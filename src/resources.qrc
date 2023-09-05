@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="tv">resources/icons/tv.png</file>
+        <file alias="exit">resources/icons/exit.png</file>
+    </qresource>
+</RCC>
