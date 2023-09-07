@@ -5,21 +5,32 @@
 #include <QString>
 #include <QFile>
 
+struct EmulatorConfigParameter {
+    QString name;
+    QString left_range;
+    QString value;
+    QString right_range;
+    QString right_extended;
+};
+
 class EmulatorConfigDevice: public QObject
 {
     Q_OBJECT
 
 public:
-    EmulatorConfigDevice(QString device_name, QString device_type);
+    EmulatorConfigDevice(QString name, QString type);
     ~EmulatorConfigDevice();
 
-    QString device_name;
-    QString device_type;
+    QString name;
+    QString type;
+    unsigned int parameters_count;
+    EmulatorConfigParameter parameters[100];
 
-    void add_parameter(QString new_param_name, QString range_left, QString param_value, QString range_right, QString extended_right);
 
-private:
-
+    void add_parameter(QString name, QString left_range, QString value, QString right_range, QString right_extended);
+    QString extended_parameter(unsigned int i, QString expected_name);
+    EmulatorConfigParameter get_parameter(QString name, bool required = true);
+    EmulatorConfigParameter get_parameter(unsigned int id);
 };
 
 class EmulatorConfig: public QObject
@@ -31,12 +42,13 @@ public:
     EmulatorConfig(QString file_name);
     ~EmulatorConfig();
 
-    int devices_count;
+    unsigned int devices_count;
 
     void load_from_file(QString file_name, bool system_only = false);
     void free_devices();
 
     EmulatorConfigDevice * get_device(int i);
+    EmulatorConfigDevice * get_device(QString name);
 
 private:
     EmulatorConfigDevice *devices[100];

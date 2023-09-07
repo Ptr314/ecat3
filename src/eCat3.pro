@@ -12,6 +12,7 @@ SOURCES += \
     emulator/config.cpp \
     emulator/core.cpp \
     emulator/emulator.cpp \
+    emulator/utils.cpp \
     main.cpp \
     mainwindow.cpp
 
@@ -19,6 +20,7 @@ HEADERS += \
     emulator/config.h \
     emulator/core.h \
     emulator/emulator.h \
+    emulator/utils.h \
     mainwindow.h
 
 FORMS += \

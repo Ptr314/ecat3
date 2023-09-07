@@ -19,6 +19,7 @@ private:
     bool loaded;
     DeviceManager *dm;
     InterfaceManager *im;
+    SystemData sd;
 
     void register_devices();
 };

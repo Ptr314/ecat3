@@ -1,28 +1,43 @@
 #include <QFile>
 #include <QMessageBox>
+#include <QException>
 
 #include "config.h"
 
-EmulatorConfigDevice::EmulatorConfigDevice(QString device_name, QString device_type)
+EmulatorConfigDevice::EmulatorConfigDevice(QString name, QString type):
+    name(name),
+    type(type),
+    parameters_count(0)
+{}
+
+EmulatorConfigDevice::~EmulatorConfigDevice(){}
+
+void EmulatorConfigDevice::add_parameter(QString name, QString left_range, QString value, QString right_range, QString right_extended)
 {
-    this->device_name = device_name;
-    this->device_type = device_type;
+    this->parameters[this->parameters_count].name = name;
+    this->parameters[this->parameters_count].left_range = left_range;
+    this->parameters[this->parameters_count].value = value;
+    this->parameters[this->parameters_count].right_range = right_range;
+    this->parameters[this->parameters_count].right_extended = right_extended;
+
+    this->parameters_count++;
 }
 
-EmulatorConfigDevice::~EmulatorConfigDevice()
+EmulatorConfigParameter EmulatorConfigDevice::get_parameter(QString name, bool required)
 {
-
+    for (unsigned int i=0; i<this->parameters_count; i++)
+    {
+        if (this->parameters[i].name == name) return this->parameters[i];
+    }
+    if (required)
+        throw QException();
+    else
+        return {"", "", "", "", ""};
 }
 
-void EmulatorConfigDevice::add_parameter(QString new_param_name, QString range_left, QString param_value, QString range_right, QString extended_right)
-{
-    qDebug() << new_param_name << range_left << param_value << range_right << extended_right;
-}
-
-EmulatorConfig::EmulatorConfig()
-{
-    this->devices_count = 0;
-}
+EmulatorConfig::EmulatorConfig():
+    devices_count(0)
+{}
 
 EmulatorConfig::~EmulatorConfig()
 {
@@ -59,7 +74,7 @@ QString EmulatorConfig::read_next_entity(QString *config, QString stop = "")
             c = config->at(0);
             config->remove(0, 1);
         }
-        if (!config->isEmpty())
+        if (!config->isEmpty() || !parser_spaces.contains(c))
         {
 
             if (!terminator.contains(c))
@@ -113,10 +128,10 @@ EmulatorConfigDevice * EmulatorConfig::add_device(QString device_name, QString d
 {
     qDebug() << device_name << device_type;
     EmulatorConfigDevice *new_device = new EmulatorConfigDevice(device_name, device_type);
-    this->devices[devices_count] = new_device;
-    this->devices_count += 1;
+    this->devices[this->devices_count++] = new_device;
     return new_device;
 }
+
 
 void EmulatorConfig::load_from_file(QString file_name, bool system_only)
 {
@@ -275,3 +290,14 @@ EmulatorConfigDevice * EmulatorConfig::get_device(int i)
 {
     return this->devices[i];
 }
+
+EmulatorConfigDevice * EmulatorConfig::get_device(QString name)
+{
+    for (unsigned int i=0; i<this->devices_count; i++)
+    {
+        if (this->devices[i]->name == name) return this->devices[i];
+    }
+    QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Device '%1' not found").arg(name));
+}
+
+
