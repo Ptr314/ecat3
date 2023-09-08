@@ -18,6 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     e->load_config(file_to_load);
     //E.Start(UseDI, Handle);
+    //CreateDevicesMenu
 
 }
 

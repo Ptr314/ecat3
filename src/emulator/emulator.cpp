@@ -5,12 +5,14 @@
 #include "emulator/config.h"
 #include "emulator/utils.h"
 
-Emulator::Emulator(QString work_path, QString ini_file)
+#include "emulator/devices/cpu/i8080.h"
+
+Emulator::Emulator(QString work_path, QString ini_file):
+    work_path(work_path),
+    loaded(false)
 {
-    this->work_path = work_path;
-    this->settings = new QSettings (ini_file, QSettings::IniFormat);
     qDebug() << "INI path: " + ini_file;
-    this->loaded = false;
+    this->settings = new QSettings (ini_file, QSettings::IniFormat);
 }
 
 QString Emulator::read_setup(QString section, QString ident, QString def_val)
@@ -43,7 +45,7 @@ void Emulator::load_config(QString file_name)
     sd.system_name = system->get_parameter("name").value;
     sd.system_version = system->get_parameter("version", false).value;
     sd.system_charmap = system->get_parameter("charmap", false).value;
-    sd.software_path = fi.absolutePath();
+    sd.software_path = work_path;
     sd.mapper_cache = parse_numeric_value(this->read_setup("Core", "mapper_cache", "8"));
 
     sd.allowed_files = system->get_parameter("files", false).value;
@@ -64,4 +66,7 @@ void Emulator::load_config(QString file_name)
 void Emulator::register_devices()
 {
     dm->register_device("ram", create_ram);
+    dm->register_device("rom", create_rom);
+    dm->register_device("memory_mapper", create_memory_mapper);
+    dm->register_device("i8080", create_i8080);
 }

@@ -11,6 +11,7 @@ CONFIG += c++17
 SOURCES += \
     emulator/config.cpp \
     emulator/core.cpp \
+    emulator/devices/cpu/i8080.cpp \
     emulator/emulator.cpp \
     emulator/utils.cpp \
     main.cpp \
@@ -19,6 +20,7 @@ SOURCES += \
 HEADERS += \
     emulator/config.h \
     emulator/core.h \
+    emulator/devices/cpu/i8080.h \
     emulator/emulator.h \
     emulator/utils.h \
     mainwindow.h

@@ -14,6 +14,7 @@ Interface::Interface(
     unsigned int mode,
     unsigned int callback_id
 ):
+    size(size),
     old_value(-1),
     edge_value(-1),
     im(im),
@@ -21,13 +22,107 @@ Interface::Interface(
     value(-1),
     name(name),
     device(device),
-    size(size),
     mode(mode),
     linked(0),
     linked_bits(0)
 {
     im->register_interface(this);
 }
+
+void Interface::connect(LinkedInterface s, LinkedInterface d)
+{
+    int index = -1;
+
+    for (unsigned int i=0; i < this->linked; i++)
+        if (this->linked_interfaces[i].d.i == d.i) index = i;
+
+    if (index < 0)
+    {
+        this->linked_interfaces[this->linked].s = s;
+        this->linked_interfaces[this->linked].d = d;
+        d.i->connect(d, s);
+        this->linked_bits |= s.mask;
+        this->linked++;
+    }
+}
+
+void Interface::set_size(unsigned int new_size)
+{
+    this->size = new_size;
+    this->mask = create_mask(new_size, 0);
+}
+
+unsigned int Interface::Interface::get_size()
+{
+    return this->size;
+}
+
+void Interface::set_mode(unsigned int new_mode)
+{
+    unsigned int prev_mode = this->mode;
+    this->mode = new_mode;
+    //Если интерфейс переключился с вывода на ввод, нужно правильно
+    //установить его значение, если оно контролируется другим интерфейсом.
+    //Поэтому просматриваем все соединенные интерфейсы, и если один из них
+    //находится в режиме вывода, то имитируем установку его значения,
+    //чтобы правильно выставились значения на текущем интерфейсе
+    if (new_mode == MODE_R && prev_mode == MODE_W)
+    {
+        for (unsigned int i=0; i>this->linked; i++)
+        {
+            Interface * li = this->linked_interfaces[i].d.i;
+            if (li->mode == MODE_W) li->change(li->value);
+        }
+    }
+    if (new_mode == MODE_OFF) this->change(_FFFF);
+}
+
+void Interface::change(unsigned int new_value)
+{
+    if (this->mode == MODE_W)
+    {
+        this->old_value = this->value;
+        this->value = new_value;
+        for (unsigned int i=0; i < this->linked; i++)
+        {
+            this->linked_interfaces[i].d.i->changed(this->linked_interfaces[i], new_value);
+        }
+    } else {
+        if (this->mode == MODE_OFF)
+        {
+            this->im->dm->error(this->device, Interface::tr("Interface '%1' is in OFF state, writing is impossible").arg(this->name));
+        }
+    }
+}
+
+void Interface::changed(LinkData link, unsigned int value)
+{
+    if (this->mode == MODE_R)
+    {
+        unsigned int new_value = this->value && ~link.d.mask; //Set expected bits to 0
+        new_value |=  ((value & link.s.mask) >> link.s.shift) << link.d.shift;
+        this->old_value = this->value;
+        this->value = new_value;
+
+        if (callback_id > 0) this->device->interface_callback(callback_id, new_value, this->old_value);
+    }
+}
+
+void Interface::clear()
+{
+    this->change(_FFFF);
+}
+
+bool Interface::pos_edge()
+{
+    //TODO: Implement this
+}
+
+bool Interface::neg_edge()
+{
+    //TODO: Implement this
+}
+
 
 //----------------------- class DeviceManager -------------------------------//
 
@@ -98,6 +193,18 @@ void DeviceManager::load_devices_config(SystemData *sd)
     }
 }
 
+ComputerDevice * DeviceManager::get_device_by_name(QString name, bool required)
+{
+    for (unsigned int i=0; i < this->device_count; i++)
+    {
+        if (this->devices[i].device->device_name == name) return this->devices[i].device;
+    }
+    if (required)
+        throw QException();
+    else
+        return nullptr;
+}
+
 //----------------------- class InterfaceManager -------------------------------//
 
 InterfaceManager::InterfaceManager(DeviceManager *dm):interfaces_count(0), dm(dm){}
@@ -122,13 +229,30 @@ void InterfaceManager::clear()
 ComputerDevice::ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
     device_type(cd->type),
     device_name(cd->name),
-    im(im),
-    cd(cd)
+    cd(cd),
+    im(im)
 {
-    //TODO: taking clock from config
+    try {
+        QString s = cd->get_parameter("clock").value;
+        if (s.isEmpty())
+        {
+            QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect clock value for '%1'").arg(this->device_name));
+            throw QException();
+        } else {
+            int pos = s.indexOf("/");
+            if (pos>0) {
+                this->clock_miltiplier = parse_numeric_value(s.first(pos));
+                this->clock_divider = parse_numeric_value(s.last(s.length()-pos-1));
+            } else {
+                this->clock_miltiplier = parse_numeric_value(s);
+                this->clock_divider = 1;
+            }
+        }
+    } catch (QException &e) {
+        this->clock_miltiplier = 1;
+        this->clock_divider = 1;
+    }
 
-    this->clock_miltiplier = 1;
-    this->clock_divider = 1;
     this->clock_stored = 0;
 }
 
@@ -154,7 +278,7 @@ void ComputerDevice::system_clock(unsigned int counter)
 
 void ComputerDevice::load_config(SystemData *sd)
 {
-    //TODO: Implement
+    qDebug() << "ComputerDevice::load_config";
 }
 
 Interface * ComputerDevice::create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id)
@@ -167,12 +291,18 @@ void ComputerDevice::interface_callback([[maybe_unused]] unsigned int callback_i
     //Does nothing by default, by may be overridden
 }
 
+void ComputerDevice::reset([[maybe_unused]] bool cold)
+{
+    //Does nothing by default, by may be overridden
+}
+
 //----------------------- class Memory -------------------------------//
 
 Memory::Memory(InterfaceManager *im, EmulatorConfigDevice *cd):
     AddressableDevice(im, cd),
     can_read(false),
     can_write(false),
+    auto_output(false),
     buffer(nullptr),
     size(0),
     fill(0),
@@ -185,34 +315,51 @@ Memory::Memory(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 Memory::~Memory()
 {
-    //TODO: Destroy buffer here
+    if (this->buffer != nullptr) delete [] buffer;
 }
 
 unsigned int Memory::get_value(unsigned int address)
 {
-    //TODO: Implement
-    return 0;
+    if (this->read_callback != nullptr) {
+        //TODO: implement this
+    }
+
+    if (this->can_read && address<this->size)
+        return this->buffer[address];
+    else
+        return 0xFF;
 }
 
-void Memory::set_value(unsigned int address)
+void Memory::set_value(unsigned int address, unsigned int value)
 {
-    //TODO: Implement
+    if (this->write_callback != nullptr) {
+        //TODO: implement this
+    }
+
+    if (this->can_write && address < this->size)
+        this->buffer[address] = (uint8_t)value;
 }
 
 void Memory::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
-    //TODO: Implement
+    unsigned int address = new_value & create_mask(this->address->get_size(), 0);
+    if (address < this->size and this->auto_output) this->data->change(this->buffer[address]);
 }
 
 void Memory::set_size(unsigned int value)
 {
     if (this->buffer != nullptr) delete [] buffer;
-    buffer = new short[value];
+    buffer = new uint8_t[value];
     this->size = value;
 
     QRandomGenerator *rg = QRandomGenerator::global();
 
     for (unsigned int i=0; i < value; i++) buffer[i]=rg->bounded(255);
+}
+
+void Memory::set_callback(MemoryCallbackFunc f, unsigned int mode)
+{
+    //TODO: Implement
 }
 
 //----------------------- class RAM -------------------------------//
@@ -244,6 +391,124 @@ void RAM::reset(bool cold)
     if (cold && this->buffer!=nullptr) memset(this->buffer, this->fill, this->size);
 }
 
+//----------------------- class ROM -------------------------------//
+
+ROM::ROM(InterfaceManager *im, EmulatorConfigDevice *cd):
+    Memory(im, cd)
+{
+    this->can_read = true;
+    this->can_write = false;
+    this->auto_output = true;
+}
+
+void ROM::load_config(SystemData *sd)
+{
+    Memory::load_config(sd);
+    this->set_size(parse_numeric_value(this->cd->get_parameter("size").value));
+
+    try {
+        this->fill = parse_numeric_value(this->cd->get_parameter("fill").value);
+    } catch (QException &e) {
+        this->fill = 0xFF;
+    }
+
+    if (this->buffer!=nullptr) memset(this->buffer, this->fill, this->size);
+
+    QString file_name = sd->software_path + this->cd->get_parameter("image").value;
+    QFile file(file_name);
+    if (file.open(QIODevice::ReadOnly)){
+        unsigned int file_size = file.size();
+        if (file_size > this->size)
+        {
+            QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("ROM image file for '%1' is too big").arg(this->device_name));
+            throw QException();
+        }
+        QByteArray data = file.readAll();
+        memcpy(this->buffer, data.constData(), file_size);
+        file.close();
+    } else {
+        QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Can't open ROM image file '%1'").arg(file_name));
+        throw QException();
+    }
+}
+
+//----------------------- class CPU -------------------------------//
+
+CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
+    ComputerDevice(im, cd),
+    reset_mode(true),
+    debug(DEBUG_OFF),
+    break_count(0)
+
+{
+    try {
+        clock = parse_numeric_value(this->cd->get_parameter("clock").value);
+    } catch (QException &e) {
+        QMessageBox::critical(0, CPU::tr("Error"), CPU::tr("No CPU clock value found"));
+    }
+}
+
+void CPU::load_config(SystemData *sd)
+{
+    ComputerDevice::load_config(sd);
+    this->mm = (MemoryMapper*)this->im->dm->get_device_by_name("mapper");
+}
+
+bool CPU::check_breakpoint(unsigned int address)
+{
+    //TODO: Implement
+}
+
+void CPU::add_breakpoint(unsigned int address)
+{
+    //TODO: Implement
+}
+
+void CPU::remove_breakpoint(unsigned int address)
+{
+    //TODO: Implement
+}
+
+void CPU::clear_breakpoints()
+{
+    //TODO: Implement
+}
+
+void CPU::reset(bool cold)
+{
+    this->reset_mode = true;
+}
+
+//----------------------- class MemoryMapper -------------------------------//
+
+MemoryMapper::MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd):
+    ComputerDevice(im, cd)
+{
+    //TODO: Implement
+}
+
+void MemoryMapper::load_config(SystemData *sd)
+{
+    ComputerDevice::load_config(sd);
+
+    //TODO: Implement
+}
+
+void MemoryMapper::reset(bool cold)
+{
+    //TODO: Implement
+}
+
+//----------------------- Creation functions -------------------------------//
+
 ComputerDevice * create_ram(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new RAM(im, cd);
+}
+
+ComputerDevice * create_rom(InterfaceManager *im, EmulatorConfigDevice *cd){
+    return new ROM(im, cd);
+}
+
+ComputerDevice * create_memory_mapper(InterfaceManager *im, EmulatorConfigDevice *cd){
+    return new MemoryMapper(im, cd);
 }

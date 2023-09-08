@@ -15,12 +15,18 @@
 #define MODE_W                  2
 #define MODE_RW                 MODE_R + MODE_W
 
+#define DEBUG_OFF               0
+#define DEBUG_STOPPED           1
+#define DEBUG_STEP              2
+#define DEBUG_BRAKES            3
+
+
 class DeviceManager;
 class InterfaceManager;
 class Interface;
 class ComputerDevice;
+class MemoryMapper;
 
-//typedef short *Storage[];
 typedef short ScreenColor[3];
 
 struct SystemData {
@@ -75,7 +81,7 @@ public:
     QString device_name;
 
     ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual void reset(bool cold) = 0;
+    virtual void reset(bool cold);
     virtual void load_config(SystemData *sd);
     virtual void clock(unsigned int counter);
     virtual void system_clock(unsigned int counter);
@@ -87,11 +93,11 @@ private:
     unsigned int clock_miltiplier;
     unsigned int clock_divider;
 
-    InterfaceManager *im;
 
 protected:
     Interface * create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id = 0);
     EmulatorConfigDevice *cd;
+    InterfaceManager *im;
 
 };
 
@@ -100,7 +106,7 @@ class AddressableDevice: public ComputerDevice
 public:
     AddressableDevice(InterfaceManager *im, EmulatorConfigDevice *cd):ComputerDevice(im, cd){};
     virtual unsigned int get_value(unsigned int address) = 0;
-    virtual void set_value(unsigned int address) = 0;
+    virtual void set_value(unsigned int address, unsigned int value) = 0;
 };
 
 
@@ -109,16 +115,17 @@ class Memory: public AddressableDevice
 protected:
     bool can_read;
     bool can_write;
+    bool auto_output;
     Interface *address;
     Interface *data;
-    short * buffer;
+    uint8_t * buffer;
     unsigned int size;
     unsigned short fill;
     MemoryCallbackFunc read_callback;
     MemoryCallbackFunc write_callback;
 
     virtual unsigned int get_value(unsigned int address);
-    virtual void set_value(unsigned int address);
+    virtual void set_value(unsigned int address, unsigned int value);
 public:
     Memory(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~Memory();
@@ -133,6 +140,13 @@ public:
     RAM(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void load_config(SystemData *sd);
     virtual void reset(bool cold);
+};
+
+class ROM: public Memory
+{
+public:
+    ROM(InterfaceManager *im, EmulatorConfigDevice *cd);
+    virtual void load_config(SystemData *sd);
 };
 
 class DeviceManager: public QObject
@@ -169,6 +183,8 @@ class Interface: public QObject
 {
     Q_OBJECT
 private:
+    unsigned int size;
+    unsigned int mode;
     unsigned int old_value;
     unsigned int edge_value;
     InterfaceManager *im;
@@ -179,9 +195,7 @@ public:
     unsigned int mask;
     QString name;
     ComputerDevice *device;
-    unsigned int size;
-    unsigned int mode;
-    int linked;
+    unsigned int linked;
     unsigned int linked_bits;
 
     Interface(
@@ -194,7 +208,10 @@ public:
     );
 
     void connect(LinkedInterface s, LinkedInterface d);
-    void change(unsigned int value); //Вызывается устройством для изменения выхода
+    unsigned int get_size();
+    void set_size(unsigned int new_size);
+    void set_mode(unsigned int new_mode);
+    void change(unsigned int new_value); //Вызывается устройством для изменения выхода
     void changed(LinkData link, unsigned int value); //Вызывается связанными интерфейсами при изменении значения на них
     void clear();
     bool pos_edge(); //Триггеры фронтов для 0-го бита
@@ -224,6 +241,51 @@ public:
 private:
 };
 
+class CPU: public ComputerDevice
+{
+private:
+    unsigned int breakpoints[100];
+
+protected:
+    Interface * address;
+    Interface * data;
+    bool reset_mode;
+
+public:
+    unsigned int clock;
+    MemoryMapper * mm;
+    unsigned int debug;
+    unsigned int break_count;
+
+    CPU(InterfaceManager *im, EmulatorConfigDevice *cd);
+
+    virtual void load_config(SystemData *sd);
+    virtual void execute() = 0;
+    bool check_breakpoint(unsigned int address);
+    void add_breakpoint(unsigned int address);
+    void remove_breakpoint(unsigned int address);
+    void clear_breakpoints();
+    virtual void reset(bool cold);
+    virtual unsigned int get_pc() = 0;
+};
+
+class MemoryMapper: public ComputerDevice
+{
+private:
+    //TODO: Implement
+protected:
+
+public:
+
+    MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd);
+    virtual void load_config(SystemData *sd);
+    virtual void reset(bool cold);
+};
+
+//----------------------- Creation functions -------------------------------//
+
 ComputerDevice * create_ram(InterfaceManager *im, EmulatorConfigDevice *cd);
+ComputerDevice * create_rom(InterfaceManager *im, EmulatorConfigDevice *cd);
+ComputerDevice * create_memory_mapper(InterfaceManager *im, EmulatorConfigDevice *cd);
 
 #endif // CORE_H

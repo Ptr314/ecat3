@@ -2,7 +2,7 @@
 
 #include "utils.h"
 
-int parse_numeric_value(QString str)
+unsigned int parse_numeric_value(QString str)
 {
     int base;
     int mult;
@@ -30,4 +30,14 @@ int parse_numeric_value(QString str)
     if (!valid) throw QException();
 
     return value*mult;
+}
+
+unsigned int create_mask(unsigned int size, unsigned int shift)
+{
+    return ~(_FFFF << size) << shift;
+    // (4, 4):
+    //1                    FFFF
+    //2                            FFF0
+    //3    000F
+    //4                                     00F0
 }
