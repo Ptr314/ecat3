@@ -27,7 +27,7 @@ class Interface;
 class ComputerDevice;
 class MemoryMapper;
 
-typedef short ScreenColor[3];
+typedef uint8_t ScreenColor[3];
 
 struct SystemData {
     QString         system_file;
@@ -72,13 +72,34 @@ struct DeviceDescription {
     QString device_name;
 };
 
+struct MapperRange {
+    unsigned int        config_mask;		//AND-маска, которая накладывается на значение порта конфигурации
+    unsigned int        config_value;		//Число, с которым сравнивается значение порта после маски
+    unsigned int        range_begin;		//Адрес начала диапазона
+    unsigned int        range_end;      	//Адрес конца диапазона
+    unsigned int        address_mask;		//AND-маска, которая накладывается на адрес
+    unsigned int        address_value;		//Число, с которым сравнивается адрес после маски
+    ComputerDevice *    device;             //Устройство, соответствующее наложенным условиям
+    unsigned int        base;				//Адрес во внутр. адр. пр-ве устройства, соотв. RangeBegin системы
+    unsigned int        mode;				//Режим допустимости чтения-записи для устройства
+    bool                cache;              //Разрешение кеширования записи
+};
+
+struct MapperCacheEntry {
+    unsigned int        range_begin;
+    unsigned int        range_end;
+    ComputerDevice *    device;
+    unsigned int        base;
+    unsigned int        counter;
+};
+
 class ComputerDevice: public QObject
 {
     Q_OBJECT
 
 public:
-    QString device_type;
-    QString device_name;
+    QString type;
+    QString name;
 
     ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void reset(bool cold);
@@ -149,29 +170,57 @@ public:
     virtual void load_config(SystemData *sd);
 };
 
+class Port:public AddressableDevice
+{
+private:
+    unsigned int size;
+    Interface * i_input;
+    Interface * i_data;
+    unsigned int flip_mask;
+    Interface * i_access;
+    Interface * i_flip;
+    void flip_changed(unsigned int new_value, unsigned int old_value);
+
+protected:
+    unsigned int value;
+
+public:
+    virtual unsigned int get_value(unsigned int address);
+    virtual void set_value(unsigned int address, unsigned int value);
+
+    Port(InterfaceManager *im, EmulatorConfigDevice *cd);
+    virtual void reset(bool cold);
+};
+
+class PortAddress:public Port
+{
+public:
+    virtual void set_value(unsigned int address, unsigned int value);
+};
+
 class DeviceManager: public QObject
 {
     Q_OBJECT
 
 public:
-    DeviceManager();
-    ~DeviceManager();
+    DeviceManager(); //
+    ~DeviceManager(); //
 
     unsigned int device_count;
     ComputerDevice *error_device;
     QString error_message;
 
-    void add_device(InterfaceManager *im, EmulatorConfigDevice *d);
-    void clear();
-    void load_devices_config(SystemData *sd);
-    ComputerDevice *get_device_by_name(QString name, bool required=true);
+    void add_device(InterfaceManager *im, EmulatorConfigDevice *d); //
+    void clear(); //
+    void load_devices_config(SystemData *sd); //
+    ComputerDevice *get_device_by_name(QString name, bool required=true); //
     unsigned int get_device_index(QString name);
     void reset_devices(bool is_cold);
     void clock(unsigned int counter);
     void error(ComputerDevice *d, QString message);
     void error_clear();
-    DeviceDescription * get_device(unsigned int i);
-    void register_device(QString device_type, CreateDeviceFunc func);
+    DeviceDescription * get_device(unsigned int i); //
+    void register_device(QString device_type, CreateDeviceFunc func); //
 
 private:
     DeviceDescription devices[100];
@@ -194,9 +243,9 @@ public:
     unsigned int value;
     unsigned int mask;
     QString name;
-    ComputerDevice *device;
     unsigned int linked;
     unsigned int linked_bits;
+    ComputerDevice *device;
 
     Interface(
                 ComputerDevice * device,

@@ -4,6 +4,8 @@
 #include "core.h"
 #include "emulator/utils.h"
 
+MapperCacheEntry MapperCache[15];
+
 //----------------------- class Interface -------------------------------//
 
 Interface::Interface(
@@ -15,16 +17,16 @@ Interface::Interface(
     unsigned int callback_id
 ):
     size(size),
+    mode(mode),
     old_value(-1),
     edge_value(-1),
     im(im),
     callback_id(callback_id),
     value(-1),
     name(name),
-    device(device),
-    mode(mode),
     linked(0),
-    linked_bits(0)
+    linked_bits(0),
+    device(device)
 {
     im->register_interface(this);
 }
@@ -197,13 +199,41 @@ ComputerDevice * DeviceManager::get_device_by_name(QString name, bool required)
 {
     for (unsigned int i=0; i < this->device_count; i++)
     {
-        if (this->devices[i].device->device_name == name) return this->devices[i].device;
+        if (this->devices[i].device->name == name) return this->devices[i].device;
     }
     if (required)
         throw QException();
     else
         return nullptr;
 }
+
+unsigned int DeviceManager::get_device_index(QString name)
+{
+    //TODO: Implement
+}
+
+void DeviceManager::reset_devices(bool is_cold)
+{
+    //TODO: Implement
+}
+
+void DeviceManager::clock(unsigned int counter)
+{
+    //TODO: Implement
+}
+
+void DeviceManager::error(ComputerDevice *d, QString message)
+{
+    this->error_device = d;
+    this->error_message = message;
+    throw QException();
+}
+
+void DeviceManager::error_clear()
+{
+    //TODO: Implement
+}
+
 
 //----------------------- class InterfaceManager -------------------------------//
 
@@ -227,8 +257,8 @@ void InterfaceManager::clear()
 //----------------------- class ComputerDevice -------------------------------//
 
 ComputerDevice::ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
-    device_type(cd->type),
-    device_name(cd->name),
+    type(cd->type),
+    name(cd->name),
     cd(cd),
     im(im)
 {
@@ -236,7 +266,7 @@ ComputerDevice::ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
         QString s = cd->get_parameter("clock").value;
         if (s.isEmpty())
         {
-            QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect clock value for '%1'").arg(this->device_name));
+            QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect clock value for '%1'").arg(this->name));
             throw QException();
         } else {
             int pos = s.indexOf("/");
@@ -340,7 +370,7 @@ void Memory::set_value(unsigned int address, unsigned int value)
         this->buffer[address] = (uint8_t)value;
 }
 
-void Memory::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
+void Memory::interface_callback([[maybe_unused]] unsigned int callback_id, unsigned int new_value, [[maybe_unused]] unsigned int old_value)
 {
     unsigned int address = new_value & create_mask(this->address->get_size(), 0);
     if (address < this->size and this->auto_output) this->data->change(this->buffer[address]);
@@ -420,7 +450,7 @@ void ROM::load_config(SystemData *sd)
         unsigned int file_size = file.size();
         if (file_size > this->size)
         {
-            QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("ROM image file for '%1' is too big").arg(this->device_name));
+            QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("ROM image file for '%1' is too big").arg(this->name));
             throw QException();
         }
         QByteArray data = file.readAll();
@@ -431,6 +461,42 @@ void ROM::load_config(SystemData *sd)
         throw QException();
     }
 }
+
+//----------------------- class Port -------------------------------//
+
+Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
+    AddressableDevice(im, cd)
+{
+    //TODO: Implement
+}
+
+void Port::flip_changed(unsigned int new_value, unsigned int old_value)
+{
+    //TODO: Implement
+}
+
+unsigned int Port::get_value(unsigned int address)
+{
+    //TODO: Implement
+}
+
+void Port:: set_value(unsigned int address, unsigned int value)
+{
+    //TODO: Implement
+}
+
+void Port::reset(bool cold)
+{
+    //TODO: Implement
+}
+
+//----------------------- class PortAddress -------------------------------//
+
+void PortAddress:: set_value(unsigned int address, unsigned int value)
+{
+    //TODO: Implement
+}
+
 
 //----------------------- class CPU -------------------------------//
 
