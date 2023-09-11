@@ -2,5 +2,12 @@
     <qresource prefix="/icons">
         <file alias="tv">resources/icons/tv.png</file>
         <file alias="exit">resources/icons/exit.png</file>
+        <file alias="devices">resources/icons/ksim_cpu.png</file>
+        <file alias="power">resources/icons/power.png</file>
+        <file alias="reload">resources/icons/reload.png</file>
+        <file alias="next">resources/icons/next.png</file>
+    </qresource>
+    <qresource prefix="/fonts">
+        <file alias="mono">resources/fonts/RobotoMono-Regular.ttf</file>
     </qresource>
 </RCC>

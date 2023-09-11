@@ -35,14 +35,24 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionSelect_a_machine"/>
+    <addaction name="action_Select_a_machine"/>
     <addaction name="separator"/>
-    <addaction name="actionExit"/>
+    <addaction name="action_Exit"/>
    </widget>
    <widget class="QMenu" name="menuEmulation">
     <property name="title">
      <string>Emulation</string>
     </property>
+    <widget class="QMenu" name="menuDevices">
+     <property name="title">
+      <string>Devices</string>
+     </property>
+     <addaction name="actionDevice_one"/>
+    </widget>
+    <addaction name="action_Cold_restart"/>
+    <addaction name="action_Soft_restart"/>
+    <addaction name="separator"/>
+    <addaction name="menuDevices"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -79,9 +89,9 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionSelect_a_machine"/>
+   <addaction name="action_Select_a_machine"/>
   </widget>
-  <action name="actionSelect_a_machine">
+  <action name="action_Select_a_machine">
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -93,13 +103,36 @@
     <string>Select a machine</string>
    </property>
   </action>
-  <action name="actionExit">
+  <action name="action_Exit">
    <property name="icon">
     <iconset resource="resources.qrc">
      <normaloff>:/icons/exit</normaloff>:/icons/exit</iconset>
    </property>
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="action_Cold_restart">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/power</normaloff>:/icons/power</iconset>
+   </property>
+   <property name="text">
+    <string>Cold restart</string>
+   </property>
+  </action>
+  <action name="action_Soft_restart">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/reload</normaloff>:/icons/reload</iconset>
+   </property>
+   <property name="text">
+    <string>Soft restart</string>
+   </property>
+  </action>
+  <action name="actionDevice_one">
+   <property name="text">
+    <string>Device_one</string>
    </property>
   </action>
  </widget>

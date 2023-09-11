@@ -9,8 +9,12 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    dialogs/debugdialog.cpp \
+    dialogs/dumparea.cpp \
+    dialogs/dumpwindow.cpp \
     emulator/config.cpp \
     emulator/core.cpp \
+    emulator/debug.cpp \
     emulator/devices/cpu/i8080.cpp \
     emulator/emulator.cpp \
     emulator/utils.cpp \
@@ -18,14 +22,19 @@ SOURCES += \
     mainwindow.cpp
 
 HEADERS += \
+    dialogs/debugdialog.h \
+    dialogs/dumparea.h \
+    dialogs/dumpwindow.h \
     emulator/config.h \
     emulator/core.h \
+    emulator/debug.h \
     emulator/devices/cpu/i8080.h \
     emulator/emulator.h \
     emulator/utils.h \
     mainwindow.h
 
 FORMS += \
+    dialogs/dumpwindow.ui \
     mainwindow.ui
 
 TRANSLATIONS += \

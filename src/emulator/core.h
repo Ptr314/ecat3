@@ -145,12 +145,13 @@ protected:
     MemoryCallbackFunc read_callback;
     MemoryCallbackFunc write_callback;
 
-    virtual unsigned int get_value(unsigned int address);
     virtual void set_value(unsigned int address, unsigned int value);
 public:
     Memory(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~Memory();
     void set_size(unsigned int value);
+    unsigned int get_size();
+    virtual unsigned int get_value(unsigned int address);
     void set_callback(MemoryCallbackFunc f, unsigned int mode);
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
 };

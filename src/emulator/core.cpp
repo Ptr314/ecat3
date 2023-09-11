@@ -387,6 +387,11 @@ void Memory::set_size(unsigned int value)
     for (unsigned int i=0; i < value; i++) buffer[i]=rg->bounded(255);
 }
 
+unsigned int Memory::get_size()
+{
+    return this->size;
+}
+
 void Memory::set_callback(MemoryCallbackFunc f, unsigned int mode)
 {
     //TODO: Implement
