@@ -4,14 +4,12 @@
 #include <QDialog>
 
 #include "emulator/emulator.h"
-#include "emulator/core.h"
-#include "dialogs/debugdialog.h"
 
 namespace Ui {
 class DumpWindow;
 }
 
-class DumpWindow : public DebugDialog
+class DumpWindow : public QDialog
 {
     Q_OBJECT
 
@@ -20,13 +18,16 @@ public:
     explicit DumpWindow(QWidget *parent, Emulator * e, ComputerDevice * device);
     ~DumpWindow();
 
-    static DebugDialog CreateDialog(QWidget *parent, Emulator * e, ComputerDevice * device);
-
 private slots:
     void on_closeButton_clicked();
 
 private:
     Ui::DumpWindow *ui;
+
+    Emulator * e;
+    ComputerDevice * d;
 };
+
+QDialog * CreateDumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d);
 
 #endif // DUMPWINDOW_H

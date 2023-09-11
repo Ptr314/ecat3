@@ -7,8 +7,9 @@
 
 #include "emulator/devices/cpu/i8080.h"
 
-Emulator::Emulator(QString work_path, QString ini_file):
+Emulator::Emulator(QString work_path, QString data_path, QString ini_file):
     work_path(work_path),
+    data_path(data_path),
     loaded(false)
 {
     qDebug() << "INI path: " + ini_file;
@@ -50,6 +51,8 @@ void Emulator::load_config(QString file_name)
 
     sd.allowed_files = system->get_parameter("files", false).value;
 
+    this->load_charmap();
+
     for (unsigned int i=0; i<config->devices_count; i++)
     {
         EmulatorConfigDevice *d = config->get_device(i);
@@ -69,4 +72,31 @@ void Emulator::register_devices()
     dm->register_device("rom", create_rom);
     dm->register_device("memory_mapper", create_memory_mapper);
     dm->register_device("i8080", create_i8080);
+}
+
+
+void Emulator::load_charmap()
+{
+    //TODO: delete old charmap objects
+
+    if (!sd.system_charmap.isEmpty())
+    {
+        QFile f(this->data_path + this->sd.system_charmap + ".chr");
+        f.open(QFile::ReadOnly);
+        QString s = QString::fromUtf8(f.readAll());
+
+        unsigned int count = 0;
+        for (unsigned int i = 0; i < s.length(); i++)
+        {
+            QChar c = s.at(i);
+            if (c != '\x0D' && c != '\x0A') this->charmap[count++] = new QChar(c);
+        }
+        qDebug() << "Chars loaded: " << count;
+    } else
+        for (unsigned int i = 0; i < 256; i++) this->charmap[i] = new QChar('.');
+}
+
+QChar * Emulator::translate_char(unsigned int char_code)
+{
+    return this->charmap[char_code];
 }

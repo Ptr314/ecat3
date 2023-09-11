@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include "emulator/core.h"
+#include "emulator/emulator.h"
 
 class DumpArea : public QWidget
 {
@@ -11,7 +11,7 @@ class DumpArea : public QWidget
 public:
     explicit DumpArea(QWidget *parent = nullptr);
 
-    void set_memory(Memory * memory);
+    void set_data(Emulator * e, Memory * memory);
 
 signals:
 
@@ -20,6 +20,7 @@ protected:
 
 private:
     Memory * m;
+    Emulator * e;
     unsigned int font_height;
     unsigned int char_width;
     unsigned int start_address;

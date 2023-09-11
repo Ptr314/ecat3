@@ -1,19 +1,19 @@
 #include "dumpwindow.h"
 #include "ui_dumpwindow.h"
 
-#include "emulator/debug.h"
-
 DumpWindow::DumpWindow(QWidget *parent) :
-    DebugDialog(parent),
+    QDialog(parent),
     ui(new Ui::DumpWindow)
 {
     ui->setupUi(this);
 }
 
-DumpWindow::DumpWindow(QWidget *parent, Emulator * e, ComputerDevice * device):
-    DebugDialog(parent, e, device)
+DumpWindow::DumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
+    DumpWindow(parent)
 {
-    //ui->dump_area->set_memory((Memory*)device);
+    this->e = e;
+    this->d = d;
+    ui->dump_area->set_data(e, (Memory*)d);
 }
 
 DumpWindow::~DumpWindow()
@@ -21,14 +21,12 @@ DumpWindow::~DumpWindow()
     delete ui;
 }
 
-DebugDialog DumpWindow::CreateDialog(QWidget *parent, Emulator * e, ComputerDevice * device)
-{
-    return new DumpWindow(parent, e, device);
-}
-
-
 void DumpWindow::on_closeButton_clicked()
 {
     this->close();
 }
 
+QDialog * CreateDumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
+{
+    return new DumpWindow(parent, e, d);
+}

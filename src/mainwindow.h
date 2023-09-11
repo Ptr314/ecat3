@@ -4,7 +4,7 @@
 #include <QMainWindow>
 
 #include "emulator/emulator.h"
-#include "dialogs/dumpwindow.h"
+#include "emulator/debug.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -26,6 +26,8 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+
+    DebugWindowsManager * DWM;
 
     void CreateDevicesMenu();
 };

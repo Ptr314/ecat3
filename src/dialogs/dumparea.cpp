@@ -17,9 +17,10 @@ DumpArea::DumpArea(QWidget *parent)
     this->font_height = fm.height();
 }
 
-void DumpArea::set_memory(Memory * memory)
+void DumpArea::set_data(Emulator * e, Memory * memory)
 {
     this->m = memory;
+    this->e = e;
 }
 
 void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
@@ -51,7 +52,8 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
                     uint8_t data = this->m->get_value(address);
                     QString data_str = QString("%1 ").arg(data, 2, 16, QChar('0')).toUpper();
                     painter.drawText(x + j*data_str.length()*this->char_width, y, data_str);
-                    painter.drawText(x + this->char_width*(16 * data_str.length() + 5 + j), y, "A");
+                    QString c = QString(*this->e->translate_char(data));
+                    painter.drawText(x + this->char_width*(16 * data_str.length() + 5 + j), y, c);
                 }
             }
         }
