@@ -3,9 +3,9 @@
 
 #include "emulator/core.h"
 
-//TODO: Implement
 class Speaker: public ComputerDevice
 {
+    //TODO: Implement
 public:
     Speaker(InterfaceManager *im, EmulatorConfigDevice *cd);
 };

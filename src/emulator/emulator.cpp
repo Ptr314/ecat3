@@ -8,6 +8,7 @@
 #include "emulator/devices/cpu/i8080.h"
 #include "emulator/devices/common/i8255.h"
 #include "emulator/devices/common/speaker.h"
+#include "emulator/devices/common/tape.h"
 
 Emulator::Emulator(QString work_path, QString data_path, QString ini_file):
     work_path(work_path),
@@ -102,6 +103,7 @@ void Emulator::register_devices()
     dm->register_device("port", create_port);
     dm->register_device("port-address", create_port_address);
     dm->register_device("speaker", create_speaker);
+    dm->register_device("taperecorder", create_tape_recorder);
     dm->register_device("i8080", create_i8080);
     dm->register_device("i8255", create_i8255);
 }
