@@ -14,6 +14,7 @@ SOURCES += \
     emulator/config.cpp \
     emulator/core.cpp \
     emulator/devices/common/i8255.cpp \
+    emulator/devices/common/speaker.cpp \
     emulator/devices/cpu/i8080.cpp \
     emulator/emulator.cpp \
     emulator/utils.cpp \
@@ -27,6 +28,7 @@ HEADERS += \
     emulator/core.h \
     emulator/debug.h \
     emulator/devices/common/i8255.h \
+    emulator/devices/common/speaker.h \
     emulator/devices/cpu/i8080.h \
     emulator/emulator.h \
     emulator/utils.h \

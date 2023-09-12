@@ -451,7 +451,7 @@ void ROM::load_config(SystemData *sd)
 
     if (this->buffer!=nullptr) memset(this->buffer, this->fill, this->size);
 
-    QString file_name = sd->software_path + this->cd->get_parameter("image").value;
+    QString file_name = sd->system_path + this->cd->get_parameter("image").value;
     QFile file(file_name);
     if (file.open(QIODevice::ReadOnly)){
         unsigned int file_size = file.size();

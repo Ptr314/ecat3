@@ -7,6 +7,7 @@
 
 #include "emulator/devices/cpu/i8080.h"
 #include "emulator/devices/common/i8255.h"
+#include "emulator/devices/common/speaker.h"
 
 Emulator::Emulator(QString work_path, QString data_path, QString ini_file):
     work_path(work_path),
@@ -40,9 +41,9 @@ void Emulator::load_config(QString file_name)
     EmulatorConfig * config = new EmulatorConfig(work_path + file_name);
 
     EmulatorConfigDevice * system = config->get_device("system");
-    QFileInfo fi(file_name);
+    QFileInfo fi(work_path + file_name);
     sd.system_file = file_name;
-    sd.system_path = fi.absolutePath();
+    sd.system_path = fi.absolutePath() + "/";
     sd.system_type = system->get_parameter("type").value;
     sd.system_name = system->get_parameter("name").value;
     sd.system_version = system->get_parameter("version", false).value;
@@ -100,6 +101,7 @@ void Emulator::register_devices()
     dm->register_device("memory_mapper", create_memory_mapper);
     dm->register_device("port", create_port);
     dm->register_device("port-address", create_port_address);
+    dm->register_device("speaker", create_speaker);
     dm->register_device("i8080", create_i8080);
     dm->register_device("i8255", create_i8255);
 }
