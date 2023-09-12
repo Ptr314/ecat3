@@ -20,7 +20,7 @@ public:
     I8080Context context;
 
     I8080(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual void execute();
+    virtual unsigned int execute();
 };
 
 ComputerDevice * create_i8080(InterfaceManager *im, EmulatorConfigDevice *cd);

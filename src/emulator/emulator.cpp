@@ -1,4 +1,5 @@
 #include <QFileInfo>
+#include <QThread>
 
 #include "core.h"
 #include "emulator.h"
@@ -15,7 +16,10 @@
 Emulator::Emulator(QString work_path, QString data_path, QString ini_file):
     work_path(work_path),
     data_path(data_path),
-    loaded(false)
+    loaded(false),
+    busy(false),
+    local_counter(0),
+    clock_counter(0)
 {
     qDebug() << "INI path: " + ini_file;
     this->settings = new QSettings (ini_file, QSettings::IniFormat);
@@ -95,6 +99,66 @@ void Emulator::load_charmap()
 QChar * Emulator::translate_char(unsigned int char_code)
 {
     return this->charmap[char_code];
+}
+
+void Emulator::reset(bool cold)
+{
+    this->dm->reset_devices(cold);
+}
+
+void Emulator::start()
+{
+    if (this->loaded)
+    {
+        this->cpu = (CPU*)this->dm->get_device_by_name("cpu");
+        this->mm = (MemoryMapper*)this->dm->get_device_by_name("mapper");
+        this->display = (Display*)this->dm->get_device_by_name("display");
+        this->keyboard = (Keyboard*)this->dm->get_device_by_name("keyboard");
+
+        this->reset(true);
+
+        this->clock_freq = this->cpu->clock;
+        this->timer_res = parse_numeric_value(this->read_setup("Core", "TimerResolution", "1"));
+        this->timer_delay = parse_numeric_value(this->read_setup("Core", "TimerDelay", "20"));
+        this->time_ticks = this->clock_freq * this->timer_delay / 1000;
+
+        this->local_counter = 0;
+        this->clock_counter = 0;
+
+
+        timer = new QTimer(this);
+        connect(timer, &QTimer::timeout, this, QOverload<>::of(&Emulator::timer_proc));
+        timer->start(this->timer_delay);
+    }
+}
+
+void Emulator::stop()
+{
+    if (this->loaded)
+    {
+        this->timer->stop();
+        //TODO: Other stopping stuff
+    }
+}
+
+void Emulator::timer_proc()
+{
+    //TODO: Implement
+    if (!this->busy)
+    {
+        this->busy = true;
+        while (this->local_counter < this->time_ticks) {
+
+            unsigned int counter = this->cpu->execute();
+            this->local_counter += counter;
+            this->clock_counter += counter;
+            this->dm->clock(counter);
+        }
+        this->mm->sort_cache();
+
+        this->local_counter -= this->time_ticks;
+        this->busy = false;
+    }
 }
 
 void Emulator::register_devices()

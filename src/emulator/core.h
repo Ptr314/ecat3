@@ -108,6 +108,7 @@ public:
     virtual void system_clock(unsigned int counter);
 
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
+    virtual void memory_callback(unsigned int callback_id, unsigned int address);
 
 private:
     unsigned int clock_stored;
@@ -119,7 +120,7 @@ protected:
     Interface * create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id = 0);
     EmulatorConfigDevice *cd;
     InterfaceManager *im;
-
+    ComputerDevice * memory_callback_device;
 };
 
 class AddressableDevice: public ComputerDevice
@@ -137,13 +138,13 @@ protected:
     bool can_read;
     bool can_write;
     bool auto_output;
-    Interface *address;
-    Interface *data;
+    Interface *i_address;
+    Interface *i_data;
     uint8_t * buffer;
     unsigned int size;
     unsigned short fill;
-    MemoryCallbackFunc read_callback;
-    MemoryCallbackFunc write_callback;
+    unsigned int read_callback;
+    unsigned int write_callback;
 
     virtual void set_value(unsigned int address, unsigned int value);
 public:
@@ -152,7 +153,7 @@ public:
     void set_size(unsigned int value);
     unsigned int get_size();
     virtual unsigned int get_value(unsigned int address);
-    void set_callback(MemoryCallbackFunc f, unsigned int mode);
+    void set_memory_callback(ComputerDevice * d, unsigned int callback_id, unsigned int mode);
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
 };
 
@@ -217,7 +218,7 @@ public:
     void load_devices_config(SystemData *sd); //
     ComputerDevice *get_device_by_name(QString name, bool required=true); //
     unsigned int get_device_index(QString name);
-    void reset_devices(bool is_cold);
+    void reset_devices(bool cold);
     void clock(unsigned int counter);
     void error(ComputerDevice *d, QString message);
     void error_clear();
@@ -311,7 +312,7 @@ public:
     CPU(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     virtual void load_config(SystemData *sd);
-    virtual void execute() = 0;
+    virtual unsigned int execute() = 0;
     bool check_breakpoint(unsigned int address);
     void add_breakpoint(unsigned int address);
     void remove_breakpoint(unsigned int address);
@@ -331,6 +332,7 @@ public:
     MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void load_config(SystemData *sd);
     virtual void reset(bool cold);
+    void sort_cache();
 };
 
 class Display: public ComputerDevice

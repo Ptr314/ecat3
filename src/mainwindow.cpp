@@ -24,13 +24,14 @@ MainWindow::MainWindow(QWidget *parent)
     qDebug() << "File to load: " + file_to_load;
 
     e->load_config(file_to_load);
-    //E.Start(UseDI, Handle);
     this->CreateDevicesMenu();
 
     DWM = new DebugWindowsManager();
 
     DWM->register_debug_window("rom", &CreateDumpWindow);
     DWM->register_debug_window("ram", &CreateDumpWindow);
+
+    e->start();
 }
 
 MainWindow::~MainWindow()

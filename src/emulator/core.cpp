@@ -117,12 +117,16 @@ void Interface::clear()
 
 bool Interface::pos_edge()
 {
-    //TODO: Implement
+    bool result = ((this->value & 1) != 0) && ((this->edge_value & 1) == 0);
+    this->edge_value = this->value;
+    return result;
 }
 
 bool Interface::neg_edge()
 {
-    //TODO: Implement
+    bool result = ((this->value & 1) == 0) && ((this->edge_value & 1) != 0);
+    this->edge_value = this->value;
+    return result;
 }
 
 
@@ -144,7 +148,12 @@ DeviceManager::~DeviceManager()
 
 void DeviceManager::clear()
 {
-    //TODO: Implement
+    for (unsigned int i=0; i < this->device_count; i++)
+        delete this->devices[i].device;
+
+    this->device_count = 2;
+
+    memset(&this->devices, 0, sizeof(this->devices));
 }
 
 void DeviceManager::register_device(QString device_type, CreateDeviceFunc func)
@@ -180,6 +189,8 @@ void DeviceManager::add_device(InterfaceManager *im, EmulatorConfigDevice *d)
         this->devices[index].device = create_func(im, d);
     } else
         QMessageBox::critical(0, DeviceManager::tr("Error"), DeviceManager::tr("Can't create device %1:%2").arg(name, d->type));
+
+    //this->device_count++;
 }
 
 DeviceDescription * DeviceManager::get_device(unsigned int i)
@@ -209,17 +220,25 @@ ComputerDevice * DeviceManager::get_device_by_name(QString name, bool required)
 
 unsigned int DeviceManager::get_device_index(QString name)
 {
-    //TODO: Implement
+    for (unsigned int i=0; i < this->device_count; i++)
+        if (this->devices[i].device->name == name)
+            return i;
+
+    this->error(nullptr, DeviceManager::tr("Device %1 not found").arg(name));
+    return (unsigned int)(-1);
 }
 
-void DeviceManager::reset_devices(bool is_cold)
+void DeviceManager::reset_devices(bool cold)
 {
-    //TODO: Implement
+    for (unsigned int i=0; i < this->device_count; i++)
+        this->devices[i].device->reset(cold);
 }
 
 void DeviceManager::clock(unsigned int counter)
 {
-    //TODO: Implement
+    //Except CPU
+    for (unsigned int i=1; i < this->device_count; i++)
+        this->devices[i].device->clock(counter);
 }
 
 void DeviceManager::error(ComputerDevice *d, QString message)
@@ -231,7 +250,7 @@ void DeviceManager::error(ComputerDevice *d, QString message)
 
 void DeviceManager::error_clear()
 {
-    //TODO: Implement
+    this->error_device = nullptr;
 }
 
 
@@ -251,7 +270,12 @@ void InterfaceManager::register_interface(Interface *i)
 
 void InterfaceManager::clear()
 {
-    //TODO: Implement
+    for (unsigned int i=0; i < this->interfaces_count; i++)
+        delete this->interfaces[i];
+
+    this->interfaces_count = 0;
+
+    memset(&this->interfaces, 0, sizeof(this->interfaces));
 }
 
 //----------------------- class ComputerDevice -------------------------------//
@@ -323,6 +347,11 @@ void ComputerDevice::interface_callback([[maybe_unused]] unsigned int callback_i
     //Does nothing by default, but may be overridden
 }
 
+void ComputerDevice::memory_callback([[maybe_unused]] unsigned int callback_id, [[maybe_unused]] unsigned int address)
+{
+    //Does nothing by default, but may be overridden
+}
+
 void ComputerDevice::reset([[maybe_unused]] bool cold)
 {
     //Does nothing by default, but may be overridden
@@ -338,11 +367,11 @@ Memory::Memory(InterfaceManager *im, EmulatorConfigDevice *cd):
     buffer(nullptr),
     size(0),
     fill(0),
-    read_callback(nullptr),
-    write_callback(nullptr)
+    read_callback(0),
+    write_callback(0)
 {
-    this->address = this->create_interface(16, "address", MODE_R, 1);
-    this->data = this->create_interface(8, "data", MODE_W);
+    this->i_address = this->create_interface(16, "address", MODE_R, 1);
+    this->i_data = this->create_interface(8, "data", MODE_W);
 }
 
 Memory::~Memory()
@@ -352,9 +381,8 @@ Memory::~Memory()
 
 unsigned int Memory::get_value(unsigned int address)
 {
-    if (this->read_callback != nullptr) {
-        //TODO: implement
-    }
+    if (this->read_callback != 0)
+        this->memory_callback_device->memory_callback(this->read_callback, address);
 
     if (this->can_read && address<this->size)
         return this->buffer[address];
@@ -364,9 +392,8 @@ unsigned int Memory::get_value(unsigned int address)
 
 void Memory::set_value(unsigned int address, unsigned int value)
 {
-    if (this->write_callback != nullptr) {
-        //TODO: implement
-    }
+    if (this->write_callback != 0)
+        this->memory_callback_device->memory_callback(this->write_callback, address);
 
     if (this->can_write && address < this->size)
         this->buffer[address] = (uint8_t)value;
@@ -374,8 +401,8 @@ void Memory::set_value(unsigned int address, unsigned int value)
 
 void Memory::interface_callback([[maybe_unused]] unsigned int callback_id, unsigned int new_value, [[maybe_unused]] unsigned int old_value)
 {
-    unsigned int address = new_value & create_mask(this->address->get_size(), 0);
-    if (address < this->size and this->auto_output) this->data->change(this->buffer[address]);
+    unsigned int address = new_value & create_mask(this->i_address->get_size(), 0);
+    if (address < this->size and this->auto_output) this->i_data->change(this->buffer[address]);
 }
 
 void Memory::set_size(unsigned int value)
@@ -394,9 +421,11 @@ unsigned int Memory::get_size()
     return this->size;
 }
 
-void Memory::set_callback(MemoryCallbackFunc f, unsigned int mode)
+void Memory::set_memory_callback(ComputerDevice * d, unsigned int callback_id, unsigned int mode)
 {
-    //TODO: Implement
+    this->memory_callback_device = d;
+    if ((mode & MODE_R) != 1) this->read_callback = callback_id;
+    if ((mode & MODE_W) != 1) this->write_callback = callback_id;
 }
 
 //----------------------- class RAM -------------------------------//
@@ -596,6 +625,11 @@ void MemoryMapper::load_config(SystemData *sd)
 }
 
 void MemoryMapper::reset(bool cold)
+{
+    //TODO: Implement
+}
+
+void MemoryMapper::sort_cache()
 {
     //TODO: Implement
 }

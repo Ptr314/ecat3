@@ -11,9 +11,10 @@ unsigned int I8080::get_pc()
 
 }
 
-void I8080::execute()
+unsigned int I8080::execute()
 {
     //TODO: Implement
+    return 10;
 }
 
 ComputerDevice * create_i8080(InterfaceManager *im, EmulatorConfigDevice *cd){
