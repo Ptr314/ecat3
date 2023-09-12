@@ -175,27 +175,28 @@ class Port:public AddressableDevice
 {
 private:
     unsigned int size;
-    Interface * i_input;
-    Interface * i_data;
     unsigned int flip_mask;
-    Interface * i_access;
-    Interface * i_flip;
-    void flip_changed(unsigned int new_value, unsigned int old_value);
 
 protected:
     unsigned int value;
+    Interface * i_input;
+    Interface * i_data;
+    Interface * i_access;
+    Interface * i_flip;
 
 public:
     virtual unsigned int get_value(unsigned int address);
     virtual void set_value(unsigned int address, unsigned int value);
 
     Port(InterfaceManager *im, EmulatorConfigDevice *cd);
+    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
     virtual void reset(bool cold);
 };
 
 class PortAddress:public Port
 {
 public:
+    PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void set_value(unsigned int address, unsigned int value);
 };
 
@@ -337,5 +338,7 @@ public:
 ComputerDevice * create_ram(InterfaceManager *im, EmulatorConfigDevice *cd);
 ComputerDevice * create_rom(InterfaceManager *im, EmulatorConfigDevice *cd);
 ComputerDevice * create_memory_mapper(InterfaceManager *im, EmulatorConfigDevice *cd);
+ComputerDevice * create_port(InterfaceManager *im, EmulatorConfigDevice *cd);
+ComputerDevice * create_port_address(InterfaceManager *im, EmulatorConfigDevice *cd);
 
 #endif // CORE_H

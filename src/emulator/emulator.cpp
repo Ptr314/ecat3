@@ -98,6 +98,8 @@ void Emulator::register_devices()
     dm->register_device("ram", create_ram);
     dm->register_device("rom", create_rom);
     dm->register_device("memory_mapper", create_memory_mapper);
+    dm->register_device("port", create_port);
+    dm->register_device("port-address", create_port_address);
     dm->register_device("i8080", create_i8080);
     dm->register_device("i8255", create_i8255);
 }

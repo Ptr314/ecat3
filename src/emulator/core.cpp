@@ -472,38 +472,66 @@ void ROM::load_config(SystemData *sd)
 //----------------------- class Port -------------------------------//
 
 Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
-    AddressableDevice(im, cd)
+    AddressableDevice(im, cd),
+    value(0)
 {
-    //TODO: Implement
+    try {
+        this->size = parse_numeric_value(this->cd->get_parameter("size").value);
+    } catch (QException &e) {
+        this->size = 8;
+    }
+
+    try {
+        this->flip_mask = parse_numeric_value(this->cd->get_parameter("flipmask").value);
+    } catch (QException &e) {
+        this->flip_mask = (unsigned int)(-1);
+    }
+
+    this->i_input = this->create_interface(this->size, "data", MODE_R);
+    this->i_data = this->create_interface(this->size, "value", MODE_W);
+
+    this->i_access = this->create_interface(1, "access", MODE_W);
+    this->i_flip = this->create_interface(1, "flip", MODE_R, 1);
+
 }
 
-void Port::flip_changed(unsigned int new_value, unsigned int old_value)
+void Port::interface_callback([[maybe_unused]] unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
-    //TODO: Implement
+    //Flip interface only
+    if ((old_value & 1) != 0 && (new_value & 1) == 0) this->set_value(0, this->value ^ this->flip_mask);
 }
 
-unsigned int Port::get_value(unsigned int address)
+unsigned int Port::get_value([[maybe_unused]] unsigned int address)
 {
-    //TODO: Implement
+    return this->value;
 }
 
-void Port:: set_value(unsigned int address, unsigned int value)
+void Port:: set_value([[maybe_unused]] unsigned int address, unsigned int value)
 {
-    //TODO: Implement
+    this->i_access->change(0);
+    this->value = value;
+    this->i_data->change(value);
+    this->i_access->change(1);
 }
 
-void Port::reset(bool cold)
+void Port::reset([[maybe_unused]] bool cold)
 {
-    //TODO: Implement
+    this->set_value(0, 0);
 }
 
 //----------------------- class PortAddress -------------------------------//
 
-void PortAddress:: set_value(unsigned int address, unsigned int value)
-{
-    //TODO: Implement
-}
+PortAddress::PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd):
+    Port(im, cd)
+{}
 
+void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int value)
+{
+    this->i_access->change(0);
+    this->value = address;
+    this->i_data->change(address);
+    this->i_access->change(1);
+}
 
 //----------------------- class CPU -------------------------------//
 
@@ -584,4 +612,12 @@ ComputerDevice * create_rom(InterfaceManager *im, EmulatorConfigDevice *cd){
 
 ComputerDevice * create_memory_mapper(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new MemoryMapper(im, cd);
+}
+
+ComputerDevice * create_port(InterfaceManager *im, EmulatorConfigDevice *cd){
+    return new Port(im, cd);
+}
+
+ComputerDevice * create_port_address(InterfaceManager *im, EmulatorConfigDevice *cd){
+    return new PortAddress(im, cd);
 }
