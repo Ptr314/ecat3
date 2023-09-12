@@ -20,6 +20,8 @@
 #define DEBUG_STEP              2
 #define DEBUG_BRAKES            3
 
+#define MM_CONFIG               1
+
 
 class DeviceManager;
 class InterfaceManager;
@@ -325,6 +327,23 @@ class MemoryMapper: public ComputerDevice
 {
 private:
     //TODO: Implement
+    Interface * i_address;
+    Interface * i_config;
+
+    unsigned int ranges_count;
+    unsigned int ports_count;
+    bool ports_to_mem;
+    unsigned int first_range;
+    unsigned int cancel_init_mask;
+    unsigned int cache_size;
+    MapperRange ranges[100];
+    MapperRange ports[100];
+
+    MapperCacheEntry read_cache[15];
+    MapperCacheEntry write_cache[15];
+    unsigned int read_cache_items;
+    unsigned int write_cache_items;
+
 protected:
 
 public:
@@ -333,6 +352,13 @@ public:
     virtual void load_config(SystemData *sd);
     virtual void reset(bool cold);
     void sort_cache();
+    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
+    void add_cache_entry(MapperCacheEntry * cache, unsigned int * cache_items, MapperRange * range);
+
+    unsigned int read(unsigned int address);
+    void write(unsigned int address, unsigned int value);
+    unsigned int read_port(unsigned int address);
+    void write_port(unsigned int address, unsigned int value);
 };
 
 class Display: public ComputerDevice

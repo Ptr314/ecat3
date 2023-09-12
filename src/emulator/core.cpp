@@ -671,9 +671,18 @@ void CPU::reset(bool cold)
 //----------------------- class MemoryMapper -------------------------------//
 
 MemoryMapper::MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd)
+    ComputerDevice(im, cd),
+    ranges_count(0),
+    ports_count(0),
+    ports_to_mem(false),
+    first_range(1),
+    cancel_init_mask(0),
+    read_cache_items(0),
+    write_cache_items(0)
+
 {
-    //TODO: Implement
+    this->i_address = this->create_interface(16, "address", MODE_R);
+    this->i_config = this->create_interface(8, "config", MODE_R, MM_CONFIG);
 }
 
 void MemoryMapper::load_config(SystemData *sd)
@@ -683,7 +692,20 @@ void MemoryMapper::load_config(SystemData *sd)
     //TODO: Implement
 }
 
-void MemoryMapper::reset(bool cold)
+void MemoryMapper::reset([[maybe_unused]] bool cold)
+{
+    if (this->cancel_init_mask != 0) this->first_range = 0;
+    this->read_cache_items = 0;
+    this->write_cache_items = 0;
+}
+
+void MemoryMapper::interface_callback([[maybe_unused]] unsigned int callback_id, [[maybe_unused]] unsigned int new_value, [[maybe_unused]] unsigned int old_value)
+{
+    this->read_cache_items = 0;
+    this->write_cache_items = 0;
+}
+
+void MemoryMapper::add_cache_entry(MapperCacheEntry * cache, unsigned int * cache_items, MapperRange * range)
 {
     //TODO: Implement
 }
@@ -692,6 +714,27 @@ void MemoryMapper::sort_cache()
 {
     //TODO: Implement
 }
+
+unsigned int MemoryMapper::read(unsigned int address)
+{
+    //TODO: Implement
+}
+
+void MemoryMapper::write(unsigned int address, unsigned int value)
+{
+    //TODO: Implement
+}
+
+unsigned int MemoryMapper::read_port(unsigned int address)
+{
+    //TODO: Implement
+}
+
+void MemoryMapper::write_port(unsigned int address, unsigned int value)
+{
+    //TODO: Implement
+}
+
 
 //----------------------- class Display -------------------------------//
 
