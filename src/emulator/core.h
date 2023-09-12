@@ -333,6 +333,17 @@ public:
     virtual void reset(bool cold);
 };
 
+class Display: public ComputerDevice
+{
+    //TODO: Implement
+private:
+protected:
+public:
+    Display(InterfaceManager *im, EmulatorConfigDevice *cd);
+    virtual void get_screen(bool required) = 0;
+};
+
+
 //----------------------- Creation functions -------------------------------//
 
 ComputerDevice * create_ram(InterfaceManager *im, EmulatorConfigDevice *cd);

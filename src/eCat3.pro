@@ -14,9 +14,12 @@ SOURCES += \
     emulator/config.cpp \
     emulator/core.cpp \
     emulator/devices/common/i8255.cpp \
+    emulator/devices/common/keyboard.cpp \
+    emulator/devices/common/scankeyboard.cpp \
     emulator/devices/common/speaker.cpp \
     emulator/devices/common/tape.cpp \
     emulator/devices/cpu/i8080.cpp \
+    emulator/devices/specific/o128display.cpp \
     emulator/emulator.cpp \
     emulator/utils.cpp \
     main.cpp \
@@ -29,9 +32,12 @@ HEADERS += \
     emulator/core.h \
     emulator/debug.h \
     emulator/devices/common/i8255.h \
+    emulator/devices/common/keyboard.h \
+    emulator/devices/common/scankeyboard.h \
     emulator/devices/common/speaker.h \
     emulator/devices/common/tape.h \
     emulator/devices/cpu/i8080.h \
+    emulator/devices/specific/o128display.h \
     emulator/emulator.h \
     emulator/utils.h \
     mainwindow.h

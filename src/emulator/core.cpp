@@ -600,6 +600,14 @@ void MemoryMapper::reset(bool cold)
     //TODO: Implement
 }
 
+//----------------------- class Display -------------------------------//
+
+Display::Display(InterfaceManager *im, EmulatorConfigDevice *cd):
+    ComputerDevice(im, cd)
+{
+    //TODO: Implement
+}
+
 //----------------------- Creation functions -------------------------------//
 
 ComputerDevice * create_ram(InterfaceManager *im, EmulatorConfigDevice *cd){
