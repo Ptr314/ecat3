@@ -117,12 +117,12 @@ void Interface::clear()
 
 bool Interface::pos_edge()
 {
-    //TODO: Implement this
+    //TODO: Implement
 }
 
 bool Interface::neg_edge()
 {
-    //TODO: Implement this
+    //TODO: Implement
 }
 
 
@@ -144,7 +144,7 @@ DeviceManager::~DeviceManager()
 
 void DeviceManager::clear()
 {
-    //TODO: Implement this
+    //TODO: Implement
 }
 
 void DeviceManager::register_device(QString device_type, CreateDeviceFunc func)
@@ -179,7 +179,7 @@ void DeviceManager::add_device(InterfaceManager *im, EmulatorConfigDevice *d)
         this->devices[index].device_name = name;
         this->devices[index].device = create_func(im, d);
     } else
-        QMessageBox::critical(0, DeviceManager::tr("Error"), DeviceManager::tr("Can't create device %1").arg(name));
+        QMessageBox::critical(0, DeviceManager::tr("Error"), DeviceManager::tr("Can't create device %1:%2").arg(name, d->type));
 }
 
 DeviceDescription * DeviceManager::get_device(unsigned int i)
@@ -251,7 +251,7 @@ void InterfaceManager::register_interface(Interface *i)
 
 void InterfaceManager::clear()
 {
-    //TODO: Implement this
+    //TODO: Implement
 }
 
 //----------------------- class ComputerDevice -------------------------------//
@@ -308,7 +308,9 @@ void ComputerDevice::system_clock(unsigned int counter)
 
 void ComputerDevice::load_config(SystemData *sd)
 {
-    qDebug() << "ComputerDevice::load_config";
+    //TODO: ! Implement
+    qDebug() << "Core::ComputerDevice::load_config";
+
 }
 
 Interface * ComputerDevice::create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id)
@@ -318,12 +320,12 @@ Interface * ComputerDevice::create_interface(unsigned int size, QString name, un
 
 void ComputerDevice::interface_callback([[maybe_unused]] unsigned int callback_id, [[maybe_unused]] unsigned int new_value, [[maybe_unused]] unsigned int old_value)
 {
-    //Does nothing by default, by may be overridden
+    //Does nothing by default, but may be overridden
 }
 
 void ComputerDevice::reset([[maybe_unused]] bool cold)
 {
-    //Does nothing by default, by may be overridden
+    //Does nothing by default, but may be overridden
 }
 
 //----------------------- class Memory -------------------------------//
@@ -351,7 +353,7 @@ Memory::~Memory()
 unsigned int Memory::get_value(unsigned int address)
 {
     if (this->read_callback != nullptr) {
-        //TODO: implement this
+        //TODO: implement
     }
 
     if (this->can_read && address<this->size)
@@ -363,7 +365,7 @@ unsigned int Memory::get_value(unsigned int address)
 void Memory::set_value(unsigned int address, unsigned int value)
 {
     if (this->write_callback != nullptr) {
-        //TODO: implement this
+        //TODO: implement
     }
 
     if (this->can_write && address < this->size)

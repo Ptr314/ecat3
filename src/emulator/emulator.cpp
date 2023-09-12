@@ -6,6 +6,7 @@
 #include "emulator/utils.h"
 
 #include "emulator/devices/cpu/i8080.h"
+#include "emulator/devices/common/i8255.h"
 
 Emulator::Emulator(QString work_path, QString data_path, QString ini_file):
     work_path(work_path),
@@ -66,15 +67,6 @@ void Emulator::load_config(QString file_name)
     this->loaded = true;
 }
 
-void Emulator::register_devices()
-{
-    dm->register_device("ram", create_ram);
-    dm->register_device("rom", create_rom);
-    dm->register_device("memory_mapper", create_memory_mapper);
-    dm->register_device("i8080", create_i8080);
-}
-
-
 void Emulator::load_charmap()
 {
     //TODO: delete old charmap objects
@@ -99,4 +91,13 @@ void Emulator::load_charmap()
 QChar * Emulator::translate_char(unsigned int char_code)
 {
     return this->charmap[char_code];
+}
+
+void Emulator::register_devices()
+{
+    dm->register_device("ram", create_ram);
+    dm->register_device("rom", create_rom);
+    dm->register_device("memory_mapper", create_memory_mapper);
+    dm->register_device("i8080", create_i8080);
+    dm->register_device("i8255", create_i8255);
 }

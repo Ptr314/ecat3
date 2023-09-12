@@ -13,6 +13,7 @@ SOURCES += \
     dialogs/dumpwindow.cpp \
     emulator/config.cpp \
     emulator/core.cpp \
+    emulator/devices/common/i8255.cpp \
     emulator/devices/cpu/i8080.cpp \
     emulator/emulator.cpp \
     emulator/utils.cpp \
@@ -25,6 +26,7 @@ HEADERS += \
     emulator/config.h \
     emulator/core.h \
     emulator/debug.h \
+    emulator/devices/common/i8255.h \
     emulator/devices/cpu/i8080.h \
     emulator/emulator.h \
     emulator/utils.h \
