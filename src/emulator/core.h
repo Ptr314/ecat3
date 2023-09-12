@@ -118,8 +118,8 @@ private:
 
 protected:
     Interface * create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id = 0);
-    EmulatorConfigDevice *cd;
-    InterfaceManager *im;
+    EmulatorConfigDevice * cd;
+    InterfaceManager * im;
     ComputerDevice * memory_callback_device;
 };
 

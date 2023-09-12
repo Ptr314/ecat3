@@ -9,4 +9,6 @@ unsigned int parse_numeric_value(QString str);
 
 unsigned int create_mask(unsigned int size, unsigned int shift);
 
+void convert_range(QString s, unsigned int * v1, unsigned int * v2);
+
 #endif // UTILS_H

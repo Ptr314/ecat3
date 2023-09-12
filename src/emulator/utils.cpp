@@ -41,3 +41,20 @@ unsigned int create_mask(unsigned int size, unsigned int shift)
     //3    000F
     //4                                     00F0
 }
+
+void convert_range(QString s, unsigned int * v1, unsigned int * v2)
+{
+    if (!s.isEmpty())
+    {
+        int p = s.indexOf('-');
+        if (p<0)
+        {
+            *v1 = parse_numeric_value(s);
+            *v2 = *v1;
+        } else {
+            *v1 = parse_numeric_value(s.left(p));
+            *v2 = parse_numeric_value(s.right(s.length()-p-1));
+        }
+    } else
+        throw QException();
+}

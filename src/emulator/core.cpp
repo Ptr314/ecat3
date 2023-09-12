@@ -278,6 +278,16 @@ void InterfaceManager::clear()
     memset(&this->interfaces, 0, sizeof(this->interfaces));
 }
 
+Interface * InterfaceManager::get_interface_by_name(QString device_name, QString interface_name)
+{
+    for (unsigned int i=0; i<this->interfaces_count; i++)
+        if (this->interfaces[i]->device->name == device_name && this->interfaces[i]->name == interface_name)
+            return this->interfaces[i];
+
+    QMessageBox::critical(0, InterfaceManager::tr("Error"), InterfaceManager::tr("Interface '%1:%2' not found").arg(device_name, interface_name));
+    return nullptr;
+}
+
 //----------------------- class ComputerDevice -------------------------------//
 
 ComputerDevice::ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
@@ -330,10 +340,59 @@ void ComputerDevice::system_clock(unsigned int counter)
     }
 }
 
-void ComputerDevice::load_config(SystemData *sd)
+void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
 {
-    //TODO: ! Implement
-    qDebug() << "Core::ComputerDevice::load_config";
+    LinkData ld;
+
+    for (unsigned int i = 0; i < this->cd->parameters_count; i++)
+    {
+        QString parameter_name = this->cd->parameters[i].name;
+        qDebug() << this->name << " " << parameter_name;
+        if (parameter_name.at(0) == '~')
+        {
+            QString interface_name = parameter_name.removeFirst();
+            if (interface_name.isEmpty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect interface definition for %1").arg(this->name));
+
+            ld.s.i = this->im->get_interface_by_name(this->name, interface_name);
+
+            QString connection = this->cd->parameters[i].value;
+            if (connection.isEmpty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(this->name, connection));
+
+            int p = connection.indexOf('.');
+            if (p < 0) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(this->name, connection));
+            QString connected_device = connection.first(p);
+            QString connected_interface = connection.last(connection.length()-p-1);
+
+            ld.d.i = this->im->get_interface_by_name(connected_device, connected_interface);
+
+            QString source_bits = this->cd->parameters[i].left_range;
+            if (source_bits.isEmpty())
+            {
+                ld.s.shift = 0;
+                ld.s.mask = create_mask(ld.s.i->get_size(), 0);
+            } else {
+                source_bits = source_bits.mid(1, source_bits.length()-2); //remove brackets
+                unsigned int bit_1, bit_2;
+                convert_range(source_bits, &bit_1, &bit_2);
+                ld.s.shift = bit_1;
+                ld.s.mask = create_mask(bit_2 - bit_1 + 1, bit_1);
+            }
+
+            QString dest_bits = this->cd->parameters[i].right_range;
+            if (dest_bits.isEmpty())
+            {
+                ld.d.shift = 0;
+                ld.d.mask = create_mask(ld.d.i->get_size(), 0);
+            } else {
+                dest_bits = dest_bits.mid(1, dest_bits.length()-2); //remove brackets
+                unsigned int bit_1, bit_2;
+                convert_range(dest_bits, &bit_1, &bit_2);
+                ld.d.shift = bit_1;
+                ld.d.mask = create_mask(bit_2 - bit_1 + 1, bit_1);
+            }
+            ld.s.i->connect(ld.s, ld.d);
+        }
+    }
 
 }
 
