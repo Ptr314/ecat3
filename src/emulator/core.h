@@ -301,8 +301,8 @@ private:
     unsigned int breakpoints[100];
 
 protected:
-    Interface * address;
-    Interface * data;
+    Interface * i_address;
+    Interface * i_data;
     bool reset_mode;
 
 public:

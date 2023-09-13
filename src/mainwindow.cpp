@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("rom", &CreateDumpWindow);
     DWM->register_debug_window("ram", &CreateDumpWindow);
 
-    e->start();
+    //e->start();
 }
 
 MainWindow::~MainWindow()

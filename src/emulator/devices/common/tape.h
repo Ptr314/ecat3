@@ -5,6 +5,11 @@
 
 class TapeRecorder: public ComputerDevice
 {
+    //TODO: Implement
+private:
+    Interface * i_input;
+    Interface * i_output;
+
 public:
     TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd);
 };

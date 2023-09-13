@@ -10,10 +10,10 @@ struct I8080Context {
 class I8080: public CPU
 {
 private:
-    Interface * inmi;
-    Interface * iint;
-    Interface * iinte;
-    Interface * im1;
+    Interface * i_nmi;
+    Interface * i_int;
+    Interface * i_inte;
+    Interface * i_m1;
 protected:
     virtual unsigned int get_pc();
 public:

@@ -6,6 +6,8 @@
 class Speaker: public ComputerDevice
 {
     //TODO: Implement
+private:
+    Interface * i_input;
 public:
     Speaker(InterfaceManager *im, EmulatorConfigDevice *cd);
 };

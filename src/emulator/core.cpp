@@ -40,11 +40,12 @@ void Interface::connect(LinkedInterface s, LinkedInterface d)
 
     if (index < 0)
     {
-        this->linked_interfaces[this->linked].s = s;
-        this->linked_interfaces[this->linked].d = d;
+        this->linked++;
+        this->linked_interfaces[this->linked-1].s = s;
+        this->linked_interfaces[this->linked-1].d = d;
         d.i->connect(d, s);
         this->linked_bits |= s.mask;
-        this->linked++;
+        //this->linked++;
     }
 }
 
@@ -213,8 +214,10 @@ ComputerDevice * DeviceManager::get_device_by_name(QString name, bool required)
         if (this->devices[i].device->name == name) return this->devices[i].device;
     }
     if (required)
+    {
+        qDebug() << "Exception: DeviceManager::get_device_by_name " << name;
         throw QException();
-    else
+    } else
         return nullptr;
 }
 
@@ -245,6 +248,7 @@ void DeviceManager::error(ComputerDevice *d, QString message)
 {
     this->error_device = d;
     this->error_message = message;
+    qDebug() << "Exception DeviceManager::error " << d->name << " " << message;
     throw QException();
 }
 
@@ -733,8 +737,8 @@ void MemoryMapper::load_config(SystemData *sd)
             p = range.indexOf("][");
             if (p>=0)
             {
-                c = range.left(p);
-                a = range.right(range.length()-p-3);
+                c = range.mid(1, p-1);
+                a = range.mid(p+2, range.length()-p-3);
                 p = c.indexOf(":");
                 if (p >= 0)
                 {

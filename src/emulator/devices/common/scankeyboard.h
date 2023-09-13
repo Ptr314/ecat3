@@ -3,8 +3,18 @@
 
 #include "emulator/devices/common/keyboard.h"
 
+#define SCAN_CALLBACK 1
+
 class ScanKeyboard: public Keyboard
 {
+    //TODO: Implement
+private:
+    Interface * i_scan;
+    Interface * i_output;
+    Interface * i_shift;
+    Interface * i_ctrl;
+    Interface * i_ruslat;
+
 public:
     ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
 

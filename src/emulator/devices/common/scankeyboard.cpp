@@ -4,6 +4,12 @@ ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     Keyboard(im, cd)
 {
     //TODO: Impelement
+    i_scan =   this->create_interface(8, "scan", MODE_R, SCAN_CALLBACK);
+    i_output = this->create_interface(8, "output", MODE_W);
+    i_shift =  this->create_interface(1, "shift", MODE_W);
+    i_ctrl =   this->create_interface(1, "ctrl", MODE_W);
+    i_ruslat = this->create_interface(1, "ruslat", MODE_W);
+
 }
 
 void ScanKeyboard::key_down(unsigned int key)
