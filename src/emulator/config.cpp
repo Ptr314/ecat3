@@ -133,6 +133,21 @@ EmulatorConfigDevice * EmulatorConfig::add_device(QString device_name, QString d
     return new_device;
 }
 
+QString EmulatorConfigDevice::extended_parameter(unsigned int i, QString expected_name)
+{
+    QString s = this->parameters[i].right_extended;
+    QStringList list = s.split(u',', Qt::SkipEmptyParts);
+    for (int i = 0; i < list.size(); i++)
+    {
+        QStringList parameter = list.at(i).split(u'=', Qt::SkipEmptyParts);
+        QString name = parameter.at(0).toLower().trimmed();
+        QString value = parameter.at(1).toLower().trimmed();
+        if (name == expected_name) return value;
+    }
+    return "";
+}
+
+
 
 void EmulatorConfig::load_from_file(QString file_name, bool system_only)
 {
@@ -300,5 +315,4 @@ EmulatorConfigDevice * EmulatorConfig::get_device(QString name)
     }
     QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Device '%1' not found").arg(name));
 }
-
 

@@ -327,22 +327,23 @@ class MemoryMapper: public ComputerDevice
 {
 private:
     //TODO: Implement
-    Interface * i_address;
-    Interface * i_config;
+    Interface *     i_address;
+    Interface *     i_config;
 
-    unsigned int ranges_count;
-    unsigned int ports_count;
-    bool ports_to_mem;
-    unsigned int first_range;
-    unsigned int cancel_init_mask;
-    unsigned int cache_size;
-    MapperRange ranges[100];
-    MapperRange ports[100];
+    unsigned int    ranges_count;
+    unsigned int    ports_count;
+    bool            ports_to_mem;
+    unsigned int    ports_mask;
+    unsigned int    first_range;
+    unsigned int    cancel_init_mask;
+    unsigned int    cache_size;
+    MapperRange     ranges[100];
+    MapperRange     ports[100];
 
     MapperCacheEntry read_cache[15];
     MapperCacheEntry write_cache[15];
-    unsigned int read_cache_items;
-    unsigned int write_cache_items;
+    unsigned int     read_cache_items;
+    unsigned int     write_cache_items;
 
 protected:
 

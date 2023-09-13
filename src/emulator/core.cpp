@@ -687,9 +687,154 @@ MemoryMapper::MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 void MemoryMapper::load_config(SystemData *sd)
 {
+    LinkData ld;
+
     ComputerDevice::load_config(sd);
 
     //TODO: Implement
+    this->cache_size = sizeof(this->read_cache_items) / sizeof(MapperCacheEntry);
+
+    QString config_device = this->cd->get_parameter("config", false).value;
+
+    if (!config_device.isEmpty())
+    {
+        ld.d.i = this->im->get_interface_by_name(config_device, "value");
+        ld.d.shift = 0;
+        ld.d.mask = create_mask(ld.d.i->get_size(), 0);
+
+        ld.s.i = this->im->get_interface_by_name(this->name, "config");
+        ld.s.i->set_size(ld.d.i->get_size());
+        ld.s.shift = 0;
+        ld.s.mask = create_mask(ld.s.i->get_size(), 0);
+
+        ld.s.i->connect(ld.s, ld.d);
+    } else
+        this->i_config->change(0);
+
+    this->ports_to_mem = this->cd->get_parameter("portstomemory", false).value == "1";
+
+    this->ports_mask = (this->cd->get_parameter("wideports", false).value == "1")?(unsigned int)(-1):0xFF;
+
+    QString m = this->cd->get_parameter("cancelinit", false).value;
+    this->cancel_init_mask = (!m.isEmpty())?parse_numeric_value(m):0;
+
+    //Loading ranges
+    QString parameter_name, mask, range, c, a;
+    unsigned int index;
+    int p;
+
+    for (unsigned int i = 0; i < this->cd->parameters_count; i++)
+    {
+        parameter_name = this->cd->parameters[i].name;
+        if (parameter_name == "@memory" || parameter_name == "@port")
+        {
+            MapperRange mr;
+
+            range = this->cd->parameters[i].left_range;
+            p = range.indexOf("][");
+            if (p>=0)
+            {
+                c = range.left(p);
+                a = range.right(range.length()-p-3);
+                p = c.indexOf(":");
+                if (p >= 0)
+                {
+                    mask = c.right(c.length()-p-1);
+                    c = c.left(p);
+                } else
+                    mask = "";
+            } else {
+                c = "";
+                a = range.mid(1, range.length()-2);
+                mask = "";
+            }
+
+            if (c=="*")
+            {
+                index = 0;
+                this->first_range = 0;
+                c = "";
+            } else {
+                index = ++this->ranges_count;
+            }
+
+            try {
+                mr.config_mask = parse_numeric_value(mask);
+            } catch (QException &e) {
+                mr.config_mask = create_mask(this->i_config->get_size(), 0);
+            }
+
+            try {
+                mr.config_value = parse_numeric_value(c);
+            } catch (QException &e) {
+                mr.config_value = 0;
+                mr.config_mask = 0;
+            }
+
+            p = a.indexOf("-");
+            if (p>=0)
+            {
+                mr.range_begin = parse_numeric_value(a.left(p));
+                mr.range_end = parse_numeric_value(a.right(a.length() - p - 1));
+            } else {
+                if (parameter_name == "@port")
+                {
+                    mr.range_begin = parse_numeric_value(a);
+                    mr.range_end = mr.range_begin;
+                } else
+                    QMessageBox::critical(0, MemoryMapper::tr("Error"), MemoryMapper::tr("Incorrect range for '%1'").arg(parameter_name));
+            }
+
+            mr.device = this->im->dm->get_device_by_name(this->cd->parameters[i].value);
+
+            range = this->cd->parameters[i].right_range;
+            try {
+               mr.base = parse_numeric_value(range.mid(1, range.length()-2));
+            } catch (QException &e) {
+                mr.base = 0;
+            }
+
+            m = this->cd->extended_parameter(i, "mode");
+            if (m == "r") mr.mode = MODE_R;
+            else if (m == "w") mr.mode = MODE_W;
+            else mr.mode = MODE_RW;
+
+            try {
+                mr.address_mask = parse_numeric_value(this->cd->extended_parameter(i, "addr_mask"));
+                mr.address_value = parse_numeric_value(this->cd->extended_parameter(i, "addr_value"));
+            } catch (QException &e) {
+                mr.address_mask = 0;
+                mr.address_value = 0;
+            }
+
+            //Disable cache for complicated entries
+            mr.cache = (mr.address_mask == 0) && (this->cache_size > 0);
+
+            if (parameter_name == "@memory")
+                this->ranges[index] = mr;
+            else
+                this->ports[this->ports_count++] = mr;
+        }
+    }
+
+    //Also we need to disable cache for ranges crossing uncached ones
+    if (this->cache_size > 0)
+        for (unsigned int i = this->first_range; i < this->ranges_count; i++)
+            if (!this->ranges[i].cache)
+                for (unsigned int j = this->first_range; j < this->ranges_count; j++)
+                    if (
+                         !(
+                            (
+                                (this->ranges[j].range_end < this->ranges[i].range_begin)
+                                ||
+                                (this->ranges[j].range_begin > this->ranges[i].range_end)
+                            )
+                            &&
+                            (this->ranges[j].config_mask == this->ranges[i].config_mask)
+                            &&
+                            (this->ranges[j].config_value == this->ranges[i].config_value)
+                          )
+                       ) this->ranges[j].cache = false;
 }
 
 void MemoryMapper::reset([[maybe_unused]] bool cold)
