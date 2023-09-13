@@ -483,8 +483,8 @@ unsigned int Memory::get_size()
 void Memory::set_memory_callback(ComputerDevice * d, unsigned int callback_id, unsigned int mode)
 {
     this->memory_callback_device = d;
-    if ((mode & MODE_R) != 1) this->read_callback = callback_id;
-    if ((mode & MODE_W) != 1) this->write_callback = callback_id;
+    if ((mode & MODE_R) != 0) this->read_callback = callback_id;
+    if ((mode & MODE_W) != 0) this->write_callback = callback_id;
 }
 
 //----------------------- class RAM -------------------------------//
@@ -645,22 +645,22 @@ void CPU::load_config(SystemData *sd)
 
 bool CPU::check_breakpoint(unsigned int address)
 {
-    //TODO: Implement
+    //TODO: - Implement
 }
 
 void CPU::add_breakpoint(unsigned int address)
 {
-    //TODO: Implement
+    //TODO: - Implement
 }
 
 void CPU::remove_breakpoint(unsigned int address)
 {
-    //TODO: Implement
+    //TODO: - Implement
 }
 
 void CPU::clear_breakpoints()
 {
-    //TODO: Implement
+    //TODO: - Implement
 }
 
 void CPU::reset(bool cold)
@@ -691,7 +691,6 @@ void MemoryMapper::load_config(SystemData *sd)
 
     ComputerDevice::load_config(sd);
 
-    //TODO: Implement
     this->cache_size = sizeof(this->read_cache_items) / sizeof(MapperCacheEntry);
 
     QString config_device = this->cd->get_parameter("config", false).value;
@@ -819,9 +818,9 @@ void MemoryMapper::load_config(SystemData *sd)
 
     //Also we need to disable cache for ranges crossing uncached ones
     if (this->cache_size > 0)
-        for (unsigned int i = this->first_range; i < this->ranges_count; i++)
+        for (unsigned int i = this->first_range; i <= this->ranges_count; i++)
             if (!this->ranges[i].cache)
-                for (unsigned int j = this->first_range; j < this->ranges_count; j++)
+                for (unsigned int j = this->first_range; j <= this->ranges_count; j++)
                     if (
                          !(
                             (
@@ -852,32 +851,134 @@ void MemoryMapper::interface_callback([[maybe_unused]] unsigned int callback_id,
 
 void MemoryMapper::add_cache_entry(MapperCacheEntry * cache, unsigned int * cache_items, MapperRange * range)
 {
-    //TODO: Implement
+    //TODO: Cache
 }
 
 void MemoryMapper::sort_cache()
 {
-    //TODO: Implement
+    //TODO: Cache
 }
 
 unsigned int MemoryMapper::read(unsigned int address)
 {
-    //TODO: Implement
+    //TODO: Cache
+    // for (unsigned int i = 0; i < this->read_cache_items; i++)
+
+    if ((this->first_range == 0) && ((address & this->cancel_init_mask) != 0))
+    {
+        this->first_range = 1;
+        this->read_cache_items = 0;
+        this->write_cache_items = 0;
+    }
+
+    MapperRange * mr;
+    for (unsigned int i = this->first_range; i <= this->ranges_count; i++)
+    {
+        mr = &(this->ranges[i]);
+        if (
+            ( (this->i_config->value & mr->config_mask) == mr->config_value )
+            &&
+            (address >= mr->range_begin)
+            &&
+            (address <= mr->range_end)
+            &&
+            ( (address & mr->address_mask) == mr->address_value)
+            &&
+            ( (mr->mode & MODE_R) != 0)
+           )
+           {
+            //TODO: Cache
+            //if (mr->cache) this->add_cache_entry();
+            return ((AddressableDevice*)mr->device)->get_value(address - mr->range_begin + mr->base);
+           }
+    }
+    return _FFFF;
 }
 
 void MemoryMapper::write(unsigned int address, unsigned int value)
 {
-    //TODO: Implement
+    //TODO: Cache
+    // for (unsigned int i = 0; i < this->write_cache_items; i++)
+
+    MapperRange * mr;
+    for (unsigned int i = this->first_range; i <= this->ranges_count; i++)
+    {
+           mr = &(this->ranges[i]);
+           if (
+               ( (this->i_config->value & mr->config_mask) == mr->config_value )
+               &&
+               (address >= mr->range_begin)
+               &&
+               (address <= mr->range_end)
+               &&
+               ( (address & mr->address_mask) == mr->address_value)
+               &&
+               ( (mr->mode & MODE_W) != 0)
+               )
+           {
+            //TODO: Cache
+            //if (mr->cache) this->add_cache_entry();
+            ((AddressableDevice*)mr->device)->set_value(address - mr->range_begin + mr->base, value);
+           }
+    }
+
 }
 
 unsigned int MemoryMapper::read_port(unsigned int address)
 {
-    //TODO: Implement
+    if (this->ports_to_mem) {
+        return(this->read(address));
+    } else {
+        unsigned int a = address & this->ports_mask;
+        MapperRange * mr;
+        for (unsigned int i = 0; i < this->ports_count; i++)
+        {
+            mr = &(this->ports[i]);
+            if (
+                ( (this->i_config->value & mr->config_mask) == mr->config_value )
+                &&
+                (a >= mr->range_begin)
+                &&
+                (a <= mr->range_end)
+                &&
+                ( (a & mr->address_mask) == mr->address_value)
+                &&
+                ( (mr->mode & MODE_R) != 0)
+                )
+            {
+                return ((AddressableDevice*)mr->device)->get_value(a - mr->range_begin + mr->base);
+            }
+        }
+        return _FFFF;
+    }
 }
 
 void MemoryMapper::write_port(unsigned int address, unsigned int value)
 {
-    //TODO: Implement
+    if (this->ports_to_mem) {
+        this->write(address, value);
+    } else {
+        unsigned int a = address & this->ports_mask;
+        MapperRange * mr;
+        for (unsigned int i = 0; i < this->ports_count; i++)
+        {
+            mr = &(this->ports[i]);
+            if (
+                ( (this->i_config->value & mr->config_mask) == mr->config_value )
+                &&
+                (a >= mr->range_begin)
+                &&
+                (a <= mr->range_end)
+                &&
+                ( (a & mr->address_mask) == mr->address_value)
+                &&
+                ( (mr->mode & MODE_W) != 0)
+                )
+            {
+                ((AddressableDevice*)mr->device)->set_value(a - mr->range_begin + mr->base, value);
+            }
+        }
+    }
 }
 
 
