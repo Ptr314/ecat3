@@ -11,6 +11,7 @@ CONFIG += c++17
 SOURCES += \
     dialogs/dumparea.cpp \
     dialogs/dumpwindow.cpp \
+    dialogs/mmwindow.cpp \
     emulator/config.cpp \
     emulator/core.cpp \
     emulator/devices/common/i8255.cpp \
@@ -28,6 +29,7 @@ SOURCES += \
 HEADERS += \
     dialogs/dumparea.h \
     dialogs/dumpwindow.h \
+    dialogs/mmwindow.h \
     emulator/config.h \
     emulator/core.h \
     emulator/debug.h \
@@ -44,6 +46,7 @@ HEADERS += \
 
 FORMS += \
     dialogs/dumpwindow.ui \
+    dialogs/mmwindow.ui \
     mainwindow.ui
 
 TRANSLATIONS += \
