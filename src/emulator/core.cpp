@@ -645,22 +645,22 @@ void CPU::load_config(SystemData *sd)
 
 bool CPU::check_breakpoint(unsigned int address)
 {
-    //TODO: - Implement
+    //TODO: Breakpoints
 }
 
 void CPU::add_breakpoint(unsigned int address)
 {
-    //TODO: - Implement
+    //TODO: Breakpoints
 }
 
 void CPU::remove_breakpoint(unsigned int address)
 {
-    //TODO: - Implement
+    //TODO: Breakpoints
 }
 
 void CPU::clear_breakpoints()
 {
-    //TODO: - Implement
+    //TODO: Breakpoints
 }
 
 void CPU::reset(bool cold)
@@ -859,6 +859,39 @@ void MemoryMapper::sort_cache()
     //TODO: Cache
 }
 
+AddressableDevice * MemoryMapper::map(
+                                        MapperArray * map_ranges,
+                                        unsigned int index_from,
+                                        unsigned int index_to,
+                                        unsigned int address,
+                                        unsigned int mode,
+                                        unsigned int * address_on_device,
+                                        unsigned int * range_index
+                                    )
+{
+    for (unsigned int i = index_from; i <= index_to; i++)
+    {
+        MapperRange * mr = (MapperRange*)&(map_ranges[i]);
+        if (
+            ( (this->i_config->value & mr->config_mask) == mr->config_value )
+            &&
+            (address >= mr->range_begin)
+            &&
+            (address <= mr->range_end)
+            &&
+            ( (address & mr->address_mask) == mr->address_value)
+            &&
+            ( (mr->mode & mode) != 0)
+            )
+        {
+            * address_on_device = address - mr->range_begin + mr->base;
+            * range_index = i;
+            return (AddressableDevice*)mr->device;
+        }
+    }
+    return nullptr;
+}
+
 unsigned int MemoryMapper::read(unsigned int address)
 {
     //TODO: Cache
@@ -871,28 +904,16 @@ unsigned int MemoryMapper::read(unsigned int address)
         this->write_cache_items = 0;
     }
 
-    MapperRange * mr;
-    for (unsigned int i = this->first_range; i <= this->ranges_count; i++)
+    unsigned int address_on_device, range_index;
+    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, address, MODE_R, &address_on_device, &range_index);
+    if (d != nullptr)
     {
-        mr = &(this->ranges[i]);
-        if (
-            ( (this->i_config->value & mr->config_mask) == mr->config_value )
-            &&
-            (address >= mr->range_begin)
-            &&
-            (address <= mr->range_end)
-            &&
-            ( (address & mr->address_mask) == mr->address_value)
-            &&
-            ( (mr->mode & MODE_R) != 0)
-           )
-           {
-            //TODO: Cache
-            //if (mr->cache) this->add_cache_entry();
-            return ((AddressableDevice*)mr->device)->get_value(address - mr->range_begin + mr->base);
-           }
-    }
-    return _FFFF;
+        //TODO: Cache
+        //if (mr->cache) this->add_cache_entry(); //this->ranges[range_index]
+        return d->get_value(address_on_device);
+
+    } else
+        return _FFFF;
 }
 
 void MemoryMapper::write(unsigned int address, unsigned int value)
@@ -900,28 +921,14 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
     //TODO: Cache
     // for (unsigned int i = 0; i < this->write_cache_items; i++)
 
-    MapperRange * mr;
-    for (unsigned int i = this->first_range; i <= this->ranges_count; i++)
+    unsigned int address_on_device, range_index;
+    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, address, MODE_W, &address_on_device, &range_index);
+    if (d != nullptr)
     {
-           mr = &(this->ranges[i]);
-           if (
-               ( (this->i_config->value & mr->config_mask) == mr->config_value )
-               &&
-               (address >= mr->range_begin)
-               &&
-               (address <= mr->range_end)
-               &&
-               ( (address & mr->address_mask) == mr->address_value)
-               &&
-               ( (mr->mode & MODE_W) != 0)
-               )
-           {
-            //TODO: Cache
-            //if (mr->cache) this->add_cache_entry();
-            ((AddressableDevice*)mr->device)->set_value(address - mr->range_begin + mr->base, value);
-           }
+        //TODO: Cache
+        //if (mr->cache) this->add_cache_entry(); //this->ranges[range_index]
+        d->set_value(address_on_device, value);
     }
-
 }
 
 unsigned int MemoryMapper::read_port(unsigned int address)
@@ -930,26 +937,14 @@ unsigned int MemoryMapper::read_port(unsigned int address)
         return(this->read(address));
     } else {
         unsigned int a = address & this->ports_mask;
-        MapperRange * mr;
-        for (unsigned int i = 0; i < this->ports_count; i++)
+        unsigned int address_on_device, range_index;
+        AddressableDevice * d = this->map(&(this->ports), 0, this->ports_count-1, a, MODE_R, &address_on_device, &range_index);
+        if (d != nullptr)
         {
-            mr = &(this->ports[i]);
-            if (
-                ( (this->i_config->value & mr->config_mask) == mr->config_value )
-                &&
-                (a >= mr->range_begin)
-                &&
-                (a <= mr->range_end)
-                &&
-                ( (a & mr->address_mask) == mr->address_value)
-                &&
-                ( (mr->mode & MODE_R) != 0)
-                )
-            {
-                return ((AddressableDevice*)mr->device)->get_value(a - mr->range_begin + mr->base);
-            }
-        }
-        return _FFFF;
+            return d->get_value(address_on_device);
+
+        } else
+            return _FFFF;
     }
 }
 
@@ -959,24 +954,12 @@ void MemoryMapper::write_port(unsigned int address, unsigned int value)
         this->write(address, value);
     } else {
         unsigned int a = address & this->ports_mask;
-        MapperRange * mr;
-        for (unsigned int i = 0; i < this->ports_count; i++)
+        unsigned int address_on_device, range_index;
+        AddressableDevice * d = this->map(&(this->ports), 0, this->ports_count-1, a, MODE_R, &address_on_device, &range_index);
+        if (d != nullptr)
         {
-            mr = &(this->ports[i]);
-            if (
-                ( (this->i_config->value & mr->config_mask) == mr->config_value )
-                &&
-                (a >= mr->range_begin)
-                &&
-                (a <= mr->range_end)
-                &&
-                ( (a & mr->address_mask) == mr->address_value)
-                &&
-                ( (mr->mode & MODE_W) != 0)
-                )
-            {
-                ((AddressableDevice*)mr->device)->set_value(a - mr->range_begin + mr->base, value);
-            }
+            d->set_value(address_on_device, value);
+
         }
     }
 }
@@ -987,7 +970,7 @@ void MemoryMapper::write_port(unsigned int address, unsigned int value)
 Display::Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd)
 {
-    //TODO: Implement
+    //TODO: Display constructor
 }
 
 //----------------------- Creation functions -------------------------------//

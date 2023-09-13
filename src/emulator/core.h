@@ -323,6 +323,8 @@ public:
     virtual unsigned int get_pc() = 0;
 };
 
+typedef MapperRange MapperArray[100];
+
 class MemoryMapper: public ComputerDevice
 {
 private:
@@ -337,13 +339,22 @@ private:
     unsigned int    first_range;
     unsigned int    cancel_init_mask;
     unsigned int    cache_size;
-    MapperRange     ranges[100];
-    MapperRange     ports[100];
+    MapperArray     ranges;
+    MapperArray     ports;
 
     MapperCacheEntry read_cache[15];
     MapperCacheEntry write_cache[15];
     unsigned int     read_cache_items;
     unsigned int     write_cache_items;
+    AddressableDevice * map(
+                                MapperArray * map_ranges,
+                                unsigned int index_from,
+                                unsigned int index_to,
+                                unsigned int address,
+                                unsigned int mode,
+                                unsigned int * address_on_device,
+                                unsigned int * range_index
+                        );
 
 protected:
 
