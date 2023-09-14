@@ -127,23 +127,30 @@ protected:
 
 class AddressableDevice: public ComputerDevice
 {
+protected:
+    bool can_read;
+    bool can_write;
+    unsigned int addresable_size;
 public:
-    AddressableDevice(InterfaceManager *im, EmulatorConfigDevice *cd):ComputerDevice(im, cd){};
+    AddressableDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
+        ComputerDevice(im, cd),
+        addresable_size(0),
+        can_read(false),
+        can_write(false){};
+
     virtual unsigned int get_value(unsigned int address) = 0;
     virtual void set_value(unsigned int address, unsigned int value) = 0;
+    virtual unsigned int get_size();
 };
 
 
 class Memory: public AddressableDevice
 {
 protected:
-    bool can_read;
-    bool can_write;
     bool auto_output;
     Interface *i_address;
     Interface *i_data;
     uint8_t * buffer;
-    unsigned int size;
     unsigned short fill;
     unsigned int read_callback;
     unsigned int write_callback;
@@ -153,7 +160,6 @@ public:
     Memory(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~Memory();
     void set_size(unsigned int value);
-    unsigned int get_size();
     virtual unsigned int get_value(unsigned int address);
     void set_memory_callback(ComputerDevice * d, unsigned int callback_id, unsigned int mode);
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
@@ -346,15 +352,17 @@ private:
     MapperCacheEntry write_cache[15];
     unsigned int     read_cache_items;
     unsigned int     write_cache_items;
+
     AddressableDevice * map(
-                                MapperArray * map_ranges,
-                                unsigned int index_from,
-                                unsigned int index_to,
-                                unsigned int address,
-                                unsigned int mode,
-                                unsigned int * address_on_device,
-                                unsigned int * range_index
-                        );
+        MapperArray * map_ranges,
+        unsigned int index_from,
+        unsigned int index_to,
+        unsigned int config,
+        unsigned int address,
+        unsigned int mode,
+        unsigned int * address_on_device,
+        unsigned int * range_index
+        );
 
 protected:
 
@@ -371,6 +379,23 @@ public:
     void write(unsigned int address, unsigned int value);
     unsigned int read_port(unsigned int address);
     void write_port(unsigned int address, unsigned int value);
+
+    AddressableDevice * map_memory(
+        unsigned int config,
+        unsigned int address,
+        unsigned int mode,
+        unsigned int * address_on_device,
+        unsigned int * range_index
+        );
+
+    AddressableDevice * map_port(
+        unsigned int config,
+        unsigned int address,
+        unsigned int mode,
+        unsigned int * address_on_device,
+        unsigned int * range_index
+        );
+
 };
 
 class Display: public ComputerDevice

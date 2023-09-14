@@ -420,15 +420,19 @@ void ComputerDevice::reset([[maybe_unused]] bool cold)
     //Does nothing by default, but may be overridden
 }
 
+//----------------------- class AddressableDevice -------------------------------//
+
+unsigned int AddressableDevice::get_size()
+{
+    return this->addresable_size;
+}
+
 //----------------------- class Memory -------------------------------//
 
 Memory::Memory(InterfaceManager *im, EmulatorConfigDevice *cd):
     AddressableDevice(im, cd),
-    can_read(false),
-    can_write(false),
     auto_output(false),
     buffer(nullptr),
-    size(0),
     fill(0),
     read_callback(0),
     write_callback(0)
@@ -447,7 +451,7 @@ unsigned int Memory::get_value(unsigned int address)
     if (this->read_callback != 0)
         this->memory_callback_device->memory_callback(this->read_callback, address);
 
-    if (this->can_read && address<this->size)
+    if (this->can_read && address<this->get_size())
         return this->buffer[address];
     else
         return 0xFF;
@@ -458,30 +462,25 @@ void Memory::set_value(unsigned int address, unsigned int value)
     if (this->write_callback != 0)
         this->memory_callback_device->memory_callback(this->write_callback, address);
 
-    if (this->can_write && address < this->size)
+    if (this->can_write && address < this->get_size())
         this->buffer[address] = (uint8_t)value;
 }
 
 void Memory::interface_callback([[maybe_unused]] unsigned int callback_id, unsigned int new_value, [[maybe_unused]] unsigned int old_value)
 {
     unsigned int address = new_value & create_mask(this->i_address->get_size(), 0);
-    if (address < this->size and this->auto_output) this->i_data->change(this->buffer[address]);
+    if (address < this->get_size() and this->auto_output) this->i_data->change(this->buffer[address]);
 }
 
 void Memory::set_size(unsigned int value)
 {
     if (this->buffer != nullptr) delete [] buffer;
     buffer = new uint8_t[value];
-    this->size = value;
+    this->addresable_size = value;
 
     QRandomGenerator *rg = QRandomGenerator::global();
 
     for (unsigned int i=0; i < value; i++) buffer[i]=rg->bounded(255);
-}
-
-unsigned int Memory::get_size()
-{
-    return this->size;
 }
 
 void Memory::set_memory_callback(ComputerDevice * d, unsigned int callback_id, unsigned int mode)
@@ -517,7 +516,7 @@ void RAM::load_config(SystemData *sd)
 
 void RAM::reset(bool cold)
 {
-    if (cold && this->buffer!=nullptr) memset(this->buffer, this->fill, this->size);
+    if (cold && this->buffer!=nullptr) memset(this->buffer, this->fill, this->get_size());
 }
 
 //----------------------- class ROM -------------------------------//
@@ -541,13 +540,13 @@ void ROM::load_config(SystemData *sd)
         this->fill = 0xFF;
     }
 
-    if (this->buffer!=nullptr) memset(this->buffer, this->fill, this->size);
+    if (this->buffer!=nullptr) memset(this->buffer, this->fill, this->get_size());
 
     QString file_name = sd->system_path + this->cd->get_parameter("image").value;
     QFile file(file_name);
     if (file.open(QIODevice::ReadOnly)){
         unsigned int file_size = file.size();
-        if (file_size > this->size)
+        if (file_size > this->get_size())
         {
             QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("ROM image file for '%1' is too big").arg(this->name));
             throw QException();
@@ -867,6 +866,7 @@ AddressableDevice * MemoryMapper::map(
                                         MapperArray * map_ranges,
                                         unsigned int index_from,
                                         unsigned int index_to,
+                                        unsigned int config,
                                         unsigned int address,
                                         unsigned int mode,
                                         unsigned int * address_on_device,
@@ -875,9 +875,9 @@ AddressableDevice * MemoryMapper::map(
 {
     for (unsigned int i = index_from; i <= index_to; i++)
     {
-        MapperRange * mr = (MapperRange*)&(map_ranges[i]);
+        MapperRange * mr = &(*map_ranges)[i];
         if (
-            ( (this->i_config->value & mr->config_mask) == mr->config_value )
+            ( (config & mr->config_mask) == mr->config_value )
             &&
             (address >= mr->range_begin)
             &&
@@ -896,6 +896,28 @@ AddressableDevice * MemoryMapper::map(
     return nullptr;
 }
 
+AddressableDevice * MemoryMapper::map_memory(
+                                                unsigned int config,
+                                                unsigned int address,
+                                                unsigned int mode,
+                                                unsigned int * address_on_device,
+                                                unsigned int * range_index
+                                            )
+{
+    return this->map(&(this->ranges), this->first_range, this->ranges_count, config, address, mode, address_on_device, range_index);
+}
+
+AddressableDevice * MemoryMapper::map_port(
+                                                unsigned int config,
+                                                unsigned int address,
+                                                unsigned int mode,
+                                                unsigned int * address_on_device,
+                                                unsigned int * range_index
+                                            )
+{
+    return this->map(&(this->ports), 0, this->ports_count-1, config, address, mode, address_on_device, range_index);
+}
+
 unsigned int MemoryMapper::read(unsigned int address)
 {
     //TODO: Cache
@@ -909,7 +931,7 @@ unsigned int MemoryMapper::read(unsigned int address)
     }
 
     unsigned int address_on_device, range_index;
-    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, address, MODE_R, &address_on_device, &range_index);
+    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config->value, address, MODE_R, &address_on_device, &range_index);
     if (d != nullptr)
     {
         //TODO: Cache
@@ -926,7 +948,7 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
     // for (unsigned int i = 0; i < this->write_cache_items; i++)
 
     unsigned int address_on_device, range_index;
-    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, address, MODE_W, &address_on_device, &range_index);
+    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config->value, address, MODE_W, &address_on_device, &range_index);
     if (d != nullptr)
     {
         //TODO: Cache
@@ -942,7 +964,7 @@ unsigned int MemoryMapper::read_port(unsigned int address)
     } else {
         unsigned int a = address & this->ports_mask;
         unsigned int address_on_device, range_index;
-        AddressableDevice * d = this->map(&(this->ports), 0, this->ports_count-1, a, MODE_R, &address_on_device, &range_index);
+        AddressableDevice * d = this->map(&(this->ports), 0, this->ports_count-1, this->i_config->value, a, MODE_R, &address_on_device, &range_index);
         if (d != nullptr)
         {
             return d->get_value(address_on_device);
@@ -959,7 +981,7 @@ void MemoryMapper::write_port(unsigned int address, unsigned int value)
     } else {
         unsigned int a = address & this->ports_mask;
         unsigned int address_on_device, range_index;
-        AddressableDevice * d = this->map(&(this->ports), 0, this->ports_count-1, a, MODE_R, &address_on_device, &range_index);
+        AddressableDevice * d = this->map(&(this->ports), 0, this->ports_count-1, this->i_config->value, a, MODE_R, &address_on_device, &range_index);
         if (d != nullptr)
         {
             d->set_value(address_on_device, value);

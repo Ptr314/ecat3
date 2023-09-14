@@ -6,8 +6,13 @@
         <file alias="power">resources/icons/power.png</file>
         <file alias="reload">resources/icons/reload.png</file>
         <file alias="next">resources/icons/next.png</file>
+        <file alias="r">resources/icons/letter-r.png</file>
+        <file alias="w">resources/icons/letter-w.png</file>
     </qresource>
     <qresource prefix="/fonts">
-        <file alias="mono">resources/fonts/RobotoMono-Regular.ttf</file>
+        <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>
+        <file alias="mono-bold">resources/fonts/RobotoMono-Bold.ttf</file>
+        <file alias="mono-semibold">resources/fonts/RobotoMono-SemiBold.ttf</file>
+        <file alias="consolas">resources/fonts/Consolas.ttf</file>
     </qresource>
 </RCC>

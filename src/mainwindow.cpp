@@ -5,14 +5,19 @@
 #include "ui_mainwindow.h"
 #include "emulator/debug.h"
 #include "dialogs/dumpwindow.h"
+#include "dialogs/mmwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    int font_id = QFontDatabase::addApplicationFont(":/fonts/mono");
+    int font_id = QFontDatabase::addApplicationFont(":/fonts/mono-bold");
     qDebug() << "Font " << font_id;
     qDebug() << QFontDatabase::applicationFontFamilies(font_id);
+
+    QFontDatabase::addApplicationFont(":/fonts/mono-regular");
+    QFontDatabase::addApplicationFont(":/fonts/mono-semibold");
+    QFontDatabase::addApplicationFont(":/fonts/consolas");
 
     ui->setupUi(this);
 
@@ -30,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     DWM->register_debug_window("rom", &CreateDumpWindow);
     DWM->register_debug_window("ram", &CreateDumpWindow);
+    DWM->register_debug_window("memory_mapper", &CreateMMWindow);
 
     //e->start();
 }

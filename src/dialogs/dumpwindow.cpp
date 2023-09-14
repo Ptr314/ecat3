@@ -13,7 +13,7 @@ DumpWindow::DumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
 {
     this->e = e;
     this->d = d;
-    ui->dump_area->set_data(e, (Memory*)d);
+    ui->dump_area->set_data(e, (AddressableDevice*)d);
 }
 
 DumpWindow::~DumpWindow()

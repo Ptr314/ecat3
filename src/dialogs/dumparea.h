@@ -11,7 +11,7 @@ class DumpArea : public QWidget
 public:
     explicit DumpArea(QWidget *parent = nullptr);
 
-    void set_data(Emulator * e, Memory * memory);
+    void set_data(Emulator * e, AddressableDevice * device, unsigned int start_address = 0);
 
 signals:
 
@@ -19,7 +19,7 @@ protected:
     void paintEvent(QPaintEvent *event) override;
 
 private:
-    Memory * m;
+    AddressableDevice * d;
     Emulator * e;
     unsigned int font_height;
     unsigned int char_width;
