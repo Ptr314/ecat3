@@ -127,7 +127,6 @@ QString EmulatorConfig::read_extended_entity(QString *config, QString stop)
 
 EmulatorConfigDevice * EmulatorConfig::add_device(QString device_name, QString device_type)
 {
-    qDebug() << device_name << device_type;
     EmulatorConfigDevice *new_device = new EmulatorConfigDevice(device_name, device_type);
     this->devices[this->devices_count++] = new_device;
     return new_device;

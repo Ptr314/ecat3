@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QMessageBox>
 
+#include <SDL.h>
+
 #include "config.h"
 
 #define MAX_LINKS               100
@@ -402,9 +404,14 @@ class Display: public ComputerDevice
     //TODO: Abstract Display
 private:
 protected:
+    unsigned int sx;
+    unsigned int sy;
+    SDL_Texture * texture;
 public:
     Display(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void get_screen(bool required) = 0;
+    virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) = 0;
+    virtual void set_texture(SDL_Texture * texture);
 };
 
 

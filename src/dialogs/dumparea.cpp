@@ -3,9 +3,10 @@
 
 #include "dumparea.h"
 
-#define FONT_NAME "Consolas"
-#define FONT_SIZE 10
-#define FONT_WEIGHT 600 //600, 700
+//#define FONT_NAME "Consolas"
+#define FONT_NAME "PxPlus IBM VGA9"
+#define FONT_SIZE 11
+#define FONT_WEIGHT 400 //600, 700
 
 DumpArea::DumpArea(QWidget *parent)
     : QWidget{parent},

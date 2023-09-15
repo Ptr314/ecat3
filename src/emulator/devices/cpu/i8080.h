@@ -4,7 +4,7 @@
 #include "emulator/core.h"
 
 struct I8080Context {
-    //TODO: Implement
+    //TODO: I8080: Implement
 };
 
 class I8080: public CPU

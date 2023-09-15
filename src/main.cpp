@@ -4,9 +4,13 @@
 #include <QLocale>
 #include <QTranslator>
 
+#include <SDL.h>
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    SDL_Init(SDL_INIT_VIDEO);
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
@@ -19,5 +23,10 @@ int main(int argc, char *argv[])
     }
     MainWindow w;
     w.show();
-    return a.exec();
+
+    int RetVal = a.exec();
+
+    SDL_Quit();
+
+    return RetVal;
 }

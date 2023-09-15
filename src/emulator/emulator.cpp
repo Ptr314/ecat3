@@ -1,5 +1,6 @@
 #include <QFileInfo>
 #include <QThread>
+#include <QRandomGenerator>
 
 #include "core.h"
 #include "emulator.h"
@@ -91,7 +92,6 @@ void Emulator::load_charmap()
             QChar c = s.at(i);
             if (c != '\x0D' && c != '\x0A') this->charmap[count++] = new QChar(c);
         }
-        qDebug() << "Chars loaded: " << count;
     } else
         for (unsigned int i = 0; i < 256; i++) this->charmap[i] = new QChar('.');
 }
@@ -126,9 +126,14 @@ void Emulator::start()
         this->clock_counter = 0;
 
 
+        //TODO: Unify calling timers
         timer = new QTimer(this);
         connect(timer, &QTimer::timeout, this, QOverload<>::of(&Emulator::timer_proc));
         timer->start(this->timer_delay);
+
+        this->render_timer = new QTimer(this);
+        connect(this->render_timer, SIGNAL(timeout()), this, SLOT(render_screen()));
+        this->render_timer->start(1000 / 50);
     }
 }
 
@@ -159,6 +164,77 @@ void Emulator::timer_proc()
         this->local_counter -= this->time_ticks;
         this->busy = false;
     }
+}
+
+
+void Emulator::init_video(void *p)
+{
+    SDLWindowRef = SDL_CreateWindowFrom(p);
+    SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
+
+    Display * d = (Display*)dm->get_device_by_name("display");
+    unsigned int sx, sy;
+    d->get_screen_constraints(&sx, &sy);
+
+    //TODO: create setup parameters
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+
+    double screen_scale = 2.5;
+    double pixel_scale = (4.0 / 3.0) / ((double)sx / (double)sy);
+    int rx, ry;
+
+    SDL_GetRendererOutputSize(SDLRendererRef, &rx, &ry);
+    render_rect.w = sx * screen_scale * pixel_scale;
+    render_rect.h = sy * screen_scale;
+    render_rect.x = (rx - render_rect.w) / 2;
+    render_rect.y = (ry - render_rect.h) / 2;
+
+    SDLTexture = SDL_CreateTexture(SDLRendererRef, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, sx, sy);
+
+    d->set_texture(SDLTexture);
+
+
+    //TODO: cleanup
+//    SDL_RendererInfo info;
+//    SDL_GetRendererInfo( SDLRendererRef, &info );
+//    qDebug() << "Renderer name: " << info.name;
+//    qDebug() << "Texture formats: ";
+//    for( Uint32 i = 0; i < info.num_texture_formats; i++ )
+//    {
+//        qDebug() << SDL_GetPixelFormatName( info.texture_formats[i] );
+//    }
+}
+
+void Emulator::stop_video()
+{
+    SDL_DestroyRenderer(SDLRendererRef);
+    SDL_DestroyWindow(SDLWindowRef);
+}
+
+void Emulator::render_screen()
+{
+    //TODO: cleanup
+//    void *pixels;
+//    Uint8 *base;
+//    int pitch;
+
+//    SDL_LockTexture(SDLTexture, NULL, &pixels, &pitch);
+
+//    QRandomGenerator *rg = QRandomGenerator::global();
+
+//    int x = rg->bounded(384);
+//    int y = rg->bounded(256);
+//    base = ((Uint8 *)pixels) + (4 * (y * 384 + x));
+
+//    base[0] = rg->bounded(256);
+//    base[1] = rg->bounded(256);
+//    base[2] = rg->bounded(256);
+//    //base[3] = 0;
+
+//    SDL_UnlockTexture(SDLTexture);
+
+    SDL_RenderCopy(SDLRendererRef, SDLTexture, NULL, &render_rect);
+    SDL_RenderPresent(SDLRendererRef);
 }
 
 void Emulator::register_devices()

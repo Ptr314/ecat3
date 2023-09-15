@@ -5,7 +5,7 @@
 
 class TapeRecorder: public ComputerDevice
 {
-    //TODO: Implement
+    //TODO: TapeRecorder: Implement
 private:
     Interface * i_input;
     Interface * i_output;

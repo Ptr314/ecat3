@@ -8,6 +8,9 @@ find_package(QT NAMES Qt5 Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Gui)
 find_package(Qt${QT_VERSION_MAJOR} OPTIONAL_COMPONENTS Widgets)
 
+find_package(SDL2 REQUIRED)
+#include_directories(${SDL2_INCLUDE_DIRS})
+
 qt_standard_project_setup()
 
 set(RESOURCE_FILES resources.qrc)
@@ -40,56 +43,9 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
 target_link_libraries(eCat3 PRIVATE
     Qt::Core
     Qt::Gui
+    SDL2::SDL2main
+    SDL2::SDL2
 )
-
-
-# Resources:
-#set_source_files_properties("resources/icons/exit.png"
-#    PROPERTIES QT_RESOURCE_ALIAS "exit"
-#)
-#set_source_files_properties("resources/icons/ksim_cpu.png"
-#    PROPERTIES QT_RESOURCE_ALIAS "devices"
-#)
-#set_source_files_properties("resources/icons/next.png"
-#    PROPERTIES QT_RESOURCE_ALIAS "next"
-#)
-#set_source_files_properties("resources/icons/power.png"
-#    PROPERTIES QT_RESOURCE_ALIAS "power"
-#)
-#set_source_files_properties("resources/icons/reload.png"
-#    PROPERTIES QT_RESOURCE_ALIAS "reload"
-#)
-#set_source_files_properties("resources/icons/tv.png"
-#    PROPERTIES QT_RESOURCE_ALIAS "tv"
-#)
-#set(resources_resource_files
-#    "resources/icons/exit.png"
-#    "resources/icons/ksim_cpu.png"
-#    "resources/icons/next.png"
-#    "resources/icons/power.png"
-#    "resources/icons/reload.png"
-#    "resources/icons/tv.png"
-#)
-
-#qt_add_resources(eCat3 "resources"
-#    PREFIX
-#        "/icons"
-#    FILES
-#        ${resources_resource_files}
-#)
-#set_source_files_properties("resources/fonts/RobotoMono-Regular.ttf"
-#    PROPERTIES QT_RESOURCE_ALIAS "mono"
-#)
-#set(resources1_resource_files
-#    "resources/fonts/RobotoMono-Regular.ttf"
-#)
-
-#qt_add_resources(eCat3 "resources1"
-#    PREFIX
-#        "/fonts"
-#    FILES
-#        ${resources1_resource_files}
-#)
 
 if((QT_VERSION_MAJOR GREATER 4))
     target_link_libraries(eCat3 PRIVATE

@@ -5,7 +5,7 @@
 
 class Speaker: public ComputerDevice
 {
-    //TODO: Implement
+    //TODO: Speaker: Implement
 private:
     Interface * i_input;
 public:

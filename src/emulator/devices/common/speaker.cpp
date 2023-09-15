@@ -4,7 +4,7 @@ Speaker::Speaker(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd)
 
 {
-    //TODO: Implement
+    //TODO: Speaker: Implement
     this->i_input = this->create_interface(1, "input", MODE_R);
 }
 

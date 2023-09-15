@@ -11,13 +11,11 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    int font_id = QFontDatabase::addApplicationFont(":/fonts/mono-bold");
-    qDebug() << "Font " << font_id;
-    qDebug() << QFontDatabase::applicationFontFamilies(font_id);
-
+    QFontDatabase::addApplicationFont(":/fonts/mono-bold");
     QFontDatabase::addApplicationFont(":/fonts/mono-regular");
     QFontDatabase::addApplicationFont(":/fonts/mono-semibold");
     QFontDatabase::addApplicationFont(":/fonts/consolas");
+    QFontDatabase::addApplicationFont(":/fonts/dos");
 
     ui->setupUi(this);
 
@@ -26,9 +24,9 @@ MainWindow::MainWindow(QWidget *parent)
     e = new Emulator(current_path + "/computers/", current_path + "/data/", current_path + "/ecat.ini");
 
     QString file_to_load = e->read_setup("Startup", "default", "");
-    qDebug() << "File to load: " + file_to_load;
 
     e->load_config(file_to_load);
+
     this->CreateDevicesMenu();
 
     DWM = new DebugWindowsManager();
@@ -37,7 +35,8 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("ram", &CreateDumpWindow);
     DWM->register_debug_window("memory_mapper", &CreateMMWindow);
 
-    //e->start();
+    e->init_video((void*)(ui->screen->winId()));
+    e->start();
 }
 
 MainWindow::~MainWindow()

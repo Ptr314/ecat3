@@ -5,6 +5,8 @@
 #include <QSettings>
 #include <QTimer>
 
+#include <SDL.h>
+
 #include "core.h"
 #include "emulator/devices/common/keyboard.h"
 
@@ -36,6 +38,12 @@ private:
     unsigned int local_counter;
     unsigned int clock_counter;
 
+    SDL_Window * SDLWindowRef = nullptr;
+    SDL_Renderer * SDLRendererRef = nullptr;
+    SDL_Texture * SDLTexture = nullptr;
+    QTimer * render_timer;
+    SDL_Rect render_rect;
+
     void register_devices();
 
 public:
@@ -48,6 +56,9 @@ public:
     void load_charmap();
     QChar * translate_char(unsigned int system_code);
 
+    void init_video(void *p);
+    void stop_video();
+
     void reset(bool cold);
 
     void start();
@@ -55,6 +66,7 @@ public:
 
 public slots:
     void timer_proc();
+    void render_screen();
 };
 
 #endif // EMULATOR_H

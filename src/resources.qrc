@@ -14,5 +14,6 @@
         <file alias="mono-bold">resources/fonts/RobotoMono-Bold.ttf</file>
         <file alias="mono-semibold">resources/fonts/RobotoMono-SemiBold.ttf</file>
         <file alias="consolas">resources/fonts/Consolas.ttf</file>
+        <file alias="dos">resources/fonts/PxPlus_IBM_VGA9.ttf</file>
     </qresource>
 </RCC>

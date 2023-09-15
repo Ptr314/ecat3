@@ -351,7 +351,6 @@ void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
     for (unsigned int i = 0; i < this->cd->parameters_count; i++)
     {
         QString parameter_name = this->cd->parameters[i].name;
-        qDebug() << this->name << " " << parameter_name;
         if (parameter_name.at(0) == '~')
         {
             QString interface_name = parameter_name.removeFirst();
@@ -994,9 +993,17 @@ void MemoryMapper::write_port(unsigned int address, unsigned int value)
 //----------------------- class Display -------------------------------//
 
 Display::Display(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd)
+    ComputerDevice(im, cd),
+    sx(0),
+    sy(0),
+    texture(nullptr)
 {
     //TODO: Display constructor
+}
+
+void Display::set_texture(SDL_Texture * texture)
+{
+    this->texture = texture;
 }
 
 //----------------------- Creation functions -------------------------------//

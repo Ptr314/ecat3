@@ -8,6 +8,7 @@ class O128Display: public Display
 public:
     O128Display(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void get_screen(bool required);
+    virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy);
 };
 
 ComputerDevice * create_o128display(InterfaceManager *im, EmulatorConfigDevice *cd);
