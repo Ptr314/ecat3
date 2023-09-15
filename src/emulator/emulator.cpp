@@ -143,7 +143,7 @@ void Emulator::stop()
 
 void Emulator::timer_proc()
 {
-    //TODO: Implement
+    //TODO: Other timer stuff?
     if (!this->busy)
     {
         this->busy = true;

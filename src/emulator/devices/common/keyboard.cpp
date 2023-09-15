@@ -6,5 +6,5 @@ Keyboard::Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 unsigned int Keyboard::translate_key(QString key)
 {
-    //TODO: Implement
+    //TODO: Keyboard: Implement
 }

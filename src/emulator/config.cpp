@@ -263,7 +263,7 @@ void EmulatorConfig::load_from_file(QString file_name, bool system_only)
                         s = this->read_next_entity(&config);
                         if (s.isEmpty())
                         {
-                            QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(device_name).arg(param_name));
+                            QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(device_name, param_name));
                             return;
                         }
                         if (s.compare("]")==0) break;
@@ -272,7 +272,7 @@ void EmulatorConfig::load_from_file(QString file_name, bool system_only)
                     s = this->read_next_entity(&config);
                     if (s.isEmpty())
                     {
-                        QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(device_name).arg(param_name));
+                        QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(device_name, param_name));
                         return;
                     }
                 }

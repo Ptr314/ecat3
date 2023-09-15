@@ -7,7 +7,7 @@
 
 class ScanKeyboard: public Keyboard
 {
-    //TODO: Implement
+    //TODO: ScanKeyboard: Implement
 private:
     Interface * i_scan;
     Interface * i_output;

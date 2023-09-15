@@ -18,7 +18,7 @@ unsigned int I8080::get_pc()
 
 unsigned int I8080::execute()
 {
-    //TODO: Implement
+    //TODO: 8080 Implement
     return 10;
 }
 

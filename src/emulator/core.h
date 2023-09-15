@@ -334,7 +334,6 @@ typedef MapperRange MapperArray[100];
 class MemoryMapper: public ComputerDevice
 {
 private:
-    //TODO: Implement
     Interface *     i_address;
     Interface *     i_config;
 
@@ -400,7 +399,7 @@ public:
 
 class Display: public ComputerDevice
 {
-    //TODO: Implement
+    //TODO: Abstract Display
 private:
 protected:
 public:

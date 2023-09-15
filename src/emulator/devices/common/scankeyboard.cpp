@@ -3,7 +3,7 @@
 ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     Keyboard(im, cd)
 {
-    //TODO: Impelement
+    //TODO: ScanKeyboard: Impelement
     i_scan =   this->create_interface(8, "scan", MODE_R, SCAN_CALLBACK);
     i_output = this->create_interface(8, "output", MODE_W);
     i_shift =  this->create_interface(1, "shift", MODE_W);
@@ -14,12 +14,12 @@ ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 void ScanKeyboard::key_down(unsigned int key)
 {
-    //TODO: Impelement
+    //TODO: ScanKeyboard: Impelement
 }
 
 void ScanKeyboard::key_up(unsigned int key)
 {
-    //TODO: Impelement
+    //TODO: ScanKeyboard: Impelement
 }
 
 
