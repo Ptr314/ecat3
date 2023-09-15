@@ -284,7 +284,7 @@ void EmulatorConfig::load_from_file(QString file_name, bool system_only)
             QString extended_right = "";
             if (s.compare("{")==0)
             {
-                QString extended_right = this->read_extended_entity(&config, "}");
+                extended_right = this->read_extended_entity(&config, "}");
                 param_name = this->read_next_entity(&config);
                 if (param_name.isEmpty())
                 {

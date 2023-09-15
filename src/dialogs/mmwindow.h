@@ -23,10 +23,6 @@ private slots:
 
     void on_process_button_clicked();
 
-    void on_readButton_toggled(bool checked);
-
-    void on_writeButton_toggled(bool checked);
-
 private:
     Ui::MemoryMapperWindow *ui;
 

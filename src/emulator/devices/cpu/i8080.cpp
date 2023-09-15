@@ -1,6 +1,3 @@
-//#define Z_COMPILER Z_COMPILER_MINGW
-//#include <Z80.h>
-
 #include "i8080.h"
 
 I8080::I8080(InterfaceManager *im, EmulatorConfigDevice *cd):

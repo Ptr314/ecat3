@@ -143,6 +143,12 @@
           <height>30</height>
          </size>
         </property>
+        <property name="baseSize">
+         <size>
+          <width>30</width>
+          <height>30</height>
+         </size>
+        </property>
         <property name="text">
          <string>R</string>
         </property>
@@ -156,11 +162,23 @@
         <property name="checked">
          <bool>true</bool>
         </property>
+        <property name="autoExclusive">
+         <bool>true</bool>
+        </property>
+        <property name="autoRaise">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QToolButton" name="writeButton">
         <property name="minimumSize">
+         <size>
+          <width>30</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="baseSize">
          <size>
           <width>30</width>
           <height>30</height>
@@ -174,6 +192,9 @@
           <normaloff>:/icons/w</normaloff>:/icons/w</iconset>
         </property>
         <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="autoExclusive">
          <bool>true</bool>
         </property>
        </widget>

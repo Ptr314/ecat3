@@ -55,16 +55,3 @@ void MemoryMapperWindow::on_process_button_clicked()
     ui->dump_area->set_data(e, (AddressableDevice*)d, address_on_device);
     ui->dump_area->update();
 }
-
-
-void MemoryMapperWindow::on_readButton_toggled(bool checked)
-{
-    ui->writeButton->setChecked(!ui->readButton->isChecked());
-}
-
-
-void MemoryMapperWindow::on_writeButton_toggled(bool checked)
-{
-    ui->readButton->setChecked(!ui->writeButton->isChecked());
-}
-
