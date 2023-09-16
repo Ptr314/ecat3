@@ -39,6 +39,7 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     main.cpp
     mainwindow.cpp mainwindow.h mainwindow.ui
     ${PROJECT_RESOURCES}
+    libs/z80.h
 )
 target_link_libraries(eCat3 PRIVATE
     Qt::Core
