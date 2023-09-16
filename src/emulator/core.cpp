@@ -1,6 +1,8 @@
 #include <QException>
 #include <QRandomGenerator>
 
+#include <SDL.h>
+
 #include "core.h"
 #include "emulator/utils.h"
 
@@ -508,6 +510,7 @@ void RAM::load_config(SystemData *sd)
     } catch (QException &e) {
         this->fill = 0;
     }
+    //memset(this->buffer, this->fill, this->get_size());
 
     this->reset(true);
 
@@ -996,7 +999,9 @@ Display::Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd),
     sx(0),
     sy(0),
-    texture(nullptr)
+    texture(nullptr),
+    screen_valid(false),
+    render_pixels(nullptr)
 {
     //TODO: Display constructor
 }
@@ -1004,6 +1009,24 @@ Display::Display(InterfaceManager *im, EmulatorConfigDevice *cd):
 void Display::set_texture(SDL_Texture * texture)
 {
     this->texture = texture;
+}
+
+void Display::validate()
+{
+    if (!screen_valid) render_all();
+}
+
+void Display::start_rendering()
+{
+    //TODO: Investigate why it is occasionally crashing when locking this way
+    //int pitch;
+    //SDL_LockTexture(texture, NULL, &render_pixels, &line_bytes);
+    //qDebug() << "Screen line size: " << line_bytes;
+}
+
+void Display::stop_rendering()
+{
+    //SDL_UnlockTexture(texture);
 }
 
 //----------------------- Creation functions -------------------------------//

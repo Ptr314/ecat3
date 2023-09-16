@@ -157,7 +157,6 @@ protected:
     unsigned int read_callback;
     unsigned int write_callback;
 
-    virtual void set_value(unsigned int address, unsigned int value);
 public:
     Memory(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~Memory();
@@ -165,6 +164,7 @@ public:
     virtual unsigned int get_value(unsigned int address);
     void set_memory_callback(ComputerDevice * d, unsigned int callback_id, unsigned int mode);
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
+    virtual void set_value(unsigned int address, unsigned int value);
 };
 
 class RAM: public Memory
@@ -406,12 +406,21 @@ private:
 protected:
     unsigned int sx;
     unsigned int sy;
+    int line_bytes;
     SDL_Texture * texture;
+    bool screen_valid;
+    void * render_pixels;
+
+    virtual void render_all() = 0;
+
 public:
     Display(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void get_screen(bool required) = 0;
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) = 0;
     virtual void set_texture(SDL_Texture * texture);
+    virtual void validate();
+    virtual void start_rendering();
+    virtual void stop_rendering();
 };
 
 

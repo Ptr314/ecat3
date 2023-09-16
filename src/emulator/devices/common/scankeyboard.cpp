@@ -1,3 +1,4 @@
+#include "emulator/utils.h"
 #include "scankeyboard.h"
 
 ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
@@ -10,6 +11,7 @@ ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     i_ctrl =   this->create_interface(1, "ctrl", MODE_W);
     i_ruslat = this->create_interface(1, "ruslat", MODE_W);
 
+    calculate_out();
 }
 
 void ScanKeyboard::key_down(unsigned int key)
@@ -20,6 +22,12 @@ void ScanKeyboard::key_down(unsigned int key)
 void ScanKeyboard::key_up(unsigned int key)
 {
     //TODO: ScanKeyboard: Impelement
+}
+
+void ScanKeyboard::calculate_out()
+{
+    //TODO: ScanKeyboard: Impelement
+    i_output->change(_FFFF);
 }
 
 

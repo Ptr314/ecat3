@@ -125,7 +125,6 @@ void Emulator::start()
         this->local_counter = 0;
         this->clock_counter = 0;
 
-
         //TODO: Unify calling timers
         timer = new QTimer(this);
         connect(timer, &QTimer::timeout, this, QOverload<>::of(&Emulator::timer_proc));
@@ -146,12 +145,15 @@ void Emulator::stop()
     }
 }
 
+unsigned int tmp = 0;
+
 void Emulator::timer_proc()
 {
     //TODO: Other timer stuff?
     if (!this->busy)
     {
         this->busy = true;
+        display->start_rendering();
         while (this->local_counter < this->time_ticks) {
 
             unsigned int counter = this->cpu->execute();
@@ -162,6 +164,19 @@ void Emulator::timer_proc()
         this->mm->sort_cache();
 
         this->local_counter -= this->time_ticks;
+        display->stop_rendering();
+
+        //TODO: Cleanup
+//        //Debug block {
+//        QRandomGenerator *rg = QRandomGenerator::global();
+
+//        Memory * m1 = (Memory*)(dm->get_device_by_name("ram0"));
+//        Memory * m2 = (Memory*)(dm->get_device_by_name("ram1"));
+//        m1->set_value(0xC000 + tmp/2, rg->bounded(256));
+//        m2->set_value(0xC000 + tmp/2, rg->bounded(256));
+//        tmp++;
+//        //} Debig block
+
         this->busy = false;
     }
 }
@@ -179,8 +194,8 @@ void Emulator::init_video(void *p)
     //TODO: create setup parameters
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 
-    double screen_scale = 2.5;
-    double pixel_scale = (4.0 / 3.0) / ((double)sx / (double)sy);
+    double screen_scale = 2;
+    double pixel_scale = 1; //(4.0 / 3.0) / ((double)sx / (double)sy);
     int rx, ry;
 
     SDL_GetRendererOutputSize(SDLRendererRef, &rx, &ry);
@@ -232,7 +247,7 @@ void Emulator::render_screen()
 //    //base[3] = 0;
 
 //    SDL_UnlockTexture(SDLTexture);
-
+    display->validate();
     SDL_RenderCopy(SDLRendererRef, SDLTexture, NULL, &render_rect);
     SDL_RenderPresent(SDLRendererRef);
 }

@@ -15,6 +15,8 @@ private:
     Interface * i_ctrl;
     Interface * i_ruslat;
 
+    void calculate_out();
+
 public:
     ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
 
