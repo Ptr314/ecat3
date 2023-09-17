@@ -55,6 +55,7 @@ void I8080::reset(bool cold)
 unsigned int I8080::execute()
 {
     //TODO: 8080 Implement
+    //TODO: 8080 debugging stuff
     //return 10;
 
 }

@@ -20,7 +20,9 @@ struct i8080context
         uint16_t reg_array_16[3];
     } registers;
     bool halted;
+    //TODO: i8080 maybe it should be bool
     unsigned int int_enable;
+    unsigned int debug_mode;
 };
 
 union PartsRecLE {
@@ -158,13 +160,16 @@ private:
     uint8_t calc_flags(uint32_t v1, uint32_t v2, uint32_t value);
     void do_ret();
     void do_jump();
+    void do_call();
 
 protected:
     i8080context context;
+
 public:
     i8080core();
     virtual uint8_t read_mem(uint16_t address) = 0;
     virtual void write_mem(uint16_t address, uint8_t value) = 0;
+    virtual void reset();
 
     unsigned int execute();
 };
