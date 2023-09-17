@@ -1,17 +1,23 @@
 #include "i8080.h"
 
-//----------------------- Library wrapper -------------------------------------
-z80::fast_u8 i8080emulator::on_read(z80::fast_u16 addr)
+//----------------------- Library wrapper -----------------------------------
+I8080Core::I8080Core(I8080 * emulator_device):
+    i8080core()
 {
-    return emulator_device->read_mem(addr);
+    this->emulator_device = emulator_device;
 }
 
-void i8080emulator::on_write(z80::fast_u16 addr, z80::fast_u8 n)
+uint8_t I8080Core::read_mem(uint16_t address)
 {
-    emulator_device->write_mem(addr, n);
+    return emulator_device->read_mem(address);
 }
 
-//----------------------- I8080 -------------------------------------
+void I8080Core::write_mem(uint16_t address, uint8_t value)
+{
+    emulator_device->write_mem(address, value);
+}
+
+//----------------------- Emulator device -----------------------------------
 
 I8080::I8080(InterfaceManager *im, EmulatorConfigDevice *cd):
     CPU(im, cd)
@@ -23,7 +29,7 @@ I8080::I8080(InterfaceManager *im, EmulatorConfigDevice *cd):
     this->i_inte =    this->create_interface(1, "inte", MODE_W);
     this->i_m1 =      this->create_interface(1, "m1", MODE_W);
 
-    i8080_emulator = new i8080emulator(this);
+    core = new I8080Core(this);
 }
 
 unsigned int I8080::get_pc()
@@ -44,14 +50,22 @@ void I8080::write_mem(unsigned int address, unsigned int data)
 void I8080::reset(bool cold)
 {
     CPU::reset(cold);
-    i8080_emulator->set_pc(0);
 }
 
 unsigned int I8080::execute()
 {
     //TODO: 8080 Implement
     //return 10;
-    i8080_emulator->on_step();
+
+}
+
+unsigned int read_mem(unsigned int address)
+{
+
+}
+
+void write_mem(unsigned int address, unsigned int data)
+{
 
 }
 

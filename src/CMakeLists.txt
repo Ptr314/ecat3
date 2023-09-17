@@ -39,7 +39,9 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     main.cpp
     mainwindow.cpp mainwindow.h mainwindow.ui
     ${PROJECT_RESOURCES}
-    libs/z80.h
+    emulator/devices/cpu/i8080core.h
+    emulator/devices/cpu/i8080core.cpp
+
 )
 target_link_libraries(eCat3 PRIVATE
     Qt::Core
