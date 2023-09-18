@@ -987,7 +987,6 @@ void MemoryMapper::write_port(unsigned int address, unsigned int value)
         if (d != nullptr)
         {
             d->set_value(address_on_device, value);
-
         }
     }
 }

@@ -16,7 +16,8 @@ public:
     I8080Core(I8080 * emulator_device);
     virtual uint8_t read_mem(uint16_t address);
     virtual void write_mem(uint16_t address, uint8_t value);
-};
+    virtual uint8_t read_port(uint16_t address);
+    virtual void write_port(uint16_t address, uint8_t value);};
 
 //Emulator class
 class I8080: public CPU
@@ -38,7 +39,9 @@ public:
     virtual unsigned int execute();
     virtual unsigned int read_mem(unsigned int address);
     virtual void write_mem(unsigned int address, unsigned int data);
-
+    virtual unsigned int read_port(unsigned int address);
+    virtual void write_port(unsigned int address, unsigned int data);
+    virtual void inte_changed(unsigned int inte);
 };
 
 unsigned int read_mem(unsigned int address);
