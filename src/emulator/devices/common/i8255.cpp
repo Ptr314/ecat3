@@ -5,10 +5,19 @@ I8255::I8255(InterfaceManager *im, EmulatorConfigDevice *cd):
 {
     this->i_address = this->create_interface(2, "address", MODE_R);
     this->i_data = this->create_interface(8, "data", MODE_R);
-    this->i_port_a = this->create_interface(8, "A", MODE_W, PORT_A);
-    this->i_port_b = this->create_interface(8, "B", MODE_W, PORT_B);
-    this->i_port_ch = this->create_interface(4, "CH", MODE_W, PORT_CH);
-    this->i_port_cl = this->create_interface(4, "CL", MODE_W, PORT_CL);
+    this->i_port_a = this->create_interface(8, "A", MODE_R, PORT_A);
+    this->i_port_b = this->create_interface(8, "B", MODE_R, PORT_B);
+    this->i_port_ch = this->create_interface(4, "CH", MODE_R, PORT_CH);
+    this->i_port_cl = this->create_interface(4, "CL", MODE_R, PORT_CL);
+}
+
+void I8255::reset(bool cold)
+{
+    registers[3] = 0;
+    i_port_a->set_mode(MODE_R);
+    i_port_b->set_mode(MODE_R);
+    i_port_ch->set_mode(MODE_R);
+    i_port_cl->set_mode(MODE_R);
 }
 
 unsigned int I8255::get_value(unsigned int address)
@@ -58,7 +67,7 @@ void I8255::set_value(unsigned int address, unsigned int value)
             this->i_port_ch->change(this->registers[n]);
         }
         break;
-    default:
+    default: //3 - control register
         if ((value & 0x80) != 0)
         {
             //Set mode

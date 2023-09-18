@@ -1,3 +1,5 @@
+#include <QDebug>
+
 #include "i8080core.h"
 
 i8080core::i8080core()
@@ -83,6 +85,7 @@ unsigned int i8080core::execute()
 
     //Store PC for debug purposes
     context.registers.regs.PC2 = context.registers.regs.PC;
+    //qDebug() << Qt::hex << context.registers.regs.PC;
 
     command = next_byte();
 
