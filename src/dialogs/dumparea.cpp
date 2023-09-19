@@ -1,12 +1,9 @@
 #include <QPainter>
 #include <QFontDatabase>
 
-#include "dumparea.h"
+#include "dialogs/dialogs.h"
 
-//#define FONT_NAME "Consolas"
-#define FONT_NAME "PxPlus IBM VGA9"
-#define FONT_SIZE 11
-#define FONT_WEIGHT 400 //600, 700
+#include "dumparea.h"
 
 DumpArea::DumpArea(QWidget *parent)
     : QWidget{parent},
@@ -30,10 +27,10 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
 {
     QPainter painter(this);
 
-    painter.fillRect(0, 0, size().width(), size().height(), QColor(0,0,128));
+    painter.fillRect(0, 0, size().width(), size().height(), DIALOGS_BACKGROUND);
 
     painter.setFont(QFont(FONT_NAME, FONT_SIZE, FONT_WEIGHT));
-    painter.setPen(QColor(0,255,255));
+    painter.setPen(TEXT_COLOR);
     if (this->d != nullptr)
     {
 

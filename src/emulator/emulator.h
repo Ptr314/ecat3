@@ -15,8 +15,6 @@ class Emulator: public QObject
     Q_OBJECT
 
 private:
-    QString work_path;
-    QString data_path;
     QSettings *settings;
     bool loaded;
     bool busy;
@@ -48,6 +46,8 @@ private:
 
 public:
     DeviceManager *dm;
+    QString work_path;
+    QString data_path;
 
     Emulator(QString work_path, QString data_path, QString ini_file);
 

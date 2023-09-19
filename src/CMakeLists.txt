@@ -41,6 +41,10 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     ${PROJECT_RESOURCES}
     emulator/devices/cpu/i8080core.h
     emulator/devices/cpu/i8080core.cpp
+    dialogs/debugwindow.h dialogs/debugwindow.cpp dialogs/debugwindow.ui
+    dialogs/disasmarea.h dialogs/disasmarea.cpp
+    emulator/disasm.h emulator/disasm.cpp
+    dialogs/dialogs.h
 
 )
 target_link_libraries(eCat3 PRIVATE
