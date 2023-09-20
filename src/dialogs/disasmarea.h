@@ -21,6 +21,7 @@ public:
     explicit DisAsmArea(QWidget *parent = nullptr);
 
     void set_data(Emulator * e, CPU * cpu, DisAsm * disasm, unsigned int address);
+    void go_to(unsigned int address);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -33,12 +34,17 @@ private:
     unsigned int font_height;
     unsigned int char_width;
     unsigned int address_first;
+    unsigned int address;
     unsigned int address_last;
     unsigned int lines_count;
     DisAsmEntry lines[100];
     unsigned int max_lines;
+    unsigned int screen_size;
+    unsigned int first_line;
+    unsigned int cursor_line;
+    bool data_valid;
 
-    void go_to(unsigned int address);
+    void update_data();
 
 signals:
 

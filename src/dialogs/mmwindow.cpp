@@ -16,6 +16,7 @@ MemoryMapperWindow::MemoryMapperWindow(QWidget *parent, Emulator * e, ComputerDe
 {
     this->e = e;
     this->d = d;
+    this->setWindowTitle(d->name + " : " + d->type);
 }
 
 MemoryMapperWindow::~MemoryMapperWindow()

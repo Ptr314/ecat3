@@ -44,7 +44,7 @@ I8080::I8080(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 unsigned int I8080::get_pc()
 {
-    return 0;
+    return core->get_context()->registers.regs.PC;
 }
 
 unsigned int I8080::read_mem(unsigned int address)
@@ -77,12 +77,57 @@ void I8080::inte_changed(unsigned int inte)
     i_inte->change(inte);
 }
 
+QList<QString> I8080::get_registers()
+{
+    QList<QString> l;
+    i8080context * c = core->get_context();
+
+    l << QString("A=%1").arg(c->registers.regs.A, 2, 16, QChar('0')).toUpper()
+      << QString("BC=%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0')).toUpper()
+      << QString("DE=%1").arg(c->registers.reg_pairs.DE, 4, 16, QChar('0')).toUpper()
+      << QString("HL=%1").arg(c->registers.reg_pairs.HL, 4, 16, QChar('0')).toUpper()
+      << ""
+      << QString("SP=%1").arg(c->registers.regs.SP, 4, 16, QChar('0')).toUpper()
+      << QString("PC=%1").arg(c->registers.regs.PC, 4, 16, QChar('0')).toUpper()
+    ;
+    return l;
+}
+
+QList<QString> I8080::get_flags()
+{
+    QList<QString> l;
+    i8080context * c = core->get_context();
+
+    l << QString("C=%1").arg( ((c->registers.regs.F & F_CARRY) != 0)?1:0)
+      << QString("P=%1").arg( ((c->registers.regs.F & F_PARITY) != 0)?1:0)
+      << QString("HC=%1").arg( ((c->registers.regs.F & F_HALF_CARRY) != 0)?1:0)
+      << QString("Z=%1").arg( ((c->registers.regs.F & F_ZERO) != 0)?1:0)
+      << QString("S=%1").arg( ((c->registers.regs.F & F_SIGN) != 0)?1:0)
+    ;
+    return l;
+}
+
+
 unsigned int I8080::execute()
 {
-    //TODO: 8080 Implement
-    //TODO: 8080 debugging stuff
-    return core->execute();
+    //TODO: use HALT imitation
+    if (debug == DEBUG_STOPPED)
+        return 10;
 
+    unsigned int cycles = core->execute();
+
+    switch (debug) {
+    case DEBUG_STEP:
+        debug = DEBUG_STOPPED;
+        break;
+    case DEBUG_BRAKES:
+        if (check_breakpoint(get_pc())) debug = DEBUG_STOPPED;
+        break;
+    default:
+        break;
+    }
+
+    return cycles;
 }
 
 ComputerDevice * create_i8080(InterfaceManager *im, EmulatorConfigDevice *cd){

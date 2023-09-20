@@ -45,6 +45,7 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     dialogs/disasmarea.h dialogs/disasmarea.cpp
     emulator/disasm.h emulator/disasm.cpp
     dialogs/dialogs.h
+    dialogs/keyvaluearea.h dialogs/keyvaluearea.cpp
 
 )
 target_link_libraries(eCat3 PRIVATE

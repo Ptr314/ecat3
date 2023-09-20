@@ -35,6 +35,4 @@ public:
     }
 };
 
-//DebugWindowsManager * DWM = new DebugWindowsManager();
-
 #endif // DEBUG_H

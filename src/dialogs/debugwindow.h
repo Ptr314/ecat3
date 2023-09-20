@@ -23,12 +23,18 @@ public:
 private slots:
     void on_closeButton_clicked();
 
+    void on_stepButton_clicked();
+
+    void on_toPCButton_clicked();
+
 private:
     Ui::DebugWindow *ui;
 
     Emulator * e;
-    ComputerDevice * d;
+    CPU * cpu;
     DisAsm * disasm;
+
+    void update_registers();
 };
 
 QDialog * CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d);

@@ -65,6 +65,11 @@ void i8080core::reset()
     context.int_enable = 0;
 }
 
+i8080context * i8080core::get_context()
+{
+    return &context;
+}
+
 uint8_t i8080core::read_port(uint16_t address){
     return 0xFF;
 }

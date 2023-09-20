@@ -631,9 +631,9 @@ void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int 
 CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd),
     reset_mode(true),
-    debug(DEBUG_OFF),
+//    debug(DEBUG_OFF),
+    debug(DEBUG_STOPPED),
     break_count(0)
-
 {
     try {
         clock = parse_numeric_value(this->cd->get_parameter("clock").value);
@@ -651,6 +651,7 @@ void CPU::load_config(SystemData *sd)
 bool CPU::check_breakpoint(unsigned int address)
 {
     //TODO: Breakpoints
+    return false;
 }
 
 void CPU::add_breakpoint(unsigned int address)

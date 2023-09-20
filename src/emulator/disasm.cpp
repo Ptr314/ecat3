@@ -109,8 +109,8 @@ unsigned int DisAsm::disassemle(CommandBytes bytes, unsigned int PC, unsigned in
                     unsigned int v = 0;
                     for (j = 0; j < ins[i].length; j++)
                         if (!ins[i].bytes[j].is_instr && ins[i].bytes[j].value == QChar('n').unicode())
-                            v = *bytes[j];
-                    QString hexval = QString("%1").arg(v, 2, 16, QChar('0'));
+                            v = (*bytes)[j];
+                    QString hexval = QString("%1").arg(v, 2, 16, QChar('0')).toUpper();
                     s = s.replace("$n", hexval);
                 };
 
@@ -120,8 +120,8 @@ unsigned int DisAsm::disassemle(CommandBytes bytes, unsigned int PC, unsigned in
                     unsigned int v=0;
                     for (j = 0; j < ins[i].length; j++)
                         if (!ins[i].bytes[j].is_instr && ins[i].bytes[j].value == QChar('d').unicode())
-                            v = *bytes[j];
-                    QString hexval = QString("%1").arg(v, 2, 16, QChar('0'));
+                            v = (*bytes)[j];
+                    QString hexval = QString("%1").arg(v, 2, 16, QChar('0')).toUpper();
                     s = s.replace("$d", hexval);
                 };
 

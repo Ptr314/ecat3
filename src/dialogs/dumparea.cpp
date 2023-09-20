@@ -23,6 +23,12 @@ void DumpArea::set_data(Emulator * e, AddressableDevice * d, unsigned int start_
     this->start_address = start_address;
 }
 
+void DumpArea::go_to(unsigned int address)
+{
+    this->start_address = address;
+    update();
+}
+
 void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
 {
     QPainter painter(this);

@@ -21,6 +21,8 @@ public:
 private slots:
     void on_closeButton_clicked();
 
+    void on_toolButton_clicked();
+
 private:
     Ui::DumpWindow *ui;
 

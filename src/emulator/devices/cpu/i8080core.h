@@ -173,6 +173,7 @@ public:
     virtual void write_port(uint16_t address, uint8_t value);
     virtual void inte_changed(unsigned int inte);
     virtual void reset();
+    virtual i8080context * get_context();
 
     unsigned int execute();
 };

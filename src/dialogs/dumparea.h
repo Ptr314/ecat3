@@ -12,6 +12,7 @@ public:
     explicit DumpArea(QWidget *parent = nullptr);
 
     void set_data(Emulator * e, AddressableDevice * device, unsigned int start_address = 0);
+    void go_to(unsigned int address);
 
 signals:
 

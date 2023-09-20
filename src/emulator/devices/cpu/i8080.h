@@ -31,17 +31,21 @@ private:
     i8080core * core;
 
 protected:
-    virtual unsigned int get_pc();
+    virtual unsigned int get_pc() override;
 
 public:
     I8080(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual void reset(bool cold);
-    virtual unsigned int execute();
-    virtual unsigned int read_mem(unsigned int address);
-    virtual void write_mem(unsigned int address, unsigned int data);
+    virtual void reset(bool cold) override;
+    virtual unsigned int execute() override;
+    virtual unsigned int read_mem(unsigned int address) override;
+    virtual void write_mem(unsigned int address, unsigned int data) override;
     virtual unsigned int read_port(unsigned int address);
     virtual void write_port(unsigned int address, unsigned int data);
     virtual void inte_changed(unsigned int inte);
+
+    virtual QList<QString> get_registers() override;
+    virtual QList<QString> get_flags() override;
+
 };
 
 unsigned int read_mem(unsigned int address);

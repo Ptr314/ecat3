@@ -332,6 +332,9 @@ public:
 
     virtual unsigned int read_mem(unsigned int address) = 0;
     virtual void write_mem(unsigned int address, unsigned int data) = 0;
+
+    virtual QList<QString> get_registers() = 0;
+    virtual QList<QString> get_flags() = 0;
 };
 
 typedef MapperRange MapperArray[100];

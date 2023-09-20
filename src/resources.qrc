@@ -8,6 +8,8 @@
         <file alias="next">resources/icons/next.png</file>
         <file alias="r">resources/icons/letter-r.png</file>
         <file alias="w">resources/icons/letter-w.png</file>
+        <file alias="step">resources/icons/finish.png</file>
+        <file alias="undo">resources/icons/undo.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>
