@@ -8,7 +8,7 @@ struct i8080context
 {
     union {
         struct{
-            uint8_t  C,B,E,D,H,L,
+            uint8_t  C,B,E,D,L,H,
                      m,
                      A, F;
             uint16_t SP, PC, PC2;
@@ -131,7 +131,7 @@ static const uint8_t CONDITIONS[8][2] = {
                                 {F_PARITY, 0},	 		//ODD
                                 {F_PARITY, F_PARITY},   //NOT ODD
                                 {F_SIGN, 0},            //POSITIVE
-                                {F_SIGN, F_SIGN}        //NERATIVE
+                                {F_SIGN, F_SIGN}        //NEGATIVE
                             };
 
 static const uint8_t I8080LENGTHS[256] = {

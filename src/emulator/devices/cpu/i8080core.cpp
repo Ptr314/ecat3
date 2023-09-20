@@ -24,10 +24,10 @@ inline uint8_t i8080core::read_command()
 inline uint8_t i8080core::calc_flags(uint32_t v1, uint32_t v2, uint32_t value)
 {
 
-    return    ((v1^v2^value) & F_HALF_CARRY)
-           || ( (value >> 8) & F_CARRY )
-           || ZERO_SIGN[(uint8_t)value]
-           || PARITY[(uint8_t)value];
+    return ((v1^v2^value) & F_HALF_CARRY)
+           | ( (value >> 8) & F_CARRY )
+           | ZERO_SIGN[(uint8_t)value]
+           | PARITY[(uint8_t)value];
 }
 
 inline void i8080core::do_ret()
