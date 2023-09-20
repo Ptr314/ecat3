@@ -30,6 +30,11 @@ void ScanKeyboard::calculate_out()
     i_output->change(_FFFF);
 }
 
+void ScanKeyboard::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
+{
+    calculate_out();
+}
+
 
 ComputerDevice * create_scankeyboard(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new ScanKeyboard(im, cd);

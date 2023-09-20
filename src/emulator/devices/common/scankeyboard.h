@@ -20,8 +20,10 @@ private:
 public:
     ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
 
-    virtual void key_down(unsigned int key);
-    virtual void key_up(unsigned int key);
+    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+
+    virtual void key_down(unsigned int key) override;
+    virtual void key_up(unsigned int key) override;
 };
 
 ComputerDevice * create_scankeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
