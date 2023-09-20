@@ -7,6 +7,7 @@
 #include "dialogs/dumpwindow.h"
 #include "dialogs/mmwindow.h"
 #include "dialogs/debugwindow.h"
+#include "dialogs/portwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -36,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("ram", &CreateDumpWindow);
     DWM->register_debug_window("memory_mapper", &CreateMMWindow);
     DWM->register_debug_window("i8080", &CreateDebugWindow);
+    DWM->register_debug_window("port", &CreatePortWindow);
 
     e->init_video((void*)(ui->screen->winId()));
     e->start();
