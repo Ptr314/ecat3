@@ -1,6 +1,7 @@
 #include <QDir>
 #include <QFontDatabase>
 
+#include "dialogs/i8255window.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "emulator/debug.h"
@@ -38,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("memory_mapper", &CreateMMWindow);
     DWM->register_debug_window("i8080", &CreateDebugWindow);
     DWM->register_debug_window("port", &CreatePortWindow);
+    DWM->register_debug_window("i8255", &CreateI8255Window);
 
     e->init_video((void*)(ui->screen->winId()));
     e->start();

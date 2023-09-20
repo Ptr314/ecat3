@@ -47,6 +47,7 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     dialogs/dialogs.h
     dialogs/keyvaluearea.h dialogs/keyvaluearea.cpp
     dialogs/portwindow.h dialogs/portwindow.cpp dialogs/portwindow.ui
+    dialogs/i8255window.h dialogs/i8255window.cpp dialogs/i8255window.ui
 
 )
 target_link_libraries(eCat3 PRIVATE

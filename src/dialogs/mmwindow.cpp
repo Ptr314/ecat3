@@ -29,11 +29,6 @@ void MemoryMapperWindow::on_pushButton_clicked()
     this->close();
 }
 
-QDialog * CreateMMWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
-{
-    return new MemoryMapperWindow(parent, e, d);
-}
-
 void MemoryMapperWindow::on_process_button_clicked()
 {
     unsigned int cfg = parse_numeric_value("$" + ui->config_edit->text());
@@ -55,4 +50,9 @@ void MemoryMapperWindow::on_process_button_clicked()
 
     ui->dump_area->set_data(e, (AddressableDevice*)d, address_on_device);
     ui->dump_area->update();
+}
+
+QDialog * CreateMMWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
+{
+    return new MemoryMapperWindow(parent, e, d);
 }
