@@ -30,7 +30,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     e->load_config(file_to_load);
 
-    this->CreateDevicesMenu();
 
     DWM = new DebugWindowsManager();
 
@@ -40,6 +39,8 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("i8080", &CreateDebugWindow);
     DWM->register_debug_window("port", &CreatePortWindow);
     DWM->register_debug_window("i8255", &CreateI8255Window);
+
+    this->CreateDevicesMenu();
 
     e->init_video((void*)(ui->screen->winId()));
     e->start();
@@ -57,11 +58,11 @@ void MainWindow::CreateDevicesMenu()
 
     for (unsigned int i=0; i < this->e->dm->device_count; i++)
     {
-        //QAction * a = new QAction();
-        ui->menuDevices->addAction(
-            this->e->dm->get_device(i)->device_name + " : " + this->e->dm->get_device(i)->device_type,
-            [this, i=i]{onDeviceMenuCalled(i);}
-        );
+        QAction * a = ui->menuDevices->addAction(
+                            this->e->dm->get_device(i)->device_name + " : " + this->e->dm->get_device(i)->device_type,
+                            [this, i=i]{onDeviceMenuCalled(i);}
+                      );
+        a->setEnabled( DWM->get_create_func(this->e->dm->get_device(i)->device_type) != nullptr );
     };
 
 
