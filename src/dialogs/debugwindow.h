@@ -21,11 +21,22 @@ public:
     ~DebugWindow();
 
 private slots:
+
+    void track();
+
     void on_closeButton_clicked();
 
     void on_stepButton_clicked();
 
     void on_toPCButton_clicked();
+
+    void on_addBRButton_clicked();
+
+    void on_removeBRButton_clicked();
+
+    void on_runButton_clicked();
+
+    void on_stopTrackingButton_clicked();
 
 private:
     Ui::DebugWindow *ui;
@@ -33,6 +44,7 @@ private:
     Emulator * e;
     CPU * cpu;
     DisAsm * disasm;
+    bool stop_tracking;
 
     void update_registers();
 };

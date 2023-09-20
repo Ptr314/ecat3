@@ -22,8 +22,10 @@ public:
 
     void set_data(Emulator * e, CPU * cpu, DisAsm * disasm, unsigned int address);
     void go_to(unsigned int address);
+    unsigned int get_address_at_cursor();
 
 protected:
+    void mousePressEvent(QMouseEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
 
 private:

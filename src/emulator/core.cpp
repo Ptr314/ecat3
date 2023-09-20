@@ -650,23 +650,34 @@ void CPU::load_config(SystemData *sd)
 
 bool CPU::check_breakpoint(unsigned int address)
 {
-    //TODO: Breakpoints
+    for (unsigned int i=0; i<break_count; i++)
+        if (breakpoints[i] == address) return true;
+
     return false;
 }
 
 void CPU::add_breakpoint(unsigned int address)
 {
-    //TODO: Breakpoints
+    if (!check_breakpoint(address))
+        if (break_count < sizeof(breakpoints) / sizeof(breakpoints[0]))
+            breakpoints[break_count++] = address;
 }
 
 void CPU::remove_breakpoint(unsigned int address)
 {
-    //TODO: Breakpoints
+    for (unsigned int i=0; i<break_count; i++)
+        if (breakpoints[i] == address)
+        {
+            for (unsigned int j=i; j<break_count-1; j++)
+                breakpoints[j] = breakpoints[j+1];
+            break_count--;
+            return;
+        }
 }
 
 void CPU::clear_breakpoints()
 {
-    //TODO: Breakpoints
+    break_count = 0;
 }
 
 void CPU::reset(bool cold)

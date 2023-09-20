@@ -1,3 +1,4 @@
+#include <QMouseEvent>
 #include <QPainter>
 
 #include "emulator/utils.h"
@@ -36,6 +37,11 @@ void DisAsmArea::go_to(unsigned int address)
     this->address = address;
     data_valid = false;
     update();
+}
+
+unsigned int DisAsmArea::get_address_at_cursor()
+{
+    return lines[cursor_line + first_line].address;
 }
 
 void DisAsmArea::update_data()
@@ -83,6 +89,15 @@ void DisAsmArea::update_data()
     data_valid = true;
 }
 
+void DisAsmArea::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) {
+        QPoint point = event->pos();
+        cursor_line = point.y() / font_height;
+        update();
+    }
+}
+
 void DisAsmArea::paintEvent(QPaintEvent *event)
 {
     if (!data_valid) update_data();
@@ -101,7 +116,7 @@ void DisAsmArea::paintEvent(QPaintEvent *event)
         if (line < lines_count)
         {
             unsigned int x = 20;
-            unsigned int y = this->font_height * (i+1);
+            unsigned int y = font_height * (i+1);
             if (i == cursor_line)
             {
                 painter.setPen(SELECTION);
@@ -111,11 +126,16 @@ void DisAsmArea::paintEvent(QPaintEvent *event)
             }
             QString prefix_str = (lines[line].address == cpu->get_pc())?"►":" ";
             painter.drawText(x, y, prefix_str);
-            x += char_width * (1+1);
+            x += char_width * (prefix_str.length()+1);
+
 
             QString address_str = QString("%1").arg(lines[line].address, 4, 16, QChar('0')).toUpper() + " :";
             painter.drawText(x, y, address_str);
             x += char_width * (6+1);
+
+            QString postfix_str = (cpu->check_breakpoint(lines[line].address))?"@":" ";
+            painter.drawText(x, y, postfix_str);
+            x += char_width * (postfix_str.length()+1);
 
             painter.drawText(x, y, lines[line].code);
             x += char_width * (3*disasm->max_command_length+4);

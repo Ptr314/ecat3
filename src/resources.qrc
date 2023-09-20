@@ -8,8 +8,12 @@
         <file alias="next">resources/icons/next.png</file>
         <file alias="r">resources/icons/letter-r.png</file>
         <file alias="w">resources/icons/letter-w.png</file>
-        <file alias="step">resources/icons/finish.png</file>
+        <file alias="finish">resources/icons/finish.png</file>
         <file alias="undo">resources/icons/undo.png</file>
+        <file alias="add">resources/icons/edit_add.png</file>
+        <file alias="remove">resources/icons/edit_remove.png</file>
+        <file alias="forward">resources/icons/forward.png</file>
+        <file alias="stop">resources/icons/player_stop.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>

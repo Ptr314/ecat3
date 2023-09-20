@@ -3,7 +3,8 @@
 
 DebugWindow::DebugWindow(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::DebugWindow)
+    ui(new Ui::DebugWindow),
+    stop_tracking(false)
 {
     ui->setupUi(this);
 }
@@ -61,5 +62,50 @@ void DebugWindow::on_toPCButton_clicked()
 {
     ui->codeview->go_to(cpu->get_pc());
     update_registers();
+}
+
+
+void DebugWindow::on_addBRButton_clicked()
+{
+    cpu->add_breakpoint(ui->codeview->get_address_at_cursor());
+    ui->codeview->update();
+}
+
+
+void DebugWindow::on_removeBRButton_clicked()
+{
+    cpu->remove_breakpoint(ui->codeview->get_address_at_cursor());
+    ui->codeview->update();
+
+}
+
+
+void DebugWindow::on_runButton_clicked()
+{
+    if (cpu->debug == DEBUG_STOPPED)
+    {
+        cpu->debug = DEBUG_BRAKES;
+        QTimer::singleShot(200, this, SLOT(track()));
+    }
+
+}
+
+void DebugWindow::track()
+{
+    if ((cpu->debug != DEBUG_STOPPED) && !stop_tracking)
+    {
+        ui->codeview->update();
+        update_registers();
+        QTimer::singleShot(200, this, SLOT(track()));
+    }
+
+    stop_tracking = false;
+}
+
+void DebugWindow::on_stopTrackingButton_clicked()
+{
+    cpu->debug = DEBUG_STOPPED;
+    stop_tracking = true;
+    on_toPCButton_clicked();
 }
 
