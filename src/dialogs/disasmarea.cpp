@@ -94,14 +94,12 @@ void DisAsmArea::mousePressEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton) {
         QPoint point = event->pos();
         cursor_line = point.y() / font_height;
-        qDebug() << point.x() << point.y() << cursor_line;
         update();
     }
 }
 
 void DisAsmArea::paintEvent(QPaintEvent *event)
 {
-    qDebug() << "DisAsm: Repaint";
     if (!data_valid) update_data();
 
     QPainter painter(this);
