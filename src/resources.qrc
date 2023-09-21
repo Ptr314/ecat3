@@ -14,6 +14,7 @@
         <file alias="remove">resources/icons/edit_remove.png</file>
         <file alias="forward">resources/icons/forward.png</file>
         <file alias="stop">resources/icons/player_stop.png</file>
+        <file alias="accept">resources/icons/button_accept.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>

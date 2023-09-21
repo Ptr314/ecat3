@@ -46,6 +46,8 @@ public:
     virtual QList<QString> get_registers() override;
     virtual QList<QString> get_flags() override;
 
+    virtual void set_context_value(QString name, unsigned int value) override;
+
 };
 
 unsigned int read_mem(unsigned int address);

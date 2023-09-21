@@ -130,6 +130,14 @@ unsigned int I8080::execute()
     return cycles;
 }
 
+void I8080::set_context_value(QString name, unsigned int value)
+{
+    if (name == "PC")
+    {
+        core->get_context()->registers.regs.PC = value;
+    }
+}
+
 ComputerDevice * create_i8080(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new I8080(im, cd);
 }

@@ -335,6 +335,8 @@ public:
 
     virtual QList<QString> get_registers() = 0;
     virtual QList<QString> get_flags() = 0;
+
+    virtual void set_context_value(QString name, unsigned int value) = 0;
 };
 
 typedef MapperRange MapperArray[100];

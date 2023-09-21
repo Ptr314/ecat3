@@ -1,4 +1,5 @@
 #include "debugwindow.h"
+#include "emulator/utils.h"
 #include "ui_debugwindow.h"
 
 DebugWindow::DebugWindow(QWidget *parent) :
@@ -106,6 +107,14 @@ void DebugWindow::on_stopTrackingButton_clicked()
 {
     cpu->debug = DEBUG_STOPPED;
     stop_tracking = true;
+    on_toPCButton_clicked();
+}
+
+
+void DebugWindow::on_toolButton_clicked()
+{
+    unsigned int v = parse_numeric_value("$" + ui->valueEdit->text());
+    cpu->set_context_value("PC", v);
     on_toPCButton_clicked();
 }
 

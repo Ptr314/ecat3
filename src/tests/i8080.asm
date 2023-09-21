@@ -1,4 +1,6 @@
 ;https://www.asm80.com/onepage/asm8080.html
+;https://86rk.ru/disassm/
+;http://dunfield.classiccmp.org//r/8080.txt
 
         .org 0xF800
 
@@ -130,8 +132,8 @@ start:  xra a               ;A=0
         rrc                 ;A=55, c=0
         rrc                 ;A=AA, c=1
         ral                 ;A=55, c=1
-        ral                 ;A=AA, c=0
-        rar                 ;A=55, c=0
+        ral                 ;A=AB, c=0
+        rar                 ;A=55, c=1
         rar                 ;A=AA, c=1
         nop
         mvi a, 0xAA

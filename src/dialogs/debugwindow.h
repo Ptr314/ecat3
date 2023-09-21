@@ -38,6 +38,8 @@ private slots:
 
     void on_stopTrackingButton_clicked();
 
+    void on_toolButton_clicked();
+
 private:
     Ui::DebugWindow *ui;
 
