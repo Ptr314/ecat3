@@ -46,6 +46,7 @@ unsigned int DisAsmArea::get_address_at_cursor()
 
 void DisAsmArea::update_data()
 {
+    data_valid = true;
     screen_size = size().height() / font_height - 1;
     if ( (address >= address_first) && (address <= address_last) )
     {
@@ -86,7 +87,6 @@ void DisAsmArea::update_data()
         first_line = 0;
         cursor_line = 0;
     }
-    data_valid = true;
 }
 
 void DisAsmArea::mousePressEvent(QMouseEvent *event)
@@ -94,12 +94,14 @@ void DisAsmArea::mousePressEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton) {
         QPoint point = event->pos();
         cursor_line = point.y() / font_height;
+        qDebug() << point.x() << point.y() << cursor_line;
         update();
     }
 }
 
 void DisAsmArea::paintEvent(QPaintEvent *event)
 {
+    qDebug() << "DisAsm: Repaint";
     if (!data_valid) update_data();
 
     QPainter painter(this);
