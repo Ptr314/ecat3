@@ -255,12 +255,12 @@ unsigned int i8080core::execute()
                 //RLC
                 T.w = static_cast<uint16_t>(context.registers.regs.A) << 1;
                 context.registers.regs.A = T.b.L | (T.b.H & 0x01);
-                context.registers.regs.F = (context.registers.regs.F & (F_ALL - F_CARRY)) | (T.b.H & 0x01)?F_CARRY:0;
+                context.registers.regs.F = (context.registers.regs.F & (F_ALL - F_CARRY)) | ((T.b.H & 0x01)?F_CARRY:0);
                 break;
             case 1:
                 //00_001_111
                 //RRC
-                context.registers.regs.F = (context.registers.regs.F & (F_ALL - F_CARRY)) | (context.registers.regs.A & 0x01)?F_CARRY:0;
+                context.registers.regs.F = (context.registers.regs.F & (F_ALL - F_CARRY)) | ((context.registers.regs.A & 0x01)?F_CARRY:0);
                 T.w = static_cast<uint16_t>(context.registers.regs.A) << 7;
                 context.registers.regs.A = T.b.H | (T.b.L & 0x80);
                 break;
@@ -268,15 +268,15 @@ unsigned int i8080core::execute()
                 //00_010_111
                 //RAL
                 T.w = static_cast<uint16_t>(context.registers.regs.A) << 1;
-                context.registers.regs.A = T.b.L | (context.registers.regs.F & F_CARRY)?1:0;
-                context.registers.regs.F = (context.registers.regs.F & (F_ALL - F_CARRY)) | (T.b.H & 0x01)?F_CARRY:0;
+                context.registers.regs.A = T.b.L | ((context.registers.regs.F & F_CARRY)?1:0);
+                context.registers.regs.F = (context.registers.regs.F & (F_ALL - F_CARRY)) | ((T.b.H & 0x01)?F_CARRY:0);
                 break;
             case 3:
                 //00_011_111
                 //RAR
                 T.w = static_cast<uint16_t>(context.registers.regs.A) << 7;
-                context.registers.regs.A = T.b.H | (context.registers.regs.F & F_CARRY)?0x80:0;
-                context.registers.regs.F = (context.registers.regs.F & (F_ALL - F_CARRY)) | (T.b.L >> 7)?F_CARRY:0;
+                context.registers.regs.A = T.b.H | ((context.registers.regs.F & F_CARRY)?0x80:0);
+                context.registers.regs.F = (context.registers.regs.F & (F_ALL - F_CARRY)) | ((T.b.L >> 7)?F_CARRY:0);
                 break;
             case 4:
                 //00_100_111

@@ -104,7 +104,7 @@ void Interface::changed(LinkData link, unsigned int value)
 {
     if (this->mode == MODE_R)
     {
-        unsigned int new_value = this->value && ~link.d.mask; //Set expected bits to 0
+        unsigned int new_value = this->value & ~link.d.mask; //Set expected bits to 0
         new_value |=  ((value & link.s.mask) >> link.s.shift) << link.d.shift;
         this->old_value = this->value;
         this->value = new_value;
@@ -545,20 +545,48 @@ void ROM::load_config(SystemData *sd)
     if (this->buffer!=nullptr) memset(this->buffer, this->fill, this->get_size());
 
     QString file_name = sd->system_path + this->cd->get_parameter("image").value;
-    QFile file(file_name);
-    if (file.open(QIODevice::ReadOnly)){
-        unsigned int file_size = file.size();
-        if (file_size > this->get_size())
-        {
-            QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("ROM image file for '%1' is too big").arg(this->name));
-            throw QException();
+    if (file_name.endsWith(".hex", Qt::CaseInsensitive))
+    {
+        QFile file(file_name);
+        if (!file.open(QIODevice::ReadOnly)) {
+            QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Error reading HEX file %1").arg(file_name));
+            return;
         }
-        QByteArray data = file.readAll();
-        memcpy(this->buffer, data.constData(), file_size);
+
+        unsigned int index = 0;
+        QTextStream in(&file);
+        while (!in.atEnd())
+        {
+            QString line = in.readLine();
+            unsigned int len = parse_numeric_value("$" + line.mid(1, 2));
+            unsigned int addr = parse_numeric_value("$" + line.mid(3, 4));
+            unsigned int type = parse_numeric_value("$" + line.mid(7, 2));
+            qDebug() << len << Qt::hex << addr << type;
+            if (type == 0)
+            {
+                for (unsigned int j=0; j< len; j++)
+                    buffer[index+j] = parse_numeric_value("$" + line.mid(9+j*2, 2));
+                index += len;
+            }
+            //QStringList parts = line.split(u'\x09', Qt::SkipEmptyParts);
+        }
         file.close();
     } else {
-        QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Can't open ROM image file '%1'").arg(file_name));
-        throw QException();
+        QFile file(file_name);
+        if (file.open(QIODevice::ReadOnly)){
+            unsigned int file_size = file.size();
+            if (file_size > this->get_size())
+            {
+                QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("ROM image file for '%1' is too big").arg(this->name));
+                throw QException();
+            }
+            QByteArray data = file.readAll();
+            memcpy(this->buffer, data.constData(), file_size);
+            file.close();
+        } else {
+            QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Can't open ROM image file '%1'").arg(file_name));
+            throw QException();
+        }
     }
 }
 
