@@ -75,7 +75,7 @@
         <item>
          <widget class="QToolButton" name="stepButton">
           <property name="toolTip">
-           <string>One step</string>
+           <string>Step into</string>
           </property>
           <property name="text">
            <string>...</string>
@@ -87,13 +87,44 @@
          </widget>
         </item>
         <item>
-         <widget class="QToolButton" name="runButton">
+         <widget class="QToolButton" name="stepOverButton">
+          <property name="toolTip">
+           <string>Step over</string>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../resources.qrc">
+            <normaloff>:/icons/step_over</normaloff>:/icons/step_over</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="runUntilButton">
+          <property name="toolTip">
+           <string>Run to cursor</string>
+          </property>
           <property name="text">
            <string>...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/finish</normaloff>:/icons/finish</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="runButton">
+          <property name="toolTip">
+           <string>Run</string>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../resources.qrc">
+            <normaloff>:/icons/play</normaloff>:/icons/play</iconset>
           </property>
          </widget>
         </item>
@@ -108,31 +139,6 @@
           <property name="icon">
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/stop</normaloff>:/icons/stop</iconset>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolButton" name="addBRButton">
-          <property name="toolTip">
-           <string>Add a breakpoint</string>
-          </property>
-          <property name="text">
-           <string>...</string>
-          </property>
-          <property name="icon">
-           <iconset resource="../resources.qrc">
-            <normaloff>:/icons/add</normaloff>:/icons/add</iconset>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolButton" name="removeBRButton">
-          <property name="text">
-           <string>...</string>
-          </property>
-          <property name="icon">
-           <iconset resource="../resources.qrc">
-            <normaloff>:/icons/remove</normaloff>:/icons/remove</iconset>
           </property>
          </widget>
         </item>
@@ -175,7 +181,46 @@
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="comboBox">
+         <widget class="QToolButton" name="gotoButton">
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../resources.qrc">
+            <normaloff>:/icons/next</normaloff>:/icons/next</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="addBRButton">
+          <property name="toolTip">
+           <string>Add a breakpoint</string>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../resources.qrc">
+            <normaloff>:/icons/add</normaloff>:/icons/add</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="removeBRButton">
+          <property name="toolTip">
+           <string>Delete breakpoint</string>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../resources.qrc">
+            <normaloff>:/icons/remove</normaloff>:/icons/remove</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="valueSelect">
           <item>
            <property name="text">
             <string notr="true">PC</string>
@@ -185,6 +230,9 @@
         </item>
         <item>
          <widget class="QToolButton" name="toolButton">
+          <property name="toolTip">
+           <string>Set value</string>
+          </property>
           <property name="text">
            <string>...</string>
           </property>

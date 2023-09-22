@@ -40,6 +40,12 @@ private slots:
 
     void on_toolButton_clicked();
 
+    void on_stepOverButton_clicked();
+
+    void on_runUntilButton_clicked();
+
+    void on_gotoButton_clicked();
+
 private:
     Ui::DebugWindow *ui;
 

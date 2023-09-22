@@ -83,12 +83,8 @@ void DebugWindow::on_removeBRButton_clicked()
 
 void DebugWindow::on_runButton_clicked()
 {
-    if (cpu->debug == DEBUG_STOPPED)
-    {
-        cpu->debug = DEBUG_BRAKES;
-        QTimer::singleShot(200, this, SLOT(track()));
-    }
-
+    cpu->debug = DEBUG_OFF;
+    stop_tracking = true;
 }
 
 void DebugWindow::track()
@@ -116,5 +112,30 @@ void DebugWindow::on_toolButton_clicked()
     unsigned int v = parse_numeric_value("$" + ui->valueEdit->text());
     cpu->set_context_value("PC", v);
     on_toPCButton_clicked();
+}
+
+
+void DebugWindow::on_stepOverButton_clicked()
+{
+
+}
+
+
+void DebugWindow::on_runUntilButton_clicked()
+{
+    if (cpu->debug == DEBUG_STOPPED)
+    {
+        cpu->debug = DEBUG_BRAKES;
+        QTimer::singleShot(200, this, SLOT(track()));
+    }
+
+}
+
+
+void DebugWindow::on_gotoButton_clicked()
+{
+    unsigned int v = parse_numeric_value("$" + ui->valueEdit->text());
+    ui->codeview->go_to(v);
+    update_registers();
 }
 
