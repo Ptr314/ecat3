@@ -64,7 +64,7 @@ void I8255::set_value(unsigned int address, unsigned int value)
         {
             this->registers[n] &= 0xF0;
             this->registers[n] |= (uint8_t)value & 0x0F;
-            this->i_port_ch->change(this->registers[n]);
+            this->i_port_cl->change(this->registers[n]);
         }
         break;
     default: //3 - control register
