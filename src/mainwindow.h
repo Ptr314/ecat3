@@ -20,6 +20,10 @@ public:
 
     Emulator *e;
 
+protected:
+    void keyPressEvent( QKeyEvent *event );
+    void keyReleaseEvent( QKeyEvent *event );
+
 private slots:
     void on_actionExit_triggered();
     void onDeviceMenuCalled(unsigned int i);

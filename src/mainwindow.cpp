@@ -1,8 +1,10 @@
 #include <QDir>
 #include <QFontDatabase>
+#include <QEvent>
 
 #include "dialogs/i8255window.h"
 #include "mainwindow.h"
+#include "qevent.h"
 #include "ui_mainwindow.h"
 #include "emulator/debug.h"
 #include "dialogs/dumpwindow.h"
@@ -91,5 +93,26 @@ void MainWindow::onDeviceMenuCalled(unsigned int i)
 void MainWindow::on_actionExit_triggered()
 {
     qApp->exit();
+}
+
+void MainWindow::keyPressEvent( QKeyEvent *event )
+{
+    if (event->isAutoRepeat()) {
+        event->ignore();
+    } else {
+        //qDebug() << "Key pressed: scan " << event->nativeScanCode() << "virtual" << event->nativeVirtualKey() << "key" << event->key() << "Qt::Key_Left" << (int)(Qt::Key_Left);
+        e->key_event(event, true);
+    }
+}
+
+void MainWindow::keyReleaseEvent( QKeyEvent *event )
+{
+    if (event->isAutoRepeat()) {
+        event->ignore();
+    } else {
+        //qDebug() << "Key released:" << event->nativeScanCode() << event->nativeVirtualKey() << event->key();
+        e->key_event(event, false);
+
+    }
 }
 

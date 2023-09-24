@@ -5,6 +5,12 @@
 
 #define SCAN_CALLBACK 1
 
+struct ScanData {
+    unsigned int key_code;
+    unsigned int scan_line;
+    unsigned int out_line;
+};
+
 class ScanKeyboard: public Keyboard
 {
     //TODO: ScanKeyboard: Implement
@@ -15,6 +21,17 @@ private:
     Interface * i_ctrl;
     Interface * i_ruslat;
 
+    unsigned int scan_lines;
+    unsigned int out_lines;
+
+    unsigned int keys_count;
+    ScanData scan_data[200];
+    unsigned int key_array[15];
+
+    unsigned int code_ctrl;
+    unsigned int code_shift;
+    unsigned int code_ruslat;
+
     void calculate_out();
 
 public:
@@ -24,6 +41,8 @@ public:
 
     virtual void key_down(unsigned int key) override;
     virtual void key_up(unsigned int key) override;
+
+    virtual void load_config(SystemData *sd) override;
 };
 
 ComputerDevice * create_scankeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);

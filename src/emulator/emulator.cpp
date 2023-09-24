@@ -153,6 +153,9 @@ void Emulator::timer_proc()
     if (!this->busy)
     {
         this->busy = true;
+
+        process_events();
+
         display->start_rendering();
         while (this->local_counter < this->time_ticks) {
 
@@ -165,6 +168,7 @@ void Emulator::timer_proc()
 
         this->local_counter -= this->time_ticks;
         display->stop_rendering();
+
 
         //TODO: Cleanup
 //        //Debug block {
@@ -250,6 +254,26 @@ void Emulator::render_screen()
     display->validate();
     SDL_RenderCopy(SDLRendererRef, SDLTexture, NULL, &render_rect);
     SDL_RenderPresent(SDLRendererRef);
+}
+
+void Emulator::process_events()
+{
+//    SDL_Event event;
+//    while (SDL_PollEvent(&event) == 1) {
+//        if (event.type == SDL_QUIT) {
+//            //TODO: Maybe we need to to something here
+//            return;
+//        } else if (event.type == SDL_KEYDOWN) {
+//            qDebug() << "Down: " << event.key.keysym.sym;
+//        } else if (event.type == SDL_KEYUP) {
+//            qDebug() << "Up: " << event.key.keysym.sym;
+//        }
+//    }
+}
+
+void Emulator::key_event(QKeyEvent *event, bool press)
+{
+    keyboard->key_event(event, press);
 }
 
 void Emulator::register_devices()

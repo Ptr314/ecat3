@@ -44,6 +44,8 @@ private:
 
     void register_devices();
 
+    void process_events();
+
 public:
     DeviceManager *dm;
     QString work_path;
@@ -63,6 +65,8 @@ public:
 
     void start();
     void stop();
+
+    void key_event(QKeyEvent *event, bool press);
 
 public slots:
     void timer_proc();
