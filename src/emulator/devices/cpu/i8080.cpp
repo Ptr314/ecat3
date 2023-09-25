@@ -115,6 +115,7 @@ unsigned int I8080::execute()
         core->reset();
         reset_mode = false;
     }
+
     //TODO: use HALT imitation
     if (debug == DEBUG_STOPPED)
         return 10;

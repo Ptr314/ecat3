@@ -199,7 +199,7 @@ void Emulator::init_video(void *p)
     //TODO: create setup parameters
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 
-    double screen_scale = 2;
+    double screen_scale = 3;
     double pixel_scale = 1; //(4.0 / 3.0) / ((double)sx / (double)sy);
     int rx, ry;
 
