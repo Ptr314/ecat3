@@ -110,6 +110,11 @@ QList<QString> I8080::get_flags()
 
 unsigned int I8080::execute()
 {
+    if (reset_mode)
+    {
+        core->reset();
+        reset_mode = false;
+    }
     //TODO: use HALT imitation
     if (debug == DEBUG_STOPPED)
         return 10;

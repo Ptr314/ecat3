@@ -116,3 +116,15 @@ void MainWindow::keyReleaseEvent( QKeyEvent *event )
     }
 }
 
+
+void MainWindow::on_action_Cold_restart_triggered()
+{
+    e->reset(true);
+}
+
+
+void MainWindow::on_action_Soft_restart_triggered()
+{
+    e->reset(false);
+}
+

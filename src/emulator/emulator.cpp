@@ -103,6 +103,7 @@ QChar * Emulator::translate_char(unsigned int char_code)
 
 void Emulator::reset(bool cold)
 {
+    //TODO: understand the difference
     this->dm->reset_devices(cold);
 }
 
@@ -203,10 +204,10 @@ void Emulator::init_video(void *p)
     int rx, ry;
 
     SDL_GetRendererOutputSize(SDLRendererRef, &rx, &ry);
+    //SDL_GetWindowSize(SDLWindowRef, &rx, &ry);
+    //dynamic_cast<QWidget*>(p)->
     render_rect.w = sx * screen_scale * pixel_scale;
     render_rect.h = sy * screen_scale;
-    render_rect.x = (rx - render_rect.w) / 2;
-    render_rect.y = (ry - render_rect.h) / 2;
 
     SDLTexture = SDL_CreateTexture(SDLRendererRef, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, sx, sy);
 
@@ -252,6 +253,13 @@ void Emulator::render_screen()
 
 //    SDL_UnlockTexture(SDLTexture);
     display->validate();
+
+    //TODO: move this code to resize event
+    int rx, ry;
+    SDL_GetRendererOutputSize(SDLRendererRef, &rx, &ry);
+    render_rect.x = (rx - render_rect.w) / 2;
+    render_rect.y = (ry - render_rect.h) / 2;
+
     SDL_RenderCopy(SDLRendererRef, SDLTexture, NULL, &render_rect);
     SDL_RenderPresent(SDLRendererRef);
 }

@@ -17,6 +17,7 @@
         <file alias="accept">resources/icons/button_accept.png</file>
         <file alias="step_over">resources/icons/step_over.png</file>
         <file alias="play">resources/icons/player_play.png</file>
+        <file alias="open">resources/icons/cdrom_mount.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>

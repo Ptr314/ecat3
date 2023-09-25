@@ -28,6 +28,10 @@ private slots:
     void on_actionExit_triggered();
     void onDeviceMenuCalled(unsigned int i);
 
+    void on_action_Cold_restart_triggered();
+
+    void on_action_Soft_restart_triggered();
+
 private:
     Ui::MainWindow *ui;
 
