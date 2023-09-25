@@ -56,6 +56,11 @@ void ScanKeyboard::load_config(SystemData *sd)
     code_ctrl = translate_key(cd->get_parameter("ctrl").value);
     code_shift = translate_key(cd->get_parameter("shift").value);
     code_ruslat = translate_key(cd->get_parameter("ruslat").value);
+
+    i_shift->change(1);
+    i_ctrl->change(1);
+    i_ruslat->change(1);
+
 }
 
 void ScanKeyboard::key_down(unsigned int key)
@@ -73,6 +78,7 @@ void ScanKeyboard::key_down(unsigned int key)
                 unsigned int l = scan_data[i].scan_line;
                 key_array[l] &= ~create_mask(1, scan_data[i].out_line);
                 calculate_out();
+                qDebug() << l << Qt::hex << key_array[l];
             }
     }
 }
@@ -102,7 +108,7 @@ void ScanKeyboard::calculate_out()
     for (unsigned int i = 0; i<scan_lines; i++)
     {
         unsigned int mask = create_mask(1, i);
-        if ((i_scan->value && mask) == 0)
+        if ((i_scan->value & mask) == 0)
             new_value &= key_array[i];
     }
     i_output->change(new_value);

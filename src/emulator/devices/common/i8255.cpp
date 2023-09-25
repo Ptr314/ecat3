@@ -76,6 +76,11 @@ void I8255::set_value(unsigned int address, unsigned int value)
             this->i_port_b-> set_mode( ((value & 0x02) == 0)?MODE_W:MODE_R );
             this->i_port_ch->set_mode( ((value & 0x08) == 0)?MODE_W:MODE_R );
             this->i_port_cl->set_mode( ((value & 0x01) == 0)?MODE_W:MODE_R );
+
+            if (this->i_port_a->get_mode() == MODE_R) interface_callback(PORT_A, i_port_a->value, registers[0]);
+            if (this->i_port_b->get_mode() == MODE_R) interface_callback(PORT_B, i_port_b->value, registers[1]);
+            if (this->i_port_ch->get_mode() == MODE_R) interface_callback(PORT_CH, i_port_ch->value, registers[2] >> 4);
+            if (this->i_port_cl->get_mode() == MODE_R) interface_callback(PORT_CL, i_port_cl->value, registers[2] & 0xF);
         } else {
             //Bitwise operations on C
             unsigned int bn = value >> 1;

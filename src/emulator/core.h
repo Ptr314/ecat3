@@ -273,6 +273,7 @@ public:
     unsigned int get_size();
     void set_size(unsigned int new_size);
     void set_mode(unsigned int new_mode);
+    unsigned int get_mode();
     void change(unsigned int new_value); //Вызывается устройством для изменения выхода
     void changed(LinkData link, unsigned int value); //Вызывается связанными интерфейсами при изменении значения на них
     void clear();

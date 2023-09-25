@@ -82,6 +82,12 @@ void Interface::set_mode(unsigned int new_mode)
     if (new_mode == MODE_OFF) this->change(_FFFF);
 }
 
+unsigned int Interface::get_mode()
+{
+    return mode;
+}
+
+
 void Interface::change(unsigned int new_value)
 {
     if (this->mode == MODE_W)

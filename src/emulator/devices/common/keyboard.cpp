@@ -8,7 +8,7 @@ Keyboard::Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 void Keyboard::key_event(QKeyEvent *event, bool press)
 {
-    qDebug() << "Key pressed: scan " << event->nativeScanCode() << "virtual" << event->nativeVirtualKey() << "key" << Qt::hex << event->key();
+    qDebug() << "Key: nativeScanCode()" << Qt::hex << event->nativeScanCode() << "nativeVirtualKey()" << Qt::hex<< event->nativeVirtualKey() << "key()" << Qt::hex << event->key();
 
     unsigned int key;
     if (known_key(event->key()))
