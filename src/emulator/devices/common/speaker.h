@@ -44,7 +44,7 @@ public:
     Speaker(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~Speaker();
 
-    void callback(Uint8 *stream, int len);
+    //void callback(Uint8 *stream, int len);
     virtual void clock(unsigned int counter) override;
 };
 

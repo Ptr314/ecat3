@@ -16,10 +16,10 @@ Speaker::~Speaker()
     //TODO: free buffers
 }
 
-void audio_callback(void *userdata, Uint8 *stream, int len)
-{
-    static_cast<Speaker*>(userdata)->callback(stream, len);
-}
+//void audio_callback(void *userdata, Uint8 *stream, int len)
+//{
+//    static_cast<Speaker*>(userdata)->callback(stream, len);
+//}
 
 void Speaker::init_sound(unsigned int clock_freq)
 {
@@ -55,15 +55,15 @@ void Speaker::init_sound(unsigned int clock_freq)
     want.channels = 1;
     want.samples = BUFFER_SIZE;
     want.userdata = this;
-    want.callback = audio_callback;
+    want.callback = nullptr; //audio_callback;
     SDLdev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
 }
 
-void Speaker::callback(Uint8 *stream, int len)
-{
-    //TODO: Implement
-    //SDL_memcpy (stream, , len);
-}
+//void Speaker::callback(Uint8 *stream, int len)
+//{
+//    //TODO: Implement
+//    //SDL_memcpy (stream, , len);
+//}
 
 unsigned int Speaker::calc_sound_value()
 {
