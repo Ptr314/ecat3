@@ -116,6 +116,10 @@ void MainWindow::keyReleaseEvent( QKeyEvent *event )
     }
 }
 
+void MainWindow::resizeEvent(QResizeEvent * event)
+{
+    e->resize_screen();
+}
 
 void MainWindow::on_action_Cold_restart_triggered()
 {

@@ -21,10 +21,8 @@ O128Display::O128Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     mode(_FFFF),
     frame(_FFFF)
 {
-    //TODO: 128Display: Implement
     this->sx = 384;
     this->sy = 256;
-
 }
 
 void O128Display::load_config(SystemData *sd)
@@ -37,7 +35,7 @@ void O128Display::load_config(SystemData *sd)
     page_color = (RAM*)im->dm->get_device_by_name(cd->get_parameter("color").value);
 
     page_main->set_memory_callback(this, 1, MODE_W);
-    page_color->set_memory_callback(this, 1, MODE_W);
+    page_color->set_memory_callback(this, 2, MODE_W);
 
 }
 
@@ -46,10 +44,10 @@ void O128Display::memory_callback(unsigned int callback_id, unsigned int address
     //TODO: check if it faster just to invalidate all the screen than lock the texture each time
     if ( (address >= base_address) && (address < base_address + 0x3000) )
     {
-//        SDL_LockTexture(texture, NULL, &render_pixels, &line_bytes);
-//        render_byte(address - base_address);
-//        SDL_UnlockTexture(texture);
+        //TODO: Find why local update doesn't work
+        //render_byte(address - base_address);
         screen_valid = false;
+        was_updated = true;
     }
 }
 
@@ -72,17 +70,17 @@ void O128Display::clock(unsigned int counter)
         frame = port_frame->get_value(0);
         base_address = 0xC000 - frame * 0x4000;
         screen_valid = false;
+        was_updated = true;
     }
 }
 
-void O128Display::render_all()
+void O128Display::render_all(bool force_render)
 {
-    if (!screen_valid)
+    if (!screen_valid || force_render)
     {
-        SDL_LockTexture(texture, NULL, &render_pixels, &line_bytes);
         for (unsigned int a=0; a < 0x3000; a++) render_byte(a);
-        SDL_UnlockTexture(texture);
         screen_valid = true;
+        was_updated = true;
     }
 }
 
@@ -115,6 +113,7 @@ void O128Display::render_byte(unsigned int address)
                 base[0] = Orion128_MonoColors[c1][2];
                 base[1] = Orion128_MonoColors[c1][1];
                 base[2] = Orion128_MonoColors[c1][0];
+                *(uint32_t*)base = SDL_MapRGB(surface->format, Orion128_MonoColors[c1][0], Orion128_MonoColors[c1][1], Orion128_MonoColors[c1][2]);
             }
         } else {
             //Blanking
@@ -133,9 +132,10 @@ void O128Display::render_byte(unsigned int address)
                 c3 = (c2 >> (4*c1)) & 0x0F; //main color - lower 4 bits, background - higher
                 p1 = offset + (7-k)*4;
                 base = ((Uint8 *)render_pixels) + line*line_bytes + p1;
-                base[0] = Orion128_16Colors[c3][2];
-                base[1] = Orion128_16Colors[c3][1];
-                base[2] = Orion128_16Colors[c3][0];
+                //base[0] = Orion128_16Colors[c3][2];
+                //base[1] = Orion128_16Colors[c3][1];
+                //base[2] = Orion128_16Colors[c3][0];
+                *(uint32_t*)base = SDL_MapRGB(surface->format, Orion128_16Colors[c3][0], Orion128_16Colors[c3][1], Orion128_16Colors[c3][2]);
             }
         } else {
             //4 colors
@@ -149,9 +149,10 @@ void O128Display::render_byte(unsigned int address)
                 c4 = ((c2 << 1) | c3) | mode0;
                 p1 = offset + (7-k)*4;
                 base = ((Uint8 *)render_pixels) + line*line_bytes + p1;
-                base[0] = Orion128_4Colors[c4][2];
-                base[1] = Orion128_4Colors[c4][1];
-                base[2] = Orion128_4Colors[c4][0];
+                //base[0] = Orion128_4Colors[c4][2];
+                //base[1] = Orion128_4Colors[c4][1];
+                //base[2] = Orion128_4Colors[c4][0];
+                *(uint32_t*)base = SDL_MapRGB(surface->format, Orion128_4Colors[c4][0], Orion128_4Colors[c4][1], Orion128_4Colors[c4][2]);
             }
         }
     }

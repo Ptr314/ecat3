@@ -413,23 +413,24 @@ class Display: public ComputerDevice
     //TODO: Abstract Display
 private:
 protected:
-    unsigned int sx;
+    unsigned int sx = 0;
     unsigned int sy;
     int line_bytes;
-    SDL_Texture * texture;
-    bool screen_valid;
+    SDL_Surface * surface;
+    bool screen_valid;              //Means surface is correct
     void * render_pixels;
 
-    virtual void render_all() = 0;
+    virtual void render_all(bool force_render = false) = 0;
 
 public:
+    bool was_updated;               //Means we need to send surface to screen
+
     Display(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void get_screen(bool required) = 0;
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) = 0;
-    virtual void set_texture(SDL_Texture * texture);
-    virtual void validate();
-    virtual void start_rendering();
-    virtual void stop_rendering();
+    virtual void reset(bool cold) override;
+    virtual void set_surface(SDL_Surface * surface);
+    virtual void validate(bool force_render = false);
 };
 
 

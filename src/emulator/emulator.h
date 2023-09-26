@@ -39,6 +39,8 @@ private:
     SDL_Window * SDLWindowRef = nullptr;
     SDL_Renderer * SDLRendererRef = nullptr;
     SDL_Texture * SDLTexture = nullptr;
+    SDL_Surface  * window_surface = nullptr;
+    SDL_Surface  * device_surface = nullptr;
     QTimer * render_timer;
     SDL_Rect render_rect;
 
@@ -67,6 +69,8 @@ public:
     void stop();
 
     void key_event(QKeyEvent *event, bool press);
+
+    void resize_screen();
 
 public slots:
     void timer_proc();

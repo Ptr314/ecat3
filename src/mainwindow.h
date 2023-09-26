@@ -21,8 +21,9 @@ public:
     Emulator *e;
 
 protected:
-    void keyPressEvent( QKeyEvent *event );
-    void keyReleaseEvent( QKeyEvent *event );
+    void keyPressEvent( QKeyEvent * event );
+    void keyReleaseEvent( QKeyEvent * event );
+    void resizeEvent(QResizeEvent * event);
 
 private slots:
     void on_actionExit_triggered();

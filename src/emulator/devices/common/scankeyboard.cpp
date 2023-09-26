@@ -78,7 +78,7 @@ void ScanKeyboard::key_down(unsigned int key)
                 unsigned int l = scan_data[i].scan_line;
                 key_array[l] &= ~create_mask(1, scan_data[i].out_line);
                 calculate_out();
-                qDebug() << l << Qt::hex << key_array[l];
+                //qDebug() << l << Qt::hex << key_array[l];
             }
     }
 }

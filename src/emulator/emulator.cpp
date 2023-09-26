@@ -13,6 +13,7 @@
 #include "emulator/devices/common/tape.h"
 #include "emulator/devices/common/scankeyboard.h"
 #include "emulator/devices/specific/o128display.h"
+#include "qevent.h"
 
 Emulator::Emulator(QString work_path, QString data_path, QString ini_file):
     work_path(work_path),
@@ -157,7 +158,6 @@ void Emulator::timer_proc()
 
         process_events();
 
-        display->start_rendering();
         while (this->local_counter < this->time_ticks) {
 
             unsigned int counter = this->cpu->execute();
@@ -168,7 +168,6 @@ void Emulator::timer_proc()
         this->mm->sort_cache();
 
         this->local_counter -= this->time_ticks;
-        display->stop_rendering();
 
 
         //TODO: Cleanup
@@ -191,77 +190,56 @@ void Emulator::init_video(void *p)
 {
     SDLWindowRef = SDL_CreateWindowFrom(p);
     SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
+    //TODO: create setup parameters
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 
     Display * d = (Display*)dm->get_device_by_name("display");
     unsigned int sx, sy;
     d->get_screen_constraints(&sx, &sy);
 
-    //TODO: create setup parameters
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
-
     double screen_scale = 3;
     double pixel_scale = 1; //(4.0 / 3.0) / ((double)sx / (double)sy);
-    int rx, ry;
 
-    SDL_GetRendererOutputSize(SDLRendererRef, &rx, &ry);
-    //SDL_GetWindowSize(SDLWindowRef, &rx, &ry);
-    //dynamic_cast<QWidget*>(p)->
     render_rect.w = sx * screen_scale * pixel_scale;
     render_rect.h = sy * screen_scale;
 
-    SDLTexture = SDL_CreateTexture(SDLRendererRef, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, sx, sy);
-
-    d->set_texture(SDLTexture);
-
-
-    //TODO: cleanup
-//    SDL_RendererInfo info;
-//    SDL_GetRendererInfo( SDLRendererRef, &info );
-//    qDebug() << "Renderer name: " << info.name;
-//    qDebug() << "Texture formats: ";
-//    for( Uint32 i = 0; i < info.num_texture_formats; i++ )
-//    {
-//        qDebug() << SDL_GetPixelFormatName( info.texture_formats[i] );
-//    }
+    window_surface = SDL_GetWindowSurface(SDLWindowRef);
+    device_surface = SDL_CreateRGBSurfaceWithFormat(0, sx, sy, 32, SDL_PIXELFORMAT_RGBA8888);
+    d->set_surface(device_surface);
 }
 
 void Emulator::stop_video()
 {
+    SDL_FreeSurface(device_surface);
+    SDL_FreeSurface(window_surface);
     SDL_DestroyRenderer(SDLRendererRef);
     SDL_DestroyWindow(SDLWindowRef);
 }
 
 void Emulator::render_screen()
 {
-    //TODO: cleanup
-//    void *pixels;
-//    Uint8 *base;
-//    int pitch;
-
-//    SDL_LockTexture(SDLTexture, NULL, &pixels, &pitch);
-
-//    QRandomGenerator *rg = QRandomGenerator::global();
-
-//    int x = rg->bounded(384);
-//    int y = rg->bounded(256);
-//    base = ((Uint8 *)pixels) + (4 * (y * 384 + x));
-
-//    base[0] = rg->bounded(256);
-//    base[1] = rg->bounded(256);
-//    base[2] = rg->bounded(256);
-//    //base[3] = 0;
-
-//    SDL_UnlockTexture(SDLTexture);
     display->validate();
 
-    //TODO: move this code to resize event
-    int rx, ry;
-    SDL_GetRendererOutputSize(SDLRendererRef, &rx, &ry);
-    render_rect.x = (rx - render_rect.w) / 2;
-    render_rect.y = (ry - render_rect.h) / 2;
+    if (display->was_updated)
+    {
+        int rx, ry;
+        SDL_GetRendererOutputSize(SDLRendererRef, &rx, &ry);
+        render_rect.x = (rx - render_rect.w) / 2;
+        render_rect.y = (ry - render_rect.h) / 2;
 
-    SDL_RenderCopy(SDLRendererRef, SDLTexture, NULL, &render_rect);
-    SDL_RenderPresent(SDLRendererRef);
+        SDLTexture = SDL_CreateTextureFromSurface(SDLRendererRef, device_surface);
+
+        SDL_RenderCopy(SDLRendererRef, SDLTexture, NULL, &render_rect);
+        SDL_RenderPresent(SDLRendererRef);
+
+        SDL_DestroyTexture(SDLTexture);
+        display->was_updated = false;
+    }
+}
+
+void Emulator::resize_screen()
+{
+    display->validate(true);
 }
 
 void Emulator::process_events()
@@ -282,6 +260,7 @@ void Emulator::process_events()
 void Emulator::key_event(QKeyEvent *event, bool press)
 {
     keyboard->key_event(event, press);
+    if (event->key() == Qt::Key_F12) display->validate(true);
 }
 
 void Emulator::register_devices()

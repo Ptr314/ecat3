@@ -1044,34 +1044,37 @@ Display::Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd),
     sx(0),
     sy(0),
-    texture(nullptr),
+    //texture(nullptr),
+    surface(nullptr),
     screen_valid(false),
+    was_updated(true),
     render_pixels(nullptr)
 {
     //TODO: Display constructor
 }
 
-void Display::set_texture(SDL_Texture * texture)
+//void Display::set_texture(SDL_Texture * texture)
+//{
+//    this->texture = texture;
+//}
+
+void Display::set_surface(SDL_Surface * surface)
 {
-    this->texture = texture;
+    this->surface = surface;
+    render_pixels = surface->pixels;
+    line_bytes = sx*4;
 }
 
-void Display::validate()
+
+void Display::validate(bool force_render)
 {
-    if (!screen_valid) render_all();
+    if (!screen_valid || force_render) render_all(force_render);
 }
 
-void Display::start_rendering()
+void Display::reset(bool cold)
 {
-    //TODO: Investigate why it is occasionally crashing when locking this way
-    //int pitch;
-    //SDL_LockTexture(texture, NULL, &render_pixels, &line_bytes);
-    //qDebug() << "Screen line size: " << line_bytes;
-}
-
-void Display::stop_rendering()
-{
-    //SDL_UnlockTexture(texture);
+    screen_valid = false;
+    was_updated = true;
 }
 
 //----------------------- Creation functions -------------------------------//

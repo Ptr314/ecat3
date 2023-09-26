@@ -18,7 +18,7 @@ private:
     void render_byte(unsigned int address);
 
 protected:
-    virtual void render_all();
+    virtual void render_all(bool force_render);
 
 public:
     O128Display(InterfaceManager *im, EmulatorConfigDevice *cd);
