@@ -118,6 +118,12 @@ void MainWindow::keyReleaseEvent( QKeyEvent *event )
 
 void MainWindow::resizeEvent(QResizeEvent * event)
 {
+    //e->resize_screen();
+}
+
+void MainWindow::paintEvent(QPaintEvent * event)
+{
+    //QMainWindow::paintEvent(event);
     e->resize_screen();
 }
 

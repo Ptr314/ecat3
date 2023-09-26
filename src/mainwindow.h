@@ -24,6 +24,7 @@ protected:
     void keyPressEvent( QKeyEvent * event );
     void keyReleaseEvent( QKeyEvent * event );
     void resizeEvent(QResizeEvent * event);
+    void paintEvent(QPaintEvent * event);
 
 private slots:
     void on_actionExit_triggered();

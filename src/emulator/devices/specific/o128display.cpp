@@ -41,10 +41,9 @@ void O128Display::load_config(SystemData *sd)
 
 void O128Display::memory_callback(unsigned int callback_id, unsigned int address)
 {
-    //TODO: check if it faster just to invalidate all the screen than lock the texture each time
     if ( (address >= base_address) && (address < base_address + 0x3000) )
     {
-        //TODO: Find why local update doesn't work
+        //TODO: Find out why local update doesn't work
         //render_byte(address - base_address);
         screen_valid = false;
         was_updated = true;
