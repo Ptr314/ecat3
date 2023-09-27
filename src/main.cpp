@@ -22,6 +22,7 @@ int main(int argc, char *argv[])
         }
     }
     MainWindow w;
+    w.setWindowIcon(QIcon(":/icons/tv"));
     w.show();
 
     int RetVal = a.exec();
