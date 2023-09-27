@@ -14,10 +14,12 @@ private:
 
 public:
     I8080Core(I8080 * emulator_device);
-    virtual uint8_t read_mem(uint16_t address);
-    virtual void write_mem(uint16_t address, uint8_t value);
-    virtual uint8_t read_port(uint16_t address);
-    virtual void write_port(uint16_t address, uint8_t value);};
+    virtual uint8_t read_mem(uint16_t address) override;
+    virtual void write_mem(uint16_t address, uint8_t value) override;
+    virtual uint8_t read_port(uint16_t address) override;
+    virtual void write_port(uint16_t address, uint8_t value) override;
+    virtual void inte_changed(unsigned int inte) override;
+};
 
 //Emulator class
 class I8080: public CPU

@@ -27,6 +27,11 @@ void I8080Core::write_port(uint16_t address, uint8_t value)
     emulator_device->write_port(address, value);
 }
 
+void I8080Core::inte_changed(unsigned int inte)
+{
+    emulator_device->inte_changed(inte);
+}
+
 //----------------------- Emulator device -----------------------------------
 
 I8080::I8080(InterfaceManager *im, EmulatorConfigDevice *cd):

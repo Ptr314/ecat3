@@ -4,10 +4,10 @@
 #include <SDL.h>
 #include "emulator/core.h"
 
-#define BUFFERS_COUNT   32 //Power of 2
 #define BUFFER_SIZE     4096
+#define SILENCE_SIZE     512
 
-typedef uint8_t SpeakerBuffer[BUFFER_SIZE];
+//typedef uint8_t SpeakerBuffer[BUFFER_SIZE];
 
 struct SpeakerData{
     unsigned int ClockSampling;
@@ -18,19 +18,14 @@ struct SpeakerData{
     unsigned int SamplingCount;
     unsigned int BufferingCount;
     unsigned int SamplesInBuffer;
-    unsigned int BufferLen;
-    //unsigned int BufferLen2;
     unsigned int BufferPtr;
-    unsigned int BufferLatency;
-    unsigned int CurrentBuffer;
-    uint8_t * Buffers[BUFFERS_COUNT+1];
-    uint8_t BuffersFlags[BUFFERS_COUNT];
-    unsigned int EmptyCount;
+    uint8_t buffer[BUFFER_SIZE];
+    uint8_t silence[SILENCE_SIZE];
+    unsigned int buffer_empty;
 };
 
 class Speaker: public ComputerDevice
 {
-    //TODO: Speaker: Implement
 private:
     Interface * i_input;
     CPU * cpu;
@@ -44,8 +39,8 @@ public:
     Speaker(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~Speaker();
 
-    //void callback(Uint8 *stream, int len);
     virtual void clock(unsigned int counter) override;
+    virtual void load_config(SystemData *sd) override;
 };
 
 ComputerDevice * create_speaker(InterfaceManager *im, EmulatorConfigDevice *cd);
