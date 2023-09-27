@@ -56,6 +56,7 @@ public:
     Emulator(QString work_path, QString data_path, QString ini_file);
 
     QString read_setup(QString section, QString ident, QString def_val);
+    void write_setup(QString section, QString ident, QString new_val);
     void load_config(QString file_name);
     void load_charmap();
     QChar * translate_char(unsigned int system_code);
@@ -71,6 +72,9 @@ public:
     void key_event(QKeyEvent *event, bool press);
 
     void resize_screen();
+
+    void set_volume(int value);
+    void set_muted(bool muted);
 
 public slots:
     void timer_proc();

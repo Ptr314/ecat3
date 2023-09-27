@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QSlider>
+#include <QToolButton>
 
 #include "emulator/emulator.h"
 #include "emulator/debug.h"
@@ -34,10 +36,16 @@ private slots:
 
     void on_action_Soft_restart_triggered();
 
+    void set_volume(int value);
+    void set_mute(bool muted);
+
 private:
     Ui::MainWindow *ui;
 
     DebugWindowsManager * DWM;
+
+    QSlider * volume;
+    QToolButton * mute;
 
     void CreateDevicesMenu();
 };

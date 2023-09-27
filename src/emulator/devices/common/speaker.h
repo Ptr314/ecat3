@@ -24,7 +24,7 @@ struct SpeakerData{
     unsigned int buffer_empty;
 };
 
-class Speaker: public ComputerDevice
+class Speaker: public Sound
 {
 private:
     Interface * i_input;

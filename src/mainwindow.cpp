@@ -1,6 +1,7 @@
 #include <QDir>
 #include <QFontDatabase>
 #include <QEvent>
+#include <QSlider>
 
 #include "dialogs/i8255window.h"
 #include "mainwindow.h"
@@ -24,9 +25,62 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->setupUi(this);
 
+    QIcon * icon = new QIcon();
+    icon->addFile(QString::fromUtf8(":/icons/sound"), QSize(), QIcon::Normal, QIcon::Off);
+    icon->addFile(QString::fromUtf8(":/icons/sound-mute"), QSize(), QIcon::Normal, QIcon::On);
+
+    mute = new QToolButton(this);
+    mute->setFocusPolicy(Qt::NoFocus);
+    mute->setCheckable(true);
+    mute->setIcon(*icon);
+    mute->setStyleSheet(
+                            "QToolButton { /* all types of tool button */"
+                            "border: 1px solid #8f8f91;"
+                            "border-radius: 2px;"
+                            "}"
+        );
+    statusBar()->addPermanentWidget(mute, 0);
+
+    connect(mute, SIGNAL(toggled(bool)), this, SLOT(set_mute(bool)));
+
+
+    volume = new QSlider(Qt::Horizontal, this);
+    volume->setStyleSheet(
+                            "QSlider::groove:horizontal {"
+                            "border: 1px solid #999999;"
+                            "height: 4px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */"
+                            "background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #B1B1B1, stop:1 #c4c4c4);"
+                            "margin: 2px 0;"
+                            "}"
+                            "QSlider::handle:horizontal {"
+                            "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #b4b4b4, stop:1 #8f8f8f);"
+                            "border: 1px solid #5c5c5c;"
+                            "width: 8px;"
+                            "margin: -2px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */"
+                            "    border-radius: 3px;"
+                            "}"
+//                            "QSlider::add-page:horizontal {"
+//                            "background: white;"
+//                            "}"
+                            "QSlider::sub-page:horizontal {"
+                            "background: #00FF00;"
+                            "margin: 3px 1px;"
+                            "}"
+        );
+    volume->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+    volume->setFocusPolicy(Qt::NoFocus);
+    volume->setMinimumWidth(100);
+    volume->setMinimum(0);
+    volume->setMaximum(100);
+    //volume->setValue(50);
+    statusBar()->addPermanentWidget(volume, 0);
+
+    connect(volume, SIGNAL(valueChanged(int)), this, SLOT(set_volume(int)));
+
     QString current_path = QDir::currentPath(); //QApplication::applicationDirPath() ?
 
     e = new Emulator(current_path + "/computers/", current_path + "/data/", current_path + "/ecat.ini");
+
 
     QString file_to_load = e->read_setup("Startup", "default", "");
 
@@ -43,6 +97,12 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("i8255", &CreateI8255Window);
 
     this->CreateDevicesMenu();
+
+    QString sound_volume = e->read_setup("Startup", "volume", "50");
+    volume->setValue(sound_volume.toInt());
+
+    QString muted = e->read_setup("Startup", "muted", "0");
+    mute->setChecked(muted.toInt() == 1);
 
     e->init_video((void*)(ui->screen->winId()));
     e->start();
@@ -138,3 +198,15 @@ void MainWindow::on_action_Soft_restart_triggered()
     e->reset(false);
 }
 
+void MainWindow::set_volume(int value)
+{
+    e->write_setup("Startup", "volume", QString::number(value));
+    e->set_volume(value);
+}
+
+void MainWindow::set_mute(bool muted)
+{
+    e->write_setup("Startup", "muted", QString::number(muted?1:0));
+    e->set_muted(muted);
+    volume->setEnabled(!muted);
+}

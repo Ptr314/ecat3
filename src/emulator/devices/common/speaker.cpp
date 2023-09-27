@@ -1,7 +1,7 @@
 #include "speaker.h"
 
 Speaker::Speaker(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd)
+    Sound(im, cd)
 
 {
     i_input = this->create_interface(1, "input", MODE_R);
@@ -47,7 +47,10 @@ void Speaker::init_sound(unsigned int clock_freq)
 unsigned int Speaker::calc_sound_value()
 {
     //TODO: Implement mixed values
-    return ((i_input->value & 0x01) != 0)?255:128;
+    if (muted)
+        return 128;
+    else
+        return ((i_input->value & 0x01) != 0)?(128 + 127*volume/100):128;
 }
 
 void Speaker::clock(unsigned int counter)

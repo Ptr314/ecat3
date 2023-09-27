@@ -33,6 +33,12 @@ QString Emulator::read_setup(QString section, QString ident, QString def_val)
     return value;
 }
 
+void Emulator::write_setup(QString section, QString ident, QString new_val)
+{
+    settings->setValue(section + "/" + ident, new_val);
+}
+
+
 void Emulator::load_config(QString file_name)
 {
     if (this->loaded)
@@ -262,6 +268,20 @@ void Emulator::key_event(QKeyEvent *event, bool press)
     keyboard->key_event(event, press);
     if (event->key() == Qt::Key_F12) display->validate(true);
 }
+
+void Emulator::set_volume(int value)
+{
+    Sound * sound = (Sound*)this->dm->get_device_by_name("sound", false);
+    if (sound != nullptr) sound->set_volume(value);
+}
+
+void Emulator::set_muted(bool muted)
+{
+    Sound * sound = (Sound*)this->dm->get_device_by_name("sound", false);
+    if (sound != nullptr) sound->set_muted(muted);
+
+}
+
 
 void Emulator::register_devices()
 {
