@@ -47,7 +47,7 @@ void OpenConfigWindow::list_machines(QString work_path)
     QStandardItemModel * model = new QStandardItemModel();
     QStandardItem * node = model->invisibleRootItem();
 
-    qDebug() << "Listning machines in " << work_path;
+    qDebug() << "Listing machines in " << work_path;
     QDirIterator it(work_path, QDirIterator::Subdirectories);
     while (it.hasNext()) {
         QFileInfo fi = it.nextFileInfo();
@@ -91,17 +91,17 @@ void OpenConfigWindow::list_machines(QString work_path)
     ui->treeView->setModel(model);
     ui->treeView->expandAll();
 
-    connect(ui->treeView , SIGNAL(clicked(const QModelIndex &)), this, SLOT(set_description(const QModelIndex &)));
+    connect(ui->treeView , SIGNAL(clicked(QModelIndex)), this, SLOT(set_description(QModelIndex)));
 
 }
 
-void OpenConfigWindow::set_description(const QModelIndex & index)
+void OpenConfigWindow::set_description(QModelIndex index)
 {
     QString path = index.data(Qt::UserRole).toString();
     if (!path.isEmpty())
     {
         QString text_path = path.left(path.size()-3) + "md";
-        qDebug() << "DESCRIPTION:" << text_path;
+        //qDebug() << "DESCRIPTION:" << text_path;
         QFile file(text_path);
         if (!file.open(QIODevice::ReadOnly)) {
             ui->textBrowser->setPlainText(OpenConfigWindow::tr("No any description file found for this machine"));

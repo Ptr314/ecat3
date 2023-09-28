@@ -55,7 +55,7 @@ private:
     void list_machines(QString work_path);
 
 public slots:
-    void set_description(const QModelIndex & index);
+    void set_description(QModelIndex index);
 };
 
 #endif // OPENCONFIGWINDOW_H
