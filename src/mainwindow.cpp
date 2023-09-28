@@ -12,6 +12,7 @@
 #include "dialogs/mmwindow.h"
 #include "dialogs/debugwindow.h"
 #include "dialogs/portwindow.h"
+#include "dialogs/openconfigwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -210,3 +211,11 @@ void MainWindow::set_mute(bool muted)
     e->set_muted(muted);
     volume->setEnabled(!muted);
 }
+
+void MainWindow::on_action_Select_a_machine_triggered()
+{
+    QDialog * w = new OpenConfigWindow(this, e->work_path);
+    w->setAttribute(Qt::WA_DeleteOnClose);
+    w->show();
+}
+

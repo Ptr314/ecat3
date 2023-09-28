@@ -52,7 +52,7 @@ EmulatorConfig::EmulatorConfig(QString file_name)
 
 void EmulatorConfig::free_devices()
 {
-    //TODO: ?
+    //TODO: why it crashes the system?
     //for(unsigned int i = 0; i < this->devices_count; i++) delete this->devices[i];
     this->devices_count = 0;
 }

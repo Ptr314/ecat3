@@ -10,6 +10,7 @@ find_package(Qt${QT_VERSION_MAJOR} OPTIONAL_COMPONENTS Widgets)
 
 find_package(SDL2 REQUIRED)
 #include_directories(${SDL2_INCLUDE_DIRS})
+#add_subdirectory(${PROJECT_SOURCE_DIR}/libs/maddy)
 
 qt_standard_project_setup()
 
@@ -57,6 +58,7 @@ target_link_libraries(eCat3 PRIVATE
     Qt::Gui
     SDL2::SDL2main
     SDL2::SDL2
+#    maddy
 )
 
 if((QT_VERSION_MAJOR GREATER 4))

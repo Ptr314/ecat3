@@ -39,6 +39,8 @@ private slots:
     void set_volume(int value);
     void set_mute(bool muted);
 
+    void on_action_Select_a_machine_triggered();
+
 private:
     Ui::MainWindow *ui;
 
