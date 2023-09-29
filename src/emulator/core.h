@@ -445,6 +445,14 @@ public:
     virtual void set_muted(bool muted);
 };
 
+class FDC: public AddressableDevice
+{
+public:
+    FDC(InterfaceManager *im, EmulatorConfigDevice *cd):AddressableDevice(im, cd){}
+    virtual bool get_busy() = 0;
+    virtual unsigned int get_selected_drive() = 0;
+};
+
 //----------------------- Creation functions -------------------------------//
 
 ComputerDevice * create_ram(InterfaceManager *im, EmulatorConfigDevice *cd);

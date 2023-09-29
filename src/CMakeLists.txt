@@ -51,6 +51,8 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     dialogs/i8255window.h dialogs/i8255window.cpp dialogs/i8255window.ui
     tests/i8080.asm
     dialogs/openconfigwindow.h dialogs/openconfigwindow.cpp dialogs/openconfigwindow.ui
+    emulator/devices/common/wd1793.h emulator/devices/common/wd1793.cpp
+    emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp
 
 )
 target_link_libraries(eCat3 PRIVATE

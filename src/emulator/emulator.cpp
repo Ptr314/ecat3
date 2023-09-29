@@ -1,6 +1,7 @@
 #include <QFileInfo>
 #include <QThread>
 #include <QRandomGenerator>
+#include <QKeyEvent>
 
 #include "core.h"
 #include "emulator.h"
@@ -13,7 +14,8 @@
 #include "emulator/devices/common/tape.h"
 #include "emulator/devices/common/scankeyboard.h"
 #include "emulator/devices/specific/o128display.h"
-#include "qevent.h"
+#include "emulator/devices/common/wd1793.h"
+#include "emulator/devices/common/fdd.h"
 
 Emulator::Emulator(QString work_path, QString data_path, QString ini_file):
     work_path(work_path),
@@ -281,5 +283,7 @@ void Emulator::register_devices()
     dm->register_device("scan-keyboard", create_scankeyboard);
     dm->register_device("i8080", create_i8080);
     dm->register_device("i8255", create_i8255);
+    dm->register_device("wd1793", create_WD1793);
+    dm->register_device("fdd", create_FDD);
     dm->register_device("orion-128-display", create_o128display);
 }
