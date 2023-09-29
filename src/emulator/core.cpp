@@ -497,6 +497,11 @@ void Memory::set_memory_callback(ComputerDevice * d, unsigned int callback_id, u
     if ((mode & MODE_W) != 0) this->write_callback = callback_id;
 }
 
+uint8_t * Memory::get_buffer()
+{
+    return buffer;
+}
+
 //----------------------- class RAM -------------------------------//
 
 RAM::RAM(InterfaceManager *im, EmulatorConfigDevice *cd):

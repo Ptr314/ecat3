@@ -43,6 +43,8 @@ private slots:
 
     void on_action_Select_a_machine_triggered();
 
+    void on_actionOpen_triggered();
+
 private:
     Ui::MainWindow *ui;
 
