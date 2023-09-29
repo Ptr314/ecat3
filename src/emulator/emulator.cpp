@@ -17,9 +17,10 @@
 #include "emulator/devices/common/wd1793.h"
 #include "emulator/devices/common/fdd.h"
 
-Emulator::Emulator(QString work_path, QString data_path, QString ini_file):
+Emulator::Emulator(QString work_path, QString data_path, QString software_path, QString ini_file):
     work_path(work_path),
     data_path(data_path),
+    software_path(software_path),
     loaded(false),
     busy(false),
     local_counter(0),
@@ -66,7 +67,7 @@ void Emulator::load_config(QString file_name)
     sd.system_name = system->get_parameter("name").value;
     sd.system_version = system->get_parameter("version", false).value;
     sd.system_charmap = system->get_parameter("charmap", false).value;
-    sd.software_path = work_path;
+    sd.software_path = software_path;
     sd.mapper_cache = parse_numeric_value(this->read_setup("Core", "mapper_cache", "8"));
 
     sd.allowed_files = system->get_parameter("files", false).value;

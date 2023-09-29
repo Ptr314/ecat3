@@ -81,8 +81,9 @@ MainWindow::MainWindow(QWidget *parent)
     QString current_path = QDir::currentPath(); //QApplication::applicationDirPath() ?
 
     QString work_path = current_path + "/computers/";
+    QString software_path = current_path + "/software/";
 
-    e = new Emulator(work_path, current_path + "/data/", current_path + "/ecat.ini");
+    e = new Emulator(work_path, current_path + "/data/", software_path, current_path + "/ecat.ini");
 
     QString file_to_load = e->read_setup("Startup", "default", "");
 
