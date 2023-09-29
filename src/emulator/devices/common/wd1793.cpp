@@ -86,6 +86,7 @@ void WD1793::FindSelectedDrive()
 void WD1793::WriteRegister(unsigned int address, unsigned int  value)
 {
     unsigned int a = address & 3;
+    qDebug() << "CW" << a << "=" << Qt::hex << value;
     if (a==wd1793_REG_COMMAND)
     {
         //Command register
@@ -199,6 +200,7 @@ unsigned int WD1793::get_value(unsigned int address)
     unsigned int a = address & 0x03;
     if (a==wd1793_REG_DATA) ClearDRQ();
     if (a==wd1793_REG_STATUS) ClearINTRQ();
+    qDebug() << "CR" << a << "=" << Qt::hex << registers[a];
     return registers[a];
 }
 

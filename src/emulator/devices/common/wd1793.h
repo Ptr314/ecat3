@@ -61,8 +61,8 @@ private:
     unsigned int drives_count;
     unsigned int selected_drive;
     unsigned int command;
-    unsigned int delay;
-    unsigned int register_delay;
+    int delay;
+    int register_delay;
     unsigned int register_to_write;
     unsigned int value_to_write;
     int sector_size;
