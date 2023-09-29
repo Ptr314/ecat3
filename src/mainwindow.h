@@ -29,6 +29,8 @@ protected:
     void paintEvent(QPaintEvent * event);
 
 private slots:
+    void load_config(QString file_name, bool set_default);
+
     void on_actionExit_triggered();
     void onDeviceMenuCalled(unsigned int i);
 

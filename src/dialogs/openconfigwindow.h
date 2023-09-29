@@ -4,9 +4,7 @@
 #include <QDialog>
 #include <QStandardItem>
 
-//struct MachineFile {
-//    QString type, name, version, path;
-//};
+#include "emulator/emulator.h"
 
 class ComputerFamily: public QStandardItem
 {
@@ -38,24 +36,27 @@ class OpenConfigWindow : public QDialog
 
 public:
     explicit OpenConfigWindow(QWidget *parent = nullptr);
-    OpenConfigWindow(QWidget *parent, QString work_path);
+    OpenConfigWindow(QWidget *parent, Emulator * e);
     ~OpenConfigWindow();
 
 private:
     Ui::OpenConfigWindow *ui;
 
-    //MachineFile machines[100];
-    //unsigned int machine_count;
-    //ComputerFamily * families[100];
-    //unsigned int families_count;
-    //ComputerModel * models[200];
-    //unsigned int models_count;
-    //QStandardItemModel * model;
+    Emulator * e;
+
+    QString selected_path;
 
     void list_machines(QString work_path);
 
 public slots:
     void set_description(QModelIndex index);
+private slots:
+    void on_closeButton_clicked();
+
+    void on_okButton_clicked();
+
+signals:
+    void load_config(QString file_name, bool set_default);
 };
 
 #endif // OPENCONFIGWINDOW_H

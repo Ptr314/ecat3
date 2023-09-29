@@ -16,7 +16,6 @@ class Emulator: public QObject
 
 private:
     QSettings *settings;
-    bool loaded;
     bool busy;
     InterfaceManager *im;
     SystemData sd;
@@ -53,11 +52,14 @@ public:
     QString work_path;
     QString data_path;
 
+    bool loaded;
+
     Emulator(QString work_path, QString data_path, QString ini_file);
+
+    void load_config(QString file_name);
 
     QString read_setup(QString section, QString ident, QString def_val);
     void write_setup(QString section, QString ident, QString new_val);
-    void load_config(QString file_name);
     void load_charmap();
     QChar * translate_char(unsigned int system_code);
 

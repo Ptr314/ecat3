@@ -80,13 +80,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     QString current_path = QDir::currentPath(); //QApplication::applicationDirPath() ?
 
-    e = new Emulator(current_path + "/computers/", current_path + "/data/", current_path + "/ecat.ini");
+    QString work_path = current_path + "/computers/";
 
+    e = new Emulator(work_path, current_path + "/data/", current_path + "/ecat.ini");
 
     QString file_to_load = e->read_setup("Startup", "default", "");
 
-    e->load_config(file_to_load);
-
+    e->load_config(work_path + file_to_load);
 
     DWM = new DebugWindowsManager();
 
@@ -135,13 +135,6 @@ void MainWindow::CreateDevicesMenu()
 
 void MainWindow::onDeviceMenuCalled(unsigned int i)
 {
-    //qDebug() << QString("%1:%2").arg(this->e->dm->get_device(i)->device_name).arg(this->e->dm->get_device(i)->device_type);
-    //if (this->e->dm->get_device(i)->device_type == "rom")
-    //{
-    //    DumpWindow *w = new DumpWindow(this, this->e, this->e->dm->get_device(i)->device);
-    //    w->setAttribute(Qt::WA_DeleteOnClose);
-    //    w->show();
-    //}
     DebugWndCreateFunc * f = DWM->get_create_func(this->e->dm->get_device(i)->device_type);
     if (f != nullptr)
     {
@@ -214,8 +207,36 @@ void MainWindow::set_mute(bool muted)
 
 void MainWindow::on_action_Select_a_machine_triggered()
 {
-    QDialog * w = new OpenConfigWindow(this, e->work_path);
+    QDialog * w = new OpenConfigWindow(this, e);
     w->setAttribute(Qt::WA_DeleteOnClose);
+    connect(w, SIGNAL(load_config(QString, bool)), this, SLOT(load_config(QString, bool)));
     w->show();
+}
+
+void MainWindow::load_config(QString file_name, bool set_default)
+{
+    if (e->loaded)
+    {
+        e->stop_video();
+        e->stop();
+
+        e->load_config(file_name);
+
+        e->set_volume(volume->value());
+        e->set_muted(mute->isChecked());
+
+        e->init_video((void*)(ui->screen->winId()));
+        e->start();
+
+        CreateDevicesMenu();
+    }
+
+    if (set_default)
+    {
+        QString new_file = file_name.right(file_name.length() - e->work_path.length());
+        e->write_setup("Startup", "default", new_file);
+        qDebug() << new_file;
+
+    }
 }
 

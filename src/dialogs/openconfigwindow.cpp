@@ -25,15 +25,17 @@ ComputerModel::ComputerModel(QString type, QString name, QString version, QStrin
 
 OpenConfigWindow::OpenConfigWindow(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::OpenConfigWindow)
+    ui(new Ui::OpenConfigWindow),
+    selected_path("")
 {
     ui->setupUi(this);
 }
 
-OpenConfigWindow::OpenConfigWindow(QWidget *parent, QString work_path) :
+OpenConfigWindow::OpenConfigWindow(QWidget *parent, Emulator * e) :
     OpenConfigWindow(parent)
 {
-    list_machines(work_path);
+    this->e = e;
+    list_machines(e->work_path);
 }
 
 
@@ -97,10 +99,10 @@ void OpenConfigWindow::list_machines(QString work_path)
 
 void OpenConfigWindow::set_description(QModelIndex index)
 {
-    QString path = index.data(Qt::UserRole).toString();
-    if (!path.isEmpty())
+    selected_path = index.data(Qt::UserRole).toString();
+    if (!selected_path.isEmpty())
     {
-        QString text_path = path.left(path.size()-3) + "md";
+        QString text_path = selected_path.left(selected_path.size()-3) + "md";
         //qDebug() << "DESCRIPTION:" << text_path;
         QFile file(text_path);
         if (!file.open(QIODevice::ReadOnly)) {
@@ -113,3 +115,18 @@ void OpenConfigWindow::set_description(QModelIndex index)
         file.close();
     }
 }
+
+void OpenConfigWindow::on_closeButton_clicked()
+{
+    this->close();
+}
+
+
+void OpenConfigWindow::on_okButton_clicked()
+{
+    if (!selected_path.isEmpty()) {
+        emit load_config(selected_path, ui->defaultCheck->isChecked());
+        this->close();
+    }
+}
+

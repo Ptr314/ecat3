@@ -45,6 +45,7 @@ void Emulator::load_config(QString file_name)
     {
         //Delete loaded machine
         delete this->dm;
+        delete this->im;
         this->loaded = false;
     }
 
@@ -53,10 +54,10 @@ void Emulator::load_config(QString file_name)
 
     this->register_devices();
 
-    EmulatorConfig * config = new EmulatorConfig(work_path + file_name);
+    EmulatorConfig * config = new EmulatorConfig(file_name);
 
     EmulatorConfigDevice * system = config->get_device("system");
-    QFileInfo fi(work_path + file_name);
+    QFileInfo fi(file_name);
     sd.system_file = file_name;
     sd.system_path = fi.absolutePath() + "/";
     sd.system_type = system->get_parameter("type").value;
@@ -149,11 +150,10 @@ void Emulator::stop()
     if (this->loaded)
     {
         this->timer->stop();
+        this->render_timer->stop();
         //TODO: Other stopping stuff
     }
 }
-
-unsigned int tmp = 0;
 
 void Emulator::timer_proc()
 {
@@ -172,21 +172,7 @@ void Emulator::timer_proc()
             this->dm->clock(counter);
         }
         this->mm->sort_cache();
-
         this->local_counter -= this->time_ticks;
-
-
-        //TODO: Cleanup
-//        //Debug block {
-//        QRandomGenerator *rg = QRandomGenerator::global();
-
-//        Memory * m1 = (Memory*)(dm->get_device_by_name("ram0"));
-//        Memory * m2 = (Memory*)(dm->get_device_by_name("ram1"));
-//        m1->set_value(0xC000 + tmp/2, rg->bounded(256));
-//        m2->set_value(0xC000 + tmp/2, rg->bounded(256));
-//        tmp++;
-//        //} Debig block
-
         this->busy = false;
     }
 }
