@@ -382,7 +382,7 @@ add16:  db      0ffh            ; flag mask
         tstr    030h,0,0,0,0f821h,0,0,0,0,0     ; (512 cycles)
         tstr    0,0,0,0,-1,-1,-1,0d7h,0,-1      ; (38 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "dad <B,D,H,SP>        14474BA6 : ", 0
+        db      10, 13, "DAD <B,D,H,SP>        14474BA6 : ", 0
 
 ; aluop a,nn (28,672 cycles)
 alu8i:  db      0ffh            ; flag mask
@@ -390,7 +390,7 @@ alu8i:  db      0ffh            ; flag mask
         tstr    038h,0,0,0,0,0,0,0,-1,0         ; (2048 cycles)
         tstr16  0,0ffh,0,0,0,0,0,0,0d7h,0,0     ; (14 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "aluop NN              9E922F9E : ", 0
+        db      10, 13, "ALUOP NN              9E922F9E : ", 0
 
 ; adi nn (3,584 cycles)
 add8i:  db      0ffh            ; flag mask
@@ -462,7 +462,7 @@ alu8r:  db      0ffh            ; flag mask
         tstr    03fh,0,0,0,0,0,0,0,-1,0         ; (16,384 cycles)
         tstr    0,0ffh,0,0,0,-1,-1,0d7h,0,0     ; (46 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "aluop <B..L,M,A>      CF762C86 : ", 0
+        db      10, 13, "ALUOP <B..L,M,A>      CF762C86 : ", 0
 
 ; <daa,cpl,scf,ccf>
 daa:    db      0ffh            ; flag mask
@@ -470,7 +470,7 @@ daa:    db      0ffh            ; flag mask
         tstr    018h,0,0,0,0,0,0,0d7h,-1,0      ; (65,536 cycles)
         tstr    0,0,0,0,0,0,0,0,0,0             ; (1 cycle)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<daa,cma,stc,cmc>     BB3F030C : ", 0
+        db      10, 13, "<DAA,CMA,STC,CMC>     BB3F030C : ", 0
 
 ; <inc,dec> a (3072 cycles)
 inca:   db      0ffh            ; flag mask
@@ -478,7 +478,7 @@ inca:   db      0ffh            ; flag mask
         tstr    001h,0,0,0,0,0,0,0,-1,0         ; (512 cycles)
         tstr    0,0,0,0,0,0,0,0d7h,0,0          ; (6 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<inr,dcr> A           ADB6460E : ", 0
+        db      10, 13, "<INR,DCR> A           ADB6460E : ", 0
 
 ; <inc,dec> b (3072 cycles)
 incb:   db      0ffh            ; flag mask
@@ -486,7 +486,7 @@ incb:   db      0ffh            ; flag mask
         tstr    001h,0,0,0,0,0,0ff00h,0,0,0     ; (512 cycles)
         tstr    0,0,0,0,0,0,0,0d7h,0,0          ; (6 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<inr,dcr> B           83ED1345 : ", 0
+        db      10, 13, "<INR,DCR> B           83ED1345 : ", 0
 
 ; <inc,dec> bc (1536 cycles)
 incbc:  db      0ffh            ; flag mask
@@ -494,7 +494,7 @@ incbc:  db      0ffh            ; flag mask
         tstr    008h,0,0,0,0,0,0f821h,0,0,0     ; (256 cycles)
         tstr    0,0,0,0,0,0,0,0d7h,0,0          ; (6 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<inx,dcx> B           F79287CD : ", 0
+        db      10, 13, "<INX,DCX> B           F79287CD : ", 0
 
 ; <inc,dec> c (3072 cycles)
 incc:   db      0ffh            ; flag mask
@@ -502,7 +502,7 @@ incc:   db      0ffh            ; flag mask
         tstr    001h,0,0,0,0,0,0ffh,0,0,0       ; (512 cycles)
         tstr    0,0,0,0,0,0,0,0d7h,0,0          ; (6 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<inr,dcr> C           E5F6721B : ", 0
+        db      10, 13, "<INR,DCR> C           E5F6721B : ", 0
 
 ; <inc,dec> d (3072 cycles)
 incd:   db      0ffh            ; flag mask
@@ -510,7 +510,7 @@ incd:   db      0ffh            ; flag mask
         tstr    001h,0,0,0,0,0ff00h,0,0,0,0     ; (512 cycles)
         tstr    0,0,0,0,0,0,0,0d7h,0,0          ; (6 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<inr,dcr> D           15B5579A : ", 0
+        db      10, 13, "<INR,DCR> D           15B5579A : ", 0
 
 ; <inc,dec> de (1536 cycles)
 incde:  db      0ffh            ; flag mask
@@ -518,7 +518,7 @@ incde:  db      0ffh            ; flag mask
         tstr    008h,0,0,0,0,0f821h,0,0,0,0     ; (256 cycles)
         tstr    0,0,0,0,0,0,0,0d7h,0,0          ; (6 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<inx,dcx> D           7F4E2501 : ", 0
+        db      10, 13, "<INX,DCX> D           7F4E2501 : ", 0
 
 ; <inc,dec> e (3072 cycles)
 ince:   db      0ffh            ; flag mask
@@ -526,7 +526,7 @@ ince:   db      0ffh            ; flag mask
         tstr    001h,0,0,0,0,0ffh,0,0,0,0       ; (512 cycles)
         tstr    0,0,0,0,0,0,0,0d7h,0,0          ; (6 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<inr,dcr> E           CF2AB396 : ", 0
+        db      10, 13, "<INR,DCR> E           CF2AB396 : ", 0
 
 ; <inc,dec> h (3072 cycles)
 inch:   db      0ffh            ; flag mask
@@ -534,7 +534,7 @@ inch:   db      0ffh            ; flag mask
         tstr    001h,0,0,0,0ff00h,0,0,0,0,0     ; (512 cycles)
         tstr    0,0,0,0,0,0,0,0d7h,0,0          ; (6 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<inr,dcr> H           12B2952C : ", 0
+        db      10, 13, "<INR,DCR> H           12B2952C : ", 0
 
 ; <inc,dec> hl (1536 cycles)
 inchl:  db      0ffh            ; flag mask
@@ -542,7 +542,7 @@ inchl:  db      0ffh            ; flag mask
         tstr    008h,0,0,0,0f821h,0,0,0,0,0     ; (256 cycles)
         tstr    0,0,0,0,0,0,0,0d7h,0,0          ; (6 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<inx,dcx> H           9F2B23C0 : ", 0
+        db      10, 13, "<INX,DCX> H           9F2B23C0 : ", 0
 
 ; <inc,dec> l (3072 cycles)
 incl:   db      0ffh            ; flag mask
@@ -550,7 +550,7 @@ incl:   db      0ffh            ; flag mask
         tstr    001h,0,0,0,0ffh,0,0,0,0,0       ; (512 cycles)
         tstr    0,0,0,0,0,0,0,0d7h,0,0          ; (6 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<inr,dcr> L           FF57D356 : ", 0
+        db      10, 13, "<INR,DCR> L           FF57D356 : ", 0
 
 ; <inc,dec> (hl) (3072 cycles)
 incm:   db      0ffh            ; flag mask
@@ -558,7 +558,7 @@ incm:   db      0ffh            ; flag mask
         tstr    001h,0ffh,0,0,0,0,0,0,0,0       ; (512 cycles)
         tstr    0,0,0,0,0,0,0,0d7h,0,0          ; (6 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<inr,dcr> M           92E963BD : ", 0
+        db      10, 13, "<INR,DCR> M           92E963BD : ", 0
 
 ; <inc,dec> sp (1536 cycles)
 incsp:  db      0ffh            ; flag mask
@@ -566,7 +566,7 @@ incsp:  db      0ffh            ; flag mask
         tstr    008h,0,0,0,0,0,0,0,0,0f821h     ; (256 cycles)
         tstr    0,0,0,0,0,0,0,0d7h,0,0          ; (6 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<inx,dcx> SP          D5702FAB : ", 0
+        db      10, 13, "<INX,DCX> SP          D5702FAB : ", 0
 
 ; ld hl,(nnnn) (16 cycles)
 ld162:  db      0ffh            ; flag mask
@@ -574,7 +574,7 @@ ld162:  db      0ffh            ; flag mask
         tstr    0,0,0,0,0,0,0,0,0,0             ; (1 cycle)
         tstr    0,-1,0,0,0,0,0,0,0,0            ; (16 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "lhld NNNN             A9C3D5CB : ", 0
+        db      10, 13, "LHLD NNNN             A9C3D5CB : ", 0
 
 ; ld (nnnn),hl (16 cycles)
 ld166:  db      0ffh            ; flag mask
@@ -582,7 +582,7 @@ ld166:  db      0ffh            ; flag mask
         tstr    0,0,0,0,0,0,0,0,0,0             ; (1 cycle)
         tstr    0,0,0,0,-1,0,0,0,0,0            ; (16 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "shld NNNN             E8864F26 : ", 0
+        db      10, 13, "SHLD NNNN             E8864F26 : ", 0
 
 ; ld <bc,de,hl,sp>,nnnn (64 cycles)
 ld16im: db      0ffh            ; flag mask
@@ -590,7 +590,7 @@ ld16im: db      0ffh            ; flag mask
         tstr    030h,0,0,0,0,0,0,0,0,0          ; (4 cycles)
         tstr16  0,0ffffh,0,0,0,0,0,0,0,0,0      ; (16 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "lxi <B,D,H,SP>,NNNN   FCF46E12 : ", 0
+        db      10, 13, "LXI <B,D,H,SP>,NNNN   FCF46E12 : ", 0
 
 ;tstr           macro   insn, memop, hliy, hlix, rhl, rde, rbc, flags, acc, rsp
 ; ld a,<(bc),(de)> (44 cycles)
@@ -599,7 +599,7 @@ ld8bd:  db      0ffh            ; flag mask
         tstr    010h,0,0,0,0,0,0,0,0,0          ; (2 cycles)
         tstr    0,0ffh,0,0,0,0,0,0d7h,-1,0      ; (22 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "ldax <B,D>            2B821D5F : ", 0
+        db      10, 13, "LDAX <B,D>            2B821D5F : ", 0
 
 ; ld <b,c,d,e,h,l,(hl),a>,nn (64 cycles)
 ld8im:  db      0ffh            ; flag mask
@@ -607,7 +607,7 @@ ld8im:  db      0ffh            ; flag mask
         tstr    038h,0,0,0,0,0,0,0,0,0          ; (8 cycles)
         tstr    0,0,0,0,0,0,0,0,-1,0            ; (8 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "mvi <B..L,M,A>,NN     EAA72044 : ", 0
+        db      10, 13, "MVI <B..L,M,A>,NN     EAA72044 : ", 0
 
 ; ld <b,c,d,e,h,l,a>,<b,c,d,e,h,l,a> (3456 cycles)
 ld8rr:  db      0ffh            ; flag mask
@@ -615,7 +615,7 @@ ld8rr:  db      0ffh            ; flag mask
         tstr    03fh,0,0,0,0,0,0,0,0,0          ; (64 cycles)
         tstr    0,0ffh,0,0,0,-1,-1,0d7h,-1,0    ; (54 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "mov <B..L,A>,<B..L,A> 10B58CEE : ", 0
+        db      10, 13, "MOV <B..L,A>,<B..L,A> 10B58CEE : ", 0
 
 ; ld a,(nnnn) / ld (nnnn),a (44 cycles)
 lda:    db      0ffh            ; flag mask
@@ -623,7 +623,7 @@ lda:    db      0ffh            ; flag mask
         tstr    008h,0,0,0,0,0,0,0,0,0          ; (2 cycle)
         tstr    0,0ffh,0,0,0,0,0,0d7h,-1,0      ; (22 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<sta,lda> NNNN        ED57AF72 : ", 0
+        db      10, 13, "<STA,LDA> NNNN        ED57AF72 : ", 0
 
 ; <rlca,rrca,rla,rra> (6144 cycles)
 rot8080: db     0ffh            ; flag mask
@@ -631,7 +631,7 @@ rot8080: db     0ffh            ; flag mask
         tstr    018h,0,0,0,0,0,0,0,-1,0         ; (1024 cycles)
         tstr    0,0,0,0,0,0,0,0d7h,0,0          ; (6 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "<rlc,rrc,ral,rar>     E0D89235 : ", 0
+        db      10, 13, "<RLC,RRC,RAL,RAR>     E0D89235 : ", 0
 
 ; ld (<bc,de>),a (96 cycles)
 stabd:  db      0ffh            ; flag mask
@@ -639,7 +639,7 @@ stabd:  db      0ffh            ; flag mask
         tstr    018h,0,0,0,0,0,0,0,0,0          ; (4 cycles)
         tstr    0,-1,0,0,0,0,0,0,-1,0           ; (24 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "stax <B,D>            2B0471E9 : ", 0
+        db      10, 13, "STAX <B,D>            2B0471E9 : ", 0
 
 ;_______________________________________________________________________
 ;
@@ -1616,14 +1616,14 @@ stable:         ds      8192
 stack:
 ;_______________________________________________________________________
 ;
-msg0:           db      10, 10, 13, "*** i8080 instruction exerciser ***"
-                db      10, 13, "Some tests take a long time (minutes)"
-                db      10, 13, "You can press ESC to skip the test", 10, 13, 0
-msg1:           db      "skipped", 0
-msg2:           db      "wait...", 0
-msg3:           db      10, 13, 10, 13, "Exerciser completed", 10, 13, 0
+msg0:           db      10, 10, 13, "*** I8080 INSTRUCTION EXERCISER ***"
+                db      10, 13, "SOME TESTS TAKE A LONG TIME (MINUTES)"
+                db      10, 13, "YOU CAN PRESS ESC TO SKIP THE TEST", 10, 13, 0
+msg1:           db      "SKIPPED", 0
+msg2:           db      "WAIT...", 0
+msg3:           db      10, 13, 10, 13, "EXERCISER COMPLETED", 10, 13, 0
 msg4:           db      8, 8, 8, 8, 8, 8, 8, 0
-msg5:           db      10, 13, "Press a key for interrupt test...", 0
+msg5:           db      10, 13, "PRESS A KEY FOR INTERRUPT TEST...", 0
 
 ;_______________________________________________________________________
 ;
