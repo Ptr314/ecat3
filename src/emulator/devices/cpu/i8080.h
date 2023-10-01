@@ -1,8 +1,8 @@
-#ifndef I8080_H
-#define I8080_H
+#ifndef I8080main_H
+#define I8080main_H
 
 #include "emulator/core.h"
-#include "emulator/devices/cpu/i8080core.h"
+#include "emulator/devices/cpu/i8080core2.h"
 
 class I8080;
 
@@ -58,4 +58,4 @@ void write_mem(unsigned int address, unsigned int data);
 ComputerDevice * create_i8080(InterfaceManager *im, EmulatorConfigDevice *cd);
 
 
-#endif // I8080_H
+#endif // I8080main_H
