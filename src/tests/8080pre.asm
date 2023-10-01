@@ -243,10 +243,22 @@ lab10:	inx	H
 	cpi	0
 	cnz	fault+$
 	
-allok:	lxi	H, 0FFFFh;
-	mov	A, M
-	jmp	fault+$
-	
+;allok:	lxi	H, 0FFFFh;
+;	mov	A, M
+;	jmp	fault+$
+;allok:  lxi     H, okmsg
+;        call 0F81BH     ;print ok
+        mvi c, 01Fh
+        call 0F809H
+        mvi c, 'O'
+        call 0F809H
+        mvi c, 'K'
+        call 0F809H
+        call 0F803H     ;wait a key
+        jmp 0F800H
+
+okmsg:  db      01Fh, "TEST OK", 10, 13, 0
+
 regs1:	db	2, 4, 6, 8, 10, 12, 14, 16
 regs2:	ds	8,0
 

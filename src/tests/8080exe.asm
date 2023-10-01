@@ -314,7 +314,8 @@ start:          lxi     SP, stack               ;
                 jmp     $                       ;
                                                 ;
 tests:                                          ;
-                dw      add16                   ;
+;                dw      add16                   ;
+
 ;               dw      add8i                   ;
 ;               dw      adc8i                   ;
 ;               dw      sub8i                   ;
@@ -323,30 +324,31 @@ tests:                                          ;
 ;               dw      xra8i                   ;
 ;               dw      ora8i                   ;
 ;               dw      cmp8i                   ;
-                dw      alu8i                   ;
-                dw      alu8r                   ;
-                dw      daa                     ;
-                dw      inca                    ;
-                dw      incb                    ;
+
+;                dw      alu8i                   ;
+;                dw      alu8r                   ;
+;                dw      daa                     ;
+;                dw      inca                    ;
+;                dw      incb                    ;
                 dw      incbc                   ;
-                dw      incc                    ;
-                dw      incd                    ;
-                dw      incde                   ;
-                dw      ince                    ;
-                dw      inch                    ;
-                dw      inchl                   ;
-                dw      incl                    ;
-                dw      incm                    ;
-                dw      incsp                   ;
-                dw      ld162                   ;
-                dw      ld166                   ;
-                dw      ld16im                  ;
-                dw      ld8bd                   ;
-                dw      ld8im                   ;
-                dw      ld8rr                   ;
-                dw      lda                     ;
-                dw      rot8080                 ;
-                dw      stabd                   ;
+;                dw      incc                    ;
+;                dw      incd                    ;
+;                dw      incde                   ;
+;                dw      ince                    ;
+;                dw      inch                    ;
+;                dw      inchl                   ;
+;                dw      incl                    ;
+;                dw      incm                    ;
+;                dw      incsp                   ;
+;                dw      ld162                   ;
+;                dw      ld166                   ;
+;                dw      ld16im                  ;
+;                dw      ld8bd                   ;
+;                dw      ld8im                   ;
+;                dw      ld8rr                   ;
+;                dw      lda                     ;
+;                dw      rot8080                 ;
+;                dw      stabd                   ;
                 dw      0                       ;
 ;_______________________________________________________________________
 ;
@@ -1616,7 +1618,7 @@ stable:         ds      8192
 stack:
 ;_______________________________________________________________________
 ;
-msg0:           db      10, 10, 13, "*** I8080 INSTRUCTION EXERCISER ***"
+msg0:           db      01Fh, "*** I8080 INSTRUCTION EXERCISER ***"
                 db      10, 13, "SOME TESTS TAKE A LONG TIME (MINUTES)"
                 db      10, 13, "YOU CAN PRESS ESC TO SKIP THE TEST", 10, 13, 0
 msg1:           db      "SKIPPED", 0

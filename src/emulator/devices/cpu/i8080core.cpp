@@ -24,7 +24,8 @@ inline uint8_t i8080core::read_command()
 inline uint8_t i8080core::calc_flags(uint32_t v1, uint32_t v2, uint32_t value)
 {
 
-    return ((v1^v2^value) & F_HALF_CARRY)
+    return F_BASE_8080
+           | ((v1^v2^value) & F_HALF_CARRY)
            | ( (value >> 8) & F_CARRY )
            | ZERO_SIGN[(uint8_t)value]
            | PARITY[(uint8_t)value];
@@ -89,7 +90,7 @@ unsigned int i8080core::execute()
     unsigned int cycles;
 
     //Store PC for debug purposes
-    context.registers.regs.PC2 = context.registers.regs.PC;
+    //context.registers.regs.PC2 = context.registers.regs.PC;
     //qDebug() << Qt::hex << context.registers.regs.PC;
 
     command = next_byte();

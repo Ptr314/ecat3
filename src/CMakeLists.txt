@@ -51,6 +51,7 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     dialogs/i8255window.h dialogs/i8255window.cpp dialogs/i8255window.ui
     tests/i8080.asm
     dialogs/openconfigwindow.h dialogs/openconfigwindow.cpp dialogs/openconfigwindow.ui
+    tests/8080exe.asm tests/8080pre.asm
 
 )
 target_link_libraries(eCat3 PRIVATE
