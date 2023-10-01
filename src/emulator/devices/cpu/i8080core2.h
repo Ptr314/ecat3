@@ -73,7 +73,9 @@ public:
 
     unsigned int execute(){
         i8080_next(&cpu_context);
-        return cpu_context.cycles;
+        int c = cpu_context.cycles;
+        cpu_context.cycles = 0;
+        return c;
     }
 };
 
