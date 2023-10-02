@@ -3,27 +3,14 @@
 
 #include <cstdint>
 
+#include "i8080_context.h"
+
+#define LO4(v)      (v & 0x0F)
+#define HI4(v)      ((v >> 4) & 0x0F)
+#define CARRY       (context.registers.regs.F & F_CARRY)
+#define HALF_CARRY  (context.registers.regs.F & F_HALF_CARRY)
+
 #pragma pack(1)
-struct i8080context
-{
-    union {
-        struct{
-            uint8_t  C,B,E,D,L,H,
-                     m,
-                     A, F;
-            uint16_t SP, PC, PC2;
-        } regs;
-        struct {
-            uint16_t BC, DE, HL;
-        } reg_pairs;
-        uint8_t reg_array_8[8];
-        uint16_t reg_array_16[3];
-    } registers;
-    bool halted;
-    //TODO: i8080 maybe it should be bool
-    unsigned int int_enable;
-    unsigned int debug_mode;
-};
 
 union PartsRecLE {
     struct{
@@ -34,13 +21,6 @@ union PartsRecLE {
 };
 
 #pragma pack()
-
-#define F_CARRY         0x01
-#define F_PARITY        0x04
-#define F_HALF_CARRY    0x10
-#define F_ZERO          0x40
-#define F_SIGN          0x80
-#define F_ALL           (F_CARRY + F_PARITY + F_HALF_CARRY + F_ZERO + F_SIGN)
 
 //Register id to array index
 static const unsigned int REGISTERS8[8] = {1, 0, 3, 2, 5, 4, 6, 7};
@@ -157,7 +137,8 @@ class i8080core
 private:
     uint8_t next_byte();
     uint8_t read_command();
-    uint8_t calc_flags(uint32_t v1, uint32_t v2, uint32_t value);
+    uint8_t calc_base_flags(uint32_t value);
+    uint8_t calc_half_carry(uint8_t v1, uint8_t v2, uint8_t c);
     void do_ret();
     void do_jump();
     void do_call();
@@ -176,6 +157,16 @@ public:
     virtual i8080context * get_context();
 
     unsigned int execute();
+    virtual uint8_t get_command()
+    {
+        return read_mem(context.registers.regs.PC);
+    }
+
+    virtual uint16_t get_pc()
+    {
+        return context.registers.regs.PC;
+    }
+
 };
 
 #endif // I8080CORE_H

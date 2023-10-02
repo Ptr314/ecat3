@@ -10,7 +10,7 @@ find_package(Qt${QT_VERSION_MAJOR} OPTIONAL_COMPONENTS Widgets)
 
 find_package(SDL2 REQUIRED)
 #include_directories(${SDL2_INCLUDE_DIRS})
-#add_subdirectory(${PROJECT_SOURCE_DIR}/libs/maddy)
+add_subdirectory(${PROJECT_SOURCE_DIR}/libs/intel8080-emulator)
 
 qt_standard_project_setup()
 
@@ -40,8 +40,9 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     main.cpp
     mainwindow.cpp mainwindow.h mainwindow.ui
     ${PROJECT_RESOURCES}
-    emulator/devices/cpu/i8080core.h
-    emulator/devices/cpu/i8080core.cpp
+    emulator/devices/cpu/i8080_context.h
+    emulator/devices/cpu/i8080core.h emulator/devices/cpu/i8080core.cpp
+#    emulator/devices/cpu/i8080core2.h emulator/devices/cpu/i8080core2.cpp
     dialogs/debugwindow.h dialogs/debugwindow.cpp dialogs/debugwindow.ui
     dialogs/disasmarea.h dialogs/disasmarea.cpp
     emulator/disasm.h emulator/disasm.cpp
@@ -53,14 +54,15 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     dialogs/openconfigwindow.h dialogs/openconfigwindow.cpp dialogs/openconfigwindow.ui
     emulator/devices/common/wd1793.h emulator/devices/common/wd1793.cpp
     emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp
-
+    tests/8080exe.asm tests/8080pre.asm
+    emulator/devices/cpu/cpulogger.h emulator/devices/cpu/cpulogger.cpp
 )
 target_link_libraries(eCat3 PRIVATE
     Qt::Core
     Qt::Gui
     SDL2::SDL2main
     SDL2::SDL2
-#    maddy
+    i8080
 )
 
 if((QT_VERSION_MAJOR GREATER 4))

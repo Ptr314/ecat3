@@ -165,6 +165,7 @@ public:
     void set_memory_callback(ComputerDevice * d, unsigned int callback_id, unsigned int mode);
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
     virtual void set_value(unsigned int address, unsigned int value);
+    virtual uint8_t * get_buffer();
 };
 
 class RAM: public Memory

@@ -1,8 +1,15 @@
-#ifndef I8080_H
-#define I8080_H
+#ifndef I8080main_H
+#define I8080main_H
 
 #include "emulator/core.h"
 #include "emulator/devices/cpu/i8080core.h"
+
+//#define LOG_8080 1
+
+#ifdef LOG_8080
+#include "cpulogger.h"
+#endif
+
 
 class I8080;
 
@@ -32,11 +39,16 @@ private:
 
     i8080core * core;
 
+#ifdef LOG_8080
+    CPULogger * logger;
+#endif
+
 protected:
     virtual unsigned int get_pc() override;
 
 public:
     I8080(InterfaceManager *im, EmulatorConfigDevice *cd);
+    ~I8080();
     virtual void reset(bool cold) override;
     virtual unsigned int execute() override;
     virtual unsigned int read_mem(unsigned int address) override;
@@ -58,4 +70,4 @@ void write_mem(unsigned int address, unsigned int data);
 ComputerDevice * create_i8080(InterfaceManager *im, EmulatorConfigDevice *cd);
 
 
-#endif // I8080_H
+#endif // I8080main_H

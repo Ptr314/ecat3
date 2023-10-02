@@ -45,6 +45,19 @@ I8080::I8080(InterfaceManager *im, EmulatorConfigDevice *cd):
     i_m1 =      this->create_interface(1, "m1", MODE_W);
 
     core = new I8080Core(this);
+
+#ifdef LOG_8080
+    logger = new CPULogger(this, CPU_LOGGER_8080, core->get_context(), "8080_my");
+#endif
+
+}
+
+I8080::~I8080()
+{
+#ifdef LOG_8080
+    delete logger;
+#endif
+
 }
 
 unsigned int I8080::get_pc()
@@ -125,7 +138,26 @@ unsigned int I8080::execute()
     if (debug == DEBUG_STOPPED)
         return 10;
 
+#ifdef LOG_8080
+    uint16_t address = core->get_pc();
+    uint8_t log_cmd = core->get_command();
+    //i8080context * context = core->get_context();
+    //uint8_t f1 = context->registers.regs.F & 0x10;
+    bool do_log = (address < 0xF800)
+                  //&& ((log_cmd == 0x3C) || (log_cmd == 0x3D));
+                  && (log_cmd == 0x27);
+                  //&& ((log_cmd == 0xC6) || (log_cmd == 0xD6) || (log_cmd == 0xE6) || (log_cmd == 0xF6) || (log_cmd == 0xCE) || (log_cmd == 0xDE) || (log_cmd == 0xEE) || (log_cmd == 0xFE));
+    if (do_log) logger->log_state(log_cmd, true);
+#endif
+
     unsigned int cycles = core->execute();
+
+#ifdef LOG_8080
+    //uint8_t f2 = context->registers.regs.F & 0x10;
+    //bool do_log = (address < 0xF800) && (f1 == 0) && (f2 != 0);
+    if (do_log) logger->log_state(log_cmd, false, cycles);
+#endif
+
 
     switch (debug) {
     case DEBUG_STEP:

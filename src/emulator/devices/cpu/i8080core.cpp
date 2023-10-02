@@ -21,14 +21,21 @@ inline uint8_t i8080core::read_command()
     return next_byte();
 }
 
-inline uint8_t i8080core::calc_flags(uint32_t v1, uint32_t v2, uint32_t value)
+inline uint8_t i8080core::calc_base_flags(uint32_t value)
 {
 
-    return ((v1^v2^value) & F_HALF_CARRY)
+    return F_BASE_8080
            | ( (value >> 8) & F_CARRY )
            | ZERO_SIGN[(uint8_t)value]
            | PARITY[(uint8_t)value];
 }
+
+inline uint8_t i8080core::calc_half_carry(uint8_t v1, uint8_t v2, uint8_t c)
+{
+
+    return (LO4(v1) + LO4(v2) + c) & F_HALF_CARRY;
+}
+
 
 inline void i8080core::do_ret()
 {
@@ -89,7 +96,7 @@ unsigned int i8080core::execute()
     unsigned int cycles;
 
     //Store PC for debug purposes
-    context.registers.regs.PC2 = context.registers.regs.PC;
+    //context.registers.regs.PC2 = context.registers.regs.PC;
     //qDebug() << Qt::hex << context.registers.regs.PC;
 
     command = next_byte();
@@ -216,8 +223,9 @@ unsigned int i8080core::execute()
             else
                 T.b.L = context.registers.reg_array_8[REGISTERS8[YYY]];
             D.dw = static_cast<uint32_t>(T.b.L) + 1;
-            context.registers.regs.F &= F_CARRY;                                            //Clear flags except carry
-            context.registers.regs.F |= calc_flags(T.b.L, 0, D.dw) & ((F_ALL - F_CARRY));   //Then set other
+            context.registers.regs.F &= F_CARRY;                                    //Clear flags except carry & HC
+            context.registers.regs.F |= calc_base_flags(D.dw) & (F_ALL - F_CARRY);  //Then set other
+            context.registers.regs.F |= calc_half_carry(T.b.L, 1, 0);               //HC
             if (YYY == 6)
                 write_mem(context.registers.reg_pairs.HL, D.b.L);
             else
@@ -231,8 +239,9 @@ unsigned int i8080core::execute()
             else
                 T.b.L = context.registers.reg_array_8[REGISTERS8[YYY]];
             D.dw = static_cast<uint32_t>(T.b.L) - 1;
-            context.registers.regs.F &= F_CARRY;                                            //Clear flags except carry
-            context.registers.regs.F |= calc_flags(T.b.L, 0xFF, D.dw) & (F_ALL - F_CARRY);  //Then set other
+            context.registers.regs.F &= F_CARRY;                                    //Clear flags except carry & HC
+            context.registers.regs.F |= calc_base_flags(D.dw) & (F_ALL - F_CARRY);  //Then set other
+            context.registers.regs.F |= calc_half_carry(T.b.L, 0x0F, 0);            //HC
             if (YYY == 6)
                 write_mem(context.registers.reg_pairs.HL, D.b.L);
             else
@@ -281,15 +290,20 @@ unsigned int i8080core::execute()
             case 4:
                 //00_100_111
                 //DAA
+                //TODO: DAA
                 T.w = static_cast<uint16_t>(context.registers.regs.A);
-                D.w = 0;
-                if (((T.b.L & 0x0F) > 9) || ((context.registers.regs.F & F_HALF_CARRY) != 0))
-                    D.b.L += 0x06;
-                if (((T.b.L & 0xF0) > 0x90) or ((context.registers.regs.F & F_CARRY) != 0))
-                    D.b.L += 0x60;
-                T.w += D.w;
-                context.registers.regs.A = T.b.L;
-                context.registers.regs.F = calc_flags(T.b.L, D.b.L, T.w);
+                if ((LO4(T.b.L) > 9) || (HALF_CARRY != 0))
+                {
+                    context.registers.regs.A += 0x06;
+                    context.registers.regs.F &= ~F_HALF_CARRY;
+                    context.registers.regs.F |= calc_half_carry(T.b.L, 0x06, 0);
+                }
+                if ( (CARRY != 0) || (HI4(T.b.L) > 9) || ( (HI4(T.b.L) == 9) && (LO4(T.b.L) > 9) ) )
+                {
+                    context.registers.regs.A += 0x60;
+                    context.registers.regs.F |= F_CARRY;
+                }
+                context.registers.regs.F = calc_base_flags(static_cast<uint16_t>(context.registers.regs.A) + (CARRY << 8)) | (context.registers.regs.F & F_HALF_CARRY); //Keep CY & HC
                 break;
             case 5:
                 //00_101_111
@@ -338,52 +352,49 @@ unsigned int i8080core::execute()
         case 0:
             //ADD
             D.w = static_cast<uint16_t>(context.registers.regs.A) + T.w;
-            context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+            context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, T.b.L, 0);
             context.registers.regs.A = D.b.L;
             break;
         case 1:
             //ADC
-            T.w += (context.registers.regs.F & F_CARRY)?1:0;
-            D.w = static_cast<uint16_t>(context.registers.regs.A) + T.w;
-            context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+            D.w = static_cast<uint16_t>(context.registers.regs.A) + T.w + CARRY;
+            context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, T.b.L, CARRY);
             context.registers.regs.A = D.b.L;
             break;
         case 2:
             //SUB
             D.w = static_cast<uint16_t>(context.registers.regs.A) - T.w;
-            context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+            context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, ~(T.b.L), 1);
             context.registers.regs.A = D.b.L;
             break;
         case 3:
             //SBB
-            //A = A - (B + CARRY)
-            T.w += (context.registers.regs.F & F_CARRY)?1:0;
-            D.w = static_cast<uint16_t>(context.registers.regs.A) - T.w;
-            context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+            D.w = static_cast<uint16_t>(context.registers.regs.A) - T.w - CARRY;
+            context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, ~(T.b.L), !CARRY);
             context.registers.regs.A = D.b.L;
             break;
         case 4:
             //ANA
             D.w = static_cast<uint16_t>(context.registers.regs.A) & T.w;
-            context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+            context.registers.regs.F = calc_base_flags(D.b.L) | ((((context.registers.regs.A | T.b.L) & 0x08) != 0 )?F_HALF_CARRY:0); //CY=0!
             context.registers.regs.A = D.b.L;
             break;
         case 5:
             //XRA
             D.w = static_cast<uint16_t>(context.registers.regs.A) ^ T.w;
-            context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+            context.registers.regs.F = calc_base_flags(D.b.L); //CY=0, HC=0!
             context.registers.regs.A = D.b.L;
             break;
         case 6:
             //ORA
             D.w = static_cast<uint16_t>(context.registers.regs.A) | T.w;
-            context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+            context.registers.regs.F = calc_base_flags(D.b.L); //CY=0, HC=0!
             context.registers.regs.A = D.b.L;
             break;
         default: //7
             //CMP
             D.w = static_cast<uint16_t>(context.registers.regs.A) - T.w;
-            context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+            context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, ~(T.b.L), 1);
             break;
         }
         break;
@@ -408,7 +419,7 @@ unsigned int i8080core::execute()
                 T.b.H = read_mem(static_cast<uint16_t>(context.registers.regs.SP+1));
                 if (PP == 3)
                 {
-                    context.registers.regs.F = T.b.L;
+                    context.registers.regs.F = T.b.L | F_BASE_8080;
                     context.registers.regs.A = T.b.H;
                 } else
                     context.registers.reg_array_16[PP] = T.w;
@@ -548,52 +559,49 @@ unsigned int i8080core::execute()
             case 0:
                 //ADI
                 D.w = static_cast<uint16_t>(context.registers.regs.A) + T.w;
-                context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+                context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, T.b.L, 0);
                 context.registers.regs.A = D.b.L;
                 break;
             case 1:
                 //ACI
-                T.w += (context.registers.regs.F & F_CARRY)?1:0;
-                D.w = static_cast<uint16_t>(context.registers.regs.A) + T.w;
-                context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+                D.w = static_cast<uint16_t>(context.registers.regs.A) + T.w + CARRY;
+                context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, T.b.L, CARRY);
                 context.registers.regs.A = D.b.L;
                 break;
             case 2:
                 //SUI
                 D.w = static_cast<uint16_t>(context.registers.regs.A) - T.w;
-                context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+                context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, ~(T.b.L), 1);
                 context.registers.regs.A = D.b.L;
                 break;
             case 3:
                 //SBI
-                //A = A - (B + CARRY)
-                T.w += (context.registers.regs.F & F_CARRY)?1:0;
-                D.w = static_cast<uint16_t>(context.registers.regs.A) - T.w;
-                context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+                D.w = static_cast<uint16_t>(context.registers.regs.A) - T.w - CARRY;
+                context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, ~(T.b.L), !CARRY);
                 context.registers.regs.A = D.b.L;
                 break;
             case 4:
                 //ANI
                 D.w = static_cast<uint16_t>(context.registers.regs.A) & T.w;
-                context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+                context.registers.regs.F = calc_base_flags(D.b.L) | ((((context.registers.regs.A | T.b.L) & 0x08) != 0 )?F_HALF_CARRY:0); //CY=0
                 context.registers.regs.A = D.b.L;
                 break;
             case 5:
                 //XRI
                 D.w = static_cast<uint16_t>(context.registers.regs.A) ^ T.w;
-                context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+                context.registers.regs.F = calc_base_flags(D.b.L); //CY=0, HC=0!
                 context.registers.regs.A = D.b.L;
                 break;
             case 6:
                 //ORI
                 D.w = static_cast<uint16_t>(context.registers.regs.A) | T.w;
-                context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+                context.registers.regs.F = calc_base_flags(D.b.L); //CY=0, HC=0!
                 context.registers.regs.A = D.b.L;
                 break;
             default: //7
                 //CPI
                 D.w = static_cast<uint16_t>(context.registers.regs.A) - T.w;
-                context.registers.regs.F = calc_flags(context.registers.regs.A, T.w, D.w);
+                context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, ~(T.b.L), 1);
                 break;
             }
             break;

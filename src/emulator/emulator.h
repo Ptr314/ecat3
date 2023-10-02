@@ -56,6 +56,7 @@ public:
     bool loaded;
 
     Emulator(QString work_path, QString data_path, QString software_path, QString ini_file);
+    ~Emulator();
 
     void load_config(QString file_name);
 
