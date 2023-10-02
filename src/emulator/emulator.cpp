@@ -268,6 +268,12 @@ void Emulator::set_muted(bool muted)
 
 }
 
+Emulator::~Emulator()
+{
+    delete dm;
+}
+
+
 
 void Emulator::register_devices()
 {

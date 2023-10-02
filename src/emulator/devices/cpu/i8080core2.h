@@ -39,7 +39,7 @@ public:
 
     virtual uint8_t read_mem(uint16_t address) = 0;
     virtual void write_mem(uint16_t address, uint8_t value) = 0;
-    virtual uint8_t read_port(uint16_t address){};
+    virtual uint8_t read_port(uint16_t address){return 0;};
     virtual void write_port(uint16_t address, uint8_t value){};
     virtual void inte_changed(unsigned int inte){};
     virtual void reset()
@@ -70,6 +70,16 @@ public:
 
         return &ex_cont;
     };
+
+    virtual uint8_t get_command()
+    {
+        return read_mem(cpu_context.pc);
+    }
+
+    virtual uint16_t get_pc()
+    {
+        return cpu_context.pc;
+    }
 
     unsigned int execute(){
         i8080_next(&cpu_context);

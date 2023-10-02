@@ -4,6 +4,13 @@
 #include "emulator/core.h"
 #include "emulator/devices/cpu/i8080core2.h"
 
+#define LOG_8080 1
+
+#ifdef LOG_8080
+#include "cpulogger.h"
+#endif
+
+
 class I8080;
 
 //Library wrapper
@@ -32,11 +39,16 @@ private:
 
     i8080core * core;
 
+#ifdef LOG_8080
+    CPULogger * logger;
+#endif
+
 protected:
     virtual unsigned int get_pc() override;
 
 public:
     I8080(InterfaceManager *im, EmulatorConfigDevice *cd);
+    ~I8080();
     virtual void reset(bool cold) override;
     virtual unsigned int execute() override;
     virtual unsigned int read_mem(unsigned int address) override;

@@ -147,6 +147,9 @@ void MainWindow::onDeviceMenuCalled(unsigned int i)
 
 void MainWindow::on_actionExit_triggered()
 {
+    e->stop_video();
+    e->stop();
+    delete e;
     qApp->exit();
 }
 
