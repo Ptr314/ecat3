@@ -314,7 +314,7 @@ start:          lxi     SP, stack               ;
                 jmp     $                       ;
                                                 ;
 tests:                                          ;
-;                dw      add16                   ;
+                dw      add16                   ;
 
 ;               dw      add8i                   ;
 ;               dw      adc8i                   ;
@@ -325,30 +325,30 @@ tests:                                          ;
 ;               dw      ora8i                   ;
 ;               dw      cmp8i                   ;
 
-;                dw      alu8i                   ;
-;                dw      alu8r                   ;
-;                dw      daa                     ;
-;                dw      inca                    ;
-;                dw      incb                    ;
+                dw      alu8i                   ;
+                dw      alu8r                   ;
+                dw      daa                     ;
+                dw      inca                    ;
+                dw      incb                    ;
                 dw      incbc                   ;
-;                dw      incc                    ;
-;                dw      incd                    ;
-;                dw      incde                   ;
-;                dw      ince                    ;
-;                dw      inch                    ;
-;                dw      inchl                   ;
-;                dw      incl                    ;
-;                dw      incm                    ;
-;                dw      incsp                   ;
-;                dw      ld162                   ;
-;                dw      ld166                   ;
-;                dw      ld16im                  ;
-;                dw      ld8bd                   ;
-;                dw      ld8im                   ;
-;                dw      ld8rr                   ;
-;                dw      lda                     ;
-;                dw      rot8080                 ;
-;                dw      stabd                   ;
+                dw      incc                    ;
+                dw      incd                    ;
+                dw      incde                   ;
+                dw      ince                    ;
+                dw      inch                    ;
+                dw      inchl                   ;
+                dw      incl                    ;
+                dw      incm                    ;
+                dw      incsp                   ;
+                dw      ld162                   ;
+                dw      ld166                   ;
+                dw      ld16im                  ;
+                dw      ld8bd                   ;
+                dw      ld8im                   ;
+                dw      ld8rr                   ;
+                dw      lda                     ;
+                dw      rot8080                 ;
+                dw      stabd                   ;
                 dw      0                       ;
 ;_______________________________________________________________________
 ;
@@ -400,7 +400,7 @@ add8i:  db      0ffh            ; flag mask
         tstr    0,0,0,0,0,0,0,0,-1,0            ; (256 cycles)
         tstr16  0,0ffh,0,0,0,0,0,0,0d7h,0,0     ; (14 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "add8i                 CD0203CE : ", 0
+        db      10, 13, "ADD8I                 CD0203CE : ", 0
 
 ; aci nn (3,584 cycles)
 adc8i:  db      0ffh            ; flag mask
@@ -408,7 +408,7 @@ adc8i:  db      0ffh            ; flag mask
         tstr    0,0,0,0,0,0,0,0,-1,0            ; (256 cycles)
         tstr16  0,0ffh,0,0,0,0,0,0,0d7h,0,0     ; (14 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "adc8i                 6F26398B : ", 0
+        db      10, 13, "ADC8I                 6F26398B : ", 0
 
 ; sui nn (3,584 cycles)
 sub8i:  db      0ffh            ; flag mask
@@ -416,7 +416,7 @@ sub8i:  db      0ffh            ; flag mask
         tstr    0,0,0,0,0,0,0,0,-1,0            ; (256 cycles)
         tstr16  0,0ffh,0,0,0,0,0,0,0d7h,0,0     ; (14 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "sub8i                 E5DA5007 : ", 0
+        db      10, 13, "SUB8I                 E5DA5007 : ", 0
 
 ; sbi nn (3,584 cycles)
 sbb8i:  db      0ffh            ; flag mask
@@ -424,7 +424,7 @@ sbb8i:  db      0ffh            ; flag mask
         tstr    0,0,0,0,0,0,0,0,-1,0            ; (256 cycles)
         tstr16  0,0ffh,0,0,0,0,0,0,0d7h,0,0     ; (14 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "sbb8i                 2C47E33B : ", 0
+        db      10, 13, "SBB8I                 2C47E33B : ", 0
 
 ; xri nn (3,584 cycles)
 ana8i:  db      0ffh            ; flag mask
@@ -432,7 +432,7 @@ ana8i:  db      0ffh            ; flag mask
         tstr    0,0,0,0,0,0,0,0,-1,0            ; (256 cycles)
         tstr16  0,0ffh,0,0,0,0,0,0,0d7h,0,0     ; (14 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "ana8i                 8383F645 : ", 0
+        db      10, 13, "ANA8I                 8383F645 : ", 0
 
 ; xri nn (3,584 cycles)
 xra8i:  db      0ffh            ; flag mask
@@ -440,7 +440,7 @@ xra8i:  db      0ffh            ; flag mask
         tstr    0,0,0,0,0,0,0,0,-1,0            ; (256 cycles)
         tstr16  0,0ffh,0,0,0,0,0,0,0d7h,0,0     ; (14 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "xra8i                 BCEA1369 : ", 0
+        db      10, 13, "XRA8I                 BCEA1369 : ", 0
 
 ; ori nn (3,584 cycles)
 ora8i:  db      0ffh            ; flag mask
@@ -448,7 +448,7 @@ ora8i:  db      0ffh            ; flag mask
         tstr    0,0,0,0,0,0,0,0,-1,0            ; (256 cycles)
         tstr16  0,0ffh,0,0,0,0,0,0,0d7h,0,0     ; (14 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "ora8i                 B22030B1 : ", 0
+        db      10, 13, "ORA8I                 B22030B1 : ", 0
 
 ; cpi nn (3,584 cycles)
 cmp8i:  db      0ffh            ; flag mask
@@ -456,7 +456,7 @@ cmp8i:  db      0ffh            ; flag mask
         tstr    0,0,0,0,0,0,0,0,-1,0            ; (256 cycles)
         tstr16  0,0ffh,0,0,0,0,0,0,0d7h,0,0     ; (14 cycles)
         db      0,0,0,0                         ; expected crc
-        db      10, 13, "cmp8i                 B922496F : ", 0
+        db      10, 13, "CMP8I                 B922496F : ", 0
 
 ; aluop a,<b,c,d,e,h,l,(hl),a> (753,664 cycles)
 alu8r:  db      0ffh            ; flag mask

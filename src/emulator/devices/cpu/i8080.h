@@ -4,7 +4,7 @@
 #include "emulator/core.h"
 #include "emulator/devices/cpu/i8080core.h"
 
-#define LOG_8080 1
+//#define LOG_8080 1
 
 #ifdef LOG_8080
 #include "cpulogger.h"

@@ -141,18 +141,20 @@ unsigned int I8080::execute()
 #ifdef LOG_8080
     uint16_t address = core->get_pc();
     uint8_t log_cmd = core->get_command();
-    i8080context * context = core->get_context();
-    uint8_t f1 = context->registers.regs.F & 0x02;
-    //bool do_log = (address < 0xF800)
-    //              && ((log_cmd == 0x03) || (log_cmd == 0x0B));
-    //if (do_log) logger->log_state(log_cmd, true);
+    //i8080context * context = core->get_context();
+    //uint8_t f1 = context->registers.regs.F & 0x10;
+    bool do_log = (address < 0xF800)
+                  //&& ((log_cmd == 0x3C) || (log_cmd == 0x3D));
+                  && (log_cmd == 0x27);
+                  //&& ((log_cmd == 0xC6) || (log_cmd == 0xD6) || (log_cmd == 0xE6) || (log_cmd == 0xF6) || (log_cmd == 0xCE) || (log_cmd == 0xDE) || (log_cmd == 0xEE) || (log_cmd == 0xFE));
+    if (do_log) logger->log_state(log_cmd, true);
 #endif
 
     unsigned int cycles = core->execute();
 
 #ifdef LOG_8080
-    uint8_t f2 = context->registers.regs.F & 0x02;
-    bool do_log = (address < 0xF800) && (f1 != 0) && (f2 == 0);
+    //uint8_t f2 = context->registers.regs.F & 0x10;
+    //bool do_log = (address < 0xF800) && (f1 == 0) && (f2 != 0);
     if (do_log) logger->log_state(log_cmd, false, cycles);
 #endif
 

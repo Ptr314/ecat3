@@ -5,6 +5,11 @@
 
 #include "i8080_context.h"
 
+#define LO4(v)      (v & 0x0F)
+#define HI4(v)      ((v >> 4) & 0x0F)
+#define CARRY       (context.registers.regs.F & F_CARRY)
+#define HALF_CARRY  (context.registers.regs.F & F_HALF_CARRY)
+
 #pragma pack(1)
 
 union PartsRecLE {
@@ -132,7 +137,8 @@ class i8080core
 private:
     uint8_t next_byte();
     uint8_t read_command();
-    uint8_t calc_flags(uint32_t v1, uint32_t v2, uint32_t value);
+    uint8_t calc_base_flags(uint32_t value);
+    uint8_t calc_half_carry(uint8_t v1, uint8_t v2, uint8_t c);
     void do_ret();
     void do_jump();
     void do_call();
