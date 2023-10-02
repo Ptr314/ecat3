@@ -151,6 +151,16 @@ public:
     virtual i8080context * get_context();
 
     unsigned int execute();
+    virtual uint8_t get_command()
+    {
+        return read_mem(context.registers.regs.PC);
+    }
+
+    virtual uint16_t get_pc()
+    {
+        return context.registers.regs.PC;
+    }
+
 };
 
 #endif // I8080CORE_H

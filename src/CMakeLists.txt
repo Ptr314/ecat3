@@ -41,8 +41,8 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     mainwindow.cpp mainwindow.h mainwindow.ui
     ${PROJECT_RESOURCES}
     emulator/devices/cpu/i8080_context.h
-#    emulator/devices/cpu/i8080core.h emulator/devices/cpu/i8080core.cpp
-    emulator/devices/cpu/i8080core2.h emulator/devices/cpu/i8080core2.cpp
+    emulator/devices/cpu/i8080core.h emulator/devices/cpu/i8080core.cpp
+#    emulator/devices/cpu/i8080core2.h emulator/devices/cpu/i8080core2.cpp
     dialogs/debugwindow.h dialogs/debugwindow.cpp dialogs/debugwindow.ui
     dialogs/disasmarea.h dialogs/disasmarea.cpp
     emulator/disasm.h emulator/disasm.cpp

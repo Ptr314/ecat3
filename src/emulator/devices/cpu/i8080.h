@@ -2,7 +2,7 @@
 #define I8080main_H
 
 #include "emulator/core.h"
-#include "emulator/devices/cpu/i8080core2.h"
+#include "emulator/devices/cpu/i8080core.h"
 
 #define LOG_8080 1
 

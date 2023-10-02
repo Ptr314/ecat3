@@ -47,7 +47,7 @@ I8080::I8080(InterfaceManager *im, EmulatorConfigDevice *cd):
     core = new I8080Core(this);
 
 #ifdef LOG_8080
-    logger = new CPULogger(this, CPU_LOGGER_8080, core->get_context(), "8080_precise");
+    logger = new CPULogger(this, CPU_LOGGER_8080, core->get_context(), "8080_my");
 #endif
 
 }
