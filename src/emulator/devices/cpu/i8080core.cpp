@@ -409,7 +409,7 @@ unsigned int i8080core::execute()
                 T.b.H = read_mem(static_cast<uint16_t>(context.registers.regs.SP+1));
                 if (PP == 3)
                 {
-                    context.registers.regs.F = T.b.L;
+                    context.registers.regs.F = T.b.L | F_BASE_8080;
                     context.registers.regs.A = T.b.H;
                 } else
                     context.registers.reg_array_16[PP] = T.w;

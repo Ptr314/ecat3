@@ -39,14 +39,14 @@ public:
         if (cpu_type == CPU_LOGGER_8080) {
             i8080context * c = static_cast<i8080context*>(context);
             cs =   QString("%1").arg(pc, 4, 16, QChar('0')) \
-                 + ((before)?(QString(" %1+").arg(command, 2, 16, QChar('0'))):"   -")
+                 + QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
                  + ((!before)?(QString(" %1").arg(cycles, 2, 10, QChar('0'))):"   ")
                  + QString(" AF:%1%2").arg(c->registers.regs.A, 2, 16, QChar('0')).arg(c->registers.regs.F, 2, 16, QChar('0'))
-                 + QString(" B, C:%1,%2").arg(c->registers.regs.B, 2, 16, QChar('0')).arg(c->registers.regs.C, 2, 16, QChar('0'))
+                 //+ QString(" B, C:%1,%2").arg(c->registers.regs.B, 2, 16, QChar('0')).arg(c->registers.regs.C, 2, 16, QChar('0'))
                  + QString(" BC:%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0'))
-                 + QString(" D, E:%1,%2").arg(c->registers.regs.D, 2, 16, QChar('0')).arg(c->registers.regs.E, 2, 16, QChar('0'))
+                 //+ QString(" D, E:%1,%2").arg(c->registers.regs.D, 2, 16, QChar('0')).arg(c->registers.regs.E, 2, 16, QChar('0'))
                  + QString(" DE:%1").arg(c->registers.reg_pairs.DE, 4, 16, QChar('0'))
-                 + QString(" H, L:%1,%2").arg(c->registers.regs.H, 2, 16, QChar('0')).arg(c->registers.regs.L, 2, 16, QChar('0'))
+                 //+ QString(" H, L:%1,%2").arg(c->registers.regs.H, 2, 16, QChar('0')).arg(c->registers.regs.L, 2, 16, QChar('0'))
                  + QString(" HL:%1").arg(c->registers.reg_pairs.HL, 4, 16, QChar('0'))
                  + QString(" SP:%1").arg(c->registers.regs.SP, 4, 16, QChar('0'))
                  + "\x0D\x0A";
