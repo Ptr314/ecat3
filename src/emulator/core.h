@@ -320,6 +320,7 @@ public:
     MemoryMapper * mm;
     unsigned int debug;
     unsigned int break_count;
+    std::list<unsigned int> over_commands;
 
     CPU(InterfaceManager *im, EmulatorConfigDevice *cd);
 
@@ -331,6 +332,7 @@ public:
     void clear_breakpoints();
     virtual void reset(bool cold);
     virtual unsigned int get_pc() = 0;
+    virtual unsigned int get_command() = 0;
 
     virtual unsigned int read_mem(unsigned int address) = 0;
     virtual void write_mem(unsigned int address, unsigned int data) = 0;
@@ -339,6 +341,7 @@ public:
     virtual QList<QString> get_flags() = 0;
 
     virtual void set_context_value(QString name, unsigned int value) = 0;
+
 };
 
 typedef MapperRange MapperArray[100];

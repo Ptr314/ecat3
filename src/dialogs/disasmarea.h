@@ -8,6 +8,7 @@
 
 struct DisAsmEntry {
     unsigned int address;
+    unsigned int len;
     QString code;
     QString command;
     bool breakpoint;
@@ -23,6 +24,7 @@ public:
     void set_data(Emulator * e, CPU * cpu, DisAsm * disasm, unsigned int address);
     void go_to(unsigned int address);
     unsigned int get_address_at_cursor();
+    void invalidate();
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -32,6 +34,7 @@ private:
     Emulator * e;
     CPU * cpu;
     DisAsm * disasm;
+    uint16_t CRC;
 
     unsigned int font_height;
     unsigned int char_width;

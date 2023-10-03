@@ -46,6 +46,11 @@ I8080::I8080(InterfaceManager *im, EmulatorConfigDevice *cd):
 
     core = new I8080Core(this);
 
+    over_commands.push_back(0xCD);
+    over_commands.push_back(0xDD);
+    over_commands.push_back(0xED);
+    over_commands.push_back(0xFD);
+
 #ifdef LOG_8080
     logger = new CPULogger(this, CPU_LOGGER_8080, core->get_context(), "8080_my");
 #endif
@@ -179,6 +184,11 @@ void I8080::set_context_value(QString name, unsigned int value)
     {
         core->get_context()->registers.regs.PC = value;
     }
+}
+
+unsigned int I8080::get_command()
+{
+    return core->get_command();
 }
 
 ComputerDevice * create_i8080(InterfaceManager *im, EmulatorConfigDevice *cd){

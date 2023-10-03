@@ -56,6 +56,7 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp
     tests/8080exe.asm tests/8080pre.asm
     emulator/devices/cpu/cpulogger.h emulator/devices/cpu/cpulogger.cpp
+    libs/crc16.h
 )
 target_link_libraries(eCat3 PRIVATE
     Qt::Core

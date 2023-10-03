@@ -4,6 +4,7 @@
 #include "emulator/utils.h"
 #include "dialogs/dialogs.h"
 #include "disasmarea.h"
+#include "libs/crc16.h"
 
 DisAsmArea::DisAsmArea(QWidget *parent)
     : QWidget{parent},
@@ -11,7 +12,8 @@ DisAsmArea::DisAsmArea(QWidget *parent)
     address_first(_FFFF),
     address_last(_FFFF),
     max_lines(0),
-    data_valid(false)
+    data_valid(false),
+    CRC(0)
 {
     QFont font(FONT_NAME, FONT_SIZE);
     QFontMetrics fm(font);
@@ -32,6 +34,14 @@ void DisAsmArea::set_data(Emulator * e, CPU * cpu, DisAsm * disasm, unsigned int
     go_to(address);
 }
 
+void DisAsmArea::invalidate()
+{
+    address_first = _FFFF;                              //Address at first buffer line
+    address_last = _FFFF;                               //Address at last buffer line
+    data_valid = false;
+    update();
+}
+
 void DisAsmArea::go_to(unsigned int address)
 {
     this->address = address;
@@ -48,7 +58,19 @@ void DisAsmArea::update_data()
 {
     data_valid = true;
     screen_size = size().height() / font_height - 1;
-    if ( (address >= address_first) && (address <= address_last) )
+    if (CRC != 0)
+    {
+        uint16_t CRC2 = 0;
+        for (unsigned int a = address_first; a < address_last + lines[lines_count-1].len; a++)
+        {
+            uint8_t b = cpu->read_mem(a);
+            CRC16_update(&CRC2, &b, 1);
+        }
+
+        if (CRC2 != CRC) CRC = 0;
+    }
+
+    if ( (address >= address_first) && (address <= address_last) && (CRC != 0))
     {
         //TODO: goto inside existing lines
         unsigned int screen_first = lines[first_line].address;
@@ -67,6 +89,7 @@ void DisAsmArea::update_data()
 
         unsigned int a = address;
         uint8_t buffer[15];
+        CRC = 0;
 
         for (unsigned int i = 0; i < screen_size; i++)
         {
@@ -78,8 +101,11 @@ void DisAsmArea::update_data()
             lines[i].command = s;
             lines[i].current = (a == cpu->get_pc());
             lines[i].breakpoint = false;
+            lines[i].len = c;
             lines[i].code = bytes_dump(&buffer, c);
             a += c;
+
+            CRC16_update(&CRC, buffer, c);
         }
         lines_count = screen_size;
         address_first = lines[0].address;
@@ -88,7 +114,6 @@ void DisAsmArea::update_data()
         cursor_line = 0;
     }
 }
-
 void DisAsmArea::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {

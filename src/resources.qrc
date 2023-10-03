@@ -22,6 +22,9 @@
         <file alias="sound-mute">resources/icons/sound-mute.png</file>
         <file alias="debug">resources/icons/binary.png</file>
         <file alias="camera">resources/icons/camera.png</file>
+        <file alias="play_fwd">resources/icons/player_fwd.png</file>
+        <file alias="pause">resources/icons/player_pause.png</file>
+        <file alias="ondebug">resources/icons/debug.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>

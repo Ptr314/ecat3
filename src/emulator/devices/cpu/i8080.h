@@ -59,6 +59,7 @@ public:
 
     virtual QList<QString> get_registers() override;
     virtual QList<QString> get_flags() override;
+    virtual unsigned int get_command() override;
 
     virtual void set_context_value(QString name, unsigned int value) override;
 

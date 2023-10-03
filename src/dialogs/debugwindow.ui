@@ -59,6 +59,44 @@
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout_5">
         <item>
+         <widget class="QLabel" name="state">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>36</width>
+            <height>36</height>
+           </size>
+          </property>
+          <property name="baseSize">
+           <size>
+            <width>36</width>
+            <height>36</height>
+           </size>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="pixmap">
+           <pixmap resource="../resources.qrc">:/icons/ondebug</pixmap>
+          </property>
+          <property name="scaledContents">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Line" name="line_5">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QToolButton" name="toPCButton">
           <property name="toolTip">
            <string>Return to PC</string>
@@ -103,7 +141,7 @@
         <item>
          <widget class="QToolButton" name="runUntilButton">
           <property name="toolTip">
-           <string>Run to cursor</string>
+           <string>Run until cursor</string>
           </property>
           <property name="text">
            <string>...</string>
@@ -115,9 +153,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QToolButton" name="runButton">
+         <widget class="QToolButton" name="runDebuggedButton">
           <property name="toolTip">
-           <string>Run</string>
+           <string>Run under debugger</string>
           </property>
           <property name="text">
            <string>...</string>
@@ -131,14 +169,28 @@
         <item>
          <widget class="QToolButton" name="stopTrackingButton">
           <property name="toolTip">
-           <string>Stop tracking</string>
+           <string>Stop</string>
           </property>
           <property name="text">
            <string>...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
-            <normaloff>:/icons/stop</normaloff>:/icons/stop</iconset>
+            <normaloff>:/icons/pause</normaloff>:/icons/pause</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="runButton">
+          <property name="toolTip">
+           <string>Run without debugging</string>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../resources.qrc">
+            <normaloff>:/icons/play_fwd</normaloff>:/icons/play_fwd</iconset>
           </property>
          </widget>
         </item>

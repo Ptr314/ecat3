@@ -46,6 +46,10 @@ private slots:
 
     void on_gotoButton_clicked();
 
+    void on_runDebuggedButton_clicked();
+
+    void update_state();
+
 private:
     Ui::DebugWindow *ui;
 
@@ -53,6 +57,9 @@ private:
     CPU * cpu;
     DisAsm * disasm;
     bool stop_tracking;
+    int temporary_break;
+
+    QTimer * state_timer;
 
     void update_registers();
 };
