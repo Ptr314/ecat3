@@ -59,7 +59,7 @@ void WD1793::SetFlag(unsigned int flag)
 
 void WD1793::ClearFlag(unsigned int flag)
 {
-    registers[wd1793_REG_STATUS] &= !flag;
+    registers[wd1793_REG_STATUS] &= ~flag;
 }
 
 void WD1793::SetINTRQ()
@@ -144,7 +144,7 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
             break;
 
         case 0x0A:
-        case 0x0B: //Read sector
+        case 0x0B: //Write sector
             if ((value & wd1793_PARAM_m) > 0)
             {
                 im->dm->error(this, WD1793::tr("Writing of more than one sector at once is not supported!"));
