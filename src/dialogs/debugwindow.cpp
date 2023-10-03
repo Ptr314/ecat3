@@ -105,6 +105,7 @@ void DebugWindow::track()
     } else {
         qDebug() << "Tracking stopped";
         //ui->codeview->invalidate();
+        if (temporary_break >= 0) cpu->remove_breakpoint(temporary_break);
         on_toPCButton_clicked();
     }
 
@@ -166,7 +167,17 @@ void DebugWindow::on_stepOverButton_clicked()
 
 void DebugWindow::on_runUntilButton_clicked()
 {
+    if (cpu->debug == DEBUG_STOPPED)
+    {
+        if (temporary_break >= 0) cpu->remove_breakpoint(temporary_break);
 
+        temporary_break = ui->codeview->get_address_at_cursor();
+        cpu->add_breakpoint(temporary_break);
+
+        cpu->debug = DEBUG_BRAKES;
+        QTimer::singleShot(200, this, SLOT(track()));
+        stop_tracking = false;
+    }
 }
 
 
