@@ -262,3 +262,16 @@ void MainWindow::on_actionOpen_triggered()
     }
 }
 
+
+void MainWindow::on_actionDebugger_triggered()
+{
+    CPU * cpu = dynamic_cast<CPU*>(e->dm->get_device_by_name("cpu"));
+    DebugWndCreateFunc * f = DWM->get_create_func(cpu->type);
+    if (f != nullptr)
+    {
+            QDialog * w = f(this, this->e, cpu);
+            w->setAttribute(Qt::WA_DeleteOnClose);
+            w->show();
+    }
+}
+

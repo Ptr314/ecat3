@@ -20,6 +20,8 @@
         <file alias="open">resources/icons/cdrom_mount.png</file>
         <file alias="sound">resources/icons/sound.png</file>
         <file alias="sound-mute">resources/icons/sound-mute.png</file>
+        <file alias="debug">resources/icons/binary.png</file>
+        <file alias="camera">resources/icons/camera.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>

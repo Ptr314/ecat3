@@ -100,10 +100,15 @@
      <property name="title">
       <string>Devices</string>
      </property>
+     <property name="icon">
+      <iconset resource="resources.qrc">
+       <normaloff>:/icons/devices</normaloff>:/icons/devices</iconset>
+     </property>
      <addaction name="actionDevice_one"/>
     </widget>
     <addaction name="action_Cold_restart"/>
     <addaction name="action_Soft_restart"/>
+    <addaction name="actionDebugger"/>
     <addaction name="separator"/>
     <addaction name="menuDevices"/>
    </widget>
@@ -112,8 +117,15 @@
      <string>Help</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuDisplay">
+    <property name="title">
+     <string>Display</string>
+    </property>
+    <addaction name="actionScreenshot"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEmulation"/>
+   <addaction name="menuDisplay"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -147,6 +159,9 @@
    <addaction name="separator"/>
    <addaction name="action_Cold_restart"/>
    <addaction name="action_Soft_restart"/>
+   <addaction name="separator"/>
+   <addaction name="actionDebugger"/>
+   <addaction name="actionScreenshot"/>
   </widget>
   <action name="action_Select_a_machine">
    <property name="enabled">
@@ -199,6 +214,30 @@
    </property>
    <property name="text">
     <string>Open...</string>
+   </property>
+  </action>
+  <action name="actionDebugger">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/debug</normaloff>:/icons/debug</iconset>
+   </property>
+   <property name="text">
+    <string>Debugger</string>
+   </property>
+   <property name="toolTip">
+    <string>Open debugger</string>
+   </property>
+  </action>
+  <action name="actionScreenshot">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/camera</normaloff>:/icons/camera</iconset>
+   </property>
+   <property name="text">
+    <string>Screenshot</string>
+   </property>
+   <property name="toolTip">
+    <string>Get a screenshot</string>
    </property>
   </action>
  </widget>

@@ -86,9 +86,9 @@ void WD1793::FindSelectedDrive()
 void WD1793::WriteRegister(unsigned int address, unsigned int  value)
 {
     unsigned int a = address & 3;
-    qDebug() << "CW" << a << "=" << Qt::hex << value;
     if (a==wd1793_REG_COMMAND)
     {
+        qDebug() << "COMMAND" << Qt::hex << (value >> 4);
         //Command register
         registers[4] = value;
         ClearINTRQ();
@@ -180,6 +180,17 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
             break;
         }
     } else {
+        switch (a) {
+        case 1:
+            qDebug() << "TRACK=" << Qt::hex << value;
+            break;
+        case 2:
+            qDebug() << "SECT=" << Qt::hex << value;
+            break;
+        default:
+            qDebug() << "DATA=" << Qt::hex << value;
+            break;
+        }
         registers[a] = value;
     }
     if (a==wd1793_REG_DATA) ClearDRQ();
@@ -200,7 +211,20 @@ unsigned int WD1793::get_value(unsigned int address)
     unsigned int a = address & 0x03;
     if (a==wd1793_REG_DATA) ClearDRQ();
     if (a==wd1793_REG_STATUS) ClearINTRQ();
-    qDebug() << "CR" << a << "=" << Qt::hex << registers[a];
+    switch (a) {
+    case 0:
+        qDebug() << "GET STATUS" << Qt::hex << registers[a];
+        break;
+    case 1:
+        qDebug() << "GET TRACK" << Qt::hex << registers[a];
+        break;
+    case 2:
+        qDebug() << "GET SECT" << Qt::hex << registers[a];
+        break;
+    default:
+        qDebug() << "GET DATA" << Qt::hex << registers[a];
+        break;
+    }
     return registers[a];
 }
 
