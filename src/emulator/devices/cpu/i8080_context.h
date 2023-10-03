@@ -11,7 +11,7 @@ struct i8080context
             uint8_t  C,B,E,D,L,H,
                 m,
                 A, F;
-            uint16_t SP, PC, PC2;
+            uint16_t SP, PC;
         } regs;
         struct {
             uint16_t BC, DE, HL;

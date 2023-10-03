@@ -21,18 +21,18 @@ O128Display::O128Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     mode(_FFFF),
     frame(_FFFF)
 {
-    this->sx = 384;
-    this->sy = 256;
+    sx = 384;
+    sy = 256;
 }
 
 void O128Display::load_config(SystemData *sd)
 {
     Display::load_config(sd);
 
-    port_mode = (Port*)im->dm->get_device_by_name(cd->get_parameter("mode").value);
-    port_frame = (Port*)im->dm->get_device_by_name(cd->get_parameter("screen").value);
-    page_main = (RAM*)im->dm->get_device_by_name(cd->get_parameter("rmain").value);
-    page_color = (RAM*)im->dm->get_device_by_name(cd->get_parameter("color").value);
+    port_mode =  dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("mode").value));
+    port_frame = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("screen").value));
+    page_main =  dynamic_cast<RAM*> (im->dm->get_device_by_name(cd->get_parameter("rmain").value));
+    page_color = dynamic_cast<RAM*> (im->dm->get_device_by_name(cd->get_parameter("color").value));
 
     page_main->set_memory_callback(this, 1, MODE_W);
     page_color->set_memory_callback(this, 2, MODE_W);
@@ -108,7 +108,7 @@ void O128Display::render_byte(unsigned int address)
             {
                 c1 = ((c >> k) & 0x01) | mode0;
                 p1 = offset + (7-k)*4;
-                base = ((Uint8 *)render_pixels) + line*line_bytes + p1;
+                base = static_cast<Uint8 *>(render_pixels) + line*line_bytes + p1;
                 base[0] = Orion128_MonoColors[c1][2];
                 base[1] = Orion128_MonoColors[c1][1];
                 base[2] = Orion128_MonoColors[c1][0];

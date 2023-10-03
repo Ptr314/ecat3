@@ -4,7 +4,7 @@ Speaker::Speaker(InterfaceManager *im, EmulatorConfigDevice *cd):
     Sound(im, cd)
 
 {
-    i_input = this->create_interface(1, "input", MODE_R);
+    i_input = create_interface(1, "input", MODE_R);
     cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu"));
     init_sound(cpu->clock);
 }

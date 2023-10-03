@@ -14,8 +14,8 @@ DumpWindow::DumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
 {
     this->e = e;
     this->d = d;
-    ui->dump_area->set_data(e, (AddressableDevice*)d);
-    this->setWindowTitle(d->name + " : " + d->type);
+    ui->dump_area->set_data(e, dynamic_cast<AddressableDevice*>(d));
+    setWindowTitle(d->name + " : " + d->type);
 }
 
 DumpWindow::~DumpWindow()
@@ -25,7 +25,7 @@ DumpWindow::~DumpWindow()
 
 void DumpWindow::on_closeButton_clicked()
 {
-    this->close();
+    close();
 }
 
 QDialog * CreateDumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d)

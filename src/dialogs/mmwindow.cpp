@@ -16,7 +16,7 @@ MemoryMapperWindow::MemoryMapperWindow(QWidget *parent, Emulator * e, ComputerDe
 {
     this->e = e;
     this->d = d;
-    this->setWindowTitle(d->name + " : " + d->type);
+    setWindowTitle(d->name + " : " + d->type);
 }
 
 MemoryMapperWindow::~MemoryMapperWindow()
@@ -26,7 +26,7 @@ MemoryMapperWindow::~MemoryMapperWindow()
 
 void MemoryMapperWindow::on_pushButton_clicked()
 {
-    this->close();
+    close();
 }
 
 void MemoryMapperWindow::on_process_button_clicked()
@@ -36,7 +36,7 @@ void MemoryMapperWindow::on_process_button_clicked()
     qDebug() << cfg << address;
     unsigned int address_on_device, range_index;
 
-    AddressableDevice * d = ((MemoryMapper*)this->d)->map_memory(
+    AddressableDevice * d = dynamic_cast<MemoryMapper*>(d)->map_memory(
                                                                   cfg,
                                                                   address,
                                                                   ui->readButton->isChecked()?MODE_R:MODE_W,
@@ -48,7 +48,7 @@ void MemoryMapperWindow::on_process_button_clicked()
     QString s = d->name + " " + d->type;
     ui->device_name->setText(s);
 
-    ui->dump_area->set_data(e, (AddressableDevice*)d, address_on_device);
+    ui->dump_area->set_data(e, dynamic_cast<AddressableDevice*>(d), address_on_device);
     ui->dump_area->update();
 }
 

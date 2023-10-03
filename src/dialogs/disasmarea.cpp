@@ -72,7 +72,6 @@ void DisAsmArea::update_data()
 
     if ( (address >= address_first) && (address <= address_last) && (CRC != 0))
     {
-        //TODO: goto inside existing lines
         unsigned int screen_first = lines[first_line].address;
         unsigned int screen_last = lines[first_line+screen_size-1].address;
         if ( (address >= screen_first) && (address <= screen_last) )
@@ -80,7 +79,7 @@ void DisAsmArea::update_data()
             for (unsigned int i = first_line; i < first_line+screen_size; i++)
                 if (lines[i].address == address){
                     cursor_line = i-first_line;
-                    this->update();
+                    update();
                     return;
                 }
         }

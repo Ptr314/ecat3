@@ -118,7 +118,7 @@ void OpenConfigWindow::set_description(QModelIndex index)
 
 void OpenConfigWindow::on_closeButton_clicked()
 {
-    this->close();
+    close();
 }
 
 
@@ -126,7 +126,7 @@ void OpenConfigWindow::on_okButton_clicked()
 {
     if (!selected_path.isEmpty()) {
         emit load_config(selected_path, ui->defaultCheck->isChecked());
-        this->close();
+        close();
     }
 }
 

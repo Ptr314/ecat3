@@ -52,7 +52,7 @@ QDialog * CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
 
 void DebugWindow::on_closeButton_clicked()
 {
-    this->close();
+    close();
 }
 
 

@@ -219,7 +219,7 @@
   <action name="actionDebugger">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/icons/debug</normaloff>:/icons/debug</iconset>
+     <normaloff>:/icons/terminal</normaloff>:/icons/terminal</iconset>
    </property>
    <property name="text">
     <string>Debugger</string>

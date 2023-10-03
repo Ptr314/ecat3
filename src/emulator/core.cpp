@@ -37,35 +37,34 @@ void Interface::connect(LinkedInterface s, LinkedInterface d)
 {
     int index = -1;
 
-    for (unsigned int i=0; i < this->linked; i++)
-        if (this->linked_interfaces[i].d.i == d.i) index = i;
+    for (unsigned int i=0; i < linked; i++)
+        if (linked_interfaces[i].d.i == d.i) index = i;
 
     if (index < 0)
     {
-        this->linked++;
-        this->linked_interfaces[this->linked-1].s = s;
-        this->linked_interfaces[this->linked-1].d = d;
+        linked++;
+        linked_interfaces[linked-1].s = s;
+        linked_interfaces[linked-1].d = d;
         d.i->connect(d, s);
-        this->linked_bits |= s.mask;
-        //this->linked++;
+        linked_bits |= s.mask;
     }
 }
 
 void Interface::set_size(unsigned int new_size)
 {
-    this->size = new_size;
-    this->mask = create_mask(new_size, 0);
+    size = new_size;
+    mask = create_mask(new_size, 0);
 }
 
 unsigned int Interface::Interface::get_size()
 {
-    return this->size;
+    return size;
 }
 
 void Interface::set_mode(unsigned int new_mode)
 {
-    unsigned int prev_mode = this->mode;
-    this->mode = new_mode;
+    unsigned int prev_mode = mode;
+    mode = new_mode;
     //Если интерфейс переключился с вывода на ввод, нужно правильно
     //установить его значение, если оно контролируется другим интерфейсом.
     //Поэтому просматриваем все соединенные интерфейсы, и если один из них
@@ -73,13 +72,13 @@ void Interface::set_mode(unsigned int new_mode)
     //чтобы правильно выставились значения на текущем интерфейсе
     if (new_mode == MODE_R && prev_mode == MODE_W)
     {
-        for (unsigned int i=0; i>this->linked; i++)
+        for (unsigned int i=0; i>linked; i++)
         {
-            Interface * li = this->linked_interfaces[i].d.i;
+            Interface * li = linked_interfaces[i].d.i;
             if (li->mode == MODE_W) li->change(li->value);
         }
     }
-    if (new_mode == MODE_OFF) this->change(_FFFF);
+    if (new_mode == MODE_OFF) change(_FFFF);
 }
 
 unsigned int Interface::get_mode()
@@ -90,51 +89,51 @@ unsigned int Interface::get_mode()
 
 void Interface::change(unsigned int new_value)
 {
-    if (this->mode == MODE_W)
+    if (mode == MODE_W)
     {
-        this->old_value = this->value;
-        this->value = new_value;
-        for (unsigned int i=0; i < this->linked; i++)
+        old_value = value;
+        value = new_value;
+        for (unsigned int i=0; i < linked; i++)
         {
-            this->linked_interfaces[i].d.i->changed(this->linked_interfaces[i], new_value);
+            linked_interfaces[i].d.i->changed(linked_interfaces[i], new_value);
         }
     } else {
-        if (this->mode == MODE_OFF)
+        if (mode == MODE_OFF)
         {
-            this->im->dm->error(this->device, Interface::tr("Interface '%1' is in OFF state, writing is impossible").arg(this->name));
+            im->dm->error(device, Interface::tr("Interface '%1' is in OFF state, writing is impossible").arg(name));
         }
     }
 }
 
 void Interface::changed(LinkData link, unsigned int value)
 {
-    if (this->mode == MODE_R)
+    if (mode == MODE_R)
     {
         unsigned int new_value = this->value & ~link.d.mask; //Set expected bits to 0
         new_value |=  ((value & link.s.mask) >> link.s.shift) << link.d.shift;
         this->old_value = this->value;
         this->value = new_value;
 
-        if (callback_id > 0) this->device->interface_callback(callback_id, new_value, this->old_value);
+        if (callback_id > 0) device->interface_callback(callback_id, new_value, this->old_value);
     }
 }
 
 void Interface::clear()
 {
-    this->change(_FFFF);
+    change(_FFFF);
 }
 
 bool Interface::pos_edge()
 {
-    bool result = ((this->value & 1) != 0) && ((this->edge_value & 1) == 0);
-    this->edge_value = this->value;
+    bool result = ((value & 1) != 0) && ((edge_value & 1) == 0);
+    edge_value = value;
     return result;
 }
 
 bool Interface::neg_edge()
 {
-    bool result = ((this->value & 1) == 0) && ((this->edge_value & 1) != 0);
-    this->edge_value = this->value;
+    bool result = ((value & 1) == 0) && ((edge_value & 1) != 0);
+    edge_value = value;
     return result;
 }
 
@@ -143,34 +142,34 @@ bool Interface::neg_edge()
 
 DeviceManager::DeviceManager()
 {
-    this->registered_devices_count = 0;
+    registered_devices_count = 0;
 
-    this->device_count = 2;
-    this->error_message = "";
-    this->error_device = nullptr;
+    device_count = 2;
+    error_message = "";
+    error_device = nullptr;
 }
 
 DeviceManager::~DeviceManager()
 {
-    this->clear();
+    clear();
 }
 
 void DeviceManager::clear()
 {
-    for (unsigned int i=0; i < this->device_count; i++)
-        delete this->devices[i].device;
+    for (unsigned int i=0; i < device_count; i++)
+        delete devices[i].device;
 
-    this->device_count = 2;
+    device_count = 2;
 
-    memset(&this->devices, 0, sizeof(this->devices));
+    memset(&devices, 0, sizeof(devices));
 }
 
 void DeviceManager::register_device(QString device_type, CreateDeviceFunc func)
 {
-    this->registered_devices[this->registered_devices_count].type = device_type;
-    this->registered_devices[this->registered_devices_count].create_func = func;
+    registered_devices[registered_devices_count].type = device_type;
+    registered_devices[registered_devices_count].create_func = func;
 
-    this->registered_devices_count++;
+    registered_devices_count++;
 }
 
 void DeviceManager::add_device(InterfaceManager *im, EmulatorConfigDevice *d)
@@ -183,43 +182,41 @@ void DeviceManager::add_device(InterfaceManager *im, EmulatorConfigDevice *d)
     if (name.compare("mapper")==0)
         index=1;
     else
-        index = this->device_count++;
+        index = device_count++;
 
     CreateDeviceFunc create_func = nullptr;
-    for (unsigned int i=0; i < this->registered_devices_count; i++)
+    for (unsigned int i=0; i < registered_devices_count; i++)
     {
-        if (this->registered_devices[i].type == d->type) create_func = this->registered_devices[i].create_func;
+        if (registered_devices[i].type == d->type) create_func = registered_devices[i].create_func;
     }
 
     if (create_func != nullptr)
     {
-        this->devices[index].device_type = d->type;
-        this->devices[index].device_name = name;
-        this->devices[index].device = create_func(im, d);
+        devices[index].device_type = d->type;
+        devices[index].device_name = name;
+        devices[index].device = create_func(im, d);
     } else
         QMessageBox::critical(0, DeviceManager::tr("Error"), DeviceManager::tr("Can't create device %1:%2").arg(name, d->type));
-
-    //this->device_count++;
 }
 
 DeviceDescription * DeviceManager::get_device(unsigned int i)
 {
-    return &(this->devices[i]);
+    return &(devices[i]);
 }
 
 void DeviceManager::load_devices_config(SystemData *sd)
 {
-    for (unsigned int i=0; i < this->device_count; i++)
+    for (unsigned int i=0; i < device_count; i++)
     {
-        this->get_device(i)->device->load_config(sd);
+        get_device(i)->device->load_config(sd);
     }
 }
 
 ComputerDevice * DeviceManager::get_device_by_name(QString name, bool required)
 {
-    for (unsigned int i=0; i < this->device_count; i++)
+    for (unsigned int i=0; i < device_count; i++)
     {
-        if (this->devices[i].device->name == name) return this->devices[i].device;
+        if (devices[i].device->name == name) return devices[i].device;
     }
     if (required)
     {
@@ -231,38 +228,38 @@ ComputerDevice * DeviceManager::get_device_by_name(QString name, bool required)
 
 unsigned int DeviceManager::get_device_index(QString name)
 {
-    for (unsigned int i=0; i < this->device_count; i++)
-        if (this->devices[i].device->name == name)
+    for (unsigned int i=0; i < device_count; i++)
+        if (devices[i].device->name == name)
             return i;
 
-    this->error(nullptr, DeviceManager::tr("Device %1 not found").arg(name));
+    error(nullptr, DeviceManager::tr("Device %1 not found").arg(name));
     return (unsigned int)(-1);
 }
 
 void DeviceManager::reset_devices(bool cold)
 {
-    for (unsigned int i=0; i < this->device_count; i++)
-        this->devices[i].device->reset(cold);
+    for (unsigned int i=0; i < device_count; i++)
+        devices[i].device->reset(cold);
 }
 
 void DeviceManager::clock(unsigned int counter)
 {
     //Except CPU
-    for (unsigned int i=1; i < this->device_count; i++)
-        this->devices[i].device->clock(counter);
+    for (unsigned int i=1; i < device_count; i++)
+        devices[i].device->clock(counter);
 }
 
 void DeviceManager::error(ComputerDevice *d, QString message)
 {
-    this->error_device = d;
-    this->error_message = message;
+    error_device = d;
+    error_message = message;
     qDebug() << "Exception DeviceManager::error " << d->name << " " << message;
     throw QException();
 }
 
 void DeviceManager::error_clear()
 {
-    this->error_device = nullptr;
+    error_device = nullptr;
 }
 
 
@@ -272,29 +269,29 @@ InterfaceManager::InterfaceManager(DeviceManager *dm):interfaces_count(0), dm(dm
 
 InterfaceManager::~InterfaceManager()
 {
-    this->clear();
+    clear();
 }
 
 void InterfaceManager::register_interface(Interface *i)
 {
-    this->interfaces[this->interfaces_count++] = i;
+    interfaces[interfaces_count++] = i;
 }
 
 void InterfaceManager::clear()
 {
-    for (unsigned int i=0; i < this->interfaces_count; i++)
-        delete this->interfaces[i];
+    for (unsigned int i=0; i < interfaces_count; i++)
+        delete interfaces[i];
 
-    this->interfaces_count = 0;
+    interfaces_count = 0;
 
-    memset(&this->interfaces, 0, sizeof(this->interfaces));
+    memset(&interfaces, 0, sizeof(interfaces));
 }
 
 Interface * InterfaceManager::get_interface_by_name(QString device_name, QString interface_name)
 {
-    for (unsigned int i=0; i<this->interfaces_count; i++)
-        if (this->interfaces[i]->device->name == device_name && this->interfaces[i]->name == interface_name)
-            return this->interfaces[i];
+    for (unsigned int i=0; i<interfaces_count; i++)
+        if (interfaces[i]->device->name == device_name && interfaces[i]->name == interface_name)
+            return interfaces[i];
 
     QMessageBox::critical(0, InterfaceManager::tr("Error"), InterfaceManager::tr("Interface '%1:%2' not found").arg(device_name, interface_name));
     return nullptr;
@@ -312,24 +309,24 @@ ComputerDevice::ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
         QString s = cd->get_parameter("clock").value;
         if (s.isEmpty())
         {
-            QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect clock value for '%1'").arg(this->name));
+            QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect clock value for '%1'").arg(name));
             throw QException();
         } else {
             int pos = s.indexOf("/");
             if (pos>0) {
-                this->clock_miltiplier = parse_numeric_value(s.first(pos));
-                this->clock_divider = parse_numeric_value(s.last(s.length()-pos-1));
+                clock_miltiplier = parse_numeric_value(s.first(pos));
+                clock_divider = parse_numeric_value(s.last(s.length()-pos-1));
             } else {
-                this->clock_miltiplier = parse_numeric_value(s);
-                this->clock_divider = 1;
+                clock_miltiplier = parse_numeric_value(s);
+                clock_divider = 1;
             }
         }
     } catch (QException &e) {
-        this->clock_miltiplier = 1;
-        this->clock_divider = 1;
+        clock_miltiplier = 1;
+        clock_divider = 1;
     }
 
-    this->clock_stored = 0;
+    clock_stored = 0;
 }
 
 void ComputerDevice::clock([[maybe_unused]] unsigned int counter)
@@ -339,15 +336,15 @@ void ComputerDevice::clock([[maybe_unused]] unsigned int counter)
 
 void ComputerDevice::system_clock(unsigned int counter)
 {
-    if (this->clock_miltiplier == this->clock_divider)
-        this->clock(counter);
+    if (clock_miltiplier == clock_divider)
+        clock(counter);
     else {
-        this->clock_stored += counter * this->clock_miltiplier;
-        unsigned int internal_clock = this->clock_stored / this->clock_divider;
+        clock_stored += counter * clock_miltiplier;
+        unsigned int internal_clock = clock_stored / clock_divider;
         if (internal_clock > 0)
         {
-            this->clock(internal_clock);
-            this->clock_stored -= internal_clock * this->clock_divider;
+            clock(internal_clock);
+            clock_stored -= internal_clock * clock_divider;
         }
     }
 }
@@ -684,7 +681,7 @@ CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
 void CPU::load_config(SystemData *sd)
 {
     ComputerDevice::load_config(sd);
-    this->mm = (MemoryMapper*)this->im->dm->get_device_by_name("mapper");
+    mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper"));
 }
 
 bool CPU::check_breakpoint(unsigned int address)
@@ -943,7 +940,7 @@ AddressableDevice * MemoryMapper::map(
         {
             * address_on_device = address - mr->range_begin + mr->base;
             * range_index = i;
-            return (AddressableDevice*)mr->device;
+            return dynamic_cast<AddressableDevice*>(mr->device);
         }
     }
     return nullptr;

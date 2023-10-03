@@ -25,7 +25,7 @@ void WD1793::load_config(SystemData *sd)
     try {
         s = cd->get_parameter("drives").value;
     } catch (QException &e) {
-        QMessageBox::critical(0, WD1793::tr("Error"), WD1793::tr("Incorrect fdd list for '%1'").arg(this->name));
+        QMessageBox::critical(0, WD1793::tr("Error"), WD1793::tr("Incorrect fdd list for '%1'").arg(name));
         throw QException();
     }
 

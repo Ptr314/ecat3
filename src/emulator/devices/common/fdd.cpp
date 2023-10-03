@@ -36,7 +36,7 @@ void FDD::load_config(SystemData *sd)
         disk_size = sides*tracks*sectors*sector_size;
         write_protect = false;
     } catch (QException &e) {
-        QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Incorrect fdd parameters for '%1'").arg(this->name));
+        QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Incorrect fdd parameters for '%1'").arg(name));
         throw QException();
     }
 

@@ -95,10 +95,6 @@ unsigned int i8080core::execute()
     PartsRecLE T, D;
     unsigned int cycles;
 
-    //Store PC for debug purposes
-    //context.registers.regs.PC2 = context.registers.regs.PC;
-    //qDebug() << Qt::hex << context.registers.regs.PC;
-
     command = next_byte();
 
     //XX YYY ZZZ

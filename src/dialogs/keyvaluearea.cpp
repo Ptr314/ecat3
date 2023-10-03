@@ -15,7 +15,7 @@ KeyValueArea::KeyValueArea(QWidget *parent)
 void KeyValueArea::set_data(QList<QString> newlist)
 {
     list = newlist;
-    this->update();
+    update();
 }
 
 void KeyValueArea::paintEvent(QPaintEvent *event)
@@ -29,7 +29,7 @@ void KeyValueArea::paintEvent(QPaintEvent *event)
     for (unsigned int i=0; i<list.size(); i++)
     {
         unsigned int x = 20;
-        unsigned int y = this->font_height * (i+1);
+        unsigned int y = font_height * (i+1);
         painter.drawText(x, y, list.at(i));
     }
 }

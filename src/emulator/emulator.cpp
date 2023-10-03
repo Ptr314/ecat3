@@ -122,10 +122,10 @@ void Emulator::start()
 {
     if (this->loaded)
     {
-        this->cpu = (CPU*)this->dm->get_device_by_name("cpu");
-        this->mm = (MemoryMapper*)this->dm->get_device_by_name("mapper");
-        this->display = (Display*)this->dm->get_device_by_name("display");
-        this->keyboard = (Keyboard*)this->dm->get_device_by_name("keyboard");
+        this->cpu = dynamic_cast<CPU*>(dm->get_device_by_name("cpu"));
+        this->mm = dynamic_cast<MemoryMapper*>(dm->get_device_by_name("mapper"));
+        this->display = dynamic_cast<Display*>(dm->get_device_by_name("display"));
+        this->keyboard = dynamic_cast<Keyboard*>(dm->get_device_by_name("keyboard"));
 
         this->reset(true);
 
@@ -188,7 +188,7 @@ void Emulator::init_video(void *p)
     //TODO: create setup parameters
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 
-    Display * d = (Display*)dm->get_device_by_name("display");
+    Display * d = dynamic_cast<Display*>(dm->get_device_by_name("display"));
     unsigned int sx, sy;
     d->get_screen_constraints(&sx, &sy);
 
@@ -260,15 +260,14 @@ void Emulator::key_event(QKeyEvent *event, bool press)
 
 void Emulator::set_volume(int value)
 {
-    Sound * sound = (Sound*)this->dm->get_device_by_name("sound", false);
+    Sound * sound = dynamic_cast<Sound*>(dm->get_device_by_name("sound", false));
     if (sound != nullptr) sound->set_volume(value);
 }
 
 void Emulator::set_muted(bool muted)
 {
-    Sound * sound = (Sound*)this->dm->get_device_by_name("sound", false);
+    Sound * sound = dynamic_cast<Sound*>(dm->get_device_by_name("sound", false));
     if (sound != nullptr) sound->set_muted(muted);
-
 }
 
 Emulator::~Emulator()

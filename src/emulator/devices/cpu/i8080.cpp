@@ -37,12 +37,12 @@ void I8080Core::inte_changed(unsigned int inte)
 I8080::I8080(InterfaceManager *im, EmulatorConfigDevice *cd):
     CPU(im, cd)
 {
-    i_address = this->create_interface(16, "address", MODE_R, 1);
-    i_data =    this->create_interface(8, "data", MODE_RW);
-    i_nmi =     this->create_interface(1, "nmi", MODE_R);
-    i_int =     this->create_interface(1, "int", MODE_R);
-    i_inte =    this->create_interface(1, "inte", MODE_W);
-    i_m1 =      this->create_interface(1, "m1", MODE_W);
+    i_address = create_interface(16, "address", MODE_R, 1);
+    i_data =    create_interface(8, "data", MODE_RW);
+    i_nmi =     create_interface(1, "nmi", MODE_R);
+    i_int =     create_interface(1, "int", MODE_R);
+    i_inte =    create_interface(1, "inte", MODE_W);
+    i_m1 =      create_interface(1, "m1", MODE_W);
 
     core = new I8080Core(this);
 

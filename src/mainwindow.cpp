@@ -99,7 +99,7 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("port", &CreatePortWindow);
     DWM->register_debug_window("i8255", &CreateI8255Window);
 
-    this->CreateDevicesMenu();
+    CreateDevicesMenu();
 
     QString sound_volume = e->read_setup("Startup", "volume", "50");
     volume->setValue(sound_volume.toInt());
@@ -121,13 +121,13 @@ void MainWindow::CreateDevicesMenu()
 {
     ui->menuDevices->clear();
 
-    for (unsigned int i=0; i < this->e->dm->device_count; i++)
+    for (unsigned int i=0; i < e->dm->device_count; i++)
     {
         QAction * a = ui->menuDevices->addAction(
-                            this->e->dm->get_device(i)->device_name + " : " + this->e->dm->get_device(i)->device_type,
+                            e->dm->get_device(i)->device_name + " : " + e->dm->get_device(i)->device_type,
                             [this, i=i]{onDeviceMenuCalled(i);}
                       );
-        a->setEnabled( DWM->get_create_func(this->e->dm->get_device(i)->device_type) != nullptr );
+        a->setEnabled( DWM->get_create_func(e->dm->get_device(i)->device_type) != nullptr );
     };
 
 
@@ -137,10 +137,10 @@ void MainWindow::CreateDevicesMenu()
 
 void MainWindow::onDeviceMenuCalled(unsigned int i)
 {
-    DebugWndCreateFunc * f = DWM->get_create_func(this->e->dm->get_device(i)->device_type);
+    DebugWndCreateFunc * f = DWM->get_create_func(e->dm->get_device(i)->device_type);
     if (f != nullptr)
     {
-        QDialog * w = f(this, this->e, this->e->dm->get_device(i)->device);
+        QDialog * w = f(this, e, e->dm->get_device(i)->device);
         w->setAttribute(Qt::WA_DeleteOnClose);
         w->show();
     }
@@ -269,7 +269,7 @@ void MainWindow::on_actionDebugger_triggered()
     DebugWndCreateFunc * f = DWM->get_create_func(cpu->type);
     if (f != nullptr)
     {
-            QDialog * w = f(this, this->e, cpu);
+            QDialog * w = f(this, e, cpu);
             w->setAttribute(Qt::WA_DeleteOnClose);
             w->show();
     }
