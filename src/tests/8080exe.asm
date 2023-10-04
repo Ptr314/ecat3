@@ -153,8 +153,8 @@ spbt:           ds      2
 ;_______________________________________________________________________
 ;
 start:          lxi     SP, stack               ;
-                lxi     H, 8080h                ;
-                call    hexlo                   ;
+                ;lxi     H, 8080h                ;
+                ;call    hexlo                   ;
                 lxi     H, msg0                 ;
                 call    print                   ;
                                                 ;
@@ -1284,7 +1284,10 @@ puthd:          ani     0Fh                     ; put one hex digit
                 adi     'A'-'0'-10              ;
 
 putch:          push    PSW                     ; char to output in A
-		call	0F80Fh
+                push    B
+                mov     C,A
+                call	0F809h
+                pop     B
 		pop 	PSW	
                 ret                             ;
                                                 ;

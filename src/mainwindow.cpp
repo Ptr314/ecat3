@@ -249,7 +249,11 @@ void MainWindow::load_config(QString file_name, bool set_default)
 void MainWindow::on_actionOpen_triggered()
 {
     QString file_name = QFileDialog::getOpenFileName(this, tr("Open XML File 1"), e->work_path, tr("All Files (*.*)"));
-    RAM * m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram0"));
+
+    RAM * m;
+    m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram", false));
+    if (m==nullptr) m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram0"));
+
     uint8_t * buffer = m->get_buffer();
 
     QFile file(file_name);
