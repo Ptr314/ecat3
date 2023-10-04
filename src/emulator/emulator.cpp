@@ -17,6 +17,7 @@
 #include "emulator/devices/common/wd1793.h"
 #include "emulator/devices/common/fdd.h"
 #include "emulator/devices/common/i8257.h"
+#include "emulator/devices/common/i8275.h"
 
 Emulator::Emulator(QString work_path, QString data_path, QString software_path, QString ini_file):
     work_path(work_path),
@@ -294,4 +295,5 @@ void Emulator::register_devices()
     dm->register_device("fdd", create_FDD);
     dm->register_device("orion-128-display", create_o128display);
     dm->register_device("i8257", create_i8257);
+    dm->register_device("i8275", create_i8275);
 }
