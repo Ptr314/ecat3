@@ -175,7 +175,7 @@ protected:
                     }
                 }
                 uint8_t C = sign & 0x7F;
-                unsigned int Ofs = Col*18;
+                unsigned int Ofs = Col*24;
                 for (int i = 0; i < H; i++)
                 {
                     uint8_t V;
@@ -206,10 +206,7 @@ protected:
                     for (unsigned int k = 0; k <6; k++)
                     {
                         uint8_t c1 = (V >> k) & 1;
-                        unsigned int p1 = Ofs + (5-k)*3;
-                        //FLines[Adr][p1]   := c1 * VG75_8Colors[FAColor, 2];
-                        //FLines[Adr][p1+1] := c1 * VG75_8Colors[FAColor, 1];
-                        //FLines[Adr][p1+2] := c1 * VG75_8Colors[FAColor, 0];
+                        unsigned int p1 = Ofs + (5-k)*4;
                         uint8_t * base = static_cast<Uint8 *>(render_pixels) + Adr*line_bytes + p1;
                         *(uint32_t*)base = SDL_MapRGB(surface->format, c1 * VG75_8Colors[FAColor][0], c1 * VG75_8Colors[FAColor][1], c1 * VG75_8Colors[FAColor][2]);
                     }
