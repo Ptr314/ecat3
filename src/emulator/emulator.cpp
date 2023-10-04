@@ -18,6 +18,7 @@
 #include "emulator/devices/common/fdd.h"
 #include "emulator/devices/common/i8257.h"
 #include "emulator/devices/common/i8275.h"
+#include "emulator/devices/common/i8275display.h"
 
 Emulator::Emulator(QString work_path, QString data_path, QString software_path, QString ini_file):
     work_path(work_path),
@@ -191,17 +192,17 @@ void Emulator::init_video(void *p)
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 
     Display * d = dynamic_cast<Display*>(dm->get_device_by_name("display"));
-    unsigned int sx, sy;
-    d->get_screen_constraints(&sx, &sy);
 
-    double screen_scale = 3;
-    double pixel_scale = 1; //(4.0 / 3.0) / ((double)sx / (double)sy);
+    d->get_screen_constraints(&screen_sx, &screen_sy);
 
-    render_rect.w = sx * screen_scale * pixel_scale;
-    render_rect.h = sy * screen_scale;
+    screen_scale = 3;
+    pixel_scale = 1; //(4.0 / 3.0) / ((double)sx / (double)sy);
+
+    render_rect.w = screen_sx * screen_scale * pixel_scale;
+    render_rect.h = screen_sy * screen_scale;
 
     window_surface = SDL_GetWindowSurface(SDLWindowRef);
-    device_surface = SDL_CreateRGBSurfaceWithFormat(0, sx, sy, 32, SDL_PIXELFORMAT_RGBA8888);
+    device_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_sx, screen_sy, 32, SDL_PIXELFORMAT_RGBA8888);
     d->set_surface(device_surface);
 }
 
@@ -215,6 +216,21 @@ void Emulator::stop_video()
 
 void Emulator::render_screen()
 {
+    unsigned int current_sx, current_sy;
+    display->get_screen_constraints(&current_sx, &current_sy);
+    if ((current_sx != screen_sx) || (current_sy != screen_sy))
+    {
+        screen_sx = current_sx;
+        screen_sy = current_sy;
+        SDL_FreeSurface(device_surface);
+
+        render_rect.w = screen_sx * screen_scale * pixel_scale;
+        render_rect.h = screen_sy * screen_scale;
+
+        device_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_sx, screen_sy, 32, SDL_PIXELFORMAT_RGBA8888);
+        display->set_surface(device_surface);
+    }
+
     display->validate();
 
     if (display->was_updated)
@@ -296,4 +312,5 @@ void Emulator::register_devices()
     dm->register_device("orion-128-display", create_o128display);
     dm->register_device("i8257", create_i8257);
     dm->register_device("i8275", create_i8275);
+    dm->register_device("i8275-display", create_i8275display);
 }

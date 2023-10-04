@@ -10,6 +10,7 @@ private:
     Interface * i_address;
     Interface * i_data;
 
+public:
     uint8_t RgA[8];
     uint8_t RgC[8];
     uint8_t PtrA[4];        // Flip-flops to write high and low bytes alternately
@@ -17,7 +18,6 @@ private:
     uint8_t RgMode;
     uint8_t RgState;
 
-public:
     I8257(InterfaceManager *im, EmulatorConfigDevice *cd):
         AddressableDevice(im, cd)
     {

@@ -18,18 +18,18 @@ private:
     void render_byte(unsigned int address);
 
 protected:
-    virtual void render_all(bool force_render);
+    virtual void render_all(bool force_render) override;
 
 public:
     O128Display(InterfaceManager *im, EmulatorConfigDevice *cd);
 
-    virtual void clock(unsigned int counter);
-    virtual void load_config(SystemData *sd);
+    virtual void clock(unsigned int counter) override;
+    virtual void load_config(SystemData *sd) override;
 
-    virtual void memory_callback(unsigned int callback_id, unsigned int address);
+    virtual void memory_callback(unsigned int callback_id, unsigned int address) override;
 
-    virtual void get_screen(bool required);
-    virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy);
+    virtual void get_screen(bool required) override;
+    virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
 };
 
 ComputerDevice * create_o128display(InterfaceManager *im, EmulatorConfigDevice *cd);

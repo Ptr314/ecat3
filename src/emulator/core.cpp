@@ -1055,6 +1055,7 @@ Display::Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     //TODO: Display constructor
 }
 
+//TODO: Cleanup
 //void Display::set_texture(SDL_Texture * texture)
 //{
 //    this->texture = texture;

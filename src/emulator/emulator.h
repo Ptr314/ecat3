@@ -43,6 +43,11 @@ private:
     QTimer * render_timer;
     SDL_Rect render_rect;
 
+    unsigned int screen_sx;
+    unsigned int screen_sy;
+    double screen_scale;
+    double pixel_scale;
+
     void register_devices();
 
     void process_events();
