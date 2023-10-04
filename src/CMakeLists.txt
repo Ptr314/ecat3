@@ -58,6 +58,7 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
 
     libs/crc16.h
     emulator/devices/cpu/cpulogger.h
+    emulator/devices/common/i8257.h
 )
 target_link_libraries(eCat3 PRIVATE
     Qt::Core
