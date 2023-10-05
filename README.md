@@ -1,7 +1,11 @@
 # eCat3
 
 # Compilation
+
 ## Windows
+
+* MSVC
+    * Download installer for "Build Tools for Visual Studio XXXX" here: https://visualstudio.microsoft.com/downloads/
 
 * SDL
     * Download SDL library from there: https://www.libsdl.org/ (development version)
