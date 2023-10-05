@@ -1,10 +1,12 @@
 #include "speaker.h"
+#include "emulator/utils.h"
 
 Speaker::Speaker(InterfaceManager *im, EmulatorConfigDevice *cd):
     Sound(im, cd)
 
 {
     i_input = create_interface(1, "input", MODE_R);
+    i_mixer = create_interface(8, "mixer", MODE_R);
     cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu"));
     init_sound(cpu->clock);
 }
@@ -49,8 +51,15 @@ unsigned int Speaker::calc_sound_value()
     //TODO: Implement mixed values
     if (muted)
         return 128;
-    else
-        return ((i_input->value & 0x01) != 0)?(128 + 127*volume/100):128;
+    else {
+        //return ((i_input->value & 0x01) != 0)?(127 + 127*volume/100):128;
+        unsigned int V = 0;
+        if (InputWidth != 0)
+            V += i_input->value & 0x01;
+        for (unsigned int i=0; i < MixerWidth; i++)
+            V += (i_mixer->value >> i) & 0x01;
+        return V * InputValue * volume / 100 + 127;
+    }
 }
 
 void Speaker::clock(unsigned int counter)
@@ -86,6 +95,26 @@ void Speaker::clock(unsigned int counter)
         SD.BufferPtr = 0;
         SD.buffer_empty = 0;
     }
+}
+
+void Speaker::reset(bool cold)
+{
+    Sound::reset(cold);
+
+    if (i_input->linked == 0)
+        InputWidth = 0;
+    else
+        InputWidth = 1;
+
+    if (i_mixer->linked == 0)
+        MixerWidth = 0;
+    else
+        MixerWidth = CalcBits(i_mixer->linked_bits, 8);
+
+    if (InputWidth + MixerWidth > 0)
+        InputValue = 127 / (InputWidth + MixerWidth);
+    else
+        InputValue = 1;
 }
 
 void Speaker::load_config(SystemData *sd)

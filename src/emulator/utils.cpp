@@ -58,3 +58,11 @@ void convert_range(QString s, unsigned int * v1, unsigned int * v2)
     } else
         throw QException();
 }
+
+unsigned int CalcBits(unsigned int V, unsigned int MaxBits)
+{
+    unsigned int result = 0;
+    for (unsigned int i=0; i < MaxBits-1; i++)
+        result += (V >> i) & 1;
+    return result;
+}

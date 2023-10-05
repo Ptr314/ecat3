@@ -28,9 +28,13 @@ class Speaker: public Sound
 {
 private:
     Interface * i_input;
+    Interface * i_mixer;
     CPU * cpu;
     SDL_AudioDeviceID SDLdev;
     SpeakerData SD;
+    unsigned int InputWidth;
+    unsigned int MixerWidth;
+    unsigned int InputValue;
 
     void init_sound(unsigned int clock_freq);
     unsigned int calc_sound_value();
@@ -39,6 +43,7 @@ public:
     Speaker(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~Speaker();
 
+    virtual void reset(bool cold) override;
     virtual void clock(unsigned int counter) override;
     virtual void load_config(SystemData *sd) override;
 };
