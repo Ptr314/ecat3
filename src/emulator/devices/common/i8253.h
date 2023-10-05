@@ -100,7 +100,7 @@ protected:
                 //Умножаем значение на 2 для двойного декремента
                 if (I8253_MODES[COUNTER_LOAD_DEC_VALUE][Modes[A]] == 1)
                     I2 = I2 << 1;
-                int Ctr = static_cast<int>(Counters[A*2] + Counters[A*2+1]*256);
+                int Ctr = static_cast<int>(Counters[A*2]) + static_cast<int>(Counters[A*2+1])*256;
                 int V = Ctr - static_cast<int>(I2);
                 if ((V > 0) || (Ctr == 0))
                 {
