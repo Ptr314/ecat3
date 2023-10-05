@@ -20,6 +20,7 @@
 #include "emulator/devices/common/i8275.h"
 #include "emulator/devices/common/i8275display.h"
 #include "emulator/devices/common/i8253.h"
+#include "emulator/devices/common/register.h"
 
 Emulator::Emulator(QString work_path, QString data_path, QString software_path, QString ini_file):
     work_path(work_path),
@@ -294,8 +295,6 @@ Emulator::~Emulator()
     delete dm;
 }
 
-
-
 void Emulator::register_devices()
 {
     dm->register_device("ram", create_ram);
@@ -315,4 +314,5 @@ void Emulator::register_devices()
     dm->register_device("i8275", create_i8275);
     dm->register_device("i8275-display", create_i8275display);
     dm->register_device("i8253", create_i8253);
+    dm->register_device("register", create_register);
 }

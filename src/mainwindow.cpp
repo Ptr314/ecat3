@@ -9,6 +9,7 @@
 #include "qevent.h"
 #include "ui_mainwindow.h"
 #include "emulator/debug.h"
+#include "emulator/files.h"
 #include "dialogs/dumpwindow.h"
 #include "dialogs/mmwindow.h"
 #include "dialogs/debugwindow.h"
@@ -250,20 +251,22 @@ void MainWindow::on_actionOpen_triggered()
 {
     QString file_name = QFileDialog::getOpenFileName(this, tr("Open XML File 1"), e->work_path, tr("All Files (*.*)"));
 
-    RAM * m;
-    m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram", false));
-    if (m==nullptr) m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram0"));
+    HandleExternalFile(e, file_name);
 
-    uint8_t * buffer = m->get_buffer();
+//    RAM * m;
+//    m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram", false));
+//    if (m==nullptr) m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram0"));
 
-    QFile file(file_name);
-    if (file.open(QIODevice::ReadOnly)){
-        QByteArray data = file.readAll();
-        memcpy(buffer, data.constData(), file.size());
-        file.close();
-    } else {
-            QMessageBox::critical(0, MainWindow::tr("Error"), MainWindow::tr("Error opening file %1").arg(file_name));
-    }
+//    uint8_t * buffer = m->get_buffer();
+
+//    QFile file(file_name);
+//    if (file.open(QIODevice::ReadOnly)){
+//        QByteArray data = file.readAll();
+//        memcpy(buffer, data.constData(), file.size());
+//        file.close();
+//    } else {
+//            QMessageBox::critical(0, MainWindow::tr("Error"), MainWindow::tr("Error opening file %1").arg(file_name));
+//    }
 }
 
 

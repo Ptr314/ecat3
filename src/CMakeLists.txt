@@ -62,6 +62,9 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     emulator/devices/common/i8275.h
     emulator/devices/common/i8275display.h
     emulator/devices/common/i8253.h
+    emulator/files.h
+    emulator/devices/common/register.h
+
 )
 target_link_libraries(eCat3 PRIVATE
     Qt::Core

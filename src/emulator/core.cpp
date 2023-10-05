@@ -331,7 +331,7 @@ ComputerDevice::ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 void ComputerDevice::clock([[maybe_unused]] unsigned int counter)
 {
-    //Does nothing by default, by may be overridden
+    //Does nothing by default, but may be overridden
 }
 
 void ComputerDevice::system_clock(unsigned int counter)
