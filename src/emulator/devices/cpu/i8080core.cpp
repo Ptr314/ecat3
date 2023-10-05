@@ -70,6 +70,7 @@ void i8080core::reset()
     context.registers.regs.PC = 0;
     context.halted = false;
     context.int_enable = 0;
+    inte_changed(context.int_enable);
 }
 
 i8080context * i8080core::get_context()
