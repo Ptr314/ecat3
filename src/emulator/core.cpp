@@ -246,7 +246,7 @@ void DeviceManager::clock(unsigned int counter)
 {
     //Except CPU
     for (unsigned int i=1; i < device_count; i++)
-        devices[i].device->clock(counter);
+        devices[i].device->system_clock(counter);
 }
 
 void DeviceManager::error(ComputerDevice *d, QString message)
