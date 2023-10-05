@@ -51,7 +51,7 @@ public:
             switch (store_type) {
             case REGISTER_LATCH_POS:
                 if (i_c->pos_edge()){
-                    register_value = new_value;
+                    register_value = i_in->value;
                     i_out->change(register_value);
                 }
                 break;

@@ -482,6 +482,8 @@ void Memory::set_size(unsigned int value)
     buffer = new uint8_t[value];
     this->addresable_size = value;
 
+    i_address->set_size(ceil(log2(addresable_size)));
+
     QRandomGenerator *rg = QRandomGenerator::global();
 
     for (unsigned int i=0; i < value; i++) buffer[i]=rg->bounded(255);
