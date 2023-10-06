@@ -242,7 +242,6 @@ void MainWindow::load_config(QString file_name, bool set_default)
         QString new_file = file_name.right(file_name.length() - e->work_path.length());
         e->write_setup("Startup", "default", new_file);
         qDebug() << new_file;
-
     }
 }
 
@@ -251,22 +250,8 @@ void MainWindow::on_actionOpen_triggered()
 {
     QString file_name = QFileDialog::getOpenFileName(this, tr("Open XML File 1"), e->work_path, tr("All Files (*.*)"));
 
-    HandleExternalFile(e, file_name);
-
-//    RAM * m;
-//    m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram", false));
-//    if (m==nullptr) m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram0"));
-
-//    uint8_t * buffer = m->get_buffer();
-
-//    QFile file(file_name);
-//    if (file.open(QIODevice::ReadOnly)){
-//        QByteArray data = file.readAll();
-//        memcpy(buffer, data.constData(), file.size());
-//        file.close();
-//    } else {
-//            QMessageBox::critical(0, MainWindow::tr("Error"), MainWindow::tr("Error opening file %1").arg(file_name));
-//    }
+    if (!file_name.isEmpty())
+        HandleExternalFile(e, file_name);
 }
 
 

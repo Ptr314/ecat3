@@ -5,7 +5,7 @@
 #include "emulator/core.h"
 
 #define BUFFER_SIZE     4096
-#define SILENCE_SIZE     512
+#define SILENCE_SIZE    512
 
 //typedef uint8_t SpeakerBuffer[BUFFER_SIZE];
 
