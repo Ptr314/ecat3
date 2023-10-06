@@ -1,5 +1,10 @@
 # eCat3
 
+# Tools
+
+* Online assembler: https://www.asm80.com/onepage/asm8080.html
+* Online diassembler: https://86rk.ru/disassm/
+
 # Compilation
 
 ## Windows

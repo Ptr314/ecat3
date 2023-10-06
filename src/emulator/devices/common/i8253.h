@@ -139,11 +139,13 @@ public:
         i_gate =    create_interface(3, "gate", MODE_R, 1);
 
         init();
+        memset(&Gates, 1, sizeof(Gates)); //Allow counting just if gates are not connected
     }
 
     virtual void reset(bool cold) override
     {
         AddressableDevice::reset(cold);
+        init();
     }
 
     virtual unsigned int get_value(unsigned int address) override
@@ -164,7 +166,7 @@ public:
         unsigned int a = address & 0x03;
         if (a==3) {
             //control word
-            unsigned int C = (value >> 6) * 0x03;				 	//Номер канала
+            unsigned int C = (value >> 6) & 0x03;				 	//Номер канала
             if ((value & 0x30) != 0)
             {
                 IsBCD[C] = value & 0x01;  				//BCD-режим

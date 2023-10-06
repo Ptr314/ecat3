@@ -48,7 +48,6 @@ void Speaker::init_sound(unsigned int clock_freq)
 
 unsigned int Speaker::calc_sound_value()
 {
-    //TODO: Implement mixed values
     if (muted)
         return 128;
     else {
@@ -75,8 +74,11 @@ void Speaker::clock(unsigned int counter)
         SD.buffer[SD.BufferPtr] = v;
 
         //Non-zero value shows when the buffer contains varying sound
-        if (SD.BufferPtr>0)
-            SD.buffer_empty |= SD.buffer[SD.BufferPtr-1] ^ v;
+        //if (SD.BufferPtr>0)
+        //    SD.buffer_empty |= SD.buffer[SD.BufferPtr-1] ^ v;
+        //Not working :( so do not stop the stream all the time
+        //TODO: solve it
+        SD.buffer_empty = 1;
 
         SD.BufferPtr++;
     }

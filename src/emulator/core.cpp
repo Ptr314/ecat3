@@ -571,7 +571,7 @@ void ROM::load_config(SystemData *sd)
             unsigned int len = parse_numeric_value("$" + line.mid(1, 2));
             unsigned int addr = parse_numeric_value("$" + line.mid(3, 4));
             unsigned int type = parse_numeric_value("$" + line.mid(7, 2));
-            qDebug() << len << Qt::hex << addr << type;
+            //qDebug() << len << Qt::hex << addr << type;
             if (type == 0)
             {
                 for (unsigned int j=0; j< len; j++)
