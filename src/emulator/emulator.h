@@ -51,8 +51,6 @@ private:
 
     void register_devices();
 
-    void process_events();
-
 public:
     DeviceManager *dm;
     QString work_path;

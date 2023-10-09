@@ -14,13 +14,12 @@ FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
     i_side = create_interface(1, "side", MODE_R);
     i_density = create_interface(1, "density", MODE_R);
 
-    memset(&buffer, 0, sizeof(buffer));
+    //memset(&buffer, 0, sizeof(buffer));
 }
 
 FDD::~FDD()
 {
     if (buffer != nullptr) delete [] buffer;
-    ComputerDevice::~ComputerDevice();
 }
 
 void FDD::load_config(SystemData *sd)

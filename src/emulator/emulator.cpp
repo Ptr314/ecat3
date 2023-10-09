@@ -34,6 +34,8 @@ Emulator::Emulator(QString work_path, QString data_path, QString software_path, 
     qDebug() << "INI path: " + ini_file;
     settings = new QSettings (ini_file, QSettings::IniFormat);
     use_threads = (read_setup("Startup", "threads", "1") == "1");
+
+    connect(this, &Emulator::finished, this, &Emulator::stop_emulation, Qt::DirectConnection);
 }
 
 QString Emulator::read_setup(QString section, QString ident, QString def_val)
@@ -50,22 +52,22 @@ void Emulator::write_setup(QString section, QString ident, QString new_val)
 
 void Emulator::load_config(QString file_name)
 {
-    if (this->loaded)
+    if (loaded)
     {
         //Delete loaded machine
-        delete this->dm;
-        delete this->im;
-        this->loaded = false;
+        delete dm;
+        delete im;
+        loaded = false;
     }
 
-    this->dm = new DeviceManager();
-    this->im = new InterfaceManager(this->dm);
+    dm = new DeviceManager();
+    im = new InterfaceManager(dm);
 
-    this->register_devices();
+    register_devices();
 
-    EmulatorConfig * config = new EmulatorConfig(file_name);
+    EmulatorConfig config(file_name);
 
-    EmulatorConfigDevice * system = config->get_device("system");
+    EmulatorConfigDevice * system = config.get_device("system");
     QFileInfo fi(file_name);
     sd.system_file = file_name;
     sd.system_path = fi.absolutePath() + "/";
@@ -74,23 +76,22 @@ void Emulator::load_config(QString file_name)
     sd.system_version = system->get_parameter("version", false).value;
     sd.system_charmap = system->get_parameter("charmap", false).value;
     sd.software_path = software_path;
-    sd.mapper_cache = parse_numeric_value(this->read_setup("Core", "mapper_cache", "8"));
+    sd.mapper_cache = parse_numeric_value(read_setup("Core", "mapper_cache", "8"));
 
     sd.allowed_files = system->get_parameter("files", false).value;
 
-    this->load_charmap();
+    load_charmap();
 
-    for (unsigned int i=0; i<config->devices_count; i++)
+    for (unsigned int i=0; i<config.devices_count; i++)
     {
-        EmulatorConfigDevice *d = config->get_device(i);
+        EmulatorConfigDevice * d = config.get_device(i);
         if (!d->type.isEmpty())
         {
-            this->dm->add_device(this->im, d);
+            dm->add_device(im, d);
         }
     }
-    this->dm->load_devices_config(&sd);
-    delete config;
-    this->loaded = true;
+    dm->load_devices_config(&sd);
+    loaded = true;
 }
 
 void Emulator::load_charmap()
@@ -99,7 +100,7 @@ void Emulator::load_charmap()
 
     if (!sd.system_charmap.isEmpty())
     {
-        QFile f(this->data_path + this->sd.system_charmap + ".chr");
+        QFile f(data_path + sd.system_charmap + ".chr");
         f.open(QFile::ReadOnly);
         QString s = QString::fromUtf8(f.readAll());
 
@@ -107,27 +108,27 @@ void Emulator::load_charmap()
         for (unsigned int i = 0; i < s.length(); i++)
         {
             QChar c = s.at(i);
-            if (c != '\x0D' && c != '\x0A') this->charmap[count++] = new QChar(c);
+            if (c != '\x0D' && c != '\x0A') charmap[count++] = new QChar(c);
         }
     } else
-        for (unsigned int i = 0; i < 256; i++) this->charmap[i] = new QChar('.');
+        for (unsigned int i = 0; i < 256; i++) charmap[i] = new QChar('.');
 }
 
 QChar * Emulator::translate_char(unsigned int char_code)
 {
-    return this->charmap[char_code];
+    return charmap[char_code];
 }
 
 void Emulator::reset(bool cold)
 {
-    this->dm->reset_devices(cold);
+    dm->reset_devices(cold);
 }
 
 void Emulator::run()
 {
     if (loaded)
     {
-        qDebug() << "Emulator thread id: " << QThread::currentThreadId();
+        //qDebug() << "Emulator thread id: " << QThread::currentThreadId();
 
         cpu = dynamic_cast<CPU*>(dm->get_device_by_name("cpu"));
         mm = dynamic_cast<MemoryMapper*>(dm->get_device_by_name("mapper"));
@@ -137,9 +138,9 @@ void Emulator::run()
         reset(true);
 
         clock_freq = this->cpu->clock;
-        timer_res = parse_numeric_value(this->read_setup("Core", "TimerResolution", "1"));
-        timer_delay = parse_numeric_value(this->read_setup("Core", "TimerDelay", "20"));
-        time_ticks = this->clock_freq * this->timer_delay / 1000;
+        timer_res = parse_numeric_value(read_setup("Core", "TimerResolution", "1"));
+        timer_delay = parse_numeric_value(read_setup("Core", "TimerDelay", "20"));
+        time_ticks = this->clock_freq * timer_delay / 1000;
 
         local_counter = 0;
         clock_counter = 0;
@@ -153,8 +154,6 @@ void Emulator::run()
         connect(render_timer, &QTimer::timeout, this, &Emulator::render_screen);
         render_timer->start(1000 / 50);
 
-        connect(this, &QThread::finished, this, &Emulator::stop_emulation);
-
         if (use_threads) exec();
     }
 }
@@ -165,10 +164,6 @@ void Emulator::stop_emulation()
     {
         timer->stop();
         render_timer->stop();
-//        if (use_threads)
-//        {
-//            quit();
-//        }
         //TODO: Other stopping stuff
     }
 }
@@ -176,22 +171,20 @@ void Emulator::stop_emulation()
 void Emulator::timer_proc()
 {
     //TODO: Other timer stuff?
-    if (!this->busy)
+    if (!busy)
     {
-        this->busy = true;
+        busy = true;
 
-        process_events();
+        while (local_counter < time_ticks) {
 
-        while (this->local_counter < this->time_ticks) {
-
-            unsigned int counter = this->cpu->execute();
-            this->local_counter += counter;
-            this->clock_counter += counter;
-            this->dm->clock(counter);
+            unsigned int counter = cpu->execute();
+            local_counter += counter;
+            clock_counter += counter;
+            dm->clock(counter);
         }
-        this->mm->sort_cache();
-        this->local_counter -= this->time_ticks;
-        this->busy = false;
+        mm->sort_cache();
+        local_counter -= time_ticks;
+        busy = false;
     }
 }
 
@@ -267,21 +260,6 @@ void Emulator::resize_screen()
     display->validate(true);
 }
 
-void Emulator::process_events()
-{
-//    SDL_Event event;
-//    while (SDL_PollEvent(&event) == 1) {
-//        if (event.type == SDL_QUIT) {
-//            //TODO: Maybe we need to to something here
-//            return;
-//        } else if (event.type == SDL_KEYDOWN) {
-//            qDebug() << "Down: " << event.key.keysym.sym;
-//        } else if (event.type == SDL_KEYUP) {
-//            qDebug() << "Up: " << event.key.keysym.sym;
-//        }
-//    }
-}
-
 void Emulator::key_event(QKeyEvent *event, bool press)
 {
     keyboard->key_event(event, press);
@@ -302,6 +280,7 @@ void Emulator::set_muted(bool muted)
 
 Emulator::~Emulator()
 {
+    delete im;
     delete dm;
 }
 

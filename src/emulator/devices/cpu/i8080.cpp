@@ -62,7 +62,6 @@ I8080::~I8080()
 #ifdef LOG_8080
     delete logger;
 #endif
-
 }
 
 unsigned int I8080::get_pc()

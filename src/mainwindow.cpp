@@ -117,7 +117,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     e->init_video((void*)(ui->screen->winId()));
 
-    qDebug() << "Main thread id: " << QCoreApplication::instance()->thread()->currentThreadId();
+    //qDebug() << "Main thread id: " << QCoreApplication::instance()->thread()->currentThreadId();
     if (e->use_threads)
         e->start(QThread::TimeCriticalPriority);
     else
@@ -127,10 +127,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    //emit send_stop();
-    e->quit();
-    e->wait();
-    delete e;
     delete ui;
 }
 
@@ -161,14 +157,6 @@ void MainWindow::onDeviceMenuCalled(unsigned int i)
         w->setAttribute(Qt::WA_DeleteOnClose);
         w->show();
     }
-}
-
-void MainWindow::on_actionExit_triggered()
-{
-    e->stop_video();
-    e->stop_emulation();
-    delete e;
-    qApp->exit();
 }
 
 void MainWindow::keyPressEvent( QKeyEvent *event )
@@ -246,17 +234,21 @@ void MainWindow::load_config(QString file_name, bool set_default)
     if (e->loaded)
     {
         e->stop_video();
-        e->stop_emulation();
+        e->quit();
+        e->wait();
 
         e->load_config(file_name);
+
+        CreateDevicesMenu();
 
         e->set_volume(volume->value());
         e->set_muted(mute->isChecked());
 
         e->init_video((void*)(ui->screen->winId()));
-        e->start();
-
-        CreateDevicesMenu();
+        if (e->use_threads)
+            e->start(QThread::TimeCriticalPriority);
+        else
+            e->run();
     }
 
     if (set_default)
@@ -303,4 +295,19 @@ void MainWindow::on_actionDebugger_triggered()
 
 //    SDL_DestroyTexture(SDLTexture);
 //}
+
+void MainWindow::closeEvent (QCloseEvent *event)
+{
+    e->stop_video();
+    e->quit();
+    e->wait();
+    delete e;
+
+    event->accept();
+}
+
+void MainWindow::on_action_Exit_triggered()
+{
+    close();
+}
 

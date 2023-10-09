@@ -27,11 +27,11 @@ protected:
     void keyReleaseEvent( QKeyEvent * event );
     void resizeEvent(QResizeEvent * event);
     void paintEvent(QPaintEvent * event);
+    void closeEvent(QCloseEvent *event);
 
 private slots:
     void load_config(QString file_name, bool set_default);
 
-    void on_actionExit_triggered();
     void onDeviceMenuCalled(unsigned int i);
 
     void on_action_Cold_restart_triggered();
@@ -48,6 +48,8 @@ private slots:
     void on_actionDebugger_triggered();
 
     //void show_screen();
+
+    void on_action_Exit_triggered();
 
 signals:
     void send_a_key(QKeyEvent *event, bool press);
