@@ -119,28 +119,29 @@ QChar * Emulator::translate_char(unsigned int char_code)
 
 void Emulator::reset(bool cold)
 {
-    //TODO: understand the difference
     this->dm->reset_devices(cold);
 }
 
-void Emulator::start()
+void Emulator::run()
 {
-    if (this->loaded)
+    if (loaded)
     {
-        this->cpu = dynamic_cast<CPU*>(dm->get_device_by_name("cpu"));
-        this->mm = dynamic_cast<MemoryMapper*>(dm->get_device_by_name("mapper"));
-        this->display = dynamic_cast<Display*>(dm->get_device_by_name("display"));
-        this->keyboard = dynamic_cast<Keyboard*>(dm->get_device_by_name("keyboard"));
+        qDebug() << "Emulator thread id: " << QThread::currentThreadId();
 
-        this->reset(true);
+        cpu = dynamic_cast<CPU*>(dm->get_device_by_name("cpu"));
+        mm = dynamic_cast<MemoryMapper*>(dm->get_device_by_name("mapper"));
+        display = dynamic_cast<Display*>(dm->get_device_by_name("display"));
+        keyboard = dynamic_cast<Keyboard*>(dm->get_device_by_name("keyboard"));
 
-        this->clock_freq = this->cpu->clock;
-        this->timer_res = parse_numeric_value(this->read_setup("Core", "TimerResolution", "1"));
-        this->timer_delay = parse_numeric_value(this->read_setup("Core", "TimerDelay", "20"));
-        this->time_ticks = this->clock_freq * this->timer_delay / 1000;
+        reset(true);
 
-        this->local_counter = 0;
-        this->clock_counter = 0;
+        clock_freq = this->cpu->clock;
+        timer_res = parse_numeric_value(this->read_setup("Core", "TimerResolution", "1"));
+        timer_delay = parse_numeric_value(this->read_setup("Core", "TimerDelay", "20"));
+        time_ticks = this->clock_freq * this->timer_delay / 1000;
+
+        local_counter = 0;
+        clock_counter = 0;
 
         //TODO: Unify calling timers
         timer = new QTimer(this);
@@ -150,10 +151,12 @@ void Emulator::start()
         this->render_timer = new QTimer(this);
         connect(this->render_timer, SIGNAL(timeout()), this, SLOT(render_screen()));
         this->render_timer->start(1000 / 50);
+
+        exec();
     }
 }
 
-void Emulator::stop()
+void Emulator::stop_emulation()
 {
     if (this->loaded)
     {
@@ -203,7 +206,7 @@ void Emulator::init_video(void *p)
     render_rect.w = screen_sx * screen_scale * pixel_scale;
     render_rect.h = screen_sy * screen_scale;
 
-    window_surface = SDL_GetWindowSurface(SDLWindowRef);
+    //window_surface = SDL_GetWindowSurface(SDLWindowRef);
     device_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_sx, screen_sy, 32, SDL_PIXELFORMAT_RGBA8888);
     d->set_surface(device_surface);
 }
@@ -211,7 +214,7 @@ void Emulator::init_video(void *p)
 void Emulator::stop_video()
 {
     SDL_FreeSurface(device_surface);
-    SDL_FreeSurface(window_surface);
+    //SDL_FreeSurface(window_surface);
     SDL_DestroyRenderer(SDLRendererRef);
     SDL_DestroyWindow(SDLWindowRef);
 }

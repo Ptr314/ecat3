@@ -47,6 +47,15 @@ private slots:
 
     void on_actionDebugger_triggered();
 
+    //void show_screen();
+
+signals:
+    void send_a_key(QKeyEvent *event, bool press);
+    void send_volume(int value);
+    void send_muted(bool muted);
+    void send_reset(bool cool);
+    void send_resize();
+
 private:
     Ui::MainWindow *ui;
 

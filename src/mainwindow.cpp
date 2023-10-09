@@ -85,12 +85,6 @@ MainWindow::MainWindow(QWidget *parent)
     QString work_path = current_path + "/computers/";
     QString software_path = current_path + "/software/";
 
-    e = new Emulator(work_path, current_path + "/data/", software_path, current_path + "/ecat.ini");
-
-    QString file_to_load = e->read_setup("Startup", "default", "");
-
-    e->load_config(work_path + file_to_load);
-
     DWM = new DebugWindowsManager();
 
     DWM->register_debug_window("rom", &CreateDumpWindow);
@@ -99,6 +93,18 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("i8080", &CreateDebugWindow);
     DWM->register_debug_window("port", &CreatePortWindow);
     DWM->register_debug_window("i8255", &CreateI8255Window);
+
+    e = new Emulator(work_path, current_path + "/data/", software_path, current_path + "/ecat.ini");
+
+    connect(this, &MainWindow::send_a_key,  e, &Emulator::key_event);
+    connect(this, &MainWindow::send_volume, e, &Emulator::set_volume);
+    connect(this, &MainWindow::send_muted,  e, &Emulator::set_muted);
+    connect(this, &MainWindow::send_reset,  e, &Emulator::reset);
+    connect(this, &MainWindow::send_resize, e, &Emulator::resize_screen);
+
+    QString file_to_load = e->read_setup("Startup", "default", "");
+
+    e->load_config(work_path + file_to_load);
 
     CreateDevicesMenu();
 
@@ -109,7 +115,9 @@ MainWindow::MainWindow(QWidget *parent)
     mute->setChecked(muted.toInt() == 1);
 
     e->init_video((void*)(ui->screen->winId()));
-    e->start();
+
+    qDebug() << "Main thread id: " << QCoreApplication::instance()->thread()->currentThreadId();
+    e->start(QThread::TimeCriticalPriority);
 }
 
 MainWindow::~MainWindow()
@@ -150,7 +158,7 @@ void MainWindow::onDeviceMenuCalled(unsigned int i)
 void MainWindow::on_actionExit_triggered()
 {
     e->stop_video();
-    e->stop();
+    e->stop_emulation();
     delete e;
     qApp->exit();
 }
@@ -161,7 +169,8 @@ void MainWindow::keyPressEvent( QKeyEvent *event )
         event->ignore();
     } else {
         //qDebug() << "Key pressed: scan " << event->nativeScanCode() << "virtual" << event->nativeVirtualKey() << "key" << event->key() << "Qt::Key_Left" << (int)(Qt::Key_Left);
-        e->key_event(event, true);
+        //e->key_event(event, true);
+        emit send_a_key(event, true);
     }
 }
 
@@ -171,8 +180,8 @@ void MainWindow::keyReleaseEvent( QKeyEvent *event )
         event->ignore();
     } else {
         //qDebug() << "Key released:" << event->nativeScanCode() << event->nativeVirtualKey() << event->key();
-        e->key_event(event, false);
-
+        //e->key_event(event, false);
+        emit send_a_key(event, false);
     }
 }
 
@@ -184,30 +193,35 @@ void MainWindow::resizeEvent(QResizeEvent * event)
 void MainWindow::paintEvent(QPaintEvent * event)
 {
     //QMainWindow::paintEvent(event);
-    e->resize_screen();
+    emit send_resize();
+    //e->resize_screen();
 }
 
 void MainWindow::on_action_Cold_restart_triggered()
 {
-    e->reset(true);
+    emit send_reset(true);
+    //e->reset(true);
 }
 
 
 void MainWindow::on_action_Soft_restart_triggered()
 {
-    e->reset(false);
+    emit send_reset(false);
+    //e->reset(false);
 }
 
 void MainWindow::set_volume(int value)
 {
     e->write_setup("Startup", "volume", QString::number(value));
-    e->set_volume(value);
+    emit send_volume(value);
+    //e->set_volume(value);
 }
 
 void MainWindow::set_mute(bool muted)
 {
     e->write_setup("Startup", "muted", QString::number(muted?1:0));
-    e->set_muted(muted);
+    emit send_muted(muted);
+    //e->set_muted(muted);
     volume->setEnabled(!muted);
 }
 
@@ -224,7 +238,7 @@ void MainWindow::load_config(QString file_name, bool set_default)
     if (e->loaded)
     {
         e->stop_video();
-        e->stop();
+        e->stop_emulation();
 
         e->load_config(file_name);
 
@@ -266,4 +280,19 @@ void MainWindow::on_actionDebugger_triggered()
             w->show();
     }
 }
+
+//void MainWindow::show_screen()
+//{
+//    int rx, ry;
+//    SDL_GetRendererOutputSize(SDLRendererRef, &rx, &ry);
+//    render_rect.x = (rx - render_rect.w) / 2;
+//    render_rect.y = (ry - render_rect.h) / 2;
+
+//    SDLTexture = SDL_CreateTextureFromSurface(SDLRendererRef, device_surface);
+
+//    SDL_RenderCopy(SDLRendererRef, SDLTexture, NULL, &render_rect);
+//    SDL_RenderPresent(SDLRendererRef);
+
+//    SDL_DestroyTexture(SDLTexture);
+//}
 

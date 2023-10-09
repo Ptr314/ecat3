@@ -4,13 +4,14 @@
 #include <QString>
 #include <QSettings>
 #include <QTimer>
+#include <QThread>
 
 #include <SDL.h>
 
 #include "core.h"
 #include "emulator/devices/common/keyboard.h"
 
-class Emulator: public QObject
+class Emulator: public QThread
 {
     Q_OBJECT
 
@@ -38,7 +39,7 @@ private:
     SDL_Window * SDLWindowRef = nullptr;
     SDL_Renderer * SDLRendererRef = nullptr;
     SDL_Texture * SDLTexture = nullptr;
-    SDL_Surface  * window_surface = nullptr;
+    //SDL_Surface  * window_surface = nullptr;
     SDL_Surface  * device_surface = nullptr;
     QTimer * render_timer;
     SDL_Rect render_rect;
@@ -73,21 +74,19 @@ public:
     void init_video(void *p);
     void stop_video();
 
-    void reset(bool cold);
-
-    void start();
-    void stop();
-
-    void key_event(QKeyEvent *event, bool press);
-
-    void resize_screen();
-
-    void set_volume(int value);
-    void set_muted(bool muted);
+    void run() override;
+    void stop_emulation();
 
 public slots:
     void timer_proc();
     void render_screen();
+
+    void key_event(QKeyEvent *event, bool press);
+    void set_volume(int value);
+    void set_muted(bool muted);
+    void reset(bool cold);
+    void resize_screen();
+
 };
 
 #endif // EMULATOR_H
