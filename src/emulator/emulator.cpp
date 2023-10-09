@@ -32,12 +32,13 @@ Emulator::Emulator(QString work_path, QString data_path, QString software_path, 
     clock_counter(0)
 {
     qDebug() << "INI path: " + ini_file;
-    this->settings = new QSettings (ini_file, QSettings::IniFormat);
+    settings = new QSettings (ini_file, QSettings::IniFormat);
+    use_threads = (read_setup("Startup", "threads", "1") == "1");
 }
 
 QString Emulator::read_setup(QString section, QString ident, QString def_val)
 {
-    QString value = this->settings->value(section + "/" + ident, def_val).toString();
+    QString value = settings->value(section + "/" + ident, def_val).toString();
     return value;
 }
 
@@ -144,15 +145,17 @@ void Emulator::run()
         clock_counter = 0;
 
         //TODO: Unify calling timers
-        timer = new QTimer(this);
-        connect(timer, &QTimer::timeout, this, QOverload<>::of(&Emulator::timer_proc));
-        timer->start(this->timer_delay);
+        timer = new QTimer();
+        connect(timer, &QTimer::timeout, this, &Emulator::timer_proc);
+        timer->start(timer_delay);
 
-        this->render_timer = new QTimer(this);
-        connect(this->render_timer, SIGNAL(timeout()), this, SLOT(render_screen()));
-        this->render_timer->start(1000 / 50);
+        render_timer = new QTimer();
+        connect(render_timer, &QTimer::timeout, this, &Emulator::render_screen);
+        render_timer->start(1000 / 50);
 
-        exec();
+        connect(this, &QThread::finished, this, &Emulator::stop_emulation);
+
+        if (use_threads) exec();
     }
 }
 
@@ -160,8 +163,12 @@ void Emulator::stop_emulation()
 {
     if (this->loaded)
     {
-        this->timer->stop();
-        this->render_timer->stop();
+        timer->stop();
+        render_timer->stop();
+//        if (use_threads)
+//        {
+//            quit();
+//        }
         //TODO: Other stopping stuff
     }
 }

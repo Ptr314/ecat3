@@ -101,6 +101,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, &MainWindow::send_muted,  e, &Emulator::set_muted);
     connect(this, &MainWindow::send_reset,  e, &Emulator::reset);
     connect(this, &MainWindow::send_resize, e, &Emulator::resize_screen);
+    connect(this, &MainWindow::send_stop,   e, &Emulator::stop_emulation, Qt::QueuedConnection);
 
     QString file_to_load = e->read_setup("Startup", "default", "");
 
@@ -117,11 +118,18 @@ MainWindow::MainWindow(QWidget *parent)
     e->init_video((void*)(ui->screen->winId()));
 
     qDebug() << "Main thread id: " << QCoreApplication::instance()->thread()->currentThreadId();
-    e->start(QThread::TimeCriticalPriority);
+    if (e->use_threads)
+        e->start(QThread::TimeCriticalPriority);
+    else
+        e->run();
+
 }
 
 MainWindow::~MainWindow()
 {
+    //emit send_stop();
+    e->quit();
+    e->wait();
     delete e;
     delete ui;
 }

@@ -60,6 +60,7 @@ public:
     QString software_path;
 
     bool loaded;
+    bool use_threads;
 
     Emulator(QString work_path, QString data_path, QString software_path, QString ini_file);
     ~Emulator();
@@ -75,7 +76,6 @@ public:
     void stop_video();
 
     void run() override;
-    void stop_emulation();
 
 public slots:
     void timer_proc();
@@ -86,6 +86,7 @@ public slots:
     void set_muted(bool muted);
     void reset(bool cold);
     void resize_screen();
+    void stop_emulation();
 
 };
 

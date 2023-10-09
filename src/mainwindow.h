@@ -55,6 +55,7 @@ signals:
     void send_muted(bool muted);
     void send_reset(bool cool);
     void send_resize();
+    void send_stop();
 
 private:
     Ui::MainWindow *ui;
