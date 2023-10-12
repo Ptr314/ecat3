@@ -26,7 +26,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>00000000</string>
+    <string notr="true">00000000</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
@@ -45,7 +45,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>FF</string>
+    <string notr="true">FF</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>

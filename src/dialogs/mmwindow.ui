@@ -62,7 +62,7 @@
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>C</string>
+         <string notr="true">C</string>
         </property>
        </widget>
       </item>
@@ -93,17 +93,17 @@
          </size>
         </property>
         <property name="inputMask">
-         <string>NN</string>
+         <string notr="true">NN</string>
         </property>
         <property name="text">
-         <string>00</string>
+         <string notr="true">00</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>A</string>
+         <string notr="true">A</string>
         </property>
        </widget>
       </item>
@@ -128,10 +128,10 @@
          </size>
         </property>
         <property name="inputMask">
-         <string>NNNN</string>
+         <string notr="true">NNNN</string>
         </property>
         <property name="text">
-         <string>0000</string>
+         <string notr="true">0000</string>
         </property>
        </widget>
       </item>
@@ -150,7 +150,7 @@
          </size>
         </property>
         <property name="text">
-         <string>R</string>
+         <string notr="true">R</string>
         </property>
         <property name="icon">
          <iconset resource="../resources.qrc">
@@ -185,7 +185,7 @@
          </size>
         </property>
         <property name="text">
-         <string>W</string>
+         <string notr="true">W</string>
         </property>
         <property name="icon">
          <iconset resource="../resources.qrc">
@@ -208,7 +208,7 @@
          </size>
         </property>
         <property name="text">
-         <string>...</string>
+         <string notr="true">...</string>
         </property>
         <property name="icon">
          <iconset resource="../resources.qrc">
@@ -276,7 +276,7 @@
   <customwidget>
    <class>DumpArea</class>
    <extends>QWidget</extends>
-   <header>dialogs/dumparea.h</header>
+   <header location="global">dialogs/dumparea.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

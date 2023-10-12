@@ -4,120 +4,206 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="518"/>
+        <location filename="../emulator/core.cpp" line="+679"/>
         <source>Error</source>
-        <translation type="unfinished">Ошибка</translation>
+        <translation>Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="518"/>
+        <location line="+0"/>
         <source>No CPU clock value found</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задана тактовая частота процессора</translation>
     </message>
 </context>
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="269"/>
+        <location line="-367"/>
+        <location line="+50"/>
+        <location line="+5"/>
+        <location line="+3"/>
         <source>Error</source>
-        <translation type="unfinished">Ошибка</translation>
+        <translation>Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="269"/>
+        <location line="-58"/>
         <source>Incorrect clock value for &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректное значение для тактовой частоты %1</translation>
+    </message>
+    <message>
+        <location line="+50"/>
+        <source>Incorrect interface definition for %1</source>
+        <translation>Некорректное определение интерфейса для %1</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+3"/>
+        <source>Incorrect connection for %1:%2</source>
+        <translation>Некорректное соединение интерфейсов для %1:%2</translation>
+    </message>
+</context>
+<context>
+    <name>DebugWindow</name>
+    <message>
+        <location filename="../dialogs/debugwindow.ui" line="+14"/>
+        <source>Dialog</source>
+        <translation>Отладчик</translation>
+    </message>
+    <message>
+        <location line="+88"/>
+        <source>Return to PC</source>
+        <translation>Вернуться к PC</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Step into</source>
+        <translation>Шаг внутрь</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Step over</source>
+        <translation>Шаг снаружи</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Run until cursor</source>
+        <translation>Выполнить до курсора</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Run under debugger</source>
+        <translation>Запустить под отладчиком</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Stop</source>
+        <translation>Останов</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Run without debugging</source>
+        <translation>Запустить без отладки</translation>
+    </message>
+    <message>
+        <location line="+63"/>
+        <source>Add a breakpoint</source>
+        <translation>Добавить точку останова</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Delete breakpoint</source>
+        <translation>Удалить точку остнова</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Set value</source>
+        <translation>Установить значение</translation>
     </message>
 </context>
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="182"/>
+        <location filename="../emulator/core.cpp" line="-171"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="182"/>
+        <location line="+0"/>
         <source>Can&apos;t create device %1:%2</source>
         <translation>Не удалось создать устройство %1:%2</translation>
+    </message>
+    <message>
+        <location line="+36"/>
+        <source>Device %1 not found</source>
+        <translation>Устройство %1 не найдено</translation>
+    </message>
+</context>
+<context>
+    <name>DisAsm</name>
+    <message>
+        <location filename="../emulator/disasm.cpp" line="+29"/>
+        <location line="+35"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="-35"/>
+        <source>Error reading CPU instructions file %1</source>
+        <translation>Ошибка при чтении файла описаний инструкций процессора %1</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>CPU instruction %1 length is incorrect</source>
+        <translation>Длина инструкции %1 указана некорректно</translation>
     </message>
 </context>
 <context>
     <name>DumpWindow</name>
     <message>
-        <location filename="../dialogs/dumpwindow.ui" line="14"/>
+        <location filename="../dialogs/dumpwindow.ui" line="+14"/>
         <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Дамп</translation>
     </message>
     <message>
-        <location filename="../dialogs/dumpwindow.ui" line="62"/>
-        <source>0000:0000</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../dialogs/dumpwindow.ui" line="69"/>
-        <source>...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../dialogs/dumpwindow.ui" line="93"/>
+        <location line="+79"/>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть</translation>
     </message>
 </context>
 <context>
     <name>EmulatorConfig</name>
     <message>
-        <location filename="../emulator/config.cpp" line="147"/>
-        <location filename="../emulator/config.cpp" line="162"/>
-        <location filename="../emulator/config.cpp" line="168"/>
-        <location filename="../emulator/config.cpp" line="177"/>
-        <location filename="../emulator/config.cpp" line="184"/>
-        <location filename="../emulator/config.cpp" line="193"/>
-        <location filename="../emulator/config.cpp" line="209"/>
-        <location filename="../emulator/config.cpp" line="221"/>
-        <location filename="../emulator/config.cpp" line="232"/>
-        <location filename="../emulator/config.cpp" line="250"/>
-        <location filename="../emulator/config.cpp" line="259"/>
-        <location filename="../emulator/config.cpp" line="275"/>
-        <location filename="../emulator/config.cpp" line="300"/>
+        <location filename="../emulator/config.cpp" line="+162"/>
+        <location line="+15"/>
+        <location line="+6"/>
+        <location line="+9"/>
+        <location line="+7"/>
+        <location line="+9"/>
+        <location line="+16"/>
+        <location line="+12"/>
+        <location line="+11"/>
+        <location line="+18"/>
+        <location line="+9"/>
+        <location line="+16"/>
+        <location line="+25"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/config.cpp" line="147"/>
+        <location line="-153"/>
         <source>Error reading config file %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка чтения файла конфигурации %1</translation>
     </message>
     <message>
-        <location filename="../emulator/config.cpp" line="162"/>
-        <location filename="../emulator/config.cpp" line="168"/>
+        <location line="+15"/>
+        <location line="+6"/>
         <source>Configuration error for device &apos;%1&apos; - no type found</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка конфигурации устройства %1 - не указан тип</translation>
     </message>
     <message>
-        <location filename="../emulator/config.cpp" line="177"/>
+        <location line="+9"/>
         <source>Configuration error for device &apos;%1&apos; - no description found</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка конфигурации устройства %1 - отсутствует описание</translation>
     </message>
     <message>
-        <location filename="../emulator/config.cpp" line="184"/>
-        <location filename="../emulator/config.cpp" line="193"/>
-        <location filename="../emulator/config.cpp" line="275"/>
+        <location line="+7"/>
+        <location line="+9"/>
+        <location line="+82"/>
         <source>Configuration error for device &apos;%1&apos; - incorrect parameters</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка конфигурации устройства %1 - некорректно заданы параметры</translation>
     </message>
     <message>
-        <location filename="../emulator/config.cpp" line="209"/>
-        <location filename="../emulator/config.cpp" line="221"/>
-        <location filename="../emulator/config.cpp" line="232"/>
-        <location filename="../emulator/config.cpp" line="250"/>
-        <location filename="../emulator/config.cpp" line="259"/>
+        <location line="-66"/>
+        <location line="+12"/>
+        <location line="+11"/>
+        <location line="+18"/>
+        <location line="+9"/>
         <source>Configuration error for device parameter &apos;%1:%2&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректно задан параметр для устройства %1:%2</translation>
     </message>
     <message>
-        <location filename="../emulator/config.cpp" line="300"/>
+        <location line="+41"/>
         <source>Device &apos;%1&apos; not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Устройство %1 не найдено</translation>
     </message>
     <message>
         <source>Error reading config file</source>
@@ -125,88 +211,442 @@
     </message>
 </context>
 <context>
+    <name>FDD</name>
+    <message>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+38"/>
+        <location line="+13"/>
+        <location line="+24"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="-37"/>
+        <source>Incorrect fdd parameters for &apos;%1&apos;</source>
+        <translation>Некорректный параметр дисковода &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Disk image file &apos;%1&apos; not found</source>
+        <translation>Файл образа диска &apos;%1&apos; не найден</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Incorrect disk image size for &apos;%1&apos;</source>
+        <translation>Некорректный файл образа диска &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>This mode is not supported</source>
+        <translation>Режим не поддерживается</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Reading outside of a sector</source>
+        <translation>Попытка чтения за пределеами сектора</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Writing outside of a sector</source>
+        <translation>Попытка записи за пределами сектора</translation>
+    </message>
+</context>
+<context>
+    <name>I8255</name>
+    <message>
+        <location filename="../emulator/devices/common/i8255.cpp" line="+41"/>
+        <location line="+62"/>
+        <source>i8255:A is in an unsupported mode</source>
+        <translation>i8255:А переведен в неподдерживаемый режим</translation>
+    </message>
+    <message>
+        <location line="-50"/>
+        <location line="+56"/>
+        <source>i8255:B is in an unsupported mode</source>
+        <translation>i8255:B переведен в неподдерживаемый режим</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>i8255:unknown interface called</source>
+        <translation>Обращение к неизвестному интерфейсу</translation>
+    </message>
+</context>
+<context>
+    <name>I8255Window</name>
+    <message>
+        <location filename="../dialogs/i8255window.ui" line="+14"/>
+        <source>Dialog</source>
+        <translation>8255</translation>
+    </message>
+    <message>
+        <location line="+66"/>
+        <location line="+13"/>
+        <location line="+140"/>
+        <location line="+16"/>
+        <location filename="../dialogs/i8255window.cpp" line="+52"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Input</source>
+        <translation>Ввод</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Control</source>
+        <translation>Управление</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/i8255window.cpp" line="-3"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Output</source>
+        <translation>Вывод</translation>
+    </message>
+</context>
+<context>
+    <name>I8257</name>
+    <message>
+        <location filename="../emulator/devices/common/i8257.h" line="+62"/>
+        <source>i8257: reading from an unknown register</source>
+        <translation>i8257: чтение из неизвестного регистра</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>i8257: writing to an unknown register</source>
+        <translation>i8257: запись в неизвестный регистр</translation>
+    </message>
+</context>
+<context>
     <name>Interface</name>
     <message>
-        <location filename="../emulator/core.cpp" line="95"/>
+        <location filename="../emulator/core.cpp" line="-132"/>
         <source>Interface &apos;%1&apos; is in OFF state, writing is impossible</source>
-        <translation type="unfinished"></translation>
+        <translation>Интерфейс &apos;%1&apos; отключен, запись невозможна</translation>
+    </message>
+</context>
+<context>
+    <name>InterfaceManager</name>
+    <message>
+        <location line="+193"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Interface &apos;%1:%2&apos; not found</source>
+        <translation>Интерфейс &apos;%1:%2&apos; не найден</translation>
     </message>
 </context>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../mainwindow.ui" line="14"/>
+        <location filename="../mainwindow.ui" line="+20"/>
         <source>MainWindow</source>
-        <translation type="unfinished"></translation>
+        <translation>eCat3</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="36"/>
+        <location line="+68"/>
         <source>File</source>
         <translation>Файл</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="44"/>
+        <location line="+9"/>
         <source>Emulation</source>
         <translation>Эмуляция</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="48"/>
+        <location line="+4"/>
         <source>Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Устройства</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="59"/>
+        <location line="+16"/>
         <source>Help</source>
         <translation>Помощь</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="69"/>
+        <location line="+5"/>
+        <source>Display</source>
+        <translation>Экран</translation>
+    </message>
+    <message>
+        <location line="+12"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="103"/>
-        <source>Select a machine</source>
-        <translation>Выбрать компьютер...</translation>
+        <location line="+41"/>
+        <source>Select a machine...</source>
+        <translation>Выбор компьютера...</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="112"/>
+        <location line="+41"/>
+        <source>Open...</source>
+        <translation>Открыть...</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Debugger</source>
+        <translation>Отладчик</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Open debugger</source>
+        <translation>Открыть окно отладчика</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Screenshot</source>
+        <translation>Снимок экрана</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Get a screenshot</source>
+        <translation>Сделать снимок экрана</translation>
+    </message>
+    <message>
+        <source>Select a machine</source>
+        <translation type="vanished">Выбрать компьютер...</translation>
+    </message>
+    <message>
+        <location line="-56"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="121"/>
+        <location line="+9"/>
         <source>Cold restart</source>
-        <translation type="unfinished"></translation>
+        <translation>Холодный перезапуск</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="130"/>
+        <location line="+9"/>
         <source>Soft restart</source>
-        <translation type="unfinished"></translation>
+        <translation>Теплый перезапуск</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="135"/>
+        <location line="+5"/>
         <source>Device_one</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../mainwindow.cpp" line="+142"/>
+        <location line="+268"/>
+        <source>&lt;Not loaded&gt;</source>
+        <translation>&lt;Не загружено&gt;</translation>
+    </message>
+    <message>
+        <location line="-265"/>
+        <source>Open an image...</source>
+        <translation>Открыть образ...</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Write protect</source>
+        <translation>Защита от записи</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Eject</source>
+        <translation>Извлечь</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Write to a file...</source>
+        <translation>Сохранить образ...</translation>
+    </message>
+    <message>
+        <location line="+206"/>
+        <source>Open XML File 1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>All Files (*.*)</source>
+        <translation>Все файлы (*.*)</translation>
+    </message>
+    <message>
+        <location line="+37"/>
+        <source>Open disk image</source>
+        <translation>Открыть образ диска</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Save disk image to a file</source>
+        <translation>Сохранить образ диска в файл</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>File already exists</source>
+        <translation>Файл уже существует</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>File already exists. Overwrite? (Choose &quot;No&quot; to make a backup)</source>
+        <translation>Файл уже существует. Перезаписать? (Выберите &quot;Нет&quot;, чтобы создать резервную копию)</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>Backup error</source>
+        <translation>Ошибка создания резервной копии</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Error creating a backup. Probably *.bak already exists.</source>
+        <translation>Обшибка создания резервной копии. Возможно, файл с расширение *.bak уже существует.</translation>
+    </message>
+</context>
+<context>
+    <name>MemoryMapper</name>
+    <message>
+        <location filename="../emulator/core.cpp" line="+543"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect range for &apos;%1&apos;</source>
+        <translation>Некорректный диапазон для &apos;%1&apos;</translation>
+    </message>
+</context>
+<context>
+    <name>MemoryMapperWindow</name>
+    <message>
+        <location filename="../dialogs/mmwindow.ui" line="+14"/>
+        <source>Dialog</source>
+        <translation>Диспетчер адресов</translation>
+    </message>
+    <message>
+        <location line="+221"/>
+        <source>Close</source>
+        <translation>Закрыть</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Choose an address</source>
+        <translation>Выберите адрес</translation>
+    </message>
+</context>
+<context>
+    <name>OpenConfigWindow</name>
+    <message>
+        <location filename="../dialogs/openconfigwindow.ui" line="+14"/>
+        <source>Dialog</source>
+        <translation>Выбор конфигурации</translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>Set as default</source>
+        <translation>Установить по умолчанию</translation>
+    </message>
+    <message>
+        <location line="+47"/>
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Close</source>
+        <translation>Закрыть</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+109"/>
+        <source>No any description file found for this machine</source>
+        <translation>Файл описания для данной конфигурации не найден.</translation>
+    </message>
+</context>
+<context>
+    <name>PortWindow</name>
+    <message>
+        <location filename="../dialogs/portwindow.ui" line="+14"/>
+        <source>Dialog</source>
+        <translation>Порт</translation>
+    </message>
+</context>
+<context>
+    <name>QMessageBox</name>
+    <message>
+        <location filename="../emulator/files.h" line="+29"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Unable to find a RAM page to store data</source>
+        <translation>Не получилось найти страницу памяти для записи данных</translation>
     </message>
 </context>
 <context>
     <name>ROM</name>
     <message>
-        <location filename="../emulator/core.cpp" line="458"/>
-        <location filename="../emulator/core.cpp" line="465"/>
+        <location filename="../emulator/core.cpp" line="-277"/>
+        <location line="+28"/>
+        <location line="+7"/>
+        <location filename="../emulator/files.h" line="+21"/>
+        <location line="+19"/>
         <source>Error</source>
-        <translation type="unfinished">Ошибка</translation>
+        <translation>Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="458"/>
+        <location line="-35"/>
+        <location filename="../emulator/files.h" line="+0"/>
+        <source>Error reading HEX file %1</source>
+        <translation>Ошибка чтения HEX-файла &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location line="+28"/>
         <source>ROM image file for &apos;%1&apos; is too big</source>
-        <translation type="unfinished"></translation>
+        <translation>Размер образа ПЗУ &apos;%1&apos; превышает выделенный объем устройства</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="465"/>
+        <location line="+7"/>
         <source>Can&apos;t open ROM image file &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка чтения образа ПЗУ &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location filename="../emulator/files.h" line="-19"/>
+        <source>Error reading %1</source>
+        <translation>Ошибка чтения %1</translation>
+    </message>
+</context>
+<context>
+    <name>ScanKeyboard</name>
+    <message>
+        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+45"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Unknown key %1</source>
+        <translation>Неизвестная клавиша %1</translation>
+    </message>
+</context>
+<context>
+    <name>WD1793</name>
+    <message>
+        <location filename="../emulator/devices/common/wd1793.cpp" line="+28"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect fdd list for &apos;%1&apos;</source>
+        <translation>Некорректный список дисководов для &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location line="+110"/>
+        <source>Reading of more than one sector at once is not supported!</source>
+        <translation>Команда чтения нескольких секторов еще не поддерживается</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Writing of more than one sector at once is not supported!</source>
+        <translation>Команда записи нескольких секторов еще не поддерживается</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>Force Interrupt command with parameters is not supported!</source>
+        <translation>Команда &apos;Force Interrupt&apos; с параметрами еще не поддерживается</translation>
     </message>
 </context>
 </TS>

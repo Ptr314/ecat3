@@ -102,7 +102,7 @@
            <string>Return to PC</string>
           </property>
           <property name="text">
-           <string>...</string>
+           <string notr="true">...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
@@ -116,7 +116,7 @@
            <string>Step into</string>
           </property>
           <property name="text">
-           <string>...</string>
+           <string notr="true">...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
@@ -130,7 +130,7 @@
            <string>Step over</string>
           </property>
           <property name="text">
-           <string>...</string>
+           <string notr="true">...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
@@ -144,7 +144,7 @@
            <string>Run until cursor</string>
           </property>
           <property name="text">
-           <string>...</string>
+           <string notr="true">...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
@@ -158,7 +158,7 @@
            <string>Run under debugger</string>
           </property>
           <property name="text">
-           <string>...</string>
+           <string notr="true">...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
@@ -172,7 +172,7 @@
            <string>Stop</string>
           </property>
           <property name="text">
-           <string>...</string>
+           <string notr="true">...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
@@ -186,7 +186,7 @@
            <string>Run without debugging</string>
           </property>
           <property name="text">
-           <string>...</string>
+           <string notr="true">...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
@@ -228,14 +228,14 @@
            </size>
           </property>
           <property name="text">
-           <string>0000</string>
+           <string notr="true">0000</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="gotoButton">
           <property name="text">
-           <string>...</string>
+           <string notr="true">...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
@@ -249,7 +249,7 @@
            <string>Add a breakpoint</string>
           </property>
           <property name="text">
-           <string>...</string>
+           <string notr="true">...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
@@ -263,7 +263,7 @@
            <string>Delete breakpoint</string>
           </property>
           <property name="text">
-           <string>...</string>
+           <string notr="true">...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
@@ -286,7 +286,7 @@
            <string>Set value</string>
           </property>
           <property name="text">
-           <string>...</string>
+           <string notr="true">...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">
@@ -310,7 +310,7 @@
         <item>
          <widget class="QToolButton" name="closeButton">
           <property name="text">
-           <string>...</string>
+           <string notr="true">...</string>
           </property>
           <property name="icon">
            <iconset resource="../resources.qrc">

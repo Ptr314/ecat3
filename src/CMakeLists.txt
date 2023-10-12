@@ -92,3 +92,10 @@ qt_generate_deploy_app_script(
     NO_UNSUPPORTED_PLATFORM_ERROR
 )
 install(SCRIPT ${deploy_script})
+
+find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
+
+qt_add_translations(eCat3 TS_FILES
+    translations/en_US.ts
+    translations/ru_RU.ts
+)
