@@ -55,7 +55,7 @@ void OpenConfigWindow::list_machines(QString work_path)
         QFileInfo fi = it.nextFileInfo();
         if (fi.suffix().toLower() == "cfg")
         {
-            qDebug() << fi.absoluteFilePath();
+            //qDebug() << fi.absoluteFilePath();
             EmulatorConfig * config = new EmulatorConfig(fi.absoluteFilePath());
             EmulatorConfigDevice * system = config->get_device("system");
 
@@ -78,12 +78,12 @@ void OpenConfigWindow::list_machines(QString work_path)
             } else
                 family = dynamic_cast<ComputerFamily*>(node->child(index));
 
-            qDebug() << "DATA:" << family->data().toString();
+            //qDebug() << "DATA:" << family->data().toString();
 
             ComputerModel * computer = new ComputerModel(type, name, (!version.isEmpty())?version:name, fi.absoluteFilePath());
             family->appendRow(computer);
 
-            qDebug() << "DATA:" << computer->data().toString();
+            //qDebug() << "DATA:" << computer->data().toString();
 
             delete config;
         }

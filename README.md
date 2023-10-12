@@ -7,6 +7,10 @@
 
 # Compilation
 
+~~~
+cmake.exe --build ../build --target update_translations
+~~~
+
 ## Windows
 
 * MSVC

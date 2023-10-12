@@ -75,6 +75,9 @@ public:
 
     void run() override;
 
+    SDL_Surface * get_surface();
+    void get_screen_constraints(unsigned int * sx, unsigned int * sy);
+
 public slots:
     void timer_proc();
     void render_screen();
@@ -85,6 +88,8 @@ public slots:
     void reset(bool cold);
     void resize_screen();
     void stop_emulation();
+
+signals:
 
 };
 

@@ -59,6 +59,8 @@ private slots:
 
     void update_fdds();
 
+    void on_actionScreenshot_triggered();
+
 signals:
     void send_a_key(QKeyEvent *event, bool press);
     void send_volume(int value);

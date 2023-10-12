@@ -15,4 +15,6 @@ unsigned int CalcBits(unsigned int V, unsigned int MaxBits = 32);
 
 bool fileExists(QString path);
 
+unsigned decodeBMP(std::vector<unsigned char>& image, unsigned& w, unsigned& h, const std::vector<unsigned char>& bmp);
+
 #endif // UTILS_H

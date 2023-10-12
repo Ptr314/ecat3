@@ -19,6 +19,8 @@
 #include "dialogs/openconfigwindow.h"
 #include "emulator/devices/common/fdd.h"
 
+#include "libs/lodepng/lodepng.h"
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -481,3 +483,33 @@ void MainWindow::update_fdds()
         }
     }
 }
+
+void MainWindow::on_actionScreenshot_triggered()
+{
+    SDL_Surface * s = e->get_surface();
+    //SDL_SaveBMP(s, file_name.toUtf8().constData());
+
+    unsigned int sx, sy;
+    e->get_screen_constraints(&sx, &sy);
+
+    unsigned int bitmap_size = sx*sy*4 + 200;
+
+    std::vector<unsigned char> bmp;
+    bmp.resize(bitmap_size);
+
+    SDL_RWops *rw;
+    rw = SDL_RWFromMem(bmp.data(), bitmap_size);
+    SDL_SaveBMP_RW(s, rw, 0);
+
+    QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save screenshot"), e->work_path, "PNG (*.png)");
+
+    if (!file_name.isEmpty())
+    {
+        std::vector<unsigned char> image;
+        unsigned error = decodeBMP(image, sx, sy, bmp);
+        std::vector<unsigned char> png;
+        error = lodepng::encode(png, image, sx, sy);
+        lodepng::save_file(png, file_name.toUtf8().constData());
+    }
+}
+

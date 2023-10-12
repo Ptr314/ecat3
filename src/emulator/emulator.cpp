@@ -284,6 +284,16 @@ Emulator::~Emulator()
     delete dm;
 }
 
+SDL_Surface *  Emulator::get_surface()
+{
+    return device_surface;
+}
+
+void Emulator::get_screen_constraints(unsigned int * sx, unsigned int * sy)
+{
+    display->get_screen_constraints(sx, sy);
+}
+
 void Emulator::register_devices()
 {
     dm->register_device("ram", create_ram);
