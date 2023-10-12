@@ -7,6 +7,7 @@
 
 #include "emulator/emulator.h"
 #include "emulator/debug.h"
+#include "emulator/devices/common/fdd.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -51,6 +52,13 @@ private slots:
 
     void on_action_Exit_triggered();
 
+    void fdd_open(unsigned int n);
+    void fdd_eject(unsigned int n);
+    void fdd_wp(unsigned int n);
+    void fdd_write(unsigned int n);
+
+    void update_fdds();
+
 signals:
     void send_a_key(QKeyEvent *event, bool press);
     void send_volume(int value);
@@ -67,6 +75,16 @@ private:
     QSlider * volume;
     QToolButton * mute;
 
+    QToolButton * fdd_button[2];
+    QMenu * fdd_menu[2];
+    FDD * fdds[2];
+    FDC * fdc;
+    unsigned int max_fdd_count = 2;
+    unsigned int fdds_found = 0;
+    QTimer * fdd_timer;
+
+
     void CreateDevicesMenu();
+    void CreateFDDMenu(unsigned int n);
 };
 #endif // MAINWINDOW_H

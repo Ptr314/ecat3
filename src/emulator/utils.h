@@ -13,4 +13,6 @@ void convert_range(QString s, unsigned int * v1, unsigned int * v2);
 
 unsigned int CalcBits(unsigned int V, unsigned int MaxBits = 32);
 
+bool fileExists(QString path);
+
 #endif // UTILS_H

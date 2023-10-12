@@ -3,6 +3,8 @@
 #include <QEvent>
 #include <QSlider>
 #include <QFileDialog>
+#include <QWidgetAction>
+#include <QPushButton>
 
 #include "dialogs/i8255window.h"
 #include "mainwindow.h"
@@ -15,10 +17,14 @@
 #include "dialogs/debugwindow.h"
 #include "dialogs/portwindow.h"
 #include "dialogs/openconfigwindow.h"
+#include "emulator/devices/common/fdd.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , fdd_timer(nullptr)
+    , fdds_found(0)
+    , fdc(nullptr)
 {
     QFontDatabase::addApplicationFont(":/fonts/mono-bold");
     QFontDatabase::addApplicationFont(":/fonts/mono-regular");
@@ -27,6 +33,8 @@ MainWindow::MainWindow(QWidget *parent)
     QFontDatabase::addApplicationFont(":/fonts/dos");
 
     ui->setupUi(this);
+
+    memset(&fdds, 0, sizeof(fdds));
 
     QIcon * icon = new QIcon();
     icon->addFile(QString::fromUtf8(":/icons/sound"), QSize(), QIcon::Normal, QIcon::Off);
@@ -103,6 +111,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, &MainWindow::send_resize, e, &Emulator::resize_screen);
     connect(this, &MainWindow::send_stop,   e, &Emulator::stop_emulation, Qt::QueuedConnection);
 
+    for (unsigned int n=0; n < max_fdd_count; n++) CreateFDDMenu(n);
+    ui->toolBar->insertSeparator(ui->actionDebugger);
+
     QString file_to_load = e->read_setup("Startup", "default", "");
 
     e->load_config(work_path + file_to_load);
@@ -125,6 +136,43 @@ MainWindow::MainWindow(QWidget *parent)
 
 }
 
+void MainWindow::CreateFDDMenu(unsigned int n)
+{
+    fdd_menu[n] = new QMenu(this);
+    QAction * a1 = new QAction(MainWindow::tr("<Not loaded>"));
+    a1->setIcon(QIcon(":/icons/cdrom_unmount"));
+    a1->setEnabled(false);
+    QAction * a2 = new QAction(QString(MainWindow::tr("Open an image...")));
+    a2->setIcon(QIcon(":/icons/open"));
+    connect(a2, &QAction::triggered, this, [this, n=n](){fdd_open(n);});
+    QAction * a3 = new QAction(QString(MainWindow::tr("Write protect")));
+    connect(a3, &QAction::triggered, this, [this, n=n](){fdd_wp(n);});
+    a3->setIcon(QIcon(":/icons/lock"));
+    QAction * a4 = new QAction(QString(MainWindow::tr("Eject")));
+    connect(a4, &QAction::triggered, this, [this, n=n](){fdd_eject(n);});
+    a4->setIcon(QIcon(":/icons/eject"));
+    QAction * a5 = new QAction(QString(MainWindow::tr("Write to a file...")));
+    connect(a5, &QAction::triggered, this, [this, n=n](){fdd_write(n);});
+    a5->setIcon(QIcon(":/icons/file_save"));
+    fdd_menu[n]->addAction(a1);
+    fdd_menu[n]->addSeparator();
+    fdd_menu[n]->addAction(a2);
+    fdd_menu[n]->addAction(a3);
+    fdd_menu[n]->addAction(a4);
+    fdd_menu[n]->addAction(a5);
+
+    fdd_button[n] = new QToolButton();
+    fdd_button[n]->setIcon(QIcon(":/icons/floppy_unmount"));
+    fdd_button[n]->setMenu(fdd_menu[n]);
+    fdd_button[n]->setPopupMode(QToolButton::MenuButtonPopup);
+    fdd_button[n]->setFocusPolicy(Qt::NoFocus);
+
+    connect(fdd_button[n], &QToolButton::clicked, this, [this, n=n](){fdd_open(n);});
+
+
+    ui->toolBar->insertWidget(ui->actionDebugger, fdd_button[n] );
+}
+
 MainWindow::~MainWindow()
 {
     delete ui;
@@ -143,6 +191,52 @@ void MainWindow::CreateDevicesMenu()
         a->setEnabled( DWM->get_create_func(e->dm->get_device(i)->device_type) != nullptr );
     };
 
+    fdc = dynamic_cast<FDC*>(e->dm->get_device_by_name("fdc", false));
+
+    fdds_found = 0;
+    for (unsigned int i=0; i<max_fdd_count; i++)
+    {
+        FDD * fdd = dynamic_cast<FDD*>(e->dm->get_device_by_name(QString("fdd%1").arg(i), false));
+        if (fdd != nullptr)
+        {
+            fdds[fdds_found] = fdd;
+            if (fdd->get_loaded())
+            {
+                fdd_menu[fdds_found]->actions().at(0)->setText(fdd->file_name);
+                fdd_button[fdds_found]->setIcon(QIcon(":/icons/floppy_mount"));
+                if (fdds[fdds_found]->is_protected())
+                    fdd_button[fdds_found]->setIcon(QIcon(":/icons/floppy_locked"));
+            }
+            fdds_found++;
+        }
+    }
+
+    if (fdds_found > 0)
+    {
+        for (unsigned int i = 0; i < max_fdd_count; i++)
+        {
+            if (fdds[i] != nullptr)
+                fdd_button[i]->setEnabled(true);
+            else
+                fdd_button[i]->setEnabled(false);
+        }
+
+        if (fdd_timer == nullptr)
+        {
+            fdd_timer = new QTimer(this);
+            connect(fdd_timer, &QTimer::timeout, this, &MainWindow::update_fdds);
+        }
+        fdd_timer->start(100);
+    } else {
+        if (fdd_timer != nullptr) fdd_timer->stop();
+
+        for (unsigned int i = 0; i < max_fdd_count; i++)
+        {
+            fdd_button[i]->setIcon(QIcon(":/icons/floppy_unmount"));
+            fdd_button[i]->setEnabled(false);
+        }
+
+    }
 
     //TODO: Interface adaptation to a machine configuration
 
@@ -233,6 +327,7 @@ void MainWindow::load_config(QString file_name, bool set_default)
 {
     if (e->loaded)
     {
+        if (fdd_timer != nullptr) fdd_timer->stop();
         e->stop_video();
         e->quit();
         e->wait();
@@ -268,7 +363,6 @@ void MainWindow::on_actionOpen_triggered()
         HandleExternalFile(e, file_name);
 }
 
-
 void MainWindow::on_actionDebugger_triggered()
 {
     CPU * cpu = dynamic_cast<CPU*>(e->dm->get_device_by_name("cpu"));
@@ -280,21 +374,6 @@ void MainWindow::on_actionDebugger_triggered()
             w->show();
     }
 }
-
-//void MainWindow::show_screen()
-//{
-//    int rx, ry;
-//    SDL_GetRendererOutputSize(SDLRendererRef, &rx, &ry);
-//    render_rect.x = (rx - render_rect.w) / 2;
-//    render_rect.y = (ry - render_rect.h) / 2;
-
-//    SDLTexture = SDL_CreateTextureFromSurface(SDLRendererRef, device_surface);
-
-//    SDL_RenderCopy(SDLRendererRef, SDLTexture, NULL, &render_rect);
-//    SDL_RenderPresent(SDLRendererRef);
-
-//    SDL_DestroyTexture(SDLTexture);
-//}
 
 void MainWindow::closeEvent (QCloseEvent *event)
 {
@@ -311,3 +390,94 @@ void MainWindow::on_action_Exit_triggered()
     close();
 }
 
+void MainWindow::fdd_open(unsigned int n)
+{
+    if (fdds[n] != nullptr)
+    {
+        QString file_name = QFileDialog::getOpenFileName(this, MainWindow::tr("Open disk image"), e->work_path, fdds[n]->files);
+        if (!file_name.isEmpty())
+        {
+            QFileInfo fi(file_name);
+            fdd_menu[n]->actions().at(0)->setText(fi.fileName());
+            fdd_button[n]->setIcon(QIcon(":/icons/floppy_mount"));
+            fdds[n]->load_image(file_name);
+        }
+    }
+}
+
+void MainWindow::fdd_eject(unsigned int n)
+{
+    fdd_menu[n]->actions().at(0)->setText(MainWindow::tr("<Not loaded>"));
+    fdd_button[n]->setIcon(QIcon(":/icons/floppy_unmount"));
+    fdds[n]->unload();
+}
+
+void MainWindow::fdd_wp(unsigned int n)
+{
+    fdds[n]->change_protection();
+    if (fdds[n]->get_loaded()) {
+        if (fdds[n]->is_protected()) {
+            fdd_button[n]->setIcon(QIcon(":/icons/floppy_locked"));
+        } else {
+            fdd_button[n]->setIcon(QIcon(":/icons/floppy_mount"));
+        }
+    }
+}
+
+void MainWindow::fdd_write(unsigned int n)
+{
+    if (fdds[n] != nullptr)
+    {
+        QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save disk image to a file"), e->work_path, fdds[n]->files, 0, QFileDialog::DontConfirmOverwrite);
+        if (!file_name.isEmpty())
+        {
+            QMessageBox::StandardButton reply;
+
+            if (fileExists(file_name))
+            {
+                reply = QMessageBox::question(this,
+                                              MainWindow::tr("File already exists"),
+                                              MainWindow::tr("File already exists. Overwrite? (Choose \"No\" to make a backup)"),
+                                              QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel);
+            } else {
+                reply = QMessageBox::Yes;
+            }
+
+            if (reply == QMessageBox::Yes)
+            {
+                fdds[n]->save_image(file_name);
+            } else
+            if (reply == QMessageBox::No)
+            {
+                //QFileInfo fi(file_name);
+                QString backup_name = file_name + ".bak";
+                bool result = QFile::rename(file_name, backup_name);
+                if (result)
+                    fdds[n]->save_image(file_name);
+                else
+                    QMessageBox::critical(this, MainWindow::tr("Backup error"), MainWindow::tr("Error creating a backup. Probably *.bak already exists."));
+            }
+        }
+    }
+
+}
+
+void MainWindow::update_fdds()
+{
+    for (unsigned int i=0; i<fdds_found; i++)
+    {
+        if (fdc->get_busy() && fdc->get_selected_drive()==i) {
+            fdd_button[i]->setIcon(QIcon(":/icons/floppy_access"));
+        } else {
+            if (fdds[i]->get_loaded()) {
+                if (fdds[i]->is_protected()) {
+                    fdd_button[i]->setIcon(QIcon(":/icons/floppy_locked"));
+                } else {
+                    fdd_button[i]->setIcon(QIcon(":/icons/floppy_mount"));
+                }
+            } else {
+                fdd_button[i]->setIcon(QIcon(":/icons/floppy_unmount"));
+            }
+        }
+    }
+}

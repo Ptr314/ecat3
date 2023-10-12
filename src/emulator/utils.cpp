@@ -1,4 +1,5 @@
 #include <QException>
+#include <QFileInfo>
 
 #include "utils.h"
 
@@ -65,4 +66,13 @@ unsigned int CalcBits(unsigned int V, unsigned int MaxBits)
     for (unsigned int i=0; i < MaxBits-1; i++)
         result += (V >> i) & 1;
     return result;
+}
+
+bool fileExists(QString path) {
+    QFileInfo check_file(path);
+    if (check_file.exists() && check_file.isFile()) {
+        return true;
+    } else {
+        return false;
+    }
 }

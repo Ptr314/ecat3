@@ -27,6 +27,14 @@
         <file alias="ondebug">resources/icons/debug.png</file>
         <file alias="wrench">resources/icons/configure.png</file>
         <file alias="terminal">resources/icons/terminal.png</file>
+        <file alias="floppy_access">resources/icons/5floppy_access.png</file>
+        <file alias="floppy_locked">resources/icons/5floppy_locked.png</file>
+        <file alias="floppy_mount">resources/icons/5floppy_mount.png</file>
+        <file alias="floppy_unmount">resources/icons/5floppy_unmount.png</file>
+        <file alias="lock">resources/icons/encrypted.png</file>
+        <file alias="eject">resources/icons/player_eject.png</file>
+        <file alias="cdrom_unmount">resources/icons/cdrom_unmount.png</file>
+        <file alias="file_save">resources/icons/3floppy_unmount.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>

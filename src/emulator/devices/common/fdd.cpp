@@ -168,7 +168,14 @@ void FDD::change_protection()
 
 void FDD::save_image(QString file_name)
 {
-    //TODO: FDD Implement
+    if (loaded)
+    {
+        QFile file(file_name);
+        if (file.open(QIODevice::WriteOnly)){
+            file.write(reinterpret_cast<char*>(buffer), disk_size);
+            file.close();
+        }
+    }
 }
 
 void FDD::ConvertStreamFormat()
