@@ -1,6 +1,7 @@
 #ifndef z80main_H
 #define z80main_H
 
+
 #include "emulator/core.h"
 #include "emulator/devices/cpu/z80core.h"
 
@@ -10,6 +11,8 @@
 #include "cpulogger.h"
 #endif
 
+
+//using namespace z80;
 
 class z80;
 

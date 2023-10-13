@@ -210,7 +210,7 @@ D0	RNC	1
 D1	POP D	1
 D2 n n	JNC $nn	3
 D3 p	OUT $p	2
-D4 n n	JNC $nn	3
+D4 n n	CNC $nn	3
 D5	PUSH D	1
 D6 d	SUI $d	2
 D7	RST 2	1

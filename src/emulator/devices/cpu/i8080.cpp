@@ -1,7 +1,9 @@
 #include "i8080.h"
 
+using namespace I8080;
+
 //----------------------- Library wrapper -----------------------------------
-I8080Core::I8080Core(I8080 * emulator_device):
+I8080Core::I8080Core(i8080 * emulator_device):
     i8080core()
 {
     this->emulator_device = emulator_device;
@@ -34,7 +36,7 @@ void I8080Core::inte_changed(unsigned int inte)
 
 //----------------------- Emulator device -----------------------------------
 
-I8080::I8080(InterfaceManager *im, EmulatorConfigDevice *cd):
+i8080::i8080(InterfaceManager *im, EmulatorConfigDevice *cd):
     CPU(im, cd)
 {
     i_address = create_interface(16, "address", MODE_R, 1);
@@ -57,49 +59,49 @@ I8080::I8080(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 }
 
-I8080::~I8080()
+i8080::~i8080()
 {
 #ifdef LOG_8080
     delete logger;
 #endif
 }
 
-unsigned int I8080::get_pc()
+unsigned int i8080::get_pc()
 {
     return core->get_context()->registers.regs.PC;
 }
 
-unsigned int I8080::read_mem(unsigned int address)
+unsigned int i8080::read_mem(unsigned int address)
 {
     return mm->read(address);
 }
 
-void I8080::write_mem(unsigned int address, unsigned int data)
+void i8080::write_mem(unsigned int address, unsigned int data)
 {
     mm->write(address, data);
 }
 
-unsigned int I8080::read_port(unsigned int address)
+unsigned int i8080::read_port(unsigned int address)
 {
     return mm->read_port(address);
 }
 
-void I8080::write_port(unsigned int address, unsigned int data)
+void i8080::write_port(unsigned int address, unsigned int data)
 {
     mm->write_port(address, data);
 }
 
-void I8080::reset(bool cold)
+void i8080::reset(bool cold)
 {
     CPU::reset(cold);
 }
 
-void I8080::inte_changed(unsigned int inte)
+void i8080::inte_changed(unsigned int inte)
 {
     i_inte->change(inte);
 }
 
-QList<QString> I8080::get_registers()
+QList<QString> i8080::get_registers()
 {
     QList<QString> l;
     i8080context * c = core->get_context();
@@ -115,7 +117,7 @@ QList<QString> I8080::get_registers()
     return l;
 }
 
-QList<QString> I8080::get_flags()
+QList<QString> i8080::get_flags()
 {
     QList<QString> l;
     i8080context * c = core->get_context();
@@ -130,7 +132,7 @@ QList<QString> I8080::get_flags()
 }
 
 
-unsigned int I8080::execute()
+unsigned int i8080::execute()
 {
     if (reset_mode)
     {
@@ -177,7 +179,7 @@ unsigned int I8080::execute()
     return cycles;
 }
 
-void I8080::set_context_value(QString name, unsigned int value)
+void i8080::set_context_value(QString name, unsigned int value)
 {
     if (name == "PC")
     {
@@ -185,11 +187,11 @@ void I8080::set_context_value(QString name, unsigned int value)
     }
 }
 
-unsigned int I8080::get_command()
+unsigned int i8080::get_command()
 {
     return core->get_command();
 }
 
 ComputerDevice * create_i8080(InterfaceManager *im, EmulatorConfigDevice *cd){
-    return new I8080(im, cd);
+    return new i8080(im, cd);
 }

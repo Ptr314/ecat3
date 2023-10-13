@@ -5,6 +5,8 @@
 
 #include "z80_context.h"
 
+using namespace Z80;
+
 class z80core
 {
 private:
@@ -15,6 +17,18 @@ private:
     void do_ret();
     void do_jump();
     void do_call();
+    unsigned int do_jr(unsigned int command, bool cond);
+    uint8_t do_rlc(uint8_t v);
+    uint8_t do_rrc(uint8_t v);
+    uint8_t do_rl(uint8_t v);
+    uint8_t do_rr(uint8_t v);
+    uint8_t do_sla(uint8_t v);
+    uint8_t do_sra(uint8_t v);
+    uint8_t do_srl(uint8_t v);
+    uint8_t do_sll(uint8_t v);
+    void do_bit(unsigned int bit, uint8_t v);
+    uint8_t do_res(unsigned int bit, uint8_t v);
+    uint8_t do_set(unsigned int bit, uint8_t v);
 
 protected:
     z80context context;

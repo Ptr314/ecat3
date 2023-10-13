@@ -6,6 +6,9 @@
 #define LO4(v)      (v & 0x0F)
 #define HI4(v)      ((v >> 4) & 0x0F)
 
+#define LO8(v)      (static_cast<uint8_t>(v & 0xFF))
+#define HI8(v)      (static_cast<uint8_t>(v >> 8))
+
 #pragma pack(1)
 
 union PartsRecLE {

@@ -10,17 +10,18 @@
 #include "cpulogger.h"
 #endif
 
+using namespace I8080;
 
-class I8080;
+class i8080;
 
 //Library wrapper
 class I8080Core: public i8080core
 {
 private:
-    I8080 * emulator_device;
+    i8080 * emulator_device;
 
 public:
-    I8080Core(I8080 * emulator_device);
+    I8080Core(i8080 * emulator_device);
     virtual uint8_t read_mem(uint16_t address) override;
     virtual void write_mem(uint16_t address, uint8_t value) override;
     virtual uint8_t read_port(uint16_t address) override;
@@ -29,7 +30,7 @@ public:
 };
 
 //Emulator class
-class I8080: public CPU
+class i8080: public CPU
 {
 private:
     Interface * i_nmi;
@@ -47,8 +48,8 @@ protected:
     virtual unsigned int get_pc() override;
 
 public:
-    I8080(InterfaceManager *im, EmulatorConfigDevice *cd);
-    ~I8080();
+    i8080(InterfaceManager *im, EmulatorConfigDevice *cd);
+    ~i8080();
     virtual void reset(bool cold) override;
     virtual unsigned int execute() override;
     virtual unsigned int read_mem(unsigned int address) override;
