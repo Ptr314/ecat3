@@ -1,7 +1,7 @@
 #include <QDebug>
 
 #include "cpu_utils.h"
-#include "i8080core.h"
+#include "z80core.h"
 
 #define CARRY       (context.registers.regs.F & F_CARRY)
 #define HALF_CARRY  (context.registers.regs.F & F_HALF_CARRY)
@@ -98,7 +98,7 @@ static const uint8_t CONDITIONS[8][2] = {
     {F_SIGN, F_SIGN}        //NEGATIVE
 };
 
-static const uint8_t I8080LENGTHS[256] = {
+static const uint8_t z80LENGTHS[256] = {
     1,3,1,1,1,1,2,1,1,1,1,1,1,1,2,1,     // 00-0F
     1,3,1,1,1,1,2,1,1,1,1,1,1,1,2,1,     // 10-1F
     1,3,3,1,1,1,2,1,1,1,3,1,1,1,2,1,     // 20-2F
@@ -117,7 +117,7 @@ static const uint8_t I8080LENGTHS[256] = {
     1,1,3,1,3,1,2,1,1,1,3,1,3,1,2,1};    // F0-FF
 
 
-i8080core::i8080core()
+z80core::z80core()
 {
     //TODO: 8080 core constructor
     context.registers.regs.PC = 0;
@@ -125,18 +125,18 @@ i8080core::i8080core()
     context.int_enable = 0;
 }
 
-inline uint8_t i8080core::next_byte()
+inline uint8_t z80core::next_byte()
 {
     return read_mem(context.registers.regs.PC++);
 }
 
-inline uint8_t i8080core::read_command()
+inline uint8_t z80core::read_command()
 {
     //TODO: flipping M1
     return next_byte();
 }
 
-inline uint8_t i8080core::calc_base_flags(uint32_t value)
+inline uint8_t z80core::calc_base_flags(uint32_t value)
 {
 
     return F_BASE_8080
@@ -145,14 +145,14 @@ inline uint8_t i8080core::calc_base_flags(uint32_t value)
            | PARITY[(uint8_t)value];
 }
 
-inline uint8_t i8080core::calc_half_carry(uint8_t v1, uint8_t v2, uint8_t c)
+inline uint8_t z80core::calc_half_carry(uint8_t v1, uint8_t v2, uint8_t c)
 {
 
     return (LO4(v1) + LO4(v2) + c) & F_HALF_CARRY;
 }
 
 
-inline void i8080core::do_ret()
+inline void z80core::do_ret()
 {
     PartsRecLE T;
     T.b.L = read_mem(context.registers.regs.SP);
@@ -161,7 +161,7 @@ inline void i8080core::do_ret()
     context.registers.regs.SP += 2;
 }
 
-inline void i8080core::do_jump()
+inline void z80core::do_jump()
 {
     PartsRecLE T;
     T.b.L = next_byte();
@@ -169,7 +169,7 @@ inline void i8080core::do_jump()
     context.registers.regs.PC = T.w;
 }
 
-inline void i8080core::do_call()
+inline void z80core::do_call()
 {
     PartsRecLE T;
     T.b.L = next_byte();
@@ -180,7 +180,7 @@ inline void i8080core::do_call()
     context.registers.regs.PC = T.w;
 }
 
-void i8080core::reset()
+void z80core::reset()
 {
     context.registers.regs.PC = 0;
     context.halted = false;
@@ -188,22 +188,22 @@ void i8080core::reset()
     inte_changed(context.int_enable);
 }
 
-i8080context * i8080core::get_context()
+z80context * z80core::get_context()
 {
     return &context;
 }
 
-uint8_t i8080core::read_port(uint16_t address){
+uint8_t z80core::read_port(uint16_t address){
     return 0xFF;
 }
 
-void i8080core::write_port(uint16_t address, uint8_t value)
+void z80core::write_port(uint16_t address, uint8_t value)
 {}
 
-void i8080core::inte_changed(unsigned int inte)
+void z80core::inte_changed(unsigned int inte)
 {}
 
-unsigned int i8080core::execute()
+unsigned int z80core::execute()
 {
     uint8_t command;
     uint16_t port;
