@@ -32,6 +32,7 @@ namespace Z80
     const uint8_t F_BASE_8080  = 0x02; //This bit is always set
 
     const uint8_t F_CARRY      = 1;
+    const uint8_t F_SUB        = (1 << 1); //0x02
     const uint8_t F_PARITY     = (1 << 2); //0x04
     const uint8_t F_B3         = (1 << 3); //0x08
     const uint8_t F_HALF_CARRY = (1 << 4); //0x10

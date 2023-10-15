@@ -23,6 +23,9 @@ using namespace Z80;
 #define REG_DE_      context.registers.regs.DE_
 #define REG_HL_      context.registers.regs.HL_
 
+const uint32_t FLAGS_35 = F_B3 + F_B5;
+
+
 //Register id to array index
 static const unsigned int REGISTERS8[8] = {1, 0, 3, 2, 5, 4, 6, 7};
 
@@ -161,6 +164,29 @@ inline uint8_t z80core::calc_base_flags(uint32_t value)
            | ( (value >> 8) & F_CARRY )
            | ZERO_SIGN[(uint8_t)value]
            | PARITY[(uint8_t)value];
+}
+
+inline uint8_t z80core::calc_z80_flags(
+                        uint32_t value,         //Value for standard flags
+                        uint32_t value35,       //Value for flags 3 and 5
+                        uint32_t flags_set,     //Flags to be set
+                        uint32_t flags_reset,   //Flags to be reset
+                        uint32_t flags_chg      //Flags to be calculated
+                    )
+{
+    uint32_t result;
+    uint32_t mask_reset = ~(flags_reset + flags_chg);
+
+    result = (REG_F & mask_reset) | flags_set;      //Set and reset selected flags, reset flags to be changed
+    result |= ( ( (value >> 8) & F_CARRY )              //CARRY
+                | (value35 & FLAGS_35)                  //3 and 5
+                | ZERO_SIGN[(uint8_t)value]             //ZERO and SIGN
+                | PARITY[(uint8_t)value]                //PARITY
+               ) & flags_chg;                       //Leave only flags to be changed
+
+    REG_F = result;
+    return result;
+
 }
 
 inline uint8_t z80core::calc_half_carry(uint8_t v1, uint8_t v2, uint8_t c)
@@ -305,10 +331,11 @@ inline uint8_t z80core::do_sll(uint8_t v)
     return result;
 }
 
-inline void z80core::do_bit(unsigned int bit, uint8_t v)
+inline uint8_t z80core::do_bit(unsigned int bit, uint8_t v)
 {
     uint8_t result = v & (1 << bit);
     //TODO: BIT set flags
+    return result;
 }
 
 inline uint8_t z80core::do_res(unsigned int bit, uint8_t v)
@@ -353,7 +380,7 @@ unsigned int z80core::execute()
 {
     uint8_t command, command2;
     uint16_t port;
-    unsigned int XX, YYY, ZZZ, PP, Q, XX2, YYY2, ZZZ2;
+    unsigned int XX, YYY, ZZZ, PP, Q, XX2, YYY2, ZZZ2, PP2;
     PartsRecLE T, D;
     unsigned int cycles;
 
@@ -787,15 +814,15 @@ unsigned int z80core::execute()
                 XX2 = command2 >> 6;
                 YYY2 = (command2 >> 3) & 0x07;
                 ZZZ2 = command2 & 0x07;
+
+                if (ZZZ2 == 6)
+                    T.b.L = read_mem(REG_HL);
+                else
+                    T.b.L = context.registers.reg_array_8[REGISTERS8[ZZZ2]];
+
                 switch (XX2) {
                 case 0:
                     // CB 00_rot_SSS
-
-                    if (ZZZ2 == 6)
-                        T.b.L = read_mem(REG_HL);
-                    else
-                        T.b.L = context.registers.reg_array_8[REGISTERS8[ZZZ2]];
-
                     switch (YYY2) {
                     case 0:
                         //RLC
@@ -829,57 +856,39 @@ unsigned int z80core::execute()
                         //SRL
                         D.b.L = do_srl(T.b.L);
                         break;
+                    default:
+                        D.b.L = 0;  //Never happens, just to avoid warnings
+                        break;
                     }
-
-                    if (ZZZ2 == 6)
-                        write_mem(REG_HL, D.b.L);
-                    else
-                        context.registers.reg_array_8[REGISTERS8[ZZZ2]] = D.b.L;
-
                     break;
                 case 1:
                     // CB 01_bit_SSS
                     //BIT bit, SSS
-                    if (ZZZ2 == 6)
-                        T.b.L = read_mem(REG_HL);
-                    else
-                        T.b.L = context.registers.reg_array_8[REGISTERS8[ZZZ2]];
-
-                    do_bit(YYY2, T.b.L);
-
+                    D.b.L = do_bit(YYY2, T.b.L);    //Should not be stored back
                     break;
                 case 2:
                     // CB 10 bit SSS
                     //RES bit, SSS
-                    if (ZZZ2 == 6)
-                        T.b.L = read_mem(REG_HL);
-                    else
-                        T.b.L = context.registers.reg_array_8[REGISTERS8[ZZZ2]];
-
                     D.b.L = do_res(YYY2, T.b.L);
-
-                    if (ZZZ2 == 6)
-                        write_mem(REG_HL, D.b.L);
-                    else
-                        context.registers.reg_array_8[REGISTERS8[ZZZ2]] = D.b.L;
-
                     break;
                 case 3:
                     // CB 11 bit SSS
                     //SET bit, SSS
-                    if (ZZZ2 == 6)
-                        T.b.L = read_mem(REG_HL);
-                    else
-                        T.b.L = context.registers.reg_array_8[REGISTERS8[ZZZ2]];
-
                     D.b.L = do_set(YYY2, T.b.L);
+                    break;
+                default:
+                    D.b.L = 0;      //Never happens, just to avoid warnings
+                    break;
+                }
 
+                if (XX2 != 1)
+                {
                     if (ZZZ2 == 6)
                         write_mem(REG_HL, D.b.L);
                     else
                         context.registers.reg_array_8[REGISTERS8[ZZZ2]] = D.b.L;
-                    break;
                 }
+
                 break;
             case 2:
                 //11_010_011
@@ -960,15 +969,302 @@ unsigned int z80core::execute()
                     //CALL ADDR16
                     do_call();
                     break;
+                case 2:
+                    //11_101_101
+                    //Prefix ED
+                    command2 = next_byte();
+                    //XX YYY ZZZ
+                    XX2 = command2 >> 6;
+                    YYY2 = (command2 >> 3) & 0x07;
+                    ZZZ2 = command2 & 0x07;
+                    switch (XX2) {
+                    case 0:
+                        //ED 00 YYY ZZZ
+                        //*NOP/NONI
+                        break;
+                    case 1:
+                        //ED 01 YYY ZZZ
+                        switch (ZZZ2) {
+                        case 0:
+                            // ED 01 YYY 000
+                            if (YYY2 == 0b110) {
+                                // ED 01 110 000
+                                // *IN F, [C]
+                                // TODO: *IN F, [C]
+                            } else {
+                                // ED 01 YYY 000
+                                // IN YYY, [C]
+                                // TODO: IN YYY, [C]
+                            }
+                            break;
+                        case 1:
+                            // ED 01 YYY 001
+                            if (YYY2 == 0b110) {
+                                // ED 01 110 001
+                                // *OUT [C], 0
+                                // TODO: *OUT [C], 0
+                            } else {
+                                // ED 01 YYY 001
+                                // OUT [C], YYY
+                                // TODO: OUT [C], YYY
+                            }
+                            break;
+                        case 2:
+                            // ED 01 YYY 010
+                            PP2 = (YYY2 >> 1) & 0x03;
+                            if ((YYY2 & 0x01)==0) {
+                                // ED 01 RP0 010
+                                // SBC HL, RP
+                                // TODO: SBC HL, RP
+                            } else {
+                                // ED 01 RP1 010
+                                // ADC HL, RP
+                                // TODO: ADC HL, RP
+                            }
+                            break;
+                        case 3:
+                            // ED 01 YYY 011
+                            PP2 = (YYY2 >> 1) & 0x03;
+                            if ((YYY2 & 0x01)==0) {
+                                // ED 01 RP0 011
+                                // LD [ADDR16], RP
+                                // TODO: LD [ADDR16], RP
+                            } else {
+                                // ED 01 RP1 011
+                                // LD RP, [ADDR16]
+                                // TODO: LD RP, [ADDR16]
+                            }
+                            break;
+                        case 4:
+                            // ED 01 YYY 100
+                            // NEG/*NEG
+                            //TODO: NEG
+                            break;
+                        case 5:
+                            // ED 01 YYY 101
+                            // RETI/*RETN
+                            // TODO: RETI
+                            break;
+                        case 6:
+                            // ED 01 YYY 110
+                            switch (YYY2) {
+                            case 0:
+                            case 4:
+                                // ED 01 X00 110
+                                // IM 0/*IM 0
+                                // TODO: IM 0
+                                break;
+                            case 1:
+                            case 5:
+                                // ED 01 X01 110
+                                // *IM 0
+                                // TODO: *IM 0
+                                break;
+                            case 2:
+                            case 6:
+                                // ED 01 X10 110
+                                // IM 1/*IM 1
+                                // TODO: IM 1
+                                break;
+                            case 3:
+                            case 7:
+                                // ED 01 X11 110
+                                // IM 2/*IM 2
+                                // TODO: IM 2
+                                break;
+                            }
+                            break;
+                        case 7:
+                            // ED 01 YYY 111
+                            switch (YYY2) {
+                            case 0:
+                                // ED 01 000 111
+                                // LD I, A
+                                // TODO: LD I, A
+                                break;
+                            case 1:
+                                // ED 01 001 111
+                                // LD R, A
+                                // TODO: LD R, A
+                                break;
+                            case 2:
+                                // ED 01 010 111
+                                // LD A, I
+                                // TODO: LD A, I
+                                break;
+                            case 3:
+                                // ED 01 011 111
+                                // LD A, R
+                                // TODO: LD A, R
+                                break;
+                            case 4:
+                                // ED 01 100 111
+                                // RRD
+                                // TODO: RRD
+                                break;
+                            case 5:
+                                // ED 01 101 111
+                                // RLD
+                                // TODO: RLD
+                                break;
+                            case 6:
+                            case 7:
+                                // ED 01 11X 111
+                                // *NOP
+                                break;
+                            }
+                            break;
+                        }
+                        break;
+                    case 2:
+                        //ED 10 YYY ZZZ
+                        switch (YYY2) {
+                        case 0:
+                        case 1:
+                        case 2:
+                        case 3:
+                            // ED 10 0YY ZZZ
+                            // *NOP
+                            break;
+                        case 4:
+                            switch (ZZZ2) {
+                            case 0:
+                                // ED 10 100 000
+                                // LDI
+                                // TODO: LDI
+                                break;
+                            case 1:
+                                // ED 10 100 001
+                                // CPI
+                                // TODO: CPI
+                                break;
+                            case 2:
+                                // ED 10 100 010
+                                // INI
+                                // TODO: INI
+                                break;
+                            case 3:
+                                // ED 10 100 011
+                                // OUTI
+                                // TODO: OUTI
+                                break;
+                            case 4:
+                            case 5:
+                            case 6:
+                            case 7:
+                                // ED 10 100 1ZZ
+                                // *NOP
+                                break;
+                            }
+                            break;
+                        case 5:
+                            // ED 10 101 ZZZ
+                            switch (ZZZ2) {
+                            case 0:
+                                // ED 10 101 000
+                                // LDD
+                                // TODO: LDD
+                                break;
+                            case 1:
+                                // ED 10 101 001
+                                // CPD
+                                // TODO: CPD
+                                break;
+                            case 2:
+                                // ED 10 101 010
+                                // IND
+                                // TODO: IND
+                                break;
+                            case 3:
+                                // ED 10 101 011
+                                // OUTD
+                                // TODO: OUTD
+                                break;
+                            case 4:
+                            case 5:
+                            case 6:
+                            case 7:
+                                // ED 10 101 1ZZ
+                                // *NOP
+                                break;
+                            }
+                            break;
+                        case 6:
+                            // ED 10 110 ZZZ
+                            switch (ZZZ2) {
+                            case 0:
+                                // ED 10 110 000
+                                // LDIR
+                                // TODO: LDIR
+                                break;
+                            case 1:
+                                // ED 10 110 001
+                                // CPIR
+                                // TODO: CPIR
+                                break;
+                            case 2:
+                                // ED 10 110 010
+                                // INIR
+                                // TODO: INIR
+                                break;
+                            case 3:
+                                // ED 10 110 011
+                                // OTIR
+                                // TODO: OTIR
+                                break;
+                            case 4:
+                            case 5:
+                            case 6:
+                            case 7:
+                                // ED 10 110 1ZZ
+                                // *NOP
+                                break;
+                            }
+                            break;
+                        case 7:
+                            // ED 10 111 ZZZ
+                            switch (ZZZ2) {
+                            case 0:
+                                // ED 10 111 000
+                                // LDDR
+                                // TODO: LDDR
+                                break;
+                            case 1:
+                                // ED 10 111 001
+                                // CPDR
+                                // TODO: CPDR
+                                break;
+                            case 2:
+                                // ED 10 111 010
+                                // INDR
+                                // TODO: INDR
+                                break;
+                            case 3:
+                                // ED 10 111 011
+                                // OTDR
+                                // TODO: OTDR
+                                break;
+                            case 4:
+                            case 5:
+                            case 6:
+                            case 7:
+                                // ED 10 111 1ZZ
+                                // *NOP
+                                break;
+                            }
+                            break;
+                        }
+                        break;
+                    case 3:
+                        //ED 11 YYY ZZZ
+                        // *NOP
+                        break;
+                    }
+                    break;
                 case 1:
                     //11_011_101
                     //Prefix DD
                     //TODO: Prefix DD
-                    break;
-                case 2:
-                    //11_101_101
-                    //Prefix ED
-                    //TODO: Prefix ED
                     break;
                 case 3:
                     //11_111_101

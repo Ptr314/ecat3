@@ -13,6 +13,13 @@ private:
     uint8_t next_byte();
     uint8_t read_command();
     uint8_t calc_base_flags(uint32_t value);
+    uint8_t calc_z80_flags(
+                            uint32_t value,         //Value to calc standard flags
+                            uint32_t value35,       //Value to get flags 3 and 5
+                            uint32_t flags_set,     //Flags to set
+                            uint32_t flags_reset,   //Flags to reset
+                            uint32_t flags_chg      //Flags to calculate
+        );
     uint8_t calc_half_carry(uint8_t v1, uint8_t v2, uint8_t c);
     void do_ret();
     void do_jump();
@@ -26,7 +33,7 @@ private:
     uint8_t do_sra(uint8_t v);
     uint8_t do_srl(uint8_t v);
     uint8_t do_sll(uint8_t v);
-    void do_bit(unsigned int bit, uint8_t v);
+    uint8_t do_bit(unsigned int bit, uint8_t v);
     uint8_t do_res(unsigned int bit, uint8_t v);
     uint8_t do_set(unsigned int bit, uint8_t v);
 
