@@ -20,6 +20,7 @@ private:
                             uint32_t flags_reset,   //Flags to reset
                             uint32_t flags_chg      //Flags to calculate
         );
+    uint8_t calc_overflow(uint32_t a, uint32_t b, uint32_t result, uint32_t position);
     uint8_t calc_half_carry(uint8_t v1, uint8_t v2, uint8_t c);
     void do_ret();
     void do_jump();
@@ -36,6 +37,13 @@ private:
     uint8_t do_bit(unsigned int bit, uint8_t v);
     uint8_t do_res(unsigned int bit, uint8_t v);
     uint8_t do_set(unsigned int bit, uint8_t v);
+    uint8_t do_DD_FD_CB(unsigned int prefix);
+
+    uint32_t get_first_16();
+    uint32_t get_second_16(uint32_t PP);
+    void store_value_16(uint32_t value);
+    uint8_t get_first_8(unsigned int YYY, uint32_t * address, unsigned int *cycles);
+    void store_value_8(unsigned int YYY, uint32_t address, uint8_t value, unsigned int * cycles);
 
 protected:
     z80context context;

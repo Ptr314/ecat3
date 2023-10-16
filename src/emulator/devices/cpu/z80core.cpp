@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QException>
 
 #include "cpu_utils.h"
 #include "z80core.h"
@@ -10,18 +11,31 @@ using namespace Z80;
 
 #define REG_A       context.registers.regs.A
 #define REG_B       context.registers.regs.B
+#define REG_C       context.registers.regs.C
+#define REG_D       context.registers.regs.D
+#define REG_E       context.registers.regs.E
+#define REG_H       context.registers.regs.H
+#define REG_L       context.registers.regs.L
+#define REG_IXH     context.registers.regs.IXH
+#define REG_IXL     context.registers.regs.IXL
+#define REG_IYH     context.registers.regs.IYH
+#define REG_IYL     context.registers.regs.IYL
+
 #define REG_F       context.registers.regs.F
 #define REG_AF      context.registers.reg_pairs.AF
 #define REG_BC      context.registers.reg_pairs.BC
 #define REG_DE      context.registers.reg_pairs.DE
 #define REG_HL      context.registers.reg_pairs.HL
+#define REG_IX      context.registers.reg_pairs.IX
+#define REG_IY      context.registers.reg_pairs.IY
 
+#define REG_SP      context.registers.regs.SP
 #define REG_PC      context.registers.regs.PC
 
-#define REG_AF_      context.registers.regs.AF_
-#define REG_BC_      context.registers.regs.BC_
-#define REG_DE_      context.registers.regs.DE_
-#define REG_HL_      context.registers.regs.HL_
+#define REG_AF_     context.registers.regs.AF_
+#define REG_BC_     context.registers.regs.BC_
+#define REG_DE_     context.registers.regs.DE_
+#define REG_HL_     context.registers.regs.HL_
 
 const uint32_t FLAGS_35 = F_B3 + F_B5;
 
@@ -189,6 +203,14 @@ inline uint8_t z80core::calc_z80_flags(
 
 }
 
+inline uint8_t z80core::calc_overflow(uint32_t a, uint32_t b, uint32_t result, uint32_t position)
+{
+    if (((a ^ b) & (a ^ result) & position) != 0)
+        return F_OVERFLOW;
+    else
+        return 0;
+}
+
 inline uint8_t z80core::calc_half_carry(uint8_t v1, uint8_t v2, uint8_t c)
 {
 
@@ -341,15 +363,22 @@ inline uint8_t z80core::do_bit(unsigned int bit, uint8_t v)
 inline uint8_t z80core::do_res(unsigned int bit, uint8_t v)
 {
     uint8_t result = v & ~(1 << bit);
-    //TODO: BIT set flags
+    //TODO: BIT reset
     return result;
 }
 
 inline uint8_t z80core::do_set(unsigned int bit, uint8_t v)
 {
     uint8_t result = v | (1 << bit);
-    //TODO: BIT set flags
+    //TODO: BIT set
     return result;
+}
+
+inline uint8_t z80core::do_DD_FD_CB(unsigned int prefix)
+{
+    unsigned int cycles = 0;
+    // TODO: do_DD_FD_CB
+    return cycles;
 }
 
 
@@ -358,6 +387,11 @@ void z80core::reset()
     context.registers.regs.PC = 0;
     context.halted = false;
     context.int_enable = 0;
+
+    context.global_prefix = 0;
+    context.index8_inc = 0;
+    context.index16_inc = 0;
+
     inte_changed(context.int_enable);
 }
 
@@ -376,13 +410,102 @@ void z80core::write_port(uint16_t address, uint8_t value)
 void z80core::inte_changed(unsigned int inte)
 {}
 
+inline uint32_t z80core::get_first_16()
+{
+    switch (context.global_prefix) {
+        case 0:    return REG_HL; break;
+        case 0xDD: return REG_IX; break;
+        case 0xFD: return REG_IY; break;
+        default:
+            qDebug() << "Incorrect prefix value";
+            throw QException();
+        break;
+    }
+}
+
+inline uint32_t z80core::get_second_16(uint32_t PP)
+{
+    switch (PP) {
+    case 3: return REG_SP; break;                   //SP
+    case 2: return get_first_16(); break;     //HL, IX, IY
+    default:
+        return context.registers.reg_array_16[PP];
+        break;
+    }
+}
+
+inline void z80core::store_value_16(uint32_t value)
+{
+    switch (context.global_prefix) {
+    case 0:    REG_HL = static_cast<uint16_t>(value); break;
+    case 0xDD: REG_IX = static_cast<uint16_t>(value); break;
+    case 0xFD: REG_IY = static_cast<uint16_t>(value); break;
+    default:
+        qDebug() << "Incorrect prefix value";
+        throw QException();
+        break;
+    }
+}
+
+inline uint8_t z80core::get_first_8(unsigned int YYY, uint32_t * address, unsigned int * cycles)
+{
+    if (context.global_prefix == 0) {
+        if (YYY == 6)
+            return read_mem(context.registers.reg_pairs.HL);
+        else
+            return context.registers.reg_array_8[REGISTERS8[YYY]];
+    } else {
+        switch (YYY) {
+        case 6:
+            *cycles += 4;
+            *address = get_first_16() + static_cast<int>(next_byte());
+            return read_mem(*address);
+            break;
+        case 4:
+        case 5:
+            return context.registers.reg_array_8[REGISTERS8[YYY]+context.index8_inc];
+            break;
+        default:
+            return context.registers.reg_array_8[REGISTERS8[YYY]];
+            break;
+        }
+    }
+}
+
+inline void z80core::store_value_8(unsigned int YYY, uint32_t address, uint8_t value, unsigned int * cycles)
+{
+    if (context.global_prefix == 0) {
+        if (YYY == 6)
+            write_mem(context.registers.reg_pairs.HL, value);
+        else
+            context.registers.reg_array_8[REGISTERS8[YYY]] = value;
+    } else {
+        switch (YYY) {
+        case 6:
+            *cycles += 4;
+            write_mem(address, value);
+            break;
+        case 4:
+        case 5:
+            context.registers.reg_array_8[REGISTERS8[YYY]+context.index8_inc] = value;
+            break;
+        default:
+            context.registers.reg_array_8[REGISTERS8[YYY]] = value;
+            break;
+        }
+    }
+}
+
 unsigned int z80core::execute()
 {
     uint8_t command, command2;
     uint16_t port;
     unsigned int XX, YYY, ZZZ, PP, Q, XX2, YYY2, ZZZ2, PP2;
-    PartsRecLE T, D;
+    PartsRecLE T, D, T1, T2;
     unsigned int cycles;
+    unsigned int address = 0;
+
+    bool process_ints = true;
 
     command = next_byte();
 
@@ -461,24 +584,34 @@ unsigned int z80core::execute()
                 //LD RP, nn
                 T.b.L = next_byte();
                 T.b.H = next_byte();
-                if (PP == 3)
-                    context.registers.regs.SP = T.w;
-                else
-                    context.registers.reg_array_16[PP] = T.w;
+                switch (PP) {
+                    case 3: REG_SP = T.w; break;                                //SP
+                    case 2: store_value_16(T.w); break;  //HL, IX, IY
+                    default:
+                        context.registers.reg_array_16[PP] = T.w;               //DC, DE
+                        break;
+                }
                 break;
             default:
                 //00_RP1_001
-                //ADD HL, RP
-                if (PP == 3)
-                    T.dw = static_cast<uint32_t>(context.registers.reg_pairs.HL) + context.registers.regs.SP;
-                else
-                    T.dw = static_cast<uint32_t>(context.registers.reg_pairs.HL) + context.registers.reg_array_16[PP];
-                context.registers.reg_pairs.HL = T.w;
-                //Carry
-                if ((T.dw & 0x10000) != 0)
-                    context.registers.regs.F |= F_CARRY;
-                else
-                    context.registers.regs.F &= (F_ALL - F_CARRY);
+                //ADD HL (IX, IY), RP
+                T1.dw = get_first_16();
+                T2.dw = get_second_16(PP);
+                D.dw = T1.dw + T2.dw;
+                store_value_16(D.dw);
+
+                calc_z80_flags(
+                                    D.dw >> 8,              //For carry
+                                    D.b.H,                  //For 3&5
+                                    0,                      //Set none
+                                    F_SUB + F_HALF_CARRY,   //Reset SUB, HC for below
+                                    F_B5 + F_B3 + F_CARRY   //To change
+                    );
+                REG_F |= calc_half_carry(                                                           //HC is taken from adding higher bytes
+                                            T1.b.H,
+                                            T2.b.H,
+                                            ((static_cast<uint32_t>(T1.b.L) + T2.b.L) & 0x100) >> 8 //Carry from adding lower bytes
+                                        );
                 break;
             }
             break;
@@ -502,16 +635,29 @@ unsigned int z80core::execute()
                 //LD [nn], HL
                 T.b.L = next_byte();
                 T.b.H = next_byte();
-                write_mem(T.w, context.registers.regs.L);
-                write_mem(static_cast<uint16_t>(T.w+1), context.registers.regs.H);
+                switch (context.global_prefix) {
+                    case 0:
+                            write_mem(T.w, REG_L);
+                            write_mem(static_cast<uint16_t>(T.w+1), REG_H);
+                            break;
+                    case 0xDD:
+                            write_mem(T.w, REG_IXL);
+                            write_mem(static_cast<uint16_t>(T.w+1), REG_IXH);
+                            break;
+                    case 0xFD:
+                            write_mem(T.w, REG_IYL);
+                            write_mem(static_cast<uint16_t>(T.w+1), REG_IYH);
+                            break;
+                }
                 break;
             case 5:
                 //00_101_010
                 //LD HL, [nn]
                 T.b.L = next_byte();
                 T.b.H = next_byte();
-                context.registers.regs.L = read_mem(T.w);
-                context.registers.regs.H = read_mem(static_cast<uint16_t>(T.w+1));
+                D.b.L = read_mem(T.w);
+                D.b.H = read_mem(static_cast<uint16_t>(T.w+1));
+                store_value_16(D.w);
                 break;
             case 6:
                 //00_110_010
@@ -534,60 +680,70 @@ unsigned int z80core::execute()
             case 0:
                 //00_RP0_011
                 //INC RP
-                if (PP == 3)
-                    context.registers.regs.SP++;
-                else
-                    context.registers.reg_array_16[PP]++;
+                switch (PP) {
+                    case 3: context.registers.regs.SP++; break;         //SP
+                    case 2:                                             //HL, IX, IY
+                        D.dw = get_first_16() + 1;
+                        store_value_16(D.dw);
+                        break;
+                    default:
+                        context.registers.reg_array_16[PP]++;           //BC, DE
+                        break;
+                }
                 break;
             default:
                 //00_RP1_011
                 //DEC RP
-                if (PP == 3)
-                    context.registers.regs.SP--;
-                else
-                    context.registers.reg_array_16[PP]--;
+                switch (PP) {
+                    case 3: context.registers.regs.SP--; break;         //SP
+                    case 2:                                             //HL, IX, IY
+                        D.dw = get_first_16() - 1;
+                        store_value_16(D.dw);
+                        break;
+                    default:
+                        context.registers.reg_array_16[PP]--;          //BC, DE
+                        break;
+                }
             }
             break;
         case 4:
             //00_YYY_100
             //INC SSS
-            if (YYY == 6)
-                T.b.L = read_mem(context.registers.reg_pairs.HL);
-            else
-                T.b.L = context.registers.reg_array_8[REGISTERS8[YYY]];
+            T.b.L = get_first_8(YYY, &address, &cycles);
             D.dw = static_cast<uint32_t>(T.b.L) + 1;
-            context.registers.regs.F &= F_CARRY;                                    //Clear flags except carry & HC
-            context.registers.regs.F |= calc_base_flags(D.dw) & (F_ALL - F_CARRY);  //Then set other
-            context.registers.regs.F |= calc_half_carry(T.b.L, 1, 0);               //HC
-            if (YYY == 6)
-                write_mem(context.registers.reg_pairs.HL, D.b.L);
-            else
-                context.registers.reg_array_8[REGISTERS8[YYY]] = D.b.L;
+            store_value_8(YYY, address, D.b.L, &cycles);
+            calc_z80_flags(                                     //All are affected except CY
+                            D.w,                                //Value
+                            D.b.L,                              //For 3&5
+                            0,                                  //Set none
+                            F_HALF_CARRY + F_OVERFLOW + F_SUB,  //Reset HC and V for below, N=0
+                            F_SIGN+F_ZERO+F_B5+F_B3             //To change
+                );
+            REG_F |= calc_half_carry(T.b.L, 1, 0);
+            REG_F |= calc_overflow(T.b.L, ~1, D.b.L, 0x80);
             break;
         case 5:
             //00_YYY_101
             //DEC SSS
-            if (YYY == 6)
-                T.b.L = read_mem(context.registers.reg_pairs.HL);
-            else
-                T.b.L = context.registers.reg_array_8[REGISTERS8[YYY]];
+            T.b.L = get_first_8(YYY, &address, &cycles);
             D.dw = static_cast<uint32_t>(T.b.L) - 1;
-            context.registers.regs.F &= F_CARRY;                                    //Clear flags except carry & HC
-            context.registers.regs.F |= calc_base_flags(D.dw) & (F_ALL - F_CARRY);  //Then set other
-            context.registers.regs.F |= calc_half_carry(T.b.L, 0x0F, 0);            //HC
-            if (YYY == 6)
-                write_mem(context.registers.reg_pairs.HL, D.b.L);
-            else
-                context.registers.reg_array_8[REGISTERS8[YYY]] = D.b.L;
+            store_value_8(YYY, address, D.b.L, &cycles);
+            calc_z80_flags(                                     //All are affected except CY
+                            D.w,                                //Value
+                            D.b.L,                              //For 3&5
+                            F_SUB,                              //Set N
+                            F_HALF_CARRY + F_OVERFLOW,          //Reset HC and V for below
+                            F_SIGN+F_ZERO+F_B5+F_B3             //To change
+                            );
+            REG_F |= calc_half_carry(T.b.L, 0x0F, 0);
+            REG_F |= calc_overflow(T.b.L, 1, D.b.L, 0x80);
             break;
         case 6:
             //00_YYY_110
             //LD DDD, d
+            get_first_8(YYY, &address, &cycles);        //Just to get an address for IX/IY + d
             T.b.L = next_byte();
-            if (YYY == 6)
-                write_mem(context.registers.reg_pairs.HL, T.b.L);
-            else
-                context.registers.reg_array_8[REGISTERS8[YYY]] = T.b.L;
+            store_value_8(YYY, address, T.b.L, &cycles);
             break;
         default: //7
             //00_YYY_111
@@ -665,47 +821,72 @@ unsigned int z80core::execute()
             context.halted = true;
         } else {
             //LD DDD, SSS
-            if (ZZZ == 6)
-                T.b.L = read_mem(context.registers.reg_pairs.HL);
-            else
-                T.b.L = context.registers.reg_array_8[REGISTERS8[ZZZ]];
-            if (YYY == 6)
-                write_mem(context.registers.reg_pairs.HL, T.b.L);
-            else
-                context.registers.reg_array_8[REGISTERS8[YYY]] = T.b.L;
+            T.b.L = get_first_8(ZZZ, &address, &cycles);
+            store_value_8(YYY, address, T.b.L, &cycles);
         }
         break;
     case 2:
         //10_YYY_ZZZ
 
-        if (ZZZ == 6)
-            T.w = static_cast<uint16_t>(read_mem(context.registers.reg_pairs.HL));
-        else
-            T.w = static_cast<uint16_t>(context.registers.reg_array_8[REGISTERS8[ZZZ]]);
+        T.w = get_first_8(ZZZ, &address, &cycles);
+
         switch (YYY) {
         case 0:
             //ADD A, ZZZ
-            D.w = static_cast<uint16_t>(context.registers.regs.A) + T.w;
-            context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, T.b.L, 0);
-            context.registers.regs.A = D.b.L;
+            D.w = static_cast<uint16_t>(REG_A) + T.w;
+            //context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, T.b.L, 0);
+            calc_z80_flags(
+                            D.w,                                //Value
+                            D.b.L,                              //For 3&5
+                            0,                                  //Set none
+                            F_HALF_CARRY + F_OVERFLOW + F_SUB,  //Reset HC and V for below, N=0
+                            F_SIGN+F_ZERO+F_B5+F_B3+F_CARRY     //To change
+                            );
+            REG_F |= calc_half_carry(REG_A, T.b.L, 0);
+            REG_F |= calc_overflow(REG_A, ~T.b.L, D.b.L, 0x80);
+            REG_A = D.b.L;
             break;
         case 1:
             //ADC A, ZZZ
-            D.w = static_cast<uint16_t>(context.registers.regs.A) + T.w + CARRY;
-            context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, T.b.L, CARRY);
-            context.registers.regs.A = D.b.L;
+            D.w = static_cast<uint16_t>(REG_A) + T.w + CARRY;
+            calc_z80_flags(
+                            D.w,                                //Value
+                            D.b.L,                              //For 3&5
+                            0,                                  //Set none
+                            F_HALF_CARRY + F_OVERFLOW + F_SUB,  //Reset HC and V for below, N=0
+                            F_SIGN+F_ZERO+F_B5+F_B3+F_CARRY     //To change
+                            );
+            REG_F |= calc_half_carry(REG_A, T.b.L, CARRY);
+            REG_F |= calc_overflow(REG_A, ~T.b.L, D.b.L, 0x80);
+            REG_A = D.b.L;
             break;
         case 2:
             //SUB A, ZZZ
-            D.w = static_cast<uint16_t>(context.registers.regs.A) - T.w;
-            context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, ~(T.b.L), 1);
-            context.registers.regs.A = D.b.L;
+            D.w = static_cast<uint16_t>(REG_A) - T.w;
+            calc_z80_flags(
+                            D.w,                                //Value
+                            D.b.L,                              //For 3&5
+                            F_SUB,                              //Set N
+                            F_HALF_CARRY + F_OVERFLOW,          //Reset HC and V for below
+                            F_SIGN+F_ZERO+F_B5+F_B3+F_CARRY     //To change
+                        );
+            REG_F |= calc_half_carry(REG_A, ~(T.b.L), 1);
+            REG_F |= calc_overflow(REG_A, T.b.L, D.b.L, 0x80);
+            REG_A = D.b.L;
             break;
         case 3:
             //SBC A, ZZZ
-            D.w = static_cast<uint16_t>(context.registers.regs.A) - T.w - CARRY;
-            context.registers.regs.F = calc_base_flags(D.w) | calc_half_carry(context.registers.regs.A, ~(T.b.L), !CARRY);
-            context.registers.regs.A = D.b.L;
+            D.w = static_cast<uint16_t>(REG_A) - T.w - CARRY;
+            calc_z80_flags(
+                            D.w,                                //Value
+                            D.b.L,                              //For 3&5
+                            F_SUB,                              //Set N
+                            F_HALF_CARRY + F_OVERFLOW,          //Reset HC and V for below
+                            F_SIGN+F_ZERO+F_B5+F_B3+F_CARRY     //To change
+                            );
+            REG_F |= calc_half_carry(REG_A, ~(T.b.L), !CARRY);
+            REG_F |= calc_overflow(REG_A, T.b.L, D.b.L, 0x80);
+            REG_A = D.b.L;
             break;
         case 4:
             //AND A, ZZZ
@@ -751,13 +932,19 @@ unsigned int z80core::execute()
                 //POP RP
                 T.b.L = read_mem(context.registers.regs.SP);
                 T.b.H = read_mem(static_cast<uint16_t>(context.registers.regs.SP+1));
-                if (PP == 3)
-                {
-                    context.registers.regs.F = T.b.L | F_BASE_8080;
-                    context.registers.regs.A = T.b.H;
-                } else
-                    context.registers.reg_array_16[PP] = T.w;
-                context.registers.regs.SP += 2;
+                switch (PP) {
+                    case 3:                                          //PSW
+                        REG_F = T.b.L;
+                        REG_A = T.b.H;
+                        break;
+                    case 2:                                          //HL, IX, IY
+                        store_value_16(T.w);
+                        break;
+                    default:
+                        context.registers.reg_array_16[PP] = T.w;    //BC, DE
+                        break;
+                }
+                REG_SP += 2;
                 break;
             default: //1
                 switch (PP) {
@@ -776,12 +963,12 @@ unsigned int z80core::execute()
                 case 2:
                     //11_101_001
                     //JP [HL]
-                    context.registers.regs.PC = context.registers.reg_pairs.HL;
+                    context.registers.regs.PC = get_first_16();
                     break;
                 default: //3
                     //11_111_001
                     //LD SP,HL
-                    context.registers.regs.SP = context.registers.reg_pairs.HL;
+                    context.registers.regs.SP = get_first_16();
                     break;
                 }
                 break;
@@ -907,9 +1094,10 @@ unsigned int z80core::execute()
                 //EX (SP),HL
                 T.b.L = read_mem(context.registers.regs.SP);
                 T.b.H = read_mem(static_cast<uint16_t>(context.registers.regs.SP+1));
-                write_mem(context.registers.regs.SP, context.registers.regs.L);
-                write_mem(static_cast<uint16_t>(context.registers.regs.SP+1), context.registers.regs.H);
-                context.registers.reg_pairs.HL = T.w;
+                D.w = get_first_16();
+                write_mem(context.registers.regs.SP, D.b.L);
+                write_mem(static_cast<uint16_t>(context.registers.regs.SP+1), D.b.H);
+                store_value_16(T.w);
                 break;
             case 5:
                 //11_101_011
@@ -951,12 +1139,13 @@ unsigned int z80core::execute()
             case 0:
                 //11_RP0_101
                 //PUSH RP
-                if (PP == 3)
-                {
-                    T.b.L = context.registers.regs.F;
-                    T.b.H = context.registers.regs.A;
-                } else
-                    T.w = context.registers.reg_array_16[PP];
+                switch (PP) {
+                case 3: T.w = REG_AF; break;                    //PSW
+                case 2: T.w = get_first_16(); break;            //HL, IX, IY
+                default:
+                    T.w = context.registers.reg_array_16[PP];   //BC, DE
+                    break;
+                }
                 context.registers.regs.SP -= 2;
                 write_mem(context.registers.regs.SP, T.b.L);
                 write_mem(static_cast<uint16_t>(context.registers.regs.SP+1), T.b.H);
@@ -1261,15 +1450,36 @@ unsigned int z80core::execute()
                         break;
                     }
                     break;
-                case 1:
-                    //11_011_101
-                    //Prefix DD
-                    //TODO: Prefix DD
-                    break;
-                case 3:
-                    //11_111_101
-                    //Prefix FD
-                    //TODO: Prefix FD
+                case 1: //11_011_101 (DD)
+                case 3: //11_111_101 (FD)
+                    //Prefix DD/FD
+                    process_ints = false;
+                    command2 = next_byte();
+                    switch (command2) {
+                    case 0xDD:
+                    case 0xED:
+                    case 0xFD:
+                        // Prefixes chain
+                        //NONI
+                        REG_PC -= 1;
+                        break;
+                    case 0xCB:
+                        // DD/FD CB commands
+                        cycles += do_DD_FD_CB(command);
+                        command = command2;     // For correct prefix arter-processing
+                        process_ints = true;
+                        break;
+                    default:
+                        REG_PC -= 1;
+                        context.global_prefix = command;
+                        if (command == 0xDD) {
+                            context.index8_inc = 4;     //L, H -> IXL, IXH
+                            context.index16_inc = 2;    //HL -> IX
+                        } else {
+                            context.index8_inc = 6;     //L, H -> IYL, IYH
+                            context.index16_inc = 3;    //HL -> IY
+                        }
+                    }
                     break;
                 }
                 break;
@@ -1339,6 +1549,18 @@ unsigned int z80core::execute()
             break;
         }
         break;
+    }
+
+    if ((command != 0xDD) && (command != 0xFD) && (context.global_prefix !=0))
+    {
+        // Reset prefix after a command excluding prefix chains
+        context.global_prefix = 0;
+        context.index8_inc = 0;
+        context.index16_inc = 0;
+    }
+
+    if (process_ints) {
+        //TODO: process ints
     }
 
     return cycles;

@@ -16,12 +16,16 @@ struct z80context
             uint16_t BC, DE, HL, AF, IX, IY;
         } reg_pairs;
         uint8_t reg_array_8[8];
-        uint16_t reg_array_16[3];
+        uint16_t reg_array_16[6];
     } registers;
     bool halted;
     //TODO: Z80 int system
     unsigned int int_enable;
     unsigned int debug_mode;
+
+    unsigned int global_prefix;
+    unsigned int index8_inc;
+    unsigned int index16_inc;
 };
 
 #pragma pack()
@@ -34,6 +38,7 @@ namespace Z80
     const uint8_t F_CARRY      = 1;
     const uint8_t F_SUB        = (1 << 1); //0x02
     const uint8_t F_PARITY     = (1 << 2); //0x04
+    const uint8_t F_OVERFLOW   = (1 << 2); //0x04
     const uint8_t F_B3         = (1 << 3); //0x08
     const uint8_t F_HALF_CARRY = (1 << 4); //0x10
     const uint8_t F_B5         = (1 << 5); //0x20
