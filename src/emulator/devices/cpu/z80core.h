@@ -12,7 +12,7 @@ class z80core
 private:
     uint8_t next_byte();
     uint8_t read_command();
-    uint8_t calc_base_flags(uint32_t value);
+    //uint8_t calc_base_flags(uint32_t value);
     uint8_t calc_z80_flags(
                             uint32_t value,         //Value to calc standard flags
                             uint32_t value35,       //Value to get flags 3 and 5
@@ -38,6 +38,18 @@ private:
     uint8_t do_res(unsigned int bit, uint8_t v);
     uint8_t do_set(unsigned int bit, uint8_t v);
     uint8_t do_DD_FD_CB(unsigned int prefix);
+    uint8_t do_add8(uint8_t a, uint8_t b);
+    uint8_t do_adc8(uint8_t a, uint8_t b);
+    uint8_t do_sub8(uint8_t a, uint8_t b);
+    uint8_t do_sbc8(uint8_t a, uint8_t b);
+    uint8_t do_and8(uint8_t a, uint8_t b);
+    uint8_t do_xor8(uint8_t a, uint8_t b);
+    uint8_t do_or8(uint8_t a, uint8_t b);
+    void do_cp8(uint8_t a, uint8_t b);
+    void do_cpi_cpd(int16_t hlinc);
+    void do_ini_ind(int16_t hlinc);
+    void do_ldi_ldd(int16_t hlinc);
+    void do_outi_outd(int16_t hlinc);
 
     uint32_t get_first_16();
     uint32_t get_second_16(uint32_t PP);

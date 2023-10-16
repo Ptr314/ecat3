@@ -15,9 +15,12 @@ struct z80context
         struct {
             uint16_t BC, DE, HL, AF, IX, IY;
         } reg_pairs;
-        uint8_t reg_array_8[8];
+        uint8_t reg_array_8[12];
         uint16_t reg_array_16[6];
     } registers;
+    unsigned int IFF1;
+    unsigned int IFF2;
+    unsigned int IM;
     bool halted;
     //TODO: Z80 int system
     unsigned int int_enable;
@@ -33,7 +36,7 @@ struct z80context
 namespace Z80
 {
     //TODO: right flags
-    const uint8_t F_BASE_8080  = 0x02; //This bit is always set
+    //const uint8_t F_BASE_8080  = 0x02; //This bit is always set
 
     const uint8_t F_CARRY      = 1;
     const uint8_t F_SUB        = (1 << 1); //0x02
@@ -44,7 +47,7 @@ namespace Z80
     const uint8_t F_B5         = (1 << 5); //0x20
     const uint8_t F_ZERO       = (1 << 6); //0x40
     const uint8_t F_SIGN       = (1 << 7); //0x80
-    const uint8_t F_ALL        = (F_BASE_8080 + F_CARRY + F_PARITY + F_HALF_CARRY + F_ZERO + F_SIGN);
+    const uint8_t F_ALL        = 0xFF; //(F_BASE_8080 + F_CARRY + F_PARITY + F_HALF_CARRY + F_ZERO + F_SIGN);
 }
 
 #endif // Z80_CONTEXT_H
