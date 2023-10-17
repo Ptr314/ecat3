@@ -37,7 +37,7 @@ private:
     uint8_t do_bit(unsigned int bit, uint8_t v);
     uint8_t do_res(unsigned int bit, uint8_t v);
     uint8_t do_set(unsigned int bit, uint8_t v);
-    uint8_t do_DD_FD_CB(unsigned int prefix);
+    void do_DD_FD_CB(unsigned int prefix, unsigned int * cycles);
     uint8_t do_add8(uint8_t a, uint8_t b);
     uint8_t do_adc8(uint8_t a, uint8_t b);
     uint8_t do_sub8(uint8_t a, uint8_t b);
@@ -50,6 +50,7 @@ private:
     void do_ini_ind(int16_t hlinc);
     void do_ldi_ldd(int16_t hlinc);
     void do_outi_outd(int16_t hlinc);
+    void do_daa();
 
     uint32_t get_first_16();
     uint32_t get_second_16(uint32_t PP);

@@ -90,24 +90,23 @@ static const uint8_t ZERO_SIGN[256] = {
     F_SIGN,F_SIGN,F_SIGN,F_SIGN,F_SIGN,F_SIGN,F_SIGN,F_SIGN,
     F_SIGN,F_SIGN,F_SIGN,F_SIGN,F_SIGN,F_SIGN,F_SIGN,F_SIGN}; // F0-FF
 
-//TODO: Z80 timings
 static const uint8_t TIMING[256][2] = {
-    {4, 4},   {10, 10}, {7, 7},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {4, 4},
-    {4, 4},   {10, 10}, {7, 7},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {4, 4},        // 00-0F
-    {4, 4},   {10, 10}, {7, 7},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {4, 4},
-    {4, 4},   {10, 10}, {7, 7},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {4, 4},        // 10-1F
-    {4, 4},   {10, 19}, {16, 16}, {5, 5},   {5, 5},   {5, 5},   {7, 7},   {4, 4},
-    {4, 4},   {10, 10}, {16, 16}, {5, 5},   {5, 5},   {5, 5},   {7, 7},   {4, 4},        // 20-2F
-    {4, 4},   {10, 10}, {13, 13}, {5, 5},   {10, 10}, {10, 10}, {10, 10}, {4, 4},
-    {4, 4},   {10, 10}, {13, 13}, {5, 5},   {5, 5},   {5, 5},   {7, 7},   {4, 4},        // 30-3F
-    {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {5, 5},
-    {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {5, 5},        // 40-4F
-    {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {5, 5},
-    {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {5, 5},        // 50-5F
-    {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {5, 5},
-    {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {5, 5},        // 60-6F
-    {7, 7},   {7, 7},   {7, 7},   {7, 7},   {7, 7},   {7, 7},   {4, 4},   {7, 7},
-    {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {5, 5},        // 70-7F
+    {4, 4},   {10, 10}, {7, 7},   {6, 6},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
+    {4, 4},   {11, 11}, {7, 7},   {6, 6},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 00-0F
+    {8, 13},  {10, 10}, {7, 7},   {6, 6},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
+    {12, 12}, {11, 11}, {7, 7},   {6, 6},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 10-1F
+    {7, 12},  {10, 10}, {16, 16}, {6, 6},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
+    {7, 12},  {11, 11}, {20, 20}, {6, 6},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 20-2F
+    {7, 12},  {10, 10}, {13, 13}, {6, 6},   {11, 11}, {11, 11}, {10, 10}, {4, 4},
+    {7, 12},  {11, 11}, {13, 13}, {6, 6},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 30-3F
+    {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
+    {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 40-4F
+    {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
+    {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 50-5F
+    {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
+    {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 60-6F
+    {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
+    {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 70-7F
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 80-8F
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
@@ -116,14 +115,14 @@ static const uint8_t TIMING[256][2] = {
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // A0-AF
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // B0-BF
-    {5, 11},  {11, 11}, {10, 10}, {10, 10}, {11, 17}, {11, 11}, {7, 7},   {11, 11},
-    {5, 11},  {10, 10}, {10, 10}, {10, 10}, {11, 17}, {17, 17}, {7, 7},   {11, 11},      // C0-CF
-    {5, 11},  {11, 11}, {10, 10}, {10, 10}, {11, 17}, {11, 11}, {7, 7},   {11, 11},
-    {5, 11},  {10, 10}, {10, 10}, {10, 10}, {11, 17}, {17, 17}, {7, 7},   {11, 11},      // D0-DF
-    {5, 11},  {11, 11}, {10, 10}, {18, 18}, {11, 17}, {11, 11}, {7, 7},   {11, 11},
-    {5, 11},  {5, 5},   {10, 10}, {4, 4},   {11, 17}, {17, 17}, {7, 7},   {11, 11},      // E0-EF
-    {5, 11},  {11, 11}, {10, 10}, {4, 4},   {11, 17}, {11, 11}, {7, 7},   {11, 11},
-    {5, 11},  {5, 5},   {10, 10}, {4, 4},   {11, 17}, {17, 17}, {7, 7},   {11, 11}};  	 // F0-FF
+    {5, 11},  {10, 10}, {10, 10}, {10, 10}, {10, 17}, {11, 11}, {7, 7},   {11, 11},
+    {5, 11},  {10, 10}, {10, 10}, {4, 4},   {10, 17}, {17, 17}, {7, 7},   {11, 11},      // C0-CF
+    {5, 11},  {10, 10}, {10, 10}, {10, 10}, {10, 17}, {11, 11}, {7, 7},   {11, 11},
+    {5, 11},  {4, 4},   {10, 10}, {11, 11}, {10, 17}, {4, 4},   {7, 7},   {11, 11},      // D0-DF
+    {5, 11},  {10, 10}, {10, 10}, {19, 19}, {10, 17}, {11, 11}, {7, 7},   {11, 11},
+    {5, 11},  {4, 4},   {10, 10}, {4, 4},   {10, 17}, {4, 4},   {7, 7},   {11, 11},      // E0-EF
+    {5, 11},  {10, 10}, {10, 10}, {4, 4},   {10, 17}, {11, 11}, {7, 7},   {11, 11},
+    {5, 11},  {6, 6},   {10, 10}, {4, 4},   {10, 17}, {4, 4},   {7, 7},   {11, 11}};  	 // F0-FF
 
 static const uint8_t CONDITIONS[8][2] = {
     {F_ZERO, 0},		 	//NOT ZERO
@@ -307,9 +306,15 @@ inline uint8_t z80core::do_rl(uint8_t v)
 
     T.w = T.w << 1;
     uint8_t result = T.b.L | (REG_F & F_CARRY);
-    REG_F = (REG_F & (F_ALL - F_CARRY)) | (T.b.H & 0x01);
+    //REG_F = (REG_F & (F_ALL - F_CARRY)) | (T.b.H & 0x01);
 
-    //TODO: right flags
+    calc_z80_flags(
+                    T.w,                            //Value
+                    result,                         //3&5
+                    0,                              //Set
+                    F_HALF_CARRY+F_SUB,             //Reset
+                    F_B5+F_B3+F_CARRY               //To change
+                    );
 
     return result;
 }
@@ -321,9 +326,15 @@ inline uint8_t z80core::do_rr(uint8_t v)
 
     T.w = T.w << 7;
     uint8_t result  = T.b.H | ((REG_F & F_CARRY)?0x80:0);
-    REG_F = (REG_F & (F_ALL - F_CARRY)) | ((T.b.L >> 7)?F_CARRY:0);
+    //REG_F = (REG_F & (F_ALL - F_CARRY)) | ((T.b.L >> 7)?F_CARRY:0);
 
-    //TODO: right flags
+    calc_z80_flags(
+        T.w << 1,                       //Value
+        result,                         //3&5
+        0,                              //Set
+        F_HALF_CARRY+F_SUB,             //Reset
+        F_B5+F_B3+F_CARRY               //To change
+        );
 
     return result;
 }
@@ -335,9 +346,15 @@ inline uint8_t z80core::do_sla(uint8_t v)
 
     T.w = T.w << 1;
     uint8_t result = T.b.L;
-    REG_F = (REG_F & (F_ALL - F_CARRY)) | (T.b.H & 0x01);
+    //REG_F = (REG_F & (F_ALL - F_CARRY)) | (T.b.H & 0x01);
 
-    //TODO: right flags
+    calc_z80_flags(
+        T.w,                            //Value
+        result,                         //3&5
+        0,                              //Set
+        F_HALF_CARRY+F_SUB,             //Reset
+        F_B5+F_B3+F_CARRY               //To change
+        );
 
     return result;
 }
@@ -351,7 +368,13 @@ inline uint8_t z80core::do_sra(uint8_t v)
     T.w = T.w << 7;
     uint8_t result =  T.b.H | ((T.b.H & 0x40) << 1);
 
-    //TODO: right flags
+    calc_z80_flags(
+        T.w << 1,                       //Value
+        result,                         //3&5
+        0,                              //Set
+        F_HALF_CARRY+F_SUB,             //Reset
+        F_B5+F_B3+F_CARRY               //To change
+        );
 
     return result;
 }
@@ -365,7 +388,13 @@ inline uint8_t z80core::do_srl(uint8_t v)
     T.w = T.w << 7;
     uint8_t result =  T.b.H;
 
-    //TODO: right flags
+    calc_z80_flags(
+        T.w << 1,                       //Value
+        result,                         //3&5
+        0,                              //Set
+        F_HALF_CARRY+F_SUB,             //Reset
+        F_B5+F_B3+F_CARRY               //To change
+        );
 
     return result;
 }
@@ -379,7 +408,13 @@ inline uint8_t z80core::do_sll(uint8_t v)
     uint8_t result = T.b.L | 0x01;
     REG_F = (REG_F & (F_ALL - F_CARRY)) | (T.b.H & 0x01);
 
-    //TODO: right flags
+    calc_z80_flags(
+        T.w,                            //Value
+        result,                         //3&5
+        0,                              //Set
+        F_HALF_CARRY+F_SUB,             //Reset
+        F_B5+F_B3+F_CARRY               //To change
+        );
 
     return result;
 }
@@ -411,21 +446,18 @@ inline uint8_t z80core::do_set(unsigned int bit, uint8_t v)
     return result;
 }
 
-inline uint8_t z80core::do_DD_FD_CB(unsigned int prefix)
+inline void z80core::do_DD_FD_CB(unsigned int prefix, unsigned int * cycles)
 {
-    // TODO: do_DD_FD_CB
-
     unsigned int XX, YYY, ZZZ, address;
 
     PartsRecLE T, D;
 
-    unsigned int cycles = 0;
-    uint8_t d = next_byte();
-    uint8_t c = next_byte();
+    uint8_t d = next_byte();    //+4T
+    uint8_t c = next_byte();    //+4T
 
     address = ((prefix == 0xDD)?REG_IX:REG_IY) + static_cast<int16_t>(d);
 
-    T.b.L = read_mem(address);
+    T.b.L = read_mem(address);  //+4T
 
     XX = c >> 6;
     YYY = (c >> 3) & 0x07;
@@ -467,22 +499,28 @@ inline uint8_t z80core::do_DD_FD_CB(unsigned int prefix)
             D.b.L = do_srl(T.b.L);
             break;
         }
-        write_mem(address, D.b.L);
-
-        if (ZZZ != 0b110) {
-            context.registers.reg_array_8[REGISTERS8[ZZZ]] = D.b.L;
-        }
         break;
     case 1:
+        D.b.L = do_bit(YYY, T.b.L);
         break;
     case 2:
+        D.b.L = do_res(YYY, T.b.L);
         break;
     default: //3
+        D.b.L = do_set(YYY, T.b.L);
         break;
     }
 
+    if (XX != 1) {
+        write_mem(address, D.b.L);  //+3T
+        *cycles += 12+3;
+    } else {
+        *cycles += 12;
+    }
 
-    return cycles;
+    if (ZZZ != 0b110) {
+        context.registers.reg_array_8[REGISTERS8[ZZZ]] = D.b.L;
+    }
 }
 
 
@@ -804,6 +842,36 @@ inline void z80core::do_outi_outd(int16_t hlinc)
         );
 }
 
+inline void z80core::do_daa()
+{
+    PartsRecLE T, D;
+    uint32_t increment, result, carry;
+
+    increment = 0;
+    result = REG_A;
+    carry = REG_F & F_CARRY;
+
+    if (((REG_F & F_HALF_CARRY) != 0) || ((result & 0x0F) > 0x09)) increment |= 0x06;
+
+    if ((carry != 0) || (result > 0x9F)) increment |= 0x60;
+
+    if ((result > 0x8F) && ((result & 0x0F) > 9)) increment |= 0x60;
+
+    if (result > 0x99) carry = F_CARRY;
+
+    if ((REG_F & F_SUB) != 0)
+        REG_A = do_sub8(REG_A, increment);
+    else
+        REG_A = do_add8(REG_A, increment);
+
+    calc_z80_flags(
+        (carry << 8) + REG_A,               //Value
+        0,                                  //For 3&5
+        0,                                  //Set none
+        0,                                  //Reset
+        F_CARRY+F_PARITY                    //To change
+        );
+}
 
 unsigned int z80core::execute()
 {
@@ -1081,32 +1149,7 @@ unsigned int z80core::execute()
             case 4:
                 //00_100_111
                 //DAA
-                //TODO: DAA check and correct
-                T.w = static_cast<uint16_t>(context.registers.regs.A);
-                if ((LO4(T.b.L) > 9) || (HALF_CARRY != 0))
-                {
-                    context.registers.regs.A += 0x06;
-                    context.registers.regs.F &= ~F_HALF_CARRY;
-                    context.registers.regs.F |= calc_half_carry(T.b.L, 0x06, 0);
-                }
-                if ( (CARRY != 0) || (HI4(T.b.L) > 9) || ( (HI4(T.b.L) == 9) && (LO4(T.b.L) > 9) ) )
-                {
-                    context.registers.regs.A += 0x60;
-                    context.registers.regs.F |= F_CARRY;
-                }
-                //context.registers.regs.F = calc_base_flags(static_cast<uint16_t>(context.registers.regs.A) + (CARRY << 8)) | (context.registers.regs.F & F_HALF_CARRY); //Keep CY & HC
-                //TODO: DAA correct flags
-                D.w = REG_A;
-                calc_z80_flags(
-                    D.w,                                //Value
-                    D.b.L,                              //For 3&5
-                    0,                                  //Set none
-                    F_HALF_CARRY + F_CARRY,             //Reset HC and V for below
-                    F_SIGN+F_ZERO+F_B5+F_B3+F_PARITY     //To change
-                    );
-                //REG_F |= calc_half_carry(a, b, 0);
-                //REG_F |= calc_overflow(a, ~b, D.b.L, 0x80);
-
+                do_daa();
                 break;
             case 5:
                 //00_101_111
@@ -1262,15 +1305,15 @@ unsigned int z80core::execute()
             case 1:
                 //11_001_011
                 //Prefix CB
-                command2 = next_byte();
+                command2 = next_byte(); cycles += 4;
                 //XX YYY ZZZ
                 XX2 = command2 >> 6;
                 YYY2 = (command2 >> 3) & 0x07;
                 ZZZ2 = command2 & 0x07;
 
-                if (ZZZ2 == 6)
-                    T.b.L = read_mem(REG_HL);
-                else
+                if (ZZZ2 == 6) {
+                    T.b.L = read_mem(REG_HL); cycles += 4;
+                } else
                     T.b.L = context.registers.reg_array_8[REGISTERS8[ZZZ2]];
 
                 switch (XX2) {
@@ -1336,9 +1379,9 @@ unsigned int z80core::execute()
 
                 if (XX2 != 1)
                 {
-                    if (ZZZ2 == 6)
-                        write_mem(REG_HL, D.b.L);
-                    else
+                    if (ZZZ2 == 6) {
+                        write_mem(REG_HL, D.b.L); cycles += 3;
+                    } else
                         context.registers.reg_array_8[REGISTERS8[ZZZ2]] = D.b.L;
                 }
 
@@ -1435,7 +1478,7 @@ unsigned int z80core::execute()
                 case 2:
                     //11_101_101
                     //Prefix ED
-                    command2 = next_byte();
+                    command2 = next_byte(); cycles += 4;
                     //XX YYY ZZZ
                     XX2 = command2 >> 6;
                     YYY2 = (command2 >> 3) & 0x07;
@@ -1451,7 +1494,7 @@ unsigned int z80core::execute()
                         case 0:
                             // ED 01 YYY 000
                             // IN YYY, [C]
-                            D.b.L = read_port(REG_BC);
+                            D.b.L = read_port(REG_BC); cycles += 4;
                             if (YYY2 != 0b110)                      //110: only flags are set (undoc)
                                 context.registers.reg_array_8[REGISTERS8[YYY2]] = D.b.L;
                             calc_z80_flags(
@@ -1467,11 +1510,11 @@ unsigned int z80core::execute()
                             if (YYY2 == 0b110) {
                                 // ED 01 110 001
                                 // *OUT [C], 0
-                                write_port(REG_BC, 0);
+                                write_port(REG_BC, 0);  cycles += 4;
                             } else {
                                 // ED 01 YYY 001
                                 // OUT [C], YYY
-                                write_port(REG_BC, context.registers.reg_array_8[REGISTERS8[YYY2]]);
+                                write_port(REG_BC, context.registers.reg_array_8[REGISTERS8[YYY2]]);  cycles += 4;
                             }
                             break;
                         case 2:
@@ -1500,6 +1543,7 @@ unsigned int z80core::execute()
                                     !(((static_cast<uint32_t>(T1.b.L) - T2.b.L - tmp_carry) & 0x100) >> 8) //Carry from substracting lower bytes
                                     );
                                 REG_F |= calc_overflow(T1.w, T2.w, D.w, 0x8000);
+                                cycles += 7;
                             } else {
                                 // ED 01 RP1 010
                                 // ADC HL, RP
@@ -1523,6 +1567,7 @@ unsigned int z80core::execute()
                                     ((static_cast<uint32_t>(T1.b.L) + T2.b.L + tmp_carry) & 0x100) >> 8 //Carry from adding lower bytes
                                     );
                                 REG_F |= calc_overflow(T1.w, ~T2.w, D.w, 0x8000);
+                                cycles += 7;
                             }
                             break;
                         case 3:
@@ -1540,6 +1585,7 @@ unsigned int z80core::execute()
                                     write_mem(T.w, LO8(context.registers.reg_array_16[PP2]));
                                     write_mem(T.w + 1, HI8(context.registers.reg_array_16[PP2]));
                                 }
+                                cycles += 12;
                             } else {
                                 // ED 01 RP1 011
                                 // LD RP, [ADDR16]
@@ -1550,6 +1596,7 @@ unsigned int z80core::execute()
                                     REG_SP = D.w;
                                 else
                                     context.registers.reg_array_16[PP2] = D.w;
+                                cycles += 12;
                             }
                             break;
                         case 4:
@@ -1562,6 +1609,7 @@ unsigned int z80core::execute()
                             // RETI/*RETN
                             context.IFF1 = context.IFF2;
                             do_ret();
+                            cycles += 6;
                             break;
                         case 6:
                             // ED 01 YYY 110
@@ -1599,11 +1647,13 @@ unsigned int z80core::execute()
                                 // ED 01 000 111
                                 // LD I, A
                                 REG_I = REG_A;
+                                cycles += 1;
                                 break;
                             case 1:
                                 // ED 01 001 111
                                 // LD R, A
                                 REG_R = REG_A;
+                                cycles += 1;
                                 break;
                             case 2:
                                 // ED 01 010 111
@@ -1613,6 +1663,7 @@ unsigned int z80core::execute()
                                     REG_F |= F_PARITY;
                                 else
                                     REG_F &= ~F_PARITY;
+                                cycles += 1;
                                 break;
                             case 3:
                                 // ED 01 011 111
@@ -1623,7 +1674,7 @@ unsigned int z80core::execute()
                                     REG_F |= F_PARITY;
                                 else
                                     REG_F &= ~F_PARITY;
-                                break;
+                                cycles += 1;
                                 break;
                             case 4:
                                 // ED 01 100 111
@@ -1639,6 +1690,7 @@ unsigned int z80core::execute()
                                     F_SUB+F_HALF_CARRY,                 //Reset SUB & HC
                                     F_SIGN+F_ZERO+F_B5+F_B3+F_PARITY    //To change
                                     );
+                                cycles += 10;
                                 break;
                             case 5:
                                 // ED 01 101 111
@@ -1654,6 +1706,7 @@ unsigned int z80core::execute()
                                     F_SUB+F_HALF_CARRY,                 //Reset SUB & HC
                                     F_SIGN+F_ZERO+F_B5+F_B3+F_PARITY    //To change
                                     );
+                                cycles += 10;
                                 break;
                             case 6:
                             case 7:
@@ -1680,21 +1733,25 @@ unsigned int z80core::execute()
                                 // ED 10 100 000
                                 // LDI
                                 do_ldi_ldd(1);
+                                cycles += 8;
                                 break;
                             case 1:
                                 // ED 10 100 001
                                 // CPI
                                 do_cpi_cpd(1);
+                                cycles += 8;
                                 break;
                             case 2:
                                 // ED 10 100 010
                                 // INI
                                 do_ini_ind(1);
+                                cycles += 8;
                                 break;
                             case 3:
                                 // ED 10 100 011
                                 // OUTI
                                 do_outi_outd(1);
+                                cycles += 8;
                                 break;
                             case 4:
                             case 5:
@@ -1712,21 +1769,25 @@ unsigned int z80core::execute()
                                 // ED 10 101 000
                                 // LDD
                                 do_ldi_ldd(-1);
+                                cycles += 8;
                                 break;
                             case 1:
                                 // ED 10 101 001
                                 // CPD
                                 do_cpi_cpd(-1);
+                                cycles += 8;
                                 break;
                             case 2:
                                 // ED 10 101 010
                                 // IND
                                 do_ini_ind(-1);
+                                cycles += 8;
                                 break;
                             case 3:
                                 // ED 10 101 011
                                 // OUTD
                                 do_outi_outd(-1);
+                                cycles += 8;
                                 break;
                             case 4:
                             case 5:
@@ -1747,7 +1808,7 @@ unsigned int z80core::execute()
                                 if (REG_BC == 0) {
                                     cycles = 16;
                                 } else {
-                                    cycles = 24;
+                                    cycles = 21;
                                     REG_PC -= 2;
                                 }
                                 break;
@@ -1758,7 +1819,7 @@ unsigned int z80core::execute()
                                 if ((REG_F & F_ZERO) != 0 || REG_BC == 0) {
                                     cycles = 16;
                                 } else {
-                                    cycles = 24;
+                                    cycles = 21;
                                     REG_PC -= 2;
                                 }
                                 break;
@@ -1769,7 +1830,7 @@ unsigned int z80core::execute()
                                 if ((REG_F & F_ZERO) != 0) {
                                     cycles = 16;
                                 } else {
-                                    cycles = 24;
+                                    cycles = 21;
                                     REG_PC -= 2;
                                 }
                                 break;
@@ -1780,7 +1841,7 @@ unsigned int z80core::execute()
                                 if ((REG_F & F_ZERO) != 0) {
                                     cycles = 16;
                                 } else {
-                                    cycles = 24;
+                                    cycles = 21;
                                     REG_PC -= 2;
                                 }
                                 break;
@@ -1803,7 +1864,7 @@ unsigned int z80core::execute()
                                 if (REG_BC == 0) {
                                     cycles = 16;
                                 } else {
-                                    cycles = 24;
+                                    cycles = 21;
                                     REG_PC -= 2;
                                 }
                                 break;
@@ -1814,7 +1875,7 @@ unsigned int z80core::execute()
                                 if ((REG_F & F_ZERO) != 0 || REG_BC == 0) {
                                     cycles = 16;
                                 } else {
-                                    cycles = 24;
+                                    cycles = 21;
                                     REG_PC -= 2;
                                 }
                                 break;
@@ -1825,7 +1886,7 @@ unsigned int z80core::execute()
                                 if ((REG_F & F_ZERO) != 0 || REG_BC == 0) {
                                     cycles = 16;
                                 } else {
-                                    cycles = 24;
+                                    cycles = 21;
                                     REG_PC -= 2;
                                 }
                                 break;
@@ -1836,7 +1897,7 @@ unsigned int z80core::execute()
                                 if ((REG_F & F_ZERO) != 0) {
                                     cycles = 16;
                                 } else {
-                                    cycles = 24;
+                                    cycles = 21;
                                     REG_PC -= 2;
                                 }
                                 break;
@@ -1872,7 +1933,8 @@ unsigned int z80core::execute()
                         break;
                     case 0xCB:
                         // DD/FD CB commands
-                        cycles += do_DD_FD_CB(command);
+                        cycles += 4;
+                        do_DD_FD_CB(command, &cycles);
                         command = command2;     // For correct prefix arter-processing
                         process_ints = true;
                         break;

@@ -57,6 +57,24 @@ void load_rk(Emulator * e, QString file_name)
     file.close();
 }
 
+void load_bin(Emulator * e, QString file_name)
+{
+    RAM * m = find_ram(e);
+
+    uint8_t * buffer = m->get_buffer();
+    unsigned int page_size = m->get_size();
+
+    QFile file(file_name);
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Error reading %1").arg(file_name));
+        return;
+    }
+
+    QByteArray data = file.readAll();
+    memcpy(buffer, data.constData(), MIN(file.size(),page_size));
+    file.close();
+}
+
 void load_hex(Emulator * e, QString file_name)
 {
     RAM * m = find_ram(e);
@@ -93,12 +111,17 @@ void HandleExternalFile(Emulator * e, QString file_name)
     QStringList rk_files;
     rk_files << "rk" << "rkr" << "rkm" << "rka";
 
+    QStringList bin_files;
+    bin_files << "cim" << "bin";
+
     QFileInfo fi(file_name);
     QString ext = fi.suffix().toLower();
 
     if (ext == "hex") load_hex(e, file_name);
     else
     if (rk_files.contains(ext)) load_rk(e, file_name);
+    else
+    if (bin_files.contains(ext)) load_bin(e, file_name);
     else
         QMessageBox::warning(NULL, "Error", "Unknown file type");
 }
