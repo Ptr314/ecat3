@@ -1,5 +1,8 @@
 #include "z80.h"
 
+#define CALLBACK_NMI    1
+#define CALLBACK_INT    2
+
 //----------------------- Library wrapper -----------------------------------
 z80Core::z80Core(z80 * emulator_device):
     z80core()
@@ -27,21 +30,21 @@ void z80Core::write_port(uint16_t address, uint8_t value)
     emulator_device->write_port(address, value);
 }
 
-void z80Core::inte_changed(unsigned int inte)
-{
-    emulator_device->inte_changed(inte);
-}
+//void z80Core::inte_changed(unsigned int inte)
+//{
+//    emulator_device->inte_changed(inte);
+//}
 
 //----------------------- Emulator device -----------------------------------
 
 z80::z80(InterfaceManager *im, EmulatorConfigDevice *cd):
     CPU(im, cd)
 {
-    i_address = create_interface(16, "address", MODE_R, 1);
+    i_address = create_interface(16, "address", MODE_R, 1); //TODO: check mode
     i_data =    create_interface(8, "data", MODE_RW);
-    i_nmi =     create_interface(1, "nmi", MODE_R);
-    i_int =     create_interface(1, "int", MODE_R);
-    i_inte =    create_interface(1, "inte", MODE_W);
+    i_nmi =     create_interface(1, "nmi", MODE_R, CALLBACK_NMI);
+    i_int =     create_interface(1, "int", MODE_R, CALLBACK_INT);
+    //i_inte =    create_interface(1, "inte", MODE_W);
     i_m1 =      create_interface(1, "m1", MODE_W);
 
     core = new z80Core(this);
@@ -94,10 +97,10 @@ void z80::reset(bool cold)
     CPU::reset(cold);
 }
 
-void z80::inte_changed(unsigned int inte)
-{
-    i_inte->change(inte);
-}
+//void z80::inte_changed(unsigned int inte)
+//{
+//    i_inte->change(inte);
+//}
 
 QList<QString> z80::get_registers()
 {
@@ -188,6 +191,18 @@ void z80::set_context_value(QString name, unsigned int value)
 unsigned int z80::get_command()
 {
     return core->get_command();
+}
+
+void z80::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
+{
+    switch (callback_id) {
+    case CALLBACK_NMI:
+        core->set_nmi(new_value & 1);
+        break;
+    case CALLBACK_INT:
+        core->set_int(new_value & 1);
+        break;
+    }
 }
 
 ComputerDevice * create_z80(InterfaceManager *im, EmulatorConfigDevice *cd){

@@ -71,6 +71,7 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     emulator/devices/cpu/z80.h
     emulator/devices/cpu/z80.cpp
     emulator/devices/cpu/cpu_utils.h
+    emulator/devices/common/page_mapper.h
 
 )
 target_link_libraries(eCat3 PRIVATE

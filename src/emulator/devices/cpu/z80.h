@@ -28,7 +28,7 @@ public:
     virtual void write_mem(uint16_t address, uint8_t value) override;
     virtual uint8_t read_port(uint16_t address) override;
     virtual void write_port(uint16_t address, uint8_t value) override;
-    virtual void inte_changed(unsigned int inte) override;
+    //virtual void inte_changed(unsigned int inte) override;
 };
 
 //Emulator class
@@ -37,7 +37,7 @@ class z80: public CPU
 private:
     Interface * i_nmi;
     Interface * i_int;
-    Interface * i_inte;
+    //Interface * i_inte;
     Interface * i_m1;
 
     z80core * core;
@@ -45,6 +45,9 @@ private:
 #ifdef LOG_8080
     CPULogger * logger;
 #endif
+
+    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+
 
 protected:
     virtual unsigned int get_pc() override;
@@ -58,7 +61,7 @@ public:
     virtual void write_mem(unsigned int address, unsigned int data) override;
     virtual unsigned int read_port(unsigned int address);
     virtual void write_port(unsigned int address, unsigned int data);
-    virtual void inte_changed(unsigned int inte);
+    //virtual void inte_changed(unsigned int inte);
 
     virtual QList<QString> get_registers() override;
     virtual QList<QString> get_flags() override;

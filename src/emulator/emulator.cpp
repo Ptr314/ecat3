@@ -22,6 +22,7 @@
 #include "emulator/devices/common/i8253.h"
 #include "emulator/devices/common/register.h"
 #include "emulator/devices/cpu/z80.h"
+#include "emulator/devices/common/page_mapper.h"
 
 Emulator::Emulator(QString work_path, QString data_path, QString software_path, QString ini_file):
     work_path(work_path),
@@ -316,4 +317,5 @@ void Emulator::register_devices()
     dm->register_device("i8253", create_i8253);
     dm->register_device("register", create_register);
     dm->register_device("z80", create_z80);
+    dm->register_device("page_mapper", create_page_mapper);
 }

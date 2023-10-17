@@ -67,9 +67,11 @@ public:
     virtual void write_mem(uint16_t address, uint8_t value) = 0;
     virtual uint8_t read_port(uint16_t address);
     virtual void write_port(uint16_t address, uint8_t value);
-    virtual void inte_changed(unsigned int inte);
+    //virtual void inte_changed(unsigned int inte);
     virtual void reset();
     virtual z80context * get_context();
+    virtual void set_nmi(unsigned int nmi_val);
+    virtual void set_int(unsigned int int_val);
 
     unsigned int execute();
     virtual uint8_t get_command()

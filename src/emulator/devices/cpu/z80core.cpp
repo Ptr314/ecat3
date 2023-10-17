@@ -40,6 +40,8 @@ using namespace Z80;
 #define REG_DE_     context.registers.regs.DE_
 #define REG_HL_     context.registers.regs.HL_
 
+#define INC_R       REG_R = (REG_R & 0x80) | ((REG_R + 1) & 0x7F)    //incrementing lower 7 bits
+
 const uint32_t FLAGS_35 = F_B3 + F_B5;
 
 
@@ -159,7 +161,10 @@ z80core::z80core()
     //TODO: z80 core constructor
     context.registers.regs.PC = 0;
     context.halted = false;
-    context.int_enable = 0;
+    context.NMI = 1;
+    context.INT = 1;
+    //context.int_enable = 0;
+
 }
 
 inline uint8_t z80core::next_byte()
@@ -169,18 +174,8 @@ inline uint8_t z80core::next_byte()
 
 inline uint8_t z80core::read_command()
 {
-    //TODO: flipping M1
     return next_byte();
 }
-
-//inline uint8_t z80core::calc_base_flags(uint32_t value)
-//{
-
-//    return F_BASE_8080
-//           | ( (value >> 8) & F_CARRY )
-//           | ZERO_SIGN[(uint8_t)value]
-//           | PARITY[(uint8_t)value];
-//}
 
 inline uint8_t z80core::calc_z80_flags(
                         uint32_t value,         //Value for standard flags
@@ -528,7 +523,7 @@ void z80core::reset()
 {
     context.registers.regs.PC = 0;
     context.halted = false;
-    context.int_enable = 0;
+    //context.int_enable = 0;
 
     context.global_prefix = 0;
     context.index8_inc = 0;
@@ -538,7 +533,9 @@ void z80core::reset()
     context.IFF1 = 0;
     context.IFF2 = 0;
 
-    inte_changed(context.int_enable);
+    REG_R = 0;
+
+    //inte_changed(context.int_enable);
 }
 
 z80context * z80core::get_context()
@@ -553,8 +550,8 @@ uint8_t z80core::read_port(uint16_t address){
 void z80core::write_port(uint16_t address, uint8_t value)
 {}
 
-void z80core::inte_changed(unsigned int inte)
-{}
+//void z80core::inte_changed(unsigned int inte)
+//{}
 
 inline uint32_t z80core::get_first_16()
 {
@@ -785,6 +782,8 @@ inline void z80core::do_cpi_cpd(int16_t hlinc)
 
     REG_F |= tmp & F_B3;
     REG_F |= ((tmp & 0x02) != 0)?F_B5:0;
+
+    INC_R;
 }
 
 inline void z80core::do_ldi_ldd(int16_t hlinc)
@@ -807,6 +806,8 @@ inline void z80core::do_ldi_ldd(int16_t hlinc)
 
     REG_F |= D.b.L & F_B3;
     REG_F |= ((D.b.L & 0x02) != 0)?F_B5:0;
+
+    INC_R;
 }
 
 
@@ -824,6 +825,8 @@ inline void z80core::do_ini_ind(int16_t hlinc)
         0,                              //Reset
         F_SIGN+F_ZERO+F_B5+F_B3         //To change
         );
+
+    INC_R;
 }
 
 inline void z80core::do_outi_outd(int16_t hlinc)
@@ -840,6 +843,8 @@ inline void z80core::do_outi_outd(int16_t hlinc)
         0,                              //Reset
         F_SIGN+F_ZERO+F_B5+F_B3         //To change
         );
+
+    INC_R;
 }
 
 inline void z80core::do_daa()
@@ -873,6 +878,16 @@ inline void z80core::do_daa()
         );
 }
 
+void z80core::set_nmi(unsigned int nmi_val)
+{
+    context.NMI = nmi_val;
+}
+
+void z80core::set_int(unsigned int int_val)
+{
+    context.INT = int_val;
+}
+
 unsigned int z80core::execute()
 {
     uint8_t command, command2;
@@ -886,6 +901,8 @@ unsigned int z80core::execute()
     bool process_ints = true;
 
     command = next_byte();
+
+    INC_R;
 
     //XX YYY ZZZ
     //   PPQ
@@ -1420,10 +1437,6 @@ unsigned int z80core::execute()
                 //DI
                 context.IFF1 = 0;
                 context.IFF2 = 0;
-
-                //TODO: remove old code
-                context.int_enable = 0;
-                inte_changed(context.int_enable);
                 break;
             default: //7
                 //11_111_011
@@ -1431,10 +1444,6 @@ unsigned int z80core::execute()
                 context.IFF1 = 1;
                 context.IFF2 = 1;
                 process_ints = false;
-
-                //TODO: remove old code
-                context.int_enable = 1;
-                inte_changed(context.int_enable);
                 break;
             }
             break;
@@ -1668,7 +1677,6 @@ unsigned int z80core::execute()
                             case 3:
                                 // ED 01 011 111
                                 // LD A, R
-                                //TODO: LD A, R - check which R should be taken
                                 REG_A = REG_R;
                                 if (context.IFF2 == 1)
                                     REG_F |= F_PARITY;

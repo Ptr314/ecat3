@@ -23,7 +23,9 @@ struct z80context
     unsigned int IM;
     bool halted;
     //TODO: Z80 int system
-    unsigned int int_enable;
+    //unsigned int int_enable;
+    unsigned int NMI;
+    unsigned int INT;
     unsigned int debug_mode;
 
     unsigned int global_prefix;
