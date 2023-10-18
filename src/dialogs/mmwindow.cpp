@@ -36,7 +36,7 @@ void MemoryMapperWindow::on_process_button_clicked()
     qDebug() << cfg << address;
     unsigned int address_on_device, range_index;
 
-    AddressableDevice * d = dynamic_cast<MemoryMapper*>(d)->map_memory(
+    AddressableDevice * d = dynamic_cast<MemoryMapper*>(this->d)->map_memory(
                                                                   cfg,
                                                                   address,
                                                                   ui->readButton->isChecked()?MODE_R:MODE_W,

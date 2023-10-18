@@ -467,6 +467,7 @@ void MainWindow::fdd_write(unsigned int n)
 
 void MainWindow::update_fdds()
 {
+    //TODO: this event may happen after exiting or stopping emulator
     for (unsigned int i=0; i<fdds_found; i++)
     {
         if (fdc->get_busy() && fdc->get_selected_drive()==i) {

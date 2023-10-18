@@ -107,13 +107,25 @@ QList<QString> z80::get_registers()
     QList<QString> l;
     z80context * c = core->get_context();
 
-    l << QString("A=%1").arg(c->registers.regs.A, 2, 16, QChar('0')).toUpper()
+    l << QString("AF=%1").arg((c->registers.regs.A << 8) + c->registers.regs.F, 4, 16, QChar('0')).toUpper()
       << QString("BC=%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0')).toUpper()
       << QString("DE=%1").arg(c->registers.reg_pairs.DE, 4, 16, QChar('0')).toUpper()
       << QString("HL=%1").arg(c->registers.reg_pairs.HL, 4, 16, QChar('0')).toUpper()
+      << QString("IX=%1").arg(c->registers.reg_pairs.IX, 4, 16, QChar('0')).toUpper()
+      << QString("IY=%1").arg(c->registers.reg_pairs.IY, 4, 16, QChar('0')).toUpper()
+      << ""
+      << QString("AF'=%1").arg(c->registers.regs.AF_, 4, 16, QChar('0')).toUpper()
+      << QString("BC'=%1").arg(c->registers.regs.BC_, 4, 16, QChar('0')).toUpper()
+      << QString("DE'=%1").arg(c->registers.regs.DE_, 4, 16, QChar('0')).toUpper()
+      << QString("HL'=%1").arg(c->registers.regs.HL_, 4, 16, QChar('0')).toUpper()
       << ""
       << QString("SP=%1").arg(c->registers.regs.SP, 4, 16, QChar('0')).toUpper()
       << QString("PC=%1").arg(c->registers.regs.PC, 4, 16, QChar('0')).toUpper()
+      << ""
+      << QString("I=%1").arg(c->registers.regs.I, 2, 16, QChar('0')).toUpper()
+      << QString("R=%1").arg(c->registers.regs.R, 2, 16, QChar('0')).toUpper()
+      << QString("IFF1=%1").arg(c->IFF1, 1, 16, QChar('0')).toUpper()
+      << QString("IFF2=%1").arg(c->IFF2, 1, 16, QChar('0')).toUpper()
     ;
     return l;
 }
@@ -123,11 +135,14 @@ QList<QString> z80::get_flags()
     QList<QString> l;
     z80context * c = core->get_context();
 
-    l << QString("C=%1").arg( ((c->registers.regs.F & F_CARRY) != 0)?1:0)
-      << QString("P=%1").arg( ((c->registers.regs.F & F_PARITY) != 0)?1:0)
-      << QString("HC=%1").arg( ((c->registers.regs.F & F_HALF_CARRY) != 0)?1:0)
+    l << QString("S=%1").arg( ((c->registers.regs.F & F_SIGN) != 0)?1:0)
       << QString("Z=%1").arg( ((c->registers.regs.F & F_ZERO) != 0)?1:0)
-      << QString("S=%1").arg( ((c->registers.regs.F & F_SIGN) != 0)?1:0)
+      << QString("5=%1").arg( ((c->registers.regs.F & F_B5) != 0)?1:0)
+      << QString("H=%1").arg( ((c->registers.regs.F & F_HALF_CARRY) != 0)?1:0)
+      << QString("3=%1").arg( ((c->registers.regs.F & F_B3) != 0)?1:0)
+      << QString("PV=%1").arg( ((c->registers.regs.F & F_PARITY) != 0)?1:0)
+      << QString("N=%1").arg( ((c->registers.regs.F & F_SUB) != 0)?1:0)
+      << QString("C=%1").arg( ((c->registers.regs.F & F_CARRY) != 0)?1:0)
     ;
     return l;
 }
