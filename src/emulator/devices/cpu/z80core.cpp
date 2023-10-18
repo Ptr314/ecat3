@@ -934,14 +934,11 @@ unsigned int z80core::execute()
             case 2:
                 //00_010_000
                 //DJNZ (PC+$e)
+                T.b.L = next_byte();
                 REG_B--;
                 if (REG_B != 0) {
-                    T.b.L = next_byte();
                     REG_PC += (int8_t)T.b.L;
                     cycles = TIMING[command][1];
-                } else {
-                    T.b.L = next_byte();
-                    T.b.H = next_byte();
                 }
                 break;
             case 3:

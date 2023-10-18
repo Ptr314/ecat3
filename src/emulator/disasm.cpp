@@ -36,6 +36,8 @@ void DisAsm::load_file(QString file_name)
         QString line = in.readLine();
         QStringList parts = line.split(u'\x09', Qt::SkipEmptyParts);
 
+        qDebug() << line;
+
         QStringList codes = parts.at(0).split(' ', Qt::SkipEmptyParts);
 
         ins[count].length = 0;
@@ -126,6 +128,18 @@ unsigned int DisAsm::disassemle(CommandBytes bytes, unsigned int PC, unsigned in
                 };
 
                 //TODO: implement "PC+$e" for Z80
+                p = ins[i].text.indexOf("PC+$e");
+                if (p >= 0)
+                {
+                    int8_t v=0;
+                    for (j = 0; j < ins[i].length; j++)
+                        if (!ins[i].bytes[j].is_instr && ins[i].bytes[j].value == QChar('e').unicode())
+                            v = static_cast<int8_t>((*bytes)[j]);
+                    uint16_t v1=static_cast<int16_t>(PC) + v + ins[i].length;
+                    QString hexval = QString("%1").arg(v1, 4, 16, QChar('0')).toUpper();
+                    s = s.replace("PC+$e", hexval);
+                }
+
                 *output = s;
                 return result;
             }

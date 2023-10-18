@@ -19,7 +19,13 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
 
     this->setWindowTitle(d->name + " : " + d->type);
 
-    QString file_name = e->data_path + "i8080.dis";
+    QString file_name;
+    if (d->type == "i8080")
+        file_name = e->data_path + "i8080.dis";
+    else
+    if (d->type == "z80")
+        file_name = e->data_path + "z80.dis";
+
     disasm = new DisAsm(this, file_name);
     ui->codeview->set_data(e, dynamic_cast<CPU*>(d), disasm, dynamic_cast<CPU*>(d)->get_pc());
     update_registers();
