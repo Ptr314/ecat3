@@ -164,7 +164,6 @@ z80core::z80core()
     context.NMI = 1;
     context.INT = 1;
     //context.int_enable = 0;
-
 }
 
 inline uint8_t z80core::next_byte()
@@ -197,7 +196,6 @@ inline uint8_t z80core::calc_z80_flags(
 
     REG_F = result;
     return result;
-
 }
 
 inline uint8_t z80core::calc_overflow(uint32_t a, uint32_t b, uint32_t result, uint32_t position)
