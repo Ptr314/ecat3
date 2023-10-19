@@ -66,13 +66,13 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     emulator/devices/common/register.h
     tests/i8253_test.asm
     libs/lodepng/lodepng.cpp libs/lodepng/lodepng.h
-    emulator/devices/cpu/z80core.h emulator/devices/cpu/z80core.cpp
-    emulator/devices/cpu/z80_context.h
     emulator/devices/cpu/z80.h
     emulator/devices/cpu/z80.cpp
     emulator/devices/cpu/cpu_utils.h
     emulator/devices/common/page_mapper.h
-
+    emulator/devices/cpu/z80_context.h
+    emulator/devices/cpu/z80core.h emulator/devices/cpu/z80core.cpp
+#    libs/z80.hpp
 )
 target_link_libraries(eCat3 PRIVATE
     Qt::Core

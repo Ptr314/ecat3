@@ -3,6 +3,8 @@
 #define CALLBACK_NMI    1
 #define CALLBACK_INT    2
 
+#ifndef EXTERNAL_Z80
+
 //----------------------- Library wrapper -----------------------------------
 z80Core::z80Core(z80 * emulator_device):
     z80core()
@@ -30,10 +32,31 @@ void z80Core::write_port(uint16_t address, uint8_t value)
     emulator_device->write_port(address, value);
 }
 
-//void z80Core::inte_changed(unsigned int inte)
-//{
-//    emulator_device->inte_changed(inte);
-//}
+#endif
+
+#ifdef EXTERNAL_Z80
+//external funcs
+unsigned char readByte(void* arg, unsigned short addr)
+{
+    return ((z80*)arg)->read_mem(addr);
+}
+
+// memory write request per 1 byte from CPU
+void writeByte(void* arg, unsigned short addr, unsigned char value)
+{
+    ((z80*)arg)->write_mem(addr, value);
+}
+
+unsigned char inPort(void* arg, unsigned short port)
+{
+    return ((z80*)arg)->read_port(port);
+}
+
+void outPort(void* arg, unsigned short port, unsigned char value)
+{
+    ((z80*)arg)->write_port(port, value);
+}
+#endif
 
 //----------------------- Emulator device -----------------------------------
 
@@ -47,7 +70,11 @@ z80::z80(InterfaceManager *im, EmulatorConfigDevice *cd):
     //i_inte =    create_interface(1, "inte", MODE_W);
     i_m1 =      create_interface(1, "m1", MODE_W);
 
+#ifndef EXTERNAL_Z80
     core = new z80Core(this);
+#else
+    core_ext = new Z80(readByte, writeByte, inPort, outPort, this);
+#endif
 
     over_commands.push_back(0xCD);
     over_commands.push_back(0xDD);
@@ -69,7 +96,12 @@ z80::~z80()
 
 unsigned int z80::get_pc()
 {
+#ifndef EXTERNAL_Z80
     return core->get_context()->registers.regs.PC;
+#else
+    return core_ext->reg.PC;
+#endif
+
 }
 
 unsigned int z80::read_mem(unsigned int address)
@@ -97,14 +129,10 @@ void z80::reset(bool cold)
     CPU::reset(cold);
 }
 
-//void z80::inte_changed(unsigned int inte)
-//{
-//    i_inte->change(inte);
-//}
-
 QList<QString> z80::get_registers()
 {
     QList<QString> l;
+#ifndef EXTERNAL_Z80
     z80context * c = core->get_context();
 
     l << QString("AF=%1").arg((c->registers.regs.A << 8) + c->registers.regs.F, 4, 16, QChar('0')).toUpper()
@@ -127,12 +155,16 @@ QList<QString> z80::get_registers()
       << QString("IFF1=%1").arg(c->IFF1, 1, 16, QChar('0')).toUpper()
       << QString("IFF2=%1").arg(c->IFF2, 1, 16, QChar('0')).toUpper()
     ;
+#else
+#endif
+
     return l;
 }
 
 QList<QString> z80::get_flags()
 {
     QList<QString> l;
+#ifndef EXTERNAL_Z80
     z80context * c = core->get_context();
 
     l << QString("S=%1").arg( ((c->registers.regs.F & F_SIGN) != 0)?1:0)
@@ -144,6 +176,8 @@ QList<QString> z80::get_flags()
       << QString("N=%1").arg( ((c->registers.regs.F & F_SUB) != 0)?1:0)
       << QString("C=%1").arg( ((c->registers.regs.F & F_CARRY) != 0)?1:0)
     ;
+#else
+#endif
     return l;
 }
 
@@ -152,7 +186,11 @@ unsigned int z80::execute()
 {
     if (reset_mode)
     {
+#ifndef EXTERNAL_Z80
         core->reset();
+#else
+        core_ext->reg.PC=0;
+#endif
         reset_mode = false;
     }
 
@@ -160,7 +198,7 @@ unsigned int z80::execute()
     if (debug == DEBUG_STOPPED)
         return 10;
 
-#ifdef LOG_8080
+#ifdef LOG_Z80
     uint16_t address = core->get_pc();
     uint8_t log_cmd = core->get_command();
     //z80context * context = core->get_context();
@@ -172,9 +210,13 @@ unsigned int z80::execute()
     if (do_log) logger->log_state(log_cmd, true);
 #endif
 
+#ifndef EXTERNAL_Z80
     unsigned int cycles = core->execute();
+#else
+    unsigned int cycles = core_ext->execute(1);
+#endif
 
-#ifdef LOG_8080
+#ifdef LOG_Z80
     //uint8_t f2 = context->registers.regs.F & 0x10;
     //bool do_log = (address < 0xF800) && (f1 == 0) && (f2 != 0);
     if (do_log) logger->log_state(log_cmd, false, cycles);
@@ -197,25 +239,43 @@ unsigned int z80::execute()
 
 void z80::set_context_value(QString name, unsigned int value)
 {
+#ifndef EXTERNAL_Z80
     if (name == "PC")
     {
         core->get_context()->registers.regs.PC = value;
     }
+#else
+    if (name == "PC")
+    {
+        core_ext->reg.PC = value;
+    }
+#endif
+
 }
 
 unsigned int z80::get_command()
 {
+#ifndef EXTERNAL_Z80
     return core->get_command();
+#else
+    return read_mem(core_ext->reg.PC);
+#endif
 }
 
 void z80::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
     switch (callback_id) {
     case CALLBACK_NMI:
+#ifndef EXTERNAL_Z80
         core->set_nmi(new_value & 1);
+#else
+#endif
         break;
     case CALLBACK_INT:
+#ifndef EXTERNAL_Z80
         core->set_int(new_value & 1);
+#else
+#endif
         break;
     }
 }

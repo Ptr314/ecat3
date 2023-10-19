@@ -1,13 +1,18 @@
 #ifndef z80main_H
 #define z80main_H
 
+//#define EXTERNAL_Z80
+//#define LOG_Z80 1
 
 #include "emulator/core.h"
+
+#ifndef EXTERNAL_Z80
 #include "emulator/devices/cpu/z80core.h"
+#else
+#include "libs/z80.hpp"
+#endif
 
-//#define LOG_8080 1
-
-#ifdef LOG_8080
+#ifdef LOG_Z80
 #include "cpulogger.h"
 #endif
 
@@ -16,6 +21,7 @@
 
 class z80;
 
+#ifndef EXTERNAL_Z80
 //Library wrapper
 class z80Core: public z80core
 {
@@ -30,6 +36,7 @@ public:
     virtual void write_port(uint16_t address, uint8_t value) override;
     //virtual void inte_changed(unsigned int inte) override;
 };
+#endif
 
 //Emulator class
 class z80: public CPU
@@ -40,9 +47,13 @@ private:
     //Interface * i_inte;
     Interface * i_m1;
 
+#ifndef EXTERNAL_Z80
     z80core * core;
+#else
+    Z80 * core_ext;
+#endif
 
-#ifdef LOG_8080
+#ifdef LOG_Z80
     CPULogger * logger;
 #endif
 
