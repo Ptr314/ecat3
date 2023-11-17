@@ -2,6 +2,7 @@
 #define DUMPAREA_H
 
 #include <QWidget>
+#include <QLineEdit>
 
 #include "emulator/emulator.h"
 
@@ -18,10 +19,12 @@ signals:
 
 protected:
     void paintEvent(QPaintEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
 
 private:
     AddressableDevice * d;
     Emulator * e;
+    QLineEdit * editor;
     unsigned int font_height;
     unsigned int char_width;
     unsigned int start_address;

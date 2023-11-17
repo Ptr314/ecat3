@@ -66,6 +66,7 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     emulator/devices/common/register.h
     tests/i8253_test.asm
     libs/lodepng/lodepng.cpp libs/lodepng/lodepng.h
+    dialogs/hexeditorline.h dialogs/hexeditorline.cpp
 
 )
 target_link_libraries(eCat3 PRIVATE
