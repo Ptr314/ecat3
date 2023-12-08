@@ -4,7 +4,12 @@
 #include "dialogs/dialogs.h"
 
 DOSFrame::DOSFrame(QWidget *parent)
-    : QWidget{parent}
+    : QWidget{parent},
+    frame_top(false),
+    frame_right(false),
+    frame_bottom(false),
+    frame_left(false),
+    frame_chars("")
 {
     font = new QFont(FONT_NAME, FONT_SIZE, FONT_WEIGHT);
     QFontMetrics fm(*font);
@@ -29,7 +34,7 @@ void DOSFrame::paintEvent([[maybe_unused]] QPaintEvent *event)
     painter.fillRect(0, 0, size().width(), size().height(), DIALOGS_BACKGROUND);
     painter.setFont(*font);
     painter.setPen(QColor(255,255,255));
-    int sx = floor(static_cast<float>(size().width()) / char_width);
+    int sx = ceil(static_cast<float>(size().width()) / char_width);
     int sy = size().height() / font_height;
     QString s = "";
     int c = 0;
@@ -46,6 +51,7 @@ void DOSFrame::paintEvent([[maybe_unused]] QPaintEvent *event)
         if (frame_right) s += frame_chars.at(2);
         painter.drawText(0, font_height, s);
     }
+
     c = 0;
     int y = 1;
     if (frame_top) {y++; c++;};
@@ -56,11 +62,13 @@ void DOSFrame::paintEvent([[maybe_unused]] QPaintEvent *event)
         for (int i=0; i<sy-c; i++)
             painter.drawText(0, font_height*(y+i), f);
     }
+
     if (frame_right) {
         QString f = frame_chars.at(5);
         for (int i=0; i<sy-c; i++)
-            painter.drawText(floor(char_width*(sx-1)), font_height*(y+i), f);
+            painter.drawText(round(char_width*(sx-1)), font_height*(y+i), f);
     }
+
     c = 0;
     s = "";
     if (frame_top) {

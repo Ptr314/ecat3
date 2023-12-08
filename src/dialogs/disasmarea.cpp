@@ -7,7 +7,7 @@
 #include "libs/crc16.h"
 
 DisAsmArea::DisAsmArea(QWidget *parent)
-    : QWidget{parent},
+    : DOSFrame{parent},
     lines_count(0),
     address_first(_FFFF),
     address_last(_FFFF),
@@ -15,10 +15,12 @@ DisAsmArea::DisAsmArea(QWidget *parent)
     data_valid(false),
     CRC(0)
 {
-    QFont font(FONT_NAME, FONT_SIZE);
-    QFontMetrics fm(font);
+    //QFont font(FONT_NAME, FONT_SIZE);
+    QFontMetrics fm(*font);
     char_width = fm.horizontalAdvance('0');
+    qDebug() << font_height;
     font_height = fm.height();
+    qDebug() << font_height;
 }
 
 void DisAsmArea::set_data(Emulator * e, CPU * cpu, DisAsm * disasm, unsigned int address)
@@ -117,22 +119,24 @@ void DisAsmArea::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
         QPoint point = event->pos();
-        cursor_line = point.y() / font_height;
+        cursor_line = point.y() / font_height - 1;
         update();
     }
 }
 
 void DisAsmArea::paintEvent(QPaintEvent *event)
 {
+    DOSFrame::paintEvent(event);
+
     if (!data_valid) update_data();
 
     QPainter painter(this);
 
-    painter.fillRect(0, 0, size().width(), size().height(), DIALOGS_BACKGROUND);
+    //painter.fillRect(0, 0, size().width(), size().height(), DIALOGS_BACKGROUND);
 
     painter.setFont(QFont(FONT_NAME, FONT_SIZE, FONT_WEIGHT));
 
-    unsigned int lines_count = size().height() / font_height - 1;
+    unsigned int lines_count = size().height() / font_height - 2;
 
     for (unsigned int i=0; i < lines_count; i++)
     {
@@ -140,11 +144,11 @@ void DisAsmArea::paintEvent(QPaintEvent *event)
         if (line < lines_count)
         {
             unsigned int x = 20;
-            unsigned int y = font_height * (i+1);
+            unsigned int y = font_height * (i+2);
             if (i == cursor_line)
             {
                 painter.setPen(SELECTION);
-                painter.fillRect(0, y-font_height+3, size().width(), font_height, SELECTION_BACK);
+                painter.fillRect(char_width, y-font_height+3, floor(static_cast<float>(size().width()) / char_width - 2)*char_width, font_height, SELECTION_BACK);
             } else {
                 painter.setPen(QColor(0,0,0));
             }

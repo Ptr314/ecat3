@@ -10,10 +10,10 @@ class DOSFrame : public QWidget
 
 private:
     QString frame_chars;
-    bool frame_top = false;
-    bool frame_right = false;
-    bool frame_bottom = false;
-    bool frame_left = false;
+    bool frame_top;
+    bool frame_right;
+    bool frame_bottom;
+    bool frame_left;
 
 public:
     explicit DOSFrame(QWidget *parent = nullptr);

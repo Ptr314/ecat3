@@ -22,6 +22,11 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     QString file_name = e->data_path + "i8080.dis";
     disasm = new DisAsm(this, file_name);
     ui->codeview->set_data(e, dynamic_cast<CPU*>(d), disasm, dynamic_cast<CPU*>(d)->get_pc());
+    ui->codeview->set_frame(true, true, true, true, "╔═╤║ │╚═╧");
+    ui->registers->set_frame(true, true, true, false, "╤═╤│ │╧═╧");
+    ui->flags->set_frame(true, true, true, false, "╤═╗│ ║╧═╝");
+
+
     update_registers();
 
     state_timer = new QTimer(this);

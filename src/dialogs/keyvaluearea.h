@@ -3,7 +3,9 @@
 
 #include <QWidget>
 
-class KeyValueArea : public QWidget
+#include "dosframe.h"
+
+class KeyValueArea : public DOSFrame
 {
     Q_OBJECT
 private:
