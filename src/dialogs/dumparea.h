@@ -5,8 +5,9 @@
 #include <QLineEdit>
 
 #include "emulator/emulator.h"
+#include "dosframe.h"
 
-class DumpArea : public QWidget
+class DumpArea : public DOSFrame
 {
     Q_OBJECT
 public:
@@ -25,9 +26,17 @@ private:
     AddressableDevice * d;
     Emulator * e;
     QLineEdit * editor;
-    unsigned int font_height;
-    unsigned int char_width;
+//    unsigned int font_height;
+//    unsigned int char_width;
     unsigned int start_address;
+    unsigned int editor_address;
+
+    void show_editor(unsigned int address);
+
+private slots:
+    void editor_return_pressed();
+    void editor_tab_pressed();
+    void editor_escape_pressed();
 };
 
 #endif // DUMPAREA_H

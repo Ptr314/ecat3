@@ -28,6 +28,8 @@ private:
 
     Emulator * e;
     ComputerDevice * d;
+
+    void keyPressEvent(QKeyEvent *event) override;
 };
 
 QDialog * CreateDumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d);

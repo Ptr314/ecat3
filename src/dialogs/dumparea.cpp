@@ -3,35 +3,27 @@
 #include <QMouseEvent>
 
 #include "dialogs/dialogs.h"
+#include "emulator/utils.h"
 
 #include "dumparea.h"
 #include "hexeditorline.h"
 
-#define LEFT_PADDING 10
+#define LEFT_PADDING 2
 
 DumpArea::DumpArea(QWidget *parent)
-    : QWidget{parent},
+    : DOSFrame{parent},
     d(nullptr),
     start_address(0)
 {
-    QFont font(FONT_NAME, FONT_SIZE);
-    QFontMetrics fm(font);
-    char_width = fm.horizontalAdvance('0');
-    font_height = fm.height();
+//    QFont font(FONT_NAME, FONT_SIZE);
+//    QFontMetrics fm(font);
+//    char_width = fm.horizontalAdvance('0');
+//    font_height = fm.height();
 
-    editor = new HexEditorLine(this);
-    editor->setFixedSize(char_width*3, font_height+2);
-    editor->setAlignment(Qt::AlignHCenter);
-    editor->setFont(font);
-    editor->setStyleSheet(
-                            "QLineEdit {"
-                                "border: 1px solid red;"
-                                "padding: 0;"
-                                "margin: 0;"
-                                "background: #00AAAA;"
-                                "selection-background-color: #000080;"
-                            "}"
-        );
+    editor = new HexEditorLine(this, *font, char_width, font_height);
+    connect(editor, SIGNAL(esc_pressed()), this, SLOT(editor_escape_pressed()));
+    connect(editor, SIGNAL(return_pressed()), this, SLOT(editor_return_pressed()));
+    connect(editor, SIGNAL(tab_pressed()), this, SLOT(editor_tab_pressed()));
     editor->hide();
 }
 
@@ -50,24 +42,24 @@ void DumpArea::go_to(unsigned int address)
 
 void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
 {
+    DOSFrame::paintEvent(event);
+
     QPainter painter(this);
 
-    painter.fillRect(0, 0, size().width(), size().height(), DIALOGS_BACKGROUND);
-
-    painter.setFont(QFont(FONT_NAME, FONT_SIZE, FONT_WEIGHT));
+    painter.setFont(*font);
     painter.setPen(TEXT_COLOR);
     if (d != nullptr)
     {
 
-        unsigned int lines_count = size().height() / font_height - 1;
+        unsigned int lines_count = size().height() / font_height - 2;
 
         for (unsigned int i=0; i < lines_count; i++)
         {
             unsigned int address = start_address + i*16;
             if (address < d->get_size())
             {
-                unsigned int x = LEFT_PADDING;
-                unsigned int y = font_height * (i+1);
+                unsigned int x = floor(char_width * LEFT_PADDING);
+                unsigned int y = font_height * (i+2);
                 QString address_str = QString("%1 : ").arg(address, 4, 16, QChar('0')).toUpper();
                 painter.drawText(x, y, address_str);
                 x += address_str.length() * char_width;
@@ -88,17 +80,15 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
     }
 }
 
-
-void DumpArea::mouseDoubleClickEvent(QMouseEvent *event)
+void DumpArea::show_editor(unsigned int address)
 {
-    int xc = floor((event->position().x()-LEFT_PADDING)/char_width);
-    int yc = floor(event->position().y()/font_height);
-    int xb = (xc - 7) / 3;
-    unsigned int address = start_address + yc*16 + xb;
-    qDebug() << Qt::hex << address;
-    editor->move(xc*char_width+LEFT_PADDING - char_width/2, yc*font_height+2);
+    //qDebug() << Qt::hex << address;
+    editor_address = address;
+    int yc = (editor_address - start_address) / 16;
+    int xb = (editor_address - start_address) % 16;
+    editor->move((xb*3+7+LEFT_PADDING)*char_width - char_width/2, (yc+1)*font_height+2);
 
-    uint8_t data = d->get_value(address);
+    uint8_t data = d->get_value(editor_address);
     QString data_str = QString("%1").arg(data, 2, 16, QChar('0')).toUpper();
     editor->setText(data_str);
     editor->show();
@@ -106,3 +96,32 @@ void DumpArea::mouseDoubleClickEvent(QMouseEvent *event)
     editor->setFocus();
 }
 
+void DumpArea::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    int xc = floor((event->position().x()-floor(char_width * LEFT_PADDING))/char_width);
+    int yc = floor(event->position().y()/font_height - 1);
+    int xb = (xc - 7) / 3;
+
+    show_editor(start_address + yc*16 + xb);
+}
+
+void DumpArea::editor_return_pressed()
+{
+    editor->hide();
+    QString str_value = editor->text();
+    uint32_t value = parse_numeric_value('$'+str_value);
+    d->set_value(editor_address, value);
+    update();
+}
+
+void DumpArea::editor_tab_pressed()
+{
+    //TODO: HEX editor: Do something if the next address is below the last line
+    editor_return_pressed();
+    show_editor(editor_address + 1);
+}
+
+void DumpArea::editor_escape_pressed()
+{
+    editor->hide();
+}

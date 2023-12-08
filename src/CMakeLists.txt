@@ -67,6 +67,8 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     tests/i8253_test.asm
     libs/lodepng/lodepng.cpp libs/lodepng/lodepng.h
     dialogs/hexeditorline.h dialogs/hexeditorline.cpp
+    dialogs/dosframe.h dialogs/dosframe.cpp
+
 
 )
 target_link_libraries(eCat3 PRIVATE
