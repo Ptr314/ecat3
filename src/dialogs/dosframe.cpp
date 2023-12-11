@@ -13,8 +13,10 @@ DOSFrame::DOSFrame(QWidget *parent)
 {
     font = new QFont(FONT_NAME, FONT_SIZE, FONT_WEIGHT);
     QFontMetrics fm(*font);
-    char_width = static_cast<float>(fm.horizontalAdvance("01234567890123456789012345678901234567890123456789")) / 50;
+    char_width = fm.horizontalAdvance("0");
     font_height = fm.height();
+
+    //qDebug() << char_width << font_height;
 }
 
 void DOSFrame::set_frame(bool top, bool right, bool bottom, bool left, QString chars)
@@ -32,10 +34,13 @@ void DOSFrame::paintEvent([[maybe_unused]] QPaintEvent *event)
     QPainter painter(this);
 
     painter.fillRect(0, 0, size().width(), size().height(), DIALOGS_BACKGROUND);
+    //painter.drawRect(0, 0, size().width(), size().height());
+
     painter.setFont(*font);
     painter.setPen(QColor(255,255,255));
-    int sx = ceil(static_cast<float>(size().width()) / char_width);
+    int sx = size().width() / char_width;
     int sy = size().height() / font_height;
+
     QString s = "";
     int c = 0;
     if (frame_top) {
@@ -49,7 +54,7 @@ void DOSFrame::paintEvent([[maybe_unused]] QPaintEvent *event)
             s += frame_chars.at(1);
 
         if (frame_right) s += frame_chars.at(2);
-        painter.drawText(0, font_height, s);
+        painter.drawText(0, font_height-4, s);
     }
 
     c = 0;
@@ -60,18 +65,18 @@ void DOSFrame::paintEvent([[maybe_unused]] QPaintEvent *event)
     if (frame_left) {
         QString f = frame_chars.at(3);
         for (int i=0; i<sy-c; i++)
-            painter.drawText(0, font_height*(y+i), f);
+            painter.drawText(0, font_height*(y+i)-4, f);
     }
 
     if (frame_right) {
         QString f = frame_chars.at(5);
         for (int i=0; i<sy-c; i++)
-            painter.drawText(round(char_width*(sx-1)), font_height*(y+i), f);
+            painter.drawText(char_width*(sx-1), font_height*(y+i)-4, f);
     }
 
     c = 0;
     s = "";
-    if (frame_top) {
+    if (frame_bottom) {
         if (frame_left) {
             s = frame_chars.at(6);
             c++;
@@ -82,6 +87,6 @@ void DOSFrame::paintEvent([[maybe_unused]] QPaintEvent *event)
             s += frame_chars.at(7);
 
         if (frame_right) s += frame_chars.at(8);
-        painter.drawText(0, font_height*sy, s);
+        painter.drawText(0, font_height*sy-4, s);
     }
 }

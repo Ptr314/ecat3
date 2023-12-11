@@ -48,6 +48,7 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
 
     painter.setFont(*font);
     painter.setPen(TEXT_COLOR);
+
     if (d != nullptr)
     {
 
@@ -72,7 +73,7 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
                         QString data_str = QString("%1 ").arg(data, 2, 16, QChar('0')).toUpper();
                         painter.drawText(x + j*data_str.length()*char_width, y, data_str);
                         QString c = QString(*e->translate_char(data));
-                        painter.drawText(x + char_width*(16 * data_str.length() + 5 + j), y, c);
+                        painter.drawText(x + char_width*(16 * data_str.length() + 2 + j), y, c);
                     }
                 }
             }

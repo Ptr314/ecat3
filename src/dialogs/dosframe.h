@@ -22,7 +22,7 @@ public:
 protected:
     QFont * font;
     unsigned int font_height;
-    float char_width;
+    unsigned int  char_width;
 
     void paintEvent(QPaintEvent *event) override;
 

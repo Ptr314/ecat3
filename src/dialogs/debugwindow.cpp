@@ -22,10 +22,11 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     QString file_name = e->data_path + "i8080.dis";
     disasm = new DisAsm(this, file_name);
     ui->codeview->set_data(e, dynamic_cast<CPU*>(d), disasm, dynamic_cast<CPU*>(d)->get_pc());
-    ui->codeview->set_frame(true, true, true, true, "╔═╤║ │╚═╧");
-    ui->registers->set_frame(true, true, true, false, "╤═╤│ │╧═╧");
-    ui->flags->set_frame(true, true, true, false, "╤═╗│ ║╧═╝");
+    ui->codeview->set_frame(true, true, true, true, "╔═╤║ │╟─┴");
+    ui->registers->set_frame(true, true, true, false, "╤═╤│ │╧─┴");
+    ui->flags->set_frame(true, true, true, false, "╤═╗│ ║╧─╢");
 
+    ui->dump->set_frame(false, true, true, true, "╔═╗║ ║╚═╝");
 
     update_registers();
 
@@ -43,11 +44,10 @@ DebugWindow::~DebugWindow()
 
 void DebugWindow::update_registers()
 {
-    QList<QString> r = cpu->get_registers();
-    QList<QString> f = cpu->get_flags();
+    QList<QPair<QString, QString>> r = cpu->get_registers();
+    QList<QPair<QString, QString>> f = cpu->get_flags();
     ui->registers->set_data(r);
     ui->flags->set_data(f);
-
 }
 
 QDialog * CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
@@ -216,4 +216,9 @@ void DebugWindow::update_state()
         ui->state->setPixmap(QPixmap(":/icons/ondebug"));
         break;
     }
+}
+
+void DebugWindow::resizeEvent(QResizeEvent*)
+{
+    //qDebug() << "Resized!";
 }

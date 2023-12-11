@@ -17,4 +17,6 @@ bool fileExists(QString path);
 
 unsigned decodeBMP(std::vector<unsigned char>& image, unsigned& w, unsigned& h, const std::vector<unsigned char>& bmp);
 
+QString pad_string(QString s, QChar c, int len, bool from_left = true);
+
 #endif // UTILS_H

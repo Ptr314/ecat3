@@ -62,6 +62,8 @@ private:
     QTimer * state_timer;
 
     void update_registers();
+
+    void resizeEvent(QResizeEvent*);
 };
 
 QDialog * CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d);

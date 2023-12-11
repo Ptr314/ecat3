@@ -3,7 +3,7 @@
 
 //#define FONT_NAME "Consolas"
 #define FONT_NAME "PxPlus IBM VGA9"
-#define FONT_SIZE 11
+#define FONT_SIZE 12
 #define FONT_WEIGHT 400 //600, 700
 
 #define DIALOGS_BACKGROUND QColor(0,170,170)

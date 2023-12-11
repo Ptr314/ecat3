@@ -18,9 +18,9 @@ DisAsmArea::DisAsmArea(QWidget *parent)
     //QFont font(FONT_NAME, FONT_SIZE);
     QFontMetrics fm(*font);
     char_width = fm.horizontalAdvance('0');
-    qDebug() << font_height;
+    //qDebug() << font_height;
     font_height = fm.height();
-    qDebug() << font_height;
+    //qDebug() << font_height;
 }
 
 void DisAsmArea::set_data(Emulator * e, CPU * cpu, DisAsm * disasm, unsigned int address)
@@ -128,6 +128,8 @@ void DisAsmArea::paintEvent(QPaintEvent *event)
 {
     DOSFrame::paintEvent(event);
 
+    //qDebug() << "Heigth: " << size().height();
+
     if (!data_valid) update_data();
 
     QPainter painter(this);
@@ -143,12 +145,12 @@ void DisAsmArea::paintEvent(QPaintEvent *event)
         unsigned int line = first_line + i;
         if (line < lines_count)
         {
-            unsigned int x = 20;
+            unsigned int x = char_width*2;
             unsigned int y = font_height * (i+2);
             if (i == cursor_line)
             {
                 painter.setPen(SELECTION);
-                painter.fillRect(char_width, y-font_height+3, floor(static_cast<float>(size().width()) / char_width - 2)*char_width, font_height, SELECTION_BACK);
+                painter.fillRect(char_width, y-font_height+3, (size().width() / char_width - 2)*char_width, font_height, SELECTION_BACK);
             } else {
                 painter.setPen(QColor(0,0,0));
             }
