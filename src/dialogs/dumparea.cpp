@@ -16,9 +16,9 @@ DumpArea::DumpArea(QWidget *parent)
     start_address(0)
 {
 //    QFont font(FONT_NAME, FONT_SIZE);
-//    QFontMetrics fm(font);
-//    char_width = fm.horizontalAdvance('0');
-//    font_height = fm.height();
+    QFontMetrics fm(*font);
+    char_width = fm.horizontalAdvance('0');
+    font_height = fm.height();
 
     editor = new HexEditorLine(this, *font, char_width, font_height);
     connect(editor, SIGNAL(esc_pressed()), this, SLOT(editor_escape_pressed()));
@@ -49,8 +49,10 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
     painter.setFont(*font);
     painter.setPen(TEXT_COLOR);
 
+
     if (d != nullptr)
     {
+        //qDebug() << "Dump is repainting";
 
         unsigned int lines_count = size().height() / font_height - 2;
 
