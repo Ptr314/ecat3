@@ -346,7 +346,7 @@ public:
 
 typedef MapperRange MapperArray[100];
 
-class MemoryMapper: public ComputerDevice
+class MemoryMapper: public AddressableDevice
 {
 private:
     Interface *     i_address;
@@ -410,6 +410,9 @@ public:
         unsigned int * range_index
         );
 
+    //These two functions are needed to use the MM as an addressable device
+    virtual unsigned int get_value(unsigned int address) override;
+    virtual void set_value(unsigned int address, unsigned int value) override;
 };
 
 class Display: public ComputerDevice

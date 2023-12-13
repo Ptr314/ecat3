@@ -726,7 +726,7 @@ void CPU::reset(bool cold)
 //----------------------- class MemoryMapper -------------------------------//
 
 MemoryMapper::MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd),
+    AddressableDevice(im, cd),
     ranges_count(0),
     ports_count(0),
     ports_to_mem(false),
@@ -1039,6 +1039,16 @@ void MemoryMapper::write_port(unsigned int address, unsigned int value)
             d->set_value(address_on_device, value);
         }
     }
+}
+
+unsigned int MemoryMapper::get_value(unsigned int address)
+{
+    return read(address);
+}
+
+void MemoryMapper::set_value(unsigned int address, unsigned int value)
+{
+    write(address, value);
 }
 
 
