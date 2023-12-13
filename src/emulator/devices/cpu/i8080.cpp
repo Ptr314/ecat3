@@ -123,7 +123,7 @@ QList<QPair<QString, QString>> I8080::get_flags()
 
     l << std::pair("C", QString("%1").arg( ((c->registers.regs.F & F_CARRY) != 0)?1:0))
       << std::pair("P", QString("%1").arg( ((c->registers.regs.F & F_PARITY) != 0)?1:0))
-      << std::pair("HC", QString("%1").arg( ((c->registers.regs.F & F_HALF_CARRY) != 0)?1:0))
+      << std::pair("H", QString("%1").arg( ((c->registers.regs.F & F_HALF_CARRY) != 0)?1:0))
       << std::pair("Z", QString("%1").arg( ((c->registers.regs.F & F_ZERO) != 0)?1:0))
       << std::pair("S", QString("%1").arg( ((c->registers.regs.F & F_SIGN) != 0)?1:0))
     ;

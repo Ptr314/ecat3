@@ -738,6 +738,8 @@ MemoryMapper::MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd):
 {
     this->i_address = this->create_interface(16, "address", MODE_R);
     this->i_config = this->create_interface(8, "config", MODE_R, MM_CONFIG);
+
+    addresable_size = 0x10000;
 }
 
 void MemoryMapper::load_config(SystemData *sd)

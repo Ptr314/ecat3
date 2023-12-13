@@ -13,7 +13,8 @@
 DumpArea::DumpArea(QWidget *parent)
     : DOSFrame{parent},
     d(nullptr),
-    start_address(0)
+    start_address(0),
+    hilight_address(_FFFF)
 {
 //    QFont font(FONT_NAME, FONT_SIZE);
     QFontMetrics fm(*font);
@@ -47,23 +48,20 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
     QPainter painter(this);
 
     painter.setFont(*font);
-    painter.setPen(TEXT_COLOR);
-
 
     if (d != nullptr)
     {
-        //qDebug() << "Dump is repainting";
-
-        unsigned int lines_count = size().height() / font_height - 2;
+        unsigned int lines_count = size().height() / font_height - 1 - (frame_top?1:0);
 
         for (unsigned int i=0; i < lines_count; i++)
         {
             unsigned int address = start_address + i*16;
             if (address < d->get_size())
             {
-                unsigned int x = floor(char_width * LEFT_PADDING);
-                unsigned int y = font_height * (i+2);
-                QString address_str = QString("%1 : ").arg(address, 4, 16, QChar('0')).toUpper();
+                unsigned int x = char_width * LEFT_PADDING;
+                unsigned int y = font_height * (i+1+(frame_top?1:0)) - 4;
+                QString address_str = QString("%1: ").arg(address, 4, 16, QChar('0')).toUpper();
+                painter.setPen(TEXT_COLOR);
                 painter.drawText(x, y, address_str);
                 x += address_str.length() * char_width;
                 for (unsigned int j=0; j<16; j++)
@@ -73,6 +71,12 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
                     {
                         uint8_t data = d->get_value(address);
                         QString data_str = QString("%1 ").arg(data, 2, 16, QChar('0')).toUpper();
+                        if (address == hilight_address)
+                        {
+                            painter.setPen(TEXT_HILIGHT);
+                        } else {
+                            painter.setPen(TEXT_COLOR);
+                        }
                         painter.drawText(x + j*data_str.length()*char_width, y, data_str);
                         QString c = QString(*e->translate_char(data));
                         painter.drawText(x + char_width*(16 * data_str.length() + 2 + j), y, c);
@@ -89,7 +93,7 @@ void DumpArea::show_editor(unsigned int address)
     editor_address = address;
     int yc = (editor_address - start_address) / 16;
     int xb = (editor_address - start_address) % 16;
-    editor->move((xb*3+7+LEFT_PADDING)*char_width - char_width/2, (yc+1)*font_height+2);
+    editor->move((xb*3 + 6 + LEFT_PADDING)*char_width - char_width/2, (yc+(frame_top?1:0))*font_height+3-4);
 
     uint8_t data = d->get_value(editor_address);
     QString data_str = QString("%1").arg(data, 2, 16, QChar('0')).toUpper();
@@ -99,14 +103,39 @@ void DumpArea::show_editor(unsigned int address)
     editor->setFocus();
 }
 
+unsigned int DumpArea::mouse_to_offset(unsigned int  x, unsigned int y)
+{
+    int border = char_width * (LEFT_PADDING + 6 /* addr */ + 16*3 /* data */ + 2);
+    if (x<border)
+    {
+        int xc = floor((x-floor(char_width * LEFT_PADDING))/char_width);
+        int yc = floor(y/font_height - (frame_top?1:0));
+        int xb = (xc - 6) / 3;
+
+        if (yc < 0) yc = 0;
+        if (xb < 0) xb = 0;
+        if (xb > 15) xb = 15;
+
+        return yc*16 + xb;
+    } else {
+        int xc = (x-border)/char_width;
+        int yc = y/font_height - (frame_top?1:0);
+        return yc*16 + xc;
+    }
+}
+
 void DumpArea::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    int xc = floor((event->position().x()-floor(char_width * LEFT_PADDING))/char_width);
-    int yc = floor(event->position().y()/font_height - 1);
-    int xb = (xc - 7) / 3;
-
-    show_editor(start_address + yc*16 + xb);
+    show_editor(start_address + mouse_to_offset(event->position().x(), event->position().y()));
 }
+
+void DumpArea::mousePressEvent(QMouseEvent *event)
+{
+    hilight_address = start_address + mouse_to_offset(event->position().x(), event->position().y());
+    editor->hide();
+    update();
+}
+
 
 void DumpArea::editor_return_pressed()
 {

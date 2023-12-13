@@ -61,7 +61,7 @@ private:
 
     QTimer * state_timer;
 
-    MemoryMapper * device_mm;
+    AddressableDevice * device_mm;
     AddressableDevice * device_memory[100];
     int memory_devices;
 

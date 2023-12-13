@@ -11,5 +11,6 @@
 #define SELECTION_BACK  QColor(0,0,153)
 #define SELECTION       QColor(255,255,255)
 #define TEXT_COLOR      QColor(0,0,0)
+#define TEXT_HILIGHT    QColor(255,255,255)
 
 #endif // DIALOGS_H

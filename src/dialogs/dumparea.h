@@ -20,7 +20,9 @@ signals:
 
 protected:
     void paintEvent(QPaintEvent *event) override;
+    unsigned int mouse_to_offset(unsigned int  x, unsigned int y);
     void mouseDoubleClickEvent(QMouseEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
 
 private:
     AddressableDevice * d;
@@ -30,6 +32,7 @@ private:
 //    unsigned int char_width;
     unsigned int start_address;
     unsigned int editor_address;
+    unsigned int hilight_address;
 
     void show_editor(unsigned int address);
 
