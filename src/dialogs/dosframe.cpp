@@ -9,7 +9,10 @@ DOSFrame::DOSFrame(QWidget *parent)
     frame_right(false),
     frame_bottom(false),
     frame_left(false),
-    frame_chars("")
+    frame_chars(""),
+    scroll_range(0),
+    scroll_position(0)
+
 {
     font = new QFont(FONT_NAME, FONT_SIZE, FONT_WEIGHT);
     QFontMetrics fm(*font);
@@ -28,13 +31,19 @@ void DOSFrame::set_frame(bool top, bool right, bool bottom, bool left, QString c
     frame_chars = chars;
 }
 
+void DOSFrame::set_scroll(unsigned int range, unsigned int position, QString chars)
+{
+    scroll_range = range;
+    scroll_position = position;
+    scroll_chars = chars;
+    update();
+}
 
 void DOSFrame::paintEvent([[maybe_unused]] QPaintEvent *event)
 {
     QPainter painter(this);
 
     painter.fillRect(0, 0, size().width(), size().height(), DIALOGS_BACKGROUND);
-    //painter.drawRect(0, 0, size().width(), size().height());
 
     painter.setFont(*font);
     painter.setPen(QColor(255,255,255));
@@ -70,10 +79,28 @@ void DOSFrame::paintEvent([[maybe_unused]] QPaintEvent *event)
 
     if (frame_right) {
         QString f = frame_chars.at(5);
-        for (int i=0; i<sy-c; i++)
-            painter.drawText(char_width*(sx-1), font_height*(y+i)-4, f);
+        if (scroll_range == 0)
+        {
+            for (int i=0; i<sy-c; i++)
+                painter.drawText(char_width*(sx-1), font_height*(y+i)-4, f);
+        } else {
+            painter.fillRect(char_width*(sx-1), font_height*(y-1)-4, char_width-1, font_height*(sy-c)+4, SCROLL_BACK);
+            painter.setPen(SCROLL_COLOR);
+            int i = 0;
+            painter.drawText(char_width*(sx-1), font_height*(y+i)-4, scroll_chars.at(0));
+            int bar_pos = round((sy-c-3) * (static_cast<float>(scroll_position) / scroll_range )) + 1;
+            while (i < sy-c - 2)
+            {
+                i++;
+                painter.drawText(char_width*(sx-1), font_height*(y+i)-4, (i==bar_pos)?scroll_chars.at(2):scroll_chars.at(3));
+            }
+            painter.drawText(char_width*(sx-1), font_height*(y+i+1)-4, scroll_chars.at(1));
+
+            painter.drawText(char_width*(sx-1), font_height*(y+bar_pos)-4, scroll_chars.at(2));
+        }
     }
 
+    painter.setPen(QColor(255,255,255));
     c = 0;
     s = "";
     if (frame_bottom) {

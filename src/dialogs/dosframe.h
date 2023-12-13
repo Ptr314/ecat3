@@ -10,10 +10,14 @@ class DOSFrame : public QWidget
 
 private:
     QString frame_chars;
+    QString scroll_chars;
+    unsigned int scroll_range;
+    unsigned int scroll_position;
 
 public:
     explicit DOSFrame(QWidget *parent = nullptr);
     void set_frame(bool top, bool right, bool bottom, bool left, QString chars="╔═╗║ ║╚═╝");
+    void set_scroll(unsigned int range, unsigned int position, QString chars="▲▼■▒");
 
 protected:
     bool frame_top;

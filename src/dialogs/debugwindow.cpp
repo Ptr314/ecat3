@@ -23,6 +23,9 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     disasm = new DisAsm(this, file_name);
     ui->codeview->set_data(e, dynamic_cast<CPU*>(d), disasm, dynamic_cast<CPU*>(d)->get_pc());
     ui->codeview->set_frame(true, true, true, true, "╔═╤║ │╟─┴");
+    ui->codeview->set_scroll(100, 0);
+
+
     ui->registers->set_frame(true, true, true, false, "╤═╤│ │╧─┴");
     ui->flags->set_frame(true, true, true, false, "╤═╗│ ║╧─╢");
 
@@ -44,6 +47,8 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
 
     if (device_mm != nullptr)
         ui->dump->set_data(e, device_mm);
+
+    ui->dump->set_scroll(100, 0);
 
     update_registers();
 
