@@ -1,3 +1,5 @@
+#include <QKeyEvent>
+
 #include "dumpwindow.h"
 #include "emulator/utils.h"
 #include "ui_dumpwindow.h"
@@ -15,6 +17,7 @@ DumpWindow::DumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     this->e = e;
     this->d = d;
     ui->dump_area->set_data(e, dynamic_cast<AddressableDevice*>(d));
+    ui->dump_area->set_frame(true, true, true, true);
     setWindowTitle(d->name + " : " + d->type);
 }
 
@@ -41,3 +44,9 @@ void DumpWindow::on_toolButton_clicked()
     ui->dump_area->go_to(a);
 }
 
+void DumpWindow::keyPressEvent(QKeyEvent *event)
+{
+    if(event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return)
+        return;
+    QDialog::keyPressEvent(event);
+}

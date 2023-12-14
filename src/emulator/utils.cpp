@@ -132,3 +132,12 @@ unsigned decodeBMP(std::vector<unsigned char>& image, unsigned& w, unsigned& h, 
         }
     return 0;
 }
+
+QString pad_string(QString s, QChar c, int len, bool from_left)
+{
+    QString v = s;
+    for (int i=0; i<len - s.length(); i++)
+        if (from_left) v = c + v;
+        else v = v + c;
+    return v;
+}

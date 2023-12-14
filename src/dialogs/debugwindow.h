@@ -61,7 +61,13 @@ private:
 
     QTimer * state_timer;
 
+    AddressableDevice * device_mm;
+    AddressableDevice * device_memory[100];
+    int memory_devices;
+
     void update_registers();
+
+    void resizeEvent(QResizeEvent*);
 };
 
 QDialog * CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d);

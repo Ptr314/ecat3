@@ -74,8 +74,8 @@ public:
     virtual void write_port(unsigned int address, unsigned int data);
     //virtual void inte_changed(unsigned int inte);
 
-    virtual QList<QString> get_registers() override;
-    virtual QList<QString> get_flags() override;
+    virtual QList<QPair<QString, QString>> get_registers() override;
+    virtual QList<QPair<QString, QString>> get_flags() override;
     virtual unsigned int get_command() override;
 
     virtual void set_context_value(QString name, unsigned int value) override;

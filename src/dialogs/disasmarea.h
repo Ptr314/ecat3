@@ -5,6 +5,7 @@
 
 #include "emulator/emulator.h"
 #include "emulator/disasm.h"
+#include "dosframe.h"
 
 struct DisAsmEntry {
     unsigned int address;
@@ -15,7 +16,7 @@ struct DisAsmEntry {
     bool current;
 };
 
-class DisAsmArea : public QWidget
+class DisAsmArea : public DOSFrame
 {
     Q_OBJECT
 public:

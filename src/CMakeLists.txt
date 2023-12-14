@@ -72,7 +72,10 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     emulator/devices/common/page_mapper.h
     emulator/devices/cpu/z80_context.h
     emulator/devices/cpu/z80core.h emulator/devices/cpu/z80core.cpp
-#    libs/z80.hpp
+    dialogs/hexeditorline.h dialogs/hexeditorline.cpp
+    dialogs/dosframe.h dialogs/dosframe.cpp
+    #    libs/z80.hpp
+
 )
 target_link_libraries(eCat3 PRIVATE
     Qt::Core

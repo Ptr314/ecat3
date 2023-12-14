@@ -28,6 +28,34 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
 
     disasm = new DisAsm(this, file_name);
     ui->codeview->set_data(e, dynamic_cast<CPU*>(d), disasm, dynamic_cast<CPU*>(d)->get_pc());
+    ui->codeview->set_frame(true, true, true, true, "╔═╤║ │╟─┴");
+    ui->codeview->set_scroll(100, 0);
+
+
+    ui->registers->set_frame(true, true, true, false, "╤═╤│ │╧─┴");
+    ui->flags->set_frame(true, true, true, false, "╤═╗│ ║╧─╢");
+
+    memory_devices = 0;
+    device_mm = nullptr;
+    for (unsigned int i=0; i < e->dm->device_count; i++){
+        DeviceDescription * d = e->dm->get_device(i);
+        if (d->device_type == "memory_mapper")
+        {
+            device_mm = dynamic_cast<AddressableDevice*>(d->device);
+        }
+        else if (d->device_type == "ram" || d->device_type == "rom")
+        {
+            device_memory[memory_devices++] = dynamic_cast<AddressableDevice*>(d->device);
+        };
+    }
+
+    ui->dump->set_frame(false, true, true, true, "╔═╗║ ║╚═╝");
+
+    if (device_mm != nullptr)
+        ui->dump->set_data(e, device_mm);
+
+    ui->dump->set_scroll(100, 0);
+
     update_registers();
 
     state_timer = new QTimer(this);
@@ -44,11 +72,10 @@ DebugWindow::~DebugWindow()
 
 void DebugWindow::update_registers()
 {
-    QList<QString> r = cpu->get_registers();
-    QList<QString> f = cpu->get_flags();
+    QList<QPair<QString, QString>> r = cpu->get_registers();
+    QList<QPair<QString, QString>> f = cpu->get_flags();
     ui->registers->set_data(r);
     ui->flags->set_data(f);
-
 }
 
 QDialog * CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
@@ -217,4 +244,9 @@ void DebugWindow::update_state()
         ui->state->setPixmap(QPixmap(":/icons/ondebug"));
         break;
     }
+}
+
+void DebugWindow::resizeEvent(QResizeEvent*)
+{
+    //qDebug() << "Resized!";
 }
