@@ -58,6 +58,8 @@ private:
     uint8_t get_first_8(unsigned int YYY, uint32_t * address, unsigned int *cycles);
     void store_value_8(unsigned int YYY, uint32_t address, uint8_t value, unsigned int * cycles);
 
+    unsigned int execute_command();
+
 protected:
     z80context context;
 

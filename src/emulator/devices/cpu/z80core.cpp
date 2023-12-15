@@ -886,7 +886,7 @@ void z80core::set_int(unsigned int int_val)
     context.INT = int_val;
 }
 
-unsigned int z80core::execute()
+unsigned int z80core::execute_command()
 {
     uint8_t command, command2;
     uint16_t port;
@@ -2022,4 +2022,15 @@ unsigned int z80core::execute()
 
     return cycles;
 
+}
+
+unsigned int z80core::execute()
+{
+    unsigned int cycles = 0;
+    do
+    {
+        cycles += execute_command();
+    } while (context.global_prefix != 0);
+
+    return cycles;
 }
