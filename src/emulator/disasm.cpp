@@ -133,7 +133,7 @@ unsigned int DisAsm::disassemle(CommandBytes bytes, unsigned int PC, unsigned in
                     for (j = 0; j < ins[i].length; j++)
                         if (!ins[i].bytes[j].is_instr && ins[i].bytes[j].value == QChar('e').unicode())
                             v = static_cast<int8_t>((*bytes)[j]);
-                    uint16_t v1=static_cast<int16_t>(PC) + v + ins[i].length;
+                    uint16_t v1=(PC + v + ins[i].length) & 0xFFFF;
                     QString hexval = QString("%1").arg(v1, 4, 16, QChar('0')).toUpper();
                     s = s.replace("PC+$e", hexval);
                 }

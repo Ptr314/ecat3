@@ -97,7 +97,7 @@ void DisAsmArea::update_data()
             for (unsigned int j = 0; j < disasm->max_command_length; j++)
                 buffer[j] = cpu->read_mem(a+j);
             QString s;
-            unsigned int c = disasm->disassemle(&buffer, cpu->get_pc(), disasm->max_command_length, &s);
+            unsigned int c = disasm->disassemle(&buffer, a, disasm->max_command_length, &s);
             lines[i].address = a;
             lines[i].command = s;
             lines[i].current = (a == cpu->get_pc());
