@@ -50,6 +50,9 @@ private slots:
 
     void update_state();
 
+public slots:
+    void command_key(QKeyEvent *event);
+
 protected:
     void keyPressEvent(QKeyEvent *event) override;
 

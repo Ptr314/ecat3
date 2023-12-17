@@ -33,6 +33,8 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     ui->codeview->set_frame(true, true, true, true, "╔═╤║ │╟─┴");
     ui->codeview->set_scroll(100, 0);
 
+    connect(ui->codeview, SIGNAL(command_key(QKeyEvent*)), this, SLOT(command_key(QKeyEvent*)));
+
 
     ui->registers->set_frame(true, true, true, false, "╤═╤│ │╧─┴");
     ui->flags->set_frame(true, true, true, false, "╤═╗│ ║╧─╢");
@@ -274,4 +276,9 @@ void DebugWindow::keyPressEvent(QKeyEvent *event)
         QDialog::keyPressEvent(event);
         break;
     }
+}
+
+void DebugWindow::command_key(QKeyEvent *event)
+{
+    keyPressEvent(event);
 }

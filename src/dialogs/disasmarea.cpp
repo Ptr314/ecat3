@@ -59,7 +59,7 @@ unsigned int DisAsmArea::get_address_at_cursor()
 void DisAsmArea::update_data()
 {
     data_valid = true;
-    screen_size = size().height() / font_height - 1;
+    screen_size = size().height() / font_height - 2;
     if (CRC != 0)
     {
         uint16_t CRC2 = 0;
@@ -74,18 +74,23 @@ void DisAsmArea::update_data()
 
     if ( (address >= address_first) && (address <= address_last) && (CRC != 0))
     {
+        //adddres is inside of the buffer
         unsigned int screen_first = lines[first_line].address;
         unsigned int screen_last = lines[first_line+screen_size-1].address;
         if ( (address >= screen_first) && (address <= screen_last) )
         {
+            //adddres is inside of both the buffer and the screen
             for (unsigned int i = first_line; i < first_line+screen_size; i++)
                 if (lines[i].address == address){
                     cursor_line = i-first_line;
                     update();
                     return;
                 }
+        } else {
+            //adddres is inside of the buffer but ouside of the screen
         }
     } else {
+        //adddres is outside of the buffer or CRC has changed
         lines_count = 0;
 
         unsigned int a = address;
@@ -138,7 +143,7 @@ void DisAsmArea::paintEvent(QPaintEvent *event)
 
     painter.setFont(QFont(FONT_NAME, FONT_SIZE, FONT_WEIGHT));
 
-    unsigned int lines_count = size().height() / font_height - 2;
+    unsigned int lines_count = screen_size;
 
     for (unsigned int i=0; i < lines_count; i++)
     {
@@ -173,4 +178,36 @@ void DisAsmArea::paintEvent(QPaintEvent *event)
             painter.drawText(x, y, lines[line].command);
         }
     }
+}
+
+void DisAsmArea::keyPressEvent(QKeyEvent *event)
+{
+    //qDebug() << "Disasm" << event->key();
+
+    switch (event->key()) {
+    case Qt::Key_F4:
+    case Qt::Key_F7:
+    case Qt::Key_F8:
+    case Qt::Key_F9:
+        emit command_key(event);
+        break;
+    case Qt::Key_Down:
+        move_cursor(1);
+        break;
+    default:
+        DOSFrame::keyPressEvent(event);
+        break;
+    }
+}
+
+void DisAsmArea::move_cursor(int increment)
+{
+    if (cursor_line < screen_size)
+    {
+        cursor_line += increment;
+        qDebug() << cursor_line;
+    } else {
+
+    }
+    update();
 }

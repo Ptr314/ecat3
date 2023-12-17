@@ -30,6 +30,7 @@ public:
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
 private:
     Emulator * e;
@@ -43,7 +44,7 @@ private:
     unsigned int address;
     unsigned int address_last;
     unsigned int lines_count;
-    DisAsmEntry lines[100];
+    DisAsmEntry lines[1000];
     unsigned int max_lines;
     unsigned int screen_size;
     unsigned int first_line;
@@ -52,8 +53,10 @@ private:
 
     void update_data();
 
-signals:
+    void move_cursor(int increment);
 
+signals:
+    void command_key(QKeyEvent *event);
 };
 
 #endif // DISASMAREA_H

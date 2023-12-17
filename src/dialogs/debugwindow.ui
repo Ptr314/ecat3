@@ -451,6 +451,9 @@
          <height>144</height>
         </size>
        </property>
+       <property name="focusPolicy">
+        <enum>Qt::ClickFocus</enum>
+       </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(0, 170, 170);</string>
        </property>
