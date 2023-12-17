@@ -75,7 +75,7 @@ public:
         if (Frame == pages[0]->get_size())
             pages[i_page->value & PageMask]->set_value(address, value);
         else
-            pages[i_page->value & PageMask]->set_value((i_segment->value * SegmentMask)*Frame + address, value);
+            pages[i_page->value & PageMask]->set_value((i_segment->value & SegmentMask)*Frame + address, value);
     }
 };
 
