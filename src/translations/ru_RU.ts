@@ -44,57 +44,80 @@
 <context>
     <name>DebugWindow</name>
     <message>
-        <location filename="../dialogs/debugwindow.ui" line="+14"/>
+        <location filename="../dialogs/debugwindow.ui" line="+26"/>
+        <location/>
         <source>Dialog</source>
         <translation>Отладчик</translation>
     </message>
     <message>
-        <location line="+88"/>
+        <location line="+91"/>
+        <location/>
         <source>Return to PC</source>
         <translation>Вернуться к PC</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>Step into</source>
         <translation>Шаг внутрь</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>Step over</source>
         <translation>Шаг снаружи</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>Run until cursor</source>
         <translation>Выполнить до курсора</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>Run under debugger</source>
         <translation>Запустить под отладчиком</translation>
     </message>
     <message>
         <location line="+14"/>
+        <source>Trace into [F7]</source>
+        <translation>Шаг внутрь (Trace into) [F7]</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Step over [F8]</source>
+        <translation>Шаг поверх (Step over) [F8]</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Go to cursor [F4]</source>
+        <translation>Выполнить до курсора [F4]</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Run under debugger [F9]</source>
+        <translation>Запустить под отладчиком [F9]</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location/>
         <source>Stop</source>
         <translation>Останов</translation>
     </message>
     <message>
         <location line="+14"/>
+        <location/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
     </message>
     <message>
         <location line="+63"/>
+        <location/>
         <source>Add a breakpoint</source>
         <translation>Добавить точку останова</translation>
     </message>
     <message>
         <location line="+14"/>
+        <location/>
         <source>Delete breakpoint</source>
         <translation>Удалить точку остнова</translation>
     </message>
     <message>
         <location line="+23"/>
+        <location/>
         <source>Set value</source>
         <translation>Установить значение</translation>
     </message>
@@ -140,11 +163,13 @@
     <name>DumpWindow</name>
     <message>
         <location filename="../dialogs/dumpwindow.ui" line="+14"/>
+        <location/>
         <source>Dialog</source>
         <translation>Дамп</translation>
     </message>
     <message>
         <location line="+79"/>
+        <location/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -274,6 +299,7 @@
     <name>I8255Window</name>
     <message>
         <location filename="../dialogs/i8255window.ui" line="+14"/>
+        <location/>
         <source>Dialog</source>
         <translation>8255</translation>
     </message>
@@ -282,6 +308,7 @@
         <location line="+13"/>
         <location line="+140"/>
         <location line="+16"/>
+        <location/>
         <location filename="../dialogs/i8255window.cpp" line="+52"/>
         <location line="+1"/>
         <location line="+1"/>
@@ -291,6 +318,7 @@
     </message>
     <message>
         <location line="+16"/>
+        <location/>
         <source>Control</source>
         <translation>Управление</translation>
     </message>
@@ -341,66 +369,91 @@
     <name>MainWindow</name>
     <message>
         <location filename="../mainwindow.ui" line="+20"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+178"/>
         <source>MainWindow</source>
         <translation>eCat3</translation>
     </message>
     <message>
         <location line="+68"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+15"/>
         <source>File</source>
         <translation>Файл</translation>
     </message>
     <message>
         <location line="+9"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Emulation</source>
         <translation>Эмуляция</translation>
     </message>
     <message>
         <location line="+4"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Devices</source>
         <translation>Устройства</translation>
     </message>
     <message>
         <location line="+16"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Help</source>
         <translation>Помощь</translation>
     </message>
     <message>
         <location line="+5"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Display</source>
         <translation>Экран</translation>
     </message>
     <message>
         <location line="+12"/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+41"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="-19"/>
         <source>Select a machine...</source>
         <translation>Выбор компьютера...</translation>
     </message>
     <message>
         <location line="+41"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+5"/>
         <source>Open...</source>
         <translation>Открыть...</translation>
     </message>
     <message>
         <location line="+9"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Debugger</source>
         <translation>Отладчик</translation>
     </message>
     <message>
         <location line="+3"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>Open debugger</source>
         <translation>Открыть окно отладчика</translation>
     </message>
     <message>
         <location line="+9"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>Screenshot</source>
         <translation>Снимок экрана</translation>
     </message>
     <message>
         <location line="+3"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>Get a screenshot</source>
         <translation>Сделать снимок экрана</translation>
     </message>
@@ -410,26 +463,33 @@
     </message>
     <message>
         <location line="-56"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="-11"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
     <message>
         <location line="+9"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Cold restart</source>
         <translation>Холодный перезапуск</translation>
     </message>
     <message>
         <location line="+9"/>
+        <location/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Soft restart</source>
         <translation>Теплый перезапуск</translation>
     </message>
     <message>
         <location line="+5"/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Device_one</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+142"/>
+        <location filename="../mainwindow.cpp" line="+145"/>
         <location line="+268"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
@@ -494,16 +554,23 @@
         <source>Error creating a backup. Probably *.bak already exists.</source>
         <translation>Обшибка создания резервной копии. Возможно, файл с расширение *.bak уже существует.</translation>
     </message>
+    <message>
+        <location line="+45"/>
+        <source>Save screenshot</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+543"/>
+        <location filename="../emulator/core.cpp" line="+545"/>
+        <location filename="../emulator/devices/common/page_mapper.h" line="+45"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
         <location line="+0"/>
+        <location filename="../emulator/devices/common/page_mapper.h" line="+0"/>
         <source>Incorrect range for &apos;%1&apos;</source>
         <translation>Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
@@ -512,16 +579,19 @@
     <name>MemoryMapperWindow</name>
     <message>
         <location filename="../dialogs/mmwindow.ui" line="+14"/>
+        <location/>
         <source>Dialog</source>
         <translation>Диспетчер адресов</translation>
     </message>
     <message>
         <location line="+221"/>
+        <location/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
     <message>
         <location line="+25"/>
+        <location/>
         <source>Choose an address</source>
         <translation>Выберите адрес</translation>
     </message>
@@ -530,21 +600,25 @@
     <name>OpenConfigWindow</name>
     <message>
         <location filename="../dialogs/openconfigwindow.ui" line="+14"/>
+        <location/>
         <source>Dialog</source>
         <translation>Выбор конфигурации</translation>
     </message>
     <message>
         <location line="+40"/>
+        <location/>
         <source>Set as default</source>
         <translation>Установить по умолчанию</translation>
     </message>
     <message>
         <location line="+47"/>
+        <location/>
         <source>OK</source>
         <translation>OK</translation>
     </message>
     <message>
         <location line="+7"/>
+        <location/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -558,6 +632,7 @@
     <name>PortWindow</name>
     <message>
         <location filename="../dialogs/portwindow.ui" line="+14"/>
+        <location/>
         <source>Dialog</source>
         <translation>Порт</translation>
     </message>
@@ -578,11 +653,12 @@
 <context>
     <name>ROM</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-277"/>
+        <location filename="../emulator/core.cpp" line="-279"/>
         <location line="+28"/>
         <location line="+7"/>
         <location filename="../emulator/files.h" line="+21"/>
         <location line="+19"/>
+        <location line="+18"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -603,7 +679,8 @@
         <translation>Ошибка чтения образа ПЗУ &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../emulator/files.h" line="-19"/>
+        <location filename="../emulator/files.h" line="-37"/>
+        <location line="+19"/>
         <source>Error reading %1</source>
         <translation>Ошибка чтения %1</translation>
     </message>

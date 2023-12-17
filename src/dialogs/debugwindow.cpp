@@ -1,3 +1,5 @@
+#include <QKeyEvent>
+
 #include "debugwindow.h"
 #include "emulator/utils.h"
 #include "ui_debugwindow.h"
@@ -249,4 +251,27 @@ void DebugWindow::update_state()
 void DebugWindow::resizeEvent(QResizeEvent*)
 {
     //qDebug() << "Resized!";
+}
+
+void DebugWindow::keyPressEvent(QKeyEvent *event)
+{
+    //qDebug() << event->key();
+
+    switch (event->key()) {
+    case Qt::Key_F4:
+        on_runUntilButton_clicked();
+        break;
+    case Qt::Key_F7:
+        on_stepButton_clicked();
+        break;
+    case Qt::Key_F8:
+        on_stepOverButton_clicked();
+        break;
+    case Qt::Key_F9:
+        on_runDebuggedButton_clicked();
+        break;
+    default:
+        QDialog::keyPressEvent(event);
+        break;
+    }
 }

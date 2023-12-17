@@ -50,6 +50,9 @@ private slots:
 
     void update_state();
 
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+
 private:
     Ui::DebugWindow *ui;
 

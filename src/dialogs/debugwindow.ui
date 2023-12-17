@@ -113,6 +113,9 @@
         </item>
         <item>
          <widget class="QToolButton" name="toPCButton">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="toolTip">
            <string>Return to PC</string>
           </property>
@@ -127,8 +130,11 @@
         </item>
         <item>
          <widget class="QToolButton" name="stepButton">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="toolTip">
-           <string>Step into</string>
+           <string>Trace into [F7]</string>
           </property>
           <property name="text">
            <string notr="true">...</string>
@@ -141,8 +147,11 @@
         </item>
         <item>
          <widget class="QToolButton" name="stepOverButton">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="toolTip">
-           <string>Step over</string>
+           <string>Step over [F8]</string>
           </property>
           <property name="text">
            <string notr="true">...</string>
@@ -155,8 +164,11 @@
         </item>
         <item>
          <widget class="QToolButton" name="runUntilButton">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="toolTip">
-           <string>Run until cursor</string>
+           <string>Go to cursor [F4]</string>
           </property>
           <property name="text">
            <string notr="true">...</string>
@@ -169,8 +181,11 @@
         </item>
         <item>
          <widget class="QToolButton" name="runDebuggedButton">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="toolTip">
-           <string>Run under debugger</string>
+           <string>Run under debugger [F9]</string>
           </property>
           <property name="text">
            <string notr="true">...</string>
@@ -183,6 +198,9 @@
         </item>
         <item>
          <widget class="QToolButton" name="stopTrackingButton">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="toolTip">
            <string>Stop</string>
           </property>
@@ -197,6 +215,9 @@
         </item>
         <item>
          <widget class="QToolButton" name="runButton">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="toolTip">
            <string>Run without debugging</string>
           </property>
@@ -242,6 +263,9 @@
             <height>0</height>
            </size>
           </property>
+          <property name="focusPolicy">
+           <enum>Qt::ClickFocus</enum>
+          </property>
           <property name="text">
            <string notr="true">0000</string>
           </property>
@@ -249,6 +273,9 @@
         </item>
         <item>
          <widget class="QToolButton" name="gotoButton">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="text">
            <string notr="true">...</string>
           </property>
@@ -260,6 +287,9 @@
         </item>
         <item>
          <widget class="QToolButton" name="addBRButton">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="toolTip">
            <string>Add a breakpoint</string>
           </property>
@@ -274,6 +304,9 @@
         </item>
         <item>
          <widget class="QToolButton" name="removeBRButton">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="toolTip">
            <string>Delete breakpoint</string>
           </property>
@@ -288,6 +321,9 @@
         </item>
         <item>
          <widget class="QComboBox" name="valueSelect">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <item>
            <property name="text">
             <string notr="true">PC</string>
@@ -297,6 +333,9 @@
         </item>
         <item>
          <widget class="QToolButton" name="toolButton">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="toolTip">
            <string>Set value</string>
           </property>
@@ -324,6 +363,9 @@
         </item>
         <item>
          <widget class="QToolButton" name="closeButton">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="text">
            <string notr="true">...</string>
           </property>
@@ -350,6 +392,9 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="focusPolicy">
+        <enum>Qt::ClickFocus</enum>
        </property>
        <property name="autoFillBackground">
         <bool>false</bool>
