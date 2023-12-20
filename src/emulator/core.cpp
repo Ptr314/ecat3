@@ -1044,7 +1044,7 @@ void MemoryMapper::write_port(unsigned int address, unsigned int value)
 
 //----------------------- class Display -------------------------------//
 
-Display::Display(InterfaceManager *im, EmulatorConfigDevice *cd):
+GenericDisplay::GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd),
     sx(0),
     sy(0),
@@ -1063,7 +1063,7 @@ Display::Display(InterfaceManager *im, EmulatorConfigDevice *cd):
 //    this->texture = texture;
 //}
 
-void Display::set_surface(SDL_Surface * surface)
+void GenericDisplay::set_surface(SDL_Surface * surface)
 {
     this->surface = surface;
     render_pixels = surface->pixels;
@@ -1071,12 +1071,12 @@ void Display::set_surface(SDL_Surface * surface)
 }
 
 
-void Display::validate(bool force_render)
+void GenericDisplay::validate(bool force_render)
 {
     if (!screen_valid || force_render) render_all(force_render);
 }
 
-void Display::reset(bool cold)
+void GenericDisplay::reset(bool cold)
 {
     screen_valid = false;
     was_updated = true;

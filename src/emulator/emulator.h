@@ -25,7 +25,7 @@ private:
 
     CPU * cpu;
     MemoryMapper * mm;
-    Display * display;
+    GenericDisplay * display;
     Keyboard * keyboard;
 
     QTimer * timer;

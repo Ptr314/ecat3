@@ -412,7 +412,7 @@ public:
 
 };
 
-class Display: public ComputerDevice
+class GenericDisplay: public ComputerDevice
 {
     //TODO: Abstract Display
 private:
@@ -429,7 +429,7 @@ protected:
 public:
     bool was_updated;               //Means we need to send surface to screen
 
-    Display(InterfaceManager *im, EmulatorConfigDevice *cd);
+    GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void get_screen(bool required) = 0;
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) = 0;
     virtual void reset(bool cold) override;

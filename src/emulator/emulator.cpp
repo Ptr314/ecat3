@@ -132,7 +132,7 @@ void Emulator::run()
 
         cpu = dynamic_cast<CPU*>(dm->get_device_by_name("cpu"));
         mm = dynamic_cast<MemoryMapper*>(dm->get_device_by_name("mapper"));
-        display = dynamic_cast<Display*>(dm->get_device_by_name("display"));
+        display = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display"));
         keyboard = dynamic_cast<Keyboard*>(dm->get_device_by_name("keyboard"));
 
         reset(true);
@@ -191,12 +191,13 @@ void Emulator::timer_proc()
 
 void Emulator::init_video(void *p)
 {
-    SDLWindowRef = SDL_CreateWindowFrom(p);
+    //SDLWindowRef = SDL_CreateWindowFrom(p);
+    SDLWindowRef = SDL_CreateWindow("Screen", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1600, 1200, SDL_WINDOW_SHOWN | SDL_WINDOW_SKIP_TASKBAR);
     SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
     //TODO: create setup parameters
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 
-    Display * d = dynamic_cast<Display*>(dm->get_device_by_name("display"));
+    GenericDisplay * d = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display"));
 
     d->get_screen_constraints(&screen_sx, &screen_sy);
 

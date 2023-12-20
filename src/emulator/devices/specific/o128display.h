@@ -3,7 +3,7 @@
 
 #include "emulator/core.h"
 
-class O128Display: public Display
+class O128Display: public GenericDisplay
 {
 private:
     unsigned int mode;
