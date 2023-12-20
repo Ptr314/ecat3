@@ -17,7 +17,7 @@ uint8_t Orion128_16Colors[16][3] = {
                                     };
 
 O128Display::O128Display(InterfaceManager *im, EmulatorConfigDevice *cd):
-    Display(im, cd),
+    GenericDisplay(im, cd),
     mode(_FFFF),
     frame(_FFFF)
 {
@@ -27,7 +27,7 @@ O128Display::O128Display(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 void O128Display::load_config(SystemData *sd)
 {
-    Display::load_config(sd);
+    GenericDisplay::load_config(sd);
 
     port_mode =  dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("mode").value));
     port_frame = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("screen").value));

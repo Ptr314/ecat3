@@ -9,7 +9,7 @@ static uint8_t VG75_8Colors[8][3] = { {0, 0, 0}, {  0,   0, 255}, {  0, 255,   0
                                       {255,   0,   0}, {255,   0, 255}, {255, 255,   0}, {255, 255, 255}
                                     };
 
-class I8275Display:public Display
+class I8275Display:public GenericDisplay
 {
 private:
     RAM * Memory;
@@ -24,7 +24,7 @@ private:
 
 public:
     I8275Display(InterfaceManager *im, EmulatorConfigDevice *cd):
-        Display(im, cd)
+        GenericDisplay(im, cd)
     {
         sx = 78*6;
         sy = 30*10;
@@ -34,7 +34,7 @@ public:
 
     virtual void load_config(SystemData *sd) override
     {
-        Display::load_config(sd);
+        GenericDisplay::load_config(sd);
         Memory = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram").value));
         Font = dynamic_cast<ROM*>(im->dm->get_device_by_name(cd->get_parameter("font").value));
         VG75 = dynamic_cast<I8275*>(im->dm->get_device_by_name(cd->get_parameter("i8275").value));
