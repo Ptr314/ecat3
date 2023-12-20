@@ -43,17 +43,20 @@ private:
     unsigned int address_first;
     unsigned int address;
     unsigned int address_last;
-    unsigned int lines_count;
+    int lines_count;
     DisAsmEntry lines[1000];
-    unsigned int max_lines;
-    unsigned int screen_size;
-    unsigned int first_line;
-    unsigned int cursor_line;
+    int max_lines;
+    int screen_size;
+    int first_line;
+    int cursor_line;
     bool data_valid;
 
     void update_data();
 
     void move_cursor(int increment);
+
+    uint16_t area_crc16();
+    void disassemble_lines(int index, int count, unsigned int address=0);
 
 signals:
     void command_key(QKeyEvent *event);
