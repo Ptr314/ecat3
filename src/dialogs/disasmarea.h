@@ -7,6 +7,8 @@
 #include "emulator/disasm.h"
 #include "dosframe.h"
 
+#define DISASM_SIZE 1000
+
 struct DisAsmEntry {
     unsigned int address;
     unsigned int len;
@@ -26,11 +28,11 @@ public:
     void go_to(unsigned int address);
     unsigned int get_address_at_cursor();
     void invalidate();
+    void keyPressEvent(QKeyEvent *event) override;
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
-    void keyPressEvent(QKeyEvent *event) override;
 
 private:
     Emulator * e;
@@ -44,7 +46,7 @@ private:
     unsigned int address;
     unsigned int address_last;
     int lines_count;
-    DisAsmEntry lines[1000];
+    DisAsmEntry lines[DISASM_SIZE];
     int max_lines;
     int screen_size;
     int first_line;

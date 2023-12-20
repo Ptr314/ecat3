@@ -1,3 +1,4 @@
+#include <QApplication>
 #include <QMouseEvent>
 #include <QPainter>
 
@@ -46,6 +47,7 @@ void DisAsmArea::invalidate()
 
 void DisAsmArea::go_to(unsigned int address)
 {
+    if (address == address_last + lines[lines_count-1].len) disassemble_lines(lines_count, 1);
     this->address = address;
     data_valid = false;
     update();
@@ -86,41 +88,49 @@ void DisAsmArea::update_data()
         {
             //adddres is inside of both the buffer and the screen
             for (unsigned int i = first_line; i < first_line+screen_size; i++)
+            {
                 if (lines[i].address == address){
                     cursor_line = i-first_line;
                     update();
                     return;
                 }
+            }
         } else {
             //adddres is inside of the buffer but ouside of the screen
+            if (address < screen_first) {
+                //Moving up
+                for (int i=0; i < first_line; i++)
+                {
+                    if (address >= lines[i].address and address < lines[i].address + lines[i].len)
+                    {
+                        first_line = i;
+                        cursor_line = 0;
+                        break;
+                    }
+                }
+            } else {
+                //Moving down
+                for (int i = first_line + screen_size; i < lines_count; i++)
+                {
+                    if (address >= lines[i].address and address < lines[i].address + lines[i].len)
+                    {
+                        first_line = i - screen_size + 5;
+                        cursor_line = screen_size - 5;
+                        if (first_line + screen_size >= lines_count)
+                        {
+                            int lines_to_add = first_line + screen_size - lines_count;
+                            disassemble_lines(lines_count, lines_to_add);
+                        }
+                        break;
+                    }
+
+                }
+
+            }
         }
     } else {
         //adddres is outside of the buffer or CRC has changed
-        lines_count = 0;
-
-        // unsigned int a = address;
-        // uint8_t buffer[15];
-        // CRC = 0;
-
-        // for (unsigned int i = 0; i < screen_size; i++)
-        // {
-        //     for (unsigned int j = 0; j < disasm->max_command_length; j++)
-        //         buffer[j] = cpu->read_mem(a+j);
-        //     QString s;
-        //     unsigned int c = disasm->disassemle(&buffer, a, disasm->max_command_length, &s);
-        //     lines[i].address = a;
-        //     lines[i].command = s;
-        //     lines[i].current = (a == cpu->get_pc());
-        //     lines[i].breakpoint = false;
-        //     lines[i].len = c;
-        //     lines[i].code = bytes_dump(&buffer, c);
-        //     a += c;
-
-        //     CRC16_update(&CRC, buffer, c);
-        // }
-
         disassemble_lines(0, screen_size, address);
-        CRC = area_crc16();
         first_line = 0;
         cursor_line = 0;
     }
@@ -129,8 +139,8 @@ void DisAsmArea::update_data()
 void DisAsmArea::disassemble_lines(int index, int count, unsigned int address)
 {
     //index - buffer index to start from
-    //lines - expected lines to disassemble
-    //address - address to begin in case of full update
+    //count - expected lines to disassemble
+    //address - address to begin in case of full update (index == 0)
     unsigned int a;
     uint8_t buffer[15];
 
@@ -160,6 +170,8 @@ void DisAsmArea::disassemble_lines(int index, int count, unsigned int address)
     lines_count += count;
     address_first = lines[0].address;
     address_last = lines[lines_count-1].address;
+
+    CRC = area_crc16();
 }
 
 void DisAsmArea::mousePressEvent(QMouseEvent *event)
@@ -245,6 +257,9 @@ void DisAsmArea::keyPressEvent(QKeyEvent *event)
     case Qt::Key_PageUp:
         move_cursor(-screen_size);
         break;
+    case Qt::Key_Home:
+        go_to(cpu->get_pc());
+        break;
     default:
         DOSFrame::keyPressEvent(event);
         break;
@@ -267,7 +282,6 @@ void DisAsmArea::move_cursor(int increment)
             //We need to extend our buffer
             int lines_to_add = first_line + screen_size + increment - lines_count;
             disassemble_lines(lines_count, lines_to_add);
-            CRC = area_crc16();
         }
         first_line += increment;
     } else
@@ -278,6 +292,7 @@ void DisAsmArea::move_cursor(int increment)
         } else {
             //We can't disassemble backwards, so just reset the screen to the start
             first_line = 0;
+            cursor_line = 0;
             //QApplication::beep();
         }
     }

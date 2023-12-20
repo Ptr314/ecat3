@@ -272,6 +272,13 @@ void DebugWindow::keyPressEvent(QKeyEvent *event)
     case Qt::Key_F9:
         on_runDebuggedButton_clicked();
         break;
+    case Qt::Key_Down:
+    case Qt::Key_PageDown:
+    case Qt::Key_Up:
+    case Qt::Key_PageUp:
+    case Qt::Key_Home:
+        ui->codeview->keyPressEvent(event);
+        break;
     default:
         QDialog::keyPressEvent(event);
         break;
