@@ -164,6 +164,7 @@ z80core::z80core()
     context.NMI = 1;
     context.INT = 1;
     //context.int_enable = 0;
+    process_ints = true;
 }
 
 inline uint8_t z80core::next_byte()
@@ -876,6 +877,16 @@ inline void z80core::do_daa()
         );
 }
 
+void z80core::do_rst(uint16_t address)
+{
+    PartsRecLE T;
+    T.w = context.registers.regs.PC;
+    context.registers.regs.SP -= 2;
+    write_mem(context.registers.regs.SP, T.b.L);
+    write_mem(static_cast<uint16_t>(context.registers.regs.SP+1), T.b.H);
+    context.registers.regs.PC = address;
+}
+
 void z80core::set_nmi(unsigned int nmi_val)
 {
     context.NMI = nmi_val;
@@ -896,7 +907,7 @@ unsigned int z80core::execute_command()
     unsigned int cycles;
     unsigned int address = 0;
 
-    bool process_ints = true;
+    process_ints = true;
 
     command = next_byte();
 
@@ -1998,11 +2009,7 @@ unsigned int z80core::execute_command()
         default: //7
             //11_YYY_111
             //RST
-            T.w = context.registers.regs.PC;
-            context.registers.regs.SP -= 2;
-            write_mem(context.registers.regs.SP, T.b.L);
-            write_mem(static_cast<uint16_t>(context.registers.regs.SP+1), T.b.H);
-            context.registers.regs.PC = YYY << 3;
+            do_rst(YYY << 3);
             break;
         }
         break;
@@ -2016,17 +2023,38 @@ unsigned int z80core::execute_command()
         context.index16_inc = 0;
     }
 
-    if (process_ints) {
-        //TODO: process ints
-    };
-
     return cycles;
 
 }
 
 unsigned int z80core::execute()
 {
+    //TODO: Z80: IM 0 & 2
+
     unsigned int cycles = 0;
+
+    if (process_ints) {
+        if ((context.INT == 0) && (context.IFF1 != 0))
+        {
+            context.IFF1 = 0;
+            context.IFF2 = 0;
+            switch (context.IM) {
+            case 0:
+                cycles = 13;
+                break;
+            case 1:
+                do_rst(0x38);
+                cycles = 13;
+                break;
+            case 2:
+                cycles = 19;
+                break;
+            }
+            process_ints = true;
+            return cycles;
+        }
+    };
+
     do
     {
         cycles += execute_command();

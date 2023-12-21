@@ -10,6 +10,8 @@ using namespace Z80;
 class z80core
 {
 private:
+    bool process_ints;
+
     uint8_t next_byte();
     uint8_t read_command();
     //uint8_t calc_base_flags(uint32_t value);
@@ -51,6 +53,7 @@ private:
     void do_ldi_ldd(int16_t hlinc);
     void do_outi_outd(int16_t hlinc);
     void do_daa();
+    void do_rst(uint16_t address);
 
     uint32_t get_first_16();
     uint32_t get_second_16(uint32_t PP);

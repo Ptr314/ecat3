@@ -74,6 +74,7 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     emulator/devices/cpu/z80core.h emulator/devices/cpu/z80core.cpp
     dialogs/hexeditorline.h dialogs/hexeditorline.cpp
     dialogs/dosframe.h dialogs/dosframe.cpp
+    emulator/devices/common/generator.h
     #    libs/z80.hpp
 
 )

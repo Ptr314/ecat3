@@ -115,16 +115,17 @@ public:
     virtual void memory_callback(unsigned int callback_id, unsigned int address);
 
 private:
-    unsigned int clock_stored;
     unsigned int clock_miltiplier;
     unsigned int clock_divider;
 
 
 protected:
+    unsigned int clock_stored;
+
     Interface * create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id = 0);
     EmulatorConfigDevice * cd;
     InterfaceManager * im;
-    ComputerDevice * memory_callback_device;
+    ComputerDevice * memory_callback_device;   
 };
 
 class AddressableDevice: public ComputerDevice
