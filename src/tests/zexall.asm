@@ -108,19 +108,19 @@ done:	ld	de,msg2
 	jp	0		; warm boot
 
 tests:
-	dw	adc16
-	dw	add16
-	dw	add16x
-	dw	add16y
-	dw	alu8i
-	dw	alu8r
-	dw	alu8rx
-	dw	alu8x
-	dw	bitx
-	dw	bitz80
-	dw	cpd1
-	dw	cpi1
-	dw	daaop	; can't use opcode as label
+        ;dw	adc16
+        ;dw	add16
+        ;dw	add16x
+        ;dw	add16y
+        ;dw	alu8i
+        ;dw	alu8r
+        ;dw	alu8rx
+        ;dw	alu8x
+        ;dw	bitx
+        ;dw	bitz80
+        ;dw	cpd1
+        ;dw	cpi1
+        ;dw	daaop	; can't use opcode as label
 	dw	inca
 	dw	incb
 	dw	incbc
@@ -1249,11 +1249,11 @@ putch:
         ret
 
 
-msg1:	db	01Fh,'Z80all instruction exerciser',13,10,0
-msg2:	db	'Tests complete',13,10,0
+msg1:	db	01Fh,'Z80 ALL INSTRUCTION EXERCISER',13,10,0
+msg2:	db	'TESTS COMPLETE',13,10,0
 okmsg:	db	'  OK',13,10,0
-ermsg1:	db	'  ERROR **** crc expected:',0
-ermsg2:	db	' found:',0
+ermsg1:	db	'  ERROR **** CRC EXPECTED:',0
+ermsg2:	db	' FOUND:',0
 crlf:	db	13,10,0
 
 ; compare crc

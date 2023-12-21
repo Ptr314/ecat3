@@ -1120,8 +1120,10 @@ unsigned int z80core::execute_command()
                             F_HALF_CARRY + F_OVERFLOW + F_SUB,  //Reset HC and V for below, N=0
                             F_SIGN+F_ZERO+F_B5+F_B3             //To change
                 );
-            REG_F |= calc_half_carry(T.b.L, 1, 0);
-            REG_F |= calc_overflow(T.b.L, ~1, D.b.L, 0x80);
+            //REG_F |= calc_half_carry(T.b.L, 1, 0);
+            if (LO4(T.b.L) == 0xF) REG_F |= F_HALF_CARRY;
+            //REG_F |= calc_overflow(T.b.L, ~1, D.b.L, 0x80);
+            if (T.b.L == 0x7F) REG_F |= F_OVERFLOW;
             break;
         case 5:
             //00_YYY_101
@@ -1136,8 +1138,10 @@ unsigned int z80core::execute_command()
                             F_HALF_CARRY + F_OVERFLOW,          //Reset HC and V for below
                             F_SIGN+F_ZERO+F_B5+F_B3             //To change
                             );
-            REG_F |= calc_half_carry(T.b.L, 0x0F, 0);
-            REG_F |= calc_overflow(T.b.L, 1, D.b.L, 0x80);
+            //REG_F |= calc_half_carry(T.b.L, 0x0F, 0);
+            if (LO4(T.b.L) == 0) REG_F |= F_HALF_CARRY;
+            //REG_F |= calc_overflow(T.b.L, 1, D.b.L, 0x80);
+            if (T.b.L == 0x80) REG_F |= F_OVERFLOW;
             break;
         case 6:
             //00_YYY_110
