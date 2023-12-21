@@ -618,7 +618,7 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
         this->flip_mask = (unsigned int)(-1);
     }
 
-    this->i_input = this->create_interface(this->size, "data", MODE_R);
+    this->i_input = this->create_interface(this->size, "data", MODE_R); //TODO: check if it is nesessary
     this->i_data = this->create_interface(this->size, "value", MODE_W);
 
     this->i_access = this->create_interface(1, "access", MODE_W);
