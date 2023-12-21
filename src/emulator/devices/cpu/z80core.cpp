@@ -1607,6 +1607,7 @@ unsigned int z80core::execute_command()
                                 T.b.L = next_byte();
                                 T.b.H = next_byte();
                                 D.b.L = read_mem(T.w);
+                                D.b.H = read_mem(T.w + 1);
                                 if (PP2 == 3)
                                     REG_SP = D.w;
                                 else

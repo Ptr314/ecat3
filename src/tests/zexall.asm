@@ -87,7 +87,7 @@ msbtlo	equ	msbt & 0ffh
 ; hand using a binary search of the test space.
 
 
-start:	ld	hl,(6)
+start:	ld	hl,stack
 	ld	sp,hl
 	ld	de,msg1
 	ld	c,9
@@ -199,7 +199,7 @@ tmsg	macro	msg,?lab
 	else
 	ds	?lab+30-$,'.'	; jgh: ZMAC/MAXAM don't have char parameter
 	endif
-	db	'$'
+        db	0
 	endm
 
 ; jgh: ZMAC/MAXAM don't recognise <n,m> syntax for macros, so full parameters given
@@ -1206,23 +1206,55 @@ ph11:	add	a,'0'
 	pop	af
 	ret
 
-bdos	push	af
+bdos:	push	af
 	push	bc
 	push	de
 	push	hl
-	call	5
+        ld      a,c
+        cp      a,9
+        jz      print
+        cp      a,2
+        jz      printc
+
+back:
 	pop	hl
 	pop	de
 	pop	bc
 	pop	af
 	ret
 
-msg1:	db	'Z80all instruction exerciser',13,10,'$'
-msg2:	db	'Tests complete',13,10,'$'
-okmsg:	db	'  OK',13,10,'$'
-ermsg1:	db	'  ERROR **** crc expected:$'
-ermsg2:	db	' found:$'
-crlf:	db	13,10,'$'
+print:
+        ld      h,d
+        ld      l,e
+repeat:
+        ld      a, (hl)
+        and     a, a
+        jz      back
+        call    putch
+        inc     hl
+        jp     repeat
+
+printc:
+        ld      a,e
+        call    putch
+        jp back
+
+putch:
+        push    af
+        push    bc
+        ld     c,a
+        call	0F809h
+        pop     bc
+        pop     af
+        ret
+
+
+msg1:	db	01Fh,'Z80all instruction exerciser',13,10,0
+msg2:	db	'Tests complete',13,10,0
+okmsg:	db	'  OK',13,10,0
+ermsg1:	db	'  ERROR **** crc expected:',0
+ermsg2:	db	' found:',0
+crlf:	db	13,10,0
 
 ; compare crc
 ; hl points to value to compare to crcval
@@ -1559,3 +1591,5 @@ crctab:	db	000h,000h,000h,000h
 	db	05ah,005h,0dfh,01bh
 	db	02dh,002h,0efh,08dh
 
+        org     (($+255)/256)*256
+stack:
