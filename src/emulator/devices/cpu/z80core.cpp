@@ -628,7 +628,7 @@ inline void z80core::store_value_16(uint32_t value)
     }
 }
 
-inline uint8_t z80core::get_first_8(unsigned int YYY, uint32_t * address, unsigned int * cycles)
+inline uint8_t z80core::get_first_8(unsigned int YYY, uint32_t * address, unsigned int * cycles, bool force_hl)
 {
     if (context.global_prefix == 0) {
         if (YYY == 6)
@@ -644,7 +644,7 @@ inline uint8_t z80core::get_first_8(unsigned int YYY, uint32_t * address, unsign
             break;
         case 4:
         case 5:
-            return context.registers.reg_array_8[REGISTERS8[YYY]+context.index8_inc];
+            return context.registers.reg_array_8[REGISTERS8[YYY] + ((!force_hl)?context.index8_inc:0)];
             break;
         default:
             return context.registers.reg_array_8[REGISTERS8[YYY]];
@@ -653,7 +653,7 @@ inline uint8_t z80core::get_first_8(unsigned int YYY, uint32_t * address, unsign
     }
 }
 
-inline void z80core::store_value_8(unsigned int YYY, uint32_t address, uint8_t value, unsigned int * cycles)
+inline void z80core::store_value_8(unsigned int YYY, uint32_t address, uint8_t value, unsigned int * cycles, bool force_hl)
 {
     if (context.global_prefix == 0) {
         if (YYY == 6)
@@ -668,7 +668,7 @@ inline void z80core::store_value_8(unsigned int YYY, uint32_t address, uint8_t v
             break;
         case 4:
         case 5:
-            context.registers.reg_array_8[REGISTERS8[YYY]+context.index8_inc] = value;
+            context.registers.reg_array_8[REGISTERS8[YYY] + ((!force_hl)?context.index8_inc:0)] = value;
             break;
         default:
             context.registers.reg_array_8[REGISTERS8[YYY]] = value;
@@ -834,14 +834,25 @@ inline void z80core::do_cpi_cpd(int16_t hlinc)
         F_HALF_CARRY+F_OVERFLOW+F_B3+F_B5,  //Reset HC and V for below
         F_SIGN+F_ZERO                       //To change
         );
-    uint8_t HC = calc_half_carry(REG_A, ~T.b.L, 1);
-    uint8_t tmp = D.w - HC;
-
+    //uint8_t HC = calc_half_carry(REG_A, ~T.b.L, 1);
+    uint8_t HC = (REG_A ^ T.b.L ^ D.b.L) & F_HALF_CARRY;
     REG_F |= HC;
     REG_F |= (REG_BC != 0)?F_OVERFLOW:0;
 
+    uint8_t tmp = D.w - ((HC!=0)?1:0);
     REG_F |= tmp & F_B3;
     REG_F |= ((tmp & 0x02) != 0)?F_B5:0;
+
+    // uint8_t HC = (REG_A ^ T.b.L ^ D.b.L) & F_HALF_CARRY;
+    // REG_F |= HC;
+    // //REG_F = HC | (REG_F & F_CARRY);
+    // uint16_t n = D.w - (HC!=0?1:0);
+    // REG_F |= (n << 4) & F_B5;
+    // REG_F |= n & F_B3;
+    // REG_F |= (REG_BC != 0)?F_OVERFLOW:0;
+
+    // REG_F |= F_SUB;
+    // REG_F |= ((D.b.L == 0)?F_ZERO:0) | (((D.b.L & 0x80) != 0)?F_SIGN:0);
 
     INC_R;
 }
@@ -1266,8 +1277,8 @@ unsigned int z80core::execute_command()
             context.halted = true;
         } else {
             //LD DDD, SSS
-            T.b.L = get_first_8(ZZZ, &address, &cycles);
-            store_value_8(YYY, address, T.b.L, &cycles);
+            T.b.L = get_first_8(ZZZ, &address, &cycles, YYY == 0b110);
+            store_value_8(YYY, address, T.b.L, &cycles, ZZZ == 0b110);
         }
         break;
     case 2:
