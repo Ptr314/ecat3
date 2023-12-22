@@ -95,7 +95,7 @@ void load_hex(Emulator * e, QString file_name)
             unsigned int len = parse_numeric_value("$" + line.mid(1, 2));
             unsigned int addr = parse_numeric_value("$" + line.mid(3, 4));
             unsigned int type = parse_numeric_value("$" + line.mid(7, 2));
-            qDebug() << Qt::hex << addr << Qt::hex << len;
+            //qDebug() << Qt::hex << addr << Qt::hex << len;
             if (type == 0)
             {
                 for (unsigned int j=0; j< len; j++)

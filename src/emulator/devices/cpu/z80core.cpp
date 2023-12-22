@@ -137,6 +137,15 @@ static const uint8_t CONDITIONS[8][2] = {
     {F_SIGN, F_SIGN}        //NEGATIVE
 };
 
+static const int OVERFLOW_TABLE[4] = {
+
+    0,
+    F_OVERFLOW,
+    F_OVERFLOW,
+    0,
+
+};
+
 //static const uint8_t z80LENGTHS[256] = {
 //    1,3,1,1,1,1,2,1,1,1,1,1,1,1,2,1,     // 00-0F
 //    1,3,1,1,1,1,2,1,1,1,1,1,1,1,2,1,     // 10-1F
@@ -649,8 +658,12 @@ inline uint8_t z80core::do_add8(uint8_t a, uint8_t b)
                     F_HALF_CARRY + F_OVERFLOW + F_SUB,  //Reset HC and V for below, N=0
                     F_SIGN+F_ZERO+F_B5+F_B3+F_CARRY     //To change
                     );
-    REG_F |= calc_half_carry(a, b, 0);
-    REG_F |= calc_overflow(a, ~b, D.b.L, 0x80);
+    //REG_F |= calc_half_carry(a, b, 0);
+    //REG_F |= calc_overflow(a, ~b, D.b.L, 0x80);
+    uint16_t c = a ^ b ^ D.dw;
+    REG_F |= c & F_HALF_CARRY;
+    REG_F |= OVERFLOW_TABLE[c >> 7];
+
     return D.b.L;
 }
 
@@ -665,8 +678,12 @@ inline uint8_t z80core::do_adc8(uint8_t a, uint8_t b)
                     F_HALF_CARRY + F_OVERFLOW + F_SUB,  //Reset HC and V for below, N=0
                     F_SIGN+F_ZERO+F_B5+F_B3+F_CARRY     //To change
                     );
-    REG_F |= calc_half_carry(a, b, CARRY);
-    REG_F |= calc_overflow(a, ~b, D.b.L, 0x80);
+    //REG_F |= calc_half_carry(a, b, CARRY);
+    //REG_F |= calc_overflow(a, ~b, D.b.L, 0x80);
+    uint16_t c = a ^ b ^ D.dw;
+    REG_F |= c & F_HALF_CARRY;
+    REG_F |= OVERFLOW_TABLE[c >> 7];
+
     return D.b.L;
 }
 
@@ -681,8 +698,13 @@ inline uint8_t z80core::do_sub8(uint8_t a, uint8_t b)
         F_HALF_CARRY + F_OVERFLOW,          //Reset HC and V for below
         F_SIGN+F_ZERO+F_B5+F_B3+F_CARRY     //To change
         );
-    REG_F |= calc_half_carry(a, ~b, 1);
-    REG_F |= calc_overflow(a, b, D.b.L, 0x80);
+    // REG_F |= calc_half_carry(a, ~b, 1);
+    // REG_F |= calc_overflow(a, b, D.b.L, 0x80);
+    uint16_t c = a ^ b ^ D.dw;
+    REG_F |= c & F_HALF_CARRY;
+    c &= 0x0180;
+    REG_F |= OVERFLOW_TABLE[c >> 7];
+
     return D.b.L;
 }
 
@@ -697,8 +719,13 @@ inline uint8_t z80core::do_sbc8(uint8_t a, uint8_t b)
         F_HALF_CARRY + F_OVERFLOW,          //Reset HC and V for below
         F_SIGN+F_ZERO+F_B5+F_B3+F_CARRY     //To change
         );
-    REG_F |= calc_half_carry(a, ~b, !CARRY);
-    REG_F |= calc_overflow(a, b, D.b.L, 0x80);
+    // REG_F |= calc_half_carry(a, ~b, !CARRY);
+    // REG_F |= calc_overflow(a, b, D.b.L, 0x80);
+    uint16_t c = a ^ b ^ D.dw;
+    REG_F |= c & F_HALF_CARRY;
+    c &= 0x0180;
+    REG_F |= OVERFLOW_TABLE[c >> 7];
+
     return D.b.L;
 }
 
@@ -755,8 +782,12 @@ inline void z80core::do_cp8(uint8_t a, uint8_t b)
         F_HALF_CARRY + F_OVERFLOW,          //Reset HC and V for below
         F_SIGN+F_ZERO+F_B5+F_B3+F_CARRY     //To change
         );
-    REG_F |= calc_half_carry(a, ~b, 1);
-    REG_F |= calc_overflow(a, b, D.b.L, 0x80);
+    // REG_F |= calc_half_carry(a, ~b, 1);
+    // REG_F |= calc_overflow(a, b, D.b.L, 0x80);
+    uint16_t c = a ^ b ^ D.dw;
+    REG_F |= c & F_HALF_CARRY;
+    c &= 0x0180;
+    REG_F |= OVERFLOW_TABLE[c >> 7];
 }
 
 inline void z80core::do_cpi_cpd(int16_t hlinc)
@@ -1121,8 +1152,8 @@ unsigned int z80core::execute_command()
                             F_SIGN+F_ZERO+F_B5+F_B3             //To change
                 );
             //REG_F |= calc_half_carry(T.b.L, 1, 0);
-            if (LO4(T.b.L) == 0xF) REG_F |= F_HALF_CARRY;
             //REG_F |= calc_overflow(T.b.L, ~1, D.b.L, 0x80);
+            if (LO4(T.b.L) == 0xF) REG_F |= F_HALF_CARRY;
             if (T.b.L == 0x7F) REG_F |= F_OVERFLOW;
             break;
         case 5:
@@ -1139,8 +1170,8 @@ unsigned int z80core::execute_command()
                             F_SIGN+F_ZERO+F_B5+F_B3             //To change
                             );
             //REG_F |= calc_half_carry(T.b.L, 0x0F, 0);
-            if (LO4(T.b.L) == 0) REG_F |= F_HALF_CARRY;
             //REG_F |= calc_overflow(T.b.L, 1, D.b.L, 0x80);
+            if (LO4(T.b.L) == 0) REG_F |= F_HALF_CARRY;
             if (T.b.L == 0x80) REG_F |= F_OVERFLOW;
             break;
         case 6:
@@ -1544,31 +1575,30 @@ unsigned int z80core::execute_command()
                                 // SBC HL, RP
                                 T1.dw = REG_HL;
                                 T2.dw = (PP2==3)?REG_SP:context.registers.reg_array_16[PP2];
-                                tmp_carry = CARRY;
                                 D.dw = T1.dw - T2.dw - CARRY;
                                 REG_HL = D.w;
 
                                 calc_z80_flags(
                                     D.dw >> 8,                              //For carry and sign
                                     D.b.H,                                  //For 3&5
-                                    0,                                      //Set none
-                                    F_ZERO+F_SUB+F_HALF_CARRY+F_OVERFLOW ,  //Reset SUB; Z, HC & V for below
+                                    F_SUB,                                  //Set SUB
+                                    F_ZERO+F_HALF_CARRY+F_OVERFLOW,         //Reset Z, HC & V for below
                                     F_SIGN+F_B5+F_B3+F_CARRY                //To change
                                     );
+
                                 REG_F |= (D.w == 0)?F_ZERO:0;
-                                REG_F |= calc_half_carry(                   //HC is taken from substracting higher bytes
-                                    T1.b.H,
-                                    ~T2.b.H,
-                                    !(((static_cast<uint32_t>(T1.b.L) - T2.b.L - tmp_carry) & 0x100) >> 8) //Carry from substracting lower bytes
-                                    );
-                                REG_F |= calc_overflow(T1.w, T2.w, D.w, 0x8000);
+
+                                uint32_t c = T1.dw ^ T2.dw ^ D.dw;
+                                REG_F |= (c >> 8) & F_HALF_CARRY;
+                                c &= 0x018000;
+                                REG_F |= OVERFLOW_TABLE[c >> 15];
+
                                 cycles += 7;
                             } else {
                                 // ED 01 RP1 010
                                 // ADC HL, RP
                                 T1.dw = REG_HL;
                                 T2.dw = (PP2==3)?REG_SP:context.registers.reg_array_16[PP2];
-                                tmp_carry = CARRY;
                                 D.dw = T1.dw + T2.dw + CARRY;
                                 REG_HL = D.w;
 
@@ -1580,12 +1610,12 @@ unsigned int z80core::execute_command()
                                     F_SIGN+F_B5+F_B3+F_CARRY                    //To change
                                     );
                                 REG_F |= (D.w == 0)?F_ZERO:0;
-                                REG_F |= calc_half_carry(                       //HC is taken from adding higher bytes
-                                    T1.b.H,
-                                    T2.b.H,
-                                    ((static_cast<uint32_t>(T1.b.L) + T2.b.L + tmp_carry) & 0x100) >> 8 //Carry from adding lower bytes
-                                    );
-                                REG_F |= calc_overflow(T1.w, ~T2.w, D.w, 0x8000);
+
+                                uint32_t c = T1.dw ^ T2.dw ^ D.dw;
+                                REG_F |= (c >> 8) & F_HALF_CARRY;
+                                c &= 0x018000;
+                                REG_F |= OVERFLOW_TABLE[c >> 15];
+
                                 cycles += 7;
                             }
                             break;
