@@ -424,18 +424,48 @@ inline uint8_t z80core::do_sll(uint8_t v)
 
 inline uint8_t z80core::do_bit(unsigned int bit, uint8_t v)
 {
-    uint8_t result = v & (1 << bit);
-    calc_z80_flags(
-        result,                                         //Value
-        result,                                         //For 3&5
-        F_HALF_CARRY,                                   //Set HC
-        F_SIGN + F_PARITY + F_SUB,                      //Reset N, prepare S&P for below
-        F_ZERO+F_B5+F_B3                                //To change
-        );
-    REG_F |= (result == 0)?F_PARITY:0;                  //PV = Z
-    REG_F |= ((bit == 7) && ((v & 0x80) != 0))?F_SIGN:0;
-    return result;
+    // uint8_t result = v & (1 << bit);
+    // calc_z80_flags(
+    //     result,                                         //Value
+    //     result,                                         //For 3&5
+    //     F_HALF_CARRY,                                   //Set HC
+    //     F_SIGN + F_PARITY + F_SUB,                      //Reset N, prepare S&P for below
+    //     F_ZERO+F_B5+F_B3                                //To change
+    //     );
+    // REG_F |= (result == 0)?F_PARITY:0;                  //PV = Z
+    // REG_F |= ((bit == 7) && (result != 0))?F_SIGN:0;
+    int x;
+    x = v & (1 << bit);
+    REG_F = (x ? 0 : (F_ZERO + F_PARITY))
+        | (x & F_SIGN)
+        | (v & (F_B5+F_B3))
+        | F_HALF_CARRY
+        | (REG_F & F_CARRY);
+    return x;
 }
+
+inline uint8_t z80core::do_bit_ind(unsigned int bit, uint8_t v, unsigned int address)
+{
+    // uint8_t result = v & (1 << bit);
+    // calc_z80_flags(
+    //     result,                                         //Value
+    //     result,                                         //For 3&5
+    //     F_HALF_CARRY,                                   //Set HC
+    //     F_SIGN + F_PARITY + F_SUB,                      //Reset N, prepare S&P for below
+    //     F_ZERO+F_B5+F_B3                                //To change
+    //     );
+    // REG_F |= (result == 0)?F_PARITY:0;                  //PV = Z
+    // REG_F |= ((bit == 7) && (result != 0))?F_SIGN:0;
+    int x;
+    x = v & (1 << bit);
+    REG_F = (x ? 0 : (F_ZERO + F_PARITY))
+            | (x & F_SIGN)
+            | (address & (F_B5+F_B3))
+            | F_HALF_CARRY
+            | (REG_F & F_CARRY);
+    return x;
+}
+
 
 inline uint8_t z80core::do_res(unsigned int bit, uint8_t v)
 {
@@ -504,7 +534,7 @@ inline void z80core::do_DD_FD_CB(unsigned int prefix, unsigned int * cycles)
         }
         break;
     case 1:
-        D.b.L = do_bit(YYY, T.b.L);
+        D.b.L = do_bit_ind(YYY, T.b.L, address);
         break;
     case 2:
         D.b.L = do_res(YYY, T.b.L);
@@ -1418,7 +1448,10 @@ unsigned int z80core::execute_command()
                 case 1:
                     // CB 01_bit_SSS
                     //BIT bit, SSS
-                    D.b.L = do_bit(YYY2, T.b.L);    //Should not be stored back
+                    if (ZZZ2 == 6)
+                        D.b.L = do_bit_ind(YYY2, T.b.L, REG_HL);    //Should not be stored back
+                    else
+                        D.b.L = do_bit(YYY2, T.b.L);    //Should not be stored back
                     break;
                 case 2:
                     // CB 10 bit SSS

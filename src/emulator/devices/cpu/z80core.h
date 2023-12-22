@@ -37,6 +37,7 @@ private:
     uint8_t do_srl(uint8_t v);
     uint8_t do_sll(uint8_t v);
     uint8_t do_bit(unsigned int bit, uint8_t v);
+    uint8_t do_bit_ind(unsigned int bit, uint8_t v, unsigned int address);
     uint8_t do_res(unsigned int bit, uint8_t v);
     uint8_t do_set(unsigned int bit, uint8_t v);
     void do_DD_FD_CB(unsigned int prefix, unsigned int * cycles);
