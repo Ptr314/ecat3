@@ -360,10 +360,17 @@ void MainWindow::load_config(QString file_name, bool set_default)
 
 void MainWindow::on_actionOpen_triggered()
 {
-    QString file_name = QFileDialog::getOpenFileName(this, tr("Open XML File 1"), e->work_path, tr("All Files (*.*)"));
+    QString path = e->read_setup("Startup", "last_path", e->work_path);
+    //TODO: Open specified files only?
+    QString file_name = QFileDialog::getOpenFileName(this, tr("Open XML File 1"), path, tr("All Files (*.*)"));
 
-    if (!file_name.isEmpty())
+
+    if (!file_name.isEmpty()) {
+        QFileInfo fi(file_name);
+        e->write_setup("Startup", "last_path", fi.absolutePath());
+
         HandleExternalFile(e, file_name);
+    }
 }
 
 void MainWindow::on_actionDebugger_triggered()
