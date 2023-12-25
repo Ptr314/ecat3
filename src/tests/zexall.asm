@@ -119,9 +119,9 @@ tests:
         ;; dw	alu8x
         ;; dw	bitx
         ;; dw	bitz80
-        ;dw	cpd1    ; !
+        dw	cpd1    ; !
         ;; dw	cpi1
-        ;dw	daaop	; can't use opcode as label ; !
+        dw	daaop	; can't use opcode as label ; !
         ;; dw	inca
         ;; dw	incb
         ;; dw	incbc
@@ -169,8 +169,8 @@ tests:
         ;; dw	negop	; jgh: can't use opcode as label
         ;; dw	rldop	; jgh: can't use opcode as label
         ;; dw	rot8080
-        dw	rotxy   ; !
-        dw	rotz80  ; !
+        ;; dw	rotxy
+        ;; dw	rotz80
         ;; dw	srz80
         ;; dw	srzx
         ;; dw	st8ix1

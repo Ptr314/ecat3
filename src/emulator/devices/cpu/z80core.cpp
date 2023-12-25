@@ -262,81 +262,75 @@ inline unsigned int z80core::do_jr(unsigned int command, bool cond)
     }
 }
 
-inline uint8_t z80core::do_rlc(uint8_t v)
+inline uint8_t z80core::do_rlc(uint8_t v, bool set_szp)
 {
     PartsRecLE T;
-    T.w = v;
+    T.w = (v << 1) | (v >> 7);
 
-    T.w = T.w << 1;
-    uint8_t result = T.b.L | (T.b.H & 0x01);
-    //REG_F = (REG_F & (F_ALL - F_CARRY)) | (T.b.H & 0x01);
+    uint8_t result = T.b.L;
     calc_z80_flags(
                     T.w,                            //Value
                     result,                         //3&5
                     0,                              //Set
                     F_HALF_CARRY+F_SUB,             //Reset
-                    F_B5+F_B3+F_CARRY               //To change
+                    F_B5+F_B3+F_CARRY+((set_szp)?F_PARITY+F_ZERO+F_SIGN:0)              //To change
                     );
 
 
     return result;
 }
 
-inline uint8_t z80core::do_rrc(uint8_t v)
+inline uint8_t z80core::do_rrc(uint8_t v, bool set_szp)
 {
     PartsRecLE T;
-    T.w = v;
+    T.w = (v >> 1) | (v << 7);
 
-    //REG_F = (REG_F & (F_ALL - F_CARRY)) | (T.b.L & 0x01);
-    T.w = T.w << 7;
-    uint8_t result =  T.b.H | (T.b.L & 0x80);
+    uint8_t result =  T.b.L;
+    T.b.H = v & 0x01;
 
     calc_z80_flags(
-        T.w << 1,                       //Value
+        T.w,                       //Value
         result,                         //3&5
         0,                              //Set
         F_HALF_CARRY+F_SUB,             //Reset
-        F_B5+F_B3+F_CARRY               //To change
+        F_B5+F_B3+F_CARRY+((set_szp)?F_PARITY+F_ZERO+F_SIGN:0)               //To change
         );
 
     return result;
 }
 
-inline uint8_t z80core::do_rl(uint8_t v)
+inline uint8_t z80core::do_rl(uint8_t v, bool set_szp)
 {
     PartsRecLE T;
-    T.w = v;
+    T.w = (v << 1) | (REG_F & F_CARRY);
 
-    T.w = T.w << 1;
-    uint8_t result = T.b.L | (REG_F & F_CARRY);
-    //REG_F = (REG_F & (F_ALL - F_CARRY)) | (T.b.H & 0x01);
+    uint8_t result = T.b.L;
 
     calc_z80_flags(
                     T.w,                            //Value
                     result,                         //3&5
                     0,                              //Set
                     F_HALF_CARRY+F_SUB,             //Reset
-                    F_B5+F_B3+F_CARRY               //To change
+                    F_B5+F_B3+F_CARRY+((set_szp)?F_PARITY+F_ZERO+F_SIGN:0)               //To change
                     );
 
     return result;
 }
 
-inline uint8_t z80core::do_rr(uint8_t v)
+inline uint8_t z80core::do_rr(uint8_t v, bool set_szp)
 {
     PartsRecLE T;
-    T.w = v;
+    T.w = (v >> 1) | ((REG_F & F_CARRY) << 7) ;
 
-    T.w = T.w << 7;
-    uint8_t result  = T.b.H | ((REG_F & F_CARRY)?0x80:0);
-    //REG_F = (REG_F & (F_ALL - F_CARRY)) | ((T.b.L >> 7)?F_CARRY:0);
+    uint8_t result  = T.b.L;
+    T.b.H = v;
 
     calc_z80_flags(
-        T.w << 1,                       //Value
+        T.w,                       //Value
         result,                         //3&5
         0,                              //Set
         F_HALF_CARRY+F_SUB,             //Reset
-        F_B5+F_B3+F_CARRY               //To change
+        F_B5+F_B3+F_CARRY+((set_szp)?F_PARITY+F_ZERO+F_SIGN:0)               //To change
         );
 
     return result;
@@ -345,18 +339,15 @@ inline uint8_t z80core::do_rr(uint8_t v)
 inline uint8_t z80core::do_sla(uint8_t v)
 {
     PartsRecLE T;
-    T.w = v;
-
-    T.w = T.w << 1;
+    T.w = v << 1;
     uint8_t result = T.b.L;
-    //REG_F = (REG_F & (F_ALL - F_CARRY)) | (T.b.H & 0x01);
 
     calc_z80_flags(
         T.w,                            //Value
         result,                         //3&5
         0,                              //Set
         F_HALF_CARRY+F_SUB,             //Reset
-        F_B5+F_B3+F_CARRY               //To change
+        F_B5+F_B3+F_CARRY+F_PARITY+F_ZERO+F_SIGN //To change
         );
 
     return result;
@@ -365,18 +356,17 @@ inline uint8_t z80core::do_sla(uint8_t v)
 inline uint8_t z80core::do_sra(uint8_t v)
 {
     PartsRecLE T;
-    T.w = v;
+    T.w = (v >> 1) | (v & 0x80);
 
-    REG_F = (REG_F & (F_ALL - F_CARRY)) | (T.b.L & 0x01);
-    T.w = T.w << 7;
-    uint8_t result =  T.b.H | ((T.b.H & 0x40) << 1);
+    uint8_t result =  T.b.L;
+    T.b.H = v & 0x01;
 
     calc_z80_flags(
-        T.w << 1,                       //Value
+        T.w,                       //Value
         result,                         //3&5
         0,                              //Set
         F_HALF_CARRY+F_SUB,             //Reset
-        F_B5+F_B3+F_CARRY               //To change
+        F_B5+F_B3+F_CARRY+F_PARITY+F_ZERO+F_SIGN               //To change
         );
 
     return result;
@@ -385,18 +375,17 @@ inline uint8_t z80core::do_sra(uint8_t v)
 inline uint8_t z80core::do_srl(uint8_t v)
 {
     PartsRecLE T;
-    T.w = v;
+    T.w = (v >> 1) & 0x7F;
 
-    REG_F = (REG_F & (F_ALL - F_CARRY)) | (T.b.L & 0x01);
-    T.w = T.w << 7;
-    uint8_t result =  T.b.H;
+    uint8_t result =  T.b.L;
+    T.b.H = v;
 
     calc_z80_flags(
-        T.w << 1,                       //Value
+        T.w,                       //Value
         result,                         //3&5
         0,                              //Set
         F_HALF_CARRY+F_SUB,             //Reset
-        F_B5+F_B3+F_CARRY               //To change
+        F_B5+F_B3+F_CARRY+F_PARITY+F_SIGN+F_ZERO               //To change
         );
 
     return result;
@@ -405,18 +394,15 @@ inline uint8_t z80core::do_srl(uint8_t v)
 inline uint8_t z80core::do_sll(uint8_t v)
 {
     PartsRecLE T;
-    T.w = v;
-
-    T.w = T.w << 1;
-    uint8_t result = T.b.L | 0x01;
-    REG_F = (REG_F & (F_ALL - F_CARRY)) | (T.b.H & 0x01);
+    T.w = (v << 1) | 0x01;
+    uint8_t result = T.b.L;
 
     calc_z80_flags(
         T.w,                            //Value
         result,                         //3&5
         0,                              //Set
         F_HALF_CARRY+F_SUB,             //Reset
-        F_B5+F_B3+F_CARRY               //To change
+        F_B5+F_B3+F_CARRY+F_PARITY+F_SIGN+F_ZERO      //To change
         );
 
     return result;
@@ -501,19 +487,19 @@ inline void z80core::do_DD_FD_CB(unsigned int prefix, unsigned int * cycles)
         switch (YYY) {
         case 0:
             //RLC
-            D.b.L = do_rlc(T.b.L);
+            D.b.L = do_rlc(T.b.L, true);
             break;
         case 1:
             //RRC
-            D.b.L = do_rrc(T.b.L);
+            D.b.L = do_rrc(T.b.L, true);
             break;
         case 2:
             //RL
-            D.b.L = do_rl(T.b.L);
+            D.b.L = do_rl(T.b.L, true);
             break;
         case 3:
             //RR
-            D.b.L = do_rr(T.b.L);
+            D.b.L = do_rr(T.b.L, true);
             break;
         case 4:
             //SLA
@@ -1422,19 +1408,19 @@ unsigned int z80core::execute_command()
                     switch (YYY2) {
                     case 0:
                         //RLC
-                        D.b.L = do_rlc(T.b.L);
+                        D.b.L = do_rlc(T.b.L, true);
                         break;
                     case 1:
                         //RRC
-                        D.b.L = do_rrc(T.b.L);
+                        D.b.L = do_rrc(T.b.L, true);
                         break;
                     case 2:
                         //RL
-                        D.b.L = do_rl(T.b.L);
+                        D.b.L = do_rl(T.b.L, true);
                         break;
                     case 3:
                         //RR
-                        D.b.L = do_rr(T.b.L);
+                        D.b.L = do_rr(T.b.L, true);
                         break;
                     case 4:
                         //SLA
@@ -1480,7 +1466,7 @@ unsigned int z80core::execute_command()
                     break;
                 }
 
-                if (XX2 != 1)
+                if (XX2 != 1) //Store for all except BIT
                 {
                     if (ZZZ2 == 6) {
                         write_mem(REG_HL, D.b.L); cycles += 3;
