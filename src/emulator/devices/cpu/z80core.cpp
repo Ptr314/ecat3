@@ -906,33 +906,56 @@ inline void z80core::do_outi_outd(int16_t hlinc)
 
 inline void z80core::do_daa()
 {
-    PartsRecLE T, D;
-    uint32_t increment, result, carry;
+    // PartsRecLE T, D;
+    // uint32_t increment, result, carry;
 
-    increment = 0;
-    result = REG_A;
-    carry = REG_F & F_CARRY;
+    // increment = 0;
+    // result = REG_A;
+    // carry = CARRY;
 
-    if (((REG_F & F_HALF_CARRY) != 0) || ((result & 0x0F) > 0x09)) increment |= 0x06;
+    // if (((REG_F & F_HALF_CARRY) != 0) || ((result & 0x0F) > 0x09)) increment |= 0x06;
 
-    if ((carry != 0) || (result > 0x9F)) increment |= 0x60;
+    // if ((carry != 0) || (result > 0x9F)) increment |= 0x60;
 
-    if ((result > 0x8F) && ((result & 0x0F) > 9)) increment |= 0x60;
+    // if ((result > 0x8F) && ((result & 0x0F) > 9)) increment |= 0x60;
 
-    if (result > 0x99) carry = F_CARRY;
+    // if (result > 0x99) carry = F_CARRY;
 
-    if ((REG_F & F_SUB) != 0)
-        REG_A = do_sub8(REG_A, increment);
-    else
-        REG_A = do_add8(REG_A, increment);
+    // if ((REG_F & F_SUB) != 0)
+    //     REG_A = do_sub8(REG_A, increment);
+    // else
+    //     REG_A = do_add8(REG_A, increment);
+
+    // calc_z80_flags(
+    //     (carry << 8) + REG_A,               //Value
+    //     REG_A,                                  //For 3&5
+    //     0,                                  //Set none
+    //     0,                                  //Reset
+    //     F_CARRY+F_PARITY+F_B3+F_B5+F_SIGN+F_ZERO        //To change
+    //     );
+    int a, c, d;
+
+    a = REG_A;
+    if (a > 0x99 || CARRY)
+    {
+        c = F_CARRY;
+        d = 0x60;
+    } else
+        c = d = 0;
+
+    if ( (a & 0x0F) > 0x09 || (REG_F & F_HALF_CARRY) )
+        d += 0x06;
+
+    REG_A += (REG_F & F_SUB)?-d:+d;
 
     calc_z80_flags(
-        (carry << 8) + REG_A,               //Value
-        0,                                  //For 3&5
-        0,                                  //Set none
-        0,                                  //Reset
-        F_CARRY+F_PARITY                    //To change
+        (c << 8) + REG_A,                        //Value
+        REG_A,                                   //For 3&5
+        0,                                       //Set none
+        F_HALF_CARRY,                            //Reset
+        F_CARRY+F_PARITY+F_B3+F_B5+F_SIGN+F_ZERO //To change
         );
+    REG_F |= (REG_A ^ a) & F_HALF_CARRY;
 }
 
 void z80core::do_rst(uint16_t address)
@@ -1239,17 +1262,38 @@ unsigned int z80core::execute_command()
             case 5:
                 //00_101_111
                 //CPL
-                context.registers.regs.A  = ~context.registers.regs.A;
+                REG_A = ~REG_A;
+                calc_z80_flags(
+                                0,                      // Not used
+                                REG_A,                  // For 3 & 5
+                                F_HALF_CARRY + F_SUB,   // Set HC & N
+                                0,                      // None to reset
+                                F_B3 + F_B5             // Calc 3 & 5
+                    );
                 break;
             case 6:
                 //00_110_111
                 //SCF
-                context.registers.regs.F |= F_CARRY;
+                calc_z80_flags(
+                                0,                      // Not used
+                                REG_A,                  // For 3 & 5 we use A
+                                F_CARRY,                // Set CY
+                                F_HALF_CARRY + F_SUB,   // Reset HC & N
+                                F_B3 + F_B5             // Calc 3 & 5
+                    );
                 break;
             default: //7
                 //00_111_111
                 //CCF
-                context.registers.regs.F ^= F_CARRY;
+                T.b.L = CARRY;
+                calc_z80_flags(
+                                (~T.b.L) << 8,          // Invert CY
+                                REG_A,                  // For 3 & 5 we use A
+                                0,                      // Set none
+                                F_HALF_CARRY + F_SUB,   // Reset HC & N
+                                F_B3 + F_B5 + F_CARRY   // Calc 3, 5 and CY
+                    );
+                REG_F |= (T.b.L != 0)?F_HALF_CARRY:0;   //HC = old CY
                 break;
             }
             break;

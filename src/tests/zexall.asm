@@ -105,7 +105,7 @@ loop:	ld	a,(hl)		; end of list ?
 done:	ld	de,msg2
 	ld	c,9
 	call	bdos
-        call	0xF803		; wait fo a key
+        call	0xF803		; wait for a key
         jp      0xF800          ; warm reboot
 
 tests:
@@ -119,7 +119,7 @@ tests:
         ;; dw	alu8x
         ;; dw	bitx
         ;; dw	bitz80
-        dw	cpd1    ; !
+        ;dw	cpd1    ; !
         ;; dw	cpi1
         dw	daaop	; can't use opcode as label ; !
         ;; dw	inca
