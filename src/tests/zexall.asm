@@ -105,76 +105,78 @@ loop:	ld	a,(hl)		; end of list ?
 done:	ld	de,msg2
 	ld	c,9
 	call	bdos
-	jp	0		; warm boot
+        call	0xF803		; wait fo a key
+        jp      0xF800          ; warm reboot
 
 tests:
-        ;dw	adc16
-        ;dw	add16
-        ;dw	add16x
-        ;dw	add16y
-        ;dw	alu8i
-        ;dw	alu8r
-        ;dw	alu8rx
-        ;dw	alu8x
-        ;dw	bitx
-        ;dw	bitz80
-        ;dw	cpd1    ; still incorrect
-        ;dw	cpi1
-        ;dw	daaop	; can't use opcode as label ; still incorrect
-        ;dw	inca
-        ;dw	incb
-        ;dw	incbc
-        ;dw	incc
-        ;dw	incd
-        ;dw	incde
-        ;dw	ince
-        ;dw	inch
-        ;dw	inchl
-        ;dw	incix
-        ;dw	inciy
-        ;dw	incl
-        ;dw	incm
-        ;dw	incsp
-        ;dw	incx
-        ;dw	incxh
-        ;dw	incxl
-        ;dw	incyh
-        ;dw	incyl
-        ;dw	ld161
-        ;dw	ld162
-        ;dw	ld163
-        ;dw	ld164
-        ;dw	ld165
-        ;dw	ld166
-        ;dw	ld167
-        ;dw	ld168
-        ;dw	ld16im
-        ;dw	ld16ix
-        ;dw	ld8bd
-        ;dw	ld8im
-        ;dw	ld8imx
-        dw	ld8ix1
-	dw	ld8ix2
-	dw	ld8ix3
-	dw	ld8ixy
-	dw	ld8rr
-	dw	ld8rrx
-	dw	lda
-	dw	ldd1
-	dw	ldd2
-	dw	ldi1
-	dw	ldi2
-	dw	negop	; jgh: can't use opcode as label
-	dw	rldop	; jgh: can't use opcode as label
-	dw	rot8080
-	dw	rotxy
-	dw	rotz80
-	dw	srz80
-	dw	srzx
-	dw	st8ix1
-	dw	st8ix2
-	dw	st8ix3
-	dw	stabd
+        ;; dw	adc16
+        ;; dw	add16
+        ;; dw	add16x
+        ;; dw	add16y
+        ;; dw	alu8i
+        ;; dw	alu8r
+        ;; dw	alu8rx
+        ;; dw	alu8x
+        ;; dw	bitx
+        ;; dw	bitz80
+        ;dw	cpd1    ; !
+        ;; dw	cpi1
+        ;dw	daaop	; can't use opcode as label ; !
+        ;; dw	inca
+        ;; dw	incb
+        ;; dw	incbc
+        ;; dw	incc
+        ;; dw	incd
+        ;; dw	incde
+        ;; dw	ince
+        ;; dw	inch
+        ;; dw	inchl
+        ;; dw	incix
+        ;; dw	inciy
+        ;; dw	incl
+        ;; dw	incm
+        ;; dw	incsp
+        ;; dw	incx
+        ;; dw	incxh
+        ;; dw	incxl
+        ;; dw	incyh
+        ;; dw	incyl
+        ;; dw	ld161
+        ;; dw	ld162
+        ;; dw	ld163
+        ;; dw	ld164
+        ;; dw	ld165
+        ;; dw	ld166
+        ;; dw	ld167
+        ;; dw	ld168
+        ;; dw	ld16im
+        ;; dw	ld16ix
+        ;; dw	ld8bd
+        ;; dw	ld8im
+        ;; dw	ld8imx
+
+        ;; dw	ld8ix1
+        ;; dw	ld8ix2
+        ;; dw	ld8ix3
+        ;; dw	ld8ixy
+        ;; dw	ld8rr
+        ;; dw	ld8rrx
+        ;; dw	lda
+        ;; dw	ldd1
+        ;; dw	ldd2
+        ;; dw	ldi1
+        ;; dw	ldi2
+        ;; dw	negop	; jgh: can't use opcode as label
+        ;; dw	rldop	; jgh: can't use opcode as label
+        ;; dw	rot8080
+        dw	rotxy   ; !
+        dw	rotz80  ; !
+        ;; dw	srz80
+        ;; dw	srzx
+        ;; dw	st8ix1
+        ;; dw	st8ix2
+        ;; dw	st8ix3
+        ;; dw	stabd
 	dw	0
 
 ; jgh: macro syntax changed for ZMAC and MAXAM
@@ -1250,7 +1252,7 @@ putch:
 
 
 msg1:	db	01Fh,'Z80 ALL INSTRUCTION EXERCISER',13,10,0
-msg2:	db	'TESTS COMPLETE',13,10,0
+msg2:	db	13,10,'TESTS COMPLETE',13,10,'PRESS ANY KEY TO REBOOT',13,10,0
 okmsg:	db	'  OK',13,10,0
 ermsg1:	db	'  ERROR **** CRC EXPECTED:',0
 ermsg2:	db	' FOUND:',0

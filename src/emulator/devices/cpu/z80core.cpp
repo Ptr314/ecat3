@@ -1278,6 +1278,7 @@ unsigned int z80core::execute_command()
         } else {
             //LD DDD, SSS
             T.b.L = get_first_8(ZZZ, &address, &cycles, YYY == 0b110);
+            get_first_8(YYY, &address, &cycles);                        // Just to get an address for (IX, IY + d)
             store_value_8(YYY, address, T.b.L, &cycles, ZZZ == 0b110);
         }
         break;
