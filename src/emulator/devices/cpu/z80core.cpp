@@ -809,10 +809,10 @@ inline void z80core::do_cp8(uint8_t a, uint8_t b)
 inline void z80core::do_cpi_cpd(int16_t hlinc)
 {
     PartsRecLE T, D;
-    T.b.L = read_mem(REG_HL);
+    T.w = read_mem(REG_HL);
     REG_HL += hlinc;
     REG_BC--;
-    D.w = static_cast<uint16_t>(REG_A) - T.b.L;
+    D.w = static_cast<uint16_t>(REG_A) - T.w;
     calc_z80_flags(
         D.w,                                //Value
         0,                                  //3&5 we calc later
@@ -820,7 +820,7 @@ inline void z80core::do_cpi_cpd(int16_t hlinc)
         F_HALF_CARRY+F_OVERFLOW+F_B3+F_B5,  //Reset HC and V for below
         F_SIGN+F_ZERO                       //To change
         );
-    //uint8_t HC = calc_half_carry(REG_A, ~T.b.L, 1);
+
     uint8_t HC = (REG_A ^ T.b.L ^ D.b.L) & F_HALF_CARRY;
     REG_F |= HC;
     REG_F |= (REG_BC != 0)?F_OVERFLOW:0;

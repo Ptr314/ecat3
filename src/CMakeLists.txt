@@ -50,12 +50,9 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     dialogs/keyvaluearea.h dialogs/keyvaluearea.cpp
     dialogs/portwindow.h dialogs/portwindow.cpp dialogs/portwindow.ui
     dialogs/i8255window.h dialogs/i8255window.cpp dialogs/i8255window.ui
-    tests/i8080.asm
     dialogs/openconfigwindow.h dialogs/openconfigwindow.cpp dialogs/openconfigwindow.ui
     emulator/devices/common/wd1793.h emulator/devices/common/wd1793.cpp
     emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp
-    tests/8080exe.asm tests/8080pre.asm
-
     libs/crc16.h
     emulator/devices/cpu/cpulogger.h
     emulator/devices/common/i8257.h
@@ -64,19 +61,23 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     emulator/devices/common/i8253.h
     emulator/files.h
     emulator/devices/common/register.h
-    tests/i8253_test.asm
     libs/lodepng/lodepng.cpp libs/lodepng/lodepng.h
     emulator/devices/cpu/z80.h
     emulator/devices/cpu/z80.cpp
     emulator/devices/cpu/cpu_utils.h
     emulator/devices/common/page_mapper.h
-    emulator/devices/cpu/z80_context.h
-    emulator/devices/cpu/z80core.h emulator/devices/cpu/z80core.cpp
     dialogs/hexeditorline.h dialogs/hexeditorline.cpp
     dialogs/dosframe.h dialogs/dosframe.cpp
     emulator/devices/common/generator.h
+
+    tests/8080exe.asm tests/8080pre.asm
     tests/zexall.asm
-    #    libs/z80.hpp
+    tests/i8253_test.asm
+    tests/i8080.asm
+
+    emulator/devices/cpu/z80_context.h
+    emulator/devices/cpu/z80core.h emulator/devices/cpu/z80core.cpp
+    #libs/z80.hpp
 
 )
 target_link_libraries(eCat3 PRIVATE
