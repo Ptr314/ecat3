@@ -22,24 +22,18 @@ struct z80context
     unsigned int IFF2;
     unsigned int IM;
     bool halted;
-    //TODO: Z80 int system
-    //unsigned int int_enable;
     unsigned int NMI;
     unsigned int INT;
     unsigned int debug_mode;
 
     unsigned int global_prefix;
     unsigned int index8_inc;
-    unsigned int index16_inc;
 };
 
 #pragma pack()
 
 namespace Z80
 {
-    //TODO: right flags
-    //const uint8_t F_BASE_8080  = 0x02; //This bit is always set
-
     const uint8_t F_CARRY      = 1;
     const uint8_t F_SUB        = (1 << 1); //0x02
     const uint8_t F_PARITY     = (1 << 2); //0x04
@@ -49,7 +43,7 @@ namespace Z80
     const uint8_t F_B5         = (1 << 5); //0x20
     const uint8_t F_ZERO       = (1 << 6); //0x40
     const uint8_t F_SIGN       = (1 << 7); //0x80
-    const uint8_t F_ALL        = 0xFF; //(F_BASE_8080 + F_CARRY + F_PARITY + F_HALF_CARRY + F_ZERO + F_SIGN);
+    const uint8_t F_ALL        = 0xFF;
 }
 
 #endif // Z80_CONTEXT_H
