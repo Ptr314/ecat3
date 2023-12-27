@@ -1,5 +1,6 @@
 #include <QException>
 #include <QFileInfo>
+#include <QDir>
 
 #include "utils.h"
 
@@ -140,4 +141,26 @@ QString pad_string(QString s, QChar c, int len, bool from_left)
         if (from_left) v = c + v;
         else v = v + c;
     return v;
+}
+
+QString find_file_location(QString system_path, QString software_path, QString file_name)
+{
+    if (!file_name.isEmpty())
+    {
+        QString dir = QFileInfo(system_path).dir().dirName();
+        QString file;
+
+        file = system_path + file_name;
+        if (QFile::exists(file)) return file;
+
+        file = system_path + "files/" + file_name;
+        if (QFile::exists(file)) return file;
+
+        file = software_path + file_name;
+        if (QFile::exists(file)) return file;
+
+        file = software_path + dir + "/" + file_name;
+        if (QFile::exists(file)) return file;
+    }
+    return "";
 }

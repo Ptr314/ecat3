@@ -40,16 +40,11 @@ void FDD::load_config(SystemData *sd)
     }
 
     try {
-        file_name = cd->get_parameter("image").value;
+        file_name = find_file_location(sd->system_path, sd->software_path, cd->get_parameter("image").value);
         if (!file_name.isEmpty())
-        {
-            if (QFile::exists(sd->software_path + file_name))
-                load_image(sd->software_path + file_name);
-            else if(QFile::exists(sd->system_path + file_name))
-                load_image(sd->system_path + file_name);
-            else
-                QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Disk image file '%1' not found").arg(file_name));
-        }
+            load_image(file_name);
+        else
+            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Disk image file '%1' not found").arg(file_name));
     } catch (QException &e) {
     }
 }

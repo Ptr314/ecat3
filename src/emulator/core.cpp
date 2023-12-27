@@ -554,7 +554,10 @@ void ROM::load_config(SystemData *sd)
 
     if (this->buffer!=nullptr) memset(this->buffer, this->fill, this->get_size());
 
-    QString file_name = sd->system_path + this->cd->get_parameter("image").value;
+    QString file_name = find_file_location(sd->system_path, sd->software_path, cd->get_parameter("image").value);
+    if (file_name.isEmpty())
+        QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("File '%1' not found").arg(file_name));
+    else
     if (file_name.endsWith(".hex", Qt::CaseInsensitive))
     {
         QFile file(file_name);

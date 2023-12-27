@@ -19,4 +19,6 @@ unsigned decodeBMP(std::vector<unsigned char>& image, unsigned& w, unsigned& h, 
 
 QString pad_string(QString s, QChar c, int len, bool from_left = true);
 
+QString find_file_location(QString system_path, QString software_path, QString file_name);
+
 #endif // UTILS_H
