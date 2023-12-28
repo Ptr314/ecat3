@@ -148,6 +148,7 @@ static const int OVERFLOW_TABLE[4] = {
 
 z80core::z80core()
 {
+    memset(&context, 0, sizeof(context));
     REG_PC = 0;
     context.halted = false;
     context.NMI = 1;
@@ -1316,7 +1317,7 @@ unsigned int z80core::execute_command()
                     //EXX
                     T.w = REG_BC; REG_BC = REG_BC_; REG_BC_ = T.w;
                     T.w = REG_DE; REG_DE = REG_DE_; REG_DE_ = T.w;
-                    T.w = REG_HL; REG_HL = REG_BC_; REG_HL_ = T.w;
+                    T.w = REG_HL; REG_HL = REG_HL_; REG_HL_ = T.w;
                     break;
                 case 2:
                     //11_101_001
@@ -1442,13 +1443,15 @@ unsigned int z80core::execute_command()
                 //11_010_011
                 //OUT (d),A
                 port = next_byte();
-                write_port(port + (port << 8), REG_A);
+                //write_port(port + (port << 8), REG_A);
+                write_port(port, REG_A);
                 break;
             case 3:
                 //11_011_011
                 //IN A, (d)
                 port = next_byte();
-                REG_A = read_port(port + (port << 8));
+                //REG_A = read_port(port + (port << 8));
+                REG_A = read_port(port);
                 break;
             case 4:
                 //11_100_011
