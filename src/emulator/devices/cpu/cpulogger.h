@@ -1,6 +1,8 @@
 #ifndef CPULOGGER_H
 #define CPULOGGER_H
 
+//#define EXTERNAL_Z80
+
 #include <QObject>
 #include <QDateTime>
 #include <QDir>
@@ -9,7 +11,15 @@
 #include "emulator/emulator.h"
 #include "emulator/devices/cpu/i8080_context.h"
 
+#ifndef EXTERNAL_Z80
+#include "emulator/devices/cpu/z80_context.h"
+#else
+#include "libs/z80.hpp"
+#endif
+
+
 #define CPU_LOGGER_8080     1
+#define CPU_LOGGER_Z80      2
 
 class CPULogger:public QObject
 {
@@ -51,10 +61,46 @@ public:
                  + QString(" SP:%1").arg(c->registers.regs.SP, 4, 16, QChar('0'))
                  + "\x0D\x0A";
 
+        } else
+        if (cpu_type == CPU_LOGGER_Z80) {
+#ifndef EXTERNAL_Z80
+            z80context * c = static_cast<z80context*>(context);
+            cs =   QString("%1").arg(pc, 4, 16, QChar('0')) \
+                 + QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
+                 + QString(" AF:%1").arg(c->registers.reg_pairs.AF, 4, 16, QChar('0'))
+                 + QString(" BC:%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0'))
+                 + QString(" DE:%1").arg(c->registers.reg_pairs.DE, 4, 16, QChar('0'))
+                 + QString(" HL:%1").arg(c->registers.reg_pairs.HL, 4, 16, QChar('0'))
+                 + QString(" SP:%1").arg(c->registers.regs.SP, 4, 16, QChar('0'))
+                 + QString(" IX:%1").arg(c->registers.reg_pairs.IX, 4, 16, QChar('0'))
+                 + QString(" IY:%1").arg(c->registers.reg_pairs.IY, 4, 16, QChar('0'))
+                 + "\x0D\x0A";
+#else
+            Z80 * c = static_cast<Z80*>(context);
+            cs =   QString("%1").arg(pc, 4, 16, QChar('0')) \
+                 + QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
+                 + QString(" AF:%1%2").arg(c->reg.pair.A, 2, 16, QChar('0')).arg(c->reg.pair.F, 2, 16, QChar('0'))
+                 + QString(" BC:%1%2").arg(c->reg.pair.B, 2, 16, QChar('0')).arg(c->reg.pair.C, 2, 16, QChar('0'))
+                 + QString(" DE:%1%2").arg(c->reg.pair.D, 2, 16, QChar('0')).arg(c->reg.pair.E, 2, 16, QChar('0'))
+                 + QString(" HL:%1%2").arg(c->reg.pair.H, 2, 16, QChar('0')).arg(c->reg.pair.L, 2, 16, QChar('0'))
+                 + QString(" SP:%1").arg(c->reg.SP, 4, 16, QChar('0'))
+                 + QString(" IX:%1").arg(c->reg.IX, 4, 16, QChar('0'))
+                 + QString(" IY:%1").arg(c->reg.IY, 4, 16, QChar('0'))
+                 + "\x0D\x0A";
+#endif
+
         }
         log += cs;
         logged_count++;
     }
+
+    void logs(QString s)
+    {
+        log += s + "\x0D\x0A";
+        logged_count++;
+
+    }
+
 
     ~CPULogger()
     {

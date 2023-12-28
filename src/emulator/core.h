@@ -7,6 +7,7 @@
 #include <SDL.h>
 
 #include "config.h"
+#include "globals.h"
 
 #define MAX_LINKS               100
 #define MAX_INTERFACES          200

@@ -74,6 +74,8 @@ z80::z80(InterfaceManager *im, EmulatorConfigDevice *cd):
     core = new z80Core(this);
 #else
     core_ext = new Z80(readByte, writeByte, inPort, outPort, this);
+    core_ext->reg.pair.A = core_ext->reg.pair.F = 0;
+    core_ext->reg.SP = 0;
 #endif
 
     over_commands.push_back(0xCD);
@@ -81,15 +83,19 @@ z80::z80(InterfaceManager *im, EmulatorConfigDevice *cd):
     over_commands.push_back(0xED);
     over_commands.push_back(0xFD);
 
-#ifdef LOG_8080
-    logger = new CPULogger(this, CPU_LOGGER_8080, core->get_context(), "8080_my");
+#ifdef LOG_Z80
+#ifdef EXTERNAL_Z80
+    logger = new CPULogger(this, CPU_LOGGER_Z80, core_ext, "Z80_EXT");
+#else
+    logger = new CPULogger(this, CPU_LOGGER_Z80, core->get_context(), "Z80_MY");
+#endif
 #endif
 
 }
 
 z80::~z80()
 {
-#ifdef LOG_8080
+#ifdef LOG_Z80
     delete logger;
 #endif
 }
@@ -116,12 +122,19 @@ void z80::write_mem(unsigned int address, unsigned int data)
 
 unsigned int z80::read_port(unsigned int address)
 {
-    return mm->read_port(address);
+    unsigned int data = mm->read_port(address);
+#ifdef LOG_Z80
+    logger->logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')));
+#endif
+    return data;
 }
 
 void z80::write_port(unsigned int address, unsigned int data)
 {
     mm->write_port(address, data);
+#ifdef LOG_Z80
+    logger->logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')));
+#endif
 }
 
 void z80::reset(bool cold)
@@ -199,14 +212,19 @@ unsigned int z80::execute()
         return 10;
 
 #ifdef LOG_Z80
-    uint16_t address = core->get_pc();
-    uint8_t log_cmd = core->get_command();
+    static bool do_log = false;
+    static unsigned int log_count = 0;
+#ifndef EXTERNAL_Z80
     //z80context * context = core->get_context();
-    //uint8_t f1 = context->registers.regs.F & 0x10;
-    bool do_log = (address < 0xF800)
-                  //&& ((log_cmd == 0x3C) || (log_cmd == 0x3D));
-                  && (log_cmd == 0x27);
-                  //&& ((log_cmd == 0xC6) || (log_cmd == 0xD6) || (log_cmd == 0xE6) || (log_cmd == 0xF6) || (log_cmd == 0xCE) || (log_cmd == 0xDE) || (log_cmd == 0xEE) || (log_cmd == 0xFE));
+    //uint8_t log_cmd = core->get_command();
+    //uint16_t address = core->get_pc();
+#else
+#endif
+    uint8_t log_cmd = get_command();
+    uint16_t address = get_pc();
+
+    //do_log = (address < 0xF800) && (log_count++ < 2000000);
+    do_log = log_count++ < 100000;
     if (do_log) logger->log_state(log_cmd, true);
 #endif
 
@@ -217,8 +235,6 @@ unsigned int z80::execute()
 #endif
 
 #ifdef LOG_Z80
-    //uint8_t f2 = context->registers.regs.F & 0x10;
-    //bool do_log = (address < 0xF800) && (f1 == 0) && (f2 != 0);
     if (do_log) logger->log_state(log_cmd, false, cycles);
 #endif
 
