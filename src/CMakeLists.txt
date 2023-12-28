@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
-project(eCat3 VERSION 1.0 LANGUAGES C CXX)
 
-set(VERSION_MAJOR 3)
-set(VERSION_MINOR 0)
-set(VERSION_PATCH 0.alpha)
-set(SOFT_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
-
-configure_file (globals.h.in ${CMAKE_CURRENT_SOURCE_DIR}/globals.h @ONLY)
+project(eCat3 VERSION 3.0.0 LANGUAGES C CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
+
+set(LOG_8080 0)
+set(EXTERNAL_Z80 1)
+set(LOG_Z80 1)
+
+configure_file (globals.h.in ${CMAKE_CURRENT_SOURCE_DIR}/globals.h @ONLY)
 
 find_package(QT NAMES Qt5 Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Gui)
@@ -28,7 +28,18 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
+if (${EXTERNAL_Z80})
+    set(Z80_FILES
+        libs/z80.hpp
+    )
+elseif()
+    set(Z80_FILES
+        emulator/devices/cpu/z80_context.h
+        emulator/devices/cpu/z80core.h emulator/devices/cpu/z80core.cpp
+    )
+endif()
+
+qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     dialogs/dumparea.cpp dialogs/dumparea.h
     dialogs/dumpwindow.cpp dialogs/dumpwindow.h dialogs/dumpwindow.ui
     dialogs/mmwindow.cpp dialogs/mmwindow.h dialogs/mmwindow.ui
@@ -82,12 +93,10 @@ qt_add_executable(eCat3 WIN32 MACOSX_BUNDLE
     tests/i8253_test.asm
     tests/i8080.asm
 
-    emulator/devices/cpu/z80_context.h
-    emulator/devices/cpu/z80core.h emulator/devices/cpu/z80core.cpp
-    #libs/z80.hpp
-
+    ${Z80_FILES}
 )
-target_link_libraries(eCat3 PRIVATE
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt::Core
     Qt::Gui
     SDL2::SDL2main
@@ -96,18 +105,18 @@ target_link_libraries(eCat3 PRIVATE
 )
 
 if((QT_VERSION_MAJOR GREATER 4))
-    target_link_libraries(eCat3 PRIVATE
+    target_link_libraries(${PROJECT_NAME} PRIVATE
         Qt::Widgets
     )
 endif()
 
-install(TARGETS eCat3
+install(TARGETS ${PROJECT_NAME}
     BUNDLE DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 qt_generate_deploy_app_script(
-    TARGET eCat3
+    TARGET ${PROJECT_NAME}
     OUTPUT_SCRIPT deploy_script
     NO_UNSUPPORTED_PLATFORM_ERROR
 )
@@ -115,7 +124,7 @@ install(SCRIPT ${deploy_script})
 
 find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
 
-qt_add_translations(eCat3 TS_FILES
+qt_add_translations(${PROJECT_NAME} TS_FILES
     translations/en_US.ts
     translations/ru_RU.ts
 )
