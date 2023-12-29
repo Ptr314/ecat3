@@ -9,6 +9,13 @@
 
 /* #undef LOG_8080 */
 #define EXTERNAL_Z80
-#define LOG_Z80
+/* #undef LOG_Z80 */
+
+#define LOGGER
+#define LOG_NAME "Z80_EXT"
+#define LOG_LIMIT 100000
+
+#define LOG_8255
+
 
 #endif // GLOBALS_H_IN

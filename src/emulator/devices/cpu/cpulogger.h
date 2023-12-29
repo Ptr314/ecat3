@@ -1,8 +1,6 @@
 #ifndef CPULOGGER_H
 #define CPULOGGER_H
 
-//#define EXTERNAL_Z80
-
 #include <QObject>
 #include <QDateTime>
 #include <QDir>

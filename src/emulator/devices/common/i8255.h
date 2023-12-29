@@ -3,11 +3,6 @@
 
 #include "emulator/core.h"
 
-#define PORT_A   1
-#define PORT_B   2
-#define PORT_CH  3
-#define PORT_CL  4
-
 class I8255:public AddressableDevice
 {
 private:

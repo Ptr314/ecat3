@@ -1,5 +1,10 @@
 #include "i8255.h"
 
+#define PORT_A   1
+#define PORT_B   2
+#define PORT_CH  3
+#define PORT_CL  4
+
 I8255::I8255(InterfaceManager *im, EmulatorConfigDevice *cd):
     AddressableDevice(im, cd)
 {
@@ -22,7 +27,11 @@ void I8255::reset(bool cold)
 
 unsigned int I8255::get_value(unsigned int address)
 {
-    return registers[address & 0b11];
+    uint8_t data = registers[address & 0b11];
+#ifdef LOG_8255
+    logs(QString("R %1:%2").arg(address & 0b11).arg(data, 2, 16, QChar('0')));
+#endif
+    return data;
 }
 
 void I8255::set_value(unsigned int address, unsigned int value)
@@ -91,6 +100,10 @@ void I8255::set_value(unsigned int address, unsigned int value)
         }
         break;
     }
+#ifdef LOG_8255
+    logs(QString("W %1:%2").arg(n).arg(value, 2, 16, QChar('0')));
+#endif
+
 }
 
 void I8255::interface_callback(unsigned int callback_id, unsigned int new_value, [[maybe_unused]] unsigned int old_value)
@@ -126,6 +139,10 @@ void I8255::interface_callback(unsigned int callback_id, unsigned int new_value,
         im->dm->error(this, I8255::tr("i8255:unknown interface called"));
         break;
     }
+
+#ifdef LOG_8255
+    logs(QString("C %1:%2").arg(callback_id).arg(new_value, 2, 16, QChar('0')));
+#endif
 }
 
 ComputerDevice * create_i8255(InterfaceManager *im, EmulatorConfigDevice *cd){

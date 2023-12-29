@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include "globals.h"
+#include "logger.h"
 
 #define MAX_LINKS               100
 #define MAX_INTERFACES          200
@@ -31,6 +32,7 @@ class InterfaceManager;
 class Interface;
 class ComputerDevice;
 class MemoryMapper;
+class CPU;
 
 typedef uint8_t ScreenColor[3];
 
@@ -126,7 +128,10 @@ protected:
     Interface * create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id = 0);
     EmulatorConfigDevice * cd;
     InterfaceManager * im;
-    ComputerDevice * memory_callback_device;   
+    ComputerDevice * memory_callback_device;
+
+    void logs(QString s);
+
 };
 
 class AddressableDevice: public ComputerDevice
@@ -219,8 +224,8 @@ class DeviceManager: public QObject
     Q_OBJECT
 
 public:
-    DeviceManager(); //
-    ~DeviceManager(); //
+    DeviceManager(Logger * l);
+    ~DeviceManager();
 
     unsigned int device_count;
     ComputerDevice *error_device;
@@ -238,10 +243,14 @@ public:
     DeviceDescription * get_device(unsigned int i); //
     void register_device(QString device_type, CreateDeviceFunc func); //
 
+    void logs(QString s);
+
 private:
     DeviceDescription devices[100];
     unsigned int registered_devices_count;
     RegisteredDevice registered_devices[MAX_REGISTERED_DEVICES];
+
+    Logger * logger;
 };
 
 class Interface: public QObject
@@ -385,10 +394,10 @@ protected:
 public:
 
     MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual void load_config(SystemData *sd);
-    virtual void reset(bool cold);
+    virtual void load_config(SystemData *sd) override;
+    virtual void reset(bool cold) override;
     void sort_cache();
-    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
+    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     void add_cache_entry(MapperCacheEntry * cache, unsigned int * cache_items, MapperRange * range);
 
     unsigned int read(unsigned int address);

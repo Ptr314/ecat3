@@ -140,13 +140,15 @@ bool Interface::neg_edge()
 
 //----------------------- class DeviceManager -------------------------------//
 
-DeviceManager::DeviceManager()
+DeviceManager::DeviceManager(Logger *l)
 {
     registered_devices_count = 0;
 
     device_count = 2;
     error_message = "";
     error_device = nullptr;
+
+    logger = l;
 }
 
 DeviceManager::~DeviceManager()
@@ -262,6 +264,20 @@ void DeviceManager::error_clear()
     error_device = nullptr;
 }
 
+void DeviceManager::logs(QString s)
+{
+    if (logger != nullptr)
+    {
+        CPU * cpu = dynamic_cast<CPU*>(get_device(0)->device);
+
+        if (cpu != nullptr)
+        {
+            QString out = QString("%1: ").arg(cpu->get_pc(), 4, 16, QChar('0')) + s;
+            logger->logs(out);
+        } else
+            logger->logs(s);
+    }
+}
 
 //----------------------- class InterfaceManager -------------------------------//
 
@@ -422,6 +438,11 @@ void ComputerDevice::memory_callback([[maybe_unused]] unsigned int callback_id, 
 void ComputerDevice::reset([[maybe_unused]] bool cold)
 {
     //Does nothing by default, but may be overridden
+}
+
+void ComputerDevice::logs(QString s)
+{
+    im->dm->logs(this->name + ": " + s);
 }
 
 //----------------------- class AddressableDevice -------------------------------//

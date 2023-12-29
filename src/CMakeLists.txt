@@ -2,12 +2,24 @@ cmake_minimum_required(VERSION 3.16)
 
 project(eCat3 VERSION 3.0.0 LANGUAGES C CXX)
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOUIC ON)
-
 set(LOG_8080 0)
 set(EXTERNAL_Z80 1)
-set(LOG_Z80 1)
+set(LOG_Z80 0)
+
+set(LOGGER 1)
+
+if (${LOGGER})
+    if (${EXTERNAL_Z80})
+        set(LOG_NAME "Z80_EXT")
+    else()
+        set(LOG_NAME "LOG")
+    endif()
+    set(LOG_LIMIT 100000)
+    set(LOG_8255 1)
+endif()
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOUIC ON)
 
 configure_file (globals.h.in ${CMAKE_CURRENT_SOURCE_DIR}/globals.h @ONLY)
 
@@ -32,7 +44,7 @@ if (${EXTERNAL_Z80})
     set(Z80_FILES
         libs/z80.hpp
     )
-elseif()
+else()
     set(Z80_FILES
         emulator/devices/cpu/z80_context.h
         emulator/devices/cpu/z80core.h emulator/devices/cpu/z80core.cpp
@@ -92,6 +104,8 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     tests/zexall.asm
     tests/i8253_test.asm
     tests/i8080.asm
+
+    emulator/logger.h
 
     ${Z80_FILES}
 )

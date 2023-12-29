@@ -32,13 +32,18 @@ Emulator::Emulator(QString work_path, QString data_path, QString software_path, 
     loaded(false),
     busy(false),
     local_counter(0),
-    clock_counter(0)
+    clock_counter(0),
+    logger(nullptr)
 {
     qDebug() << "INI path: " + ini_file;
     settings = new QSettings (ini_file, QSettings::IniFormat);
     use_threads = (read_setup("Startup", "threads", "1") == "1");
 
     connect(this, &Emulator::finished, this, &Emulator::stop_emulation, Qt::DirectConnection);
+
+#ifdef LOGGER
+    logger = new Logger(LOG_NAME);
+#endif
 }
 
 QString Emulator::read_setup(QString section, QString ident, QString def_val)
@@ -63,7 +68,7 @@ void Emulator::load_config(QString file_name)
         loaded = false;
     }
 
-    dm = new DeviceManager();
+    dm = new DeviceManager(logger);
     im = new InterfaceManager(dm);
 
     register_devices();
@@ -286,6 +291,11 @@ Emulator::~Emulator()
 {
     delete im;
     delete dm;
+
+#ifdef LOGGER
+    delete logger;
+#endif
+
 }
 
 SDL_Surface *  Emulator::get_surface()
@@ -297,6 +307,13 @@ void Emulator::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 {
     display->get_screen_constraints(sx, sy);
 }
+
+#ifdef LOGGER
+void Emulator::logs(ComputerDevice * d, QString s)
+{
+    if (logger != nullptr) logger->logs(d->name + ": " + s);
+}
+#endif
 
 void Emulator::register_devices()
 {

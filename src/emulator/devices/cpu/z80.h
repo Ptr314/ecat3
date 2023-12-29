@@ -1,7 +1,6 @@
 #ifndef z80main_H
 #define z80main_H
 
-//#define EXTERNAL_Z80
 //#define LOG_Z80 1
 
 #include "emulator/core.h"

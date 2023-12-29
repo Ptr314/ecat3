@@ -11,6 +11,10 @@
 #include "core.h"
 #include "emulator/devices/common/keyboard.h"
 
+#ifdef LOGGER
+#include "logger.h"
+#endif
+
 class Emulator: public QThread
 {
     Q_OBJECT
@@ -60,6 +64,7 @@ public:
     bool loaded;
     bool use_threads;
 
+
     Emulator(QString work_path, QString data_path, QString software_path, QString ini_file);
     ~Emulator();
 
@@ -90,6 +95,12 @@ public slots:
     void stop_emulation();
 
 signals:
+
+private:
+    Logger * logger;
+public:
+    void logs(ComputerDevice * d, QString s);
+
 
 };
 

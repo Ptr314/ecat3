@@ -11,4 +11,11 @@
 #cmakedefine EXTERNAL_Z80
 #cmakedefine LOG_Z80
 
+#cmakedefine LOGGER
+#cmakedefine LOG_NAME "@LOG_NAME@"
+#cmakedefine LOG_LIMIT @LOG_LIMIT@
+
+#cmakedefine LOG_8255
+
+
 #endif // GLOBALS_H_IN
