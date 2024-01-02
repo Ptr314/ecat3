@@ -1147,7 +1147,7 @@ unsigned int z80core::execute_command()
         case 6:
             //00_YYY_110
             //LD DDD, d
-            get_first_8(YYY, &address, &cycles);        //Just to get an address for [IX/IY + d]
+            if (context.global_prefix !=0 && YYY==6) get_first_8(YYY, &address, &cycles);        //Just to get an address for [IX/IY + d]
             T.b.L = next_byte();
             store_value_8(YYY, address, T.b.L, &cycles);
             break;
@@ -1228,7 +1228,7 @@ unsigned int z80core::execute_command()
         } else {
             //LD DDD, SSS
             T.b.L = get_first_8(ZZZ, &address, &cycles, YYY == 0b110);
-            get_first_8(YYY, &address, &cycles);                        // Just to get an address for [IX, IY + d]
+            if (context.global_prefix !=0 && YYY==6) get_first_8(YYY, &address, &cycles);                        // Just to get an address for [IX, IY + d]
             store_value_8(YYY, address, T.b.L, &cycles, ZZZ == 0b110);
         }
         break;
