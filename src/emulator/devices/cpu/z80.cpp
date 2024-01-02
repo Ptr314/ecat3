@@ -83,22 +83,10 @@ z80::z80(InterfaceManager *im, EmulatorConfigDevice *cd):
     over_commands.push_back(0xED);
     over_commands.push_back(0xFD);
 
-#ifdef LOG_Z80
-#ifdef EXTERNAL_Z80
-    logger = new CPULogger(this, CPU_LOGGER_Z80, core_ext, "Z80_EXT");
-#else
-    logger = new CPULogger(this, CPU_LOGGER_Z80, core->get_context(), "Z80_MY");
-#endif
-#endif
-
 }
 
 z80::~z80()
-{
-#ifdef LOG_Z80
-    delete logger;
-#endif
-}
+{}
 
 unsigned int z80::get_pc()
 {
@@ -123,8 +111,8 @@ void z80::write_mem(unsigned int address, unsigned int data)
 unsigned int z80::read_port(unsigned int address)
 {
     unsigned int data = mm->read_port(address);
-#ifdef LOG_Z80
-    logger->logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')));
+#ifdef LOG_CPU
+    logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')));
 #endif
     return data;
 }
@@ -132,8 +120,8 @@ unsigned int z80::read_port(unsigned int address)
 void z80::write_port(unsigned int address, unsigned int data)
 {
     mm->write_port(address, data);
-#ifdef LOG_Z80
-    logger->logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')));
+#ifdef LOG_CPU
+    logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')));
 #endif
 }
 
@@ -211,21 +199,14 @@ unsigned int z80::execute()
     if (debug == DEBUG_STOPPED)
         return 10;
 
-#ifdef LOG_Z80
-    static bool do_log = false;
-    static unsigned int log_count = 0;
-#ifndef EXTERNAL_Z80
-    //z80context * context = core->get_context();
-    //uint8_t log_cmd = core->get_command();
-    //uint16_t address = core->get_pc();
-#else
-#endif
+#ifdef LOG_CPU
     uint8_t log_cmd = get_command();
-    uint16_t address = get_pc();
+    bool do_log = true;
+    //uint16_t address = get_pc();
 
     //do_log = (address < 0xF800) && (log_count++ < 2000000);
-    do_log = log_count++ < 100000;
-    if (do_log) logger->log_state(log_cmd, true);
+    //do_log = log_count++ < 100000;
+    if (do_log) log_state(log_cmd, true);
 #endif
 
 #ifndef EXTERNAL_Z80
@@ -234,8 +215,8 @@ unsigned int z80::execute()
     unsigned int cycles = core_ext->execute(1);
 #endif
 
-#ifdef LOG_Z80
-    if (do_log) logger->log_state(log_cmd, false, cycles);
+#ifdef LOG_CPU
+    if (do_log) log_state(log_cmd, false, cycles);
 #endif
 
 
@@ -295,6 +276,41 @@ void z80::interface_callback(unsigned int callback_id, unsigned int new_value, u
         break;
     }
 }
+
+#ifdef LOG_CPU
+void z80::log_state(uint8_t command, bool before, unsigned int cycles)
+{
+    if (log_available())
+    {
+#ifndef EXTERNAL_Z80
+        z80context * c = static_cast<z80context*>(core->get_context());
+        logs(
+            QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
+            + QString(" AF:%1").arg(c->registers.reg_pairs.AF, 4, 16, QChar('0'))
+            + QString(" BC:%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0'))
+            + QString(" DE:%1").arg(c->registers.reg_pairs.DE, 4, 16, QChar('0'))
+            + QString(" HL:%1").arg(c->registers.reg_pairs.HL, 4, 16, QChar('0'))
+            + QString(" SP:%1").arg(c->registers.regs.SP, 4, 16, QChar('0'))
+            + QString(" IX:%1").arg(c->registers.reg_pairs.IX, 4, 16, QChar('0'))
+            + QString(" IY:%1").arg(c->registers.reg_pairs.IY, 4, 16, QChar('0'))
+        );
+#else
+        Z80 * c = static_cast<Z80*>(core_ext);
+        logs(
+            QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
+            + QString(" AF:%1%2").arg(c->reg.pair.A, 2, 16, QChar('0')).arg(c->reg.pair.F, 2, 16, QChar('0'))
+            + QString(" BC:%1%2").arg(c->reg.pair.B, 2, 16, QChar('0')).arg(c->reg.pair.C, 2, 16, QChar('0'))
+            + QString(" DE:%1%2").arg(c->reg.pair.D, 2, 16, QChar('0')).arg(c->reg.pair.E, 2, 16, QChar('0'))
+            + QString(" HL:%1%2").arg(c->reg.pair.H, 2, 16, QChar('0')).arg(c->reg.pair.L, 2, 16, QChar('0'))
+            + QString(" SP:%1").arg(c->reg.SP, 4, 16, QChar('0'))
+            + QString(" IX:%1").arg(c->reg.IX, 4, 16, QChar('0'))
+            + QString(" IY:%1").arg(c->reg.IY, 4, 16, QChar('0'))
+            );
+#endif
+    }
+}
+#endif
+
 
 ComputerDevice * create_z80(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new z80(im, cd);

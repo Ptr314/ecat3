@@ -27,9 +27,14 @@ public:
         log_name(log_name)
     {}
 
+    bool log_available()
+    {
+        return logged_count < LOG_LIMIT;
+    }
+
     void logs(QString s)
     {
-        if (logged_count < LOG_LIMIT)
+        if (log_available())
         {
             log += s + "\x0D\x0A";
             logged_count++;

@@ -279,6 +279,11 @@ void DeviceManager::logs(QString s)
     }
 }
 
+bool DeviceManager::log_available()
+{
+    return (logger != nullptr) && logger->log_available();
+}
+
 //----------------------- class InterfaceManager -------------------------------//
 
 InterfaceManager::InterfaceManager(DeviceManager *dm):interfaces_count(0), dm(dm){}
@@ -443,6 +448,11 @@ void ComputerDevice::reset([[maybe_unused]] bool cold)
 void ComputerDevice::logs(QString s)
 {
     im->dm->logs(this->name + ": " + s);
+}
+
+bool ComputerDevice::log_available()
+{
+    return im->dm->log_available();
 }
 
 //----------------------- class AddressableDevice -------------------------------//

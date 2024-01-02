@@ -7,15 +7,14 @@
 #define VERSION_PATCH "@PROJECT_VERSION_PATCH@"
 #define PROJECT_VERSION "@PROJECT_VERSION@"
 
-#cmakedefine LOG_8080
 #cmakedefine EXTERNAL_Z80
-#cmakedefine LOG_Z80
 
 #cmakedefine LOGGER
 #cmakedefine LOG_NAME "@LOG_NAME@"
 #cmakedefine LOG_LIMIT @LOG_LIMIT@
 
 #cmakedefine LOG_8255
+#cmakedefine LOG_CPU
 
 
 #endif // GLOBALS_H_IN

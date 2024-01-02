@@ -7,15 +7,14 @@
 #define VERSION_PATCH "0"
 #define PROJECT_VERSION "3.0.0"
 
-/* #undef LOG_8080 */
-#define EXTERNAL_Z80
-/* #undef LOG_Z80 */
+/* #undef EXTERNAL_Z80 */
 
-#define LOGGER
-#define LOG_NAME "Z80_EXT"
-#define LOG_LIMIT 100000
+/* #undef LOGGER */
+/* #undef LOG_NAME */
+/* #undef LOG_LIMIT */
 
-#define LOG_8255
+/* #undef LOG_8255 */
+/* #undef LOG_CPU */
 
 
 #endif // GLOBALS_H_IN

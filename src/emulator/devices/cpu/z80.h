@@ -1,8 +1,6 @@
 #ifndef z80main_H
 #define z80main_H
 
-//#define LOG_Z80 1
-
 #include "emulator/core.h"
 
 #ifndef EXTERNAL_Z80
@@ -10,11 +8,6 @@
 #else
 #include "libs/z80.hpp"
 #endif
-
-#ifdef LOG_Z80
-#include "cpulogger.h"
-#endif
-
 
 //using namespace z80;
 
@@ -52,15 +45,14 @@ private:
     Z80 * core_ext;
 #endif
 
-#ifdef LOG_Z80
-    CPULogger * logger;
-#endif
-
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
-
 
 protected:
     virtual unsigned int get_pc() override;
+
+#ifdef LOG_CPU
+    virtual void log_state(uint8_t command, bool before, unsigned int cycles=0) override;
+#endif
 
 public:
     z80(InterfaceManager *im, EmulatorConfigDevice *cd);

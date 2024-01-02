@@ -2,11 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 
 project(eCat3 VERSION 3.0.0 LANGUAGES C CXX)
 
-set(LOG_8080 0)
-set(EXTERNAL_Z80 1)
-set(LOG_Z80 0)
+set(EXTERNAL_Z80 0)
 
-set(LOGGER 1)
+set(LOGGER 0)
 
 if (${LOGGER})
     if (${EXTERNAL_Z80})
@@ -14,8 +12,9 @@ if (${LOGGER})
     else()
         set(LOG_NAME "LOG")
     endif()
-    set(LOG_LIMIT 100000)
+    set(LOG_LIMIT 300000)
     set(LOG_8255 1)
+    set(LOG_CPU 1)
 endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

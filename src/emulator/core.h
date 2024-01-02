@@ -131,6 +131,7 @@ protected:
     ComputerDevice * memory_callback_device;
 
     void logs(QString s);
+    bool log_available();
 
 };
 
@@ -244,6 +245,7 @@ public:
     void register_device(QString device_type, CreateDeviceFunc func); //
 
     void logs(QString s);
+    bool log_available();
 
 private:
     DeviceDescription devices[100];
@@ -325,6 +327,8 @@ protected:
     Interface * i_address;
     Interface * i_data;
     bool reset_mode;
+
+    virtual void log_state(uint8_t command, bool before, unsigned int cycles=0){};
 
 public:
     unsigned int clock;

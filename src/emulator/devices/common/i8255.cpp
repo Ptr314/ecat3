@@ -18,6 +18,7 @@ I8255::I8255(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 void I8255::reset(bool cold)
 {
+    if (cold) memset(&registers, 0, sizeof(registers));
     registers[3] = 0;
     i_port_a->set_mode(MODE_R);
     i_port_b->set_mode(MODE_R);
@@ -29,7 +30,7 @@ unsigned int I8255::get_value(unsigned int address)
 {
     uint8_t data = registers[address & 0b11];
 #ifdef LOG_8255
-    logs(QString("R %1:%2").arg(address & 0b11).arg(data, 2, 16, QChar('0')));
+    if (log_available()) logs(QString("R %1:%2").arg(address & 0b11).arg(data, 2, 16, QChar('0')));
 #endif
     return data;
 }
@@ -101,7 +102,7 @@ void I8255::set_value(unsigned int address, unsigned int value)
         break;
     }
 #ifdef LOG_8255
-    logs(QString("W %1:%2").arg(n).arg(value, 2, 16, QChar('0')));
+    if (log_available()) logs(QString("W %1:%2").arg(n).arg(value, 2, 16, QChar('0')));
 #endif
 
 }
