@@ -1,6 +1,6 @@
 # eCat v3
 
-[![GitHub version](https://badge.fury.io/gh/conventional-changelog%2Fstandard-version.svg)](https://badge.fury.io/gh/conventional-changelog%2Fstandard-version)
+[![GitHub Release](https://img.shields.io/github/release/ptr314/ecat3.svg?style=flat)]() 
 
 eCat &ndash; универсальный эмулятор 8-разрядных компьютеров.
 
