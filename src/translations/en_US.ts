@@ -2,9 +2,24 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US">
 <context>
+    <name>About</name>
+    <message>
+        <location filename="../dialogs/aboutdlg.ui" line="+14"/>
+        <location filename="../../build/eCat3_autogen/include/dialogs/ui_aboutdlg.h" line="+102"/>
+        <source>About</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+63"/>
+        <location filename="../../build/eCat3_autogen/include/dialogs/ui_aboutdlg.h" line="+2"/>
+        <source>Copyright</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+679"/>
+        <location filename="../emulator/core.cpp" line="+713"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17,10 +32,11 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location line="-367"/>
+        <location line="-380"/>
         <location line="+50"/>
         <location line="+5"/>
         <location line="+3"/>
+        <location filename="../emulator/devices/common/generator.h" line="+60"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -40,6 +56,11 @@
         <source>Incorrect connection for %1:%2</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../emulator/devices/common/generator.h" line="+0"/>
+        <source>Incorrect polarity for %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DebugWindow</name>
@@ -50,7 +71,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+91"/>
+        <location line="+94"/>
         <location/>
         <source>Return to PC</source>
         <translation type="unfinished"></translation>
@@ -72,51 +93,55 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+17"/>
+        <location/>
         <source>Trace into [F7]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+17"/>
+        <location/>
         <source>Step over [F8]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+17"/>
+        <location/>
         <source>Go to cursor [F4]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+17"/>
+        <location/>
         <source>Run under debugger [F9]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+17"/>
         <location/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+17"/>
         <location/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+72"/>
         <location/>
         <source>Add a breakpoint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+17"/>
         <location/>
         <source>Delete breakpoint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+29"/>
         <location/>
         <source>Set value</source>
         <translation type="unfinished"></translation>
@@ -125,7 +150,7 @@
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-171"/>
+        <location filename="../emulator/core.cpp" line="-190"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -235,23 +260,23 @@
     <name>FDD</name>
     <message>
         <location filename="../emulator/devices/common/fdd.cpp" line="+38"/>
-        <location line="+13"/>
-        <location line="+24"/>
+        <location line="+9"/>
+        <location line="+23"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-37"/>
+        <location line="-32"/>
         <source>Incorrect fdd parameters for &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+9"/>
         <source>Disk image file &apos;%1&apos; not found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+23"/>
         <source>Incorrect disk image size for &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -274,14 +299,14 @@
 <context>
     <name>I8255</name>
     <message>
-        <location filename="../emulator/devices/common/i8255.cpp" line="+41"/>
-        <location line="+62"/>
+        <location filename="../emulator/devices/common/i8255.cpp" line="+51"/>
+        <location line="+66"/>
         <source>i8255:A is in an unsupported mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-50"/>
-        <location line="+56"/>
+        <location line="-54"/>
+        <location line="+60"/>
         <source>i8255:B is in an unsupported mode</source>
         <translation type="unfinished"></translation>
     </message>
@@ -343,7 +368,7 @@
 <context>
     <name>Interface</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-132"/>
+        <location filename="../emulator/core.cpp" line="-134"/>
         <source>Interface &apos;%1&apos; is in OFF state, writing is impossible</source>
         <translation type="unfinished"></translation>
     </message>
@@ -351,7 +376,7 @@
 <context>
     <name>InterfaceManager</name>
     <message>
-        <location line="+193"/>
+        <location line="+214"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -366,14 +391,14 @@
     <message>
         <location filename="../mainwindow.ui" line="+20"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+178"/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+182"/>
         <source>MainWindow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+68"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+15"/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+16"/>
         <source>File</source>
         <translation type="unfinished"></translation>
     </message>
@@ -399,7 +424,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+6"/>
         <location/>
         <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Display</source>
@@ -414,7 +439,7 @@
     <message>
         <location line="+41"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="-19"/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="-20"/>
         <source>Select a machine...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -454,9 +479,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-56"/>
+        <location line="+5"/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
+        <source>About...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-61"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="-11"/>
+        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="-13"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -481,13 +512,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+145"/>
-        <location line="+268"/>
+        <location filename="../mainwindow.cpp" line="+146"/>
+        <location line="+275"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-265"/>
+        <location line="-272"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -507,7 +538,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+206"/>
+        <location line="+208"/>
         <source>Open XML File 1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -517,7 +548,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+37"/>
+        <location line="+42"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -555,7 +586,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+545"/>
+        <location filename="../emulator/core.cpp" line="+558"/>
         <location filename="../emulator/devices/common/page_mapper.h" line="+45"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
@@ -645,7 +676,8 @@
 <context>
     <name>ROM</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-279"/>
+        <location filename="../emulator/core.cpp" line="-285"/>
+        <location line="+6"/>
         <location line="+28"/>
         <location line="+7"/>
         <location filename="../emulator/files.h" line="+21"/>
@@ -655,7 +687,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-35"/>
+        <location line="-41"/>
+        <source>File &apos;%1&apos; not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <location filename="../emulator/files.h" line="+0"/>
         <source>Error reading HEX file %1</source>
         <translation type="unfinished"></translation>

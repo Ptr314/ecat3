@@ -35,6 +35,7 @@
         <file alias="eject">resources/icons/player_eject.png</file>
         <file alias="cdrom_unmount">resources/icons/cdrom_unmount.png</file>
         <file alias="file_save">resources/icons/3floppy_unmount.png</file>
+        <file alias="logo">resources/icons/Emuverse3.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>

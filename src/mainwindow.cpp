@@ -10,6 +10,7 @@
 #include "mainwindow.h"
 #include "qevent.h"
 #include "ui_mainwindow.h"
+#include "dialogs/ui_aboutdlg.h"
 #include "emulator/debug.h"
 #include "emulator/files.h"
 #include "dialogs/dumpwindow.h"
@@ -520,5 +521,21 @@ void MainWindow::on_actionScreenshot_triggered()
         error = lodepng::encode(png, image, sx, sy);
         lodepng::save_file(png, file_name.toUtf8().constData());
     }
+}
+
+
+void MainWindow::on_actionAbout_triggered()
+{
+    QDialog * about = new QDialog(this);
+
+    Ui_About aboutUi;
+    aboutUi.setupUi(about);
+
+    aboutUi.info_label->setText(
+        aboutUi.info_label->text().replace("{$PROJECT_VERSION}", PROJECT_VERSION)
+    );
+
+
+    about->exec();
 }
 

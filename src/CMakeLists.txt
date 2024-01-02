@@ -107,6 +107,8 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/logger.h
 
     ${Z80_FILES}
+    dialogs/aboutdlg.ui
+
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
