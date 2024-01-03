@@ -1,11 +1,11 @@
-# Настройка окружения для компиляции приложения
+# Настройка окружения и компиляция приложения
 
 ## Windows
 
 ### MINGW
 
 #### 1. Установить программы
-* https://www.qt.io/download-qt-installer (прямая ссылка https://download.qt.io/) и установить следующие компоненты:
+* https://download.qt.io/, скачать online-инсталятор (возможно, понадобится зарубежный VPN) и установить следующие компоненты:
     * Qt Creator
     * Mingw 11.2
     * cmake
@@ -40,13 +40,12 @@ cmake --install .
 * __Edit/Preferences/Kits/Kits/Add__ &ndash; Qt version из предыдущего пункта.
 
 #### 4. Собрать release-версию приложения
+* Перейти в настройку компиляции из предыдущего пункта (Projects/Build & Run/Static Kit/Build)
+* Выбрать вариант "Build configuration" &ndash; "Release". 
+* Установить целевую директорию для компиляции "репозиторий-приложения\build-release" (Build directory).
 * Скомпилировать приложение с помощью Kit из предыдущего пункта по варианту Release.
-* Поместить в одну директорию exe и файлы данных.
-* Перенести туда же файлы:
-    * SDL2.dll (из SDL2)
-    * libgcc_s_seh-1.dll (из Qt-mingw)
-    * libstdc++-6.dll
-    * libwinpthread-1.dll
+* Перейти в директорию .build, проверить пути в файле build-win.bat, затем очистить директорию release/windows и запустить bat-файл.
+* Убедиться, что в директории release/windows появился zip-архив с полным содержимым.
 
 ### MSVC
 * Скачать "Build Tools for Visual Studio XXXX" https://visualstudio.microsoft.com/downloads/
