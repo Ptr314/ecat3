@@ -1,6 +1,8 @@
 # Руководство пользователя
 ## Главное окно
-<center><img src="screenshots/main_window.png" width="600"></center>
+<p align="center">
+<img src="screenshots/main_window.png" width="600">
+</p>
 
 ## Основные операции
 
