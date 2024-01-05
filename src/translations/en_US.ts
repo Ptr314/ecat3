@@ -5,13 +5,14 @@
     <name>About</name>
     <message>
         <location filename="../dialogs/aboutdlg.ui" line="+14"/>
-        <location filename="../../build/eCat3_autogen/include/dialogs/ui_aboutdlg.h" line="+102"/>
+        <location/>
+        <location filename="../../build-debug/eCat3_autogen/include/dialogs/ui_aboutdlg.h" line="+111"/>
         <source>About</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+63"/>
-        <location filename="../../build/eCat3_autogen/include/dialogs/ui_aboutdlg.h" line="+2"/>
+        <location filename="../../build-debug/eCat3_autogen/include/dialogs/ui_aboutdlg.h" line="+2"/>
         <source>Copyright</source>
         <translation type="unfinished"></translation>
     </message>
@@ -196,6 +197,97 @@
         <location line="+79"/>
         <location/>
         <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Emulator</name>
+    <message>
+        <location filename="../emulator/files.cpp" line="+18"/>
+        <location line="+18"/>
+        <location line="+38"/>
+        <location line="+8"/>
+        <location line="+10"/>
+        <location line="+5"/>
+        <location line="+9"/>
+        <location line="+11"/>
+        <location line="+17"/>
+        <location line="+18"/>
+        <location line="+53"/>
+        <location line="+15"/>
+        <location line="+9"/>
+        <location line="+5"/>
+        <location line="+6"/>
+        <location line="+14"/>
+        <location line="+33"/>
+        <location line="+56"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-325"/>
+        <source>Unable to find an expected preamble byte 0xE6!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>Unable to find a RAM page to store data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+38"/>
+        <location line="+60"/>
+        <location line="+71"/>
+        <source>Error reading %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-123"/>
+        <source>File is smaller than expected!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <location line="+5"/>
+        <source>Unable to find an expected finalization byte 0xE6!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Error reading CRC bytes!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>The file was loaded, but its checksum is incorrect!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>Error reading HEX file %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+68"/>
+        <location line="+9"/>
+        <location line="+5"/>
+        <location line="+6"/>
+        <source>Error reading preamble data!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Error reading header data!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+33"/>
+        <source>Can&apos;t load the file: all ramdisks are full!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+56"/>
+        <source>Unknown file type</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -389,136 +481,134 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../mainwindow.ui" line="+20"/>
-        <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+182"/>
         <source>MainWindow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+68"/>
+        <location filename="../mainwindow.ui" line="+88"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+16"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+198"/>
         <source>File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+9"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Emulation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Devices</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+16"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+6"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+12"/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+41"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="-20"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-20"/>
         <source>Select a machine...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+41"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+5"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+5"/>
         <source>Open...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+9"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Debugger</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>Open debugger</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+9"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>Screenshot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>Get a screenshot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+5"/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
+        <location/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>About...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="-61"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="-13"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-13"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+9"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Cold restart</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+9"/>
         <location/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Soft restart</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+5"/>
-        <location filename="../../build/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Device_one</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+146"/>
-        <location line="+275"/>
+        <location filename="../mainwindow.cpp" line="+149"/>
+        <location line="+283"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-272"/>
+        <location line="-280"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -538,7 +628,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+208"/>
+        <location line="+216"/>
         <source>Open XML File 1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -663,12 +753,10 @@
 <context>
     <name>QMessageBox</name>
     <message>
-        <location filename="../emulator/files.h" line="+29"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Unable to find a RAM page to store data</source>
         <translation type="unfinished"></translation>
     </message>
@@ -680,9 +768,6 @@
         <location line="+6"/>
         <location line="+28"/>
         <location line="+7"/>
-        <location filename="../emulator/files.h" line="+21"/>
-        <location line="+19"/>
-        <location line="+18"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -693,7 +778,6 @@
     </message>
     <message>
         <location line="+6"/>
-        <location filename="../emulator/files.h" line="+0"/>
         <source>Error reading HEX file %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -708,8 +792,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/files.h" line="-37"/>
-        <location line="+19"/>
         <source>Error reading %1</source>
         <translation type="unfinished"></translation>
     </message>

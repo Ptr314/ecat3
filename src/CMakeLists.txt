@@ -82,13 +82,13 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     dialogs/openconfigwindow.h dialogs/openconfigwindow.cpp dialogs/openconfigwindow.ui
     emulator/devices/common/wd1793.h emulator/devices/common/wd1793.cpp
     emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp
-    libs/crc16.h
+    libs/crc16.h libs/crc16.cpp
     emulator/devices/cpu/cpulogger.h
     emulator/devices/common/i8257.h
     emulator/devices/common/i8275.h
     emulator/devices/common/i8275display.h
     emulator/devices/common/i8253.h
-    emulator/files.h
+    emulator/files.h emulator/files.cpp
     emulator/devices/common/register.h
     libs/lodepng/lodepng.cpp libs/lodepng/lodepng.h
     emulator/devices/cpu/z80.h
@@ -106,9 +106,9 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
 
     emulator/logger.h
 
-    ${Z80_FILES}
     dialogs/aboutdlg.ui
 
+    ${Z80_FILES}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

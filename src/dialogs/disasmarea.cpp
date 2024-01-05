@@ -4,8 +4,8 @@
 
 #include "emulator/utils.h"
 #include "dialogs/dialogs.h"
-#include "disasmarea.h"
 #include "libs/crc16.h"
+#include "disasmarea.h"
 
 DisAsmArea::DisAsmArea(QWidget *parent)
     : DOSFrame{parent},

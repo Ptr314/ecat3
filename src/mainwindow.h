@@ -90,5 +90,7 @@ private:
 
     void CreateDevicesMenu();
     void CreateFDDMenu(unsigned int n);
+
+    void setTitle();
 };
 #endif // MAINWINDOW_H

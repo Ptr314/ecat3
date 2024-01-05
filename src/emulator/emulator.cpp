@@ -315,6 +315,11 @@ void Emulator::logs(ComputerDevice * d, QString s)
 }
 #endif
 
+SystemData * Emulator::get_system_data()
+{
+    return &sd;
+}
+
 void Emulator::register_devices()
 {
     dm->register_device("ram", create_ram);

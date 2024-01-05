@@ -8,6 +8,7 @@
 
 #include "dialogs/i8255window.h"
 #include "mainwindow.h"
+#include "emulator/utils.h"
 #include "qevent.h"
 #include "ui_mainwindow.h"
 #include "dialogs/ui_aboutdlg.h"
@@ -121,6 +122,8 @@ MainWindow::MainWindow(QWidget *parent)
     QString file_to_load = e->read_setup("Startup", "default", "");
 
     e->load_config(work_path + file_to_load);
+
+    setTitle();
 
     CreateDevicesMenu();
 
@@ -327,6 +330,12 @@ void MainWindow::on_action_Select_a_machine_triggered()
     w->show();
 }
 
+void MainWindow::setTitle()
+{
+    SystemData * sd = e->get_system_data();
+    setWindowTitle("eCat: " + sd->system_name + " : " + sd->system_version);
+}
+
 void MainWindow::load_config(QString file_name, bool set_default)
 {
     if (e->loaded)
@@ -337,6 +346,8 @@ void MainWindow::load_config(QString file_name, bool set_default)
         e->wait();
 
         e->load_config(file_name);
+
+        setTitle();
 
         CreateDevicesMenu();
 

@@ -83,6 +83,8 @@ public:
     SDL_Surface * get_surface();
     void get_screen_constraints(unsigned int * sx, unsigned int * sy);
 
+    SystemData * get_system_data();
+
 public slots:
     void timer_proc();
     void render_screen();
