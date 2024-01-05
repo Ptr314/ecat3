@@ -26,6 +26,10 @@
 
 #define MM_CONFIG               1
 
+#define SCREEN_RATIO_43         0
+#define SCREEN_RATIO_SQ         1
+
+
 
 class DeviceManager;
 class InterfaceManager;

@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include <QWidgetAction>
 #include <QPushButton>
+#include <QActionGroup>
 
 #include "dialogs/i8255window.h"
 #include "mainwindow.h"
@@ -123,9 +124,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     e->load_config(work_path + file_to_load);
 
-    setTitle();
+    set_title();
 
     CreateDevicesMenu();
+
+    CreateScreenMenu();
 
     QString sound_volume = e->read_setup("Startup", "volume", "50");
     volume->setValue(sound_volume.toInt());
@@ -183,6 +186,22 @@ void MainWindow::CreateFDDMenu(unsigned int n)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::CreateScreenMenu()
+{
+    ui->menuScale->clear();
+    QActionGroup * scale_group = new QActionGroup(ui->menuScale);
+
+    for (unsigned int i=1; i <= 5; i++)
+    {
+        QAction * a = ui->menuScale->addAction(
+            QString::number(i) + "x",
+            [this, i=i]{e->set_scale(i);}
+            );
+        a->setActionGroup(scale_group);
+        a->setCheckable(true);
+    };
 }
 
 void MainWindow::CreateDevicesMenu()
@@ -330,7 +349,7 @@ void MainWindow::on_action_Select_a_machine_triggered()
     w->show();
 }
 
-void MainWindow::setTitle()
+void MainWindow::set_title()
 {
     SystemData * sd = e->get_system_data();
     setWindowTitle("eCat: " + sd->system_name + " : " + sd->system_version);
@@ -347,7 +366,7 @@ void MainWindow::load_config(QString file_name, bool set_default)
 
         e->load_config(file_name);
 
-        setTitle();
+        set_title();
 
         CreateDevicesMenu();
 

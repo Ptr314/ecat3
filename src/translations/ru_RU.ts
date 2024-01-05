@@ -491,7 +491,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+88"/>
         <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+198"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+246"/>
         <source>File</source>
         <translation>Файл</translation>
     </message>
@@ -524,7 +524,19 @@
         <translation>Экран</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+4"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <source>Scale</source>
+        <translation>Масштаб</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <source>Screen ratio</source>
+        <translation>Соотношение сторон</translation>
+    </message>
+    <message>
+        <location line="+16"/>
         <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
@@ -532,7 +544,7 @@
     <message>
         <location line="+41"/>
         <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-20"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-30"/>
         <source>Select a machine...</source>
         <translation>Выбор компьютера...</translation>
     </message>
@@ -580,13 +592,61 @@
 </translation>
     </message>
     <message>
+        <location line="+8"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <source>1x</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <source>2x</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <source>3x</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <source>4x</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <source>4:3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <source>Square pixel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <source>Scale_one</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <source>Ratio one</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Select a machine</source>
         <translation type="vanished">Выбрать компьютер...</translation>
     </message>
     <message>
-        <location line="-61"/>
+        <location line="-119"/>
         <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-13"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-21"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
@@ -611,13 +671,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+149"/>
-        <location line="+283"/>
+        <location filename="../mainwindow.cpp" line="+152"/>
+        <location line="+299"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-280"/>
+        <location line="-296"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -637,7 +697,7 @@
         <translation>Сохранить образ...</translation>
     </message>
     <message>
-        <location line="+216"/>
+        <location line="+232"/>
         <source>Open XML File 1</source>
         <translation type="unfinished"></translation>
     </message>

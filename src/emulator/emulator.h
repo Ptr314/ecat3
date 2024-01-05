@@ -47,6 +47,7 @@ private:
     SDL_Surface  * device_surface = nullptr;
     QTimer * render_timer;
     SDL_Rect render_rect;
+    SDL_Texture * black_box = nullptr;
 
     unsigned int screen_sx;
     unsigned int screen_sy;
@@ -84,6 +85,9 @@ public:
     void get_screen_constraints(unsigned int * sx, unsigned int * sy);
 
     SystemData * get_system_data();
+
+    void set_scale(int scale);
+    void set_ratio(int ratio);
 
 public slots:
     void timer_proc();

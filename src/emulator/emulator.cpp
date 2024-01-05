@@ -218,10 +218,19 @@ void Emulator::init_video(void *p)
     //window_surface = SDL_GetWindowSurface(SDLWindowRef);
     device_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_sx, screen_sy, 32, SDL_PIXELFORMAT_RGBA8888);
     d->set_surface(device_surface);
+
+    black_box = SDL_CreateTexture(SDLRendererRef, SDL_PIXELFORMAT_RGBA8888,
+                                               SDL_TEXTUREACCESS_STREAMING, 100, 100);
+    unsigned char* black_bytes = nullptr;
+    int pitch = 0;
+    SDL_LockTexture(black_box, nullptr, reinterpret_cast<void**>(&black_bytes), &pitch);
+    memset(black_bytes, 0, 100*100*4);
+    SDL_UnlockTexture(black_box);
 }
 
 void Emulator::stop_video()
 {
+    SDL_DestroyTexture(black_box);
     SDL_FreeSurface(device_surface);
     //SDL_FreeSurface(window_surface);
     SDL_DestroyRenderer(SDLRendererRef);
@@ -243,6 +252,9 @@ void Emulator::render_screen()
 
         device_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_sx, screen_sy, 32, SDL_PIXELFORMAT_RGBA8888);
         display->set_surface(device_surface);
+
+        // We need to blank old screen contents
+        SDL_RenderCopy(SDLRendererRef, black_box, NULL, NULL);
     }
 
     display->validate();
@@ -319,6 +331,21 @@ SystemData * Emulator::get_system_data()
 {
     return &sd;
 }
+
+void Emulator::set_scale(int scale)
+{
+    screen_scale = scale;
+    screen_sx = 0;
+}
+
+void Emulator::set_ratio(int ratio)
+{
+    if (ratio == SCREEN_RATIO_SQ)
+        pixel_scale = 1;
+    else
+        pixel_scale = (4.0 / 3.0) / ((double)screen_sx / (double)screen_sy);
+}
+
 
 void Emulator::register_devices()
 {
