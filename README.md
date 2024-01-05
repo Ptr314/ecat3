@@ -4,13 +4,17 @@
 
 eCat &ndash; универсальный эмулятор 8-разрядных компьютеров.
 
-* [Руководство пользователя](MANUAL.md)
-* [Документация по настройке](CONFIG.md)
-* [История версий](HISTORY.md)
-
 <p align="center">
 <img src="screenshots/main_window.png" width="600">
 </p>
+
+<hr>
+
+* [Руководство пользователя](MANUAL.md)
+* [Документация по настройке](CONFIG.md)
+* [История версий](HISTORY.md)
+* [Emuverse.ru](https://emuverse.ru) &ndash; энциклопедия эмуляции на русском языке.
+
 
 
 
