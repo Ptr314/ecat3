@@ -46,6 +46,8 @@ OpenConfigWindow::~OpenConfigWindow()
 
 void OpenConfigWindow::list_machines(QString work_path)
 {
+    bool load_debugs = e->read_setup("Startup", "show_debug_versions", "0") == "1";
+
     QStandardItemModel * model = new QStandardItemModel();
     QStandardItem * node = model->invisibleRootItem();
 
@@ -59,31 +61,37 @@ void OpenConfigWindow::list_machines(QString work_path)
             EmulatorConfig * config = new EmulatorConfig(fi.absoluteFilePath());
             EmulatorConfigDevice * system = config->get_device("system");
 
-            QString type = system->get_parameter("type").value;
-            QString name = system->get_parameter("name").value;
-            QString version = system->get_parameter("version", false).value;
+            bool is_debug = system->get_parameter("debug", false).value == "1";
 
-            int index = -1;
-            for (int i = 0; i < node->rowCount(); i++)
-                if (node->child(i)->data().toString() == type)
-                {
-                    index = i;
-                    break;
-                }
-            ComputerFamily * family;
-            if (index < 0)
+            if (!is_debug || load_debugs)
             {
-                family = new ComputerFamily(type, name);
-                node->appendRow(family);
-            } else
-                family = dynamic_cast<ComputerFamily*>(node->child(index));
 
-            //qDebug() << "DATA:" << family->data().toString();
+                QString type = system->get_parameter("type").value;
+                QString name = system->get_parameter("name").value;
+                QString version = (is_debug?"* ":"") + system->get_parameter("version", false).value;
 
-            ComputerModel * computer = new ComputerModel(type, name, (!version.isEmpty())?version:name, fi.absoluteFilePath());
-            family->appendRow(computer);
+                int index = -1;
+                for (int i = 0; i < node->rowCount(); i++)
+                    if (node->child(i)->data().toString() == type)
+                    {
+                        index = i;
+                        break;
+                    }
+                ComputerFamily * family;
+                if (index < 0)
+                {
+                    family = new ComputerFamily(type, name);
+                    node->appendRow(family);
+                } else
+                    family = dynamic_cast<ComputerFamily*>(node->child(index));
 
-            //qDebug() << "DATA:" << computer->data().toString();
+                //qDebug() << "DATA:" << family->data().toString();
+
+                ComputerModel * computer = new ComputerModel(type, name, (!version.isEmpty())?version:name, fi.absoluteFilePath());
+                family->appendRow(computer);
+
+                //qDebug() << "DATA:" << computer->data().toString();
+            }
 
             delete config;
         }
