@@ -50,11 +50,6 @@ void O128Display::memory_callback(unsigned int callback_id, unsigned int address
     }
 }
 
-void O128Display::get_screen(bool required)
-{
-    //TODO: O128Display: Implement (or remove)
-}
-
 void O128Display::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 {
     *sx = this->sx;
@@ -109,10 +104,9 @@ void O128Display::render_byte(unsigned int address)
                 c1 = ((c >> k) & 0x01) | mode0;
                 p1 = offset + (7-k)*4;
                 base = static_cast<Uint8 *>(render_pixels) + line*line_bytes + p1;
-                //TODO: comment this
-                base[0] = Orion128_MonoColors[c1][2];
-                base[1] = Orion128_MonoColors[c1][1];
-                base[2] = Orion128_MonoColors[c1][0];
+                //base[0] = Orion128_MonoColors[c1][2];
+                //base[1] = Orion128_MonoColors[c1][1];
+                //base[2] = Orion128_MonoColors[c1][0];
                 *(uint32_t*)base = SDL_MapRGB(surface->format, Orion128_MonoColors[c1][0], Orion128_MonoColors[c1][1], Orion128_MonoColors[c1][2]);
             }
         } else {

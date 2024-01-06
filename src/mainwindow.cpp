@@ -128,15 +128,17 @@ MainWindow::MainWindow(QWidget *parent)
 
     CreateDevicesMenu();
 
-    CreateScreenMenu();
 
-    QString sound_volume = e->read_setup("Startup", "volume", "50");
+
+    QString sound_volume = e->read_setup("Sound", "volume", "50");
     volume->setValue(sound_volume.toInt());
 
-    QString muted = e->read_setup("Startup", "muted", "0");
+    QString muted = e->read_setup("Sound", "muted", "0");
     mute->setChecked(muted.toInt() == 1);
 
     e->init_video((void*)(ui->screen->winId()));
+
+    CreateScreenMenu();
 
     //qDebug() << "Main thread id: " << QCoreApplication::instance()->thread()->currentThreadId();
     if (e->use_threads)
@@ -202,6 +204,42 @@ void MainWindow::CreateScreenMenu()
         a->setActionGroup(scale_group);
         a->setCheckable(true);
     };
+
+    ui->menuScreen_ratio->clear();
+    QActionGroup * ratio_group = new QActionGroup(ui->menuScreen_ratio);
+    QAction * a1 = ui->menuScreen_ratio->addAction(
+        Emulator::tr("Screen 4:3"),
+        [this]{e->set_ratio(SCREEN_RATIO_43);}
+        );
+    a1->setActionGroup(ratio_group);
+    a1->setCheckable(true);
+    QAction * a2 = ui->menuScreen_ratio->addAction(
+        Emulator::tr("Square pixels"),
+        [this]{e->set_ratio(SCREEN_RATIO_SQ);}
+        );
+    a2->setActionGroup(ratio_group);
+    a2->setCheckable(true);
+
+    ui->menuFiltering->clear();
+    QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);
+    QAction * af1 = ui->menuFiltering->addAction(
+        Emulator::tr("Nearest pixel"),
+        [this]{e->set_filtering(SCREEN_FILTERING_NONE);}
+        );
+    af1->setActionGroup(filtering_group);
+    af1->setCheckable(true);
+    QAction * af2 = ui->menuFiltering->addAction(
+        Emulator::tr("Linear"),
+        [this]{e->set_filtering(SCREEN_FILTERING_LINEAR);}
+        );
+    af2->setActionGroup(filtering_group);
+    af2->setCheckable(true);
+    QAction * af3 = ui->menuFiltering->addAction(
+        Emulator::tr("Anisotropic"),
+        [this]{e->set_filtering(SCREEN_FILTERING_ANISOTROPIC);}
+        );
+    af3->setActionGroup(filtering_group);
+    af3->setCheckable(true);
 }
 
 void MainWindow::CreateDevicesMenu()
@@ -328,14 +366,14 @@ void MainWindow::on_action_Soft_restart_triggered()
 
 void MainWindow::set_volume(int value)
 {
-    e->write_setup("Startup", "volume", QString::number(value));
+    e->write_setup("Sound", "volume", QString::number(value));
     emit send_volume(value);
     //e->set_volume(value);
 }
 
 void MainWindow::set_mute(bool muted)
 {
-    e->write_setup("Startup", "muted", QString::number(muted?1:0));
+    e->write_setup("Sound", "muted", QString::number(muted?1:0));
     emit send_muted(muted);
     //e->set_muted(muted);
     volume->setEnabled(!muted);
@@ -345,7 +383,7 @@ void MainWindow::on_action_Select_a_machine_triggered()
 {
     QDialog * w = new OpenConfigWindow(this, e);
     w->setAttribute(Qt::WA_DeleteOnClose);
-    connect(w, SIGNAL(load_config(QString, bool)), this, SLOT(load_config(QString, bool)));
+    connect(w, SIGNAL(load_config(QString,bool)), this, SLOT(load_config(QString,bool)));
     w->show();
 }
 
@@ -392,8 +430,8 @@ void MainWindow::load_config(QString file_name, bool set_default)
 void MainWindow::on_actionOpen_triggered()
 {
     QString path = e->read_setup("Startup", "last_path", e->work_path);
-    //TODO: Open specified files only?
-    QString file_name = QFileDialog::getOpenFileName(this, tr("Open XML File 1"), path, tr("All Files (*.*)"));
+    SystemData * sd = e->get_system_data();
+    QString file_name = QFileDialog::getOpenFileName(this, Emulator::tr("Load a file"), path, sd->allowed_files);
 
 
     if (!file_name.isEmpty()) {

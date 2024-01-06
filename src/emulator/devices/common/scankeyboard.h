@@ -13,7 +13,6 @@ struct ScanData {
 
 class ScanKeyboard: public Keyboard
 {
-    //TODO: ScanKeyboard: Implement
 private:
     Interface * i_scan;
     Interface * i_output;

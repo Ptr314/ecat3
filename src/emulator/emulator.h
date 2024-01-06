@@ -51,8 +51,10 @@ private:
 
     unsigned int screen_sx;
     unsigned int screen_sy;
-    double screen_scale;
+    double screen_scale = 1;
     double pixel_scale;
+    int screen_ratio = SCREEN_RATIO_43;
+    int screen_filtering = 0;
 
     void register_devices();
 
@@ -88,6 +90,7 @@ public:
 
     void set_scale(int scale);
     void set_ratio(int ratio);
+    void set_filtering(int filtering);
 
 public slots:
     void timer_proc();

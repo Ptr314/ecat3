@@ -12,6 +12,7 @@
     </message>
     <message>
         <location line="+63"/>
+        <location/>
         <location filename="../../build-debug/eCat3_autogen/include/dialogs/ui_aboutdlg.h" line="+2"/>
         <source>Copyright</source>
         <translation type="unfinished"></translation>
@@ -290,6 +291,36 @@
         <source>Unknown file type</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../mainwindow.cpp" line="+211"/>
+        <source>Screen 4:3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Square pixels</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Nearest pixel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Linear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Anisotropic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+196"/>
+        <source>Load a file</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>EmulatorConfig</name>
@@ -487,7 +518,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+88"/>
         <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+246"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+225"/>
         <source>File</source>
         <translation type="unfinished"></translation>
     </message>
@@ -521,18 +552,27 @@
     </message>
     <message>
         <location line="+4"/>
+        <location/>
         <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Scale</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+6"/>
+        <location/>
         <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Screen ratio</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+6"/>
+        <location/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <source>Filtering</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+17"/>
         <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
@@ -540,7 +580,7 @@
     <message>
         <location line="+41"/>
         <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-30"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-26"/>
         <source>Select a machine...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -587,44 +627,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
-        <source>1x</source>
+        <location line="+15"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+3"/>
+        <source>Filter one</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
-        <source>2x</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
-        <source>3x</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
-        <source>4x</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
-        <source>4:3</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
-        <source>Square pixel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <location line="-10"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-2"/>
         <source>Scale_one</source>
         <translation type="unfinished"></translation>
     </message>
@@ -635,9 +645,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-119"/>
+        <location line="-71"/>
         <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-21"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-15"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -662,13 +672,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+152"/>
-        <location line="+299"/>
+        <location filename="../mainwindow.cpp" line="-280"/>
+        <location line="+335"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-296"/>
+        <location line="-332"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -688,17 +698,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+232"/>
-        <source>Open XML File 1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+0"/>
         <source>All Files (*.*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="+310"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>

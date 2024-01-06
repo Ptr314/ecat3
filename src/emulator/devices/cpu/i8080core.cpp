@@ -121,7 +121,6 @@ static const uint8_t CONDITIONS[8][2] = {
 
 i8080core::i8080core()
 {
-    //TODO: 8080 core constructor
     context.registers.regs.PC = 0;
     context.halted = false;
     context.int_enable = 0;

@@ -7,7 +7,6 @@ ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     Keyboard(im, cd),
     keys_count(0)
 {
-    //TODO: ScanKeyboard: Impelement
     i_scan =   create_interface(8, "scan", MODE_R, SCAN_CALLBACK);
     i_output = create_interface(8, "output", MODE_W);
     i_shift =  create_interface(1, "shift", MODE_W);

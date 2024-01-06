@@ -134,9 +134,16 @@
      </property>
      <addaction name="actionRatio_one"/>
     </widget>
+    <widget class="QMenu" name="menuFiltering">
+     <property name="title">
+      <string>Filtering</string>
+     </property>
+     <addaction name="actionFilter_one"/>
+    </widget>
     <addaction name="actionScreenshot"/>
     <addaction name="menuScale"/>
     <addaction name="menuScreen_ratio"/>
+    <addaction name="menuFiltering"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEmulation"/>
@@ -260,54 +267,6 @@
     <string>About...</string>
    </property>
   </action>
-  <action name="action1x">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>1x</string>
-   </property>
-  </action>
-  <action name="action2x">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>2x</string>
-   </property>
-  </action>
-  <action name="action3x">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>3x</string>
-   </property>
-  </action>
-  <action name="action4x">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>4x</string>
-   </property>
-  </action>
-  <action name="action4_3">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>4:3</string>
-   </property>
-  </action>
-  <action name="actionSquare_pixel">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Square pixel</string>
-   </property>
-  </action>
   <action name="actionScale_one">
    <property name="text">
     <string>Scale_one</string>
@@ -316,6 +275,11 @@
   <action name="actionRatio_one">
    <property name="text">
     <string>Ratio one</string>
+   </property>
+  </action>
+  <action name="actionFilter_one">
+   <property name="text">
+    <string>Filter one</string>
    </property>
   </action>
  </widget>

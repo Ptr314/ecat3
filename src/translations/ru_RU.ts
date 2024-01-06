@@ -12,9 +12,10 @@
     </message>
     <message>
         <location line="+63"/>
+        <location/>
         <location filename="../../build-debug/eCat3_autogen/include/dialogs/ui_aboutdlg.h" line="+2"/>
         <source>Copyright</source>
-        <translation type="unfinished"></translation>
+        <translation>Copyright</translation>
     </message>
 </context>
 <context>
@@ -290,6 +291,36 @@
         <source>Unknown file type</source>
         <translation>Неизвестный тип файла</translation>
     </message>
+    <message>
+        <location filename="../mainwindow.cpp" line="+211"/>
+        <source>Screen 4:3</source>
+        <translation>Экран 4:3</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Square pixels</source>
+        <translation>Квадратные пиксели</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Nearest pixel</source>
+        <translation>Ближайший пиксель</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Linear</source>
+        <translation>Линейное</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Anisotropic</source>
+        <translation>Анизотропное</translation>
+    </message>
+    <message>
+        <location line="+196"/>
+        <source>Load a file</source>
+        <translation>Загрузить файл</translation>
+    </message>
 </context>
 <context>
     <name>EmulatorConfig</name>
@@ -491,7 +522,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+88"/>
         <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+246"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+225"/>
         <source>File</source>
         <translation>Файл</translation>
     </message>
@@ -525,18 +556,27 @@
     </message>
     <message>
         <location line="+4"/>
+        <location/>
         <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Scale</source>
         <translation>Масштаб</translation>
     </message>
     <message>
         <location line="+6"/>
+        <location/>
         <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Screen ratio</source>
         <translation>Соотношение сторон</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+6"/>
+        <location/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <source>Filtering</source>
+        <translation>Сглаживание</translation>
+    </message>
+    <message>
+        <location line="+17"/>
         <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
@@ -544,7 +584,7 @@
     <message>
         <location line="+41"/>
         <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-30"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-26"/>
         <source>Select a machine...</source>
         <translation>Выбор компьютера...</translation>
     </message>
@@ -588,48 +628,17 @@
         <location/>
         <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>About...</source>
-        <translation>О программе...
-</translation>
+        <translation>О программе...</translation>
     </message>
     <message>
-        <location line="+8"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
-        <source>1x</source>
+        <location line="+15"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+3"/>
+        <source>Filter one</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
-        <source>2x</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
-        <source>3x</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
-        <source>4x</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
-        <source>4:3</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
-        <source>Square pixel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
+        <location line="-10"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-2"/>
         <source>Scale_one</source>
         <translation type="unfinished"></translation>
     </message>
@@ -644,9 +653,9 @@
         <translation type="vanished">Выбрать компьютер...</translation>
     </message>
     <message>
-        <location line="-119"/>
+        <location line="-71"/>
         <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-21"/>
+        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-15"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
@@ -671,13 +680,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+152"/>
-        <location line="+299"/>
+        <location filename="../mainwindow.cpp" line="-280"/>
+        <location line="+335"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-296"/>
+        <location line="-332"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -697,17 +706,11 @@
         <translation>Сохранить образ...</translation>
     </message>
     <message>
-        <location line="+232"/>
-        <source>Open XML File 1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+0"/>
         <source>All Files (*.*)</source>
         <translation>Все файлы (*.*)</translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="+310"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>
@@ -807,7 +810,7 @@
     <message>
         <location filename="../dialogs/openconfigwindow.cpp" line="+109"/>
         <source>No any description file found for this machine</source>
-        <translation>Файл описания для данной конфигурации не найден.</translation>
+        <translation>Файл описания для данной конфигурации не найден</translation>
     </message>
 </context>
 <context>
@@ -893,17 +896,17 @@
     <message>
         <location line="+110"/>
         <source>Reading of more than one sector at once is not supported!</source>
-        <translation>Команда чтения нескольких секторов еще не поддерживается</translation>
+        <translation>Команда чтения нескольких секторов еще не поддерживается!</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>Writing of more than one sector at once is not supported!</source>
-        <translation>Команда записи нескольких секторов еще не поддерживается</translation>
+        <translation>Команда записи нескольких секторов еще не поддерживается!</translation>
     </message>
     <message>
         <location line="+29"/>
         <source>Force Interrupt command with parameters is not supported!</source>
-        <translation>Команда &apos;Force Interrupt&apos; с параметрами еще не поддерживается</translation>
+        <translation>Команда &apos;Force Interrupt&apos; с параметрами еще не поддерживается!</translation>
     </message>
 </context>
 </TS>

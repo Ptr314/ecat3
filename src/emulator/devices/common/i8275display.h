@@ -54,11 +54,6 @@ public:
         }
     }
 
-    virtual void get_screen(bool required) override
-    {
-        //TODO: 8275 Display: Implement (or remove)
-    }
-
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) override
     {
         *sx = this->sx;

@@ -1099,15 +1099,7 @@ GenericDisplay::GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     screen_valid(false),
     was_updated(true),
     render_pixels(nullptr)
-{
-    //TODO: Display constructor
-}
-
-//TODO: Cleanup
-//void Display::set_texture(SDL_Texture * texture)
-//{
-//    this->texture = texture;
-//}
+{}
 
 void GenericDisplay::set_surface(SDL_Surface * surface)
 {
@@ -1134,9 +1126,7 @@ Sound::Sound(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd),
     volume(100),
     muted(false)
-{
-    //TODO: Sound constructor
-}
+{}
 
 void Sound::set_volume(unsigned int volume)
 {

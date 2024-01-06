@@ -29,6 +29,11 @@
 #define SCREEN_RATIO_43         0
 #define SCREEN_RATIO_SQ         1
 
+#define SCREEN_FILTERING_NONE           0
+#define SCREEN_FILTERING_LINEAR         1
+#define SCREEN_FILTERING_ANISOTROPIC    2
+
+
 
 
 class DeviceManager;
@@ -436,7 +441,6 @@ public:
 
 class GenericDisplay: public ComputerDevice
 {
-    //TODO: Abstract Display
 private:
 protected:
     unsigned int sx = 0;
@@ -452,7 +456,7 @@ public:
     bool was_updated;               //Means we need to send surface to screen
 
     GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual void get_screen(bool required) = 0;
+    //virtual void get_screen(bool required) = 0;
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) = 0;
     virtual void reset(bool cold) override;
     virtual void set_surface(SDL_Surface * surface);

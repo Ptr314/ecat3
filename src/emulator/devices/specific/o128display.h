@@ -28,7 +28,6 @@ public:
 
     virtual void memory_callback(unsigned int callback_id, unsigned int address) override;
 
-    virtual void get_screen(bool required) override;
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
 };
 
