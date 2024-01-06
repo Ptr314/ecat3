@@ -203,8 +203,6 @@ void Emulator::init_video(void *p)
     //SDLWindowRef = SDL_CreateWindow("Screen", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1600, 1200, SDL_WINDOW_SHOWN | SDL_WINDOW_SKIP_TASKBAR);
     SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
 
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
-
     GenericDisplay * d = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display"));
 
     d->get_screen_constraints(&screen_sx, &screen_sy);
@@ -217,6 +215,10 @@ void Emulator::init_video(void *p)
         pixel_scale = 1;
     else
         pixel_scale = (4.0 / 3.0) / ((double)screen_sx / (double)screen_sy);
+
+    std::string s = std::to_string(screen_filtering);
+    char const *pchar = s.c_str();
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, pchar);
 
     render_rect.w = screen_sx * screen_scale * pixel_scale;
     render_rect.h = screen_sy * screen_scale;
@@ -361,6 +363,7 @@ void Emulator::set_ratio(int ratio)
 
 void Emulator::set_filtering(int filtering)
 {
+    screen_filtering = filtering;
     std::string s = std::to_string(filtering);
     char const *pchar = s.c_str();
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, pchar);
@@ -369,6 +372,22 @@ void Emulator::set_filtering(int filtering)
 
     write_setup("Video", "filtering", QString::number(filtering) );
 }
+
+int Emulator::get_scale()
+{
+    return round(screen_scale);
+}
+
+int Emulator::get_ratio()
+{
+    return screen_ratio;
+}
+
+int Emulator::get_filtering()
+{
+    return screen_filtering;
+}
+
 
 void Emulator::register_devices()
 {

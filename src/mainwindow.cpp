@@ -203,6 +203,7 @@ void MainWindow::CreateScreenMenu()
             );
         a->setActionGroup(scale_group);
         a->setCheckable(true);
+        a->setChecked(e->get_scale() == i);
     };
 
     ui->menuScreen_ratio->clear();
@@ -213,12 +214,14 @@ void MainWindow::CreateScreenMenu()
         );
     a1->setActionGroup(ratio_group);
     a1->setCheckable(true);
+    a1->setChecked(e->get_ratio() == SCREEN_RATIO_43);
     QAction * a2 = ui->menuScreen_ratio->addAction(
         Emulator::tr("Square pixels"),
         [this]{e->set_ratio(SCREEN_RATIO_SQ);}
         );
     a2->setActionGroup(ratio_group);
     a2->setCheckable(true);
+    a2->setChecked(e->get_ratio() == SCREEN_RATIO_SQ);
 
     ui->menuFiltering->clear();
     QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);
@@ -228,18 +231,23 @@ void MainWindow::CreateScreenMenu()
         );
     af1->setActionGroup(filtering_group);
     af1->setCheckable(true);
+    af1->setChecked(e->get_filtering() == SCREEN_FILTERING_NONE);
+
     QAction * af2 = ui->menuFiltering->addAction(
         Emulator::tr("Linear"),
         [this]{e->set_filtering(SCREEN_FILTERING_LINEAR);}
         );
     af2->setActionGroup(filtering_group);
     af2->setCheckable(true);
+    af2->setChecked(e->get_filtering() == SCREEN_FILTERING_LINEAR);
+
     QAction * af3 = ui->menuFiltering->addAction(
         Emulator::tr("Anisotropic"),
         [this]{e->set_filtering(SCREEN_FILTERING_ANISOTROPIC);}
         );
     af3->setActionGroup(filtering_group);
     af3->setCheckable(true);
+    af3->setChecked(e->get_filtering() == SCREEN_FILTERING_ANISOTROPIC);
 }
 
 void MainWindow::CreateDevicesMenu()

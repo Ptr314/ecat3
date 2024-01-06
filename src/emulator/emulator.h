@@ -92,6 +92,10 @@ public:
     void set_ratio(int ratio);
     void set_filtering(int filtering);
 
+    int get_scale();
+    int get_ratio();
+    int get_filtering();
+
 public slots:
     void timer_proc();
     void render_screen();
