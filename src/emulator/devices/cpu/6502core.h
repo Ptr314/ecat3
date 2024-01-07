@@ -14,10 +14,10 @@ struct mos6502context
     union {
         struct{
             uint8_t  PCL, PCH;
-        } re8;
+        } r8;
         struct {
             uint16_t PC;
-        } reg16;
+        } r16;
     };
     int type;
 };
@@ -32,19 +32,104 @@ const uint8_t F_B   = (1 << 4); //0x10
 const uint8_t F_P5  = (1 << 5); //0x20
 const uint8_t F_V   = (1 << 6); //0x40
 const uint8_t F_N   = (1 << 7); //0x80
+
 const uint8_t F_ALL = 0xFF;
+const uint8_t F_NZC = F_N + F_Z + F_C;
+const uint8_t F_NZ = F_N + F_Z;
 }
 
 #pragma pack()
 
 class mos6502core
 {
-private:
-
 protected:
+    typedef void (mos6502core::*_OPER_FUNC)(uint8_t, unsigned int *);
+
+    _OPER_FUNC commands[256];
+
+    // Documented
+    void _ADC(uint8_t command, unsigned int * cycles);
+    void _AND(uint8_t command, unsigned int * cycles);
+    void _ASL(uint8_t command, unsigned int * cycles);
+    void _BRANCH(uint8_t command, unsigned int * cycles);
+    void _BIT(uint8_t command, unsigned int * cycles);
+    void _BRK(uint8_t command, unsigned int * cycles);
+    void _CLC(uint8_t command, unsigned int * cycles);
+    void _CLD(uint8_t command, unsigned int * cycles);
+    void _CLI(uint8_t command, unsigned int * cycles);
+    void _CLV(uint8_t command, unsigned int * cycles);
+    void _CMP(uint8_t command, unsigned int * cycles);
+    void _CPX(uint8_t command, unsigned int * cycles);
+    void _CPY(uint8_t command, unsigned int * cycles);
+    void _DEC(uint8_t command, unsigned int * cycles);
+    void _DEX(uint8_t command, unsigned int * cycles);
+    void _DEY(uint8_t command, unsigned int * cycles);
+    void _EOR(uint8_t command, unsigned int * cycles);
+    void _INC(uint8_t command, unsigned int * cycles);
+    void _INX(uint8_t command, unsigned int * cycles);
+    void _INY(uint8_t command, unsigned int * cycles);
+    void _JMP(uint8_t command, unsigned int * cycles);
+    void _JSR(uint8_t command, unsigned int * cycles);
+    void _LDA(uint8_t command, unsigned int * cycles);
+    void _LDX(uint8_t command, unsigned int * cycles);
+    void _LDY(uint8_t command, unsigned int * cycles);
+    void _LSR(uint8_t command, unsigned int * cycles);
+    void _NOP(uint8_t command, unsigned int * cycles);
+    void _ORA(uint8_t command, unsigned int * cycles);
+    void _PHA(uint8_t command, unsigned int * cycles);
+    void _PHP(uint8_t command, unsigned int * cycles);
+    void _PLA(uint8_t command, unsigned int * cycles);
+    void _PLP(uint8_t command, unsigned int * cycles);
+    void _ROL(uint8_t command, unsigned int * cycles);
+    void _ROR(uint8_t command, unsigned int * cycles);
+    void _RTI(uint8_t command, unsigned int * cycles);
+    void _RTS(uint8_t command, unsigned int * cycles);
+    void _SBC(uint8_t command, unsigned int * cycles);
+    void _SEC(uint8_t command, unsigned int * cycles);
+    void _SED(uint8_t command, unsigned int * cycles);
+    void _SEI(uint8_t command, unsigned int * cycles);
+    void _STA(uint8_t command, unsigned int * cycles);
+    void _STX(uint8_t command, unsigned int * cycles);
+    void _STY(uint8_t command, unsigned int * cycles);
+    void _TAX(uint8_t command, unsigned int * cycles);
+    void _TAY(uint8_t command, unsigned int * cycles);
+    void _TSX(uint8_t command, unsigned int * cycles);
+    void _TXA(uint8_t command, unsigned int * cycles);
+    void _TXS(uint8_t command, unsigned int * cycles);
+    void _TYA(uint8_t command, unsigned int * cycles);
+
+    // Undocumented
+    void __ANE(uint8_t command, unsigned int * cycles);
+    void __ANC(uint8_t command, unsigned int * cycles);
+    void __ANC2(uint8_t command, unsigned int * cycles);
+    void __ARR(uint8_t command, unsigned int * cycles);
+    void __ASR(uint8_t command, unsigned int * cycles);
+    void __DCP(uint8_t command, unsigned int * cycles);
+    void __ISB(uint8_t command, unsigned int * cycles);
+    void __LAS(uint8_t command, unsigned int * cycles);
+    void __LAX(uint8_t command, unsigned int * cycles);
+    void __LXA(uint8_t command, unsigned int * cycles);
+    void __RLA(uint8_t command, unsigned int * cycles);
+    void __RRA(uint8_t command, unsigned int * cycles);
+    void __SAX(uint8_t command, unsigned int * cycles);
+    void __SBX(uint8_t command, unsigned int * cycles);
+    void __SHA(uint8_t command, unsigned int * cycles);
+    void __SHS(uint8_t command, unsigned int * cycles);
+    void __SHX(uint8_t command, unsigned int * cycles);
+    void __SHY(uint8_t command, unsigned int * cycles);
+    void __SLO(uint8_t command, unsigned int * cycles);
+    void __SRE(uint8_t command, unsigned int * cycles);
+    void __KILL(uint8_t command, unsigned int * cycles);
+    void __NOP(uint8_t command, unsigned int * cycles);
+
     mos6502context context;
     uint8_t next_byte();
     uint8_t read_command();
+    void init_commands();
+    uint8_t get_operand(uint8_t command, unsigned int * cycles);
+    uint16_t get_address(uint8_t command, unsigned int * cycles);
+    void calc_flags(uint32_t value, uint32_t mask);
+    void set_flag(uint8_t flag, uint8_t value);
 
 public:
     mos6502core(int family_type);

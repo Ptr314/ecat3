@@ -65,7 +65,7 @@ QList<QPair<QString, QString>> mos6502::get_registers()
       << std::pair("S", QString("%1").arg(c->S, 2, 16, QChar('0')).toUpper())
       << std::pair("P", QString("%1").arg(c->P, 2, 16, QChar('0')).toUpper())
       << std::pair("-1", "")
-      << std::pair("PC", QString("%1").arg(c->reg16.PC, 4, 16, QChar('0')).toUpper())
+      << std::pair("PC", QString("%1").arg(c->r16.PC, 4, 16, QChar('0')).toUpper())
     ;
     return l;
 }
@@ -103,7 +103,7 @@ void mos6502::set_context_value(QString name, unsigned int value)
 
     if (name == "PC")
     {
-        c->reg16.PC = value;
+        c->r16.PC = value;
     }
 }
 
