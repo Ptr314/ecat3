@@ -1,0 +1,256 @@
+00 	BRK	1	Impl/immed
+01 n	ORA ($$n, X)	2	(indir,x)
+02 	*HALT	1	? /immed
+03 n	*SLO ($$n, X)	2	(indir,x)
+04 n	*NOP $$n	2	Zeropage
+05 n	ORA $$n	2	Zeropage
+06 n	ASL $$n	2	Zeropage
+07 n	*SLO $$n	2	Zeropage
+08 	PHP	1	Implied
+09 n	ORA #$$n	2	Immediate
+0A 	ASL A	1	Accu/impl
+0B n	*ANC #$$n	2	Immediate
+0C n n	*NOP $$nn	3	Absolute
+0D n n	ORA $$nn	3	Absolute
+0E n n	ASL $$nn	3	Absolute
+0F n n	*SLO $$nn	3	Absolute
+10 e	BPL $PC+$e	2	Relative
+11 n	ORA ($$n), Y	2	(indir),y
+12 	*HALT	1	?
+13 n	*SLO ($$n), Y	2	(indir),y
+14 n	*NOP $$n, X	2	Zeropage,x
+15 n	ORA $$n, X	2	Zeropage,x
+16 n	ASL $$n, X	2	Zeropage,x
+17 n	*SLO $$n, X	2	Zeropage,x
+18 	CLC	1	Implied
+19 n n	ORA $$nn, Y	3	Absolute,y
+1A 	*NOP	1	Implied
+1B n n	*SLO $$nn, Y	3	Absolute,y
+1C n n	*NOP $$nn, X	3	Absolute,x
+1D n n	ORA $$nn, X	3	Absolute,x
+1E n n	ASL $$nn, X	3	Absolute,x
+1F n n	*SLO $$nn, X	3	Absolute,x
+20 n n	JSR $$nn	3	Impl/immed
+21 n	AND ($$n, X) 	2	(indir,x)
+22 	*HALT	1	? /immed
+23 n	*RLA ($$n, X)	2	(indir,x)
+24 n	BIT $$n	2	Zeropage
+25 n	AND $$n	2	Zeropage
+26 n	ROL $$n	2	Zeropage
+27 n	*RLA $$n	2	Zeropage
+28 	PLP	1	Implied
+29 n	AND #$$n	2	Immediate
+2A 	ROL A	1	Accu/impl
+2B n	*ANC2 #$$n	2	Immediate
+2C n n	BIT $$nn	3	Absolute
+2D n n	AND $$nn	3	Absolute
+2E n n	ROL $$nn	3	Absolute
+2F n n	*RLA $$nn	3	Absolute
+30 e	BMI $PC+$e	2	Relative
+31 n	AND ($$n), Y 	2	(indir),y
+32 	*HALT	1	?
+33 n	*RLA ($$n), Y	2	(indir),y
+34 n	*NOP $$n, X	2	Zeropage,x
+35 n	AND $$n, X	2	Zeropage,x
+36 n	ROL $$n, X	2	Zeropage,x
+37 n	*RLA $$n, X	2	Zeropage,x
+38 	SEC	1	Implied
+39 n n	AND $$nn, Y	3	Absolute,y
+3A 	*NOP	1	Implied
+3B n n	*RLA $$nn, Y	3	Absolute,y
+3C n n	*NOP $$nn, X	3	Absolute,x
+3D n n	AND $$nn, X	3	Absolute,x
+3E n n	ROL $$nn, X	3	Absolute,x
+3F n n	*RLA $$nn, X	3	Absolute,x
+40 	RTI	1	Impl/immed
+41 n	EOR ($$n, X)	2	(indir,x)
+42 	*HALT	1	? /immed
+43 n	*SRE ($$n, X)	2	(indir,x)
+44 n	*NOP $$n	2	Zeropage
+45 n	EOR $$n	2	Zeropage
+46 n	LSR $$n	2	Zeropage
+47 n	*SRE $$n	2	Zeropage
+48 	PHA	1	Implied
+49 n	EOR #$$n	2	Immediate
+4A 	LSR A	1	Accu/impl
+4B n	*ASR #$$n	2	Immediate
+4C n n	JMP $$nn	3	Absolute
+4D n n	EOR $$nn	3	Absolute
+4E n n	LSR $$nn	3	Absolute
+4F n n	*SRE $$nn	3	Absolute
+50 e	BVC $PC+$e	2	Relative
+51 n	EOR ($$n), Y	2	(indir),y
+52 	*HALT	1	?
+53 n	*SRE ($$n), Y	2	(indir),y
+54 n	*NOP $$n, X	2	Zeropage,x
+55 n	EOR $$n, X	2	Zeropage,x
+56 n	LSR $$n, X	2	Zeropage,x
+57 n	*SRE $$n, X	2	Zeropage,x
+58 	CLI	1	Implied
+59 n n	EOR $$nn, Y	3	Absolute,y
+5A 	*NOP	1	Implied
+5B n n	*SRE $$nn, Y	3	Absolute,y
+5C n n	*NOP $$nn, X	3	Absolute,x
+5D n n	EOR $$nn, X	3	Absolute,x
+5E n n	LSR $$nn, X	3	Absolute,x
+5F n n	*SRE $$nn, X	3	Absolute,x
+60 	RTS	1	Impl/immed
+61 n	ADC ($$n, X) 	2	(indir,x)
+62 	*HALT	1	? /immed
+63 n	*RRA ($$n, X)	2	(indir,x)
+64 n	*NOP $$n	2	Zeropage
+65 n	ADC $$n	2	Zeropage
+66 n	ROR $$n	2	Zeropage
+67 n	*RRA $$n	2	Zeropage
+68 	PLA	1	Implied
+69 n	ADC #$$n	2	Immediate
+6A 	ROR A	1	Accu/impl
+6B n	*ARR #$$n	2	Immediate
+6C n n	JMP ($$nn)	3	Absolute
+6D n n	ADC $$nn	3	Absolute
+6E n n	ROR $$nn	3	Absolute
+6F n n	*RRA $$nn	3	Absolute
+70 e	BVS $PC+$e	2	Relative
+71 n	ADC ($$n), Y 	2	(indir),y
+72 	*HALT	1	?
+73 n	*RRA ($$n), Y	2	(indir),y
+74 n	*NOP $$n, X	2	Zeropage,x
+75 n	ADC $$n, X	2	Zeropage,x
+76 n	ROR $$n, X	2	Zeropage,x
+77 n	*RRA $$n, X	2	Zeropage,x
+78 	SEI	1	Implied
+79 n n	ADC $$nn, Y	3	Absolute,y
+7A 	*NOP	1	Implied
+7B n n	*RRA $$nn, Y	3	Absolute,y
+7C n n	*NOP $$nn, X	3	Absolute,x
+7D n n	ADC $$nn, X	3	Absolute,x
+7E n n	ROR $$nn, X	3	Absolute,x
+7F n n	*RRA $$nn, X	3	Absolute,x
+80 n	*NOP #$$n	2	Impl/immed
+81 n	STA ($$n, X)	2	(indir,x)
+82 n	*NOP #$$n	2	? /immed
+83 n	*SAX ($$n, X)	3	(indir,x)
+84 n	STY $$n	2	Zeropage
+85 n	STA $$n	2	Zeropage
+86 n	STX $$n	2	Zeropage
+87 n	*SAX $$n	2	Zeropage
+88 	DEY	1	Implied
+89 n	*NOP #$$n	2	Immediate
+8A 	TXA	1	Accu/impl
+8B n	*ANE #$$n	2	Immediate
+8C n n	STY $$nn	3	Absolute
+8D n n	STA $$nn	3	Absolute
+8E n n	STX $$nn	3	Absolute
+8F n n	*SAX $$nn	3	Absolute
+90 e	BCC $PC+$e	2	Relative
+91 n	STA ($$n), Y	2	(indir),y
+92 	*HALT	1	?
+93 n	*SHA ($$n, X)	2	(indir),y
+94 n	STY $$n, X	2	Zeropage,x
+95 n	STA $$n, X	2	Zeropage,x
+96 n	STX $$n, Y	2	Zeropage,x
+97 n	*SAX $$n, Y	2	Zeropage,x
+98 	TYA	1	Implied
+99 n n	STA $$nn, Y	3	Absolute,y
+9A 	TXS	1	Implied
+9B n n	*SHS $$nn, Y	3	Absolute,y
+9C n n	*SHY $$nn, X	3	Absolute,x
+9D n n	STA $$nn, X	3	Absolute,x
+9E n n	*SHX $$nn, Y	3	Absolute,x
+9F n n	*SHA $$nn, Y	3	Absolute,x
+A0 n	LDY #$$n	2	Impl/immed
+A1 n	LDA ($$n, X)	2	(indir,x)
+A2 n	LDX #$$n	2	? /immed
+A3 n	*LAX ($$n, Y)	2	(indir,x)
+A4 n	LDY $$n	2	Zeropage
+A5 n	LDA $$n	2	Zeropage
+A6 n	LDX $$n	2	Zeropage
+A7 n	*LAX $$n	2	Zeropage
+A8 	TAY	1	Implied
+A9 n	LDA #$$n	2	Immediate
+AA 	TAX	1	Accu/impl
+AB n	*LXA #$$n	2	Immediate
+AC n n	LDY $$nn	3	Absolute
+AD n n	LDA $$nn	3	Absolute
+AE n n	LDX $$nn	3	Absolute
+AF n n	*LAX $$nn	3	Absolute
+B0 e	BCS $PC+$e	2	Relative
+B1 n	LDA ($$n), Y	2	(indir),y
+B2 	*HALT	1	?
+B3 n	*LAX ($$n), Y	2	(indir),y
+B4 n	LDY $$n, X	2	Zeropage,x
+B5 n	LDA $$n, X	2	Zeropage,x
+B6 n	LDX $$n, Y	2	Zeropage,x
+B7 n	*LAX $$n, Y	2	Zeropage,x
+B8 	CLV	1	Implied
+B9 n n	LDA $$nn, Y	3	Absolute,y
+BA 	TSX	1	Implied
+BB n n	*LAS $$nn, Y	3	Absolute,y
+BC n n	LDY $$nn, X	3	Absolute,x
+BD n n	LDA $$nn, X	3	Absolute,x
+BE n n	LDX $$nn, Y	3	Absolute,x
+BF n n	*LAX $$nn, Y	3	Absolute,x
+C0 n	CPY #$$n	2	Impl/immed
+C1 n	CMP ($$n, X)	2	(indir,x)
+C2 n	*NOP #$$n	2	? /immed
+C3 n	*DCP ($$n, X)	2	(indir,x)
+C4 n	CPY $$n	2	Zeropage
+C5 n	CMP $$nn	2	Zeropage
+C6 n	DEC $$n	2	Zeropage
+C7 n	*DCP $$n	2	Zeropage
+C8 	INY	1	Implied
+C9 n	CMP #$$n	2	Immediate
+CA 	DEX	1	Accu/impl
+CB n	*SBX #$$n	2	Immediate
+CC n n	CPY $$nn	3	Absolute
+CD n n	CMP $$nn	3	Absolute
+CE n n	DEC $$nn	3	Absolute
+CF n n	*DCP $$nn	3	Absolute
+D0 e	BNE $PC+$e	2	Relative
+D1 n	CMP ($$n), Y	2	(indir),y
+D2 	*HALT	1	?
+D3 n	*DCP ($$n), Y	2	(indir),y
+D4 n	*NOP $$n, X	2	Zeropage,x
+D5 n	CMP $$n, X	2	Zeropage,x
+D6 n	DEC $$n, X	2	Zeropage,x
+D7 n	*DCP $$n, X	2	Zeropage,x
+D8 	CLD	1	Implied
+D9 n n	CMP $$nn, Y	3	Absolute,y
+DA 	*NOP	1	Implied
+DB n n	*DCP $$nn, Y	3	Absolute,y
+DC n n	*NOP $$nn, X	3	Absolute,x
+DD n n	CMP $$nn, X	3	Absolute,x
+DE n n	DEC $$nn, X	3	Absolute,x
+DF n n	*DCP $$nn, X	3	Absolute,x
+E0 n	CPX #$$n	2	Impl/immed
+E1 n	SBC ($$n, X)	2	(indir,x)
+E2 n	*NOP #$$n	2	? /immed
+E3 n	*ISB ($$n, X)	2	(indir,x)
+E4 n	CPX $$n	2	Zeropage
+E5 n	SBC $$n	2	Zeropage
+E6 n	INC $$n	2	Zeropage
+E7 n	*ISB $$n	2	Zeropage
+E8 	INX	1	Implied
+E9 n	SBC #$$n	2	Immediate
+EA 	NOP	1	Accu/impl
+EB n	*SBC #$$n	2	Immediate
+EC n n	CPX $$nn	3	Absolute
+ED n n	SBC $$nn	3	Absolute
+EE n n	INC $$nn	3	Absolute
+EF n n	*ISB $$nn	3	Absolute
+F0 e	BEQ $PC+$e	2	Relative
+F1 n	SBC ($$n), Y	2	(indir),y
+F2 	*HALT	1	?
+F3 n	*ISB ($$n), Y	2	(indir),y
+F4 n	*NOP $$n, X	2	Zeropage,x
+F5 n	SBC $$n, X	2	Zeropage,x
+F6 n	INC $$n, X	2	Zeropage,x
+F7 n	*ISB $$n, X	2	Zeropage,x
+F8 	SED	1	Implied
+F9 n n	SBC $$nn, Y	3	Absolute,y
+FA 	*NOP	1	Implied
+FB n n	*ISB $$nn, Y	3	Absolute,y
+FC n n	*NOP $$nn, X	3	Absolute,x
+FD n n	SBC $$nn, X	3	Absolute,x
+FE n n	INC $$nn, X	3	Absolute,x
+FF n n	*ISB $$nn, X	3	Absolute,x

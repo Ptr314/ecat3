@@ -27,6 +27,9 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     else
     if (d->type == "z80")
         file_name = e->data_path + "z80.dis";
+    else
+    if (d->type == "mos6502")
+        file_name = e->data_path + "6502.dis";
 
     disasm = new DisAsm(this, file_name);
     ui->codeview->set_data(e, dynamic_cast<CPU*>(d), disasm, dynamic_cast<CPU*>(d)->get_pc());

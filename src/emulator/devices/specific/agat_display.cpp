@@ -6,14 +6,16 @@ AgatDisplay::AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     // TODO: implement
 }
 
-void render_all(bool force_render)
+void AgatDisplay::render_all(bool force_render)
 {
     // TODO: implement
 }
 
-void get_screen_constraints(unsigned int * sx, unsigned int * sy)
+void AgatDisplay::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 {
     // TODO: implement
+    *sx = 100;
+    *sy = 200;
 }
 
 ComputerDevice * create_agat_display(InterfaceManager *im, EmulatorConfigDevice *cd)
