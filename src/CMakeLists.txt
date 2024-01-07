@@ -51,6 +51,7 @@ else()
 endif()
 
 qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
+    ${PROJECT_RESOURCES}
     dialogs/dumparea.cpp dialogs/dumparea.h
     dialogs/dumpwindow.cpp dialogs/dumpwindow.h dialogs/dumpwindow.ui
     dialogs/mmwindow.cpp dialogs/mmwindow.h dialogs/mmwindow.ui
@@ -68,7 +69,6 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/utils.cpp emulator/utils.h
     main.cpp
     mainwindow.cpp mainwindow.h mainwindow.ui
-    ${PROJECT_RESOURCES}
     emulator/devices/cpu/i8080_context.h
     emulator/devices/cpu/i8080core.h emulator/devices/cpu/i8080core.cpp
 #    emulator/devices/cpu/i8080core2.h emulator/devices/cpu/i8080core2.cpp
@@ -83,7 +83,7 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/devices/common/wd1793.h emulator/devices/common/wd1793.cpp
     emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp
     libs/crc16.h libs/crc16.cpp
-    emulator/devices/cpu/cpulogger.h
+    # emulator/devices/cpu/cpulogger.h
     emulator/devices/common/i8257.h
     emulator/devices/common/i8275.h
     emulator/devices/common/i8275display.h
@@ -107,6 +107,9 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/logger.h
 
     dialogs/aboutdlg.ui
+
+    emulator/devices/cpu/6502core.h emulator/devices/cpu/6502core.cpp
+    emulator/devices/cpu/6502.h emulator/devices/cpu/6502.cpp
 
     ${Z80_FILES}
 )

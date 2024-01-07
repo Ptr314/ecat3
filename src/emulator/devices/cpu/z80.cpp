@@ -77,7 +77,7 @@ z80::z80(InterfaceManager *im, EmulatorConfigDevice *cd):
     core_ext->reg.pair.A = core_ext->reg.pair.F = 0;
     core_ext->reg.SP = 0;
 #endif
-
+    //TODO: add new codes if expected
     over_commands.push_back(0xCD);
     over_commands.push_back(0xDD);
     over_commands.push_back(0xED);
