@@ -112,6 +112,8 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/devices/cpu/6502.h emulator/devices/cpu/6502.cpp
 
     ${Z80_FILES}
+    emulator/devices/specific/agat_fdc140.h emulator/devices/specific/agat_fdc140.cpp
+    emulator/devices/specific/agat_display.h emulator/devices/specific/agat_display.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
