@@ -29,21 +29,19 @@
 
 https://doc.qt.io/qt-6/windows-building.html
 
-* Отредактировать __.build/mingw-vars.cmd__ на действительные пути.
+* Отредактировать __.build/vars-mingw.cmd__ на действительные пути.
 * Открыть командную строку и скомпилировать Qt: 
 
 ~~~
 cd репозиторий-приложения\.build
-%SystemRoot%\system32\cmd.exe /E:ON /V:ON /k mingw-vars.cmd
+%SystemRoot%\system32\cmd.exe /E:ON /V:ON /k vars-mingw.cmd
 cd C:\Temp
 mkdir qt6-build
 cd qt6-build
-configure.bat -static
+configure.bat -static -release [-prefix путь-для-установки]
 cmake --build . --parallel
 cmake --install .
 ~~~
-
-* Запомнить, куда библиотека установилась (либо разобраться, как это изменить).
 
 #### 4. Настроить Qt Creator для использования статической сборки
 * __Edit/Preferences/Kits/Qt versions/Add__ &ndash; выбрать qmake.exe из статической сборки, Name: __"Qt %{Qt:Version} Static"__;

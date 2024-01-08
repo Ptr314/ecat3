@@ -8,7 +8,7 @@
 #define PROJECT_VERSION "3.0.0"
 
 /* #undef EXTERNAL_Z80 */
-
+#define CPU_STOPPED
 /* #undef LOGGER */
 /* #undef LOG_NAME */
 /* #undef LOG_LIMIT */

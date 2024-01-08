@@ -28,9 +28,14 @@ bool ReadHeader(QString file_name, unsigned int bytes, uint8_t * buffer, bool ha
 
 RAM * find_ram(Emulator * e)
 {
-    RAM * m;
-    m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram", false));
-    if (m==nullptr) m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram0"));
+    QStringList ram_names {"ram", "ram0", "ram1"};
+    RAM * m = nullptr;
+
+    for ( const auto& n : ram_names )
+    {
+        m = dynamic_cast<RAM*>(e->dm->get_device_by_name(n, false));
+        if (m != nullptr) break;
+    }
 
     if (m==nullptr)
         QMessageBox::warning(0, Emulator::tr("Error"), Emulator::tr("Unable to find a RAM page to store data"));

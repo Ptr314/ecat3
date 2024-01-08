@@ -6,6 +6,9 @@
 
 class Agat_FDC140 : public FDC
 {
+private:
+    Interface * i_select;
+
 public:
     Agat_FDC140(InterfaceManager *im, EmulatorConfigDevice *cd);
 

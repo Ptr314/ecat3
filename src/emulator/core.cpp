@@ -703,8 +703,11 @@ void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int 
 CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd),
     reset_mode(true),
+#ifdef CPU_STOPPED
+    debug(DEBUG_STOPPED),
+#else
     debug(DEBUG_OFF),
-//    debug(DEBUG_STOPPED),
+#endif
     break_count(0)
 {
     try {

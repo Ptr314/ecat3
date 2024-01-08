@@ -264,51 +264,56 @@ void MainWindow::CreateDevicesMenu()
         a->setEnabled( DWM->get_create_func(e->dm->get_device(i)->device_type) != nullptr );
     };
 
-    fdc = dynamic_cast<FDC*>(e->dm->get_device_by_name("fdc", false));
 
     fdds_found = 0;
-    for (unsigned int i=0; i<max_fdd_count; i++)
-    {
-        FDD * fdd = dynamic_cast<FDD*>(e->dm->get_device_by_name(QString("fdd%1").arg(i), false));
-        if (fdd != nullptr)
+
+    //TODO: change "fdc" from setup
+    fdc = dynamic_cast<FDC*>(e->dm->get_device_by_name("fdc", false));
+
+    if (fdc != nullptr) {
+        for (unsigned int i=0; i<max_fdd_count; i++)
         {
-            fdds[fdds_found] = fdd;
-            if (fdd->get_loaded())
+            FDD * fdd = dynamic_cast<FDD*>(e->dm->get_device_by_name(QString("fdd%1").arg(i), false));
+            if (fdd != nullptr)
             {
-                fdd_menu[fdds_found]->actions().at(0)->setText(fdd->file_name);
-                fdd_button[fdds_found]->setIcon(QIcon(":/icons/floppy_mount"));
-                if (fdds[fdds_found]->is_protected())
-                    fdd_button[fdds_found]->setIcon(QIcon(":/icons/floppy_locked"));
+                fdds[fdds_found] = fdd;
+                if (fdd->get_loaded())
+                {
+                    fdd_menu[fdds_found]->actions().at(0)->setText(fdd->file_name);
+                    fdd_button[fdds_found]->setIcon(QIcon(":/icons/floppy_mount"));
+                    if (fdds[fdds_found]->is_protected())
+                        fdd_button[fdds_found]->setIcon(QIcon(":/icons/floppy_locked"));
+                }
+                fdds_found++;
             }
-            fdds_found++;
         }
-    }
 
-    if (fdds_found > 0)
-    {
-        for (unsigned int i = 0; i < max_fdd_count; i++)
+        if (fdds_found > 0)
         {
-            if (fdds[i] != nullptr)
-                fdd_button[i]->setEnabled(true);
-            else
+            for (unsigned int i = 0; i < max_fdd_count; i++)
+            {
+                if (fdds[i] != nullptr)
+                    fdd_button[i]->setEnabled(true);
+                else
+                    fdd_button[i]->setEnabled(false);
+            }
+
+            if (fdd_timer == nullptr)
+            {
+                fdd_timer = new QTimer(this);
+                connect(fdd_timer, &QTimer::timeout, this, &MainWindow::update_fdds);
+            }
+            fdd_timer->start(100);
+        } else {
+            if (fdd_timer != nullptr) fdd_timer->stop();
+
+            for (unsigned int i = 0; i < max_fdd_count; i++)
+            {
+                fdd_button[i]->setIcon(QIcon(":/icons/floppy_unmount"));
                 fdd_button[i]->setEnabled(false);
-        }
+            }
 
-        if (fdd_timer == nullptr)
-        {
-            fdd_timer = new QTimer(this);
-            connect(fdd_timer, &QTimer::timeout, this, &MainWindow::update_fdds);
         }
-        fdd_timer->start(100);
-    } else {
-        if (fdd_timer != nullptr) fdd_timer->stop();
-
-        for (unsigned int i = 0; i < max_fdd_count; i++)
-        {
-            fdd_button[i]->setIcon(QIcon(":/icons/floppy_unmount"));
-            fdd_button[i]->setEnabled(false);
-        }
-
     }
 
     //TODO: Interface adaptation to a machine configuration

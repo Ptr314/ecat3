@@ -72,12 +72,14 @@ mos6502core::mos6502core(int family_type)
     memset(&context, 0, sizeof(context));
     context.type = family_type;
     init_commands();
+    calc_flags(0, F_ALL);
 }
 
 void mos6502core::reset()
 {
     REG_PCL = read_mem(0xFFFC);
     REG_PCH = read_mem(0xFFFD);
+    REG_S = 0xFF;
 }
 
 mos6502context * mos6502core::get_context()
@@ -511,7 +513,7 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int * cycles)
 
 inline void mos6502core::calc_flags(uint32_t value, uint32_t mask)
 {
-    uint8_t F = ZERO_SIGN_5[value & 0xFF] & ((value & 0x100) >> 8);
+    uint8_t F = ZERO_SIGN_5[value & 0xFF] | ((value & 0x100) >> 8);
     REG_P = (REG_P & ~mask) | (F & mask) | F_P5;
 }
 
@@ -588,11 +590,12 @@ void mos6502core::_BIT(uint8_t command, unsigned int * cycles)
 
 void mos6502core::_BRK(uint8_t command, unsigned int * cycles)
 {
+    //https://www.nesdev.org/the%20'B'%20flag%20&%20BRK%20instruction.txt
     write_mem(REG_S+0x100, REG_PCH);
     REG_S--;
     write_mem(REG_S+0x100, REG_PCL);
     REG_S--;
-    write_mem(REG_S+0x100, REG_P);
+    write_mem(REG_S+0x100, REG_P | F_B);
     REG_S--;
     set_flag(F_B+F_I, F_B+F_I);
     REG_PCL = read_mem(0xFFFE);
@@ -740,10 +743,11 @@ void mos6502core::_JSR(uint8_t command, unsigned int * cycles)
 {
     PartsRecLE T;
     T.b.L = next_byte();
+    uint16_t ret_PC = REG_PC;
     T.b.H = next_byte();
-    write_mem(REG_S+0x100, REG_PCH);
+    write_mem(REG_S+0x100, ret_PC >> 8);
     REG_S--;
-    write_mem(REG_S+0x100, REG_PCL);
+    write_mem(REG_S+0x100, ret_PC & 0xFF);
     REG_S--;
     REG_PC = T.w;
 }
@@ -836,7 +840,8 @@ void mos6502core::_PHA(uint8_t command, unsigned int * cycles)
 
 void mos6502core::_PHP(uint8_t command, unsigned int * cycles)
 {
-    write_mem(REG_S+0x100, REG_P);
+    //https://www.nesdev.org/the%20'B'%20flag%20&%20BRK%20instruction.txt
+    write_mem(REG_S+0x100, REG_P | F_B);
     REG_S--;
 }
 
@@ -844,12 +849,14 @@ void mos6502core::_PLA(uint8_t command, unsigned int * cycles)
 {
     REG_S++;
     REG_A = read_mem(REG_S+0x100);
+    calc_flags(REG_A, F_NZ);
 }
 
 void mos6502core::_PLP(uint8_t command, unsigned int * cycles)
 {
+    //https://www.nesdev.org/the%20'B'%20flag%20&%20BRK%20instruction.txt
     REG_S++;
-    REG_P = read_mem(REG_S+0x100) | F_P5;
+    REG_P = (read_mem(REG_S+0x100) & ~F_B) | FLAG_B | F_P5;
 }
 
 void mos6502core::_ROL(uint8_t command, unsigned int * cycles)
@@ -895,8 +902,9 @@ void mos6502core::_ROR(uint8_t command, unsigned int * cycles)
 
 void mos6502core::_RTI(uint8_t command, unsigned int * cycles)
 {
+    //https://www.nesdev.org/the%20'B'%20flag%20&%20BRK%20instruction.txt
     REG_S++;
-    REG_P = read_mem(REG_S+0x100);
+    REG_P = (read_mem(REG_S+0x100) & ~F_B) | FLAG_B | F_P5;
     REG_S++;
     REG_PCL = read_mem(REG_S+0x100);
     REG_S++;
@@ -909,6 +917,7 @@ void mos6502core::_RTS(uint8_t command, unsigned int * cycles)
     REG_PCL = read_mem(REG_S+0x100);
     REG_S++;
     REG_PCH = read_mem(REG_S+0x100);
+    REG_PC++;
 }
 
 void mos6502core::_SBC(uint8_t command, unsigned int * cycles)
