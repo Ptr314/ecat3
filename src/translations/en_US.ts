@@ -131,19 +131,62 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+72"/>
+        <location line="+73"/>
+        <source>Address for the debugger</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Go to</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+17"/>
         <location/>
         <source>Add a breakpoint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
+        <source>Delete a breakpoint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Register to set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+79"/>
+        <source>Address for the dump</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Go to for the dump</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Page down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Page up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Delete breakpoint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="-114"/>
         <location/>
         <source>Set value</source>
         <translation type="unfinished"></translation>
@@ -292,32 +335,32 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+211"/>
+        <location filename="../mainwindow.cpp" line="+212"/>
         <source>Screen 4:3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Square pixels</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Nearest pixel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+8"/>
         <source>Linear</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+8"/>
         <source>Anisotropic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+196"/>
+        <location line="+197"/>
         <source>Load a file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -672,13 +715,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-280"/>
-        <location line="+335"/>
+        <location filename="../mainwindow.cpp" line="-288"/>
+        <location line="+343"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-332"/>
+        <location line="-340"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -702,7 +745,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+310"/>
+        <location line="+318"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -800,7 +843,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+109"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+117"/>
         <source>No any description file found for this machine</source>
         <translation type="unfinished"></translation>
     </message>
@@ -863,7 +906,7 @@
 <context>
     <name>ScanKeyboard</name>
     <message>
-        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+45"/>
+        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+44"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>

@@ -14,7 +14,10 @@ DumpArea::DumpArea(QWidget *parent)
     : DOSFrame{parent},
     d(nullptr),
     start_address(0),
-    hilight_address(_FFFF)
+    hilight_address(_FFFF),
+    lines_count(0),
+    buffer_is_valid(false),
+    current_buffer(0)
 {
 //    QFont font(FONT_NAME, FONT_SIZE);
     QFontMetrics fm(*font);
@@ -51,7 +54,9 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
 
     if (d != nullptr)
     {
-        unsigned int lines_count = size().height() / font_height - 1 - (frame_top?1:0);
+        lines_count = size().height() / font_height - 1 - (frame_top?1:0);
+
+        if (!buffer_is_valid) fill_buffer(true);
 
         for (unsigned int i=0; i < lines_count; i++)
         {
@@ -71,7 +76,7 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
                     {
                         uint8_t data = d->get_value(address);
                         QString data_str = QString("%1 ").arg(data, 2, 16, QChar('0')).toUpper();
-                        if (address == hilight_address)
+                        if (address == hilight_address || data != buffer[current_buffer][i*16 + j])
                         {
                             painter.setPen(TEXT_HILIGHT);
                         } else {
@@ -156,4 +161,47 @@ void DumpArea::editor_tab_pressed()
 void DumpArea::editor_escape_pressed()
 {
     editor->hide();
+}
+
+void DumpArea::page_down()
+{
+    if (lines_count > 0) go_to(start_address + lines_count*16);
+}
+
+void DumpArea::page_up()
+{
+    if (lines_count > 0) {
+        int new_address = start_address - lines_count*16;
+        if (new_address < 0) new_address = 0;
+        go_to(new_address);
+    }
+}
+
+void DumpArea::fill_buffer(bool prefill)
+{
+    unsigned int fill_buffer = current_buffer ^ 1;
+    for (unsigned int i=0; i < lines_count; i++)
+        for (unsigned int j=0; j<16; j++)
+        {
+            unsigned int address = start_address + i*16 + j;
+            uint8_t data = d->get_value(address);
+            if (address < d->get_size()) {
+                buffer[fill_buffer][i*16 + j] = data;
+                if (prefill) buffer[current_buffer][i*16 + j] = data;
+            }
+        }
+    buffer_is_valid = true;
+}
+
+void DumpArea::update_view()
+{
+    current_buffer ^= 1;
+    fill_buffer();
+    hilight_address = _FFFF;
+    update();
+}
+
+void DumpArea::reset_buffer()
+{
+    buffer_is_valid = false;
 }

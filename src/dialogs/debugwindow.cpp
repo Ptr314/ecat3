@@ -80,6 +80,7 @@ void DebugWindow::update_registers()
     QList<QPair<QString, QString>> f = cpu->get_flags();
     ui->registers->set_data(r);
     ui->flags->set_data(f);
+    ui->dump->update_view();
 }
 
 QDialog * CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
@@ -289,3 +290,23 @@ void DebugWindow::command_key(QKeyEvent *event)
 {
     keyPressEvent(event);
 }
+
+void DebugWindow::on_dumpGotoButton_clicked()
+{
+    unsigned int v = parse_numeric_value("$" + ui->dumpAddr->text());
+    ui->dump->reset_buffer();
+    ui->dump->go_to(v);
+}
+
+
+void DebugWindow::on_dumpPgDownBotton_clicked()
+{
+    ui->dump->page_down();
+}
+
+
+void DebugWindow::on_dumpPgUpBotton_clicked()
+{
+    ui->dump->page_up();
+}
+

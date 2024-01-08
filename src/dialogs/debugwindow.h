@@ -50,6 +50,12 @@ private slots:
 
     void update_state();
 
+    void on_dumpGotoButton_clicked();
+
+    void on_dumpPgDownBotton_clicked();
+
+    void on_dumpPgUpBotton_clicked();
+
 public slots:
     void command_key(QKeyEvent *event);
 
