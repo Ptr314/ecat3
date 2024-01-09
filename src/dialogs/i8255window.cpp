@@ -4,7 +4,7 @@
 #include "emulator/devices/common/i8255.h"
 
 I8255Window::I8255Window(QWidget *parent) :
-    QDialog(parent),
+    GenericDbgWnd(parent),
     ui(new Ui::I8255Window)
 {
     ui->setupUi(this);
@@ -28,7 +28,7 @@ I8255Window::~I8255Window()
     delete ui;
 }
 
-QDialog * CreateI8255Window(QWidget *parent, Emulator * e, ComputerDevice * d)
+GenericDbgWnd * CreateI8255Window(QWidget *parent, Emulator * e, ComputerDevice * d)
 {
     return new I8255Window(parent, e, d);
 }

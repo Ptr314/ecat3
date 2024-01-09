@@ -41,6 +41,7 @@ void DumpArea::set_data(Emulator * e, AddressableDevice * d, unsigned int start_
 void DumpArea::go_to(unsigned int address)
 {
     start_address = address;
+    buffer_is_valid = false;
     update();
 }
 

@@ -5,7 +5,7 @@
 #include "ui_debugwindow.h"
 
 DebugWindow::DebugWindow(QWidget *parent) :
-    QDialog(parent),
+    GenericDbgWnd(parent),
     ui(new Ui::DebugWindow),
     stop_tracking(false)
 {
@@ -80,10 +80,10 @@ void DebugWindow::update_registers()
     QList<QPair<QString, QString>> f = cpu->get_flags();
     ui->registers->set_data(r);
     ui->flags->set_data(f);
-    ui->dump->update_view();
+    emit data_changed(this);
 }
 
-QDialog * CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
+GenericDbgWnd * CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
 {
     return new DebugWindow(parent, e, d);
 }
@@ -139,10 +139,7 @@ void DebugWindow::track()
     if ((cpu->debug != DEBUG_STOPPED) && ~stop_tracking)
     {
         QTimer::singleShot(200, this, SLOT(track()));
-        qDebug() << "Continue tracking";
     } else {
-        qDebug() << "Tracking stopped";
-        //ui->codeview->invalidate();
         if (temporary_break >= 0) cpu->remove_breakpoint(temporary_break);
         on_toPCButton_clicked();
     }
@@ -310,3 +307,7 @@ void DebugWindow::on_dumpPgUpBotton_clicked()
     ui->dump->page_up();
 }
 
+void DebugWindow::update_view()
+{
+    ui->dump->update_view();
+}

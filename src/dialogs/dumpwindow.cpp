@@ -5,7 +5,7 @@
 #include "ui_dumpwindow.h"
 
 DumpWindow::DumpWindow(QWidget *parent) :
-    QDialog(parent),
+    GenericDbgWnd(parent),
     ui(new Ui::DumpWindow)
 {
     ui->setupUi(this);
@@ -31,7 +31,7 @@ void DumpWindow::on_closeButton_clicked()
     close();
 }
 
-QDialog * CreateDumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
+GenericDbgWnd * CreateDumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
 {
     return new DumpWindow(parent, e, d);
 }
@@ -49,4 +49,9 @@ void DumpWindow::keyPressEvent(QKeyEvent *event)
     if(event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return)
         return;
     QDialog::keyPressEvent(event);
+}
+
+void DumpWindow::update_view()
+{
+    ui->dump_area->update_view();
 }

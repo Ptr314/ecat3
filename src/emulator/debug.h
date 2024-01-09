@@ -1,9 +1,10 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
+#include "dialogs/genericdbgwnd.h"
 #include "emulator.h"
 
-using DebugWndCreateFunc = QDialog * (QWidget * parent, Emulator * e, ComputerDevice * d);
+using DebugWndCreateFunc = GenericDbgWnd * (QWidget * parent, Emulator * e, ComputerDevice * d);
 
 struct DebugWndFuncData {
     QString device_type;
@@ -33,6 +34,14 @@ public:
                 return (WndFuncData[i].f);
         return nullptr;
     }
+
+public slots:
+    void data_changed(GenericDbgWnd * src){
+        qDebug() << "DWM: Update";
+        emit update_all();
+    }
+signals:
+    void update_all();
 };
 
 #endif // DEBUG_H

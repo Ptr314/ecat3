@@ -3,13 +3,14 @@
 
 #include <QDialog>
 
+#include "dialogs/genericdbgwnd.h"
 #include "emulator/emulator.h"
 
 namespace Ui {
 class DumpWindow;
 }
 
-class DumpWindow : public QDialog
+class DumpWindow : public GenericDbgWnd
 {
     Q_OBJECT
 
@@ -23,6 +24,9 @@ private slots:
 
     void on_toolButton_clicked();
 
+public slots:
+    virtual void update_view() override;
+
 private:
     Ui::DumpWindow *ui;
 
@@ -32,6 +36,6 @@ private:
     void keyPressEvent(QKeyEvent *event) override;
 };
 
-QDialog * CreateDumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d);
+GenericDbgWnd *CreateDumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d);
 
 #endif // DUMPWINDOW_H

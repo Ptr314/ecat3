@@ -107,6 +107,7 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/logger.h
 
     dialogs/aboutdlg.ui
+    dialogs/genericdbgwnd.h dialogs/genericdbgwnd.cpp
 
     ${Z80_FILES}
 )
