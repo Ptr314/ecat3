@@ -2,7 +2,7 @@
 #include "ui_portwindow.h"
 
 PortWindow::PortWindow(QWidget *parent) :
-    QDialog(parent),
+    GenericDbgWnd(parent),
     ui(new Ui::PortWindow)
 {
     ui->setupUi(this);
@@ -32,7 +32,7 @@ void PortWindow::update()
     ui->hexEdit->setText(QString("%1").arg(v, 2, 16, QChar('0')).toUpper());
 }
 
-QDialog * CreatePortWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
+GenericDbgWnd * CreatePortWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
 {
     return new PortWindow(parent, e, d);
 }

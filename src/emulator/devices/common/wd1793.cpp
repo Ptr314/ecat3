@@ -228,7 +228,7 @@ unsigned int WD1793::get_value(unsigned int address)
     return registers[a];
 }
 
-void WD1793::set_value(unsigned int address, unsigned int value)
+void WD1793::set_value(unsigned int address, unsigned int value, bool force)
 {
     if (wd1793_DELAY_REGISTER > 0){
         register_delay = wd1793_DELAY_REGISTER;

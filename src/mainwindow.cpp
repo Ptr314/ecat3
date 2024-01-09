@@ -325,8 +325,10 @@ void MainWindow::onDeviceMenuCalled(unsigned int i)
     DebugWndCreateFunc * f = DWM->get_create_func(e->dm->get_device(i)->device_type);
     if (f != nullptr)
     {
-        QDialog * w = f(this, e, e->dm->get_device(i)->device);
+        GenericDbgWnd * w = f(this, e, e->dm->get_device(i)->device);
         w->setAttribute(Qt::WA_DeleteOnClose);
+        connect(w, &GenericDbgWnd::data_changed, DWM, &DebugWindowsManager::data_changed);
+        connect(DWM, &DebugWindowsManager::update_all, w, &GenericDbgWnd::update_view);
         w->show();
     }
 }
@@ -462,8 +464,10 @@ void MainWindow::on_actionDebugger_triggered()
     DebugWndCreateFunc * f = DWM->get_create_func(cpu->type);
     if (f != nullptr)
     {
-            QDialog * w = f(this, e, cpu);
+            GenericDbgWnd * w = f(this, e, cpu);
             w->setAttribute(Qt::WA_DeleteOnClose);
+            connect(w, &GenericDbgWnd::data_changed, DWM, &DebugWindowsManager::data_changed);
+            connect(DWM, &DebugWindowsManager::update_all, w, &GenericDbgWnd::update_view);
             w->show();
     }
 }

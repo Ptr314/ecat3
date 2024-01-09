@@ -1,6 +1,7 @@
 #ifndef PORTWINDOW_H
 #define PORTWINDOW_H
 
+#include "dialogs/genericdbgwnd.h"
 #include "emulator/core.h"
 #include "emulator/emulator.h"
 #include <QDialog>
@@ -9,7 +10,7 @@ namespace Ui {
 class PortWindow;
 }
 
-class PortWindow : public QDialog
+class PortWindow : public GenericDbgWnd
 {
     Q_OBJECT
 
@@ -29,6 +30,6 @@ private slots:
     void update();
 };
 
-QDialog * CreatePortWindow(QWidget *parent, Emulator * e, ComputerDevice * d);
+GenericDbgWnd *CreatePortWindow(QWidget *parent, Emulator * e, ComputerDevice * d);
 
 #endif // PORTWINDOW_H

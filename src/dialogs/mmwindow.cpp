@@ -5,7 +5,7 @@
 #include "emulator/emulator.h"
 
 MemoryMapperWindow::MemoryMapperWindow(QWidget *parent) :
-    QDialog(parent),
+    GenericDbgWnd(parent),
     ui(new Ui::MemoryMapperWindow)
 {
     ui->setupUi(this);
@@ -52,7 +52,7 @@ void MemoryMapperWindow::on_process_button_clicked()
     ui->dump_area->update();
 }
 
-QDialog * CreateMMWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
+GenericDbgWnd * CreateMMWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
 {
     return new MemoryMapperWindow(parent, e, d);
 }

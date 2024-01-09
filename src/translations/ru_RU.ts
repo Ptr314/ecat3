@@ -131,7 +131,19 @@
         <translation>Запустить без отладки</translation>
     </message>
     <message>
-        <location line="+72"/>
+        <location line="+73"/>
+        <location/>
+        <source>Address for the debugger</source>
+        <translation>Адрес перехода для отладчика</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <location/>
+        <source>Go to</source>
+        <translation>Перейти</translation>
+    </message>
+    <message>
+        <location line="+17"/>
         <location/>
         <source>Add a breakpoint</source>
         <translation>Добавить точку останова</translation>
@@ -139,14 +151,62 @@
     <message>
         <location line="+17"/>
         <location/>
+        <source>Delete a breakpoint</source>
+        <translation>Удалить точку останова</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <location/>
+        <source>Register to set</source>
+        <translation>Регистр для установки</translation>
+    </message>
+    <message>
+        <location line="+79"/>
+        <location/>
+        <source>Address for the dump</source>
+        <translation>Адрес для дампа</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <location/>
+        <source>Go to for the dump</source>
+        <translation>Показать данные с адреса</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location/>
+        <source>Page down</source>
+        <translation>Страница вниз</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location/>
+        <source>Page up</source>
+        <translation>Страница вверх</translation>
+    </message>
+    <message>
         <source>Delete breakpoint</source>
         <translation>Удалить точку остнова</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="-111"/>
         <location/>
         <source>Set value</source>
         <translation>Установить значение</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/debugwindow.cpp" line="+166"/>
+        <location line="+66"/>
+        <location line="+76"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="-142"/>
+        <location line="+66"/>
+        <location line="+76"/>
+        <source>Incorrect address value</source>
+        <translation>Адрес введен некорректно</translation>
     </message>
 </context>
 <context>
@@ -195,10 +255,64 @@
         <translation>Дамп</translation>
     </message>
     <message>
-        <location line="+79"/>
+        <source>Global offset</source>
+        <translation>Глобальное смещение</translation>
+    </message>
+    <message>
+        <source>Local address</source>
+        <translation>Смещение внутри блока</translation>
+    </message>
+    <message>
+        <location line="+51"/>
+        <location/>
+        <source>Base</source>
+        <translation>Базовый адрес</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <location/>
+        <source>Offset</source>
+        <translation>Смещение</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <location/>
+        <source>Page Down</source>
+        <translation>Страница вниз</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location/>
+        <source>To end</source>
+        <translation>В конец</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location/>
+        <source>Page Up</source>
+        <translation>Страница вверх</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location/>
+        <source>To begin</source>
+        <translation>В начало</translation>
+    </message>
+    <message>
+        <location line="+27"/>
         <location/>
         <source>Close</source>
         <translation>Закрыть</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/dumpwindow.cpp" line="+49"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect address value</source>
+        <translation>Адрес введен некорректно</translation>
     </message>
 </context>
 <context>
@@ -292,32 +406,32 @@
         <translation>Неизвестный тип файла</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+211"/>
+        <location filename="../mainwindow.cpp" line="+212"/>
         <source>Screen 4:3</source>
         <translation>Экран 4:3</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Square pixels</source>
         <translation>Квадратные пиксели</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Nearest pixel</source>
         <translation>Ближайший пиксель</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+8"/>
         <source>Linear</source>
         <translation>Линейное</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+8"/>
         <source>Anisotropic</source>
         <translation>Анизотропное</translation>
     </message>
     <message>
-        <location line="+196"/>
+        <location line="+199"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
     </message>
@@ -680,13 +794,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-280"/>
-        <location line="+335"/>
+        <location filename="../mainwindow.cpp" line="-290"/>
+        <location line="+347"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-332"/>
+        <location line="-344"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -710,7 +824,7 @@
         <translation>Все файлы (*.*)</translation>
     </message>
     <message>
-        <location line="+310"/>
+        <location line="+322"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>
@@ -808,7 +922,7 @@
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+109"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+117"/>
         <source>No any description file found for this machine</source>
         <translation>Файл описания для данной конфигурации не найден</translation>
     </message>
@@ -871,7 +985,7 @@
 <context>
     <name>ScanKeyboard</name>
     <message>
-        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+45"/>
+        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+44"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>

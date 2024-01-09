@@ -18,10 +18,10 @@ private:
 public:
     I8255(InterfaceManager *im, EmulatorConfigDevice *cd);
 
-    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
-    virtual unsigned int get_value(unsigned int address);
-    virtual void set_value(unsigned int address, unsigned int value);
-    virtual void reset(bool cold);
+    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+    virtual unsigned int get_value(unsigned int address) override;
+    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
+    virtual void reset(bool cold) override;
 
 };
 

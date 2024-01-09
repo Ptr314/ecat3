@@ -1,6 +1,7 @@
 #ifndef I8255WINDOW_H
 #define I8255WINDOW_H
 
+#include "dialogs/genericdbgwnd.h"
 #include "emulator/devices/common/i8255.h"
 #include "emulator/emulator.h"
 #include <QDialog>
@@ -9,7 +10,7 @@ namespace Ui {
 class I8255Window;
 }
 
-class I8255Window : public QDialog
+class I8255Window : public GenericDbgWnd
 {
     Q_OBJECT
 
@@ -27,8 +28,9 @@ private:
 
 private slots:
     void update();
+
 };
 
-QDialog * CreateI8255Window(QWidget *parent, Emulator * e, ComputerDevice * d);
+GenericDbgWnd *CreateI8255Window(QWidget *parent, Emulator * e, ComputerDevice * d);
 
 #endif // I8255WINDOW_H

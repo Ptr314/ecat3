@@ -3,6 +3,7 @@
 
 #include <QDialog>
 
+#include "dialogs/genericdbgwnd.h"
 #include "emulator/core.h"
 #include "emulator/emulator.h"
 #include "emulator/disasm.h"
@@ -11,7 +12,7 @@ namespace Ui {
 class DebugWindow;
 }
 
-class DebugWindow : public QDialog
+class DebugWindow : public GenericDbgWnd
 {
     Q_OBJECT
 
@@ -50,8 +51,15 @@ private slots:
 
     void update_state();
 
+    void on_dumpGotoButton_clicked();
+
+    void on_dumpPgDownBotton_clicked();
+
+    void on_dumpPgUpBotton_clicked();
+
 public slots:
     void command_key(QKeyEvent *event);
+    virtual void update_view() override;
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -76,6 +84,6 @@ private:
     void resizeEvent(QResizeEvent*);
 };
 
-QDialog * CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d);
+GenericDbgWnd *CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d);
 
 #endif // DEBUGWINDOW_H

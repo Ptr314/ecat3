@@ -107,6 +107,7 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/logger.h
 
     dialogs/aboutdlg.ui
+    dialogs/genericdbgwnd.h dialogs/genericdbgwnd.cpp
 
     emulator/devices/cpu/6502core.h emulator/devices/cpu/6502core.cpp
     emulator/devices/cpu/6502.h emulator/devices/cpu/6502.cpp

@@ -13,8 +13,12 @@
 DumpArea::DumpArea(QWidget *parent)
     : DOSFrame{parent},
     d(nullptr),
+    global_offset(0),
     start_address(0),
-    hilight_address(_FFFF)
+    hilight_address(_FFFF),
+    lines_count(0),
+    buffer_is_valid(false),
+    current_buffer(0)
 {
 //    QFont font(FONT_NAME, FONT_SIZE);
     QFontMetrics fm(*font);
@@ -32,13 +36,33 @@ void DumpArea::set_data(Emulator * e, AddressableDevice * d, unsigned int start_
 {
     this->d = d;
     this->e = e;
-    this->start_address = start_address;
+    data_size = d->get_size();
+    scroll_size = data_size;
+    go_to(start_address);
 }
 
-void DumpArea::go_to(unsigned int address)
+void DumpArea::go_to(int offset, int address)
 {
+    global_offset = offset;
     start_address = address;
+    buffer_is_valid = false;
+
+    if (lines_count > 0) {
+        scroll_size = data_size - lines_count*16;
+        if (scroll_size < 0) scroll_size = data_size;
+    }
+    set_scroll(scroll_size, address);
     update();
+}
+
+void DumpArea::go_to(int address)
+{
+    int new_address = address;
+    if (address < 0) {
+        new_address = d->get_size() - lines_count*16;
+        if (new_address < 0) new_address = 0;
+    }
+    go_to(global_offset, new_address);
 }
 
 void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
@@ -51,7 +75,9 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
 
     if (d != nullptr)
     {
-        unsigned int lines_count = size().height() / font_height - 1 - (frame_top?1:0);
+        lines_count = size().height() / font_height - 1 - (frame_top?1:0);
+
+        if (!buffer_is_valid) fill_buffer(true);
 
         for (unsigned int i=0; i < lines_count; i++)
         {
@@ -60,7 +86,7 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
             {
                 unsigned int x = char_width * LEFT_PADDING;
                 unsigned int y = font_height * (i+1+(frame_top?1:0)) - 4;
-                QString address_str = QString("%1: ").arg(address, 4, 16, QChar('0')).toUpper();
+                QString address_str = QString("%1: ").arg(address + global_offset, 4, 16, QChar('0')).toUpper();
                 painter.setPen(TEXT_COLOR);
                 painter.drawText(x, y, address_str);
                 x += address_str.length() * char_width;
@@ -71,7 +97,7 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
                     {
                         uint8_t data = d->get_value(address);
                         QString data_str = QString("%1 ").arg(data, 2, 16, QChar('0')).toUpper();
-                        if (address == hilight_address)
+                        if (address == hilight_address || data != buffer[current_buffer][i*16 + j])
                         {
                             painter.setPen(TEXT_HILIGHT);
                         } else {
@@ -142,7 +168,7 @@ void DumpArea::editor_return_pressed()
     editor->hide();
     QString str_value = editor->text();
     uint32_t value = parse_numeric_value('$'+str_value);
-    d->set_value(editor_address, value);
+    d->set_value(editor_address, value, true);
     update();
 }
 
@@ -156,4 +182,53 @@ void DumpArea::editor_tab_pressed()
 void DumpArea::editor_escape_pressed()
 {
     editor->hide();
+}
+
+void DumpArea::page_down()
+{
+    if (lines_count > 0) {
+        int new_address = start_address + lines_count*16;
+        if (new_address > data_size - lines_count*16)
+            go_to(-1);
+        else
+            go_to(global_offset, new_address);
+    }
+}
+
+void DumpArea::page_up()
+{
+    if (lines_count > 0) {
+        int new_address = start_address - lines_count*16;
+        if (new_address < 0) new_address = 0;
+        go_to(global_offset, new_address);
+    }
+}
+
+void DumpArea::fill_buffer(bool prefill)
+{
+    unsigned int fill_buffer = current_buffer ^ 1;
+    for (unsigned int i=0; i < lines_count; i++)
+        for (unsigned int j=0; j<16; j++)
+        {
+            unsigned int address = start_address + i*16 + j;
+            uint8_t data = d->get_value(address);
+            if (address < d->get_size()) {
+                buffer[fill_buffer][i*16 + j] = data;
+                if (prefill) buffer[current_buffer][i*16 + j] = data;
+            }
+        }
+    buffer_is_valid = true;
+}
+
+void DumpArea::update_view()
+{
+    current_buffer ^= 1;
+    fill_buffer();
+    hilight_address = _FFFF;
+    update();
+}
+
+void DumpArea::reset_buffer()
+{
+    buffer_is_valid = false;
 }

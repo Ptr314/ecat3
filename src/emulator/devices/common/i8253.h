@@ -161,7 +161,7 @@ public:
         return result;
     }
 
-    virtual void set_value(unsigned int address, unsigned int value) override
+    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override
     {
         unsigned int a = address & 0x03;
         if (a==3) {

@@ -2,10 +2,11 @@
 
 #include "debugwindow.h"
 #include "emulator/utils.h"
+#include "qexception.h"
 #include "ui_debugwindow.h"
 
 DebugWindow::DebugWindow(QWidget *parent) :
-    QDialog(parent),
+    GenericDbgWnd(parent),
     ui(new Ui::DebugWindow),
     stop_tracking(false)
 {
@@ -83,9 +84,10 @@ void DebugWindow::update_registers()
     QList<QPair<QString, QString>> f = cpu->get_flags();
     ui->registers->set_data(r);
     ui->flags->set_data(f);
+    emit data_changed(this);
 }
 
-QDialog * CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
+GenericDbgWnd * CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
 {
     return new DebugWindow(parent, e, d);
 }
@@ -141,10 +143,7 @@ void DebugWindow::track()
     if ((cpu->debug != DEBUG_STOPPED) && ~stop_tracking)
     {
         QTimer::singleShot(200, this, SLOT(track()));
-        qDebug() << "Continue tracking";
     } else {
-        qDebug() << "Tracking stopped";
-        //ui->codeview->invalidate();
         if (temporary_break >= 0) cpu->remove_breakpoint(temporary_break);
         on_toPCButton_clicked();
     }
@@ -162,9 +161,14 @@ void DebugWindow::on_stopTrackingButton_clicked()
 
 void DebugWindow::on_toolButton_clicked()
 {
-    unsigned int v = parse_numeric_value("$" + ui->valueEdit->text());
-    cpu->set_context_value("PC", v);
-    on_toPCButton_clicked();
+    try {
+        unsigned int v = parse_numeric_value("$" + ui->valueEdit->text());
+        cpu->set_context_value("PC", v);
+        on_toPCButton_clicked();
+    } catch (QException &e) {
+        QMessageBox::critical(0, DebugWindow::tr("Error"), DebugWindow::tr("Incorrect address value"));
+    }
+
 }
 
 
@@ -223,9 +227,13 @@ void DebugWindow::on_runUntilButton_clicked()
 
 void DebugWindow::on_gotoButton_clicked()
 {
-    unsigned int v = parse_numeric_value("$" + ui->valueEdit->text());
-    ui->codeview->go_to(v);
-    update_registers();
+    try {
+        unsigned int v = parse_numeric_value("$" + ui->valueEdit->text());
+        ui->codeview->go_to(v);
+        update_registers();
+    } catch (QException &e) {
+        QMessageBox::critical(0, DebugWindow::tr("Error"), DebugWindow::tr("Incorrect address value"));
+    }
 }
 
 
@@ -291,4 +299,32 @@ void DebugWindow::keyPressEvent(QKeyEvent *event)
 void DebugWindow::command_key(QKeyEvent *event)
 {
     keyPressEvent(event);
+}
+
+void DebugWindow::on_dumpGotoButton_clicked()
+{
+    try {
+        unsigned int v = parse_numeric_value("$" + ui->dumpAddr->text());
+        ui->dump->reset_buffer();
+        ui->dump->go_to(v);
+    } catch (QException &e) {
+        QMessageBox::critical(0, DebugWindow::tr("Error"), DebugWindow::tr("Incorrect address value"));
+    }
+}
+
+
+void DebugWindow::on_dumpPgDownBotton_clicked()
+{
+    ui->dump->page_down();
+}
+
+
+void DebugWindow::on_dumpPgUpBotton_clicked()
+{
+    ui->dump->page_up();
+}
+
+void DebugWindow::update_view()
+{
+    ui->dump->update_view();
 }

@@ -472,46 +472,46 @@ Memory::Memory(InterfaceManager *im, EmulatorConfigDevice *cd):
     read_callback(0),
     write_callback(0)
 {
-    this->i_address = this->create_interface(16, "address", MODE_R, 1);
-    this->i_data = this->create_interface(8, "data", MODE_W);
+    i_address = this->create_interface(16, "address", MODE_R, 1);
+    i_data = this->create_interface(8, "data", MODE_W);
 }
 
 Memory::~Memory()
 {
-    if (this->buffer != nullptr) delete [] buffer;
+    if (buffer != nullptr) delete [] buffer;
 }
 
 unsigned int Memory::get_value(unsigned int address)
 {
-    if (this->read_callback != 0)
-        this->memory_callback_device->memory_callback(this->read_callback, address);
+    if (read_callback != 0)
+        memory_callback_device->memory_callback(read_callback, address);
 
-    if (this->can_read && address<this->get_size())
-        return this->buffer[address];
+    if (can_read && address < get_size())
+        return buffer[address];
     else
         return 0xFF;
 }
 
-void Memory::set_value(unsigned int address, unsigned int value)
+void Memory::set_value(unsigned int address, unsigned int value, bool force)
 {
-    if (this->write_callback != 0)
-        this->memory_callback_device->memory_callback(this->write_callback, address);
+    if (write_callback != 0)
+        memory_callback_device->memory_callback(write_callback, address);
 
-    if (this->can_write && address < this->get_size())
-        this->buffer[address] = (uint8_t)value;
+    if ((can_write || force) && address < get_size())
+        buffer[address] = (uint8_t)value;
 }
 
 void Memory::interface_callback([[maybe_unused]] unsigned int callback_id, unsigned int new_value, [[maybe_unused]] unsigned int old_value)
 {
-    unsigned int address = new_value & create_mask(this->i_address->get_size(), 0);
-    if (address < this->get_size() and this->auto_output) this->i_data->change(this->buffer[address]);
+    unsigned int address = new_value & create_mask(i_address->get_size(), 0);
+    if (address < get_size() and auto_output) i_data->change(buffer[address]);
 }
 
 void Memory::set_size(unsigned int value)
 {
-    if (this->buffer != nullptr) delete [] buffer;
+    if (buffer != nullptr) delete [] buffer;
     buffer = new uint8_t[value];
-    this->addresable_size = value;
+    addresable_size = value;
 
     i_address->set_size(ceil(log2(addresable_size)));
 
@@ -522,9 +522,9 @@ void Memory::set_size(unsigned int value)
 
 void Memory::set_memory_callback(ComputerDevice * d, unsigned int callback_id, unsigned int mode)
 {
-    this->memory_callback_device = d;
-    if ((mode & MODE_R) != 0) this->read_callback = callback_id;
-    if ((mode & MODE_W) != 0) this->write_callback = callback_id;
+    memory_callback_device = d;
+    if ((mode & MODE_R) != 0) read_callback = callback_id;
+    if ((mode & MODE_W) != 0) write_callback = callback_id;
 }
 
 uint8_t * Memory::get_buffer()
@@ -671,7 +671,7 @@ unsigned int Port::get_value([[maybe_unused]] unsigned int address)
     return this->value;
 }
 
-void Port:: set_value([[maybe_unused]] unsigned int address, unsigned int value)
+void Port:: set_value([[maybe_unused]] unsigned int address, unsigned int value, bool force)
 {
     this->i_access->change(0);
     this->value = value;
@@ -690,7 +690,7 @@ PortAddress::PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd):
     Port(im, cd)
 {}
 
-void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int value)
+void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int value, bool force)
 {
     this->i_access->change(0);
     this->value = address;
@@ -1085,7 +1085,7 @@ unsigned int MemoryMapper::get_value(unsigned int address)
     return read(address);
 }
 
-void MemoryMapper::set_value(unsigned int address, unsigned int value)
+void MemoryMapper::set_value(unsigned int address, unsigned int value, bool force)
 {
     write(address, value);
 }
