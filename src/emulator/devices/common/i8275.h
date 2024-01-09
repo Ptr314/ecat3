@@ -43,7 +43,7 @@ public:
             return 0x20;    //Control (0x20 - CRT beam return)
     }
 
-    virtual void set_value(unsigned int address, unsigned int value) override
+    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override
     {
         unsigned int a = address & 1;
         if (a == 0)

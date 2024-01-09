@@ -132,11 +132,13 @@
     </message>
     <message>
         <location line="+73"/>
+        <location/>
         <source>Address for the debugger</source>
         <translation>Адрес перехода для отладчика</translation>
     </message>
     <message>
         <location line="+16"/>
+        <location/>
         <source>Go to</source>
         <translation>Перейти</translation>
     </message>
@@ -148,48 +150,63 @@
     </message>
     <message>
         <location line="+17"/>
+        <location/>
         <source>Delete a breakpoint</source>
         <translation>Удалить точку останова</translation>
     </message>
     <message>
         <location line="+17"/>
+        <location/>
         <source>Register to set</source>
         <translation>Регистр для установки</translation>
     </message>
     <message>
         <location line="+79"/>
+        <location/>
         <source>Address for the dump</source>
         <translation>Адрес для дампа</translation>
     </message>
     <message>
         <location line="+19"/>
+        <location/>
         <source>Go to for the dump</source>
         <translation>Показать данные с адреса</translation>
     </message>
     <message>
         <location line="+14"/>
+        <location/>
         <source>Page down</source>
         <translation>Страница вниз</translation>
     </message>
     <message>
         <location line="+14"/>
+        <location/>
         <source>Page up</source>
         <translation>Страница вверх</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete breakpoint</source>
         <translation>Удалить точку остнова</translation>
     </message>
     <message>
-        <location line="-114"/>
+        <location line="-111"/>
         <location/>
         <source>Set value</source>
         <translation>Установить значение</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/debugwindow.cpp" line="+166"/>
+        <location line="+66"/>
+        <location line="+76"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="-142"/>
+        <location line="+66"/>
+        <location line="+76"/>
+        <source>Incorrect address value</source>
+        <translation>Адрес введен некорректно</translation>
     </message>
 </context>
 <context>
@@ -238,10 +255,64 @@
         <translation>Дамп</translation>
     </message>
     <message>
-        <location line="+79"/>
+        <source>Global offset</source>
+        <translation>Глобальное смещение</translation>
+    </message>
+    <message>
+        <source>Local address</source>
+        <translation>Смещение внутри блока</translation>
+    </message>
+    <message>
+        <location line="+51"/>
+        <location/>
+        <source>Base</source>
+        <translation>Базовый адрес</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <location/>
+        <source>Offset</source>
+        <translation>Смещение</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <location/>
+        <source>Page Down</source>
+        <translation>Страница вниз</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location/>
+        <source>To end</source>
+        <translation>В конец</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location/>
+        <source>Page Up</source>
+        <translation>Страница вверх</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location/>
+        <source>To begin</source>
+        <translation>В начало</translation>
+    </message>
+    <message>
+        <location line="+27"/>
         <location/>
         <source>Close</source>
         <translation>Закрыть</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/dumpwindow.cpp" line="+49"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect address value</source>
+        <translation>Адрес введен некорректно</translation>
     </message>
 </context>
 <context>
@@ -360,7 +431,7 @@
         <translation>Анизотропное</translation>
     </message>
     <message>
-        <location line="+197"/>
+        <location line="+199"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
     </message>
@@ -723,13 +794,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-288"/>
-        <location line="+343"/>
+        <location filename="../mainwindow.cpp" line="-290"/>
+        <location line="+347"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-340"/>
+        <location line="-344"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -753,7 +824,7 @@
         <translation>Все файлы (*.*)</translation>
     </message>
     <message>
-        <location line="+318"/>
+        <location line="+322"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>

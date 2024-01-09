@@ -38,6 +38,8 @@
         <file alias="logo">resources/icons/Emuverse3.png</file>
         <file alias="page_down">resources/icons/2downarrow.png</file>
         <file alias="page_up">resources/icons/2uparrow.png</file>
+        <file alias="bottom">resources/icons/bottom.png</file>
+        <file alias="top">resources/icons/top.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>

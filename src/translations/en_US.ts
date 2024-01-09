@@ -132,11 +132,13 @@
     </message>
     <message>
         <location line="+73"/>
+        <location/>
         <source>Address for the debugger</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+16"/>
+        <location/>
         <source>Go to</source>
         <translation type="unfinished"></translation>
     </message>
@@ -148,37 +150,38 @@
     </message>
     <message>
         <location line="+17"/>
+        <location/>
         <source>Delete a breakpoint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+17"/>
+        <location/>
         <source>Register to set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+79"/>
+        <location/>
         <source>Address for the dump</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+19"/>
+        <location/>
         <source>Go to for the dump</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+14"/>
+        <location/>
         <source>Page down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+14"/>
+        <location/>
         <source>Page up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -186,9 +189,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-114"/>
+        <location line="-111"/>
         <location/>
         <source>Set value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../dialogs/debugwindow.cpp" line="+166"/>
+        <location line="+66"/>
+        <location line="+76"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-142"/>
+        <location line="+66"/>
+        <location line="+76"/>
+        <source>Incorrect address value</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -238,9 +255,63 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+79"/>
+        <source>Global offset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Local address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+51"/>
+        <location/>
+        <source>Base</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <location/>
+        <source>Offset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <location/>
+        <source>Page Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location/>
+        <source>To end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location/>
+        <source>Page Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location/>
+        <source>To begin</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+27"/>
         <location/>
         <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../dialogs/dumpwindow.cpp" line="+49"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect address value</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -360,7 +431,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+197"/>
+        <location line="+199"/>
         <source>Load a file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -715,13 +786,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-288"/>
-        <location line="+343"/>
+        <location filename="../mainwindow.cpp" line="-290"/>
+        <location line="+347"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-340"/>
+        <location line="-344"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -745,7 +816,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+318"/>
+        <location line="+322"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>

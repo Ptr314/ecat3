@@ -158,7 +158,7 @@ public:
         can_write(false){};
 
     virtual unsigned int get_value(unsigned int address) = 0;
-    virtual void set_value(unsigned int address, unsigned int value) = 0;
+    virtual void set_value(unsigned int address, unsigned int value, bool force=false) = 0;
     virtual unsigned int get_size();
 };
 
@@ -178,10 +178,10 @@ public:
     Memory(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~Memory();
     void set_size(unsigned int value);
-    virtual unsigned int get_value(unsigned int address);
+    virtual unsigned int get_value(unsigned int address) override;
     void set_memory_callback(ComputerDevice * d, unsigned int callback_id, unsigned int mode);
-    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
-    virtual void set_value(unsigned int address, unsigned int value);
+    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
     virtual uint8_t * get_buffer();
 };
 
@@ -214,19 +214,19 @@ protected:
     Interface * i_flip;
 
 public:
-    virtual unsigned int get_value(unsigned int address);
-    virtual void set_value(unsigned int address, unsigned int value);
+    virtual unsigned int get_value(unsigned int address) override;
+    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
 
     Port(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
-    virtual void reset(bool cold);
+    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+    virtual void reset(bool cold) override;
 };
 
 class PortAddress:public Port
 {
 public:
     PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual void set_value(unsigned int address, unsigned int value);
+    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
 };
 
 class DeviceManager: public QObject
@@ -436,7 +436,7 @@ public:
 
     //These two functions are needed to use the MM as an addressable device
     virtual unsigned int get_value(unsigned int address) override;
-    virtual void set_value(unsigned int address, unsigned int value) override;
+    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
 };
 
 class GenericDisplay: public ComputerDevice

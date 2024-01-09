@@ -70,7 +70,7 @@ public:
             return pages[i_page->value & PageMask]->get_value((i_segment->value & SegmentMask)*Frame +  address);
     }
 
-    virtual void set_value(unsigned int address, unsigned int value) override
+    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override
     {
         if (Frame == pages[0]->get_size())
             pages[i_page->value & PageMask]->set_value(address, value);

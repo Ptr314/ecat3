@@ -24,6 +24,14 @@ private slots:
 
     void on_toolButton_clicked();
 
+    void on_pgDnButton_clicked();
+
+    void on_pgUpButton_clicked();
+
+    void on_topButton_clicked();
+
+    void on_bottomButton_clicked();
+
 public slots:
     virtual void update_view() override;
 

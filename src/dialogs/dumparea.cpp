@@ -13,6 +13,7 @@
 DumpArea::DumpArea(QWidget *parent)
     : DOSFrame{parent},
     d(nullptr),
+    global_offset(0),
     start_address(0),
     hilight_address(_FFFF),
     lines_count(0),
@@ -35,14 +36,33 @@ void DumpArea::set_data(Emulator * e, AddressableDevice * d, unsigned int start_
 {
     this->d = d;
     this->e = e;
-    this->start_address = start_address;
+    data_size = d->get_size();
+    scroll_size = data_size;
+    go_to(start_address);
 }
 
-void DumpArea::go_to(unsigned int address)
+void DumpArea::go_to(int offset, int address)
 {
+    global_offset = offset;
     start_address = address;
     buffer_is_valid = false;
+
+    if (lines_count > 0) {
+        scroll_size = data_size - lines_count*16;
+        if (scroll_size < 0) scroll_size = data_size;
+    }
+    set_scroll(scroll_size, address);
     update();
+}
+
+void DumpArea::go_to(int address)
+{
+    int new_address = address;
+    if (address < 0) {
+        new_address = d->get_size() - lines_count*16;
+        if (new_address < 0) new_address = 0;
+    }
+    go_to(global_offset, new_address);
 }
 
 void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
@@ -66,7 +86,7 @@ void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
             {
                 unsigned int x = char_width * LEFT_PADDING;
                 unsigned int y = font_height * (i+1+(frame_top?1:0)) - 4;
-                QString address_str = QString("%1: ").arg(address, 4, 16, QChar('0')).toUpper();
+                QString address_str = QString("%1: ").arg(address + global_offset, 4, 16, QChar('0')).toUpper();
                 painter.setPen(TEXT_COLOR);
                 painter.drawText(x, y, address_str);
                 x += address_str.length() * char_width;
@@ -148,7 +168,7 @@ void DumpArea::editor_return_pressed()
     editor->hide();
     QString str_value = editor->text();
     uint32_t value = parse_numeric_value('$'+str_value);
-    d->set_value(editor_address, value);
+    d->set_value(editor_address, value, true);
     update();
 }
 
@@ -166,7 +186,13 @@ void DumpArea::editor_escape_pressed()
 
 void DumpArea::page_down()
 {
-    if (lines_count > 0) go_to(start_address + lines_count*16);
+    if (lines_count > 0) {
+        int new_address = start_address + lines_count*16;
+        if (new_address > data_size - lines_count*16)
+            go_to(-1);
+        else
+            go_to(global_offset, new_address);
+    }
 }
 
 void DumpArea::page_up()
@@ -174,7 +200,7 @@ void DumpArea::page_up()
     if (lines_count > 0) {
         int new_address = start_address - lines_count*16;
         if (new_address < 0) new_address = 0;
-        go_to(new_address);
+        go_to(global_offset, new_address);
     }
 }
 

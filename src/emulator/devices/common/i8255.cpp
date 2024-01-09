@@ -35,7 +35,7 @@ unsigned int I8255::get_value(unsigned int address)
     return data;
 }
 
-void I8255::set_value(unsigned int address, unsigned int value)
+void I8255::set_value(unsigned int address, unsigned int value, bool force)
 {
     unsigned int n = address & 0b11;
     switch (n) {

@@ -85,7 +85,7 @@ public:
     virtual bool get_busy() override;
     virtual unsigned int get_selected_drive() override;
     virtual unsigned int get_value(unsigned int address) override;
-    virtual void set_value(unsigned int address, unsigned int value) override;
+    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
     virtual void load_config(SystemData *sd) override;
     virtual void clock(unsigned int counter) override;
 };
