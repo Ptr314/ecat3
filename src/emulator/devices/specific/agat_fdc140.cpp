@@ -24,7 +24,7 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
     // TODO: implement
 }
 
-void Agat_FDC140::set_value(unsigned int address, unsigned int value)
+void Agat_FDC140::set_value(unsigned int address, unsigned int value, bool force)
 {
     // TODO: implement
 }
