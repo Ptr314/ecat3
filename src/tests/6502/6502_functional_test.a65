@@ -95,7 +95,7 @@ load_data_direct = 1
 ;I_flag behavior (0=force enabled, 1=force disabled, 2=prohibit change, 3=allow
 ;change) 2 requires extra code and is not recommended. SEI & CLI can only be
 ;tested if you allow changing the interrupt status (I_flag = 3)
-I_flag = 3
+I_flag = 0
 
 ;configure memory - try to stay away from memory used by the system
 ;zero_page memory start address, $52 (82) consecutive Bytes required
@@ -128,7 +128,7 @@ ram_top = -1
 
 ;disable test decimal mode ADC & SBC, 0=enable, 1=disable,
 ;2=disable including decimal flag in processor status
-disable_decimal = 0
+disable_decimal = 1
 
         noopt       ;do not take shortcuts
 
@@ -1176,29 +1176,29 @@ test_bne
         lda #0 
         cmp #0          ;test compare immediate 
         trap_ne
-        trap_cs
+        trap_cc
         trap_mi
         cmp #1
         trap_eq 
-        trap_cc
+        trap_cs
         trap_pl
         tax 
         cpx #0          ;test compare x immediate
         trap_ne
-        trap_cs
+        trap_cc
         trap_mi
         cpx #1
         trap_eq 
-        trap_cc
+        trap_cs
         trap_pl
         tay 
         cpy #0          ;test compare y immediate
         trap_ne
-        trap_cs
+        trap_cc
         trap_mi
         cpy #1
         trap_eq 
-        trap_cc
+        trap_cs
         trap_pl
         next_test
 ;testing stack operations PHA PHP PLA PLP
@@ -1545,7 +1545,7 @@ far_ret
 test_near
         trap_eq         ;passed flags OK?
         trap_mi
-        trap_cs
+        trap_cc
         trap_vc
         cmp #'F'        ;passed registers OK?
         trap_ne

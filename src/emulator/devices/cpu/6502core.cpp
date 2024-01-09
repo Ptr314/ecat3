@@ -404,7 +404,10 @@ inline uint8_t mos6502core::get_operand(uint8_t command, unsigned int * cycles)
         //ind, x
         T.w = (next_byte() + REG_X) & 0xFF;
         D.b.L = read_mem(T.w);
-        D.b.H = read_mem(T.w+1);
+        if (T.b.L == 0xFF)
+            D.b.H = read_mem(0);
+        else
+            D.b.H = read_mem(T.w+1);
         result = read_mem(D.w);
         break;
     case 1:
@@ -426,7 +429,10 @@ inline uint8_t mos6502core::get_operand(uint8_t command, unsigned int * cycles)
         //ind, y
         T.w = next_byte();
         D.b.L = read_mem(T.w);
-        D.b.H = read_mem(T.w+1);
+        if (T.b.L == 0xFF)
+            D.b.H = read_mem(0);
+        else
+            D.b.H = read_mem(T.w+1);
         D.w += REG_Y;
         result = read_mem(D.w);
         //TODO: 6502 add 1 cycle when crossing a page border
@@ -462,6 +468,16 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int * cycles)
     uint16_t result;
     unsigned int mode = (command >> 2) & 0x07;
     switch (mode) {
+    case 0:
+        //ind, x
+        T.w = (next_byte() + REG_X) & 0xFF;
+        D.b.L = read_mem(T.w);
+        if (T.b.L == 0xFF)
+            D.b.H = read_mem(0);
+        else
+            D.b.H = read_mem(T.w+1);
+        result = D.w;
+        break;
     case 1:
         //zp
         result = next_byte();
@@ -476,7 +492,10 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int * cycles)
         //ind, y
         T.w = next_byte();
         D.b.L = read_mem(T.w);
-        D.b.H = read_mem(T.w+1);
+        if (T.b.L == 0xFF)
+            D.b.H = read_mem(0);
+        else
+            D.b.H = read_mem(T.w+1);
         D.w += REG_Y;
         result = D.w;
         //TODO: 6502 add 1 cycle when crossing a page border
@@ -529,7 +548,9 @@ void mos6502core::_ADC(uint8_t command, unsigned int * cycles)
     if (FLAG_B == 0) {
         // Binary mode
         D.w = REG_A + T.b.L + FLAG_C;
-
+        calc_flags(D.w, F_NZC);
+        calc_flags(D.w, F_NZC);
+        set_flag(F_V, ((REG_A ^ D.b.L) & (T.b.L ^ D.b.L)) >> 1);
         REG_A = D.b.L;
     } else {
         // BCD mode
@@ -625,7 +646,7 @@ void mos6502core::_CLV(uint8_t command, unsigned int * cycles)
 void mos6502core::_CMP(uint8_t command, unsigned int * cycles)
 {
     PartsRecLE D;
-    D.w = static_cast<uint16_t>(REG_A) - get_operand(command, cycles);
+    D.w = static_cast<uint16_t>(REG_A) + 0x100 - get_operand(command, cycles);
     calc_flags(D.w, F_NZC);
 }
 
@@ -642,7 +663,7 @@ void mos6502core::_CPX(uint8_t command, unsigned int * cycles)
             T.b.L =  get_operand(command, cycles);
             break;
     }
-    D.w = static_cast<uint16_t>(REG_X) - T.b.L;
+    D.w = static_cast<uint16_t>(REG_X) + 0x100 - T.b.L;
     calc_flags(D.w, F_NZC);
 }
 
@@ -659,7 +680,7 @@ void mos6502core::_CPY(uint8_t command, unsigned int * cycles)
         T.b.L =  get_operand(command, cycles);
         break;
     }
-    D.w = static_cast<uint16_t>(REG_Y) - T.b.L;
+    D.w = static_cast<uint16_t>(REG_Y) + 0x100 - T.b.L;
     calc_flags(D.w, F_NZC);
 }
 
@@ -730,7 +751,10 @@ void mos6502core::_JMP(uint8_t command, unsigned int * cycles)
         break;
     case 0x6C:
         D.b.L = read_mem(T.w);
-        D.b.H = read_mem(T.w+1);
+        if (T.b.L == 0xFF)
+            D.b.H = read_mem(T.w & 0xFF00);
+        else
+            D.b.H = read_mem(T.w+1);
         break;
     default:
         // TODO: 6502 generate an error
@@ -923,12 +947,12 @@ void mos6502core::_RTS(uint8_t command, unsigned int * cycles)
 void mos6502core::_SBC(uint8_t command, unsigned int * cycles)
 {
     PartsRecLE T, D;
-    T.w = get_operand(command, cycles);
+    T.w = get_operand(command, cycles) ^ 0xFF;
     if (FLAG_B == 0) {
         // Binary mode
-        D.w = REG_A - T.b.L - FLAG_C;
+        D.w = REG_A + T.b.L + FLAG_C;
         calc_flags(D.w, F_NZC);
-        set_flag(F_V, (REG_A ^ T.b.L ^ D.b.L) >> 1);
+        set_flag(F_V, ((REG_A ^ D.b.L) & (T.b.L ^ D.b.L)) >> 1);
         REG_A = D.b.L;
     } else {
         // BCD mode
