@@ -15,6 +15,7 @@ using namespace MOS6502;
 
 #define FLAG_B (REG_P & F_B)
 #define FLAG_C (REG_P & F_C)
+#define FLAG_D (REG_P & F_D)
 #define FLAG_Z (REG_P & F_Z)
 #define FLAG_P (REG_P & F_P)
 #define FLAG_N (REG_P & F_N)
@@ -545,7 +546,7 @@ void mos6502core::_ADC(uint8_t command, unsigned int * cycles)
 {
     PartsRecLE T, D;
     T.w = get_operand(command, cycles);
-    if (FLAG_B == 0) {
+    if (FLAG_D == 0) {
         // Binary mode
         D.w = REG_A + T.b.L + FLAG_C;
         calc_flags(D.w, F_NZC);
@@ -612,6 +613,7 @@ void mos6502core::_BIT(uint8_t command, unsigned int * cycles)
 void mos6502core::_BRK(uint8_t command, unsigned int * cycles)
 {
     //https://www.nesdev.org/the%20'B'%20flag%20&%20BRK%20instruction.txt
+    REG_PC++;
     write_mem(REG_S+0x100, REG_PCH);
     REG_S--;
     write_mem(REG_S+0x100, REG_PCL);
@@ -948,7 +950,7 @@ void mos6502core::_SBC(uint8_t command, unsigned int * cycles)
 {
     PartsRecLE T, D;
     T.w = get_operand(command, cycles) ^ 0xFF;
-    if (FLAG_B == 0) {
+    if (FLAG_D == 0) {
         // Binary mode
         D.w = REG_A + T.b.L + FLAG_C;
         calc_flags(D.w, F_NZC);
