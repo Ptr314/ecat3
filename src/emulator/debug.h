@@ -37,7 +37,6 @@ public:
 
 public slots:
     void data_changed(GenericDbgWnd * src){
-        qDebug() << "DWM: Update";
         emit update_all();
     }
 signals:
