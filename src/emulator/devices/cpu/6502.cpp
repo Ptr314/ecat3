@@ -35,8 +35,7 @@ mos6502::mos6502(InterfaceManager *im, EmulatorConfigDevice *cd, int family_type
 
     core = new mos6502Core(this, family_type);
 
-    //TODO: 6502 add codes
-    //over_commands.push_back(0xCD);
+    over_commands.push_back(0x20);
 }
 
 void mos6502::reset(bool cold)
