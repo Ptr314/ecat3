@@ -1,5 +1,6 @@
 #include "6502core.h"
 #include "cpu_utils.h"
+#include "qdebug.h"
 
 using namespace MOS6502;
 
@@ -546,16 +547,23 @@ void mos6502core::_ADC(uint8_t command, unsigned int * cycles)
 {
     PartsRecLE T, D;
     T.w = get_operand(command, cycles);
+    D.w = REG_A + T.b.L + FLAG_C;
     if (FLAG_D == 0) {
         // Binary mode
-        D.w = REG_A + T.b.L + FLAG_C;
         calc_flags(D.w, F_NZC);
         calc_flags(D.w, F_NZC);
         set_flag(F_V, ((REG_A ^ D.b.L) & (T.b.L ^ D.b.L)) >> 1);
         REG_A = D.b.L;
     } else {
-        // BCD mode
-        //TODO: 6502 BCD ADC
+        uint8_t AL = (REG_A & 0x0F) + (T.b.L & 0x0F) + FLAG_C;
+        if (AL >= 0x0A) AL = ((AL + 0x06) & 0x0F) + 0x10;
+        uint16_t A = (REG_A & 0xF0) + (T.b.L & 0xF0) + AL;
+        set_flag(F_N, A & 0x80);
+        set_flag(F_V, ((REG_A ^ A) & (T.b.L ^ A)) >> 1);
+        if (A >= 0xA0) A += 0x60;
+        REG_A = A & 0xFF;
+        set_flag(F_C, (A>=0x100)?F_C:0);
+        set_flag(F_Z, (D.b.L==0)?F_Z:0);
     }
 }
 
@@ -939,16 +947,24 @@ void mos6502core::_RTS(uint8_t command, unsigned int * cycles)
 void mos6502core::_SBC(uint8_t command, unsigned int * cycles)
 {
     PartsRecLE T, D;
-    T.w = get_operand(command, cycles) ^ 0xFF;
+    T.w = get_operand(command, cycles);
     if (FLAG_D == 0) {
         // Binary mode
+        T.w ^= 0xFF;
         D.w = REG_A + T.b.L + FLAG_C;
         calc_flags(D.w, F_NZC);
         set_flag(F_V, ((REG_A ^ D.b.L) & (T.b.L ^ D.b.L)) >> 1);
         REG_A = D.b.L;
     } else {
-        // BCD mode
-        //TODO: 6502 BCD ADC
+        int8_t AL = static_cast<int8_t>(REG_A & 0x0F) - static_cast<int8_t>(T.b.L & 0x0F) + static_cast<int8_t>(FLAG_C) - 1;
+        if (AL < 0) AL = ((AL - 0x06) & 0x0F) - 0x10;
+        int16_t A = (REG_A & 0xF0) - (T.b.L & 0xF0) + AL;
+        if (A < 0) A = A - 0x60;
+        T.w ^= 0xFF;
+        D.w = REG_A + T.b.L + FLAG_C;
+        calc_flags(D.w, F_NZC);
+        set_flag(F_V, ((REG_A ^ D.b.L) & (T.b.L ^ D.b.L)) >> 1);
+        REG_A = A & 0xFF;
     }
 }
 
