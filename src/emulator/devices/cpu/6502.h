@@ -56,5 +56,6 @@ public:
 };
 
 ComputerDevice * create_mos6502(InterfaceManager *im, EmulatorConfigDevice *cd);
+ComputerDevice * create_wdc65c02(InterfaceManager *im, EmulatorConfigDevice *cd);
 
 #endif // MOS6502_H

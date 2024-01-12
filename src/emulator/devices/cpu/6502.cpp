@@ -184,6 +184,12 @@ unsigned int mos6502::execute()
     return cycles;
 }
 
-ComputerDevice * create_mos6502(InterfaceManager *im, EmulatorConfigDevice *cd){
+ComputerDevice * create_mos6502(InterfaceManager *im, EmulatorConfigDevice *cd)
+{
     return new mos6502(im, cd, MOS_6502_FAMILY_BASIC);
+}
+
+ComputerDevice * create_wdc65c02(InterfaceManager *im, EmulatorConfigDevice *cd)
+{
+    return new mos6502(im, cd, MOS_6502_FAMILY_65C02);
 }

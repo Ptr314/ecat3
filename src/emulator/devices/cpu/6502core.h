@@ -4,6 +4,7 @@
 #include <QObject>
 
 #define MOS_6502_FAMILY_BASIC  0
+#define MOS_6502_FAMILY_65C02  1
 
 #pragma pack(1)
 
@@ -121,17 +122,48 @@ protected:
     void __SHY(uint8_t command, unsigned int & cycles);
     void __SLO(uint8_t command, unsigned int & cycles);
     void __SRE(uint8_t command, unsigned int & cycles);
+    void __SBC(uint8_t command, unsigned int & cycles);
     void __KILL(uint8_t command, unsigned int & cycles);
     void __NOP(uint8_t command, unsigned int & cycles);
 
     void _IRQ(uint8_t command, unsigned int & cycles);
     void _NMI(uint8_t command, unsigned int & cycles);
 
+    //65c02
+    void _BRA(uint8_t command, unsigned int & cycles);
+    void _PHX(uint8_t command, unsigned int & cycles);
+    void _PLX(uint8_t command, unsigned int & cycles);
+    void _PHY(uint8_t command, unsigned int & cycles);
+    void _PLY(uint8_t command, unsigned int & cycles);
+    void _STZ(uint8_t command, unsigned int & cycles);
+    void _TRB(uint8_t command, unsigned int & cycles);
+    void _TSB(uint8_t command, unsigned int & cycles);
+    void _BBR(uint8_t command, unsigned int & cycles);
+    void _BBS(uint8_t command, unsigned int & cycles);
+    void _RMB(uint8_t command, unsigned int & cycles);
+    void _SMB(uint8_t command, unsigned int & cycles);
+    void _STP(uint8_t command, unsigned int & cycles);
+    void _WAI(uint8_t command, unsigned int & cycles);
+    void _NOPc02(uint8_t command, unsigned int & cycles);
+
+    void _ADCc02(uint8_t command, unsigned int & cycles);
+    void _ANDc02(uint8_t command, unsigned int & cycles);
+    void _BITc02(uint8_t command, unsigned int & cycles);
+    void _CMPc02(uint8_t command, unsigned int & cycles);
+    void _DEAc02(uint8_t command, unsigned int & cycles);
+    void _INAc02(uint8_t command, unsigned int & cycles);
+    void _EORc02(uint8_t command, unsigned int & cycles);
+    void _JMPc02(uint8_t command, unsigned int & cycles);
+    void _LDAc02(uint8_t command, unsigned int & cycles);
+    void _ORAc02(uint8_t command, unsigned int & cycles);
+    void _SBCc02(uint8_t command, unsigned int & cycles);
+    void _STAc02(uint8_t command, unsigned int & cycles);
 
     mos6502context context;
     uint8_t next_byte();
     uint8_t read_command();
-    void init_commands();
+    void init_commands_6502();
+    void init_commands_65c02();
     uint8_t get_operand(uint8_t command, unsigned int & cycles);
     uint16_t get_address(uint8_t command, unsigned int & cycles);
     void calc_flags(uint32_t value, uint32_t mask);
