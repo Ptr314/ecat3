@@ -26,7 +26,7 @@ class mos6502 : public CPU
     Q_OBJECT
 private:
     Interface * i_nmi;
-    Interface * i_int;
+    Interface * i_irq;
     Interface * i_so;
 
     mos6502Core * core;

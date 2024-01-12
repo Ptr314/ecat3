@@ -30,7 +30,7 @@ mos6502::mos6502(InterfaceManager *im, EmulatorConfigDevice *cd, int family_type
     i_address = create_interface(16, "address", MODE_R, 1); //TODO: 6502 check mode
     i_data =    create_interface(8, "data", MODE_RW);
     i_nmi =     create_interface(1, "nmi", MODE_R, CALLBACK_NMI);
-    i_int =     create_interface(1, "int", MODE_R, CALLBACK_INT);
+    i_irq =     create_interface(1, "irq", MODE_R, CALLBACK_INT);
     i_so =      create_interface(1, "so", MODE_R);
 
     core = new mos6502Core(this, family_type);
@@ -107,7 +107,7 @@ void mos6502::set_context_value(QString name, unsigned int value)
 }
 
 #ifdef LOG_CPU
-void z80::log_state(uint8_t command, bool before, unsigned int cycles)
+void mos6502::log_state(uint8_t command, bool before, unsigned int cycles)
 {
     if (log_available())
     {
@@ -128,10 +128,16 @@ void mos6502::interface_callback(unsigned int callback_id, unsigned int new_valu
 {
     switch (callback_id) {
     case CALLBACK_NMI:
-        core->set_nmi(new_value & 1);
+#ifdef LOG_CPU
+        logs("NMI = " + QString::number(new_value & 1));
+#endif
+        core->set_nmi((new_value & 1) == 0); //NMI has active 0
         break;
     case CALLBACK_INT:
-        core->set_int(new_value & 1);
+#ifdef LOG_CPU
+        logs("INT = " + QString::number(new_value & 1));
+#endif
+        core->set_irq((new_value & 1) == 0); //INT has active 0
         break;
     }
 }
