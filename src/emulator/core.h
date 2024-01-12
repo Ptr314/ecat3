@@ -80,6 +80,7 @@ struct LinkedInterface {
 struct LinkData {
     LinkedInterface s;
     LinkedInterface d;
+    unsigned int inversion;
 };
 
 struct DeviceDescription {
@@ -292,7 +293,7 @@ public:
                 unsigned int callback_id
     );
 
-    void connect(LinkedInterface s, LinkedInterface d);
+    void connect(LinkedInterface s, LinkedInterface d, bool invert=false);
     unsigned int get_size();
     void set_size(unsigned int new_size);
     void set_mode(unsigned int new_mode);

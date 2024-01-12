@@ -57,7 +57,7 @@ device_id: device_type {
     parameter1 = value
     parameter2 = value
     ~interface1 = other_device.interface3
-    ~interface2[bits] = other_device.interface4[bits]
+    ~interface2[bits] = !other_device.interface4[bits]
 }
 ~~~
 
@@ -76,6 +76,7 @@ device_id: device_type {
     * __~page = portFB.value[2-3]__
         * Биты [0-1] интерфейса __page__ подключаются к битам [2-3] интерфейса __value__ устройства __portFB__;
         * Ширина интерфейса берется из правой части.
+    * Если в начале правой части стоит знак «!», интерфейсы будут соединены с инверсией.
 
 ## Пример
 

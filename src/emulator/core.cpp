@@ -33,7 +33,7 @@ Interface::Interface(
     im->register_interface(this);
 }
 
-void Interface::connect(LinkedInterface s, LinkedInterface d)
+void Interface::connect(LinkedInterface s, LinkedInterface d, bool invert)
 {
     int index = -1;
 
@@ -45,7 +45,8 @@ void Interface::connect(LinkedInterface s, LinkedInterface d)
         linked++;
         linked_interfaces[linked-1].s = s;
         linked_interfaces[linked-1].d = d;
-        d.i->connect(d, s);
+        linked_interfaces[linked-1].inversion = invert?_FFFF:0;
+        d.i->connect(d, s, invert);
         linked_bits |= s.mask;
     }
 }
@@ -95,7 +96,7 @@ void Interface::change(unsigned int new_value)
         value = new_value;
         for (unsigned int i=0; i < linked; i++)
         {
-            linked_interfaces[i].d.i->changed(linked_interfaces[i], new_value);
+            linked_interfaces[i].d.i->changed(linked_interfaces[i], new_value ^ linked_interfaces[i].inversion);
         }
     } else {
         if (mode == MODE_OFF)
@@ -374,6 +375,8 @@ void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
 {
     LinkData ld;
 
+    bool inverted;
+
     for (unsigned int i = 0; i < this->cd->parameters_count; i++)
     {
         QString parameter_name = this->cd->parameters[i].name;
@@ -386,6 +389,12 @@ void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
 
             QString connection = this->cd->parameters[i].value;
             if (connection.isEmpty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(this->name, connection));
+
+            if (connection.at(0) == '!') {
+                connection = connection.last(connection.length()-1);
+                inverted = true;
+            } else
+                inverted = false;
 
             int p = connection.indexOf('.');
             if (p < 0) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(this->name, connection));
@@ -419,7 +428,7 @@ void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
                 ld.d.shift = bit_1;
                 ld.d.mask = create_mask(bit_2 - bit_1 + 1, bit_1);
             }
-            ld.s.i->connect(ld.s, ld.d);
+            ld.s.i->connect(ld.s, ld.d, inverted);
         }
     }
 
