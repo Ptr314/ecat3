@@ -1,4 +1,4 @@
-00 	BRK	1	Impl/immed
+00 	BRK	1	
 01 n	ORA ($n, X)	2	(indir,x)
 02 n	*NOP #$n	2	
 03	*NOP	1	
@@ -16,7 +16,7 @@
 0F n e	BBR0 $n,$PC+e	3	
 10 e	BPL $PC+$e	2	Relative
 11 n	ORA ($n), Y	2	(indir),y
-12 n n	ORA ($nn)	3	(indir)
+12 n	ORA ($n)	2	(indir)
 13	*NOP	1	
 14 n	TRB $n	2	zp
 15 n	ORA $n, X	2	Zeropage,x
@@ -48,7 +48,7 @@
 2F n e	BBR2 $n,$PC+e	3	
 30 e	BMI $PC+$e	2	Relative
 31 n	AND ($n), Y 	2	(indir),y
-32 n n	AND ($nn)	3	(indir)
+32 n	AND ($n)	2	(indir)
 33	*NOP	1	
 34 n	BIT $n, X	2	Zeropage,x
 35 n	AND $n, X	2	Zeropage,x
@@ -80,7 +80,7 @@
 4F n e	BBR4 $n,$PC+e	3	
 50 e	BVC $PC+$e	2	Relative
 51 n	EOR ($n), Y	2	(indir),y
-52 n n	EOR ($nn)	3	(indir)
+52 n	EOR ($n)	2	(indir)
 53	*NOP	1	
 54 n	*NOP #$n	2	zp
 55 n	EOR $n, X	2	Zeropage,x
@@ -112,7 +112,7 @@
 6F n e	BBR6 $n,$PC+e	3	
 70 e	BVS $PC+$e	2	Relative
 71 n	ADC ($n), Y 	2	(indir),y
-72 n n	ADC ($nn)	3	(indir)
+72 n	ADC ($n)	2	zp
 73	*NOP	1	
 74 n	STZ $n, X	2	Zeropage,x
 75 n	ADC $n, X	2	Zeropage,x
@@ -144,7 +144,7 @@
 8F n e	BBS0 $n,PC+$e	3	
 90 e	BCC PC+$e	2	Relative
 91 n	STA ($n), Y	2	(indir),y
-92 n n	STA ($nn)	3	(indir)
+92 n	STA ($nn)	2	(indir)
 93	*NOP	1	
 94 n	STY $n, X	2	Zeropage,x
 95 n	STA $n, X	2	Zeropage,x
@@ -176,7 +176,7 @@ AE n n	LDX $nn	3	Absolute
 AF n e	BBS2 $n,PC+$e	3	Absolute
 B0 e	BCS PC+$e	2	Relative
 B1 n	LDA ($n), Y	2	(indir),y
-B2 n n	LDA ($nn)	3	(indir)
+B2 n	LDA ($n)	2	(indir)
 B3	*NOP	1	
 B4 n	LDY $n, X	2	Zeropage,x
 B5 n	LDA $n, X	2	Zeropage,x
@@ -208,7 +208,7 @@ CE n n	DEC $nn	3	Absolute
 CF n e	BBS4 $n,PC+$e	3	
 D0 e	BNE PC+$e	2	Relative
 D1 n	CMP ($n), Y	2	(indir),y
-D2 n n	CMP ($nn)	3	(indir)
+D2 n	CMP ($n)	2	(indir)
 D3	*NOP	1	
 D4 n	*NOP #$n	2	
 D5 n	CMP $n, X	2	Zeropage,x
@@ -240,7 +240,7 @@ EE n n	INC $nn	3	Absolute
 EF n e	BBS6 $n,PC+$e	3	
 F0 e	BEQ PC+$e	2	Relative
 F1 n	SBC ($n), Y	2	(indir),y
-F2 n n	SBC ($nn)	3	(indir)
+F2 n	SBC ($n)	2	(indir)
 F3	*NOP	1	
 F4 n	*NOP #$n	2	
 F5 n	SBC $n, X	2	Zeropage,x

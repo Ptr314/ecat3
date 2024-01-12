@@ -23,6 +23,8 @@ struct mos6502context
     int type;
     bool is_nmi;
     bool is_irq;
+    bool stop;
+    bool wait;
 };
 
 namespace MOS6502
@@ -49,6 +51,15 @@ protected:
     typedef void (mos6502core::*_OPER_FUNC)(uint8_t, unsigned int &);
 
     _OPER_FUNC commands[256];
+
+    void doADC(uint8_t v);
+    void doAND(uint8_t v);
+    void doCMP(uint8_t v);
+    void doEOR(uint8_t v);
+    void doLDA(uint8_t v);
+    void doORA(uint8_t v);
+    void doSBC(uint8_t v);
+    void doSTA(uint16_t address);
 
     // Documented
     void _ADC(uint8_t command, unsigned int & cycles);
@@ -148,12 +159,10 @@ protected:
 
     void _ADCc02(uint8_t command, unsigned int & cycles);
     void _ANDc02(uint8_t command, unsigned int & cycles);
-    void _BITc02(uint8_t command, unsigned int & cycles);
     void _CMPc02(uint8_t command, unsigned int & cycles);
     void _DEAc02(uint8_t command, unsigned int & cycles);
     void _INAc02(uint8_t command, unsigned int & cycles);
     void _EORc02(uint8_t command, unsigned int & cycles);
-    void _JMPc02(uint8_t command, unsigned int & cycles);
     void _LDAc02(uint8_t command, unsigned int & cycles);
     void _ORAc02(uint8_t command, unsigned int & cycles);
     void _SBCc02(uint8_t command, unsigned int & cycles);

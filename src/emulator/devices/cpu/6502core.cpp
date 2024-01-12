@@ -105,6 +105,7 @@ mos6502core::mos6502core(int family_type)
     }
     calc_flags(0, F_ALL);
     context.is_irq = context.is_nmi = false;
+    context.stop = context.wait = false;
 }
 
 void mos6502core::reset()
@@ -112,6 +113,7 @@ void mos6502core::reset()
     REG_PCL = read_mem(0xFFFC);
     REG_PCH = read_mem(0xFFFD);
     REG_S = 0xFF;
+    context.stop = context.wait = false;
 }
 
 mos6502context * mos6502core::get_context()
@@ -482,7 +484,7 @@ void mos6502core::init_commands_65c02()
     commands[0x31] = &mos6502core::_AND;
     commands[0x32] = &mos6502core::_ANDc02; //
     commands[0x33] = &mos6502core::_NOPc02; //
-    commands[0x34] = &mos6502core::_BITc02; //
+    commands[0x34] = &mos6502core::_BIT; //
     commands[0x35] = &mos6502core::_AND;
     commands[0x36] = &mos6502core::_ROL;
     commands[0x37] = &mos6502core::_RMB; //
@@ -490,7 +492,7 @@ void mos6502core::init_commands_65c02()
     commands[0x39] = &mos6502core::_AND;
     commands[0x3A] = &mos6502core::_DEAc02; //
     commands[0x3B] = &mos6502core::_NOPc02; //
-    commands[0x3C] = &mos6502core::_BITc02; //
+    commands[0x3C] = &mos6502core::_BIT; //
     commands[0x3D] = &mos6502core::_AND;
     commands[0x3E] = &mos6502core::_ROL;
     commands[0x3F] = &mos6502core::_BBR; //
@@ -558,7 +560,7 @@ void mos6502core::init_commands_65c02()
     commands[0x79] = &mos6502core::_ADC;
     commands[0x7A] = &mos6502core::_PLY; //
     commands[0x7B] = &mos6502core::_NOPc02; //
-    commands[0x7C] = &mos6502core::_JMPc02; //
+    commands[0x7C] = &mos6502core::_JMP; //
     commands[0x7D] = &mos6502core::_ADC;
     commands[0x7E] = &mos6502core::_ROR;
     commands[0x7F] = &mos6502core::_BBR; //
@@ -572,7 +574,7 @@ void mos6502core::init_commands_65c02()
     commands[0x86] = &mos6502core::_STX;
     commands[0x87] = &mos6502core::_SMB; //
     commands[0x88] = &mos6502core::_DEY;
-    commands[0x89] = &mos6502core::_BITc02; //
+    commands[0x89] = &mos6502core::_BIT; //
     commands[0x8A] = &mos6502core::_TXA;
     commands[0x8B] = &mos6502core::_NOPc02; //
     commands[0x8C] = &mos6502core::_STY;
@@ -848,23 +850,22 @@ inline void mos6502core::set_flag(uint8_t flag, uint8_t value)
     REG_P = (REG_P & ~flag) | (value & flag);
 }
 
-void mos6502core::_ADC(uint8_t command, unsigned int & cycles)
+inline void mos6502core::doADC(uint8_t v)
 {
-    PartsRecLE T, D;
-    T.w = get_operand(command, cycles);
-    D.w = REG_A + T.b.L + FLAG_C;
+    PartsRecLE D;
+    D.w = REG_A + v + FLAG_C;
     if (FLAG_D == 0) {
         // Binary mode
         calc_flags(D.w, F_NZC);
         calc_flags(D.w, F_NZC);
-        set_flag(F_V, ((REG_A ^ D.b.L) & (T.b.L ^ D.b.L)) >> 1);
+        set_flag(F_V, ((REG_A ^ D.b.L) & (v ^ D.b.L)) >> 1);
         REG_A = D.b.L;
     } else {
-        uint8_t AL = (REG_A & 0x0F) + (T.b.L & 0x0F) + FLAG_C;
+        uint8_t AL = (REG_A & 0x0F) + (v & 0x0F) + FLAG_C;
         if (AL >= 0x0A) AL = ((AL + 0x06) & 0x0F) + 0x10;
-        uint16_t A = (REG_A & 0xF0) + (T.b.L & 0xF0) + AL;
+        uint16_t A = (REG_A & 0xF0) + (v & 0xF0) + AL;
         set_flag(F_N, A & 0x80);
-        set_flag(F_V, ((REG_A ^ A) & (T.b.L ^ A)) >> 1);
+        set_flag(F_V, ((REG_A ^ A) & (v ^ A)) >> 1);
         if (A >= 0xA0) A += 0x60;
         REG_A = A & 0xFF;
         set_flag(F_C, (A>=0x100)?F_C:0);
@@ -872,10 +873,20 @@ void mos6502core::_ADC(uint8_t command, unsigned int & cycles)
     }
 }
 
+void mos6502core::_ADC(uint8_t command, unsigned int & cycles)
+{
+    doADC(get_operand(command, cycles));
+}
+
+inline void mos6502core::doAND(uint8_t v)
+{
+    REG_A &= v;
+    calc_flags(REG_A, F_NZ);
+}
+
 void mos6502core::_AND(uint8_t command, unsigned int & cycles)
 {
-    REG_A &= get_operand(command, cycles);
-    calc_flags(REG_A, F_NZ);
+    doAND(get_operand(command, cycles));
 }
 
 void mos6502core::_ASL(uint8_t command, unsigned int & cycles)
@@ -918,9 +929,11 @@ void mos6502core::_BRANCH(uint8_t command, unsigned int & cycles)
 
 void mos6502core::_BIT(uint8_t command, unsigned int & cycles)
 {
-    uint8_t v = get_operand(command, cycles);
-    calc_flags(REG_A & v, F_Z);
-    set_flag(F_V+F_N, v);
+    PartsRecLE D;
+    D.b.L = get_operand(command, cycles);
+    calc_flags(REG_A & D.b.L, F_Z);
+    if (command != 0x89)                    // 65c02 BIT imm doesn't affect V&N
+        set_flag(F_V+F_N, D.b.L);
 }
 
 void mos6502core::_BRK(uint8_t command, unsigned int & cycles)
@@ -954,11 +967,14 @@ void mos6502core::_CLV(uint8_t command, unsigned int & cycles)
     set_flag(F_V, 0);
 }
 
+inline void mos6502core::doCMP(uint8_t v)
+{
+    calc_flags(static_cast<uint16_t>(REG_A) + 0x100 - v, F_NZC);
+}
+
 void mos6502core::_CMP(uint8_t command, unsigned int & cycles)
 {
-    PartsRecLE D;
-    D.w = static_cast<uint16_t>(REG_A) + 0x100 - get_operand(command, cycles);
-    calc_flags(D.w, F_NZC);
+    doCMP(get_operand(command, cycles));
 }
 
 void mos6502core::_CPX(uint8_t command, unsigned int & cycles)
@@ -1020,10 +1036,15 @@ void mos6502core::_DEY(uint8_t command, unsigned int & cycles)
     REG_Y = D.b.L;
 }
 
+inline void mos6502core::doEOR(uint8_t v)
+{
+    REG_A ^= v;
+    calc_flags(REG_A, F_NZ);
+}
+
 void mos6502core::_EOR(uint8_t command, unsigned int & cycles)
 {
-    REG_A ^= get_operand(command, cycles);
-    calc_flags(REG_A, F_NZ);
+    doEOR(get_operand(command, cycles));
 }
 
 void mos6502core::_INC(uint8_t command, unsigned int & cycles)
@@ -1058,14 +1079,22 @@ void mos6502core::_JMP(uint8_t command, unsigned int & cycles)
     T.b.H = next_byte();
     switch (command) {
     case 0x4C:
+        // JMP abs
         D.w = T.w;
         break;
     case 0x6C:
+        // JMP (abs)
         D.b.L = read_mem(T.w);
-        if (T.b.L == 0xFF)
+        if (T.b.L == 0xFF && context.type == MOS_6502_FAMILY_BASIC)
             D.b.H = read_mem(T.w & 0xFF00);
         else
             D.b.H = read_mem(T.w+1);
+        break;
+    case 0x7C:
+        // 65c02 JMP (abs,X)
+        T.w += REG_X;
+        D.b.L = read_mem(T.w);
+        D.b.H = read_mem(T.w+1);
         break;
     default:
         // TODO: 6502 generate an error
@@ -1087,10 +1116,15 @@ void mos6502core::_JSR(uint8_t command, unsigned int & cycles)
     REG_PC = T.w;
 }
 
+inline void mos6502core::doLDA(uint8_t v)
+{
+    REG_A = v;
+    calc_flags(REG_A, F_NZ);
+}
+
 void mos6502core::_LDA(uint8_t command, unsigned int & cycles)
 {
-    REG_A = get_operand(command, cycles);
-    calc_flags(REG_A, F_NZ);
+    doLDA(get_operand(command, cycles));
 }
 
 void mos6502core::_LDX(uint8_t command, unsigned int & cycles)
@@ -1161,16 +1195,20 @@ void mos6502core::_NOP(uint8_t command, unsigned int & cycles)
     // Chilling here a bit
 }
 
+inline void mos6502core::doORA(uint8_t v)
+{
+    REG_A |= v;
+    calc_flags(REG_A, F_NZ);
+}
+
 void mos6502core::_ORA(uint8_t command, unsigned int & cycles)
 {
-    REG_A |= get_operand(command, cycles);
-    calc_flags(REG_A, F_NZ);
+    doORA(get_operand(command, cycles));
 }
 
 void mos6502core::_PHA(uint8_t command, unsigned int & cycles)
 {
-    write_mem(REG_S+0x100, REG_A);
-    REG_S--;
+    write_mem(0x100+REG_S--, REG_A);
 }
 
 void mos6502core::_PHP(uint8_t command, unsigned int & cycles)
@@ -1182,8 +1220,7 @@ void mos6502core::_PHP(uint8_t command, unsigned int & cycles)
 
 void mos6502core::_PLA(uint8_t command, unsigned int & cycles)
 {
-    REG_S++;
-    REG_A = read_mem(REG_S+0x100);
+    REG_A = read_mem(++REG_S+0x100);
     calc_flags(REG_A, F_NZ);
 }
 
@@ -1249,10 +1286,10 @@ void mos6502core::_RTS(uint8_t command, unsigned int & cycles)
     REG_PC++;
 }
 
-void mos6502core::_SBC(uint8_t command, unsigned int & cycles)
+inline void mos6502core::doSBC(uint8_t v)
 {
     PartsRecLE T, D;
-    T.w = get_operand(command, cycles);
+    T.w = v;
     if (FLAG_D == 0) {
         // Binary mode
         T.w ^= 0xFF;
@@ -1271,6 +1308,12 @@ void mos6502core::_SBC(uint8_t command, unsigned int & cycles)
         set_flag(F_V, ((REG_A ^ D.b.L) & (T.b.L ^ D.b.L)) >> 1);
         REG_A = A & 0xFF;
     }
+
+}
+
+void mos6502core::_SBC(uint8_t command, unsigned int & cycles)
+{
+    doSBC(get_operand(command, cycles));
 }
 
 void mos6502core::_SEC(uint8_t command, unsigned int & cycles)
@@ -1288,9 +1331,14 @@ void mos6502core::_SEI(uint8_t command, unsigned int & cycles)
     set_flag(F_I, F_I);
 }
 
+inline void mos6502core::doSTA(uint16_t address)
+{
+    write_mem(address, REG_A);
+}
+
 void mos6502core::_STA(uint8_t command, unsigned int & cycles)
 {
-    write_mem(get_address(command, cycles), REG_A);
+    doSTA(get_address(command, cycles));
 }
 
 void mos6502core::_STX(uint8_t command, unsigned int & cycles)
@@ -1642,76 +1690,6 @@ void mos6502core::_NMI(uint8_t command, unsigned int & cycles)
 
 //65c02
 
-void mos6502core::_BRA(uint8_t command, unsigned int & cycles)
-{
-
-}
-
-void mos6502core::_PHX(uint8_t command, unsigned int & cycles)
-{
-
-}
-
-void mos6502core::_PLX(uint8_t command, unsigned int & cycles)
-{
-
-}
-
-void mos6502core::_PHY(uint8_t command, unsigned int & cycles)
-{
-
-}
-
-void mos6502core::_PLY(uint8_t command, unsigned int & cycles)
-{
-
-}
-
-void mos6502core::_STZ(uint8_t command, unsigned int & cycles)
-{
-
-}
-
-void mos6502core::_TRB(uint8_t command, unsigned int & cycles)
-{
-
-}
-
-void mos6502core::_TSB(uint8_t command, unsigned int & cycles)
-{
-
-}
-
-void mos6502core::_BBR(uint8_t command, unsigned int & cycles)
-{
-
-}
-
-void mos6502core::_BBS(uint8_t command, unsigned int & cycles)
-{
-
-}
-
-void mos6502core::_RMB(uint8_t command, unsigned int & cycles)
-{
-
-}
-
-void mos6502core::_SMB(uint8_t command, unsigned int & cycles)
-{
-
-}
-
-void mos6502core::_STP(uint8_t command, unsigned int & cycles)
-{
-
-}
-
-void mos6502core::_WAI(uint8_t command, unsigned int & cycles)
-{
-
-}
-
 void mos6502core::_NOPc02(uint8_t command, unsigned int & cycles)
 {
     switch(command){
@@ -1744,77 +1722,226 @@ void mos6502core::_NOPc02(uint8_t command, unsigned int & cycles)
 
 void mos6502core::_ADCc02(uint8_t command, unsigned int & cycles)
 {
-
+    // 65c02 ADC (zp)
+    doADC(read_mem(next_byte()));
 }
 
 void mos6502core::_ANDc02(uint8_t command, unsigned int & cycles)
 {
-
-}
-
-void mos6502core::_BITc02(uint8_t command, unsigned int & cycles)
-{
-
+    // 65c02 AND (zp)
+    doAND(read_mem(next_byte()));
 }
 
 void mos6502core::_CMPc02(uint8_t command, unsigned int & cycles)
 {
-
+    // 65c02 CMP (zp)
+    doCMP(read_mem(next_byte()));
 }
 
 void mos6502core::_DEAc02(uint8_t command, unsigned int & cycles)
 {
-
+    // 65c02 DEA
+    REG_A -= 1;
+    calc_flags(REG_A, F_NZ);
 }
 
 void mos6502core::_INAc02(uint8_t command, unsigned int & cycles)
 {
-
+    // 65c02 INA
+    REG_A += 1;
+    calc_flags(REG_A, F_NZ);
 }
 
 void mos6502core::_EORc02(uint8_t command, unsigned int & cycles)
 {
-
-}
-
-void mos6502core::_JMPc02(uint8_t command, unsigned int & cycles)
-{
-
+    // 65c02 EOR (zp)
+    doEOR(read_mem(next_byte()));
 }
 
 void mos6502core::_LDAc02(uint8_t command, unsigned int & cycles)
 {
-
+    // 65c02 LDA (zp)
+    doLDA(read_mem(next_byte()));
 }
 
 void mos6502core::_ORAc02(uint8_t command, unsigned int & cycles)
 {
-
+    // 65c02 ORA (zp)
+    doORA(read_mem(next_byte()));
 }
 
 void mos6502core::_SBCc02(uint8_t command, unsigned int & cycles)
 {
-
+    // 65c02 SBC (zp)
+    doSBC(read_mem(next_byte()));
 }
 
 void mos6502core::_STAc02(uint8_t command, unsigned int & cycles)
 {
-
+    // 65c02 STA (zp)
+    PartsRecLE T, D;
+    T.w = next_byte();
+    D.b.L = read_mem(T.w);
+    if (T.b.L == 0xFF)
+        D.b.H = read_mem(0);
+    else
+        D.b.H = read_mem(T.w+1);
+    doSTA(D.w);
 }
 
+void mos6502core::_BRA(uint8_t command, unsigned int & cycles)
+{
+    REG_PC += static_cast<int8_t>(next_byte());
+}
+
+void mos6502core::_PHX(uint8_t command, unsigned int & cycles)
+{
+    write_mem(0x100+REG_S--, REG_X);
+}
+
+void mos6502core::_PLX(uint8_t command, unsigned int & cycles)
+{
+    REG_X = read_mem(++REG_S+0x100);
+    calc_flags(REG_X, F_NZ);
+}
+
+void mos6502core::_PHY(uint8_t command, unsigned int & cycles)
+{
+    write_mem(0x100+REG_S--, REG_Y);
+}
+
+void mos6502core::_PLY(uint8_t command, unsigned int & cycles)
+{
+    REG_Y = read_mem(++REG_S+0x100);
+    calc_flags(REG_Y, F_NZ);
+}
+
+void mos6502core::_STZ(uint8_t command, unsigned int & cycles)
+{
+    PartsRecLE T;
+    switch (command) {
+    case 0x9C:
+        T.w = get_address(3 << 2, cycles); // abs
+        break;
+    case 0x9E:
+        T.w = get_address(7 << 2, cycles); // abs, X
+        break;
+    default:
+        T.w = get_address(command, cycles); // zp; zp,x
+        break;
+    }
+    write_mem(T.w, 0);
+}
+
+void mos6502core::_TRB(uint8_t command, unsigned int & cycles)
+{
+    PartsRecLE T, D;
+    if (command == 0x14) {
+        // zp
+        T.w = next_byte();
+    } else
+    if (command == 0x1C) {
+        // abs
+        T.b.L = next_byte();
+        T.b.H = next_byte();
+    } else {
+        // TODO: Error
+        T.w = 0;    // To avoid warnings
+    }
+    D.b.L = read_mem(T.w);
+    write_mem(T.w, D.b.L & ~REG_A);
+    calc_flags(D.b.L & REG_A, F_Z);
+}
+
+void mos6502core::_TSB(uint8_t command, unsigned int & cycles)
+{
+    PartsRecLE T, D;
+    if (command == 0x04) {
+        // zp
+        T.w = next_byte();
+    } else
+    if (command == 0x0C) {
+        // abs
+        T.b.L = next_byte();
+        T.b.H = next_byte();
+    } else {
+        // TODO: Error
+        T.w = 0;    // To avoid warnings
+    }
+    D.b.L = read_mem(T.w);
+    write_mem(T.w, D.b.L | REG_A);
+    calc_flags(D.b.L & REG_A, F_Z);
+}
+
+void mos6502core::_BBR(uint8_t command, unsigned int & cycles)
+{
+    uint8_t bit = (command >> 4) & 0x07;
+    uint8_t v = read_mem(next_byte());
+    uint8_t offset = next_byte();
+    if ((v & (1 << bit)) == 0) {
+        cycles++;
+        uint16_t new_pc = REG_PC + static_cast<int8_t>(offset);
+        if (((new_pc ^ REG_PC) & 0xFF00) != 0) cycles++;            // Branch to a different page
+        REG_PC = new_pc;
+    }
+}
+
+void mos6502core::_BBS(uint8_t command, unsigned int & cycles)
+{
+    uint8_t bit = (command >> 4) & 0x07;
+    uint8_t v = read_mem(next_byte());
+    uint8_t offset = next_byte();
+    if ((v & (1 << bit)) != 0) {
+        cycles++;
+        uint16_t new_pc = REG_PC + static_cast<int8_t>(offset);
+        if (((new_pc ^ REG_PC) & 0xFF00) != 0) cycles++;            // Branch to a different page
+        REG_PC = new_pc;
+    }
+}
+
+void mos6502core::_RMB(uint8_t command, unsigned int & cycles)
+{
+    uint8_t bit = (command >> 4) & 0x07;
+    uint16_t address = next_byte();
+    uint8_t v = read_mem(address) & ~(1 << bit);
+    write_mem(address, v);
+}
+
+void mos6502core::_SMB(uint8_t command, unsigned int & cycles)
+{
+    uint8_t bit = (command >> 4) & 0x07;
+    uint16_t address = next_byte();
+    uint8_t v = read_mem(address) | (1 << bit);
+    write_mem(address, v);
+}
+
+void mos6502core::_STP(uint8_t command, unsigned int & cycles)
+{
+    context.stop = true;
+}
+
+void mos6502core::_WAI(uint8_t command, unsigned int & cycles)
+{
+    context.wait = true;
+}
 
 
 unsigned int mos6502core::execute()
 {
+    if (context.stop) return 5;
+
     unsigned int cycles = 0;
 
     if (context.is_nmi) {
         context.is_nmi = false;
+        context.wait = false;
         _NMI(0, cycles);
     } else
     if (context.is_irq && (FLAG_I == 0)) {
+        context.wait = false;
         _IRQ(0, cycles);
     } else {
+        if (context.wait) return 5;
         uint8_t command = next_byte();
         cycles += MOS6502_TIMES[command];
         (this->*(commands[command]))(command, cycles);
