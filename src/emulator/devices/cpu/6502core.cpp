@@ -62,31 +62,31 @@ static const uint8_t WDC65c02_TIMES[256] = {
                         2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7
 };
 
-static const uint8_t ZERO_SIGN_5[256] = {
-                        F_Z+F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,    // 00-0F */
-                        F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,        // 10-1F */
-                        F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,        // 20-2F */
-                        F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,        // 30-3F */
-                        F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,        // 40-4F */
-                        F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,        // 50-5F */
-                        F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,        // 60-6F */
-                        F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,F_P5,        // 70-7F */
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,                // 80-8F */
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,                // 90-9F */
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,                // A0-AF */
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,                // B0-BF */
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,                // C0-CF */
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,                // D0-DF */
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,                // E0-EF */
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,
-                        F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5,F_N+F_P5                 // F0-FF */
+static const uint8_t ZERO_SIGN[256] = {
+                        F_Z,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,    // 00-0F */
+                        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,        // 10-1F */
+                        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,        // 20-2F */
+                        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,        // 30-3F */
+                        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,        // 40-4F */
+                        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,        // 50-5F */
+                        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,        // 60-6F */
+                        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,        // 70-7F */
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,        // 80-8F */
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,        // 90-9F */
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,        // A0-AF */
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,        // B0-BF */
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,        // C0-CF */
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,        // D0-DF */
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,        // E0-EF */
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N,
+                        F_N,F_N,F_N,F_N,F_N,F_N,F_N,F_N         // F0-FF */
 };
 
 mos6502core::mos6502core(int family_type)
@@ -839,7 +839,7 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int & cycles)
 
 inline void mos6502core::calc_flags(uint32_t value, uint32_t mask)
 {
-    uint8_t F = ZERO_SIGN_5[value & 0xFF] | ((value & 0x100) >> 8);
+    uint8_t F = ZERO_SIGN[value & 0xFF] | ((value & 0x100) >> 8);
     REG_P = (REG_P & ~mask) | (F & mask) | F_P5;
 }
 
