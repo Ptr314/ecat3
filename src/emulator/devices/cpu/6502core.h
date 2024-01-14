@@ -178,6 +178,8 @@ protected:
     void calc_flags(uint32_t value, uint32_t mask);
     void set_flag(uint8_t flag, uint8_t value);
 
+    uint16_t get_address_zp(unsigned int & cycles);
+
 public:
     mos6502core(int family_type);
     virtual uint8_t read_mem(uint16_t address) = 0;

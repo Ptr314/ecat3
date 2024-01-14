@@ -839,7 +839,6 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int & cycles)
         break;
     }
     return result;
-
 }
 
 inline void mos6502core::calc_flags(uint32_t value, uint32_t mask)
@@ -1745,22 +1744,33 @@ void mos6502core::_NOPc02(uint8_t command, unsigned int & cycles)
     }
 }
 
+inline uint16_t mos6502core::get_address_zp(unsigned int & cycles)
+{
+    PartsRecLE T, D;
+    T.w = next_byte();
+    D.b.L = read_mem(T.w);
+    if (T.b.L == 0xFF)
+        D.b.H = read_mem(0);
+    else
+        D.b.H = read_mem(T.w+1);
+}
+
 void mos6502core::_ADCc02(uint8_t command, unsigned int & cycles)
 {
     // 65c02 ADC (zp)
-    doADC(read_mem(next_byte()));
+    doADC(read_mem(get_address_zp(cycles)));
 }
 
 void mos6502core::_ANDc02(uint8_t command, unsigned int & cycles)
 {
     // 65c02 AND (zp)
-    doAND(read_mem(next_byte()));
+    doAND(read_mem(get_address_zp(cycles)));
 }
 
 void mos6502core::_CMPc02(uint8_t command, unsigned int & cycles)
 {
     // 65c02 CMP (zp)
-    doCMP(read_mem(next_byte()));
+    doCMP(read_mem(get_address_zp(cycles)));
 }
 
 void mos6502core::_DEAc02(uint8_t command, unsigned int & cycles)
@@ -1780,38 +1790,31 @@ void mos6502core::_INAc02(uint8_t command, unsigned int & cycles)
 void mos6502core::_EORc02(uint8_t command, unsigned int & cycles)
 {
     // 65c02 EOR (zp)
-    doEOR(read_mem(next_byte()));
+    doEOR(read_mem(get_address_zp(cycles)));
 }
 
 void mos6502core::_LDAc02(uint8_t command, unsigned int & cycles)
 {
     // 65c02 LDA (zp)
-    doLDA(read_mem(next_byte()));
+    doLDA(read_mem(get_address_zp(cycles)));
 }
 
 void mos6502core::_ORAc02(uint8_t command, unsigned int & cycles)
 {
     // 65c02 ORA (zp)
-    doORA(read_mem(next_byte()));
+    doORA(read_mem(get_address_zp(cycles)));
 }
 
 void mos6502core::_SBCc02(uint8_t command, unsigned int & cycles)
 {
     // 65c02 SBC (zp)
-    doSBC(read_mem(next_byte()));
+    doSBC(read_mem(get_address_zp(cycles)));
 }
 
 void mos6502core::_STAc02(uint8_t command, unsigned int & cycles)
 {
     // 65c02 STA (zp)
-    PartsRecLE T, D;
-    T.w = next_byte();
-    D.b.L = read_mem(T.w);
-    if (T.b.L == 0xFF)
-        D.b.H = read_mem(0);
-    else
-        D.b.H = read_mem(T.w+1);
-    doSTA(D.w);
+    doSTA(get_address_zp(cycles));
 }
 
 void mos6502core::_BRA(uint8_t command, unsigned int & cycles)
