@@ -114,6 +114,9 @@ void mos6502core::reset()
     REG_PCH = read_mem(0xFFFD);
     REG_S = 0xFF;
     context.stop = context.wait = false;
+    if (context.type == MOS_6502_FAMILY_65C02)
+        set_flag(F_D, 0);
+
 }
 
 mos6502context * mos6502core::get_context()
@@ -869,7 +872,12 @@ inline void mos6502core::doADC(uint8_t v)
         if (A >= 0xA0) A += 0x60;
         REG_A = A & 0xFF;
         set_flag(F_C, (A>=0x100)?F_C:0);
-        set_flag(F_Z, (D.b.L==0)?F_Z:0);
+        if (context.type == MOS_6502_FAMILY_BASIC)
+            set_flag(F_Z, (D.b.L==0)?F_Z:0);
+        else {
+            set_flag(F_Z, (REG_A==0)?F_Z:0);
+            set_flag(F_N, REG_A);
+        }
     }
 }
 
@@ -911,16 +919,16 @@ void mos6502core::_BRANCH(uint8_t command, unsigned int & cycles)
 {
     bool branch = false;
     switch (command) {
-        case 0xD0: branch = FLAG_Z == 0; break;	//BNE
-        case 0xF0: branch = FLAG_Z != 0; break;	//BEQ
-        case 0x90: branch = FLAG_C == 0; break;	//BCC
-        case 0xB0: branch = FLAG_C != 0; break;	//BCS
-        case 0x10: branch = FLAG_N == 0; break;	//BPL
-        case 0x30: branch = FLAG_N != 0; break; //BMI
-        case 0x50: branch = FLAG_V == 0; break;	//BVC
-        case 0x70: branch = FLAG_V != 0; break; //BVS
-        default:
-            break;
+    case 0xD0: branch = FLAG_Z == 0; break;	//BNE
+    case 0xF0: branch = FLAG_Z != 0; break;	//BEQ
+    case 0x90: branch = FLAG_C == 0; break;	//BCC
+    case 0xB0: branch = FLAG_C != 0; break;	//BCS
+    case 0x10: branch = FLAG_N == 0; break;	//BPL
+    case 0x30: branch = FLAG_N != 0; break; //BMI
+    case 0x50: branch = FLAG_V == 0; break;	//BVC
+    case 0x70: branch = FLAG_V != 0; break; //BVS
+    default:
+        break;
     }
     int8_t offset = static_cast<int8_t>(next_byte());
     if (branch)
@@ -943,6 +951,8 @@ void mos6502core::_BRK(uint8_t command, unsigned int & cycles)
     write_mem(0x100+REG_S--, REG_PCL);
     write_mem(0x100+REG_S--, REG_P | F_B);
     set_flag(F_B+F_I, F_B+F_I);
+    if (context.type == MOS_6502_FAMILY_65C02)
+        set_flag(F_D, 0);
     REG_PCL = read_mem(0xFFFE);
     REG_PCH = read_mem(0xFFFF);
 }
@@ -1298,15 +1308,26 @@ inline void mos6502core::doSBC(uint8_t v)
         set_flag(F_V, ((REG_A ^ D.b.L) & (T.b.L ^ D.b.L)) >> 1);
         REG_A = D.b.L;
     } else {
+        int16_t A;
         int8_t AL = static_cast<int8_t>(REG_A & 0x0F) - static_cast<int8_t>(T.b.L & 0x0F) + static_cast<int8_t>(FLAG_C) - 1;
-        if (AL < 0) AL = ((AL - 0x06) & 0x0F) - 0x10;
-        int16_t A = (REG_A & 0xF0) - (T.b.L & 0xF0) + AL;
-        if (A < 0) A = A - 0x60;
+        if (context.type == MOS_6502_FAMILY_BASIC) {
+            if (AL < 0) AL = ((AL - 0x06) & 0x0F) - 0x10;
+            A = (REG_A & 0xF0) - (T.b.L & 0xF0) + AL;
+            if (A < 0) A = A - 0x60;
+        } else {
+            A = (REG_A & 0xF0) - (T.b.L & 0xF0) + AL;
+            if (A < 0) A -= 0x60;
+            if (AL < 0) A -= 0x06;
+        }
         T.w ^= 0xFF;
         D.w = REG_A + T.b.L + FLAG_C;
-        calc_flags(D.w, F_NZC);
+        calc_flags(D.w, F_C);
         set_flag(F_V, ((REG_A ^ D.b.L) & (T.b.L ^ D.b.L)) >> 1);
         REG_A = A & 0xFF;
+        if (context.type == MOS_6502_FAMILY_BASIC)
+            calc_flags(D.w, F_NZ);
+        else
+            calc_flags(REG_A, F_NZ);
     }
 
 }
@@ -1672,6 +1693,8 @@ void mos6502core::_IRQ(uint8_t command, unsigned int & cycles)
     write_mem(0x100+REG_S--, REG_PCL);
     write_mem(0x100+REG_S--, REG_P & ~F_B);
     set_flag(F_I, F_I);
+    if (context.type == MOS_6502_FAMILY_65C02)
+        set_flag(F_D, 0);
     REG_PCL = read_mem(0xFFFE);
     REG_PCH = read_mem(0xFFFF);
     cycles += 7;
@@ -1683,6 +1706,8 @@ void mos6502core::_NMI(uint8_t command, unsigned int & cycles)
     write_mem(0x100+REG_S--, REG_PCL);
     write_mem(0x100+REG_S--, REG_P & ~F_B);
     set_flag(F_I, F_I);
+    if (context.type == MOS_6502_FAMILY_65C02)
+        set_flag(F_D, 0);
     REG_PCL = read_mem(0xFFFA);
     REG_PCH = read_mem(0xFFFB);
     cycles += 7;
