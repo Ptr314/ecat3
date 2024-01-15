@@ -105,6 +105,7 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("memory_mapper", &CreateMMWindow);
     DWM->register_debug_window("i8080", &CreateDebugWindow);
     DWM->register_debug_window("port", &CreatePortWindow);
+    DWM->register_debug_window("port-address", &CreatePortWindow);
     DWM->register_debug_window("i8255", &CreateI8255Window);
     DWM->register_debug_window("z80", &CreateDebugWindow);
     DWM->register_debug_window("6502", &CreateDebugWindow);
