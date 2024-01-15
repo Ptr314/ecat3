@@ -29,7 +29,7 @@ AS65 Assembler for R6502 [1.42].  Copyright 1994-2007, Frank A. Kingswood       
                         ;
                         
                         ; Configuration:
-0000 =                  cputype = 0         ; 0 = 6502, 1 = 65C02, 2 = 65C816
+0001 =                  cputype = 1         ; 0 = 6502, 1 = 65C02, 2 = 65C816
 0000 =                  vld_bcd = 0         ; 0 = allow invalid bcd, 1 = valid bcd only
 0001 =                  chk_a   = 1         ; check accumulator
 0001 =                  chk_n   = 1         ; check sign (negative) flag
@@ -108,12 +108,12 @@ AS65 Assembler for R6502 [1.42].  Copyright 1994-2007, Frank A. Kingswood       
                                 endif
 0224 : 850d                     sta N1H
 0226 : 206202                   jsr ADD
-0229 : 200103                   jsr A6502
-022c : 20dc02                   jsr COMPARE
+0229 : 200503                   jsr A6502
+022c : 20e002                   jsr COMPARE
 022f : d01f                     bne ERROR_ADD
 0231 : 20a602                   jsr SUB
-0234 : 200a03                   jsr S6502
-0237 : 20dc02                   jsr COMPARE
+0234 : 200e03                   jsr S6502
+0237 : 20e002                   jsr COMPARE
 023a : d01d                     bne ERROR_SUB
 023c : e600             NEXT1   inc N1    ; [5] see text
 023e : d0da                     bne LOOP2 ; loop through all 256 values of N1
@@ -223,51 +223,51 @@ AS65 Assembler for R6502 [1.42].  Copyright 1994-2007, Frank A. Kingswood       
                                 if cputype != 1
                         ; Calculate the predicted SBC accumulator result for the 6502 and 65816
                         ;          
-02c1 : c001             SUB1        cpy #1    ; set carry if Y = 1, clear carry if Y = 0
-02c3 : a50c                         lda N1L
-02c5 : e50e                         sbc N2L
-02c7 : a200                         ldx #0
-02c9 : b006                         bcs S11
-02cb : e8                           inx
-02cc : e905                         sbc #5    ; subtract 6 (carry is clear)
-02ce : 290f                         and #$0F
-02d0 : 18                           clc
-02d1 : 050d             S11         ora N1H
-                        ;          
-                        ; if N1L - N2L >= 0, then subtract N2 & $F0
-                        ; if N1L - N2L <  0, then subtract (N2 & $F0) + $0F + 1 (carry is clear)
-                        ;          
-02d3 : f50f                         sbc N2H,x
-02d5 : b002                         bcs S12
-02d7 : e95f                         sbc #$5F  ; subtract $60 (carry is clear)
-02d9 : 8506             S12         sta AR
-02db : 60                           rts
-                                endif
-                                   
-                                if cputype = 1
-                        ; Calculate the predicted SBC accumulator result for the 6502 and 65C02
-                        ;
-                        SUB2        cpy #1    ; set carry if Y = 1, clear carry if Y = 0
+                        SUB1        cpy #1    ; set carry if Y = 1, clear carry if Y = 0
                                     lda N1L
                                     sbc N2L
                                     ldx #0
-                                    bcs S21
+                                    bcs S11
                                     inx
+                                    sbc #5    ; subtract 6 (carry is clear)
                                     and #$0F
                                     clc
-                        S21         ora N1H
+                        S11         ora N1H
                         ;          
                         ; if N1L - N2L >= 0, then subtract N2 & $F0
                         ; if N1L - N2L <  0, then subtract (N2 & $F0) + $0F + 1 (carry is clear)
                         ;          
                                     sbc N2H,x
-                                    bcs S22
-                                    sbc #$5F   ; subtract $60 (carry is clear)
-                        S22         cpx #0
-                                    beq S23
-                                    sbc #6
-                        S23         sta AR     ; predicted accumulator result
+                                    bcs S12
+                                    sbc #$5F  ; subtract $60 (carry is clear)
+                        S12         sta AR
                                     rts
+                                endif
+                                   
+                                if cputype = 1
+                        ; Calculate the predicted SBC accumulator result for the 6502 and 65C02
+                        ;
+02c1 : c001             SUB2        cpy #1    ; set carry if Y = 1, clear carry if Y = 0
+02c3 : a50c                         lda N1L
+02c5 : e50e                         sbc N2L
+02c7 : a200                         ldx #0
+02c9 : b004                         bcs S21
+02cb : e8                           inx
+02cc : 290f                         and #$0F
+02ce : 18                           clc
+02cf : 050d             S21         ora N1H
+                        ;          
+                        ; if N1L - N2L >= 0, then subtract N2 & $F0
+                        ; if N1L - N2L <  0, then subtract (N2 & $F0) + $0F + 1 (carry is clear)
+                        ;          
+02d1 : f50f                         sbc N2H,x
+02d3 : b002                         bcs S22
+02d5 : e95f                         sbc #$5F   ; subtract $60 (carry is clear)
+02d7 : e000             S22         cpx #0
+02d9 : f002                         beq S23
+02db : e906                         sbc #6
+02dd : 8506             S23         sta AR     ; predicted accumulator result
+02df : 60                           rts
                                 endif
                                    
                         ; Compare accumulator actual results to predicted results
@@ -276,80 +276,80 @@ AS65 Assembler for R6502 [1.42].  Copyright 1994-2007, Frank A. Kingswood       
                         ;   Z flag = 1 (BEQ branch) if same
                         ;   Z flag = 0 (BNE branch) if different
                         ;          
-02dc :                  COMPARE 
+02e0 :                  COMPARE 
                                 if chk_a = 1
-02dc : a504                         lda DA
-02de : c506                         cmp AR
-02e0 : d01e                         bne C1
+02e0 : a504                         lda DA
+02e2 : c506                         cmp AR
+02e4 : d01e                         bne C1
                                 endif
                                 if chk_n = 1
-02e2 : a505                         lda DNVZC ; [7] see text
-02e4 : 4507                         eor NF
-02e6 : 2980                         and #$80  ; mask off N flag
-02e8 : d016                         bne C1
+02e6 : a505                         lda DNVZC ; [7] see text
+02e8 : 4507                         eor NF
+02ea : 2980                         and #$80  ; mask off N flag
+02ec : d016                         bne C1
                                 endif
                                 if chk_v = 1
-02ea : a505                         lda DNVZC ; [8] see text
-02ec : 4508                         eor VF
-02ee : 2940                         and #$40  ; mask off V flag
-02f0 : d00e                         bne C1    ; [9] see text
+02ee : a505                         lda DNVZC ; [8] see text
+02f0 : 4508                         eor VF
+02f2 : 2940                         and #$40  ; mask off V flag
+02f4 : d00e                         bne C1    ; [9] see text
                                 endif
                                 if chk_z = 1
-02f2 : a505                         lda DNVZC
-02f4 : 4509                         eor ZF    ; mask off Z flag
-02f6 : 2902                         and #2
-02f8 : d006                         bne C1    ; [10] see text
+02f6 : a505                         lda DNVZC
+02f8 : 4509                         eor ZF    ; mask off Z flag
+02fa : 2902                         and #2
+02fc : d006                         bne C1    ; [10] see text
                                 endif
                                 if chk_c = 1
-02fa : a505                         lda DNVZC
-02fc : 450a                         eor CF
-02fe : 2901                         and #1    ; mask off C flag
+02fe : a505                         lda DNVZC
+0300 : 450a                         eor CF
+0302 : 2901                         and #1    ; mask off C flag
                                 endif
-0300 : 60               C1      rts
+0304 : 60               C1      rts
                                    
                         ; These routines store the predicted values for ADC and SBC for the 6502,
                         ; 65C02, and 65816 in AR, CF, NF, VF, and ZF
                         
                                 if cputype = 0
                         
-0301 : a508             A6502       lda VF      ; 6502
+                        A6502       lda VF      ; 6502
                         ;          
                         ; since all 8 bits of the P register were stored in VF, bit 7 of VF contains
                         ; the N flag for NF
                         ;          
-0303 : 8507                         sta NF
-0305 : a503                         lda HNVZC
-0307 : 8509                         sta ZF
-0309 : 60                           rts
+                                    sta NF
+                                    lda HNVZC
+                                    sta ZF
+                                    rts
                                    
-030a : 20c102           S6502       jsr SUB1
-030d : a503                         lda HNVZC
-030f : 8507                         sta NF
-0311 : 8508                         sta VF
-0313 : 8509                         sta ZF
-0315 : 850a                         sta CF
-0317 : 60                           rts
+                        S6502       jsr SUB1
+                                    lda HNVZC
+                                    sta NF
+                                    sta VF
+                                    sta ZF
+                                    sta CF
+                                    rts
                         
                                 endif
                                 if  cputype = 1
                         
-                        A6502       lda AR      ; 65C02
-                                    php
-                                    pla
-                                    sta NF
-                                    sta ZF
-                                    rts
+0305 : a506             A6502       lda AR      ; 65C02
+0307 : 08                           php
+0308 : 68                           pla
+0309 : 8507                         sta NF
+030b : 8509                         sta ZF
+030d : 60                           rts
                                    
-                        S6502       jsr SUB2
-                                    lda AR
-                                    php
-                                    pla
-                                    sta NF
-                                    sta ZF
-                                    lda HNVZC
-                                    sta VF
-                                    sta CF
-                                    rts
+030e : 20c102           S6502       jsr SUB2
+0311 : a506                         lda AR
+0313 : 08                           php
+0314 : 68                           pla
+0315 : 8507                         sta NF
+0317 : 8509                         sta ZF
+0319 : a503                         lda HNVZC
+031b : 8508                         sta VF
+031d : 850a                         sta CF
+031f : 60                           rts
                         
                                 endif
                                 if  cputype = 2   
@@ -374,6 +374,6 @@ AS65 Assembler for R6502 [1.42].  Copyright 1994-2007, Frank A. Kingswood       
                         
                                 endif
                         
-030a =                          end TEST
+030e =                          end TEST
                         
 No errors in pass 2.
