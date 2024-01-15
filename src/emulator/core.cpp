@@ -478,6 +478,7 @@ Memory::Memory(InterfaceManager *im, EmulatorConfigDevice *cd):
     auto_output(false),
     buffer(nullptr),
     fill(0),
+    random_fill(false),
     read_callback(0),
     write_callback(0)
 {
@@ -553,22 +554,30 @@ RAM::RAM(InterfaceManager *im, EmulatorConfigDevice *cd):
 void RAM::load_config(SystemData *sd)
 {
     Memory::load_config(sd);
-    this->set_size(parse_numeric_value(this->cd->get_parameter("size").value));
+    set_size(parse_numeric_value(this->cd->get_parameter("size").value));
 
     try {
-        this->fill = parse_numeric_value(this->cd->get_parameter("fill").value);
+        QString s = cd->get_parameter("fill").value.toLower();
+        random_fill = (s == "random");
+        if (!random_fill) fill = parse_numeric_value(s);
     } catch (QException &e) {
-        this->fill = 0;
+        fill = 0;
     }
-    //memset(this->buffer, this->fill, this->get_size());
+    //memset(buffer, fill, get_size());
 
-    this->reset(true);
-
+    reset(true);
 }
 
 void RAM::reset(bool cold)
 {
-    if (cold && this->buffer!=nullptr) memset(this->buffer, this->fill, this->get_size());
+    if (cold && buffer!=nullptr) {
+        if (!random_fill) {
+            memset(buffer, fill, get_size());
+        } else {
+            QRandomGenerator *rg = QRandomGenerator::global();
+            for (unsigned int i=0; i < get_size(); i++) buffer[i]=rg->bounded(255);
+        }
+    }
 }
 
 //----------------------- class ROM -------------------------------//
@@ -647,50 +656,57 @@ void ROM::load_config(SystemData *sd)
 
 Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
     AddressableDevice(im, cd),
-    value(0)
+    default_value(0)
 {
     try {
-        this->size = parse_numeric_value(this->cd->get_parameter("size").value);
+        size = parse_numeric_value(this->cd->get_parameter("size").value);
     } catch (QException &e) {
-        this->size = 8;
+        size = 8;
     }
 
     try {
-        this->flip_mask = parse_numeric_value(this->cd->get_parameter("flipmask").value);
+        default_value = parse_numeric_value(this->cd->get_parameter("default").value);
     } catch (QException &e) {
-        this->flip_mask = (unsigned int)(-1);
+        default_value = 0;
     }
 
-    this->i_input = this->create_interface(this->size, "data", MODE_R); //TODO: check if it is nesessary
-    this->i_data = this->create_interface(this->size, "value", MODE_W);
+    try {
+        flip_mask = parse_numeric_value(cd->get_parameter("flipmask").value);
+    } catch (QException &e) {
+        flip_mask = _FFFF;
+    }
 
-    this->i_access = this->create_interface(1, "access", MODE_W);
-    this->i_flip = this->create_interface(1, "flip", MODE_R, 1);
+    i_input = this->create_interface(size, "data", MODE_R); //TODO: check if it is nesessary
+    i_data = this->create_interface(size, "value", MODE_W);
 
+    i_access = this->create_interface(1, "access", MODE_W);
+    i_flip = this->create_interface(1, "flip", MODE_R, 1);
+
+    value = default_value;
 }
 
 void Port::interface_callback([[maybe_unused]] unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
     //Flip interface only
-    if ((old_value & 1) != 0 && (new_value & 1) == 0) this->set_value(0, this->value ^ this->flip_mask);
+    if ((old_value & 1) != 0 && (new_value & 1) == 0) set_value(0, value ^ flip_mask);
 }
 
 unsigned int Port::get_value([[maybe_unused]] unsigned int address)
 {
-    return this->value;
+    return value;
 }
 
 void Port:: set_value([[maybe_unused]] unsigned int address, unsigned int value, bool force)
 {
-    this->i_access->change(0);
-    this->value = value;
-    this->i_data->change(value);
-    this->i_access->change(1);
+    i_access->change(0);
+    value = value;
+    i_data->change(value);
+    i_access->change(1);
 }
 
 void Port::reset([[maybe_unused]] bool cold)
 {
-    this->set_value(0, 0);
+    set_value(0, default_value);
 }
 
 //----------------------- class PortAddress -------------------------------//
@@ -701,11 +717,17 @@ PortAddress::PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int value, bool force)
 {
-    this->i_access->change(0);
-    this->value = address;
-    this->i_data->change(address);
-    this->i_access->change(1);
+    i_access->change(0);
+    value = address;
+    i_data->change(address);
+    i_access->change(1);
 }
+
+void PortAddress::reset([[maybe_unused]] bool cold)
+{
+    set_value(default_value, 0);
+}
+
 
 //----------------------- class CPU -------------------------------//
 

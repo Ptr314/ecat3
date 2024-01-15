@@ -172,6 +172,7 @@ protected:
     Interface *i_data;
     uint8_t * buffer;
     unsigned short fill;
+    bool random_fill;
     unsigned int read_callback;
     unsigned int write_callback;
 
@@ -209,6 +210,7 @@ private:
 
 protected:
     unsigned int value;
+    unsigned int default_value;
     Interface * i_input;
     Interface * i_data;
     Interface * i_access;
@@ -228,6 +230,7 @@ class PortAddress:public Port
 public:
     PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
+    virtual void reset(bool cold) override;
 };
 
 class DeviceManager: public QObject
