@@ -142,7 +142,7 @@ void AgatDisplay::render_byte(unsigned int address)
             v1 = memory[module]->get_value(read_address);       // Character
             v2 = memory[module]->get_value(read_address+1);     // Attribute
             cl = (v2 & 0x07) | ((v2 & 0x10) >> 1);
-            for (unsigned int i=0; i<=7; i++) {
+            for (unsigned int i=0; i<8; i++) {
                 uint8_t font_val = font->get_value(v1*8+i);
                 for (unsigned int k=0; k<7; k++) {             // Char is 7x8 pixels
                     unsigned int c = (font_val >> k) & 0x01;
@@ -154,7 +154,7 @@ void AgatDisplay::render_byte(unsigned int address)
                         else
                             ccl = cl * (c ^ 0x01);
                         pixel_address = static_cast<Uint8 *>(render_pixels) + (line + i)*line_bytes + p;
-                        *(uint32_t*)pixel_address = SDL_MapRGB(surface->format, Agat_2Colors[ccl][0], Agat_2Colors[ccl][1], Agat_2Colors[ccl][2]);
+                        *(uint32_t*)pixel_address = SDL_MapRGB(surface->format, Agat_16Colors[ccl][0], Agat_16Colors[ccl][1], Agat_16Colors[ccl][2]);
                     }
                 }
             }
