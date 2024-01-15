@@ -699,7 +699,7 @@ unsigned int Port::get_value([[maybe_unused]] unsigned int address)
 void Port:: set_value([[maybe_unused]] unsigned int address, unsigned int value, bool force)
 {
     i_access->change(0);
-    value = value;
+    this->value = value;
     i_data->change(value);
     i_access->change(1);
 }
@@ -718,7 +718,7 @@ PortAddress::PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd):
 void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int value, bool force)
 {
     i_access->change(0);
-    value = address;
+    this->value = address;
     i_data->change(address);
     i_access->change(1);
 }
