@@ -1,11 +1,185 @@
 #include "agat_display.h"
+#include "emulator/utils.h"
+
+uint8_t Agat_2Colors[2][3] =  {
+                    {0, 0, 0},
+                    {255, 255, 255}
+        };
+
+uint8_t Agat_16Colors[16][3]  = {
+                    {  0,   0,   0}, {127,   0,   0}, {  0, 127,   0}, {127, 127,   0},
+                    {  0,   0, 127}, {127,   0, 127}, {  0, 127, 127}, {255, 255, 255},
+                    {  0,   0, 	 0}, {255,   0,   0}, {  0, 255,   0}, {255, 255,   0},
+                    {  0,   0, 255}, {255,   0, 255}, {  0, 255, 255}, {255, 255, 255}
+        };
 
 AgatDisplay::AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
-    GenericDisplay(im, cd)
+    GenericDisplay(im, cd),
+    previous_mode(_FFFF),
+    blinker(false),
+    clock_counter(0)
 {
-    // TODO: implement
-    sx = 512;
+    sx = 512; // Doubling 2*256 because of 64 chars mode;
     sy = 256;
+}
+
+void AgatDisplay::load_config(SystemData *sd)
+{
+    port_mode = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("mode").value));
+    memory[0] = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram1").value));
+    memory[1] = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram2").value));
+    font =      dynamic_cast<ROM*>(im->dm->get_device_by_name(cd->get_parameter("font").value));
+
+    memory[0]->set_memory_callback(this, 1, MODE_W);
+    memory[1]->set_memory_callback(this, 2, MODE_W);
+
+    system_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
+    blink_ticks = system_clock / 10;
+}
+
+void AgatDisplay::clock(unsigned int counter)
+{
+    //TODO: implement
+    uint8_t mode_value = port_mode->get_value(0);
+    if (previous_mode != mode_value) {
+        previous_mode = mode_value;
+        mode = mode_value & 0x83;
+        module = (mode_value & 0x80) >> 7;
+        base_address = ((mode_value & 0x70) >> 4) * 8192;
+        switch (mode) {
+            case 0x00:
+                // ГНР (LoRes Graphics)
+                page_size = 2048;
+                base_address += ((mode_value & 0x0C) >> 2) * 2048;
+                break;
+            case 0x01:
+                // ГCР (MidRes Graphics)
+                page_size = 8192;
+                break;
+            case 0x02:
+            case 0x82:
+                // АЦР (Alphanumeric)
+                page_size = 2048;
+                base_address += ((mode_value & 0x0C) >> 2) * 2048;
+                break;
+            case 0x03:
+                // ГВР (HiRes Graphics)
+                page_size = 8192;
+                break;
+            default:
+                break;
+        }
+        screen_valid = false;
+        was_updated = true;
+    }
+
+    clock_counter += counter;
+    if (clock_counter >= blink_ticks) {
+        clock_counter -= blink_ticks;
+        blinker = !blinker;
+        if (mode == 0x02) screen_valid = false;
+    }
+}
+
+void AgatDisplay::memory_callback(unsigned int callback_id, unsigned int address)
+{
+    if ( (address >= base_address) && (address < base_address + page_size) )
+    {
+        //TODO: Find out why local update doesn't work
+        //render_byte(address - base_address);
+        screen_valid = false;
+        was_updated = true;
+    }
+}
+
+void AgatDisplay::render_byte(unsigned int address)
+{
+    //TODO: finish
+    unsigned int line, offset, p, read_address, cl;
+    uint8_t color[2];
+    uint8_t * pixel_address;
+    uint8_t v1, v2;
+
+    uint8_t v = memory[module]->get_value(base_address + address);
+    switch (mode) {
+        case 0x00:
+            // ГНР (LoRes Graphics)
+            line = (address & ~0x1F) >> 3;
+            offset = (address & 0x1F) * 64; // 8*4*2: 8 pixels, 4 bytes per pixel, doubling
+            color[0] = v >> 4;
+            color[1] = v & 0x0F;
+            for (unsigned int j = 0; j < 2; j++)
+                for (unsigned int k = 0; k < 7; k++) {
+                    p = offset + j*32 + k*4;
+                    for (unsigned int i = line; i <= line+3; i++) {
+                        unsigned int c = color[j];
+                        pixel_address = static_cast<Uint8 *>(render_pixels) + i*line_bytes + p;
+                        *(uint32_t*)pixel_address = SDL_MapRGB(surface->format, Agat_16Colors[c][0], Agat_16Colors[c][1], Agat_16Colors[c][2]);
+                    }
+                }
+            break;
+        case 0x01:
+            // ГCР (MidRes Graphics)
+            line = (address & ~0x3F) >> 5;
+            offset = (address & 0x3F) * 32; // 8*4: 8 pixels, 4 bytes per pixel
+            color[0] = v >> 4;
+            color[1] = v & 0x0F;
+            for (unsigned int j = 0; j < 2; j++)
+                for (unsigned int k = 0; k < 7; k++) {
+                    p = offset + j*16 + k*4;
+                    for (unsigned int i = line; i <= line+1; i++) {
+                        unsigned int c = color[j];
+                        pixel_address = static_cast<Uint8 *>(render_pixels) + i*line_bytes + p;
+                        *(uint32_t*)pixel_address = SDL_MapRGB(surface->format, Agat_16Colors[c][0], Agat_16Colors[c][1], Agat_16Colors[c][2]);
+                    }
+                }
+            break;
+        case 0x02:
+            // АЦР-32 (Alphanumeric 32 chars)
+            line = (address & ~0x3F) >> 3;
+            offset = 128 + (address & 0x3F) * 28; // 32 pixels blanking, 7 pixels per char, 4 bytes per pixel
+            read_address = base_address + (address & ~1);
+            v1 = memory[module]->get_value(read_address);       // Character
+            v2 = memory[module]->get_value(read_address+1);     // Attribute
+            cl = (v2 & 0x07) | ((v2 & 0x10) >> 1);
+            for (unsigned int i=0; i<=7; i++) {
+                uint8_t font_val = font->get_value(v1*8+i);
+                for (unsigned int k=0; k<7; k++) {             // Char is 7x8 pixels
+                    unsigned int c = (font_val >> k) & 0x01;
+                    for (unsigned int j = 0; j < 2; j++) {
+                        p = offset + (6-k)*8 + j*4;
+                        unsigned int ccl;
+                        if ( (((v2 & 0x20) != 0) || ((v2 & 0x08) != 0)) && blinker )
+                            ccl = cl * c;
+                        else
+                            ccl = cl * (c ^ 0x01);
+                        pixel_address = static_cast<Uint8 *>(render_pixels) + (line + i)*line_bytes + p;
+                        *(uint32_t*)pixel_address = SDL_MapRGB(surface->format, Agat_2Colors[ccl][0], Agat_2Colors[ccl][1], Agat_2Colors[ccl][2]);
+                    }
+                }
+            }
+            break;
+        case 0x82:
+            // АЦР-64 (Alphanumeric 64 chars)
+            //TODO: АЦР-64
+            break;
+        case 0x03:
+            // ГВР (HiRes Graphics)
+            line = address >> 5;
+            offset = (address & 0x1F) * 64; // 8*4*2: 8 pixels, 4 bytes per pixel, doubling
+            for (unsigned int k = 0; k < 7; k++) {
+                unsigned int c = (v >> k) & 0x01;
+                for (unsigned int j = 0; j < 2; j++) {
+                    // Rendering 2 pixels because of doubling
+                    p = offset + (7-k)*8 + j*4;
+                    pixel_address = static_cast<Uint8 *>(render_pixels) + line*line_bytes + p;
+                    *(uint32_t*)pixel_address = SDL_MapRGB(surface->format, Agat_2Colors[c][0], Agat_2Colors[c][1], Agat_2Colors[c][2]);
+                }
+            }
+            break;
+        default:
+            break;
+    }
 
 }
 
