@@ -35,43 +35,47 @@ void AgatDisplay::load_config(SystemData *sd)
 
     system_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
     blink_ticks = system_clock / 10;
+
+    set_mode(0x02);
+}
+
+void AgatDisplay::set_mode(unsigned int new_mode)
+{
+    previous_mode = new_mode;
+    mode = new_mode & 0x83;
+    module = (new_mode & 0x80) >> 7;
+    base_address = ((new_mode & 0x70) >> 4) * 8192;
+    switch (mode) {
+    case 0x00:
+        // ГНР (LoRes Graphics)
+        page_size = 2048;
+        base_address += ((new_mode & 0x0C) >> 2) * 2048;
+        break;
+    case 0x01:
+        // ГCР (MidRes Graphics)
+        page_size = 8192;
+        break;
+    case 0x02:
+    case 0x82:
+        // АЦР (Alphanumeric)
+        page_size = 2048;
+        base_address += ((new_mode & 0x0C) >> 2) * 2048;
+        break;
+    case 0x03:
+        // ГВР (HiRes Graphics)
+        page_size = 8192;
+        break;
+    default:
+        break;
+    }
+    screen_valid = false;
+    was_updated = true;
 }
 
 void AgatDisplay::clock(unsigned int counter)
 {
-    //TODO: implement
     uint8_t mode_value = port_mode->get_value(0);
-    if (previous_mode != mode_value) {
-        previous_mode = mode_value;
-        mode = mode_value & 0x83;
-        module = (mode_value & 0x80) >> 7;
-        base_address = ((mode_value & 0x70) >> 4) * 8192;
-        switch (mode) {
-            case 0x00:
-                // ГНР (LoRes Graphics)
-                page_size = 2048;
-                base_address += ((mode_value & 0x0C) >> 2) * 2048;
-                break;
-            case 0x01:
-                // ГCР (MidRes Graphics)
-                page_size = 8192;
-                break;
-            case 0x02:
-            case 0x82:
-                // АЦР (Alphanumeric)
-                page_size = 2048;
-                base_address += ((mode_value & 0x0C) >> 2) * 2048;
-                break;
-            case 0x03:
-                // ГВР (HiRes Graphics)
-                page_size = 8192;
-                break;
-            default:
-                break;
-        }
-        screen_valid = false;
-        was_updated = true;
-    }
+    if (previous_mode != mode_value) set_mode(mode_value);
 
     clock_counter += counter;
     if (clock_counter >= blink_ticks) {
@@ -79,6 +83,8 @@ void AgatDisplay::clock(unsigned int counter)
         blinker = !blinker;
         if (mode == 0x02) screen_valid = false;
     }
+
+    screen_valid = false;
 }
 
 void AgatDisplay::memory_callback(unsigned int callback_id, unsigned int address)
@@ -103,7 +109,7 @@ void AgatDisplay::render_byte(unsigned int address)
     uint8_t v = memory[module]->get_value(base_address + address);
     switch (mode) {
         case 0x00:
-            // ГНР (LoRes Graphics)
+            // ГНР (LoRes Graphics, 64x64, 16 colors)
             line = (address & ~0x1F) >> 3;
             offset = (address & 0x1F) * 64; // 8*4*2: 8 pixels, 4 bytes per pixel, doubling
             color[0] = v >> 4;
@@ -119,7 +125,7 @@ void AgatDisplay::render_byte(unsigned int address)
                 }
             break;
         case 0x01:
-            // ГCР (MidRes Graphics)
+            // ГCР (MidRes Graphics, 128x128, 16 colors)
             line = (address & ~0x3F) >> 5;
             offset = (address & 0x3F) * 32; // 8*4: 8 pixels, 4 bytes per pixel
             color[0] = v >> 4;
@@ -135,46 +141,61 @@ void AgatDisplay::render_byte(unsigned int address)
                 }
             break;
         case 0x02:
-            // АЦР-32 (Alphanumeric 32 chars)
+            // АЦР-32 (Alphanumeric 32 chars with attributes, 16 colors)
+            // Each position takes two bytes in memory - a character code and its attrubute value
             line = (address & ~0x3F) >> 3;
-            offset = 128 + (address & 0x3F) * 28; // 32 pixels blanking, 7 pixels per char, 4 bytes per pixel
+            offset = 32*4 + (address & 0x3E) * (7*4);           // 32 pixels blanking, 7 pixels per char, 4 bytes per pixel
             read_address = base_address + (address & ~1);
             v1 = memory[module]->get_value(read_address);       // Character
             v2 = memory[module]->get_value(read_address+1);     // Attribute
             cl = (v2 & 0x07) | ((v2 & 0x10) >> 1);
             for (unsigned int i=0; i<8; i++) {
                 uint8_t font_val = font->get_value(v1*8+i);
-                for (unsigned int k=0; k<7; k++) {             // Char is 7x8 pixels
+                for (unsigned int k=0; k<7; k++) {              // Char is 7x8 pixels
                     unsigned int c = (font_val >> k) & 0x01;
-                    for (unsigned int j = 0; j < 2; j++) {
-                        p = offset + (6-k)*8 + j*4;
-                        unsigned int ccl;
-                        if ( (((v2 & 0x20) != 0) || ((v2 & 0x08) != 0)) && blinker )
-                            ccl = cl * c;
-                        else
-                            ccl = cl * (c ^ 0x01);
-                        pixel_address = static_cast<Uint8 *>(render_pixels) + (line + i)*line_bytes + p;
-                        *(uint32_t*)pixel_address = SDL_MapRGB(surface->format, Agat_16Colors[ccl][0], Agat_16Colors[ccl][1], Agat_16Colors[ccl][2]);
-                    }
+                    unsigned int ccl;
+                    if ( (((v2 & 0x20) != 0) || ((v2 & 0x08) != 0)) && blinker )
+                        ccl = cl * c;
+                    else
+                        ccl = cl * (c ^ 0x01);
+                    uint32_t color = SDL_MapRGB(surface->format, Agat_16Colors[ccl][0], Agat_16Colors[ccl][1], Agat_16Colors[ccl][2]);
+                    p = offset + (6-k)*8;
+                    pixel_address = static_cast<Uint8 *>(render_pixels) + (line + i)*line_bytes + p;
+                    *(uint32_t*)pixel_address = color;
+                    *(uint32_t*)(pixel_address+4) = color;
                 }
             }
             break;
         case 0x82:
-            // АЦР-64 (Alphanumeric 64 chars)
+            // АЦР-64 (Alphanumeric 64 chars, monochrome)
             //TODO: АЦР-64
-            break;
-        case 0x03:
-            // ГВР (HiRes Graphics)
-            line = address >> 5;
-            offset = (address & 0x1F) * 64; // 8*4*2: 8 pixels, 4 bytes per pixel, doubling
-            for (unsigned int k = 0; k < 7; k++) {
-                unsigned int c = (v >> k) & 0x01;
-                for (unsigned int j = 0; j < 2; j++) {
-                    // Rendering 2 pixels because of doubling
-                    p = offset + (7-k)*8 + j*4;
-                    pixel_address = static_cast<Uint8 *>(render_pixels) + line*line_bytes + p;
+            line = (address & ~0x3F) >> 3;
+            offset = 32*4 + (address & 0x3F) * (7*4);                   // 32 pixels blanking, 7 pixels per char, 4 bytes per pixel
+            read_address = base_address + address;
+            v1 = memory[module]->get_value(read_address);               // Character only
+            for (unsigned int i=0; i<8; i++) {
+                uint8_t font_val = font->get_value(v1*8+i);
+                for (unsigned int k=0; k<7; k++) {                      // Char is 7x8 pixels
+                    unsigned int c = ((font_val >> k) & 1)
+                                     ^ ((previous_mode & 0x04) >> 2);   // odd pages are inverted
+                    p = offset + (6-k)*4;
+                    pixel_address = static_cast<Uint8 *>(render_pixels) + (line + i)*line_bytes + p;
                     *(uint32_t*)pixel_address = SDL_MapRGB(surface->format, Agat_2Colors[c][0], Agat_2Colors[c][1], Agat_2Colors[c][2]);
                 }
+            }
+            break;
+        case 0x03:
+            // ГВР (HiRes Graphics, monochrome 256x256)
+            // Filling two pixels per bit because of doubling
+            line = address >> 5;
+            offset = (address & 0x1F) * 64; // 8*4*2: 8 pixels, 4 bytes per pixel, doubling
+            for (unsigned int k = 0; k < 8; k++) {
+                unsigned int c = (v >> k) & 0x01;
+                uint32_t color = SDL_MapRGB(surface->format, Agat_2Colors[c][0], Agat_2Colors[c][1], Agat_2Colors[c][2]);
+                p = offset + (7-k)*8;
+                pixel_address = static_cast<Uint8 *>(render_pixels) + line*line_bytes + p;
+                *(uint32_t*)pixel_address = color;
+                *(uint32_t*)(pixel_address+4) = color;
             }
             break;
         default:
@@ -185,10 +206,18 @@ void AgatDisplay::render_byte(unsigned int address)
 
 void AgatDisplay::render_all(bool force_render)
 {
-    // TODO: implement
     if (!screen_valid || force_render)
     {
-        //for (unsigned int a=0; a < 0x3000; a++) render_byte(a);
+        if ((mode & 0x03) == 2) {
+            // Blanking fields in text modes
+            uint8_t * pixel_address;
+            for (unsigned int i=0; i<256; i++) {
+                pixel_address = ((Uint8 *)render_pixels) + i*line_bytes;
+                memset(pixel_address, 0, 32*4);         // Left
+                memset(pixel_address + 480*4, 0, 32*4); // Right
+            }
+        }
+        for (unsigned int i=0; i<page_size; i++) render_byte(i);
         screen_valid = true;
         was_updated = true;
     }

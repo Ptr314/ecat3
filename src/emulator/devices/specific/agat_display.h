@@ -23,6 +23,8 @@ protected:
     void render_byte(unsigned int address);
     virtual void render_all(bool force_render) override;
 
+    void set_mode(unsigned int new_mode);
+
 public:
     AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
 
