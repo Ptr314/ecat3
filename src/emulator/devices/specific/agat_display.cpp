@@ -6,12 +6,16 @@ uint8_t Agat_2Colors[2][3] =  {
                     {255, 255, 255}
         };
 
+uint32_t Agat_RGBA2[2];
+
 uint8_t Agat_16Colors[16][3]  = {
                     {  0,   0,   0}, {127,   0,   0}, {  0, 127,   0}, {127, 127,   0},
                     {  0,   0, 127}, {127,   0, 127}, {  0, 127, 127}, {255, 255, 255},
                     {  0,   0, 	 0}, {255,   0,   0}, {  0, 255,   0}, {255, 255,   0},
                     {  0,   0, 255}, {255,   0, 255}, {  0, 255, 255}, {255, 255, 255}
         };
+
+uint32_t Agat_RGBA16[16];
 
 AgatDisplay::AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     GenericDisplay(im, cd),
@@ -34,9 +38,16 @@ void AgatDisplay::load_config(SystemData *sd)
     memory[1]->set_memory_callback(this, 2, MODE_W);
 
     system_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
-    blink_ticks = system_clock / 10;
+    blink_ticks = system_clock / (5*2);     // 5 Hz
 
     set_mode(0x02);
+}
+
+void AgatDisplay::set_surface(SDL_Surface * surface)
+{
+    GenericDisplay::set_surface(surface);
+    fill_SDL_rgba(Agat_2Colors, Agat_RGBA2, 2, surface->format);
+    fill_SDL_rgba(Agat_16Colors, Agat_RGBA16, 16, surface->format);
 }
 
 void AgatDisplay::set_mode(unsigned int new_mode)
@@ -84,7 +95,7 @@ void AgatDisplay::clock(unsigned int counter)
         if (mode == 0x02) screen_valid = false;
     }
 
-    screen_valid = false;
+    //screen_valid = false;
 }
 
 void AgatDisplay::memory_callback(unsigned int callback_id, unsigned int address)
@@ -120,7 +131,7 @@ void AgatDisplay::render_byte(unsigned int address)
                     for (unsigned int i = line; i <= line+3; i++) {
                         unsigned int c = color[j];
                         pixel_address = static_cast<Uint8 *>(render_pixels) + i*line_bytes + p;
-                        *(uint32_t*)pixel_address = SDL_MapRGB(surface->format, Agat_16Colors[c][0], Agat_16Colors[c][1], Agat_16Colors[c][2]);
+                        *(uint32_t*)pixel_address = Agat_RGBA16[c]; //SDL_MapRGB(surface->format, Agat_16Colors[c][0], Agat_16Colors[c][1], Agat_16Colors[c][2]);
                     }
                 }
             break;
@@ -136,7 +147,7 @@ void AgatDisplay::render_byte(unsigned int address)
                     for (unsigned int i = line; i <= line+1; i++) {
                         unsigned int c = color[j];
                         pixel_address = static_cast<Uint8 *>(render_pixels) + i*line_bytes + p;
-                        *(uint32_t*)pixel_address = SDL_MapRGB(surface->format, Agat_16Colors[c][0], Agat_16Colors[c][1], Agat_16Colors[c][2]);
+                        *(uint32_t*)pixel_address = Agat_RGBA16[c]; //SDL_MapRGB(surface->format, Agat_16Colors[c][0], Agat_16Colors[c][1], Agat_16Colors[c][2]);
                     }
                 }
             break;
@@ -148,17 +159,17 @@ void AgatDisplay::render_byte(unsigned int address)
             read_address = base_address + (address & ~1);
             v1 = memory[module]->get_value(read_address);       // Character
             v2 = memory[module]->get_value(read_address+1);     // Attribute
-            cl = (v2 & 0x07) | ((v2 & 0x10) >> 1);
+            cl = (v2 & 0x07) | ((v2 & 0x10) >> 1);              // Color index (YBGR)
             for (unsigned int i=0; i<8; i++) {
                 uint8_t font_val = font->get_value(v1*8+i);
                 for (unsigned int k=0; k<7; k++) {              // Char is 7x8 pixels
                     unsigned int c = (font_val >> k) & 0x01;
                     unsigned int ccl;
-                    if ( (((v2 & 0x20) != 0) || ((v2 & 0x08) != 0)) && blinker )
+                    if ( (((v2 & 0x20) != 0) || ((v2 & 0x08) != 0) && blinker) )
                         ccl = cl * c;
                     else
                         ccl = cl * (c ^ 0x01);
-                    uint32_t color = SDL_MapRGB(surface->format, Agat_16Colors[ccl][0], Agat_16Colors[ccl][1], Agat_16Colors[ccl][2]);
+                    uint32_t color = Agat_RGBA16[ccl]; //SDL_MapRGB(surface->format, Agat_16Colors[ccl][0], Agat_16Colors[ccl][1], Agat_16Colors[ccl][2]);
                     p = offset + (6-k)*8;
                     pixel_address = static_cast<Uint8 *>(render_pixels) + (line + i)*line_bytes + p;
                     *(uint32_t*)pixel_address = color;
@@ -180,7 +191,7 @@ void AgatDisplay::render_byte(unsigned int address)
                                      ^ ((previous_mode & 0x04) >> 2);   // odd pages are inverted
                     p = offset + (6-k)*4;
                     pixel_address = static_cast<Uint8 *>(render_pixels) + (line + i)*line_bytes + p;
-                    *(uint32_t*)pixel_address = SDL_MapRGB(surface->format, Agat_2Colors[c][0], Agat_2Colors[c][1], Agat_2Colors[c][2]);
+                    *(uint32_t*)pixel_address = Agat_RGBA2[c]; //SDL_MapRGB(surface->format, Agat_2Colors[c][0], Agat_2Colors[c][1], Agat_2Colors[c][2]);
                 }
             }
             break;
@@ -191,7 +202,7 @@ void AgatDisplay::render_byte(unsigned int address)
             offset = (address & 0x1F) * 64; // 8*4*2: 8 pixels, 4 bytes per pixel, doubling
             for (unsigned int k = 0; k < 8; k++) {
                 unsigned int c = (v >> k) & 0x01;
-                uint32_t color = SDL_MapRGB(surface->format, Agat_2Colors[c][0], Agat_2Colors[c][1], Agat_2Colors[c][2]);
+                uint32_t color = Agat_RGBA2[c]; //SDL_MapRGB(surface->format, Agat_2Colors[c][0], Agat_2Colors[c][1], Agat_2Colors[c][2]);
                 p = offset + (7-k)*8;
                 pixel_address = static_cast<Uint8 *>(render_pixels) + line*line_bytes + p;
                 *(uint32_t*)pixel_address = color;

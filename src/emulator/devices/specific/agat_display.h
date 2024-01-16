@@ -28,6 +28,8 @@ protected:
 public:
     AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
 
+    virtual void set_surface(SDL_Surface * surface) override;
+
     virtual void memory_callback(unsigned int callback_id, unsigned int address) override;
 
     virtual void clock(unsigned int counter) override;
