@@ -97,7 +97,7 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/devices/common/page_mapper.h
     dialogs/hexeditorline.h dialogs/hexeditorline.cpp
     dialogs/dosframe.h dialogs/dosframe.cpp
-    emulator/devices/common/generator.h
+    emulator/devices/common/generator.h  emulator/devices/common/generator.cpp
 
     tests/8080exe.asm tests/8080pre.asm
     tests/zexall.asm
