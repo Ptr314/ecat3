@@ -183,7 +183,7 @@ void AgatDisplay::render_byte(unsigned int address)
             line = (address & ~0x3F) >> 3;
             offset = 32*4 + (address & 0x3F) * (7*4);                   // 32 pixels blanking, 7 pixels per char, 4 bytes per pixel
             read_address = base_address + address;
-            v1 = memory[module]->get_value(read_address);               // Character only
+            v1 = memory[0]->get_value(read_address);                    // Character only, getting from the main memory
             for (unsigned int i=0; i<8; i++) {
                 uint8_t font_val = font->get_value(v1*8+i);
                 for (unsigned int k=0; k<7; k++) {                      // Char is 7x8 pixels
