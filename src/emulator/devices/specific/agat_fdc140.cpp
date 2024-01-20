@@ -1,5 +1,7 @@
 #include "agat_fdc140.h"
 
+// https://github.com/allender/apple2emu/blob/df9eff703dd70b7dbc3b817734daf95133437143/src/disk_image.cpp#L263
+
 Agat_FDC140::Agat_FDC140(InterfaceManager *im, EmulatorConfigDevice *cd):
     FDC(im, cd)
 {

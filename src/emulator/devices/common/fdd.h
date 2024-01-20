@@ -2,6 +2,7 @@
 #define FDD_H
 
 #include "emulator/core.h"
+#include "mfm_formats.h"
 
 #define FDD_STREAM_PLAIN    0
 #define FDD_STREAM_MFM      1
@@ -16,6 +17,9 @@ private:
     int sectors;
     int sector_size;
     int disk_size;
+
+    // MFM tracks info
+    HXC_MFM_TRACK_INFO track_indexes[100];
 
     unsigned int selector;
 

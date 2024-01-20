@@ -52,23 +52,62 @@ void FDD::load_config(SystemData *sd)
 void FDD::load_image(QString file_name)
 {
     QFileInfo fi(file_name);
-    unsigned int file_size = fi.size();
-    if (file_size == disk_size)
-    {
-        if (buffer != nullptr) delete [] buffer;
-        buffer = new uint8_t[disk_size];
+    QString ext = fi.suffix().toLower();
 
+    if (ext == "mfm") {
+        HXC_MFM_HEADER hxc_header;
         QFile file(file_name);
         if (file.open(QIODevice::ReadOnly)){
-            QByteArray data = file.readAll();
-            memcpy(buffer, data.constData(), file_size);
+            QByteArray header_data = file.read(sizeof(HXC_MFM_HEADER));
+            memcpy(&hxc_header, header_data.constData(), sizeof(HXC_MFM_HEADER));
+            if (QString::fromLatin1(reinterpret_cast<char*>(hxc_header.headername), 6) == "HXCMFM") {
+                sides = hxc_header.number_of_side;
+                tracks = hxc_header.number_of_track;
+
+                file.seek(hxc_header.mfmtracklistoffset);
+                HXC_MFM_TRACK_INFO track_info;
+                QByteArray track_info_data = file.read(sizeof(HXC_MFM_TRACK_INFO)*tracks);
+                memcpy(&track_indexes, track_info_data.constData(), sizeof(HXC_MFM_TRACK_INFO)*tracks);
+
+                disk_size = track_indexes[0].mfmtracksize * tracks;
+                if (buffer != nullptr) delete [] buffer;
+                buffer = new uint8_t[disk_size];
+
+                int data_begin = track_indexes[0].mfmtrackoffset;
+                for (int i=0; i < tracks; i++) track_indexes[i].mfmtrackoffset -= data_begin;
+
+                file.seek(data_begin);
+                QByteArray disk_data = file.read(disk_size);
+                memcpy(buffer, disk_data.constData(), disk_size);
+                int tmp=0;
+            } else {
+                QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Unrecognized MFM format"));
+            }
             file.close();
-            loaded = true;
-            this->file_name =fi.fileName();
+        } else {
+            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error opening file '%1'").arg(file_name));
         }
     } else {
-        QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Incorrect disk image size for '%1'").arg(file_name));
-        this->file_name = "";
+        unsigned int file_size = fi.size();
+        if (file_size == disk_size)
+        {
+            if (buffer != nullptr) delete [] buffer;
+            buffer = new uint8_t[disk_size];
+
+            QFile file(file_name);
+            if (file.open(QIODevice::ReadOnly)){
+                QByteArray data = file.readAll();
+                memcpy(buffer, data.constData(), file_size);
+                file.close();
+                loaded = true;
+                this->file_name =fi.fileName();
+            } else {
+                QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error opening file '%1'").arg(file_name));
+            }
+        } else {
+            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Incorrect disk image size for '%1'").arg(file_name));
+            this->file_name = "";
+        }
     }
 }
 
