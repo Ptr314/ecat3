@@ -66,7 +66,21 @@ cd репозиторий-приложения\src\
 ### MSVC
 <не завершено>
 * Скачать "Build Tools for Visual Studio XXXX" https://visualstudio.microsoft.com/downloads/
-
+    * Или Visual Studio 2010 Comminity
+* Python 3, добавить его в PATH
+* Скачачать SDL - версия для разработчика SDL2-devel-x.xx.x-VC.zip
+* Отредактировать __.build/vars-msvc.cmd__ на действительные пути.
+* Открыть командную строку и скомпилировать Qt: 
+~~~
+cd репозиторий-приложения\.build
+%SystemRoot%\system32\cmd.exe /E:ON /V:ON /k vars-msvc.cmd
+cd C:\Temp
+mkdir qt6-build
+cd qt6-build
+configure.bat -static -release -nomake examples -nomake tests [-prefix путь-для-установки]
+cmake --build . --parallel
+cmake --install .
+~~~
 
 # Linux
 
