@@ -79,7 +79,11 @@ void FDD::load_image(QString file_name)
                 file.seek(data_begin);
                 QByteArray disk_data = file.read(disk_size);
                 memcpy(buffer, disk_data.constData(), disk_size);
-                int tmp=0;
+
+                track_mode = FDD_MODE_WHOLE_TRACK;
+                position = 0;
+                loaded = true;
+                this->file_name =fi.fileName();
             } else {
                 QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Unrecognized MFM format"));
             }
@@ -99,6 +103,8 @@ void FDD::load_image(QString file_name)
                 QByteArray data = file.readAll();
                 memcpy(buffer, data.constData(), file_size);
                 file.close();
+
+                track_mode = FDD_MODE_SECTORS;
                 loaded = true;
                 this->file_name =fi.fileName();
             } else {
@@ -119,16 +125,12 @@ int FDD::SeekSector(int track, int sector)
         this->side = ~(i_side->value) & 1;
         this->track = track;
         this->sector = sector;
-        fbyte = 0;
-        if (sector > 0) {
+        qDebug() << "SEEK " << this->side << this->track << this->sector;
+        position = 0;
+        if (track_mode == FDD_MODE_SECTORS) {
             result = sector_size;
         } else {
-            //TODO: FDD recall purpose of this code
-            if (stream_format == FDD_STREAM_MFM) {
-                result = 128;
-            } else {
-                im->dm->error(this, FDD::tr("This mode is not supported"));
-            }
+            result = 256;
         }
     }
     return result;
@@ -136,35 +138,46 @@ int FDD::SeekSector(int track, int sector)
 
 unsigned int FDD::translate_address()
 {
-    return ((track*sides + side)*sectors + sector-1)*sector_size + fbyte;
+    return ((track*sides + side)*sectors + sector-1)*sector_size + position;
 }
 
 uint8_t FDD::ReadNextByte()
 {
-    if (fbyte >= sector_size)
-        im->dm->error(this, FDD::tr("Reading outside of a sector"));
+    if (track_mode == FDD_MODE_SECTORS) {
+        if (position >= sector_size)
+            im->dm->error(this, FDD::tr("Reading outside of a sector"));
 
-    if (sector==0)
-    {
-        //GAP
-        return 0xFF;
+        if (sector==0)
+        {
+            //GAP
+            return 0xFF;
+        } else {
+            //DAta
+            uint8_t result = buffer[translate_address()];
+            position++;
+            return result;
+        }
     } else {
-        //DAta
-        uint8_t result = buffer[translate_address()];
-        fbyte++;
+        uint8_t result = buffer[track_indexes[track*sides + side].mfmtrackoffset + position++];
+        if (position >= track_indexes[track*sides + side].mfmtracksize) position = 0;
         return result;
     }
 }
 
 void FDD::WriteNextByte(uint8_t value)
 {
-    if (fbyte >= sector_size)
-        im->dm->error(this, FDD::tr("Writing outside of a sector"));
+    if (track_mode == FDD_MODE_SECTORS) {
+        if (position >= sector_size)
+            im->dm->error(this, FDD::tr("Writing outside of a sector"));
 
-    if (sector != 0)
-    {
-        buffer[translate_address()] = value;
-        fbyte++;
+        if (sector != 0)
+        {
+            buffer[translate_address()] = value;
+            position++;
+        }
+    } else {
+        buffer[track_indexes[track*sides + side].mfmtrackoffset + position++] = value;
+        if (position >= track_indexes[track*sides + side].mfmtracksize) position = 0;
     }
 }
 

@@ -8,6 +8,9 @@
 #define FDD_STREAM_MFM      1
 #define FDD_STREAM_HEADERS  2
 
+#define FDD_MODE_SECTORS        0
+#define FDD_MODE_WHOLE_TRACK    1
+
 class FDD : public ComputerDevice
 {
 private:
@@ -34,7 +37,9 @@ private:
     int side;
     int track;
     int sector;
-    int fbyte;
+    int position;
+
+    int track_mode;
 
     unsigned int translate_address();
     void ConvertStreamFormat();
