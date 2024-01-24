@@ -56,8 +56,15 @@ unsigned int Agat_FDC140::get_selected_drive()
 
 void Agat_FDC140::phase_on(int n)
 {
+#ifdef LOG_FDD
+    logs(QString(" PHASE %1+").arg(n));
+#endif
+
     if ((n==1) && (prev_phase==2)) {
         //Step down
+#ifdef LOG_FDD
+        logs(QString(" DOWN"));
+#endif
         if (current_track[selected_drive] > 0) {
             current_track[selected_drive]--;
             drives[selected_drive]->SeekSector(current_track[selected_drive], 0);
@@ -65,6 +72,9 @@ void Agat_FDC140::phase_on(int n)
     } else
     if ((n==3) && (prev_phase==2)) {
         //Step up
+#ifdef LOG_FDD
+        logs(QString(" UP"));
+#endif
         if (current_track[selected_drive] < 35) {
             current_track[selected_drive]++;
             drives[selected_drive]->SeekSector(current_track[selected_drive], 0);
@@ -74,12 +84,18 @@ void Agat_FDC140::phase_on(int n)
 
 void Agat_FDC140::phase_off(int n)
 {
+#ifdef LOG_FDD
+    logs(QString(" PHASE %1-").arg(n));
+#endif
     prev_phase = current_phase;
     current_phase = n;
 }
 
 void Agat_FDC140::select_drive(int n)
 {
+#ifdef LOG_FDD
+    logs(QString(" SEL %1").arg(n));
+#endif
     // TODO: check selection on a drive
     selected_drive = n;
     i_select->change(1 << n);
@@ -89,7 +105,10 @@ void Agat_FDC140::select_drive(int n)
 unsigned int Agat_FDC140::get_value(unsigned int address)
 {
     unsigned int A = address & 0x0f;
-        switch (A) {
+#ifdef LOG_FDD
+    logs(QString("R %1").arg(A, 1, 16, QChar('0')));
+#endif
+    switch (A) {
         case 0x0:
         case 0x2:
         case 0x4:
@@ -103,8 +122,14 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
             phase_on(A >> 1);
             break;
         case 0x8:
+#ifdef LOG_FDD
+            logs(QString(" MOT-"));
+#endif
             break;
         case 0x9:
+#ifdef LOG_FDD
+            logs(QString(" MOT+"));
+#endif
             break;
         case 0xA:
         case 0xB:
@@ -119,6 +144,9 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
             break;
         case 0xE:
             // TODO: set read mode?
+#ifdef LOG_FDD
+            logs(QString(" READ MODE"));
+#endif
             break;
         default: // 0x0F
             // TODO: set write mode?
@@ -130,6 +158,9 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
 void Agat_FDC140::set_value(unsigned int address, unsigned int value, bool force)
 {
     unsigned int A = address & 0x0f;
+#ifdef LOG_FDD
+    logs(QString("W %1").arg(A, 1, 16, QChar('0')));
+#endif
     switch (A) {
         case 0x0:
         case 0x2:

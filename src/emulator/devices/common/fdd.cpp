@@ -8,7 +8,9 @@ FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd),
     loaded(false),
     stream_format(FDD_STREAM_PLAIN),
-    buffer(nullptr)
+    buffer(nullptr),
+    side(0),
+    track(0)
 {
     i_select = create_interface(2, "select", MODE_R);
     i_side = create_interface(1, "side", MODE_R);
@@ -122,7 +124,8 @@ int FDD::SeekSector(int track, int sector)
     int result = -1;
     if (buffer != nullptr)
     {
-        this->side = ~(i_side->value) & 1;
+        if (sides > 1)
+            this->side = ~(i_side->value) & 1;
         this->track = track;
         this->sector = sector;
         qDebug() << "SEEK " << this->side << this->track << this->sector;
@@ -159,7 +162,11 @@ uint8_t FDD::ReadNextByte()
         }
     } else {
         uint8_t result = buffer[track_indexes[track*sides + side].mfmtrackoffset + position++];
-        if (position >= track_indexes[track*sides + side].mfmtracksize) position = 0;
+        if (position >= track_indexes[track*sides + side].mfmtracksize)
+            position = 0;
+#ifdef LOG_FDD
+        logs(QString("R %1 %2").arg(position).arg(result, 2, 16, QChar('0')));
+#endif
         return result;
     }
 }

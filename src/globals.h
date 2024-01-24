@@ -9,12 +9,13 @@
 
 /* #undef EXTERNAL_Z80 */
 /* #undef CPU_STOPPED */
-/* #undef LOGGER */
-/* #undef LOG_NAME */
-/* #undef LOG_LIMIT */
+#define LOGGER
+#define LOG_NAME "LOG"
+#define LOG_LIMIT 100000
 
 /* #undef LOG_8255 */
 /* #undef LOG_CPU */
+#define LOG_FDD
 
 
 #endif // GLOBALS_H_IN
