@@ -93,6 +93,39 @@ void FDD::load_image(QString file_name)
         } else {
             QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error opening file '%1'").arg(file_name));
         }
+    } else
+    if (ext == "nib") {
+        QFile file(file_name);
+        if (file.size() == 232960) {
+            if (file.open(QIODevice::ReadOnly)){
+                sides = 1;
+                tracks = 35;
+                disk_size = 232960;
+                physical_track_len = disk_size / tracks;
+
+                if (buffer != nullptr) delete [] buffer;
+                buffer = new uint8_t[disk_size];
+
+                for (int i=0; i < tracks; i++) {
+                    track_indexes[i].track_number = i;
+                    track_indexes[i].side_number = 0;
+                    track_indexes[i].mfmtracksize = physical_track_len;
+                    track_indexes[i].mfmtrackoffset = i * physical_track_len;
+                }
+
+                QByteArray disk_data = file.read(disk_size);
+                memcpy(buffer, disk_data.constData(), disk_size);
+
+                track_mode = FDD_MODE_WHOLE_TRACK;
+                position = 0;
+                loaded = true;
+                this->file_name =fi.fileName();
+            } else {
+                QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error opening file '%1'").arg(file_name));
+            }
+        } else {
+            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("File '%1' is in unknown format").arg(file_name));
+        }
     } else {
         unsigned int file_size = fi.size();
         if (file_size == disk_size)
@@ -128,7 +161,10 @@ int FDD::SeekSector(int track, int sector)
             this->side = ~(i_side->value) & 1;
         this->track = track;
         this->sector = sector;
-        qDebug() << "SEEK " << this->side << this->track << this->sector;
+        //qDebug() << "SEEK " << this->side << this->track << this->sector;
+#ifdef LOG_FDD
+        logs(QString("SEEK %1").arg(track));
+#endif
         position = 0;
         if (track_mode == FDD_MODE_SECTORS) {
             result = sector_size;
@@ -165,7 +201,7 @@ uint8_t FDD::ReadNextByte()
         if (position >= track_indexes[track*sides + side].mfmtracksize)
             position = 0;
 #ifdef LOG_FDD
-        logs(QString("R %1 %2").arg(position).arg(result, 2, 16, QChar('0')));
+        //logs(QString("R %1 %2").arg(position).arg(result, 2, 16, QChar('0')));
 #endif
         return result;
     }

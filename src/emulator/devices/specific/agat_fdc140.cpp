@@ -60,35 +60,36 @@ void Agat_FDC140::phase_on(int n)
     logs(QString(" PHASE %1+").arg(n));
 #endif
 
-    if ((n==1) && (prev_phase==2)) {
+    if ( ((prev_phase-1) & 0x03) == n ) {
         //Step down
 #ifdef LOG_FDD
         logs(QString(" DOWN"));
 #endif
         if (current_track[selected_drive] > 0) {
             current_track[selected_drive]--;
-            drives[selected_drive]->SeekSector(current_track[selected_drive], 0);
+            drives[selected_drive]->SeekSector(current_track[selected_drive] / 2, 0);
         }
     } else
-    if ((n==3) && (prev_phase==2)) {
+    if ( ((prev_phase+1) & 0x03) == n ) {
         //Step up
 #ifdef LOG_FDD
         logs(QString(" UP"));
 #endif
-        if (current_track[selected_drive] < 35) {
+        if (current_track[selected_drive] < 70) {
             current_track[selected_drive]++;
-            drives[selected_drive]->SeekSector(current_track[selected_drive], 0);
+            drives[selected_drive]->SeekSector(current_track[selected_drive] / 2, 0);
         }
     }
+    prev_phase = n;
 }
 
 void Agat_FDC140::phase_off(int n)
 {
 #ifdef LOG_FDD
-    logs(QString(" PHASE %1-").arg(n));
+    //logs(QString(" PHASE %1-").arg(n));
 #endif
-    prev_phase = current_phase;
-    current_phase = n;
+    //prev_phase = current_phase;
+    //current_phase = n;
 }
 
 void Agat_FDC140::select_drive(int n)
@@ -105,30 +106,37 @@ void Agat_FDC140::select_drive(int n)
 unsigned int Agat_FDC140::get_value(unsigned int address)
 {
     unsigned int A = address & 0x0f;
+    static bool was_r = false;
 #ifdef LOG_FDD
-    logs(QString("R %1").arg(A, 1, 16, QChar('0')));
+    //logs(QString("R %1").arg(A, 1, 16, QChar('0')));
 #endif
     switch (A) {
         case 0x0:
         case 0x2:
         case 0x4:
         case 0x6:
+#ifdef LOG_FDD
+        was_r = false;
+#endif
             phase_off(A >> 1);
             break;
         case 0x1:
         case 0x3:
         case 0x5:
         case 0x7:
+#ifdef LOG_FDD
+            was_r = false;
+#endif
             phase_on(A >> 1);
             break;
         case 0x8:
 #ifdef LOG_FDD
-            logs(QString(" MOT-"));
+            logs(" MOT-");
 #endif
             break;
         case 0x9:
 #ifdef LOG_FDD
-            logs(QString(" MOT+"));
+            logs(" MOT+");
 #endif
             break;
         case 0xA:
@@ -137,6 +145,12 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
             break;
         case 0xC:
             // TODO: timings imitation
+#ifdef LOG_FDD
+            if (!was_r) {
+                logs(" READ");
+                was_r = true;
+            }
+#endif
             return drives[selected_drive]->ReadNextByte();
             break;
         case 0xD:

@@ -23,6 +23,7 @@ private:
 
     // MFM tracks info
     HXC_MFM_TRACK_INFO track_indexes[100];
+    int physical_track_len;
 
     unsigned int selector;
 

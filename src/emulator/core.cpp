@@ -751,6 +751,10 @@ CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
 void CPU::load_config(SystemData *sd)
 {
     ComputerDevice::load_config(sd);
+
+    QString s = cd->get_parameter("stopped", false).value;
+    if (s=="1") debug = (DEBUG_STOPPED);
+
     mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper"));
 }
 
