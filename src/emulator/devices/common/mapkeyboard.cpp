@@ -91,7 +91,7 @@ void MapKeyboard::key_down(unsigned int key)
                     && key_map[i].shift    == shift_pressed
                 )
             {
-                port_value->set_value(0, key_map[i].value);
+                port_value->set_value(key_map[i].value, key_map[i].value); // To use both port & port-address
             }
     }
 }
