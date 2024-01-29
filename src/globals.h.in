@@ -16,6 +16,8 @@
 #cmakedefine LOG_8255
 #cmakedefine LOG_CPU
 #cmakedefine LOG_FDD
+#cmakedefine LOG_PORTS
+#cmakedefine LOG_MAPPER
 
 
 #endif // GLOBALS_H_IN

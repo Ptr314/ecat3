@@ -142,6 +142,9 @@ protected:
 
     void logs(QString s);
     bool log_available();
+#ifdef LOGGER
+    MemoryMapper * log_mm;
+#endif
 
 };
 

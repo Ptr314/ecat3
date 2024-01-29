@@ -33,6 +33,7 @@ void Agat_FDC140::load_config(SystemData *sd)
         throw QException();
     }
 
+    memset(&drives, 0, sizeof(drives));
     QStringList parts = s.split('|', Qt::SkipEmptyParts);
     drives_count = parts.size();
     for (unsigned int i = 0; i < drives_count; i++)
@@ -57,27 +58,28 @@ unsigned int Agat_FDC140::get_selected_drive()
 void Agat_FDC140::phase_on(int n)
 {
 #ifdef LOG_FDD
-    logs(QString(" PHASE %1+").arg(n));
+    //logs(QString(" PHASE %1+").arg(n));
 #endif
-
-    if ( ((prev_phase-1) & 0x03) == n ) {
-        //Step down
+    if (prev_phase >= 0) {
+        if ( ((prev_phase-1) & 0x03) == n ) {
+            //Step down
 #ifdef LOG_FDD
-        logs(QString(" DOWN"));
+            logs(QString(" DOWN"));
 #endif
-        if (current_track[selected_drive] > 0) {
-            current_track[selected_drive]--;
-            drives[selected_drive]->SeekSector(current_track[selected_drive] / 2, 0);
-        }
-    } else
-    if ( ((prev_phase+1) & 0x03) == n ) {
-        //Step up
+            if (current_track[selected_drive] > 0) {
+                current_track[selected_drive]--;
+                drives[selected_drive]->SeekSector(current_track[selected_drive] / 2, 0);
+            }
+        } else
+        if ( ((prev_phase+1) & 0x03) == n ) {
+            //Step up
 #ifdef LOG_FDD
-        logs(QString(" UP"));
+            logs(QString(" UP"));
 #endif
-        if (current_track[selected_drive] < 70) {
-            current_track[selected_drive]++;
-            drives[selected_drive]->SeekSector(current_track[selected_drive] / 2, 0);
+            if (current_track[selected_drive] < 70) {
+                current_track[selected_drive]++;
+                drives[selected_drive]->SeekSector(current_track[selected_drive] / 2, 0);
+            }
         }
     }
     prev_phase = n;
@@ -130,12 +132,14 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
             phase_on(A >> 1);
             break;
         case 0x8:
+            prev_phase = -1;
 #ifdef LOG_FDD
             logs(" MOT-");
 #endif
             break;
         case 0x9:
 #ifdef LOG_FDD
+            prev_phase = -1;
             logs(" MOT+");
 #endif
             break;
@@ -146,12 +150,23 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
         case 0xC:
             // TODO: timings imitation
 #ifdef LOG_FDD
-            if (!was_r) {
-                logs(" READ");
-                was_r = true;
+            {
+                static int debug_track = -1;
+                static int debug_sector = -1;
+                int x_track = log_mm->read(0x41);
+                int x_sector = log_mm->read(0x3D);
+                if (!was_r || debug_track!=x_track || debug_sector!=x_sector) {
+                    logs(" READ " + QString::number(x_track) + " " + QString::number(x_sector));
+                    was_r = true;
+                }
+                debug_track = x_track;
+                debug_sector = x_sector;
             }
 #endif
-            return drives[selected_drive]->ReadNextByte();
+            if (drives[selected_drive] != nullptr)
+                return drives[selected_drive]->ReadNextByte();
+            else
+                return 0xFF;
             break;
         case 0xD:
             // TODO: implement geting WP

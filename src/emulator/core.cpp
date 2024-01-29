@@ -270,6 +270,7 @@ void DeviceManager::error_clear()
 
 void DeviceManager::logs(QString s)
 {
+    qDebug() << s;
     if (logger != nullptr)
     {
         CPU * cpu = dynamic_cast<CPU*>(get_device(0)->device);
@@ -434,7 +435,9 @@ void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
             ld.s.i->connect(ld.s, ld.d, inverted);
         }
     }
-
+#ifdef LOGGER
+    log_mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper"));
+#endif
 }
 
 Interface * ComputerDevice::create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id)
@@ -696,18 +699,27 @@ void Port::interface_callback([[maybe_unused]] unsigned int callback_id, unsigne
             if ((old_value & 1) != 0 && (new_value & 1) == 0) set_value(0, value ^ flip_mask);
             break;
         default: // PORT_RESET
-            if ((old_value & 1) != 0 && (new_value & 1) == 0) set_value(0, default_value);
+            if ((old_value & 1) != 0 && (new_value & 1) == 0) this->value = default_value;
             break;
     }
 }
 
 unsigned int Port::get_value([[maybe_unused]] unsigned int address)
 {
+#ifdef LOG_PORTS
+    if (name != "port-video")
+        logs("GET");
+#endif
+    i_access->change(0);
+    i_access->change(1);
     return value;
 }
 
 void Port:: set_value([[maybe_unused]] unsigned int address, unsigned int value, bool force)
 {
+#ifdef LOG_PORTS
+    logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
+#endif
     i_access->change(0);
     this->value = value;
     i_data->change(value);
@@ -727,6 +739,9 @@ PortAddress::PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int value, bool force)
 {
+#ifdef LOG_PORTS
+    logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
+#endif
     i_access->change(0);
     this->value = address;
     i_data->change(address);
@@ -1058,6 +1073,9 @@ unsigned int MemoryMapper::read(unsigned int address)
 {
     //TODO: Cache
     // for (unsigned int i = 0; i < this->read_cache_items; i++)
+#ifdef LOG_MAPPER
+    if (address > 0xC000 && address < 0xC020) logs(QString(">READ %1").arg(address, 4, 16, QChar('0')));
+#endif
 
     if ((this->first_range == 0) && ((address & this->cancel_init_mask) != 0))
     {
@@ -1082,6 +1100,10 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
 {
     //TODO: Cache
     // for (unsigned int i = 0; i < this->write_cache_items; i++)
+
+#ifdef LOG_MAPPER
+    if (address >= 0xC000 && address < 0xC400) logs(QString(">WRITE %1").arg(address, 4, 16, QChar('0')));
+#endif
 
     unsigned int address_on_device, range_index;
     AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config->value, address, MODE_W, &address_on_device, &range_index);

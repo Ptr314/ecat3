@@ -71,7 +71,8 @@ void MapKeyboard::load_config(SystemData *sd)
 void MapKeyboard::set_ruslat(unsigned int value)
 {
     ruslat_state = value;
-    if (port_ruslat != nullptr) port_ruslat->set_value(0, ruslat_state << ruslat_bit);
+    unsigned int port_value = ruslat_state << ruslat_bit;
+    if (port_ruslat != nullptr) port_ruslat->set_value(port_value, port_value); // Alow using both port & port-address
     i_ruslat->change(ruslat_state);
 }
 

@@ -222,10 +222,15 @@ void AgatDisplay::render_all(bool force_render)
         if ((mode & 0x03) == 2) {
             // Blanking fields in text modes
             uint8_t * pixel_address;
+            uint32_t black = SDL_MapRGB(surface->format, 0, 0, 0);
             for (unsigned int i=0; i<256; i++) {
                 pixel_address = ((Uint8 *)render_pixels) + i*line_bytes;
-                memset(pixel_address, 0, 32*4);         // Left
-                memset(pixel_address + 480*4, 0, 32*4); // Right
+                //memset(pixel_address, 10, 32*4);         // Left
+                //memset(pixel_address + 480*4, 10, 32*4); // Right
+                for (unsigned int j=0; j<32; j++) {
+                    *(uint32_t *)(pixel_address + j*4) = black;
+                    *(uint32_t *)(pixel_address + 480*4 + j*4) = black;
+                }
             }
         }
         for (unsigned int i=0; i<page_size; i++) render_byte(i);
