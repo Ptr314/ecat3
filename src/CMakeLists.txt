@@ -117,6 +117,7 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/devices/specific/agat_fdc140.h emulator/devices/specific/agat_fdc140.cpp
     emulator/devices/specific/agat_display.h emulator/devices/specific/agat_display.cpp
     emulator/devices/common/mfm_formats.h
+    emulator/devices/common/mapkeyboard.h emulator/devices/common/mapkeyboard.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

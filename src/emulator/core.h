@@ -215,6 +215,7 @@ protected:
     Interface * i_data;
     Interface * i_access;
     Interface * i_flip;
+    Interface * i_reset;
 
 public:
     virtual unsigned int get_value(unsigned int address) override;

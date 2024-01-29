@@ -1,0 +1,137 @@
+space:      $A0
+semicolon:  $BB
++:          $AB
+0:          $B0
+1:          $B1
+2:          $B2
+3:          $B3
+4:          $B4
+5:          $B5
+6:          $B6
+7:          $B7
+8:          $B8
+9:          $B9
+
+!:          $A1
+":          $A2
+#:          $A3
+$:          $A4
+%:          $A5
+&:          $A6
+':          $A7
+(:          $A8
+):          $A9
+
+-:          $AD
+=:          $BD
+colon:      $BA
+*:          $AA
+.:          $AE
+>:          $BE
+,:          $AC
+<:          $BC
+slash:      $AF
+?:          $BF
+left:       $88
+right:      $95
+up:         $99
+down:       $9A
+scroll:     $9B
+enter:      $8D
+ret:        $8D
+
+f1:         $84
+f2:         $85
+f3:         $86
+
+A:          $C1
+A/C:        $81
+A/S:        $E1
+
+B:          $C2
+B/C:        $82
+B/S:        $E2
+
+W:          $D7
+W/C:        $97
+W/S:        $F7
+
+G:          $C7
+G/C:        $87
+G/S:        $E7
+
+D:          $C4
+D/C:        $84
+D/S:        $E4
+
+E:          $C5
+E/C:        $85
+E/S:        $E5
+
+V:          $D6
+V/C:        $96
+V/S:        $F6
+
+Z:          $DA
+Z/C:        $9A
+Z/S:        $FA
+
+I:          $C9
+I/C:        $89
+I/S:        $E9
+
+J:          $CA
+J/C:        $8A
+J/S:        $EA
+
+K:          $CB
+K/C:        $8B
+K/S:        $EB
+
+L:          $CC
+L/C:        $8C
+L/S:        $EC
+
+M:          $CD
+M/C:        $8D
+M/S:        $ED
+
+N:          $CE
+N/C:        $8E
+N/S:        $EE
+
+O:          $CF
+O/C:        $8F
+O/S:        $EF
+
+P:          $D0
+P/C:        $90
+P/S:        $F0
+
+R:          $D2
+R/C:        $92
+R/S:        $F2
+
+S:          $D3
+S/C:        $93
+S/S:        $F3
+
+T:          $D4
+T/C:        $94
+T/S:        $F4
+
+U:          $D5
+U/C:        $95
+U/S:        $F5
+
+F:          $C6
+F/C:        $86
+F/S:        $E6
+
+H:          $C8
+H/C:        $88
+H/S:        $E8
+
+C:          $C3
+C/C:        $83
+C/S:        $E3

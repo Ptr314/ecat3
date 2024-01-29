@@ -8,6 +8,9 @@
 
 MapperCacheEntry MapperCache[15];
 
+#define PORT_FLIP  1
+#define PORT_RESET 2
+
 //----------------------- class Interface -------------------------------//
 
 Interface::Interface(
@@ -680,15 +683,22 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
     i_data = this->create_interface(size, "value", MODE_W);
 
     i_access = this->create_interface(1, "access", MODE_W);
-    i_flip = this->create_interface(1, "flip", MODE_R, 1);
+    i_flip = this->create_interface(1, "flip", MODE_R, PORT_FLIP);
+    i_reset = this->create_interface(1, "reset", MODE_R, PORT_RESET);
 
     value = default_value;
 }
 
 void Port::interface_callback([[maybe_unused]] unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
-    //Flip interface only
-    if ((old_value & 1) != 0 && (new_value & 1) == 0) set_value(0, value ^ flip_mask);
+    switch (callback_id) {
+        case PORT_FLIP:
+            if ((old_value & 1) != 0 && (new_value & 1) == 0) set_value(0, value ^ flip_mask);
+            break;
+        default: // PORT_RESET
+            if ((old_value & 1) != 0 && (new_value & 1) == 0) set_value(0, default_value);
+            break;
+    }
 }
 
 unsigned int Port::get_value([[maybe_unused]] unsigned int address)

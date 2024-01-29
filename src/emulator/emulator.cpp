@@ -27,6 +27,7 @@
 #include "emulator/devices/cpu/6502.h"
 #include "emulator/devices/specific/agat_fdc140.h"
 #include "emulator/devices/specific/agat_display.h"
+#include "emulator/devices/common/mapkeyboard.h"
 
 Emulator::Emulator(QString work_path, QString data_path, QString software_path, QString ini_file):
     work_path(work_path),
@@ -419,4 +420,5 @@ void Emulator::register_devices()
     dm->register_device("65c02", create_wdc65c02);
     dm->register_device("agat-fdc140", create_agat_fdc140);
     dm->register_device("agat-display", create_agat_display);
+    dm->register_device("map-keyboard", create_mapkeyboard);
 }
