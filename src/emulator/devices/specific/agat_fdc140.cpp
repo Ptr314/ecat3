@@ -58,27 +58,33 @@ unsigned int Agat_FDC140::get_selected_drive()
 void Agat_FDC140::phase_on(int n)
 {
 #ifdef LOG_FDD
-    //logs(QString(" PHASE %1+").arg(n));
+    //logs(QString("P%1+").arg(n));
 #endif
     if (prev_phase >= 0) {
         if ( ((prev_phase-1) & 0x03) == n ) {
             //Step down
 #ifdef LOG_FDD
-            logs(QString(" DOWN"));
+            //logs(QString(" DOWN"));
 #endif
             if (current_track[selected_drive] > 0) {
                 current_track[selected_drive]--;
                 drives[selected_drive]->SeekSector(current_track[selected_drive] / 2, 0);
+#ifdef LOG_FDD
+                //logs("["+QString::number(current_track[selected_drive]) + "]");
+#endif
             }
         } else
         if ( ((prev_phase+1) & 0x03) == n ) {
             //Step up
 #ifdef LOG_FDD
-            logs(QString(" UP"));
+            //logs(QString(" UP"));
 #endif
             if (current_track[selected_drive] < 70) {
                 current_track[selected_drive]++;
                 drives[selected_drive]->SeekSector(current_track[selected_drive] / 2, 0);
+#ifdef LOG_FDD
+                //logs("["+QString::number(current_track[selected_drive]) + "]");
+#endif
             }
         }
     }
@@ -88,7 +94,7 @@ void Agat_FDC140::phase_on(int n)
 void Agat_FDC140::phase_off(int n)
 {
 #ifdef LOG_FDD
-    //logs(QString(" PHASE %1-").arg(n));
+    //logs(QString("P%1-").arg(n));
 #endif
     //prev_phase = current_phase;
     //current_phase = n;
@@ -132,14 +138,14 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
             phase_on(A >> 1);
             break;
         case 0x8:
-            prev_phase = -1;
+            //prev_phase = -1;
 #ifdef LOG_FDD
             logs(" MOT-");
 #endif
             break;
         case 0x9:
 #ifdef LOG_FDD
-            prev_phase = -1;
+            //prev_phase = -1;
             logs(" MOT+");
 #endif
             break;
@@ -151,16 +157,20 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
             // TODO: timings imitation
 #ifdef LOG_FDD
             {
-                static int debug_track = -1;
-                static int debug_sector = -1;
-                int x_track = log_mm->read(0x41);
-                int x_sector = log_mm->read(0x3D);
-                if (!was_r || debug_track!=x_track || debug_sector!=x_sector) {
-                    logs(" READ " + QString::number(x_track) + " " + QString::number(x_sector));
+                //static int debug_track = -1;
+                //static int debug_sector = -1;
+                static int debug_mem = -1;
+                //int x_track = log_mm->read(0x41);
+                //int x_sector = log_mm->read(0x3D);
+                int x_mem = log_mm->read(0x2B);
+                //if (!was_r || debug_track!=x_track || debug_sector!=x_sector) {
+                if (!was_r || debug_mem!=x_mem) {
+                    logs(" READ TO " + QString::number(x_mem, 16));
                     was_r = true;
                 }
-                debug_track = x_track;
-                debug_sector = x_sector;
+                // debug_track = x_track;
+                // debug_sector = x_sector;
+                debug_mem = x_mem;
             }
 #endif
             if (drives[selected_drive] != nullptr)

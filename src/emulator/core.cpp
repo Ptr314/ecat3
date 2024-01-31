@@ -662,7 +662,8 @@ void ROM::load_config(SystemData *sd)
 
 Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
     AddressableDevice(im, cd),
-    default_value(0)
+    default_value(0),
+    mask(_FFFF)
 {
     try {
         size = parse_numeric_value(this->cd->get_parameter("size").value);
@@ -680,6 +681,12 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
         flip_mask = parse_numeric_value(cd->get_parameter("flipmask").value);
     } catch (QException &e) {
         flip_mask = _FFFF;
+    }
+
+    try {
+        mask = parse_numeric_value(cd->get_parameter("mask").value);
+    } catch (QException &e) {
+        mask = _FFFF;
     }
 
     i_input = this->create_interface(size, "data", MODE_R); //TODO: check if it is nesessary
@@ -707,22 +714,22 @@ void Port::interface_callback([[maybe_unused]] unsigned int callback_id, unsigne
 unsigned int Port::get_value([[maybe_unused]] unsigned int address)
 {
 #ifdef LOG_PORTS
-    if (name != "port-video")
-        logs("GET");
+    if (name != "port-video" && name != "port-kbd")
+        logs("GET " + QString::number(value, 16));
 #endif
     i_access->change(0);
     i_access->change(1);
     return value;
 }
 
-void Port:: set_value([[maybe_unused]] unsigned int address, unsigned int value, bool force)
+void Port::set_value([[maybe_unused]] unsigned int address, unsigned int value, bool force)
 {
 #ifdef LOG_PORTS
     logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
 #endif
     i_access->change(0);
-    this->value = value;
-    i_data->change(value);
+    this->value = (value & mask) | (this->value & ~mask);
+    i_data->change(this->value);
     i_access->change(1);
 }
 
@@ -743,8 +750,8 @@ void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int 
     logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
 #endif
     i_access->change(0);
-    this->value = address;
-    i_data->change(address);
+    this->value = (address & mask) | (this->value & ~mask);
+    i_data->change(this->value);
     i_access->change(1);
 }
 

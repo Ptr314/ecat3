@@ -11,12 +11,12 @@
 /* #undef CPU_STOPPED */
 #define LOGGER
 #define LOG_NAME "LOG"
-#define LOG_LIMIT 100000
+#define LOG_LIMIT 300000
 
 /* #undef LOG_8255 */
 /* #undef LOG_CPU */
 #define LOG_FDD
-/* #undef LOG_PORTS */
+#define LOG_PORTS
 /* #undef LOG_MAPPER */
 
 

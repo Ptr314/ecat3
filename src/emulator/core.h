@@ -207,11 +207,11 @@ public:
 
 class Port:public AddressableDevice
 {
-private:
+protected:
     unsigned int size;
     unsigned int flip_mask;
+    unsigned int mask;
 
-protected:
     unsigned int value;
     unsigned int default_value;
     Interface * i_input;
