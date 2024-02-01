@@ -45,11 +45,13 @@ void mos6502::reset(bool cold)
 
 unsigned int mos6502::read_mem(unsigned int address)
 {
+    i_address->change(address);
     return mm->read(address);
 }
 
 void mos6502::write_mem(unsigned int address, unsigned int data)
 {
+    i_address->change(address);
     mm->write(address, data);
 }
 

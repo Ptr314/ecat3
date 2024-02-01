@@ -4,7 +4,7 @@ project(eCat3 VERSION 3.0.0 LANGUAGES C CXX)
 
 set(EXTERNAL_Z80 0)
 set(CPU_STOPPED 0)
-set(LOGGER 1)
+set(LOGGER 0)
 
 if (${LOGGER})
     if (${EXTERNAL_Z80})
