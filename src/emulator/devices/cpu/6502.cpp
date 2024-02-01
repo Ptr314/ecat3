@@ -27,7 +27,7 @@ void mos6502Core::write_mem(uint16_t address, uint8_t value)
 mos6502::mos6502(InterfaceManager *im, EmulatorConfigDevice *cd, int family_type):
     CPU(im, cd)
 {
-    i_address = create_interface(16, "address", MODE_R, 1); //TODO: 6502 check mode
+    i_address = create_interface(16, "address", MODE_W, 1); //TODO: 6502 check mode
     i_data =    create_interface(8, "data", MODE_RW);
     i_nmi =     create_interface(1, "nmi", MODE_R, CALLBACK_NMI);
     i_irq =     create_interface(1, "irq", MODE_R, CALLBACK_INT);

@@ -5,6 +5,7 @@
 #include "emulator/core.h"
 
 #define REGISTER_LATCH_POS  0
+#define REGISTER_BUFFER     1
 
 #define CHANGED_IN          1
 #define CHANGED_C           2
@@ -42,6 +43,12 @@ public:
     {
         ComputerDevice::load_config(sd);
         //TODO: Register - add other types
+        QString type_string = cd->get_parameter("type", false).value.toLower();
+        if (type_string.isEmpty() || type_string == "latch-pos")
+            store_type = REGISTER_LATCH_POS;
+        else if (type_string == "buffer")
+            store_type = REGISTER_BUFFER;
+
     }
 
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override
@@ -56,6 +63,10 @@ public:
                 }
                 break;
             }
+        } else
+        if (callback_id == CHANGED_IN && store_type == REGISTER_BUFFER) {
+            register_value = i_in->value;
+            i_out->change(register_value);
         }
     }
 

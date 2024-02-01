@@ -12,12 +12,14 @@ if (${LOGGER})
     else()
         set(LOG_NAME "LOG")
     endif()
-    set(LOG_LIMIT 300000)
+    set(LOG_LIMIT 200000)
     set(LOG_8255 0)
     set(LOG_CPU 0)
-    set(LOG_MAPPER 0)
+    set(LOG_MAPPER 1)
     set(LOG_PORTS 1)
-    set(LOG_FDD 1)
+    set(LOG_FDD 0)
+    set(LOG_PAGE_MAPPER 1)
+    set(LOG_INTERFACES 0)
 endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -97,7 +99,7 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/devices/cpu/z80.h
     emulator/devices/cpu/z80.cpp
     emulator/devices/cpu/cpu_utils.h
-    emulator/devices/common/page_mapper.h
+    emulator/devices/common/page_mapper.h emulator/devices/common/page_mapper.cpp
     dialogs/hexeditorline.h dialogs/hexeditorline.cpp
     dialogs/dosframe.h dialogs/dosframe.cpp
     emulator/devices/common/generator.h  emulator/devices/common/generator.cpp

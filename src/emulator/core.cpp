@@ -45,6 +45,9 @@ void Interface::connect(LinkedInterface s, LinkedInterface d, bool invert)
 
     if (index < 0)
     {
+#ifdef LOG_INTERFACES
+        qDebug() << "CONNECT " + s.i->device->name +":" + s.i->name + " TO " + d.i->device->name +":" + d.i->name;
+#endif
         linked++;
         linked_interfaces[linked-1].s = s;
         linked_interfaces[linked-1].d = d;
@@ -141,6 +144,10 @@ bool Interface::neg_edge()
     return result;
 }
 
+void Interface::pull(unsigned int new_value)
+{
+    value = new_value;
+}
 
 //----------------------- class DeviceManager -------------------------------//
 
@@ -270,7 +277,7 @@ void DeviceManager::error_clear()
 
 void DeviceManager::logs(QString s)
 {
-    qDebug() << s;
+    //qDebug() << s;
     if (logger != nullptr)
     {
         CPU * cpu = dynamic_cast<CPU*>(get_device(0)->device);
@@ -313,13 +320,13 @@ void InterfaceManager::clear()
     memset(&interfaces, 0, sizeof(interfaces));
 }
 
-Interface * InterfaceManager::get_interface_by_name(QString device_name, QString interface_name)
+Interface * InterfaceManager::get_interface_by_name(QString device_name, QString interface_name, bool required)
 {
     for (unsigned int i=0; i<interfaces_count; i++)
         if (interfaces[i]->device->name == device_name && interfaces[i]->name == interface_name)
             return interfaces[i];
-
-    QMessageBox::critical(0, InterfaceManager::tr("Error"), InterfaceManager::tr("Interface '%1:%2' not found").arg(device_name, interface_name));
+    if (required)
+        QMessageBox::critical(0, InterfaceManager::tr("Error"), InterfaceManager::tr("Interface '%1:%2' not found").arg(device_name, interface_name));
     return nullptr;
 }
 
@@ -377,22 +384,31 @@ void ComputerDevice::system_clock(unsigned int counter)
 
 void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
 {
-    LinkData ld;
 
-    bool inverted;
-
-    for (unsigned int i = 0; i < this->cd->parameters_count; i++)
+    for (unsigned int i = 0; i < cd->parameters_count; i++)
     {
-        QString parameter_name = this->cd->parameters[i].name;
+        QString parameter_name = cd->parameters[i].name;
         if (parameter_name.at(0) == '~')
         {
+
             QString interface_name = parameter_name.removeFirst();
-            if (interface_name.isEmpty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect interface definition for %1").arg(this->name));
+            if (interface_name.isEmpty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect interface definition for %1").arg(name));
 
-            ld.s.i = this->im->get_interface_by_name(this->name, interface_name);
+            QString connection = cd->parameters[i].value;
+            Interface * interface = im->get_interface_by_name(name, interface_name);
 
-            QString connection = this->cd->parameters[i].value;
-            if (connection.isEmpty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(this->name, connection));
+            try {
+                unsigned int pull_value = parse_numeric_value(connection);
+                interface->pull(pull_value);
+                continue;
+            } catch (QException &e) {}
+
+            LinkData ld;
+            bool inverted;
+
+            ld.s.i = interface;
+
+            if (connection.isEmpty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(name, connection));
 
             if (connection.at(0) == '!') {
                 connection = connection.last(connection.length()-1);
@@ -401,13 +417,13 @@ void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
                 inverted = false;
 
             int p = connection.indexOf('.');
-            if (p < 0) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(this->name, connection));
+            if (p < 0) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(name, connection));
             QString connected_device = connection.first(p);
             QString connected_interface = connection.last(connection.length()-p-1);
 
-            ld.d.i = this->im->get_interface_by_name(connected_device, connected_interface);
+            ld.d.i = im->get_interface_by_name(connected_device, connected_interface);
 
-            QString source_bits = this->cd->parameters[i].left_range;
+            QString source_bits = cd->parameters[i].left_range;
             if (source_bits.isEmpty())
             {
                 ld.s.shift = 0;
@@ -420,7 +436,7 @@ void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
                 ld.s.mask = create_mask(bit_2 - bit_1 + 1, bit_1);
             }
 
-            QString dest_bits = this->cd->parameters[i].right_range;
+            QString dest_bits = cd->parameters[i].right_range;
             if (dest_bits.isEmpty())
             {
                 ld.d.shift = 0;
@@ -433,6 +449,7 @@ void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
                 ld.d.mask = create_mask(bit_2 - bit_1 + 1, bit_1);
             }
             ld.s.i->connect(ld.s, ld.d, inverted);
+
         }
     }
 #ifdef LOGGER
@@ -521,6 +538,9 @@ void Memory::interface_callback([[maybe_unused]] unsigned int callback_id, unsig
 {
     unsigned int address = new_value & create_mask(i_address->get_size(), 0);
     if (address < get_size() and auto_output) i_data->change(buffer[address]);
+
+    // if (name == "rom-card-mapper")
+    //     logs(QString::number(address, 2) + QString::number(buffer[address], 2));
 }
 
 void Memory::set_size(unsigned int value)
@@ -759,6 +779,10 @@ void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int 
 {
 #ifdef LOG_PORTS
     logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
+    if (address == 0xC1) {
+        int i=0;
+        i++;
+    }
 #endif
     i_access->change(0);
     this->value = (address & mask) | (this->value & ~mask);
@@ -869,7 +893,11 @@ void MemoryMapper::load_config(SystemData *sd)
 
     if (!config_device.isEmpty())
     {
-        ld.d.i = this->im->get_interface_by_name(config_device, "value");
+        Interface * i_cfg = im->get_interface_by_name(config_device, "out", false);
+        if (i_cfg == nullptr)
+            i_cfg = im->get_interface_by_name(config_device, "value");
+
+        ld.d.i = i_cfg;
         ld.d.shift = 0;
         ld.d.mask = create_mask(ld.d.i->get_size(), 0);
 
@@ -1092,7 +1120,7 @@ unsigned int MemoryMapper::read(unsigned int address)
     //TODO: Cache
     // for (unsigned int i = 0; i < this->read_cache_items; i++)
 #ifdef LOG_MAPPER
-    if (address > 0xC000 && address < 0xC020) logs(QString(">READ %1").arg(address, 4, 16, QChar('0')));
+    if (address >= 0xE000 && address < 0xF800) logs(QString("R %1").arg(address, 4, 16, QChar('0')));
 #endif
 
     if ((this->first_range == 0) && ((address & this->cancel_init_mask) != 0))
@@ -1120,7 +1148,7 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
     // for (unsigned int i = 0; i < this->write_cache_items; i++)
 
 #ifdef LOG_MAPPER
-    if (address >= 0xC000 && address < 0xC400) logs(QString(">WRITE %1").arg(address, 4, 16, QChar('0')));
+    if (address >= 0xE000 && address <= 0xFFFF) logs(QString("W %1").arg(address, 4, 16, QChar('0')));
 #endif
 
     unsigned int address_on_device, range_index;

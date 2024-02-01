@@ -310,7 +310,7 @@ public:
     void clear();
     bool pos_edge(); //Триггеры фронтов для 0-го бита
     bool neg_edge();
-
+    void pull(unsigned int new_value);
 };
 
 class InterfaceManager: public QObject
@@ -327,7 +327,7 @@ public:
     ~InterfaceManager();
 
     void register_interface(Interface *i);
-    Interface * get_interface_by_name(QString device_name, QString interface_name);
+    Interface * get_interface_by_name(QString device_name, QString interface_name, bool required=true);
     void clear();
     void interface_changes(Interface *i);
 

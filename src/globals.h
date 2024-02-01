@@ -18,6 +18,7 @@
 /* #undef LOG_FDD */
 /* #undef LOG_PORTS */
 /* #undef LOG_MAPPER */
-
+/* #undef LOG_PAGE_MAPPER */
+/* #undef LOG_INTERFACES */
 
 #endif // GLOBALS_H_IN
