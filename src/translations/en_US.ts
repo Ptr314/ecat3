@@ -1048,6 +1048,19 @@
     </message>
 </context>
 <context>
+    <name>Register</name>
+    <message>
+        <location filename="../emulator/devices/common/register.cpp" line="+47"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Unknown register type %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ScanKeyboard</name>
     <message>
         <location filename="../emulator/devices/common/scankeyboard.cpp" line="+44"/>
