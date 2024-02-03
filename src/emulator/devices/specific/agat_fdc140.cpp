@@ -160,20 +160,20 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
             // TODO: timings imitation
 #ifdef LOG_FDD
             {
-                //static int debug_track = -1;
-                //static int debug_sector = -1;
-                static int debug_mem = -1;
-                //int x_track = log_mm->read(0x41);
-                //int x_sector = log_mm->read(0x3D);
-                int x_mem = log_mm->read(0x2B);
-                //if (!was_r || debug_track!=x_track || debug_sector!=x_sector) {
-                if (!was_r || debug_mem!=x_mem) {
-                    logs(" READ TO " + QString::number(x_mem, 16));
+                static int debug_track = -1;
+                static int debug_sector = -1;
+                //static int debug_mem = -1;
+                int x_track = log_mm->read(0x41);
+                int x_sector = log_mm->read(0x3D);
+                int x_mem = log_mm->read(0x27);
+                if (!was_r || debug_track!=x_track || debug_sector!=x_sector) {
+                //if (!was_r || debug_mem!=x_mem) {
+                    logs(" READ T:" + QString::number(x_track, 16) + " S:" + QString::number(x_sector, 16) + " TO:" + QString::number(x_mem, 16));
                     was_r = true;
                 }
-                // debug_track = x_track;
-                // debug_sector = x_sector;
-                debug_mem = x_mem;
+                 debug_track = x_track;
+                 debug_sector = x_sector;
+                //debug_mem = x_mem;
             }
 #endif
             if (drives[selected_drive] != nullptr)

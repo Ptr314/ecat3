@@ -289,7 +289,7 @@ void DeviceManager::error_clear()
 
 void DeviceManager::logs(QString s)
 {
-    //qDebug() << s;
+    qDebug() << s;
     if (logger != nullptr)
     {
         CPU * cpu = dynamic_cast<CPU*>(get_device(0)->device);
