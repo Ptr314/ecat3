@@ -94,7 +94,7 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/devices/common/i8275display.h
     emulator/devices/common/i8253.h
     emulator/files.h emulator/files.cpp
-    emulator/devices/common/register.h
+    emulator/devices/common/register.h emulator/devices/common/register.cpp
     libs/lodepng/lodepng.cpp libs/lodepng/lodepng.h
     emulator/devices/cpu/z80.h
     emulator/devices/cpu/z80.cpp

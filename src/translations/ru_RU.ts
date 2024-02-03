@@ -19,9 +19,22 @@
     </message>
 </context>
 <context>
+    <name>Agat_FDC140</name>
+    <message>
+        <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+33"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect fdd list for &apos;%1&apos;</source>
+        <translation>Некорректный список дисководов для &apos;%1&apos;</translation>
+    </message>
+</context>
+<context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+713"/>
+        <location filename="../emulator/core.cpp" line="+827"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -34,16 +47,16 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location line="-380"/>
+        <location line="-469"/>
         <location line="+50"/>
-        <location line="+5"/>
-        <location line="+3"/>
-        <location filename="../emulator/devices/common/generator.h" line="+60"/>
+        <location line="+16"/>
+        <location line="+9"/>
+        <location filename="../emulator/devices/common/generator.cpp" line="+43"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-58"/>
+        <location line="-75"/>
         <source>Incorrect clock value for &apos;%1&apos;</source>
         <translation>Некорректное значение для тактовой частоты %1</translation>
     </message>
@@ -53,13 +66,13 @@
         <translation>Некорректное определение интерфейса для %1</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <location line="+3"/>
+        <location line="+16"/>
+        <location line="+9"/>
         <source>Incorrect connection for %1:%2</source>
         <translation>Некорректное соединение интерфейсов для %1:%2</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/generator.h" line="+0"/>
+        <location filename="../emulator/devices/common/generator.cpp" line="+0"/>
         <source>Incorrect polarity for %1</source>
         <translation>Неправильно указана полярность для %1</translation>
     </message>
@@ -195,7 +208,7 @@
         <translation>Установить значение</translation>
     </message>
     <message>
-        <location filename="../dialogs/debugwindow.cpp" line="+166"/>
+        <location filename="../dialogs/debugwindow.cpp" line="+172"/>
         <location line="+66"/>
         <location line="+76"/>
         <source>Error</source>
@@ -212,7 +225,7 @@
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-190"/>
+        <location filename="../emulator/core.cpp" line="-221"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -319,7 +332,7 @@
     <name>Emulator</name>
     <message>
         <location filename="../emulator/files.cpp" line="+18"/>
-        <location line="+18"/>
+        <location line="+23"/>
         <location line="+38"/>
         <location line="+8"/>
         <location line="+10"/>
@@ -340,12 +353,12 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-325"/>
+        <location line="-330"/>
         <source>Unable to find an expected preamble byte 0xE6!</source>
         <translation>Не удалось найти байт преамбулы 0xE6!</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+23"/>
         <source>Unable to find a RAM page to store data</source>
         <translation>Не получилось найти страницу памяти для записи данных</translation>
     </message>
@@ -406,7 +419,7 @@
         <translation>Неизвестный тип файла</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+212"/>
+        <location filename="../mainwindow.cpp" line="+215"/>
         <source>Screen 4:3</source>
         <translation>Экран 4:3</translation>
     </message>
@@ -431,7 +444,7 @@
         <translation>Анизотропное</translation>
     </message>
     <message>
-        <location line="+199"/>
+        <location line="+204"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
     </message>
@@ -500,14 +513,19 @@
 <context>
     <name>FDD</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+38"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+40"/>
         <location line="+9"/>
-        <location line="+23"/>
+        <location line="+41"/>
+        <location line="+4"/>
+        <location line="+30"/>
+        <location line="+3"/>
+        <location line="+19"/>
+        <location line="+3"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-32"/>
+        <location line="-109"/>
         <source>Incorrect fdd parameters for &apos;%1&apos;</source>
         <translation>Некорректный параметр дисковода &apos;%1&apos;</translation>
     </message>
@@ -517,22 +535,38 @@
         <translation>Файл образа диска &apos;%1&apos; не найден</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+41"/>
+        <source>Unrecognized MFM format</source>
+        <translation>Файл формата MFM не распознан</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+30"/>
+        <location line="+22"/>
+        <source>Error opening file &apos;%1&apos;</source>
+        <translation>Ошибка открытия файла &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location line="-19"/>
+        <source>File &apos;%1&apos; is in unknown format</source>
+        <translation>Формат файла &apos;%1&apos; не распознан</translation>
+    </message>
+    <message>
+        <location line="+22"/>
         <source>Incorrect disk image size for &apos;%1&apos;</source>
         <translation>Некорректный файл образа диска &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>This mode is not supported</source>
         <translation>Режим не поддерживается</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+38"/>
         <source>Reading outside of a sector</source>
         <translation>Попытка чтения за пределеами сектора</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+27"/>
         <source>Writing outside of a sector</source>
         <translation>Попытка записи за пределами сектора</translation>
     </message>
@@ -609,7 +643,7 @@
 <context>
     <name>Interface</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-134"/>
+        <location filename="../emulator/core.cpp" line="-138"/>
         <source>Interface &apos;%1&apos; is in OFF state, writing is impossible</source>
         <translation>Интерфейс &apos;%1&apos; отключен, запись невозможна</translation>
     </message>
@@ -617,7 +651,7 @@
 <context>
     <name>InterfaceManager</name>
     <message>
-        <location line="+214"/>
+        <location line="+231"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -794,13 +828,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-290"/>
-        <location line="+347"/>
+        <location filename="../mainwindow.cpp" line="-295"/>
+        <location line="+353"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-344"/>
+        <location line="-350"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -824,7 +858,7 @@
         <translation>Все файлы (*.*)</translation>
     </message>
     <message>
-        <location line="+322"/>
+        <location line="+328"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>
@@ -860,16 +894,55 @@
     </message>
 </context>
 <context>
+    <name>MapKeyboard</name>
+    <message>
+        <location filename="../emulator/devices/common/mapkeyboard.cpp" line="+24"/>
+        <location line="+4"/>
+        <location line="+11"/>
+        <location line="+5"/>
+        <location line="+28"/>
+        <location line="+6"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="-54"/>
+        <source>Keyboard map file is expected</source>
+        <translation>Не указан файл мэппинга</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Error reading map file %1</source>
+        <translation>Ошибка чтенияфайла мэппинга &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <location line="+5"/>
+        <source>Map file entry &apos;%1&apos; is incorrect</source>
+        <translation>Элемент файла мэппинга &apos;%1&apos; некорректен</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>rus-on should be 0 or 1</source>
+        <translation>Параметр rus-on должен быть 0 или 1</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>rus-bit should be a number</source>
+        <translation>Параметр rus-bit должен быть числом</translation>
+    </message>
+</context>
+<context>
     <name>MemoryMapper</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+558"/>
-        <location filename="../emulator/devices/common/page_mapper.h" line="+45"/>
+        <location filename="../emulator/core.cpp" line="+656"/>
+        <location filename="../emulator/devices/common/page_mapper.cpp" line="+31"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
         <location line="+0"/>
-        <location filename="../emulator/devices/common/page_mapper.h" line="+0"/>
+        <location filename="../emulator/devices/common/page_mapper.cpp" line="+0"/>
         <source>Incorrect range for &apos;%1&apos;</source>
         <translation>Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
@@ -950,7 +1023,7 @@
 <context>
     <name>ROM</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-285"/>
+        <location filename="../emulator/core.cpp" line="-346"/>
         <location line="+6"/>
         <location line="+28"/>
         <location line="+7"/>
