@@ -251,8 +251,20 @@ unsigned int DeviceManager::get_device_index(QString name)
 
 void DeviceManager::reset_devices(bool cold)
 {
+    int devlist[MAX_DEVICES];
+    for (int i=0; i < device_count; i++)
+        devlist[i] = i;
+
+    for (int i=0; i< device_count; i++)
+        for (int j=0; j < device_count - i - 1; j++)
+            if (devices[devlist[j]].device->reset_priority > devices[devlist[j+1]].device->reset_priority) {
+                int t = devlist[j];
+                devlist[j] = devlist[j+1];
+                devlist[j+1] = t;
+            }
+
     for (unsigned int i=0; i < device_count; i++)
-        devices[i].device->reset(cold);
+        devices[devlist[i]].device->reset(cold);
 }
 
 void DeviceManager::clock(unsigned int counter)
@@ -336,7 +348,8 @@ ComputerDevice::ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
     type(cd->type),
     name(cd->name),
     cd(cd),
-    im(im)
+    im(im),
+    reset_priority(0)
 {
     try {
         QString s = cd->get_parameter("clock").value;

@@ -30,12 +30,12 @@ AgatDisplay::AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
 void AgatDisplay::load_config(SystemData *sd)
 {
     port_mode = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("mode").value));
-    memory[0] = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram1").value));
-    memory[1] = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram2").value));
+    memory[0] = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram").value));
+    //memory[1] = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram2").value));
     font =      dynamic_cast<ROM*>(im->dm->get_device_by_name(cd->get_parameter("font").value));
 
     memory[0]->set_memory_callback(this, 1, MODE_W);
-    memory[1]->set_memory_callback(this, 2, MODE_W);
+    //memory[1]->set_memory_callback(this, 2, MODE_W);
 
     system_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
     blink_ticks = system_clock / (5*2);     // 5 Hz
@@ -54,7 +54,7 @@ void AgatDisplay::set_mode(unsigned int new_mode)
 {
     previous_mode = new_mode;
     mode = new_mode & 0x83;
-    module = (new_mode & 0x80) >> 7;
+    module = 0; //(new_mode & 0x80) >> 7;
     base_address = ((new_mode & 0x70) >> 4) * 8192;
     switch (mode) {
     case 0x00:

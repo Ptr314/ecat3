@@ -80,7 +80,7 @@ void Agat_FDC140::phase_on(int n)
 #ifdef LOG_FDD
             //logs(QString(" UP"));
 #endif
-            if (current_track[selected_drive] < 70) {
+            if (current_track[selected_drive] < 68) {
                 current_track[selected_drive]++;
                 drives[selected_drive]->SeekSector(current_track[selected_drive] / 2, 0);
 #ifdef LOG_FDD

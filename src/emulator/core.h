@@ -33,7 +33,7 @@
 #define SCREEN_FILTERING_LINEAR         1
 #define SCREEN_FILTERING_ANISOTROPIC    2
 
-
+#define MAX_DEVICES 100
 
 
 class DeviceManager;
@@ -117,6 +117,7 @@ class ComputerDevice: public QObject
 public:
     QString type;
     QString name;
+    unsigned int reset_priority;
 
     ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void reset(bool cold);
@@ -265,7 +266,7 @@ public:
     bool log_available();
 
 private:
-    DeviceDescription devices[100];
+    DeviceDescription devices[MAX_DEVICES];
     unsigned int registered_devices_count;
     RegisteredDevice registered_devices[MAX_REGISTERED_DEVICES];
 

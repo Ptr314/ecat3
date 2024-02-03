@@ -1,15 +1,15 @@
+#include <QException>
+
 #include "emulator/utils.h"
 #include "mapkeyboard.h"
-
-
+#include "emulator/utils.h"
 
 MapKeyboard::MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     Keyboard(im, cd),
     shift_pressed(false),
     ctrl_pressed(false),
     code_ruslat(0),
-    ruslat_state(0),
-    ruslat_bit(7),
+    ruslat_bit(1),
     key_map_len(0)
 {
     i_ruslat = create_interface(1, "ruslat", MODE_W);
@@ -52,7 +52,7 @@ void MapKeyboard::load_config(SystemData *sd)
                     .key_code = translate_key(key),
                     .value = parse_numeric_value(value),
                     .shift = (modificators.indexOf('S') >= 0),
-                    .ctrl = (modificators.indexOf('C') >= 0)
+                    .ctrl = (modificators.indexOf('C') >= 0),
                 };
             };
         };
@@ -63,18 +63,31 @@ void MapKeyboard::load_config(SystemData *sd)
     if (!s.isEmpty()) {
         port_ruslat = dynamic_cast<Port*>(im->dm->get_device_by_name(s));
         code_ruslat = translate_key(cd->get_parameter("ruslat").value);
-        ruslat_bit = 7;
     } else
         port_ruslat = nullptr;
 
-    i_ruslat->change(0);
+    try {
+        rus_value = read_confg_value(cd, "rus-on", false, 1);
+    } catch (QException e) {
+        QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("rus-on should be 0 or 1"));
+    }
+
+    try {
+        ruslat_bit = read_confg_value(cd, "rus-bit", false, 0);
+    } catch (QException e) {
+        QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("rus-bit should be a number"));
+    }
 }
 
-void MapKeyboard::set_ruslat(unsigned int value)
+void MapKeyboard::set_rus(bool new_rus)
 {
-    ruslat_state = value;
-    unsigned int port_value = ruslat_state << ruslat_bit;
-    if (port_ruslat != nullptr) port_ruslat->set_value(port_value, port_value); // Alow using both port & port-address
+    Keyboard::set_rus(new_rus);
+
+    unsigned int ruslat_state = new_rus?rus_value:(rus_value ^ 1);
+    if (port_ruslat != nullptr) {
+        unsigned int port_value = (port_ruslat->get_value(0) & ~(1 << ruslat_bit)) | (ruslat_state  << ruslat_bit);
+        port_ruslat->set_value(port_value, port_value); // Alow using both port & port-address
+    }
     i_ruslat->change(ruslat_state);
 }
 
@@ -85,7 +98,7 @@ void MapKeyboard::key_down(unsigned int key)
     else if (key == Qt::Key_Shift)
         shift_pressed = true;
     else if (key == code_ruslat)
-        set_ruslat(ruslat_state ^ 1);
+        set_rus(!rus_mode);
     else {
         for (unsigned int i=0; i<key_map_len; i++)
             if (
@@ -105,6 +118,19 @@ void MapKeyboard::key_up(unsigned int key)
         ctrl_pressed = false;
     else if (key == Qt::Key_Shift)
         shift_pressed = false;
+}
+
+void MapKeyboard::reset(bool cool)
+{
+    Keyboard::reset(cool);
+
+    if (code_ruslat != 0)
+        if (code_ruslat == Qt::Key_CapsLock)
+            set_rus(checkCapsLock());
+        else
+            set_rus(false);
+    else
+        set_rus(false);
 }
 
 ComputerDevice * create_mapkeyboard(InterfaceManager *im, EmulatorConfigDevice *cd){

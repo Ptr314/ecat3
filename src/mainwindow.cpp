@@ -476,6 +476,7 @@ void MainWindow::on_actionDebugger_triggered()
 
 void MainWindow::closeEvent (QCloseEvent *event)
 {
+    fdds_found = 0; // to prevent crashing on buttont update
     e->stop_video();
     e->quit();
     e->wait();

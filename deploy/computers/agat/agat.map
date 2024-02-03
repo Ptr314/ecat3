@@ -1,6 +1,5 @@
 space:      $A0
 semicolon:  $BB
-+:          $AB
 0:          $B0
 1:          $B1
 2:          $B2
@@ -12,30 +11,56 @@ semicolon:  $BB
 8:          $B8
 9:          $B9
 
-!:          $A1
-":          $A2
-#:          $A3
-$:          $A4
-%:          $A5
-&:          $A6
+!/S:        $A1
+
+@:          $C0
+@/S:        $C0
+
+#/S:        $A3
+$/S:        $A4
+%/S:        $A5
+&/S:        $A6
+*/S:        $AA
 ':          $A7
-(:          $A8
-):          $A9
+(/S:        $A8
+)/S:        $A9
++/S:        $AB
+"/S:        $A2
+
+\:          $DC
+\/C:        $9C
+
+[:          $DB
+[/C:        $9B
+{/S:        $FB
+
+]:          $DD
+]/C:        $9D
+{/S:        $FD
+
+_:          $DF
+_/S:        $DF
+_/C:        $9F
+
+^/S:        $DE
+^/C:        $9F
 
 -:          $AD
 =:          $BD
-colon:      $BA
-*:          $AA
+colon/S:    $BA
 .:          $AE
->:          $BE
+>/S:        $BE
 ,:          $AC
-<:          $BC
+</S:        $BC
 slash:      $AF
-?:          $BF
+?/S:        $BF
+
 left:       $88
+back:       $88
 right:      $95
 up:         $99
 down:       $9A
+
 scroll:     $9B
 enter:      $8D
 ret:        $8D
@@ -139,3 +164,13 @@ C/S:        $E3
 Q:          $D1
 Q/C:        $91
 Q/S:        $F1
+
+Y:          $D9
+Y/C:        $99
+Y/S:        $F9
+
+X:          $D8
+X/C:        $98
+X/S:        $F8
+
+esc:        $9B

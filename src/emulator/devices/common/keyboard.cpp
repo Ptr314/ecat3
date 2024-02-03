@@ -4,8 +4,10 @@
 
 Keyboard::Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd),
-    JCUKEN_mode(false)
-{}
+    rus_mode(false)
+{
+    reset_priority = 100;
+}
 
 void Keyboard::key_event(QKeyEvent *event, bool press)
 {
@@ -18,9 +20,9 @@ void Keyboard::key_event(QKeyEvent *event, bool press)
         key = event->nativeVirtualKey();
     else return;
     if (press)
-        key_down(JCUKEN_translate(key));
+        key_down(rus_translate(key));
     else
-        key_up(JCUKEN_translate(key));
+        key_up(rus_translate(key));
 }
 
 bool Keyboard::known_key(unsigned int code)
@@ -41,11 +43,16 @@ unsigned int Keyboard::translate_key(QString key)
     return _FFFF;
 }
 
-unsigned int Keyboard::JCUKEN_translate(unsigned int code)
+void Keyboard::set_rus(bool new_rus)
 {
-    if (JCUKEN_mode) {
-        for (int i=0; i < JCUKEN_encode_size; i++)
-            if (JCUKEN_encode[i][0] == code) return JCUKEN_encode[i][1];
+    rus_mode = new_rus;
+}
+
+unsigned int Keyboard::rus_translate(unsigned int code)
+{
+    if (rus_mode) {
+        for (int i=0; i < RUS_REMAP_SIZE; i++)
+            if (RUS_REMAP[i][0] == code) return RUS_REMAP[i][1];
         return code;
     } else
         return code;

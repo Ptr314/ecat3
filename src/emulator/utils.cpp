@@ -2,6 +2,10 @@
 #include <QFileInfo>
 #include <QDir>
 
+#ifdef Q_OS_WIN32
+#include <windows.h>
+#endif
+
 #include "utils.h"
 
 unsigned int parse_numeric_value(QString str)
@@ -170,4 +174,25 @@ void fill_SDL_rgba(const uint8_t colors[][3], uint32_t * RGBA, int len, const SD
 {
     for (int i=0; i<len; i++)
         RGBA[i] = SDL_MapRGB(format, colors[i][0], colors[i][1], colors[i][2]);
+}
+
+unsigned int read_confg_value(EmulatorConfigDevice * cd, QString name, bool required, unsigned int def)
+{
+    QString s = cd->get_parameter(name, required).value;
+    if (s.isEmpty()) {
+        return def;
+    } else {
+        return parse_numeric_value(s);
+    }
+
+}
+
+bool checkCapsLock()
+{
+// https://www.qtcentre.org/threads/30180-how-to-determine-if-CapsLock-is-on-crossplatform
+#ifdef Q_OS_WIN32 // MS Windows version
+    return GetKeyState(VK_CAPITAL) == 1;
+#else
+    return false;
+#endif
 }

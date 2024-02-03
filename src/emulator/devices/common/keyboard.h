@@ -124,22 +124,63 @@ static const KeyDescription KEYS[] ={
     {.code = Qt::Key_Slash, .name = "/"},
     {.code = Qt::Key_Slash, .name = "slash"},
     {.code = Qt::Key_Question, .name = "?"},
-    {.code = Qt::Key_Tab, .name = "tab"}
+    {.code = Qt::Key_Tab, .name = "tab"},
+    {.code = Qt::Key_At, .name = "@"},
+    {.code = Qt::Key_BraceLeft, .name = "{"},
+    {.code = Qt::Key_BraceRight, .name = "}"},
+    {.code = Qt::Key_Underscore, .name = "_"},
+    {.code = Qt::Key_AsciiCircum, .name = "^"},
 };
 
-static const unsigned int JCUKEN_encode[][2] = {
-    {Qt::Key_Q, Qt::Key_J}
+static const unsigned int RUS_REMAP[][2] = {
+    {Qt::Key_Q, Qt::Key_J},                     // Й
+    {Qt::Key_W, Qt::Key_C},                     // Ц
+    {Qt::Key_E, Qt::Key_U},                     // У
+    {Qt::Key_R, Qt::Key_K},                     // К
+    {Qt::Key_T, Qt::Key_E},                     // Е
+    {Qt::Key_Y, Qt::Key_N},                     // Н
+    {Qt::Key_U, Qt::Key_G},                     // Г
+    {Qt::Key_I, Qt::Key_BracketLeft},           // Ш
+    {Qt::Key_O, Qt::Key_BracketRight},          // Ш
+    {Qt::Key_P, Qt::Key_Z},                     // З
+    {Qt::Key_BracketLeft, Qt::Key_H},           // Х
+    {Qt::Key_BracketRight, Qt::Key_Underscore}, // Ъ
+
+    {Qt::Key_A, Qt::Key_F},                     // Ф
+    {Qt::Key_S, Qt::Key_Y},                     // Ы
+    {Qt::Key_D, Qt::Key_W},                     // В
+    {Qt::Key_F, Qt::Key_A},                     // А
+    {Qt::Key_G, Qt::Key_P},                     // П
+    {Qt::Key_H, Qt::Key_R},                     // Р
+    {Qt::Key_J, Qt::Key_O},                     // О
+    {Qt::Key_K, Qt::Key_L},                     // Л
+    {Qt::Key_L, Qt::Key_D},                     // Д
+    {Qt::Key_Semicolon, Qt::Key_V},             // Ж
+    {Qt::Key_Apostrophe, Qt::Key_Backslash},    // Э
+
+    {Qt::Key_Z, Qt::Key_Q},                     // Я
+    {Qt::Key_X, Qt::Key_AsciiCircum},           // Ч
+    {Qt::Key_C, Qt::Key_S},                     // С
+    {Qt::Key_V, Qt::Key_M},                     // М
+    {Qt::Key_B, Qt::Key_I},                     // И
+    {Qt::Key_N, Qt::Key_T},                     // Т
+    {Qt::Key_M, Qt::Key_X},                     // Ь
+    {Qt::Key_Comma, Qt::Key_B},                 // Б
+    {Qt::Key_Period, Qt::Key_At},               // Ю
+
+
 };
 
-#define JCUKEN_encode_size (sizeof(JCUKEN_encode) / sizeof(unsigned int) / 2)
+#define RUS_REMAP_SIZE (sizeof(RUS_REMAP) / sizeof(unsigned int) / 2)
 
 class Keyboard: public ComputerDevice
 {
 protected:
-    bool JCUKEN_mode;
+    bool rus_mode;
     unsigned int translate_key(QString key);
     bool known_key(unsigned int code);
-    unsigned int JCUKEN_translate(unsigned int code);
+    unsigned int rus_translate(unsigned int code);
+    virtual void set_rus(bool new_rus);
 
 public:
     Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
