@@ -126,7 +126,7 @@ void AgatDisplay::render_byte(unsigned int address)
             color[0] = v >> 4;
             color[1] = v & 0x0F;
             for (unsigned int j = 0; j < 2; j++)
-                for (unsigned int k = 0; k < 7; k++) {
+                for (unsigned int k = 0; k < 8; k++) {
                     p = offset + j*32 + k*4;
                     for (unsigned int i = line; i <= line+3; i++) {
                         unsigned int c = color[j];
@@ -142,7 +142,7 @@ void AgatDisplay::render_byte(unsigned int address)
             color[0] = v >> 4;
             color[1] = v & 0x0F;
             for (unsigned int j = 0; j < 2; j++)
-                for (unsigned int k = 0; k < 7; k++) {
+                for (unsigned int k = 0; k < 4; k++) {
                     p = offset + j*16 + k*4;
                     for (unsigned int i = line; i <= line+1; i++) {
                         unsigned int c = color[j];
