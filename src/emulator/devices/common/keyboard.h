@@ -127,11 +127,19 @@ static const KeyDescription KEYS[] ={
     {.code = Qt::Key_Tab, .name = "tab"}
 };
 
+static const unsigned int JCUKEN_encode[][2] = {
+    {Qt::Key_Q, Qt::Key_J}
+};
+
+#define JCUKEN_encode_size (sizeof(JCUKEN_encode) / sizeof(unsigned int) / 2)
+
 class Keyboard: public ComputerDevice
 {
 protected:
+    bool JCUKEN_mode;
     unsigned int translate_key(QString key);
     bool known_key(unsigned int code);
+    unsigned int JCUKEN_translate(unsigned int code);
 
 public:
     Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd);

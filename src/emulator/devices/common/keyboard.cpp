@@ -3,7 +3,8 @@
 #include "emulator/utils.h"
 
 Keyboard::Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd)
+    ComputerDevice(im, cd),
+    JCUKEN_mode(false)
 {}
 
 void Keyboard::key_event(QKeyEvent *event, bool press)
@@ -17,9 +18,9 @@ void Keyboard::key_event(QKeyEvent *event, bool press)
         key = event->nativeVirtualKey();
     else return;
     if (press)
-        key_down(key);
+        key_down(JCUKEN_translate(key));
     else
-        key_up(key);
+        key_up(JCUKEN_translate(key));
 }
 
 bool Keyboard::known_key(unsigned int code)
@@ -38,4 +39,14 @@ unsigned int Keyboard::translate_key(QString key)
             return KEYS[i].code;
 
     return _FFFF;
+}
+
+unsigned int Keyboard::JCUKEN_translate(unsigned int code)
+{
+    if (JCUKEN_mode) {
+        for (int i=0; i < JCUKEN_encode_size; i++)
+            if (JCUKEN_encode[i][0] == code) return JCUKEN_encode[i][1];
+        return code;
+    } else
+        return code;
 }

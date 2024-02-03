@@ -16,6 +16,7 @@ protected:
     int selected_drive;
     int drives_count;
     FDD * drives[2];
+    bool motor_on;
 
     void phase_on(int n);
     void phase_off(int n);
