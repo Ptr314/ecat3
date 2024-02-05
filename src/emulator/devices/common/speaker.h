@@ -14,6 +14,10 @@ private:
     unsigned int MixerWidth;
     unsigned int InputValue;
     unsigned int flip_value;
+    bool shorts;
+    bool is_delayed;
+    unsigned int delayed_value;
+    unsigned int input;
 
     virtual unsigned int calc_sound_value() override;
 

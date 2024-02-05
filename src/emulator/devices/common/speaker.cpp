@@ -7,7 +7,10 @@
 Speaker::Speaker(InterfaceManager *im, EmulatorConfigDevice *cd):
     GenericSound(im, cd),
     mode(SPK_MODE_LEVEL),
-    flip_value(0)
+    flip_value(0),
+    shorts(true),
+    is_delayed(false),
+    input(0)
 {
     i_input = create_interface(1, "input", MODE_R, 1);
     i_mixer = create_interface(8, "mixer", MODE_R);
@@ -16,8 +19,13 @@ Speaker::Speaker(InterfaceManager *im, EmulatorConfigDevice *cd):
 unsigned int Speaker::calc_sound_value()
 {
     unsigned int V = 0;
-    if (InputWidth != 0)
-        V += ((mode==SPK_MODE_FLIP)?flip_value:i_input->value) & 0x01;
+    if (InputWidth != 0) {
+        V += input;
+        if (is_delayed) {
+            input = delayed_value;
+            is_delayed = false;
+        }
+    }
     for (unsigned int i=0; i < MixerWidth; i++)
         V += (i_mixer->value >> i) & 0x01;
     return V * InputValue * volume / 100 + 127;
@@ -55,11 +63,30 @@ void Speaker::load_config(SystemData *sd)
         mode = SPK_MODE_FLIP;
     else
         QMessageBox::critical(0, Speaker::tr("Error"), Speaker::tr("Unknown speaker type %1").arg(s));
+
+    shorts = read_confg_value(cd, "shorts", false, 0) != 0;
 }
 
 void Speaker::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
-    if (mode == SPK_MODE_FLIP) flip_value ^= 1;
+    unsigned int new_input;
+
+    if (mode == SPK_MODE_FLIP) {
+        if (i_input->neg_edge())
+            new_input = input ^ 1;
+    } else
+        new_input = i_input->value  & 0x01;
+
+    if (shorts) {
+        if (!is_delayed) {
+            delayed_value = input = new_input;
+            is_delayed = true;
+        } else {
+            delayed_value = new_input;
+        }
+    } else {
+        input = new_input;
+    }
 }
 
 ComputerDevice * create_speaker(InterfaceManager *im, EmulatorConfigDevice *cd){
