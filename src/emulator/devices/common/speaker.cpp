@@ -1,107 +1,31 @@
 #include "speaker.h"
 #include "emulator/utils.h"
 
+#define SPK_MODE_LEVEL  0
+#define SPK_MODE_FLIP   1
+
 Speaker::Speaker(InterfaceManager *im, EmulatorConfigDevice *cd):
-    Sound(im, cd)
-
+    GenericSound(im, cd),
+    mode(SPK_MODE_LEVEL),
+    flip_value(0)
 {
-    i_input = create_interface(1, "input", MODE_R);
+    i_input = create_interface(1, "input", MODE_R, 1);
     i_mixer = create_interface(8, "mixer", MODE_R);
-    cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu"));
-    init_sound(cpu->clock);
-}
-
-Speaker::~Speaker()
-{
-    SDL_CloseAudioDevice(SDLdev);
-}
-
-void Speaker::init_sound(unsigned int clock_freq)
-{
-    SD.ClockSampling = 0;
-    SD.ClockBuffering = 0;
-    SD.SamplesPerSec = 44100;
-    SD.BitsPerSample = 8;
-    SD.BlocksFreq = 50;                                     //Blocks frequency
-
-    SD.SamplingCount = clock_freq * 16 / SD.SamplesPerSec;  //CPU clocks per sample, 16x
-    SD.BufferingCount = clock_freq / SD.BlocksFreq;         //CPU clocks per block
-    SD.SamplesInBuffer = SD.SamplesPerSec / SD.BlocksFreq;  //Samples in a block
-
-    SD.BufferPtr = 0;
-    SD.buffer_empty = 0;
-
-    memset(&SD.buffer, 0, BUFFER_SIZE);
-    memset(&SD.silence, 128, SILENCE_SIZE);
-
-    SDL_AudioSpec want, have;
-
-    SDL_memset(&want, 0, sizeof(want)); /* or SDL_zero(want) */
-    want.freq = SD.SamplesPerSec;
-    want.format = AUDIO_U8;
-    want.channels = 1;
-    want.samples = BUFFER_SIZE;
-
-    SDLdev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
-    SDL_PauseAudioDevice(SDLdev, 0);
 }
 
 unsigned int Speaker::calc_sound_value()
 {
-    if (muted)
-        return 128;
-    else {
-        //return ((i_input->value & 0x01) != 0)?(127 + 127*volume/100):128;
-        unsigned int V = 0;
-        if (InputWidth != 0)
-            V += i_input->value & 0x01;
-        for (unsigned int i=0; i < MixerWidth; i++)
-            V += (i_mixer->value >> i) & 0x01;
-        return V * InputValue * volume / 100 + 127;
-    }
-}
-
-void Speaker::clock(unsigned int counter)
-{
-    ComputerDevice::clock(counter);
-
-    SD.ClockSampling += counter << 4;
-    SD.ClockBuffering += counter;
-    if (SD.ClockSampling >= SD.SamplingCount)
-    {
-        SD.ClockSampling -= SD.SamplingCount;
-        unsigned int v = calc_sound_value();
-        SD.buffer[SD.BufferPtr] = v;
-
-        //Non-zero value shows when the buffer contains varying sound
-        //if (SD.BufferPtr>0)
-        //    SD.buffer_empty |= SD.buffer[SD.BufferPtr-1] ^ v;
-        //Not working :( so do not stop the stream all the time
-        //TODO: solve it
-        SD.buffer_empty = 1;
-
-        SD.BufferPtr++;
-    }
-    if (SD.ClockBuffering >= SD.BufferingCount)
-    {
-        SD.ClockBuffering -= SD.BufferingCount;
-
-        if (SD.buffer_empty != 0)
-        {
-            if (SDL_GetQueuedAudioSize(SDLdev) == 0)
-                SDL_QueueAudio(SDLdev, SD.silence, sizeof(SD.silence));
-
-            SDL_QueueAudio(SDLdev, SD.buffer, SD.BufferPtr);
-        };
-
-        SD.BufferPtr = 0;
-        SD.buffer_empty = 0;
-    }
+    unsigned int V = 0;
+    if (InputWidth != 0)
+        V += ((mode==SPK_MODE_FLIP)?flip_value:i_input->value) & 0x01;
+    for (unsigned int i=0; i < MixerWidth; i++)
+        V += (i_mixer->value >> i) & 0x01;
+    return V * InputValue * volume / 100 + 127;
 }
 
 void Speaker::reset(bool cold)
 {
-    Sound::reset(cold);
+    GenericSound::reset(cold);
 
     if (i_input->linked == 0)
         InputWidth = 0;
@@ -121,7 +45,21 @@ void Speaker::reset(bool cold)
 
 void Speaker::load_config(SystemData *sd)
 {
-    ComputerDevice::load_config(sd);
+    GenericSound::load_config(sd);
+
+    QString s = cd->get_parameter("mode", false).value.toLower();
+    if (s.isEmpty() || s == "level")
+        mode = SPK_MODE_LEVEL;
+    else
+    if (s == "flip")
+        mode = SPK_MODE_FLIP;
+    else
+        QMessageBox::critical(0, Speaker::tr("Error"), Speaker::tr("Unknown speaker type %1").arg(s));
+}
+
+void Speaker::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
+{
+    if (mode == SPK_MODE_FLIP) flip_value ^= 1;
 }
 
 ComputerDevice * create_speaker(InterfaceManager *im, EmulatorConfigDevice *cd){

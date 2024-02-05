@@ -1249,24 +1249,6 @@ void GenericDisplay::reset(bool cold)
     was_updated = true;
 }
 
-//----------------------- class Sound -------------------------------//
-
-Sound::Sound(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd),
-    volume(100),
-    muted(false)
-{}
-
-void Sound::set_volume(unsigned int volume)
-{
-    this->volume = volume;
-}
-
-void Sound::set_muted(bool muted)
-{
-    this->muted = muted;
-}
-
 //----------------------- Creation functions -------------------------------//
 
 ComputerDevice * create_ram(InterfaceManager *im, EmulatorConfigDevice *cd){

@@ -4,7 +4,7 @@ project(eCat3 VERSION 3.0.0 LANGUAGES C CXX)
 
 set(EXTERNAL_Z80 0)
 set(CPU_STOPPED 0)
-set(LOGGER 0)
+set(LOGGER 1)
 
 if (${LOGGER})
     if (${EXTERNAL_Z80})
@@ -12,12 +12,12 @@ if (${LOGGER})
     else()
         set(LOG_NAME "LOG")
     endif()
-    set(LOG_LIMIT 100000)
+    set(LOG_LIMIT 200000)
     set(LOG_8255 0)
     set(LOG_CPU 0)
     set(LOG_MAPPER 0)
-    set(LOG_PORTS 1)
-    set(LOG_FDD 1)
+    set(LOG_PORTS 0)
+    set(LOG_FDD 0)
     set(LOG_PAGE_MAPPER 0)
     set(LOG_INTERFACES 0)
 endif()
@@ -122,6 +122,7 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/devices/specific/agat_display.h emulator/devices/specific/agat_display.cpp
     emulator/devices/common/mfm_formats.h
     emulator/devices/common/mapkeyboard.h emulator/devices/common/mapkeyboard.cpp
+    emulator/devices/common/sound.h emulator/devices/common/sound.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

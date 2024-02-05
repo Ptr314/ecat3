@@ -1753,6 +1753,7 @@ inline uint16_t mos6502core::get_address_zp(unsigned int & cycles)
         D.b.H = read_mem(0);
     else
         D.b.H = read_mem(T.w+1);
+    return D.w;
 }
 
 void mos6502core::_ADCc02(uint8_t command, unsigned int & cycles)

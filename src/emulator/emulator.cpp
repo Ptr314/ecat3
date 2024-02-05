@@ -10,6 +10,7 @@
 
 #include "emulator/devices/cpu/i8080.h"
 #include "emulator/devices/common/i8255.h"
+#include "emulator/devices/common/sound.h"
 #include "emulator/devices/common/speaker.h"
 #include "emulator/devices/common/tape.h"
 #include "emulator/devices/common/scankeyboard.h"
@@ -301,13 +302,13 @@ void Emulator::key_event(QKeyEvent *event, bool press)
 
 void Emulator::set_volume(int value)
 {
-    Sound * sound = dynamic_cast<Sound*>(dm->get_device_by_name("sound", false));
+    GenericSound * sound = dynamic_cast<GenericSound*>(dm->get_device_by_name("sound", false));
     if (sound != nullptr) sound->set_volume(value);
 }
 
 void Emulator::set_muted(bool muted)
 {
-    Sound * sound = dynamic_cast<Sound*>(dm->get_device_by_name("sound", false));
+    GenericSound * sound = dynamic_cast<GenericSound*>(dm->get_device_by_name("sound", false));
     if (sound != nullptr) sound->set_muted(muted);
 }
 

@@ -472,18 +472,6 @@ public:
     virtual void validate(bool force_render = false);
 };
 
-class Sound: public ComputerDevice
-{
-private:
-protected:
-    unsigned int volume;
-    bool muted;
-public:
-    Sound(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual void set_volume(unsigned int volume);
-    virtual void set_muted(bool muted);
-};
-
 class FDC: public AddressableDevice
 {
 public:
