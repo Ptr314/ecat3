@@ -47,6 +47,9 @@ void FDD::load_config(SystemData *sd)
         throw QException();
     }
 
+    files_save = cd->get_parameter("files_save", false).value;
+    if (files_save.isEmpty()) files_save = files;
+
     QString s = read_confg_value(cd, "mode", false, "logical");
     if (s == "logical")
         fdd_mode = FDD_MODE_LOGICAL;
@@ -72,7 +75,7 @@ void FDD::load_image(QString file_name)
     QFileInfo fi(file_name);
     QString ext = fi.suffix().toLower();
 
-    if (ext == "mfm") {
+    if (ext == "mfm" || ext == "hfe") {
         if (fdd_mode == FDD_MODE_LOGICAL) {
             QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("FDD device is working in a logical mode, no physical formats are supported"));
             return;
@@ -182,7 +185,7 @@ void FDD::load_image(QString file_name)
                     buffer = generate_mfm_agat_140(file_name, sides, tracks, disk_size, track_indexes);
                     break;
                 default:
-                    QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Expected conversion form DSK to MFM is not supperted yet."));
+                    QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Expected conversion from DSK to MFM is not supported yet."));
                     break;
             }
             track_mode = FDD_MODE_WHOLE_TRACK;
@@ -301,10 +304,26 @@ void FDD::save_image(QString file_name)
 {
     if (loaded)
     {
-        QFile file(file_name);
-        if (file.open(QIODevice::WriteOnly)){
-            file.write(reinterpret_cast<char*>(buffer), disk_size);
-            file.close();
+        QFileInfo fi(file_name);
+        QString ext = fi.suffix().toLower();
+
+        if (ext == "dsk") {
+            if (fdd_mode == FDD_MODE_LOGICAL) {
+                QFile file(file_name);
+                if (file.open(QIODevice::WriteOnly)){
+                    file.write(reinterpret_cast<char*>(buffer), disk_size);
+                    file.close();
+                }
+            } else {
+                QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("FDD is working in a physical mode now, generating of DSK images is not supported yet."));
+            }
+        } else if (ext == "mfm") {
+            if (fdd_mode == FDD_MODE_AGAT_140) {
+                save_mfm_file(file_name, sides, tracks, track_indexes[0].mfmtracksize, track_indexes, buffer);
+            } else {
+                QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Saving images for this type of drive is not supported yet."));
+            }
+
         }
     }
 }

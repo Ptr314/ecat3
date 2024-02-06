@@ -162,3 +162,46 @@ uint8_t * generate_mfm_agat_140(QString file_name, int & sides, int & tracks, in
 
     return buffer;
 }
+
+void save_mfm_file(QString file_name, int sides, int tracks, int track_size, HXC_MFM_TRACK_INFO track_indexes[], uint8_t * data)
+{
+    HXC_MFM_HEADER      hxc_mfm_header;
+    HXC_MFM_TRACK_INFO  hxc_mfm_track_info;
+
+    QFile file(file_name);
+    if (file.open(QIODevice::WriteOnly)){
+        //header
+        strcpy((char*)&hxc_mfm_header.headername, "HXCMFM");
+        hxc_mfm_header.number_of_track = tracks;
+        hxc_mfm_header.number_of_side = sides;
+        int track_offset_mult = (hxc_mfm_header.number_of_side==2)?2:1;
+        hxc_mfm_header.floppyRPM = 300;
+        hxc_mfm_header.floppyBitRate = 250;
+        hxc_mfm_header.floppyiftype = 0;
+        hxc_mfm_header.mfmtracklistoffset = sizeof(HXC_MFM_HEADER);
+
+        file.write((char*)(&hxc_mfm_header), sizeof(HXC_MFM_HEADER));
+
+        //track list
+        for (uint8_t track = 0; track < tracks; track++){
+            for (uint8_t head = 0; head < sides; head++){
+                hxc_mfm_track_info.track_number = track;
+                hxc_mfm_track_info.side_number = head;
+                hxc_mfm_track_info.mfmtracksize = track_size;
+                hxc_mfm_track_info.mfmtrackoffset = 0x800 + (track*track_offset_mult + head)*track_size;
+                file.write((char*)(&hxc_mfm_track_info), sizeof(HXC_MFM_TRACK_INFO));
+            }
+        }
+
+        uint8_t fill = 0;
+        int fill_size = 0x800 - sizeof(HXC_MFM_HEADER) - sizeof(HXC_MFM_TRACK_INFO) * tracks * sides;
+        for (int i=0; i < fill_size; i++){
+            file.write((char*)(&fill), 1);
+        }
+
+        file.write((char*)data, sides*tracks*track_size);
+
+        file.close();
+    }
+
+}

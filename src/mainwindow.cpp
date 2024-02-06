@@ -528,7 +528,7 @@ void MainWindow::fdd_write(unsigned int n)
 {
     if (fdds[n] != nullptr)
     {
-        QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save disk image to a file"), e->work_path, fdds[n]->files, 0, QFileDialog::DontConfirmOverwrite);
+        QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save disk image to a file"), e->work_path, fdds[n]->files_save, 0, QFileDialog::DontConfirmOverwrite);
         if (!file_name.isEmpty())
         {
             QMessageBox::StandardButton reply;

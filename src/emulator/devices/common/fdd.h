@@ -48,6 +48,7 @@ private:
 
 public:
     QString files;
+    QString files_save;
     QString file_name;
     unsigned int stream_format;
 
