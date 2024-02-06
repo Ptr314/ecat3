@@ -120,9 +120,10 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     ${Z80_FILES}
     emulator/devices/specific/agat_fdc140.h emulator/devices/specific/agat_fdc140.cpp
     emulator/devices/specific/agat_display.h emulator/devices/specific/agat_display.cpp
-    emulator/devices/common/mfm_formats.h
     emulator/devices/common/mapkeyboard.h emulator/devices/common/mapkeyboard.cpp
     emulator/devices/common/sound.h emulator/devices/common/sound.cpp
+    libs/mfm_formats.h
+    libs/mfm_tools.h libs/mfm_tools.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

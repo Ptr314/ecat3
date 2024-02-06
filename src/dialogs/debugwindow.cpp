@@ -50,7 +50,7 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     device_mm = nullptr;
     for (unsigned int i=0; i < e->dm->device_count; i++){
         DeviceDescription * d = e->dm->get_device(i);
-        if (d->device_type == "memory_mapper")
+        if (d->device_type == "memory-mapper")
         {
             device_mm = dynamic_cast<AddressableDevice*>(d->device);
         }

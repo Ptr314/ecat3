@@ -509,47 +509,67 @@
 <context>
     <name>FDD</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+40"/>
-        <location line="+9"/>
-        <location line="+41"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+46"/>
+        <location line="+12"/>
+        <location line="+7"/>
+        <location line="+12"/>
+        <location line="+33"/>
         <location line="+4"/>
-        <location line="+30"/>
+        <location line="+5"/>
+        <location line="+29"/>
         <location line="+3"/>
-        <location line="+19"/>
+        <location line="+20"/>
         <location line="+3"/>
+        <location line="+11"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-109"/>
+        <location line="-139"/>
         <source>Incorrect fdd parameters for &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+12"/>
+        <source>Unknown fdd mode &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Disk image file &apos;%1&apos; not found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+12"/>
+        <location line="+42"/>
+        <source>FDD device is working in a logical mode, no physical formats are supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-9"/>
         <source>Unrecognized MFM format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <location line="+30"/>
-        <location line="+22"/>
+        <location line="+34"/>
+        <location line="+23"/>
         <source>Error opening file &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-19"/>
+        <location line="-20"/>
         <source>File &apos;%1&apos; is in unknown format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+23"/>
         <source>Incorrect disk image size for &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Expected conversion form DSK to MFM is not supperted yet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -557,7 +577,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="+43"/>
         <source>Reading outside of a sector</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1013,6 +1033,25 @@
     </message>
 </context>
 <context>
+    <name>QObject</name>
+    <message>
+        <location filename="../libs/mfm_tools.cpp" line="+42"/>
+        <location line="+3"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-3"/>
+        <source>Error opening file &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Incorrect disk image size for &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ROM</name>
     <message>
         <location filename="../emulator/core.cpp" line="-346"/>
@@ -1070,6 +1109,19 @@
     <message>
         <location line="+0"/>
         <source>Unknown key %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Speaker</name>
+    <message>
+        <location filename="../emulator/devices/common/speaker.cpp" line="+65"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Unknown speaker type %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

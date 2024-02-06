@@ -2,7 +2,7 @@
 #define FDD_H
 
 #include "emulator/core.h"
-#include "mfm_formats.h"
+#include "libs/mfm_formats.h"
 
 #define FDD_STREAM_PLAIN    0
 #define FDD_STREAM_MFM      1
@@ -40,6 +40,7 @@ private:
     int sector;
     int position;
 
+    int fdd_mode;
     int track_mode;
 
     unsigned int translate_address();

@@ -184,8 +184,18 @@ unsigned int read_confg_value(EmulatorConfigDevice * cd, QString name, bool requ
     } else {
         return parse_numeric_value(s);
     }
-
 }
+
+QString read_confg_value(EmulatorConfigDevice * cd, QString name, bool required, QString def)
+{
+    QString s = cd->get_parameter(name, required).value;
+    if (s.isEmpty()) {
+        return def;
+    } else {
+        return s.toLower();
+    }
+}
+
 
 bool checkCapsLock()
 {

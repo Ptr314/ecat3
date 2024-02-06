@@ -3,6 +3,11 @@
 
 #include "fdd.h"
 #include "emulator/utils.h"
+#include "libs/mfm_tools.h"
+
+#define FDD_MODE_LOGICAL    0
+#define FDD_MODE_AGAT_140   1
+#define FDD_MODE_AGAT_840   2
 
 FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd),
@@ -10,7 +15,8 @@ FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
     stream_format(FDD_STREAM_PLAIN),
     buffer(nullptr),
     side(0),
-    track(0)
+    track(0),
+    fdd_mode(FDD_MODE_LOGICAL)
 {
     i_select = create_interface(2, "select", MODE_R);
     i_side = create_interface(1, "side", MODE_R);
@@ -41,6 +47,16 @@ void FDD::load_config(SystemData *sd)
         throw QException();
     }
 
+    QString s = read_confg_value(cd, "mode", false, "logical");
+    if (s == "logical")
+        fdd_mode = FDD_MODE_LOGICAL;
+    else if (s == "mfm_agat_140")
+        fdd_mode = FDD_MODE_AGAT_140;
+    else if (s == "mfm_agat_840")
+        fdd_mode = FDD_MODE_AGAT_840;
+    else
+        QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Unknown fdd mode '%1'").arg(s));
+
     try {
         file_name = find_file_location(sd->system_path, sd->software_path, cd->get_parameter("image").value);
         if (!file_name.isEmpty())
@@ -57,6 +73,10 @@ void FDD::load_image(QString file_name)
     QString ext = fi.suffix().toLower();
 
     if (ext == "mfm") {
+        if (fdd_mode == FDD_MODE_LOGICAL) {
+            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("FDD device is working in a logical mode, no physical formats are supported"));
+            return;
+        }
         HXC_MFM_HEADER hxc_header;
         QFile file(file_name);
         if (file.open(QIODevice::ReadOnly)){
@@ -95,6 +115,10 @@ void FDD::load_image(QString file_name)
         }
     } else
     if (ext == "nib") {
+        if (fdd_mode == FDD_MODE_LOGICAL) {
+            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("FDD device is working in a logical mode, no physical formats are supported"));
+            return;
+        }
         QFile file(file_name);
         if (file.size() == 232960) {
             if (file.open(QIODevice::ReadOnly)){
@@ -127,27 +151,44 @@ void FDD::load_image(QString file_name)
             QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("File '%1' is in unknown format").arg(file_name));
         }
     } else {
-        unsigned int file_size = fi.size();
-        if (file_size == disk_size)
-        {
-            if (buffer != nullptr) delete [] buffer;
-            buffer = new uint8_t[disk_size];
+        if (fdd_mode == FDD_MODE_LOGICAL) {
+            unsigned int file_size = fi.size();
+            if (file_size == disk_size)
+            {
+                if (buffer != nullptr) delete [] buffer;
+                buffer = new uint8_t[disk_size];
 
-            QFile file(file_name);
-            if (file.open(QIODevice::ReadOnly)){
-                QByteArray data = file.readAll();
-                memcpy(buffer, data.constData(), file_size);
-                file.close();
+                QFile file(file_name);
+                if (file.open(QIODevice::ReadOnly)){
+                    QByteArray data = file.readAll();
+                    memcpy(buffer, data.constData(), file_size);
+                    file.close();
 
-                track_mode = FDD_MODE_SECTORS;
-                loaded = true;
-                this->file_name =fi.fileName();
+                    track_mode = FDD_MODE_SECTORS;
+                    loaded = true;
+                    this->file_name =fi.fileName();
+                } else {
+                    QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error opening file '%1'").arg(file_name));
+                }
             } else {
-                QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error opening file '%1'").arg(file_name));
+                QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Incorrect disk image size for '%1'").arg(file_name));
+                this->file_name = "";
             }
         } else {
-            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Incorrect disk image size for '%1'").arg(file_name));
-            this->file_name = "";
+            // Convert to MFM
+            if (buffer != nullptr) delete [] buffer;
+            switch (fdd_mode) {
+                case FDD_MODE_AGAT_140:
+                    buffer = generate_mfm_agat_140(file_name, sides, tracks, disk_size, track_indexes);
+                    break;
+                default:
+                    QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Expected conversion form DSK to MFM is not supperted yet."));
+                    break;
+            }
+            track_mode = FDD_MODE_WHOLE_TRACK;
+            position = 0;
+            loaded = true;
+            this->file_name =fi.fileName();
         }
     }
 }

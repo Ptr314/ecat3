@@ -398,7 +398,7 @@ void Emulator::register_devices()
 {
     dm->register_device("ram", create_ram);
     dm->register_device("rom", create_rom);
-    dm->register_device("memory_mapper", create_memory_mapper);
+    dm->register_device("memory-mapper", create_memory_mapper);
     dm->register_device("port", create_port);
     dm->register_device("port-address", create_port_address);
     dm->register_device("speaker", create_speaker);
@@ -415,7 +415,7 @@ void Emulator::register_devices()
     dm->register_device("i8253", create_i8253);
     dm->register_device("register", create_register);
     dm->register_device("z80", create_z80);
-    dm->register_device("page_mapper", create_page_mapper);
+    dm->register_device("page-mapper", create_page_mapper);
     dm->register_device("generator", create_generator);
     dm->register_device("6502", create_mos6502);
     dm->register_device("65c02", create_wdc65c02);
