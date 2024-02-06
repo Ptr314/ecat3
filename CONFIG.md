@@ -9,7 +9,7 @@
 * [Устройства](#Устройства)
     * [Специальные](#Специальные)
         * [system](#system) (Описание системы)
-        * [memory_mapper](#memory_mapper) (Основной диспетчер памяти)
+        * [memory-mapper](#memory-mapper) (Основной диспетчер памяти)
     * [CPU](#CPU)
         * [Общие параметры](#Общие-параметры)
         * [i8080](#i8080)
@@ -21,7 +21,7 @@
         * [port-address](#port-address) (Адресуемый порт, запоминающий адрес)
         * [register](#register) (Регистр-защелка)
         * [generator](#generator) (Генератор импульсов)
-        * [page_mapper](#page_mapper) (Страничный диспетчер)
+        * [page-mapper](#page-mapper) (Страничный диспетчер)
     * [Периферия](#Периферия)
         * [speaker](#speaker) (Однобитный динамик)
         * [scan-keyboard](#scan-keyboard) (Сканирующая клавиатура)
@@ -50,7 +50,7 @@
     * Первым устройством в файле должно быть устройство [__system__](#system), задающее общие параметры и описание системы.
     * Вторым устройством должен быть [CPU](#cpu), так как его частота устанавливается как основная системная.
     * Далее идут описания остальных устройств и их конфигураций. Список допустимых устройств и их параметров см. далее.
-    * Также обязательным является наличие устройства [memory_mapper](#memorymapper), задающее отображение остальных устройств на адресное пространство процессора.
+    * Также обязательным является наличие устройства [memory-mapper](#memory-mapper), задающее отображение остальных устройств на адресное пространство процессора.
 
 # Синтаксис описания устройств
 
@@ -142,12 +142,12 @@ system {
 }
 ~~~
 
-### memory_mapper
+### memory-mapper
 
 Главный диспетчер адресного пространства процессора.
 
 ~~~
-mapper : memory_mapper {
+mapper : memory-mapper {
 	portstomemory = 0
 	cancelinit = $8000
 	config = port1
@@ -324,10 +324,10 @@ gen50hz: generator {
 * __length__: Длина импульса в отсчетах системного генератора. Значение по умолчанию: 1.
     * В связи с особенностями эмуляции, минимально возможная длина импульса фактически будет равна длине команды CPU, на которую он попадет.
 
-### page_mapper
+### page-mapper
 Страничный диспетчер
 ~~~
-mm2 : page_mapper {
+mm2 : page-mapper {
 	frame = 16k
 	@page[0] = ram0
 	@page[1] = ram1
@@ -497,7 +497,7 @@ sound : speaker {
 	~mixer[0-2] = timer.output[0-2]
 }
 
-mapper : memory_mapper {
+mapper : memory-mapper {
 	portstomemory = 1
 	...
 	@memory[$EC00-$ECFF] = timer
@@ -532,7 +532,7 @@ romdisk : rom {
 	~data = port-user.A
 }
 
-mapper : memory_mapper {
+mapper : memory-mapper {
 	portstomemory = 1
 	...
 	@memory[$F500-$F5FF] = port-user
