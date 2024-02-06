@@ -30,3 +30,4 @@
 * https://tulip-house.ddo.jp/digital/SDISK2/english.html (dsk2nic.cpp)
 * https://sourceforge.net/p/agatemulator/code/HEAD/tree/branches/scanline-gfx/fdd/fdd1.c#l592
 * https://web.archive.org/web/20110607135105/http://www.doc.ic.ac.uk/~ih/doc/stepper/others/example3/diskii_specs.html
+* https://github.com/latchdevel/HxCFloppyImageConverter

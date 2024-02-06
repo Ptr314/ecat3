@@ -3,6 +3,10 @@
 #include "emulator/utils.h"
 #include "scankeyboard.h"
 
+#define SCAN_CALLBACK 1
+#define LED_CALLBACK 2
+
+
 ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     Keyboard(im, cd),
     keys_count(0)
@@ -12,6 +16,7 @@ ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     i_shift =  create_interface(1, "shift", MODE_W);
     i_ctrl =   create_interface(1, "ctrl", MODE_W);
     i_ruslat = create_interface(1, "ruslat", MODE_W);
+    i_ruslat_led = create_interface(1, "ruslat_led", MODE_R, LED_CALLBACK);
 
     memset(&key_array, _FFFF, sizeof(key_array));
 
@@ -68,9 +73,10 @@ void ScanKeyboard::key_down(unsigned int key)
         i_ctrl->change(0);
     else if (key == code_shift)
         i_shift->change(0);
-    else if (key == code_ruslat)
+    else if (key == code_ruslat) {
         i_ruslat->change(0);
-    else {
+        set_rus(!rus_mode);
+    } else {
         for (unsigned int i=0; i<keys_count; i++)
             if (scan_data[i].key_code == key)
             {
@@ -88,9 +94,10 @@ void ScanKeyboard::key_up(unsigned int key)
         i_ctrl->change(1);
     else if (key == code_shift)
         i_shift->change(1);
-    else if (key == code_ruslat)
+    else if (key == code_ruslat) {
         i_ruslat->change(1);
-    else {
+        set_rus(!rus_mode);
+    } else {
         for (unsigned int i=0; i<keys_count; i++)
             if (scan_data[i].key_code == key)
             {
@@ -115,9 +122,16 @@ void ScanKeyboard::calculate_out()
 
 void ScanKeyboard::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
-    calculate_out();
+    if (callback_id == SCAN_CALLBACK)
+        calculate_out();
+    else
+        set_rus((i_ruslat_led->value & 1) == 1);
 }
 
+void ScanKeyboard::set_rus(bool new_rus)
+{
+    Keyboard::set_rus(new_rus);
+}
 
 ComputerDevice * create_scankeyboard(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new ScanKeyboard(im, cd);

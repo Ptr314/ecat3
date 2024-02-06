@@ -3,8 +3,6 @@
 
 #include "emulator/devices/common/keyboard.h"
 
-#define SCAN_CALLBACK 1
-
 struct ScanData {
     unsigned int key_code;
     unsigned int scan_line;
@@ -19,6 +17,7 @@ private:
     Interface * i_shift;
     Interface * i_ctrl;
     Interface * i_ruslat;
+    Interface * i_ruslat_led;
 
     unsigned int scan_lines;
     unsigned int out_lines;
@@ -32,6 +31,9 @@ private:
     unsigned int code_ruslat;
 
     void calculate_out();
+
+protected:
+    virtual void set_rus(bool new_rus) override;
 
 public:
     ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
