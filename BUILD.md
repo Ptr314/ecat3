@@ -6,11 +6,14 @@
 
 #### 1. Установить программы
 * https://download.qt.io/, скачать online-инсталятор (возможно, из России понадобится зарубежный VPN) и установить следующие компоненты:
-    * Qt Creator
-    * Mingw 11.2
-    * cmake
-    * ninja
-    * Qt sources
+    * Qt [X.X.X]
+        * Qt [X.X.X] Prebuilt Components for mingw 11.2
+        * Sources
+    * Qt Developer and Designer tools
+        * Qt Creator
+        * Mingw 11.2
+        * cmake
+        * ninja
 * Python 3
 * SDL
     * Скачать https://www.libsdl.org/ (development version)
@@ -77,7 +80,7 @@ cd репозиторий-приложения\.build
 cd C:\Temp
 mkdir qt6-build
 cd qt6-build
-configure.bat -static -release -nomake examples -nomake tests [-prefix путь-для-установки]
+configure.bat -static -release -nomake examples -nomake tests -prefix c:\DEV\Qt-static\6.7.0
 cmake --build . --parallel
 cmake --install .
 ~~~
