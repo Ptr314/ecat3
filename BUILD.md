@@ -41,16 +41,17 @@ cd репозиторий-приложения\.build
 cd C:\Temp
 mkdir qt6-build
 cd qt6-build
-configure.bat -static -release -prefix c:\DEV\Qt-static\6.7.0
+configure.bat -static -release -nomake examples -nomake tests -prefix c:\DEV\Qt-static\%_QT_VERSION%
 cmake --build . --parallel
 cmake --install .
 ~~~
 
 #### 4. Настроить Qt Creator для использования статической сборки
+Если не получается добавить Kit из-за отсутствующих библиотек или падения qmake, нужно проверить системные пути, чтобы они указывали на bin-директорию актуальной версии mingw.
+
 * __Edit/Preferences/Kits/Qt versions/Add__ &ndash; выбрать qmake.exe из статической сборки, Name: __"Qt %{Qt:Version} Static"__;
 * __Edit/Preferences/Kits/Kits/Add__ &ndash; __Qt version__ из предыдущего пункта.
 
-Если не получается добавить Kit из-за отсутствующих библиотек или падения qmake, нужно проверить системные пути, чтобы они указывали на bin-директорию актуальной версии mingw.
 
 #### 5. Собрать release-версию приложения
 * Перейти в настройку компиляции из предыдущего пункта (__Projects/Build & Run/Static Kit/Build__)
@@ -82,7 +83,7 @@ cd репозиторий-приложения\.build
 cd C:\Temp
 mkdir qt6-build
 cd qt6-build
-configure.bat -static -release -nomake examples -nomake tests -prefix c:\DEV\Qt-static\6.7.0
+configure.bat -static -release -nomake examples -nomake tests -prefix c:\DEV\Qt-static\%_QT_VERSION%
 cmake --build . --parallel
 cmake --install .
 ~~~

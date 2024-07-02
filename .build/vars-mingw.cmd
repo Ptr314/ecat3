@@ -1,7 +1,7 @@
 @echo off
 
 SET _ROOT_QT=C:\DEV\Qt
-SET _QT_VERSION=6.7.0
+SET _QT_VERSION=6.7.2
 
 SET _ROOT_CMAKE=%_ROOT_QT%\Tools\CMake_64\bin
 SET _ROOT_NINJA=%_ROOT_QT%\Tools\Ninja
