@@ -89,6 +89,7 @@ void Emulator::load_config(QString file_name)
     sd.system_version = system->get_parameter("version", false).value;
     sd.system_charmap = system->get_parameter("charmap", false).value;
     sd.software_path = software_path;
+    sd.data_path = data_path;
     sd.mapper_cache = parse_numeric_value(read_setup("Core", "mapper_cache", "8"));
 
     sd.allowed_files = system->get_parameter("files", false).value;

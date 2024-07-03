@@ -61,7 +61,7 @@ void FDD::load_config(SystemData *sd)
         QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Unknown fdd mode '%1'").arg(s));
 
     try {
-        file_name = find_file_location(sd->system_path, sd->software_path, cd->get_parameter("image").value);
+        file_name = find_file_location(sd, cd->get_parameter("image").value);
         if (!file_name.isEmpty())
             load_image(file_name);
         else

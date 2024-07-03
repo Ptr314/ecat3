@@ -30,30 +30,42 @@ void ScanKeyboard::load_config(SystemData *sd)
     static QRegularExpression re_crlf("[\r\n]");
     static QRegularExpression re_space("[\t ]");
 
-    QString layout = cd->get_parameter("@layout").right_extended.trimmed();
-    QStringList lines = layout.split(re_crlf, Qt::SkipEmptyParts);
-    out_lines = lines.size();
-    for (unsigned int out = 0; out < out_lines; out++)
-    {
-        QString line = lines[out].trimmed();
-        QStringList parts = line.split(re_space, Qt::SkipEmptyParts);
-        scan_lines = parts.size();
-        for (unsigned int scan=0; scan<scan_lines; scan++)
+    QString map_file = find_file_location(sd, cd->get_parameter("map", false).value);
+    if (map_file.isEmpty())
+        QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Keyboard map file is expected"));
+    else {
+        QFile file(map_file);
+        if (!file.open(QIODevice::ReadOnly)) {
+            QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Error reading map file %1").arg(map_file));
+            return;
+        }
+        QTextStream in(&file);
+        QString layout = in.readAll();
+
+        QStringList lines = layout.split(re_crlf, Qt::SkipEmptyParts);
+        out_lines = lines.size();
+        for (unsigned int out = 0; out < out_lines; out++)
         {
-            QStringList keys = parts[scan].split("|", Qt::SkipEmptyParts);
-            for (unsigned int i=0; i< keys.size(); i++)
-                if (keys[i] != "__")
-                {
-                    unsigned int key_code = translate_key(keys[i]);
-                    if (key_code == _FFFF)
-                        QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Unknown key %1").arg(keys[i]));
-                    else
-                        scan_data[keys_count++] = {
-                                                    .key_code = key_code,
-                                                    .scan_line = scan,
-                                                    .out_line = out
-                        };
-                }
+            QString line = lines[out].trimmed();
+            QStringList parts = line.split(re_space, Qt::SkipEmptyParts);
+            scan_lines = parts.size();
+            for (unsigned int scan=0; scan<scan_lines; scan++)
+            {
+                QStringList keys = parts[scan].split("|", Qt::SkipEmptyParts);
+                for (unsigned int i=0; i< keys.size(); i++)
+                    if (keys[i] != "__")
+                    {
+                        unsigned int key_code = translate_key(keys[i]);
+                        if (key_code == _FFFF)
+                            QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Unknown key %1").arg(keys[i]));
+                        else
+                            scan_data[keys_count++] = {
+                                                        .key_code = key_code,
+                                                        .scan_line = scan,
+                                                        .out_line = out
+                            };
+                    }
+            }
         }
     }
 

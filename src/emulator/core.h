@@ -53,6 +53,7 @@ struct SystemData {
     QString         system_version;
     QString         system_charmap;
     QString         software_path;
+    QString         data_path;
     float           screen_ratio;
     unsigned int    screen_scale;
     QString         allowed_files;
