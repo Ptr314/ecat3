@@ -1,4 +1,7 @@
-CALL "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvarsall.bat" x64
-SET _ROOT=C:\DEV\Qt\6.6.1\Src
+@echo off
+
+SET _ROOT_QT=C:\DEV\Qt
+SET _QT_VERSION=6.7.2
+
+SET _ROOT=%_ROOT_QT%\%_QT_VERSION%\Src
 SET PATH=%_ROOT%;%PATH%
-SET _ROOT=
