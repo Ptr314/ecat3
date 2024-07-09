@@ -1,16 +1,12 @@
-#ifndef AGAT_FDC140_H
-#define AGAT_FDC140_H
+#ifndef AGAT_FDC840_H
+#define AGAT_FDC840_H
 
 #include "emulator/core.h"
 #include "emulator/devices/common/fdd.h"
 
-class Agat_FDC140 : public FDC
+class Agat_FDC840 : public FDC
 {
 protected:
-    Interface * i_select;
-    int prev_phase;
-    int current_phase;
-
     int current_track[2];
     int selected_drive;
     int drives_count;
@@ -18,15 +14,8 @@ protected:
     bool motor_on;
     bool write_mode;
 
-    uint8_t write_register;
-
-
-    void phase_on(int n);
-    void phase_off(int n);
-    void select_drive(int n);
-
 public:
-    Agat_FDC140(InterfaceManager *im, EmulatorConfigDevice *cd);
+    Agat_FDC840(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     virtual void load_config(SystemData *sd) override;
 
@@ -36,6 +25,7 @@ public:
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
 };
 
-ComputerDevice * create_agat_fdc140(InterfaceManager *im, EmulatorConfigDevice *cd);
+ComputerDevice * create_agat_fdc840(InterfaceManager *im, EmulatorConfigDevice *cd);
 
-#endif // AGAT_FDC140_H
+
+#endif // AGAT_FDC840_H

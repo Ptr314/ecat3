@@ -14,10 +14,7 @@ Agat_FDC140::Agat_FDC140(InterfaceManager *im, EmulatorConfigDevice *cd):
     motor_on(false),
     write_mode(false)
 {
-    // TODO: implement
     i_select = create_interface(2, "select", MODE_W);
-
-    //data = 0;
 
     selected_drive = -1;
 
@@ -47,7 +44,6 @@ void Agat_FDC140::load_config(SystemData *sd)
 
 bool Agat_FDC140::get_busy()
 {
-    // TODO: implement
     return motor_on;
 }
 

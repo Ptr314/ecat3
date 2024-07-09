@@ -124,6 +124,7 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/devices/common/sound.h emulator/devices/common/sound.cpp
     libs/mfm_formats.h
     libs/mfm_tools.h libs/mfm_tools.cpp
+    emulator/devices/specific/agat_fdc840.h emulator/devices/specific/agat_fdc840.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
