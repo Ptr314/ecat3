@@ -94,7 +94,7 @@ void ScanKeyboard::load_config(SystemData *sd)
 
 void ScanKeyboard::key_down(unsigned int key)
 {
-    qDebug() << "DOWN" << Qt::hex << key;
+    //qDebug() << "DOWN" << Qt::hex << key;
     if (key == code_ctrl)
         i_ctrl->change(0);
     else if (key == code_shift)
@@ -172,7 +172,7 @@ void ScanKeyboard::interface_callback(unsigned int callback_id, unsigned int new
 
 void ScanKeyboard::set_rus(bool new_rus)
 {
-    qDebug() << "RUS" << new_rus;
+    //qDebug() << "RUS" << new_rus;
     Keyboard::set_rus(new_rus);
 }
 
