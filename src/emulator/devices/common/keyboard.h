@@ -3,6 +3,10 @@
 
 #include "emulator/core.h"
 
+#define SHIFT_STATE_KEEP    0
+#define SHIFT_STATE_ON      1
+#define SHIFT_STATE_OFF     2
+
 struct KeyDescription {
     unsigned int code;
     QString name;
@@ -129,7 +133,10 @@ static const KeyDescription KEYS[] ={
     {.code = Qt::Key_BraceLeft, .name = "{"},
     {.code = Qt::Key_BraceRight, .name = "}"},
     {.code = Qt::Key_Underscore, .name = "_"},
+    {.code = Qt::Key_Underscore, .name = "under"},
     {.code = Qt::Key_AsciiCircum, .name = "^"},
+    {.code = Qt::Key_AsciiCircum, .name = "circum"},
+    {.code = Qt::Key_Bar, .name = "bar"},
 };
 
 static const unsigned int RUS_REMAP[][2] = {
@@ -167,8 +174,8 @@ static const unsigned int RUS_REMAP[][2] = {
     {Qt::Key_M, Qt::Key_X},                     // Ь
     {Qt::Key_Comma, Qt::Key_B},                 // Б
     {Qt::Key_Period, Qt::Key_At},               // Ю
-
-
+    {Qt::Key_Slash, Qt::Key_Period},            // Точка
+    {Qt::Key_Question, Qt::Key_Comma},          // Запятая
 };
 
 #define RUS_REMAP_SIZE (sizeof(RUS_REMAP) / sizeof(unsigned int) / 2)

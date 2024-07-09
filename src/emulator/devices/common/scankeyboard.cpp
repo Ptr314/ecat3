@@ -55,14 +55,27 @@ void ScanKeyboard::load_config(SystemData *sd)
                 for (unsigned int i=0; i< keys.size(); i++)
                     if (keys[i] != "__")
                     {
-                        unsigned int key_code = translate_key(keys[i]);
+                        int shift_state = SHIFT_STATE_KEEP;
+                        QString key_name;
+                        int key_len = keys[i].length();
+                        if (key_len > 1 && keys[i].last(1) == "_") {
+                            key_name = keys[i].left(key_len-1);
+                            shift_state = SHIFT_STATE_OFF;
+                        } else
+                        if (key_len > 1 && keys[i].last(1) == "^") {
+                            key_name = keys[i].left(key_len-1);
+                            shift_state = SHIFT_STATE_ON;
+                        } else
+                            key_name = keys[i];
+                        unsigned int key_code = translate_key(key_name);
                         if (key_code == _FFFF)
                             QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Unknown key %1").arg(keys[i]));
                         else
                             scan_data[keys_count++] = {
                                                         .key_code = key_code,
                                                         .scan_line = scan,
-                                                        .out_line = out
+                                                        .out_line = out,
+                                                        .shift_state = shift_state
                             };
                     }
             }
@@ -81,6 +94,7 @@ void ScanKeyboard::load_config(SystemData *sd)
 
 void ScanKeyboard::key_down(unsigned int key)
 {
+    //qDebug() << "DOWN" << Qt::hex << key;
     if (key == code_ctrl)
         i_ctrl->change(0);
     else if (key == code_shift)
@@ -92,6 +106,13 @@ void ScanKeyboard::key_down(unsigned int key)
         for (unsigned int i=0; i<keys_count; i++)
             if (scan_data[i].key_code == key)
             {
+                //qDebug() << "SCAN INDEX" << i;
+                if (scan_data[i].shift_state != SHIFT_STATE_KEEP) {
+                    stored_shift = i_shift->value;
+                    i_shift->change(scan_data[i].shift_state==SHIFT_STATE_ON?0:1);
+                    // qDebug() << "SHIFT " << ((scan_data[i].shift_state==SHIFT_STATE_ON)?0:1);
+                }
+
                 unsigned int l = scan_data[i].scan_line;
                 key_array[l] &= ~create_mask(1, scan_data[i].out_line);
                 calculate_out();
@@ -102,6 +123,7 @@ void ScanKeyboard::key_down(unsigned int key)
 
 void ScanKeyboard::key_up(unsigned int key)
 {
+    //qDebug() << "UP" << key;
     if (key == code_ctrl)
         i_ctrl->change(1);
     else if (key == code_shift)
@@ -116,6 +138,13 @@ void ScanKeyboard::key_up(unsigned int key)
                 unsigned int l = scan_data[i].scan_line;
                 key_array[l] |= create_mask(1, scan_data[i].out_line);
                 calculate_out();
+
+                if (scan_data[i].shift_state != SHIFT_STATE_KEEP) {
+                    i_shift->change(stored_shift);
+                    // qDebug() << "SHIFT " << stored_shift;
+
+                }
+
             }
     }
 }
@@ -137,11 +166,13 @@ void ScanKeyboard::interface_callback(unsigned int callback_id, unsigned int new
     if (callback_id == SCAN_CALLBACK)
         calculate_out();
     else
+        // LED_CALLBACK
         set_rus((i_ruslat_led->value & 1) == 1);
 }
 
 void ScanKeyboard::set_rus(bool new_rus)
 {
+    //qDebug() << "RUS" << new_rus;
     Keyboard::set_rus(new_rus);
 }
 
