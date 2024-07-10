@@ -57,6 +57,9 @@ public:
 
     bool is_selected();
     bool is_protected();
+    bool is_index();
+    bool is_track_00();
+
     int get_sector_size();
     int get_loaded();
     int SeekSector(int track, int sector);

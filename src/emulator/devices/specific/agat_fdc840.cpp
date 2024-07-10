@@ -1,12 +1,16 @@
 #include <QException>
 
 #include "agat_fdc840.h"
+#include "emulator/utils.h"
 
 Agat_FDC840::Agat_FDC840(InterfaceManager *im, EmulatorConfigDevice *cd):
     FDC(im, cd),
+    dd14(im, cd),
+    dd15(im, cd),
     motor_on(false),
     write_mode(false)
 {
+    i_select = create_interface(2, "select", MODE_W);
     selected_drive = -1;
     memset(&current_track, 0, sizeof(current_track));
 }
@@ -42,54 +46,96 @@ unsigned int Agat_FDC840::get_selected_drive()
     return selected_drive;
 }
 
+void Agat_FDC840::reset(bool cold)
+{
+    FDC::reset(cold);
+
+    dd14.reset(cold);
+    dd15.reset(cold);
+}
+
+void Agat_FDC840::update_status()
+{
+    // Collect status signals and put them to the register for reading
+
+    uint8_t status =   (0b00                                         << 0)    //FDD2 type
+                     + (0b00                                         << 2)    //FDD1 type
+                     + ((drives[selected_drive]->is_index()?0:1)     << 4)    // Index hole
+                     + ((drives[selected_drive]->is_protected()?0:1) << 5)    // Write protection
+                     + ((drives[selected_drive]->is_track_00()?0:1)  << 6)    // Track 00
+                     + ((motor_on?0:1)                               << 7);   // Ready // TODO: check
+
+    dd14.set_value(1, status, true);
+}
+
+void Agat_FDC840::update_state()
+{
+    // Check control signals after setting them
+    uint8_t state = dd14.get_value(2);
+
+    step_dir       = (state >> 2) & 0x1;
+    selected_drive = (state >> 3) & 0x1;
+    head           = (state >> 4) & 0x1;
+    write_mode     = ((state >> 6) & 0x1) == 1;
+    motor_on       = ((state >> 7) & 0x1) == 1;
+
+    i_select->change(1 << selected_drive);
+
+    update_status();
+}
+
 unsigned int Agat_FDC840::get_value(unsigned int address)
 {
+    //TODO: check if reading 8255(3) works
     unsigned int A = address & 0x0f;
+    uint8_t value;
     switch (A) {
-        case 0x0:
+        case 0x1:
         case 0x2:
+            update_status();
+            value = dd14.get_value(A & 0x03);
+            break;
         case 0x4:
         case 0x6:
-        case 0x1:
-        case 0x3:
-        case 0x5:
-        case 0x7:
-        case 0x8:
-        case 0x9:
-        case 0xA:
-        case 0xB:
-        case 0xC:
-        case 0xD:
-        case 0xE:
+            value = dd15.get_value(A & 0x03);
             break;
-        default: // 0x0F
+        default:
+            value = 0xFF;
             break;
     }
-    return 0;
+#ifdef LOG_FDD
+        if (log_available()) logs(QString("R %1:%2").arg(A, 1, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
+#endif
+    return value;
 }
 
 void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force)
 {
     unsigned int A = address & 0x0f;
+#ifdef LOG_FDD
+    if (log_available()) logs(QString("W %1:%2").arg(A, 1, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
+#endif
     switch (A) {
-    case 0x0:
-    case 0x2:
-    case 0x4:
-    case 0x6:
-    case 0x1:
-    case 0x3:
-    case 0x5:
-    case 0x7:
-    case 0x8:
-    case 0x9:
-    case 0xA:
-    case 0xB:
-    case 0xC:
-    case 0xD:
-    case 0xE:
-        break;
-    default: // 0x0F
-        break;
+        case 0x2:
+        case 0x3:
+            dd14.set_value(A & 0x03, value);
+            update_state();
+            break;
+        case 0x5:
+        case 0x7:
+            dd15.set_value(A & 0x03, value);
+            break;
+        case 0x8:
+            // SYNC WRTITE
+            break;
+        case 0x9:
+            // STEP
+            break;
+        case 0xA:
+            // SYNC RESET
+            break;
+        default:
+            break;
     }
 }
 

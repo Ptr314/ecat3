@@ -278,6 +278,22 @@ bool FDD::is_protected()
     return write_protect;
 }
 
+bool FDD::is_index()
+{
+    //TODO: tune conditions
+    if (track_mode == FDD_MODE_SECTORS) {
+        return sector==0 && position < 100;
+    } else {
+        return position < 100;
+    }
+}
+
+bool FDD::is_track_00()
+{
+    return track == 0;
+}
+
+
 void FDD::unload(){
     if (buffer != nullptr) delete [] buffer;
     buffer = nullptr;

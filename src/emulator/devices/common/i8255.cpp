@@ -38,6 +38,20 @@ unsigned int I8255::get_value(unsigned int address)
 void I8255::set_value(unsigned int address, unsigned int value, bool force)
 {
     unsigned int n = address & 0b11;
+
+    // This hack is used when the IC is used internally to avoid setting interfaces etc.
+    if (force) {
+        registers[n] = (uint8_t)value;
+#ifdef LOG_8255
+        if (log_available()) logs(QString("WF %1:%2").arg(n).arg(value, 2, 16, QChar('0')));
+#endif
+        return;
+    }
+
+#ifdef LOG_8255
+    if (log_available()) logs(QString("W %1:%2").arg(n).arg(value, 2, 16, QChar('0')));
+#endif
+
     switch (n) {
     case 0:
         if ((registers[3] & 0x60) == 0)
@@ -96,26 +110,31 @@ void I8255::set_value(unsigned int address, unsigned int value, bool force)
             unsigned int bn = value >> 1;
             unsigned int bv = (value & 1) << bn;
             unsigned int bm = 1 << bn;
-            unsigned int v = (registers[2] & !bm) | bv;
+            unsigned int v = (registers[2] & ~bm) | bv;
             set_value(2, v);
         }
         break;
     }
-#ifdef LOG_8255
-    if (log_available()) logs(QString("W %1:%2").arg(n).arg(value, 2, 16, QChar('0')));
-#endif
-
 }
 
 void I8255::interface_callback(unsigned int callback_id, unsigned int new_value, [[maybe_unused]] unsigned int old_value)
 {
     switch (callback_id) {
-    case PORT_A:
-        if ((registers[3] & 0x60) == 0) {
-            if ((registers[3] & 0x10) != 0) registers[0] = (uint8_t)new_value;
-        } else
-            im->dm->error(this, I8255::tr("i8255:A is in an unsupported mode"));
+    case PORT_A: {
+        unsigned int mode_a = (registers[3] >> 5) & 0b11;
+        switch (mode_a) {
+            case 0: // Basic I/O
+                if ((registers[3] & 0x10) != 0) registers[0] = (uint8_t)new_value;
+                break;
+            case 1: // Strobed I/O
+                // TODO: check if we have to do nothing here
+                break;
+            default: // Bi-directional Bus
+                im->dm->error(this, I8255::tr("i8255:A is in an unsupported mode"));
+                break;
+        }
         break;
+    }
     case PORT_B:
         if ((registers[3] & 0x04) == 0) {
             if ((registers[3] & 0x02) != 0) registers[1] = (uint8_t)new_value;
