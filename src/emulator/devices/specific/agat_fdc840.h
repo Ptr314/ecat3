@@ -18,6 +18,7 @@ protected:
     int step_dir;
     int head;
     bool sector_sync;
+    bool data_ready;
 
     I8255 dd14;
     I8255 dd15;

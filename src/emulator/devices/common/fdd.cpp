@@ -184,6 +184,9 @@ void FDD::load_image(QString file_name)
                 case FDD_MODE_AGAT_140:
                     buffer = generate_mfm_agat_140(file_name, sides, tracks, disk_size, track_indexes);
                     break;
+                case FDD_MODE_AGAT_840:
+                    buffer = generate_mfm_agat_840(file_name, sides, tracks, disk_size, track_indexes);
+                    break;
                 default:
                     QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Expected conversion from DSK to MFM is not supported yet."));
                     break;
@@ -309,6 +312,11 @@ int FDD::get_sector_size()
 int FDD::get_loaded()
 {
     return loaded;
+}
+
+int FDD::get_position()
+{
+    return position;
 }
 
 void FDD::change_protection()

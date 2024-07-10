@@ -163,6 +163,27 @@ uint8_t * generate_mfm_agat_140(QString file_name, int & sides, int & tracks, in
     return buffer;
 }
 
+uint8_t * generate_mfm_agat_840(QString file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[])
+{
+    //TODO: implement
+    int track_len =;
+    sides = 2;
+    tracks = 80;
+    int sectors = 21;
+    int sector_size = 256;
+    disk_size = tracks * track_len;
+    int image_size = tracks * sectors * sector_size;
+    uint8_t * image = load_image(file_name, image_size);
+
+    uint8_t * buffer = new uint8_t[disk_size];
+    uint8_t * out = buffer;
+
+    char gap_bytes[256];
+    memset(&gap_bytes, 0xFF, sizeof(gap_bytes));
+
+    uint8_t encoded_sector[344];
+}
+
 void save_mfm_file(QString file_name, int sides, int tracks, int track_size, HXC_MFM_TRACK_INFO track_indexes[], uint8_t * data)
 {
     HXC_MFM_HEADER      hxc_mfm_header;

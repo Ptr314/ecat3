@@ -62,6 +62,7 @@ public:
 
     int get_sector_size();
     int get_loaded();
+    int get_position();
     int SeekSector(int track, int sector);
     uint8_t  ReadNextByte();
     void WriteNextByte(uint8_t value);

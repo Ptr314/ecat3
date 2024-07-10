@@ -8,7 +8,8 @@ Agat_FDC840::Agat_FDC840(InterfaceManager *im, EmulatorConfigDevice *cd):
     dd14(im, cd),
     dd15(im, cd),
     motor_on(false),
-    write_mode(false)
+    write_mode(false),
+    sector_sync(false)
 {
     i_select = create_interface(2, "select", MODE_W);
     selected_drive = -1;
@@ -58,14 +59,19 @@ void Agat_FDC840::update_status()
 {
     // Collect status signals and put them to the register for reading
 
-    uint8_t status =   (0b00                                         << 0)    //FDD2 type
-                     + (0b00                                         << 2)    //FDD1 type
-                     + ((drives[selected_drive]->is_index()?0:1)     << 4)    // Index hole
-                     + ((drives[selected_drive]->is_protected()?0:1) << 5)    // Write protection
-                     + ((drives[selected_drive]->is_track_00()?0:1)  << 6)    // Track 00
-                     + ((motor_on?0:1)                               << 7);   // Ready // TODO: check
+    uint8_t status_fdd =   (0b00                                         << 0)    //FDD2 type
+                         + (0b00                                         << 2)    //FDD1 type
+                         + ((drives[selected_drive]->is_index()?0:1)     << 4)    // Index hole
+                         + ((drives[selected_drive]->is_protected()?0:1) << 5)    // Write protection
+                         + ((drives[selected_drive]->is_track_00()?0:1)  << 6)    // Track 00
+                         + ((motor_on?0:1)                               << 7);   // Ready // TODO: check
 
-    dd14.set_value(1, status, true);
+    dd14.set_value(1, status_fdd, true);
+
+    uint8_t status_fdc =   ((sector_sync?0:1) << 6)                               // sector sync detected (active - 0)
+                         + ((data_ready?1:0) << 7);                               // data is ready to be read (active - 1)
+
+    dd15.set_value(1, status_fdc, true);
 }
 
 void Agat_FDC840::update_state()
@@ -97,6 +103,8 @@ unsigned int Agat_FDC840::get_value(unsigned int address)
             break;
         case 0x4:
         case 0x6:
+            drives[selected_drive]->ReadNextByte();
+            if (drives[selected_drive]->get_position() == 12) sector_sync = true;
             value = dd15.get_value(A & 0x03);
             break;
         default:
@@ -133,6 +141,7 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
             break;
         case 0xA:
             // SYNC RESET
+            sector_sync = false;
             break;
         default:
             break;
