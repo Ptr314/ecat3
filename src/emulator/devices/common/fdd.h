@@ -22,7 +22,7 @@ private:
     int disk_size;
 
     // MFM tracks info
-    HXC_MFM_TRACK_INFO track_indexes[100];
+    HXC_MFM_TRACK_INFO track_indexes[200];
     int physical_track_len;
 
     unsigned int selector;

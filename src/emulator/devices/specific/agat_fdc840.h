@@ -26,6 +26,8 @@ protected:
     void update_status();
     void update_state();
 
+    uint8_t read_next_byte();
+
 public:
     Agat_FDC840(InterfaceManager *im, EmulatorConfigDevice *cd);
 

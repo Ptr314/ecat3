@@ -205,12 +205,11 @@ int FDD::SeekSector(int track, int sector)
     if (buffer != nullptr)
     {
         if (sides > 1)
-            this->side = ~(i_side->value) & 1;
+            side = ~(i_side->value) & 1;
         this->track = track;
         this->sector = sector;
-        //qDebug() << "SEEK " << this->side << this->track << this->sector;
 #ifdef LOG_FDD
-        logs(QString("SEEK %1").arg(track));
+        logs(QString("SEEK side:%1 track:%1 sector:%1").arg(side).arg(track).arg(sector));
 #endif
         position = 0;
         if (track_mode == FDD_MODE_SECTORS) {

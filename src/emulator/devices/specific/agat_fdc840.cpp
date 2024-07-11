@@ -90,6 +90,22 @@ void Agat_FDC840::update_state()
     update_status();
 }
 
+uint8_t Agat_FDC840::read_next_byte()
+{
+    uint8_t data = drives[selected_drive]->ReadNextByte();
+    if (drives[selected_drive]->get_position() % 282 == 12) {
+#ifdef LOG_FDD
+        logs(QString("SYNC ON"));
+#endif
+        sector_sync = true;
+    }
+    dd15.set_value(2, data, true);
+    data_ready = true;
+    update_status();
+    return data;
+}
+
+
 unsigned int Agat_FDC840::get_value(unsigned int address)
 {
     //TODO: check if reading 8255(3) works
@@ -103,8 +119,7 @@ unsigned int Agat_FDC840::get_value(unsigned int address)
             break;
         case 0x4:
         case 0x6:
-            drives[selected_drive]->ReadNextByte();
-            if (drives[selected_drive]->get_position() == 12) sector_sync = true;
+            read_next_byte();
             value = dd15.get_value(A & 0x03);
             break;
         default:
@@ -112,7 +127,7 @@ unsigned int Agat_FDC840::get_value(unsigned int address)
             break;
     }
 #ifdef LOG_FDD
-        if (log_available()) logs(QString("R %1:%2").arg(A, 1, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
+        logs(QString("R %1:%2").arg(A, 1, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
 #endif
     return value;
 }
@@ -121,7 +136,7 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
 {
     unsigned int A = address & 0x0f;
 #ifdef LOG_FDD
-    if (log_available()) logs(QString("W %1:%2").arg(A, 1, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
+    logs(QString("W %1:%2").arg(A, 1, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
 #endif
     switch (A) {
         case 0x2:
@@ -142,6 +157,9 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
         case 0xA:
             // SYNC RESET
             sector_sync = false;
+#ifdef LOG_FDD
+            logs(QString("SYNC OFF"));
+#endif
             break;
         default:
             break;
