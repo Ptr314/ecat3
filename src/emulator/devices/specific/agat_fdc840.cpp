@@ -12,6 +12,7 @@ Agat_FDC840::Agat_FDC840(InterfaceManager *im, EmulatorConfigDevice *cd):
     sector_sync(false)
 {
     i_select = create_interface(2, "select", MODE_W);
+    i_side = create_interface(1, "side", MODE_W);
     selected_drive = -1;
     memset(&current_track, 0, sizeof(current_track));
 }
@@ -30,8 +31,20 @@ void Agat_FDC840::load_config(SystemData *sd)
     memset(&drives, 0, sizeof(drives));
     QStringList parts = s.split('|', Qt::SkipEmptyParts);
     drives_count = parts.size();
-    for (unsigned int i = 0; i < drives_count; i++)
+
+    LinkData ld;
+    ld.s.i = i_side;
+    ld.s.shift = 0;
+    ld.s.mask = create_mask(1, 0);
+
+    for (unsigned int i = 0; i < drives_count; i++) {
         drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));
+
+        ld.d.i = im->get_interface_by_name(parts[i], "side");
+        ld.d.shift = 0;
+        ld.d.mask = create_mask(1, 0);
+        ld.s.i->connect(ld.s, ld.d, false);
+    }
 
     selected_drive = 0;
 }
@@ -63,7 +76,7 @@ void Agat_FDC840::update_status()
                          + (0b00                                         << 2)    //FDD1 type
                          + ((drives[selected_drive]->is_index()?0:1)     << 4)    // Index hole
                          + ((drives[selected_drive]->is_protected()?0:1) << 5)    // Write protection
-                         + ((drives[selected_drive]->is_track_00()?0:1)  << 6)    // Track 00
+                         + ((current_track[selected_drive]==0?0:1)       << 6)    // Track 00
                          + ((motor_on?0:1)                               << 7);   // Ready // TODO: check
 
     dd14.set_value(1, status_fdd, true);
@@ -81,11 +94,13 @@ void Agat_FDC840::update_state()
 
     step_dir       = (state >> 2) & 0x1;
     selected_drive = (state >> 3) & 0x1;
-    head           = (state >> 4) & 0x1;
+    i_side->change((state >> 4) & 0x1);
     write_mode     = ((state >> 6) & 0x1) == 1;
     motor_on       = ((state >> 7) & 0x1) == 1;
 
     i_select->change(1 << selected_drive);
+
+    drives[selected_drive]->SeekSector(current_track[selected_drive], 0);
 
     update_status();
 }
@@ -112,6 +127,9 @@ unsigned int Agat_FDC840::get_value(unsigned int address)
     unsigned int A = address & 0x0f;
     uint8_t value;
     switch (A) {
+        case 0x0:
+            value = 0x10;
+            break;
         case 0x1:
         case 0x2:
             update_status();
@@ -120,6 +138,9 @@ unsigned int Agat_FDC840::get_value(unsigned int address)
         case 0x4:
         case 0x6:
             read_next_byte();
+            value = dd15.get_value(A & 0x03);
+            break;
+        case 0x7:
             value = dd15.get_value(A & 0x03);
             break;
         default:
@@ -149,10 +170,20 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
             dd15.set_value(A & 0x03, value);
             break;
         case 0x8:
-            // SYNC WRTITE
+            // SYNC WRITE
+            // TODO: writing
             break;
         case 0x9:
             // STEP
+            if (step_dir == 1) {
+                if (current_track[selected_drive] < AGAT_840_TRACK_COUNT-1) current_track[selected_drive]++;
+            } else {
+                if (current_track[selected_drive] > 0) current_track[selected_drive]--;
+            }
+            drives[selected_drive]->SeekSector(current_track[selected_drive], 0);
+#ifdef LOG_FDD
+            logs(QString("STEP to %1").arg(current_track[selected_drive]));
+#endif
             break;
         case 0xA:
             // SYNC RESET

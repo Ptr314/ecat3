@@ -5,10 +5,13 @@
 #include "emulator/devices/common/fdd.h"
 #include "emulator/devices/common/i8255.h"
 
+#define AGAT_840_TRACK_COUNT 80
+
 class Agat_FDC840 : public FDC
 {
 protected:
     Interface * i_select;
+    Interface * i_side;
     int current_track[2];
     int selected_drive;
     int drives_count;
@@ -16,7 +19,6 @@ protected:
     bool motor_on;
     bool write_mode;
     int step_dir;
-    int head;
     bool sector_sync;
     bool data_ready;
 
