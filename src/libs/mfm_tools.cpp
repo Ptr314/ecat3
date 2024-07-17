@@ -18,24 +18,6 @@ static const uint8_t agat_sector_translate[]={
     0x00,0x0D,0x0B,0x09,0x07,0x05,0x03,0x01,0x0E,0x0C,0x0A,0x08,0x06,0x04,0x02,0x0F
 };
 
-static const uint8_t agat_840_prolog[]={
-    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-    0xFF, 0xAA, 0xA4, 0x95, 0x6A,
-    0xFE,   //volume
-    00,     // track
-    00,     // sector
-    0x5A, 0xAA, 0xAA
-};
-
-static const uint8_t agat_840_header[]={
-    0xAA, 0x6A, 0x95
-};
-
-#define AGAT_840_PROLOG_SIZE sizeof(agat_840_prolog)
-#define AGAT_840_HEADER_SIZE sizeof(agat_840_header)
-#define AGAT_840_PROLOG_TRACK  16
-#define AGAT_840_PROLOG_SECTOR 17
-
 // Idea: https://tulip-house.ddo.jp/digital/SDISK2/english.html (dsk2nic.cpp)
 static const unsigned char FlipBit1[4] = { 0, 2,  1,  3  };
 static const unsigned char FlipBit2[4] = { 0, 8,  4,  12 };

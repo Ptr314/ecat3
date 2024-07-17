@@ -209,7 +209,7 @@ int FDD::SeekSector(int track, int sector)
         this->track = track;
         this->sector = sector;
 #ifdef LOG_FDD
-        logs(QString("SEEK side:%1 track:%1 sector:%1").arg(side).arg(track).arg(sector));
+        logs(QString("SEEK side:%1 track:%2 sector:%3").arg(side).arg(track).arg(sector));
 #endif
         position = 0;
         if (track_mode == FDD_MODE_SECTORS) {

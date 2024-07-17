@@ -11,7 +11,7 @@
 /* #undef CPU_STOPPED */
 #define LOGGER
 #define LOG_NAME "LOG"
-#define LOG_LIMIT 1000
+#define LOG_LIMIT 20000
 
 /* #undef LOG_8255 */
 /* #undef LOG_CPU */

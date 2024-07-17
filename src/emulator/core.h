@@ -129,12 +129,9 @@ public:
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
     virtual void memory_callback(unsigned int callback_id, unsigned int address);
 
-private:
+protected:
     unsigned int clock_miltiplier;
     unsigned int clock_divider;
-
-
-protected:
     unsigned int clock_stored;
 
     Interface * create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id = 0);

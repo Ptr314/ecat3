@@ -19,6 +19,7 @@ protected:
     bool motor_on;
     bool write_mode;
     int step_dir;
+    int side;
     bool sector_sync;
     bool data_ready;
 
@@ -40,6 +41,7 @@ public:
     virtual unsigned int get_value(unsigned int address) override;
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
     virtual void reset(bool cold) override;
+    virtual void clock(unsigned int counter) override;
 };
 
 ComputerDevice * create_agat_fdc840(InterfaceManager *im, EmulatorConfigDevice *cd);
