@@ -53,6 +53,10 @@ void Agat_FDC840::load_config(SystemData *sd)
     }
 
     selected_drive = 0;
+
+#ifdef LOG_FDD
+    ram0 = dynamic_cast<RAM*>(im->dm->get_device_by_name("ram0"));
+#endif
 }
 
 
@@ -124,6 +128,13 @@ uint8_t Agat_FDC840::read_next_byte()
     if ( sector_pos == 12 || sector_pos == 21) {
         sector_sync = true;
     }
+#ifdef LOG_FDD
+    if (sector_pos == 16)
+        logs(QString("TRACK %1:%2").arg(data & 1).arg(data >> 1));
+    if (sector_pos == 17)
+        logs(QString("SECTOR %1").arg(data));
+#endif
+
     dd15.set_value(0, data, true);
     data_ready = true;
     update_status();
@@ -204,7 +215,7 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
             sector_sync = false;
             update_status();
 #ifdef LOG_FDD
-            //logs(QString("SYNC OFF"));
+            logs(QString("SYNC OFF T:S = %1:%2").arg(ram0->get_value(0x41)).arg(ram0->get_value(0x3D)));
 #endif
             break;
         default:

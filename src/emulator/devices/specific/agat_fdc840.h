@@ -31,6 +31,10 @@ protected:
 
     uint8_t read_next_byte();
 
+#ifdef LOG_FDD
+    RAM * ram0;
+#endif
+
 public:
     Agat_FDC840(InterfaceManager *im, EmulatorConfigDevice *cd);
 
