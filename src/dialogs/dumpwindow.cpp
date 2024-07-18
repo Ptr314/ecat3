@@ -1,4 +1,5 @@
 #include <QKeyEvent>
+#include <QFileDialog>
 
 #include "dumpwindow.h"
 #include "emulator/utils.h"
@@ -95,5 +96,20 @@ void DumpWindow::on_topButton_clicked()
 void DumpWindow::on_bottomButton_clicked()
 {
     ui->dump_area->go_to(-1);
+}
+
+
+void DumpWindow::on_saveButton_clicked()
+{
+    QString file_name = QFileDialog::getSaveFileName(this, DumpWindow::tr("Save contents to a file"), e->work_path, DumpWindow::tr("Dump (*.bin)"));
+    if (!file_name.isEmpty())
+    {
+        Memory * dev = dynamic_cast<Memory*>(d);
+        QFile file(file_name);
+        if (file.open(QIODevice::WriteOnly)){
+            file.write(reinterpret_cast<char*>(dev->get_buffer()), dev->get_size());
+            file.close();
+        }
+    }
 }
 

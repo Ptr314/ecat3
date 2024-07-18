@@ -32,6 +32,8 @@ private slots:
 
     void on_bottomButton_clicked();
 
+    void on_saveButton_clicked();
+
 public slots:
     virtual void update_view() override;
 
