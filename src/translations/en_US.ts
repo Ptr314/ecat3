@@ -17,7 +17,20 @@
 <context>
     <name>Agat_FDC140</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+34"/>
+        <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+31"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect fdd list for &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Agat_FDC840</name>
+    <message>
+        <location filename="../emulator/devices/specific/agat_fdc840.cpp" line="+33"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -255,18 +268,38 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+14"/>
+        <source>Save to file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/dumpwindow.cpp" line="+49"/>
+        <location filename="../dialogs/dumpwindow.cpp" line="+50"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Incorrect address value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+54"/>
+        <source>Save contents to a file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Dump (*.bin)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -462,14 +495,14 @@
         <location line="+3"/>
         <location line="+20"/>
         <location line="+3"/>
-        <location line="+11"/>
-        <location line="+130"/>
+        <location line="+14"/>
+        <location line="+150"/>
         <location line="+6"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-278"/>
+        <location line="-301"/>
         <source>Incorrect fdd parameters for &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -512,12 +545,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+14"/>
         <source>Expected conversion from DSK to MFM is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+130"/>
+        <location line="+150"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -527,7 +560,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-93"/>
+        <location line="-114"/>
         <source>Reading outside of a sector</source>
         <translation type="unfinished"></translation>
     </message>
@@ -540,14 +573,14 @@
 <context>
     <name>I8255</name>
     <message>
-        <location filename="../emulator/devices/common/i8255.cpp" line="+51"/>
-        <location line="+66"/>
+        <location filename="../emulator/devices/common/i8255.cpp" line="+65"/>
+        <location line="+68"/>
         <source>i8255:A is in an unsupported mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-54"/>
-        <location line="+60"/>
+        <location line="-56"/>
+        <location line="+65"/>
         <source>i8255:B is in an unsupported mode</source>
         <translation type="unfinished"></translation>
     </message>
