@@ -53,6 +53,8 @@ void Agat_FDC840::load_config(SystemData *sd)
     }
 
     selected_drive = 0;
+    i_select->change(1 << selected_drive);
+    i_side->change(~side);
 
 #ifdef LOG_FDD
     ram0 = dynamic_cast<RAM*>(im->dm->get_device_by_name("ram0"));
@@ -84,10 +86,19 @@ void Agat_FDC840::update_status()
 
     uint8_t status_fdd =   (0b00                                         << 0)    //FDD2 type
                          + (0b00                                         << 2)    //FDD1 type
-                         + ((drives[selected_drive]->is_index()?0:1)     << 4)    // Index hole
-                         //+ ((drives[selected_drive]->is_protected()?0:1) << 5)    // Write protection
+                         + (((selected_drive < drives_count)?
+                                (drives[selected_drive]->is_index()?0:1)
+                                :1
+                            )                                            << 4)    // Index hole
+                         // + (((selected_drive < drives_count)?
+                         //         (drives[selected_drive]->is_protected()?0:1)
+                         //                                     :1
+                         //     )                                           << 5)    // Write protection
                          + (0 << 5)                                               // Write protection
-                         + ((current_track[selected_drive]==0?0:1)       << 6)    // Track 00
+                         + (((selected_drive < drives_count)?
+                                (current_track[selected_drive]==0?0:1)
+                                :1
+                            )                                            << 6)    // Track 00
                          + ((motor_on?0:1)                               << 7);   // Ready // TODO: check
 
     dd14.set_value(1, status_fdd, true);
@@ -127,36 +138,45 @@ void Agat_FDC840::update_state()
         selected_drive = new_selected;
         side = new_side;
         i_select->change(1 << selected_drive);
-        i_side->change(side);
-        drives[selected_drive]->SeekSector(current_track[selected_drive], 0);
+        i_side->change(~side);
+        if (selected_drive < drives_count)
+            drives[selected_drive]->SeekSector(current_track[selected_drive], 0);
     }
-
 
     update_status();
 }
 
 uint8_t Agat_FDC840::read_next_byte()
 {
-    int sector_pos = drives[selected_drive]->get_position() % 282;
-    uint8_t data = drives[selected_drive]->ReadNextByte();
-    // Sync at a sector prologue (before 0x95) or header (before 0x6A)
-    if ( sector_pos == 12 || sector_pos == 21) {
-        sector_sync = true;
-    }
+    if (selected_drive < drives_count) {
+        int sector_pos = drives[selected_drive]->get_position() % 282;
+        uint8_t data = drives[selected_drive]->ReadNextByte();
+        // Sync at a sector prologue (before 0x95) or header (before 0x6A)
+        if ( sector_pos == 12 || sector_pos == 21) {
+            sector_sync = true;
 #ifdef LOG_FDD
-    static int tmp_track = 0;
-    if (sector_pos == 16) {
-        //logs(QString("--TRACK %1:%2").arg(data & 1).arg(data >> 1));
-        tmp_track = data;
-    }
-    if (sector_pos == 17)
-        logs(QString("--DISC %1:%2:%3").arg(tmp_track & 1).arg(tmp_track >> 1).arg(data));
+            if (sector_pos == 12)
+                logs(QString("--SYNC PREAMBLE"));
+            else
+                logs(QString("--SYNC DATA"));
+#endif
+        }
+#ifdef LOG_FDD
+        static int tmp_track = 0;
+        if (sector_pos == 16) {
+            tmp_track = data;
+        }
+        if (sector_pos == 17)
+            logs(QString("--SECTOR %1:%2:%3").arg(tmp_track & 1).arg(tmp_track >> 1).arg(data));
 #endif
 
-    dd15.set_value(0, data, true);
-    data_ready = true;
-    update_status();
-    return data;
+        dd15.set_value(0, data, true);
+        data_ready = true;
+        update_status();
+        return data;
+    } else {
+        return static_cast<uint8_t>(_FFFF);
+    }
 }
 
 
@@ -221,15 +241,17 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
             break;
         case 0x9:
             // STEP
-            if (step_dir == 1) {
-                if (current_track[selected_drive] < AGAT_840_TRACK_COUNT-1) current_track[selected_drive]++;
-            } else {
-                if (current_track[selected_drive] > 0) current_track[selected_drive]--;
-            }
+            if (selected_drive < drives_count) {
+                if (step_dir == 1) {
+                    if (current_track[selected_drive] < AGAT_840_TRACK_COUNT-1) current_track[selected_drive]++;
+                } else {
+                    if (current_track[selected_drive] > 0) current_track[selected_drive]--;
+                }
 #ifdef LOG_FDD
-            logs(QString("STEP to %1").arg(current_track[selected_drive]));
+                logs(QString("STEP to %1").arg(current_track[selected_drive]));
 #endif
-            drives[selected_drive]->SeekSector(current_track[selected_drive], 0);
+                drives[selected_drive]->SeekSector(current_track[selected_drive], 0);
+            }
             break;
         case 0xA:
             // SYNC RESET
