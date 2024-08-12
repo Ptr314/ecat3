@@ -74,7 +74,13 @@ void I8255::set_value(unsigned int address, unsigned int value, bool force)
                 i_port_b->change(value);
             }
         } else {
-            im->dm->error(this, I8255::tr("i8255:B is in an unsupported mode"));
+            //im->dm->error(this, I8255::tr("i8255:B is in an unsupported mode"));
+            if ((registers[3] & 2) == 0)
+            {
+                registers[n] = (uint8_t)value;
+                i_port_b->change(value);
+                // TODO: we have to set a strobe here?
+            }
         }
         break;
     case 2:
@@ -135,12 +141,16 @@ void I8255::interface_callback(unsigned int callback_id, unsigned int new_value,
         }
         break;
     }
-    case PORT_B:
+    case PORT_B: {
         if ((registers[3] & 0x04) == 0) {
+            // Basic I/O
             if ((registers[3] & 0x02) != 0) registers[1] = (uint8_t)new_value;
-        } else
-            im->dm->error(this, I8255::tr("i8255:B is in an unsupported mode"));
-        break;
+        } else {
+            // Strobed I/O
+            // TODO: check if we have to do nothing here
+            //im->dm->error(this, I8255::tr("i8255:B is in an unsupported mode"));
+        }
+    }
     case PORT_CH:
         if ((registers[3] & 0x08) != 0)
         {

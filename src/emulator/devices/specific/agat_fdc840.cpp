@@ -11,8 +11,9 @@ Agat_FDC840::Agat_FDC840(InterfaceManager *im, EmulatorConfigDevice *cd):
     motor_on(false),
     write_mode(false),
     sector_sync(false),
-    side(0),
-    data_ready(false)
+    write_sync(false),
+    data_ready(false),
+    side(0)
 {
     i_select = create_interface(2, "select", MODE_W);
     i_side = create_interface(1, "side", MODE_W);
@@ -90,11 +91,11 @@ void Agat_FDC840::update_status()
                                 (drives[selected_drive]->is_index()?0:1)
                                 :1
                             )                                            << 4)    // Index hole
-                         // + (((selected_drive < drives_count)?
-                         //         (drives[selected_drive]->is_protected()?0:1)
-                         //                                     :1
-                         //     )                                           << 5)    // Write protection
-                         + (0 << 5)                                               // Write protection
+                         + (((selected_drive < drives_count)?
+                                 (drives[selected_drive]->is_protected()?0:1)
+                                                             :1
+                             )                                           << 5)    // Write protection
+                         //+ (0 << 5)
                          + (((selected_drive < drives_count)?
                                 (current_track[selected_drive]==0?0:1)
                                 :1
@@ -104,7 +105,7 @@ void Agat_FDC840::update_status()
     dd14.set_value(1, status_fdd, true);
 
     uint8_t status_fdc =   ((sector_sync?0:1) << 6)                               // sector sync detected (active - 0)
-                         + ((data_ready?1:0) << 7);                               // data is ready to be read (active - 1)
+                         + ((data_ready?1:0) << 7);                               // data is ready to be read or written (active - 1)
 
     dd15.set_value(2, status_fdc, true);
 }
@@ -123,7 +124,7 @@ void Agat_FDC840::update_state()
 #ifdef LOG_FDD
     if (write_mode != new_write_mode) {
         if (new_write_mode==1) {
-            logs(QString("WRITE ON"));
+            logs(QString("WRITE ON POS:%1").arg(drives[selected_drive]->get_position() % 282));
         } else {
             logs(QString("WRITE OFF"));
         }
@@ -146,7 +147,7 @@ void Agat_FDC840::update_state()
     update_status();
 }
 
-uint8_t Agat_FDC840::read_next_byte()
+void Agat_FDC840::read_next_byte()
 {
     if (selected_drive < drives_count) {
         int sector_pos = drives[selected_drive]->get_position() % 282;
@@ -173,10 +174,22 @@ uint8_t Agat_FDC840::read_next_byte()
         dd15.set_value(0, data, true);
         data_ready = true;
         update_status();
-        return data;
-    } else {
-        return static_cast<uint8_t>(_FFFF);
     }
+}
+
+void Agat_FDC840::write_next_byte()
+{
+    if (selected_drive < drives_count) {
+        uint8_t data = dd15.get_value(1);
+
+#ifdef LOG_FDD
+        int sector_pos = drives[selected_drive]->get_position() % 282;
+        logs(QString("--WRITE %1 at %2").arg(data, 1, 16, QChar('0')).arg(sector_pos));
+#endif
+
+        drives[selected_drive]->WriteNextByte(data);
+    }
+    data_ready = true;
 }
 
 
@@ -200,8 +213,6 @@ unsigned int Agat_FDC840::get_value(unsigned int address)
             update_status();
             break;
         case 0x6:
-            value = dd15.get_value(A & 0x03);
-            break;
         case 0x7:
             value = dd15.get_value(A & 0x03);
             break;
@@ -226,18 +237,25 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
         case 0x2:
         case 0x3:
 #ifdef LOG_FDD
-            logs(QString("W %1:%2").arg(A).arg(value, 2, 16, QChar('0')));
+            logs(QString("W %1:%2 POS:%3").arg(A).arg(value, 2, 16, QChar('0')).arg((selected_drive < drives_count)?(drives[selected_drive]->get_position() % 282):9999));
 #endif
             dd14.set_value(A & 0x03, value);
             update_state();
             break;
         case 0x5:
+            dd15.set_value(A & 0x03, value);
+            data_ready = false;
+            break;
         case 0x7:
             dd15.set_value(A & 0x03, value);
             break;
         case 0x8:
             // SYNC WRITE
             // TODO: writing
+            write_sync = true;
+#ifdef LOG_FDD
+            logs(QString("WRITE SYNC ON POS: %1").arg(drives[selected_drive]->get_position() % 282));
+#endif
             break;
         case 0x9:
             // STEP
@@ -269,7 +287,12 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
 
 void Agat_FDC840::clock(unsigned int counter)
 {
-    if (motor_on) read_next_byte();
+    if (motor_on) {
+        if (write_mode)
+            write_next_byte();
+        else
+            read_next_byte();
+    }
 }
 
 ComputerDevice * create_agat_fdc840(InterfaceManager *im, EmulatorConfigDevice *cd)

@@ -21,6 +21,7 @@ protected:
     int step_dir;
     int side;
     bool sector_sync;
+    bool write_sync;
     bool data_ready;
 
     I8255 dd14;
@@ -29,7 +30,8 @@ protected:
     void update_status();
     void update_state();
 
-    uint8_t read_next_byte();
+    void read_next_byte();
+    void write_next_byte();
 
 #ifdef LOG_FDD
     RAM * ram0;
