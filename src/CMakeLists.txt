@@ -34,6 +34,7 @@ find_package(Qt${QT_VERSION_MAJOR} OPTIONAL_COMPONENTS Widgets)
 find_package(SDL2 REQUIRED)
 #include_directories(${SDL2_INCLUDE_DIRS})
 add_subdirectory(${PROJECT_SOURCE_DIR}/libs/intel8080-emulator)
+#add_subdirectory(${PROJECT_SOURCE_DIR}/libs/maddy)
 
 qt_standard_project_setup()
 
@@ -124,6 +125,8 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     emulator/devices/common/sound.h emulator/devices/common/sound.cpp
     libs/mfm_formats.h
     libs/mfm_tools.h libs/mfm_tools.cpp
+
+    libs/md4c/md4c.h libs/md4c/md4c.c libs/md4c/md4c-html.h libs/md4c/md4c-html.c libs/md4c/entity.h libs/md4c/entity.c
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
