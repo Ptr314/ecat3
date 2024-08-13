@@ -255,18 +255,38 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+14"/>
+        <source>Save to file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/dumpwindow.cpp" line="+49"/>
+        <location filename="../dialogs/dumpwindow.cpp" line="+50"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Incorrect address value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+54"/>
+        <source>Save contents to a file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Dump (*.bin)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -898,7 +918,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+45"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+42"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -908,7 +928,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+92"/>
+        <location line="+84"/>
         <source>No any description file found for this machine</source>
         <translation type="unfinished"></translation>
     </message>

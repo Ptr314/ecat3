@@ -283,12 +283,22 @@
         <translation>В начало</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+14"/>
+        <source>Save to file</source>
+        <translation>Сохранить в файл</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>...</source>
+        <translation>...</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="../dialogs/dumpwindow.cpp" line="+49"/>
+        <location filename="../dialogs/dumpwindow.cpp" line="+50"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -296,6 +306,16 @@
         <location line="+0"/>
         <source>Incorrect address value</source>
         <translation>Адрес введен некорректно</translation>
+    </message>
+    <message>
+        <location line="+54"/>
+        <source>Save contents to a file</source>
+        <translation>Сохранить содержимое в файл</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Dump (*.bin)</source>
+        <translation>Двоичный образ (*.bin)</translation>
     </message>
 </context>
 <context>
@@ -950,7 +970,7 @@
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+45"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+42"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -960,7 +980,7 @@
         <translation>Ошибка чтения файла CSS</translation>
     </message>
     <message>
-        <location line="+92"/>
+        <location line="+84"/>
         <source>No any description file found for this machine</source>
         <translation>Файл описания для данной конфигурации не найден</translation>
     </message>
