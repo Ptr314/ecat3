@@ -127,6 +127,8 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     libs/mfm_tools.h libs/mfm_tools.cpp
 
     libs/md4c/md4c.h libs/md4c/md4c.c libs/md4c/md4c-html.h libs/md4c/md4c-html.c libs/md4c/entity.h libs/md4c/entity.c
+
+    dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

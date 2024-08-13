@@ -63,6 +63,8 @@ private slots:
 
     void on_actionAbout_triggered();
 
+    void on_actionTape_triggered();
+
 signals:
     void send_a_key(QKeyEvent *event, bool press);
     void send_volume(int value);

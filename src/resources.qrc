@@ -40,6 +40,9 @@
         <file alias="page_up">resources/icons/2uparrow.png</file>
         <file alias="bottom">resources/icons/bottom.png</file>
         <file alias="top">resources/icons/top.png</file>
+        <file alias="sound2">resources/icons/amarok.png</file>
+        <file alias="nosound2">resources/icons/arts.png</file>
+        <file alias="tape">resources/icons/kdat.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>

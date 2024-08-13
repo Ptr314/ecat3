@@ -21,6 +21,8 @@
 #include "dialogs/portwindow.h"
 #include "dialogs/openconfigwindow.h"
 #include "emulator/devices/common/fdd.h"
+#include "emulator/devices/common/tape.h"
+#include "dialogs/taperecorder.h"
 
 #include "libs/lodepng/lodepng.h"
 
@@ -626,5 +628,25 @@ void MainWindow::on_actionAbout_triggered()
 
 
     about->exec();
+}
+
+
+void MainWindow::on_actionTape_triggered()
+{
+    // QDialog * tape = new QDialog(this);
+
+    // Ui_TapeRecorderWindow tapeRecorderWindowUi;
+    // tapeRecorderWindowUi.setupUi(tape);
+
+    // tape->exec();
+    TapeRecorder * tape = dynamic_cast<TapeRecorder*>(e->dm->get_device_by_name("tape"));
+
+    if (tape != nullptr) {
+        TapeRecorderWindow * w = new TapeRecorderWindow(this, e, tape);
+        w->setAttribute(Qt::WA_DeleteOnClose);
+        // connect(w, &GenericDbgWnd::data_changed, DWM, &DebugWindowsManager::data_changed);
+        // connect(DWM, &DebugWindowsManager::update_all, w, &GenericDbgWnd::update_view);
+        w->show();
+    }
 }
 
