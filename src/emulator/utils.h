@@ -32,4 +32,6 @@ QString read_confg_value(EmulatorConfigDevice * cd, QString name, bool required,
 
 bool checkCapsLock();
 
+QString md2html(QString md);
+
 #endif // UTILS_H

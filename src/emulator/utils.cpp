@@ -8,6 +8,9 @@
 
 #include "utils.h"
 
+#define MD4C_USE_UTF8
+#include "libs/md4c/md4c-html.h"
+
 unsigned int parse_numeric_value(QString str)
 {
     int base;
@@ -208,4 +211,17 @@ bool checkCapsLock()
 #else
     return false;
 #endif
+}
+
+void store_html_callback(const MD_CHAR* text, MD_SIZE size, void* result)
+{
+    *static_cast<QString*>(result) += QString::fromUtf8(text, size);
+}
+
+QString md2html(QString md)
+{
+    QString result;
+    std::string text = md.toStdString();
+    int endCode = md_html(text.c_str(), text.length(), store_html_callback, static_cast<void*>(&result), 0, 1);
+    return result;
 }

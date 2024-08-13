@@ -950,7 +950,17 @@
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+117"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+45"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Error opening CSS file</source>
+        <translation>Ошибка чтения файла CSS</translation>
+    </message>
+    <message>
+        <location line="+92"/>
         <source>No any description file found for this machine</source>
         <translation>Файл описания для данной конфигурации не найден</translation>
     </message>

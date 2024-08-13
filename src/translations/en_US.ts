@@ -898,7 +898,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+117"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+45"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Error opening CSS file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+92"/>
         <source>No any description file found for this machine</source>
         <translation type="unfinished"></translation>
     </message>
