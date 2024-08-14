@@ -22,14 +22,38 @@ public:
 
     ~TapeRecorderWindow();
 
+protected:
+    QIcon btnIconOff;
+    QIcon btnIconOn;
+    QIcon btnIconEjectOff;
+    QIcon btnIconEjectOn;
+
+    bool is_playing;
+
+    void play_pause();
+
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+
 private:
     Ui::TapeRecorderWindow *ui;
 
     Emulator * e;
     TapeRecorder * d;
+
+    QPoint dragPosition;
+
 private slots:
     void set_mute(bool muted);
-    void on_openButton_clicked();
+    void on_buttonEject_released();
+    void on_buttonRewind_pressed();
+    void on_buttonRewind_released();
+    void on_buttonForward_pressed();
+    void on_buttonForward_released();
+    void on_buttonEject_pressed();
+    void on_buttonPlay_clicked();
+    void on_buttonStop_clicked();
+    void on_toolButton_clicked();
 };
 
 #endif // TAPERECORDERWND_H
