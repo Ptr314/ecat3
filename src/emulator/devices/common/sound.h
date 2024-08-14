@@ -39,7 +39,7 @@ public:
     GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~GenericSound();
 
-    virtual void clock(unsigned int counter);
+    virtual void clock(unsigned int counter) override;
     virtual void set_volume(unsigned int volume);
     virtual void set_muted(bool muted);
 };
