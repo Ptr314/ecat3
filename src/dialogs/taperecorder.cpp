@@ -1,5 +1,6 @@
 #include <QFileDialog>
 #include <QProxyStyle>
+#include <QMovie>
 #include <qevent.h>
 
 #include "taperecorder.h"
@@ -61,6 +62,12 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
 
     ui->name_mask->setVisible(false);
     ui->textLabel->setVisible(false);
+
+    QMovie *movie_left = new QMovie(":/icons/roller_left");
+    QMovie *movie_right = new QMovie(":/icons/roller_right");
+
+    ui->left_roller->setMovie(movie_left);
+    ui->right_roller->setMovie(movie_right);
 }
 
 void TapeRecorderWindow::set_mute(bool muted)
@@ -163,7 +170,13 @@ void TapeRecorderWindow::play_pause()
     is_playing = ui->buttonPlay->isChecked();
 
     if (is_playing) {
-
+        ui->left_roller->movie()->start();
+        ui->right_roller->movie()->start();
+        d->play();
+    } else {
+        ui->left_roller->movie()->stop();
+        ui->right_roller->movie()->stop();
+        d->stop();
     }
 }
 

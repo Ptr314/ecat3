@@ -19,14 +19,14 @@ TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
     //TODO: TapeRecorder: Implement
     i_input =  create_interface(1, "input", MODE_R);
     i_output = create_interface(1, "output", MODE_W);
-    i_speaker = create_interface(1, "output", MODE_W);
+    i_speaker = create_interface(1, "speaker", MODE_W);
 
     system_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
 
-    EmulatorConfigDevice speaker_config(name + "-speaker", "speaker");
-    speaker_config.add_parameter("~input", "", name + ".speaker", "", "");
+    EmulatorConfigDevice * speaker_config = new EmulatorConfigDevice(name + "-speaker", "speaker");
+    speaker_config->add_parameter("~input", "", name + ".speaker", "", "");
 
-    // speaker = new Speaker(im, &speaker_config);
+    speaker = new Speaker(im, speaker_config);
 
 }
 
@@ -37,7 +37,8 @@ void TapeRecorder::load_config(SystemData *sd)
 
     baud_rate = read_confg_value(cd, "baudrate", false, 1200);
 
-    // speaker->load_config(sd);
+    speaker->load_config(sd);
+    speaker->reset(true);
 }
 
 void TapeRecorder::play()
@@ -112,7 +113,7 @@ void TapeRecorder::load_file(QString file_name, QString fmt)
             uint8_t b = buffer.at(i);
             for (int j=0; j<8; j++)
                 T.w += (b & (1 << j)) << j;
-            T.w |= ~(T.w << 1);
+            T.w |= ~(T.w << 1) & 0xAAAA;
             buffer_encoded.append(T.b.H);
             buffer_encoded.append(T.b.L);
         }
@@ -147,6 +148,7 @@ void TapeRecorder::clock(unsigned int counter)
             }
         }
     }
+    speaker->clock(counter);
 }
 
 ComputerDevice * create_tape_recorder(InterfaceManager *im, EmulatorConfigDevice *cd)
