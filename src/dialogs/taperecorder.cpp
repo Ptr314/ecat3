@@ -174,6 +174,8 @@ void TapeRecorderWindow::play_pause()
     if (is_playing) {
         ui->left_roller->movie()->start();
         ui->right_roller->movie()->start();
+        ui->left_roller->movie()->setSpeed(50);
+        ui->right_roller->movie()->setSpeed(100);
         d->play();
         ui->left_roller->show();
         ui->right_roller->show();

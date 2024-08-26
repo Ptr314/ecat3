@@ -36,7 +36,9 @@
 
 ### Загрузка с магнитофона
 
+<p align="center">
 <img src="screenshots/Electronica-302.png" width="600">
+</p>
 
 1. Открыть окно эмулятора магнитофона кнопкой <img src="src/resources/icons/kdat.png" width="30"> в главном окне программы;
 2. Открыть файл кнопкой &laquo;Открыть лоток&raquo; (самая правая с синим индикатором);
