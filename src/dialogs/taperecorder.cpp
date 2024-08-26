@@ -68,6 +68,8 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
 
     ui->left_roller->setMovie(movie_left);
     ui->right_roller->setMovie(movie_right);
+    ui->left_roller->hide();
+    ui->right_roller->hide();
 }
 
 void TapeRecorderWindow::set_mute(bool muted)
@@ -173,9 +175,13 @@ void TapeRecorderWindow::play_pause()
         ui->left_roller->movie()->start();
         ui->right_roller->movie()->start();
         d->play();
+        ui->left_roller->show();
+        ui->right_roller->show();
     } else {
         ui->left_roller->movie()->stop();
         ui->right_roller->movie()->stop();
+        ui->left_roller->hide();
+        ui->right_roller->hide();
         d->stop();
     }
 }
