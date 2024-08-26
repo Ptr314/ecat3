@@ -29,6 +29,7 @@ protected:
     QIcon btnIconEjectOn;
 
     bool is_playing;
+    bool is_paused;
 
     void play_pause();
 
@@ -54,6 +55,7 @@ private slots:
     void on_buttonPlay_clicked();
     void on_buttonStop_clicked();
     void on_toolButton_clicked();
+    void on_buttonPause_clicked();
 };
 
 #endif // TAPERECORDERWND_H

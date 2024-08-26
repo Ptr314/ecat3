@@ -29,6 +29,8 @@ protected:
     void set_data(QByteArray new_data);
 
 public:
+    QString files;
+
     TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     virtual void load_config(SystemData *sd) override;

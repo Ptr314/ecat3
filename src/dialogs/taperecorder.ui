@@ -218,7 +218,7 @@
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QToolButton" name="buttonStop">
+  <widget class="QToolButton" name="buttonPause">
    <property name="geometry">
     <rect>
      <x>540</x>

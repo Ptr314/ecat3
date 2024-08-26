@@ -27,6 +27,7 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent)
     : GenericDbgWnd(parent)
     , ui(new Ui::TapeRecorderWindow)
     , is_playing(false)
+    , is_paused(false)
 {
     setAttribute(Qt::WA_TranslucentBackground);
     setWindowFlag(Qt::FramelessWindowHint, true);
@@ -49,11 +50,11 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
     ui->buttonRewind->setStyle( tbp );
     ui->buttonForward->setStyle( tbp );
     ui->buttonPlay->setStyle( tbp );
-    ui->buttonStop->setStyle( tbp );
+    ui->buttonPause->setStyle( tbp );
     ui->buttonEject->setStyle( tbp );
 
     ui->buttonPlay->setChecked(false);
-    ui->buttonStop->setChecked(true);
+    ui->buttonPause->setChecked(false);
 
     btnIconOff.addFile(QString::fromUtf8(":/icons/tape_flat_off"));
     btnIconOn.addFile(QString::fromUtf8(":/icons/tape_flat_on"));
@@ -108,35 +109,42 @@ void TapeRecorderWindow::on_buttonForward_released()
 void TapeRecorderWindow::on_buttonEject_pressed()
 {
     ui->buttonEject->setIcon(btnIconEjectOn);
+
+    if (is_playing) {
+        is_playing = false;
+        ui->buttonPlay->setChecked(false);
+        play_pause();
+    } else {
+        QString path = e->read_setup("Startup", "last_path", e->work_path);
+        SystemData * sd = e->get_system_data();
+        QString file_name = QFileDialog::getOpenFileName(this, Emulator::tr("Load a file"), path, d->files);
+
+
+        if (!file_name.isEmpty()) {
+            QFileInfo fi(file_name);
+            QString ext = fi.suffix().toLower();
+            QString fmt = e->read_setup("TapeFiles", ext, "");
+
+            if (fmt.length() > 0) {
+                //e->write_setup("Startup", "last_path", fi.absolutePath());
+
+                ui->name_mask->setVisible(true);
+                ui->textLabel->setVisible(true);
+
+                ui->textLabel->setText(fi.fileName());
+
+                d->load_file(file_name, fmt);
+            } else {
+                QMessageBox::warning(0, TapeRecorderWindow::tr("Error"), TapeRecorderWindow::tr("Unknown tape file format!"));
+            }
+        }
+        ui->buttonEject->setIcon(btnIconEjectOff);
+    }
 }
 
 void TapeRecorderWindow::on_buttonEject_released()
 {
     ui->buttonEject->setIcon(btnIconEjectOff);
-
-    QString path = e->read_setup("Startup", "last_path", e->work_path);
-    SystemData * sd = e->get_system_data();
-    QString file_name = QFileDialog::getOpenFileName(this, Emulator::tr("Load a file"), path, sd->allowed_files);
-
-
-    if (!file_name.isEmpty()) {
-        QFileInfo fi(file_name);
-        QString ext = fi.suffix().toLower();
-        QString fmt = e->read_setup("TapeFiles", ext, "");
-
-        if (fmt.length() > 0) {
-            //e->write_setup("Startup", "last_path", fi.absolutePath());
-
-            ui->name_mask->setVisible(true);
-            ui->textLabel->setVisible(true);
-
-            ui->textLabel->setText(fi.fileName());
-
-            d->load_file(file_name, fmt);
-        } else {
-            QMessageBox::warning(0, TapeRecorderWindow::tr("Error"), TapeRecorderWindow::tr("Unknown tape file format!"));
-        }
-    }
 }
 
 void TapeRecorderWindow::mousePressEvent(QMouseEvent *event)
@@ -157,21 +165,19 @@ void TapeRecorderWindow::mouseMoveEvent(QMouseEvent *event)
 
 void TapeRecorderWindow::on_buttonPlay_clicked()
 {
-    ui->buttonStop->setChecked(!(ui->buttonPlay->isChecked()));
-    play_pause();
+    if (ui->buttonPlay->isChecked()) {
+        is_playing = true;
+        play_pause();
+    }
 }
 
 void TapeRecorderWindow::on_buttonStop_clicked()
 {
-    ui->buttonPlay->setChecked(!(ui->buttonStop->isChecked()));
-    play_pause();
 }
 
 void TapeRecorderWindow::play_pause()
 {
-    is_playing = ui->buttonPlay->isChecked();
-
-    if (is_playing) {
+    if (is_playing && !is_paused) {
         ui->left_roller->movie()->start();
         ui->right_roller->movie()->start();
         ui->left_roller->movie()->setSpeed(50);
@@ -193,3 +199,9 @@ void TapeRecorderWindow::on_toolButton_clicked()
     close();
 }
 
+
+void TapeRecorderWindow::on_buttonPause_clicked()
+{
+    is_paused = ui->buttonPause->isChecked();
+    if (is_playing) play_pause();
+}

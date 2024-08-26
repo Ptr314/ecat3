@@ -37,6 +37,10 @@ void TapeRecorder::load_config(SystemData *sd)
 
     baud_rate = read_confg_value(cd, "baudrate", false, 1200);
 
+    files = cd->get_parameter("files", false).value;
+
+    if (files.isEmpty()) files = sd->allowed_files;
+
     speaker->load_config(sd);
     speaker->reset(true);
 }
