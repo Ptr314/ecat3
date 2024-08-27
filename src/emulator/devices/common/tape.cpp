@@ -61,6 +61,16 @@ void TapeRecorder::rewind()
     bit_shift = 7;
     ticks_counter = 0;
 }
+void TapeRecorder::mute(bool muted)
+{
+    speaker->set_muted(muted);
+}
+
+void TapeRecorder::volume(unsigned int volume)
+{
+    speaker->set_volume(volume);
+
+}
 
 void TapeRecorder::set_baud_rate(unsigned int baud)
 {

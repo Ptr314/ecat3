@@ -52,6 +52,7 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
     ui->buttonPlay->setStyle( tbp );
     ui->buttonPause->setStyle( tbp );
     ui->buttonEject->setStyle( tbp );
+    ui->buttonMute->setStyle( tbp );
 
     ui->buttonPlay->setChecked(false);
     ui->buttonPause->setChecked(false);
@@ -71,6 +72,8 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
     ui->right_roller->setMovie(movie_right);
     ui->left_roller->hide();
     ui->right_roller->hide();
+
+    this->d->volume(10);
 }
 
 void TapeRecorderWindow::set_mute(bool muted)
@@ -205,3 +208,9 @@ void TapeRecorderWindow::on_buttonPause_clicked()
     is_paused = ui->buttonPause->isChecked();
     if (is_playing) play_pause();
 }
+
+void TapeRecorderWindow::on_buttonMute_clicked()
+{
+    d->mute(ui->buttonMute->isChecked());
+}
+

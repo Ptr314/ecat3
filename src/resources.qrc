@@ -53,6 +53,8 @@
         <file alias="tape_name_mask">resources/icons/tape_name_mask.png</file>
         <file alias="roller_left">resources/icons/roller_left.gif</file>
         <file alias="roller_right">resources/icons/roller_right.gif</file>
+        <file alias="tape_volume_0">resources/icons/tape_volume_0.png</file>
+        <file alias="tape_volume_100">resources/icons/tape_volume_100.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>

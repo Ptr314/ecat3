@@ -56,6 +56,7 @@ private slots:
     void on_buttonStop_clicked();
     void on_toolButton_clicked();
     void on_buttonPause_clicked();
+    void on_buttonMute_clicked();
 };
 
 #endif // TAPERECORDERWND_H

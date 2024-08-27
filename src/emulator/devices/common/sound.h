@@ -5,7 +5,7 @@
 #include "emulator/core.h"
 
 #define BUFFER_SIZE     4096
-#define SILENCE_SIZE    256
+#define SILENCE_SIZE    64
 
 struct SpeakerData{
     unsigned int ClockSampling;

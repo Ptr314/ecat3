@@ -40,6 +40,8 @@ public:
     virtual void play();
     virtual void stop();
     virtual void rewind();
+    virtual void mute(bool muted);
+    virtual void volume(unsigned int volume);
 };
 
 ComputerDevice * create_tape_recorder(InterfaceManager *im, EmulatorConfigDevice *cd);
