@@ -110,11 +110,12 @@ romdisk : rom {
 Основные параметры системы, раздел должен быть первым в файле.
 ~~~
 system { 
-	type = type_id
-	name = type_name_for_display
-	version = version_name_for_display
-	charmap = character_map_file 
-	files = file_types_to_select
+	type = orion-128
+	name = Орион-128
+	version = КР580ВМ80 / Монитор-3
+	charmap= radio-86rk 
+	files = "Orion-128 (*.bru *.ord *.rko);;All files (*.*)"
+	debug = 0
 }
 ~~~
 
@@ -491,7 +492,23 @@ A/S:        $E1
 
 ### taperecorder
 
-Магнитофон (пока заглушка, функционал еще не перенесен из старой версии)
+Магнитофон
+
+~~~
+tape : taperecorder {
+	baudrate = 1200
+	files = "Orion-128 tape files (*.rko)"
+	~input  = port-keyboard.CL[0]
+	~output = port-keyboard.CH[4]
+}
+~~~
+
+* Параметры
+    * __baudrate*__: Скорость работы по умолчанию. 
+    * __files__: Фильтр для окна открытия файла. Если не указан, то значение берется из раздела __system__.
+* Интерфейсы
+    * __~input{1, in}__: Подключение входа.
+    * __~output{1, out}__: Подключение выхода.
 
 ### i8253
 

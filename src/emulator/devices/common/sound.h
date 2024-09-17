@@ -5,7 +5,7 @@
 #include "emulator/core.h"
 
 #define BUFFER_SIZE     4096
-#define SILENCE_SIZE    256
+#define SILENCE_SIZE    64
 
 struct SpeakerData{
     unsigned int ClockSampling;
@@ -39,7 +39,7 @@ public:
     GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~GenericSound();
 
-    virtual void clock(unsigned int counter);
+    virtual void clock(unsigned int counter) override;
     virtual void set_volume(unsigned int volume);
     virtual void set_muted(bool muted);
 };
