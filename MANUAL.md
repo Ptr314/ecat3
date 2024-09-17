@@ -7,6 +7,10 @@
 * Работа с файлами
     * [Прямая загрузка в память](#прямая-загрузка-в-память)
     * [Загрузка с магнитофона](#загрузка-с-магнитофона)
+* Средства отладки
+    * [Состояние устройств](#состояние-устройств)
+    * [Основной отладчик](#основной-отладчик)
+
 
 ## Главное окно
 <p align="center">
@@ -17,8 +21,14 @@
 
 ### Выбор компьютера
 
+<p align="center">
+<img src="screenshots/choose_machine.png" width="600">
+</p>
+
 * Вариант 1: с помощью кнопки <img src="src/resources/icons/tv.png" width="30"> на панели главного окна.
 * Вариант 2: С помощью пункта меню __&laquo;Файл/Выбор компьютера...&raquo;__.
+
+Если перед нажатием __&laquo;ОК&raquo;__ отметить флажок __&laquo;Установить по умолчанию&raquo;__, данная машина будет открываться по умолчанию при следующем запуске эмулятора.
 
 ### Перезагрузка
 
@@ -29,7 +39,9 @@
 
 ### Прямая загрузка в память
 
-Результат будет отличаться в зависимости от выбранного компьютера. В общем случае файл будет напрямую загружен в память, минуя все программные механизмы эмулируемого компьютера. 
+Результат будет отличаться в зависимости от выбранного компьютера. В общем случае файл будет напрямую загружен в память, минуя все программные механизмы эмулируемого компьютера.
+
+Подробности смотрите в описании компьютера при его [выборе в соответствующем окне](#выбор-компьютера).
 
 * Вариант 1: с помощью кнопки <img src="src/resources/icons/cdrom_mount.png" width="30"> на панели главного окна.
 * Вариант 2: С помощью пункта меню __&laquo;Файл/Открыть файл...&raquo;__.
@@ -50,3 +62,66 @@
     * Кнопка &laquo;СТОП/ВЫБРОС&raquo; &ndash; при воспроизведении &ndash; остановка, второе нажатие &ndash; открыть файл;
     * Кнопка &laquo;ПЕРЕМОТКА ВЛЕВО&raquo; &ndash; сброс текущей позиции файла на начало.
     * Регулятор &laquo;ГРОМКОСТЬ&raquo; &ndash; заглушить звук.
+
+## Средства отладки
+
+### Состояние устройств
+<p align="center">
+<img src="screenshots/menu_devices.png" width="600">
+</p>
+
+Все доступные устройства перечислены в меню &laquo;Эмуляция/Устройства&raquo;. Те устройства, для которых доступно отладочное окно, выводяится черным цветом. Если отладочное окно недоступно &ndash; серым.
+
+Отладочное окно процессора является одновременно основным отладчиком в системе.
+
+### Основной отладчик
+
+<p align="center">
+<img src="screenshots/debug_z80.png" width="600"><br/>
+<small>Окно отладчика для процессора Z80</small>
+</p>
+
+Основной отладчик может быть вызван тремя способами:
+
+1. С помощью кнопки <img src="src/resources/icons/terminal.png" width="30"> на панели главного окна.
+2. С помощью пункта меню __&laquo;Эмуляция/Отладчик&raquo;__.
+3. Через меню &laquo;Эмуляция/Устройства&raquo;, если открыть окно отладки устройства CPU.
+
+Окно отладчика содержит следующие элементы:
+
+* Панель состояния с кнопками управления;
+* Панель дизассемблера;
+* Две панели состояния регистров и флагов процессора;
+* Панель дампа памяти.
+
+#### Панель состояния
+
+Верхняя панель состоит из четырех блоков:
+
+* Символ режима работы процессора:
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/player_play.png" width="30"> &ndash; процессор запущен без отладки;</div>
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/player_pause.png" width="30"> &ndash; процессор остановлен;</div>
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/debug.png" width="30"> &ndash; процессор запущен под отладчиком, отслеживаются точки останова и состяние регистров;</div>
+    
+* Блок управления выполнением:
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/undo.png" width="30"> &ndash; возврат курсора панели дизассемблера на текущую точку исполнения;</div>
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/forward.png" width="30"> &ndash; шаг внутрь (с заходом в подпрограмму), короткая клавиша F7;
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/step_over.png" width="30"> &ndash; шаг поверх (без захода в подпрограмму), короткая клавиша F8;
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/finish.png" width="30"> &ndash; выполнить до курсора, короткая клавиша F4;
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/player_play.png" width="30"> &ndash; запустить под отладчиком (с отслеживанием точек останова), короткая клавиша F9;
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/player_pause.png" width="30"> &ndash; останов процессора;
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/player_fwd.png" width="30"> &ndash; запуск без отладки.
+    
+* Блок управления панелью дизассемблера:
+    * Строка ввода адреса или значения регистра; 
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/next.png" width="30"> &ndash; переключение панели дизассемблера на введенный адрес (установка курсора);
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/edit_add.png" width="30"> &ndash; установка точки останова на адрес под курсором. (Для установки точки сначала необходимо нажать кнопку установки курсора на нужный адрес!);
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/edit_remove.png" width="30"> &ndash; удаление точки останова с адреса под курсором. (Курсор должен стоять на нужном адресе!);
+    * Выпадающий список с именами регистров;
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/button_accept.png" width="30"> &ndash; запись значения в выбранный регистр.
+
+* Блок управления панелью дампа памяти:
+    * Строка ввода адреса;
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/next.png" width="30"> &ndash; переключение панели дампа на введенный адрес;
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/2downarrow.png" width="30"> &ndash; переход на сраницу вниз;
+    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/2uparrow.png" width="30"> &ndash; переход на сраницу вверх.
