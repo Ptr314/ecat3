@@ -566,17 +566,17 @@
     <message>
         <location line="+11"/>
         <source>Expected conversion from DSK to MFM is not supported yet.</source>
-        <translation>Для данного формата автоматическая конвертация в MFM не поддерживается.</translation>
+        <translation>Необходимая конвертация из посекторного в физический формат еще не поддерживается.</translation>
     </message>
     <message>
         <location line="+130"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
-        <translation>Дисковод работает в низкоуровневом режиме, поддержка DSK-образов еще не реализована.</translation>
+        <translation>Дисковод работает в MFM-режиме. Сохранение в посекторные образы еще не поддерживается.</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Saving images for this type of drive is not supported yet.</source>
-        <translation>Сохранение образов для данного устройства не поддерживается.</translation>
+        <translation>Сохранение образов для данного типа устройств еще не поддерживается.</translation>
     </message>
     <message>
         <source>Expected conversion form DSK to MFM is not supperted yet.</source>
