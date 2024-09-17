@@ -70,7 +70,7 @@
 <img src="screenshots/menu_devices.png" width="600">
 </p>
 
-Все доступные устройства перечислены в меню &laquo;Эмуляция/Устройства&raquo;. Те устройства, для которых доступно отладочное окно, выводяится черным цветом. Если отладочное окно недоступно &ndash; серым.
+Все доступные устройства перечислены в меню &laquo;Эмуляция/Устройства&raquo;. Те устройства, для которых доступно отладочное окно, выводятся черным цветом. Если отладочное окно недоступно &ndash; серым.
 
 Отладочное окно процессора является одновременно основным отладчиком в системе.
 
@@ -92,36 +92,36 @@
 * Панель состояния с кнопками управления;
 * Панель дизассемблера;
 * Две панели состояния регистров и флагов процессора;
-* Панель дампа памяти.
+* Панель дампа памяти (так, как память видит сам процессор с учетом диспетчера).
 
 #### Панель состояния
 
 Верхняя панель состоит из четырех блоков:
 
 * Символ режима работы процессора:
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/player_play.png" width="30"> &ndash; процессор запущен без отладки;</div>
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/player_pause.png" width="30"> &ndash; процессор остановлен;</div>
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/debug.png" width="30"> &ndash; процессор запущен под отладчиком, отслеживаются точки останова и состяние регистров;</div>
+    * <img src="src/resources/icons/player_play.png" width="30"> &ndash; процессор запущен без отладки;
+    * <img src="src/resources/icons/player_pause.png" width="30"> &ndash; процессор остановлен;
+    * <img src="src/resources/icons/debug.png" width="30"> &ndash; процессор запущен под отладчиком, отслеживаются точки останова и состяние регистров;
     
 * Блок управления выполнением:
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/undo.png" width="30"> &ndash; возврат курсора панели дизассемблера на текущую точку исполнения;</div>
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/forward.png" width="30"> &ndash; шаг внутрь (с заходом в подпрограмму), короткая клавиша F7;
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/step_over.png" width="30"> &ndash; шаг поверх (без захода в подпрограмму), короткая клавиша F8;
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/finish.png" width="30"> &ndash; выполнить до курсора, короткая клавиша F4;
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/player_play.png" width="30"> &ndash; запустить под отладчиком (с отслеживанием точек останова), короткая клавиша F9;
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/player_pause.png" width="30"> &ndash; останов процессора;
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/player_fwd.png" width="30"> &ndash; запуск без отладки.
+    * <img src="src/resources/icons/undo.png" width="30"> &ndash; возврат курсора панели дизассемблера на текущую точку исполнения;
+    * <img src="src/resources/icons/forward.png" width="30"> &ndash; шаг внутрь (с заходом в подпрограмму), короткая клавиша F7;
+    * <img src="src/resources/icons/step_over.png" width="30"> &ndash; шаг поверх (без захода в подпрограмму), короткая клавиша F8;
+    * <img src="src/resources/icons/finish.png" width="30"> &ndash; выполнить до курсора, короткая клавиша F4;
+    * <img src="src/resources/icons/player_play.png" width="30"> &ndash; запустить под отладчиком (с отслеживанием точек останова), короткая клавиша F9;
+    * <img src="src/resources/icons/player_pause.png" width="30"> &ndash; останов процессора;
+    * <img src="src/resources/icons/player_fwd.png" width="30"> &ndash; запуск без отладки.
     
 * Блок управления панелью дизассемблера:
     * Строка ввода адреса или значения регистра; 
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/next.png" width="30"> &ndash; переключение панели дизассемблера на введенный адрес (установка курсора);
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/edit_add.png" width="30"> &ndash; установка точки останова на адрес под курсором. (Для установки точки сначала необходимо нажать кнопку установки курсора на нужный адрес!);
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/edit_remove.png" width="30"> &ndash; удаление точки останова с адреса под курсором. (Курсор должен стоять на нужном адресе!);
+    * <img src="src/resources/icons/next.png" width="30"> &ndash; переключение панели дизассемблера на введенный адрес (установка курсора);
+    * <img src="src/resources/icons/edit_add.png" width="30"> &ndash; установка точки останова на адрес под курсором. (Для установки точки сначала необходимо нажать кнопку установки курсора на нужный адрес!);
+    * <img src="src/resources/icons/edit_remove.png" width="30"> &ndash; удаление точки останова с адреса под курсором. (Курсор должен стоять на нужном адресе!);
     * Выпадающий список с именами регистров;
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/button_accept.png" width="30"> &ndash; запись значения в выбранный регистр.
+    * <img src="src/resources/icons/button_accept.png" width="30"> &ndash; запись значения в выбранный регистр.
 
 * Блок управления панелью дампа памяти:
     * Строка ввода адреса;
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/next.png" width="30"> &ndash; переключение панели дампа на введенный адрес;
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/2downarrow.png" width="30"> &ndash; переход на сраницу вниз;
-    * <div style="display: flex; justify-content: left;"><img src="src/resources/icons/2uparrow.png" width="30"> &ndash; переход на сраницу вверх.
+    * <img src="src/resources/icons/next.png" width="30"> &ndash; переключение панели дампа на введенный адрес;
+    * <img src="src/resources/icons/2downarrow.png" width="30"> &ndash; переход на сраницу вниз;
+    * <img src="src/resources/icons/2uparrow.png" width="30"> &ndash; переход на сраницу вверх.
