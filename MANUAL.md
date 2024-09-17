@@ -123,5 +123,5 @@
 * Блок управления панелью дампа памяти:
     * Строка ввода адреса;
     * <img src="src/resources/icons/next.png" width="30"> &ndash; переключение панели дампа на введенный адрес;
-    * <img src="src/resources/icons/2downarrow.png" width="30"> &ndash; переход на сраницу вниз;
-    * <img src="src/resources/icons/2uparrow.png" width="30"> &ndash; переход на сраницу вверх.
+    * <img src="src/resources/icons/2downarrow.png" width="30"> &ndash; переход на страницу вниз;
+    * <img src="src/resources/icons/2uparrow.png" width="30"> &ndash; переход на страницу вверх.
