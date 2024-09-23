@@ -19,7 +19,7 @@ void MapKeyboard::load_config(SystemData *sd)
 {
     Keyboard::load_config(sd);
 
-    QString map_file = find_file_location(sd->system_path, sd->software_path, cd->get_parameter("map", false).value);
+    QString map_file = find_file_location(sd, cd->get_parameter("map", false).value);
     if (map_file.isEmpty())
         QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Keyboard map file is expected"));
     else {

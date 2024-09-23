@@ -69,24 +69,44 @@ cd репозиторий-приложения\src\
 * Путь после __--build__ должен совпадать с установленным в п. 2.
 * Команду надо выполнять на той же платформе, где происходил препроцессинг CMakeLists.txt. 
 
+Далее открываем обновленные файлы __*.ts__ в Qt Linguist и редактируем переводы.
+
 ### MSVC
-<не завершено>
-* Скачать "Build Tools for Visual Studio XXXX" https://visualstudio.microsoft.com/downloads/
-    * Или Visual Studio 2010 Comminity
-* Python 3, добавить его в PATH
-* Скачачать SDL - версия для разработчика SDL2-devel-x.xx.x-VC.zip
+Актуально для версии Qt 6.7.2.
+
+* Скачать [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/)
+    * Выбрать вариант "Разработка классических приложений"
+* Открыть консоль с соответствующим окружением:
+    * Вариант 1: Найти указанный bat-файл и запустить его:
+~~~  
+    > "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" amd64
+~~~
+* 
+    * Вариант 2: Запустить через поиск Windows:
+~~~
+x64 Native Tools Command Prompt for VS 2022
+~~~
+
 * Отредактировать __.build/vars-msvc.cmd__ на действительные пути.
 * Открыть командную строку и скомпилировать Qt: 
 ~~~
 cd репозиторий-приложения\.build
 %SystemRoot%\system32\cmd.exe /E:ON /V:ON /k vars-msvc.cmd
 cd C:\Temp
-mkdir qt6-build
-cd qt6-build
-configure.bat -static -release -nomake examples -nomake tests -prefix c:\DEV\Qt-static\%_QT_VERSION%
+mkdir qt6-build-vc
+cd qt6-build-vc
+
+Для dev-сборки:
+configure.bat -debug -nomake examples -skip qtspeech -prefix c:\DEV\Qt-vc-dev\%_QT_VERSION%
+
+Для release-сбоки:
+configure.bat -static -release -nomake examples -skip qtspeech -prefix c:\DEV\Qt-vc-static\%_QT_VERSION%
+
 cmake --build . --parallel
 cmake --install .
 ~~~
+
+Далее аналогично mingw &ndash; установить соответствующие окружения для dev- и release-сборок.
 
 # Linux
 

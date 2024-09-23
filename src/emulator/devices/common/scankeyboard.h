@@ -7,6 +7,7 @@ struct ScanData {
     unsigned int key_code;
     unsigned int scan_line;
     unsigned int out_line;
+    int shift_state;
 };
 
 class ScanKeyboard: public Keyboard
@@ -29,6 +30,8 @@ private:
     unsigned int code_ctrl;
     unsigned int code_shift;
     unsigned int code_ruslat;
+
+    unsigned int stored_shift;
 
     void calculate_out();
 

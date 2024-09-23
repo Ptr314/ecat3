@@ -8,6 +8,9 @@
 
 #include "utils.h"
 
+#define MD4C_USE_UTF8
+#include "libs/md4c/md4c-html.h"
+
 unsigned int parse_numeric_value(QString str)
 {
     int base;
@@ -147,23 +150,26 @@ QString pad_string(QString s, QChar c, int len, bool from_left)
     return v;
 }
 
-QString find_file_location(QString system_path, QString software_path, QString file_name)
+QString find_file_location(SystemData * sd, QString file_name)
 {
     if (!file_name.isEmpty())
     {
-        QString dir = QFileInfo(system_path).dir().dirName();
+        QString dir = QFileInfo(sd->system_path).dir().dirName();
         QString file;
 
-        file = system_path + file_name;
+        file = sd->system_path + file_name;
         if (QFile::exists(file)) return file;
 
-        file = system_path + "files/" + file_name;
+        file = sd->system_path + "files/" + file_name;
         if (QFile::exists(file)) return file;
 
-        file = software_path + file_name;
+        file = sd->software_path + file_name;
         if (QFile::exists(file)) return file;
 
-        file = software_path + dir + "/" + file_name;
+        file = sd->software_path + dir + "/" + file_name;
+        if (QFile::exists(file)) return file;
+
+        file = sd->data_path + file_name;
         if (QFile::exists(file)) return file;
     }
     return "";
@@ -205,4 +211,17 @@ bool checkCapsLock()
 #else
     return false;
 #endif
+}
+
+void store_html_callback(const MD_CHAR* text, MD_SIZE size, void* result)
+{
+    *static_cast<QString*>(result) += QString::fromUtf8(text, size);
+}
+
+QString md2html(QString md)
+{
+    QString result;
+    std::string text = md.toStdString();
+    int endCode = md_html(text.c_str(), text.length(), store_html_callback, static_cast<void*>(&result), 0, 1);
+    return result;
 }

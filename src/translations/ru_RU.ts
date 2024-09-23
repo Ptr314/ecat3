@@ -5,15 +5,11 @@
     <name>About</name>
     <message>
         <location filename="../dialogs/aboutdlg.ui" line="+14"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/dialogs/ui_aboutdlg.h" line="+111"/>
         <source>About</source>
         <translation>О программе</translation>
     </message>
     <message>
         <location line="+63"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/dialogs/ui_aboutdlg.h" line="+2"/>
         <source>Copyright</source>
         <translation>Copyright</translation>
     </message>
@@ -21,7 +17,7 @@
 <context>
     <name>Agat_FDC140</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+33"/>
+        <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+34"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -81,129 +77,111 @@
     <name>DebugWindow</name>
     <message>
         <location filename="../dialogs/debugwindow.ui" line="+26"/>
-        <location/>
         <source>Dialog</source>
         <translation>Отладчик</translation>
     </message>
     <message>
         <location line="+94"/>
-        <location/>
         <source>Return to PC</source>
         <translation>Вернуться к PC</translation>
     </message>
     <message>
         <source>Step into</source>
-        <translation>Шаг внутрь</translation>
+        <translation type="vanished">Шаг внутрь</translation>
     </message>
     <message>
         <source>Step over</source>
-        <translation>Шаг снаружи</translation>
+        <translation type="vanished">Шаг снаружи</translation>
     </message>
     <message>
         <source>Run until cursor</source>
-        <translation>Выполнить до курсора</translation>
+        <translation type="vanished">Выполнить до курсора</translation>
     </message>
     <message>
         <source>Run under debugger</source>
-        <translation>Запустить под отладчиком</translation>
+        <translation type="vanished">Запустить под отладчиком</translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Trace into [F7]</source>
         <translation>Шаг внутрь (Trace into) [F7]</translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Step over [F8]</source>
         <translation>Шаг поверх (Step over) [F8]</translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Go to cursor [F4]</source>
         <translation>Выполнить до курсора [F4]</translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Run under debugger [F9]</source>
         <translation>Запустить под отладчиком [F9]</translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Stop</source>
         <translation>Останов</translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
     </message>
     <message>
         <location line="+73"/>
-        <location/>
         <source>Address for the debugger</source>
         <translation>Адрес перехода для отладчика</translation>
     </message>
     <message>
         <location line="+16"/>
-        <location/>
         <source>Go to</source>
         <translation>Перейти</translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Add a breakpoint</source>
         <translation>Добавить точку останова</translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Delete a breakpoint</source>
         <translation>Удалить точку останова</translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Register to set</source>
         <translation>Регистр для установки</translation>
     </message>
     <message>
         <location line="+79"/>
-        <location/>
         <source>Address for the dump</source>
         <translation>Адрес для дампа</translation>
     </message>
     <message>
         <location line="+19"/>
-        <location/>
         <source>Go to for the dump</source>
         <translation>Показать данные с адреса</translation>
     </message>
     <message>
         <location line="+14"/>
-        <location/>
         <source>Page down</source>
         <translation>Страница вниз</translation>
     </message>
     <message>
         <location line="+14"/>
-        <location/>
         <source>Page up</source>
         <translation>Страница вверх</translation>
     </message>
     <message>
         <source>Delete breakpoint</source>
-        <translation>Удалить точку остнова</translation>
+        <translation type="vanished">Удалить точку остнова</translation>
     </message>
     <message>
         <location line="-111"/>
-        <location/>
         <source>Set value</source>
         <translation>Установить значение</translation>
     </message>
@@ -263,62 +241,64 @@
     <name>DumpWindow</name>
     <message>
         <location filename="../dialogs/dumpwindow.ui" line="+14"/>
-        <location/>
         <source>Dialog</source>
         <translation>Дамп</translation>
     </message>
     <message>
         <source>Global offset</source>
-        <translation>Глобальное смещение</translation>
+        <translation type="vanished">Глобальное смещение</translation>
     </message>
     <message>
         <source>Local address</source>
-        <translation>Смещение внутри блока</translation>
+        <translation type="vanished">Смещение внутри блока</translation>
     </message>
     <message>
         <location line="+51"/>
-        <location/>
         <source>Base</source>
         <translation>Базовый адрес</translation>
     </message>
     <message>
         <location line="+25"/>
-        <location/>
         <source>Offset</source>
         <translation>Смещение</translation>
     </message>
     <message>
         <location line="+24"/>
-        <location/>
         <source>Page Down</source>
         <translation>Страница вниз</translation>
     </message>
     <message>
         <location line="+14"/>
-        <location/>
         <source>To end</source>
         <translation>В конец</translation>
     </message>
     <message>
         <location line="+14"/>
-        <location/>
         <source>Page Up</source>
         <translation>Страница вверх</translation>
     </message>
     <message>
         <location line="+14"/>
-        <location/>
         <source>To begin</source>
         <translation>В начало</translation>
     </message>
     <message>
-        <location line="+27"/>
-        <location/>
+        <location line="+14"/>
+        <source>Save to file</source>
+        <translation>Сохранить в файл</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>...</source>
+        <translation>...</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="../dialogs/dumpwindow.cpp" line="+49"/>
+        <location filename="../dialogs/dumpwindow.cpp" line="+50"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -326,6 +306,16 @@
         <location line="+0"/>
         <source>Incorrect address value</source>
         <translation>Адрес введен некорректно</translation>
+    </message>
+    <message>
+        <location line="+54"/>
+        <source>Save contents to a file</source>
+        <translation>Сохранить содержимое в файл</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Dump (*.bin)</source>
+        <translation>Двоичный образ (*.bin)</translation>
     </message>
 </context>
 <context>
@@ -419,7 +409,7 @@
         <translation>Неизвестный тип файла</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+215"/>
+        <location filename="../mainwindow.cpp" line="+217"/>
         <source>Screen 4:3</source>
         <translation>Экран 4:3</translation>
     </message>
@@ -445,6 +435,7 @@
     </message>
     <message>
         <location line="+204"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+123"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
     </message>
@@ -514,7 +505,7 @@
     <name>FDD</name>
     <message>
         <location filename="../emulator/devices/common/fdd.cpp" line="+46"/>
-        <location line="+12"/>
+        <location line="+15"/>
         <location line="+7"/>
         <location line="+12"/>
         <location line="+33"/>
@@ -525,16 +516,18 @@
         <location line="+20"/>
         <location line="+3"/>
         <location line="+11"/>
+        <location line="+130"/>
+        <location line="+6"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-139"/>
+        <location line="-278"/>
         <source>Incorrect fdd parameters for &apos;%1&apos;</source>
         <translation>Некорректный параметр дисковода &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+15"/>
         <source>Unknown fdd mode &apos;%1&apos;</source>
         <translation>Неизвестный режим работы устройства fdd &apos;%1&apos;</translation>
     </message>
@@ -573,15 +566,29 @@
     </message>
     <message>
         <location line="+11"/>
-        <source>Expected conversion form DSK to MFM is not supperted yet.</source>
+        <source>Expected conversion from DSK to MFM is not supported yet.</source>
         <translation>Необходимая конвертация из посекторного в физический формат еще не поддерживается.</translation>
     </message>
     <message>
-        <source>This mode is not supported</source>
-        <translation>Режим не поддерживается</translation>
+        <location line="+130"/>
+        <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
+        <translation>Дисковод работает в MFM-режиме. Сохранение в посекторные образы еще не поддерживается.</translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+6"/>
+        <source>Saving images for this type of drive is not supported yet.</source>
+        <translation>Сохранение образов для данного типа устройств еще не поддерживается.</translation>
+    </message>
+    <message>
+        <source>Expected conversion form DSK to MFM is not supperted yet.</source>
+        <translation type="vanished">Необходимая конвертация из посекторного в физический формат еще не поддерживается.</translation>
+    </message>
+    <message>
+        <source>This mode is not supported</source>
+        <translation type="vanished">Режим не поддерживается</translation>
+    </message>
+    <message>
+        <location line="-93"/>
         <source>Reading outside of a sector</source>
         <translation>Попытка чтения за пределеами сектора</translation>
     </message>
@@ -615,7 +622,6 @@
     <name>I8255Window</name>
     <message>
         <location filename="../dialogs/i8255window.ui" line="+14"/>
-        <location/>
         <source>Dialog</source>
         <translation>8255</translation>
     </message>
@@ -624,7 +630,6 @@
         <location line="+13"/>
         <location line="+140"/>
         <location line="+16"/>
-        <location/>
         <location filename="../dialogs/i8255window.cpp" line="+52"/>
         <location line="+1"/>
         <location line="+1"/>
@@ -634,7 +639,6 @@
     </message>
     <message>
         <location line="+16"/>
-        <location/>
         <source>Control</source>
         <translation>Управление</translation>
     </message>
@@ -685,134 +689,110 @@
     <name>MainWindow</name>
     <message>
         <source>MainWindow</source>
-        <translation>eCat3</translation>
+        <translation type="vanished">eCat3</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="+88"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+225"/>
         <source>File</source>
         <translation>Файл</translation>
     </message>
     <message>
         <location line="+9"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Emulation</source>
         <translation>Эмуляция</translation>
     </message>
     <message>
         <location line="+4"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Devices</source>
         <translation>Устройства</translation>
     </message>
     <message>
         <location line="+16"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Help</source>
         <translation>Помощь</translation>
     </message>
     <message>
         <location line="+6"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Display</source>
         <translation>Экран</translation>
     </message>
     <message>
         <location line="+4"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Scale</source>
         <translation>Масштаб</translation>
     </message>
     <message>
         <location line="+6"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Screen ratio</source>
         <translation>Соотношение сторон</translation>
     </message>
     <message>
         <location line="+6"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Filtering</source>
         <translation>Сглаживание</translation>
     </message>
     <message>
         <location line="+17"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+41"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-26"/>
+        <location line="+42"/>
         <source>Select a machine...</source>
         <translation>Выбор компьютера...</translation>
     </message>
     <message>
         <location line="+41"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+5"/>
         <source>Open...</source>
         <translation>Открыть файл...</translation>
     </message>
     <message>
         <location line="+9"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Debugger</source>
         <translation>Отладчик</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>Open debugger</source>
         <translation>Открыть окно отладчика</translation>
     </message>
     <message>
         <location line="+9"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>Screenshot</source>
         <translation>Снимок экрана</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>Get a screenshot</source>
         <translation>Сделать снимок экрана</translation>
     </message>
     <message>
         <location line="+5"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>About...</source>
         <translation>О программе...</translation>
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+3"/>
         <source>Filter one</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-10"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-2"/>
+        <location line="+9"/>
+        <source>Tape</source>
+        <translation>Магнитофон</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Tape recorder</source>
+        <translation>Магнитофон</translation>
+    </message>
+    <message>
+        <location line="-22"/>
         <source>Scale_one</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+5"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Ratio one</source>
         <translation type="unfinished"></translation>
     </message>
@@ -822,28 +802,21 @@
     </message>
     <message>
         <location line="-71"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-15"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
     <message>
         <location line="+9"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Cold restart</source>
         <translation>Холодный перезапуск</translation>
     </message>
     <message>
         <location line="+9"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Soft restart</source>
         <translation>Теплый перезапуск</translation>
     </message>
     <message>
         <location line="+5"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Device_one</source>
         <translation type="unfinished"></translation>
     </message>
@@ -875,7 +848,7 @@
     </message>
     <message>
         <source>All Files (*.*)</source>
-        <translation>Все файлы (*.*)</translation>
+        <translation type="vanished">Все файлы (*.*)</translation>
     </message>
     <message>
         <location line="+328"/>
@@ -971,19 +944,16 @@
     <name>MemoryMapperWindow</name>
     <message>
         <location filename="../dialogs/mmwindow.ui" line="+14"/>
-        <location/>
         <source>Dialog</source>
         <translation>Диспетчер адресов</translation>
     </message>
     <message>
         <location line="+221"/>
-        <location/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
     <message>
         <location line="+25"/>
-        <location/>
         <source>Choose an address</source>
         <translation>Выберите адрес</translation>
     </message>
@@ -992,30 +962,36 @@
     <name>OpenConfigWindow</name>
     <message>
         <location filename="../dialogs/openconfigwindow.ui" line="+14"/>
-        <location/>
         <source>Dialog</source>
         <translation>Выбор конфигурации</translation>
     </message>
     <message>
         <location line="+40"/>
-        <location/>
         <source>Set as default</source>
         <translation>Установить по умолчанию</translation>
     </message>
     <message>
         <location line="+47"/>
-        <location/>
         <source>OK</source>
         <translation>OK</translation>
     </message>
     <message>
         <location line="+7"/>
-        <location/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+117"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+42"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Error opening CSS file</source>
+        <translation>Ошибка чтения файла CSS</translation>
+    </message>
+    <message>
+        <location line="+84"/>
         <source>No any description file found for this machine</source>
         <translation>Файл описания для данной конфигурации не найден</translation>
     </message>
@@ -1024,7 +1000,6 @@
     <name>PortWindow</name>
     <message>
         <location filename="../dialogs/portwindow.ui" line="+14"/>
-        <location/>
         <source>Dialog</source>
         <translation>Порт</translation>
     </message>
@@ -1033,17 +1008,17 @@
     <name>QMessageBox</name>
     <message>
         <source>Error</source>
-        <translation>Ошибка</translation>
+        <translation type="vanished">Ошибка</translation>
     </message>
     <message>
         <source>Unable to find a RAM page to store data</source>
-        <translation>Не получилось найти страницу памяти для записи данных</translation>
+        <translation type="vanished">Не получилось найти страницу памяти для записи данных</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../libs/mfm_tools.cpp" line="+42"/>
+        <location filename="../libs/mfm_tools.cpp" line="+47"/>
         <location line="+3"/>
         <source>Error</source>
         <translation>Ошибка</translation>
@@ -1091,7 +1066,7 @@
     </message>
     <message>
         <source>Error reading %1</source>
-        <translation>Ошибка чтения %1</translation>
+        <translation type="vanished">Ошибка чтения %1</translation>
     </message>
 </context>
 <context>
@@ -1110,12 +1085,24 @@
 <context>
     <name>ScanKeyboard</name>
     <message>
-        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+44"/>
+        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+35"/>
+        <location line="+4"/>
+        <location line="+33"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="+0"/>
+        <location line="-37"/>
+        <source>Keyboard map file is expected</source>
+        <translation>Не указан файл мэппинга</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Error reading map file %1</source>
+        <translation>Ошибка чтенияфайла мэппинга &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location line="+33"/>
         <source>Unknown key %1</source>
         <translation>Неизвестная клавиша %1</translation>
     </message>
@@ -1131,6 +1118,78 @@
         <location line="+0"/>
         <source>Unknown speaker type %1</source>
         <translation>Неизвестный тип устройства Speaker %1</translation>
+    </message>
+</context>
+<context>
+    <name>TapeRecorder</name>
+    <message>
+        <location filename="../emulator/devices/common/tape.cpp" line="+136"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Unknown tape format!</source>
+        <translation>Неизвестный формат файла записи!</translation>
+    </message>
+</context>
+<context>
+    <name>TapeRecorderWindow</name>
+    <message>
+        <location filename="../dialogs/taperecorder.ui" line="+14"/>
+        <source>Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+43"/>
+        <source>Record</source>
+        <translation>Запись</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Rewind</source>
+        <translation>Перемотка в начало</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>FastForward</source>
+        <translation>Перемотка вперёд</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Play</source>
+        <translation>Воспроизведение</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Stop</source>
+        <translation>Пауза</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Eject</source>
+        <translation>Извлечь</translation>
+    </message>
+    <message>
+        <location line="+41"/>
+        <location line="+133"/>
+        <source>...</source>
+        <translation>...</translation>
+    </message>
+    <message>
+        <location line="-69"/>
+        <source>ЭЛЕКТРОНИКА-302</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../dialogs/taperecorder.cpp" line="+18"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Unknown tape file format!</source>
+        <translation>Неизвестный формат файла записи!</translation>
     </message>
 </context>
 <context>

@@ -1,0 +1,8 @@
+home		tab  		0 	        8|(	        @_ 	H 	P 	X
+del     	ret2 		1|! 	    9|)	        A 	I 	Q 	Y
+esc 		ret		    2|"	        :_|*   	    B 	J 	R 	Z
+F1  		back		3|#	        ;|+	        C	K	S 	[
+F2	    	left		4|$	        ,|<	        D	L	T	\
+F3		    up		    5|%	        -|=^	    E	M	U	]
+F4		    right		6|&         .|>	        F	N	V	^_
+__		    down		7|'^	    /|?	        G	O	W	space

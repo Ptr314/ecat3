@@ -5,15 +5,11 @@
     <name>About</name>
     <message>
         <location filename="../dialogs/aboutdlg.ui" line="+14"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/dialogs/ui_aboutdlg.h" line="+111"/>
         <source>About</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+63"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/dialogs/ui_aboutdlg.h" line="+2"/>
         <source>Copyright</source>
         <translation type="unfinished"></translation>
     </message>
@@ -21,7 +17,7 @@
 <context>
     <name>Agat_FDC140</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+33"/>
+        <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+34"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -81,129 +77,91 @@
     <name>DebugWindow</name>
     <message>
         <location filename="../dialogs/debugwindow.ui" line="+26"/>
-        <location/>
         <source>Dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+94"/>
-        <location/>
         <source>Return to PC</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Step into</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Step over</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Run until cursor</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Run under debugger</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location line="+17"/>
-        <location/>
         <source>Trace into [F7]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Step over [F8]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Go to cursor [F4]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Run under debugger [F9]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+73"/>
-        <location/>
         <source>Address for the debugger</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+16"/>
-        <location/>
         <source>Go to</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Add a breakpoint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Delete a breakpoint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+17"/>
-        <location/>
         <source>Register to set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+79"/>
-        <location/>
         <source>Address for the dump</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+19"/>
-        <location/>
         <source>Go to for the dump</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+14"/>
-        <location/>
         <source>Page down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+14"/>
-        <location/>
         <source>Page up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Delete breakpoint</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location line="-111"/>
-        <location/>
         <source>Set value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -263,68 +221,72 @@
     <name>DumpWindow</name>
     <message>
         <location filename="../dialogs/dumpwindow.ui" line="+14"/>
-        <location/>
         <source>Dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Global offset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Local address</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location line="+51"/>
-        <location/>
         <source>Base</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+25"/>
-        <location/>
         <source>Offset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+24"/>
-        <location/>
         <source>Page Down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+14"/>
-        <location/>
         <source>To end</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+14"/>
-        <location/>
         <source>Page Up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+14"/>
-        <location/>
         <source>To begin</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+27"/>
-        <location/>
+        <location line="+14"/>
+        <source>Save to file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/dumpwindow.cpp" line="+49"/>
+        <location filename="../dialogs/dumpwindow.cpp" line="+50"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Incorrect address value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+54"/>
+        <source>Save contents to a file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Dump (*.bin)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -419,7 +381,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+215"/>
+        <location filename="../mainwindow.cpp" line="+217"/>
         <source>Screen 4:3</source>
         <translation type="unfinished"></translation>
     </message>
@@ -445,6 +407,7 @@
     </message>
     <message>
         <location line="+204"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+123"/>
         <source>Load a file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -510,7 +473,7 @@
     <name>FDD</name>
     <message>
         <location filename="../emulator/devices/common/fdd.cpp" line="+46"/>
-        <location line="+12"/>
+        <location line="+15"/>
         <location line="+7"/>
         <location line="+12"/>
         <location line="+33"/>
@@ -521,16 +484,18 @@
         <location line="+20"/>
         <location line="+3"/>
         <location line="+11"/>
+        <location line="+130"/>
+        <location line="+6"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-139"/>
+        <location line="-278"/>
         <source>Incorrect fdd parameters for &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+15"/>
         <source>Unknown fdd mode &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -569,15 +534,21 @@
     </message>
     <message>
         <location line="+11"/>
-        <source>Expected conversion form DSK to MFM is not supperted yet.</source>
+        <source>Expected conversion from DSK to MFM is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This mode is not supported</source>
+        <location line="+130"/>
+        <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+6"/>
+        <source>Saving images for this type of drive is not supported yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-93"/>
         <source>Reading outside of a sector</source>
         <translation type="unfinished"></translation>
     </message>
@@ -611,7 +582,6 @@
     <name>I8255Window</name>
     <message>
         <location filename="../dialogs/i8255window.ui" line="+14"/>
-        <location/>
         <source>Dialog</source>
         <translation type="unfinished"></translation>
     </message>
@@ -620,7 +590,6 @@
         <location line="+13"/>
         <location line="+140"/>
         <location line="+16"/>
-        <location/>
         <location filename="../dialogs/i8255window.cpp" line="+52"/>
         <location line="+1"/>
         <location line="+1"/>
@@ -630,7 +599,6 @@
     </message>
     <message>
         <location line="+16"/>
-        <location/>
         <source>Control</source>
         <translation type="unfinished"></translation>
     </message>
@@ -680,162 +648,127 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <source>MainWindow</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../mainwindow.ui" line="+88"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+225"/>
         <source>File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+9"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Emulation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Devices</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+16"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+6"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Scale</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+6"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Screen ratio</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+6"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Filtering</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+17"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+41"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-26"/>
+        <location line="+42"/>
         <source>Select a machine...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+41"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+5"/>
         <source>Open...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+9"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Debugger</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>Open debugger</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+9"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>Screenshot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>Get a screenshot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+5"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+2"/>
         <source>About...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+3"/>
         <source>Filter one</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-10"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-2"/>
+        <location line="+9"/>
+        <source>Tape</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Tape recorder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-22"/>
         <source>Scale_one</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+5"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Ratio one</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="-71"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="-15"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+9"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Cold restart</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+9"/>
-        <location/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Soft restart</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+5"/>
-        <location filename="../../build-debug/eCat3_autogen/include/ui_mainwindow.h" line="+1"/>
         <source>Device_one</source>
         <translation type="unfinished"></translation>
     </message>
@@ -863,10 +796,6 @@
     <message>
         <location line="+3"/>
         <source>Write to a file...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>All Files (*.*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -963,19 +892,16 @@
     <name>MemoryMapperWindow</name>
     <message>
         <location filename="../dialogs/mmwindow.ui" line="+14"/>
-        <location/>
         <source>Dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+221"/>
-        <location/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+25"/>
-        <location/>
         <source>Choose an address</source>
         <translation type="unfinished"></translation>
     </message>
@@ -984,30 +910,36 @@
     <name>OpenConfigWindow</name>
     <message>
         <location filename="../dialogs/openconfigwindow.ui" line="+14"/>
-        <location/>
         <source>Dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+40"/>
-        <location/>
         <source>Set as default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+47"/>
-        <location/>
         <source>OK</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+7"/>
-        <location/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+117"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+42"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Error opening CSS file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+84"/>
         <source>No any description file found for this machine</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1016,26 +948,14 @@
     <name>PortWindow</name>
     <message>
         <location filename="../dialogs/portwindow.ui" line="+14"/>
-        <location/>
         <source>Dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QMessageBox</name>
-    <message>
-        <source>Error</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to find a RAM page to store data</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../libs/mfm_tools.cpp" line="+42"/>
+        <location filename="../libs/mfm_tools.cpp" line="+47"/>
         <location line="+3"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
@@ -1081,10 +1001,6 @@
         <source>Can&apos;t open ROM image file &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Error reading %1</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>Register</name>
@@ -1102,12 +1018,24 @@
 <context>
     <name>ScanKeyboard</name>
     <message>
-        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+44"/>
+        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+35"/>
+        <location line="+4"/>
+        <location line="+33"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+0"/>
+        <location line="-37"/>
+        <source>Keyboard map file is expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Error reading map file %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+33"/>
         <source>Unknown key %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1122,6 +1050,78 @@
     <message>
         <location line="+0"/>
         <source>Unknown speaker type %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TapeRecorder</name>
+    <message>
+        <location filename="../emulator/devices/common/tape.cpp" line="+136"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Unknown tape format!</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TapeRecorderWindow</name>
+    <message>
+        <location filename="../dialogs/taperecorder.ui" line="+14"/>
+        <source>Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+43"/>
+        <source>Record</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Rewind</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>FastForward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Play</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Eject</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+41"/>
+        <location line="+133"/>
+        <source>...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-69"/>
+        <source>ЭЛЕКТРОНИКА-302</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../dialogs/taperecorder.cpp" line="+18"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Unknown tape file format!</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
