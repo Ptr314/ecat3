@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(eCat3 VERSION 3.2.0 LANGUAGES C CXX)
+project(eCat3 VERSION 3.2.1 LANGUAGES C CXX)
 
 set(EXTERNAL_Z80 0)
 set(CPU_STOPPED 0)
