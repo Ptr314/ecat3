@@ -112,7 +112,7 @@ void AgatDisplay::memory_callback(unsigned int callback_id, unsigned int address
 void AgatDisplay::render_byte(unsigned int address)
 {
     //TODO: finish
-    unsigned int line, offset, p, read_address, cl;
+    unsigned int line, offset, p, read_address, cl, inv;
     uint8_t color[2];
     uint8_t * pixel_address;
     uint8_t v1, v2;
@@ -184,11 +184,11 @@ void AgatDisplay::render_byte(unsigned int address)
             offset = 32*4 + (address & 0x3F) * (7*4);                   // 32 pixels blanking, 7 pixels per char, 4 bytes per pixel
             read_address = base_address + address;
             v1 = memory[0]->get_value(read_address);                    // Character only, getting from the main memory
+            inv = ((~previous_mode & 0x04) >> 2);                       // inverted mode
             for (unsigned int i=0; i<8; i++) {
                 uint8_t font_val = font->get_value(v1*8+i);
                 for (unsigned int k=0; k<7; k++) {                      // Char is 7x8 pixels
-                    unsigned int c = ((font_val >> k) & 1)
-                                     ^ ((previous_mode & 0x04) >> 2);   // odd pages are inverted
+                    unsigned int c = ((font_val >> k) & 1) ^ inv;
                     p = offset + (6-k)*4;
                     pixel_address = static_cast<Uint8 *>(render_pixels) + (line + i)*line_bytes + p;
                     *(uint32_t*)pixel_address = Agat_RGBA2[c]; //SDL_MapRGB(surface->format, Agat_2Colors[c][0], Agat_2Colors[c][1], Agat_2Colors[c][2]);
