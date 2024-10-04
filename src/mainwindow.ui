@@ -80,7 +80,7 @@
      <rect>
       <x>345</x>
       <y>101</y>
-      <width>171</width>
+      <width>168</width>
       <height>131</height>
      </rect>
     </property>
@@ -293,6 +293,9 @@
    </property>
    <property name="toolTip">
     <string>Tape recorder</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::TextHeuristicRole</enum>

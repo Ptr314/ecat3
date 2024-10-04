@@ -133,8 +133,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     CreateDevicesMenu();
 
-
-
     QString sound_volume = e->read_setup("Sound", "volume", "50");
     volume->setValue(sound_volume.toInt());
 
@@ -185,7 +183,6 @@ void MainWindow::CreateFDDMenu(unsigned int n)
     fdd_button[n]->setFocusPolicy(Qt::NoFocus);
 
     connect(fdd_button[n], &QToolButton::clicked, this, [this, n=n](){fdd_open(n);});
-
 
     ui->toolBar->insertWidget(ui->actionDebugger, fdd_button[n] );
 }
@@ -268,6 +265,7 @@ void MainWindow::CreateDevicesMenu()
         a->setEnabled( DWM->get_create_func(e->dm->get_device(i)->device_type) != nullptr );
     };
 
+    int buttons_added=0;
 
     fdds_found = 0;
 
@@ -321,7 +319,21 @@ void MainWindow::CreateDevicesMenu()
     }
 
     //TODO: Interface adaptation to a machine configuration
+    tape = dynamic_cast<TapeRecorder*>(e->dm->get_device_by_name("tape", false));
+    if (tape != nullptr) {
+        buttons_added++;
+        tape_button = new QToolButton();
+        tape_button->setIcon(QIcon(":/icons/tape"));
+        tape_button->setFocusPolicy(Qt::NoFocus);
 
+        connect(tape_button, &QToolButton::clicked, this, &MainWindow::on_actionTape_triggered);
+
+        ui->toolBar->insertWidget(ui->actionDebugger, tape_button);
+    }
+
+    if (buttons_added > 0) {
+        ui->toolBar->insertSeparator(ui->actionDebugger);
+    }
 }
 
 void MainWindow::onDeviceMenuCalled(unsigned int i)

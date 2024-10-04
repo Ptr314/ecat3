@@ -8,6 +8,7 @@
 #include "emulator/emulator.h"
 #include "emulator/debug.h"
 #include "emulator/devices/common/fdd.h"
+#include "emulator/devices/common/tape.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -82,9 +83,11 @@ private:
     QToolButton * mute;
 
     QToolButton * fdd_button[2];
+    QToolButton * tape_button;
     QMenu * fdd_menu[2];
     FDD * fdds[2];
     FDC * fdc;
+    TapeRecorder * tape;
     unsigned int max_fdd_count = 2;
     unsigned int fdds_found = 0;
     QTimer * fdd_timer;
