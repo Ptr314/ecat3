@@ -59,4 +59,6 @@ private slots:
     void on_buttonMute_clicked();
 };
 
+GenericDbgWnd * CreateTapeWindow(QWidget *parent, Emulator * e, ComputerDevice * d);
+
 #endif // TAPERECORDERWND_H

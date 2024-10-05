@@ -112,6 +112,7 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("z80", &CreateDebugWindow);
     DWM->register_debug_window("6502", &CreateDebugWindow);
     DWM->register_debug_window("65c02", &CreateDebugWindow);
+    DWM->register_debug_window("taperecorder", &CreateTapeWindow);
 
     e = new Emulator(work_path, current_path + "/data/", software_path, current_path + "/ecat.ini");
 

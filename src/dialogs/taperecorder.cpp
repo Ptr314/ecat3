@@ -214,3 +214,7 @@ void TapeRecorderWindow::on_buttonMute_clicked()
     d->mute(ui->buttonMute->isChecked());
 }
 
+GenericDbgWnd * CreateTapeWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
+{
+    return new TapeRecorderWindow(parent, e, d);
+}
