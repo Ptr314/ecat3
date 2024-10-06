@@ -118,6 +118,7 @@ class ComputerDevice: public QObject
 public:
     QString type;
     QString name;
+    QString device_class;
     unsigned int reset_priority;
 
     ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd);
@@ -128,6 +129,7 @@ public:
 
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
     virtual void memory_callback(unsigned int callback_id, unsigned int address);
+    bool belongs_to_class(QString class_to_check);
 
 private:
     unsigned int clock_miltiplier;
@@ -256,6 +258,7 @@ public:
     void load_devices_config(SystemData *sd); //
     ComputerDevice *get_device_by_name(QString name, bool required=true); //
     unsigned int get_device_index(QString name);
+    QVector<ComputerDevice*> find_devices_by_class(QString class_to_find);
     void reset_devices(bool cold);
     void clock(unsigned int counter);
     void error(ComputerDevice *d, QString message);

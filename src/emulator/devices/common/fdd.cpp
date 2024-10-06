@@ -18,6 +18,8 @@ FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
     track(0),
     fdd_mode(FDD_MODE_LOGICAL)
 {
+    device_class = "fdd";
+
     i_select = create_interface(2, "select", MODE_R);
     i_side = create_interface(1, "side", MODE_R);
     i_density = create_interface(1, "density", MODE_R);

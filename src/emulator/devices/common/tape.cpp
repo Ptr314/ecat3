@@ -16,7 +16,7 @@ TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
     , bit_shift(7)
     , ticks_counter(0)
 {
-    //TODO: TapeRecorder: Implement
+    device_class = "tape";
     i_input =  create_interface(1, "input", MODE_R);
     i_output = create_interface(1, "output", MODE_W);
     i_speaker = create_interface(1, "speaker", MODE_W);
