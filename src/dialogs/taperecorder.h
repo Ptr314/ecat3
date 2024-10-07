@@ -46,8 +46,13 @@ private:
 
     QPoint dragPosition;
 
+    QTimer update_timer;
+
+    QString loaded_file;
+
 private slots:
     void set_mute(bool muted);
+    void update_counter();
     void on_buttonEject_released();
     void on_buttonRewind_pressed();
     void on_buttonRewind_released();

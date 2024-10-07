@@ -28,6 +28,7 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent)
     , ui(new Ui::TapeRecorderWindow)
     , is_playing(false)
     , is_paused(false)
+    , update_timer(this)
 {
     setAttribute(Qt::WA_TranslucentBackground);
     setWindowFlag(Qt::FramelessWindowHint, true);
@@ -74,6 +75,9 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
     ui->right_roller->hide();
 
     this->d->volume(10);
+
+    update_timer.setInterval(1000);
+    connect(&update_timer, &QTimer::timeout, this, &TapeRecorderWindow::update_counter);
 }
 
 void TapeRecorderWindow::set_mute(bool muted)
@@ -134,9 +138,12 @@ void TapeRecorderWindow::on_buttonEject_pressed()
                 ui->name_mask->setVisible(true);
                 ui->textLabel->setVisible(true);
 
-                ui->textLabel->setText(fi.fileName());
+                loaded_file = fi.fileName();
 
                 d->load_file(file_name, fmt);
+
+                update_counter();
+
             } else {
                 QMessageBox::warning(0, TapeRecorderWindow::tr("Error"), TapeRecorderWindow::tr("Unknown tape file format!"));
             }
@@ -188,12 +195,15 @@ void TapeRecorderWindow::play_pause()
         d->play();
         ui->left_roller->show();
         ui->right_roller->show();
+        update_timer.start();
     } else {
         ui->left_roller->movie()->stop();
         ui->right_roller->movie()->stop();
         ui->left_roller->hide();
         ui->right_roller->hide();
         d->stop();
+        update_timer.stop();
+        update_counter();
     }
 }
 
@@ -201,7 +211,6 @@ void TapeRecorderWindow::on_toolButton_clicked()
 {
     close();
 }
-
 
 void TapeRecorderWindow::on_buttonPause_clicked()
 {
@@ -230,6 +239,37 @@ void TapeRecorderWindow::closeEvent(QCloseEvent *event)
     GenericDbgWnd::closeEvent(event);
 }
 
+void TapeRecorderWindow::update_counter()
+{
+    if (is_playing){
+        if (d->get_mode() != TAPE_STOPPED) {
+            int position = d->get_position();
+            int total = d->get_total();
+            ui->textLabel->setText(
+                loaded_file
+                + " ("
+                + QString::number(position / 60) + ":" + QString("%1").arg(position % 60, 2, 10, QChar('0'))
+                + "/"
+                + QString::number(total / 60) + ":" + QString("%1").arg(total % 60, 2, 10, QChar('0'))
+                + ")"
+            );
+        } else {
+            if (!is_paused) {
+                is_playing = false;
+                play_pause();
+                ui->buttonPlay->setChecked(false);
+            }
+        }
+    } else {
+        int total = d->get_total();
+        ui->textLabel->setText(
+            loaded_file
+            + " ("
+            + QString::number(total / 60) + ":" + QString("%1").arg(total % 60, 2, 10, QChar('0'))
+            + ")"
+            );
+    }
+}
 
 GenericDbgWnd * CreateTapeWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
 {
