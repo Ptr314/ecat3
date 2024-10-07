@@ -16,6 +16,7 @@ Agat_FDC140::Agat_FDC140(InterfaceManager *im, EmulatorConfigDevice *cd):
 {
     // TODO: implement
     i_select = create_interface(2, "select", MODE_W);
+    i_motor_on = create_interface(1, "motor_on", MODE_W);
 
     //data = 0;
 
@@ -109,7 +110,7 @@ void Agat_FDC140::select_drive(int n)
 #endif
     // TODO: check selection on a drive
     selected_drive = n;
-    i_select->change(1 << n);
+    i_select->change(n);
     current_phase = -1;
 }
 
@@ -131,9 +132,11 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
             break;
         case 0x8:
             motor_on = false;
+            i_motor_on->change(0);
             break;
         case 0x9:
             motor_on = true;
+            i_motor_on->change(1);
             break;
         case 0xA:
         case 0xB:

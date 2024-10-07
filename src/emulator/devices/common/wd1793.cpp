@@ -14,6 +14,7 @@ WD1793::WD1793(InterfaceManager *im, EmulatorConfigDevice *cd):
     i_data = create_interface(8, "data", MODE_R);
     i_INTRQ = create_interface(1, "intrq", MODE_W);
     i_DRQ = create_interface(1, "drq", MODE_W);
+    i_HLD = create_interface(1, "hld", MODE_W);
 
     memset(&registers, 0, sizeof(registers));
 }
@@ -55,11 +56,13 @@ void WD1793::ClearDRQ()
 void WD1793::SetFlag(unsigned int flag)
 {
     registers[wd1793_REG_STATUS] |= flag;
+    if (flag == wd1793_FLAG_HLD) i_HLD->change(1);
 }
 
 void WD1793::ClearFlag(unsigned int flag)
 {
     registers[wd1793_REG_STATUS] &= ~flag;
+    if (flag == wd1793_FLAG_HLD) i_HLD->change(0);
 }
 
 void WD1793::SetINTRQ()

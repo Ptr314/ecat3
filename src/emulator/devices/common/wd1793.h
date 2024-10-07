@@ -57,6 +57,7 @@ private:
     Interface * i_data;
     Interface * i_INTRQ;
     Interface * i_DRQ;
+    Interface * i_HLD;
     FDD * drives[4];
     unsigned int drives_count;
     unsigned int selected_drive;

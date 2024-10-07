@@ -575,23 +575,24 @@ void MainWindow::fdd_write(unsigned int n)
 
 void MainWindow::update_fdds()
 {
-    //TODO: this event may happen after exiting or stopping emulator
-    // for (unsigned int i=0; i<fdds_found; i++)
-    // {
-    //     if (fdc->get_busy() && fdc->get_selected_drive()==i) {
-    //         fdd_button[i]->setIcon(QIcon(":/icons/floppy_access"));
-    //     } else {
-    //         if (fdds[i]->get_loaded()) {
-    //             if (fdds[i]->is_protected()) {
-    //                 fdd_button[i]->setIcon(QIcon(":/icons/floppy_locked"));
-    //             } else {
-    //                 fdd_button[i]->setIcon(QIcon(":/icons/floppy_mount"));
-    //             }
-    //         } else {
-    //             fdd_button[i]->setIcon(QIcon(":/icons/floppy_unmount"));
-    //         }
-    //     }
-    // }
+    // TODO: this event may happen after exiting or stopping emulator
+    for (unsigned int i=0; i<fdds_found; i++)
+    {
+        //if (fdc->get_busy() && fdc->get_selected_drive()==i) {
+        if (fdds[i]->is_led_on()) {
+            fdd_button[i]->setIcon(QIcon(":/icons/floppy_access"));
+        } else {
+            if (fdds[i]->get_loaded()) {
+                if (fdds[i]->is_protected()) {
+                    fdd_button[i]->setIcon(QIcon(":/icons/floppy_locked"));
+                } else {
+                    fdd_button[i]->setIcon(QIcon(":/icons/floppy_mount"));
+                }
+            } else {
+                fdd_button[i]->setIcon(QIcon(":/icons/floppy_unmount"));
+            }
+        }
+    }
 }
 
 void MainWindow::on_actionScreenshot_triggered()

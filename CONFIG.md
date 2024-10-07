@@ -35,7 +35,8 @@
         * [fdd](#fdd) (Дисковод)
     * [Машино-зависимые устройства](#Машино-зависимые-устройства)
         * [orion-128-display](#orion-128-display) (Дисплей Орион-128)
-        * [agat-display](#agat-display) (Дисплей Орион-128)
+        * [agat-display](#agat-display) (Дисплей Агат-7)
+        * [agat-fdc140](#agat-fdc140) (Контроллер дисковода Агат 140 Кб).
         * [i8275-display](#i8275-display) (Дисплей на i8275)
 
 # Общие замечания
@@ -626,6 +627,7 @@ fdc : wd1793 {
     * __~data{8, in/out}__: Данные для записи во внутренний регистр.
     * __~intrq{1, out}__: Выход запроса на прерывание.
     * __~drq{1, out}__: Выход готовности данных.
+    * __~hld{1, out}__: Выход HLD (обычно используется для включения мотора дисковода). Активный сигнал &ndash; высокий.
 
 ### fdd
 
@@ -635,16 +637,17 @@ fdc : wd1793 {
 
 ~~~
 fdd0 : fdd {
-	sides = 2
-	tracks = 80 
-	sectors = 5 
-	sector_size = 1k
-	selector_value = 0
-	files = "Образы дисков Орион-128 (*.odi)|*.odi"
-	image= orion-128/Disk2.ODI
-	~select  = port-fdc.value[0-1]
-	~side    = port-fdc.value[4]
-	~density = port-fdc.value[6]
+    sides = 2
+    tracks = 80 
+    sectors = 5 
+    sector_size = 1k
+    selector_value = 0
+    files = "Образы дисков Орион-128 (*.odi)|*.odi"
+    image= orion-128/Disk2.ODI
+    ~select  = port-fdc.value[0-1]
+    ~side    = port-fdc.value[4]
+    ~density = port-fdc.value[6]
+    ~motor_on = !fdc.hld
 }
 ~~~
 
@@ -665,6 +668,7 @@ fdd0 : fdd {
     * __~select{2, in}__: Выбор устройства.
     * __~side{1, in}__: Выбор стороны.
     * __~density{1, in}__: Выбор плотности.
+    * __~motor_on{1, in}__: Включение мотора. Активный уровень &ndash; низкий.
 
 ## Машино-зависимые устройства
 
@@ -703,6 +707,22 @@ display : agat-display {
     * __ram*__: Устройство ram видеопамяти.
     * __mode*__: Порт видеорежима.
     * __font*__: Устройство типа rom со знакогенератором.
+
+### agat-fdc140
+
+Контроллер дисковода Агат 140 Кб.
+
+~~~
+fdc : agat-fdc140 {
+	drives = fdd0
+}
+~~~
+
+* Параметры
+    * __drives*__: Список подключеных устройств fdd.  
+
+* Интерфейсы
+    * __~motor_on{1, out}__: Выход включения мотора дисковода. Активный сигнал &ndash; высокий.
 
 ### i8275-display
 
