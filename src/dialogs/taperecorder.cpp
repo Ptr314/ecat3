@@ -258,6 +258,7 @@ void TapeRecorderWindow::update_counter()
                 is_playing = false;
                 play_pause();
                 ui->buttonPlay->setChecked(false);
+                d->rewind();
             }
         }
     } else {
