@@ -214,7 +214,27 @@ void TapeRecorderWindow::on_buttonMute_clicked()
     d->mute(ui->buttonMute->isChecked());
 }
 
+void TapeRecorderWindow::on_buttonRewind_clicked()
+{
+    if (is_playing) {
+        is_playing = false;
+        play_pause();
+        ui->buttonPlay->setChecked(false);
+    }
+    d->rewind();
+}
+
+void TapeRecorderWindow::closeEvent(QCloseEvent *event)
+{
+    d->stop();
+    GenericDbgWnd::closeEvent(event);
+}
+
+
 GenericDbgWnd * CreateTapeWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
 {
     return new TapeRecorderWindow(parent, e, d);
 }
+
+
+
