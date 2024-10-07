@@ -288,9 +288,6 @@ void MainWindow::UpdateToolbar()
 
     fdds_found = 0;
 
-    //TODO: change "fdc" from setup
-    // fdc = dynamic_cast<FDC*>(e->dm->get_device_by_name("fdc", false));
-
     QVector<ComputerDevice*>fdd_devices = e->dm->find_devices_by_class("fdd");
     fdds_found = fdd_devices.size();
 
@@ -487,7 +484,7 @@ void MainWindow::on_actionDebugger_triggered()
 
 void MainWindow::closeEvent (QCloseEvent *event)
 {
-    fdds_found = 0; // to prevent crashing on buttont update
+    fdds_found = 0; // to prevent crashing on buttons update
     e->stop_video();
     e->quit();
     e->wait();
@@ -643,19 +640,11 @@ void MainWindow::on_actionAbout_triggered()
 
 void MainWindow::on_actionTape_triggered()
 {
-    // QDialog * tape = new QDialog(this);
-
-    // Ui_TapeRecorderWindow tapeRecorderWindowUi;
-    // tapeRecorderWindowUi.setupUi(tape);
-
-    // tape->exec();
     TapeRecorder * tape = dynamic_cast<TapeRecorder*>(e->dm->get_device_by_name("tape"));
 
     if (tape != nullptr) {
         TapeRecorderWindow * w = new TapeRecorderWindow(this, e, tape);
         w->setAttribute(Qt::WA_DeleteOnClose);
-        // connect(w, &GenericDbgWnd::data_changed, DWM, &DebugWindowsManager::data_changed);
-        // connect(DWM, &DebugWindowsManager::update_all, w, &GenericDbgWnd::update_view);
         w->show();
     }
 }
