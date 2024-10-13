@@ -422,7 +422,7 @@
         <translation>Неизвестный тип файла</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+215"/>
+        <location filename="../mainwindow.cpp" line="+217"/>
         <source>Screen 4:3</source>
         <translation>Экран 4:3</translation>
     </message>
@@ -448,6 +448,7 @@
     </message>
     <message>
         <location line="+204"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+123"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
     </message>
@@ -579,17 +580,17 @@
     <message>
         <location line="+14"/>
         <source>Expected conversion from DSK to MFM is not supported yet.</source>
-        <translation>Для данного формата автоматическая конвертация в MFM не поддерживается.</translation>
+        <translation>Необходимая конвертация из посекторного в физический формат еще не поддерживается.</translation>
     </message>
     <message>
         <location line="+150"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
-        <translation>Дисковод работает в низкоуровневом режиме, поддержка DSK-образов еще не реализована.</translation>
+        <translation>Дисковод работает в MFM-режиме. Сохранение в посекторные образы еще не поддерживается.</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Saving images for this type of drive is not supported yet.</source>
-        <translation>Сохранение образов для данного устройства не поддерживается.</translation>
+        <translation>Сохранение образов для данного типа устройств еще не поддерживается.</translation>
     </message>
     <message>
         <source>Expected conversion form DSK to MFM is not supperted yet.</source>
@@ -749,7 +750,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+42"/>
         <source>Select a machine...</source>
         <translation>Выбор компьютера...</translation>
     </message>
@@ -789,7 +790,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-10"/>
+        <location line="+9"/>
+        <source>Tape</source>
+        <translation>Магнитофон</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Tape recorder</source>
+        <translation>Магнитофон</translation>
+    </message>
+    <message>
+        <location line="-22"/>
         <source>Scale_one</source>
         <translation type="unfinished"></translation>
     </message>
@@ -983,7 +994,17 @@
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+117"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+42"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Error opening CSS file</source>
+        <translation>Ошибка чтения файла CSS</translation>
+    </message>
+    <message>
+        <location line="+84"/>
         <source>No any description file found for this machine</source>
         <translation>Файл описания для данной конфигурации не найден</translation>
     </message>
@@ -1110,6 +1131,78 @@
         <location line="+0"/>
         <source>Unknown speaker type %1</source>
         <translation>Неизвестный тип устройства Speaker %1</translation>
+    </message>
+</context>
+<context>
+    <name>TapeRecorder</name>
+    <message>
+        <location filename="../emulator/devices/common/tape.cpp" line="+136"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Unknown tape format!</source>
+        <translation>Неизвестный формат файла записи!</translation>
+    </message>
+</context>
+<context>
+    <name>TapeRecorderWindow</name>
+    <message>
+        <location filename="../dialogs/taperecorder.ui" line="+14"/>
+        <source>Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+43"/>
+        <source>Record</source>
+        <translation>Запись</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Rewind</source>
+        <translation>Перемотка в начало</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>FastForward</source>
+        <translation>Перемотка вперёд</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Play</source>
+        <translation>Воспроизведение</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Stop</source>
+        <translation>Пауза</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Eject</source>
+        <translation>Извлечь</translation>
+    </message>
+    <message>
+        <location line="+41"/>
+        <location line="+133"/>
+        <source>...</source>
+        <translation>...</translation>
+    </message>
+    <message>
+        <location line="-69"/>
+        <source>ЭЛЕКТРОНИКА-302</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../dialogs/taperecorder.cpp" line="+18"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Unknown tape file format!</source>
+        <translation>Неизвестный формат файла записи!</translation>
     </message>
 </context>
 <context>

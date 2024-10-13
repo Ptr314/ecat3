@@ -1,6 +1,8 @@
 #ifndef FDD_H
 #define FDD_H
 
+#include <QTimer>
+
 #include "emulator/core.h"
 #include "libs/mfm_formats.h"
 
@@ -30,9 +32,12 @@ private:
     Interface * i_select;
     Interface * i_side;
     Interface * i_density;
+    Interface * i_motor_on;
 
     bool write_protect;
     bool loaded;
+    bool motor_on = false;
+    QTimer led_timer;
 
 
     int side;
@@ -59,6 +64,7 @@ public:
     bool is_protected();
     bool is_index();
     bool is_track_00();
+    bool is_led_on();
 
     int get_sector_size();
     int get_loaded();
@@ -71,6 +77,7 @@ public:
     void save_image(QString file_name);
     void unload();
     void change_protection();
+    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 };
 
 ComputerDevice * create_FDD(InterfaceManager *im, EmulatorConfigDevice *cd);

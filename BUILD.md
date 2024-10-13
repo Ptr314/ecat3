@@ -7,11 +7,11 @@
 #### 1. Установить программы
 * https://download.qt.io/, скачать online-инсталятор (возможно, из России понадобится зарубежный VPN) и установить следующие компоненты:
     * Qt [X.X.X]
-        * Qt [X.X.X] Prebuilt Components for mingw 11.2
+        * MinGW YY.Y.Y
         * Sources
     * Qt Developer and Designer tools
         * Qt Creator
-        * Mingw 11.2
+        * Mingw YY.Y.Y (Версия, соответствующая компилятору библиотеки в предыдущем пункте)
         * cmake
         * ninja
 * Python 3

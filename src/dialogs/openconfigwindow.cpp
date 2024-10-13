@@ -4,7 +4,7 @@
 #include "openconfigwindow.h"
 #include "ui_openconfigwindow.h"
 
-//#include "maddy/parser.h"
+#include "emulator/utils.h"
 
 ComputerFamily::ComputerFamily(QString type, QString name):
     QStandardItem(name),
@@ -36,6 +36,15 @@ OpenConfigWindow::OpenConfigWindow(QWidget *parent, Emulator * e) :
 {
     this->e = e;
     list_machines(e->work_path);
+
+    QFile file(e->data_path + "description.css");
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(0, OpenConfigWindow::tr("Error"), OpenConfigWindow::tr("Error opening CSS file"));
+        return;
+    }
+
+    ui->textBrowser->document()->setDefaultStyleSheet(file.readAll());
+    file.close();
 }
 
 
@@ -118,7 +127,8 @@ void OpenConfigWindow::set_description(QModelIndex index)
             return;
         }
 
-        ui->textBrowser->setMarkdown(QString(file.readAll()));
+        QString html = "<body>" + md2html(file.readAll()) +"</body>";
+        ui->textBrowser->document()->setHtml(html);
 
         file.close();
     }

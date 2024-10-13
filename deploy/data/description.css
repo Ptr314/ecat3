@@ -1,0 +1,29 @@
+body {
+    font-size: 10pt;
+    margin-left: 10px; margin-right: 10px;
+}
+
+h1 {
+    margin-top: 0; margin-bottom: 5px;
+}
+
+h2 {
+    margin-top: 5px; margin-bottom: 5px;
+}
+
+h3 {
+    margin-top: 3px; margin-bottom: 2px;
+}
+
+p {
+    margin-top: 0; margin-bottom: 4px;
+}
+
+ul {
+    list-style: square outside;
+    margin-left: -10px; margin-top: 0; margin-bottom: 5px;
+}
+
+li {
+    margin-left: 0; margin-top: 0; margin-bottom: 1px;
+}

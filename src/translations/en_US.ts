@@ -394,7 +394,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+215"/>
+        <location filename="../mainwindow.cpp" line="+217"/>
         <source>Screen 4:3</source>
         <translation type="unfinished"></translation>
     </message>
@@ -420,6 +420,7 @@
     </message>
     <message>
         <location line="+204"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+123"/>
         <source>Load a file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -705,7 +706,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+42"/>
         <source>Select a machine...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -745,7 +746,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-10"/>
+        <location line="+9"/>
+        <source>Tape</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Tape recorder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-22"/>
         <source>Scale_one</source>
         <translation type="unfinished"></translation>
     </message>
@@ -931,7 +942,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+117"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+42"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Error opening CSS file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+84"/>
         <source>No any description file found for this machine</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1042,6 +1063,78 @@
     <message>
         <location line="+0"/>
         <source>Unknown speaker type %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TapeRecorder</name>
+    <message>
+        <location filename="../emulator/devices/common/tape.cpp" line="+136"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Unknown tape format!</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TapeRecorderWindow</name>
+    <message>
+        <location filename="../dialogs/taperecorder.ui" line="+14"/>
+        <source>Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+43"/>
+        <source>Record</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Rewind</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>FastForward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Play</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Eject</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+41"/>
+        <location line="+133"/>
+        <source>...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-69"/>
+        <source>ЭЛЕКТРОНИКА-302</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../dialogs/taperecorder.cpp" line="+18"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Unknown tape file format!</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

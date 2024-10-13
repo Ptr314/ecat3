@@ -40,6 +40,21 @@
         <file alias="page_up">resources/icons/2uparrow.png</file>
         <file alias="bottom">resources/icons/bottom.png</file>
         <file alias="top">resources/icons/top.png</file>
+        <file alias="sound2">resources/icons/amarok.png</file>
+        <file alias="nosound2">resources/icons/arts.png</file>
+        <file alias="tape">resources/icons/kdat.png</file>
+        <file alias="elektronica-302">resources/icons/Electronica-302.png</file>
+        <file alias="tape_flat_off">resources/icons/tape_flat_off.png</file>
+        <file alias="tape_flat_on">resources/icons/tape_flat_on.png</file>
+        <file alias="tape_eject_off">resources/icons/tape_open_off.png</file>
+        <file alias="tape_eject_on">resources/icons/tape_open_on.png</file>
+        <file alias="tape_rec_off">resources/icons/tape_rec_off.png</file>
+        <file alias="tape_rec_on">resources/icons/tape_rec_on.png</file>
+        <file alias="tape_name_mask">resources/icons/tape_name_mask.png</file>
+        <file alias="roller_left">resources/icons/roller_left.gif</file>
+        <file alias="roller_right">resources/icons/roller_right.gif</file>
+        <file alias="tape_volume_0">resources/icons/tape_volume_0.png</file>
+        <file alias="tape_volume_100">resources/icons/tape_volume_100.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>

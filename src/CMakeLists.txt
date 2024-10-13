@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(eCat3 VERSION 3.1.0 LANGUAGES C CXX)
+project(eCat3 VERSION 3.2.1 LANGUAGES C CXX)
 
 set(EXTERNAL_Z80 0)
 set(CPU_STOPPED 0)
@@ -34,6 +34,7 @@ find_package(Qt${QT_VERSION_MAJOR} OPTIONAL_COMPONENTS Widgets)
 find_package(SDL2 REQUIRED)
 #include_directories(${SDL2_INCLUDE_DIRS})
 add_subdirectory(${PROJECT_SOURCE_DIR}/libs/intel8080-emulator)
+#add_subdirectory(${PROJECT_SOURCE_DIR}/libs/maddy)
 
 qt_standard_project_setup()
 
@@ -125,6 +126,8 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     libs/mfm_formats.h
     libs/mfm_tools.h libs/mfm_tools.cpp
     emulator/devices/specific/agat_fdc840.h emulator/devices/specific/agat_fdc840.cpp
+    libs/md4c/md4c.h libs/md4c/md4c.c libs/md4c/md4c-html.h libs/md4c/md4c-html.c libs/md4c/entity.h libs/md4c/entity.c
+    dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

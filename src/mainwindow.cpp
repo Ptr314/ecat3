@@ -21,6 +21,8 @@
 #include "dialogs/portwindow.h"
 #include "dialogs/openconfigwindow.h"
 #include "emulator/devices/common/fdd.h"
+#include "emulator/devices/common/tape.h"
+#include "dialogs/taperecorder.h"
 
 #include "libs/lodepng/lodepng.h"
 
@@ -29,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
     , fdd_timer(nullptr)
     , fdds_found(0)
-    , fdc(nullptr)
+    //, fdc(nullptr)
 {
     QFontDatabase::addApplicationFont(":/fonts/mono-bold");
     QFontDatabase::addApplicationFont(":/fonts/mono-regular");
@@ -110,6 +112,7 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("z80", &CreateDebugWindow);
     DWM->register_debug_window("6502", &CreateDebugWindow);
     DWM->register_debug_window("65c02", &CreateDebugWindow);
+    DWM->register_debug_window("taperecorder", &CreateTapeWindow);
 
     e = new Emulator(work_path, current_path + "/data/", software_path, current_path + "/ecat.ini");
 
@@ -120,9 +123,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, &MainWindow::send_resize, e, &Emulator::resize_screen);
     connect(this, &MainWindow::send_stop,   e, &Emulator::stop_emulation, Qt::QueuedConnection);
 
-    for (unsigned int n=0; n < max_fdd_count; n++) CreateFDDMenu(n);
-    ui->toolBar->insertSeparator(ui->actionDebugger);
-
     QString file_to_load = e->read_setup("Startup", "default", "");
 
     e->load_config(work_path + file_to_load);
@@ -130,8 +130,7 @@ MainWindow::MainWindow(QWidget *parent)
     set_title();
 
     CreateDevicesMenu();
-
-
+    UpdateToolbar();
 
     QString sound_volume = e->read_setup("Sound", "volume", "50");
     volume->setValue(sound_volume.toInt());
@@ -183,7 +182,6 @@ void MainWindow::CreateFDDMenu(unsigned int n)
     fdd_button[n]->setFocusPolicy(Qt::NoFocus);
 
     connect(fdd_button[n], &QToolButton::clicked, this, [this, n=n](){fdd_open(n);});
-
 
     ui->toolBar->insertWidget(ui->actionDebugger, fdd_button[n] );
 }
@@ -265,61 +263,70 @@ void MainWindow::CreateDevicesMenu()
                       );
         a->setEnabled( DWM->get_create_func(e->dm->get_device(i)->device_type) != nullptr );
     };
+}
 
+void MainWindow::UpdateToolbar()
+{
+    if (fdds_found > 0) {
+        for (int i=0; i < fdds_found; i++) {
+            delete fdd_button[i];
+            delete fdd_menu[i];
+        }
+        fdds.clear();
+    }
+    if (fdd_timer != nullptr) fdd_timer->stop();
+
+    if (tape_action != nullptr) {
+        ui->toolBar->removeAction(tape_action);
+    }
+
+    if (buttons_separator != nullptr) {
+        ui->toolBar->removeAction(buttons_separator);
+    }
+
+    int buttons_added=0;
 
     fdds_found = 0;
 
-    //TODO: change "fdc" from setup
-    fdc = dynamic_cast<FDC*>(e->dm->get_device_by_name("fdc", false));
+    QVector<ComputerDevice*>fdd_devices = e->dm->find_devices_by_class("fdd");
+    fdds_found = fdd_devices.size();
 
-    if (fdc != nullptr) {
-        for (unsigned int i=0; i<max_fdd_count; i++)
+    for (int i=0; i < fdds_found; i++) {
+        FDD * fdd = dynamic_cast<FDD*>(fdd_devices[i]);
+        fdds.append(fdd);
+        CreateFDDMenu(i);
+        if (fdd->get_loaded())
         {
-            FDD * fdd = dynamic_cast<FDD*>(e->dm->get_device_by_name(QString("fdd%1").arg(i), false));
-            if (fdd != nullptr)
-            {
-                fdds[fdds_found] = fdd;
-                if (fdd->get_loaded())
-                {
-                    fdd_menu[fdds_found]->actions().at(0)->setText(fdd->file_name);
-                    fdd_button[fdds_found]->setIcon(QIcon(":/icons/floppy_mount"));
-                    if (fdds[fdds_found]->is_protected())
-                        fdd_button[fdds_found]->setIcon(QIcon(":/icons/floppy_locked"));
-                }
-                fdds_found++;
-            }
+            fdd_menu[i]->actions().at(0)->setText(fdd->file_name);
+            fdd_button[i]->setIcon(QIcon(":/icons/floppy_mount"));
+            if (fdd->is_protected())
+                fdd_button[i]->setIcon(QIcon(":/icons/floppy_locked"));
         }
 
-        if (fdds_found > 0)
+    }
+    if (fdds_found > 0) {
+        if (fdd_timer == nullptr)
         {
-            for (unsigned int i = 0; i < max_fdd_count; i++)
-            {
-                if (fdds[i] != nullptr)
-                    fdd_button[i]->setEnabled(true);
-                else
-                    fdd_button[i]->setEnabled(false);
-            }
-
-            if (fdd_timer == nullptr)
-            {
-                fdd_timer = new QTimer(this);
-                connect(fdd_timer, &QTimer::timeout, this, &MainWindow::update_fdds);
-            }
-            fdd_timer->start(100);
-        } else {
-            if (fdd_timer != nullptr) fdd_timer->stop();
-
-            for (unsigned int i = 0; i < max_fdd_count; i++)
-            {
-                fdd_button[i]->setIcon(QIcon(":/icons/floppy_unmount"));
-                fdd_button[i]->setEnabled(false);
-            }
-
+            fdd_timer = new QTimer(this);
+            connect(fdd_timer, &QTimer::timeout, this, &MainWindow::update_fdds);
         }
+        fdd_timer->start(100);
     }
 
-    //TODO: Interface adaptation to a machine configuration
+    QVector<ComputerDevice*>tape_devices = e->dm->find_devices_by_class("tape");
+    if (tape_devices.size() != 0) {
+        buttons_added++;
+        QToolButton * tape_button = new QToolButton();
+        tape_button->setIcon(QIcon(":/icons/tape"));
+        tape_button->setFocusPolicy(Qt::NoFocus);
 
+        connect(tape_button, &QToolButton::clicked, this, &MainWindow::on_actionTape_triggered);
+        tape_action = ui->toolBar->insertWidget(ui->actionDebugger, tape_button);
+    }
+
+    if (buttons_added > 0) {
+        buttons_separator = ui->toolBar->insertSeparator(ui->actionDebugger);
+    }
 }
 
 void MainWindow::onDeviceMenuCalled(unsigned int i)
@@ -425,6 +432,7 @@ void MainWindow::load_config(QString file_name, bool set_default)
         set_title();
 
         CreateDevicesMenu();
+        UpdateToolbar();
 
         e->set_volume(volume->value());
         e->set_muted(mute->isChecked());
@@ -476,7 +484,7 @@ void MainWindow::on_actionDebugger_triggered()
 
 void MainWindow::closeEvent (QCloseEvent *event)
 {
-    fdds_found = 0; // to prevent crashing on buttont update
+    fdds_found = 0; // to prevent crashing on buttons update
     e->stop_video();
     e->quit();
     e->wait();
@@ -564,10 +572,11 @@ void MainWindow::fdd_write(unsigned int n)
 
 void MainWindow::update_fdds()
 {
-    //TODO: this event may happen after exiting or stopping emulator
+    // TODO: this event may happen after exiting or stopping emulator
     for (unsigned int i=0; i<fdds_found; i++)
     {
-        if (fdc->get_busy() && fdc->get_selected_drive()==i) {
+        //if (fdc->get_busy() && fdc->get_selected_drive()==i) {
+        if (fdds[i]->is_led_on()) {
             fdd_button[i]->setIcon(QIcon(":/icons/floppy_access"));
         } else {
             if (fdds[i]->get_loaded()) {
@@ -626,5 +635,17 @@ void MainWindow::on_actionAbout_triggered()
 
 
     about->exec();
+}
+
+
+void MainWindow::on_actionTape_triggered()
+{
+    TapeRecorder * tape = dynamic_cast<TapeRecorder*>(e->dm->get_device_by_name("tape"));
+
+    if (tape != nullptr) {
+        TapeRecorderWindow * w = new TapeRecorderWindow(this, e, tape);
+        w->setAttribute(Qt::WA_DeleteOnClose);
+        w->show();
+    }
 }
 

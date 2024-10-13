@@ -35,7 +35,8 @@
         * [fdd](#fdd) (Дисковод)
     * [Машино-зависимые устройства](#Машино-зависимые-устройства)
         * [orion-128-display](#orion-128-display) (Дисплей Орион-128)
-        * [agat-display](#agat-display) (Дисплей Орион-128)
+        * [agat-display](#agat-display) (Дисплей Агат-7)
+        * [agat-fdc140](#agat-fdc140) (Контроллер дисковода Агат 140 Кб).
         * [i8275-display](#i8275-display) (Дисплей на i8275)
 
 # Общие замечания
@@ -110,11 +111,12 @@ romdisk : rom {
 Основные параметры системы, раздел должен быть первым в файле.
 ~~~
 system { 
-	type = type_id
-	name = type_name_for_display
-	version = version_name_for_display
-	charmap = character_map_file 
-	files = file_types_to_select
+	type = orion-128
+	name = Орион-128
+	version = КР580ВМ80 / Монитор-3
+	charmap= radio-86rk 
+	files = "Orion-128 (*.bru *.ord *.rko);;All files (*.*)"
+	debug = 0
 }
 ~~~
 
@@ -491,7 +493,23 @@ A/S:        $E1
 
 ### taperecorder
 
-Магнитофон (пока заглушка, функционал еще не перенесен из старой версии)
+Магнитофон
+
+~~~
+tape : taperecorder {
+	baudrate = 1200
+	files = "Orion-128 tape files (*.rko)"
+	~input  = port-keyboard.CL[0]
+	~output = port-keyboard.CH[4]
+}
+~~~
+
+* Параметры
+    * __baudrate*__: Скорость работы по умолчанию. 
+    * __files__: Фильтр для окна открытия файла. Если не указан, то значение берется из раздела __system__.
+* Интерфейсы
+    * __~input{1, in}__: Подключение входа.
+    * __~output{1, out}__: Подключение выхода.
 
 ### i8253
 
@@ -609,6 +627,7 @@ fdc : wd1793 {
     * __~data{8, in/out}__: Данные для записи во внутренний регистр.
     * __~intrq{1, out}__: Выход запроса на прерывание.
     * __~drq{1, out}__: Выход готовности данных.
+    * __~hld{1, out}__: Выход HLD (обычно используется для включения мотора дисковода). Активный сигнал &ndash; высокий.
 
 ### fdd
 
@@ -618,16 +637,17 @@ fdc : wd1793 {
 
 ~~~
 fdd0 : fdd {
-	sides = 2
-	tracks = 80 
-	sectors = 5 
-	sector_size = 1k
-	selector_value = 0
-	files = "Образы дисков Орион-128 (*.odi)|*.odi"
-	image= orion-128/Disk2.ODI
-	~select  = port-fdc.value[0-1]
-	~side    = port-fdc.value[4]
-	~density = port-fdc.value[6]
+    sides = 2
+    tracks = 80 
+    sectors = 5 
+    sector_size = 1k
+    selector_value = 0
+    files = "Образы дисков Орион-128 (*.odi)|*.odi"
+    image= orion-128/Disk2.ODI
+    ~select  = port-fdc.value[0-1]
+    ~side    = port-fdc.value[4]
+    ~density = port-fdc.value[6]
+    ~motor_on = !fdc.hld
 }
 ~~~
 
@@ -648,6 +668,7 @@ fdd0 : fdd {
     * __~select{2, in}__: Выбор устройства.
     * __~side{1, in}__: Выбор стороны.
     * __~density{1, in}__: Выбор плотности.
+    * __~motor_on{1, in}__: Включение мотора. Активный уровень &ndash; низкий.
 
 ## Машино-зависимые устройства
 
@@ -687,9 +708,25 @@ display : agat-display {
     * __mode*__: Порт видеорежима.
     * __font*__: Устройство типа rom со знакогенератором.
 
+### agat-fdc140
+
+Контроллер дисковода Агат 140 Кб.
+
+~~~
+fdc : agat-fdc140 {
+	drives = fdd0
+}
+~~~
+
+* Параметры
+    * __drives*__: Список подключеных устройств fdd.  
+
+* Интерфейсы
+    * __~motor_on{1, out}__: Выход включения мотора дисковода. Активный сигнал &ndash; высокий.
+
 ### i8275-display
 
-Универсальный дисплейны контроллер на основе i8275. Поддерживаются различные варианты генерации цвета.
+Универсальный дисплейный контроллер на основе i8275. Поддерживаются различные варианты генерации цвета.
 
 ~~~
 display : i8275-display {

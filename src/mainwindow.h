@@ -8,6 +8,7 @@
 #include "emulator/emulator.h"
 #include "emulator/debug.h"
 #include "emulator/devices/common/fdd.h"
+#include "emulator/devices/common/tape.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -63,6 +64,8 @@ private slots:
 
     void on_actionAbout_triggered();
 
+    void on_actionTape_triggered();
+
 signals:
     void send_a_key(QKeyEvent *event, bool press);
     void send_volume(int value);
@@ -79,16 +82,20 @@ private:
     QSlider * volume;
     QToolButton * mute;
 
-    QToolButton * fdd_button[2];
+    QToolButton * fdd_button[8];
+    // QToolButton * tape_button = nullptr;
+    QAction * tape_action = nullptr;
+    QAction * buttons_separator = nullptr;
     QMenu * fdd_menu[2];
-    FDD * fdds[2];
-    FDC * fdc;
-    unsigned int max_fdd_count = 2;
+    QVector<FDD*> fdds;
+    //FDC * fdc;
+    // TapeRecorder * tape;
     unsigned int fdds_found = 0;
     QTimer * fdd_timer;
 
 
     void CreateDevicesMenu();
+    void UpdateToolbar();
     void CreateScreenMenu();
     void CreateFDDMenu(unsigned int n);
 
