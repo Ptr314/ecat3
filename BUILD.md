@@ -5,7 +5,7 @@
 ### MINGW
 
 #### 1. Установить программы
-* https://download.qt.io/, скачать online-инсталятор (возможно, из России понадобится зарубежный VPN) и установить следующие компоненты:
+* https://download.qt.io/, скачать online-инсталлятор (возможно, из России понадобится зарубежный VPN) и установить следующие компоненты:
     * Qt [X.X.X]
         * MinGW YY.Y.Y
         * Sources
@@ -154,4 +154,4 @@ cmake --install .
 # Полезные ссылки
 
 * Online assembler: https://www.asm80.com/onepage/asm8080.html
-* Online diassembler: https://86rk.ru/disassm/
+* Online disassembler: https://86rk.ru/disassm/
