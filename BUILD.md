@@ -124,9 +124,32 @@ cd ~/Downloads
 chmod +x qt*.run
 ./qt*.run
 
-sudo apt-get install libsdl2-dev
+sudo apt install libsdl2-dev
 ~~~
 
+#### 3. Скомпилировать Qt из исходников для статической сборки приложения
+
+https://doc.qt.io/qt-6/linux-building.html
+
+Установить необходимые программы (при необходимости):
+~~~
+sudo apt install cmake ninja--build python3
+~~~
+
+Скачать архив с исходными кодами (обязательно tar, в zip неверные окончания строк) и скомпилировать release-версию:
+
+~~~
+cd /tmp
+mkdir qt-src
+cd qt-src
+wget https://download.qt.io/official_releases/qt/6.8/6.8.0/single/qt-everywhere-src-6.8.0.tar.xz
+tar xf qt-everywhere-src-6.8.0.tar.xz
+mkdir qt-build
+cd qt-build
+../qt-everywhere-src-6.8.0/configure -static -release
+cmake --build . --parallel
+cmake --install .
+~~~
 
 # Полезные ссылки
 

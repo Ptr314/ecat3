@@ -1,7 +1,7 @@
 @echo off
 
-SET QT_BIN=C:\DEV\Qt\6.8.0\mingw_64\bin
-SET SDL2_BIN=C:\DEV\SDL2-2.30.8\x86_64-w64-mingw32\bin
+SET QT_BIN=C:\DEV\Qt\6.8.1\mingw_64\bin
+SET SDL2_BIN=C:\DEV\SDL2-2.30.9\x86_64-w64-mingw32\bin
 
 FOR /F "tokens=* USEBACKQ" %%g IN (`findstr "PROJECT_VERSION" ..\src\globals.h`) do (SET VER=%%g)
 for /f "tokens=3" %%G IN ("%VER%") DO (SET V=%%G)
