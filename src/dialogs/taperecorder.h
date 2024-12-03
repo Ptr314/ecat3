@@ -22,6 +22,7 @@ public:
 
     ~TapeRecorderWindow();
 
+
 protected:
     QIcon btnIconOff;
     QIcon btnIconOn;
@@ -35,6 +36,7 @@ protected:
 
     void mouseMoveEvent(QMouseEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
 private:
     Ui::TapeRecorderWindow *ui;
@@ -44,8 +46,13 @@ private:
 
     QPoint dragPosition;
 
+    QTimer update_timer;
+
+    QString loaded_file;
+
 private slots:
     void set_mute(bool muted);
+    void update_counter();
     void on_buttonEject_released();
     void on_buttonRewind_pressed();
     void on_buttonRewind_released();
@@ -57,6 +64,9 @@ private slots:
     void on_toolButton_clicked();
     void on_buttonPause_clicked();
     void on_buttonMute_clicked();
+    void on_buttonRewind_clicked();
 };
+
+GenericDbgWnd * CreateTapeWindow(QWidget *parent, Emulator * e, ComputerDevice * d);
 
 #endif // TAPERECORDERWND_H

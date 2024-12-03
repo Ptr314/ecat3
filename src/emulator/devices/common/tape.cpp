@@ -4,19 +4,16 @@
 #include "emulator/devices/cpu/cpu_utils.h"
 #include "tape.h"
 
-#define TAPE_STOPPED 0
-#define TAPE_READ    1
-#define TAPE_WRITE   0
-
 TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
     : ComputerDevice(im, cd)
     , baud_rate(0)
     , tape_mode(TAPE_STOPPED)
+    , data_size(0)
     , data_position(0)
     , bit_shift(7)
     , ticks_counter(0)
 {
-    //TODO: TapeRecorder: Implement
+    device_class = "tape";
     i_input =  create_interface(1, "input", MODE_R);
     i_output = create_interface(1, "output", MODE_W);
     i_speaker = create_interface(1, "speaker", MODE_W);
@@ -27,7 +24,6 @@ TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
     speaker_config->add_parameter("~input", "", name + ".speaker", "", "");
 
     speaker = new Speaker(im, speaker_config);
-
 }
 
 void TapeRecorder::load_config(SystemData *sd)
@@ -47,7 +43,9 @@ void TapeRecorder::load_config(SystemData *sd)
 
 void TapeRecorder::play()
 {
-    tape_mode = TAPE_READ;
+    if (data_size > 0) {
+        tape_mode = TAPE_READ;
+    }
 }
 
 void TapeRecorder::stop()
@@ -61,6 +59,7 @@ void TapeRecorder::rewind()
     bit_shift = 7;
     ticks_counter = 0;
 }
+
 void TapeRecorder::mute(bool muted)
 {
     speaker->set_muted(muted);
@@ -163,6 +162,21 @@ void TapeRecorder::clock(unsigned int counter)
         }
     }
     speaker->clock(counter);
+}
+
+int TapeRecorder::get_position()
+{
+    return (data_position * 8) / baud_rate;;
+}
+
+int TapeRecorder::get_total()
+{
+    return total_seconds;
+}
+
+int TapeRecorder::get_mode()
+{
+    return tape_mode;
 }
 
 ComputerDevice * create_tape_recorder(InterfaceManager *im, EmulatorConfigDevice *cd)

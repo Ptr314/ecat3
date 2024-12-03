@@ -308,6 +308,18 @@ bool DeviceManager::log_available()
     return (logger != nullptr) && logger->log_available();
 }
 
+QVector<ComputerDevice*> DeviceManager::find_devices_by_class(QString class_to_find)
+{
+    QVector<ComputerDevice*> found;
+
+    for (unsigned int i=0; i < device_count; i++)
+    {
+        if (devices[i].device->belongs_to_class(class_to_find)) found.append(devices[i].device);
+    }
+
+    return found;
+}
+
 //----------------------- class InterfaceManager -------------------------------//
 
 InterfaceManager::InterfaceManager(DeviceManager *dm):interfaces_count(0), dm(dm){}
@@ -347,6 +359,7 @@ Interface * InterfaceManager::get_interface_by_name(QString device_name, QString
 ComputerDevice::ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
     type(cd->type),
     name(cd->name),
+    device_class("generic_device"),
     cd(cd),
     im(im),
     reset_priority(0)
@@ -499,6 +512,12 @@ bool ComputerDevice::log_available()
 {
     return im->dm->log_available();
 }
+
+bool ComputerDevice::belongs_to_class(QString class_to_check)
+{
+    return device_class == class_to_check;
+}
+
 
 //----------------------- class AddressableDevice -------------------------------//
 

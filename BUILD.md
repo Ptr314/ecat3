@@ -5,13 +5,13 @@
 ### MINGW
 
 #### 1. Установить программы
-* https://download.qt.io/, скачать online-инсталятор (возможно, из России понадобится зарубежный VPN) и установить следующие компоненты:
+* https://download.qt.io/, скачать online-инсталлятор (возможно, из России понадобится зарубежный VPN) и установить следующие компоненты:
     * Qt [X.X.X]
-        * Qt [X.X.X] Prebuilt Components for mingw 11.2
+        * MinGW YY.Y.Y
         * Sources
     * Qt Developer and Designer tools
         * Qt Creator
-        * Mingw 11.2
+        * Mingw YY.Y.Y (Версия, соответствующая компилятору библиотеки в предыдущем пункте)
         * cmake
         * ninja
 * Python 3
@@ -124,11 +124,34 @@ cd ~/Downloads
 chmod +x qt*.run
 ./qt*.run
 
-sudo apt-get install libsdl2-dev
+sudo apt install libsdl2-dev
 ~~~
 
+#### 3. Скомпилировать Qt из исходников для статической сборки приложения
+
+https://doc.qt.io/qt-6/linux-building.html
+
+Установить необходимые программы (при необходимости):
+~~~
+sudo apt install cmake ninja--build python3
+~~~
+
+Скачать архив с исходными кодами (обязательно tar, в zip неверные окончания строк) и скомпилировать release-версию:
+
+~~~
+cd /tmp
+mkdir qt-src
+cd qt-src
+wget https://download.qt.io/official_releases/qt/6.8/6.8.0/single/qt-everywhere-src-6.8.0.tar.xz
+tar xf qt-everywhere-src-6.8.0.tar.xz
+mkdir qt-build
+cd qt-build
+../qt-everywhere-src-6.8.0/configure -static -release
+cmake --build . --parallel
+cmake --install .
+~~~
 
 # Полезные ссылки
 
 * Online assembler: https://www.asm80.com/onepage/asm8080.html
-* Online diassembler: https://86rk.ru/disassm/
+* Online disassembler: https://86rk.ru/disassm/

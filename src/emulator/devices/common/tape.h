@@ -4,9 +4,13 @@
 #include "emulator/core.h"
 #include "emulator/devices/common/speaker.h"
 
+#define TAPE_STOPPED 0
+#define TAPE_READ    1
+#define TAPE_WRITE   0
+
 class TapeRecorder: public ComputerDevice
 {
-    //TODO: TapeRecorder: Implement
+
 private:
     Interface * i_input;
     Interface * i_output;
@@ -42,6 +46,9 @@ public:
     virtual void rewind();
     virtual void mute(bool muted);
     virtual void volume(unsigned int volume);
+    virtual int get_position();
+    virtual int get_total();
+    virtual int get_mode();
 };
 
 ComputerDevice * create_tape_recorder(InterfaceManager *im, EmulatorConfigDevice *cd);
