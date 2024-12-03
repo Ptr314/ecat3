@@ -10,6 +10,7 @@ set V=%V:"=%
 cd .\releases\windows
 
 xcopy ..\..\..\deploy\* . /E
+del .\*.log
 copy ..\..\..\build-release\eCat3.exe .
 
 copy "%QT_BIN%\libgcc_s_seh-1.dll" .
@@ -19,4 +20,4 @@ copy "%SDL2_BIN%\SDL2.dll" .
 
 copy /Y .ecat.ini ecat.ini
 
-"C:\Program Files\7-Zip\7z.exe" a -x!.* "eCat-%V%-win-x86_64.zip" *
+"C:\Program Files\7-Zip\7z.exe" a -x!.* -x!*.log "eCat-%V%-win-x86_64.zip" *
