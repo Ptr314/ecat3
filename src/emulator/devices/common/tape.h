@@ -12,9 +12,9 @@ class TapeRecorder: public ComputerDevice
 {
 
 private:
-    Interface * i_input;
-    Interface * i_output;
-    Interface * i_speaker;
+    Interface i_input;
+    Interface i_output;
+    Interface i_speaker;
 
     Speaker * speaker;
 

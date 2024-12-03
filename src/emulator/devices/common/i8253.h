@@ -32,10 +32,10 @@ const uint8_t I8253_MODES[10][8] =
 class I8253:public AddressableDevice
 {
 private:
-    Interface * i_address;
-    Interface * i_data;
-    Interface * i_output;
-    Interface * i_gate;
+    Interface i_address;
+    Interface i_data;
+    Interface i_output;
+    Interface i_gate;
 
 
     uint8_t Modes[3];           //Режим работы счетчиков
@@ -75,12 +75,12 @@ protected:
     void SetOut(unsigned int A, unsigned int Mode)
     {
         unsigned int M = I8253_MODES[Mode][Modes[A]];
-        unsigned int V = i_output->value;
+        unsigned int V = i_output.value;
         unsigned int Mask = 1 << A;
         switch (M) {
-        case 0: i_output->change(V & ~Mask); break; //0
-        case 1: i_output->change(V | Mask);  break; //1
-        case 2: i_output->change(V ^ Mask);  break; //Инверсия
+            case 0: i_output.change(V & ~Mask); break; //0
+            case 1: i_output.change(V | Mask);  break; //1
+            case 2: i_output.change(V ^ Mask);  break; //Инверсия
         }
     }
 
@@ -131,13 +131,12 @@ public:
 
 
     I8253(InterfaceManager *im, EmulatorConfigDevice *cd):
-        AddressableDevice(im, cd)
+          AddressableDevice(im, cd)
+        , i_address(this, im, 2, "address", MODE_R)
+        , i_data(this, im, 8, "data", MODE_R)
+        , i_output(this, im, 3, "output", MODE_W)
+        , i_gate(this, im, 3, "gate", MODE_R, 1)
     {
-        i_address = create_interface(2, "address", MODE_R);
-        i_data =    create_interface(8, "data", MODE_R);
-        i_output =  create_interface(3, "output", MODE_W);
-        i_gate =    create_interface(3, "gate", MODE_R, 1);
-
         init();
         memset(&Gates, 1, sizeof(Gates)); //Allow counting just if gates are not connected
     }
@@ -180,7 +179,7 @@ public:
                 Counting[C] = 0;
                 //Устанавливаем OUT
                 unsigned int V = I8253_MODES[MODE_SET_OUT][Modes[C]];
-                i_output->change( (i_output->value & ~(1 << C)) | (V << C));
+                i_output.change( (i_output.value & ~(1 << C)) | (V << C));
             } else {
                 //Фиксация счетчиков для чтения
                 ReadData[C*2] = Counters[C*2];

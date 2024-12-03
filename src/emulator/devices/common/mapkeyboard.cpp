@@ -5,14 +5,14 @@
 #include "emulator/utils.h"
 
 MapKeyboard::MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
-    Keyboard(im, cd),
-    shift_pressed(false),
-    ctrl_pressed(false),
-    code_ruslat(0),
-    ruslat_bit(1),
-    key_map_len(0)
+      Keyboard(im, cd)
+    , shift_pressed(false)
+    , ctrl_pressed(false)
+    , code_ruslat(0)
+    , ruslat_bit(1)
+    , key_map_len(0)
+    , i_ruslat(this, im, 1, "ruslat", MODE_W)
 {
-    i_ruslat = create_interface(1, "ruslat", MODE_W);
 }
 
 void MapKeyboard::load_config(SystemData *sd)
@@ -88,7 +88,7 @@ void MapKeyboard::set_rus(bool new_rus)
         unsigned int port_value = (port_ruslat->get_value(0) & ~(1 << ruslat_bit)) | (ruslat_state  << ruslat_bit);
         port_ruslat->set_value(port_value, port_value); // Alow using both port & port-address
     }
-    i_ruslat->change(ruslat_state);
+    i_ruslat.change(ruslat_state);
 }
 
 void MapKeyboard::key_down(unsigned int key)

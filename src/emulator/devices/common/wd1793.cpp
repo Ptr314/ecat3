@@ -3,19 +3,18 @@
 #include "wd1793.h"
 
 WD1793::WD1793(InterfaceManager *im, EmulatorConfigDevice *cd):
-    FDC(im, cd),
-    drives_count(0),
-    command(0),
-    delay(0),
-    register_delay(0),
-    step_dir(1)
+      FDC(im, cd)
+    , drives_count(0)
+    , command(0)
+    , delay(0)
+    , register_delay(0)
+    , step_dir(1)
+    , i_address(this, im, 2, "address", MODE_R)
+    , i_data(this, im, 8, "data", MODE_R)
+    , i_INTRQ(this, im, 1, "intrq", MODE_W)
+    , i_DRQ(this, im, 1, "drq", MODE_W)
+    , i_HLD(this, im, 1, "hld", MODE_W)
 {
-    i_address = create_interface(2, "address", MODE_R);
-    i_data = create_interface(8, "data", MODE_R);
-    i_INTRQ = create_interface(1, "intrq", MODE_W);
-    i_DRQ = create_interface(1, "drq", MODE_W);
-    i_HLD = create_interface(1, "hld", MODE_W);
-
     memset(&registers, 0, sizeof(registers));
 }
 
@@ -39,7 +38,7 @@ void WD1793::load_config(SystemData *sd)
 void WD1793::SetDRQ()
 {
     SetFlag(wd1793_FLAG_DRQ);
-    i_DRQ->change(1);
+    i_DRQ.change(1);
 }
 
 bool WD1793::GetDRQ()
@@ -50,29 +49,29 @@ bool WD1793::GetDRQ()
 void WD1793::ClearDRQ()
 {
     ClearFlag(wd1793_FLAG_DRQ);
-    i_DRQ->change(0);
+    i_DRQ.change(0);
 }
 
 void WD1793::SetFlag(unsigned int flag)
 {
     registers[wd1793_REG_STATUS] |= flag;
-    if (flag == wd1793_FLAG_HLD) i_HLD->change(1);
+    if (flag == wd1793_FLAG_HLD) i_HLD.change(1);
 }
 
 void WD1793::ClearFlag(unsigned int flag)
 {
     registers[wd1793_REG_STATUS] &= ~flag;
-    if (flag == wd1793_FLAG_HLD) i_HLD->change(0);
+    if (flag == wd1793_FLAG_HLD) i_HLD.change(0);
 }
 
 void WD1793::SetINTRQ()
 {
-    i_INTRQ->change(1);
+    i_INTRQ.change(1);
 }
 
 void WD1793::ClearINTRQ()
 {
-    i_INTRQ->change(0);
+    i_INTRQ.change(0);
 }
 
 void WD1793::FindSelectedDrive()

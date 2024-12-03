@@ -7,8 +7,8 @@
 class Agat_FDC140 : public FDC
 {
 protected:
-    Interface * i_select;
-    Interface * i_motor_on;
+    Interface i_select;
+    Interface i_motor_on;
     int prev_phase;
     int current_phase;
     //uint8_t data;

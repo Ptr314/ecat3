@@ -5,15 +5,15 @@
 #define SPK_MODE_FLIP   1
 
 Speaker::Speaker(InterfaceManager *im, EmulatorConfigDevice *cd):
-    GenericSound(im, cd),
-    mode(SPK_MODE_LEVEL),
-    flip_value(0),
-    shorts(true),
-    is_delayed(false),
-    input(0)
+      GenericSound(im, cd)
+    , mode(SPK_MODE_LEVEL)
+    , flip_value(0)
+    , shorts(true)
+    , is_delayed(false)
+    , input(0)
+    , i_input(this, im, 1, "input", MODE_R, 1)
+    , i_mixer(this, im, 8, "mixer", MODE_R)
 {
-    i_input = create_interface(1, "input", MODE_R, 1);
-    i_mixer = create_interface(8, "mixer", MODE_R);
 }
 
 unsigned int Speaker::calc_sound_value()
@@ -27,7 +27,7 @@ unsigned int Speaker::calc_sound_value()
         }
     }
     for (unsigned int i=0; i < MixerWidth; i++)
-        V += (i_mixer->value >> i) & 0x01;
+        V += (i_mixer.value >> i) & 0x01;
     return V * InputValue * volume / 100 + 127;
 }
 
@@ -35,15 +35,15 @@ void Speaker::reset(bool cold)
 {
     GenericSound::reset(cold);
 
-    if (i_input->linked == 0)
+    if (i_input.linked == 0)
         InputWidth = 0;
     else
         InputWidth = 1;
 
-    if (i_mixer->linked == 0)
+    if (i_mixer.linked == 0)
         MixerWidth = 0;
     else
-        MixerWidth = CalcBits(i_mixer->linked_bits, 8);
+        MixerWidth = CalcBits(i_mixer.linked_bits, 8);
 
     if (InputWidth + MixerWidth > 0)
         InputValue = 127 / (InputWidth + MixerWidth);
@@ -72,10 +72,10 @@ void Speaker::interface_callback(unsigned int callback_id, unsigned int new_valu
     unsigned int new_input;
 
     if (mode == SPK_MODE_FLIP) {
-        if (i_input->neg_edge())
+        if (i_input.neg_edge())
             new_input = input ^ 1;
     } else
-        new_input = i_input->value  & 0x01;
+        new_input = i_input.value  & 0x01;
 
     if (shorts) {
         if (!is_delayed) {

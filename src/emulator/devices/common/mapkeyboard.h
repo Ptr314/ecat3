@@ -14,7 +14,7 @@ struct KeyMapData {
 class MapKeyboard: public Keyboard
 {
 private:
-    Interface * i_ruslat;
+    Interface i_ruslat;
 
 protected:
     bool shift_pressed;

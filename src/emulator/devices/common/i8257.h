@@ -7,8 +7,8 @@
 class I8257:public AddressableDevice
 {
 private:
-    Interface * i_address;
-    Interface * i_data;
+    Interface i_address;
+    Interface i_data;
 
 public:
     uint8_t RgA[8];
@@ -19,10 +19,10 @@ public:
     uint8_t RgState;
 
     I8257(InterfaceManager *im, EmulatorConfigDevice *cd):
-        AddressableDevice(im, cd)
+          AddressableDevice(im, cd)
+        , i_address(this, im, 2, "address", MODE_R)
+        , i_data(this, im, 8, "data", MODE_R)
     {
-        i_address = create_interface(2, "address", MODE_R);
-        i_data =    create_interface(8, "data", MODE_R);
 
         memset(&PtrA, 0, sizeof(PtrA));
         memset(&PtrC, 0, sizeof(PtrC));

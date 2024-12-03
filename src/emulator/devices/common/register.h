@@ -6,9 +6,9 @@
 class Register:public ComputerDevice
 {
 private:
-    Interface * i_in;
-    Interface * i_out;
-    Interface * i_c;
+    Interface i_in;
+    Interface i_out;
+    Interface i_c;
 
     unsigned int register_value;
     unsigned int store_type;

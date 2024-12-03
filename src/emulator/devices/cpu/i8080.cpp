@@ -37,15 +37,13 @@ void I8080Core::inte_changed(unsigned int inte)
 //----------------------- Emulator device -----------------------------------
 
 i8080::i8080(InterfaceManager *im, EmulatorConfigDevice *cd):
-    CPU(im, cd)
-{
-    i_address = create_interface(16, "address", MODE_R, 1);
-    i_data =    create_interface(8, "data", MODE_RW);
-    i_nmi =     create_interface(1, "nmi", MODE_R);
-    i_int =     create_interface(1, "int", MODE_R);
-    i_inte =    create_interface(1, "inte", MODE_W);
-    i_m1 =      create_interface(1, "m1", MODE_W);
+      CPU(im, cd)
+    , i_nmi(this, im, 1, "nmi", MODE_R)
+    , i_int(this, im, 1, "int", MODE_R)
+    , i_inte(this, im, 1, "inte", MODE_W)
+    , i_m1(this, im, 1, "m1", MODE_W)
 
+{
     core = new I8080Core(this);
 
     over_commands.push_back(0xCD);
@@ -98,7 +96,7 @@ void i8080::reset(bool cold)
 
 void i8080::inte_changed(unsigned int inte)
 {
-    i_inte->change(inte);
+    i_inte.change(inte);
 }
 
 QList<QPair<QString, QString>> i8080::get_registers()

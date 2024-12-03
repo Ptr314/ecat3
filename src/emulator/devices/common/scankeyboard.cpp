@@ -8,16 +8,16 @@
 
 
 ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
-    Keyboard(im, cd),
-    keys_count(0)
-{
-    i_scan =   create_interface(8, "scan", MODE_R, SCAN_CALLBACK);
-    i_output = create_interface(8, "output", MODE_W);
-    i_shift =  create_interface(1, "shift", MODE_W);
-    i_ctrl =   create_interface(1, "ctrl", MODE_W);
-    i_ruslat = create_interface(1, "ruslat", MODE_W);
-    i_ruslat_led = create_interface(1, "ruslat_led", MODE_R, LED_CALLBACK);
+      Keyboard(im, cd)
+    , keys_count(0)
+    , i_scan(this, im, 8, "scan", MODE_R, SCAN_CALLBACK)
+    , i_output(this, im, 8, "output", MODE_W)
+    , i_shift(this, im, 1, "shift", MODE_W)
+    , i_ctrl(this, im, 1, "ctrl", MODE_W)
+    , i_ruslat(this, im, 1, "ruslat", MODE_W)
+    , i_ruslat_led(this, im, 1, "ruslat_led", MODE_R, LED_CALLBACK)
 
+{
     memset(&key_array, _FFFF, sizeof(key_array));
 
     calculate_out();
@@ -86,9 +86,9 @@ void ScanKeyboard::load_config(SystemData *sd)
     code_shift = translate_key(cd->get_parameter("shift").value);
     code_ruslat = translate_key(cd->get_parameter("ruslat").value);
 
-    i_shift->change(1);
-    i_ctrl->change(1);
-    i_ruslat->change(1);
+    i_shift.change(1);
+    i_ctrl.change(1);
+    i_ruslat.change(1);
 
 }
 
@@ -96,11 +96,11 @@ void ScanKeyboard::key_down(unsigned int key)
 {
     //qDebug() << "DOWN" << Qt::hex << key;
     if (key == code_ctrl)
-        i_ctrl->change(0);
+        i_ctrl.change(0);
     else if (key == code_shift)
-        i_shift->change(0);
+        i_shift.change(0);
     else if (key == code_ruslat) {
-        i_ruslat->change(0);
+        i_ruslat.change(0);
         set_rus(!rus_mode);
     } else {
         for (unsigned int i=0; i<keys_count; i++)
@@ -108,8 +108,8 @@ void ScanKeyboard::key_down(unsigned int key)
             {
                 //qDebug() << "SCAN INDEX" << i;
                 if (scan_data[i].shift_state != SHIFT_STATE_KEEP) {
-                    stored_shift = i_shift->value;
-                    i_shift->change(scan_data[i].shift_state==SHIFT_STATE_ON?0:1);
+                    stored_shift = i_shift.value;
+                    i_shift.change(scan_data[i].shift_state==SHIFT_STATE_ON?0:1);
                     // qDebug() << "SHIFT " << ((scan_data[i].shift_state==SHIFT_STATE_ON)?0:1);
                 }
 
@@ -125,11 +125,11 @@ void ScanKeyboard::key_up(unsigned int key)
 {
     //qDebug() << "UP" << key;
     if (key == code_ctrl)
-        i_ctrl->change(1);
+        i_ctrl.change(1);
     else if (key == code_shift)
-        i_shift->change(1);
+        i_shift.change(1);
     else if (key == code_ruslat) {
-        i_ruslat->change(1);
+        i_ruslat.change(1);
         set_rus(!rus_mode);
     } else {
         for (unsigned int i=0; i<keys_count; i++)
@@ -140,7 +140,7 @@ void ScanKeyboard::key_up(unsigned int key)
                 calculate_out();
 
                 if (scan_data[i].shift_state != SHIFT_STATE_KEEP) {
-                    i_shift->change(stored_shift);
+                    i_shift.change(stored_shift);
                     // qDebug() << "SHIFT " << stored_shift;
 
                 }
@@ -155,10 +155,10 @@ void ScanKeyboard::calculate_out()
     for (unsigned int i = 0; i<scan_lines; i++)
     {
         unsigned int mask = create_mask(1, i);
-        if ((i_scan->value & mask) == 0)
+        if ((i_scan.value & mask) == 0)
             new_value &= key_array[i];
     }
-    i_output->change(new_value);
+    i_output.change(new_value);
 }
 
 void ScanKeyboard::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
@@ -167,7 +167,7 @@ void ScanKeyboard::interface_callback(unsigned int callback_id, unsigned int new
         calculate_out();
     else
         // LED_CALLBACK
-        set_rus((i_ruslat_led->value & 1) == 1);
+        set_rus((i_ruslat_led.value & 1) == 1);
 }
 
 void ScanKeyboard::set_rus(bool new_rus)

@@ -13,12 +13,12 @@ struct ScanData {
 class ScanKeyboard: public Keyboard
 {
 private:
-    Interface * i_scan;
-    Interface * i_output;
-    Interface * i_shift;
-    Interface * i_ctrl;
-    Interface * i_ruslat;
-    Interface * i_ruslat_led;
+    Interface i_scan;
+    Interface i_output;
+    Interface i_shift;
+    Interface i_ctrl;
+    Interface i_ruslat;
+    Interface i_ruslat_led;
 
     unsigned int scan_lines;
     unsigned int out_lines;

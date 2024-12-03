@@ -12,21 +12,21 @@
 #define CALLBACK_MOTOR_ON   1
 
 FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd),
-    loaded(false),
-    stream_format(FDD_STREAM_PLAIN),
-    buffer(nullptr),
-    side(0),
-    track(0),
-    fdd_mode(FDD_MODE_LOGICAL),
-    led_timer(this)
+      ComputerDevice(im, cd)
+    , loaded(false)
+    , stream_format(FDD_STREAM_PLAIN)
+    , buffer(nullptr)
+    , side(0)
+    , track(0)
+    , fdd_mode(FDD_MODE_LOGICAL)
+    , led_timer(this)
+    , i_select(this, im, 2, "select", MODE_R)
+    , i_side(this, im, 1, "side", MODE_R)
+    , i_density(this, im, 1, "density", MODE_R)
+    ,i_motor_on(this, im, 1, "motor_on", MODE_R, CALLBACK_MOTOR_ON)
+
 {
     device_class = "fdd";
-
-    i_select = create_interface(2, "select", MODE_R);
-    i_side = create_interface(1, "side", MODE_R);
-    i_density = create_interface(1, "density", MODE_R);
-    i_motor_on = create_interface(1, "motor_on", MODE_R, CALLBACK_MOTOR_ON);
 
     //memset(&buffer, 0, sizeof(buffer));
     led_timer.setSingleShot(true);
@@ -209,7 +209,7 @@ int FDD::SeekSector(int track, int sector)
     if (buffer != nullptr)
     {
         if (sides > 1)
-            this->side = ~(i_side->value) & 1;
+            this->side = ~(i_side.value) & 1;
         this->track = track;
         this->sector = sector;
         //qDebug() << "SEEK " << this->side << this->track << this->sector;
@@ -277,7 +277,7 @@ void FDD::WriteNextByte(uint8_t value)
 
 bool FDD::is_selected()
 {
-    return (i_select->value & 0x03) == selector;
+    return (i_select.value & 0x03) == selector;
 }
 
 bool FDD::is_protected()

@@ -139,7 +139,7 @@ private:
 protected:
     unsigned int clock_stored;
 
-    Interface * create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id = 0);
+    // Interface * create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id = 0);
     EmulatorConfigDevice * cd;
     InterfaceManager * im;
     ComputerDevice * memory_callback_device;
@@ -170,13 +170,53 @@ public:
     virtual unsigned int get_size();
 };
 
+class Interface: public QObject
+{
+    Q_OBJECT
+private:
+    unsigned int size;
+    unsigned int mode;
+    unsigned int old_value;
+    unsigned int edge_value;
+    InterfaceManager *im;
+    LinkData linked_interfaces[MAX_LINKS];
+    unsigned int callback_id;
+public:
+    unsigned int value;
+    unsigned int mask;
+    QString name;
+    unsigned int linked;
+    unsigned int linked_bits;
+    ComputerDevice *device;
+
+    Interface(
+        ComputerDevice * device,
+        InterfaceManager * im,
+        unsigned int size,
+        QString name,
+        unsigned int mode,
+        unsigned int callback_id = 0
+        );
+
+    void connect(LinkedInterface s, LinkedInterface d, bool invert=false);
+    unsigned int get_size();
+    void set_size(unsigned int new_size);
+    void set_mode(unsigned int new_mode);
+    unsigned int get_mode();
+    void change(unsigned int new_value); //Вызывается устройством для изменения выхода
+    void changed(LinkData link, unsigned int value); //Вызывается связанными интерфейсами при изменении значения на них
+    void clear();
+    bool pos_edge(); //Триггеры фронтов для 0-го бита
+    bool neg_edge();
+    void pull(unsigned int new_value);
+};
 
 class Memory: public AddressableDevice
 {
 protected:
     bool auto_output;
-    Interface *i_address;
-    Interface *i_data;
+    Interface i_address;
+    Interface i_data;
     uint8_t * buffer;
     unsigned short fill;
     bool random_fill;
@@ -218,11 +258,11 @@ protected:
 
     unsigned int value;
     unsigned int default_value;
-    Interface * i_input;
-    Interface * i_data;
-    Interface * i_access;
-    Interface * i_flip;
-    Interface * i_reset;
+    Interface i_input;
+    Interface i_data;
+    Interface i_access;
+    Interface i_flip;
+    Interface i_reset;
 
 public:
     virtual unsigned int get_value(unsigned int address) override;
@@ -277,46 +317,6 @@ private:
     Logger * logger;
 };
 
-class Interface: public QObject
-{
-    Q_OBJECT
-private:
-    unsigned int size;
-    unsigned int mode;
-    unsigned int old_value;
-    unsigned int edge_value;
-    InterfaceManager *im;
-    LinkData linked_interfaces[MAX_LINKS];
-    unsigned int callback_id;
-public:
-    unsigned int value;
-    unsigned int mask;
-    QString name;
-    unsigned int linked;
-    unsigned int linked_bits;
-    ComputerDevice *device;
-
-    Interface(
-                ComputerDevice * device,
-                InterfaceManager * im,
-                unsigned int size,
-                QString name,
-                unsigned int mode,
-                unsigned int callback_id
-    );
-
-    void connect(LinkedInterface s, LinkedInterface d, bool invert=false);
-    unsigned int get_size();
-    void set_size(unsigned int new_size);
-    void set_mode(unsigned int new_mode);
-    unsigned int get_mode();
-    void change(unsigned int new_value); //Вызывается устройством для изменения выхода
-    void changed(LinkData link, unsigned int value); //Вызывается связанными интерфейсами при изменении значения на них
-    void clear();
-    bool pos_edge(); //Триггеры фронтов для 0-го бита
-    bool neg_edge();
-    void pull(unsigned int new_value);
-};
 
 class InterfaceManager: public QObject
 {
@@ -346,8 +346,8 @@ private:
     unsigned int breakpoints[100];
 
 protected:
-    Interface * i_address;
-    Interface * i_data;
+    Interface i_address;
+    Interface i_data;
     bool reset_mode;
 
     virtual void log_state(uint8_t command, bool before, unsigned int cycles=0){};
@@ -386,8 +386,8 @@ typedef MapperRange MapperArray[100];
 class MemoryMapper: public AddressableDevice
 {
 private:
-    Interface *     i_address;
-    Interface *     i_config;
+    Interface       i_address;
+    Interface       i_config;
 
     unsigned int    ranges_count;
     unsigned int    ports_count;

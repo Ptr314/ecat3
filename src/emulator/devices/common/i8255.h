@@ -6,12 +6,12 @@
 class I8255:public AddressableDevice
 {
 private:
-    Interface * i_address;
-    Interface * i_data;
-    Interface * i_port_a;
-    Interface * i_port_b;
-    Interface * i_port_ch;
-    Interface * i_port_cl;
+    Interface i_address;
+    Interface i_data;
+    Interface i_port_a;
+    Interface i_port_b;
+    Interface i_port_ch;
+    Interface i_port_cl;
 
     uint8_t registers [4];
 

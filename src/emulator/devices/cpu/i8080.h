@@ -33,10 +33,10 @@ public:
 class i8080: public CPU
 {
 private:
-    Interface * i_nmi;
-    Interface * i_int;
-    Interface * i_inte;
-    Interface * i_m1;
+    Interface i_nmi;
+    Interface i_int;
+    Interface i_inte;
+    Interface i_m1;
 
     i8080core * core;
 

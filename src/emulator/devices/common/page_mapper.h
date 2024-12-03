@@ -6,8 +6,8 @@
 class PageMapper:public AddressableDevice
 {
 private:
-    Interface * i_page;
-    Interface * i_segment;
+    Interface i_page;
+    Interface i_segment;
 
     unsigned int PagesCount;
     Memory * pages[32];

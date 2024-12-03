@@ -17,19 +17,18 @@ private:
     I8275 * VG75;
     I8257 * DMA;
     unsigned int Channel;
-    Interface * i_high;             //Font select
+    Interface i_high;             //Font select
     bool AttrDelay;
     unsigned int RGB[3];
     bool RGBInv;
 
 public:
     I8275Display(InterfaceManager *im, EmulatorConfigDevice *cd):
-        GenericDisplay(im, cd)
+          GenericDisplay(im, cd)
+        , i_high(this, im, 1, "high", MODE_R)
     {
         sx = 78*6;
         sy = 30*10;
-
-        i_high = create_interface(1, "high", MODE_R);
     }
 
     virtual void load_config(SystemData *sd) override
@@ -119,8 +118,8 @@ protected:
 
         //Font select
         unsigned int FH;
-        if (i_high->linked > 0)
-            FH = (i_high->value & 1) << 10;
+        if (i_high.linked > 0)
+            FH = (i_high.value & 1) << 10;
         else
             FH = 0;
 

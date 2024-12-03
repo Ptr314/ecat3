@@ -61,15 +61,11 @@ void outPort(void* arg, unsigned short port, unsigned char value)
 //----------------------- Emulator device -----------------------------------
 
 z80::z80(InterfaceManager *im, EmulatorConfigDevice *cd):
-    CPU(im, cd)
+      CPU(im, cd)
+    , i_nmi(this, im, 1, "nmi", MODE_R, CALLBACK_NMI)
+    , i_int(this, im, 1, "int", MODE_R, CALLBACK_INT)
+    , i_m1(this, im, 1, "m1", MODE_W)
 {
-    i_address = create_interface(16, "address", MODE_R, 1); //TODO: check mode
-    i_data =    create_interface(8, "data", MODE_RW);
-    i_nmi =     create_interface(1, "nmi", MODE_R, CALLBACK_NMI);
-    i_int =     create_interface(1, "int", MODE_R, CALLBACK_INT);
-    //i_inte =    create_interface(1, "inte", MODE_W);
-    i_m1 =      create_interface(1, "m1", MODE_W);
-
 #ifndef EXTERNAL_Z80
     core = new z80Core(this);
 #else

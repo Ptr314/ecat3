@@ -7,8 +7,8 @@
 class Speaker: public GenericSound
 {
 private:
-    Interface * i_input;
-    Interface * i_mixer;
+    Interface i_input;
+    Interface i_mixer;
     unsigned int mode;
     unsigned int InputWidth;
     unsigned int MixerWidth;

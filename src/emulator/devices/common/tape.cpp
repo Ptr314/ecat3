@@ -12,11 +12,11 @@ TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
     , data_position(0)
     , bit_shift(7)
     , ticks_counter(0)
+    , i_input(this, im, 1, "input", MODE_R)
+    , i_output(this, im, 1, "output", MODE_W)
+    , i_speaker(this, im, 1, "speaker", MODE_W)
 {
     device_class = "tape";
-    i_input =  create_interface(1, "input", MODE_R);
-    i_output = create_interface(1, "output", MODE_W);
-    i_speaker = create_interface(1, "speaker", MODE_W);
 
     system_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
 
@@ -147,8 +147,8 @@ void TapeRecorder::clock(unsigned int counter)
             if (data_position < data_size) {
                 if (tape_mode == TAPE_READ) {
                     unsigned int v = (data.at(data_position) >> bit_shift) & 1;
-                    i_output->change(v);
-                    i_speaker->change(v);
+                    i_output.change(v);
+                    i_speaker.change(v);
                 } else {
                     //TODO: write
                 }

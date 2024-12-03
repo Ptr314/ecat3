@@ -7,23 +7,22 @@
 
 I8255::I8255(InterfaceManager *im, EmulatorConfigDevice *cd):
     AddressableDevice(im, cd)
-{
-    i_address = create_interface(2, "address", MODE_R);
-    i_data =    create_interface(8, "data", MODE_R);
-    i_port_a =  create_interface(8, "A", MODE_R, PORT_A);
-    i_port_b =  create_interface(8, "B", MODE_R, PORT_B);
-    i_port_ch = create_interface(4, "CH", MODE_R, PORT_CH);
-    i_port_cl = create_interface(4, "CL", MODE_R, PORT_CL);
-}
+    , i_address(this, im, 2, "address", MODE_R)
+    , i_data(this, im, 8, "data", MODE_R)
+    , i_port_a(this, im, 8, "A", MODE_R, PORT_A)
+    , i_port_b(this, im, 8, "B", MODE_R, PORT_B)
+    , i_port_ch(this, im, 4, "CH", MODE_R, PORT_CH)
+    , i_port_cl(this, im, 4, "CL", MODE_R, PORT_CL)
+{}
 
 void I8255::reset(bool cold)
 {
     if (cold) memset(&registers, 0, sizeof(registers));
     registers[3] = 0;
-    i_port_a->set_mode(MODE_R);
-    i_port_b->set_mode(MODE_R);
-    i_port_ch->set_mode(MODE_R);
-    i_port_cl->set_mode(MODE_R);
+    i_port_a.set_mode(MODE_R);
+    i_port_b.set_mode(MODE_R);
+    i_port_ch.set_mode(MODE_R);
+    i_port_cl.set_mode(MODE_R);
 }
 
 unsigned int I8255::get_value(unsigned int address)
@@ -45,7 +44,7 @@ void I8255::set_value(unsigned int address, unsigned int value, bool force)
             if ((registers[3] & 0x10) == 0)
             {
                 registers[n] = (uint8_t)value;
-                i_port_a->change(value);
+                i_port_a.change(value);
             }
         } else {
             im->dm->error(this, I8255::tr("i8255:A is in an unsupported mode"));
@@ -57,7 +56,7 @@ void I8255::set_value(unsigned int address, unsigned int value, bool force)
             if ((registers[3] & 2) == 0)
             {
                 registers[n] = (uint8_t)value;
-                i_port_b->change(value);
+                i_port_b.change(value);
             }
         } else {
             im->dm->error(this, I8255::tr("i8255:B is in an unsupported mode"));
@@ -68,13 +67,13 @@ void I8255::set_value(unsigned int address, unsigned int value, bool force)
         {
             registers[n] &= 0x0F;
             registers[n] |= (uint8_t)value & 0xF0;
-            i_port_ch->change(registers[n] >> 4);
+            i_port_ch.change(registers[n] >> 4);
         }
         if ((registers[3] & 1) == 0)
         {
             registers[n] &= 0xF0;
             registers[n] |= (uint8_t)value & 0x0F;
-            i_port_cl->change(registers[n]);
+            i_port_cl.change(registers[n]);
         }
         break;
     default: //3 - control register
@@ -82,15 +81,15 @@ void I8255::set_value(unsigned int address, unsigned int value, bool force)
         {
             //Set mode
             registers[n] = (uint8_t)value;
-            i_port_a-> set_mode( ((value & 0x10) == 0)?MODE_W:MODE_R );
-            i_port_b-> set_mode( ((value & 0x02) == 0)?MODE_W:MODE_R );
-            i_port_ch->set_mode( ((value & 0x08) == 0)?MODE_W:MODE_R );
-            i_port_cl->set_mode( ((value & 0x01) == 0)?MODE_W:MODE_R );
+            i_port_a. set_mode( ((value & 0x10) == 0)?MODE_W:MODE_R );
+            i_port_b. set_mode( ((value & 0x02) == 0)?MODE_W:MODE_R );
+            i_port_ch.set_mode( ((value & 0x08) == 0)?MODE_W:MODE_R );
+            i_port_cl.set_mode( ((value & 0x01) == 0)?MODE_W:MODE_R );
 
-            if (i_port_a->get_mode() == MODE_R) interface_callback(PORT_A, i_port_a->value, registers[0]);
-            if (i_port_b->get_mode() == MODE_R) interface_callback(PORT_B, i_port_b->value, registers[1]);
-            if (i_port_ch->get_mode() == MODE_R) interface_callback(PORT_CH, i_port_ch->value, registers[2] >> 4);
-            if (i_port_cl->get_mode() == MODE_R) interface_callback(PORT_CL, i_port_cl->value, registers[2] & 0xF);
+            if (i_port_a. get_mode() == MODE_R) interface_callback(PORT_A, i_port_a.value, registers[0]);
+            if (i_port_b. get_mode() == MODE_R) interface_callback(PORT_B, i_port_b.value, registers[1]);
+            if (i_port_ch.get_mode() == MODE_R) interface_callback(PORT_CH, i_port_ch.value, registers[2] >> 4);
+            if (i_port_cl.get_mode() == MODE_R) interface_callback(PORT_CL, i_port_cl.value, registers[2] & 0xF);
         } else {
             //Bitwise operations on C
             unsigned int bn = value >> 1;

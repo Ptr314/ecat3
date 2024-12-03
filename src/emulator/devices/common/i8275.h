@@ -6,8 +6,8 @@
 class I8275:public AddressableDevice
 {
 private:
-    Interface * i_address;
-    Interface * i_data;
+    Interface i_address;
+    Interface i_data;
 
     uint8_t Mode;
     int RegIndex;
@@ -21,15 +21,14 @@ public:
     bool Blinker;
 
     I8275(InterfaceManager *im, EmulatorConfigDevice *cd):
-        AddressableDevice(im, cd),
-        Counter(0),
-        Mode(0),
-        RegIndex(0),
-        Blinker(false)
+          AddressableDevice(im, cd)
+        , Counter(0)
+        , Mode(0)
+        , RegIndex(0)
+        , Blinker(false)
+        , i_address(this, im, 1, "address", MODE_R)
+        , i_data(this, im, 8, "data", MODE_R)
     {
-        i_address = create_interface(1, "address", MODE_R);
-        i_data =    create_interface(8, "data", MODE_R);
-
         memset(&RegMode, 0, sizeof(RegMode));
         memset(&RegCursor, 0, sizeof(RegCursor));
     }

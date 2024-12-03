@@ -5,12 +5,12 @@
 
 
 PageMapper::PageMapper(InterfaceManager *im, EmulatorConfigDevice *cd):
-    AddressableDevice(im, cd),
-    PagesCount(0),
-    address_mask(_FFFF)
+      AddressableDevice(im, cd)
+    , PagesCount(0)
+    , address_mask(_FFFF)
+    , i_page(this, im, 8, "page", MODE_R)
+    , i_segment(this, im, 8, "segment", MODE_R)
 {
-    i_page = create_interface(8, "page", MODE_R);
-    i_segment = create_interface(8, "segment", MODE_R);
     memset(&pages, 0, sizeof(pages));
 }
 
@@ -51,20 +51,20 @@ void PageMapper::load_config(SystemData *sd)
 unsigned int PageMapper::get_value(unsigned int address)
 {
     if (Frame == pages[0]->get_size())
-        return pages[i_page->value & PageMask]->get_value(address);
+        return pages[i_page.value & PageMask]->get_value(address);
     else {
-        unsigned int address_on_device = (i_segment->value & SegmentMask)*Frame + (address & address_mask);
-        return pages[i_page->value & PageMask]->get_value(address_on_device);
+        unsigned int address_on_device = (i_segment.value & SegmentMask)*Frame + (address & address_mask);
+        return pages[i_page.value & PageMask]->get_value(address_on_device);
     }
 }
 
 void PageMapper::set_value(unsigned int address, unsigned int value, bool force)
 {
     if (Frame == pages[0]->get_size())
-        pages[i_page->value & PageMask]->set_value(address, value);
+        pages[i_page.value & PageMask]->set_value(address, value);
     else {
-        unsigned int address_on_device = (i_segment->value & SegmentMask)*Frame + (address & address_mask);
-        pages[i_page->value & PageMask]->set_value(address_on_device, value);
+        unsigned int address_on_device = (i_segment.value & SegmentMask)*Frame + (address & address_mask);
+        pages[i_page.value & PageMask]->set_value(address_on_device, value);
 #ifdef LOG_PAGE_MAPPER
         logs("W SEG: " + QString::number(i_segment->value & SegmentMask, 2) + ", " + QString::number(address, 16) + " -> " + QString::number(address_on_device, 16));
 #endif

@@ -34,10 +34,9 @@ public:
 class z80: public CPU
 {
 private:
-    Interface * i_nmi;
-    Interface * i_int;
-    //Interface * i_inte;
-    Interface * i_m1;
+    Interface i_nmi;
+    Interface i_int;
+    Interface i_m1;
 
 #ifndef EXTERNAL_Z80
     z80core * core;

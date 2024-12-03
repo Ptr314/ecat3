@@ -6,8 +6,8 @@
 class Generator:public ComputerDevice
 {
 private:
-    Interface * i_out;
-    Interface * i_enable;
+    Interface i_out;
+    Interface i_enable;
 
     bool positive;
     unsigned int total_counts;

@@ -25,9 +25,9 @@ class mos6502 : public CPU
 {
     Q_OBJECT
 private:
-    Interface * i_nmi;
-    Interface * i_irq;
-    Interface * i_so;
+    Interface i_nmi;
+    Interface i_irq;
+    Interface i_so;
 
     mos6502Core * core;
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;

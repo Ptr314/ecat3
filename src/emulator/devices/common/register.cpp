@@ -10,21 +10,21 @@
 #define CHANGED_C           2
 
 Register::Register(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd),
-    register_value(0),
-    store_type(REGISTER_FLIPFLOP_POS)
+      ComputerDevice(im, cd)
+    , register_value(0)
+    , store_type(REGISTER_FLIPFLOP_POS)
+    , i_in(this, im, 16, "in", MODE_R, CHANGED_IN)
+    , i_out(this, im, 16, "out", MODE_W)
+    , i_c(this, im, 1, "c", MODE_R, CHANGED_C)
 {
-    i_in =  create_interface(16, "in", MODE_R, CHANGED_IN);
-    i_out = create_interface(16, "out", MODE_W);
-    i_c =   create_interface(1, "c", MODE_R, CHANGED_C);
 
-    i_out->change(register_value);
+    i_out.change(register_value);
 }
 
 void Register::reset(bool cold)
 {
     register_value = 0;
-    i_out->change(register_value);
+    i_out.change(register_value);
 }
 
 void Register::load_config(SystemData *sd)
@@ -54,16 +54,16 @@ void Register::interface_callback(unsigned int callback_id, unsigned int new_val
         switch (store_type) {
         case REGISTER_FLIPFLOP_POS:
         case REGISTER_LATCH_POS:
-            if (i_c->pos_edge()){
-                register_value = i_in->value;
-                i_out->change(register_value);
+            if (i_c.pos_edge()){
+                register_value = i_in.value;
+                i_out.change(register_value);
             }
             break;
         case REGISTER_FLIPFLOP_NEG:
         case REGISTER_LATCH_NEG:
-            if (i_c->neg_edge()){
-                register_value = i_in->value;
-                i_out->change(register_value);
+            if (i_c.neg_edge()){
+                register_value = i_in.value;
+                i_out.change(register_value);
             }
             break;
         }
@@ -71,12 +71,12 @@ void Register::interface_callback(unsigned int callback_id, unsigned int new_val
         if (callback_id == CHANGED_IN) {
             if (
                 (store_type == REGISTER_BUFFER)
-                || (store_type == REGISTER_LATCH_POS && i_c->value == 0 )
-                || (store_type == REGISTER_LATCH_NEG && i_c->value == 1 )
+                || (store_type == REGISTER_LATCH_POS && i_c.value == 0 )
+                || (store_type == REGISTER_LATCH_NEG && i_c.value == 1 )
                 )
             {
-                register_value = i_in->value;
-                i_out->change(register_value);
+                register_value = i_in.value;
+                i_out.change(register_value);
             }
         }
 }

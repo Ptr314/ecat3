@@ -2,13 +2,13 @@
 #include "emulator/utils.h"
 
 Generator::Generator(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd),
-    pulse_stored(0),
-    in_pulse(false),
-    enabled(true)
+      ComputerDevice(im, cd)
+    , pulse_stored(0)
+    , in_pulse(false)
+    , enabled(true)
+    , i_out(this, im, 1, "out", MODE_W)
+    , i_enable(this, im, 1, "enable", MODE_R, 1)
 {
-    i_out = create_interface(1, "out", MODE_W);
-    i_enable = create_interface(1, "enable", MODE_R, 1);
 }
 
 void Generator::load_config(SystemData *sd)
@@ -42,7 +42,7 @@ void Generator::load_config(SystemData *sd)
         else
             QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect polarity for %1").arg(this->name));
 
-    i_enable->change(1);
+    i_enable.change(1);
 }
 
 void Generator::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
@@ -60,9 +60,9 @@ void Generator::system_clock(unsigned int counter)
         {
             in_pulse = false;
             if (positive)
-                i_out->change(0);
+                i_out.change(0);
             else
-                i_out->change(1);
+                i_out.change(1);
         }
     }
 
@@ -74,9 +74,9 @@ void Generator::system_clock(unsigned int counter)
             in_pulse = true;
             pulse_stored = 0;
             if (positive)
-                i_out->change(1);
+                i_out.change(1);
             else
-                i_out->change(0);
+                i_out.change(0);
         }
     }
 }

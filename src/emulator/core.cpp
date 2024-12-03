@@ -336,8 +336,8 @@ void InterfaceManager::register_interface(Interface *i)
 
 void InterfaceManager::clear()
 {
-    for (unsigned int i=0; i < interfaces_count; i++)
-        delete interfaces[i];
+    // for (unsigned int i=0; i < interfaces_count; i++)
+    //     delete interfaces[i];
 
     interfaces_count = 0;
 
@@ -483,10 +483,10 @@ void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
 #endif
 }
 
-Interface * ComputerDevice::create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id)
-{
-    return new Interface(this, im, size, name, mode, callback_id);
-}
+// Interface * ComputerDevice::create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id)
+// {
+//     return new Interface(this, im, size, name, mode, callback_id);
+// }
 
 void ComputerDevice::interface_callback([[maybe_unused]] unsigned int callback_id, [[maybe_unused]] unsigned int new_value, [[maybe_unused]] unsigned int old_value)
 {
@@ -529,16 +529,16 @@ unsigned int AddressableDevice::get_size()
 //----------------------- class Memory -------------------------------//
 
 Memory::Memory(InterfaceManager *im, EmulatorConfigDevice *cd):
-    AddressableDevice(im, cd),
-    auto_output(false),
-    buffer(nullptr),
-    fill(0),
-    random_fill(false),
-    read_callback(0),
-    write_callback(0)
+      AddressableDevice(im, cd)
+    , auto_output(false)
+    , buffer(nullptr)
+    , fill(0)
+    , random_fill(false)
+    , read_callback(0)
+    , write_callback(0)
+    , i_address(this, im, 16, "address", MODE_R, 1)
+    , i_data(this, im, 8, "data", MODE_W)
 {
-    i_address = this->create_interface(16, "address", MODE_R, 1);
-    i_data = this->create_interface(8, "data", MODE_W);
 }
 
 Memory::~Memory()
@@ -568,8 +568,8 @@ void Memory::set_value(unsigned int address, unsigned int value, bool force)
 
 void Memory::interface_callback([[maybe_unused]] unsigned int callback_id, unsigned int new_value, [[maybe_unused]] unsigned int old_value)
 {
-    unsigned int address = new_value & create_mask(i_address->get_size(), 0);
-    if (address < get_size() and auto_output) i_data->change(buffer[address]);
+    unsigned int address = new_value & create_mask(i_address.get_size(), 0);
+    if (address < get_size() and auto_output) i_data.change(buffer[address]);
 
     // if (name == "rom-card-mapper")
     //     logs(QString::number(address, 2) + QString::number(buffer[address], 2));
@@ -581,7 +581,7 @@ void Memory::set_size(unsigned int value)
     buffer = new uint8_t[value];
     addresable_size = value;
 
-    i_address->set_size(ceil(log2(addresable_size)));
+    i_address.set_size(ceil(log2(addresable_size)));
 
     QRandomGenerator *rg = QRandomGenerator::global();
 
@@ -724,15 +724,24 @@ void ROM::load_config(SystemData *sd)
 //----------------------- class Port -------------------------------//
 
 Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
-    AddressableDevice(im, cd),
-    default_value(0),
-    mask(_FFFF)
+      AddressableDevice(im, cd)
+    , default_value(0)
+    , mask(_FFFF)
+    , i_input(this, im, 8, "data", MODE_R)
+    , i_data(this, im, 8, "value", MODE_W)
+    , i_access(this, im, 1, "access", MODE_W)
+    , i_flip(this, im, 1, "flip", MODE_R, PORT_FLIP)
+    , i_reset(this, im, 1, "reset", MODE_R, PORT_RESET)
+
 {
     try {
         size = parse_numeric_value(this->cd->get_parameter("size").value);
     } catch (QException &e) {
         size = 8;
     }
+
+    i_input.set_size(size);
+    i_data.set_size(size);
 
     try {
         default_value = parse_numeric_value(this->cd->get_parameter("default").value);
@@ -751,13 +760,6 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
     } catch (QException &e) {
         mask = _FFFF;
     }
-
-    i_input = this->create_interface(size, "data", MODE_R); //TODO: check if it is nesessary
-    i_data = this->create_interface(size, "value", MODE_W);
-
-    i_access = this->create_interface(1, "access", MODE_W);
-    i_flip = this->create_interface(1, "flip", MODE_R, PORT_FLIP);
-    i_reset = this->create_interface(1, "reset", MODE_R, PORT_RESET);
 
     value = default_value;
 }
@@ -780,8 +782,8 @@ unsigned int Port::get_value([[maybe_unused]] unsigned int address)
     if (name != "port-video" && name != "port-kbd")
         logs("GET " + QString::number(value, 16));
 #endif
-    i_access->change(0);
-    i_access->change(1);
+    i_access.change(0);
+    i_access.change(1);
     return value;
 }
 
@@ -790,10 +792,10 @@ void Port::set_value([[maybe_unused]] unsigned int address, unsigned int value, 
 #ifdef LOG_PORTS
     logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
 #endif
-    i_access->change(0);
+    i_access.change(0);
     this->value = (value & mask) | (this->value & ~mask);
-    i_data->change(this->value);
-    i_access->change(1);
+    i_data.change(this->value);
+    i_access.change(1);
 }
 
 void Port::reset([[maybe_unused]] bool cold)
@@ -816,10 +818,10 @@ void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int 
         i++;
     }
 #endif
-    i_access->change(0);
+    i_access.change(0);
     this->value = (address & mask) | (this->value & ~mask);
-    i_data->change(this->value);
-    i_access->change(1);
+    i_data.change(this->value);
+    i_access.change(1);
 }
 
 void PortAddress::reset([[maybe_unused]] bool cold)
@@ -831,14 +833,16 @@ void PortAddress::reset([[maybe_unused]] bool cold)
 //----------------------- class CPU -------------------------------//
 
 CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd),
-    reset_mode(true),
+      ComputerDevice(im, cd)
+    , reset_mode(true)
+    , i_address(this, im, 16, "address", MODE_W, 1)
+    , i_data(this, im, 8, "data", MODE_RW)
 #ifdef CPU_STOPPED
-    debug(DEBUG_STOPPED),
+    , debug(DEBUG_STOPPED)
 #else
-    debug(DEBUG_OFF),
+    , debug(DEBUG_OFF)
 #endif
-    break_count(0)
+    , break_count(0)
 {
     try {
         clock = parse_numeric_value(this->cd->get_parameter("clock").value);
@@ -897,18 +901,18 @@ void CPU::reset(bool cold)
 //----------------------- class MemoryMapper -------------------------------//
 
 MemoryMapper::MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd):
-    AddressableDevice(im, cd),
-    ranges_count(0),
-    ports_count(0),
-    ports_to_mem(false),
-    first_range(1),
-    cancel_init_mask(0),
-    read_cache_items(0),
-    write_cache_items(0)
+      AddressableDevice(im, cd)
+    , ranges_count(0)
+    , ports_count(0)
+    , ports_to_mem(false)
+    , first_range(1)
+    , cancel_init_mask(0)
+    , read_cache_items(0)
+    , write_cache_items(0)
+    , i_address(this, im, 16, "address", MODE_R)
+    , i_config(this, im, 8, "config", MODE_R, MM_CONFIG)
 
 {
-    this->i_address = this->create_interface(16, "address", MODE_R);
-    this->i_config = this->create_interface(8, "config", MODE_R, MM_CONFIG);
 
     addresable_size = 0x10000;
 }
@@ -940,7 +944,7 @@ void MemoryMapper::load_config(SystemData *sd)
 
         ld.s.i->connect(ld.s, ld.d);
     } else
-        this->i_config->change(0);
+        this->i_config.change(0);
 
     this->ports_to_mem = this->cd->get_parameter("portstomemory", false).value == "1";
 
@@ -992,7 +996,7 @@ void MemoryMapper::load_config(SystemData *sd)
             try {
                 mr.config_mask = parse_numeric_value(mask);
             } catch (QException &e) {
-                mr.config_mask = create_mask(this->i_config->get_size(), 0);
+                mr.config_mask = create_mask(this->i_config.get_size(), 0);
             }
 
             try {
@@ -1163,7 +1167,7 @@ unsigned int MemoryMapper::read(unsigned int address)
     }
 
     unsigned int address_on_device, range_index;
-    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config->value, address, MODE_R, &address_on_device, &range_index);
+    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
     if (d != nullptr)
     {
         //TODO: Cache
@@ -1184,7 +1188,7 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
 #endif
 
     unsigned int address_on_device, range_index;
-    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config->value, address, MODE_W, &address_on_device, &range_index);
+    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index);
     if (d != nullptr)
     {
         //TODO: Cache
@@ -1200,7 +1204,7 @@ unsigned int MemoryMapper::read_port(unsigned int address)
     } else {
         unsigned int a = address & this->ports_mask;
         unsigned int address_on_device, range_index;
-        AddressableDevice * d = this->map(&(this->ports), 0, this->ports_count-1, this->i_config->value, a, MODE_R, &address_on_device, &range_index);
+        AddressableDevice * d = this->map(&(this->ports), 0, this->ports_count-1, this->i_config.value, a, MODE_R, &address_on_device, &range_index);
         if (d != nullptr)
         {
             return d->get_value(address_on_device);
@@ -1217,7 +1221,7 @@ void MemoryMapper::write_port(unsigned int address, unsigned int value)
     } else {
         unsigned int a = address & this->ports_mask;
         unsigned int address_on_device, range_index;
-        AddressableDevice * d = this->map(&(this->ports), 0, this->ports_count-1, this->i_config->value, a, MODE_R, &address_on_device, &range_index);
+        AddressableDevice * d = this->map(&(this->ports), 0, this->ports_count-1, this->i_config.value, a, MODE_R, &address_on_device, &range_index);
         if (d != nullptr)
         {
             d->set_value(address_on_device, value);

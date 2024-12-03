@@ -29,10 +29,10 @@ private:
 
     unsigned int selector;
 
-    Interface * i_select;
-    Interface * i_side;
-    Interface * i_density;
-    Interface * i_motor_on;
+    Interface i_select;
+    Interface i_side;
+    Interface i_density;
+    Interface i_motor_on;
 
     bool write_protect;
     bool loaded;
