@@ -153,7 +153,7 @@ void EmulatorConfig::load_from_file(QString file_name, bool system_only)
     QString device_name;
     QString device_type;
 
-    qDebug() << "Loading: " + file_name;
+    //qDebug() << "Loading: " + file_name;
 
     if (devices_count > 0) free_devices();
 

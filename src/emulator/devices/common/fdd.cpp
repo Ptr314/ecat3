@@ -344,7 +344,7 @@ void FDD::interface_callback(unsigned int callback_id, unsigned int new_value, u
 {
     if (callback_id == CALLBACK_MOTOR_ON) {
         motor_on = ((new_value & 1) == 0) && is_selected();
-        qDebug() << ((new_value & 1) == 0) << is_selected();
+        // qDebug() << ((new_value & 1) == 0) << is_selected();
     }
 }
 

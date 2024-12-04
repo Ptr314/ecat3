@@ -336,6 +336,7 @@ void InterfaceManager::register_interface(Interface *i)
 
 void InterfaceManager::clear()
 {
+    // Interfaces are now static, and are destroyed along with their owners.
     // for (unsigned int i=0; i < interfaces_count; i++)
     //     delete interfaces[i];
 

@@ -142,7 +142,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     CreateScreenMenu();
 
-    //qDebug() << "Main thread id: " << QCoreApplication::instance()->thread()->currentThreadId();
     if (e->use_threads)
         e->start(QThread::TimeCriticalPriority);
     else
@@ -423,14 +422,11 @@ void MainWindow::load_config(QString file_name, bool set_default)
     if (e->loaded)
     {
         if (fdd_timer != nullptr) fdd_timer->stop();
-        qDebug() << "Stopping: video";
+
         e->stop_video();
-        qDebug() << "Stopping: quit";
         e->quit();
-        qDebug() << "Stopping: wait";
         e->wait();
 
-        qDebug() << "Loading new config";
         e->load_config(file_name);
 
         set_title();
