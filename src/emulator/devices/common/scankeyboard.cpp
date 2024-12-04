@@ -19,8 +19,6 @@ ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 {
     memset(&key_array, _FFFF, sizeof(key_array));
-
-    calculate_out();
 }
 
 void ScanKeyboard::load_config(SystemData *sd)
