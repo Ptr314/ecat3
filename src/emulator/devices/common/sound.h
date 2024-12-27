@@ -1,7 +1,12 @@
 #ifndef GENERICSOUND_H
 #define GENERICSOUND_H
 
-#include <SDL.h>
+#ifdef USE_SDL
+    #include <SDL.h>
+#else
+    #include "libs/sdl_wrapper.h"
+#endif
+
 #include "emulator/core.h"
 
 #define BUFFER_SIZE     4096
@@ -26,7 +31,9 @@ class GenericSound: public ComputerDevice
 {
 private:
     CPU * cpu;
+#ifdef USE_SDL
     SDL_AudioDeviceID SDLdev;
+#endif
     SpeakerData SD;
 
 protected:

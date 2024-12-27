@@ -46,8 +46,8 @@ void AgatDisplay::load_config(SystemData *sd)
 void AgatDisplay::set_surface(SDL_Surface * surface)
 {
     GenericDisplay::set_surface(surface);
-    fill_SDL_rgba(Agat_2Colors, Agat_RGBA2, 2, surface->format);
-    fill_SDL_rgba(Agat_16Colors, Agat_RGBA16, 16, surface->format);
+    fill_SDL_rgba(Agat_2Colors, Agat_RGBA2, 2, &pixel_format);
+    fill_SDL_rgba(Agat_16Colors, Agat_RGBA16, 16, &pixel_format);
 }
 
 void AgatDisplay::set_mode(unsigned int new_mode)
@@ -222,7 +222,7 @@ void AgatDisplay::render_all(bool force_render)
         if ((mode & 0x03) == 2) {
             // Blanking fields in text modes
             uint8_t * pixel_address;
-            uint32_t black = SDL_MapRGB(surface->format, 0, 0, 0);
+            uint32_t black = SDL_MapRGB(&pixel_format, 0, 0, 0);
             for (unsigned int i=0; i<256; i++) {
                 pixel_address = ((Uint8 *)render_pixels) + i*line_bytes;
                 //memset(pixel_address, 10, 32*4);         // Left

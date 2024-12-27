@@ -594,6 +594,7 @@ void MainWindow::update_fdds()
 
 void MainWindow::on_actionScreenshot_triggered()
 {
+#ifdef USE_SDL
     SDL_Surface * s = e->get_surface();
     //SDL_SaveBMP(s, file_name.toUtf8().constData());
 
@@ -619,6 +620,7 @@ void MainWindow::on_actionScreenshot_triggered()
         error = lodepng::encode(png, image, sx, sy);
         lodepng::save_file(png, file_name.toUtf8().constData());
     }
+#endif
 }
 
 

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 
 project(eCat3 VERSION 3.2.1 LANGUAGES C CXX)
 
+set(USE_SDL 0)
+
 IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
     set(EXTERNAL_Z80 0)
     set(CPU_STOPPED 0)
@@ -33,8 +35,9 @@ find_package(QT NAMES Qt5 Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Gui)
 find_package(Qt${QT_VERSION_MAJOR} OPTIONAL_COMPONENTS Widgets)
 
-find_package(SDL2 REQUIRED)
-# add_subdirectory(${PROJECT_SOURCE_DIR}/libs/intel8080-emulator)
+if (${USE_SDL})
+    find_package(SDL2 REQUIRED)
+endif()
 
 qt_standard_project_setup()
 
@@ -128,16 +131,22 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     libs/md4c/md4c.h libs/md4c/md4c.c libs/md4c/md4c-html.h libs/md4c/md4c-html.c libs/md4c/entity.h libs/md4c/entity.c
 
     dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
+    libs/sdl_wrapper.h
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt::Core
     Qt::Gui
     Qt::Widgets
-    SDL2::SDL2main
-    SDL2::SDL2
     # i8080
 )
+
+if (${USE_SDL})
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        SDL2::SDL2main
+        SDL2::SDL2
+    )
+endif()
 
 install(TARGETS ${PROJECT_NAME}
     BUNDLE DESTINATION .

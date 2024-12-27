@@ -2,7 +2,12 @@
 #define UTILS_H
 
 #include <QString>
-#include <SDL.h>
+
+#ifdef USE_SDL
+    #include <SDL.h>
+#else
+    #include "libs/sdl_wrapper.h"
+#endif
 
 #include "emulator/config.h"
 #include "emulator/core.h"

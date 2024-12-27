@@ -4,7 +4,11 @@
 #include <QLocale>
 #include <QTranslator>
 
-#include <SDL.h>
+#ifdef USE_SDL
+    #include <SDL.h>
+#else
+    #include "libs/sdl_wrapper.h"
+#endif
 
 int main(int argc, char *argv[])
 {

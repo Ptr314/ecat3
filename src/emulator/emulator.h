@@ -6,7 +6,12 @@
 #include <QTimer>
 #include <QThread>
 
-#include <SDL.h>
+#ifdef USE_SDL
+    #include <SDL.h>
+#else
+    #include "libs/sdl_wrapper.h"
+#endif
+
 
 #include "core.h"
 #include "emulator/devices/common/keyboard.h"
@@ -40,9 +45,11 @@ private:
     unsigned int local_counter;
     unsigned int clock_counter;
 
+#ifdef USE_SDL
     SDL_Window * SDLWindowRef = nullptr;
     SDL_Renderer * SDLRendererRef = nullptr;
     SDL_Texture * SDLTexture = nullptr;
+#endif
     //SDL_Surface  * window_surface = nullptr;
     SDL_Surface  * device_surface = nullptr;
     QTimer * render_timer;

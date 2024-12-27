@@ -1,7 +1,11 @@
 #include <QException>
 #include <QRandomGenerator>
 
-#include <SDL.h>
+#ifdef USE_SDL
+    #include <SDL.h>
+#else
+    #include "libs/sdl_wrapper.h"
+#endif
 
 #include "core.h"
 #include "emulator/utils.h"
@@ -1257,7 +1261,12 @@ GenericDisplay::GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
 void GenericDisplay::set_surface(SDL_Surface * surface)
 {
     this->surface = surface;
+#ifdef USE_SDL
     render_pixels = surface->pixels;
+    pixel_format = surface->format;
+#else
+    render_pixels = surface->bits();
+#endif
     line_bytes = sx*4;
 }
 

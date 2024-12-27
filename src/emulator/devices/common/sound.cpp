@@ -37,13 +37,17 @@ void GenericSound::init_sound(unsigned int clock_freq)
     want.channels = 1;
     want.samples = BUFFER_SIZE;
 
+#ifdef USE_SDL
     SDLdev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
     SDL_PauseAudioDevice(SDLdev, 0);
+#endif
 }
 
 GenericSound::~GenericSound()
 {
+#ifdef USE_SDL
     SDL_CloseAudioDevice(SDLdev);
+#endif
 }
 
 void GenericSound::set_volume(unsigned int volume)
@@ -83,10 +87,12 @@ void GenericSound::clock(unsigned int counter)
 
         if (SD.buffer_empty != 0)
         {
+#ifdef USE_SDL
             if (SDL_GetQueuedAudioSize(SDLdev) == 0)
                 SDL_QueueAudio(SDLdev, SD.silence, sizeof(SD.silence));
 
             SDL_QueueAudio(SDLdev, SD.buffer, SD.BufferPtr);
+#endif
         };
 
         SD.BufferPtr = 0;

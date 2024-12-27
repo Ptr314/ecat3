@@ -4,7 +4,11 @@
 #include <QObject>
 #include <QMessageBox>
 
-#include <SDL.h>
+#ifdef USE_SDL
+    #include <SDL.h>
+#else
+    #include "libs/sdl_wrapper.h"
+#endif
 
 #include "config.h"
 #include "globals.h"
@@ -460,6 +464,7 @@ protected:
     unsigned int sy;
     int line_bytes;
     SDL_Surface * surface;
+    SDL_PixelFormat pixel_format;
     bool screen_valid;              //Means surface is correct
     void * render_pixels;
 
