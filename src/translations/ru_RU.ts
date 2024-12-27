@@ -17,7 +17,7 @@
 <context>
     <name>Agat_FDC140</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+34"/>
+        <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+31"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -30,7 +30,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+827"/>
+        <location filename="../emulator/core.cpp" line="+851"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -43,7 +43,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location line="-469"/>
+        <location line="-479"/>
         <location line="+50"/>
         <location line="+16"/>
         <location line="+9"/>
@@ -203,7 +203,7 @@
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-221"/>
+        <location filename="../emulator/core.cpp" line="-235"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -409,7 +409,7 @@
         <translation>Неизвестный тип файла</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+217"/>
+        <location filename="../mainwindow.cpp" line="+212"/>
         <source>Screen 4:3</source>
         <translation>Экран 4:3</translation>
     </message>
@@ -434,8 +434,8 @@
         <translation>Анизотропное</translation>
     </message>
     <message>
-        <location line="+204"/>
-        <location filename="../dialogs/taperecorder.cpp" line="+123"/>
+        <location line="+215"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+127"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
     </message>
@@ -504,7 +504,7 @@
 <context>
     <name>FDD</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+46"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+53"/>
         <location line="+15"/>
         <location line="+7"/>
         <location line="+12"/>
@@ -601,7 +601,7 @@
 <context>
     <name>I8255</name>
     <message>
-        <location filename="../emulator/devices/common/i8255.cpp" line="+51"/>
+        <location filename="../emulator/devices/common/i8255.cpp" line="+50"/>
         <location line="+66"/>
         <source>i8255:A is in an unsupported mode</source>
         <translation>i8255:А переведен в неподдерживаемый режим</translation>
@@ -675,7 +675,7 @@
 <context>
     <name>InterfaceManager</name>
     <message>
-        <location line="+231"/>
+        <location line="+244"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -821,13 +821,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-295"/>
-        <location line="+353"/>
+        <location filename="../mainwindow.cpp" line="-305"/>
+        <location line="+363"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-350"/>
+        <location line="-360"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -851,7 +851,7 @@
         <translation type="vanished">Все файлы (*.*)</translation>
     </message>
     <message>
-        <location line="+328"/>
+        <location line="+338"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>
@@ -881,7 +881,7 @@
         <translation>Обшибка создания резервной копии. Возможно, файл с расширение *.bak уже существует.</translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+46"/>
         <source>Save screenshot</source>
         <translation>Сохранение скриншота</translation>
     </message>
@@ -928,7 +928,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+656"/>
+        <location filename="../emulator/core.cpp" line="+667"/>
         <location filename="../emulator/devices/common/page_mapper.cpp" line="+31"/>
         <source>Error</source>
         <translation>Ошибка</translation>
@@ -1037,7 +1037,7 @@
 <context>
     <name>ROM</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-346"/>
+        <location filename="../emulator/core.cpp" line="-350"/>
         <location line="+6"/>
         <location line="+28"/>
         <location line="+7"/>
@@ -1085,7 +1085,7 @@
 <context>
     <name>ScanKeyboard</name>
     <message>
-        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+35"/>
+        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+33"/>
         <location line="+4"/>
         <location line="+33"/>
         <source>Error</source>
@@ -1123,7 +1123,7 @@
 <context>
     <name>TapeRecorder</name>
     <message>
-        <location filename="../emulator/devices/common/tape.cpp" line="+136"/>
+        <location filename="../emulator/devices/common/tape.cpp" line="+135"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -1182,7 +1182,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="+18"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+21"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -1205,7 +1205,7 @@
         <translation>Некорректный список дисководов для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+110"/>
+        <location line="+112"/>
         <source>Reading of more than one sector at once is not supported!</source>
         <translation>Команда чтения нескольких секторов еще не поддерживается!</translation>
     </message>
