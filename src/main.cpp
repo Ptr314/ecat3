@@ -4,6 +4,8 @@
 #include <QLocale>
 #include <QTranslator>
 
+#include "globals.h"
+
 #ifdef USE_SDL
     #include <SDL.h>
 #else

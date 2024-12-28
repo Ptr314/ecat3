@@ -2,7 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 
 project(eCat3 VERSION 3.2.1 LANGUAGES C CXX)
 
-set(USE_SDL 0)
+set(USE_SDL 1)
+
+if (${USE_SDL})
+    set(SDL_SEPARATE_WINDOW 1)
+endif()
 
 IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
     set(EXTERNAL_Z80 0)
@@ -37,6 +41,9 @@ find_package(Qt${QT_VERSION_MAJOR} OPTIONAL_COMPONENTS Widgets)
 
 if (${USE_SDL})
     find_package(SDL2 REQUIRED)
+    set(SDL_WRAPPER "")
+else()
+    #set(SDL_WRAPPER libs/sdl_wrapper.h)
 endif()
 
 qt_standard_project_setup()
@@ -131,7 +138,7 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     libs/md4c/md4c.h libs/md4c/md4c.c libs/md4c/md4c-html.h libs/md4c/md4c-html.c libs/md4c/entity.h libs/md4c/entity.c
 
     dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
-    libs/sdl_wrapper.h
+    ${SDL_WRAPPER}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

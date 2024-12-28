@@ -103,7 +103,7 @@ protected:
         if ((CPL < 10) || (LPS < 10))
         {
             //Not initilized yet
-            SDL_FillRect(surface, NULL, SDL_MapRGB(&pixel_format, 0, 0, 0));
+            SDL_FillRect(surface, NULL, SDL_MapRGB(pixel_format, 0, 0, 0));
             return;
         }
 
@@ -202,7 +202,7 @@ protected:
                         uint8_t c1 = (V >> k) & 1;
                         unsigned int p1 = Ofs + (5-k)*4;
                         uint8_t * base = static_cast<Uint8 *>(render_pixels) + Adr*line_bytes + p1;
-                        *(uint32_t*)base = SDL_MapRGB(&pixel_format, c1 * VG75_8Colors[FAColor][0], c1 * VG75_8Colors[FAColor][1], c1 * VG75_8Colors[FAColor][2]);
+                        *(uint32_t*)base = SDL_MapRGB(pixel_format, c1 * VG75_8Colors[FAColor][0], c1 * VG75_8Colors[FAColor][1], c1 * VG75_8Colors[FAColor][2]);
                     }
                 }
                 if (AttrDelay && (NextAttr != 0))

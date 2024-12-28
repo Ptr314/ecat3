@@ -3,6 +3,7 @@
 #include <QRandomGenerator>
 #include <QKeyEvent>
 
+#include "globals.h"
 #include "core.h"
 #include "emulator.h"
 #include "emulator/config.h"
@@ -206,8 +207,11 @@ void Emulator::timer_proc()
 void Emulator::init_video(void *p)
 {
 #ifdef USE_SDL
-    SDLWindowRef = SDL_CreateWindowFrom(p);
-    //SDLWindowRef = SDL_CreateWindow("Screen", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1600, 1200, SDL_WINDOW_SHOWN | SDL_WINDOW_SKIP_TASKBAR);
+#ifdef SDL_SEPARATE_WINDOW
+        SDLWindowRef = SDL_CreateWindow("Screen", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1600, 1200, SDL_WINDOW_SHOWN | SDL_WINDOW_SKIP_TASKBAR);
+#else
+        SDLWindowRef = SDL_CreateWindowFrom(p);
+#endif
     SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
 #endif
 

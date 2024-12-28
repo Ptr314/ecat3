@@ -8,6 +8,7 @@
 #define PROJECT_VERSION "@PROJECT_VERSION@"
 
 #cmakedefine USE_SDL
+#cmakedefine SDL_SEPARATE_WINDOW
 
 #cmakedefine EXTERNAL_Z80
 #cmakedefine CPU_STOPPED

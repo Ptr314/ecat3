@@ -3,6 +3,8 @@
 
 #include <QString>
 
+#include "globals.h"
+
 #ifdef USE_SDL
     #include <SDL.h>
 #else

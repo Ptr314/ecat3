@@ -147,6 +147,9 @@ MainWindow::MainWindow(QWidget *parent)
     else
         e->run();
 
+#ifdef SDL_SEPARATE_WINDOW
+    resize(500, 100);
+#endif
 }
 
 void MainWindow::CreateFDDMenu(unsigned int n)

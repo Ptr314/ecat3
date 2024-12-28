@@ -7,7 +7,8 @@
 #define VERSION_PATCH "1"
 #define PROJECT_VERSION "3.2.1"
 
-/* #undef USE_SDL */
+#define USE_SDL
+#define SDL_SEPARATE_WINDOW
 
 /* #undef EXTERNAL_Z80 */
 /* #undef CPU_STOPPED */
