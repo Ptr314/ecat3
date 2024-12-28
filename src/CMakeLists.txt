@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(eCat3 VERSION 3.2.1 LANGUAGES C CXX)
+project(eCat3 VERSION 3.3.0 LANGUAGES C CXX)
 
 set(USE_SDL 1)
 
@@ -75,6 +75,8 @@ endif()
 set(PROJECT_SOURCES
     ../README.md
     ../BUILD.md
+    ../MANUAL.md
+    ../CONFIG.md
 
     dialogs/dumparea.cpp dialogs/dumparea.h
     dialogs/dumpwindow.cpp dialogs/dumpwindow.h dialogs/dumpwindow.ui
