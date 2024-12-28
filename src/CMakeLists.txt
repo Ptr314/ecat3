@@ -2,6 +2,17 @@ cmake_minimum_required(VERSION 3.16)
 
 project(eCat3 VERSION 3.2.1 LANGUAGES C CXX)
 
+set(USE_SDL 1)
+
+if (${USE_SDL})
+    if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        set(SDL_SEPARATE_WINDOW 1)
+    else()
+        set(SDL_SEPARATE_WINDOW 0)
+    endif()
+endif()
+
+
 IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
     set(EXTERNAL_Z80 0)
     set(CPU_STOPPED 0)
@@ -27,19 +38,24 @@ endif()
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 configure_file (globals.h.in ${CMAKE_CURRENT_SOURCE_DIR}/globals.h @ONLY)
 
-find_package(QT NAMES Qt5 Qt6 REQUIRED COMPONENTS Core)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Gui)
-find_package(Qt${QT_VERSION_MAJOR} OPTIONAL_COMPONENTS Widgets)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 
 find_package(SDL2 REQUIRED)
-# add_subdirectory(${PROJECT_SOURCE_DIR}/libs/intel8080-emulator)
-
-qt_standard_project_setup()
 
 set(RESOURCE_FILES resources.qrc)
-QT6_ADD_RESOURCES(PROJECT_RESOURCES ${RESOURCE_FILES})
+
+if(${QT_VERSION} VERSION_LESS 5.15.0)
+    qt5_add_resources(PROJECT_RESOURCES ${RESOURCE_FILES})
+else()
+    qt_add_resources(PROJECT_RESOURCES ${RESOURCE_FILES})
+endif()
+
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -56,8 +72,10 @@ else()
     )
 endif()
 
-qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
-    ${PROJECT_RESOURCES}
+set(PROJECT_SOURCES
+    ../README.md
+    ../BUILD.md
+
     dialogs/dumparea.cpp dialogs/dumparea.h
     dialogs/dumpwindow.cpp dialogs/dumpwindow.h dialogs/dumpwindow.ui
     dialogs/mmwindow.cpp dialogs/mmwindow.h dialogs/mmwindow.ui
@@ -77,7 +95,6 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     mainwindow.cpp mainwindow.h mainwindow.ui
     emulator/devices/cpu/i8080_context.h
     emulator/devices/cpu/i8080core.h emulator/devices/cpu/i8080core.cpp
-#    emulator/devices/cpu/i8080core2.h emulator/devices/cpu/i8080core2.cpp
     dialogs/debugwindow.h dialogs/debugwindow.cpp dialogs/debugwindow.ui
     dialogs/disasmarea.h dialogs/disasmarea.cpp
     emulator/disasm.h emulator/disasm.cpp
@@ -130,30 +147,51 @@ qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
     dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    Qt::Core
-    Qt::Gui
-    Qt::Widgets
-    SDL2::SDL2main
-    SDL2::SDL2
-    # i8080
-)
-
-install(TARGETS ${PROJECT_NAME}
-    BUNDLE DESTINATION .
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
-qt_generate_deploy_app_script(
-    TARGET ${PROJECT_NAME}
-    OUTPUT_SCRIPT deploy_script
-    NO_UNSUPPORTED_PLATFORM_ERROR
-)
-install(SCRIPT ${deploy_script})
-
-find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
-
-qt_add_translations(${PROJECT_NAME} TS_FILES
+set(TRANSLATION_FILES
     translations/en_US.ts
     translations/ru_RU.ts
 )
+
+if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
+
+    qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
+        MANUAL_FINALIZATION
+        ${PROJECT_SOURCES}
+        ${PROJECT_RESOURCES}
+    )
+    qt_add_translations(${PROJECT_NAME} TS_FILES
+        ${TRANSLATION_FILES}
+    )
+else()
+    add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
+        ${PROJECT_SOURCES}
+        ${PROJECT_RESOURCES}
+    )
+    qt5_add_translation(QM_FILES ${TRANSLATION_FILES})
+
+    # find_program(LUPDATE_EXECUTABLE lupdate)
+    # find_program(LRELEASE_EXECUTABLE lrelease)
+
+    # file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/languages/)
+
+    # foreach(_ts_file ${TRANSLATION_FILES})
+
+    #     # execute_process(
+    #     #     COMMAND ${LUPDATE_EXECUTABLE} -recursive ${CMAKE_SOURCE_DIR} -ts ${_ts_file})
+    #     get_filename_component(_qt_id ${_ts_file} NAME_WE)
+    #     execute_process(
+    #         COMMAND ${LRELEASE_EXECUTABLE} "${CMAKE_SOURCE_DIR}/${_ts_file}" -qm ${CMAKE_CURRENT_BINARY_DIR}/languages/${_qt_id}.qm )
+
+    # endforeach()
+endif()
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Qt${QT_VERSION_MAJOR}::Widgets
+    SDL2::SDL2main
+    SDL2::SDL2
+)
+
+if(QT_VERSION_MAJOR EQUAL 6)
+    qt_finalize_executable(${PROJECT_NAME})
+endif()

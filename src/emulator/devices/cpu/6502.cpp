@@ -57,13 +57,13 @@ QList<QPair<QString, QString>> mos6502::get_registers()
     QList<QPair<QString, QString>> l;
     mos6502context * c = core->get_context();
 
-    l << std::pair("A", QString("%1").arg(c->A, 2, 16, QChar('0')).toUpper())
-      << std::pair("X", QString("%1").arg(c->X, 2, 16, QChar('0')).toUpper())
-      << std::pair("Y", QString("%1").arg(c->Y, 2, 16, QChar('0')).toUpper())
-      << std::pair("S", QString("%1").arg(c->S, 2, 16, QChar('0')).toUpper())
-      << std::pair("P", QString("%1").arg(c->P, 2, 16, QChar('0')).toUpper())
-      << std::pair("-1", "")
-      << std::pair("PC", QString("%1").arg(c->r16.PC, 4, 16, QChar('0')).toUpper())
+    l << QPair<QString, QString>("A", QString("%1").arg(c->A, 2, 16, QChar('0')).toUpper())
+      << QPair<QString, QString>("X", QString("%1").arg(c->X, 2, 16, QChar('0')).toUpper())
+      << QPair<QString, QString>("Y", QString("%1").arg(c->Y, 2, 16, QChar('0')).toUpper())
+      << QPair<QString, QString>("S", QString("%1").arg(c->S, 2, 16, QChar('0')).toUpper())
+      << QPair<QString, QString>("P", QString("%1").arg(c->P, 2, 16, QChar('0')).toUpper())
+      << QPair<QString, QString>("-1", "")
+      << QPair<QString, QString>("PC", QString("%1").arg(c->r16.PC, 4, 16, QChar('0')).toUpper())
     ;
     return l;
 }
@@ -73,14 +73,14 @@ QList<QPair<QString, QString>> mos6502::get_flags()
     QList<QPair<QString, QString>> l;
     mos6502context * c = core->get_context();
 
-    l << std::pair("C",  QString("%1").arg( ((c->P & MOS6502::F_C) != 0)?1:0))
-      << std::pair("Z",  QString("%1").arg( ((c->P & MOS6502::F_Z) != 0)?1:0))
-      << std::pair("I",  QString("%1").arg( ((c->P & MOS6502::F_I) != 0)?1:0))
-      << std::pair("D",  QString("%1").arg( ((c->P & MOS6502::F_D) != 0)?1:0))
-      << std::pair("B",  QString("%1").arg( ((c->P & MOS6502::F_B) != 0)?1:0))
-      << std::pair("5", QString("%1").arg( ((c->P & MOS6502::F_P5) != 0)?1:0))
-      << std::pair("V",  QString("%1").arg( ((c->P & MOS6502::F_V) != 0)?1:0))
-      << std::pair("N",  QString("%1").arg( ((c->P & MOS6502::F_N) != 0)?1:0))
+    l << QPair<QString, QString>("C",  QString("%1").arg( ((c->P & MOS6502::F_C) != 0)?1:0))
+      << QPair<QString, QString>("Z",  QString("%1").arg( ((c->P & MOS6502::F_Z) != 0)?1:0))
+      << QPair<QString, QString>("I",  QString("%1").arg( ((c->P & MOS6502::F_I) != 0)?1:0))
+      << QPair<QString, QString>("D",  QString("%1").arg( ((c->P & MOS6502::F_D) != 0)?1:0))
+      << QPair<QString, QString>("B",  QString("%1").arg( ((c->P & MOS6502::F_B) != 0)?1:0))
+      << QPair<QString, QString>("5", QString("%1").arg( ((c->P & MOS6502::F_P5) != 0)?1:0))
+      << QPair<QString, QString>("V",  QString("%1").arg( ((c->P & MOS6502::F_V) != 0)?1:0))
+      << QPair<QString, QString>("N",  QString("%1").arg( ((c->P & MOS6502::F_N) != 0)?1:0))
     ;
     return l;
 }

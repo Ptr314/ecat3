@@ -63,7 +63,11 @@ void OpenConfigWindow::list_machines(QString work_path)
     qDebug() << "Listing machines in " << work_path;
     QDirIterator it(work_path, QDirIterator::Subdirectories);
     while (it.hasNext()) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         QFileInfo fi = it.nextFileInfo();
+#else
+        QFileInfo fi = QFileInfo(it.next());
+#endif
         if (fi.suffix().toLower() == "cfg")
         {
             //qDebug() << fi.absoluteFilePath();

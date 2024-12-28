@@ -1,4 +1,5 @@
 #include <QPainter>
+#include <cmath>
 
 #include "dosframe.h"
 #include "dialogs/dialogs.h"

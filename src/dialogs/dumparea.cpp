@@ -1,6 +1,7 @@
 #include <QPainter>
 #include <QFontDatabase>
 #include <QMouseEvent>
+#include <cmath>
 
 #include "dialogs/dialogs.h"
 #include "emulator/utils.h"
@@ -22,7 +23,11 @@ DumpArea::DumpArea(QWidget *parent)
 {
 //    QFont font(FONT_NAME, FONT_SIZE);
     QFontMetrics fm(*font);
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
     char_width = fm.horizontalAdvance('0');
+#endif
+
     font_height = fm.height();
 
     editor = new HexEditorLine(this, *font, char_width, font_height);
@@ -152,12 +157,21 @@ unsigned int DumpArea::mouse_to_offset(unsigned int  x, unsigned int y)
 
 void DumpArea::mouseDoubleClickEvent(QMouseEvent *event)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     show_editor(start_address + mouse_to_offset(event->position().x(), event->position().y()));
+#else
+    show_editor(start_address + mouse_to_offset(event->x(), event->y()));
+#endif
+
 }
 
 void DumpArea::mousePressEvent(QMouseEvent *event)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     hilight_address = start_address + mouse_to_offset(event->position().x(), event->position().y());
+#else
+    hilight_address = start_address + mouse_to_offset(event->x(), event->y());
+#endif
     editor->hide();
     update();
 }

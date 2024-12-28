@@ -41,6 +41,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->setupUi(this);
 
+#ifdef SDL_SEPARATE_WINDOW
+    resize(500,100);
+#endif
+
     memset(&fdds, 0, sizeof(fdds));
 
     QIcon * icon = new QIcon();
@@ -292,7 +296,7 @@ void MainWindow::UpdateToolbar()
 
     for (int i=0; i < fdds_found; i++) {
         FDD * fdd = dynamic_cast<FDD*>(fdd_devices[i]);
-        fdds.append(fdd);
+        fdds.push_back(fdd);
         CreateFDDMenu(i);
         if (fdd->get_loaded())
         {
@@ -630,9 +634,13 @@ void MainWindow::on_actionAbout_triggered()
     aboutUi.setupUi(about);
 
     aboutUi.info_label->setText(
-        aboutUi.info_label->text().replace("{$PROJECT_VERSION}", PROJECT_VERSION)
-    );
-
+        aboutUi.info_label->text()
+            .replace("{$PROJECT_VERSION}", PROJECT_VERSION)
+            .replace("{$BUILD_ARCHITECTURE}", QSysInfo::buildCpuArchitecture())
+            .replace("{$OS}", QSysInfo::productType())
+            .replace("{$OS_VERSION}", QSysInfo::productVersion())
+            .replace("{$CPU_ARCHITECTURE}", QSysInfo::currentCpuArchitecture())
+        );
 
     about->exec();
 }

@@ -135,10 +135,10 @@ EmulatorConfigDevice * EmulatorConfig::add_device(QString device_name, QString d
 QString EmulatorConfigDevice::extended_parameter(unsigned int i, QString expected_name)
 {
     QString s = parameters[i].right_extended;
-    QStringList list = s.split(u',', Qt::SkipEmptyParts);
+    QStringList list = s.split(u',', skip_empty_parts);
     for (int i = 0; i < list.size(); i++)
     {
-        QStringList parameter = list.at(i).split(u'=', Qt::SkipEmptyParts);
+        QStringList parameter = list.at(i).split(u'=', skip_empty_parts);
         QString name = parameter.at(0).toLower().trimmed();
         QString value = parameter.at(1).toLower().trimmed();
         if (name == expected_name) return value;

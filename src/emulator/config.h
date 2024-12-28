@@ -13,6 +13,12 @@ struct EmulatorConfigParameter {
     QString right_extended;
 };
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    const auto skip_empty_parts = Qt::SkipEmptyParts;
+#else
+    const auto skip_empty_parts = QString::SkipEmptyParts;
+#endif
+
 class EmulatorConfigDevice: public QObject
 {
     Q_OBJECT

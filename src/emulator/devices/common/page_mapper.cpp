@@ -1,4 +1,5 @@
 #include <QException>
+#include <cmath>
 
 #include "page_mapper.h"
 #include "emulator/utils.h"

@@ -151,6 +151,119 @@ cmake --build . --parallel
 cmake --install .
 ~~~
 
+---
+## macOS
+
+https://doc.qt.io/qt-6/macos.html
+
+Далее описывается установка окружения из offline-инсталляторов, так как сетевая установка под виртуальными машинами работала нестабильно.
+
+### 1. Установить xcode
+
+Дистрибутив взять здесь: https://xcodereleases.com, нужен аккаунт на Apple Developer.
+
+* Скопировать файл `.xip` в папку `/Applications` и там распаковать. Файл `.xip` удалить
+* Выполнить команду `sudo xcode-select --switch /Applications/Xcode.app`
+
+### 2. Установить HomeBrew
+
+https://brew.sh/
+
+### 3. Установить утилиты
+
+cmake, ninja, принять лицензию xcode:
+
+```
+brew install cmake
+brew install ninja
+sudo xcodebuild -license
+```
+
+### 4. Установить Qt
+
+С https://download.qt.io/official_releases/qtcreator/latest/ скачать Qt Creator Offline Installer и с https://download.qt.io/official_releases/qt/ Qt Sources (qt-everywhere-src-X.X.X.tar.xz)
+* Установить Qt Creator обычным образом (открыть файл `.dmg`, перетащить иконку в `/Applications`).
+* qt-everywhere-src-X.X.X.tar.xz поместить в ~/Downloads
+
+### 5. Собрать статическую версию Qt
+
+https://doc.qt.io/qt-6/macos-building.html
+
+```
+cd /tmp
+tar xf ~/Downloads/qt-everywhere-src-6.8.1.tar.xz
+mkdir -p ~/dev/qt-build
+cd ~/dev/qt-build
+/tmp/qt-everywhere-src-6.8.1/configure -static -static-runtime -release -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -make libs -prefix /usr/local/Qt-6.8.1-static
+cmake --build . --parallel
+sudo cmake --install .
+```
+
+После перезагрузки системы `/tmp` очищается, поэтому для повторного запуска надо распаковывать исходники заново.
+
+### 6. Добавить Kit в Qt Creator 
+
+Из папки `/usr/local/Qt-X.X.X-static` (включить отображение скрытых папок при необходимости).
+
+### 7. Установка SDL2
+
+https://www.csalmeida.com/log/how-to-install-sdl2-on-macos/
+
+* Скачать SDL2-X.X.X.dmg по адресу https://github.com/libsdl-org/SDL/releases
+* Скачать SDL2_image-Y.Y.Y.dmg https://github.com/libsdl-org/SDL_image/releases
+* Поочередно открыть оба архива и перетащить парку Framework в `/Library/Frameworks`.
+* После первого запуска приложения перейти в системные настройки и в разделе безопасности разрешить работу библиотеки.
+
+### 8. Сборка приложения
+
+Для сборки приложения используется скрипт `.build/build-macos.sh`. Перед первым запуском необходимо актуализировать следующе переменные: QT_PATH.
+
+На выходе должен быть получен файл `.dmg`.
+
+
+---
+## Ubuntu 20.04
+
+В целях совместимости, для сборки выбирается самая старая версия из текущих на поддержке, на 12.2024 это Ubuntu 20.04. В более новых версиях не запустится linuxdeployqt.
+
+#### 1. Установить программы
+* https://download.qt.io/, скачать online-инсталлятор (возможно, из России понадобится зарубежный VPN) и установить следующие компоненты:
+    * Qt [X.X.X]
+        * Desktop
+        * Sources 
+        * Plugins
+            * Qt5Compatibility 
+    * Qt Developer and Designer tools
+        * Qt Creator
+        * cmake
+        * ninja
+* Компилятор `sudo apt install g++`
+* Скачать linuxdeployqt: https://github.com/probonopd/linuxdeployqt/releases и разместить в `~/Downloads`.
+
+Добавить в `~/.profile` пути к cmake и ninja:
+```
+PATH="~/Qt/Tools/Cmake/bin:~/Qt/Tools/Ninja:${PATH}"
+```
+
+Если cmake выводит ошибку вида `Qt6Gui could not be found because dependency WrapOpenGL could not be found.`, поставить библиотеку:
+
+```
+sudo apt install libgl1-mesa-dev
+```
+
+#### 2. Настроить Kit в Qt Creator
+* Если нужна полная очистка, удалить файлы __CMakeLists.txt.user*__.
+
+#### 3. Сборка приложения
+
+Для сборки приложения используется скрипт `.build/build-linux.sh`. Перед первым запуском необходимо актуализировать следующе переменные: QT_PATH и LINUXDEPLOYQT.
+
+cmake и ninja должны быть в PATH (см. п. 1).
+
+На выходе должен быть получен файл `.AppImage`.
+
+
+
 # Полезные ссылки
 
 * Online assembler: https://www.asm80.com/onepage/asm8080.html

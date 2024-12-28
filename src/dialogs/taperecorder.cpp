@@ -160,7 +160,11 @@ void TapeRecorderWindow::on_buttonEject_released()
 void TapeRecorderWindow::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         dragPosition = event->globalPosition().toPoint() - frameGeometry().topLeft();
+#else
+        dragPosition = event->globalPos() - frameGeometry().topLeft();
+#endif
         event->accept();
     }
 }
@@ -168,7 +172,11 @@ void TapeRecorderWindow::mousePressEvent(QMouseEvent *event)
 void TapeRecorderWindow::mouseMoveEvent(QMouseEvent *event)
 {
     if (event->buttons() & Qt::LeftButton) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         move(event->globalPosition().toPoint() - dragPosition);
+#else
+        move(event->globalPos() - dragPosition);
+#endif
         event->accept();
     }
 }

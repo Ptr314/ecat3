@@ -1,5 +1,9 @@
 #include <QException>
-#include <QRandomGenerator>
+#include <QtGlobal>
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    #include <QRandomGenerator>
+#endif
 
 #include <SDL.h>
 
@@ -170,11 +174,11 @@ DeviceManager::~DeviceManager()
 void DeviceManager::clear()
 {
     for (unsigned int i=0; i < device_count; i++)
-        delete devices[i].device;
+       delete devices[i].device;
 
     device_count = 2;
 
-    memset(&devices, 0, sizeof(devices));
+    //memset(&devices, 0, sizeof(devices));
 }
 
 void DeviceManager::register_device(QString device_type, CreateDeviceFunc func)
@@ -374,8 +378,8 @@ ComputerDevice::ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
         } else {
             int pos = s.indexOf("/");
             if (pos>0) {
-                clock_miltiplier = parse_numeric_value(s.first(pos));
-                clock_divider = parse_numeric_value(s.last(s.length()-pos-1));
+                clock_miltiplier = parse_numeric_value(s.left(pos));
+                clock_divider = parse_numeric_value(s.right(s.length()-pos-1));
             } else {
                 clock_miltiplier = parse_numeric_value(s);
                 clock_divider = 1;
@@ -418,7 +422,7 @@ void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
         if (parameter_name.at(0) == '~')
         {
 
-            QString interface_name = parameter_name.removeFirst();
+            QString interface_name = parameter_name.remove(0, 1);
             if (interface_name.isEmpty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect interface definition for %1").arg(name));
 
             QString connection = cd->parameters[i].value;
@@ -438,15 +442,15 @@ void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
             if (connection.isEmpty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(name, connection));
 
             if (connection.at(0) == '!') {
-                connection = connection.last(connection.length()-1);
+                connection = connection.right(connection.length()-1);
                 inverted = true;
             } else
                 inverted = false;
 
             int p = connection.indexOf('.');
             if (p < 0) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(name, connection));
-            QString connected_device = connection.first(p);
-            QString connected_interface = connection.last(connection.length()-p-1);
+            QString connected_device = connection.left(p);
+            QString connected_interface = connection.right(connection.length()-p-1);
 
             ld.d.i = im->get_interface_by_name(connected_device, connected_interface);
 

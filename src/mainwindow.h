@@ -87,7 +87,7 @@ private:
     QAction * tape_action = nullptr;
     QAction * buttons_separator = nullptr;
     QMenu * fdd_menu[2];
-    QVector<FDD*> fdds;
+    std::vector<FDD*> fdds;
     //FDC * fdc;
     // TapeRecorder * tape;
     unsigned int fdds_found = 0;

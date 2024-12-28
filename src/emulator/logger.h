@@ -5,6 +5,7 @@
 #include <QDateTime>
 #include <QFile>
 #include <QDir>
+#include <QDebug>
 
 #include "globals.h"
 

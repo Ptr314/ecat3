@@ -1,6 +1,7 @@
 #include <QRegularExpression>
 
 #include "emulator/utils.h"
+#include "emulator/config.h"
 #include "scankeyboard.h"
 
 #define SCAN_CALLBACK 1
@@ -40,27 +41,27 @@ void ScanKeyboard::load_config(SystemData *sd)
         QTextStream in(&file);
         QString layout = in.readAll();
 
-        QStringList lines = layout.split(re_crlf, Qt::SkipEmptyParts);
+        QStringList lines = layout.split(re_crlf, skip_empty_parts);
         out_lines = lines.size();
         for (unsigned int out = 0; out < out_lines; out++)
         {
             QString line = lines[out].trimmed();
-            QStringList parts = line.split(re_space, Qt::SkipEmptyParts);
+            QStringList parts = line.split(re_space, skip_empty_parts);
             scan_lines = parts.size();
             for (unsigned int scan=0; scan<scan_lines; scan++)
             {
-                QStringList keys = parts[scan].split("|", Qt::SkipEmptyParts);
+                QStringList keys = parts[scan].split("|", skip_empty_parts);
                 for (unsigned int i=0; i< keys.size(); i++)
                     if (keys[i] != "__")
                     {
                         int shift_state = SHIFT_STATE_KEEP;
                         QString key_name;
                         int key_len = keys[i].length();
-                        if (key_len > 1 && keys[i].last(1) == "_") {
+                        if (key_len > 1 && keys[i].right(1) == "_") {
                             key_name = keys[i].left(key_len-1);
                             shift_state = SHIFT_STATE_OFF;
                         } else
-                        if (key_len > 1 && keys[i].last(1) == "^") {
+                        if (key_len > 1 && keys[i].right(1) == "^") {
                             key_name = keys[i].left(key_len-1);
                             shift_state = SHIFT_STATE_ON;
                         } else

@@ -104,13 +104,13 @@ QList<QPair<QString, QString>> i8080::get_registers()
     QList<QPair<QString, QString>> l;
     i8080context * c = core->get_context();
 
-    l << std::pair("A", QString("%1").arg(c->registers.regs.A, 2, 16, QChar('0')).toUpper())
-      << std::pair("BC", QString("%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0')).toUpper())
-      << std::pair("DE", QString("%1").arg(c->registers.reg_pairs.DE, 4, 16, QChar('0')).toUpper())
-      << std::pair("HL", QString("%1").arg(c->registers.reg_pairs.HL, 4, 16, QChar('0')).toUpper())
-      << std::pair("-", "")
-      << std::pair("SP", QString("%1").arg(c->registers.regs.SP, 4, 16, QChar('0')).toUpper())
-      << std::pair("PC", QString("%1").arg(c->registers.regs.PC, 4, 16, QChar('0')).toUpper())
+    l << QPair<QString, QString>("A", QString("%1").arg(c->registers.regs.A, 2, 16, QChar('0')).toUpper())
+      << QPair<QString, QString>("BC", QString("%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0')).toUpper())
+      << QPair<QString, QString>("DE", QString("%1").arg(c->registers.reg_pairs.DE, 4, 16, QChar('0')).toUpper())
+      << QPair<QString, QString>("HL", QString("%1").arg(c->registers.reg_pairs.HL, 4, 16, QChar('0')).toUpper())
+      << QPair<QString, QString>("-", "")
+      << QPair<QString, QString>("SP", QString("%1").arg(c->registers.regs.SP, 4, 16, QChar('0')).toUpper())
+      << QPair<QString, QString>("PC", QString("%1").arg(c->registers.regs.PC, 4, 16, QChar('0')).toUpper())
     ;
 
     return l;
@@ -121,11 +121,11 @@ QList<QPair<QString, QString>> i8080::get_flags()
     QList<QPair<QString, QString>> l;
     i8080context * c = core->get_context();
 
-    l << std::pair("C", QString("%1").arg( ((c->registers.regs.F & F_CARRY) != 0)?1:0))
-      << std::pair("P", QString("%1").arg( ((c->registers.regs.F & F_PARITY) != 0)?1:0))
-      << std::pair("H", QString("%1").arg( ((c->registers.regs.F & F_HALF_CARRY) != 0)?1:0))
-      << std::pair("Z", QString("%1").arg( ((c->registers.regs.F & F_ZERO) != 0)?1:0))
-      << std::pair("S", QString("%1").arg( ((c->registers.regs.F & F_SIGN) != 0)?1:0))
+    l << QPair<QString, QString>("C", QString("%1").arg( ((c->registers.regs.F & F_CARRY) != 0)?1:0))
+      << QPair<QString, QString>("P", QString("%1").arg( ((c->registers.regs.F & F_PARITY) != 0)?1:0))
+      << QPair<QString, QString>("H", QString("%1").arg( ((c->registers.regs.F & F_HALF_CARRY) != 0)?1:0))
+      << QPair<QString, QString>("Z", QString("%1").arg( ((c->registers.regs.F & F_ZERO) != 0)?1:0))
+      << QPair<QString, QString>("S", QString("%1").arg( ((c->registers.regs.F & F_SIGN) != 0)?1:0))
     ;
 
     return l;
