@@ -226,7 +226,11 @@ void Emulator::init_video(void *p)
     if (screen_ratio == SCREEN_RATIO_SQ)
         pixel_scale = 1;
     else
+    if (screen_ratio == SCREEN_RATIO_43)
         pixel_scale = (4.0 / 3.0) / ((double)screen_sx / (double)screen_sy);
+    else
+        pixel_scale = ((double)screen_sy / (double)screen_sx);
+
 
 #ifdef USE_SDL
     std::string s = std::to_string(screen_filtering);
@@ -391,7 +395,10 @@ void Emulator::set_ratio(int ratio)
     if (ratio == SCREEN_RATIO_SQ)
         pixel_scale = 1;
     else
+    if (ratio == SCREEN_RATIO_43)
         pixel_scale = (4.0 / 3.0) / ((double)screen_sx / (double)screen_sy);
+    else
+        pixel_scale = ((double)screen_sy / (double)screen_sx);
 
     screen_sx = 0;
 

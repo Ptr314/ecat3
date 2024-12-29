@@ -9,7 +9,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+66"/>
         <source>Copyright</source>
         <translation type="unfinished"></translation>
     </message>
@@ -30,7 +30,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+851"/>
+        <location filename="../emulator/core.cpp" line="+855"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -381,13 +381,18 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+212"/>
+        <location filename="../mainwindow.cpp" line="+216"/>
         <source>Screen 4:3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Square pixels</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Square screen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -773,13 +778,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-305"/>
-        <location line="+363"/>
+        <location filename="../mainwindow.cpp" line="-312"/>
+        <location line="+370"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-360"/>
+        <location line="-367"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -799,7 +804,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+338"/>
+        <location line="+345"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -877,7 +882,7 @@
     <name>MemoryMapper</name>
     <message>
         <location filename="../emulator/core.cpp" line="+667"/>
-        <location filename="../emulator/devices/common/page_mapper.cpp" line="+31"/>
+        <location filename="../emulator/devices/common/page_mapper.cpp" line="+32"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -939,7 +944,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+84"/>
+        <location line="+88"/>
         <source>No any description file found for this machine</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1018,7 +1023,7 @@
 <context>
     <name>ScanKeyboard</name>
     <message>
-        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+33"/>
+        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+34"/>
         <location line="+4"/>
         <location line="+33"/>
         <source>Error</source>
@@ -1105,7 +1110,7 @@
     </message>
     <message>
         <location line="+41"/>
-        <location line="+133"/>
+        <location line="+131"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>

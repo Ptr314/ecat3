@@ -226,6 +226,13 @@ void MainWindow::CreateScreenMenu()
     a2->setActionGroup(ratio_group);
     a2->setCheckable(true);
     a2->setChecked(e->get_ratio() == SCREEN_RATIO_SQ);
+    QAction * a3 = ui->menuScreen_ratio->addAction(
+        Emulator::tr("Square screen"),
+        [this]{e->set_ratio(SCREEN_RATIO_11);}
+        );
+    a3->setActionGroup(ratio_group);
+    a3->setCheckable(true);
+    a3->setChecked(e->get_ratio() == SCREEN_RATIO_11);
 
     ui->menuFiltering->clear();
     QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);

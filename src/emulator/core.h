@@ -28,6 +28,7 @@
 
 #define SCREEN_RATIO_43         0
 #define SCREEN_RATIO_SQ         1
+#define SCREEN_RATIO_11         2
 
 #define SCREEN_FILTERING_NONE           0
 #define SCREEN_FILTERING_LINEAR         1

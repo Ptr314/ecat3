@@ -77,6 +77,7 @@ set(PROJECT_SOURCES
     ../BUILD.md
     ../MANUAL.md
     ../CONFIG.md
+    ../HISTORY.md
 
     dialogs/dumparea.cpp dialogs/dumparea.h
     dialogs/dumpwindow.cpp dialogs/dumpwindow.h dialogs/dumpwindow.ui
