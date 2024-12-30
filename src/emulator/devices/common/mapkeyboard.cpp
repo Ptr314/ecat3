@@ -67,13 +67,13 @@ void MapKeyboard::load_config(SystemData *sd)
         port_ruslat = nullptr;
 
     try {
-        rus_value = read_confg_value(cd, "rus-on", false, 1);
+        rus_value = read_confg_value(cd, "rus-on", false, (unsigned int)1);
     } catch (QException e) {
         QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("rus-on should be 0 or 1"));
     }
 
     try {
-        ruslat_bit = read_confg_value(cd, "rus-bit", false, 0);
+        ruslat_bit = read_confg_value(cd, "rus-bit", false, (unsigned int)0);
     } catch (QException e) {
         QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("rus-bit should be a number"));
     }

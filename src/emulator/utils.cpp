@@ -202,6 +202,19 @@ QString read_confg_value(EmulatorConfigDevice * cd, QString name, bool required,
     }
 }
 
+bool read_confg_value(EmulatorConfigDevice * cd, QString name, bool required, bool def)
+{
+    QString s = cd->get_parameter(name, required).value.toLower();
+    if (s.isEmpty()) {
+        return def;
+    } else {
+        QStringList trues = {"1", "true", "y", "yes"};
+        QStringList falses = {"0", "false", "n", "no"};
+        if (trues.contains(s)) return true;
+        if (falses.contains(s)) return false;
+        throw QException();
+    }
+}
 
 bool checkCapsLock()
 {

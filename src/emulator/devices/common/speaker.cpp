@@ -64,7 +64,7 @@ void Speaker::load_config(SystemData *sd)
     else
         QMessageBox::critical(0, Speaker::tr("Error"), Speaker::tr("Unknown speaker type %1").arg(s));
 
-    shorts = read_confg_value(cd, "shorts", false, 0) != 0;
+    shorts = read_confg_value(cd, "shorts", false, (unsigned int)0) != 0;
 }
 
 void Speaker::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)

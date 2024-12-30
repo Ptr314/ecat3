@@ -31,7 +31,7 @@ void TapeRecorder::load_config(SystemData *sd)
 
     ComputerDevice::load_config(sd);
 
-    baud_rate = read_confg_value(cd, "baudrate", false, 1200);
+    baud_rate = read_confg_value(cd, "baudrate", false, (unsigned int)1200);
 
     files = cd->get_parameter("files", false).value;
 

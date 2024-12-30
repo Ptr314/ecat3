@@ -766,6 +766,13 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
         mask = _FFFF;
     }
 
+    try {
+        constant_value = parse_numeric_value(cd->get_parameter("constant_return").value);
+        has_constant_return = true;
+    } catch (QException &e) {
+        has_constant_return = false;
+    }
+
     value = default_value;
 }
 
@@ -789,6 +796,12 @@ unsigned int Port::get_value([[maybe_unused]] unsigned int address)
 #endif
     i_access.change(0);
     i_access.change(1);
+    if (!has_constant_return) return value;
+    else return constant_value;
+}
+
+unsigned int Port::get_direct()
+{
     return value;
 }
 
@@ -812,7 +825,13 @@ void Port::reset([[maybe_unused]] bool cold)
 
 PortAddress::PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd):
     Port(im, cd)
-{}
+{
+    try {
+        store_on_read = read_confg_value(cd, "store_on_read", false, false);
+    } catch (QException &e) {
+        QMessageBox::critical(0, PortAddress::tr("Error"), PortAddress::tr("Incorrect parameters for '%1'").arg(name));
+    }
+}
 
 void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int value, bool force)
 {
@@ -828,6 +847,16 @@ void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int 
     i_data.change(this->value);
     i_access.change(1);
 }
+
+unsigned int PortAddress::get_value([[maybe_unused]] unsigned int address)
+{
+    if (store_on_read) {
+        this->value = (address & mask) | (this->value & ~mask);
+        i_data.change(this->value);
+    }
+    return Port::get_value(address);
+}
+
 
 void PortAddress::reset([[maybe_unused]] bool cold)
 {

@@ -85,7 +85,7 @@ void AgatDisplay::set_mode(unsigned int new_mode)
 
 void AgatDisplay::clock(unsigned int counter)
 {
-    uint8_t mode_value = port_mode->get_value(0);
+    uint8_t mode_value = port_mode->get_direct();
     if (previous_mode != mode_value) set_mode(mode_value);
 
     clock_counter += counter;

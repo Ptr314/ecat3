@@ -57,7 +57,7 @@ void FDD::load_config(SystemData *sd)
     files_save = cd->get_parameter("files_save", false).value;
     if (files_save.isEmpty()) files_save = files;
 
-    QString s = read_confg_value(cd, "mode", false, "logical");
+    QString s = read_confg_value(cd, "mode", false, QString("logical"));
     if (s == "logical")
         fdd_mode = FDD_MODE_LOGICAL;
     else if (s == "mfm_agat_140")

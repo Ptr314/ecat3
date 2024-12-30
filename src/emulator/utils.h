@@ -29,6 +29,7 @@ void fill_SDL_rgba(const uint8_t colors[][3], uint32_t * RGBA, int len, const SD
 
 unsigned int read_confg_value(EmulatorConfigDevice * cd, QString name, bool required, unsigned int def);
 QString read_confg_value(EmulatorConfigDevice * cd, QString name, bool required, QString def);
+bool read_confg_value(EmulatorConfigDevice * cd, QString name, bool required, bool def);
 
 bool checkCapsLock();
 

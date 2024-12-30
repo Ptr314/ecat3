@@ -256,6 +256,8 @@ protected:
     unsigned int size;
     unsigned int flip_mask;
     unsigned int mask;
+    unsigned int constant_value;
+    bool has_constant_return;
 
     unsigned int value;
     unsigned int default_value;
@@ -266,6 +268,7 @@ protected:
     Interface i_reset;
 
 public:
+    virtual unsigned int get_direct();
     virtual unsigned int get_value(unsigned int address) override;
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
 
@@ -276,8 +279,11 @@ public:
 
 class PortAddress:public Port
 {
+protected:
+    bool store_on_read = false;
 public:
     PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd);
+    virtual unsigned int get_value(unsigned int address) override;
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
     virtual void reset(bool cold) override;
 };
