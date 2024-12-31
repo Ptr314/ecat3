@@ -13,6 +13,9 @@ cmake -DCMAKE_PREFIX_PATH=${QT_PATH} -S ../src -B ${BUILD_DIR} -G Ninja
 cwd=$(pwd)
 cd "$BUILD_DIR"
 ninja
+
+cp -r ../../../deploy/* ./eCat3.app/Contents/MacOS
+
 macdeployqt eCat3.app -dmg
 cd $cwd
 mkdir $RELEASE_DIR
