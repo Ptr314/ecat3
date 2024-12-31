@@ -81,7 +81,7 @@ private:
 
     void update_registers();
 
-    void resizeEvent(QResizeEvent*);
+    void resizeEvent(QResizeEvent*) override;
 };
 
 GenericDbgWnd *CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d);
