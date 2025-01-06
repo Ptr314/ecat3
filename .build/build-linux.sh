@@ -7,9 +7,9 @@ LINUXDEPLOYQT="~/Downloads/linuxdeployqt-continuous-x86_64.AppImage"
 
 BUILD_DIR="./build/${PLATFORM}-${ARCHITECTURE}"
 
-VERSION=`cat ../src/globals.h | grep 'PROJECT_VERSION' | awk '{printf $3}' | tr -d '"'`
+VERSION=`cat ../src/globals.h | grep 'PROJECT_VERSION' | awk '{printf $3}' | tr -d '"\n\r'`
 
-RELEASE_DIR="./release/mfmtools-${VERSION}-${PLATFORM}-${ARCHITECTURE}.AppDir"
+RELEASE_DIR="./release/ecat-${VERSION}-${PLATFORM}-${ARCHITECTURE}.AppDir"
 
 cmake -DCMAKE_PREFIX_PATH=${QT_PATH} -S ../src -B ${BUILD_DIR} -G Ninja
 
@@ -18,15 +18,16 @@ cd ${BUILD_DIR}
 ninja
 cd ${CWD}
 
-mkdir -p ${RELEASE_DIR}
-cp -r ./.linux/mfmtools.AppDir/* ${RELEASE_DIR}
-cp "${BUILD_DIR}/MFMTools" "${RELEASE_DIR}/usr/bin/"
-cp -r ../deploy/* "${RELEASE_DIR}/usr/bin/"
-cp ${BUILD_DIR}/languages/*.qm "${RELEASE_DIR}/usr/bin/languages"
+mkdir -p ${RELEASE_DIR}/usr/bin/
+cp -r ./.linux/ecat3.AppDir/* ${RELEASE_DIR}
+cp "${BUILD_DIR}/eCat3" "${RELEASE_DIR}/usr/bin/"
+
+mkdir -p ${RELEASE_DIR}/usr/share/ecat
+cp -r ../deploy/* "${RELEASE_DIR}/usr/share/ecat"
 
 cd release
 
 export VERSION=${VERSION}-${PLATFORM}
-exec ${LINUXDEPLOYQT} ../${RELEASE_DIR}/usr/share/applications/mfmtools.desktop -verbose=2 -appimage -no-translations -qmake=${QT_PATH}/bin/qmake
+exec ${LINUXDEPLOYQT} ../${RELEASE_DIR}/usr/share/applications/ecat3.desktop -verbose=2 -appimage -no-translations -qmake=${QT_PATH}/bin/qmake
 
 cd $CWD

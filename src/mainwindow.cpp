@@ -99,10 +99,44 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(volume, SIGNAL(valueChanged(int)), this, SLOT(set_volume(int)));
 
-    QString current_path = QDir::currentPath(); //QApplication::applicationDirPath() ?
+    // qDebug() << "QDir::currentPath(): " << QDir::currentPath();
+    // qDebug() << "QApplication::applicationDirPath(): " << QApplication::applicationDirPath() ;
+    // qDebug() << "QApplication::applicationFilePath(): " << QApplication::applicationFilePath();
+    // qDebug() << "QApplication::applicationName(): " << QApplication::applicationName();
+    // qDebug() << "QApplication::applicationVersion(): " << QApplication::applicationVersion();
+    // qDebug() << "QDir::rootPath(): " << QDir::rootPath() ;
 
-    QString work_path = current_path + "/computers/";
-    QString software_path = current_path + "/software/";
+    QString app_path = QApplication::applicationDirPath();
+    QString current_path = QDir::currentPath();
+    QString work_path, software_path, data_path, emulator_root;
+
+#if defined(__linux__) || defined(__APPLE__)
+    QString ini_path = QString(getenv("HOME")) + "/.config";
+    QString ini_file = ini_path + "/ecat.ini";
+    if (!std::filesystem::exists(ini_file.toStdString())) {
+        if (std::filesystem::exists(QString(app_path + "/ecat.ini").toStdString())) {
+            std::filesystem::copy_file(QString(app_path + "/ecat.ini").toStdString(), ini_file.toStdString());
+        } else {
+            std::filesystem::copy_file(QString(current_path + "/ecat.ini").toStdString(), ini_file.toStdString());
+        }
+    }
+    if (std::filesystem::exists(QString(current_path + "/computers").toStdString())) {
+        emulator_root = current_path;
+    } else {
+        emulator_root = app_path.left(app_path.lastIndexOf('/')) + "/share/ecat";
+    }
+#elif defined(_WIN32)
+    QString ini_path = app_path;
+    QString ini_file = ini_path + "/ecat.ini";
+#else
+    #error "Unknown platform"
+#endif
+
+    qDebug() << "emulator_root: " << emulator_root ;
+
+    work_path = emulator_root + "/computers/";
+    software_path = emulator_root + "/software/";
+    data_path = emulator_root + "/data/";
 
     DWM = new DebugWindowsManager();
 
@@ -118,7 +152,7 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("65c02", &CreateDebugWindow);
     DWM->register_debug_window("taperecorder", &CreateTapeWindow);
 
-    e = new Emulator(work_path, current_path + "/data/", software_path, current_path + "/ecat.ini");
+    e = new Emulator(work_path, data_path, software_path, ini_file);
 
     connect(this, &MainWindow::send_a_key,  e, &Emulator::key_event);
     connect(this, &MainWindow::send_volume, e, &Emulator::set_volume);
