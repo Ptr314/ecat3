@@ -26,6 +26,7 @@
 
 #include "libs/lodepng/lodepng.h"
 
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -108,11 +109,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     QString app_path = QApplication::applicationDirPath();
     QString current_path = QDir::currentPath();
-    QString work_path, software_path, data_path, emulator_root;
+    QString work_path, software_path, data_path, emulator_root, ini_path, ini_file;
 
 #if defined(__linux__) || defined(__APPLE__)
-    QString ini_path = QString(getenv("HOME")) + "/.config";
-    QString ini_file = ini_path + "/ecat.ini";
+    ini_path = QString(getenv("HOME")) + "/.config";
+    ini_file = ini_path + "/ecat.ini";
     if (!std::filesystem::exists(ini_file.toStdString())) {
         if (std::filesystem::exists(QString(app_path + "/ecat.ini").toStdString())) {
             std::filesystem::copy_file(QString(app_path + "/ecat.ini").toStdString(), ini_file.toStdString());
@@ -126,8 +127,20 @@ MainWindow::MainWindow(QWidget *parent)
         emulator_root = app_path.left(app_path.lastIndexOf('/')) + "/share/ecat";
     }
 #elif defined(_WIN32)
-    QString ini_path = app_path;
-    QString ini_file = ini_path + "/ecat.ini";
+    QFileInfo ini_fi(app_path + "/ecat.ini");
+    if (ini_fi.exists() && ini_fi.isFile()) {
+        ini_path = app_path;
+    } else {
+        ini_path = current_path;
+    }
+    ini_file = ini_path + "/ecat.ini";
+
+    QFileInfo comp_fi(current_path + "/computers");
+    if (comp_fi.exists() && !comp_fi.isFile()) {
+        emulator_root = current_path;
+    } else {
+        emulator_root = app_path;
+    }
 #else
     #error "Unknown platform"
 #endif
