@@ -32,16 +32,16 @@
 
 https://doc.qt.io/qt-6/windows-building.html
 
-* Отредактировать __.build/vars-mingw.cmd__ на действительные пути.
+* Отредактировать __.build/vars-mingw-latest.cmd__ на действительные пути.
 * Открыть командную строку и скомпилировать Qt: 
 
 ~~~
 cd репозиторий-приложения\.build
-%SystemRoot%\system32\cmd.exe /E:ON /V:ON /k vars-mingw.cmd
+%SystemRoot%\system32\cmd.exe /E:ON /V:ON /k vars-mingw-latest.cmd
 cd C:\Temp
 mkdir qt6-build
 cd qt6-build
-configure.bat -static -release -nomake examples -nomake tests -prefix c:\DEV\Qt-static\%_QT_VERSION%
+configure.bat -static -release -nomake examples -nomake tests -prefix c:\DEV\Qt\%_QT_VERSION%-static
 cmake --build . --parallel
 cmake --install .
 ~~~
@@ -54,12 +54,10 @@ cmake --install .
 
 
 #### 5. Собрать release-версию приложения
-* Перейти в настройку компиляции из предыдущего пункта (__Projects/Build & Run/Static Kit/Build__)
-* Выбрать вариант __"Build configuration"__ &ndash; __"Release"__. 
-* Установить целевую директорию для компиляции __"репозиторий-приложения\build-release"__ (__Build directory__).
-* Скомпилировать приложение с помощью Kit из предыдущего пункта по варианту __Release__.
-* Перейти в директорию __build__, проверить пути в файле __build-win.bat__, затем очистить директорию __releases/windows__ и запустить bat-файл.
-* Убедиться, что в директории __releases/windows__ появился zip-архив с полным содержимым.
+* Перейти в папку `.build`
+* Проверить пути в файлах `vars-mingw-latest.cmd` и `vars-mingw-qt5.15.cmd`.
+* Выполнить `build-win-i386.bat` `buils-win-latest.bat`.
+* Зайтив директорию `relase`, запаковать поддиректории в отдельные архивы.
 
 #### 6. Обновление языковых файлов
 ~~~
@@ -107,49 +105,6 @@ cmake --install .
 ~~~
 
 Далее аналогично mingw &ndash; установить соответствующие окружения для dev- и release-сборок.
-
-# Linux
-
-https://web.stanford.edu/dept/cs_edu/resources/qt/install-linux
-
-~~~
-sudo apt update && sudo apt upgrade -y
-sudo apt -y install build-essential openssl libssl-dev libssl1.0 libgl1-mesa-dev libqt5x11extras5 '^libxcb.*-dev' libx11-xcb-dev libglu1-mesa-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev
-~~~
-
-https://www.qt.io/download-qt-installer
-
-~~~
-cd ~/Downloads
-chmod +x qt*.run
-./qt*.run
-
-sudo apt install libsdl2-dev
-~~~
-
-#### 3. Скомпилировать Qt из исходников для статической сборки приложения
-
-https://doc.qt.io/qt-6/linux-building.html
-
-Установить необходимые программы (при необходимости):
-~~~
-sudo apt install cmake ninja--build python3
-~~~
-
-Скачать архив с исходными кодами (обязательно tar, в zip неверные окончания строк) и скомпилировать release-версию:
-
-~~~
-cd /tmp
-mkdir qt-src
-cd qt-src
-wget https://download.qt.io/official_releases/qt/6.8/6.8.0/single/qt-everywhere-src-6.8.0.tar.xz
-tar xf qt-everywhere-src-6.8.0.tar.xz
-mkdir qt-build
-cd qt-build
-../qt-everywhere-src-6.8.0/configure -static -release
-cmake --build . --parallel
-cmake --install .
-~~~
 
 ---
 ## macOS
@@ -238,6 +193,7 @@ https://www.csalmeida.com/log/how-to-install-sdl2-on-macos/
         * cmake
         * ninja
 * Компилятор `sudo apt install g++`
+* SDL2 `sudo apt install libsdl2-dev`
 * Скачать linuxdeployqt: https://github.com/probonopd/linuxdeployqt/releases и разместить в `~/Downloads`.
 
 Добавить в `~/.profile` пути к cmake и ninja:

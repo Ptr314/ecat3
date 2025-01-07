@@ -27,7 +27,7 @@ PortWindow::~PortWindow()
 
 void PortWindow::update()
 {
-    unsigned int v = d->get_value(0);
+    unsigned int v = d->get_direct();
     ui->binaryEdit->setText(QString("%1").arg(v, 8, 2, QChar('0')));
     ui->hexEdit->setText(QString("%1").arg(v, 2, 16, QChar('0')).toUpper());
 }
