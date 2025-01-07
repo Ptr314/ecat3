@@ -119,6 +119,7 @@ https://doc.qt.io/qt-6/macos.html
 
 * Скопировать файл `.xip` в папку `/Applications` и там распаковать. Файл `.xip` удалить
 * Выполнить команду `sudo xcode-select --switch /Applications/Xcode.app`
+* Закомментировать `helper = osxkeychain` в файле `/Applications/Xcode.app/Contents/Developer/usr/share/git-core/gitconfig`, чтобы отключить хранение паролей Git в локальной системе.
 
 ### 2. Установить HomeBrew
 
