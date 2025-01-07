@@ -12,6 +12,7 @@ if (${USE_SDL})
     endif()
 endif()
 
+set(CMAKE_BUILD_RPATH /Library/Frameworks)
 
 IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
     set(EXTERNAL_Z80 0)
