@@ -5,6 +5,7 @@ PLATFORM="macos"
 QT_PATH="/usr/local/Qt-6.8.1-static"
 BUILD_DIR="./build/${PLATFORM}-${ARCHITECTURE}"
 RELEASE_DIR="./release"
+RESOURCES=./eCat3.app/Contents/Resources
 
 VERSION=`cat ../src/globals.h | grep 'PROJECT_VERSION' | awk '{printf $3}' | tr -d '"\n\r'`
 
@@ -14,7 +15,9 @@ cwd=$(pwd)
 cd "$BUILD_DIR"
 ninja
 
-cp -r ../../../deploy/* ./eCat3.app/Contents/MacOS
+cp -r ../../../deploy/ ${RESOURCES}
+rm ${RESOURCES}/ecat.ini
+mv ${RESOURCES}/.ecat.ini ${RESOURCES}/ecat.ini
 
 macdeployqt eCat3.app -dmg
 cd $cwd
