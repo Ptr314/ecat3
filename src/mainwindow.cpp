@@ -112,19 +112,20 @@ MainWindow::MainWindow(QWidget *parent)
     QString work_path, software_path, data_path, emulator_root, ini_path, ini_file;
 
 #if defined(__linux__)
-    ini_path = QString(getenv("HOME")) + "/.config";
-    ini_file = ini_path + "/ecat.ini";
-    if (!std::filesystem::exists(ini_file.toStdString())) {
-        if (std::filesystem::exists(QString(app_path + "/ecat.ini").toStdString())) {
-            std::filesystem::copy_file(QString(app_path + "/ecat.ini").toStdString(), ini_file.toStdString());
-        } else {
-            std::filesystem::copy_file(QString(current_path + "/ecat.ini").toStdString(), ini_file.toStdString());
-        }
-    }
     if (std::filesystem::exists(QString(current_path + "/computers").toStdString())) {
         emulator_root = current_path;
     } else {
         emulator_root = app_path.left(app_path.lastIndexOf('/')) + "/share/ecat";
+    }
+
+    ini_path = QString(getenv("HOME")) + "/.config";
+    ini_file = ini_path + "/ecat.ini";
+    if (!std::filesystem::exists(ini_file.toStdString())) {
+        if (std::filesystem::exists(QString(emulator_root + "/ecat.ini").toStdString())) {
+            std::filesystem::copy_file(QString(emulator_root + "/ecat.ini").toStdString(), ini_file.toStdString());
+        } else {
+            std::filesystem::copy_file(QString(current_path + "/ecat.ini").toStdString(), ini_file.toStdString());
+        }
     }
 #elif defined(__APPLE__)
     if (std::filesystem::exists(QString(current_path + "/computers").toStdString())) {

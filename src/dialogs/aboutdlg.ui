@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>430</width>
+    <width>473</width>
     <height>323</height>
    </rect>
   </property>
@@ -16,9 +16,9 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>190</x>
+     <x>240</x>
      <y>140</y>
-     <width>221</width>
+     <width>211</width>
      <height>30</height>
     </rect>
    </property>
@@ -72,7 +72,7 @@
     <rect>
      <x>19</x>
      <y>190</y>
-     <width>391</width>
+     <width>431</width>
      <height>121</height>
     </rect>
    </property>
@@ -107,7 +107,7 @@
     <rect>
      <x>20</x>
      <y>170</y>
-     <width>391</width>
+     <width>431</width>
      <height>16</height>
     </rect>
    </property>
@@ -120,7 +120,7 @@
     <rect>
      <x>190</x>
      <y>40</y>
-     <width>231</width>
+     <width>271</width>
      <height>81</height>
     </rect>
    </property>

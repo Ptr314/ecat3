@@ -10,6 +10,7 @@ BUILD_DIR="./build/${PLATFORM}-${ARCHITECTURE}"
 VERSION=`cat ../src/globals.h | grep 'PROJECT_VERSION' | awk '{printf $3}' | tr -d '"\n\r'`
 
 RELEASE_DIR="./release/ecat-${VERSION}-${PLATFORM}-${ARCHITECTURE}.AppDir"
+RESOURCES=${RELEASE_DIR}/usr/share/ecat
 
 cmake -DCMAKE_PREFIX_PATH=${QT_PATH} -S ../src -B ${BUILD_DIR} -G Ninja
 
@@ -23,7 +24,9 @@ cp -r ./.linux/ecat3.AppDir/* ${RELEASE_DIR}
 cp "${BUILD_DIR}/eCat3" "${RELEASE_DIR}/usr/bin/"
 
 mkdir -p ${RELEASE_DIR}/usr/share/ecat
-cp -r ../deploy/* "${RELEASE_DIR}/usr/share/ecat"
+cp -r ../deploy/* ${RESOURCES}
+rm ${RESOURCES}/ecat.ini
+cp ../deploy/.ecat.ini ${RESOURCES}/ecat.ini
 
 cd release
 
