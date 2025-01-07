@@ -8,7 +8,7 @@
 #define PROJECT_VERSION "3.3.0"
 
 #define USE_SDL
-#define SDL_SEPARATE_WINDOW
+/* #undef SDL_SEPARATE_WINDOW */
 
 /* #undef EXTERNAL_Z80 */
 /* #undef CPU_STOPPED */
