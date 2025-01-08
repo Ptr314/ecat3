@@ -92,6 +92,7 @@ private:
     // TapeRecorder * tape;
     unsigned int fdds_found = 0;
     QTimer * fdd_timer;
+    QString last_path;
 
 
     void CreateDevicesMenu();

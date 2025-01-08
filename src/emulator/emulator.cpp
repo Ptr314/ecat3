@@ -187,9 +187,17 @@ void Emulator::stop_emulation()
 void Emulator::timer_proc()
 {
     //TODO: Other timer stuff?
+
+    // SDL_Event ev;
+
     if (!busy)
     {
         busy = true;
+
+        // while (SDL_PollEvent(&ev))
+        // {
+        //     qDebug() << ev.type;
+        // }
 
         while (local_counter < time_ticks) {
 

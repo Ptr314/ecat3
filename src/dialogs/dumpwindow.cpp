@@ -101,7 +101,8 @@ void DumpWindow::on_bottomButton_clicked()
 
 void DumpWindow::on_saveButton_clicked()
 {
-    QString file_name = QFileDialog::getSaveFileName(this, DumpWindow::tr("Save contents to a file"), e->work_path, DumpWindow::tr("Dump (*.bin)"));
+    QString path = e->read_setup("Startup", "last_path", e->work_path);
+    QString file_name = QFileDialog::getSaveFileName(this, DumpWindow::tr("Save contents to a file"), path, DumpWindow::tr("Dump (*.bin)"));
     if (!file_name.isEmpty())
     {
         Memory * dev = dynamic_cast<Memory*>(d);
@@ -110,6 +111,8 @@ void DumpWindow::on_saveButton_clicked()
             file.write(reinterpret_cast<char*>(dev->get_buffer()), dev->get_size());
             file.close();
         }
+        // QFileInfo fi(file_name);
+        // e->write_setup("Startup", "last_path", fi.absolutePath());
     }
 }
 

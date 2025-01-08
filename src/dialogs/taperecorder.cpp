@@ -133,7 +133,7 @@ void TapeRecorderWindow::on_buttonEject_pressed()
             QString fmt = e->read_setup("TapeFiles", ext, "");
 
             if (fmt.length() > 0) {
-                //e->write_setup("Startup", "last_path", fi.absolutePath());
+                e->write_setup("Startup", "last_path", fi.absolutePath());
 
                 ui->name_mask->setVisible(true);
                 ui->textLabel->setVisible(true);

@@ -193,6 +193,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     QString file_to_load = e->read_setup("Startup", "default", "");
 
+    last_path = e->read_setup("Startup", "last_path", software_path);
+
     e->load_config(work_path + file_to_load);
 
     set_title();
@@ -530,14 +532,14 @@ void MainWindow::load_config(QString file_name, bool set_default)
 
 void MainWindow::on_actionOpen_triggered()
 {
-    QString path = e->read_setup("Startup", "last_path", e->work_path);
     SystemData * sd = e->get_system_data();
-    QString file_name = QFileDialog::getOpenFileName(this, Emulator::tr("Load a file"), path, sd->allowed_files);
+    QString file_name = QFileDialog::getOpenFileName(this, Emulator::tr("Load a file"), last_path, sd->allowed_files);
 
 
     if (!file_name.isEmpty()) {
         QFileInfo fi(file_name);
-        e->write_setup("Startup", "last_path", fi.absolutePath());
+        last_path = fi.absolutePath();
+        e->write_setup("Startup", "last_path", last_path);
 
         HandleExternalFile(e, file_name);
     }
@@ -577,13 +579,15 @@ void MainWindow::fdd_open(unsigned int n)
 {
     if (fdds[n] != nullptr)
     {
-        QString file_name = QFileDialog::getOpenFileName(this, MainWindow::tr("Open disk image"), e->work_path, fdds[n]->files);
+        QString file_name = QFileDialog::getOpenFileName(this, MainWindow::tr("Open disk image"), last_path, fdds[n]->files);
         if (!file_name.isEmpty())
         {
             QFileInfo fi(file_name);
             fdd_menu[n]->actions().at(0)->setText(fi.fileName());
             fdd_button[n]->setIcon(QIcon(":/icons/floppy_mount"));
             fdds[n]->load_image(file_name);
+            last_path = fi.absolutePath();
+            e->write_setup("Startup", "last_path", last_path);
         }
     }
 }
@@ -611,7 +615,7 @@ void MainWindow::fdd_write(unsigned int n)
 {
     if (fdds[n] != nullptr)
     {
-        QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save disk image to a file"), e->work_path, fdds[n]->files_save, 0, QFileDialog::DontConfirmOverwrite);
+        QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save disk image to a file"), last_path, fdds[n]->files_save, 0, QFileDialog::DontConfirmOverwrite);
         if (!file_name.isEmpty())
         {
             QMessageBox::StandardButton reply;
@@ -632,7 +636,6 @@ void MainWindow::fdd_write(unsigned int n)
             } else
             if (reply == QMessageBox::No)
             {
-                //QFileInfo fi(file_name);
                 QString backup_name = file_name + ".bak";
                 bool result = QFile::rename(file_name, backup_name);
                 if (result)
@@ -640,6 +643,9 @@ void MainWindow::fdd_write(unsigned int n)
                 else
                     QMessageBox::critical(this, MainWindow::tr("Backup error"), MainWindow::tr("Error creating a backup. Probably *.bak already exists."));
             }
+            QFileInfo fi(file_name);
+            last_path = fi.absolutePath();
+            e->write_setup("Startup", "last_path", last_path);
         }
     }
 
