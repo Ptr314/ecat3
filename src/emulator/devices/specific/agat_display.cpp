@@ -18,10 +18,16 @@ uint8_t Agat_16Colors[16][3]  = {
 uint32_t Agat_RGBA16[16];
 
 AgatDisplay::AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
-    GenericDisplay(im, cd),
-    previous_mode(_FFFF),
-    blinker(false),
-    clock_counter(0)
+    GenericDisplay(im, cd)
+    , previous_mode(_FFFF)
+    , blinker(false)
+    , clock_counter(0)
+    , i50_counter(0)
+    , i500_counter(0)
+    , current_line(0)
+    , i_50hz(this, im, 1, "50hz", MODE_W)
+    , i_500hz(this, im, 1, "500hz", MODE_W)
+    , i_ints_en(this, im, 1, "ints_en", MODE_R)
 {
     sx = 512; // Doubling 2*256 because of 64 chars mode;
     sy = 256;
@@ -39,6 +45,8 @@ void AgatDisplay::load_config(SystemData *sd)
 
     system_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
     blink_ticks = system_clock / (5*2);     // 5 Hz
+    i50_ticks = system_clock / (50);
+    i500_ticks = system_clock / (500);
 
     set_mode(0x02);
 }
@@ -95,7 +103,15 @@ void AgatDisplay::clock(unsigned int counter)
         if (mode == 0x02) screen_valid = false;
     }
 
-    //screen_valid = false;
+    bool ints_en = (i_ints_en.value & 1) == 0;
+    i50_counter += counter;
+    if (i50_counter >= i50_ticks) {
+        i50_counter -= i50_ticks;
+        if (ints_en) {
+            // 50 Hz
+            current_line = 0;
+        }
+    }
 }
 
 void AgatDisplay::memory_callback(unsigned int callback_id, unsigned int address)

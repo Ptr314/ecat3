@@ -15,6 +15,15 @@ protected:
     unsigned int clock_counter;
     unsigned int system_clock;
     unsigned int blink_ticks;
+    unsigned int i50_counter, i50_ticks;
+    unsigned int i500_counter, i500_ticks;
+
+    unsigned int current_line;
+    bool odd_lines;
+
+    Interface i_50hz;
+    Interface i_500hz;
+    Interface i_ints_en;
 
     Port * port_mode;
     RAM * memory[2];
