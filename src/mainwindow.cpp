@@ -32,6 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
     , fdd_timer(nullptr)
     , fdds_found(0)
+    , fdd_blinker(false)
     //, fdc(nullptr)
 {
     QFontDatabase::addApplicationFont(":/fonts/mono-bold");
@@ -658,7 +659,12 @@ void MainWindow::update_fdds()
     {
         //if (fdc->get_busy() && fdc->get_selected_drive()==i) {
         if (fdds[i]->is_led_on()) {
-            fdd_button[i]->setIcon(QIcon(":/icons/floppy_access"));
+            fdd_blinker = !fdd_blinker;
+            if (fdd_blinker) {
+                fdd_button[i]->setIcon(QIcon(":/icons/floppy_access"));
+            } else {
+                fdd_button[i]->setIcon(QIcon(":/icons/floppy_mount"));
+            }
         } else {
             if (fdds[i]->get_loaded()) {
                 if (fdds[i]->is_protected()) {
