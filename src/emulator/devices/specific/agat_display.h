@@ -15,10 +15,9 @@ protected:
     unsigned int clock_counter;
     unsigned int system_clock;
     unsigned int blink_ticks;
-    unsigned int i50_counter, i50_ticks;
-    unsigned int i500_counter, i500_ticks;
+    unsigned int screen_counter, screen_ticks;
 
-    unsigned int current_line;
+    unsigned int screen_line;
     bool odd_lines;
 
     Interface i_50hz;
@@ -29,7 +28,7 @@ protected:
     RAM * memory[2];
     ROM * font;
 
-    void render_byte(unsigned int address);
+    void render_line(unsigned int line);
     virtual void render_all(bool force_render) override;
 
     void set_mode(unsigned int new_mode);
@@ -39,7 +38,7 @@ public:
 
     virtual void set_surface(SDL_Surface * surface) override;
 
-    virtual void memory_callback(unsigned int callback_id, unsigned int address) override;
+    // virtual void memory_callback(unsigned int callback_id, unsigned int address) override;
 
     virtual void clock(unsigned int counter) override;
     virtual void load_config(SystemData *sd) override;
