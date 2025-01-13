@@ -17,6 +17,13 @@ uint8_t Agat_16Colors[16][3]  = {
 
 uint32_t Agat_RGBA16[16];
 
+#define AGAT7_SCREEN_LINES  128
+#define AGAT7_BLANK_LINES   28
+#define AGAT7_TOTAL_LINES (AGAT7_SCREEN_LINES+AGAT7_BLANK_LINES)
+
+unsigned int NMI_CYCLE[AGAT7_TOTAL_LINES];  // The cycle is calculated for every half-frame
+unsigned int IRQ_CYCLE[AGAT7_TOTAL_LINES];
+
 AgatDisplay::AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     GenericDisplay(im, cd)
     , previous_mode(_FFFF)
@@ -24,6 +31,7 @@ AgatDisplay::AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     , clock_counter(0)
     , screen_counter(0)
     , screen_line(0)
+    , field_num(1)
     , i_50hz(this, im, 1, "50hz", MODE_W)
     , i_500hz(this, im, 1, "500hz", MODE_W)
     , i_ints_en(this, im, 1, "ints_en", MODE_R)
@@ -42,9 +50,17 @@ void AgatDisplay::load_config(SystemData *sd)
 
     system_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
     blink_ticks = system_clock / (5*2);     // 5 Hz
-    screen_ticks = system_clock / (25*256); // 25 full frames 50 half-frames per second
+    screen_ticks = system_clock / (50 * AGAT7_TOTAL_LINES); // 25 full frames 50 half-frames per second
 
     set_mode(0x02);
+
+    for (unsigned int i=0; i < AGAT7_TOTAL_LINES; i++) {
+        NMI_CYCLE[i] = (i < AGAT7_SCREEN_LINES)?1:0;
+        IRQ_CYCLE[i] = (i/8) % 2;
+    }
+
+    prev_nmi = NMI_CYCLE[AGAT7_TOTAL_LINES-1];
+    prev_irq = IRQ_CYCLE[AGAT7_TOTAL_LINES-1];
 }
 
 void AgatDisplay::set_surface(SDL_Surface * surface)
@@ -103,8 +119,24 @@ void AgatDisplay::clock(unsigned int counter)
     screen_counter += counter;
     if (screen_counter >= screen_ticks) {
         screen_counter -= screen_ticks;
-        render_line(screen_line++);
-        if (screen_line >= sy) screen_line = 0;
+
+        if (screen_line < AGAT7_SCREEN_LINES)
+            render_line(screen_line*2 + field_num);
+
+        if (++screen_line >= AGAT7_TOTAL_LINES) {
+            screen_line = 0;
+            field_num ^= 1;
+        }
+
+        bool ints_en = i_ints_en.value == 1;
+
+        unsigned int new_nmi = NMI_CYCLE[screen_line];
+        if (ints_en && prev_nmi != new_nmi) i_50hz.change(new_nmi);
+        prev_nmi = new_nmi;
+
+        unsigned int new_irq = IRQ_CYCLE[screen_line];
+        if (ints_en && prev_irq != new_irq) i_500hz.change(new_irq);
+        prev_irq = new_irq;
     }
 }
 

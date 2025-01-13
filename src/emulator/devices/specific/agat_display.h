@@ -18,7 +18,11 @@ protected:
     unsigned int screen_counter, screen_ticks;
 
     unsigned int screen_line;
+    unsigned int field_num;
     bool odd_lines;
+
+    unsigned int prev_nmi;
+    unsigned int prev_irq;
 
     Interface i_50hz;
     Interface i_500hz;
