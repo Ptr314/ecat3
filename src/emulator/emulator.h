@@ -38,7 +38,6 @@ private:
     unsigned int timer_delay;
     unsigned int time_ticks;
     unsigned int local_counter;
-    unsigned int clock_counter;
 
     SDL_Window * SDLWindowRef = nullptr;
     SDL_Renderer * SDLRendererRef = nullptr;
@@ -67,6 +66,7 @@ public:
     bool loaded;
     bool use_threads;
 
+    unsigned int clock_counter;
 
     Emulator(QString work_path, QString data_path, QString software_path, QString ini_file);
     ~Emulator();

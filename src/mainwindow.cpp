@@ -387,7 +387,7 @@ void MainWindow::UpdateToolbar()
             fdd_timer = new QTimer(this);
             connect(fdd_timer, &QTimer::timeout, this, &MainWindow::update_fdds);
         }
-        fdd_timer->start(100);
+        fdd_timer->start(1000);
     }
 
     QVector<ComputerDevice*>tape_devices = e->dm->find_devices_by_class("tape");
@@ -677,6 +677,10 @@ void MainWindow::update_fdds()
             }
         }
     }
+    // static unsigned int prev_counter = 0;
+    // unsigned int counter = e->clock_counter;
+    // qDebug() << counter-prev_counter;
+    // prev_counter = counter;
 }
 
 void MainWindow::on_actionScreenshot_triggered()
