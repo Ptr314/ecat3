@@ -8,19 +8,15 @@
 
 int main(int argc, char *argv[])
 {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
+
     QApplication a(argc, argv);
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
-    QTranslator translator;
-    const QStringList uiLanguages = QLocale::system().uiLanguages();
-    for (const QString &locale : uiLanguages) {
-        const QString baseName = QLocale(locale).name();
-        if (translator.load(":/i18n/" + baseName)) {
-            a.installTranslator(&translator);
-            break;
-        }
-    }
     MainWindow w;
     w.setWindowIcon(QIcon(":/icons/tv"));
     w.show();

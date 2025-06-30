@@ -1,6 +1,8 @@
-cmake_minimum_required(VERSION 3.21.1)
+cmake_minimum_required(VERSION 3.21)
 
 project(eCat3 VERSION 3.3.0 LANGUAGES C CXX)
+
+# Some defines
 
 set(USE_SDL 1)
 
@@ -11,8 +13,6 @@ if (${USE_SDL})
         set(SDL_SEPARATE_WINDOW 0)
     endif()
 endif()
-
-set(CMAKE_BUILD_RPATH /Library/Frameworks)
 
 IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
     set(EXTERNAL_Z80 0)
@@ -36,13 +36,18 @@ if (${LOGGER})
     set(LOG_INTERFACES 0)
 endif()
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
+# CMake globals & options
+
 set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-configure_file (globals.h.in ${CMAKE_CURRENT_SOURCE_DIR}/globals.h @ONLY)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+# Adding Qt & SDL
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
@@ -50,18 +55,15 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 
-set(RESOURCE_FILES resources.qrc)
+# Translations
 
-if(${QT_VERSION} VERSION_LESS 5.15.0)
-    qt5_add_resources(PROJECT_RESOURCES ${RESOURCE_FILES})
-else()
-    qt_add_resources(PROJECT_RESOURCES ${RESOURCE_FILES})
-endif()
+set(SUPPORTED_LANGUAGES ru en)
+set(TS_FILES
+    ${CMAKE_SOURCE_DIR}/translations/en_us.ts
+    ${CMAKE_SOURCE_DIR}/translations/ru_ru.ts
+)
 
-
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
+# Source files
 
 if (${EXTERNAL_Z80})
     set(Z80_FILES
@@ -152,29 +154,81 @@ set(PROJECT_SOURCES
     dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
 )
 
-set(TRANSLATION_FILES
-    translations/en_US.ts
-    translations/ru_RU.ts
+# Adding Qt base translations
+
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED Core)
+if(NOT ${Qt6Core_DIR} STREQUAL "")
+    set(QT_TRANSLATIONS_DIR "${Qt6Core_DIR}/../../../translations")
+else()
+    set(QT_TRANSLATIONS_DIR "${Qt5Core_DIR}/../../../translations")
+endif()
+
+set(QT_TRANSLATION_FILES "")
+foreach(LANG ${SUPPORTED_LANGUAGES})
+    set(QT_TRANSLATION_FILE "${QT_TRANSLATIONS_DIR}/qtbase_${LANG}.qm")
+    if(EXISTS ${QT_TRANSLATION_FILE})
+        list(APPEND QT_TRANSLATION_FILES ${QT_TRANSLATION_FILE})
+    else()
+        message(WARNING "Qt translation (qtbase_${LANG}.qm) not found: ${QT_TRANSLATION_FILE}")
+    endif()
+endforeach()
+
+if(QT_TRANSLATION_FILES STREQUAL "")
+    message(FATAL_ERROR "No any Qt translations found.")
+endif()
+
+file(WRITE ${CMAKE_BINARY_DIR}/qt_base.qrc "<RCC>\n  <qresource prefix=\"/i18n\">\n")
+foreach(FILE ${QT_TRANSLATION_FILES})
+    get_filename_component(FILENAME ${FILE} NAME)
+    file(APPEND ${CMAKE_BINARY_DIR}/qt_base.qrc "    <file alias=\"${FILENAME}\">${FILE}</file>\n")
+endforeach()
+file(APPEND ${CMAKE_BINARY_DIR}/qt_base.qrc "  </qresource>\n</RCC>\n")
+
+set(RESOURCE_FILES
+    resources.qrc
+    ${CMAKE_BINARY_DIR}/qt_base.qrc
 )
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
+# Build project
 
-    qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
+if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    QT6_ADD_RESOURCES(PROJECT_RESOURCES
+        ${RESOURCE_FILES}
+    )
+    qt_add_executable(${PROJECT_NAME}
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         ${PROJECT_RESOURCES}
     )
+
     qt_add_translations(${PROJECT_NAME} TS_FILES
-        ${TRANSLATION_FILES}
+        ${TS_FILES}
     )
 else()
-    add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
+    # For Qt5: making qms manually and putting them to a separate resource file
+    find_program(LRELEASE_EXECUTABLE lrelease)
+
+    set(QRC_FILE ${CMAKE_BINARY_DIR}/translations.qrc)
+    file(WRITE ${QRC_FILE} "<RCC>\n    <qresource prefix=\"/i18n\">\n")
+
+    foreach(_ts_file ${TS_FILES})
+        get_filename_component(_qt_id ${_ts_file} NAME_WE)
+        set(QM_FILE ${CMAKE_BINARY_DIR}/${_qt_id}.qm)
+        execute_process(COMMAND ${LRELEASE_EXECUTABLE} ${_ts_file} -qm  ${QM_FILE})
+        file(APPEND ${QRC_FILE} "        <file alias=\"${_qt_id}\">${QM_FILE}</file>\n")
+    endforeach()
+
+    file(APPEND ${QRC_FILE} "    </qresource>\n</RCC>\n")
+
+    qt5_add_resources(PROJECT_RESOURCES
+        ${RESOURCE_FILES}
+        ${QRC_FILE}
+    )
+
+    add_executable(${PROJECT_NAME}
         ${PROJECT_SOURCES}
         ${PROJECT_RESOURCES}
     )
-    qt5_add_translation(QM_FILES ${TRANSLATION_FILES})
-
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -182,12 +236,47 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${SDL2_LIBRARIES}
 )
 
+# Different platforms setup
+
+if(APPLE)
+    if(${QT_VERSION} VERSION_LESS 6.1.0)
+      set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.${PROJECT_NAME})
+    endif()
+
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum macOS deployment version" FORCE)
+    set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Build universal binary for macOS" FORCE)
+    set(ICON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/resources/files/ecat.icns")
+    set(PLIST_FILE "${CMAKE_CURRENT_SOURCE_DIR}/resources/files/Info.plist")
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        ${BUNDLE_ID_OPTION}
+        MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+        MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_ICON_FILE "ecat.icns"
+        MACOSX_BUNDLE_INFO_PLIST "${PLIST_FILE}"
+    )
+  target_sources(${PROJECT_NAME} PRIVATE ${ICON_FILE})
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>/Contents/Resources"
+    COMMAND ${CMAKE_COMMAND} -E copy "${ICON_FILE}" "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>/Contents/Resources/"
+  )
+endif()
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    ${BUNDLE_ID_OPTION}
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
+)
+
+include(GNUInstallDirs)
+
+# Passing version to the application
+
+set(CMAKE_CONFIGURE_FILE_CONTENT_NEWLINE_STYLE UNIX)
+configure_file (globals.h.in ${CMAKE_CURRENT_SOURCE_DIR}/globals.h @ONLY)
+
+install(TARGETS ${PROJECT_NAME}
+    BUNDLE DESTINATION .
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 if(QT_VERSION_MAJOR EQUAL 6)

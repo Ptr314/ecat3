@@ -41,6 +41,82 @@ MainWindow::MainWindow(QWidget *parent)
     QFontDatabase::addApplicationFont(":/fonts/consolas");
     QFontDatabase::addApplicationFont(":/fonts/dos");
 
+    QString app_path = QApplication::applicationDirPath();
+    QString current_path = QDir::currentPath();
+    QString work_path, software_path, data_path, emulator_root, ini_path, ini_file;
+
+#if defined(__linux__)
+    if (std::filesystem::exists(QString(current_path + "/computers").toStdString())) {
+        emulator_root = current_path;
+    } else {
+        emulator_root = app_path.left(app_path.lastIndexOf('/')) + "/share/ecat";
+    }
+
+    ini_path = QString(getenv("HOME")) + "/.config";
+    ini_file = ini_path + "/ecat.ini";
+    if (!std::filesystem::exists(ini_file.toStdString())) {
+        if (std::filesystem::exists(QString(emulator_root + "/ecat.ini").toStdString())) {
+            std::filesystem::copy_file(QString(emulator_root + "/ecat.ini").toStdString(), ini_file.toStdString());
+        } else {
+            std::filesystem::copy_file(QString(current_path + "/ecat.ini").toStdString(), ini_file.toStdString());
+        }
+    }
+#elif defined(__APPLE__)
+    if (std::filesystem::exists(QString(current_path + "/computers").toStdString())) {
+        emulator_root = current_path;
+    } else {
+        emulator_root = app_path.left(app_path.lastIndexOf('/')) + "/Resources";
+    }
+
+    ini_path = QString(getenv("HOME"));
+    ini_file = ini_path + "/.ecat.ini";
+    if (!std::filesystem::exists(ini_file.toStdString())) {
+        if (std::filesystem::exists(QString(emulator_root + "/ecat.ini").toStdString())) {
+            std::filesystem::copy_file(QString(emulator_root + "/ecat.ini").toStdString(), ini_file.toStdString());
+        } else {
+            std::filesystem::copy_file(QString(current_path + "/ecat.ini").toStdString(), ini_file.toStdString());
+        }
+    }
+#elif defined(_WIN32)
+    QFileInfo ini_fi(app_path + "/ecat.ini");
+    if (ini_fi.exists() && ini_fi.isFile()) {
+        ini_path = app_path;
+    } else {
+        ini_path = current_path;
+    }
+    ini_file = ini_path + "/ecat.ini";
+
+    QFileInfo comp_fi(current_path + "/computers");
+    if (comp_fi.exists() && !comp_fi.isFile()) {
+        emulator_root = current_path;
+    } else {
+        emulator_root = app_path;
+    }
+#else
+#error "Unknown platform"
+#endif
+
+    qDebug() << "emulator_root: " << emulator_root ;
+
+    work_path = emulator_root + "/computers/";
+    software_path = emulator_root + "/software/";
+    data_path = emulator_root + "/data/";
+
+    QSettings settings(ini_file, QSettings::IniFormat);
+
+    QString ini_lang = settings.value("interface/language", "").toString();
+
+    if (ini_lang.length() == 0) {
+        const QStringList uiLanguages = QLocale::system().uiLanguages();
+        for (const QString &locale : uiLanguages) {
+            const QString baseName = QLocale(locale).name().toLower();
+            switch_language(baseName, true);
+            break;
+        }
+    } else {
+        switch_language(ini_lang, true);
+    }
+
     ui->setupUi(this);
 
 #ifdef SDL_SEPARATE_WINDOW
@@ -101,73 +177,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(volume, SIGNAL(valueChanged(int)), this, SLOT(set_volume(int)));
 
-    // qDebug() << "QDir::currentPath(): " << QDir::currentPath();
-    // qDebug() << "QApplication::applicationDirPath(): " << QApplication::applicationDirPath() ;
-    // qDebug() << "QApplication::applicationFilePath(): " << QApplication::applicationFilePath();
-    // qDebug() << "QApplication::applicationName(): " << QApplication::applicationName();
-    // qDebug() << "QApplication::applicationVersion(): " << QApplication::applicationVersion();
-    // qDebug() << "QDir::rootPath(): " << QDir::rootPath() ;
 
-    QString app_path = QApplication::applicationDirPath();
-    QString current_path = QDir::currentPath();
-    QString work_path, software_path, data_path, emulator_root, ini_path, ini_file;
-
-#if defined(__linux__)
-    if (std::filesystem::exists(QString(current_path + "/computers").toStdString())) {
-        emulator_root = current_path;
-    } else {
-        emulator_root = app_path.left(app_path.lastIndexOf('/')) + "/share/ecat";
-    }
-
-    ini_path = QString(getenv("HOME")) + "/.config";
-    ini_file = ini_path + "/ecat.ini";
-    if (!std::filesystem::exists(ini_file.toStdString())) {
-        if (std::filesystem::exists(QString(emulator_root + "/ecat.ini").toStdString())) {
-            std::filesystem::copy_file(QString(emulator_root + "/ecat.ini").toStdString(), ini_file.toStdString());
-        } else {
-            std::filesystem::copy_file(QString(current_path + "/ecat.ini").toStdString(), ini_file.toStdString());
-        }
-    }
-#elif defined(__APPLE__)
-    if (std::filesystem::exists(QString(current_path + "/computers").toStdString())) {
-        emulator_root = current_path;
-    } else {
-        emulator_root = app_path.left(app_path.lastIndexOf('/')) + "/Resources";
-    }
-
-    ini_path = QString(getenv("HOME"));
-    ini_file = ini_path + "/.ecat.ini";
-    if (!std::filesystem::exists(ini_file.toStdString())) {
-        if (std::filesystem::exists(QString(emulator_root + "/ecat.ini").toStdString())) {
-            std::filesystem::copy_file(QString(emulator_root + "/ecat.ini").toStdString(), ini_file.toStdString());
-        } else {
-            std::filesystem::copy_file(QString(current_path + "/ecat.ini").toStdString(), ini_file.toStdString());
-        }
-    }
-#elif defined(_WIN32)
-    QFileInfo ini_fi(app_path + "/ecat.ini");
-    if (ini_fi.exists() && ini_fi.isFile()) {
-        ini_path = app_path;
-    } else {
-        ini_path = current_path;
-    }
-    ini_file = ini_path + "/ecat.ini";
-
-    QFileInfo comp_fi(current_path + "/computers");
-    if (comp_fi.exists() && !comp_fi.isFile()) {
-        emulator_root = current_path;
-    } else {
-        emulator_root = app_path;
-    }
-#else
-    #error "Unknown platform"
-#endif
-
-    qDebug() << "emulator_root: " << emulator_root ;
-
-    work_path = emulator_root + "/computers/";
-    software_path = emulator_root + "/software/";
-    data_path = emulator_root + "/data/";
 
     DWM = new DebugWindowsManager();
 
@@ -219,6 +229,26 @@ MainWindow::MainWindow(QWidget *parent)
         e->run();
 
 }
+
+void MainWindow::switch_language(const QString & lang, bool init)
+{
+    if (translator.load(":/i18n/" + lang)) {
+        qApp->installTranslator(&translator);
+
+        QString t = QString(":/i18n/qtbase_%1.qm").arg(lang.split("_")[0]);
+        if (qtTranslator.load(t)) {
+            qApp->installTranslator(&qtTranslator);
+        }
+        if (!init) {
+            ui->retranslateUi(this);
+            // init_controls();
+            // settings->setValue("interface/language", lang);
+        }
+    } else {
+        QMessageBox::warning(this, MainWindow::tr("Error"), MainWindow::tr("Failed to load language file for: ") + lang);
+    }
+}
+
 
 void MainWindow::CreateFDDMenu(unsigned int n)
 {

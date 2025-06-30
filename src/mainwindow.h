@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QSlider>
 #include <QToolButton>
+#include <QTranslator>
 
 #include "emulator/emulator.h"
 #include "emulator/debug.h"
@@ -77,6 +78,9 @@ signals:
 private:
     Ui::MainWindow *ui;
 
+    QTranslator translator;
+    QTranslator qtTranslator;
+
     DebugWindowsManager * DWM;
 
     QSlider * volume;
@@ -96,6 +100,7 @@ private:
     bool fdd_blinker;
 
 
+    void switch_language(const QString &lang, bool init);
     void CreateDevicesMenu();
     void UpdateToolbar();
     void CreateScreenMenu();
