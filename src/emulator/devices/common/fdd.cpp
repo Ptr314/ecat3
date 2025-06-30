@@ -124,17 +124,19 @@ void FDD::load_image(QString file_name)
             QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error opening file '%1'").arg(file_name));
         }
     } else
-    if (ext == "nib") {
+    if (ext == "nib" || ext == "nic") {
         if (fdd_mode == FDD_MODE_LOGICAL) {
             QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("FDD device is working in a logical mode, no physical formats are supported"));
             return;
         }
         QFile file(file_name);
-        if (file.size() == 232960) {
+        int expected_size = (ext == "nib")?232960:286720;
+
+        if (file.size() == expected_size) {
             if (file.open(QIODevice::ReadOnly)){
                 sides = 1;
                 tracks = 35;
-                disk_size = 232960;
+                disk_size = expected_size;
                 physical_track_len = disk_size / tracks;
 
                 if (buffer != nullptr) delete [] buffer;

@@ -175,20 +175,6 @@ else()
     )
     qt5_add_translation(QM_FILES ${TRANSLATION_FILES})
 
-    # find_program(LUPDATE_EXECUTABLE lupdate)
-    # find_program(LRELEASE_EXECUTABLE lrelease)
-
-    # file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/languages/)
-
-    # foreach(_ts_file ${TRANSLATION_FILES})
-
-    #     # execute_process(
-    #     #     COMMAND ${LUPDATE_EXECUTABLE} -recursive ${CMAKE_SOURCE_DIR} -ts ${_ts_file})
-    #     get_filename_component(_qt_id ${_ts_file} NAME_WE)
-    #     execute_process(
-    #         COMMAND ${LRELEASE_EXECUTABLE} "${CMAKE_SOURCE_DIR}/${_ts_file}" -qm ${CMAKE_CURRENT_BINARY_DIR}/languages/${_qt_id}.qm )
-
-    # endforeach()
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
