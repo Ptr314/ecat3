@@ -179,8 +179,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(volume, SIGNAL(valueChanged(int)), this, SLOT(set_volume(int)));
 
-
-
     DWM = new DebugWindowsManager();
 
     DWM->register_debug_window("rom", &CreateDumpWindow);
@@ -223,6 +221,7 @@ void MainWindow::showEvent(QShowEvent* event)
     if (first_show) {
         // We use this trick to ensure that all interface elements already have their final dimensions (especially on Linux).
         load_config(first_config, false);
+        CreateScreenMenu();
         first_show = false;
     }
 }
