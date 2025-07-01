@@ -216,13 +216,15 @@ void Emulator::timer_proc()
 
 void Emulator::init_video(void *p)
 {
-#ifdef SDL_SEPARATE_WINDOW
-    SDLWindowRef = SDL_CreateWindow("Screen", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1024, 768, SDL_WINDOW_SHOWN | SDL_WINDOW_SKIP_TASKBAR);
-#else
-    SDLWindowRef = SDL_CreateWindowFrom(p);
-#endif
+    if (SDLWindowRef == nullptr)
+        #ifdef SDL_SEPARATE_WINDOW
+            SDLWindowRef = SDL_CreateWindow("Screen", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1024, 768, SDL_WINDOW_SHOWN | SDL_WINDOW_SKIP_TASKBAR);
+        #else
+            SDLWindowRef = SDL_CreateWindowFrom(p);
+        #endif
 
-    SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
+    if (SDLRendererRef == nullptr)
+        SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
 
     GenericDisplay * d = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display"));
 
@@ -275,8 +277,8 @@ void Emulator::stop_video()
     SDL_DestroyTexture(black_box);
     SDL_FreeSurface(device_surface);
     //SDL_FreeSurface(window_surface);
-    SDL_DestroyRenderer(SDLRendererRef);
-    SDL_DestroyWindow(SDLWindowRef);
+    // SDL_DestroyRenderer(SDLRendererRef);
+    // SDL_DestroyWindow(SDLWindowRef);
 #else
     delete black_box;
     delete device_surface;
