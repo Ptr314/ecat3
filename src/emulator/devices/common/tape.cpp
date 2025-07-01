@@ -109,7 +109,11 @@ void TapeRecorder::load_file(QString file_name, QString fmt)
             QStringList bytes = parts[i].split(":");
             uint8_t b = parse_numeric_value(bytes[0]);
             unsigned int count = parse_numeric_value(bytes[1]);
-            buffer.append(count, b);
+
+            // buffer.append(count, b);
+            for (int i = 0; i < count; i++) {
+                buffer.append(reinterpret_cast<const char*>(&b), 1);
+            }
         }
     }
 

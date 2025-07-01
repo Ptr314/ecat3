@@ -211,7 +211,7 @@ public:
     }
 
 private:
-    void interface_callback([[maybe_unused]] unsigned int callback_id, unsigned int new_value, unsigned int old_value) override
+    void interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned int new_value, unsigned int old_value) override
     {
         for (unsigned int A=0; A<3; A++)
         {

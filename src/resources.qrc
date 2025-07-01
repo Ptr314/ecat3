@@ -55,6 +55,10 @@
         <file alias="roller_right">resources/icons/roller_right.gif</file>
         <file alias="tape_volume_0">resources/icons/tape_volume_0.png</file>
         <file alias="tape_volume_100">resources/icons/tape_volume_100.png</file>
+        <file alias="en">resources/icons/en.png</file>
+        <file alias="ru">resources/icons/ru.png</file>
+        <file alias="language">resources/icons/browser.png</file>
+        <file alias="about">resources/icons/help.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>

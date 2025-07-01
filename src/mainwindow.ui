@@ -72,16 +72,16 @@
      <x>0</x>
      <y>0</y>
      <width>901</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="geometry">
      <rect>
-      <x>345</x>
-      <y>101</y>
-      <width>168</width>
-      <height>131</height>
+      <x>275</x>
+      <y>96</y>
+      <width>142</width>
+      <height>117</height>
      </rect>
     </property>
     <property name="title">
@@ -116,6 +116,7 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <addaction name="actionLanguage"/>
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuDisplay">
@@ -264,6 +265,10 @@
    </property>
   </action>
   <action name="actionAbout">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/about</normaloff>:/icons/about</iconset>
+   </property>
    <property name="text">
     <string>About...</string>
    </property>
@@ -299,6 +304,15 @@
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
+  <action name="actionLanguage">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/language</normaloff>:/icons/language</iconset>
+   </property>
+   <property name="text">
+    <string>Language</string>
    </property>
   </action>
  </widget>

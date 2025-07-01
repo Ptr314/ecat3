@@ -393,7 +393,7 @@ ComputerDevice::ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
     clock_stored = 0;
 }
 
-void ComputerDevice::clock([[maybe_unused]] unsigned int counter)
+void ComputerDevice::clock(MAYBE_UNUSED unsigned int counter)
 {
     //Does nothing by default, but may be overridden
 }
@@ -413,7 +413,7 @@ void ComputerDevice::system_clock(unsigned int counter)
     }
 }
 
-void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
+void ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
 {
 
     for (unsigned int i = 0; i < cd->parameters_count; i++)
@@ -493,17 +493,17 @@ void ComputerDevice::load_config([[maybe_unused]] SystemData * sd)
 //     return new Interface(this, im, size, name, mode, callback_id);
 // }
 
-void ComputerDevice::interface_callback([[maybe_unused]] unsigned int callback_id, [[maybe_unused]] unsigned int new_value, [[maybe_unused]] unsigned int old_value)
+void ComputerDevice::interface_callback(MAYBE_UNUSED unsigned int callback_id, MAYBE_UNUSED unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
 {
     //Does nothing by default, but may be overridden
 }
 
-void ComputerDevice::memory_callback([[maybe_unused]] unsigned int callback_id, [[maybe_unused]] unsigned int address)
+void ComputerDevice::memory_callback(MAYBE_UNUSED unsigned int callback_id, MAYBE_UNUSED unsigned int address)
 {
     //Does nothing by default, but may be overridden
 }
 
-void ComputerDevice::reset([[maybe_unused]] bool cold)
+void ComputerDevice::reset(MAYBE_UNUSED bool cold)
 {
     //Does nothing by default, but may be overridden
 }
@@ -571,7 +571,7 @@ void Memory::set_value(unsigned int address, unsigned int value, bool force)
         buffer[address] = (uint8_t)value;
 }
 
-void Memory::interface_callback([[maybe_unused]] unsigned int callback_id, unsigned int new_value, [[maybe_unused]] unsigned int old_value)
+void Memory::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
 {
     unsigned int address = new_value & create_mask(i_address.get_size(), 0);
     if (address < get_size() and auto_output) i_data.change(buffer[address]);
@@ -588,9 +588,10 @@ void Memory::set_size(unsigned int value)
 
     i_address.set_size(ceil(log2(addresable_size)));
 
-    QRandomGenerator *rg = QRandomGenerator::global();
+    // QRandomGenerator *rg = QRandomGenerator::global();
+    // for (unsigned int i=0; i < value; i++) buffer[i]=rg->bounded(255);
 
-    for (unsigned int i=0; i < value; i++) buffer[i]=rg->bounded(255);
+    for (unsigned int i=0; i < value; i++) buffer[i] = getRandomNumber(0, 255);
 }
 
 void Memory::set_memory_callback(ComputerDevice * d, unsigned int callback_id, unsigned int mode)
@@ -637,8 +638,9 @@ void RAM::reset(bool cold)
         if (!random_fill) {
             memset(buffer, fill, get_size());
         } else {
-            QRandomGenerator *rg = QRandomGenerator::global();
-            for (unsigned int i=0; i < get_size(); i++) buffer[i]=rg->bounded(255);
+            // QRandomGenerator *rg = QRandomGenerator::global();
+            // for (unsigned int i=0; i < get_size(); i++) buffer[i]=rg->bounded(255);
+            for (unsigned int i=0; i < get_size(); i++) buffer[i]=getRandomNumber(0, 255);
         }
     }
 }
@@ -719,7 +721,7 @@ void ROM::load_config(SystemData *sd)
         }
     } else {
         QString data_str = cd->get_parameter("data").right_extended;
-        QStringList values = data_str.split(',', Qt::SkipEmptyParts);
+        QStringList values = data_str.split(',', skip_empty_parts);
         set_size(values.size());
         for (int i=0; i<values.size(); i++)
             buffer[i] = parse_numeric_value(values.at(i));
@@ -776,7 +778,7 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
     value = default_value;
 }
 
-void Port::interface_callback([[maybe_unused]] unsigned int callback_id, unsigned int new_value, unsigned int old_value)
+void Port::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
     switch (callback_id) {
         case PORT_FLIP:
@@ -788,7 +790,7 @@ void Port::interface_callback([[maybe_unused]] unsigned int callback_id, unsigne
     }
 }
 
-unsigned int Port::get_value([[maybe_unused]] unsigned int address)
+unsigned int Port::get_value(MAYBE_UNUSED unsigned int address)
 {
 #ifdef LOG_PORTS
     if (name != "port-video" && name != "port-kbd")
@@ -805,7 +807,7 @@ unsigned int Port::get_direct()
     return value;
 }
 
-void Port::set_value([[maybe_unused]] unsigned int address, unsigned int value, bool force)
+void Port::set_value(MAYBE_UNUSED unsigned int address, unsigned int value, bool force)
 {
 #ifdef LOG_PORTS
     logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
@@ -816,7 +818,7 @@ void Port::set_value([[maybe_unused]] unsigned int address, unsigned int value, 
     i_access.change(1);
 }
 
-void Port::reset([[maybe_unused]] bool cold)
+void Port::reset(MAYBE_UNUSED bool cold)
 {
     set_value(0, default_value);
 }
@@ -833,7 +835,7 @@ PortAddress::PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd):
     }
 }
 
-void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int value, bool force)
+void PortAddress::set_value(unsigned int address, MAYBE_UNUSED unsigned int value, bool force)
 {
 #ifdef LOG_PORTS
     logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
@@ -848,7 +850,7 @@ void PortAddress::set_value(unsigned int address, [[maybe_unused]] unsigned int 
     i_access.change(1);
 }
 
-unsigned int PortAddress::get_value([[maybe_unused]] unsigned int address)
+unsigned int PortAddress::get_value(MAYBE_UNUSED unsigned int address)
 {
     if (store_on_read) {
         this->value = (address & mask) | (this->value & ~mask);
@@ -858,7 +860,7 @@ unsigned int PortAddress::get_value([[maybe_unused]] unsigned int address)
 }
 
 
-void PortAddress::reset([[maybe_unused]] bool cold)
+void PortAddress::reset(MAYBE_UNUSED bool cold)
 {
     set_value(default_value, 0);
 }
@@ -1106,14 +1108,14 @@ void MemoryMapper::load_config(SystemData *sd)
                        ) this->ranges[j].cache = false;
 }
 
-void MemoryMapper::reset([[maybe_unused]] bool cold)
+void MemoryMapper::reset(MAYBE_UNUSED bool cold)
 {
     if (this->cancel_init_mask != 0) this->first_range = 0;
     this->read_cache_items = 0;
     this->write_cache_items = 0;
 }
 
-void MemoryMapper::interface_callback([[maybe_unused]] unsigned int callback_id, [[maybe_unused]] unsigned int new_value, [[maybe_unused]] unsigned int old_value)
+void MemoryMapper::interface_callback(MAYBE_UNUSED unsigned int callback_id, MAYBE_UNUSED unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
 {
     this->read_cache_items = 0;
     this->write_cache_items = 0;

@@ -30,7 +30,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+855"/>
+        <location filename="../emulator/core.cpp" line="+886"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -43,7 +43,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location line="-479"/>
+        <location line="-510"/>
         <location line="+50"/>
         <location line="+16"/>
         <location line="+9"/>
@@ -202,17 +202,17 @@
     <name>DisAsm</name>
     <message>
         <location filename="../emulator/disasm.cpp" line="+29"/>
-        <location line="+35"/>
+        <location line="+34"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-35"/>
+        <location line="-34"/>
         <source>Error reading CPU instructions file %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+34"/>
         <source>CPU instruction %1 length is incorrect</source>
         <translation type="unfinished"></translation>
     </message>
@@ -280,7 +280,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+55"/>
         <source>Save contents to a file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -381,7 +381,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+216"/>
+        <location filename="../mainwindow.cpp" line="+330"/>
         <source>Screen 4:3</source>
         <translation type="unfinished"></translation>
     </message>
@@ -411,7 +411,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+215"/>
+        <location line="+214"/>
         <location filename="../dialogs/taperecorder.cpp" line="+127"/>
         <source>Load a file</source>
         <translation type="unfinished"></translation>
@@ -484,7 +484,7 @@
         <location line="+33"/>
         <location line="+4"/>
         <location line="+5"/>
-        <location line="+29"/>
+        <location line="+31"/>
         <location line="+3"/>
         <location line="+20"/>
         <location line="+3"/>
@@ -495,7 +495,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-278"/>
+        <location line="-280"/>
         <source>Incorrect fdd parameters for &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -522,7 +522,7 @@
     </message>
     <message>
         <location line="+4"/>
-        <location line="+34"/>
+        <location line="+36"/>
         <location line="+23"/>
         <source>Error opening file &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
@@ -673,7 +673,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
@@ -728,7 +728,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+9"/>
         <source>About...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -748,7 +748,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-22"/>
+        <location line="+15"/>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-37"/>
         <source>Scale_one</source>
         <translation type="unfinished"></translation>
     </message>
@@ -758,7 +763,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-71"/>
+        <location line="-75"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -778,13 +783,38 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-312"/>
-        <location line="+370"/>
+        <location filename="../mainwindow.cpp" line="-334"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Failed to load language file for: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Languages</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Русский</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>English</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <location line="+372"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-367"/>
+        <location line="-369"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -809,7 +839,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+36"/>
         <source>Save disk image to a file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -824,7 +854,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+17"/>
         <source>Backup error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -834,7 +864,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+46"/>
+        <location line="+54"/>
         <source>Save screenshot</source>
         <translation type="unfinished"></translation>
     </message>
@@ -881,7 +911,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+667"/>
+        <location filename="../emulator/core.cpp" line="+698"/>
         <location filename="../emulator/devices/common/page_mapper.cpp" line="+32"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
@@ -950,6 +980,19 @@
     </message>
 </context>
 <context>
+    <name>PortAddress</name>
+    <message>
+        <location filename="../emulator/core.cpp" line="-222"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect parameters for &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>PortWindow</name>
     <message>
         <location filename="../dialogs/portwindow.ui" line="+14"/>
@@ -979,7 +1022,7 @@
 <context>
     <name>ROM</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-350"/>
+        <location filename="../emulator/core.cpp" line="-157"/>
         <location line="+6"/>
         <location line="+28"/>
         <location line="+7"/>

@@ -3,6 +3,7 @@
 
 #include "dosframe.h"
 #include "dialogs/dialogs.h"
+#include "emulator/core.h"
 
 DOSFrame::DOSFrame(QWidget *parent)
     : QWidget{parent},
@@ -17,7 +18,13 @@ DOSFrame::DOSFrame(QWidget *parent)
 {
     font = new QFont(FONT_NAME, FONT_SIZE, FONT_WEIGHT);
     QFontMetrics fm(*font);
-    char_width = fm.horizontalAdvance("0");
+
+    #if QT_VERSION < QT_VERSION_CHECK(5, 11, 0)
+        char_width = fm.width('0');
+    #else
+        char_width = fm.horizontalAdvance('0');
+    #endif
+
     font_height = fm.height();
 
     //qDebug() << char_width << font_height;
@@ -40,7 +47,7 @@ void DOSFrame::set_scroll(unsigned int range, unsigned int position, QString cha
     update();
 }
 
-void DOSFrame::paintEvent([[maybe_unused]] QPaintEvent *event)
+void DOSFrame::paintEvent(MAYBE_UNUSED QPaintEvent *event)
 {
     QPainter painter(this);
 

@@ -35,4 +35,7 @@ bool checkCapsLock();
 
 QString md2html(QString md);
 
+int getRandomNumber(int min, int max);
+
+
 #endif // UTILS_H

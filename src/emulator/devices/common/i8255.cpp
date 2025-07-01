@@ -106,7 +106,7 @@ void I8255::set_value(unsigned int address, unsigned int value, bool force)
 
 }
 
-void I8255::interface_callback(unsigned int callback_id, unsigned int new_value, [[maybe_unused]] unsigned int old_value)
+void I8255::interface_callback(unsigned int callback_id, unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
 {
     switch (callback_id) {
     case PORT_A:

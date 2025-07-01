@@ -34,12 +34,12 @@ void MapKeyboard::load_config(SystemData *sd)
         {
             QString line = in.readLine();
             if (!line.isEmpty()) {
-                QStringList parts = line.split(':', Qt::SkipEmptyParts);
+                QStringList parts = line.split(':', skip_empty_parts);
                 if (parts.length() != 2) {
                     QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Map file entry '%1' is incorrect").arg(line));
                     return;
                 }
-                QStringList left_parts = parts.at(0).split('/', Qt::SkipEmptyParts);
+                QStringList left_parts = parts.at(0).split('/', skip_empty_parts);
                 if (left_parts.length() < 1 || left_parts.length() > 2) {
                     QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Map file entry '%1' is incorrect").arg(line));
                     return;

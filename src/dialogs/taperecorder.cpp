@@ -31,7 +31,13 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent)
     , update_timer(this)
 {
     setAttribute(Qt::WA_TranslucentBackground);
-    setWindowFlag(Qt::FramelessWindowHint, true);
+
+    #if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+        setWindowFlag(Qt::FramelessWindowHint, true);
+    #else
+        setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
+    #endif
+
     ui->setupUi(this);
 }
 

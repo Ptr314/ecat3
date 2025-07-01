@@ -70,7 +70,7 @@ void DumpArea::go_to(int address)
     go_to(global_offset, new_address);
 }
 
-void DumpArea::paintEvent([[maybe_unused]] QPaintEvent *event)
+void DumpArea::paintEvent(MAYBE_UNUSED QPaintEvent *event)
 {
     DOSFrame::paintEvent(event);
 

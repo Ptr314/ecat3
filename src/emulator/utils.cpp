@@ -1,3 +1,5 @@
+#include <random>
+
 #include <QException>
 #include <QFileInfo>
 #include <QDir>
@@ -237,4 +239,11 @@ QString md2html(QString md)
     std::string text = md.toStdString();
     int endCode = md_html(text.c_str(), text.length(), store_html_callback, static_cast<void*>(&result), 0, 1);
     return result;
+}
+
+int getRandomNumber(int min, int max) {
+    static std::random_device rd;  // Источник случайности
+    static std::mt19937 gen(rd()); // Генератор
+    std::uniform_int_distribution<> dis(min, max);
+    return dis(gen);
 }

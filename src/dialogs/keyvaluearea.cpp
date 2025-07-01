@@ -10,7 +10,11 @@ KeyValueArea::KeyValueArea(QWidget *parent)
 //    QFont font(FONT_NAME, FONT_SIZE);
     divider = ": ";
     QFontMetrics fm(*font);
-    char_width = fm.horizontalAdvance('0');
+    #if QT_VERSION < QT_VERSION_CHECK(5, 11, 0)
+        char_width = fm.width('0');
+    #else
+        char_width = fm.horizontalAdvance('0');
+    #endif
     font_height = fm.height();
 }
 

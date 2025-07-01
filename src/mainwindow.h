@@ -78,6 +78,7 @@ signals:
 private:
     Ui::MainWindow *ui;
 
+    QSettings * m_settings;
     QTranslator translator;
     QTranslator qtTranslator;
 
@@ -101,6 +102,8 @@ private:
 
 
     void switch_language(const QString &lang, bool init);
+    void add_languages();
+
     void CreateDevicesMenu();
     void UpdateToolbar();
     void CreateScreenMenu();

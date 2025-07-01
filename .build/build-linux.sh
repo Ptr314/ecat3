@@ -2,12 +2,12 @@
 
 ARCHITECTURE="x86_64"
 PLATFORM="linux"
-QT_PATH=~/Qt/6.8.1/gcc_64
+QT_PATH=~/Qt/6.8.2/gcc_64
 LINUXDEPLOYQT="~/Downloads/linuxdeployqt-continuous-x86_64.AppImage"
 
 BUILD_DIR="./build/${PLATFORM}-${ARCHITECTURE}"
 
-VERSION=`cat ../src/globals.h | grep 'PROJECT_VERSION' | awk '{printf $3}' | tr -d '"\n\r'`
+VERSION=$(grep 'PROJECT_VERSION' ../src/globals.h | cut -d'"' -f2 | tr -d '\r')
 
 RELEASE_DIR="./release/ecat-${VERSION}-${PLATFORM}-${ARCHITECTURE}.AppDir"
 RESOURCES=${RELEASE_DIR}/usr/share/ecat
@@ -34,3 +34,4 @@ export VERSION=${VERSION}-${PLATFORM}
 exec ${LINUXDEPLOYQT} ../${RELEASE_DIR}/usr/share/applications/ecat3.desktop -verbose=2 -appimage -no-translations -qmake=${QT_PATH}/bin/qmake
 
 cd $CWD
+

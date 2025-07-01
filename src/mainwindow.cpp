@@ -102,9 +102,9 @@ MainWindow::MainWindow(QWidget *parent)
     software_path = emulator_root + "/software/";
     data_path = emulator_root + "/data/";
 
-    QSettings settings(ini_file, QSettings::IniFormat);
+    m_settings = new QSettings(ini_file, QSettings::IniFormat);
 
-    QString ini_lang = settings.value("interface/language", "").toString();
+    QString ini_lang = m_settings->value("interface/language", "").toString();
 
     if (ini_lang.length() == 0) {
         const QStringList uiLanguages = QLocale::system().uiLanguages();
@@ -118,6 +118,8 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     ui->setupUi(this);
+
+    add_languages();
 
 #ifdef SDL_SEPARATE_WINDOW
     resize(500,100);
@@ -242,31 +244,46 @@ void MainWindow::switch_language(const QString & lang, bool init)
         if (!init) {
             ui->retranslateUi(this);
             // init_controls();
-            // settings->setValue("interface/language", lang);
+            m_settings->setValue("interface/language", lang);
         }
     } else {
         QMessageBox::warning(this, MainWindow::tr("Error"), MainWindow::tr("Failed to load language file for: ") + lang);
     }
 }
 
+void MainWindow::add_languages()
+{
+    QAction *langsAction = ui->actionLanguage;
+
+    QMenu *subMenu = new QMenu(MainWindow::tr("Languages"), this);
+
+    QAction *subAction1 = subMenu->addAction(QIcon(":/icons/ru"), MainWindow::tr("Русский"));
+    connect(subAction1, &QAction::triggered, this, [this]() { switch_language("ru_ru", false); });
+
+    QAction *subAction2 = subMenu->addAction(QIcon(":/icons/en"), MainWindow::tr("English"));
+    connect(subAction2, &QAction::triggered, this, [this]() { switch_language("en_us", false); });
+
+    langsAction->setMenu(subMenu);
+}
+
 
 void MainWindow::CreateFDDMenu(unsigned int n)
 {
     fdd_menu[n] = new QMenu(this);
-    QAction * a1 = new QAction(MainWindow::tr("<Not loaded>"));
+    QAction * a1 = new QAction(MainWindow::tr("<Not loaded>"), this);
     a1->setIcon(QIcon(":/icons/cdrom_unmount"));
     a1->setEnabled(false);
-    QAction * a2 = new QAction(QString(MainWindow::tr("Open an image...")));
+    QAction * a2 = new QAction(QString(MainWindow::tr("Open an image...")), this);
     a2->setIcon(QIcon(":/icons/open"));
-    connect(a2, &QAction::triggered, this, [this, n=n](){fdd_open(n);});
-    QAction * a3 = new QAction(QString(MainWindow::tr("Write protect")));
-    connect(a3, &QAction::triggered, this, [this, n=n](){fdd_wp(n);});
+    connect(a2, &QAction::triggered, this, [this, n](){fdd_open(n);});
+    QAction * a3 = new QAction(QString(MainWindow::tr("Write protect")), this);
+    connect(a3, &QAction::triggered, this, [this, n](){fdd_wp(n);});
     a3->setIcon(QIcon(":/icons/lock"));
-    QAction * a4 = new QAction(QString(MainWindow::tr("Eject")));
-    connect(a4, &QAction::triggered, this, [this, n=n](){fdd_eject(n);});
+    QAction * a4 = new QAction(QString(MainWindow::tr("Eject")), this);
+    connect(a4, &QAction::triggered, this, [this, n](){fdd_eject(n);});
     a4->setIcon(QIcon(":/icons/eject"));
-    QAction * a5 = new QAction(QString(MainWindow::tr("Write to a file...")));
-    connect(a5, &QAction::triggered, this, [this, n=n](){fdd_write(n);});
+    QAction * a5 = new QAction(QString(MainWindow::tr("Write to a file...")), this);
+    connect(a5, &QAction::triggered, this, [this, n](){fdd_write(n);});
     a5->setIcon(QIcon(":/icons/file_save"));
     fdd_menu[n]->addAction(a1);
     fdd_menu[n]->addSeparator();
@@ -281,7 +298,7 @@ void MainWindow::CreateFDDMenu(unsigned int n)
     fdd_button[n]->setPopupMode(QToolButton::MenuButtonPopup);
     fdd_button[n]->setFocusPolicy(Qt::NoFocus);
 
-    connect(fdd_button[n], &QToolButton::clicked, this, [this, n=n](){fdd_open(n);});
+    connect(fdd_button[n], &QToolButton::clicked, this, [this, n](){fdd_open(n);});
 
     ui->toolBar->insertWidget(ui->actionDebugger, fdd_button[n] );
 }
@@ -300,7 +317,7 @@ void MainWindow::CreateScreenMenu()
     {
         QAction * a = ui->menuScale->addAction(
             QString::number(i) + "x",
-            [this, i=i]{e->set_scale(i);}
+            [this, i]{e->set_scale(i);}
             );
         a->setActionGroup(scale_group);
         a->setCheckable(true);
@@ -366,7 +383,7 @@ void MainWindow::CreateDevicesMenu()
     {
         QAction * a = ui->menuDevices->addAction(
                             e->dm->get_device(i)->device_name + " : " + e->dm->get_device(i)->device_type,
-                            [this, i=i]{onDeviceMenuCalled(i);}
+                            [this, i]{onDeviceMenuCalled(i);}
                       );
         a->setEnabled( DWM->get_create_func(e->dm->get_device(i)->device_type) != nullptr );
     };

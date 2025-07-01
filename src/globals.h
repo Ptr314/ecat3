@@ -3,9 +3,9 @@
 
 #define PROJECT_NAME "eCat3"
 #define VERSION_MAJOR "3"
-#define VERSION_MINOR "3"
+#define VERSION_MINOR "4"
 #define VERSION_PATCH "0"
-#define PROJECT_VERSION "3.3.0"
+#define PROJECT_VERSION "3.4.0"
 
 #define USE_SDL
 /* #undef SDL_SEPARATE_WINDOW */

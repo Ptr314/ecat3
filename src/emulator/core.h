@@ -10,6 +10,10 @@
 #include "globals.h"
 #include "logger.h"
 
+#ifdef PROJECT_NAME
+    static_assert(true, "Suppress unused include warning");
+#endif
+
 #define MAX_LINKS               100
 #define MAX_INTERFACES          200
 #define MAX_REGISTERED_DEVICES  100
@@ -36,6 +40,11 @@
 
 #define MAX_DEVICES 100
 
+#if defined(__cplusplus) && __cplusplus >= 201703L
+    #define MAYBE_UNUSED [[maybe_unused]]
+#else
+    #define MAYBE_UNUSED
+#endif
 
 class DeviceManager;
 class InterfaceManager;

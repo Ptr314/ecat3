@@ -1,7 +1,8 @@
 #include <QFileInfo>
 #include <QThread>
-#include <QRandomGenerator>
+// #include <QRandomGenerator>
 #include <QKeyEvent>
+#include <cmath>
 
 #include "globals.h"
 

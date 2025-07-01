@@ -29,7 +29,7 @@ void WD1793::load_config(SystemData *sd)
         throw QException();
     }
 
-    QStringList parts = s.split('|', Qt::SkipEmptyParts);
+    QStringList parts = s.split('|', skip_empty_parts);
     drives_count = parts.size();
     for (unsigned int i = 0; i < drives_count; i++)
         drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));

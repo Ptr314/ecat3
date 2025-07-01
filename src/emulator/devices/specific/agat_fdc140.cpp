@@ -33,7 +33,7 @@ void Agat_FDC140::load_config(SystemData *sd)
     }
 
     memset(&drives, 0, sizeof(drives));
-    QStringList parts = s.split('|', Qt::SkipEmptyParts);
+    QStringList parts = s.split('|', skip_empty_parts);
     drives_count = parts.size();
     for (unsigned int i = 0; i < drives_count; i++)
         drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));

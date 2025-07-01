@@ -34,9 +34,8 @@ void DisAsm::load_file(QString file_name)
     while (!in.atEnd())
     {
         QString line = in.readLine();
-        QStringList parts = line.split(u'\x09', Qt::SkipEmptyParts);
-
-        QStringList codes = parts.at(0).split(' ', Qt::SkipEmptyParts);
+        QStringList parts = line.split(u'\x09', skip_empty_parts);
+        QStringList codes = parts.at(0).split(' ', skip_empty_parts);
 
         ins[count].length = 0;
 

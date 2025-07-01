@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(eCat3 VERSION 3.3.0 LANGUAGES C CXX)
+project(eCat3 VERSION 3.4.0 LANGUAGES C CXX)
+
+if(WIN32)
+    list(APPEND CMAKE_PREFIX_PATH "C:/DEV/SDL2-2.32.8")
+endif()
 
 # Some defines
 
@@ -42,7 +46,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -52,6 +56,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 
+# For Windows, path to SDL should be added to CMAKE_PREFIX_PATH global environment variable
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 

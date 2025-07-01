@@ -75,13 +75,15 @@ void load_rk(Emulator * e, QString file_name)
         unsigned int page_size = m->get_size();
 
         QFile file(file_name);
-        if (!file.open(QIODevice::ReadOnly)) {
+        //if (!file.open(QIODevice::ReadOnly)) {
+        if (!file.open(QIODevice::OpenMode(QIODevice::ReadOnly))) {
             QMessageBox::critical(0, Emulator::tr("Error"), Emulator::tr("Error reading %1").arg(file_name));
             return;
         }
 
         // Reading the main data
-        file.skip(offset);
+        //file.skip(offset);
+        file.seek(file.pos() + offset);
         QByteArray data = file.read(len);
         if (data.size() < len) {
             QMessageBox::warning(0, Emulator::tr("Error"), Emulator::tr("File is smaller than expected!"));
@@ -135,7 +137,7 @@ void load_bin(Emulator * e, QString file_name)
     unsigned int page_size = m->get_size();
 
     QFile file(file_name);
-    if (!file.open(QIODevice::ReadOnly)) {
+    if (!file.open(QIODevice::ReadOnly | QIODevice::NotOpen)) {
         QMessageBox::critical(0, Emulator::tr("Error"), Emulator::tr("Error reading %1").arg(file_name));
         return;
     }
@@ -153,7 +155,7 @@ void load_hex(Emulator * e, QString file_name)
         uint8_t * buffer = m->get_buffer();
 
         QFile file(file_name);
-        if (!file.open(QIODevice::ReadOnly)) {
+        if (!file.open(QIODevice::ReadOnly | QIODevice::NotOpen)) {
             QMessageBox::critical(0, Emulator::tr("Error"), Emulator::tr("Error reading HEX file %1").arg(file_name));
             return;
         }
@@ -206,7 +208,7 @@ void load_rko(Emulator * e, QString file_name)
         add_to_disk = true;
 
     QFile file(file_name);
-    if (!file.open(QIODevice::ReadOnly)) {
+    if (!file.open(QIODevice::ReadOnly | QIODevice::NotOpen)) {
         QMessageBox::critical(0, Emulator::tr("Error"), Emulator::tr("Error reading %1").arg(file_name));
         return;
     }
@@ -250,7 +252,7 @@ void load_rko(Emulator * e, QString file_name)
         preamble_size = (preamble_data[2] << 8) + preamble_data[3];
 
         read_length = preamble_size + 16;
-        qDebug() << "read_length (preamble) " << Qt::hex << read_length;
+        // qDebug() << "read_length (preamble) " << Qt::hex << read_length;
     }
 
     uint8_t header_name[8];
@@ -304,12 +306,12 @@ void load_rko(Emulator * e, QString file_name)
         address = header_start;
     }
 
-    qDebug() << "file_offset" << Qt::hex << file_offset;
-    qDebug() << "read_length" << Qt::hex << read_length;
-    qDebug() << "preamble_start" << Qt::hex << preamble_start;
-    qDebug() << "preamble_size" << Qt::hex << preamble_size;
-    qDebug() << "header_start" << Qt::hex << header_start;
-    qDebug() << "header_size" << Qt::hex << header_size;
+    // qDebug() << "file_offset" << Qt::hex << file_offset;
+    // qDebug() << "read_length" << Qt::hex << read_length;
+    // qDebug() << "preamble_start" << Qt::hex << preamble_start;
+    // qDebug() << "preamble_size" << Qt::hex << preamble_size;
+    // qDebug() << "header_start" << Qt::hex << header_start;
+    // qDebug() << "header_size" << Qt::hex << header_size;
 
     file.seek(file_offset);
 
