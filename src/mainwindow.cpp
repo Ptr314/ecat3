@@ -208,28 +208,23 @@ MainWindow::MainWindow(QWidget *parent)
 
     last_path = e->read_setup("Startup", "last_path", software_path);
 
-    e->load_config(work_path + file_to_load);
-
-    set_title();
-
-    CreateDevicesMenu();
-    UpdateToolbar();
-
     QString sound_volume = e->read_setup("Sound", "volume", "50");
     volume->setValue(sound_volume.toInt());
 
     QString muted = e->read_setup("Sound", "muted", "0");
     mute->setChecked(muted.toInt() == 1);
 
-    e->init_video((void*)(ui->screen->winId()));
+    first_config = work_path + file_to_load;
+}
 
-    CreateScreenMenu();
-
-    if (e->use_threads)
-        e->start(QThread::TimeCriticalPriority);
-    else
-        e->run();
-
+void MainWindow::showEvent(QShowEvent* event)
+{
+    QMainWindow::showEvent(event);
+    if (first_show) {
+        // We use this trick to ensure that all interface elements already have their final dimensions (especially on Linux).
+        load_config(first_config, false);
+        first_show = false;
+    }
 }
 
 void MainWindow::switch_language(const QString & lang, bool init)
@@ -551,23 +546,23 @@ void MainWindow::load_config(QString file_name, bool set_default)
         e->stop_video();
         e->quit();
         e->wait();
-
-        e->load_config(file_name);
-
-        set_title();
-
-        CreateDevicesMenu();
-        UpdateToolbar();
-
-        e->set_volume(volume->value());
-        e->set_muted(mute->isChecked());
-
-        e->init_video((void*)(ui->screen->winId()));
-        if (e->use_threads)
-            e->start(QThread::TimeCriticalPriority);
-        else
-            e->run();
     }
+
+    e->load_config(file_name);
+
+    set_title();
+
+    CreateDevicesMenu();
+    UpdateToolbar();
+
+    e->set_volume(volume->value());
+    e->set_muted(mute->isChecked());
+
+    e->init_video((void*)(ui->screen->winId()));
+    if (e->use_threads)
+        e->start(QThread::TimeCriticalPriority);
+    else
+        e->run();
 
     if (set_default)
     {

@@ -26,11 +26,12 @@ public:
     Emulator *e;
 
 protected:
-    void keyPressEvent( QKeyEvent * event );
-    void keyReleaseEvent( QKeyEvent * event );
-    void resizeEvent(QResizeEvent * event);
-    void paintEvent(QPaintEvent * event);
-    void closeEvent(QCloseEvent *event);
+    void keyPressEvent( QKeyEvent * event) override;
+    void keyReleaseEvent( QKeyEvent * event) override;
+    void resizeEvent(QResizeEvent * event) override;
+    void paintEvent(QPaintEvent * event) override;
+    void closeEvent(QCloseEvent *event) override;
+    void showEvent(QShowEvent* event) override;
 
 private slots:
     void load_config(QString file_name, bool set_default);
@@ -100,6 +101,8 @@ private:
     QString last_path;
     bool fdd_blinker;
 
+    bool first_show = true;
+    QString first_config;
 
     void switch_language(const QString &lang, bool init);
     void add_languages();

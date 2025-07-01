@@ -336,7 +336,7 @@ void Emulator::render_screen()
 
 void Emulator::resize_screen()
 {
-    display->validate(true);
+    if (loaded) display->validate(true);
 }
 
 void Emulator::key_event(QKeyEvent *event, bool press)
@@ -347,14 +347,18 @@ void Emulator::key_event(QKeyEvent *event, bool press)
 
 void Emulator::set_volume(int value)
 {
-    GenericSound * sound = dynamic_cast<GenericSound*>(dm->get_device_by_name("sound", false));
-    if (sound != nullptr) sound->set_volume(value);
+    if (loaded) {
+        GenericSound * sound = dynamic_cast<GenericSound*>(dm->get_device_by_name("sound", false));
+        if (sound != nullptr) sound->set_volume(value);
+    }
 }
 
 void Emulator::set_muted(bool muted)
 {
-    GenericSound * sound = dynamic_cast<GenericSound*>(dm->get_device_by_name("sound", false));
-    if (sound != nullptr) sound->set_muted(muted);
+    if (loaded) {
+        GenericSound * sound = dynamic_cast<GenericSound*>(dm->get_device_by_name("sound", false));
+        if (sound != nullptr) sound->set_muted(muted);
+    }
 }
 
 Emulator::~Emulator()
