@@ -4,7 +4,7 @@ QT_PATH="${HOME}/Qt-6.8.2-static-universal"
 
 PLATFORM="macos"
 APP_NAME="eCat3"
-BUILD_DIR="./build/${PLATFORM}-${ARCHITECTURE}"
+BUILD_DIR="./build/${PLATFORM}"
 RELEASE_DIR="./release"
 RESOURCES=./eCat3.app/Contents/Resources
 
