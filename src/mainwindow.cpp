@@ -119,6 +119,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->setupUi(this);
 
+    ui->screen->setUpdatesEnabled(false);
+
     add_languages();
 
 #ifdef SDL_SEPARATE_WINDOW

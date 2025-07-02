@@ -268,6 +268,8 @@ void Emulator::init_video(void *p)
     SDL_LockTexture(black_box, nullptr, reinterpret_cast<void**>(&black_bytes), &pitch);
     memset(black_bytes, 0, 100*100*4);
     SDL_UnlockTexture(black_box);
+    SDL_RenderCopy(SDLRendererRef, black_box, NULL, NULL);
+    SDL_RenderPresent(SDLRendererRef);
 #else
     device_surface = new QImage(screen_sx, screen_sy, QImage::Format_RGB32);
     black_box = new QImage(100, 100, QImage::Format_RGB32);
