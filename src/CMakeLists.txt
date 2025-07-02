@@ -9,14 +9,15 @@ endif()
 # Some defines
 
 set(USE_SDL 1)
+set(SDL_SEPARATE_WINDOW 0)
 
-if (${USE_SDL})
-    if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        set(SDL_SEPARATE_WINDOW 1)
-    else()
-        set(SDL_SEPARATE_WINDOW 0)
-    endif()
-endif()
+# if (${USE_SDL})
+#     if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+#         set(SDL_SEPARATE_WINDOW 1)
+#     else()
+#         set(SDL_SEPARATE_WINDOW 0)
+#     endif()
+# endif()
 
 IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
     set(EXTERNAL_Z80 0)

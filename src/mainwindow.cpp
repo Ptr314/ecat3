@@ -557,17 +557,23 @@ void MainWindow::load_config(QString file_name, bool set_default)
     e->set_volume(volume->value());
     e->set_muted(mute->isChecked());
 
-    e->init_video((void*)(ui->screen->winId()));
-    if (e->use_threads)
-        e->start(QThread::TimeCriticalPriority);
-    else
-        e->run();
+    void* nativeView = reinterpret_cast<void*>(ui->screen->winId());
 
-    if (set_default)
-    {
-        QString new_file = file_name.right(file_name.length() - e->work_path.length());
-        e->write_setup("Startup", "default", new_file);
-        qDebug() << new_file;
+    if (nativeView) {
+        e->init_video(nativeView);
+        if (e->use_threads)
+            e->start(QThread::TimeCriticalPriority);
+        else
+            e->run();
+
+        if (set_default)
+        {
+            QString new_file = file_name.right(file_name.length() - e->work_path.length());
+            e->write_setup("Startup", "default", new_file);
+            qDebug() << new_file;
+        }
+    } else {
+        qWarning() << "ui->screen->winId() is null!";
     }
 }
 

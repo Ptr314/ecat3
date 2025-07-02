@@ -223,6 +223,10 @@ void Emulator::init_video(void *p)
             SDLWindowRef = SDL_CreateWindowFrom(p);
         #endif
 
+    if (!SDLWindowRef) {
+        qDebug() << "SDL error:" << SDL_GetError();
+    }
+
     if (SDLRendererRef == nullptr)
         SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
 

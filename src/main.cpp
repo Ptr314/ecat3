@@ -8,7 +8,9 @@
 
 int main(int argc, char *argv[])
 {
-    qputenv("QT_QPA_PLATFORM", "xcb"); // Enforce using X11
+    #if defined(__linux__)
+        qputenv("QT_QPA_PLATFORM", "xcb"); // Enforce using X11 on Linux
+    #endif
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
