@@ -52,7 +52,7 @@ private:
     #elif defined(RENDERER_QT)
         QImage * device_surface;
         QImage * black_box;
-        QWidget * screen_widget;
+        QLabel * screen_widget;
     #endif
     QTimer * render_timer;
 

@@ -4,8 +4,8 @@ project(eCat3 VERSION 3.4.0 LANGUAGES C CXX)
 
 # Some defines
 
-add_compile_definitions(RENDERER_SDL2)
-# add_compile_definitions(RENDERER_QT)
+# add_compile_definitions(RENDERER_SDL2)
+add_compile_definitions(RENDERER_QT)
 #add_compile_definitions(RENDERER_OPENGL)
 
 # if (${USE_SDL})

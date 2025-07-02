@@ -79,6 +79,8 @@ signals:
 private:
     Ui::MainWindow *ui;
 
+    QLabel * screen;
+
     QSettings * m_settings;
     QTranslator translator;
     QTranslator qtTranslator;

@@ -119,7 +119,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->setupUi(this);
 
-    ui->screen->setUpdatesEnabled(false);
+    screen = new QLabel(this);
+    setCentralWidget(screen);
+    #ifdef RENDERER_SDL2
+        screen->setUpdatesEnabled(false);
+    #elif defined(RENDERER_QT)
+        screen->setAlignment(Qt::AlignCenter);
+        screen->setStyleSheet("background-color: black;");
+    #endif
 
     add_languages();
 
@@ -560,9 +567,9 @@ void MainWindow::load_config(QString file_name, bool set_default)
     e->set_muted(mute->isChecked());
 
     #ifdef RENDERER_SDL2
-        void* nativeView = reinterpret_cast<void*>(ui->screen->winId());
+        void* nativeView = reinterpret_cast<void*>(screen->winId());
     #elif defined(RENDERER_QT)
-        void* nativeView = reinterpret_cast<void*>(ui->screen);
+        void* nativeView = reinterpret_cast<void*>(screen);
     #endif
 
     if (nativeView) {

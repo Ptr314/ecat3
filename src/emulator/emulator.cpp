@@ -3,6 +3,7 @@
 // #include <QRandomGenerator>
 #include <QKeyEvent>
 #include <cmath>
+#include <qlabel.h>
 #include <qpainter.h>
 
 #include "globals.h"
@@ -228,7 +229,7 @@ void Emulator::init_video(void *p)
         if (SDLRendererRef == nullptr)
             SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
     #elif defined(RENDERER_QT)
-        screen_widget = reinterpret_cast<QWidget *>(p);
+        screen_widget = reinterpret_cast<QLabel *>(p);
     #endif
 
 
@@ -323,7 +324,7 @@ void Emulator::render_screen()
             // We need to blank old screen contents
             SDL_RenderCopy(SDLRendererRef, black_box, NULL, NULL);
         #elif defined(RENDERER_QT)
-            device_surface->fill(0);
+            device_surface->fill(Qt::black);
         #endif
     }
 
@@ -344,8 +345,15 @@ void Emulator::render_screen()
 
             SDL_DestroyTexture(SDLTexture);
         #elif defined(RENDERER_QT)
-            QPainter painter(screen_widget);
-            painter.drawImage(0, 0, *device_surface);
+            int w = screen_sx * screen_scale * pixel_scale;
+            int h = screen_sy * screen_scale;
+            QImage copy = device_surface->copy();
+            QPixmap pm = QPixmap::fromImage(copy.scaled(
+                w, h,
+                Qt::IgnoreAspectRatio,
+                Qt::FastTransformation
+                ));
+            screen_widget->setPixmap(pm);
         #endif
 
         display->was_updated = false;

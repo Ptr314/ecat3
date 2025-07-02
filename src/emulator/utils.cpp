@@ -253,6 +253,6 @@ uint32_t MapRGB(const SURFACE * surface, uint8_t R, uint8_t G, uint8_t B)
 #ifdef RENDERER_SDL2
     return SDL_MapRGB(surface->format, R, G, B);
 #elif defined(RENDERER_QT)
-    return 0xFF000000 | (B << 16) | (G << 8) | R;
+    return 0xFF000000 | (R << 16) | (G << 8) | B;
 #endif
 }

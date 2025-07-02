@@ -23,6 +23,8 @@ int main(int argc, char *argv[])
 
     #ifdef RENDERER_SDL2
         SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+    #else
+        SDL_Init(SDL_INIT_AUDIO);
     #endif
 
     MainWindow w;
@@ -32,6 +34,9 @@ int main(int argc, char *argv[])
     int RetVal = a.exec();
 
     #ifdef RENDERER_SDL2
+        SDL_Quit();
+    #else
+        // We still need it for sound
         SDL_Quit();
     #endif
 
