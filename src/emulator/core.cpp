@@ -2,10 +2,12 @@
 #include <QtGlobal>
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-    #include <QRandomGenerator>
+    // #include <QRandomGenerator>
 #endif
 
-#include <SDL.h>
+#ifdef RENDERER_SDL2
+    #include <SDL.h>
+#endif
 
 #include "core.h"
 #include "emulator/utils.h"
@@ -1289,11 +1291,16 @@ GenericDisplay::GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     render_pixels(nullptr)
 {}
 
-void GenericDisplay::set_surface(SDL_Surface * surface)
+void GenericDisplay::set_surface(SURFACE * surface)
 {
     this->surface = surface;
-    render_pixels = surface->pixels;
-    line_bytes = sx*4;
+    #ifdef RENDERER_SDL2
+        render_pixels = surface->pixels;
+        line_bytes = sx*4;
+    #elif defined(RENDERER_QT)
+        render_pixels = surface->bits();
+        line_bytes = surface->bytesPerLine();
+    #endif
 }
 
 

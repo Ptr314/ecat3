@@ -43,11 +43,11 @@ void AgatDisplay::load_config(SystemData *sd)
     set_mode(0x02);
 }
 
-void AgatDisplay::set_surface(SDL_Surface * surface)
+void AgatDisplay::set_surface(SURFACE * surface)
 {
     GenericDisplay::set_surface(surface);
-    fill_SDL_rgba(Agat_2Colors, Agat_RGBA2, 2, surface->format);
-    fill_SDL_rgba(Agat_16Colors, Agat_RGBA16, 16, surface->format);
+    fill_SDL_rgba(Agat_2Colors, Agat_RGBA2, 2, surface);
+    fill_SDL_rgba(Agat_16Colors, Agat_RGBA16, 16, surface);
 }
 
 void AgatDisplay::set_mode(unsigned int new_mode)
@@ -130,7 +130,7 @@ void AgatDisplay::render_byte(unsigned int address)
                     p = offset + j*32 + k*4;
                     for (unsigned int i = line; i <= line+3; i++) {
                         unsigned int c = color[j];
-                        pixel_address = static_cast<Uint8 *>(render_pixels) + i*line_bytes + p;
+                        pixel_address = static_cast<uint8_t *>(render_pixels) + i*line_bytes + p;
                         *(uint32_t*)pixel_address = Agat_RGBA16[c]; //SDL_MapRGB(surface->format, Agat_16Colors[c][0], Agat_16Colors[c][1], Agat_16Colors[c][2]);
                     }
                 }
@@ -146,7 +146,7 @@ void AgatDisplay::render_byte(unsigned int address)
                     p = offset + j*16 + k*4;
                     for (unsigned int i = line; i <= line+1; i++) {
                         unsigned int c = color[j];
-                        pixel_address = static_cast<Uint8 *>(render_pixels) + i*line_bytes + p;
+                        pixel_address = static_cast<uint8_t *>(render_pixels) + i*line_bytes + p;
                         *(uint32_t*)pixel_address = Agat_RGBA16[c]; //SDL_MapRGB(surface->format, Agat_16Colors[c][0], Agat_16Colors[c][1], Agat_16Colors[c][2]);
                     }
                 }
@@ -171,7 +171,7 @@ void AgatDisplay::render_byte(unsigned int address)
                         ccl = cl * (c ^ 0x01);
                     uint32_t color = Agat_RGBA16[ccl]; //SDL_MapRGB(surface->format, Agat_16Colors[ccl][0], Agat_16Colors[ccl][1], Agat_16Colors[ccl][2]);
                     p = offset + (6-k)*8;
-                    pixel_address = static_cast<Uint8 *>(render_pixels) + (line + i)*line_bytes + p;
+                    pixel_address = static_cast<uint8_t *>(render_pixels) + (line + i)*line_bytes + p;
                     *(uint32_t*)pixel_address = color;
                     *(uint32_t*)(pixel_address+4) = color;
                 }
@@ -190,7 +190,7 @@ void AgatDisplay::render_byte(unsigned int address)
                 for (unsigned int k=0; k<7; k++) {                      // Char is 7x8 pixels
                     unsigned int c = ((font_val >> k) & 1) ^ inv;
                     p = offset + (6-k)*4;
-                    pixel_address = static_cast<Uint8 *>(render_pixels) + (line + i)*line_bytes + p;
+                    pixel_address = static_cast<uint8_t *>(render_pixels) + (line + i)*line_bytes + p;
                     *(uint32_t*)pixel_address = Agat_RGBA2[c]; //SDL_MapRGB(surface->format, Agat_2Colors[c][0], Agat_2Colors[c][1], Agat_2Colors[c][2]);
                 }
             }
@@ -204,7 +204,7 @@ void AgatDisplay::render_byte(unsigned int address)
                 unsigned int c = (v >> k) & 0x01;
                 uint32_t color = Agat_RGBA2[c]; //SDL_MapRGB(surface->format, Agat_2Colors[c][0], Agat_2Colors[c][1], Agat_2Colors[c][2]);
                 p = offset + (7-k)*8;
-                pixel_address = static_cast<Uint8 *>(render_pixels) + line*line_bytes + p;
+                pixel_address = static_cast<uint8_t *>(render_pixels) + line*line_bytes + p;
                 *(uint32_t*)pixel_address = color;
                 *(uint32_t*)(pixel_address+4) = color;
             }
@@ -222,9 +222,9 @@ void AgatDisplay::render_all(bool force_render)
         if ((mode & 0x03) == 2) {
             // Blanking fields in text modes
             uint8_t * pixel_address;
-            uint32_t black = SDL_MapRGB(surface->format, 0, 0, 0);
+            uint32_t black = MapRGB(surface, 0, 0, 0);
             for (unsigned int i=0; i<256; i++) {
-                pixel_address = ((Uint8 *)render_pixels) + i*line_bytes;
+                pixel_address = ((uint8_t *)render_pixels) + i*line_bytes;
                 //memset(pixel_address, 10, 32*4);         // Left
                 //memset(pixel_address + 480*4, 10, 32*4); // Right
                 for (unsigned int j=0; j<32; j++) {

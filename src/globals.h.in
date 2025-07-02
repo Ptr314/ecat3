@@ -7,8 +7,7 @@
 #define VERSION_PATCH "@PROJECT_VERSION_PATCH@"
 #define PROJECT_VERSION "@PROJECT_VERSION@"
 
-#cmakedefine USE_SDL
-#cmakedefine SDL_SEPARATE_WINDOW
+#cmakedefine USE_RENDERER
 
 #cmakedefine EXTERNAL_Z80
 #cmakedefine CPU_STOPPED

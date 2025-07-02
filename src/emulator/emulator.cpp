@@ -3,6 +3,7 @@
 // #include <QRandomGenerator>
 #include <QKeyEvent>
 #include <cmath>
+#include <qpainter.h>
 
 #include "globals.h"
 
@@ -216,19 +217,20 @@ void Emulator::timer_proc()
 
 void Emulator::init_video(void *p)
 {
-    if (SDLWindowRef == nullptr)
-        #ifdef SDL_SEPARATE_WINDOW
-            SDLWindowRef = SDL_CreateWindow("Screen", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1024, 768, SDL_WINDOW_SHOWN | SDL_WINDOW_SKIP_TASKBAR);
-        #else
+    #ifdef RENDERER_SDL2
+        if (SDLWindowRef == nullptr)
+            // SDLWindowRef = SDL_CreateWindow("Screen", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1024, 768, SDL_WINDOW_SHOWN | SDL_WINDOW_SKIP_TASKBAR);
             SDLWindowRef = SDL_CreateWindowFrom(p);
-        #endif
+        if (!SDLWindowRef) {
+            qWarning() << "SDL error:" << SDL_GetError();
+        }
 
-    if (!SDLWindowRef) {
-        qDebug() << "SDL error:" << SDL_GetError();
-    }
+        if (SDLRendererRef == nullptr)
+            SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
+    #elif defined(RENDERER_QT)
+        screen_widget = reinterpret_cast<QWidget *>(p);
+    #endif
 
-    if (SDLRendererRef == nullptr)
-        SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
 
     GenericDisplay * d = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display"));
 
@@ -247,45 +249,45 @@ void Emulator::init_video(void *p)
         pixel_scale = ((double)screen_sy / (double)screen_sx);
 
 
-#ifdef USE_SDL
-    std::string s = std::to_string(screen_filtering);
-    char const *pchar = s.c_str();
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, pchar);
-#endif
+    #ifdef RENDERER_SDL2
+        std::string s = std::to_string(screen_filtering);
+        char const *pchar = s.c_str();
+        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, pchar);
+    #endif
 
-    render_rect.w = screen_sx * screen_scale * pixel_scale;
-    render_rect.h = screen_sy * screen_scale;
+    #ifdef RENDERER_SDL2
+        render_rect.w = screen_sx * screen_scale * pixel_scale;
+        render_rect.h = screen_sy * screen_scale;
+        //window_surface = SDL_GetWindowSurface(SDLWindowRef);
+        device_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_sx, screen_sy, 32, SDL_PIXELFORMAT_RGBA8888);
+        d->set_surface(device_surface);
 
-#ifdef USE_SDL
-    //window_surface = SDL_GetWindowSurface(SDLWindowRef);
-    device_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_sx, screen_sy, 32, SDL_PIXELFORMAT_RGBA8888);
-    d->set_surface(device_surface);
-
-    black_box = SDL_CreateTexture(SDLRendererRef, SDL_PIXELFORMAT_RGBA8888,
-                                               SDL_TEXTUREACCESS_STREAMING, 100, 100);
-    unsigned char* black_bytes = nullptr;
-    int pitch = 0;
-    SDL_LockTexture(black_box, nullptr, reinterpret_cast<void**>(&black_bytes), &pitch);
-    memset(black_bytes, 0, 100*100*4);
-    SDL_UnlockTexture(black_box);
-    SDL_RenderCopy(SDLRendererRef, black_box, NULL, NULL);
-    SDL_RenderPresent(SDLRendererRef);
-#else
-    device_surface = new QImage(screen_sx, screen_sy, QImage::Format_RGB32);
-    black_box = new QImage(100, 100, QImage::Format_RGB32);
-    black_box->fill(0);
-#endif
+        black_box = SDL_CreateTexture(SDLRendererRef, SDL_PIXELFORMAT_RGBA8888,
+                                                   SDL_TEXTUREACCESS_STREAMING, 100, 100);
+        unsigned char* black_bytes = nullptr;
+        int pitch = 0;
+        SDL_LockTexture(black_box, nullptr, reinterpret_cast<void**>(&black_bytes), &pitch);
+        memset(black_bytes, 0, 100*100*4);
+        SDL_UnlockTexture(black_box);
+        SDL_RenderCopy(SDLRendererRef, black_box, NULL, NULL);
+        SDL_RenderPresent(SDLRendererRef);
+    #elif defined(RENDERER_QT)
+        device_surface = new QImage(screen_sx, screen_sy, QImage::Format_RGB32);
+        d->set_surface(device_surface);
+        black_box = new QImage(100, 100, QImage::Format_RGB32);
+        black_box->fill(0);
+    #endif
 }
 
 void Emulator::stop_video()
 {
-#ifdef USE_SDL
+#ifdef RENDERER_SDL2
     SDL_DestroyTexture(black_box);
     SDL_FreeSurface(device_surface);
     //SDL_FreeSurface(window_surface);
     // SDL_DestroyRenderer(SDLRendererRef);
     // SDL_DestroyWindow(SDLWindowRef);
-#else
+#elif defined(RENDERER_QT)
     delete black_box;
     delete device_surface;
 #endif
@@ -300,26 +302,28 @@ void Emulator::render_screen()
         screen_sx = current_sx;
         screen_sy = current_sy;
 
-        #ifdef USE_SDL
+        #ifdef RENDERER_SDL2
             SDL_FreeSurface(device_surface);
-        #else
+        #elif defined(RENDERER_QT)
             delete device_surface;
         #endif
 
-        render_rect.w = screen_sx * screen_scale * pixel_scale;
-        render_rect.h = screen_sy * screen_scale;
 
-        #ifdef USE_SDL
+        #ifdef RENDERER_SDL2
+            render_rect.w = screen_sx * screen_scale * pixel_scale;
+            render_rect.h = screen_sy * screen_scale;
             device_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_sx, screen_sy, 32, SDL_PIXELFORMAT_RGBA8888);
-        #else
+        #elif defined(RENDERER_QT)
             device_surface = new QImage(screen_sx, screen_sy, QImage::Format_RGB32);
         #endif
 
         display->set_surface(device_surface);
 
-        #ifdef USE_SDL
+        #ifdef RENDERER_SDL2
             // We need to blank old screen contents
             SDL_RenderCopy(SDLRendererRef, black_box, NULL, NULL);
+        #elif defined(RENDERER_QT)
+            device_surface->fill(0);
         #endif
     }
 
@@ -327,17 +331,23 @@ void Emulator::render_screen()
 
     if (display->was_updated)
     {
-        int rx, ry;
-        SDL_GetRendererOutputSize(SDLRendererRef, &rx, &ry);
-        render_rect.x = (rx - render_rect.w) / 2;
-        render_rect.y = (ry - render_rect.h) / 2;
+        #ifdef RENDERER_SDL2
+            int rx, ry;
+            SDL_GetRendererOutputSize(SDLRendererRef, &rx, &ry);
+            render_rect.x = (rx - render_rect.w) / 2;
+            render_rect.y = (ry - render_rect.h) / 2;
 
-        SDLTexture = SDL_CreateTextureFromSurface(SDLRendererRef, device_surface);
+            SDLTexture = SDL_CreateTextureFromSurface(SDLRendererRef, device_surface);
 
-        SDL_RenderCopy(SDLRendererRef, SDLTexture, NULL, &render_rect);
-        SDL_RenderPresent(SDLRendererRef);
+            SDL_RenderCopy(SDLRendererRef, SDLTexture, NULL, &render_rect);
+            SDL_RenderPresent(SDLRendererRef);
 
-        SDL_DestroyTexture(SDLTexture);
+            SDL_DestroyTexture(SDLTexture);
+        #elif defined(RENDERER_QT)
+            QPainter painter(screen_widget);
+            painter.drawImage(0, 0, *device_surface);
+        #endif
+
         display->was_updated = false;
     }
 }
@@ -380,7 +390,7 @@ Emulator::~Emulator()
 
 }
 
-SDL_Surface *  Emulator::get_surface()
+SURFACE * Emulator::get_surface()
 {
     return device_surface;
 }
@@ -428,7 +438,7 @@ void Emulator::set_ratio(int ratio)
 
 void Emulator::set_filtering(int filtering)
 {
-#ifdef USE_SDL
+#ifdef RENDERER_SDL2
     screen_filtering = filtering;
     std::string s = std::to_string(filtering);
     char const *pchar = s.c_str();

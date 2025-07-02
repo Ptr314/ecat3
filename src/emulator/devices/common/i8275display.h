@@ -103,7 +103,11 @@ protected:
         if ((CPL < 10) || (LPS < 10))
         {
             //Not initilized yet
-            SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0, 0, 0));
+            #ifdef RENDERER_SDL2
+                SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0, 0, 0));
+            #elif defined(RENDERER_QT)
+                surface->fill(Qt::black);
+            #endif
             return;
         }
 
@@ -201,8 +205,8 @@ protected:
                     {
                         uint8_t c1 = (V >> k) & 1;
                         unsigned int p1 = Ofs + (5-k)*4;
-                        uint8_t * base = static_cast<Uint8 *>(render_pixels) + Adr*line_bytes + p1;
-                        *(uint32_t*)base = SDL_MapRGB(surface->format, c1 * VG75_8Colors[FAColor][0], c1 * VG75_8Colors[FAColor][1], c1 * VG75_8Colors[FAColor][2]);
+                        uint8_t * base = static_cast<uint8_t *>(render_pixels) + Adr*line_bytes + p1;
+                        *(uint32_t*)base = MapRGB(surface, c1 * VG75_8Colors[FAColor][0], c1 * VG75_8Colors[FAColor][1], c1 * VG75_8Colors[FAColor][2]);
                     }
                 }
                 if (AttrDelay && (NextAttr != 0))

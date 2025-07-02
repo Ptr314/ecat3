@@ -103,15 +103,15 @@ void O128Display::render_byte(unsigned int address)
             {
                 c1 = ((c >> k) & 0x01) | mode0;
                 p1 = offset + (7-k)*4;
-                base = static_cast<Uint8 *>(render_pixels) + line*line_bytes + p1;
+                base = static_cast<uint8_t *>(render_pixels) + line*line_bytes + p1;
                 //base[0] = Orion128_MonoColors[c1][2];
                 //base[1] = Orion128_MonoColors[c1][1];
                 //base[2] = Orion128_MonoColors[c1][0];
-                *(uint32_t*)base = SDL_MapRGB(surface->format, Orion128_MonoColors[c1][0], Orion128_MonoColors[c1][1], Orion128_MonoColors[c1][2]);
+                *(uint32_t*)base = MapRGB(surface, Orion128_MonoColors[c1][0], Orion128_MonoColors[c1][1], Orion128_MonoColors[c1][2]);
             }
         } else {
             //Blanking
-            base = ((Uint8 *)render_pixels) + line*line_bytes + offset;
+            base = ((uint8_t *)render_pixels) + line*line_bytes + offset;
             memset(base, 0, 32);
         }
     } else {
@@ -125,11 +125,11 @@ void O128Display::render_byte(unsigned int address)
                 c1 = (~(c >> k)) & 1;
                 c3 = (c2 >> (4*c1)) & 0x0F; //main color - lower 4 bits, background - higher
                 p1 = offset + (7-k)*4;
-                base = ((Uint8 *)render_pixels) + line*line_bytes + p1;
+                base = ((uint8_t *)render_pixels) + line*line_bytes + p1;
                 //base[0] = Orion128_16Colors[c3][2];
                 //base[1] = Orion128_16Colors[c3][1];
                 //base[2] = Orion128_16Colors[c3][0];
-                *(uint32_t*)base = SDL_MapRGB(surface->format, Orion128_16Colors[c3][0], Orion128_16Colors[c3][1], Orion128_16Colors[c3][2]);
+                *(uint32_t*)base = MapRGB(surface, Orion128_16Colors[c3][0], Orion128_16Colors[c3][1], Orion128_16Colors[c3][2]);
             }
         } else {
             //4 colors
@@ -142,11 +142,11 @@ void O128Display::render_byte(unsigned int address)
                 c3 = (c1 >> k) & 0x01;
                 c4 = ((c2 << 1) | c3) | mode0;
                 p1 = offset + (7-k)*4;
-                base = ((Uint8 *)render_pixels) + line*line_bytes + p1;
+                base = ((uint8_t *)render_pixels) + line*line_bytes + p1;
                 //base[0] = Orion128_4Colors[c4][2];
                 //base[1] = Orion128_4Colors[c4][1];
                 //base[2] = Orion128_4Colors[c4][0];
-                *(uint32_t*)base = SDL_MapRGB(surface->format, Orion128_4Colors[c4][0], Orion128_4Colors[c4][1], Orion128_4Colors[c4][2]);
+                *(uint32_t*)base = MapRGB(surface, Orion128_4Colors[c4][0], Orion128_4Colors[c4][1], Orion128_4Colors[c4][2]);
             }
         }
     }

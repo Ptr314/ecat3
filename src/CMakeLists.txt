@@ -2,14 +2,11 @@ cmake_minimum_required(VERSION 3.21)
 
 project(eCat3 VERSION 3.4.0 LANGUAGES C CXX)
 
-if(WIN32)
-    list(APPEND CMAKE_PREFIX_PATH "C:/DEV/SDL2-2.32.8")
-endif()
-
 # Some defines
 
-set(USE_SDL 1)
-set(SDL_SEPARATE_WINDOW 0)
+add_compile_definitions(RENDERER_SDL2)
+# add_compile_definitions(RENDERER_QT)
+#add_compile_definitions(RENDERER_OPENGL)
 
 # if (${USE_SDL})
 #     if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "Linux")

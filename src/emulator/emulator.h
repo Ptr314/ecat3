@@ -6,7 +6,9 @@
 #include <QTimer>
 #include <QThread>
 
-#include <SDL.h>
+#ifdef RENDERER_SDL2
+    #include <SDL.h>
+#endif
 
 #include "core.h"
 #include "emulator/devices/common/keyboard.h"
@@ -40,14 +42,19 @@ private:
     unsigned int local_counter;
     unsigned int clock_counter;
 
-    SDL_Window * SDLWindowRef = nullptr;
-    SDL_Renderer * SDLRendererRef = nullptr;
-    SDL_Texture * SDLTexture = nullptr;
-    //SDL_Surface  * window_surface = nullptr;
-    SDL_Surface  * device_surface = nullptr;
+    #ifdef RENDERER_SDL2
+        SDL_Window * SDLWindowRef = nullptr;
+        SDL_Renderer * SDLRendererRef = nullptr;
+        SDL_Texture * SDLTexture = nullptr;
+        SDL_Surface * device_surface = nullptr;
+        SDL_Texture * black_box = nullptr;
+        SDL_Rect render_rect;
+    #elif defined(RENDERER_QT)
+        QImage * device_surface;
+        QImage * black_box;
+        QWidget * screen_widget;
+    #endif
     QTimer * render_timer;
-    SDL_Rect render_rect;
-    SDL_Texture * black_box = nullptr;
 
     unsigned int screen_sx;
     unsigned int screen_sy;
@@ -83,7 +90,7 @@ public:
 
     void run() override;
 
-    SDL_Surface * get_surface();
+    SURFACE * get_surface();
     void get_screen_constraints(unsigned int * sx, unsigned int * sy);
 
     SystemData * get_system_data();

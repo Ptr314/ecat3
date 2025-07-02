@@ -4,7 +4,9 @@
 #include <QObject>
 #include <QMessageBox>
 
-#include <SDL.h>
+#ifdef RENDERER_SDL2
+    #include <SDL.h>
+#endif
 
 #include "config.h"
 #include "globals.h"
@@ -44,6 +46,14 @@
     #define MAYBE_UNUSED [[maybe_unused]]
 #else
     #define MAYBE_UNUSED
+#endif
+
+#ifdef RENDERER_SDL2
+    typedef SDL_Surface SURFACE;
+    typedef SDL_PixelFormat PIXEL_FORMAT;
+#elif defined(RENDERER_QT)
+    typedef QImage SURFACE;
+    typedef QImage::Format PIXEL_FORMAT;
 #endif
 
 class DeviceManager;
@@ -475,7 +485,7 @@ protected:
     unsigned int sx = 0;
     unsigned int sy;
     int line_bytes;
-    SDL_Surface * surface;
+    SURFACE * surface;
     bool screen_valid;              //Means surface is correct
     void * render_pixels;
 
@@ -488,7 +498,7 @@ public:
     //virtual void get_screen(bool required) = 0;
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) = 0;
     virtual void reset(bool cold) override;
-    virtual void set_surface(SDL_Surface * surface);
+    virtual void set_surface(SURFACE * surface);
     virtual void validate(bool force_render = false);
 };
 

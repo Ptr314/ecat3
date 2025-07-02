@@ -559,7 +559,11 @@ void MainWindow::load_config(QString file_name, bool set_default)
     e->set_volume(volume->value());
     e->set_muted(mute->isChecked());
 
-    void* nativeView = reinterpret_cast<void*>(ui->screen->winId());
+    #ifdef RENDERER_SDL2
+        void* nativeView = reinterpret_cast<void*>(ui->screen->winId());
+    #elif defined(RENDERER_QT)
+        void* nativeView = reinterpret_cast<void*>(ui->screen);
+    #endif
 
     if (nativeView) {
         e->init_video(nativeView);
@@ -730,12 +734,13 @@ void MainWindow::update_fdds()
 
 void MainWindow::on_actionScreenshot_triggered()
 {
-    SDL_Surface * s = e->get_surface();
+    SURFACE * s = e->get_surface();
     //SDL_SaveBMP(s, file_name.toUtf8().constData());
 
     unsigned int sx, sy;
     e->get_screen_constraints(&sx, &sy);
 
+#ifdef RENDERER_SDL2
     unsigned int bitmap_size = sx*sy*4 + 200;
 
     std::vector<unsigned char> bmp;
@@ -744,13 +749,20 @@ void MainWindow::on_actionScreenshot_triggered()
     SDL_RWops *rw;
     rw = SDL_RWFromMem(bmp.data(), bitmap_size);
     SDL_SaveBMP_RW(s, rw, 0);
+#endif
 
     QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save screenshot"), e->work_path, "PNG (*.png)");
 
     if (!file_name.isEmpty())
     {
         std::vector<unsigned char> image;
-        unsigned error = decodeBMP(image, sx, sy, bmp);
+        unsigned error;
+#ifdef RENDERER_SDL2
+        error = decodeBMP(image, sx, sy, bmp);
+#elif defined(RENDERER_QT)
+        uint8_t * pixels = s->bits();
+        image.insert(image.end(), pixels, pixels + sx*sy*4);
+#endif
         std::vector<unsigned char> png;
         error = lodepng::encode(png, image, sx, sy);
         lodepng::save_file(png, file_name.toUtf8().constData());

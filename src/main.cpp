@@ -4,7 +4,9 @@
 #include <QLocale>
 #include <QTranslator>
 
-#include <SDL.h>
+#ifdef RENDERER_SDL2
+    #include <SDL.h>
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -19,7 +21,9 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+    #ifdef RENDERER_SDL2
+        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+    #endif
 
     MainWindow w;
     w.setWindowIcon(QIcon(":/icons/tv"));
@@ -27,7 +31,9 @@ int main(int argc, char *argv[])
 
     int RetVal = a.exec();
 
-    SDL_Quit();
+    #ifdef RENDERER_SDL2
+        SDL_Quit();
+    #endif
 
     return RetVal;
 }
