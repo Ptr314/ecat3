@@ -1,11 +1,15 @@
 #include "GLWidget.h"
+#include <cmath>
 
 static const char* vertexShaderSrc = R"(
     attribute vec2 position;
     attribute vec2 texCoord;
     varying vec2 vTexCoord;
+    uniform vec2 imageScale;
+    uniform vec2 imageOffset;
     void main() {
-        gl_Position = vec4(position, 0.0, 1.0);
+        vec2 pos = position * imageScale + imageOffset;
+        gl_Position = vec4(pos, 0.0, 1.0);
         vTexCoord = texCoord;
     }
 )";
@@ -19,7 +23,8 @@ static const char* fragmentShaderSrc = R"(
 )";
 
 GLWidget::GLWidget(QWidget* parent)
-    : QOpenGLWidget(parent), program(nullptr), texture(nullptr), vbo(0) {}
+    : QOpenGLWidget(parent), program(nullptr), texture(nullptr), vbo(0),
+    imageDisplaySize(0, 0), aspectRatioScale(1.0f) {}
 
 GLWidget::~GLWidget() {
     makeCurrent();
@@ -52,6 +57,7 @@ void GLWidget::initializeGL() {
 
 void GLWidget::resizeGL(int w, int h) {
     glViewport(0, 0, w, h);
+    updateImageRect();
 }
 
 void GLWidget::paintGL() {
@@ -63,13 +69,45 @@ void GLWidget::paintGL() {
         texture = new QOpenGLTexture(pendingImage.mirrored());
         texture->setMinificationFilter(QOpenGLTexture::Linear);
         texture->setMagnificationFilter(QOpenGLTexture::Linear);
-        pendingImage = QImage(); // clear to avoid reuse
+        pendingImage = QImage();
     }
 
     if (!texture) return;
 
     program->bind();
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    float scaleX, scaleY, offsetX, offsetY;
+
+    if (imageDisplaySize.isNull()) {
+        // Режим растягивания с сохранением пропорций
+        float widgetAspect = (float)width() / height();
+        float imageAspect = (float)texture->width() / texture->height();
+
+        // Применяем коэффициент масштабирования пропорций
+        imageAspect *= aspectRatioScale;
+
+        if (widgetAspect > imageAspect) {
+            // Шире, чем изображение - ограничиваем по высоте
+            scaleY = 1.0f;
+            scaleX = imageAspect / widgetAspect;
+        } else {
+            // Уже, чем изображение - ограничиваем по ширине
+            scaleX = 1.0f;
+            scaleY = widgetAspect / imageAspect;
+        }
+        offsetX = 0.0f;
+        offsetY = 0.0f;
+    } else {
+        // Режим фиксированного размера с центрированием
+        scaleX = (float)imageRect.width() / width();
+        scaleY = (float)imageRect.height() / height();
+        offsetX = (float)(imageRect.x() + imageRect.width() / 2) / (width() / 2) - 1.0f;
+        offsetY = 1.0f - (float)(imageRect.y() + imageRect.height() / 2) / (height() / 2);
+    }
+
+    program->setUniformValue("imageScale", scaleX, scaleY);
+    program->setUniformValue("imageOffset", offsetX, offsetY);
 
     int posLoc = program->attributeLocation("position");
     int texLoc = program->attributeLocation("texCoord");
@@ -91,5 +129,32 @@ void GLWidget::paintGL() {
 void GLWidget::updateTexture(const QImage& image) {
     QMutexLocker locker(&mutex);
     pendingImage = image;
+    updateImageRect();
     update();
+}
+
+void GLWidget::setImageSize(const QSize& size) {
+    imageDisplaySize = size;
+    updateImageRect();
+    update();
+}
+
+void GLWidget::setAspectRatioScale(float scale) {
+    aspectRatioScale = scale;
+    update();
+}
+
+void GLWidget::updateImageRect() {
+    if (imageDisplaySize.isNull()) {
+        // В режиме сохранения пропорций imageRect не используется,
+        // так как масштабирование делается в шейдере
+        imageRect = QRect(0, 0, width(), height());
+        return;
+    }
+
+    // Центрируем изображение с заданным размером
+    int x = (width() - imageDisplaySize.width()) / 2;
+    int y = (height() - imageDisplaySize.height()) / 2;
+
+    imageRect = QRect(x, y, imageDisplaySize.width(), imageDisplaySize.height());
 }

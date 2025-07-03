@@ -265,7 +265,7 @@ void MainWindow::switch_language(const QString & lang, bool init)
         }
         if (!init) {
             ui->retranslateUi(this);
-            // init_controls();
+            CreateScreenMenu();
             m_settings->setValue("interface/language", lang);
         }
     } else {
@@ -335,9 +335,17 @@ void MainWindow::CreateScreenMenu()
     ui->menuScale->clear();
     QActionGroup * scale_group = new QActionGroup(ui->menuScale);
 
+    int i0 = 0;
+    QAction * a = ui->menuScale->addAction(
+        MainWindow::tr("Auto scale"),
+        [this, i0]{e->set_scale(i0);}
+        );
+    a->setActionGroup(scale_group);
+    a->setCheckable(true);
+    a->setChecked(e->get_scale() == i0);
     for (unsigned int i=1; i <= 5; i++)
     {
-        QAction * a = ui->menuScale->addAction(
+        a = ui->menuScale->addAction(
             QString::number(i) + "x",
             [this, i]{e->set_scale(i);}
             );
@@ -414,6 +422,8 @@ void MainWindow::CreateScreenMenu()
         af2->setActionGroup(filtering_group);
         af2->setCheckable(true);
         af2->setChecked(e->get_filtering() == SCREEN_FILTERING_LINEAR);
+    #elif defined(RENDERER_OPENGL)
+        ui->menuFiltering->setDisabled(true);
     #endif
 }
 

@@ -15,6 +15,8 @@ public:
 
 public slots:
     void updateTexture(const QImage& image);
+    void setImageSize(const QSize& size); // (0,0) - растянуть с сохранением пропорций
+    void setAspectRatioScale(float scale); // Установить коэффициент масштабирования пропорций
 
 protected:
     void initializeGL() override;
@@ -27,4 +29,8 @@ private:
     QImage pendingImage;
     QMutex mutex;
     GLuint vbo;
+    QSize imageDisplaySize; // (0,0) - режим растягивания с пропорциями
+    QRect imageRect;
+    float aspectRatioScale; // Коэффициент масштабирования пропорций
+    void updateImageRect();
 };

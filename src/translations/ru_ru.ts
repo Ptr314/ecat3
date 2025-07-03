@@ -409,7 +409,7 @@
         <translation>Неизвестный тип файла</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+352"/>
+        <location filename="../mainwindow.cpp" line="+360"/>
         <source>Screen 4:3</source>
         <translation>Экран 4:3</translation>
     </message>
@@ -453,7 +453,7 @@
         <translation type="vanished">Сглаживание</translation>
     </message>
     <message>
-        <location line="+225"/>
+        <location line="+227"/>
         <location filename="../dialogs/taperecorder.cpp" line="+133"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
@@ -845,13 +845,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-341"/>
-        <location line="+402"/>
+        <location filename="../mainwindow.cpp" line="-351"/>
+        <location line="+412"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-399"/>
+        <location line="-409"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -900,7 +900,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+397"/>
+        <location line="+55"/>
+        <source>Auto scale</source>
+        <translation>Автоматически</translation>
+    </message>
+    <message>
+        <location line="+352"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>

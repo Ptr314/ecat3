@@ -6,11 +6,8 @@
 class OpenGLRenderer: public VideoRenderer
 {
 private:
-    QImage * surface;
-    GLWidget * widget;
-    int render_w;
-    int render_h;
-
+    QImage * surface = nullptr;
+    GLWidget * widget = nullptr;
 
 public:
     OpenGLRenderer():
@@ -31,25 +28,15 @@ public:
     void init_screen(void *p, int sx, int sy, double ss, double ps) override
     {
         VideoRenderer::init_screen(p, sx, sy, ss, ps);
-
         widget = reinterpret_cast<GLWidget *>(p);
-
-        render_w = sx * ss * ps;
-        render_h = sy * ss;
-
-        surface = new QImage(sx, sy, QImage::Format_RGB32);
+        resize(sx, sy, ss, ps);
     }
 
     void stop() override
     {
-        // if (black_box != nullptr) delete black_box;
         if (surface != nullptr) delete surface;
-
         surface = nullptr;
     }
-
-    void set_filtering(int value) override
-    {}
 
     uint8_t * get_buffer() override
     {
@@ -71,18 +58,16 @@ public:
         if (surface != nullptr) delete surface;
         screen_x = sx;
         screen_y = sy;
-        screen_ss = ss;
-        screen_ps = ps;
-        render_w = screen_x * ss * ps;
-        render_h = screen_y * ps;
+        int render_w = sx * ss * ps;
+        int render_h = sy * ss;
         surface = new QImage(sx, sy, QImage::Format_RGB32);
         surface->fill(Qt::black);
+        widget->setImageSize(QSize(render_w, render_h));
+        widget->setAspectRatioScale(ps);
     }
 
     void render() override
     {
-        int w = screen_x * screen_ss * screen_ps;
-        int h = screen_y * screen_ss;
         widget->updateTexture(*surface);
     }
 

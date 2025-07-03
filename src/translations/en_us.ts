@@ -381,7 +381,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+352"/>
+        <location filename="../mainwindow.cpp" line="+360"/>
         <source>Screen 4:3</source>
         <translation type="unfinished"></translation>
     </message>
@@ -421,7 +421,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+225"/>
+        <location line="+227"/>
         <location filename="../dialogs/taperecorder.cpp" line="+133"/>
         <source>Load a file</source>
         <translation type="unfinished"></translation>
@@ -793,7 +793,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-364"/>
+        <location filename="../mainwindow.cpp" line="-374"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -819,12 +819,12 @@
     </message>
     <message>
         <location line="+10"/>
-        <location line="+402"/>
+        <location line="+412"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-399"/>
+        <location line="-409"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -844,7 +844,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+375"/>
+        <location line="+33"/>
+        <source>Auto scale</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+352"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
