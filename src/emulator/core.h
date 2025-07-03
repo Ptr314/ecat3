@@ -41,6 +41,8 @@
 #define SCREEN_FILTERING_LINEAR         1
 #define SCREEN_FILTERING_ANISOTROPIC    2
 
+#define SCREEN_FILTERING_SOFT_SMOOTH    1
+
 #define MAX_DEVICES 100
 
 #if defined(__cplusplus) && __cplusplus >= 201703L

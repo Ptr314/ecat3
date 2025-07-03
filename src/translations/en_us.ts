@@ -30,7 +30,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+886"/>
+        <location filename="../emulator/core.cpp" line="+888"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -295,8 +295,8 @@
     <message>
         <location filename="../emulator/files.cpp" line="+18"/>
         <location line="+23"/>
-        <location line="+38"/>
-        <location line="+8"/>
+        <location line="+39"/>
+        <location line="+9"/>
         <location line="+10"/>
         <location line="+5"/>
         <location line="+9"/>
@@ -315,7 +315,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-330"/>
+        <location line="-332"/>
         <source>Unable to find an expected preamble byte 0xE6!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -325,8 +325,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+38"/>
-        <location line="+60"/>
+        <location line="+39"/>
+        <location line="+61"/>
         <location line="+71"/>
         <source>Error reading %1</source>
         <translation type="unfinished"></translation>
@@ -381,7 +381,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+330"/>
+        <location filename="../mainwindow.cpp" line="+352"/>
         <source>Screen 4:3</source>
         <translation type="unfinished"></translation>
     </message>
@@ -396,7 +396,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+11"/>
         <source>Nearest pixel</source>
         <translation type="unfinished"></translation>
     </message>
@@ -411,8 +411,18 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+214"/>
-        <location filename="../dialogs/taperecorder.cpp" line="+127"/>
+        <location line="+10"/>
+        <source>Fast, no smoothing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Bilinear filtering</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+225"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+133"/>
         <source>Load a file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -653,7 +663,7 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../mainwindow.ui" line="+88"/>
+        <location filename="../mainwindow.ui" line="+69"/>
         <source>File</source>
         <translation type="unfinished"></translation>
     </message>
@@ -783,7 +793,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-334"/>
+        <location filename="../mainwindow.cpp" line="-364"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -809,12 +819,12 @@
     </message>
     <message>
         <location line="+10"/>
-        <location line="+372"/>
+        <location line="+402"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-369"/>
+        <location line="-399"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -834,7 +844,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+345"/>
+        <location line="+375"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -861,11 +871,6 @@
     <message>
         <location line="+0"/>
         <source>Error creating a backup. Probably *.bak already exists.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+54"/>
-        <source>Save screenshot</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1104,7 +1109,7 @@
 <context>
     <name>TapeRecorder</name>
     <message>
-        <location filename="../emulator/devices/common/tape.cpp" line="+135"/>
+        <location filename="../emulator/devices/common/tape.cpp" line="+139"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>

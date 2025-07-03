@@ -133,7 +133,7 @@ MainWindow::MainWindow(QWidget *parent)
     #elif defined(RENDERER_QT)
         screen = new QLabel(this);
         setCentralWidget(screen);
-        screen->setAlignment(Qt::AlignCenter);
+        dynamic_cast<QLabel*>(screen)->setAlignment(Qt::AlignCenter);
         screen->setStyleSheet("background-color: black;");
     #elif defined(RENDERER_OPENGL)
         screen = new GLWidget(this);
@@ -370,31 +370,51 @@ void MainWindow::CreateScreenMenu()
     a3->setCheckable(true);
     a3->setChecked(e->get_ratio() == SCREEN_RATIO_11);
 
-    ui->menuFiltering->clear();
-    QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);
-    QAction * af1 = ui->menuFiltering->addAction(
-        Emulator::tr("Nearest pixel"),
-        [this]{e->set_filtering(SCREEN_FILTERING_NONE);}
-        );
-    af1->setActionGroup(filtering_group);
-    af1->setCheckable(true);
-    af1->setChecked(e->get_filtering() == SCREEN_FILTERING_NONE);
+    #ifdef RENDERER_SDL2
+        ui->menuFiltering->clear();
+        QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);
+        QAction * af1 = ui->menuFiltering->addAction(
+            Emulator::tr("Nearest pixel"),
+            [this]{e->set_filtering(SCREEN_FILTERING_NONE);}
+            );
+        af1->setActionGroup(filtering_group);
+        af1->setCheckable(true);
+        af1->setChecked(e->get_filtering() == SCREEN_FILTERING_NONE);
 
-    QAction * af2 = ui->menuFiltering->addAction(
-        Emulator::tr("Linear"),
-        [this]{e->set_filtering(SCREEN_FILTERING_LINEAR);}
-        );
-    af2->setActionGroup(filtering_group);
-    af2->setCheckable(true);
-    af2->setChecked(e->get_filtering() == SCREEN_FILTERING_LINEAR);
+        QAction * af2 = ui->menuFiltering->addAction(
+            Emulator::tr("Linear"),
+            [this]{e->set_filtering(SCREEN_FILTERING_LINEAR);}
+            );
+        af2->setActionGroup(filtering_group);
+        af2->setCheckable(true);
+        af2->setChecked(e->get_filtering() == SCREEN_FILTERING_LINEAR);
 
-    QAction * af3 = ui->menuFiltering->addAction(
-        Emulator::tr("Anisotropic"),
-        [this]{e->set_filtering(SCREEN_FILTERING_ANISOTROPIC);}
-        );
-    af3->setActionGroup(filtering_group);
-    af3->setCheckable(true);
-    af3->setChecked(e->get_filtering() == SCREEN_FILTERING_ANISOTROPIC);
+        QAction * af3 = ui->menuFiltering->addAction(
+            Emulator::tr("Anisotropic"),
+            [this]{e->set_filtering(SCREEN_FILTERING_ANISOTROPIC);}
+            );
+        af3->setActionGroup(filtering_group);
+        af3->setCheckable(true);
+        af3->setChecked(e->get_filtering() == SCREEN_FILTERING_ANISOTROPIC);
+    #elif defined(RENDERER_QT)
+        ui->menuFiltering->clear();
+        QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);
+        QAction * af1 = ui->menuFiltering->addAction(
+            Emulator::tr("Fast, no smoothing"),
+            [this]{e->set_filtering(SCREEN_FILTERING_NONE);}
+            );
+        af1->setActionGroup(filtering_group);
+        af1->setCheckable(true);
+        af1->setChecked(e->get_filtering() == SCREEN_FILTERING_NONE);
+
+        QAction * af2 = ui->menuFiltering->addAction(
+            Emulator::tr("Bilinear filtering"),
+            [this]{e->set_filtering(SCREEN_FILTERING_SOFT_SMOOTH);}
+            );
+        af2->setActionGroup(filtering_group);
+        af2->setCheckable(true);
+        af2->setChecked(e->get_filtering() == SCREEN_FILTERING_LINEAR);
+    #endif
 }
 
 void MainWindow::CreateDevicesMenu()
@@ -803,18 +823,10 @@ void MainWindow::on_actionAbout_triggered()
     Ui_About aboutUi;
     aboutUi.setupUi(about);
 
-    #ifdef RENDERER_SDL2
-        QString rnd = "SDL2";
-    #elif defined(RENDERER_QT)
-        QString rnd = "Qt";
-    #elif defined(RENDERER_OPENGL)
-        QString rnd = "OpenGL";
-    #endif
-
     aboutUi.info_label->setText(
         aboutUi.info_label->text()
             .replace("{$PROJECT_VERSION}", PROJECT_VERSION)
-            .replace("{$RENDERER}", rnd)
+            .replace("{$RENDERER}", QString::fromStdString(renderer->get_name()))
             .replace("{$BUILD_ARCHITECTURE}", QSysInfo::buildCpuArchitecture())
             .replace("{$OS}", QSysInfo::productType())
             .replace("{$OS_VERSION}", QSysInfo::productVersion())

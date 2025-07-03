@@ -345,16 +345,19 @@ void Emulator::set_ratio(int ratio)
 
 void Emulator::set_filtering(int filtering)
 {
-#ifdef RENDERER_SDL2
-    screen_filtering = filtering;
-    std::string s = std::to_string(filtering);
-    char const *pchar = s.c_str();
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, pchar);
-
-    screen_sx = 0;
-
+    renderer->set_filtering(filtering);
     write_setup("Video", "filtering", QString::number(filtering) );
-#endif
+    screen_sx = 0;
+// #ifdef RENDERER_SDL2
+//     screen_filtering = filtering;
+//     std::string s = std::to_string(filtering);
+//     char const *pchar = s.c_str();
+//     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, pchar);
+
+//     screen_sx = 0;
+
+//     write_setup("Video", "filtering", QString::number(filtering) );
+// #endif
 }
 
 int Emulator::get_scale()

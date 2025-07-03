@@ -29,7 +29,6 @@ public:
 
     virtual ~SDL2Renderer() override
     {
-        VideoRenderer::~VideoRenderer();
         if (black_box != nullptr) SDL_DestroyTexture(black_box);
         if (device_surface != nullptr) SDL_FreeSurface(device_surface);
     };

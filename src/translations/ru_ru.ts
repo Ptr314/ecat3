@@ -30,7 +30,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+886"/>
+        <location filename="../emulator/core.cpp" line="+888"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -323,8 +323,8 @@
     <message>
         <location filename="../emulator/files.cpp" line="+18"/>
         <location line="+23"/>
-        <location line="+38"/>
-        <location line="+8"/>
+        <location line="+39"/>
+        <location line="+9"/>
         <location line="+10"/>
         <location line="+5"/>
         <location line="+9"/>
@@ -343,7 +343,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-330"/>
+        <location line="-332"/>
         <source>Unable to find an expected preamble byte 0xE6!</source>
         <translation>Не удалось найти байт преамбулы 0xE6!</translation>
     </message>
@@ -353,8 +353,8 @@
         <translation>Не получилось найти страницу памяти для записи данных</translation>
     </message>
     <message>
-        <location line="+38"/>
-        <location line="+60"/>
+        <location line="+39"/>
+        <location line="+61"/>
         <location line="+71"/>
         <source>Error reading %1</source>
         <translation>Ошибка чтения %1</translation>
@@ -409,7 +409,7 @@
         <translation>Неизвестный тип файла</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+330"/>
+        <location filename="../mainwindow.cpp" line="+352"/>
         <source>Screen 4:3</source>
         <translation>Экран 4:3</translation>
     </message>
@@ -424,7 +424,7 @@
         <translation>Квадратный экран</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+11"/>
         <source>Nearest pixel</source>
         <translation>Ближайший пиксель</translation>
     </message>
@@ -439,8 +439,22 @@
         <translation>Анизотропное</translation>
     </message>
     <message>
-        <location line="+214"/>
-        <location filename="../dialogs/taperecorder.cpp" line="+127"/>
+        <location line="+10"/>
+        <source>Fast, no smoothing</source>
+        <translation>Выключено</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Bilinear filtering</source>
+        <translation>Билинейное</translation>
+    </message>
+    <message>
+        <source>Smooth</source>
+        <translation type="vanished">Сглаживание</translation>
+    </message>
+    <message>
+        <location line="+225"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+133"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
     </message>
@@ -697,7 +711,7 @@
         <translation type="vanished">eCat3</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="+88"/>
+        <location filename="../mainwindow.ui" line="+69"/>
         <source>File</source>
         <translation>Файл</translation>
     </message>
@@ -831,13 +845,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-311"/>
-        <location line="+372"/>
+        <location filename="../mainwindow.cpp" line="-341"/>
+        <location line="+402"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-369"/>
+        <location line="-399"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -886,7 +900,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+367"/>
+        <location line="+397"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>
@@ -916,9 +930,8 @@
         <translation>Обшибка создания резервной копии. Возможно, файл с расширение *.bak уже существует.</translation>
     </message>
     <message>
-        <location line="+54"/>
         <source>Save screenshot</source>
-        <translation>Сохранение скриншота</translation>
+        <translation type="vanished">Сохранение скриншота</translation>
     </message>
 </context>
 <context>
@@ -1171,7 +1184,7 @@
 <context>
     <name>TapeRecorder</name>
     <message>
-        <location filename="../emulator/devices/common/tape.cpp" line="+135"/>
+        <location filename="../emulator/devices/common/tape.cpp" line="+139"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>

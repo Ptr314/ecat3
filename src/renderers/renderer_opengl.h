@@ -7,7 +7,6 @@ class OpenGLRenderer: public VideoRenderer
 {
 private:
     QImage * surface;
-    QImage * black_box;
     GLWidget * widget;
     int render_w;
     int render_h;
@@ -20,13 +19,12 @@ public:
 
     std::string get_name() override
     {
-        return "Qt";
+        return "OpenGL";
     }
 
     virtual ~OpenGLRenderer() override
     {
         VideoRenderer::~VideoRenderer();
-        // if (black_box != nullptr) delete black_box;
         if (surface != nullptr) delete surface;
     };
 
@@ -40,16 +38,13 @@ public:
         render_h = sy * ss;
 
         surface = new QImage(sx, sy, QImage::Format_RGB32);
-        black_box = new QImage(100, 100, QImage::Format_RGB32);
-        black_box->fill(0);
     }
 
     void stop() override
     {
-        if (black_box != nullptr) delete black_box;
+        // if (black_box != nullptr) delete black_box;
         if (surface != nullptr) delete surface;
 
-        black_box = nullptr;
         surface = nullptr;
     }
 

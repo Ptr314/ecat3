@@ -6,12 +6,11 @@
 class QtRenderer: public VideoRenderer
 {
 private:
-    QImage * surface;
-    QImage * black_box;
-    QLabel * widget;
+    QImage * surface = nullptr;
+    QLabel * widget = nullptr;
     int render_w;
     int render_h;
-
+    int filtering;
 
 public:
     QtRenderer():
@@ -26,35 +25,26 @@ public:
     virtual ~QtRenderer() override
     {
         VideoRenderer::~VideoRenderer();
-        if (black_box != nullptr) delete black_box;
         if (surface != nullptr) delete surface;
     };
 
     void init_screen(void *p, int sx, int sy, double ss, double ps) override
     {
         VideoRenderer::init_screen(p, sx, sy, ss, ps);
-
         widget = reinterpret_cast<QLabel *>(p);
-
-        render_w = sx * ss * ps;
-        render_h = sy * ss;
-
-        surface = new QImage(sx, sy, QImage::Format_RGB32);
-        black_box = new QImage(100, 100, QImage::Format_RGB32);
-        black_box->fill(0);
+        resize(sx, sy, ss, ps);
     }
 
     void stop() override
     {
-        if (black_box != nullptr) delete black_box;
         if (surface != nullptr) delete surface;
-
-        black_box = nullptr;
         surface = nullptr;
     }
 
     void set_filtering(int value) override
-    {}
+    {
+        filtering = value;
+    }
 
     uint8_t * get_buffer() override
     {
@@ -76,23 +66,19 @@ public:
         if (surface != nullptr) delete surface;
         screen_x = sx;
         screen_y = sy;
-        screen_ss = ss;
-        screen_ps = ps;
         render_w = screen_x * ss * ps;
-        render_h = screen_y * ps;
+        render_h = screen_y * ss;
         surface = new QImage(sx, sy, QImage::Format_RGB32);
         surface->fill(Qt::black);
     }
 
     void render() override
     {
-        int w = screen_x * screen_ss * screen_ps;
-        int h = screen_y * screen_ss;
         QImage copy = surface->copy();
         QPixmap pm = QPixmap::fromImage(copy.scaled(
-            w, h,
+            render_w, render_h,
             Qt::IgnoreAspectRatio,
-            Qt::FastTransformation
+            (filtering==0)?Qt::FastTransformation:Qt::SmoothTransformation
             ));
         widget->setPixmap(pm);
     }
