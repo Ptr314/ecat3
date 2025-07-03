@@ -22,6 +22,11 @@ public:
         VideoRenderer()
     {};
 
+    std::string get_name() override
+    {
+        return "SDL2";
+    }
+
     virtual ~SDL2Renderer() override
     {
         VideoRenderer::~VideoRenderer();
@@ -29,7 +34,6 @@ public:
         if (device_surface != nullptr) SDL_FreeSurface(device_surface);
     };
 
-    // RENDER_INFO init_screen(void *p, int screen_x, int screen_y, double screen_scale, double pixel_scale) override
     void init_screen(void *p, int sx, int sy, double ss, double ps) override
     {
         VideoRenderer::init_screen(p, sx, sy, ss, ps);
@@ -56,8 +60,8 @@ public:
         render_rect.h = sy * ss;
 
         device_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_x, screen_y, 32, SDL_PIXELFORMAT_RGBA8888);
-        // return {device_surface->pixels, screen_x*4};
     }
+
     void stop() override
     {
         if (black_box != nullptr) SDL_DestroyTexture(black_box);

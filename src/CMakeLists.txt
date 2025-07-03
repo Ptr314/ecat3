@@ -4,9 +4,9 @@ project(eCat3 VERSION 3.4.0 LANGUAGES C CXX)
 
 # Some defines
 
-add_compile_definitions(RENDERER_SDL2)
+# add_compile_definitions(RENDERER_SDL2)
 # add_compile_definitions(RENDERER_QT)
-#add_compile_definitions(RENDERER_OPENGL)
+add_compile_definitions(RENDERER_OPENGL)
 
 # if (${USE_SDL})
 #     if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -53,6 +53,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
+find_package(Qt6 REQUIRED COMPONENTS OpenGLWidgets)
 
 # For Windows, path to SDL should be added to CMAKE_PREFIX_PATH global environment variable
 find_package(SDL2 REQUIRED)
@@ -157,8 +158,11 @@ set(PROJECT_SOURCES
     dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
 
     emulator/renderer.h
-
     renderers/renderer_sdl2.h
+    renderers/renderer_qt.h
+    renderers/renderer_opengl.h
+    renderers/GLWidget.cpp renderers/GLWidget.h
+
 )
 
 # Adding Qt base translations
@@ -206,7 +210,6 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         ${PROJECT_RESOURCES}
-        renderers/renderer_qt.h
     )
 
     qt_add_translations(${PROJECT_NAME} TS_FILES
@@ -242,6 +245,7 @@ endif()
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     ${SDL2_LIBRARIES}
+    Qt6::OpenGLWidgets
 )
 
 # Different platforms setup

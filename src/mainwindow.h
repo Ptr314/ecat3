@@ -79,7 +79,7 @@ signals:
 private:
     Ui::MainWindow *ui;
 
-    QLabel * screen;
+    QWidget * screen;
     VideoRenderer * renderer;
 
     QSettings * m_settings;

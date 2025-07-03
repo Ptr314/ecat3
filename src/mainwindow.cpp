@@ -30,6 +30,8 @@
     #include "renderers/renderer_sdl2.h"
 #elif defined(RENDERER_QT)
     #include "renderers/renderer_qt.h"
+#elif defined(RENDERER_OPENGL)
+    #include "renderers/renderer_opengl.h"
 #endif
 
 MainWindow::MainWindow(QWidget *parent)
@@ -124,13 +126,18 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->setupUi(this);
 
-    screen = new QLabel(this);
-    setCentralWidget(screen);
     #ifdef RENDERER_SDL2
+        screen = new QLabel(this);
+        setCentralWidget(screen);
         screen->setUpdatesEnabled(false);
     #elif defined(RENDERER_QT)
+        screen = new QLabel(this);
+        setCentralWidget(screen);
         screen->setAlignment(Qt::AlignCenter);
         screen->setStyleSheet("background-color: black;");
+    #elif defined(RENDERER_OPENGL)
+        screen = new GLWidget(this);
+        setCentralWidget(screen);
     #endif
 
     add_languages();
@@ -211,6 +218,8 @@ MainWindow::MainWindow(QWidget *parent)
         renderer = new SDL2Renderer();
     #elif defined(RENDERER_QT)
         renderer = new QtRenderer();
+    #elif defined(RENDERER_OPENGL)
+        renderer = new OpenGLRenderer();
     #endif
     e = new Emulator(work_path, data_path, software_path, ini_file, renderer);
 
@@ -578,7 +587,7 @@ void MainWindow::load_config(QString file_name, bool set_default)
 
     #ifdef RENDERER_SDL2
         void* nativeView = reinterpret_cast<void*>(screen->winId());
-    #elif defined(RENDERER_QT)
+    #elif defined(RENDERER_QT) or defined(RENDERER_OPENGL)
         void* nativeView = reinterpret_cast<void*>(screen);
     #endif
 

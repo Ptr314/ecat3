@@ -1,20 +1,20 @@
 #pragma once
 
-#include <QLabel>
 #include "emulator/renderer.h"
+#include "GLWidget.h"
 
-class QtRenderer: public VideoRenderer
+class OpenGLRenderer: public VideoRenderer
 {
 private:
     QImage * surface;
     QImage * black_box;
-    QLabel * widget;
+    GLWidget * widget;
     int render_w;
     int render_h;
 
 
 public:
-    QtRenderer():
+    OpenGLRenderer():
         VideoRenderer()
     {};
 
@@ -23,10 +23,10 @@ public:
         return "Qt";
     }
 
-    virtual ~QtRenderer() override
+    virtual ~OpenGLRenderer() override
     {
         VideoRenderer::~VideoRenderer();
-        if (black_box != nullptr) delete black_box;
+        // if (black_box != nullptr) delete black_box;
         if (surface != nullptr) delete surface;
     };
 
@@ -34,7 +34,7 @@ public:
     {
         VideoRenderer::init_screen(p, sx, sy, ss, ps);
 
-        widget = reinterpret_cast<QLabel *>(p);
+        widget = reinterpret_cast<GLWidget *>(p);
 
         render_w = sx * ss * ps;
         render_h = sy * ss;
@@ -88,13 +88,7 @@ public:
     {
         int w = screen_x * screen_ss * screen_ps;
         int h = screen_y * screen_ss;
-        QImage copy = surface->copy();
-        QPixmap pm = QPixmap::fromImage(copy.scaled(
-            w, h,
-            Qt::IgnoreAspectRatio,
-            Qt::FastTransformation
-            ));
-        widget->setPixmap(pm);
+        widget->updateTexture(*surface);
     }
 
     uint32_t MapRGB(uint8_t R, uint8_t G, uint8_t B) override

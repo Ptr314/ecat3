@@ -1,9 +1,7 @@
 #pragma once
 
 #include <cstdint>
-// #include <utility>
-
-// typedef std::pair<void*, int> RENDER_INFO;
+#include <string>
 
 class VideoRenderer
 {
@@ -15,7 +13,7 @@ protected:
 public:
     VideoRenderer() {};
     virtual ~VideoRenderer() {};
-    // virtual RENDER_INFO init_screen(void *p, int screen_x, int screen_y, double screen_scale, double pixel_scale) = 0;
+    virtual std::string get_name() = 0;
     virtual void init_screen(void *p, int sx, int sy, double ss, double ps)
     {
         screen_x = sx;
