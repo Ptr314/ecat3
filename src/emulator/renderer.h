@@ -1,0 +1,39 @@
+#pragma once
+
+#include <cstdint>
+// #include <utility>
+
+// typedef std::pair<void*, int> RENDER_INFO;
+
+class VideoRenderer
+{
+protected:
+    int screen_x = 0;
+    int screen_y = 0;
+    double screen_ss = 1;
+    double screen_ps = 1;
+public:
+    VideoRenderer() {};
+    virtual ~VideoRenderer() {};
+    // virtual RENDER_INFO init_screen(void *p, int screen_x, int screen_y, double screen_scale, double pixel_scale) = 0;
+    virtual void init_screen(void *p, int sx, int sy, double ss, double ps)
+    {
+        screen_x = sx;
+        screen_y = sy;
+        screen_ss = ss;
+        screen_ps = ps;
+    };
+    virtual void stop() = 0;
+    virtual void set_filtering(int value) = 0;
+    virtual uint8_t * get_buffer() = 0;
+    virtual int get_line_bytes() = 0;
+    virtual void fill(uint32_t c) = 0;
+    virtual void resize(int sx, int sy, double ss, double ps) = 0;
+    virtual void render() = 0;
+    virtual uint32_t MapRGB(uint8_t R, uint8_t G, uint8_t B) = 0;
+    virtual void FillRGB(const uint8_t colors[][3], uint32_t * RGBA, int len)
+    {
+        for (int i=0; i<len; i++)
+            RGBA[i] = MapRGB(colors[i][0], colors[i][1], colors[i][2]);
+    }
+};

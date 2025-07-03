@@ -28,7 +28,8 @@ protected:
 public:
     AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
 
-    virtual void set_surface(SURFACE * surface) override;
+    // virtual void set_surface(SURFACE * surface) override;
+    void set_renderer(VideoRenderer &vr) override;
 
     virtual void memory_callback(unsigned int callback_id, unsigned int address) override;
 

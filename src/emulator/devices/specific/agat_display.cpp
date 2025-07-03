@@ -43,11 +43,18 @@ void AgatDisplay::load_config(SystemData *sd)
     set_mode(0x02);
 }
 
-void AgatDisplay::set_surface(SURFACE * surface)
+// void AgatDisplay::set_surface(SURFACE * surface)
+// {
+//     GenericDisplay::set_surface(surface);
+//     fill_SDL_rgba(Agat_2Colors, Agat_RGBA2, 2, surface);
+//     fill_SDL_rgba(Agat_16Colors, Agat_RGBA16, 16, surface);
+// }
+
+void AgatDisplay::set_renderer(VideoRenderer &vr)
 {
-    GenericDisplay::set_surface(surface);
-    fill_SDL_rgba(Agat_2Colors, Agat_RGBA2, 2, surface);
-    fill_SDL_rgba(Agat_16Colors, Agat_RGBA16, 16, surface);
+    GenericDisplay::set_renderer(vr);
+    vr.FillRGB(Agat_2Colors, Agat_RGBA2, 2);
+    vr.FillRGB(Agat_16Colors, Agat_RGBA16, 16);
 }
 
 void AgatDisplay::set_mode(unsigned int new_mode)
@@ -222,7 +229,7 @@ void AgatDisplay::render_all(bool force_render)
         if ((mode & 0x03) == 2) {
             // Blanking fields in text modes
             uint8_t * pixel_address;
-            uint32_t black = MapRGB(surface, 0, 0, 0);
+            uint32_t black = renderer->MapRGB(0, 0, 0);
             for (unsigned int i=0; i<256; i++) {
                 pixel_address = ((uint8_t *)render_pixels) + i*line_bytes;
                 //memset(pixel_address, 10, 32*4);         // Left

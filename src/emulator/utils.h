@@ -1,5 +1,4 @@
-#ifndef UTILS_H
-#define UTILS_H
+#pragma once
 
 #include <QString>
 #ifdef RENDERER_SDL2
@@ -27,8 +26,6 @@ QString pad_string(QString s, QChar c, int len, bool from_left = true);
 
 QString find_file_location(SystemData * sd, QString file_name);
 
-void fill_SDL_rgba(const uint8_t colors[][3], uint32_t * RGBA, int len, const SURFACE * surface);
-
 unsigned int read_confg_value(EmulatorConfigDevice * cd, QString name, bool required, unsigned int def);
 QString read_confg_value(EmulatorConfigDevice * cd, QString name, bool required, QString def);
 bool read_confg_value(EmulatorConfigDevice * cd, QString name, bool required, bool def);
@@ -39,7 +36,3 @@ QString md2html(QString md);
 
 int getRandomNumber(int min, int max);
 
-uint32_t MapRGB(const SURFACE * surface, uint8_t R, uint8_t G, uint8_t B);
-
-
-#endif // UTILS_H

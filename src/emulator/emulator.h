@@ -12,6 +12,7 @@
 
 #include "core.h"
 #include "emulator/devices/common/keyboard.h"
+#include "renderer.h"
 
 #ifdef LOGGER
 #include "logger.h"
@@ -26,6 +27,7 @@ private:
     bool busy;
     InterfaceManager *im;
     SystemData sd;
+    VideoRenderer * renderer;
 
     QChar * charmap[256];
 
@@ -42,18 +44,6 @@ private:
     unsigned int local_counter;
     unsigned int clock_counter;
 
-    #ifdef RENDERER_SDL2
-        SDL_Window * SDLWindowRef = nullptr;
-        SDL_Renderer * SDLRendererRef = nullptr;
-        SDL_Texture * SDLTexture = nullptr;
-        SDL_Surface * device_surface = nullptr;
-        SDL_Texture * black_box = nullptr;
-        SDL_Rect render_rect;
-    #elif defined(RENDERER_QT)
-        QImage * device_surface;
-        QImage * black_box;
-        QLabel * screen_widget;
-    #endif
     QTimer * render_timer;
 
     unsigned int screen_sx;
@@ -75,7 +65,7 @@ public:
     bool use_threads;
 
 
-    Emulator(QString work_path, QString data_path, QString software_path, QString ini_file);
+    Emulator(QString work_path, QString data_path, QString software_path, QString ini_file, VideoRenderer * renderer);
     ~Emulator();
 
     void load_config(QString file_name);
@@ -90,7 +80,7 @@ public:
 
     void run() override;
 
-    SURFACE * get_surface();
+    // SURFACE * get_surface();
     void get_screen_constraints(unsigned int * sx, unsigned int * sy);
 
     SystemData * get_system_data();

@@ -1285,22 +1285,17 @@ GenericDisplay::GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     sx(0),
     sy(0),
     //texture(nullptr),
-    surface(nullptr),
+    // surface(nullptr),
     screen_valid(false),
-    was_updated(true),
-    render_pixels(nullptr)
+    was_updated(true)
+    // , render_pixels(nullptr)
 {}
 
-void GenericDisplay::set_surface(SURFACE * surface)
+void GenericDisplay::set_renderer(VideoRenderer & vr)
 {
-    this->surface = surface;
-    #ifdef RENDERER_SDL2
-        render_pixels = surface->pixels;
-        line_bytes = sx*4;
-    #elif defined(RENDERER_QT)
-        render_pixels = surface->bits();
-        line_bytes = surface->bytesPerLine();
-    #endif
+    renderer = &vr;
+    render_pixels = vr.get_buffer();
+    line_bytes = vr.get_line_bytes();
 }
 
 

@@ -4,8 +4,8 @@ project(eCat3 VERSION 3.4.0 LANGUAGES C CXX)
 
 # Some defines
 
-# add_compile_definitions(RENDERER_SDL2)
-add_compile_definitions(RENDERER_QT)
+add_compile_definitions(RENDERER_SDL2)
+# add_compile_definitions(RENDERER_QT)
 #add_compile_definitions(RENDERER_OPENGL)
 
 # if (${USE_SDL})
@@ -155,6 +155,10 @@ set(PROJECT_SOURCES
     libs/md4c/md4c.h libs/md4c/md4c.c libs/md4c/md4c-html.h libs/md4c/md4c-html.c libs/md4c/entity.h libs/md4c/entity.c
 
     dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
+
+    emulator/renderer.h
+
+    renderers/renderer_sdl2.h
 )
 
 # Adding Qt base translations
@@ -202,6 +206,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         ${PROJECT_RESOURCES}
+        renderers/renderer_qt.h
     )
 
     qt_add_translations(${PROJECT_NAME} TS_FILES

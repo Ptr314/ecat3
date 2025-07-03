@@ -26,6 +26,11 @@
 
 #include "libs/lodepng/lodepng.h"
 
+#ifdef RENDERER_SDL2
+    #include "renderers/renderer_sdl2.h"
+#elif defined(RENDERER_QT)
+    #include "renderers/renderer_qt.h"
+#endif
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -202,7 +207,12 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("65c02", &CreateDebugWindow);
     DWM->register_debug_window("taperecorder", &CreateTapeWindow);
 
-    e = new Emulator(work_path, data_path, software_path, ini_file);
+    #ifdef RENDERER_SDL2
+        renderer = new SDL2Renderer();
+    #elif defined(RENDERER_QT)
+        renderer = new QtRenderer();
+    #endif
+    e = new Emulator(work_path, data_path, software_path, ini_file, renderer);
 
     connect(this, &MainWindow::send_a_key,  e, &Emulator::key_event);
     connect(this, &MainWindow::send_volume, e, &Emulator::set_volume);
@@ -741,39 +751,39 @@ void MainWindow::update_fdds()
 
 void MainWindow::on_actionScreenshot_triggered()
 {
-    SURFACE * s = e->get_surface();
-    //SDL_SaveBMP(s, file_name.toUtf8().constData());
+//     SURFACE * s = e->get_surface();
+//     //SDL_SaveBMP(s, file_name.toUtf8().constData());
 
-    unsigned int sx, sy;
-    e->get_screen_constraints(&sx, &sy);
+//     unsigned int sx, sy;
+//     e->get_screen_constraints(&sx, &sy);
 
-#ifdef RENDERER_SDL2
-    unsigned int bitmap_size = sx*sy*4 + 200;
+// #ifdef RENDERER_SDL2
+//     unsigned int bitmap_size = sx*sy*4 + 200;
 
-    std::vector<unsigned char> bmp;
-    bmp.resize(bitmap_size);
+//     std::vector<unsigned char> bmp;
+//     bmp.resize(bitmap_size);
 
-    SDL_RWops *rw;
-    rw = SDL_RWFromMem(bmp.data(), bitmap_size);
-    SDL_SaveBMP_RW(s, rw, 0);
-#endif
+//     SDL_RWops *rw;
+//     rw = SDL_RWFromMem(bmp.data(), bitmap_size);
+//     SDL_SaveBMP_RW(s, rw, 0);
+// #endif
 
-    QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save screenshot"), e->work_path, "PNG (*.png)");
+//     QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save screenshot"), e->work_path, "PNG (*.png)");
 
-    if (!file_name.isEmpty())
-    {
-        std::vector<unsigned char> image;
-        unsigned error;
-#ifdef RENDERER_SDL2
-        error = decodeBMP(image, sx, sy, bmp);
-#elif defined(RENDERER_QT)
-        uint8_t * pixels = s->bits();
-        image.insert(image.end(), pixels, pixels + sx*sy*4);
-#endif
-        std::vector<unsigned char> png;
-        error = lodepng::encode(png, image, sx, sy);
-        lodepng::save_file(png, file_name.toUtf8().constData());
-    }
+//     if (!file_name.isEmpty())
+//     {
+//         std::vector<unsigned char> image;
+//         unsigned error;
+// #ifdef RENDERER_SDL2
+//         error = decodeBMP(image, sx, sy, bmp);
+// #elif defined(RENDERER_QT)
+//         uint8_t * pixels = s->bits();
+//         image.insert(image.end(), pixels, pixels + sx*sy*4);
+// #endif
+//         std::vector<unsigned char> png;
+//         error = lodepng::encode(png, image, sx, sy);
+//         lodepng::save_file(png, file_name.toUtf8().constData());
+//     }
 }
 
 
@@ -784,9 +794,18 @@ void MainWindow::on_actionAbout_triggered()
     Ui_About aboutUi;
     aboutUi.setupUi(about);
 
+    #ifdef RENDERER_SDL2
+        QString rnd = "SDL2";
+    #elif defined(RENDERER_QT)
+        QString rnd = "Qt";
+    #elif defined(RENDERER_OPENGL)
+        QString rnd = "OpenGL";
+    #endif
+
     aboutUi.info_label->setText(
         aboutUi.info_label->text()
             .replace("{$PROJECT_VERSION}", PROJECT_VERSION)
+            .replace("{$RENDERER}", rnd)
             .replace("{$BUILD_ARCHITECTURE}", QSysInfo::buildCpuArchitecture())
             .replace("{$OS}", QSysInfo::productType())
             .replace("{$OS_VERSION}", QSysInfo::productVersion())

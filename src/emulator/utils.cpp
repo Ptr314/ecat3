@@ -178,11 +178,11 @@ QString find_file_location(SystemData * sd, QString file_name)
 }
 
 
-void fill_SDL_rgba(const uint8_t colors[][3], uint32_t * RGBA, int len, const SURFACE *surface)
-{
-    for (int i=0; i<len; i++)
-        RGBA[i] = MapRGB(surface, colors[i][0], colors[i][1], colors[i][2]);
-}
+// void fill_SDL_rgba(const uint8_t colors[][3], uint32_t * RGBA, int len)
+// {
+//     for (int i=0; i<len; i++)
+//         RGBA[i] = MapRGB(colors[i][0], colors[i][1], colors[i][2]);
+// }
 
 unsigned int read_confg_value(EmulatorConfigDevice * cd, QString name, bool required, unsigned int def)
 {
@@ -246,13 +246,4 @@ int getRandomNumber(int min, int max) {
     static std::mt19937 gen(rd()); // Генератор
     std::uniform_int_distribution<> dis(min, max);
     return dis(gen);
-}
-
-uint32_t MapRGB(const SURFACE * surface, uint8_t R, uint8_t G, uint8_t B)
-{
-#ifdef RENDERER_SDL2
-    return SDL_MapRGB(surface->format, R, G, B);
-#elif defined(RENDERER_QT)
-    return 0xFF000000 | (R << 16) | (G << 8) | B;
-#endif
 }

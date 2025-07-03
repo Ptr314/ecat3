@@ -80,6 +80,7 @@ private:
     Ui::MainWindow *ui;
 
     QLabel * screen;
+    VideoRenderer * renderer;
 
     QSettings * m_settings;
     QTranslator translator;

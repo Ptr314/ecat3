@@ -1,6 +1,7 @@
 #ifndef CORE_H
 #define CORE_H
 
+#include "emulator/renderer.h"
 #include <QObject>
 #include <QMessageBox>
 
@@ -46,14 +47,6 @@
     #define MAYBE_UNUSED [[maybe_unused]]
 #else
     #define MAYBE_UNUSED
-#endif
-
-#ifdef RENDERER_SDL2
-    typedef SDL_Surface SURFACE;
-    typedef SDL_PixelFormat PIXEL_FORMAT;
-#elif defined(RENDERER_QT)
-    typedef QImage SURFACE;
-    typedef QImage::Format PIXEL_FORMAT;
 #endif
 
 class DeviceManager;
@@ -485,9 +478,10 @@ protected:
     unsigned int sx = 0;
     unsigned int sy;
     int line_bytes;
-    SURFACE * surface;
+    // SURFACE * surface;
     bool screen_valid;              //Means surface is correct
     void * render_pixels;
+    VideoRenderer * renderer = nullptr;
 
     virtual void render_all(bool force_render = false) = 0;
 
@@ -498,7 +492,9 @@ public:
     //virtual void get_screen(bool required) = 0;
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) = 0;
     virtual void reset(bool cold) override;
-    virtual void set_surface(SURFACE * surface);
+    // virtual void set_surface(SURFACE * surface);
+    // virtual void set_surface(const RENDER_INFO & ri);
+    virtual void set_renderer(VideoRenderer &vr);
     virtual void validate(bool force_render = false);
 };
 

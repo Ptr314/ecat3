@@ -107,7 +107,7 @@ void O128Display::render_byte(unsigned int address)
                 //base[0] = Orion128_MonoColors[c1][2];
                 //base[1] = Orion128_MonoColors[c1][1];
                 //base[2] = Orion128_MonoColors[c1][0];
-                *(uint32_t*)base = MapRGB(surface, Orion128_MonoColors[c1][0], Orion128_MonoColors[c1][1], Orion128_MonoColors[c1][2]);
+                *(uint32_t*)base = renderer->MapRGB(Orion128_MonoColors[c1][0], Orion128_MonoColors[c1][1], Orion128_MonoColors[c1][2]);
             }
         } else {
             //Blanking
@@ -129,7 +129,7 @@ void O128Display::render_byte(unsigned int address)
                 //base[0] = Orion128_16Colors[c3][2];
                 //base[1] = Orion128_16Colors[c3][1];
                 //base[2] = Orion128_16Colors[c3][0];
-                *(uint32_t*)base = MapRGB(surface, Orion128_16Colors[c3][0], Orion128_16Colors[c3][1], Orion128_16Colors[c3][2]);
+                *(uint32_t*)base = renderer->MapRGB(Orion128_16Colors[c3][0], Orion128_16Colors[c3][1], Orion128_16Colors[c3][2]);
             }
         } else {
             //4 colors
@@ -146,7 +146,7 @@ void O128Display::render_byte(unsigned int address)
                 //base[0] = Orion128_4Colors[c4][2];
                 //base[1] = Orion128_4Colors[c4][1];
                 //base[2] = Orion128_4Colors[c4][0];
-                *(uint32_t*)base = MapRGB(surface, Orion128_4Colors[c4][0], Orion128_4Colors[c4][1], Orion128_4Colors[c4][2]);
+                *(uint32_t*)base = renderer->MapRGB(Orion128_4Colors[c4][0], Orion128_4Colors[c4][1], Orion128_4Colors[c4][2]);
             }
         }
     }
