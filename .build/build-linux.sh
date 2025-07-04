@@ -43,11 +43,14 @@ for RENDERER in "${RENDERERS[@]}"; do
 
     # Создание AppImage
     cd release
+    export VERSION="${APP_VERSION}-${PLATFORM}-${RENDERER}"
     "${LINUXDEPLOYQT}" "../${RELEASE_DIR}/usr/share/applications/ecat3.desktop" \
-        -executable-name="ecat-${APP_VERSION}-${PLATFORM}-${ARCHITECTURE}-${RENDERER}.AppImage" \
         -verbose=0 \
         -appimage \
         -no-translations \
         -qmake="${QT_PATH}/bin/qmake"
+    mv "eCat3-${APP_VERSION}-${PLATFORM}-${RENDERER}-x86_64.AppImage" \
+       "ecat-${APP_VERSION}-${PLATFORM}-${ARCHITECTURE}-${RENDERER}.AppImage"
     cd ..
+
 done
