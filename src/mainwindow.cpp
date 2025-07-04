@@ -423,7 +423,8 @@ void MainWindow::CreateScreenMenu()
         af2->setCheckable(true);
         af2->setChecked(e->get_filtering() == SCREEN_FILTERING_LINEAR);
     #elif defined(RENDERER_OPENGL)
-        ui->menuFiltering->setDisabled(true);
+        delete ui->menuFiltering;
+        // ui->menuFiltering->setDisabled(true);
     #endif
 }
 
