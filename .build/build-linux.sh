@@ -43,9 +43,9 @@ for RENDERER in "${RENDERERS[@]}"; do
 
     # Создание AppImage
     cd release
-    export VERSION="${APP_VERSION}-${PLATFORM}-${RENDERER}"
     "${LINUXDEPLOYQT}" "../${RELEASE_DIR}/usr/share/applications/ecat3.desktop" \
-        -verbose=2 \
+        -executable-name="ecat-${APP_VERSION}-${PLATFORM}-${ARCHITECTURE}-${RENDERER}.AppImage" \
+        -verbose=0 \
         -appimage \
         -no-translations \
         -qmake="${QT_PATH}/bin/qmake"
