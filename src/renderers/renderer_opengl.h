@@ -21,7 +21,6 @@ public:
 
     virtual ~OpenGLRenderer() override
     {
-        VideoRenderer::~VideoRenderer();
         if (surface != nullptr) delete surface;
     };
 
