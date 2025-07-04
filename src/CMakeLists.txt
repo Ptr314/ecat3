@@ -2,17 +2,17 @@ cmake_minimum_required(VERSION 3.21)
 
 project(eCat3 VERSION 3.4.0 LANGUAGES C CXX)
 
-# Some defines
-
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+        # Qt6 for Win 10+, Linux & macOS 64 bits
         # add_compile_definitions(RENDERER_SDL2)
         # add_compile_definitions(RENDERER_QT)
         add_compile_definitions(RENDERER_OPENGL)
     else()
+        # Qt5 for Win XP+ 32 bits
         add_compile_definitions(RENDERER_SDL2)
         # add_compile_definitions(RENDERER_QT)
     endif()
@@ -30,14 +30,6 @@ else()
         add_compile_definitions(RENDERER_OPENGL)
     endif()
 endif()
-
-# if (${USE_SDL})
-#     if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
-#         set(SDL_SEPARATE_WINDOW 1)
-#     else()
-#         set(SDL_SEPARATE_WINDOW 0)
-#     endif()
-# endif()
 
 IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
     set(EXTERNAL_Z80 0)

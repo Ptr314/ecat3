@@ -39,7 +39,6 @@ public:
         VideoRenderer::init_screen(p, sx, sy, ss, ps);
 
         if (SDLWindowRef == nullptr)
-            // SDLWindowRef = SDL_CreateWindow("Screen", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1024, 768, SDL_WINDOW_SHOWN | SDL_WINDOW_SKIP_TASKBAR);
             SDLWindowRef = SDL_CreateWindowFrom(p);
         if (!SDLWindowRef) {
             qWarning() << "SDL error:" << SDL_GetError();
@@ -100,8 +99,6 @@ public:
         screen_y = sy;
         screen_ss = ss;
         screen_ps = ps;
-        // render_rect.w = screen_x * ss * ps;
-        // render_rect.h = screen_y * ss;
         device_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_x, screen_y, 32, SDL_PIXELFORMAT_RGBA8888);
         SDL_RenderCopy(SDLRendererRef, black_box, NULL, NULL);
     }

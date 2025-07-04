@@ -423,8 +423,8 @@ void MainWindow::CreateScreenMenu()
         af2->setCheckable(true);
         af2->setChecked(e->get_filtering() == SCREEN_FILTERING_LINEAR);
     #elif defined(RENDERER_OPENGL)
-        delete ui->menuFiltering;
-        // ui->menuFiltering->setDisabled(true);
+        ui->menuFiltering->clear();
+        ui->menuFiltering->setDisabled(true);
     #endif
 }
 
@@ -791,8 +791,6 @@ void MainWindow::update_fdds()
 
 void MainWindow::on_actionScreenshot_triggered()
 {
-    // SURFACE * s = e->get_surface();
-
     unsigned int sx, sy;
     e->get_screen_constraints(&sx, &sy);
     std::vector<uint8_t> image = renderer->get_screenshot();
@@ -801,7 +799,6 @@ void MainWindow::on_actionScreenshot_triggered()
 
     if (!file_name.isEmpty())
     {
-        // std::vector<unsigned char> image;
         unsigned error;
         std::vector<unsigned char> png;
         error = lodepng::encode(png, image, sx, sy);
