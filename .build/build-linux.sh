@@ -5,33 +5,49 @@ PLATFORM="linux"
 QT_PATH=~/Qt/6.8.2/gcc_64
 LINUXDEPLOYQT="~/Downloads/linuxdeployqt-continuous-x86_64.AppImage"
 
-BUILD_DIR="./build/${PLATFORM}-${ARCHITECTURE}"
-
 VERSION=$(grep 'PROJECT_VERSION' ../src/globals.h | cut -d'"' -f2 | tr -d '\r')
 
-RELEASE_DIR="./release/ecat-${VERSION}-${PLATFORM}-${ARCHITECTURE}.AppDir"
-RESOURCES=${RELEASE_DIR}/usr/share/ecat
+# Массив рендереров
+RENDERERS=("sdl2" "qt" "opengl")
 
-cmake -DCMAKE_PREFIX_PATH=${QT_PATH} -S ../src -B ${BUILD_DIR} -G Ninja
+for RENDERER in "${RENDERERS[@]}"; do
+    echo "Building ${RENDERER} version..."
 
-CWD=$(pwd)
-cd ${BUILD_DIR}
-ninja
-cd ${CWD}
+    BUILD_DIR="./build/${PLATFORM}-${ARCHITECTURE}-${RENDERER}"
+    RELEASE_DIR="./release/ecat-${VERSION}-${PLATFORM}-${ARCHITECTURE}-${RENDERER}.AppDir"
+    RESOURCES="${RELEASE_DIR}/usr/share/ecat"
 
-mkdir -p ${RELEASE_DIR}/usr/bin/
-cp -r ./.linux/ecat3.AppDir/* ${RELEASE_DIR}
-cp "${BUILD_DIR}/eCat3" "${RELEASE_DIR}/usr/bin/"
+    # Очистка предыдущей сборки (опционально)
+    # rm -rf "${BUILD_DIR}"
 
-mkdir -p ${RELEASE_DIR}/usr/share/ecat
-cp -r ../deploy/* ${RESOURCES}
-rm ${RESOURCES}/ecat.ini
-cp ../deploy/.ecat.ini ${RESOURCES}/ecat.ini
+    # Сборка с разными рендерерами
+    cmake \
+        -DCMAKE_PREFIX_PATH="${QT_PATH}" \
+        -DRENDERER_${RENDERER^^}=1 \
+        -S ../src \
+        -B "${BUILD_DIR}" \
+        -G Ninja
 
-cd release
+    # Компиляция
+    cmake --build "${BUILD_DIR}" --target all
 
-export VERSION=${VERSION}-${PLATFORM}
-exec ${LINUXDEPLOYQT} ../${RELEASE_DIR}/usr/share/applications/ecat3.desktop -verbose=2 -appimage -no-translations -qmake=${QT_PATH}/bin/qmake
+    # Подготовка AppDir
+    mkdir -p "${RELEASE_DIR}/usr/bin/"
+    cp -r ./.linux/ecat3.AppDir/* "${RELEASE_DIR}"
+    cp "${BUILD_DIR}/eCat3" "${RELEASE_DIR}/usr/bin/"
 
-cd $CWD
+    mkdir -p "${RESOURCES}"
+    cp -r ../deploy/* "${RESOURCES}"
+    rm -f "${RESOURCES}/ecat.ini"
+    cp ../deploy/.ecat.ini "${RESOURCES}/ecat.ini"
 
+    # Создание AppImage
+    cd release
+    export VERSION="${VERSION}-${PLATFORM}-${RENDERER}"
+    "${LINUXDEPLOYQT}" "../${RELEASE_DIR}/usr/share/applications/ecat3.desktop" \
+        -verbose=2 \
+        -appimage \
+        -no-translations \
+        -qmake="${QT_PATH}/bin/qmake"
+    cd ..
+done
