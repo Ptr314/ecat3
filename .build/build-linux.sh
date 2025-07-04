@@ -3,9 +3,9 @@
 ARCHITECTURE="x86_64"
 PLATFORM="linux"
 QT_PATH=~/Qt/6.8.2/gcc_64
-LINUXDEPLOYQT="~/Downloads/linuxdeployqt-continuous-x86_64.AppImage"
+LINUXDEPLOYQT=~/Downloads/linuxdeployqt-continuous-x86_64.AppImage
 
-VERSION=$(grep 'PROJECT_VERSION' ../src/globals.h | cut -d'"' -f2 | tr -d '\r')
+APP_VERSION=$(grep 'PROJECT_VERSION' ../src/globals.h | cut -d'"' -f2 | tr -d '\r')
 
 # Массив рендереров
 RENDERERS=("sdl2" "qt" "opengl")
@@ -14,7 +14,7 @@ for RENDERER in "${RENDERERS[@]}"; do
     echo "Building ${RENDERER} version..."
 
     BUILD_DIR="./build/${PLATFORM}-${ARCHITECTURE}-${RENDERER}"
-    RELEASE_DIR="./release/ecat-${VERSION}-${PLATFORM}-${ARCHITECTURE}-${RENDERER}.AppDir"
+    RELEASE_DIR="./release/ecat-${APP_VERSION}-${PLATFORM}-${ARCHITECTURE}-${RENDERER}.AppDir"
     RESOURCES="${RELEASE_DIR}/usr/share/ecat"
 
     # Очистка предыдущей сборки (опционально)
@@ -43,7 +43,7 @@ for RENDERER in "${RENDERERS[@]}"; do
 
     # Создание AppImage
     cd release
-    export VERSION="${VERSION}-${PLATFORM}-${RENDERER}"
+    export VERSION="${APP_VERSION}-${PLATFORM}-${RENDERER}"
     "${LINUXDEPLOYQT}" "../${RELEASE_DIR}/usr/share/applications/ecat3.desktop" \
         -verbose=2 \
         -appimage \
