@@ -76,5 +76,20 @@ public:
         return 0xFF000000 | (R << 16) | (G << 8) | B;
     }
 
+    std::vector<uint8_t> get_screenshot() override
+    {
+        std::vector<uint8_t> image;
+        int image_size = screen_x * screen_y * 4;
+        uint8_t * pixels = surface->bits();
+        image.insert(image.end(), pixels, pixels + image_size);
+        // QImage has a reversed RGB order, so we need to swap R and B parts
+        for (int i=0; i < image_size; i+=4) {
+            uint8_t R = image[i + 2];
+            image[i+2] = image[i];
+            image[i] = R;
+        }
+        return image;
+    }
+
 
 };

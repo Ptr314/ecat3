@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 class VideoRenderer
 {
@@ -34,4 +35,5 @@ public:
         for (int i=0; i<len; i++)
             RGBA[i] = MapRGB(colors[i][0], colors[i][1], colors[i][2]);
     }
+    virtual std::vector<uint8_t> get_screenshot() = 0;
 };

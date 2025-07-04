@@ -6,6 +6,7 @@
 #include <SDL.h>
 
 #include "emulator/renderer.h"
+#include "emulator/utils.h"
 
 class SDL2Renderer: public VideoRenderer
 {
@@ -97,8 +98,10 @@ public:
         SDL_FreeSurface(device_surface);
         screen_x = sx;
         screen_y = sy;
-        render_rect.w = screen_x * ss * ps;
-        render_rect.h = screen_y * ss;
+        screen_ss = ss;
+        screen_ps = ps;
+        // render_rect.w = screen_x * ss * ps;
+        // render_rect.h = screen_y * ss;
         device_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_x, screen_y, 32, SDL_PIXELFORMAT_RGBA8888);
         SDL_RenderCopy(SDLRendererRef, black_box, NULL, NULL);
     }
@@ -107,6 +110,24 @@ public:
     {
         int rx, ry;
         SDL_GetRendererOutputSize(SDLRendererRef, &rx, &ry);
+        if (screen_ss == 0) {
+            int border = 20;
+            int rx2 = rx - 2*border;
+            int ry2 = ry - 2*border;
+            float screen_aspect = (float)rx2 / ry2;
+            float image_aspect = (float)screen_x / screen_y * screen_ps;
+
+            if (screen_aspect > image_aspect) {
+                render_rect.w = (float)screen_x * ry2 / screen_y * screen_ps;
+                render_rect.h = ry2;
+            } else {
+                render_rect.w = (float)rx2 * screen_ps;
+                render_rect.h = (float)screen_y * rx2 / screen_x;
+            }
+        } else {
+            render_rect.w = screen_x * screen_ss * screen_ps;
+            render_rect.h = screen_y * screen_ss;
+        }
         render_rect.x = (rx - render_rect.w) / 2;
         render_rect.y = (ry - render_rect.h) / 2;
 
@@ -121,6 +142,23 @@ public:
     uint32_t MapRGB(uint8_t R, uint8_t G, uint8_t B) override
     {
         return SDL_MapRGB(device_surface->format, R, G, B);
+    }
+
+    std::vector<uint8_t> get_screenshot() override
+    {
+        std::vector<uint8_t> image;
+
+        unsigned int bitmap_size = screen_x * screen_y * 4 + 200;
+
+        std::vector<uint8_t> bmp;
+        bmp.resize(bitmap_size);
+
+        SDL_RWops *rw;
+        rw = SDL_RWFromMem(bmp.data(), bitmap_size);
+        SDL_SaveBMP_RW(device_surface, rw, 0);
+        unsigned error = decodeBMP(image, (unsigned&)screen_x, (unsigned&)screen_y, bmp);
+
+        return image;
     }
 
 

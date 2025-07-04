@@ -13,6 +13,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     add_compile_definitions(RENDERER_OPENGL)
 else()
     add_compile_definitions(RENDERER_SDL2)
+    # add_compile_definitions(RENDERER_QT)
 endif()
 
 # if (${USE_SDL})

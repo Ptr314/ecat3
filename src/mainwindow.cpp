@@ -790,39 +790,22 @@ void MainWindow::update_fdds()
 
 void MainWindow::on_actionScreenshot_triggered()
 {
-//     SURFACE * s = e->get_surface();
-//     //SDL_SaveBMP(s, file_name.toUtf8().constData());
+    // SURFACE * s = e->get_surface();
 
-//     unsigned int sx, sy;
-//     e->get_screen_constraints(&sx, &sy);
+    unsigned int sx, sy;
+    e->get_screen_constraints(&sx, &sy);
+    std::vector<uint8_t> image = renderer->get_screenshot();
 
-// #ifdef RENDERER_SDL2
-//     unsigned int bitmap_size = sx*sy*4 + 200;
+    QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save screenshot"), e->work_path, "PNG (*.png)");
 
-//     std::vector<unsigned char> bmp;
-//     bmp.resize(bitmap_size);
-
-//     SDL_RWops *rw;
-//     rw = SDL_RWFromMem(bmp.data(), bitmap_size);
-//     SDL_SaveBMP_RW(s, rw, 0);
-// #endif
-
-//     QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save screenshot"), e->work_path, "PNG (*.png)");
-
-//     if (!file_name.isEmpty())
-//     {
-//         std::vector<unsigned char> image;
-//         unsigned error;
-// #ifdef RENDERER_SDL2
-//         error = decodeBMP(image, sx, sy, bmp);
-// #elif defined(RENDERER_QT)
-//         uint8_t * pixels = s->bits();
-//         image.insert(image.end(), pixels, pixels + sx*sy*4);
-// #endif
-//         std::vector<unsigned char> png;
-//         error = lodepng::encode(png, image, sx, sy);
-//         lodepng::save_file(png, file_name.toUtf8().constData());
-//     }
+    if (!file_name.isEmpty())
+    {
+        // std::vector<unsigned char> image;
+        unsigned error;
+        std::vector<unsigned char> png;
+        error = lodepng::encode(png, image, sx, sy);
+        lodepng::save_file(png, file_name.toUtf8().constData());
+    }
 }
 
 

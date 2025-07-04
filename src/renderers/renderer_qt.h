@@ -24,7 +24,6 @@ public:
 
     virtual ~QtRenderer() override
     {
-        VideoRenderer::~VideoRenderer();
         if (surface != nullptr) delete surface;
     };
 
@@ -66,14 +65,35 @@ public:
         if (surface != nullptr) delete surface;
         screen_x = sx;
         screen_y = sy;
-        render_w = screen_x * ss * ps;
-        render_h = screen_y * ss;
+        screen_ss = ss;
+        screen_ps = ps;
         surface = new QImage(sx, sy, QImage::Format_RGB32);
         surface->fill(Qt::black);
     }
 
     void render() override
     {
+        int rx = widget->width();
+        int ry = widget->height();
+        if (screen_ss == 0) {
+            int border = 20;
+            int rx2 = rx - 2*border;
+            int ry2 = ry - 2*border;
+            float screen_aspect = (float)rx2 / ry2;
+            float image_aspect = (float)screen_x / screen_y * screen_ps;
+
+            if (screen_aspect > image_aspect) {
+                render_w = (float)screen_x * ry2 / screen_y * screen_ps;
+                render_h = ry2;
+            } else {
+                render_w = (float)rx2 * screen_ps;
+                render_h = (float)screen_y * rx2 / screen_x;
+            }
+        } else {
+            render_w = screen_x * screen_ss * screen_ps;
+            render_h = screen_y * screen_ss;
+        }
+
         QImage copy = surface->copy();
         QPixmap pm = QPixmap::fromImage(copy.scaled(
             render_w, render_h,
@@ -86,6 +106,21 @@ public:
     uint32_t MapRGB(uint8_t R, uint8_t G, uint8_t B) override
     {
         return 0xFF000000 | (R << 16) | (G << 8) | B;
+    }
+
+    std::vector<uint8_t> get_screenshot() override
+    {
+        std::vector<uint8_t> image;
+        int image_size = screen_x * screen_y * 4;
+        uint8_t * pixels = surface->bits();
+        image.insert(image.end(), pixels, pixels + image_size);
+        // QImage has a reversed RGB order, so we need to swap R and B parts
+        for (int i=0; i < image_size; i+=4) {
+            uint8_t R = image[i + 2];
+            image[i+2] = image[i];
+            image[i] = R;
+        }
+        return image;
     }
 
 
