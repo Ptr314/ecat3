@@ -311,7 +311,7 @@ include(GNUInstallDirs)
 # Passing version to the application
 
 set(CMAKE_CONFIGURE_FILE_CONTENT_NEWLINE_STYLE UNIX)
-configure_file (globals.h.in ${CMAKE_CURRENT_SOURCE_DIR}/globals.h @ONLY)
+configure_file (globals.h.in ${CMAKE_CURRENT_SOURCE_DIR}/globals.h @ONLY NEWLINE_STYLE LF)
 
 install(TARGETS ${PROJECT_NAME}
     BUNDLE DESTINATION .
