@@ -177,6 +177,7 @@ protected:
     uint16_t get_address(uint8_t command, unsigned int & cycles);
     void calc_flags(uint32_t value, uint32_t mask);
     void set_flag(uint8_t flag, uint8_t value);
+    uint16_t calc_address(const uint16_t base, const uint16_t increment, unsigned int & cycles);
 
     uint16_t get_address_zp(unsigned int & cycles);
 

@@ -745,9 +745,9 @@ inline uint8_t mos6502core::get_operand(uint8_t command, unsigned int & cycles)
             D.b.H = read_mem(0);
         else
             D.b.H = read_mem(T.w+1);
-        D.w += REG_Y;
+        // D.w += REG_Y;
+        D.w = calc_address(D.w, REG_Y, cycles);
         result = read_mem(D.w);
-        //TODO: 6502 add 1 cycle when crossing a page border
         break;
     case 5:
         //zp, x
@@ -758,17 +758,17 @@ inline uint8_t mos6502core::get_operand(uint8_t command, unsigned int & cycles)
         //abs, y
         T.b.L = next_byte();
         T.b.H = next_byte();
-        T.w += REG_Y;
+        // T.w += REG_Y;
+        T.w = calc_address(T.w, REG_Y, cycles);
         result = read_mem(T.w);
-        //TODO: 6502 add 1 cycle when crossing a page border
         break;
     default:
         //abs, x
         T.b.L = next_byte();
         T.b.H = next_byte();
-        T.w += REG_X;
+        // T.w += REG_X;
+        T.w = calc_address(T.w, REG_X, cycles);
         result = read_mem(T.w);
-        //TODO: 6502 add 1 cycle when crossing a page border
         break;
     }
     return result;
@@ -808,9 +808,9 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int & cycles)
             D.b.H = read_mem(0);
         else
             D.b.H = read_mem(T.w+1);
-        D.w += REG_Y;
+        // D.w += REG_Y;
+        D.w = calc_address(D.w, REG_Y, cycles);
         result = D.w;
-        //TODO: 6502 add 1 cycle when crossing a page border
         break;
     case 5:
         //zp, x
@@ -821,17 +821,17 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int & cycles)
         //abs, y
         T.b.L = next_byte();
         T.b.H = next_byte();
-        T.w += REG_Y;
+        // T.w += REG_Y;
+        T.w = calc_address(T.w, REG_Y, cycles);
         result = T.w;
-        //TODO: 6502 add 1 cycle when crossing a page border
         break;
     case 7:
         //abs, x
         T.b.L = next_byte();
         T.b.H = next_byte();
-        T.w += REG_X;
+        // T.w += REG_X;
+        T.w = calc_address(T.w, REG_X, cycles);
         result = T.w;
-        //TODO: 6502 add 1 cycle when crossing a page border
         break;
     default:
         // TODO: 6502 generate an error?
@@ -850,6 +850,13 @@ inline void mos6502core::calc_flags(uint32_t value, uint32_t mask)
 inline void mos6502core::set_flag(uint8_t flag, uint8_t value)
 {
     REG_P = (REG_P & ~flag) | (value & flag);
+}
+
+inline uint16_t mos6502core::calc_address(const uint16_t base, const uint16_t increment, unsigned int & cycles)
+{
+    uint16_t res = base + increment;
+    if (((base ^ res) & 0xFF00) != 0 ) cycles++;
+    return res;
 }
 
 inline void mos6502core::doADC(uint8_t v)
@@ -930,8 +937,11 @@ void mos6502core::_BRANCH(uint8_t command, unsigned int & cycles)
         break;
     }
     int8_t offset = static_cast<int8_t>(next_byte());
-    if (branch)
-        REG_PC = REG_PC + offset;
+    if (branch) {
+        // offset is int8, so we have to widen its sign to fit uint16
+        REG_PC = calc_address(REG_PC, static_cast<int16_t>(offset), cycles);
+        cycles++;
+    }
 }
 
 void mos6502core::_BIT(uint8_t command, unsigned int & cycles)
