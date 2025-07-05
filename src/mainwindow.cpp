@@ -241,6 +241,15 @@ MainWindow::MainWindow(QWidget *parent)
     mute->setChecked(muted.toInt() == 1);
 
     first_config = work_path + file_to_load;
+
+    // static int old = 0;
+    // QTimer *timer = new QTimer(this);
+    // connect(timer, &QTimer::timeout, [=]() {
+    //     int c = e->clock_counter;
+    //     qDebug() << c - old;
+    //     old = c;
+    // });
+    // timer->start(1000);
 }
 
 void MainWindow::showEvent(QShowEvent* event)

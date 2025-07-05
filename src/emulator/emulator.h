@@ -42,7 +42,6 @@ private:
     unsigned int timer_delay;
     unsigned int time_ticks;
     unsigned int local_counter;
-    unsigned int clock_counter;
 
     QTimer * render_timer;
 
@@ -64,6 +63,7 @@ public:
     bool loaded;
     bool use_threads;
 
+    unsigned int clock_counter;
 
     Emulator(QString work_path, QString data_path, QString software_path, QString ini_file, VideoRenderer * renderer);
     ~Emulator();

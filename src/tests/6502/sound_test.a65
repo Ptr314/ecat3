@@ -1,0 +1,23 @@
+;https://www.masswerk.at/6502/assembler.html
+;Generates 996 Hz sound on a 1 MHz 6502
+;Use bin as a system bios on F800
+
+        .org $F800       
+START:
+        LDA $C030       ; 4
+        JSR DELAY	    ; 6 + 486
+        JMP START       ; 3
+			            ; = 499 mks, one half of a wave period.
+
+DELAY:
+        LDX #69   	    ; 2
+@LOOP:
+        NOP             ; 2
+        DEX             ; 2
+        BNE @LOOP       ; 3/2
+        RTS             ; 6 = 2 + (2+2+3)*68 + 2 + 6 = 486
+
+        .ORG $FFFc
+        .word $F800
+        .word $F800
+        
