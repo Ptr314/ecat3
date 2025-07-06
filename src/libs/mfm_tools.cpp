@@ -14,9 +14,14 @@ const uint8_t gcr62_encode_table[64] =
         0xF7,0xF9,0xFA,0xFB,0xFC,0xFD,0xFE,0xFF
 };
 
-static const uint8_t agat_sector_translate[]={
-    0x00,0x0D,0x0B,0x09,0x07,0x05,0x03,0x01,0x0E,0x0C,0x0A,0x08,0x06,0x04,0x02,0x0F
+// static const uint8_t agat_sector_translate[]={
+//     0x00,0x0D,0x0B,0x09,0x07,0x05,0x03,0x01,0x0E,0x0C,0x0A,0x08,0x06,0x04,0x02,0x0F
+// };
+
+static const int agat_140_raw2logic[16] = {
+    0, 7, 14, 6, 13, 5, 12, 4, 11, 3, 10, 2, 9, 1, 8, 15
 };
+
 
 // Idea: https://tulip-house.ddo.jp/digital/SDISK2/english.html (dsk2nic.cpp)
 static const unsigned char FlipBit1[4] = { 0, 2,  1,  3  };
@@ -117,8 +122,8 @@ uint8_t * generate_mfm_agat_140(QString file_name, int & sides, int & tracks, in
             memcpy(out, QByteArray("\xD5\xAA\x96").constData(), 3); out += 3;
             // Address
             uint8_t volume = 0xFE;
-            uint8_t sector_t = agat_sector_translate[sector];
-            uint8_t address_field[4] = {volume, track, sector_t, static_cast<uint8_t>(volume ^ track ^ sector_t)};
+            uint8_t sector_t = agat_140_raw2logic[sector];
+            uint8_t address_field[4] = {volume, track, sector, static_cast<uint8_t>(volume ^ track ^ sector)};
             memcpy(out, code44(address_field, 4).constData(), 8); out += 8;
             // Epilogue
             memcpy(out, QByteArray("\xDE\xAA\xEB").constData(), 3); out += 3;
@@ -127,7 +132,7 @@ uint8_t * generate_mfm_agat_140(QString file_name, int & sides, int & tracks, in
             // Data field
             // Prologue
             memcpy(out, QByteArray("\xD5\xAA\xAD").constData(), 3); out += 3;
-            uint8_t * data = &image[track * sectors * sector_size + sector * sector_size];
+            uint8_t * data = &image[track * sectors * sector_size + sector_t * sector_size];
             encode_gcr62(data, encoded_sector);
             memcpy(out, &encoded_sector, 343); out += 343;
             // Epilogue
