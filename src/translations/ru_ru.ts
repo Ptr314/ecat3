@@ -28,6 +28,19 @@
     </message>
 </context>
 <context>
+    <name>Agat_FDC840</name>
+    <message>
+        <location filename="../emulator/devices/specific/agat_fdc840.cpp" line="+34"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect fdd list for &apos;%1&apos;</source>
+        <translation>Некорректный список дисководов для &apos;%1&apos;</translation>
+    </message>
+</context>
+<context>
     <name>CPU</name>
     <message>
         <location filename="../emulator/core.cpp" line="+888"/>
@@ -409,7 +422,7 @@
         <translation>Неизвестный тип файла</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+360"/>
+        <location filename="../mainwindow.cpp" line="+369"/>
         <source>Screen 4:3</source>
         <translation>Экран 4:3</translation>
     </message>
@@ -453,7 +466,7 @@
         <translation type="vanished">Сглаживание</translation>
     </message>
     <message>
-        <location line="+227"/>
+        <location line="+228"/>
         <location filename="../dialogs/taperecorder.cpp" line="+133"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
@@ -534,14 +547,14 @@
         <location line="+3"/>
         <location line="+20"/>
         <location line="+3"/>
-        <location line="+11"/>
-        <location line="+130"/>
+        <location line="+14"/>
+        <location line="+150"/>
         <location line="+6"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-280"/>
+        <location line="-303"/>
         <source>Incorrect fdd parameters for &apos;%1&apos;</source>
         <translation>Некорректный параметр дисковода &apos;%1&apos;</translation>
     </message>
@@ -584,12 +597,12 @@
         <translation>Некорректный файл образа диска &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+14"/>
         <source>Expected conversion from DSK to MFM is not supported yet.</source>
         <translation>Необходимая конвертация из посекторного в физический формат еще не поддерживается.</translation>
     </message>
     <message>
-        <location line="+130"/>
+        <location line="+150"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation>Дисковод работает в MFM-режиме. Сохранение в посекторные образы еще не поддерживается.</translation>
     </message>
@@ -607,7 +620,7 @@
         <translation type="vanished">Режим не поддерживается</translation>
     </message>
     <message>
-        <location line="-93"/>
+        <location line="-113"/>
         <source>Reading outside of a sector</source>
         <translation>Попытка чтения за пределеами сектора</translation>
     </message>
@@ -620,19 +633,17 @@
 <context>
     <name>I8255</name>
     <message>
-        <location filename="../emulator/devices/common/i8255.cpp" line="+50"/>
-        <location line="+66"/>
+        <location filename="../emulator/devices/common/i8255.cpp" line="+64"/>
+        <location line="+78"/>
         <source>i8255:A is in an unsupported mode</source>
         <translation>i8255:А переведен в неподдерживаемый режим</translation>
     </message>
     <message>
-        <location line="-54"/>
-        <location line="+60"/>
         <source>i8255:B is in an unsupported mode</source>
-        <translation>i8255:B переведен в неподдерживаемый режим</translation>
+        <translation type="vanished">i8255:B переведен в неподдерживаемый режим</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+30"/>
         <source>i8255:unknown interface called</source>
         <translation>Обращение к неизвестному интерфейсу</translation>
     </message>
@@ -751,12 +762,7 @@
         <translation>Сглаживание</translation>
     </message>
     <message>
-        <location line="+17"/>
-        <source>toolBar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+42"/>
+        <location line="+59"/>
         <source>Select a machine...</source>
         <translation>Выбор компьютера...</translation>
     </message>
@@ -791,12 +797,7 @@
         <translation>О программе...</translation>
     </message>
     <message>
-        <location line="+15"/>
-        <source>Filter one</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
+        <location line="+24"/>
         <source>Tape</source>
         <translation>Магнитофон</translation>
     </message>
@@ -811,21 +812,11 @@
         <translation>Переключить язык</translation>
     </message>
     <message>
-        <location line="-37"/>
-        <source>Scale_one</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Ratio one</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Select a machine</source>
         <translation type="vanished">Выбрать компьютер...</translation>
     </message>
     <message>
-        <location line="-75"/>
+        <location line="-107"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
@@ -840,18 +831,13 @@
         <translation>Теплый перезапуск</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>Device_one</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../mainwindow.cpp" line="-351"/>
-        <location line="+412"/>
+        <location filename="../mainwindow.cpp" line="-352"/>
+        <location line="+413"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-409"/>
+        <location line="-410"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -877,27 +863,27 @@
     <message>
         <location line="-35"/>
         <source>Error</source>
-        <translation type="unfinished">Ошибка</translation>
+        <translation>Ошибка</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Failed to load language file for: </source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка загрузки языкового файла: </translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Languages</source>
-        <translation type="unfinished"></translation>
+        <translation>Языки</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Русский</source>
-        <translation type="unfinished"></translation>
+        <translation>Русский</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>English</source>
-        <translation type="unfinished"></translation>
+        <translation>English</translation>
     </message>
     <message>
         <location line="+55"/>
@@ -905,7 +891,7 @@
         <translation>Автоматически</translation>
     </message>
     <message>
-        <location line="+352"/>
+        <location line="+353"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>
@@ -935,8 +921,9 @@
         <translation>Обшибка создания резервной копии. Возможно, файл с расширение *.bak уже существует.</translation>
     </message>
     <message>
+        <location line="+43"/>
         <source>Save screenshot</source>
-        <translation type="vanished">Сохранение скриншота</translation>
+        <translation>Сохранение скриншота</translation>
     </message>
 </context>
 <context>
@@ -1054,12 +1041,12 @@
     <message>
         <location filename="../emulator/core.cpp" line="-222"/>
         <source>Error</source>
-        <translation type="unfinished">Ошибка</translation>
+        <translation>Ошибка</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Incorrect parameters for &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Неправильно указаны параметры для &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
@@ -1084,7 +1071,7 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../libs/mfm_tools.cpp" line="+47"/>
+        <location filename="../libs/mfm_tools.cpp" line="+52"/>
         <location line="+3"/>
         <source>Error</source>
         <translation>Ошибка</translation>
@@ -1203,8 +1190,8 @@
     <name>TapeRecorderWindow</name>
     <message>
         <location filename="../dialogs/taperecorder.ui" line="+14"/>
-        <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <source>Tape Recorder</source>
+        <translation>Магнитофон</translation>
     </message>
     <message>
         <location line="+43"/>
@@ -1245,7 +1232,7 @@
     <message>
         <location line="-69"/>
         <source>ЭЛЕКТРОНИКА-302</source>
-        <translation type="unfinished"></translation>
+        <translation>ЭЛЕКТРОНИКА-302</translation>
     </message>
     <message>
         <location filename="../dialogs/taperecorder.cpp" line="+21"/>

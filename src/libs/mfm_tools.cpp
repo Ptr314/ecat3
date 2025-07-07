@@ -71,7 +71,7 @@ QByteArray code44(const uint8_t buffer[], const int len)
 void encode_gcr62(const uint8_t data_in[], uint8_t * data_out)
 {
 
-    // First 86 bytes are combined lower 2 bits of input data
+    // First 86 bytes are combined 2 lower bits of input data
     for (int i = 0; i < 86; i++) {
         data_out[i] = FlipBit1[data_in[i]&3] | FlipBit2[data_in[i+86]&3] | FlipBit3[data_in[(i+172) & 0xFF]&3];
                                                                                                     // ^^ 2 extra bytes are wrapped to the beginning
@@ -209,4 +209,67 @@ void save_mfm_file(QString file_name, int sides, int tracks, int track_size, HXC
         file.close();
     }
 
+}
+
+uint8_t agat_840_calc_cs(const uint8_t data[], const int len)
+{
+    uint32_t cs=0;
+    uint32_t carry=0;
+
+    for (int i=0; i<len; i++) {
+        cs += data[i] + carry;
+        carry = cs >> 8;
+        cs &= 0xFF;
+    }
+
+    return static_cast<uint8_t>(cs);
+}
+
+uint8_t * generate_mfm_agat_840(QString file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[])
+{
+    sides = 2;
+    tracks = 80;
+    int sectors = 21;
+    int sector_size = 256;
+    int encoded_sector_size = AGAT_840_HEADER_SIZE + AGAT_840_PROLOG_SIZE + sector_size + 1 + 1;
+    //   cs  footer
+    int track_len = encoded_sector_size * sectors;
+    disk_size = tracks * track_len * sides;
+    int image_size = sides * tracks * sectors * sector_size;
+    uint8_t * image = load_image(file_name, image_size);
+
+    uint8_t * buffer = new uint8_t[disk_size];
+    uint8_t * out = buffer;
+
+    int track_index = 0;
+
+    for (uint8_t track = 0; track < tracks; track++)
+        for (uint8_t head = 0; head < sides; head++) {
+            for (uint8_t sector = 0; sector < sectors; sector++) {
+                // Prologue
+                memcpy(out, &agat_840_prolog, AGAT_840_PROLOG_SIZE);
+                out[AGAT_840_PROLOG_TRACK] = track*2 + head;
+                out[AGAT_840_PROLOG_SECTOR] = sector;
+                out += AGAT_840_PROLOG_SIZE;
+                // Header
+                memcpy(out, &agat_840_header, AGAT_840_HEADER_SIZE); out += AGAT_840_HEADER_SIZE;
+                // Data
+                uint8_t * data = &image[((track*2 + head) * sectors + sector) * sector_size];
+                memcpy(out, data, sector_size); out += sector_size;
+                // Checksum
+                *out++ = agat_840_calc_cs(data, sector_size);
+                // Footer
+                *out++ = 0x5A;
+            }
+
+            track_indexes[track_index].track_number = track;
+            track_indexes[track_index].side_number = head;
+            track_indexes[track_index].mfmtracksize = track_len;
+            track_indexes[track_index].mfmtrackoffset = (track*2 + head)*track_len;
+            track_index++;
+        }
+
+    delete [] image;
+
+    return buffer;
 }

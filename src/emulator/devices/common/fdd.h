@@ -24,7 +24,7 @@ private:
     int disk_size;
 
     // MFM tracks info
-    HXC_MFM_TRACK_INFO track_indexes[100];
+    HXC_MFM_TRACK_INFO track_indexes[200];
     int physical_track_len;
 
     unsigned int selector;
@@ -62,9 +62,12 @@ public:
 
     bool is_selected();
     bool is_protected();
+    bool is_index();
+    bool is_track_00();
     bool is_led_on();
     int get_sector_size();
     int get_loaded();
+    int get_position();
     int SeekSector(int track, int sector);
     uint8_t  ReadNextByte();
     void WriteNextByte(uint8_t value);

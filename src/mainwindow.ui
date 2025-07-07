@@ -135,7 +135,7 @@
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
-    <string>toolBar</string>
+    <string notr="true">toolBar</string>
    </property>
    <property name="allowedAreas">
     <set>Qt::ToolBarArea::LeftToolBarArea|Qt::ToolBarArea::TopToolBarArea</set>
@@ -209,7 +209,7 @@
   </action>
   <action name="actionDevice_one">
    <property name="text">
-    <string>Device_one</string>
+    <string notr="true">Device_one</string>
    </property>
   </action>
   <action name="actionOpen">
@@ -256,17 +256,17 @@
   </action>
   <action name="actionScale_one">
    <property name="text">
-    <string>Scale_one</string>
+    <string notr="true">Scale_one</string>
    </property>
   </action>
   <action name="actionRatio_one">
    <property name="text">
-    <string>Ratio one</string>
+    <string notr="true">Ratio one</string>
    </property>
   </action>
   <action name="actionFilter_one">
    <property name="text">
-    <string>Filter one</string>
+    <string notr="true">Filter one</string>
    </property>
   </action>
   <action name="actionTape">

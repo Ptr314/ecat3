@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Tape Recorder</string>
   </property>
   <property name="styleSheet">
    <string notr="true"/>
@@ -51,7 +51,7 @@
     <cursorShape>PointingHandCursor</cursorShape>
    </property>
    <property name="focusPolicy">
-    <enum>Qt::NoFocus</enum>
+    <enum>Qt::FocusPolicy::NoFocus</enum>
    </property>
    <property name="toolTip">
     <string>Record</string>
@@ -96,7 +96,7 @@
     <cursorShape>PointingHandCursor</cursorShape>
    </property>
    <property name="focusPolicy">
-    <enum>Qt::NoFocus</enum>
+    <enum>Qt::FocusPolicy::NoFocus</enum>
    </property>
    <property name="toolTip">
     <string>Rewind</string>
@@ -141,7 +141,7 @@
     <cursorShape>PointingHandCursor</cursorShape>
    </property>
    <property name="focusPolicy">
-    <enum>Qt::NoFocus</enum>
+    <enum>Qt::FocusPolicy::NoFocus</enum>
    </property>
    <property name="toolTip">
     <string>FastForward</string>
@@ -186,7 +186,7 @@
     <cursorShape>PointingHandCursor</cursorShape>
    </property>
    <property name="focusPolicy">
-    <enum>Qt::NoFocus</enum>
+    <enum>Qt::FocusPolicy::NoFocus</enum>
    </property>
    <property name="toolTip">
     <string>Play</string>
@@ -231,7 +231,7 @@
     <cursorShape>PointingHandCursor</cursorShape>
    </property>
    <property name="focusPolicy">
-    <enum>Qt::NoFocus</enum>
+    <enum>Qt::FocusPolicy::NoFocus</enum>
    </property>
    <property name="toolTip">
     <string>Stop</string>
@@ -276,7 +276,7 @@
     <cursorShape>PointingHandCursor</cursorShape>
    </property>
    <property name="focusPolicy">
-    <enum>Qt::NoFocus</enum>
+    <enum>Qt::FocusPolicy::NoFocus</enum>
    </property>
    <property name="toolTip">
     <string>Eject</string>
@@ -385,10 +385,10 @@
     <string>ЭЛЕКТРОНИКА-302</string>
    </property>
    <property name="textFormat">
-    <enum>Qt::PlainText</enum>
+    <enum>Qt::TextFormat::PlainText</enum>
    </property>
    <property name="alignment">
-    <set>Qt::AlignCenter</set>
+    <set>Qt::AlignmentFlag::AlignCenter</set>
    </property>
   </widget>
   <widget class="QLabel" name="left_roller">
@@ -473,7 +473,6 @@
   </widget>
  </widget>
  <resources>
-  <include location="../resources.qrc"/>
   <include location="../resources.qrc"/>
  </resources>
  <connections/>

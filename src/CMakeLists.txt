@@ -43,7 +43,7 @@ if (${LOGGER})
     else()
         set(LOG_NAME "LOG")
     endif()
-    set(LOG_LIMIT 200000)
+    set(LOG_LIMIT 20000)
     set(LOG_8255 0)
     set(LOG_CPU 0)
     set(LOG_MAPPER 0)
@@ -169,6 +169,7 @@ set(PROJECT_SOURCES
     emulator/devices/common/sound.h emulator/devices/common/sound.cpp
     libs/mfm_formats.h
     libs/mfm_tools.h libs/mfm_tools.cpp
+    emulator/devices/specific/agat_fdc840.h emulator/devices/specific/agat_fdc840.cpp
 
     libs/md4c/md4c.h libs/md4c/md4c.c libs/md4c/md4c-html.h libs/md4c/md4c-html.c libs/md4c/entity.h libs/md4c/entity.c
 

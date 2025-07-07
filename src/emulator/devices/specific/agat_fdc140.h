@@ -11,7 +11,6 @@ protected:
     Interface i_motor_on;
     int prev_phase;
     int current_phase;
-    //uint8_t data;
 
     int current_track[2];
     int selected_drive;

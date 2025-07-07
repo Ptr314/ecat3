@@ -28,6 +28,19 @@
     </message>
 </context>
 <context>
+    <name>Agat_FDC840</name>
+    <message>
+        <location filename="../emulator/devices/specific/agat_fdc840.cpp" line="+34"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect fdd list for &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CPU</name>
     <message>
         <location filename="../emulator/core.cpp" line="+888"/>
@@ -381,7 +394,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+360"/>
+        <location filename="../mainwindow.cpp" line="+369"/>
         <source>Screen 4:3</source>
         <translation type="unfinished"></translation>
     </message>
@@ -421,7 +434,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+227"/>
+        <location line="+228"/>
         <location filename="../dialogs/taperecorder.cpp" line="+133"/>
         <source>Load a file</source>
         <translation type="unfinished"></translation>
@@ -498,14 +511,14 @@
         <location line="+3"/>
         <location line="+20"/>
         <location line="+3"/>
-        <location line="+11"/>
-        <location line="+130"/>
+        <location line="+14"/>
+        <location line="+150"/>
         <location line="+6"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-280"/>
+        <location line="-303"/>
         <source>Incorrect fdd parameters for &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -548,12 +561,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+14"/>
         <source>Expected conversion from DSK to MFM is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+130"/>
+        <location line="+150"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -563,7 +576,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-93"/>
+        <location line="-113"/>
         <source>Reading outside of a sector</source>
         <translation type="unfinished"></translation>
     </message>
@@ -576,19 +589,13 @@
 <context>
     <name>I8255</name>
     <message>
-        <location filename="../emulator/devices/common/i8255.cpp" line="+50"/>
-        <location line="+66"/>
+        <location filename="../emulator/devices/common/i8255.cpp" line="+64"/>
+        <location line="+78"/>
         <source>i8255:A is in an unsupported mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-54"/>
-        <location line="+60"/>
-        <source>i8255:B is in an unsupported mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+17"/>
+        <location line="+30"/>
         <source>i8255:unknown interface called</source>
         <translation type="unfinished"></translation>
     </message>
@@ -703,12 +710,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+17"/>
-        <source>toolBar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+42"/>
+        <location line="+59"/>
         <source>Select a machine...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -743,12 +745,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+15"/>
-        <source>Filter one</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
+        <location line="+24"/>
         <source>Tape</source>
         <translation type="unfinished"></translation>
     </message>
@@ -763,17 +760,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-37"/>
-        <source>Scale_one</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Ratio one</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-75"/>
+        <location line="-107"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -788,12 +775,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>Device_one</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../mainwindow.cpp" line="-374"/>
+        <location filename="../mainwindow.cpp" line="-375"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -819,12 +801,12 @@
     </message>
     <message>
         <location line="+10"/>
-        <location line="+412"/>
+        <location line="+413"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-409"/>
+        <location line="-410"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -849,7 +831,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+352"/>
+        <location line="+353"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -876,6 +858,11 @@
     <message>
         <location line="+0"/>
         <source>Error creating a backup. Probably *.bak already exists.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+43"/>
+        <source>Save screenshot</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1013,7 +1000,7 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../libs/mfm_tools.cpp" line="+47"/>
+        <location filename="../libs/mfm_tools.cpp" line="+52"/>
         <location line="+3"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
@@ -1128,7 +1115,7 @@
     <name>TapeRecorderWindow</name>
     <message>
         <location filename="../dialogs/taperecorder.ui" line="+14"/>
-        <source>Dialog</source>
+        <source>Tape Recorder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

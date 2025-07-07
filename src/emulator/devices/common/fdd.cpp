@@ -193,6 +193,9 @@ void FDD::load_image(QString file_name)
                 case FDD_MODE_AGAT_140:
                     buffer = generate_mfm_agat_140(file_name, sides, tracks, disk_size, track_indexes);
                     break;
+                case FDD_MODE_AGAT_840:
+                    buffer = generate_mfm_agat_840(file_name, sides, tracks, disk_size, track_indexes);
+                    break;
                 default:
                     QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Expected conversion from DSK to MFM is not supported yet."));
                     break;
@@ -216,7 +219,7 @@ int FDD::SeekSector(int track, int sector)
         this->sector = sector;
         //qDebug() << "SEEK " << this->side << this->track << this->sector;
 #ifdef LOG_FDD
-        logs(QString("SEEK %1").arg(track));
+        logs(QString("SEEK side:%1 track:%2 sector:%3").arg(side).arg(track).arg(sector));
 #endif
         position = 0;
         if (track_mode == FDD_MODE_SECTORS) {
@@ -287,6 +290,21 @@ bool FDD::is_protected()
     return write_protect;
 }
 
+bool FDD::is_index()
+{
+    //TODO: tune conditions
+    if (track_mode == FDD_MODE_SECTORS) {
+        return sector==0 && position < 100;
+    } else {
+        return position < 100;
+    }
+}
+
+bool FDD::is_track_00()
+{
+    return track == 0;
+}
+
 void FDD::unload(){
     if (buffer != nullptr) delete [] buffer;
     buffer = nullptr;
@@ -302,6 +320,11 @@ int FDD::get_sector_size()
 int FDD::get_loaded()
 {
     return loaded;
+}
+
+int FDD::get_position()
+{
+    return position;
 }
 
 void FDD::change_protection()

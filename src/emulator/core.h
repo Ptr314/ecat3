@@ -146,7 +146,7 @@ public:
     virtual void memory_callback(unsigned int callback_id, unsigned int address);
     bool belongs_to_class(QString class_to_check);
 
-private:
+protected:
     unsigned int clock_miltiplier;
     unsigned int clock_divider;
 

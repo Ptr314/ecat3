@@ -512,7 +512,7 @@ void ComputerDevice::reset(MAYBE_UNUSED bool cold)
 
 void ComputerDevice::logs(QString s)
 {
-    im->dm->logs(this->name + ": " + s);
+    if (log_available()) im->dm->logs(this->name + ": " + s);
 }
 
 bool ComputerDevice::log_available()
