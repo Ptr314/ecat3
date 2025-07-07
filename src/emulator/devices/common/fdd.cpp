@@ -23,7 +23,7 @@ FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_select(this, im, 2, "select", MODE_R)
     , i_side(this, im, 1, "side", MODE_R)
     , i_density(this, im, 1, "density", MODE_R)
-    ,i_motor_on(this, im, 1, "motor_on", MODE_R, CALLBACK_MOTOR_ON)
+    , i_motor_on(this, im, 1, "motor_on", MODE_R, CALLBACK_MOTOR_ON)
 
 {
     device_class = "fdd";

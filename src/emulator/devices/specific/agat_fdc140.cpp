@@ -13,6 +13,8 @@ Agat_FDC140::Agat_FDC140(InterfaceManager *im, EmulatorConfigDevice *cd):
     , current_phase(-1)
     , motor_on(false)
     , write_mode(false)
+    , speed_mode(true)
+    , data_ready(false)
     , i_select(this, im, 2, "select", MODE_W)
     , i_motor_on(this, im, 1, "motor_on", MODE_W)
 {
@@ -24,6 +26,18 @@ Agat_FDC140::Agat_FDC140(InterfaceManager *im, EmulatorConfigDevice *cd):
 void Agat_FDC140::load_config(SystemData *sd)
 {
     FDC::load_config(sd);
+
+    QString mode_string = cd->get_parameter("speed_mode", false).value.toLower();
+
+    if (mode_string.isEmpty() || mode_string == "fast")
+        speed_mode = true;
+    else if (mode_string == "syncro")
+        speed_mode = false;
+    else
+        QMessageBox::critical(0, Agat_FDC140::tr("Error"), Agat_FDC140::tr("Unknown speed mode %1").arg(mode_string));
+
+    clock_divider = 32; // Byte timer for the syncro mode
+
     QString s;
     try {
         s = cd->get_parameter("drives").value;
@@ -145,10 +159,21 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
                 drives[selected_drive]->WriteNextByte(write_register);
             } else {
                 // Reading
-                if (drives[selected_drive] != nullptr)
-                    return drives[selected_drive]->ReadNextByte();
-                else
-                    return 0xFF;
+                if (speed_mode) {
+                    // Speed mode
+                    if (drives[selected_drive] != nullptr)
+                        return drives[selected_drive]->ReadNextByte();
+                    else
+                        return 0xFF;
+                } else {
+                    // Syncro mode
+                    if (data_ready) {
+                        data_ready = false;
+                        return data;
+                    } else {
+                        return 0;
+                    }
+                }
             }
             break;
         case 0xD:
@@ -203,6 +228,21 @@ void Agat_FDC140::set_value(unsigned int address, unsigned int value, bool force
             write_mode = true;
             write_register = value;
             break;
+    }
+}
+
+void Agat_FDC140::clock(unsigned int counter)
+{
+    if (!speed_mode) {
+        // Syncro mode
+        if (motor_on) {
+            if (write_mode) {
+                // write_next_byte();
+            } else {
+                data_ready = true;
+                data = (drives[selected_drive] != nullptr)? drives[selected_drive]->ReadNextByte() : 0xFF;
+            }
+        }
     }
 }
 

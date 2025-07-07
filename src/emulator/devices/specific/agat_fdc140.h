@@ -18,6 +18,10 @@ protected:
     FDD * drives[2];
     bool motor_on;
     bool write_mode;
+    bool speed_mode = true;
+
+    uint8_t data;
+    bool data_ready;
 
     uint8_t write_register;
 
@@ -35,6 +39,7 @@ public:
     virtual unsigned int get_selected_drive() override;
     virtual unsigned int get_value(unsigned int address) override;
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
+    virtual void clock(unsigned int counter) override;
 };
 
 ComputerDevice * create_agat_fdc140(InterfaceManager *im, EmulatorConfigDevice *cd);
