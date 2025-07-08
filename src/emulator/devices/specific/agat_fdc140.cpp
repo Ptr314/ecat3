@@ -171,20 +171,24 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
                 drives[selected_drive]->WriteNextByte(write_register);
             } else {
                 // Reading
-                if (speed_mode) {
-                    // Speed mode
-                    if (drives[selected_drive] != nullptr)
-                        return drives[selected_drive]->ReadNextByte();
-                    else
-                        return 0xFF;
-                } else {
-                    // Syncro mode
-                    if (data_ready) {
-                        data_ready = false;
-                        return data;
+                if (motor_on) {
+                    if (speed_mode) {
+                        // Speed mode
+                        if (drives[selected_drive] != nullptr)
+                            return drives[selected_drive]->ReadNextByte();
+                        else
+                            return 0xFF;
                     } else {
-                        return 0;
+                        // Syncro mode
+                        if (data_ready) {
+                            data_ready = false;
+                            return data;
+                        } else {
+                            return 0;
+                        }
                     }
+                } else {
+                    return std::rand() & 0xFF;
                 }
             }
             break;
@@ -199,7 +203,7 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
             write_mode = true;
             break;
     }
-    return 0;
+    return 0xFF;
 }
 
 void Agat_FDC140::set_value(unsigned int address, unsigned int value, bool force)
