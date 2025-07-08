@@ -275,6 +275,7 @@ void DeviceManager::reset_devices(bool cold)
 
 void DeviceManager::clock(unsigned int counter)
 {
+    global_clock_counter += counter;
     //Except CPU
     for (unsigned int i=1; i < device_count; i++)
         devices[i].device->system_clock(counter);
@@ -302,7 +303,7 @@ void DeviceManager::logs(QString s)
 
         if (cpu != nullptr)
         {
-            QString out = QString("%1: ").arg(cpu->get_pc(), 4, 16, QChar('0')) + s;
+            QString out = QString("%1:%2: ").arg(global_clock_counter >> 17).arg(cpu->get_pc(), 4, 16, QChar('0')) + s;
             logger->logs(out);
         } else
             logger->logs(s);

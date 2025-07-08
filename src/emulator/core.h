@@ -336,6 +336,7 @@ private:
     RegisteredDevice registered_devices[MAX_REGISTERED_DEVICES];
 
     Logger * logger;
+    int64_t global_clock_counter = 0;
 };
 
 

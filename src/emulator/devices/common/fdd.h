@@ -50,6 +50,9 @@ private:
 
     unsigned int translate_address();
     void ConvertStreamFormat();
+#ifdef LOG_FDD
+    int log_rotations = 0;
+#endif
 
 public:
     QString files;

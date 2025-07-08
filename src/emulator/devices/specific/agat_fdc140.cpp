@@ -77,7 +77,7 @@ void Agat_FDC140::phase_on(int n)
         if ( ((prev_phase-1) & 0x03) == n ) {
             //Step down
 #ifdef LOG_FDD
-            //logs(QString(" DOWN"));
+            // logs(QString(" DOWN"));
 #endif
             if (current_track[selected_drive] > 0) {
                 current_track[selected_drive]--;
@@ -90,7 +90,7 @@ void Agat_FDC140::phase_on(int n)
         if ( ((prev_phase+1) & 0x03) == n ) {
             //Step up
 #ifdef LOG_FDD
-            //logs(QString(" UP"));
+            // logs(QString(" UP"));
 #endif
             if (current_track[selected_drive] < 68) {
                 current_track[selected_drive]++;
@@ -116,7 +116,7 @@ void Agat_FDC140::phase_off(int n)
 void Agat_FDC140::select_drive(int n)
 {
 #ifdef LOG_FDD
-    logs(QString(" SEL %1").arg(n));
+    // logs(QString(" SEL %1").arg(n));
 #endif
     // TODO: check selection on a drive
     selected_drive = n;
@@ -127,6 +127,18 @@ void Agat_FDC140::select_drive(int n)
 unsigned int Agat_FDC140::get_value(unsigned int address)
 {
     unsigned int A = address & 0x0f;
+#ifdef LOG_FDD
+    static bool show12 = true;
+    if (A == 12) {
+        if (show12) {
+            logs(QString("R DATA+"));
+            show12 = false;
+        }
+    } else {
+        logs(QString("R %1").arg(A));
+        show12 = true;
+    }
+#endif
     switch (A) {
         case 0x0:
         case 0x2:

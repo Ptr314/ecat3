@@ -7,17 +7,15 @@
 #define VERSION_PATCH "0"
 #define PROJECT_VERSION "3.4.0"
 
-/* #undef USE_RENDERER */
-
 /* #undef EXTERNAL_Z80 */
 /* #undef CPU_STOPPED */
-/* #undef LOGGER */
-/* #undef LOG_NAME */
-/* #undef LOG_LIMIT */
+#define LOGGER
+#define LOG_NAME "LOG"
+#define LOG_LIMIT 20000
 
 /* #undef LOG_8255 */
 /* #undef LOG_CPU */
-/* #undef LOG_FDD */
+#define LOG_FDD
 /* #undef LOG_PORTS */
 /* #undef LOG_MAPPER */
 /* #undef LOG_PAGE_MAPPER */

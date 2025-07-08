@@ -206,6 +206,52 @@ void Emulator::timer_proc()
 
         while (local_counter < time_ticks) {
 
+#ifdef LOG_FDD
+            static bool log_all = false;
+            static int log_count = 0;
+            if (im->dm->log_available()) {
+                // static uint16_t prev_pc = 0;
+                uint16_t pc = cpu->get_pc();
+                // if (pc > 0x4000 && log_all) {
+                //     im->dm->logs("+");
+                // }
+                // if (pc == 0x400) log_all = true;
+                // prev_pc = pc;
+
+
+                if (pc == 0xBE2E) {
+                    uint8_t sector = cpu->read_mem(0x2D);
+                    im->dm->logs(QString("CHECK %1").arg(sector));
+                }
+                else if (pc == 0xB9FA) {
+                    if (log_count==0) log_all = true;
+                    im->dm->logs(QString("SEEK"));
+                }
+                else if (pc == 0xBE35) {
+                    log_all = false;
+                    im->dm->logs(QString("LOAD"));
+                }
+                // else if (pc == 0xBE35+3) {
+                //     im->dm->logs(QString("LOAD DONE"));
+                // }
+                // else if (pc == 0xBE40) {
+                //     im->dm->logs(QString("DECODE"));
+                // }
+                else if (pc == 0xBE40+3) {
+                    uint8_t track = cpu->read_mem(0x2E);
+                    im->dm->logs(QString("DECODE DONE"));
+                    if (track == 1) log_all = true;
+                }
+                else if (pc == 0xBA00) {
+                    im->dm->logs(QString("DELAY"));
+                }
+            }
+            // if (log_all && log_count++ < 1000) im->dm->logs(QString("-"));
+
+
+
+#endif
+
             unsigned int counter = cpu->execute();
             local_counter += counter;
             clock_counter += counter;

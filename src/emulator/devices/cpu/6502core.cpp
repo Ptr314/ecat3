@@ -865,7 +865,7 @@ inline void mos6502core::doADC(uint8_t v)
     D.w = REG_A + v + FLAG_C;
     if (FLAG_D == 0) {
         // Binary mode
-        calc_flags(D.w, F_NZC);
+        // calc_flags(D.w, F_NZC);
         calc_flags(D.w, F_NZC);
         set_flag(F_V, ((REG_A ^ D.b.L) & (v ^ D.b.L)) >> 1);
         REG_A = D.b.L;
