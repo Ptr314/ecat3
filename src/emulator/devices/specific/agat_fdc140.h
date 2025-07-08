@@ -25,7 +25,6 @@ protected:
 
     uint8_t write_register;
 
-
     void phase_on(int n);
     void phase_off(int n);
     void select_drive(int n);

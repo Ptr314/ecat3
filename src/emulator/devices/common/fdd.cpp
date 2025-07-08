@@ -241,6 +241,11 @@ unsigned int FDD::translate_address()
     return ((track*sides + side)*sectors + sector-1)*sector_size + position;
 }
 
+void FDD::NextPosition()
+{
+    if (++position >= track_indexes[track*sides + side].mfmtracksize) position = 0;
+}
+
 uint8_t FDD::ReadNextByte()
 {
     if (track_mode == FDD_MODE_SECTORS) {
@@ -288,6 +293,22 @@ void FDD::WriteNextByte(uint8_t value)
         if (position >= track_indexes[track*sides + side].mfmtracksize) position = 0;
     }
 }
+
+void FDD::WriteByte(uint8_t value)
+{
+    if (track_mode == FDD_MODE_SECTORS) {
+        if (position >= sector_size)
+            im->dm->error(this, FDD::tr("Writing outside of a sector"));
+
+        if (sector != 0)
+        {
+            buffer[translate_address()] = value;
+        }
+    } else {
+        buffer[track_indexes[track*sides + side].mfmtrackoffset + position] = value;
+    }
+}
+
 
 bool FDD::is_selected()
 {

@@ -72,8 +72,10 @@ public:
     int get_loaded();
     int get_position();
     int SeekSector(int track, int sector);
+    void NextPosition();
     uint8_t  ReadNextByte();
     void WriteNextByte(uint8_t value);
+    void WriteByte(uint8_t value);
     virtual void load_config(SystemData *sd) override;
     void load_image(QString file_name);
     void save_image(QString file_name);

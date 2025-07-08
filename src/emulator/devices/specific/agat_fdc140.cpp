@@ -168,7 +168,15 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
             // TODO: timings imitation
             if (write_mode) {
                 // Writing
-                drives[selected_drive]->WriteNextByte(write_register);
+                if (motor_on) {
+                    if (speed_mode) {
+                        // Speed mode
+                        drives[selected_drive]->WriteNextByte(write_register);
+                    } else {
+                        // Syncro mode
+                        drives[selected_drive]->WriteByte(write_register);
+                    }
+                }
             } else {
                 // Reading
                 if (motor_on) {
@@ -231,9 +239,15 @@ void Agat_FDC140::set_value(unsigned int address, unsigned int value, bool force
             select_drive(A & 0x01);
             break;
         case 0xC:
-            if (write_mode)
-                drives[selected_drive]->WriteNextByte(write_register);
-            break;
+            if (motor_on) {
+                if (speed_mode) {
+                    // Speed mode
+                    drives[selected_drive]->WriteNextByte(write_register);
+                } else {
+                    // Syncro mode
+                    drives[selected_drive]->WriteByte(write_register);
+                }
+            }
         case 0xD:
             write_register = value;
             break;
@@ -253,7 +267,7 @@ void Agat_FDC140::clock(unsigned int counter)
         // Syncro mode
         if (motor_on) {
             if (write_mode) {
-                // write_next_byte();
+                if (drives[selected_drive] != nullptr) drives[selected_drive]->NextPosition(); // Just move the pointer
             } else {
                 data_ready = true;
                 data = (drives[selected_drive] != nullptr)? drives[selected_drive]->ReadNextByte() : 0xFF;
