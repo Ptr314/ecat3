@@ -71,6 +71,7 @@ public:
     int get_sector_size();
     int get_loaded();
     int get_position();
+    void set_position(int value);
     int SeekSector(int track, int sector);
     void NextPosition();
     uint8_t  ReadNextByte();

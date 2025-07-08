@@ -12,6 +12,8 @@ class Agat_FDC840 : public FDC
 protected:
     Interface i_select;
     Interface i_side;
+    Interface i_motor_on;
+
     int current_track[2];
     int selected_drive;
     int drives_count;
@@ -35,6 +37,7 @@ protected:
 
 #ifdef LOG_FDD
     RAM * ram0;
+    bool start_log = false;
 #endif
 
 public:

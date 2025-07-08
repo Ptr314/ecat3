@@ -149,23 +149,23 @@ unsigned int mos6502::execute()
         reset_mode = false;
     }
 
-    //TODO: 6502 use HALT imitation
     if (debug == DEBUG_STOPPED)
-        return 10;
+        return 0;
 
 #ifdef LOG_CPU
     uint8_t log_cmd = get_command();
-    bool do_log = true;
-    //uint16_t address = get_pc();
+    static bool do_log = false;
+    uint16_t address = get_pc();
 
-    //do_log = (address < 0xF800);
+    if (address >0x3000 && address < 0x4000)
+        do_log = true;
     if (do_log) log_state(log_cmd, true);
 #endif
 
     unsigned int cycles = core->execute();
 
 #ifdef LOG_CPU
-    if (do_log) log_state(log_cmd, false, cycles);
+    // if (do_log) log_state(log_cmd, false, cycles);
 #endif
 
 

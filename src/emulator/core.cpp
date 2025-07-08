@@ -1,8 +1,8 @@
 #include <QException>
 #include <QtGlobal>
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-    // #include <QRandomGenerator>
+#ifdef LOGGER
+    #include <cmath>
 #endif
 
 #ifdef RENDERER_SDL2
@@ -296,6 +296,7 @@ void DeviceManager::error_clear()
 
 void DeviceManager::logs(QString s)
 {
+#ifdef LOGGER
     qDebug() << s;
     if (logger != nullptr)
     {
@@ -303,11 +304,15 @@ void DeviceManager::logs(QString s)
 
         if (cpu != nullptr)
         {
-            QString out = QString("%1:%2: ").arg(global_clock_counter >> 17).arg(cpu->get_pc(), 4, 16, QChar('0')) + s;
+            // float i;
+            // float fraq = std::modf((float)global_clock_counter / 1000000, &i);
+            // QString out = QString("%1.%2: %3: ").arg(std::ceil(i)).arg(std::round(fraq * 1000)).arg(cpu->get_pc(), 4, 16, QChar('0')) + s;
+            QString out = QString("%1: ").arg(cpu->get_pc(), 4, 16, QChar('0')) + s;
             logger->logs(out);
         } else
             logger->logs(s);
     }
+#endif
 }
 
 bool DeviceManager::log_available()

@@ -357,6 +357,11 @@ int FDD::get_position()
     return position;
 }
 
+void FDD::set_position(int value)
+{
+    position = value;
+}
+
 void FDD::change_protection()
 {
     write_protect = !write_protect;
