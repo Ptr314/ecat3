@@ -116,7 +116,7 @@ void Agat_FDC140::phase_off(int n)
 void Agat_FDC140::select_drive(int n)
 {
 #ifdef LOG_FDD
-    // logs(QString(" SEL %1").arg(n));
+    logs(QString(" SEL %1").arg(n));
 #endif
     // TODO: check selection on a drive
     selected_drive = n;

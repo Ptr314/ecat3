@@ -9,7 +9,8 @@
 #define FDD_MODE_AGAT_140   1
 #define FDD_MODE_AGAT_840   2
 
-#define CALLBACK_MOTOR_ON   1
+#define CALLBACK_SELECT     1
+#define CALLBACK_MOTOR_ON   2
 
 FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
       ComputerDevice(im, cd)
@@ -20,7 +21,7 @@ FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
     , track(0)
     , fdd_mode(FDD_MODE_LOGICAL)
     , led_timer(this)
-    , i_select(this, im, 2, "select", MODE_R)
+    , i_select(this, im, 2, "select", MODE_R, CALLBACK_SELECT)
     , i_side(this, im, 1, "side", MODE_R)
     , i_density(this, im, 1, "density", MODE_R)
     , i_motor_on(this, im, 1, "motor_on", MODE_R, CALLBACK_MOTOR_ON)
@@ -402,14 +403,16 @@ void FDD::ConvertStreamFormat()
 
 void FDD::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
-    if (callback_id == CALLBACK_MOTOR_ON) {
-        motor_on = ((new_value & 1) == 0) && is_selected();
-        // qDebug() << ((new_value & 1) == 0) << is_selected();
-    }
+    // if (callback_id == CALLBACK_MOTOR_ON) {
+        motor_on = ((i_motor_on.value & 1) == 0) && is_selected();
+        // if (is_selected())
+        // qDebug() << "MOT" << selector << motor_on << (i_motor_on.value & 1);
+    // }
 }
 
 bool FDD::is_led_on()
 {
+    // qDebug() << motor_on << selector;
     if (motor_on) led_timer.start(5000);
     return led_timer.isActive();
 }
