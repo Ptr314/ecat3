@@ -378,9 +378,22 @@ void FDD::save_image(QString file_name)
 
         if (ext == "dsk") {
             if (fdd_mode == FDD_MODE_AGAT_840) {
-                dsk_tools::BYTES encoded_track(buffer, buffer+disk_size);
+                dsk_tools::BYTES encoded_data(buffer, buffer+disk_size);
                 dsk_tools::BYTES raw_data;
-                if (dsk_tools::decode_agat_840_image(raw_data, encoded_track) == FDD_LOAD_OK) {
+                if (dsk_tools::decode_agat_840_image(raw_data, encoded_data) == FDD_LOAD_OK) {
+                    QFile file(file_name);
+                    if (file.open(QIODevice::WriteOnly)){
+                        file.write(reinterpret_cast<char*>(raw_data.data()), raw_data.size());
+                        file.close();
+                    }
+                } else {
+                    QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error exporting disk."));
+                }
+            } else
+            if (fdd_mode == FDD_MODE_AGAT_140) {
+                dsk_tools::BYTES encoded_data(buffer, buffer+disk_size);
+                dsk_tools::BYTES raw_data;
+                if (dsk_tools::decode_agat_140_image(raw_data, encoded_data, track_indexes[0].mfmtracksize) == FDD_LOAD_OK) {
                     QFile file(file_name);
                     if (file.open(QIODevice::WriteOnly)){
                         file.write(reinterpret_cast<char*>(raw_data.data()), raw_data.size());
