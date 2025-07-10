@@ -45,4 +45,4 @@
 Техническая документация и программы:
 
 * [На сайте Emuverse.ru](https://emuverse.ru/wiki/Агат)
-* [На сайт
+* [На сайте Agatcomp.ru](http://agatcomp.ru)
