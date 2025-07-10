@@ -76,6 +76,9 @@ endif()
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 
+set(ENABLE_DSK_TOOLS OFF CACHE BOOL "Disable command line tools from the library")
+add_subdirectory(${CMAKE_SOURCE_DIR}/libs/dsk_tools/)
+
 # Translations
 
 set(SUPPORTED_LANGUAGES ru en)
@@ -258,9 +261,14 @@ else()
     )
 endif()
 
+target_include_directories(${PROJECT_NAME} PUBLIC
+    ${CMAKE_SOURCE_DIR}/libs/dsk_tools/include/
+)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     ${SDL2_LIBRARIES}
+    dsk_tools
 )
 
 if(QT_VERSION_MAJOR EQUAL 6)

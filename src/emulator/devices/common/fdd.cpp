@@ -4,6 +4,7 @@
 #include "fdd.h"
 #include "emulator/utils.h"
 #include "libs/mfm_tools.h"
+#include "dsk_tools/dsk_tools.h"
 
 #define FDD_MODE_LOGICAL    0
 #define FDD_MODE_AGAT_140   1
@@ -376,6 +377,19 @@ void FDD::save_image(QString file_name)
         QString ext = fi.suffix().toLower();
 
         if (ext == "dsk") {
+            if (fdd_mode == FDD_MODE_AGAT_840) {
+                dsk_tools::BYTES encoded_track(buffer, buffer+disk_size);
+                dsk_tools::BYTES raw_data;
+                if (dsk_tools::decode_agat_840_image(raw_data, encoded_track) == FDD_LOAD_OK) {
+                    QFile file(file_name);
+                    if (file.open(QIODevice::WriteOnly)){
+                        file.write(reinterpret_cast<char*>(raw_data.data()), raw_data.size());
+                        file.close();
+                    }
+                } else {
+                    QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error exporting disk."));
+                }
+            } else
             if (fdd_mode == FDD_MODE_LOGICAL) {
                 QFile file(file_name);
                 if (file.open(QIODevice::WriteOnly)){
