@@ -33,7 +33,7 @@ unsigned int Speaker::calc_sound_value()
     }
     for (unsigned int i=0; i < MixerWidth; i++)
         V += (i_mixer.value >> i) & 0x01;
-    return V * InputValue * volume / 100 + 127;
+    return V * InputValue * m_volume / 100;
 }
 
 void Speaker::reset(bool cold)
@@ -51,7 +51,7 @@ void Speaker::reset(bool cold)
         MixerWidth = CalcBits(i_mixer.linked_bits, 8);
 
     if (InputWidth + MixerWidth > 0)
-        InputValue = 127 / (InputWidth + MixerWidth);
+        InputValue = 32768 / (InputWidth + MixerWidth);
     else
         InputValue = 1;
 }

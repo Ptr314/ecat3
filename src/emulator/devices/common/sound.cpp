@@ -3,57 +3,79 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Generic sound device class
 
+#include <algorithm>
+
 #include "sound.h"
 
 #define SILENCE_VALUE   128
 
 GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd),
-    volume(100),
+    m_initialized(false),
+    m_clock_freq(0),
+    m_counter(0),
+    m_samples_per_buffer(4096),
+    m_sample_rate(44100),
+    m_audio_device(0),
+    m_volume(100),
     muted(false)
 {
+    m_buffer.resize(m_samples_per_buffer);
     cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu"));
     init_sound(cpu->clock);
 }
 
 void GenericSound::init_sound(unsigned int clock_freq)
 {
-    SD.ClockSampling = 0;
-    SD.ClockBuffering = 0;
-    SD.SamplesPerSec = 44100;
-    SD.BitsPerSample = 8;
-    SD.BlocksFreq = 50;                                     //Blocks frequency
+    if (m_initialized) {
+        return;
+    }
 
-    SD.SamplingCount = clock_freq * 16 / SD.SamplesPerSec;  //CPU clocks per sample, 16x
-    SD.BufferingCount = clock_freq / SD.BlocksFreq;         //CPU clocks per block
-    SD.SamplesInBuffer = SD.SamplesPerSec / SD.BlocksFreq;  //Samples in a block
+    m_clock_freq = clock_freq;
+    m_counter = 0;
 
-    SD.BufferPtr = 0;
-    SD.buffer_empty = 0;
+    if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
+        std::cerr << "SDL audio init failed: " << SDL_GetError() << std::endl;
+        return;
+    }
 
-    memset(&SD.buffer, 0, BUFFER_SIZE);
-    memset(&SD.silence, SILENCE_VALUE, SILENCE_SIZE);
+    SDL_AudioSpec desired_spec, obtained_spec;
+    SDL_zero(desired_spec);
+    desired_spec.freq = m_sample_rate;
+    desired_spec.format = AUDIO_S16SYS;
+    desired_spec.channels = 1;
+    desired_spec.samples = m_samples_per_buffer;
+    desired_spec.callback = audio_callback;
+    desired_spec.userdata = this;
 
-    SDL_AudioSpec want, have;
+    m_audio_device = SDL_OpenAudioDevice(nullptr, 0, &desired_spec, &obtained_spec, 0);
+    if (m_audio_device == 0) {
+        std::cerr << "Failed to open audio device: " << SDL_GetError() << std::endl;
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+        return;
+    }
 
-    SDL_memset(&want, 0, sizeof(want)); /* or SDL_zero(want) */
-    want.freq = SD.SamplesPerSec;
-    want.format = AUDIO_U8;
-    want.channels = 1;
-    want.samples = BUFFER_SIZE;
+    m_sample_rate = obtained_spec.freq;
+    m_samples_per_buffer = obtained_spec.samples;
 
-    SDLdev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
-    SDL_PauseAudioDevice(SDLdev, 0);
+    m_buffer.resize(m_samples_per_buffer);
+    m_buffer_pos = 0;
+
+    SDL_PauseAudioDevice(m_audio_device, 0);
+    m_initialized = true;
 }
 
 GenericSound::~GenericSound()
 {
-    SDL_CloseAudioDevice(SDLdev);
+    if (m_initialized) {
+        SDL_CloseAudioDevice(m_audio_device);
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+    }
 }
 
 void GenericSound::set_volume(unsigned int volume)
 {
-    this->volume = volume;
+    m_volume = volume;
 }
 
 void GenericSound::set_muted(bool muted)
@@ -63,38 +85,53 @@ void GenericSound::set_muted(bool muted)
 
 void GenericSound::clock(unsigned int counter)
 {
-    ComputerDevice::clock(counter);
+    if (!m_initialized) return;
 
-    SD.ClockSampling += counter << 4;
-    SD.ClockBuffering += counter;
-    if (SD.ClockSampling >= SD.SamplingCount)
-    {
-        SD.ClockSampling -= SD.SamplingCount;
-        unsigned int v = muted?SILENCE_VALUE:calc_sound_value();
-        SD.buffer[SD.BufferPtr] = v;
+    double samples_to_generate = static_cast<double>(counter) * m_sample_rate / m_clock_freq;
+    m_accumulated_samples += samples_to_generate;
 
-        //Non-zero value shows when the buffer contains varying sound
-        //if (SD.BufferPtr>0)
-        //    SD.buffer_empty |= SD.buffer[SD.BufferPtr-1] ^ v;
-        //Not working :( so do not stop the stream all the time
-        //TODO: solve it
-        SD.buffer_empty = 1;
+    while (m_accumulated_samples >= 1.0) {
+        m_accumulated_samples -= 1.0;
 
-        SD.BufferPtr++;
+        std::lock_guard<std::mutex> lock(m_buffer_mutex);
+        if (m_buffer_pos < m_samples_per_buffer) {
+            m_buffer[m_buffer_pos++] = static_cast<int16_t>(calc_sound_value());
+        }
     }
-    if (SD.ClockBuffering >= SD.BufferingCount)
-    {
-        SD.ClockBuffering -= SD.BufferingCount;
+}
 
-        if (SD.buffer_empty != 0)
-        {
-            if (SDL_GetQueuedAudioSize(SDLdev) == 0)
-                SDL_QueueAudio(SDLdev, SD.silence, sizeof(SD.silence));
+void GenericSound::audio_callback(void* userdata, Uint8* stream, int len) {
+    GenericSound* sound = static_cast<GenericSound*>(userdata);
+    sound->handle_audio_callback(stream, len);
+}
 
-            SDL_QueueAudio(SDLdev, SD.buffer, SD.BufferPtr);
-        };
+void GenericSound::handle_audio_callback(Uint8* stream, int len) {
+    std::lock_guard<std::mutex> lock(m_buffer_mutex);
+    const int samples_requested = len / sizeof(int16_t);
+    const int samples_available = static_cast<int>(m_buffer_pos);
+    const int samples_to_copy = std::min(samples_requested, samples_available);
 
-        SD.BufferPtr = 0;
-        SD.buffer_empty = 0;
+    if (samples_to_copy > 0) {
+        std::copy_n(
+            m_buffer.data(),
+            samples_to_copy,
+            reinterpret_cast<int16_t*>(stream)
+            );
+
+        std::copy(
+            m_buffer.begin() + samples_to_copy,
+            m_buffer.begin() + m_buffer_pos,
+            m_buffer.begin()
+            );
+
+        m_buffer_pos -= samples_to_copy;
+    }
+
+    if (samples_to_copy < samples_requested) {
+        std::fill_n(
+            reinterpret_cast<int16_t*>(stream) + samples_to_copy,
+            samples_requested - samples_to_copy,
+            0
+            );
     }
 }
