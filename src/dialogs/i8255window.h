@@ -1,5 +1,9 @@
-#ifndef I8255WINDOW_H
-#define I8255WINDOW_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: 8255 debug window, header
+
+#pragma once
 
 #include "dialogs/genericdbgwnd.h"
 #include "emulator/devices/common/i8255.h"
@@ -33,4 +37,3 @@ private slots:
 
 GenericDbgWnd *CreateI8255Window(QWidget *parent, Emulator * e, ComputerDevice * d);
 
-#endif // I8255WINDOW_H

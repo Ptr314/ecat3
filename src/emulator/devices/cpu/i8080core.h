@@ -1,5 +1,9 @@
-#ifndef I8080CORE_H
-#define I8080CORE_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: Intel 8080 (КР580ВМ80) CPU core
+
+#pragma once
 
 #include <cstdint>
 
@@ -42,5 +46,3 @@ public:
     }
 
 };
-
-#endif // I8080CORE_H

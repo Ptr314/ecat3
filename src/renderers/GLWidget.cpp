@@ -1,5 +1,11 @@
-#include "GLWidget.h"
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: OpenGL renderer widget, source
+
 #include <cmath>
+
+#include "GLWidget.h"
 
 static const char* vertexShaderSrc = R"(
     attribute vec2 position;

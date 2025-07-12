@@ -1,5 +1,9 @@
-#ifndef I8080_CONTEXT_H
-#define I8080_CONTEXT_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: Common definitions for the Intel 8080 (КР580ВМ80) CPU core
+
+#pragma once
 
 #include <cstdint>
 
@@ -38,5 +42,3 @@ namespace I8080
     const uint8_t F_SIGN       =  0x80;
     const uint8_t F_ALL        =  (F_BASE_8080 + F_CARRY + F_PARITY + F_HALF_CARRY + F_ZERO + F_SIGN);
 }
-
-#endif // I8080_CONTEXT_H

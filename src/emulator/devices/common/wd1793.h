@@ -1,5 +1,9 @@
-#ifndef WD1793_H
-#define WD1793_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: wd1793 FDC device
+
+#pragma once
 
 #include "emulator/core.h"
 #include "emulator/devices/common/fdd.h"
@@ -92,5 +96,3 @@ public:
 };
 
 ComputerDevice * create_WD1793(InterfaceManager *im, EmulatorConfigDevice *cd);
-
-#endif // WD1793_H

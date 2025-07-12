@@ -1,5 +1,9 @@
-#ifndef MOS6502_H
-#define MOS6502_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: 6502 & 65c02 emulator interface class
+
+#pragma once
 
 #include <QObject>
 
@@ -57,5 +61,3 @@ public:
 
 ComputerDevice * create_mos6502(InterfaceManager *im, EmulatorConfigDevice *cd);
 ComputerDevice * create_wdc65c02(InterfaceManager *im, EmulatorConfigDevice *cd);
-
-#endif // MOS6502_H

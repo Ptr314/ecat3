@@ -1,5 +1,9 @@
-#ifndef I8255_H
-#define I8255_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: Inter 8255 (КР580ВВ55) PPI device
+
+#pragma once
 
 #include "emulator/core.h"
 
@@ -26,6 +30,3 @@ public:
 };
 
 ComputerDevice * create_i8255(InterfaceManager *im, EmulatorConfigDevice *cd);
-
-
-#endif // I8255_H

@@ -1,5 +1,9 @@
-#ifndef I8080main_H
-#define I8080main_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: Inter 8080 emulator interface class
+
+#pragma once
 
 #include "emulator/core.h"
 #include "emulator/devices/cpu/i8080core.h"
@@ -70,6 +74,3 @@ unsigned int read_mem(unsigned int address);
 void write_mem(unsigned int address, unsigned int data);
 
 ComputerDevice * create_i8080(InterfaceManager *im, EmulatorConfigDevice *cd);
-
-
-#endif // I8080main_H

@@ -1,5 +1,9 @@
-#ifndef I8275_H
-#define I8275_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: Inter 8275 (КР580ВГ75) CRT controller device
+
+#pragma once
 
 #include "emulator/core.h"
 
@@ -89,6 +93,3 @@ ComputerDevice * create_i8275(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new I8275(im, cd);
 }
-
-
-#endif // I8275_H

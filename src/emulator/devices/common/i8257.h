@@ -1,5 +1,9 @@
-#ifndef I8257_H
-#define I8257_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: Inter 8257 (КР580ВТ57) DMA controller device
+
+#pragma once
 
 #include "emulator/core.h"
 #include "emulator/utils.h"
@@ -100,6 +104,3 @@ ComputerDevice * create_i8257(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new I8257(im, cd);
 }
-
-
-#endif // I8257_H

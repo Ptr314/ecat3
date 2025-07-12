@@ -1,5 +1,9 @@
-#ifndef OPENCONFIGWINDOW_H
-#define OPENCONFIGWINDOW_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: Computer selection window, header
+
+#pragma once
 
 #include <QDialog>
 #include <QStandardItem>
@@ -58,5 +62,3 @@ private slots:
 signals:
     void load_config(QString file_name, bool set_default);
 };
-
-#endif // OPENCONFIGWINDOW_H

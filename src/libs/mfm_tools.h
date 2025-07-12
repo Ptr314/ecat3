@@ -1,5 +1,9 @@
-#ifndef MFM_TOOLS_H
-#define MFM_TOOLS_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: MFM functions, header
+
+#pragma once
 
 #include <QString>
 #include "mfm_formats.h"
@@ -26,5 +30,3 @@ uint8_t * generate_mfm_agat_140(QString file_name, int & sides, int & tracks, in
 uint8_t * generate_mfm_agat_840(QString file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[]);
 
 void save_mfm_file(QString file_name, int sides, int tracks, int track_size, HXC_MFM_TRACK_INFO track_indexes[], uint8_t * data);
-
-#endif // MFM_TOOLS_H

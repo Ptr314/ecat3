@@ -1,5 +1,9 @@
-#ifndef Z80_CONTEXT_H
-#define Z80_CONTEXT_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: Common definitions for the Z80 CPU core
+
+#pragma once
 
 #include <cstdint>
 
@@ -45,5 +49,3 @@ namespace Z80
     const uint8_t F_SIGN       = (1 << 7); //0x80
     const uint8_t F_ALL        = 0xFF;
 }
-
-#endif // Z80_CONTEXT_H

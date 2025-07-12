@@ -1,5 +1,9 @@
-#ifndef z80main_H
-#define z80main_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: Zilog Z80 emulator interface class
+
+#pragma once
 
 #include "emulator/core.h"
 
@@ -76,6 +80,3 @@ unsigned int read_mem(unsigned int address);
 void write_mem(unsigned int address, unsigned int data);
 
 ComputerDevice * create_z80(InterfaceManager *im, EmulatorConfigDevice *cd);
-
-
-#endif // z80main_H

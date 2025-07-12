@@ -1,5 +1,9 @@
-#ifndef PORTWINDOW_H
-#define PORTWINDOW_H
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: Port debug window, header
+
+#pragma once
 
 #include "dialogs/genericdbgwnd.h"
 #include "emulator/core.h"
@@ -31,5 +35,3 @@ private slots:
 };
 
 GenericDbgWnd *CreatePortWindow(QWidget *parent, Emulator * e, ComputerDevice * d);
-
-#endif // PORTWINDOW_H
