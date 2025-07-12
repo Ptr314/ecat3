@@ -8,9 +8,9 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         # Qt6 for Win 10+, Linux & macOS 64 bits
-        add_compile_definitions(RENDERER_SDL2)
+        # add_compile_definitions(RENDERER_SDL2)
         # add_compile_definitions(RENDERER_QT)
-        # add_compile_definitions(RENDERER_OPENGL)
+        add_compile_definitions(RENDERER_OPENGL)
     else()
         # Qt5 for Win XP+ 32 bits
         add_compile_definitions(RENDERER_SDL2)
