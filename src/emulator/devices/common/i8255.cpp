@@ -158,6 +158,7 @@ void I8255::interface_callback(unsigned int callback_id, unsigned int new_value,
             // TODO: check if we have to do nothing here
             //im->dm->error(this, I8255::tr("i8255:B is in an unsupported mode"));
         }
+        break;
     }
     case PORT_CH:
         if ((registers[3] & 0x08) != 0)
