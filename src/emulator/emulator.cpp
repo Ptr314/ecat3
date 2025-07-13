@@ -9,6 +9,14 @@
 #include <cmath>
 #include <qlabel.h>
 #include <qpainter.h>
+#include <thread>
+
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <pthread.h>
+    #include <sched.h>
+#endif
 
 #include "globals.h"
 
@@ -49,13 +57,13 @@ Emulator::Emulator(QString work_path, QString data_path, QString software_path, 
     local_counter(0),
     clock_counter(0),
     logger(nullptr),
-    renderer(renderer)
+    renderer(renderer),
+    running(false)
 {
     qDebug() << "INI path: " + ini_file;
     settings = new QSettings (ini_file, QSettings::IniFormat);
-    use_threads = (read_setup("Startup", "threads", "1") == "1");
 
-    connect(this, &Emulator::finished, this, &Emulator::stop_emulation, Qt::DirectConnection);
+    // connect(this, &Emulator::finished, this, &Emulator::stop_emulation, Qt::DirectConnection);
 
 #ifdef LOGGER
     logger = new Logger(LOG_NAME);
@@ -165,21 +173,49 @@ void Emulator::run()
         clock_freq = this->cpu->clock;
         timer_res = parse_numeric_value(read_setup("Core", "TimerResolution", "1"));
         timer_delay = parse_numeric_value(read_setup("Core", "TimerDelay", "20"));
-        time_ticks = this->clock_freq * timer_delay / 1000;
+        // time_ticks = this->clock_freq * timer_delay / 1000;
 
         local_counter = 0;
         clock_counter = 0;
 
-        //TODO: Unify calling timers
-        timer = new QTimer();
-        connect(timer, &QTimer::timeout, this, &Emulator::timer_proc);
-        timer->start(timer_delay);
+        if (running) return;
+        running = true;
+        emulationThread = std::thread([this]() {
+            setThreadPriority(true);
 
-        render_timer = new QTimer();
-        connect(render_timer, &QTimer::timeout, this, &Emulator::render_screen);
-        render_timer->start(1000 / 50);
+            auto lastTime = std::chrono::high_resolution_clock::now();
+            while (running) {
+                auto now = std::chrono::high_resolution_clock::now();
+                auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime).count();
 
-        if (use_threads) exec();
+                if (elapsed < 500) {
+                    std::this_thread::yield();
+                    continue;
+                }
+
+                lastTime = now;
+
+                uint64_t time_ticks = elapsed * clock_freq / 1000000;
+                // qDebug() << time_ticks;
+                timer_proc(time_ticks);
+
+                // std::this_thread::sleep_for(std::chrono::microseconds(1000));
+            }
+        });
+
+        renderThread = std::thread([this]() {
+            while (running) {
+                auto start = std::chrono::high_resolution_clock::now();
+
+                render_screen();
+
+                auto end = std::chrono::high_resolution_clock::now();
+                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+                int delay = std::max(0, 20 - static_cast<int>(elapsed)); // ~50 FPS
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+            }
+        });
     }
 }
 
@@ -187,13 +223,22 @@ void Emulator::stop_emulation()
 {
     if (this->loaded)
     {
-        timer->stop();
-        render_timer->stop();
-        //TODO: Other stopping stuff
+        running = false;
+        qDebug() << "Stopping";
+
+        if (renderThread.joinable()) {
+            renderThread.join();
+        }
+        qDebug() << "Video stopped";
+
+        if (emulationThread.joinable()) {
+            emulationThread.join();
+        }
+        qDebug() << "Core stopped";
     }
 }
 
-void Emulator::timer_proc()
+void Emulator::timer_proc(uint64_t time_ticks)
 {
     //TODO: Other timer stuff?
 
@@ -301,21 +346,23 @@ void Emulator::stop_video()
 
 void Emulator::render_screen()
 {
-    unsigned int current_sx, current_sy;
-    display->get_screen_constraints(&current_sx, &current_sy);
-    if ((current_sx != screen_sx) || (current_sy != screen_sy))
-    {
-        screen_sx = current_sx;
-        screen_sy = current_sy;
-        renderer->resize(screen_sx, screen_sy, screen_scale, pixel_scale);
-    }
+    if (running) {
+        unsigned int current_sx, current_sy;
+        display->get_screen_constraints(&current_sx, &current_sy);
+        if ((current_sx != screen_sx) || (current_sy != screen_sy))
+        {
+            screen_sx = current_sx;
+            screen_sy = current_sy;
+            renderer->resize(screen_sx, screen_sy, screen_scale, pixel_scale);
+        }
 
-    display->validate();
+        display->validate();
 
-    if (display->was_updated)
-    {
-        renderer->render();
-        display->was_updated = false;
+        if (display->was_updated)
+        {
+            renderer->render();
+            display->was_updated = false;
+        }
     }
 }
 
@@ -428,6 +475,31 @@ int Emulator::get_ratio()
 int Emulator::get_filtering()
 {
     return screen_filtering;
+}
+
+void Emulator::setThreadPriority(bool timeCritical) {
+#ifdef _WIN32
+    HANDLE thread = GetCurrentThread();
+    if (timeCritical) {
+        SetThreadPriority(thread, THREAD_PRIORITY_TIME_CRITICAL);
+    } else {
+        SetThreadPriority(thread, THREAD_PRIORITY_HIGHEST);
+    }
+#else
+    pthread_t thread = pthread_self();
+    struct sched_param param;
+    int policy;
+
+    pthread_getschedparam(thread, &policy, &param);
+
+    if (timeCritical) {
+        param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+        pthread_setschedparam(thread, SCHED_FIFO, &param);
+    } else {
+        param.sched_priority = sched_get_priority_max(SCHED_OTHER) - 1;
+        pthread_setschedparam(thread, SCHED_OTHER, &param);
+    }
+#endif
 }
 
 

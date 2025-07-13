@@ -23,10 +23,10 @@
     </rect>
    </property>
    <property name="orientation">
-    <enum>Qt::Horizontal</enum>
+    <enum>Qt::Orientation::Horizontal</enum>
    </property>
    <property name="standardButtons">
-    <set>QDialogButtonBox::Ok</set>
+    <set>QDialogButtonBox::StandardButton::Ok</set>
    </property>
    <property name="centerButtons">
     <bool>false</bool>
@@ -112,7 +112,7 @@
     </rect>
    </property>
    <property name="orientation">
-    <enum>Qt::Horizontal</enum>
+    <enum>Qt::Orientation::Horizontal</enum>
    </property>
   </widget>
   <widget class="QLabel" name="info_label">
@@ -125,10 +125,10 @@
     </rect>
    </property>
    <property name="text">
-    <string notr="true">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;{$PROJECT_VERSION}&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;/{$RENDERER}-{$BUILD_ARCHITECTURE} on {$OS} {$OS_VERSION}-{$CPU_ARCHITECTURE}&lt;br/&gt;&lt;/span&gt;&lt;br/&gt;&lt;a href=&quot;https://github.com/Ptr314/ecat3&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://github.com/Ptr314/ecat3&lt;br/&gt;&lt;br/&gt;&lt;/span&gt;&lt;/a&gt;&lt;a href=&quot;https://emuverse.ru&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://emuverse.ru&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string notr="true">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;{$PROJECT_VERSION}&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;/{$BUILD_ARCHITECTURE}-Qt{$QT_VERSION}-{$RENDERER} on {$OS} {$OS_VERSION}-{$CPU_ARCHITECTURE}&lt;br/&gt;&lt;/span&gt;&lt;br/&gt;&lt;a href=&quot;https://github.com/Ptr314/ecat3&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://github.com/Ptr314/ecat3&lt;br/&gt;&lt;br/&gt;&lt;/span&gt;&lt;/a&gt;&lt;a href=&quot;https://emuverse.ru&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://emuverse.ru&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="alignment">
-    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+    <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
    </property>
    <property name="wordWrap">
     <bool>true</bool>
@@ -139,7 +139,6 @@
   </widget>
  </widget>
  <resources>
-  <include location="../resources.qrc"/>
   <include location="../resources.qrc"/>
  </resources>
  <connections>

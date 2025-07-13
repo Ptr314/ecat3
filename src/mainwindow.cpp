@@ -36,6 +36,7 @@
 #elif defined(RENDERER_QT)
     #include "renderers/renderer_qt.h"
 #elif defined(RENDERER_OPENGL)
+    #include "renderers/GLWidget.h"
     #include "renderers/renderer_opengl.h"
 #endif
 
@@ -616,8 +617,7 @@ void MainWindow::load_config(QString file_name, bool set_default)
         if (fdd_timer != nullptr) fdd_timer->stop();
 
         e->stop_video();
-        e->quit();
-        e->wait();
+        e->stop_emulation();
     }
 
     e->load_config(file_name);
@@ -638,10 +638,7 @@ void MainWindow::load_config(QString file_name, bool set_default)
 
     if (nativeView) {
         e->init_video(nativeView);
-        if (e->use_threads)
-            e->start(QThread::TimeCriticalPriority);
-        else
-            e->run();
+        e->run();
 
         if (set_default)
         {
@@ -688,8 +685,7 @@ void MainWindow::closeEvent (QCloseEvent *event)
 {
     fdds_found = 0; // to prevent crashing on buttons update
     e->stop_video();
-    e->quit();
-    e->wait();
+    e->stop_emulation();
     delete e;
 
     event->accept();
@@ -831,6 +827,7 @@ void MainWindow::on_actionAbout_triggered()
     aboutUi.info_label->setText(
         aboutUi.info_label->text()
             .replace("{$PROJECT_VERSION}", PROJECT_VERSION)
+            .replace("{$QT_VERSION}", QT_VERSION_STR )
             .replace("{$RENDERER}", QString::fromStdString(renderer->get_name()))
             .replace("{$BUILD_ARCHITECTURE}", QSysInfo::buildCpuArchitecture())
             .replace("{$OS}", QSysInfo::productType())

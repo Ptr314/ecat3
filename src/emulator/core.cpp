@@ -6,9 +6,7 @@
 #include <QException>
 #include <QtGlobal>
 
-#ifdef LOGGER
-    #include <cmath>
-#endif
+#include <cmath>
 
 #ifdef RENDERER_SDL2
     #include <SDL.h>

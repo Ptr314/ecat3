@@ -12,7 +12,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         # add_compile_definitions(RENDERER_QT)
         add_compile_definitions(RENDERER_OPENGL)
     else()
-        # Qt5 for Win XP+ 32 bits
+        # Qt5 for Win 7+ 32 bits
         add_compile_definitions(RENDERER_SDL2)
         # add_compile_definitions(RENDERER_QT)
     endif()
@@ -35,7 +35,7 @@ IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(EXTERNAL_Z80 0)
     set(CPU_STOPPED 0)
     set(LOGGER 0)
-ENDIF(CMAKE_BUILD_TYPE MATCHES DEBUG)
+ENDIF()
 
 if (${LOGGER})
     if (${EXTERNAL_Z80})
