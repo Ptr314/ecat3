@@ -22,7 +22,7 @@
 #include "logger.h"
 #endif
 
-class Emulator: public QThread
+class Emulator: public QObject
 {
     Q_OBJECT
 
@@ -44,7 +44,7 @@ private:
     unsigned int clock_freq;
     unsigned int timer_res;
     unsigned int timer_delay;
-    unsigned int time_ticks;
+    // uint64_t time_ticks;
     unsigned int local_counter;
 
     QTimer * render_timer;
@@ -58,6 +58,11 @@ private:
 
     void register_devices();
 
+    std::atomic<bool> running;
+    std::thread emulationThread;
+    std::thread renderThread;
+    void setThreadPriority(bool timeCritical);
+
 public:
     DeviceManager *dm;
     QString work_path;
@@ -65,7 +70,6 @@ public:
     QString software_path;
 
     bool loaded;
-    bool use_threads;
 
     unsigned int clock_counter;
 
@@ -82,7 +86,7 @@ public:
     void init_video(void *p);
     void stop_video();
 
-    void run() override;
+    void run();
 
     // SURFACE * get_surface();
     void get_screen_constraints(unsigned int * sx, unsigned int * sy);
@@ -98,7 +102,7 @@ public:
     int get_filtering();
 
 public slots:
-    void timer_proc();
+    void timer_proc(uint64_t time_ticks);
     void render_screen();
 
     void key_event(QKeyEvent *event, bool press);

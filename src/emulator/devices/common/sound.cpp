@@ -12,7 +12,7 @@ GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
     m_initialized(false),
     m_clock_freq(0),
     m_counter(0),
-    m_samples_per_buffer(4096),
+    m_samples_per_buffer(2048),
     m_sample_rate(22050),
     m_audio_device(0),
     m_volume(100),
@@ -59,7 +59,7 @@ void GenericSound::init_sound(unsigned int clock_freq)
     m_buffer.resize(m_samples_per_buffer*2);
     m_buffer_pos = 0;
 
-    m_counts_per_sample = m_clock_freq / m_sample_rate * 128;
+    m_counts_per_sample = (m_clock_freq / m_sample_rate) << 7; // * 128 to make it more precise
 
     SDL_PauseAudioDevice(m_audio_device, 0);
     m_initialized = true;
@@ -106,16 +106,44 @@ void GenericSound::clock(unsigned int counter)
 {
     if (!m_initialized) return;
 
-    double samples_to_generate = static_cast<double>(counter) * m_sample_rate / m_clock_freq;
-    m_accumulated_samples += samples_to_generate;
+    m_counter += counter << 7;
 
-    while (m_accumulated_samples >= 1.0) {
-        m_accumulated_samples -= 1.0;
-        std::lock_guard<std::mutex> lock(m_buffer_mutex);
-        if (m_buffer_pos < m_samples_per_buffer) {
-            m_last_value = static_cast<int16_t>(calc_sound_value());
-            m_buffer[m_buffer_pos++] = m_last_value;
+    if (m_counter >= m_counts_per_sample) {
+        m_counter -= m_counts_per_sample;
+        static int overflow_count = 0;
+        static int overflow_delta = 10;
+        static int no_overflow_count = 0;
+        static bool overflow_detected = false;
+        if (m_buffer_pos >= m_buffer.size()) {
+            // Overflow detected
+            overflow_detected = true;
+            overflow_count++;
+            qDebug() << "Sound buffer overflow!!! " << overflow_count;
+            if (overflow_count == 1) {
+                qDebug() << "Overflow++";
+                overflow_delta += 10;
+                overflow_count = 0;
+                no_overflow_count = 0;
+            };
+            std::copy(
+                m_buffer.begin() + overflow_delta,
+                m_buffer.begin() + m_buffer_pos,
+                m_buffer.begin()
+            );
+            m_buffer_pos -= overflow_delta;
+        } else {
+            if (overflow_detected) {
+                no_overflow_count++;
+                if (no_overflow_count > m_samples_per_buffer * 4) {
+                    qDebug() << "Overflow--";
+                    // overflow_delta = 20;
+                    overflow_count = 0;
+                    no_overflow_count = 0;
+                    overflow_detected = false;
+                }
+            }
         }
+        m_buffer[m_buffer_pos++] = static_cast<int16_t>(calc_sound_value());
     }
 }
 

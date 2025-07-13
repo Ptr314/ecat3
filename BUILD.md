@@ -60,27 +60,24 @@ cmake --build . --parallel
 cmake --install .
 ```
 
-##### Qt5 для Windows XP
+##### Qt5 для Windows 7
 
-Для XP необходима версия Qt 5.6.3 и mingw 4.9.2 (https://download.qt.io/new_archive/qt/5.6/5.6.3/single/)
+Для Windows 7 необходима версия Qt 5.15 и mingw 8.1.0 (https://download.qt.io/archive/qt/5.15/5.15.16/single/)
 
 ~~~
 cd репозиторий-приложения\.build
-%SystemRoot%\system32\cmd.exe /E:ON /V:ON /k vars-mingw-qt5.6.cmd
+%SystemRoot%\system32\cmd.exe /E:ON /V:ON /k vars-mingw-qt5.15.cmd
 cd C:\Temp
-mkdir qt5.6-build
-cd qt5.6-build
-configure.bat -release -nomake examples -nomake tests -opensource -confirm-license -no-opengl -target xp -no-directwrite -no-compile-examples -prefix c:\DEV\Qt\%_QT_VERSION%
+mkdir qt5.15-build
+cd qt5.15-build
+configure.bat -static -static-runtime -release -nomake examples -nomake tests -opensource -confirm-license -no-opengl -skip qtlocation -prefix c:\DEV\Qt\%_QT_VERSION%-static
 mingw32-make
 mingw32-make install
 ~~~
 
 Примечания: 
-* `-target xp` необходимо для компиляции в формат .exe Windows XP.
-* Собрать статическую версию не удается, поэтому в дальнейшем необходимо в папку программы помещать следующие файлы:
-    * `Qt5Core.dll`, `Qt5Gui.dll`, `Qt5Widgets.dll` из `Qt/5.6.3/bin/`
-    * `platforms/qwindows.dll` из `Qt/5.6.3/plugins`
-    * `libgcc_s_dw2-1.dll`, `libstdc++-6.dll`, `libwinpthread-1.dll` из `Qt/Tools/mingw492_32/bin`
+* -no-opengl используется для исключения установки OpenGL SDK.
+* -skip qtlocation исключает непонятную ошибку компиляции в этом модуле
 
 #### 4. Обновление языковых файлов
 
