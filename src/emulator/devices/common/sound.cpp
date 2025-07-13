@@ -7,15 +7,13 @@
 
 #include "sound.h"
 
-#define SILENCE_VALUE   128
-
 GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd),
     m_initialized(false),
     m_clock_freq(0),
     m_counter(0),
     m_samples_per_buffer(4096),
-    m_sample_rate(44100),
+    m_sample_rate(22050),
     m_audio_device(0),
     m_volume(100),
     muted(false)
@@ -45,8 +43,8 @@ void GenericSound::init_sound(unsigned int clock_freq)
     desired_spec.format = AUDIO_S16SYS;
     desired_spec.channels = 1;
     desired_spec.samples = m_samples_per_buffer;
-    desired_spec.callback = audio_callback;
     desired_spec.userdata = this;
+    desired_spec.callback = audio_callback;
 
     m_audio_device = SDL_OpenAudioDevice(nullptr, 0, &desired_spec, &obtained_spec, 0);
     if (m_audio_device == 0) {
@@ -58,8 +56,10 @@ void GenericSound::init_sound(unsigned int clock_freq)
     m_sample_rate = obtained_spec.freq;
     m_samples_per_buffer = obtained_spec.samples;
 
-    m_buffer.resize(m_samples_per_buffer);
+    m_buffer.resize(m_samples_per_buffer*2);
     m_buffer_pos = 0;
+
+    m_counts_per_sample = m_clock_freq / m_sample_rate * 128;
 
     SDL_PauseAudioDevice(m_audio_device, 0);
     m_initialized = true;
@@ -83,6 +83,25 @@ void GenericSound::set_muted(bool muted)
     this->muted = muted;
 }
 
+// // Queue version
+// void GenericSound::clock(unsigned int counter)
+// {
+//     if (!m_initialized) return;
+
+//     m_counter += counter*128;
+
+//     if (m_counter >= m_counts_per_sample) {
+//         m_counter -= m_counts_per_sample;
+
+//         m_buffer[m_buffer_pos++] = static_cast<int16_t>(calc_sound_value());
+//         if (m_buffer_pos >= m_samples_per_buffer) {
+//             m_buffer_pos = 0;
+//             SDL_QueueAudio(m_audio_device, m_buffer.data(), m_samples_per_buffer);
+//         }
+//     }
+// }
+
+// Callback version
 void GenericSound::clock(unsigned int counter)
 {
     if (!m_initialized) return;
@@ -92,10 +111,10 @@ void GenericSound::clock(unsigned int counter)
 
     while (m_accumulated_samples >= 1.0) {
         m_accumulated_samples -= 1.0;
-
         std::lock_guard<std::mutex> lock(m_buffer_mutex);
         if (m_buffer_pos < m_samples_per_buffer) {
-            m_buffer[m_buffer_pos++] = static_cast<int16_t>(calc_sound_value());
+            m_last_value = static_cast<int16_t>(calc_sound_value());
+            m_buffer[m_buffer_pos++] = m_last_value;
         }
     }
 }
@@ -127,11 +146,17 @@ void GenericSound::handle_audio_callback(Uint8* stream, int len) {
         m_buffer_pos -= samples_to_copy;
     }
 
+    static int ok_count = 0;
+    static int fill_count = 0;
     if (samples_to_copy < samples_requested) {
+        fill_count++;
+        qDebug() << samples_to_copy << " " << samples_requested <<  " ok: " << ok_count << " fill: " << fill_count;
         std::fill_n(
             reinterpret_cast<int16_t*>(stream) + samples_to_copy,
             samples_requested - samples_to_copy,
-            0
+            m_last_value
             );
+    } else {
+        ok_count++;
     }
 }

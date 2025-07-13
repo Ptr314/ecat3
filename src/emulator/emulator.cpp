@@ -153,7 +153,8 @@ void Emulator::run()
 {
     if (loaded)
     {
-        //qDebug() << "Emulator thread id: " << QThread::currentThreadId();
+        qDebug() << "Emulator thread id: " << QThread::currentThreadId();
+        qDebug() << "Priority: " << priority();
 
         cpu = dynamic_cast<CPU*>(dm->get_device_by_name("cpu"));
         mm = dynamic_cast<MemoryMapper*>(dm->get_device_by_name("mapper"));
@@ -177,7 +178,7 @@ void Emulator::run()
 
         render_timer = new QTimer();
         connect(render_timer, &QTimer::timeout, this, &Emulator::render_screen);
-        render_timer->start(1000 / 50);
+        // render_timer->start(1000 / 50);
 
         if (use_threads) exec();
     }

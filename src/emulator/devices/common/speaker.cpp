@@ -26,14 +26,15 @@ unsigned int Speaker::calc_sound_value()
     unsigned int V = 0;
     if (InputWidth != 0) {
         V += input;
-        if (is_delayed) {
-            input = delayed_value;
-            is_delayed = false;
-        }
+        // if (is_delayed) {
+        //     input = delayed_value;
+        //     is_delayed = false;
+        // }
     }
     for (unsigned int i=0; i < MixerWidth; i++)
         V += (i_mixer.value >> i) & 0x01;
-    return V * InputValue * m_volume / 100;
+    // V = 2;
+    return static_cast<unsigned int>(std::round(static_cast<double>(V) / (InputWidth + MixerWidth) * m_volume / 100 * 65535)) & 0xFFFF;
 }
 
 void Speaker::reset(bool cold)

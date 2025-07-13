@@ -24,6 +24,8 @@ private:
     unsigned int m_samples_per_buffer;
     unsigned int m_sample_rate;
     SDL_AudioDeviceID m_audio_device;
+    int16_t m_last_value = 0;
+    unsigned int m_counts_per_sample;
 
     std::vector<int16_t> m_buffer;
     size_t m_buffer_pos = 0;
