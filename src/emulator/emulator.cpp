@@ -353,6 +353,7 @@ void Emulator::render_screen()
             screen_sx = current_sx;
             screen_sy = current_sy;
             renderer->resize(screen_sx, screen_sy, screen_scale, pixel_scale);
+            display->set_renderer(*renderer);                                   // We need to update surface
         }
 
         display->validate();
