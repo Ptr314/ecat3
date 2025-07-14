@@ -40,6 +40,7 @@ public:
     QString files;
 
     TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd);
+    virtual ~TapeRecorder();
 
     virtual void load_config(SystemData *sd) override;
     virtual void clock(unsigned int counter) override;

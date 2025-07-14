@@ -223,17 +223,14 @@ void Emulator::stop_emulation()
     if (this->loaded)
     {
         running = false;
-        qDebug() << "Stopping";
 
         if (renderThread.joinable()) {
             renderThread.join();
         }
-        qDebug() << "Video stopped";
 
         if (emulationThread.joinable()) {
             emulationThread.join();
         }
-        qDebug() << "Core stopped";
     }
 }
 

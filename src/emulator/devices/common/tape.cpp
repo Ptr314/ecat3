@@ -31,6 +31,11 @@ TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
     speaker = new Speaker(im, speaker_config);
 }
 
+TapeRecorder::~TapeRecorder()
+{
+    delete speaker;
+}
+
 void TapeRecorder::load_config(SystemData *sd)
 {
 

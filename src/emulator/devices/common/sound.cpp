@@ -4,6 +4,7 @@
 // Description: Generic sound device class
 
 #include <algorithm>
+#include <iostream>
 
 #include "sound.h"
 
@@ -16,7 +17,7 @@ GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
     m_sample_rate(22050),
     m_audio_device(0),
     m_volume(100),
-    muted(false)
+    m_muted(false)
 {
     m_buffer.resize(m_samples_per_buffer);
     cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu"));
@@ -59,7 +60,7 @@ void GenericSound::init_sound(unsigned int clock_freq)
     m_buffer.resize(m_samples_per_buffer*2);
     m_buffer_pos = 0;
 
-    m_counts_per_sample = (m_clock_freq / m_sample_rate) << 7; // * 128 to make it more precise
+    m_counts_per_sample = (m_clock_freq << 7) / m_sample_rate; // * 128 to make it more precise
 
     SDL_PauseAudioDevice(m_audio_device, 0);
     m_initialized = true;
@@ -68,8 +69,10 @@ void GenericSound::init_sound(unsigned int clock_freq)
 GenericSound::~GenericSound()
 {
     if (m_initialized) {
+        m_initialized = false;
+        SDL_PauseAudioDevice(m_audio_device, 1);
         SDL_CloseAudioDevice(m_audio_device);
-        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+        // SDL_QuitSubSystem(SDL_INIT_AUDIO);
     }
 }
 
@@ -80,28 +83,9 @@ void GenericSound::set_volume(unsigned int volume)
 
 void GenericSound::set_muted(bool muted)
 {
-    this->muted = muted;
+    m_muted = muted;
 }
 
-// // Queue version
-// void GenericSound::clock(unsigned int counter)
-// {
-//     if (!m_initialized) return;
-
-//     m_counter += counter*128;
-
-//     if (m_counter >= m_counts_per_sample) {
-//         m_counter -= m_counts_per_sample;
-
-//         m_buffer[m_buffer_pos++] = static_cast<int16_t>(calc_sound_value());
-//         if (m_buffer_pos >= m_samples_per_buffer) {
-//             m_buffer_pos = 0;
-//             SDL_QueueAudio(m_audio_device, m_buffer.data(), m_samples_per_buffer);
-//         }
-//     }
-// }
-
-// Callback version
 void GenericSound::clock(unsigned int counter)
 {
     if (!m_initialized) return;
@@ -110,81 +94,76 @@ void GenericSound::clock(unsigned int counter)
 
     if (m_counter >= m_counts_per_sample) {
         m_counter -= m_counts_per_sample;
-        static int overflow_count = 0;
-        static int overflow_delta = 10;
-        static int no_overflow_count = 0;
-        static bool overflow_detected = false;
+        std::lock_guard<std::mutex> lock(m_buffer_mutex);
+        static int overflow_delta = m_samples_per_buffer / 8;
         if (m_buffer_pos >= m_buffer.size()) {
-            // Overflow detected
-            overflow_detected = true;
-            overflow_count++;
-            qDebug() << "Sound buffer overflow!!! " << overflow_count;
-            if (overflow_count == 1) {
-                qDebug() << "Overflow++";
-                overflow_delta += 10;
-                overflow_count = 0;
-                no_overflow_count = 0;
-            };
             std::copy(
                 m_buffer.begin() + overflow_delta,
                 m_buffer.begin() + m_buffer_pos,
                 m_buffer.begin()
             );
             m_buffer_pos -= overflow_delta;
-        } else {
-            if (overflow_detected) {
-                no_overflow_count++;
-                if (no_overflow_count > m_samples_per_buffer * 4) {
-                    qDebug() << "Overflow--";
-                    // overflow_delta = 20;
-                    overflow_count = 0;
-                    no_overflow_count = 0;
-                    overflow_detected = false;
-                }
-            }
-        }
+            std::cerr << "Sound buffer overflow!" << std::endl;
+        };
         m_buffer[m_buffer_pos++] = static_cast<int16_t>(calc_sound_value());
     }
 }
 
-void GenericSound::audio_callback(void* userdata, Uint8* stream, int len) {
+void GenericSound::audio_callback(void* userdata, Uint8* stream, int len)
+{
     GenericSound* sound = static_cast<GenericSound*>(userdata);
     sound->handle_audio_callback(stream, len);
 }
 
-void GenericSound::handle_audio_callback(Uint8* stream, int len) {
+void GenericSound::handle_audio_callback(Uint8* stream, int len)
+{
+    if (!m_initialized) return;
+
     std::lock_guard<std::mutex> lock(m_buffer_mutex);
+
     const int samples_requested = len / sizeof(int16_t);
     const int samples_available = static_cast<int>(m_buffer_pos);
     const int samples_to_copy = std::min(samples_requested, samples_available);
 
+    // static int n = 0;
+    // n++;
+    // if (samples_available > samples_requested) {
+    //     qDebug() << name << ": " << n << " + " << samples_available - samples_requested;
+    // } else
+    // if (samples_available < samples_requested) {
+    //     qDebug() << name << ": " << n << " --- " << samples_requested - samples_available;
+    // };
+
+    // We use 'fill_value' later to fill missed samples.
+    // The default value is 0 - "silence" in case the buffer is totally empty.
+    // And the first buffer value, if we have less values than expected
+    int16_t fill_value = 0;
+
     if (samples_to_copy > 0) {
+        fill_value = m_buffer[0];
+        // We have some data -
+        // So putting it to the end of the output
         std::copy_n(
             m_buffer.data(),
             samples_to_copy,
-            reinterpret_cast<int16_t*>(stream)
-            );
+            reinterpret_cast<int16_t*>(stream) + (samples_requested - samples_to_copy)
+        );
 
+        // And if we have more data than expected, moving the extra data to the start of the buffer
         std::copy(
             m_buffer.begin() + samples_to_copy,
             m_buffer.begin() + m_buffer_pos,
             m_buffer.begin()
-            );
-
+        );
         m_buffer_pos -= samples_to_copy;
     }
 
-    static int ok_count = 0;
-    static int fill_count = 0;
     if (samples_to_copy < samples_requested) {
-        fill_count++;
-        qDebug() << samples_to_copy << " " << samples_requested <<  " ok: " << ok_count << " fill: " << fill_count;
+        // We need to fill missing data, so doing it at the start of the output
         std::fill_n(
-            reinterpret_cast<int16_t*>(stream) + samples_to_copy,
+            reinterpret_cast<int16_t*>(stream),
             samples_requested - samples_to_copy,
-            m_last_value
-            );
-    } else {
-        ok_count++;
+            fill_value
+        );
     }
 }
