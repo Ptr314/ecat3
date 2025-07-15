@@ -16,14 +16,9 @@ private:
     unsigned int mode;
     unsigned int InputWidth;
     unsigned int MixerWidth;
-    unsigned int InputValue;
-    unsigned int flip_value;
-    bool shorts;
-    bool is_delayed;
-    unsigned int delayed_value;
     unsigned int input;
 
-    virtual unsigned int calc_sound_value() override;
+    virtual int16_t calc_sound_value() override;
 
 public:
     Speaker(InterfaceManager *im, EmulatorConfigDevice *cd);

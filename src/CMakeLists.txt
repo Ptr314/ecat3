@@ -229,6 +229,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         ${PROJECT_RESOURCES}
+        libs/audio_filters.h
     )
 
     qt_add_translations(${PROJECT_NAME} TS_FILES

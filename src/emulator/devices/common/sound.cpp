@@ -7,20 +7,33 @@
 #include <iostream>
 
 #include "sound.h"
+#include "emulator/utils.h"
 
 GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd),
-    m_initialized(false),
-    m_clock_freq(0),
-    m_counter(0),
-    m_samples_per_buffer(2048),
-    m_sample_rate(22050),
-    m_audio_device(0),
-    m_volume(100),
-    m_muted(false)
+      ComputerDevice(im, cd)
+    , m_initialized(false)
+    , m_clock_freq(0)
+    , m_counter(0)
+    , m_samples_per_buffer(2048)
+    , m_sample_rate(22050)
+    , m_audio_device(0)
+    , m_volume(100)
+    , m_muted(false)
+    , m_use_lpf(false)
+    , m_lpf_coutoff(5000)
+    , m_accumulator(0)
+    , m_acc_counter(0)
 {
     m_buffer.resize(m_samples_per_buffer);
     cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu"));
+}
+
+void GenericSound::load_config(SystemData *sd)
+{
+    ComputerDevice::load_config(sd);
+    m_lpf_coutoff = read_confg_value(cd, "lpf", false, (unsigned int)m_lpf_coutoff);
+    m_use_lpf = (m_lpf_coutoff > 0);
+
     init_sound(cpu->clock);
 }
 
@@ -60,7 +73,9 @@ void GenericSound::init_sound(unsigned int clock_freq)
     m_buffer.resize(m_samples_per_buffer*2);
     m_buffer_pos = 0;
 
-    m_counts_per_sample = (m_clock_freq << 7) / m_sample_rate; // * 128 to make it more precise
+    m_counts_per_sample = (m_clock_freq << 8) / m_sample_rate; // * 128 to make it more precise
+
+    if (m_use_lpf) m_filter.setup(m_sample_rate, m_lpf_coutoff);
 
     SDL_PauseAudioDevice(m_audio_device, 0);
     m_initialized = true;
@@ -79,6 +94,7 @@ GenericSound::~GenericSound()
 void GenericSound::set_volume(unsigned int volume)
 {
     m_volume = volume;
+    m_amplitude = m_volume * 32000 / 100;
 }
 
 void GenericSound::set_muted(bool muted)
@@ -90,13 +106,16 @@ void GenericSound::clock(unsigned int counter)
 {
     if (!m_initialized) return;
 
-    m_counter += counter << 7;
+    m_counter += counter << 8;
 
     if (m_counter >= m_counts_per_sample) {
         m_counter -= m_counts_per_sample;
+
         std::lock_guard<std::mutex> lock(m_buffer_mutex);
-        static int overflow_delta = m_samples_per_buffer / 8;
+
+        // Checking buffer overflow and discarding a part of it if expected
         if (m_buffer_pos >= m_buffer.size()) {
+            static int overflow_delta = m_samples_per_buffer / 8;
             std::copy(
                 m_buffer.begin() + overflow_delta,
                 m_buffer.begin() + m_buffer_pos,
@@ -105,7 +124,22 @@ void GenericSound::clock(unsigned int counter)
             m_buffer_pos -= overflow_delta;
             std::cerr << "Sound buffer overflow!" << std::endl;
         };
-        m_buffer[m_buffer_pos++] = static_cast<int16_t>(calc_sound_value());
+
+        // Using average value between counts
+        int16_t v = static_cast<int16_t>(m_accumulator / m_acc_counter);
+        m_accumulator = m_acc_counter = 0;
+
+        // Applying LPF if expected
+        if (m_use_lpf) {
+            float out = m_filter.process(static_cast<float>(v));
+            v = static_cast<int16_t>(out);
+        }
+
+        m_buffer[m_buffer_pos++] = v;
+    } else {
+        // Accumulating values between counts to get average when expected
+        m_accumulator += m_muted ? -m_amplitude : calc_sound_value();
+        m_acc_counter++;
     }
 }
 
@@ -135,21 +169,20 @@ void GenericSound::handle_audio_callback(Uint8* stream, int len)
     // };
 
     // We use 'fill_value' later to fill missed samples.
-    // The default value is 0 - "silence" in case the buffer is totally empty.
+    // The default value is -m_amplitude - "silence" in case the buffer is totally empty.
     // And the first buffer value, if we have less values than expected
-    int16_t fill_value = 0;
+    int16_t fill_value = -m_amplitude;
 
     if (samples_to_copy > 0) {
         fill_value = m_buffer[0];
-        // We have some data -
-        // So putting it to the end of the output
+        // We have some data, putting it to the end of the output
         std::copy_n(
             m_buffer.data(),
             samples_to_copy,
             reinterpret_cast<int16_t*>(stream) + (samples_requested - samples_to_copy)
         );
 
-        // And if we have more data than expected, moving the extra data to the start of the buffer
+        // And if we have more data than expected, we move the extra data to the beginning
         std::copy(
             m_buffer.begin() + samples_to_copy,
             m_buffer.begin() + m_buffer_pos,
@@ -159,7 +192,7 @@ void GenericSound::handle_audio_callback(Uint8* stream, int len)
     }
 
     if (samples_to_copy < samples_requested) {
-        // We need to fill missing data, so doing it at the start of the output
+        // We need to fill in the missing data, so we do it at the beginning of the output.
         std::fill_n(
             reinterpret_cast<int16_t*>(stream),
             samples_requested - samples_to_copy,

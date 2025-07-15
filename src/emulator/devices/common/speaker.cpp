@@ -12,49 +12,29 @@
 Speaker::Speaker(InterfaceManager *im, EmulatorConfigDevice *cd):
       GenericSound(im, cd)
     , mode(SPK_MODE_LEVEL)
-    , flip_value(0)
-    , shorts(true)
-    , is_delayed(false)
     , input(0)
     , i_input(this, im, 1, "input", MODE_R, 1)
     , i_mixer(this, im, 8, "mixer", MODE_R)
 {
 }
 
-unsigned int Speaker::calc_sound_value()
+int16_t Speaker::calc_sound_value()
 {
-    unsigned int V = 0;
+    int32_t V = 0;
     if (InputWidth != 0) {
         V += input;
-        // if (is_delayed) {
-        //     input = delayed_value;
-        //     is_delayed = false;
-        // }
     }
     for (unsigned int i=0; i < MixerWidth; i++)
         V += (i_mixer.value >> i) & 0x01;
-    // V = 2;
-    return static_cast<unsigned int>(std::round(static_cast<double>(V) / (InputWidth + MixerWidth) * m_volume / 100 * 65535)) & 0xFFFF;
+
+    return (V * m_amplitude * 2 / (InputWidth + MixerWidth)) - m_amplitude;
 }
 
 void Speaker::reset(bool cold)
 {
     GenericSound::reset(cold);
-
-    if (i_input.linked == 0)
-        InputWidth = 0;
-    else
-        InputWidth = 1;
-
-    if (i_mixer.linked == 0)
-        MixerWidth = 0;
-    else
-        MixerWidth = CalcBits(i_mixer.linked_bits, 8);
-
-    if (InputWidth + MixerWidth > 0)
-        InputValue = 32768 / (InputWidth + MixerWidth);
-    else
-        InputValue = 1;
+    InputWidth = (i_input.linked == 0) ? 0 : 1;
+    MixerWidth = (i_mixer.linked == 0) ? 0 : CalcBits(i_mixer.linked_bits, 8);
 }
 
 void Speaker::load_config(SystemData *sd)
@@ -69,8 +49,6 @@ void Speaker::load_config(SystemData *sd)
         mode = SPK_MODE_FLIP;
     else
         QMessageBox::critical(0, Speaker::tr("Error"), Speaker::tr("Unknown speaker type %1").arg(s));
-
-    shorts = read_confg_value(cd, "shorts", false, (unsigned int)0) != 0;
 }
 
 void Speaker::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
@@ -83,16 +61,7 @@ void Speaker::interface_callback(unsigned int callback_id, unsigned int new_valu
     } else
         new_input = i_input.value  & 0x01;
 
-    if (shorts) {
-        if (!is_delayed) {
-            delayed_value = input = new_input;
-            is_delayed = true;
-        } else {
-            delayed_value = new_input;
-        }
-    } else {
-        input = new_input;
-    }
+    input = new_input;
 }
 
 ComputerDevice * create_speaker(InterfaceManager *im, EmulatorConfigDevice *cd){
