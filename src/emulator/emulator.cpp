@@ -7,6 +7,7 @@
 #include <QThread>
 #include <QKeyEvent>
 #include <cmath>
+#include <iostream>
 #include <qlabel.h>
 #include <qpainter.h>
 #include <thread>
@@ -49,16 +50,17 @@
 #include "emulator/devices/common/mapkeyboard.h"
 
 Emulator::Emulator(QString work_path, QString data_path, QString software_path, QString ini_file, VideoRenderer * renderer):
-    work_path(work_path),
-    data_path(data_path),
-    software_path(software_path),
-    loaded(false),
-    busy(false),
-    local_counter(0),
-    clock_counter(0),
-    logger(nullptr),
-    renderer(renderer),
-    running(false)
+      work_path(work_path)
+    , data_path(data_path)
+    , software_path(software_path)
+    , loaded(false)
+    , busy(false)
+    , local_counter(0)
+    , clock_counter(0)
+    , logger(nullptr)
+    , renderer(renderer)
+    , m_running(false)
+    , m_ready(false)
 {
     qDebug() << "INI path: " + ini_file;
     settings = new QSettings (ini_file, QSettings::IniFormat);
@@ -161,9 +163,10 @@ void Emulator::run()
 {
     if (loaded)
     {
-        if (running) return;
+        if (m_running) return;
 
-        running = true;
+        m_ready = false;
+        m_running = true;
 
         emulationThread = std::thread([this]() {
             setThreadPriority(true);
@@ -182,8 +185,10 @@ void Emulator::run()
             local_counter = 0;
             clock_counter = 0;
 
+            m_ready = true;
+
             auto lastTime = std::chrono::high_resolution_clock::now();
-            while (running) {
+            while (m_running) {
                 auto now = std::chrono::high_resolution_clock::now();
                 auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime).count();
 
@@ -203,7 +208,12 @@ void Emulator::run()
         });
 
         renderThread = std::thread([this]() {
-            while (running) {
+            while (m_running) {
+                // In a rare case when this thread gets a time earlier than the main, we should skip this time slot
+                if (!m_ready) {
+                    std::this_thread::yield();
+                    continue;
+                }
                 auto start = std::chrono::high_resolution_clock::now();
 
                 render_screen();
@@ -222,7 +232,7 @@ void Emulator::stop_emulation()
 {
     if (this->loaded)
     {
-        running = false;
+        m_running = m_ready = false;
 
         if (renderThread.joinable()) {
             renderThread.join();
@@ -342,7 +352,7 @@ void Emulator::stop_video()
 
 void Emulator::render_screen()
 {
-    if (running) {
+    if (m_running && m_ready) {
         unsigned int current_sx, current_sy;
         display->get_screen_constraints(&current_sx, &current_sy);
         if ((current_sx != screen_sx) || (current_sy != screen_sy))

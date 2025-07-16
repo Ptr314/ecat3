@@ -44,7 +44,6 @@ private:
     unsigned int clock_freq;
     unsigned int timer_res;
     unsigned int timer_delay;
-    // uint64_t time_ticks;
     unsigned int local_counter;
 
     QTimer * render_timer;
@@ -58,10 +57,11 @@ private:
 
     void register_devices();
 
-    std::atomic<bool> running;
+    std::atomic<bool> m_running;
     std::thread emulationThread;
     std::thread renderThread;
     void setThreadPriority(bool timeCritical);
+    std::atomic<bool> m_ready;
 
 public:
     DeviceManager *dm;
