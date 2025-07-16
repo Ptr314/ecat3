@@ -824,9 +824,12 @@ void MainWindow::on_actionAbout_triggered()
     Ui_About aboutUi;
     aboutUi.setupUi(about);
 
+    aboutUi.title_label->setText(
+        aboutUi.title_label->text()
+            .replace("{$PROJECT_VERSION}", PROJECT_VERSION)
+        );
     aboutUi.info_label->setText(
         aboutUi.info_label->text()
-            .replace("{$PROJECT_VERSION}", PROJECT_VERSION)
             .replace("{$QT_VERSION}", QT_VERSION_STR )
             .replace("{$RENDERER}", QString::fromStdString(renderer->get_name()))
             .replace("{$BUILD_ARCHITECTURE}", QSysInfo::buildCpuArchitecture())
