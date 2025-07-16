@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 
 CALL vars-mingw-qt5.15.cmd
 
-SET _ARCHITECTURE=x86_64
+SET _ARCHITECTURE=i386
 SET _PLATFORM=windows_7
 SET _BUILD_DIR=.\build\%_PLATFORM%_%_ARCHITECTURE%
 
@@ -58,11 +58,11 @@ for %%R in (!RENDERERS!) do (
     copy "!_ROOT_BIN!\Qt5Gui.dll" "!_RELEASE_DIR!"
     copy "!_ROOT_BIN!\Qt5Widgets.dll" "!_RELEASE_DIR!"
 
-    if not exist "!_ROOT_MINGW!\libgcc_s_seh-1.dll" (
-        echo Error: "!_ROOT_MINGW!\libgcc_s_seh-1.dll" not found.
+    if not exist "!_ROOT_MINGW!\libgcc_s_dw2-1.dll" (
+        echo Error: "!_ROOT_MINGW!\libgcc_s_dw2-1.dll" not found.
         exit /b 1
     )
-    copy "!_ROOT_MINGW!\libgcc_s_seh-1.dll" "!_RELEASE_DIR!"
+    copy "!_ROOT_MINGW!\libgcc_s_dw2-1.dll" "!_RELEASE_DIR!"
     copy "!_ROOT_MINGW!\libstdc++-6.dll" "!_RELEASE_DIR!"
     copy "!_ROOT_MINGW!\libwinpthread-1.dll" "!_RELEASE_DIR!"
 
