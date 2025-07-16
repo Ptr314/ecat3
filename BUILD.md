@@ -2,8 +2,8 @@
 
 В данный момент программа компилируется под следующие платформы:
 
-* Windows XP+
-    * Версия i386 на основе Qt 5.6.3 и mingw 4.9.2.
+* Windows 7+
+    * Версия i386 на основе Qt 5.15.2 и mingw 8.1.0.
 * Windows 10+
     * Версия х86_64. Актуальная версия Qt 6.8.3 и mingw 13.10.
 * macOS 15 (возможна совместимость с более ранними версиями)
@@ -31,7 +31,7 @@
         * ninja
 * Python 3
 * SDL
-    * Скачать https://www.libsdl.org/ (development version)
+    * Скачать SDL версии 2 с https://www.libsdl.org/ (development version)
     * Распаковать
     * Добавить путь к переменной окружения CMAKE_PREFIX_PATH
 
