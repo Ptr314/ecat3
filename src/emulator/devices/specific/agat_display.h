@@ -32,6 +32,7 @@ protected:
     unsigned m_irq_val;
 
     void render_byte(unsigned int address);
+    void render_line(unsigned line);
     virtual void render_all(bool force_render) override;
 
     void set_mode(unsigned int new_mode);
@@ -42,7 +43,7 @@ public:
     // virtual void set_surface(SURFACE * surface) override;
     void set_renderer(VideoRenderer &vr) override;
 
-    virtual void memory_callback(unsigned int callback_id, unsigned int address) override;
+    // virtual void memory_callback(unsigned int callback_id, unsigned int address) override;
 
     virtual void clock(unsigned int counter) override;
     virtual void load_config(SystemData *sd) override;

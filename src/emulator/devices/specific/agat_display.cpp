@@ -45,7 +45,7 @@ void AgatDisplay::load_config(SystemData *sd)
     memory[0] = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram").value));
     font =      dynamic_cast<ROM*>(im->dm->get_device_by_name(cd->get_parameter("font").value));
 
-    memory[0]->set_memory_callback(this, 1, MODE_W);
+    // memory[0]->set_memory_callback(this, 1, MODE_W);
 
     system_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
     blink_ticks = system_clock / (5*2);     // 5 Hz
@@ -113,16 +113,16 @@ void AgatDisplay::clock(unsigned int counter)
     //screen_valid = false;
 }
 
-void AgatDisplay::memory_callback(unsigned int callback_id, unsigned int address)
-{
-    if ( (address >= base_address) && (address < base_address + page_size) )
-    {
-        //TODO: Find out why local update doesn't work
-        //render_byte(address - base_address);
-        screen_valid = false;
-        was_updated = true;
-    }
-}
+// void AgatDisplay::memory_callback(unsigned int callback_id, unsigned int address)
+// {
+//     if ( (address >= base_address) && (address < base_address + page_size) )
+//     {
+//         //TODO: Find out why local update doesn't work
+//         //render_byte(address - base_address);
+//         screen_valid = false;
+//         was_updated = true;
+//     }
+// }
 
 void AgatDisplay::render_byte(unsigned int address)
 {
@@ -230,25 +230,163 @@ void AgatDisplay::render_byte(unsigned int address)
 
 }
 
+void AgatDisplay::render_line(unsigned int line)
+{
+    uint8_t * pixel_address;
+    unsigned int p, screen_offset, font_line, char_address, inv;
+    uint8_t v, v1, v2, font_val;
+    uint8_t color[2];
+
+    switch (mode) {
+    case 0x00:
+        // ГНР (LoRes Graphics, 64x64, 16 colors)
+        // 32 bytes per line
+        for (unsigned int i=0; i<32; i++) {
+            char_address = base_address + (line/4)*32 + i;
+            v = memory[module]->get_value(char_address);
+            color[0] = v >> 4;
+            color[1] = v & 0x0F;
+            screen_offset = i * 64;
+            for (unsigned int j = 0; j < 2; j++) {
+                unsigned int c = color[j];
+                for (unsigned int k = 0; k < 8; k++) {
+                    p = screen_offset + j*32 + k*4;
+
+                    pixel_address = static_cast<uint8_t *>(render_pixels) + line*line_bytes + p;
+                    *(uint32_t*)pixel_address = Agat_RGBA16[c];
+                }
+            }
+        }
+        break;
+
+    case 0x01:
+        // ГCР (MidRes Graphics, 128x128, 16 colors)
+        // 64 bytes per line
+        for (unsigned int i=0; i<64; i++) {
+            char_address = base_address + (line/2)*64 + i;
+            v = memory[module]->get_value(char_address);
+            color[0] = v >> 4;
+            color[1] = v & 0x0F;
+            screen_offset = i * 32;
+            for (unsigned int j = 0; j < 2; j++)
+                for (unsigned int k = 0; k < 4; k++) {
+                    p = screen_offset + j*16 + k*4;
+                    unsigned int c = color[j];
+                    pixel_address = static_cast<uint8_t *>(render_pixels) + line*line_bytes + p;
+                    *(uint32_t*)pixel_address = Agat_RGBA16[c];
+                }
+        }
+        break;
+
+    case 0x02:
+        // АЦР-32 (Alphanumeric 32 chars with attributes, 16 colors)
+        // Each position takes two bytes in memory - a character code and its attrubute value
+        // Each line is 64 bytes long
+        // Filling two pixels per bit because of doubling
+
+        // Blanking sides
+        pixel_address = ((uint8_t *)render_pixels) + line*line_bytes;
+        for (unsigned int j=0; j<32; j++) {
+            *(uint32_t *)(pixel_address + j*4) = Agat_RGBA2[0];
+            *(uint32_t *)(pixel_address + 480*4 + j*4) = Agat_RGBA2[0];
+        }
+
+        font_line = line % 8;
+        for (unsigned int i=0; i<32; i++) {
+            char_address = base_address + (line/8)*64 + i*2;
+            v1 = memory[module]->get_value(char_address);       // Character
+            v2 = memory[module]->get_value(char_address+1);     // Attribute
+            unsigned int cl = (v2 & 0x07) | ((v2 & 0x10) >> 1);         // Color index (YBGR)
+            font_val = font->get_value(v1*8 + font_line);
+
+            screen_offset = 32*4 + i * (7*4*2);
+
+            for (unsigned int k=0; k<7; k++) {              // Char is 7 pixels wide
+                unsigned int c = (font_val >> k) & 0x01;
+                unsigned int ccl;
+                if ( (((v2 & 0x20) != 0) || ((v2 & 0x08) != 0) && blinker) )
+                    ccl = cl * c;
+                else
+                    ccl = cl * (c ^ 0x01);
+                uint32_t color = Agat_RGBA16[ccl];
+                p = screen_offset + (6-k)*8;
+                pixel_address = static_cast<uint8_t *>(render_pixels) + line*line_bytes + p;
+                *(uint32_t*)pixel_address = color;
+                *(uint32_t*)(pixel_address+4) = color;
+            }
+
+        }
+        break;
+
+    case 0x82:
+        // АЦР-64 (Alphanumeric 64 chars, monochrome)
+        // Each line is 64 bytes long
+
+        // Blanking sides
+        pixel_address = ((uint8_t *)render_pixels) + line*line_bytes;
+        for (unsigned int j=0; j<32; j++) {
+            *(uint32_t *)(pixel_address + j*4) = Agat_RGBA2[0];
+            *(uint32_t *)(pixel_address + 480*4 + j*4) = Agat_RGBA2[0];
+        }
+
+        inv = ((~previous_mode & 0x04) >> 2);                       // inverted mode
+        font_line = line % 8;
+        for (unsigned int i=0; i<64; i++) {
+            char_address = base_address + (line/8)*64 + i;
+            v1 = memory[module]->get_value(char_address);       // Character
+            font_val = font->get_value(v1*8 + font_line);
+            screen_offset = 32*4 + i * (7*4);
+            for (unsigned int k=0; k<7; k++) {                      // Char is 7x8 pixels
+                unsigned int c = ((font_val >> k) & 1) ^ inv;
+                p = screen_offset + (6-k)*4;
+                pixel_address = static_cast<uint8_t *>(render_pixels) + line*line_bytes + p;
+                *(uint32_t*)pixel_address = Agat_RGBA2[c];
+            }
+        }
+        break;
+
+    case 0x03:
+        // ГВР (HiRes Graphics, monochrome 256x256)
+        // Filling two pixels per bit because of doubling
+
+        for (unsigned int i=0; i<32; i++) {
+            char_address = base_address + line*32 + i;
+            v = memory[module]->get_value(char_address);
+            screen_offset = i * 64;
+
+            for (unsigned int k = 0; k < 8; k++) {
+                unsigned int c = (v >> k) & 0x01;
+                uint32_t color = Agat_RGBA2[c];
+                p = screen_offset + (7-k)*8;
+                pixel_address = static_cast<uint8_t *>(render_pixels) + line*line_bytes + p;
+                *(uint32_t*)pixel_address = color;
+                *(uint32_t*)(pixel_address+4) = color;
+            }
+        }
+        break;
+    }
+}
+
+
 void AgatDisplay::render_all(bool force_render)
 {
     if (!screen_valid || force_render)
     {
-        if ((mode & 0x03) == 2) {
-            // Blanking fields in text modes
-            uint8_t * pixel_address;
-            uint32_t black = renderer->MapRGB(0, 0, 0);
-            for (unsigned int i=0; i<256; i++) {
-                pixel_address = ((uint8_t *)render_pixels) + i*line_bytes;
-                //memset(pixel_address, 10, 32*4);         // Left
-                //memset(pixel_address + 480*4, 10, 32*4); // Right
-                for (unsigned int j=0; j<32; j++) {
-                    *(uint32_t *)(pixel_address + j*4) = black;
-                    *(uint32_t *)(pixel_address + 480*4 + j*4) = black;
-                }
-            }
-        }
-        for (unsigned int i=0; i<page_size; i++) render_byte(i);
+        // if ((mode & 0x03) == 2) {
+        //     // Blanking fields in text modes
+        //     uint8_t * pixel_address;
+        //     uint32_t black = renderer->MapRGB(0, 0, 0);
+        //     for (unsigned int i=0; i<256; i++) {
+        //         pixel_address = ((uint8_t *)render_pixels) + i*line_bytes;
+        //         //memset(pixel_address, 10, 32*4);         // Left
+        //         //memset(pixel_address + 480*4, 10, 32*4); // Right
+        //         for (unsigned int j=0; j<32; j++) {
+        //             *(uint32_t *)(pixel_address + j*4) = black;
+        //             *(uint32_t *)(pixel_address + 480*4 + j*4) = black;
+        //         }
+        //     }
+        // }
+        // for (unsigned int i=0; i<page_size; i++) render_byte(i);
         screen_valid = true;
         was_updated = true;
     }
@@ -276,6 +414,9 @@ void AgatDisplay::HSYNC(unsigned line, unsigned sync_val)
             }
         }
     }
+    int screen_line = static_cast<int>(line - m_top_blank) / 2;
+    if (screen_line >= 0 && screen_line < 256)
+        render_line(screen_line);
 }
 
 ComputerDevice * create_agat_display(InterfaceManager *im, EmulatorConfigDevice *cd)

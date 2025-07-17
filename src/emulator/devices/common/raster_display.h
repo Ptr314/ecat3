@@ -15,11 +15,13 @@ private:
     unsigned m_lines;
     unsigned m_half_frame_lines;
     bool m_interlaced;
-    unsigned m_top_blank;
-    unsigned m_bottom_blank;
     unsigned m_line_counter;
     unsigned m_current_line;
     unsigned m_counts_per_line;
+
+protected:
+    unsigned m_top_blank;
+    unsigned m_bottom_blank;
 
     virtual void FRAME_SYNC() {};
     virtual void VSYNC(unsigned sync_val) {};
