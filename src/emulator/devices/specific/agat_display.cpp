@@ -5,6 +5,7 @@
 
 #include "agat_display.h"
 #include "emulator/utils.h"
+#include <iostream>
 
 uint8_t Agat_2Colors[2][3] =  {
                     {0, 0, 0},
@@ -23,10 +24,14 @@ uint8_t Agat_16Colors[16][3]  = {
 uint32_t Agat_RGBA16[16];
 
 AgatDisplay::AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
-    RasterDisplay(im, cd),
-    previous_mode(_FFFF),
-    blinker(false),
-    clock_counter(0)
+    RasterDisplay(im, cd)
+    , previous_mode(_FFFF)
+    , blinker(false)
+    , clock_counter(0)
+    , m_irq_val(1)
+    , i_50hz(this, im, 1, "50hz", MODE_W)
+    , i_500hz(this, im, 1, "500hz", MODE_W)
+    , i_ints_en(this, im, 1, "ints_en", MODE_R)
 {
     sx = 512; // Doubling 2*256 because of 64 chars mode;
     sy = 256;
@@ -38,24 +43,18 @@ void AgatDisplay::load_config(SystemData *sd)
 
     port_mode = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("mode").value));
     memory[0] = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram").value));
-    //memory[1] = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram2").value));
     font =      dynamic_cast<ROM*>(im->dm->get_device_by_name(cd->get_parameter("font").value));
 
     memory[0]->set_memory_callback(this, 1, MODE_W);
-    //memory[1]->set_memory_callback(this, 2, MODE_W);
 
     system_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
     blink_ticks = system_clock / (5*2);     // 5 Hz
 
+    i_50hz.change(1);
+    i_500hz.change(1);
+
     set_mode(0x02);
 }
-
-// void AgatDisplay::set_surface(SURFACE * surface)
-// {
-//     GenericDisplay::set_surface(surface);
-//     fill_SDL_rgba(Agat_2Colors, Agat_RGBA2, 2, surface);
-//     fill_SDL_rgba(Agat_16Colors, Agat_RGBA16, 16, surface);
-// }
 
 void AgatDisplay::set_renderer(VideoRenderer &vr)
 {
@@ -259,6 +258,24 @@ void AgatDisplay::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 {
     *sx = this->sx;
     *sy = this->sy;
+}
+
+void AgatDisplay::VSYNC(unsigned sync_val)
+{
+    if ((i_ints_en.value & 1) == 0) i_50hz.change(sync_val);
+}
+
+void AgatDisplay::HSYNC(unsigned line, unsigned sync_val)
+{
+    if ((i_ints_en.value & 1) == 0) {
+        if (sync_val == 0) {
+            unsigned irq_val = (line >> 5) & 1;
+            if (irq_val != m_irq_val) {
+                i_500hz.change(irq_val);
+                m_irq_val = irq_val;
+            }
+        }
+    }
 }
 
 ComputerDevice * create_agat_display(InterfaceManager *im, EmulatorConfigDevice *cd)

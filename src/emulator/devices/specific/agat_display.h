@@ -25,6 +25,12 @@ protected:
     RAM * memory[2];
     ROM * font;
 
+    Interface i_50hz;
+    Interface i_500hz;
+    Interface i_ints_en;
+
+    unsigned m_irq_val;
+
     void render_byte(unsigned int address);
     virtual void render_all(bool force_render) override;
 
@@ -42,6 +48,9 @@ public:
     virtual void load_config(SystemData *sd) override;
 
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
+
+    void VSYNC(unsigned sync_val) override;
+    void HSYNC(unsigned line, unsigned sync_val) override;
 };
 
 ComputerDevice * create_agat_display(InterfaceManager *im, EmulatorConfigDevice *cd);

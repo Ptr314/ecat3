@@ -28,7 +28,7 @@ void RasterDisplay::load_config(SystemData *sd)
         im->dm->error(this, "Unknown video standard");
     }
 
-    m_counts_per_line = m_system_clock / m_lines;
+    m_counts_per_line = (m_interlaced?2:1) * m_system_clock / m_lines / m_frame_rate;
 }
 
 void RasterDisplay::clock(unsigned int counter)
