@@ -28,7 +28,7 @@ void RasterDisplay::load_config(SystemData *sd)
         m_interlaced = true;
         m_top_blank = 23;
         m_bottom_blank = 4;
-        m_hsync_length_ms = 32;
+        m_hsync_length_ms = 12;
     } else {
         im->dm->error(this, "Unknown video standard");
     }
