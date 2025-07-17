@@ -6,8 +6,9 @@
 #pragma once
 
 #include "emulator/core.h"
+#include "emulator/devices/common/raster_display.h"
 
-class AgatDisplay : public GenericDisplay
+class AgatDisplay : public RasterDisplay
 {
 protected:
     unsigned int mode;

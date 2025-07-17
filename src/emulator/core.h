@@ -153,9 +153,9 @@ public:
 protected:
     unsigned int clock_miltiplier;
     unsigned int clock_divider;
+    CPU * cpu = nullptr;
+    uint32_t m_system_clock = 0;
 
-
-protected:
     unsigned int clock_stored;
 
     // Interface * create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id = 0);

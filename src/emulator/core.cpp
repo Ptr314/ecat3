@@ -494,6 +494,10 @@ void ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
 
         }
     }
+    if (name != "cpu") {
+        cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu"));
+        m_system_clock = cpu->clock;
+    }
 #ifdef LOGGER
     log_mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper"));
 #endif

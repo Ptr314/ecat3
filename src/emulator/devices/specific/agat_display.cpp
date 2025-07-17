@@ -23,7 +23,7 @@ uint8_t Agat_16Colors[16][3]  = {
 uint32_t Agat_RGBA16[16];
 
 AgatDisplay::AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
-    GenericDisplay(im, cd),
+    RasterDisplay(im, cd),
     previous_mode(_FFFF),
     blinker(false),
     clock_counter(0)
@@ -34,6 +34,8 @@ AgatDisplay::AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 void AgatDisplay::load_config(SystemData *sd)
 {
+    RasterDisplay::load_config(sd);
+
     port_mode = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("mode").value));
     memory[0] = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram").value));
     //memory[1] = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram2").value));
@@ -97,6 +99,8 @@ void AgatDisplay::set_mode(unsigned int new_mode)
 
 void AgatDisplay::clock(unsigned int counter)
 {
+    RasterDisplay::clock(counter);
+
     uint8_t mode_value = port_mode->get_direct();
     if (previous_mode != mode_value) set_mode(mode_value);
 
