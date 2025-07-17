@@ -18,6 +18,11 @@ private:
     unsigned m_line_counter;
     unsigned m_current_line;
     unsigned m_counts_per_line;
+    unsigned m_screen_line;
+    unsigned m_hsync_counter;
+    unsigned m_hsync_length_ms;
+    unsigned m_counts_hsync;
+    bool m_hsync_active;
 
 protected:
     unsigned m_top_blank;

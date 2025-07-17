@@ -30,9 +30,10 @@ protected:
     Interface i_ints_en;
 
     unsigned m_irq_val;
+    unsigned m_512_mode;
 
     void render_byte(unsigned int address);
-    void render_line(unsigned line);
+    void render_line(unsigned screen_line);
     virtual void render_all(bool force_render) override;
 
     void set_mode(unsigned int new_mode);
@@ -40,7 +41,6 @@ protected:
 public:
     AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
 
-    // virtual void set_surface(SURFACE * surface) override;
     void set_renderer(VideoRenderer &vr) override;
 
     // virtual void memory_callback(unsigned int callback_id, unsigned int address) override;

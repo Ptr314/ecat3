@@ -11,6 +11,10 @@ RasterDisplay::RasterDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
       GenericDisplay(im, cd)
     , m_current_line(0)
     , m_standart("625/50")
+    , m_screen_line(0)
+    , m_line_counter(0)
+    , m_hsync_counter(0)
+    , m_hsync_active(false)
 {}
 
 void RasterDisplay::load_config(SystemData *sd)
@@ -24,21 +28,27 @@ void RasterDisplay::load_config(SystemData *sd)
         m_interlaced = true;
         m_top_blank = 23;
         m_bottom_blank = 4;
+        m_hsync_length_ms = 32;
     } else {
         im->dm->error(this, "Unknown video standard");
     }
 
     m_counts_per_line = (m_interlaced?2:1) * m_system_clock / m_lines / m_frame_rate;
+    m_counts_hsync = m_system_clock * m_hsync_length_ms / 1000000;
 }
 
 void RasterDisplay::clock(unsigned int counter)
 {
-    unsigned screen_line = 0;
     m_line_counter += counter;
+    m_hsync_counter += counter;
+    if (m_hsync_active && m_hsync_counter >= m_counts_hsync) {
+        HSYNC(m_screen_line, 1);
+        m_hsync_active = false;
+    }
     if (m_line_counter >= m_counts_per_line) {
         m_line_counter -= m_counts_per_line;
         if (m_interlaced) {
-            screen_line = (m_current_line <= 312) ? (2 * m_current_line) : (2 * (m_current_line - 313) + 1);
+            m_screen_line = (m_current_line <= 312) ? (2 * m_current_line) : (2 * (m_current_line - 313) + 1);
         } else {
             im->dm->error(this, "Non-interlaced mode is not supported yet");
         }
@@ -50,7 +60,9 @@ void RasterDisplay::clock(unsigned int counter)
         if (m_current_line == m_top_blank || m_current_line == m_half_frame_lines + m_top_blank)
             VSYNC(1);
 
-        HSYNC(screen_line, 0);
+        HSYNC(m_screen_line, 0);
+        m_hsync_counter = 0;
+        m_hsync_active = true;
 
         if (m_current_line++ > 624) m_current_line = 0;
     }

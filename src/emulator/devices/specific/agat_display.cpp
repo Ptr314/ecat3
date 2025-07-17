@@ -23,6 +23,10 @@ uint8_t Agat_16Colors[16][3]  = {
 
 uint32_t Agat_RGBA16[16];
 
+#define     M_256_EVEN  0       // Render even lines only
+#define     M_256_ODD   1       // Render odd lines only
+#define     M_512_ON    2       // Render all 512 interlaced lines
+
 AgatDisplay::AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     RasterDisplay(im, cd)
     , previous_mode(_FFFF)
@@ -52,6 +56,10 @@ void AgatDisplay::load_config(SystemData *sd)
 
     i_50hz.change(1);
     i_500hz.change(1);
+
+    m_512_mode = M_256_EVEN;
+
+    if (m_512_mode == M_512_ON) sy = 512;
 
     set_mode(0x02);
 }
@@ -230,12 +238,15 @@ void AgatDisplay::render_byte(unsigned int address)
 
 }
 
-void AgatDisplay::render_line(unsigned int line)
+void AgatDisplay::render_line(unsigned int screen_line)
 {
     uint8_t * pixel_address;
     unsigned int p, screen_offset, font_line, char_address, inv;
     uint8_t v, v1, v2, font_val;
     uint8_t color[2];
+
+    // As we psysically have 256 doubled lines, we use a half of screen_line in a 512-line mode
+    unsigned line = (m_512_mode==M_512_ON) ? (screen_line / 2) : screen_line;
 
     switch (mode) {
     case 0x00:
@@ -252,7 +263,7 @@ void AgatDisplay::render_line(unsigned int line)
                 for (unsigned int k = 0; k < 8; k++) {
                     p = screen_offset + j*32 + k*4;
 
-                    pixel_address = static_cast<uint8_t *>(render_pixels) + line*line_bytes + p;
+                    pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
                     *(uint32_t*)pixel_address = Agat_RGBA16[c];
                 }
             }
@@ -272,7 +283,7 @@ void AgatDisplay::render_line(unsigned int line)
                 for (unsigned int k = 0; k < 4; k++) {
                     p = screen_offset + j*16 + k*4;
                     unsigned int c = color[j];
-                    pixel_address = static_cast<uint8_t *>(render_pixels) + line*line_bytes + p;
+                    pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
                     *(uint32_t*)pixel_address = Agat_RGBA16[c];
                 }
         }
@@ -301,7 +312,7 @@ void AgatDisplay::render_line(unsigned int line)
 
             screen_offset = 32*4 + i * (7*4*2);
 
-            for (unsigned int k=0; k<7; k++) {              // Char is 7 pixels wide
+            for (unsigned int k=1; k<=7; k++) {              // Char is 7 pixels wide
                 unsigned int c = (font_val >> k) & 0x01;
                 unsigned int ccl;
                 if ( (((v2 & 0x20) != 0) || ((v2 & 0x08) != 0) && blinker) )
@@ -309,8 +320,8 @@ void AgatDisplay::render_line(unsigned int line)
                 else
                     ccl = cl * (c ^ 0x01);
                 uint32_t color = Agat_RGBA16[ccl];
-                p = screen_offset + (6-k)*8;
-                pixel_address = static_cast<uint8_t *>(render_pixels) + line*line_bytes + p;
+                p = screen_offset + (7-k)*8;
+                pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
                 *(uint32_t*)pixel_address = color;
                 *(uint32_t*)(pixel_address+4) = color;
             }
@@ -339,7 +350,7 @@ void AgatDisplay::render_line(unsigned int line)
             for (unsigned int k=0; k<7; k++) {                      // Char is 7x8 pixels
                 unsigned int c = ((font_val >> k) & 1) ^ inv;
                 p = screen_offset + (6-k)*4;
-                pixel_address = static_cast<uint8_t *>(render_pixels) + line*line_bytes + p;
+                pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
                 *(uint32_t*)pixel_address = Agat_RGBA2[c];
             }
         }
@@ -358,7 +369,7 @@ void AgatDisplay::render_line(unsigned int line)
                 unsigned int c = (v >> k) & 0x01;
                 uint32_t color = Agat_RGBA2[c];
                 p = screen_offset + (7-k)*8;
-                pixel_address = static_cast<uint8_t *>(render_pixels) + line*line_bytes + p;
+                pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
                 *(uint32_t*)pixel_address = color;
                 *(uint32_t*)(pixel_address+4) = color;
             }
@@ -405,18 +416,30 @@ void AgatDisplay::VSYNC(unsigned sync_val)
 
 void AgatDisplay::HSYNC(unsigned line, unsigned sync_val)
 {
-    if ((i_ints_en.value & 1) == 0) {
-        if (sync_val == 0) {
-            unsigned irq_val = (line >> 5) & 1;
-            if (irq_val != m_irq_val) {
-                i_500hz.change(irq_val);
-                m_irq_val = irq_val;
-            }
+    // We fire irqs at the beginning of the HSYNC
+    if (sync_val == 0 && (i_ints_en.value & 1) == 0) {
+        unsigned irq_val = (line >> 5) & 1;
+        if (irq_val != m_irq_val) {
+            i_500hz.change(irq_val);
+            m_irq_val = irq_val;
         }
     }
-    int screen_line = static_cast<int>(line - m_top_blank) / 2;
-    if (screen_line >= 0 && screen_line < 256)
-        render_line(screen_line);
+
+    // And rendering a line after ending of the HSYNC
+    if (sync_val == 1) {
+        int screen_line;
+        if (m_512_mode == M_512_ON) {
+            // Render all 512 interlaced lines
+            screen_line = static_cast<int>(line - m_top_blank);
+            if (screen_line >= 0 && screen_line < 512)
+                render_line(screen_line);
+        } else {
+            // Render 256 lines, using even or odd lines of the full 625-lines frame only
+            screen_line = static_cast<int>(line - m_top_blank) / 2;
+            if (screen_line >= 0 && screen_line < 256 && ((line & 1) == m_512_mode))
+                render_line(screen_line);
+        }
+    }
 }
 
 ComputerDevice * create_agat_display(InterfaceManager *im, EmulatorConfigDevice *cd)
