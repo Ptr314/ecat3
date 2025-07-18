@@ -823,12 +823,12 @@
     <message>
         <location line="+9"/>
         <source>Cold restart</source>
-        <translation>Холодный перезапуск</translation>
+        <translation>Холодный перезапуск (Ctrl+Alt+Break)</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Soft restart</source>
-        <translation>Теплый перезапуск</translation>
+        <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="-352"/>

@@ -382,6 +382,9 @@ void Emulator::key_event(QKeyEvent *event, bool press)
 {
     keyboard->key_event(event, press);
     if (event->key() == Qt::Key_F12) display->validate(true);
+    if (press && event->key() == Qt::Key_Cancel) {
+        reset(event->modifiers() & Qt::AltModifier);
+    }
 }
 
 void Emulator::set_volume(int value)

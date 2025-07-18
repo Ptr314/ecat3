@@ -539,7 +539,7 @@ void MainWindow::keyPressEvent( QKeyEvent *event )
     if (event->isAutoRepeat()) {
         event->ignore();
     } else {
-        //qDebug() << "Key pressed: scan " << event->nativeScanCode() << "virtual" << event->nativeVirtualKey() << "key" << event->key() << "Qt::Key_Left" << (int)(Qt::Key_Left);
+        // qDebug() << "Key pressed: scan " << event->nativeScanCode() << "virtual" << event->nativeVirtualKey() << "key" << Qt::hex << event->key();
         //e->key_event(event, true);
         emit send_a_key(event, true);
     }
