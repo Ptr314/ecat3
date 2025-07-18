@@ -106,6 +106,7 @@ void AgatDisplay::interface_callback(unsigned callback_id, unsigned new_value, u
 {
     if (callback_id == 1) {
         if ((new_value & 1) != 0) {
+            // Return both the signals to 1 after disabling interrupts
             m_irq_val = m_nmi_val = 1;
             i_50hz.change(m_nmi_val);
             i_500hz.change(m_irq_val);
@@ -299,6 +300,7 @@ void AgatDisplay::HSYNC(const unsigned line, const unsigned sync_val)
     if (sync_val == 0) {
         // We fire irqs _before_ HSYNC
         // In Agat-7 IRQ is a 1:1 meander with a frequency of 32+32 lines (for a 625-lines frame)
+        // Except a last period which is shorter (625 < 64*10)
         // https://forum.agatcomp.ru//viewtopic.php?id=244
         if ((i_ints_en.value & 1) == 0) {
             // Align with VSYNC(1)
