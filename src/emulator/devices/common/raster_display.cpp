@@ -40,11 +40,6 @@ void RasterDisplay::load_config(SystemData *sd)
 void RasterDisplay::clock(unsigned int counter)
 {
     m_line_counter += counter;
-    m_hsync_counter += counter;
-    if (m_hsync_active && m_hsync_counter >= m_counts_hsync) {
-        HSYNC(m_screen_line, 1);
-        m_hsync_active = false;
-    }
     if (m_line_counter >= m_counts_per_line) {
         m_line_counter -= m_counts_per_line;
         if (m_interlaced) {
@@ -66,5 +61,12 @@ void RasterDisplay::clock(unsigned int counter)
 
         if (m_current_line++ > 624) m_current_line = 0;
     }
+
+    m_hsync_counter += counter;
+    if (m_hsync_active && m_hsync_counter >= m_counts_hsync) {
+        HSYNC(m_screen_line, 1);
+        m_hsync_active = false;
+    }
+
 }
 

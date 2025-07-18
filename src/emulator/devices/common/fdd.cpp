@@ -255,33 +255,36 @@ void FDD::NextPosition()
 
 uint8_t FDD::ReadNextByte()
 {
-    if (track_mode == FDD_MODE_SECTORS) {
-        if (position >= sector_size)
-            im->dm->error(this, FDD::tr("Reading outside of a sector"));
+    if (loaded) {
+        if (track_mode == FDD_MODE_SECTORS) {
+            if (position >= sector_size)
+                im->dm->error(this, FDD::tr("Reading outside of a sector"));
 
-        if (sector==0)
-        {
-            //GAP
-            return 0xFF;
+            if (sector==0)
+            {
+                //GAP
+                return 0xFF;
+            } else {
+                //DAta
+                uint8_t result = buffer[translate_address()];
+                position++;
+                return result;
+            }
         } else {
-            //DAta
-            uint8_t result = buffer[translate_address()];
-            position++;
+            uint8_t result = buffer[track_indexes[track*sides + side].mfmtrackoffset + position++];
+            if (position >= track_indexes[track*sides + side].mfmtracksize) {
+    #ifdef LOG_FDD
+                log_rotations++;
+    #endif
+                position = 0;
+            }
+    #ifdef LOG_FDD
+            //logs(QString("R %1 %2").arg(position).arg(result, 2, 16, QChar('0')));
+    #endif
             return result;
         }
-    } else {
-        uint8_t result = buffer[track_indexes[track*sides + side].mfmtrackoffset + position++];
-        if (position >= track_indexes[track*sides + side].mfmtracksize) {
-#ifdef LOG_FDD
-            log_rotations++;
-#endif
-            position = 0;
-        }
-#ifdef LOG_FDD
-        //logs(QString("R %1 %2").arg(position).arg(result, 2, 16, QChar('0')));
-#endif
-        return result;
-    }
+    } else
+        return 0xFF;
 }
 
 void FDD::WriteNextByte(uint8_t value)

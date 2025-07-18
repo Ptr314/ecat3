@@ -12,7 +12,6 @@ class RasterDisplay:public GenericDisplay
 private:
     std::string m_standart;
     unsigned m_frame_rate;
-    unsigned m_lines;
     unsigned m_half_frame_lines;
     bool m_interlaced;
     unsigned m_line_counter;
@@ -25,12 +24,13 @@ private:
     bool m_hsync_active;
 
 protected:
+    unsigned m_lines;
     unsigned m_top_blank;
     unsigned m_bottom_blank;
 
     virtual void FRAME_SYNC() {};
-    virtual void VSYNC(unsigned sync_val) {};
-    virtual void HSYNC(unsigned line, unsigned sync_val) {};
+    virtual void VSYNC(const unsigned sync_val) {};
+    virtual void HSYNC(const unsigned line, const unsigned sync_val) {};
 public:
     RasterDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
     void load_config(SystemData *sd) override;

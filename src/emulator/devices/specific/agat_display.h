@@ -13,26 +13,24 @@ class AgatDisplay : public RasterDisplay
 protected:
     unsigned int mode;
     unsigned int previous_mode;
-    unsigned int module;
     unsigned int base_address;
     unsigned int page_size;
     bool blinker;
     unsigned int clock_counter;
-    unsigned int system_clock;
     unsigned int blink_ticks;
 
-    Port * port_mode;
-    RAM * memory[2];
-    ROM * font;
+    Port * m_port_mode;
+    RAM * m_memory;
+    ROM * m_font;
 
     Interface i_50hz;
     Interface i_500hz;
     Interface i_ints_en;
 
     unsigned m_irq_val;
+    unsigned m_nmi_val;
     unsigned m_512_mode;
 
-    void render_byte(unsigned int address);
     void render_line(unsigned screen_line);
     virtual void render_all(bool force_render) override;
 
@@ -43,15 +41,14 @@ public:
 
     void set_renderer(VideoRenderer &vr) override;
 
-    // virtual void memory_callback(unsigned int callback_id, unsigned int address) override;
-
-    virtual void clock(unsigned int counter) override;
-    virtual void load_config(SystemData *sd) override;
+    void clock(unsigned int counter) override;
+    void load_config(SystemData *sd) override;
+    void interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value) override;
 
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
 
-    void VSYNC(unsigned sync_val) override;
-    void HSYNC(unsigned line, unsigned sync_val) override;
+    void VSYNC(const unsigned sync_val) override;
+    void HSYNC(const unsigned line, const unsigned sync_val) override;
 };
 
 ComputerDevice * create_agat_display(InterfaceManager *im, EmulatorConfigDevice *cd);
