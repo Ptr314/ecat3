@@ -90,6 +90,9 @@ void GLWidget::paintGL() {
         float widgetAspect = (float)width() / height();
         float imageAspect = (float)texture->width() / texture->height();
 
+        int borderWidth = 20;
+        float borderAspect = std::min((float)(width() - 2*borderWidth)/width(), (float)(height() - 2*borderWidth)/height());
+
         // Применяем коэффициент масштабирования пропорций
         imageAspect *= aspectRatioScale;
 
@@ -102,6 +105,9 @@ void GLWidget::paintGL() {
             scaleX = 1.0f;
             scaleY = widgetAspect / imageAspect;
         }
+        scaleY *= borderAspect;
+        scaleX *= borderAspect;
+
         offsetX = 0.0f;
         offsetY = 0.0f;
     } else {
