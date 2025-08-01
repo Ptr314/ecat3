@@ -607,7 +607,7 @@ void MainWindow::on_action_Select_a_machine_triggered()
 void MainWindow::set_title()
 {
     SystemData * sd = e->get_system_data();
-    setWindowTitle("eCat: " + sd->system_name + " : " + sd->system_version);
+    setWindowTitle("[eCat " + QString(PROJECT_VERSION) + "] " + sd->system_name + " : " + sd->system_version);
 }
 
 void MainWindow::load_config(QString file_name, bool set_default)
