@@ -8,8 +8,8 @@
 #define PROJECT_NAME "eCat3"
 #define VERSION_MAJOR "3"
 #define VERSION_MINOR "4"
-#define VERSION_PATCH "0"
-#define PROJECT_VERSION "3.4.0"
+#define VERSION_PATCH "1"
+#define PROJECT_VERSION "3.4.1"
 
 /* #undef EXTERNAL_Z80 */
 /* #undef CPU_STOPPED */

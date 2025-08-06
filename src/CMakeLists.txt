@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(eCat3 VERSION 3.4.0 LANGUAGES C CXX)
+project(eCat3 VERSION 3.4.1 LANGUAGES C CXX)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)

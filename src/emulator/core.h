@@ -149,6 +149,7 @@ public:
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
     virtual void memory_callback(unsigned int callback_id, unsigned int address);
     bool belongs_to_class(QString class_to_check);
+    bool get_reset_behavior(bool is_cold);
 
 protected:
     unsigned int clock_miltiplier;
@@ -169,6 +170,9 @@ protected:
     MemoryMapper * log_mm;
 #endif
 
+private:
+    bool m_cold_reset = true;
+    bool m_soft_reset = true;
 };
 
 class AddressableDevice: public ComputerDevice

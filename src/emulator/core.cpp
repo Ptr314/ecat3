@@ -272,8 +272,10 @@ void DeviceManager::reset_devices(bool cold)
                 devlist[j+1] = t;
             }
 
-    for (unsigned int i=0; i < device_count; i++)
-        devices[devlist[i]].device->reset(cold);
+    for (unsigned int i=0; i < device_count; i++) {
+        ComputerDevice * d = devices[devlist[i]].device;
+        if (d->get_reset_behavior(cold)) d->reset(cold);
+    }
 }
 
 void DeviceManager::clock(unsigned int counter)
@@ -498,9 +500,22 @@ void ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
         cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu"));
         m_system_clock = cpu->clock;
     }
+
+    try {
+        m_cold_reset = read_confg_value(cd, "cold_reset", false, true);
+        m_soft_reset = read_confg_value(cd, "soft_reset", false, true);
+    } catch (QException &e) {
+        QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect parameters for '%1'").arg(name));
+    }
+
 #ifdef LOGGER
     log_mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper"));
 #endif
+}
+
+bool ComputerDevice::get_reset_behavior(bool is_cold)
+{
+    return (is_cold)?m_cold_reset:m_soft_reset;
 }
 
 // Interface * ComputerDevice::create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id)
