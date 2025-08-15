@@ -219,6 +219,7 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("6502", &CreateDebugWindow);
     DWM->register_debug_window("65c02", &CreateDebugWindow);
     DWM->register_debug_window("taperecorder", &CreateTapeWindow);
+    DWM->register_debug_window("ram-address", &CreateDumpWindow);
 
     #ifdef RENDERER_SDL2
         renderer = new SDL2Renderer();

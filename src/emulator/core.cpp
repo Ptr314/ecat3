@@ -7,6 +7,7 @@
 #include <QtGlobal>
 
 #include <cmath>
+#include <iostream>
 
 #ifdef RENDERER_SDL2
     #include <SDL.h>

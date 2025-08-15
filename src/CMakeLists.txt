@@ -167,7 +167,8 @@ set(PROJECT_SOURCES
 
     ${Z80_FILES}
     emulator/devices/specific/agat_fdc140.h emulator/devices/specific/agat_fdc140.cpp
-    emulator/devices/specific/agat_display.h emulator/devices/specific/agat_display.cpp
+    emulator/devices/specific/agat_7_display.h emulator/devices/specific/agat_7_display.cpp
+    emulator/devices/specific/agat_9_display.h emulator/devices/specific/agat_9_display.cpp
     emulator/devices/common/mapkeyboard.h emulator/devices/common/mapkeyboard.cpp
     emulator/devices/common/sound.h emulator/devices/common/sound.cpp
     libs/mfm_formats.h
@@ -186,6 +187,9 @@ set(PROJECT_SOURCES
     libs/audio_filters.h
     emulator/devices/common/raster_display.h
     emulator/devices/common/raster_display.cpp
+    emulator/devices/common/ram_address.h
+    emulator/devices/common/ram_address.cpp
+
 )
 
 # Adding Qt base translations

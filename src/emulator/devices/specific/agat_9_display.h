@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: Agat display controller device
+// Description: Agat-9 display controller device
 
 #pragma once
 
 #include "emulator/core.h"
 #include "emulator/devices/common/raster_display.h"
 
-class AgatDisplay : public RasterDisplay
+class Agat9Display : public RasterDisplay
 {
 protected:
     unsigned int mode;
@@ -37,7 +37,7 @@ protected:
     void set_mode(unsigned int new_mode);
 
 public:
-    AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
+    Agat9Display(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     void set_renderer(VideoRenderer &vr) override;
 
@@ -51,4 +51,4 @@ public:
     void HSYNC(const unsigned line, const unsigned sync_val) override;
 };
 
-ComputerDevice * create_agat_display(InterfaceManager *im, EmulatorConfigDevice *cd);
+ComputerDevice * create_agat_9_display(InterfaceManager *im, EmulatorConfigDevice *cd);

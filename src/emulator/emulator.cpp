@@ -46,8 +46,10 @@
 #include "emulator/devices/cpu/6502.h"
 #include "emulator/devices/specific/agat_fdc140.h"
 #include "emulator/devices/specific/agat_fdc840.h"
-#include "emulator/devices/specific/agat_display.h"
+#include "emulator/devices/specific/agat_7_display.h"
+#include "emulator/devices/specific/agat_9_display.h"
 #include "emulator/devices/common/mapkeyboard.h"
+#include "emulator/devices/common/ram_address.h"
 
 Emulator::Emulator(QString work_path, QString data_path, QString software_path, QString ini_file, VideoRenderer * renderer):
       work_path(work_path)
@@ -540,6 +542,8 @@ void Emulator::register_devices()
     dm->register_device("65c02", create_wdc65c02);
     dm->register_device("agat-fdc140", create_agat_fdc140);
     dm->register_device("agat-fdc840", create_agat_fdc840);
-    dm->register_device("agat-display", create_agat_display);
+    dm->register_device("agat-7-display", create_agat_7_display);
+    dm->register_device("agat-9-display", create_agat_9_display);
     dm->register_device("map-keyboard", create_mapkeyboard);
+    dm->register_device("ram-address", create_ram_address);
 }

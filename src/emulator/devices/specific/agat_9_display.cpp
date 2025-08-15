@@ -1,33 +1,33 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: Agat display controller device
+// Description: Agat-9 display controller device
 
-#include "agat_display.h"
+#include "agat_9_display.h"
 #include "emulator/utils.h"
 #include <iostream>
 
-uint8_t Agat_2Colors[2][3] =  {
+uint8_t Agat_2Colors_[2][3] =  {
                     {0, 0, 0},
                     {255, 255, 255}
         };
 
-uint32_t Agat_RGBA2[2];
+uint32_t Agat_RGBA2_[2];
 
-uint8_t Agat_16Colors[16][3]  = {
+uint8_t Agat_16Colors_[16][3]  = {
                     {  0,   0,   0}, {217,   0,   0}, {  0, 217,   0}, {217, 217,   0},
                     {  0,   0, 217}, {217,   0, 217}, {  0, 217, 217}, {217, 217, 217},
                     { 38,  38, 	38}, {255,  38,  38}, { 38, 255,  38}, {255, 255,  38},
                     { 38,  38, 255}, {255,  38, 255}, { 38, 255, 255}, {255, 255, 255}
         };
 
-uint32_t Agat_RGBA16[16];
+uint32_t Agat_RGBA16_[16];
 
 #define     M_256_EVEN  0       // Render even lines only
 #define     M_256_ODD   1       // Render odd lines only
 #define     M_512_ON    2       // Render all 512 interlaced lines
 
-AgatDisplay::AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
+Agat9Display::Agat9Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     RasterDisplay(im, cd)
     , previous_mode(_FFFF)
     , blinker(false)
@@ -42,11 +42,11 @@ AgatDisplay::AgatDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     sy = 256;
 }
 
-void AgatDisplay::load_config(SystemData *sd)
+void Agat9Display::load_config(SystemData *sd)
 {
     RasterDisplay::load_config(sd);
 
-    m_port_mode = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("mode").value));
+    m_port_mode = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("mode_agat").value));
     m_memory =    dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram").value));
     m_font =      dynamic_cast<ROM*>(im->dm->get_device_by_name(cd->get_parameter("font").value));
 
@@ -63,14 +63,14 @@ void AgatDisplay::load_config(SystemData *sd)
     set_mode(0x02);
 }
 
-void AgatDisplay::set_renderer(VideoRenderer &vr)
+void Agat9Display::set_renderer(VideoRenderer &vr)
 {
     GenericDisplay::set_renderer(vr);
-    vr.FillRGB(Agat_2Colors, Agat_RGBA2, 2);
-    vr.FillRGB(Agat_16Colors, Agat_RGBA16, 16);
+    vr.FillRGB(Agat_2Colors_, Agat_RGBA2_, 2);
+    vr.FillRGB(Agat_16Colors_, Agat_RGBA16_, 16);
 }
 
-void AgatDisplay::set_mode(unsigned int new_mode)
+void Agat9Display::set_mode(unsigned int new_mode)
 {
     previous_mode = new_mode;
     mode = new_mode & 0x83;
@@ -89,7 +89,7 @@ void AgatDisplay::set_mode(unsigned int new_mode)
     case 0x82:
         // АЦР (Alphanumeric)
         page_size = 2048;
-        base_address += ((new_mode & 0x0C) >> 2) * 2048;
+        base_address = ((new_mode & 0x0C) >> 2) * 2048;
         break;
     case 0x03:
         // ГВР (HiRes Graphics)
@@ -102,7 +102,7 @@ void AgatDisplay::set_mode(unsigned int new_mode)
     was_updated = true;
 }
 
-void AgatDisplay::interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value)
+void Agat9Display::interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value)
 {
     if (callback_id == 1) {
         if ((new_value & 1) != 0) {
@@ -114,7 +114,7 @@ void AgatDisplay::interface_callback(unsigned callback_id, unsigned new_value, u
     }
 }
 
-void AgatDisplay::clock(unsigned int counter)
+void Agat9Display::clock(unsigned int counter)
 {
     RasterDisplay::clock(counter);
 
@@ -128,7 +128,7 @@ void AgatDisplay::clock(unsigned int counter)
     }
 }
 
-void AgatDisplay::render_line(unsigned int screen_line)
+void Agat9Display::render_line(unsigned int screen_line)
 {
     uint8_t * pixel_address;
     unsigned int p, screen_offset, font_line, char_address, inv;
@@ -154,7 +154,7 @@ void AgatDisplay::render_line(unsigned int screen_line)
                     p = screen_offset + j*32 + k*4;
 
                     pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
-                    *(uint32_t*)pixel_address = Agat_RGBA16[c];
+                    *(uint32_t*)pixel_address = Agat_RGBA16_[c];
                 }
             }
         }
@@ -174,7 +174,7 @@ void AgatDisplay::render_line(unsigned int screen_line)
                     p = screen_offset + j*16 + k*4;
                     unsigned int c = color[j];
                     pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
-                    *(uint32_t*)pixel_address = Agat_RGBA16[c];
+                    *(uint32_t*)pixel_address = Agat_RGBA16_[c];
                 }
         }
         break;
@@ -188,8 +188,8 @@ void AgatDisplay::render_line(unsigned int screen_line)
         // Blanking sides
         pixel_address = ((uint8_t *)render_pixels) + line*line_bytes;
         for (unsigned int j=0; j<32; j++) {
-            *(uint32_t *)(pixel_address + j*4) = Agat_RGBA2[0];
-            *(uint32_t *)(pixel_address + 480*4 + j*4) = Agat_RGBA2[0];
+            *(uint32_t *)(pixel_address + j*4) = Agat_RGBA2_[0];
+            *(uint32_t *)(pixel_address + 480*4 + j*4) = Agat_RGBA2_[0];
         }
 
         font_line = line % 8;
@@ -209,7 +209,7 @@ void AgatDisplay::render_line(unsigned int screen_line)
                     ccl = cl * c;
                 else
                     ccl = cl * (c ^ 0x01);
-                uint32_t color = Agat_RGBA16[ccl];
+                uint32_t color = Agat_RGBA16_[ccl];
                 p = screen_offset + (7-k)*8;
                 pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
                 *(uint32_t*)pixel_address = color;
@@ -226,8 +226,8 @@ void AgatDisplay::render_line(unsigned int screen_line)
         // Blanking sides
         pixel_address = ((uint8_t *)render_pixels) + line*line_bytes;
         for (unsigned int j=0; j<32; j++) {
-            *(uint32_t *)(pixel_address + j*4) = Agat_RGBA2[0];
-            *(uint32_t *)(pixel_address + 480*4 + j*4) = Agat_RGBA2[0];
+            *(uint32_t *)(pixel_address + j*4) = Agat_RGBA2_[0];
+            *(uint32_t *)(pixel_address + 480*4 + j*4) = Agat_RGBA2_[0];
         }
 
         inv = ((~previous_mode & 0x04) >> 2);                       // inverted mode
@@ -241,7 +241,7 @@ void AgatDisplay::render_line(unsigned int screen_line)
                 unsigned int c = ((font_val >> k) & 1) ^ inv;
                 p = screen_offset + (6-k)*4;
                 pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
-                *(uint32_t*)pixel_address = Agat_RGBA2[c];
+                *(uint32_t*)pixel_address = Agat_RGBA2_[c];
             }
         }
         break;
@@ -257,7 +257,7 @@ void AgatDisplay::render_line(unsigned int screen_line)
 
             for (unsigned int k = 0; k < 8; k++) {
                 unsigned int c = (v >> k) & 0x01;
-                uint32_t color = Agat_RGBA2[c];
+                uint32_t color = Agat_RGBA2_[c];
                 p = screen_offset + (7-k)*8;
                 pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
                 *(uint32_t*)pixel_address = color;
@@ -269,19 +269,19 @@ void AgatDisplay::render_line(unsigned int screen_line)
 }
 
 
-void AgatDisplay::render_all(bool force_render)
+void Agat9Display::render_all(bool force_render)
 {
     screen_valid = true;
     was_updated = true;
 }
 
-void AgatDisplay::get_screen_constraints(unsigned int * sx, unsigned int * sy)
+void Agat9Display::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 {
     *sx = this->sx;
     *sy = this->sy;
 }
 
-void AgatDisplay::VSYNC(const unsigned sync_val)
+void Agat9Display::VSYNC(const unsigned sync_val)
 {
     // if ((i_ints_en.value & 1) == 0) {
     //     std::cout << "- VSYNC " << sync_val << std::endl;
@@ -295,7 +295,7 @@ void AgatDisplay::VSYNC(const unsigned sync_val)
     }
 }
 
-void AgatDisplay::HSYNC(const unsigned line, const unsigned sync_val)
+void Agat9Display::HSYNC(const unsigned line, const unsigned sync_val)
 {
     if (sync_val == 0) {
         // We fire irqs _before_ HSYNC
@@ -333,7 +333,7 @@ void AgatDisplay::HSYNC(const unsigned line, const unsigned sync_val)
     }
 }
 
-ComputerDevice * create_agat_display(InterfaceManager *im, EmulatorConfigDevice *cd)
+ComputerDevice * create_agat_9_display(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
-    return new AgatDisplay(im, cd);
+    return new Agat9Display(im, cd);
 }
