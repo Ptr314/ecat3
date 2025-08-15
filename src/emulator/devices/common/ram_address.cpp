@@ -30,19 +30,23 @@ void RAMAddress::load_config(SystemData *sd)
 unsigned RAMAddress::get_value(unsigned address)
 {
     unsigned a = (address >> m_address_shift) & m_address_mask;
-    unsigned v = Memory::get_value(a);
-    std::cout << "R " + std::to_string(a) + ":" + std::to_string(v) << std::endl;
+    unsigned v = RAM::get_value(a);
+    // std::cout << "R " + std::to_string(a) + ":" + std::to_string(v) << std::endl;
     return (a << m_address_shift) | (v << m_value_shift) ;
 }
 
 void RAMAddress::set_value(unsigned int address, unsigned int value, bool force)
 {
-    unsigned a = (address >> m_address_shift) & m_address_mask;
-    unsigned v = (address >> m_value_shift) & m_value_mask;
+    if ((i_we.value & 1) == 1) {
+        unsigned a = (address >> m_address_shift) & m_address_mask;
+        unsigned v = (address >> m_value_shift) & m_value_mask;
 
-    std::cout << "W " + std::to_string(a) + ":" + std::to_string(v) << std::endl;
+        // std::cout << "W " + std::to_string(a) + ":" + std::to_string(v) << std::endl;
 
-    Memory::set_value(a, v, force);
+        Memory::set_value(a, v, force);
+    } else {
+        // std::cout << "W " + std::to_string(address) + ": blocked by WE";
+    }
 }
 
 ComputerDevice * create_ram_address(InterfaceManager *im, EmulatorConfigDevice *cd)

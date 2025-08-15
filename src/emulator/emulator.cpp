@@ -50,6 +50,8 @@
 #include "emulator/devices/specific/agat_9_display.h"
 #include "emulator/devices/common/mapkeyboard.h"
 #include "emulator/devices/common/ram_address.h"
+#include "emulator/devices/specific/agat_9_mapper.h"
+
 
 Emulator::Emulator(QString work_path, QString data_path, QString software_path, QString ini_file, VideoRenderer * renderer):
       work_path(work_path)
@@ -546,4 +548,5 @@ void Emulator::register_devices()
     dm->register_device("agat-9-display", create_agat_9_display);
     dm->register_device("map-keyboard", create_mapkeyboard);
     dm->register_device("ram-address", create_ram_address);
+    dm->register_device("agat-9-mapper", create_agat_9_mapper);
 }

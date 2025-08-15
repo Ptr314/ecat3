@@ -9,8 +9,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         # Qt6 for Win 10+, Linux & macOS 64 bits
         # add_compile_definitions(RENDERER_SDL2)
-        # add_compile_definitions(RENDERER_QT)
-        add_compile_definitions(RENDERER_OPENGL)
+        add_compile_definitions(RENDERER_QT)
+        # add_compile_definitions(RENDERER_OPENGL)
     else()
         # Qt5 for Win 7+ 32 bits
         add_compile_definitions(RENDERER_SDL2)
@@ -185,10 +185,9 @@ set(PROJECT_SOURCES
     ${OPENGL_FILES}
 
     libs/audio_filters.h
-    emulator/devices/common/raster_display.h
-    emulator/devices/common/raster_display.cpp
-    emulator/devices/common/ram_address.h
-    emulator/devices/common/ram_address.cpp
+    emulator/devices/common/raster_display.h emulator/devices/common/raster_display.cpp
+    emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
+    emulator/devices/specific/agat_9_mapper.h emulator/devices/specific/agat_9_mapper.cpp
 
 )
 
