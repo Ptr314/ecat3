@@ -13,6 +13,8 @@ private:
     Interface i_in;
     Interface i_out;
     Interface i_c;
+    Interface i_r;
+    Interface i_s;
 
     unsigned int register_value;
     unsigned int store_type;
