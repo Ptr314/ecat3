@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(eCat3 VERSION 3.4.1 LANGUAGES C CXX)
+project(eCat3 VERSION 3.5.0 LANGUAGES C CXX)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
@@ -48,7 +48,7 @@ if (${LOGGER})
     set(LOG_CPU 0)
     set(LOG_MAPPER 0)
     set(LOG_PORTS 0)
-    set(LOG_FDD 1)
+    set(LOG_FDD 0)
     set(LOG_PAGE_MAPPER 0)
     set(LOG_INTERFACES 0)
 endif()

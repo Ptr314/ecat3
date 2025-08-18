@@ -5,7 +5,6 @@
 
 #include <QFile>
 #include <QMessageBox>
-#include <QException>
 
 #include "config.h"
 
@@ -35,7 +34,7 @@ EmulatorConfigParameter EmulatorConfigDevice::get_parameter(QString name, bool r
         if (parameters[i].name == name) return parameters[i];
     }
     if (required)
-        throw QException();
+        throw ConfigException(this->name + ":" + name);
     else
         return {"", "", "", "", ""};
 }

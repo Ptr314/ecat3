@@ -16,8 +16,20 @@ private:
     RAM * m_page_map;
     Port * rom_mode;
 
+    unsigned _WR;        // ЗП
+    unsigned _RD;        // ЧТ
+    unsigned _HD;        // HD
+    unsigned _D8_4;
+    unsigned _bl_RAM;
+    unsigned _bl_ROM;
+    unsigned m_bios_mask;
+
+    unsigned do_access(unsigned rd_wr, unsigned address, unsigned data);
+    void C08X(unsigned rd_wr, unsigned address);
+
 public:
     Agat9Mapper(InterfaceManager *im, EmulatorConfigDevice *cd);
+    void reset(bool cold) override;
     void load_config(SystemData *sd) override;
     unsigned get_value(unsigned address) override;
     void set_value(unsigned address, unsigned value, bool force=false) override;

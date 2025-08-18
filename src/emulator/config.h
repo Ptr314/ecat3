@@ -8,6 +8,8 @@
 #include <QObject>
 #include <QString>
 #include <QFile>
+#include <QException>
+#include <iostream>
 
 struct EmulatorConfigParameter {
     QString name;
@@ -22,6 +24,34 @@ struct EmulatorConfigParameter {
 #else
     const auto skip_empty_parts = QString::SkipEmptyParts;
 #endif
+
+    class ConfigException : public QException
+    {
+    private:
+        std::string m_text;  // хранить в std::string безопаснее для what()
+
+    public:
+        explicit ConfigException(QString const& text = "") noexcept
+            : m_text(text.toStdString())
+        {
+            // std::cerr << "ConfigException created: " << m_text << std::endl;
+        }
+
+        // нужно для QException
+        void raise() const override {
+            std::cerr << "Throwing ConfigException: " << m_text << std::endl;
+            throw *this;
+        }
+
+        ConfigException* clone() const override {
+            return new ConfigException(*this);
+        }
+
+        // совместимость со std::exception
+        const char* what() const noexcept override {
+            return m_text.c_str();
+        }
+    };
 
 class EmulatorConfigDevice: public QObject
 {

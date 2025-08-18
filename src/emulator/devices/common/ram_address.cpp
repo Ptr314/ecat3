@@ -41,11 +41,11 @@ void RAMAddress::set_value(unsigned int address, unsigned int value, bool force)
         unsigned a = (address >> m_address_shift) & m_address_mask;
         unsigned v = (address >> m_value_shift) & m_value_mask;
 
-        // std::cout << "W " + std::to_string(a) + ":" + std::to_string(v) << std::endl;
+        RAM::set_value(a, v, force);
+        // logs(name + ": W " + QString::number(a) + ":" + QString::number(v) + "| 0:" + QString::number(buffer[0]) + " 1:"+ QString::number(buffer[1]));
 
-        Memory::set_value(a, v, force);
     } else {
-        // std::cout << "W " + std::to_string(address) + ": blocked by WE";
+        std::cout << "W " + std::to_string(address) + ": blocked by WE";
     }
 }
 

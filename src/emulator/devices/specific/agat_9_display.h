@@ -8,20 +8,44 @@
 #include "emulator/core.h"
 #include "emulator/devices/common/raster_display.h"
 
+static const uint8_t Agat_9_base_colors[16][3]  = {
+    {  0,   0,   0}, {217,   0,   0}, {  0, 217,   0}, {217, 217,   0},
+    {  0,   0, 217}, {217,   0, 217}, {  0, 217, 217}, {217, 217, 217},
+    { 38,  38, 	38}, {255,  38,  38}, { 38, 255,  38}, {255, 255,  38},
+    { 38,  38, 255}, {255,  38, 255}, { 38, 255, 255}, {255, 255, 255}
+};
+
+static const uint8_t Agat_4_index[4][4]  = {
+    // 0    1   2   3
+    { 0,  1,  2,  4},    // Palette 1
+    {15,  1,  2,  4},    // Palette 2
+    { 0,  0,  2,  4},    // Palette 3
+    { 0,  1,  0,  4}     // Palette 4
+};
+
+static const uint8_t Agat_2_index[4][2] =  {
+    //  0   1
+    { 0, 15},     // Palette 1
+    {15,  0},     // Palette 2
+    { 0,  2},     // Palette 3
+    { 2,  0}      // Palette 4
+};
+
 class Agat9Display : public RasterDisplay
 {
 protected:
-    unsigned int mode;
-    unsigned int previous_mode;
-    unsigned int base_address;
-    unsigned int page_size;
+    unsigned mode;
+    unsigned previous_mode;
+    unsigned base_address;
     bool blinker;
-    unsigned int clock_counter;
-    unsigned int blink_ticks;
+    unsigned clock_counter;
+    unsigned blink_ticks;
 
     Port * m_port_mode;
     RAM * m_memory;
     ROM * m_font;
+    Port * m_pal1;
+    Port * m_pal2;
 
     Interface i_50hz;
     Interface i_500hz;
@@ -30,6 +54,10 @@ protected:
     unsigned m_irq_val;
     unsigned m_nmi_val;
     unsigned m_512_mode;
+
+    unsigned _memory_bank;
+
+    uint32_t Agat_RGBA16[16];
 
     void render_line(unsigned screen_line);
     virtual void render_all(bool force_render) override;
