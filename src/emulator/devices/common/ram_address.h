@@ -16,7 +16,9 @@ private:
     unsigned m_value_shift;
     unsigned m_value_mask;
     Interface i_we;
+    Interface i_access;
     std::vector<unsigned> m_values;
+    bool m_store_on_read;
 
 public:
     RAMAddress(InterfaceManager *im, EmulatorConfigDevice *cd);

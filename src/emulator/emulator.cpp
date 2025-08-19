@@ -339,14 +339,14 @@ void Emulator::init_video(void *p)
     if (screen_ratio == SCREEN_RATIO_SQ)
         pixel_scale = 1;
     else
-        if (screen_ratio == SCREEN_RATIO_43)
-            pixel_scale = (4.0 / 3.0) / ((double)screen_sx / (double)screen_sy);
-        else
-            pixel_scale = ((double)screen_sy / (double)screen_sx);
+    if (screen_ratio == SCREEN_RATIO_43)
+        pixel_scale = (4.0 / 3.0) / ((double)screen_sx / (double)screen_sy);
+    else
+        pixel_scale = ((double)screen_sy / (double)screen_sx);
 
-        renderer->init_screen(p, screen_sx, screen_sy, screen_scale, pixel_scale);
-        d->set_renderer(*renderer);
-        set_filtering(screen_filtering);
+    renderer->init_screen(p, screen_sx, screen_sy, screen_scale, pixel_scale);
+    d->set_renderer(*renderer);
+    set_filtering(screen_filtering);
 }
 
 void Emulator::stop_video()
@@ -363,6 +363,13 @@ void Emulator::render_screen()
         {
             screen_sx = current_sx;
             screen_sy = current_sy;
+            if (screen_ratio == SCREEN_RATIO_SQ)
+                pixel_scale = 1;
+            else
+            if (screen_ratio == SCREEN_RATIO_43)
+                pixel_scale = (4.0 / 3.0) / ((double)screen_sx / (double)screen_sy);
+            else
+                pixel_scale = ((double)screen_sy / (double)screen_sx);
             renderer->resize(screen_sx, screen_sy, screen_scale, pixel_scale);
             display->set_renderer(*renderer);                                   // We need to update surface
         }

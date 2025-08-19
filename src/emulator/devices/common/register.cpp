@@ -19,7 +19,6 @@
 
 Register::Register(InterfaceManager *im, EmulatorConfigDevice *cd):
       ComputerDevice(im, cd)
-    , register_value(0)
     , store_type(REGISTER_FLIPFLOP_POS)
     , i_in(this, im, 16, "in", MODE_R, CHANGED_IN)
     , i_out(this, im, 16, "out", MODE_W)
@@ -27,13 +26,20 @@ Register::Register(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_r(this, im, 1, "r", MODE_R, CHANGED_R)
     , i_s(this, im, 1, "s", MODE_R, CHANGED_S)
 {
+    try {
+        default_value = parse_numeric_value(this->cd->get_parameter("default").value);
+    } catch (QException &e) {
+        default_value = 0;
+    }
+
+    register_value = default_value;
 
     i_out.change(register_value);
 }
 
 void Register::reset(bool cold)
 {
-    register_value = 0;
+    register_value = default_value;
     i_out.change(register_value);
 }
 
@@ -57,7 +63,7 @@ void Register::load_config(SystemData *sd)
         QMessageBox::critical(0, Register::tr("Error"), Register::tr("Unknown register type %1").arg(type_string));
 }
 
-void Register::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
+void Register::interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value)
 {
     if (callback_id == CHANGED_C)
     {
@@ -101,6 +107,11 @@ void Register::interface_callback(unsigned int callback_id, unsigned int new_val
             i_out.change(register_value);
         }
     }
+}
+
+unsigned Register::get_value()
+{
+    return register_value;
 }
 
 ComputerDevice * create_register(InterfaceManager *im, EmulatorConfigDevice *cd)

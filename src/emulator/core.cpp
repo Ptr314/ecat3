@@ -595,11 +595,11 @@ unsigned int Memory::get_value(unsigned int address)
 
 void Memory::set_value(unsigned int address, unsigned int value, bool force)
 {
-    if (write_callback != 0)
-        memory_callback_device->memory_callback(write_callback, address);
-
     if ((can_write || force) && address < get_size())
         buffer[address] = (uint8_t)value;
+
+    if (write_callback != 0)
+        memory_callback_device->memory_callback(write_callback, address);
 }
 
 void Memory::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
@@ -1310,14 +1310,12 @@ void MemoryMapper::set_value(unsigned int address, unsigned int value, bool forc
 //----------------------- class Display -------------------------------//
 
 GenericDisplay::GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd),
-    sx(0),
-    sy(0),
-    //texture(nullptr),
-    // surface(nullptr),
-    screen_valid(false),
-    was_updated(true)
-    // , render_pixels(nullptr)
+      ComputerDevice(im, cd)
+    , sx(0)
+    , sy(0)
+    , screen_valid(false)
+    , was_updated(true)
+    , m_renderer_valid(false)
 {}
 
 void GenericDisplay::set_renderer(VideoRenderer & vr)
@@ -1325,6 +1323,7 @@ void GenericDisplay::set_renderer(VideoRenderer & vr)
     renderer = &vr;
     render_pixels = vr.get_buffer();
     line_bytes = vr.get_line_bytes();
+    m_renderer_valid = true;
 }
 
 
@@ -1337,6 +1336,20 @@ void GenericDisplay::reset(bool cold)
 {
     screen_valid = false;
     was_updated = true;
+}
+
+void GenericDisplay::change_resolution(unsigned new_x, unsigned new_y)
+{
+    if (sx != new_x || sy != new_y) {
+        m_renderer_valid = false;
+        sx = new_x;
+        sy = new_y;
+    }
+}
+
+bool GenericDisplay::has_valid_renderer()
+{
+    return m_renderer_valid;
 }
 
 //----------------------- Creation functions -------------------------------//

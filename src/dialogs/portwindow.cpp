@@ -6,6 +6,8 @@
 #include "portwindow.h"
 #include "ui_portwindow.h"
 
+#include "emulator/devices/common/register.h"
+
 PortWindow::PortWindow(QWidget *parent) :
     GenericDbgWnd(parent),
     ui(new Ui::PortWindow)
@@ -17,7 +19,7 @@ PortWindow::PortWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     PortWindow(parent)
 {
     this->e = e;
-    this->d = dynamic_cast<Port*>(d);
+    this->d = d;
     setWindowTitle(d->name + " : " + d->type);
 
     timer = new QTimer();
@@ -32,7 +34,16 @@ PortWindow::~PortWindow()
 
 void PortWindow::update()
 {
-    unsigned int v = d->get_direct();
+    unsigned v;
+    if (auto dev = dynamic_cast<Port*>(d)) {
+        v = dev->get_direct();
+    } else
+    if (auto dev = dynamic_cast<Register*>(d)) {
+        v = dev->get_value() & 0xFF;
+    } else {
+        qDebug() << "PortWindow: unknown class";
+        return;
+    }
     ui->binaryEdit->setText(QString("%1").arg(v, 8, 2, QChar('0')));
     ui->hexEdit->setText(QString("%1").arg(v, 2, 16, QChar('0')).toUpper());
 }

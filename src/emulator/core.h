@@ -493,6 +493,7 @@ protected:
     bool screen_valid;              //Means surface is correct
     void * render_pixels;
     VideoRenderer * renderer = nullptr;
+    bool m_renderer_valid;
 
     virtual void render_all(bool force_render = false) = 0;
 
@@ -500,13 +501,12 @@ public:
     bool was_updated;               //Means we need to send surface to screen
 
     GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
-    //virtual void get_screen(bool required) = 0;
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) = 0;
     virtual void reset(bool cold) override;
-    // virtual void set_surface(SURFACE * surface);
-    // virtual void set_surface(const RENDER_INFO & ri);
     virtual void set_renderer(VideoRenderer &vr);
     virtual void validate(bool force_render = false);
+    virtual void change_resolution(unsigned new_x, unsigned new_y);
+    virtual bool has_valid_renderer();
 };
 
 class FDC: public AddressableDevice

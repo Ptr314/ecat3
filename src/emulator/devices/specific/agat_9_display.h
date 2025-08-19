@@ -7,6 +7,7 @@
 
 #include "emulator/core.h"
 #include "emulator/devices/common/raster_display.h"
+#include "emulator/devices/common/register.h"
 
 static const uint8_t Agat_9_base_colors[16][3]  = {
     {  0,   0,   0}, {217,   0,   0}, {  0, 217,   0}, {217, 217,   0},
@@ -31,6 +32,14 @@ static const uint8_t Agat_2_index[4][2] =  {
     { 2,  0}      // Palette 4
 };
 
+static const uint8_t Agat_Apple_index[2][2] =  {
+    // Hi   0   1
+          { 4,  5},     // Even
+          { 1,  2}      // Odd
+};
+
+#define APPLE_MODE_CALLBACK     1
+
 class Agat9Display : public RasterDisplay
 {
 protected:
@@ -41,11 +50,12 @@ protected:
     unsigned clock_counter;
     unsigned blink_ticks;
 
-    Port * m_port_mode;
+    Port * m_mode_agat;
+    RAM * m_mode_apple;
+    Register * m_pa;
     RAM * m_memory;
     ROM * m_font;
-    Port * m_pal1;
-    Port * m_pal2;
+    RAM * m_pal;
 
     Interface i_50hz;
     Interface i_500hz;
@@ -54,6 +64,9 @@ protected:
     unsigned m_irq_val;
     unsigned m_nmi_val;
     unsigned m_512_mode;
+    unsigned m_a2_text;
+    unsigned m_a2_mixed;
+    unsigned m_a2_page;
 
     unsigned _memory_bank;
 
@@ -73,7 +86,8 @@ public:
     void load_config(SystemData *sd) override;
     void interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value) override;
 
-    virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
+    void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
+    void memory_callback(unsigned int callback_id, unsigned int address) override;
 
     void VSYNC(const unsigned sync_val) override;
     void HSYNC(const unsigned line, const unsigned sync_val) override;

@@ -27,7 +27,7 @@ private:
     Ui::PortWindow *ui;
 
     Emulator * e;
-    Port * d;
+    ComputerDevice * d;
     QTimer * timer;
 
 private slots:
