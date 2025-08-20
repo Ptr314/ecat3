@@ -342,26 +342,27 @@ void Agat9Display::render_line(unsigned int screen_line)
                     }
                 } else {
                     // Graphic mode
-                    base_address = (m_a2_page==0)?0x2000:0x4000;
-                    unsigned line_address = base_address + (apple_line & 7)*0x400 + (apple_line & 0xF8)*5;
-                    bool prev_on = false;
                     uint32_t color;
                     static uint32_t black = Agat_RGBA16[0];
                     static uint32_t white = Agat_RGBA16[15];
 
+                    base_address = (m_a2_page==0)?0x2000:0x4000;
+                    unsigned line_address = base_address + (apple_line & 7)*1024 + ((apple_line >> 3) & 7)*128 + ((apple_line >> 6) & 3)*40;
+
+                    bool prev_on = false;
                     for (unsigned i=0; i<40; i++) {
                         uint8_t b = m_memory->get_value(line_address + i);
                         unsigned hi = (b >> 7) & 1;
-                        unsigned screen_offset = i * (7*4);
+                        unsigned group_offset = i * (7*4);
                         for (unsigned k=0; k<7; k++) {
-                            unsigned p = screen_offset + (6-k)*4;
+                            unsigned p = group_offset + k*4;
                             uint8_t * pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
                             unsigned x = i*7 + k;
                             unsigned is_on = (b >> k) & 1;
                             unsigned is_odd = x & 1;
                             if (is_on != 0) {
                                 if (!prev_on) {
-                                    color = Agat_Apple_index[is_odd][hi];
+                                    color = Agat_RGBA16[Agat_Apple_index[is_odd][hi]];
                                 } else {
                                     color = white;
                                     *(uint32_t*)(pixel_address-4) = white;
