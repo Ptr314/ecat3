@@ -396,12 +396,9 @@ void Agat9Display::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 
 void Agat9Display::VSYNC(const unsigned sync_val)
 {
-    // if ((i_ints_en.value & 1) == 0) {
-    //     std::cout << "- VSYNC " << sync_val << std::endl;
-    // }
-
-    // In Agat-7 NMI follows VBLANC if enabled
-    unsigned nmi_val = ((i_ints_en.value & 1) == 0)?sync_val:1;
+    // In Agat-9 NMI follows inverted VSYNC
+    // https://forum.agatcomp.ru//viewtopic.php?pid=3708#p3708
+    unsigned nmi_val = ((i_ints_en.value & 1) == 0)?(sync_val ^ 1):1;
     if (nmi_val != m_nmi_val) {
         m_nmi_val = nmi_val;
         i_50hz.change(m_nmi_val);
@@ -411,23 +408,24 @@ void Agat9Display::VSYNC(const unsigned sync_val)
 void Agat9Display::HSYNC(const unsigned line, const unsigned sync_val)
 {
     if (sync_val == 0) {
-        // We fire irqs _before_ HSYNC
-        // In Agat-7 IRQ is a 1:1 meander with a frequency of 32+32 lines (for a 625-lines frame)
-        // Except a last period which is shorter (625 < 64*10)
-        // https://forum.agatcomp.ru//viewtopic.php?id=244
+        unsigned irq_val;
+
+        // IRQ becomes low 39 times per every half-frame
+        // https://forum.agatcomp.ru//viewtopic.php?pid=3708#p3708
         if ((i_ints_en.value & 1) == 0) {
-            // Align with VSYNC(1)
-            unsigned shifted_line = (line >= 2*m_top_blank) ? (line - 2*m_top_blank) : (line + m_lines - 2*m_top_blank);
-            unsigned irq_val = (shifted_line >> 5) & 1;
+            unsigned ll = line % 16;
+            irq_val = (line<624 && ll<2)?0:1;
+        } else
+            irq_val = 1;
+
+        if (irq_val != m_irq_val) {
             // std::cout << line << " : " << irq_val << std::endl;
-            if (irq_val != m_irq_val) {
-                m_irq_val = irq_val;
-                i_500hz.change(m_irq_val);
-            }
+            m_irq_val = irq_val;
+            i_500hz.change(m_irq_val);
         }
     } else {
         // And rendering a line _after_ HSYNC
-        // 56 is an experimentally found first visible line (512 < 576, so we need to forcefully move the frame lower)
+        // 56 is the experimentally determined first visible line (since 512 < 576, we need to forcefully shift the frame down)
         int screen_line;
         if (m_512_mode == M_512_ON) {
             // Render all 512 interlaced lines
