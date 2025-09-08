@@ -163,26 +163,26 @@ void Agat_FDC840::update_state()
 void Agat_FDC840::read_next_byte()
 {
     if (selected_drive < drives_count) {
-        int sector_pos = drives[selected_drive]->get_position() % 282;
+        int pos = drives[selected_drive]->get_position();
+        int aim_code = drives[selected_drive]->aim_code();
         uint8_t data = drives[selected_drive]->ReadNextByte();
-        // Sync at a sector prologue (before 0x95) or header (before 0x6A)
-        if ( sector_pos == 12 || sector_pos == 21) {
+        if (aim_code == 1) {
+            // if (data == 0) data = drives[selected_drive]->ReadNextByte();
             sector_sync = true;
-#ifdef LOG_FDD
-            // if (sector_pos == 12)
-            //     logs(QString("--SYNC PREAMBLE"));
-            // else
-            //     logs(QString("--SYNC DATA"));
-#endif
-        }
-#ifdef LOG_FDD
-        static int tmp_track = 0;
-        if (sector_pos == 16) {
-            tmp_track = data;
-        }
-        if (sector_pos == 17)
-            logs(QString("--INDEX %1:%2:%3").arg(tmp_track & 1).arg(tmp_track >> 1).arg(data));
-#endif
+            qDebug() << "-- SYNC " << pos << ":" << Qt::hex << data;
+            #ifdef LOG_FDD
+            // logs(QString("--SYNC"));
+            #endif
+        } else
+            qDebug() << Qt::hex << data;
+        #ifdef LOG_FDD
+            static int tmp_track = 0;
+            if (sector_pos == 16) {
+                tmp_track = data;
+            }
+            if (sector_pos == 17)
+                logs(QString("--INDEX %1:%2:%3").arg(tmp_track & 1).arg(tmp_track >> 1).arg(data));
+        #endif
 
         dd15.set_value(0, data, true);
         data_ready = true;

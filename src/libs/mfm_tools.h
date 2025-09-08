@@ -6,6 +6,7 @@
 #pragma once
 
 #include <QString>
+#include <map>
 #include "mfm_formats.h"
 
 static const uint8_t agat_840_prolog[]={
@@ -26,7 +27,10 @@ static const uint8_t agat_840_header[]={
 #define AGAT_840_PROLOG_TRACK  16
 #define AGAT_840_PROLOG_SECTOR 17
 
+typedef std::map<int, int> AgatAIMCodes[160];
+
 uint8_t * generate_mfm_agat_140(QString file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[]);
-uint8_t * generate_mfm_agat_840(QString file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[]);
+uint8_t * generate_mfm_agat_840(QString file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes);
+uint8_t * load_aim_image(QString file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes);
 
 void save_mfm_file(QString file_name, int sides, int tracks, int track_size, HXC_MFM_TRACK_INFO track_indexes[], uint8_t * data);
