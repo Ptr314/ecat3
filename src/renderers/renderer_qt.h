@@ -6,13 +6,57 @@
 #pragma once
 
 #include <QLabel>
+#include <QPainter>
+#include <QMutex>
 #include "emulator/renderer.h"
+
+class QtRenderWidget : public QLabel
+{
+private:
+    QImage display_image;
+    mutable QMutex image_mutex;
+
+public:
+    QtRenderWidget(QWidget *parent = nullptr) : QLabel(parent) {}
+
+    void set_image(const QImage& image)
+    {
+        QMutexLocker locker(&image_mutex);
+        display_image = image;
+        locker.unlock();
+        update();
+    }
+
+protected:
+    void paintEvent(QPaintEvent *event) override
+    {
+        QMutexLocker locker(&image_mutex);
+        if (display_image.isNull()) {
+            locker.unlock();
+            QLabel::paintEvent(event);
+            return;
+        }
+
+        QImage temp_image = display_image;
+        locker.unlock();
+
+        QPainter painter(this);
+        const QRect r(
+        (width() - temp_image.width()) / 2,
+        (height() - temp_image.height()) / 2,
+        temp_image.width(),
+        temp_image.height()
+        );
+        painter.drawImage(r, temp_image);
+    }
+};
 
 class QtRenderer: public VideoRenderer
 {
 private:
     QImage * surface = nullptr;
-    QLabel * widget = nullptr;
+    QtRenderWidget * widget = nullptr;
+    QImage current_display;
     int render_w;
     int render_h;
     int filtering;
@@ -35,7 +79,7 @@ public:
     void init_screen(void *p, int sx, int sy, double ss, double ps) override
     {
         VideoRenderer::init_screen(p, sx, sy, ss, ps);
-        widget = reinterpret_cast<QLabel *>(p);
+        widget = reinterpret_cast<QtRenderWidget *>(p);
         resize(sx, sy, ss, ps);
     }
 
@@ -52,6 +96,7 @@ public:
 
     uint8_t * get_buffer() override
     {
+        if (surface == nullptr) return nullptr;
         return reinterpret_cast<uint8_t *>(surface->bits());
     }
 
@@ -62,6 +107,7 @@ public:
 
     void fill(uint32_t c) override
     {
+        if (surface == nullptr) return;
         surface->fill(Qt::black);
     }
 
@@ -78,6 +124,10 @@ public:
 
     void render() override
     {
+        if (surface == nullptr || widget == nullptr) {
+            return;
+        }
+
         int rx = widget->width();
         int ry = widget->height();
         if (screen_ss == 0) {
@@ -99,13 +149,17 @@ public:
             render_h = screen_y * screen_ss;
         }
 
-        QImage copy = surface->copy();
-        QPixmap pm = QPixmap::fromImage(copy.scaled(
+        if (render_w <= 0 || render_h <= 0) {
+            return;
+        }
+
+        // QImage copy = surface->copy();
+        current_display = surface->scaled(
             render_w, render_h,
             Qt::IgnoreAspectRatio,
             (filtering==0)?Qt::FastTransformation:Qt::SmoothTransformation
-            ));
-        widget->setPixmap(pm);
+            );
+        widget->set_image(current_display);
     }
 
     uint32_t MapRGB(uint8_t R, uint8_t G, uint8_t B) override
@@ -116,6 +170,9 @@ public:
     std::vector<uint8_t> get_screenshot() override
     {
         std::vector<uint8_t> image;
+        if (surface == nullptr) {
+            return image;
+        }
         int image_size = screen_x * screen_y * 4;
         uint8_t * pixels = surface->bits();
         image.insert(image.end(), pixels, pixels + image_size);

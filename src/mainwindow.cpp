@@ -138,9 +138,9 @@ MainWindow::MainWindow(QWidget *parent)
         setCentralWidget(screen);
         screen->setUpdatesEnabled(false);
     #elif defined(RENDERER_QT)
-        screen = new QLabel(this);
+        screen = new QtRenderWidget(this);
         setCentralWidget(screen);
-        dynamic_cast<QLabel*>(screen)->setAlignment(Qt::AlignCenter);
+        dynamic_cast<QtRenderWidget*>(screen)->setAlignment(Qt::AlignCenter);
         screen->setStyleSheet("background-color: black;");
     #elif defined(RENDERER_OPENGL)
         screen = new GLWidget(this);
