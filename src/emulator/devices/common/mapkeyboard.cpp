@@ -15,7 +15,6 @@ MapKeyboard::MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     , ctrl_pressed(false)
     , code_ruslat(0)
     , ruslat_bit(1)
-    , key_map_len(0)
     , i_ruslat(this, im, 1, "ruslat", MODE_W)
 {
 }
@@ -53,12 +52,12 @@ void MapKeyboard::load_config(SystemData *sd)
                 QString key = left_parts.at(0).trimmed();
                 QString modificators = (left_parts.length()>1)?left_parts.at(1).trimmed():"";
                 QString value = parts.at(1).trimmed();
-                key_map[key_map_len++] = {
+                key_map.push_back({
                     .key_code = translate_key(key),
                     .value = parse_numeric_value(value),
                     .shift = (modificators.indexOf('S') >= 0),
                     .ctrl = (modificators.indexOf('C') >= 0),
-                };
+                });
             };
         };
     }
@@ -105,7 +104,7 @@ void MapKeyboard::key_down(unsigned int key)
     else if (key == code_ruslat)
         set_rus(!rus_mode);
     else {
-        for (unsigned int i=0; i<key_map_len; i++)
+        for (size_t i=0; i<key_map.size(); i++)
             if (
                        key_map[i].key_code == key
                     && key_map[i].ctrl     == ctrl_pressed

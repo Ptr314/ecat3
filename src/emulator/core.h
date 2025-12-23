@@ -360,8 +360,7 @@ class InterfaceManager: public QObject
     Q_OBJECT
 
 public:
-    unsigned int interfaces_count;
-    Interface * interfaces[MAX_INTERFACES];
+    std::vector<Interface*> interfaces;
     DeviceManager *dm;
 
 

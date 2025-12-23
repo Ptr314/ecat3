@@ -10,29 +10,22 @@
 
 EmulatorConfigDevice::EmulatorConfigDevice(QString name, QString type):
     name(name),
-    type(type),
-    parameters_count(0)
+    type(type)
 {}
 
 EmulatorConfigDevice::~EmulatorConfigDevice(){}
 
 void EmulatorConfigDevice::add_parameter(QString name, QString left_range, QString value, QString right_range, QString right_extended)
 {
-    if (parameters_count >= 100) {
+    if (parameters.size() >= 100) {
         throw ConfigException(QString("Too many parameters in device '%1' (max 100)").arg(this->name));
     }
-    parameters[parameters_count].name = name;
-    parameters[parameters_count].left_range = left_range;
-    parameters[parameters_count].value = value;
-    parameters[parameters_count].right_range = right_range;
-    parameters[parameters_count].right_extended = right_extended;
-
-    parameters_count++;
+    parameters.push_back({name, left_range, value, right_range, right_extended});
 }
 
 EmulatorConfigParameter EmulatorConfigDevice::get_parameter(QString name, bool required)
 {
-    for (unsigned int i = 0; i < parameters_count; i++)
+    for (size_t i = 0; i < parameters.size(); i++)
     {
         if (parameters[i].name == name) return parameters[i];
     }

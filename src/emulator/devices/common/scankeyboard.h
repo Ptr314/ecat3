@@ -27,8 +27,7 @@ private:
     unsigned int scan_lines;
     unsigned int out_lines;
 
-    unsigned int keys_count;
-    ScanData scan_data[200];
+    std::vector<ScanData> scan_data;
     unsigned int key_array[15];
 
     unsigned int code_ctrl;

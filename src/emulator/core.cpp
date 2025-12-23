@@ -340,7 +340,7 @@ QVector<ComputerDevice*> DeviceManager::find_devices_by_class(QString class_to_f
 
 //----------------------- class InterfaceManager -------------------------------//
 
-InterfaceManager::InterfaceManager(DeviceManager *dm):interfaces_count(0), dm(dm){}
+InterfaceManager::InterfaceManager(DeviceManager *dm): dm(dm){}
 
 InterfaceManager::~InterfaceManager()
 {
@@ -349,23 +349,18 @@ InterfaceManager::~InterfaceManager()
 
 void InterfaceManager::register_interface(Interface *i)
 {
-    interfaces[interfaces_count++] = i;
+    interfaces.push_back(i);
 }
 
 void InterfaceManager::clear()
 {
-    // Interfaces are now static, and are destroyed along with their owners.
-    // for (unsigned int i=0; i < interfaces_count; i++)
-    //     delete interfaces[i];
-
-    interfaces_count = 0;
-
-    memset(&interfaces, 0, sizeof(interfaces));
+    // Interfaces are now in std::vector, automatically cleaned up
+    interfaces.clear();
 }
 
 Interface * InterfaceManager::get_interface_by_name(QString device_name, QString interface_name, bool required)
 {
-    for (unsigned int i=0; i<interfaces_count; i++)
+    for (size_t i=0; i<interfaces.size(); i++)
         if (interfaces[i]->device->name == device_name && interfaces[i]->name == interface_name)
             return interfaces[i];
     if (required)
@@ -430,7 +425,7 @@ void ComputerDevice::system_clock(unsigned int counter)
 void ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
 {
 
-    for (unsigned int i = 0; i < cd->parameters_count; i++)
+    for (size_t i = 0; i < cd->parameters.size(); i++)
     {
         QString parameter_name = cd->parameters[i].name;
         if (parameter_name.at(0) == '~')
@@ -1024,7 +1019,7 @@ void MemoryMapper::load_config(SystemData *sd)
     unsigned int index;
     int p;
 
-    for (unsigned int i = 0; i < this->cd->parameters_count; i++)
+    for (size_t i = 0; i < this->cd->parameters.size(); i++)
     {
         parameter_name = this->cd->parameters[i].name;
         if (parameter_name == "@memory" || parameter_name == "@port")

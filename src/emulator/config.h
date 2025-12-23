@@ -65,9 +65,7 @@ public:
 
     QString name;
     QString type;
-    unsigned int parameters_count;
-    EmulatorConfigParameter parameters[100];
-
+    std::vector<EmulatorConfigParameter> parameters;
 
     void add_parameter(QString name, QString left_range, QString value, QString right_range, QString right_extended);
     QString extended_parameter(unsigned int i, QString expected_name);

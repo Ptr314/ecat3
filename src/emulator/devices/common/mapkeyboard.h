@@ -30,8 +30,7 @@ protected:
     Port * port_value;
     Port * port_ruslat;
 
-    KeyMapData key_map[1000];
-    unsigned int key_map_len;
+    std::vector<KeyMapData> key_map;
 
     virtual void set_rus(bool new_rus) override;
 
