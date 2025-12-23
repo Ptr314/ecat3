@@ -51,8 +51,14 @@
 
 #define MAX_DEVICES 100
 
-#if defined(__cplusplus) && __cplusplus >= 201703L
-    #define MAYBE_UNUSED [[maybe_unused]]
+// C++11 compatible attribute for unused parameters/variables
+// Supports GCC, Clang (via __attribute__), and MSVC (pragma-based)
+#if defined(__GNUC__) || defined(__clang__)
+    #define MAYBE_UNUSED __attribute__((unused))
+#elif defined(_MSC_VER)
+    // MSVC doesn't support __attribute__, fallback to empty macro
+    // Warnings suppressed via project settings instead
+    #define MAYBE_UNUSED
 #else
     #define MAYBE_UNUSED
 #endif
