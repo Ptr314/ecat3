@@ -17,9 +17,6 @@ EmulatorConfigDevice::~EmulatorConfigDevice(){}
 
 void EmulatorConfigDevice::add_parameter(QString name, QString left_range, QString value, QString right_range, QString right_extended)
 {
-    if (parameters.size() >= 100) {
-        throw ConfigException(QString("Too many parameters in device '%1' (max 100)").arg(this->name));
-    }
     parameters.push_back({name, left_range, value, right_range, right_extended});
 }
 
@@ -124,9 +121,6 @@ QString EmulatorConfig::read_extended_entity(QString *config, QString stop)
 
 EmulatorConfigDevice * EmulatorConfig::add_device(QString device_name, QString device_type)
 {
-    if (devices.size() >= 100) {
-        throw ConfigException(QString("Too many devices in config (max 100)"));
-    }
     auto new_device = std::make_unique<EmulatorConfigDevice>(device_name, device_type);
     EmulatorConfigDevice* ptr = new_device.get();
     devices.push_back(std::move(new_device));
