@@ -155,6 +155,9 @@ void Emulator::load_charmap()
 
 QChar * Emulator::translate_char(unsigned int char_code)
 {
+    if (char_code >= 256) {
+        return charmap[0];  // Return default character
+    }
     return charmap[char_code];
 }
 
@@ -176,9 +179,32 @@ void Emulator::run()
             setThreadPriority(true);
 
             cpu = dynamic_cast<CPU*>(dm->get_device_by_name("cpu"));
+            if (!cpu) {
+                qCritical() << "Error: CPU device not found or wrong type";
+                m_running = false;
+                return;
+            }
+
             mm = dynamic_cast<MemoryMapper*>(dm->get_device_by_name("mapper"));
+            if (!mm) {
+                qCritical() << "Error: Memory mapper device not found or wrong type";
+                m_running = false;
+                return;
+            }
+
             display = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display"));
+            if (!display) {
+                qCritical() << "Error: Display device not found or wrong type";
+                m_running = false;
+                return;
+            }
+
             keyboard = dynamic_cast<Keyboard*>(dm->get_device_by_name("keyboard"));
+            if (!keyboard) {
+                qCritical() << "Error: Keyboard device not found or wrong type";
+                m_running = false;
+                return;
+            }
 
             reset(true);
 
@@ -330,6 +356,10 @@ void Emulator::timer_proc(uint64_t time_ticks)
 void Emulator::init_video(void *p)
 {
     GenericDisplay * d = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display"));
+    if (!d) {
+        qCritical() << "Error: Display device not found or wrong type in init_video";
+        return;
+    }
 
     d->get_screen_constraints(&screen_sx, &screen_sy);
     screen_scale = read_setup("Video", "scale", "2").toDouble();

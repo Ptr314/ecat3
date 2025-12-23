@@ -89,7 +89,7 @@ void Interface::set_mode(unsigned int new_mode)
     //чтобы правильно выставились значения на текущем интерфейсе
     if (new_mode == MODE_R && prev_mode == MODE_W)
     {
-        for (unsigned int i=0; i>linked; i++)
+        for (unsigned int i=0; i<linked; i++)
         {
             Interface * li = linked_interfaces[i].d.i;
             if (li->mode == MODE_W) li->change(li->value);

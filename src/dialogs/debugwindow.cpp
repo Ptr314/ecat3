@@ -148,7 +148,7 @@ void DebugWindow::track()
 {
     ui->codeview->update();
     update_registers();
-    if ((cpu->debug != DEBUG_STOPPED) && ~stop_tracking)
+    if ((cpu->debug != DEBUG_STOPPED) && !stop_tracking)
     {
         QTimer::singleShot(200, this, SLOT(track()));
     } else {
