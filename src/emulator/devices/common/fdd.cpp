@@ -400,27 +400,45 @@ void FDD::save_image(QString file_name)
             if (fdd_mode == FDD_MODE_AGAT_840) {
                 dsk_tools::BYTES encoded_data(buffer, buffer+disk_size);
                 dsk_tools::BYTES raw_data;
-                if (dsk_tools::decode_agat_840_image(raw_data, encoded_data) == FDD_LOAD_OK) {
+                const dsk_tools::Result decode_res = dsk_tools::decode_agat_840_image(raw_data, encoded_data);
+                if (decode_res) {
                     QFile file(file_name);
                     if (file.open(QIODevice::WriteOnly)){
                         file.write(reinterpret_cast<char*>(raw_data.data()), raw_data.size());
                         file.close();
                     }
                 } else {
-                    QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error exporting disk."));
+                    QMessageBox::critical(
+                        0,
+                        FDD::tr("Error"),
+                        FDD::tr("Error exporting disk. %1 : %2")
+                                .arg(
+                                    QString::fromStdString(dsk_tools::decode_error(decode_res)),
+                                    QString::fromStdString(decode_res.message)
+                                )
+                    );
                 }
             } else
             if (fdd_mode == FDD_MODE_AGAT_140) {
                 dsk_tools::BYTES encoded_data(buffer, buffer+disk_size);
                 dsk_tools::BYTES raw_data;
-                if (dsk_tools::decode_agat_140_image(raw_data, encoded_data, track_indexes[0].mfmtracksize) == FDD_LOAD_OK) {
+                const dsk_tools::Result decode_res = dsk_tools::decode_agat_140_image(raw_data, encoded_data, track_indexes[0].mfmtracksize);
+                if (decode_res) {
                     QFile file(file_name);
                     if (file.open(QIODevice::WriteOnly)){
                         file.write(reinterpret_cast<char*>(raw_data.data()), raw_data.size());
                         file.close();
                     }
                 } else {
-                    QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error exporting disk."));
+                    QMessageBox::critical(
+                        0,
+                        FDD::tr("Error"),
+                        FDD::tr("Error exporting disk. %1 : %2")
+                                .arg(
+                                    QString::fromStdString(dsk_tools::decode_error(decode_res)),
+                                    QString::fromStdString(decode_res.message)
+                                )
+                    );
                 }
             } else
             if (fdd_mode == FDD_MODE_LOGICAL) {

@@ -53,10 +53,10 @@ void MapKeyboard::load_config(SystemData *sd)
                 QString modificators = (left_parts.length()>1)?left_parts.at(1).trimmed():"";
                 QString value = parts.at(1).trimmed();
                 key_map.push_back({
-                    .key_code = translate_key(key),
-                    .value = parse_numeric_value(value),
-                    .shift = (modificators.indexOf('S') >= 0),
-                    .ctrl = (modificators.indexOf('C') >= 0),
+                    translate_key(key),
+                    parse_numeric_value(value),
+                    (modificators.indexOf('S') >= 0),
+                    (modificators.indexOf('C') >= 0)
                 });
             };
         };

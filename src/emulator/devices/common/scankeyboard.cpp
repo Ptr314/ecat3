@@ -74,12 +74,7 @@ void ScanKeyboard::load_config(SystemData *sd)
                         if (key_code == _FFFF)
                             QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Unknown key %1").arg(keys[i]));
                         else
-                            scan_data.push_back({
-                                                        .key_code = key_code,
-                                                        .scan_line = scan,
-                                                        .out_line = out,
-                                                        .shift_state = shift_state
-                            });
+                            scan_data.push_back({key_code, scan, out, shift_state});
                     }
             }
         }

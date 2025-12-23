@@ -53,7 +53,7 @@ void Speaker::load_config(SystemData *sd)
 
 void Speaker::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
-    unsigned int new_input;
+    unsigned int new_input = input;
 
     if (mode == SPK_MODE_FLIP) {
         if (i_input.neg_edge())
