@@ -5,6 +5,7 @@
 
 #include "portwindow.h"
 #include "ui_portwindow.h"
+#include <QOverload>
 
 #include "emulator/devices/common/register.h"
 
@@ -22,8 +23,8 @@ PortWindow::PortWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     this->d = d;
     setWindowTitle(d->name + " : " + d->type);
 
-    timer = new QTimer();
-    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+    timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, QOverload<>::of(&PortWindow::update));
     timer->start(100);
 }
 

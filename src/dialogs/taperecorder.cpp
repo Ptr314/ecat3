@@ -53,9 +53,9 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
     this->d = dynamic_cast<TapeRecorder*>(d);
     setWindowTitle(d->name + " : " + d->type);
 
-    QIcon * icon = new QIcon();
-    icon->addFile(QString::fromUtf8(":/icons/sound2"), QSize(), QIcon::Normal, QIcon::Off);
-    icon->addFile(QString::fromUtf8(":/icons/nosound2"), QSize(), QIcon::Normal, QIcon::On);
+    QIcon icon;
+    icon.addFile(QString::fromUtf8(":/icons/sound2"), QSize(), QIcon::Normal, QIcon::Off);
+    icon.addFile(QString::fromUtf8(":/icons/nosound2"), QSize(), QIcon::Normal, QIcon::On);
 
     ToolButtonProxy * tbp = new ToolButtonProxy();
     ui->buttonRec->setStyle( tbp );
@@ -77,8 +77,8 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
     ui->name_mask->setVisible(false);
     ui->textLabel->setVisible(false);
 
-    QMovie *movie_left = new QMovie(":/icons/roller_left");
-    QMovie *movie_right = new QMovie(":/icons/roller_right");
+    QMovie *movie_left = new QMovie(":/icons/roller_left", QByteArray(), this);
+    QMovie *movie_right = new QMovie(":/icons/roller_right", QByteArray(), this);
 
     ui->left_roller->setMovie(movie_left);
     ui->right_roller->setMovie(movie_right);

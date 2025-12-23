@@ -567,7 +567,7 @@ unsigned int AddressableDevice::get_size()
 Memory::Memory(InterfaceManager *im, EmulatorConfigDevice *cd):
       AddressableDevice(im, cd)
     , auto_output(false)
-    , buffer(nullptr)
+    , buffer()
     , fill(0)
     , random_fill(false)
     , read_callback(0)
@@ -579,7 +579,7 @@ Memory::Memory(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 Memory::~Memory()
 {
-    if (buffer != nullptr) delete [] buffer;
+    // Automatic cleanup via std::vector destructor
 }
 
 unsigned int Memory::get_value(unsigned int address)
@@ -613,8 +613,7 @@ void Memory::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned 
 
 void Memory::set_size(unsigned int value)
 {
-    if (buffer != nullptr) delete [] buffer;
-    buffer = new uint8_t[value];
+    buffer.resize(value);  // std::vector handles allocation and cleanup
     addresable_size = value;
 
     i_address.set_size(ceil(log2(addresable_size)));
@@ -634,7 +633,7 @@ void Memory::set_memory_callback(ComputerDevice * d, unsigned int callback_id, u
 
 uint8_t * Memory::get_buffer()
 {
-    return buffer;
+    return buffer.empty() ? nullptr : buffer.data();
 }
 
 //----------------------- class RAM -------------------------------//
@@ -665,9 +664,9 @@ void RAM::load_config(SystemData *sd)
 
 void RAM::reset(bool cold)
 {
-    if (cold && buffer!=nullptr) {
+    if (cold && !buffer.empty()) {
         if (!random_fill) {
-            memset(buffer, fill, get_size());
+            memset(buffer.data(), fill, get_size());
         } else {
             // QRandomGenerator *rg = QRandomGenerator::global();
             // for (unsigned int i=0; i < get_size(); i++) buffer[i]=rg->bounded(255);
@@ -701,7 +700,7 @@ void ROM::load_config(SystemData *sd)
     if (!image.isEmpty()) {
 
         set_size(parse_numeric_value(cd->get_parameter("size").value));
-        if (buffer!=nullptr) memset(buffer, fill, get_size());
+        if (!buffer.empty()) memset(buffer.data(), fill, get_size());
 
         QString file_name = find_file_location(sd, image);
         if (file_name.isEmpty())
@@ -743,7 +742,7 @@ void ROM::load_config(SystemData *sd)
                     throw QException();
                 }
                 QByteArray data = file.readAll();
-                memcpy(this->buffer, data.constData(), file_size);
+                memcpy(this->buffer.data(), data.constData(), file_size);
                 file.close();
             } else {
                 QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Can't open ROM image file '%1'").arg(file_name));

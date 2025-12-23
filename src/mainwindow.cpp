@@ -154,14 +154,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     memset(&fdds, 0, sizeof(fdds));
 
-    QIcon * icon = new QIcon();
-    icon->addFile(QString::fromUtf8(":/icons/sound"), QSize(), QIcon::Normal, QIcon::Off);
-    icon->addFile(QString::fromUtf8(":/icons/sound-mute"), QSize(), QIcon::Normal, QIcon::On);
+    QIcon icon;
+    icon.addFile(QString::fromUtf8(":/icons/sound"), QSize(), QIcon::Normal, QIcon::Off);
+    icon.addFile(QString::fromUtf8(":/icons/sound-mute"), QSize(), QIcon::Normal, QIcon::On);
 
     mute = new QToolButton(this);
     mute->setFocusPolicy(Qt::NoFocus);
     mute->setCheckable(true);
-    mute->setIcon(*icon);
+    mute->setIcon(icon);
     mute->setStyleSheet(
                             "QToolButton { /* all types of tool button */"
                             "border: 1px solid #8f8f91;"

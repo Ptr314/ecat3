@@ -9,6 +9,7 @@
 #include <QObject>
 #include <QMessageBox>
 #include <memory>
+#include <vector>
 
 #ifdef RENDERER_SDL2
     #include <SDL.h>
@@ -246,7 +247,7 @@ protected:
     bool auto_output;
     Interface i_address;
     Interface i_data;
-    uint8_t * buffer;
+    std::vector<uint8_t> buffer;
     unsigned short fill;
     bool random_fill;
     unsigned int read_callback;
