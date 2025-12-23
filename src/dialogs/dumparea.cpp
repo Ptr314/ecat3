@@ -36,9 +36,9 @@ DumpArea::DumpArea(QWidget *parent)
     font_height = fm.height();
 
     editor = new HexEditorLine(this, *font, char_width, font_height);
-    connect(editor, SIGNAL(esc_pressed()), this, SLOT(editor_escape_pressed()));
-    connect(editor, SIGNAL(return_pressed()), this, SLOT(editor_return_pressed()));
-    connect(editor, SIGNAL(tab_pressed()), this, SLOT(editor_tab_pressed()));
+    connect(editor, &HexEditorLine::esc_pressed, this, &DumpArea::editor_escape_pressed);
+    connect(editor, &HexEditorLine::return_pressed, this, &DumpArea::editor_return_pressed);
+    connect(editor, &HexEditorLine::tab_pressed, this, &DumpArea::editor_tab_pressed);
     editor->hide();
 }
 

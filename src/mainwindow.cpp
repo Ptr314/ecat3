@@ -11,6 +11,7 @@
 #include <QWidgetAction>
 #include <QPushButton>
 #include <QActionGroup>
+#include <QOverload>
 
 #include "dialogs/i8255window.h"
 #include "mainwindow.h"
@@ -170,7 +171,7 @@ MainWindow::MainWindow(QWidget *parent)
         );
     statusBar()->addPermanentWidget(mute, 0);
 
-    connect(mute, SIGNAL(toggled(bool)), this, SLOT(set_mute(bool)));
+    connect(mute, &QToolButton::toggled, this, &MainWindow::set_mute);  // No QOverload needed: toggled(bool) is not overloaded
 
 
     volume = new QSlider(Qt::Horizontal, this);
@@ -204,7 +205,7 @@ MainWindow::MainWindow(QWidget *parent)
     //volume->setValue(50);
     statusBar()->addPermanentWidget(volume, 0);
 
-    connect(volume, SIGNAL(valueChanged(int)), this, SLOT(set_volume(int)));
+    connect(volume, QOverload<int>::of(&QSlider::valueChanged), this, &MainWindow::set_volume);
 
     DWM = new DebugWindowsManager();
 

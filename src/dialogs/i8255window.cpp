@@ -22,8 +22,8 @@ I8255Window::I8255Window(QWidget *parent, Emulator * e, ComputerDevice * d):
     this->d = dynamic_cast<I8255*>(d);
     setWindowTitle(d->name + " : " + d->type);
 
-    timer = new QTimer();
-    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+    timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &I8255Window::update);
     timer->start(100);
 }
 
