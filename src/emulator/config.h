@@ -10,6 +10,8 @@
 #include <QFile>
 #include <QException>
 #include <iostream>
+#include <memory>
+#include <vector>
 
 struct EmulatorConfigParameter {
     QString name;
@@ -82,16 +84,15 @@ public:
     EmulatorConfig(QString file_name);
     ~EmulatorConfig();
 
-    unsigned int devices_count;
-
     void load_from_file(QString file_name, bool system_only = false);
     void free_devices();
 
     EmulatorConfigDevice * get_device(int i);
     EmulatorConfigDevice * get_device(QString name);
+    unsigned int get_devices_count() const { return devices.size(); }
 
 private:
-    EmulatorConfigDevice *devices[100];
+    std::vector<std::unique_ptr<EmulatorConfigDevice>> devices;
 
     QString read_next_entity(QString *config, QString stop);
     QString read_extended_entity(QString *config, QString stop);

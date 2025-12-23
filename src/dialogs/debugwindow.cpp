@@ -57,11 +57,11 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
         DeviceDescription * d = e->dm->get_device(i);
         if (d->device_type == "memory-mapper")
         {
-            device_mm = dynamic_cast<AddressableDevice*>(d->device);
+            device_mm = dynamic_cast<AddressableDevice*>(d->device.get());
         }
         else if (d->device_type == "ram" || d->device_type == "rom")
         {
-            device_memory[memory_devices++] = dynamic_cast<AddressableDevice*>(d->device);
+            device_memory[memory_devices++] = dynamic_cast<AddressableDevice*>(d->device.get());
         };
     }
 

@@ -180,7 +180,7 @@ DeviceManager::~DeviceManager()
 void DeviceManager::clear()
 {
     for (unsigned int i=0; i < device_count; i++)
-       delete devices[i].device;
+       devices[i].device.reset();  // unique_ptr handles deletion automatically
 
     device_count = 2;
 
@@ -217,7 +217,7 @@ void DeviceManager::add_device(InterfaceManager *im, EmulatorConfigDevice *d)
     {
         devices[index].device_type = d->type;
         devices[index].device_name = name;
-        devices[index].device = create_func(im, d);
+        devices[index].device.reset(create_func(im, d));  // Wrap raw pointer in unique_ptr
     } else
         QMessageBox::critical(0, DeviceManager::tr("Error"), DeviceManager::tr("Can't create device %1:%2").arg(name, d->type));
 }
@@ -239,7 +239,7 @@ ComputerDevice * DeviceManager::get_device_by_name(QString name, bool required)
 {
     for (unsigned int i=0; i < device_count; i++)
     {
-        if (devices[i].device->name == name) return devices[i].device;
+        if (devices[i].device->name == name) return devices[i].device.get();
     }
     if (required)
     {
@@ -274,7 +274,7 @@ void DeviceManager::reset_devices(bool cold)
             }
 
     for (unsigned int i=0; i < device_count; i++) {
-        ComputerDevice * d = devices[devlist[i]].device;
+        ComputerDevice * d = devices[devlist[i]].device.get();
         if (d->get_reset_behavior(cold)) d->reset(cold);
     }
 }
@@ -306,7 +306,7 @@ void DeviceManager::logs(QString s)
     qDebug() << s;
     if (logger != nullptr)
     {
-        CPU * cpu = dynamic_cast<CPU*>(get_device(0)->device);
+        CPU * cpu = dynamic_cast<CPU*>(get_device(0)->device.get());
 
         if (cpu != nullptr)
         {
@@ -332,7 +332,7 @@ QVector<ComputerDevice*> DeviceManager::find_devices_by_class(QString class_to_f
 
     for (unsigned int i=0; i < device_count; i++)
     {
-        if (devices[i].device->belongs_to_class(class_to_find)) found.append(devices[i].device);
+        if (devices[i].device->belongs_to_class(class_to_find)) found.append(devices[i].device.get());
     }
 
     return found;

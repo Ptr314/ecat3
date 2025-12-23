@@ -8,6 +8,7 @@
 #include "emulator/renderer.h"
 #include <QObject>
 #include <QMessageBox>
+#include <memory>
 
 #ifdef RENDERER_SDL2
     #include <SDL.h>
@@ -104,9 +105,14 @@ struct LinkData {
 };
 
 struct DeviceDescription {
-    ComputerDevice *device;
+    std::unique_ptr<ComputerDevice> device;
     QString device_type;
     QString device_name;
+
+    // Helper to get raw pointer for non-owning access
+    ComputerDevice* get() const {
+        return device.get();
+    }
 };
 
 struct MapperRange {

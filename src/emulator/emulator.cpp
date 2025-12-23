@@ -67,7 +67,7 @@ Emulator::Emulator(QString work_path, QString data_path, QString software_path, 
     , m_ready(false)
 {
     qDebug() << "INI path: " + ini_file;
-    settings = new QSettings (ini_file, QSettings::IniFormat);
+    settings = std::make_unique<QSettings>(ini_file, QSettings::IniFormat);
 
     // connect(this, &Emulator::finished, this, &Emulator::stop_emulation, Qt::DirectConnection);
 
@@ -121,7 +121,7 @@ void Emulator::load_config(QString file_name)
 
     load_charmap();
 
-    for (unsigned int i=0; i<config.devices_count; i++)
+    for (unsigned int i=0; i<config.get_devices_count(); i++)
     {
         EmulatorConfigDevice * d = config.get_device(i);
         if (!d->type.isEmpty())
@@ -135,7 +135,10 @@ void Emulator::load_config(QString file_name)
 
 void Emulator::load_charmap()
 {
-    //TODO: delete old charmap objects
+    // Initialize all to default character
+    for (auto& ch : charmap) {
+        ch = std::make_unique<QChar>('.');
+    }
 
     if (!sd.system_charmap.isEmpty())
     {
@@ -144,21 +147,20 @@ void Emulator::load_charmap()
         QString s = QString::fromUtf8(f.readAll());
 
         unsigned int count = 0;
-        for (unsigned int i = 0; i < s.length(); i++)
+        for (unsigned int i = 0; i < s.length() && count < 256; i++)
         {
             QChar c = s.at(i);
-            if (c != '\x0D' && c != '\x0A') charmap[count++] = new QChar(c);
+            if (c != '\x0D' && c != '\x0A') charmap[count++] = std::make_unique<QChar>(c);
         }
-    } else
-        for (unsigned int i = 0; i < 256; i++) charmap[i] = new QChar('.');
+    }
 }
 
 QChar * Emulator::translate_char(unsigned int char_code)
 {
     if (char_code >= 256) {
-        return charmap[0];  // Return default character
+        return charmap[0].get();  // Return default character
     }
-    return charmap[char_code];
+    return charmap[char_code].get();
 }
 
 void Emulator::reset(bool cold)

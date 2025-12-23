@@ -42,13 +42,12 @@ EmulatorConfigParameter EmulatorConfigDevice::get_parameter(QString name, bool r
         return {"", "", "", "", ""};
 }
 
-EmulatorConfig::EmulatorConfig():
-    devices_count(0)
+EmulatorConfig::EmulatorConfig()
 {}
 
 EmulatorConfig::~EmulatorConfig()
 {
-    if (devices_count > 0) free_devices();
+    if (!devices.empty()) free_devices();
 }
 
 EmulatorConfig::EmulatorConfig(QString file_name)
@@ -59,9 +58,7 @@ EmulatorConfig::EmulatorConfig(QString file_name)
 
 void EmulatorConfig::free_devices()
 {
-    //TODO: why it crashes the system?
-    //for(unsigned int i = 0; i < devices_count; i++) delete devices[i];
-    devices_count = 0;
+    devices.clear();  // Automatic cleanup via unique_ptr
 }
 
 QString EmulatorConfig::read_next_entity(QString *config, QString stop = "")
@@ -134,12 +131,13 @@ QString EmulatorConfig::read_extended_entity(QString *config, QString stop)
 
 EmulatorConfigDevice * EmulatorConfig::add_device(QString device_name, QString device_type)
 {
-    if (devices_count >= 100) {
+    if (devices.size() >= 100) {
         throw ConfigException(QString("Too many devices in config (max 100)"));
     }
-    EmulatorConfigDevice *new_device = new EmulatorConfigDevice(device_name, device_type);
-    devices[devices_count++] = new_device;
-    return new_device;
+    auto new_device = std::make_unique<EmulatorConfigDevice>(device_name, device_type);
+    EmulatorConfigDevice* ptr = new_device.get();
+    devices.push_back(std::move(new_device));
+    return ptr;
 }
 
 QString EmulatorConfigDevice::extended_parameter(unsigned int i, QString expected_name)
@@ -165,7 +163,7 @@ void EmulatorConfig::load_from_file(QString file_name, bool system_only)
 
     //qDebug() << "Loading: " + file_name;
 
-    if (devices_count > 0) free_devices();
+    if (!devices.empty()) free_devices();
 
     QFile file(file_name);
     if (!file.open(QIODevice::ReadOnly)) {
@@ -313,14 +311,14 @@ void EmulatorConfig::load_from_file(QString file_name, bool system_only)
 
 EmulatorConfigDevice * EmulatorConfig::get_device(int i)
 {
-    return devices[i];
+    return devices[i].get();
 }
 
 EmulatorConfigDevice * EmulatorConfig::get_device(QString name)
 {
-    for (unsigned int i=0; i<devices_count; i++)
+    for (unsigned int i=0; i<devices.size(); i++)
     {
-        if (devices[i]->name == name) return devices[i];
+        if (devices[i]->name == name) return devices[i].get();
     }
     QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Device '%1' not found").arg(name));
     return nullptr;
