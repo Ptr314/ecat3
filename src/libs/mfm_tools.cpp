@@ -309,10 +309,10 @@ uint8_t * load_aim_image(QString file_name, int & sides, int & tracks, int & dis
                 }
                 out[image_pos] = lo;
             }
-            track_indexes[track].track_number = track;
-            track_indexes[track].side_number = head;
-            track_indexes[track].mfmtracksize = track_len;
-            track_indexes[track].mfmtrackoffset = (track*2 + head)*track_len;
+            track_indexes[agat_track].track_number = track;
+            track_indexes[agat_track].side_number = head;
+            track_indexes[agat_track].mfmtracksize = track_len;
+            track_indexes[agat_track].mfmtrackoffset = (track*2 + head)*track_len;
         }
     }
     delete [] image;
