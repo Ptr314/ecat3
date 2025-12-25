@@ -12,3 +12,4 @@ CMakeLists.txt.user*
 cmake-*/
 .qtcreator/
 CLAUDE.md
+.claude/
