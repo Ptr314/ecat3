@@ -250,6 +250,7 @@ void DebugWindow::on_runDebuggedButton_clicked()
     if (cpu->debug == DEBUG_STOPPED)
     {
         cpu->debug = DEBUG_BRAKES;
+        stop_tracking = false;
         QTimer::singleShot(200, this, &DebugWindow::track);
     }
 }
