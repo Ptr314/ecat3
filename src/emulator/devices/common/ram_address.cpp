@@ -17,9 +17,7 @@ RAMAddress::RAMAddress(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_we(this, im, 1, "we", MODE_R)
     , i_access(this, im, 1, "access", MODE_W)
 
-{
-    m_values.resize(get_size(), 0);
-}
+{}
 
 void RAMAddress::load_config(SystemData *sd)
 {
