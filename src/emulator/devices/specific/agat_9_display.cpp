@@ -425,16 +425,16 @@ void Agat9Display::HSYNC(const unsigned line, const unsigned sync_val)
         }
     } else {
         // And rendering a line _after_ HSYNC
-        // 56 is the experimentally determined first visible line (since 512 < 576, we need to forcefully shift the frame down)
+        constexpr int top_pos = 8;  // Experimentally set
         int screen_line;
         if (m_512_mode == M_512_ON) {
             // Render all 512 interlaced lines
-            screen_line = static_cast<int>(line - m_top_blank*2 - 56);
+            screen_line = static_cast<int>(line - m_top_blank*2 + top_pos);
             if (screen_line >= 0 && screen_line < 512)
                 render_line(screen_line);
         } else {
             // Render 256 lines, using even or odd lines of the full 625-lines frame only
-            screen_line = static_cast<int>(line - m_top_blank*2 - 56) / 2;
+            screen_line = static_cast<int>(line - m_top_blank*2 + top_pos) / 2;
             if (screen_line >= 0 && screen_line < 256 && ((line & 1) == m_512_mode)) {
                 render_line(screen_line);
                 // uint8_t * pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes;
