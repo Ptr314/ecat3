@@ -8,9 +8,10 @@
 #include <QString>
 #include <QSettings>
 #include <QTimer>
-#include <QThread>
 #include <memory>
 #include <array>
+
+#include "thread_compat.h"
 
 #ifdef RENDERER_SDL2
     #include <SDL.h>
@@ -60,8 +61,13 @@ private:
     void register_devices();
 
     std::atomic<bool> m_running;
+#if USE_QT_THREADING
+    EmuThread* emulationThread = nullptr;
+    EmuThread* renderThread = nullptr;
+#else
     std::thread emulationThread;
     std::thread renderThread;
+#endif
     void setThreadPriority(bool timeCritical);
     std::atomic<bool> m_ready;
 

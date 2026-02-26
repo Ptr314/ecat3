@@ -62,6 +62,16 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Threading compatibility for old MinGW (4.9.2)
+option(FORCE_QT_THREADING "Force QThread-based threading (for old MinGW)" OFF)
+option(FORCE_STD_THREADING "Force std::thread even on old MinGW" OFF)
+if(FORCE_QT_THREADING)
+    add_compile_definitions(FORCE_QT_THREADING)
+endif()
+if(FORCE_STD_THREADING)
+    add_compile_definitions(FORCE_STD_THREADING)
+endif()
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if(QT_VERSION_MAJOR EQUAL 6)
@@ -121,6 +131,7 @@ set(PROJECT_SOURCES
     emulator/devices/cpu/i8080.cpp emulator/devices/cpu/i8080.h
     emulator/devices/specific/o128display.cpp emulator/devices/specific/o128display.h
     emulator/emulator.cpp emulator/emulator.h
+    emulator/thread_compat.h
     emulator/utils.cpp emulator/utils.h
     main.cpp
     mainwindow.cpp mainwindow.h mainwindow.ui

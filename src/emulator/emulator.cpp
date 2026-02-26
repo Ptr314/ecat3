@@ -4,13 +4,11 @@
 // Description: Main emulator class, source
 
 #include <QFileInfo>
-#include <QThread>
 #include <QKeyEvent>
 #include <cmath>
 #include <iostream>
 #include <qlabel.h>
 #include <qpainter.h>
-#include <thread>
 
 #ifdef _WIN32
     #define NOMINMAX
@@ -178,7 +176,11 @@ void Emulator::run()
         m_ready = false;
         m_running = true;
 
+#if USE_QT_THREADING
+        emulationThread = EmuThread::create([this]() {
+#else
         emulationThread = std::thread([this]() {
+#endif
             setThreadPriority(true);
 
             cpu = dynamic_cast<CPU*>(dm->get_device_by_name("cpu"));
@@ -220,6 +222,21 @@ void Emulator::run()
 
             m_ready = true;
 
+#if USE_QT_THREADING
+            QElapsedTimer timer;
+            timer.start();
+            qint64 lastUsecs = timer.nsecsElapsed() / 1000;
+            while (m_running) {
+                qint64 nowUsecs = timer.nsecsElapsed() / 1000;
+                qint64 elapsed = nowUsecs - lastUsecs;
+
+                if (elapsed < 1000) {
+                    QThread::yieldCurrentThread();
+                    continue;
+                }
+
+                lastUsecs = nowUsecs;
+#else
             auto lastTime = std::chrono::high_resolution_clock::now();
             while (m_running) {
                 auto now = std::chrono::high_resolution_clock::now();
@@ -231,22 +248,37 @@ void Emulator::run()
                 }
 
                 lastTime = now;
+#endif
 
                 uint64_t time_ticks = elapsed * clock_freq / 1000000;
-                // qDebug() << time_ticks;
                 timer_proc(time_ticks);
-
-                // std::this_thread::sleep_for(std::chrono::microseconds(20000));
             }
         });
 
+#if USE_QT_THREADING
+        renderThread = EmuThread::create([this]() {
+#else
         renderThread = std::thread([this]() {
+#endif
             while (m_running) {
-                // In a rare case when this thread gets a time earlier than the main, we should skip this time slot
                 if (!m_ready) {
+#if USE_QT_THREADING
+                    QThread::yieldCurrentThread();
+#else
                     std::this_thread::yield();
+#endif
                     continue;
                 }
+#if USE_QT_THREADING
+                QElapsedTimer frameTimer;
+                frameTimer.start();
+
+                render_screen();
+
+                qint64 elapsedMs = frameTimer.elapsed();
+                int delay = std::max(static_cast<qint64>(0), 20 - elapsedMs);
+                if (delay > 0) QThread::msleep(delay);
+#else
                 auto start = std::chrono::high_resolution_clock::now();
 
                 render_screen();
@@ -256,6 +288,7 @@ void Emulator::run()
                 int delay = std::max(0, 20 - static_cast<int>(elapsed)); // ~50 FPS
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+#endif
             }
         });
     }
@@ -267,6 +300,18 @@ void Emulator::stop_emulation()
     {
         m_running = m_ready = false;
 
+#if USE_QT_THREADING
+        if (renderThread) {
+            renderThread->join();
+            delete renderThread;
+            renderThread = nullptr;
+        }
+        if (emulationThread) {
+            emulationThread->join();
+            delete emulationThread;
+            emulationThread = nullptr;
+        }
+#else
         if (renderThread.joinable()) {
             renderThread.join();
         }
@@ -274,6 +319,7 @@ void Emulator::stop_emulation()
         if (emulationThread.joinable()) {
             emulationThread.join();
         }
+#endif
     }
 }
 

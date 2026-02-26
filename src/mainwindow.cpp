@@ -205,7 +205,7 @@ MainWindow::MainWindow(QWidget *parent)
     //volume->setValue(50);
     statusBar()->addPermanentWidget(volume, 0);
 
-    connect(volume, QOverload<int>::of(&QSlider::valueChanged), this, &MainWindow::set_volume);
+    connect(volume, static_cast<void (QSlider::*)(int)>(&QSlider::valueChanged), this, &MainWindow::set_volume);
 
     DWM = new DebugWindowsManager();
 

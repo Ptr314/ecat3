@@ -42,7 +42,7 @@ void Agat_FDC840::load_config(SystemData *sd)
     }
 
     memset(&drives, 0, sizeof(drives));
-    QStringList parts = s.split('|', Qt::SkipEmptyParts);
+    QStringList parts = s.split('|', skip_empty_parts);
     drives_count = parts.size();
 
     LinkData ld;
@@ -169,12 +169,12 @@ void Agat_FDC840::read_next_byte()
         if (aim_code == 1) {
             // if (data == 0) data = drives[selected_drive]->ReadNextByte();
             sector_sync = true;
-            qDebug() << "-- SYNC " << pos << ":" << Qt::hex << data;
+            qDebug() << "-- SYNC " << pos << ":" << hex << data;
             #ifdef LOG_FDD
             // logs(QString("--SYNC"));
             #endif
         } else
-            qDebug() << Qt::hex << data;
+            qDebug() << hex << data;
         #ifdef LOG_FDD
             static int tmp_track = 0;
             if (sector_pos == 16) {
