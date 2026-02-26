@@ -7,6 +7,9 @@
 #include <QMessageBox>
 
 #include "config.h"
+#include "utils.h"
+
+#include "dsk_tools/dsk_tools.h"
 
 EmulatorConfigDevice::EmulatorConfigDevice(QString name, QString type):
     name(name),
@@ -121,7 +124,7 @@ QString EmulatorConfig::read_extended_entity(QString *config, QString stop)
 
 EmulatorConfigDevice * EmulatorConfig::add_device(QString device_name, QString device_type)
 {
-    auto new_device = std::make_unique<EmulatorConfigDevice>(device_name, device_type);
+    auto new_device = make_unique<EmulatorConfigDevice>(device_name, device_type);
     EmulatorConfigDevice* ptr = new_device.get();
     devices.push_back(std::move(new_device));
     return ptr;

@@ -41,3 +41,14 @@ QString md2html(QString md);
 
 int getRandomNumber(int min, int max);
 
+// std::make_unique copy for C++11 and Mingw 4.9.2 compatibility
+#if __cplusplus >= 201402L || defined(_MSC_VER)
+using std::make_unique;
+#else
+template <typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args) {
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+#endif
+
+

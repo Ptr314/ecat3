@@ -68,7 +68,7 @@ Emulator::Emulator(QString work_path, QString data_path, QString software_path, 
     , m_ready(false)
 {
     qDebug() << "INI path: " + ini_file;
-    settings = std::make_unique<QSettings>(ini_file, QSettings::IniFormat);
+    settings = make_unique<QSettings>(ini_file, QSettings::IniFormat);
 
     // connect(this, &Emulator::finished, this, &Emulator::stop_emulation, Qt::DirectConnection);
 
@@ -138,7 +138,7 @@ void Emulator::load_charmap()
 {
     // Initialize all to default character
     for (auto& ch : charmap) {
-        ch = std::make_unique<QChar>('.');
+        ch = make_unique<QChar>('.');
     }
 
     if (!sd.system_charmap.isEmpty())
@@ -151,7 +151,7 @@ void Emulator::load_charmap()
         for (unsigned int i = 0; i < s.length() && count < 256; i++)
         {
             QChar c = s.at(i);
-            if (c != '\x0D' && c != '\x0A') charmap[count++] = std::make_unique<QChar>(c);
+            if (c != '\x0D' && c != '\x0A') charmap[count++] = make_unique<QChar>(c);
         }
     }
 }
