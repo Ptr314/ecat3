@@ -831,6 +831,23 @@ void MainWindow::on_actionAbout_triggered()
         aboutUi.title_label->text()
             .replace("{$PROJECT_VERSION}", PROJECT_VERSION)
         );
+    QString compilerInfo;
+#if defined(_MSC_VER)
+    compilerInfo = QString("MSVC %1").arg(_MSC_VER);
+#elif defined(__clang__)
+    compilerInfo = QString("Clang %1.%2.%3")
+        .arg(__clang_major__)
+        .arg(__clang_minor__)
+        .arg(__clang_patchlevel__);
+#elif defined(__GNUC__)
+    compilerInfo = QString("GCC %1.%2.%3")
+        .arg(__GNUC__)
+        .arg(__GNUC_MINOR__)
+        .arg(__GNUC_PATCHLEVEL__);
+#else
+    compilerInfo = "Unknown";
+#endif
+
     aboutUi.info_label->setText(
         aboutUi.info_label->text()
             .replace("{$QT_VERSION}", QT_VERSION_STR )
@@ -839,6 +856,7 @@ void MainWindow::on_actionAbout_triggered()
             .replace("{$OS}", QSysInfo::productType())
             .replace("{$OS_VERSION}", QSysInfo::productVersion())
             .replace("{$CPU_ARCHITECTURE}", QSysInfo::currentCpuArchitecture())
+            .replace("{$COMPILER}", compilerInfo)
         );
 
     about->exec();

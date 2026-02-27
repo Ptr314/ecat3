@@ -11,7 +11,9 @@
 #include <qpainter.h>
 
 #ifdef _WIN32
-    #define NOMINMAX
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
     #include <windows.h>
 #else
     #include <pthread.h>
@@ -142,7 +144,7 @@ void Emulator::load_charmap()
     if (!sd.system_charmap.isEmpty())
     {
         QFile f(data_path + sd.system_charmap + ".chr");
-        f.open(QFile::ReadOnly);
+        if (!f.open(QFile::ReadOnly)) return;
         QString s = QString::fromUtf8(f.readAll());
 
         unsigned int count = 0;
