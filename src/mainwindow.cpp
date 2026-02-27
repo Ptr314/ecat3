@@ -619,7 +619,6 @@ void MainWindow::load_config(QString file_name, bool set_default)
     {
         if (fdd_timer != nullptr) fdd_timer->stop();
 
-        e->stop_video();
         e->stop_emulation();
     }
 
@@ -687,7 +686,6 @@ void MainWindow::on_actionDebugger_triggered()
 void MainWindow::closeEvent (QCloseEvent *event)
 {
     fdds_found = 0; // to prevent crashing on buttons update
-    e->stop_video();
     e->stop_emulation();
     delete e;
 

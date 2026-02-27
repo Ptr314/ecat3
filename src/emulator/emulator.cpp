@@ -322,6 +322,7 @@ void Emulator::stop_emulation()
             emulationThread.join();
         }
 #endif
+        renderer->stop();
     }
 }
 
