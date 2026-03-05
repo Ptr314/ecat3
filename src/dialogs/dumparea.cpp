@@ -105,7 +105,7 @@ void DumpArea::paintEvent(MAYBE_UNUSED QPaintEvent *event)
                     address = start_address + i*16 + j;
                     if (address < d->get_size())
                     {
-                        uint8_t data = d->get_value(address);
+                        uint8_t data = d->get_direct(address);
                         QString data_str = QString("%1 ").arg(data, 2, 16, QChar('0')).toUpper();
                         if (address == hilight_address || data != buffer[current_buffer][i*16 + j])
                         {
@@ -131,7 +131,7 @@ void DumpArea::show_editor(unsigned int address)
     int xb = (editor_address - start_address) % 16;
     editor->move((xb*3 + 6 + LEFT_PADDING)*char_width - char_width/2, (yc+(frame_top?1:0))*font_height+3-4);
 
-    uint8_t data = d->get_value(editor_address);
+    uint8_t data = d->get_direct(editor_address);
     QString data_str = QString("%1").arg(data, 2, 16, QChar('0')).toUpper();
     editor->setText(data_str);
     editor->show();
@@ -230,7 +230,7 @@ void DumpArea::fill_buffer(bool prefill)
         for (unsigned int j=0; j<16; j++)
         {
             unsigned int address = start_address + i*16 + j;
-            uint8_t data = d->get_value(address);
+            uint8_t data = d->get_direct(address);
             if (address < d->get_size()) {
                 buffer[fill_buffer][i*16 + j] = data;
                 if (prefill) buffer[current_buffer][i*16 + j] = data;

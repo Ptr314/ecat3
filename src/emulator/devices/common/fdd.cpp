@@ -236,7 +236,7 @@ int FDD::SeekSector(int track, int sector)
             this->side = ~(i_side.value) & 1;
         this->track = track;
         this->sector = sector;
-        qDebug() << "SEEK " << this->side << this->track << this->sector;
+        // qDebug() << "SEEK " << this->side << this->track << this->sector;
 #ifdef LOG_FDD
         static int prev_track = -1;
         if (prev_track != track) {

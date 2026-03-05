@@ -64,6 +64,11 @@ void RAMAddress::set_value(unsigned int address, unsigned int value, bool force)
     i_access.change(1);
 }
 
+unsigned RAMAddress::get_direct(unsigned address)
+{
+    return RAM::get_direct(address);
+}
+
 ComputerDevice * create_ram_address(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new RAMAddress(im, cd);

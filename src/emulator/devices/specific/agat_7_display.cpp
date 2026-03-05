@@ -118,7 +118,7 @@ void Agat7Display::clock(unsigned int counter)
 {
     RasterDisplay::clock(counter);
 
-    uint8_t mode_value = m_port_mode->get_direct();
+    uint8_t mode_value = m_port_mode->get_direct(0);
     if (previous_mode != mode_value) set_mode(mode_value);
 
     clock_counter += counter;

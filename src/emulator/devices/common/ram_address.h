@@ -23,6 +23,7 @@ public:
     void load_config(SystemData *sd) override;
     unsigned get_value(unsigned address) override;
     void set_value(unsigned address, unsigned value, bool force=false) override;
+    unsigned get_direct(unsigned address) override;
 };
 
 ComputerDevice * create_ram_address(InterfaceManager *im, EmulatorConfigDevice *cd);

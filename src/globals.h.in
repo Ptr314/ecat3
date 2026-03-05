@@ -24,3 +24,4 @@
 #cmakedefine LOG_MAPPER
 #cmakedefine LOG_PAGE_MAPPER
 #cmakedefine LOG_INTERFACES
+#cmakedefine LOG_AGAT

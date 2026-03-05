@@ -8,8 +8,8 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         # Qt6 for Win 10+, Linux & macOS 64 bits
-        # add_compile_definitions(RENDERER_SDL2)
-        add_compile_definitions(RENDERER_QT)
+        add_compile_definitions(RENDERER_SDL2)
+        # add_compile_definitions(RENDERER_QT)
         # add_compile_definitions(RENDERER_OPENGL)
     else()
         # Qt5 for Win 7+ 32 bits
@@ -47,10 +47,12 @@ if (${LOGGER})
     set(LOG_8255 0)
     set(LOG_CPU 0)
     set(LOG_MAPPER 0)
-    set(LOG_PORTS 0)
+    set(LOG_PORTS 1)
     set(LOG_FDD 0)
     set(LOG_PAGE_MAPPER 0)
     set(LOG_INTERFACES 0)
+    set(LOG_AGAT 1)
+
 endif()
 
 # CMake globals & options
@@ -74,8 +76,8 @@ endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGLWidgets)
+if(QT_VERSION_MAJOR EQUAL 6 AND RENDERER_OPENGL)
+    find_package(Qt6 REQUIRED COMPONENTS OpenGLWidgets)
     set(OPENGL_FILES
         renderers/renderer_opengl.h
         renderers/GLWidget.cpp renderers/GLWidget.h
@@ -289,7 +291,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     dsk_tools
 )
 
-if(QT_VERSION_MAJOR EQUAL 6)
+if(QT_VERSION_MAJOR EQUAL 6 AND RENDERER_OPENGL)
     target_link_libraries(${PROJECT_NAME} PRIVATE
         Qt${QT_VERSION_MAJOR}::OpenGLWidgets
     )

@@ -24,7 +24,7 @@ for %%R in (!RENDERERS!) do (
 
     if not exist "!_BUILD_DIR!\" (
         echo Building with renderer: %%R
-        cmake -DCMAKE_PREFIX_PATH="!_QT_PATH!;%SDL2_ROOT%" -S ../src -B "!_BUILD_DIR!" -G Ninja !_RENDERER_DEFINE!
+        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="!_QT_PATH!;%SDL2_ROOT%" -S ../src -B "!_BUILD_DIR!" -G Ninja !_RENDERER_DEFINE!
 
         cd "!_BUILD_DIR!"
         ninja

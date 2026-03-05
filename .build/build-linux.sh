@@ -22,6 +22,7 @@ for RENDERER in "${RENDERERS[@]}"; do
 
     # Сборка с разными рендерерами
     cmake \
+        -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_PREFIX_PATH="${QT_PATH}" \
         -DRENDERER_${RENDERER^^}=1 \
         -S ../src \

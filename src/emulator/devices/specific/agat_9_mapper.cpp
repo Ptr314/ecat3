@@ -185,6 +185,7 @@ void Agat9Mapper::C08X(unsigned rd_wr, unsigned address)
     unsigned A1 = (address >> 1) & 1;
     unsigned A3 = (address >> 3) & 1;
     unsigned PM = m_pm->get_value(0) & 1;
+    unsigned PM = m_pm->get_direct(0) & 1;
 
     unsigned D3_a = (_D8_4   << 0) +
                     (A0      << 1) +

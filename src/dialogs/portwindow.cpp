@@ -36,7 +36,7 @@ void PortWindow::update()
 {
     unsigned v;
     if (auto dev = dynamic_cast<Port*>(d)) {
-        v = dev->get_direct();
+        v = dev->get_direct(0);
     } else
     if (auto dev = dynamic_cast<Register*>(d)) {
         v = dev->get_value() & 0xFF;

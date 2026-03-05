@@ -303,7 +303,7 @@ void DeviceManager::error_clear()
 void DeviceManager::logs(QString s)
 {
 #ifdef LOGGER
-    qDebug() << s;
+    std::cout << s.toStdString() << std::endl;
     if (logger != nullptr)
     {
         CPU * cpu = dynamic_cast<CPU*>(get_device(0)->device.get());
@@ -552,9 +552,14 @@ bool ComputerDevice::belongs_to_class(QString class_to_check)
 
 //----------------------- class AddressableDevice -------------------------------//
 
-unsigned int AddressableDevice::get_size()
+unsigned AddressableDevice::get_size()
 {
-    return this->addresable_size;
+    return addresable_size;
+}
+
+unsigned AddressableDevice::get_direct(const unsigned address)
+{
+    return get_value(address);
 }
 
 //----------------------- class Memory -------------------------------//
@@ -587,6 +592,14 @@ unsigned int Memory::get_value(unsigned int address)
     else
         return 0xFF;
 }
+
+unsigned int Memory::get_direct(unsigned int address)
+{
+    if (can_read && address < get_size()) return buffer[address];
+
+    return 0xFF;
+}
+
 
 void Memory::set_value(unsigned int address, unsigned int value, bool force)
 {
@@ -818,16 +831,16 @@ void Port::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned in
 unsigned int Port::get_value(MAYBE_UNUSED unsigned int address)
 {
 #ifdef LOG_PORTS
-    if (name != "port-video" && name != "port-kbd")
-        logs("GET " + QString::number(value, 16));
+    // if (name != "port-video" && name != "port-kbd")
+    //     logs("GET " + QString::number(value, 16));
 #endif
     i_access.change(0);
     i_access.change(1);
     if (!has_constant_return) return value;
-    else return constant_value;
+    return constant_value;
 }
 
-unsigned int Port::get_direct()
+unsigned int Port::get_direct(unsigned address)
 {
     return value;
 }
@@ -835,7 +848,7 @@ unsigned int Port::get_direct()
 void Port::set_value(MAYBE_UNUSED unsigned int address, unsigned int value, bool force)
 {
 #ifdef LOG_PORTS
-    logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
+    // logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
 #endif
     i_access.change(0);
     this->value = (value & mask) | (this->value & ~mask);
