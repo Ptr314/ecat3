@@ -216,8 +216,9 @@ void Agat9Display::render_line(unsigned int screen_line)
                             *(uint32_t*)pixel_address = color;
                             *(uint32_t*)(pixel_address+4) = color;
                         }
-
                     }
+                    pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes;
+                    *(uint32_t*)pixel_address = 0xFF0000FF; //RGBA
                     break;
                 }
 
@@ -246,6 +247,8 @@ void Agat9Display::render_line(unsigned int screen_line)
                             *(uint32_t*)pixel_address = Agat_RGBA16[Agat_2_index[pallette][c]];
                         }
                     }
+                    pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes;
+                    *(uint32_t*)pixel_address = 0x00FF00FF; //RGBA
                     break;
                 }
 
@@ -398,8 +401,11 @@ void Agat9Display::VSYNC(const unsigned sync_val)
 {
     // In Agat-9 NMI follows inverted VSYNC
     // https://forum.agatcomp.ru//viewtopic.php?pid=3708#p3708
+    // if ((i_ints_en.value & 1) == 0)
+        // std::cout << "NMI EN" << std::endl;
     unsigned nmi_val = ((i_ints_en.value & 1) == 0)?(sync_val ^ 1):1;
     if (nmi_val != m_nmi_val) {
+        // std::cout << "NMI " << nmi_val << std::endl;
         m_nmi_val = nmi_val;
         i_50hz.change(m_nmi_val);
     }
@@ -413,13 +419,14 @@ void Agat9Display::HSYNC(const unsigned line, const unsigned sync_val)
         // IRQ becomes low 39 times per every half-frame
         // https://forum.agatcomp.ru//viewtopic.php?pid=3708#p3708
         if ((i_ints_en.value & 1) == 0) {
+            // std::cout << "IRQ EN" << std::endl;
             unsigned ll = line % 16;
             irq_val = (line<624 && ll<2)?0:1;
         } else
             irq_val = 1;
 
         if (irq_val != m_irq_val) {
-            // std::cout << line << " : " << irq_val << std::endl;
+            // if (irq_val == 0) std::cout << "irq " << std::dec << line << " : " << irq_val << std::endl;
             m_irq_val = irq_val;
             i_500hz.change(m_irq_val);
         }

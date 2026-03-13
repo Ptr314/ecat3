@@ -13,14 +13,15 @@
 
 /* #undef EXTERNAL_Z80 */
 /* #undef CPU_STOPPED */
-/* #undef LOGGER */
-/* #undef LOG_NAME */
-/* #undef LOG_LIMIT */
+#define LOGGER
+#define LOG_NAME "LOG"
+#define LOG_LIMIT 50000
 
 /* #undef LOG_8255 */
 /* #undef LOG_CPU */
-/* #undef LOG_FDD */
-/* #undef LOG_PORTS */
+#define LOG_FDD
+#define LOG_PORTS
 /* #undef LOG_MAPPER */
 /* #undef LOG_PAGE_MAPPER */
 /* #undef LOG_INTERFACES */
+#define LOG_AGAT

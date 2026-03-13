@@ -876,11 +876,33 @@ PortAddress::PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd):
 void PortAddress::set_value(unsigned int address, MAYBE_UNUSED unsigned int value, bool force)
 {
 #ifdef LOG_PORTS
-    logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
-    if (address == 0xC1) {
-        int i=0;
-        i++;
-    }
+    // logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
+    // if (address == 0xC1) {
+    //     int i=0;
+    //     i++;
+    // }
+    if (name=="port-int-en")
+    {
+        if (address == 0x20)
+            logs("INTS OFF/W");
+        else if (address == 0x40)
+            logs("INTS ON/W");
+        else
+            logs(QString("W %1").arg(address, 2, 16, QChar('0')));
+    } else
+    if (name=="port-C7xx")
+    {
+        const unsigned vm = address & 0x83;
+        const unsigned pm = (address & 0x0C) >> 2;
+        if (vm == 0x82)
+            logs(QString("T64/W P%1").arg(pm));
+        else if (vm == 0x02)
+            logs(QString("T32/W P%1").arg(pm));
+        else
+            logs(QString("port-C7xx/W: %1").arg(address, 2, 16, QChar('0')));
+    } else
+    if (name!="port-sound" && name!="port-kbd" && name!="port-kbd-ruslat" && name!="port-kbd-reset")
+        logs(QString("W %1").arg(address, 2, 16, QChar('0')));
 #endif
     i_access.change(0);
     this->value = (address & mask) | (this->value & ~mask);
@@ -890,6 +912,28 @@ void PortAddress::set_value(unsigned int address, MAYBE_UNUSED unsigned int valu
 
 unsigned int PortAddress::get_value(MAYBE_UNUSED unsigned int address)
 {
+#ifdef LOG_PORTS
+    if (name=="port-int-en") {
+        if (address == 0x20)
+            logs("INTS OFF/R");
+        else if (address == 0x40)
+            logs("INTS ON/R");
+        else
+            logs(QString("R %1").arg(address, 2, 16, QChar('0')));
+    } else
+    if (store_on_read && name=="port-C7xx") {
+        const unsigned vm = address & 0x83;
+        const unsigned pm = (address & 0x0C) >> 2;
+        if (vm == 0x82)
+            logs(QString("T64/R P%1").arg(pm));
+        else if (vm == 0x02)
+            logs(QString("T32/R P%1").arg(pm));
+        else
+            logs(QString("port-C7xx/R: %1").arg(address, 2, 16, QChar('0')));
+    } else
+    if (name!="port-sound" && name!="port-kbd" && name!="port-kbd-ruslat" && name!="port-kbd-reset")
+        logs(QString("R %1").arg(address, 2, 16, QChar('0')));
+#endif
     if (store_on_read) {
         this->value = (address & mask) | (this->value & ~mask);
         i_data.change(this->value);
