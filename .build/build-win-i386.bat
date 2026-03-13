@@ -5,7 +5,7 @@ CALL vars-mingw-qt5.6.cmd
 
 SET _ARCHITECTURE=i386
 SET _PLATFORM=windows
-SET _QT_PATH="%_ROOT_QT%\%_QT_VERSION%"
+rem SET _QT_PATH="%_ROOT_QT%\%_QT_VERSION%"
 set CC=%_ROOT_MINGW%\gcc.exe
 
 FOR /F "tokens=* USEBACKQ" %%g IN (`findstr "PROJECT_VERSION" ..\src\globals.h`) do (SET VER=%%g)
@@ -24,7 +24,7 @@ for %%R in (!RENDERERS!) do (
 
     if not exist "!_BUILD_DIR!\" (
         echo Building with renderer: %%R
-        cmake -DCMAKE_PREFIX_PATH="!_QT_PATH!" -S ../src -B "!_BUILD_DIR!" -G Ninja !_RENDERER_DEFINE!
+        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="!_QT_PATH!;%SDL2_ROOT%" -S ../src -B "!_BUILD_DIR!" -G Ninja !_RENDERER_DEFINE!
 
         cd "!_BUILD_DIR!"
         ninja
@@ -49,13 +49,13 @@ for %%R in (!RENDERERS!) do (
     )
     copy "!SDL2_BIN!\SDL2.dll" "!_RELEASE_DIR!"
 
-    if not exist "!_QT_PATH!\bin\Qt5Core.dll" (
-        echo Error: "!_QT_PATH!\bin\Qt5Core.dll" not found.
+    if not exist "!_ROOT_BIN!\Qt5Core.dll" (
+        echo Error: "!_ROOT_BIN!\Qt5Core.dll" not found.
         exit /b 1
     )
-    copy "!_QT_PATH!\bin\Qt5Core.dll" "!_RELEASE_DIR!"
-    copy "!_QT_PATH!\bin\Qt5Gui.dll" "!_RELEASE_DIR!"
-    copy "!_QT_PATH!\bin\Qt5Widgets.dll" "!_RELEASE_DIR!"
+    copy "!_ROOT_BIN!\Qt5Core.dll" "!_RELEASE_DIR!"
+    copy "!_ROOT_BIN!\Qt5Gui.dll" "!_RELEASE_DIR!"
+    copy "!_ROOT_BIN!\Qt5Widgets.dll" "!_RELEASE_DIR!"
 
     if not exist "!_ROOT_MINGW!\libgcc_s_dw2-1.dll" (
         echo Error: "!_ROOT_MINGW!\libgcc_s_dw2-1.dll" not found.

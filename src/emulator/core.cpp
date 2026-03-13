@@ -7,6 +7,7 @@
 #include <QtGlobal>
 
 #include <cmath>
+#include <iostream>
 
 #ifdef RENDERER_SDL2
     #include <SDL.h>
@@ -88,7 +89,7 @@ void Interface::set_mode(unsigned int new_mode)
     //чтобы правильно выставились значения на текущем интерфейсе
     if (new_mode == MODE_R && prev_mode == MODE_W)
     {
-        for (unsigned int i=0; i>linked; i++)
+        for (unsigned int i=0; i<linked; i++)
         {
             Interface * li = linked_interfaces[i].d.i;
             if (li->mode == MODE_W) li->change(li->value);
@@ -179,7 +180,7 @@ DeviceManager::~DeviceManager()
 void DeviceManager::clear()
 {
     for (unsigned int i=0; i < device_count; i++)
-       delete devices[i].device;
+       devices[i].device.reset();  // unique_ptr handles deletion automatically
 
     device_count = 2;
 
@@ -216,7 +217,7 @@ void DeviceManager::add_device(InterfaceManager *im, EmulatorConfigDevice *d)
     {
         devices[index].device_type = d->type;
         devices[index].device_name = name;
-        devices[index].device = create_func(im, d);
+        devices[index].device.reset(create_func(im, d));  // Wrap raw pointer in unique_ptr
     } else
         QMessageBox::critical(0, DeviceManager::tr("Error"), DeviceManager::tr("Can't create device %1:%2").arg(name, d->type));
 }
@@ -238,7 +239,7 @@ ComputerDevice * DeviceManager::get_device_by_name(QString name, bool required)
 {
     for (unsigned int i=0; i < device_count; i++)
     {
-        if (devices[i].device->name == name) return devices[i].device;
+        if (devices[i].device->name == name) return devices[i].device.get();
     }
     if (required)
     {
@@ -273,7 +274,7 @@ void DeviceManager::reset_devices(bool cold)
             }
 
     for (unsigned int i=0; i < device_count; i++) {
-        ComputerDevice * d = devices[devlist[i]].device;
+        ComputerDevice * d = devices[devlist[i]].device.get();
         if (d->get_reset_behavior(cold)) d->reset(cold);
     }
 }
@@ -302,10 +303,10 @@ void DeviceManager::error_clear()
 void DeviceManager::logs(QString s)
 {
 #ifdef LOGGER
-    qDebug() << s;
+    std::cout << s.toStdString() << std::endl;
     if (logger != nullptr)
     {
-        CPU * cpu = dynamic_cast<CPU*>(get_device(0)->device);
+        CPU * cpu = dynamic_cast<CPU*>(get_device(0)->device.get());
 
         if (cpu != nullptr)
         {
@@ -331,7 +332,7 @@ QVector<ComputerDevice*> DeviceManager::find_devices_by_class(QString class_to_f
 
     for (unsigned int i=0; i < device_count; i++)
     {
-        if (devices[i].device->belongs_to_class(class_to_find)) found.append(devices[i].device);
+        if (devices[i].device->belongs_to_class(class_to_find)) found.append(devices[i].device.get());
     }
 
     return found;
@@ -339,7 +340,7 @@ QVector<ComputerDevice*> DeviceManager::find_devices_by_class(QString class_to_f
 
 //----------------------- class InterfaceManager -------------------------------//
 
-InterfaceManager::InterfaceManager(DeviceManager *dm):interfaces_count(0), dm(dm){}
+InterfaceManager::InterfaceManager(DeviceManager *dm): dm(dm){}
 
 InterfaceManager::~InterfaceManager()
 {
@@ -348,23 +349,18 @@ InterfaceManager::~InterfaceManager()
 
 void InterfaceManager::register_interface(Interface *i)
 {
-    interfaces[interfaces_count++] = i;
+    interfaces.push_back(i);
 }
 
 void InterfaceManager::clear()
 {
-    // Interfaces are now static, and are destroyed along with their owners.
-    // for (unsigned int i=0; i < interfaces_count; i++)
-    //     delete interfaces[i];
-
-    interfaces_count = 0;
-
-    memset(&interfaces, 0, sizeof(interfaces));
+    // Interfaces are now in std::vector, automatically cleaned up
+    interfaces.clear();
 }
 
 Interface * InterfaceManager::get_interface_by_name(QString device_name, QString interface_name, bool required)
 {
-    for (unsigned int i=0; i<interfaces_count; i++)
+    for (size_t i=0; i<interfaces.size(); i++)
         if (interfaces[i]->device->name == device_name && interfaces[i]->name == interface_name)
             return interfaces[i];
     if (required)
@@ -429,7 +425,7 @@ void ComputerDevice::system_clock(unsigned int counter)
 void ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
 {
 
-    for (unsigned int i = 0; i < cd->parameters_count; i++)
+    for (size_t i = 0; i < cd->parameters.size(); i++)
     {
         QString parameter_name = cd->parameters[i].name;
         if (parameter_name.at(0) == '~')
@@ -556,9 +552,14 @@ bool ComputerDevice::belongs_to_class(QString class_to_check)
 
 //----------------------- class AddressableDevice -------------------------------//
 
-unsigned int AddressableDevice::get_size()
+unsigned AddressableDevice::get_size()
 {
-    return this->addresable_size;
+    return addresable_size;
+}
+
+unsigned AddressableDevice::get_direct(const unsigned address)
+{
+    return get_value(address);
 }
 
 //----------------------- class Memory -------------------------------//
@@ -566,7 +567,7 @@ unsigned int AddressableDevice::get_size()
 Memory::Memory(InterfaceManager *im, EmulatorConfigDevice *cd):
       AddressableDevice(im, cd)
     , auto_output(false)
-    , buffer(nullptr)
+    , buffer()
     , fill(0)
     , random_fill(false)
     , read_callback(0)
@@ -578,7 +579,7 @@ Memory::Memory(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 Memory::~Memory()
 {
-    if (buffer != nullptr) delete [] buffer;
+    // Automatic cleanup via std::vector destructor
 }
 
 unsigned int Memory::get_value(unsigned int address)
@@ -592,13 +593,21 @@ unsigned int Memory::get_value(unsigned int address)
         return 0xFF;
 }
 
+unsigned int Memory::get_direct(unsigned int address)
+{
+    if (can_read && address < get_size()) return buffer[address];
+
+    return 0xFF;
+}
+
+
 void Memory::set_value(unsigned int address, unsigned int value, bool force)
 {
-    if (write_callback != 0)
-        memory_callback_device->memory_callback(write_callback, address);
-
     if ((can_write || force) && address < get_size())
         buffer[address] = (uint8_t)value;
+
+    if (write_callback != 0)
+        memory_callback_device->memory_callback(write_callback, address);
 }
 
 void Memory::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
@@ -612,8 +621,7 @@ void Memory::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned 
 
 void Memory::set_size(unsigned int value)
 {
-    if (buffer != nullptr) delete [] buffer;
-    buffer = new uint8_t[value];
+    buffer.resize(value);  // std::vector handles allocation and cleanup
     addresable_size = value;
 
     i_address.set_size(ceil(log2(addresable_size)));
@@ -633,7 +641,7 @@ void Memory::set_memory_callback(ComputerDevice * d, unsigned int callback_id, u
 
 uint8_t * Memory::get_buffer()
 {
-    return buffer;
+    return buffer.empty() ? nullptr : buffer.data();
 }
 
 //----------------------- class RAM -------------------------------//
@@ -664,9 +672,9 @@ void RAM::load_config(SystemData *sd)
 
 void RAM::reset(bool cold)
 {
-    if (cold && buffer!=nullptr) {
+    if (cold && !buffer.empty()) {
         if (!random_fill) {
-            memset(buffer, fill, get_size());
+            memset(buffer.data(), fill, get_size());
         } else {
             // QRandomGenerator *rg = QRandomGenerator::global();
             // for (unsigned int i=0; i < get_size(); i++) buffer[i]=rg->bounded(255);
@@ -700,7 +708,7 @@ void ROM::load_config(SystemData *sd)
     if (!image.isEmpty()) {
 
         set_size(parse_numeric_value(cd->get_parameter("size").value));
-        if (buffer!=nullptr) memset(buffer, fill, get_size());
+        if (!buffer.empty()) memset(buffer.data(), fill, get_size());
 
         QString file_name = find_file_location(sd, image);
         if (file_name.isEmpty())
@@ -742,7 +750,7 @@ void ROM::load_config(SystemData *sd)
                     throw QException();
                 }
                 QByteArray data = file.readAll();
-                memcpy(this->buffer, data.constData(), file_size);
+                memcpy(this->buffer.data(), data.constData(), file_size);
                 file.close();
             } else {
                 QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Can't open ROM image file '%1'").arg(file_name));
@@ -823,16 +831,16 @@ void Port::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned in
 unsigned int Port::get_value(MAYBE_UNUSED unsigned int address)
 {
 #ifdef LOG_PORTS
-    if (name != "port-video" && name != "port-kbd")
-        logs("GET " + QString::number(value, 16));
+    // if (name != "port-video" && name != "port-kbd")
+    //     logs("GET " + QString::number(value, 16));
 #endif
     i_access.change(0);
     i_access.change(1);
     if (!has_constant_return) return value;
-    else return constant_value;
+    return constant_value;
 }
 
-unsigned int Port::get_direct()
+unsigned int Port::get_direct(unsigned address)
 {
     return value;
 }
@@ -840,7 +848,7 @@ unsigned int Port::get_direct()
 void Port::set_value(MAYBE_UNUSED unsigned int address, unsigned int value, bool force)
 {
 #ifdef LOG_PORTS
-    logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
+    // logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
 #endif
     i_access.change(0);
     this->value = (value & mask) | (this->value & ~mask);
@@ -1024,7 +1032,7 @@ void MemoryMapper::load_config(SystemData *sd)
     unsigned int index;
     int p;
 
-    for (unsigned int i = 0; i < this->cd->parameters_count; i++)
+    for (size_t i = 0; i < this->cd->parameters.size(); i++)
     {
         parameter_name = this->cd->parameters[i].name;
         if (parameter_name == "@memory" || parameter_name == "@port")
@@ -1309,14 +1317,12 @@ void MemoryMapper::set_value(unsigned int address, unsigned int value, bool forc
 //----------------------- class Display -------------------------------//
 
 GenericDisplay::GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd),
-    sx(0),
-    sy(0),
-    //texture(nullptr),
-    // surface(nullptr),
-    screen_valid(false),
-    was_updated(true)
-    // , render_pixels(nullptr)
+      ComputerDevice(im, cd)
+    , sx(0)
+    , sy(0)
+    , screen_valid(false)
+    , was_updated(true)
+    , m_renderer_valid(false)
 {}
 
 void GenericDisplay::set_renderer(VideoRenderer & vr)
@@ -1324,6 +1330,7 @@ void GenericDisplay::set_renderer(VideoRenderer & vr)
     renderer = &vr;
     render_pixels = vr.get_buffer();
     line_bytes = vr.get_line_bytes();
+    m_renderer_valid = true;
 }
 
 
@@ -1336,6 +1343,20 @@ void GenericDisplay::reset(bool cold)
 {
     screen_valid = false;
     was_updated = true;
+}
+
+void GenericDisplay::change_resolution(unsigned new_x, unsigned new_y)
+{
+    if (sx != new_x || sy != new_y) {
+        m_renderer_valid = false;
+        sx = new_x;
+        sy = new_y;
+    }
+}
+
+bool GenericDisplay::has_valid_renderer()
+{
+    return m_renderer_valid;
 }
 
 //----------------------- Creation functions -------------------------------//

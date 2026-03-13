@@ -169,6 +169,18 @@ void FDD::load_image(QString file_name)
         } else {
             QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("File '%1' is in unknown format").arg(file_name));
         }
+    } else
+    if (ext == "aim") {
+        if (fdd_mode != FDD_MODE_AGAT_840) {
+            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("AIM files supported on Agat 840k drives only!"));
+            return;
+        }
+        if (buffer != nullptr) delete [] buffer;
+        buffer = load_aim_image(file_name, sides, tracks, disk_size, track_indexes, aim_codes);
+        track_mode = FDD_MODE_WHOLE_TRACK;
+        position = 0;
+        loaded = true;
+        this->file_name =fi.fileName();
     } else {
         if (fdd_mode == FDD_MODE_LOGICAL) {
             unsigned int file_size = fi.size();
@@ -201,7 +213,7 @@ void FDD::load_image(QString file_name)
                     buffer = generate_mfm_agat_140(file_name, sides, tracks, disk_size, track_indexes);
                     break;
                 case FDD_MODE_AGAT_840:
-                    buffer = generate_mfm_agat_840(file_name, sides, tracks, disk_size, track_indexes);
+                    buffer = generate_mfm_agat_840(file_name, sides, tracks, disk_size, track_indexes, aim_codes);
                     break;
                 default:
                     QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Expected conversion from DSK to MFM is not supported yet."));
@@ -224,7 +236,7 @@ int FDD::SeekSector(int track, int sector)
             this->side = ~(i_side.value) & 1;
         this->track = track;
         this->sector = sector;
-        //qDebug() << "SEEK " << this->side << this->track << this->sector;
+        // qDebug() << "SEEK " << this->side << this->track << this->sector;
 #ifdef LOG_FDD
         static int prev_track = -1;
         if (prev_track != track) {
@@ -388,27 +400,45 @@ void FDD::save_image(QString file_name)
             if (fdd_mode == FDD_MODE_AGAT_840) {
                 dsk_tools::BYTES encoded_data(buffer, buffer+disk_size);
                 dsk_tools::BYTES raw_data;
-                if (dsk_tools::decode_agat_840_image(raw_data, encoded_data) == FDD_LOAD_OK) {
+                const dsk_tools::Result decode_res = dsk_tools::decode_agat_840_image(raw_data, encoded_data);
+                if (decode_res) {
                     QFile file(file_name);
                     if (file.open(QIODevice::WriteOnly)){
                         file.write(reinterpret_cast<char*>(raw_data.data()), raw_data.size());
                         file.close();
                     }
                 } else {
-                    QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error exporting disk."));
+                    QMessageBox::critical(
+                        0,
+                        FDD::tr("Error"),
+                        FDD::tr("Error exporting disk. %1 : %2")
+                                .arg(
+                                    QString::fromStdString(dsk_tools::decode_error(decode_res)),
+                                    QString::fromStdString(decode_res.message)
+                                )
+                    );
                 }
             } else
             if (fdd_mode == FDD_MODE_AGAT_140) {
                 dsk_tools::BYTES encoded_data(buffer, buffer+disk_size);
                 dsk_tools::BYTES raw_data;
-                if (dsk_tools::decode_agat_140_image(raw_data, encoded_data, track_indexes[0].mfmtracksize) == FDD_LOAD_OK) {
+                const dsk_tools::Result decode_res = dsk_tools::decode_agat_140_image(raw_data, encoded_data, track_indexes[0].mfmtracksize);
+                if (decode_res) {
                     QFile file(file_name);
                     if (file.open(QIODevice::WriteOnly)){
                         file.write(reinterpret_cast<char*>(raw_data.data()), raw_data.size());
                         file.close();
                     }
                 } else {
-                    QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error exporting disk."));
+                    QMessageBox::critical(
+                        0,
+                        FDD::tr("Error"),
+                        FDD::tr("Error exporting disk. %1 : %2")
+                                .arg(
+                                    QString::fromStdString(dsk_tools::decode_error(decode_res)),
+                                    QString::fromStdString(decode_res.message)
+                                )
+                    );
                 }
             } else
             if (fdd_mode == FDD_MODE_LOGICAL) {
@@ -452,6 +482,15 @@ bool FDD::is_led_on()
     return led_timer.isActive();
 }
 
+// Returns the AIM control code at the current position, or 0 if none exists
+int FDD::aim_code()
+{
+    auto code = aim_codes[track].find(get_position());
+    if (code != aim_codes[track].end())
+        return code->second;
+    else
+        return 0;
+}
 
 ComputerDevice * create_FDD(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new FDD(im, cd);

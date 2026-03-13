@@ -15,7 +15,6 @@
 
 ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
       Keyboard(im, cd)
-    , keys_count(0)
     , i_scan(this, im, 8, "scan", MODE_R, SCAN_CALLBACK)
     , i_output(this, im, 8, "output", MODE_W)
     , i_shift(this, im, 1, "shift", MODE_W)
@@ -75,12 +74,7 @@ void ScanKeyboard::load_config(SystemData *sd)
                         if (key_code == _FFFF)
                             QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Unknown key %1").arg(keys[i]));
                         else
-                            scan_data[keys_count++] = {
-                                                        .key_code = key_code,
-                                                        .scan_line = scan,
-                                                        .out_line = out,
-                                                        .shift_state = shift_state
-                            };
+                            scan_data.push_back({key_code, scan, out, shift_state});
                     }
             }
         }
@@ -107,7 +101,7 @@ void ScanKeyboard::key_down(unsigned int key)
         i_ruslat.change(0);
         set_rus(!rus_mode);
     } else {
-        for (unsigned int i=0; i<keys_count; i++)
+        for (size_t i=0; i<scan_data.size(); i++)
             if (scan_data[i].key_code == key)
             {
                 //qDebug() << "SCAN INDEX" << i;
@@ -136,7 +130,7 @@ void ScanKeyboard::key_up(unsigned int key)
         i_ruslat.change(1);
         set_rus(!rus_mode);
     } else {
-        for (unsigned int i=0; i<keys_count; i++)
+        for (size_t i=0; i<scan_data.size(); i++)
             if (scan_data[i].key_code == key)
             {
                 unsigned int l = scan_data[i].scan_line;

@@ -11,6 +11,8 @@
 #include "emulator/emulator.h"
 #include "dosframe.h"
 
+class HexEditorLine;
+
 class DumpArea : public DOSFrame
 {
     Q_OBJECT
@@ -36,7 +38,7 @@ protected:
 private:
     AddressableDevice * d;
     Emulator * e;
-    QLineEdit * editor;
+    HexEditorLine * editor;
 //    unsigned int font_height;
 //    unsigned int char_width;
     unsigned int global_offset;

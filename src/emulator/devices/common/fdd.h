@@ -9,6 +9,7 @@
 
 #include "emulator/core.h"
 #include "libs/mfm_formats.h"
+#include "libs/mfm_tools.h"
 
 #define FDD_STREAM_PLAIN    0
 #define FDD_STREAM_MFM      1
@@ -52,6 +53,8 @@ private:
     int fdd_mode;
     int track_mode;
 
+    AgatAIMCodes aim_codes;
+
     unsigned int translate_address();
     void ConvertStreamFormat();
 #ifdef LOG_FDD
@@ -87,6 +90,7 @@ public:
     void unload();
     void change_protection();
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+    int aim_code();
 };
 
 ComputerDevice * create_FDD(InterfaceManager *im, EmulatorConfigDevice *cd);

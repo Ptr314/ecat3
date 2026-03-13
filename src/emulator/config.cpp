@@ -5,48 +5,42 @@
 
 #include <QFile>
 #include <QMessageBox>
-#include <QException>
 
 #include "config.h"
+#include "utils.h"
+
+#include "dsk_tools/dsk_tools.h"
 
 EmulatorConfigDevice::EmulatorConfigDevice(QString name, QString type):
     name(name),
-    type(type),
-    parameters_count(0)
+    type(type)
 {}
 
 EmulatorConfigDevice::~EmulatorConfigDevice(){}
 
 void EmulatorConfigDevice::add_parameter(QString name, QString left_range, QString value, QString right_range, QString right_extended)
 {
-    parameters[parameters_count].name = name;
-    parameters[parameters_count].left_range = left_range;
-    parameters[parameters_count].value = value;
-    parameters[parameters_count].right_range = right_range;
-    parameters[parameters_count].right_extended = right_extended;
-
-    parameters_count++;
+    parameters.push_back({name, left_range, value, right_range, right_extended});
 }
 
 EmulatorConfigParameter EmulatorConfigDevice::get_parameter(QString name, bool required)
 {
-    for (unsigned int i = 0; i < parameters_count; i++)
+    for (size_t i = 0; i < parameters.size(); i++)
     {
         if (parameters[i].name == name) return parameters[i];
     }
     if (required)
-        throw QException();
+        throw ConfigException(this->name + ":" + name);
     else
         return {"", "", "", "", ""};
 }
 
-EmulatorConfig::EmulatorConfig():
-    devices_count(0)
+EmulatorConfig::EmulatorConfig()
 {}
 
 EmulatorConfig::~EmulatorConfig()
 {
-    if (devices_count > 0) free_devices();
+    if (!devices.empty()) free_devices();
 }
 
 EmulatorConfig::EmulatorConfig(QString file_name)
@@ -57,9 +51,7 @@ EmulatorConfig::EmulatorConfig(QString file_name)
 
 void EmulatorConfig::free_devices()
 {
-    //TODO: why it crashes the system?
-    //for(unsigned int i = 0; i < devices_count; i++) delete devices[i];
-    devices_count = 0;
+    devices.clear();  // Automatic cleanup via unique_ptr
 }
 
 QString EmulatorConfig::read_next_entity(QString *config, QString stop = "")
@@ -132,9 +124,10 @@ QString EmulatorConfig::read_extended_entity(QString *config, QString stop)
 
 EmulatorConfigDevice * EmulatorConfig::add_device(QString device_name, QString device_type)
 {
-    EmulatorConfigDevice *new_device = new EmulatorConfigDevice(device_name, device_type);
-    devices[devices_count++] = new_device;
-    return new_device;
+    auto new_device = make_unique<EmulatorConfigDevice>(device_name, device_type);
+    EmulatorConfigDevice* ptr = new_device.get();
+    devices.push_back(std::move(new_device));
+    return ptr;
 }
 
 QString EmulatorConfigDevice::extended_parameter(unsigned int i, QString expected_name)
@@ -160,7 +153,7 @@ void EmulatorConfig::load_from_file(QString file_name, bool system_only)
 
     //qDebug() << "Loading: " + file_name;
 
-    if (devices_count > 0) free_devices();
+    if (!devices.empty()) free_devices();
 
     QFile file(file_name);
     if (!file.open(QIODevice::ReadOnly)) {
@@ -308,14 +301,14 @@ void EmulatorConfig::load_from_file(QString file_name, bool system_only)
 
 EmulatorConfigDevice * EmulatorConfig::get_device(int i)
 {
-    return devices[i];
+    return devices[i].get();
 }
 
 EmulatorConfigDevice * EmulatorConfig::get_device(QString name)
 {
-    for (unsigned int i=0; i<devices_count; i++)
+    for (unsigned int i=0; i<devices.size(); i++)
     {
-        if (devices[i]->name == name) return devices[i];
+        if (devices[i]->name == name) return devices[i].get();
     }
     QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Device '%1' not found").arg(name));
     return nullptr;

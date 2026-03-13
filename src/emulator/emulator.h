@@ -8,7 +8,10 @@
 #include <QString>
 #include <QSettings>
 #include <QTimer>
-#include <QThread>
+#include <memory>
+#include <array>
+
+#include "thread_compat.h"
 
 #ifdef RENDERER_SDL2
     #include <SDL.h>
@@ -27,13 +30,13 @@ class Emulator: public QObject
     Q_OBJECT
 
 private:
-    QSettings *settings;
+    std::unique_ptr<QSettings> settings;
     bool busy;
     InterfaceManager *im;
     SystemData sd;
     VideoRenderer * renderer;
 
-    QChar * charmap[256];
+    std::array<std::unique_ptr<QChar>, 256> charmap;
 
     CPU * cpu;
     MemoryMapper * mm;
@@ -58,8 +61,13 @@ private:
     void register_devices();
 
     std::atomic<bool> m_running;
+#if USE_QT_THREADING
+    EmuThread* emulationThread = nullptr;
+    EmuThread* renderThread = nullptr;
+#else
     std::thread emulationThread;
     std::thread renderThread;
+#endif
     void setThreadPriority(bool timeCritical);
     std::atomic<bool> m_ready;
 

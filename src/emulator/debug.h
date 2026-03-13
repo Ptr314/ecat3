@@ -28,7 +28,7 @@ public:
 
     void register_debug_window(QString device_type, DebugWndCreateFunc * f)
     {
-        WndFuncData[this->count++] = {.device_type = device_type, .f = f};
+        WndFuncData[this->count++] = {device_type, f};
     };
 
     DebugWndCreateFunc * get_create_func(QString device_type)

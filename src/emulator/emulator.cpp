@@ -4,15 +4,16 @@
 // Description: Main emulator class, source
 
 #include <QFileInfo>
-#include <QThread>
 #include <QKeyEvent>
 #include <cmath>
 #include <iostream>
 #include <qlabel.h>
 #include <qpainter.h>
-#include <thread>
 
 #ifdef _WIN32
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
     #include <windows.h>
 #else
     #include <pthread.h>
@@ -46,8 +47,10 @@
 #include "emulator/devices/cpu/6502.h"
 #include "emulator/devices/specific/agat_fdc140.h"
 #include "emulator/devices/specific/agat_fdc840.h"
-#include "emulator/devices/specific/agat_display.h"
+#include "emulator/devices/specific/agat_7_display.h"
 #include "emulator/devices/common/mapkeyboard.h"
+#include "emulator/devices/common/ram_address.h"
+
 
 Emulator::Emulator(QString work_path, QString data_path, QString software_path, QString ini_file, VideoRenderer * renderer):
       work_path(work_path)
@@ -63,7 +66,7 @@ Emulator::Emulator(QString work_path, QString data_path, QString software_path, 
     , m_ready(false)
 {
     qDebug() << "INI path: " + ini_file;
-    settings = new QSettings (ini_file, QSettings::IniFormat);
+    settings = make_unique<QSettings>(ini_file, QSettings::IniFormat);
 
     // connect(this, &Emulator::finished, this, &Emulator::stop_emulation, Qt::DirectConnection);
 
@@ -117,7 +120,7 @@ void Emulator::load_config(QString file_name)
 
     load_charmap();
 
-    for (unsigned int i=0; i<config.devices_count; i++)
+    for (unsigned int i=0; i<config.get_devices_count(); i++)
     {
         EmulatorConfigDevice * d = config.get_device(i);
         if (!d->type.isEmpty())
@@ -131,27 +134,32 @@ void Emulator::load_config(QString file_name)
 
 void Emulator::load_charmap()
 {
-    //TODO: delete old charmap objects
+    // Initialize all to default character
+    for (auto& ch : charmap) {
+        ch = make_unique<QChar>('.');
+    }
 
     if (!sd.system_charmap.isEmpty())
     {
         QFile f(data_path + sd.system_charmap + ".chr");
-        f.open(QFile::ReadOnly);
+        if (!f.open(QFile::ReadOnly)) return;
         QString s = QString::fromUtf8(f.readAll());
 
         unsigned int count = 0;
-        for (unsigned int i = 0; i < s.length(); i++)
+        for (unsigned int i = 0; i < s.length() && count < 256; i++)
         {
             QChar c = s.at(i);
-            if (c != '\x0D' && c != '\x0A') charmap[count++] = new QChar(c);
+            if (c != '\x0D' && c != '\x0A') charmap[count++] = make_unique<QChar>(c);
         }
-    } else
-        for (unsigned int i = 0; i < 256; i++) charmap[i] = new QChar('.');
+    }
 }
 
 QChar * Emulator::translate_char(unsigned int char_code)
 {
-    return charmap[char_code];
+    if (char_code >= 256) {
+        return charmap[0].get();  // Return default character
+    }
+    return charmap[char_code].get();
 }
 
 void Emulator::reset(bool cold)
@@ -168,13 +176,40 @@ void Emulator::run()
         m_ready = false;
         m_running = true;
 
+#if USE_QT_THREADING
+        emulationThread = EmuThread::create([this]() {
+#else
         emulationThread = std::thread([this]() {
+#endif
             setThreadPriority(true);
 
             cpu = dynamic_cast<CPU*>(dm->get_device_by_name("cpu"));
+            if (!cpu) {
+                qCritical() << "Error: CPU device not found or wrong type";
+                m_running = false;
+                return;
+            }
+
             mm = dynamic_cast<MemoryMapper*>(dm->get_device_by_name("mapper"));
+            if (!mm) {
+                qCritical() << "Error: Memory mapper device not found or wrong type";
+                m_running = false;
+                return;
+            }
+
             display = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display"));
+            if (!display) {
+                qCritical() << "Error: Display device not found or wrong type";
+                m_running = false;
+                return;
+            }
+
             keyboard = dynamic_cast<Keyboard*>(dm->get_device_by_name("keyboard"));
+            if (!keyboard) {
+                qCritical() << "Error: Keyboard device not found or wrong type";
+                m_running = false;
+                return;
+            }
 
             reset(true);
 
@@ -187,6 +222,21 @@ void Emulator::run()
 
             m_ready = true;
 
+#if USE_QT_THREADING
+            QElapsedTimer timer;
+            timer.start();
+            qint64 lastUsecs = timer.nsecsElapsed() / 1000;
+            while (m_running) {
+                qint64 nowUsecs = timer.nsecsElapsed() / 1000;
+                qint64 elapsed = nowUsecs - lastUsecs;
+
+                if (elapsed < 1000) {
+                    QThread::yieldCurrentThread();
+                    continue;
+                }
+
+                lastUsecs = nowUsecs;
+#else
             auto lastTime = std::chrono::high_resolution_clock::now();
             while (m_running) {
                 auto now = std::chrono::high_resolution_clock::now();
@@ -198,22 +248,37 @@ void Emulator::run()
                 }
 
                 lastTime = now;
+#endif
 
                 uint64_t time_ticks = elapsed * clock_freq / 1000000;
-                // qDebug() << time_ticks;
                 timer_proc(time_ticks);
-
-                // std::this_thread::sleep_for(std::chrono::microseconds(20000));
             }
         });
 
+#if USE_QT_THREADING
+        renderThread = EmuThread::create([this]() {
+#else
         renderThread = std::thread([this]() {
+#endif
             while (m_running) {
-                // In a rare case when this thread gets a time earlier than the main, we should skip this time slot
                 if (!m_ready) {
+#if USE_QT_THREADING
+                    QThread::yieldCurrentThread();
+#else
                     std::this_thread::yield();
+#endif
                     continue;
                 }
+#if USE_QT_THREADING
+                QElapsedTimer frameTimer;
+                frameTimer.start();
+
+                render_screen();
+
+                qint64 elapsedMs = frameTimer.elapsed();
+                int delay = std::max(static_cast<qint64>(0), 20 - elapsedMs);
+                if (delay > 0) QThread::msleep(delay);
+#else
                 auto start = std::chrono::high_resolution_clock::now();
 
                 render_screen();
@@ -223,6 +288,7 @@ void Emulator::run()
                 int delay = std::max(0, 20 - static_cast<int>(elapsed)); // ~50 FPS
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+#endif
             }
         });
     }
@@ -234,6 +300,18 @@ void Emulator::stop_emulation()
     {
         m_running = m_ready = false;
 
+#if USE_QT_THREADING
+        if (renderThread) {
+            renderThread->join();
+            delete renderThread;
+            renderThread = nullptr;
+        }
+        if (emulationThread) {
+            emulationThread->join();
+            delete emulationThread;
+            emulationThread = nullptr;
+        }
+#else
         if (renderThread.joinable()) {
             renderThread.join();
         }
@@ -241,6 +319,8 @@ void Emulator::stop_emulation()
         if (emulationThread.joinable()) {
             emulationThread.join();
         }
+#endif
+        renderer->stop();
     }
 }
 
@@ -326,6 +406,10 @@ void Emulator::timer_proc(uint64_t time_ticks)
 void Emulator::init_video(void *p)
 {
     GenericDisplay * d = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display"));
+    if (!d) {
+        qCritical() << "Error: Display device not found or wrong type in init_video";
+        return;
+    }
 
     d->get_screen_constraints(&screen_sx, &screen_sy);
     screen_scale = read_setup("Video", "scale", "2").toDouble();
@@ -335,14 +419,14 @@ void Emulator::init_video(void *p)
     if (screen_ratio == SCREEN_RATIO_SQ)
         pixel_scale = 1;
     else
-        if (screen_ratio == SCREEN_RATIO_43)
-            pixel_scale = (4.0 / 3.0) / ((double)screen_sx / (double)screen_sy);
-        else
-            pixel_scale = ((double)screen_sy / (double)screen_sx);
+    if (screen_ratio == SCREEN_RATIO_43)
+        pixel_scale = (4.0 / 3.0) / ((double)screen_sx / (double)screen_sy);
+    else
+        pixel_scale = ((double)screen_sy / (double)screen_sx);
 
-        renderer->init_screen(p, screen_sx, screen_sy, screen_scale, pixel_scale);
-        d->set_renderer(*renderer);
-        set_filtering(screen_filtering);
+    renderer->init_screen(p, screen_sx, screen_sy, screen_scale, pixel_scale);
+    d->set_renderer(*renderer);
+    set_filtering(screen_filtering);
 }
 
 void Emulator::stop_video()
@@ -359,6 +443,13 @@ void Emulator::render_screen()
         {
             screen_sx = current_sx;
             screen_sy = current_sy;
+            if (screen_ratio == SCREEN_RATIO_SQ)
+                pixel_scale = 1;
+            else
+            if (screen_ratio == SCREEN_RATIO_43)
+                pixel_scale = (4.0 / 3.0) / ((double)screen_sx / (double)screen_sy);
+            else
+                pixel_scale = ((double)screen_sy / (double)screen_sx);
             renderer->resize(screen_sx, screen_sy, screen_scale, pixel_scale);
             display->set_renderer(*renderer);                                   // We need to update surface
         }
@@ -540,6 +631,7 @@ void Emulator::register_devices()
     dm->register_device("65c02", create_wdc65c02);
     dm->register_device("agat-fdc140", create_agat_fdc140);
     dm->register_device("agat-fdc840", create_agat_fdc840);
-    dm->register_device("agat-display", create_agat_display);
+    dm->register_device("agat-7-display", create_agat_7_display);
     dm->register_device("map-keyboard", create_mapkeyboard);
+    dm->register_device("ram-address", create_ram_address);
 }

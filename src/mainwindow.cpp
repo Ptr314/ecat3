@@ -11,6 +11,7 @@
 #include <QWidgetAction>
 #include <QPushButton>
 #include <QActionGroup>
+// #include <QOverload>
 
 #include "dialogs/i8255window.h"
 #include "mainwindow.h"
@@ -137,9 +138,9 @@ MainWindow::MainWindow(QWidget *parent)
         setCentralWidget(screen);
         screen->setUpdatesEnabled(false);
     #elif defined(RENDERER_QT)
-        screen = new QLabel(this);
+        screen = new QtRenderWidget(this);
         setCentralWidget(screen);
-        dynamic_cast<QLabel*>(screen)->setAlignment(Qt::AlignCenter);
+        dynamic_cast<QtRenderWidget*>(screen)->setAlignment(Qt::AlignCenter);
         screen->setStyleSheet("background-color: black;");
     #elif defined(RENDERER_OPENGL)
         screen = new GLWidget(this);
@@ -154,14 +155,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     memset(&fdds, 0, sizeof(fdds));
 
-    QIcon * icon = new QIcon();
-    icon->addFile(QString::fromUtf8(":/icons/sound"), QSize(), QIcon::Normal, QIcon::Off);
-    icon->addFile(QString::fromUtf8(":/icons/sound-mute"), QSize(), QIcon::Normal, QIcon::On);
+    QIcon icon;
+    icon.addFile(QString::fromUtf8(":/icons/sound"), QSize(), QIcon::Normal, QIcon::Off);
+    icon.addFile(QString::fromUtf8(":/icons/sound-mute"), QSize(), QIcon::Normal, QIcon::On);
 
     mute = new QToolButton(this);
     mute->setFocusPolicy(Qt::NoFocus);
     mute->setCheckable(true);
-    mute->setIcon(*icon);
+    mute->setIcon(icon);
     mute->setStyleSheet(
                             "QToolButton { /* all types of tool button */"
                             "border: 1px solid #8f8f91;"
@@ -170,7 +171,7 @@ MainWindow::MainWindow(QWidget *parent)
         );
     statusBar()->addPermanentWidget(mute, 0);
 
-    connect(mute, SIGNAL(toggled(bool)), this, SLOT(set_mute(bool)));
+    connect(mute, &QToolButton::toggled, this, &MainWindow::set_mute);  // No QOverload needed: toggled(bool) is not overloaded
 
 
     volume = new QSlider(Qt::Horizontal, this);
@@ -204,7 +205,7 @@ MainWindow::MainWindow(QWidget *parent)
     //volume->setValue(50);
     statusBar()->addPermanentWidget(volume, 0);
 
-    connect(volume, SIGNAL(valueChanged(int)), this, SLOT(set_volume(int)));
+    connect(volume, static_cast<void (QSlider::*)(int)>(&QSlider::valueChanged), this, &MainWindow::set_volume);
 
     DWM = new DebugWindowsManager();
 
@@ -219,6 +220,8 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("6502", &CreateDebugWindow);
     DWM->register_debug_window("65c02", &CreateDebugWindow);
     DWM->register_debug_window("taperecorder", &CreateTapeWindow);
+    DWM->register_debug_window("ram-address", &CreateDumpWindow);
+    DWM->register_debug_window("register", &CreatePortWindow);
 
     #ifdef RENDERER_SDL2
         renderer = new SDL2Renderer();
@@ -526,7 +529,7 @@ void MainWindow::onDeviceMenuCalled(unsigned int i)
     DebugWndCreateFunc * f = DWM->get_create_func(e->dm->get_device(i)->device_type);
     if (f != nullptr)
     {
-        GenericDbgWnd * w = f(this, e, e->dm->get_device(i)->device);
+        GenericDbgWnd * w = f(this, e, e->dm->get_device(i)->device.get());
         w->setAttribute(Qt::WA_DeleteOnClose);
         connect(w, &GenericDbgWnd::data_changed, DWM, &DebugWindowsManager::data_changed);
         connect(DWM, &DebugWindowsManager::update_all, w, &GenericDbgWnd::update_view);
@@ -616,7 +619,6 @@ void MainWindow::load_config(QString file_name, bool set_default)
     {
         if (fdd_timer != nullptr) fdd_timer->stop();
 
-        e->stop_video();
         e->stop_emulation();
     }
 
@@ -684,7 +686,6 @@ void MainWindow::on_actionDebugger_triggered()
 void MainWindow::closeEvent (QCloseEvent *event)
 {
     fdds_found = 0; // to prevent crashing on buttons update
-    e->stop_video();
     e->stop_emulation();
     delete e;
 
@@ -828,6 +829,23 @@ void MainWindow::on_actionAbout_triggered()
         aboutUi.title_label->text()
             .replace("{$PROJECT_VERSION}", PROJECT_VERSION)
         );
+    QString compilerInfo;
+#if defined(_MSC_VER)
+    compilerInfo = QString("MSVC %1").arg(_MSC_VER);
+#elif defined(__clang__)
+    compilerInfo = QString("Clang %1.%2.%3")
+        .arg(__clang_major__)
+        .arg(__clang_minor__)
+        .arg(__clang_patchlevel__);
+#elif defined(__GNUC__)
+    compilerInfo = QString("GCC %1.%2.%3")
+        .arg(__GNUC__)
+        .arg(__GNUC_MINOR__)
+        .arg(__GNUC_PATCHLEVEL__);
+#else
+    compilerInfo = "Unknown";
+#endif
+
     aboutUi.info_label->setText(
         aboutUi.info_label->text()
             .replace("{$QT_VERSION}", QT_VERSION_STR )
@@ -836,6 +854,7 @@ void MainWindow::on_actionAbout_triggered()
             .replace("{$OS}", QSysInfo::productType())
             .replace("{$OS_VERSION}", QSysInfo::productVersion())
             .replace("{$CPU_ARCHITECTURE}", QSysInfo::currentCpuArchitecture())
+            .replace("{$COMPILER}", compilerInfo)
         );
 
     about->exec();

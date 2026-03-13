@@ -45,7 +45,7 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     ui->codeview->set_frame(true, true, true, true, "╔═╤║ │╟─┴");
     ui->codeview->set_scroll(100, 0);
 
-    connect(ui->codeview, SIGNAL(command_key(QKeyEvent*)), this, SLOT(command_key(QKeyEvent*)));
+    connect(ui->codeview, &DisAsmArea::command_key, this, &DebugWindow::command_key);
 
 
     ui->registers->set_frame(true, true, true, false, "╤═╤│ │╧─┴");
@@ -57,11 +57,11 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
         DeviceDescription * d = e->dm->get_device(i);
         if (d->device_type == "memory-mapper")
         {
-            device_mm = dynamic_cast<AddressableDevice*>(d->device);
+            device_mm = dynamic_cast<AddressableDevice*>(d->device.get());
         }
         else if (d->device_type == "ram" || d->device_type == "rom")
         {
-            device_memory[memory_devices++] = dynamic_cast<AddressableDevice*>(d->device);
+            device_memory[memory_devices++] = dynamic_cast<AddressableDevice*>(d->device.get());
         };
     }
 
@@ -75,7 +75,7 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     update_registers();
 
     state_timer = new QTimer(this);
-    connect(state_timer, SIGNAL(timeout()), this, SLOT(update_state()));
+    connect(state_timer, &QTimer::timeout, this, &DebugWindow::update_state);
     state_timer->start(200);
     update_state();
 }
@@ -111,7 +111,7 @@ void DebugWindow::on_stepButton_clicked()
     if (cpu->debug == DEBUG_STOPPED)
     {
         cpu->debug = DEBUG_STEP;
-        QTimer::singleShot(100, this, SLOT(on_toPCButton_clicked()));
+        QTimer::singleShot(100, this, &DebugWindow::on_toPCButton_clicked);
     }
 }
 
@@ -148,9 +148,9 @@ void DebugWindow::track()
 {
     ui->codeview->update();
     update_registers();
-    if ((cpu->debug != DEBUG_STOPPED) && ~stop_tracking)
+    if ((cpu->debug != DEBUG_STOPPED) && !stop_tracking)
     {
-        QTimer::singleShot(200, this, SLOT(track()));
+        QTimer::singleShot(200, this, &DebugWindow::track);
     } else {
         if (temporary_break >= 0) cpu->remove_breakpoint(temporary_break);
         on_toPCButton_clicked();
@@ -206,11 +206,11 @@ void DebugWindow::on_stepOverButton_clicked()
             cpu->add_breakpoint(temporary_break);
 
             cpu->debug = DEBUG_BRAKES;
-            QTimer::singleShot(200, this, SLOT(track()));
+            QTimer::singleShot(200, this, &DebugWindow::track);
             stop_tracking = false;
         } else {
             cpu->debug = DEBUG_STEP;
-            QTimer::singleShot(100, this, SLOT(on_toPCButton_clicked()));
+            QTimer::singleShot(100, this, &DebugWindow::on_toPCButton_clicked);
         }
     }
 
@@ -227,7 +227,7 @@ void DebugWindow::on_runUntilButton_clicked()
         cpu->add_breakpoint(temporary_break);
 
         cpu->debug = DEBUG_BRAKES;
-        QTimer::singleShot(200, this, SLOT(track()));
+        QTimer::singleShot(200, this, &DebugWindow::track);
         stop_tracking = false;
     }
 }
@@ -250,7 +250,8 @@ void DebugWindow::on_runDebuggedButton_clicked()
     if (cpu->debug == DEBUG_STOPPED)
     {
         cpu->debug = DEBUG_BRAKES;
-        QTimer::singleShot(200, this, SLOT(track()));
+        stop_tracking = false;
+        QTimer::singleShot(200, this, &DebugWindow::track);
     }
 }
 

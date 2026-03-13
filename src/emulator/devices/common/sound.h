@@ -7,8 +7,8 @@
 
 #include <SDL.h>
 #include <vector>
-#include <mutex>
 
+#include "emulator/thread_compat.h"
 #include "emulator/core.h"
 #include "libs/audio_filters.h"
 
@@ -27,7 +27,7 @@ private:
     // Data buffer
     std::vector<int16_t> m_buffer;
     size_t m_buffer_pos = 0;
-    mutable std::mutex m_buffer_mutex;
+    mutable compat_mutex m_buffer_mutex;
 
     // Sample accumulator
     int64_t m_accumulator;

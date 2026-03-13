@@ -111,7 +111,11 @@ void GenericSound::clock(unsigned int counter)
     if (m_counter >= m_counts_per_sample) {
         m_counter -= m_counts_per_sample;
 
+#if USE_QT_THREADING
+        QMutexLocker lock(&m_buffer_mutex);
+#else
         std::lock_guard<std::mutex> lock(m_buffer_mutex);
+#endif
 
         // Checking buffer overflow and discarding a part of it if expected
         if (m_buffer_pos >= m_buffer.size()) {
@@ -153,7 +157,11 @@ void GenericSound::handle_audio_callback(Uint8* stream, int len)
 {
     if (!m_initialized) return;
 
+#if USE_QT_THREADING
+    QMutexLocker lock(&m_buffer_mutex);
+#else
     std::lock_guard<std::mutex> lock(m_buffer_mutex);
+#endif
 
     const int samples_requested = len / sizeof(int16_t);
     const int samples_available = static_cast<int>(m_buffer_pos);

@@ -13,15 +13,19 @@ private:
     Interface i_in;
     Interface i_out;
     Interface i_c;
+    Interface i_r;
+    Interface i_s;
 
-    unsigned int register_value;
-    unsigned int store_type;
+    unsigned register_value;
+    unsigned store_type;
+    unsigned default_value;
 
 public:
     Register(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void reset(bool cold) override;
     virtual void load_config(SystemData *sd) override;
-    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+    virtual void interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value) override;
+    virtual unsigned get_value();
 };
 
 ComputerDevice * create_register(InterfaceManager *im, EmulatorConfigDevice *cd);

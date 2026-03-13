@@ -25,7 +25,7 @@ for %%R in (!RENDERERS!) do (
 
     if not exist "!_BUILD_DIR!\" (
         echo "!_ROOT_LIB!"
-        cmake -DCMAKE_PREFIX_PATH="!_ROOT_LIB!" -S ../src -B "!_BUILD_DIR!" -G Ninja !_RENDERER_DEFINE!
+        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="!_ROOT_LIB!" -S ../src -B "!_BUILD_DIR!" -G Ninja !_RENDERER_DEFINE!
 
         cd "!_BUILD_DIR!"
         ninja

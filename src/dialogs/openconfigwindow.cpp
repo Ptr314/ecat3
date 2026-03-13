@@ -4,6 +4,7 @@
 // Description: Computer selection window, source
 
 #include <QDirIterator>
+#include <QTreeView>
 
 #include "emulator/config.h"
 #include "openconfigwindow.h"
@@ -119,7 +120,7 @@ void OpenConfigWindow::list_machines(QString work_path)
     ui->treeView->setModel(model);
     ui->treeView->expandAll();
 
-    connect(ui->treeView , SIGNAL(clicked(QModelIndex)), this, SLOT(set_description(QModelIndex)));
+    connect(ui->treeView, &QTreeView::clicked, this, &OpenConfigWindow::set_description);
 
 }
 

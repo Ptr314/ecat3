@@ -42,7 +42,7 @@ void Agat_FDC840::load_config(SystemData *sd)
     }
 
     memset(&drives, 0, sizeof(drives));
-    QStringList parts = s.split('|', Qt::SkipEmptyParts);
+    QStringList parts = s.split('|', skip_empty_parts);
     drives_count = parts.size();
 
     LinkData ld;
@@ -64,7 +64,7 @@ void Agat_FDC840::load_config(SystemData *sd)
     i_side.change(~side);
 
 #ifdef LOG_FDD
-    ram0 = dynamic_cast<RAM*>(im->dm->get_device_by_name("ram0"));
+    //ram0 = dynamic_cast<RAM*>(im->dm->get_device_by_name("ram0"));
 #endif
 }
 
@@ -94,6 +94,8 @@ void Agat_FDC840::update_status()
 {
     // Collect status signals and put them to the register for reading
 
+    const bool loaded = (selected_drive < drives_count) ? drives[selected_drive]->get_loaded() : false;
+
     uint8_t status_fdd =   ((drives_count>1)?0b00:0b11                   << 0)    //FDD2 type
                          + (0b00                                         << 2)    //FDD1 type
                          + (((selected_drive < drives_count)?
@@ -111,11 +113,13 @@ void Agat_FDC840::update_status()
                             )                                            << 6)    // Track 00
                          + ((motor_on?0:1)                               << 7);   // Ready // TODO: check
 
+    if (!loaded) status_fdd &= ~0x80;
     dd14.set_value(1, status_fdd, true);
 
     uint8_t status_fdc =   ((sector_sync?0:1) << 6)                               // sector sync detected (active - 0)
                          + ((data_ready?1:0) << 7);                               // data is ready to be read or written (active - 1)
 
+    if (!loaded) status_fdc &= ~0x80;
     dd15.set_value(2, status_fdc, true);
 }
 
@@ -163,26 +167,27 @@ void Agat_FDC840::update_state()
 void Agat_FDC840::read_next_byte()
 {
     if (selected_drive < drives_count) {
-        int sector_pos = drives[selected_drive]->get_position() % 282;
+        int pos = drives[selected_drive]->get_position();
+        int aim_code = drives[selected_drive]->aim_code();
         uint8_t data = drives[selected_drive]->ReadNextByte();
-        // Sync at a sector prologue (before 0x95) or header (before 0x6A)
-        if ( sector_pos == 12 || sector_pos == 21) {
+        if (aim_code == 1) {
+            // if (data == 0) data = drives[selected_drive]->ReadNextByte();
             sector_sync = true;
-#ifdef LOG_FDD
-            // if (sector_pos == 12)
-            //     logs(QString("--SYNC PREAMBLE"));
-            // else
-            //     logs(QString("--SYNC DATA"));
-#endif
+            // qDebug() << "-- SYNC " << pos << ":" << hex << data;
+            #ifdef LOG_FDD
+            // logs(QString("--SYNC"));
+            #endif
+        } else {
+            // qDebug() << hex << data;
+            #ifdef LOG_FDD
+            // static int tmp_track = 0;
+            // if (sector_pos == 16) {
+            //     tmp_track = data;
+            // }
+            // if (sector_pos == 17)
+            //     logs(QString("--INDEX %1:%2:%3").arg(tmp_track & 1).arg(tmp_track >> 1).arg(data));
+            #endif
         }
-#ifdef LOG_FDD
-        static int tmp_track = 0;
-        if (sector_pos == 16) {
-            tmp_track = data;
-        }
-        if (sector_pos == 17)
-            logs(QString("--INDEX %1:%2:%3").arg(tmp_track & 1).arg(tmp_track >> 1).arg(data));
-#endif
 
         dd15.set_value(0, data, true);
         data_ready = true;
@@ -222,7 +227,15 @@ unsigned int Agat_FDC840::get_value(unsigned int address)
             value = dd14.get_value(A & 0x03);
             break;
         case 0x4:
-            value = dd15.get_value(A & 0x03);
+            if (drives[selected_drive]->get_loaded() && motor_on) {
+                // if (data_ready) {
+                    value = dd15.get_value(A & 0x03);
+                // } else {
+                //     value = 0;
+                // }
+            } else {
+                value = std::rand() & 0xFF;
+            }
             data_ready = false;
             update_status();
             break;

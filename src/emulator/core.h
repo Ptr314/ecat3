@@ -8,6 +8,8 @@
 #include "emulator/renderer.h"
 #include <QObject>
 #include <QMessageBox>
+#include <memory>
+#include <vector>
 
 #ifdef RENDERER_SDL2
     #include <SDL.h>
@@ -49,8 +51,14 @@
 
 #define MAX_DEVICES 100
 
-#if defined(__cplusplus) && __cplusplus >= 201703L
-    #define MAYBE_UNUSED [[maybe_unused]]
+// C++11 compatible attribute for unused parameters/variables
+// Supports GCC, Clang (via __attribute__), and MSVC (pragma-based)
+#if defined(__GNUC__) || defined(__clang__)
+    #define MAYBE_UNUSED __attribute__((unused))
+#elif defined(_MSC_VER)
+    // MSVC doesn't support __attribute__, fallback to empty macro
+    // Warnings suppressed via project settings instead
+    #define MAYBE_UNUSED
 #else
     #define MAYBE_UNUSED
 #endif
@@ -104,9 +112,14 @@ struct LinkData {
 };
 
 struct DeviceDescription {
-    ComputerDevice *device;
+    std::unique_ptr<ComputerDevice> device;
     QString device_type;
     QString device_name;
+
+    // Helper to get raw pointer for non-owning access
+    ComputerDevice* get() const {
+        return device.get();
+    }
 };
 
 struct MapperRange {
@@ -188,7 +201,8 @@ public:
         can_read(false),
         can_write(false){};
 
-    virtual unsigned int get_value(unsigned int address) = 0;
+    virtual unsigned get_value(unsigned address) = 0;
+    virtual unsigned get_direct(unsigned address);
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) = 0;
     virtual unsigned int get_size();
 };
@@ -240,7 +254,7 @@ protected:
     bool auto_output;
     Interface i_address;
     Interface i_data;
-    uint8_t * buffer;
+    std::vector<uint8_t> buffer;
     unsigned short fill;
     bool random_fill;
     unsigned int read_callback;
@@ -248,12 +262,13 @@ protected:
 
 public:
     Memory(InterfaceManager *im, EmulatorConfigDevice *cd);
-    ~Memory();
+    ~Memory() override;
     void set_size(unsigned int value);
-    virtual unsigned int get_value(unsigned int address) override;
+    unsigned get_value(unsigned int address) override;
+    unsigned get_direct(unsigned int address) override;
     void set_memory_callback(ComputerDevice * d, unsigned int callback_id, unsigned int mode);
-    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
-    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
+    void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+    void set_value(unsigned int address, unsigned int value, bool force=false) override;
     virtual uint8_t * get_buffer();
 };
 
@@ -290,13 +305,13 @@ protected:
     Interface i_reset;
 
 public:
-    virtual unsigned int get_direct();
-    virtual unsigned int get_value(unsigned int address) override;
-    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
+    unsigned get_direct(unsigned address) override;
+    unsigned int get_value(unsigned address) override;
+    void set_value(unsigned int address, unsigned int value, bool force=false) override;
 
     Port(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
-    virtual void reset(bool cold) override;
+    void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+    void reset(bool cold) override;
 };
 
 class PortAddress:public Port
@@ -353,8 +368,7 @@ class InterfaceManager: public QObject
     Q_OBJECT
 
 public:
-    unsigned int interfaces_count;
-    Interface * interfaces[MAX_INTERFACES];
+    std::vector<Interface*> interfaces;
     DeviceManager *dm;
 
 
@@ -493,6 +507,7 @@ protected:
     bool screen_valid;              //Means surface is correct
     void * render_pixels;
     VideoRenderer * renderer = nullptr;
+    bool m_renderer_valid;
 
     virtual void render_all(bool force_render = false) = 0;
 
@@ -500,13 +515,12 @@ public:
     bool was_updated;               //Means we need to send surface to screen
 
     GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
-    //virtual void get_screen(bool required) = 0;
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) = 0;
     virtual void reset(bool cold) override;
-    // virtual void set_surface(SURFACE * surface);
-    // virtual void set_surface(const RENDER_INFO & ri);
     virtual void set_renderer(VideoRenderer &vr);
     virtual void validate(bool force_render = false);
+    virtual void change_resolution(unsigned new_x, unsigned new_y);
+    virtual bool has_valid_renderer();
 };
 
 class FDC: public AddressableDevice

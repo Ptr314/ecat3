@@ -72,7 +72,11 @@ void GLWidget::paintGL() {
     QMutexLocker locker(&mutex);
     if (!pendingImage.isNull()) {
         if (texture) delete texture;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+        texture = new QOpenGLTexture(pendingImage.flipped(Qt::Vertical));
+#else
         texture = new QOpenGLTexture(pendingImage.mirrored());
+#endif
         texture->setMinificationFilter(QOpenGLTexture::Linear);
         texture->setMagnificationFilter(QOpenGLTexture::Linear);
         pendingImage = QImage();

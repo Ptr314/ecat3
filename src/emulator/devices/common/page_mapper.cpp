@@ -27,7 +27,7 @@ void PageMapper::load_config(SystemData *sd)
     QString parameter_name, range;
     unsigned int page_id;
 
-    for (unsigned int i = 0; i < cd->parameters_count; i++)
+    for (size_t i = 0; i < cd->parameters.size(); i++)
     {
         parameter_name = cd->parameters[i].name;
         if (parameter_name == "@page")

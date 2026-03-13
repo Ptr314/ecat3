@@ -70,14 +70,15 @@ cd репозиторий-приложения\.build
 cd C:\Temp
 mkdir qt5.15-build
 cd qt5.15-build
-configure.bat -static -static-runtime -release -nomake examples -nomake tests -opensource -confirm-license -no-opengl -skip qtlocation -prefix c:\DEV\Qt\%_QT_VERSION%-static
+configure.bat -release -nomake examples -nomake tests -opensource -confirm-license -no-opengl -skip qtlocation -skip qtdeclarative -prefix %_ROOT_LIB%
 mingw32-make
 mingw32-make install
 ~~~
 
 Примечания: 
-* -no-opengl используется для исключения установки OpenGL SDK.
-* -skip qtlocation исключает непонятную ошибку компиляции в этом модуле
+* `-no-opengl` используется для исключения установки OpenGL SDK.
+* `-skip qtdeclarative` позволяет избежать необходимости в установке Python, но отключает модули QtQuick, QtQml и некоторые другие.
+* `-skip qtlocation` исключает непонятную ошибку компиляции в этом модуле
 
 #### 4. Обновление языковых файлов
 

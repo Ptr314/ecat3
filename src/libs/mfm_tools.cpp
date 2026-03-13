@@ -230,7 +230,7 @@ uint8_t agat_840_calc_cs(const uint8_t data[], const int len)
     return static_cast<uint8_t>(cs);
 }
 
-uint8_t * generate_mfm_agat_840(QString file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[])
+uint8_t * generate_mfm_agat_840(QString file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes)
 {
     sides = 2;
     tracks = 80;
@@ -250,10 +250,12 @@ uint8_t * generate_mfm_agat_840(QString file_name, int & sides, int & tracks, in
 
     for (uint8_t track = 0; track < tracks; track++)
         for (uint8_t head = 0; head < sides; head++) {
+            int agat_track = track*2 + head;
+            aim_codes[agat_track].clear();
             for (uint8_t sector = 0; sector < sectors; sector++) {
                 // Prologue
                 memcpy(out, &agat_840_prolog, AGAT_840_PROLOG_SIZE);
-                out[AGAT_840_PROLOG_TRACK] = track*2 + head;
+                out[AGAT_840_PROLOG_TRACK] = agat_track;
                 out[AGAT_840_PROLOG_SECTOR] = sector;
                 out += AGAT_840_PROLOG_SIZE;
                 // Header
@@ -265,6 +267,10 @@ uint8_t * generate_mfm_agat_840(QString file_name, int & sides, int & tracks, in
                 *out++ = agat_840_calc_cs(data, sector_size);
                 // Footer
                 *out++ = 0x5A;
+
+                int track_pos = sector * encoded_sector_size;
+                aim_codes[agat_track][track_pos + 12] = 0x01;
+                aim_codes[agat_track][track_pos + 21] = 0x01;
             }
 
             track_indexes[track_index].track_number = track;
@@ -277,4 +283,38 @@ uint8_t * generate_mfm_agat_840(QString file_name, int & sides, int & tracks, in
     delete [] image;
 
     return buffer;
+}
+
+uint8_t * load_aim_image(QString file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes)
+{
+    sides = 2;
+    tracks = 80;
+    int track_len = 6464;
+    disk_size = tracks * track_len * sides;
+    uint16_t * image = reinterpret_cast<uint16_t*>(load_image(file_name, disk_size*2));
+    uint8_t * out = new uint8_t[disk_size];
+
+    for (uint8_t track = 0; track < tracks; track++) {
+        for (uint8_t head = 0; head < sides; head++) {
+            int agat_track = track*2 + head;
+            aim_codes[agat_track].clear();
+            for (int track_pos=0; track_pos<track_len; track_pos++) {
+                int image_pos = agat_track*track_len + track_pos;
+                uint16_t w = image[image_pos];
+                uint8_t hi = static_cast<uint8_t>(w >> 8);
+                uint8_t lo = static_cast<uint8_t>(w & 0xFF);
+                if (hi !=0) {
+                    aim_codes[agat_track][track_pos] = hi;
+                    // qDebug() << "AIM " << track_pos << ":" << Qt::hex << lo;
+                }
+                out[image_pos] = lo;
+            }
+            track_indexes[agat_track].track_number = track;
+            track_indexes[agat_track].side_number = head;
+            track_indexes[agat_track].mfmtracksize = track_len;
+            track_indexes[agat_track].mfmtrackoffset = (track*2 + head)*track_len;
+        }
+    }
+    delete [] image;
+    return out;
 }

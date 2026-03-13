@@ -8,9 +8,9 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         # Qt6 for Win 10+, Linux & macOS 64 bits
-        # add_compile_definitions(RENDERER_SDL2)
+        add_compile_definitions(RENDERER_SDL2)
         # add_compile_definitions(RENDERER_QT)
-        add_compile_definitions(RENDERER_OPENGL)
+        # add_compile_definitions(RENDERER_OPENGL)
     else()
         # Qt5 for Win 7+ 32 bits
         add_compile_definitions(RENDERER_SDL2)
@@ -62,10 +62,20 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Threading compatibility for old MinGW (4.9.2)
+option(FORCE_QT_THREADING "Force QThread-based threading (for old MinGW)" OFF)
+option(FORCE_STD_THREADING "Force std::thread even on old MinGW" OFF)
+if(FORCE_QT_THREADING)
+    add_compile_definitions(FORCE_QT_THREADING)
+endif()
+if(FORCE_STD_THREADING)
+    add_compile_definitions(FORCE_STD_THREADING)
+endif()
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGLWidgets)
+if(QT_VERSION_MAJOR EQUAL 6 AND RENDERER_OPENGL)
+    find_package(Qt6 REQUIRED COMPONENTS OpenGLWidgets)
     set(OPENGL_FILES
         renderers/renderer_opengl.h
         renderers/GLWidget.cpp renderers/GLWidget.h
@@ -121,6 +131,7 @@ set(PROJECT_SOURCES
     emulator/devices/cpu/i8080.cpp emulator/devices/cpu/i8080.h
     emulator/devices/specific/o128display.cpp emulator/devices/specific/o128display.h
     emulator/emulator.cpp emulator/emulator.h
+    emulator/thread_compat.h
     emulator/utils.cpp emulator/utils.h
     main.cpp
     mainwindow.cpp mainwindow.h mainwindow.ui
@@ -167,7 +178,7 @@ set(PROJECT_SOURCES
 
     ${Z80_FILES}
     emulator/devices/specific/agat_fdc140.h emulator/devices/specific/agat_fdc140.cpp
-    emulator/devices/specific/agat_display.h emulator/devices/specific/agat_display.cpp
+    emulator/devices/specific/agat_7_display.h emulator/devices/specific/agat_7_display.cpp
     emulator/devices/common/mapkeyboard.h emulator/devices/common/mapkeyboard.cpp
     emulator/devices/common/sound.h emulator/devices/common/sound.cpp
     libs/mfm_formats.h
@@ -184,8 +195,9 @@ set(PROJECT_SOURCES
     ${OPENGL_FILES}
 
     libs/audio_filters.h
-    emulator/devices/common/raster_display.h
-    emulator/devices/common/raster_display.cpp
+    emulator/devices/common/raster_display.h emulator/devices/common/raster_display.cpp
+    emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
+
 )
 
 # Adding Qt base translations
@@ -275,7 +287,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     dsk_tools
 )
 
-if(QT_VERSION_MAJOR EQUAL 6)
+if(QT_VERSION_MAJOR EQUAL 6 AND RENDERER_OPENGL)
     target_link_libraries(${PROJECT_NAME} PRIVATE
         Qt${QT_VERSION_MAJOR}::OpenGLWidgets
     )
