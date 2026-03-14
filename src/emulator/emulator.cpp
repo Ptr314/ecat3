@@ -50,6 +50,7 @@
 #include "emulator/devices/specific/agat_7_display.h"
 #include "emulator/devices/common/mapkeyboard.h"
 #include "emulator/devices/common/ram_address.h"
+#include "emulator/devices/specific/irisha_display.h"
 
 
 Emulator::Emulator(QString work_path, QString data_path, QString software_path, QString ini_file, VideoRenderer * renderer):
@@ -634,4 +635,5 @@ void Emulator::register_devices()
     dm->register_device("agat-7-display", create_agat_7_display);
     dm->register_device("map-keyboard", create_mapkeyboard);
     dm->register_device("ram-address", create_ram_address);
+    dm->register_device("irisha-display", create_irisha_display);
 }

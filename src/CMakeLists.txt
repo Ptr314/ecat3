@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(eCat3 VERSION 3.4.1 LANGUAGES C CXX)
+project(eCat3 VERSION 3.5.0 LANGUAGES C CXX)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
@@ -197,6 +197,7 @@ set(PROJECT_SOURCES
     libs/audio_filters.h
     emulator/devices/common/raster_display.h emulator/devices/common/raster_display.cpp
     emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
+    emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp
 
 )
 

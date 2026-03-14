@@ -1,0 +1,119 @@
+space:      $20
+0:          $30
+1:          $31
+2:          $32
+3:          $33
+4:          $34
+5:          $35
+6:          $36
+7:          $37
+8:          $38
+9:          $39
+
+enter:      $0D
+ret:        $0D
+
+A:          $61
+A/S:        $41
+
+B:          $C2
+B/C:        $82
+B/S:        $E2
+
+W:          $D7
+W/C:        $97
+W/S:        $F7
+
+G:          $C7
+G/C:        $87
+G/S:        $E7
+
+D:          $C4
+D/C:        $84
+D/S:        $E4
+
+E:          $C5
+E/C:        $85
+E/S:        $E5
+
+V:          $D6
+V/C:        $96
+V/S:        $F6
+
+Z:          $DA
+Z/C:        $9A
+Z/S:        $FA
+
+I:          $C9
+I/C:        $89
+I/S:        $E9
+
+J:          $CA
+J/C:        $8A
+J/S:        $EA
+
+K:          $CB
+K/C:        $8B
+K/S:        $EB
+
+L:          $CC
+L/C:        $8C
+L/S:        $EC
+
+M:          $CD
+M/C:        $8D
+M/S:        $ED
+
+N:          $CE
+N/C:        $8E
+N/S:        $EE
+
+O:          $CF
+O/C:        $8F
+O/S:        $EF
+
+P:          $D0
+P/C:        $90
+P/S:        $F0
+
+R:          $D2
+R/C:        $92
+R/S:        $F2
+
+S:          $D3
+S/C:        $93
+S/S:        $F3
+
+T:          $D4
+T/C:        $94
+T/S:        $F4
+
+U:          $D5
+U/C:        $95
+U/S:        $F5
+
+F:          $C6
+F/C:        $86
+F/S:        $E6
+
+H:          $C8
+H/C:        $88
+H/S:        $E8
+
+C:          $C3
+C/C:        $83
+C/S:        $E3
+
+Q:          $D1
+Q/C:        $91
+Q/S:        $F1
+
+Y:          $D9
+Y/C:        $99
+Y/S:        $F9
+
+X:          $D8
+X/C:        $98
+X/S:        $F8
+
+esc:        $9B
