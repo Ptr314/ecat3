@@ -62,7 +62,10 @@ void Register::load_config(SystemData *sd)
     else
         QMessageBox::critical(0, Register::tr("Error"), Register::tr("Unknown register type %1").arg(type_string));
 
-    mask = i_in.linked_bits;
+    if (i_in.linked_bits)
+        mask = i_in.linked_bits;
+    else
+        mask = _FFFF;
 }
 
 void Register::interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value)
@@ -104,7 +107,7 @@ void Register::interface_callback(unsigned callback_id, unsigned new_value, unsi
         }
     } else
     if (callback_id == CHANGED_S) {
-        if (i_r.neg_edge()){
+        if (i_s.neg_edge()){
             register_value = _FFFF & mask;
             i_out.change(register_value);
         }
