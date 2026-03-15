@@ -209,7 +209,7 @@ CF	RST 1	1
 D0	RNC	1
 D1	POP D	1
 D2 n n	JNC $nn	3
-D3 p	OUT $p	2
+D3 n	OUT $n	2
 D4 n n	CNC $nn	3
 D5	PUSH D	1
 D6 d	SUI $d	2
@@ -217,7 +217,7 @@ D7	RST 2	1
 D8	RC	1
 D9	*RET	1
 DA n n	JC $nn	3
-DB p	IN $p	2
+DB n	IN $n	2
 DC n n	CC $nn	3
 DD n n	*CALL $nn	3
 DE d	SBI $d	2
