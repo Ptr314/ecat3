@@ -19,6 +19,7 @@ class MapKeyboard: public Keyboard
 {
 private:
     Interface i_ruslat;
+    Interface i_ready;
 
 protected:
     bool shift_pressed;
@@ -32,17 +33,17 @@ protected:
 
     std::vector<KeyMapData> key_map;
 
-    virtual void set_rus(bool new_rus) override;
+    void set_rus(bool new_rus) override;
 
 public:
     MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
 
-    virtual void key_down(unsigned int key) override;
-    virtual void key_up(unsigned int key) override;
+    void key_down(unsigned int key) override;
+    void key_up(unsigned int key) override;
 
-    virtual void load_config(SystemData *sd) override;
+    void load_config(SystemData *sd) override;
 
-    virtual void reset(bool cool) override;
+    void reset(bool cool) override;
 };
 
 ComputerDevice * create_mapkeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);

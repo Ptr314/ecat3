@@ -16,6 +16,7 @@ MapKeyboard::MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     , code_ruslat(0)
     , ruslat_bit(1)
     , i_ruslat(this, im, 1, "ruslat", MODE_W)
+    , i_ready(this, im, 1, "ready", MODE_W)
 {
 }
 
@@ -81,6 +82,8 @@ void MapKeyboard::load_config(SystemData *sd)
     } catch (QException e) {
         QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("rus-bit should be a number"));
     }
+
+    i_ready.change(1);
 }
 
 void MapKeyboard::set_rus(bool new_rus)
@@ -112,6 +115,8 @@ void MapKeyboard::key_down(unsigned int key)
                 )
             {
                 port_value->set_value(key_map[i].value, key_map[i].value); // To use both port & port-address
+                i_ready.change(0);
+                i_ready.change(1);
             }
     }
 }
