@@ -11,20 +11,31 @@ class IrishaDisplay: public GenericDisplay
 {
 private:
     unsigned m_mode;
+    unsigned m_color;
+    unsigned m_page;
     unsigned m_base_address{};
+    uint32_t m_fore_color;
+    uint32_t m_back_color;
+    unsigned m_mode_index;
+    unsigned m_page_size;
 
     Port * port_mode{};
     Port * port_color{};
     Port * port_page{};
     RAM * vram{};
 
-    void render_byte(unsigned int address);
+
+    void render_mono(unsigned address) const;
+    void render_color(unsigned address) const;
+    void render_blank() const;
 
 protected:
     void render_all(bool force_render) override;
 
 public:
     IrishaDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
+
+    void set_renderer(VideoRenderer &vr) override;
 
     void clock(unsigned int counter) override;
     void load_config(SystemData *sd) override;
