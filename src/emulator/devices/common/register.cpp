@@ -61,6 +61,8 @@ void Register::load_config(SystemData *sd)
         store_type = REGISTER_BUFFER;
     else
         QMessageBox::critical(0, Register::tr("Error"), Register::tr("Unknown register type %1").arg(type_string));
+
+    mask = i_in.linked_bits;
 }
 
 void Register::interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value)
@@ -71,14 +73,14 @@ void Register::interface_callback(unsigned callback_id, unsigned new_value, unsi
         case REGISTER_FLIPFLOP_POS:
         case REGISTER_LATCH_POS:
             if (i_c.pos_edge()){
-                register_value = i_in.value;
+                register_value = i_in.value & mask;
                 i_out.change(register_value);
             }
             break;
         case REGISTER_FLIPFLOP_NEG:
         case REGISTER_LATCH_NEG:
             if (i_c.neg_edge()){
-                register_value = i_in.value;
+                register_value = i_in.value & mask;
                 i_out.change(register_value);
             }
             break;
@@ -91,7 +93,7 @@ void Register::interface_callback(unsigned callback_id, unsigned new_value, unsi
             || (store_type == REGISTER_LATCH_NEG && i_c.value == 1 )
             )
         {
-            register_value = i_in.value;
+            register_value = i_in.value & mask;
             i_out.change(register_value);
         }
     } else
@@ -103,7 +105,7 @@ void Register::interface_callback(unsigned callback_id, unsigned new_value, unsi
     } else
     if (callback_id == CHANGED_S) {
         if (i_r.neg_edge()){
-            register_value = _FFFF;
+            register_value = _FFFF & mask;
             i_out.change(register_value);
         }
     }

@@ -19,6 +19,7 @@ private:
     unsigned register_value;
     unsigned store_type;
     unsigned default_value;
+    unsigned mask;
 
 public:
     Register(InterfaceManager *im, EmulatorConfigDevice *cd);
