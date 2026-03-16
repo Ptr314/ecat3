@@ -40,6 +40,7 @@
 #include "emulator/devices/common/i8275.h"
 #include "emulator/devices/common/i8275display.h"
 #include "emulator/devices/common/i8253.h"
+#include "emulator/devices/common/i8259.h"
 #include "emulator/devices/common/register.h"
 #include "emulator/devices/cpu/z80.h"
 #include "emulator/devices/common/page_mapper.h"
@@ -624,6 +625,7 @@ void Emulator::register_devices()
     dm->register_device("i8275", create_i8275);
     dm->register_device("i8275-display", create_i8275display);
     dm->register_device("i8253", create_i8253);
+    dm->register_device("i8259", create_i8259);
     dm->register_device("register", create_register);
     dm->register_device("z80", create_z80);
     dm->register_device("page-mapper", create_page_mapper);
