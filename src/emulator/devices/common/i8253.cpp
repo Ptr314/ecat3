@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Intel 8253 (КР580ВИ53) programmable timer
 
@@ -42,7 +42,7 @@ I8253::I8253(InterfaceManager *im, EmulatorConfigDevice *cd):
     memset(&Gates, 1, sizeof(Gates)); //Allow counting just if gates are not connected
 }
 
-void I8253::reset(bool cold)
+void I8253::reset(const bool cold)
 {
     AddressableDevice::reset(cold);
     init();
@@ -72,17 +72,18 @@ void I8253::StartCount(unsigned int A)
 
 void I8253::SetOut(unsigned int A, unsigned int Mode)
 {
-    unsigned int M = I8253_MODES[Mode][Modes[A]];
-    unsigned int V = i_output.value;
-    unsigned int Mask = 1 << A;
+    const unsigned int M = I8253_MODES[Mode][Modes[A]];
+    const unsigned int V = i_output.value;
+    const unsigned int Mask = 1 << A;
     switch (M) {
         case 0: i_output.change(V & ~Mask); break; //0
         case 1: i_output.change(V | Mask);  break; //1
         case 2: i_output.change(V ^ Mask);  break; //Инверсия
+        default: break;
     }
 }
 
-void I8253::Count(unsigned int A, unsigned int Increment)
+void I8253::Count(const unsigned int A, const unsigned int Increment)
 {
     //Проверяем, загружен ли счетчик
     if (Loaded[A] == 1)
@@ -98,8 +99,8 @@ void I8253::Count(unsigned int A, unsigned int Increment)
             //Умножаем значение на 2 для двойного декремента
             if (I8253_MODES[COUNTER_LOAD_DEC_VALUE][Modes[A]] == 1)
                 I2 = I2 << 1;
-            int Ctr = static_cast<int>(Counters[A*2]) + static_cast<int>(Counters[A*2+1])*256;
-            int V = Ctr - static_cast<int>(I2);
+            const int Ctr = static_cast<int>(Counters[A*2]) + static_cast<int>(Counters[A*2+1])*256;
+            const int V = Ctr - static_cast<int>(I2);
             if ((V > 0) || (Ctr == 0))
             {
                 //Сохраняем значение для следующего цикла
@@ -127,8 +128,8 @@ void I8253::Reload(unsigned int A)
 
 unsigned int I8253::get_value(unsigned int address)
 {
-    unsigned int a = address & 0x03;
-    unsigned int result;
+    const unsigned a = address & 0x03;
+    unsigned result;
     if (a==3)
         result = 0;
     else {
@@ -138,9 +139,9 @@ unsigned int I8253::get_value(unsigned int address)
     return result;
 }
 
-void I8253::set_value(unsigned int address, unsigned int value, bool force)
+void I8253::set_value(const unsigned address, const unsigned value, bool force)
 {
-    unsigned int a = address & 0x03;
+    const unsigned a = address & 0x03;
     if (a==3) {
         //control word
         unsigned int C = (value >> 6) & 0x03;				 	//Номер канала
@@ -181,19 +182,19 @@ void I8253::set_value(unsigned int address, unsigned int value, bool force)
     }
 }
 
-void I8253::clock(unsigned int counter)
+void I8253::clock(const unsigned counter)
 {
     Count(0, counter);
     Count(1, counter);
     Count(2, counter);
 }
 
-void I8253::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned int new_value, unsigned int old_value)
+void I8253::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned new_value, const unsigned old_value)
 {
     for (unsigned int A=0; A<3; A++)
     {
-        unsigned int G0 = (old_value >> A) & 0x01;
-        unsigned int G1 = (new_value >> A) & 0x01;
+        const unsigned G0 = (old_value >> A) & 0x01;
+        const unsigned G1 = (new_value >> A) & 0x01;
         if (G1!=G0)
         {
             if (G1==0)

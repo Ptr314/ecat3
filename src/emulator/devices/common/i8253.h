@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Intel 8253 (КР580ВИ53) programmable timer
 
@@ -18,7 +18,7 @@ private:
     uint8_t Modes[3];           //Режим работы счетчиков
     uint8_t IsBCD[3];           //Тип загруженных данных
     uint8_t Orders[3];          //Порядок загрузки данных
-    uint8_t Indexes[3];         //Индесы загружаемых в счетчики байтов
+    uint8_t Indexes[3];         //Индексы загружаемых в счетчики байтов
     uint8_t Loaded[3];          //Загружены ли счетчики
     uint8_t Counting[3];        //Флаг останова для считывания счетчиков
     uint8_t StartData[6];       //Начальные данные
