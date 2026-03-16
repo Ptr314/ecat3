@@ -67,12 +67,15 @@
         </size>
        </property>
        <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
+        <enum>QFrame::Shape::StyledPanel</enum>
        </property>
        <property name="frameShadow">
-        <enum>QFrame::Raised</enum>
+        <enum>QFrame::Shadow::Raised</enum>
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <property name="spacing">
+         <number>3</number>
+        </property>
         <item>
          <widget class="QLabel" name="state">
           <property name="sizePolicy">
@@ -107,14 +110,20 @@
         <item>
          <widget class="Line" name="line_5">
           <property name="orientation">
-           <enum>Qt::Vertical</enum>
+           <enum>Qt::Orientation::Vertical</enum>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="toPCButton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+           <enum>Qt::FocusPolicy::NoFocus</enum>
           </property>
           <property name="toolTip">
            <string>Return to PC</string>
@@ -126,12 +135,24 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/undo</normaloff>:/icons/undo</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="stepButton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+           <enum>Qt::FocusPolicy::NoFocus</enum>
           </property>
           <property name="toolTip">
            <string>Trace into [F7]</string>
@@ -143,12 +164,24 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/forward</normaloff>:/icons/forward</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="stepOverButton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+           <enum>Qt::FocusPolicy::NoFocus</enum>
           </property>
           <property name="toolTip">
            <string>Step over [F8]</string>
@@ -160,12 +193,24 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/step_over</normaloff>:/icons/step_over</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="runUntilButton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+           <enum>Qt::FocusPolicy::NoFocus</enum>
           </property>
           <property name="toolTip">
            <string>Go to cursor [F4]</string>
@@ -177,12 +222,24 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/finish</normaloff>:/icons/finish</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="runDebuggedButton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+           <enum>Qt::FocusPolicy::NoFocus</enum>
           </property>
           <property name="toolTip">
            <string>Run under debugger [F9]</string>
@@ -194,12 +251,24 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/play</normaloff>:/icons/play</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="stopTrackingButton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+           <enum>Qt::FocusPolicy::NoFocus</enum>
           </property>
           <property name="toolTip">
            <string>Stop</string>
@@ -211,12 +280,24 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/pause</normaloff>:/icons/pause</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="runButton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+           <enum>Qt::FocusPolicy::NoFocus</enum>
           </property>
           <property name="toolTip">
            <string>Run without debugging</string>
@@ -228,12 +309,18 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/play_fwd</normaloff>:/icons/play_fwd</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="Line" name="line_4">
           <property name="orientation">
-           <enum>Qt::Vertical</enum>
+           <enum>Qt::Orientation::Vertical</enum>
           </property>
          </widget>
         </item>
@@ -289,7 +376,7 @@
            </size>
           </property>
           <property name="focusPolicy">
-           <enum>Qt::ClickFocus</enum>
+           <enum>Qt::FocusPolicy::ClickFocus</enum>
           </property>
           <property name="toolTip">
            <string>Address for the debugger</string>
@@ -304,8 +391,14 @@
         </item>
         <item>
          <widget class="QToolButton" name="gotoButton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+           <enum>Qt::FocusPolicy::NoFocus</enum>
           </property>
           <property name="toolTip">
            <string>Go to</string>
@@ -317,12 +410,24 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/next</normaloff>:/icons/next</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="addBRButton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+           <enum>Qt::FocusPolicy::NoFocus</enum>
           </property>
           <property name="toolTip">
            <string>Add a breakpoint</string>
@@ -334,12 +439,24 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/add</normaloff>:/icons/add</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="removeBRButton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+           <enum>Qt::FocusPolicy::NoFocus</enum>
           </property>
           <property name="toolTip">
            <string>Delete a breakpoint</string>
@@ -351,12 +468,18 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/remove</normaloff>:/icons/remove</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QComboBox" name="valueSelect">
           <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+           <enum>Qt::FocusPolicy::NoFocus</enum>
           </property>
           <property name="toolTip">
            <string>Register to set</string>
@@ -370,8 +493,14 @@
         </item>
         <item>
          <widget class="QToolButton" name="toolButton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+           <enum>Qt::FocusPolicy::NoFocus</enum>
           </property>
           <property name="toolTip">
            <string>Set value</string>
@@ -383,12 +512,18 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/accept</normaloff>:/icons/accept</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="Line" name="line">
           <property name="orientation">
-           <enum>Qt::Vertical</enum>
+           <enum>Qt::Orientation::Vertical</enum>
           </property>
          </widget>
         </item>
@@ -456,6 +591,12 @@
         </item>
         <item>
          <widget class="QToolButton" name="dumpGotoButton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="toolTip">
            <string>Go to for the dump</string>
           </property>
@@ -466,10 +607,22 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/next</normaloff>:/icons/next</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="dumpPgDownBotton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="toolTip">
            <string>Page down</string>
           </property>
@@ -480,10 +633,22 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/page_down</normaloff>:/icons/page_down</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="dumpPgUpBotton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="toolTip">
            <string>Page up</string>
           </property>
@@ -494,12 +659,18 @@
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/page_up</normaloff>:/icons/page_up</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
          </widget>
         </item>
         <item>
          <spacer name="horizontalSpacer">
           <property name="orientation">
-           <enum>Qt::Horizontal</enum>
+           <enum>Qt::Orientation::Horizontal</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
@@ -511,8 +682,14 @@
         </item>
         <item>
          <widget class="QToolButton" name="closeButton">
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+           <enum>Qt::FocusPolicy::NoFocus</enum>
           </property>
           <property name="text">
            <string notr="true">...</string>
@@ -520,6 +697,12 @@
           <property name="icon">
            <iconset resource="../resources.qrc">
             <normaloff>:/icons/exit</normaloff>:/icons/exit</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
           </property>
          </widget>
         </item>
@@ -542,7 +725,7 @@
         </sizepolicy>
        </property>
        <property name="focusPolicy">
-        <enum>Qt::ClickFocus</enum>
+        <enum>Qt::FocusPolicy::ClickFocus</enum>
        </property>
        <property name="autoFillBackground">
         <bool>false</bool>
@@ -600,7 +783,7 @@
         </size>
        </property>
        <property name="focusPolicy">
-        <enum>Qt::ClickFocus</enum>
+        <enum>Qt::FocusPolicy::ClickFocus</enum>
        </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(0, 170, 170);</string>
