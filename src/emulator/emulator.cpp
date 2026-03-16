@@ -39,6 +39,7 @@
 #include "emulator/devices/common/i8257.h"
 #include "emulator/devices/common/i8275.h"
 #include "emulator/devices/common/i8275display.h"
+#include "emulator/devices/common/i8251.h"
 #include "emulator/devices/common/i8253.h"
 #include "emulator/devices/common/i8259.h"
 #include "emulator/devices/common/register.h"
@@ -624,6 +625,7 @@ void Emulator::register_devices()
     dm->register_device("i8257", create_i8257);
     dm->register_device("i8275", create_i8275);
     dm->register_device("i8275-display", create_i8275display);
+    dm->register_device("i8251", create_i8251);
     dm->register_device("i8253", create_i8253);
     dm->register_device("i8259", create_i8259);
     dm->register_device("register", create_register);

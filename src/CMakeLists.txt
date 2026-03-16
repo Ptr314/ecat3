@@ -152,6 +152,7 @@ set(PROJECT_SOURCES
     emulator/devices/common/i8257.h
     emulator/devices/common/i8275.h
     emulator/devices/common/i8275display.h
+    emulator/devices/common/i8251.h emulator/devices/common/i8251.cpp
     emulator/devices/common/i8253.h emulator/devices/common/i8253.cpp
     emulator/devices/common/i8259.h emulator/devices/common/i8259.cpp
     emulator/files.h emulator/files.cpp
