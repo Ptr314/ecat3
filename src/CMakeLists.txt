@@ -12,6 +12,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         # add_compile_definitions(RENDERER_QT)
         set(RENDERER_OPENGL ON)
         add_compile_definitions(RENDERER_OPENGL)
+
+        # set(USE_SDL_AUDIO ON)
+        # add_compile_definitions(USE_SDL_AUDIO)
     else()
         # Qt5 for Win 7+ 32 bits
         set(RENDERER_SDL2 ON)
