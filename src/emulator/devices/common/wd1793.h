@@ -77,22 +77,22 @@ private:
     void SetDRQ();
     bool GetDRQ();
     void ClearDRQ();
-    void SetFlag(unsigned int flag);
-    void ClearFlag(unsigned int flag);
+    void SetFlag(unsigned flag);
+    void ClearFlag(unsigned flag);
     void SetINTRQ();
     void ClearINTRQ();
     void FindSelectedDrive();
-    void WriteRegister(unsigned int address, unsigned int  value);
+    void WriteRegister(unsigned address, unsigned  value);
 
 public:
     uint8_t registers[5];
     WD1793(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual bool get_busy() override;
-    virtual unsigned int get_selected_drive() override;
-    virtual unsigned int get_value(unsigned int address) override;
-    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
-    virtual void load_config(SystemData *sd) override;
-    virtual void clock(unsigned int counter) override;
+    bool get_busy() override;
+    unsigned get_selected_drive() override;
+    unsigned get_value(unsigned int address) override;
+    void set_value(unsigned address, unsigned value, bool force=false) override;
+    void load_config(SystemData *sd) override;
+    void clock(unsigned int counter) override;
 };
 
 ComputerDevice * create_WD1793(InterfaceManager *im, EmulatorConfigDevice *cd);

@@ -53,7 +53,7 @@
 #include "emulator/devices/common/mapkeyboard.h"
 #include "emulator/devices/common/ram_address.h"
 #include "emulator/devices/specific/irisha_display.h"
-
+#include "devices/common/gmd70.h"
 
 Emulator::Emulator(QString work_path, QString data_path, QString software_path, QString ini_file, VideoRenderer * renderer):
       work_path(work_path)
@@ -620,6 +620,7 @@ void Emulator::register_devices()
     dm->register_device("i8080", create_i8080);
     dm->register_device("i8255", create_i8255);
     dm->register_device("wd1793", create_WD1793);
+    dm->register_device("gmd70", create_GMD70);
     dm->register_device("fdd", create_FDD);
     dm->register_device("orion-128-display", create_o128display);
     dm->register_device("i8257", create_i8257);

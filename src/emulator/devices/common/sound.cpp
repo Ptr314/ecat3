@@ -126,7 +126,7 @@ void GenericSound::clock(unsigned int counter)
                 m_buffer.begin()
             );
             m_buffer_pos -= overflow_delta;
-            std::cerr << "Sound buffer overflow!" << std::endl;
+            // std::cerr << "Sound buffer overflow!" << std::endl;
         };
 
         // Using average value between counts
