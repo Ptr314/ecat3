@@ -3,6 +3,7 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Irisha display controller device
 
+#include <algorithm>
 #include <cstring>
 
 #include "emulator/utils.h"
@@ -79,7 +80,7 @@ IrishaDisplay::IrishaDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     m_page_size(0)
 {
     sx = 320;
-    sy = 200;
+    sy = 240;
 }
 
 void IrishaDisplay::load_config(SystemData *sd)
@@ -182,6 +183,12 @@ void IrishaDisplay::set_renderer(VideoRenderer &vr)
 void IrishaDisplay::render_all(const bool force_render)
 {
     if (!screen_valid || force_render) {
+        // Blank fields
+        const auto buf = static_cast<uint32_t *>(render_pixels);
+        const uint32_t black = Irisha_RGBA4[0];
+        std::fill(buf, buf + 5 * line_bytes, black);
+        std::fill(buf + sx * sy - 5 * line_bytes, buf + sx * sy, black);
+        // Screen
         if (m_mode_index == 1) for (unsigned a=0; a < m_page_size; a++) render_mono(a);
         else
         if (m_mode_index == 2) for (unsigned a=0; a < m_page_size; a++) render_color(a);
@@ -199,7 +206,7 @@ void IrishaDisplay::render_mono(const unsigned address) const
 {
     const uint8_t b = vram->get_direct(m_base_address + address);
     const auto buf = static_cast<uint32_t *>(render_pixels);
-    const unsigned offset = address * 8; // Each byte gives 8 dots
+    const unsigned offset = 5*line_bytes + address * 8; // 20 blank lines + Each byte gives 8 dots
     for (int k = 7; k >= 0; k--)
     {
         buf[offset + (7-k)] = ((b >> k) & 0x01) ? m_fore_color : m_back_color;
@@ -210,7 +217,7 @@ void IrishaDisplay::render_color(const unsigned address) const
 {
     const uint8_t b = vram->get_direct(m_base_address + address);
     const auto buf = static_cast<uint32_t *>(render_pixels);
-    const unsigned offset = address * 4; // Each byte gives 4 dots
+    const unsigned offset = 5*line_bytes + address * 4; // 20 blank lines + Each byte gives 4 dots
     for (int k = 3; k >= 0; k--)
     {
         const unsigned c = (b >> k*2) & 0x03;
@@ -223,8 +230,9 @@ void IrishaDisplay::render_color(const unsigned address) const
 void IrishaDisplay::render_blank() const
 {
     auto * buf = static_cast<uint32_t *>(render_pixels);
-    for (unsigned i = 0; i < sx * sy; i++)
-        buf[i] = m_back_color;
+    const unsigned offset = 5*line_bytes;       // 20 blank lines
+    for (unsigned i = 0; i < sx * (sy - 40); i++)
+        buf[offset + i] = m_back_color;
 }
 
 ComputerDevice * create_irisha_display(InterfaceManager *im, EmulatorConfigDevice *cd)
