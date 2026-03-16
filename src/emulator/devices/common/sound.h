@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Generic sound device class
 
 #pragma once
 
-#include <SDL.h>
 #include <vector>
 
 #include "emulator/thread_compat.h"
 #include "emulator/core.h"
 #include "libs/audio_filters.h"
+
+class AudioDriver;
 
 class GenericSound: public ComputerDevice
 {
@@ -21,7 +22,7 @@ private:
     unsigned int m_counter;
     unsigned int m_samples_per_buffer;
     unsigned int m_sample_rate;
-    SDL_AudioDeviceID m_audio_device;
+    AudioDriver * m_audio_driver;
     uint64_t m_counts_per_sample;
 
     // Data buffer
@@ -38,9 +39,8 @@ private:
     int m_lpf_coutoff;
     ButterworthLowPassFilter m_filter;
 
-
-    static void audio_callback(void* userdata, Uint8* stream, int len);
-    void handle_audio_callback(Uint8* stream, int len);
+    static void audio_callback(void* userdata, uint8_t* stream, int len);
+    void handle_audio_callback(uint8_t* stream, int len);
 
 protected:
     unsigned int m_volume;

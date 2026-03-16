@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Generic sound device class
 
@@ -8,6 +8,13 @@
 
 #include "sound.h"
 #include "emulator/utils.h"
+#include "emulator/audio/audio_driver.h"
+
+#ifdef USE_SDL_AUDIO
+    #include "emulator/audio/audio_driver_sdl.h"
+#else
+    #include "emulator/audio/audio_driver_miniaudio.h"
+#endif
 
 GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
       ComputerDevice(im, cd)
@@ -16,7 +23,7 @@ GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_counter(0)
     , m_samples_per_buffer(2048)
     , m_sample_rate(22050)
-    , m_audio_device(0)
+    , m_audio_driver(NULL)
     , m_volume(100)
     , m_muted(false)
     , m_use_lpf(false)
@@ -46,29 +53,21 @@ void GenericSound::init_sound(unsigned int clock_freq)
     m_clock_freq = clock_freq;
     m_counter = 0;
 
-    if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
-        std::cerr << "SDL audio init failed: " << SDL_GetError() << std::endl;
+#ifdef USE_SDL_AUDIO
+    m_audio_driver = new SDLAudioDriver();
+#else
+    m_audio_driver = new MiniaudioDriver();
+#endif
+
+    if (!m_audio_driver->open(m_sample_rate, 1, m_samples_per_buffer, audio_callback, this)) {
+        std::cerr << "Audio driver: failed to open device" << std::endl;
+        delete m_audio_driver;
+        m_audio_driver = NULL;
         return;
     }
 
-    SDL_AudioSpec desired_spec, obtained_spec;
-    SDL_zero(desired_spec);
-    desired_spec.freq = m_sample_rate;
-    desired_spec.format = AUDIO_S16SYS;
-    desired_spec.channels = 1;
-    desired_spec.samples = m_samples_per_buffer;
-    desired_spec.userdata = this;
-    desired_spec.callback = audio_callback;
-
-    m_audio_device = SDL_OpenAudioDevice(nullptr, 0, &desired_spec, &obtained_spec, 0);
-    if (m_audio_device == 0) {
-        std::cerr << "Failed to open audio device: " << SDL_GetError() << std::endl;
-        SDL_QuitSubSystem(SDL_INIT_AUDIO);
-        return;
-    }
-
-    m_sample_rate = obtained_spec.freq;
-    m_samples_per_buffer = obtained_spec.samples;
+    m_sample_rate = m_audio_driver->getObtainedSampleRate();
+    m_samples_per_buffer = m_audio_driver->getObtainedBufferSamples();
 
     m_buffer.resize(m_samples_per_buffer*2);
     m_buffer_pos = 0;
@@ -77,7 +76,7 @@ void GenericSound::init_sound(unsigned int clock_freq)
 
     if (m_use_lpf) m_filter.setup(m_sample_rate, m_lpf_coutoff);
 
-    SDL_PauseAudioDevice(m_audio_device, 0);
+    m_audio_driver->start();
     m_initialized = true;
 }
 
@@ -85,9 +84,12 @@ GenericSound::~GenericSound()
 {
     if (m_initialized) {
         m_initialized = false;
-        SDL_PauseAudioDevice(m_audio_device, 1);
-        SDL_CloseAudioDevice(m_audio_device);
-        // SDL_QuitSubSystem(SDL_INIT_AUDIO);
+        if (m_audio_driver) {
+            m_audio_driver->stop();
+            m_audio_driver->close();
+            delete m_audio_driver;
+            m_audio_driver = NULL;
+        }
     }
 }
 
@@ -147,13 +149,13 @@ void GenericSound::clock(unsigned int counter)
     }
 }
 
-void GenericSound::audio_callback(void* userdata, Uint8* stream, int len)
+void GenericSound::audio_callback(void* userdata, uint8_t* stream, int len)
 {
     GenericSound* sound = static_cast<GenericSound*>(userdata);
     sound->handle_audio_callback(stream, len);
 }
 
-void GenericSound::handle_audio_callback(Uint8* stream, int len)
+void GenericSound::handle_audio_callback(uint8_t* stream, int len)
 {
     if (!m_initialized) return;
 
@@ -166,15 +168,6 @@ void GenericSound::handle_audio_callback(Uint8* stream, int len)
     const int samples_requested = len / sizeof(int16_t);
     const int samples_available = static_cast<int>(m_buffer_pos);
     const int samples_to_copy = std::min(samples_requested, samples_available);
-
-    // static int n = 0;
-    // n++;
-    // if (samples_available > samples_requested) {
-    //     qDebug() << name << ": " << n << " + " << samples_available - samples_requested;
-    // } else
-    // if (samples_available < samples_requested) {
-    //     qDebug() << name << ": " << n << " --- " << samples_requested - samples_available;
-    // };
 
     // We use 'fill_value' later to fill missed samples.
     // The default value is -m_amplitude - "silence" in case the buffer is totally empty.

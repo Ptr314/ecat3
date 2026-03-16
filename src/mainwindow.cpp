@@ -855,6 +855,11 @@ void MainWindow::on_actionAbout_triggered()
             .replace("{$OS_VERSION}", QSysInfo::productVersion())
             .replace("{$CPU_ARCHITECTURE}", QSysInfo::currentCpuArchitecture())
             .replace("{$COMPILER}", compilerInfo)
+#ifdef USE_SDL_AUDIO
+            .replace("{$AUDIO_DRIVER}", "SDL2")
+#else
+            .replace("{$AUDIO_DRIVER}", "miniaudio")
+#endif
         );
 
     about->exec();

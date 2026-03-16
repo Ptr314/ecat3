@@ -14,6 +14,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         add_compile_definitions(RENDERER_OPENGL)
     else()
         # Qt5 for Win 7+ 32 bits
+        set(RENDERER_SDL2 ON)
         add_compile_definitions(RENDERER_SDL2)
         # add_compile_definitions(RENDERER_QT)
     endif()
@@ -83,9 +84,18 @@ if(QT_VERSION_MAJOR EQUAL 6 AND RENDERER_OPENGL)
     )
 endif()
 
-# For Windows, path to SDL should be added to CMAKE_PREFIX_PATH global environment variable
-find_package(SDL2 REQUIRED)
-include_directories(${SDL2_INCLUDE_DIRS})
+# Audio backend: miniaudio by default, SDL2 optional
+option(USE_SDL_AUDIO "Use SDL2 for audio instead of miniaudio" OFF)
+if(USE_SDL_AUDIO)
+    add_compile_definitions(USE_SDL_AUDIO)
+endif()
+
+# SDL2 is only required when using SDL2 renderer or SDL2 audio
+if(RENDERER_SDL2 OR USE_SDL_AUDIO)
+    # For Windows, path to SDL should be added to CMAKE_PREFIX_PATH global environment variable
+    find_package(SDL2 REQUIRED)
+    include_directories(${SDL2_INCLUDE_DIRS})
+endif()
 
 set(ENABLE_DSK_TOOLS OFF CACHE BOOL "Disable command line tools from the library")
 add_subdirectory(${CMAKE_SOURCE_DIR}/libs/dsk_tools/)
@@ -198,6 +208,10 @@ set(PROJECT_SOURCES
     ${OPENGL_FILES}
 
     libs/audio_filters.h
+    emulator/audio/audio_driver.h
+    emulator/audio/audio_driver_miniaudio.h emulator/audio/audio_driver_miniaudio.cpp
+    emulator/audio/audio_driver_sdl.h emulator/audio/audio_driver_sdl.cpp
+    libs/miniaudio/miniaudio.c
     emulator/devices/common/raster_display.h emulator/devices/common/raster_display.cpp
     emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
     emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp
@@ -288,9 +302,32 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
-    ${SDL2_LIBRARIES}
     dsk_tools
 )
+
+# SDL2 libraries (only when using SDL2 renderer or SDL2 audio)
+if(RENDERER_SDL2 OR USE_SDL_AUDIO)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_LIBRARIES})
+endif()
+
+# miniaudio platform dependencies
+if(NOT USE_SDL_AUDIO)
+    if(WIN32)
+        target_link_libraries(${PROJECT_NAME} PRIVATE winmm ole32)
+    elseif(APPLE)
+        find_library(COREAUDIO_FRAMEWORK CoreAudio)
+        find_library(AUDIOUNIT_FRAMEWORK AudioUnit)
+        find_library(COREFOUNDATION_FRAMEWORK CoreFoundation)
+        target_link_libraries(${PROJECT_NAME} PRIVATE
+            ${COREAUDIO_FRAMEWORK}
+            ${AUDIOUNIT_FRAMEWORK}
+            ${COREFOUNDATION_FRAMEWORK}
+        )
+    else()
+        # Linux
+        target_link_libraries(${PROJECT_NAME} PRIVATE pthread m dl)
+    endif()
+endif()
 
 if(QT_VERSION_MAJOR EQUAL 6 AND RENDERER_OPENGL)
     target_link_libraries(${PROJECT_NAME} PRIVATE

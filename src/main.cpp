@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: main.cpp
 
@@ -9,7 +9,7 @@
 #include <QLocale>
 #include <QTranslator>
 
-#ifdef RENDERER_SDL2
+#if defined(RENDERER_SDL2) || defined(USE_SDL_AUDIO)
     #include <SDL.h>
 #endif
 
@@ -26,11 +26,11 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
-    #ifdef RENDERER_SDL2
-        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-    #else
-        SDL_Init(SDL_INIT_AUDIO);
-    #endif
+#ifdef RENDERER_SDL2
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+#elif defined(USE_SDL_AUDIO)
+    SDL_Init(SDL_INIT_AUDIO);
+#endif
 
     MainWindow w;
     w.setWindowIcon(QIcon(":/icons/tv"));
@@ -38,12 +38,9 @@ int main(int argc, char *argv[])
 
     int RetVal = a.exec();
 
-    #ifdef RENDERER_SDL2
-        SDL_Quit();
-    #else
-        // We still need it for sound
-        SDL_Quit();
-    #endif
+#if defined(RENDERER_SDL2) || defined(USE_SDL_AUDIO)
+    SDL_Quit();
+#endif
 
     return RetVal;
 }
