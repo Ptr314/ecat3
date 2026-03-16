@@ -27,6 +27,12 @@ private:
     uint8_t Gates[3];           //Состояния входов GATE
     uint8_t NeedRestart[3];     //Старт счетчиков по следующему тактовому импульсу
 
+    // Per-channel clock scaling (relative to device clock)
+    unsigned int ch_clock_multiplier[3];
+    unsigned int ch_clock_divider[3];
+    unsigned int ch_clock_stored[3];
+    bool per_channel_clock;
+
     void init();
     void StartCount(unsigned int A);
     void SetOut(unsigned int A, unsigned int Mode);
@@ -37,6 +43,7 @@ private:
 public:
     I8253(InterfaceManager *im, EmulatorConfigDevice *cd);
 
+    void load_config(SystemData *sd) override;
     void reset(bool cold) override;
     unsigned int get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;

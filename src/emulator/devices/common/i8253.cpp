@@ -4,6 +4,7 @@
 // Description: Intel 8253 (КР580ВИ53) programmable timer
 
 #include "i8253.h"
+#include "emulator/utils.h"
 
 //Номера строк в таблице управления режимами
 //Каждая строка соответствует своему событию
@@ -37,9 +38,36 @@ I8253::I8253(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_data(this, im, 8, "data", MODE_R)
     , i_output(this, im, 3, "output", MODE_W)
     , i_gate(this, im, 3, "gate", MODE_R, 1)
+    , per_channel_clock(false)
 {
+    for (int i = 0; i < 3; i++) {
+        ch_clock_multiplier[i] = 1;
+        ch_clock_divider[i] = 1;
+        ch_clock_stored[i] = 0;
+    }
     init();
     memset(&Gates, 1, sizeof(Gates)); //Allow counting just if gates are not connected
+}
+
+void I8253::load_config(SystemData *sd)
+{
+    AddressableDevice::load_config(sd);
+
+    const QString param_names[3] = {"clock0", "clock1", "clock2"};
+    for (int ch = 0; ch < 3; ch++) {
+        QString s = cd->get_parameter(param_names[ch], false).value;
+        if (!s.isEmpty()) {
+            int pos = s.indexOf("/");
+            if (pos > 0) {
+                ch_clock_multiplier[ch] = parse_numeric_value(s.left(pos));
+                ch_clock_divider[ch] = parse_numeric_value(s.right(s.length() - pos - 1));
+            } else {
+                ch_clock_multiplier[ch] = parse_numeric_value(s);
+                ch_clock_divider[ch] = 1;
+            }
+            per_channel_clock = true;
+        }
+    }
 }
 
 void I8253::reset(const bool cold)
@@ -59,6 +87,7 @@ void I8253::init()
     memset(&Counters,    0, sizeof(Counters));
     memset(&NeedRestart, 0, sizeof(NeedRestart));
     memset(&Loaded,      0, sizeof(Loaded));
+    memset(&ch_clock_stored, 0, sizeof(ch_clock_stored));
 }
 
 void I8253::StartCount(unsigned int A)
@@ -184,9 +213,24 @@ void I8253::set_value(const unsigned address, const unsigned value, bool force)
 
 void I8253::clock(const unsigned counter)
 {
-    Count(0, counter);
-    Count(1, counter);
-    Count(2, counter);
+    if (!per_channel_clock) {
+        Count(0, counter);
+        Count(1, counter);
+        Count(2, counter);
+    } else {
+        for (int ch = 0; ch < 3; ch++) {
+            if (ch_clock_multiplier[ch] == ch_clock_divider[ch]) {
+                Count(ch, counter);
+            } else {
+                ch_clock_stored[ch] += counter * ch_clock_multiplier[ch];
+                unsigned int ch_clock = ch_clock_stored[ch] / ch_clock_divider[ch];
+                if (ch_clock > 0) {
+                    Count(ch, ch_clock);
+                    ch_clock_stored[ch] -= ch_clock * ch_clock_divider[ch];
+                }
+            }
+        }
+    }
 }
 
 void I8253::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned new_value, const unsigned old_value)
