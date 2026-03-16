@@ -764,6 +764,33 @@ void ROM::load_config(SystemData *sd)
         for (int i=0; i<values.size(); i++)
             buffer[i] = parse_numeric_value(values.at(i));
     }
+
+    try {
+        QString s = cd->get_parameter("mode").value.toLower();
+        if ((s == "stream")) rom_mode = ROMMode::Stream;
+        else if ((s == "normal")) rom_mode = ROMMode::Normal;
+        else
+        {
+            QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Incorrect mode set for '%1'").arg(this->name));
+            throw QException();
+        }
+    } catch (QException &e) {
+        rom_mode = ROMMode::Normal;
+    }
+}
+
+unsigned int ROM::get_value(unsigned int address)
+{
+    if (rom_mode == ROMMode::Normal) return Memory::get_value(address);
+    auto value = Memory::get_value(stream_counter);
+    stream_counter = (stream_counter + 1) % get_size();
+    return value;
+}
+
+void ROM::set_value(unsigned int address, unsigned int value, bool force)
+{
+    if (rom_mode == ROMMode::Normal) Memory::set_value(address, value, force);
+    else stream_counter = 0;
 }
 
 //----------------------- class Port -------------------------------//

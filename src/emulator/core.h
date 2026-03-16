@@ -143,6 +143,11 @@ struct MapperCacheEntry {
     unsigned int        counter;
 };
 
+enum class ROMMode {
+    Normal,
+    Stream
+};
+
 class ComputerDevice: public QObject
 {
     Q_OBJECT
@@ -282,9 +287,14 @@ public:
 
 class ROM: public Memory
 {
+private:
+    ROMMode rom_mode = ROMMode::Normal;
+    unsigned stream_counter = 0;
 public:
     ROM(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void load_config(SystemData *sd);
+    unsigned get_value(unsigned int address) override;
+    void set_value(unsigned int address, unsigned int value, bool force=false) override;
 };
 
 class Port:public AddressableDevice
