@@ -20,6 +20,8 @@ Speaker::Speaker(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 int16_t Speaker::calc_sound_value()
 {
+    if (InputWidth + MixerWidth == 0) return m_amplitude;
+
     int32_t V = 0;
     if (InputWidth != 0) {
         V += input;
