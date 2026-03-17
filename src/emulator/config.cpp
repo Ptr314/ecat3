@@ -57,12 +57,12 @@ void EmulatorConfig::free_devices()
 QString EmulatorConfig::read_next_entity(QString *config, QString stop = "")
 {
     QString s = "";
-    QString parser_spaces = " \x09\x0D\x0A";
-    QString parser_line = "\x0D\x0A";
-    QString parser_border = "=[]{}";
-    QString terminator = parser_border + stop;
+    const QString parser_spaces = " \x09\x0D\x0A";
+    const QString parser_line = "\x0D\x0A";
+    const QString parser_border = "=[]{}";
+    const QString terminator = parser_border + stop;
     QString stop_chars;
-    if (!config->isEmpty())
+    while (!config->isEmpty())
     {
         QChar c = config->at(0);
         config->remove(0, 1);
@@ -74,7 +74,6 @@ QString EmulatorConfig::read_next_entity(QString *config, QString stop = "")
         }
         if (!config->isEmpty() || !parser_spaces.contains(c))
         {
-
             if (!terminator.contains(c))
             {
                 if (c == '"')
@@ -94,13 +93,25 @@ QString EmulatorConfig::read_next_entity(QString *config, QString stop = "")
                 if (!config->isEmpty() and c != '"') {
                     *config = QString(c) + *config;
                 }
-                return s.trimmed();
-            } else {
-                return c;
+                s = s.trimmed();
+                // std::cout << s.toStdString() << std::endl;
+                const auto pos = s.indexOf("//");
+                if (pos == 0) s = "";
+                if (pos > 0) s = s.left(pos).trimmed();
+                if (pos >= 0 && !config->isEmpty()) {
+                    // Skipping until end of line
+                    QChar cc = config->at(0);
+                    while (!config->isEmpty() && !parser_line.contains(cc)) {
+                        config->remove(0, 1);
+                        cc = config->at(0);
+                    }
+                }
+                if (s.isEmpty()) continue;
+                return s;
             }
-        } else {
-            return "";
+            return c;
         }
+        return "";
     }
     return "";
 }
@@ -164,6 +175,7 @@ void EmulatorConfig::load_from_file(QString file_name, bool system_only)
     while(!config.isEmpty())
     {
         device_name = read_next_entity(&config, ":");
+        // std::cout << device_name.toStdString() << std::endl;
         if (device_name.isEmpty()) return;
         if (device_name.compare("system")==0)
         {
@@ -201,6 +213,7 @@ void EmulatorConfig::load_from_file(QString file_name, bool system_only)
         {
             QString new_param_name = param_name;
             s = read_next_entity(&config);
+            // std::cout << "- " << s.toStdString() << std::endl;
             if (s.isEmpty() || (s.compare("[")!=0 && s.compare("=")!=0))
             {
                 QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device '%1' - incorrect parameters").arg(device_name));
