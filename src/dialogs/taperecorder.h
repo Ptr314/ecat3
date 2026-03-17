@@ -33,8 +33,9 @@ protected:
     QIcon btnIconEjectOff;
     QIcon btnIconEjectOn;
 
-    bool is_playing;
-    bool is_paused;
+    bool is_playing = false;
+    bool is_paused = false;
+    bool is_recording = false;
 
     void play_pause();
 
@@ -69,6 +70,7 @@ private slots:
     void on_buttonPause_clicked();
     void on_buttonMute_clicked();
     void on_buttonRewind_clicked();
+    void on_buttonRec_clicked();
 };
 
 GenericDbgWnd * CreateTapeWindow(QWidget *parent, Emulator * e, ComputerDevice * d);

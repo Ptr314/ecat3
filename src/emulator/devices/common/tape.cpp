@@ -17,7 +17,7 @@ TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
     , data_position(0)
     , bit_shift(7)
     , ticks_counter(0)
-    , i_input(this, im, 1, "input", MODE_R)
+    , i_input(this, im, 1, "input", MODE_R, 1)
     , i_output(this, im, 1, "output", MODE_W)
     , i_speaker(this, im, 1, "speaker", MODE_W)
 {
@@ -43,12 +43,111 @@ void TapeRecorder::load_config(SystemData *sd)
 
     baud_rate = read_confg_value(cd, "baudrate", false, (unsigned int)1200);
 
+    const QString enc_str = cd->get_parameter("ecoding", false).value.toLower();
+    if (enc_str.isEmpty() || enc_str == "msx")
+        m_tape_enc = TapeEnc::MSX;
+    else if (enc_str == "rk86")
+        m_tape_enc = TapeEnc::RK86;
+    else
+        QMessageBox::critical(0, TapeRecorder::tr("Error"), TapeRecorder::tr("Incorrect encoding %1").arg(enc_str));
+
     files = cd->get_parameter("files", false).value;
 
     if (files.isEmpty()) files = sd->allowed_files;
 
     speaker->load_config(sd);
     speaker->reset(true);
+}
+
+void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, MAYBE_UNUSED unsigned old_value)
+{
+    if (is_recording) {
+        if ((old_value & 1) != 0 && (new_value & 1) == 0) {
+            if (has_last_edge) {
+                const uint64_t delta_cycles = cycle_counter - last_edge_cycles;
+                // const unsigned delta_us = static_cast<unsigned int>(delta_cycles * 1000000 / system_clock);
+                write_edge(delta_cycles);
+            }
+            last_edge_cycles = cycle_counter;
+            has_last_edge = true;
+        }
+    }
+}
+
+void TapeRecorder::write_edge(uint64_t counter)
+{
+    if (writer_state == TapeWriterState::Measuring) {
+        measured_time = (measured_time * measured_counter + counter) / (measured_counter + 1);
+        if (++measured_counter > 100) {
+            writer_state = TapeWriterState::Preamble;
+            measured_time_x2 = measured_time * 2;
+            max_delta = measured_time / 8;
+        }
+        return;
+    }
+    const uint64_t diff_to_short = (counter > measured_time) ? (counter - measured_time) : (measured_time - counter);
+    const uint64_t diff_to_long = (counter > measured_time_x2) ? (counter - measured_time_x2) : (measured_time_x2 - counter);
+    bool is_short = diff_to_short < max_delta;
+    bool is_long = diff_to_long < max_delta*2;
+    if (writer_state == TapeWriterState::Preamble || writer_state == TapeWriterState::Stops) {
+        if (is_long) {
+            // Start bit detected
+            writer_state = TapeWriterState::Data;
+            byte_counter = 0;
+            short_counter = 0;
+            current_byte = 0;
+        }
+        return;
+    }
+    if (writer_state == TapeWriterState::Data) {
+        if (is_short) {
+            if (short_counter != 0) {
+                // 1 detected
+                short_counter = 0;
+                store_bit(1);
+            } else
+                short_counter++;
+        } else
+        if (is_long) {
+            // 0 detected
+            short_counter = 0;
+            store_bit(0);
+        }
+    }
+}
+
+void TapeRecorder::store_bit(const unsigned bit)
+{
+    current_byte = current_byte | ((bit & 1) << byte_counter);
+    if (byte_counter++ > 6) {
+        writer_state = TapeWriterState::Stops;
+        if (recorded_bytes.size() == recorded_bytes.capacity())
+            recorded_bytes.reserve(recorded_bytes.capacity() + 1024);
+        recorded_bytes.push_back(current_byte);
+    }
+}
+
+void TapeRecorder::set_recording(bool recording)
+{
+    is_recording = recording;
+    if (is_recording && m_tape_enc == TapeEnc::MSX) {
+        has_last_edge = false;
+        writer_state = TapeWriterState::Measuring;
+        measured_counter = 0;
+        measured_time = 0;
+        recorded_bytes.clear();
+        recorded_bytes.reserve(1024);
+    }
+}
+
+unsigned TapeRecorder::get_record_size()
+{
+    return recorded_bytes.size();
+}
+
+std::vector<uint8_t> * TapeRecorder::get_record_data()
+{
+    return &recorded_bytes;
 }
 
 void TapeRecorder::play()
@@ -153,6 +252,7 @@ void TapeRecorder::load_file(QString file_name, QString fmt)
 
 void TapeRecorder::clock(unsigned int counter)
 {
+    cycle_counter += counter;
     if (tape_mode != TAPE_STOPPED) {
         if (ticks_counter < ticks_per_bit) {
             ticks_counter += counter;

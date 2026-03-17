@@ -686,6 +686,13 @@ void MainWindow::on_actionDebugger_triggered()
 void MainWindow::closeEvent (QCloseEvent *event)
 {
     fdds_found = 0; // to prevent crashing on buttons update
+
+    // Close all debug windows before destroying the emulator,
+    // so their closeEvent handlers can safely access devices
+    QList<GenericDbgWnd*> dbgWindows = findChildren<GenericDbgWnd*>();
+    for (auto *w : dbgWindows)
+        w->close();
+
     e->stop_emulation();
     delete e;
 
