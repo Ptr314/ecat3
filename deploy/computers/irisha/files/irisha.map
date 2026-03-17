@@ -166,3 +166,5 @@ up:         $0B
 down:       $0A
 left:       $08
 right:      $0C
+
+back:       $08
