@@ -55,6 +55,7 @@ protected:
     TapeWriterState writer_state = TapeWriterState::Measuring;
     void write_edge(uint64_t counter);
     void store_bit(unsigned bit);
+    static void encode_msx(const QByteArray &buffer, QByteArray &buffer_encoded);
     unsigned measured_counter = 0;
     uint64_t measured_time = 0;
     uint64_t measured_time_x2 = 0;

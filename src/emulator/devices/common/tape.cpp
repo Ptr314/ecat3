@@ -196,6 +196,34 @@ void TapeRecorder::set_data(QByteArray new_data){
     ticks_counter = 0;
 }
 
+void TapeRecorder::encode_msx(const QByteArray &buffer, QByteArray &buffer_encoded)
+{
+    int data_size = buffer.size();
+    // 11 nibbles per byte: 1 start + 8 data + 2 stop
+    buffer_encoded.reserve(buffer_encoded.size() + (data_size * 11 + 1) / 2);
+
+    std::vector<uint8_t> nibbles;
+    nibbles.reserve(data_size * 11);
+
+    for (int i = 0; i < data_size; i++) {
+        uint8_t b = buffer.at(i);
+        nibbles.push_back(0xC);  // Start bit: 0 -> 1100
+        for (int j = 0; j < 8; j++) {
+            int bit = (b >> j) & 1;
+            nibbles.push_back(bit ? 0xA : 0xC);
+        }
+        nibbles.push_back(0xA);  // Stop bit 1: 1 -> 1010
+        nibbles.push_back(0xA);  // Stop bit 2: 1 -> 1010
+    }
+
+    // Pack nibble pairs into bytes (MSB first)
+    for (size_t i = 0; i < nibbles.size(); i += 2) {
+        uint8_t hi = nibbles[i];
+        uint8_t lo = (i + 1 < nibbles.size()) ? nibbles[i + 1] : 0xA;
+        buffer_encoded.append((char)((hi << 4) | lo));
+    }
+}
+
 void TapeRecorder::load_file(QString file_name, QString fmt)
 {
     QStringList parts = fmt.split(";");
@@ -229,9 +257,9 @@ void TapeRecorder::load_file(QString file_name, QString fmt)
     unsigned int data_size = buffer.size();
 
     QByteArray buffer_encoded;
-    buffer_encoded.reserve(data_size*2);
 
     if (tape_format == "rk86") {
+        buffer_encoded.reserve(data_size*2);
         set_baud_rate(baud*2);
         for (int i=0; i < data_size; i++) {
             PartsRecLE T;
@@ -243,6 +271,12 @@ void TapeRecorder::load_file(QString file_name, QString fmt)
             buffer_encoded.append(T.b.H);
             buffer_encoded.append(T.b.L);
         }
+        set_data(buffer_encoded);
+    } else
+    if (tape_format == "msx") {
+        set_baud_rate(baud*4);
+        buffer_encoded.fill('\xAA', 256 * 4);
+        encode_msx(buffer, buffer_encoded);
         set_data(buffer_encoded);
     } else {
         QMessageBox::warning(0, TapeRecorder::tr("Error"), TapeRecorder::tr("Unknown tape format!"));
