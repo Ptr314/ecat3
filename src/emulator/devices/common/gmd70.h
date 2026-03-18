@@ -12,6 +12,7 @@ class GMD70 : public FDC
 {
 private:
     Interface i_select;
+    Interface i_motor;
 
     FDD * m_drives[2]{};
     bool m_busy = false;
@@ -30,6 +31,8 @@ private:
     uint8_t m_command_buffer[2];
     void reset_fdc();
     void do_command();
+    void motor_on();
+    void motor_off();
 public:
     GMD70(InterfaceManager *im, EmulatorConfigDevice *cd);
     bool get_busy() override;

@@ -42,6 +42,7 @@ private:
     bool write_protect;
     bool loaded;
     bool motor_on = false;
+    bool m_motor_was_on = false;
     QTimer led_timer;
 
 

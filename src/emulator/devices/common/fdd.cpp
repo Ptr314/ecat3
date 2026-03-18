@@ -396,7 +396,10 @@ void FDD::save_image(QString file_name)
         QFileInfo fi(file_name);
         QString ext = fi.suffix().toLower();
 
-        if (ext == "dsk") {
+        const std::vector<QString> raw_extensions = {"dsk", "gmd", "cpm"};
+        bool is_raw = std::find(raw_extensions.begin(), raw_extensions.end(), ext) != raw_extensions.end();
+
+        if (is_raw) {
             if (fdd_mode == FDD_MODE_AGAT_840) {
                 dsk_tools::BYTES encoded_data(buffer, buffer+disk_size);
                 dsk_tools::BYTES raw_data;
@@ -470,6 +473,7 @@ void FDD::interface_callback(unsigned int callback_id, unsigned int new_value, u
 {
     // if (callback_id == CALLBACK_MOTOR_ON) {
         motor_on = ((i_motor_on.value & 1) == 0) && is_selected();
+        if (motor_on) m_motor_was_on = true;
         // if (is_selected())
         // qDebug() << "MOT" << selector << motor_on << (i_motor_on.value & 1);
     // }
@@ -478,7 +482,10 @@ void FDD::interface_callback(unsigned int callback_id, unsigned int new_value, u
 bool FDD::is_led_on()
 {
     // qDebug() << motor_on << selector;
-    if (motor_on) led_timer.start(5000);
+    if (motor_on || m_motor_was_on) {
+        m_motor_was_on = false;
+        led_timer.start(5000);
+    }
     return led_timer.isActive();
 }
 
