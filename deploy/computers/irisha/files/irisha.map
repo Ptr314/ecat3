@@ -162,9 +162,18 @@ _/C:        $1F
 
 esc:        $1B
 
-up:         $0B
-down:       $0A
-left:       $08
-right:      $0C
+up:         $1C
+down:       $1D
+left:       $1A
+right:      $19
 
 back:       $08
+tab:        $09
+
+F1:         $81
+F2:         $82
+F3:         $83
+F4:         $84
+F5:         $86
+
+F12:        $0A
