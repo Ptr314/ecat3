@@ -150,7 +150,7 @@ void IrishaDisplay::clock(unsigned int counter)
                 m_fore_color = Irisha_RGBA8[m_color & 0x07];
                 m_back_color = Irisha_RGBA4[((m_color >> 3) & 1) | ((m_color >> 4) & 2)];
             } else
-            if ((m_mode & 0x01)==0) {
+            if ((m_mode & 0x01)==1) {
                 // Mode 2 - color low
                 m_mode_index = 2;
                 sx = 320;

@@ -111,7 +111,7 @@ void GMD70::set_value(const unsigned  address, const unsigned  value, bool force
 {
     if ((address & 1) == 0) {
         // Command register
-        std::cout << "GMD70::command " << std::hex << (value & 0xFF) << std::endl;
+        // std::cout << "GMD70::command " << std::hex << (value & 0xFF) << std::endl;
         if (value & 0x80) {
             reset_fdc();
             m_done = true;
@@ -128,7 +128,7 @@ void GMD70::set_value(const unsigned  address, const unsigned  value, bool force
         if (start) do_command();
     } else {
         // Data register
-        std::cout << "GMD70::write data " << std::hex << (value & 0xFF) << std::endl;
+        // std::cout << "GMD70::write data " << std::hex << (value & 0xFF) << std::endl;
         m_data = value & 0xFF;
         if (m_command == GMD70_FILL_BUFFER) {
             m_buffer[m_counter] = m_data;
