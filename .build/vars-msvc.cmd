@@ -1,7 +1,0 @@
-@echo off
-
-SET _ROOT_QT=C:\DEV\Qt
-SET _QT_VERSION=6.7.2
-
-SET _ROOT=%_ROOT_QT%\%_QT_VERSION%\Src
-SET PATH=%_ROOT%;%PATH%
