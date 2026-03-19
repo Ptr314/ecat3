@@ -51,6 +51,13 @@ OpenConfigWindow::OpenConfigWindow(QWidget *parent, Emulator * e) :
 
     ui->textBrowser->document()->setDefaultStyleSheet(file.readAll());
     file.close();
+
+    QFile default_md(e->work_path + "default.md");
+    if (default_md.open(QIODevice::ReadOnly)) {
+        QString html = "<body>" + md2html(default_md.readAll()) + "</body>";
+        ui->textBrowser->document()->setHtml(html);
+        default_md.close();
+    }
 }
 
 

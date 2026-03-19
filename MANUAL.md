@@ -142,29 +142,31 @@
 Верхняя панель состоит из четырех блоков:
 
 * Символ режима работы процессора:
-    * <img src="src/resources/icons/player_play.png" width="30"> &ndash; процессор запущен без отладки;
-    * <img src="src/resources/icons/player_pause.png" width="30"> &ndash; процессор остановлен;
-    * <img src="src/resources/icons/debug.png" width="30"> &ndash; процессор запущен под отладчиком, отслеживаются точки останова и состяние регистров;
+    * <img src="src/resources/icons/player_play.png" width="20"> &ndash; процессор запущен без отладки;
+    * <img src="src/resources/icons/player_pause.png" width="20"> &ndash; процессор остановлен;
+    * <img src="src/resources/icons/debug.png" width="20"> &ndash; процессор запущен под отладчиком, отслеживаются точки останова и состяние регистров;
     
 * Блок управления выполнением:
-    * <img src="src/resources/icons/undo.png" width="30"> &ndash; возврат курсора панели дизассемблера на текущую точку исполнения;
-    * <img src="src/resources/icons/forward.png" width="30"> &ndash; шаг внутрь (с заходом в подпрограмму), короткая клавиша F7;
-    * <img src="src/resources/icons/step_over.png" width="30"> &ndash; шаг поверх (без захода в подпрограмму), короткая клавиша F8;
-    * <img src="src/resources/icons/finish.png" width="30"> &ndash; выполнить до курсора, короткая клавиша F4;
-    * <img src="src/resources/icons/player_play.png" width="30"> &ndash; запустить под отладчиком (с отслеживанием точек останова), короткая клавиша F9;
-    * <img src="src/resources/icons/player_pause.png" width="30"> &ndash; останов процессора;
-    * <img src="src/resources/icons/player_fwd.png" width="30"> &ndash; запуск без отладки.
+    * <img src="src/resources/icons/undo.png" width="20"> &ndash; возврат курсора панели дизассемблера на текущую точку исполнения;
+    * <img src="src/resources/icons/forward.png" width="20"> &ndash; шаг внутрь (с заходом в подпрограмму), короткая клавиша F7;
+    * <img src="src/resources/icons/step_over.png" width="20"> &ndash; шаг поверх (без захода в подпрограмму), короткая клавиша F8;
+    * <img src="src/resources/icons/finish.png" width="20"> &ndash; выполнить до курсора, короткая клавиша F4;
+    * <img src="src/resources/icons/player_play.png" width="20"> &ndash; запустить под отладчиком (с отслеживанием точек останова), короткая клавиша F9;
+    * <img src="src/resources/icons/player_pause.png" width="20"> &ndash; останов процессора;
+    * <img src="src/resources/icons/player_fwd.png" width="20"> &ndash; запуск без отладки.
     
 * Блок управления панелью дизассемблера:
     * Строка ввода адреса или значения регистра; 
-    * <img src="src/resources/icons/next.png" width="30"> &ndash; переключение панели дизассемблера на введенный адрес (установка курсора);
-    * <img src="src/resources/icons/edit_add.png" width="30"> &ndash; установка точки останова на адрес под курсором. (Для установки точки сначала необходимо нажать кнопку установки курсора на нужный адрес!);
-    * <img src="src/resources/icons/edit_remove.png" width="30"> &ndash; удаление точки останова с адреса под курсором. (Курсор должен стоять на нужном адресе!);
+    * <img src="src/resources/icons/next.png" width="20"> &ndash; переключение панели дизассемблера на введенный адрес (установка курсора);
+    * <img src="src/resources/icons/edit_add.png" width="20"> &ndash; установка точки останова на адрес под курсором. (Для установки точки сначала необходимо нажать кнопку установки курсора на нужный адрес!);
+    * <img src="src/resources/icons/edit_remove.png" width="20"> &ndash; удаление точки останова с адреса под курсором. (Курсор должен стоять на нужном адресе!);
     * Выпадающий список с именами регистров;
-    * <img src="src/resources/icons/button_accept.png" width="30"> &ndash; запись значения в выбранный регистр.
+    * <img src="src/resources/icons/button_accept.png" width="20"> &ndash; запись значения в выбранный регистр.
 
 * Блок управления панелью дампа памяти:
     * Строка ввода адреса;
-    * <img src="src/resources/icons/next.png" width="30"> &ndash; переключение панели дампа на введенный адрес;
-    * <img src="src/resources/icons/2downarrow.png" width="30"> &ndash; переход на страницу вниз;
-    * <img src="src/resources/icons/2uparrow.png" width="30"> &ndash; переход на страницу вверх.
+    * <img src="src/resources/icons/next.png" width="20"> &ndash; переключение панели дампа на введенный адрес;
+    * <img src="src/resources/icons/2downarrow.png" width="20"> &ndash; переход на страницу вниз;
+    * <img src="src/resources/icons/2uparrow.png" width="20"> &ndash; переход на страницу вверх.
+
+Примечание: для того, чтобы иметь возможность настроить отладчик и другие окна до запуска эмулируемой машины, можно использовать параметр процессора stopped=1 в конфигурации машины (подробнее см. в [документации по настройке](CONFIG.md)).    
