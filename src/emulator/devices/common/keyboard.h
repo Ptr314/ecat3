@@ -188,6 +188,7 @@ class Keyboard: public ComputerDevice
 {
 protected:
     bool rus_mode;
+    bool use_remap = true;
     unsigned int translate_key(QString key);
     bool known_key(unsigned int code);
     unsigned int rus_translate(unsigned int code);
@@ -195,6 +196,7 @@ protected:
 
 public:
     Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
+    void load_config(SystemData *sd) override;
     virtual void key_event(QKeyEvent *event, bool press);
     virtual void key_down(unsigned int key) = 0;
     virtual void key_up(unsigned int key) = 0;

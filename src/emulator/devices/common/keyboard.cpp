@@ -14,6 +14,12 @@ Keyboard::Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     reset_priority = 100;
 }
 
+void Keyboard::load_config(SystemData *sd)
+{
+    ComputerDevice::load_config(sd);
+    use_remap = read_confg_value(cd, "use_remap", false, true);
+}
+
 void Keyboard::key_event(QKeyEvent *event, bool press)
 {
     //qDebug() << "Key: nativeScanCode()" << Qt::hex << event->nativeScanCode() << "nativeVirtualKey()" << Qt::hex<< event->nativeVirtualKey() << "key()" << Qt::hex << event->key();
@@ -55,10 +61,10 @@ void Keyboard::set_rus(bool new_rus)
 
 unsigned int Keyboard::rus_translate(unsigned int code)
 {
-    if (rus_mode) {
-        for (int i=0; i < RUS_REMAP_SIZE; i++)
-            if (RUS_REMAP[i][0] == code) return RUS_REMAP[i][1];
+    if (rus_mode && use_remap) {
+        for (auto i : RUS_REMAP)
+            if (i[0] == code) return i[1];
         return code;
-    } else
-        return code;
+    }
+    return code;
 }

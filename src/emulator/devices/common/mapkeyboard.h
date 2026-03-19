@@ -30,6 +30,8 @@ protected:
     unsigned rus_value;
     bool m_use_pin = true;
     bool m_use_codes = false;
+    bool m_has_rus_switches = false;
+    uint8_t m_rus_switches[2];
 
     Port * port_value;
     Port * port_ruslat;
@@ -37,6 +39,7 @@ protected:
     std::vector<KeyMapData> key_map;
 
     void set_rus(bool new_rus) override;
+    void send_key(unsigned int value);
 
 public:
     MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
