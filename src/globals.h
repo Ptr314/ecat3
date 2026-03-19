@@ -24,3 +24,4 @@
 /* #undef LOG_MAPPER */
 /* #undef LOG_PAGE_MAPPER */
 /* #undef LOG_INTERFACES */
+/* #undef LOG_AGAT */

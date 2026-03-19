@@ -31,13 +31,7 @@ void RAMAddress::load_config(SystemData *sd)
 
 unsigned RAMAddress::get_value(unsigned address)
 {
-    const unsigned a = (address >> m_address_shift) & m_address_mask;
-#ifdef LOG_AGAT
-    if (name=="port-C1xx") {
-        logs(QString("R %1").arg(a, 2, 16, QChar('0')));
-    }
-#endif
-
+    unsigned a = (address >> m_address_shift) & m_address_mask;
     unsigned v;
     if (m_store_on_read) {
         v = (address >> m_value_shift) & m_value_mask;

@@ -56,6 +56,8 @@ if (${LOGGER})
     set(LOG_FDD 1)
     set(LOG_PAGE_MAPPER 0)
     set(LOG_INTERFACES 0)
+    set(LOG_AGAT 1)
+
 endif()
 
 # CMake globals & options
@@ -195,6 +197,7 @@ set(PROJECT_SOURCES
     ${Z80_FILES}
     emulator/devices/specific/agat_fdc140.h emulator/devices/specific/agat_fdc140.cpp
     emulator/devices/specific/agat_7_display.h emulator/devices/specific/agat_7_display.cpp
+    emulator/devices/specific/agat_9_display.h emulator/devices/specific/agat_9_display.cpp
     emulator/devices/common/mapkeyboard.h emulator/devices/common/mapkeyboard.cpp
     emulator/devices/common/sound.h emulator/devices/common/sound.cpp
     libs/mfm_formats.h
@@ -211,6 +214,10 @@ set(PROJECT_SOURCES
     ${OPENGL_FILES}
 
     libs/audio_filters.h
+    emulator/devices/common/raster_display.h emulator/devices/common/raster_display.cpp
+    emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
+    emulator/devices/specific/agat_9_mapper.h emulator/devices/specific/agat_9_mapper.cpp
+
     emulator/audio/audio_driver.h
     emulator/audio/audio_driver_miniaudio.h emulator/audio/audio_driver_miniaudio.cpp
     emulator/audio/audio_driver_sdl.h emulator/audio/audio_driver_sdl.cpp
