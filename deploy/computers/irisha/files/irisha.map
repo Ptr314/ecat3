@@ -35,115 +35,201 @@ colon/S:    $3A
 >/S:        $3E
 ?/S:        $3F
 
+;/R:        $F6
+colon/R:    $D6
+'/R:        $FC
+"/RS:       $DC
+
 @/S:        $40
 
 A:          $41
 A/S:        $61
 A/C:        $01
+A/R:        $E1
+A/RS:       $C1
+A/RC:       $01
 
 B:          $42
 B/S:        $62
 B/C:        $02
+B/R:        $E2
+B/RS:       $C2
+B/RC:       $02
 
 C:          $43
 C/S:        $63
 C/C:        $03
+C/R:        $E3
+C/RS:       $C3
+C/RC:       $03
 
 D:          $44
 D/S:        $64
 D/C:        $04
+D/R:        $E4
+D/RS:       $C4
+D/RC:       $04
 
 E:          $45
 E/S:        $65
 E/C:        $05
+E/R:        $E5
+E/RS:       $C5
+E/RC:       $05
 
 F:          $46
 F/S:        $66
 F/C:        $06
+F/R:        $E6
+F/RS:       $C6
+F/RC:       $06
 
 G:          $47
 G/S:        $67
 G/C:        $07
+G/R:        $E7
+G/RS:       $C7
+G/RC:       $07
 
 H:          $48
 H/S:        $68
 H/C:        $08
+H/R:        $E8
+H/RS:       $C8
+H/RC:       $08
 
 I:          $49
 I/S:        $69
 I/C:        $09
+I/R:        $E9
+I/RS:       $C9
+I/RC:       $09
 
 J:          $4A
 J/S:        $6A
 J/C:        $0A
+J/R:        $EA
+J/RS:       $CA
+J/RC:       $0A
 
 K:          $4B
 K/S:        $6B
 K/C:        $0B
+K/R:        $EB
+K/RS:       $CB
+K/RC:       $0B
 
 L:          $4C
 L/S:        $6C
 L/C:        $0C
+L/R:        $EC
+L/RS:       $EC
+L/RC:       $0C
 
 M:          $4D
 M/S:        $6D
 M/C:        $0D
+M/R:        $ED
+M/RS:       $CD
+M/RC:       $0D
 
 N:          $4E
 N/S:        $6E
 N/C:        $0E
+N/R:        $EE
+N/RS:       $CE
+N/RC:       $0E
 
 O:          $4F
 O/S:        $6F
 O/C:        $0F
+O/R:        $EF
+O/RS:       $CF
+O/RC:       $0F
 
 P:          $50
 P/S:        $70
 P/C:        $10
+P/R:        $F0
+P/RS:       $D0
+P/RC:       $10
 
 Q:          $51
 Q/S:        $71
 Q/C:        $11
+Q/R:        $F1
+Q/RS:       $D1
+Q/RC:       $11
 
 R:          $52
 R/S:        $72
 R/C:        $12
+R/R:        $F2
+R/RS:       $D2
+R/RC:       $12
 
 S:          $53
 S/S:        $73
 S/C:        $13
+S/R:        $F3
+S/RS:       $D3
+S/RC:       $13
 
 T:          $54
 T/S:        $74
 T/C:        $14
+T/R:        $F4
+T/RS:       $D4
+T/RC:       $14
 
 U:          $55
 U/S:        $75
 U/C:        $15
+U/R:        $F5
+U/RS:       $D5
+U/RC:       $15
 
 V:          $56
 V/S:        $76
 V/C:        $16
+V/R:        $F6
+V/RS:       $D6
+V/RC:       $16
 
 W:          $57
 W/S:        $77
 W/C:        $17
+W/R:        $F7
+W/RS:       $F7
+W/RC:       $17
 
 X:          $58
 X/S:        $78
 X/C:        $18
+X/R:        $F8
+X/RS:       $D8
+X/RC:       $18
 
 Y:          $59
 Y/S:        $79
 Y/C:        $19
+Y/R:        $F9
+Y/RS:       $D9
+Y/RC:       $19
 
 Z:          $5A
 Z/S:        $7A
 Z/C:        $1A
+Z/R:        $FA
+Z/RS:       $DA
+Z/RC:       $1A
 
 [:          $5B
 [/C:        $1B
 {/S:        $7B
+[/R:        $E8
+[/RC:       $1B
+{/RS:       $C8
 
 \:          $7C
 \/C:        $1C
@@ -151,6 +237,9 @@ Z/C:        $1A
 ]:          $5D
 ]/C:        $1D
 }/S:        $7D
+]/R:        $FF
+]/RC:       $1D
+}/RS:       $DF
 
 ^:          $7E
 ^/C:        $1E

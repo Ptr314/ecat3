@@ -12,6 +12,7 @@ struct KeyMapData {
     unsigned int value;
     bool shift;
     bool ctrl;
+    bool rus;
 };
 
 
@@ -24,9 +25,11 @@ private:
 protected:
     bool shift_pressed;
     bool ctrl_pressed;
-    unsigned int code_ruslat;
-    unsigned int ruslat_bit;
-    unsigned int rus_value;
+    unsigned code_ruslat;
+    unsigned ruslat_bit;
+    unsigned rus_value;
+    bool m_use_pin = true;
+    bool m_use_codes = false;
 
     Port * port_value;
     Port * port_ruslat;

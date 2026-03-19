@@ -57,7 +57,8 @@ void MapKeyboard::load_config(SystemData *sd)
                     translate_key(key),
                     parse_numeric_value(value),
                     (modificators.indexOf('S') >= 0),
-                    (modificators.indexOf('C') >= 0)
+                    (modificators.indexOf('C') >= 0),
+                    (modificators.indexOf('R') >= 0)
                 });
             };
         };
@@ -82,6 +83,19 @@ void MapKeyboard::load_config(SystemData *sd)
     } catch (QException e) {
         QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("rus-bit should be a number"));
     }
+
+    const QString mode_str = cd->get_parameter("rusmode", false).value.toLower();
+    if (mode_str.isEmpty() || mode_str == "pin") {
+        m_use_pin = true;
+        m_use_codes = false;
+    } else if (mode_str == "both"){
+        m_use_pin = true;
+        m_use_codes = true;
+    } else if (mode_str == "code"){
+        m_use_pin = false;
+        m_use_codes = true;
+    } else
+        QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Incorrect keyboard rusmode %1").arg(mode_str));
 
     i_ready.change(1);
 }
@@ -112,6 +126,7 @@ void MapKeyboard::key_down(unsigned int key)
                        key_map[i].key_code == key
                     && key_map[i].ctrl     == ctrl_pressed
                     && key_map[i].shift    == shift_pressed
+                    && (key_map[i].rus == rus_mode || !m_use_codes)
                 )
             {
                 port_value->set_value(key_map[i].value, key_map[i].value); // To use both port & port-address
