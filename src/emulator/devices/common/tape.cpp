@@ -20,6 +20,7 @@ TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
     , i_input(this, im, 1, "input", MODE_R, 1)
     , i_output(this, im, 1, "output", MODE_W)
     , i_speaker(this, im, 1, "speaker", MODE_W)
+    , i_motor(this, im, 1, "motor", MODE_R, 2)
 {
     device_class = "tape";
 
@@ -61,15 +62,27 @@ void TapeRecorder::load_config(SystemData *sd)
 
 void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, MAYBE_UNUSED unsigned old_value)
 {
-    if (is_recording) {
-        if ((old_value & 1) != 0 && (new_value & 1) == 0) {
-            if (has_last_edge) {
-                const uint64_t delta_cycles = cycle_counter - last_edge_cycles;
-                // const unsigned delta_us = static_cast<unsigned int>(delta_cycles * 1000000 / system_clock);
-                write_edge(delta_cycles);
+    if (callback_id == 1) {
+        // Input changed
+        if (is_recording) {
+            if ((old_value & 1) != 0 && (new_value & 1) == 0) {
+                if (has_last_edge) {
+                    const uint64_t delta_cycles = cycle_counter - last_edge_cycles;
+                    // const unsigned delta_us = static_cast<unsigned int>(delta_cycles * 1000000 / system_clock);
+                    write_edge(delta_cycles);
+                }
+                last_edge_cycles = cycle_counter;
+                has_last_edge = true;
             }
-            last_edge_cycles = cycle_counter;
-            has_last_edge = true;
+        }
+    } else {
+        // Motor changed
+        std::cout << "TapeRecorder: motor = " << (new_value & 1) << std::endl;
+        if ((new_value & 1)==1 && (old_value & 1)==0 && !is_recording && data_size>0) {
+            emit mode_changed(TAPE_READ);
+        }
+        if ((new_value & 1)==0 && (old_value & 1)==1 && tape_mode == TAPE_READ) {
+            emit mode_changed(TAPE_STOPPED);
         }
     }
 }

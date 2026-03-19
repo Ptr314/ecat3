@@ -26,11 +26,13 @@ enum class TapeWriterState {
 
 class TapeRecorder: public ComputerDevice
 {
+    Q_OBJECT
 
 private:
     Interface i_input;
     Interface i_output;
     Interface i_speaker;
+    Interface i_motor;
 
     Speaker * speaker;
 
@@ -87,6 +89,9 @@ public:
     virtual void set_recording(bool recording);
     virtual unsigned get_record_size();
     virtual std::vector<uint8_t> * get_record_data();
+
+signals:
+    void mode_changed(unsigned int new_mode);
 };
 
 ComputerDevice * create_tape_recorder(InterfaceManager *im, EmulatorConfigDevice *cd);

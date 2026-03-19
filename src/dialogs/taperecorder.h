@@ -71,6 +71,7 @@ private slots:
     void on_buttonMute_clicked();
     void on_buttonRewind_clicked();
     void on_buttonRec_clicked();
+    void on_tape_mode_changed(unsigned int new_mode);
 };
 
 GenericDbgWnd * CreateTapeWindow(QWidget *parent, Emulator * e, ComputerDevice * d);
