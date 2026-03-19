@@ -55,6 +55,7 @@ private:
 public slots:
     void set_description(QModelIndex index);
 private slots:
+    void on_item_double_clicked(QModelIndex index);
     void on_closeButton_clicked();
 
     void on_okButton_clicked();

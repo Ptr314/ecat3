@@ -121,6 +121,7 @@ void OpenConfigWindow::list_machines(QString work_path)
     ui->treeView->expandAll();
 
     connect(ui->treeView, &QTreeView::clicked, this, &OpenConfigWindow::set_description);
+    connect(ui->treeView, &QTreeView::doubleClicked, this, &OpenConfigWindow::on_item_double_clicked);
 
 }
 
@@ -142,6 +143,12 @@ void OpenConfigWindow::set_description(QModelIndex index)
 
         file.close();
     }
+}
+
+void OpenConfigWindow::on_item_double_clicked(QModelIndex index)
+{
+    set_description(index);
+    on_okButton_clicked();
 }
 
 void OpenConfigWindow::on_closeButton_clicked()
