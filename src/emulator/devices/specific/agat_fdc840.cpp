@@ -169,20 +169,21 @@ void Agat_FDC840::read_next_byte()
         if (aim_code == 1) {
             // if (data == 0) data = drives[selected_drive]->ReadNextByte();
             sector_sync = true;
-            qDebug() << "-- SYNC " << pos << ":" << hex << data;
+            // qDebug() << "-- SYNC " << pos << ":" << hex << data;
             #ifdef LOG_FDD
             // logs(QString("--SYNC"));
             #endif
-        } else
-            qDebug() << hex << data;
-        #ifdef LOG_FDD
-            static int tmp_track = 0;
-            if (sector_pos == 16) {
-                tmp_track = data;
-            }
-            if (sector_pos == 17)
-                logs(QString("--INDEX %1:%2:%3").arg(tmp_track & 1).arg(tmp_track >> 1).arg(data));
-        #endif
+        } else {
+            // qDebug() << hex << data;
+            #ifdef LOG_FDD
+            // static int tmp_track = 0;
+            // if (sector_pos == 16) {
+            //     tmp_track = data;
+            // }
+            // if (sector_pos == 17)
+            //     logs(QString("--INDEX %1:%2:%3").arg(tmp_track & 1).arg(tmp_track >> 1).arg(data));
+            #endif
+        }
 
         dd15.set_value(0, data, true);
         data_ready = true;
@@ -222,7 +223,15 @@ unsigned int Agat_FDC840::get_value(unsigned int address)
             value = dd14.get_value(A & 0x03);
             break;
         case 0x4:
-            value = dd15.get_value(A & 0x03);
+            if (drives[selected_drive]->get_loaded() && motor_on) {
+                // if (data_ready) {
+                    value = dd15.get_value(A & 0x03);
+                // } else {
+                //     value = 0;
+                // }
+            } else {
+                value = std::rand() & 0xFF;
+            }
             data_ready = false;
             update_status();
             break;

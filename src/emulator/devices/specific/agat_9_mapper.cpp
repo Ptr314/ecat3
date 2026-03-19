@@ -122,29 +122,29 @@ unsigned Agat9Mapper::do_access(unsigned rd_wr, unsigned address, unsigned data)
 {
     unsigned v = _FFFF;
 
-    unsigned A12 = (address >> 12) & 1;
-    unsigned A13 = (address >> 13) & 1;
-    unsigned A14 = (address >> 14) & 1;
-    unsigned A15 = (address >> 15) & 1;
-    unsigned A14_15_ = 1 - (A14 & A15);
-    unsigned PM = m_pm->get_value(0) & 1;
+    const unsigned A12 = (address >> 12) & 1;
+    const unsigned A13 = (address >> 13) & 1;
+    const unsigned A14 = (address >> 14) & 1;
+    const unsigned A15 = (address >> 15) & 1;
+    const unsigned A14_15_ = 1 - (A14 & A15);
+    const unsigned PM = m_pm->get_direct(0) & 1;
 
-    unsigned D14_a = (A12     << 0) +
-                     (A13     << 1) +
-                     (A14_15_ << 2) +
-                     (_WR     << 3) +
-                     (_RD     << 4) +
-                     (_HD     << 5) +
-                     (rd_wr   << 6) +
-                     (_bl_ROM << 7) +
-                     (_bl_RAM << 8) +
-                     (PM      << 9);
-    unsigned _D14_v = D14[D14_a];
+    const unsigned D14_a = (A12     << 0) +
+                           (A13     << 1) +
+                           (A14_15_ << 2) +
+                           (_WR     << 3) +
+                           (_RD     << 4) +
+                           (_HD     << 5) +
+                           (rd_wr   << 6) +
+                           (_bl_ROM << 7) +
+                           (_bl_RAM << 8) +
+                           (PM      << 9);
+    const unsigned _D14_v = D14[D14_a];
 
-    unsigned __vkROM = ((_D14_v >> 7) & 1);
+    const unsigned __vkROM = (_D14_v >> 7) & 1;
     if (__vkROM == 0 && rd_wr == 1) {
-        unsigned __F =  ((_D14_v >> 3) & 1);
-        unsigned __DE = ((_D14_v >> 6) & 1);
+        unsigned __F =  (_D14_v >> 3) & 1;
+        unsigned __DE = (_D14_v >> 6) & 1;
         if (__F == 0) {
             // ROM F000–FFFF
             v = m_bios->get_value(address & m_bios_mask);
@@ -154,16 +154,16 @@ unsigned Agat9Mapper::do_access(unsigned rd_wr, unsigned address, unsigned data)
         }
     }
 
-    unsigned __vkRAM = ((_D14_v >> 2) & 1);
+    const unsigned __vkRAM = (_D14_v >> 2) & 1;
     if (__vkRAM == 0) {
-        unsigned __A12f = ((_D14_v >> 0) & 1);
-        unsigned __W    = ((_D14_v >> 1) & 1);
-        unsigned __RP   = ((_D14_v >> 5) & 1);
+        const unsigned __A12f = (_D14_v >> 0) & 1;
+        const unsigned __W    = (_D14_v >> 1) & 1;
+        const unsigned __RP   = (_D14_v >> 5) & 1;
 
-        unsigned segment = (address >> 13) + __RP * 8;
-        unsigned bank = m_page_map->get_buffer()[segment];
-        unsigned offset = (address & 0x0FFF) | (__A12f << 12);
-        unsigned ram_address = (bank << 13) + offset;
+        const unsigned segment = (address >> 13) + (__RP << 3);
+        const unsigned bank = m_page_map->get_buffer()[segment];
+        const unsigned offset = (address & 0x0FFF) | (__A12f << 12);
+        const unsigned ram_address = (bank << 13) + offset;
 
         if (rd_wr == 1) {
             // Read
@@ -179,12 +179,11 @@ unsigned Agat9Mapper::do_access(unsigned rd_wr, unsigned address, unsigned data)
     return v;
 }
 
-void Agat9Mapper::C08X(unsigned rd_wr, unsigned address)
+void Agat9Mapper::C08X(const unsigned rd_wr, const unsigned address)
 {
     unsigned A0 = (address >> 0) & 1;
     unsigned A1 = (address >> 1) & 1;
     unsigned A3 = (address >> 3) & 1;
-    unsigned PM = m_pm->get_value(0) & 1;
     unsigned PM = m_pm->get_direct(0) & 1;
 
     unsigned D3_a = (_D8_4   << 0) +
@@ -205,19 +204,16 @@ void Agat9Mapper::C08X(unsigned rd_wr, unsigned address)
 
 unsigned Agat9Mapper::get_value(unsigned address)
 {
-    unsigned v = _FFFF;
-
     if (address < 0xC000 || address >= 0xD000) {
         // RAM or ROM
         return do_access(1, address, _FFFF);
-    } else
+    }
     if (address >= 0xC080 && address <= 0xC09F) {
         // Control register
         C08X(1, address & 0xF);
-        v = 0xF4 | (_HD << 3) | (_RD << 1) | (1 - (_WR & 1)); // HD, ЧТ, ~ЗП
+        return 0xF4 | (_HD << 3)  | (_RD << 1) | (1 - (_WR & 1)); // HD, ЧТ, ~ЗП
     }
-
-    return v;
+    return _FFFF;
 }
 
 void Agat9Mapper::set_value(unsigned int address, unsigned int value, bool force)
