@@ -41,7 +41,7 @@ for RENDERER in "${RENDERERS[@]}"; do
   # Bundle SDL2 dylib
   APP_BINARY="${BUILD_DIR}/${APP_NAME}.app/Contents/MacOS/${APP_NAME}"
   FRAMEWORKS_DIR="${BUILD_DIR}/${APP_NAME}.app/Contents/Frameworks"
-  SDL2_LIB=$(otool -L "${APP_BINARY}" | grep libSDL2 | awk '{print $1}')
+  SDL2_LIB=$(otool -L "${APP_BINARY}" | grep libSDL2 | awk '{print $1}' || true)
   if [ -n "${SDL2_LIB}" ]; then
     mkdir -p "${FRAMEWORKS_DIR}"
     cp "${SDL2_LIB}" "${FRAMEWORKS_DIR}/"

@@ -281,8 +281,8 @@ class RAM: public Memory
 {
 public:
     RAM(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual void load_config(SystemData *sd);
-    virtual void reset(bool cold);
+    void load_config(SystemData *sd) override;
+    void reset(bool cold) override;
 };
 
 class ROM: public Memory
@@ -292,7 +292,7 @@ private:
     unsigned stream_counter = 0;
 public:
     ROM(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual void load_config(SystemData *sd);
+    void load_config(SystemData *sd) override;
     unsigned get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
 };
@@ -415,13 +415,13 @@ public:
 
     CPU(InterfaceManager *im, EmulatorConfigDevice *cd);
 
-    virtual void load_config(SystemData *sd);
+    void load_config(SystemData *sd) override;
     virtual unsigned int execute() = 0;
     bool check_breakpoint(unsigned int address);
     void add_breakpoint(unsigned int address);
     void remove_breakpoint(unsigned int address);
     void clear_breakpoints();
-    virtual void reset(bool cold);
+    void reset(bool cold) override;
     virtual unsigned int get_pc() = 0;
     virtual unsigned int get_command() = 0;
 
