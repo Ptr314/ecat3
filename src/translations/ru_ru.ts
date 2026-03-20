@@ -17,12 +17,18 @@
 <context>
     <name>Agat_FDC140</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+31"/>
+        <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+42"/>
+        <location line="+8"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="+0"/>
+        <location line="-8"/>
+        <source>Unknown speed mode %1</source>
+        <translation>Некорректно задан режим эмуляции дисковода %1</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Incorrect fdd list for &apos;%1&apos;</source>
         <translation>Некорректный список дисководов для &apos;%1&apos;</translation>
     </message>
@@ -30,7 +36,7 @@
 <context>
     <name>Agat_FDC840</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_fdc840.cpp" line="+34"/>
+        <location filename="../emulator/devices/specific/agat_fdc840.cpp" line="+40"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -43,7 +49,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+888"/>
+        <location filename="../emulator/core.cpp" line="+951"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -56,16 +62,17 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location line="-510"/>
+        <location line="-566"/>
         <location line="+50"/>
         <location line="+16"/>
         <location line="+9"/>
-        <location filename="../emulator/devices/common/generator.cpp" line="+43"/>
+        <location line="+44"/>
+        <location filename="../emulator/devices/common/generator.cpp" line="+48"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-75"/>
+        <location line="-119"/>
         <source>Incorrect clock value for &apos;%1&apos;</source>
         <translation>Некорректное значение для тактовой частоты %1</translation>
     </message>
@@ -81,6 +88,11 @@
         <translation>Некорректное соединение интерфейсов для %1:%2</translation>
     </message>
     <message>
+        <location line="+44"/>
+        <source>Incorrect parameters for &apos;%1&apos;</source>
+        <translation>Неправильно указаны параметры для &apos;%1&apos;</translation>
+    </message>
+    <message>
         <location filename="../emulator/devices/common/generator.cpp" line="+0"/>
         <source>Incorrect polarity for %1</source>
         <translation>Неправильно указана полярность для %1</translation>
@@ -94,7 +106,7 @@
         <translation>Отладчик</translation>
     </message>
     <message>
-        <location line="+94"/>
+        <location line="+103"/>
         <source>Return to PC</source>
         <translation>Вернуться к PC</translation>
     </message>
@@ -115,77 +127,77 @@
         <translation type="vanished">Запустить под отладчиком</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+29"/>
         <source>Trace into [F7]</source>
         <translation>Шаг внутрь (Trace into) [F7]</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+29"/>
         <source>Step over [F8]</source>
         <translation>Шаг поверх (Step over) [F8]</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+29"/>
         <source>Go to cursor [F4]</source>
         <translation>Выполнить до курсора [F4]</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+29"/>
         <source>Run under debugger [F9]</source>
         <translation>Запустить под отладчиком [F9]</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+29"/>
         <source>Stop</source>
         <translation>Останов</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+29"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
     </message>
     <message>
-        <location line="+73"/>
+        <location line="+79"/>
         <source>Address for the debugger</source>
         <translation>Адрес перехода для отладчика</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+22"/>
         <source>Go to</source>
         <translation>Перейти</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+29"/>
         <source>Add a breakpoint</source>
         <translation>Добавить точку останова</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+29"/>
         <source>Delete a breakpoint</source>
         <translation>Удалить точку останова</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+23"/>
         <source>Register to set</source>
         <translation>Регистр для установки</translation>
     </message>
     <message>
-        <location line="+79"/>
+        <location line="+91"/>
         <source>Address for the dump</source>
         <translation>Адрес для дампа</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+25"/>
         <source>Go to for the dump</source>
         <translation>Показать данные с адреса</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+26"/>
         <source>Page down</source>
         <translation>Страница вниз</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+26"/>
         <source>Page up</source>
         <translation>Страница вверх</translation>
     </message>
@@ -194,21 +206,21 @@
         <translation type="vanished">Удалить точку остнова</translation>
     </message>
     <message>
-        <location line="-111"/>
+        <location line="-147"/>
         <source>Set value</source>
         <translation>Установить значение</translation>
     </message>
     <message>
-        <location filename="../dialogs/debugwindow.cpp" line="+172"/>
+        <location filename="../dialogs/debugwindow.cpp" line="+177"/>
         <location line="+66"/>
-        <location line="+76"/>
+        <location line="+77"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-142"/>
+        <location line="-143"/>
         <location line="+66"/>
-        <location line="+76"/>
+        <location line="+77"/>
         <source>Incorrect address value</source>
         <translation>Адрес введен некорректно</translation>
     </message>
@@ -216,7 +228,7 @@
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-235"/>
+        <location filename="../emulator/core.cpp" line="-282"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -234,7 +246,7 @@
 <context>
     <name>DisAsm</name>
     <message>
-        <location filename="../emulator/disasm.cpp" line="+29"/>
+        <location filename="../emulator/disasm.cpp" line="+34"/>
         <location line="+34"/>
         <source>Error</source>
         <translation>Ошибка</translation>
@@ -311,7 +323,7 @@
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="../dialogs/dumpwindow.cpp" line="+50"/>
+        <location filename="../dialogs/dumpwindow.cpp" line="+55"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -334,7 +346,7 @@
 <context>
     <name>Emulator</name>
     <message>
-        <location filename="../emulator/files.cpp" line="+18"/>
+        <location filename="../emulator/files.cpp" line="+23"/>
         <location line="+23"/>
         <location line="+39"/>
         <location line="+9"/>
@@ -422,7 +434,7 @@
         <translation>Неизвестный тип файла</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+369"/>
+        <location filename="../mainwindow.cpp" line="+380"/>
         <source>Screen 4:3</source>
         <translation>Экран 4:3</translation>
     </message>
@@ -466,21 +478,26 @@
         <translation type="vanished">Сглаживание</translation>
     </message>
     <message>
-        <location line="+228"/>
-        <location filename="../dialogs/taperecorder.cpp" line="+133"/>
+        <location line="+223"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+139"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/taperecorder.cpp" line="+128"/>
+        <source>Save recorded data</source>
+        <translation>Сохранить записанные данные</translation>
     </message>
 </context>
 <context>
     <name>EmulatorConfig</name>
     <message>
-        <location filename="../emulator/config.cpp" line="+162"/>
-        <location line="+15"/>
+        <location filename="../emulator/config.cpp" line="+171"/>
+        <location line="+16"/>
         <location line="+6"/>
         <location line="+9"/>
         <location line="+7"/>
-        <location line="+9"/>
+        <location line="+10"/>
         <location line="+16"/>
         <location line="+12"/>
         <location line="+11"/>
@@ -492,12 +509,12 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-153"/>
+        <location line="-155"/>
         <source>Error reading config file %1</source>
         <translation>Ошибка чтения файла конфигурации %1</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+16"/>
         <location line="+6"/>
         <source>Configuration error for device &apos;%1&apos; - no type found</source>
         <translation>Ошибка конфигурации устройства %1 - не указан тип</translation>
@@ -509,7 +526,7 @@
     </message>
     <message>
         <location line="+7"/>
-        <location line="+9"/>
+        <location line="+10"/>
         <location line="+82"/>
         <source>Configuration error for device &apos;%1&apos; - incorrect parameters</source>
         <translation>Ошибка конфигурации устройства %1 - некорректно заданы параметры</translation>
@@ -536,7 +553,7 @@
 <context>
     <name>FDD</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+53"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+60"/>
         <location line="+15"/>
         <location line="+7"/>
         <location line="+12"/>
@@ -545,16 +562,19 @@
         <location line="+5"/>
         <location line="+31"/>
         <location line="+3"/>
-        <location line="+20"/>
+        <location line="+5"/>
+        <location line="+27"/>
         <location line="+3"/>
         <location line="+14"/>
-        <location line="+150"/>
+        <location line="+197"/>
+        <location line="+22"/>
+        <location line="+16"/>
         <location line="+6"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-303"/>
+        <location line="-400"/>
         <source>Incorrect fdd parameters for &apos;%1&apos;</source>
         <translation>Некорректный параметр дисковода &apos;%1&apos;</translation>
     </message>
@@ -582,17 +602,22 @@
     <message>
         <location line="+4"/>
         <location line="+36"/>
-        <location line="+23"/>
+        <location line="+35"/>
         <source>Error opening file &apos;%1&apos;</source>
         <translation>Ошибка открытия файла &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="-20"/>
+        <location line="-32"/>
         <source>File &apos;%1&apos; is in unknown format</source>
         <translation>Формат файла &apos;%1&apos; не распознан</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+5"/>
+        <source>AIM files supported on Agat 840k drives only!</source>
+        <translation>Файлы AIM поддерживаются только на дисководах 840 Кб Агат!</translation>
+    </message>
+    <message>
+        <location line="+30"/>
         <source>Incorrect disk image size for &apos;%1&apos;</source>
         <translation>Некорректный файл образа диска &apos;%1&apos;</translation>
     </message>
@@ -602,7 +627,13 @@
         <translation>Необходимая конвертация из посекторного в физический формат еще не поддерживается.</translation>
     </message>
     <message>
-        <location line="+150"/>
+        <location line="+198"/>
+        <location line="+22"/>
+        <source>Error exporting disk. %1 : %2</source>
+        <translation>Ошибка экспорта диска. %1 : %2</translation>
+    </message>
+    <message>
+        <location line="+15"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation>Дисковод работает в MFM-режиме. Сохранение в посекторные образы еще не поддерживается.</translation>
     </message>
@@ -620,20 +651,34 @@
         <translation type="vanished">Режим не поддерживается</translation>
     </message>
     <message>
-        <location line="-113"/>
+        <location line="-187"/>
         <source>Reading outside of a sector</source>
         <translation>Попытка чтения за пределеами сектора</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+33"/>
+        <location line="+17"/>
         <source>Writing outside of a sector</source>
         <translation>Попытка записи за пределами сектора</translation>
     </message>
 </context>
 <context>
+    <name>GMD70</name>
+    <message>
+        <location filename="../emulator/devices/common/gmd70.cpp" line="+63"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect fdd list for &apos;%1&apos;</source>
+        <translation>Некорректный список дисководов для &apos;%1&apos;</translation>
+    </message>
+</context>
+<context>
     <name>I8255</name>
     <message>
-        <location filename="../emulator/devices/common/i8255.cpp" line="+64"/>
+        <location filename="../emulator/devices/common/i8255.cpp" line="+69"/>
         <location line="+78"/>
         <source>i8255:A is in an unsupported mode</source>
         <translation>i8255:А переведен в неподдерживаемый режим</translation>
@@ -643,7 +688,7 @@
         <translation type="vanished">i8255:B переведен в неподдерживаемый режим</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+31"/>
         <source>i8255:unknown interface called</source>
         <translation>Обращение к неизвестному интерфейсу</translation>
     </message>
@@ -660,7 +705,7 @@
         <location line="+13"/>
         <location line="+140"/>
         <location line="+16"/>
-        <location filename="../dialogs/i8255window.cpp" line="+52"/>
+        <location filename="../dialogs/i8255window.cpp" line="+57"/>
         <location line="+1"/>
         <location line="+1"/>
         <location line="+1"/>
@@ -684,7 +729,7 @@
 <context>
     <name>I8257</name>
     <message>
-        <location filename="../emulator/devices/common/i8257.h" line="+62"/>
+        <location filename="../emulator/devices/common/i8257.h" line="+66"/>
         <source>i8257: reading from an unknown register</source>
         <translation>i8257: чтение из неизвестного регистра</translation>
     </message>
@@ -705,7 +750,7 @@
 <context>
     <name>InterfaceManager</name>
     <message>
-        <location line="+244"/>
+        <location line="+247"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -831,7 +876,7 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-352"/>
+        <location filename="../mainwindow.cpp" line="-347"/>
         <location line="+413"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
@@ -929,17 +974,19 @@
 <context>
     <name>MapKeyboard</name>
     <message>
-        <location filename="../emulator/devices/common/mapkeyboard.cpp" line="+24"/>
+        <location filename="../emulator/devices/common/mapkeyboard.cpp" line="+31"/>
         <location line="+4"/>
         <location line="+11"/>
         <location line="+5"/>
-        <location line="+28"/>
+        <location line="+33"/>
         <location line="+6"/>
+        <location line="+14"/>
+        <location line="+10"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-54"/>
+        <location line="-83"/>
         <source>Keyboard map file is expected</source>
         <translation>Не указан файл мэппинга</translation>
     </message>
@@ -955,7 +1002,7 @@
         <translation>Элемент файла мэппинга &apos;%1&apos; некорректен</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+33"/>
         <source>rus-on should be 0 or 1</source>
         <translation>Параметр rus-on должен быть 0 или 1</translation>
     </message>
@@ -964,12 +1011,22 @@
         <source>rus-bit should be a number</source>
         <translation>Параметр rus-bit должен быть числом</translation>
     </message>
+    <message>
+        <location line="+14"/>
+        <source>Incorrect keyboard rusmode %1</source>
+        <translation>Некорректный параметр клавиатуры rusmode %1</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>rus_switches should have two values separated by &apos;/&apos;</source>
+        <translation>Параметр rus_switches должен быть задан как два числа, разделённые &apos;/&apos;</translation>
+    </message>
 </context>
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+698"/>
-        <location filename="../emulator/devices/common/page_mapper.cpp" line="+32"/>
+        <location filename="../emulator/core.cpp" line="+754"/>
+        <location filename="../emulator/devices/common/page_mapper.cpp" line="+37"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -1011,7 +1068,7 @@
         <translation>Установить по умолчанию</translation>
     </message>
     <message>
-        <location line="+47"/>
+        <location line="+28"/>
         <source>OK</source>
         <translation>OK</translation>
     </message>
@@ -1021,7 +1078,7 @@
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+42"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+48"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -1031,7 +1088,7 @@
         <translation>Ошибка чтения файла CSS</translation>
     </message>
     <message>
-        <location line="+88"/>
+        <location line="+96"/>
         <source>No any description file found for this machine</source>
         <translation>Файл описания для данной конфигурации не найден</translation>
     </message>
@@ -1071,7 +1128,7 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../libs/mfm_tools.cpp" line="+52"/>
+        <location filename="../libs/mfm_tools.cpp" line="+57"/>
         <location line="+3"/>
         <source>Error</source>
         <translation>Ошибка</translation>
@@ -1090,15 +1147,16 @@
 <context>
     <name>ROM</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-157"/>
+        <location filename="../emulator/core.cpp" line="-184"/>
         <location line="+6"/>
         <location line="+28"/>
         <location line="+7"/>
+        <location line="+18"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-41"/>
+        <location line="-59"/>
         <source>File &apos;%1&apos; not found</source>
         <translation>Файл %1 не найден</translation>
     </message>
@@ -1118,6 +1176,11 @@
         <translation>Ошибка чтения образа ПЗУ &apos;%1&apos;</translation>
     </message>
     <message>
+        <location line="+18"/>
+        <source>Incorrect mode set for &apos;%1&apos;</source>
+        <translation>Некорректно задан режим для &apos;%1&apos;</translation>
+    </message>
+    <message>
         <source>Error reading %1</source>
         <translation type="vanished">Ошибка чтения %1</translation>
     </message>
@@ -1125,7 +1188,7 @@
 <context>
     <name>Register</name>
     <message>
-        <location filename="../emulator/devices/common/register.cpp" line="+47"/>
+        <location filename="../emulator/devices/common/register.cpp" line="+63"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -1138,7 +1201,7 @@
 <context>
     <name>ScanKeyboard</name>
     <message>
-        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+34"/>
+        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+38"/>
         <location line="+4"/>
         <location line="+33"/>
         <source>Error</source>
@@ -1163,7 +1226,7 @@
 <context>
     <name>Speaker</name>
     <message>
-        <location filename="../emulator/devices/common/speaker.cpp" line="+65"/>
+        <location filename="../emulator/devices/common/speaker.cpp" line="+53"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -1176,12 +1239,18 @@
 <context>
     <name>TapeRecorder</name>
     <message>
-        <location filename="../emulator/devices/common/tape.cpp" line="+139"/>
+        <location filename="../emulator/devices/common/tape.cpp" line="+53"/>
+        <location line="+242"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="+0"/>
+        <location line="-242"/>
+        <source>Incorrect encoding %1</source>
+        <translation>Некорректно задан способ кодирования данных для магнитофона %1</translation>
+    </message>
+    <message>
+        <location line="+242"/>
         <source>Unknown tape format!</source>
         <translation>Неизвестный формат файла записи!</translation>
     </message>
@@ -1235,20 +1304,26 @@
         <translation>ЭЛЕКТРОНИКА-302</translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="+21"/>
+        <location filename="../dialogs/taperecorder.cpp" line="-107"/>
+        <location line="+117"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="+0"/>
+        <location line="-117"/>
         <source>Unknown tape file format!</source>
         <translation>Неизвестный формат файла записи!</translation>
+    </message>
+    <message>
+        <location line="+117"/>
+        <source>Unable to save file!</source>
+        <translation>Невозможно сохранить файл!</translation>
     </message>
 </context>
 <context>
     <name>WD1793</name>
     <message>
-        <location filename="../emulator/devices/common/wd1793.cpp" line="+28"/>
+        <location filename="../emulator/devices/common/wd1793.cpp" line="+33"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>

@@ -124,6 +124,8 @@ MainWindow::MainWindow(QWidget *parent)
         const QStringList uiLanguages = QLocale::system().uiLanguages();
         for (const QString &locale : uiLanguages) {
             const QString baseName = QLocale(locale).name().toLower();
+            if (baseName.startsWith("en_"))
+                continue;
             switch_language(baseName, true);
             break;
         }
@@ -153,7 +155,6 @@ MainWindow::MainWindow(QWidget *parent)
     resize(500,100);
 #endif
 
-    memset(&fdds, 0, sizeof(fdds));
 
     QIcon icon;
     icon.addFile(QString::fromUtf8(":/icons/sound"), QSize(), QIcon::Normal, QIcon::Off);
