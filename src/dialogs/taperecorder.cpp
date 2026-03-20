@@ -89,7 +89,7 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
 
     update_timer.setInterval(1000);
     connect(&update_timer, &QTimer::timeout, this, &TapeRecorderWindow::update_counter);
-    connect(this->d, &TapeRecorder::mode_changed, this, &TapeRecorderWindow::on_tape_mode_changed, Qt::QueuedConnection);
+    connect(this->d, &TapeRecorder::mode_changed, this, &TapeRecorderWindow::tape_mode_changed, Qt::QueuedConnection);
 }
 
 void TapeRecorderWindow::set_mute(bool muted)
@@ -199,10 +199,6 @@ void TapeRecorderWindow::on_buttonPlay_clicked()
         is_playing = true;
         play_pause();
     }
-}
-
-void TapeRecorderWindow::on_buttonStop_clicked()
-{
 }
 
 void TapeRecorderWindow::play_pause()
@@ -320,7 +316,7 @@ void TapeRecorderWindow::update_counter()
     }
 }
 
-void TapeRecorderWindow::on_tape_mode_changed(unsigned int new_mode)
+void TapeRecorderWindow::tape_mode_changed(unsigned int new_mode)
 {
     if (new_mode == TAPE_READ && !is_playing) {
         is_playing = true;

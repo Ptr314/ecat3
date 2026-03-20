@@ -77,7 +77,7 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
         }
     } else {
         // Motor changed
-        std::cout << "TapeRecorder: motor = " << (new_value & 1) << std::endl;
+        // std::cout << "TapeRecorder: motor = " << (new_value & 1) << std::endl;
         if ((new_value & 1)==1 && (old_value & 1)==0 && !is_recording && data_size>0) {
             emit mode_changed(TAPE_READ);
         }
