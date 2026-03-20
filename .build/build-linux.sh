@@ -8,7 +8,8 @@ LINUXDEPLOYQT=~/Downloads/linuxdeployqt-continuous-x86_64.AppImage
 APP_VERSION=$(grep 'PROJECT_VERSION' ../src/globals.h | cut -d'"' -f2 | tr -d '\r')
 
 # Массив рендереров
-RENDERERS=("sdl2" "qt" "opengl")
+#RENDERERS=("sdl2" "qt" "opengl")
+RENDERERS=("qt" "opengl")
 
 for RENDERER in "${RENDERERS[@]}"; do
     echo "Building ${RENDERER} version..."
