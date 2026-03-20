@@ -40,24 +40,24 @@ for %%R in (!RENDERERS!) do (
     )
     copy "!_BUILD_DIR!\Release\ecat3.exe" "!_RELEASE_DIR!"
 
-    echo Copying Qt6Core.dll, Qt6Gui.dll, Qt6Widgets.dll from !_ROOT_QT!\bin
-    copy "!_ROOT_QT!\bin\Qt6Core.dll" "!_RELEASE_DIR!"
-    copy "!_ROOT_QT!\bin\Qt6Gui.dll" "!_RELEASE_DIR!"
-    copy "!_ROOT_QT!\bin\Qt6Widgets.dll" "!_RELEASE_DIR!"
-
-    mkdir "!_RELEASE_DIR!\platforms"
-    echo Copying platforms\qwindows.dll from !_ROOT_QT!\plugins
-    copy "!_ROOT_QT!\plugins\platforms\qwindows.dll" "!_RELEASE_DIR!\platforms"
-
-    mkdir "!_RELEASE_DIR!\styles"
-    echo Copying styles\qmodernwindowsstyle.dll from !_ROOT_QT!\plugins
-    copy "!_ROOT_QT!\plugins\styles\qmodernwindowsstyle.dll" "!_RELEASE_DIR!\styles"
-
-    if "%%R"=="OPENGL" (
-        echo Copying Qt6OpenGL.dll, Qt6OpenGLWidgets.dll from !_ROOT_QT!\bin
-        copy "!_ROOT_QT!\bin\Qt6OpenGL.dll" "!_RELEASE_DIR!"
-        copy "!_ROOT_QT!\bin\Qt6OpenGLWidgets.dll" "!_RELEASE_DIR!"
-    )
+@REM     echo Copying Qt6Core.dll, Qt6Gui.dll, Qt6Widgets.dll from !_ROOT_QT!\bin
+@REM     copy "!_ROOT_QT!\bin\Qt6Core.dll" "!_RELEASE_DIR!"
+@REM     copy "!_ROOT_QT!\bin\Qt6Gui.dll" "!_RELEASE_DIR!"
+@REM     copy "!_ROOT_QT!\bin\Qt6Widgets.dll" "!_RELEASE_DIR!"
+@REM
+@REM     mkdir "!_RELEASE_DIR!\platforms"
+@REM     echo Copying platforms\qwindows.dll from !_ROOT_QT!\plugins
+@REM     copy "!_ROOT_QT!\plugins\platforms\qwindows.dll" "!_RELEASE_DIR!\platforms"
+@REM
+@REM     mkdir "!_RELEASE_DIR!\styles"
+@REM     echo Copying styles\qmodernwindowsstyle.dll from !_ROOT_QT!\plugins
+@REM     copy "!_ROOT_QT!\plugins\styles\qmodernwindowsstyle.dll" "!_RELEASE_DIR!\styles"
+@REM
+@REM     if "%%R"=="OPENGL" (
+@REM         echo Copying Qt6OpenGL.dll, Qt6OpenGLWidgets.dll from !_ROOT_QT!\bin
+@REM         copy "!_ROOT_QT!\bin\Qt6OpenGL.dll" "!_RELEASE_DIR!"
+@REM         copy "!_ROOT_QT!\bin\Qt6OpenGLWidgets.dll" "!_RELEASE_DIR!"
+@REM     )
 
     set SEVENZIP="7z"
     !SEVENZIP! >nul 2>&1

@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
 
+# MSVC static runtime for release builds (dynamic Qt in Debug needs dynamic CRT)
+cmake_policy(SET CMP0091 NEW)
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 project(eCat3 VERSION 3.5.0 LANGUAGES C CXX)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
@@ -72,6 +78,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Threading compatibility for old MinGW (4.9.2)
 option(FORCE_QT_THREADING "Force QThread-based threading (for old MinGW)" OFF)
 option(FORCE_STD_THREADING "Force std::thread even on old MinGW" OFF)
+option(UPDATE_TRANSLATIONS "Run lupdate to update .ts files on each build" OFF)
 if(FORCE_QT_THREADING)
     add_compile_definitions(FORCE_QT_THREADING)
 endif()
@@ -279,6 +286,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_translations(${PROJECT_NAME} TS_FILES
         ${TS_FILES}
     )
+
+    if(UPDATE_TRANSLATIONS)
+        add_dependencies(${PROJECT_NAME} update_translations)
+    endif()
 else()
     # For Qt5: making qms manually and putting them to a separate resource file
     find_program(LRELEASE_EXECUTABLE lrelease)
@@ -295,6 +306,17 @@ else()
 
     file(APPEND ${QRC_FILE} "    </qresource>\n</RCC>\n")
 
+    if(UPDATE_TRANSLATIONS)
+        find_program(LUPDATE_EXECUTABLE lupdate)
+        if(LUPDATE_EXECUTABLE)
+            add_custom_target(update_translations
+                COMMAND ${LUPDATE_EXECUTABLE} ${CMAKE_SOURCE_DIR} -ts ${TS_FILES}
+                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                COMMENT "Updating translation files..."
+            )
+        endif()
+    endif()
+
     qt5_add_resources(PROJECT_RESOURCES
         ${RESOURCE_FILES}
         ${QRC_FILE}
@@ -304,6 +326,10 @@ else()
         ${PROJECT_SOURCES}
         ${PROJECT_RESOURCES}
     )
+
+    if(UPDATE_TRANSLATIONS AND TARGET update_translations)
+        add_dependencies(${PROJECT_NAME} update_translations)
+    endif()
 endif()
 
 target_include_directories(${PROJECT_NAME} PUBLIC

@@ -2,16 +2,18 @@
 
 В данный момент программа компилируется под следующие платформы:
 
+* Windows XP+
+    * Версия i386 на основе Qt 5.6.3 и mingw 4.9.2.
 * Windows 7+
     * Версия i386 на основе Qt 5.15.2 и mingw 8.1.0.
 * Windows 10+
-    * Версия х86_64. Актуальная версия Qt 6.8.3 и mingw 13.10.
+    * Версия х86_64. Актуальная версия Qt 6.10.2 для mingw 13.10 и MSVC2022.
 * macOS 15 (возможна совместимость с более ранними версиями)
     * Универсальная версия х86_64+arm64. Qt 6.8.2, xcode 16
 * Linux Ubuntu 20.04+
     * Версия х86_64. Qt 6.8.2, gcc 9.4.0
 
-Версии х86_64 для Windows и х86_64+arm64 для macOS используют статическую сборку. Версия для Linux использует динамическую сборку в целях лучшей совместимости с разными дистрибутивами. Компиляция происходит в Ubuntu 20.04. 
+Версии х86_64 для Windows 10+ и х86_64+arm64 для macOS используют статическую сборку. Версия для Linux использует динамическую сборку в целях лучшей совместимости с разными дистрибутивами. Компиляция происходит в Ubuntu 20.04. 
 
 ## Windows
 
@@ -35,27 +37,53 @@
     * Распаковать
     * Добавить путь к переменной окружения CMAKE_PREFIX_PATH
 
-#### 2. Настроить debug-версию в Qt Creator
+#### 2. Настройка IDEs
+
+##### 2.1 Настройка Qt Creator
 * Если нужна полная очистка, удалить файлы __CMakeLists.txt.user*__.
 * Перейти в настройку для запуска (__Projects/Build & Run/Debug kit/Run__):
     * Установить __Working directory__ как __"репозиторий-приложения\deploy"__.
 
+##### 2.2 Настройка CLion
+* Settings / Build, Execution, Deployment / Toolchains:
+  * Добавить тулчейны MinGW. Toolset &ndash; директория `C:\DEV\Qt\Tools\mingw1310_64` (пример).
+  * Добавить тулчейны MSVC (Тип System). Environment file &ndash; `C:\DEV\MSVC\msvc\setup_x64.bat` (пример).
+* Settings / Build, Execution, Deployment / CMake profiles
+  * Добавить профиль для каждого тулчейна:
+    * CMake options: `-DCMAKE_PREFIX_PATH=C:\DEV\Qt\6.10.2\mingw_64;C:\DEV\SDL2-2.32.10` (пример).
+  * Для обновления языковых файлов (в одном из тулчейнов) добавить `-DUPDATE_TRANSLATIONS=ON`.
+* Run/Debug configurations
+  * Создать конфигурацию для каждого тулчейна:
+    * Working directory &ndash; deploy-директория проекта.
+    * Environment variables (MinGW): `PATH="C:\\DEV\\Qt\\6.10.2\\mingw_64\\bin;C:\\DEV\\SDL2-2.32.10\\x86_64-w64-mingw32\\bin;%PATH%"` (пример).
+    * Environment variables (MSVC): `PATH="C:\\DEV\\Qt\\6.10.2\\msvc2022_64\\bin;C:\\DEV\\SDL2-2.32.10\\msvc2022\\lib\\x64;%PATH%";QT_PLUGIN_PATH=C:\DEV\Qt\6.10.2\msvc2022_64\plugins` (пример).
+
 #### 3. Компиляция статической версии Qt
 
-##### Qt6 (актуальная версия)
+##### Установка portable-версии MSVC
+
+* Скачать `portable-msvc.py` с [GitHub](https://gist.github.com/mmozeiko/7f3162ec2988e81e56d5c4e22cde9977)
+
+```
+python .\portable-msvc.py --msvc-version 14.43 --sdk-version 26100 --accept-license
+```
+В данном случае будут установлены MSVC2022 17.13 и Windows 11 24H2 SDK. Документацию по скрипту см. на его странице.
+
+##### Компиляция Qt6 (актуальная версия)
 
 https://doc.qt.io/qt-6/windows-building.html
 
-* Отредактировать `.build/vars-mingw-latest.cmd` на действительные пути.
+* Отредактировать `.build/vars-mingw-latest.cmd` или `.build/vars-msvc-latest.cmd` на действительные пути.
+* Настроить окружение Python 3.
 * Открыть командную строку и скомпилировать Qt:
 
 ```
 cd репозиторий-приложения\.build
-%SystemRoot%\system32\cmd.exe /E:ON /V:ON /k vars-mingw-latest.cmd
-cd C:\Temp
-mkdir qt-build
-cd qt-build
-configure.bat -static -static-runtime -release -opensource -confirm-license -nomake examples -nomake tests -prefix c:\DEV\Qt\%_QT_VERSION%-static
+%SystemRoot%\system32\cmd.exe /E:ON /V:ON /k vars-msvc-latest.cmd
+C:\DEV\venv\Scripts\activate.bat
+mkdir C:\Temp\qt-build
+cd C:\Temp\qt-build
+configure.bat -static -static-runtime -release -opensource -confirm-license -nomake examples -nomake tests -submodules qtbase,qttools,qttranslations -platform win32-msvc -prefix %_ROOT_QT%
 cmake --build . --parallel
 cmake --install .
 ```
@@ -80,8 +108,25 @@ mingw32-make install
 * `-skip qtdeclarative` позволяет избежать необходимости в установке Python, но отключает модули QtQuick, QtQml и некоторые другие.
 * `-skip qtlocation` исключает непонятную ошибку компиляции в этом модуле
 
+##### Qt5 для Windows XP
+
+Для XP необходима версия Qt 5.6.3 (https://download.qt.io/new_archive/qt/5.6/5.6.3/single/) и mingw 4.9.2 (https://wiki.qt.io/MinGW)
+
+```
+cd репозиторий-приложения\.build
+%SystemRoot%\system32\cmd.exe /E:ON /V:ON /k vars-mingw-qt5.6.cmd
+mkdir C:\Temp\qt5.6-build
+cd C:\Tempqt5.6-build
+configure.bat -release -nomake examples -nomake tests -opensource -confirm-license -no-opengl -target xp -no-directwrite -no-compile-examples -skip qtwebengine -skip qtwebview -skip qtandroidextras -skip qt3d -skip qtcanvas3d  -skip qtlocation -skip qtscript -skip qtsensors -skip qtserialbus -skip qtwayland -skip qtdeclarative -prefix %_QT_PATH%
+mingw32-make
+mingw32-make install
+```
+
 #### 4. Обновление языковых файлов
 
+__Вариант 1__ (предпочтительный): выполнить предварительную компиляцию с флагом cmake `-DUPDATE_TRANSLATIONS=ON`, после чего обновленные языковые файлы отредактировать утилитой Qt Linguist. Далее откомпилировать итоговый вариант. 
+
+__Вариант 2__: выполнить bat-файл:
 ~~~
 cd .build
 update_translations.bat
@@ -91,17 +136,14 @@ update_translations.bat
 * Команду надо выполнять на той же платформе, где происходил препроцессинг CMakeLists.txt.
 * Далее файлы .ts редактируются с помощью Linguist из Qt Creator.
 
-#### 5. Сборка release-версии
-* Проверить, что в Qt Creator/Kits/Compilers есть компилятор, который использовался для сборки Qt.
-* Добавить собранную версию Qt в Qt Creator/Kits/Versions и Qt Creator/Kits/Kits. Версия компилятора должна соответствовать версии, с которой происходила сборка Qt.
+#### 5. Сборка release-версии для Windows
 * Обновить версию приложения в CMakeLists.txt, пересканировать проект (Rescan project), чтобы версия прописалась в заголовочные файлы.
 * Закоммитить изменения.
 * Откомпилировать приложение нужной версией Qt.
-    * актуализировать значения переменных в `/build/vars-mingw-*.cmd`. 
-    * i386: `./build/build-win-i386.bat`.
-    * x86_64: `./build/build-win-latest.bat`.
-* Упаковать директории в `./build/release` в zip.
-* Загрузить как релиз на GitHub, добавив последнему коммиту тег с номером версии.
+    * актуализировать значения переменных в `/build/vars-mingw-*.cmd`, `/build/vars-msvc-*.cmd`. 
+    * Windows XP: `./build/build-win-i386.bat`.
+    * Windows 7: `./build/build-win-7.bat`.
+    * Windows 10+: `./build/build-win-latest.bat`.
 
 ---
 ## macOS

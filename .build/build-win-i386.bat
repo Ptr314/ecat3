@@ -43,11 +43,13 @@ for %%R in (!RENDERERS!) do (
     )
     copy "!_BUILD_DIR!\ecat3.exe" "!_RELEASE_DIR!"
 
-    if not exist "!SDL2_BIN!\SDL2.dll" (
-        echo Error: "!SDL2_BIN!\SDL2.dll" not found.
-        exit /b 1
+    if "%%R"=="SDL2" (
+        if not exist "!SDL2_BIN!\SDL2.dll" (
+            echo Error: "!SDL2_BIN!\SDL2.dll" not found.
+            exit /b 1
+        )
+        copy "!SDL2_BIN!\SDL2.dll" "!_RELEASE_DIR!"
     )
-    copy "!SDL2_BIN!\SDL2.dll" "!_RELEASE_DIR!"
 
     if not exist "!_ROOT_BIN!\Qt5Core.dll" (
         echo Error: "!_ROOT_BIN!\Qt5Core.dll" not found.
