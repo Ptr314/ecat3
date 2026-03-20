@@ -110,8 +110,9 @@ if(RENDERER_SDL2 OR USE_SDL_AUDIO)
 endif()
 
 set(ENABLE_DSK_TOOLS OFF CACHE BOOL "Disable command line tools from the library")
+set(CMAKE_INCLUDE_CURRENT_DIR OFF)
 add_subdirectory(${CMAKE_SOURCE_DIR}/libs/dsk_tools/)
-set_target_properties(dsk_tools PROPERTIES AUTOMOC OFF)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Translations
 
