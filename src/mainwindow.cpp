@@ -126,8 +126,8 @@ MainWindow::MainWindow(QWidget *parent)
             const QString baseName = QLocale(locale).name().toLower();
             if (baseName.startsWith("en_"))
                 continue;
-            switch_language(baseName, true);
-            break;
+            if (switch_language(baseName, true))
+                break;
         }
     } else {
         switch_language(ini_lang, true);
@@ -273,7 +273,7 @@ void MainWindow::showEvent(QShowEvent* event)
     }
 }
 
-void MainWindow::switch_language(const QString & lang, bool init)
+bool MainWindow::switch_language(const QString & lang, bool init)
 {
     if (translator.load(":/i18n/" + lang)) {
         qApp->installTranslator(&translator);
@@ -287,8 +287,12 @@ void MainWindow::switch_language(const QString & lang, bool init)
             CreateScreenMenu();
             m_settings->setValue("interface/language", lang);
         }
+        return true;
     } else {
-        QMessageBox::warning(this, MainWindow::tr("Error"), MainWindow::tr("Failed to load language file for: ") + lang);
+        if (!init) {
+            QMessageBox::warning(this, MainWindow::tr("Error"), MainWindow::tr("Failed to load language file for: ") + lang);
+        }
+        return false;
     }
 }
 

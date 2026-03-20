@@ -111,7 +111,7 @@ private:
     bool first_show = true;
     QString first_config;
 
-    void switch_language(const QString &lang, bool init);
+    bool switch_language(const QString &lang, bool init);
     void add_languages();
 
     void CreateDevicesMenu();
