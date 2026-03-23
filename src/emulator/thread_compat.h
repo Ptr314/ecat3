@@ -58,18 +58,6 @@ private:
 
 typedef QMutex compat_mutex;
 
-// RAII lock guard for compat_mutex (QMutex)
-class compat_lock_guard
-{
-public:
-    explicit compat_lock_guard(compat_mutex & m) : m_mutex(m) { m_mutex.lock(); }
-    ~compat_lock_guard() { m_mutex.unlock(); }
-private:
-    compat_mutex & m_mutex;
-    compat_lock_guard(const compat_lock_guard &);
-    compat_lock_guard & operator=(const compat_lock_guard &);
-};
-
 #else // USE_QT_THREADING == 0
 
 #include <thread>
@@ -77,7 +65,9 @@ private:
 
 typedef std::mutex compat_mutex;
 
-// RAII lock guard for compat_mutex (std::mutex)
+#endif
+
+// RAII lock guard for compat_mutex
 class compat_lock_guard
 {
 public:
@@ -88,5 +78,3 @@ private:
     compat_lock_guard(const compat_lock_guard &);
     compat_lock_guard & operator=(const compat_lock_guard &);
 };
-
-#endif
