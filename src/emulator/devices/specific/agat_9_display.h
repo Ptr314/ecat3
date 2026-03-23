@@ -9,6 +9,7 @@
 #include "emulator/devices/common/raster_display.h"
 #include "emulator/devices/common/register.h"
 
+// https://agatcomp.ru/agat/Hardware/useful/ColorSet.shtml
 static const uint8_t Agat_9_base_colors[16][3]  = {
     {  0,   0,   0}, {217,   0,   0}, {  0, 217,   0}, {217, 217,   0},
     {  0,   0, 217}, {217,   0, 217}, {  0, 217, 217}, {217, 217, 217},
@@ -34,8 +35,8 @@ static const uint8_t Agat_2_index[4][2] =  {
 
 static const uint8_t Agat_Apple_index[2][2] =  {
     // Hi   0   1
-          { 4,  5},     // Even
-          { 1,  2}      // Odd
+          { 5,  4},     // Even
+          { 2,  1}      // Odd
 };
 
 #define APPLE_MODE_CALLBACK     1
