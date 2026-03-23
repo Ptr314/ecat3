@@ -22,6 +22,31 @@ private:
     SDL_Surface * device_surface = nullptr;
     SDL_Texture * black_box = nullptr;
     SDL_Rect render_rect;
+    int cached_window_w = 0;
+    int cached_window_h = 0;
+
+    void create_black_box()
+    {
+        black_box = SDL_CreateTexture(SDLRendererRef, SDL_PIXELFORMAT_RGBA8888,
+                                      SDL_TEXTUREACCESS_STREAMING, 100, 100);
+        if (black_box == nullptr) return;
+        unsigned char* black_bytes = nullptr;
+        int pitch = 0;
+        SDL_LockTexture(black_box, nullptr, reinterpret_cast<void**>(&black_bytes), &pitch);
+        memset(black_bytes, 0, 100*100*4);
+        SDL_UnlockTexture(black_box);
+    }
+
+    void recreate_renderer()
+    {
+        if (black_box != nullptr) { SDL_DestroyTexture(black_box); black_box = nullptr; }
+        if (SDLRendererRef != nullptr) SDL_DestroyRenderer(SDLRendererRef);
+        SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
+        if (SDLRendererRef != nullptr) {
+            create_black_box();
+            SDL_RenderClear(SDLRendererRef);
+        }
+    }
 
 public:
     SDL2Renderer():
@@ -37,6 +62,8 @@ public:
     {
         if (black_box != nullptr) SDL_DestroyTexture(black_box);
         if (device_surface != nullptr) SDL_FreeSurface(device_surface);
+        if (SDLRendererRef != nullptr) SDL_DestroyRenderer(SDLRendererRef);
+        if (SDLWindowRef != nullptr) SDL_DestroyWindow(SDLWindowRef);
     };
 
     void init_screen(void *p, int sx, int sy, double ss, double ps) override
@@ -47,21 +74,17 @@ public:
             SDLWindowRef = SDL_CreateWindowFrom(p);
         if (!SDLWindowRef) {
             qWarning() << "SDL error:" << SDL_GetError();
+            return;
         }
 
-        if (SDLRendererRef == nullptr)
-            SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
+        recreate_renderer();
+        if (!SDLRendererRef) return;
 
-        black_box = SDL_CreateTexture(SDLRendererRef, SDL_PIXELFORMAT_RGBA8888,
-                                      SDL_TEXTUREACCESS_STREAMING, 100, 100);
-        unsigned char* black_bytes = nullptr;
-        int pitch = 0;
-        SDL_LockTexture(black_box, nullptr, reinterpret_cast<void**>(&black_bytes), &pitch);
-        memset(black_bytes, 0, 100*100*4);
-        SDL_UnlockTexture(black_box);
         SDL_RenderCopy(SDLRendererRef, black_box, NULL, NULL);
         render_rect.w = sx * ss * ps;
         render_rect.h = sy * ss;
+
+        SDL_GetWindowSize(SDLWindowRef, &cached_window_w, &cached_window_h);
 
         device_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_x, screen_y, 32, SDL_PIXELFORMAT_RGBA8888);
     }
@@ -70,9 +93,13 @@ public:
     {
         if (black_box != nullptr) SDL_DestroyTexture(black_box);
         if (device_surface != nullptr) SDL_FreeSurface(device_surface);
+        if (SDLRendererRef != nullptr) SDL_DestroyRenderer(SDLRendererRef);
 
         black_box = nullptr;
         device_surface = nullptr;
+        SDLRendererRef = nullptr;
+        cached_window_w = 0;
+        cached_window_h = 0;
     }
 
     void set_filtering(int value) override
@@ -110,12 +137,27 @@ public:
 
     void render() override
     {
+        if (SDLRendererRef == nullptr || device_surface == nullptr) return;
+
         int rx, ry;
-        SDL_GetRendererOutputSize(SDLRendererRef, &rx, &ry);
+        SDL_GetWindowSize(SDLWindowRef, &rx, &ry);
+        if (rx <= 0 || ry <= 0) return;
+
+        // Recreate the renderer when the window has been resized externally.
+        // SDL_CreateWindowFrom windows don't pump events, so the renderer's
+        // internal backbuffer and D3D device state become stale after resize.
+        if (rx != cached_window_w || ry != cached_window_h) {
+            cached_window_w = rx;
+            cached_window_h = ry;
+            recreate_renderer();
+            if (SDLRendererRef == nullptr) return;
+        }
+
         if (screen_ss == 0) {
             int border = 20;
             int rx2 = rx - 2*border;
             int ry2 = ry - 2*border;
+            if (rx2 <= 0 || ry2 <= 0) return;
             float screen_aspect = (float)rx2 / ry2;
             float image_aspect = (float)screen_x / screen_y * screen_ps;
 
@@ -134,7 +176,15 @@ public:
         render_rect.y = (ry - render_rect.h) / 2;
 
         SDLTexture = SDL_CreateTextureFromSurface(SDLRendererRef, device_surface);
+        if (SDLTexture == nullptr) {
+            // Renderer may be in a bad state (e.g. D3D device lost), try recovery
+            recreate_renderer();
+            if (SDLRendererRef == nullptr) return;
+            SDLTexture = SDL_CreateTextureFromSurface(SDLRendererRef, device_surface);
+            if (SDLTexture == nullptr) return;
+        }
 
+        SDL_RenderClear(SDLRendererRef);
         SDL_RenderCopy(SDLRendererRef, SDLTexture, NULL, &render_rect);
         SDL_RenderPresent(SDLRendererRef);
 
