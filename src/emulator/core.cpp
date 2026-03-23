@@ -1386,6 +1386,16 @@ bool GenericDisplay::has_valid_renderer()
     return m_renderer_valid;
 }
 
+void GenericDisplay::lock_surface()
+{
+    m_surface_mutex.lock();
+}
+
+void GenericDisplay::unlock_surface()
+{
+    m_surface_mutex.unlock();
+}
+
 //----------------------- Creation functions -------------------------------//
 
 ComputerDevice * create_ram(InterfaceManager *im, EmulatorConfigDevice *cd){

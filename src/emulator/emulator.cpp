@@ -457,8 +457,10 @@ void Emulator::render_screen()
                 pixel_scale = (4.0 / 3.0) / ((double)screen_sx / (double)screen_sy);
             else
                 pixel_scale = ((double)screen_sy / (double)screen_sx);
+            display->lock_surface();
             renderer->resize(screen_sx, screen_sy, screen_scale, pixel_scale);
             display->set_renderer(*renderer);                                   // We need to update surface
+            display->unlock_surface();
         }
 
         display->validate();

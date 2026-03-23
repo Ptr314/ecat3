@@ -124,6 +124,7 @@ void Agat9Display::clock(unsigned int counter)
 
 void Agat9Display::render_line(unsigned int screen_line)
 {
+    compat_lock_guard guard(m_surface_mutex);
     if (has_valid_renderer()) {
         // As we psysically have 256 doubled lines, we use a half of screen_line in a 512-line mode
         unsigned line = (m_512_mode==M_512_ON) ? (screen_line / 2) : screen_line;

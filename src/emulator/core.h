@@ -18,6 +18,7 @@
 #include "config.h"
 #include "globals.h"
 #include "logger.h"
+#include "thread_compat.h"
 
 #ifdef PROJECT_NAME
     static_assert(true, "Suppress unused include warning");
@@ -518,6 +519,7 @@ protected:
     void * render_pixels;
     VideoRenderer * renderer = nullptr;
     bool m_renderer_valid;
+    compat_mutex m_surface_mutex;   // Guards render_pixels against concurrent resize
 
     virtual void render_all(bool force_render = false) = 0;
 
@@ -531,6 +533,8 @@ public:
     virtual void validate(bool force_render = false);
     virtual void change_resolution(unsigned new_x, unsigned new_y);
     virtual bool has_valid_renderer();
+    void lock_surface();
+    void unlock_surface();
 };
 
 class FDC: public AddressableDevice

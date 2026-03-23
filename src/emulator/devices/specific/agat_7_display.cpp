@@ -130,6 +130,8 @@ void Agat7Display::clock(unsigned int counter)
 
 void Agat7Display::render_line(unsigned int screen_line)
 {
+    compat_lock_guard guard(m_surface_mutex);
+    if (!has_valid_renderer()) return;
     uint8_t * pixel_address;
     unsigned int p, screen_offset, font_line, char_address, inv;
     uint8_t v, v1, v2, font_val;
