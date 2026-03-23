@@ -49,7 +49,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+951"/>
+        <location filename="../emulator/core.cpp" line="+960"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -62,7 +62,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location line="-566"/>
+        <location line="-575"/>
         <location line="+50"/>
         <location line="+16"/>
         <location line="+9"/>
@@ -220,6 +220,39 @@
     <message>
         <location line="+36"/>
         <source>Device %1 not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>DeviceOptions</name>
+    <message>
+        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+116"/>
+        <source>Output type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>16 colors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>16 inverted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>8 colors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Grayscale</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Experimental</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -406,7 +439,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+380"/>
+        <location filename="../mainwindow.cpp" line="+385"/>
         <source>Screen 4:3</source>
         <translation type="unfinished"></translation>
     </message>
@@ -446,13 +479,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+223"/>
+        <location line="+298"/>
         <location filename="../dialogs/taperecorder.cpp" line="+139"/>
         <source>Load a file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="+128"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+124"/>
         <source>Save recorded data</source>
         <translation type="unfinished"></translation>
     </message>
@@ -820,7 +853,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-370"/>
+        <location filename="../mainwindow.cpp" line="-447"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -830,7 +863,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>Languages</source>
         <translation type="unfinished"></translation>
     </message>
@@ -846,12 +879,12 @@
     </message>
     <message>
         <location line="+10"/>
-        <location line="+413"/>
+        <location line="+488"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-410"/>
+        <location line="-485"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -876,7 +909,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+353"/>
+        <location line="+428"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -965,7 +998,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+754"/>
+        <location filename="../emulator/core.cpp" line="+763"/>
         <location filename="../emulator/devices/common/page_mapper.cpp" line="+37"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
@@ -1229,18 +1262,18 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="-107"/>
-        <location line="+117"/>
+        <location filename="../dialogs/taperecorder.cpp" line="-103"/>
+        <location line="+113"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-117"/>
+        <location line="-113"/>
         <source>Unknown tape file format!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+113"/>
         <source>Unable to save file!</source>
         <translation type="unfinished"></translation>
     </message>

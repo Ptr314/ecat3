@@ -5,17 +5,52 @@
 
 #pragma once
 
+#include <atomic>
+
 #include "emulator/core.h"
 #include "emulator/devices/common/raster_display.h"
 #include "emulator/devices/common/register.h"
 
 // https://agatcomp.ru/agat/Hardware/useful/ColorSet.shtml
+// Standard palette
 static const uint8_t Agat_9_base_colors[16][3]  = {
     {  0,   0,   0}, {217,   0,   0}, {  0, 217,   0}, {217, 217,   0},
     {  0,   0, 217}, {217,   0, 217}, {  0, 217, 217}, {217, 217, 217},
     { 38,  38, 	38}, {255,  38,  38}, { 38, 255,  38}, {255, 255,  38},
     { 38,  38, 255}, {255,  38, 255}, { 38, 255, 255}, {255, 255, 255}
 };
+
+// Palette for a monochrome output
+static const uint8_t Agat_9_gray_colors[16][3]  = {
+    {  0,   0,   0}, {130, 130, 130}, { 89,  89,  89}, {221, 221, 221},
+    { 65,  65,  65}, {194, 194, 194}, {151, 151, 151}, {241, 241, 241},
+    { 39,  39, 	39}, {185, 185, 185}, {148, 148, 148}, {244, 244, 244},
+    {108, 108, 108}, {229, 229, 229}, {197, 197, 197}, {255, 255, 255}
+};
+
+// Palette without an I bit
+static const uint8_t Agat_9_8_colors[16][3]  = {
+    {  0,   0,   0}, {217,   0,   0}, {  0, 217,   0}, {217, 217,   0},
+    {  0,   0, 217}, {217,   0, 217}, {  0, 217, 217}, {217, 217, 217},
+    {  0,   0,   0}, {217,   0,   0}, {  0, 217,   0}, {217, 217,   0},
+    {  0,   0, 217}, {217,   0, 217}, {  0, 217, 217}, {217, 217, 217},
+};
+
+// Palette with an inverted I bit
+static const uint8_t Agat_9_inverted_colors[16][3]  = {
+    { 38,  38, 	38}, {255,  38,  38}, { 38, 255,  38}, {255, 255,  38},
+    { 38,  38, 255}, {255,  38, 255}, { 38, 255, 255}, {255, 255, 255},
+    {  0,   0,   0}, {217,   0,   0}, {  0, 217,   0}, {217, 217,   0},
+    {  0,   0, 217}, {217,   0, 217}, {  0, 217, 217}, {217, 217, 217}
+};
+
+static const uint8_t Agat_9_ex_colors[16][3]  = {
+    {  0,   0,   0}, {167,  87,  52}, {  0, 115,  16}, {242,  91,   0},
+    {  0,   0, 218}, {202,  20, 255}, { 90, 212, 199}, {217, 217, 217},
+    { 38,  38,  38}, {254,  39,  37}, { 37, 255,  37}, {255, 255,  37},
+    { 35, 151, 254}, {255, 118, 170}, { 72, 252, 253}, {255, 255, 255}
+};
+
 
 static const uint8_t Agat_4_index[4][4]  = {
     // 0    1   2   3
@@ -71,7 +106,13 @@ protected:
 
     unsigned _memory_bank;
 
+    std::atomic<unsigned> m_color_mode;
+
     uint32_t Agat_RGBA16[16];
+    uint32_t Agat_RGBA16gray[16];
+    uint32_t Agat_RGBA16i[16];
+    uint32_t Agat_RGBA16_8[16];
+    uint32_t Agat_RGBA16ex[16];
 
     void render_line(unsigned screen_line);
     virtual void render_all(bool force_render) override;
@@ -86,6 +127,9 @@ public:
     void clock(unsigned int counter) override;
     void load_config(SystemData *sd) override;
     void interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value) override;
+
+    DeviceOptions get_device_options() override;
+    void set_device_option(unsigned option_id, unsigned value_id) override;
 
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
     void memory_callback(unsigned int callback_id, unsigned int address) override;

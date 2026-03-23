@@ -549,6 +549,15 @@ bool ComputerDevice::belongs_to_class(QString class_to_check)
     return device_class == class_to_check;
 }
 
+DeviceOptions ComputerDevice::get_device_options()
+{
+    return {};
+}
+
+void ComputerDevice::set_device_option(unsigned option_id, unsigned value_id)
+{
+    // Does nothing by default
+}
 
 //----------------------- class AddressableDevice -------------------------------//
 

@@ -85,6 +85,7 @@ public:
     ~Emulator();
 
     void load_config(QString file_name);
+    void apply_saved_device_options();
 
     QString read_setup(QString section, QString ident, QString def_val);
     void write_setup(QString section, QString ident, QString new_val);

@@ -123,6 +123,24 @@ struct DeviceDescription {
     }
 };
 
+struct DeviceOptionValue {
+    unsigned id;
+    std::string title;
+};
+
+#define DEVICE_OPTION_DROPDOWN  0
+#define DEVICE_OPTION_CHECKBOX  1
+
+struct DeviceOption {
+    unsigned id;
+    unsigned type;
+    std::string title;
+    std::string icon;
+    std::vector<DeviceOptionValue> values;
+};
+
+typedef std::vector<DeviceOption> DeviceOptions;
+
 struct MapperRange {
     unsigned int        config_mask;		//AND-маска, которая накладывается на значение порта конфигурации
     unsigned int        config_value;		//Число, с которым сравнивается значение порта после маски
@@ -165,10 +183,14 @@ public:
     virtual void clock(unsigned int counter);
     virtual void system_clock(unsigned int counter);
 
+    virtual DeviceOptions get_device_options();
+    virtual void set_device_option(unsigned option_id, unsigned value_id);
+
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
     virtual void memory_callback(unsigned int callback_id, unsigned int address);
     bool belongs_to_class(QString class_to_check);
     bool get_reset_behavior(bool is_cold);
+
 
 protected:
     unsigned int clock_miltiplier;

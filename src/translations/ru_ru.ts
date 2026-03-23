@@ -15,6 +15,29 @@
     </message>
 </context>
 <context>
+    <name>Agat9Display</name>
+    <message>
+        <source>Output type</source>
+        <translation type="vanished">Тип видеовыхода</translation>
+    </message>
+    <message>
+        <source>16 colors</source>
+        <translation type="vanished">16 цветов</translation>
+    </message>
+    <message>
+        <source>16 inverted</source>
+        <translation type="vanished">16 инверсный</translation>
+    </message>
+    <message>
+        <source>8 colors</source>
+        <translation type="vanished">8 цветов</translation>
+    </message>
+    <message>
+        <source>Monochrome</source>
+        <translation type="vanished">Монохромный</translation>
+    </message>
+</context>
+<context>
     <name>Agat_FDC140</name>
     <message>
         <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+42"/>
@@ -49,7 +72,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+951"/>
+        <location filename="../emulator/core.cpp" line="+960"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -62,7 +85,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location line="-566"/>
+        <location line="-575"/>
         <location line="+50"/>
         <location line="+16"/>
         <location line="+9"/>
@@ -241,6 +264,43 @@
         <location line="+36"/>
         <source>Device %1 not found</source>
         <translation>Устройство %1 не найдено</translation>
+    </message>
+</context>
+<context>
+    <name>DeviceOptions</name>
+    <message>
+        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+116"/>
+        <source>Output type</source>
+        <translation>Тип видеовыхода</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>16 colors</source>
+        <translation>16 цветов</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>16 inverted</source>
+        <translation>16 инверсный</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>8 colors</source>
+        <translation>8 цветов</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Grayscale</source>
+        <translation>Оттенки серого</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Experimental</source>
+        <translation>Прототип</translation>
+    </message>
+    <message>
+        <source>Monochrome</source>
+        <translation type="vanished">Монохромный</translation>
     </message>
 </context>
 <context>
@@ -434,7 +494,7 @@
         <translation>Неизвестный тип файла</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+380"/>
+        <location filename="../mainwindow.cpp" line="+385"/>
         <source>Screen 4:3</source>
         <translation>Экран 4:3</translation>
     </message>
@@ -478,13 +538,13 @@
         <translation type="vanished">Сглаживание</translation>
     </message>
     <message>
-        <location line="+223"/>
+        <location line="+298"/>
         <location filename="../dialogs/taperecorder.cpp" line="+139"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="+128"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+124"/>
         <source>Save recorded data</source>
         <translation>Сохранить записанные данные</translation>
     </message>
@@ -876,13 +936,13 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-347"/>
-        <location line="+413"/>
+        <location filename="../mainwindow.cpp" line="-422"/>
+        <location line="+488"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-410"/>
+        <location line="-485"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -906,7 +966,7 @@
         <translation type="vanished">Все файлы (*.*)</translation>
     </message>
     <message>
-        <location line="-35"/>
+        <location line="-37"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -916,7 +976,7 @@
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>Languages</source>
         <translation>Языки</translation>
     </message>
@@ -936,7 +996,7 @@
         <translation>Автоматически</translation>
     </message>
     <message>
-        <location line="+353"/>
+        <location line="+428"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>
@@ -1025,7 +1085,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+754"/>
+        <location filename="../emulator/core.cpp" line="+763"/>
         <location filename="../emulator/devices/common/page_mapper.cpp" line="+37"/>
         <source>Error</source>
         <translation>Ошибка</translation>
@@ -1304,18 +1364,18 @@
         <translation>ЭЛЕКТРОНИКА-302</translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="-107"/>
-        <location line="+117"/>
+        <location filename="../dialogs/taperecorder.cpp" line="-103"/>
+        <location line="+113"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-117"/>
+        <location line="-113"/>
         <source>Unknown tape file format!</source>
         <translation>Неизвестный формат файла записи!</translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+113"/>
         <source>Unable to save file!</source>
         <translation>Невозможно сохранить файл!</translation>
     </message>

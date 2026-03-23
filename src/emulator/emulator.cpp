@@ -136,7 +136,29 @@ void Emulator::load_config(QString file_name)
         }
     }
     dm->load_devices_config(&sd);
+    apply_saved_device_options();
     loaded = true;
+}
+
+void Emulator::apply_saved_device_options()
+{
+    QFileInfo fi(sd.system_file);
+    QString config_key = fi.baseName();
+
+    for (unsigned int i = 0; i < dm->device_count; i++) {
+        ComputerDevice * dev = dm->get_device(i)->device.get();
+        DeviceOptions options = dev->get_device_options();
+        for (size_t j = 0; j < options.size(); j++) {
+            const DeviceOption & opt = options[j];
+            if (!opt.values.empty()) {
+                QString settings_key = config_key + "_" + dev->name + "_" + QString::number(opt.id);
+                QString saved = read_setup("DeviceOptions", settings_key, "");
+                if (!saved.isEmpty()) {
+                    dev->set_device_option(opt.id, saved.toUInt());
+                }
+            }
+        }
+    }
 }
 
 void Emulator::load_charmap()

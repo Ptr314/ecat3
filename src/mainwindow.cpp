@@ -6,6 +6,8 @@
 #include <QDir>
 #include <QFontDatabase>
 #include <QEvent>
+#include <QComboBox>
+#include <QLabel>
 #include <QSlider>
 #include <QFileDialog>
 #include <QWidgetAction>
@@ -484,6 +486,12 @@ void MainWindow::UpdateToolbar()
         ui->toolBar->removeAction(buttons_separator);
     }
 
+    for (int i = 0; i < option_toolbar_actions.size(); i++) {
+        ui->toolBar->removeAction(option_toolbar_actions[i]);
+        delete option_toolbar_actions[i];
+    }
+    option_toolbar_actions.clear();
+
     int buttons_added=0;
 
     fdds_found = 0;
@@ -522,6 +530,75 @@ void MainWindow::UpdateToolbar()
 
         connect(tape_button, &QToolButton::clicked, this, &MainWindow::on_actionTape_triggered);
         tape_action = ui->toolBar->insertWidget(ui->actionDebugger, tape_button);
+    }
+
+    // Device options
+    bool has_hw_buttons = (fdds_found > 0 || tape_devices.size() != 0);
+    bool options_separator_added = false;
+
+    SystemData * sd = e->get_system_data();
+    QFileInfo opt_fi(sd->system_file);
+    QString config_key = opt_fi.baseName();
+
+    for (unsigned int i = 0; i < e->dm->device_count; i++) {
+        ComputerDevice * dev = e->dm->get_device(i)->device.get();
+        DeviceOptions options = dev->get_device_options();
+        for (size_t j = 0; j < options.size(); j++) {
+            const DeviceOption & opt = options[j];
+            if (opt.type == DEVICE_OPTION_DROPDOWN && !opt.values.empty()) {
+                if (has_hw_buttons && !options_separator_added) {
+                    QAction * sep = ui->toolBar->insertSeparator(ui->actionDebugger);
+                    option_toolbar_actions.append(sep);
+                    options_separator_added = true;
+                }
+                buttons_added++;
+
+                QString option_tooltip = QCoreApplication::translate("DeviceOptions", opt.title.c_str());
+
+                if (!opt.icon.empty()) {
+                    QString icon_path = find_file_location(sd, QString::fromStdString(opt.icon));
+                    if (!icon_path.isEmpty()) {
+                        QLabel * icon_label = new QLabel();
+                        icon_label->setPixmap(QPixmap(icon_path).scaled(24, 24, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                        icon_label->setToolTip(option_tooltip);
+                        QAction * icon_action = ui->toolBar->insertWidget(ui->actionDebugger, icon_label);
+                        option_toolbar_actions.append(icon_action);
+                    }
+                }
+
+                QComboBox * combo = new QComboBox();
+                combo->setFocusPolicy(Qt::NoFocus);
+                combo->setToolTip(option_tooltip);
+
+                QString settings_key = config_key + "_" + dev->name + "_" + QString::number(opt.id);
+                QString saved = e->read_setup("DeviceOptions", settings_key, "");
+
+                int selected_index = 0;
+                for (size_t v = 0; v < opt.values.size(); v++) {
+                    combo->addItem(
+                        QCoreApplication::translate("DeviceOptions", opt.values[v].title.c_str()),
+                        opt.values[v].id
+                    );
+                    if (!saved.isEmpty() && opt.values[v].id == saved.toUInt()) {
+                        selected_index = static_cast<int>(v);
+                    }
+                }
+                combo->setCurrentIndex(selected_index);
+
+                unsigned option_id = opt.id;
+                QString device_name = dev->name;
+                connect(combo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+                    [this, combo, dev, option_id, config_key, device_name](int index) {
+                        unsigned value_id = combo->itemData(index).toUInt();
+                        dev->set_device_option(option_id, value_id);
+                        QString key = config_key + "_" + device_name + "_" + QString::number(option_id);
+                        e->write_setup("DeviceOptions", key, QString::number(value_id));
+                    });
+
+                QAction * action = ui->toolBar->insertWidget(ui->actionDebugger, combo);
+                option_toolbar_actions.append(action);
+            }
+        }
     }
 
     if (buttons_added > 0) {
