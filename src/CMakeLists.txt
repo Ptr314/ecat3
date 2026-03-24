@@ -62,7 +62,7 @@ if (${LOGGER})
     set(LOG_FDD 1)
     set(LOG_PAGE_MAPPER 0)
     set(LOG_INTERFACES 0)
-    set(LOG_AGAT 1)
+    set(LOG_AGAT 0)
 
 endif()
 
@@ -235,6 +235,7 @@ set(PROJECT_SOURCES
     emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
     emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp
     emulator/devices/common/gmd70.h emulator/devices/common/gmd70.cpp
+        emulator/devices/specific/agat_common.h
 
 )
 

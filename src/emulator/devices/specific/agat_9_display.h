@@ -106,6 +106,16 @@ protected:
 
     unsigned _memory_bank;
 
+    bool m_color_options = true;
+    bool m_pal_card = false;
+    bool m_pal_card_out = false;
+    bool m_pal_builtin = false;
+
+    RAM * m_pal_mem;
+    PortAddress * m_pal_switch;
+    PortAddress * m_pal_mode;
+    RAM * m_pal_font;
+
     std::atomic<unsigned> m_color_mode;
 
     uint32_t Agat_RGBA16[16];
@@ -114,10 +124,17 @@ protected:
     uint32_t Agat_RGBA16_8[16];
     uint32_t Agat_RGBA16ex[16];
 
+    uint32_t Agat_RGBA16_palcard[16];
+    uint32_t Agat_RGBA16_palcard_std[8][16];
+
+
     void render_line(unsigned screen_line);
-    virtual void render_all(bool force_render) override;
+    void render_all(bool force_render) override;
 
     void set_mode(unsigned int new_mode);
+
+    uint32_t convert_rgba(unsigned c, const uint32_t rgba[]) const;
+    uint8_t convert_font(unsigned chr, unsigned line) const;
 
 public:
     Agat9Display(InterfaceManager *im, EmulatorConfigDevice *cd);

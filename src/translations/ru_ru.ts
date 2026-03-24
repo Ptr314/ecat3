@@ -36,6 +36,16 @@
         <source>Monochrome</source>
         <translation type="vanished">Монохромный</translation>
     </message>
+    <message>
+        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+73"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect display config - palette card</source>
+        <translation>Некорректно заданы параметры для платы палитр</translation>
+    </message>
 </context>
 <context>
     <name>Agat_FDC140</name>
@@ -269,12 +279,23 @@
 <context>
     <name>DeviceOptions</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+116"/>
+        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+70"/>
+        <location line="+10"/>
         <source>Output type</source>
         <translation>Тип видеовыхода</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-8"/>
+        <source>Palette card</source>
+        <translation>Плата палитр</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Standard</source>
+        <translation>RGB-выход</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>16 colors</source>
         <translation>16 цветов</translation>
     </message>

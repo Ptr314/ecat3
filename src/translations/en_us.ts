@@ -15,6 +15,19 @@
     </message>
 </context>
 <context>
+    <name>Agat9Display</name>
+    <message>
+        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+73"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect display config - palette card</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Agat_FDC140</name>
     <message>
         <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+42"/>
@@ -226,12 +239,23 @@
 <context>
     <name>DeviceOptions</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+116"/>
+        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+70"/>
+        <location line="+10"/>
         <source>Output type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-8"/>
+        <source>Palette card</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Standard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>16 colors</source>
         <translation type="unfinished"></translation>
     </message>

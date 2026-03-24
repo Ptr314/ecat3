@@ -3,16 +3,10 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Agat-7 display controller device
 
+#include <iostream>
 #include "agat_7_display.h"
 #include "emulator/utils.h"
-#include <iostream>
-
-uint8_t Agat_2Colors[2][3] =  {
-                    {0, 0, 0},
-                    {255, 255, 255}
-        };
-
-uint32_t Agat_RGBA2[2];
+#include "agat_common.h"
 
 uint8_t Agat_16Colors[16][3]  = {
                     {  0,   0,   0}, {217,   0,   0}, {  0, 217,   0}, {217, 217,   0},
@@ -26,6 +20,10 @@ uint32_t Agat_RGBA16[16];
 #define     M_256_EVEN  0       // Render even lines only
 #define     M_256_ODD   1       // Render odd lines only
 #define     M_512_ON    2       // Render all 512 interlaced lines
+
+#define     A7_OPTION_PALCARD   1
+#define     A7_PALCARD_ON       0
+#define     A7_PALCARD_OFF      1
 
 Agat7Display::Agat7Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     RasterDisplay(im, cd)
@@ -60,14 +58,33 @@ void Agat7Display::load_config(SystemData *sd)
 
     if (m_512_mode == M_512_ON) sy = 512;
 
+    const QString pal_mem = read_confg_value(cd, "pal_mem", false, QString(""));
+    const QString pal_switch = read_confg_value(cd, "pal_switch", false, QString(""));
+    const QString pal_mode = read_confg_value(cd, "pal_mode", false, QString(""));
+    const QString pal_font = read_confg_value(cd, "pal_font", false, QString(""));
+
+    if (!pal_mem.isEmpty() || !pal_switch.isEmpty() || !pal_mode.isEmpty() || !pal_font.isEmpty()) {
+        try {
+            m_pal_mem = dynamic_cast<RAM*>(im->dm->get_device_by_name(pal_mem));
+            m_pal_switch = dynamic_cast<PortAddress*>(im->dm->get_device_by_name(pal_switch));
+            m_pal_mode = dynamic_cast<PortAddress*>(im->dm->get_device_by_name(pal_mode));
+            m_pal_font = dynamic_cast<RAM*>(im->dm->get_device_by_name(pal_font));
+            m_pal_card = true;
+            m_pal_card_out = true;
+            m_pal_builtin = read_confg_value(cd, "pal_builtin", false, false);
+        } catch (QException &e) {
+            QMessageBox::critical(0, tr("Error"), tr("Incorrect display config - palette card"));
+        }
+    }
+
     set_mode(0x02);
 }
 
 void Agat7Display::set_renderer(VideoRenderer &vr)
 {
     GenericDisplay::set_renderer(vr);
-    vr.FillRGB(Agat_2Colors, Agat_RGBA2, 2);
     vr.FillRGB(Agat_16Colors, Agat_RGBA16, 16);
+    for (int i=0; i<8; i++) vr.FillRGB(Agat_Palcard_std_pal[i], Agat_RGBA16_palcard_std[i], 16);
 }
 
 void Agat7Display::set_mode(unsigned int new_mode)
@@ -128,6 +145,55 @@ void Agat7Display::clock(unsigned int counter)
     }
 }
 
+DeviceOptions Agat7Display::get_device_options()
+{
+    if (m_pal_card)
+        return {
+                    {
+                        A7_OPTION_PALCARD, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Output type"), "kscreensaver.png",
+                        {
+                            {A7_PALCARD_ON, QT_TRANSLATE_NOOP("DeviceOptions", "Palette card")},
+                            {A7_PALCARD_OFF, QT_TRANSLATE_NOOP("DeviceOptions", "Standard")}
+                        }
+                    }
+        };
+    return {};
+};
+
+void Agat7Display::set_device_option(unsigned option_id, unsigned value_id)
+{
+    if (option_id == A7_OPTION_PALCARD) m_pal_card_out = value_id == A7_PALCARD_ON;
+}
+
+uint32_t Agat7Display::convert_rgba(const unsigned c, const uint32_t rgba[]) const
+{
+    if (!m_pal_card || !m_pal_card_out) return rgba[c];
+    const auto pal = m_pal_switch->get_direct(0);
+    if (pal < 8) {
+        if (m_pal_builtin) return Agat_RGBA16_palcard_std[pal][c];
+        return rgba[c];
+    }
+    const uint8_t R = m_pal_mem->get_direct(0x00 + c) * 17;
+    const uint8_t G = m_pal_mem->get_direct(0x10 + c) * 17;
+    const uint8_t B = m_pal_mem->get_direct(0x20 + c) * 17;
+    return renderer->MapRGB(R, G, B);
+}
+
+uint8_t Agat7Display::convert_font(unsigned chr, unsigned line) const
+{
+    const unsigned a = chr*8 + line;
+    if (!m_pal_card) return m_font->get_direct(a);
+    if ((m_pal_mode->get_direct(0) & 0x02) != 0) {
+        uint8_t v = m_pal_font->get_direct(a);
+        v = ((v & 0xAA) >> 1) | ((v & 0x55) << 1);
+        v = ((v & 0xCC) >> 2) | ((v & 0x33) << 2);
+        v = (v >> 4) | (v << 4);
+        return ~v;
+    }
+    return m_font->get_direct(a);
+
+}
+
 void Agat7Display::render_line(unsigned int screen_line)
 {
     compat_lock_guard guard(m_surface_mutex);
@@ -139,6 +205,8 @@ void Agat7Display::render_line(unsigned int screen_line)
 
     // As we psysically have 256 doubled lines, we use a half of screen_line in a 512-line mode
     unsigned line = (m_512_mode==M_512_ON) ? (screen_line / 2) : screen_line;
+
+    const uint32_t black = Agat_RGBA16[0];
 
     switch (mode) {
     case 0x00:
@@ -156,7 +224,8 @@ void Agat7Display::render_line(unsigned int screen_line)
                     p = screen_offset + j*32 + k*4;
 
                     pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
-                    *(uint32_t*)pixel_address = Agat_RGBA16[c];
+                    // *(uint32_t*)pixel_address = Agat_RGBA16[c];
+                    *(uint32_t*)pixel_address = convert_rgba(c, Agat_RGBA16);
                 }
             }
         }
@@ -176,7 +245,8 @@ void Agat7Display::render_line(unsigned int screen_line)
                     p = screen_offset + j*16 + k*4;
                     unsigned int c = color[j];
                     pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
-                    *(uint32_t*)pixel_address = Agat_RGBA16[c];
+                    // *(uint32_t*)pixel_address = Agat_RGBA16[c];
+                    *(uint32_t*)pixel_address = convert_rgba(c, Agat_RGBA16);
                 }
         }
         break;
@@ -190,8 +260,8 @@ void Agat7Display::render_line(unsigned int screen_line)
         // Blanking sides
         pixel_address = ((uint8_t *)render_pixels) + line*line_bytes;
         for (unsigned int j=0; j<32; j++) {
-            *(uint32_t *)(pixel_address + j*4) = Agat_RGBA2[0];
-            *(uint32_t *)(pixel_address + 480*4 + j*4) = Agat_RGBA2[0];
+            *(uint32_t *)(pixel_address + j*4) = black;
+            *(uint32_t *)(pixel_address + 480*4 + j*4) = black;
         }
 
         font_line = line % 8;
@@ -200,7 +270,8 @@ void Agat7Display::render_line(unsigned int screen_line)
             v1 = m_memory->get_value(char_address);       // Character
             v2 = m_memory->get_value(char_address+1);     // Attribute
             unsigned int cl = (v2 & 0x07) | ((v2 & 0x10) >> 1);         // Color index (YBGR)
-            font_val = m_font->get_value(v1*8 + font_line);
+            // font_val = m_font->get_value(v1*8 + font_line);
+            font_val = convert_font(v1, font_line);
 
             screen_offset = 32*4 + i * (7*4*2);
 
@@ -211,7 +282,8 @@ void Agat7Display::render_line(unsigned int screen_line)
                     ccl = cl * c;
                 else
                     ccl = cl * (c ^ 0x01);
-                uint32_t color = Agat_RGBA16[ccl];
+                // uint32_t color = Agat_RGBA16[ccl];
+                uint32_t color = convert_rgba(ccl, Agat_RGBA16);
                 p = screen_offset + (7-k)*8;
                 pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
                 *(uint32_t*)pixel_address = color;
@@ -228,8 +300,8 @@ void Agat7Display::render_line(unsigned int screen_line)
         // Blanking sides
         pixel_address = ((uint8_t *)render_pixels) + line*line_bytes;
         for (unsigned int j=0; j<32; j++) {
-            *(uint32_t *)(pixel_address + j*4) = Agat_RGBA2[0];
-            *(uint32_t *)(pixel_address + 480*4 + j*4) = Agat_RGBA2[0];
+            *(uint32_t *)(pixel_address + j*4) = black;
+            *(uint32_t *)(pixel_address + 480*4 + j*4) = black;
         }
 
         inv = ((~previous_mode & 0x04) >> 2);                       // inverted mode
@@ -237,13 +309,15 @@ void Agat7Display::render_line(unsigned int screen_line)
         for (unsigned int i=0; i<64; i++) {
             char_address = base_address + (line/8)*64 + i;
             v1 = m_memory->get_value(char_address);       // Character
-            font_val = m_font->get_value(v1*8 + font_line);
+            // font_val = m_font->get_value(v1*8 + font_line);
+            font_val = convert_font(v1, font_line);
             screen_offset = 32*4 + i * (7*4);
             for (unsigned int k=0; k<7; k++) {                      // Char is 7x8 pixels
                 unsigned int c = ((font_val >> k) & 1) ^ inv;
                 p = screen_offset + (6-k)*4;
                 pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
-                *(uint32_t*)pixel_address = Agat_RGBA2[c];
+                // *(uint32_t*)pixel_address = Agat_RGBA2[c];
+                *(uint32_t*)pixel_address = convert_rgba(c*15, Agat_RGBA16);
             }
         }
         break;
@@ -259,7 +333,8 @@ void Agat7Display::render_line(unsigned int screen_line)
 
             for (unsigned int k = 0; k < 8; k++) {
                 unsigned int c = (v >> k) & 0x01;
-                uint32_t color = Agat_RGBA2[c];
+                // uint32_t color = Agat_RGBA2[c];
+                uint32_t color = convert_rgba(c*15, Agat_RGBA16);
                 p = screen_offset + (7-k)*8;
                 pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes + p;
                 *(uint32_t*)pixel_address = color;

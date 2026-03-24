@@ -912,11 +912,13 @@ PortAddress::PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd):
 void PortAddress::set_value(unsigned int address, MAYBE_UNUSED unsigned int value, bool force)
 {
 #ifdef LOG_PORTS
-    logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
-    if (address == 0xC1) {
-        int i=0;
-        i++;
-    }
+    // if (name == "pal-switch")
+    //     logs(QString("W %1").arg(address));
+    // logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
+    // if (address == 0xC1) {
+    //     int i=0;
+    //     i++;
+    // }
 #endif
     i_access.change(0);
     this->value = (address & mask) | (this->value & ~mask);
@@ -926,6 +928,10 @@ void PortAddress::set_value(unsigned int address, MAYBE_UNUSED unsigned int valu
 
 unsigned int PortAddress::get_value(MAYBE_UNUSED unsigned int address)
 {
+#ifdef LOG_PORTS
+    // if (name == "pal-switch")
+    //     logs(QString("R %1").arg(address));
+#endif
     if (store_on_read) {
         this->value = (address & mask) | (this->value & ~mask);
         i_data.change(this->value);
