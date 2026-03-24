@@ -558,10 +558,12 @@ void MainWindow::UpdateToolbar()
                 if (!opt.icon.empty()) {
                     QString icon_path = find_file_location(sd, QString::fromStdString(opt.icon));
                     if (!icon_path.isEmpty()) {
-                        QLabel * icon_label = new QLabel();
-                        icon_label->setPixmap(QPixmap(icon_path).scaled(24, 24, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-                        icon_label->setToolTip(option_tooltip);
-                        QAction * icon_action = ui->toolBar->insertWidget(ui->actionDebugger, icon_label);
+                        QIcon icon(icon_path);
+                        icon.addPixmap(QPixmap(icon_path), QIcon::Disabled);
+                        QAction * icon_action = new QAction(icon, "", this);
+                        icon_action->setToolTip(option_tooltip);
+                        icon_action->setEnabled(false);
+                        ui->toolBar->insertAction(ui->actionDebugger, icon_action);
                         option_toolbar_actions.append(icon_action);
                     }
                 }
