@@ -43,7 +43,7 @@ EmulatorConfig::~EmulatorConfig()
     if (!devices.empty()) free_devices();
 }
 
-EmulatorConfig::EmulatorConfig(QString file_name)
+EmulatorConfig::EmulatorConfig(std::string file_name)
 {
     EmulatorConfig();
     load_from_file(file_name);
@@ -157,7 +157,7 @@ QString EmulatorConfigDevice::extended_parameter(unsigned int i, QString expecte
 
 
 
-void EmulatorConfig::load_from_file(QString file_name, bool system_only)
+void EmulatorConfig::load_from_file(std::string file_name, bool system_only)
 {
     QString device_name;
     QString device_type;
@@ -166,9 +166,10 @@ void EmulatorConfig::load_from_file(QString file_name, bool system_only)
 
     if (!devices.empty()) free_devices();
 
-    QFile file(file_name);
+    QString q_file_name = QString::fromStdString(file_name);
+    QFile file(q_file_name);
     if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Error reading config file %1").arg(file_name));
+        QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Error reading config file %1").arg(q_file_name));
         return;
     }
     QString config = QString(file.readAll());

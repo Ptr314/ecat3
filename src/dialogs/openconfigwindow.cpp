@@ -84,7 +84,7 @@ void OpenConfigWindow::list_machines(QString work_path)
         if (fi.suffix().toLower() == "cfg")
         {
             //qDebug() << fi.absoluteFilePath();
-            EmulatorConfig * config = new EmulatorConfig(fi.absoluteFilePath());
+            EmulatorConfig * config = new EmulatorConfig(fi.absoluteFilePath().toStdString());
             EmulatorConfigDevice * system = config->get_device("system");
 
             bool is_debug = system->get_parameter("debug", false).value == "1";

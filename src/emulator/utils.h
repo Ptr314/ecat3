@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <string>
 #include <QString>
 #ifdef RENDERER_SDL2
     #include <SDL.h>
@@ -16,6 +17,7 @@
 #define _FFFF (unsigned int)(-1)
 
 unsigned int parse_numeric_value(QString str);
+unsigned int parse_numeric_value(std::string str);
 
 unsigned int create_mask(unsigned int size, unsigned int shift);
 

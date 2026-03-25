@@ -114,7 +114,7 @@ void DumpArea::paintEvent(MAYBE_UNUSED QPaintEvent *event)
                             painter.setPen(TEXT_COLOR);
                         }
                         painter.drawText(x + j*data_str.length()*char_width, y, data_str);
-                        QString c = QString(*e->translate_char(data));
+                        QString c = QString::fromStdString(e->translate_char(data));
                         painter.drawText(x + char_width*(16 * data_str.length() + 2 + j), y, c);
                     }
                 }

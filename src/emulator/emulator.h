@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include <QString>
 #include <QTimer>
 #include <memory>
 #include <array>
@@ -47,7 +46,7 @@ private:
     SystemData sd;
     VideoRenderer * renderer;
 
-    std::array<std::unique_ptr<QChar>, 256> charmap;
+    std::array<std::string, 256> charmap;
 
     CPU * cpu;
     MemoryMapper * mm;
@@ -101,7 +100,7 @@ public:
     std::string read_setup(std::string section, std::string ident, std::string def_val);
     void write_setup(std::string section, std::string ident, std::string new_val);
     void load_charmap();
-    QChar * translate_char(unsigned int system_code);
+    const std::string & translate_char(unsigned int system_code);
 
     void init_video(void *p);
     void stop_video();

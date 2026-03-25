@@ -4,6 +4,7 @@
 // Description: Service functions, source
 
 #include <random>
+#include <stdexcept>
 
 #include <QException>
 #include <QFileInfo>
@@ -46,6 +47,39 @@ unsigned int parse_numeric_value(QString str)
     if (!valid) throw QException();
 
     return value*mult;
+}
+
+unsigned int parse_numeric_value(std::string str)
+{
+    int base;
+    int mult;
+
+    if (str.empty()) throw std::invalid_argument("Empty numeric value");
+
+    std::string s = str;
+    for (size_t i = 0; i < s.size(); i++)
+        s[i] = toupper(s[i]);
+
+    char first = s[0];
+    if (first == '$') base = 16;
+    else if (first == '#') base = 2;
+    else base = 10;
+
+    if (base != 10) s.erase(0, 1);
+
+    if (s[s.length() - 1] == 'K') {
+        mult = 1024;
+        s.erase(s.length() - 1, 1);
+    } else {
+        mult = 1;
+    }
+
+    char *end;
+    long value = strtol(s.c_str(), &end, base);
+
+    if (*end != '\0') throw std::invalid_argument("Invalid numeric value: " + str);
+
+    return value * mult;
 }
 
 unsigned int create_mask(unsigned int size, unsigned int shift)

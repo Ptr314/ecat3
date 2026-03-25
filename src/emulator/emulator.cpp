@@ -3,12 +3,12 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Main emulator class, source
 
-#include <QFileInfo>
 #include <QKeyEvent>
+#include "dsk_tools/dsk_tools.h"
+#include "../libs/dsk_tools/src/utils.h"
+#include "host_helpers.h"
 #include <cmath>
 #include <iostream>
-#include <qlabel.h>
-#include <qpainter.h>
 
 #ifdef _WIN32
     #ifndef NOMINMAX
@@ -75,7 +75,7 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , settings_file(ini_file)
 #endif
 {
-    qDebug() << "INI path: " + QString::fromStdString(ini_file);
+    // qDebug() << "INI path: " + QString::fromStdString(ini_file);
 #ifdef USE_MINI_INI
     settings_file.read(settings);
 #else
@@ -127,20 +127,18 @@ void Emulator::load_config(std::string file_name)
 
     register_devices();
 
-    QString q_file_name = QString::fromStdString(file_name);
-    EmulatorConfig config(q_file_name);
+    EmulatorConfig config(file_name);
 
     EmulatorConfigDevice * system = config.get_device("system");
-    QFileInfo fi(q_file_name);
-    sd.system_file = q_file_name.toStdString();
-    sd.system_path = (fi.absolutePath() + "/").toStdString();
+    sd.system_file = file_name;
+    sd.system_path = dsk_tools::get_file_path(file_name);
     sd.system_type = system->get_parameter("type").value.toStdString();
     sd.system_name = system->get_parameter("name").value.toStdString();
     sd.system_version = system->get_parameter("version", false).value.toStdString();
     sd.system_charmap = system->get_parameter("charmap", false).value.toStdString();
     sd.software_path = software_path;
     sd.data_path = data_path;
-    sd.mapper_cache = parse_numeric_value(QString::fromStdString(read_setup("Core", "mapper_cache", "8")));
+    sd.mapper_cache = parse_numeric_value(read_setup("Core", "mapper_cache", "8"));
 
     sd.allowed_files = system->get_parameter("files", false).value.toStdString();
 
@@ -161,8 +159,7 @@ void Emulator::load_config(std::string file_name)
 
 void Emulator::apply_saved_device_options()
 {
-    QFileInfo fi(QString::fromStdString(sd.system_file));
-    QString config_key = fi.baseName();
+    std::string config_key = dsk_tools::get_file_basename(sd.system_file);
 
     for (unsigned int i = 0; i < dm->device_count; i++) {
         ComputerDevice * dev = dm->get_device(i)->device.get();
@@ -170,7 +167,7 @@ void Emulator::apply_saved_device_options()
         for (size_t j = 0; j < options.size(); j++) {
             const DeviceOption & opt = options[j];
             if (!opt.values.empty()) {
-                std::string settings_key = (config_key + "_" + dev->name + "_" + QString::number(opt.id)).toStdString();
+                std::string settings_key = config_key + "_" + dev->name.toStdString() + "_" + std::to_string(opt.id);
                 std::string saved = read_setup("DeviceOptions", settings_key, "");
                 if (!saved.empty()) {
                     dev->set_device_option(opt.id, static_cast<unsigned int>(std::stoul(saved)));
@@ -184,30 +181,36 @@ void Emulator::load_charmap()
 {
     // Initialize all to default character
     for (auto& ch : charmap) {
-        ch = make_unique<QChar>('.');
+        ch = ".";
     }
 
     if (!sd.system_charmap.empty())
     {
-        QFile f(QString::fromStdString(data_path + sd.system_charmap + ".chr"));
-        if (!f.open(QFile::ReadOnly)) return;
-        QString s = QString::fromUtf8(f.readAll());
+        std::string file_path = data_path + sd.system_charmap + ".chr";
+        UTF8_ifstream f(file_path);
+        if (!f.good()) return;
 
+        f.seekg(0, std::ios::end);
+        std::streampos size = f.tellg();
+        f.seekg(0, std::ios::beg);
+        std::string content(static_cast<size_t>(size), '\0');
+        f.read(&content[0], size);
+
+        std::vector<std::string> chars = dsk_tools::split_utf8_chars(content);
         unsigned int count = 0;
-        for (unsigned int i = 0; i < s.length() && count < 256; i++)
+        for (size_t i = 0; i < chars.size() && count < 256; i++)
         {
-            QChar c = s.at(i);
-            if (c != '\x0D' && c != '\x0A') charmap[count++] = make_unique<QChar>(c);
+            if (chars[i] != "\x0D" && chars[i] != "\x0A") charmap[count++] = chars[i];
         }
     }
 }
 
-QChar * Emulator::translate_char(unsigned int char_code)
+const std::string & Emulator::translate_char(unsigned int char_code)
 {
     if (char_code >= 256) {
-        return charmap[0].get();  // Return default character
+        return charmap[0];  // Return default character
     }
-    return charmap[char_code].get();
+    return charmap[char_code];
 }
 
 void Emulator::reset(bool cold)
@@ -262,8 +265,8 @@ void Emulator::run()
             reset(true);
 
             clock_freq = this->cpu->clock;
-            timer_res = parse_numeric_value(QString::fromStdString(read_setup("Core", "TimerResolution", "1")));
-            timer_delay = parse_numeric_value(QString::fromStdString(read_setup("Core", "TimerDelay", "20")));
+            timer_res = parse_numeric_value(read_setup("Core", "TimerResolution", "1"));
+            timer_delay = parse_numeric_value(read_setup("Core", "TimerDelay", "20"));
 
             local_counter = 0;
             clock_counter = 0;
