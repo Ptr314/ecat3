@@ -71,9 +71,16 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , renderer(renderer)
     , m_running(false)
     , m_ready(false)
+#ifdef USE_MINI_INI
+    , settings_file(ini_file)
+#endif
 {
     qDebug() << "INI path: " + QString::fromStdString(ini_file);
+#ifdef USE_MINI_INI
+    settings_file.read(settings);
+#else
     settings = make_unique<QSettings>(QString::fromStdString(ini_file), QSettings::IniFormat);
+#endif
 
     // connect(this, &Emulator::finished, this, &Emulator::stop_emulation, Qt::DirectConnection);
 
@@ -84,13 +91,24 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
 
 std::string Emulator::read_setup(std::string section, std::string ident, std::string def_val)
 {
-    QString value = settings->value(QString::fromStdString(section + "/" + ident), QString::fromStdString(def_val)).toString();
-    return value.toStdString();
+#ifdef USE_MINI_INI
+    if (settings.has(section) && settings[section].has(ident)) {
+        return settings[section][ident];
+    }
+    return def_val;
+#else
+    return settings->value(QString::fromStdString(section + "/" + ident), QString::fromStdString(def_val)).toString().toStdString();
+#endif
 }
 
 void Emulator::write_setup(std::string section, std::string ident, std::string new_val)
 {
+#ifdef USE_MINI_INI
+    settings[section][ident] = new_val;
+    settings_file.write(settings);
+#else
     settings->setValue(QString::fromStdString(section + "/" + ident), QString::fromStdString(new_val));
+#endif
 }
 
 

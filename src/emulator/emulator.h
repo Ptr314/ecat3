@@ -6,11 +6,16 @@
 #pragma once
 
 #include <QString>
-#include <QSettings>
 #include <QTimer>
 #include <memory>
 #include <array>
 #include <string>
+
+#ifdef USE_MINI_INI
+    #include "libs/ini.h"
+#else
+    #include <QSettings>
+#endif
 
 #include "thread_compat.h"
 
@@ -31,7 +36,12 @@ class Emulator: public QObject
     Q_OBJECT
 
 private:
+#ifdef USE_MINI_INI
+    mINI::INIFile settings_file;
+    mINI::INIStructure settings;
+#else
     std::unique_ptr<QSettings> settings;
+#endif
     bool busy;
     InterfaceManager *im;
     SystemData sd;

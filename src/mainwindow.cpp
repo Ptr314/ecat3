@@ -118,9 +118,18 @@ MainWindow::MainWindow(QWidget *parent)
     software_path = emulator_root + "/software/";
     data_path = emulator_root + "/data/";
 
-    m_settings = new QSettings(ini_file, QSettings::IniFormat);
+#ifdef USE_MINI_INI
+    m_settings_file = make_unique<mINI::INIFile>(ini_file.toStdString());
+    m_settings_file->read(m_settings);
 
+    QString ini_lang;
+    if (m_settings.has("interface") && m_settings["interface"].has("language")) {
+        ini_lang = QString::fromStdString(m_settings["interface"]["language"]);
+    }
+#else
+    m_settings = new QSettings(ini_file, QSettings::IniFormat);
     QString ini_lang = m_settings->value("interface/language", "").toString();
+#endif
 
     if (ini_lang.length() == 0) {
         const QStringList uiLanguages = QLocale::system().uiLanguages();
@@ -287,7 +296,12 @@ bool MainWindow::switch_language(const QString & lang, bool init)
         if (!init) {
             ui->retranslateUi(this);
             CreateScreenMenu();
+#ifdef USE_MINI_INI
+            m_settings["interface"]["language"] = lang.toStdString();
+            m_settings_file->write(m_settings);
+#else
             m_settings->setValue("interface/language", lang);
+#endif
         }
         return true;
     } else {

@@ -86,7 +86,12 @@ private:
     QWidget * screen;
     VideoRenderer * renderer;
 
+#ifdef USE_MINI_INI
+    std::unique_ptr<mINI::INIFile> m_settings_file;
+    mINI::INIStructure m_settings;
+#else
     QSettings * m_settings;
+#endif
     QTranslator translator;
     QTranslator qtTranslator;
 

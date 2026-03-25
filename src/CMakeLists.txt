@@ -72,7 +72,12 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 11)
+if(QT_VERSION VERSION_GREATER_EQUAL "5.15")
+    set(CMAKE_CXX_STANDARD 17)
+    add_compile_definitions(USE_MINI_INI)
+else()
+    set(CMAKE_CXX_STANDARD 11)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Threading compatibility for old MinGW (4.9.2)
@@ -123,6 +128,10 @@ set(TS_FILES
 )
 
 # Source files
+
+if(USE_MINI_INI)
+    set(INI_FILES libs/ini.h)
+endif()
 
 if (${EXTERNAL_Z80})
     set(Z80_FILES
@@ -204,6 +213,7 @@ set(PROJECT_SOURCES
     emulator/devices/cpu/6502.h emulator/devices/cpu/6502.cpp
 
     ${Z80_FILES}
+    ${INI_FILES}
     emulator/devices/specific/agat_fdc140.h emulator/devices/specific/agat_fdc140.cpp
     emulator/devices/specific/agat_7_display.h emulator/devices/specific/agat_7_display.cpp
     emulator/devices/specific/agat_9_display.h emulator/devices/specific/agat_9_display.cpp
