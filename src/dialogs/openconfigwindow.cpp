@@ -41,9 +41,9 @@ OpenConfigWindow::OpenConfigWindow(QWidget *parent, Emulator * e) :
     OpenConfigWindow(parent)
 {
     this->e = e;
-    list_machines(e->work_path);
+    list_machines(QString::fromStdString(e->work_path));
 
-    QFile file(e->data_path + "description.css");
+    QFile file(QString::fromStdString(e->data_path + "description.css"));
     if (!file.open(QIODevice::ReadOnly)) {
         QMessageBox::critical(0, OpenConfigWindow::tr("Error"), OpenConfigWindow::tr("Error opening CSS file"));
         return;
@@ -52,7 +52,7 @@ OpenConfigWindow::OpenConfigWindow(QWidget *parent, Emulator * e) :
     ui->textBrowser->document()->setDefaultStyleSheet(file.readAll());
     file.close();
 
-    QFile default_md(e->work_path + "default.md");
+    QFile default_md(QString::fromStdString(e->work_path + "default.md"));
     if (default_md.open(QIODevice::ReadOnly)) {
         QString html = "<body>" + md2html(default_md.readAll()) + "</body>";
         ui->textBrowser->document()->setHtml(html);

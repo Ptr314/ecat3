@@ -106,7 +106,7 @@ void DumpWindow::on_bottomButton_clicked()
 
 void DumpWindow::on_saveButton_clicked()
 {
-    QString path = e->read_setup("Startup", "last_path", e->work_path);
+    QString path = QString::fromStdString(e->read_setup("Startup", "last_path", e->work_path));
     QString file_name = QFileDialog::getSaveFileName(this, DumpWindow::tr("Save contents to a file"), path, DumpWindow::tr("Dump (*.bin)"));
     if (!file_name.isEmpty())
     {

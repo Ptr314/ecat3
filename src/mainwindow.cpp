@@ -233,7 +233,7 @@ MainWindow::MainWindow(QWidget *parent)
     #elif defined(RENDERER_OPENGL)
         renderer = new OpenGLRenderer();
     #endif
-    e = new Emulator(work_path, data_path, software_path, ini_file, renderer);
+    e = new Emulator(work_path.toStdString(), data_path.toStdString(), software_path.toStdString(), ini_file.toStdString(), renderer);
 
     connect(this, &MainWindow::send_a_key,  e, &Emulator::key_event);
     connect(this, &MainWindow::send_volume, e, &Emulator::set_volume);
@@ -242,14 +242,14 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, &MainWindow::send_resize, e, &Emulator::resize_screen);
     connect(this, &MainWindow::send_stop,   e, &Emulator::stop_emulation, Qt::QueuedConnection);
 
-    QString file_to_load = e->read_setup("Startup", "default", "");
+    QString file_to_load = QString::fromStdString(e->read_setup("Startup", "default", ""));
 
-    last_path = e->read_setup("Startup", "last_path", software_path);
+    last_path = QString::fromStdString(e->read_setup("Startup", "last_path", software_path.toStdString()));
 
-    QString sound_volume = e->read_setup("Sound", "volume", "50");
+    QString sound_volume = QString::fromStdString(e->read_setup("Sound", "volume", "50"));
     volume->setValue(sound_volume.toInt());
 
-    QString muted = e->read_setup("Sound", "muted", "0");
+    QString muted = QString::fromStdString(e->read_setup("Sound", "muted", "0"));
     mute->setChecked(muted.toInt() == 1);
 
     first_config = work_path + file_to_load;
@@ -537,7 +537,7 @@ void MainWindow::UpdateToolbar()
     bool options_separator_added = false;
 
     SystemData * sd = e->get_system_data();
-    QFileInfo opt_fi(sd->system_file);
+    QFileInfo opt_fi(QString::fromStdString(sd->system_file));
     QString config_key = opt_fi.baseName();
 
     for (unsigned int i = 0; i < e->dm->device_count; i++) {
@@ -572,8 +572,8 @@ void MainWindow::UpdateToolbar()
                 combo->setFocusPolicy(Qt::NoFocus);
                 combo->setToolTip(option_tooltip);
 
-                QString settings_key = config_key + "_" + dev->name + "_" + QString::number(opt.id);
-                QString saved = e->read_setup("DeviceOptions", settings_key, "");
+                std::string settings_key = (config_key + "_" + dev->name + "_" + QString::number(opt.id)).toStdString();
+                QString saved = QString::fromStdString(e->read_setup("DeviceOptions", settings_key, ""));
 
                 int selected_index = 0;
                 for (size_t v = 0; v < opt.values.size(); v++) {
@@ -594,7 +594,7 @@ void MainWindow::UpdateToolbar()
                         unsigned value_id = combo->itemData(index).toUInt();
                         dev->set_device_option(option_id, value_id);
                         QString key = config_key + "_" + device_name + "_" + QString::number(option_id);
-                        e->write_setup("DeviceOptions", key, QString::number(value_id));
+                        e->write_setup("DeviceOptions", key.toStdString(), std::to_string(value_id));
                     });
 
                 QAction * action = ui->toolBar->insertWidget(ui->actionDebugger, combo);
@@ -670,14 +670,14 @@ void MainWindow::on_action_Soft_restart_triggered()
 
 void MainWindow::set_volume(int value)
 {
-    e->write_setup("Sound", "volume", QString::number(value));
+    e->write_setup("Sound", "volume", std::to_string(value));
     emit send_volume(value);
     //e->set_volume(value);
 }
 
 void MainWindow::set_mute(bool muted)
 {
-    e->write_setup("Sound", "muted", QString::number(muted?1:0));
+    e->write_setup("Sound", "muted", std::to_string(muted?1:0));
     emit send_muted(muted);
     //e->set_muted(muted);
     volume->setEnabled(!muted);
@@ -694,7 +694,7 @@ void MainWindow::on_action_Select_a_machine_triggered()
 void MainWindow::set_title()
 {
     SystemData * sd = e->get_system_data();
-    setWindowTitle("[eCat " + QString(PROJECT_VERSION) + "] " + sd->system_name + " : " + sd->system_version);
+    setWindowTitle("[eCat " + QString(PROJECT_VERSION) + "] " + QString::fromStdString(sd->system_name) + " : " + QString::fromStdString(sd->system_version));
 }
 
 void MainWindow::load_config(QString file_name, bool set_default)
@@ -706,7 +706,7 @@ void MainWindow::load_config(QString file_name, bool set_default)
         e->stop_emulation();
     }
 
-    e->load_config(file_name);
+    e->load_config(file_name.toStdString());
 
     set_title();
 
@@ -728,8 +728,8 @@ void MainWindow::load_config(QString file_name, bool set_default)
 
         if (set_default)
         {
-            QString new_file = file_name.right(file_name.length() - e->work_path.length());
-            e->write_setup("Startup", "default", new_file);
+            QString new_file = file_name.right(file_name.length() - static_cast<int>(e->work_path.length()));
+            e->write_setup("Startup", "default", new_file.toStdString());
             qDebug() << new_file;
         }
     } else {
@@ -741,13 +741,13 @@ void MainWindow::load_config(QString file_name, bool set_default)
 void MainWindow::on_actionOpen_triggered()
 {
     SystemData * sd = e->get_system_data();
-    QString file_name = QFileDialog::getOpenFileName(this, Emulator::tr("Load a file"), last_path, sd->allowed_files);
+    QString file_name = QFileDialog::getOpenFileName(this, Emulator::tr("Load a file"), last_path, QString::fromStdString(sd->allowed_files));
 
 
     if (!file_name.isEmpty()) {
         QFileInfo fi(file_name);
         last_path = fi.absolutePath();
-        e->write_setup("Startup", "last_path", last_path);
+        e->write_setup("Startup", "last_path", last_path.toStdString());
 
         HandleExternalFile(e, file_name);
     }
@@ -800,7 +800,7 @@ void MainWindow::fdd_open(unsigned int n)
             fdd_button[n]->setIcon(QIcon(":/icons/floppy_mount"));
             fdds[n]->load_image(file_name);
             last_path = fi.absolutePath();
-            e->write_setup("Startup", "last_path", last_path);
+            e->write_setup("Startup", "last_path", last_path.toStdString());
         }
     }
 }
@@ -858,7 +858,7 @@ void MainWindow::fdd_write(unsigned int n)
             }
             QFileInfo fi(file_name);
             last_path = fi.absolutePath();
-            e->write_setup("Startup", "last_path", last_path);
+            e->write_setup("Startup", "last_path", last_path.toStdString());
         }
     }
 
@@ -897,7 +897,7 @@ void MainWindow::on_actionScreenshot_triggered()
     e->get_screen_constraints(&sx, &sy);
     std::vector<uint8_t> image = renderer->get_screenshot();
 
-    QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save screenshot"), e->work_path, "PNG (*.png)");
+    QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save screenshot"), QString::fromStdString(e->work_path), "PNG (*.png)");
 
     if (!file_name.isEmpty())
     {

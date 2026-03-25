@@ -59,7 +59,7 @@
 #include "emulator/devices/specific/agat_9_mapper.h"
 
 
-Emulator::Emulator(QString work_path, QString data_path, QString software_path, QString ini_file, VideoRenderer * renderer):
+Emulator::Emulator(std::string work_path, std::string data_path, std::string software_path, std::string ini_file, VideoRenderer * renderer):
       work_path(work_path)
     , data_path(data_path)
     , software_path(software_path)
@@ -72,8 +72,8 @@ Emulator::Emulator(QString work_path, QString data_path, QString software_path, 
     , m_running(false)
     , m_ready(false)
 {
-    qDebug() << "INI path: " + ini_file;
-    settings = make_unique<QSettings>(ini_file, QSettings::IniFormat);
+    qDebug() << "INI path: " + QString::fromStdString(ini_file);
+    settings = make_unique<QSettings>(QString::fromStdString(ini_file), QSettings::IniFormat);
 
     // connect(this, &Emulator::finished, this, &Emulator::stop_emulation, Qt::DirectConnection);
 
@@ -82,19 +82,19 @@ Emulator::Emulator(QString work_path, QString data_path, QString software_path, 
 #endif
 }
 
-QString Emulator::read_setup(QString section, QString ident, QString def_val)
+std::string Emulator::read_setup(std::string section, std::string ident, std::string def_val)
 {
-    QString value = settings->value(section + "/" + ident, def_val).toString();
-    return value;
+    QString value = settings->value(QString::fromStdString(section + "/" + ident), QString::fromStdString(def_val)).toString();
+    return value.toStdString();
 }
 
-void Emulator::write_setup(QString section, QString ident, QString new_val)
+void Emulator::write_setup(std::string section, std::string ident, std::string new_val)
 {
-    settings->setValue(section + "/" + ident, new_val);
+    settings->setValue(QString::fromStdString(section + "/" + ident), QString::fromStdString(new_val));
 }
 
 
-void Emulator::load_config(QString file_name)
+void Emulator::load_config(std::string file_name)
 {
     if (loaded)
     {
@@ -109,21 +109,22 @@ void Emulator::load_config(QString file_name)
 
     register_devices();
 
-    EmulatorConfig config(file_name);
+    QString q_file_name = QString::fromStdString(file_name);
+    EmulatorConfig config(q_file_name);
 
     EmulatorConfigDevice * system = config.get_device("system");
-    QFileInfo fi(file_name);
-    sd.system_file = file_name;
-    sd.system_path = fi.absolutePath() + "/";
-    sd.system_type = system->get_parameter("type").value;
-    sd.system_name = system->get_parameter("name").value;
-    sd.system_version = system->get_parameter("version", false).value;
-    sd.system_charmap = system->get_parameter("charmap", false).value;
+    QFileInfo fi(q_file_name);
+    sd.system_file = q_file_name.toStdString();
+    sd.system_path = (fi.absolutePath() + "/").toStdString();
+    sd.system_type = system->get_parameter("type").value.toStdString();
+    sd.system_name = system->get_parameter("name").value.toStdString();
+    sd.system_version = system->get_parameter("version", false).value.toStdString();
+    sd.system_charmap = system->get_parameter("charmap", false).value.toStdString();
     sd.software_path = software_path;
     sd.data_path = data_path;
-    sd.mapper_cache = parse_numeric_value(read_setup("Core", "mapper_cache", "8"));
+    sd.mapper_cache = parse_numeric_value(QString::fromStdString(read_setup("Core", "mapper_cache", "8")));
 
-    sd.allowed_files = system->get_parameter("files", false).value;
+    sd.allowed_files = system->get_parameter("files", false).value.toStdString();
 
     load_charmap();
 
@@ -142,7 +143,7 @@ void Emulator::load_config(QString file_name)
 
 void Emulator::apply_saved_device_options()
 {
-    QFileInfo fi(sd.system_file);
+    QFileInfo fi(QString::fromStdString(sd.system_file));
     QString config_key = fi.baseName();
 
     for (unsigned int i = 0; i < dm->device_count; i++) {
@@ -151,10 +152,10 @@ void Emulator::apply_saved_device_options()
         for (size_t j = 0; j < options.size(); j++) {
             const DeviceOption & opt = options[j];
             if (!opt.values.empty()) {
-                QString settings_key = config_key + "_" + dev->name + "_" + QString::number(opt.id);
-                QString saved = read_setup("DeviceOptions", settings_key, "");
-                if (!saved.isEmpty()) {
-                    dev->set_device_option(opt.id, saved.toUInt());
+                std::string settings_key = (config_key + "_" + dev->name + "_" + QString::number(opt.id)).toStdString();
+                std::string saved = read_setup("DeviceOptions", settings_key, "");
+                if (!saved.empty()) {
+                    dev->set_device_option(opt.id, static_cast<unsigned int>(std::stoul(saved)));
                 }
             }
         }
@@ -168,9 +169,9 @@ void Emulator::load_charmap()
         ch = make_unique<QChar>('.');
     }
 
-    if (!sd.system_charmap.isEmpty())
+    if (!sd.system_charmap.empty())
     {
-        QFile f(data_path + sd.system_charmap + ".chr");
+        QFile f(QString::fromStdString(data_path + sd.system_charmap + ".chr"));
         if (!f.open(QFile::ReadOnly)) return;
         QString s = QString::fromUtf8(f.readAll());
 
@@ -243,8 +244,8 @@ void Emulator::run()
             reset(true);
 
             clock_freq = this->cpu->clock;
-            timer_res = parse_numeric_value(read_setup("Core", "TimerResolution", "1"));
-            timer_delay = parse_numeric_value(read_setup("Core", "TimerDelay", "20"));
+            timer_res = parse_numeric_value(QString::fromStdString(read_setup("Core", "TimerResolution", "1")));
+            timer_delay = parse_numeric_value(QString::fromStdString(read_setup("Core", "TimerDelay", "20")));
 
             local_counter = 0;
             clock_counter = 0;
@@ -441,9 +442,9 @@ void Emulator::init_video(void *p)
     }
 
     d->get_screen_constraints(&screen_sx, &screen_sy);
-    screen_scale = read_setup("Video", "scale", "2").toDouble();
-    screen_ratio = read_setup("Video", "ratio", QString::number(SCREEN_RATIO_43)).toInt();
-    screen_filtering = read_setup("Video", "filtering", QString::number(SCREEN_FILTERING_NONE)).toInt();
+    screen_scale = std::stod(read_setup("Video", "scale", "2"));
+    screen_ratio = std::stoi(read_setup("Video", "ratio", std::to_string(SCREEN_RATIO_43)));
+    screen_filtering = std::stoi(read_setup("Video", "filtering", std::to_string(SCREEN_FILTERING_NONE)));
 
     if (screen_ratio == SCREEN_RATIO_SQ)
         pixel_scale = 1;
@@ -542,9 +543,9 @@ void Emulator::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 }
 
 #ifdef LOGGER
-void Emulator::logs(ComputerDevice * d, QString s)
+void Emulator::logs(ComputerDevice * d, std::string s)
 {
-    if (logger != nullptr) logger->logs(d->name + ": " + s);
+    if (logger != nullptr) logger->logs(d->name + ": " + QString::fromStdString(s));
 }
 #endif
 
@@ -558,7 +559,7 @@ void Emulator::set_scale(int scale)
     screen_scale = scale;
     screen_sx = 0;
 
-    write_setup("Video", "scale", QString::number(screen_scale) );
+    write_setup("Video", "scale", std::to_string(screen_scale));
 }
 
 void Emulator::set_ratio(int ratio)
@@ -574,13 +575,13 @@ void Emulator::set_ratio(int ratio)
 
     screen_sx = 0;
 
-    write_setup("Video", "ratio", QString::number(screen_ratio) );
+    write_setup("Video", "ratio", std::to_string(screen_ratio));
 }
 
 void Emulator::set_filtering(int filtering)
 {
     renderer->set_filtering(filtering);
-    write_setup("Video", "filtering", QString::number(filtering) );
+    write_setup("Video", "filtering", std::to_string(filtering));
     screen_sx = 0;
 // #ifdef RENDERER_SDL2
 //     screen_filtering = filtering;
@@ -590,7 +591,7 @@ void Emulator::set_filtering(int filtering)
 
 //     screen_sx = 0;
 
-//     write_setup("Video", "filtering", QString::number(filtering) );
+//     write_setup("Video", "filtering", std::to_string(filtering));
 // #endif
 }
 

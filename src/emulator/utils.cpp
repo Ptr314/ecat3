@@ -161,22 +161,25 @@ QString find_file_location(SystemData * sd, QString file_name)
 {
     if (!file_name.isEmpty())
     {
-        QString dir = QFileInfo(sd->system_path).dir().dirName();
+        QString system_path = QString::fromStdString(sd->system_path);
+        QString software_path = QString::fromStdString(sd->software_path);
+        QString data_path = QString::fromStdString(sd->data_path);
+        QString dir = QFileInfo(system_path).dir().dirName();
         QString file;
 
-        file = sd->system_path + file_name;
+        file = system_path + file_name;
         if (QFile::exists(file)) return file;
 
-        file = sd->system_path + "files/" + file_name;
+        file = system_path + "files/" + file_name;
         if (QFile::exists(file)) return file;
 
-        file = sd->software_path + file_name;
+        file = software_path + file_name;
         if (QFile::exists(file)) return file;
 
-        file = sd->software_path + dir + "/" + file_name;
+        file = software_path + dir + "/" + file_name;
         if (QFile::exists(file)) return file;
 
-        file = sd->data_path + file_name;
+        file = data_path + file_name;
         if (QFile::exists(file)) return file;
     }
     return "";

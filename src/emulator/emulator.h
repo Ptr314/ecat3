@@ -10,6 +10,7 @@
 #include <QTimer>
 #include <memory>
 #include <array>
+#include <string>
 
 #include "thread_compat.h"
 
@@ -73,22 +74,22 @@ private:
 
 public:
     DeviceManager *dm;
-    QString work_path;
-    QString data_path;
-    QString software_path;
+    std::string work_path;
+    std::string data_path;
+    std::string software_path;
 
     bool loaded;
 
     unsigned int clock_counter;
 
-    Emulator(QString work_path, QString data_path, QString software_path, QString ini_file, VideoRenderer * renderer);
+    Emulator(std::string work_path, std::string data_path, std::string software_path, std::string ini_file, VideoRenderer * renderer);
     ~Emulator();
 
-    void load_config(QString file_name);
+    void load_config(std::string file_name);
     void apply_saved_device_options();
 
-    QString read_setup(QString section, QString ident, QString def_val);
-    void write_setup(QString section, QString ident, QString new_val);
+    std::string read_setup(std::string section, std::string ident, std::string def_val);
+    void write_setup(std::string section, std::string ident, std::string new_val);
     void load_charmap();
     QChar * translate_char(unsigned int system_code);
 
@@ -126,7 +127,7 @@ signals:
 private:
     Logger * logger;
 public:
-    void logs(ComputerDevice * d, QString s);
+    void logs(ComputerDevice * d, std::string s);
 
 
 };

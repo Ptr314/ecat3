@@ -54,7 +54,7 @@ void TapeRecorder::load_config(SystemData *sd)
 
     files = cd->get_parameter("files", false).value;
 
-    if (files.isEmpty()) files = sd->allowed_files;
+    if (files.isEmpty()) files = QString::fromStdString(sd->allowed_files);
 
     speaker->load_config(sd);
     speaker->reset(true);

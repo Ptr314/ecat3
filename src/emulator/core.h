@@ -9,6 +9,7 @@
 #include <QObject>
 #include <QMessageBox>
 #include <memory>
+#include <string>
 #include <vector>
 
 #ifdef RENDERER_SDL2
@@ -74,17 +75,17 @@ class CPU;
 typedef uint8_t ScreenColor[3];
 
 struct SystemData {
-    QString         system_file;
-    QString         system_path;
-    QString         system_type;
-    QString         system_name;
-    QString         system_version;
-    QString         system_charmap;
-    QString         software_path;
-    QString         data_path;
+    std::string     system_file;
+    std::string     system_path;
+    std::string     system_type;
+    std::string     system_name;
+    std::string     system_version;
+    std::string     system_charmap;
+    std::string     software_path;
+    std::string     data_path;
     float           screen_ratio;
     unsigned int    screen_scale;
-    QString         allowed_files;
+    std::string     allowed_files;
     unsigned int    mapper_cache;
 };
 

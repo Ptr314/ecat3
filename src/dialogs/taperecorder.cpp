@@ -134,7 +134,7 @@ void TapeRecorderWindow::on_buttonEject_pressed()
         ui->buttonPlay->setChecked(false);
         play_pause();
     } else {
-        QString path = e->read_setup("Startup", "last_path", e->work_path);
+        QString path = QString::fromStdString(e->read_setup("Startup", "last_path", e->work_path));
         SystemData * sd = e->get_system_data();
         QString file_name = QFileDialog::getOpenFileName(this, Emulator::tr("Load a file"), path, d->files);
 
@@ -142,10 +142,10 @@ void TapeRecorderWindow::on_buttonEject_pressed()
         if (!file_name.isEmpty()) {
             QFileInfo fi(file_name);
             QString ext = fi.suffix().toLower();
-            QString fmt = e->read_setup("TapeFiles", ext, "");
+            QString fmt = QString::fromStdString(e->read_setup("TapeFiles", ext.toStdString(), ""));
 
             if (fmt.length() > 0) {
-                e->write_setup("Startup", "last_path", fi.absolutePath());
+                e->write_setup("Startup", "last_path", fi.absolutePath().toStdString());
 
                 ui->name_mask->setVisible(true);
                 ui->textLabel->setVisible(true);
@@ -259,11 +259,11 @@ void TapeRecorderWindow::on_buttonRec_clicked()
     }
     d->set_recording(is_recording);
     if (!is_recording && d->get_record_size() != 0) {
-        const QString path = e->read_setup("Startup", "last_path", e->work_path);
+        const QString path = QString::fromStdString(e->read_setup("Startup", "last_path", e->work_path));
         const QString file_name = QFileDialog::getSaveFileName(this, Emulator::tr("Save recorded data"), path, "Binary files (*.bin);;All files (*.*)");
         if (!file_name.isEmpty()) {
             const QFileInfo fi(file_name);
-            e->write_setup("Startup", "last_path", fi.absolutePath());
+            e->write_setup("Startup", "last_path", fi.absolutePath().toStdString());
             QFile file(file_name);
             if (file.open(QIODevice::WriteOnly)) {
                 const std::vector<uint8_t> * data = d->get_record_data();

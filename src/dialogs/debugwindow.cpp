@@ -29,16 +29,16 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
 
     QString file_name;
     if (d->type == "i8080")
-        file_name = e->data_path + "i8080.dis";
+        file_name = QString::fromStdString(e->data_path + "i8080.dis");
     else
     if (d->type == "z80")
-        file_name = e->data_path + "z80.dis";
+        file_name = QString::fromStdString(e->data_path + "z80.dis");
     else
     if (d->type == "6502")
-        file_name = e->data_path + "6502.dis";
+        file_name = QString::fromStdString(e->data_path + "6502.dis");
     else
     if (d->type == "65c02")
-        file_name = e->data_path + "65c02.dis";
+        file_name = QString::fromStdString(e->data_path + "65c02.dis");
 
     disasm = new DisAsm(this, file_name);
     ui->codeview->set_data(e, dynamic_cast<CPU*>(d), disasm, dynamic_cast<CPU*>(d)->get_pc());
