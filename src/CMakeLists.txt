@@ -6,7 +6,7 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-project(eCat3 VERSION 3.5.2 LANGUAGES C CXX)
+project(eCat3 VERSION 3.5.3 LANGUAGES C CXX)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
@@ -72,13 +72,15 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-if(QT_VERSION VERSION_GREATER_EQUAL "5.15")
-    set(CMAKE_CXX_STANDARD 17)
-    add_compile_definitions(USE_MINI_INI)
-else()
-    set(CMAKE_CXX_STANDARD 11)
-endif()
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# mini-ini requires C++17 (<filesystem>); enabled for Qt 5.15+ with GCC 9+ or non-GCC compilers
+if(QT_VERSION VERSION_GREATER_EQUAL "5.15")
+    if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9"))
+        add_compile_definitions(USE_MINI_INI)
+    endif()
+endif()
 
 # Threading compatibility for old MinGW (4.9.2)
 option(FORCE_QT_THREADING "Force QThread-based threading (for old MinGW)" OFF)
@@ -129,8 +131,9 @@ set(TS_FILES
 
 # Source files
 
+set(INI_FILES libs/ini_wrapper.h libs/ini_wrapper.cpp)
 if(USE_MINI_INI)
-    set(INI_FILES libs/ini.h)
+    set_source_files_properties(libs/ini_wrapper.cpp PROPERTIES COMPILE_FLAGS "-std=c++17")
 endif()
 
 if (${EXTERNAL_Z80})

@@ -71,16 +71,8 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , renderer(renderer)
     , m_running(false)
     , m_ready(false)
-#ifdef USE_MINI_INI
-    , settings_file(ini_file)
-#endif
+    , settings(ini_file)
 {
-    // qDebug() << "INI path: " + QString::fromStdString(ini_file);
-#ifdef USE_MINI_INI
-    settings_file.read(settings);
-#else
-    settings = make_unique<QSettings>(QString::fromStdString(ini_file), QSettings::IniFormat);
-#endif
 
     // connect(this, &Emulator::finished, this, &Emulator::stop_emulation, Qt::DirectConnection);
 
@@ -91,24 +83,13 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
 
 std::string Emulator::read_setup(std::string section, std::string ident, std::string def_val)
 {
-#ifdef USE_MINI_INI
-    if (settings.has(section) && settings[section].has(ident)) {
-        return settings[section][ident];
-    }
-    return def_val;
-#else
-    return settings->value(QString::fromStdString(section + "/" + ident), QString::fromStdString(def_val)).toString().toStdString();
-#endif
+    return settings.get(section, ident, def_val);
 }
 
 void Emulator::write_setup(std::string section, std::string ident, std::string new_val)
 {
-#ifdef USE_MINI_INI
-    settings[section][ident] = new_val;
-    settings_file.write(settings);
-#else
-    settings->setValue(QString::fromStdString(section + "/" + ident), QString::fromStdString(new_val));
-#endif
+    settings.set(section, ident, new_val);
+    settings.save();
 }
 
 
@@ -132,22 +113,22 @@ void Emulator::load_config(std::string file_name)
     EmulatorConfigDevice * system = config.get_device("system");
     sd.system_file = file_name;
     sd.system_path = dsk_tools::get_file_path(file_name);
-    sd.system_type = system->get_parameter("type").value.toStdString();
-    sd.system_name = system->get_parameter("name").value.toStdString();
-    sd.system_version = system->get_parameter("version", false).value.toStdString();
-    sd.system_charmap = system->get_parameter("charmap", false).value.toStdString();
+    sd.system_type = system->get_parameter("type").value;
+    sd.system_name = system->get_parameter("name").value;
+    sd.system_version = system->get_parameter("version", false).value;
+    sd.system_charmap = system->get_parameter("charmap", false).value;
     sd.software_path = software_path;
     sd.data_path = data_path;
     sd.mapper_cache = parse_numeric_value(read_setup("Core", "mapper_cache", "8"));
 
-    sd.allowed_files = system->get_parameter("files", false).value.toStdString();
+    sd.allowed_files = system->get_parameter("files", false).value;
 
     load_charmap();
 
     for (unsigned int i=0; i<config.get_devices_count(); i++)
     {
         EmulatorConfigDevice * d = config.get_device(i);
-        if (!d->type.isEmpty())
+        if (!d->type.empty())
         {
             dm->add_device(im, d);
         }
@@ -167,7 +148,7 @@ void Emulator::apply_saved_device_options()
         for (size_t j = 0; j < options.size(); j++) {
             const DeviceOption & opt = options[j];
             if (!opt.values.empty()) {
-                std::string settings_key = config_key + "_" + dev->name.toStdString() + "_" + std::to_string(opt.id);
+                std::string settings_key = config_key + "_" + dev->name + "_" + std::to_string(opt.id);
                 std::string saved = read_setup("DeviceOptions", settings_key, "");
                 if (!saved.empty()) {
                     dev->set_device_option(opt.id, static_cast<unsigned int>(std::stoul(saved)));
@@ -187,7 +168,7 @@ void Emulator::load_charmap()
     if (!sd.system_charmap.empty())
     {
         std::string file_path = data_path + sd.system_charmap + ".chr";
-        UTF8_ifstream f(file_path);
+        dsk_tools::UTF8_ifstream f(file_path);
         if (!f.good()) return;
 
         f.seekg(0, std::ios::end);
@@ -566,7 +547,7 @@ void Emulator::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 #ifdef LOGGER
 void Emulator::logs(ComputerDevice * d, std::string s)
 {
-    if (logger != nullptr) logger->logs(d->name + ": " + QString::fromStdString(s));
+    if (logger != nullptr) logger->logs(QString::fromStdString(d->name + ": " + s));
 }
 #endif
 

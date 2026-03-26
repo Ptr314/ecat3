@@ -53,14 +53,14 @@ void I8253::load_config(SystemData *sd)
 {
     AddressableDevice::load_config(sd);
 
-    const QString param_names[3] = {"clock0", "clock1", "clock2"};
+    const std::string param_names[3] = {"clock0", "clock1", "clock2"};
     for (int ch = 0; ch < 3; ch++) {
-        QString s = cd->get_parameter(param_names[ch], false).value;
-        if (!s.isEmpty()) {
-            int pos = s.indexOf("/");
-            if (pos > 0) {
-                ch_clock_multiplier[ch] = parse_numeric_value(s.left(pos));
-                ch_clock_divider[ch] = parse_numeric_value(s.right(s.length() - pos - 1));
+        std::string s = cd->get_parameter(param_names[ch], false).value;
+        if (!s.empty()) {
+            size_t pos = s.find('/');
+            if (pos != std::string::npos) {
+                ch_clock_multiplier[ch] = parse_numeric_value(s.substr(0, pos));
+                ch_clock_divider[ch] = parse_numeric_value(s.substr(pos + 1));
             } else {
                 ch_clock_multiplier[ch] = parse_numeric_value(s);
                 ch_clock_divider[ch] = 1;

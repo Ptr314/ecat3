@@ -3,11 +3,10 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Scanning matrix-based keyboard device
 
-#include <QRegularExpression>
-
 #include "emulator/utils.h"
 #include "emulator/config.h"
 #include "scankeyboard.h"
+#include "dsk_tools/dsk_tools.h"
 
 #define SCAN_CALLBACK 1
 #define LED_CALLBACK 2
@@ -30,49 +29,57 @@ void ScanKeyboard::load_config(SystemData *sd)
 {
     Keyboard::load_config(sd);
 
-    static QRegularExpression re_crlf("[\r\n]");
-    static QRegularExpression re_space("[\t ]");
-
-    QString map_file = find_file_location(sd, cd->get_parameter("map", false).value);
-    if (map_file.isEmpty())
+    std::string map_file = find_file_location(sd, cd->get_parameter("map", false).value);
+    if (map_file.empty())
         QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Keyboard map file is expected"));
     else {
-        QFile file(map_file);
-        if (!file.open(QIODevice::ReadOnly)) {
-            QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Error reading map file %1").arg(map_file));
+        std::string layout = dsk_tools::utf8_read_file(map_file);
+        if (layout.empty()) {
+            QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Error reading map file %1").arg(QString::fromStdString(map_file)));
             return;
         }
-        QTextStream in(&file);
-        QString layout = in.readAll();
 
-        QStringList lines = layout.split(re_crlf, skip_empty_parts);
+        std::vector<std::string> lines = split_string(layout, '\n', true);
         out_lines = lines.size();
         for (unsigned int out = 0; out < out_lines; out++)
         {
-            QString line = lines[out].trimmed();
-            QStringList parts = line.split(re_space, skip_empty_parts);
+            std::string line = str_trim(lines[out]);
+            if (line.empty()) continue;
+            // Split by whitespace: find tokens separated by spaces/tabs
+            std::vector<std::string> parts;
+            {
+                std::string token;
+                for (size_t ci = 0; ci < line.size(); ci++) {
+                    if (line[ci] == ' ' || line[ci] == '\t' || line[ci] == '\r') {
+                        if (!token.empty()) { parts.push_back(token); token.clear(); }
+                    } else {
+                        token += line[ci];
+                    }
+                }
+                if (!token.empty()) parts.push_back(token);
+            }
             scan_lines = parts.size();
             for (unsigned int scan=0; scan<scan_lines; scan++)
             {
-                QStringList keys = parts[scan].split("|", skip_empty_parts);
-                for (unsigned int i=0; i< keys.size(); i++)
+                std::vector<std::string> keys = split_string(parts[scan], '|', true);
+                for (size_t i=0; i< keys.size(); i++)
                     if (keys[i] != "__")
                     {
                         int shift_state = SHIFT_STATE_KEEP;
-                        QString key_name;
-                        int key_len = keys[i].length();
-                        if (key_len > 1 && keys[i].right(1) == "_") {
-                            key_name = keys[i].left(key_len-1);
+                        std::string key_name;
+                        size_t key_len = keys[i].length();
+                        if (key_len > 1 && keys[i].back() == '_') {
+                            key_name = keys[i].substr(0, key_len-1);
                             shift_state = SHIFT_STATE_OFF;
                         } else
-                        if (key_len > 1 && keys[i].right(1) == "^") {
-                            key_name = keys[i].left(key_len-1);
+                        if (key_len > 1 && keys[i].back() == '^') {
+                            key_name = keys[i].substr(0, key_len-1);
                             shift_state = SHIFT_STATE_ON;
                         } else
                             key_name = keys[i];
                         unsigned int key_code = translate_key(key_name);
                         if (key_code == _FFFF)
-                            QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Unknown key %1").arg(keys[i]));
+                            QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Unknown key %1").arg(QString::fromStdString(keys[i])));
                         else
                             scan_data.push_back({key_code, scan, out, shift_state});
                     }

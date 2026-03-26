@@ -45,10 +45,11 @@ bool Keyboard::known_key(unsigned int code)
     return false;
 }
 
-unsigned int Keyboard::translate_key(QString key)
+unsigned int Keyboard::translate_key(const std::string &key)
 {
+    std::string key_lower = str_tolower(key);
     for (unsigned int i=0; i<sizeof(KEYS)/sizeof(KeyDescription); i++)
-        if (KEYS[i].name.toLower() == key.toLower())
+        if (str_tolower(KEYS[i].name) == key_lower)
             return KEYS[i].code;
 
     return _FFFF;

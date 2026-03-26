@@ -186,7 +186,7 @@ void DumpArea::editor_return_pressed()
 {
     editor->hide();
     QString str_value = editor->text();
-    uint32_t value = parse_numeric_value('$'+str_value);
+    uint32_t value = parse_numeric_value(("$" + str_value).toStdString());
     d->set_value(editor_address, value, true);
     update();
 }

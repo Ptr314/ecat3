@@ -3,7 +3,6 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: RAM pages memory manager device
 
-#include <QException>
 #include <cmath>
 
 #include "page_mapper.h"
@@ -24,7 +23,7 @@ void PageMapper::load_config(SystemData *sd)
 {
     ComputerDevice::load_config(sd);
 
-    QString parameter_name, range;
+    std::string parameter_name, range;
     unsigned int page_id;
 
     for (size_t i = 0; i < cd->parameters.size(); i++)
@@ -33,11 +32,11 @@ void PageMapper::load_config(SystemData *sd)
         if (parameter_name == "@page")
         {
             range = cd->parameters[i].left_range;
-            if (range.isEmpty()) {
-                QMessageBox::critical(0, MemoryMapper::tr("Error"), MemoryMapper::tr("Incorrect range for '%1'").arg(parameter_name));
+            if (range.empty()) {
+                QMessageBox::critical(0, MemoryMapper::tr("Error"), MemoryMapper::tr("Incorrect range for '%1'").arg(QString::fromStdString(parameter_name)));
                 return;
             }
-            page_id = parse_numeric_value(range.mid(1, range.length()-2));
+            page_id = parse_numeric_value(range.substr(1, range.length()-2));
             if (page_id >= PagesCount) PagesCount = page_id + 1;
             pages[page_id] = dynamic_cast<Memory*>(im->dm->get_device_by_name(cd->parameters[i].value));
         }
@@ -47,7 +46,7 @@ void PageMapper::load_config(SystemData *sd)
 
     try {
         Frame = parse_numeric_value(cd->get_parameter("frame").value);
-    } catch (QException &e) {
+    } catch (std::exception &e) {
         Frame = pages[0]->get_size();
     }
     SegmentMask = create_mask(round(log2(pages[0]->get_size() / Frame)), 0);
@@ -72,7 +71,7 @@ void PageMapper::set_value(unsigned int address, unsigned int value, bool force)
         unsigned int address_on_device = (i_segment.value & SegmentMask)*Frame + (address & address_mask);
         pages[i_page.value & PageMask]->set_value(address_on_device, value);
 #ifdef LOG_PAGE_MAPPER
-        logs("W SEG: " + QString::number(i_segment->value & SegmentMask, 2) + ", " + QString::number(address, 16) + " -> " + QString::number(address_on_device, 16));
+        logs(("W SEG: " + QString::number(i_segment->value & SegmentMask, 2) + ", " + QString::number(address, 16) + " -> " + QString::number(address_on_device, 16)).toStdString());
 #endif
     }
 }

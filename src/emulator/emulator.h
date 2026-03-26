@@ -10,11 +10,7 @@
 #include <array>
 #include <string>
 
-#ifdef USE_MINI_INI
-    #include "libs/ini.h"
-#else
-    #include <QSettings>
-#endif
+#include "libs/ini_wrapper.h"
 
 #include "thread_compat.h"
 
@@ -35,12 +31,7 @@ class Emulator: public QObject
     Q_OBJECT
 
 private:
-#ifdef USE_MINI_INI
-    mINI::INIFile settings_file;
-    mINI::INIStructure settings;
-#else
-    std::unique_ptr<QSettings> settings;
-#endif
+    IniSettings settings;
     bool busy;
     InterfaceManager *im;
     SystemData sd;

@@ -3,9 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Agat 140K floppy disk controller device
 
-#include <QException>
-
 #include "agat_fdc140.h"
+#include "emulator/utils.h"
 
 // https://github.com/allender/apple2emu/blob/df9eff703dd70b7dbc3b817734daf95133437143/src/disk_image.cpp#L263
 
@@ -32,27 +31,27 @@ void Agat_FDC140::load_config(SystemData *sd)
 {
     FDC::load_config(sd);
 
-    QString mode_string = cd->get_parameter("speed_mode", false).value.toLower();
+    std::string mode_string = str_tolower(cd->get_parameter("speed_mode", false).value);
 
-    if (mode_string.isEmpty() || mode_string == "fast")
+    if (mode_string.empty() || mode_string == "fast")
         speed_mode = true;
     else if (mode_string == "syncro")
         speed_mode = false;
     else
-        QMessageBox::critical(0, Agat_FDC140::tr("Error"), Agat_FDC140::tr("Unknown speed mode %1").arg(mode_string));
+        QMessageBox::critical(0, Agat_FDC140::tr("Error"), Agat_FDC140::tr("Unknown speed mode %1").arg(QString::fromStdString(mode_string)));
 
     clock_divider = 32; // Byte timer for the syncro mode
 
-    QString s;
+    std::string s;
     try {
         s = cd->get_parameter("drives").value;
-    } catch (QException &e) {
-        QMessageBox::critical(0, Agat_FDC140::tr("Error"), Agat_FDC140::tr("Incorrect fdd list for '%1'").arg(name));
-        throw QException();
+    } catch (std::exception &e) {
+        QMessageBox::critical(0, Agat_FDC140::tr("Error"), Agat_FDC140::tr("Incorrect fdd list for '%1'").arg(QString::fromStdString(name)));
+        throw std::runtime_error("Incorrect fdd list for " + name);
     }
 
     memset(&drives, 0, sizeof(drives));
-    QStringList parts = s.split('|', skip_empty_parts);
+    std::vector<std::string> parts = split_string(s, '|', true);
     drives_count = parts.size();
     for (unsigned int i = 0; i < drives_count; i++)
         drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));
@@ -121,7 +120,7 @@ void Agat_FDC140::phase_off(int n)
 void Agat_FDC140::select_drive(int n)
 {
 #ifdef LOG_FDD
-    logs(QString(" SEL %1").arg(n));
+    logs(QString(" SEL %1").arg(n).toStdString());
 #endif
     // TODO: check selection on a drive
     selected_drive = n;
@@ -136,11 +135,11 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
     static bool show12 = true;
     if (A == 12) {
         if (show12) {
-            logs(QString("R DATA+"));
+            logs(QString("R DATA+").toStdString());
             show12 = false;
         }
     } else {
-        logs(QString("R %1").arg(A));
+        logs(QString("R %1").arg(A).toStdString());
         show12 = true;
     }
 #endif

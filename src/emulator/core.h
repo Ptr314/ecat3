@@ -97,7 +97,7 @@ typedef ComputerDevice * (*CreateDeviceFunc)(InterfaceManager *im, EmulatorConfi
 typedef void (*MemoryCallbackFunc)(unsigned int);
 
 struct RegisteredDevice {
-    QString type;
+    std::string type;
     CreateDeviceFunc create_func;
 };
 
@@ -115,8 +115,8 @@ struct LinkData {
 
 struct DeviceDescription {
     std::unique_ptr<ComputerDevice> device;
-    QString device_type;
-    QString device_name;
+    std::string device_type;
+    std::string device_name;
 
     // Helper to get raw pointer for non-owning access
     ComputerDevice* get() const {
@@ -173,9 +173,9 @@ class ComputerDevice: public QObject
     Q_OBJECT
 
 public:
-    QString type;
-    QString name;
-    QString device_class;
+    std::string type;
+    std::string name;
+    std::string device_class;
     unsigned int reset_priority;
 
     ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd);
@@ -189,7 +189,7 @@ public:
 
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
     virtual void memory_callback(unsigned int callback_id, unsigned int address);
-    bool belongs_to_class(QString class_to_check);
+    bool belongs_to_class(const std::string &class_to_check);
     bool get_reset_behavior(bool is_cold);
 
 
@@ -201,12 +201,11 @@ protected:
 
     unsigned int clock_stored;
 
-    // Interface * create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id = 0);
     EmulatorConfigDevice * cd;
     InterfaceManager * im;
     ComputerDevice * memory_callback_device;
 
-    void logs(QString s);
+    void logs(const std::string &s);
     bool log_available();
 #ifdef LOGGER
     MemoryMapper * log_mm;
@@ -250,7 +249,7 @@ private:
 public:
     unsigned int value;
     unsigned int mask;
-    QString name;
+    std::string name;
     unsigned int linked;
     unsigned int linked_bits;
     ComputerDevice *device;
@@ -259,7 +258,7 @@ public:
         ComputerDevice * device,
         InterfaceManager * im,
         unsigned int size,
-        QString name,
+        const std::string &name,
         unsigned int mode,
         unsigned int callback_id = 0
         );
@@ -354,9 +353,9 @@ protected:
     bool store_on_read = false;
 public:
     PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual unsigned int get_value(unsigned int address) override;
-    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
-    virtual void reset(bool cold) override;
+    unsigned int get_value(unsigned int address) override;
+    void set_value(unsigned int address, unsigned int value, bool force=false) override;
+    void reset(bool cold) override;
 };
 
 class DeviceManager: public QObject
@@ -369,22 +368,22 @@ public:
 
     unsigned int device_count;
     ComputerDevice *error_device;
-    QString error_message;
+    std::string error_message;
 
     void add_device(InterfaceManager *im, EmulatorConfigDevice *d); //
     void clear(); //
     void load_devices_config(SystemData *sd); //
-    ComputerDevice *get_device_by_name(QString name, bool required=true); //
-    unsigned int get_device_index(QString name);
-    QVector<ComputerDevice*> find_devices_by_class(QString class_to_find);
+    ComputerDevice *get_device_by_name(const std::string &name, bool required=true); //
+    unsigned int get_device_index(const std::string &name);
+    QVector<ComputerDevice*> find_devices_by_class(const std::string &class_to_find);
     void reset_devices(bool cold);
     void clock(unsigned int counter);
-    void error(ComputerDevice *d, QString message);
+    void error(ComputerDevice *d, const std::string &message);
     void error_clear();
     DeviceDescription * get_device(unsigned int i); //
-    void register_device(QString device_type, CreateDeviceFunc func); //
+    void register_device(const std::string &device_type, CreateDeviceFunc func); //
 
-    void logs(QString s);
+    void logs(const std::string &s);
     bool log_available();
 
 private:
@@ -410,7 +409,7 @@ public:
     ~InterfaceManager();
 
     void register_interface(Interface *i);
-    Interface * get_interface_by_name(QString device_name, QString interface_name, bool required=true);
+    Interface * get_interface_by_name(const std::string &device_name, const std::string &interface_name, bool required=true);
     void clear();
     void interface_changes(Interface *i);
 
@@ -452,10 +451,10 @@ public:
     virtual unsigned int read_mem(unsigned int address) = 0;
     virtual void write_mem(unsigned int address, unsigned int data) = 0;
 
-    virtual QList<QPair<QString, QString>> get_registers() = 0;
-    virtual QList<QPair<QString, QString>> get_flags() = 0;
+    virtual std::vector<std::pair<std::string, std::string>> get_registers() = 0;
+    virtual std::vector<std::pair<std::string, std::string>> get_flags() = 0;
 
-    virtual void set_context_value(QString name, unsigned int value) = 0;
+    virtual void set_context_value(const std::string &name, unsigned int value) = 0;
 
 };
 

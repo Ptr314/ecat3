@@ -4,7 +4,7 @@
 // Description: Z80 CPU core
 
 #include <QDebug>
-#include <QException>
+#include <stdexcept>
 
 #include "cpu_utils.h"
 #include "z80core.h"
@@ -531,7 +531,7 @@ inline uint32_t z80core::get_first_16()
         case 0xFD: return REG_IY; break;
         default:
             qDebug() << "Incorrect prefix value";
-            throw QException();
+            throw std::runtime_error("Incorrect prefix value");
         break;
     }
 }
@@ -555,7 +555,7 @@ inline void z80core::store_value_16(uint32_t value)
     case 0xFD: REG_IY = static_cast<uint16_t>(value); break;
     default:
         qDebug() << "Incorrect prefix value";
-        throw QException();
+        throw std::runtime_error("Incorrect prefix value");
         break;
     }
 }

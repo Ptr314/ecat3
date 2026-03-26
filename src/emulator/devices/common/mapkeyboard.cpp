@@ -3,11 +3,9 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Port-based keyboard device
 
-#include <QException>
-
 #include "emulator/utils.h"
 #include "mapkeyboard.h"
-#include "emulator/utils.h"
+#include "dsk_tools/dsk_tools.h"
 
 MapKeyboard::MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
       Keyboard(im, cd)
@@ -26,72 +24,72 @@ void MapKeyboard::load_config(SystemData *sd)
 {
     Keyboard::load_config(sd);
 
-    QString map_file = find_file_location(sd, cd->get_parameter("map", false).value);
-    if (map_file.isEmpty())
+    std::string map_file = find_file_location(sd, cd->get_parameter("map", false).value);
+    if (map_file.empty())
         QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Keyboard map file is expected"));
     else {
-        QFile file(map_file);
-        if (!file.open(QIODevice::ReadOnly)) {
-            QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Error reading map file %1").arg(map_file));
+        std::string content = dsk_tools::utf8_read_file(map_file);
+        if (content.empty()) {
+            QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Error reading map file %1").arg(QString::fromStdString(map_file)));
             return;
         }
 
-        QTextStream in(&file);
-        while (!in.atEnd())
+        std::vector<std::string> lines = split_string(content, '\n', true);
+        for (size_t li = 0; li < lines.size(); li++)
         {
-            QString line = in.readLine();
-            if (!line.isEmpty()) {
-                QStringList parts = line.split(':', skip_empty_parts);
-                if (parts.length() != 2) {
-                    QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Map file entry '%1' is incorrect").arg(line));
+            std::string line = str_trim(lines[li]);
+            if (!line.empty()) {
+                std::vector<std::string> parts = split_string(line, ':', true);
+                if (parts.size() != 2) {
+                    QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Map file entry '%1' is incorrect").arg(QString::fromStdString(line)));
                     return;
                 }
-                QStringList left_parts = parts.at(0).split('/', skip_empty_parts);
-                if (left_parts.length() < 1 || left_parts.length() > 2) {
-                    QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Map file entry '%1' is incorrect").arg(line));
+                std::vector<std::string> left_parts = split_string(parts[0], '/', true);
+                if (left_parts.size() < 1 || left_parts.size() > 2) {
+                    QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Map file entry '%1' is incorrect").arg(QString::fromStdString(line)));
                     return;
                 }
 
-                QString key = left_parts.at(0).trimmed();
-                QString modificators = (left_parts.length()>1)?left_parts.at(1).trimmed():"";
-                QString value = parts.at(1).trimmed();
+                std::string key = str_trim(left_parts[0]);
+                std::string modificators = (left_parts.size() > 1) ? str_trim(left_parts[1]) : "";
+                std::string value = str_trim(parts[1]);
                 key_map.push_back({
                     translate_key(key),
                     parse_numeric_value(value),
-                    (modificators.indexOf('S') >= 0),
-                    (modificators.indexOf('C') >= 0),
-                    (modificators.indexOf('R') >= 0)
+                    (modificators.find('S') != std::string::npos),
+                    (modificators.find('C') != std::string::npos),
+                    (modificators.find('R') != std::string::npos)
                 });
-            };
-        };
+            }
+        }
     }
     port_value = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("port-value").value));
 
-    QString s = cd->get_parameter("port-ruslat", false).value;
-    if (!s.isEmpty()) {
+    std::string s = cd->get_parameter("port-ruslat", false).value;
+    if (!s.empty()) {
         port_ruslat = dynamic_cast<Port*>(im->dm->get_device_by_name(s));
     } else
         port_ruslat = nullptr;
 
-    QString rl = cd->get_parameter("ruslat", false).value;
-    if (!rl.isEmpty()) {
+    std::string rl = cd->get_parameter("ruslat", false).value;
+    if (!rl.empty()) {
         code_ruslat = translate_key(rl);
     }
 
     try {
         rus_value = read_confg_value(cd, "rus-on", false, (unsigned int)1);
-    } catch (QException e) {
+    } catch (std::exception &e) {
         QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("rus-on should be 0 or 1"));
     }
 
     try {
         ruslat_bit = read_confg_value(cd, "rus-bit", false, (unsigned int)0);
-    } catch (QException e) {
+    } catch (std::exception &e) {
         QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("rus-bit should be a number"));
     }
 
-    const QString mode_str = cd->get_parameter("rusmode", false).value.toLower();
-    if (mode_str.isEmpty() || mode_str == "pin") {
+    const std::string mode_str = str_tolower(cd->get_parameter("rusmode", false).value);
+    if (mode_str.empty() || mode_str == "pin") {
         m_use_pin = true;
         m_use_codes = false;
     } else if (mode_str == "both"){
@@ -101,14 +99,14 @@ void MapKeyboard::load_config(SystemData *sd)
         m_use_pin = false;
         m_use_codes = true;
     } else
-        QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Incorrect keyboard rusmode %1").arg(mode_str));
+        QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Incorrect keyboard rusmode %1").arg(QString::fromStdString(mode_str)));
 
-    QString rs = cd->get_parameter("rus_switches", false).value;
-    if (!rs.isEmpty()) {
-        QStringList rs_parts = rs.split('/', skip_empty_parts);
-        if (rs_parts.length() == 2) {
-            m_rus_switches[0] = parse_numeric_value(rs_parts.at(0).trimmed());
-            m_rus_switches[1] = parse_numeric_value(rs_parts.at(1).trimmed());
+    std::string rs = cd->get_parameter("rus_switches", false).value;
+    if (!rs.empty()) {
+        std::vector<std::string> rs_parts = split_string(rs, '/', true);
+        if (rs_parts.size() == 2) {
+            m_rus_switches[0] = parse_numeric_value(str_trim(rs_parts[0]));
+            m_rus_switches[1] = parse_numeric_value(str_trim(rs_parts[1]));
             m_has_rus_switches = true;
         } else {
             QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("rus_switches should have two values separated by '/'"));

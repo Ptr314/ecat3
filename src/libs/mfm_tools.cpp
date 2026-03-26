@@ -3,9 +3,10 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: MFM functions, source
 
-#include <QFileInfo>
-#include <QMessageBox>
+#include <cstring>
+#include <stdexcept>
 #include "libs/mfm_tools.h"
+#include "dsk_tools/dsk_tools.h"
 
 const uint8_t gcr62_encode_table[64] =
     {
@@ -37,40 +38,32 @@ static const unsigned char FlipBit3[4] = { 0, 32, 16, 48 };
 #define GAP1    6
 #define GAP2    27
 
-uint8_t * load_image(QString file_name, int image_size)
+uint8_t * load_image(const std::string &file_name, int image_size)
 {
-
-    QFileInfo fi(file_name);
-    unsigned int file_size = fi.size();
+    long long file_size = dsk_tools::utf8_file_size(file_name);
     if (file_size == image_size)
     {
-        QFile file(file_name);
-        if (file.open(QIODevice::ReadOnly)){
+        dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
+        if (file.is_open()){
             uint8_t * image = new uint8_t[image_size];
-
-            QByteArray data = file.readAll();
-            memcpy(image, data.constData(), file_size);
+            file.read(reinterpret_cast<char*>(image), image_size);
             file.close();
-
             return image;
         } else {
-            QMessageBox::critical(0, QObject::tr("Error"), QObject::tr("Error opening file '%1'").arg(file_name));
+            throw std::runtime_error("Error opening file: " + file_name);
         }
     } else {
-        QMessageBox::critical(0, QObject::tr("Error"), QObject::tr("Incorrect disk image size for '%1'").arg(file_name));
+        throw std::runtime_error("Incorrect disk image size for: " + file_name);
     }
     return nullptr;
 }
 
-QByteArray code44(const uint8_t buffer[], const int len)
+static void code44(const uint8_t buffer[], int len, uint8_t * out)
 {
-    QByteArray result;
     for (int i=0; i<len; i++) {
-        result.append(static_cast<char>( (buffer[i] >> 1) | 0xaa));
-        result.append(static_cast<char>(  buffer[i]       | 0xaa));
+        out[i*2]   = (buffer[i] >> 1) | 0xaa;
+        out[i*2+1] =  buffer[i]       | 0xaa;
     }
-
-    return result;
 }
 
 void encode_gcr62(const uint8_t data_in[], uint8_t * data_out)
@@ -99,8 +92,11 @@ void encode_gcr62(const uint8_t data_in[], uint8_t * data_out)
     data_out[342] = gcr62_encode_table[crc];
 }
 
+static const uint8_t prologue_address[] = {0xD5, 0xAA, 0x96};
+static const uint8_t prologue_data[]    = {0xD5, 0xAA, 0xAD};
+static const uint8_t epilogue[]         = {0xDE, 0xAA, 0xEB};
 
-uint8_t * generate_mfm_agat_140(QString file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[])
+uint8_t * generate_mfm_agat_140(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[])
 {
     int track_len = 6400;
     sides = 1;
@@ -118,30 +114,32 @@ uint8_t * generate_mfm_agat_140(QString file_name, int & sides, int & tracks, in
     memset(&gap_bytes, 0xFF, sizeof(gap_bytes));
 
     uint8_t encoded_sector[344];
+    uint8_t encoded_address[8];
 
     for (uint8_t track = 0; track < tracks; track++){
         // GAP 0
         memcpy(out, &gap_bytes, GAP0); out += GAP0;
         for (uint8_t sector = 0; sector < sectors; sector++) {
             // Prologue
-            memcpy(out, QByteArray("\xD5\xAA\x96").constData(), 3); out += 3;
+            memcpy(out, prologue_address, 3); out += 3;
             // Address
             uint8_t volume = 0xFE;
             uint8_t sector_t = agat_140_raw2logic[sector];
             uint8_t address_field[4] = {volume, track, sector, static_cast<uint8_t>(volume ^ track ^ sector)};
-            memcpy(out, code44(address_field, 4).constData(), 8); out += 8;
+            code44(address_field, 4, encoded_address);
+            memcpy(out, encoded_address, 8); out += 8;
             // Epilogue
-            memcpy(out, QByteArray("\xDE\xAA\xEB").constData(), 3); out += 3;
+            memcpy(out, epilogue, 3); out += 3;
             // GAP 1
             memcpy(out, &gap_bytes, GAP1); out += GAP1;
             // Data field
             // Prologue
-            memcpy(out, QByteArray("\xD5\xAA\xAD").constData(), 3); out += 3;
+            memcpy(out, prologue_data, 3); out += 3;
             uint8_t * data = &image[track * sectors * sector_size + sector_t * sector_size];
             encode_gcr62(data, encoded_sector);
             memcpy(out, &encoded_sector, 343); out += 343;
             // Epilogue
-            memcpy(out, QByteArray("\xDE\xAA\xEB").constData(), 3); out += 3;
+            memcpy(out, epilogue, 3); out += 3;
             // GAP 2
             memcpy(out, &gap_bytes, GAP2); out += GAP2;
         }
@@ -173,13 +171,13 @@ uint8_t * generate_mfm_agat_140(QString file_name, int & sides, int & tracks, in
     return buffer;
 }
 
-void save_mfm_file(QString file_name, int sides, int tracks, int track_size, HXC_MFM_TRACK_INFO track_indexes[], uint8_t * data)
+void save_mfm_file(const std::string &file_name, int sides, int tracks, int track_size, HXC_MFM_TRACK_INFO track_indexes[], uint8_t * data)
 {
     HXC_MFM_HEADER      hxc_mfm_header;
     HXC_MFM_TRACK_INFO  hxc_mfm_track_info;
 
-    QFile file(file_name);
-    if (file.open(QIODevice::WriteOnly)){
+    dsk_tools::UTF8_ofstream file(file_name, std::ios::binary);
+    if (file.is_open()){
         //header
         strcpy((char*)&hxc_mfm_header.headername, "HXCMFM");
         hxc_mfm_header.number_of_track = tracks;
@@ -230,7 +228,7 @@ uint8_t agat_840_calc_cs(const uint8_t data[], const int len)
     return static_cast<uint8_t>(cs);
 }
 
-uint8_t * generate_mfm_agat_840(QString file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes)
+uint8_t * generate_mfm_agat_840(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes)
 {
     sides = 2;
     tracks = 80;
@@ -285,7 +283,7 @@ uint8_t * generate_mfm_agat_840(QString file_name, int & sides, int & tracks, in
     return buffer;
 }
 
-uint8_t * load_aim_image(QString file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes)
+uint8_t * load_aim_image(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes)
 {
     sides = 2;
     tracks = 80;
@@ -305,7 +303,6 @@ uint8_t * load_aim_image(QString file_name, int & sides, int & tracks, int & dis
                 uint8_t lo = static_cast<uint8_t>(w & 0xFF);
                 if (hi !=0) {
                     aim_codes[agat_track][track_pos] = hi;
-                    // qDebug() << "AIM " << track_pos << ":" << Qt::hex << lo;
                 }
                 out[image_pos] = lo;
             }

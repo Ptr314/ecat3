@@ -7,5 +7,5 @@
 
 #include "emulator/emulator.h"
 
-void HandleExternalFile(Emulator * e, QString file_name);
+void HandleExternalFile(Emulator * e, const std::string &file_name);
 

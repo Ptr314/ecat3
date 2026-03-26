@@ -4,6 +4,7 @@
 // Description: Zilog Z80 emulator interface class
 
 #include "z80.h"
+#include "emulator/utils.h"
 
 #define CALLBACK_NMI    1
 #define CALLBACK_INT    2
@@ -113,7 +114,7 @@ unsigned int z80::read_port(unsigned int address)
 {
     unsigned int data = mm->read_port(address);
 #ifdef LOG_CPU
-    logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')));
+    logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')).toStdString());
 #endif
     return data;
 }
@@ -122,7 +123,7 @@ void z80::write_port(unsigned int address, unsigned int data)
 {
     mm->write_port(address, data);
 #ifdef LOG_CPU
-    logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')));
+    logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')).toStdString());
 #endif
 }
 
@@ -131,53 +132,55 @@ void z80::reset(bool cold)
     CPU::reset(cold);
 }
 
-QList<QPair<QString, QString>> z80::get_registers()
+std::vector<std::pair<std::string, std::string>> z80::get_registers()
 {
-    QList<QPair<QString, QString>> l;
+    std::vector<std::pair<std::string, std::string>> l;
 #ifndef EXTERNAL_Z80
     z80context * c = core->get_context();
 
-    l << QPair<QString, QString>("AF", QString("%1").arg((c->registers.regs.A << 8) + c->registers.regs.F, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("BC", QString("%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("DE", QString("%1").arg(c->registers.reg_pairs.DE, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("HL", QString("%1").arg(c->registers.reg_pairs.HL, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("IX", QString("%1").arg(c->registers.reg_pairs.IX, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("IY", QString("%1").arg(c->registers.reg_pairs.IY, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("-1", "")
-      << QPair<QString, QString>("AF'", QString("%1").arg(c->registers.regs.AF_, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("BC'", QString("%1").arg(c->registers.regs.BC_, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("DE'", QString("%1").arg(c->registers.regs.DE_, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("HL'", QString("%1").arg(c->registers.regs.HL_, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("-2", "")
-      << QPair<QString, QString>("SP", QString("%1").arg(c->registers.regs.SP, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("PC", QString("%1").arg(c->registers.regs.PC, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("-3", "")
-      << QPair<QString, QString>("I", QString("%1").arg(c->registers.regs.I, 2, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("R", QString("%1").arg(c->registers.regs.R, 2, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("IFF1", QString("%1").arg(c->IFF1, 1, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("IFF2", QString("%1").arg(c->IFF2, 1, 16, QChar('0')).toUpper())
-    ;
+    l = {
+        {"AF",  hex_str((c->registers.regs.A << 8) + c->registers.regs.F, 4)},
+        {"BC",  hex_str(c->registers.reg_pairs.BC, 4)},
+        {"DE",  hex_str(c->registers.reg_pairs.DE, 4)},
+        {"HL",  hex_str(c->registers.reg_pairs.HL, 4)},
+        {"IX",  hex_str(c->registers.reg_pairs.IX, 4)},
+        {"IY",  hex_str(c->registers.reg_pairs.IY, 4)},
+        {"-1",  ""},
+        {"AF'", hex_str(c->registers.regs.AF_, 4)},
+        {"BC'", hex_str(c->registers.regs.BC_, 4)},
+        {"DE'", hex_str(c->registers.regs.DE_, 4)},
+        {"HL'", hex_str(c->registers.regs.HL_, 4)},
+        {"-2",  ""},
+        {"SP",  hex_str(c->registers.regs.SP, 4)},
+        {"PC",  hex_str(c->registers.regs.PC, 4)},
+        {"-3",  ""},
+        {"I",    hex_str(c->registers.regs.I, 2)},
+        {"R",    hex_str(c->registers.regs.R, 2)},
+        {"IFF1", hex_str(c->IFF1, 1)},
+        {"IFF2", hex_str(c->IFF2, 1)}
+    };
 #else
 #endif
 
     return l;
 }
 
-QList<QPair<QString, QString>> z80::get_flags()
+std::vector<std::pair<std::string, std::string>> z80::get_flags()
 {
-    QList<QPair<QString, QString>> l;
+    std::vector<std::pair<std::string, std::string>> l;
 #ifndef EXTERNAL_Z80
     z80context * c = core->get_context();
 
-    l << QPair<QString, QString>("S",  QString("%1").arg( ((c->registers.regs.F & F_SIGN) != 0)?1:0))
-      << QPair<QString, QString>("Z",  QString("%1").arg( ((c->registers.regs.F & F_ZERO) != 0)?1:0))
-      << QPair<QString, QString>("5",  QString("%1").arg( ((c->registers.regs.F & F_B5) != 0)?1:0))
-      << QPair<QString, QString>("H",  QString("%1").arg( ((c->registers.regs.F & F_HALF_CARRY) != 0)?1:0))
-      << QPair<QString, QString>("3",  QString("%1").arg( ((c->registers.regs.F & F_B3) != 0)?1:0))
-      << QPair<QString, QString>("PV", QString("%1").arg( ((c->registers.regs.F & F_PARITY) != 0)?1:0))
-      << QPair<QString, QString>("N",  QString("%1").arg( ((c->registers.regs.F & F_SUB) != 0)?1:0))
-      << QPair<QString, QString>("C",  QString("%1").arg( ((c->registers.regs.F & F_CARRY) != 0)?1:0))
-        ;
+    l = {
+        {"S",  std::to_string(((c->registers.regs.F & F_SIGN) != 0) ? 1 : 0)},
+        {"Z",  std::to_string(((c->registers.regs.F & F_ZERO) != 0) ? 1 : 0)},
+        {"5",  std::to_string(((c->registers.regs.F & F_B5) != 0) ? 1 : 0)},
+        {"H",  std::to_string(((c->registers.regs.F & F_HALF_CARRY) != 0) ? 1 : 0)},
+        {"3",  std::to_string(((c->registers.regs.F & F_B3) != 0) ? 1 : 0)},
+        {"PV", std::to_string(((c->registers.regs.F & F_PARITY) != 0) ? 1 : 0)},
+        {"N",  std::to_string(((c->registers.regs.F & F_SUB) != 0) ? 1 : 0)},
+        {"C",  std::to_string(((c->registers.regs.F & F_CARRY) != 0) ? 1 : 0)}
+    };
 #else
 #endif
     return l;
@@ -235,7 +238,7 @@ unsigned int z80::execute()
     return cycles;
 }
 
-void z80::set_context_value(QString name, unsigned int value)
+void z80::set_context_value(const std::string &name, unsigned int value)
 {
 #ifndef EXTERNAL_Z80
     if (name == "PC")
@@ -285,7 +288,7 @@ void z80::log_state(uint8_t command, bool before, unsigned int cycles)
     {
 #ifndef EXTERNAL_Z80
         z80context * c = static_cast<z80context*>(core->get_context());
-        logs(
+        logs((
             QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
             + QString(" AF:%1").arg(c->registers.reg_pairs.AF, 4, 16, QChar('0'))
             + QString(" BC:%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0'))
@@ -294,10 +297,10 @@ void z80::log_state(uint8_t command, bool before, unsigned int cycles)
             + QString(" SP:%1").arg(c->registers.regs.SP, 4, 16, QChar('0'))
             + QString(" IX:%1").arg(c->registers.reg_pairs.IX, 4, 16, QChar('0'))
             + QString(" IY:%1").arg(c->registers.reg_pairs.IY, 4, 16, QChar('0'))
-        );
+        ).toStdString());
 #else
         Z80 * c = static_cast<Z80*>(core_ext);
-        logs(
+        logs((
             QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
             + QString(" AF:%1%2").arg(c->reg.pair.A, 2, 16, QChar('0')).arg(c->reg.pair.F, 2, 16, QChar('0'))
             + QString(" BC:%1%2").arg(c->reg.pair.B, 2, 16, QChar('0')).arg(c->reg.pair.C, 2, 16, QChar('0'))
@@ -306,7 +309,7 @@ void z80::log_state(uint8_t command, bool before, unsigned int cycles)
             + QString(" SP:%1").arg(c->reg.SP, 4, 16, QChar('0'))
             + QString(" IX:%1").arg(c->reg.IX, 4, 16, QChar('0'))
             + QString(" IY:%1").arg(c->reg.IY, 4, 16, QChar('0'))
-            );
+            ).toStdString());
 #endif
     }
 }

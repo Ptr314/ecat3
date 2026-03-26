@@ -58,16 +58,16 @@ void GMD70::load_config(SystemData *sd)
     FDC::load_config(sd);
     QString s;
     try {
-        s = cd->get_parameter("drives").value;
-    } catch (QException &e) {
-        QMessageBox::critical(0, GMD70::tr("Error"), GMD70::tr("Incorrect fdd list for '%1'").arg(name));
-        throw QException();
+        s = QString::fromStdString(cd->get_parameter("drives").value);
+    } catch (std::exception &e) {
+        QMessageBox::critical(0, GMD70::tr("Error"), GMD70::tr("Incorrect fdd list for '%1'").arg(QString::fromStdString(name)));
+        throw std::runtime_error("Incorrect fdd list for " + name);
     }
 
     QStringList parts = s.split('|', skip_empty_parts);
     m_drives_count = parts.size();
     for (unsigned int i = 0; i < m_drives_count; i++)
-        m_drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));
+        m_drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i].toStdString()));
 
     reset_fdc();
 }

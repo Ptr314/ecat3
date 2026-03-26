@@ -28,7 +28,7 @@ Register::Register(InterfaceManager *im, EmulatorConfigDevice *cd):
 {
     try {
         default_value = parse_numeric_value(this->cd->get_parameter("default").value);
-    } catch (QException &e) {
+    } catch (std::exception &e) {
         default_value = 0;
     }
 
@@ -47,9 +47,9 @@ void Register::load_config(SystemData *sd)
 {
     ComputerDevice::load_config(sd);
     //TODO: Register - add other types
-    QString type_string = cd->get_parameter("type", false).value.toLower();
+    std::string type_string = str_tolower(cd->get_parameter("type", false).value);
 
-    if (type_string.isEmpty() || type_string == "flip-flop-pos")
+    if (type_string.empty() || type_string == "flip-flop-pos")
         store_type = REGISTER_FLIPFLOP_POS;
     else if (type_string == "flip-flop-neg")
         store_type = REGISTER_FLIPFLOP_NEG;
@@ -60,7 +60,7 @@ void Register::load_config(SystemData *sd)
     else if (type_string == "buffer")
         store_type = REGISTER_BUFFER;
     else
-        QMessageBox::critical(0, Register::tr("Error"), Register::tr("Unknown register type %1").arg(type_string));
+        QMessageBox::critical(0, Register::tr("Error"), Register::tr("Unknown register type %1").arg(QString::fromStdString(type_string)));
 
     if (i_in.linked_bits)
         mask = i_in.linked_bits;

@@ -43,14 +43,14 @@ void Speaker::load_config(SystemData *sd)
 {
     GenericSound::load_config(sd);
 
-    QString s = cd->get_parameter("mode", false).value.toLower();
-    if (s.isEmpty() || s == "level")
+    std::string s = str_tolower(cd->get_parameter("mode", false).value);
+    if (s.empty() || s == "level")
         mode = SPK_MODE_LEVEL;
     else
     if (s == "flip")
         mode = SPK_MODE_FLIP;
     else
-        QMessageBox::critical(0, Speaker::tr("Error"), Speaker::tr("Unknown speaker type %1").arg(s));
+        QMessageBox::critical(0, Speaker::tr("Error"), Speaker::tr("Unknown speaker type %1").arg(QString::fromStdString(s)));
 }
 
 void Speaker::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)

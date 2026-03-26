@@ -51,7 +51,7 @@ void DisAsm::load_file(QString file_name)
             {
                 //HEX byte
                 ins[count].bytes[ins[count].length].is_instr = true;
-                ins[count].bytes[ins[count].length].value = parse_numeric_value("$" + code);
+                ins[count].bytes[ins[count].length].value = parse_numeric_value("$" + code.toStdString());
                 ins[count].length++;
             } else
             if (code.length() == 1 && letters.contains(code.at(0)))
@@ -63,7 +63,7 @@ void DisAsm::load_file(QString file_name)
             }
         }
 
-        if ( ins[count].length != parse_numeric_value(parts.at(2)) )
+        if ( ins[count].length != parse_numeric_value(parts.at(2).toStdString()) )
         {
             QMessageBox::critical(0, DisAsm::tr("Error"), DisAsm::tr("CPU instruction %1 length is incorrect").arg(parts.at(1)));
         }

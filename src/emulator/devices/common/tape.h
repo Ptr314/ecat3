@@ -42,13 +42,13 @@ protected:
     unsigned int ticks_per_bit;
     unsigned int ticks_counter;
     unsigned int tape_mode;
-    QByteArray data;
+    std::vector<uint8_t> data;
     unsigned int data_size;
     unsigned int data_position;
     int bit_shift;
     unsigned int total_seconds;
     void set_baud_rate(unsigned int baud);
-    void set_data(QByteArray new_data);
+    void set_data(const std::vector<uint8_t> &new_data);
     bool is_recording = false;
     TapeEnc m_tape_enc = TapeEnc::MSX;
     uint64_t cycle_counter = 0;
@@ -57,7 +57,7 @@ protected:
     TapeWriterState writer_state = TapeWriterState::Measuring;
     void write_edge(uint64_t counter);
     void store_bit(unsigned bit);
-    static void encode_msx(const QByteArray &buffer, QByteArray &buffer_encoded);
+    static void encode_msx(const std::vector<uint8_t> &buffer, std::vector<uint8_t> &buffer_encoded);
     unsigned measured_counter = 0;
     uint64_t measured_time = 0;
     uint64_t measured_time_x2 = 0;
@@ -67,7 +67,7 @@ protected:
     uint8_t current_byte = 0;
     std::vector<uint8_t> recorded_bytes{};
 public:
-    QString files;
+    std::string files;
 
     TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual ~TapeRecorder();
@@ -77,7 +77,7 @@ public:
     void load_config(SystemData *sd) override;
     void clock(unsigned int counter) override;
 
-    virtual void load_file(QString file_name, QString fmt);
+    virtual void load_file(const std::string &file_name, const std::string &fmt);
     virtual void play();
     virtual void stop();
     virtual void rewind();

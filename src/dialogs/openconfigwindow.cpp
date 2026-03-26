@@ -92,9 +92,9 @@ void OpenConfigWindow::list_machines(QString work_path)
             if (!is_debug || load_debugs)
             {
 
-                QString type = system->get_parameter("type").value;
-                QString name = system->get_parameter("name").value;
-                QString version = (is_debug?"* ":"") + system->get_parameter("version", false).value;
+                QString type = QString::fromStdString(system->get_parameter("type").value);
+                QString name = QString::fromStdString(system->get_parameter("name").value);
+                QString version = QString::fromStdString((is_debug?"* ":"") + system->get_parameter("version", false).value);
 
                 int index = -1;
                 for (int i = 0; i < node->rowCount(); i++)

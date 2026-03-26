@@ -55,7 +55,7 @@ void RAMAddress::set_value(unsigned int address, unsigned int value, bool force)
 
 #ifdef LOG_AGAT
         if (name=="port-C1xx") {
-            logs(QString("W %1").arg(address, 2, 16, QChar('0')));
+            logs(QString("W %1").arg(address, 2, 16, QChar('0')).toStdString());
         }
 #endif
 

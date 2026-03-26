@@ -6,19 +6,18 @@
 #pragma once
 
 #include <QObject>
-#include <QString>
-#include <QFile>
-#include <QException>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
+#include <string>
 #include <vector>
 
 struct EmulatorConfigParameter {
-    QString name;
-    QString left_range;
-    QString value;
-    QString right_range;
-    QString right_extended;
+    std::string name;
+    std::string left_range;
+    std::string value;
+    std::string right_range;
+    std::string right_extended;
 };
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
@@ -27,49 +26,21 @@ struct EmulatorConfigParameter {
     const auto skip_empty_parts = QString::SkipEmptyParts;
 #endif
 
-    class ConfigException : public QException
-    {
-    private:
-        std::string m_text;  // хранить в std::string безопаснее для what()
-
-    public:
-        explicit ConfigException(QString const& text = "") noexcept
-            : m_text(text.toStdString())
-        {
-            // std::cerr << "ConfigException created: " << m_text << std::endl;
-        }
-
-        // нужно для QException
-        void raise() const override {
-            std::cerr << "Throwing ConfigException: " << m_text << std::endl;
-            throw *this;
-        }
-
-        ConfigException* clone() const override {
-            return new ConfigException(*this);
-        }
-
-        // совместимость со std::exception
-        const char* what() const noexcept override {
-            return m_text.c_str();
-        }
-    };
-
 class EmulatorConfigDevice: public QObject
 {
     Q_OBJECT
 
 public:
-    EmulatorConfigDevice(QString name, QString type);
+    EmulatorConfigDevice(std::string name, std::string type);
     ~EmulatorConfigDevice();
 
-    QString name;
-    QString type;
+    std::string name;
+    std::string type;
     std::vector<EmulatorConfigParameter> parameters;
 
-    void add_parameter(QString name, QString left_range, QString value, QString right_range, QString right_extended);
-    QString extended_parameter(unsigned int i, QString expected_name);
-    EmulatorConfigParameter get_parameter(QString name, bool required = true);
+    void add_parameter(std::string name, std::string left_range, std::string value, std::string right_range, std::string right_extended);
+    std::string extended_parameter(unsigned int i, std::string expected_name);
+    EmulatorConfigParameter get_parameter(std::string name, bool required = true);
     EmulatorConfigParameter get_parameter(unsigned int id);
 };
 
@@ -86,13 +57,13 @@ public:
     void free_devices();
 
     EmulatorConfigDevice * get_device(int i);
-    EmulatorConfigDevice * get_device(QString name);
+    EmulatorConfigDevice * get_device(const std::string& name);
     unsigned int get_devices_count() const { return devices.size(); }
 
 private:
     std::vector<std::unique_ptr<EmulatorConfigDevice>> devices;
 
-    QString read_next_entity(QString *config, QString stop);
-    QString read_extended_entity(QString *config, QString stop);
-    EmulatorConfigDevice *add_device(QString device_name, QString device_type);
+    std::string read_next_entity(std::string *config, std::string stop = "");
+    std::string read_extended_entity(std::string *config, std::string stop);
+    EmulatorConfigDevice *add_device(std::string device_name, std::string device_type);
 };

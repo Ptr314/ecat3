@@ -3,8 +3,6 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Agat 840K floppy disk controller device
 
-#include <QException>
-
 #include "agat_fdc840.h"
 #include "emulator/utils.h"
 #include "libs/mfm_tools.h"
@@ -33,16 +31,16 @@ void Agat_FDC840::load_config(SystemData *sd)
 
     clock_divider = 64;
 
-    QString s;
+    std::string s;
     try {
         s = cd->get_parameter("drives").value;
-    } catch (QException &e) {
-        QMessageBox::critical(0, Agat_FDC840::tr("Error"), Agat_FDC840::tr("Incorrect fdd list for '%1'").arg(name));
-        throw QException();
+    } catch (std::exception &e) {
+        QMessageBox::critical(0, Agat_FDC840::tr("Error"), Agat_FDC840::tr("Incorrect fdd list for '%1'").arg(QString::fromStdString(name)));
+        throw std::runtime_error("Incorrect fdd list for " + name);
     }
 
     memset(&drives, 0, sizeof(drives));
-    QStringList parts = s.split('|', skip_empty_parts);
+    std::vector<std::string> parts = split_string(s, '|', true);
     drives_count = parts.size();
 
     LinkData ld;
@@ -141,13 +139,13 @@ void Agat_FDC840::update_state()
 #ifdef LOG_FDD
     if (write_mode != new_write_mode) {
         if (new_write_mode==1) {
-            logs(QString("WRITE ON POS:%1").arg(drives[selected_drive]->get_position() % 282));
+            logs(QString("WRITE ON POS:%1").arg(drives[selected_drive]->get_position() % 282).toStdString());
         } else {
-            logs(QString("WRITE OFF"));
+            logs(QString("WRITE OFF").toStdString());
         }
     }
     if (side != new_side) {
-        logs(QString("SIDE %1").arg(new_side));
+        logs(QString("SIDE %1").arg(new_side).toStdString());
     }
 #endif
     write_mode = new_write_mode;
@@ -202,7 +200,7 @@ void Agat_FDC840::write_next_byte()
 
 #ifdef LOG_FDD
         int sector_pos = drives[selected_drive]->get_position() % 282;
-        logs(QString("--WRITE %1 at %2").arg(data, 1, 16, QChar('0')).arg(sector_pos));
+        logs(QString("--WRITE %1 at %2").arg(data, 1, 16, QChar('0')).arg(sector_pos).toStdString());
 #endif
 
         drives[selected_drive]->WriteByte(data);
@@ -250,7 +248,7 @@ unsigned int Agat_FDC840::get_value(unsigned int address)
 #ifdef LOG_FDD
     // if (A != 6 || value != 0xC0)
     if (start_log)
-        logs(QString("R %1:%2 p:%3").arg(A, 1, 16, QChar('0')).arg(value, 2, 16, QChar('0')).arg(drives[selected_drive]->get_position() % 282));
+        logs(QString("R %1:%2 p:%3").arg(A, 1, 16, QChar('0')).arg(value, 2, 16, QChar('0')).arg(drives[selected_drive]->get_position() % 282).toStdString());
 #endif
     return value;
 }
@@ -291,7 +289,7 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
         op = "DESYNC";
     };
 
-    logs(QString("W %1:%2 POS:%3 %4").arg(A).arg(value, 2, 16, QChar('0')).arg((selected_drive < drives_count)?(drives[selected_drive]->get_position() % 282):9999).arg(op));
+    logs(QString("W %1:%2 POS:%3 %4").arg(A).arg(value, 2, 16, QChar('0')).arg((selected_drive < drives_count)?(drives[selected_drive]->get_position() % 282):9999).arg(op).toStdString());
     // if (A == 3 && value == 0xD) start_log = true;
 #endif
 
@@ -321,7 +319,7 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
             // TODO: writing
             write_sync = true;
 #ifdef LOG_FDD
-            logs(QString("WRITE SYNC ON POS: %1").arg(drives[selected_drive]->get_position() % 282));
+            logs(QString("WRITE SYNC ON POS: %1").arg(drives[selected_drive]->get_position() % 282).toStdString());
 #endif
             break;
         case 0x9:

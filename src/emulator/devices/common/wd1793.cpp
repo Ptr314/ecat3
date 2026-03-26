@@ -3,9 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: wd1793 FDC device
 
-#include <QException>
-
 #include "wd1793.h"
+#include "emulator/utils.h"
 
 WD1793::WD1793(InterfaceManager *im, EmulatorConfigDevice *cd):
       FDC(im, cd)
@@ -26,15 +25,15 @@ WD1793::WD1793(InterfaceManager *im, EmulatorConfigDevice *cd):
 void WD1793::load_config(SystemData *sd)
 {
     FDC::load_config(sd);
-    QString s;
+    std::string s;
     try {
         s = cd->get_parameter("drives").value;
-    } catch (QException &e) {
-        QMessageBox::critical(0, WD1793::tr("Error"), WD1793::tr("Incorrect fdd list for '%1'").arg(name));
-        throw QException();
+    } catch (std::exception &e) {
+        QMessageBox::critical(0, WD1793::tr("Error"), WD1793::tr("Incorrect fdd list for '%1'").arg(QString::fromStdString(name)));
+        throw std::runtime_error("Incorrect fdd list for " + name);
     }
 
-    QStringList parts = s.split('|', skip_empty_parts);
+    std::vector<std::string> parts = split_string(s, '|', true);
     drives_count = parts.size();
     for (unsigned int i = 0; i < drives_count; i++)
         drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));
@@ -142,7 +141,7 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
         case 0x09: //Read sector
             if ((value & wd1793_PARAM_m) > 0)
             {
-                im->dm->error(this, WD1793::tr("Reading of more than one sector at once is not supported!"));
+                im->dm->error(this, WD1793::tr("Reading of more than one sector at once is not supported!").toStdString());
             } else {
                 delay = wd1793_DELAY_SECTOR;
                 command = wd1793_COMMAND_READ_SECTOR;
@@ -154,7 +153,7 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
         case 0x0B: //Write sector
             if ((value & wd1793_PARAM_m) > 0)
             {
-                im->dm->error(this, WD1793::tr("Writing of more than one sector at once is not supported!"));
+                im->dm->error(this, WD1793::tr("Writing of more than one sector at once is not supported!").toStdString());
             } else {
                 delay = wd1793_DELAY_SECTOR;
                 command = wd1793_COMMAND_WRITE_SECTOR;
@@ -183,7 +182,7 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
             delay = 0;
             ClearDRQ();
             if ((value & 0x0F) !=0)
-                im->dm->error(this, WD1793::tr("Force Interrupt command with parameters is not supported!"));
+                im->dm->error(this, WD1793::tr("Force Interrupt command with parameters is not supported!").toStdString());
             break;
         }
     } else {

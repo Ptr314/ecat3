@@ -4,6 +4,7 @@
 // Description: 6502 & 65c02 emulator interface class
 
 #include "6502.h"
+#include "emulator/utils.h"
 
 #define CALLBACK_NMI    1
 #define CALLBACK_INT    2
@@ -57,37 +58,33 @@ void mos6502::write_mem(unsigned int address, unsigned int data)
     mm->write(address, data);
 }
 
-QList<QPair<QString, QString>> mos6502::get_registers()
+std::vector<std::pair<std::string, std::string>> mos6502::get_registers()
 {
-    QList<QPair<QString, QString>> l;
     mos6502context * c = core->get_context();
-
-    l << QPair<QString, QString>("A", QString("%1").arg(c->A, 2, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("X", QString("%1").arg(c->X, 2, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("Y", QString("%1").arg(c->Y, 2, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("S", QString("%1").arg(c->S, 2, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("P", QString("%1").arg(c->P, 2, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("-1", "")
-      << QPair<QString, QString>("PC", QString("%1").arg(c->r16.PC, 4, 16, QChar('0')).toUpper())
-    ;
-    return l;
+    return {
+        {"A",  hex_str(c->A, 2)},
+        {"X",  hex_str(c->X, 2)},
+        {"Y",  hex_str(c->Y, 2)},
+        {"S",  hex_str(c->S, 2)},
+        {"P",  hex_str(c->P, 2)},
+        {"-1", ""},
+        {"PC", hex_str(c->r16.PC, 4)}
+    };
 }
 
-QList<QPair<QString, QString>> mos6502::get_flags()
+std::vector<std::pair<std::string, std::string>> mos6502::get_flags()
 {
-    QList<QPair<QString, QString>> l;
     mos6502context * c = core->get_context();
-
-    l << QPair<QString, QString>("C",  QString("%1").arg( ((c->P & MOS6502::F_C) != 0)?1:0))
-      << QPair<QString, QString>("Z",  QString("%1").arg( ((c->P & MOS6502::F_Z) != 0)?1:0))
-      << QPair<QString, QString>("I",  QString("%1").arg( ((c->P & MOS6502::F_I) != 0)?1:0))
-      << QPair<QString, QString>("D",  QString("%1").arg( ((c->P & MOS6502::F_D) != 0)?1:0))
-      << QPair<QString, QString>("B",  QString("%1").arg( ((c->P & MOS6502::F_B) != 0)?1:0))
-      << QPair<QString, QString>("5", QString("%1").arg( ((c->P & MOS6502::F_P5) != 0)?1:0))
-      << QPair<QString, QString>("V",  QString("%1").arg( ((c->P & MOS6502::F_V) != 0)?1:0))
-      << QPair<QString, QString>("N",  QString("%1").arg( ((c->P & MOS6502::F_N) != 0)?1:0))
-    ;
-    return l;
+    return {
+        {"C", std::to_string(((c->P & MOS6502::F_C) != 0) ? 1 : 0)},
+        {"Z", std::to_string(((c->P & MOS6502::F_Z) != 0) ? 1 : 0)},
+        {"I", std::to_string(((c->P & MOS6502::F_I) != 0) ? 1 : 0)},
+        {"D", std::to_string(((c->P & MOS6502::F_D) != 0) ? 1 : 0)},
+        {"B", std::to_string(((c->P & MOS6502::F_B) != 0) ? 1 : 0)},
+        {"5", std::to_string(((c->P & MOS6502::F_P5) != 0) ? 1 : 0)},
+        {"V", std::to_string(((c->P & MOS6502::F_V) != 0) ? 1 : 0)},
+        {"N", std::to_string(((c->P & MOS6502::F_N) != 0) ? 1 : 0)}
+    };
 }
 
 unsigned int mos6502::get_command()
@@ -100,7 +97,7 @@ unsigned int mos6502::get_pc()
     return core->get_pc();
 }
 
-void mos6502::set_context_value(QString name, unsigned int value)
+void mos6502::set_context_value(const std::string &name, unsigned int value)
 {
     mos6502context * c = core->get_context();
 
@@ -116,14 +113,14 @@ void mos6502::log_state(uint8_t command, bool before, unsigned int cycles)
     if (log_available())
     {
         mos6502context * c = core->get_context();
-        logs(
+        logs((
             QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
             + QString(" A:%1").arg(c->A, 2, 16, QChar('0'))
             + QString(" X:%1").arg(c->X, 2, 16, QChar('0'))
             + QString(" Y:%1").arg(c->Y, 2, 16, QChar('0'))
             + QString(" S:%1").arg(c->S, 2, 16, QChar('0'))
             + QString(" P:%1").arg(c->P, 2, 16, QChar('0'))
-            );
+            ).toStdString());
     }
 }
 #endif
@@ -133,13 +130,13 @@ void mos6502::interface_callback(unsigned int callback_id, unsigned int new_valu
     switch (callback_id) {
     case CALLBACK_NMI:
 #ifdef LOG_CPU
-        logs("NMI = " + QString::number(new_value & 1));
+        logs(("NMI = " + QString::number(new_value & 1)).toStdString());
 #endif
         core->set_nmi((new_value & 1) == 0); //NMI has active 0
         break;
     case CALLBACK_INT:
 #ifdef LOG_CPU
-        logs("INT = " + QString::number(new_value & 1));
+        logs(("INT = " + QString::number(new_value & 1)).toStdString());
 #endif
         core->set_irq((new_value & 1) == 0); //INT has active 0
         break;

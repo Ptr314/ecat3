@@ -13,7 +13,7 @@
 
 struct KeyDescription {
     unsigned int code;
-    QString name;
+    std::string name;
 };
 
 static const KeyDescription KEYS[] ={
@@ -189,7 +189,7 @@ class Keyboard: public ComputerDevice
 protected:
     bool rus_mode;
     bool use_remap = true;
-    unsigned int translate_key(QString key);
+    unsigned int translate_key(const std::string &key);
     bool known_key(unsigned int code);
     unsigned int rus_translate(unsigned int code);
     virtual void set_rus(bool new_rus);

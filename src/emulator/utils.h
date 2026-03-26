@@ -6,6 +6,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <QString>
 #ifdef RENDERER_SDL2
     #include <SDL.h>
@@ -16,32 +17,35 @@
 
 #define _FFFF (unsigned int)(-1)
 
-unsigned int parse_numeric_value(QString str);
+// unsigned int parse_numeric_value(QString str);
 unsigned int parse_numeric_value(std::string str);
 
 unsigned int create_mask(unsigned int size, unsigned int shift);
 
-void convert_range(QString s, unsigned int * v1, unsigned int * v2);
+void convert_range(const std::string &s, unsigned int * v1, unsigned int * v2);
 
 unsigned int CalcBits(unsigned int V, unsigned int MaxBits = 32);
-
-bool fileExists(QString path);
 
 unsigned decodeBMP(std::vector<unsigned char>& image, unsigned& w, unsigned& h, const std::vector<unsigned char>& bmp);
 
 QString pad_string(QString s, QChar c, int len, bool from_left = true);
 
-QString find_file_location(SystemData * sd, QString file_name);
+std::string find_file_location(SystemData * sd, const std::string &file_name);
 
-unsigned int read_confg_value(EmulatorConfigDevice * cd, QString name, bool required, unsigned int def);
-QString read_confg_value(EmulatorConfigDevice * cd, QString name, bool required, QString def);
-bool read_confg_value(EmulatorConfigDevice * cd, QString name, bool required, bool def);
+unsigned int read_confg_value(EmulatorConfigDevice * cd, const std::string &name, bool required, unsigned int def);
+std::string read_confg_value(EmulatorConfigDevice * cd, const std::string &name, bool required, const std::string &def);
+bool read_confg_value(EmulatorConfigDevice * cd, const std::string &name, bool required, bool def);
 
 bool checkCapsLock();
 
 QString md2html(QString md);
 
 int getRandomNumber(int min, int max);
+
+std::vector<std::string> split_string(const std::string &s, char delimiter, bool skip_empty = false);
+std::string str_trim(const std::string &s);
+std::string str_tolower(const std::string &s);
+std::string hex_str(unsigned int value, int width);
 
 // std::make_unique copy for C++11 and Mingw 4.9.2 compatibility
 #if __cplusplus >= 201402L || defined(_MSC_VER)

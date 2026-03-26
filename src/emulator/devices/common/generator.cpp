@@ -22,30 +22,23 @@ void Generator::load_config(SystemData *sd)
 
     unsigned int main_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
 
-    QString freqs = cd->get_parameter("frequency").value;
-    unsigned int freq = parse_numeric_value(freqs);
-
+    unsigned int freq = parse_numeric_value(cd->get_parameter("frequency").value);
     total_counts = main_clock / freq;
 
-    QString lens = cd->get_parameter("length").value;
-    if (lens.isEmpty())
+    std::string lens = cd->get_parameter("length", false).value;
+    if (lens.empty())
         pulse_counts = 1;
     else
         pulse_counts = parse_numeric_value(lens);
 
-    QStringList positives;
-    positives << "positive" << "pos" << "p" << "1";
-    QStringList negatives;
-    negatives << "negative" << "neg" << "n" << "0";
-
-    QString pol = cd->get_parameter("polarity", false).value.toLower();
-    if (pol.isEmpty() || positives.contains(pol))
+    std::string pol = str_tolower(cd->get_parameter("polarity", false).value);
+    if (pol.empty() || pol == "positive" || pol == "pos" || pol == "p" || pol == "1")
         positive = true;
     else
-        if (negatives.contains(pol))
+        if (pol == "negative" || pol == "neg" || pol == "n" || pol == "0")
             positive = false;
         else
-            QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect polarity for %1").arg(this->name));
+            QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect polarity for %1").arg(QString::fromStdString(this->name)));
 
     i_enable.change(1);
 }

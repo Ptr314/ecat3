@@ -11,7 +11,7 @@
 using DebugWndCreateFunc = GenericDbgWnd * (QWidget * parent, Emulator * e, ComputerDevice * d);
 
 struct DebugWndFuncData {
-    QString device_type;
+    std::string device_type;
     DebugWndCreateFunc * f;
 };
 
@@ -26,12 +26,12 @@ private:
 public:
     DebugWindowsManager():count(0){};
 
-    void register_debug_window(QString device_type, DebugWndCreateFunc * f)
+    void register_debug_window(const std::string &device_type, DebugWndCreateFunc * f)
     {
         WndFuncData[this->count++] = {device_type, f};
     };
 
-    DebugWndCreateFunc * get_create_func(QString device_type)
+    DebugWndCreateFunc * get_create_func(const std::string &device_type)
     {
         for (unsigned int i=0; i < this->count; i++)
             if (WndFuncData[i].device_type == device_type)

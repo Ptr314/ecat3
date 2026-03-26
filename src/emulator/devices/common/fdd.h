@@ -63,9 +63,9 @@ private:
 #endif
 
 public:
-    QString files;
-    QString files_save;
-    QString file_name;
+    std::string files;
+    std::string files_save;
+    std::string file_name;
     unsigned int stream_format;
 
     FDD(InterfaceManager *im, EmulatorConfigDevice *cd);
@@ -86,8 +86,8 @@ public:
     void WriteNextByte(uint8_t value);
     void WriteByte(uint8_t value);
     virtual void load_config(SystemData *sd) override;
-    void load_image(QString file_name);
-    void save_image(QString file_name);
+    void load_image(const std::string &file_name);
+    void save_image(const std::string &file_name);
     void unload();
     void change_protection();
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;

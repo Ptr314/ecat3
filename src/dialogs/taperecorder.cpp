@@ -51,7 +51,7 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
 {
     this->e = e;
     this->d = dynamic_cast<TapeRecorder*>(d);
-    setWindowTitle(d->name + " : " + d->type);
+    setWindowTitle(QString::fromStdString(d->name + " : " + d->type));
 
     QIcon icon;
     icon.addFile(QString::fromUtf8(":/icons/sound2"), QSize(), QIcon::Normal, QIcon::Off);
@@ -136,7 +136,7 @@ void TapeRecorderWindow::on_buttonEject_pressed()
     } else {
         QString path = QString::fromStdString(e->read_setup("Startup", "last_path", e->work_path));
         SystemData * sd = e->get_system_data();
-        QString file_name = QFileDialog::getOpenFileName(this, Emulator::tr("Load a file"), path, d->files);
+        QString file_name = QFileDialog::getOpenFileName(this, Emulator::tr("Load a file"), path, QString::fromStdString(d->files));
 
 
         if (!file_name.isEmpty()) {
@@ -152,7 +152,7 @@ void TapeRecorderWindow::on_buttonEject_pressed()
 
                 loaded_file = fi.fileName();
 
-                d->load_file(file_name, fmt);
+                d->load_file(file_name.toStdString(), fmt.toStdString());
 
                 update_counter();
 

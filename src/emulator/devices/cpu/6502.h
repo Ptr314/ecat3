@@ -51,11 +51,11 @@ public:
     virtual unsigned int read_mem(unsigned int address) override;
     virtual void write_mem(unsigned int address, unsigned int data) override;
 
-    virtual QList<QPair<QString, QString>> get_registers() override;
-    virtual QList<QPair<QString, QString>> get_flags() override;
+    virtual std::vector<std::pair<std::string, std::string>> get_registers() override;
+    virtual std::vector<std::pair<std::string, std::string>> get_flags() override;
     virtual unsigned int get_command() override;
 
-    virtual void set_context_value(QString name, unsigned int value) override;
+    virtual void set_context_value(const std::string &name, unsigned int value) override;
 
 };
 

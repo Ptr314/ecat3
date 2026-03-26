@@ -3,11 +3,10 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Tape recorder device
 
-#include <QException>
-
 #include "emulator/utils.h"
 #include "emulator/devices/cpu/cpu_utils.h"
 #include "tape.h"
+#include "dsk_tools/dsk_tools.h"
 
 TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
     : ComputerDevice(im, cd)
@@ -44,17 +43,17 @@ void TapeRecorder::load_config(SystemData *sd)
 
     baud_rate = read_confg_value(cd, "baudrate", false, (unsigned int)1200);
 
-    const QString enc_str = cd->get_parameter("ecoding", false).value.toLower();
-    if (enc_str.isEmpty() || enc_str == "msx")
+    const std::string enc_str = str_tolower(cd->get_parameter("ecoding", false).value);
+    if (enc_str.empty() || enc_str == "msx")
         m_tape_enc = TapeEnc::MSX;
     else if (enc_str == "rk86")
         m_tape_enc = TapeEnc::RK86;
     else
-        QMessageBox::critical(0, TapeRecorder::tr("Error"), TapeRecorder::tr("Incorrect encoding %1").arg(enc_str));
+        QMessageBox::critical(0, TapeRecorder::tr("Error"), TapeRecorder::tr("Incorrect encoding %1").arg(QString::fromStdString(enc_str)));
 
     files = cd->get_parameter("files", false).value;
 
-    if (files.isEmpty()) files = QString::fromStdString(sd->allowed_files);
+    if (files.empty()) files = sd->allowed_files;
 
     speaker->load_config(sd);
     speaker->reset(true);
@@ -199,27 +198,27 @@ void TapeRecorder::set_baud_rate(unsigned int baud)
     ticks_per_bit = system_clock / baud_rate;
 }
 
-void TapeRecorder::set_data(QByteArray new_data){
+void TapeRecorder::set_data(const std::vector<uint8_t> &new_data){
     data = new_data;
     tape_mode = TAPE_STOPPED;
-    data_size = data.length();
+    data_size = data.size();
     data_position = 0;
     bit_shift = 7;
     total_seconds = (data_size * 8) / baud_rate;
     ticks_counter = 0;
 }
 
-void TapeRecorder::encode_msx(const QByteArray &buffer, QByteArray &buffer_encoded)
+void TapeRecorder::encode_msx(const std::vector<uint8_t> &buffer, std::vector<uint8_t> &buffer_encoded)
 {
-    int data_size = buffer.size();
+    size_t buf_size = buffer.size();
     // 11 nibbles per byte: 1 start + 8 data + 2 stop
-    buffer_encoded.reserve(buffer_encoded.size() + (data_size * 11 + 1) / 2);
+    buffer_encoded.reserve(buffer_encoded.size() + (buf_size * 11 + 1) / 2);
 
     std::vector<uint8_t> nibbles;
-    nibbles.reserve(data_size * 11);
+    nibbles.reserve(buf_size * 11);
 
-    for (int i = 0; i < data_size; i++) {
-        uint8_t b = buffer.at(i);
+    for (size_t i = 0; i < buf_size; i++) {
+        uint8_t b = buffer[i];
         nibbles.push_back(0xC);  // Start bit: 0 -> 1100
         for (int j = 0; j < 8; j++) {
             int bit = (b >> j) & 1;
@@ -233,62 +232,65 @@ void TapeRecorder::encode_msx(const QByteArray &buffer, QByteArray &buffer_encod
     for (size_t i = 0; i < nibbles.size(); i += 2) {
         uint8_t hi = nibbles[i];
         uint8_t lo = (i + 1 < nibbles.size()) ? nibbles[i + 1] : 0xA;
-        buffer_encoded.append((char)((hi << 4) | lo));
+        buffer_encoded.push_back((hi << 4) | lo);
     }
 }
 
-void TapeRecorder::load_file(QString file_name, QString fmt)
+void TapeRecorder::load_file(const std::string &file_name, const std::string &fmt)
 {
-    QStringList parts = fmt.split(";");
-    QStringList first = parts[0].split(":");
+    std::vector<std::string> parts = split_string(fmt, ';', true);
+    std::vector<std::string> first = split_string(parts[0], ':', true);
 
-    QString tape_format = first[0];
+    std::string tape_format = first[0];
     int baud = parse_numeric_value(first[1]);
 
-    QByteArray buffer;
+    std::vector<uint8_t> buffer;
 
-    for (int i=1; i< parts.length(); i++ ) {
+    for (size_t i=1; i< parts.size(); i++ ) {
         if (parts[i] == "data") {
-            QFile file(file_name);
-            if (file.open(QIODevice::ReadOnly)){
-                QByteArray data = file.readAll();
-                file.close();
-                buffer.append(data);
+            long long fsize = dsk_tools::utf8_file_size(file_name);
+            if (fsize > 0) {
+                dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
+                if (file.is_open()) {
+                    size_t old_size = buffer.size();
+                    buffer.resize(old_size + static_cast<size_t>(fsize));
+                    file.read(reinterpret_cast<char*>(buffer.data() + old_size), fsize);
+                    file.close();
+                }
             }
         } else {
-            QStringList bytes = parts[i].split(":");
+            std::vector<std::string> bytes = split_string(parts[i], ':', true);
             uint8_t b = parse_numeric_value(bytes[0]);
             unsigned int count = parse_numeric_value(bytes[1]);
 
-            // buffer.append(count, b);
-            for (int i = 0; i < count; i++) {
-                buffer.append(reinterpret_cast<const char*>(&b), 1);
+            for (unsigned int j = 0; j < count; j++) {
+                buffer.push_back(b);
             }
         }
     }
 
-    unsigned int data_size = buffer.size();
+    unsigned int buf_size = buffer.size();
 
-    QByteArray buffer_encoded;
+    std::vector<uint8_t> buffer_encoded;
 
     if (tape_format == "rk86") {
-        buffer_encoded.reserve(data_size*2);
+        buffer_encoded.reserve(buf_size*2);
         set_baud_rate(baud*2);
-        for (int i=0; i < data_size; i++) {
+        for (unsigned int i=0; i < buf_size; i++) {
             PartsRecLE T;
             T.w = 0;
-            uint8_t b = buffer.at(i);
+            uint8_t b = buffer[i];
             for (int j=0; j<8; j++)
                 T.w += (b & (1 << j)) << j;
             T.w |= ~(T.w << 1) & 0xAAAA;
-            buffer_encoded.append(T.b.H);
-            buffer_encoded.append(T.b.L);
+            buffer_encoded.push_back(T.b.H);
+            buffer_encoded.push_back(T.b.L);
         }
         set_data(buffer_encoded);
     } else
     if (tape_format == "msx") {
         set_baud_rate(baud*4);
-        buffer_encoded.fill('\xAA', 256 * 4);
+        buffer_encoded.resize(256 * 4, 0xAA);
         encode_msx(buffer, buffer_encoded);
         set_data(buffer_encoded);
     } else {
@@ -307,7 +309,7 @@ void TapeRecorder::clock(unsigned int counter)
             ticks_counter -= ticks_per_bit;
             if (data_position < data_size) {
                 if (tape_mode == TAPE_READ) {
-                    unsigned int v = (data.at(data_position) >> bit_shift) & 1;
+                    unsigned int v = (data[data_position] >> bit_shift) & 1;
                     i_output.change(v);
                     i_speaker.change(v);
                 } else {

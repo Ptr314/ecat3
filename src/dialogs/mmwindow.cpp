@@ -21,7 +21,7 @@ MemoryMapperWindow::MemoryMapperWindow(QWidget *parent, Emulator * e, ComputerDe
 {
     this->e = e;
     this->d = d;
-    setWindowTitle(d->name + " : " + d->type);
+    setWindowTitle(QString::fromStdString(d->name + " : " + d->type));
 }
 
 MemoryMapperWindow::~MemoryMapperWindow()
@@ -36,8 +36,8 @@ void MemoryMapperWindow::on_pushButton_clicked()
 
 void MemoryMapperWindow::on_process_button_clicked()
 {
-    unsigned int cfg = parse_numeric_value("$" + ui->config_edit->text());
-    unsigned int address = parse_numeric_value("$" + ui->address_edit->text());
+    unsigned int cfg = parse_numeric_value(("$" + ui->config_edit->text()).toStdString());
+    unsigned int address = parse_numeric_value(("$" + ui->address_edit->text()).toStdString());
     qDebug() << cfg << address;
     unsigned int address_on_device, range_index;
 
@@ -50,7 +50,7 @@ void MemoryMapperWindow::on_process_button_clicked()
                                                                 );
 
     unsigned int value = d->get_value(address_on_device);
-    QString s = d->name + " " + d->type;
+    QString s = QString::fromStdString(d->name + " " + d->type);
     ui->device_name->setText(s);
 
     ui->dump_area->set_data(e, dynamic_cast<AddressableDevice*>(d), address_on_device);

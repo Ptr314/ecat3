@@ -39,17 +39,17 @@ private:
     void calculate_out();
 
 protected:
-    virtual void set_rus(bool new_rus) override;
+    void set_rus(bool new_rus) override;
 
 public:
     ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
 
-    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+    void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
-    virtual void key_down(unsigned int key) override;
-    virtual void key_up(unsigned int key) override;
+    void key_down(unsigned int key) override;
+    void key_up(unsigned int key) override;
 
-    virtual void load_config(SystemData *sd) override;
+    void load_config(SystemData *sd) override;
 };
 
 ComputerDevice * create_scankeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);

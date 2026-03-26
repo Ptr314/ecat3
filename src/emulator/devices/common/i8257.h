@@ -63,7 +63,7 @@ public:
             result = RgState;
             break;
         default:
-            im->dm->error(this, I8257::tr("i8257: reading from an unknown register"));
+            im->dm->error(this, I8257::tr("i8257: reading from an unknown register").toStdString());
             break;
         }
         return result;
@@ -93,7 +93,7 @@ public:
             RgMode = v;
             break;
         default:
-            im->dm->error(this, I8257::tr("i8257: writing to an unknown register"));
+            im->dm->error(this, I8257::tr("i8257: writing to an unknown register").toStdString());
             break;
         }
     }

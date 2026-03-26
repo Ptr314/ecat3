@@ -3,11 +3,13 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Emulator core classes, source
 
-#include <QException>
 #include <QtGlobal>
 
 #include <cmath>
 #include <iostream>
+#include <sstream>
+#include "dsk_tools/dsk_tools.h"
+#include "../libs/dsk_tools/src/utils.h"
 
 #ifdef RENDERER_SDL2
     #include <SDL.h>
@@ -27,7 +29,7 @@ Interface::Interface(
     ComputerDevice * device,
     InterfaceManager * im,
     unsigned int size,
-    QString name,
+    const std::string &name,
     unsigned int mode,
     unsigned int callback_id
 ):
@@ -56,7 +58,7 @@ void Interface::connect(LinkedInterface s, LinkedInterface d, bool invert)
     if (index < 0)
     {
 #ifdef LOG_INTERFACES
-        qDebug() << "CONNECT " + s.i->device->name +":" + s.i->name + " TO " + d.i->device->name +":" + d.i->name;
+        qDebug() << QString::fromStdString("CONNECT " + s.i->device->name + ":" + s.i->name + " TO " + d.i->device->name + ":" + d.i->name);
 #endif
         linked++;
         linked_interfaces[linked-1].s = s;
@@ -117,7 +119,7 @@ void Interface::change(unsigned int new_value)
     } else {
         if (mode == MODE_OFF)
         {
-            im->dm->error(device, Interface::tr("Interface '%1' is in OFF state, writing is impossible").arg(name));
+            im->dm->error(device, Interface::tr("Interface '%1' is in OFF state, writing is impossible").arg(QString::fromStdString(name)).toStdString());
         }
     }
 }
@@ -187,7 +189,7 @@ void DeviceManager::clear()
     //memset(&devices, 0, sizeof(devices));
 }
 
-void DeviceManager::register_device(QString device_type, CreateDeviceFunc func)
+void DeviceManager::register_device(const std::string &device_type, CreateDeviceFunc func)
 {
     registered_devices[registered_devices_count].type = device_type;
     registered_devices[registered_devices_count].create_func = func;
@@ -197,12 +199,11 @@ void DeviceManager::register_device(QString device_type, CreateDeviceFunc func)
 
 void DeviceManager::add_device(InterfaceManager *im, EmulatorConfigDevice *d)
 {
-    QString name = d->name;
     unsigned int index;
-    if (name.compare("cpu")==0)
+    if (d->name == "cpu")
         index=0;
     else
-    if (name.compare("mapper")==0)
+    if (d->name == "mapper")
         index=1;
     else
         index = device_count++;
@@ -216,10 +217,10 @@ void DeviceManager::add_device(InterfaceManager *im, EmulatorConfigDevice *d)
     if (create_func != nullptr)
     {
         devices[index].device_type = d->type;
-        devices[index].device_name = name;
+        devices[index].device_name = d->name;
         devices[index].device.reset(create_func(im, d));  // Wrap raw pointer in unique_ptr
     } else
-        QMessageBox::critical(0, DeviceManager::tr("Error"), DeviceManager::tr("Can't create device %1:%2").arg(name, d->type));
+        QMessageBox::critical(0, DeviceManager::tr("Error"), DeviceManager::tr("Can't create device %1:%2").arg(QString::fromStdString(d->name), QString::fromStdString(d->type)));
 }
 
 DeviceDescription * DeviceManager::get_device(unsigned int i)
@@ -235,7 +236,7 @@ void DeviceManager::load_devices_config(SystemData *sd)
     }
 }
 
-ComputerDevice * DeviceManager::get_device_by_name(QString name, bool required)
+ComputerDevice * DeviceManager::get_device_by_name(const std::string &name, bool required)
 {
     for (unsigned int i=0; i < device_count; i++)
     {
@@ -243,19 +244,19 @@ ComputerDevice * DeviceManager::get_device_by_name(QString name, bool required)
     }
     if (required)
     {
-        qDebug() << "Exception: DeviceManager::get_device_by_name " << name;
-        throw QException();
+        qDebug() << "Exception: DeviceManager::get_device_by_name " << QString::fromStdString(name);
+        throw std::runtime_error("Device not found: " + name);
     } else
         return nullptr;
 }
 
-unsigned int DeviceManager::get_device_index(QString name)
+unsigned int DeviceManager::get_device_index(const std::string &name)
 {
     for (unsigned int i=0; i < device_count; i++)
         if (devices[i].device->name == name)
             return i;
 
-    error(nullptr, DeviceManager::tr("Device %1 not found").arg(name));
+    error(nullptr, DeviceManager::tr("Device %1 not found").arg(QString::fromStdString(name)).toStdString());
     return (unsigned int)(-1);
 }
 
@@ -287,12 +288,12 @@ void DeviceManager::clock(unsigned int counter)
         devices[i].device->system_clock(counter);
 }
 
-void DeviceManager::error(ComputerDevice *d, QString message)
+void DeviceManager::error(ComputerDevice *d, const std::string &message)
 {
     error_device = d;
     error_message = message;
-    qDebug() << "Exception DeviceManager::error " << d->name << " " << message;
-    throw QException();
+    qDebug() << "Exception DeviceManager::error " << QString::fromStdString(d->name) << " " << QString::fromStdString(message);
+    throw std::runtime_error(message);
 }
 
 void DeviceManager::error_clear()
@@ -300,23 +301,20 @@ void DeviceManager::error_clear()
     error_device = nullptr;
 }
 
-void DeviceManager::logs(QString s)
+void DeviceManager::logs(const std::string &s)
 {
 #ifdef LOGGER
-    std::cout << s.toStdString() << std::endl;
+    std::cout << s << std::endl;
     if (logger != nullptr)
     {
         CPU * cpu = dynamic_cast<CPU*>(get_device(0)->device.get());
 
         if (cpu != nullptr)
         {
-            // float i;
-            // float fraq = std::modf((float)global_clock_counter / 1000000, &i);
-            // QString out = QString("%1.%2: %3: ").arg(std::ceil(i)).arg(std::round(fraq * 1000)).arg(cpu->get_pc(), 4, 16, QChar('0')) + s;
-            QString out = QString("%1: ").arg(cpu->get_pc(), 4, 16, QChar('0')) + s;
+            QString out = QString("%1: ").arg(cpu->get_pc(), 4, 16, QChar('0')) + QString::fromStdString(s);
             logger->logs(out);
         } else
-            logger->logs(s);
+            logger->logs(QString::fromStdString(s));
     }
 #endif
 }
@@ -326,7 +324,7 @@ bool DeviceManager::log_available()
     return (logger != nullptr) && logger->log_available();
 }
 
-QVector<ComputerDevice*> DeviceManager::find_devices_by_class(QString class_to_find)
+QVector<ComputerDevice*> DeviceManager::find_devices_by_class(const std::string &class_to_find)
 {
     QVector<ComputerDevice*> found;
 
@@ -358,13 +356,13 @@ void InterfaceManager::clear()
     interfaces.clear();
 }
 
-Interface * InterfaceManager::get_interface_by_name(QString device_name, QString interface_name, bool required)
+Interface * InterfaceManager::get_interface_by_name(const std::string &device_name, const std::string &interface_name, bool required)
 {
     for (size_t i=0; i<interfaces.size(); i++)
         if (interfaces[i]->device->name == device_name && interfaces[i]->name == interface_name)
             return interfaces[i];
     if (required)
-        QMessageBox::critical(0, InterfaceManager::tr("Error"), InterfaceManager::tr("Interface '%1:%2' not found").arg(device_name, interface_name));
+        QMessageBox::critical(0, InterfaceManager::tr("Error"), InterfaceManager::tr("Interface '%1:%2' not found").arg(QString::fromStdString(device_name), QString::fromStdString(interface_name)));
     return nullptr;
 }
 
@@ -379,22 +377,22 @@ ComputerDevice::ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
     reset_priority(0)
 {
     try {
-        QString s = cd->get_parameter("clock").value;
-        if (s.isEmpty())
+        std::string s = cd->get_parameter("clock").value;
+        if (s.empty())
         {
-            QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect clock value for '%1'").arg(name));
-            throw QException();
+            QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect clock value for '%1'").arg(QString::fromStdString(name)));
+            throw std::runtime_error("Incorrect clock value for " + name);
         } else {
-            int pos = s.indexOf("/");
-            if (pos>0) {
-                clock_miltiplier = parse_numeric_value(s.left(pos));
-                clock_divider = parse_numeric_value(s.right(s.length()-pos-1));
+            size_t pos = s.find("/");
+            if (pos != std::string::npos) {
+                clock_miltiplier = parse_numeric_value(s.substr(0, pos));
+                clock_divider = parse_numeric_value(s.substr(pos + 1));
             } else {
                 clock_miltiplier = parse_numeric_value(s);
                 clock_divider = 1;
             }
         }
-    } catch (QException &e) {
+    } catch (std::exception &e) {
         clock_miltiplier = 1;
         clock_divider = 1;
     }
@@ -427,64 +425,63 @@ void ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
 
     for (size_t i = 0; i < cd->parameters.size(); i++)
     {
-        QString parameter_name = cd->parameters[i].name;
-        if (parameter_name.at(0) == '~')
+        const std::string &parameter_name = cd->parameters[i].name;
+        if (parameter_name[0] == '~')
         {
+            std::string interface_name = parameter_name.substr(1);
+            if (interface_name.empty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect interface definition for %1").arg(QString::fromStdString(name)));
 
-            QString interface_name = parameter_name.remove(0, 1);
-            if (interface_name.isEmpty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect interface definition for %1").arg(name));
-
-            QString connection = cd->parameters[i].value;
+            std::string connection = cd->parameters[i].value;
             Interface * interface = im->get_interface_by_name(name, interface_name);
 
             try {
                 unsigned int pull_value = parse_numeric_value(connection);
                 interface->pull(pull_value);
                 continue;
-            } catch (QException &e) {}
+            } catch (std::exception &e) {}
 
             LinkData ld;
             bool inverted;
 
             ld.s.i = interface;
 
-            if (connection.isEmpty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(name, connection));
+            if (connection.empty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(QString::fromStdString(name), QString::fromStdString(connection)));
 
-            if (connection.at(0) == '!') {
-                connection = connection.right(connection.length()-1);
+            if (connection[0] == '!') {
+                connection = connection.substr(1);
                 inverted = true;
             } else
                 inverted = false;
 
-            int p = connection.indexOf('.');
-            if (p < 0) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(name, connection));
-            QString connected_device = connection.left(p);
-            QString connected_interface = connection.right(connection.length()-p-1);
+            size_t p = connection.find('.');
+            if (p == std::string::npos) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(QString::fromStdString(name), QString::fromStdString(connection)));
+            std::string connected_device = connection.substr(0, p);
+            std::string connected_interface = connection.substr(p + 1);
 
             ld.d.i = im->get_interface_by_name(connected_device, connected_interface);
 
-            QString source_bits = cd->parameters[i].left_range;
-            if (source_bits.isEmpty())
+            const std::string &source_bits = cd->parameters[i].left_range;
+            if (source_bits.empty())
             {
                 ld.s.shift = 0;
                 ld.s.mask = create_mask(ld.s.i->get_size(), 0);
             } else {
-                source_bits = source_bits.mid(1, source_bits.length()-2); //remove brackets
+                std::string sb = source_bits.substr(1, source_bits.length()-2); //remove brackets
                 unsigned int bit_1, bit_2;
-                convert_range(source_bits, &bit_1, &bit_2);
+                convert_range(sb, &bit_1, &bit_2);
                 ld.s.shift = bit_1;
                 ld.s.mask = create_mask(bit_2 - bit_1 + 1, bit_1);
             }
 
-            QString dest_bits = cd->parameters[i].right_range;
-            if (dest_bits.isEmpty())
+            const std::string &dest_bits = cd->parameters[i].right_range;
+            if (dest_bits.empty())
             {
                 ld.d.shift = 0;
                 ld.d.mask = create_mask(ld.d.i->get_size(), 0);
             } else {
-                dest_bits = dest_bits.mid(1, dest_bits.length()-2); //remove brackets
+                std::string db = dest_bits.substr(1, dest_bits.length()-2); //remove brackets
                 unsigned int bit_1, bit_2;
-                convert_range(dest_bits, &bit_1, &bit_2);
+                convert_range(db, &bit_1, &bit_2);
                 ld.d.shift = bit_1;
                 ld.d.mask = create_mask(bit_2 - bit_1 + 1, bit_1);
             }
@@ -500,8 +497,8 @@ void ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
     try {
         m_cold_reset = read_confg_value(cd, "cold_reset", false, true);
         m_soft_reset = read_confg_value(cd, "soft_reset", false, true);
-    } catch (QException &e) {
-        QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect parameters for '%1'").arg(name));
+    } catch (std::exception &e) {
+        QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect parameters for '%1'").arg(QString::fromStdString(name)));
     }
 
 #ifdef LOGGER
@@ -534,7 +531,7 @@ void ComputerDevice::reset(MAYBE_UNUSED bool cold)
     //Does nothing by default, but may be overridden
 }
 
-void ComputerDevice::logs(QString s)
+void ComputerDevice::logs(const std::string &s)
 {
     if (log_available()) im->dm->logs(this->name + ": " + s);
 }
@@ -544,7 +541,7 @@ bool ComputerDevice::log_available()
     return im->dm->log_available();
 }
 
-bool ComputerDevice::belongs_to_class(QString class_to_check)
+bool ComputerDevice::belongs_to_class(const std::string &class_to_check)
 {
     return device_class == class_to_check;
 }
@@ -668,10 +665,10 @@ void RAM::load_config(SystemData *sd)
     set_size(parse_numeric_value(this->cd->get_parameter("size").value));
 
     try {
-        QString s = cd->get_parameter("fill").value.toLower();
+        std::string s = str_tolower(cd->get_parameter("fill").value);
         random_fill = (s == "random");
         if (!random_fill) fill = parse_numeric_value(s);
-    } catch (QException &e) {
+    } catch (std::exception &e) {
         fill = 0;
     }
     //memset(buffer, fill, get_size());
@@ -708,82 +705,81 @@ void ROM::load_config(SystemData *sd)
 
     try {
         this->fill = parse_numeric_value(this->cd->get_parameter("fill").value);
-    } catch (QException &e) {
+    } catch (std::exception &e) {
         this->fill = 0xFF;
     }
 
-    QString image = cd->get_parameter("image", false).value;
+    std::string image = cd->get_parameter("image", false).value;
 
-    if (!image.isEmpty()) {
+    if (!image.empty()) {
 
         set_size(parse_numeric_value(cd->get_parameter("size").value));
         if (!buffer.empty()) memset(buffer.data(), fill, get_size());
 
-        QString file_name = find_file_location(sd, image);
-        if (file_name.isEmpty())
-            QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("File '%1' not found").arg(file_name));
+        std::string file_name = find_file_location(sd, image);
+        if (file_name.empty())
+            QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("File '%1' not found").arg(QString::fromStdString(image)));
         else
-        if (file_name.endsWith(".hex", Qt::CaseInsensitive))
+        if (dsk_tools::get_file_ext(file_name) == ".hex")
         {
-            QFile file(file_name);
-            if (!file.open(QIODevice::ReadOnly)) {
-                QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Error reading HEX file %1").arg(file_name));
+            std::string content = dsk_tools::utf8_read_file(file_name);
+            if (content.empty()) {
+                QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Error reading HEX file %1").arg(QString::fromStdString(file_name)));
                 return;
             }
 
             unsigned int index = 0;
-            QTextStream in(&file);
-            while (!in.atEnd())
+            std::istringstream stream(content);
+            std::string line;
+            while (std::getline(stream, line))
             {
-                QString line = in.readLine();
-                unsigned int len = parse_numeric_value("$" + line.mid(1, 2));
-                unsigned int addr = parse_numeric_value("$" + line.mid(3, 4));
-                unsigned int type = parse_numeric_value("$" + line.mid(7, 2));
-                //qDebug() << len << Qt::hex << addr << type;
+                if (line.size() < 9) continue;
+                unsigned int len = parse_numeric_value("$" + line.substr(1, 2));
+                unsigned int type = parse_numeric_value("$" + line.substr(7, 2));
                 if (type == 0)
                 {
                     for (unsigned int j=0; j< len; j++)
-                        buffer[index+j] = parse_numeric_value("$" + line.mid(9+j*2, 2));
+                        buffer[index+j] = parse_numeric_value("$" + line.substr(9+j*2, 2));
                     index += len;
                 }
-                //QStringList parts = line.split(u'\x09', Qt::SkipEmptyParts);
             }
-            file.close();
         } else {
-            QFile file(file_name);
-            if (file.open(QIODevice::ReadOnly)){
-                unsigned int file_size = file.size();
-                if (file_size > this->get_size())
-                {
-                    QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("ROM image file for '%1' is too big").arg(this->name));
-                    throw QException();
-                }
-                QByteArray data = file.readAll();
-                memcpy(this->buffer.data(), data.constData(), file_size);
+            long long file_size = dsk_tools::utf8_file_size(file_name);
+            if (file_size < 0) {
+                QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Can't open ROM image file '%1'").arg(QString::fromStdString(file_name)));
+                throw std::runtime_error("Can't open ROM image file: " + file_name);
+            }
+            if (static_cast<unsigned int>(file_size) > this->get_size())
+            {
+                QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("ROM image file for '%1' is too big").arg(QString::fromStdString(this->name)));
+                throw std::runtime_error("ROM image file too big for " + this->name);
+            }
+            dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
+            if (file.is_open()){
+                file.read(reinterpret_cast<char*>(this->buffer.data()), file_size);
                 file.close();
             } else {
-                QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Can't open ROM image file '%1'").arg(file_name));
-                throw QException();
+                QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Can't open ROM image file '%1'").arg(QString::fromStdString(file_name)));
+                throw std::runtime_error("Can't open ROM image file: " + file_name);
             }
         }
     } else {
-        QString data_str = cd->get_parameter("data").right_extended;
-        QStringList values = data_str.split(',', skip_empty_parts);
+        std::vector<std::string> values = split_string(cd->get_parameter("data").right_extended, ',', true);
         set_size(values.size());
-        for (int i=0; i<values.size(); i++)
-            buffer[i] = parse_numeric_value(values.at(i));
+        for (size_t i=0; i<values.size(); i++)
+            buffer[i] = parse_numeric_value(values[i]);
     }
 
     try {
-        QString s = cd->get_parameter("mode").value.toLower();
+        std::string s = str_tolower(cd->get_parameter("mode").value);
         if ((s == "stream")) rom_mode = ROMMode::Stream;
         else if ((s == "normal")) rom_mode = ROMMode::Normal;
         else
         {
-            QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Incorrect mode set for '%1'").arg(this->name));
-            throw QException();
+            QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Incorrect mode set for '%1'").arg(QString::fromStdString(this->name)));
+            throw std::runtime_error("Incorrect mode set for " + this->name);
         }
-    } catch (QException &e) {
+    } catch (std::exception &e) {
         rom_mode = ROMMode::Normal;
     }
 }
@@ -817,7 +813,7 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
 {
     try {
         size = parse_numeric_value(this->cd->get_parameter("size").value);
-    } catch (QException &e) {
+    } catch (std::exception &e) {
         size = 8;
     }
 
@@ -826,26 +822,26 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
 
     try {
         default_value = parse_numeric_value(this->cd->get_parameter("default").value);
-    } catch (QException &e) {
+    } catch (std::exception &e) {
         default_value = 0;
     }
 
     try {
         flip_mask = parse_numeric_value(cd->get_parameter("flipmask").value);
-    } catch (QException &e) {
+    } catch (std::exception &e) {
         flip_mask = _FFFF;
     }
 
     try {
         mask = parse_numeric_value(cd->get_parameter("mask").value);
-    } catch (QException &e) {
+    } catch (std::exception &e) {
         mask = _FFFF;
     }
 
     try {
         constant_value = parse_numeric_value(cd->get_parameter("constant_return").value);
         has_constant_return = true;
-    } catch (QException &e) {
+    } catch (std::exception &e) {
         has_constant_return = false;
     }
 
@@ -904,8 +900,8 @@ PortAddress::PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd):
 {
     try {
         store_on_read = read_confg_value(cd, "store_on_read", false, false);
-    } catch (QException &e) {
-        QMessageBox::critical(0, PortAddress::tr("Error"), PortAddress::tr("Incorrect parameters for '%1'").arg(name));
+    } catch (std::exception &e) {
+        QMessageBox::critical(0, PortAddress::tr("Error"), PortAddress::tr("Incorrect parameters for '%1'").arg(QString::fromStdString(name)));
     }
 }
 
@@ -962,7 +958,7 @@ CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
 {
     try {
         clock = parse_numeric_value(this->cd->get_parameter("clock").value);
-    } catch (QException &e) {
+    } catch (std::exception &e) {
         QMessageBox::critical(0, CPU::tr("Error"), CPU::tr("No CPU clock value found"));
     }
 }
@@ -971,7 +967,7 @@ void CPU::load_config(SystemData *sd)
 {
     ComputerDevice::load_config(sd);
 
-    QString s = cd->get_parameter("stopped", false).value;
+    std::string s = cd->get_parameter("stopped", false).value;
     if (s=="1") debug = (DEBUG_STOPPED);
 
     mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper"));
@@ -1041,9 +1037,9 @@ void MemoryMapper::load_config(SystemData *sd)
 
     this->cache_size = sizeof(this->read_cache_items) / sizeof(MapperCacheEntry);
 
-    QString config_device = this->cd->get_parameter("config", false).value;
+    std::string config_device = this->cd->get_parameter("config", false).value;
 
-    if (!config_device.isEmpty())
+    if (!config_device.empty())
     {
         Interface * i_cfg = im->get_interface_by_name(config_device, "out", false);
         if (i_cfg == nullptr)
@@ -1066,41 +1062,39 @@ void MemoryMapper::load_config(SystemData *sd)
 
     this->ports_mask = (this->cd->get_parameter("wideports", false).value == "1")?(unsigned int)(-1):0xFF;
 
-    QString m = this->cd->get_parameter("cancelinit", false).value;
-    this->cancel_init_mask = (!m.isEmpty())?parse_numeric_value(m):0;
+    std::string m = this->cd->get_parameter("cancelinit", false).value;
+    this->cancel_init_mask = (!m.empty())?parse_numeric_value(m):0;
 
     //Loading ranges
-    QString parameter_name, mask, range, c, a;
-    unsigned int index;
-    int p;
-
     for (size_t i = 0; i < this->cd->parameters.size(); i++)
     {
-        parameter_name = this->cd->parameters[i].name;
+        const std::string &parameter_name = this->cd->parameters[i].name;
         if (parameter_name == "@memory" || parameter_name == "@port")
         {
             MapperRange mr;
+            std::string mask, c, a;
+            unsigned int index;
 
-            range = this->cd->parameters[i].left_range;
-            p = range.indexOf("][");
-            if (p>=0)
+            const std::string &range = this->cd->parameters[i].left_range;
+            size_t p = range.find("][");
+            if (p != std::string::npos)
             {
-                c = range.mid(1, p-1);
-                a = range.mid(p+2, range.length()-p-3);
-                p = c.indexOf(":");
-                if (p >= 0)
+                c = range.substr(1, p - 1);
+                a = range.substr(p + 2, range.length() - p - 3);
+                size_t cp = c.find(':');
+                if (cp != std::string::npos)
                 {
-                    mask = c.right(c.length()-p-1);
-                    c = c.left(p);
+                    mask = c.substr(cp + 1);
+                    c = c.substr(0, cp);
                 } else
                     mask = "";
             } else {
                 c = "";
-                a = range.mid(1, range.length()-2);
+                a = range.substr(1, range.length() - 2);
                 mask = "";
             }
 
-            if (c=="*")
+            if (c == "*")
             {
                 index = 0;
                 this->first_range = 0;
@@ -1111,37 +1105,37 @@ void MemoryMapper::load_config(SystemData *sd)
 
             try {
                 mr.config_mask = parse_numeric_value(mask);
-            } catch (QException &e) {
+            } catch (std::exception &) {
                 mr.config_mask = create_mask(this->i_config.get_size(), 0);
             }
 
             try {
                 mr.config_value = parse_numeric_value(c);
-            } catch (QException &e) {
+            } catch (std::exception &) {
                 mr.config_value = 0;
                 mr.config_mask = 0;
             }
 
-            p = a.indexOf("-");
-            if (p>=0)
+            p = a.find('-');
+            if (p != std::string::npos)
             {
-                mr.range_begin = parse_numeric_value(a.left(p));
-                mr.range_end = parse_numeric_value(a.right(a.length() - p - 1));
+                mr.range_begin = parse_numeric_value(a.substr(0, p));
+                mr.range_end = parse_numeric_value(a.substr(p + 1));
             } else {
                 if (parameter_name == "@port")
                 {
                     mr.range_begin = parse_numeric_value(a);
                     mr.range_end = mr.range_begin;
                 } else
-                    QMessageBox::critical(0, MemoryMapper::tr("Error"), MemoryMapper::tr("Incorrect range for '%1'").arg(parameter_name));
+                    QMessageBox::critical(0, MemoryMapper::tr("Error"), MemoryMapper::tr("Incorrect range for '%1'").arg(QString::fromStdString(parameter_name)));
             }
 
             mr.device = this->im->dm->get_device_by_name(this->cd->parameters[i].value);
 
-            range = this->cd->parameters[i].right_range;
+            const std::string &right_range = this->cd->parameters[i].right_range;
             try {
-               mr.base = parse_numeric_value(range.mid(1, range.length()-2));
-            } catch (QException &e) {
+               mr.base = parse_numeric_value(right_range.substr(1, right_range.length() - 2));
+            } catch (std::exception &) {
                 mr.base = 0;
             }
 
@@ -1153,7 +1147,7 @@ void MemoryMapper::load_config(SystemData *sd)
             try {
                 mr.address_mask = parse_numeric_value(this->cd->extended_parameter(i, "addr_mask"));
                 mr.address_value = parse_numeric_value(this->cd->extended_parameter(i, "addr_value"));
-            } catch (QException &e) {
+            } catch (std::exception &) {
                 mr.address_mask = 0;
                 mr.address_value = 0;
             }

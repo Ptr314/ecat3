@@ -4,6 +4,7 @@
 // Description: Inter 8080 emulator interface class
 
 #include "i8080.h"
+#include "emulator/utils.h"
 
 using namespace I8080;
 
@@ -104,36 +105,30 @@ void i8080::inte_changed(unsigned int inte)
     i_inte.change(inte);
 }
 
-QList<QPair<QString, QString>> i8080::get_registers()
+std::vector<std::pair<std::string, std::string>> i8080::get_registers()
 {
-    QList<QPair<QString, QString>> l;
     i8080context * c = core->get_context();
-
-    l << QPair<QString, QString>("A", QString("%1").arg(c->registers.regs.A, 2, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("BC", QString("%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("DE", QString("%1").arg(c->registers.reg_pairs.DE, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("HL", QString("%1").arg(c->registers.reg_pairs.HL, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("-", "")
-      << QPair<QString, QString>("SP", QString("%1").arg(c->registers.regs.SP, 4, 16, QChar('0')).toUpper())
-      << QPair<QString, QString>("PC", QString("%1").arg(c->registers.regs.PC, 4, 16, QChar('0')).toUpper())
-    ;
-
-    return l;
+    return {
+        {"A",  hex_str(c->registers.regs.A, 2)},
+        {"BC", hex_str(c->registers.reg_pairs.BC, 4)},
+        {"DE", hex_str(c->registers.reg_pairs.DE, 4)},
+        {"HL", hex_str(c->registers.reg_pairs.HL, 4)},
+        {"-",  ""},
+        {"SP", hex_str(c->registers.regs.SP, 4)},
+        {"PC", hex_str(c->registers.regs.PC, 4)}
+    };
 }
 
-QList<QPair<QString, QString>> i8080::get_flags()
+std::vector<std::pair<std::string, std::string>> i8080::get_flags()
 {
-    QList<QPair<QString, QString>> l;
     i8080context * c = core->get_context();
-
-    l << QPair<QString, QString>("C", QString("%1").arg( ((c->registers.regs.F & F_CARRY) != 0)?1:0))
-      << QPair<QString, QString>("P", QString("%1").arg( ((c->registers.regs.F & F_PARITY) != 0)?1:0))
-      << QPair<QString, QString>("H", QString("%1").arg( ((c->registers.regs.F & F_HALF_CARRY) != 0)?1:0))
-      << QPair<QString, QString>("Z", QString("%1").arg( ((c->registers.regs.F & F_ZERO) != 0)?1:0))
-      << QPair<QString, QString>("S", QString("%1").arg( ((c->registers.regs.F & F_SIGN) != 0)?1:0))
-    ;
-
-    return l;
+    return {
+        {"C", std::to_string(((c->registers.regs.F & F_CARRY) != 0) ? 1 : 0)},
+        {"P", std::to_string(((c->registers.regs.F & F_PARITY) != 0) ? 1 : 0)},
+        {"H", std::to_string(((c->registers.regs.F & F_HALF_CARRY) != 0) ? 1 : 0)},
+        {"Z", std::to_string(((c->registers.regs.F & F_ZERO) != 0) ? 1 : 0)},
+        {"S", std::to_string(((c->registers.regs.F & F_SIGN) != 0) ? 1 : 0)}
+    };
 }
 
 
@@ -184,7 +179,7 @@ unsigned int i8080::execute()
     return cycles;
 }
 
-void i8080::set_context_value(QString name, unsigned int value)
+void i8080::set_context_value(const std::string &name, unsigned int value)
 {
     if (name == "PC")
     {

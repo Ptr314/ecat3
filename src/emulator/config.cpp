@@ -3,7 +3,6 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Emulator config functions, source
 
-#include <QFile>
 #include <QMessageBox>
 
 #include "config.h"
@@ -11,26 +10,26 @@
 
 #include "dsk_tools/dsk_tools.h"
 
-EmulatorConfigDevice::EmulatorConfigDevice(QString name, QString type):
+EmulatorConfigDevice::EmulatorConfigDevice(std::string name, std::string type):
     name(name),
     type(type)
 {}
 
 EmulatorConfigDevice::~EmulatorConfigDevice(){}
 
-void EmulatorConfigDevice::add_parameter(QString name, QString left_range, QString value, QString right_range, QString right_extended)
+void EmulatorConfigDevice::add_parameter(std::string name, std::string left_range, std::string value, std::string right_range, std::string right_extended)
 {
     parameters.push_back({name, left_range, value, right_range, right_extended});
 }
 
-EmulatorConfigParameter EmulatorConfigDevice::get_parameter(QString name, bool required)
+EmulatorConfigParameter EmulatorConfigDevice::get_parameter(std::string name, bool required)
 {
     for (size_t i = 0; i < parameters.size(); i++)
     {
         if (parameters[i].name == name) return parameters[i];
     }
     if (required)
-        throw ConfigException(this->name + ":" + name);
+        throw std::runtime_error(this->name + ":" + name);
     else
         return {"", "", "", "", ""};
 }
@@ -54,86 +53,85 @@ void EmulatorConfig::free_devices()
     devices.clear();  // Automatic cleanup via unique_ptr
 }
 
-QString EmulatorConfig::read_next_entity(QString *config, QString stop = "")
+std::string EmulatorConfig::read_next_entity(std::string *config, std::string stop)
 {
-    QString s = "";
-    const QString parser_spaces = " \x09\x0D\x0A";
-    const QString parser_line = "\x0D\x0A";
-    const QString parser_border = "=[]{}";
-    const QString terminator = parser_border + stop;
-    QString stop_chars;
-    while (!config->isEmpty())
+    std::string s;
+    const std::string parser_spaces = " \x09\x0D\x0A";
+    const std::string parser_line = "\x0D\x0A";
+    const std::string parser_border = "=[]{}";
+    const std::string terminator = parser_border + stop;
+    std::string stop_chars;
+    while (!config->empty())
     {
-        QChar c = config->at(0);
-        config->remove(0, 1);
+        char c = (*config)[0];
+        config->erase(0, 1);
         //Skipping spaces
-        while (!config->isEmpty() && parser_spaces.contains(c))
+        while (!config->empty() && parser_spaces.find(c) != std::string::npos)
         {
-            c = config->at(0);
-            config->remove(0, 1);
+            c = (*config)[0];
+            config->erase(0, 1);
         }
-        if (!config->isEmpty() || !parser_spaces.contains(c))
+        if (!config->empty() || parser_spaces.find(c) == std::string::npos)
         {
-            if (!terminator.contains(c))
+            if (terminator.find(c) == std::string::npos)
             {
                 if (c == '"')
                 {
                     stop_chars = parser_line + "\"";
-                    c = config->at(0);
-                    config->remove(0, 1);
+                    c = (*config)[0];
+                    config->erase(0, 1);
                 } else {
                     stop_chars = parser_border + parser_line + stop;
                 }
-                while (!config->isEmpty() && !stop_chars.contains(c))
+                while (!config->empty() && stop_chars.find(c) == std::string::npos)
                 {
-                    s.append(c);
-                    c = config->at(0);
-                    config->remove(0, 1);
+                    s += c;
+                    c = (*config)[0];
+                    config->erase(0, 1);
                 }
-                if (!config->isEmpty() and c != '"') {
-                    *config = QString(c) + *config;
+                if (!config->empty() && c != '"') {
+                    config->insert(config->begin(), c);
                 }
-                s = s.trimmed();
-                // std::cout << s.toStdString() << std::endl;
-                const auto pos = s.indexOf("//");
+                s = str_trim(s);
+                const auto pos = s.find("//");
                 if (pos == 0) s = "";
-                if (pos > 0) s = s.left(pos).trimmed();
-                if (pos >= 0 && !config->isEmpty()) {
+                if (pos > 0 && pos != std::string::npos) s = str_trim(s.substr(0, pos));
+                if (pos != std::string::npos && !config->empty()) {
                     // Skipping until end of line
-                    QChar cc = config->at(0);
-                    while (!config->isEmpty() && !parser_line.contains(cc)) {
-                        config->remove(0, 1);
-                        cc = config->at(0);
+                    char cc = (*config)[0];
+                    while (!config->empty() && parser_line.find(cc) == std::string::npos) {
+                        config->erase(0, 1);
+                        cc = (*config)[0];
                     }
                 }
-                if (s.isEmpty()) continue;
+                if (s.empty()) continue;
                 return s;
             }
-            return c;
+            return std::string(1, c);
         }
         return "";
     }
     return "";
 }
 
-QString EmulatorConfig::read_extended_entity(QString *config, QString stop)
+std::string EmulatorConfig::read_extended_entity(std::string *config, std::string stop)
 {
-    QString s = "";
-    if (!config->isEmpty())
+    std::string s;
+    if (!config->empty())
     {
-        QChar c = config->at(0);
-        config->remove(0, 1);
-        while (!config->isEmpty() && !stop.contains(c))
+        char c = (*config)[0];
+        config->erase(0, 1);
+        while (!config->empty() && stop.find(c) == std::string::npos)
         {
-            s = s + QString(c);
-            c = config->at(0);
-            config->remove(0, 1);
+            s += c;
+            c = (*config)[0];
+            config->erase(0, 1);
         }
     }
     return s;
 }
 
-EmulatorConfigDevice * EmulatorConfig::add_device(QString device_name, QString device_type)
+EmulatorConfigDevice * EmulatorConfig::add_device(std::string device_name, std::string device_type)
 {
     auto new_device = make_unique<EmulatorConfigDevice>(device_name, device_type);
     EmulatorConfigDevice* ptr = new_device.get();
@@ -141,15 +139,14 @@ EmulatorConfigDevice * EmulatorConfig::add_device(QString device_name, QString d
     return ptr;
 }
 
-QString EmulatorConfigDevice::extended_parameter(unsigned int i, QString expected_name)
+std::string EmulatorConfigDevice::extended_parameter(unsigned int i, std::string expected_name)
 {
-    QString s = parameters[i].right_extended;
-    QStringList list = s.split(u',', skip_empty_parts);
-    for (int i = 0; i < list.size(); i++)
+    std::vector<std::string> list = split_string(parameters[i].right_extended, ',', true);
+    for (size_t i = 0; i < list.size(); i++)
     {
-        QStringList parameter = list.at(i).split(u'=', skip_empty_parts);
-        QString name = parameter.at(0).toLower().trimmed();
-        QString value = parameter.at(1).toLower().trimmed();
+        std::vector<std::string> parameter = split_string(list[i], '=', true);
+        std::string name = str_tolower(str_trim(parameter[0]));
+        std::string value = str_tolower(str_trim(parameter[1]));
         if (name == expected_name) return value;
     }
     return "";
@@ -159,81 +156,75 @@ QString EmulatorConfigDevice::extended_parameter(unsigned int i, QString expecte
 
 void EmulatorConfig::load_from_file(std::string file_name, bool system_only)
 {
-    QString device_name;
-    QString device_type;
-
-    //qDebug() << "Loading: " + file_name;
+    std::string device_name;
+    std::string device_type;
 
     if (!devices.empty()) free_devices();
 
-    QString q_file_name = QString::fromStdString(file_name);
-    QFile file(q_file_name);
-    if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Error reading config file %1").arg(q_file_name));
+    std::string config = dsk_tools::utf8_read_file(file_name);
+    if (config.empty()) {
+        QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Error reading config file %1").arg(QString::fromStdString(file_name)));
         return;
     }
-    QString config = QString(file.readAll());
-    while(!config.isEmpty())
+    while(!config.empty())
     {
         device_name = read_next_entity(&config, ":");
-        // std::cout << device_name.toStdString() << std::endl;
-        if (device_name.isEmpty()) return;
-        if (device_name.compare("system")==0)
+        if (device_name.empty()) return;
+        if (device_name == "system")
         {
             device_type = "";
         } else {
-            QString s = read_next_entity(&config, ":");
-            if (s.isEmpty() || s.compare(":")!=0)
+            std::string s = read_next_entity(&config, ":");
+            if (s.empty() || s != ":")
             {
-                QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device '%1' - no type found").arg(device_name));
+                QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device '%1' - no type found").arg(QString::fromStdString(device_name)));
                 return;
             }
             device_type = read_next_entity(&config);
-            if (device_type.isEmpty())
+            if (device_type.empty())
             {
-                QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device '%1' - no type found").arg(device_name));
+                QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device '%1' - no type found").arg(QString::fromStdString(device_name)));
                 return;
             }
         }
         EmulatorConfigDevice * new_device = add_device(device_name, device_type);
 
-        QString s = read_next_entity(&config);
-        if (s.isEmpty() || s.compare("{")!=0)
+        std::string s = read_next_entity(&config);
+        if (s.empty() || s != "{")
         {
-            QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device '%1' - no description found").arg(device_name));
+            QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device '%1' - no description found").arg(QString::fromStdString(device_name)));
             return;
         }
 
-        QString param_name = read_next_entity(&config);
-        if (param_name.isEmpty())
+        std::string param_name = read_next_entity(&config);
+        if (param_name.empty())
         {
-            QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device '%1' - incorrect parameters").arg(device_name));
+            QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device '%1' - incorrect parameters").arg(QString::fromStdString(device_name)));
             return;
         }
-        while (param_name.compare("}")!=0)
+        while (param_name != "}")
         {
-            QString new_param_name = param_name;
+            std::string new_param_name = param_name;
             s = read_next_entity(&config);
-            // std::cout << "- " << s.toStdString() << std::endl;
-            if (s.isEmpty() || (s.compare("[")!=0 && s.compare("=")!=0))
+            if (s.empty() || (s != "[" && s != "="))
             {
-                QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device '%1' - incorrect parameters").arg(device_name));
+                QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device '%1' - incorrect parameters").arg(QString::fromStdString(device_name)));
                 return;
             }
 
             //Do we have a range on the left?
-            QString range_left;
-            if (s.compare("[")==0)
+            std::string range_left;
+            if (s == "[")
             {
                 range_left = "[";
                 s = read_next_entity(&config);
-                while (s.compare("=")!=0)
+                while (s != "=")
                 {
-                    range_left = range_left + s;
+                    range_left += s;
                     s = read_next_entity(&config);
-                    if (s.isEmpty())
+                    if (s.empty())
                     {
-                        QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(device_name).arg(param_name));
+                        QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(QString::fromStdString(device_name), QString::fromStdString(param_name)));
                         return;
                     }
                 }
@@ -243,47 +234,47 @@ void EmulatorConfig::load_from_file(std::string file_name, bool system_only)
 
             //Reading a right part
             s = read_next_entity(&config);
-            if (s.isEmpty())
+            if (s.empty())
             {
-                QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(device_name).arg(param_name));
+                QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(QString::fromStdString(device_name), QString::fromStdString(param_name)));
                 return;
             }
-            QString param_value;
-            QString range_right;
-            if (s.compare("{")!=0)
+            std::string param_value;
+            std::string range_right;
+            if (s != "{")
             {
                 param_value = s;
                 s = read_next_entity(&config);
-                if (s.isEmpty())
+                if (s.empty())
                 {
-                    QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(device_name).arg(param_name));
+                    QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(QString::fromStdString(device_name), QString::fromStdString(param_name)));
                     return;
                 }
-                if (s.compare("}")==0)
+                if (s == "}")
                 {
                     new_device->add_parameter(new_param_name, range_left, param_value, "", "");
                     param_name = s;
                     break;
                 }
                 range_right = "";
-                if (s.compare("[")==0)
+                if (s == "[")
                 {
                     while(1)
                     {
-                        range_right = range_right + s;
+                        range_right += s;
                         s = read_next_entity(&config);
-                        if (s.isEmpty())
+                        if (s.empty())
                         {
-                            QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(device_name, param_name));
+                            QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(QString::fromStdString(device_name), QString::fromStdString(param_name)));
                             return;
                         }
-                        if (s.compare("]")==0) break;
+                        if (s == "]") break;
                     }
-                    range_right = range_right + s;
+                    range_right += s;
                     s = read_next_entity(&config);
-                    if (s.isEmpty())
+                    if (s.empty())
                     {
-                        QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(device_name, param_name));
+                        QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device parameter '%1:%2'").arg(QString::fromStdString(device_name), QString::fromStdString(param_name)));
                         return;
                     }
                 }
@@ -292,14 +283,14 @@ void EmulatorConfig::load_from_file(std::string file_name, bool system_only)
                 range_right = "";
             }
 
-            QString extended_right = "";
-            if (s.compare("{")==0)
+            std::string extended_right;
+            if (s == "{")
             {
                 extended_right = read_extended_entity(&config, "}");
                 param_name = read_next_entity(&config);
-                if (param_name.isEmpty())
+                if (param_name.empty())
                 {
-                    QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device '%1' - incorrect parameters").arg(device_name));
+                    QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Configuration error for device '%1' - incorrect parameters").arg(QString::fromStdString(device_name)));
                     return;
                 }
             } else {
@@ -308,9 +299,8 @@ void EmulatorConfig::load_from_file(std::string file_name, bool system_only)
             new_device->add_parameter(new_param_name, range_left, param_value, range_right, extended_right);
         }
 
-        if (system_only && device_name.compare("system")==0) break;
+        if (system_only && device_name == "system") break;
     }
-    file.close();
 }
 
 EmulatorConfigDevice * EmulatorConfig::get_device(int i)
@@ -318,13 +308,13 @@ EmulatorConfigDevice * EmulatorConfig::get_device(int i)
     return devices[i].get();
 }
 
-EmulatorConfigDevice * EmulatorConfig::get_device(QString name)
+EmulatorConfigDevice * EmulatorConfig::get_device(const std::string& name)
 {
     for (unsigned int i=0; i<devices.size(); i++)
     {
         if (devices[i]->name == name) return devices[i].get();
     }
-    QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Device '%1' not found").arg(name));
+    QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Device '%1' not found").arg(QString::fromStdString(name)));
     return nullptr;
 }
 

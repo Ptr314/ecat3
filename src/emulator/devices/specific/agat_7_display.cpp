@@ -58,12 +58,12 @@ void Agat7Display::load_config(SystemData *sd)
 
     if (m_512_mode == M_512_ON) sy = 512;
 
-    const QString pal_mem = read_confg_value(cd, "pal_mem", false, QString(""));
-    const QString pal_switch = read_confg_value(cd, "pal_switch", false, QString(""));
-    const QString pal_mode = read_confg_value(cd, "pal_mode", false, QString(""));
-    const QString pal_font = read_confg_value(cd, "pal_font", false, QString(""));
+    const std::string pal_mem = read_confg_value(cd, "pal_mem", false, std::string(""));
+    const std::string pal_switch = read_confg_value(cd, "pal_switch", false, std::string(""));
+    const std::string pal_mode = read_confg_value(cd, "pal_mode", false, std::string(""));
+    const std::string pal_font = read_confg_value(cd, "pal_font", false, std::string(""));
 
-    if (!pal_mem.isEmpty() || !pal_switch.isEmpty() || !pal_mode.isEmpty() || !pal_font.isEmpty()) {
+    if (!pal_mem.empty() || !pal_switch.empty() || !pal_mode.empty() || !pal_font.empty()) {
         try {
             m_pal_mem = dynamic_cast<RAM*>(im->dm->get_device_by_name(pal_mem));
             m_pal_switch = dynamic_cast<PortAddress*>(im->dm->get_device_by_name(pal_switch));
@@ -72,7 +72,7 @@ void Agat7Display::load_config(SystemData *sd)
             m_pal_card = true;
             m_pal_card_out = true;
             m_pal_builtin = read_confg_value(cd, "pal_builtin", false, false);
-        } catch (QException &e) {
+        } catch (std::exception &e) {
             QMessageBox::critical(0, tr("Error"), tr("Incorrect display config - palette card"));
         }
     }

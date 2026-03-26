@@ -44,16 +44,16 @@ public:
         DMA = dynamic_cast<I8257*>(im->dm->get_device_by_name(cd->get_parameter("dma").value));
         Channel = parse_numeric_value(cd->get_parameter("channel").value);
         AttrDelay = cd->get_parameter("attr_delay", false).value == "1";
-        QString s = cd->get_parameter("rgb", false).value;
-        if (s.isEmpty())
+        std::string s = cd->get_parameter("rgb", false).value;
+        if (s.empty())
         {
             memset(&RGB, 0xFF, sizeof(RGB));
         } else {
-            RGBInv = s.at(0) == '^';
-            if (RGBInv) s = s.mid(1, s.length()-1);
+            RGBInv = s[0] == '^';
+            if (RGBInv) s = s.substr(1);
 
             for (unsigned int i=0; i<3; i++)
-                RGB[i] = QString(s.at(i)).toInt();
+                RGB[i] = s[i] - '0';
         }
     }
 

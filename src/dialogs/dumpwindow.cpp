@@ -8,7 +8,6 @@
 
 #include "dumpwindow.h"
 #include "emulator/utils.h"
-#include "qexception.h"
 #include "ui_dumpwindow.h"
 
 DumpWindow::DumpWindow(QWidget *parent) :
@@ -25,7 +24,7 @@ DumpWindow::DumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     this->d = d;
     ui->dump_area->set_data(e, dynamic_cast<AddressableDevice*>(d));
     ui->dump_area->set_frame(true, true, true, true);
-    setWindowTitle(d->name + " : " + d->type);
+    setWindowTitle(QString::fromStdString(d->name + " : " + d->type));
 }
 
 DumpWindow::~DumpWindow()
@@ -48,10 +47,10 @@ void DumpWindow::on_toolButton_clicked()
     QString so = ui->offsetEdit->text();
     QString sa = ui->addressEdit->text();
     try {
-        unsigned int offset = parse_numeric_value("$" + so);
-        unsigned int address = parse_numeric_value("$" + sa);
+        unsigned int offset = parse_numeric_value(("$" + so).toStdString());
+        unsigned int address = parse_numeric_value(("$" + sa).toStdString());
         ui->dump_area->go_to(offset, address);
-    } catch (QException &e) {
+    } catch (std::exception &e) {
         QMessageBox::critical(0, DumpWindow::tr("Error"), DumpWindow::tr("Incorrect address value"));
     }
 }

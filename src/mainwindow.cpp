@@ -18,6 +18,7 @@
 #include "dialogs/i8255window.h"
 #include "mainwindow.h"
 #include "emulator/utils.h"
+#include "dsk_tools/dsk_tools.h"
 #include "qevent.h"
 #include "ui_mainwindow.h"
 #include "dialogs/ui_aboutdlg.h"
@@ -118,18 +119,8 @@ MainWindow::MainWindow(QWidget *parent)
     software_path = emulator_root + "/software/";
     data_path = emulator_root + "/data/";
 
-#ifdef USE_MINI_INI
-    m_settings_file = make_unique<mINI::INIFile>(ini_file.toStdString());
-    m_settings_file->read(m_settings);
-
-    QString ini_lang;
-    if (m_settings.has("interface") && m_settings["interface"].has("language")) {
-        ini_lang = QString::fromStdString(m_settings["interface"]["language"]);
-    }
-#else
-    m_settings = new QSettings(ini_file, QSettings::IniFormat);
-    QString ini_lang = m_settings->value("interface/language", "").toString();
-#endif
+    m_settings = make_unique<IniSettings>(ini_file.toStdString());
+    QString ini_lang = QString::fromStdString(m_settings->get("interface", "language"));
 
     if (ini_lang.length() == 0) {
         const QStringList uiLanguages = QLocale::system().uiLanguages();
@@ -296,12 +287,8 @@ bool MainWindow::switch_language(const QString & lang, bool init)
         if (!init) {
             ui->retranslateUi(this);
             CreateScreenMenu();
-#ifdef USE_MINI_INI
-            m_settings["interface"]["language"] = lang.toStdString();
-            m_settings_file->write(m_settings);
-#else
-            m_settings->setValue("interface/language", lang);
-#endif
+            m_settings->set("interface", "language", lang.toStdString());
+            m_settings->save();
         }
         return true;
     } else {
@@ -474,7 +461,7 @@ void MainWindow::CreateDevicesMenu()
     for (unsigned int i=0; i < e->dm->device_count; i++)
     {
         QAction * a = ui->menuDevices->addAction(
-                            e->dm->get_device(i)->device_name + " : " + e->dm->get_device(i)->device_type,
+                            QString::fromStdString(e->dm->get_device(i)->device_name + " : " + e->dm->get_device(i)->device_type),
                             [this, i]{onDeviceMenuCalled(i);}
                       );
         a->setEnabled( DWM->get_create_func(e->dm->get_device(i)->device_type) != nullptr );
@@ -519,7 +506,7 @@ void MainWindow::UpdateToolbar()
         CreateFDDMenu(i);
         if (fdd->get_loaded())
         {
-            fdd_menu[i]->actions().at(0)->setText(fdd->file_name);
+            fdd_menu[i]->actions().at(0)->setText(QString::fromStdString(fdd->file_name));
             fdd_button[i]->setIcon(QIcon(":/icons/floppy_mount"));
             if (fdd->is_protected())
                 fdd_button[i]->setIcon(QIcon(":/icons/floppy_locked"));
@@ -570,7 +557,7 @@ void MainWindow::UpdateToolbar()
                 QString option_tooltip = QCoreApplication::translate("DeviceOptions", opt.title.c_str());
 
                 if (!opt.icon.empty()) {
-                    QString icon_path = find_file_location(sd, QString::fromStdString(opt.icon));
+                    QString icon_path = QString::fromStdString(find_file_location(sd, opt.icon));
                     if (!icon_path.isEmpty()) {
                         QIcon icon(icon_path);
                         icon.addPixmap(QPixmap(icon_path), QIcon::Disabled);
@@ -586,7 +573,7 @@ void MainWindow::UpdateToolbar()
                 combo->setFocusPolicy(Qt::NoFocus);
                 combo->setToolTip(option_tooltip);
 
-                std::string settings_key = (config_key + "_" + dev->name + "_" + QString::number(opt.id)).toStdString();
+                std::string settings_key = config_key.toStdString() + "_" + dev->name + "_" + std::to_string(opt.id);
                 QString saved = QString::fromStdString(e->read_setup("DeviceOptions", settings_key, ""));
 
                 int selected_index = 0;
@@ -602,13 +589,13 @@ void MainWindow::UpdateToolbar()
                 combo->setCurrentIndex(selected_index);
 
                 unsigned option_id = opt.id;
-                QString device_name = dev->name;
+                std::string device_name = dev->name;
                 connect(combo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                     [this, combo, dev, option_id, config_key, device_name](int index) {
                         unsigned value_id = combo->itemData(index).toUInt();
                         dev->set_device_option(option_id, value_id);
-                        QString key = config_key + "_" + device_name + "_" + QString::number(option_id);
-                        e->write_setup("DeviceOptions", key.toStdString(), std::to_string(value_id));
+                        std::string key = config_key.toStdString() + "_" + device_name + "_" + std::to_string(option_id);
+                        e->write_setup("DeviceOptions", key, std::to_string(value_id));
                     });
 
                 QAction * action = ui->toolBar->insertWidget(ui->actionDebugger, combo);
@@ -763,7 +750,7 @@ void MainWindow::on_actionOpen_triggered()
         last_path = fi.absolutePath();
         e->write_setup("Startup", "last_path", last_path.toStdString());
 
-        HandleExternalFile(e, file_name);
+        HandleExternalFile(e, file_name.toStdString());
     }
 }
 
@@ -806,13 +793,13 @@ void MainWindow::fdd_open(unsigned int n)
 {
     if (fdds[n] != nullptr)
     {
-        QString file_name = QFileDialog::getOpenFileName(this, MainWindow::tr("Open disk image"), last_path, fdds[n]->files);
+        QString file_name = QFileDialog::getOpenFileName(this, MainWindow::tr("Open disk image"), last_path, QString::fromStdString(fdds[n]->files));
         if (!file_name.isEmpty())
         {
             QFileInfo fi(file_name);
             fdd_menu[n]->actions().at(0)->setText(fi.fileName());
             fdd_button[n]->setIcon(QIcon(":/icons/floppy_mount"));
-            fdds[n]->load_image(file_name);
+            fdds[n]->load_image(file_name.toStdString());
             last_path = fi.absolutePath();
             e->write_setup("Startup", "last_path", last_path.toStdString());
         }
@@ -842,12 +829,13 @@ void MainWindow::fdd_write(unsigned int n)
 {
     if (fdds[n] != nullptr)
     {
-        QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save disk image to a file"), last_path, fdds[n]->files_save, 0, QFileDialog::DontConfirmOverwrite);
+        QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save disk image to a file"), last_path, QString::fromStdString(fdds[n]->files_save), 0, QFileDialog::DontConfirmOverwrite);
         if (!file_name.isEmpty())
         {
+            std::string std_file_name = file_name.toStdString();
             QMessageBox::StandardButton reply;
 
-            if (fileExists(file_name))
+            if (dsk_tools::file_exists(std_file_name))
             {
                 reply = QMessageBox::question(this,
                                               MainWindow::tr("File already exists"),
@@ -859,14 +847,14 @@ void MainWindow::fdd_write(unsigned int n)
 
             if (reply == QMessageBox::Yes)
             {
-                fdds[n]->save_image(file_name);
+                fdds[n]->save_image(std_file_name);
             } else
             if (reply == QMessageBox::No)
             {
                 QString backup_name = file_name + ".bak";
                 bool result = QFile::rename(file_name, backup_name);
                 if (result)
-                    fdds[n]->save_image(file_name);
+                    fdds[n]->save_image(std_file_name);
                 else
                     QMessageBox::critical(this, MainWindow::tr("Backup error"), MainWindow::tr("Error creating a backup. Probably *.bak already exists."));
             }
