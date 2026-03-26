@@ -30,9 +30,10 @@ O128Display::O128Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     sy = 256;
 }
 
-void O128Display::load_config(SystemData *sd)
+dsk_tools::Result O128Display::load_config(SystemData *sd)
 {
-    GenericDisplay::load_config(sd);
+    dsk_tools::Result res = GenericDisplay::load_config(sd);
+    if (!res) return res;
 
     port_mode =  dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("mode").value));
     port_frame = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("screen").value));
@@ -42,6 +43,7 @@ void O128Display::load_config(SystemData *sd)
     page_main->set_memory_callback(this, 1, MODE_W);
     page_color->set_memory_callback(this, 2, MODE_W);
 
+    return dsk_tools::Result::ok();
 }
 
 void O128Display::memory_callback(unsigned int callback_id, unsigned int address)

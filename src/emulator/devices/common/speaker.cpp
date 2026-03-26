@@ -39,9 +39,10 @@ void Speaker::reset(bool cold)
     MixerWidth = (i_mixer.linked == 0) ? 0 : CalcBits(i_mixer.linked_bits, 8);
 }
 
-void Speaker::load_config(SystemData *sd)
+dsk_tools::Result Speaker::load_config(SystemData *sd)
 {
-    GenericSound::load_config(sd);
+    dsk_tools::Result res = GenericSound::load_config(sd);
+    if (!res) return res;
 
     std::string s = str_tolower(cd->get_parameter("mode", false).value);
     if (s.empty() || s == "level")
@@ -50,7 +51,9 @@ void Speaker::load_config(SystemData *sd)
     if (s == "flip")
         mode = SPK_MODE_FLIP;
     else
-        QMessageBox::critical(0, Speaker::tr("Error"), Speaker::tr("Unknown speaker type %1").arg(QString::fromStdString(s)));
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{Speaker|" + std::string(QT_TRANSLATE_NOOP("Speaker", "Unknown speaker type")) + "} " + s);
+
+    return dsk_tools::Result::ok();
 }
 
 void Speaker::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)

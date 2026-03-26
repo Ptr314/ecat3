@@ -24,7 +24,7 @@ public:
     Speaker(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     virtual void reset(bool cold) override;
-    virtual void load_config(SystemData *sd) override;
+    virtual dsk_tools::Result load_config(SystemData *sd) override;
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 };
 

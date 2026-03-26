@@ -228,12 +228,14 @@ DeviceDescription * DeviceManager::get_device(unsigned int i)
     return &(devices[i]);
 }
 
-void DeviceManager::load_devices_config(SystemData *sd)
+dsk_tools::Result DeviceManager::load_devices_config(SystemData *sd)
 {
     for (unsigned int i=0; i < device_count; i++)
     {
-        get_device(i)->device->load_config(sd);
+        dsk_tools::Result res = get_device(i)->device->load_config(sd);
+        if (!res) return res;
     }
+    return dsk_tools::Result::ok();
 }
 
 ComputerDevice * DeviceManager::get_device_by_name(const std::string &name, bool required)
@@ -420,7 +422,7 @@ void ComputerDevice::system_clock(unsigned int counter)
     }
 }
 
-void ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
+dsk_tools::Result ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
 {
 
     for (size_t i = 0; i < cd->parameters.size(); i++)
@@ -429,7 +431,9 @@ void ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
         if (parameter_name[0] == '~')
         {
             std::string interface_name = parameter_name.substr(1);
-            if (interface_name.empty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect interface definition for %1").arg(QString::fromStdString(name)));
+            if (interface_name.empty())
+                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect interface definition for")) + "} " + name);
 
             std::string connection = cd->parameters[i].value;
             Interface * interface = im->get_interface_by_name(name, interface_name);
@@ -445,7 +449,9 @@ void ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
 
             ld.s.i = interface;
 
-            if (connection.empty()) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(QString::fromStdString(name), QString::fromStdString(connection)));
+            if (connection.empty())
+                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect connection for")) + "} " + name + ":" + connection);
 
             if (connection[0] == '!') {
                 connection = connection.substr(1);
@@ -454,7 +460,9 @@ void ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
                 inverted = false;
 
             size_t p = connection.find('.');
-            if (p == std::string::npos) QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect connection for %1:%2").arg(QString::fromStdString(name), QString::fromStdString(connection)));
+            if (p == std::string::npos)
+                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect connection for")) + "} " + name + ":" + connection);
             std::string connected_device = connection.substr(0, p);
             std::string connected_interface = connection.substr(p + 1);
 
@@ -498,23 +506,21 @@ void ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
         m_cold_reset = read_confg_value(cd, "cold_reset", false, true);
         m_soft_reset = read_confg_value(cd, "soft_reset", false, true);
     } catch (std::exception &e) {
-        QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect parameters for '%1'").arg(QString::fromStdString(name)));
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect parameters for")) + "} " + name);
     }
 
 #ifdef LOGGER
     log_mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper"));
 #endif
+
+    return dsk_tools::Result::ok();
 }
 
 bool ComputerDevice::get_reset_behavior(bool is_cold)
 {
     return (is_cold)?m_cold_reset:m_soft_reset;
 }
-
-// Interface * ComputerDevice::create_interface(unsigned int size, QString name, unsigned int mode, unsigned int callback_id)
-// {
-//     return new Interface(this, im, size, name, mode, callback_id);
-// }
 
 void ComputerDevice::interface_callback(MAYBE_UNUSED unsigned int callback_id, MAYBE_UNUSED unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
 {
@@ -659,9 +665,11 @@ RAM::RAM(InterfaceManager *im, EmulatorConfigDevice *cd):
     this->can_write = true;
 }
 
-void RAM::load_config(SystemData *sd)
+dsk_tools::Result RAM::load_config(SystemData *sd)
 {
-    Memory::load_config(sd);
+    dsk_tools::Result res = Memory::load_config(sd);
+    if (!res) return res;
+
     set_size(parse_numeric_value(this->cd->get_parameter("size").value));
 
     try {
@@ -674,6 +682,8 @@ void RAM::load_config(SystemData *sd)
     //memset(buffer, fill, get_size());
 
     reset(true);
+
+    return dsk_tools::Result::ok();
 }
 
 void RAM::reset(bool cold)
@@ -699,9 +709,10 @@ ROM::ROM(InterfaceManager *im, EmulatorConfigDevice *cd):
     this->auto_output = true;
 }
 
-void ROM::load_config(SystemData *sd)
+dsk_tools::Result ROM::load_config(SystemData *sd)
 {
-    Memory::load_config(sd);
+    dsk_tools::Result res = Memory::load_config(sd);
+    if (!res) return res;
 
     try {
         this->fill = parse_numeric_value(this->cd->get_parameter("fill").value);
@@ -718,14 +729,15 @@ void ROM::load_config(SystemData *sd)
 
         std::string file_name = find_file_location(sd, image);
         if (file_name.empty())
-            QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("File '%1' not found").arg(QString::fromStdString(image)));
+            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                "{ROM|" + std::string(QT_TRANSLATE_NOOP("ROM", "File not found")) + "} " + image);
         else
         if (dsk_tools::get_file_ext(file_name) == ".hex")
         {
             std::string content = dsk_tools::utf8_read_file(file_name);
             if (content.empty()) {
-                QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Error reading HEX file %1").arg(QString::fromStdString(file_name)));
-                return;
+                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    "{ROM|" + std::string(QT_TRANSLATE_NOOP("ROM", "Error reading HEX file")) + "} " + file_name);
             }
 
             unsigned int index = 0;
@@ -746,21 +758,21 @@ void ROM::load_config(SystemData *sd)
         } else {
             long long file_size = dsk_tools::utf8_file_size(file_name);
             if (file_size < 0) {
-                QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Can't open ROM image file '%1'").arg(QString::fromStdString(file_name)));
-                throw std::runtime_error("Can't open ROM image file: " + file_name);
+                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    "{ROM|" + std::string(QT_TRANSLATE_NOOP("ROM", "Can't open ROM image file")) + "} " + file_name);
             }
             if (static_cast<unsigned int>(file_size) > this->get_size())
             {
-                QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("ROM image file for '%1' is too big").arg(QString::fromStdString(this->name)));
-                throw std::runtime_error("ROM image file too big for " + this->name);
+                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    "{ROM|" + std::string(QT_TRANSLATE_NOOP("ROM", "ROM image file is too big")) + "} " + this->name);
             }
             dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
             if (file.is_open()){
                 file.read(reinterpret_cast<char*>(this->buffer.data()), file_size);
                 file.close();
             } else {
-                QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Can't open ROM image file '%1'").arg(QString::fromStdString(file_name)));
-                throw std::runtime_error("Can't open ROM image file: " + file_name);
+                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    "{ROM|" + std::string(QT_TRANSLATE_NOOP("ROM", "Can't open ROM image file")) + "} " + file_name);
             }
         }
     } else {
@@ -776,12 +788,14 @@ void ROM::load_config(SystemData *sd)
         else if ((s == "normal")) rom_mode = ROMMode::Normal;
         else
         {
-            QMessageBox::critical(0, ROM::tr("Error"), ROM::tr("Incorrect mode set for '%1'").arg(QString::fromStdString(this->name)));
-            throw std::runtime_error("Incorrect mode set for " + this->name);
+            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                "{ROM|" + std::string(QT_TRANSLATE_NOOP("ROM", "Incorrect mode set for")) + "} " + this->name);
         }
     } catch (std::exception &e) {
         rom_mode = ROMMode::Normal;
     }
+
+    return dsk_tools::Result::ok();
 }
 
 unsigned int ROM::get_value(unsigned int address)
@@ -963,14 +977,17 @@ CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
     }
 }
 
-void CPU::load_config(SystemData *sd)
+dsk_tools::Result CPU::load_config(SystemData *sd)
 {
-    ComputerDevice::load_config(sd);
+    dsk_tools::Result res = ComputerDevice::load_config(sd);
+    if (!res) return res;
 
     std::string s = cd->get_parameter("stopped", false).value;
     if (s=="1") debug = (DEBUG_STOPPED);
 
     mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper"));
+
+    return dsk_tools::Result::ok();
 }
 
 bool CPU::check_breakpoint(unsigned int address)
@@ -1029,11 +1046,12 @@ MemoryMapper::MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd):
     addresable_size = 0x10000;
 }
 
-void MemoryMapper::load_config(SystemData *sd)
+dsk_tools::Result MemoryMapper::load_config(SystemData *sd)
 {
     LinkData ld;
 
-    ComputerDevice::load_config(sd);
+    dsk_tools::Result res = ComputerDevice::load_config(sd);
+    if (!res) return res;
 
     this->cache_size = sizeof(this->read_cache_items) / sizeof(MapperCacheEntry);
 
@@ -1127,7 +1145,8 @@ void MemoryMapper::load_config(SystemData *sd)
                     mr.range_begin = parse_numeric_value(a);
                     mr.range_end = mr.range_begin;
                 } else
-                    QMessageBox::critical(0, MemoryMapper::tr("Error"), MemoryMapper::tr("Incorrect range for '%1'").arg(QString::fromStdString(parameter_name)));
+                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                        "{MemoryMapper|" + std::string(QT_TRANSLATE_NOOP("MemoryMapper", "Incorrect range for")) + "} " + parameter_name);
             }
 
             mr.device = this->im->dm->get_device_by_name(this->cd->parameters[i].value);
@@ -1180,6 +1199,8 @@ void MemoryMapper::load_config(SystemData *sd)
                             (this->ranges[j].config_value == this->ranges[i].config_value)
                           )
                        ) this->ranges[j].cache = false;
+
+    return dsk_tools::Result::ok();
 }
 
 void MemoryMapper::reset(MAYBE_UNUSED bool cold)

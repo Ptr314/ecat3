@@ -53,15 +53,16 @@ void GMD70::reset_fdc()
     m_counter = 0;
 }
 
-void GMD70::load_config(SystemData *sd)
+dsk_tools::Result GMD70::load_config(SystemData *sd)
 {
-    FDC::load_config(sd);
+    dsk_tools::Result res = FDC::load_config(sd);
+    if (!res) return res;
+
     QString s;
     try {
         s = QString::fromStdString(cd->get_parameter("drives").value);
     } catch (std::exception &e) {
-        QMessageBox::critical(0, GMD70::tr("Error"), GMD70::tr("Incorrect fdd list for '%1'").arg(QString::fromStdString(name)));
-        throw std::runtime_error("Incorrect fdd list for " + name);
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{GMD70|" + std::string(QT_TRANSLATE_NOOP("GMD70", "Incorrect fdd list for")) + "} " + name);
     }
 
     QStringList parts = s.split('|', skip_empty_parts);
@@ -70,6 +71,8 @@ void GMD70::load_config(SystemData *sd)
         m_drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i].toStdString()));
 
     reset_fdc();
+
+    return dsk_tools::Result::ok();
 }
 
 bool GMD70::get_busy()

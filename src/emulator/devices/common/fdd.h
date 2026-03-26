@@ -85,12 +85,12 @@ public:
     uint8_t  ReadNextByte();
     void WriteNextByte(uint8_t value);
     void WriteByte(uint8_t value);
-    virtual void load_config(SystemData *sd) override;
-    void load_image(const std::string &file_name);
-    void save_image(const std::string &file_name);
+    dsk_tools::Result load_config(SystemData *sd) override;
+    dsk_tools::Result load_image(const std::string &file_name);
+    dsk_tools::Result save_image(const std::string &file_name);
     void unload();
     void change_protection();
-    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+    void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     int aim_code();
 };
 

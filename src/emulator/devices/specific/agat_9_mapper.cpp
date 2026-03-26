@@ -106,9 +106,10 @@ void Agat9Mapper::reset(bool cold)
     }
 }
 
-void Agat9Mapper::load_config(SystemData *sd)
+dsk_tools::Result Agat9Mapper::load_config(SystemData *sd)
 {
-    AddressableDevice::load_config(sd);
+    dsk_tools::Result res = AddressableDevice::load_config(sd);
+    if (!res) return res;
 
     m_pm = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("pm").value));
     m_ram = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram").value));
@@ -116,6 +117,8 @@ void Agat9Mapper::load_config(SystemData *sd)
     m_page_map = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("page_map").value));
 
     m_bios_mask = (m_bios->get_size()==2048)?0x7FF:0xFFF;
+
+    return dsk_tools::Result::ok();
 }
 
 unsigned Agat9Mapper::do_access(unsigned rd_wr, unsigned address, unsigned data)

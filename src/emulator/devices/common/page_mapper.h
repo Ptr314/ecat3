@@ -22,7 +22,7 @@ private:
 
 public:
     PageMapper(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual void load_config(SystemData *sd) override;
+    virtual dsk_tools::Result load_config(SystemData *sd) override;
     virtual unsigned int get_value(unsigned int address) override;
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
 };

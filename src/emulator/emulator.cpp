@@ -93,7 +93,7 @@ void Emulator::write_setup(std::string section, std::string ident, std::string n
 }
 
 
-void Emulator::load_config(std::string file_name)
+dsk_tools::Result Emulator::load_config(std::string file_name)
 {
     if (loaded)
     {
@@ -108,7 +108,9 @@ void Emulator::load_config(std::string file_name)
 
     register_devices();
 
-    EmulatorConfig config(file_name);
+    EmulatorConfig config;
+    dsk_tools::Result res = config.load_from_file(file_name);
+    if (!res) return res;
 
     EmulatorConfigDevice * system = config.get_device("system");
     sd.system_file = file_name;
@@ -133,9 +135,11 @@ void Emulator::load_config(std::string file_name)
             dm->add_device(im, d);
         }
     }
-    dm->load_devices_config(&sd);
+    res = dm->load_devices_config(&sd);
+    if (!res) return res;
     apply_saved_device_options();
     loaded = true;
+    return dsk_tools::Result::ok();
 }
 
 void Emulator::apply_saved_device_options()

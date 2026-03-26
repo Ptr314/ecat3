@@ -14,10 +14,14 @@ Keyboard::Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     reset_priority = 100;
 }
 
-void Keyboard::load_config(SystemData *sd)
+dsk_tools::Result Keyboard::load_config(SystemData *sd)
 {
-    ComputerDevice::load_config(sd);
+    dsk_tools::Result res = ComputerDevice::load_config(sd);
+    if (!res) return res;
+
     use_remap = read_confg_value(cd, "use_remap", false, true);
+
+    return dsk_tools::Result::ok();
 }
 
 void Keyboard::key_event(QKeyEvent *event, bool press)

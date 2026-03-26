@@ -16,9 +16,10 @@ Generator::Generator(InterfaceManager *im, EmulatorConfigDevice *cd):
 {
 }
 
-void Generator::load_config(SystemData *sd)
+dsk_tools::Result Generator::load_config(SystemData *sd)
 {
-    ComputerDevice::load_config(sd);
+    dsk_tools::Result res = ComputerDevice::load_config(sd);
+    if (!res) return res;
 
     unsigned int main_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
 
@@ -38,9 +39,11 @@ void Generator::load_config(SystemData *sd)
         if (pol == "negative" || pol == "neg" || pol == "n" || pol == "0")
             positive = false;
         else
-            QMessageBox::critical(0, ComputerDevice::tr("Error"), ComputerDevice::tr("Incorrect polarity for %1").arg(QString::fromStdString(this->name)));
+            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect polarity for")) + "} " + this->name);
 
     i_enable.change(1);
+
+    return dsk_tools::Result::ok();
 }
 
 void Generator::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)

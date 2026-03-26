@@ -83,9 +83,10 @@ IrishaDisplay::IrishaDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     sy = 240;
 }
 
-void IrishaDisplay::load_config(SystemData *sd)
+dsk_tools::Result IrishaDisplay::load_config(SystemData *sd)
 {
-    GenericDisplay::load_config(sd);
+    dsk_tools::Result res = GenericDisplay::load_config(sd);
+    if (!res) return res;
 
     port_mode  = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("mode").value));
     port_color = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("color").value));
@@ -94,6 +95,7 @@ void IrishaDisplay::load_config(SystemData *sd)
 
     vram->set_memory_callback(this, 1, MODE_W);
 
+    return dsk_tools::Result::ok();
 }
 
 void IrishaDisplay::memory_callback(unsigned int callback_id, unsigned int address)

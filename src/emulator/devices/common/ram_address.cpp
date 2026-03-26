@@ -19,14 +19,18 @@ RAMAddress::RAMAddress(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 {}
 
-void RAMAddress::load_config(SystemData *sd)
+dsk_tools::Result RAMAddress::load_config(SystemData *sd)
 {
-    RAM::load_config(sd);
+    dsk_tools::Result res = RAM::load_config(sd);
+    if (!res) return res;
+
     m_address_shift = read_confg_value(cd, "address_shift", false, m_address_shift);
     m_address_mask = read_confg_value(cd, "address_mask", false, m_address_mask);
     m_value_shift = read_confg_value(cd, "value_shift", false, m_value_shift);
     m_value_mask = read_confg_value(cd, "value_mask", false, m_value_mask);
     m_store_on_read = read_confg_value(cd, "store_on_read", false, false);
+
+    return dsk_tools::Result::ok();
 }
 
 unsigned RAMAddress::get_value(unsigned address)

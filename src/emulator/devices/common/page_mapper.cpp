@@ -19,9 +19,10 @@ PageMapper::PageMapper(InterfaceManager *im, EmulatorConfigDevice *cd):
     memset(&pages, 0, sizeof(pages));
 }
 
-void PageMapper::load_config(SystemData *sd)
+dsk_tools::Result PageMapper::load_config(SystemData *sd)
 {
-    ComputerDevice::load_config(sd);
+    dsk_tools::Result res = ComputerDevice::load_config(sd);
+    if (!res) return res;
 
     std::string parameter_name, range;
     unsigned int page_id;
@@ -33,8 +34,7 @@ void PageMapper::load_config(SystemData *sd)
         {
             range = cd->parameters[i].left_range;
             if (range.empty()) {
-                QMessageBox::critical(0, MemoryMapper::tr("Error"), MemoryMapper::tr("Incorrect range for '%1'").arg(QString::fromStdString(parameter_name)));
-                return;
+                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{MemoryMapper|" + std::string(QT_TRANSLATE_NOOP("MemoryMapper", "Incorrect range for")) + "} " + parameter_name);
             }
             page_id = parse_numeric_value(range.substr(1, range.length()-2));
             if (page_id >= PagesCount) PagesCount = page_id + 1;
@@ -51,6 +51,8 @@ void PageMapper::load_config(SystemData *sd)
     }
     SegmentMask = create_mask(round(log2(pages[0]->get_size() / Frame)), 0);
     address_mask = create_mask(round(log2(Frame)), 0);
+
+    return dsk_tools::Result::ok();
 }
 
 unsigned int PageMapper::get_value(unsigned int address)

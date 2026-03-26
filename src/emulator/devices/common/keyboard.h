@@ -196,7 +196,7 @@ protected:
 
 public:
     Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
-    void load_config(SystemData *sd) override;
+    dsk_tools::Result load_config(SystemData *sd) override;
     virtual void key_event(QKeyEvent *event, bool press);
     virtual void key_down(unsigned int key) = 0;
     virtual void key_up(unsigned int key) = 0;

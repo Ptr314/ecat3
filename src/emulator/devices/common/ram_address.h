@@ -20,7 +20,7 @@ private:
 
 public:
     RAMAddress(InterfaceManager *im, EmulatorConfigDevice *cd);
-    void load_config(SystemData *sd) override;
+    dsk_tools::Result load_config(SystemData *sd) override;
     unsigned get_value(unsigned address) override;
     void set_value(unsigned address, unsigned value, bool force=false) override;
     unsigned get_direct(unsigned address) override;

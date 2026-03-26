@@ -25,18 +25,18 @@ ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     memset(&key_array, _FFFF, sizeof(key_array));
 }
 
-void ScanKeyboard::load_config(SystemData *sd)
+dsk_tools::Result ScanKeyboard::load_config(SystemData *sd)
 {
-    Keyboard::load_config(sd);
+    dsk_tools::Result res = Keyboard::load_config(sd);
+    if (!res) return res;
 
     std::string map_file = find_file_location(sd, cd->get_parameter("map", false).value);
     if (map_file.empty())
-        QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Keyboard map file is expected"));
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Keyboard map file is expected")) + "}");
     else {
         std::string layout = dsk_tools::utf8_read_file(map_file);
         if (layout.empty()) {
-            QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Error reading map file %1").arg(QString::fromStdString(map_file)));
-            return;
+            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Error reading map file")) + "} " + map_file);
         }
 
         std::vector<std::string> lines = split_string(layout, '\n', true);
@@ -79,7 +79,7 @@ void ScanKeyboard::load_config(SystemData *sd)
                             key_name = keys[i];
                         unsigned int key_code = translate_key(key_name);
                         if (key_code == _FFFF)
-                            QMessageBox::critical(0, ScanKeyboard::tr("Error"), ScanKeyboard::tr("Unknown key %1").arg(QString::fromStdString(keys[i])));
+                            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Unknown key")) + "} " + keys[i]);
                         else
                             scan_data.push_back({key_code, scan, out, shift_state});
                     }
@@ -95,6 +95,7 @@ void ScanKeyboard::load_config(SystemData *sd)
     i_ctrl.change(1);
     i_ruslat.change(1);
 
+    return dsk_tools::Result::ok();
 }
 
 void ScanKeyboard::key_down(unsigned int key)

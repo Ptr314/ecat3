@@ -53,7 +53,7 @@ public:
     GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~GenericSound();
 
-    virtual void load_config(SystemData *sd) override;
+    virtual dsk_tools::Result load_config(SystemData *sd) override;
     virtual void clock(unsigned int counter) override;
     virtual void set_volume(unsigned int volume);
     virtual void set_muted(bool muted);

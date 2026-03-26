@@ -692,6 +692,24 @@ void MainWindow::on_action_Select_a_machine_triggered()
     w->show();
 }
 
+static QString translateResultMessage(const std::string &message)
+{
+    QString msg = QString::fromStdString(message);
+    int open = msg.indexOf('{');
+    int close = msg.indexOf('}');
+    if (open >= 0 && close > open) {
+        QString inner = msg.mid(open + 1, close - open - 1);
+        int sep = inner.indexOf('|');
+        if (sep >= 0) {
+            QByteArray context = inner.left(sep).toUtf8();
+            QByteArray source = inner.mid(sep + 1).toUtf8();
+            QString translated = QCoreApplication::translate(context.constData(), source.constData());
+            msg = translated + msg.mid(close + 1);
+        }
+    }
+    return msg;
+}
+
 void MainWindow::set_title()
 {
     SystemData * sd = e->get_system_data();
@@ -707,7 +725,11 @@ void MainWindow::load_config(QString file_name, bool set_default)
         e->stop_emulation();
     }
 
-    e->load_config(file_name.toStdString());
+    dsk_tools::Result res = e->load_config(file_name.toStdString());
+    if (!res) {
+        QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
+        return;
+    }
 
     set_title();
 
@@ -750,7 +772,10 @@ void MainWindow::on_actionOpen_triggered()
         last_path = fi.absolutePath();
         e->write_setup("Startup", "last_path", last_path.toStdString());
 
-        HandleExternalFile(e, file_name.toStdString());
+        dsk_tools::Result res = HandleExternalFile(e, file_name.toStdString());
+        if (!res) {
+            QMessageBox::warning(this, tr("Error"), translateResultMessage(res.message));
+        }
     }
 }
 
@@ -799,7 +824,10 @@ void MainWindow::fdd_open(unsigned int n)
             QFileInfo fi(file_name);
             fdd_menu[n]->actions().at(0)->setText(fi.fileName());
             fdd_button[n]->setIcon(QIcon(":/icons/floppy_mount"));
-            fdds[n]->load_image(file_name.toStdString());
+            dsk_tools::Result res = fdds[n]->load_image(file_name.toStdString());
+            if (!res) {
+                QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
+            }
             last_path = fi.absolutePath();
             e->write_setup("Startup", "last_path", last_path.toStdString());
         }
@@ -845,18 +873,22 @@ void MainWindow::fdd_write(unsigned int n)
                 reply = QMessageBox::Yes;
             }
 
+            dsk_tools::Result save_res;
             if (reply == QMessageBox::Yes)
             {
-                fdds[n]->save_image(std_file_name);
+                save_res = fdds[n]->save_image(std_file_name);
             } else
             if (reply == QMessageBox::No)
             {
                 QString backup_name = file_name + ".bak";
                 bool result = QFile::rename(file_name, backup_name);
                 if (result)
-                    fdds[n]->save_image(std_file_name);
+                    save_res = fdds[n]->save_image(std_file_name);
                 else
                     QMessageBox::critical(this, MainWindow::tr("Backup error"), MainWindow::tr("Error creating a backup. Probably *.bak already exists."));
+            }
+            if (!save_res) {
+                QMessageBox::critical(this, tr("Error"), translateResultMessage(save_res.message));
             }
             QFileInfo fi(file_name);
             last_path = fi.absolutePath();

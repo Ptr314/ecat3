@@ -35,9 +35,10 @@ public:
         sy = 30*10;
     }
 
-    virtual void load_config(SystemData *sd) override
+    virtual dsk_tools::Result load_config(SystemData *sd) override
     {
-        GenericDisplay::load_config(sd);
+        dsk_tools::Result res = GenericDisplay::load_config(sd);
+        if (!res) return res;
         Memory = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram").value));
         Font = dynamic_cast<ROM*>(im->dm->get_device_by_name(cd->get_parameter("font").value));
         VG75 = dynamic_cast<I8275*>(im->dm->get_device_by_name(cd->get_parameter("i8275").value));
@@ -55,6 +56,7 @@ public:
             for (unsigned int i=0; i<3; i++)
                 RGB[i] = s[i] - '0';
         }
+        return dsk_tools::Result::ok();
     }
 
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) override

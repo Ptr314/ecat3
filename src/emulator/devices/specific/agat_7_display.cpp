@@ -40,9 +40,10 @@ Agat7Display::Agat7Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     sy = 256;
 }
 
-void Agat7Display::load_config(SystemData *sd)
+dsk_tools::Result Agat7Display::load_config(SystemData *sd)
 {
-    RasterDisplay::load_config(sd);
+    dsk_tools::Result res = RasterDisplay::load_config(sd);
+    if (!res) return res;
 
     m_port_mode = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("mode").value));
     m_memory =    dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram").value));
@@ -73,11 +74,13 @@ void Agat7Display::load_config(SystemData *sd)
             m_pal_card_out = true;
             m_pal_builtin = read_confg_value(cd, "pal_builtin", false, false);
         } catch (std::exception &e) {
-            QMessageBox::critical(0, tr("Error"), tr("Incorrect display config - palette card"));
+            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{Agat7Display|" + std::string(QT_TRANSLATE_NOOP("Agat7Display", "Incorrect display config - palette card")) + "}");
         }
     }
 
     set_mode(0x02);
+
+    return dsk_tools::Result::ok();
 }
 
 void Agat7Display::set_renderer(VideoRenderer &vr)

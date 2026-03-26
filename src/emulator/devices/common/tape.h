@@ -74,7 +74,7 @@ public:
 
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
-    void load_config(SystemData *sd) override;
+    dsk_tools::Result load_config(SystemData *sd) override;
     void clock(unsigned int counter) override;
 
     virtual void load_file(const std::string &file_name, const std::string &fmt);

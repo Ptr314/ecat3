@@ -38,7 +38,7 @@ public:
     void set_renderer(VideoRenderer &vr) override;
 
     void clock(unsigned int counter) override;
-    void load_config(SystemData *sd) override;
+    dsk_tools::Result load_config(SystemData *sd) override;
 
     void memory_callback(unsigned int callback_id, unsigned int address) override;
 

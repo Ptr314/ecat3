@@ -28,7 +28,7 @@ public:
     O128Display(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     virtual void clock(unsigned int counter) override;
-    virtual void load_config(SystemData *sd) override;
+    virtual dsk_tools::Result load_config(SystemData *sd) override;
 
     virtual void memory_callback(unsigned int callback_id, unsigned int address) override;
 

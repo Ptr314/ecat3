@@ -20,18 +20,18 @@ MapKeyboard::MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     m_rus_switches[1] = 0;
 }
 
-void MapKeyboard::load_config(SystemData *sd)
+dsk_tools::Result MapKeyboard::load_config(SystemData *sd)
 {
-    Keyboard::load_config(sd);
+    dsk_tools::Result res = Keyboard::load_config(sd);
+    if (!res) return res;
 
     std::string map_file = find_file_location(sd, cd->get_parameter("map", false).value);
     if (map_file.empty())
-        QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Keyboard map file is expected"));
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Keyboard map file is expected")) + "}");
     else {
         std::string content = dsk_tools::utf8_read_file(map_file);
         if (content.empty()) {
-            QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Error reading map file %1").arg(QString::fromStdString(map_file)));
-            return;
+            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Error reading map file")) + "} " + map_file);
         }
 
         std::vector<std::string> lines = split_string(content, '\n', true);
@@ -41,13 +41,11 @@ void MapKeyboard::load_config(SystemData *sd)
             if (!line.empty()) {
                 std::vector<std::string> parts = split_string(line, ':', true);
                 if (parts.size() != 2) {
-                    QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Map file entry '%1' is incorrect").arg(QString::fromStdString(line)));
-                    return;
+                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Map file entry is incorrect")) + "} " + line);
                 }
                 std::vector<std::string> left_parts = split_string(parts[0], '/', true);
                 if (left_parts.size() < 1 || left_parts.size() > 2) {
-                    QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Map file entry '%1' is incorrect").arg(QString::fromStdString(line)));
-                    return;
+                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Map file entry is incorrect")) + "} " + line);
                 }
 
                 std::string key = str_trim(left_parts[0]);
@@ -79,13 +77,13 @@ void MapKeyboard::load_config(SystemData *sd)
     try {
         rus_value = read_confg_value(cd, "rus-on", false, (unsigned int)1);
     } catch (std::exception &e) {
-        QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("rus-on should be 0 or 1"));
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "rus-on should be 0 or 1")) + "}");
     }
 
     try {
         ruslat_bit = read_confg_value(cd, "rus-bit", false, (unsigned int)0);
     } catch (std::exception &e) {
-        QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("rus-bit should be a number"));
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "rus-bit should be a number")) + "}");
     }
 
     const std::string mode_str = str_tolower(cd->get_parameter("rusmode", false).value);
@@ -99,7 +97,7 @@ void MapKeyboard::load_config(SystemData *sd)
         m_use_pin = false;
         m_use_codes = true;
     } else
-        QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("Incorrect keyboard rusmode %1").arg(QString::fromStdString(mode_str)));
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Incorrect keyboard rusmode")) + "} " + mode_str);
 
     std::string rs = cd->get_parameter("rus_switches", false).value;
     if (!rs.empty()) {
@@ -109,11 +107,13 @@ void MapKeyboard::load_config(SystemData *sd)
             m_rus_switches[1] = parse_numeric_value(str_trim(rs_parts[1]));
             m_has_rus_switches = true;
         } else {
-            QMessageBox::critical(0, MapKeyboard::tr("Error"), MapKeyboard::tr("rus_switches should have two values separated by '/'"));
+            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "rus_switches should have two values separated by '/'")) + "}");
         }
     }
 
     i_ready.change(1);
+
+    return dsk_tools::Result::ok();
 }
 
 void MapKeyboard::set_rus(bool new_rus)

@@ -142,7 +142,7 @@ public:
     void set_renderer(VideoRenderer &vr) override;
 
     void clock(unsigned int counter) override;
-    void load_config(SystemData *sd) override;
+    dsk_tools::Result load_config(SystemData *sd) override;
     void interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value) override;
 
     DeviceOptions get_device_options() override;

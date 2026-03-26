@@ -43,9 +43,11 @@ void Register::reset(bool cold)
     i_out.change(register_value);
 }
 
-void Register::load_config(SystemData *sd)
+dsk_tools::Result Register::load_config(SystemData *sd)
 {
-    ComputerDevice::load_config(sd);
+    dsk_tools::Result res = ComputerDevice::load_config(sd);
+    if (!res) return res;
+
     //TODO: Register - add other types
     std::string type_string = str_tolower(cd->get_parameter("type", false).value);
 
@@ -60,12 +62,14 @@ void Register::load_config(SystemData *sd)
     else if (type_string == "buffer")
         store_type = REGISTER_BUFFER;
     else
-        QMessageBox::critical(0, Register::tr("Error"), Register::tr("Unknown register type %1").arg(QString::fromStdString(type_string)));
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{Register|" + std::string(QT_TRANSLATE_NOOP("Register", "Unknown register type")) + "} " + type_string);
 
     if (i_in.linked_bits)
         mask = i_in.linked_bits;
     else
         mask = _FFFF;
+
+    return dsk_tools::Result::ok();
 }
 
 void Register::interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value)

@@ -22,21 +22,24 @@ WD1793::WD1793(InterfaceManager *im, EmulatorConfigDevice *cd):
     memset(&registers, 0, sizeof(registers));
 }
 
-void WD1793::load_config(SystemData *sd)
+dsk_tools::Result WD1793::load_config(SystemData *sd)
 {
-    FDC::load_config(sd);
+    dsk_tools::Result res = FDC::load_config(sd);
+    if (!res) return res;
+
     std::string s;
     try {
         s = cd->get_parameter("drives").value;
     } catch (std::exception &e) {
-        QMessageBox::critical(0, WD1793::tr("Error"), WD1793::tr("Incorrect fdd list for '%1'").arg(QString::fromStdString(name)));
-        throw std::runtime_error("Incorrect fdd list for " + name);
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{WD1793|" + std::string(QT_TRANSLATE_NOOP("WD1793", "Incorrect fdd list for")) + "} " + name);
     }
 
     std::vector<std::string> parts = split_string(s, '|', true);
     drives_count = parts.size();
     for (unsigned int i = 0; i < drives_count; i++)
         drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));
+
+    return dsk_tools::Result::ok();
 }
 
 void WD1793::SetDRQ()

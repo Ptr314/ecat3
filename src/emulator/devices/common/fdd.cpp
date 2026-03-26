@@ -41,9 +41,11 @@ FDD::~FDD()
     if (buffer != nullptr) delete [] buffer;
 }
 
-void FDD::load_config(SystemData *sd)
+dsk_tools::Result FDD::load_config(SystemData *sd)
 {
-    ComputerDevice::load_config(sd);
+    dsk_tools::Result res = ComputerDevice::load_config(sd);
+    if (!res) return res;
+
     try {
         sides = parse_numeric_value(cd->get_parameter("sides").value);
         tracks = parse_numeric_value(cd->get_parameter("tracks").value);
@@ -54,8 +56,7 @@ void FDD::load_config(SystemData *sd)
         disk_size = sides*tracks*sectors*sector_size;
         write_protect = false;
     } catch (std::exception &e) {
-        QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Incorrect fdd parameters for '%1'").arg(QString::fromStdString(name)));
-        throw std::runtime_error("Incorrect fdd parameters for " + name);
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect fdd parameters for")) + "} " + name);
     }
 
     files_save = cd->get_parameter("files_save", false).value;
@@ -69,29 +70,30 @@ void FDD::load_config(SystemData *sd)
     else if (s == "mfm_agat_840")
         fdd_mode = FDD_MODE_AGAT_840;
     else
-        QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Unknown fdd mode '%1'").arg(QString::fromStdString(s)));
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unknown fdd mode")) + "} " + s);
 
     try {
         file_name = find_file_location(sd, cd->get_parameter("image").value);
-        if (!file_name.empty())
-            load_image(file_name);
-        else
-            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Disk image file '%1' not found").arg(QString::fromStdString(file_name)));
+        if (!file_name.empty()) {
+            dsk_tools::Result img_res = load_image(file_name);
+            if (!img_res) return img_res;
+        } else
+            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Disk image file not found")) + "} " + file_name);
     } catch (std::exception &e) {
     }
+
+    return dsk_tools::Result::ok();
 }
 
-void FDD::load_image(const std::string &file_name)
+dsk_tools::Result FDD::load_image(const std::string &file_name)
 {
     std::string ext = dsk_tools::get_file_ext(file_name);  // returns ".ext" lowercase
     std::string base_name = dsk_tools::get_filename(file_name);
-    QString q_file_name = QString::fromStdString(file_name); // for error messages and mfm_tools
 
     if (ext == ".mfm" || ext == ".hfe") {
-        if (fdd_mode == FDD_MODE_LOGICAL) {
-            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("FDD device is working in a logical mode, no physical formats are supported"));
-            return;
-        }
+        if (fdd_mode == FDD_MODE_LOGICAL)
+            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "FDD device is working in a logical mode, no physical formats are supported")) + "}");
         HXC_MFM_HEADER hxc_header;
         dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
         if (file.is_open()){
@@ -118,18 +120,20 @@ void FDD::load_image(const std::string &file_name)
                 loaded = true;
                 this->file_name = base_name;
             } else {
-                QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Unrecognized MFM format"));
+                file.close();
+                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unrecognized MFM format")) + "}");
             }
             file.close();
         } else {
-            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error opening file '%1'").arg(q_file_name));
+            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
         }
     } else
     if (ext == ".nib" || ext == ".nic") {
-        if (fdd_mode == FDD_MODE_LOGICAL) {
-            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("FDD device is working in a logical mode, no physical formats are supported"));
-            return;
-        }
+        if (fdd_mode == FDD_MODE_LOGICAL)
+            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "FDD device is working in a logical mode, no physical formats are supported")) + "}");
         int expected_size = (ext == ".nib")?232960:286720;
         long long actual_size = dsk_tools::utf8_file_size(file_name);
 
@@ -158,18 +162,19 @@ void FDD::load_image(const std::string &file_name)
                 loaded = true;
                 this->file_name = base_name;
             } else {
-                QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error opening file '%1'").arg(q_file_name));
+                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
             }
             file.close();
         } else {
-            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("File '%1' is in unknown format").arg(q_file_name));
+            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "File is in unknown format")) + "} " + file_name);
         }
     } else
     if (ext == ".aim") {
-        if (fdd_mode != FDD_MODE_AGAT_840) {
-            QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("AIM files supported on Agat 840k drives only!"));
-            return;
-        }
+        if (fdd_mode != FDD_MODE_AGAT_840)
+            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "AIM files supported on Agat 840k drives only!")) + "}");
         if (buffer != nullptr) delete [] buffer;
         buffer = load_aim_image(file_name, sides, tracks, disk_size, track_indexes, aim_codes);
         track_mode = FDD_MODE_WHOLE_TRACK;
@@ -194,11 +199,13 @@ void FDD::load_image(const std::string &file_name)
                     loaded = true;
                     this->file_name = base_name;
                 } else {
-                    QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Error opening file '%1'").arg(q_file_name));
+                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                        "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
                 }
             } else {
-                QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Incorrect disk image size for '%1'").arg(q_file_name));
                 this->file_name = "";
+                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect disk image size for")) + "} " + file_name);
             }
         } else {
             // Convert to MFM
@@ -211,8 +218,8 @@ void FDD::load_image(const std::string &file_name)
                     buffer = generate_mfm_agat_840(file_name, sides, tracks, disk_size, track_indexes, aim_codes);
                     break;
                 default:
-                    QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Expected conversion from DSK to MFM is not supported yet."));
-                    break;
+                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                        "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Expected conversion from DSK to MFM is not supported yet.")) + "}");
             }
             track_mode = FDD_MODE_WHOLE_TRACK;
             position = 0;
@@ -220,6 +227,7 @@ void FDD::load_image(const std::string &file_name)
             this->file_name = base_name;
         }
     }
+    return dsk_tools::Result::ok();
 }
 
 int FDD::SeekSector(int track, int sector)
@@ -384,7 +392,7 @@ void FDD::change_protection()
     write_protect = !write_protect;
 }
 
-void FDD::save_image(const std::string &file_name)
+dsk_tools::Result FDD::save_image(const std::string &file_name)
 {
     if (loaded)
     {
@@ -404,15 +412,8 @@ void FDD::save_image(const std::string &file_name)
                         file.close();
                     }
                 } else {
-                    QMessageBox::critical(
-                        0,
-                        FDD::tr("Error"),
-                        FDD::tr("Error exporting disk. %1 : %2")
-                                .arg(
-                                    QString::fromStdString(dsk_tools::decode_error(decode_res)),
-                                    QString::fromStdString(decode_res.message)
-                                )
-                    );
+                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                        "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error exporting disk.")) + "} " + dsk_tools::decode_error(decode_res) + " : " + decode_res.message);
                 }
             } else
             if (fdd_mode == FDD_MODE_AGAT_140) {
@@ -426,15 +427,8 @@ void FDD::save_image(const std::string &file_name)
                         file.close();
                     }
                 } else {
-                    QMessageBox::critical(
-                        0,
-                        FDD::tr("Error"),
-                        FDD::tr("Error exporting disk. %1 : %2")
-                                .arg(
-                                    QString::fromStdString(dsk_tools::decode_error(decode_res)),
-                                    QString::fromStdString(decode_res.message)
-                                )
-                    );
+                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                        "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error exporting disk.")) + "} " + dsk_tools::decode_error(decode_res) + " : " + decode_res.message);
                 }
             } else
             if (fdd_mode == FDD_MODE_LOGICAL) {
@@ -444,17 +438,19 @@ void FDD::save_image(const std::string &file_name)
                     file.close();
                 }
             } else {
-                QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("FDD is working in a physical mode now, generating of DSK images is not supported yet."));
+                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "FDD is working in a physical mode now, generating of DSK images is not supported yet.")) + "}");
             }
         } else if (ext == ".mfm") {
             if (fdd_mode == FDD_MODE_AGAT_140) {
                 save_mfm_file(file_name, sides, tracks, track_indexes[0].mfmtracksize, track_indexes, buffer);
             } else {
-                QMessageBox::critical(0, FDD::tr("Error"), FDD::tr("Saving images for this type of drive is not supported yet."));
+                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Saving images for this type of drive is not supported yet.")) + "}");
             }
-
         }
     }
+    return dsk_tools::Result::ok();
 }
 
 void FDD::ConvertStreamFormat()

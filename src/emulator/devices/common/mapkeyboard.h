@@ -47,7 +47,7 @@ public:
     void key_down(unsigned int key) override;
     void key_up(unsigned int key) override;
 
-    void load_config(SystemData *sd) override;
+    dsk_tools::Result load_config(SystemData *sd) override;
 
     void reset(bool cool) override;
 };

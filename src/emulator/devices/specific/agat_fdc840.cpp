@@ -25,9 +25,10 @@ Agat_FDC840::Agat_FDC840(InterfaceManager *im, EmulatorConfigDevice *cd):
     memset(&current_track, 0, sizeof(current_track));
 }
 
-void Agat_FDC840::load_config(SystemData *sd)
+dsk_tools::Result Agat_FDC840::load_config(SystemData *sd)
 {
-    FDC::load_config(sd);
+    dsk_tools::Result res = FDC::load_config(sd);
+    if (!res) return res;
 
     clock_divider = 64;
 
@@ -35,8 +36,7 @@ void Agat_FDC840::load_config(SystemData *sd)
     try {
         s = cd->get_parameter("drives").value;
     } catch (std::exception &e) {
-        QMessageBox::critical(0, Agat_FDC840::tr("Error"), Agat_FDC840::tr("Incorrect fdd list for '%1'").arg(QString::fromStdString(name)));
-        throw std::runtime_error("Incorrect fdd list for " + name);
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{Agat_FDC840|" + std::string(QT_TRANSLATE_NOOP("Agat_FDC840", "Incorrect fdd list for")) + "} " + name);
     }
 
     memset(&drives, 0, sizeof(drives));
@@ -64,6 +64,8 @@ void Agat_FDC840::load_config(SystemData *sd)
 #ifdef LOG_FDD
     //ram0 = dynamic_cast<RAM*>(im->dm->get_device_by_name("ram0"));
 #endif
+
+    return dsk_tools::Result::ok();
 }
 
 

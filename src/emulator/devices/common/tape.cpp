@@ -36,10 +36,10 @@ TapeRecorder::~TapeRecorder()
     delete speaker;
 }
 
-void TapeRecorder::load_config(SystemData *sd)
+dsk_tools::Result TapeRecorder::load_config(SystemData *sd)
 {
-
-    ComputerDevice::load_config(sd);
+    dsk_tools::Result res = ComputerDevice::load_config(sd);
+    if (!res) return res;
 
     baud_rate = read_confg_value(cd, "baudrate", false, (unsigned int)1200);
 
@@ -49,14 +49,18 @@ void TapeRecorder::load_config(SystemData *sd)
     else if (enc_str == "rk86")
         m_tape_enc = TapeEnc::RK86;
     else
-        QMessageBox::critical(0, TapeRecorder::tr("Error"), TapeRecorder::tr("Incorrect encoding %1").arg(QString::fromStdString(enc_str)));
+        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect encoding")) + "} " + enc_str);
 
     files = cd->get_parameter("files", false).value;
 
     if (files.empty()) files = sd->allowed_files;
 
-    speaker->load_config(sd);
+    res = speaker->load_config(sd);
+    if (!res) return res;
+
     speaker->reset(true);
+
+    return dsk_tools::Result::ok();
 }
 
 void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, MAYBE_UNUSED unsigned old_value)

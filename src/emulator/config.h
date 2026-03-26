@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "definitions.h"
+
 struct EmulatorConfigParameter {
     std::string name;
     std::string left_range;
@@ -53,7 +55,7 @@ public:
     EmulatorConfig(std::string file_name);
     ~EmulatorConfig();
 
-    void load_from_file(std::string file_name, bool system_only = false);
+    dsk_tools::Result load_from_file(std::string file_name, bool system_only = false);
     void free_devices();
 
     EmulatorConfigDevice * get_device(int i);

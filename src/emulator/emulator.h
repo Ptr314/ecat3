@@ -85,7 +85,7 @@ public:
     Emulator(std::string work_path, std::string data_path, std::string software_path, std::string ini_file, VideoRenderer * renderer);
     ~Emulator();
 
-    void load_config(std::string file_name);
+    dsk_tools::Result load_config(std::string file_name);
     void apply_saved_device_options();
 
     std::string read_setup(std::string section, std::string ident, std::string def_val);

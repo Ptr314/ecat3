@@ -33,6 +33,6 @@ protected:
     virtual void HSYNC(const unsigned line, const unsigned sync_val) {};
 public:
     RasterDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
-    void load_config(SystemData *sd) override;
+    dsk_tools::Result load_config(SystemData *sd) override;
     void clock(unsigned int counter) override;
 };

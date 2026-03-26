@@ -35,13 +35,17 @@ GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
     cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu"));
 }
 
-void GenericSound::load_config(SystemData *sd)
+dsk_tools::Result GenericSound::load_config(SystemData *sd)
 {
-    ComputerDevice::load_config(sd);
+    dsk_tools::Result res = ComputerDevice::load_config(sd);
+    if (!res) return res;
+
     m_lpf_coutoff = read_confg_value(cd, "lpf", false, (unsigned int)m_lpf_coutoff);
     m_use_lpf = (m_lpf_coutoff > 0);
 
     init_sound(cpu->clock);
+
+    return dsk_tools::Result::ok();
 }
 
 void GenericSound::init_sound(unsigned int clock_freq)

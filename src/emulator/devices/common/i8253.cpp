@@ -49,9 +49,10 @@ I8253::I8253(InterfaceManager *im, EmulatorConfigDevice *cd):
     memset(&Gates, 1, sizeof(Gates)); //Allow counting just if gates are not connected
 }
 
-void I8253::load_config(SystemData *sd)
+dsk_tools::Result I8253::load_config(SystemData *sd)
 {
-    AddressableDevice::load_config(sd);
+    dsk_tools::Result res = AddressableDevice::load_config(sd);
+    if (!res) return res;
 
     const std::string param_names[3] = {"clock0", "clock1", "clock2"};
     for (int ch = 0; ch < 3; ch++) {
@@ -68,6 +69,8 @@ void I8253::load_config(SystemData *sd)
             per_channel_clock = true;
         }
     }
+
+    return dsk_tools::Result::ok();
 }
 
 void I8253::reset(const bool cold)
