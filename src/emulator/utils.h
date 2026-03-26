@@ -38,7 +38,7 @@ bool read_confg_value(EmulatorConfigDevice * cd, const std::string &name, bool r
 
 bool checkCapsLock();
 
-QString md2html(QString md);
+std::string md2html(const std::string &md);
 
 int getRandomNumber(int min, int max);
 

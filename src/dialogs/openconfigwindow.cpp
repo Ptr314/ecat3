@@ -54,7 +54,7 @@ OpenConfigWindow::OpenConfigWindow(QWidget *parent, Emulator * e) :
 
     QFile default_md(QString::fromStdString(e->work_path + "default.md"));
     if (default_md.open(QIODevice::ReadOnly)) {
-        QString html = "<body>" + md2html(default_md.readAll()) + "</body>";
+        QString html = "<body>" + QString::fromStdString(md2html(default_md.readAll().toStdString())) + "</body>";
         ui->textBrowser->document()->setHtml(html);
         default_md.close();
     }
@@ -84,8 +84,10 @@ void OpenConfigWindow::list_machines(QString work_path)
         if (fi.suffix().toLower() == "cfg")
         {
             //qDebug() << fi.absoluteFilePath();
-            EmulatorConfig * config = new EmulatorConfig(fi.absoluteFilePath().toStdString());
-            EmulatorConfigDevice * system = config->get_device("system");
+            EmulatorConfig config;
+            dsk_tools::Result res = config.load_from_file(fi.absoluteFilePath().toStdString(), true);
+            if (!res) continue;
+            EmulatorConfigDevice * system = config.get_device("system");
 
             bool is_debug = system->get_parameter("debug", false).value == "1";
 
@@ -118,8 +120,6 @@ void OpenConfigWindow::list_machines(QString work_path)
 
                 //qDebug() << "DATA:" << computer->data().toString();
             }
-
-            delete config;
         }
     }
     model->sort(0);
@@ -145,7 +145,7 @@ void OpenConfigWindow::set_description(QModelIndex index)
             return;
         }
 
-        QString html = "<body>" + md2html(file.readAll()) +"</body>";
+        QString html = "<body>" + QString::fromStdString(md2html(file.readAll().toStdString())) +"</body>";
         ui->textBrowser->document()->setHtml(html);
 
         file.close();

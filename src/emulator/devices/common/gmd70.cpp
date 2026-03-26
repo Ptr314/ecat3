@@ -4,6 +4,7 @@
 // Description: GMD70 (Электроника-ГМД70) FDC device
 
 #include "gmd70.h"
+#include "emulator/utils.h"
 
 // Commands
 #define GMD70_FILL_BUFFER               0
@@ -58,17 +59,17 @@ dsk_tools::Result GMD70::load_config(SystemData *sd)
     dsk_tools::Result res = FDC::load_config(sd);
     if (!res) return res;
 
-    QString s;
+    std::string s;
     try {
-        s = QString::fromStdString(cd->get_parameter("drives").value);
+        s = cd->get_parameter("drives").value;
     } catch (std::exception &e) {
         return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{GMD70|" + std::string(QT_TRANSLATE_NOOP("GMD70", "Incorrect fdd list for")) + "} " + name);
     }
 
-    QStringList parts = s.split('|', skip_empty_parts);
+    std::vector<std::string> parts = split_string(s, '|', true);
     m_drives_count = parts.size();
     for (unsigned int i = 0; i < m_drives_count; i++)
-        m_drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i].toStdString()));
+        m_drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));
 
     reset_fdc();
 

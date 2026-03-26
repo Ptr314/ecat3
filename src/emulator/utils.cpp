@@ -291,14 +291,13 @@ bool checkCapsLock()
 
 void store_html_callback(const MD_CHAR* text, MD_SIZE size, void* result)
 {
-    *static_cast<QString*>(result) += QString::fromUtf8(text, size);
+    static_cast<std::string*>(result)->append(text, size);
 }
 
-QString md2html(QString md)
+std::string md2html(const std::string &md)
 {
-    QString result;
-    std::string text = md.toStdString();
-    int endCode = md_html(text.c_str(), text.length(), store_html_callback, static_cast<void*>(&result), 0, 1);
+    std::string result;
+    md_html(md.c_str(), md.length(), store_html_callback, static_cast<void*>(&result), 0, 1);
     return result;
 }
 
