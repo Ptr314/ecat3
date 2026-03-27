@@ -5,11 +5,12 @@
 
 #pragma once
 
-#include <QString>
-#include <QDateTime>
-#include <QFile>
-#include <QDir>
-#include <QDebug>
+#include <algorithm>
+#include <chrono>
+#include <ctime>
+#include <fstream>
+#include <iostream>
+#include <string>
 
 #include "globals.h"
 
@@ -17,18 +18,32 @@
 #define LOG_LIMIT 0
 #endif
 
-class Logger:public QObject
+class Logger
 {
-    Q_OBJECT
 private:
     unsigned int logged_count;
-    QString log;
-    QString log_name;
+    std::string log;
+    std::string log_name;
+
+    static std::string current_time_string()
+    {
+        auto now = std::chrono::system_clock::now();
+        std::time_t t = std::chrono::system_clock::to_time_t(now);
+        char buf[64];
+        std::strftime(buf, sizeof(buf), "%Y-%m-%d-%H-%M-%S", std::localtime(&t));
+        return std::string(buf);
+    }
+
+    static std::string to_upper(const std::string &s)
+    {
+        std::string result = s;
+        std::transform(result.begin(), result.end(), result.begin(), ::toupper);
+        return result;
+    }
 
 public:
-    Logger(QString log_name):
+    Logger(const std::string &log_name):
         logged_count(0),
-        log(""),
         log_name(log_name)
     {}
 
@@ -37,7 +52,7 @@ public:
         return logged_count < LOG_LIMIT;
     }
 
-    void logs(QString s)
+    void logs(const std::string &s)
     {
         if (log_available())
         {
@@ -51,19 +66,19 @@ public:
     {
         if (logged_count > 0)
         {
-            QDateTime date = QDateTime::currentDateTime();
-            QString formattedTime = date.toString("yyyy-MM-dd-hh-mm-ss");
-            QString log_file = QDir::currentPath() + "/" + log_name + +"_" + formattedTime + ".log";
-            qDebug() << "Logged " << logged_count << "entries";
-            qDebug() << "Wrting log to " << log_file;
-            QFile qFile(log_file);
-            if (qFile.open(QIODevice::WriteOnly))
+            std::string formattedTime = current_time_string();
+            std::string log_file = log_name + "_" + formattedTime + ".log";
+            std::cerr << "Logged " << logged_count << " entries" << std::endl;
+            std::cerr << "Writing log to " << log_file << std::endl;
+            std::ofstream ofs(log_file, std::ios::binary);
+            if (ofs.is_open())
             {
-                qFile.write(log.toUpper().toUtf8());
-                qFile.close();
+                std::string upper_log = to_upper(log);
+                ofs.write(upper_log.c_str(), upper_log.size());
+                ofs.close();
             }
         } else {
-            qDebug() << "Log is empty, none to write";
+            std::cerr << "Log is empty, none to write" << std::endl;
         }
     }
 };

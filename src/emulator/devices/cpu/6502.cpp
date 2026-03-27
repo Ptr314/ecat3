@@ -113,14 +113,14 @@ void mos6502::log_state(uint8_t command, bool before, unsigned int cycles)
     if (log_available())
     {
         mos6502context * c = core->get_context();
-        logs((
-            QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
-            + QString(" A:%1").arg(c->A, 2, 16, QChar('0'))
-            + QString(" X:%1").arg(c->X, 2, 16, QChar('0'))
-            + QString(" Y:%1").arg(c->Y, 2, 16, QChar('0'))
-            + QString(" S:%1").arg(c->S, 2, 16, QChar('0'))
-            + QString(" P:%1").arg(c->P, 2, 16, QChar('0'))
-            ).toStdString());
+        // logs((
+        //     QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
+        //     + QString(" A:%1").arg(c->A, 2, 16, QChar('0'))
+        //     + QString(" X:%1").arg(c->X, 2, 16, QChar('0'))
+        //     + QString(" Y:%1").arg(c->Y, 2, 16, QChar('0'))
+        //     + QString(" S:%1").arg(c->S, 2, 16, QChar('0'))
+        //     + QString(" P:%1").arg(c->P, 2, 16, QChar('0'))
+        //     ).toStdString());
     }
 }
 #endif
@@ -130,13 +130,13 @@ void mos6502::interface_callback(unsigned int callback_id, unsigned int new_valu
     switch (callback_id) {
     case CALLBACK_NMI:
 #ifdef LOG_CPU
-        logs(("NMI = " + QString::number(new_value & 1)).toStdString());
+        // logs(("NMI = " + QString::number(new_value & 1)).toStdString());
 #endif
         core->set_nmi((new_value & 1) == 0); //NMI has active 0
         break;
     case CALLBACK_INT:
 #ifdef LOG_CPU
-        logs(("INT = " + QString::number(new_value & 1)).toStdString());
+        // logs(("INT = " + QString::number(new_value & 1)).toStdString());
 #endif
         core->set_irq((new_value & 1) == 0); //INT has active 0
         break;

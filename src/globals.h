@@ -25,3 +25,8 @@
 /* #undef LOG_PAGE_MAPPER */
 /* #undef LOG_INTERFACES */
 /* #undef LOG_AGAT */
+
+// Fallback for translation markers when building without QObject
+#ifndef QT_TRANSLATE_NOOP
+#define QT_TRANSLATE_NOOP(scope, x) x
+#endif

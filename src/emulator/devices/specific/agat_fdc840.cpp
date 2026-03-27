@@ -3,6 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Agat 840K floppy disk controller device
 
+#include <cstring>
+
 #include "agat_fdc840.h"
 #include "emulator/utils.h"
 #include "libs/mfm_tools.h"
@@ -25,9 +27,9 @@ Agat_FDC840::Agat_FDC840(InterfaceManager *im, EmulatorConfigDevice *cd):
     memset(&current_track, 0, sizeof(current_track));
 }
 
-dsk_tools::Result Agat_FDC840::load_config(SystemData *sd)
+emulator::Result Agat_FDC840::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = FDC::load_config(sd);
+    emulator::Result res = FDC::load_config(sd);
     if (!res) return res;
 
     clock_divider = 64;
@@ -36,7 +38,7 @@ dsk_tools::Result Agat_FDC840::load_config(SystemData *sd)
     try {
         s = cd->get_parameter("drives").value;
     } catch (std::exception &e) {
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{Agat_FDC840|" + std::string(QT_TRANSLATE_NOOP("Agat_FDC840", "Incorrect fdd list for")) + "} " + name);
+        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{Agat_FDC840|" + std::string(QT_TRANSLATE_NOOP("Agat_FDC840", "Incorrect fdd list for")) + "} " + name);
     }
 
     memset(&drives, 0, sizeof(drives));
@@ -52,6 +54,9 @@ dsk_tools::Result Agat_FDC840::load_config(SystemData *sd)
         drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));
 
         ld.d.i = im->get_interface_by_name(parts[i], "side");
+        if (ld.d.i == nullptr)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{Agat_FDC840|" + std::string(QT_TRANSLATE_NOOP("Agat_FDC840", "Interface not found")) + "} " + parts[i] + ":side");
         ld.d.shift = 0;
         ld.d.mask = create_mask(1, 0);
         ld.s.i->connect(ld.s, ld.d, false);
@@ -65,7 +70,7 @@ dsk_tools::Result Agat_FDC840::load_config(SystemData *sd)
     //ram0 = dynamic_cast<RAM*>(im->dm->get_device_by_name("ram0"));
 #endif
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 
@@ -141,13 +146,13 @@ void Agat_FDC840::update_state()
 #ifdef LOG_FDD
     if (write_mode != new_write_mode) {
         if (new_write_mode==1) {
-            logs(QString("WRITE ON POS:%1").arg(drives[selected_drive]->get_position() % 282).toStdString());
+            // logs(QString("WRITE ON POS:%1").arg(drives[selected_drive]->get_position() % 282).toStdString());
         } else {
-            logs(QString("WRITE OFF").toStdString());
+            // logs(QString("WRITE OFF").toStdString());
         }
     }
     if (side != new_side) {
-        logs(QString("SIDE %1").arg(new_side).toStdString());
+        // logs(QString("SIDE %1").arg(new_side).toStdString());
     }
 #endif
     write_mode = new_write_mode;
@@ -202,7 +207,7 @@ void Agat_FDC840::write_next_byte()
 
 #ifdef LOG_FDD
         int sector_pos = drives[selected_drive]->get_position() % 282;
-        logs(QString("--WRITE %1 at %2").arg(data, 1, 16, QChar('0')).arg(sector_pos).toStdString());
+        // logs(QString("--WRITE %1 at %2").arg(data, 1, 16, QChar('0')).arg(sector_pos).toStdString());
 #endif
 
         drives[selected_drive]->WriteByte(data);
@@ -250,7 +255,7 @@ unsigned int Agat_FDC840::get_value(unsigned int address)
 #ifdef LOG_FDD
     // if (A != 6 || value != 0xC0)
     if (start_log)
-        logs(QString("R %1:%2 p:%3").arg(A, 1, 16, QChar('0')).arg(value, 2, 16, QChar('0')).arg(drives[selected_drive]->get_position() % 282).toStdString());
+        // logs(QString("R %1:%2 p:%3").arg(A, 1, 16, QChar('0')).arg(value, 2, 16, QChar('0')).arg(drives[selected_drive]->get_position() % 282).toStdString());
 #endif
     return value;
 }
@@ -261,7 +266,7 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
     unsigned int A = address & 0x0f;
 
 #ifdef LOG_FDD
-    QString op;
+    std::string op;
     if (A == 3) {
              if (value == 0) op="SP 0";
         else if (value == 1) op="SP 1";
@@ -291,7 +296,7 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
         op = "DESYNC";
     };
 
-    logs(QString("W %1:%2 POS:%3 %4").arg(A).arg(value, 2, 16, QChar('0')).arg((selected_drive < drives_count)?(drives[selected_drive]->get_position() % 282):9999).arg(op).toStdString());
+    // logs(QString("W %1:%2 POS:%3 %4").arg(A).arg(value, 2, 16, QChar('0')).arg((selected_drive < drives_count)?(drives[selected_drive]->get_position() % 282):9999).arg(op).toStdString());
     // if (A == 3 && value == 0xD) start_log = true;
 #endif
 
@@ -321,7 +326,7 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
             // TODO: writing
             write_sync = true;
 #ifdef LOG_FDD
-            logs(QString("WRITE SYNC ON POS: %1").arg(drives[selected_drive]->get_position() % 282).toStdString());
+            // logs(QString("WRITE SYNC ON POS: %1").arg(drives[selected_drive]->get_position() % 282).toStdString());
 #endif
             break;
         case 0x9:

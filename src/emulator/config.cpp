@@ -3,8 +3,6 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Emulator config functions, source
 
-#include <QMessageBox>
-
 #include "config.h"
 #include "utils.h"
 
@@ -152,7 +150,7 @@ std::string EmulatorConfigDevice::extended_parameter(unsigned int i, std::string
 
 
 
-dsk_tools::Result EmulatorConfig::load_from_file(std::string file_name, bool system_only)
+emulator::Result EmulatorConfig::load_from_file(std::string file_name, bool system_only)
 {
     std::string device_name;
     std::string device_type;
@@ -161,13 +159,13 @@ dsk_tools::Result EmulatorConfig::load_from_file(std::string file_name, bool sys
 
     std::string config = dsk_tools::utf8_read_file(file_name);
     if (config.empty()) {
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{EmulatorConfig|" + std::string(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading config file")) + "} " + file_name);
     }
     while(!config.empty())
     {
         device_name = read_next_entity(&config, ":");
-        if (device_name.empty()) return dsk_tools::Result::ok();
+        if (device_name.empty()) return emulator::Result::ok();
         if (device_name == "system")
         {
             device_type = "";
@@ -175,13 +173,13 @@ dsk_tools::Result EmulatorConfig::load_from_file(std::string file_name, bool sys
             std::string s = read_next_entity(&config, ":");
             if (s.empty() || s != ":")
             {
-                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{EmulatorConfig|" + std::string(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device - no type found")) + "} " + device_name);
             }
             device_type = read_next_entity(&config);
             if (device_type.empty())
             {
-                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{EmulatorConfig|" + std::string(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device - no type found")) + "} " + device_name);
             }
         }
@@ -190,14 +188,14 @@ dsk_tools::Result EmulatorConfig::load_from_file(std::string file_name, bool sys
         std::string s = read_next_entity(&config);
         if (s.empty() || s != "{")
         {
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{EmulatorConfig|" + std::string(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device - no description found")) + "} " + device_name);
         }
 
         std::string param_name = read_next_entity(&config);
         if (param_name.empty())
         {
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{EmulatorConfig|" + std::string(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device - incorrect parameters")) + "} " + device_name);
         }
         while (param_name != "}")
@@ -206,7 +204,7 @@ dsk_tools::Result EmulatorConfig::load_from_file(std::string file_name, bool sys
             s = read_next_entity(&config);
             if (s.empty() || (s != "[" && s != "="))
             {
-                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{EmulatorConfig|" + std::string(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device - incorrect parameters")) + "} " + device_name);
             }
 
@@ -222,7 +220,7 @@ dsk_tools::Result EmulatorConfig::load_from_file(std::string file_name, bool sys
                     s = read_next_entity(&config);
                     if (s.empty())
                     {
-                        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                        return emulator::Result::error(emulator::ErrorCode::ConfigError,
                             "{EmulatorConfig|" + std::string(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device parameter")) + "} " + device_name + ":" + param_name);
                     }
                 }
@@ -234,7 +232,7 @@ dsk_tools::Result EmulatorConfig::load_from_file(std::string file_name, bool sys
             s = read_next_entity(&config);
             if (s.empty())
             {
-                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{EmulatorConfig|" + std::string(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device parameter")) + "} " + device_name + ":" + param_name);
             }
             std::string param_value;
@@ -245,7 +243,7 @@ dsk_tools::Result EmulatorConfig::load_from_file(std::string file_name, bool sys
                 s = read_next_entity(&config);
                 if (s.empty())
                 {
-                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
                         "{EmulatorConfig|" + std::string(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device parameter")) + "} " + device_name + ":" + param_name);
                 }
                 if (s == "}")
@@ -263,7 +261,7 @@ dsk_tools::Result EmulatorConfig::load_from_file(std::string file_name, bool sys
                         s = read_next_entity(&config);
                         if (s.empty())
                         {
-                            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                                 "{EmulatorConfig|" + std::string(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device parameter")) + "} " + device_name + ":" + param_name);
                         }
                         if (s == "]") break;
@@ -272,7 +270,7 @@ dsk_tools::Result EmulatorConfig::load_from_file(std::string file_name, bool sys
                     s = read_next_entity(&config);
                     if (s.empty())
                     {
-                        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                        return emulator::Result::error(emulator::ErrorCode::ConfigError,
                             "{EmulatorConfig|" + std::string(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device parameter")) + "} " + device_name + ":" + param_name);
                     }
                 }
@@ -288,7 +286,7 @@ dsk_tools::Result EmulatorConfig::load_from_file(std::string file_name, bool sys
                 param_name = read_next_entity(&config);
                 if (param_name.empty())
                 {
-                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
                         "{EmulatorConfig|" + std::string(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device - incorrect parameters")) + "} " + device_name);
                 }
             } else {
@@ -299,7 +297,7 @@ dsk_tools::Result EmulatorConfig::load_from_file(std::string file_name, bool sys
 
         if (system_only && device_name == "system") break;
     }
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 EmulatorConfigDevice * EmulatorConfig::get_device(int i)
@@ -313,7 +311,6 @@ EmulatorConfigDevice * EmulatorConfig::get_device(const std::string& name)
     {
         if (devices[i]->name == name) return devices[i].get();
     }
-    QMessageBox::critical(0, EmulatorConfig::tr("Error"), EmulatorConfig::tr("Device '%1' not found").arg(QString::fromStdString(name)));
     return nullptr;
 }
 

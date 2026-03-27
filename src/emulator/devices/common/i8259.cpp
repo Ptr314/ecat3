@@ -3,6 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Intel 8259 (КР580ВН59) programmable interrupt controller
 
+#include <cstring>
+
 #include "i8259.h"
 
 #define CALLBACK_IR     1

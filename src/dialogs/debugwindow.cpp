@@ -4,6 +4,7 @@
 // Description: Debug Window source
 
 #include <QKeyEvent>
+#include <QMessageBox>
 
 #include "debugwindow.h"
 #include "emulator/utils.h"
@@ -39,7 +40,11 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     if (d->type == "65c02")
         file_name = QString::fromStdString(e->data_path + "65c02.dis");
 
-    disasm = new DisAsm(this, file_name);
+    disasm = new DisAsm();
+    emulator::Result res = disasm->load_file(file_name.toStdString());
+    if (!res) {
+        QMessageBox::warning(this, DebugWindow::tr("Error"), translateResultMessage(res.message));
+    }
     ui->codeview->set_data(e, dynamic_cast<CPU*>(d), disasm, dynamic_cast<CPU*>(d)->get_pc());
     ui->codeview->set_frame(true, true, true, true, "╔═╤║ │╟─┴");
     ui->codeview->set_scroll(100, 0);
@@ -207,7 +212,7 @@ void DebugWindow::on_stepOverButton_clicked()
             for (unsigned int i = 0; i < disasm->max_command_length; i++)
                 bytes[i] = cpu->read_mem(a+i);
 
-            QString tmp;
+            std::string tmp;
             unsigned int len = disasm->disassemle(&bytes, a, sizeof(bytes), &tmp);
 
             temporary_break = a+len;

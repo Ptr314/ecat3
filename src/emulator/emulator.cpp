@@ -93,7 +93,7 @@ void Emulator::write_setup(std::string section, std::string ident, std::string n
 }
 
 
-dsk_tools::Result Emulator::load_config(std::string file_name)
+emulator::Result Emulator::load_config(std::string file_name)
 {
     if (loaded)
     {
@@ -109,10 +109,13 @@ dsk_tools::Result Emulator::load_config(std::string file_name)
     register_devices();
 
     EmulatorConfig config;
-    dsk_tools::Result res = config.load_from_file(file_name);
+    emulator::Result res = config.load_from_file(file_name);
     if (!res) return res;
 
     EmulatorConfigDevice * system = config.get_device("system");
+    if (system == nullptr)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Device 'system' not found in config")) + "}");
     sd.system_file = file_name;
     sd.system_path = dsk_tools::get_file_path(file_name);
     sd.system_type = system->get_parameter("type").value;
@@ -132,14 +135,15 @@ dsk_tools::Result Emulator::load_config(std::string file_name)
         EmulatorConfigDevice * d = config.get_device(i);
         if (!d->type.empty())
         {
-            dm->add_device(im, d);
+            res = dm->add_device(im, d);
+            if (!res) return res;
         }
     }
     res = dm->load_devices_config(&sd);
     if (!res) return res;
     apply_saved_device_options();
     loaded = true;
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 void Emulator::apply_saved_device_options()
@@ -221,28 +225,28 @@ void Emulator::run()
 
             cpu = dynamic_cast<CPU*>(dm->get_device_by_name("cpu"));
             if (!cpu) {
-                qCritical() << "Error: CPU device not found or wrong type";
+                // qCritical() << "Error: CPU device not found or wrong type";
                 m_running = false;
                 return;
             }
 
             mm = dynamic_cast<MemoryMapper*>(dm->get_device_by_name("mapper"));
             if (!mm) {
-                qCritical() << "Error: Memory mapper device not found or wrong type";
+                // qCritical() << "Error: Memory mapper device not found or wrong type";
                 m_running = false;
                 return;
             }
 
             display = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display"));
             if (!display) {
-                qCritical() << "Error: Display device not found or wrong type";
+                // qCritical() << "Error: Display device not found or wrong type";
                 m_running = false;
                 return;
             }
 
             keyboard = dynamic_cast<Keyboard*>(dm->get_device_by_name("keyboard"));
             if (!keyboard) {
-                qCritical() << "Error: Keyboard device not found or wrong type";
+                // qCritical() << "Error: Keyboard device not found or wrong type";
                 m_running = false;
                 return;
             }
@@ -443,7 +447,7 @@ void Emulator::init_video(void *p)
 {
     GenericDisplay * d = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display"));
     if (!d) {
-        qCritical() << "Error: Display device not found or wrong type in init_video";
+        // qCritical() << "Error: Display device not found or wrong type in init_video";
         return;
     }
 
@@ -551,7 +555,7 @@ void Emulator::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 #ifdef LOGGER
 void Emulator::logs(ComputerDevice * d, std::string s)
 {
-    if (logger != nullptr) logger->logs(QString::fromStdString(d->name + ": " + s));
+    if (logger != nullptr) logger->logs(d->name + ": " + s);
 }
 #endif
 

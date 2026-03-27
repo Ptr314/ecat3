@@ -43,9 +43,9 @@ void Register::reset(bool cold)
     i_out.change(register_value);
 }
 
-dsk_tools::Result Register::load_config(SystemData *sd)
+emulator::Result Register::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = ComputerDevice::load_config(sd);
+    emulator::Result res = ComputerDevice::load_config(sd);
     if (!res) return res;
 
     //TODO: Register - add other types
@@ -62,14 +62,14 @@ dsk_tools::Result Register::load_config(SystemData *sd)
     else if (type_string == "buffer")
         store_type = REGISTER_BUFFER;
     else
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{Register|" + std::string(QT_TRANSLATE_NOOP("Register", "Unknown register type")) + "} " + type_string);
+        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{Register|" + std::string(QT_TRANSLATE_NOOP("Register", "Unknown register type")) + "} " + type_string);
 
     if (i_in.linked_bits)
         mask = i_in.linked_bits;
     else
         mask = _FFFF;
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 void Register::interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value)

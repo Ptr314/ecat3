@@ -7,5 +7,5 @@
 
 #include "emulator/emulator.h"
 
-dsk_tools::Result HandleExternalFile(Emulator * e, const std::string &file_name);
+emulator::Result HandleExternalFile(Emulator * e, const std::string &file_name);
 

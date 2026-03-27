@@ -11,7 +11,7 @@
 #include <SDL.h>
 
 #include "emulator/renderer.h"
-#include "emulator/utils.h"
+#include "qt_utils.h"
 
 class SDL2Renderer: public VideoRenderer
 {

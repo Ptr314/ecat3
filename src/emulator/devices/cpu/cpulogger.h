@@ -5,12 +5,16 @@
 
 #pragma once
 
-#include <QObject>
-#include <QDateTime>
-#include <QDir>
+#include <algorithm>
+#include <chrono>
+#include <ctime>
+#include <fstream>
+#include <iostream>
+#include <string>
 
 #include "emulator/core.h"
 #include "emulator/emulator.h"
+#include "emulator/utils.h"
 #include "emulator/devices/cpu/i8080_context.h"
 
 #ifndef EXTERNAL_Z80
@@ -23,71 +27,89 @@
 #define CPU_LOGGER_8080     1
 #define CPU_LOGGER_Z80      2
 
-class CPULogger:public QObject
+class CPULogger
 {
-    Q_OBJECT
 private:
     CPU * cpu;
     void * context;
     int cpu_type;
     unsigned int logged_count;
-    QString log;
-    QString log_name;
+    std::string log;
+    std::string log_name;
+
+    static std::string dec_str(unsigned int value, int width)
+    {
+        std::string s = std::to_string(value);
+        while (static_cast<int>(s.size()) < width) s = "0" + s;
+        return s;
+    }
+
+    static std::string to_upper(const std::string &s)
+    {
+        std::string result = s;
+        std::transform(result.begin(), result.end(), result.begin(), ::toupper);
+        return result;
+    }
+
+    static std::string current_time_string()
+    {
+        auto now = std::chrono::system_clock::now();
+        std::time_t t = std::chrono::system_clock::to_time_t(now);
+        char buf[64];
+        std::strftime(buf, sizeof(buf), "%Y-%m-%d-%H-%M-%S", std::localtime(&t));
+        return std::string(buf);
+    }
 
 public:
-    CPULogger(CPU * cpu, int cpu_type, void * context, QString log_name):
+    CPULogger(CPU * cpu, int cpu_type, void * context, const std::string &log_name):
         cpu(cpu),
         cpu_type(cpu_type),
         context(context),
         logged_count(0),
-        log(""),
         log_name(log_name)
     {}
 
     void log_state(uint8_t command, bool before, unsigned int cycles=0)
     {
         unsigned int pc = cpu->get_pc();
-        QString cs;
+        std::string cs;
         if (cpu_type == CPU_LOGGER_8080) {
             i8080context * c = static_cast<i8080context*>(context);
-            cs =   QString("%1").arg(pc, 4, 16, QChar('0')) \
-                 + QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
-                 + ((!before)?(QString(" %1").arg(cycles, 2, 10, QChar('0'))):"   ")
-                 + QString(" AF:%1%2").arg(c->registers.regs.A, 2, 16, QChar('0')).arg(c->registers.regs.F, 2, 16, QChar('0'))
-                 //+ QString(" B, C:%1,%2").arg(c->registers.regs.B, 2, 16, QChar('0')).arg(c->registers.regs.C, 2, 16, QChar('0'))
-                 + QString(" BC:%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0'))
-                 //+ QString(" D, E:%1,%2").arg(c->registers.regs.D, 2, 16, QChar('0')).arg(c->registers.regs.E, 2, 16, QChar('0'))
-                 + QString(" DE:%1").arg(c->registers.reg_pairs.DE, 4, 16, QChar('0'))
-                 //+ QString(" H, L:%1,%2").arg(c->registers.regs.H, 2, 16, QChar('0')).arg(c->registers.regs.L, 2, 16, QChar('0'))
-                 + QString(" HL:%1").arg(c->registers.reg_pairs.HL, 4, 16, QChar('0'))
-                 + QString(" SP:%1").arg(c->registers.regs.SP, 4, 16, QChar('0'))
+            cs =   hex_str(pc, 4)
+                 + " " + hex_str(command, 2) + ((before)?"+":"-")
+                 + ((!before)?(" " + dec_str(cycles, 2)):"   ")
+                 + " AF:" + hex_str(c->registers.regs.A, 2) + hex_str(c->registers.regs.F, 2)
+                 + " BC:" + hex_str(c->registers.reg_pairs.BC, 4)
+                 + " DE:" + hex_str(c->registers.reg_pairs.DE, 4)
+                 + " HL:" + hex_str(c->registers.reg_pairs.HL, 4)
+                 + " SP:" + hex_str(c->registers.regs.SP, 4)
                  + "\x0D\x0A";
 
         } else
         if (cpu_type == CPU_LOGGER_Z80) {
 #ifndef EXTERNAL_Z80
             z80context * c = static_cast<z80context*>(context);
-            cs =   QString("%1").arg(pc, 4, 16, QChar('0')) \
-                 + QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
-                 + QString(" AF:%1").arg(c->registers.reg_pairs.AF, 4, 16, QChar('0'))
-                 + QString(" BC:%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0'))
-                 + QString(" DE:%1").arg(c->registers.reg_pairs.DE, 4, 16, QChar('0'))
-                 + QString(" HL:%1").arg(c->registers.reg_pairs.HL, 4, 16, QChar('0'))
-                 + QString(" SP:%1").arg(c->registers.regs.SP, 4, 16, QChar('0'))
-                 + QString(" IX:%1").arg(c->registers.reg_pairs.IX, 4, 16, QChar('0'))
-                 + QString(" IY:%1").arg(c->registers.reg_pairs.IY, 4, 16, QChar('0'))
+            cs =   hex_str(pc, 4)
+                 + " " + hex_str(command, 2) + ((before)?"+":"-")
+                 + " AF:" + hex_str(c->registers.reg_pairs.AF, 4)
+                 + " BC:" + hex_str(c->registers.reg_pairs.BC, 4)
+                 + " DE:" + hex_str(c->registers.reg_pairs.DE, 4)
+                 + " HL:" + hex_str(c->registers.reg_pairs.HL, 4)
+                 + " SP:" + hex_str(c->registers.regs.SP, 4)
+                 + " IX:" + hex_str(c->registers.reg_pairs.IX, 4)
+                 + " IY:" + hex_str(c->registers.reg_pairs.IY, 4)
                  + "\x0D\x0A";
 #else
             Z80 * c = static_cast<Z80*>(context);
-            cs =   QString("%1").arg(pc, 4, 16, QChar('0')) \
-                 + QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
-                 + QString(" AF:%1%2").arg(c->reg.pair.A, 2, 16, QChar('0')).arg(c->reg.pair.F, 2, 16, QChar('0'))
-                 + QString(" BC:%1%2").arg(c->reg.pair.B, 2, 16, QChar('0')).arg(c->reg.pair.C, 2, 16, QChar('0'))
-                 + QString(" DE:%1%2").arg(c->reg.pair.D, 2, 16, QChar('0')).arg(c->reg.pair.E, 2, 16, QChar('0'))
-                 + QString(" HL:%1%2").arg(c->reg.pair.H, 2, 16, QChar('0')).arg(c->reg.pair.L, 2, 16, QChar('0'))
-                 + QString(" SP:%1").arg(c->reg.SP, 4, 16, QChar('0'))
-                 + QString(" IX:%1").arg(c->reg.IX, 4, 16, QChar('0'))
-                 + QString(" IY:%1").arg(c->reg.IY, 4, 16, QChar('0'))
+            cs =   hex_str(pc, 4)
+                 + " " + hex_str(command, 2) + ((before)?"+":"-")
+                 + " AF:" + hex_str(c->reg.pair.A, 2) + hex_str(c->reg.pair.F, 2)
+                 + " BC:" + hex_str(c->reg.pair.B, 2) + hex_str(c->reg.pair.C, 2)
+                 + " DE:" + hex_str(c->reg.pair.D, 2) + hex_str(c->reg.pair.E, 2)
+                 + " HL:" + hex_str(c->reg.pair.H, 2) + hex_str(c->reg.pair.L, 2)
+                 + " SP:" + hex_str(c->reg.SP, 4)
+                 + " IX:" + hex_str(c->reg.IX, 4)
+                 + " IY:" + hex_str(c->reg.IY, 4)
                  + "\x0D\x0A";
 #endif
 
@@ -96,26 +118,25 @@ public:
         logged_count++;
     }
 
-    void logs(QString s)
+    void logs(const std::string &s)
     {
         log += s + "\x0D\x0A";
         logged_count++;
-
     }
 
 
     ~CPULogger()
     {
-        QDateTime date = QDateTime::currentDateTime();
-        QString formattedTime = date.toString("yyyy-MM-dd-hh-mm-ss");
-        QString log_file = QDir::currentPath() + "/" + log_name + +"_" + formattedTime + ".log";
-        qDebug() << "Logged " << logged_count << "entries";
-        qDebug() << "Wrting log to " << log_file;
-        QFile qFile(log_file);
-        if (qFile.open(QIODevice::WriteOnly))
+        std::string formattedTime = current_time_string();
+        std::string log_file = log_name + "_" + formattedTime + ".log";
+        std::cerr << "Logged " << logged_count << " entries" << std::endl;
+        std::cerr << "Writing log to " << log_file << std::endl;
+        std::ofstream ofs(log_file, std::ios::binary);
+        if (ofs.is_open())
         {
-            qFile.write(log.toUpper().toUtf8());
-            qFile.close();
+            std::string upper_log = to_upper(log);
+            ofs.write(upper_log.c_str(), upper_log.size());
+            ofs.close();
         }
     }
 };

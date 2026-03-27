@@ -5,7 +5,9 @@
 
 #pragma once
 
-#include <QObject>
+#include <string>
+
+#include "emulator/result.h"
 
 struct InstructionByte {
     bool is_instr;
@@ -15,14 +17,13 @@ struct InstructionByte {
 struct Instruction {
     InstructionByte bytes[16];
     unsigned int length;
-    QString text;
+    std::string text;
 };
 
 typedef uint8_t (*CommandBytes)[15];
 
-class DisAsm : public QObject
+class DisAsm
 {
-    Q_OBJECT
 private:
     Instruction ins[2048];
     unsigned int count;
@@ -30,14 +31,11 @@ private:
 public:
     unsigned int max_command_length;
 
-    explicit DisAsm(QObject *parent = nullptr);
-    DisAsm(QObject *parent, QString file_name);
+    DisAsm();
 
-    void load_file(QString file_name);
-    unsigned int disassemle(CommandBytes bytes, unsigned int PC, unsigned int max_len, QString * output);
-
-signals:
+    emulator::Result load_file(const std::string &file_name);
+    unsigned int disassemle(CommandBytes bytes, unsigned int PC, unsigned int max_len, std::string * output);
 
 };
 
-QString bytes_dump(CommandBytes bytes, unsigned int length);
+std::string bytes_dump(CommandBytes bytes, unsigned int length);

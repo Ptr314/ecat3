@@ -7,17 +7,12 @@
 
 #include <string>
 #include <vector>
-#include <QString>
-#ifdef RENDERER_SDL2
-    #include <SDL.h>
-#endif
 
 #include "emulator/config.h"
 #include "emulator/core.h"
 
 #define _FFFF (unsigned int)(-1)
 
-// unsigned int parse_numeric_value(QString str);
 unsigned int parse_numeric_value(std::string str);
 
 unsigned int create_mask(unsigned int size, unsigned int shift);
@@ -26,10 +21,6 @@ void convert_range(const std::string &s, unsigned int * v1, unsigned int * v2);
 
 unsigned int CalcBits(unsigned int V, unsigned int MaxBits = 32);
 
-unsigned decodeBMP(std::vector<unsigned char>& image, unsigned& w, unsigned& h, const std::vector<unsigned char>& bmp);
-
-QString pad_string(QString s, QChar c, int len, bool from_left = true);
-
 std::string find_file_location(SystemData * sd, const std::string &file_name);
 
 unsigned int read_confg_value(EmulatorConfigDevice * cd, const std::string &name, bool required, unsigned int def);
@@ -37,8 +28,6 @@ std::string read_confg_value(EmulatorConfigDevice * cd, const std::string &name,
 bool read_confg_value(EmulatorConfigDevice * cd, const std::string &name, bool required, bool def);
 
 bool checkCapsLock();
-
-std::string md2html(const std::string &md);
 
 int getRandomNumber(int min, int max);
 

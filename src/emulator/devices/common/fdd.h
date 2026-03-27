@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QTimer>
+#include <chrono>
 
 #include "emulator/core.h"
 #include "libs/mfm_formats.h"
@@ -43,7 +43,8 @@ private:
     bool loaded;
     bool motor_on = false;
     bool m_motor_was_on = false;
-    QTimer led_timer;
+    std::chrono::steady_clock::time_point led_start;
+    bool led_active = false;
 
 
     int side;
@@ -85,9 +86,9 @@ public:
     uint8_t  ReadNextByte();
     void WriteNextByte(uint8_t value);
     void WriteByte(uint8_t value);
-    dsk_tools::Result load_config(SystemData *sd) override;
-    dsk_tools::Result load_image(const std::string &file_name);
-    dsk_tools::Result save_image(const std::string &file_name);
+    emulator::Result load_config(SystemData *sd) override;
+    emulator::Result load_image(const std::string &file_name);
+    emulator::Result save_image(const std::string &file_name);
     void unload();
     void change_protection();
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;

@@ -23,7 +23,6 @@ FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
     , side(0)
     , track(0)
     , fdd_mode(FDD_MODE_LOGICAL)
-    , led_timer(this)
     , i_select(this, im, 2, "select", MODE_R, CALLBACK_SELECT)
     , i_side(this, im, 1, "side", MODE_R)
     , i_density(this, im, 1, "density", MODE_R)
@@ -31,9 +30,6 @@ FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 {
     device_class = "fdd";
-
-    //memset(&buffer, 0, sizeof(buffer));
-    led_timer.setSingleShot(true);
 }
 
 FDD::~FDD()
@@ -41,9 +37,9 @@ FDD::~FDD()
     if (buffer != nullptr) delete [] buffer;
 }
 
-dsk_tools::Result FDD::load_config(SystemData *sd)
+emulator::Result FDD::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = ComputerDevice::load_config(sd);
+    emulator::Result res = ComputerDevice::load_config(sd);
     if (!res) return res;
 
     try {
@@ -56,7 +52,7 @@ dsk_tools::Result FDD::load_config(SystemData *sd)
         disk_size = sides*tracks*sectors*sector_size;
         write_protect = false;
     } catch (std::exception &e) {
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect fdd parameters for")) + "} " + name);
+        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect fdd parameters for")) + "} " + name);
     }
 
     files_save = cd->get_parameter("files_save", false).value;
@@ -70,29 +66,29 @@ dsk_tools::Result FDD::load_config(SystemData *sd)
     else if (s == "mfm_agat_840")
         fdd_mode = FDD_MODE_AGAT_840;
     else
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unknown fdd mode")) + "} " + s);
+        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unknown fdd mode")) + "} " + s);
 
     try {
         file_name = find_file_location(sd, cd->get_parameter("image").value);
         if (!file_name.empty()) {
-            dsk_tools::Result img_res = load_image(file_name);
+            emulator::Result img_res = load_image(file_name);
             if (!img_res) return img_res;
         } else
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Disk image file not found")) + "} " + file_name);
+            return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Disk image file not found")) + "} " + file_name);
     } catch (std::exception &e) {
     }
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
-dsk_tools::Result FDD::load_image(const std::string &file_name)
+emulator::Result FDD::load_image(const std::string &file_name)
 {
     std::string ext = dsk_tools::get_file_ext(file_name);  // returns ".ext" lowercase
     std::string base_name = dsk_tools::get_filename(file_name);
 
     if (ext == ".mfm" || ext == ".hfe") {
         if (fdd_mode == FDD_MODE_LOGICAL)
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "FDD device is working in a logical mode, no physical formats are supported")) + "}");
         HXC_MFM_HEADER hxc_header;
         dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
@@ -121,18 +117,18 @@ dsk_tools::Result FDD::load_image(const std::string &file_name)
                 this->file_name = base_name;
             } else {
                 file.close();
-                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unrecognized MFM format")) + "}");
             }
             file.close();
         } else {
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
         }
     } else
     if (ext == ".nib" || ext == ".nic") {
         if (fdd_mode == FDD_MODE_LOGICAL)
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "FDD device is working in a logical mode, no physical formats are supported")) + "}");
         int expected_size = (ext == ".nib")?232960:286720;
         long long actual_size = dsk_tools::utf8_file_size(file_name);
@@ -162,18 +158,18 @@ dsk_tools::Result FDD::load_image(const std::string &file_name)
                 loaded = true;
                 this->file_name = base_name;
             } else {
-                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
             }
             file.close();
         } else {
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "File is in unknown format")) + "} " + file_name);
         }
     } else
     if (ext == ".aim") {
         if (fdd_mode != FDD_MODE_AGAT_840)
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "AIM files supported on Agat 840k drives only!")) + "}");
         if (buffer != nullptr) delete [] buffer;
         buffer = load_aim_image(file_name, sides, tracks, disk_size, track_indexes, aim_codes);
@@ -199,12 +195,12 @@ dsk_tools::Result FDD::load_image(const std::string &file_name)
                     loaded = true;
                     this->file_name = base_name;
                 } else {
-                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
                         "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
                 }
             } else {
                 this->file_name = "";
-                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect disk image size for")) + "} " + file_name);
             }
         } else {
@@ -218,7 +214,7 @@ dsk_tools::Result FDD::load_image(const std::string &file_name)
                     buffer = generate_mfm_agat_840(file_name, sides, tracks, disk_size, track_indexes, aim_codes);
                     break;
                 default:
-                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
                         "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Expected conversion from DSK to MFM is not supported yet.")) + "}");
             }
             track_mode = FDD_MODE_WHOLE_TRACK;
@@ -227,7 +223,7 @@ dsk_tools::Result FDD::load_image(const std::string &file_name)
             this->file_name = base_name;
         }
     }
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 int FDD::SeekSector(int track, int sector)
@@ -243,7 +239,7 @@ int FDD::SeekSector(int track, int sector)
 #ifdef LOG_FDD
         static int prev_track = -1;
         if (prev_track != track) {
-            logs(QString("ROT %1 SEEK side:%2 track:%3 sector:%4").arg(log_rotations).arg(side).arg(track).arg(sector).toStdString());
+            // logs(QString("ROT %1 SEEK side:%2 track:%3 sector:%4").arg(log_rotations).arg(side).arg(track).arg(sector).toStdString());
             log_rotations = 0;
             prev_track = track;
         }
@@ -273,7 +269,7 @@ uint8_t FDD::ReadNextByte()
     if (loaded) {
         if (track_mode == FDD_MODE_SECTORS) {
             if (position >= sector_size)
-                im->dm->error(this, FDD::tr("Reading outside of a sector").toStdString());
+                im->dm->error(this, "Reading outside of a sector");
 
             if (sector==0)
             {
@@ -306,7 +302,7 @@ void FDD::WriteNextByte(uint8_t value)
 {
     if (track_mode == FDD_MODE_SECTORS) {
         if (position >= sector_size)
-            im->dm->error(this, FDD::tr("Writing outside of a sector").toStdString());
+            im->dm->error(this, "Writing outside of a sector");
 
         if (sector != 0)
         {
@@ -323,7 +319,7 @@ void FDD::WriteByte(uint8_t value)
 {
     if (track_mode == FDD_MODE_SECTORS) {
         if (position >= sector_size)
-            im->dm->error(this, FDD::tr("Writing outside of a sector").toStdString());
+            im->dm->error(this, "Writing outside of a sector");
 
         if (sector != 0)
         {
@@ -392,7 +388,7 @@ void FDD::change_protection()
     write_protect = !write_protect;
 }
 
-dsk_tools::Result FDD::save_image(const std::string &file_name)
+emulator::Result FDD::save_image(const std::string &file_name)
 {
     if (loaded)
     {
@@ -412,7 +408,7 @@ dsk_tools::Result FDD::save_image(const std::string &file_name)
                         file.close();
                     }
                 } else {
-                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
                         "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error exporting disk.")) + "} " + dsk_tools::decode_error(decode_res) + " : " + decode_res.message);
                 }
             } else
@@ -427,7 +423,7 @@ dsk_tools::Result FDD::save_image(const std::string &file_name)
                         file.close();
                     }
                 } else {
-                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
                         "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error exporting disk.")) + "} " + dsk_tools::decode_error(decode_res) + " : " + decode_res.message);
                 }
             } else
@@ -438,19 +434,19 @@ dsk_tools::Result FDD::save_image(const std::string &file_name)
                     file.close();
                 }
             } else {
-                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "FDD is working in a physical mode now, generating of DSK images is not supported yet.")) + "}");
             }
         } else if (ext == ".mfm") {
             if (fdd_mode == FDD_MODE_AGAT_140) {
                 save_mfm_file(file_name, sides, tracks, track_indexes[0].mfmtracksize, track_indexes, buffer);
             } else {
-                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Saving images for this type of drive is not supported yet.")) + "}");
             }
         }
     }
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 void FDD::ConvertStreamFormat()
@@ -470,12 +466,17 @@ void FDD::interface_callback(unsigned int callback_id, unsigned int new_value, u
 
 bool FDD::is_led_on()
 {
-    // qDebug() << motor_on << selector;
     if (motor_on || m_motor_was_on) {
         m_motor_was_on = false;
-        led_timer.start(5000);
+        led_start = std::chrono::steady_clock::now();
+        led_active = true;
     }
-    return led_timer.isActive();
+    if (led_active) {
+        auto elapsed = std::chrono::steady_clock::now() - led_start;
+        if (elapsed > std::chrono::milliseconds(5000))
+            led_active = false;
+    }
+    return led_active;
 }
 
 // Returns the AIM control code at the current position, or 0 if none exists

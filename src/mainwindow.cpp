@@ -14,7 +14,9 @@
 #include <QPushButton>
 #include <QActionGroup>
 // #include <QOverload>
+#include <QMessageBox>
 
+#include "dialogs/genericdbgwnd.h"
 #include "dialogs/i8255window.h"
 #include "mainwindow.h"
 #include "emulator/utils.h"
@@ -497,7 +499,7 @@ void MainWindow::UpdateToolbar()
 
     fdds_found = 0;
 
-    QVector<ComputerDevice*>fdd_devices = e->dm->find_devices_by_class("fdd");
+    std::vector<ComputerDevice*>fdd_devices = e->dm->find_devices_by_class("fdd");
     fdds_found = fdd_devices.size();
 
     for (int i=0; i < fdds_found; i++) {
@@ -522,7 +524,7 @@ void MainWindow::UpdateToolbar()
         fdd_timer->start(100);
     }
 
-    QVector<ComputerDevice*>tape_devices = e->dm->find_devices_by_class("tape");
+    std::vector<ComputerDevice*>tape_devices = e->dm->find_devices_by_class("tape");
     if (tape_devices.size() != 0) {
         buttons_added++;
         QToolButton * tape_button = new QToolButton();
@@ -616,8 +618,13 @@ void MainWindow::onDeviceMenuCalled(unsigned int i)
     {
         GenericDbgWnd * w = f(this, e, e->dm->get_device(i)->device.get());
         w->setAttribute(Qt::WA_DeleteOnClose);
-        connect(w, &GenericDbgWnd::data_changed, DWM, &DebugWindowsManager::data_changed);
-        connect(DWM, &DebugWindowsManager::update_all, w, &GenericDbgWnd::update_view);
+        DWM->add_window(w);
+        connect(w, &GenericDbgWnd::data_changed, [this](GenericDbgWnd * src) {
+            DWM->data_changed(src);
+        });
+        connect(w, &QObject::destroyed, [this, w]() {
+            DWM->remove_window(w);
+        });
         w->show();
     }
 }
@@ -692,23 +699,6 @@ void MainWindow::on_action_Select_a_machine_triggered()
     w->show();
 }
 
-static QString translateResultMessage(const std::string &message)
-{
-    QString msg = QString::fromStdString(message);
-    int open = msg.indexOf('{');
-    int close = msg.indexOf('}');
-    if (open >= 0 && close > open) {
-        QString inner = msg.mid(open + 1, close - open - 1);
-        int sep = inner.indexOf('|');
-        if (sep >= 0) {
-            QByteArray context = inner.left(sep).toUtf8();
-            QByteArray source = inner.mid(sep + 1).toUtf8();
-            QString translated = QCoreApplication::translate(context.constData(), source.constData());
-            msg = translated + msg.mid(close + 1);
-        }
-    }
-    return msg;
-}
 
 void MainWindow::set_title()
 {
@@ -725,7 +715,7 @@ void MainWindow::load_config(QString file_name, bool set_default)
         e->stop_emulation();
     }
 
-    dsk_tools::Result res = e->load_config(file_name.toStdString());
+    emulator::Result res = e->load_config(file_name.toStdString());
     if (!res) {
         QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
         return;
@@ -772,7 +762,7 @@ void MainWindow::on_actionOpen_triggered()
         last_path = fi.absolutePath();
         e->write_setup("Startup", "last_path", last_path.toStdString());
 
-        dsk_tools::Result res = HandleExternalFile(e, file_name.toStdString());
+        emulator::Result res = HandleExternalFile(e, file_name.toStdString());
         if (!res) {
             QMessageBox::warning(this, tr("Error"), translateResultMessage(res.message));
         }
@@ -787,8 +777,13 @@ void MainWindow::on_actionDebugger_triggered()
     {
             GenericDbgWnd * w = f(this, e, cpu);
             w->setAttribute(Qt::WA_DeleteOnClose);
-            connect(w, &GenericDbgWnd::data_changed, DWM, &DebugWindowsManager::data_changed);
-            connect(DWM, &DebugWindowsManager::update_all, w, &GenericDbgWnd::update_view);
+            DWM->add_window(w);
+            connect(w, &GenericDbgWnd::data_changed, [this](GenericDbgWnd * src) {
+                DWM->data_changed(src);
+            });
+            connect(w, &QObject::destroyed, [this, w]() {
+                DWM->remove_window(w);
+            });
             w->show();
     }
 }
@@ -824,7 +819,7 @@ void MainWindow::fdd_open(unsigned int n)
             QFileInfo fi(file_name);
             fdd_menu[n]->actions().at(0)->setText(fi.fileName());
             fdd_button[n]->setIcon(QIcon(":/icons/floppy_mount"));
-            dsk_tools::Result res = fdds[n]->load_image(file_name.toStdString());
+            emulator::Result res = fdds[n]->load_image(file_name.toStdString());
             if (!res) {
                 QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
             }
@@ -873,7 +868,7 @@ void MainWindow::fdd_write(unsigned int n)
                 reply = QMessageBox::Yes;
             }
 
-            dsk_tools::Result save_res;
+            emulator::Result save_res;
             if (reply == QMessageBox::Yes)
             {
                 save_res = fdds[n]->save_image(std_file_name);

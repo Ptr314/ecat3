@@ -6,8 +6,8 @@
 #pragma once
 
 #include "emulator/renderer.h"
-#include <QObject>
-#include <QMessageBox>
+#include <atomic>
+#include <list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -17,7 +17,7 @@
 #endif
 
 #include "config.h"
-#include "definitions.h"
+#include "emulator/result.h"
 #include "globals.h"
 #include "logger.h"
 #include "thread_compat.h"
@@ -169,10 +169,8 @@ enum class ROMMode {
     Stream
 };
 
-class ComputerDevice: public QObject
+class ComputerDevice
 {
-    Q_OBJECT
-
 public:
     std::string type;
     std::string name;
@@ -180,8 +178,9 @@ public:
     unsigned int reset_priority;
 
     ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd);
+    virtual ~ComputerDevice() = default;
     virtual void reset(bool cold);
-    virtual dsk_tools::Result load_config(SystemData *sd);
+    virtual emulator::Result load_config(SystemData *sd);
     virtual void clock(unsigned int counter);
     virtual void system_clock(unsigned int counter);
 
@@ -236,9 +235,8 @@ public:
     virtual unsigned int get_size();
 };
 
-class Interface: public QObject
+class Interface
 {
-    Q_OBJECT
 private:
     unsigned int size;
     unsigned int mode;
@@ -305,7 +303,7 @@ class RAM: public Memory
 {
 public:
     RAM(InterfaceManager *im, EmulatorConfigDevice *cd);
-    dsk_tools::Result load_config(SystemData *sd) override;
+    emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;
 };
 
@@ -316,7 +314,7 @@ private:
     unsigned stream_counter = 0;
 public:
     ROM(InterfaceManager *im, EmulatorConfigDevice *cd);
-    dsk_tools::Result load_config(SystemData *sd) override;
+    emulator::Result load_config(SystemData *sd) override;
     unsigned get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
 };
@@ -354,15 +352,14 @@ protected:
     bool store_on_read = false;
 public:
     PortAddress(InterfaceManager *im, EmulatorConfigDevice *cd);
+    emulator::Result load_config(SystemData *sd) override;
     unsigned int get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
     void reset(bool cold) override;
 };
 
-class DeviceManager: public QObject
+class DeviceManager
 {
-    Q_OBJECT
-
 public:
     DeviceManager(Logger * l);
     ~DeviceManager();
@@ -371,12 +368,12 @@ public:
     ComputerDevice *error_device;
     std::string error_message;
 
-    void add_device(InterfaceManager *im, EmulatorConfigDevice *d); //
+    emulator::Result add_device(InterfaceManager *im, EmulatorConfigDevice *d); //
     void clear(); //
-    dsk_tools::Result load_devices_config(SystemData *sd); //
+    emulator::Result load_devices_config(SystemData *sd); //
     ComputerDevice *get_device_by_name(const std::string &name, bool required=true); //
     unsigned int get_device_index(const std::string &name);
-    QVector<ComputerDevice*> find_devices_by_class(const std::string &class_to_find);
+    std::vector<ComputerDevice*> find_devices_by_class(const std::string &class_to_find);
     void reset_devices(bool cold);
     void clock(unsigned int counter);
     void error(ComputerDevice *d, const std::string &message);
@@ -397,10 +394,8 @@ private:
 };
 
 
-class InterfaceManager: public QObject
+class InterfaceManager
 {
-    Q_OBJECT
-
 public:
     std::vector<Interface*> interfaces;
     DeviceManager *dm;
@@ -439,7 +434,7 @@ public:
 
     CPU(InterfaceManager *im, EmulatorConfigDevice *cd);
 
-    dsk_tools::Result load_config(SystemData *sd) override;
+    emulator::Result load_config(SystemData *sd) override;
     virtual unsigned int execute() = 0;
     bool check_breakpoint(unsigned int address);
     void add_breakpoint(unsigned int address);
@@ -498,7 +493,7 @@ protected:
 public:
 
     MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual dsk_tools::Result load_config(SystemData *sd) override;
+    virtual emulator::Result load_config(SystemData *sd) override;
     virtual void reset(bool cold) override;
     void sort_cache();
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;

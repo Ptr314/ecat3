@@ -54,16 +54,16 @@ void GMD70::reset_fdc()
     m_counter = 0;
 }
 
-dsk_tools::Result GMD70::load_config(SystemData *sd)
+emulator::Result GMD70::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = FDC::load_config(sd);
+    emulator::Result res = FDC::load_config(sd);
     if (!res) return res;
 
     std::string s;
     try {
         s = cd->get_parameter("drives").value;
     } catch (std::exception &e) {
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{GMD70|" + std::string(QT_TRANSLATE_NOOP("GMD70", "Incorrect fdd list for")) + "} " + name);
+        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{GMD70|" + std::string(QT_TRANSLATE_NOOP("GMD70", "Incorrect fdd list for")) + "} " + name);
     }
 
     std::vector<std::string> parts = split_string(s, '|', true);
@@ -73,7 +73,7 @@ dsk_tools::Result GMD70::load_config(SystemData *sd)
 
     reset_fdc();
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 bool GMD70::get_busy()

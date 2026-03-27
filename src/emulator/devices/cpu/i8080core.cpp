@@ -3,8 +3,6 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Intel 8080 (КР580ВМ80) CPU core
 
-#include <QDebug>
-
 #include "cpu_utils.h"
 #include "i8080core.h"
 

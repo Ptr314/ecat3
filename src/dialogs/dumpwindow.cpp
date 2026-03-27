@@ -5,6 +5,7 @@
 
 #include <QKeyEvent>
 #include <QFileDialog>
+#include <QMessageBox>
 
 #include "dumpwindow.h"
 #include "emulator/utils.h"

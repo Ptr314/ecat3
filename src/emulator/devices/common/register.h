@@ -24,7 +24,7 @@ private:
 public:
     Register(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void reset(bool cold) override;
-    virtual dsk_tools::Result load_config(SystemData *sd) override;
+    virtual emulator::Result load_config(SystemData *sd) override;
     virtual void interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value) override;
     virtual unsigned get_value();
 };

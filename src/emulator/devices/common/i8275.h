@@ -72,11 +72,11 @@ public:
 
     }
 
-    virtual dsk_tools::Result load_config(SystemData *sd) override
+    virtual emulator::Result load_config(SystemData *sd) override
     {
         SystemClock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
         BlinkTicks = SystemClock / 2;
-        return dsk_tools::Result::ok();
+        return emulator::Result::ok();
     }
 
     virtual void clock(unsigned int counter) override

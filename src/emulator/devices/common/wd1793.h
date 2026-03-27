@@ -91,7 +91,7 @@ public:
     unsigned get_selected_drive() override;
     unsigned get_value(unsigned int address) override;
     void set_value(unsigned address, unsigned value, bool force=false) override;
-    dsk_tools::Result load_config(SystemData *sd) override;
+    emulator::Result load_config(SystemData *sd) override;
     void clock(unsigned int counter) override;
 };
 

@@ -3,85 +3,93 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Universal disassembler class, source
 
-#include <QDebug>
-#include <QFile>
-#include <QMessageBox>
+#include <fstream>
+#include <iostream>
 
+#include "dsk_tools/dsk_tools.h"
 #include "emulator/utils.h"
 #include "disasm.h"
 
-DisAsm::DisAsm(QObject *parent)
-    : QObject{parent},
-    count(0),
+static std::string str_replace(const std::string &s, const std::string &from, const std::string &to)
+{
+    std::string result = s;
+    size_t pos = result.find(from);
+    if (pos != std::string::npos)
+        result.replace(pos, from.length(), to);
+    return result;
+}
+
+DisAsm::DisAsm()
+    : count(0),
     max_command_length(0)
 {}
 
-DisAsm::DisAsm(QObject *parent, QString file_name)
-    : DisAsm{parent}
-
+emulator::Result DisAsm::load_file(const std::string &file_name)
 {
-    load_file(file_name);
-}
+    const std::string hex_digits = "0123456789ABCDEF";
+    const std::string letters = "abcdefghijklmnopqrstuvwxyz";
 
-void DisAsm::load_file(QString file_name)
-{
-    QString hex_digits = "0123456789ABCDEF";
-    QString letters = "abcdefghijklmnopqrstuvwxyz";
+    std::cerr << "Loading " << file_name << std::endl;
 
-    qDebug() << "Loading " << file_name;
-    QFile file(file_name);
-    if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::critical(0, DisAsm::tr("Error"), DisAsm::tr("Error reading CPU instructions file %1").arg(file_name));
-        return;
+    std::string content = dsk_tools::utf8_read_file(file_name);
+    if (content.empty()) {
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{DisAsm|" + std::string(QT_TRANSLATE_NOOP("DisAsm", "Error reading CPU instructions file")) + "} " + file_name);
     }
 
-    QTextStream in(&file);
-    while (!in.atEnd())
+    std::istringstream stream(content);
+    std::string line;
+    while (std::getline(stream, line))
     {
-        QString line = in.readLine();
-        QStringList parts = line.split(u'\x09', skip_empty_parts);
-        QStringList codes = parts.at(0).split(' ', skip_empty_parts);
+        // Remove \r if present
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line.empty()) continue;
+
+        std::vector<std::string> parts = split_string(line, '\x09', true);
+        if (parts.size() < 3) continue;
+
+        std::vector<std::string> codes = split_string(parts[0], ' ', true);
 
         ins[count].length = 0;
 
-        for (int i = 0; i<codes.size(); i++)
+        for (size_t i = 0; i < codes.size(); i++)
         {
-            QString code = codes.at(i);
-            if (code.length() == 2 && hex_digits.contains(code.at(0)))
+            const std::string &code = codes[i];
+            if (code.length() == 2 && hex_digits.find(code[0]) != std::string::npos)
             {
                 //HEX byte
                 ins[count].bytes[ins[count].length].is_instr = true;
-                ins[count].bytes[ins[count].length].value = parse_numeric_value("$" + code.toStdString());
+                ins[count].bytes[ins[count].length].value = parse_numeric_value("$" + code);
                 ins[count].length++;
             } else
-            if (code.length() == 1 && letters.contains(code.at(0)))
+            if (code.length() == 1 && letters.find(code[0]) != std::string::npos)
             {
                 //data byte
                 ins[count].bytes[ins[count].length].is_instr = false;
-                ins[count].bytes[ins[count].length].value = code.at(0).unicode();
+                ins[count].bytes[ins[count].length].value = static_cast<uint8_t>(code[0]);
                 ins[count].length++;
             }
         }
 
-        if ( ins[count].length != parse_numeric_value(parts.at(2).toStdString()) )
+        if ( ins[count].length != parse_numeric_value(parts[2]) )
         {
-            QMessageBox::critical(0, DisAsm::tr("Error"), DisAsm::tr("CPU instruction %1 length is incorrect").arg(parts.at(1)));
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{DisAsm|" + std::string(QT_TRANSLATE_NOOP("DisAsm", "CPU instruction length is incorrect")) + "} " + parts[1]);
         }
 
         if (ins[count].length > max_command_length) max_command_length = ins[count].length;
 
-        ins[count].text = parts.at(1);
+        ins[count].text = parts[1];
 
         count++;
     }
-    file.close();
 
+    return emulator::Result::ok();
 }
 
-unsigned int DisAsm::disassemle(CommandBytes bytes, unsigned int PC, unsigned int max_len, QString *output)
+unsigned int DisAsm::disassemle(CommandBytes bytes, unsigned int PC, unsigned int max_len, std::string *output)
 {
     unsigned int result = 0;
-    int p;
 
     for (unsigned int i = 0; i < count; i++)
     {
@@ -93,53 +101,49 @@ unsigned int DisAsm::disassemle(CommandBytes bytes, unsigned int PC, unsigned in
 
             if (j == ins[i].length)
             {
-                QString s = ins[i].text;
+                std::string s = ins[i].text;
                 result = ins[i].length;
 
-                p = ins[i].text.indexOf("$nn");
-                if (p >= 0)
+                size_t p = ins[i].text.find("$nn");
+                if (p != std::string::npos)
                 {
                     unsigned int c = 0;
                     unsigned int v = 0;
                     for (j = 0; j < ins[i].length; j++)
-                        if (!ins[i].bytes[j].is_instr && ins[i].bytes[j].value == QChar('n').unicode())
+                        if (!ins[i].bytes[j].is_instr && ins[i].bytes[j].value == 'n')
                             v += (*bytes)[j] << (c++*8);
-                    QString hexval = QString("%1").arg(v, 4, 16, QChar('0')).toUpper();
-                    s = s.replace("$nn", hexval);
+                    s = str_replace(s, "$nn", hex_str(v, 4));
                 };
 
-                p = ins[i].text.indexOf("$n");
-                if (p >= 0)
+                p = ins[i].text.find("$n");
+                if (p != std::string::npos)
                 {
                     unsigned int v = 0;
                     for (j = 0; j < ins[i].length; j++)
-                        if (!ins[i].bytes[j].is_instr && ins[i].bytes[j].value == QChar('n').unicode())
+                        if (!ins[i].bytes[j].is_instr && ins[i].bytes[j].value == 'n')
                             v = (*bytes)[j];
-                    QString hexval = QString("%1").arg(v, 2, 16, QChar('0')).toUpper();
-                    s = s.replace("$n", hexval);
+                    s = str_replace(s, "$n", hex_str(v, 2));
                 };
 
-                p = ins[i].text.indexOf("$d");
-                if (p >= 0)
+                p = ins[i].text.find("$d");
+                if (p != std::string::npos)
                 {
                     unsigned int v=0;
                     for (j = 0; j < ins[i].length; j++)
-                        if (!ins[i].bytes[j].is_instr && ins[i].bytes[j].value == QChar('d').unicode())
+                        if (!ins[i].bytes[j].is_instr && ins[i].bytes[j].value == 'd')
                             v = (*bytes)[j];
-                    QString hexval = QString("%1").arg(v, 2, 16, QChar('0')).toUpper();
-                    s = s.replace("$d", hexval);
+                    s = str_replace(s, "$d", hex_str(v, 2));
                 };
 
-                p = ins[i].text.indexOf("PC+$e");
-                if (p >= 0)
+                p = ins[i].text.find("PC+$e");
+                if (p != std::string::npos)
                 {
                     int8_t v=0;
                     for (j = 0; j < ins[i].length; j++)
-                        if (!ins[i].bytes[j].is_instr && ins[i].bytes[j].value == QChar('e').unicode())
+                        if (!ins[i].bytes[j].is_instr && ins[i].bytes[j].value == 'e')
                             v = static_cast<int8_t>((*bytes)[j]);
                     uint16_t v1=(PC + v + ins[i].length) & 0xFFFF;
-                    QString hexval = QString("%1").arg(v1, 4, 16, QChar('0')).toUpper();
-                    s = s.replace("PC+$e", hexval);
+                    s = str_replace(s, "PC+$e", hex_str(v1, 4));
                 }
 
                 *output = s;
@@ -150,11 +154,10 @@ unsigned int DisAsm::disassemle(CommandBytes bytes, unsigned int PC, unsigned in
     return result;
 }
 
-QString bytes_dump(CommandBytes bytes, unsigned int length)
+std::string bytes_dump(CommandBytes bytes, unsigned int length)
 {
-    QString s = "";
+    std::string s;
     for (unsigned int i = 0; i < length; i++)
-        s += QString("%1 ").arg((*bytes)[i], 2, 16,QChar('0')).toUpper();
+        s += hex_str((*bytes)[i], 2) + " ";
     return s;
 }
-

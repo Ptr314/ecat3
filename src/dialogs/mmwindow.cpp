@@ -38,7 +38,7 @@ void MemoryMapperWindow::on_process_button_clicked()
 {
     unsigned int cfg = parse_numeric_value(("$" + ui->config_edit->text()).toStdString());
     unsigned int address = parse_numeric_value(("$" + ui->address_edit->text()).toStdString());
-    qDebug() << cfg << address;
+    // qDebug() << cfg << address;
     unsigned int address_on_device, range_index;
 
     AddressableDevice * d = dynamic_cast<MemoryMapper*>(this->d)->map_memory(

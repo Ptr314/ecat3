@@ -19,9 +19,9 @@ RAMAddress::RAMAddress(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 {}
 
-dsk_tools::Result RAMAddress::load_config(SystemData *sd)
+emulator::Result RAMAddress::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = RAM::load_config(sd);
+    emulator::Result res = RAM::load_config(sd);
     if (!res) return res;
 
     m_address_shift = read_confg_value(cd, "address_shift", false, m_address_shift);
@@ -30,7 +30,7 @@ dsk_tools::Result RAMAddress::load_config(SystemData *sd)
     m_value_mask = read_confg_value(cd, "value_mask", false, m_value_mask);
     m_store_on_read = read_confg_value(cd, "store_on_read", false, false);
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 unsigned RAMAddress::get_value(unsigned address)
@@ -59,7 +59,7 @@ void RAMAddress::set_value(unsigned int address, unsigned int value, bool force)
 
 #ifdef LOG_AGAT
         if (name=="port-C1xx") {
-            logs(QString("W %1").arg(address, 2, 16, QChar('0')).toStdString());
+            // logs(QString("W %1").arg(address, 2, 16, QChar('0')).toStdString());
         }
 #endif
 

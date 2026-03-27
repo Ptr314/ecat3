@@ -3,6 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Scanning matrix-based keyboard device
 
+#include <cstring>
+
 #include "emulator/utils.h"
 #include "emulator/config.h"
 #include "scankeyboard.h"
@@ -25,18 +27,18 @@ ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     memset(&key_array, _FFFF, sizeof(key_array));
 }
 
-dsk_tools::Result ScanKeyboard::load_config(SystemData *sd)
+emulator::Result ScanKeyboard::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = Keyboard::load_config(sd);
+    emulator::Result res = Keyboard::load_config(sd);
     if (!res) return res;
 
     std::string map_file = find_file_location(sd, cd->get_parameter("map", false).value);
     if (map_file.empty())
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Keyboard map file is expected")) + "}");
+        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Keyboard map file is expected")) + "}");
     else {
         std::string layout = dsk_tools::utf8_read_file(map_file);
         if (layout.empty()) {
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Error reading map file")) + "} " + map_file);
+            return emulator::Result::error(emulator::ErrorCode::ConfigError, "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Error reading map file")) + "} " + map_file);
         }
 
         std::vector<std::string> lines = split_string(layout, '\n', true);
@@ -79,7 +81,7 @@ dsk_tools::Result ScanKeyboard::load_config(SystemData *sd)
                             key_name = keys[i];
                         unsigned int key_code = translate_key(key_name);
                         if (key_code == _FFFF)
-                            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Unknown key")) + "} " + keys[i]);
+                            return emulator::Result::error(emulator::ErrorCode::ConfigError, "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Unknown key")) + "} " + keys[i]);
                         else
                             scan_data.push_back({key_code, scan, out, shift_state});
                     }
@@ -95,7 +97,7 @@ dsk_tools::Result ScanKeyboard::load_config(SystemData *sd)
     i_ctrl.change(1);
     i_ruslat.change(1);
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 void ScanKeyboard::key_down(unsigned int key)

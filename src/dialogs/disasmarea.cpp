@@ -165,14 +165,14 @@ void DisAsmArea::disassemble_lines(int index, int count, unsigned int address)
     {
         for (unsigned int j = 0; j < disasm->max_command_length; j++)
             buffer[j] = cpu->read_mem(a+j);
-        QString s;
+        std::string s;
         unsigned int c = disasm->disassemle(&buffer, a, disasm->max_command_length, &s);
         lines[i].address = a;
-        lines[i].command = s;
+        lines[i].command = QString::fromStdString(s);
         lines[i].current = (a == pc);
         lines[i].breakpoint = false;
         lines[i].len = c;
-        lines[i].code = bytes_dump(&buffer, c);
+        lines[i].code = QString::fromStdString(bytes_dump(&buffer, c));
         a += c;
     }
 

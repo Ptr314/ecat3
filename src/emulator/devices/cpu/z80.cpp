@@ -114,7 +114,7 @@ unsigned int z80::read_port(unsigned int address)
 {
     unsigned int data = mm->read_port(address);
 #ifdef LOG_CPU
-    logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')).toStdString());
+    // logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')).toStdString());
 #endif
     return data;
 }
@@ -123,7 +123,7 @@ void z80::write_port(unsigned int address, unsigned int data)
 {
     mm->write_port(address, data);
 #ifdef LOG_CPU
-    logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')).toStdString());
+    // logs(QString("PORT(%1)=%2").arg(address, 4, 16, QChar('0')).arg(data, 2, 16, QChar('0')).toStdString());
 #endif
 }
 
@@ -288,28 +288,28 @@ void z80::log_state(uint8_t command, bool before, unsigned int cycles)
     {
 #ifndef EXTERNAL_Z80
         z80context * c = static_cast<z80context*>(core->get_context());
-        logs((
-            QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
-            + QString(" AF:%1").arg(c->registers.reg_pairs.AF, 4, 16, QChar('0'))
-            + QString(" BC:%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0'))
-            + QString(" DE:%1").arg(c->registers.reg_pairs.DE, 4, 16, QChar('0'))
-            + QString(" HL:%1").arg(c->registers.reg_pairs.HL, 4, 16, QChar('0'))
-            + QString(" SP:%1").arg(c->registers.regs.SP, 4, 16, QChar('0'))
-            + QString(" IX:%1").arg(c->registers.reg_pairs.IX, 4, 16, QChar('0'))
-            + QString(" IY:%1").arg(c->registers.reg_pairs.IY, 4, 16, QChar('0'))
-        ).toStdString());
+        // logs((
+        //     QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
+        //     + QString(" AF:%1").arg(c->registers.reg_pairs.AF, 4, 16, QChar('0'))
+        //     + QString(" BC:%1").arg(c->registers.reg_pairs.BC, 4, 16, QChar('0'))
+        //     + QString(" DE:%1").arg(c->registers.reg_pairs.DE, 4, 16, QChar('0'))
+        //     + QString(" HL:%1").arg(c->registers.reg_pairs.HL, 4, 16, QChar('0'))
+        //     + QString(" SP:%1").arg(c->registers.regs.SP, 4, 16, QChar('0'))
+        //     + QString(" IX:%1").arg(c->registers.reg_pairs.IX, 4, 16, QChar('0'))
+        //     + QString(" IY:%1").arg(c->registers.reg_pairs.IY, 4, 16, QChar('0'))
+        // ).toStdString());
 #else
         Z80 * c = static_cast<Z80*>(core_ext);
-        logs((
-            QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
-            + QString(" AF:%1%2").arg(c->reg.pair.A, 2, 16, QChar('0')).arg(c->reg.pair.F, 2, 16, QChar('0'))
-            + QString(" BC:%1%2").arg(c->reg.pair.B, 2, 16, QChar('0')).arg(c->reg.pair.C, 2, 16, QChar('0'))
-            + QString(" DE:%1%2").arg(c->reg.pair.D, 2, 16, QChar('0')).arg(c->reg.pair.E, 2, 16, QChar('0'))
-            + QString(" HL:%1%2").arg(c->reg.pair.H, 2, 16, QChar('0')).arg(c->reg.pair.L, 2, 16, QChar('0'))
-            + QString(" SP:%1").arg(c->reg.SP, 4, 16, QChar('0'))
-            + QString(" IX:%1").arg(c->reg.IX, 4, 16, QChar('0'))
-            + QString(" IY:%1").arg(c->reg.IY, 4, 16, QChar('0'))
-            ).toStdString());
+        // logs((
+        //     QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
+        //     + QString(" AF:%1%2").arg(c->reg.pair.A, 2, 16, QChar('0')).arg(c->reg.pair.F, 2, 16, QChar('0'))
+        //     + QString(" BC:%1%2").arg(c->reg.pair.B, 2, 16, QChar('0')).arg(c->reg.pair.C, 2, 16, QChar('0'))
+        //     + QString(" DE:%1%2").arg(c->reg.pair.D, 2, 16, QChar('0')).arg(c->reg.pair.E, 2, 16, QChar('0'))
+        //     + QString(" HL:%1%2").arg(c->reg.pair.H, 2, 16, QChar('0')).arg(c->reg.pair.L, 2, 16, QChar('0'))
+        //     + QString(" SP:%1").arg(c->reg.SP, 4, 16, QChar('0'))
+        //     + QString(" IX:%1").arg(c->reg.IX, 4, 16, QChar('0'))
+        //     + QString(" IY:%1").arg(c->reg.IY, 4, 16, QChar('0'))
+        //     ).toStdString());
 #endif
     }
 }

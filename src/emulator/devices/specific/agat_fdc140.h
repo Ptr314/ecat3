@@ -36,7 +36,7 @@ protected:
 public:
     Agat_FDC140(InterfaceManager *im, EmulatorConfigDevice *cd);
 
-    virtual dsk_tools::Result load_config(SystemData *sd) override;
+    virtual emulator::Result load_config(SystemData *sd) override;
 
     virtual bool get_busy() override;
     virtual unsigned int get_selected_drive() override;

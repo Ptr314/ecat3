@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <QObject>
-
 #include "emulator/core.h"
 #include "6502core.h"
 
@@ -27,7 +25,6 @@ public:
 // Emulator device
 class mos6502 : public CPU
 {
-    Q_OBJECT
 private:
     Interface i_nmi;
     Interface i_irq;

@@ -45,8 +45,13 @@ bool IniSettings::has(const std::string &section, const std::string &ident) cons
 
 std::string IniSettings::get(const std::string &section, const std::string &ident, const std::string &def_val) const
 {
-    if (has(section, ident))
-        return d->data[section][ident];
+    if (has(section, ident)) {
+        std::string val = d->data[section][ident];
+        // mINI preserves surrounding quotes; strip them for QSettings compatibility
+        if (val.size() >= 2 && val.front() == '"' && val.back() == '"')
+            val = val.substr(1, val.size() - 2);
+        return val;
+    }
     return def_val;
 }
 

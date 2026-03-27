@@ -5,12 +5,13 @@
 
 #include <QDirIterator>
 #include <QTreeView>
+#include <QMessageBox>
 
 #include "emulator/config.h"
 #include "openconfigwindow.h"
 #include "ui_openconfigwindow.h"
 
-#include "emulator/utils.h"
+#include "qt_utils.h"
 
 ComputerFamily::ComputerFamily(QString type, QString name):
     QStandardItem(name),
@@ -73,7 +74,7 @@ void OpenConfigWindow::list_machines(QString work_path)
     QStandardItemModel * model = new QStandardItemModel();
     QStandardItem * node = model->invisibleRootItem();
 
-    qDebug() << "Listing machines in " << work_path;
+    // qDebug() << "Listing machines in " << work_path;
     QDirIterator it(work_path, QDirIterator::Subdirectories);
     while (it.hasNext()) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
@@ -85,9 +86,10 @@ void OpenConfigWindow::list_machines(QString work_path)
         {
             //qDebug() << fi.absoluteFilePath();
             EmulatorConfig config;
-            dsk_tools::Result res = config.load_from_file(fi.absoluteFilePath().toStdString(), true);
+            emulator::Result res = config.load_from_file(fi.absoluteFilePath().toStdString(), true);
             if (!res) continue;
             EmulatorConfigDevice * system = config.get_device("system");
+            if (system == nullptr) continue;
 
             bool is_debug = system->get_parameter("debug", false).value == "1";
 

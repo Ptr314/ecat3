@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QObject>
+#include <cstdint>
 
 #define MOS_6502_FAMILY_BASIC  0
 #define MOS_6502_FAMILY_65C02  1

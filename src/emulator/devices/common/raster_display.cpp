@@ -17,9 +17,9 @@ RasterDisplay::RasterDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_hsync_active(false)
 {}
 
-dsk_tools::Result RasterDisplay::load_config(SystemData *sd)
+emulator::Result RasterDisplay::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = GenericDisplay::load_config(sd);
+    emulator::Result res = GenericDisplay::load_config(sd);
     if (!res) return res;
 
     if (m_standart == "625/50") {
@@ -31,13 +31,13 @@ dsk_tools::Result RasterDisplay::load_config(SystemData *sd)
         m_bottom_blank = 4;
         m_hsync_length_ms = 12;
     } else {
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{RasterDisplay|" + std::string(QT_TRANSLATE_NOOP("RasterDisplay", "Unknown video standard")) + "}");
+        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{RasterDisplay|" + std::string(QT_TRANSLATE_NOOP("RasterDisplay", "Unknown video standard")) + "}");
     }
 
     m_counts_per_line = (m_interlaced?2:1) * m_system_clock / m_lines / m_frame_rate;
     m_counts_hsync = m_system_clock * m_hsync_length_ms / 1000000;
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 void RasterDisplay::clock(unsigned int counter)

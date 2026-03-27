@@ -5,6 +5,9 @@
 
 #pragma once
 
+#include <algorithm>
+#include <vector>
+
 #include "dialogs/genericdbgwnd.h"
 #include "emulator.h"
 
@@ -15,13 +18,12 @@ struct DebugWndFuncData {
     DebugWndCreateFunc * f;
 };
 
-class DebugWindowsManager: public QObject
+class DebugWindowsManager
 {
-    Q_OBJECT
-
 private:
     unsigned int count;
     DebugWndFuncData WndFuncData[100];
+    std::vector<GenericDbgWnd*> windows;
 
 public:
     DebugWindowsManager():count(0){};
@@ -39,10 +41,18 @@ public:
         return nullptr;
     }
 
-public slots:
-    void data_changed(GenericDbgWnd * src){
-        emit update_all();
+    void add_window(GenericDbgWnd * w)
+    {
+        windows.push_back(w);
     }
-signals:
-    void update_all();
+
+    void remove_window(GenericDbgWnd * w)
+    {
+        windows.erase(std::remove(windows.begin(), windows.end(), w), windows.end());
+    }
+
+    void data_changed(GenericDbgWnd * src){
+        for (size_t i = 0; i < windows.size(); i++)
+            windows[i]->update_view();
+    }
 };

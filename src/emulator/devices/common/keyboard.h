@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <QKeyEvent>
+
 #include "emulator/core.h"
 
 #define SHIFT_STATE_KEEP    0
@@ -196,7 +198,7 @@ protected:
 
 public:
     Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
-    dsk_tools::Result load_config(SystemData *sd) override;
+    emulator::Result load_config(SystemData *sd) override;
     virtual void key_event(QKeyEvent *event, bool press);
     virtual void key_down(unsigned int key) = 0;
     virtual void key_up(unsigned int key) = 0;

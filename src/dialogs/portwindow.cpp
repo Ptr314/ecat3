@@ -41,7 +41,7 @@ void PortWindow::update()
     if (auto dev = dynamic_cast<Register*>(d)) {
         v = dev->get_value() & 0xFF;
     } else {
-        qDebug() << "PortWindow: unknown class";
+        // qDebug() << "PortWindow: unknown class";
         return;
     }
     ui->binaryEdit->setText(QString("%1").arg(v, 8, 2, QChar('0')));

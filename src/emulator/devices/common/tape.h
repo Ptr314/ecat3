@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include "emulator/core.h"
 #include "emulator/devices/common/speaker.h"
 
@@ -26,8 +28,6 @@ enum class TapeWriterState {
 
 class TapeRecorder: public ComputerDevice
 {
-    Q_OBJECT
-
 private:
     Interface i_input;
     Interface i_output;
@@ -74,10 +74,10 @@ public:
 
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
-    dsk_tools::Result load_config(SystemData *sd) override;
+    emulator::Result load_config(SystemData *sd) override;
     void clock(unsigned int counter) override;
 
-    virtual void load_file(const std::string &file_name, const std::string &fmt);
+    virtual emulator::Result load_file(const std::string &file_name, const std::string &fmt);
     virtual void play();
     virtual void stop();
     virtual void rewind();
@@ -90,8 +90,7 @@ public:
     virtual unsigned get_record_size();
     virtual std::vector<uint8_t> * get_record_data();
 
-signals:
-    void mode_changed(unsigned int new_mode);
+    std::function<void(unsigned int)> on_mode_changed;
 };
 
 ComputerDevice * create_tape_recorder(InterfaceManager *im, EmulatorConfigDevice *cd);

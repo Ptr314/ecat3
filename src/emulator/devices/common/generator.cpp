@@ -16,9 +16,9 @@ Generator::Generator(InterfaceManager *im, EmulatorConfigDevice *cd):
 {
 }
 
-dsk_tools::Result Generator::load_config(SystemData *sd)
+emulator::Result Generator::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = ComputerDevice::load_config(sd);
+    emulator::Result res = ComputerDevice::load_config(sd);
     if (!res) return res;
 
     unsigned int main_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
@@ -39,11 +39,11 @@ dsk_tools::Result Generator::load_config(SystemData *sd)
         if (pol == "negative" || pol == "neg" || pol == "n" || pol == "0")
             positive = false;
         else
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect polarity for")) + "} " + this->name);
+            return emulator::Result::error(emulator::ErrorCode::ConfigError, "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect polarity for")) + "} " + this->name);
 
     i_enable.change(1);
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 void Generator::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)

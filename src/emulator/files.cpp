@@ -3,6 +3,7 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Loader for files, source
 
+#include <cstring>
 #include <sstream>
 
 #include "files.h"
@@ -13,7 +14,7 @@
 
 #define MIN(a, b)   ((a<b)?a:b)
 
-static dsk_tools::Result ReadHeader(const std::string &file_name, unsigned int bytes, uint8_t* buffer, bool has_start)
+static emulator::Result ReadHeader(const std::string &file_name, unsigned int bytes, uint8_t* buffer, bool has_start)
 {
     dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
     if (file.is_open())
@@ -24,17 +25,17 @@ static dsk_tools::Result ReadHeader(const std::string &file_name, unsigned int b
             file.read(reinterpret_cast<char*>(&preamble), 1);
             if (preamble != 0xE6)
             {
-                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Unable to find an expected preamble byte 0xE6!")) + "}");
             }
         }
         file.read(reinterpret_cast<char*>(buffer), bytes);
         file.close();
     }
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
-static dsk_tools::Result find_ram(Emulator* e, RAM** out)
+static emulator::Result find_ram(Emulator* e, RAM** out)
 {
     std::vector<std::string> ram_names{"ram", "ram0", "ram1"};
     *out = nullptr;
@@ -46,13 +47,13 @@ static dsk_tools::Result find_ram(Emulator* e, RAM** out)
     }
 
     if (*out == nullptr)
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Unable to find a RAM page to store data")) + "}");
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
-static dsk_tools::Result load_rk(Emulator* e, const std::string &file_name)
+static emulator::Result load_rk(Emulator* e, const std::string &file_name)
 {
     bool has_start, has_finish;
 
@@ -74,7 +75,7 @@ static dsk_tools::Result load_rk(Emulator* e, const std::string &file_name)
 
 
     uint8_t header[16];
-    dsk_tools::Result res = ReadHeader(file_name, 16, header, has_start);
+    emulator::Result res = ReadHeader(file_name, 16, header, has_start);
     if (!res) return res;
     {
         unsigned int offset = (has_start) ? 5 : 4;
@@ -91,7 +92,7 @@ static dsk_tools::Result load_rk(Emulator* e, const std::string &file_name)
         dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
         if (!file.is_open())
         {
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading")) + "} " + file_name);
         }
 
@@ -101,7 +102,7 @@ static dsk_tools::Result load_rk(Emulator* e, const std::string &file_name)
         file.read(reinterpret_cast<char*>(data.data()), len);
         if (!file.good())
         {
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "File is smaller than expected!")) + "}");
         }
 
@@ -114,14 +115,14 @@ static dsk_tools::Result load_rk(Emulator* e, const std::string &file_name)
                 file.read(reinterpret_cast<char*>(&final_byte), 1);
                 if (!file.good())
                 {
-                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
                         "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Unable to find an expected finalization byte 0xE6!")) + "}");
                 }
             }
             while (final_byte == 0);
             if (final_byte != 0xE6)
             {
-                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Unable to find an expected finalization byte 0xE6!")) + "}");
             }
         }
@@ -131,7 +132,7 @@ static dsk_tools::Result load_rk(Emulator* e, const std::string &file_name)
         file.read(reinterpret_cast<char*>(&expected_crc), 2);
         if (!file.good())
         {
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading CRC bytes!")) + "}");
         }
         expected_crc = ((expected_crc & 0xFF) << 8) + (expected_crc >> 8);
@@ -151,13 +152,13 @@ static dsk_tools::Result load_rk(Emulator* e, const std::string &file_name)
         memcpy(&(buffer[delta]), data.data(), MIN(len, page_size-delta));
         file.close();
     }
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
-static dsk_tools::Result load_bin(Emulator* e, const std::string &file_name)
+static emulator::Result load_bin(Emulator* e, const std::string &file_name)
 {
     RAM* m;
-    dsk_tools::Result res = find_ram(e, &m);
+    emulator::Result res = find_ram(e, &m);
     if (!res) return res;
 
     uint8_t* buffer = m->get_buffer();
@@ -166,27 +167,27 @@ static dsk_tools::Result load_bin(Emulator* e, const std::string &file_name)
     long long fsize = dsk_tools::utf8_file_size(file_name);
     if (fsize < 0)
     {
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading")) + "} " + file_name);
     }
 
     dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
     if (!file.is_open())
     {
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading")) + "} " + file_name);
     }
 
     unsigned int read_size = MIN(static_cast<unsigned int>(fsize), page_size);
     file.read(reinterpret_cast<char*>(buffer), read_size);
     file.close();
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
-static dsk_tools::Result load_hex(Emulator* e, const std::string &file_name)
+static emulator::Result load_hex(Emulator* e, const std::string &file_name)
 {
     RAM* m;
-    dsk_tools::Result res = find_ram(e, &m);
+    emulator::Result res = find_ram(e, &m);
     if (!res) return res;
 
     uint8_t* buffer = m->get_buffer();
@@ -194,7 +195,7 @@ static dsk_tools::Result load_hex(Emulator* e, const std::string &file_name)
     std::string content = dsk_tools::utf8_read_file(file_name);
     if (content.empty())
     {
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading HEX file")) + "} " + file_name);
     }
 
@@ -212,7 +213,7 @@ static dsk_tools::Result load_hex(Emulator* e, const std::string &file_name)
                 buffer[addr + j] = parse_numeric_value("$" + line.substr(9 + j * 2, 2));
         }
     }
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 int get_ramdisk_position(uint8_t* buffer, unsigned int top)
@@ -231,7 +232,7 @@ int get_ramdisk_position(uint8_t* buffer, unsigned int top)
     return -1;
 }
 
-static dsk_tools::Result load_rko(Emulator* e, const std::string &file_name)
+static emulator::Result load_rko(Emulator* e, const std::string &file_name)
 {
     std::string ext = dsk_tools::get_file_ext(file_name);
     bool has_preamble = ext == ".rko";
@@ -249,7 +250,7 @@ static dsk_tools::Result load_rko(Emulator* e, const std::string &file_name)
     dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
     if (!file.is_open())
     {
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading")) + "} " + file_name);
     }
 
@@ -262,7 +263,7 @@ static dsk_tools::Result load_rko(Emulator* e, const std::string &file_name)
         file.read(reinterpret_cast<char*>(&preamble_name), sizeof(preamble_name));
         if (!file.good())
         {
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading preamble data!")) + "}");
         }
         file_offset += sizeof(preamble_name);
@@ -272,7 +273,7 @@ static dsk_tools::Result load_rko(Emulator* e, const std::string &file_name)
             file.read(reinterpret_cast<char*>(&b), 1);
             if (!file.good())
             {
-                return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading preamble data!")) + "}");
             }
             file_offset += 1;
@@ -280,14 +281,14 @@ static dsk_tools::Result load_rko(Emulator* e, const std::string &file_name)
         while (b == 0);
         if (b != 0xE6)
         {
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading preamble data!")) + "}");
         }
         uint8_t preamble_data[4];
         file.read(reinterpret_cast<char*>(&preamble_data), sizeof(preamble_data));
         if (!file.good())
         {
-            return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading preamble data!")) + "}");
         }
         file_offset += sizeof(preamble_data);
@@ -300,7 +301,7 @@ static dsk_tools::Result load_rko(Emulator* e, const std::string &file_name)
     file.read(reinterpret_cast<char*>(&header_name), sizeof(header_name));
     if (!file.good())
     {
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading header data!")) + "}");
     }
     uint8_t header_data[8];
@@ -333,7 +334,7 @@ static dsk_tools::Result load_rko(Emulator* e, const std::string &file_name)
                 address = get_ramdisk_position(buffer, page_size);
                 if (address < 0 || address + read_length > page_size)
                 {
-                    return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
                         "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Can't load the file: all ramdisks are full!")) + "}");
                 }
             }
@@ -342,7 +343,7 @@ static dsk_tools::Result load_rko(Emulator* e, const std::string &file_name)
     else
     {
         // We will load to a memory
-        dsk_tools::Result res = find_ram(e, &m);
+        emulator::Result res = find_ram(e, &m);
         if (!res) return res;
         buffer = m->get_buffer();
         page_size = m->get_size();
@@ -361,10 +362,10 @@ static dsk_tools::Result load_rko(Emulator* e, const std::string &file_name)
         buffer[address + read_length] = 0xFF;
 
     file.close();
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
-dsk_tools::Result HandleExternalFile(Emulator* e, const std::string &file_name)
+emulator::Result HandleExternalFile(Emulator* e, const std::string &file_name)
 {
     std::string ext = dsk_tools::get_file_ext(file_name);
 
@@ -373,6 +374,6 @@ dsk_tools::Result HandleExternalFile(Emulator* e, const std::string &file_name)
     else if (ext == ".rko" || ext == ".ord" || ext == ".bru") return load_rko(e, file_name);
     else if (ext == ".cim" || ext == ".bin") return load_bin(e, file_name);
     else
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError,
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Unknown file type")) + "}");
 }

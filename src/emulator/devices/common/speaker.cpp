@@ -39,9 +39,9 @@ void Speaker::reset(bool cold)
     MixerWidth = (i_mixer.linked == 0) ? 0 : CalcBits(i_mixer.linked_bits, 8);
 }
 
-dsk_tools::Result Speaker::load_config(SystemData *sd)
+emulator::Result Speaker::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = GenericSound::load_config(sd);
+    emulator::Result res = GenericSound::load_config(sd);
     if (!res) return res;
 
     std::string s = str_tolower(cd->get_parameter("mode", false).value);
@@ -51,9 +51,9 @@ dsk_tools::Result Speaker::load_config(SystemData *sd)
     if (s == "flip")
         mode = SPK_MODE_FLIP;
     else
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{Speaker|" + std::string(QT_TRANSLATE_NOOP("Speaker", "Unknown speaker type")) + "} " + s);
+        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{Speaker|" + std::string(QT_TRANSLATE_NOOP("Speaker", "Unknown speaker type")) + "} " + s);
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 void Speaker::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)

@@ -3,8 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Z80 CPU core
 
-#include <QDebug>
 #include <stdexcept>
+#include <cstring>
 
 #include "cpu_utils.h"
 #include "z80core.h"
@@ -530,7 +530,7 @@ inline uint32_t z80core::get_first_16()
         case 0xDD: return REG_IX; break;
         case 0xFD: return REG_IY; break;
         default:
-            qDebug() << "Incorrect prefix value";
+            // qDebug() << "Incorrect prefix value";
             throw std::runtime_error("Incorrect prefix value");
         break;
     }
@@ -554,7 +554,7 @@ inline void z80core::store_value_16(uint32_t value)
     case 0xDD: REG_IX = static_cast<uint16_t>(value); break;
     case 0xFD: REG_IY = static_cast<uint16_t>(value); break;
     default:
-        qDebug() << "Incorrect prefix value";
+        // qDebug() << "Incorrect prefix value";
         throw std::runtime_error("Incorrect prefix value");
         break;
     }

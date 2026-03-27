@@ -63,7 +63,7 @@ public:
     void set_device_option(unsigned option_id, unsigned value_id) override;
 
     void clock(unsigned int counter) override;
-    dsk_tools::Result load_config(SystemData *sd) override;
+    emulator::Result load_config(SystemData *sd) override;
     void interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value) override;
 
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;

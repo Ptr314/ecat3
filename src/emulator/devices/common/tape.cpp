@@ -36,9 +36,9 @@ TapeRecorder::~TapeRecorder()
     delete speaker;
 }
 
-dsk_tools::Result TapeRecorder::load_config(SystemData *sd)
+emulator::Result TapeRecorder::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = ComputerDevice::load_config(sd);
+    emulator::Result res = ComputerDevice::load_config(sd);
     if (!res) return res;
 
     baud_rate = read_confg_value(cd, "baudrate", false, (unsigned int)1200);
@@ -49,7 +49,7 @@ dsk_tools::Result TapeRecorder::load_config(SystemData *sd)
     else if (enc_str == "rk86")
         m_tape_enc = TapeEnc::RK86;
     else
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect encoding")) + "} " + enc_str);
+        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect encoding")) + "} " + enc_str);
 
     files = cd->get_parameter("files", false).value;
 
@@ -60,7 +60,7 @@ dsk_tools::Result TapeRecorder::load_config(SystemData *sd)
 
     speaker->reset(true);
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, MAYBE_UNUSED unsigned old_value)
@@ -82,10 +82,10 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
         // Motor changed
         // std::cout << "TapeRecorder: motor = " << (new_value & 1) << std::endl;
         if ((new_value & 1)==1 && (old_value & 1)==0 && !is_recording && data_size>0) {
-            emit mode_changed(TAPE_READ);
+            if (on_mode_changed) on_mode_changed(TAPE_READ);
         }
         if ((new_value & 1)==0 && (old_value & 1)==1 && tape_mode == TAPE_READ) {
-            emit mode_changed(TAPE_STOPPED);
+            if (on_mode_changed) on_mode_changed(TAPE_STOPPED);
         }
     }
 }
@@ -240,7 +240,7 @@ void TapeRecorder::encode_msx(const std::vector<uint8_t> &buffer, std::vector<ui
     }
 }
 
-void TapeRecorder::load_file(const std::string &file_name, const std::string &fmt)
+emulator::Result TapeRecorder::load_file(const std::string &file_name, const std::string &fmt)
 {
     std::vector<std::string> parts = split_string(fmt, ';', true);
     std::vector<std::string> first = split_string(parts[0], ':', true);
@@ -298,9 +298,11 @@ void TapeRecorder::load_file(const std::string &file_name, const std::string &fm
         encode_msx(buffer, buffer_encoded);
         set_data(buffer_encoded);
     } else {
-        QMessageBox::warning(0, TapeRecorder::tr("Error"), TapeRecorder::tr("Unknown tape format!"));
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Unknown tape format!")) + "} " + tape_format);
     }
 
+    return emulator::Result::ok();
 }
 
 void TapeRecorder::clock(unsigned int counter)

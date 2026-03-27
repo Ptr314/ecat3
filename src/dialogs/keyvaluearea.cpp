@@ -7,7 +7,7 @@
 
 #include "dialogs/dialogs.h"
 #include "keyvaluearea.h"
-#include "emulator/utils.h"
+#include "qt_utils.h"
 
 KeyValueArea::KeyValueArea(QWidget *parent)
     : DOSFrame{parent}

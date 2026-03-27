@@ -160,6 +160,7 @@ set(PROJECT_SOURCES
     emulator/config.cpp emulator/config.h
     emulator/core.cpp emulator/core.h
     emulator/debug.h
+    emulator/result.h
     emulator/devices/common/i8255.cpp emulator/devices/common/i8255.h
     emulator/devices/common/keyboard.cpp emulator/devices/common/keyboard.h
     emulator/devices/common/scankeyboard.cpp emulator/devices/common/scankeyboard.h
@@ -170,6 +171,7 @@ set(PROJECT_SOURCES
     emulator/emulator.cpp emulator/emulator.h
     emulator/thread_compat.h
     emulator/utils.cpp emulator/utils.h
+    qt_utils.cpp qt_utils.h
     main.cpp
     mainwindow.cpp mainwindow.h mainwindow.ui
     emulator/devices/cpu/i8080_context.h

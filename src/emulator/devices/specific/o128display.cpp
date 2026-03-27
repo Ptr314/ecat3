@@ -3,6 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Orion-128 display controller device
 
+#include <cstring>
+
 #include "emulator/utils.h"
 #include "o128display.h"
 
@@ -30,9 +32,9 @@ O128Display::O128Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     sy = 256;
 }
 
-dsk_tools::Result O128Display::load_config(SystemData *sd)
+emulator::Result O128Display::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = GenericDisplay::load_config(sd);
+    emulator::Result res = GenericDisplay::load_config(sd);
     if (!res) return res;
 
     port_mode =  dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("mode").value));
@@ -43,7 +45,7 @@ dsk_tools::Result O128Display::load_config(SystemData *sd)
     page_main->set_memory_callback(this, 1, MODE_W);
     page_color->set_memory_callback(this, 2, MODE_W);
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 void O128Display::memory_callback(unsigned int callback_id, unsigned int address)

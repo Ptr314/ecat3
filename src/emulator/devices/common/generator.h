@@ -22,7 +22,7 @@ private:
 
 public:
     Generator(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual dsk_tools::Result load_config(SystemData *sd) override;
+    virtual emulator::Result load_config(SystemData *sd) override;
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     virtual void system_clock(unsigned int counter) override;
 };

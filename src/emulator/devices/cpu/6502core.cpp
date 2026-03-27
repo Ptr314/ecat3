@@ -3,6 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: 6502 & 65c02 CPU core
 
+#include <cstring>
+
 #include "6502core.h"
 #include "cpu_utils.h"
 

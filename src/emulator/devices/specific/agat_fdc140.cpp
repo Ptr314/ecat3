@@ -3,6 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Agat 140K floppy disk controller device
 
+#include <cstring>
+
 #include "agat_fdc140.h"
 #include "emulator/utils.h"
 
@@ -27,9 +29,9 @@ Agat_FDC140::Agat_FDC140(InterfaceManager *im, EmulatorConfigDevice *cd):
     memset(&current_track, 0, sizeof(current_track));
 }
 
-dsk_tools::Result Agat_FDC140::load_config(SystemData *sd)
+emulator::Result Agat_FDC140::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = FDC::load_config(sd);
+    emulator::Result res = FDC::load_config(sd);
     if (!res) return res;
 
     std::string mode_string = str_tolower(cd->get_parameter("speed_mode", false).value);
@@ -39,7 +41,7 @@ dsk_tools::Result Agat_FDC140::load_config(SystemData *sd)
     else if (mode_string == "syncro")
         speed_mode = false;
     else
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{Agat_FDC140|" + std::string(QT_TRANSLATE_NOOP("Agat_FDC140", "Unknown speed mode")) + "} " + mode_string);
+        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{Agat_FDC140|" + std::string(QT_TRANSLATE_NOOP("Agat_FDC140", "Unknown speed mode")) + "} " + mode_string);
 
     clock_divider = 32; // Byte timer for the syncro mode
 
@@ -47,7 +49,7 @@ dsk_tools::Result Agat_FDC140::load_config(SystemData *sd)
     try {
         s = cd->get_parameter("drives").value;
     } catch (std::exception &e) {
-        return dsk_tools::Result::error(dsk_tools::ErrorCode::ConfigError, "{Agat_FDC140|" + std::string(QT_TRANSLATE_NOOP("Agat_FDC140", "Incorrect fdd list for")) + "} " + name);
+        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{Agat_FDC140|" + std::string(QT_TRANSLATE_NOOP("Agat_FDC140", "Incorrect fdd list for")) + "} " + name);
     }
 
     memset(&drives, 0, sizeof(drives));
@@ -58,7 +60,7 @@ dsk_tools::Result Agat_FDC140::load_config(SystemData *sd)
 
     selected_drive = 0;
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 
@@ -122,7 +124,7 @@ void Agat_FDC140::phase_off(int n)
 void Agat_FDC140::select_drive(int n)
 {
 #ifdef LOG_FDD
-    logs(QString(" SEL %1").arg(n).toStdString());
+    // logs(QString(" SEL %1").arg(n).toStdString());
 #endif
     // TODO: check selection on a drive
     selected_drive = n;
@@ -137,11 +139,11 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
     static bool show12 = true;
     if (A == 12) {
         if (show12) {
-            logs(QString("R DATA+").toStdString());
+            // logs(QString("R DATA+").toStdString());
             show12 = false;
         }
     } else {
-        logs(QString("R %1").arg(A).toStdString());
+        // logs(QString("R %1").arg(A).toStdString());
         show12 = true;
     }
 #endif

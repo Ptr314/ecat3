@@ -5,14 +5,13 @@
 
 #pragma once
 
-#include <QObject>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-#include "definitions.h"
+#include "emulator/result.h"
 
 struct EmulatorConfigParameter {
     std::string name;
@@ -22,16 +21,8 @@ struct EmulatorConfigParameter {
     std::string right_extended;
 };
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    const auto skip_empty_parts = Qt::SkipEmptyParts;
-#else
-    const auto skip_empty_parts = QString::SkipEmptyParts;
-#endif
-
-class EmulatorConfigDevice: public QObject
+class EmulatorConfigDevice
 {
-    Q_OBJECT
-
 public:
     EmulatorConfigDevice(std::string name, std::string type);
     ~EmulatorConfigDevice();
@@ -46,16 +37,14 @@ public:
     EmulatorConfigParameter get_parameter(unsigned int id);
 };
 
-class EmulatorConfig: public QObject
+class EmulatorConfig
 {
-    Q_OBJECT
-
 public:
     EmulatorConfig();
     EmulatorConfig(std::string file_name);
     ~EmulatorConfig();
 
-    dsk_tools::Result load_from_file(std::string file_name, bool system_only = false);
+    emulator::Result load_from_file(std::string file_name, bool system_only = false);
     void free_devices();
 
     EmulatorConfigDevice * get_device(int i);

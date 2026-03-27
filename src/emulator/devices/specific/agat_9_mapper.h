@@ -30,7 +30,7 @@ private:
 public:
     Agat9Mapper(InterfaceManager *im, EmulatorConfigDevice *cd);
     void reset(bool cold) override;
-    dsk_tools::Result load_config(SystemData *sd) override;
+    emulator::Result load_config(SystemData *sd) override;
     unsigned get_value(unsigned address) override;
     void set_value(unsigned address, unsigned value, bool force=false) override;
 };

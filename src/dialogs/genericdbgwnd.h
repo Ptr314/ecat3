@@ -5,7 +5,26 @@
 
 #pragma once
 
+#include <QCoreApplication>
 #include <QDialog>
+
+inline QString translateResultMessage(const std::string &message)
+{
+    QString msg = QString::fromStdString(message);
+    int open = msg.indexOf('{');
+    int close = msg.indexOf('}');
+    if (open >= 0 && close > open) {
+        QString inner = msg.mid(open + 1, close - open - 1);
+        int sep = inner.indexOf('|');
+        if (sep >= 0) {
+            QByteArray context = inner.left(sep).toUtf8();
+            QByteArray source = inner.mid(sep + 1).toUtf8();
+            QString translated = QCoreApplication::translate(context.constData(), source.constData());
+            msg = translated + msg.mid(close + 1);
+        }
+    }
+    return msg;
+}
 
 class GenericDbgWnd : public QDialog
 {

@@ -7,6 +7,7 @@
 #include <QProxyStyle>
 #include <QMovie>
 #include <qevent.h>
+#include <QMessageBox>
 
 #include "taperecorder.h"
 #include "ui_taperecorder.h"
@@ -89,7 +90,11 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
 
     update_timer.setInterval(1000);
     connect(&update_timer, &QTimer::timeout, this, &TapeRecorderWindow::update_counter);
-    connect(this->d, &TapeRecorder::mode_changed, this, &TapeRecorderWindow::tape_mode_changed, Qt::QueuedConnection);
+    this->d->on_mode_changed = [this](unsigned int new_mode) {
+        QTimer::singleShot(0, this, [this, new_mode]() {
+            tape_mode_changed(new_mode);
+        });
+    };
 }
 
 void TapeRecorderWindow::set_mute(bool muted)
@@ -152,7 +157,11 @@ void TapeRecorderWindow::on_buttonEject_pressed()
 
                 loaded_file = fi.fileName();
 
-                d->load_file(file_name.toStdString(), fmt.toStdString());
+                emulator::Result res = d->load_file(file_name.toStdString(), fmt.toStdString());
+                if (!res) {
+                    QMessageBox::warning(this, TapeRecorderWindow::tr("Error"), translateResultMessage(res.message));
+                    return;
+                }
 
                 update_counter();
 

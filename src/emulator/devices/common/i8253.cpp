@@ -3,6 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Intel 8253 (КР580ВИ53) programmable timer
 
+#include <cstring>
+
 #include "i8253.h"
 #include "emulator/utils.h"
 
@@ -49,9 +51,9 @@ I8253::I8253(InterfaceManager *im, EmulatorConfigDevice *cd):
     memset(&Gates, 1, sizeof(Gates)); //Allow counting just if gates are not connected
 }
 
-dsk_tools::Result I8253::load_config(SystemData *sd)
+emulator::Result I8253::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = AddressableDevice::load_config(sd);
+    emulator::Result res = AddressableDevice::load_config(sd);
     if (!res) return res;
 
     const std::string param_names[3] = {"clock0", "clock1", "clock2"};
@@ -70,7 +72,7 @@ dsk_tools::Result I8253::load_config(SystemData *sd)
         }
     }
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 void I8253::reset(const bool cold)

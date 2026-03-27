@@ -106,9 +106,9 @@ void Agat9Mapper::reset(bool cold)
     }
 }
 
-dsk_tools::Result Agat9Mapper::load_config(SystemData *sd)
+emulator::Result Agat9Mapper::load_config(SystemData *sd)
 {
-    dsk_tools::Result res = AddressableDevice::load_config(sd);
+    emulator::Result res = AddressableDevice::load_config(sd);
     if (!res) return res;
 
     m_pm = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("pm").value));
@@ -118,7 +118,7 @@ dsk_tools::Result Agat9Mapper::load_config(SystemData *sd)
 
     m_bios_mask = (m_bios->get_size()==2048)?0x7FF:0xFFF;
 
-    return dsk_tools::Result::ok();
+    return emulator::Result::ok();
 }
 
 unsigned Agat9Mapper::do_access(unsigned rd_wr, unsigned address, unsigned data)
