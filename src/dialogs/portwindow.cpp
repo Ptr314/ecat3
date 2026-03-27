@@ -3,6 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Port debug window, source
 
+#include <QTimer>
+
 #include "portwindow.h"
 #include "ui_portwindow.h"
 

@@ -137,9 +137,9 @@ void MapKeyboard::send_key(unsigned int value)
 
 void MapKeyboard::key_down(unsigned int key)
 {
-    if (key == Qt::Key_Control)
+    if (key == EmuKey::Control)
         ctrl_pressed = true;
-    else if (key == Qt::Key_Shift)
+    else if (key == EmuKey::Shift)
         shift_pressed = true;
     else if (key == code_ruslat) {
         set_rus(!rus_mode);
@@ -180,9 +180,9 @@ void MapKeyboard::key_down(unsigned int key)
 
 void MapKeyboard::key_up(unsigned int key)
 {
-    if (key == Qt::Key_Control)
+    if (key == EmuKey::Control)
         ctrl_pressed = false;
-    else if (key == Qt::Key_Shift)
+    else if (key == EmuKey::Shift)
         shift_pressed = false;
 }
 
@@ -191,7 +191,7 @@ void MapKeyboard::reset(bool cool)
     Keyboard::reset(cool);
 
     if (code_ruslat != 0)
-        if (code_ruslat == Qt::Key_CapsLock)
+        if (code_ruslat == EmuKey::CapsLock)
             set_rus(checkCapsLock());
         else
             set_rus(false);

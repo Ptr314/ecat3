@@ -6,6 +6,7 @@
 #include <QFileDialog>
 #include <QProxyStyle>
 #include <QMovie>
+#include <QTimer>
 #include <qevent.h>
 #include <QMessageBox>
 
@@ -141,7 +142,7 @@ void TapeRecorderWindow::on_buttonEject_pressed()
     } else {
         QString path = QString::fromStdString(e->read_setup("Startup", "last_path", e->work_path));
         SystemData * sd = e->get_system_data();
-        QString file_name = QFileDialog::getOpenFileName(this, Emulator::tr("Load a file"), path, QString::fromStdString(d->files));
+        QString file_name = QFileDialog::getOpenFileName(this, tr("Load a file"), path, QString::fromStdString(d->files));
 
 
         if (!file_name.isEmpty()) {
@@ -269,7 +270,7 @@ void TapeRecorderWindow::on_buttonRec_clicked()
     d->set_recording(is_recording);
     if (!is_recording && d->get_record_size() != 0) {
         const QString path = QString::fromStdString(e->read_setup("Startup", "last_path", e->work_path));
-        const QString file_name = QFileDialog::getSaveFileName(this, Emulator::tr("Save recorded data"), path, "Binary files (*.bin);;All files (*.*)");
+        const QString file_name = QFileDialog::getSaveFileName(this, tr("Save recorded data"), path, "Binary files (*.bin);;All files (*.*)");
         if (!file_name.isEmpty()) {
             const QFileInfo fi(file_name);
             e->write_setup("Startup", "last_path", fi.absolutePath().toStdString());

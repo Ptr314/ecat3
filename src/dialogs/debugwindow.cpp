@@ -5,6 +5,7 @@
 
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QTimer>
 
 #include "debugwindow.h"
 #include "emulator/utils.h"

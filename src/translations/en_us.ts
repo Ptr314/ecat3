@@ -187,7 +187,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/debugwindow.cpp" line="+46"/>
+        <location filename="../dialogs/debugwindow.cpp" line="+47"/>
         <location line="+144"/>
         <location line="+66"/>
         <location line="+77"/>
@@ -408,58 +408,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+388"/>
-        <source>Screen 4:3</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Square pixels</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Square screen</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Nearest pixel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Linear</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Anisotropic</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Fast, no smoothing</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Bilinear filtering</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+310"/>
-        <location filename="../dialogs/taperecorder.cpp" line="+144"/>
-        <source>Load a file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../dialogs/taperecorder.cpp" line="+128"/>
-        <source>Save recorded data</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../emulator/emulator.cpp" line="+118"/>
+        <location filename="../emulator/emulator.cpp" line="+117"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -591,7 +540,7 @@
         <location line="+13"/>
         <location line="+140"/>
         <location line="+16"/>
-        <location filename="../dialogs/i8255window.cpp" line="+57"/>
+        <location filename="../dialogs/i8255window.cpp" line="+59"/>
         <location line="+1"/>
         <location line="+1"/>
         <location line="+1"/>
@@ -720,8 +669,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-459"/>
-        <location line="+422"/>
+        <location filename="../mainwindow.cpp" line="+293"/>
+        <location line="+415"/>
         <location line="+47"/>
         <location line="+57"/>
         <location line="+62"/>
@@ -729,7 +678,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-588"/>
+        <location line="-581"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -750,12 +699,12 @@
     </message>
     <message>
         <location line="+10"/>
-        <location line="+511"/>
+        <location line="+504"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-508"/>
+        <location line="-501"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -780,7 +729,52 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+448"/>
+        <location line="+20"/>
+        <source>Screen 4:3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Square pixels</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Square screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Nearest pixel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Linear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Anisotropic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Fast, no smoothing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Bilinear filtering</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+303"/>
+        <source>Load a file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+59"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1065,7 +1059,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="-110"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+145"/>
+        <source>Load a file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+18"/>
         <location line="+7"/>
         <location line="+113"/>
         <source>Error</source>
@@ -1077,7 +1076,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+113"/>
+        <location line="+103"/>
+        <source>Save recorded data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
         <source>Unable to save file!</source>
         <translation type="unfinished"></translation>
     </message>

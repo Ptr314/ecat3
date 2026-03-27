@@ -6,6 +6,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QTimer>
 
 #include "dialogs/genericdbgwnd.h"
 #include "emulator/core.h"

@@ -279,7 +279,7 @@
         <translation>Установить значение</translation>
     </message>
     <message>
-        <location filename="../dialogs/debugwindow.cpp" line="+46"/>
+        <location filename="../dialogs/debugwindow.cpp" line="+47"/>
         <location line="+144"/>
         <location line="+66"/>
         <location line="+77"/>
@@ -552,62 +552,51 @@
         <translation>Неизвестный тип файла</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+388"/>
         <source>Screen 4:3</source>
-        <translation>Экран 4:3</translation>
+        <translation type="vanished">Экран 4:3</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>Square pixels</source>
-        <translation>Квадратные пиксели</translation>
+        <translation type="vanished">Квадратные пиксели</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>Square screen</source>
-        <translation>Квадратный экран</translation>
+        <translation type="vanished">Квадратный экран</translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>Nearest pixel</source>
-        <translation>Ближайший пиксель</translation>
+        <translation type="vanished">Ближайший пиксель</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Linear</source>
-        <translation>Линейное</translation>
+        <translation type="vanished">Линейное</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Anisotropic</source>
-        <translation>Анизотропное</translation>
+        <translation type="vanished">Анизотропное</translation>
     </message>
     <message>
-        <location line="+10"/>
         <source>Fast, no smoothing</source>
-        <translation>Выключено</translation>
+        <translation type="vanished">Выключено</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Bilinear filtering</source>
-        <translation>Билинейное</translation>
+        <translation type="vanished">Билинейное</translation>
     </message>
     <message>
         <source>Smooth</source>
         <translation type="vanished">Сглаживание</translation>
     </message>
     <message>
-        <location line="+310"/>
-        <location filename="../dialogs/taperecorder.cpp" line="+144"/>
         <source>Load a file</source>
-        <translation>Загрузить файл</translation>
+        <translation type="vanished">Загрузить файл</translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="+128"/>
         <source>Save recorded data</source>
-        <translation>Сохранить записанные данные</translation>
+        <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+118"/>
+        <location filename="../emulator/emulator.cpp" line="+117"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -838,7 +827,7 @@
         <location line="+13"/>
         <location line="+140"/>
         <location line="+16"/>
-        <location filename="../dialogs/i8255window.cpp" line="+57"/>
+        <location filename="../dialogs/i8255window.cpp" line="+59"/>
         <location line="+1"/>
         <location line="+1"/>
         <location line="+1"/>
@@ -1004,13 +993,13 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-434"/>
-        <location line="+511"/>
+        <location filename="../mainwindow.cpp" line="+318"/>
+        <location line="+504"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-508"/>
+        <location line="-501"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -1035,7 +1024,7 @@
     </message>
     <message>
         <location line="-37"/>
-        <location line="+422"/>
+        <location line="+415"/>
         <location line="+47"/>
         <location line="+57"/>
         <location line="+62"/>
@@ -1043,7 +1032,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-588"/>
+        <location line="-581"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -1068,7 +1057,52 @@
         <translation>Автоматически</translation>
     </message>
     <message>
-        <location line="+448"/>
+        <location line="+20"/>
+        <source>Screen 4:3</source>
+        <translation>Экран 4:3</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Square pixels</source>
+        <translation>Квадратные пиксели</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Square screen</source>
+        <translation>Квадратный экран</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Nearest pixel</source>
+        <translation>Ближайший пиксель</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Linear</source>
+        <translation>Линейное</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Anisotropic</source>
+        <translation>Анизотропное</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Fast, no smoothing</source>
+        <translation>Выключено</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Bilinear filtering</source>
+        <translation>Билинейное</translation>
+    </message>
+    <message>
+        <location line="+303"/>
+        <source>Load a file</source>
+        <translation>Загрузить файл</translation>
+    </message>
+    <message>
+        <location line="+59"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>
@@ -1478,7 +1512,12 @@
         <translation>ЭЛЕКТРОНИКА-302</translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="-110"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+145"/>
+        <source>Load a file</source>
+        <translation>Загрузить файл</translation>
+    </message>
+    <message>
+        <location line="+18"/>
         <location line="+7"/>
         <location line="+113"/>
         <source>Error</source>
@@ -1490,7 +1529,12 @@
         <translation>Неизвестный формат файла записи!</translation>
     </message>
     <message>
-        <location line="+113"/>
+        <location line="+103"/>
+        <source>Save recorded data</source>
+        <translation>Сохранить записанные данные</translation>
+    </message>
+    <message>
+        <location line="+10"/>
         <source>Unable to save file!</source>
         <translation>Невозможно сохранить файл!</translation>
     </message>

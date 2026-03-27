@@ -3,7 +3,6 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Main emulator class, source
 
-#include <QKeyEvent>
 #include "dsk_tools/dsk_tools.h"
 #include "../libs/dsk_tools/src/utils.h"
 #include "host_helpers.h"
@@ -511,12 +510,12 @@ void Emulator::resize_screen()
     if (loaded) display->validate(true);
 }
 
-void Emulator::key_event(QKeyEvent *event, bool press)
+void Emulator::key_event(int key, int modifiers, bool press)
 {
-    keyboard->key_event(event, press);
-    if (event->key() == Qt::Key_F12) display->validate(true);
-    if (press && event->key() == Qt::Key_Cancel) {
-        reset(event->modifiers() & Qt::AltModifier);
+    keyboard->key_event(key, key, press);
+    if (key == EmuKey::F12) display->validate(true);
+    if (press && key == EmuKey::Cancel) {
+        reset(modifiers & EmuKey::AltModifier);
     }
 }
 

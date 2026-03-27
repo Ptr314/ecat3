@@ -3,6 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: 8255 debug window, source
 
+#include <QTimer>
+
 #include "i8255window.h"
 #include "ui_i8255window.h"
 

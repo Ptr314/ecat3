@@ -4,7 +4,6 @@
 // Description: Abstract keyboard device
 
 #include "keyboard.h"
-#include "qevent.h"
 #include "emulator/utils.h"
 
 Keyboard::Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
@@ -24,20 +23,18 @@ emulator::Result Keyboard::load_config(SystemData *sd)
     return emulator::Result::ok();
 }
 
-void Keyboard::key_event(QKeyEvent *event, bool press)
+void Keyboard::key_event(unsigned int key, unsigned int native_key, bool press)
 {
-    //qDebug() << "Key: nativeScanCode()" << Qt::hex << event->nativeScanCode() << "nativeVirtualKey()" << Qt::hex<< event->nativeVirtualKey() << "key()" << Qt::hex << event->key();
-
-    unsigned int key;
-    if (known_key(event->key()))
-        key = event->key();
-    else if (known_key(event->nativeVirtualKey()))
-        key = event->nativeVirtualKey();
+    unsigned int k;
+    if (known_key(key))
+        k = key;
+    else if (known_key(native_key))
+        k = native_key;
     else return;
     if (press)
-        key_down(rus_translate(key));
+        key_down(rus_translate(k));
     else
-        key_up(rus_translate(key));
+        key_up(rus_translate(k));
 }
 
 bool Keyboard::known_key(unsigned int code)

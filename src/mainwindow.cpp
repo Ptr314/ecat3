@@ -237,12 +237,7 @@ MainWindow::MainWindow(QWidget *parent)
     #endif
     e = new Emulator(work_path.toStdString(), data_path.toStdString(), software_path.toStdString(), ini_file.toStdString(), renderer);
 
-    connect(this, &MainWindow::send_a_key,  e, &Emulator::key_event);
-    connect(this, &MainWindow::send_volume, e, &Emulator::set_volume);
-    connect(this, &MainWindow::send_muted,  e, &Emulator::set_muted);
-    connect(this, &MainWindow::send_reset,  e, &Emulator::reset);
-    connect(this, &MainWindow::send_resize, e, &Emulator::resize_screen);
-    connect(this, &MainWindow::send_stop,   e, &Emulator::stop_emulation, Qt::QueuedConnection);
+    // Signal/slot connections removed — using direct calls to Emulator methods
 
     QString file_to_load = QString::fromStdString(e->read_setup("Startup", "default", ""));
 
@@ -385,21 +380,21 @@ void MainWindow::CreateScreenMenu()
     ui->menuScreen_ratio->clear();
     QActionGroup * ratio_group = new QActionGroup(ui->menuScreen_ratio);
     QAction * a1 = ui->menuScreen_ratio->addAction(
-        Emulator::tr("Screen 4:3"),
+        tr("Screen 4:3"),
         [this]{e->set_ratio(SCREEN_RATIO_43);}
         );
     a1->setActionGroup(ratio_group);
     a1->setCheckable(true);
     a1->setChecked(e->get_ratio() == SCREEN_RATIO_43);
     QAction * a2 = ui->menuScreen_ratio->addAction(
-        Emulator::tr("Square pixels"),
+        tr("Square pixels"),
         [this]{e->set_ratio(SCREEN_RATIO_SQ);}
         );
     a2->setActionGroup(ratio_group);
     a2->setCheckable(true);
     a2->setChecked(e->get_ratio() == SCREEN_RATIO_SQ);
     QAction * a3 = ui->menuScreen_ratio->addAction(
-        Emulator::tr("Square screen"),
+        tr("Square screen"),
         [this]{e->set_ratio(SCREEN_RATIO_11);}
         );
     a3->setActionGroup(ratio_group);
@@ -410,7 +405,7 @@ void MainWindow::CreateScreenMenu()
         ui->menuFiltering->clear();
         QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);
         QAction * af1 = ui->menuFiltering->addAction(
-            Emulator::tr("Nearest pixel"),
+            tr("Nearest pixel"),
             [this]{e->set_filtering(SCREEN_FILTERING_NONE);}
             );
         af1->setActionGroup(filtering_group);
@@ -418,7 +413,7 @@ void MainWindow::CreateScreenMenu()
         af1->setChecked(e->get_filtering() == SCREEN_FILTERING_NONE);
 
         QAction * af2 = ui->menuFiltering->addAction(
-            Emulator::tr("Linear"),
+            tr("Linear"),
             [this]{e->set_filtering(SCREEN_FILTERING_LINEAR);}
             );
         af2->setActionGroup(filtering_group);
@@ -426,7 +421,7 @@ void MainWindow::CreateScreenMenu()
         af2->setChecked(e->get_filtering() == SCREEN_FILTERING_LINEAR);
 
         QAction * af3 = ui->menuFiltering->addAction(
-            Emulator::tr("Anisotropic"),
+            tr("Anisotropic"),
             [this]{e->set_filtering(SCREEN_FILTERING_ANISOTROPIC);}
             );
         af3->setActionGroup(filtering_group);
@@ -436,7 +431,7 @@ void MainWindow::CreateScreenMenu()
         ui->menuFiltering->clear();
         QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);
         QAction * af1 = ui->menuFiltering->addAction(
-            Emulator::tr("Fast, no smoothing"),
+            tr("Fast, no smoothing"),
             [this]{e->set_filtering(SCREEN_FILTERING_NONE);}
             );
         af1->setActionGroup(filtering_group);
@@ -444,7 +439,7 @@ void MainWindow::CreateScreenMenu()
         af1->setChecked(e->get_filtering() == SCREEN_FILTERING_NONE);
 
         QAction * af2 = ui->menuFiltering->addAction(
-            Emulator::tr("Bilinear filtering"),
+            tr("Bilinear filtering"),
             [this]{e->set_filtering(SCREEN_FILTERING_SOFT_SMOOTH);}
             );
         af2->setActionGroup(filtering_group);
@@ -635,8 +630,7 @@ void MainWindow::keyPressEvent( QKeyEvent *event )
         event->ignore();
     } else {
         // qDebug() << "Key pressed: scan " << event->nativeScanCode() << "virtual" << event->nativeVirtualKey() << "key" << Qt::hex << event->key();
-        //e->key_event(event, true);
-        emit send_a_key(event, true);
+        e->key_event(event->key(), event->modifiers(), true);
     }
 }
 
@@ -646,8 +640,7 @@ void MainWindow::keyReleaseEvent( QKeyEvent *event )
         event->ignore();
     } else {
         //qDebug() << "Key released:" << event->nativeScanCode() << event->nativeVirtualKey() << event->key();
-        //e->key_event(event, false);
-        emit send_a_key(event, false);
+        e->key_event(event->key(), event->modifiers(), false);
     }
 }
 
@@ -659,35 +652,30 @@ void MainWindow::resizeEvent(QResizeEvent * event)
 void MainWindow::paintEvent(QPaintEvent * event)
 {
     //QMainWindow::paintEvent(event);
-    emit send_resize();
-    //e->resize_screen();
+    e->resize_screen();
 }
 
 void MainWindow::on_action_Cold_restart_triggered()
 {
-    emit send_reset(true);
-    //e->reset(true);
+    e->reset(true);
 }
 
 
 void MainWindow::on_action_Soft_restart_triggered()
 {
-    emit send_reset(false);
-    //e->reset(false);
+    e->reset(false);
 }
 
 void MainWindow::set_volume(int value)
 {
     e->write_setup("Sound", "volume", std::to_string(value));
-    emit send_volume(value);
-    //e->set_volume(value);
+    e->set_volume(value);
 }
 
 void MainWindow::set_mute(bool muted)
 {
     e->write_setup("Sound", "muted", std::to_string(muted?1:0));
-    emit send_muted(muted);
-    //e->set_muted(muted);
+    e->set_muted(muted);
     volume->setEnabled(!muted);
 }
 
@@ -754,7 +742,7 @@ void MainWindow::load_config(QString file_name, bool set_default)
 void MainWindow::on_actionOpen_triggered()
 {
     SystemData * sd = e->get_system_data();
-    QString file_name = QFileDialog::getOpenFileName(this, Emulator::tr("Load a file"), last_path, QString::fromStdString(sd->allowed_files));
+    QString file_name = QFileDialog::getOpenFileName(this, tr("Load a file"), last_path, QString::fromStdString(sd->allowed_files));
 
 
     if (!file_name.isEmpty()) {

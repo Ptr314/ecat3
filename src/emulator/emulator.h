@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include <QTimer>
 #include <memory>
 #include <array>
 #include <string>
@@ -26,10 +25,8 @@
 #include "logger.h"
 #endif
 
-class Emulator: public QObject
+class Emulator
 {
-    Q_OBJECT
-
 private:
     IniSettings settings;
     bool busy;
@@ -108,18 +105,15 @@ public:
     int get_ratio();
     int get_filtering();
 
-public slots:
     void timer_proc(uint64_t time_ticks);
     void render_screen();
 
-    void key_event(QKeyEvent *event, bool press);
+    void key_event(int key, int modifiers, bool press);
     void set_volume(int value);
     void set_muted(bool muted);
     void reset(bool cold);
     void resize_screen();
     void stop_emulation();
-
-signals:
 
 private:
     Logger * logger;
