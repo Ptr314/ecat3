@@ -44,13 +44,10 @@ private:
     GenericDisplay * display;
     Keyboard * keyboard;
 
-    QTimer * timer;
     unsigned int clock_freq;
     unsigned int timer_res;
     unsigned int timer_delay;
     unsigned int local_counter;
-
-    QTimer * render_timer;
 
     unsigned int screen_sx;
     unsigned int screen_sy;
