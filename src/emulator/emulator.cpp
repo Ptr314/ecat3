@@ -497,11 +497,18 @@ void Emulator::render_screen()
 
         display->validate();
 
+#ifdef WASM_BUILD
+        // Always render: raster displays (Agat) write pixels in clock() on the emulation
+        // thread and don't set was_updated per frame, so we must push every frame to canvas.
+        renderer->render();
+        display->was_updated = false;
+#else
         if (display->was_updated)
         {
             renderer->render();
             display->was_updated = false;
         }
+#endif
     }
 }
 

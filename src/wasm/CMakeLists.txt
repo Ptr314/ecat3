@@ -12,7 +12,7 @@ add_compile_definitions(USE_MINI_INI)
 
 # Emscripten compiler/linker flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fexceptions")
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
     -pthread \
@@ -25,6 +25,8 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
     -sEXPORT_NAME=EmuModule \
     -sENVIRONMENT=web,worker \
     -sEXIT_RUNTIME=0 \
+    -fexceptions \
+    -sNO_DISABLE_EXCEPTION_CATCHING \
 ")
 
 # Source directories

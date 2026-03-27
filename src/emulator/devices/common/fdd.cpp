@@ -73,8 +73,13 @@ emulator::Result FDD::load_config(SystemData *sd)
         if (!file_name.empty()) {
             emulator::Result img_res = load_image(file_name);
             if (!img_res) return img_res;
-        } else
+        } else {
+#ifdef WASM_BUILD
+            // In WASM, missing disk images are non-fatal (drive starts empty, user can load via file picker)
+#else
             return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Disk image file not found")) + "} " + file_name);
+#endif
+        }
     } catch (std::exception &e) {
     }
 

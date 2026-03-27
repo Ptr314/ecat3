@@ -258,12 +258,15 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl) {
 
         // Load shared data bundle (charmaps, keyboard maps) if provided
         if (dataBundleUrl) {
+            console.log("Loading data bundle:", dataBundleUrl);
             await fetchAndMount(module, dataBundleUrl, "/data");
         }
 
         // Load machine-specific bundle
+        console.log("Loading machine bundle:", bundleUrl);
         await fetchAndMount(module, bundleUrl, "");
 
+        console.log("Bundles loaded. Calling wasm_load_machine:", machinePath);
         statusEl.textContent = "Starting emulation...";
 
         let result = module.ccall("wasm_load_machine", "number", ["string"], [machinePath]);
@@ -276,6 +279,11 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl) {
         statusEl.textContent = "Running";
         statusEl.className = "";
 
+        // Resume audio context (miniaudio creates it but browsers suspend it without user gesture)
+        if (window.miniaudio && window.miniaudio.unlock) {
+            window.miniaudio.unlock();
+        }
+
         // Enable controls
         document.getElementById("btn-reset").disabled = false;
         document.getElementById("btn-cold-reset").disabled = false;
@@ -283,7 +291,8 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl) {
 
     } catch (err) {
         console.error("loadMachine error:", err);
-        statusEl.textContent = "Error: " + err.message;
+        let msg = (err instanceof Error) ? err.message : String(err);
+        statusEl.textContent = "Error: " + msg;
         statusEl.className = "error";
     }
 }
@@ -306,16 +315,14 @@ function setupDiskLoader(module) {
             let buffer = await file.arrayBuffer();
             let data = new Uint8Array(buffer);
 
-            // Allocate WASM memory and copy file data
-            let ptr = module._malloc(data.length);
-            module.HEAPU8.set(data, ptr);
+            // Write file to Emscripten virtual FS, then tell C++ to load it
+            let tempPath = "/tmp/" + file.name;
+            module.FS.writeFile(tempPath, data);
 
             // Default to fdd0 - user can be prompted for device selection in future
             let result = module.ccall("wasm_load_file", "number",
-                ["string", "number", "number", "string"],
-                ["fdd0", ptr, data.length, file.name]);
-
-            module._free(ptr);
+                ["string", "string"],
+                ["fdd0", tempPath]);
 
             if (result === 0) {
                 statusEl.textContent = "Disk image loaded: " + file.name;
@@ -378,35 +385,32 @@ function setupCanvasScaling() {
 
 let audioActivated = false;
 
+function unlockAudio() {
+    audioActivated = true;
+    if (window.miniaudio && window.miniaudio.devices) {
+        for (let i = 0; i < window.miniaudio.devices.length; i++) {
+            let dev = window.miniaudio.devices[i];
+            if (dev && dev.webaudio) {
+                dev.webaudio.resume();
+            }
+        }
+    }
+}
+
 function setupAudioActivation() {
     let overlay = document.getElementById("overlay");
 
     function activate() {
         overlay.classList.add("hidden");
-        audioActivated = true;
-        // Create and immediately resume an AudioContext to "unlock" audio.
-        // Also try to resume any existing AudioContext that miniaudio may have created.
-        if (typeof AudioContext !== "undefined") {
-            let ctx = new AudioContext();
-            ctx.resume().then(() => ctx.close());
-        }
+        unlockAudio();
     }
 
     overlay.addEventListener("click", activate);
     overlay.addEventListener("touchstart", activate);
 
-    // Also listen for any user interaction to unlock audio (belt and suspenders)
-    function unlockAudio() {
-        if (!audioActivated) {
-            audioActivated = true;
-            if (typeof AudioContext !== "undefined") {
-                let ctx = new AudioContext();
-                ctx.resume().then(() => ctx.close());
-            }
-        }
-    }
-    document.addEventListener("keydown", unlockAudio, { once: true });
-    document.addEventListener("mousedown", unlockAudio, { once: true });
+    document.addEventListener("keydown", unlockAudio);
+    document.addEventListener("mousedown", unlockAudio);
+    document.addEventListener("touchstart", unlockAudio);
 }
 
 // ============================================================================
@@ -508,6 +512,7 @@ async function initEcat() {
     });
 
     document.getElementById("volume").addEventListener("input", (e) => {
+        unlockAudio();
         module.ccall("wasm_set_volume", null, ["number"], [parseInt(e.target.value)]);
     });
 }

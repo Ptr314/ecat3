@@ -38,6 +38,7 @@ def parse_cfg_metadata(cfg_path):
 
     # Extract system block metadata
     name = ""
+    version = ""
     sys_type = ""
     charmap = ""
 
@@ -46,25 +47,28 @@ def parse_cfg_metadata(cfg_path):
         block = system_match.group(1)
         m = re.search(r'name\s*=\s*(.+)', block)
         if m: name = m.group(1).strip()
+        m = re.search(r'version\s*=\s*(.+)', block)
+        if m: version = m.group(1).strip()
         m = re.search(r'type\s*=\s*(.+)', block)
         if m: sys_type = m.group(1).strip()
         m = re.search(r'charmap\s*=\s*(.+)', block)
         if m: charmap = m.group(1).strip()
 
-    # Find all image = and map = references
+    # Find all "image = file" and "map = file" references (word boundary to avoid matching "charmap")
     files = []
-    for m in re.finditer(r'(?:image|map)\s*=\s*(\S+)', content):
+    for m in re.finditer(r'^\s*(?:image|map)\s*=\s*(\S+)', content, re.MULTILINE):
         files.append(m.group(1))
 
     return {
         "name": name,
+        "version": version,
         "type": sys_type,
         "charmap": charmap,
         "files": files,
     }
 
 def find_file(filename, search_dirs):
-    """Search for a file in multiple directories."""
+    """Search for a file in multiple directories and their subdirectories."""
     for d in search_dirs:
         path = os.path.join(d, filename)
         if os.path.isfile(path):
@@ -73,6 +77,12 @@ def find_file(filename, search_dirs):
         path = os.path.join(d, "files", filename)
         if os.path.isfile(path):
             return path
+        # Search one level of subdirectories (matches emulator's find_file_location behavior)
+        if os.path.isdir(d):
+            for sub in os.listdir(d):
+                subpath = os.path.join(d, sub, filename)
+                if os.path.isfile(subpath):
+                    return subpath
     return None
 
 def create_bundle(files_map, output_path):
@@ -130,7 +140,7 @@ def main():
 
         cfg_dir = os.path.dirname(cfg_path)
         cfg_filename = os.path.basename(cfg_path)
-        machine_subdir = os.path.relpath(cfg_dir, deploy_dir)  # e.g. "computers/agat"
+        machine_subdir = os.path.relpath(cfg_dir, deploy_dir).replace("\\", "/")  # e.g. "computers/agat"
 
         # Machine ID from config filename (without extension)
         machine_id = os.path.splitext(cfg_filename)[0]
@@ -151,14 +161,17 @@ def main():
         for ref_file in meta["files"]:
             local_path = find_file(ref_file, search_dirs)
             if local_path:
-                # Determine archive path relative to the search location
-                # Files found in cfg_dir go under machine_subdir
+                # Determine archive path
+                # Files from cfg_dir keep their relative position
+                # Files from software/ or data/ are placed alongside the .cfg
+                # so the emulator's find_file_location (which checks system_path first) finds them
                 if local_path.startswith(cfg_dir):
                     rel = os.path.relpath(local_path, deploy_dir)
                 elif local_path.startswith(data_dir):
                     rel = "data/" + os.path.relpath(local_path, data_dir)
                 elif local_path.startswith(software_dir):
-                    rel = "software/" + os.path.relpath(local_path, software_dir)
+                    # Place alongside .cfg so emulator finds it via system_path
+                    rel = machine_subdir + "/" + os.path.basename(local_path)
                 else:
                     rel = f"{machine_subdir}/{ref_file}"
                 bundle_files[rel.replace("\\", "/")] = local_path
@@ -179,9 +192,11 @@ def main():
         # Virtual FS path for the .cfg
         cfg_vfs_path = f"/{archive_cfg_path}"
 
+        display_name = meta["version"] if meta["version"] else meta["name"]
+
         machines.append({
             "id": machine_id,
-            "name": meta["name"],
+            "name": display_name,
             "type": meta["type"],
             "cfg_path": cfg_vfs_path,
             "bundle_url": bundle_name,
