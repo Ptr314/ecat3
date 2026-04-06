@@ -20,11 +20,13 @@ private:
     unsigned int SegmentMask;
     unsigned int address_mask;
 
+    bool m_single_frame = false;
+
 public:
     PageMapper(InterfaceManager *im, EmulatorConfigDevice *cd);
-    virtual emulator::Result load_config(SystemData *sd) override;
-    virtual unsigned int get_value(unsigned int address) override;
-    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
+    emulator::Result load_config(SystemData *sd) override;
+    unsigned int get_value(unsigned int address) override;
+    void set_value(unsigned int address, unsigned int value, bool force=false) override;
 };
 
 ComputerDevice * create_page_mapper(InterfaceManager *im, EmulatorConfigDevice *cd);

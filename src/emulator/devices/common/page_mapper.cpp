@@ -28,54 +28,70 @@ emulator::Result PageMapper::load_config(SystemData *sd)
     std::string parameter_name, range;
     unsigned int page_id;
 
-    for (size_t i = 0; i < cd->parameters.size(); i++)
+    try {
+        PagesCount = parse_numeric_value(cd->get_parameter("pages").value);
+    } catch (std::exception &e) {
+        PagesCount = 0;
+    }
+
+    std::fill_n(pages, sizeof(pages)/sizeof(pages[0]), nullptr);
+
+    unsigned last_page_size = 0;
+
+    for (auto & parameter : cd->parameters)
     {
-        parameter_name = cd->parameters[i].name;
-        if (parameter_name == "@page")
+        if (parameter.name == "@page")
         {
-            range = cd->parameters[i].left_range;
+            range = parameter.left_range;
             if (range.empty()) {
                 return emulator::Result::error(emulator::ErrorCode::ConfigError, "{MemoryMapper|" + std::string(QT_TRANSLATE_NOOP("MemoryMapper", "Incorrect range for")) + "} " + parameter_name);
             }
             page_id = parse_numeric_value(range.substr(1, range.length()-2));
             if (page_id >= PagesCount) PagesCount = page_id + 1;
-            pages[page_id] = dynamic_cast<Memory*>(im->dm->get_device_by_name(cd->parameters[i].value));
+            pages[page_id] = dynamic_cast<Memory*>(im->dm->get_device_by_name(parameter.value));
+            last_page_size = pages[page_id]->get_size();
         }
     }
 
     PageMask = create_mask(round(log2(PagesCount+1)), 0);
 
+    m_single_frame = false;
     try {
         Frame = parse_numeric_value(cd->get_parameter("frame").value);
     } catch (std::exception &e) {
-        Frame = pages[0]->get_size();
+        Frame = last_page_size;
+        m_single_frame = true;
     }
-    SegmentMask = create_mask(round(log2(pages[0]->get_size() / Frame)), 0);
+    SegmentMask = create_mask(round(log2(last_page_size / Frame)), 0);
     address_mask = create_mask(round(log2(Frame)), 0);
 
     return emulator::Result::ok();
 }
 
-unsigned int PageMapper::get_value(unsigned int address)
+unsigned int PageMapper::get_value(const unsigned address)
 {
-    if (Frame == pages[0]->get_size())
-        return pages[i_page.value & PageMask]->get_value(address);
-    else {
-        unsigned int address_on_device = (i_segment.value & SegmentMask)*Frame + (address & address_mask);
-        return pages[i_page.value & PageMask]->get_value(address_on_device);
+    auto device = pages[i_page.value & PageMask];
+    if (device) {
+        if (m_single_frame) return device->get_value(address);
+        const unsigned address_on_device = (i_segment.value & SegmentMask)*Frame + (address & address_mask);
+        return device->get_value(address_on_device);
     }
+    return _FFFF;
 }
 
-void PageMapper::set_value(unsigned int address, unsigned int value, bool force)
+void PageMapper::set_value(const unsigned address, const unsigned value, bool force)
 {
-    if (Frame == pages[0]->get_size())
-        pages[i_page.value & PageMask]->set_value(address, value);
-    else {
-        unsigned int address_on_device = (i_segment.value & SegmentMask)*Frame + (address & address_mask);
-        pages[i_page.value & PageMask]->set_value(address_on_device, value);
+    auto device = pages[i_page.value & PageMask];
+    if (device) {
+        if (m_single_frame)
+            device->set_value(address, value);
+        else {
+            const unsigned address_on_device = (i_segment.value & SegmentMask)*Frame + (address & address_mask);
+            device->set_value(address_on_device, value);
 #ifdef LOG_PAGE_MAPPER
-        // logs(("W SEG: " + QString::number(i_segment->value & SegmentMask, 2) + ", " + QString::number(address, 16) + " -> " + QString::number(address_on_device, 16)).toStdString());
+            // logs(("W SEG: " + QString::number(i_segment->value & SegmentMask, 2) + ", " + QString::number(address, 16) + " -> " + QString::number(address_on_device, 16)).toStdString());
 #endif
+        }
     }
 }
 
