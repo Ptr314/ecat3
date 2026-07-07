@@ -7,7 +7,7 @@ rem The debug version of Qt with sources is in c:\DEV\Qt\X.X.X
 rem and the static version was compiled and placed in c:\DEV\Qt\X.X.X-static
 
 SET _ROOT_QT=C:\DEV\Qt
-SET _QT_VERSION=6.10.2
+SET _QT_VERSION=6.11.1
 SET _MINGW_VERSION=mingw1310_64
 
 SET _ROOT_CMAKE=%_ROOT_QT%\Tools\CMake_64\bin
