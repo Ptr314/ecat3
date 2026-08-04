@@ -72,3 +72,39 @@ public:
     }
 };
 
+class DCBlocker {
+private:
+    float R = 0.999f;
+    float x1 = 0.0f; // предыдущее входное значение
+    float y1 = 0.0f; // предыдущее выходное значение
+    bool primed = false;
+
+public:
+    // Инициализация фильтра с заданной частотой среза и частотой дискретизации
+    void setup(float sampleRate, float cutoffFreq) {
+        R = 1.0f - (2.0f * M_PI * cutoffFreq / sampleRate);
+        if (R < 0.0f) R = 0.0f;
+        reset();
+    }
+
+    // Обработка одного отсчета
+    float process(float input) {
+        if (!primed) {
+            // Первый отсчет задает исходный уровень DC, чтобы выход начинался с нуля без скачка
+            x1 = input;
+            primed = true;
+        }
+        float output = input - x1 + R * y1;
+        x1 = input;
+        y1 = output;
+        return output;
+    }
+
+    // Очистка состояний фильтра
+    void reset() {
+        x1 = 0.0f;
+        y1 = 0.0f;
+        primed = false;
+    }
+};
+
