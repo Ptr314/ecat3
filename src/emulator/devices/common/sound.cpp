@@ -30,6 +30,7 @@ GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_lpf_coutoff(5000)
     , m_accumulator(0)
     , m_acc_counter(0)
+    , m_last_input(0)
 {
     m_amplitude = m_volume * 32000 / 100;
     m_buffer.resize(m_samples_per_buffer);
@@ -79,6 +80,8 @@ void GenericSound::init_sound(unsigned int clock_freq)
 
     m_counts_per_sample = (m_clock_freq << 8) / m_sample_rate; // * 128 to make it more precise
 
+    m_dc_blocker.setup(m_sample_rate, 20);
+
     if (m_use_lpf) m_filter.setup(m_sample_rate, m_lpf_coutoff);
 
     m_audio_driver->start();
@@ -126,7 +129,7 @@ void GenericSound::clock(unsigned int counter)
 
         // Checking buffer overflow and discarding a part of it if expected
         if (m_buffer_pos >= m_buffer.size()) {
-            static int overflow_delta = m_samples_per_buffer / 8;
+            size_t overflow_delta = m_samples_per_buffer / 8;
             std::copy(
                 m_buffer.begin() + overflow_delta,
                 m_buffer.begin() + m_buffer_pos,
@@ -137,19 +140,25 @@ void GenericSound::clock(unsigned int counter)
         };
 
         // Using average value between counts
-        int16_t v = static_cast<int16_t>(m_accumulator / m_acc_counter);
+        float v = (m_acc_counter > 0) ? static_cast<float>(m_accumulator) / m_acc_counter : m_last_input;
+        m_last_input = v;
         m_accumulator = m_acc_counter = 0;
 
-        // Applying LPF if expected
-        if (m_use_lpf) {
-            float out = m_filter.process(static_cast<float>(v));
-            v = static_cast<int16_t>(out);
-        }
+        // Removing DC offset so silence sits at 0 regardless of the device's idle level
+        float out = m_dc_blocker.process(v);
 
-        m_buffer[m_buffer_pos++] = v;
+        if (m_muted) out = 0;
+
+        // Applying LPF if expected
+        if (m_use_lpf) out = m_filter.process(out);
+
+        if (out > 32767.0f) out = 32767.0f;
+        else if (out < -32768.0f) out = -32768.0f;
+
+        m_buffer[m_buffer_pos++] = static_cast<int16_t>(out);
     } else {
         // Accumulating values between counts to get average when expected
-        m_accumulator += m_muted ? -m_amplitude : calc_sound_value();
+        m_accumulator += calc_sound_value();
         m_acc_counter++;
     }
 }
@@ -175,9 +184,9 @@ void GenericSound::handle_audio_callback(uint8_t* stream, int len)
     const int samples_to_copy = std::min(samples_requested, samples_available);
 
     // We use 'fill_value' later to fill missed samples.
-    // The default value is -m_amplitude - "silence" in case the buffer is totally empty.
+    // The default value is 0 - "silence" in case the buffer is totally empty.
     // And the first buffer value, if we have less values than expected
-    int16_t fill_value = -m_amplitude;
+    int16_t fill_value = 0;
 
     if (samples_to_copy > 0) {
         fill_value = m_buffer[0];
