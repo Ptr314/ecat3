@@ -327,6 +327,8 @@ protected:
     unsigned int mask;
     unsigned int constant_value;
     bool has_constant_return;
+    bool access_on_read = true;
+    bool access_on_write = true;
 
     unsigned int value;
     unsigned int default_value;
@@ -342,6 +344,7 @@ public:
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
 
     Port(InterfaceManager *im, EmulatorConfigDevice *cd);
+    emulator::Result load_config(SystemData *sd) override;
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     void reset(bool cold) override;
 };

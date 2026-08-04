@@ -866,6 +866,24 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
     value = default_value;
 }
 
+emulator::Result Port::load_config(SystemData *sd)
+{
+    emulator::Result res = AddressableDevice::load_config(sd);
+    if (!res) return res;
+
+    const std::string acc_mode = read_confg_value(cd, "access_mode", false, std::string("rw"));
+    if (acc_mode == "r") access_on_write = false;
+    else
+    if (acc_mode == "w") access_on_read = false;
+    else
+    if (acc_mode != "rw" and acc_mode != "wr")
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+        "{Port|" + std::string(QT_TRANSLATE_NOOP("Port", "Incorrect access mode")) + "} ");
+
+    return emulator::Result::ok();
+}
+
+
 void Port::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
     switch (callback_id) {
@@ -884,8 +902,10 @@ unsigned int Port::get_value(MAYBE_UNUSED unsigned int address)
     // if (name != "port-video" && name != "port-kbd")
     //     logs("GET " + QString::number(value, 16));
 #endif
-    i_access.change(0);
-    i_access.change(1);
+    if (access_on_read) {
+        i_access.change(0);
+        i_access.change(1);
+    }
     if (!has_constant_return) return value;
     return constant_value;
 }
@@ -900,10 +920,10 @@ void Port::set_value(MAYBE_UNUSED unsigned int address, unsigned int value, bool
 #ifdef LOG_PORTS
     // logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
 #endif
-    i_access.change(0);
+    if (access_on_write) i_access.change(0);
     this->value = (value & mask) | (this->value & ~mask);
     i_data.change(this->value);
-    i_access.change(1);
+    if (access_on_write) i_access.change(1);
 }
 
 void Port::reset(MAYBE_UNUSED bool cold)
