@@ -33,6 +33,10 @@ private:
     // Sample accumulator
     int64_t m_accumulator;
     int64_t m_acc_counter;
+    float m_last_input;
+
+    // DC offset removal, keeps silence at 0 to avoid clicks on start/stop/mute
+    DCBlocker m_dc_blocker;
 
     // Low pass filter
     bool m_use_lpf;
