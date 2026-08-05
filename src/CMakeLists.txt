@@ -250,7 +250,8 @@ set(PROJECT_SOURCES
     emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
     emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp
     emulator/devices/common/gmd70.h emulator/devices/common/gmd70.cpp
-        emulator/devices/specific/agat_common.h
+    emulator/devices/specific/agat_common.h
+    emulator/devices/common/mux.h emulator/devices/common/mux.cpp
 
 )
 
