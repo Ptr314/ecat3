@@ -774,6 +774,17 @@ emulator::Result ROM::load_config(SystemData *sd)
             if (file.is_open()){
                 file.read(reinterpret_cast<char*>(this->buffer.data()), file_size);
                 file.close();
+
+                // If the image is smaller than the mapped area, high address lines
+                // are not decoded on real hardware, so the image repeats. Mirror it.
+                size_t chunk = static_cast<size_t>(file_size);
+                size_t total = static_cast<size_t>(this->get_size());
+                if (chunk > 0)
+                    for (size_t pos = chunk; pos < total; pos += chunk)
+                    {
+                        size_t left = total - pos;
+                        memcpy(buffer.data() + pos, buffer.data(), (left < chunk)?left:chunk);
+                    }
             } else {
                 return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{ROM|" + std::string(QT_TRANSLATE_NOOP("ROM", "Can't open ROM image file")) + "} " + file_name);
