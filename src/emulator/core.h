@@ -431,7 +431,7 @@ protected:
 public:
     unsigned int clock;
     MemoryMapper * mm;
-    unsigned int debug;
+    unsigned int m_debug;
     unsigned int break_count;
     std::list<unsigned int> over_commands;
 

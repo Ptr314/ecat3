@@ -993,9 +993,9 @@ CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_address(this, im, 16, "address", MODE_W, 1)
     , i_data(this, im, 8, "data", MODE_RW)
 #ifdef CPU_STOPPED
-    , debug(DEBUG_STOPPED)
+    , m_debug(DEBUG_STOPPED)
 #else
-    , debug(DEBUG_OFF)
+    , m_debug(DEBUG_OFF)
 #endif
     , break_count(0)
 {
@@ -1015,8 +1015,34 @@ emulator::Result CPU::load_config(SystemData *sd)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "No CPU clock value found")) + "} " + name);
 
-    std::string s = cd->get_parameter("stopped", false).value;
-    if (s=="1") debug = (DEBUG_STOPPED);
+    // std::string s = cd->get_parameter("stopped", false).value;
+    const bool stopped = read_confg_value(cd, "stopped", false, false);
+    const bool debug = read_confg_value(cd, "debug", false, false);
+    if (debug) m_debug = DEBUG_BRAKES;
+    if (stopped) m_debug = (DEBUG_STOPPED);
+
+    std::string breaks = read_confg_value(cd, "breakpoints", false, std::string(""));
+    if (!breaks.empty()) {
+        // Addresses may be separated by commas, spaces or tabs
+        for (size_t i = 0; i < breaks.size(); i++)
+            if (breaks[i] == ',' || breaks[i] == '\t') breaks[i] = ' ';
+
+        const std::vector<std::string> items = split_string(breaks, ' ', true);
+        for (size_t i = 0; i < items.size(); i++)
+        {
+            const std::string item = str_trim(items[i]);
+            if (item.empty()) continue;
+            try {
+                add_breakpoint(parse_numeric_value(item));
+            } catch (std::exception &) {
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                    "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "Invalid breakpoint address")) + "} " + name + ": " + item);
+            }
+        }
+
+        // Breakpoints are only checked in DEBUG_BRAKES mode
+        if ((break_count > 0) && (m_debug == DEBUG_OFF)) m_debug = DEBUG_BRAKES;
+    }
 
     mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper"));
 

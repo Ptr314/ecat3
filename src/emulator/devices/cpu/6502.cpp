@@ -151,7 +151,7 @@ unsigned int mos6502::execute()
         reset_mode = false;
     }
 
-    if (debug == DEBUG_STOPPED)
+    if (m_debug == DEBUG_STOPPED)
         return 0;
 
 #ifdef LOG_CPU
@@ -171,12 +171,12 @@ unsigned int mos6502::execute()
 #endif
 
 
-    switch (debug) {
+    switch (m_debug) {
     case DEBUG_STEP:
-        debug = DEBUG_STOPPED;
+        m_debug = DEBUG_STOPPED;
         break;
     case DEBUG_BRAKES:
-        if (check_breakpoint(get_pc())) debug = DEBUG_STOPPED;
+        if (check_breakpoint(get_pc())) m_debug = DEBUG_STOPPED;
         break;
     default:
         break;

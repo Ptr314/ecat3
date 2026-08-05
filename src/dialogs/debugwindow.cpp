@@ -83,6 +83,11 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     connect(state_timer, &QTimer::timeout, this, &DebugWindow::update_state);
     state_timer->start(200);
     update_state();
+
+    if (cpu->m_debug == DEBUG_BRAKES) {
+        stop_tracking = false;
+        QTimer::singleShot(200, this, &DebugWindow::track);
+    }
 }
 
 DebugWindow::~DebugWindow()
@@ -122,9 +127,9 @@ void DebugWindow::on_closeButton_clicked()
 
 void DebugWindow::on_stepButton_clicked()
 {
-    if (cpu->debug == DEBUG_STOPPED)
+    if (cpu->m_debug == DEBUG_STOPPED)
     {
-        cpu->debug = DEBUG_STEP;
+        cpu->m_debug = DEBUG_STEP;
         QTimer::singleShot(100, this, &DebugWindow::on_toPCButton_clicked);
     }
 }
@@ -154,7 +159,7 @@ void DebugWindow::on_removeBRButton_clicked()
 
 void DebugWindow::on_runButton_clicked()
 {
-    cpu->debug = DEBUG_OFF;
+    cpu->m_debug = DEBUG_OFF;
     stop_tracking = true;
 }
 
@@ -162,7 +167,7 @@ void DebugWindow::track()
 {
     ui->codeview->update();
     update_registers();
-    if ((cpu->debug != DEBUG_STOPPED) && !stop_tracking)
+    if ((cpu->m_debug != DEBUG_STOPPED) && !stop_tracking)
     {
         QTimer::singleShot(200, this, &DebugWindow::track);
     } else {
@@ -175,7 +180,7 @@ void DebugWindow::track()
 
 void DebugWindow::on_stopTrackingButton_clicked()
 {
-    cpu->debug = DEBUG_STOPPED;
+    cpu->m_debug = DEBUG_STOPPED;
     stop_tracking = true;
     on_toPCButton_clicked();
 }
@@ -196,7 +201,7 @@ void DebugWindow::on_toolButton_clicked()
 
 void DebugWindow::on_stepOverButton_clicked()
 {
-    if (cpu->debug == DEBUG_STOPPED)
+    if (cpu->m_debug == DEBUG_STOPPED)
     {
         if (temporary_break >= 0) cpu->remove_breakpoint(temporary_break);
 
@@ -219,11 +224,11 @@ void DebugWindow::on_stepOverButton_clicked()
             temporary_break = a+len;
             cpu->add_breakpoint(temporary_break);
 
-            cpu->debug = DEBUG_BRAKES;
+            cpu->m_debug = DEBUG_BRAKES;
             QTimer::singleShot(200, this, &DebugWindow::track);
             stop_tracking = false;
         } else {
-            cpu->debug = DEBUG_STEP;
+            cpu->m_debug = DEBUG_STEP;
             QTimer::singleShot(100, this, &DebugWindow::on_toPCButton_clicked);
         }
     }
@@ -233,14 +238,14 @@ void DebugWindow::on_stepOverButton_clicked()
 
 void DebugWindow::on_runUntilButton_clicked()
 {
-    if (cpu->debug == DEBUG_STOPPED)
+    if (cpu->m_debug == DEBUG_STOPPED)
     {
         if (temporary_break >= 0) cpu->remove_breakpoint(temporary_break);
 
         temporary_break = ui->codeview->get_address_at_cursor();
         cpu->add_breakpoint(temporary_break);
 
-        cpu->debug = DEBUG_BRAKES;
+        cpu->m_debug = DEBUG_BRAKES;
         QTimer::singleShot(200, this, &DebugWindow::track);
         stop_tracking = false;
     }
@@ -261,9 +266,9 @@ void DebugWindow::on_gotoButton_clicked()
 
 void DebugWindow::on_runDebuggedButton_clicked()
 {
-    if (cpu->debug == DEBUG_STOPPED)
+    if (cpu->m_debug == DEBUG_STOPPED)
     {
-        cpu->debug = DEBUG_BRAKES;
+        cpu->m_debug = DEBUG_BRAKES;
         stop_tracking = false;
         QTimer::singleShot(200, this, &DebugWindow::track);
     }
@@ -271,7 +276,7 @@ void DebugWindow::on_runDebuggedButton_clicked()
 
 void DebugWindow::update_state()
 {
-    switch (cpu->debug) {
+    switch (cpu->m_debug) {
     case DEBUG_STOPPED:
         ui->state->setPixmap(QPixmap(":/icons/pause"));
         break;

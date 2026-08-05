@@ -172,11 +172,10 @@ bool read_confg_value(EmulatorConfigDevice * cd, const std::string &name, bool r
     std::string s = str_tolower(cd->get_parameter(name, required).value);
     if (s.empty()) {
         return def;
-    } else {
-        if (s == "1" || s == "true" || s == "y" || s == "yes") return true;
-        if (s == "0" || s == "false" || s == "n" || s == "no") return false;
-        throw std::runtime_error("Invalid boolean value");
     }
+    if (s == "1" || s == "true" || s == "y" || s == "yes") return true;
+    if (s == "0" || s == "false" || s == "n" || s == "no") return false;
+    throw std::runtime_error("Invalid boolean value");
 }
 
 bool checkCapsLock()
