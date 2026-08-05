@@ -56,19 +56,10 @@ i8080::i8080(InterfaceManager *im, EmulatorConfigDevice *cd):
     over_commands.push_back(0xDD);
     over_commands.push_back(0xED);
     over_commands.push_back(0xFD);
-
-#ifdef LOG_8080
-    logger = new CPULogger(this, CPU_LOGGER_8080, core->get_context(), "8080_my");
-#endif
-
 }
 
 i8080::~i8080()
-{
-#ifdef LOG_8080
-    delete logger;
-#endif
-}
+{}
 
 unsigned int i8080::get_pc()
 {
@@ -144,24 +135,25 @@ unsigned int i8080::execute()
     if (m_debug == DEBUG_STOPPED)
         return 10;
 
-#ifdef LOG_8080
+#ifdef LOG_CPU
     uint16_t address = core->get_pc();
     uint8_t log_cmd = core->get_command();
     //i8080context * context = core->get_context();
     //uint8_t f1 = context->registers.regs.F & 0x10;
-    bool do_log = (address < 0xF800)
-                  //&& ((log_cmd == 0x3C) || (log_cmd == 0x3D));
-                  && (log_cmd == 0x27);
-                  //&& ((log_cmd == 0xC6) || (log_cmd == 0xD6) || (log_cmd == 0xE6) || (log_cmd == 0xF6) || (log_cmd == 0xCE) || (log_cmd == 0xDE) || (log_cmd == 0xEE) || (log_cmd == 0xFE));
-    if (do_log) logger->log_state(log_cmd, true);
+    bool do_log = true;
+    // bool do_log = (address < 0xF800)
+    //               //&& ((log_cmd == 0x3C) || (log_cmd == 0x3D));
+    //               && (log_cmd == 0x27);
+    //               //&& ((log_cmd == 0xC6) || (log_cmd == 0xD6) || (log_cmd == 0xE6) || (log_cmd == 0xF6) || (log_cmd == 0xCE) || (log_cmd == 0xDE) || (log_cmd == 0xEE) || (log_cmd == 0xFE));
+    if (do_log) log_state(log_cmd, true);
 #endif
 
     unsigned int cycles = core->execute();
 
-#ifdef LOG_8080
+#ifdef LOG_CPU
     //uint8_t f2 = context->registers.regs.F & 0x10;
     //bool do_log = (address < 0xF800) && (f1 == 0) && (f2 != 0);
-    if (do_log) logger->log_state(log_cmd, false, cycles);
+    if (do_log) log_state(log_cmd, false, cycles);
 #endif
 
 
@@ -191,6 +183,27 @@ unsigned int i8080::get_command()
 {
     return core->get_command();
 }
+
+#ifdef LOG_CPU
+void i8080::log_state(uint8_t command, bool before, unsigned int cycles)
+{
+    if (log_available())
+    {
+        const i8080context * c = core->get_context();
+        logs(
+             hex_str(command, 2) + ((before)?"+":"-")
+             + " AF:" + hex_str(c->registers.regs.A, 2) + hex_str(c->registers.regs.F, 2)
+             + " BC:" + hex_str(c->registers.reg_pairs.BC, 4)
+             + " DE:" + hex_str(c->registers.reg_pairs.DE, 4)
+             + " HL:" + hex_str(c->registers.reg_pairs.HL, 4)
+             + " SP:" + hex_str(c->registers.regs.SP, 4)
+        );
+
+    }
+}
+#endif
+
+
 
 ComputerDevice * create_i8080(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new i8080(im, cd);

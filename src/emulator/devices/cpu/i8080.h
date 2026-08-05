@@ -8,11 +8,6 @@
 #include "emulator/core.h"
 #include "emulator/devices/cpu/i8080core.h"
 
-//#define LOG_8080 1
-
-#ifdef LOG_8080
-#include "cpulogger.h"
-#endif
 
 using namespace I8080;
 
@@ -50,6 +45,10 @@ private:
 
 protected:
     virtual unsigned int get_pc() override;
+
+#ifdef LOG_CPU
+    void log_state(uint8_t command, bool before, unsigned int cycles=0) override;
+#endif
 
 public:
     i8080(InterfaceManager *im, EmulatorConfigDevice *cd);

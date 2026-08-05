@@ -1026,12 +1026,6 @@ emulator::Result CPU::load_config(SystemData *sd)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "No CPU clock value found")) + "} " + name);
 
-    // std::string s = cd->get_parameter("stopped", false).value;
-    const bool stopped = read_confg_value(cd, "stopped", false, false);
-    const bool debug = read_confg_value(cd, "debug", false, false);
-    if (debug) m_debug = DEBUG_BRAKES;
-    if (stopped) m_debug = (DEBUG_STOPPED);
-
     std::string breaks = read_confg_value(cd, "breakpoints", false, std::string(""));
     if (!breaks.empty()) {
         // Addresses may be separated by commas, spaces or tabs
@@ -1051,8 +1045,10 @@ emulator::Result CPU::load_config(SystemData *sd)
             }
         }
 
-        // Breakpoints are only checked in DEBUG_BRAKES mode
-        if ((break_count > 0) && (m_debug == DEBUG_OFF)) m_debug = DEBUG_BRAKES;
+        const bool stopped = read_confg_value(cd, "stopped", false, false);
+        const bool debug = read_confg_value(cd, "debug", false, false);
+        if (debug) m_debug = DEBUG_BRAKES;
+        if (stopped) m_debug = DEBUG_STOPPED;
     }
 
     mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper"));
