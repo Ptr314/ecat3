@@ -107,9 +107,14 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+996"/>
+        <location filename="../emulator/core.cpp" line="+1027"/>
         <source>No CPU clock value found</source>
         <translation>Не задана тактовая частота процессора</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Invalid breakpoint address</source>
+        <translation>Нерректная точка останова</translation>
     </message>
 </context>
 <context>
@@ -123,7 +128,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location line="-562"/>
+        <location line="-616"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -280,7 +285,7 @@
     </message>
     <message>
         <location filename="../dialogs/debugwindow.cpp" line="+47"/>
-        <location line="+144"/>
+        <location line="+149"/>
         <location line="+66"/>
         <location line="+77"/>
         <source>Error</source>
@@ -693,12 +698,12 @@
         <translation>Неизвестный режим работы устройства fdd</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Disk image file not found</source>
         <translation>Файл образа диска не найден</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+17"/>
         <location line="+40"/>
         <source>FDD device is working in a logical mode, no physical formats are supported</source>
         <translation>Устройство FDD работает в посекторном режиме, загрузка физического образа невозможна</translation>
@@ -1203,13 +1208,13 @@
         <translation type="vanished">Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+857"/>
+        <location filename="../emulator/core.cpp" line="+914"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
     <message>
         <location line="+85"/>
-        <location filename="../emulator/devices/common/page_mapper.cpp" line="+38"/>
+        <location filename="../emulator/devices/common/page_mapper.cpp" line="+47"/>
         <source>Incorrect range for</source>
         <translation>Некорректный диапазон для</translation>
     </message>
@@ -1268,6 +1273,14 @@
         <location line="+97"/>
         <source>No any description file found for this machine</source>
         <translation>Файл описания для данной конфигурации не найден</translation>
+    </message>
+</context>
+<context>
+    <name>Port</name>
+    <message>
+        <location filename="../emulator/core.cpp" line="-330"/>
+        <source>Incorrect access mode</source>
+        <translation>Некорректный режим доступа</translation>
     </message>
 </context>
 <context>
@@ -1346,7 +1359,7 @@
         <translation type="vanished">Ошибка чтения %1</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-428"/>
+        <location filename="../emulator/core.cpp" line="-155"/>
         <source>File not found</source>
         <translation>Файл не найден</translation>
     </message>
@@ -1357,17 +1370,17 @@
     </message>
     <message>
         <location line="+22"/>
-        <location line="+13"/>
+        <location line="+24"/>
         <source>Can&apos;t open ROM image file</source>
         <translation>Ошибка чтения образа ПЗУ</translation>
     </message>
     <message>
-        <location line="-8"/>
+        <location line="-19"/>
         <source>ROM image file is too big</source>
         <translation>Размер образа ПЗУ превышает выделенный объем устройства</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+36"/>
         <source>Incorrect mode set for</source>
         <translation>Некорректно задан режим для</translation>
     </message>
@@ -1565,6 +1578,453 @@
     <message>
         <source>Force Interrupt command with parameters is not supported!</source>
         <translation type="vanished">Команда &apos;Force Interrupt&apos; с параметрами еще не поддерживается!</translation>
+    </message>
+</context>
+<context>
+    <name>errors</name>
+    <message>
+        <location filename="../libs/dsk_tools/src/dsk_tools.cpp" line="+292"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_raw.cpp" line="+28"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_aim.cpp" line="+36"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+27"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_fil.cpp" line="+23"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_mfm.cpp" line="+236"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_imd.cpp" line="+30"/>
+        <location line="+293"/>
+        <source>Cannot open file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+52"/>
+        <location line="+40"/>
+        <source>Invalid file size for DSK format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+62"/>
+        <source>Failed to load AIM file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Invalid file size for NIB format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+33"/>
+        <source>Unknown MFM format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Failed to load MFM file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Invalid filesystem signature</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Cannot open HFE file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Invalid HFE file format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Unknown file format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+246"/>
+        <source>Agat 840 track decode error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Failed to decode Agat 840 track</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Decoded track size mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+73"/>
+        <source>Agat 140 track decode error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Failed to decode Agat 140 track</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/loaders/loader.h" line="+33"/>
+        <source>Not implemented</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/loaders/loader_raw.cpp" line="+9"/>
+        <location line="+26"/>
+        <source>Unknown disk type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <location line="+5"/>
+        <location filename="../libs/dsk_tools/src/images/disk_image.cpp" line="+29"/>
+        <source>Sector translation table has incorrect size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_imd.cpp" line="-211"/>
+        <source>Data exceeds buffer size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/loaders/loader_aim.cpp" line="+20"/>
+        <location line="+1"/>
+        <source>Invalid index mark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <location line="+1"/>
+        <source>Invalid data mark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Unexpected end of data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+16"/>
+        <source>Invalid HFE signature</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Invalid HFE parameters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Unsupported disk type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+49"/>
+        <source>Failed to decode track data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/loaders/loader_imd.cpp" line="-76"/>
+        <location line="+293"/>
+        <source>Incorrect file format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-286"/>
+        <location line="+19"/>
+        <location line="+8"/>
+        <location line="+9"/>
+        <location line="+23"/>
+        <location line="+234"/>
+        <location line="+29"/>
+        <location line="+7"/>
+        <location line="+8"/>
+        <location line="+18"/>
+        <source>File seems to be corrupt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-346"/>
+        <source>Incorrect head index</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Incorrect track index</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Incorrect sector count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Incorrect sector size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Incorrect data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+342"/>
+        <source>Incorrect data or unsupported disk type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/images/disk_image.cpp" line="+10"/>
+        <source>Buffer size mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/writers/writer.cpp" line="+25"/>
+        <source>Cannot create output file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Error writing to file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/writers/writer_hxc_hfe.cpp" line="+72"/>
+        <source>Format not supported for HFE format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>Track substitution not supported for HFE format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/writers/writer_hxc_mfm.cpp" line="+59"/>
+        <source>MFM format not supported for this disk type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+36"/>
+        <source>NIB format not supported for this disk type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>NIC format not supported for this disk type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Unknown MFM writer format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Track substitution not supported for MFM format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/writers/writer_raw.cpp" line="+29"/>
+        <source>Template file size mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Source file size mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_dos33.cpp" line="+33"/>
+        <source>Cannot read VTOC</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>VTOC sector count or size mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+167"/>
+        <source>Cannot read VTOC extension sector (0x32, 0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Cannot read VTOC extension sector (0x72, 0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Incorrect track number for mapping</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+499"/>
+        <location line="+304"/>
+        <source>Incorrect track/sector data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-7"/>
+        <location line="+3"/>
+        <location line="+38"/>
+        <source>Sector is not free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_spriteos.cpp" line="+59"/>
+        <location line="+11"/>
+        <location line="+10"/>
+        <source>Incorrect file entry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Unknown DIR_ENTRY.LEVEL value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>File is smaller than expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+37"/>
+        <source>Unknown CP/M disk definition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>CP/M disk definition: heads is incorrect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>CP/M disk definition: tracks is required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>CP/M disk definition: sectrk is required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>CP/M disk definition: seclen is required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>CP/M disk definition: blocksize is required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>CP/M disk definition: boottrk is incorrect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>CP/M disk definition: maxdir is incorrect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+58"/>
+        <source>Unsupported disk type for CP/M</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+579"/>
+        <source>user number out of range</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_fat.cpp" line="+213"/>
+        <source>Cannot read FAT boot sector</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>FAT: invalid bytes per sector</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>FAT: invalid sectors per cluster</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>FAT: invalid FAT count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>FAT: invalid reserved sector count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>FAT: sector size mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>FAT: zero total sectors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+21"/>
+        <source>FAT32 is not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-11"/>
+        <source>FAT: data region beyond disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/viewers/agat/agat_font_bft.cpp" line="+31"/>
+        <location line="+13"/>
+        <source>File is too small</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>viewer</name>
+    <message>
+        <location filename="../libs/dsk_tools/src/viewers/viewer_binary.h" line="+18"/>
+        <source>Regular Binary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/viewers/viewer_basic_agat.h" line="+17"/>
+        <source>Agat BASIC</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/viewers/viewer_basic_apple.h" line="+16"/>
+        <source>Apple BASIC</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/viewers/viewer_basic_vector.h" line="+16"/>
+        <source>Vector-06C BASIC</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/viewers/viewer_basic_mbasic.h" line="+17"/>
+        <source>CP/M MBASIC</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/viewers/agat/agat_binary.h" line="+16"/>
+        <source>Agat Executable</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
