@@ -3,6 +3,7 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Main window source
 
+#include <QDebug>
 #include <QDir>
 #include <QFontDatabase>
 #include <QEvent>

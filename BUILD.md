@@ -83,7 +83,7 @@ cd репозиторий-приложения\.build
 C:\DEV\venv\Scripts\activate.bat
 mkdir C:\Temp\qt-build
 cd C:\Temp\qt-build
-configure.bat -static -static-runtime -release -opensource -confirm-license -nomake examples -nomake tests -submodules qtbase,qttools,qttranslations -platform win32-msvc -prefix %_ROOT_QT%
+configure.bat -static -static-runtime -release -opensource -confirm-license -nomake examples -nomake tests -submodules qtbase,qttools,qttranslations -platform win32-msvc -prefix %_QT_PREFIX_STATIC%
 cmake --build . --parallel
 cmake --install .
 ```
@@ -98,7 +98,7 @@ cd репозиторий-приложения\.build
 cd C:\Temp
 mkdir qt5.15-build
 cd qt5.15-build
-configure.bat -release -nomake examples -nomake tests -opensource -confirm-license -no-opengl -skip qtlocation -skip qtdeclarative -prefix %_ROOT_LIB%
+configure.bat -release -nomake examples -nomake tests -opensource -confirm-license -no-opengl -skip qtlocation -skip qtdeclarative -prefix %_QT_PREFIX%
 mingw32-make
 mingw32-make install
 ~~~
@@ -117,7 +117,7 @@ cd репозиторий-приложения\.build
 %SystemRoot%\system32\cmd.exe /E:ON /V:ON /k vars-mingw-qt5.6.cmd
 mkdir C:\Temp\qt5.6-build
 cd C:\Tempqt5.6-build
-configure.bat -release -nomake examples -nomake tests -opensource -confirm-license -no-opengl -target xp -no-directwrite -no-compile-examples -skip qtwebengine -skip qtwebview -skip qtandroidextras -skip qt3d -skip qtcanvas3d  -skip qtlocation -skip qtscript -skip qtsensors -skip qtserialbus -skip qtwayland -skip qtdeclarative -prefix %_QT_PATH%
+configure.bat -release -nomake examples -nomake tests -opensource -confirm-license -no-opengl -target xp -no-directwrite -no-compile-examples -skip qtwebengine -skip qtwebview -skip qtandroidextras -skip qt3d -skip qtcanvas3d  -skip qtlocation -skip qtscript -skip qtsensors -skip qtserialbus -skip qtwayland -skip qtdeclarative -prefix %_QT_PREFIX%
 mingw32-make
 mingw32-make install
 ```
@@ -132,7 +132,7 @@ cd .build
 update_translations.bat
 ~~~
 
-* Переменная BUILD_DIR в bat-файле должна указывать на build-директорию, установленную в конфигурации проекта.
+* Build-директория, установленная в конфигурации проекта, передаётся аргументом: `update_translations.bat build\Desktop_Qt_6_11_2_MinGW_64_bit-Debug`. Без аргумента используется значение по умолчанию, заданное в bat-файле.
 * Команду надо выполнять на той же платформе, где происходил препроцессинг CMakeLists.txt.
 * Далее файлы .ts редактируются с помощью Linguist из Qt Creator.
 
@@ -140,10 +140,12 @@ update_translations.bat
 * Обновить версию приложения в CMakeLists.txt, пересканировать проект (Rescan project), чтобы версия прописалась в заголовочные файлы.
 * Закоммитить изменения.
 * Откомпилировать приложение нужной версией Qt.
-    * актуализировать значения переменных в `/build/vars-mingw-*.cmd`, `/build/vars-msvc-*.cmd`. 
-    * Windows XP: `./build/build-win-i386.bat`.
-    * Windows 7: `./build/build-win-7.bat`.
-    * Windows 10+: `./build/build-win-latest.bat`.
+    * актуализировать значения переменных в `.build/vars-mingw-*.cmd`, `.build/vars-msvc-*.cmd`. 
+    * Windows XP: `./.build/build-win-i386.bat`.
+    * Windows 7: `./.build/build-win-7.bat`.
+    * Windows 10+: `./.build/build-win-mingw-latest.bat` или `./.build/build-win-msvc-latest.bat`.
+
+  Каждый скрипт собирает все свои рендереры и упаковывает по zip-архиву на рендерер в `.build/release/`. Аргумент `clean` (например `build-win-msvc-latest.bat clean`) предварительно удаляет build-директории.
 
 ---
 ## macOS

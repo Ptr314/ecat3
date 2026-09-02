@@ -66,7 +66,7 @@ update_env() {
     grep -qxF "$ADD_PATH" "$SHELL_CONFIG" || echo "$ADD_PATH" >> "$SHELL_CONFIG"
     grep -qxF "$ADD_CMAKE" "$SHELL_CONFIG" || echo "$ADD_CMAKE" >> "$SHELL_CONFIG"
 
-    echo "Environment updated — restart your terminal or run:"
+    echo "Environment updated -- restart your terminal or run:"
     echo "   source $SHELL_CONFIG"
 }
 
