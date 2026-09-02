@@ -9,6 +9,7 @@
 
 #include "emulator/core.h"
 #include "emulator/devices/common/speaker.h"
+#include "emulator/devices/common/tape_bk.h"
 
 #define TAPE_STOPPED 0
 #define TAPE_READ    1
@@ -67,6 +68,7 @@ protected:
     unsigned short_counter = 0;
     uint8_t current_byte = 0;
     std::vector<uint8_t> recorded_bytes{};
+    bk_tape::Decoder bk_decoder;
 public:
     std::string files;
 

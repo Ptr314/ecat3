@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -139,4 +140,99 @@ namespace bk_tape
 
         pack(bits, out);
     }
+
+    // Recovers a file from what the machine wrote to the tape. Periods are
+    // measured between rising edges, the same way the monitor does it, so a
+    // synchronisation pulse is one period, the marker four of them, a set bit
+    // two and a clear bit one. Every bit is followed by a separator period.
+    class Decoder
+    {
+    private:
+        std::vector<uint32_t> periods;
+        std::vector<uint8_t> result;
+        size_t decoded_periods = 0;
+
+        // Splits the stream into the records between the markers
+        void decode()
+        {
+            result.clear();
+            decoded_periods = periods.size();
+            if (periods.size() < 256) return;
+
+            // The leader is a long run of identical pulses, so the median of
+            // the first of them is the length of one period.
+            std::vector<uint32_t> head(periods.begin(), periods.begin() + 128);
+            std::sort(head.begin(), head.end());
+            uint32_t unit = head[head.size() / 2];
+            if (unit == 0) return;
+
+            const uint32_t bit_threshold = unit * 3 / 2;
+            const uint32_t marker_threshold = unit * 5 / 2;
+
+            std::vector<std::vector<uint8_t>> records;
+            size_t i = 0;
+
+            while (i < periods.size()) {
+                // Look for a marker
+                while (i < periods.size() && periods[i] <= marker_threshold) i++;
+                if (i >= periods.size()) break;
+                i++;                            // the marker itself
+                i += 2;                         // the set bit that closes it
+
+                std::vector<uint8_t> bytes;
+                uint8_t current = 0;
+                unsigned bit_count = 0;
+
+                while (i + 1 < periods.size()) {
+                    if (periods[i] > marker_threshold) break;   // the next record
+                    if (periods[i] > bit_threshold) current |= (uint8_t)(1 << bit_count);
+                    i += 2;
+                    if (++bit_count == 8) {
+                        bytes.push_back(current);
+                        current = 0;
+                        bit_count = 0;
+                    }
+                }
+                if (!bytes.empty()) records.push_back(bytes);
+            }
+
+            if (records.empty()) return;
+
+            // The first record is the header, the second the data followed by
+            // a checksum. Anything else is handed over as it was read.
+            if (records.size() >= 2 && records[0].size() >= 4) {
+                const std::vector<uint8_t> & header = records[0];
+                const std::vector<uint8_t> & data = records[1];
+                unsigned length = header[2] | (header[3] << 8);
+                if (length > data.size()) length = (unsigned)data.size();
+
+                result.push_back(header[0]); result.push_back(header[1]);
+                result.push_back((uint8_t)(length & 0xFF));
+                result.push_back((uint8_t)((length >> 8) & 0xFF));
+                result.insert(result.end(), data.begin(), data.begin() + length);
+            } else {
+                for (size_t r = 0; r < records.size(); r++)
+                    result.insert(result.end(), records[r].begin(), records[r].end());
+            }
+        }
+
+    public:
+        void reset()
+        {
+            periods.clear();
+            result.clear();
+            decoded_periods = 0;
+        }
+
+        void add_period(uint32_t cycles)
+        {
+            periods.push_back(cycles);
+        }
+
+        const std::vector<uint8_t> * file()
+        {
+            if (decoded_periods != periods.size()) decode();
+            return &result;
+        }
+    };
 }

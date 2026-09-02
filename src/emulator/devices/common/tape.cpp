@@ -71,6 +71,17 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
     if (callback_id == 1) {
         // Input changed
         if (is_recording) {
+            if (m_tape_enc == TapeEnc::BK) {
+                // The БК decoder measures whole periods between rising edges,
+                // the same reference point the monitor uses
+                if ((old_value & 1) == 0 && (new_value & 1) != 0) {
+                    if (has_last_edge)
+                        bk_decoder.add_period((uint32_t)(cycle_counter - last_edge_cycles));
+                    last_edge_cycles = cycle_counter;
+                    has_last_edge = true;
+                }
+                return;
+            }
             if ((old_value & 1) != 0 && (new_value & 1) == 0) {
                 if (has_last_edge) {
                     const uint64_t delta_cycles = cycle_counter - last_edge_cycles;
@@ -149,6 +160,11 @@ void TapeRecorder::store_bit(const unsigned bit)
 void TapeRecorder::set_recording(bool recording)
 {
     is_recording = recording;
+    if (is_recording && m_tape_enc == TapeEnc::BK) {
+        has_last_edge = false;
+        bk_decoder.reset();
+        recorded_bytes.clear();
+    }
     if (is_recording && m_tape_enc == TapeEnc::MSX) {
         has_last_edge = false;
         writer_state = TapeWriterState::Measuring;
@@ -161,11 +177,16 @@ void TapeRecorder::set_recording(bool recording)
 
 unsigned TapeRecorder::get_record_size()
 {
+    if (m_tape_enc == TapeEnc::BK) return bk_decoder.file()->size();
     return recorded_bytes.size();
 }
 
 std::vector<uint8_t> * TapeRecorder::get_record_data()
 {
+    if (m_tape_enc == TapeEnc::BK) {
+        recorded_bytes = *bk_decoder.file();
+        return &recorded_bytes;
+    }
     return &recorded_bytes;
 }
 
