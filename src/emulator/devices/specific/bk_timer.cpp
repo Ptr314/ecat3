@@ -17,9 +17,10 @@ BKTimer::BKTimer(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_out(this, im, 1, "out", MODE_W)
     , m_divider(128)
     , m_ticks(0)
+    , m_prescaler(0)
     , m_preset(0)
     , m_counter(0)
-    , m_control(0)
+    , m_control(BK_TIMER_HIGH_BITS)
 {
     addresable_size = 6;
     can_read = true;
@@ -42,8 +43,9 @@ void BKTimer::reset(MAYBE_UNUSED bool cold)
 {
     m_preset = 0;
     m_counter = 0;
-    m_control = 0;
+    m_control = BK_TIMER_HIGH_BITS;
     m_ticks = 0;
+    m_prescaler = 0;
     i_out.change(0);
 }
 
@@ -57,20 +59,29 @@ void BKTimer::tick()
 
     if ((m_control & BK_TIMER_ENABLE) == 0) return;
 
+    // Bits 5-6 divide the counting rate by 1, 16, 4 or 64
+    static const unsigned int rates[4] = {1, 16, 4, 64};
+    m_prescaler++;
+    if (m_prescaler < rates[(m_control >> BK_TIMER_DIV_SHIFT) & BK_TIMER_DIV_MASK]) return;
+    m_prescaler = 0;
+
     m_counter--;
 
     if (m_counter != 0) return;
 
-    // Passing through zero
+    // In the wraparound mode the counter just keeps going down from 0177777
+    // and passing zero is not signalled at all
+    if ((m_control & BK_TIMER_WRAP) != 0) return;
+
+    // A single pass stops the counting
+    if ((m_control & BK_TIMER_ONESHOT) != 0) m_control &= ~BK_TIMER_ENABLE;
+
+    m_counter = m_preset;
+
     if ((m_control & BK_TIMER_INDICATE) != 0) {
         m_control |= BK_TIMER_FLAG;
         i_out.change(1);
     }
-
-    if ((m_control & BK_TIMER_NO_REPEAT) == 0) m_counter = m_preset;
-
-    // Without the continuous mode the timer stops after a single pass
-    if ((m_control & BK_TIMER_CONTINUOUS) == 0) m_control &= ~BK_TIMER_ENABLE;
 }
 
 void BKTimer::clock(unsigned int counter)
@@ -98,15 +109,15 @@ void BKTimer::set_value_word(unsigned int address, unsigned int value, MAYBE_UNU
         m_preset = (uint16_t)value;
         break;
     case REG_COUNTER:
-        m_counter = (uint16_t)value;
+        // The counter itself is read only
         break;
     default:
         // Writing the control register starts the timer, which loads the
-        // counter from the preset. The flag is status only and the write
-        // clears it.
-        m_control = (uint16_t)(value & 0x1F);
+        // counter from the preset and restarts the rate divider
+        m_control = (uint16_t)(BK_TIMER_HIGH_BITS | (value & 0xFF));
         m_counter = m_preset;
-        i_out.change(0);
+        m_prescaler = 0;
+        if ((m_control & BK_TIMER_FLAG) == 0) i_out.change(0);
         break;
     }
 }

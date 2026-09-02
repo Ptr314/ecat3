@@ -5,7 +5,10 @@
 //
 // The waveform below was measured on the output routine of the БК monitor
 // (0116404 and 0116506) rather than taken from a description. One unit is the
-// half period of a synchronisation pulse, 317 processor cycles at 3 MHz.
+// half period of a short data pulse: 317 processor cycles at 3 MHz on the
+// БК0010, 473 at 4 MHz on the БК0011М. The leading series is emitted by a
+// tighter loop and comes out a few percent shorter, which does not matter
+// because the reader calibrates itself on whatever it receives.
 //
 //   sync pulse   1 unit high, 1 unit low
 //   marker       4 units low, 4 units high

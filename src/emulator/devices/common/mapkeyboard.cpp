@@ -15,6 +15,7 @@ MapKeyboard::MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     , ruslat_bit(1)
     , i_ruslat(this, im, 1, "ruslat", MODE_W)
     , i_ready(this, im, 1, "ready", MODE_W)
+    , i_pressed(this, im, 1, "pressed", MODE_W)
 {
     m_rus_switches[0] = 0;
     m_rus_switches[1] = 0;
@@ -135,8 +136,25 @@ void MapKeyboard::send_key(unsigned int value)
     i_ready.change(1);
 }
 
+// Some machines have a line telling whether any key is held at the moment,
+// separate from the code of the last key pressed. The БК firmware uses it for
+// the auto repeat, so a key that is never seen as held is dropped again right
+// after it has been read.
+void MapKeyboard::update_pressed()
+{
+    i_pressed.change(keys_held.empty()? 0 : 1);
+}
+
 void MapKeyboard::key_down(unsigned int key)
 {
+    bool known = false;
+    for (size_t i = 0; i < keys_held.size(); i++)
+        if (keys_held[i] == key) { known = true; break; }
+    if (!known) {
+        keys_held.push_back(key);
+        update_pressed();
+    }
+
     if (key == EmuKey::Control)
         ctrl_pressed = true;
     else if (key == EmuKey::Shift)
@@ -180,6 +198,13 @@ void MapKeyboard::key_down(unsigned int key)
 
 void MapKeyboard::key_up(unsigned int key)
 {
+    for (size_t i = 0; i < keys_held.size(); i++)
+        if (keys_held[i] == key) {
+            keys_held.erase(keys_held.begin() + i);
+            update_pressed();
+            break;
+        }
+
     if (key == EmuKey::Control)
         ctrl_pressed = false;
     else if (key == EmuKey::Shift)
@@ -189,6 +214,9 @@ void MapKeyboard::key_up(unsigned int key)
 void MapKeyboard::reset(bool cool)
 {
     Keyboard::reset(cool);
+
+    keys_held.clear();
+    update_pressed();
 
     if (code_ruslat != 0)
         if (code_ruslat == EmuKey::CapsLock)

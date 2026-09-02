@@ -337,11 +337,19 @@ protected:
 
     unsigned int value;
     unsigned int default_value;
+
+    // A second bank of the same register, selected by a bit of the value being
+    // written. Disabled while alt_bit is negative.
+    int alt_bit;
+    unsigned int alt_value;
+    unsigned int alt_default;
+
     Interface i_input;
     Interface i_data;
     Interface i_access;
     Interface i_flip;
     Interface i_reset;
+    Interface i_alt;
 
 protected:
     // Whole-register access, bypassing the byte lane selection done by
@@ -508,6 +516,10 @@ private:
 protected:
 
 public:
+    // Set by the last access when no device at all is mapped at that address.
+    // Machines whose bus reports a timeout use it to raise an exception, so a
+    // read-only range answering a write does not count as a missing device.
+    bool no_device = false;
 
     MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual emulator::Result load_config(SystemData *sd) override;
@@ -516,6 +528,7 @@ public:
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     void add_cache_entry(MapperCacheEntry * cache, unsigned int * cache_items, MapperRange * range);
 
+    bool responds(unsigned int address);
     unsigned int read(unsigned int address);
     void write(unsigned int address, unsigned int value);
     unsigned int read_port(unsigned int address);

@@ -8,16 +8,29 @@
 #include "emulator/utils.h"
 #include "bk_display.h"
 
-// The БК0010-01 has a fixed four colour palette. A pixel value of 0 is the
-// background, the rest select one of three fixed colours.
-uint8_t BK_Colors_4[4][3] = {
-    {  0,   0,   0},    // Black
-    {  0,   0, 255},    // Blue
-    {  0, 255,   0},    // Green
-    {255,   0,   0}     // Red
+// A pixel value of 0 is always the background, the rest select one of three
+// colours. БК0010 has the single fixed palette below under number 0, БК0011М
+// switches between all sixteen through the register 0177662.
+uint8_t BK_Palettes[16][4][3] = {
+    {{0,0,0}, {  0,  0,255}, {  0,255,  0}, {255,  0,  0}},     //  0 синий, зеленый, красный
+    {{0,0,0}, {255,255,  0}, {255,  0,255}, {255,  0,  0}},     //  1 желтый, сиреневый, красный
+    {{0,0,0}, {  0,255,255}, {  0,  0,255}, {255,  0,255}},     //  2 голубой, синий, сиреневый
+    {{0,0,0}, {  0,255,  0}, {  0,255,255}, {255,255,  0}},     //  3 зеленый, голубой, желтый
+    {{0,0,0}, {255,  0,255}, {  0,255,255}, {255,255,255}},     //  4 сиреневый, голубой, белый
+    {{0,0,0}, {255,255,255}, {255,255,255}, {255,255,255}},     //  5 белый, белый, белый
+    {{0,0,0}, {192,  0,  0}, {142,  0,  0}, {255,  0,  0}},     //  6 темно-красный, красно-коричневый, красный
+    {{0,0,0}, {192,255,  0}, {142,255,  0}, {255,255,  0}},     //  7 салатовый, светло-зеленый, желтый
+    {{0,0,0}, {192,  0,255}, {142,  0,255}, {255,  0,255}},     //  8 фиолетовый, фиолетово-синий, сиреневый
+    {{0,0,0}, {142,255,  0}, {142,  0,255}, {142,  0,  0}},     //  9 светло-зеленый, фиолетово-синий, красно-коричневый
+    {{0,0,0}, {192,255,  0}, {192,  0,255}, {192,  0,  0}},     // 10 салатовый, фиолетовый, темно-красный
+    {{0,0,0}, {  0,255,255}, {255,255,  0}, {255,  0,  0}},     // 11 голубой, желтый, красный
+    {{0,0,0}, {255,  0,  0}, {  0,255,  0}, {  0,255,255}},     // 12 красный, зеленый, голубой
+    {{0,0,0}, {  0,255,255}, {255,255,  0}, {255,255,255}},     // 13 голубой, желтый, белый
+    {{0,0,0}, {255,255,  0}, {  0,255,  0}, {255,255,255}},     // 14 желтый, зеленый, белый
+    {{0,0,0}, {  0,255,255}, {  0,255,  0}, {255,255,255}}      // 15 голубой, зеленый, белый
 };
 
-uint32_t BK_RGBA4[4];
+uint32_t BK_RGBA4[16][4];
 
 // Monochrome output is the same memory read as one bit per pixel
 uint8_t BK_Mono_2[2][3] = {
@@ -34,6 +47,9 @@ BKDisplay::BKDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_offset(0)
     , m_line_bytes(64)
     , m_lines(256)
+    , m_control(0)
+    , m_palette(0)
+    , m_page(0)
     , m_color(true)
     , m_mode_pending(false)
     , m_pending_color(true)
@@ -49,12 +65,22 @@ emulator::Result BKDisplay::load_config(SystemData *sd)
     emulator::Result res = GenericDisplay::load_config(sd);
     if (!res) return res;
 
-    vram = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("vram").value));
+    vram[0] = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("vram").value));
+
+    // The second video page exists on БК0011М only
+    std::string vram2_name = read_confg_value(cd, "vram2", false, std::string(""));
+    if (!vram2_name.empty())
+        vram[1] = dynamic_cast<RAM*>(im->dm->get_device_by_name(vram2_name));
 
     // The scroll register is optional; without it the screen never scrolls
     std::string scroll_name = read_confg_value(cd, "scroll", false, std::string(""));
     if (!scroll_name.empty())
         port_scroll = dynamic_cast<Port*>(im->dm->get_device_by_name(scroll_name));
+
+    // The palette and video page register, БК0011М only
+    std::string control_name = read_confg_value(cd, "control", false, std::string(""));
+    if (!control_name.empty())
+        port_control = dynamic_cast<Port*>(im->dm->get_device_by_name(control_name));
 
     m_scroll_base = read_confg_value(cd, "scroll_base", false, (unsigned int)0330);
     m_line_bytes = read_confg_value(cd, "line_bytes", false, (unsigned int)64);
@@ -68,13 +94,18 @@ emulator::Result BKDisplay::load_config(SystemData *sd)
     sy = m_lines;
     sx = m_color? (m_line_bytes * 4) : (m_line_bytes * 8);
 
-    vram->set_memory_callback(this, 1, MODE_W);
+    // Each video page reports writes under its own id, so a write to the page
+    // that is not on the screen does not cost a redraw
+    vram[0]->set_memory_callback(this, 1, MODE_W);
+    if (vram[1] != nullptr) vram[1]->set_memory_callback(this, 2, MODE_W);
 
     return emulator::Result::ok();
 }
 
-void BKDisplay::memory_callback(MAYBE_UNUSED unsigned int callback_id, MAYBE_UNUSED unsigned int address)
+void BKDisplay::memory_callback(unsigned int callback_id, MAYBE_UNUSED unsigned int address)
 {
+    if (callback_id - 1 != m_page) return;
+
     screen_valid = false;
     was_updated = true;
 }
@@ -128,25 +159,39 @@ void BKDisplay::set_device_option(unsigned option_id, unsigned value_id)
 
 void BKDisplay::clock(MAYBE_UNUSED unsigned int counter)
 {
-    if (port_scroll == nullptr) return;
+    if (port_scroll != nullptr) {
+        unsigned scroll = port_scroll->get_direct(0);
+        if (scroll != m_scroll) {
+            m_scroll = scroll;
+            // Only the low byte of the register matters: it names the video line
+            // shown at the top of the screen, counted from the base value. The
+            // firmware keeps adding to the register without masking it, so the
+            // upper bits are just an unused carry and the subtraction below has
+            // to come before the wrap.
+            m_offset = (scroll - m_scroll_base) % m_lines;
+            screen_valid = false;
+            was_updated = true;
+        }
+    }
 
-    unsigned scroll = port_scroll->get_direct(0);
-    if (scroll == m_scroll) return;
-
-    m_scroll = scroll;
-    // Only the low byte of the register matters: it names the video line shown
-    // at the top of the screen, counted from the base value. The firmware keeps
-    // adding to the register without masking it, so the upper bits are just an
-    // unused carry and the subtraction below has to come before the wrap.
-    m_offset = (scroll - m_scroll_base) % m_lines;
-    screen_valid = false;
-    was_updated = true;
+    if (port_control != nullptr) {
+        unsigned control = port_control->get_direct(0);
+        if (control != m_control) {
+            m_control = control;
+            // Bits 8-11 hold the palette number, bit 15 picks the video page
+            m_palette = (control >> 8) & 0x0F;
+            m_page = (vram[1] != nullptr)? ((control >> 15) & 1) : 0;
+            screen_valid = false;
+            was_updated = true;
+        }
+    }
 }
 
 void BKDisplay::set_renderer(VideoRenderer &vr)
 {
     GenericDisplay::set_renderer(vr);
-    vr.FillRGB(BK_Colors_4, BK_RGBA4, 4);
+    for (unsigned i = 0; i < 16; i++)
+        vr.FillRGB(BK_Palettes[i], BK_RGBA4[i], 4);
     vr.FillRGB(BK_Mono_2, BK_RGBA2, 2);
 }
 
@@ -161,38 +206,45 @@ void BKDisplay::render_all(const bool force_render)
     const unsigned width = color? (m_line_bytes * 4) : (m_line_bytes * 8);
     if ((int)(width * 4) > line_bytes) return;
 
+    // The palette and the page can be switched from the emulation thread at any
+    // moment, so a frame is drawn entirely from one snapshot of them
+    const unsigned palette = m_palette;
+    RAM * vmem = vram[m_page];
+    if (vmem == nullptr) return;
+
     for (unsigned line = 0; line < m_lines; line++) {
-        if (color) render_line_color(line);
-        else render_line_mono(line);
+        if (color) render_line_color(line, vmem, palette);
+        else render_line_mono(line, vmem);
     }
 
     screen_valid = true;
     was_updated = true;
 }
 
-void BKDisplay::render_line_mono(const unsigned line) const
+void BKDisplay::render_line_mono(const unsigned line, RAM * vmem) const
 {
     const unsigned src = ((line + m_offset) % m_lines) * m_line_bytes;
     uint8_t * base = static_cast<uint8_t*>(render_pixels) + line * line_bytes;
 
     for (unsigned i = 0; i < m_line_bytes; i++) {
-        const uint8_t b = vram->get_direct(src + i);
+        const uint8_t b = vmem->get_direct(src + i);
         // Bit 0 is the leftmost dot
         for (unsigned k = 0; k < 8; k++)
             *reinterpret_cast<uint32_t*>(base + (i * 8 + k) * 4) = BK_RGBA2[(b >> k) & 1];
     }
 }
 
-void BKDisplay::render_line_color(const unsigned line) const
+void BKDisplay::render_line_color(const unsigned line, RAM * vmem, const unsigned palette) const
 {
     const unsigned src = ((line + m_offset) % m_lines) * m_line_bytes;
     uint8_t * base = static_cast<uint8_t*>(render_pixels) + line * line_bytes;
+    const uint32_t * colors = BK_RGBA4[palette];
 
     for (unsigned i = 0; i < m_line_bytes; i++) {
-        const uint8_t b = vram->get_direct(src + i);
+        const uint8_t b = vmem->get_direct(src + i);
         // The lowest pair of bits is the leftmost dot
         for (unsigned k = 0; k < 4; k++)
-            *reinterpret_cast<uint32_t*>(base + (i * 4 + k) * 4) = BK_RGBA4[(b >> (k * 2)) & 3];
+            *reinterpret_cast<uint32_t*>(base + (i * 4 + k) * 4) = colors[(b >> (k * 2)) & 3];
     }
 }
 

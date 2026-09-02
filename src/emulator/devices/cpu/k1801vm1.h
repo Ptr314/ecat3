@@ -53,6 +53,10 @@ public:
     unsigned int read_mem_word(unsigned int address);
     void write_mem_word(unsigned int address, unsigned int data);
 
+    // True when nothing answered the last access. On the МПИ bus that is a
+    // timeout, and the processor turns it into a trap through vector 4.
+    bool bus_timeout();
+
     virtual std::vector<std::pair<std::string, std::string>> get_registers() override;
     virtual std::vector<std::pair<std::string, std::string>> get_flags() override;
     virtual unsigned int get_pc() override;

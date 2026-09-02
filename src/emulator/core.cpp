@@ -834,11 +834,15 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
       AddressableDevice(im, cd)
     , default_value(0)
     , mask(_FFFF)
+    , alt_bit(-1)
+    , alt_value(0)
+    , alt_default(0)
     , i_input(this, im, 8, "data", MODE_R, PORT_INPUT)
     , i_data(this, im, 8, "value", MODE_W)
     , i_access(this, im, 1, "access", MODE_W)
     , i_flip(this, im, 1, "flip", MODE_R, PORT_FLIP)
     , i_reset(this, im, 1, "reset", MODE_R, PORT_RESET)
+    , i_alt(this, im, 8, "alt", MODE_W)
 
 {
     try {
@@ -849,6 +853,7 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
 
     i_input.set_size(size);
     i_data.set_size(size);
+    i_alt.set_size(size);
 
     try {
         default_value = parse_numeric_value(this->cd->get_parameter("default").value);
@@ -875,7 +880,22 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
         has_constant_return = false;
     }
 
+    // Some registers are two registers behind one address, and one bit of the
+    // written value tells them apart. Reading always returns the main bank.
+    try {
+        alt_bit = (int)parse_numeric_value(cd->get_parameter("alt_bit").value);
+    } catch (std::exception &e) {
+        alt_bit = -1;
+    }
+
+    try {
+        alt_default = parse_numeric_value(cd->get_parameter("alt_default").value);
+    } catch (std::exception &e) {
+        alt_default = 0;
+    }
+
     value = default_value;
+    alt_value = alt_default;
 }
 
 void Port::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned int new_value, unsigned int old_value)
@@ -915,8 +935,13 @@ void Port::write_register(unsigned int new_value)
     // logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
 #endif
     i_access.change(0);
-    this->value = (new_value & mask) | (this->value & ~mask);
-    i_data.change(this->value);
+    if (alt_bit >= 0 && ((new_value >> alt_bit) & 1) != 0) {
+        alt_value = (new_value & mask) | (alt_value & ~mask);
+        i_alt.change(alt_value);
+    } else {
+        this->value = (new_value & mask) | (this->value & ~mask);
+        i_data.change(this->value);
+    }
     i_access.change(1);
 }
 
@@ -954,6 +979,11 @@ void Port::set_value_word(MAYBE_UNUSED unsigned int address, unsigned int value,
 
 void Port::reset(MAYBE_UNUSED bool cold)
 {
+    if (alt_bit >= 0)
+    {
+        alt_value = alt_default;
+        i_alt.change(alt_value);
+    }
     write_register(default_value);
 }
 
@@ -1376,6 +1406,7 @@ unsigned int MemoryMapper::read(unsigned int address)
     }
 
     unsigned int address_on_device, range_index;
+    this->no_device = false;
     AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
     if (d != nullptr)
     {
@@ -1383,8 +1414,17 @@ unsigned int MemoryMapper::read(unsigned int address)
         //if (mr->cache) this->add_cache_entry(); //this->ranges[range_index]
         return d->get_value(address_on_device);
 
-    } else
+    } else {
+        this->no_device = !this->responds(address);
         return _FFFF;
+    }
+}
+
+// Is anything mapped at this address at all, in either direction
+bool MemoryMapper::responds(unsigned int address)
+{
+    unsigned int address_on_device, range_index;
+    return this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_RW, &address_on_device, &range_index) != nullptr;
 }
 
 void MemoryMapper::write(unsigned int address, unsigned int value)
@@ -1397,13 +1437,15 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
 #endif
 
     unsigned int address_on_device, range_index;
+    this->no_device = false;
     AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index);
     if (d != nullptr)
     {
         //TODO: Cache
         //if (mr->cache) this->add_cache_entry(); //this->ranges[range_index]
         d->set_value(address_on_device, value);
-    }
+    } else
+        this->no_device = !this->responds(address);
 }
 
 unsigned int MemoryMapper::read_word(unsigned int address)
@@ -1416,19 +1458,25 @@ unsigned int MemoryMapper::read_word(unsigned int address)
     }
 
     unsigned int address_on_device, range_index;
+    this->no_device = false;
     AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
     if (d != nullptr)
         return d->get_value_word(address_on_device);
-    else
+    else {
+        this->no_device = !this->responds(address);
         return _FFFF;
+    }
 }
 
 void MemoryMapper::write_word(unsigned int address, unsigned int value)
 {
     unsigned int address_on_device, range_index;
+    this->no_device = false;
     AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index);
     if (d != nullptr)
         d->set_value_word(address_on_device, value);
+    else
+        this->no_device = !this->responds(address);
 }
 
 unsigned int MemoryMapper::read_port(unsigned int address)

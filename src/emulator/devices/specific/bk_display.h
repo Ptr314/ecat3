@@ -14,22 +14,26 @@
 class BKDisplay: public GenericDisplay
 {
 private:
-    RAM * vram{};
+    RAM * vram[2]{};
     Port * port_scroll{};
+    Port * port_control{};
 
     unsigned m_scroll_base;         // scroll register value that means "not scrolled"
     unsigned m_scroll;              // last seen scroll register value
     unsigned m_offset;              // first video line shown at the top
     unsigned m_line_bytes;          // bytes of video memory per screen line
     unsigned m_lines;               // screen lines
+    unsigned m_control;             // last seen value of the palette/page register
+    unsigned m_palette;             // palette number, 0 on machines without the register
+    unsigned m_page;                // video RAM shown, 0 on machines with a single one
     bool m_color;
 
     // A mode change requested from the interface thread, applied by the render one
     volatile bool m_mode_pending = false;
     bool m_pending_color = true;
 
-    void render_line_mono(unsigned line) const;
-    void render_line_color(unsigned line) const;
+    void render_line_mono(unsigned line, RAM * src) const;
+    void render_line_color(unsigned line, RAM * src, unsigned palette) const;
 
 protected:
     void render_all(bool force_render) override;

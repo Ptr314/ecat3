@@ -19,24 +19,33 @@ K1801VM1Core::K1801VM1Core(k1801vm1 * emulator_device, int family_type):
     this->emulator_device = emulator_device;
 }
 
+// An address nobody answers ends the cycle with a timeout on the bus, which
+// aborts the current instruction and traps through vector 4. The firmware of
+// the БК relies on it to find out which ROM blocks are actually installed.
 uint16_t K1801VM1Core::read_word(uint16_t address)
 {
-    return (uint16_t)emulator_device->read_mem_word(address);
+    uint16_t v = (uint16_t)emulator_device->read_mem_word(address);
+    if (emulator_device->bus_timeout()) m_abort = true;
+    return v;
 }
 
 void K1801VM1Core::write_word(uint16_t address, uint16_t value)
 {
     emulator_device->write_mem_word(address, value);
+    if (emulator_device->bus_timeout()) m_abort = true;
 }
 
 uint8_t K1801VM1Core::read_byte(uint16_t address)
 {
-    return (uint8_t)emulator_device->read_mem(address);
+    uint8_t v = (uint8_t)emulator_device->read_mem(address);
+    if (emulator_device->bus_timeout()) m_abort = true;
+    return v;
 }
 
 void K1801VM1Core::write_byte(uint16_t address, uint8_t value)
 {
     emulator_device->write_mem(address, value);
+    if (emulator_device->bus_timeout()) m_abort = true;
 }
 
 // ---------------------------  Emulator device --------------------------------
@@ -99,6 +108,11 @@ unsigned int k1801vm1::read_mem_word(unsigned int address)
 void k1801vm1::write_mem_word(unsigned int address, unsigned int data)
 {
     mm->write_word(address, data & 0xFFFF);
+}
+
+bool k1801vm1::bus_timeout()
+{
+    return mm->no_device;
 }
 
 std::vector<std::pair<std::string, std::string>> k1801vm1::get_registers()

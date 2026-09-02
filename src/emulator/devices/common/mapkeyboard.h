@@ -21,6 +21,11 @@ class MapKeyboard: public Keyboard
 private:
     Interface i_ruslat;
     Interface i_ready;
+    Interface i_pressed;
+
+    // Keys currently held down, to drive i_pressed
+    std::vector<unsigned int> keys_held;
+    void update_pressed();
 
 protected:
     bool shift_pressed;
