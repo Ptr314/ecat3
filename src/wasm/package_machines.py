@@ -6,11 +6,22 @@ Each bundle is a simple binary archive: for each file, a null-terminated
 relative path, 4-byte LE size, then raw content. An empty filename marks
 the end of the archive.
 
-Generates:
+Generates, inside <output_dir>:
   - machines.json: manifest for the JS frontend
-  - <machine-id>.bundle: per-machine asset archive
-  - data.bundle: shared data files (charmaps, keyboard maps from deploy/data/)
+  - bundles/<machine-id>.bundle: per-machine asset archive
+  - bundles/data.bundle: shared data files (charmaps, keyboard maps from
+    deploy/data/)
+
+The bundles sit in their own subdirectory to keep the deployment package
+readable: everything the browser loads first (page, module, manifest) stays
+at the top level, and the couple of dozen machine archives do not bury it.
+The manifest carries the subdirectory in the URLs, so the page fetches them
+without knowing the layout.
 """
+
+# Subdirectory of the output directory that the .bundle files go into.
+# Referenced from machines.json, so changing it needs no change on the page.
+BUNDLES_DIR = "bundles"
 
 import os
 import re
@@ -114,7 +125,8 @@ def main():
     data_dir = os.path.join(deploy_dir, "data")
     software_dir = os.path.join(deploy_dir, "software")
 
-    os.makedirs(output_dir, exist_ok=True)
+    bundles_dir = os.path.join(output_dir, BUNDLES_DIR)
+    os.makedirs(bundles_dir, exist_ok=True)
 
     # Package shared data files
     data_files = {}
@@ -125,7 +137,7 @@ def main():
                 data_files[f"data/{f}"] = fpath
 
     if data_files:
-        data_bundle = os.path.join(output_dir, "data.bundle")
+        data_bundle = os.path.join(bundles_dir, "data.bundle")
         create_bundle(data_files, data_bundle)
         print(f"Created {data_bundle} ({len(data_files)} files)")
 
@@ -183,7 +195,7 @@ def main():
 
         # Create bundle
         bundle_name = f"{machine_id}.bundle"
-        bundle_path = os.path.join(output_dir, bundle_name)
+        bundle_path = os.path.join(bundles_dir, bundle_name)
         create_bundle(bundle_files, bundle_path)
 
         bundle_size = os.path.getsize(bundle_path)
@@ -199,8 +211,8 @@ def main():
             "name": display_name,
             "type": meta["type"],
             "cfg_path": cfg_vfs_path,
-            "bundle_url": bundle_name,
-            "data_bundle_url": "data.bundle" if meta["charmap"] else None,
+            "bundle_url": f"{BUNDLES_DIR}/{bundle_name}",
+            "data_bundle_url": f"{BUNDLES_DIR}/data.bundle" if meta["charmap"] else None,
         })
 
     # Write manifest

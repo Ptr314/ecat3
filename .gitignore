@@ -6,11 +6,9 @@ docs/
 deploy/USers*
 eCat3.pro.user*
 CMakeLists.txt.user*
-.build/releases/
 *.log
 ~$*
 cmake-*/
 .qtcreator/
 CLAUDE.md
 .claude/
-deploy-wasm/
