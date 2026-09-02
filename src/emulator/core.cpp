@@ -1506,7 +1506,19 @@ void GenericDisplay::set_renderer(VideoRenderer & vr)
 
 void GenericDisplay::validate(bool force_render)
 {
-    if (!screen_valid || force_render) render_all(force_render);
+    // Rendering has to be locked against the resize done by the render thread,
+    // otherwise a repaint arriving from the interface thread keeps drawing into
+    // a surface that has just been deleted.
+    lock_surface();
+
+    // A device may change its resolution at any moment, and the surface only
+    // follows on the next frame. Until it does, the buffer is still the old,
+    // possibly narrower one, so drawing would run past its end.
+    if (m_renderer_valid && render_pixels != nullptr && (int)(sx * 4) <= line_bytes) {
+        if (!screen_valid || force_render) render_all(force_render);
+    }
+
+    unlock_surface();
 }
 
 void GenericDisplay::reset(bool cold)

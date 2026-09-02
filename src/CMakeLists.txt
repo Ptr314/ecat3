@@ -306,6 +306,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_RESOURCES}
     )
 
+    # Creates the update_translations and release_translations targets. lupdate
+    # is run over the sources of the target, so the build directories sitting
+    # inside the source tree are not scanned.
     qt_add_translations(${PROJECT_NAME} TS_FILES
         ${TS_FILES}
     )
@@ -332,8 +335,14 @@ else()
     if(UPDATE_TRANSLATIONS)
         find_program(LUPDATE_EXECUTABLE lupdate)
         if(LUPDATE_EXECUTABLE)
+            # lupdate is given the project sources instead of the source tree:
+            # scanning the tree would also walk the build directories that live
+            # inside it and fill the .ts files with generated code. This is what
+            # qt_add_translations does for Qt6.
+            set(LUPDATE_SOURCES ${PROJECT_SOURCES})
+            list(FILTER LUPDATE_SOURCES EXCLUDE REGEX [[\.(md|txt|qrc|png|ico|rc)$]])
             add_custom_target(update_translations
-                COMMAND ${LUPDATE_EXECUTABLE} ${CMAKE_SOURCE_DIR} -ts ${TS_FILES}
+                COMMAND ${LUPDATE_EXECUTABLE} ${LUPDATE_SOURCES} -ts ${TS_FILES}
                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
                 COMMENT "Updating translation files..."
             )

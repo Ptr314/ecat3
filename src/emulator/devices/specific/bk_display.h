@@ -24,6 +24,10 @@ private:
     unsigned m_lines;               // screen lines
     bool m_color;
 
+    // A mode change requested from the interface thread, applied by the render one
+    volatile bool m_mode_pending = false;
+    bool m_pending_color = true;
+
     void render_line_mono(unsigned line) const;
     void render_line_color(unsigned line) const;
 

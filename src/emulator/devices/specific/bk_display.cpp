@@ -35,6 +35,8 @@ BKDisplay::BKDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_line_bytes(64)
     , m_lines(256)
     , m_color(true)
+    , m_mode_pending(false)
+    , m_pending_color(true)
 {
     // Video memory holds 256 lines of 64 bytes. Read as one bit per pixel that
     // is 512 dots across, read as two bits per pixel it is 256.
@@ -79,6 +81,24 @@ void BKDisplay::memory_callback(MAYBE_UNUSED unsigned int callback_id, MAYBE_UNU
 
 void BKDisplay::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 {
+    // The switch is applied here because the render thread asks for the size
+    // before every frame. Changing the mode straight from the interface thread
+    // could land in the middle of a frame, leaving the width and the buffer
+    // describing different resolutions.
+    if (m_mode_pending) {
+        // Under the surface lock, so the switch cannot land inside a frame
+        // that another thread is drawing
+        lock_surface();
+        m_mode_pending = false;
+        if (m_pending_color != m_color) {
+            m_color = m_pending_color;
+            this->sx = m_color? (m_line_bytes * 4) : (m_line_bytes * 8);
+            screen_valid = false;
+            was_updated = true;
+        }
+        unlock_surface();
+    }
+
     *sx = this->sx;
     *sy = this->sy;
 }
@@ -100,14 +120,10 @@ void BKDisplay::set_device_option(unsigned option_id, unsigned value_id)
 {
     if (option_id != BK_OPTION_COLORS) return;
 
-    bool color = (value_id == BK_COLOR_ON);
-    if (color == m_color) return;
-
-    m_color = color;
-    // The render thread notices the new width and resizes the surface itself
-    sx = m_color? (m_line_bytes * 4) : (m_line_bytes * 8);
-    screen_valid = false;
-    was_updated = true;
+    // Called from the interface thread, so only the request is recorded here;
+    // get_screen_constraints() applies it on the render thread.
+    m_pending_color = (value_id == BK_COLOR_ON);
+    m_mode_pending = true;
 }
 
 void BKDisplay::clock(MAYBE_UNUSED unsigned int counter)
@@ -138,8 +154,15 @@ void BKDisplay::render_all(const bool force_render)
 {
     if (screen_valid && !force_render) return;
 
+    // The mode is sampled once, so a switch arriving in the middle of a frame
+    // cannot draw half of it at the other resolution, and the width is checked
+    // against the surface that is actually there.
+    const bool color = m_color;
+    const unsigned width = color? (m_line_bytes * 4) : (m_line_bytes * 8);
+    if ((int)(width * 4) > line_bytes) return;
+
     for (unsigned line = 0; line < m_lines; line++) {
-        if (m_color) render_line_color(line);
+        if (color) render_line_color(line);
         else render_line_mono(line);
     }
 

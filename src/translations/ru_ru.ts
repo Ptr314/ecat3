@@ -107,7 +107,7 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+996"/>
+        <location filename="../emulator/core.cpp" line="+1058"/>
         <source>No CPU clock value found</source>
         <translation>Не задана тактовая частота процессора</translation>
     </message>
@@ -123,7 +123,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location line="-562"/>
+        <location line="-623"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -279,7 +279,7 @@
         <translation>Установить значение</translation>
     </message>
     <message>
-        <location filename="../dialogs/debugwindow.cpp" line="+47"/>
+        <location filename="../dialogs/debugwindow.cpp" line="+54"/>
         <location line="+144"/>
         <location line="+66"/>
         <location line="+77"/>
@@ -320,6 +320,7 @@
         <location filename="../emulator/devices/specific/agat_7_display.cpp" line="+79"/>
         <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+72"/>
         <location line="+10"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="+110"/>
         <source>Output type</source>
         <translation>Тип видеовыхода</translation>
     </message>
@@ -361,8 +362,14 @@
         <translation>Прототип</translation>
     </message>
     <message>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="+2"/>
+        <source>Color</source>
+        <translation>Цветной</translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>Monochrome</source>
-        <translation type="vanished">Монохромный</translation>
+        <translation>Монохромный</translation>
     </message>
 </context>
 <context>
@@ -484,6 +491,7 @@
     </message>
     <message>
         <location line="+22"/>
+        <location line="+354"/>
         <source>Unable to find a RAM page to store data</source>
         <translation>Не получилось найти страницу памяти для записи данных</translation>
     </message>
@@ -492,7 +500,7 @@
         <translation type="vanished">Ошибка чтения %1</translation>
     </message>
     <message>
-        <location line="+55"/>
+        <location line="-299"/>
         <source>File is smaller than expected!</source>
         <translation>Размер файла меньше ожидаемого!</translation>
     </message>
@@ -520,11 +528,13 @@
         <location line="+75"/>
         <location line="+7"/>
         <location line="+76"/>
+        <location line="+124"/>
+        <location line="+7"/>
         <source>Error reading</source>
         <translation>Ошибка чтения</translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="-186"/>
         <source>Error reading HEX file</source>
         <translation>Ошибка чтения HEX-файла</translation>
     </message>
@@ -547,7 +557,7 @@
         <translation>Не удалось загрузить файл: все ram-диски уже заполнены!</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+91"/>
         <source>Unknown file type</source>
         <translation>Неизвестный тип файла</translation>
     </message>
@@ -596,7 +606,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+117"/>
+        <location filename="../emulator/emulator.cpp" line="+120"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -693,12 +703,12 @@
         <translation>Неизвестный режим работы устройства fdd</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Disk image file not found</source>
         <translation>Файл образа диска не найден</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+17"/>
         <location line="+40"/>
         <source>FDD device is working in a logical mode, no physical formats are supported</source>
         <translation>Устройство FDD работает в посекторном режиме, загрузка физического образа невозможна</translation>
@@ -993,7 +1003,7 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+318"/>
+        <location filename="../mainwindow.cpp" line="+321"/>
         <location line="+504"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
@@ -1203,7 +1213,7 @@
         <translation type="vanished">Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+857"/>
+        <location filename="../emulator/core.cpp" line="+918"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
@@ -1346,7 +1356,7 @@
         <translation type="vanished">Ошибка чтения %1</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-428"/>
+        <location filename="../emulator/core.cpp" line="-478"/>
         <source>File not found</source>
         <translation>Файл не найден</translation>
     </message>
@@ -1445,7 +1455,7 @@
 <context>
     <name>TapeRecorder</name>
     <message>
-        <location filename="../emulator/devices/common/tape.cpp" line="+52"/>
+        <location filename="../emulator/devices/common/tape.cpp" line="+55"/>
         <source>Incorrect encoding</source>
         <translation>Некорректно задан способ кодирования данных для магнитофона</translation>
     </message>
@@ -1458,7 +1468,7 @@
         <translation type="vanished">Некорректно задан способ кодирования данных для магнитофона %1</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+278"/>
         <source>Unknown tape format!</source>
         <translation>Неизвестный формат файла записи!</translation>
     </message>
@@ -1517,7 +1527,7 @@
         <translation>Загрузить файл</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+22"/>
         <location line="+7"/>
         <location line="+113"/>
         <source>Error</source>

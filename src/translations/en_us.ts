@@ -59,7 +59,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+996"/>
+        <location filename="../emulator/core.cpp" line="+1058"/>
         <source>No CPU clock value found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -67,7 +67,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location line="-562"/>
+        <location line="-623"/>
         <source>Incorrect interface definition for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -187,7 +187,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/debugwindow.cpp" line="+47"/>
+        <location filename="../dialogs/debugwindow.cpp" line="+54"/>
         <location line="+144"/>
         <location line="+66"/>
         <location line="+77"/>
@@ -216,6 +216,7 @@
         <location filename="../emulator/devices/specific/agat_7_display.cpp" line="+79"/>
         <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+72"/>
         <location line="+10"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="+110"/>
         <source>Output type</source>
         <translation type="unfinished"></translation>
     </message>
@@ -254,6 +255,16 @@
     <message>
         <location line="+1"/>
         <source>Experimental</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="+2"/>
+        <source>Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Monochrome</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -352,11 +363,12 @@
     </message>
     <message>
         <location line="+22"/>
+        <location line="+354"/>
         <source>Unable to find a RAM page to store data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+55"/>
+        <location line="-299"/>
         <source>File is smaller than expected!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -376,11 +388,13 @@
         <location line="+75"/>
         <location line="+7"/>
         <location line="+76"/>
+        <location line="+124"/>
+        <location line="+7"/>
         <source>Error reading</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="-186"/>
         <source>Error reading HEX file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -403,12 +417,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+91"/>
         <source>Unknown file type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+117"/>
+        <location filename="../emulator/emulator.cpp" line="+120"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -451,7 +465,7 @@
 <context>
     <name>FDD</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+92"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+97"/>
         <location line="+40"/>
         <source>FDD device is working in a logical mode, no physical formats are supported</source>
         <translation type="unfinished"></translation>
@@ -482,7 +496,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-390"/>
+        <location line="-395"/>
         <source>Incorrect fdd parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -492,12 +506,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Disk image file not found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+51"/>
         <location line="+36"/>
         <location line="+37"/>
         <source>Error opening file</source>
@@ -669,7 +683,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+293"/>
+        <location filename="../mainwindow.cpp" line="+296"/>
         <location line="+415"/>
         <location line="+47"/>
         <location line="+57"/>
@@ -851,7 +865,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+857"/>
+        <location filename="../emulator/core.cpp" line="+918"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -929,7 +943,7 @@
 <context>
     <name>ROM</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-428"/>
+        <location filename="../emulator/core.cpp" line="-478"/>
         <source>File not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1000,12 +1014,12 @@
 <context>
     <name>TapeRecorder</name>
     <message>
-        <location filename="../emulator/devices/common/tape.cpp" line="+52"/>
+        <location filename="../emulator/devices/common/tape.cpp" line="+55"/>
         <source>Incorrect encoding</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+278"/>
         <source>Unknown tape format!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1064,7 +1078,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+22"/>
         <location line="+7"/>
         <location line="+113"/>
         <source>Error</source>
