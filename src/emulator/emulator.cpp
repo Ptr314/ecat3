@@ -46,6 +46,7 @@
 #include "emulator/devices/common/page_mapper.h"
 #include "emulator/devices/common/generator.h"
 #include "emulator/devices/cpu/6502.h"
+#include "emulator/devices/cpu/k1801vm1.h"
 #include "emulator/devices/specific/agat_fdc140.h"
 #include "emulator/devices/specific/agat_fdc840.h"
 #include "emulator/devices/specific/agat_7_display.h"
@@ -53,6 +54,7 @@
 #include "emulator/devices/common/mapkeyboard.h"
 #include "emulator/devices/common/ram_address.h"
 #include "emulator/devices/specific/irisha_display.h"
+#include "emulator/devices/specific/bk_display.h"
 #include "devices/common/gmd70.h"
 #include "emulator/devices/common/ram_address.h"
 #include "emulator/devices/specific/agat_9_mapper.h"
@@ -680,6 +682,8 @@ void Emulator::register_devices()
     dm->register_device("generator", create_generator);
     dm->register_device("6502", create_mos6502);
     dm->register_device("65c02", create_wdc65c02);
+    dm->register_device("1801vm1", create_k1801vm1);
+    dm->register_device("1801vm2", create_k1801vm2);
     dm->register_device("agat-fdc140", create_agat_fdc140);
     dm->register_device("agat-fdc840", create_agat_fdc840);
     dm->register_device("agat-7-display", create_agat_7_display);
@@ -687,6 +691,7 @@ void Emulator::register_devices()
     dm->register_device("map-keyboard", create_mapkeyboard);
     dm->register_device("ram-address", create_ram_address);
     dm->register_device("irisha-display", create_irisha_display);
+    dm->register_device("bk-display", create_bk_display);
     dm->register_device("ram-address", create_ram_address);
     dm->register_device("agat-9-mapper", create_agat_9_mapper);
 }

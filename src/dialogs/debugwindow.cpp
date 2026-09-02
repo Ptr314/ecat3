@@ -10,6 +10,7 @@
 #include "debugwindow.h"
 #include "emulator/utils.h"
 #include "ui_debugwindow.h"
+#include "emulator/disasm_pdp11.h"
 
 DebugWindow::DebugWindow(QWidget *parent) :
     GenericDbgWnd(parent),
@@ -41,7 +42,13 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     if (d->type == "65c02")
         file_name = QString::fromStdString(e->data_path + "65c02.dis");
 
-    disasm = new DisAsm();
+    // The PDP-11 family decodes bit fields instead of whole opcode bytes and
+    // therefore brings its own decoder rather than a table file.
+    if (d->type == "1801vm1" || d->type == "1801vm2")
+        disasm = new DisAsmPDP11(d->type == "1801vm2");
+    else
+        disasm = new DisAsm();
+
     emulator::Result res = disasm->load_file(file_name.toStdString());
     if (!res) {
         QMessageBox::warning(this, DebugWindow::tr("Error"), translateResultMessage(res.message));

@@ -225,6 +225,8 @@ MainWindow::MainWindow(QWidget *parent)
     DWM->register_debug_window("z80", &CreateDebugWindow);
     DWM->register_debug_window("6502", &CreateDebugWindow);
     DWM->register_debug_window("65c02", &CreateDebugWindow);
+    DWM->register_debug_window("1801vm1", &CreateDebugWindow);
+    DWM->register_debug_window("1801vm2", &CreateDebugWindow);
     DWM->register_debug_window("taperecorder", &CreateTapeWindow);
     DWM->register_debug_window("ram-address", &CreateDumpWindow);
     DWM->register_debug_window("register", &CreatePortWindow);

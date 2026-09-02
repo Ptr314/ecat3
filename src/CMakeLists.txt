@@ -179,6 +179,7 @@ set(PROJECT_SOURCES
     dialogs/debugwindow.h dialogs/debugwindow.cpp dialogs/debugwindow.ui
     dialogs/disasmarea.h dialogs/disasmarea.cpp
     emulator/disasm.h emulator/disasm.cpp
+    emulator/disasm_pdp11.h emulator/disasm_pdp11.cpp
     dialogs/dialogs.h
     dialogs/keyvaluearea.h dialogs/keyvaluearea.cpp
     dialogs/portwindow.h dialogs/portwindow.cpp dialogs/portwindow.ui
@@ -216,6 +217,8 @@ set(PROJECT_SOURCES
 
     emulator/devices/cpu/6502core.h emulator/devices/cpu/6502core.cpp
     emulator/devices/cpu/6502.h emulator/devices/cpu/6502.cpp
+    emulator/devices/cpu/pdp11_context.h emulator/devices/cpu/pdp11core.h emulator/devices/cpu/pdp11core.cpp
+    emulator/devices/cpu/k1801vm1.h emulator/devices/cpu/k1801vm1.cpp
 
     ${Z80_FILES}
     ${INI_FILES}
@@ -249,6 +252,7 @@ set(PROJECT_SOURCES
     emulator/devices/common/raster_display.h emulator/devices/common/raster_display.cpp
     emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
     emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp
+    emulator/devices/specific/bk_display.h emulator/devices/specific/bk_display.cpp
     emulator/devices/common/gmd70.h emulator/devices/common/gmd70.cpp
         emulator/devices/specific/agat_common.h
 

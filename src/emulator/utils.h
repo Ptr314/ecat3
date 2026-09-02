@@ -35,6 +35,7 @@ std::vector<std::string> split_string(const std::string &s, char delimiter, bool
 std::string str_trim(const std::string &s);
 std::string str_tolower(const std::string &s);
 std::string hex_str(unsigned int value, int width);
+std::string oct_str(unsigned int value, int width);
 
 // std::make_unique copy for C++11 and Mingw 4.9.2 compatibility
 #if __cplusplus >= 201402L || defined(_MSC_VER)

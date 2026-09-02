@@ -365,13 +365,64 @@ static emulator::Result load_rko(Emulator* e, const std::string &file_name)
     return emulator::Result::ok();
 }
 
+// A БК program file starts with a four byte header holding the load address
+// and the length, both little endian, followed by the data. It goes through
+// the memory mapper rather than a single RAM device, because a program may
+// target main memory or video memory depending on its load address.
+static emulator::Result load_bk(Emulator* e, const std::string &file_name)
+{
+    long long fsize = dsk_tools::utf8_file_size(file_name);
+    if (fsize < 4)
+    {
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading")) + "} " + file_name);
+    }
+
+    dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
+    if (!file.is_open())
+    {
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading")) + "} " + file_name);
+    }
+
+    uint8_t header[4];
+    file.read(reinterpret_cast<char*>(header), sizeof(header));
+
+    unsigned int address = header[0] | (header[1] << 8);
+    unsigned int length  = header[2] | (header[3] << 8);
+
+    unsigned int available = static_cast<unsigned int>(fsize) - sizeof(header);
+    if (length == 0 || length > available) length = available;
+
+    std::vector<uint8_t> data(length);
+    file.read(reinterpret_cast<char*>(data.data()), length);
+    file.close();
+
+    MemoryMapper * mapper = dynamic_cast<MemoryMapper*>(e->dm->get_device_by_name("mapper", false));
+    if (mapper == nullptr)
+    {
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Unable to find a RAM page to store data")) + "}");
+    }
+
+    for (unsigned int i = 0; i < length; i++)
+        mapper->write((address + i) & 0xFFFF, data[i]);
+
+    return emulator::Result::ok();
+}
+
 emulator::Result HandleExternalFile(Emulator* e, const std::string &file_name)
 {
     std::string ext = dsk_tools::get_file_ext(file_name);
 
+    // The .bin extension means different things on different machines: on the
+    // БК it is a program with a load address, elsewhere a flat memory dump.
+    bool is_bk = e->get_system_data()->system_type == "bk";
+
     if (ext == ".hex") return load_hex(e, file_name);
     else if (ext == ".rk" || ext == ".rkr" || ext == ".rkm" || ext == ".rka" || ext == ".gam") return load_rk(e, file_name);
     else if (ext == ".rko" || ext == ".ord" || ext == ".bru") return load_rko(e, file_name);
+    else if (ext == ".bin" && is_bk) return load_bk(e, file_name);
     else if (ext == ".cim" || ext == ".bin") return load_bin(e, file_name);
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError,

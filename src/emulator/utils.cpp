@@ -50,6 +50,15 @@ std::string hex_str(unsigned int value, int width)
     return std::string(buf);
 }
 
+// PDP-11 documentation and software are written in octal, so the machines
+// built around it show register values that way
+std::string oct_str(unsigned int value, int width)
+{
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%0*o", width, value);
+    return std::string(buf);
+}
+
 unsigned int parse_numeric_value(std::string str)
 {
     int base;

@@ -59,6 +59,7 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/emulator.cpp
     ${EMU_DIR}/utils.cpp
     ${EMU_DIR}/disasm.cpp
+    ${EMU_DIR}/disasm_pdp11.cpp
     ${EMU_DIR}/files.cpp
     ${EMU_DIR}/devices/cpu/i8080.cpp
     ${EMU_DIR}/devices/cpu/i8080core.cpp
@@ -66,6 +67,8 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/cpu/z80core.cpp
     ${EMU_DIR}/devices/cpu/6502.cpp
     ${EMU_DIR}/devices/cpu/6502core.cpp
+    ${EMU_DIR}/devices/cpu/pdp11core.cpp
+    ${EMU_DIR}/devices/cpu/k1801vm1.cpp
     ${EMU_DIR}/devices/common/i8255.cpp
     ${EMU_DIR}/devices/common/i8251.cpp
     ${EMU_DIR}/devices/common/i8253.cpp
@@ -91,6 +94,7 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/specific/agat_9_display.cpp
     ${EMU_DIR}/devices/specific/agat_9_mapper.cpp
     ${EMU_DIR}/devices/specific/irisha_display.cpp
+    ${EMU_DIR}/devices/specific/bk_display.cpp
     ${EMU_DIR}/audio/audio_driver_miniaudio.cpp
 )
 

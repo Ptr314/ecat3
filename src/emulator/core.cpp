@@ -21,6 +21,7 @@ MapperCacheEntry MapperCache[15];
 
 #define PORT_FLIP  1
 #define PORT_RESET 2
+#define PORT_INPUT 3
 
 //----------------------- class Interface -------------------------------//
 
@@ -578,6 +579,17 @@ unsigned AddressableDevice::get_direct(const unsigned address)
     return get_value(address);
 }
 
+unsigned int AddressableDevice::get_value_word(unsigned int address)
+{
+    return (get_value(address) & 0xFF) | ((get_value(address + 1) & 0xFF) << 8);
+}
+
+void AddressableDevice::set_value_word(unsigned int address, unsigned int value, bool force)
+{
+    set_value(address, value & 0xFF, force);
+    set_value(address + 1, (value >> 8) & 0xFF, force);
+}
+
 //----------------------- class Memory -------------------------------//
 
 Memory::Memory(InterfaceManager *im, EmulatorConfigDevice *cd):
@@ -822,7 +834,7 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
       AddressableDevice(im, cd)
     , default_value(0)
     , mask(_FFFF)
-    , i_input(this, im, 8, "data", MODE_R)
+    , i_input(this, im, 8, "data", MODE_R, PORT_INPUT)
     , i_data(this, im, 8, "value", MODE_W)
     , i_access(this, im, 1, "access", MODE_W)
     , i_flip(this, im, 1, "flip", MODE_R, PORT_FLIP)
@@ -870,7 +882,14 @@ void Port::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned in
 {
     switch (callback_id) {
         case PORT_FLIP:
-            if ((old_value & 1) != 0 && (new_value & 1) == 0) set_value(0, value ^ flip_mask);
+            if ((old_value & 1) != 0 && (new_value & 1) == 0) write_register(value ^ flip_mask);
+            break;
+        case PORT_INPUT:
+            // Bits driven from the outside replace their counterparts in the
+            // register, so a read returns the current state of those lines.
+            // Only the connected bits are touched, the rest keep what was
+            // written into the port.
+            this->value = (this->value & ~i_input.linked_bits) | (new_value & i_input.linked_bits);
             break;
         default: // PORT_RESET
             if ((old_value & 1) != 0 && (new_value & 1) == 0) this->value = default_value;
@@ -878,7 +897,7 @@ void Port::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned in
     }
 }
 
-unsigned int Port::get_value(MAYBE_UNUSED unsigned int address)
+unsigned int Port::read_register()
 {
 #ifdef LOG_PORTS
     // if (name != "port-video" && name != "port-kbd")
@@ -890,25 +909,52 @@ unsigned int Port::get_value(MAYBE_UNUSED unsigned int address)
     return constant_value;
 }
 
-unsigned int Port::get_direct(unsigned address)
-{
-    return value;
-}
-
-void Port::set_value(MAYBE_UNUSED unsigned int address, unsigned int value, bool force)
+void Port::write_register(unsigned int new_value)
 {
 #ifdef LOG_PORTS
     // logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
 #endif
     i_access.change(0);
-    this->value = (value & mask) | (this->value & ~mask);
+    this->value = (new_value & mask) | (this->value & ~mask);
     i_data.change(this->value);
     i_access.change(1);
 }
 
+unsigned int Port::get_value(unsigned int address)
+{
+    unsigned int v = read_register();
+    // Ports wider than a byte expose two byte lanes selected by A0
+    if (size > 8) v = (address & 1)? ((v >> 8) & 0xFF) : (v & 0xFF);
+    return v;
+}
+
+unsigned int Port::get_direct(unsigned address)
+{
+    return value;
+}
+
+void Port::set_value(unsigned int address, unsigned int value, bool force)
+{
+    if (size > 8)
+        write_register((address & 1)? ((this->value & 0x00FF) | ((value & 0xFF) << 8))
+                                    : ((this->value & 0xFF00) | (value & 0xFF)));
+    else
+        write_register(value);
+}
+
+unsigned int Port::get_value_word(MAYBE_UNUSED unsigned int address)
+{
+    return read_register();
+}
+
+void Port::set_value_word(MAYBE_UNUSED unsigned int address, unsigned int value, MAYBE_UNUSED bool force)
+{
+    write_register(value);
+}
+
 void Port::reset(MAYBE_UNUSED bool cold)
 {
-    set_value(0, default_value);
+    write_register(default_value);
 }
 
 //----------------------- class PortAddress -------------------------------//
@@ -956,6 +1002,22 @@ unsigned int PortAddress::get_value(MAYBE_UNUSED unsigned int address)
         i_data.change(this->value);
     }
     return Port::get_value(address);
+}
+
+// A port-address encodes the command in the address itself, so word and byte
+// accesses store exactly the same thing; only the returned width differs.
+unsigned int PortAddress::get_value_word(unsigned int address)
+{
+    if (store_on_read) {
+        this->value = (address & mask) | (this->value & ~mask);
+        i_data.change(this->value);
+    }
+    return read_register();
+}
+
+void PortAddress::set_value_word(unsigned int address, unsigned int value, bool force)
+{
+    PortAddress::set_value(address, value, force);
 }
 
 
@@ -1344,6 +1406,31 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
     }
 }
 
+unsigned int MemoryMapper::read_word(unsigned int address)
+{
+    if ((this->first_range == 0) && ((address & this->cancel_init_mask) != 0))
+    {
+        this->first_range = 1;
+        this->read_cache_items = 0;
+        this->write_cache_items = 0;
+    }
+
+    unsigned int address_on_device, range_index;
+    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
+    if (d != nullptr)
+        return d->get_value_word(address_on_device);
+    else
+        return _FFFF;
+}
+
+void MemoryMapper::write_word(unsigned int address, unsigned int value)
+{
+    unsigned int address_on_device, range_index;
+    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index);
+    if (d != nullptr)
+        d->set_value_word(address_on_device, value);
+}
+
 unsigned int MemoryMapper::read_port(unsigned int address)
 {
     if (this->ports_to_mem) {
@@ -1384,6 +1471,16 @@ unsigned int MemoryMapper::get_value(unsigned int address)
 void MemoryMapper::set_value(unsigned int address, unsigned int value, bool force)
 {
     write(address, value);
+}
+
+unsigned int MemoryMapper::get_value_word(unsigned int address)
+{
+    return read_word(address);
+}
+
+void MemoryMapper::set_value_word(unsigned int address, unsigned int value, bool force)
+{
+    write_word(address, value);
 }
 
 

@@ -233,6 +233,13 @@ public:
     virtual unsigned get_direct(unsigned address);
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) = 0;
     virtual unsigned int get_size();
+
+    // 16-bit (word) access, used by CPUs with a word-oriented bus (PDP-11 family).
+    // The default implementation composes a word out of two byte accesses in
+    // little-endian order, which reproduces the plain byte behaviour exactly.
+    // Devices holding true 16-bit registers override these to stay atomic.
+    virtual unsigned int get_value_word(unsigned int address);
+    virtual void set_value_word(unsigned int address, unsigned int value, bool force=false);
 };
 
 class Interface
@@ -336,10 +343,18 @@ protected:
     Interface i_flip;
     Interface i_reset;
 
+protected:
+    // Whole-register access, bypassing the byte lane selection done by
+    // get_value()/set_value() on ports wider than 8 bits.
+    unsigned int read_register();
+    void write_register(unsigned int new_value);
+
 public:
     unsigned get_direct(unsigned address) override;
     unsigned int get_value(unsigned address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
+    unsigned int get_value_word(unsigned int address) override;
+    void set_value_word(unsigned int address, unsigned int value, bool force=false) override;
 
     Port(InterfaceManager *im, EmulatorConfigDevice *cd);
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
@@ -355,6 +370,8 @@ public:
     emulator::Result load_config(SystemData *sd) override;
     unsigned int get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
+    unsigned int get_value_word(unsigned int address) override;
+    void set_value_word(unsigned int address, unsigned int value, bool force=false) override;
     void reset(bool cold) override;
 };
 
@@ -504,6 +521,11 @@ public:
     unsigned int read_port(unsigned int address);
     void write_port(unsigned int address, unsigned int value);
 
+    // Word access for word-oriented CPUs. The range is resolved once and the
+    // whole word is handed to the mapped device, so 16-bit registers stay atomic.
+    unsigned int read_word(unsigned int address);
+    void write_word(unsigned int address, unsigned int value);
+
     AddressableDevice * map_memory(
         unsigned int config,
         unsigned int address,
@@ -523,6 +545,8 @@ public:
     //These two functions are needed to use the MM as an addressable device
     virtual unsigned int get_value(unsigned int address) override;
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
+    virtual unsigned int get_value_word(unsigned int address) override;
+    virtual void set_value_word(unsigned int address, unsigned int value, bool force=false) override;
 };
 
 class GenericDisplay: public ComputerDevice
