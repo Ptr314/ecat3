@@ -253,6 +253,7 @@ set(PROJECT_SOURCES
     emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
     emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp
     emulator/devices/specific/bk_display.h emulator/devices/specific/bk_display.cpp
+    emulator/devices/specific/bk_timer.h emulator/devices/specific/bk_timer.cpp
     emulator/devices/common/gmd70.h emulator/devices/common/gmd70.cpp
         emulator/devices/specific/agat_common.h
 

@@ -1,0 +1,142 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
+// Part of the eCat3 project: https://github.com/Ptr314/ecat3
+// Description: БК tape encoding
+//
+// The waveform below was measured on the output routine of the БК monitor
+// (0116404 and 0116506) rather than taken from a description. One unit is the
+// half period of a synchronisation pulse, 317 processor cycles at 3 MHz.
+//
+//   sync pulse   1 unit high, 1 unit low
+//   marker       4 units low, 4 units high
+//   data bit 0   short pulse (1 unit high, 1 unit low) plus a 1 unit separator
+//   data bit 1   long pulse (2 units low, 2 units high) plus a 1 unit separator
+//
+// Bits of a byte go out least significant first. The reader in the monitor
+// measures whole periods and calibrates itself on the leading sync series, so
+// the absolute rate is not critical as long as the long pulse stays clearly
+// above one and a half times the short one.
+
+#pragma once
+
+#include <cstdint>
+#include <string>
+#include <vector>
+
+namespace bk_tape
+{
+    // The reader needs a long stretch of identical pulses before it accepts
+    // the signal: it waits for 2048 stable ones and then averages 128 periods.
+    const unsigned LEADER_PULSES = 4096;
+
+    // A short series in front of every record
+    const unsigned RECORD_PULSES = 8;
+
+    inline void put(std::vector<uint8_t> &bits, uint8_t level, unsigned count)
+    {
+        for (unsigned i = 0; i < count; i++) bits.push_back(level);
+    }
+
+    inline void put_sync(std::vector<uint8_t> &bits, unsigned pulses)
+    {
+        for (unsigned i = 0; i < pulses; i++) { put(bits, 1, 1); put(bits, 0, 1); }
+    }
+
+    // The marker is a pulse four times longer than a sync one, followed by the
+    // pattern of a single set bit, exactly as the monitor emits it at 0116432.
+    inline void put_marker(std::vector<uint8_t> &bits)
+    {
+        put(bits, 1, 4);
+        put(bits, 0, 4);
+        put(bits, 1, 2); put(bits, 0, 2);
+        put(bits, 1, 1); put(bits, 0, 1);
+    }
+
+    // Every bit is two pulses: the one carrying the value and a short
+    // separator. The reader skips one period and measures the next, so it sees
+    // exactly one period per bit.
+    inline void put_byte(std::vector<uint8_t> &bits, uint8_t b)
+    {
+        for (int i = 0; i < 8; i++) {
+            if ((b >> i) & 1) {
+                put(bits, 1, 2); put(bits, 0, 2);        // long pulse
+            } else {
+                put(bits, 1, 1); put(bits, 0, 1);        // short pulse
+            }
+            put(bits, 1, 1); put(bits, 0, 1);            // separator
+        }
+    }
+
+    // Sum of the bytes with the carry folded back in, the way the monitor
+    // computes it at 0116622.
+    inline uint16_t checksum(const uint8_t * data, size_t size)
+    {
+        uint32_t sum = 0;
+        for (size_t i = 0; i < size; i++) {
+            sum += data[i];
+            if (sum > 0xFFFF) sum = (sum & 0xFFFF) + 1;
+        }
+        return (uint16_t)sum;
+    }
+
+    // Packs a stream of one bit per byte into the bit buffer the tape device
+    // plays back, most significant bit of every byte first.
+    inline void pack(const std::vector<uint8_t> &bits, std::vector<uint8_t> &out)
+    {
+        size_t n = bits.size();
+        out.reserve(out.size() + (n + 7) / 8);
+        for (size_t i = 0; i < n; i += 8) {
+            uint8_t b = 0;
+            for (int k = 0; k < 8; k++) {
+                b <<= 1;
+                if (i + k < n) b |= bits[i + k] & 1;
+            }
+            out.push_back(b);
+        }
+    }
+
+    // A БК file starts with the load address and the length, which are also
+    // the first four bytes of the tape header. The rest of the header is the
+    // sixteen character name.
+    inline void encode(const std::vector<uint8_t> &file, const std::string &name,
+                       std::vector<uint8_t> &out)
+    {
+        std::vector<uint8_t> bits;
+
+        uint16_t address = 0, length = 0;
+        size_t data_at = 0;
+        if (file.size() >= 4) {
+            address = (uint16_t)(file[0] | (file[1] << 8));
+            length  = (uint16_t)(file[2] | (file[3] << 8));
+            data_at = 4;
+            if (length == 0 || length > file.size() - 4) length = (uint16_t)(file.size() - 4);
+        }
+
+        // The leader the reader calibrates on, closed by a marker of its own
+        put_sync(bits, LEADER_PULSES);
+        put_marker(bits);
+
+        // Header record. Every record starts with a short sync series and a
+        // marker, the way the monitor emits them at 0116474.
+        put_sync(bits, RECORD_PULSES);
+        put_marker(bits);
+        put_byte(bits, address & 0xFF);
+        put_byte(bits, (address >> 8) & 0xFF);
+        put_byte(bits, length & 0xFF);
+        put_byte(bits, (length >> 8) & 0xFF);
+        for (int i = 0; i < 16; i++)
+            put_byte(bits, (i < (int)name.size())? (uint8_t)name[i] : (uint8_t)' ');
+
+        // Data record with the checksum appended
+        put_sync(bits, RECORD_PULSES);
+        put_marker(bits);
+        for (unsigned i = 0; i < length; i++) put_byte(bits, file[data_at + i]);
+        uint16_t cs = checksum(file.data() + data_at, length);
+        put_byte(bits, cs & 0xFF);
+        put_byte(bits, (cs >> 8) & 0xFF);
+
+        put_sync(bits, 32);
+
+        pack(bits, out);
+    }
+}

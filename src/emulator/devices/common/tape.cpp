@@ -6,6 +6,7 @@
 #include "emulator/utils.h"
 #include "emulator/devices/cpu/cpu_utils.h"
 #include "tape.h"
+#include "tape_bk.h"
 #include "dsk_tools/dsk_tools.h"
 
 TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
@@ -48,6 +49,8 @@ emulator::Result TapeRecorder::load_config(SystemData *sd)
         m_tape_enc = TapeEnc::MSX;
     else if (enc_str == "rk86")
         m_tape_enc = TapeEnc::RK86;
+    else if (enc_str == "bk")
+        m_tape_enc = TapeEnc::BK;
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect encoding")) + "} " + enc_str);
 
@@ -296,6 +299,13 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
         set_baud_rate(baud*4);
         buffer_encoded.resize(256 * 4, 0xAA);
         encode_msx(buffer, buffer_encoded);
+        set_data(buffer_encoded);
+    } else
+    if (tape_format == "bk") {
+        // For the БК the rate is given directly in units, one unit being the
+        // half period of a synchronisation pulse
+        set_baud_rate(baud);
+        bk_tape::encode(buffer, dsk_tools::get_file_basename(file_name), buffer_encoded);
         set_data(buffer_encoded);
     } else {
         return emulator::Result::error(emulator::ErrorCode::ConfigError,

@@ -16,7 +16,8 @@
 
 enum class TapeEnc {
     MSX,
-    RK86
+    RK86,
+    BK
 };
 
 enum class TapeWriterState {

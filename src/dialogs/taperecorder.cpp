@@ -148,7 +148,11 @@ void TapeRecorderWindow::on_buttonEject_pressed()
         if (!file_name.isEmpty()) {
             QFileInfo fi(file_name);
             QString ext = fi.suffix().toLower();
-            QString fmt = QString::fromStdString(e->read_setup("TapeFiles", ext.toStdString(), ""));
+            // A machine specific entry wins over the generic one, so the same
+            // extension can mean different things on different computers
+            QString fmt = QString::fromStdString(e->read_setup("TapeFiles", sd->system_type + "." + ext.toStdString(), ""));
+            if (fmt.isEmpty())
+                fmt = QString::fromStdString(e->read_setup("TapeFiles", ext.toStdString(), ""));
 
             if (fmt.length() > 0) {
                 e->write_setup("Startup", "last_path", fi.absolutePath().toStdString());

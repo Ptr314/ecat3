@@ -95,6 +95,7 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/specific/agat_9_mapper.cpp
     ${EMU_DIR}/devices/specific/irisha_display.cpp
     ${EMU_DIR}/devices/specific/bk_display.cpp
+    ${EMU_DIR}/devices/specific/bk_timer.cpp
     ${EMU_DIR}/audio/audio_driver_miniaudio.cpp
 )
 
