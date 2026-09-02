@@ -31,5 +31,7 @@ eCat &ndash; универсальный эмулятор 8-разрядных к
 Благодарности:
 
 * David Vignoni за коллекцию иконок [Nuvola](https://commons.wikimedia.org/wiki/Category:Nuvola_icons);
-* Олегу Одинцову за исходники [эмулятора компьютеров семейства &laquo;Агат&raquo;](http://agatcomp.ru/agat/PCutils/WinEmul.shtml), которые использовались как референс для решения некоторых вопросов по устройству &laquo;Агатов&raquo;;
 * [Владимиру McClaud](http://www.mcclaud.ru) за изображение магнитофона &laquo;Электроника-302&raquo; для эмулятора загрузки с магнитной ленты.
+* Игорю Филатову, одному из основателей сайта [agatcomp.ru](https://agatcomp.ru/), за помощь с эмулятором.
+* Олегу Одинцову за исходники [эмулятора](http://agatcomp.ru/agat/PCutils/WinEmul.shtml), которые использовались как референс для решения некоторых вопросов по устройству &laquo;Агатов&raquo;;
+* [Koka77](https://zx-pk.ru/members/6456) за документацию по &laquo;Ирише&raquo;.

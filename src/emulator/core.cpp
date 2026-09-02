@@ -1356,7 +1356,7 @@ unsigned int MemoryMapper::read(unsigned int address)
     //TODO: Cache
     // for (unsigned int i = 0; i < this->read_cache_items; i++)
 #ifdef LOG_MAPPER
-    if (address >= 0xE000 && address < 0xF800) logs("R " + hex_str(address, 4));
+    // if (address >= 0xE000 && address < 0xF800) logs("R " + hex_str(address, 4));
 #endif
 
     if ((this->first_range == 0) && ((address & this->cancel_init_mask) != 0))
@@ -1384,7 +1384,7 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
     // for (unsigned int i = 0; i < this->write_cache_items; i++)
 
 #ifdef LOG_MAPPER
-    if (address >= 0xE000 && address <= 0xFFFF) logs("W " + hex_str(address, 4));
+    if (address >= 0xCEF1 && address <= 0xCEF2) logs("W " + hex_str(address, 4));
 #endif
 
     unsigned int address_on_device, range_index;
