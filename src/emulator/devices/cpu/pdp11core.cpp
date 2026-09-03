@@ -96,16 +96,19 @@ void pdp11core::set_halt(bool state) { if (state) is_halt_req = true; }
 
 //----------------------- Bus access -------------------------------//
 
+// Unlike the big PDP-11s, the 1801 series does not trap on an odd word
+// address: the low address bit is simply ignored and the whole word at the
+// even address is transferred. The ROMs rely on it, e.g. the БК0011М БЕЙСИК
+// tests a byte variable with a word TST of its odd address, so a trap here
+// makes every FOR loop end with "СТОП".
 uint16_t pdp11core::read_word_checked(uint16_t address)
 {
-    if ((address & 1) != 0) { m_abort = true; return 0; }
-    return read_word(address);
+    return read_word(address & 0xFFFE);
 }
 
 void pdp11core::write_word_checked(uint16_t address, uint16_t value)
 {
-    if ((address & 1) != 0) { m_abort = true; return; }
-    write_word(address, value);
+    write_word(address & 0xFFFE, value);
 }
 
 uint16_t pdp11core::fetch()

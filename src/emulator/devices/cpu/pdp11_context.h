@@ -49,7 +49,7 @@ namespace PDP11
     const unsigned int REG_PC = 7;
 
     // Trap vectors
-    const uint16_t V_BUS_ERROR  = 0004;     // odd address or non-existent memory
+    const uint16_t V_BUS_ERROR  = 0004;     // bus timeout (non-existent memory); the 1801 ignores odd word addresses
     const uint16_t V_RESERVED   = 0010;     // reserved instruction
     const uint16_t V_BPT        = 0014;     // BPT and T-bit trace trap
     const uint16_t V_IOT        = 0020;
