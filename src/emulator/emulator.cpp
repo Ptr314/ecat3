@@ -4,7 +4,9 @@
 // Description: Main emulator class, source
 
 #include "dsk_tools/dsk_tools.h"
-#include "../libs/dsk_tools/src/utils.h"
+// MSVC resolves the "utils.h" inside dsk_tools.h against the includer's directory,
+// where it finds emulator/utils.h. Pull in the real one explicitly.
+#include "libs/dsk_tools/src/utils.h"
 #include "host_helpers.h"
 #include <cmath>
 #include <iostream>
@@ -25,6 +27,7 @@
 #include "emulator.h"
 #include "emulator/config.h"
 #include "emulator/utils.h"
+#include "libs/lodepng/lodepng.h"
 
 #include "emulator/devices/cpu/i8080.h"
 #include "emulator/devices/common/i8255.h"
@@ -127,6 +130,9 @@ emulator::Result Emulator::load_config(std::string file_name)
     sd.software_path = software_path;
     sd.data_path = data_path;
     sd.mapper_cache = parse_numeric_value(read_setup("Core", "mapper_cache", "8"));
+    sd.read_setup = [this](const std::string &section, const std::string &ident, const std::string &def) {
+        return this->read_setup(section, ident, def);
+    };
 
     sd.allowed_files = system->get_parameter("files", false).value;
 
@@ -207,6 +213,59 @@ const std::string & Emulator::translate_char(unsigned int char_code)
 void Emulator::reset(bool cold)
 {
     dm->reset_devices(cold);
+}
+
+//----------------------------- Scripting ----------------------------------//
+
+emulator::Result Emulator::load_script(const std::string &file_name)
+{
+    script.reset(new ScriptEngine(this));
+
+    emulator::Result res = script->load(file_name);
+    if (!res) {
+        script.reset();
+        return res;
+    }
+
+    //Devices look up files next to the script first, so that a script and the
+    //images it uses can live in one directory
+    sd.script_path = script->get_path();
+    return emulator::Result::ok();
+}
+
+std::string Emulator::script_machine() const
+{
+    return script?script->get_machine():std::string("");
+}
+
+void Emulator::start_script()
+{
+    if (script) script->start(clock_counter);
+}
+
+void Emulator::stop_script()
+{
+    if (script) script->stop();
+}
+
+bool Emulator::script_active() const
+{
+    return script && !script->is_finished();
+}
+
+bool Emulator::script_finished() const
+{
+    return !script || script->is_finished();
+}
+
+bool Emulator::script_exit_requested() const
+{
+    return script && script->is_exit_requested();
+}
+
+int Emulator::script_exit_code() const
+{
+    return script?script->get_exit_code():0;
 }
 
 void Emulator::run()
@@ -434,12 +493,20 @@ void Emulator::timer_proc(uint64_t time_ticks)
                 local_counter += counter;
                 clock_counter += counter;
                 dm->clock(counter);
+
+                //Scripts are advanced here, on the emulation thread, so they see
+                //the devices in the same state the CPU does. Ticking inside the
+                //loop rather than once per time slice makes a script resume at
+                //the very same instruction on every run: the size of a slice
+                //depends on the host clock, the cycle counter does not.
+                if (script) script->tick(clock_counter);
             } else {
                 local_counter += 10;
             }
         }
         mm->sort_cache();
         local_counter -= time_ticks;
+
         busy = false;
     }
 }
@@ -512,7 +579,60 @@ void Emulator::render_screen()
             display->was_updated = false;
         }
 #endif
+
+        //A screenshot requested by a script is taken here, on the render thread,
+        //right after a frame has been rendered
+        store_screenshot();
     }
+}
+
+void Emulator::request_screenshot(const std::string &file_name)
+{
+    compat_lock_guard lock(m_screenshot_mutex);
+    m_screenshot_file = file_name;
+}
+
+bool Emulator::is_screenshot_pending()
+{
+    compat_lock_guard lock(m_screenshot_mutex);
+    return !m_screenshot_file.empty();
+}
+
+void Emulator::store_screenshot()
+{
+    std::string file_name;
+    {
+        compat_lock_guard lock(m_screenshot_mutex);
+        if (m_screenshot_file.empty()) return;
+        file_name = m_screenshot_file;
+    }
+
+    //screen_sx/screen_sy are the dimensions the renderer was last resized to,
+    //so they always match the buffer it returns. The display device may already
+    //report a new resolution that has not been applied to the renderer yet.
+    unsigned int sx = screen_sx;
+    unsigned int sy = screen_sy;
+    std::vector<uint8_t> image = renderer->get_screenshot();
+
+    if (sx == 0 || sy == 0 || image.size() < static_cast<size_t>(sx) * sy * 4)
+    {
+        std::cerr << "Screenshot buffer does not match the screen size, skipped" << std::endl;
+        compat_lock_guard lock(m_screenshot_mutex);
+        m_screenshot_file.clear();
+        return;
+    }
+
+    std::vector<unsigned char> png;
+    unsigned int error = lodepng::encode(png, image, sx, sy);
+    if (error != 0)
+        std::cerr << "Unable to encode a screenshot: " << lodepng_error_text(error) << std::endl;
+    else
+    if (lodepng::save_file(png, file_name) != 0)
+        std::cerr << "Unable to write a screenshot to " << file_name << std::endl;
+
+    //Cleared last: the script waits for this to know the file has been written
+    compat_lock_guard lock(m_screenshot_mutex);
+    m_screenshot_file.clear();
 }
 
 void Emulator::resize_screen()

@@ -159,6 +159,28 @@ void I8259::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned
     }
 }
 
+std::vector<DeviceFieldInfo> I8259::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
+    r.push_back({"imr",         "Interrupt Mask Register",      false});
+    r.push_back({"irr",         "Interrupt Request Register",   false});
+    r.push_back({"isr",         "In-Service Register",          false});
+    r.push_back({"initialized", "1 after the ICW sequence",     false});
+    return r;
+}
+
+bool I8259::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    out.numeric = true;
+    if (field == "imr")         { out.values.push_back(IMR);                return true; }
+    if (field == "irr")         { out.values.push_back(IRR);                return true; }
+    if (field == "isr")         { out.values.push_back(ISR);                return true; }
+    if (field == "initialized") { out.values.push_back(initialized?1:0);    return true; }
+
+    out.numeric = false;
+    return AddressableDevice::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_i8259(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new I8259(im, cd);

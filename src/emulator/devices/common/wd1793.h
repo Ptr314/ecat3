@@ -93,6 +93,9 @@ public:
     void set_value(unsigned address, unsigned value, bool force=false) override;
     emulator::Result load_config(SystemData *sd) override;
     void clock(unsigned int counter) override;
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };
 
 ComputerDevice * create_WD1793(InterfaceManager *im, EmulatorConfigDevice *cd);

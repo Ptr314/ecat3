@@ -82,6 +82,28 @@ void Generator::system_clock(unsigned int counter)
     }
 }
 
+std::vector<DeviceFieldInfo> Generator::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
+    r.push_back({"enabled", "1 if the generator is running",    false});
+    r.push_back({"out",     "Current level of the output",      false});
+    r.push_back({"period",  "Period, in system clock counts",   false});
+    return r;
+}
+
+bool Generator::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    out.numeric = true;
+    if (field == "enabled") { out.values.push_back(enabled?1:0);    return true; }
+    if (field == "out")     { out.values.push_back(i_out.value);    return true; }
+    out.width = 32;
+    if (field == "period")  { out.values.push_back(total_counts);   return true; }
+    out.width = 0;
+
+    out.numeric = false;
+    return ComputerDevice::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_generator(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new Generator(im, cd);

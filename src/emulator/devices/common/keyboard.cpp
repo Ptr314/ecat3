@@ -46,7 +46,7 @@ bool Keyboard::known_key(unsigned int code)
     return false;
 }
 
-unsigned int Keyboard::translate_key(const std::string &key)
+unsigned int translate_key_name(const std::string &key)
 {
     std::string key_lower = str_tolower(key);
     for (unsigned int i=0; i<sizeof(KEYS)/sizeof(KeyDescription); i++)
@@ -54,6 +54,11 @@ unsigned int Keyboard::translate_key(const std::string &key)
             return KEYS[i].code;
 
     return _FFFF;
+}
+
+unsigned int Keyboard::translate_key(const std::string &key)
+{
+    return translate_key_name(key);
 }
 
 void Keyboard::set_rus(bool new_rus)

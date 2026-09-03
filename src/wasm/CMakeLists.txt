@@ -61,6 +61,9 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/disasm.cpp
     ${EMU_DIR}/disasm_pdp11.cpp
     ${EMU_DIR}/files.cpp
+    ${EMU_DIR}/script/script_parser.cpp
+    ${EMU_DIR}/script/script_log.cpp
+    ${EMU_DIR}/script/script_engine.cpp
     ${EMU_DIR}/devices/cpu/i8080.cpp
     ${EMU_DIR}/devices/cpu/i8080core.cpp
     ${EMU_DIR}/devices/cpu/z80.cpp

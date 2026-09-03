@@ -4,6 +4,8 @@
 // Description: Service functions, source
 
 #include <algorithm>
+#include <chrono>
+#include <ctime>
 #include <random>
 #include <sstream>
 #include <stdexcept>
@@ -43,6 +45,13 @@ std::string str_tolower(const std::string &s)
     return r;
 }
 
+std::string str_toupper(const std::string &s)
+{
+    std::string r = s;
+    std::transform(r.begin(), r.end(), r.begin(), ::toupper);
+    return r;
+}
+
 std::string hex_str(unsigned int value, int width)
 {
     char buf[16];
@@ -57,6 +66,108 @@ std::string oct_str(unsigned int value, int width)
     char buf[16];
     snprintf(buf, sizeof(buf), "%0*o", width, value);
     return std::string(buf);
+}
+
+std::string strip_message_context(const std::string &message)
+{
+    std::string result;
+    size_t pos = 0;
+
+    while (pos < message.length())
+    {
+        size_t open = message.find('{', pos);
+        if (open == std::string::npos) {
+            result += message.substr(pos);
+            break;
+        }
+
+        size_t close = message.find('}', open);
+        size_t sep = message.find('|', open);
+        if (close == std::string::npos || sep == std::string::npos || sep > close) {
+            //Not a marker, keep the text as it is
+            result += message.substr(pos, open - pos + 1);
+            pos = open + 1;
+            continue;
+        }
+
+        result += message.substr(pos, open - pos);
+        result += message.substr(sep + 1, close - sep - 1);
+        pos = close + 1;
+    }
+
+    return result;
+}
+
+std::vector<std::string> split_params(const std::string &s)
+{
+    std::vector<std::string> result;
+    std::string item;
+    bool in_quotes = false;
+
+    for (size_t i = 0; i < s.length(); i++)
+    {
+        char c = s[i];
+        if (c == '\\' && in_quotes && i + 1 < s.length() && s[i+1] == '"') {
+            //An escaped quote does not close the string. Both characters are
+            //kept, the consumer decides what to do with the escape.
+            item += c;
+            item += s[++i];
+        } else if (c == '"') {
+            in_quotes = !in_quotes;
+            item += c;
+        } else if (c == ',' && !in_quotes) {
+            result.push_back(item);
+            item.clear();
+        } else
+            item += c;
+    }
+    if (!item.empty() || !result.empty()) result.push_back(item);
+
+    for (size_t i = 0; i < result.size(); i++)
+    {
+        std::string v = str_trim(result[i]);
+        if (v.length() >= 2 && v[0] == '"' && v[v.length()-1] == '"')
+            v = v.substr(1, v.length() - 2);
+        result[i] = v;
+    }
+    return result;
+}
+
+std::string timestamp_string()
+{
+    std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    char buf[64];
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d-%H-%M-%S", std::localtime(&t));
+    return std::string(buf);
+}
+
+std::string format_number(unsigned int value, unsigned int base, unsigned int width_bits)
+{
+    if (width_bits != 16 && width_bits != 32) width_bits = 8;
+    unsigned int mask = (width_bits >= 32)?_FFFF:((1u << width_bits) - 1);
+    value &= mask;
+
+    switch (base)
+    {
+        case 2: {
+            std::string s(width_bits, '0');
+            for (unsigned int i = 0; i < width_bits; i++)
+                if ((value >> i) & 1) s[width_bits - 1 - i] = '1';
+            return "#" + s;
+        }
+        case 8: {
+            // 3 bits per digit, rounded up
+            unsigned int digits = (width_bits + 2) / 3;
+            std::string s(digits, '0');
+            for (unsigned int i = 0; i < digits; i++)
+                s[digits - 1 - i] = static_cast<char>('0' + ((value >> (i * 3)) & 7));
+            return "&" + s;
+        }
+        case 10:
+            return std::to_string(value);
+        default:
+            return "$" + hex_str(value, static_cast<int>(width_bits / 4));
+    }
 }
 
 unsigned int parse_numeric_value(std::string str)
@@ -128,6 +239,15 @@ unsigned int CalcBits(unsigned int V, unsigned int MaxBits)
     return result;
 }
 
+bool is_absolute_path(const std::string &path)
+{
+    if (path.empty()) return false;
+    if (path[0] == '/' || path[0] == '\\') return true;
+    //Drive letter, e.g. C:\ or C:/
+    if (path.length() >= 3 && path[1] == ':' && (path[2] == '/' || path[2] == '\\')) return true;
+    return false;
+}
+
 std::string find_file_location(SystemData * sd, const std::string &file_name)
 {
     if (!file_name.empty())
@@ -137,6 +257,14 @@ std::string find_file_location(SystemData * sd, const std::string &file_name)
         const std::string &data_path = sd->data_path;
         std::string dir = dsk_tools::parent_dir_name(system_path);
         std::string file;
+
+        // A script sets script_path while running, so files referenced by
+        // COMMAND dev.load("...") are looked up next to the script first.
+        if (!sd->script_path.empty())
+        {
+            file = sd->script_path + file_name;
+            if (dsk_tools::file_exists(file)) return file;
+        }
 
         file = system_path + file_name;
         if (dsk_tools::file_exists(file)) return file;

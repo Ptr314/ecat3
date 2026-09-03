@@ -23,6 +23,7 @@ eCat &ndash; универсальный эмулятор ретрокомпью�
 * [Скачать последнюю версию](https://github.com/Ptr314/ecat3/releases)
 * [Руководство пользователя](MANUAL.md)
 * [Документация по настройке](CONFIG.md)
+* [Скриптование и командная строка](SCRIPTING.md)
 * [История версий](HISTORY.md)
 * [Группа в Телеграме](https://t.me/ecat_emu)
 * [Emuverse.ru](https://emuverse.ru) &ndash; энциклопедия эмуляции на русском языке.

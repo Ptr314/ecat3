@@ -292,6 +292,11 @@ static const unsigned int RUS_REMAP[][2] = {
 
 #define RUS_REMAP_SIZE (sizeof(RUS_REMAP) / sizeof(unsigned int) / 2)
 
+// Resolves a key name from the KEYS[] table above into an EmuKey code.
+// Case insensitive, returns _FFFF when the name is unknown.
+// Used by keyboard layouts and by the scripting engine (KEY and TYPE).
+unsigned int translate_key_name(const std::string &key);
+
 class Keyboard: public ComputerDevice
 {
 protected:

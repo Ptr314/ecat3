@@ -93,6 +93,11 @@ public:
     void change_protection();
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     int aim_code();
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    std::vector<DeviceCommandInfo> get_device_commands() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+    emulator::Result send_command(const std::string &command, const std::string &parameters) override;
 };
 
 ComputerDevice * create_FDD(InterfaceManager *im, EmulatorConfigDevice *cd);
