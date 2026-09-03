@@ -152,6 +152,7 @@ set(PROJECT_SOURCES
     ../BUILD.md
     ../MANUAL.md
     ../CONFIG.md
+    ../SCRIPTING.md
     ../HISTORY.md
 
     dialogs/dumparea.cpp dialogs/dumparea.h
@@ -171,6 +172,10 @@ set(PROJECT_SOURCES
     emulator/emulator.cpp emulator/emulator.h
     emulator/thread_compat.h
     emulator/utils.cpp emulator/utils.h
+    emulator/script/script_types.h
+    emulator/script/script_parser.cpp emulator/script/script_parser.h
+    emulator/script/script_log.cpp emulator/script/script_log.h
+    emulator/script/script_engine.cpp emulator/script/script_engine.h
     qt_utils.cpp qt_utils.h
     main.cpp
     mainwindow.cpp mainwindow.h mainwindow.ui

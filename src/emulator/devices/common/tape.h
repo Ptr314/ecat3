@@ -91,6 +91,11 @@ public:
     virtual std::vector<uint8_t> * get_record_data();
 
     std::function<void(unsigned int)> on_mode_changed;
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    std::vector<DeviceCommandInfo> get_device_commands() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+    emulator::Result send_command(const std::string &command, const std::string &parameters) override;
 };
 
 ComputerDevice * create_tape_recorder(InterfaceManager *im, EmulatorConfigDevice *cd);

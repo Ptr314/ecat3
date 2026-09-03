@@ -7,6 +7,7 @@
 
 #include "emulator/renderer.h"
 #include <atomic>
+#include <functional>
 #include <list>
 #include <memory>
 #include <string>
@@ -78,6 +79,7 @@ typedef uint8_t ScreenColor[3];
 struct SystemData {
     std::string     system_file;
     std::string     system_path;
+    std::string     script_path;    //Directory of the running script, empty if none
     std::string     system_type;
     std::string     system_name;
     std::string     system_version;
@@ -88,6 +90,11 @@ struct SystemData {
     unsigned int    screen_scale;
     std::string     allowed_files;
     unsigned int    mapper_cache;
+
+    //Read-only access to the ini file, installed by the Emulator. Lets a device
+    //resolve a setting on its own, the way the tape recorder looks up the file
+    //format of an image in [TapeFiles].
+    std::function<std::string(const std::string &section, const std::string &ident, const std::string &def)> read_setup;
 };
 
 //typedef void (ComputerDevice::*InterfaceCallbackFunc)(unsigned int, unsigned int);
@@ -143,6 +150,46 @@ struct DeviceOption {
 
 typedef std::vector<DeviceOption> DeviceOptions;
 
+//------------------- Device introspection and control ---------------------//
+// These types back the scripting engine (LOG / COMMAND) and are designed to be
+// reusable by an external driver such as an MCP server: devices describe
+// themselves (get_device_fields / get_device_commands), return raw values
+// (get_field) and accept textual commands (send_command).
+
+// Output settings, controlled by the script command LOGDEFS
+struct LogFormat {
+    unsigned int width;         //8 or 16 - value width in bits
+    unsigned int base;          //2, 8, 10 or 16 - radix used for output
+    LogFormat(): width(8), base(16) {}
+};
+
+struct DeviceFieldInfo {
+    std::string name;           //Field name, as used in LOG device.field
+    std::string description;
+    bool        ranged;         //Accepts an address/index range
+};
+
+struct DeviceCommandInfo {
+    std::string name;           //Command name, as used in COMMAND device.command
+    std::string params;         //Parameter signature, for help and introspection
+    std::string description;
+};
+
+// Raw result of a field read. Devices fill it in, ComputerDevice::log_device()
+// turns it into text, so formatting exists in exactly one place.
+struct DeviceFieldValue {
+    bool                        numeric;    //false: use text as is
+    bool                        has_start;  //true: print the "start:" prefix
+    unsigned int                start;      //Address/index of the first value
+    std::vector<unsigned int>   values;
+    std::string                 text;
+    //Width in bits of the values. 0 means the width set by LOGDEFS. Fields that
+    //are inherently wider than a byte, such as a program counter, set it
+    //explicitly so that LOGDEFS 8 does not truncate them.
+    unsigned int                width;
+    DeviceFieldValue(): numeric(false), has_start(false), start(0), width(0) {}
+};
+
 struct MapperRange {
     unsigned int        config_mask;		//AND-маска, которая накладывается на значение порта конфигурации
     unsigned int        config_value;		//Число, с которым сравнивается значение порта после маски
@@ -187,6 +234,22 @@ public:
     virtual DeviceOptions get_device_options();
     virtual void set_device_option(unsigned option_id, unsigned value_id);
 
+    //--------------------- Introspection and control ----------------------//
+    //Self-description, used by SCRIPTING.md, the script engine and any
+    //external driver that needs to discover what a device offers
+    virtual std::vector<DeviceFieldInfo> get_device_fields();
+    virtual std::vector<DeviceCommandInfo> get_device_commands();
+
+    //Raw read of a device property. Returns false if the field is unknown.
+    virtual bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out);
+
+    //Formats the result of get_field(). Not virtual on purpose - formatting is
+    //implemented once for every device.
+    std::string log_device(const std::string &field, std::pair<unsigned int, unsigned int> range, const LogFormat &fmt);
+
+    //Performs an action on the device. Parameters are a raw comma separated list.
+    virtual emulator::Result send_command(const std::string &command, const std::string &parameters);
+
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
     virtual void memory_callback(unsigned int callback_id, unsigned int address);
     bool belongs_to_class(const std::string &class_to_check);
@@ -194,6 +257,7 @@ public:
 
 
 protected:
+    SystemData * sd = nullptr;      //Stored by load_config(), used to locate files
     unsigned int clock_miltiplier;
     unsigned int clock_divider;
     CPU * cpu = nullptr;
@@ -233,6 +297,11 @@ public:
     virtual unsigned get_direct(unsigned address);
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) = 0;
     virtual unsigned int get_size();
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    std::vector<DeviceCommandInfo> get_device_commands() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+    emulator::Result send_command(const std::string &command, const std::string &parameters) override;
 };
 
 class Interface
@@ -297,6 +366,11 @@ public:
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
     virtual uint8_t * get_buffer();
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    std::vector<DeviceCommandInfo> get_device_commands() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+    emulator::Result send_command(const std::string &command, const std::string &parameters) override;
 };
 
 class RAM: public Memory
@@ -344,6 +418,9 @@ public:
     Port(InterfaceManager *im, EmulatorConfigDevice *cd);
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     void reset(bool cold) override;
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };
 
 class PortAddress:public Port
@@ -452,6 +529,10 @@ public:
 
     virtual void set_context_value(const std::string &name, unsigned int value) = 0;
 
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    std::vector<DeviceCommandInfo> get_device_commands() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+    emulator::Result send_command(const std::string &command, const std::string &parameters) override;
 };
 
 typedef MapperRange MapperArray[100];
@@ -523,6 +604,9 @@ public:
     //These two functions are needed to use the MM as an addressable device
     virtual unsigned int get_value(unsigned int address) override;
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };
 
 class GenericDisplay: public ComputerDevice
@@ -553,6 +637,9 @@ public:
     virtual bool has_valid_renderer();
     void lock_surface();
     void unlock_surface();
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };
 
 class FDC: public AddressableDevice

@@ -409,6 +409,32 @@ void WD1793::clock(unsigned int counter)
     }
 }
 
+std::vector<DeviceFieldInfo> WD1793::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
+    r.push_back({"status",  "Status register",              false});
+    r.push_back({"track",   "Track register",               false});
+    r.push_back({"sector",  "Sector register",              false});
+    r.push_back({"data",    "Data register",                false});
+    r.push_back({"busy",    "1 while a command is running", false});
+    r.push_back({"drive",   "Index of the selected drive",  false});
+    return r;
+}
+
+bool WD1793::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    out.numeric = true;
+    if (field == "status")  { out.values.push_back(registers[wd1793_REG_STATUS]);   return true; }
+    if (field == "track")   { out.values.push_back(registers[wd1793_REG_TRACK]);    return true; }
+    if (field == "sector")  { out.values.push_back(registers[wd1793_REG_SECTOR]);   return true; }
+    if (field == "data")    { out.values.push_back(registers[wd1793_REG_DATA]);     return true; }
+    if (field == "busy")    { out.values.push_back(get_busy()?1:0);                 return true; }
+    if (field == "drive")   { out.values.push_back(get_selected_drive());           return true; }
+
+    out.numeric = false;
+    return AddressableDevice::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_WD1793(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new WD1793(im, cd);
 }

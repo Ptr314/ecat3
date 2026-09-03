@@ -261,6 +261,45 @@ void I8253::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned
     };
 }
 
+std::vector<DeviceFieldInfo> I8253::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
+    r.push_back({"counters",    "Current values of the three counters",     false});
+    r.push_back({"start",       "Initial values of the three counters",     false});
+    r.push_back({"modes",       "Operating modes of the three channels",    false});
+    r.push_back({"outputs",     "State of the three output lines",          false});
+    r.push_back({"gates",       "State of the three gate inputs",           false});
+    return r;
+}
+
+bool I8253::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    //Counters are kept as low/high byte pairs, so they are joined back here
+    if (field == "counters" || field == "start")
+    {
+        const uint8_t * src = (field == "counters")?Counters:StartData;
+        out.numeric = true;
+        out.width = 16;
+        for (unsigned int i = 0; i < 3; i++)
+            out.values.push_back(src[i*2] + (src[i*2+1] << 8));
+        return true;
+    }
+
+    if (field == "modes" || field == "outputs" || field == "gates")
+    {
+        out.numeric = true;
+        for (unsigned int i = 0; i < 3; i++)
+        {
+            if (field == "modes")   out.values.push_back(Modes[i]);
+            else if (field == "gates") out.values.push_back(Gates[i]);
+            else out.values.push_back((i_output.value >> i) & 1);
+        }
+        return true;
+    }
+
+    return AddressableDevice::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_i8253(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new I8253(im, cd);

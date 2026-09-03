@@ -47,12 +47,14 @@
     #include "renderers/renderer_opengl.h"
 #endif
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(const QString &config_file, const QString &script_file, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , fdd_timer(nullptr)
     , fdds_found(0)
     , fdd_blinker(false)
+    , cmdline_config(config_file)
+    , script_file(script_file)
     //, fdc(nullptr)
 {
     QFontDatabase::addApplicationFont(":/fonts/mono-bold");
@@ -250,7 +252,10 @@ MainWindow::MainWindow(QWidget *parent)
     QString muted = QString::fromStdString(e->read_setup("Sound", "muted", "0"));
     mute->setChecked(muted.toInt() == 1);
 
-    first_config = work_path + file_to_load;
+    //A configuration given on the command line wins over the one saved in the ini
+    first_config = cmdline_config.isEmpty()
+        ? (work_path + file_to_load)
+        : resolve_startup_path(cmdline_config);
 
     // static int old = 0;
     // QTimer *timer = new QTimer(this);
@@ -262,15 +267,76 @@ MainWindow::MainWindow(QWidget *parent)
     // timer->start(1000);
 }
 
+QString MainWindow::resolve_startup_path(const QString &file_name) const
+{
+    if (file_name.isEmpty()) return file_name;
+
+    //An absolute name, or one that resolves against the current directory,
+    //is taken as is. Everything else is relative to computers/, the same way
+    //the [Startup] default entry of the ini file is treated.
+    if (QFileInfo(file_name).isAbsolute()) return file_name;
+    if (QFileInfo::exists(file_name)) return QFileInfo(file_name).absoluteFilePath();
+
+    return QString::fromStdString(e->work_path) + file_name;
+}
+
 void MainWindow::showEvent(QShowEvent* event)
 {
     QMainWindow::showEvent(event);
     if (first_show) {
         // We use this trick to ensure that all interface elements already have their final dimensions (especially on Linux).
+        first_show = false;
+
+        //The script is parsed before the machine is loaded: its MACHINE command
+        //may name the configuration to start with
+        if (!script_file.isEmpty())
+        {
+            QString path = QFileInfo(script_file).exists()
+                ? QFileInfo(script_file).absoluteFilePath()
+                : script_file;
+
+            emulator::Result res = e->load_script(path.toStdString());
+            if (!res) {
+                QMessageBox::warning(this, tr("Error"), translateResultMessage(res.message));
+                script_file.clear();
+            } else {
+                std::string machine = e->script_machine();
+                if (cmdline_config.isEmpty() && !machine.empty())
+                    first_config = resolve_startup_path(QString::fromStdString(machine));
+            }
+        }
+
         load_config(first_config, false);
         CreateScreenMenu();
-        first_show = false;
+
+        if (!script_file.isEmpty()) start_script();
     }
+}
+
+void MainWindow::start_script()
+{
+    if (!e->loaded) return;
+
+    e->start_script();
+
+    //The engine runs on the emulation thread, so its completion is picked up
+    //here by polling rather than by a cross thread call
+    if (script_timer == nullptr) {
+        script_timer = new QTimer(this);
+        connect(script_timer, &QTimer::timeout, this, &MainWindow::check_script);
+    }
+    script_timer->start(100);
+}
+
+void MainWindow::check_script()
+{
+    if (e->script_exit_requested()) {
+        script_timer->stop();
+        close();
+        return;
+    }
+
+    if (e->script_finished()) script_timer->stop();
 }
 
 bool MainWindow::switch_language(const QString & lang, bool init)
@@ -701,6 +767,10 @@ void MainWindow::load_config(QString file_name, bool set_default)
     {
         if (fdd_timer != nullptr) fdd_timer->stop();
 
+        //Switching the machine invalidates every device the script addresses
+        if (script_timer != nullptr) script_timer->stop();
+        e->stop_script();
+
         e->stop_emulation();
     }
 
@@ -780,6 +850,10 @@ void MainWindow::on_actionDebugger_triggered()
 void MainWindow::closeEvent (QCloseEvent *event)
 {
     fdds_found = 0; // to prevent crashing on buttons update
+
+    // The timers must not fire once the emulator is gone
+    if (fdd_timer != nullptr) fdd_timer->stop();
+    if (script_timer != nullptr) script_timer->stop();
 
     // Close all debug windows before destroying the emulator,
     // so their closeEvent handlers can safely access devices

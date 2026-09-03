@@ -12,7 +12,14 @@ namespace emulator {
 
     enum class ErrorCode {
         Ok = 0,
-        ConfigError
+        ConfigError,
+        DeviceNotFound,
+        UnknownField,
+        UnknownCommand,
+        BadParameters,
+        CommandFailed,
+        FileError,
+        ScriptError
     };
 
     struct Result {

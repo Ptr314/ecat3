@@ -243,7 +243,14 @@ void TapeRecorder::encode_msx(const std::vector<uint8_t> &buffer, std::vector<ui
 emulator::Result TapeRecorder::load_file(const std::string &file_name, const std::string &fmt)
 {
     std::vector<std::string> parts = split_string(fmt, ';', true);
+    if (parts.empty())
+        return emulator::Result::error(emulator::ErrorCode::BadParameters,
+            "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Tape file format is not defined")) + "}");
+
     std::vector<std::string> first = split_string(parts[0], ':', true);
+    if (first.size() < 2)
+        return emulator::Result::error(emulator::ErrorCode::BadParameters,
+            "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect tape file format")) + "} " + fmt);
 
     std::string tape_format = first[0];
     int baud = parse_numeric_value(first[1]);
@@ -346,6 +353,93 @@ int TapeRecorder::get_total()
 int TapeRecorder::get_mode()
 {
     return tape_mode;
+}
+
+//------------------- Introspection and control ----------------------------//
+
+std::vector<DeviceFieldInfo> TapeRecorder::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
+    r.push_back({"mode",        "0 - stopped, 1 - playing",         false});
+    r.push_back({"position",    "Current position, seconds",        false});
+    r.push_back({"total",       "Total length, seconds",            false});
+    r.push_back({"size",        "Size of the loaded data, bytes",   false});
+    r.push_back({"baudrate",    "Current baud rate",                false});
+    r.push_back({"recording",   "1 if recording is on",             false});
+    r.push_back({"recorded",    "Size of the recorded data, bytes", false});
+    return r;
+}
+
+std::vector<DeviceCommandInfo> TapeRecorder::get_device_commands()
+{
+    std::vector<DeviceCommandInfo> r = ComputerDevice::get_device_commands();
+    r.push_back({"load",    "\"file\" [, \"format\"]",  "Loads a tape image, the format defaults to the [TapeFiles] ini entry"});
+    r.push_back({"play",    "",                         "Starts playback"});
+    r.push_back({"stop",    "",                         "Stops playback"});
+    r.push_back({"rewind",  "",                         "Rewinds to the beginning"});
+    r.push_back({"record",  "[0|1]",                    "Switches recording on or off"});
+    return r;
+}
+
+bool TapeRecorder::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    out.numeric = true;
+    if (field == "mode")        { out.values.push_back(get_mode());                 return true; }
+    if (field == "recording")   { out.values.push_back(is_recording?1:0);           return true; }
+
+    //Counters and sizes are not byte sized, LOGDEFS must not truncate them
+    out.width = 32;
+    if (field == "position")    { out.values.push_back(get_position());             return true; }
+    if (field == "total")       { out.values.push_back(get_total());                return true; }
+    if (field == "size")        { out.values.push_back(data_size);                  return true; }
+    if (field == "baudrate")    { out.values.push_back(baud_rate);                  return true; }
+    if (field == "recorded")    { out.values.push_back(get_record_size());          return true; }
+    out.width = 0;
+
+    out.numeric = false;
+    return ComputerDevice::get_field(field, from, to, out);
+}
+
+emulator::Result TapeRecorder::send_command(const std::string &command, const std::string &parameters)
+{
+    std::vector<std::string> p = split_params(parameters);
+
+    if (command == "load")
+    {
+        if (p.empty() || p[0].empty())
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Command 'load' expects a file name")) + "}");
+
+        std::string file = find_file_location(sd, p[0]);
+        if (file.empty()) file = p[0];
+
+        //The format may be given explicitly, otherwise it is taken from the ini
+        //by the file extension, exactly as the tape recorder window does it
+        std::string fmt = (p.size() > 1)?p[1]:std::string("");
+        if (fmt.empty() && sd != nullptr && sd->read_setup)
+        {
+            std::string ext = dsk_tools::get_file_ext(file);
+            if (!ext.empty() && ext[0] == '.') ext = ext.substr(1);
+            fmt = sd->read_setup("TapeFiles", ext, "");
+        }
+        if (fmt.empty())
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Unknown tape file format for")) + " " + p[0] + "}");
+
+        return load_file(file, fmt);
+    }
+
+    if (command == "play")   { play();   return emulator::Result::ok(); }
+    if (command == "stop")   { stop();   return emulator::Result::ok(); }
+    if (command == "rewind") { rewind(); return emulator::Result::ok(); }
+
+    if (command == "record") {
+        bool on = p.empty() || p[0].empty() || parse_numeric_value(p[0]) != 0;
+        set_recording(on);
+        return emulator::Result::ok();
+    }
+
+    return ComputerDevice::send_command(command, parameters);
 }
 
 ComputerDevice * create_tape_recorder(InterfaceManager *im, EmulatorConfigDevice *cd)

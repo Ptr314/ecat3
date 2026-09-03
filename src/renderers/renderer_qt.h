@@ -174,7 +174,10 @@ public:
             return image;
         }
         int image_size = screen_x * screen_y * 4;
-        uint8_t * pixels = surface->bits();
+        // constBits(), not bits(): the widget holds an implicitly shared copy of
+        // this image, and the non-const bits() would detach it, writing to the
+        // shared reference counter from this thread while the GUI thread reads it
+        const uint8_t * pixels = surface->constBits();
         image.insert(image.end(), pixels, pixels + image_size);
         // QImage has a reversed RGB order, so we need to swap R and B parts
         for (int i=0; i < image_size; i+=4) {
