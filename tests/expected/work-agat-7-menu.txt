@@ -1,0 +1,2 @@
+[display.resolution] 512x256
+[fdd0.track] $1A

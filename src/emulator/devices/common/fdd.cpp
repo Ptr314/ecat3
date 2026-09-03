@@ -565,7 +565,7 @@ emulator::Result FDD::send_command(const std::string &command, const std::string
         if (p.empty() || p[0].empty())
             return emulator::Result::error(emulator::ErrorCode::BadParameters,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Command 'save' expects a file name")) + "}");
-        return save_image(p[0]);
+        return save_image(resolve_output_path(sd, p[0]));
     }
 
     if (command == "eject") {

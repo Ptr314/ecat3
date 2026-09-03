@@ -248,6 +248,14 @@ bool is_absolute_path(const std::string &path)
     return false;
 }
 
+std::string resolve_output_path(SystemData * sd, const std::string &file_name)
+{
+    if (file_name.empty() || sd == nullptr) return file_name;
+    if (is_absolute_path(file_name)) return file_name;
+    if (sd->script_path.empty()) return file_name;
+    return sd->script_path + file_name;
+}
+
 std::string find_file_location(SystemData * sd, const std::string &file_name)
 {
     if (!file_name.empty())

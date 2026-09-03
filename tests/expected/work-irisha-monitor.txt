@@ -1,0 +1,2 @@
+[mconf.value] $00
+[port-videomode.value] $1A

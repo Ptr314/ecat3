@@ -1,0 +1,18 @@
+# Ириша: в стартовом меню выбран МОНИТОР, ввод запускает отладчик.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+# @timeout 40
+
+MACHINE "irisha/Irisha.cfg"
+WAIT 5000
+
+KEY 300,100,ret
+WAIT 2000
+
+LOGDEFS 8,16
+LOG mconf.value
+LOG port-videomode.value
+
+SCREEN "../results/work-irisha-monitor.png"
+EXIT

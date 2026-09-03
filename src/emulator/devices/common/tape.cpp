@@ -498,6 +498,7 @@ emulator::Result TapeRecorder::send_command(const std::string &command, const st
 
         std::string file = (p.empty() || p[0].empty())?get_record_name():p[0];
         if (file.empty()) file = "tape.bin";
+        file = resolve_output_path(sd, file);
 
         dsk_tools::UTF8_ofstream f(file, std::ios::binary);
         if (!f.is_open())

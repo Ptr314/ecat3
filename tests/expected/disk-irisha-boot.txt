@@ -1,0 +1,3 @@
+[fdd0.loaded] $01
+[fdd0.track] $02
+[fdc.status] ERROR: unknown field

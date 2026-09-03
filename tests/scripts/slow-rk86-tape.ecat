@@ -1,0 +1,32 @@
+# Радио-86РК: загрузка программы с ленты.
+# Все как на настоящей машине: включить воспроизведение и набрать директиву I,
+# пока идет преамбула.
+# Проверяет кодирование ленты, вход магнитофона и сам монитор.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+# @timeout 150
+
+MACHINE "radio-86rk/Radio-86rk.cfg"
+WAIT 2500
+
+COMMAND tape.load("XONIX.RKR")
+LOGDEFS 8,16
+LOG tape.size
+LOG tape.baudrate
+
+COMMAND tape.play
+WAIT 200
+TYPE "I\n"
+
+WAITFOR tape.mode == 0, 60000
+WAIT 2000
+
+LOG tape.position
+
+SCREEN "../results/slow-rk86-tape-loaded.png"
+
+TYPE "G\n"
+WAIT 3000
+SCREEN "../results/slow-rk86-tape-run.png"
+EXIT

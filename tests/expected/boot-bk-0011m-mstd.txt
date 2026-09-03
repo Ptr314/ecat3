@@ -1,0 +1,23 @@
+=== Экран ===
+[display.resolution] 256x256
+=== Карта памяти и портов ===
+[mapper.map] 
+        0000-3FFF -> ram0[0000] mode=rw
+        4000-7FFF -> win0[0000] mode=rw
+        8000-BFFF -> basic1[0000] mode=r cfg=01:01
+        8000-9FFF -> basic2[0000] mode=r cfg=02:03
+        A000-BFFF -> ext[0000] mode=r cfg=02:03
+        8000-BFFF -> win1[0000] mode=rw cfg=00:1B
+        C000-DFFF -> bos[0000] mode=r
+        E000-FF7F -> mstd[0000] mode=r
+        FFB0-FFB1 -> port-kbd-state[0000] mode=rw
+        FFB2-FFB3 -> port-palette[0000] mode=w
+        FFB2-FFB3 -> port-kbd-code[0000] mode=r
+        FFB4-FFB5 -> port-scroll[0000] mode=rw
+        FFC0-FFC1 -> port-177700[0000] mode=rw
+        FFC2-FFC3 -> port-177702[0000] mode=rw
+        FFC4-FFC5 -> port-177704[0000] mode=rw
+        FFC6-FFCB -> timer[0000] mode=rw
+        FFCC-FFCD -> port-ppi[0000] mode=rw
+        FFCE-FFCF -> port-sys[0000] mode=w
+        FFCE-FFCF -> port-sys-rd[0000] mode=r

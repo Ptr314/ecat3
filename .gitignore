@@ -12,3 +12,7 @@ cmake-*/
 .qtcreator/
 CLAUDE.md
 .claude/
+
+# Результаты прогона тестов (эталоны в tests/expected коммитятся)
+tests/results/
+__pycache__/

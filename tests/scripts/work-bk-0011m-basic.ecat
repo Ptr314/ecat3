@@ -1,0 +1,24 @@
+# БК0011М: набор программы из двух строк, LIST и RUN.
+# Проверяет клавиатуру (в том числе Shift для кавычек), ПЗУ Бейсика и
+# страничную память: текст программы лежит в ОЗУ, подключенном в окно.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+# @timeout 40
+
+MACHINE "bk/BK-0011M.cfg"
+WAIT 4000
+
+TYPE "10 PRINT \"BK\"\n"
+TYPE "20 PRINT 355/113\n"
+TYPE "LIST\n"
+WAIT 1500
+TYPE "RUN\n"
+WAIT 2000
+
+LOGDEFS 16,8
+LOG mapper.config
+LOG display.resolution
+
+SCREEN "../results/work-bk-0011m-basic.png"
+EXIT

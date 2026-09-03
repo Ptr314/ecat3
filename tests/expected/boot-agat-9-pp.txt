@@ -1,0 +1,24 @@
+=== Экран ===
+[display.resolution] 512x256
+=== Карта памяти и портов ===
+[mapper.map] 
+        0000-BFFF -> main-mapper[0000] mode=rw
+        D000-FFFF -> main-mapper[D000] mode=rw
+        C000-C00F -> port-kbd[0000] mode=rw
+        C010-C01F -> port-kbd-reset[0000] mode=rw
+        C020-C02F -> port-int-en[0020] mode=rw
+        C030-C03F -> port-sound[0000] mode=rw
+        C040-C04F -> port-int-en[0040] mode=rw
+        C050-C057 -> port-C05x[0000] mode=rw
+        C058-C05B -> port-pal[0000] mode=rw
+        C063-C063 -> port-kbd-ruslat[0000] mode=rw
+        C080-C08F -> main-mapper[C080] mode=rw
+        C0D0-C0DF -> fdc840[0000] mode=rw
+        C0F0-C0FF -> pm[0000] mode=w
+        C100-C1FF -> port-C1xx[0000] mode=rw
+        C300-C32F -> pal-mem[0000] mode=rw
+        C330-C33F -> pal-switch[0000] mode=rw
+        C340-C343 -> pal-mode[0000] mode=rw
+        C500-C5FF -> boot840[0000] mode=r
+        C700-C7FF -> port-C7xx[0000] mode=rw
+        C800-CFFF -> pal-font[0000] mode=rw cfg=01:01

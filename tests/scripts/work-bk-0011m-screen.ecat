@@ -1,0 +1,26 @@
+# БК0011М: переключение экрана из цветного режима в черно-белый.
+# Это то же самое, что тумблер на корпусе и список на панели инструментов.
+# Заодно проверяется, что смена режима меняет разрешение и не ломает уже
+# нарисованное.
+# @timeout 40
+
+MACHINE "bk/BK-0011M.cfg"
+WAIT 4000
+
+TYPE "PRINT \"COLOR\"\n"
+WAIT 1500
+LOGDEFS 16,8
+LOG display.resolution
+SCREEN "../results/work-bk-0011m-screen-color.png"
+
+# 1 - идентификатор списка «Тип вывода», 1 - «Черно-белый»
+COMMAND display.option(1,1)
+WAIT 500
+LOG display.resolution
+SCREEN "../results/work-bk-0011m-screen-mono.png"
+
+COMMAND display.option(1,0)
+WAIT 500
+LOG display.resolution
+SCREEN "../results/work-bk-0011m-screen-back.png"
+EXIT

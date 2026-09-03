@@ -1,0 +1,18 @@
+# Орион-128, Монитор-1: директива D — дамп памяти.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+# @timeout 30
+
+MACHINE "orion-128/Orion-128-m1.cfg"
+WAIT 3000
+
+TYPE "D0000,001F\n"
+WAIT 1500
+
+LOGDEFS 8,16
+LOG port-videomode.value
+LOG port-page.value
+
+SCREEN "../results/work-orion-m1-monitor.png"
+EXIT

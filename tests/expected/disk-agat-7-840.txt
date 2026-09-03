@@ -1,0 +1,5 @@
+[fdd0.loaded] $01
+[fdd0.file] GAMES.DSK
+[fdd0.track] $08
+[fdd0.side] $01
+[fdd0.motor] $00

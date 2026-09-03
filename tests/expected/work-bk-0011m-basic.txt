@@ -1,0 +1,2 @@
+[mapper.config] &177742
+[display.resolution] 256x256

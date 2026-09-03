@@ -927,10 +927,11 @@ emulator::Result Memory::send_command(const std::string &command, const std::str
             return emulator::Result::error(emulator::ErrorCode::BadParameters,
                 "{Memory|" + std::string(QT_TRANSLATE_NOOP("Memory", "Incorrect address range")) + "}");
 
-        dsk_tools::UTF8_ofstream f(p[0], std::ios::binary);
+        const std::string file = resolve_output_path(sd, p[0]);
+        dsk_tools::UTF8_ofstream f(file, std::ios::binary);
         if (!f.is_open())
             return emulator::Result::error(emulator::ErrorCode::FileError,
-                "{Memory|" + std::string(QT_TRANSLATE_NOOP("Memory", "Error writing")) + "} " + p[0]);
+                "{Memory|" + std::string(QT_TRANSLATE_NOOP("Memory", "Error writing")) + "} " + file);
 
         for (unsigned int a = from; a <= to; a++)
         {

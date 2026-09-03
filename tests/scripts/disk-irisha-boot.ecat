@@ -1,0 +1,19 @@
+# Ириша: загрузка с дисковода ГМД7012 — в стартовом меню выбирается ДИСК.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+# @timeout 45
+
+MACHINE "irisha/Irisha.cfg"
+WAIT 5000
+
+KEY 300,100,down,down,ret
+WAIT 6000
+
+LOGDEFS 8,16
+LOG fdd0.loaded
+LOG fdd0.track
+LOG fdc.status
+
+SCREEN "../results/disk-irisha-boot.png"
+EXIT

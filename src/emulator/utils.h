@@ -23,6 +23,12 @@ unsigned int CalcBits(unsigned int V, unsigned int MaxBits = 32);
 
 std::string find_file_location(SystemData * sd, const std::string &file_name);
 
+// Where a file written by a script command (tape.save, fdd.save, ram.save)
+// goes. A relative name lands next to the script, the way a screenshot does;
+// with no script running the name is left alone and resolves against the
+// working directory, as it did before.
+std::string resolve_output_path(SystemData * sd, const std::string &file_name);
+
 // True for "/x", "\\x", "C:/x" and "C:\x". Used to decide whether a name given
 // on the command line or in a script has to be resolved against a base path.
 bool is_absolute_path(const std::string &path);

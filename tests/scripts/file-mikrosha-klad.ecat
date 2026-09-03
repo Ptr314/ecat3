@@ -1,0 +1,20 @@
+# Микроша: загрузка .rkm и запуск директивой G.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+# @timeout 40
+
+MACHINE "mikrosha/Mikrosha.cfg"
+WAIT 2500
+
+LOAD "KLAD.RKM"
+
+LOGDEFS 8,16
+PRINT "=== Начало загруженного файла ==="
+LOG ram.value($0000,$001F)
+
+TYPE "G\n"
+WAIT 3000
+
+SCREEN "../results/file-mikrosha-klad.png"
+EXIT

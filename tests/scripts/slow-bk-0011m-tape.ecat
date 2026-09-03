@@ -1,0 +1,42 @@
+# БК0011М: полный оборот ленты.
+# Программа набирается в Бейсике, пишется на ленту командой SAVE в текстовом
+# формате БЕЙСИКа, снятое сохраняется файлом BKTAPE.asc, после чего лента
+# перезаряжается этим файлом и программа читается обратно командой LOAD. Сам файл тоже сравнивается с эталоном, так что тест
+# ловит и ошибки кодирования, и ошибки распознавания сигнала.
+#
+# Имя файла на ленте берется из имени файла (6 знаков), поэтому BKTAPE.asc и
+# LOAD"BKTAPE" должны совпадать.
+# @timeout 200
+
+MACHINE "bk/BK-0011M.cfg"
+WAIT 4000
+
+TYPE "10 PRINT \"TAPE\"\n"
+TYPE "20 PRINT 355/113\n"
+
+PRINT "=== Запись на ленту ==="
+COMMAND tape.record(1)
+TYPE "SAVE\"BKTAPE\"\n"
+WAIT 30000
+COMMAND tape.record(0)
+
+LOGDEFS 8,16
+LOG tape.recorded
+LOG tape.baudrate
+COMMAND tape.save("../results/BKTAPE.asc")
+
+PRINT "=== Чтение обратно ==="
+TYPE "NEW\n"
+WAIT 500
+COMMAND tape.load("../results/BKTAPE.asc")
+LOG tape.size
+TYPE "LOAD\"BKTAPE\"\n"
+WAIT 500
+COMMAND tape.play
+WAIT 35000
+
+TYPE "LIST\n"
+WAIT 3000
+
+SCREEN "../results/slow-bk-0011m-tape.png"
+EXIT
