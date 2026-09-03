@@ -6,7 +6,19 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-project(eCat3 VERSION 3.6.0 LANGUAGES C CXX)
+# The version lives in the VERSION file at the repository root and is the
+# single source of truth: the release scripts and the browser build read the
+# same file, so none of them can drift from the executable.
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../VERSION" ECAT_VERSION LIMIT_COUNT 1)
+string(STRIP "${ECAT_VERSION}" ECAT_VERSION)
+if(NOT ECAT_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR "Cannot read the project version from ../VERSION: '${ECAT_VERSION}'")
+endif()
+# Without this a version bump would not trigger a reconfigure, and the number
+# compiled into globals.h would stay behind the one the release scripts use.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../VERSION")
+
+project(eCat3 VERSION ${ECAT_VERSION} LANGUAGES C CXX)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)

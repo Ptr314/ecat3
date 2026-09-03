@@ -23,7 +23,7 @@ call "%~dp0%~1" || exit /b 1
 SET _ARCHITECTURE=i386
 SET "CC=%_ROOT_MINGW%\gcc.exe"
 
-call "%~dp0win-common.cmd" version "..\src\CMakeLists.txt" || exit /b 1
+call "%~dp0win-common.cmd" version "..\VERSION" || exit /b 1
 echo Building eCat3 %_VERSION% for %_PLATFORM% %_ARCHITECTURE% (Qt %_QT_VERSION%, %_MINGW_VERSION%)
 
 if not exist "%_QT_PREFIX%\bin\Qt5Core.dll" (

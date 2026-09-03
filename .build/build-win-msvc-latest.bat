@@ -24,7 +24,7 @@ SET _PLATFORM=windows
 
 SET RENDERERS=QT OPENGL
 
-call "%~dp0win-common.cmd" version "..\src\CMakeLists.txt" || exit /b 1
+call "%~dp0win-common.cmd" version "..\VERSION" || exit /b 1
 
 if exist "%_QT_PREFIX_STATIC%\bin\qt-cmake.bat" (
     SET "_QT_KIT=%_QT_PREFIX_STATIC%"

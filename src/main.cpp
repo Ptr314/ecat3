@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationVersion(PROJECT_VERSION);
 
     QCommandLineParser parser;
-    parser.setApplicationDescription(QCoreApplication::translate("main", "eCat3, an emulator of 8-bit computers"));
+    parser.setApplicationDescription(QCoreApplication::translate("main", "eCat3, a universal emulator of retro computers"));
     parser.addHelpOption();
     parser.addVersionOption();
 

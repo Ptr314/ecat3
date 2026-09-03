@@ -32,7 +32,7 @@ if not defined _PYTHON SET "_PYTHON=python"
     exit /b 1
 )
 
-call "%~dp0win-common.cmd" version "..\src\CMakeLists.txt" || exit /b 1
+call "%~dp0win-common.cmd" version "..\VERSION" || exit /b 1
 
 SET _RELEASE_NAME=ecat-%_VERSION%-%_PLATFORM%
 SET _RELEASE_DIR=.\release\%_RELEASE_NAME%

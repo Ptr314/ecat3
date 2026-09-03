@@ -81,6 +81,7 @@ private:
     uint64_t                    m_poll_at;      //Next moment to re-check a polled state
 
     std::vector<unsigned int>   m_keys;         //Key sequence of KEY / TYPE
+    std::vector<bool>           m_key_shift;    //Whether Shift is held for that key
     size_t                      m_key_index;
     bool                        m_key_pressed;
     unsigned int                m_key_delay;
@@ -96,7 +97,8 @@ private:
 
     bool     key_step();                        //true when the sequence is over
     bool     waitfor_step();                    //true when the condition is met or timed out
-    void     start_keys(const std::vector<unsigned int> &keys, unsigned int delay, unsigned int hold);
+    void     start_keys(const std::vector<unsigned int> &keys, const std::vector<bool> &shift,
+                        unsigned int delay, unsigned int hold);
 
     ComputerDevice * find_device(const ScriptCommand &c);
     bool     read_field(const ScriptCommand &c, DeviceFieldValue &out);

@@ -91,6 +91,7 @@ public:
     virtual int get_mode();
     virtual void set_recording(bool recording);
     virtual unsigned get_record_size();
+    virtual std::string get_record_name();
     virtual std::vector<uint8_t> * get_record_data();
 
     std::function<void(unsigned int)> on_mode_changed;

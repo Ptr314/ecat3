@@ -1,14 +1,15 @@
 cmake_minimum_required(VERSION 3.21)
 
-# The version is taken from the desktop project() call so the two never drift
-# apart -- it ends up in globals.h through configure_file() below.
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt _ecat_root_cmakelists)
-string(REGEX MATCH "eCat3 VERSION ([0-9]+[.][0-9]+[.][0-9]+)" _ecat_version_match "${_ecat_root_cmakelists}")
-if(NOT CMAKE_MATCH_1)
-    message(FATAL_ERROR "Cannot read the project version from ../CMakeLists.txt")
+# The version comes from the same VERSION file the desktop build reads, so the
+# two never drift apart -- it ends up in globals.h through configure_file().
+file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION ECAT_VERSION LIMIT_COUNT 1)
+string(STRIP "${ECAT_VERSION}" ECAT_VERSION)
+if(NOT ECAT_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR "Cannot read the project version from ../../VERSION: '${ECAT_VERSION}'")
 endif()
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION)
 
-project(eCat3_wasm VERSION ${CMAKE_MATCH_1} LANGUAGES C CXX)
+project(eCat3_wasm VERSION ${ECAT_VERSION} LANGUAGES C CXX)
 
 
 set(CMAKE_CXX_STANDARD 17)

@@ -181,6 +181,14 @@ unsigned TapeRecorder::get_record_size()
     return recorded_bytes.size();
 }
 
+// The name and, more importantly, the extension the recorded data has to be
+// saved under to be readable back. Empty when there is nothing to suggest.
+std::string TapeRecorder::get_record_name()
+{
+    if (m_tape_enc == TapeEnc::BK) return bk_decoder.name();
+    return "";
+}
+
 std::vector<uint8_t> * TapeRecorder::get_record_data()
 {
     if (m_tape_enc == TapeEnc::BK) {
@@ -329,11 +337,17 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
         encode_msx(buffer, buffer_encoded);
         set_data(buffer_encoded);
     } else
-    if (tape_format == "bk") {
+    if (tape_format == "bk" || tape_format == "bk-ascii") {
         // For the БК the rate is given directly in units, one unit being the
         // half period of a synchronisation pulse
         set_baud_rate(baud);
-        bk_tape::encode(buffer, dsk_tools::get_file_basename(file_name), buffer_encoded);
+        const std::string tape_name = dsk_tools::get_file_basename(file_name);
+        if (tape_format == "bk-ascii")
+            // A БЕЙСИК program in text form goes to the tape as a series of
+            // numbered files, not as a single one
+            bk_tape::encode_ascii(buffer, tape_name, buffer_encoded);
+        else
+            bk_tape::encode(buffer, tape_name, buffer_encoded);
         set_data(buffer_encoded);
     } else {
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
@@ -409,6 +423,7 @@ std::vector<DeviceCommandInfo> TapeRecorder::get_device_commands()
     r.push_back({"stop",    "",                         "Stops playback"});
     r.push_back({"rewind",  "",                         "Rewinds to the beginning"});
     r.push_back({"record",  "[0|1]",                    "Switches recording on or off"});
+    r.push_back({"save",    "[\"file\"]",                 "Writes the recorded data out, by default under the name the machine used"});
     return r;
 }
 
@@ -449,9 +464,12 @@ emulator::Result TapeRecorder::send_command(const std::string &command, const st
         std::string fmt = (p.size() > 1)?p[1]:std::string("");
         if (fmt.empty() && sd != nullptr && sd->read_setup)
         {
-            std::string ext = dsk_tools::get_file_ext(file);
+            std::string ext = str_tolower(dsk_tools::get_file_ext(file));
             if (!ext.empty() && ext[0] == '.') ext = ext.substr(1);
-            fmt = sd->read_setup("TapeFiles", ext, "");
+            //A machine specific entry wins over the generic one, the same way
+            //the tape recorder window resolves it
+            fmt = sd->read_setup("TapeFiles", sd->system_type + "." + ext, "");
+            if (fmt.empty()) fmt = sd->read_setup("TapeFiles", ext, "");
         }
         if (fmt.empty())
             return emulator::Result::error(emulator::ErrorCode::BadParameters,
@@ -467,6 +485,26 @@ emulator::Result TapeRecorder::send_command(const std::string &command, const st
     if (command == "record") {
         bool on = p.empty() || p[0].empty() || parse_numeric_value(p[0]) != 0;
         set_recording(on);
+        return emulator::Result::ok();
+    }
+
+    if (command == "save") {
+        //Writes out what has been recorded, so that a script can check that a
+        //tape written by the machine reads back into it
+        const std::vector<uint8_t> * out = get_record_data();
+        if (out->empty())
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Nothing has been recorded")) + "}");
+
+        std::string file = (p.empty() || p[0].empty())?get_record_name():p[0];
+        if (file.empty()) file = "tape.bin";
+
+        dsk_tools::UTF8_ofstream f(file, std::ios::binary);
+        if (!f.is_open())
+            return emulator::Result::error(emulator::ErrorCode::FileError,
+                "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Unable to save file!")) + "} " + file);
+        f.write(reinterpret_cast<const char*>(out->data()), (std::streamsize)out->size());
+        f.close();
         return emulator::Result::ok();
     }
 

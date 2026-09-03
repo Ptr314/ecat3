@@ -51,6 +51,7 @@ public:
 
     void key_down(unsigned int key) override;
     void key_up(unsigned int key) override;
+    bool needs_shift(unsigned int key) override;
 
     emulator::Result load_config(SystemData *sd) override;
 

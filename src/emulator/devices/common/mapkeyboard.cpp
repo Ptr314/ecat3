@@ -196,6 +196,19 @@ void MapKeyboard::key_down(unsigned int key)
     }
 }
 
+// A symbol of the upper register has a map entry with Shift and none without
+// it, so pressing the key alone gives nothing. Letters have both entries and
+// are typed as they are.
+bool MapKeyboard::needs_shift(unsigned int key)
+{
+    bool plain = false, shifted = false;
+    for (size_t i = 0; i < key_map.size(); i++)
+        if (key_map[i].key_code == key && !key_map[i].ctrl) {
+            if (key_map[i].shift) shifted = true; else plain = true;
+        }
+    return shifted && !plain;
+}
+
 void MapKeyboard::key_up(unsigned int key)
 {
     for (size_t i = 0; i < keys_held.size(); i++)

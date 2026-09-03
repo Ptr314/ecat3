@@ -36,6 +36,23 @@ namespace bk_tape
     // A short series in front of every record
     const unsigned RECORD_PULSES = 8;
 
+    // A tape header is the load address, the length and a sixteen byte name
+    const unsigned NAME_SIZE   = 16;
+    const unsigned HEADER_SIZE = 4 + NAME_SIZE;
+
+    // БЕЙСИК does not write a program saved in text form as one file. It cuts
+    // the text into parts of 256 bytes, writes every part as a separate tape
+    // file named "NAME  .ASC #NNN" and closes the series with a file of the
+    // same name without a number holding two zero bytes. LOAD reads part #000
+    // and then looks for the next one, so a single file never finishes loading.
+    const unsigned ASCII_PART_SIZE = 256;
+    const uint8_t  ASCII_EOT       = 0x1A;      // ends the text inside the last part
+
+    // The address БЕЙСИК puts into the header of a text part is the address of
+    // its own buffer. The reader ignores it and loads the text into the buffer
+    // it has itself, so the value only has to look like the real one.
+    const uint16_t ASCII_ADDRESS = 0x3DEE;
+
     inline void put(std::vector<uint8_t> &bits, uint8_t level, unsigned count)
     {
         for (unsigned i = 0; i < count; i++) bits.push_back(level);
@@ -99,6 +116,36 @@ namespace bk_tape
         }
     }
 
+    // One complete file on the tape: the leading series the reader calibrates
+    // on, then the header record and the data record. Every record opens with
+    // a short sync series and a marker, the way the monitor emits them at
+    // 0116474. The name is a raw sixteen byte field, already padded by the
+    // caller.
+    inline void put_file(std::vector<uint8_t> &bits, uint16_t address,
+                         const uint8_t * data, unsigned length,
+                         const uint8_t * name)
+    {
+        put_sync(bits, LEADER_PULSES);
+        put_marker(bits);
+
+        put_sync(bits, RECORD_PULSES);
+        put_marker(bits);
+        put_byte(bits, address & 0xFF);
+        put_byte(bits, (address >> 8) & 0xFF);
+        put_byte(bits, length & 0xFF);
+        put_byte(bits, (length >> 8) & 0xFF);
+        for (unsigned i = 0; i < NAME_SIZE; i++) put_byte(bits, name[i]);
+
+        put_sync(bits, RECORD_PULSES);
+        put_marker(bits);
+        for (unsigned i = 0; i < length; i++) put_byte(bits, data[i]);
+        const uint16_t cs = checksum(data, length);
+        put_byte(bits, cs & 0xFF);
+        put_byte(bits, (cs >> 8) & 0xFF);
+
+        put_sync(bits, 32);
+    }
+
     // A БК file starts with the load address and the length, which are also
     // the first four bytes of the tape header. The rest of the header is the
     // sixteen character name.
@@ -116,30 +163,63 @@ namespace bk_tape
             if (length == 0 || length > file.size() - 4) length = (uint16_t)(file.size() - 4);
         }
 
-        // The leader the reader calibrates on, closed by a marker of its own
-        put_sync(bits, LEADER_PULSES);
-        put_marker(bits);
+        uint8_t name_field[NAME_SIZE];
+        for (unsigned i = 0; i < NAME_SIZE; i++)
+            name_field[i] = (i < name.size())? (uint8_t)name[i] : (uint8_t)' ';
 
-        // Header record. Every record starts with a short sync series and a
-        // marker, the way the monitor emits them at 0116474.
-        put_sync(bits, RECORD_PULSES);
-        put_marker(bits);
-        put_byte(bits, address & 0xFF);
-        put_byte(bits, (address >> 8) & 0xFF);
-        put_byte(bits, length & 0xFF);
-        put_byte(bits, (length >> 8) & 0xFF);
-        for (int i = 0; i < 16; i++)
-            put_byte(bits, (i < (int)name.size())? (uint8_t)name[i] : (uint8_t)' ');
+        put_file(bits, address, file.data() + data_at, length, name_field);
 
-        // Data record with the checksum appended
-        put_sync(bits, RECORD_PULSES);
-        put_marker(bits);
-        for (unsigned i = 0; i < length; i++) put_byte(bits, file[data_at + i]);
-        uint16_t cs = checksum(file.data() + data_at, length);
-        put_byte(bits, cs & 0xFF);
-        put_byte(bits, (cs >> 8) & 0xFF);
+        pack(bits, out);
+    }
 
-        put_sync(bits, 32);
+    // The name field of a text part: six characters of the name, the .ASC
+    // extension and the number of the part. The byte 032 after the number and
+    // the four zeroes in the closing file are what БЕЙСИК leaves there, and
+    // the reader compares the whole field, so they are reproduced as measured.
+    inline void ascii_name(uint8_t * field, const std::string &name, int part)
+    {
+        for (unsigned i = 0; i < 6; i++)
+            field[i] = (i < name.size())? (uint8_t)name[i] : (uint8_t)' ';
+        field[6] = '.'; field[7] = 'A'; field[8] = 'S'; field[9] = 'C';
+        field[10] = ' ';
+        if (part < 0) {
+            field[11] = ' ';
+            field[12] = field[13] = field[14] = field[15] = 0;
+        } else {
+            field[11] = '#';
+            field[12] = (uint8_t)('0' + (part / 100) % 10);
+            field[13] = (uint8_t)('0' + (part / 10) % 10);
+            field[14] = (uint8_t)('0' + part % 10);
+            field[15] = ASCII_EOT;
+        }
+    }
+
+    // A БЕЙСИК program saved in text form. The text is cut into parts of 256
+    // bytes, each written as a file of its own, and a closing file without a
+    // number tells the reader that the program is over.
+    inline void encode_ascii(const std::vector<uint8_t> &text, const std::string &name,
+                             std::vector<uint8_t> &out)
+    {
+        std::vector<uint8_t> bits;
+        uint8_t name_field[NAME_SIZE];
+
+        // The text always ends with 032, and the last part is padded with
+        // zeroes up to the full size
+        std::vector<uint8_t> body = text;
+        while (!body.empty() && (body.back() == 0 || body.back() == ASCII_EOT)) body.pop_back();
+        body.push_back(ASCII_EOT);
+        const unsigned parts = (unsigned)((body.size() + ASCII_PART_SIZE - 1) / ASCII_PART_SIZE);
+        body.resize((size_t)parts * ASCII_PART_SIZE, 0);
+
+        for (unsigned p = 0; p < parts; p++) {
+            ascii_name(name_field, name, (int)p);
+            put_file(bits, ASCII_ADDRESS, body.data() + (size_t)p * ASCII_PART_SIZE,
+                     ASCII_PART_SIZE, name_field);
+        }
+
+        const uint8_t closing[2] = {0, 0};
+        ascii_name(name_field, name, -1);
+        put_file(bits, ASCII_ADDRESS, closing, 2, name_field);
 
         pack(bits, out);
     }
@@ -151,14 +231,36 @@ namespace bk_tape
     class Decoder
     {
     private:
+        struct TapeFile
+        {
+            uint16_t address;
+            std::string name;                   // the raw sixteen byte field
+            std::vector<uint8_t> data;
+        };
+
         std::vector<uint32_t> periods;
         std::vector<uint8_t> result;
+        std::string m_name;
         size_t decoded_periods = 0;
+
+        // Turns a tape name into something that can be offered as a file name
+        static std::string clean_name(const std::string &name)
+        {
+            std::string s;
+            for (size_t i = 0; i < name.size(); i++) {
+                const char c = name[i];
+                if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')
+                    || (c >= 'a' && c <= 'z') || c == '-' || c == '_')
+                    s += c;
+            }
+            return s.empty()? std::string("tape") : s;
+        }
 
         // Splits the stream into the records between the markers
         void decode()
         {
             result.clear();
+            m_name.clear();
             decoded_periods = periods.size();
 
             // Recording begins when the user presses the button, so the stream
@@ -228,22 +330,79 @@ namespace bk_tape
 
             if (records.empty()) return;
 
-            // The first record is the header, the second the data followed by
-            // a checksum. Anything else is handed over as it was read.
-            if (records.size() >= 2 && records[0].size() >= 4) {
-                const std::vector<uint8_t> & header = records[0];
-                const std::vector<uint8_t> & data = records[1];
-                unsigned length = header[2] | (header[3] << 8);
-                if (length > data.size()) length = (unsigned)data.size();
+            // A file is a header record of the full size followed by a data
+            // record as long as the header says plus the two checksum bytes.
+            // The leading series of every file after the first one decodes into
+            // records of zeroes, and this check is what throws them away.
+            std::vector<TapeFile> files;
+            for (size_t r = 0; r + 1 < records.size(); r++) {
+                const std::vector<uint8_t> & h = records[r];
+                const std::vector<uint8_t> & d = records[r + 1];
+                if (h.size() != HEADER_SIZE) continue;
+                const unsigned length = h[2] | (h[3] << 8);
+                // A record can carry a couple of bytes more than the header
+                // says: the series that closes the file decodes into bits too
+                if (length == 0 || d.size() < (size_t)length + 2) continue;
+                if (checksum(d.data(), length) != (uint16_t)(d[length] | (d[length + 1] << 8))) continue;
 
-                result.push_back(header[0]); result.push_back(header[1]);
-                result.push_back((uint8_t)(length & 0xFF));
-                result.push_back((uint8_t)((length >> 8) & 0xFF));
-                result.insert(result.end(), data.begin(), data.begin() + length);
-            } else {
-                for (size_t r = 0; r < records.size(); r++)
-                    result.insert(result.end(), records[r].begin(), records[r].end());
+                TapeFile f;
+                f.address = (uint16_t)(h[0] | (h[1] << 8));
+                f.name.assign(h.begin() + 4, h.end());
+                f.data.assign(d.begin(), d.begin() + length);
+                files.push_back(f);
+                r++;
             }
+
+            if (files.empty()) {
+                // A recording switched off too early leaves a data record
+                // shorter than the header promises. Nothing checks out then,
+                // but the first record is still a header and what was read is
+                // worth handing over.
+                if (records.size() >= 2 && records[0].size() >= 4) {
+                    const std::vector<uint8_t> & h = records[0];
+                    const std::vector<uint8_t> & d = records[1];
+                    unsigned length = h[2] | (h[3] << 8);
+                    if (length > d.size()) length = (unsigned)d.size();
+                    result.push_back(h[0]); result.push_back(h[1]);
+                    result.push_back((uint8_t)(length & 0xFF));
+                    result.push_back((uint8_t)((length >> 8) & 0xFF));
+                    result.insert(result.end(), d.begin(), d.begin() + length);
+                    if (h.size() == HEADER_SIZE)
+                        m_name = clean_name(std::string(h.begin() + 4, h.end())) + ".bin";
+                } else
+                    for (size_t r = 0; r < records.size(); r++)
+                        result.insert(result.end(), records[r].begin(), records[r].end());
+                return;
+            }
+
+            // A program saved in text form arrives as a series of numbered
+            // parts. They are glued back together and the closing file, which
+            // has no number, is dropped.
+            if (files[0].name.find(".ASC") != std::string::npos) {
+                unsigned parts = 0;
+                for (size_t f = 0; f < files.size(); f++) {
+                    if (files[f].name.find('#') == std::string::npos) continue;
+                    result.insert(result.end(), files[f].data.begin(), files[f].data.end());
+                    parts++;
+                }
+                if (parts != 0) {
+                    for (size_t i = 0; i < result.size(); i++)
+                        if (result[i] == ASCII_EOT) { result.resize(i); break; }
+                    m_name = clean_name(files[0].name.substr(0, 6)) + ".asc";
+                    return;
+                }
+                result.clear();
+            }
+
+            // A single file keeps the address and the length in front of the
+            // data, the way a БК file looks on disk
+            const TapeFile & f = files[0];
+            result.push_back((uint8_t)(f.address & 0xFF));
+            result.push_back((uint8_t)((f.address >> 8) & 0xFF));
+            result.push_back((uint8_t)(f.data.size() & 0xFF));
+            result.push_back((uint8_t)((f.data.size() >> 8) & 0xFF));
+            result.insert(result.end(), f.data.begin(), f.data.end());
+            m_name = clean_name(f.name) + ".bin";
         }
 
     public:
@@ -251,6 +410,7 @@ namespace bk_tape
         {
             periods.clear();
             result.clear();
+            m_name.clear();
             decoded_periods = 0;
         }
 
@@ -263,6 +423,14 @@ namespace bk_tape
         {
             if (decoded_periods != periods.size()) decode();
             return &result;
+        }
+
+        // The name the machine wrote into the header, with the extension the
+        // decoded content has to keep to be readable back
+        const std::string & name()
+        {
+            if (decoded_periods != periods.size()) decode();
+            return m_name;
         }
     };
 }

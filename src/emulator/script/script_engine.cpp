@@ -272,9 +272,12 @@ emulator::Result ScriptEngine::execute(const ScriptCommand &c)
 
 //------------------------------ Keyboard ----------------------------------//
 
-void ScriptEngine::start_keys(const std::vector<unsigned int> &keys, unsigned int delay, unsigned int hold)
+void ScriptEngine::start_keys(const std::vector<unsigned int> &keys, const std::vector<bool> &shift,
+                              unsigned int delay, unsigned int hold)
 {
     m_keys = keys;
+    m_key_shift = shift;
+    m_key_shift.resize(m_keys.size(), false);
     m_key_index = 0;
     m_key_pressed = false;
     m_key_delay = delay;
@@ -291,6 +294,9 @@ bool ScriptEngine::key_step()
     if (m_key_index >= m_keys.size()) return true;
 
     if (!m_key_pressed) {
+        //The keyboard devices watch the Shift key itself, not a modifier flag,
+        //so it is pressed and released around the character that needs it
+        if (m_key_shift[m_key_index]) e->key_event(static_cast<int>(EmuKey::Shift), 0, true);
         e->key_event(static_cast<int>(m_keys[m_key_index]), 0, true);
         m_key_pressed = true;
         m_resume_at = m_now + ms_to_ticks(m_key_hold);
@@ -298,6 +304,7 @@ bool ScriptEngine::key_step()
     }
 
     e->key_event(static_cast<int>(m_keys[m_key_index]), 0, false);
+    if (m_key_shift[m_key_index]) e->key_event(static_cast<int>(EmuKey::Shift), 0, false);
     m_key_pressed = false;
     m_key_index++;
 
@@ -318,18 +325,34 @@ emulator::Result ScriptEngine::do_key(const ScriptCommand &c)
     unsigned int hold  = parse_numeric_value(c.args[1]);
 
     std::vector<unsigned int> keys;
+    std::vector<bool> shift;
     for (size_t i = 2; i < c.args.size(); i++)
     {
         if (c.args[i].empty()) continue;
-        unsigned int code = translate_key_name(c.args[i]);
+
+        //A key can be prefixed with "shift+" to be typed with Shift held.
+        //The plus itself is a key name, so only a separator inside the name
+        //counts as the prefix.
+        std::string name = c.args[i];
+        bool with_shift = false;
+        const size_t plus = name.find('+');
+        if (plus != std::string::npos && plus > 0 && plus + 1 < name.length()) {
+            if (str_tolower(name.substr(0, plus)) == "shift") {
+                with_shift = true;
+                name = name.substr(plus + 1);
+            }
+        }
+
+        unsigned int code = translate_key_name(name);
         if (code == _FFFF) {
             log_error(c, "unknown key '" + c.args[i] + "'");
             continue;
         }
         keys.push_back(code);
+        shift.push_back(with_shift);
     }
 
-    start_keys(keys, delay, hold);
+    start_keys(keys, shift, delay, hold);
     return emulator::Result::ok();
 }
 
@@ -344,6 +367,12 @@ emulator::Result ScriptEngine::do_type(const ScriptCommand &c)
 
     const std::string &text = c.args[0];
     std::vector<unsigned int> keys;
+    std::vector<bool> shift;
+
+    //Some characters live on the machine keyboard only together with Shift.
+    //The keyboard itself knows which ones, so TYPE asks it instead of guessing
+    //by the host layout.
+    Keyboard * kbd = dynamic_cast<Keyboard*>(e->dm->get_device_by_name("keyboard", false));
 
     for (size_t i = 0; i < text.length(); i++)
     {
@@ -367,9 +396,10 @@ emulator::Result ScriptEngine::do_type(const ScriptCommand &c)
             continue;
         }
         keys.push_back(code);
+        shift.push_back(kbd != nullptr && kbd->needs_shift(code));
     }
 
-    start_keys(keys, delay, hold);
+    start_keys(keys, shift, delay, hold);
     return emulator::Result::ok();
 }
 

@@ -313,4 +313,9 @@ public:
     virtual void key_event(unsigned int key, unsigned int native_key, bool press);
     virtual void key_down(unsigned int key) = 0;
     virtual void key_up(unsigned int key) = 0;
+
+    // Tells whether the character is only reachable with Shift held on this
+    // machine. The scripting engine uses it so that TYPE can produce quotes
+    // and other symbols of the upper register.
+    virtual bool needs_shift(unsigned int key) { (void)key; return false; }
 };
