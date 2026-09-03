@@ -1931,8 +1931,10 @@ bool MemoryMapper::get_field(const std::string &field, unsigned int from, unsign
     {
         //Dumps the ranges the way they are matched at run time. Ranges before
         //first_range are the ones disabled by cancelinit.
+        //Ranges are stored from index 1 up; index 0 exists only when the
+        //config declares a [*] range, and shows as [off] once it is gone.
         std::string s;
-        for (unsigned int i = 0; i < ranges_count; i++)
+        for (unsigned int i = (cancel_init_mask != 0)?0:1; i <= ranges_count; i++)
         {
             const MapperRange &r = ranges[i];
             s += "\n  ";
