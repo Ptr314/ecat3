@@ -7,7 +7,7 @@
 
 #include "emulator/script/script_log.h"
 #include "emulator/utils.h"
-#include "../libs/dsk_tools/src/utils.h"
+#include "libs/dsk_tools/src/utils.h"
 
 ScriptLog::ScriptLog(const std::string &script_file):
       m_path(dsk_tools::get_file_path(script_file))

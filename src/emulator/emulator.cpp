@@ -4,7 +4,9 @@
 // Description: Main emulator class, source
 
 #include "dsk_tools/dsk_tools.h"
-#include "../libs/dsk_tools/src/utils.h"
+// MSVC resolves the "utils.h" inside dsk_tools.h against the includer's directory,
+// where it finds emulator/utils.h. Pull in the real one explicitly.
+#include "libs/dsk_tools/src/utils.h"
 #include "host_helpers.h"
 #include <cmath>
 #include <iostream>
