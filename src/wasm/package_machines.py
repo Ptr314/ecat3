@@ -31,14 +31,11 @@ import struct
 import glob
 
 def find_cfg_files(computers_dir):
-    """Find all .cfg files, skipping test configs."""
+    """Find all .cfg files."""
     configs = []
     for root, dirs, files in os.walk(computers_dir):
         for f in files:
             if f.endswith(".cfg"):
-                # Skip test configs
-                if "test" in f.lower() or "zexall" in f.lower():
-                    continue
                 configs.append(os.path.join(root, f))
     return sorted(configs)
 
@@ -52,6 +49,7 @@ def parse_cfg_metadata(cfg_path):
     version = ""
     sys_type = ""
     charmap = ""
+    debug = False
 
     system_match = re.search(r'system\s*\{([^}]*)\}', content, re.DOTALL)
     if system_match:
@@ -64,6 +62,8 @@ def parse_cfg_metadata(cfg_path):
         if m: sys_type = m.group(1).strip()
         m = re.search(r'charmap\s*=\s*(.+)', block)
         if m: charmap = m.group(1).strip()
+        m = re.search(r'debug\s*=\s*(.+)', block)
+        if m: debug = m.group(1).strip() == "1"
 
     # Find all "image = file" and "map = file" references (word boundary to avoid matching "charmap")
     files = []
@@ -75,6 +75,7 @@ def parse_cfg_metadata(cfg_path):
         "version": version,
         "type": sys_type,
         "charmap": charmap,
+        "debug": debug,
         "files": files,
     }
 
@@ -148,6 +149,14 @@ def main():
     for cfg_path in cfg_files:
         meta = parse_cfg_metadata(cfg_path)
         if not meta["name"]:
+            continue
+
+        # Debug configurations are the test benches and the variants with a
+        # diagnostic module plugged in. The desktop hides them behind an ini
+        # setting; the page has no such setting, so they are not shipped at
+        # all and their ROM images stay out of the download as well.
+        if meta["debug"]:
+            print(f"Skipped {os.path.basename(cfg_path)} (debug configuration)")
             continue
 
         cfg_dir = os.path.dirname(cfg_path)

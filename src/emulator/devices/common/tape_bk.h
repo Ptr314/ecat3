@@ -160,20 +160,47 @@ namespace bk_tape
         {
             result.clear();
             decoded_periods = periods.size();
-            if (periods.size() < 256) return;
 
-            // The leader is a long run of identical pulses, so the median of
-            // the first of them is the length of one period.
-            std::vector<uint32_t> head(periods.begin(), periods.begin() + 128);
+            // Recording begins when the user presses the button, so the stream
+            // normally opens with the clicks of the keys that type the command:
+            // on the БК the same bit drives the speaker and the tape. The
+            // leading series is a run of thousands of identical periods and
+            // nothing else in the recording comes close, so the first long
+            // enough run gives both the length of one period and the point
+            // where the useful signal starts.
+            const size_t LEADER = 1024;         // certainly the leading series
+            const size_t SHORTEST = 256;        // enough to average a period on
+            if (periods.size() < SHORTEST * 2) return;
+
+            size_t start = 0, length = 0;
+            size_t p = 0;
+            while (p < periods.size()) {
+                uint32_t lo = periods[p], hi = periods[p];
+                size_t q = p + 1;
+                for (; q < periods.size(); q++) {
+                    const uint32_t v = periods[q];
+                    const uint32_t new_lo = (v < lo)? v : lo;
+                    const uint32_t new_hi = (v > hi)? v : hi;
+                    if (new_lo == 0 || new_hi > new_lo + new_lo / 8) break;
+                    lo = new_lo; hi = new_hi;
+                }
+                if (q - p > length) { length = q - p; start = p; }
+                if (length >= LEADER) break;
+                p = q;
+            }
+            if (length < SHORTEST) return;
+
+            std::vector<uint32_t> head(periods.begin() + start,
+                                       periods.begin() + start + SHORTEST);
             std::sort(head.begin(), head.end());
-            uint32_t unit = head[head.size() / 2];
+            const uint32_t unit = head[head.size() / 2];
             if (unit == 0) return;
 
             const uint32_t bit_threshold = unit * 3 / 2;
             const uint32_t marker_threshold = unit * 5 / 2;
 
             std::vector<std::vector<uint8_t>> records;
-            size_t i = 0;
+            size_t i = start;
 
             while (i < periods.size()) {
                 // Look for a marker
