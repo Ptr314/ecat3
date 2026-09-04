@@ -1,0 +1,34 @@
+# Ириша + КНГМД: второй контроллер ГМД-70 на портах 50-51 с 8" дисководами
+# E: и F: (fdc2, fdd2 с disk5.gmd, fdd3 пустой). После загрузки с A: печатается
+# каталог E: и запускается E:DEMOG — программа должна дойти до своей заставки.
+# Двоеточие на Ирише набирается только через KEY shift+colon.
+# @timeout 60
+
+MACHINE "irisha/Irisha-kngmd.cfg"
+WAIT 5000
+
+KEY 300,100,down,down,ret
+WAIT 3000
+KEY 300,100,Y,ret
+WAIT 3000
+
+TYPE "DIR E"
+KEY 50,50,shift+colon
+TYPE "\n"
+WAIT 6000
+
+LOGDEFS 8,16
+LOG fdd2.file
+LOG fdd2.track
+LOG fdd2.selected
+LOG fdd3.loaded
+SCREEN "../results/disk-irisha-kngmd-gmd70-dir.png"
+
+TYPE "E"
+KEY 50,50,shift+colon
+TYPE "DEMOG\n"
+WAIT 8000
+
+LOG fdd2.track
+SCREEN "../results/disk-irisha-kngmd-gmd70-demog.png"
+EXIT

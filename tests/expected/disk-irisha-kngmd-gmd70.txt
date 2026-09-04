@@ -1,0 +1,5 @@
+[fdd2.file] disk5.gmd
+[fdd2.track] $02
+[fdd2.selected] $01
+[fdd3.loaded] $00
+[fdd2.track] $2B
