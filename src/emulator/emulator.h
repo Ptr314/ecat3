@@ -21,6 +21,7 @@
 #include "emulator/devices/common/keyboard.h"
 #include "emulator/devices/common/joystick.h"
 #include "emulator/script/script_engine.h"
+#include "emulator/script/script_recorder.h"
 #include "renderer.h"
 
 class Emulator
@@ -66,6 +67,7 @@ private:
     std::atomic<bool> m_ready;
 
     std::unique_ptr<ScriptEngine> script;
+    std::unique_ptr<ScriptRecorder> recorder;
     std::string m_screenshot_file;              //Guarded by m_screenshot_mutex
     compat_mutex m_screenshot_mutex;
     void store_screenshot();
@@ -78,7 +80,11 @@ public:
 
     bool loaded;
 
-    unsigned int clock_counter;
+    //CPU cycles since the machine was started. Written on the emulation
+    //thread for every instruction; the interface thread reads it to time
+    //stamp recorded events, a stale or torn value there costs at most one
+    //delay that is a few milliseconds off
+    uint64_t clock_counter;
 
     Emulator(std::string work_path, std::string data_path, std::string software_path, std::string ini_file, VideoRenderer * renderer);
     ~Emulator();
@@ -130,6 +136,21 @@ public:
     bool script_finished() const;
     bool script_exit_requested() const;
     int  script_exit_code() const;
+
+    //The engine and the recorder are created on first use and live as long
+    //as the emulator: the GUI record / replay controls work on them directly
+    ScriptEngine * script_engine();
+    ScriptRecorder * script_recorder();
+    void set_script_file(const std::string &file_name);     //Names a recorded buffer after a saved file
+
+    uint64_t clock_now() const { return clock_counter; }
+    uint64_t ticks_per_ms() const;                          //CPU cycles per emulated millisecond
+
+    //Recording hooks for the GUI, no-ops unless a recording is in progress
+    void record_key(unsigned int code, unsigned int native, bool press);
+    void record_command(const std::string &device, const std::string &member, const std::string &params);
+    void record_verb(unsigned int verb, const std::vector<std::string> &args);
+    void record_verb_at(unsigned int verb, const std::vector<std::string> &args, uint64_t clock);
 
     //Asks the render thread to store the current screen as a PNG file
     void request_screenshot(const std::string &file_name);

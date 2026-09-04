@@ -297,6 +297,12 @@ static const unsigned int RUS_REMAP[][2] = {
 // Used by keyboard layouts and by the scripting engine (KEY and TYPE).
 unsigned int translate_key_name(const std::string &key);
 
+// The reverse of translate_key_name(): the script name of an EmuKey code.
+// A code may have several names in KEYS[]; the single character one wins
+// ("." over "del2", "*" over "mult"), otherwise the first entry is taken.
+// Empty string for a code that has no name. Used by the script recorder.
+std::string key_name(unsigned int code);
+
 class Keyboard: public ComputerDevice
 {
 protected:

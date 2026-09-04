@@ -27,3 +27,35 @@ emulator::Result parse_script_file(const std::string &file_name,
 
 // Name of a command, for messages and documentation
 std::string script_verb_name(unsigned int verb);
+
+//------------------------------ Writing -----------------------------------//
+// The inverse of the parser, used by the GUI recorder to store a buffer as a
+// script file. A command that went through parse_script_line() and then
+// format_script_command() parses back to the same command.
+
+// Arguments are kept the way they appear between the quotes of a script line,
+// escapes included: the engine resolves them where it matters (KEY names,
+// PRINT and TYPE text). A value built from scratch goes through
+// escape_script_text() first, so that a quote or a backslash survives the
+// round trip through a file.
+std::string escape_script_text(const std::string &s);
+
+// Quotes an argument when it cannot be written bare: an empty string, or one
+// with anything outside [A-Za-z0-9_+.-]. The text itself is not changed.
+std::string format_script_arg(const std::string &s);
+
+// One line of script text, without a line terminator
+std::string format_script_command(const ScriptCommand &c);
+
+// Writes the commands as a UTF-8 text file, one per line, LF terminated
+emulator::Result write_script_file(const std::string &file_name,
+                                   const std::vector<ScriptCommand> &commands);
+
+//----------------------------- Durations ----------------------------------//
+// Emulated time a command takes on replay, ms. Only the commands with a
+// predictable duration count: WAIT, KEY and TYPE. WAITFOR and SCREEN take
+// whatever they take and are reported as 0.
+unsigned int script_command_duration_ms(const ScriptCommand &c);
+
+// Sum of the durations of the commands in [from, to)
+uint64_t script_duration_ms(const std::vector<ScriptCommand> &commands, size_t from, size_t to);

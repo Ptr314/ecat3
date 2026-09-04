@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <QComboBox>
+#include <QLabel>
 #include <QMainWindow>
 #include <QSlider>
 #include <QToolButton>
@@ -72,7 +74,15 @@ private slots:
 
     void on_actionTape_triggered();
 
-    void check_script();
+    void on_actionRecOpen_triggered();
+    void on_actionRecSave_triggered();
+    void on_actionRecord_triggered();
+    void on_actionRecPlay_triggered();
+    void on_actionRecRewind_triggered();
+    void on_actionRecStop_triggered();
+    void on_actionRecPanel_toggled(bool checked);
+
+    void rec_tick();
 
 signals:
     void send_a_key(QKeyEvent *event, bool press);
@@ -117,10 +127,41 @@ private:
     //Set from the command line, see main.cpp
     QString cmdline_config;
     QString script_file;
-    QTimer * script_timer = nullptr;
 
     QString resolve_startup_path(const QString &file_name) const;
     void start_script();
+
+    //------------------------- Action recording ---------------------------//
+    //The recording and the replay share one buffer, the one of the script
+    //engine, so a session can be recorded, replayed, cut and continued
+    enum RecState { RecIdle, RecRecording, RecPlaying, RecPaused };
+
+    struct OptionCombo {
+        std::string device;
+        unsigned int option;
+        QComboBox * combo;
+    };
+
+    RecState rec_state = RecIdle;
+    QAction * rec_panel_separator = nullptr;   //Tool bar entries of the recording block
+    QAction * rec_panel_widget = nullptr;
+    QLabel * rec_label = nullptr;
+    QTimer * rec_timer = nullptr;
+    bool rec_ui_shown = false;          //The status bar block appears with the first recording or file
+    bool rec_cmdline = false;           //A script from the command line: EXIT closes the window
+    size_t rec_seen_pc = 0;             //Commands before it were checked for option changes
+    uint64_t rec_total_ms = 0;
+    QString rec_file;                   //Last opened or saved .ecat
+    QList<OptionCombo> option_combos;   //Device option dropdowns of the tool bar
+
+    bool rec_save();
+    void rec_stop_all();
+    void rec_update_ui();
+    void rec_refresh_total();
+    void rec_sync_option_combos(size_t from, size_t to);
+    QString rec_machine_string() const;
+    bool rec_machine_matches(const std::string &machine) const;
+    static QString format_mmss(uint64_t ms);
 
     bool switch_language(const QString &lang, bool init);
     void add_languages();

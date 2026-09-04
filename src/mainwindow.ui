@@ -87,17 +87,36 @@
      </property>
      <addaction name="actionDevice_one"/>
     </widget>
+    <widget class="QMenu" name="menuRecording">
+     <property name="title">
+      <string>Action recording</string>
+     </property>
+     <property name="icon">
+      <iconset resource="resources.qrc">
+       <normaloff>:/icons/record</normaloff>:/icons/record</iconset>
+     </property>
+     <addaction name="actionRecOpen"/>
+     <addaction name="actionRecSave"/>
+     <addaction name="separator"/>
+     <addaction name="actionRecord"/>
+     <addaction name="actionRecPlay"/>
+     <addaction name="actionRecRewind"/>
+     <addaction name="actionRecStop"/>
+    </widget>
     <addaction name="action_Cold_restart"/>
     <addaction name="action_Soft_restart"/>
     <addaction name="actionDebugger"/>
+    <addaction name="menuRecording"/>
     <addaction name="separator"/>
     <addaction name="menuDevices"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>Help</string>
+     <string>Settings</string>
     </property>
     <addaction name="actionLanguage"/>
+    <addaction name="actionRecPanel"/>
+    <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuDisplay">
@@ -285,6 +304,104 @@
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
+  <action name="actionRecOpen">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/rec_open</normaloff>:/icons/rec_open</iconset>
+   </property>
+   <property name="text">
+    <string>Open recording...</string>
+   </property>
+   <property name="toolTip">
+    <string>Open a recording</string>
+   </property>
+  </action>
+  <action name="actionRecSave">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/file_save</normaloff>:/icons/file_save</iconset>
+   </property>
+   <property name="text">
+    <string>Save recording...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save the recording</string>
+   </property>
+  </action>
+  <action name="actionRecord">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/record</normaloff>:/icons/record</iconset>
+   </property>
+   <property name="text">
+    <string>Start recording</string>
+   </property>
+   <property name="toolTip">
+    <string>Start recording</string>
+   </property>
+  </action>
+  <action name="actionRecPlay">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/play</normaloff>:/icons/play</iconset>
+   </property>
+   <property name="text">
+    <string>Play recording</string>
+   </property>
+   <property name="toolTip">
+    <string>Play the recording</string>
+   </property>
+  </action>
+  <action name="actionRecRewind">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/rewind</normaloff>:/icons/rewind</iconset>
+   </property>
+   <property name="text">
+    <string>Rewind recording</string>
+   </property>
+   <property name="toolTip">
+    <string>Rewind to the beginning</string>
+   </property>
+  </action>
+  <action name="actionRecStop">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/stop</normaloff>:/icons/stop</iconset>
+   </property>
+   <property name="text">
+    <string>Stop recording/playback</string>
+   </property>
+   <property name="toolTip">
+    <string>Stop recording or playback</string>
+   </property>
+  </action>
+  <action name="actionRecPanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Recording panel</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the recording buttons on the tool bar</string>
    </property>
   </action>
   <action name="actionLanguage">

@@ -59,6 +59,9 @@
         <file alias="ru">resources/icons/ru.png</file>
         <file alias="language">resources/icons/browser.png</file>
         <file alias="about">resources/icons/help.png</file>
+        <file alias="record">resources/icons/krec.png</file>
+        <file alias="rec_open">resources/icons/folder_yellow_open.png</file>
+        <file alias="rewind">resources/icons/player_start.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mono-regular">resources/fonts/RobotoMono-Regular.ttf</file>

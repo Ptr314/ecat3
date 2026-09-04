@@ -48,6 +48,13 @@ ScriptEngine::ScriptEngine(Emulator * e):
     , m_resume_at(0)
     , m_ticks_per_ms(1000)
     , m_poll_at(0)
+    , m_paused_state(StateRunning)
+    , m_pause_remaining(0)
+    , m_pause_wait_remaining(0)
+    , m_resume_pending(false)
+    , m_play_base_ms(0)
+    , m_play_from(0)
+    , m_play_from_pending(false)
     , m_key_index(0)
     , m_key_pressed(false)
     , m_key_delay(SCRIPT_KEY_DELAY)
@@ -61,28 +68,126 @@ ScriptEngine::~ScriptEngine()
 {
 }
 
-const std::string & ScriptEngine::get_machine() const { return m_machine; }
-const std::string & ScriptEngine::get_path() const    { return m_path; }
-bool ScriptEngine::is_finished() const                { return m_finished; }
-bool ScriptEngine::is_exit_requested() const          { return m_exit_requested; }
-int  ScriptEngine::get_exit_code() const              { return m_exit_code; }
+const std::string & ScriptEngine::get_machine() const          { return m_machine; }
+const std::string & ScriptEngine::get_path() const             { return m_path; }
+const std::vector<std::string> & ScriptEngine::get_errors() const { return m_errors; }
+bool ScriptEngine::is_finished() const                         { return m_finished; }
+bool ScriptEngine::is_exit_requested() const                   { return m_exit_requested; }
+int  ScriptEngine::get_exit_code() const                       { return m_exit_code; }
+uint64_t ScriptEngine::get_ticks_per_ms() const                { return m_ticks_per_ms; }
+bool ScriptEngine::is_paused() const                           { return m_state == StatePaused; }
+bool ScriptEngine::is_active() const                           { return active_state(m_state); }
+
+bool ScriptEngine::active_state(int s) const
+{
+    return s == StateRunning || s == StateDelay || s == StateKeys || s == StateWaitFor || s == StateScreenshot;
+}
+
+const std::vector<ScriptCommand> & ScriptEngine::get_commands() const { return m_commands; }
+size_t ScriptEngine::size() const                              { return m_commands.size(); }
+size_t ScriptEngine::get_pc() const                            { return m_pc; }
 
 emulator::Result ScriptEngine::load(const std::string &file_name)
 {
-    m_file_name = file_name;
-    m_path = dsk_tools::get_file_path(file_name);
+    compat_lock_guard lock(m_mutex);
+    if (active_state(m_state)) return emulator::Result::error(emulator::ErrorCode::ScriptError, "Script is running");
 
-    emulator::Result res = parse_script_file(file_name, m_commands, m_errors);
+    clear_locked();
+
+    std::vector<ScriptCommand> commands;
+    std::vector<std::string> errors;
+    emulator::Result res = parse_script_file(file_name, commands, errors);
     if (!res) return res;
 
+    m_commands.swap(commands);
+    m_errors.swap(errors);
+    m_file_name = file_name;
+    m_path = dsk_tools::get_file_path(file_name);
     m_log.reset(new ScriptLog(file_name));
-
-    //MACHINE is only meaningful as the first command: it selects the
-    //configuration to load before the emulator starts
-    if (!m_commands.empty() && m_commands[0].verb == SCRIPT_CMD_MACHINE && !m_commands[0].args.empty())
-        m_machine = m_commands[0].args[0];
+    refresh_machine();
 
     return emulator::Result::ok();
+}
+
+void ScriptEngine::set_file_name(const std::string &file_name)
+{
+    compat_lock_guard lock(m_mutex);
+    m_file_name = file_name;
+    m_path = dsk_tools::get_file_path(file_name);
+    m_log.reset(new ScriptLog(file_name));
+}
+
+void ScriptEngine::refresh_machine()
+{
+    //MACHINE is only meaningful as the first command: it selects the
+    //configuration to load before the emulator starts
+    m_machine.clear();
+    if (!m_commands.empty() && m_commands[0].verb == SCRIPT_CMD_MACHINE && !m_commands[0].args.empty())
+        m_machine = m_commands[0].args[0];
+}
+
+//---------------------------- Buffer editing ------------------------------//
+
+void ScriptEngine::clear_locked()
+{
+    m_commands.clear();
+    m_errors.clear();
+    m_machine.clear();
+    m_file_name.clear();
+    m_path.clear();
+    m_log.reset();
+    m_pc = 0;
+    m_state = StateIdle;
+    m_finished = false;
+    m_exit_requested = false;
+    m_exit_code = 0;
+    m_play_base_ms = 0;
+    m_play_from_pending = false;
+    m_resume_pending = false;
+    m_held_keys.clear();
+    m_key_pressed = false;
+}
+
+void ScriptEngine::clear()
+{
+    compat_lock_guard lock(m_mutex);
+    if (active_state(m_state)) return;
+    clear_locked();
+}
+
+void ScriptEngine::set_commands(const std::vector<ScriptCommand> &commands)
+{
+    compat_lock_guard lock(m_mutex);
+    if (active_state(m_state)) return;
+    m_commands = commands;
+    if (m_pc > m_commands.size()) m_pc = m_commands.size();
+    refresh_machine();
+}
+
+void ScriptEngine::append(const ScriptCommand &c)
+{
+    compat_lock_guard lock(m_mutex);
+    if (active_state(m_state)) return;
+    m_commands.push_back(c);
+    if (m_commands.size() == 1) refresh_machine();
+}
+
+void ScriptEngine::truncate(size_t pc)
+{
+    compat_lock_guard lock(m_mutex);
+    if (active_state(m_state)) return;
+    if (pc < m_commands.size()) m_commands.resize(pc);
+    if (m_pc > m_commands.size()) m_pc = m_commands.size();
+    refresh_machine();
+}
+
+void ScriptEngine::seek(size_t pc)
+{
+    compat_lock_guard lock(m_mutex);
+    if (active_state(m_state)) return;
+    m_pc = (pc > m_commands.size())?m_commands.size():pc;
+    m_play_base_ms = script_duration_ms(m_commands, 0, m_pc);
+    m_play_from_pending = false;
 }
 
 void ScriptEngine::log(const std::string &s)
@@ -96,34 +201,136 @@ void ScriptEngine::log_error(const ScriptCommand &c, const std::string &text)
     log("ERROR line " + std::to_string(c.line) + ": " + strip_message_context(text));
 }
 
-void ScriptEngine::start(uint64_t clock_now)
+//------------------------------- Control ----------------------------------//
+
+void ScriptEngine::cache_ticks_per_ms()
 {
     CPU * cpu = dynamic_cast<CPU*>(e->dm->get_device_by_name("cpu", false));
     uint64_t freq = (cpu != nullptr && cpu->clock > 0)?cpu->clock:1000000;
     m_ticks_per_ms = freq / 1000;
     if (m_ticks_per_ms == 0) m_ticks_per_ms = 1;
+}
+
+void ScriptEngine::start(uint64_t clock_now)
+{
+    compat_lock_guard lock(m_mutex);
+
+    cache_ticks_per_ms();
+    release_keys();
 
     m_now = clock_now;
-    m_poll_at = clock_now;
+    m_poll_at = 0;
+    m_resume_at = 0;
     m_pc = 0;
-    m_state = StateRunning;
     m_finished = false;
     m_exit_requested = false;
+    m_exit_code = 0;
+    m_resume_pending = false;
+    m_play_base_ms = 0;
+    m_play_from_pending = true;
+    m_state = StateRunning;
 
     for (size_t i = 0; i < m_errors.size(); i++)
         log("ERROR " + strip_message_context(m_errors[i]));
 }
 
+void ScriptEngine::resume(uint64_t clock_now)
+{
+    compat_lock_guard lock(m_mutex);
+    if (active_state(m_state)) return;
+
+    cache_ticks_per_ms();
+    m_now = clock_now;
+    m_finished = false;
+    m_exit_requested = false;
+
+    int next = StateRunning;
+    if (m_state == StatePaused)
+    {
+        //The waits are restored relative to the clock of the first tick,
+        //see tick(); here it is only decided which state to return to
+        next = m_paused_state;
+        if (next == StateKeys && m_key_index >= m_keys.size()) next = StateRunning;
+        m_resume_pending = (next != StateRunning);
+    }
+    else
+    {
+        //After stop() or at the very beginning
+        if (m_pc >= m_commands.size()) m_pc = 0;
+        m_play_base_ms = script_duration_ms(m_commands, 0, m_pc);
+        m_resume_pending = false;
+    }
+
+    //Zero wake up moments make the lock free path of tick() fall through to
+    //the locked one, where the pending waits are re-armed
+    m_poll_at = 0;
+    m_resume_at = 0;
+    m_play_from_pending = true;
+    m_state = next;
+}
+
+void ScriptEngine::pause()
+{
+    compat_lock_guard lock(m_mutex);
+    int s = m_state;
+    if (!active_state(s)) return;
+
+    //A key held by a KEY sequence is released and the sequence continues
+    //from the next key on resume
+    release_keys();
+
+    m_paused_state = s;
+    m_pause_remaining = (s == StateKeys)
+        ? ms_to_ticks(m_key_delay)
+        : ((m_resume_at > m_now)?(m_resume_at - m_now):0);
+    m_pause_wait_remaining = (m_wait_deadline > m_now)?(m_wait_deadline - m_now):0;
+
+    //Freeze the position display
+    if (!m_play_from_pending && m_now > m_play_from)
+        m_play_base_ms += (m_now - m_play_from) / m_ticks_per_ms;
+    m_play_from_pending = false;
+
+    m_state = StatePaused;
+}
+
 void ScriptEngine::stop()
 {
+    compat_lock_guard lock(m_mutex);
+    release_keys();
+    if (!m_play_from_pending && active_state(m_state) && m_now > m_play_from)
+        m_play_base_ms += (m_now - m_play_from) / m_ticks_per_ms;
+    m_play_from_pending = false;
     m_state = StateFinished;
     m_finished = true;
 }
 
 void ScriptEngine::finish()
 {
+    release_keys();
     m_state = StateFinished;
     m_finished = true;
+}
+
+void ScriptEngine::release_keys()
+{
+    if (m_key_pressed && m_key_index < m_keys.size()) {
+        e->key_event(static_cast<int>(m_keys[m_key_index]), 0, false);
+        if (m_key_shift[m_key_index]) e->key_event(static_cast<int>(EmuKey::Shift), 0, false);
+        m_key_pressed = false;
+        m_key_index++;
+    }
+    for (size_t i = 0; i < m_held_keys.size(); i++)
+        e->key_event(static_cast<int>(m_held_keys[i]), 0, false);
+    m_held_keys.clear();
+}
+
+uint64_t ScriptEngine::get_position_ms(uint64_t clock_now) const
+{
+    uint64_t base = m_play_base_ms;
+    if (m_play_from_pending || !active_state(m_state)) return base;
+    uint64_t from = m_play_from;
+    if (clock_now <= from) return base;
+    return base + (clock_now - from) / (m_ticks_per_ms?m_ticks_per_ms:1);
 }
 
 uint64_t ScriptEngine::ms_to_ticks(unsigned int ms) const
@@ -141,7 +348,26 @@ void ScriptEngine::delay_ms(unsigned int ms)
 
 void ScriptEngine::tick(uint64_t clock_counter)
 {
-    if (m_state == StateIdle || m_state == StateFinished) return;
+    //Lock free part: this is where nearly every call ends
+    int s = m_state.load(std::memory_order_relaxed);
+    if (!active_state(s)) return;
+    if ((s == StateDelay || s == StateKeys) && clock_counter < m_resume_at.load(std::memory_order_relaxed)) return;
+    if ((s == StateWaitFor || s == StateScreenshot) && clock_counter < m_poll_at.load(std::memory_order_relaxed)) return;
+
+    compat_lock_guard lock(m_mutex);
+    if (!active_state(m_state)) return;       //Paused or stopped meanwhile
+
+    if (m_play_from_pending) {
+        m_play_from = clock_counter;
+        m_play_from_pending = false;
+    }
+    if (m_resume_pending) {
+        //The waits interrupted by pause() continue from this moment
+        m_resume_at = clock_counter + m_pause_remaining;
+        m_wait_deadline = clock_counter + m_pause_wait_remaining;
+        m_poll_at = clock_counter;
+        m_resume_pending = false;
+    }
 
     m_now = clock_counter;
 
@@ -214,6 +440,12 @@ emulator::Result ScriptEngine::execute(const ScriptCommand &c)
 
             case SCRIPT_CMD_KEY:
                 return do_key(c);
+
+            case SCRIPT_CMD_KEYDOWN:
+                return do_keyupdown(c, true);
+
+            case SCRIPT_CMD_KEYUP:
+                return do_keyupdown(c, false);
 
             case SCRIPT_CMD_TYPE:
                 return do_type(c);
@@ -343,7 +575,7 @@ emulator::Result ScriptEngine::do_key(const ScriptCommand &c)
             }
         }
 
-        unsigned int code = translate_key_name(name);
+        unsigned int code = translate_key_name(unescape_text(name));
         if (code == _FFFF) {
             log_error(c, "unknown key '" + c.args[i] + "'");
             continue;
@@ -353,6 +585,32 @@ emulator::Result ScriptEngine::do_key(const ScriptCommand &c)
     }
 
     start_keys(keys, shift, delay, hold);
+    return emulator::Result::ok();
+}
+
+emulator::Result ScriptEngine::do_keyupdown(const ScriptCommand &c, bool press)
+{
+    //KEYDOWN key / KEYUP key: a single key without a delay, so that chords
+    //and long holds can be expressed. Whatever is still held when the script
+    //stops is released by release_keys()
+    if (c.args.empty() || c.args[0].empty())
+        return emulator::Result::error(emulator::ErrorCode::BadParameters,
+            std::string(press?"KEYDOWN":"KEYUP") + " expects a key name");
+
+    unsigned int code = translate_key_name(unescape_text(c.args[0]));
+    if (code == _FFFF) {
+        log_error(c, "unknown key '" + c.args[0] + "'");
+        return emulator::Result::ok();
+    }
+
+    e->key_event(static_cast<int>(code), 0, press);
+
+    if (press) {
+        m_held_keys.push_back(code);
+    } else {
+        for (size_t i = 0; i < m_held_keys.size(); i++)
+            if (m_held_keys[i] == code) { m_held_keys.erase(m_held_keys.begin() + i); break; }
+    }
     return emulator::Result::ok();
 }
 

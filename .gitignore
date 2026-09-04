@@ -10,7 +10,6 @@ CMakeLists.txt.user*
 ~$*
 cmake-*/
 .qtcreator/
-CLAUDE.md
 .claude/
 
 # Результаты прогона тестов (эталоны в tests/expected коммитятся)

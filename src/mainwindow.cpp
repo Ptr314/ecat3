@@ -14,6 +14,8 @@
 #include <QWidgetAction>
 #include <QPushButton>
 #include <QActionGroup>
+#include <QSignalBlocker>
+#include <QBoxLayout>
 // #include <QOverload>
 #include <QMessageBox>
 
@@ -34,6 +36,7 @@
 #include "dialogs/openconfigwindow.h"
 #include "emulator/devices/common/fdd.h"
 #include "emulator/devices/common/tape.h"
+#include "emulator/script/script_parser.h"
 #include "dialogs/taperecorder.h"
 
 #include "libs/lodepng/lodepng.h"
@@ -162,6 +165,47 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
     resize(500,100);
 #endif
 
+    //The recording controls sit at the far end of the tool bar, after a
+    //stretch. UpdateToolbar() inserts everything before actionDebugger, so a
+    //machine change never touches them. They are tool buttons of their own
+    //rather than plain actions, so that they can be drawn smaller than the
+    //rest of the bar; each follows its action (icon, text, enabled state)
+    QWidget * rec_spacer = new QWidget(this);
+    rec_spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    ui->toolBar->addWidget(rec_spacer);
+    rec_panel_separator = ui->toolBar->addSeparator();
+
+    //A tool button whose parent is the tool bar takes the icon size of the
+    //bar (QToolButton::initStyleOption), so the buttons live in a holder of
+    //their own. The holder follows the orientation of the bar
+    QWidget * rec_holder = new QWidget(this);
+    QBoxLayout * rec_layout = new QBoxLayout(
+        (ui->toolBar->orientation() == Qt::Vertical)?QBoxLayout::TopToBottom:QBoxLayout::LeftToRight, rec_holder);
+    rec_layout->setContentsMargins(0, 0, 0, 0);
+    rec_layout->setSpacing(0);
+    connect(ui->toolBar, &QToolBar::orientationChanged, rec_layout, [rec_layout](Qt::Orientation o) {
+        rec_layout->setDirection((o == Qt::Vertical)?QBoxLayout::TopToBottom:QBoxLayout::LeftToRight);
+    });
+
+    const QSize rec_icon_size = ui->toolBar->iconSize() * 3 / 5;   //60% of the bar
+    QAction * rec_actions[] = {ui->actionRecOpen, ui->actionRecSave, ui->actionRecord,
+                               ui->actionRecPlay, ui->actionRecRewind, ui->actionRecStop};
+    for (size_t i = 0; i < sizeof(rec_actions) / sizeof(rec_actions[0]); i++) {
+        QToolButton * button = new QToolButton(rec_holder);
+        button->setDefaultAction(rec_actions[i]);
+        button->setIconSize(rec_icon_size);
+        button->setAutoRaise(true);
+        button->setFocusPolicy(Qt::NoFocus);
+        rec_layout->addWidget(button);
+    }
+    rec_panel_widget = ui->toolBar->addWidget(rec_holder);
+
+    //Recording position in the status bar, left of the sound controls.
+    //Hidden until the first recording or opened file
+    rec_label = new QLabel(this);
+    rec_label->setContentsMargins(4, 0, 8, 0);
+    rec_label->hide();
+    statusBar()->addPermanentWidget(rec_label, 0);
 
     QIcon icon;
     icon.addFile(QString::fromUtf8(":/icons/sound"), QSize(), QIcon::Normal, QIcon::Off);
@@ -254,19 +298,19 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
     QString muted = QString::fromStdString(e->read_setup("Sound", "muted", "0"));
     mute->setChecked(muted.toInt() == 1);
 
+    //The recording block of the tool bar can be hidden from the Display menu
+    ui->actionRecPanel->setChecked(e->read_setup("Video", "recording_panel", "1") != "0");
+
     //A configuration given on the command line wins over the one saved in the ini
     first_config = cmdline_config.isEmpty()
         ? (work_path + file_to_load)
         : resolve_startup_path(cmdline_config);
 
-    // static int old = 0;
-    // QTimer *timer = new QTimer(this);
-    // connect(timer, &QTimer::timeout, [=]() {
-    //     int c = e->clock_counter;
-    //     qDebug() << c - old;
-    //     old = c;
-    // });
-    // timer->start(1000);
+    //The engine runs on the emulation thread, so its progress is picked up
+    //here by polling rather than by a cross thread call
+    rec_timer = new QTimer(this);
+    connect(rec_timer, &QTimer::timeout, this, &MainWindow::rec_tick);
+    rec_timer->start(100);
 }
 
 QString MainWindow::resolve_startup_path(const QString &file_name) const
@@ -319,26 +363,15 @@ void MainWindow::start_script()
 {
     if (!e->loaded) return;
 
+    //A script from the command line runs through the same controls as a
+    //recording, the only difference being that its EXIT closes the window
     e->start_script();
-
-    //The engine runs on the emulation thread, so its completion is picked up
-    //here by polling rather than by a cross thread call
-    if (script_timer == nullptr) {
-        script_timer = new QTimer(this);
-        connect(script_timer, &QTimer::timeout, this, &MainWindow::check_script);
-    }
-    script_timer->start(100);
-}
-
-void MainWindow::check_script()
-{
-    if (e->script_exit_requested()) {
-        script_timer->stop();
-        close();
-        return;
-    }
-
-    if (e->script_finished()) script_timer->stop();
+    rec_cmdline = true;
+    rec_ui_shown = true;
+    rec_state = RecPlaying;
+    rec_seen_pc = 0;
+    rec_refresh_total();
+    rec_update_ui();
 }
 
 bool MainWindow::switch_language(const QString & lang, bool init)
@@ -353,6 +386,7 @@ bool MainWindow::switch_language(const QString & lang, bool init)
         if (!init) {
             ui->retranslateUi(this);
             CreateScreenMenu();
+            rec_update_ui();
             m_settings->set("interface", "language", lang.toStdString());
             m_settings->save();
         }
@@ -558,6 +592,7 @@ void MainWindow::UpdateToolbar()
         delete option_toolbar_actions[i];
     }
     option_toolbar_actions.clear();
+    option_combos.clear();
 
     int buttons_added=0;
 
@@ -662,10 +697,17 @@ void MainWindow::UpdateToolbar()
                         dev->set_device_option(option_id, value_id);
                         std::string key = config_key.toStdString() + "_" + device_name + "_" + std::to_string(option_id);
                         e->write_setup("DeviceOptions", key, std::to_string(value_id));
+                        e->record_command(device_name, "option", std::to_string(option_id) + "," + std::to_string(value_id));
                     });
 
                 QAction * action = ui->toolBar->insertWidget(ui->actionDebugger, combo);
                 option_toolbar_actions.append(action);
+
+                OptionCombo oc;
+                oc.device = device_name;
+                oc.option = option_id;
+                oc.combo = combo;
+                option_combos.append(oc);
             }
         }
     }
@@ -700,6 +742,16 @@ void MainWindow::keyPressEvent( QKeyEvent *event )
     } else {
         // qDebug() << "Key pressed: scan " << event->nativeScanCode() << "virtual" << event->nativeVirtualKey() << "key" << Qt::hex << event->key();
         e->key_event(event->key(), event->modifiers(), true);
+
+        if (event->key() == EmuKey::Cancel) {
+            //Pause/Break resets the machine, see Emulator::key_event(); the
+            //key has no script name, so the reset itself is recorded
+            std::vector<std::string> args;
+            args.push_back((event->modifiers() & Qt::AltModifier)?"cold":"soft");
+            e->record_verb(SCRIPT_CMD_RESET, args);
+        } else {
+            e->record_key(static_cast<unsigned int>(event->key()), event->nativeScanCode(), true);
+        }
     }
 }
 
@@ -710,6 +762,7 @@ void MainWindow::keyReleaseEvent( QKeyEvent *event )
     } else {
         //qDebug() << "Key released:" << event->nativeScanCode() << event->nativeVirtualKey() << event->key();
         e->key_event(event->key(), event->modifiers(), false);
+        e->record_key(static_cast<unsigned int>(event->key()), event->nativeScanCode(), false);
     }
 }
 
@@ -727,12 +780,14 @@ void MainWindow::paintEvent(QPaintEvent * event)
 void MainWindow::on_action_Cold_restart_triggered()
 {
     e->reset(true);
+    e->record_verb(SCRIPT_CMD_RESET, std::vector<std::string>(1, "cold"));
 }
 
 
 void MainWindow::on_action_Soft_restart_triggered()
 {
     e->reset(false);
+    e->record_verb(SCRIPT_CMD_RESET, std::vector<std::string>(1, "soft"));
 }
 
 void MainWindow::set_volume(int value)
@@ -769,8 +824,10 @@ void MainWindow::load_config(QString file_name, bool set_default)
     {
         if (fdd_timer != nullptr) fdd_timer->stop();
 
-        //Switching the machine invalidates every device the script addresses
-        if (script_timer != nullptr) script_timer->stop();
+        //Switching the machine invalidates every device the script addresses.
+        //The buffer is kept: a replay may be the reason for the switch
+        rec_stop_all();
+        e->script_recorder()->invalidate();
         e->stop_script();
 
         e->stop_emulation();
@@ -855,7 +912,7 @@ void MainWindow::closeEvent (QCloseEvent *event)
 
     // The timers must not fire once the emulator is gone
     if (fdd_timer != nullptr) fdd_timer->stop();
-    if (script_timer != nullptr) script_timer->stop();
+    if (rec_timer != nullptr) rec_timer->stop();
 
     // Close all debug windows before destroying the emulator,
     // so their closeEvent handlers can safely access devices
@@ -887,6 +944,8 @@ void MainWindow::fdd_open(unsigned int n)
             emulator::Result res = fdds[n]->load_image(file_name.toStdString());
             if (!res) {
                 QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
+            } else {
+                e->record_command(fdds[n]->name, "load", format_script_arg(fi.absoluteFilePath().toStdString()));
             }
             last_path = fi.absolutePath();
             e->write_setup("Startup", "last_path", last_path.toStdString());
@@ -899,11 +958,13 @@ void MainWindow::fdd_eject(unsigned int n)
     fdd_menu[n]->actions().at(0)->setText(MainWindow::tr("<Not loaded>"));
     fdd_button[n]->setIcon(QIcon(":/icons/floppy_unmount"));
     fdds[n]->unload();
+    e->record_command(fdds[n]->name, "eject", "");
 }
 
 void MainWindow::fdd_wp(unsigned int n)
 {
     fdds[n]->change_protection();
+    e->record_command(fdds[n]->name, "protect", fdds[n]->is_protected()?"1":"0");
     if (fdds[n]->get_loaded()) {
         if (fdds[n]->is_protected()) {
             fdd_button[n]->setIcon(QIcon(":/icons/floppy_locked"));
@@ -949,6 +1010,8 @@ void MainWindow::fdd_write(unsigned int n)
             }
             if (!save_res) {
                 QMessageBox::critical(this, tr("Error"), translateResultMessage(save_res.message));
+            } else if (reply != QMessageBox::Cancel) {
+                e->record_command(fdds[n]->name, "save", format_script_arg(QFileInfo(file_name).absoluteFilePath().toStdString()));
             }
             QFileInfo fi(file_name);
             last_path = fi.absolutePath();
@@ -991,6 +1054,9 @@ void MainWindow::on_actionScreenshot_triggered()
     e->get_screen_constraints(&sx, &sy);
     std::vector<uint8_t> image = renderer->get_screenshot();
 
+    //The image is taken before the dialog, so the recording refers to that moment
+    uint64_t taken_at = e->clock_now();
+
     QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save screenshot"), QString::fromStdString(e->work_path), "PNG (*.png)");
 
     if (!file_name.isEmpty())
@@ -999,6 +1065,9 @@ void MainWindow::on_actionScreenshot_triggered()
         std::vector<unsigned char> png;
         error = lodepng::encode(png, image, sx, sy);
         lodepng::save_file(png, file_name.toUtf8().constData());
+
+        e->record_verb_at(SCRIPT_CMD_SCREEN,
+            std::vector<std::string>(1, QFileInfo(file_name).absoluteFilePath().toStdString()), taken_at);
     }
 }
 
@@ -1060,5 +1129,346 @@ void MainWindow::on_actionTape_triggered()
         w->setAttribute(Qt::WA_DeleteOnClose);
         w->show();
     }
+}
+
+//---------------------------- Action recording ----------------------------//
+
+QString MainWindow::format_mmss(uint64_t ms)
+{
+    return QString("%1:%2").arg(ms / 60000).arg((ms / 1000) % 60, 2, 10, QChar('0'));
+}
+
+QString MainWindow::rec_machine_string() const
+{
+    //The form the ini file and MACHINE use: relative to computers/ when the
+    //configuration lives there, absolute otherwise
+    QString file = QDir::cleanPath(QString::fromStdString(e->get_system_data()->system_file));
+    QString base = QDir::cleanPath(QString::fromStdString(e->work_path));
+#ifdef Q_OS_WIN
+    const Qt::CaseSensitivity cs = Qt::CaseInsensitive;
+#else
+    const Qt::CaseSensitivity cs = Qt::CaseSensitive;
+#endif
+    if (file.startsWith(base + "/", cs)) return file.mid(base.length() + 1);
+    return file;
+}
+
+bool MainWindow::rec_machine_matches(const std::string &machine) const
+{
+    if (machine.empty() || !e->loaded) return true;
+    QString wanted = QFileInfo(resolve_startup_path(QString::fromStdString(machine))).canonicalFilePath();
+    QString current = QFileInfo(QString::fromStdString(e->get_system_data()->system_file)).canonicalFilePath();
+    if (wanted.isEmpty() || current.isEmpty()) return false;
+#ifdef Q_OS_WIN
+    return QString::compare(wanted, current, Qt::CaseInsensitive) == 0;
+#else
+    return wanted == current;
+#endif
+}
+
+void MainWindow::rec_refresh_total()
+{
+    ScriptEngine * s = e->script_engine();
+    rec_total_ms = script_duration_ms(s->get_commands(), 0, s->size());
+}
+
+void MainWindow::rec_update_ui()
+{
+    ScriptEngine * s = e->script_engine();
+    const bool empty = (s->size() == 0);
+    const size_t pc = s->get_pc();
+    const bool idle = (rec_state == RecIdle);
+    const bool recording = (rec_state == RecRecording);
+    const bool playing = (rec_state == RecPlaying);
+
+    ui->actionRecOpen->setEnabled(idle);
+    ui->actionRecSave->setEnabled(!empty && !recording);
+    ui->actionRecord->setEnabled(!playing);
+    ui->actionRecPlay->setEnabled(!empty && !recording);
+    ui->actionRecRewind->setEnabled(!empty && pc > 0 && (idle || rec_state == RecPaused));
+    ui->actionRecStop->setEnabled(!idle);
+
+    ui->actionRecord->setIcon(QIcon(recording?":/icons/pause":":/icons/record"));
+    ui->actionRecord->setText(recording?tr("Pause recording"):tr("Start recording"));
+    ui->actionRecord->setToolTip(ui->actionRecord->text());
+
+    ui->actionRecPlay->setIcon(QIcon(playing?":/icons/pause":":/icons/play"));
+    ui->actionRecPlay->setText(playing?tr("Pause playback"):tr("Play recording"));
+    ui->actionRecPlay->setToolTip(ui->actionRecPlay->text());
+
+    rec_label->setVisible(rec_ui_shown);
+}
+
+void MainWindow::rec_sync_option_combos(size_t from, size_t to)
+{
+    //A replayed COMMAND dev.option(id, value) changes the device but not the
+    //dropdown of the tool bar, so the dropdown follows the commands executed
+    //since the last poll. Signals are blocked: the change is neither written
+    //to the ini file nor recorded again
+    const std::vector<ScriptCommand> &commands = e->script_engine()->get_commands();
+    for (size_t i = from; i < to && i < commands.size(); i++)
+    {
+        const ScriptCommand &c = commands[i];
+        if (c.verb != SCRIPT_CMD_COMMAND || c.member != "option") continue;
+
+        std::vector<std::string> p = split_params(c.params);
+        if (p.size() < 2) continue;
+
+        unsigned int option_id, value_id;
+        try {
+            option_id = parse_numeric_value(p[0]);
+            value_id = parse_numeric_value(p[1]);
+        } catch (...) {
+            continue;
+        }
+
+        for (int j = 0; j < option_combos.size(); j++)
+        {
+            const OptionCombo &oc = option_combos[j];
+            if (oc.device != c.device || oc.option != option_id) continue;
+            int index = oc.combo->findData(value_id);
+            if (index >= 0) {
+                QSignalBlocker blocker(oc.combo);
+                oc.combo->setCurrentIndex(index);
+            }
+        }
+    }
+}
+
+void MainWindow::rec_tick()
+{
+    ScriptEngine * s = e->script_engine();
+    const uint64_t now = e->clock_now();
+
+    if (rec_state == RecPlaying)
+    {
+        size_t pc = s->get_pc();
+        if (pc > rec_seen_pc) {
+            rec_sync_option_combos(rec_seen_pc, pc);
+            rec_seen_pc = pc;
+        }
+        if (s->is_finished()) {
+            if (rec_cmdline && s->is_exit_requested()) {
+                rec_timer->stop();
+                close();
+                return;
+            }
+            rec_cmdline = false;
+            rec_stop_all();
+        }
+    }
+
+    if (!rec_ui_shown) return;
+
+    if (rec_state == RecRecording)
+    {
+        rec_refresh_total();
+        rec_label->setText(format_mmss(rec_total_ms + e->script_recorder()->live_ms(now)));
+    }
+    else
+    {
+        uint64_t position = (rec_state == RecIdle)
+            ? script_duration_ms(s->get_commands(), 0, s->get_pc())
+            : s->get_position_ms(now);
+        if (position > rec_total_ms) position = rec_total_ms;
+        rec_label->setText(format_mmss(position) + " / " + format_mmss(rec_total_ms));
+    }
+}
+
+void MainWindow::rec_stop_all()
+{
+    ScriptEngine * s = e->script_engine();
+    ScriptRecorder * r = e->script_recorder();
+    const uint64_t now = e->clock_now();
+
+    switch (rec_state)
+    {
+        case RecRecording:
+            r->end(now);
+            s->seek(s->size());     //The next Play starts from the beginning
+            break;
+
+        case RecPlaying:
+        case RecPaused:
+            s->stop();              //The pointer stays where the replay stopped
+            r->mark(now);
+            break;
+
+        default:
+            break;
+    }
+
+    rec_state = RecIdle;
+    rec_refresh_total();
+    rec_update_ui();
+}
+
+bool MainWindow::rec_save()
+{
+    ScriptEngine * s = e->script_engine();
+    if (s->size() == 0) return false;
+
+    QString suggested = rec_file.isEmpty()?QDir(last_path).filePath("recording.ecat"):rec_file;
+    QString file_name = QFileDialog::getSaveFileName(this, tr("Save recording"), suggested, tr("eCat scripts (*.ecat)"));
+    if (file_name.isEmpty()) return false;
+    if (QFileInfo(file_name).suffix().isEmpty()) file_name += ".ecat";
+
+    emulator::Result res = write_script_file(file_name.toStdString(), s->get_commands());
+    if (!res) {
+        QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
+        return false;
+    }
+
+    //From now on the log and relative screenshot names go next to the file
+    e->set_script_file(file_name.toStdString());
+    rec_file = file_name;
+    return true;
+}
+
+void MainWindow::on_actionRecOpen_triggered()
+{
+    if (rec_state != RecIdle) return;
+
+    ScriptEngine * s = e->script_engine();
+    if (s->size() > 0)
+    {
+        QMessageBox::StandardButton reply = QMessageBox::question(this, tr("Open recording"),
+            tr("Save the current recording?"), QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel);
+        if (reply == QMessageBox::Cancel) return;
+        if (reply == QMessageBox::Yes && !rec_save()) return;
+    }
+
+    QString dir = rec_file.isEmpty()?last_path:QFileInfo(rec_file).absolutePath();
+    QString file_name = QFileDialog::getOpenFileName(this, tr("Open recording"), dir, tr("eCat scripts (*.ecat);;All files (*.*)"));
+    if (file_name.isEmpty()) return;
+
+    emulator::Result res = e->load_script(file_name.toStdString());
+    if (!res) {
+        QMessageBox::warning(this, tr("Error"), translateResultMessage(res.message));
+        return;
+    }
+
+    const std::vector<std::string> &errors = s->get_errors();
+    if (!errors.empty()) {
+        QStringList lines;
+        for (size_t i = 0; i < errors.size(); i++) lines << translateResultMessage(errors[i]);
+        QMessageBox::warning(this, tr("Open recording"), tr("Some lines were skipped:") + "\n" + lines.join("\n"));
+    }
+
+    e->script_recorder()->invalidate();
+    rec_file = file_name;
+    rec_cmdline = false;
+    rec_ui_shown = true;
+    rec_refresh_total();
+    rec_update_ui();
+}
+
+void MainWindow::on_actionRecSave_triggered()
+{
+    if (rec_state == RecRecording) return;
+    rec_save();
+}
+
+void MainWindow::on_actionRecord_triggered()
+{
+    if (rec_state == RecRecording) {
+        rec_stop_all();
+        return;
+    }
+    if (rec_state == RecPlaying || !e->loaded) return;
+
+    ScriptEngine * s = e->script_engine();
+    ScriptRecorder * r = e->script_recorder();
+
+    if (rec_state == RecPaused) {
+        s->stop();
+        r->mark(e->clock_now());
+        rec_state = RecIdle;
+    }
+
+    if (s->size() > 0)
+    {
+        if (!rec_machine_matches(s->get_machine()))
+        {
+            QMessageBox::StandardButton reply = QMessageBox::question(this, tr("Start recording"),
+                tr("The recording was made for another machine. Discard it and start a new one?"),
+                QMessageBox::Yes|QMessageBox::Cancel);
+            if (reply != QMessageBox::Yes) { rec_update_ui(); return; }
+            s->clear();
+            r->invalidate();
+            rec_file.clear();
+        }
+        else
+        {
+            //Whatever was not replayed yet is dropped and re-recorded
+            s->truncate(s->get_pc());
+        }
+    }
+
+    r->begin(e->clock_now(), e->ticks_per_ms(), rec_machine_string().toStdString());
+    rec_cmdline = false;
+    rec_state = RecRecording;
+    rec_ui_shown = true;
+    rec_refresh_total();
+    rec_update_ui();
+}
+
+void MainWindow::on_actionRecPlay_triggered()
+{
+    ScriptEngine * s = e->script_engine();
+
+    if (rec_state == RecPlaying) {
+        s->pause();
+        rec_state = RecPaused;
+        rec_update_ui();
+        return;
+    }
+    if (rec_state == RecRecording || s->size() == 0) return;
+
+    //A recording made for another machine loads that machine first, the way
+    //the command line does
+    std::string machine = s->get_machine();
+    if (!machine.empty() && !rec_machine_matches(machine))
+    {
+        QString path = resolve_startup_path(QString::fromStdString(machine));
+        if (!QFileInfo::exists(path)) {
+            QMessageBox::warning(this, tr("Error"), tr("Configuration file is not found: ") + path);
+            return;
+        }
+        load_config(path, false);
+        if (!e->loaded) return;
+    }
+
+    s->resume(e->clock_now());
+    rec_seen_pc = s->get_pc();
+    rec_state = RecPlaying;
+    rec_ui_shown = true;
+    rec_refresh_total();
+    rec_update_ui();
+}
+
+void MainWindow::on_actionRecRewind_triggered()
+{
+    if (rec_state == RecRecording || rec_state == RecPlaying) return;
+
+    ScriptEngine * s = e->script_engine();
+    if (rec_state == RecPaused) s->stop();
+    s->seek(0);
+    e->script_recorder()->invalidate();
+    rec_state = RecIdle;
+    rec_update_ui();
+}
+
+void MainWindow::on_actionRecStop_triggered()
+{
+    rec_stop_all();
+}
+
+void MainWindow::on_actionRecPanel_toggled(bool checked)
+{
+    //The menu keeps working while the block is hidden
+    if (rec_panel_separator != nullptr) rec_panel_separator->setVisible(checked);
+    if (rec_panel_widget != nullptr) rec_panel_widget->setVisible(checked);
+    if (e != nullptr) e->write_setup("Video", "recording_panel", checked?"1":"0");
 }
 

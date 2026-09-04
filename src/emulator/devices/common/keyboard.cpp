@@ -56,6 +56,18 @@ unsigned int translate_key_name(const std::string &key)
     return _FFFF;
 }
 
+std::string key_name(unsigned int code)
+{
+    const unsigned int count = sizeof(KEYS)/sizeof(KeyDescription);
+    for (unsigned int i=0; i<count; i++)
+        if (KEYS[i].code == code && KEYS[i].name.length() == 1)
+            return KEYS[i].name;
+    for (unsigned int i=0; i<count; i++)
+        if (KEYS[i].code == code)
+            return KEYS[i].name;
+    return "";
+}
+
 unsigned int Keyboard::translate_key(const std::string &key)
 {
     return translate_key_name(key);

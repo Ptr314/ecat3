@@ -217,20 +217,64 @@ void Emulator::reset(bool cold)
 
 //----------------------------- Scripting ----------------------------------//
 
+ScriptEngine * Emulator::script_engine()
+{
+    //Created once and kept: the emulation thread dereferences the pointer on
+    //every instruction, so it must never be replaced while the machine runs
+    if (!script) script.reset(new ScriptEngine(this));
+    return script.get();
+}
+
+ScriptRecorder * Emulator::script_recorder()
+{
+    if (!recorder) recorder.reset(new ScriptRecorder(script_engine()));
+    return recorder.get();
+}
+
 emulator::Result Emulator::load_script(const std::string &file_name)
 {
-    script.reset(new ScriptEngine(this));
+    ScriptEngine * s = script_engine();
 
-    emulator::Result res = script->load(file_name);
-    if (!res) {
-        script.reset();
-        return res;
-    }
+    emulator::Result res = s->load(file_name);
+    if (!res) return res;
 
     //Devices look up files next to the script first, so that a script and the
     //images it uses can live in one directory
-    sd.script_path = script->get_path();
+    sd.script_path = s->get_path();
     return emulator::Result::ok();
+}
+
+void Emulator::set_script_file(const std::string &file_name)
+{
+    ScriptEngine * s = script_engine();
+    s->set_file_name(file_name);
+    sd.script_path = s->get_path();
+}
+
+uint64_t Emulator::ticks_per_ms() const
+{
+    if (!loaded || cpu == nullptr || cpu->clock < 1000) return 1;
+    return cpu->clock / 1000;
+}
+
+void Emulator::record_key(unsigned int code, unsigned int native, bool press)
+{
+    if (recorder && recorder->is_recording()) recorder->key(code, native, press, clock_counter);
+}
+
+void Emulator::record_command(const std::string &device, const std::string &member, const std::string &params)
+{
+    if (recorder && recorder->is_recording()) recorder->command(device, member, params, clock_counter);
+}
+
+void Emulator::record_verb(unsigned int verb, const std::vector<std::string> &args)
+{
+    record_verb_at(verb, args, clock_counter);
+}
+
+void Emulator::record_verb_at(unsigned int verb, const std::vector<std::string> &args, uint64_t clock)
+{
+    if (recorder && recorder->is_recording()) recorder->verb(verb, args, clock);
 }
 
 std::string Emulator::script_machine() const
@@ -250,7 +294,7 @@ void Emulator::stop_script()
 
 bool Emulator::script_active() const
 {
-    return script && !script->is_finished();
+    return script && script->is_active();
 }
 
 bool Emulator::script_finished() const

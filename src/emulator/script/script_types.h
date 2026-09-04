@@ -39,6 +39,8 @@ struct ScriptCommand {
 #define SCRIPT_CMD_PRINT    12
 #define SCRIPT_CMD_LOGFILE  13
 #define SCRIPT_CMD_WAITFOR  14
+#define SCRIPT_CMD_KEYDOWN  15
+#define SCRIPT_CMD_KEYUP    16
 
 //Comparison operators of WAITFOR
 #define SCRIPT_OP_EQ        0

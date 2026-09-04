@@ -13,6 +13,7 @@
 
 #include "taperecorder.h"
 #include "ui_taperecorder.h"
+#include "emulator/script/script_parser.h"
 
 class ToolButtonProxy : public QProxyStyle {
 public:
@@ -140,6 +141,7 @@ void TapeRecorderWindow::on_buttonEject_pressed()
         is_playing = false;
         ui->buttonPlay->setChecked(false);
         play_pause();
+        e->record_command(d->name, "stop", "");
     } else {
         QString path = QString::fromStdString(e->read_setup("Startup", "last_path", e->work_path));
         SystemData * sd = e->get_system_data();
@@ -168,6 +170,11 @@ void TapeRecorderWindow::on_buttonEject_pressed()
                     QMessageBox::warning(this, TapeRecorderWindow::tr("Error"), translateResultMessage(res.message));
                     return;
                 }
+
+                //The format is written out explicitly, so the replay does not
+                //depend on the ini file
+                e->record_command(d->name, "load",
+                    format_script_arg(fi.absoluteFilePath().toStdString()) + "," + format_script_arg(fmt.toStdString()));
 
                 update_counter();
 
@@ -213,6 +220,7 @@ void TapeRecorderWindow::on_buttonPlay_clicked()
     if (ui->buttonPlay->isChecked()) {
         is_playing = true;
         play_pause();
+        if (!is_paused) e->record_command(d->name, "play", "");
     }
 }
 
@@ -246,7 +254,10 @@ void TapeRecorderWindow::on_toolButton_clicked()
 void TapeRecorderWindow::on_buttonPause_clicked()
 {
     is_paused = ui->buttonPause->isChecked();
-    if (is_playing) play_pause();
+    if (is_playing) {
+        play_pause();
+        e->record_command(d->name, is_paused?"stop":"play", "");
+    }
 }
 
 void TapeRecorderWindow::on_buttonMute_clicked()
@@ -260,8 +271,10 @@ void TapeRecorderWindow::on_buttonRewind_clicked()
         is_playing = false;
         play_pause();
         ui->buttonPlay->setChecked(false);
+        e->record_command(d->name, "stop", "");
     }
     d->rewind();
+    e->record_command(d->name, "rewind", "");
 }
 
 void TapeRecorderWindow::on_buttonRec_clicked()
@@ -273,6 +286,7 @@ void TapeRecorderWindow::on_buttonRec_clicked()
         is_recording = false;
     }
     d->set_recording(is_recording);
+    e->record_command(d->name, "record", is_recording?"1":"0");
     if (!is_recording && d->get_record_size() != 0) {
         QString path = QString::fromStdString(e->read_setup("Startup", "last_path", e->work_path));
         // The device knows what it has decoded, and for some formats the
@@ -288,6 +302,7 @@ void TapeRecorderWindow::on_buttonRec_clicked()
                 const std::vector<uint8_t> * data = d->get_record_data();
                 file.write(reinterpret_cast<const char*>(data->data()), static_cast<qint64>(data->size()));
                 file.close();
+                e->record_command(d->name, "save", format_script_arg(fi.absoluteFilePath().toStdString()));
             } else {
                 QMessageBox::warning(this, TapeRecorderWindow::tr("Error"), TapeRecorderWindow::tr("Unable to save file!"));
             }

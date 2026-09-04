@@ -1,0 +1,31 @@
+# БК0011М: команды KEYDOWN и KEYUP, которыми интерфейс записывает аккорды.
+# Кавычка на этой машине есть только в верхнем регистре: с Shift, удержанным
+# через KEYDOWN, клавиша дает кавычку, без него - ничего. Первая строка
+# программы набирается с удержанным Shift вокруг кавычек, во второй кавычка
+# нажата без Shift и пропадает. LIST и RUN показывают результат.
+# @timeout 40
+
+MACHINE "bk/BK-0011M.cfg"
+WAIT 4000
+
+TYPE "10 PRINT "
+KEYDOWN shift
+KEY 100,100,"\""
+KEYUP shift
+KEY 100,100,2,2,2
+KEYDOWN shift
+KEY 100,100,"\""
+KEYUP shift
+KEY 100,100,ret
+
+TYPE "20 PRINT "
+KEY 100,100,"\""
+TYPE "3\n"
+
+TYPE "LIST\n"
+WAIT 1500
+TYPE "RUN\n"
+WAIT 1500
+
+SCREEN "../results/work-bk-0011m-keydown.png"
+EXIT

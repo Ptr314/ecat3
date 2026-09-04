@@ -170,6 +170,7 @@ set(PROJECT_SOURCES
     emulator/script/script_parser.cpp emulator/script/script_parser.h
     emulator/script/script_log.cpp emulator/script/script_log.h
     emulator/script/script_engine.cpp emulator/script/script_engine.h
+    emulator/script/script_recorder.cpp emulator/script/script_recorder.h
     qt_utils.cpp qt_utils.h
     main.cpp
     mainwindow.cpp mainwindow.h mainwindow.ui
