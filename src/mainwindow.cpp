@@ -657,14 +657,14 @@ void MainWindow::UpdateToolbar()
 
                 QString option_tooltip = QCoreApplication::translate("DeviceOptions", opt.title.c_str());
 
+                QAction * icon_action = nullptr;
                 if (!opt.icon.empty()) {
                     QString icon_path = QString::fromStdString(find_file_location(sd, opt.icon));
                     if (!icon_path.isEmpty()) {
                         QIcon icon(icon_path);
                         icon.addPixmap(QPixmap(icon_path), QIcon::Disabled);
-                        QAction * icon_action = new QAction(icon, "", this);
+                        icon_action = new QAction(icon, "", this);
                         icon_action->setToolTip(option_tooltip);
-                        icon_action->setEnabled(false);
                         ui->toolBar->insertAction(ui->actionDebugger, icon_action);
                         option_toolbar_actions.append(icon_action);
                     }
@@ -699,6 +699,13 @@ void MainWindow::UpdateToolbar()
                         e->write_setup("DeviceOptions", key, std::to_string(value_id));
                         e->record_command(device_name, "option", std::to_string(option_id) + "," + std::to_string(value_id));
                     });
+
+                if (icon_action != nullptr) {
+                    connect(icon_action, &QAction::triggered, [combo]() {
+                        int count = combo->count();
+                        if (count > 1) combo->setCurrentIndex((combo->currentIndex() + 1) % count);
+                    });
+                }
 
                 QAction * action = ui->toolBar->insertWidget(ui->actionDebugger, combo);
                 option_toolbar_actions.append(action);
