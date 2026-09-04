@@ -28,6 +28,11 @@ public:
 class k1801vm1 : public CPU
 {
 private:
+    // The last bus timeout, for scripts hunting holes in a memory map
+    unsigned int m_timeouts = 0;
+    unsigned int m_timeout_address = 0;
+    unsigned int m_timeout_pc = 0;
+
     Interface i_virq;               // vectored interrupt request
     Interface i_vector;             // vector supplied by the requesting device
     Interface i_irq2;               // request with the fixed vector 0100
@@ -56,6 +61,10 @@ public:
     // True when nothing answered the last access. On the МПИ bus that is a
     // timeout, and the processor turns it into a trap through vector 4.
     bool bus_timeout();
+    void note_timeout(unsigned int address);
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 
     virtual std::vector<std::pair<std::string, std::string>> get_registers() override;
     virtual std::vector<std::pair<std::string, std::string>> get_flags() override;

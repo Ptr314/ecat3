@@ -41,6 +41,7 @@ private:
 
     bool write_protect;
     bool loaded;
+    unsigned int m_generation = 0;      // bumped on every load/unload so controllers can drop cached tracks
     bool motor_on = false;
     bool m_motor_was_on = false;
     std::chrono::steady_clock::time_point led_start;
@@ -78,7 +79,11 @@ public:
     bool is_track_00();
     bool is_led_on();
     int get_sector_size();
+    int get_sides();
+    int get_tracks();
+    int get_sectors();
     int get_loaded();
+    unsigned int get_generation();
     int get_position();
     void set_position(int value);
     int SeekSector(int track, int sector);

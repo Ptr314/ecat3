@@ -59,6 +59,7 @@
 #include "emulator/devices/specific/irisha_display.h"
 #include "emulator/devices/specific/bk_display.h"
 #include "emulator/devices/specific/bk_timer.h"
+#include "emulator/devices/specific/bk_fdc.h"
 #include "devices/common/gmd70.h"
 #include "emulator/devices/common/ram_address.h"
 #include "emulator/devices/specific/agat_9_mapper.h"
@@ -814,6 +815,7 @@ void Emulator::register_devices()
     dm->register_device("irisha-display", create_irisha_display);
     dm->register_device("bk-display", create_bk_display);
     dm->register_device("bk-timer", create_bk_timer);
+    dm->register_device("bk-fdc", create_bk_fdc);
     dm->register_device("ram-address", create_ram_address);
     dm->register_device("agat-9-mapper", create_agat_9_mapper);
 }

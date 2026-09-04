@@ -237,6 +237,10 @@ void pdp11core::do_trap(uint16_t vector)
     uint16_t old_psw = context.PSW;
     uint16_t old_pc  = context.R[PDP11::REG_PC];
 
+    m_trap_vector = vector;
+    m_trap_pc = old_pc;
+    m_trap_count++;
+
     m_abort = false;
     push(old_psw);
     push(old_pc);

@@ -201,6 +201,7 @@ struct MapperRange {
     unsigned int        base;				//Адрес во внутр. адр. пр-ве устройства, соотв. RangeBegin системы
     unsigned int        mode;				//Режим допустимости чтения-записи для устройства
     bool                cache;              //Разрешение кеширования записи
+    bool                strict;             //Обращение другого режима остается без ответа (таймаут магистрали)
 };
 
 struct MapperCacheEntry {
@@ -609,7 +610,7 @@ public:
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     void add_cache_entry(MapperCacheEntry * cache, unsigned int * cache_items, MapperRange * range);
 
-    bool responds(unsigned int address);
+    bool responds(unsigned int address, unsigned int mode = MODE_RW);
     unsigned int read(unsigned int address);
     void write(unsigned int address, unsigned int value);
     unsigned int read_port(unsigned int address);

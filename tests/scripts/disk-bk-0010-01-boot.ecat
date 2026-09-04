@@ -1,0 +1,39 @@
+# БК0010-01 + КНГМД: загрузка ANDOS 3.1 с образа andos.img из software/bk.
+# Монитор БК0010 сам дисковый загрузчик не вызывает: его запускают директивой
+# S160000. ANDOS отличает БК0010 от БК0011М по таймауту при записи в 0177662,
+# поэтому этот регистр в конфигурации помечен strict.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+#
+# Допуск на снимки: логотип ANDOS на заставке крутится, и момент запуска
+# загрузчика чуть плавает - в снимок заставки попадает разная фаза анимации.
+# @pixels 800
+# @timeout 60
+
+MACHINE "bk/BK-0010-01-fdd.cfg"
+WAIT 3000
+
+TYPE "S160000"
+KEY 100,100,ret
+WAIT 12000
+
+LOGDEFS 16,8
+PRINT "=== Заставка ==="
+LOG fdd0.loaded
+LOG fdd0.file
+LOG fdc.motor
+LOG fdc.track
+LOG cpu.timeouts
+SCREEN "../results/disk-bk-0010-01-boot-splash.png"
+
+KEY 100,100,space
+WAIT 5000
+
+PRINT "=== Оболочка ==="
+LOG fdd0.track
+LOG fdd0.side
+LOG fdc.command
+LOG mapper.map
+SCREEN "../results/disk-bk-0010-01-boot.png"
+EXIT

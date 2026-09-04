@@ -77,6 +77,11 @@ public:
     virtual void reset();
     virtual pdp11context * get_context();
     virtual uint16_t get_pc();
+
+    // The last trap taken, for scripts: vector, PC of the trapped instruction, count
+    uint16_t m_trap_vector = 0;
+    uint16_t m_trap_pc = 0;
+    unsigned int m_trap_count = 0;
     uint16_t get_command();
 
     virtual void set_virq(bool state, uint16_t vector);

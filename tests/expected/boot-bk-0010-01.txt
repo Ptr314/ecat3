@@ -9,7 +9,7 @@
         C000-DFFF -> basic2[0000] mode=r
         E000-FEFF -> basic3[0000] mode=r
         FFB0-FFB1 -> port-kbd-state[0000] mode=rw
-        FFB2-FFB3 -> port-kbd-code[0000] mode=rw
+        FFB2-FFB3 -> port-kbd-code[0000] mode=r
         FFB4-FFB5 -> port-scroll[0000] mode=rw
         FFC0-FFC1 -> port-177700[0000] mode=rw
         FFC2-FFC3 -> port-177702[0000] mode=rw

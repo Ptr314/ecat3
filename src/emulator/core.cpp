@@ -1680,6 +1680,11 @@ emulator::Result MemoryMapper::load_config(SystemData *sd)
                 mr.address_value = 0;
             }
 
+            // A strict range answers only accesses of its own mode: a register
+            // that exists for reading only times out when written, which is how
+            // some firmware tells machines apart
+            mr.strict = (this->cd->extended_parameter(i, "strict") == "1");
+
             //Disable cache for complicated entries
             mr.cache = (mr.address_mask == 0) && (this->cache_size > 0);
 
@@ -1816,16 +1821,28 @@ unsigned int MemoryMapper::read(unsigned int address)
         return d->get_value(address_on_device);
 
     } else {
-        this->no_device = !this->responds(address);
+        this->no_device = !this->responds(address, MODE_R);
         return _FFFF;
     }
 }
 
-// Is anything mapped at this address at all, in either direction
-bool MemoryMapper::responds(unsigned int address)
+// Whether anything is mapped at the address at all: a range of the other
+// mode still counts, unless it is strict
+bool MemoryMapper::responds(unsigned int address, unsigned int mode)
 {
-    unsigned int address_on_device, range_index;
-    return this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_RW, &address_on_device, &range_index) != nullptr;
+    unsigned int config = this->i_config.value;
+    for (unsigned int i = this->first_range; i <= this->ranges_count; i++)
+    {
+        MapperRange * mr = &(this->ranges[i]);
+        if (
+            ( (config & mr->config_mask) == mr->config_value )
+            && (address >= mr->range_begin) && (address <= mr->range_end)
+            && ( (address & mr->address_mask) == mr->address_value)
+            && ( ((mr->mode & mode) != 0) || !mr->strict )
+            )
+            return true;
+    }
+    return false;
 }
 
 void MemoryMapper::write(unsigned int address, unsigned int value)
@@ -1846,7 +1863,7 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
         //if (mr->cache) this->add_cache_entry(); //this->ranges[range_index]
         d->set_value(address_on_device, value);
     } else
-        this->no_device = !this->responds(address);
+        this->no_device = !this->responds(address, MODE_W);
 }
 
 unsigned int MemoryMapper::read_word(unsigned int address)
@@ -1864,7 +1881,7 @@ unsigned int MemoryMapper::read_word(unsigned int address)
     if (d != nullptr)
         return d->get_value_word(address_on_device);
     else {
-        this->no_device = !this->responds(address);
+        this->no_device = !this->responds(address, MODE_R);
         return _FFFF;
     }
 }
@@ -1877,7 +1894,7 @@ void MemoryMapper::write_word(unsigned int address, unsigned int value)
     if (d != nullptr)
         d->set_value_word(address_on_device, value);
     else
-        this->no_device = !this->responds(address);
+        this->no_device = !this->responds(address, MODE_W);
 }
 
 unsigned int MemoryMapper::read_port(unsigned int address)

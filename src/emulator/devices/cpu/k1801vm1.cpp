@@ -92,27 +92,68 @@ void k1801vm1::reset(bool cold)
 
 unsigned int k1801vm1::read_mem(unsigned int address)
 {
-    return mm->read(address) & 0xFF;
+    unsigned int v = mm->read(address) & 0xFF;
+    note_timeout(address);
+    return v;
 }
 
 void k1801vm1::write_mem(unsigned int address, unsigned int data)
 {
     mm->write(address, data & 0xFF);
+    note_timeout(address);
 }
 
 unsigned int k1801vm1::read_mem_word(unsigned int address)
 {
-    return mm->read_word(address) & 0xFFFF;
+    unsigned int v = mm->read_word(address) & 0xFFFF;
+    note_timeout(address);
+    return v;
 }
 
 void k1801vm1::write_mem_word(unsigned int address, unsigned int data)
 {
     mm->write_word(address, data & 0xFFFF);
+    note_timeout(address);
 }
 
 bool k1801vm1::bus_timeout()
 {
     return mm->no_device;
+}
+
+void k1801vm1::note_timeout(unsigned int address)
+{
+    if (!mm->no_device) return;
+    m_timeouts++;
+    m_timeout_address = address & 0xFFFF;
+    m_timeout_pc = core->get_pc();
+}
+
+std::vector<DeviceFieldInfo> k1801vm1::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = CPU::get_device_fields();
+    r.push_back({"timeouts",        "Number of bus timeouts since start",       false});
+    r.push_back({"timeout_address", "Address of the last bus timeout",          false});
+    r.push_back({"timeout_pc",      "PC of the instruction that timed out last", false});
+    r.push_back({"traps",           "Number of traps and interrupts taken",     false});
+    r.push_back({"trap_vector",     "Vector of the last trap or interrupt",     false});
+    r.push_back({"trap_pc",         "PC saved by the last trap or interrupt",   false});
+    return r;
+}
+
+bool k1801vm1::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    out.numeric = true;
+    out.width = 16;
+    if (field == "timeouts")        { out.values.push_back(m_timeouts);        return true; }
+    if (field == "timeout_address") { out.values.push_back(m_timeout_address); return true; }
+    if (field == "timeout_pc")      { out.values.push_back(m_timeout_pc);      return true; }
+    if (field == "traps")           { out.values.push_back(core->m_trap_count);  return true; }
+    if (field == "trap_vector")     { out.values.push_back(core->m_trap_vector); return true; }
+    if (field == "trap_pc")         { out.values.push_back(core->m_trap_pc);     return true; }
+    out.width = 0;
+    out.numeric = false;
+    return CPU::get_field(field, from, to, out);
 }
 
 std::vector<std::pair<std::string, std::string>> k1801vm1::get_registers()
@@ -161,9 +202,13 @@ void k1801vm1::set_context_value(const std::string &name, unsigned int value)
     pdp11context * c = core->get_context();
 
     if (name == "PC")
-    {
         c->R[PDP11::REG_PC] = (uint16_t)value;
-    }
+    else if (name == "SP")
+        c->R[PDP11::REG_SP] = (uint16_t)value;
+    else if (name == "PSW")
+        c->PSW = (uint16_t)value;
+    else if (name.size() == 2 && name[0] == 'R' && name[1] >= '0' && name[1] <= '5')
+        c->R[name[1] - '0'] = (uint16_t)value;
 }
 
 void k1801vm1::interface_callback(unsigned int callback_id, unsigned int new_value, MAYBE_UNUSED unsigned int old_value)

@@ -1,12 +1,22 @@
-=== Экран ===
-[display.resolution] 256x256
-=== Карта памяти и портов ===
+=== Заставка ===
+[fdd0.loaded] &000001
+[fdd0.file] andos.img
+[fdc.motor] &000000
+[fdc.track] &000000
+[cpu.timeouts] &000001
+=== Оболочка ===
+[fdd0.track] &000000
+[fdd0.side] &000001
+[fdc.command] &000000
 [mapper.map] 
         0000-3FFF -> ram[0000] mode=rw
         4000-7FFF -> vram[0000] mode=rw
         8000-9FFF -> monitor[0000] mode=r
-        A000-BFFF -> focal[0000] mode=r
-        C000-FEFF -> tests[0000] mode=r
+        A000-BFFF -> basic1[0000] mode=r cfg=0C:0C
+        C000-DFFF -> basic2[0000] mode=r cfg=0C:0C
+        A000-DFFF -> ram-fdd[0000] mode=rw cfg=00:08
+        E000-EFFF -> disk[0000] mode=r
+        FE58-FE5B -> fdc[0000] mode=rw
         FFB0-FFB1 -> port-kbd-state[0000] mode=rw
         FFB2-FFB3 -> port-kbd-code[0000] mode=r
         FFB4-FFB5 -> port-scroll[0000] mode=rw

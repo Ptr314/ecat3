@@ -348,8 +348,10 @@ LOG port-user.value(0,3)        // все четыре регистра i8255
 | __memory-mapper__ | __map__ &ndash; текущая карта памяти и портов, __config__ &ndash; значение регистра конфигурации |
 | __register__ | __value__, __default__, __mask__ |
 | __cpu__ (i8080, z80, 6502, 65c02, 1801vm1, 1801vm2) | __pc__, __command__, __registers__, __flags__, __clock__, __debug__ |
-| __fdd__ | __loaded__, __file__, __protected__, __selected__, __motor__, __led__, __track__, __sector__, __side__, __position__ |
+| __1801vm1__, __1801vm2__ дополнительно | __timeouts__, __timeout_address__, __timeout_pc__ &ndash; таймауты магистрали; __traps__, __trap_vector__, __trap_pc__ &ndash; последняя ловушка или прерывание |
+| __fdd__ | __loaded__, __file__, __protected__, __selected__, __motor__, __led__, __track__, __sector__, __side__, __position__, __generation__ (счетчик загрузок и извлечений образа) |
 | __wd1793__ | __status__, __track__, __sector__, __data__, __busy__, __drive__ |
+| __bk-fdc__ | __status__, __command__, __drive__, __track__, __side__, __motor__, __writing__, __busy__, __position__; отладочные __raw(от,до)__, __marker(от,до)__, __trace(от,до)__ (см. [CONFIG.md](CONFIG.md#bk-fdc)) |
 | __taperecorder__ | __mode__ (0 &ndash; стоп, 1 &ndash; воспроизведение), __position__, __total__, __size__, __baudrate__, __recording__, __recorded__ |
 | __i8253__ | __counters__, __start__, __modes__, __outputs__, __gates__ |
 | __i8259__ | __imr__, __irr__, __isr__, __initialized__ |
@@ -387,7 +389,7 @@ LOG port-user.value(0,3)        // все четыре регистра i8255
 | | __run__ | | Продолжение выполнения |
 | | __step__ | | Выполнение одной команды |
 | | __breakpoint__ | адрес | Установка точки останова |
-| | __setreg__ | имя, значение | Установка регистра или флага |
+| | __setreg__ | имя, значение | Установка регистра или флага. У 1801vm1/1801vm2 принимаются __R0__-__R5__, __SP__, __PC__ и __PSW__ |
 | __fdd__ | __load__ | "файл" | Загрузка образа диска |
 | | __save__ | "файл" | Запись образа в файл |
 | | __eject__ | | Извлечение образа |

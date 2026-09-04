@@ -1,0 +1,34 @@
+# БК0011М + КНГМД: загрузка ANDOS 3.1 с образа andos.img из software/bk.
+# БОС находит дисковое ПЗУ по 0160000 и вызывает загрузчик; ANDOS показывает
+# заставку и ждет пробела, после которого запускается двухпанельная оболочка
+# с каталогом дискеты.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+#
+# Допуск на снимки: логотип ANDOS на заставке крутится, и момент запуска
+# загрузчика чуть плавает - в снимок заставки попадает разная фаза анимации.
+# @pixels 800
+# @timeout 60
+
+MACHINE "bk/BK-0011M-fdd.cfg"
+WAIT 12000
+
+LOGDEFS 16,8
+PRINT "=== Заставка ==="
+LOG fdd0.loaded
+LOG fdd0.file
+LOG fdc.motor
+LOG fdc.track
+SCREEN "../results/disk-bk-0011m-boot-splash.png"
+
+KEY 100,100,space
+WAIT 5000
+
+PRINT "=== Оболочка ==="
+LOG fdd0.track
+LOG fdd0.side
+LOG fdc.command
+LOG mapper.map
+SCREEN "../results/disk-bk-0011m-boot.png"
+EXIT
