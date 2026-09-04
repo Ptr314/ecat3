@@ -35,9 +35,6 @@ void I8255::reset(bool cold)
 unsigned int I8255::get_value(unsigned int address)
 {
     uint8_t data = registers[address & 0b11];
-#ifdef LOG_8255
-    // if (log_available()) logs(QString("R %1:%2").arg(address & 0b11).arg(data, 2, 16, QChar('0')).toStdString());
-#endif
     return data;
 }
 
@@ -48,15 +45,8 @@ void I8255::set_value(unsigned int address, unsigned int value, bool force)
     // This hack is used when the IC is used internally to avoid setting interfaces etc.
     if (force) {
         registers[n] = (uint8_t)value;
-        #ifdef LOG_8255
-            // if (log_available()) logs(QString("WF %1:%2").arg(n).arg(value, 2, 16, QChar('0')).toStdString());
-        #endif
         return;
     }
-
-    #ifdef LOG_8255
-        // if (log_available()) logs(QString("W %1:%2").arg(n).arg(value, 2, 16, QChar('0')).toStdString());
-    #endif
 
     switch (n) {
     case 0:
@@ -127,9 +117,6 @@ void I8255::set_value(unsigned int address, unsigned int value, bool force)
         }
         break;
     }
-#ifdef LOG_8255
-    // if (log_available()) logs(QString("W %1:%2").arg(n).arg(value, 2, 16, QChar('0')).toStdString());
-#endif
 
 }
 
@@ -181,9 +168,6 @@ void I8255::interface_callback(unsigned int callback_id, unsigned int new_value,
         break;
     }
 
-#ifdef LOG_8255
-    // logs(QString("C %1:%2").arg(callback_id).arg(new_value, 2, 16, QChar('0')).toStdString());
-#endif
 }
 
 ComputerDevice * create_i8255(InterfaceManager *im, EmulatorConfigDevice *cd){

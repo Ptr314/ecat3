@@ -107,37 +107,13 @@ void mos6502::set_context_value(const std::string &name, unsigned int value)
     }
 }
 
-#ifdef LOG_CPU
-void mos6502::log_state(uint8_t command, bool before, unsigned int cycles)
-{
-    if (log_available())
-    {
-        mos6502context * c = core->get_context();
-        // logs((
-        //     QString(" %1").arg(command, 2, 16, QChar('0')) + ((before)?"+":"-")
-        //     + QString(" A:%1").arg(c->A, 2, 16, QChar('0'))
-        //     + QString(" X:%1").arg(c->X, 2, 16, QChar('0'))
-        //     + QString(" Y:%1").arg(c->Y, 2, 16, QChar('0'))
-        //     + QString(" S:%1").arg(c->S, 2, 16, QChar('0'))
-        //     + QString(" P:%1").arg(c->P, 2, 16, QChar('0'))
-        //     ).toStdString());
-    }
-}
-#endif
-
 void mos6502::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
     switch (callback_id) {
     case CALLBACK_NMI:
-#ifdef LOG_CPU
-        // logs(("NMI = " + QString::number(new_value & 1)).toStdString());
-#endif
         core->set_nmi((new_value & 1) == 0); //NMI has active 0
         break;
     case CALLBACK_INT:
-#ifdef LOG_CPU
-        // logs(("INT = " + QString::number(new_value & 1)).toStdString());
-#endif
         core->set_irq((new_value & 1) == 0); //INT has active 0
         break;
     }
@@ -154,21 +130,7 @@ unsigned int mos6502::execute()
     if (m_debug == DEBUG_STOPPED)
         return 0;
 
-#ifdef LOG_CPU
-    uint8_t log_cmd = get_command();
-    static bool do_log = false;
-    uint16_t address = get_pc();
-
-    if (address >0x3000 && address < 0x4000)
-        do_log = true;
-    if (do_log) log_state(log_cmd, true);
-#endif
-
     unsigned int cycles = core->execute();
-
-#ifdef LOG_CPU
-    // if (do_log) log_state(log_cmd, false, cycles);
-#endif
 
 
     switch (m_debug) {

@@ -39,16 +39,8 @@ private:
 
     i8080core * core;
 
-#ifdef LOG_8080
-    CPULogger * logger;
-#endif
-
 protected:
     virtual unsigned int get_pc() override;
-
-#ifdef LOG_CPU
-    void log_state(uint8_t command, bool before, unsigned int cycles=0) override;
-#endif
 
 public:
     i8080(InterfaceManager *im, EmulatorConfigDevice *cd);

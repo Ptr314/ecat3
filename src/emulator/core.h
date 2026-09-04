@@ -20,7 +20,6 @@
 #include "config.h"
 #include "emulator/result.h"
 #include "globals.h"
-#include "logger.h"
 #include "thread_compat.h"
 
 #ifdef PROJECT_NAME
@@ -270,12 +269,6 @@ protected:
     InterfaceManager * im;
     ComputerDevice * memory_callback_device;
 
-    void logs(const std::string &s);
-    bool log_available();
-#ifdef LOGGER
-    MemoryMapper * log_mm;
-#endif
-
 private:
     bool m_cold_reset = true;
     bool m_soft_reset = true;
@@ -467,7 +460,7 @@ public:
 class DeviceManager
 {
 public:
-    DeviceManager(Logger * l);
+    DeviceManager();
     ~DeviceManager();
 
     unsigned int device_count;
@@ -487,15 +480,12 @@ public:
     DeviceDescription * get_device(unsigned int i); //
     void register_device(const std::string &device_type, CreateDeviceFunc func); //
 
-    void logs(const std::string &s);
-    bool log_available();
 
 private:
     DeviceDescription devices[MAX_DEVICES];
     unsigned int registered_devices_count;
     RegisteredDevice registered_devices[MAX_REGISTERED_DEVICES];
 
-    Logger * logger;
     int64_t global_clock_counter = 0;
 };
 
@@ -529,7 +519,6 @@ protected:
     Interface i_data;
     bool reset_mode;
 
-    virtual void log_state(uint8_t command, bool before, unsigned int cycles=0){};
 
 public:
     unsigned int clock;

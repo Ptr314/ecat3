@@ -39,11 +39,6 @@ protected:
     void read_next_byte();
     void write_next_byte();
 
-#ifdef LOG_FDD
-    RAM * ram0;
-    bool start_log = false;
-#endif
-
 public:
     Agat_FDC840(InterfaceManager *im, EmulatorConfigDevice *cd);
 

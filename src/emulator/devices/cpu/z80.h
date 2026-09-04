@@ -53,10 +53,6 @@ private:
 protected:
     virtual unsigned int get_pc() override;
 
-#ifdef LOG_CPU
-    virtual void log_state(uint8_t command, bool before, unsigned int cycles=0) override;
-#endif
-
 public:
     z80(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~z80();

@@ -59,9 +59,6 @@ void Interface::connect(LinkedInterface s, LinkedInterface d, bool invert)
 
     if (index < 0)
     {
-#ifdef LOG_INTERFACES
-        std::cerr << "CONNECT " << s.i->device->name << ":" << s.i->name << " TO " << d.i->device->name << ":" << d.i->name << std::endl;
-#endif
         linked++;
         linked_interfaces[linked-1].s = s;
         linked_interfaces[linked-1].d = d;
@@ -165,7 +162,7 @@ void Interface::pull(unsigned int new_value)
 
 //----------------------- class DeviceManager -------------------------------//
 
-DeviceManager::DeviceManager(Logger *l)
+DeviceManager::DeviceManager()
 {
     registered_devices_count = 0;
 
@@ -173,7 +170,6 @@ DeviceManager::DeviceManager(Logger *l)
     error_message = "";
     error_device = nullptr;
 
-    logger = l;
 }
 
 DeviceManager::~DeviceManager()
@@ -306,28 +302,6 @@ void DeviceManager::error(ComputerDevice *d, const std::string &message)
 void DeviceManager::error_clear()
 {
     error_device = nullptr;
-}
-
-void DeviceManager::logs(const std::string &s)
-{
-#ifdef LOGGER
-    std::cout << s << std::endl;
-    if (logger != nullptr)
-    {
-        CPU * cpu = dynamic_cast<CPU*>(get_device(0)->device.get());
-
-        if (cpu != nullptr)
-        {
-            logger->logs(hex_str(cpu->get_pc(), 4) + ": " + s);
-        } else
-            logger->logs(s);
-    }
-#endif
-}
-
-bool DeviceManager::log_available()
-{
-    return (logger != nullptr) && logger->log_available();
 }
 
 std::vector<ComputerDevice*> DeviceManager::find_devices_by_class(const std::string &class_to_find)
@@ -519,10 +493,6 @@ emulator::Result ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
             "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect parameters for")) + "} " + name);
     }
 
-#ifdef LOGGER
-    log_mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper"));
-#endif
-
     return emulator::Result::ok();
 }
 
@@ -544,16 +514,6 @@ void ComputerDevice::memory_callback(MAYBE_UNUSED unsigned int callback_id, MAYB
 void ComputerDevice::reset(MAYBE_UNUSED bool cold)
 {
     //Does nothing by default, but may be overridden
-}
-
-void ComputerDevice::logs(const std::string &s)
-{
-    if (log_available()) im->dm->logs(this->name + ": " + s);
-}
-
-bool ComputerDevice::log_available()
-{
-    return im->dm->log_available();
 }
 
 bool ComputerDevice::belongs_to_class(const std::string &class_to_check)
@@ -820,9 +780,6 @@ void Memory::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned 
 {
     unsigned int address = new_value & create_mask(i_address.get_size(), 0);
     if (address < get_size() and auto_output) i_data.change(buffer[address]);
-
-    // if (name == "rom-card-mapper")
-    //     logs(QString::number(address, 2) + QString::number(buffer[address], 2));
 }
 
 void Memory::set_size(unsigned int value)
@@ -1224,10 +1181,6 @@ void Port::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned in
 
 unsigned int Port::read_register()
 {
-#ifdef LOG_PORTS
-    // if (name != "port-video" && name != "port-kbd")
-    //     logs("GET " + QString::number(value, 16));
-#endif
     if (access_on_read) {
         i_access.change(0);
         i_access.change(1);
@@ -1238,9 +1191,6 @@ unsigned int Port::read_register()
 
 void Port::write_register(unsigned int new_value)
 {
-#ifdef LOG_PORTS
-    // logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
-#endif
     if (access_on_write) i_access.change(0);
     if (alt_bit >= 0 && ((new_value >> alt_bit) & 1) != 0) {
         alt_value = (new_value & mask) | (alt_value & ~mask);
@@ -1336,15 +1286,6 @@ emulator::Result PortAddress::load_config(SystemData *sd)
 
 void PortAddress::set_value(unsigned int address, MAYBE_UNUSED unsigned int value, bool force)
 {
-#ifdef LOG_PORTS
-    // if (name == "pal-switch")
-    //     logs(QString("W %1").arg(address));
-    // logs(QString("SET %1=%2").arg(address, 2, 16, QChar('0')).arg(value, 2, 16, QChar('0')));
-    // if (address == 0xC1) {
-    //     int i=0;
-    //     i++;
-    // }
-#endif
     i_access.change(0);
     this->value = (address & mask) | (this->value & ~mask);
     i_data.change(this->value);
@@ -1353,10 +1294,6 @@ void PortAddress::set_value(unsigned int address, MAYBE_UNUSED unsigned int valu
 
 unsigned int PortAddress::get_value(MAYBE_UNUSED unsigned int address)
 {
-#ifdef LOG_PORTS
-    // if (name == "pal-switch")
-    //     logs(QString("R %1").arg(address));
-#endif
     if (store_on_read) {
         this->value = (address & mask) | (this->value & ~mask);
         i_data.change(this->value);
@@ -1856,9 +1793,6 @@ unsigned int MemoryMapper::read(unsigned int address)
 {
     //TODO: Cache
     // for (unsigned int i = 0; i < this->read_cache_items; i++)
-#ifdef LOG_MAPPER
-    // if (address >= 0xE000 && address < 0xF800) logs("R " + hex_str(address, 4));
-#endif
 
     if ((this->first_range == 0) && ((address & this->cancel_init_mask) != 0))
     {
@@ -1905,10 +1839,6 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
 {
     //TODO: Cache
     // for (unsigned int i = 0; i < this->write_cache_items; i++)
-
-#ifdef LOG_MAPPER
-    if (address >= 0xCEF1 && address <= 0xCEF2) logs("W " + hex_str(address, 4));
-#endif
 
     unsigned int address_on_device, range_index;
     this->no_device = false;

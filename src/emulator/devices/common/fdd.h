@@ -69,9 +69,6 @@ private:
     bool layout_for_file(const std::string &file_name);
     static bool parse_layout_word(const std::string &word, bool &sides_out);
     void ConvertStreamFormat();
-#ifdef LOG_FDD
-    int log_rotations = 0;
-#endif
 
 public:
     std::string files;

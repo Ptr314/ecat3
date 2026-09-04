@@ -23,10 +23,6 @@
 #include "emulator/script/script_engine.h"
 #include "renderer.h"
 
-#ifdef LOGGER
-#include "logger.h"
-#endif
-
 class Emulator
 {
 private:
@@ -140,9 +136,7 @@ public:
     bool is_screenshot_pending();
 
 private:
-    Logger * logger;
 public:
-    void logs(ComputerDevice * d, std::string s);
 
 
 };

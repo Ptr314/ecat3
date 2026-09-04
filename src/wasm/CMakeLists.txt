@@ -50,7 +50,6 @@ add_subdirectory(${LIBS_DIR}/dsk_tools/ ${CMAKE_CURRENT_BINARY_DIR}/dsk_tools)
 # Generate globals.h from template
 set(EXTERNAL_Z80 0)
 set(CPU_STOPPED 0)
-set(LOGGER 0)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../globals.h.in ${CMAKE_CURRENT_BINARY_DIR}/globals.h @ONLY NEWLINE_STYLE LF)
 
 # Emulator core sources

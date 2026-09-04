@@ -57,26 +57,7 @@ endif()
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(EXTERNAL_Z80 0)
     set(CPU_STOPPED 0)
-    set(LOGGER 1)
 ENDIF()
-
-if (${LOGGER})
-    if (${EXTERNAL_Z80})
-        set(LOG_NAME "Z80_EXT")
-    else()
-        set(LOG_NAME "LOG")
-    endif()
-    set(LOG_LIMIT 100000)
-    set(LOG_8255 0)
-    set(LOG_CPU 0)
-    set(LOG_MAPPER 0)
-    set(LOG_PORTS 0)
-    set(LOG_FDD 0)
-    set(LOG_PAGE_MAPPER 0)
-    set(LOG_INTERFACES 0)
-    set(LOG_AGAT 0)
-
-endif()
 
 # CMake globals & options
 
@@ -228,7 +209,6 @@ set(PROJECT_SOURCES
     tests/i8253_test.asm
     tests/i8080.asm
 
-    emulator/logger.h
 
     dialogs/aboutdlg.ui
     dialogs/genericdbgwnd.h dialogs/genericdbgwnd.cpp

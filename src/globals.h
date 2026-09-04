@@ -13,18 +13,6 @@
 
 /* #undef EXTERNAL_Z80 */
 /* #undef CPU_STOPPED */
-#define LOGGER
-#define LOG_NAME "LOG"
-#define LOG_LIMIT 100000
-
-/* #undef LOG_8255 */
-/* #undef LOG_CPU */
-/* #undef LOG_FDD */
-/* #undef LOG_PORTS */
-/* #undef LOG_MAPPER */
-/* #undef LOG_PAGE_MAPPER */
-/* #undef LOG_INTERFACES */
-/* #undef LOG_AGAT */
 
 // Fallback for translation markers when building without QObject
 #ifndef QT_TRANSLATE_NOOP

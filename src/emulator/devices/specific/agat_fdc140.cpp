@@ -78,34 +78,19 @@ unsigned int Agat_FDC140::get_selected_drive()
 
 void Agat_FDC140::phase_on(int n)
 {
-#ifdef LOG_FDD
-    //logs(QString("P%1+").arg(n));
-#endif
     if (prev_phase >= 0) {
         if ( ((prev_phase-1) & 0x03) == n ) {
             //Step down
-#ifdef LOG_FDD
-            // logs(QString(" DOWN"));
-#endif
             if (current_track[selected_drive] > 0) {
                 current_track[selected_drive]--;
                 drives[selected_drive]->SeekSector(current_track[selected_drive] / 2, 0);
-#ifdef LOG_FDD
-                //logs("["+QString::number(current_track[selected_drive]) + "]");
-#endif
             }
         } else
         if ( ((prev_phase+1) & 0x03) == n ) {
             //Step up
-#ifdef LOG_FDD
-            // logs(QString(" UP"));
-#endif
             if (current_track[selected_drive] < 68) {
                 current_track[selected_drive]++;
                 drives[selected_drive]->SeekSector(current_track[selected_drive] / 2, 0);
-#ifdef LOG_FDD
-                //logs("["+QString::number(current_track[selected_drive]) + "]");
-#endif
             }
         }
     }
@@ -114,18 +99,12 @@ void Agat_FDC140::phase_on(int n)
 
 void Agat_FDC140::phase_off(int n)
 {
-#ifdef LOG_FDD
-    //logs(QString("P%1-").arg(n));
-#endif
     //prev_phase = current_phase;
     //current_phase = n;
 }
 
 void Agat_FDC140::select_drive(int n)
 {
-#ifdef LOG_FDD
-    // logs(QString(" SEL %1").arg(n).toStdString());
-#endif
     // TODO: check selection on a drive
     selected_drive = n;
     i_select.change(n);
@@ -135,18 +114,6 @@ void Agat_FDC140::select_drive(int n)
 unsigned int Agat_FDC140::get_value(unsigned int address)
 {
     unsigned int A = address & 0x0f;
-#ifdef LOG_FDD
-    static bool show12 = true;
-    if (A == 12) {
-        if (show12) {
-            // logs(QString("R DATA+").toStdString());
-            show12 = false;
-        }
-    } else {
-        // logs(QString("R %1").arg(A).toStdString());
-        show12 = true;
-    }
-#endif
     switch (A) {
         case 0x0:
         case 0x2:

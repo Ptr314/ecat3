@@ -279,14 +279,6 @@ int FDD::SeekSector(int track, int sector)
         this->track = track;
         this->sector = sector;
         // qDebug() << "SEEK " << this->side << this->track << this->sector;
-#ifdef LOG_FDD
-        static int prev_track = -1;
-        if (prev_track != track) {
-            // logs(QString("ROT %1 SEEK side:%2 track:%3 sector:%4").arg(log_rotations).arg(side).arg(track).arg(sector).toStdString());
-            log_rotations = 0;
-            prev_track = track;
-        }
-#endif
         position = 0;
         if (track_mode == FDD_MODE_SECTORS) {
             result = sector_size;
@@ -350,14 +342,8 @@ uint8_t FDD::ReadNextByte()
         } else {
             uint8_t result = buffer[track_indexes[track*sides + side].mfmtrackoffset + position++];
             if (position >= track_indexes[track*sides + side].mfmtracksize) {
-    #ifdef LOG_FDD
-                log_rotations++;
-    #endif
                 position = 0;
             }
-    #ifdef LOG_FDD
-            //logs(QString("R %1 %2").arg(position).arg(result, 2, 16, QChar('0')));
-    #endif
             return result;
         }
     } else

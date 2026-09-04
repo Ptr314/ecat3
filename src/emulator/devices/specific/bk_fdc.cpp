@@ -259,9 +259,6 @@ void BKFDC::encode_track(BKFDCDrive * d)
 
     m_crc = saved_crc;
 
-#ifdef LOG_FDD
-    logs("track " + std::to_string(d->track) + " side " + std::to_string(m_side) + (have ? " encoded" : " blank"));
-#endif
 }
 
 // Parses a raw track back into sectors, in the order they lie on the track.
@@ -331,11 +328,9 @@ void BKFDC::flush_track(BKFDCDrive * d)
 
     uint8_t sectors[BK_FDC_SECTORS * BK_FDC_SECTOR_SIZE];
     int count;
-    if (!decode_track(d, sectors, count)) {
-        logs("track " + std::to_string(d->cached_track) + " side " + std::to_string(d->cached_side)
-             + ": cannot decode the written track, not stored");
-        return;
-    }
+    // A track that does not parse back into sectors is silently dropped:
+    // the image keeps what it had, the trace field shows what happened
+    if (!decode_track(d, sectors, count)) return;
 
     i_side.change((~d->cached_side) & 1);
     for (int s = 0; s < count && s < BK_FDC_SECTORS; s++) {
@@ -345,10 +340,6 @@ void BKFDC::flush_track(BKFDCDrive * d)
     }
     i_side.change((~m_side) & 1);
 
-#ifdef LOG_FDD
-    logs("track " + std::to_string(d->cached_track) + " side " + std::to_string(d->cached_side)
-         + " stored, " + std::to_string(count) + " sectors");
-#endif
 }
 
 void BKFDC::flush_all()
@@ -395,9 +386,6 @@ void BKFDC::tick()
                 if (m_crc == 0) m_status |= BK_FDC_ST_CRC_OK;
                 else            m_status &= ~BK_FDC_ST_CRC_OK;
                 trace(6, m_crc);
-#ifdef LOG_FDD
-                logs("crc " + std::to_string(m_crc) + " at " + std::to_string(p));
-#endif
             }
         } else if (m_searching) {
             if (d->marker[p / 2]) {
@@ -408,9 +396,6 @@ void BKFDC::tick()
                 crc_byte(d->data[p]);
                 crc_byte(d->data[p + 1]);
                 trace(5, m_datareg);
-#ifdef LOG_FDD
-                logs("mark at " + std::to_string(p) + " track " + std::to_string(d->track) + " side " + std::to_string(m_side));
-#endif
             }
         } else {
             m_status |= BK_FDC_ST_MOREDATA;
@@ -454,9 +439,6 @@ void BKFDC::tick()
             m_shiftmarker = false;
             m_crc_armed = false;
             m_status |= BK_FDC_ST_CRC_OK;
-#ifdef LOG_FDD
-            logs("write crc at " + std::to_string(p));
-#endif
         }
     }
 }

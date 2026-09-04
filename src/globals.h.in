@@ -13,18 +13,6 @@
 
 #cmakedefine EXTERNAL_Z80
 #cmakedefine CPU_STOPPED
-#cmakedefine LOGGER
-#cmakedefine LOG_NAME "@LOG_NAME@"
-#cmakedefine LOG_LIMIT @LOG_LIMIT@
-
-#cmakedefine LOG_8255
-#cmakedefine LOG_CPU
-#cmakedefine LOG_FDD
-#cmakedefine LOG_PORTS
-#cmakedefine LOG_MAPPER
-#cmakedefine LOG_PAGE_MAPPER
-#cmakedefine LOG_INTERFACES
-#cmakedefine LOG_AGAT
 
 // Fallback for translation markers when building without QObject
 #ifndef QT_TRANSLATE_NOOP

@@ -88,9 +88,6 @@ void PageMapper::set_value(const unsigned address, const unsigned value, bool fo
         else {
             const unsigned address_on_device = (i_segment.value & SegmentMask)*Frame + (address & address_mask);
             device->set_value(address_on_device, value);
-#ifdef LOG_PAGE_MAPPER
-            // logs(("W SEG: " + QString::number(i_segment->value & SegmentMask, 2) + ", " + QString::number(address, 16) + " -> " + QString::number(address_on_device, 16)).toStdString());
-#endif
         }
     }
 }
