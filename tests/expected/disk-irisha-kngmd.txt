@@ -1,0 +1,11 @@
+boot
+[fdc.reads] $00000004
+[fdc.writes] $00000000
+[fdc.track] $00
+[fdd0.led] $01
+after DIR
+[fdc.reads] $00000014
+[fdc.writes] $00000003
+[fdc.status] $00
+[fdd0.track] $00
+[fdd0.side] $00

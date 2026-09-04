@@ -54,6 +54,11 @@
 #define wd1793_COMMAND_SEEK         6
 #define wd1793_COMMAND_STEP         7
 
+// The head stays loaded for a while after the last command (the real chip
+// counts 15 index pulses, about 3 s), which is what keeps the drive motor and
+// its led on between consecutive accesses
+#define wd1793_DELAY_HLD_RELEASE    5000000
+
 class WD1793 : public FDC
 {
 private:
@@ -64,7 +69,7 @@ private:
     Interface i_HLD;
     FDD * drives[4];
     unsigned int drives_count;
-    unsigned int selected_drive;
+    int selected_drive;
     unsigned int command;
     int delay;
     int register_delay;
@@ -73,6 +78,11 @@ private:
     int sector_size;
     int bytes;
     int step_dir;
+    unsigned int sync_mask;
+    bool hld;
+    int hld_timer;
+    unsigned int sectors_read;
+    unsigned int sectors_written;
 
     void SetDRQ();
     bool GetDRQ();
@@ -81,8 +91,13 @@ private:
     void ClearFlag(unsigned flag);
     void SetINTRQ();
     void ClearINTRQ();
+    void SetHLD(bool value);
+    void SetTypeIFlags(uint8_t T, uint8_t S);
+    void SetTypeIIFlags();
     void FindSelectedDrive();
     void WriteRegister(unsigned address, unsigned  value);
+    void ExecuteCommand();
+    void SyncAccess();
 
 public:
     uint8_t registers[5];

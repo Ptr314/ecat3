@@ -25,6 +25,7 @@ FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
     , side(0)
     , track(0)
     , fdd_mode(FDD_MODE_LOGICAL)
+    , sides_layout(false)
     , i_select(this, im, 2, "select", MODE_R, CALLBACK_SELECT)
     , i_side(this, im, 1, "side", MODE_R)
     , i_density(this, im, 1, "density", MODE_R)
@@ -69,6 +70,14 @@ emulator::Result FDD::load_config(SystemData *sd)
         fdd_mode = FDD_MODE_AGAT_840;
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unknown fdd mode")) + "} " + s);
+
+    s = read_confg_value(cd, "layout", false, std::string("cylinders"));
+    if (s == "cylinders")
+        sides_layout = false;
+    else if (s == "sides")
+        sides_layout = true;
+    else
+        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unknown fdd layout")) + "} " + s);
 
     try {
         file_name = find_file_location(sd, cd->get_parameter("image").value);
@@ -272,7 +281,10 @@ int FDD::SeekSector(int track, int sector)
 
 unsigned int FDD::translate_address()
 {
-    return ((track*sides + side)*sectors + sector-1)*sector_size + position;
+    // Position of the track inside the image: either both sides of a
+    // cylinder go together, or the whole first side is followed by the second
+    int image_track = sides_layout ? (side*tracks + track) : (track*sides + side);
+    return (image_track*sectors + sector-1)*sector_size + position;
 }
 
 void FDD::NextPosition()

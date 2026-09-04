@@ -55,6 +55,7 @@ private:
 
     int fdd_mode;
     int track_mode;
+    bool sides_layout;      // true: the image holds all tracks of side 0, then all tracks of side 1
 
     AgatAIMCodes aim_codes;
 

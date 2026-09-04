@@ -1,0 +1,41 @@
+# Ириша + КНГМД (RTV*001.89, BIOS 4U): загрузка с дискеты, чтение обеих
+# сторон и запись. В стартовом меню выбирается ДИСК, на вопрос об очистке
+# RAM-диска отвечается Y. AUTOEXC.SUB лежит на второй стороне дискеты,
+# SAVE создает файл X.COM: он должен появиться в каталоге при следующем DIR,
+# то есть запись прошла в образ (только в памяти, файл на диске не меняется).
+#
+# Обращение к порту 37 ждет готовности контроллера (параметр sync у wd1793),
+# без этого BIOS вставал в ожидании конца команды чтения.
+# @timeout 60
+
+MACHINE "irisha/Irisha-kngmd.cfg"
+WAIT 5000
+
+KEY 300,100,down,down,ret
+WAIT 3000
+KEY 300,100,Y,ret
+WAIT 3000
+
+LOGDEFS 8,16
+PRINT "boot"
+LOG fdc.reads
+LOG fdc.writes
+LOG fdc.track
+LOG fdd0.led
+
+TYPE "TYPE AUTOEXC.SUB\n"
+WAIT 3000
+TYPE "SAVE 1 X.COM\n"
+WAIT 5000
+TYPE "DIR\n"
+WAIT 4000
+
+PRINT "after DIR"
+LOG fdc.reads
+LOG fdc.writes
+LOG fdc.status
+LOG fdd0.track
+LOG fdd0.side
+
+SCREEN "../results/disk-irisha-kngmd.png"
+EXIT
