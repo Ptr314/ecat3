@@ -80,6 +80,7 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/common/scankeyboard.cpp
     ${EMU_DIR}/devices/common/mapkeyboard.cpp
     ${EMU_DIR}/devices/common/speaker.cpp
+    ${EMU_DIR}/devices/common/ay8910.cpp
     ${EMU_DIR}/devices/common/sound.cpp
     ${EMU_DIR}/devices/common/tape.cpp
     ${EMU_DIR}/devices/common/fdd.cpp

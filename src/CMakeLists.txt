@@ -159,6 +159,7 @@ set(PROJECT_SOURCES
     emulator/devices/common/keyboard.cpp emulator/devices/common/keyboard.h
     emulator/devices/common/scankeyboard.cpp emulator/devices/common/scankeyboard.h
     emulator/devices/common/speaker.cpp emulator/devices/common/speaker.h
+    emulator/devices/common/ay8910.cpp emulator/devices/common/ay8910.h
     emulator/devices/common/tape.cpp emulator/devices/common/tape.h
     emulator/devices/cpu/i8080.cpp emulator/devices/cpu/i8080.h
     emulator/devices/specific/o128display.cpp emulator/devices/specific/o128display.h

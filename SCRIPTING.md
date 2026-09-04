@@ -357,6 +357,7 @@ LOG port-user.value(0,3)        // все четыре регистра i8255
 | __i8253__ | __counters__, __start__, __modes__, __outputs__, __gates__ |
 | __i8259__ | __imr__, __irr__, __isr__, __initialized__ |
 | __speaker__ | __volume__, __muted__ |
+| __ay8910__ | __regs__ (все регистры, __regs(от,до)__ &ndash; диапазон), __register__ (выбранный регистр), __level__ (сумма уровней каналов, 0-3000), __envelope__ (значение огибающей, 0-15) |
 | __generator__ | __enabled__, __out__, __period__ |
 | Дисплеи | __resolution__ &ndash; текущее разрешение экрана |
 

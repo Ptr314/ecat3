@@ -45,6 +45,20 @@ emulator::Result GenericSound::load_config(SystemData *sd)
     m_lpf_coutoff = read_confg_value(cd, "lpf", false, (unsigned int)m_lpf_coutoff);
     m_use_lpf = (m_lpf_coutoff > 0);
 
+    // Other sound devices whose output is mixed into this one: mix = ay|dac
+    std::string mix = cd->get_parameter("mix", false).value;
+    if (!mix.empty()) {
+        std::vector<std::string> names = split_string(mix, '|', true);
+        for (size_t i = 0; i < names.size(); i++) {
+            std::string dev_name = str_trim(names[i]);
+            SoundSource * src = dynamic_cast<SoundSource*>(im->dm->get_device_by_name(dev_name, false));
+            if (src == nullptr)
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                    "{GenericSound|" + std::string(QT_TRANSLATE_NOOP("GenericSound", "Not a sound source")) + "} " + dev_name);
+            m_sources.push_back(src);
+        }
+    }
+
     init_sound(cpu->clock);
 
     return emulator::Result::ok();
@@ -157,8 +171,13 @@ void GenericSound::clock(unsigned int counter)
 
         m_buffer[m_buffer_pos++] = static_cast<int16_t>(out);
     } else {
-        // Accumulating values between counts to get average when expected
-        m_accumulator += calc_sound_value();
+        // Accumulating values between counts to get average when expected.
+        // The sources are averaged with the device's own output so that the
+        // sum stays within the amplitude.
+        int64_t v = calc_sound_value();
+        for (size_t i = 0; i < m_sources.size(); i++) v += m_sources[i]->sound_sample(m_amplitude);
+        if (!m_sources.empty()) v /= (int64_t)(m_sources.size() + 1);
+        m_accumulator += v;
         m_acc_counter++;
     }
 }

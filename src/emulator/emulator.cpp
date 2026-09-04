@@ -33,6 +33,7 @@
 #include "emulator/devices/common/i8255.h"
 #include "emulator/devices/common/sound.h"
 #include "emulator/devices/common/speaker.h"
+#include "emulator/devices/common/ay8910.h"
 #include "emulator/devices/common/tape.h"
 #include "emulator/devices/common/scankeyboard.h"
 #include "emulator/devices/specific/o128display.h"
@@ -731,6 +732,7 @@ void Emulator::register_devices()
     dm->register_device("port", create_port);
     dm->register_device("port-address", create_port_address);
     dm->register_device("speaker", create_speaker);
+    dm->register_device("ay8910", create_ay8910);
     dm->register_device("taperecorder", create_tape_recorder);
     dm->register_device("scan-keyboard", create_scankeyboard);
     dm->register_device("i8080", create_i8080);

@@ -13,10 +13,21 @@
 
 class AudioDriver;
 
+// A device that produces sound but has no audio output of its own: its level is
+// added to the output of a GenericSound listed in its "mix" parameter. The
+// sample is expected in the range -amplitude..amplitude.
+class SoundSource
+{
+public:
+    virtual ~SoundSource() = default;
+    virtual int32_t sound_sample(int64_t amplitude) = 0;
+};
+
 class GenericSound: public ComputerDevice
 {
 private:
     CPU * cpu;
+    std::vector<SoundSource*> m_sources;    // mixed into the output, see "mix"
     bool m_initialized;
     uint64_t m_clock_freq;
     unsigned int m_counter;
