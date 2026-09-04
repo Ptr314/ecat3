@@ -17,6 +17,7 @@ ComputerFamily::ComputerFamily(QString type, QString name):
     QStandardItem(name),
     type(type)
 {
+    setEditable(false);
     setData(type);
 }
 
@@ -26,6 +27,7 @@ ComputerModel::ComputerModel(QString type, QString name, QString version, QStrin
     name(name),
     path(path)
 {
+    setEditable(false);
     setData(path, Qt::UserRole);
 }
 
@@ -42,6 +44,20 @@ OpenConfigWindow::OpenConfigWindow(QWidget *parent, Emulator * e) :
     OpenConfigWindow(parent)
 {
     this->e = e;
+
+    {
+        // Setting the initial state must not trigger a repeated listing
+        QSignalBlocker blocker(ui->debugCheck);
+        ui->debugCheck->setChecked(e->read_setup("Startup", "show_debug_versions", "0") == "1");
+    }
+
+    // Editable items would swallow the double click to open an editor
+    // instead of emitting doubleClicked()
+    ui->treeView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    connect(ui->treeView, &QTreeView::clicked, this, &OpenConfigWindow::set_description);
+    connect(ui->treeView, &QTreeView::doubleClicked, this, &OpenConfigWindow::on_item_double_clicked);
+
     list_machines(QString::fromStdString(e->work_path));
 
     QFile file(QString::fromStdString(e->data_path + "description.css"));
@@ -69,7 +85,9 @@ OpenConfigWindow::~OpenConfigWindow()
 
 void OpenConfigWindow::list_machines(QString work_path)
 {
-    bool load_debugs = e->read_setup("Startup", "show_debug_versions", "0") == "1";
+    bool load_debugs = ui->debugCheck->isChecked();
+
+    selected_path = "";
 
     QStandardItemModel * model = new QStandardItemModel();
     QStandardItem * node = model->invisibleRootItem();
@@ -126,12 +144,10 @@ void OpenConfigWindow::list_machines(QString work_path)
     }
     model->sort(0);
     ui->treeView->setHeaderHidden(true);
+    QAbstractItemModel * old_model = ui->treeView->model();
     ui->treeView->setModel(model);
+    if (old_model != nullptr) delete old_model;
     ui->treeView->expandAll();
-
-    connect(ui->treeView, &QTreeView::clicked, this, &OpenConfigWindow::set_description);
-    connect(ui->treeView, &QTreeView::doubleClicked, this, &OpenConfigWindow::on_item_double_clicked);
-
 }
 
 void OpenConfigWindow::set_description(QModelIndex index)
@@ -163,6 +179,13 @@ void OpenConfigWindow::on_item_double_clicked(QModelIndex index)
 void OpenConfigWindow::on_closeButton_clicked()
 {
     close();
+}
+
+
+void OpenConfigWindow::on_debugCheck_toggled(bool checked)
+{
+    e->write_setup("Startup", "show_debug_versions", checked?"1":"0");
+    list_machines(QString::fromStdString(e->work_path));
 }
 
 

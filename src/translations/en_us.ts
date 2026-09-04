@@ -1186,12 +1186,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+42"/>
+        <source>Show debug configurations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
         <source>Set as default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+30"/>
         <source>OK</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1201,7 +1206,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+49"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+59"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>

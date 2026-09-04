@@ -58,6 +58,8 @@ private slots:
     void on_item_double_clicked(QModelIndex index);
     void on_closeButton_clicked();
 
+    void on_debugCheck_toggled(bool checked);
+
     void on_okButton_clicked();
 
 signals:
