@@ -66,7 +66,7 @@
 
 Действия пользователя можно записать в сценарий (файл __.ecat__, см. [SCRIPTING.md](SCRIPTING.md)) и воспроизвести. Кнопки находятся в правой части панели инструментов и продублированы в меню &laquo;Эмуляция / Запись действий&raquo; (блок кнопок можно скрыть флажком &laquo;Настройки / Панель записи&raquo;, пункты меню при этом продолжают работать):
 
-* <img src="src/resources/icons/aktion.png" width="30"> &ndash; открыть запись из файла;
+* <img src="src/resources/icons/folder_yellow_open.png" width="30"> &ndash; открыть запись из файла;
 * <img src="src/resources/icons/3floppy_unmount.png" width="30"> &ndash; сохранить запись в файл;
 * <img src="src/resources/icons/krec.png" width="30"> &ndash; начать запись (повторное нажатие приостанавливает ее);
 * <img src="src/resources/icons/player_play.png" width="30"> &ndash; воспроизвести запись (повторное нажатие приостанавливает);
