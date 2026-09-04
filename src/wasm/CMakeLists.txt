@@ -84,6 +84,7 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/common/sound.cpp
     ${EMU_DIR}/devices/common/tape.cpp
     ${EMU_DIR}/devices/common/fdd.cpp
+    ${EMU_DIR}/devices/common/joystick.cpp
     ${EMU_DIR}/devices/common/wd1793.cpp
     ${EMU_DIR}/devices/common/page_mapper.cpp
     ${EMU_DIR}/devices/common/generator.cpp

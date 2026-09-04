@@ -204,6 +204,7 @@ set(PROJECT_SOURCES
     dialogs/openconfigwindow.h dialogs/openconfigwindow.cpp dialogs/openconfigwindow.ui
     emulator/devices/common/wd1793.h emulator/devices/common/wd1793.cpp
     emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp
+    emulator/devices/common/joystick.h emulator/devices/common/joystick.cpp
     libs/crc16.h libs/crc16.cpp
     emulator/devices/common/i8257.h
     emulator/devices/common/i8275.h

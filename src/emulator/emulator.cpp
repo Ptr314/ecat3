@@ -38,6 +38,7 @@
 #include "emulator/devices/specific/o128display.h"
 #include "emulator/devices/common/wd1793.h"
 #include "emulator/devices/common/fdd.h"
+#include "emulator/devices/common/joystick.h"
 #include "emulator/devices/common/i8257.h"
 #include "emulator/devices/common/i8275.h"
 #include "emulator/devices/common/i8275display.h"
@@ -312,6 +313,11 @@ void Emulator::run()
                 m_running = false;
                 return;
             }
+
+            joysticks.clear();
+            std::vector<ComputerDevice*> joystick_devices = dm->find_devices_by_class("joystick");
+            for (size_t i = 0; i < joystick_devices.size(); i++)
+                joysticks.push_back(dynamic_cast<Joystick*>(joystick_devices[i]));
 
             reset(true);
 
@@ -644,6 +650,7 @@ void Emulator::resize_screen()
 void Emulator::key_event(int key, int modifiers, bool press)
 {
     keyboard->key_event(key, key, press);
+    for (size_t i = 0; i < joysticks.size(); i++) joysticks[i]->key_event((unsigned int)key, press);
     if (key == EmuKey::F12) display->validate(true);
     if (press && key == EmuKey::Cancel) {
         reset(modifiers & EmuKey::AltModifier);
@@ -811,6 +818,7 @@ void Emulator::register_devices()
     dm->register_device("agat-7-display", create_agat_7_display);
     dm->register_device("agat-9-display", create_agat_9_display);
     dm->register_device("map-keyboard", create_mapkeyboard);
+    dm->register_device("joystick", create_joystick);
     dm->register_device("ram-address", create_ram_address);
     dm->register_device("irisha-display", create_irisha_display);
     dm->register_device("bk-display", create_bk_display);

@@ -19,6 +19,7 @@
 
 #include "core.h"
 #include "emulator/devices/common/keyboard.h"
+#include "emulator/devices/common/joystick.h"
 #include "emulator/script/script_engine.h"
 #include "renderer.h"
 
@@ -41,6 +42,7 @@ private:
     MemoryMapper * mm;
     GenericDisplay * display;
     Keyboard * keyboard;
+    std::vector<Joystick*> joysticks;   // every device of the joystick class, fed with the same keys
 
     unsigned int clock_freq;
     unsigned int timer_res;

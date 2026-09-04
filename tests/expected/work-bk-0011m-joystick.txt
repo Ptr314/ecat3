@@ -1,0 +1,2 @@
+[joystick.state] &000000
+[port-ppi.value] &000000

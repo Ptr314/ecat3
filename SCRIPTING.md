@@ -351,6 +351,7 @@ LOG port-user.value(0,3)        // все четыре регистра i8255
 | __1801vm1__, __1801vm2__ дополнительно | __timeouts__, __timeout_address__, __timeout_pc__ &ndash; таймауты магистрали; __traps__, __trap_vector__, __trap_pc__ &ndash; последняя ловушка или прерывание |
 | __fdd__ | __loaded__, __file__, __protected__, __selected__, __motor__, __led__, __track__, __sector__, __side__, __position__, __generation__ (счетчик загрузок и извлечений образа) |
 | __wd1793__ | __status__, __track__, __sector__, __data__, __busy__, __drive__ |
+| __joystick__ | __state__ &ndash; биты замкнутых контактов; клавиши джойстика нажимаются командой __KEY__ |
 | __bk-fdc__ | __status__, __command__, __drive__, __track__, __side__, __motor__, __writing__, __busy__, __position__; отладочные __raw(от,до)__, __marker(от,до)__, __trace(от,до)__ (см. [CONFIG.md](CONFIG.md#bk-fdc)) |
 | __taperecorder__ | __mode__ (0 &ndash; стоп, 1 &ndash; воспроизведение), __position__, __total__, __size__, __baudrate__, __recording__, __recorded__ |
 | __i8253__ | __counters__, __start__, __modes__, __outputs__, __gates__ |

@@ -35,3 +35,4 @@ eCat &ndash; универсальный эмулятор ретрокомпью�
 * David Vignoni за коллекцию иконок [Nuvola](https://commons.wikimedia.org/wiki/Category:Nuvola_icons);
 * Олегу Одинцову за исходники [эмулятора компьютеров семейства &laquo;Агат&raquo;](http://agatcomp.ru/agat/PCutils/WinEmul.shtml), которые использовались как референс для решения некоторых вопросов по устройству &laquo;Агатов&raquo;;
 * [Владимиру McClaud](http://www.mcclaud.ru) за изображение магнитофона &laquo;Электроника-302&raquo; для эмулятора загрузки с магнитной ленты.
+* Никите Зимину за эмулятор [BKBTL](https://github.com/nzeemin/bkbtl), который использовался как референс при добавлении поддержки компьютеров семейства БК.
