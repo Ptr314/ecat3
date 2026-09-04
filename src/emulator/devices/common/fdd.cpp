@@ -26,6 +26,7 @@ FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
     , track(0)
     , fdd_mode(FDD_MODE_LOGICAL)
     , sides_layout(false)
+    , default_sides_layout(false)
     , i_select(this, im, 2, "select", MODE_R, CALLBACK_SELECT)
     , i_side(this, im, 1, "side", MODE_R)
     , i_density(this, im, 1, "density", MODE_R)
@@ -71,13 +72,29 @@ emulator::Result FDD::load_config(SystemData *sd)
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unknown fdd mode")) + "} " + s);
 
+    // Track order of sector images: a single word applies to every file,
+    // "ext:order" entries choose it by the extension of the file being loaded
+    // (Irisha keeps .cpm images side by side and .dsk dumps cylinder by cylinder)
     s = read_confg_value(cd, "layout", false, std::string("cylinders"));
-    if (s == "cylinders")
-        sides_layout = false;
-    else if (s == "sides")
-        sides_layout = true;
-    else
-        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unknown fdd layout")) + "} " + s);
+    layout_by_ext.clear();
+    default_sides_layout = false;
+    std::vector<std::string> items = split_string(s, '|', true);
+    for (unsigned int i = 0; i < items.size(); i++) {
+        std::string item = str_trim(items[i]);
+        size_t colon = item.find(':');
+        std::string ext  = (colon == std::string::npos) ? "" : str_tolower(str_trim(item.substr(0, colon)));
+        std::string word = str_tolower(str_trim((colon == std::string::npos) ? item : item.substr(colon + 1)));
+        bool v;
+        if (!parse_layout_word(word, v) || (colon != std::string::npos && ext.empty()))
+            return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unknown fdd layout")) + "} " + item);
+        if (ext.empty()) {
+            default_sides_layout = v;
+        } else {
+            if (ext[0] != '.') ext = "." + ext;
+            layout_by_ext.push_back(std::make_pair(ext, v));
+        }
+    }
+    sides_layout = default_sides_layout;
 
     try {
         file_name = find_file_location(sd, cd->get_parameter("image").value);
@@ -215,6 +232,7 @@ emulator::Result FDD::load_image(const std::string &file_name)
                     file.close();
 
                     track_mode = FDD_MODE_SECTORS;
+                    sides_layout = layout_for_file(file_name);
                     loaded = true;
                     m_generation++;
                     this->file_name = base_name;
@@ -279,12 +297,32 @@ int FDD::SeekSector(int track, int sector)
     return result;
 }
 
+bool FDD::parse_layout_word(const std::string &word, bool &sides_out)
+{
+    if (word == "cylinders") { sides_out = false; return true; }
+    if (word == "sides")     { sides_out = true;  return true; }
+    return false;
+}
+
+// Track order for a file name: by its extension if listed, otherwise the default
+bool FDD::layout_for_file(const std::string &file_name)
+{
+    std::string ext = dsk_tools::get_file_ext(file_name);   // ".ext" lower case, "" if none
+    for (unsigned int i = 0; i < layout_by_ext.size(); i++)
+        if (layout_by_ext[i].first == ext) return layout_by_ext[i].second;
+    return default_sides_layout;
+}
+
+// Index of a track inside a sector image: either both sides of a cylinder
+// go together, or the whole first side is followed by the second one
+unsigned int FDD::image_track(int track, int side, bool sides_order)
+{
+    return sides_order ? (side*tracks + track) : (track*sides + side);
+}
+
 unsigned int FDD::translate_address()
 {
-    // Position of the track inside the image: either both sides of a
-    // cylinder go together, or the whole first side is followed by the second
-    int image_track = sides_layout ? (side*tracks + track) : (track*sides + side);
-    return (image_track*sectors + sector-1)*sector_size + position;
+    return (image_track(track, side, sides_layout)*sectors + sector-1)*sector_size + position;
 }
 
 void FDD::NextPosition()
@@ -388,6 +426,7 @@ void FDD::unload(){
     if (buffer != nullptr) delete [] buffer;
     buffer = nullptr;
     loaded = false;
+    sides_layout = default_sides_layout;
     m_generation++;
     file_name = "";
 }
@@ -479,7 +518,22 @@ emulator::Result FDD::save_image(const std::string &file_name)
             if (fdd_mode == FDD_MODE_LOGICAL) {
                 dsk_tools::UTF8_ofstream file(file_name, std::ios::binary);
                 if (file.is_open()){
-                    file.write(reinterpret_cast<char*>(buffer), disk_size);
+                    bool target_layout = layout_for_file(file_name);
+                    if (target_layout == sides_layout || sides < 2 || track_mode != FDD_MODE_SECTORS) {
+                        file.write(reinterpret_cast<char*>(buffer), disk_size);
+                    } else {
+                        // The target extension keeps its tracks in the other
+                        // order: reshuffle them on the way out, the image in
+                        // memory stays as it is
+                        std::vector<uint8_t> out(disk_size, 0);
+                        const size_t track_bytes = static_cast<size_t>(sectors) * sector_size;
+                        for (int t = 0; t < tracks; t++)
+                            for (int s = 0; s < sides; s++)
+                                memcpy(&out[image_track(t, s, target_layout) * track_bytes],
+                                       buffer + image_track(t, s, sides_layout) * track_bytes,
+                                       track_bytes);
+                        file.write(reinterpret_cast<char*>(out.data()), disk_size);
+                    }
                     file.close();
                 }
             } else {
@@ -545,6 +599,7 @@ std::vector<DeviceFieldInfo> FDD::get_device_fields()
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
     r.push_back({"loaded",      "1 if an image is loaded",              false});
     r.push_back({"file",        "Name of the loaded image",             false});
+    r.push_back({"layout",      "Track order of the loaded image",      false});
     r.push_back({"protected",   "1 if the image is write protected",    false});
     r.push_back({"selected",    "1 if the drive is selected",           false});
     r.push_back({"motor",       "1 if the motor is on",                 false});
@@ -571,6 +626,10 @@ bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to
 {
     if (field == "file") {
         out.text = file_name;
+        return true;
+    }
+    if (field == "layout") {
+        out.text = sides_layout ? "sides" : "cylinders";
         return true;
     }
 

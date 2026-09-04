@@ -1,0 +1,5 @@
+[fdd0.file] irisha-side1.dsk
+[fdd0.layout] cylinders
+[fdc.reads] $00000006
+[fdd0.track] $00
+[fdd0.side] $01

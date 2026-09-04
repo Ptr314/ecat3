@@ -6,6 +6,9 @@
 #pragma once
 
 #include <chrono>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "emulator/core.h"
 #include "libs/mfm_formats.h"
@@ -55,11 +58,16 @@ private:
 
     int fdd_mode;
     int track_mode;
-    bool sides_layout;      // true: the image holds all tracks of side 0, then all tracks of side 1
+    bool sides_layout;          // order of the loaded image: true - all tracks of side 0, then all tracks of side 1
+    bool default_sides_layout;  // order for files whose extension is not listed in layout_by_ext
+    std::vector<std::pair<std::string, bool> > layout_by_ext;   // ".ext" (lower case) -> sides order
 
     AgatAIMCodes aim_codes;
 
     unsigned int translate_address();
+    unsigned int image_track(int track, int side, bool sides_order);
+    bool layout_for_file(const std::string &file_name);
+    static bool parse_layout_word(const std::string &word, bool &sides_out);
     void ConvertStreamFormat();
 #ifdef LOG_FDD
     int log_rotations = 0;

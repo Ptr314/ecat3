@@ -1,0 +1,29 @@
+# Ириша + КНГМД: образ .dsk с чередованием сторон по цилиндрам. Порядок дорожек
+# у fdd выбирается по расширению (layout = cpm:sides|dsk:cylinders), поэтому
+# в дисковод до загрузки ОС кладется files/irisha-side1.dsk: две дорожки образа,
+# каталог CP/M и файл SIDE1.TXT на цилиндре 0 стороны 1 (см. files/make_irisha_side1.py).
+# TYPE SIDE1.TXT должен напечатать "SIDE 1 OK"; при порядке sides файл бы не нашелся.
+# @timeout 60
+
+MACHINE "irisha/Irisha-kngmd.cfg"
+COMMAND fdd0.load("../files/irisha-side1.dsk")
+WAIT 5000
+
+KEY 300,100,down,down,ret
+WAIT 3000
+KEY 300,100,Y,ret
+WAIT 3000
+
+LOGDEFS 8,16
+LOG fdd0.file
+LOG fdd0.layout
+
+TYPE "TYPE SIDE1.TXT\n"
+WAIT 3000
+
+LOG fdc.reads
+LOG fdd0.track
+LOG fdd0.side
+
+SCREEN "../results/disk-irisha-kngmd-dsk.png"
+EXIT
