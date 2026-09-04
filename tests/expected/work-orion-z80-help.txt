@@ -1,0 +1,2 @@
+[fdd0.track] $02
+[fdc.status] $00

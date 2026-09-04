@@ -21,6 +21,11 @@ class MapKeyboard: public Keyboard
 private:
     Interface i_ruslat;
     Interface i_ready;
+    Interface i_pressed;
+
+    // Keys currently held down, to drive i_pressed
+    std::vector<unsigned int> keys_held;
+    void update_pressed();
 
 protected:
     bool shift_pressed;
@@ -46,6 +51,7 @@ public:
 
     void key_down(unsigned int key) override;
     void key_up(unsigned int key) override;
+    bool needs_shift(unsigned int key) override;
 
     emulator::Result load_config(SystemData *sd) override;
 

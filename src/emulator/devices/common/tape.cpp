@@ -6,6 +6,7 @@
 #include "emulator/utils.h"
 #include "emulator/devices/cpu/cpu_utils.h"
 #include "tape.h"
+#include "tape_bk.h"
 #include "dsk_tools/dsk_tools.h"
 
 TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
@@ -48,6 +49,8 @@ emulator::Result TapeRecorder::load_config(SystemData *sd)
         m_tape_enc = TapeEnc::MSX;
     else if (enc_str == "rk86")
         m_tape_enc = TapeEnc::RK86;
+    else if (enc_str == "bk")
+        m_tape_enc = TapeEnc::BK;
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect encoding")) + "} " + enc_str);
 
@@ -68,6 +71,17 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
     if (callback_id == 1) {
         // Input changed
         if (is_recording) {
+            if (m_tape_enc == TapeEnc::BK) {
+                // The БК decoder measures whole periods between rising edges,
+                // the same reference point the monitor uses
+                if ((old_value & 1) == 0 && (new_value & 1) != 0) {
+                    if (has_last_edge)
+                        bk_decoder.add_period((uint32_t)(cycle_counter - last_edge_cycles));
+                    last_edge_cycles = cycle_counter;
+                    has_last_edge = true;
+                }
+                return;
+            }
             if ((old_value & 1) != 0 && (new_value & 1) == 0) {
                 if (has_last_edge) {
                     const uint64_t delta_cycles = cycle_counter - last_edge_cycles;
@@ -146,6 +160,11 @@ void TapeRecorder::store_bit(const unsigned bit)
 void TapeRecorder::set_recording(bool recording)
 {
     is_recording = recording;
+    if (is_recording && m_tape_enc == TapeEnc::BK) {
+        has_last_edge = false;
+        bk_decoder.reset();
+        recorded_bytes.clear();
+    }
     if (is_recording && m_tape_enc == TapeEnc::MSX) {
         has_last_edge = false;
         writer_state = TapeWriterState::Measuring;
@@ -158,11 +177,24 @@ void TapeRecorder::set_recording(bool recording)
 
 unsigned TapeRecorder::get_record_size()
 {
+    if (m_tape_enc == TapeEnc::BK) return bk_decoder.file()->size();
     return recorded_bytes.size();
+}
+
+// The name and, more importantly, the extension the recorded data has to be
+// saved under to be readable back. Empty when there is nothing to suggest.
+std::string TapeRecorder::get_record_name()
+{
+    if (m_tape_enc == TapeEnc::BK) return bk_decoder.name();
+    return "";
 }
 
 std::vector<uint8_t> * TapeRecorder::get_record_data()
 {
+    if (m_tape_enc == TapeEnc::BK) {
+        recorded_bytes = *bk_decoder.file();
+        return &recorded_bytes;
+    }
     return &recorded_bytes;
 }
 
@@ -243,7 +275,14 @@ void TapeRecorder::encode_msx(const std::vector<uint8_t> &buffer, std::vector<ui
 emulator::Result TapeRecorder::load_file(const std::string &file_name, const std::string &fmt)
 {
     std::vector<std::string> parts = split_string(fmt, ';', true);
+    if (parts.empty())
+        return emulator::Result::error(emulator::ErrorCode::BadParameters,
+            "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Tape file format is not defined")) + "}");
+
     std::vector<std::string> first = split_string(parts[0], ':', true);
+    if (first.size() < 2)
+        return emulator::Result::error(emulator::ErrorCode::BadParameters,
+            "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect tape file format")) + "} " + fmt);
 
     std::string tape_format = first[0];
     int baud = parse_numeric_value(first[1]);
@@ -297,6 +336,19 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
         buffer_encoded.resize(256 * 4, 0xAA);
         encode_msx(buffer, buffer_encoded);
         set_data(buffer_encoded);
+    } else
+    if (tape_format == "bk" || tape_format == "bk-ascii") {
+        // For the БК the rate is given directly in units, one unit being the
+        // half period of a synchronisation pulse
+        set_baud_rate(baud);
+        const std::string tape_name = dsk_tools::get_file_basename(file_name);
+        if (tape_format == "bk-ascii")
+            // A БЕЙСИК program in text form goes to the tape as a series of
+            // numbered files, not as a single one
+            bk_tape::encode_ascii(buffer, tape_name, buffer_encoded);
+        else
+            bk_tape::encode(buffer, tape_name, buffer_encoded);
+        set_data(buffer_encoded);
     } else {
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Unknown tape format!")) + "} " + tape_format);
@@ -346,6 +398,118 @@ int TapeRecorder::get_total()
 int TapeRecorder::get_mode()
 {
     return tape_mode;
+}
+
+//------------------- Introspection and control ----------------------------//
+
+std::vector<DeviceFieldInfo> TapeRecorder::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
+    r.push_back({"mode",        "0 - stopped, 1 - playing",         false});
+    r.push_back({"position",    "Current position, seconds",        false});
+    r.push_back({"total",       "Total length, seconds",            false});
+    r.push_back({"size",        "Size of the loaded data, bytes",   false});
+    r.push_back({"baudrate",    "Current baud rate",                false});
+    r.push_back({"recording",   "1 if recording is on",             false});
+    r.push_back({"recorded",    "Size of the recorded data, bytes", false});
+    return r;
+}
+
+std::vector<DeviceCommandInfo> TapeRecorder::get_device_commands()
+{
+    std::vector<DeviceCommandInfo> r = ComputerDevice::get_device_commands();
+    r.push_back({"load",    "\"file\" [, \"format\"]",  "Loads a tape image, the format defaults to the [TapeFiles] ini entry"});
+    r.push_back({"play",    "",                         "Starts playback"});
+    r.push_back({"stop",    "",                         "Stops playback"});
+    r.push_back({"rewind",  "",                         "Rewinds to the beginning"});
+    r.push_back({"record",  "[0|1]",                    "Switches recording on or off"});
+    r.push_back({"save",    "[\"file\"]",                 "Writes the recorded data out, by default under the name the machine used"});
+    return r;
+}
+
+bool TapeRecorder::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    out.numeric = true;
+    if (field == "mode")        { out.values.push_back(get_mode());                 return true; }
+    if (field == "recording")   { out.values.push_back(is_recording?1:0);           return true; }
+
+    //Counters and sizes are not byte sized, LOGDEFS must not truncate them
+    out.width = 32;
+    if (field == "position")    { out.values.push_back(get_position());             return true; }
+    if (field == "total")       { out.values.push_back(get_total());                return true; }
+    if (field == "size")        { out.values.push_back(data_size);                  return true; }
+    if (field == "baudrate")    { out.values.push_back(baud_rate);                  return true; }
+    if (field == "recorded")    { out.values.push_back(get_record_size());          return true; }
+    out.width = 0;
+
+    out.numeric = false;
+    return ComputerDevice::get_field(field, from, to, out);
+}
+
+emulator::Result TapeRecorder::send_command(const std::string &command, const std::string &parameters)
+{
+    std::vector<std::string> p = split_params(parameters);
+
+    if (command == "load")
+    {
+        if (p.empty() || p[0].empty())
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Command 'load' expects a file name")) + "}");
+
+        std::string file = find_file_location(sd, p[0]);
+        if (file.empty()) file = p[0];
+
+        //The format may be given explicitly, otherwise it is taken from the ini
+        //by the file extension, exactly as the tape recorder window does it
+        std::string fmt = (p.size() > 1)?p[1]:std::string("");
+        if (fmt.empty() && sd != nullptr && sd->read_setup)
+        {
+            std::string ext = str_tolower(dsk_tools::get_file_ext(file));
+            if (!ext.empty() && ext[0] == '.') ext = ext.substr(1);
+            //A machine specific entry wins over the generic one, the same way
+            //the tape recorder window resolves it
+            fmt = sd->read_setup("TapeFiles", sd->system_type + "." + ext, "");
+            if (fmt.empty()) fmt = sd->read_setup("TapeFiles", ext, "");
+        }
+        if (fmt.empty())
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Unknown tape file format for")) + " " + p[0] + "}");
+
+        return load_file(file, fmt);
+    }
+
+    if (command == "play")   { play();   return emulator::Result::ok(); }
+    if (command == "stop")   { stop();   return emulator::Result::ok(); }
+    if (command == "rewind") { rewind(); return emulator::Result::ok(); }
+
+    if (command == "record") {
+        bool on = p.empty() || p[0].empty() || parse_numeric_value(p[0]) != 0;
+        set_recording(on);
+        return emulator::Result::ok();
+    }
+
+    if (command == "save") {
+        //Writes out what has been recorded, so that a script can check that a
+        //tape written by the machine reads back into it
+        const std::vector<uint8_t> * out = get_record_data();
+        if (out->empty())
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Nothing has been recorded")) + "}");
+
+        std::string file = (p.empty() || p[0].empty())?get_record_name():p[0];
+        if (file.empty()) file = "tape.bin";
+        file = resolve_output_path(sd, file);
+
+        dsk_tools::UTF8_ofstream f(file, std::ios::binary);
+        if (!f.is_open())
+            return emulator::Result::error(emulator::ErrorCode::FileError,
+                "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Unable to save file!")) + "} " + file);
+        f.write(reinterpret_cast<const char*>(out->data()), (std::streamsize)out->size());
+        f.close();
+        return emulator::Result::ok();
+    }
+
+    return ComputerDevice::send_command(command, parameters);
 }
 
 ComputerDevice * create_tape_recorder(InterfaceManager *im, EmulatorConfigDevice *cd)

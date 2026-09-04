@@ -1,0 +1,14 @@
+# Орион-128: тест памяти 256 Кб из ПЗУ, полный проход.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+# @timeout 120
+
+MACHINE "orion-128/Orion-128-t256.cfg"
+WAIT 30000
+
+LOGDEFS 8,16
+LOG port-page.value
+
+SCREEN "../results/slow-orion-t256-memtest.png"
+EXIT

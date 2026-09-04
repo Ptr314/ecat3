@@ -123,6 +123,28 @@ unsigned Register::get_value()
     return register_value;
 }
 
+std::vector<DeviceFieldInfo> Register::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
+    r.push_back({"value",   "Stored value",             false});
+    r.push_back({"default", "Value written on reset",   false});
+    r.push_back({"mask",    "Write mask",               false});
+    return r;
+}
+
+bool Register::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    //A Register is not addressable, so "value" is provided here rather than
+    //by AddressableDevice
+    out.numeric = true;
+    if (field == "value")   { out.values.push_back(get_value());     return true; }
+    if (field == "default") { out.values.push_back(default_value);   return true; }
+    if (field == "mask")    { out.values.push_back(mask);            return true; }
+
+    out.numeric = false;
+    return ComputerDevice::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_register(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new Register(im, cd);

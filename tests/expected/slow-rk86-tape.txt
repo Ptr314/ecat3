@@ -1,0 +1,3 @@
+[tape.size] $00001198
+[tape.baudrate] $00000960
+[tape.position] $0000000F

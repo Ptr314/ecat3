@@ -1,0 +1,1 @@
+[display.resolution] 256x256

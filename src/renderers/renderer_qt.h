@@ -138,11 +138,13 @@ public:
             float image_aspect = (float)screen_x / screen_y * screen_ps;
 
             if (screen_aspect > image_aspect) {
-                render_w = (float)screen_x * ry2 / screen_y * screen_ps;
+                // The window is wider than the picture, the height is the limit
                 render_h = ry2;
+                render_w = (float)ry2 * image_aspect;
             } else {
-                render_w = (float)rx2 * screen_ps;
-                render_h = (float)screen_y * rx2 / screen_x;
+                // The width is the limit
+                render_w = rx2;
+                render_h = (float)rx2 / image_aspect;
             }
         } else {
             render_w = screen_x * screen_ss * screen_ps;
@@ -174,7 +176,10 @@ public:
             return image;
         }
         int image_size = screen_x * screen_y * 4;
-        uint8_t * pixels = surface->bits();
+        // constBits(), not bits(): the widget holds an implicitly shared copy of
+        // this image, and the non-const bits() would detach it, writing to the
+        // shared reference counter from this thread while the GUI thread reads it
+        const uint8_t * pixels = surface->constBits();
         image.insert(image.end(), pixels, pixels + image_size);
         // QImage has a reversed RGB order, so we need to swap R and B parts
         for (int i=0; i < image_size; i+=4) {

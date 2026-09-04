@@ -1,0 +1,24 @@
+# Орион-128, Монитор-3: работа с оболочкой ROM-диска.
+# Перемещение по списку файлов и запуск CH4 клавишей ввода.
+# Проверяет клавиатуру и графический экран.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+# @timeout 40
+
+MACHINE "orion-128/Orion-128-m3.cfg"
+WAIT 3000
+
+KEY 200,80,down,down,down
+WAIT 1000
+SCREEN "../results/work-orion-m3-panel.png"
+
+KEY 200,80,ret
+WAIT 3000
+
+LOGDEFS 8,16
+LOG port-page.value
+LOG port-videomode.value
+
+SCREEN "../results/work-orion-m3-panel-run.png"
+EXIT

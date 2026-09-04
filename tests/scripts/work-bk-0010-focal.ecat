@@ -1,0 +1,19 @@
+# БК0010: вычисление в Фокале.
+# Проверяет раскладку БК, ПЗУ Фокала и вывод на цветной экран 256x256.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+# @timeout 30
+
+MACHINE "bk/BK-0010.cfg"
+WAIT 4000
+
+TYPE "T 2+2\n"
+WAIT 1500
+
+LOGDEFS 16,8
+LOG port-sys-rd.value
+LOG display.resolution
+
+SCREEN "../results/work-bk-0010-focal.png"
+EXIT

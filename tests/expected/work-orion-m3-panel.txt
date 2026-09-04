@@ -1,0 +1,2 @@
+[port-page.value] $00
+[port-videomode.value] $07

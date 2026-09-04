@@ -1,0 +1,103 @@
+# Раздача eCat3 через nginx.
+#
+# Странице не нужно ни сервера приложений, ни базы: это статика. Но четыре
+# вещи настроить надо, иначе выйдет либо неправильно, либо медленно.
+
+server {
+    listen 80;
+    server_name ecat.example.org;
+
+    root /srv/www/ecat;
+    index index.html;
+
+    # 1. COOP/COEP — ОБЯЗАТЕЛЬНО, БЕЗ НИХ НЕ ЗАВЕДЁТСЯ.
+    #    Эмулятор собран с потоками (-pthread), а память между потоками
+    #    в браузере разделяется через SharedArrayBuffer. Он доступен
+    #    только на «изолированном» происхождении, а изоляцию включают
+    #    ровно эти два заголовка. Без них страница загрузится и молча
+    #    встанет на инициализации модуля.
+    add_header Cross-Origin-Opener-Policy   same-origin   always;
+    add_header Cross-Origin-Embedder-Policy require-corp  always;
+    #
+    #    Плата за это: страницу нельзя вставить в чужой сайт через
+    #    <iframe>, и она не может подтягивать ресурсы со сторонних
+    #    доменов без их согласия (CORP/CORS). Всё, что ей нужно, лежит
+    #    рядом, так что на деле это не мешает.
+    #
+    #    Проверить, что изоляция включилась, можно в консоли браузера:
+    #        crossOriginIsolated   // должно быть true
+
+    # 2. ТИП ДЛЯ .wasm. Модуль грузится потоком
+    #    (WebAssembly.instantiateStreaming), и без правильного типа
+    #    браузер уходит на запасной путь: медленнее и с руганью в
+    #    консоли. В nginx 1.21.5 и новее тип уже есть в mime.types, и
+    #    делать тут не надо ничего.
+    #
+    #    Старым сборкам его дописывают так, и include mime.types в этом
+    #    блоке ОБЯЗАТЕЛЕН:
+    #
+    #        types {
+    #            include           mime.types;
+    #            application/wasm  wasm;
+    #        }
+    #
+    #    Блок types не дополняет унаследованную таблицу типов, а заменяет
+    #    её целиком. Без include известен окажется один .wasm, а всё
+    #    прочее уедет с default_type, то есть application/octet-stream:
+    #    браузер не покажет index.html, а предложит скачать его файлом.
+    #    Ошибка тихая — .wasm при этом отдаётся правильно, и по нему
+    #    кажется, что настройка верна.
+
+    # 3. СЖАТИЕ. Модуль весит несколько мегабайт, сжатый — заметно
+    #    меньше. Сам wasm внутри не сжат, так что выигрыш настоящий.
+    #    А вот .bundle сжимать смысла нет: там ПЗУ и образы дисков,
+    #    они и так плотные.
+    gzip              on;
+    gzip_comp_level   6;
+    gzip_min_length   1024;
+    gzip_vary         on;
+    gzip_types        application/wasm application/javascript text/css
+                      text/html application/json text/plain;
+    # Если собран модуль brotli, он лучше примерно на четверть:
+    #   brotli on;
+    #   brotli_types application/wasm application/javascript text/css
+    #                text/html application/json;
+
+    # 4. КЭШИРОВАНИЕ. Имена файлов не содержат версии, поэтому вечного
+    #    кэша им давать нельзя: выкатили новый выпуск — а браузер держит
+    #    старый .wasm при новом .js, и страница не заводится.
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+        add_header Cross-Origin-Opener-Policy   same-origin  always;
+        add_header Cross-Origin-Embedder-Policy require-corp always;
+    }
+    location ~* \.(js|wasm|css|json)$ {
+        add_header Cache-Control "public, max-age=300, must-revalidate";
+        add_header Cross-Origin-Opener-Policy   same-origin  always;
+        add_header Cross-Origin-Embedder-Policy require-corp always;
+    }
+
+    # Наборы машин из bundles/: ПЗУ, образы дисков и конфиги одной машины
+    # в одном файле. Двоичные, меняются только с выпуском. Правило по
+    # расширению, так что переименование подкаталога его не сломает.
+    location ~* \.bundle$ {
+        default_type application/octet-stream;
+        add_header Cache-Control "public, max-age=86400";
+        add_header Cross-Origin-Opener-Policy   same-origin  always;
+        add_header Cross-Origin-Embedder-Policy require-corp always;
+    }
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+
+# Про add_header и вложенные location: директива не наследуется в тот
+# location, где есть свой add_header, — он заменяет весь набор целиком.
+# Поэтому COOP/COEP выше повторены в каждом блоке. Пропустить хоть один
+# нельзя: файл, отданный без них, ломает изоляцию всей страницы.
+#
+# HTTPS для работы не обязателен, но SharedArrayBuffer требует
+# защищённого происхождения: localhost считается таковым, а вот
+# http:// на настоящем домене — нет. То есть в сеть это выкладывается
+# только по HTTPS.

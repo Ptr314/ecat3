@@ -19,6 +19,8 @@
 
 #include "core.h"
 #include "emulator/devices/common/keyboard.h"
+#include "emulator/devices/common/joystick.h"
+#include "emulator/script/script_engine.h"
 #include "renderer.h"
 
 #ifdef LOGGER
@@ -40,6 +42,7 @@ private:
     MemoryMapper * mm;
     GenericDisplay * display;
     Keyboard * keyboard;
+    std::vector<Joystick*> joysticks;   // every device of the joystick class, fed with the same keys
 
     unsigned int clock_freq;
     unsigned int timer_res;
@@ -65,6 +68,11 @@ private:
 #endif
     void setThreadPriority(bool timeCritical);
     std::atomic<bool> m_ready;
+
+    std::unique_ptr<ScriptEngine> script;
+    std::string m_screenshot_file;              //Guarded by m_screenshot_mutex
+    compat_mutex m_screenshot_mutex;
+    void store_screenshot();
 
 public:
     DeviceManager *dm;
@@ -114,6 +122,22 @@ public:
     void reset(bool cold);
     void resize_screen();
     void stop_emulation();
+
+    //--------------------------- Scripting --------------------------------//
+    //A script is parsed before the machine is loaded, because its MACHINE
+    //command may select the configuration to start with
+    emulator::Result load_script(const std::string &file_name);
+    std::string script_machine() const;
+    void start_script();
+    void stop_script();
+    bool script_active() const;
+    bool script_finished() const;
+    bool script_exit_requested() const;
+    int  script_exit_code() const;
+
+    //Asks the render thread to store the current screen as a PNG file
+    void request_screenshot(const std::string &file_name);
+    bool is_screenshot_pending();
 
 private:
     Logger * logger;

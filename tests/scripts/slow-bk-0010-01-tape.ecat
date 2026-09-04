@@ -1,0 +1,37 @@
+# БК0010-01: полный оборот ленты на второй машине семейства.
+# У нее своя скорость записи (9464 против 8457 единиц в секунду у БК0011М)
+# и другое ПЗУ.
+# @timeout 200
+
+MACHINE "bk/BK-0010-01.cfg"
+WAIT 4000
+
+TYPE "10 PRINT \"TAPE\"\n"
+TYPE "20 PRINT 355/113\n"
+
+PRINT "=== Запись на ленту ==="
+COMMAND tape.record(1)
+TYPE "SAVE\"BK01T\"\n"
+WAIT 30000
+COMMAND tape.record(0)
+
+LOGDEFS 8,16
+LOG tape.recorded
+LOG tape.baudrate
+COMMAND tape.save("../results/BK01T.asc")
+
+PRINT "=== Чтение обратно ==="
+TYPE "NEW\n"
+WAIT 500
+COMMAND tape.load("../results/BK01T.asc")
+LOG tape.size
+TYPE "LOAD\"BK01T\"\n"
+WAIT 500
+COMMAND tape.play
+WAIT 35000
+
+TYPE "LIST\n"
+WAIT 3000
+
+SCREEN "../results/slow-bk-0010-01-tape.png"
+EXIT

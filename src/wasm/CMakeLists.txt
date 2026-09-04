@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(eCat3_wasm VERSION 3.6.0 LANGUAGES C CXX)
+# The version comes from the same VERSION file the desktop build reads, so the
+# two never drift apart -- it ends up in globals.h through configure_file().
+file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION ECAT_VERSION LIMIT_COUNT 1)
+string(STRIP "${ECAT_VERSION}" ECAT_VERSION)
+if(NOT ECAT_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR "Cannot read the project version from ../../VERSION: '${ECAT_VERSION}'")
+endif()
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION)
+
+project(eCat3_wasm VERSION ${ECAT_VERSION} LANGUAGES C CXX)
+
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -50,13 +60,19 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/emulator.cpp
     ${EMU_DIR}/utils.cpp
     ${EMU_DIR}/disasm.cpp
+    ${EMU_DIR}/disasm_pdp11.cpp
     ${EMU_DIR}/files.cpp
+    ${EMU_DIR}/script/script_parser.cpp
+    ${EMU_DIR}/script/script_log.cpp
+    ${EMU_DIR}/script/script_engine.cpp
     ${EMU_DIR}/devices/cpu/i8080.cpp
     ${EMU_DIR}/devices/cpu/i8080core.cpp
     ${EMU_DIR}/devices/cpu/z80.cpp
     ${EMU_DIR}/devices/cpu/z80core.cpp
     ${EMU_DIR}/devices/cpu/6502.cpp
     ${EMU_DIR}/devices/cpu/6502core.cpp
+    ${EMU_DIR}/devices/cpu/pdp11core.cpp
+    ${EMU_DIR}/devices/cpu/k1801vm1.cpp
     ${EMU_DIR}/devices/common/i8255.cpp
     ${EMU_DIR}/devices/common/i8251.cpp
     ${EMU_DIR}/devices/common/i8253.cpp
@@ -68,10 +84,12 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/common/sound.cpp
     ${EMU_DIR}/devices/common/tape.cpp
     ${EMU_DIR}/devices/common/fdd.cpp
+    ${EMU_DIR}/devices/common/joystick.cpp
     ${EMU_DIR}/devices/common/wd1793.cpp
     ${EMU_DIR}/devices/common/page_mapper.cpp
     ${EMU_DIR}/devices/common/generator.cpp
     ${EMU_DIR}/devices/common/register.cpp
+    ${EMU_DIR}/devices/common/mux.cpp
     ${EMU_DIR}/devices/common/raster_display.cpp
     ${EMU_DIR}/devices/common/ram_address.cpp
     ${EMU_DIR}/devices/common/gmd70.cpp
@@ -82,6 +100,9 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/specific/agat_9_display.cpp
     ${EMU_DIR}/devices/specific/agat_9_mapper.cpp
     ${EMU_DIR}/devices/specific/irisha_display.cpp
+    ${EMU_DIR}/devices/specific/bk_display.cpp
+    ${EMU_DIR}/devices/specific/bk_timer.cpp
+    ${EMU_DIR}/devices/specific/bk_fdc.cpp
     ${EMU_DIR}/audio/audio_driver_miniaudio.cpp
 )
 

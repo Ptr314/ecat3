@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "emulator/result.h"
@@ -32,9 +33,12 @@ public:
     unsigned int max_command_length;
 
     DisAsm();
+    virtual ~DisAsm(){};
 
-    emulator::Result load_file(const std::string &file_name);
-    unsigned int disassemle(CommandBytes bytes, unsigned int PC, unsigned int max_len, std::string * output);
+    // Table driven by default; CPUs whose instructions are encoded in bit
+    // fields rather than whole bytes replace these with their own decoder.
+    virtual emulator::Result load_file(const std::string &file_name);
+    virtual unsigned int disassemle(CommandBytes bytes, unsigned int PC, unsigned int max_len, std::string * output);
 
 };
 

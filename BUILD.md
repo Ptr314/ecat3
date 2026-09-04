@@ -12,6 +12,8 @@
     * Универсальная версия х86_64+arm64. Qt 6.8.2, xcode 16
 * Linux Ubuntu 20.04+
     * Версия х86_64. Qt 6.8.2, gcc 9.4.0
+* Браузер
+    * Версия WebAssembly на основе Emscripten. Qt не используется.
 
 Версии х86_64 для Windows 10+ и х86_64+arm64 для macOS используют статическую сборку. Версия для Linux использует динамическую сборку в целях лучшей совместимости с разными дистрибутивами. Компиляция происходит в Ubuntu 20.04. 
 
@@ -83,7 +85,7 @@ cd репозиторий-приложения\.build
 C:\DEV\venv\Scripts\activate.bat
 mkdir C:\Temp\qt-build
 cd C:\Temp\qt-build
-configure.bat -static -static-runtime -release -opensource -confirm-license -nomake examples -nomake tests -submodules qtbase,qttools,qttranslations -platform win32-msvc -prefix %_ROOT_QT%
+configure.bat -static -static-runtime -release -opensource -confirm-license -nomake examples -nomake tests -submodules qtbase,qttools,qttranslations -platform win32-msvc -prefix %_QT_PREFIX_STATIC%
 cmake --build . --parallel
 cmake --install .
 ```
@@ -98,7 +100,7 @@ cd репозиторий-приложения\.build
 cd C:\Temp
 mkdir qt5.15-build
 cd qt5.15-build
-configure.bat -release -nomake examples -nomake tests -opensource -confirm-license -no-opengl -skip qtlocation -skip qtdeclarative -prefix %_ROOT_LIB%
+configure.bat -release -nomake examples -nomake tests -opensource -confirm-license -no-opengl -skip qtlocation -skip qtdeclarative -prefix %_QT_PREFIX%
 mingw32-make
 mingw32-make install
 ~~~
@@ -117,7 +119,7 @@ cd репозиторий-приложения\.build
 %SystemRoot%\system32\cmd.exe /E:ON /V:ON /k vars-mingw-qt5.6.cmd
 mkdir C:\Temp\qt5.6-build
 cd C:\Tempqt5.6-build
-configure.bat -release -nomake examples -nomake tests -opensource -confirm-license -no-opengl -target xp -no-directwrite -no-compile-examples -skip qtwebengine -skip qtwebview -skip qtandroidextras -skip qt3d -skip qtcanvas3d  -skip qtlocation -skip qtscript -skip qtsensors -skip qtserialbus -skip qtwayland -skip qtdeclarative -prefix %_QT_PATH%
+configure.bat -release -nomake examples -nomake tests -opensource -confirm-license -no-opengl -target xp -no-directwrite -no-compile-examples -skip qtwebengine -skip qtwebview -skip qtandroidextras -skip qt3d -skip qtcanvas3d  -skip qtlocation -skip qtscript -skip qtsensors -skip qtserialbus -skip qtwayland -skip qtdeclarative -prefix %_QT_PREFIX%
 mingw32-make
 mingw32-make install
 ```
@@ -132,7 +134,7 @@ cd .build
 update_translations.bat
 ~~~
 
-* Переменная BUILD_DIR в bat-файле должна указывать на build-директорию, установленную в конфигурации проекта.
+* Build-директория, установленная в конфигурации проекта, передаётся аргументом: `update_translations.bat build\Desktop_Qt_6_11_2_MinGW_64_bit-Debug`. Без аргумента используется значение по умолчанию, заданное в bat-файле.
 * Команду надо выполнять на той же платформе, где происходил препроцессинг CMakeLists.txt.
 * Далее файлы .ts редактируются с помощью Linguist из Qt Creator.
 
@@ -140,10 +142,12 @@ update_translations.bat
 * Обновить версию приложения в CMakeLists.txt, пересканировать проект (Rescan project), чтобы версия прописалась в заголовочные файлы.
 * Закоммитить изменения.
 * Откомпилировать приложение нужной версией Qt.
-    * актуализировать значения переменных в `/build/vars-mingw-*.cmd`, `/build/vars-msvc-*.cmd`. 
-    * Windows XP: `./build/build-win-i386.bat`.
-    * Windows 7: `./build/build-win-7.bat`.
-    * Windows 10+: `./build/build-win-latest.bat`.
+    * актуализировать значения переменных в `.build/vars-mingw-*.cmd`, `.build/vars-msvc-*.cmd`. 
+    * Windows XP: `./.build/build-win-i386.bat`.
+    * Windows 7: `./.build/build-win-7.bat`.
+    * Windows 10+: `./.build/build-win-mingw-latest.bat` или `./.build/build-win-msvc-latest.bat`.
+
+  Каждый скрипт собирает все свои рендереры и упаковывает по zip-архиву на рендерер в `.build/release/`. Аргумент `clean` (например `build-win-msvc-latest.bat clean`) предварительно удаляет build-директории.
 
 ---
 ## macOS
@@ -255,6 +259,70 @@ cmake и ninja должны быть в PATH (см. п. 1).
 
 На выходе должен быть получен файл `.AppImage`.
 
+
+---
+## WebAssembly (браузер)
+
+Сборка для браузера не пользуется Qt вовсе: в неё идёт только Qt-независимое
+ядро эмулятора (`src/emulator/`) плюс страница и склейка из `src/wasm/`.
+Поэтому и цепочка тут своя — Emscripten, — и результат не выпуск, а **пакет
+для выкладки**: каталог со статикой, который кладётся в корень сайта как
+есть.
+
+### 1. Установить Emscripten
+
+```
+git clone https://github.com/emscripten-core/emsdk.git C:\DEV\emsdk
+cd C:\DEV\emsdk
+emsdk install latest
+emsdk activate latest
+```
+
+Свой Python и node emsdk ставит сам, отдельно их не нужно. CMake и Ninja
+берутся из поставки Qt, как и в остальных скриптах.
+
+Путь к emsdk прописан в `.build/vars-emsdk.cmd` — если каталог другой,
+править надо только там. Под Unix достаточно `source emsdk_env.sh` перед
+запуском.
+
+### 2. Сборка
+
+```
+cd .build
+build-wasm.cmd          # под Unix: ./build-wasm.sh
+```
+
+Аргумент `clean` предварительно удаляет build-директорию.
+
+На выходе — `.build/release/ecat-<версия>-web/` и тот же каталог в zip
+рядом. Конфигурации машин, ПЗУ и образы дисков из `deploy/` упаковываются
+в отдельный `.bundle` на каждую машину (`src/wasm/package_machines.py`), и
+страница тянет только тот, который выбрали. Чтобы добавить машину, править
+страницу или скрипт сборки не нужно — достаточно положить `.cfg` в
+`deploy/computers/`.
+
+### 3. Выкладка
+
+**Двух заголовков не миновать.** Эмулятор собран с потоками (`-pthread`), а
+`SharedArrayBuffer` доступен только на изолированном происхождении:
+
+```
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+```
+
+Без них страница загрузится и молча встанет на инициализации модуля. Из
+файловой системы (`file://`) она не заведётся вовсе. Готовый пример
+настройки nginx с пояснениями лежит в самом пакете
+(`nginx.conf.example`), исходники — в `.build/web/`.
+
+Для пробы на своей машине:
+
+```
+python src/wasm/serve_wasm.py .build/release/ecat-<версия>-web 8080
+```
+
+Обычный `python -m http.server` не годится: он этих заголовков не ставит.
 
 
 # Полезные ссылки

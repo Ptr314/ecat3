@@ -1,0 +1,20 @@
+=== Экран ===
+[display.resolution] 384x256
+=== Карта памяти и портов ===
+[mapper.map] 
+  [off] 0000-07FF -> bios[0000] mode=r
+        0000-EFFF -> ram0[0000] mode=rw cfg=00:FF
+        0000-EFFF -> ram1[0000] mode=rw cfg=01:FF
+        0000-EFFF -> ram2[0000] mode=rw cfg=02:FF
+        0000-EFFF -> ram3[0000] mode=rw cfg=03:FF
+        F000-F3FF -> ram0[F000] mode=rw
+        F800-FFFF -> bios[0000] mode=r
+        F400-F4FF -> port-keyboard[0000] mode=rw
+        F500-F5FF -> port-user1[0000] mode=rw
+        F600-F6FF -> port-user2[0000] mode=rw
+        F700-F72F -> fdc[0000] mode=r
+        F700-F72F -> fdc[0000] mode=w addr=0000:0024
+        F700-F72F -> port-fdc[0000] mode=w
+        F800-F8FF -> port-videomode[0000] mode=w
+        F900-F9FF -> port-page[0000] mode=w
+        FA00-FAFF -> port-screen[0000] mode=w

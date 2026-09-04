@@ -1,0 +1,24 @@
+# Орион-128: подключение образа диска на ходу и состояние контроллера ВГ93.
+# @timeout 40
+
+MACHINE "orion-128/Orion-128-m3.cfg"
+WAIT 3000
+
+COMMAND fdd0.load("Disk2.ODI")
+WAITFOR fdd0.loaded == 1
+
+LOGDEFS 8,16
+PRINT "=== Дисковод ==="
+LOG fdd0.loaded
+LOG fdd0.file
+LOG fdd0.protected
+LOG fdd0.track
+LOG fdd0.side
+PRINT "=== Контроллер ==="
+LOG fdc.status
+LOG fdc.track
+LOG fdc.sector
+LOG fdc.busy
+
+SCREEN "../results/disk-orion-m3-mount.png"
+EXIT

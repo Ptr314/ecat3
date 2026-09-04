@@ -1,0 +1,10 @@
+=== Экран ===
+[display.resolution] 384x256
+=== Карта памяти и портов ===
+[mapper.map] 
+  [off] 0000-07FF -> bios[0000] mode=r
+        0000-F3FF -> ram0[0000] mode=rw
+        F800-FFFF -> bios[0000] mode=r
+        F400-F4FF -> port-keyboard[0000] mode=rw
+        F800-F8FF -> port-videomode[0000] mode=w
+        FA00-FAFF -> port-screen[0000] mode=w

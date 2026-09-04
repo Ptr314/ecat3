@@ -1,0 +1,11 @@
+=== Дисковод ===
+[fdd0.loaded] $01
+[fdd0.file] Disk2.ODI
+[fdd0.protected] $00
+[fdd0.track] $00
+[fdd0.side] $00
+=== Контроллер ===
+[fdc.status] $00
+[fdc.track] $00
+[fdc.sector] $00
+[fdc.busy] $00

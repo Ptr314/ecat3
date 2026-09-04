@@ -3,6 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: FDD device, source
 
+#include <cstring>
+
 #include "fdd.h"
 #include "emulator/utils.h"
 #include "libs/mfm_tools.h"
@@ -119,6 +121,7 @@ emulator::Result FDD::load_image(const std::string &file_name)
                 track_mode = FDD_MODE_WHOLE_TRACK;
                 position = 0;
                 loaded = true;
+                m_generation++;
                 this->file_name = base_name;
             } else {
                 file.close();
@@ -161,6 +164,7 @@ emulator::Result FDD::load_image(const std::string &file_name)
                 track_mode = FDD_MODE_WHOLE_TRACK;
                 position = 0;
                 loaded = true;
+                m_generation++;
                 this->file_name = base_name;
             } else {
                 return emulator::Result::error(emulator::ErrorCode::ConfigError,
@@ -181,15 +185,20 @@ emulator::Result FDD::load_image(const std::string &file_name)
         track_mode = FDD_MODE_WHOLE_TRACK;
         position = 0;
         loaded = true;
+        m_generation++;
         this->file_name = base_name;
     } else {
         if (fdd_mode == FDD_MODE_LOGICAL) {
             long long file_size = dsk_tools::utf8_file_size(file_name);
 
-            if (file_size == static_cast<long long>(disk_size))
+            // A shorter image is accepted as a disk whose remaining tracks
+            // are blank: БК images come as 40- and 80-track dumps of the
+            // same geometry, and the drive itself does not care
+            if (file_size > 0 && file_size <= static_cast<long long>(disk_size))
             {
                 if (buffer != nullptr) delete [] buffer;
                 buffer = new uint8_t[disk_size];
+                memset(buffer, 0, disk_size);
 
                 dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
                 if (file.is_open()) {
@@ -198,6 +207,7 @@ emulator::Result FDD::load_image(const std::string &file_name)
 
                     track_mode = FDD_MODE_SECTORS;
                     loaded = true;
+                    m_generation++;
                     this->file_name = base_name;
                 } else {
                     return emulator::Result::error(emulator::ErrorCode::ConfigError,
@@ -225,6 +235,7 @@ emulator::Result FDD::load_image(const std::string &file_name)
             track_mode = FDD_MODE_WHOLE_TRACK;
             position = 0;
             loaded = true;
+            m_generation++;
             this->file_name = base_name;
         }
     }
@@ -365,6 +376,7 @@ void FDD::unload(){
     if (buffer != nullptr) delete [] buffer;
     buffer = nullptr;
     loaded = false;
+    m_generation++;
     file_name = "";
 }
 
@@ -373,9 +385,29 @@ int FDD::get_sector_size()
     return sector_size;
 }
 
+int FDD::get_sides()
+{
+    return sides;
+}
+
+int FDD::get_tracks()
+{
+    return tracks;
+}
+
+int FDD::get_sectors()
+{
+    return sectors;
+}
+
 int FDD::get_loaded()
 {
     return loaded;
+}
+
+unsigned int FDD::get_generation()
+{
+    return m_generation;
 }
 
 int FDD::get_position()
@@ -399,7 +431,7 @@ emulator::Result FDD::save_image(const std::string &file_name)
     {
         std::string ext = dsk_tools::get_file_ext(file_name); // returns ".ext" lowercase
 
-        bool is_raw = (ext == ".dsk" || ext == ".gmd" || ext == ".cpm");
+        bool is_raw = (ext == ".dsk" || ext == ".gmd" || ext == ".cpm" || ext == ".img" || ext == ".bkd");
 
         if (is_raw) {
             if (fdd_mode == FDD_MODE_AGAT_840) {
@@ -492,6 +524,101 @@ int FDD::aim_code()
         return code->second;
     else
         return 0;
+}
+
+//------------------- Introspection and control ----------------------------//
+
+std::vector<DeviceFieldInfo> FDD::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
+    r.push_back({"loaded",      "1 if an image is loaded",              false});
+    r.push_back({"file",        "Name of the loaded image",             false});
+    r.push_back({"protected",   "1 if the image is write protected",    false});
+    r.push_back({"selected",    "1 if the drive is selected",           false});
+    r.push_back({"motor",       "1 if the motor is on",                 false});
+    r.push_back({"led",         "1 if the activity led is on",          false});
+    r.push_back({"track",       "Current track",                        false});
+    r.push_back({"sector",      "Current sector",                       false});
+    r.push_back({"side",        "Current side",                         false});
+    r.push_back({"position",    "Current position on a track",          false});
+    r.push_back({"generation",  "Incremented on every load and eject",  false});
+    return r;
+}
+
+std::vector<DeviceCommandInfo> FDD::get_device_commands()
+{
+    std::vector<DeviceCommandInfo> r = ComputerDevice::get_device_commands();
+    r.push_back({"load",    "\"file\"", "Loads a disk image"});
+    r.push_back({"save",    "\"file\"", "Writes the image to a file"});
+    r.push_back({"eject",   "",         "Ejects the image"});
+    r.push_back({"protect", "[0|1]",    "Sets or toggles write protection"});
+    return r;
+}
+
+bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "file") {
+        out.text = file_name;
+        return true;
+    }
+
+    out.numeric = true;
+    if (field == "loaded")      { out.values.push_back(loaded?1:0);         return true; }
+    if (field == "protected")   { out.values.push_back(write_protect?1:0);  return true; }
+    if (field == "selected")    { out.values.push_back(is_selected()?1:0);  return true; }
+    if (field == "motor")       { out.values.push_back(motor_on?1:0);       return true; }
+    if (field == "led")         { out.values.push_back(is_led_on()?1:0);    return true; }
+    if (field == "track")       { out.values.push_back(track);              return true; }
+    if (field == "sector")      { out.values.push_back(sector);             return true; }
+    if (field == "side")        { out.values.push_back(side);               return true; }
+
+    //A position within a track does not fit into a byte
+    out.width = 32;
+    if (field == "position")    { out.values.push_back(position);           return true; }
+    if (field == "generation")  { out.values.push_back(m_generation);       return true; }
+    out.width = 0;
+
+    out.numeric = false;
+    return ComputerDevice::get_field(field, from, to, out);
+}
+
+emulator::Result FDD::send_command(const std::string &command, const std::string &parameters)
+{
+    std::vector<std::string> p = split_params(parameters);
+
+    if (command == "load") {
+        if (p.empty() || p[0].empty())
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Command 'load' expects a file name")) + "}");
+        std::string file = find_file_location(sd, p[0]);
+        if (file.empty()) file = p[0];
+        return load_image(file);
+    }
+
+    if (command == "save") {
+        if (p.empty() || p[0].empty())
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Command 'save' expects a file name")) + "}");
+        return save_image(resolve_output_path(sd, p[0]));
+    }
+
+    if (command == "eject") {
+        unload();
+        return emulator::Result::ok();
+    }
+
+    if (command == "protect") {
+        //Without a parameter the flag is toggled, as the menu item does
+        if (p.empty() || p[0].empty())
+            change_protection();
+        else {
+            bool wanted = parse_numeric_value(p[0]) != 0;
+            if (wanted != write_protect) change_protection();
+        }
+        return emulator::Result::ok();
+    }
+
+    return ComputerDevice::send_command(command, parameters);
 }
 
 ComputerDevice * create_FDD(InterfaceManager *im, EmulatorConfigDevice *cd){

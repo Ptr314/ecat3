@@ -1,0 +1,7 @@
+=== Экран ===
+[display.resolution] 256x256
+=== Карта памяти и портов ===
+[mapper.map] 
+        0000-3FFF -> ram[0000] mode=rw
+        4000-7FFF -> vram[0000] mode=rw
+        8000-8011 -> bios[0000] mode=r

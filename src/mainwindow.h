@@ -24,7 +24,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    MainWindow(const QString &config_file = QString(), const QString &script_file = QString(), QWidget *parent = nullptr);
     ~MainWindow();
 
     Emulator *e;
@@ -72,6 +72,8 @@ private slots:
 
     void on_actionTape_triggered();
 
+    void check_script();
+
 signals:
     void send_a_key(QKeyEvent *event, bool press);
     void send_volume(int value);
@@ -111,6 +113,14 @@ private:
 
     bool first_show = true;
     QString first_config;
+
+    //Set from the command line, see main.cpp
+    QString cmdline_config;
+    QString script_file;
+    QTimer * script_timer = nullptr;
+
+    QString resolve_startup_path(const QString &file_name) const;
+    void start_script();
 
     bool switch_language(const QString &lang, bool init);
     void add_languages();

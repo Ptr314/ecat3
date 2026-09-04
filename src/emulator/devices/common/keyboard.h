@@ -292,6 +292,11 @@ static const unsigned int RUS_REMAP[][2] = {
 
 #define RUS_REMAP_SIZE (sizeof(RUS_REMAP) / sizeof(unsigned int) / 2)
 
+// Resolves a key name from the KEYS[] table above into an EmuKey code.
+// Case insensitive, returns _FFFF when the name is unknown.
+// Used by keyboard layouts and by the scripting engine (KEY and TYPE).
+unsigned int translate_key_name(const std::string &key);
+
 class Keyboard: public ComputerDevice
 {
 protected:
@@ -308,4 +313,9 @@ public:
     virtual void key_event(unsigned int key, unsigned int native_key, bool press);
     virtual void key_down(unsigned int key) = 0;
     virtual void key_up(unsigned int key) = 0;
+
+    // Tells whether the character is only reachable with Shift held on this
+    // machine. The scripting engine uses it so that TYPE can produce quotes
+    // and other symbols of the upper register.
+    virtual bool needs_shift(unsigned int key) { (void)key; return false; }
 };

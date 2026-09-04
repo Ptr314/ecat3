@@ -9,6 +9,7 @@
 
 #include "emulator/core.h"
 #include "emulator/devices/common/speaker.h"
+#include "emulator/devices/common/tape_bk.h"
 
 #define TAPE_STOPPED 0
 #define TAPE_READ    1
@@ -16,7 +17,8 @@
 
 enum class TapeEnc {
     MSX,
-    RK86
+    RK86,
+    BK
 };
 
 enum class TapeWriterState {
@@ -66,6 +68,7 @@ protected:
     unsigned short_counter = 0;
     uint8_t current_byte = 0;
     std::vector<uint8_t> recorded_bytes{};
+    bk_tape::Decoder bk_decoder;
 public:
     std::string files;
 
@@ -88,9 +91,15 @@ public:
     virtual int get_mode();
     virtual void set_recording(bool recording);
     virtual unsigned get_record_size();
+    virtual std::string get_record_name();
     virtual std::vector<uint8_t> * get_record_data();
 
     std::function<void(unsigned int)> on_mode_changed;
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    std::vector<DeviceCommandInfo> get_device_commands() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+    emulator::Result send_command(const std::string &command, const std::string &parameters) override;
 };
 
 ComputerDevice * create_tape_recorder(InterfaceManager *im, EmulatorConfigDevice *cd);

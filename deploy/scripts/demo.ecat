@@ -1,0 +1,27 @@
+# Демонстрационный сценарий eCat3.
+# Запуск: ecat3 --script scripts/demo.ecat
+# Описание команд: SCRIPTING.md
+
+MACHINE "orion-128/Orion-128-m3.cfg"
+
+# Даем машине выйти на приглашение монитора
+WAIT 2000
+
+PRINT "=== Состояние после старта ==="
+LOGDEFS 8,16
+LOG cpu.registers
+LOG cpu.flags
+LOG display.resolution
+LOG mapper.map
+
+PRINT "=== Дисковод ==="
+COMMAND fdd0.load("Disk2.ODI")
+LOG fdd0.file
+LOG fdd0.loaded
+LOG fdc.status
+
+PRINT "=== Первые байты ОЗУ ==="
+LOG ram0.value($0000,$000F)
+
+SCREEN "demo.png"
+EXIT

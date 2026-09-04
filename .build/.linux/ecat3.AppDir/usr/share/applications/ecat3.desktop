@@ -1,6 +1,9 @@
 [Desktop Entry]
 Type=Application
 Name=eCat3
+Comment=Emulator of 8-bit computers: Orion-128, Radio-86RK, Agat, Apogey, Mikrosha, Irisha
+Comment[ru]=Эмулятор 8-битных компьютеров: Орион-128, Радио-86РК, Агат, Апогей, Микроша, Ириша
 Exec=eCat3
 Icon=tv
-Categories=Utility;
+Categories=Game;Emulator;
+Keywords=emulator;retro;8-bit;Orion;Agat;

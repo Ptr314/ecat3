@@ -1,0 +1,41 @@
+=== Экран ===
+[display.resolution] 384x256
+=== Карта памяти и портов ===
+[mapper.map] 
+  [off] 0000-07FF -> bios[0000] mode=r
+        0000-3FFF -> mm2[0000] mode=rw cfg=00:80
+        0000-3FFF -> mm3[0000] mode=rw cfg=80:80
+        4000-EFFF -> mm3[4000] mode=rw
+        F000-F3FF -> ram0[F000] mode=rw cfg=00:20
+        F000-F3FF -> mm3[F000] mode=rw cfg=20:20
+        F400-F4FF -> port-keyboard[0000] mode=rw cfg=00:20
+        F500-F5FF -> port-user1[0000] mode=rw cfg=00:20
+        F600-F6FF -> port-user2[0000] mode=rw cfg=00:20
+        F700-F72F -> fdc[0000] mode=r cfg=00:20
+        F700-F72F -> fdc[0000] mode=w cfg=00:20 addr=0000:0024
+        F700-F72F -> port-fdc[0000] mode=w cfg=00:20
+        F800-FFFF -> bios[0000] mode=r cfg=00:20
+        F800-F8FF -> port-videomode[0000] mode=w cfg=00:20
+        F900-F9FF -> port-page[0000] mode=w cfg=00:20
+        FA00-FAFF -> port-screen[0000] mode=w cfg=00:20
+        F400-FFFF -> mm3[F400] mode=rw cfg=20:20
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+  port F4 -> port-keyboard
+  port F5 -> port-user1
+  port F6 -> port-user2
+  port F7 -> fdc
+  port F8 -> port-videomode
+  port F9 -> port-page
+  port FA -> port-screen
+  port FB -> portFB
+  port FE -> portFE
+  port FF -> portFF

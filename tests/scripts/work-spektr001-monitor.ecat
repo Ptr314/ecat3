@@ -1,0 +1,17 @@
+# Спектр-001: директива монитора D — дамп памяти на экран.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+# @timeout 30
+
+MACHINE "radio-86rk/Spektr001.cfg"
+WAIT 2500
+
+TYPE "D0000,001F\n"
+WAIT 1500
+
+LOGDEFS 8,16
+LOG ram.value($0000,$000F)
+
+SCREEN "../results/work-spektr001-monitor.png"
+EXIT

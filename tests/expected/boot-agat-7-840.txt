@@ -1,0 +1,20 @@
+=== Экран ===
+[display.resolution] 512x256
+=== Карта памяти и портов ===
+[mapper.map] 
+        0000-7FFF -> ram0[0000] mode=rw
+        8000-BFFF -> ram-card[0000] mode=r cfg=03:03
+        8000-BFFF -> ram-card[0000] mode=rw cfg=01:03
+        C000-C00F -> port-kbd[0000] mode=rw
+        C010-C01F -> port-kbd-reset[0000] mode=rw
+        C030-C03F -> port-sound[0000] mode=rw
+        C040-C05F -> port-int-en[0000] mode=rw
+        C063-C063 -> port-kbd-ruslat[0000] mode=rw
+        C0B0-C0BF -> fdc840[0000] mode=rw
+        C200-C2FF -> rom-card-port[0000] mode=rw
+        C300-C3FF -> boot840[0000] mode=r
+        C400-C4FF -> ram-card-port[0000] mode=rw
+        C700-C7FF -> port-video[0000] mode=rw
+        D000-FFFF -> rom-card[0000] mode=w cfg=00:04
+        F800-FFFF -> bios[0000] mode=r cfg=00:04
+        D000-FFFF -> rom-card[0000] mode=r cfg=04:04

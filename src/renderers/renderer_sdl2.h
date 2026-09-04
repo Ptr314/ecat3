@@ -162,11 +162,13 @@ public:
             float image_aspect = (float)screen_x / screen_y * screen_ps;
 
             if (screen_aspect > image_aspect) {
-                render_rect.w = (float)screen_x * ry2 / screen_y * screen_ps;
+                // The window is wider than the picture, the height is the limit
                 render_rect.h = ry2;
+                render_rect.w = (float)ry2 * image_aspect;
             } else {
-                render_rect.w = (float)rx2 * screen_ps;
-                render_rect.h = (float)screen_y * rx2 / screen_x;
+                // The width is the limit
+                render_rect.w = rx2;
+                render_rect.h = (float)rx2 / image_aspect;
             }
         } else {
             render_rect.w = screen_x * screen_ss * screen_ps;

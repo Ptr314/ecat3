@@ -1,0 +1,8 @@
+up:	$0001
+right:	$0002
+down:	$0004
+left:	$0008
+end:	$0010
+home:	$0020
+pgup:	$0040
+pgdn:	$0080

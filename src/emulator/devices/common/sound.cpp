@@ -215,3 +215,51 @@ void GenericSound::handle_audio_callback(uint8_t* stream, int len)
         );
     }
 }
+
+//------------------- Introspection and control ----------------------------//
+
+std::vector<DeviceFieldInfo> GenericSound::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
+    r.push_back({"volume",  "Current volume, 0-100",    false});
+    r.push_back({"muted",   "1 if the sound is muted",  false});
+    return r;
+}
+
+std::vector<DeviceCommandInfo> GenericSound::get_device_commands()
+{
+    std::vector<DeviceCommandInfo> r = ComputerDevice::get_device_commands();
+    r.push_back({"volume",  "0-100",    "Sets the volume"});
+    r.push_back({"mute",    "[0|1]",    "Mutes or unmutes the sound"});
+    return r;
+}
+
+bool GenericSound::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    out.numeric = true;
+    if (field == "volume")  { out.values.push_back(m_volume);       return true; }
+    if (field == "muted")   { out.values.push_back(m_muted?1:0);    return true; }
+
+    out.numeric = false;
+    return ComputerDevice::get_field(field, from, to, out);
+}
+
+emulator::Result GenericSound::send_command(const std::string &command, const std::string &parameters)
+{
+    std::vector<std::string> p = split_params(parameters);
+
+    if (command == "volume") {
+        if (p.empty() || p[0].empty())
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{GenericSound|" + std::string(QT_TRANSLATE_NOOP("GenericSound", "Command 'volume' expects a value")) + "}");
+        set_volume(parse_numeric_value(p[0]));
+        return emulator::Result::ok();
+    }
+
+    if (command == "mute") {
+        set_muted(p.empty() || p[0].empty() || parse_numeric_value(p[0]) != 0);
+        return emulator::Result::ok();
+    }
+
+    return ComputerDevice::send_command(command, parameters);
+}

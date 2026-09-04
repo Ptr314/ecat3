@@ -15,6 +15,19 @@
     </message>
 </context>
 <context>
+    <name>AddressableDevice</name>
+    <message>
+        <location filename="../emulator/core.cpp" line="+748"/>
+        <source>Command &apos;set&apos; expects an address and a value</source>
+        <translation>Команда &apos;set&apos; требует адрес и значение</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Command &apos;fill&apos; expects a range and a value</source>
+        <translation>Команда &apos;fill&apos; требует диапазон и значение</translation>
+    </message>
+</context>
+<context>
     <name>Agat7Display</name>
     <message>
         <location filename="../emulator/devices/specific/agat_7_display.cpp" line="+77"/>
@@ -107,9 +120,19 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+1027"/>
+        <location filename="../emulator/core.cpp" line="+625"/>
         <source>No CPU clock value found</source>
         <translation>Не задана тактовая частота процессора</translation>
+    </message>
+    <message>
+        <location line="+137"/>
+        <source>Command &apos;breakpoint&apos; expects an address</source>
+        <translation>Команда &apos;breakpoint&apos; требует адрес</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Command &apos;setreg&apos; expects a name and a value</source>
+        <translation>Команда &apos;setreg&apos; требует имя и значение</translation>
     </message>
     <message>
         <location line="+23"/>
@@ -128,7 +151,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location line="-616"/>
+        <location line="-1088"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -148,6 +171,16 @@
         <location line="+48"/>
         <source>Incorrect parameters for</source>
         <translation>Неправильно указаны параметры для</translation>
+    </message>
+    <message>
+        <location line="+140"/>
+        <source>Command &apos;option&apos; expects an option id and a value</source>
+        <translation>Команда &apos;option&apos; требует идентификатор параметра и значение</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Unknown command</source>
+        <translation>Неизвестная команда</translation>
     </message>
     <message>
         <source>Incorrect interface definition for %1</source>
@@ -276,7 +309,7 @@
     </message>
     <message>
         <source>Delete breakpoint</source>
-        <translation type="vanished">Удалить точку остнова</translation>
+        <translation type="vanished">Удалить точку останова</translation>
     </message>
     <message>
         <location line="-147"/>
@@ -284,8 +317,8 @@
         <translation>Установить значение</translation>
     </message>
     <message>
-        <location filename="../dialogs/debugwindow.cpp" line="+47"/>
-        <location line="+149"/>
+        <location filename="../dialogs/debugwindow.cpp" line="+54"/>
+        <location line="+144"/>
         <location line="+66"/>
         <location line="+77"/>
         <source>Error</source>
@@ -314,7 +347,7 @@
         <translation type="vanished">Устройство %1 не найдено</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-291"/>
+        <location filename="../emulator/core.cpp" line="-439"/>
         <source>Can&apos;t create device</source>
         <translation>Невозможно создать устройство</translation>
     </message>
@@ -325,6 +358,7 @@
         <location filename="../emulator/devices/specific/agat_7_display.cpp" line="+79"/>
         <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+72"/>
         <location line="+10"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="+141"/>
         <source>Output type</source>
         <translation>Тип видеовыхода</translation>
     </message>
@@ -366,8 +400,14 @@
         <translation>Прототип</translation>
     </message>
     <message>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="+2"/>
+        <source>Color</source>
+        <translation>Цветной</translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>Monochrome</source>
-        <translation type="vanished">Монохромный</translation>
+        <translation>Монохромный</translation>
     </message>
 </context>
 <context>
@@ -387,7 +427,7 @@
     <message>
         <location filename="../emulator/disasm.cpp" line="+37"/>
         <source>Error reading CPU instructions file</source>
-        <translation>Ошиька чтения файла инструкций</translation>
+        <translation>Ошибка чтения файла инструкций</translation>
     </message>
     <message>
         <location line="+40"/>
@@ -483,12 +523,13 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/files.cpp" line="+29"/>
+        <location filename="../emulator/files.cpp" line="+31"/>
         <source>Unable to find an expected preamble byte 0xE6!</source>
         <translation>Не удалось найти байт преамбулы 0xE6!</translation>
     </message>
     <message>
         <location line="+22"/>
+        <location line="+354"/>
         <source>Unable to find a RAM page to store data</source>
         <translation>Не получилось найти страницу памяти для записи данных</translation>
     </message>
@@ -497,7 +538,7 @@
         <translation type="vanished">Ошибка чтения %1</translation>
     </message>
     <message>
-        <location line="+55"/>
+        <location line="-299"/>
         <source>File is smaller than expected!</source>
         <translation>Размер файла меньше ожидаемого!</translation>
     </message>
@@ -525,11 +566,13 @@
         <location line="+75"/>
         <location line="+7"/>
         <location line="+76"/>
+        <location line="+124"/>
+        <location line="+7"/>
         <source>Error reading</source>
         <translation>Ошибка чтения</translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="-186"/>
         <source>Error reading HEX file</source>
         <translation>Ошибка чтения HEX-файла</translation>
     </message>
@@ -539,7 +582,7 @@
         <location line="+8"/>
         <location line="+7"/>
         <source>Error reading preamble data!</source>
-        <translation>Оштбка чтения преамбулы файла!</translation>
+        <translation>Ошибка чтения преамбулы файла!</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -552,7 +595,7 @@
         <translation>Не удалось загрузить файл: все ram-диски уже заполнены!</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+91"/>
         <source>Unknown file type</source>
         <translation>Неизвестный тип файла</translation>
     </message>
@@ -601,7 +644,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+117"/>
+        <location filename="../emulator/emulator.cpp" line="+123"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -723,7 +766,7 @@
     <message>
         <location line="-32"/>
         <source>File is in unknown format</source>
-        <translation>Формат файла не распорзнан</translation>
+        <translation>Формат файла не распознан</translation>
     </message>
     <message>
         <location line="+37"/>
@@ -734,7 +777,17 @@
         <location line="+208"/>
         <location line="+15"/>
         <source>Error exporting disk.</source>
-        <translation>Ешибка экспорта диска.</translation>
+        <translation>Ошибка экспорта диска.</translation>
+    </message>
+    <message>
+        <location line="+126"/>
+        <source>Command &apos;load&apos; expects a file name</source>
+        <translation>Команда &apos;load&apos; требует имя файла</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Command &apos;save&apos; expects a file name</source>
+        <translation>Команда &apos;save&apos; требует имя файла</translation>
     </message>
     <message>
         <source>Error opening file &apos;%1&apos;</source>
@@ -745,7 +798,7 @@
         <translation type="vanished">Формат файла &apos;%1&apos; не распознан</translation>
     </message>
     <message>
-        <location line="-254"/>
+        <location line="-389"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation>Файлы AIM поддерживаются только на дисководах 840 Кб Агат!</translation>
     </message>
@@ -782,7 +835,7 @@
     </message>
     <message>
         <source>Reading outside of a sector</source>
-        <translation type="vanished">Попытка чтения за пределеами сектора</translation>
+        <translation type="vanished">Попытка чтения за пределами сектора</translation>
     </message>
     <message>
         <source>Writing outside of a sector</source>
@@ -803,6 +856,14 @@
         <location filename="../emulator/devices/common/gmd70.cpp" line="+66"/>
         <source>Incorrect fdd list for</source>
         <translation>Некорректный список дисководов для</translation>
+    </message>
+</context>
+<context>
+    <name>GenericSound</name>
+    <message>
+        <location filename="../emulator/devices/common/sound.cpp" line="+254"/>
+        <source>Command &apos;volume&apos; expects a value</source>
+        <translation>Команда &apos;volume&apos; требует значение</translation>
     </message>
 </context>
 <context>
@@ -998,13 +1059,13 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+318"/>
-        <location line="+504"/>
+        <location filename="../mainwindow.cpp" line="+387"/>
+        <location line="+512"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-501"/>
+        <location line="-509"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -1028,16 +1089,17 @@
         <translation type="vanished">Все файлы (*.*)</translation>
     </message>
     <message>
-        <location line="-37"/>
-        <location line="+415"/>
+        <location line="-97"/>
+        <location line="+60"/>
+        <location line="+419"/>
         <location line="+47"/>
-        <location line="+57"/>
+        <location line="+61"/>
         <location line="+62"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-581"/>
+        <location line="-589"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -1102,12 +1164,12 @@
         <translation>Билинейное</translation>
     </message>
     <message>
-        <location line="+303"/>
+        <location line="+307"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
     </message>
     <message>
-        <location line="+59"/>
+        <location line="+63"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>
@@ -1134,7 +1196,7 @@
     <message>
         <location line="+0"/>
         <source>Error creating a backup. Probably *.bak already exists.</source>
-        <translation>Обшибка создания резервной копии. Возможно, файл с расширение *.bak уже существует.</translation>
+        <translation>Ошибка создания резервной копии. Возможно, файл с расширением *.bak уже существует.</translation>
     </message>
     <message>
         <location line="+46"/>
@@ -1149,13 +1211,13 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/mapkeyboard.cpp" line="+30"/>
+        <location filename="../emulator/devices/common/mapkeyboard.cpp" line="+31"/>
         <source>Keyboard map file is expected</source>
         <translation>Не указан файл мэппинга</translation>
     </message>
     <message>
         <source>Error reading map file %1</source>
-        <translation type="vanished">Ошибка чтенияфайла мэппинга &apos;%1&apos;</translation>
+        <translation type="vanished">Ошибка чтения файла мэппинга &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Map file entry &apos;%1&apos; is incorrect</source>
@@ -1198,6 +1260,39 @@
     </message>
 </context>
 <context>
+    <name>Memory</name>
+    <message>
+        <location filename="../emulator/core.cpp" line="+660"/>
+        <source>Command &apos;load&apos; expects a file name</source>
+        <translation>Команда &apos;load&apos; требует имя файла</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Error reading</source>
+        <translation>Ошибка чтения</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Address is out of the device range</source>
+        <translation>Адрес вне диапазона устройства</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Command &apos;save&apos; expects a file name</source>
+        <translation>Команда &apos;save&apos; требует имя файла</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Incorrect address range</source>
+        <translation>Некорректный диапазон адресов</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Error writing</source>
+        <translation>Ошибка записи</translation>
+    </message>
+</context>
+<context>
     <name>MemoryMapper</name>
     <message>
         <source>Error</source>
@@ -1208,13 +1303,13 @@
         <translation type="vanished">Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+914"/>
+        <location line="+639"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
     <message>
         <location line="+85"/>
-        <location filename="../emulator/devices/common/page_mapper.cpp" line="+47"/>
+        <location filename="../emulator/devices/common/page_mapper.cpp" line="+38"/>
         <source>Incorrect range for</source>
         <translation>Некорректный диапазон для</translation>
     </message>
@@ -1359,7 +1454,7 @@
         <translation type="vanished">Ошибка чтения %1</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-155"/>
+        <location filename="../emulator/core.cpp" line="-636"/>
         <source>File not found</source>
         <translation>Файл не найден</translation>
     </message>
@@ -1370,17 +1465,17 @@
     </message>
     <message>
         <location line="+22"/>
-        <location line="+24"/>
+        <location line="+13"/>
         <source>Can&apos;t open ROM image file</source>
         <translation>Ошибка чтения образа ПЗУ</translation>
     </message>
     <message>
-        <location line="-19"/>
+        <location line="-8"/>
         <source>ROM image file is too big</source>
         <translation>Размер образа ПЗУ превышает выделенный объем устройства</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+25"/>
         <source>Incorrect mode set for</source>
         <translation>Некорректно задан режим для</translation>
     </message>
@@ -1423,7 +1518,7 @@
     <message>
         <location line="+4"/>
         <source>Error reading map file</source>
-        <translation>Ошибка чтенияфайла мэппинга</translation>
+        <translation>Ошибка чтения файла мэппинга</translation>
     </message>
     <message>
         <location line="+43"/>
@@ -1432,11 +1527,59 @@
     </message>
     <message>
         <source>Error reading map file %1</source>
-        <translation type="vanished">Ошибка чтенияфайла мэппинга &apos;%1&apos;</translation>
+        <translation type="vanished">Ошибка чтения файла мэппинга &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Unknown key %1</source>
         <translation type="vanished">Неизвестная клавиша %1</translation>
+    </message>
+</context>
+<context>
+    <name>Script</name>
+    <message>
+        <location filename="../emulator/script/script_parser.cpp" line="+51"/>
+        <source>Line</source>
+        <translation>Строка</translation>
+    </message>
+    <message>
+        <location line="+46"/>
+        <source>Unknown command</source>
+        <translation>Неизвестная команда</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>Unbalanced brackets</source>
+        <translation>Непарные скобки</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Expected device.name</source>
+        <translation>Ожидается устройство.имя</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>found</source>
+        <translation>получено</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>WAITFOR expects a comparison</source>
+        <translation>WAITFOR требует условие сравнения</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Unknown comparison operator</source>
+        <translation>Неизвестный оператор сравнения</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>WAITFOR expects a value</source>
+        <translation>WAITFOR требует значение</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Script file is not found</source>
+        <translation>Файл сценария не найден</translation>
     </message>
 </context>
 <context>
@@ -1458,9 +1601,39 @@
 <context>
     <name>TapeRecorder</name>
     <message>
-        <location filename="../emulator/devices/common/tape.cpp" line="+52"/>
+        <location filename="../emulator/devices/common/tape.cpp" line="+55"/>
         <source>Incorrect encoding</source>
         <translation>Некорректно задан способ кодирования данных для магнитофона</translation>
+    </message>
+    <message>
+        <location line="+225"/>
+        <source>Tape file format is not defined</source>
+        <translation>Не задан формат файла записи</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Incorrect tape file format</source>
+        <translation>Некорректный формат файла записи</translation>
+    </message>
+    <message>
+        <location line="+172"/>
+        <source>Command &apos;load&apos; expects a file name</source>
+        <translation>Команда &apos;load&apos; требует имя файла</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Unknown tape file format for</source>
+        <translation>Неизвестный формат файла записи для</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Nothing has been recorded</source>
+        <translation>Ничего не записано</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Unable to save file!</source>
+        <translation>Невозможно сохранить файл!</translation>
     </message>
     <message>
         <source>Error</source>
@@ -1471,7 +1644,7 @@
         <translation type="vanished">Некорректно задан способ кодирования данных для магнитофона %1</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="-151"/>
         <source>Unknown tape format!</source>
         <translation>Неизвестный формат файла записи!</translation>
     </message>
@@ -1525,24 +1698,24 @@
         <translation>ЭЛЕКТРОНИКА-302</translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="+145"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+146"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+22"/>
         <location line="+7"/>
-        <location line="+113"/>
+        <location line="+117"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-113"/>
+        <location line="-117"/>
         <source>Unknown tape file format!</source>
         <translation>Неизвестный формат файла записи!</translation>
     </message>
     <message>
-        <location line="+103"/>
+        <location line="+107"/>
         <source>Save recorded data</source>
         <translation>Сохранить записанные данные</translation>
     </message>
@@ -1581,156 +1754,176 @@
     </message>
 </context>
 <context>
+    <name>attributes</name>
+    <message>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_iskra226.cpp" line="+51"/>
+        <source>Tokenized</source>
+        <translation>Упакованный</translation>
+    </message>
+</context>
+<context>
     <name>errors</name>
     <message>
-        <location filename="../libs/dsk_tools/src/dsk_tools.cpp" line="+292"/>
+        <location filename="../libs/dsk_tools/src/dsk_tools.cpp" line="+334"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_raw.cpp" line="+28"/>
-        <location filename="../libs/dsk_tools/src/loaders/loader_aim.cpp" line="+36"/>
-        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+27"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_aim.cpp" line="+102"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+56"/>
+        <location line="+40"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_fil.cpp" line="+23"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_mfm.cpp" line="+236"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_imd.cpp" line="+30"/>
         <location line="+293"/>
+        <location filename="../libs/dsk_tools/src/converters/converter.cpp" line="+20"/>
         <source>Cannot open file</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось открыть файл</translation>
     </message>
     <message>
         <location line="+52"/>
-        <location line="+40"/>
+        <location line="+48"/>
         <source>Invalid file size for DSK format</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный размер файла. Попробуйте отключить автоопределение и указать тип файла вручную</translation>
     </message>
     <message>
-        <location line="+62"/>
+        <location line="+67"/>
+        <location line="+21"/>
         <source>Failed to load AIM file</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка загрузки файла AIM</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="-13"/>
+        <location line="+123"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_prodos.cpp" line="+138"/>
+        <source>ProDOS volume header not found</source>
+        <translation>Не найден заголовок тома ProDOS</translation>
+    </message>
+    <message>
+        <location line="-100"/>
         <source>Invalid file size for NIB format</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный размер файла для формата NIB</translation>
     </message>
     <message>
         <location line="+33"/>
         <source>Unknown MFM format</source>
-        <translation type="unfinished"></translation>
+        <translation>Неизвестный формат MFM</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Failed to load MFM file</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось загрузить MFM-файл</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+23"/>
         <source>Invalid filesystem signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректная сигнатура файловой системы</translation>
     </message>
     <message>
         <location line="+14"/>
         <source>Cannot open HFE file</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось открыть файл HFE</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+24"/>
+        <location line="+17"/>
         <source>Invalid HFE file format</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный формат файла HFE</translation>
     </message>
     <message>
         <location line="+21"/>
         <source>Unknown file format</source>
-        <translation type="unfinished"></translation>
+        <translation>Неизвестный формат файла</translation>
     </message>
     <message>
-        <location line="+246"/>
+        <location line="+289"/>
         <source>Agat 840 track decode error</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка декодирования дорожки в формате диска Агат 840 Кб</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Failed to decode Agat 840 track</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка декодирования дорожки в формате диска Агат 840 Кб</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Decoded track size mismatch</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный размер дорожки после декодирования</translation>
     </message>
     <message>
         <location line="+73"/>
         <source>Agat 140 track decode error</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка декодирования дорожки в формате диска Агат 140 Кб</translation>
     </message>
     <message>
         <location line="+11"/>
         <source>Failed to decode Agat 140 track</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка декодирования дорожки в формате диска Агат 140 Кб</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/loaders/loader.h" line="+33"/>
         <source>Not implemented</source>
-        <translation type="unfinished"></translation>
+        <translation>Поддержка данного типа дисков ещё не реализована</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/loaders/loader_raw.cpp" line="+9"/>
         <location line="+26"/>
         <source>Unknown disk type</source>
-        <translation type="unfinished"></translation>
+        <translation>Неизвестный тип диска</translation>
     </message>
     <message>
         <location line="+12"/>
         <location line="+5"/>
         <location filename="../libs/dsk_tools/src/images/disk_image.cpp" line="+29"/>
         <source>Sector translation table has incorrect size</source>
-        <translation type="unfinished"></translation>
+        <translation>Таблица трансляции секторов имеет некорректную длину</translation>
     </message>
     <message>
         <location line="+28"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_imd.cpp" line="-211"/>
         <source>Data exceeds buffer size</source>
-        <translation type="unfinished"></translation>
+        <translation>Размер данных превышает размер буфера</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/loaders/loader_aim.cpp" line="+20"/>
-        <location line="+1"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_aim.cpp" line="+8"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="-33"/>
+        <location filename="../libs/dsk_tools/src/viewers/agat/agat_font_bft.cpp" line="+31"/>
+        <location line="+13"/>
+        <source>File is too small</source>
+        <translation>Размер файла меньше ожидаемого</translation>
+    </message>
+    <message>
+        <location line="+58"/>
         <source>Invalid index mark</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректная метка индекса</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <location line="+1"/>
-        <source>Invalid data mark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Unexpected end of data</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+16"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+7"/>
+        <location line="+42"/>
         <source>Invalid HFE signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректная сигнатура HFE</translation>
     </message>
     <message>
+        <location line="-41"/>
+        <location line="+4"/>
         <location line="+6"/>
+        <location line="+37"/>
+        <location line="+26"/>
         <source>Invalid HFE parameters</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректные параметры HFE</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-16"/>
         <source>Unsupported disk type</source>
-        <translation type="unfinished"></translation>
+        <translation>Данный тип диска не поддерживается</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+37"/>
         <source>Failed to decode track data</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка декодирования данных дорожки</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/loaders/loader_imd.cpp" line="-76"/>
         <location line="+293"/>
         <source>Incorrect file format</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный формат файла</translation>
     </message>
     <message>
         <location line="-286"/>
@@ -1744,254 +1937,354 @@
         <location line="+8"/>
         <location line="+18"/>
         <source>File seems to be corrupt</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл выглядит повреждённым</translation>
     </message>
     <message>
         <location line="-346"/>
         <source>Incorrect head index</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный индекс головки</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Incorrect track index</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный индекс дорожки</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Incorrect sector count</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректное количество секторов</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Incorrect sector size</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный размер сектора</translation>
     </message>
     <message>
         <location line="+30"/>
         <source>Incorrect data</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректные данные</translation>
     </message>
     <message>
         <location line="+342"/>
         <source>Incorrect data or unsupported disk type</source>
-        <translation type="unfinished"></translation>
+        <translation>Данные некорректны, либо тип диска не поддерживается</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/images/disk_image.cpp" line="+10"/>
         <source>Buffer size mismatch</source>
-        <translation type="unfinished"></translation>
+        <translation>Несоответствие размера буфера</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/writers/writer.cpp" line="+25"/>
         <source>Cannot create output file</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось создать выходной файл</translation>
     </message>
     <message>
         <location line="+11"/>
         <source>Error writing to file</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка записи в файл</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/writers/writer_hxc_hfe.cpp" line="+72"/>
+        <location filename="../libs/dsk_tools/src/writers/writer_hxc_hfe.cpp" line="+73"/>
         <source>Format not supported for HFE format</source>
-        <translation type="unfinished"></translation>
+        <translation>Для файлов HFE данный формат не поддерживается</translation>
     </message>
     <message>
         <location line="+32"/>
         <source>Track substitution not supported for HFE format</source>
-        <translation type="unfinished"></translation>
+        <translation>Замена дорожек для файлов HFE не поддерживается</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/writers/writer_hxc_mfm.cpp" line="+59"/>
         <source>MFM format not supported for this disk type</source>
-        <translation type="unfinished"></translation>
+        <translation>Для данного типа дисков формат MFM не поддерживается</translation>
     </message>
     <message>
         <location line="+36"/>
         <source>NIB format not supported for this disk type</source>
-        <translation type="unfinished"></translation>
+        <translation>Для данного типа дисков формат NIB не поддерживается</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>NIC format not supported for this disk type</source>
-        <translation type="unfinished"></translation>
+        <translation>Для данного типа дисков формат NIC не поддерживается</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Unknown MFM writer format</source>
-        <translation type="unfinished"></translation>
+        <translation>Неизвестный формат записи для файла MFM</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Track substitution not supported for MFM format</source>
-        <translation type="unfinished"></translation>
+        <translation>Замена дорожек для файлов MFM не поддерживается</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/writers/writer_raw.cpp" line="+29"/>
         <source>Template file size mismatch</source>
-        <translation type="unfinished"></translation>
+        <translation>Несоответствие размера файла образца</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Source file size mismatch</source>
-        <translation type="unfinished"></translation>
+        <translation>Несоответствие размера исходного файла</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/filesystems/fs_dos33.cpp" line="+33"/>
         <source>Cannot read VTOC</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочитать VTOC</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>VTOC sector count or size mismatch</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректное кол-во секторов или размер сектора в таблице VTOC</translation>
     </message>
     <message>
         <location line="+167"/>
         <source>Cannot read VTOC extension sector (0x32, 0)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочитать расширенный сектор VTOC (0x32, 0)</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Cannot read VTOC extension sector (0x72, 0)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочитать расширенный сектор VTOC (0x72, 0)</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Incorrect track number for mapping</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный номер дорожки для мэппинга</translation>
     </message>
     <message>
         <location line="+499"/>
         <location line="+304"/>
         <source>Incorrect track/sector data</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректные данные дорожки/сектора</translation>
     </message>
     <message>
         <location line="-7"/>
         <location line="+3"/>
         <location line="+38"/>
         <source>Sector is not free</source>
-        <translation type="unfinished"></translation>
+        <translation>Сектор уже занят</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/filesystems/fs_spriteos.cpp" line="+59"/>
         <location line="+11"/>
         <location line="+10"/>
         <source>Incorrect file entry</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректная информация о файле</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Unknown DIR_ENTRY.LEVEL value</source>
-        <translation type="unfinished"></translation>
+        <translation>Неизвестное значение DIR_ENTRY.LEVEL</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>File is smaller than expected</source>
-        <translation type="unfinished"></translation>
+        <translation>Размер файла меньше необходимого</translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_prodos.cpp" line="-10"/>
+        <source>ProDOS: unsupported sector size</source>
+        <translation>ProDOS: неподдерживаемый размер сектора</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Cannot read ProDOS volume directory</source>
+        <translation>Не удалось прочитать каталог тома ProDOS</translation>
+    </message>
+    <message>
+        <location line="+323"/>
+        <source>ProDOS: unsupported file storage type</source>
+        <translation>ProDOS: неподдерживаемый тип хранения файла</translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_onix.cpp" line="+202"/>
+        <location line="+4"/>
+        <source>Onix: unsupported disk geometry</source>
+        <translation>Onix: неподдерживаемая геометрия диска</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <location line="+5"/>
+        <source>Onix allocation table not found</source>
+        <translation>Таблица размещения Onix не найдена</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+37"/>
         <source>Unknown CP/M disk definition</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректное определение диска CP/M</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>CP/M disk definition: heads is incorrect</source>
-        <translation type="unfinished"></translation>
+        <translation>Формат диска CP/M: некорректное кол-во сторон</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>CP/M disk definition: tracks is required</source>
-        <translation type="unfinished"></translation>
+        <translation>Формат диска CP/M: параметр tracks является обязательным</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>CP/M disk definition: sectrk is required</source>
-        <translation type="unfinished"></translation>
+        <translation>Формат диска CP/M: параметр sectrk является обязательным</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>CP/M disk definition: seclen is required</source>
-        <translation type="unfinished"></translation>
+        <translation>Формат диска CP/M: параметр seclen является обязательным</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>CP/M disk definition: blocksize is required</source>
-        <translation type="unfinished"></translation>
+        <translation>Формат диска CP/M: параметр blocksize является обязательным</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>CP/M disk definition: boottrk is incorrect</source>
-        <translation type="unfinished"></translation>
+        <translation>Формат диска CP/M: некорректное значение boottrk</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>CP/M disk definition: maxdir is incorrect</source>
-        <translation type="unfinished"></translation>
+        <translation>Формат диска CP/M: некорректное значение maxdir</translation>
     </message>
     <message>
         <location line="+58"/>
         <source>Unsupported disk type for CP/M</source>
-        <translation type="unfinished"></translation>
+        <translation>Неподдерживаемый тип диска CP/M</translation>
     </message>
     <message>
         <location line="+579"/>
         <source>user number out of range</source>
-        <translation type="unfinished"></translation>
+        <translation>User # выходит за допустимые пределы</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/filesystems/fs_fat.cpp" line="+213"/>
         <source>Cannot read FAT boot sector</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочитать загрузочный сектор FAT</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>FAT: invalid bytes per sector</source>
-        <translation type="unfinished"></translation>
+        <translation>FAT: некорректный размер сектора</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>FAT: invalid sectors per cluster</source>
-        <translation type="unfinished"></translation>
+        <translation>FAT: некорректное кол-во секторов на кластер</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>FAT: invalid FAT count</source>
-        <translation type="unfinished"></translation>
+        <translation>FAT: некорректное кол-во таблиц FAT</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>FAT: invalid reserved sector count</source>
-        <translation type="unfinished"></translation>
+        <translation>FAT: некорректное кол-во резервных секторов</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>FAT: sector size mismatch</source>
-        <translation type="unfinished"></translation>
+        <translation>FAT: несоответствие размера сектора</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>FAT: zero total sectors</source>
-        <translation type="unfinished"></translation>
+        <translation>FAT: нулевое кол-во секторов</translation>
     </message>
     <message>
         <location line="+4"/>
         <location line="+21"/>
         <source>FAT32 is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>FAT32 не поддерживается</translation>
     </message>
     <message>
         <location line="-11"/>
         <source>FAT: data region beyond disk</source>
+        <translation>FAT: область данных за пределами диска</translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/converters/converter.cpp" line="+7"/>
+        <source>The file is empty</source>
+        <translation>Файл пуст</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Cannot read file</source>
+        <translation>Не удалось прочитать файл</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Cannot create file</source>
+        <translation>Не удалось создать файл</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Cannot write file</source>
+        <translation>Не удалось записать файл</translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/converters/aim2hfe.cpp" line="+378"/>
+        <source>Cannot pack a track to 6250 bytes</source>
+        <translation>Не удалось упаковать дорожку в 6250 байт</translation>
+    </message>
+    <message>
+        <location line="+113"/>
+        <source>File too small</source>
+        <translation>Файл слишком мал</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <location line="+1"/>
+        <source>Invalid data mark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/viewers/agat/agat_font_bft.cpp" line="+31"/>
-        <location line="+13"/>
-        <source>File is too small</source>
+        <location line="+3"/>
+        <source>Unexpected end of data</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>main</name>
+    <message>
+        <location filename="../main.cpp" line="+35"/>
+        <source>eCat3, a universal emulator of retro computers</source>
+        <translation>eCat3, универсальный эмулятор ретрокомпьютеров</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Machine configuration to load, overrides the one saved in the ini file.</source>
+        <translation>Конфигурация компьютера для загрузки. Имеет приоритет над сохраненной в ini-файле.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>file.cfg</source>
+        <translation>файл.cfg</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Script to run, see SCRIPTING.md.</source>
+        <translation>Сценарий для выполнения, см. SCRIPTING.md.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>file.ecat</source>
+        <translation>файл.ecat</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>file</source>
+        <translation>файл</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>A .cfg configuration or a .ecat script.</source>
+        <translation>Конфигурация .cfg или сценарий .ecat.</translation>
     </message>
 </context>
 <context>
@@ -1999,32 +2292,42 @@
     <message>
         <location filename="../libs/dsk_tools/src/viewers/viewer_binary.h" line="+18"/>
         <source>Regular Binary</source>
-        <translation type="unfinished"></translation>
+        <translation>Простой двоичный</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/viewers/viewer_basic_agat.h" line="+17"/>
         <source>Agat BASIC</source>
-        <translation type="unfinished"></translation>
+        <translation>Бейсик Агат</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/viewers/viewer_basic_apple.h" line="+16"/>
         <source>Apple BASIC</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple BASIC</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/viewers/viewer_basic_vector.h" line="+16"/>
         <source>Vector-06C BASIC</source>
-        <translation type="unfinished"></translation>
+        <translation>Бейсик Вектор-06Ц</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/viewers/viewer_basic_mbasic.h" line="+17"/>
         <source>CP/M MBASIC</source>
-        <translation type="unfinished"></translation>
+        <translation>CP/M MBASIC</translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/viewers/viewer_basic_bbc.h" line="+17"/>
+        <source>BBC BASIC</source>
+        <translation>BBC BASIC</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/viewers/agat/agat_binary.h" line="+16"/>
         <source>Agat Executable</source>
-        <translation type="unfinished"></translation>
+        <translation>Агат Исполняемый</translation>
+    </message>
+    <message>
+        <location filename="../libs/dsk_tools/src/viewers/viewer_basic_iskra226.h" line="+17"/>
+        <source>Iskra-226 BASIC</source>
+        <translation>Бейсик Искра 226</translation>
     </message>
 </context>
 </TS>

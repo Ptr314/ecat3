@@ -41,6 +41,7 @@ private:
 
     bool write_protect;
     bool loaded;
+    unsigned int m_generation = 0;      // bumped on every load/unload so controllers can drop cached tracks
     bool motor_on = false;
     bool m_motor_was_on = false;
     std::chrono::steady_clock::time_point led_start;
@@ -78,7 +79,11 @@ public:
     bool is_track_00();
     bool is_led_on();
     int get_sector_size();
+    int get_sides();
+    int get_tracks();
+    int get_sectors();
     int get_loaded();
+    unsigned int get_generation();
     int get_position();
     void set_position(int value);
     int SeekSector(int track, int sector);
@@ -93,6 +98,11 @@ public:
     void change_protection();
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     int aim_code();
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    std::vector<DeviceCommandInfo> get_device_commands() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+    emulator::Result send_command(const std::string &command, const std::string &parameters) override;
 };
 
 ComputerDevice * create_FDD(InterfaceManager *im, EmulatorConfigDevice *cd);

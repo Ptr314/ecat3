@@ -1,0 +1,182 @@
+# БК0011М + КНГМД: запись сектора через дисковый драйвер ПЗУ и чтение обратно.
+#
+# После загрузки ANDOS процессор останавливается, в ОЗУ кладется программа,
+# которая через вход 0160004 читает блок 0, пишет блок 1500 (дорожка 75) из
+# буфера с образцом, снова читает блок 0 и затем перечитывает блок 1500.
+# Промежуточное чтение блока 0 уводит головку с дорожки 75, поэтому записанная
+# дорожка успевает разобраться на секторы и попасть в образ дискеты, а обратное
+# чтение собирает ее из образа заново - так проверяется весь путь записи.
+# Образ на диске не меняется: fdd пишет только в память.
+#
+# Каждый вызов драйвера оставляет флаг C в ячейках 22000-22006: 0 - успех.
+# Код ошибки драйвера лежит в байте 52.
+# @timeout 60
+
+MACHINE "bk/BK-0011M-fdd.cfg"
+WAIT 12000
+COMMAND cpu.stop
+
+LOGDEFS 16,8
+PRINT "=== Программа по адресу 24000 ==="
+COMMAND ram0.set($2800, $17)
+COMMAND ram0.set($2801, $8D)    # MTPS #340            ; запретить прерывания: ANDOS в памяти больше не нужна
+COMMAND ram0.set($2802, $E0)
+COMMAND ram0.set($2803, $00)
+COMMAND ram0.set($2804, $C6)
+COMMAND ram0.set($2805, $15)    # MOV #27400,SP
+COMMAND ram0.set($2806, $00)
+COMMAND ram0.set($2807, $2F)
+COMMAND ram0.set($2808, $C3)
+COMMAND ram0.set($2809, $15)    # MOV #30000,R3
+COMMAND ram0.set($280A, $00)
+COMMAND ram0.set($280B, $30)
+COMMAND ram0.set($280C, $DF)
+COMMAND ram0.set($280D, $09)    # JSR PC,@#160010      ; инициализация рабочей области
+COMMAND ram0.set($280E, $08)
+COMMAND ram0.set($280F, $E0)
+COMMAND ram0.set($2810, $C3)
+COMMAND ram0.set($2811, $15)    # MOV #30000,R3        ; рабочая область драйвера
+COMMAND ram0.set($2812, $00)
+COMMAND ram0.set($2813, $30)
+COMMAND ram0.set($2814, $C0)
+COMMAND ram0.set($2815, $15)    # MOV #0,R0            ; номер блока
+COMMAND ram0.set($2816, $00)
+COMMAND ram0.set($2817, $00)
+COMMAND ram0.set($2818, $C1)
+COMMAND ram0.set($2819, $15)    # MOV #400,R1            ; число слов: >0 чтение, <0 запись
+COMMAND ram0.set($281A, $00)
+COMMAND ram0.set($281B, $01)
+COMMAND ram0.set($281C, $C2)
+COMMAND ram0.set($281D, $15)    # MOV #21000,R2            ; буфер
+COMMAND ram0.set($281E, $00)
+COMMAND ram0.set($281F, $22)
+COMMAND ram0.set($2820, $DF)
+COMMAND ram0.set($2821, $09)    # JSR PC,@#160004      ; чтение блока 0: заполняет размер сектора в рабочей области
+COMMAND ram0.set($2822, $04)
+COMMAND ram0.set($2823, $E0)
+COMMAND ram0.set($2824, $1F)
+COMMAND ram0.set($2825, $0A)    # CLR @#22000
+COMMAND ram0.set($2826, $00)
+COMMAND ram0.set($2827, $24)
+COMMAND ram0.set($2828, $5F)
+COMMAND ram0.set($2829, $0B)    # ADC @#22000              ; сюда попадает флаг C - признак ошибки
+COMMAND ram0.set($282A, $00)
+COMMAND ram0.set($282B, $24)
+COMMAND ram0.set($282C, $C3)
+COMMAND ram0.set($282D, $15)    # MOV #30000,R3        ; рабочая область драйвера
+COMMAND ram0.set($282E, $00)
+COMMAND ram0.set($282F, $30)
+COMMAND ram0.set($2830, $C0)
+COMMAND ram0.set($2831, $15)    # MOV #2734,R0            ; номер блока
+COMMAND ram0.set($2832, $DC)
+COMMAND ram0.set($2833, $05)
+COMMAND ram0.set($2834, $C1)
+COMMAND ram0.set($2835, $15)    # MOV #177400,R1            ; число слов: >0 чтение, <0 запись
+COMMAND ram0.set($2836, $00)
+COMMAND ram0.set($2837, $FF)
+COMMAND ram0.set($2838, $C2)
+COMMAND ram0.set($2839, $15)    # MOV #20000,R2            ; буфер
+COMMAND ram0.set($283A, $00)
+COMMAND ram0.set($283B, $20)
+COMMAND ram0.set($283C, $DF)
+COMMAND ram0.set($283D, $09)    # JSR PC,@#160004      ; запись блока 1500 (дорожка 75) образцом из 20000
+COMMAND ram0.set($283E, $04)
+COMMAND ram0.set($283F, $E0)
+COMMAND ram0.set($2840, $1F)
+COMMAND ram0.set($2841, $0A)    # CLR @#22002
+COMMAND ram0.set($2842, $02)
+COMMAND ram0.set($2843, $24)
+COMMAND ram0.set($2844, $5F)
+COMMAND ram0.set($2845, $0B)    # ADC @#22002              ; сюда попадает флаг C - признак ошибки
+COMMAND ram0.set($2846, $02)
+COMMAND ram0.set($2847, $24)
+COMMAND ram0.set($2848, $C3)
+COMMAND ram0.set($2849, $15)    # MOV #30000,R3        ; рабочая область драйвера
+COMMAND ram0.set($284A, $00)
+COMMAND ram0.set($284B, $30)
+COMMAND ram0.set($284C, $C0)
+COMMAND ram0.set($284D, $15)    # MOV #0,R0            ; номер блока
+COMMAND ram0.set($284E, $00)
+COMMAND ram0.set($284F, $00)
+COMMAND ram0.set($2850, $C1)
+COMMAND ram0.set($2851, $15)    # MOV #400,R1            ; число слов: >0 чтение, <0 запись
+COMMAND ram0.set($2852, $00)
+COMMAND ram0.set($2853, $01)
+COMMAND ram0.set($2854, $C2)
+COMMAND ram0.set($2855, $15)    # MOV #21000,R2            ; буфер
+COMMAND ram0.set($2856, $00)
+COMMAND ram0.set($2857, $22)
+COMMAND ram0.set($2858, $DF)
+COMMAND ram0.set($2859, $09)    # JSR PC,@#160004      ; чтение блока 0: уводит головку, записанная дорожка уходит в образ
+COMMAND ram0.set($285A, $04)
+COMMAND ram0.set($285B, $E0)
+COMMAND ram0.set($285C, $1F)
+COMMAND ram0.set($285D, $0A)    # CLR @#22004
+COMMAND ram0.set($285E, $04)
+COMMAND ram0.set($285F, $24)
+COMMAND ram0.set($2860, $5F)
+COMMAND ram0.set($2861, $0B)    # ADC @#22004              ; сюда попадает флаг C - признак ошибки
+COMMAND ram0.set($2862, $04)
+COMMAND ram0.set($2863, $24)
+COMMAND ram0.set($2864, $C3)
+COMMAND ram0.set($2865, $15)    # MOV #30000,R3        ; рабочая область драйвера
+COMMAND ram0.set($2866, $00)
+COMMAND ram0.set($2867, $30)
+COMMAND ram0.set($2868, $C0)
+COMMAND ram0.set($2869, $15)    # MOV #2734,R0            ; номер блока
+COMMAND ram0.set($286A, $DC)
+COMMAND ram0.set($286B, $05)
+COMMAND ram0.set($286C, $C1)
+COMMAND ram0.set($286D, $15)    # MOV #400,R1            ; число слов: >0 чтение, <0 запись
+COMMAND ram0.set($286E, $00)
+COMMAND ram0.set($286F, $01)
+COMMAND ram0.set($2870, $C2)
+COMMAND ram0.set($2871, $15)    # MOV #21000,R2            ; буфер
+COMMAND ram0.set($2872, $00)
+COMMAND ram0.set($2873, $22)
+COMMAND ram0.set($2874, $DF)
+COMMAND ram0.set($2875, $09)    # JSR PC,@#160004      ; чтение блока 1500 обратно в 21000
+COMMAND ram0.set($2876, $04)
+COMMAND ram0.set($2877, $E0)
+COMMAND ram0.set($2878, $1F)
+COMMAND ram0.set($2879, $0A)    # CLR @#22006
+COMMAND ram0.set($287A, $06)
+COMMAND ram0.set($287B, $24)
+COMMAND ram0.set($287C, $5F)
+COMMAND ram0.set($287D, $0B)    # ADC @#22006              ; сюда попадает флаг C - признак ошибки
+COMMAND ram0.set($287E, $06)
+COMMAND ram0.set($287F, $24)
+COMMAND ram0.set($2880, $FF)
+COMMAND ram0.set($2881, $01)    # BR .                 ; конец: сценарий ждет этот адрес
+
+PRINT "=== Образец для записи, буфер чтения и рабочая область ==="
+COMMAND ram0.fill($2000, $21FF, $A5)
+COMMAND ram0.set($2000, $45)
+COMMAND ram0.set($2001, $43)
+COMMAND ram0.set($2002, $41)
+COMMAND ram0.set($2003, $54)
+COMMAND ram0.set($2004, $33)
+COMMAND ram0.set($2005, $42)
+COMMAND ram0.set($2006, $4B)
+COMMAND ram0.set($2007, $21)
+COMMAND ram0.set($21FE, $12)
+COMMAND ram0.set($21FF, $34)
+COMMAND ram0.fill($2200, $2407, $00)
+COMMAND ram0.fill($3000, $3041, $00)
+COMMAND ram0.set($2A, $00)
+
+COMMAND cpu.setreg(PC, $2800)
+COMMAND cpu.run
+WAITFOR cpu.pc == $2880, 30000
+
+PRINT "=== Флаги C четырех вызовов, код ошибки, положение головки ==="
+LOG ram0.value($2400,$2407)
+LOG ram0.value($2A,$2A)
+LOG fdc.track
+LOG fdc.side
+LOG fdd0.track
+
+PRINT "=== Прочитанный обратно блок 1500: начало и конец ==="
+LOG ram0.value($2200,$221F)
+LOG ram0.value($23E0,$23FF)
+EXIT

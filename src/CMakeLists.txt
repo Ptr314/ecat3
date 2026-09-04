@@ -6,7 +6,19 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-project(eCat3 VERSION 3.6.0 LANGUAGES C CXX)
+# The version lives in the VERSION file at the repository root and is the
+# single source of truth: the release scripts and the browser build read the
+# same file, so none of them can drift from the executable.
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../VERSION" ECAT_VERSION LIMIT_COUNT 1)
+string(STRIP "${ECAT_VERSION}" ECAT_VERSION)
+if(NOT ECAT_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR "Cannot read the project version from ../VERSION: '${ECAT_VERSION}'")
+endif()
+# Without this a version bump would not trigger a reconfigure, and the number
+# compiled into globals.h would stay behind the one the release scripts use.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../VERSION")
+
+project(eCat3 VERSION ${ECAT_VERSION} LANGUAGES C CXX)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
@@ -28,15 +40,15 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         # add_compile_definitions(RENDERER_QT)
     endif()
 else()
-    option(RENDERER_SDL2 OFF)
+    option(RENDERER_SDL2 "Build with the SDL2 renderer" OFF)
     if(RENDERER_SDL2)
         add_compile_definitions(RENDERER_SDL2)
     endif()
-    option(RENDERER_QT OFF)
+    option(RENDERER_QT "Build with the Qt software renderer" OFF)
     if(RENDERER_QT)
         add_compile_definitions(RENDERER_QT)
     endif()
-    option(RENDERER_OPENGL OFF)
+    option(RENDERER_OPENGL "Build with the OpenGL renderer" OFF)
     if(RENDERER_OPENGL)
         add_compile_definitions(RENDERER_OPENGL)
     endif()
@@ -152,6 +164,7 @@ set(PROJECT_SOURCES
     ../BUILD.md
     ../MANUAL.md
     ../CONFIG.md
+    ../SCRIPTING.md
     ../HISTORY.md
 
     dialogs/dumparea.cpp dialogs/dumparea.h
@@ -171,6 +184,10 @@ set(PROJECT_SOURCES
     emulator/emulator.cpp emulator/emulator.h
     emulator/thread_compat.h
     emulator/utils.cpp emulator/utils.h
+    emulator/script/script_types.h
+    emulator/script/script_parser.cpp emulator/script/script_parser.h
+    emulator/script/script_log.cpp emulator/script/script_log.h
+    emulator/script/script_engine.cpp emulator/script/script_engine.h
     qt_utils.cpp qt_utils.h
     main.cpp
     mainwindow.cpp mainwindow.h mainwindow.ui
@@ -179,6 +196,7 @@ set(PROJECT_SOURCES
     dialogs/debugwindow.h dialogs/debugwindow.cpp dialogs/debugwindow.ui
     dialogs/disasmarea.h dialogs/disasmarea.cpp
     emulator/disasm.h emulator/disasm.cpp
+    emulator/disasm_pdp11.h emulator/disasm_pdp11.cpp
     dialogs/dialogs.h
     dialogs/keyvaluearea.h dialogs/keyvaluearea.cpp
     dialogs/portwindow.h dialogs/portwindow.cpp dialogs/portwindow.ui
@@ -186,6 +204,7 @@ set(PROJECT_SOURCES
     dialogs/openconfigwindow.h dialogs/openconfigwindow.cpp dialogs/openconfigwindow.ui
     emulator/devices/common/wd1793.h emulator/devices/common/wd1793.cpp
     emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp
+    emulator/devices/common/joystick.h emulator/devices/common/joystick.cpp
     libs/crc16.h libs/crc16.cpp
     emulator/devices/common/i8257.h
     emulator/devices/common/i8275.h
@@ -216,6 +235,8 @@ set(PROJECT_SOURCES
 
     emulator/devices/cpu/6502core.h emulator/devices/cpu/6502core.cpp
     emulator/devices/cpu/6502.h emulator/devices/cpu/6502.cpp
+    emulator/devices/cpu/pdp11_context.h emulator/devices/cpu/pdp11core.h emulator/devices/cpu/pdp11core.cpp
+    emulator/devices/cpu/k1801vm1.h emulator/devices/cpu/k1801vm1.cpp
 
     ${Z80_FILES}
     ${INI_FILES}
@@ -249,6 +270,9 @@ set(PROJECT_SOURCES
     emulator/devices/common/raster_display.h emulator/devices/common/raster_display.cpp
     emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
     emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp
+    emulator/devices/specific/bk_display.h emulator/devices/specific/bk_display.cpp
+    emulator/devices/specific/bk_timer.h emulator/devices/specific/bk_timer.cpp
+    emulator/devices/specific/bk_fdc.h emulator/devices/specific/bk_fdc.cpp
     emulator/devices/common/gmd70.h emulator/devices/common/gmd70.cpp
     emulator/devices/specific/agat_common.h
     emulator/devices/common/mux.h emulator/devices/common/mux.cpp
@@ -302,6 +326,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_RESOURCES}
     )
 
+    # Creates the update_translations and release_translations targets. lupdate
+    # is run over the sources of the target, so the build directories sitting
+    # inside the source tree are not scanned.
     qt_add_translations(${PROJECT_NAME} TS_FILES
         ${TS_FILES}
     )
@@ -328,8 +355,14 @@ else()
     if(UPDATE_TRANSLATIONS)
         find_program(LUPDATE_EXECUTABLE lupdate)
         if(LUPDATE_EXECUTABLE)
+            # lupdate is given the project sources instead of the source tree:
+            # scanning the tree would also walk the build directories that live
+            # inside it and fill the .ts files with generated code. This is what
+            # qt_add_translations does for Qt6.
+            set(LUPDATE_SOURCES ${PROJECT_SOURCES})
+            list(FILTER LUPDATE_SOURCES EXCLUDE REGEX [[\.(md|txt|qrc|png|ico|rc)$]])
             add_custom_target(update_translations
-                COMMAND ${LUPDATE_EXECUTABLE} ${CMAKE_SOURCE_DIR} -ts ${TS_FILES}
+                COMMAND ${LUPDATE_EXECUTABLE} ${LUPDATE_SOURCES} -ts ${TS_FILES}
                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
                 COMMENT "Updating translation files..."
             )

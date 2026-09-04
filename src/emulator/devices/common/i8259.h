@@ -36,6 +36,9 @@ public:
     void reset(bool cold) override;
     unsigned int get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };
 
 ComputerDevice * create_i8259(InterfaceManager *im, EmulatorConfigDevice *cd);

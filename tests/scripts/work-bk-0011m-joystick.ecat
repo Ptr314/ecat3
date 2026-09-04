@@ -1,0 +1,31 @@
+# БК0011М: джойстик на порту 0177714. Программа на БЕЙСИКе ждет ненулевого
+# значения PEEK(-52), печатает его и ждет отпускания, так что на каждую клавишу
+# приходится ровно одна строка: 1, 2, 4, 8 - стрелки, 16 - End (кнопка A),
+# 32 - Home (огонь), 64 - PgUp (дополнительный огонь), 128 - PgDn (кнопка B).
+# @timeout 40
+
+MACHINE "bk/BK-0011M.cfg"
+WAIT 4000
+
+TYPE "10 IF PEEK(-52)=0 THEN 10\n"
+TYPE "20 PRINT PEEK(-52)\n"
+TYPE "30 IF PEEK(-52)<>0 THEN 30\n"
+TYPE "40 GOTO 10\n"
+TYPE "RUN\n"
+WAIT 800
+
+KEY 200,300,up
+KEY 200,300,right
+KEY 200,300,down
+KEY 200,300,left
+KEY 200,300,end
+KEY 200,300,home
+KEY 200,300,pgup
+KEY 200,300,pgdn
+WAIT 500
+
+LOGDEFS 16,8
+LOG joystick.state
+LOG port-ppi.value
+SCREEN "../results/work-bk-0011m-joystick.png"
+EXIT

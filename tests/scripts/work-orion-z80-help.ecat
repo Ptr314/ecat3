@@ -1,0 +1,18 @@
+# Орион-128 Z80 Card II: CP/M с оболочкой Bridge Panels, окно помощи по F1.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+# @timeout 40
+
+MACHINE "orion-128/Orion-128-Z80.cfg"
+WAIT 9000
+
+KEY 300,100,f1
+WAIT 2000
+
+LOGDEFS 8,16
+LOG fdd0.track
+LOG fdc.status
+
+SCREEN "../results/work-orion-z80-help.png"
+EXIT

@@ -4,6 +4,7 @@
 // Description: Tape recorder window, source
 
 #include <QFileDialog>
+#include <QDir>
 #include <QProxyStyle>
 #include <QMovie>
 #include <QTimer>
@@ -148,7 +149,11 @@ void TapeRecorderWindow::on_buttonEject_pressed()
         if (!file_name.isEmpty()) {
             QFileInfo fi(file_name);
             QString ext = fi.suffix().toLower();
-            QString fmt = QString::fromStdString(e->read_setup("TapeFiles", ext.toStdString(), ""));
+            // A machine specific entry wins over the generic one, so the same
+            // extension can mean different things on different computers
+            QString fmt = QString::fromStdString(e->read_setup("TapeFiles", sd->system_type + "." + ext.toStdString(), ""));
+            if (fmt.isEmpty())
+                fmt = QString::fromStdString(e->read_setup("TapeFiles", ext.toStdString(), ""));
 
             if (fmt.length() > 0) {
                 e->write_setup("Startup", "last_path", fi.absolutePath().toStdString());
@@ -269,8 +274,12 @@ void TapeRecorderWindow::on_buttonRec_clicked()
     }
     d->set_recording(is_recording);
     if (!is_recording && d->get_record_size() != 0) {
-        const QString path = QString::fromStdString(e->read_setup("Startup", "last_path", e->work_path));
-        const QString file_name = QFileDialog::getSaveFileName(this, tr("Save recorded data"), path, "Binary files (*.bin);;All files (*.*)");
+        QString path = QString::fromStdString(e->read_setup("Startup", "last_path", e->work_path));
+        // The device knows what it has decoded, and for some formats the
+        // extension decides how the file is put back on the tape
+        const std::string suggested = d->get_record_name();
+        if (!suggested.empty()) path = QDir(path).filePath(QString::fromStdString(suggested));
+        const QString file_name = QFileDialog::getSaveFileName(this, tr("Save recorded data"), path, "Binary files (*.bin);;Text programs (*.asc);;All files (*.*)");
         if (!file_name.isEmpty()) {
             const QFileInfo fi(file_name);
             e->write_setup("Startup", "last_path", fi.absolutePath().toStdString());
