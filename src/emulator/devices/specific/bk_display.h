@@ -21,6 +21,7 @@ private:
     unsigned m_scroll_base;         // scroll register value that means "not scrolled"
     unsigned m_scroll;              // last seen scroll register value
     unsigned m_offset;              // first video line shown at the top
+    bool m_quarter;                 // only the top quarter of the screen is shown
     unsigned m_line_bytes;          // bytes of video memory per screen line
     unsigned m_lines;               // screen lines
     unsigned m_control;             // last seen value of the palette/page register
@@ -32,6 +33,8 @@ private:
     volatile bool m_mode_pending = false;
     bool m_pending_color = true;
 
+    unsigned source_line(unsigned line) const;
+    void render_line_blank(unsigned line, bool color) const;
     void render_line_mono(unsigned line, RAM * src) const;
     void render_line_color(unsigned line, RAM * src, unsigned palette) const;
 

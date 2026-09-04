@@ -45,6 +45,7 @@ BKDisplay::BKDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_scroll_base(0330)
     , m_scroll(0330)
     , m_offset(0)
+    , m_quarter(false)
     , m_line_bytes(64)
     , m_lines(256)
     , m_control(0)
@@ -169,6 +170,9 @@ void BKDisplay::clock(MAYBE_UNUSED unsigned int counter)
             // upper bits are just an unused carry and the subtraction below has
             // to come before the wrap.
             m_offset = (scroll - m_scroll_base) % m_lines;
+            // Bit 9 cleared leaves only the top quarter of the screen (64 lines)
+            // on the air; the rest of the raster stays dark
+            m_quarter = (scroll & 0x200) == 0;
             screen_valid = false;
             was_updated = true;
         }
@@ -212,8 +216,10 @@ void BKDisplay::render_all(const bool force_render)
     RAM * vmem = vram[m_page];
     if (vmem == nullptr) return;
 
+    const unsigned shown = m_quarter? (m_lines / 4) : m_lines;
     for (unsigned line = 0; line < m_lines; line++) {
-        if (color) render_line_color(line, vmem, palette);
+        if (line >= shown) render_line_blank(line, color);
+        else if (color) render_line_color(line, vmem, palette);
         else render_line_mono(line, vmem);
     }
 
@@ -221,9 +227,27 @@ void BKDisplay::render_all(const bool force_render)
     was_updated = true;
 }
 
+// Below the quarter screen the beam draws nothing
+void BKDisplay::render_line_blank(const unsigned line, const bool color) const
+{
+    uint8_t * base = static_cast<uint8_t*>(render_pixels) + line * line_bytes;
+    const unsigned width = color? (m_line_bytes * 4) : (m_line_bytes * 8);
+    for (unsigned i = 0; i < width; i++)
+        *reinterpret_cast<uint32_t*>(base + i * 4) = BK_RGBA2[0];
+}
+
+// Video line shown at a screen line. The quarter mode does not change the
+// addressing: the firmware itself points the scroll register at the last
+// quarter of the video memory (0070000-0077777), which is what the manuals
+// describe as the extended memory mode
+unsigned BKDisplay::source_line(const unsigned line) const
+{
+    return (line + m_offset) % m_lines;
+}
+
 void BKDisplay::render_line_mono(const unsigned line, RAM * vmem) const
 {
-    const unsigned src = ((line + m_offset) % m_lines) * m_line_bytes;
+    const unsigned src = source_line(line) * m_line_bytes;
     uint8_t * base = static_cast<uint8_t*>(render_pixels) + line * line_bytes;
 
     for (unsigned i = 0; i < m_line_bytes; i++) {
@@ -236,7 +260,7 @@ void BKDisplay::render_line_mono(const unsigned line, RAM * vmem) const
 
 void BKDisplay::render_line_color(const unsigned line, RAM * vmem, const unsigned palette) const
 {
-    const unsigned src = ((line + m_offset) % m_lines) * m_line_bytes;
+    const unsigned src = source_line(line) * m_line_bytes;
     uint8_t * base = static_cast<uint8_t*>(render_pixels) + line * line_bytes;
     const uint32_t * colors = BK_RGBA4[palette];
 
