@@ -44,6 +44,9 @@ ScriptEngine::ScriptEngine(Emulator * e):
     , m_finished(false)
     , m_exit_requested(false)
     , m_exit_code(0)
+    , m_interactive(false)
+    , m_done_pc(0)
+    , m_sink(nullptr)
     , m_now(0)
     , m_resume_at(0)
     , m_ticks_per_ms(1000)
@@ -80,7 +83,37 @@ bool ScriptEngine::is_active() const                           { return active_s
 
 bool ScriptEngine::active_state(int s) const
 {
+    //StateWaiting is deliberately not active: the lock free path of tick()
+    //returns at once, the buffer editors keep their guards and is_active()
+    //reports what the transport controls expect. A parked interactive session
+    //therefore costs exactly what a finished script costs
     return s == StateRunning || s == StateDelay || s == StateKeys || s == StateWaitFor || s == StateScreenshot;
+}
+
+bool ScriptEngine::is_interactive() const                      { return m_interactive; }
+size_t ScriptEngine::get_done_pc() const                       { return m_done_pc; }
+int  ScriptEngine::get_state() const                           { return m_state; }
+
+const char * ScriptEngine::state_name(int state)
+{
+    switch (state)
+    {
+        case StateIdle:       return "idle";
+        case StateRunning:    return "running";
+        case StateDelay:      return "delay";
+        case StateKeys:       return "keys";
+        case StateWaitFor:    return "waitfor";
+        case StateScreenshot: return "screenshot";
+        case StatePaused:     return "paused";
+        case StateFinished:   return "finished";
+        case StateWaiting:    return "waiting";
+        default:              return "unknown";
+    }
+}
+
+void ScriptEngine::set_sink(ScriptSink * sink)
+{
+    m_sink = sink;
 }
 
 const std::vector<ScriptCommand> & ScriptEngine::get_commands() const { return m_commands; }
@@ -137,6 +170,7 @@ void ScriptEngine::clear_locked()
     m_path.clear();
     m_log.reset();
     m_pc = 0;
+    m_done_pc = 0;
     m_state = StateIdle;
     m_finished = false;
     m_exit_requested = false;
@@ -190,9 +224,59 @@ void ScriptEngine::seek(size_t pc)
     m_play_from_pending = false;
 }
 
+//------------------------ Interactive (external) mode ---------------------//
+
+void ScriptEngine::set_interactive(bool on)
+{
+    compat_lock_guard lock(m_mutex);
+    m_interactive = on;
+    if (on && m_state == StateFinished && !m_exit_requested)
+    {
+        //A session that ran out of commands is armed again
+        m_state = StateWaiting;
+        m_finished = false;
+    }
+    if (!on && m_state == StateWaiting) finish();
+}
+
+size_t ScriptEngine::submit(const ScriptCommand &c)
+{
+    compat_lock_guard lock(m_mutex);
+    const size_t index = m_commands.size();
+    //push_back may reallocate, and tick() holds a reference into m_commands
+    //while a command runs. Both sides are inside this mutex, so no reference
+    //is ever alive across the reallocation
+    m_commands.push_back(c);
+    if (m_commands.size() == 1) refresh_machine();
+    //The engine parks at the end of the buffer, so it has to be nudged. Any
+    //other state already has a command pending and will get here by itself
+    if (m_state == StateWaiting) m_state = StateRunning;
+    return index;
+}
+
+void ScriptEngine::interrupt()
+{
+    compat_lock_guard lock(m_mutex);
+    if (!active_state(m_state) && m_state != StateWaiting) return;
+    release_keys();
+    //Everything still queued is dropped as well: a batch that was abandoned
+    //half way has already been reported as failed, and running its tail later,
+    //out of context, would be worse than not running it at all
+    m_pc = m_commands.size();
+    m_done_pc = m_pc.load();
+    if (m_interactive) {
+        m_state = StateWaiting;
+    } else {
+        m_state = StateFinished;
+        m_finished = true;
+    }
+}
+
 void ScriptEngine::log(const std::string &s)
 {
     if (m_log) m_log->write(s);
+    ScriptSink * sink = m_sink.load();
+    if (sink) sink->write(s, m_pc.load());
 }
 
 void ScriptEngine::log_error(const ScriptCommand &c, const std::string &text)
@@ -222,6 +306,7 @@ void ScriptEngine::start(uint64_t clock_now)
     m_poll_at = 0;
     m_resume_at = 0;
     m_pc = 0;
+    m_done_pc = 0;
     m_finished = false;
     m_exit_requested = false;
     m_exit_code = 0;
@@ -255,8 +340,9 @@ void ScriptEngine::resume(uint64_t clock_now)
     }
     else
     {
-        //After stop() or at the very beginning
-        if (m_pc >= m_commands.size()) m_pc = 0;
+        //After stop() or at the very beginning. An interactive buffer is a
+        //queue, not a recording: rewinding it would replay the whole session
+        if (!m_interactive && m_pc >= m_commands.size()) m_pc = 0;
         m_play_base_ms = script_duration_ms(m_commands, 0, m_pc);
         m_resume_pending = false;
     }
@@ -290,6 +376,9 @@ void ScriptEngine::pause()
         m_play_base_ms += (m_now - m_play_from) / m_ticks_per_ms;
     m_play_from_pending = false;
 
+    //A driver blocked on the command that is being paused must not hang
+    m_done_pc = m_pc.load();
+
     m_state = StatePaused;
 }
 
@@ -300,6 +389,7 @@ void ScriptEngine::stop()
     if (!m_play_from_pending && active_state(m_state) && m_now > m_play_from)
         m_play_base_ms += (m_now - m_play_from) / m_ticks_per_ms;
     m_play_from_pending = false;
+    m_done_pc = m_pc.load();
     m_state = StateFinished;
     m_finished = true;
 }
@@ -307,6 +397,7 @@ void ScriptEngine::stop()
 void ScriptEngine::finish()
 {
     release_keys();
+    m_done_pc = m_pc.load();
     m_state = StateFinished;
     m_finished = true;
 }
@@ -373,6 +464,10 @@ void ScriptEngine::tick(uint64_t clock_counter)
 
     for (;;)
     {
+        //StateRunning is only reached when the previous command is over,
+        //asynchronous part included, so everything before m_pc has finished
+        if (m_state == StateRunning) m_done_pc = m_pc.load();
+
         switch (m_state)
         {
             case StateDelay:
@@ -405,7 +500,15 @@ void ScriptEngine::tick(uint64_t clock_counter)
 
             case StateRunning:
             {
-                if (m_pc >= m_commands.size()) { finish(); return; }
+                if (m_pc >= m_commands.size())
+                {
+                    //Interactive: park and wait for the driver to submit more.
+                    //The keys held by KEYDOWN stay down on purpose - the pause
+                    //between two submitted commands is not the end of anything
+                    if (m_interactive) { m_state = StateWaiting; return; }
+                    finish();
+                    return;
+                }
                 const ScriptCommand &c = m_commands[m_pc++];
                 emulator::Result res = execute(c);
                 if (!res) log_error(c, res.message);
@@ -744,6 +847,11 @@ emulator::Result ScriptEngine::do_screen(const ScriptCommand &c)
         ? ("screen-" + timestamp_string() + ".png")
         : c.args[0];
 
+    //"-" asks for the image without a file: an external driver reads the bytes
+    //back with Emulator::take_screenshot_png()
+    if (name == "-")
+        name.clear();
+    else
     //Relative names are stored next to the script
     if (!is_absolute_path(name)) name = m_path + name;
 

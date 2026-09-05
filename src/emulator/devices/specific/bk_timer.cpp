@@ -12,6 +12,9 @@
 #define REG_COUNTER 2
 #define REG_CONTROL 4
 
+// Bits 5-6 of the control register divide the counting rate by 1, 16, 4 or 64
+static const unsigned int TIMER_RATES[4] = {1, 16, 4, 64};
+
 BKTimer::BKTimer(InterfaceManager *im, EmulatorConfigDevice *cd):
     AddressableDevice(im, cd)
     , i_out(this, im, 1, "out", MODE_W)
@@ -59,10 +62,8 @@ void BKTimer::tick()
 
     if ((m_control & BK_TIMER_ENABLE) == 0) return;
 
-    // Bits 5-6 divide the counting rate by 1, 16, 4 or 64
-    static const unsigned int rates[4] = {1, 16, 4, 64};
     m_prescaler++;
-    if (m_prescaler < rates[(m_control >> BK_TIMER_DIV_SHIFT) & BK_TIMER_DIV_MASK]) return;
+    if (m_prescaler < TIMER_RATES[(m_control >> BK_TIMER_DIV_SHIFT) & BK_TIMER_DIV_MASK]) return;
     m_prescaler = 0;
 
     m_counter--;
@@ -139,6 +140,72 @@ void BKTimer::set_value(unsigned int address, unsigned int value, bool force)
 unsigned int BKTimer::get_direct(unsigned int address)
 {
     return get_value_word(address);
+}
+
+std::vector<DeviceFieldInfo> BKTimer::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
+    r.push_back({"preset",    "Reload value, register 0177706",                       false});
+    r.push_back({"counter",   "Current count, register 0177710",                      false});
+    r.push_back({"control",   "Control register 0177712, raw",                        false});
+    r.push_back({"flags",     "Control register decoded as name=value pairs",         false});
+    r.push_back({"rate",      "Count rate divider selected by bits 5-6: 1, 16, 4, 64", false});
+    r.push_back({"divider",   "System clock ticks per timer tick",                    false});
+    r.push_back({"out",       "State of the out line, the flag that can interrupt",   false});
+    return r;
+}
+
+bool BKTimer::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    //The three registers are 16 bit, so they ignore an 8 bit LOGDEFS width
+    if (field == "preset" || field == "counter" || field == "control")
+    {
+        out.numeric = true;
+        out.width = 16;
+        if (field == "preset")       out.values.push_back(m_preset);
+        else if (field == "counter") out.values.push_back(m_counter);
+        else                         out.values.push_back(m_control);
+        return true;
+    }
+
+    if (field == "rate")
+    {
+        out.numeric = true;
+        out.values.push_back(TIMER_RATES[(m_control >> BK_TIMER_DIV_SHIFT) & BK_TIMER_DIV_MASK]);
+        return true;
+    }
+
+    if (field == "divider")
+    {
+        out.numeric = true;
+        out.values.push_back(m_divider);
+        return true;
+    }
+
+    if (field == "out")
+    {
+        out.numeric = true;
+        out.values.push_back(i_out.value & 1);
+        return true;
+    }
+
+    //Rendered the way a CPU renders its flags: the control register is a set of
+    //named bits, and reading them out of a hex value every time is a waste
+    if (field == "flags")
+    {
+        out.numeric = false;
+        out.text =
+            std::string("PRESET=")   + ((m_control & BK_TIMER_PRESET)   ? "1" : "0")
+                     + " WRAP="      + ((m_control & BK_TIMER_WRAP)     ? "1" : "0")
+                     + " INDICATE="  + ((m_control & BK_TIMER_INDICATE) ? "1" : "0")
+                     + " ONESHOT="   + ((m_control & BK_TIMER_ONESHOT)  ? "1" : "0")
+                     + " ENABLE="    + ((m_control & BK_TIMER_ENABLE)   ? "1" : "0")
+                     + " FLAG="      + ((m_control & BK_TIMER_FLAG)     ? "1" : "0")
+                     + " RATE="      + std::to_string(TIMER_RATES[(m_control >> BK_TIMER_DIV_SHIFT) & BK_TIMER_DIV_MASK]);
+        return true;
+    }
+
+    return AddressableDevice::get_field(field, from, to, out);
 }
 
 ComputerDevice * create_bk_timer(InterfaceManager *im, EmulatorConfigDevice *cd)

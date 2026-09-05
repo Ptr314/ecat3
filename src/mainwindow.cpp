@@ -41,6 +41,10 @@
 
 #include "libs/lodepng/lodepng.h"
 
+#ifdef ENABLE_MCP
+    #include "mcp_bridge.h"
+#endif
+
 #ifdef RENDERER_SDL2
     #include "renderers/renderer_sdl2.h"
 #elif defined(RENDERER_QT)
@@ -332,6 +336,12 @@ void MainWindow::showEvent(QShowEvent* event)
     if (first_show) {
         // We use this trick to ensure that all interface elements already have their final dimensions (especially on Linux).
         first_show = false;
+
+#ifdef ENABLE_MCP
+        //The machine comes from the client, not from the ini file: loading the
+        //default one first would cost a second machine bring-up every session
+        if (mcp_mode) return;
+#endif
 
         //The script is parsed before the machine is loaded: its MACHINE command
         //may name the configuration to start with
@@ -842,9 +852,16 @@ void MainWindow::load_config(QString file_name, bool set_default)
 
     emulator::Result res = e->load_config(file_name.toStdString());
     if (!res) {
+#ifdef ENABLE_MCP
+        //A modal box here would block the GUI thread that the MCP client is
+        //waiting on, so the error is reported through the protocol instead
+        if (mcp_mode) { mcp_load_error = translateResultMessage(res.message); return; }
+#endif
         QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
         return;
     }
+
+    cur_config = file_name;
 
     set_title();
 
@@ -1181,6 +1198,20 @@ void MainWindow::rec_refresh_total()
 
 void MainWindow::rec_update_ui()
 {
+#ifdef ENABLE_MCP
+    if (mcp_mode)
+    {
+        //The external driver owns the command buffer. A human pressing Rewind
+        //would call truncate() / seek() under its feet
+        QAction * rec_actions[] = {ui->actionRecOpen, ui->actionRecSave, ui->actionRecord,
+                                   ui->actionRecPlay, ui->actionRecRewind, ui->actionRecStop};
+        for (size_t i = 0; i < sizeof(rec_actions) / sizeof(rec_actions[0]); i++)
+            rec_actions[i]->setEnabled(false);
+        rec_label->setVisible(false);
+        return;
+    }
+#endif
+
     ScriptEngine * s = e->script_engine();
     const bool empty = (s->size() == 0);
     const size_t pc = s->get_pc();
@@ -1479,3 +1510,52 @@ void MainWindow::on_actionRecPanel_toggled(bool checked)
     if (e != nullptr) e->write_setup("Video", "recording_panel", checked?"1":"0");
 }
 
+
+#ifdef ENABLE_MCP
+
+//---------------------------- MCP server ----------------------------------//
+
+void MainWindow::enable_mcp(bool trace)
+{
+    mcp_mode = true;
+    //A session driven from outside must leave the working tree as it found it
+    e->set_settings_readonly(true);
+    //The recording transport must not touch the command buffer any more
+    rec_ui_shown = false;
+    rec_update_ui();
+
+    mcp_bridge = new McpBridge(this, trace);
+    mcp_bridge->start();
+}
+
+void MainWindow::mcp_show_window()
+{
+    //The renderer is attached to the widget, so the window has to exist before
+    //a machine is brought up. It is only shown when a machine is asked for
+    if (!isVisible()) show();
+}
+
+QString MainWindow::mcp_current_machine() const
+{
+    return cur_config;
+}
+
+QString MainWindow::mcp_load_config(const QString &file_name)
+{
+    mcp_show_window();
+
+    mcp_load_error.clear();
+    load_config(resolve_startup_path(file_name), false);
+
+    if (!mcp_load_error.isEmpty()) return mcp_load_error;
+    if (!e->loaded) return tr("The configuration did not load.");
+
+    if (!mcp_screen_menu)
+    {
+        CreateScreenMenu();
+        mcp_screen_menu = true;
+    }
+    return QString();
+}
+
+#endif

@@ -240,6 +240,48 @@ void MapKeyboard::reset(bool cool)
         set_rus(false);
 }
 
+std::vector<DeviceFieldInfo> MapKeyboard::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = Keyboard::get_device_fields();
+    r.push_back({"shift", "1 while Shift is held",                     false});
+    r.push_back({"ctrl",  "1 while Ctrl is held",                      false});
+    r.push_back({"held",  "Codes of the keys currently down",          false});
+    r.push_back({"count", "How many keys are currently down",          false});
+    return r;
+}
+
+bool MapKeyboard::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "shift" || field == "ctrl")
+    {
+        out.numeric = true;
+        out.values.push_back(((field == "shift") ? shift_pressed : ctrl_pressed) ? 1 : 0);
+        return true;
+    }
+
+    //A key that a script pressed and never released is invisible otherwise,
+    //and it changes everything typed afterwards
+    if (field == "held")
+    {
+        out.numeric = true;
+        //The codes match Qt::Key, so the modifiers live above bit 16 and a
+        //narrower width would quietly cut them off
+        out.width = 32;
+        for (size_t i = 0; i < keys_held.size(); i++) out.values.push_back(keys_held[i]);
+        if (keys_held.empty()) out.values.push_back(0);
+        return true;
+    }
+
+    if (field == "count")
+    {
+        out.numeric = true;
+        out.values.push_back(static_cast<unsigned int>(keys_held.size()));
+        return true;
+    }
+
+    return Keyboard::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_mapkeyboard(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new MapKeyboard(im, cd);
 }

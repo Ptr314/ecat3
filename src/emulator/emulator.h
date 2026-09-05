@@ -68,8 +68,14 @@ private:
 
     std::unique_ptr<ScriptEngine> script;
     std::unique_ptr<ScriptRecorder> recorder;
+    //An empty file name no longer means "nothing was asked for": an external
+    //driver wants the bytes without a file, so the request is a flag of its own
     std::string m_screenshot_file;              //Guarded by m_screenshot_mutex
+    bool m_screenshot_requested = false;        //Guarded by m_screenshot_mutex
+    std::vector<unsigned char> m_screenshot_png;//Guarded; the last image encoded
+    uint64_t m_screenshot_serial = 0;           //Guarded; incremented for every image
     compat_mutex m_screenshot_mutex;
+    bool m_settings_readonly = false;
     void store_screenshot();
 
 public:
@@ -94,6 +100,10 @@ public:
 
     std::string read_setup(std::string section, std::string ident, std::string def_val);
     void write_setup(std::string section, std::string ident, std::string new_val);
+
+    //An external driver runs many short sessions in the working tree, and
+    //every one of them would otherwise rewrite the ini file
+    void set_settings_readonly(bool on) { m_settings_readonly = on; }
     void load_charmap();
     const std::string & translate_char(unsigned int system_code);
 
@@ -152,9 +162,14 @@ public:
     void record_verb(unsigned int verb, const std::vector<std::string> &args);
     void record_verb_at(unsigned int verb, const std::vector<std::string> &args, uint64_t clock);
 
-    //Asks the render thread to store the current screen as a PNG file
+    //Asks the render thread to store the current screen as a PNG. An empty
+    //file name keeps the image in memory only, see take_screenshot_png()
     void request_screenshot(const std::string &file_name);
     bool is_screenshot_pending();
+
+    //Copies the last image the render thread produced. The serial tells the
+    //caller whether it is looking at its own image or at an older one
+    bool take_screenshot_png(std::vector<unsigned char> &out, uint64_t * serial = nullptr);
 
 private:
 public:

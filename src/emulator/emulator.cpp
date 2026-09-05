@@ -94,6 +94,9 @@ std::string Emulator::read_setup(std::string section, std::string ident, std::st
 void Emulator::write_setup(std::string section, std::string ident, std::string new_val)
 {
     settings.set(section, ident, new_val);
+    //The value stays in memory, so the running machine sees it; only the file
+    //is left alone
+    if (m_settings_readonly) return;
     settings.save();
 }
 
@@ -505,6 +508,13 @@ void Emulator::timer_proc(uint64_t time_ticks)
                 if (script) script->tick(clock_counter);
             } else {
                 local_counter += 10;
+
+                //A stopped CPU produces no cycles, but the script engine still
+                //has to run: the commands that need no emulated time are how a
+                //debugging session steps, inspects and starts the CPU again.
+                //The delays stay frozen, which is the honest behaviour - they
+                //are counted in emulated time and that is what has stopped
+                if (script) script->tick(clock_counter);
             }
         }
         mm->sort_cache();
@@ -593,12 +603,22 @@ void Emulator::request_screenshot(const std::string &file_name)
 {
     compat_lock_guard lock(m_screenshot_mutex);
     m_screenshot_file = file_name;
+    m_screenshot_requested = true;
 }
 
 bool Emulator::is_screenshot_pending()
 {
     compat_lock_guard lock(m_screenshot_mutex);
-    return !m_screenshot_file.empty();
+    return m_screenshot_requested;
+}
+
+bool Emulator::take_screenshot_png(std::vector<unsigned char> &out, uint64_t * serial)
+{
+    compat_lock_guard lock(m_screenshot_mutex);
+    if (serial != nullptr) *serial = m_screenshot_serial;
+    if (m_screenshot_png.empty()) return false;
+    out = m_screenshot_png;
+    return true;
 }
 
 void Emulator::store_screenshot()
@@ -606,7 +626,7 @@ void Emulator::store_screenshot()
     std::string file_name;
     {
         compat_lock_guard lock(m_screenshot_mutex);
-        if (m_screenshot_file.empty()) return;
+        if (!m_screenshot_requested) return;
         file_name = m_screenshot_file;
     }
 
@@ -622,6 +642,7 @@ void Emulator::store_screenshot()
         std::cerr << "Screenshot buffer does not match the screen size, skipped" << std::endl;
         compat_lock_guard lock(m_screenshot_mutex);
         m_screenshot_file.clear();
+        m_screenshot_requested = false;
         return;
     }
 
@@ -630,12 +651,20 @@ void Emulator::store_screenshot()
     if (error != 0)
         std::cerr << "Unable to encode a screenshot: " << lodepng_error_text(error) << std::endl;
     else
-    if (lodepng::save_file(png, file_name) != 0)
-        std::cerr << "Unable to write a screenshot to " << file_name << std::endl;
+    {
+        //The file is optional: an external driver asks for the bytes instead
+        if (!file_name.empty() && lodepng::save_file(png, file_name) != 0)
+            std::cerr << "Unable to write a screenshot to " << file_name << std::endl;
 
-    //Cleared last: the script waits for this to know the file has been written
+        compat_lock_guard lock(m_screenshot_mutex);
+        m_screenshot_png.swap(png);
+        m_screenshot_serial++;
+    }
+
+    //Cleared last: the script waits for this to know the image is ready
     compat_lock_guard lock(m_screenshot_mutex);
     m_screenshot_file.clear();
+    m_screenshot_requested = false;
 }
 
 void Emulator::resize_screen()

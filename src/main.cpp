@@ -5,8 +5,11 @@
 
 #include "mainwindow.h"
 
+#include <iostream>
+
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QDir>
 #include <QFileInfo>
 #include <QLocale>
 #include <QTranslator>
@@ -49,7 +52,45 @@ int main(int argc, char *argv[])
     parser.addPositionalArgument(QCoreApplication::translate("main", "file"),
         QCoreApplication::translate("main", "A .cfg configuration or a .ecat script."));
 
+    //Registered whatever the build: an MCP client launches the executable
+    //with --mcp, and a build without the server has to say so on stderr and
+    //exit rather than pop up a modal "unknown option" box that nobody sees
+    QCommandLineOption mcpOption(QStringList() << "mcp",
+        QCoreApplication::translate("main", "Act as an MCP server on stdin/stdout, needs a build with ENABLE_MCP, see MCP.md."));
+    parser.addOption(mcpOption);
+
+    QCommandLineOption mcpTraceOption(QStringList() << "mcp-trace",
+        QCoreApplication::translate("main", "Print the MCP conversation to stderr."));
+    parser.addOption(mcpTraceOption);
+
+    QCommandLineOption workdirOption(QStringList() << "workdir",
+        QCoreApplication::translate("main", "Directory to work in, normally the one holding computers/."),
+        QCoreApplication::translate("main", "directory"));
+    parser.addOption(workdirOption);
+
     parser.process(a);
+
+    const bool mcp_mode  = parser.isSet(mcpOption);
+    const bool mcp_trace = parser.isSet(mcpTraceOption);
+
+#ifndef ENABLE_MCP
+    if (mcp_mode)
+    {
+        std::cerr << "This build has no MCP server. Rebuild with -DENABLE_MCP=ON, see MCP.md."
+                  << std::endl;
+        return 2;
+    }
+#endif
+
+    //Set before the main window is built: it resolves the emulator root and
+    //the ini file against the current directory
+    const QString workdir = parser.value(workdirOption);
+    if (!workdir.isEmpty() && !QDir::setCurrent(workdir))
+    {
+        std::cerr << "Unable to change the working directory to "
+                  << workdir.toStdString() << std::endl;
+        return 2;
+    }
 
     QString config_file = parser.value(configOption);
     QString script_file = parser.value(scriptOption);
@@ -75,6 +116,18 @@ int main(int argc, char *argv[])
 
     MainWindow w(config_file, script_file);
     w.setWindowIcon(QIcon(":/icons/tv"));
+
+#ifdef ENABLE_MCP
+    if (mcp_mode)
+    {
+        //No show(): the window appears when the client asks for a machine, so
+        //that a session that never touches the emulator costs nothing visible
+        w.enable_mcp(mcp_trace);
+    }
+    else
+#else
+    (void)mcp_trace;
+#endif
     w.show();
 
     int RetVal = a.exec();

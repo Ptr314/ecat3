@@ -153,6 +153,9 @@ public:
 
     void VSYNC(const unsigned sync_val) override;
     void HSYNC(const unsigned line, const unsigned sync_val) override;
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };
 
 ComputerDevice * create_agat_9_display(InterfaceManager *im, EmulatorConfigDevice *cd);

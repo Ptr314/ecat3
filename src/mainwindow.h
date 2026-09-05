@@ -31,6 +31,18 @@ public:
 
     Emulator *e;
 
+#ifdef ENABLE_MCP
+    //Starts the MCP server. Called before show(): in this mode the window
+    //stays hidden until the client asks for a machine
+    void enable_mcp(bool trace);
+
+    //Called by McpBridge on the GUI thread. mcp_load_config() returns an error
+    //message, empty on success
+    QString mcp_load_config(const QString &file_name);
+    QString mcp_current_machine() const;
+    void    mcp_show_window();
+#endif
+
 protected:
     void keyPressEvent( QKeyEvent * event) override;
     void keyReleaseEvent( QKeyEvent * event) override;
@@ -123,6 +135,14 @@ private:
 
     bool first_show = true;
     QString first_config;
+    QString cur_config;                 //Configuration currently loaded
+
+#ifdef ENABLE_MCP
+    bool mcp_mode = false;
+    bool mcp_screen_menu = false;       //CreateScreenMenu() must run once only
+    QString mcp_load_error;             //Filled instead of showing a message box
+    class McpBridge * mcp_bridge = nullptr;
+#endif
 
     //Set from the command line, see main.cpp
     QString cmdline_config;

@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 // Detection: MinGW < 5 ships Win32 threading model without std::thread/std::mutex.
 // Manual overrides allow testing either path on any compiler.
 #if defined(FORCE_QT_THREADING)
@@ -58,12 +60,39 @@ private:
 
 typedef QMutex compat_mutex;
 
+// Wall clock helpers. An external driver waiting for a command to complete
+// needs a real timeout: emulated time stops when the CPU does, so a wait
+// counted in emulated milliseconds would never expire on a wedged machine
+inline void compat_sleep_ms(unsigned int ms)
+{
+    QThread::msleep(ms);
+}
+
+inline uint64_t compat_now_ms()
+{
+    static QElapsedTimer timer;
+    if (!timer.isValid()) timer.start();
+    return static_cast<uint64_t>(timer.elapsed());
+}
+
 #else // USE_QT_THREADING == 0
 
 #include <thread>
 #include <mutex>
+#include <chrono>
 
 typedef std::mutex compat_mutex;
+
+inline void compat_sleep_ms(unsigned int ms)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
+
+inline uint64_t compat_now_ms()
+{
+    return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count());
+}
 
 #endif
 

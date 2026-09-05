@@ -33,6 +33,9 @@ public:
     virtual void memory_callback(unsigned int callback_id, unsigned int address) override;
 
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };
 
 ComputerDevice * create_o128display(InterfaceManager *im, EmulatorConfigDevice *cd);

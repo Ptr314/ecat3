@@ -184,6 +184,63 @@ void ScanKeyboard::set_rus(bool new_rus)
     Keyboard::set_rus(new_rus);
 }
 
+std::vector<DeviceFieldInfo> ScanKeyboard::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = Keyboard::get_device_fields();
+    r.push_back({"scan",   "Value driven onto the scan lines",           false});
+    r.push_back({"out",    "Value the matrix answers with",              false});
+    r.push_back({"shift",  "1 while Shift is held",                      false});
+    r.push_back({"ctrl",   "1 while Ctrl is held",                       false});
+    r.push_back({"ruslat", "State of the Rus/Lat line",                  false});
+    r.push_back({"matrix", "The key matrix, one value per scan line. A bit is 0 while its key is down", true});
+    r.push_back({"count",  "How many keys of the matrix are down",       false});
+    return r;
+}
+
+bool ScanKeyboard::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "scan" || field == "out" || field == "shift" || field == "ctrl" || field == "ruslat")
+    {
+        out.numeric = true;
+        if (field == "scan")        out.values.push_back(i_scan.value);
+        else if (field == "out")    out.values.push_back(i_output.value);
+        else if (field == "shift")  out.values.push_back(i_shift.value);
+        else if (field == "ctrl")   out.values.push_back(i_ctrl.value);
+        else                        out.values.push_back(i_ruslat.value);
+        return true;
+    }
+
+    //The matrix is what a key that does not arrive, or one that never goes up,
+    //actually looks like from the machine side
+    if (field == "matrix" || field == "count")
+    {
+        const unsigned int lines = (scan_lines < 15) ? scan_lines : 15;
+
+        if (field == "count")
+        {
+            //The matrix is active low: a key pulls its bit to zero, and only
+            //the columns the machine actually has are wired
+            unsigned int n = 0;
+            for (unsigned int i = 0; i < lines; i++)
+                for (unsigned int b = 0; b < out_lines && b < 16; b++)
+                    if (((key_array[i] >> b) & 1) == 0) n++;
+            out.numeric = true;
+            out.values.push_back(n);
+            return true;
+        }
+
+        if (to >= lines) to = (lines > 0) ? lines - 1 : 0;
+        if (from > to) from = to;
+        out.numeric = true;
+        out.has_start = true;
+        out.start = from;
+        for (unsigned int i = from; i <= to; i++) out.values.push_back(key_array[i]);
+        return true;
+    }
+
+    return Keyboard::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_scankeyboard(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new ScanKeyboard(im, cd);
 }

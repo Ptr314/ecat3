@@ -6,7 +6,12 @@
 # libraries it actually needs, and a shared build keeps compatibility with a
 # wider range of distributions (see BUILD.md).
 #
-# Usage: ./build-linux.sh [clean]
+# Usage: ./build-linux.sh [clean] [mcp]
+#
+#   mcp   build with the MCP server (-DENABLE_MCP=ON). Only the OpenGL renderer
+#         supports it in a windowed build, so the others are skipped. The console
+#         build is not packaged here; configure it by hand with
+#         -DENABLE_GUI=OFF -DENABLE_HEADLESS=ON, see MCP.md
 
 set -euo pipefail
 
@@ -18,6 +23,11 @@ LINUXDEPLOYQT="${HOME}/Downloads/linuxdeployqt-continuous-x86_64.AppImage"
 # SDL2 is not built here: the AppImage would have to carry libSDL2, and the Qt
 # and OpenGL renderers already cover this platform.
 RENDERERS=("qt" "opengl")
+
+ENABLE_MCP="OFF"
+for arg in "$@"; do
+    if [ "${arg}" = "mcp" ]; then ENABLE_MCP="ON"; fi
+done
 
 cd "$(dirname "$0")"
 BUILD_ROOT="$(pwd)"
@@ -48,8 +58,15 @@ for RENDERER in "${RENDERERS[@]}"; do
     echo
     echo "=== Renderer: ${RENDERER}"
 
+    # A windowed MCP build is only supported on OpenGL, see MCP.md
+    if [ "${ENABLE_MCP}" = "ON" ] && [ "${RENDERER}" != "opengl" ]; then
+        echo "=== Skipping ${RENDERER}: an MCP build needs the OpenGL renderer"
+        continue
+    fi
+
     BUILD_DIR="${BUILD_ROOT}/build/${PLATFORM}-${ARCHITECTURE}-${RENDERER}"
     RELEASE_NAME="ecat-${APP_VERSION}-${PLATFORM}-${ARCHITECTURE}-${RENDERER}"
+    if [ "${ENABLE_MCP}" = "ON" ]; then RELEASE_NAME="${RELEASE_NAME}-mcp"; fi
     RELEASE_DIR="${BUILD_ROOT}/release/${RELEASE_NAME}.AppDir"
     RESOURCES="${RELEASE_DIR}/usr/share/ecat"
 
@@ -62,7 +79,7 @@ for RENDERER in "${RENDERERS[@]}"; do
     cmake -S ../src -B "${BUILD_DIR}" -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_PREFIX_PATH="${QT_PATH}" \
-        -DRENDERER_${RENDERER^^}=1
+        -DRENDERER_${RENDERER^^}=1 \n        -DENABLE_MCP=${ENABLE_MCP}
     cmake --build "${BUILD_DIR}"
 
     # The AppDir is recreated from scratch, otherwise leftovers from an earlier

@@ -678,6 +678,10 @@ public:
     FDC(InterfaceManager *im, EmulatorConfigDevice *cd):AddressableDevice(im, cd){}
     virtual bool get_busy() = 0;
     virtual unsigned int get_selected_drive() = 0;
+
+    //Every controller can answer these two, so they are asked here once
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };
 
 //----------------------- Creation functions -------------------------------//

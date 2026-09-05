@@ -230,6 +230,60 @@ void GMD70::do_command()
     }
 }
 
+std::vector<DeviceFieldInfo> GMD70::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = FDC::get_device_fields();
+    r.push_back({"command",  "Command code being executed",                false});
+    r.push_back({"data",     "Byte in the data register",                  false});
+    r.push_back({"trq",      "1 while the controller asks for a transfer", false});
+    r.push_back({"done",     "1 once the command has finished",            false});
+    r.push_back({"error",    "Error code of the last command, -1 for none", false});
+    r.push_back({"ints",     "1 when interrupts are enabled",              false});
+    r.push_back({"counter",  "Position inside the 128 byte sector buffer", false});
+    r.push_back({"drives",   "How many drives are attached",               false});
+    r.push_back({"buffer",   "Sector buffer",                              true});
+    return r;
+}
+
+bool GMD70::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "command" || field == "data" || field == "trq" || field == "done" ||
+        field == "ints" || field == "counter" || field == "drives")
+    {
+        out.numeric = true;
+        if (field == "command")      out.values.push_back(m_command);
+        else if (field == "data")    out.values.push_back(m_data);
+        else if (field == "trq")     out.values.push_back(m_trq ? 1 : 0);
+        else if (field == "done")    out.values.push_back(m_done ? 1 : 0);
+        else if (field == "ints")    out.values.push_back(m_ints_en ? 1 : 0);
+        else if (field == "counter") out.values.push_back(m_counter);
+        else                         out.values.push_back(m_drives_count);
+        return true;
+    }
+
+    //Kept as a signed value, and -1 means "no error", so it is printed as text
+    //rather than as a very large unsigned number
+    if (field == "error")
+    {
+        out.numeric = false;
+        out.text = (m_error < 0) ? "none" : std::to_string(m_error);
+        return true;
+    }
+
+    if (field == "buffer")
+    {
+        if (to >= sizeof(m_buffer)) to = sizeof(m_buffer) - 1;
+        if (from > to) from = to;
+        out.numeric = true;
+        out.has_start = true;
+        out.start = from;
+        for (unsigned int i = from; i <= to; i++) out.values.push_back(m_buffer[i]);
+        return true;
+    }
+
+    return FDC::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_GMD70(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new GMD70(im, cd);
 }

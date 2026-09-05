@@ -20,10 +20,28 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_
 
 project(eCat3 VERSION ${ECAT_VERSION} LANGUAGES C CXX)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
+# Build variants. The windowed executable is what everyone gets by default;
+# the console one is a second target built from the same emulator sources and
+# links no Qt at all, so it also configures on a machine without Qt.
+option(ENABLE_GUI      "Build the windowed executable" ON)
+option(ENABLE_HEADLESS "Build the console executable without a GUI" OFF)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(NOT ENABLE_GUI AND NOT ENABLE_HEADLESS)
+    message(FATAL_ERROR "Nothing to build: enable ENABLE_GUI, ENABLE_HEADLESS or both")
+endif()
+
+if(ENABLE_HEADLESS AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+                   AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9")
+    # It needs <filesystem> for the ini backend and std::thread for the timing
+    message(FATAL_ERROR "ENABLE_HEADLESS requires a C++17 toolchain, this one is too old")
+endif()
+
+if(ENABLE_GUI)
+    find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND ENABLE_GUI)
     if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         # Qt6 for Win 10+, Linux & macOS 64 bits
         # add_compile_definitions(RENDERER_SDL2)
@@ -69,7 +87,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # mini-ini requires C++17 (<filesystem>); enabled for Qt 5.15+ with GCC 9+ or non-GCC compilers
-if(QT_VERSION VERSION_GREATER_EQUAL "5.15")
+if(QT_VERSION VERSION_GREATER_EQUAL "5.15" OR NOT ENABLE_GUI)
     if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9"))
         add_compile_definitions(USE_MINI_INI)
     endif()
@@ -94,6 +112,29 @@ if(QT_VERSION_MAJOR EQUAL 6 AND RENDERER_OPENGL)
         renderers/renderer_opengl.h
         renderers/GLWidget.cpp renderers/GLWidget.h
     )
+endif()
+
+# External control over stdin/stdout. Without the option not a single file of
+# the feature is compiled: the sources below are simply not added to the target
+option(ENABLE_MCP "Build the MCP server (external control over stdin/stdout)" OFF)
+if(ENABLE_MCP)
+    set(MCP_FILES
+        mcp/mcp_server.cpp   mcp/mcp_server.h
+        mcp/mcp_session.cpp  mcp/mcp_session.h
+        mcp/mcp_base64.cpp   mcp/mcp_base64.h
+        libs/picojson/picojson.h
+    )
+    # The bridge marshals to the GUI thread, so it belongs to the windowed
+    # target only: the console build calls the session straight from main()
+    set(MCP_GUI_FILES
+        mcp_bridge.cpp       mcp_bridge.h
+    )
+    add_compile_definitions(ENABLE_MCP)
+    # The MCP server drives the emulator while the GUI thread runs the event
+    # loop; only the OpenGL renderer is supported in that combination
+    if(ENABLE_GUI AND NOT RENDERER_OPENGL)
+        message(FATAL_ERROR "ENABLE_MCP with a GUI build requires -DRENDERER_OPENGL=1")
+    endif()
 endif()
 
 # Audio backend: miniaudio by default, SDL2 optional
@@ -140,126 +181,144 @@ else()
     )
 endif()
 
-set(PROJECT_SOURCES
-    ../README.md
-    ../BUILD.md
-    ../MANUAL.md
-    ../CONFIG.md
-    ../SCRIPTING.md
-    ../HISTORY.md
-
-    dialogs/dumparea.cpp dialogs/dumparea.h
-    dialogs/dumpwindow.cpp dialogs/dumpwindow.h dialogs/dumpwindow.ui
-    dialogs/mmwindow.cpp dialogs/mmwindow.h dialogs/mmwindow.ui
+# The emulator itself: Qt free, shared by the windowed and the console targets.
+# Keeping one list rather than two is the point - a file added to only one of
+# them would build in one variant and break the other.
+set(EMULATOR_SOURCES
     emulator/config.cpp emulator/config.h
     emulator/core.cpp emulator/core.h
     emulator/debug.h
     emulator/result.h
-    emulator/devices/common/i8255.cpp emulator/devices/common/i8255.h
-    emulator/devices/common/keyboard.cpp emulator/devices/common/keyboard.h
-    emulator/devices/common/scankeyboard.cpp emulator/devices/common/scankeyboard.h
-    emulator/devices/common/speaker.cpp emulator/devices/common/speaker.h
-    emulator/devices/common/ay8910.cpp emulator/devices/common/ay8910.h
-    emulator/devices/common/tape.cpp emulator/devices/common/tape.h
-    emulator/devices/cpu/i8080.cpp emulator/devices/cpu/i8080.h
-    emulator/devices/specific/o128display.cpp emulator/devices/specific/o128display.h
     emulator/emulator.cpp emulator/emulator.h
     emulator/thread_compat.h
     emulator/utils.cpp emulator/utils.h
+    emulator/files.h emulator/files.cpp
+    emulator/renderer.h
+    emulator/disasm.h emulator/disasm.cpp
+    emulator/disasm_pdp11.h emulator/disasm_pdp11.cpp
+
     emulator/script/script_types.h
     emulator/script/script_parser.cpp emulator/script/script_parser.h
     emulator/script/script_log.cpp emulator/script/script_log.h
     emulator/script/script_engine.cpp emulator/script/script_engine.h
     emulator/script/script_recorder.cpp emulator/script/script_recorder.h
-    qt_utils.cpp qt_utils.h
-    main.cpp
-    mainwindow.cpp mainwindow.h mainwindow.ui
+
+    emulator/devices/cpu/i8080.cpp emulator/devices/cpu/i8080.h
     emulator/devices/cpu/i8080_context.h
     emulator/devices/cpu/i8080core.h emulator/devices/cpu/i8080core.cpp
-    dialogs/debugwindow.h dialogs/debugwindow.cpp dialogs/debugwindow.ui
-    dialogs/disasmarea.h dialogs/disasmarea.cpp
-    emulator/disasm.h emulator/disasm.cpp
-    emulator/disasm_pdp11.h emulator/disasm_pdp11.cpp
-    dialogs/dialogs.h
-    dialogs/keyvaluearea.h dialogs/keyvaluearea.cpp
-    dialogs/portwindow.h dialogs/portwindow.cpp dialogs/portwindow.ui
-    dialogs/i8255window.h dialogs/i8255window.cpp dialogs/i8255window.ui
-    dialogs/openconfigwindow.h dialogs/openconfigwindow.cpp dialogs/openconfigwindow.ui
+    emulator/devices/cpu/6502core.h emulator/devices/cpu/6502core.cpp
+    emulator/devices/cpu/6502.h emulator/devices/cpu/6502.cpp
+    emulator/devices/cpu/pdp11_context.h emulator/devices/cpu/pdp11core.h emulator/devices/cpu/pdp11core.cpp
+    emulator/devices/cpu/k1801vm1.h emulator/devices/cpu/k1801vm1.cpp
+    emulator/devices/cpu/z80.h emulator/devices/cpu/z80.cpp
+    emulator/devices/cpu/cpu_utils.h
+
+    emulator/devices/common/i8255.cpp emulator/devices/common/i8255.h
+    emulator/devices/common/keyboard.cpp emulator/devices/common/keyboard.h
+    emulator/devices/common/scankeyboard.cpp emulator/devices/common/scankeyboard.h
+    emulator/devices/common/mapkeyboard.h emulator/devices/common/mapkeyboard.cpp
+    emulator/devices/common/speaker.cpp emulator/devices/common/speaker.h
+    emulator/devices/common/ay8910.cpp emulator/devices/common/ay8910.h
+    emulator/devices/common/sound.h emulator/devices/common/sound.cpp
+    emulator/devices/common/tape.cpp emulator/devices/common/tape.h
     emulator/devices/common/wd1793.h emulator/devices/common/wd1793.cpp
+    emulator/devices/common/gmd70.h emulator/devices/common/gmd70.cpp
     emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp
     emulator/devices/common/joystick.h emulator/devices/common/joystick.cpp
-    libs/crc16.h libs/crc16.cpp
     emulator/devices/common/i8257.h
     emulator/devices/common/i8275.h
     emulator/devices/common/i8275display.h
     emulator/devices/common/i8251.h emulator/devices/common/i8251.cpp
     emulator/devices/common/i8253.h emulator/devices/common/i8253.cpp
     emulator/devices/common/i8259.h emulator/devices/common/i8259.cpp
-    emulator/files.h emulator/files.cpp
     emulator/devices/common/register.h emulator/devices/common/register.cpp
-    libs/lodepng/lodepng.cpp libs/lodepng/lodepng.h
-    emulator/devices/cpu/z80.h
-    emulator/devices/cpu/z80.cpp
-    emulator/devices/cpu/cpu_utils.h
     emulator/devices/common/page_mapper.h emulator/devices/common/page_mapper.cpp
+    emulator/devices/common/generator.h emulator/devices/common/generator.cpp
+    emulator/devices/common/raster_display.h emulator/devices/common/raster_display.cpp
+    emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
+    emulator/devices/common/mux.h emulator/devices/common/mux.cpp
+
+    emulator/devices/specific/o128display.cpp emulator/devices/specific/o128display.h
+    emulator/devices/specific/agat_fdc140.h emulator/devices/specific/agat_fdc140.cpp
+    emulator/devices/specific/agat_fdc840.h emulator/devices/specific/agat_fdc840.cpp
+    emulator/devices/specific/agat_7_display.h emulator/devices/specific/agat_7_display.cpp
+    emulator/devices/specific/agat_9_display.h emulator/devices/specific/agat_9_display.cpp
+    emulator/devices/specific/agat_9_mapper.h emulator/devices/specific/agat_9_mapper.cpp
+    emulator/devices/specific/agat_common.h
+    emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp
+    emulator/devices/specific/bk_display.h emulator/devices/specific/bk_display.cpp
+    emulator/devices/specific/bk_timer.h emulator/devices/specific/bk_timer.cpp
+    emulator/devices/specific/bk_fdc.h emulator/devices/specific/bk_fdc.cpp
+
+    emulator/audio/audio_driver.h
+    emulator/audio/audio_driver_miniaudio.h emulator/audio/audio_driver_miniaudio.cpp
+    emulator/audio/audio_driver_sdl.h emulator/audio/audio_driver_sdl.cpp
+
+    libs/crc16.h libs/crc16.cpp
+    libs/lodepng/lodepng.cpp libs/lodepng/lodepng.h
+    libs/mfm_formats.h
+    libs/mfm_tools.h libs/mfm_tools.cpp
+    libs/audio_filters.h
+    libs/miniaudio/miniaudio.c
+
+    ${Z80_FILES}
+    ${INI_FILES}
+    ${MCP_FILES}
+)
+
+# Everything that needs Qt. The documentation and the assembler test sources
+# are listed so that they show up in the IDE.
+set(GUI_SOURCES
+    ../README.md
+    ../BUILD.md
+    ../MANUAL.md
+    ../CONFIG.md
+    ../SCRIPTING.md
+    ../HISTORY.md
+    ../MCP.md
+
+    main.cpp
+    mainwindow.cpp mainwindow.h mainwindow.ui
+    qt_utils.cpp qt_utils.h
+
+    dialogs/dialogs.h
+    dialogs/aboutdlg.ui
+    dialogs/dumparea.cpp dialogs/dumparea.h
+    dialogs/dumpwindow.cpp dialogs/dumpwindow.h dialogs/dumpwindow.ui
+    dialogs/mmwindow.cpp dialogs/mmwindow.h dialogs/mmwindow.ui
+    dialogs/debugwindow.h dialogs/debugwindow.cpp dialogs/debugwindow.ui
+    dialogs/disasmarea.h dialogs/disasmarea.cpp
+    dialogs/keyvaluearea.h dialogs/keyvaluearea.cpp
+    dialogs/portwindow.h dialogs/portwindow.cpp dialogs/portwindow.ui
+    dialogs/i8255window.h dialogs/i8255window.cpp dialogs/i8255window.ui
+    dialogs/openconfigwindow.h dialogs/openconfigwindow.cpp dialogs/openconfigwindow.ui
     dialogs/hexeditorline.h dialogs/hexeditorline.cpp
     dialogs/dosframe.h dialogs/dosframe.cpp
-    emulator/devices/common/generator.h  emulator/devices/common/generator.cpp
+    dialogs/genericdbgwnd.h dialogs/genericdbgwnd.cpp
+    dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
+
+    renderers/renderer_sdl2.h
+    renderers/renderer_qt.h
+    ${OPENGL_FILES}
+
+    libs/md4c/md4c.h libs/md4c/md4c.c libs/md4c/md4c-html.h libs/md4c/md4c-html.c libs/md4c/entity.h libs/md4c/entity.c
 
     tests/8080exe.asm tests/8080pre.asm
     tests/zexall.asm
     tests/i8253_test.asm
     tests/i8080.asm
 
-
-    dialogs/aboutdlg.ui
-    dialogs/genericdbgwnd.h dialogs/genericdbgwnd.cpp
-
-    emulator/devices/cpu/6502core.h emulator/devices/cpu/6502core.cpp
-    emulator/devices/cpu/6502.h emulator/devices/cpu/6502.cpp
-    emulator/devices/cpu/pdp11_context.h emulator/devices/cpu/pdp11core.h emulator/devices/cpu/pdp11core.cpp
-    emulator/devices/cpu/k1801vm1.h emulator/devices/cpu/k1801vm1.cpp
-
-    ${Z80_FILES}
-    ${INI_FILES}
-    emulator/devices/specific/agat_fdc140.h emulator/devices/specific/agat_fdc140.cpp
-    emulator/devices/specific/agat_7_display.h emulator/devices/specific/agat_7_display.cpp
-    emulator/devices/specific/agat_9_display.h emulator/devices/specific/agat_9_display.cpp
-    emulator/devices/common/mapkeyboard.h emulator/devices/common/mapkeyboard.cpp
-    emulator/devices/common/sound.h emulator/devices/common/sound.cpp
-    libs/mfm_formats.h
-    libs/mfm_tools.h libs/mfm_tools.cpp
-    emulator/devices/specific/agat_fdc840.h emulator/devices/specific/agat_fdc840.cpp
-
-    libs/md4c/md4c.h libs/md4c/md4c.c libs/md4c/md4c-html.h libs/md4c/md4c-html.c libs/md4c/entity.h libs/md4c/entity.c
-
-    dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
-
-    emulator/renderer.h
-    renderers/renderer_sdl2.h
-    renderers/renderer_qt.h
-    ${OPENGL_FILES}
-
-    libs/audio_filters.h
-    emulator/devices/common/raster_display.h emulator/devices/common/raster_display.cpp
-    emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
-    emulator/devices/specific/agat_9_mapper.h emulator/devices/specific/agat_9_mapper.cpp
-
-    emulator/audio/audio_driver.h
-    emulator/audio/audio_driver_miniaudio.h emulator/audio/audio_driver_miniaudio.cpp
-    emulator/audio/audio_driver_sdl.h emulator/audio/audio_driver_sdl.cpp
-    libs/miniaudio/miniaudio.c
-    emulator/devices/common/raster_display.h emulator/devices/common/raster_display.cpp
-    emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
-    emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp
-    emulator/devices/specific/bk_display.h emulator/devices/specific/bk_display.cpp
-    emulator/devices/specific/bk_timer.h emulator/devices/specific/bk_timer.cpp
-    emulator/devices/specific/bk_fdc.h emulator/devices/specific/bk_fdc.cpp
-    emulator/devices/common/gmd70.h emulator/devices/common/gmd70.cpp
-    emulator/devices/specific/agat_common.h
-    emulator/devices/common/mux.h emulator/devices/common/mux.cpp
-
+    ${MCP_GUI_FILES}
 )
+
+set(HEADLESS_SOURCES
+    headless/headless_main.cpp
+    headless/renderer_null.h headless/renderer_null.cpp
+)
+
+set(PROJECT_SOURCES ${EMULATOR_SOURCES} ${GUI_SOURCES})
+
+if(ENABLE_GUI)
 
 # Adding Qt base translations
 
@@ -435,6 +494,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
+endif() # ENABLE_GUI
+
 include(GNUInstallDirs)
 
 # Passing version to the application
@@ -442,12 +503,66 @@ include(GNUInstallDirs)
 set(CMAKE_CONFIGURE_FILE_CONTENT_NEWLINE_STYLE UNIX)
 configure_file (globals.h.in ${CMAKE_CURRENT_SOURCE_DIR}/globals.h @ONLY NEWLINE_STYLE LF)
 
-install(TARGETS ${PROJECT_NAME}
-    BUNDLE DESTINATION .
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+if(ENABLE_GUI)
+    install(TARGETS ${PROJECT_NAME}
+        BUNDLE DESTINATION .
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(${PROJECT_NAME})
+    if(QT_VERSION_MAJOR EQUAL 6)
+        qt_finalize_executable(${PROJECT_NAME})
+    endif()
+endif()
+
+# The console executable. Same emulator, no Qt: a console subsystem binary on
+# Windows, so it has a terminal to print to, and a null renderer that keeps the
+# frame in memory. Screenshots and the whole .ecat vocabulary work as usual.
+if(ENABLE_HEADLESS)
+    set(HEADLESS_TARGET ${PROJECT_NAME}-headless)
+
+    add_executable(${HEADLESS_TARGET}
+        ${EMULATOR_SOURCES}
+        ${HEADLESS_SOURCES}
+    )
+
+    target_compile_features(${HEADLESS_TARGET} PRIVATE cxx_std_17)
+
+    target_include_directories(${HEADLESS_TARGET} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/libs/dsk_tools/include/
+    )
+
+    target_link_libraries(${HEADLESS_TARGET} PRIVATE dsk_tools)
+
+    # std::thread and std::mutex, never the Qt ones: there is no Qt here
+    target_compile_definitions(${HEADLESS_TARGET} PRIVATE FORCE_STD_THREADING USE_MINI_INI)
+
+    if(USE_SDL_AUDIO)
+        target_link_libraries(${HEADLESS_TARGET} PRIVATE ${SDL2_LIBRARIES})
+    else()
+        if(WIN32)
+            target_link_libraries(${HEADLESS_TARGET} PRIVATE winmm ole32)
+        elseif(APPLE)
+            find_library(COREAUDIO_FRAMEWORK CoreAudio)
+            find_library(AUDIOUNIT_FRAMEWORK AudioUnit)
+            find_library(COREFOUNDATION_FRAMEWORK CoreFoundation)
+            target_link_libraries(${HEADLESS_TARGET} PRIVATE
+                ${COREAUDIO_FRAMEWORK}
+                ${AUDIOUNIT_FRAMEWORK}
+                ${COREFOUNDATION_FRAMEWORK}
+            )
+        else()
+            target_link_libraries(${HEADLESS_TARGET} PRIVATE pthread m dl)
+        endif()
+    endif()
+
+    set_target_properties(${HEADLESS_TARGET} PROPERTIES
+        WIN32_EXECUTABLE FALSE
+        MACOSX_BUNDLE FALSE
+    )
+
+    install(TARGETS ${HEADLESS_TARGET}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
 endif()

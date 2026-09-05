@@ -319,6 +319,96 @@ void I8251::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned
     }
 }
 
+std::vector<DeviceFieldInfo> I8251::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
+    r.push_back({"status",  "Status register, raw",                         false});
+    r.push_back({"flags",   "Status register decoded as name=value pairs",  false});
+    r.push_back({"mode",    "Mode word, raw",                               false});
+    r.push_back({"format",  "Character format decoded from the mode word",  false});
+    r.push_back({"command", "Command word, raw",                            false});
+    r.push_back({"tx",      "Byte in the transmit buffer",                  false});
+    r.push_back({"rx",      "Byte in the receive buffer",                   false});
+    r.push_back({"buffers", "Which of the two buffers are full",            false});
+    r.push_back({"state",   "What the control port expects to be written next", false});
+    return r;
+}
+
+bool I8251::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "status" || field == "mode" || field == "command" ||
+        field == "tx" || field == "rx")
+    {
+        out.numeric = true;
+        if (field == "status")       out.values.push_back(status);
+        else if (field == "mode")    out.values.push_back(mode_word);
+        else if (field == "command") out.values.push_back(command_word);
+        else if (field == "tx")      out.values.push_back(tx_buffer);
+        else                         out.values.push_back(rx_buffer);
+        return true;
+    }
+
+    if (field == "flags")
+    {
+        out.numeric = false;
+        out.text =
+            std::string("TXRDY=") + ((status & STATUS_TXRDY)  ? "1" : "0")
+                     + " RXRDY="  + ((status & STATUS_RXRDY)  ? "1" : "0")
+                     + " TXE="    + ((status & STATUS_TXE)    ? "1" : "0")
+                     + " PE="     + ((status & STATUS_PE)     ? "1" : "0")
+                     + " OE="     + ((status & STATUS_OE)     ? "1" : "0")
+                     + " FE="     + ((status & STATUS_FE)     ? "1" : "0")
+                     + " SYNDET=" + ((status & STATUS_SYNDET) ? "1" : "0")
+                     + " DSR="    + ((status & STATUS_DSR)    ? "1" : "0");
+        return true;
+    }
+
+    if (field == "format")
+    {
+        out.numeric = false;
+        if (sync_mode)
+            out.text = "sync, " + std::to_string(char_length) + " bits, "
+                     + (parity_enable ? (even_parity ? "even parity" : "odd parity") : "no parity")
+                     + ", " + (single_sync ? "1" : "2") + " sync chars";
+        else
+            //Half a stop bit is stored as the value 2, hence the odd looking table
+            out.text = "async x" + std::to_string(baud_factor) + ", "
+                     + std::to_string(char_length) + " bits, "
+                     + (parity_enable ? (even_parity ? "even parity" : "odd parity") : "no parity")
+                     + ", " + ((stop_bits == 1) ? "1" : (stop_bits == 2) ? "1.5" : "2") + " stop";
+        out.text += std::string("; TXEN=") + (tx_enable ? "1" : "0")
+                  + " RXEN=" + (rx_enable ? "1" : "0")
+                  + (send_break ? " BREAK" : "")
+                  + (hunt_mode ? " HUNT" : "");
+        return true;
+    }
+
+    if (field == "buffers")
+    {
+        out.numeric = false;
+        out.text = std::string("tx=") + (tx_buffer_full ? "full" : "empty")
+                 + " rx=" + (rx_buffer_full ? "full" : "empty");
+        return true;
+    }
+
+    //Writing a command word while the chip still waits for the mode word is a
+    //classic way to get a port that answers with nonsense
+    if (field == "state")
+    {
+        out.numeric = false;
+        switch (control_state)
+        {
+            case STATE_MODE:      out.text = "mode word expected"; break;
+            case STATE_SYNC_CHAR: out.text = "sync character expected, "
+                                           + std::to_string(sync_chars_remaining) + " to go"; break;
+            default:              out.text = "command word expected"; break;
+        }
+        return true;
+    }
+
+    return AddressableDevice::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_i8251(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new I8251(im, cd);

@@ -413,6 +413,46 @@ void Agat7Display::HSYNC(const unsigned line, const unsigned sync_val)
     }
 }
 
+std::vector<DeviceFieldInfo> Agat7Display::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = RasterDisplay::get_device_fields();
+    r.push_back({"mode",      "Value of the mode port",                        false});
+    r.push_back({"base",      "Address the shown page starts at",              false});
+    r.push_back({"page_size", "Bytes in one video page",                       false});
+    r.push_back({"blinker",   "Phase of the blinking attribute",               false});
+    r.push_back({"wide",      "1 in the 512 dot mode",                         false});
+    r.push_back({"colors",    "Colour scheme selected in the device options",  false});
+    r.push_back({"irq",       "State of the interrupt line the display drives", false});
+    r.push_back({"nmi",       "State of the non maskable interrupt line",      false});
+    return r;
+}
+
+bool Agat7Display::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "mode" || field == "blinker" || field == "wide" ||
+        field == "colors" || field == "irq" || field == "nmi")
+    {
+        out.numeric = true;
+        if (field == "mode")         out.values.push_back(mode);
+        else if (field == "blinker") out.values.push_back(blinker ? 1 : 0);
+        else if (field == "wide")    out.values.push_back(m_512_mode);
+        else if (field == "colors")  out.values.push_back(m_color_mode.load());
+        else if (field == "irq")     out.values.push_back(m_irq_val);
+        else                         out.values.push_back(m_nmi_val);
+        return true;
+    }
+
+    if (field == "base" || field == "page_size")
+    {
+        out.numeric = true;
+        out.width = 16;
+        out.values.push_back((field == "base") ? base_address : page_size);
+        return true;
+    }
+
+    return RasterDisplay::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_agat_7_display(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new Agat7Display(im, cd);

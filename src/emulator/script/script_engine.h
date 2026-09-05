@@ -18,6 +18,21 @@
 
 class Emulator;
 
+// Receives the output of the script engine as it is produced. Used by an
+// external driver to get the result of a command back instead of, or as well
+// as, the log file. write() is called from the emulation thread, inside the
+// engine mutex, so an implementation must be prepared for that and must not
+// call back into the engine.
+class ScriptSink
+{
+public:
+    virtual ~ScriptSink() {}
+    //pc is the index of the command that produced the line, plus one: the
+    //value get_done_pc() will have reached once that command is over. This is
+    //what attributes output to a request
+    virtual void write(const std::string &line, size_t pc) = 0;
+};
+
 // Executes a script.
 //
 // The engine is a non blocking state machine: tick() is called from the
@@ -41,7 +56,11 @@ class Emulator;
 // thread may read it without the lock while a replay runs.
 //
 // execute() accepts a single command, so the engine can also be driven by an
-// external source, for example an MCP server, without a script file.
+// external source, for example an MCP server, without a script file. The
+// supported way to do that is interactive mode: submit() appends to the same
+// buffer and the same tick() runs it, so an external driver gets the whole
+// command vocabulary, the asynchronous verbs included, without a second
+// execution path.
 class ScriptEngine
 {
 public:
@@ -71,6 +90,34 @@ public:
     const std::vector<ScriptCommand> & get_commands() const;
     size_t size() const;
     size_t get_pc() const;                      //Index of the next command to run
+
+    //---------------------- Interactive (external) mode -------------------//
+    // Interactive mode changes two things: commands may be added while the
+    // engine is running (through submit(), the buffer editors above keep their
+    // guards), and reaching the end of the buffer parks the engine instead of
+    // finishing it. Everything else - the vocabulary, the threading, the
+    // buffer - is exactly what a script gets
+    void   set_interactive(bool on);
+    bool   is_interactive() const;
+
+    //Appends a command and makes sure the engine will run it. Returns the
+    //index it was stored at, which is what completion is reported against
+    size_t submit(const ScriptCommand &c);
+
+    //Number of commands that have completed, including their asynchronous
+    //part: a command with index i is done when get_done_pc() > i
+    size_t get_done_pc() const;
+
+    int    get_state() const;                   //One of State, for diagnostics
+    static const char * state_name(int state);
+
+    //Abandons whatever the current command is still waiting for and parks the
+    //engine at the end of the buffer. The keys held down are released
+    void   interrupt();
+
+    //The engine does not own the sink and never deletes it. Pass nullptr to
+    //detach; the log file, if there is one, is written either way
+    void   set_sink(ScriptSink * sink);
 
     //---------------------------- Control ---------------------------------//
     void start(uint64_t clock_now);             //From the beginning; reports parse errors to the log
@@ -104,7 +151,8 @@ private:
         StateWaitFor,       //Polling a device field
         StateScreenshot,    //Waiting for the render thread to store an image
         StatePaused,        //Stopped by the user, can be resumed
-        StateFinished
+        StateFinished,
+        StateWaiting        //Interactive: armed, but out of commands
     };
 
     Emulator *                  e;
@@ -122,6 +170,10 @@ private:
     std::atomic<bool>           m_finished;
     std::atomic<bool>           m_exit_requested;
     int                         m_exit_code;
+
+    std::atomic<bool>           m_interactive;  //Commands may be added while the engine runs
+    std::atomic<size_t>         m_done_pc;      //Commands [0, m_done_pc) have fully completed
+    std::atomic<ScriptSink*>    m_sink;         //Not owned
 
     uint64_t                    m_now;          //Last seen clock counter
     std::atomic<uint64_t>       m_resume_at;    //Clock value to continue at

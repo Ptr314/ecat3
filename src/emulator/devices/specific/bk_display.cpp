@@ -272,6 +272,59 @@ void BKDisplay::render_line_color(const unsigned line, RAM * vmem, const unsigne
     }
 }
 
+std::vector<DeviceFieldInfo> BKDisplay::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = GenericDisplay::get_device_fields();
+    r.push_back({"scroll",  "Scroll register 0177664 as last seen",            false});
+    r.push_back({"offset",  "First video line shown at the top of the screen", false});
+    r.push_back({"quarter", "1 when only the top quarter of the screen is shown", false});
+    r.push_back({"control", "Palette and page register 0177662 as last seen",  false});
+    r.push_back({"palette", "Palette number, 0 without the register",          false});
+    r.push_back({"page",    "Video RAM shown, 0 on a machine with only one",   false});
+    r.push_back({"vram",    "Name of the video RAM device being shown",        false});
+    r.push_back({"color",   "1 for colour, 0 for the monochrome mode",         false});
+    return r;
+}
+
+bool BKDisplay::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    //These are written by the render thread and read here from the emulation
+    //one. They are single words describing what is on screen right now, so a
+    //value one frame old is exactly as useful as a perfectly synchronised one
+    if (field == "scroll" || field == "control")
+    {
+        out.numeric = true;
+        out.width = 16;
+        out.values.push_back((field == "scroll") ? m_scroll : m_control);
+        return true;
+    }
+
+    if (field == "offset" || field == "palette" || field == "page")
+    {
+        out.numeric = true;
+        if (field == "offset")       out.values.push_back(m_offset);
+        else if (field == "palette") out.values.push_back(m_palette);
+        else                         out.values.push_back(m_page);
+        return true;
+    }
+
+    if (field == "quarter" || field == "color")
+    {
+        out.numeric = true;
+        out.values.push_back(((field == "quarter") ? m_quarter : m_color) ? 1 : 0);
+        return true;
+    }
+
+    if (field == "vram")
+    {
+        out.numeric = false;
+        out.text = (vram[m_page] != nullptr) ? vram[m_page]->name : std::string("-");
+        return true;
+    }
+
+    return GenericDisplay::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_bk_display(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new BKDisplay(im, cd);

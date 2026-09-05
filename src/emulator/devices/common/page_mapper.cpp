@@ -92,6 +92,76 @@ void PageMapper::set_value(const unsigned address, const unsigned value, bool fo
     }
 }
 
+std::vector<DeviceFieldInfo> PageMapper::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
+    r.push_back({"page",    "Index of the page the window currently shows",     false});
+    r.push_back({"device",  "Name of the memory device behind the window",      false});
+    r.push_back({"segment", "Segment of that device, for a windowed page",      false});
+    r.push_back({"pages",   "Number of pages that can be selected",             false});
+    r.push_back({"frame",   "Window size in bytes, 0 when a whole page is mapped", false});
+    r.push_back({"map",     "Every page index and the device it selects",       false});
+    return r;
+}
+
+bool PageMapper::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    const unsigned int page = i_page.value & PageMask;
+
+    if (field == "page")
+    {
+        out.numeric = true;
+        out.values.push_back(page);
+        return true;
+    }
+
+    //The one that answers "which bank is in the window right now", which is the
+    //question a paging problem always comes down to
+    if (field == "device")
+    {
+        out.numeric = false;
+        out.text = (pages[page] != nullptr) ? pages[page]->name : std::string("-");
+        return true;
+    }
+
+    if (field == "segment")
+    {
+        out.numeric = true;
+        out.values.push_back(m_single_frame ? 0 : (i_segment.value & SegmentMask));
+        return true;
+    }
+
+    if (field == "pages")
+    {
+        out.numeric = true;
+        out.values.push_back(PagesCount);
+        return true;
+    }
+
+    if (field == "frame")
+    {
+        out.numeric = true;
+        out.width = 16;
+        out.values.push_back(m_single_frame ? 0 : Frame);
+        return true;
+    }
+
+    if (field == "map")
+    {
+        out.numeric = false;
+        for (unsigned int i = 0; i < PagesCount; i++)
+        {
+            if (!out.text.empty()) out.text += "\n";
+            out.text += "        " + std::to_string(i) + " -> "
+                      + ((pages[i] != nullptr) ? pages[i]->name : std::string("-"))
+                      + ((i == page) ? "  <- current" : "");
+        }
+        return true;
+    }
+
+    return AddressableDevice::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_page_mapper(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new PageMapper(im, cd);

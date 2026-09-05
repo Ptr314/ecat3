@@ -170,6 +170,58 @@ void I8255::interface_callback(unsigned int callback_id, unsigned int new_value,
 
 }
 
+std::vector<DeviceFieldInfo> I8255::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
+    r.push_back({"ports",   "Latched values of ports A, B and C",           false});
+    r.push_back({"a",       "Port A",                                       false});
+    r.push_back({"b",       "Port B",                                       false});
+    r.push_back({"c",       "Port C",                                       false});
+    r.push_back({"control", "Control word, raw",                            false});
+    r.push_back({"dirs",    "Direction of every port decoded from it",      false});
+    return r;
+}
+
+bool I8255::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "ports")
+    {
+        out.numeric = true;
+        for (unsigned int i = 0; i < 3; i++) out.values.push_back(registers[i]);
+        return true;
+    }
+
+    if (field == "a" || field == "b" || field == "c" || field == "control")
+    {
+        unsigned int n = 3;
+        if (field == "a") n = 0;
+        else if (field == "b") n = 1;
+        else if (field == "c") n = 2;
+        out.numeric = true;
+        out.values.push_back(registers[n]);
+        return true;
+    }
+
+    //A machine whose keyboard or tape does not answer is very often a port
+    //programmed the wrong way round, and that is invisible in the raw word
+    if (field == "dirs")
+    {
+        const uint8_t c = registers[3];
+        out.numeric = false;
+        out.text =
+            std::string("A=")   + ((c & 0x10) ? "in" : "out")
+                     + " B="    + ((c & 0x02) ? "in" : "out")
+                     + " CH="   + ((c & 0x08) ? "in" : "out")
+                     + " CL="   + ((c & 0x01) ? "in" : "out")
+                     + " modeA=" + std::to_string((c >> 5) & 3)
+                     + " modeB=" + std::to_string((c >> 2) & 1)
+                     + ((c & 0x80) ? "" : "  (bit 7 clear: the last write was a bit set/reset)");
+        return true;
+    }
+
+    return AddressableDevice::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_i8255(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new I8255(im, cd);
 }

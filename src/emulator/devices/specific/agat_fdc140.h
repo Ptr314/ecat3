@@ -43,6 +43,9 @@ public:
     virtual unsigned int get_value(unsigned int address) override;
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
     virtual void clock(unsigned int counter) override;
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };
 
 ComputerDevice * create_agat_fdc140(InterfaceManager *im, EmulatorConfigDevice *cd);

@@ -237,6 +237,41 @@ void IrishaDisplay::render_blank() const
         buf[offset + i] = m_back_color;
 }
 
+std::vector<DeviceFieldInfo> IrishaDisplay::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = GenericDisplay::get_device_fields();
+    r.push_back({"mode",      "Value of the mode port",                    false});
+    r.push_back({"mode_index","Resolution the mode selects, as an index",  false});
+    r.push_back({"color",     "Value of the colour port",                  false});
+    r.push_back({"page",      "Video page currently shown",                false});
+    r.push_back({"base",      "Address the shown page starts at",          false});
+    r.push_back({"page_size", "Bytes in one video page",                   false});
+    return r;
+}
+
+bool IrishaDisplay::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "mode" || field == "mode_index" || field == "color" || field == "page")
+    {
+        out.numeric = true;
+        if (field == "mode")            out.values.push_back(m_mode);
+        else if (field == "mode_index") out.values.push_back(m_mode_index);
+        else if (field == "color")      out.values.push_back(m_color);
+        else                            out.values.push_back(m_page);
+        return true;
+    }
+
+    if (field == "base" || field == "page_size")
+    {
+        out.numeric = true;
+        out.width = 16;
+        out.values.push_back((field == "base") ? m_base_address : m_page_size);
+        return true;
+    }
+
+    return GenericDisplay::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_irisha_display(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new IrishaDisplay(im, cd);

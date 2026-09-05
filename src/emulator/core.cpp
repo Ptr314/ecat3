@@ -2092,3 +2092,25 @@ ComputerDevice * create_port(InterfaceManager *im, EmulatorConfigDevice *cd){
 ComputerDevice * create_port_address(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new PortAddress(im, cd);
 }
+
+//------------------------------- FDC --------------------------------------//
+
+std::vector<DeviceFieldInfo> FDC::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
+    r.push_back({"busy",  "1 while the controller is working",  false});
+    r.push_back({"drive", "Index of the drive it is talking to", false});
+    return r;
+}
+
+bool FDC::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "busy" || field == "drive")
+    {
+        out.numeric = true;
+        out.values.push_back((field == "busy") ? (get_busy() ? 1u : 0u) : get_selected_drive());
+        return true;
+    }
+
+    return AddressableDevice::get_field(field, from, to, out);
+}

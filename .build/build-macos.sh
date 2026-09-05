@@ -6,7 +6,12 @@
 # bundle carries no Qt frameworks. Only SDL2, when the binary actually links
 # against it, is copied into Contents/Frameworks.
 #
-# Usage: ./build-macos.sh [clean]
+# Usage: ./build-macos.sh [clean] [mcp]
+#
+#   mcp   build with the MCP server (-DENABLE_MCP=ON). Only the OpenGL renderer
+#         supports it in a windowed build, so the others are skipped. The console
+#         build is not packaged here; configure it by hand with
+#         -DENABLE_GUI=OFF -DENABLE_HEADLESS=ON, see MCP.md
 
 set -euo pipefail
 
@@ -20,7 +25,12 @@ APP_NAME="eCat3"
 # platform and the SDL2 one would add a dylib to every bundle.
 RENDERERS=("qt" "opengl")
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(ENABLE_MCP="OFF"
+for arg in "$@"; do
+    if [ "${arg}" = "mcp" ]; then ENABLE_MCP="ON"; fi
+done
+
+cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 RELEASE_DIR="${SCRIPT_DIR}/release"
 
@@ -45,9 +55,17 @@ for RENDERER in "${RENDERERS[@]}"; do
   echo
   echo "=== Renderer: ${RENDERER}"
 
+  # A windowed MCP build is only supported on OpenGL, see MCP.md
+  if [ "${ENABLE_MCP}" = "ON" ] && [ "${RENDERER}" != "opengl" ]; then
+      echo "=== Skipping ${RENDERER}: an MCP build needs the OpenGL renderer"
+      continue
+  fi
+
   BUILD_DIR="${SCRIPT_DIR}/build/${PLATFORM}-${ARCHITECTURE}-${RENDERER}"
   RENDERER_UPPER=$(echo "${RENDERER}" | tr '[:lower:]' '[:upper:]')
-  DMG_NAME="ecat-${APP_VERSION}-${PLATFORM}-${ARCHITECTURE}-${RENDERER}.dmg"
+  DMG_SUFFIX=""
+  if [ "${ENABLE_MCP}" = "ON" ]; then DMG_SUFFIX="-mcp"; fi
+  DMG_NAME="ecat-${APP_VERSION}-${PLATFORM}-${ARCHITECTURE}-${RENDERER}${DMG_SUFFIX}.dmg"
 
   if [ "${1:-}" = "clean" ]; then
       rm -rf "${BUILD_DIR}"
@@ -59,7 +77,7 @@ for RENDERER in "${RENDERERS[@]}"; do
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_PREFIX_PATH="${QT_PATH}" \
         -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
-        -DRENDERER_${RENDERER_UPPER}=1
+        -DRENDERER_${RENDERER_UPPER}=1 \n        -DENABLE_MCP=${ENABLE_MCP}
   cmake --build "${BUILD_DIR}"
 
   # Copy deploy data into the app bundle Resources. The payload directories are

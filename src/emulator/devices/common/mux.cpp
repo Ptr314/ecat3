@@ -23,6 +23,35 @@ void Multiplexer::interface_callback(unsigned callback_id, unsigned new_value, u
     else i_out.change(i_b.value);
 }
 
+std::vector<DeviceFieldInfo> Multiplexer::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
+    r.push_back({"selected", "Which input the select line is routing through", false});
+    r.push_back({"out",      "Value currently on the output",                  false});
+    return r;
+}
+
+bool Multiplexer::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    //interfaces already shows a, b, s and out; this says which of the two the
+    //select line has actually chosen, which is the only thing worth decoding
+    if (field == "selected")
+    {
+        out.numeric = false;
+        out.text = ((i_s.value & 1) == 0) ? "a" : "b";
+        return true;
+    }
+
+    if (field == "out")
+    {
+        out.numeric = true;
+        out.values.push_back(i_out.value);
+        return true;
+    }
+
+    return ComputerDevice::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_mux(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new Multiplexer(im, cd);

@@ -558,6 +558,59 @@ void Agat9Display::HSYNC(const unsigned line, const unsigned sync_val)
     }
 }
 
+std::vector<DeviceFieldInfo> Agat9Display::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = RasterDisplay::get_device_fields();
+    r.push_back({"mode",     "Value of the Agat mode port",                    false});
+    r.push_back({"base",     "Address the shown page starts at",               false});
+    r.push_back({"blinker",  "Phase of the blinking attribute",                false});
+    r.push_back({"wide",     "1 in the 512 dot mode",                          false});
+    r.push_back({"apple",    "Apple II soft switches: text, mixed and page",   false});
+    r.push_back({"bank",     "Memory bank the display reads",                  false});
+    r.push_back({"colors",   "Colour scheme selected in the device options",   false});
+    r.push_back({"irq",      "State of the interrupt line the display drives", false});
+    r.push_back({"nmi",      "State of the non maskable interrupt line",       false});
+    return r;
+}
+
+bool Agat9Display::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "mode" || field == "blinker" || field == "wide" || field == "bank" ||
+        field == "colors" || field == "irq" || field == "nmi")
+    {
+        out.numeric = true;
+        if (field == "mode")         out.values.push_back(mode);
+        else if (field == "blinker") out.values.push_back(blinker ? 1 : 0);
+        else if (field == "wide")    out.values.push_back(m_512_mode);
+        else if (field == "bank")    out.values.push_back(_memory_bank);
+        else if (field == "colors")  out.values.push_back(m_color_mode.load());
+        else if (field == "irq")     out.values.push_back(m_irq_val);
+        else                         out.values.push_back(m_nmi_val);
+        return true;
+    }
+
+    if (field == "base")
+    {
+        out.numeric = true;
+        out.width = 16;
+        out.values.push_back(base_address);
+        return true;
+    }
+
+    //The Apple II compatible half of the controller is three separate switches,
+    //and which of them is set decides what the Agat modes even mean
+    if (field == "apple")
+    {
+        out.numeric = false;
+        out.text = std::string("text=") + std::to_string(m_a2_text)
+                 + " mixed=" + std::to_string(m_a2_mixed)
+                 + " page="  + std::to_string(m_a2_page);
+        return true;
+    }
+
+    return RasterDisplay::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_agat_9_display(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new Agat9Display(im, cd);

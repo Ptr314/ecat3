@@ -251,6 +251,59 @@ void Agat_FDC140::clock(unsigned int counter)
     }
 }
 
+std::vector<DeviceFieldInfo> Agat_FDC140::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = FDC::get_device_fields();
+    r.push_back({"track",  "Track every drive stands on",              true});
+    r.push_back({"phase",  "Stepper phase the head is being pulled to", false});
+    r.push_back({"motor",  "1 while the motor runs",                   false});
+    r.push_back({"write",  "1 in the write mode",                      false});
+    r.push_back({"data",   "Byte in the data register",                false});
+    r.push_back({"ready",  "1 when that byte is valid",                false});
+    r.push_back({"drives", "How many drives are attached",             false});
+    return r;
+}
+
+bool Agat_FDC140::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    //Signed, and -1 means no phase is energised, which as an unsigned value
+    //would print as a very large number
+    if (field == "phase")
+    {
+        out.numeric = false;
+        out.text = (current_phase < 0) ? "none" : std::to_string(current_phase);
+        return true;
+    }
+
+    if (field == "motor" || field == "write" ||
+        field == "data" || field == "ready" || field == "drives")
+    {
+        out.numeric = true;
+        if (field == "motor")       out.values.push_back(motor_on ? 1 : 0);
+        else if (field == "write")  out.values.push_back(write_mode ? 1 : 0);
+        else if (field == "data")   out.values.push_back(data);
+        else if (field == "ready")  out.values.push_back(data_ready ? 1 : 0);
+        else                        out.values.push_back(static_cast<unsigned int>(drives_count));
+        return true;
+    }
+
+    //A head that is not where the software thinks it is explains most of the
+    //read errors this controller produces
+    if (field == "track")
+    {
+        if (to > 1) to = 1;
+        if (from > to) from = to;
+        out.numeric = true;
+        out.has_start = true;
+        out.start = from;
+        for (unsigned int i = from; i <= to; i++)
+            out.values.push_back(static_cast<unsigned int>(current_track[i]));
+        return true;
+    }
+
+    return FDC::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_agat_fdc140(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new Agat_FDC140(im, cd);

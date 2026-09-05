@@ -230,6 +230,51 @@ void Agat9Mapper::set_value(unsigned int address, unsigned int value, bool force
     }
 }
 
+std::vector<DeviceFieldInfo> Agat9Mapper::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
+    r.push_back({"switches", "All the mapping switches at once",            false});
+    r.push_back({"wr",       "Write enable switch",                         false});
+    r.push_back({"rd",       "Read enable switch",                          false});
+    r.push_back({"hd",       "HD switch",                                   false});
+    r.push_back({"d8_4",     "D8/D4 switch",                                false});
+    r.push_back({"bl_ram",   "RAM block currently selected",                false});
+    r.push_back({"bl_rom",   "ROM block currently selected",                false});
+    return r;
+}
+
+bool Agat9Mapper::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "wr" || field == "rd" || field == "hd" || field == "d8_4" ||
+        field == "bl_ram" || field == "bl_rom")
+    {
+        out.numeric = true;
+        if (field == "wr")           out.values.push_back(_WR);
+        else if (field == "rd")      out.values.push_back(_RD);
+        else if (field == "hd")      out.values.push_back(_HD);
+        else if (field == "d8_4")    out.values.push_back(_D8_4);
+        else if (field == "bl_ram")  out.values.push_back(_bl_RAM);
+        else                         out.values.push_back(_bl_ROM);
+        return true;
+    }
+
+    //Which block answers at a given address is decided by these six together,
+    //so reading them one at a time is the slow way to the same answer
+    if (field == "switches")
+    {
+        out.numeric = false;
+        out.text = "WR=" + std::to_string(_WR)
+                 + " RD=" + std::to_string(_RD)
+                 + " HD=" + std::to_string(_HD)
+                 + " D8_4=" + std::to_string(_D8_4)
+                 + " bl_RAM=" + std::to_string(_bl_RAM)
+                 + " bl_ROM=" + std::to_string(_bl_ROM);
+        return true;
+    }
+
+    return AddressableDevice::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_agat_9_mapper(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new Agat9Mapper(im, cd);

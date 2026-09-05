@@ -147,6 +147,12 @@ cd .build
 # Edit .ts files in Qt Linguist
 ```
 
+**Build variants** (`src/CMakeLists.txt`):
+- `ENABLE_GUI` (ON): the windowed `eCat3`. With `OFF` no `find_package(Qt)` runs at all, so a console-only build configures on a machine without Qt.
+- `ENABLE_HEADLESS` (OFF): a second target `eCat3-headless` built from the same `EMULATOR_SOURCES` plus `src/headless/`. Console subsystem, links no Qt, draws into `NullRenderer`. Needs a C++17 toolchain, so the XP/Win7 kits refuse it. It reproduces the regression suite byte for byte, references included.
+- `ENABLE_MCP` (OFF): the MCP server (`src/mcp/`, `src/mcp_bridge.*`, vendored `libs/picojson`). Without the option not one of those files is compiled. A windowed MCP build requires `RENDERER_OPENGL` and fails configuration otherwise; see `MCP.md`.
+- The release scripts take `mcp` and `headless` as arguments, see `.build/README.md`.
+
 **Test changes:**
 - Most behavior testing is via `.cfg` file modifications
 - **Regression suite**: `python tests/run_tests.py` runs an `.ecat` script per machine and diffs the log, the screenshots and any file the script writes against `tests/expected/` (`--all` adds the slow tape/CPU tests, `-k <substr>` filters, `--update` re-records references, `-j N` parallelises). Emulated time makes every run byte-identical, so a screenshot is a valid reference. See `tests/README.md`; a machine or device change that alters behaviour means re-recording the affected references in the same commit
@@ -159,6 +165,9 @@ cd .build
 ### Debugging Tips
 
 - **`globals.h` is generated**: Produced by `configure_file(globals.h.in ...)` at CMake configure time. Do NOT edit `globals.h` directly; edit `globals.h.in` or CMake variables instead.
+- **A halted CPU still runs the script engine**: `Emulator::timer_proc()` calls `script->tick()` on the zero-cycle path too, so `LOG`, `COMMAND` and the other instant verbs work while `cpu.stop()` holds the processor. The delays cannot - they are counted in emulated time and that has stopped, which is what an MCP session reports as a stall instead of hanging forever.
+- **A renderer's `get_screenshot()` must return raw RGBA**, `sx*sy*4` bytes: `Emulator::store_screenshot()` encodes the PNG itself and silently skips a buffer of the wrong size. `WasmRenderer` returns an encoded PNG instead, so `SCREEN` quietly does nothing in the browser build - do not copy it.
+- **`boot-agat-6502-test` is flaky**, on unmodified code too (roughly one run in six). Its screen is repainted while the CPU runs NOPs across video RAM, so `SCREEN` can catch a half-updated frame. Re-run it before believing a failure.
 - **No compile-time logging**: the old `LOGGER` / `LOG_*` macros and the `Logger` class are gone. To trace a device, expose its state through `get_device_fields()` / `get_field()` and read it from an `.ecat` script (`LOG dev.field`), like `bk-fdc` does with its `trace` field
 - **Debug Windows**: GUI provides disassembler, memory dump, port inspector, CPU state viewer
 - **Breakpoints**: Debug menu supports execution breakpoints and step modes
@@ -187,6 +196,8 @@ eCat3/
 │   ├── mainwindow.h/cpp    # Main UI window
 │   ├── qt_utils.h/cpp      # Qt-dependent utilities (moved out of emulator core)
 │   ├── tests/              # CPU test suites (i8080, Z80, 6502)
+│   ├── headless/           # Console frontend (no Qt) + null renderer
+│   ├── mcp/                # MCP server: JSON-RPC, session, base64 (Qt-free)
 │   ├── wasm/               # WebAssembly frontend + package_machines.py
 │   ├── libs/               # Third-party (dsk_tools, lodepng, md4c, miniaudio, mfm_tools, crc16, audio_filters)
 │   └── CMakeLists.txt
@@ -201,6 +212,7 @@ eCat3/
 ├── BUILD.md                # Platform-specific build instructions
 ├── CONFIG.md               # Configuration file format reference
 ├── SCRIPTING.md            # .ecat script and command line reference (Russian)
+├── MCP.md                  # External control over stdin/stdout (Russian)
 ├── LINKS.md                # Reference links
 ├── MANUAL.md               # User manual (Russian)
 └── README.md               # Project overview
@@ -287,7 +299,8 @@ See `CONFIG.md` for complete spec. Key points:
 - **Device lookup is O(N)**: `DeviceManager::get_device_by_name()` does linear scan. Use `required=false` for optional devices to get `nullptr` instead of exception.
 - **Bus timeout is a feature, not an error**: `k1801vm1` aborts the current instruction and traps through vector 004 when an address matches no range. The БК0011М ROM probes for installed memory blocks exactly this way, and without the trap it never starts БЕЙСИК. `MemoryMapper::responds()` answers whether anything is mapped.
 - **`-N` entries in `get_registers()` / `get_flags()`**: pairs whose name starts with a dash carry no value — they are blank separators between register groups, drawn (skipped) by `KeyValueArea::paintEvent` and filtered out by the script engine's `pairs_to_string`. Anything else consuming those lists must skip them too.
-- **Two source lists**: `src/CMakeLists.txt` and `src/wasm/CMakeLists.txt` are separate and hand-maintained. A file added only to the first builds fine on the desktop and breaks the web build.
+- **Two source lists**: `src/CMakeLists.txt` and `src/wasm/CMakeLists.txt` are separate and hand-maintained. A file added only to the first builds fine on the desktop and breaks the web build. Inside `src/CMakeLists.txt` the list is split into `EMULATOR_SOURCES` (Qt-free, shared by the windowed and the console targets) and `GUI_SOURCES`; a core file belongs in the first, or the headless build loses it.
+- **`Emulator`'s constructor takes work, *data*, software, ini** - not the order the members are declared in. Swapping the middle two is silent until a machine whose images live under `software/` reports "Disk image file not found".
 - **A machine may carry several disk controllers of different types**: `Irisha-kngmd.cfg` has `fdc : wd1793` (5.25", drives A:/B:) and `fdc2 : gmd70` at ports 50-51 (8", drives E:/F:). Nothing is special-cased by name: the GUI finds drives by class `fdd`, the scripts by device name (`fdd2.track`). Only `cpu`, `mapper`, `display` and `keyboard` are reserved names.
 - **Wait states are modelled by running the device forward, not by stalling the CPU**: `wd1793` `sync = <address mask>` marks a data-register copy whose access (Irisha KNGMD port 37) advances the controller state machine until DRQ/INTRQ before returning. Use the same trick for any device whose READY line holds the CPU.
 - **`fdd` `layout` picks the track order by file extension** (`cpm:sides|dsk:cylinders`); `save` to an extension with the other order reshuffles tracks on the way out, so the drive doubles as an image converter. Only the sector (`logical`) path honours it; MFM/whole-track paths index `track_indexes[track*sides+side]` directly.

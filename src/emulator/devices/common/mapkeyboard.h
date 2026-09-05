@@ -56,6 +56,9 @@ public:
     emulator::Result load_config(SystemData *sd) override;
 
     void reset(bool cool) override;
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };
 
 ComputerDevice * create_mapkeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);

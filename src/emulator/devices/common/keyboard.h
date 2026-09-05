@@ -324,4 +324,7 @@ public:
     // machine. The scripting engine uses it so that TYPE can produce quotes
     // and other symbols of the upper register.
     virtual bool needs_shift(unsigned int key) { (void)key; return false; }
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };

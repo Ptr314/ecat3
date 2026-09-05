@@ -87,3 +87,23 @@ unsigned int Keyboard::rus_translate(unsigned int code)
     }
     return code;
 }
+
+std::vector<DeviceFieldInfo> Keyboard::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
+    r.push_back({"rus", "1 when the keyboard is in the Rus register", false});
+    return r;
+}
+
+bool Keyboard::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    //Typing that comes out in the wrong alphabet is almost always this
+    if (field == "rus")
+    {
+        out.numeric = true;
+        out.values.push_back(rus_mode ? 1 : 0);
+        return true;
+    }
+
+    return ComputerDevice::get_field(field, from, to, out);
+}

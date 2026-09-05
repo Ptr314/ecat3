@@ -161,6 +161,35 @@ void O128Display::render_byte(unsigned int address)
     }
 }
 
+std::vector<DeviceFieldInfo> O128Display::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = GenericDisplay::get_device_fields();
+    r.push_back({"mode",  "Value of the mode port: colour and width",  false});
+    r.push_back({"frame", "Video page currently shown",                false});
+    r.push_back({"base",  "Address the shown page starts at",          false});
+    return r;
+}
+
+bool O128Display::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "mode" || field == "frame")
+    {
+        out.numeric = true;
+        out.values.push_back((field == "mode") ? mode : frame);
+        return true;
+    }
+
+    if (field == "base")
+    {
+        out.numeric = true;
+        out.width = 16;
+        out.values.push_back(base_address);
+        return true;
+    }
+
+    return GenericDisplay::get_field(field, from, to, out);
+}
+
 ComputerDevice * create_o128display(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new O128Display(im, cd);

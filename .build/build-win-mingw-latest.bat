@@ -13,19 +13,31 @@ REM NOTE: in a shared build the mingw runtime (libstdc++-6.dll and friends)
 REM cannot be dropped -- the Qt6*.dll themselves import it, not just our exe.
 REM A static Qt is the only way to get a DLL-free build here.
 REM
-REM Pass "clean" to wipe the build directories first.
+REM Arguments, in any order:
+REM   clean      wipe the build directories first
+REM   mcp        build with the MCP server (-DENABLE_MCP=ON). Only the OpenGL
+REM              renderer supports it, the other GUI variants are skipped
+REM   headless   also build the console executable, which needs no Qt at all
 REM ---------------------------------------------------------------------------
 
 cd /d "%~dp0"
 call "%~dp0vars-mingw-latest.cmd" || exit /b 1
 
-SET "_CLEAN=%~1"
+SET "_CLEAN="
+SET "_MCP=OFF"
+SET "_HEADLESS=0"
+for %%A in (%*) do (
+    if /I "%%A"=="clean"    SET "_CLEAN=clean"
+    if /I "%%A"=="mcp"      SET "_MCP=ON"
+    if /I "%%A"=="headless" SET "_HEADLESS=1"
+)
 SET _ARCHITECTURE=x86_64
 SET _COMPILER=mingw
 SET _PLATFORM=windows
 SET "CC=%_ROOT_MINGW%\gcc.exe"
 
 SET RENDERERS=QT OPENGL
+if "%_HEADLESS%"=="1" SET RENDERERS=%RENDERERS% HEADLESS
 
 call "%~dp0win-common.cmd" version "..\VERSION" || exit /b 1
 
@@ -53,8 +65,26 @@ exit /b 0
 REM ---------------------------------------------------------------------------
 :build_one
 SET _RENDERER=%~1
+
+REM HEADLESS is not a renderer but a whole variant: the console executable,
+REM built from the same sources with no Qt linked at all
+if /I "%_RENDERER%"=="HEADLESS" (
+    SET "_VARIANT_FLAGS=-DENABLE_GUI=OFF -DENABLE_HEADLESS=ON"
+    SET "_EXE_NAME=ecat3-headless.exe"
+) else (
+    SET "_VARIANT_FLAGS=-DRENDERER_%_RENDERER%=1"
+    SET "_EXE_NAME=ecat3.exe"
+)
+
+REM A windowed MCP build is only supported on OpenGL, see MCP.md
+if /I "%_MCP%"=="ON" if /I not "%_RENDERER%"=="OPENGL" if /I not "%_RENDERER%"=="HEADLESS" (
+    echo.
+    echo === Skipping %_RENDERER%: an MCP build needs the OpenGL renderer
+    exit /b 0
+)
 SET _BUILD_DIR=.\build\%_PLATFORM%_%_ARCHITECTURE%_%_COMPILER%_%_RENDERER%
 SET _RELEASE_NAME=ecat-%_VERSION%-%_PLATFORM%-%_ARCHITECTURE%-%_RENDERER%
+if /I "%_MCP%"=="ON" SET _RELEASE_NAME=%_RELEASE_NAME%-mcp
 SET _RELEASE_DIR=.\release\%_RELEASE_NAME%
 
 echo.
@@ -67,19 +97,21 @@ REM Always reconfigure and rebuild: cmake and ninja work out what actually
 REM changed. Previously the whole build was skipped when the directory already
 REM existed, so a stale executable could be packaged into the release.
 call "%_QT_KIT%\bin\qt-cmake" -S ../src -B "%_BUILD_DIR%" -G Ninja ^
-     -DCMAKE_BUILD_TYPE=Release -DRENDERER_%_RENDERER%=1 || exit /b 1
+     -DCMAKE_BUILD_TYPE=Release %_VARIANT_FLAGS% -DENABLE_MCP=%_MCP% || exit /b 1
 cmake --build "%_BUILD_DIR%" || exit /b 1
 
-if not exist "%_BUILD_DIR%\ecat3.exe" (
-    echo ERROR: "%_BUILD_DIR%\ecat3.exe" not found.
+if not exist "%_BUILD_DIR%\%_EXE_NAME%" (
+    echo ERROR: "%_BUILD_DIR%\%_EXE_NAME%" not found.
     exit /b 1
 )
 
 call "%~dp0win-common.cmd" reset "%_RELEASE_DIR%" || exit /b 1
 call "%~dp0win-common.cmd" deploy "%_RELEASE_DIR%" || exit /b 1
-copy /y "%_BUILD_DIR%\ecat3.exe" "%_RELEASE_DIR%" >nul || exit /b 1
+copy /y "%_BUILD_DIR%\%_EXE_NAME%" "%_RELEASE_DIR%" >nul || exit /b 1
 
-if "%_QT_STATIC%"=="1" (
+if /I "%_RENDERER%"=="HEADLESS" (
+    echo Console build: no Qt runtime needed.
+) else if "%_QT_STATIC%"=="1" (
     echo Static Qt build: no runtime DLLs needed.
 ) else (
     echo Copying Qt runtime from "%_QT_KIT%"

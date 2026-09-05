@@ -18,6 +18,9 @@ private:
 public:
     Multiplexer(InterfaceManager *im, EmulatorConfigDevice *cd);
     void interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value) override;
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };
 
 ComputerDevice * create_mux(InterfaceManager *im, EmulatorConfigDevice *cd);
