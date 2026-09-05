@@ -31,6 +31,7 @@ struct Options
     std::string workdir;
     bool mcp = false;
     bool mcp_trace = false;
+    bool no_sound = false;
     bool help = false;
     bool version = false;
     bool bad = false;
@@ -68,6 +69,7 @@ Options parse_options(int argc, char *argv[])
         else if (a == "-v" || a == "--version")  { o.version = true; }
         else if (a == "--mcp")                   { o.mcp = true; }
         else if (a == "--mcp-trace")             { o.mcp_trace = true; }
+        else if (a == "--no-sound")              { o.no_sound = true; }
         else if ((a == "-c" || a == "--config")  && has_next) { o.config  = argv[++i]; }
         else if ((a == "-s" || a == "--script")  && has_next) { o.script  = argv[++i]; }
         else if (a == "--workdir"                && has_next) { o.workdir = argv[++i]; }
@@ -95,6 +97,7 @@ void print_help()
         << "  -c, --config <file.cfg>   Machine configuration to load\n"
         << "  -s, --script <file.ecat>  Script to run, see SCRIPTING.md\n"
         << "      --workdir <dir>       Directory to work in, the one holding computers/\n"
+        << "      --no-sound            Do not open an audio device at all\n"
 #ifdef ENABLE_MCP
         << "      --mcp                 Act as an MCP server on stdin/stdout, see MCP.md\n"
         << "      --mcp-trace           Print the MCP conversation to stderr\n"
@@ -291,6 +294,8 @@ int main(int argc, char *argv[])
     NullRenderer renderer;
     //The order is work, data, software - not the order they are declared in
     Emulator emulator(paths.work, paths.data, paths.software, paths.ini, &renderer);
+    //Set before any machine is loaded, and it holds across a change of machine
+    if (o.no_sound) emulator.set_audio_enabled(false);
     HeadlessHost host(&emulator, paths.work);
 
     //A script is parsed before the machine is loaded: its MACHINE command may

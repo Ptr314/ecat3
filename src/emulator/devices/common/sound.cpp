@@ -59,7 +59,9 @@ emulator::Result GenericSound::load_config(SystemData *sd)
         }
     }
 
-    init_sound(cpu->clock);
+    //Without an audio device the whole sound path stays dormant: clock() drops
+    //out on the very first line, so a silent run costs less than a loud one
+    if (sd->audio_enabled) init_sound(cpu->clock);
 
     return emulator::Result::ok();
 }
@@ -242,6 +244,8 @@ std::vector<DeviceFieldInfo> GenericSound::get_device_fields()
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
     r.push_back({"volume",  "Current volume, 0-100",    false});
     r.push_back({"muted",   "1 if the sound is muted",  false});
+    r.push_back({"active",  "1 if an audio device is open. 0 means the machine "
+                            "is silent: --no-sound, or no audio device at all",  false});
     return r;
 }
 
@@ -258,6 +262,7 @@ bool GenericSound::get_field(const std::string &field, unsigned int from, unsign
     out.numeric = true;
     if (field == "volume")  { out.values.push_back(m_volume);       return true; }
     if (field == "muted")   { out.values.push_back(m_muted?1:0);    return true; }
+    if (field == "active")  { out.values.push_back(m_initialized?1:0); return true; }
 
     out.numeric = false;
     return ComputerDevice::get_field(field, from, to, out);

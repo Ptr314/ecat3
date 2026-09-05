@@ -90,6 +90,11 @@ struct SystemData {
     std::string     allowed_files;
     unsigned int    mapper_cache;
 
+    //False keeps every sound device from opening an audio device at all. A
+    //machine without a sound card is not an error, but the driver says so on
+    //stderr, and a test run counts any stderr output as a failure.
+    bool            audio_enabled = true;
+
     //Read-only access to the ini file, installed by the Emulator. Lets a device
     //resolve a setting on its own, the way the tape recorder looks up the file
     //format of an image in [TapeFiles].

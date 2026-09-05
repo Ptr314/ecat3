@@ -6,7 +6,6 @@
 #include "renderer_wasm.h"
 #include <emscripten.h>
 #include <emscripten/threading.h>
-#include "libs/lodepng/lodepng.h"
 
 // DOM access must happen on the main browser thread.
 // init_screen() and set_filtering() are called from the main thread (via ccall).
@@ -146,9 +145,13 @@ uint32_t WasmRenderer::MapRGB(uint8_t R, uint8_t G, uint8_t B)
 std::vector<uint8_t> WasmRenderer::get_screenshot()
 {
     std::lock_guard<std::mutex> lock(render_mutex);
-    std::vector<uint8_t> png;
-    if (buffer && screen_x > 0 && screen_y > 0) {
-        lodepng::encode(png, buffer, screen_x, screen_y);
-    }
-    return png;
+    std::vector<uint8_t> image;
+    if (buffer == nullptr || screen_x <= 0 || screen_y <= 0) return image;
+
+    // Raw RGBA, not PNG: Emulator::store_screenshot() expects sx * sy * 4 bytes
+    // and encodes them itself. The buffer is already in that byte order, see
+    // MapRGB() above, so a browser screenshot matches a desktop one byte for byte
+    const size_t size = static_cast<size_t>(screen_x) * screen_y * 4;
+    image.insert(image.end(), buffer, buffer + size);
+    return image;
 }

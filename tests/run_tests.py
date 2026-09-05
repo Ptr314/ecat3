@@ -66,6 +66,17 @@ EXE_GROUPS = [
      "build*/eCat3"],
     [".build/build/*/eCat3.exe",
      ".build/build/*/eCat3"],
+    # Консольная сборка ищется последней: она дает те же результаты, но окна
+    # эмулятора при прогоне не видно. На машине без Qt (то есть в CI) она
+    # обычно единственная, что здесь и находится.
+    ["src/cmake-build-*/eCat3-headless.exe",
+     "src/cmake-build-*/eCat3-headless",
+     "src/build*/eCat3-headless.exe",
+     "src/build*/eCat3-headless",
+     "build*/eCat3-headless.exe",
+     "build*/eCat3-headless",
+     ".build/build/*/eCat3-headless.exe",
+     ".build/build/*/eCat3-headless"],
 ]
 
 
@@ -336,7 +347,7 @@ def script_logs(test):
             if stamped.search(os.path.basename(p))]
 
 
-def run_test(test, exe, env, update):
+def run_test(test, exe, env, update, exe_args=()):
     result = {"test": test, "problems": [], "artifacts": [], "seconds": 0.0}
 
     # Хвосты прошлого прогона, чтобы не сравнить старый файл с новым эталоном
@@ -350,7 +361,7 @@ def run_test(test, exe, env, update):
     started = time.time()
     try:
         proc = subprocess.run(
-            [exe, "--script", test.path],
+            [exe, "--script", test.path] + list(exe_args),
             cwd=DEPLOY_DIR, env=env, timeout=test.timeout,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         code = proc.returncode
@@ -437,7 +448,15 @@ def main():
         where = os.path.relpath(exe, REPO_DIR)
     except ValueError:          # сборка на другом диске
         where = exe
-    print("Эмулятор: %s%s" % (where, " (%s)" % version if version else ""))
+    # Консольная сборка запускается без звука: на машине без звуковой карты
+    # аудиодрайвер пишет в stderr, а любой вывод в stderr здесь означает
+    # провалившийся тест. На вывод сценария это не влияет, звук в него не входит.
+    exe_args = []
+    if "headless" in os.path.basename(exe).lower():
+        exe_args.append("--no-sound")
+
+    print("Эмулятор: %s%s%s" % (where, " (%s)" % version if version else "",
+                                ", без звука" if exe_args else ""))
     print("Тестов:   %d%s\n" % (len(tests), ", режим обновления эталонов" if args.update else ""))
 
     results = []
@@ -445,13 +464,14 @@ def main():
     with KeepIni():
         if args.jobs > 1:
             with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
-                futures = {pool.submit(run_test, t, exe, env, args.update): t for t in tests}
+                futures = {pool.submit(run_test, t, exe, env, args.update, exe_args): t
+                           for t in tests}
                 for future in concurrent.futures.as_completed(futures):
                     results.append(future.result())
                     report_one(results[-1], len(results), len(tests))
         else:
             for i, test in enumerate(tests, 1):
-                results.append(run_test(test, exe, env, args.update))
+                results.append(run_test(test, exe, env, args.update, exe_args))
                 report_one(results[-1], i, len(tests))
 
     results.sort(key=lambda r: r["test"].name)

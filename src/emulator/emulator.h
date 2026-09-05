@@ -104,6 +104,10 @@ public:
     //An external driver runs many short sessions in the working tree, and
     //every one of them would otherwise rewrite the ini file
     void set_settings_readonly(bool on) { m_settings_readonly = on; }
+
+    //Silences the machine outright, audio device included. Has to be called
+    //before load_config(): a sound device opens its driver while it loads
+    void set_audio_enabled(bool on) { sd.audio_enabled = on; }
     void load_charmap();
     const std::string & translate_char(unsigned int system_code);
 
