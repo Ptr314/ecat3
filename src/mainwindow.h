@@ -29,6 +29,10 @@ public:
     MainWindow(const QString &config_file = QString(), const QString &script_file = QString(), QWidget *parent = nullptr);
     ~MainWindow();
 
+    //A script given on the command line may end with EXIT <code>. The code
+    //is kept here for main(), which turns it into the status of the process
+    int script_exit_code() const { return rec_exit_code; }
+
     Emulator *e;
 
 #ifdef ENABLE_MCP
@@ -169,6 +173,7 @@ private:
     QTimer * rec_timer = nullptr;
     bool rec_ui_shown = false;          //The status bar block appears with the first recording or file
     bool rec_cmdline = false;           //A script from the command line: EXIT closes the window
+    int rec_exit_code = 0;              //EXIT <code> of that script, returned from main()
     size_t rec_seen_pc = 0;             //Commands before it were checked for option changes
     uint64_t rec_total_ms = 0;
     QString rec_file;                   //Last opened or saved .ecat

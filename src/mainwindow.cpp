@@ -1288,6 +1288,8 @@ void MainWindow::rec_tick()
         if (s->is_finished()) {
             if (rec_cmdline && s->is_exit_requested()) {
                 rec_timer->stop();
+                //The engine dies with the emulator inside closeEvent()
+                rec_exit_code = s->get_exit_code();
                 close();
                 return;
             }

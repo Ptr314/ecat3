@@ -132,6 +132,10 @@ int main(int argc, char *argv[])
 
     int RetVal = a.exec();
 
+    //Closing the window ends exec() with zero whatever the script asked for,
+    //so the EXIT code of a command line script is applied here
+    if (RetVal == 0) RetVal = w.script_exit_code();
+
 #if defined(RENDERER_SDL2) || defined(USE_SDL_AUDIO)
     SDL_Quit();
 #endif
