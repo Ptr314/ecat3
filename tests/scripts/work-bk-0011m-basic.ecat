@@ -7,16 +7,16 @@
 # @timeout 40
 
 MACHINE "bk/BK-0011M.cfg"
-WAIT 4000
+WAIT _4000
 
 TYPE "10 PRINT \"BK\"\n"
 TYPE "20 PRINT 355/113\n"
 TYPE "LIST\n"
-WAIT 1500
+WAIT _1500
 TYPE "RUN\n"
-WAIT 2000
+WAIT _2000
 
-LOGDEFS 16,8
+LOGDEFS _16,_8
 LOG mapper.config
 LOG display.resolution
 

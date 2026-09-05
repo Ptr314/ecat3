@@ -90,6 +90,12 @@ struct SystemData {
     std::string     allowed_files;
     unsigned int    mapper_cache;
 
+    //Base of the numbers the machine writes without a prefix: the "radix" of
+    //the configuration, which a script can change with the RADIX command. Only
+    //machine values are read in it - addresses, vectors, register contents -
+    //never delays, counts or frequencies
+    unsigned int    radix = 10;
+
     //False keeps every sound device from opening an audio device at all. A
     //machine without a sound card is not an error, but the driver says so on
     //stderr, and a test run counts any stderr output as a failure.
@@ -260,6 +266,11 @@ public:
     bool belongs_to_class(const std::string &class_to_check);
     bool get_reset_behavior(bool is_cold);
 
+
+    //Base for the machine values of a device command: addresses and register
+    //contents. A script may have changed it with RADIX, so it is read every
+    //time instead of being cached
+    unsigned int radix() const { return (sd != nullptr)?sd->radix:10; }
 
 protected:
     SystemData * sd = nullptr;      //Stored by load_config(), used to locate files

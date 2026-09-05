@@ -419,6 +419,7 @@ emulator::Result ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
                     "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Interface not found")) + "} " + name + ":" + interface_name);
 
             try {
+                //A line tied to a fixed level carries a machine value
                 unsigned int pull_value = parse_numeric_value(connection);
                 interface->pull(pull_value);
                 continue;
@@ -651,16 +652,18 @@ void AddressableDevice::set_value_word(unsigned int address, unsigned int value,
 std::vector<DeviceFieldInfo> AddressableDevice::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
-    r.push_back({"value", "Stored value or a range of values", true});
-    r.push_back({"size",  "Addressable size of a device",      false});
+    r.push_back({"value",   "Stored value or a range of values",             true});
+    r.push_back({"value16", "The same range read as 16 bit words",           true});
+    r.push_back({"size",    "Addressable size of a device",                  false});
     return r;
 }
 
 std::vector<DeviceCommandInfo> AddressableDevice::get_device_commands()
 {
     std::vector<DeviceCommandInfo> r = ComputerDevice::get_device_commands();
-    r.push_back({"set",  "address, value",    "Writes a value to an address"});
-    r.push_back({"fill", "from, to, value",   "Fills an address range with a value"});
+    r.push_back({"set",   "address, value [, value...]", "Writes bytes to consecutive addresses"});
+    r.push_back({"set16", "address, value [, value...]", "Writes words to consecutive even addresses"});
+    r.push_back({"fill",  "from, to, value",             "Fills an address range with a value"});
     return r;
 }
 
@@ -688,6 +691,32 @@ bool AddressableDevice::get_field(const std::string &field, unsigned int from, u
         return true;
     }
 
+    //The same range, read the way a 16 bit processor sees it. Without this a
+    //script could write words with set16 and only read them back as bytes
+    if (field == "value16")
+    {
+        unsigned int size = get_size();
+        out.numeric = true;
+        out.width = 16;
+
+        if (size <= 2) {
+            out.values.push_back(get_value_word(0));
+            return true;
+        }
+
+        if (to < from) to = from;
+        from &= ~1u;
+        if (from >= size) from = (size - 1) & ~1u;
+        if (to >= size) to = size - 1;
+
+        out.has_start = true;
+        out.start = from;
+        for (unsigned int a = from; a + 1 <= to; a += 2)
+            out.values.push_back(get_value_word(a));
+        if (out.values.empty()) out.values.push_back(get_value_word(from));
+        return true;
+    }
+
     if (field == "size") {
         out.numeric = true;
         out.width = 32;
@@ -702,13 +731,52 @@ emulator::Result AddressableDevice::send_command(const std::string &command, con
 {
     std::vector<std::string> p = split_params(parameters);
 
-    if (command == "set") {
+    //A list of values goes to consecutive addresses, so that a machine code
+    //fragment is one line per instruction instead of one line per byte
+    if (command == "set" || command == "set16") {
+        const bool words = (command == "set16");
+        const unsigned int step = words?2:1;
+
         if (p.size() < 2)
             return emulator::Result::error(emulator::ErrorCode::BadParameters,
-                "{AddressableDevice|" + std::string(QT_TRANSLATE_NOOP("AddressableDevice", "Command 'set' expects an address and a value")) + "}");
+                "{AddressableDevice|" + std::string(QT_TRANSLATE_NOOP("AddressableDevice", "Command 'set' expects an address and at least one value")) + "}");
+
+        const unsigned int address = parse_numeric_value(p[0]);
+        //Ports and registers report no addressable size at all; only a device
+        //that declares one (memory) can say what fits into it
+        const unsigned int size = get_size();
+
+        //An odd word address is a bus trap on the 16 bit machines this is for
+        if (words && (address & 1) != 0)
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{AddressableDevice|" + std::string(QT_TRANSLATE_NOOP("AddressableDevice", "Command 'set16' expects an even address")) + "}");
+
+        //The whole list is checked before anything is written: half a fragment
+        //in memory is worse than none, and the value that failed is named
+        for (size_t i = 1; i < p.size(); i++)
+        {
+            const unsigned int a = address + static_cast<unsigned int>(i - 1) * step;
+            if (size != 0 && a + step > size)
+                return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                    "{AddressableDevice|" + std::string(QT_TRANSLATE_NOOP("AddressableDevice", "A value is written past the end of the device")) + "} "
+                    + name + ", #" + std::to_string(i));
+            try {
+                parse_numeric_value(p[i]);
+            } catch (const std::exception &) {
+                return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                    "{AddressableDevice|" + std::string(QT_TRANSLATE_NOOP("AddressableDevice", "Not a number")) + "} #"
+                    + std::to_string(i) + ": '" + p[i] + "'");
+            }
+        }
+
         //force=true writes the internal state without driving the bus,
         //the same way the memory dump editor does it
-        set_value(parse_numeric_value(p[0]), parse_numeric_value(p[1]), true);
+        for (size_t i = 1; i < p.size(); i++)
+        {
+            const unsigned int a = address + static_cast<unsigned int>(i - 1) * step;
+            const unsigned int v = parse_numeric_value(p[i]);
+            if (words) set_value_word(a, v, true); else set_value(a, v, true);
+        }
         return emulator::Result::ok();
     }
 
@@ -1099,6 +1167,9 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
     i_data.set_size(size);
     i_alt.set_size(size);
 
+    //Everything a port holds is a machine value: it is what the programs of
+    //this machine read and write, and its documentation writes it in the
+    //machine's own radix. The width and the bit numbers below are not
     try {
         default_value = parse_numeric_value(this->cd->get_parameter("default").value);
     } catch (std::exception &e) {

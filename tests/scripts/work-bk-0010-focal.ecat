@@ -6,12 +6,12 @@
 # @timeout 30
 
 MACHINE "bk/BK-0010.cfg"
-WAIT 4000
+WAIT _4000
 
 TYPE "T 2+2\n"
-WAIT 1500
+WAIT _1500
 
-LOGDEFS 16,8
+LOGDEFS _16,_8
 LOG port-sys-rd.value
 LOG display.resolution
 

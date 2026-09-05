@@ -9,7 +9,7 @@
 # @timeout 200
 
 MACHINE "bk/BK-0011M.cfg"
-WAIT 4000
+WAIT _4000
 
 TYPE "10 PRINT \"TAPE\"\n"
 TYPE "20 PRINT 355/113\n"
@@ -17,26 +17,26 @@ TYPE "20 PRINT 355/113\n"
 PRINT "=== Запись на ленту ==="
 COMMAND tape.record(1)
 TYPE "SAVE\"BKTAPE\"\n"
-WAIT 30000
+WAIT _30000
 COMMAND tape.record(0)
 
-LOGDEFS 8,16
+LOGDEFS _8,_16
 LOG tape.recorded
 LOG tape.baudrate
 COMMAND tape.save("../results/BKTAPE.asc")
 
 PRINT "=== Чтение обратно ==="
 TYPE "NEW\n"
-WAIT 500
+WAIT _500
 COMMAND tape.load("../results/BKTAPE.asc")
 LOG tape.size
 TYPE "LOAD\"BKTAPE\"\n"
-WAIT 500
+WAIT _500
 COMMAND tape.play
-WAIT 35000
+WAIT _35000
 
 TYPE "LIST\n"
-WAIT 3000
+WAIT _3000
 
 SCREEN "../results/slow-bk-0011m-tape.png"
 EXIT

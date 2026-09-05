@@ -8,9 +8,9 @@
 # @timeout 26
 
 MACHINE "bk/1801vm1-test.cfg"
-WAIT 1000
+WAIT _1000
 
-LOGDEFS 16,8
+LOGDEFS _16,_8
 PRINT "=== Экран ==="
 LOG display.resolution
 

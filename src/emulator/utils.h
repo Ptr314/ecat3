@@ -13,7 +13,15 @@
 
 #define _FFFF (unsigned int)(-1)
 
-unsigned int parse_numeric_value(std::string str);
+//The base of the numbers of the machine being loaded: "radix" of its
+//configuration, which the RADIX command of a script may change. Every value
+//written without a prefix is read in it, so that one file has one notation
+void set_default_radix(unsigned int base);
+unsigned int get_default_radix();
+
+//default_base of 0 means the radix above. Pass 10 explicitly for a value that
+//does not come from the machine: the ini file, a tape format, a host setting
+unsigned int parse_numeric_value(std::string str, unsigned int default_base = 0);
 
 unsigned int create_mask(unsigned int size, unsigned int shift);
 

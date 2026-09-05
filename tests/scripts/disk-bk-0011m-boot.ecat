@@ -12,9 +12,9 @@
 # @timeout 60
 
 MACHINE "bk/BK-0011M-fdd.cfg"
-WAIT 12000
+WAIT _12000
 
-LOGDEFS 16,8
+LOGDEFS _16,_8
 PRINT "=== Заставка ==="
 LOG fdd0.loaded
 LOG fdd0.file
@@ -22,8 +22,8 @@ LOG fdc.motor
 LOG fdc.track
 SCREEN "../results/disk-bk-0011m-boot-splash.png"
 
-KEY 100,100,space
-WAIT 5000
+KEY _100,_100,space
+WAIT _5000
 
 PRINT "=== Оболочка ==="
 LOG fdd0.track

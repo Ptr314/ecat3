@@ -8,9 +8,9 @@
 # @timeout 29
 
 MACHINE "bk/BK-0011M-mstd.cfg"
-WAIT 4000
+WAIT _4000
 
-LOGDEFS 16,8
+LOGDEFS _16,_8
 PRINT "=== Экран ==="
 LOG display.resolution
 

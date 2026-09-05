@@ -285,7 +285,9 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
             "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect tape file format")) + "} " + fmt);
 
     std::string tape_format = first[0];
-    int baud = parse_numeric_value(first[1]);
+    //The description comes from the ini file, where numbers are plain decimal
+    //and the bytes of a header carry a prefix of their own
+    int baud = parse_numeric_value(first[1], 10);
 
     std::vector<uint8_t> buffer;
 
@@ -303,8 +305,8 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
             }
         } else {
             std::vector<std::string> bytes = split_string(parts[i], ':', true);
-            uint8_t b = parse_numeric_value(bytes[0]);
-            unsigned int count = parse_numeric_value(bytes[1]);
+            uint8_t b = parse_numeric_value(bytes[0], 10);
+            unsigned int count = parse_numeric_value(bytes[1], 10);
 
             for (unsigned int j = 0; j < count; j++) {
                 buffer.push_back(b);

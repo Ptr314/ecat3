@@ -6,26 +6,26 @@
 # @timeout 40
 
 MACHINE "bk/BK-0010-01.cfg"
-WAIT 4000
+WAIT _4000
 
 TYPE "PRINT \"FULL SCREEN\"\n"
-WAIT 800
+WAIT _800
 TYPE "PRINT CHR$(140)\n"
-WAIT 800
+WAIT _800
 
-LOGDEFS 16,8
+LOGDEFS _16,_8
 PRINT "=== Четверть экрана ==="
 LOG port-scroll.value
 SCREEN "../results/work-bk-0010-01-rp-quarter.png"
 
 TYPE "PRINT \"HELLO RP\"\n"
-WAIT 800
+WAIT _800
 TYPE "PRINT 1234\n"
-WAIT 800
+WAIT _800
 SCREEN "../results/work-bk-0010-01-rp-text.png"
 
 TYPE "PRINT CHR$(140)\n"
-WAIT 800
+WAIT _800
 PRINT "=== Полный экран ==="
 LOG port-scroll.value
 SCREEN "../results/work-bk-0010-01-rp-back.png"

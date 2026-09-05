@@ -11,7 +11,7 @@
 # @timeout 40
 
 MACHINE "bk/BK-0010-01.cfg"
-WAIT 4000
+WAIT _4000
 
 TYPE "10 FOR I=1 TO 3\n"
 TYPE "20 PRINT I*I\n"
@@ -21,7 +21,7 @@ TYPE "50 J=J+1\n"
 TYPE "55 IF J<3 THEN 50\n"
 TYPE "60 PRINT J\n"
 TYPE "RUN\n"
-WAIT 3000
+WAIT _3000
 
 SCREEN "../results/work-bk-0010-01-loop.png"
 EXIT

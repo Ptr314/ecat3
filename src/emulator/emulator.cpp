@@ -132,7 +132,13 @@ emulator::Result Emulator::load_config(std::string file_name)
     sd.system_charmap = system->get_parameter("charmap", false).value;
     sd.software_path = software_path;
     sd.data_path = data_path;
-    sd.mapper_cache = parse_numeric_value(read_setup("Core", "mapper_cache", "8"));
+    //A setting of the host, not a number of the machine
+    sd.mapper_cache = parse_numeric_value(read_setup("Core", "mapper_cache", "8"), 10);
+
+    //From here on every value without a prefix is read in the notation this
+    //machine uses. Validated by EmulatorConfig::load_from_file()
+    sd.radix = system->radix;
+    set_default_radix(sd.radix);
     sd.read_setup = [this](const std::string &section, const std::string &ident, const std::string &def) {
         return this->read_setup(section, ident, def);
     };
@@ -367,8 +373,9 @@ void Emulator::run()
             reset(true);
 
             clock_freq = this->cpu->clock;
-            timer_res = parse_numeric_value(read_setup("Core", "TimerResolution", "1"));
-            timer_delay = parse_numeric_value(read_setup("Core", "TimerDelay", "20"));
+            //Host settings in milliseconds, decimal whatever the machine uses
+            timer_res = parse_numeric_value(read_setup("Core", "TimerResolution", "1"), 10);
+            timer_delay = parse_numeric_value(read_setup("Core", "TimerDelay", "20"), 10);
 
             local_counter = 0;
             clock_counter = 0;

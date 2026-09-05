@@ -170,7 +170,24 @@ std::string format_number(unsigned int value, unsigned int base, unsigned int wi
     }
 }
 
-unsigned int parse_numeric_value(std::string str)
+namespace {
+    //One machine is loaded at a time, and its notation belongs to it, not to a
+    //particular call site: a number without a prefix means the same thing
+    //everywhere in its files
+    unsigned int g_default_radix = 10;
+}
+
+void set_default_radix(unsigned int base)
+{
+    g_default_radix = (base == 2 || base == 8 || base == 10 || base == 16)?base:10;
+}
+
+unsigned int get_default_radix()
+{
+    return g_default_radix;
+}
+
+unsigned int parse_numeric_value(std::string str, unsigned int default_base)
 {
     int base;
     int mult;
@@ -182,12 +199,23 @@ unsigned int parse_numeric_value(std::string str)
     for (size_t i = 0; i < s.size(); i++)
         s[i] = toupper(s[i]);
 
+    //The same prefixes format_number() writes, so a value printed by LOG can be
+    //typed back in. '&' is octal, the notation every PDP-11 document uses; the
+    //'#' of a PDP-11 listing means an immediate operand and is binary here.
+    //'_' is decimal: in a file written in another radix it marks the values
+    //that are counts and delays rather than numbers of the machine.
     char first = s[0];
+    bool prefixed = true;
     if (first == '$') base = 16;
+    else if (first == '&') base = 8;
     else if (first == '#') base = 2;
-    else base = 10;
+    else if (first == '_') base = 10;
+    else {
+        base = static_cast<int>((default_base != 0)?default_base:g_default_radix);
+        prefixed = false;
+    }
 
-    if (base != 10) s.erase(0, 1);
+    if (prefixed) s.erase(0, 1);
 
     if (s[s.length() - 1] == 'K') {
         mult = 1024;
@@ -216,16 +244,18 @@ unsigned int create_mask(unsigned int size, unsigned int shift)
 
 void convert_range(const std::string &s, unsigned int * v1, unsigned int * v2)
 {
+    //Bit numbers of a connection are decimal in any file: they are part of the
+    //syntax of the connection, not a number of the machine
     if (!s.empty())
     {
         size_t p = s.find('-');
         if (p == std::string::npos)
         {
-            *v1 = parse_numeric_value(s);
+            *v1 = parse_numeric_value(s, 10);
             *v2 = *v1;
         } else {
-            *v1 = parse_numeric_value(s.substr(0, p));
-            *v2 = parse_numeric_value(s.substr(p + 1));
+            *v1 = parse_numeric_value(s.substr(0, p), 10);
+            *v2 = parse_numeric_value(s.substr(p + 1), 10);
         }
     } else
         throw std::runtime_error("Empty range value");

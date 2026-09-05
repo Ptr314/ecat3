@@ -10,15 +10,15 @@
 # @timeout 40
 
 MACHINE "bk/BK-0011M.cfg"
-WAIT 4000
+WAIT _4000
 
 TYPE "10 FOR I=1 TO 3\n"
 TYPE "20 PRINT I*I\n"
 TYPE "30 NEXT I\n"
 TYPE "RUN\n"
-WAIT 3000
+WAIT _3000
 
-LOGDEFS 16,8
+LOGDEFS _16,_8
 
 SCREEN "../results/work-bk-0011m-loop.png"
 EXIT

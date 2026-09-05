@@ -5,12 +5,12 @@
 # @timeout 30
 
 MACHINE "bk/BK-0010-01.cfg"
-WAIT 4000
+WAIT _4000
 
 TYPE "PRINT 355/113\n"
-WAIT 1500
+WAIT _1500
 
-LOGDEFS 16,8
+LOGDEFS _16,_8
 LOG display.resolution
 
 SCREEN "../results/work-bk-0010-01-basic.png"

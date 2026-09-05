@@ -559,6 +559,9 @@ emulator::Result ScriptEngine::execute(const ScriptCommand &c)
             case SCRIPT_CMD_LOGDEFS:
                 return do_logdefs(c);
 
+            case SCRIPT_CMD_RADIX:
+                return do_radix(c);
+
             case SCRIPT_CMD_LOG:
                 return do_log(c);
 
@@ -815,6 +818,26 @@ emulator::Result ScriptEngine::do_logdefs(const ScriptCommand &c)
     return emulator::Result::ok();
 }
 
+//The base of every number the script writes without a prefix. A machine brings
+//its own with MACHINE, so this is an override; '_' marks a decimal value
+emulator::Result ScriptEngine::do_radix(const ScriptCommand &c)
+{
+    if (c.args.empty() || c.args[0].empty())
+        return emulator::Result::error(emulator::ErrorCode::BadParameters,
+            "RADIX expects a base");
+
+    //Read in decimal: the base itself cannot be written in the base it sets
+    unsigned int base = parse_numeric_value(c.args[0], 10);
+    if (base != 2 && base != 8 && base != 10 && base != 16)
+        return emulator::Result::error(emulator::ErrorCode::BadParameters,
+            "RADIX: base must be 2, 8, 10 or 16");
+
+    SystemData * sd = e->get_system_data();
+    if (sd != nullptr) sd->radix = base;
+    set_default_radix(base);
+    return emulator::Result::ok();
+}
+
 emulator::Result ScriptEngine::do_log(const ScriptCommand &c)
 {
     ComputerDevice * d = find_device(c);
@@ -896,7 +919,8 @@ bool ScriptEngine::waitfor_step()
         return true;
     }
 
-    unsigned int op = parse_numeric_value(c.args[0]);
+    //The operator is stored as a code by the parser, not written by a human
+    unsigned int op = parse_numeric_value(c.args[0], 10);
     unsigned int expected = parse_numeric_value(c.args[1]);
     unsigned int actual = v.values[0];
 

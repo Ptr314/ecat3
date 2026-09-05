@@ -12,13 +12,13 @@
 # @timeout 60
 
 MACHINE "bk/BK-0010-01-fdd.cfg"
-WAIT 3000
+WAIT _3000
 
 TYPE "S160000"
-KEY 100,100,ret
-WAIT 12000
+KEY _100,_100,ret
+WAIT _12000
 
-LOGDEFS 16,8
+LOGDEFS _16,_8
 PRINT "=== Заставка ==="
 LOG fdd0.loaded
 LOG fdd0.file
@@ -27,8 +27,8 @@ LOG fdc.track
 LOG cpu.timeouts
 SCREEN "../results/disk-bk-0010-01-boot-splash.png"
 
-KEY 100,100,space
-WAIT 5000
+KEY _100,_100,space
+WAIT _5000
 
 PRINT "=== Оболочка ==="
 LOG fdd0.track

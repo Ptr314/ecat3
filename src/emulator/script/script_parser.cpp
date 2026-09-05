@@ -35,7 +35,8 @@ namespace {
         {SCRIPT_CMD_LOGFILE, "logfile", false},
         {SCRIPT_CMD_WAITFOR, "waitfor", true },
         {SCRIPT_CMD_KEYDOWN, "keydown", false},
-        {SCRIPT_CMD_KEYUP,   "keyup",   false}
+        {SCRIPT_CMD_KEYUP,   "keyup",   false},
+        {SCRIPT_CMD_RADIX,   "radix",   false}
     };
 
     const unsigned int VERBS_COUNT = sizeof(VERBS) / sizeof(VERBS[0]);

@@ -9,179 +9,50 @@
 # @nomcp ay.level - мгновенная фаза генераторов, зависит от абсолютного эмулируемого времени
 
 MACHINE "bk/BK-0011M.cfg"
-WAIT 3000
+WAIT _3000
 COMMAND cpu.stop
 
-LOGDEFS 16,8
-COMMAND ram0.set($2800, $17)
-COMMAND ram0.set($2801, $8D)    # MTPS #340            ; запретить прерывания
-COMMAND ram0.set($2802, $E0)
-COMMAND ram0.set($2803, $00)
-COMMAND ram0.set($2804, $DF)
-COMMAND ram0.set($2805, $15)    # MOV #377,@#177714    ; выбор регистра 0
-COMMAND ram0.set($2806, $FF)
-COMMAND ram0.set($2807, $00)
-COMMAND ram0.set($2808, $CC)
-COMMAND ram0.set($2809, $FF)
-COMMAND ram0.set($280A, $DF)
-COMMAND ram0.set($280B, $95)    # MOVB #233,@#177714   ; регистр 0 = 144
-COMMAND ram0.set($280C, $9B)
-COMMAND ram0.set($280D, $00)
-COMMAND ram0.set($280E, $CC)
-COMMAND ram0.set($280F, $FF)
-COMMAND ram0.set($2810, $DF)
-COMMAND ram0.set($2811, $15)    # MOV #376,@#177714    ; выбор регистра 1
-COMMAND ram0.set($2812, $FE)
-COMMAND ram0.set($2813, $00)
-COMMAND ram0.set($2814, $CC)
-COMMAND ram0.set($2815, $FF)
-COMMAND ram0.set($2816, $DF)
-COMMAND ram0.set($2817, $95)    # MOVB #377,@#177714   ; регистр 1 = 0
-COMMAND ram0.set($2818, $FF)
-COMMAND ram0.set($2819, $00)
-COMMAND ram0.set($281A, $CC)
-COMMAND ram0.set($281B, $FF)
-COMMAND ram0.set($281C, $DF)
-COMMAND ram0.set($281D, $15)    # MOV #375,@#177714    ; выбор регистра 2
-COMMAND ram0.set($281E, $FD)
-COMMAND ram0.set($281F, $00)
-COMMAND ram0.set($2820, $CC)
-COMMAND ram0.set($2821, $FF)
-COMMAND ram0.set($2822, $DF)
-COMMAND ram0.set($2823, $95)    # MOVB #377,@#177714   ; регистр 2 = 0
-COMMAND ram0.set($2824, $FF)
-COMMAND ram0.set($2825, $00)
-COMMAND ram0.set($2826, $CC)
-COMMAND ram0.set($2827, $FF)
-COMMAND ram0.set($2828, $DF)
-COMMAND ram0.set($2829, $15)    # MOV #374,@#177714    ; выбор регистра 3
-COMMAND ram0.set($282A, $FC)
-COMMAND ram0.set($282B, $00)
-COMMAND ram0.set($282C, $CC)
-COMMAND ram0.set($282D, $FF)
-COMMAND ram0.set($282E, $DF)
-COMMAND ram0.set($282F, $95)    # MOVB #376,@#177714   ; регистр 3 = 1
-COMMAND ram0.set($2830, $FE)
-COMMAND ram0.set($2831, $00)
-COMMAND ram0.set($2832, $CC)
-COMMAND ram0.set($2833, $FF)
-COMMAND ram0.set($2834, $DF)
-COMMAND ram0.set($2835, $15)    # MOV #371,@#177714    ; выбор регистра 6
-COMMAND ram0.set($2836, $F9)
-COMMAND ram0.set($2837, $00)
-COMMAND ram0.set($2838, $CC)
-COMMAND ram0.set($2839, $FF)
-COMMAND ram0.set($283A, $DF)
-COMMAND ram0.set($283B, $95)    # MOVB #370,@#177714   ; регистр 6 = 7
-COMMAND ram0.set($283C, $F8)
-COMMAND ram0.set($283D, $00)
-COMMAND ram0.set($283E, $CC)
-COMMAND ram0.set($283F, $FF)
-COMMAND ram0.set($2840, $DF)
-COMMAND ram0.set($2841, $15)    # MOV #370,@#177714    ; выбор регистра 7
-COMMAND ram0.set($2842, $F8)
-COMMAND ram0.set($2843, $00)
-COMMAND ram0.set($2844, $CC)
-COMMAND ram0.set($2845, $FF)
-COMMAND ram0.set($2846, $DF)
-COMMAND ram0.set($2847, $95)    # MOVB #341,@#177714   ; регистр 7 = 36
-COMMAND ram0.set($2848, $E1)
-COMMAND ram0.set($2849, $00)
-COMMAND ram0.set($284A, $CC)
-COMMAND ram0.set($284B, $FF)
-COMMAND ram0.set($284C, $DF)
-COMMAND ram0.set($284D, $15)    # MOV #367,@#177714    ; выбор регистра 8
-COMMAND ram0.set($284E, $F7)
-COMMAND ram0.set($284F, $00)
-COMMAND ram0.set($2850, $CC)
-COMMAND ram0.set($2851, $FF)
-COMMAND ram0.set($2852, $DF)
-COMMAND ram0.set($2853, $95)    # MOVB #360,@#177714   ; регистр 8 = 17
-COMMAND ram0.set($2854, $F0)
-COMMAND ram0.set($2855, $00)
-COMMAND ram0.set($2856, $CC)
-COMMAND ram0.set($2857, $FF)
-COMMAND ram0.set($2858, $DF)
-COMMAND ram0.set($2859, $15)    # MOV #366,@#177714    ; выбор регистра 9
-COMMAND ram0.set($285A, $F6)
-COMMAND ram0.set($285B, $00)
-COMMAND ram0.set($285C, $CC)
-COMMAND ram0.set($285D, $FF)
-COMMAND ram0.set($285E, $DF)
-COMMAND ram0.set($285F, $95)    # MOVB #357,@#177714   ; регистр 9 = 20
-COMMAND ram0.set($2860, $EF)
-COMMAND ram0.set($2861, $00)
-COMMAND ram0.set($2862, $CC)
-COMMAND ram0.set($2863, $FF)
-COMMAND ram0.set($2864, $DF)
-COMMAND ram0.set($2865, $15)    # MOV #365,@#177714    ; выбор регистра 10
-COMMAND ram0.set($2866, $F5)
-COMMAND ram0.set($2867, $00)
-COMMAND ram0.set($2868, $CC)
-COMMAND ram0.set($2869, $FF)
-COMMAND ram0.set($286A, $DF)
-COMMAND ram0.set($286B, $95)    # MOVB #363,@#177714   ; регистр 10 = 14
-COMMAND ram0.set($286C, $F3)
-COMMAND ram0.set($286D, $00)
-COMMAND ram0.set($286E, $CC)
-COMMAND ram0.set($286F, $FF)
-COMMAND ram0.set($2870, $DF)
-COMMAND ram0.set($2871, $15)    # MOV #364,@#177714    ; выбор регистра 11
-COMMAND ram0.set($2872, $F4)
-COMMAND ram0.set($2873, $00)
-COMMAND ram0.set($2874, $CC)
-COMMAND ram0.set($2875, $FF)
-COMMAND ram0.set($2876, $DF)
-COMMAND ram0.set($2877, $95)    # MOVB #277,@#177714   ; регистр 11 = 100
-COMMAND ram0.set($2878, $BF)
-COMMAND ram0.set($2879, $00)
-COMMAND ram0.set($287A, $CC)
-COMMAND ram0.set($287B, $FF)
-COMMAND ram0.set($287C, $DF)
-COMMAND ram0.set($287D, $15)    # MOV #363,@#177714    ; выбор регистра 12
-COMMAND ram0.set($287E, $F3)
-COMMAND ram0.set($287F, $00)
-COMMAND ram0.set($2880, $CC)
-COMMAND ram0.set($2881, $FF)
-COMMAND ram0.set($2882, $DF)
-COMMAND ram0.set($2883, $95)    # MOVB #377,@#177714   ; регистр 12 = 0
-COMMAND ram0.set($2884, $FF)
-COMMAND ram0.set($2885, $00)
-COMMAND ram0.set($2886, $CC)
-COMMAND ram0.set($2887, $FF)
-COMMAND ram0.set($2888, $DF)
-COMMAND ram0.set($2889, $15)    # MOV #362,@#177714    ; выбор регистра 13
-COMMAND ram0.set($288A, $F2)
-COMMAND ram0.set($288B, $00)
-COMMAND ram0.set($288C, $CC)
-COMMAND ram0.set($288D, $FF)
-COMMAND ram0.set($288E, $DF)
-COMMAND ram0.set($288F, $95)    # MOVB #361,@#177714   ; регистр 13 = 16
-COMMAND ram0.set($2890, $F1)
-COMMAND ram0.set($2891, $00)
-COMMAND ram0.set($2892, $CC)
-COMMAND ram0.set($2893, $FF)
-COMMAND ram0.set($2894, $DF)
-COMMAND ram0.set($2895, $95)    # MOVB #0,@#177715     ; старший байт: до микросхемы не доходит
-COMMAND ram0.set($2896, $00)
-COMMAND ram0.set($2897, $00)
-COMMAND ram0.set($2898, $CD)
-COMMAND ram0.set($2899, $FF)
-COMMAND ram0.set($289A, $FF)
-COMMAND ram0.set($289B, $01)    # BR .
+LOGDEFS _16,_8
+COMMAND ram0.set16(024000, 106427, 000340)           # MTPS #340            ; запретить прерывания
+COMMAND ram0.set16(024004, 012737, 000377, 177714)   # MOV #377,@#177714    ; выбор регистра 0
+COMMAND ram0.set16(024012, 112737, 000233, 177714)   # MOVB #233,@#177714   ; регистр 0 = 144
+COMMAND ram0.set16(024020, 012737, 000376, 177714)   # MOV #376,@#177714    ; выбор регистра 1
+COMMAND ram0.set16(024026, 112737, 000377, 177714)   # MOVB #377,@#177714   ; регистр 1 = 0
+COMMAND ram0.set16(024034, 012737, 000375, 177714)   # MOV #375,@#177714    ; выбор регистра 2
+COMMAND ram0.set16(024042, 112737, 000377, 177714)   # MOVB #377,@#177714   ; регистр 2 = 0
+COMMAND ram0.set16(024050, 012737, 000374, 177714)   # MOV #374,@#177714    ; выбор регистра 3
+COMMAND ram0.set16(024056, 112737, 000376, 177714)   # MOVB #376,@#177714   ; регистр 3 = 1
+COMMAND ram0.set16(024064, 012737, 000371, 177714)   # MOV #371,@#177714    ; выбор регистра 6
+COMMAND ram0.set16(024072, 112737, 000370, 177714)   # MOVB #370,@#177714   ; регистр 6 = 7
+COMMAND ram0.set16(024100, 012737, 000370, 177714)   # MOV #370,@#177714    ; выбор регистра 7
+COMMAND ram0.set16(024106, 112737, 000341, 177714)   # MOVB #341,@#177714   ; регистр 7 = 36
+COMMAND ram0.set16(024114, 012737, 000367, 177714)   # MOV #367,@#177714    ; выбор регистра 8
+COMMAND ram0.set16(024122, 112737, 000360, 177714)   # MOVB #360,@#177714   ; регистр 8 = 17
+COMMAND ram0.set16(024130, 012737, 000366, 177714)   # MOV #366,@#177714    ; выбор регистра 9
+COMMAND ram0.set16(024136, 112737, 000357, 177714)   # MOVB #357,@#177714   ; регистр 9 = 20
+COMMAND ram0.set16(024144, 012737, 000365, 177714)   # MOV #365,@#177714    ; выбор регистра 10
+COMMAND ram0.set16(024152, 112737, 000363, 177714)   # MOVB #363,@#177714   ; регистр 10 = 14
+COMMAND ram0.set16(024160, 012737, 000364, 177714)   # MOV #364,@#177714    ; выбор регистра 11
+COMMAND ram0.set16(024166, 112737, 000277, 177714)   # MOVB #277,@#177714   ; регистр 11 = 100
+COMMAND ram0.set16(024174, 012737, 000363, 177714)   # MOV #363,@#177714    ; выбор регистра 12
+COMMAND ram0.set16(024202, 112737, 000377, 177714)   # MOVB #377,@#177714   ; регистр 12 = 0
+COMMAND ram0.set16(024210, 012737, 000362, 177714)   # MOV #362,@#177714    ; выбор регистра 13
+COMMAND ram0.set16(024216, 112737, 000361, 177714)   # MOVB #361,@#177714   ; регистр 13 = 16
+COMMAND ram0.set16(024224, 112737, 000000, 177715)   # MOVB #0,@#177715     ; старший байт: до микросхемы не доходит
+COMMAND ram0.set16(024232, 000777)                   # BR .
 
-COMMAND cpu.setreg(PC, $2800)
+COMMAND cpu.setreg(PC, 024000)
 COMMAND cpu.run
-WAITFOR cpu.pc == $289A, 5000
+WAITFOR cpu.pc == 024232, _5000
 
 LOG ay.regs
 LOG ay.register
 LOG ay.level
 LOG ay.envelope
-WAIT 10
+WAIT _10
 LOG ay.level
 LOG ay.envelope
-WAIT 500
+WAIT _500
 LOG ay.level
 LOG ay.envelope
 LOG port-ppi.value

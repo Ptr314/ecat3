@@ -165,7 +165,8 @@ emulator::Result EmulatorConfig::load_from_file(std::string file_name, bool syst
     while(!config.empty())
     {
         device_name = read_next_entity(&config, ":");
-        if (device_name.empty()) return emulator::Result::ok();
+        //The usual way out: the file has ended on whitespace
+        if (device_name.empty()) return apply_radix();
         if (device_name == "system")
         {
             device_type = "";
@@ -297,6 +298,31 @@ emulator::Result EmulatorConfig::load_from_file(std::string file_name, bool syst
 
         if (system_only && device_name == "system") break;
     }
+    return apply_radix();
+}
+
+//The radix belongs to the whole file, so every device carries it: a device
+//parses its own parameters, and some of them are read before load_config()
+emulator::Result EmulatorConfig::apply_radix()
+{
+    EmulatorConfigDevice * system = get_device("system");
+    if (system == nullptr) return emulator::Result::ok();
+
+    const std::string s = system->get_parameter("radix", false).value;
+    if (s.empty()) return emulator::Result::ok();
+
+    unsigned int radix = 10;
+    try {
+        //Decimal by definition: the base cannot be written in the base it sets
+        radix = parse_numeric_value(s, 10);
+    } catch (std::exception &) {
+        radix = 0;
+    }
+    if (radix != 2 && radix != 8 && radix != 10 && radix != 16)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{EmulatorConfig|" + std::string(QT_TRANSLATE_NOOP("EmulatorConfig", "radix must be 2, 8, 10 or 16")) + "} " + s);
+
+    for (size_t i = 0; i < devices.size(); i++) devices[i]->radix = radix;
     return emulator::Result::ok();
 }
 

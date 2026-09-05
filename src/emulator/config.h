@@ -31,6 +31,11 @@ public:
     std::string type;
     std::vector<EmulatorConfigParameter> parameters;
 
+    //Base of the numbers this configuration writes without a prefix, from
+    //"radix" in the system section. Only the values that belong to the machine
+    //itself are read in it, see read_machine_value()
+    unsigned int radix = 10;
+
     void add_parameter(std::string name, std::string left_range, std::string value, std::string right_range, std::string right_extended);
     std::string extended_parameter(unsigned int i, std::string expected_name);
     EmulatorConfigParameter get_parameter(std::string name, bool required = true);
@@ -54,6 +59,7 @@ public:
 private:
     std::vector<std::unique_ptr<EmulatorConfigDevice>> devices;
 
+    emulator::Result apply_radix();
     std::string read_next_entity(std::string *config, std::string stop = "");
     std::string read_extended_entity(std::string *config, std::string stop);
     EmulatorConfigDevice *add_device(std::string device_name, std::string device_type);

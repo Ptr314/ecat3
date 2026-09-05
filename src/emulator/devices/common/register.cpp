@@ -27,6 +27,8 @@ Register::Register(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_s(this, im, 1, "s", MODE_R, CHANGED_S)
 {
     try {
+        //What the register holds is a machine value: an interrupt vector, a
+        //jumper setting, a constant the machine reads off the bus
         default_value = parse_numeric_value(this->cd->get_parameter("default").value);
     } catch (std::exception &e) {
         default_value = 0;
