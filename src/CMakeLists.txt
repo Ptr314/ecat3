@@ -79,9 +79,14 @@ ENDIF()
 
 # CMake globals & options
 
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
+# Only the windowed build has anything to generate. Left on without Qt, AUTOGEN
+# warns for every target that it cannot find a Qt version, which in a console
+# only build (no find_package(Qt) at all) is pure noise in the log
+if(ENABLE_GUI)
+    set(CMAKE_AUTOUIC ON)
+    set(CMAKE_AUTOMOC ON)
+    set(CMAKE_AUTORCC ON)
+endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
