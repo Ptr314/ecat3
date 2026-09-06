@@ -293,7 +293,12 @@ void TapeRecorderWindow::on_buttonRec_clicked()
         // extension decides how the file is put back on the tape
         const std::string suggested = d->get_record_name();
         if (!suggested.empty()) path = QDir(path).filePath(QString::fromStdString(suggested));
-        const QString file_name = QFileDialog::getSaveFileName(this, tr("Save recorded data"), path, "Binary files (*.bin);;Text programs (*.asc);;All files (*.*)");
+        // The mask the machine loads tapes through is the one to save under:
+        // the extension is what decides how the file goes back on the tape
+        QString filter = QString::fromStdString(d->files);
+        if (filter.isEmpty()) filter = "Binary files (*.bin);;Text programs (*.asc)";
+        if (!filter.contains("*.*")) filter += ";;All files (*.*)";
+        const QString file_name = QFileDialog::getSaveFileName(this, tr("Save recorded data"), path, filter);
         if (!file_name.isEmpty()) {
             const QFileInfo fi(file_name);
             e->write_setup("Startup", "last_path", fi.absolutePath().toStdString());

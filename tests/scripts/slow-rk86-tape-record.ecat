@@ -1,0 +1,46 @@
+# Радио-86РК: полный оборот ленты.
+# В память кладется узнаваемый образец, машина пишет его на ленту директивой
+# монитора O, снятое сохраняется файлом RKTAPE.rk, память затирается, лента
+# перезаряжается этим файлом и читается обратно директивой I. Сам файл тоже
+# сравнивается с эталоном, так что тест ловит и ошибки распознавания сигнала,
+# и ошибки кодирования.
+#
+# Директива O печатает начало, конец и контрольную сумму, они видны на экране.
+#
+# Регистры процессора не выводятся: между прогонами они плавают, см. раздел
+# «Что нельзя проверять» в tests/README.md.
+# @timeout 200
+
+MACHINE "radio-86rk/Radio-86rk.cfg"
+WAIT 2500
+
+COMMAND ram.set($0000, $C3,$10,$00,$11,$22,$33,$44,$55,$66,$77,$88,$99,$AA,$BB,$CC,$DD)
+COMMAND ram.set($0010, $01,$02,$04,$08,$10,$20,$40,$80,$FE,$FD,$FB,$F7,$EF,$DF,$BF,$7F)
+
+LOGDEFS 8,16
+PRINT "=== Запись на ленту ==="
+COMMAND tape.record(1)
+TYPE "O0000,001F\n"
+WAIT 5000
+COMMAND tape.record(0)
+
+LOG tape.recorded
+COMMAND tape.save("../results/RKTAPE.rk")
+
+PRINT "=== Чтение обратно ==="
+COMMAND ram.fill($0000,$001F,$00)
+COMMAND tape.load("../results/RKTAPE.rk")
+LOG tape.size
+LOG tape.baudrate
+
+COMMAND tape.play
+WAIT 200
+TYPE "I\n"
+WAITFOR tape.mode == 0, 60000
+WAIT 2000
+
+PRINT "=== Прочитанное с ленты ==="
+LOG ram.value($0000,$001F)
+
+SCREEN "../results/slow-rk86-tape-record.png"
+EXIT

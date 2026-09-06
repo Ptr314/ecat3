@@ -82,6 +82,20 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
                 }
                 return;
             }
+            if (m_tape_enc == TapeEnc::RK86) {
+                // Both edges carry information here: a bit cell is two half
+                // periods and the level of every one of them is a half of the
+                // answer, so what the decoder gets is the level that just
+                // ended and how long it was held
+                if (((old_value ^ new_value) & 1) == 0) return;
+                if (has_last_edge)
+                    rk86_decoder.add_run((uint8_t)(old_value & 1),
+                                         (uint32_t)(cycle_counter - last_edge_cycles));
+                last_edge_cycles = cycle_counter;
+                last_level = (uint8_t)(new_value & 1);
+                has_last_edge = true;
+                return;
+            }
             if ((old_value & 1) != 0 && (new_value & 1) == 0) {
                 if (has_last_edge) {
                     const uint64_t delta_cycles = cycle_counter - last_edge_cycles;
@@ -159,10 +173,24 @@ void TapeRecorder::store_bit(const unsigned bit)
 
 void TapeRecorder::set_recording(bool recording)
 {
+    if (!recording && is_recording && m_tape_enc == TapeEnc::RK86 && has_last_edge) {
+        // The level the line was left at is the second half of the last bit
+        // cell and carries its value, but no edge closes it: the machine stops
+        // writing and the line stays where the last half period put it. The
+        // run has to be closed here, or the last byte of the record - the low
+        // half of the checksum - is one bit short and gets dropped.
+        rk86_decoder.add_run(last_level, (uint32_t)(cycle_counter - last_edge_cycles));
+        has_last_edge = false;
+    }
     is_recording = recording;
     if (is_recording && m_tape_enc == TapeEnc::BK) {
         has_last_edge = false;
         bk_decoder.reset();
+        recorded_bytes.clear();
+    }
+    if (is_recording && m_tape_enc == TapeEnc::RK86) {
+        has_last_edge = false;
+        rk86_decoder.reset();
         recorded_bytes.clear();
     }
     if (is_recording && m_tape_enc == TapeEnc::MSX) {
@@ -178,7 +206,64 @@ void TapeRecorder::set_recording(bool recording)
 unsigned TapeRecorder::get_record_size()
 {
     if (m_tape_enc == TapeEnc::BK) return bk_decoder.file()->size();
+    if (m_tape_enc == TapeEnc::RK86) {
+        const size_t size = rk86_decoder.file()->size();
+        const size_t skip = (size != 0 && !record_keeps_sync())? 1 : 0;
+        return (unsigned)(size - skip);
+    }
     return recorded_bytes.size();
+}
+
+// The first extension of a file mask like "Mikrosha (*.rkm)", with the dot.
+// Empty when the mask names none.
+static std::string first_file_extension(const std::string &mask)
+{
+    const size_t p = mask.find("*.");
+    if (p == std::string::npos) return "";
+    std::string ext = ".";
+    for (size_t i = p + 2; i < mask.size(); i++) {
+        const char c = mask[i];
+        if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
+            ext += c;
+        else
+            break;
+    }
+    return (ext.size() > 1)? ext : std::string("");
+}
+
+// The [TapeFiles] entry describing how a file of that extension is put on the
+// tape. A machine specific entry wins over the generic one, the same way the
+// tape recorder window resolves it.
+std::string TapeRecorder::format_for_extension(const std::string &ext)
+{
+    if (ext.empty() || sd == nullptr || !sd->read_setup) return "";
+    std::string fmt = sd->read_setup("TapeFiles", sd->system_type + "." + ext, "");
+    if (fmt.empty()) fmt = sd->read_setup("TapeFiles", ext, "");
+    return fmt;
+}
+
+// Whether a recorded file keeps the synchronisation byte. The formats of one
+// and the same signal disagree about it: everything the [TapeFiles] entry
+// lists in front of "data" is added on playback and therefore does not belong
+// in the file, so a .rk drops the $E6 and a .rko, whose entry adds none, keeps
+// it. Getting this wrong gives a file the machine that wrote it cannot read.
+bool TapeRecorder::record_keeps_sync()
+{
+    const std::string ext = first_file_extension(files);
+    if (ext.empty()) return false;
+    const std::string fmt = format_for_extension(ext.substr(1));
+    if (fmt.empty()) return false;
+
+    std::vector<std::string> parts = split_string(fmt, ';', true);
+    for (size_t i = 1; i < parts.size(); i++) {
+        if (parts[i] == "data") break;
+        std::vector<std::string> bytes = split_string(parts[i], ':', true);
+        //The description comes from the ini file, where the bytes of a header
+        //carry a prefix of their own
+        if (!bytes.empty() && parse_numeric_value(bytes[0], 10) == rk86_tape::SYNC)
+            return false;
+    }
+    return true;
 }
 
 // The name and, more importantly, the extension the recorded data has to be
@@ -186,6 +271,13 @@ unsigned TapeRecorder::get_record_size()
 std::string TapeRecorder::get_record_name()
 {
     if (m_tape_enc == TapeEnc::BK) return bk_decoder.name();
+    if (m_tape_enc == TapeEnc::RK86) {
+        // A Радио-86РК tape carries no name, only the addresses, but the
+        // extension still decides how the file goes back on the tape, and the
+        // one the machine loads from is the one it has just written
+        const std::string ext = first_file_extension(files);
+        return ext.empty()? std::string("") : "tape" + ext;
+    }
     return "";
 }
 
@@ -193,6 +285,12 @@ std::vector<uint8_t> * TapeRecorder::get_record_data()
 {
     if (m_tape_enc == TapeEnc::BK) {
         recorded_bytes = *bk_decoder.file();
+        return &recorded_bytes;
+    }
+    if (m_tape_enc == TapeEnc::RK86) {
+        const std::vector<uint8_t> * f = rk86_decoder.file();
+        const size_t skip = (!f->empty() && !record_keeps_sync())? 1 : 0;
+        recorded_bytes.assign(f->begin() + skip, f->end());
         return &recorded_bytes;
     }
     return &recorded_bytes;
@@ -464,14 +562,11 @@ emulator::Result TapeRecorder::send_command(const std::string &command, const st
         //The format may be given explicitly, otherwise it is taken from the ini
         //by the file extension, exactly as the tape recorder window does it
         std::string fmt = (p.size() > 1)?p[1]:std::string("");
-        if (fmt.empty() && sd != nullptr && sd->read_setup)
+        if (fmt.empty())
         {
             std::string ext = str_tolower(dsk_tools::get_file_ext(file));
             if (!ext.empty() && ext[0] == '.') ext = ext.substr(1);
-            //A machine specific entry wins over the generic one, the same way
-            //the tape recorder window resolves it
-            fmt = sd->read_setup("TapeFiles", sd->system_type + "." + ext, "");
-            if (fmt.empty()) fmt = sd->read_setup("TapeFiles", ext, "");
+            fmt = format_for_extension(ext);
         }
         if (fmt.empty())
             return emulator::Result::error(emulator::ErrorCode::BadParameters,

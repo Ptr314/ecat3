@@ -10,6 +10,7 @@
 #include "emulator/core.h"
 #include "emulator/devices/common/speaker.h"
 #include "emulator/devices/common/tape_bk.h"
+#include "emulator/devices/common/tape_rk86.h"
 
 #define TAPE_STOPPED 0
 #define TAPE_READ    1
@@ -56,9 +57,12 @@ protected:
     uint64_t cycle_counter = 0;
     uint64_t last_edge_cycles = 0;
     bool has_last_edge = false;
+    uint8_t last_level = 0;
     TapeWriterState writer_state = TapeWriterState::Measuring;
     void write_edge(uint64_t counter);
     void store_bit(unsigned bit);
+    std::string format_for_extension(const std::string &ext);
+    bool record_keeps_sync();
     static void encode_msx(const std::vector<uint8_t> &buffer, std::vector<uint8_t> &buffer_encoded);
     unsigned measured_counter = 0;
     uint64_t measured_time = 0;
@@ -69,6 +73,7 @@ protected:
     uint8_t current_byte = 0;
     std::vector<uint8_t> recorded_bytes{};
     bk_tape::Decoder bk_decoder;
+    rk86_tape::Decoder rk86_decoder;
 public:
     std::string files;
 
