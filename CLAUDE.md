@@ -164,6 +164,12 @@ cd .build
   `src/cmake-build-*/eCat3.exe` first and only falls back to `eCat3-headless`, and it prints the
   executable it picked. Rebuilding one directory and recording references with another silently bakes
   the old behaviour into `expected/`; pass `--exe` when in doubt
+- **The MCP server runs behind `.build/mcp_reload.py`**, and that is not decoration: an `eCat3.exe --mcp`
+  started directly outlives every rebuild, so it holds the exe open (`cannot open output file eCat3.exe:
+  Permission denied`) and keeps answering from the core it was launched with - plausible answers from a
+  stale build. The wrapper runs the emulator from a temporary copy and restarts it whenever the built exe
+  gets newer, so a rebuild is picked up by the next tool call; it says so in the answer, and the emulated
+  machine has to be loaded again. `ECAT3_MCP_NO_RELOAD=1` keeps only the copy. See `MCP.md`
 - **Manual `eCat3.exe` runs rewrite `deploy/ecat.ini`**; the test runner restores it, a hand-run does not. Check `git status` and `git checkout -- deploy/ecat.ini` before finishing
 - CPU tests: `src/tests/*.asm` and the `slow-*` scripts that run them (6502 functional test, zexall, Orion memory test)
 - Debug configurations (`debug = 1` in the `system` section) are hidden from the machine chooser unless `show_debug_versions=1` in the ini, and `src/wasm/package_machines.py` keeps them and their ROMs out of the web build entirely
@@ -291,6 +297,7 @@ See `CONFIG.md` for complete spec. Key points:
 - `parameter = value` sets device parameters
 - Hex prefix: `$` (e.g., `$FF`), Octal: `&` (e.g., `&177714`), Binary: `#` (e.g., `#1010`), Multiplier: `k` (e.g., `64k`). The same prefixes `format_number()` writes, so a value from a `LOG` line can be typed back in. Octal is what every К1801ВМ1 (БК) document uses; note that the `#` of a PDP-11 listing means an immediate operand, not binary
 - **`radix` in the `system` section sets the base of every unprefixed number of that machine** (`radix = 8` in every BK config), and `_` marks the decimals — `clock = _4000000` next to `start_address = 140000`. It is ambient state: `set_default_radix()` (`utils.cpp`) is called by `Emulator::load_config()` from `EmulatorConfigDevice::radix`, and by the script verb `RADIX`. `parse_numeric_value(s)` therefore reads it everywhere; pass `10` explicitly for a number that is **not** the machine's — ini settings, tape format strings, the base of `RADIX` itself, and interface bit ranges in `convert_range()`. Converting a machine to a non-decimal radix means marking every count, size, frequency and delay in its configs **and its scripts** with `_`; the regression suite is what catches a missed one
+- **The arguments of a script verb are read in the machine's radix too**, which is easiest to forget when typing commands by hand into an MCP session rather than into a `.ecat` file. On a БК `LOGDEFS 16,8` fails outright (`Invalid numeric value: 8` — an octal number has no digit 8), and `WAIT 1000` silently waits 512 ms; write `LOGDEFS _16,_8` and `WAIT _1000`. The base of `LOGDEFS` is itself such a number, so the octal output of a БК is asked for with `_8`
 
 ## Non-Obvious Design Patterns
 

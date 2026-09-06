@@ -1,8 +1,13 @@
 {
   "mcpServers": {
     "ecat3": {
-      "command": "${ECAT3_EXE:-C:\\Storages\\GoogleDrive\\Projects\\Emulation\\eCat3\\src\\cmake-build-mcp\\eCat3.exe}",
-      "args": ["--mcp", "--workdir", "${ECAT3_DEPLOY:-C:\\Storages\\GoogleDrive\\Projects\\Emulation\\eCat3\\deploy}"],
+      "command": "${ECAT3_PYTHON:-py}",
+      "args": [
+        "${ECAT3_RELOADER:-C:\\Storages\\GoogleDrive\\Projects\\Emulation\\eCat3\\.build\\mcp_reload.py}",
+        "--exe", "${ECAT3_EXE:-C:\\Storages\\GoogleDrive\\Projects\\Emulation\\eCat3\\src\\cmake-build-mcp\\eCat3.exe}",
+        "--",
+        "--mcp", "--workdir", "${ECAT3_DEPLOY:-C:\\Storages\\GoogleDrive\\Projects\\Emulation\\eCat3\\deploy}"
+      ],
       "env": {
         "PATH": "${ECAT3_QT_BIN:-C:\\DEV\\Qt\\6.11.2\\mingw_64\\bin};${ECAT3_MINGW_BIN:-C:\\DEV\\Qt\\Tools\\mingw1310_64\\bin};${PATH}"
       }
