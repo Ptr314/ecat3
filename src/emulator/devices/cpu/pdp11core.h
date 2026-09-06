@@ -43,6 +43,12 @@ protected:
     uint16_t read_operand(const pdp11operand & op, bool is_byte);
     void write_operand(const pdp11operand & op, bool is_byte, uint16_t value);
 
+    // What an instruction does with its operand, which decides the bus cycle
+    // it spends on it and therefore how long it takes
+    enum operand_access { OP_NONE, OP_READ, OP_WRITE, OP_MODIFY };
+    static unsigned int access_cycles(const pdp11operand & op, operand_access access);
+    static unsigned int single_op_cycles(const pdp11operand & op, operand_access access);
+
     void push(uint16_t value);
     uint16_t pop();
     void do_trap(uint16_t vector);

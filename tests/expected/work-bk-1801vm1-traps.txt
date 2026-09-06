@@ -1,18 +1,18 @@
 === START 000010 ===
-[cpu.pc] &002000
-[cpu.trap_vector] &000010
+[cpu.pc] &001000
+[cpu.trap_vector] &000004
 === STEP 000016 ===
-[cpu.pc] &002000
-[cpu.trap_vector] &000010
+[cpu.pc] &001000
+[cpu.trap_vector] &000004
 === STEP 000017 ===
-[cpu.pc] &002000
-[cpu.trap_vector] &000010
+[cpu.pc] &001000
+[cpu.trap_vector] &000004
 === JMP R3 000103 ===
-[cpu.pc] &002000
-[cpu.trap_vector] &000010
+[cpu.pc] &001000
+[cpu.trap_vector] &000004
 === JSR SP,SP 004606 ===
-[cpu.pc] &002000
-[cpu.trap_vector] &000010
+[cpu.pc] &001000
+[cpu.trap_vector] &000004
 === Резерв 000007 ===
 [cpu.pc] &002000
 [cpu.trap_vector] &000010

@@ -5,20 +5,45 @@
 
 #include "pdp11core.h"
 
-// Timings are approximate. The 1801 series is microcoded and spends about a
-// dozen clock periods on a register-to-register operation, which is what the
-// base values reproduce; the mode table adds the operand fetch cost.
+// The 1801 series spends nearly all of its time on the bus, and its published
+// instruction times are exactly the bus cycles an instruction runs plus a
+// period or two of internal work:
+//     DATI  - a read                   7T + tn
+//     DATO  - a write, MOV only       10T + tn
+//     DATIO - a read-modify-write     13T + 2tn
+// tn is the delay before the memory answers, two periods on the BK. That makes
+// a register to register operation ten periods - the 300 000 operations per
+// second the BK0010 is specified for at 3 MHz - and every trap 52 periods,
+// which is the documented 42T + 5tn of EMT.
 namespace {
-    const unsigned int CYCLES_DOUBLE   = 12;
-    const unsigned int CYCLES_SINGLE   = 10;
-    const unsigned int CYCLES_BRANCH   = 12;
-    const unsigned int CYCLES_NOBRANCH = 8;
-    const unsigned int CYCLES_JUMP     = 14;
-    const unsigned int CYCLES_TRAP     = 30;
-    const unsigned int CYCLES_IDLE     = 8;
-    const unsigned int CYCLES_EIS      = 40;
+    const unsigned int T_REPLY = 2;                     // tn
+    const unsigned int C_DATI  = 7 + T_REPLY;
+    const unsigned int C_DATO  = 10 + T_REPLY;
+    const unsigned int C_DATIO = 13 + 2 * T_REPLY;
 
-    const unsigned int MODE_CYCLES[8] = {0, 3, 3, 7, 4, 8, 7, 11};
+    // Internal work on top of the bus cycles
+    const unsigned int C_ALU      = 1;      // an operation on registers alone
+    const unsigned int C_SRC_MEM  = 3;      // source operand taken from memory
+    const unsigned int C_DST_MEM  = 5;      // destination operand in memory
+    // A microcoded PDP-11 walks the same microcode whether a conditional
+    // branch is taken or not, and only the documented time of the always
+    // taken BR is known, so both cost the same here
+    const unsigned int C_BRANCH   = 5;      // 12T + tn
+    const unsigned int C_NOBRANCH = C_BRANCH;
+    const unsigned int C_SOB      = 9;      // 16T + tn
+    const unsigned int C_SOB_END  = C_SOB;
+    const unsigned int C_JUMP     = 5;
+    const unsigned int C_TRAP     = 2 * C_DATO + 2 * C_DATI + C_ALU;
+    const unsigned int C_HALT     = 54 + 7 * T_REPLY - C_DATI;
+    const unsigned int C_IDLE     = 8;      // WAIT, idling until an interrupt
+    const unsigned int C_RESET    = 30;     // INIT held on the bus
+    const unsigned int C_EIS      = 40;     // MUL/DIV/ASH/ASHC of the 1801VM2
+
+    // Address computation: the bus cycles a mode spends before the operand
+    // itself is touched, plus the period an auto-decrement costs
+    const unsigned int MODE_CYCLES[8] = {
+        0, 0, 0, C_DATI, 1, C_DATI + 1, C_DATI, 2 * C_DATI
+    };
 }
 
 pdp11core::pdp11core(int family_type)
@@ -217,6 +242,26 @@ void pdp11core::write_operand(const pdp11operand & op, bool is_byte, uint16_t va
     }
 }
 
+// A memory operand costs exactly one bus cycle, and which one depends on what
+// the instruction does with it. A register operand costs nothing.
+unsigned int pdp11core::access_cycles(const pdp11operand & op, operand_access access)
+{
+    if (op.is_reg) return 0;
+    switch (access) {
+    case OP_READ:   return C_DATI;
+    case OP_WRITE:  return C_DATO;
+    case OP_MODIFY: return C_DATIO;
+    default:        return 0;
+    }
+}
+
+// Single operand instructions add nothing to the bus cycle of their operand -
+// only a register operand, which needs no bus at all, takes a period in the ALU
+unsigned int pdp11core::single_op_cycles(const pdp11operand & op, operand_access access)
+{
+    return op.is_reg? C_ALU : access_cycles(op, access);
+}
+
 //----------------------- Stack, traps, interrupts -------------------------------//
 
 void pdp11core::push(uint16_t value)
@@ -271,14 +316,14 @@ bool pdp11core::check_interrupts(unsigned int & cycles)
     if (is_halt_req) {
         is_halt_req = false;
         enter_halt_mode();
-        cycles += CYCLES_TRAP;
+        cycles += C_TRAP;
         return true;
     }
 
     if ((context.PSW & PDP11::F_MASK) == 0) {
-        if (is_irq2)      { is_irq2 = false; do_trap(PDP11::V_IRQ2); cycles += CYCLES_TRAP; return true; }
-        else if (is_irq3) { is_irq3 = false; do_trap(PDP11::V_IRQ3); cycles += CYCLES_TRAP; return true; }
-        else if (is_virq) { is_virq = false; do_trap(virq_vector);   cycles += CYCLES_TRAP; return true; }
+        if (is_irq2)      { is_irq2 = false; do_trap(PDP11::V_IRQ2); cycles += C_TRAP; return true; }
+        else if (is_irq3) { is_irq3 = false; do_trap(PDP11::V_IRQ3); cycles += C_TRAP; return true; }
+        else if (is_virq) { is_virq = false; do_trap(virq_vector);   cycles += C_TRAP; return true; }
     }
     return false;
 }
@@ -288,9 +333,9 @@ void pdp11core::do_branch(uint16_t command, bool condition, unsigned int & cycle
     if (condition) {
         int8_t offset = (int8_t)(command & 0xFF);
         context.R[PDP11::REG_PC] = (uint16_t)(context.R[PDP11::REG_PC] + offset * 2);
-        cycles += CYCLES_BRANCH;
+        cycles += C_BRANCH;
     } else
-        cycles += CYCLES_NOBRANCH;
+        cycles += C_NOBRANCH;
 }
 
 //----------------------- Double operand instructions -------------------------------//
@@ -305,8 +350,6 @@ bool pdp11core::execute_double(uint16_t command, unsigned int & cycles)
 
     bool is_byte = (op_id >= 011) && (op_id != 016);
 
-    cycles += CYCLES_DOUBLE;
-
     pdp11operand src_op = decode_operand((command >> 6) & 077, is_byte, cycles);
     uint16_t src = read_operand(src_op, is_byte);
     pdp11operand dst_op = decode_operand(command & 077, is_byte, cycles);
@@ -314,6 +357,14 @@ bool pdp11core::execute_double(uint16_t command, unsigned int & cycles)
     unsigned int kind = op_id & 07;             // 1 MOV, 2 CMP, 3 BIT, 4 BIC, 5 BIS, 6 ADD/SUB
     uint32_t mask = is_byte? 0xFFu : 0xFFFFu;
     uint16_t sign = is_byte? 0x0080 : 0x8000;
+
+    // MOV writes the destination without reading it and CMP and BIT never
+    // write, the rest read and write it in a single read-modify-write cycle
+    operand_access dst_access = (kind == 1)? OP_WRITE
+                              : ((kind == 2 || kind == 3)? OP_READ : OP_MODIFY);
+    cycles += C_ALU + access_cycles(src_op, OP_READ) + access_cycles(dst_op, dst_access);
+    if (!src_op.is_reg) cycles += C_SRC_MEM;
+    if (!dst_op.is_reg) cycles += C_DST_MEM;
 
     // MOV and MOVB never read the destination, which matters for registers
     // with a side effect on read.
@@ -399,18 +450,18 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
 
     // JMP and SWAB exist in the word form only
     if (!is_byte && sop == 001) {                       // JMP
-        cycles += CYCLES_JUMP;
         pdp11operand op = decode_operand(spec, false, cycles);
+        cycles += C_JUMP;
         // A jump to a register is an illegal instruction, not a reserved
         // opcode: it traps through vector 4 and not through vector 10
-        if (op.is_reg) { do_trap(PDP11::V_ILLEGAL); return true; }
+        if (op.is_reg) { cycles += C_TRAP; do_trap(PDP11::V_ILLEGAL); return true; }
         context.R[PDP11::REG_PC] = op.addr;
         return true;
     }
 
     if (!is_byte && sop == 003) {                       // SWAB
-        cycles += CYCLES_SINGLE;
         pdp11operand op = decode_operand(spec, false, cycles);
+        cycles += single_op_cycles(op, OP_MODIFY);
         uint16_t dst = read_operand(op, false);
         if (m_abort) return true;
         uint16_t res = (uint16_t)((dst >> 8) | (dst << 8));
@@ -426,10 +477,10 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
 
     // 064..067 mean different things in the two halves of the opcode space
     if (sop >= 064) {
-        cycles += CYCLES_SINGLE;
         if (!is_byte) {
             switch (sop) {
             case 064: {                                 // MARK
+                cycles += C_DATI + C_ALU;
                 unsigned int nn = spec;
                 context.R[PDP11::REG_SP] = (uint16_t)(context.R[PDP11::REG_PC] + nn * 2);
                 context.R[PDP11::REG_PC] = context.R[5];
@@ -438,6 +489,7 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
             }
             case 065: {                                 // MFPI, one address space here
                 pdp11operand op = decode_operand(spec, false, cycles);
+                cycles += access_cycles(op, OP_READ) + C_DATO + C_ALU;
                 uint16_t v = op.is_reg? context.R[op.reg] : read_word_checked(op.addr);
                 if (m_abort) return true;
                 push(v);
@@ -448,6 +500,7 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
             case 066: {                                 // MTPI
                 uint16_t v = pop();
                 pdp11operand op = decode_operand(spec, false, cycles);
+                cycles += C_DATI + access_cycles(op, OP_WRITE) + C_ALU;
                 if (m_abort) return true;
                 write_operand(op, false, v);
                 set_nz(v, false);
@@ -456,6 +509,7 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
             }
             default: {                                  // SXT
                 pdp11operand op = decode_operand(spec, false, cycles);
+                cycles += single_op_cycles(op, OP_MODIFY);
                 uint16_t res = get_flag(PDP11::F_N)? 0xFFFF : 0x0000;
                 write_operand(op, false, res);
                 set_flag(PDP11::F_Z, !get_flag(PDP11::F_N));
@@ -467,6 +521,7 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
             switch (sop) {
             case 064: {                                 // MTPS
                 pdp11operand op = decode_operand(spec, true, cycles);
+                cycles += single_op_cycles(op, OP_READ);
                 uint16_t v = read_operand(op, true);
                 if (m_abort) return true;
                 // The trace bit cannot be set this way
@@ -475,6 +530,7 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
             }
             case 067: {                                 // MFPS
                 pdp11operand op = decode_operand(spec, true, cycles);
+                cycles += single_op_cycles(op, OP_WRITE);
                 uint16_t v = (uint16_t)(context.PSW & 0xFF);
                 if (op.is_reg)
                     context.R[op.reg] = (uint16_t)(int16_t)(int8_t)(v & 0xFF);
@@ -486,14 +542,17 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
             }
             default:
                 // MFPD/MTPD have no meaning with a single address space
+                cycles += C_TRAP;
                 do_trap(PDP11::V_RESERVED);
                 return true;
             }
         }
     }
 
-    cycles += CYCLES_SINGLE;
     pdp11operand op = decode_operand(spec, is_byte, cycles);
+    // TST only reads its operand; everything else in the group reads and
+    // writes it in one bus cycle, CLR included - it is a DATIO on the 1801
+    cycles += single_op_cycles(op, (sop == 057)? OP_READ : OP_MODIFY);
 
     // CLR does not read its destination
     uint16_t dst = (sop == 050)? 0 : read_operand(op, is_byte);
@@ -652,22 +711,22 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
 
     // EMT and TRAP
     if ((command & 0177400) == 0104000) {
-        cycles += CYCLES_TRAP;
+        cycles += C_TRAP;
         do_trap(PDP11::V_EMT);
         return true;
     }
     if ((command & 0177400) == 0104400) {
-        cycles += CYCLES_TRAP;
+        cycles += C_TRAP;
         do_trap(PDP11::V_TRAP);
         return true;
     }
 
     // JSR
     if ((command & 0177000) == 0004000) {
-        cycles += CYCLES_JUMP;
         unsigned int r = (command >> 6) & 7;
         pdp11operand op = decode_operand(command & 077, false, cycles);
-        if (op.is_reg) { do_trap(PDP11::V_ILLEGAL); return true; }
+        cycles += C_DATO + C_ALU;
+        if (op.is_reg) { cycles += C_TRAP; do_trap(PDP11::V_ILLEGAL); return true; }
         uint16_t target = op.addr;
         push(context.R[r]);
         if (m_abort) return true;
@@ -678,9 +737,10 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
 
     // XOR
     if ((command & 0177000) == 0074000) {
-        cycles += CYCLES_DOUBLE;
         unsigned int r = (command >> 6) & 7;
         pdp11operand op = decode_operand(command & 077, false, cycles);
+        cycles += C_ALU + access_cycles(op, OP_MODIFY);
+        if (!op.is_reg) cycles += C_DST_MEM;
         uint16_t dst = read_operand(op, false);
         if (m_abort) return true;
         uint16_t res = (uint16_t)(dst ^ context.R[r]);
@@ -696,20 +756,20 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         context.R[r]--;
         if (context.R[r] != 0) {
             context.R[PDP11::REG_PC] -= (uint16_t)((command & 077) * 2);
-            cycles += CYCLES_BRANCH;
+            cycles += C_SOB;
         } else
-            cycles += CYCLES_NOBRANCH;
+            cycles += C_SOB_END;
         return true;
     }
 
     // Extended arithmetic, absent on the 1801ВМ1
     if ((command & 0174000) == 0070000) {
         unsigned int group = (command >> 9) & 3;
-        if (!has_eis) { do_trap(PDP11::V_RESERVED); cycles += CYCLES_TRAP; return true; }
+        if (!has_eis) { do_trap(PDP11::V_RESERVED); cycles += C_TRAP; return true; }
 
-        cycles += CYCLES_EIS;
         unsigned int r = (command >> 6) & 7;
         pdp11operand op = decode_operand(command & 077, false, cycles);
+        cycles += C_EIS + access_cycles(op, OP_READ);
         uint16_t src = read_operand(op, false);
         if (m_abort) return true;
 
@@ -779,7 +839,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
 
     // RTS
     if ((command & 0177770) == 0000200) {
-        cycles += CYCLES_JUMP;
+        cycles += C_DATI + C_ALU;
         unsigned int r = command & 7;
         context.R[PDP11::REG_PC] = context.R[r];
         context.R[r] = pop();
@@ -788,7 +848,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
 
     // Condition code operations, 000240 is NOP
     if ((command & 0177740) == 0000240) {
-        cycles += CYCLES_NOBRANCH;
+        cycles += C_ALU;
         uint16_t flags = (uint16_t)(command & 017);
         if ((command & 020) != 0) context.PSW |= flags;
         else context.PSW &= ~flags;
@@ -798,33 +858,33 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
     // No operand instructions
     switch (command) {
     case 0000000:                                       // HALT
-        cycles += CYCLES_TRAP;
+        cycles += C_HALT;
         enter_halt_mode();
         return true;
     case 0000001:                                       // WAIT
-        cycles += CYCLES_IDLE;
+        cycles += C_IDLE;
         context.halted = true;
         return true;
     case 0000002: {                                     // RTI
-        cycles += CYCLES_JUMP;
+        cycles += 2 * C_DATI + C_ALU;
         context.R[PDP11::REG_PC] = pop();
         context.PSW = pop();
         return true;
     }
     case 0000003:                                       // BPT
-        cycles += CYCLES_TRAP;
+        cycles += C_TRAP;
         do_trap(PDP11::V_BPT);
         return true;
     case 0000004:                                       // IOT
-        cycles += CYCLES_TRAP;
+        cycles += C_TRAP;
         do_trap(PDP11::V_IOT);
         return true;
     case 0000005:                                       // RESET
         // Peripheral initialisation is driven from the emulator device
-        cycles += CYCLES_TRAP;
+        cycles += C_RESET;
         return true;
     case 0000006:                                       // RTT
-        cycles += CYCLES_JUMP;
+        cycles += 2 * C_DATI + C_ALU;
         context.R[PDP11::REG_PC] = pop();
         context.PSW = pop();
         // RTT defers the trace trap until after the next instruction
@@ -839,7 +899,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
     // the halt mode exactly like HALT does, which on the БК is a trap
     // through vector 4 rather than the reserved instruction vector 10.
     if (command >= 0000010 && command <= 0000017) {
-        cycles += CYCLES_TRAP;
+        cycles += C_HALT;
         enter_halt_mode();
         return true;
     }
@@ -853,16 +913,17 @@ unsigned int pdp11core::execute()
 {
     unsigned int cycles = 0;
 
-    if (context.stop) return CYCLES_IDLE;
+    if (context.stop) return C_IDLE;
 
     if (check_interrupts(cycles)) return cycles;
 
-    if (context.halted) return CYCLES_IDLE;     // WAIT, idling until an interrupt
+    if (context.halted) return C_IDLE;          // WAIT, idling until an interrupt
 
     bool trace = get_flag(PDP11::F_T) && !m_no_trace;
     m_no_trace = false;
 
     m_abort = false;
+    cycles += C_DATI;                           // reading the instruction
     uint16_t command = fetch();
 
     bool handled = false;
@@ -873,13 +934,13 @@ unsigned int pdp11core::execute()
     }
 
     if (m_abort) {
-        cycles += CYCLES_TRAP;
+        cycles += C_TRAP;
         do_trap(PDP11::V_BUS_ERROR);
     } else if (!handled) {
-        cycles += CYCLES_TRAP;
+        cycles += C_TRAP;
         do_trap(PDP11::V_RESERVED);
     } else if (trace) {
-        cycles += CYCLES_TRAP;
+        cycles += C_TRAP;
         do_trap(PDP11::V_BPT);
     }
 

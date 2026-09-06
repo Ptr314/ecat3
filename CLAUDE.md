@@ -160,6 +160,10 @@ cd .build
 - **Any stderr output fails every test**: the runner treats a non-empty stderr as a problem, so the core must not print diagnostics. Real discrepancies are listed per test in `tests/results/report.txt`. On Windows without `python` on PATH use `py tests/run_tests.py`
 - **A machine without a sound card is such an stderr source**: the audio driver says so and keeps going. `eCat3-headless --no-sound` (`SystemData::audio_enabled`, checked in `GenericSound::load_config`) opens no audio device at all, and the runner passes it whenever the chosen exe is the headless one — which is also the only build it finds on a machine without Qt. `sound.active` reports whether audio is really open
 - **Keep test assets tiny**: every `"../results/…"` name in a script becomes a compared artifact, so do not save whole disk images from a test. Verify a write by reading it back on the machine (`DIR`, `TYPE`) plus a counter field such as `fdc.writes`. Synthetic images go in `tests/files/` next to the Python that generates them (an image shorter than the geometry is zero-padded on load)
+- **The runner prefers a windowed build over the headless one**: `tests/run_tests.py` scans
+  `src/cmake-build-*/eCat3.exe` first and only falls back to `eCat3-headless`, and it prints the
+  executable it picked. Rebuilding one directory and recording references with another silently bakes
+  the old behaviour into `expected/`; pass `--exe` when in doubt
 - **Manual `eCat3.exe` runs rewrite `deploy/ecat.ini`**; the test runner restores it, a hand-run does not. Check `git status` and `git checkout -- deploy/ecat.ini` before finishing
 - CPU tests: `src/tests/*.asm` and the `slow-*` scripts that run them (6502 functional test, zexall, Orion memory test)
 - Debug configurations (`debug = 1` in the `system` section) are hidden from the machine chooser unless `show_debug_versions=1` in the ini, and `src/wasm/package_machines.py` keeps them and their ROMs out of the web build entirely

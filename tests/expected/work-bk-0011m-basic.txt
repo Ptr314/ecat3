@@ -1,2 +1,2 @@
-[mapper.config] &177742
+[mapper.config] &177741
 [display.resolution] 256x256
