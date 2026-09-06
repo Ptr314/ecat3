@@ -1,0 +1,137 @@
+# Внутренние прерывания К1801ВМ1: через какой вектор уходит каждый код.
+#
+# Проверяются три группы, которые легко перепутать между собой:
+#   * пультовые команды START (000010-000013) и STEP (000014-000017) -
+#     в режиме ОС они отдают процессор пультовому режиму, то есть на БК
+#     уходят в вектор 4, а не в вектор 10;
+#   * JMP и JSR с регистром в качестве адреса - запрещенные команды,
+#     тоже вектор 4;
+#   * резервные коды операции (000007, 000210-000217, EIS на ВМ1) -
+#     вектор 10.
+#
+# Каждый код кладется в 000500, за ним "BR ." на случай, если прерывания не
+# будет вовсе. Обработчики вектора 4 и вектора 10 - такие же вечные циклы по
+# адресам 001000 и 002000, так что PC после прогона и говорит, куда ушло
+# управление: 001000 - вектор 4, 002000 - вектор 10, 000502 - команда
+# выполнена или пропущена.
+# @timeout 60
+
+MACHINE "bk/1801vm1-test.cfg"
+WAIT _100
+COMMAND cpu.stop()
+LOGDEFS _16,_8
+
+COMMAND ram.set16(4, 1000, 340, 2000, 340)
+COMMAND ram.set16(1000, 777)
+COMMAND ram.set16(2000, 777)
+
+PRINT "=== START 000010 ==="
+COMMAND ram.set16(500, 10, 777)
+COMMAND cpu.setreg(SP, 400)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 500)
+COMMAND cpu.run()
+WAIT _10
+COMMAND cpu.stop()
+LOG cpu.pc
+LOG cpu.trap_vector
+
+PRINT "=== STEP 000016 ==="
+COMMAND ram.set16(500, 16, 777)
+COMMAND cpu.setreg(SP, 400)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 500)
+COMMAND cpu.run()
+WAIT _10
+COMMAND cpu.stop()
+LOG cpu.pc
+LOG cpu.trap_vector
+
+PRINT "=== STEP 000017 ==="
+COMMAND ram.set16(500, 17, 777)
+COMMAND cpu.setreg(SP, 400)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 500)
+COMMAND cpu.run()
+WAIT _10
+COMMAND cpu.stop()
+LOG cpu.pc
+LOG cpu.trap_vector
+
+PRINT "=== JMP R3 000103 ==="
+COMMAND ram.set16(500, 103, 777)
+COMMAND cpu.setreg(SP, 400)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 500)
+COMMAND cpu.run()
+WAIT _10
+COMMAND cpu.stop()
+LOG cpu.pc
+LOG cpu.trap_vector
+
+PRINT "=== JSR SP,SP 004606 ==="
+COMMAND ram.set16(500, 4606, 777)
+COMMAND cpu.setreg(SP, 400)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 500)
+COMMAND cpu.run()
+WAIT _10
+COMMAND cpu.stop()
+LOG cpu.pc
+LOG cpu.trap_vector
+
+PRINT "=== Резерв 000007 ==="
+COMMAND ram.set16(500, 7, 777)
+COMMAND cpu.setreg(SP, 400)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 500)
+COMMAND cpu.run()
+WAIT _10
+COMMAND cpu.stop()
+LOG cpu.pc
+LOG cpu.trap_vector
+
+PRINT "=== Резерв 000210 ==="
+COMMAND ram.set16(500, 210, 777)
+COMMAND cpu.setreg(SP, 400)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 500)
+COMMAND cpu.run()
+WAIT _10
+COMMAND cpu.stop()
+LOG cpu.pc
+LOG cpu.trap_vector
+
+PRINT "=== Резерв 000217 ==="
+COMMAND ram.set16(500, 217, 777)
+COMMAND cpu.setreg(SP, 400)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 500)
+COMMAND cpu.run()
+WAIT _10
+COMMAND cpu.stop()
+LOG cpu.pc
+LOG cpu.trap_vector
+
+PRINT "=== MUL R0,R0 070000, на ВМ1 нет EIS ==="
+COMMAND ram.set16(500, 70000, 777)
+COMMAND cpu.setreg(SP, 400)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 500)
+COMMAND cpu.run()
+WAIT _10
+COMMAND cpu.stop()
+LOG cpu.pc
+LOG cpu.trap_vector
+
+PRINT "=== HALT 000000 ==="
+COMMAND ram.set16(500, 0, 777)
+COMMAND cpu.setreg(SP, 400)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 500)
+COMMAND cpu.run()
+WAIT _10
+COMMAND cpu.stop()
+LOG cpu.pc
+LOG cpu.trap_vector
+EXIT

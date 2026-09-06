@@ -1,0 +1,30 @@
+=== START 000010 ===
+[cpu.pc] &002000
+[cpu.trap_vector] &000010
+=== STEP 000016 ===
+[cpu.pc] &002000
+[cpu.trap_vector] &000010
+=== STEP 000017 ===
+[cpu.pc] &002000
+[cpu.trap_vector] &000010
+=== JMP R3 000103 ===
+[cpu.pc] &002000
+[cpu.trap_vector] &000010
+=== JSR SP,SP 004606 ===
+[cpu.pc] &002000
+[cpu.trap_vector] &000010
+=== Резерв 000007 ===
+[cpu.pc] &002000
+[cpu.trap_vector] &000010
+=== Резерв 000210 ===
+[cpu.pc] &002000
+[cpu.trap_vector] &000010
+=== Резерв 000217 ===
+[cpu.pc] &002000
+[cpu.trap_vector] &000010
+=== MUL R0,R0 070000, на ВМ1 нет EIS ===
+[cpu.pc] &002000
+[cpu.trap_vector] &000010
+=== HALT 000000 ===
+[cpu.pc] &001000
+[cpu.trap_vector] &000004

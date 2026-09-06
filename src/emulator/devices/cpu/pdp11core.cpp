@@ -401,7 +401,9 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
     if (!is_byte && sop == 001) {                       // JMP
         cycles += CYCLES_JUMP;
         pdp11operand op = decode_operand(spec, false, cycles);
-        if (op.is_reg) { do_trap(PDP11::V_RESERVED); return true; }
+        // A jump to a register is an illegal instruction, not a reserved
+        // opcode: it traps through vector 4 and not through vector 10
+        if (op.is_reg) { do_trap(PDP11::V_ILLEGAL); return true; }
         context.R[PDP11::REG_PC] = op.addr;
         return true;
     }
@@ -665,7 +667,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         cycles += CYCLES_JUMP;
         unsigned int r = (command >> 6) & 7;
         pdp11operand op = decode_operand(command & 077, false, cycles);
-        if (op.is_reg) { do_trap(PDP11::V_RESERVED); return true; }
+        if (op.is_reg) { do_trap(PDP11::V_ILLEGAL); return true; }
         uint16_t target = op.addr;
         push(context.R[r]);
         if (m_abort) return true;
@@ -830,6 +832,16 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         return true;
     default:
         break;
+    }
+
+    // START (000010-000013) and STEP (000014-000017) belong to the console
+    // (halt) mode. Executed in the OS mode they hand the processor over to
+    // the halt mode exactly like HALT does, which on the БК is a trap
+    // through vector 4 rather than the reserved instruction vector 10.
+    if (command >= 0000010 && command <= 0000017) {
+        cycles += CYCLES_TRAP;
+        enter_halt_mode();
+        return true;
     }
 
     return false;
