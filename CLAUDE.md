@@ -180,6 +180,15 @@ cd .build
 - **A halted CPU still runs the script engine**: `Emulator::timer_proc()` calls `script->tick()` on the zero-cycle path too, so `LOG`, `COMMAND` and the other instant verbs work while `cpu.stop()` holds the processor. The delays cannot - they are counted in emulated time and that has stopped, which is what an MCP session reports as a stall instead of hanging forever.
 - **A renderer's `get_screenshot()` must return raw RGBA**, `sx*sy*4` bytes: `Emulator::store_screenshot()` encodes the PNG itself and drops a buffer of any other size (with a line in `cerr`). The contract is written next to the declaration in `renderer.h`; `WasmRenderer` used to return an encoded PNG, which is why it is written down at all. Nothing in the web frontend requests a screenshot yet - there is no C API for scripts there - so `SCREEN` in the browser is correct but unreachable.
 - **`boot-agat-6502-test` is flaky**, on unmodified code too (roughly one run in six). Its screen is repainted while the CPU runs NOPs across video RAM, so `SCREEN` can catch a half-updated frame. Re-run it before believing a failure.
+- **A tape write can leave the emulated keyboard in the other alphabet** (known bug, Орион-128): `scan-keyboard`
+  takes its Rus/Lat register from `~ruslat_led`, and the Орион monitor writes the whole of port C - data bits
+  included - while saving to tape, so the indicator line ends up data dependent while the monitor's own flag
+  (`$F3E5`) does not move. `RUS_REMAP` then presses the key from the other half of the layout: `I` arrives as
+  `$5B` and the monitor answers `?`, which looks exactly like a tape read failure. `LOG keyboard.rus` against
+  the machine's own flag separates them; two presses of РУС/ЛАТ resynchronise. Радио-86РК and Микроша are
+  immune - their ROM re-asserts the indicator from its own variable on every keyboard poll. Left as is on
+  purpose: the indicator is the only signal of the register, and the remap is what lets a ЙЦУКЕН host
+  keyboard drive a ЯВЕРТЬ machine
 - **No compile-time logging**: the old `LOGGER` / `LOG_*` macros and the `Logger` class are gone. To trace a device, expose its state through `get_device_fields()` / `get_field()` and read it from an `.ecat` script (`LOG dev.field`), like `bk-fdc` does with its `trace` field
 - **Debug Windows**: GUI provides disassembler, memory dump, port inspector, CPU state viewer
 - **Breakpoints**: Debug menu supports execution breakpoints and step modes
