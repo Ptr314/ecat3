@@ -16,4 +16,5 @@
         FFC6-FFCB -> timer[0000] mode=rw
         FFCC-FFCD -> ay[0000] mode=w
         FFCC-FFCD -> port-ppi[0000] mode=r
-        FFCE-FFCF -> port-sys[0000] mode=rw
+        FFCE-FFCF -> port-sys[0000] mode=w
+        FFCE-FFCF -> port-sys-rd[0000] mode=r

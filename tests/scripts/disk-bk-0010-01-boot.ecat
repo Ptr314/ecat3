@@ -8,8 +8,13 @@
 #
 # Допуск на снимки: логотип ANDOS на заставке крутится, и момент запуска
 # загрузчика чуть плавает - в снимок заставки попадает разная фаза анимации.
+#
+# Одно нажатие в оболочке должно сдвигать выделение ровно на одну строку.
+# Автоповтор ANDOS ведет по разряду 6 регистра 0177716, который читается
+# отдельным регистром port-sys-rd: если он не подключен к клавиатуре, машина
+# считает клавишу вечно нажатой и курсор улетает вниз с одного нажатия.
 # @pixels 800
-# @timeout 60
+# @timeout 70
 
 MACHINE "bk/BK-0010-01-fdd.cfg"
 WAIT _3000
@@ -36,4 +41,19 @@ LOG fdd0.side
 LOG fdc.command
 LOG mapper.map
 SCREEN "../results/disk-bk-0010-01-boot.png"
+
+PRINT "=== Два нажатия - две строки вниз ==="
+KEY _100,_100,down
+KEY _100,_100,down
+WAIT _2000
+SCREEN "../results/disk-bk-0010-01-boot-keys.png"
+
+PRINT "=== Разряд 6 при нажатой и отпущенной клавише ==="
+LOG port-sys-rd.value
+KEYDOWN down
+WAIT _100
+LOG port-sys-rd.value
+KEYUP down
+WAIT _100
+LOG port-sys-rd.value
 EXIT
