@@ -44,7 +44,7 @@ emulator::Result TapeRecorder::load_config(SystemData *sd)
 
     baud_rate = read_confg_value(cd, "baudrate", false, (unsigned int)1200);
 
-    const std::string enc_str = str_tolower(cd->get_parameter("ecoding", false).value);
+    const std::string enc_str = str_tolower(cd->get_parameter("encoding", false).value);
     if (enc_str.empty() || enc_str == "msx")
         m_tape_enc = TapeEnc::MSX;
     else if (enc_str == "rk86")
