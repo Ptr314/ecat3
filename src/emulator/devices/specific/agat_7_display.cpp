@@ -36,6 +36,7 @@ Agat7Display::Agat7Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_500hz(this, im, 1, "500hz", MODE_W)
     , i_ints_en(this, im, 1, "ints_en", MODE_R, 1)
 {
+    m_clocked = true;   //clock() is overridden here
     sx = 512; // Doubling 2*256 because of 64 chars mode;
     sy = 256;
 }
@@ -70,6 +71,7 @@ emulator::Result Agat7Display::load_config(SystemData *sd)
             m_pal_switch = dynamic_cast<PortAddress*>(im->dm->get_device_by_name(pal_switch));
             m_pal_mode = dynamic_cast<PortAddress*>(im->dm->get_device_by_name(pal_mode));
             m_pal_font = dynamic_cast<RAM*>(im->dm->get_device_by_name(pal_font));
+            if (m_pal_mem != nullptr) m_pal_mem->set_memory_callback(this, 1, MODE_W);
             m_pal_card = true;
             m_pal_card_out = true;
             m_pal_builtin = read_confg_value(cd, "pal_builtin", false, false);
@@ -85,6 +87,7 @@ emulator::Result Agat7Display::load_config(SystemData *sd)
 
 void Agat7Display::set_renderer(VideoRenderer &vr)
 {
+    m_pal_dirty = true;
     GenericDisplay::set_renderer(vr);
     vr.FillRGB(Agat_16Colors, Agat_RGBA16, 16);
     for (int i=0; i<8; i++) vr.FillRGB(Agat_Palcard_std_pal[i], Agat_RGBA16_palcard_std[i], 16);
@@ -168,6 +171,12 @@ void Agat7Display::set_device_option(unsigned option_id, unsigned value_id)
     if (option_id == A7_OPTION_PALCARD) m_pal_card_out = value_id == A7_PALCARD_ON;
 }
 
+//Any write to the palette card memory drops the cached colours
+void Agat7Display::memory_callback(MAYBE_UNUSED unsigned int callback_id, MAYBE_UNUSED unsigned int address)
+{
+    m_pal_dirty = true;
+}
+
 uint32_t Agat7Display::convert_rgba(const unsigned c, const uint32_t rgba[]) const
 {
     if (!m_pal_card || !m_pal_card_out) return rgba[c];
@@ -176,10 +185,17 @@ uint32_t Agat7Display::convert_rgba(const unsigned c, const uint32_t rgba[]) con
         if (m_pal_builtin) return Agat_RGBA16_palcard_std[pal][c];
         return rgba[c];
     }
-    const uint8_t R = m_pal_mem->get_direct(0x00 + c) * 17;
-    const uint8_t G = m_pal_mem->get_direct(0x10 + c) * 17;
-    const uint8_t B = m_pal_mem->get_direct(0x20 + c) * 17;
-    return renderer->MapRGB(R, G, B);
+    //The programmable palette is 16 colours held in the card's memory. Reading
+    //them per pixel meant three get_direct() and a virtual MapRGB() on each of
+    //512x256 pixels; the table is rebuilt whenever that memory is written
+    if (m_pal_dirty) {
+        for (unsigned i = 0; i < 16; i++)
+            Agat_RGBA16_palcard[i] = renderer->MapRGB(m_pal_mem->get_direct(0x00 + i) * 17,
+                                                      m_pal_mem->get_direct(0x10 + i) * 17,
+                                                      m_pal_mem->get_direct(0x20 + i) * 17);
+        m_pal_dirty = false;
+    }
+    return Agat_RGBA16_palcard[c];
 }
 
 uint8_t Agat7Display::convert_font(unsigned chr, unsigned line) const

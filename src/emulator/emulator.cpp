@@ -74,6 +74,13 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , software_path(software_path)
     , loaded(false)
     , busy(false)
+    //Assigned by the emulation thread once the machine is up. Until then, and
+    //after a machine that failed to load took its devices down with it, there
+    //is nothing to point at - and the GUI can reach key_event() at any moment
+    , cpu(nullptr)
+    , mm(nullptr)
+    , display(nullptr)
+    , keyboard(nullptr)
     , local_counter(0)
     , clock_counter(0)
     , renderer(renderer)
@@ -109,6 +116,14 @@ emulator::Result Emulator::load_config(std::string file_name)
         delete dm;
         delete im;
         loaded = false;
+        //The devices these point at have just been destroyed. If the machine
+        //being loaded now fails on the way in, nothing must be left pointing
+        //into them: the window stays open and its keys keep arriving
+        cpu = nullptr;
+        mm = nullptr;
+        display = nullptr;
+        keyboard = nullptr;
+        joysticks.clear();
     }
 
     dm = new DeviceManager();
@@ -397,9 +412,12 @@ void Emulator::run()
 
                 lastUsecs = nowUsecs;
 #else
-            auto lastTime = std::chrono::high_resolution_clock::now();
+            //steady_clock, not high_resolution_clock: the latter is an alias of
+            //system_clock in libstdc++, and a clock corrected backwards by NTP
+            //would freeze the machine until the wall clock caught up again
+            auto lastTime = std::chrono::steady_clock::now();
             while (m_running) {
-                auto now = std::chrono::high_resolution_clock::now();
+                auto now = std::chrono::steady_clock::now();
                 auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime).count();
 
                 if (elapsed < 1000) {
@@ -410,8 +428,23 @@ void Emulator::run()
                 lastTime = now;
 #endif
 
-                uint64_t time_ticks = elapsed * clock_freq / 1000000;
-                timer_proc(time_ticks);
+                //Everything the machine missed while the host was busy
+                //elsewhere is caught up with, without a ceiling: emulated time
+                //has to track the wall clock, and a slice capped here would
+                //lose the difference for good - a machine under load would run
+                //slow, which is exactly what the test suite measures against
+                uint64_t time_ticks = (uint64_t)elapsed * clock_freq / 1000000;
+
+                //Last resort: an exception leaving this thread ends the whole
+                //process without a word. Devices report through
+                //DeviceManager::error() instead, but a stray std::stoi or a
+                //bad_alloc must not take the application down with it
+                try {
+                    timer_proc(time_ticks);
+                } catch (const std::exception &) {
+                    busy = false;
+                    m_running = false;
+                }
             }
         });
 
@@ -524,6 +557,15 @@ void Emulator::timer_proc(uint64_t time_ticks)
                 if (script) script->tick(clock_counter);
             }
         }
+        //A device refused what the guest asked of it (an unsupported mode, a
+        //command the emulator does not model). Throwing from here used to end
+        //the process; the machine is stopped instead, and the message stays in
+        //the device manager. Starting the CPU again resumes until the next one
+        if (dm->error_pending) {
+            dm->error_pending = false;
+            cpu->m_debug = DEBUG_STOPPED;
+        }
+
         mm->sort_cache();
         local_counter -= time_ticks;
 
@@ -676,11 +718,15 @@ void Emulator::store_screenshot()
 
 void Emulator::resize_screen()
 {
-    if (loaded) display->validate(true);
+    if (display) display->validate(true);
 }
 
 void Emulator::key_event(int key, int modifiers, bool press)
 {
+    //Reached from the GUI thread, which knows nothing about a machine that
+    //failed to load or has not started yet
+    if (!keyboard || !display) return;
+
     keyboard->key_event(key, key, press);
     for (size_t i = 0; i < joysticks.size(); i++) joysticks[i]->key_event((unsigned int)key, press);
     if (key == EmuKey::F12) display->validate(true);
@@ -714,6 +760,10 @@ Emulator::~Emulator()
 
 void Emulator::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 {
+    if (!display) {
+        *sx = *sy = 0;
+        return;
+    }
     display->get_screen_constraints(sx, sy);
 }
 

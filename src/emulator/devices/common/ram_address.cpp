@@ -62,9 +62,10 @@ void RAMAddress::set_value(unsigned int address, unsigned int value, bool force)
         // if (name != "port-C1xx" && name != "port-pal")
         //     std::cout << name.toStdString() << ": W " << std::to_string(a) << ":" << std::to_string(v) << std::endl;
 
-    } else {
-        std::cout << "W " + std::to_string(address) + ": blocked by WE";
     }
+    //A write refused by WE is normal operation on an Agat in the Apple II mode
+    //(port-C1xx has ~we = !pm.value), not something to report: stdout is the
+    //JSON-RPC channel of an --mcp session, and stderr fails every test
     i_access.change(1);
 }
 

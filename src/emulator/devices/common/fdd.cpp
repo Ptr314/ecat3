@@ -131,6 +131,14 @@ emulator::Result FDD::load_image(const std::string &file_name)
                 sides = hxc_header.number_of_side;
                 tracks = hxc_header.number_of_track;
 
+                //The track table comes straight from the file, so its length
+                //has to fit ours before anything is read into it
+                if (tracks <= 0 || tracks > (int)(sizeof(track_indexes)/sizeof(track_indexes[0]))) {
+                    file.close();
+                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                        "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unrecognized MFM format")) + "}");
+                }
+
                 file.seekg(hxc_header.mfmtracklistoffset, std::ios::beg);
                 file.read(reinterpret_cast<char*>(&track_indexes), sizeof(HXC_MFM_TRACK_INFO)*tracks);
 
@@ -269,9 +277,23 @@ emulator::Result FDD::load_image(const std::string &file_name)
     return emulator::Result::ok();
 }
 
+// True while track/side/sector name a place that exists on the loaded image.
+// A controller hands over the values the guest wrote into its registers, so
+// they are not trustworthy: a wrong one must answer "no such sector", never
+// translate into an offset outside the buffer.
+bool FDD::sector_in_range()
+{
+    if (side < 0 || side >= sides || track < 0 || track >= tracks) return false;
+    if (track_mode == FDD_MODE_SECTORS)
+        //sector 0 is the gap before the data, hence <= and not <
+        return sector >= 0 && sector <= sectors;
+    else
+        return image_track(track, side, false) < (unsigned int)(sizeof(track_indexes)/sizeof(track_indexes[0]));
+}
+
 int FDD::SeekSector(int track, int sector)
 {
-    int result = -1;
+    int result = FDD_SEEK_NO_DISK;
     if (buffer != nullptr)
     {
         if (sides > 1)
@@ -280,6 +302,9 @@ int FDD::SeekSector(int track, int sector)
         this->sector = sector;
         // qDebug() << "SEEK " << this->side << this->track << this->sector;
         position = 0;
+        //Outside the geometry a real drive finds no address mark and the
+        //controller reports RNF; here the request is simply refused
+        if (!sector_in_range()) return FDD_SEEK_NO_SECTOR;
         if (track_mode == FDD_MODE_SECTORS) {
             result = sector_size;
         } else {
@@ -319,6 +344,10 @@ unsigned int FDD::translate_address()
 
 void FDD::NextPosition()
 {
+    if (!sector_in_range()) {
+        position = 0;
+        return;
+    }
     if (++position >= track_indexes[track*sides + side].mfmtracksize) position = 0;
 }
 
@@ -326,8 +355,12 @@ uint8_t FDD::ReadNextByte()
 {
     if (loaded) {
         if (track_mode == FDD_MODE_SECTORS) {
-            if (position >= sector_size)
+            if (position >= sector_size || !sector_in_range()) {
+                //Nothing under the head: the byte the drive returns is the
+                //idle state of the data line, and the buffer is left alone
                 im->dm->error(this, "Reading outside of a sector");
+                return 0xFF;
+            }
 
             if (sector==0)
             {
@@ -340,6 +373,7 @@ uint8_t FDD::ReadNextByte()
                 return result;
             }
         } else {
+            if (!sector_in_range()) return 0xFF;
             uint8_t result = buffer[track_indexes[track*sides + side].mfmtrackoffset + position++];
             if (position >= track_indexes[track*sides + side].mfmtracksize) {
                 position = 0;
@@ -353,8 +387,12 @@ uint8_t FDD::ReadNextByte()
 void FDD::WriteNextByte(uint8_t value)
 {
     if (track_mode == FDD_MODE_SECTORS) {
-        if (position >= sector_size)
+        //An out of range address is not written anywhere: the byte would land
+        //in whatever follows the image in the heap
+        if (position >= sector_size || !sector_in_range()) {
             im->dm->error(this, "Writing outside of a sector");
+            return;
+        }
 
         if (sector != 0)
         {
@@ -362,6 +400,7 @@ void FDD::WriteNextByte(uint8_t value)
             position++;
         }
     } else {
+        if (!sector_in_range()) return;
         buffer[track_indexes[track*sides + side].mfmtrackoffset + position++] = value;
         if (position >= track_indexes[track*sides + side].mfmtracksize) position = 0;
     }
@@ -370,14 +409,17 @@ void FDD::WriteNextByte(uint8_t value)
 void FDD::WriteByte(uint8_t value)
 {
     if (track_mode == FDD_MODE_SECTORS) {
-        if (position >= sector_size)
+        if (position >= sector_size || !sector_in_range()) {
             im->dm->error(this, "Writing outside of a sector");
+            return;
+        }
 
         if (sector != 0)
         {
             buffer[translate_address()] = value;
         }
     } else {
+        if (!sector_in_range()) return;
         buffer[track_indexes[track*sides + side].mfmtrackoffset + position] = value;
     }
 }

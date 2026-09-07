@@ -52,6 +52,7 @@ I8251::I8251(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_c(this, im, 1, "c", MODE_R, CALLBACK_C)
     , ext_clock(false)
 {
+    m_clocked = true;   //clock() is overridden here
     init();
 }
 
@@ -227,6 +228,16 @@ unsigned int I8251::get_value(unsigned int address)
         update_status();
         return status;
     }
+}
+
+unsigned I8251::get_direct(unsigned address)
+{
+    //Reading the data register takes the character out of the receiver; an
+    //inspection must leave it there for the program to find
+    if ((address & 1) == 0)
+        return rx_buffer;
+    else
+        return status;
 }
 
 void I8251::set_value(const unsigned address, const unsigned value, bool force)

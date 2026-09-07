@@ -123,7 +123,7 @@ void Interface::change(unsigned int new_value)
     }
 }
 
-void Interface::changed(LinkData link, unsigned int value)
+void Interface::changed(const LinkData &link, unsigned int value)
 {
     if (mode == MODE_R)
     {
@@ -169,6 +169,7 @@ DeviceManager::DeviceManager()
     device_count = 2;
     error_message = "";
     error_device = nullptr;
+    error_pending = false;
 
 }
 
@@ -179,6 +180,8 @@ DeviceManager::~DeviceManager()
 
 void DeviceManager::clear()
 {
+    clocked_devices.clear();
+
     for (unsigned int i=0; i < device_count; i++)
        devices[i].device.reset();  // unique_ptr handles deletion automatically
 
@@ -236,6 +239,13 @@ emulator::Result DeviceManager::load_devices_config(SystemData *sd)
         emulator::Result res = get_device(i)->device->load_config(sd);
         if (!res) return res;
     }
+
+    //Index 0 is the CPU, clocked separately by Emulator::timer_proc()
+    clocked_devices.clear();
+    for (unsigned int i=1; i < device_count; i++)
+        if (devices[i].device->is_clocked())
+            clocked_devices.push_back(devices[i].device.get());
+
     return emulator::Result::ok();
 }
 
@@ -286,22 +296,31 @@ void DeviceManager::reset_devices(bool cold)
 void DeviceManager::clock(unsigned int counter)
 {
     global_clock_counter += counter;
-    //Except CPU
-    for (unsigned int i=1; i < device_count; i++)
-        devices[i].device->system_clock(counter);
+    //Only the devices that do something with a tick, in the order they are
+    //declared - the CPU (index 0) is clocked by its own execute()
+    for (size_t i=0; i < clocked_devices.size(); i++)
+        clocked_devices[i]->system_clock(counter);
 }
 
 void DeviceManager::error(ComputerDevice *d, const std::string &message)
 {
+    //Reached from the emulation thread on something the guest asked for and the
+    //emulator does not model: an unsupported i8255 mode, a multi-sector WD1793
+    //command, a register the i8257 does not have. Throwing here ended the
+    //process - nothing catches an exception on that thread - and the line in
+    //cerr failed every test on its way out. The first error is kept instead,
+    //and Emulator::timer_proc stops the machine on it.
+    if (error_pending) return;
     error_device = d;
     error_message = message;
-    std::cerr << "Exception DeviceManager::error " << d->name << " " << message << std::endl;
-    throw std::runtime_error(message);
+    error_pending = true;
 }
 
 void DeviceManager::error_clear()
 {
     error_device = nullptr;
+    error_message = "";
+    error_pending = false;
 }
 
 std::vector<ComputerDevice*> DeviceManager::find_devices_by_class(const std::string &class_to_find)
@@ -627,11 +646,6 @@ emulator::Result ComputerDevice::send_command(const std::string &command, const 
 }
 
 //----------------------- class AddressableDevice -------------------------------//
-
-unsigned AddressableDevice::get_size()
-{
-    return addresable_size;
-}
 
 unsigned AddressableDevice::get_direct(const unsigned address)
 {
@@ -1629,7 +1643,11 @@ emulator::Result MemoryMapper::load_config(SystemData *sd)
     emulator::Result res = ComputerDevice::load_config(sd);
     if (!res) return res;
 
-    this->cache_size = sizeof(this->read_cache_items) / sizeof(MapperCacheEntry);
+    //sizeof of the array, not of the counter next to it: as written it was
+    //4/20 = 0, so mr.cache came out false for every range. The lookups that
+    //would use the flag are still commented out in read()/write(), so this
+    //only restores the intended value
+    this->cache_size = sizeof(this->read_cache) / sizeof(MapperCacheEntry);
 
     std::string config_device = this->cd->get_parameter("config", false).value;
 
@@ -1728,7 +1746,11 @@ emulator::Result MemoryMapper::load_config(SystemData *sd)
                         "{MemoryMapper|" + std::string(QT_TRANSLATE_NOOP("MemoryMapper", "Incorrect range for")) + "} " + parameter_name);
             }
 
-            mr.device = this->im->dm->get_device_by_name(this->cd->parameters[i].value);
+            //Downcast once, here, rather than on every access through map()
+            mr.device = dynamic_cast<AddressableDevice*>(this->im->dm->get_device_by_name(this->cd->parameters[i].value));
+            if (mr.device == nullptr)
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                    "{MemoryMapper|" + std::string(QT_TRANSLATE_NOOP("MemoryMapper", "Device is not addressable")) + "} " + this->cd->parameters[i].value);
 
             const std::string &right_range = this->cd->parameters[i].right_range;
             try {
@@ -1838,7 +1860,7 @@ AddressableDevice * MemoryMapper::map(
         {
             * address_on_device = address - mr->range_begin + mr->base;
             * range_index = i;
-            return dynamic_cast<AddressableDevice*>(mr->device);
+            return mr->device;
         }
     }
     return nullptr;
@@ -1863,6 +1885,7 @@ AddressableDevice * MemoryMapper::map_port(
                                                 unsigned int * range_index
                                             )
 {
+    if (this->ports_count == 0) return nullptr;
     return this->map(&(this->ports), 0, this->ports_count-1, config, address, mode, address_on_device, range_index);
 }
 
@@ -1965,6 +1988,9 @@ unsigned int MemoryMapper::read_port(unsigned int address)
     if (this->ports_to_mem) {
         return(this->read(address));
     } else {
+        //A machine may declare no port at all: ports_count-1 below would then
+        //be the whole unsigned range and the scan would walk off the array
+        if (this->ports_count == 0) return _FFFF;
         unsigned int a = address & this->ports_mask;
         unsigned int address_on_device, range_index;
         AddressableDevice * d = this->map(&(this->ports), 0, this->ports_count-1, this->i_config.value, a, MODE_R, &address_on_device, &range_index);
@@ -1982,9 +2008,12 @@ void MemoryMapper::write_port(unsigned int address, unsigned int value)
     if (this->ports_to_mem) {
         this->write(address, value);
     } else {
+        if (this->ports_count == 0) return;
         unsigned int a = address & this->ports_mask;
         unsigned int address_on_device, range_index;
-        AddressableDevice * d = this->map(&(this->ports), 0, this->ports_count-1, this->i_config.value, a, MODE_R, &address_on_device, &range_index);
+        //MODE_W: a range declared write-only has to be reachable for a write,
+        //and a read-only one must not be. Copied from read_port() as MODE_R
+        AddressableDevice * d = this->map(&(this->ports), 0, this->ports_count-1, this->i_config.value, a, MODE_W, &address_on_device, &range_index);
         if (d != nullptr)
         {
             d->set_value(address_on_device, value);

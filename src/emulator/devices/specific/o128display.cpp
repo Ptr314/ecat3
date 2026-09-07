@@ -28,6 +28,7 @@ O128Display::O128Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     mode(_FFFF),
     frame(_FFFF)
 {
+    m_clocked = true;   //clock() is overridden here
     sx = 384;
     sy = 256;
 }
@@ -65,12 +66,27 @@ void O128Display::get_screen_constraints(unsigned int * sx, unsigned int * sy)
     *sy = this->sy;
 }
 
+//The renderer decides the pixel format, so the palettes are converted once
+//it is known - not per pixel through the virtual MapRGB()
+void O128Display::set_renderer(VideoRenderer &vr)
+{
+    GenericDisplay::set_renderer(vr);
+    vr.FillRGB(Orion128_MonoColors, rgba_mono, 4);
+    vr.FillRGB(Orion128_4Colors, rgba_4colors, 8);
+    vr.FillRGB(Orion128_16Colors, rgba_16colors, 16);
+}
+
 void O128Display::clock(unsigned int counter)
 {
-    if ( (mode != port_mode->get_value(0)) || (frame != port_frame->get_value(0)))
+    //get_direct(), not get_value(): this runs on every instruction, and reading
+    //a port through get_value() pulses its access line. Irisha and BK read the
+    //same way here
+    const unsigned int new_mode = port_mode->get_direct(0);
+    const unsigned int new_frame = port_frame->get_direct(0);
+    if ( (mode != new_mode) || (frame != new_frame))
     {
-        mode = port_mode->get_value(0);
-        frame = port_frame->get_value(0);
+        mode = new_mode;
+        frame = new_frame;
         base_address = 0xC000 - frame * 0x4000;
         screen_valid = false;
         was_updated = true;
@@ -116,7 +132,7 @@ void O128Display::render_byte(unsigned int address)
                 //base[0] = Orion128_MonoColors[c1][2];
                 //base[1] = Orion128_MonoColors[c1][1];
                 //base[2] = Orion128_MonoColors[c1][0];
-                *(uint32_t*)base = renderer->MapRGB(Orion128_MonoColors[c1][0], Orion128_MonoColors[c1][1], Orion128_MonoColors[c1][2]);
+                *(uint32_t*)base = rgba_mono[c1];
             }
         } else {
             //Blanking
@@ -138,7 +154,7 @@ void O128Display::render_byte(unsigned int address)
                 //base[0] = Orion128_16Colors[c3][2];
                 //base[1] = Orion128_16Colors[c3][1];
                 //base[2] = Orion128_16Colors[c3][0];
-                *(uint32_t*)base = renderer->MapRGB(Orion128_16Colors[c3][0], Orion128_16Colors[c3][1], Orion128_16Colors[c3][2]);
+                *(uint32_t*)base = rgba_16colors[c3];
             }
         } else {
             //4 colors
@@ -155,7 +171,7 @@ void O128Display::render_byte(unsigned int address)
                 //base[0] = Orion128_4Colors[c4][2];
                 //base[1] = Orion128_4Colors[c4][1];
                 //base[2] = Orion128_4Colors[c4][0];
-                *(uint32_t*)base = renderer->MapRGB(Orion128_4Colors[c4][0], Orion128_4Colors[c4][1], Orion128_4Colors[c4][2]);
+                *(uint32_t*)base = rgba_4colors[c4];
             }
         }
     }

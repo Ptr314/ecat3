@@ -19,6 +19,7 @@ RasterDisplay::RasterDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 emulator::Result RasterDisplay::load_config(SystemData *sd)
 {
+    m_clocked = true;   //clock() is overridden here
     emulator::Result res = GenericDisplay::load_config(sd);
     if (!res) return res;
 

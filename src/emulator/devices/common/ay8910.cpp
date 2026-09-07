@@ -37,6 +37,7 @@ AY8910::AY8910(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_acc(0)
     , m_latch(0)
 {
+    m_clocked = true;   //clock() is overridden here
     addresable_size = 2;
     can_read = true;
     can_write = true;

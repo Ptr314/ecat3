@@ -19,6 +19,13 @@ private:
     RAM * page_main;
     RAM * page_color;
 
+    //Palettes in the pixel format of the renderer, built once in set_renderer().
+    //render_all() repaints 0x3000 bytes - 98304 pixels - on every write to the
+    //video memory, and MapRGB() is a virtual call
+    uint32_t rgba_mono[4];
+    uint32_t rgba_4colors[8];
+    uint32_t rgba_16colors[16];
+
     void render_byte(unsigned int address);
 
 protected:
@@ -29,6 +36,7 @@ public:
 
     virtual void clock(unsigned int counter) override;
     virtual emulator::Result load_config(SystemData *sd) override;
+    void set_renderer(VideoRenderer &vr) override;
 
     virtual void memory_callback(unsigned int callback_id, unsigned int address) override;
 

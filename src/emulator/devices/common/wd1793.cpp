@@ -30,6 +30,7 @@ WD1793::WD1793(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_DRQ(this, im, 1, "drq", MODE_W)
     , i_HLD(this, im, 1, "hld", MODE_W)
 {
+    m_clocked = true;   //clock() is overridden here
     memset(&registers, 0, sizeof(registers));
 }
 
@@ -259,6 +260,14 @@ unsigned int WD1793::get_value(unsigned int address)
     return registers[a];
 }
 
+unsigned WD1793::get_direct(unsigned address)
+{
+    //Reading a register here must not move the controller: this is where a
+    //LOG in a script, the port window and the memory dump come from, and
+    //get_value() clears DRQ/INTRQ and can run the state machine forward
+    return registers[address & 0x03];
+}
+
 void WD1793::set_value(unsigned int address, unsigned int value, bool force)
 {
     if ((address & 0x03) == wd1793_REG_DATA && (address & sync_mask) != 0)
@@ -294,8 +303,10 @@ void WD1793::SetTypeIFlags(uint8_t T, uint8_t S)
 
     if (selected_drive >= 0)
     {
+        //A type I command only positions the head, so an address the disk does
+        //not have is not an error here - only a missing disk is
         seek_res = drives[selected_drive]->SeekSector(T, S);
-        if (seek_res < 0)
+        if (seek_res == FDD_SEEK_NO_DISK)
             SetFlag(wd1793_FLAG_NOT_READY);
         else
             ClearFlag(wd1793_FLAG_NOT_READY);
@@ -351,9 +362,13 @@ void WD1793::ExecuteCommand()
             command = wd1793_COMMAND_READ_BYTE;
             bytes = 0;
         } else {
-            // No drive or no disk: the command terminates at once
+            // No drive or no disk: the command terminates at once. An address
+            // outside the geometry finds no mark on a real drive - RNF
             SetTypeIIFlags();
-            SetFlag(wd1793_FLAG_NOT_READY);
+            if (sector_size == FDD_SEEK_NO_SECTOR)
+                SetFlag(wd1793_FLAG_ERR_SEEK);
+            else
+                SetFlag(wd1793_FLAG_NOT_READY);
             SetINTRQ();
             command = 0;
         }
@@ -369,7 +384,9 @@ void WD1793::ExecuteCommand()
             SetDRQ();
         } else {
             SetTypeIIFlags();
-            if (sector_size < 0)
+            if (sector_size == FDD_SEEK_NO_SECTOR)
+                SetFlag(wd1793_FLAG_ERR_SEEK);
+            else if (sector_size < 0)
                 SetFlag(wd1793_FLAG_NOT_READY);
             else
                 SetFlag(wd1793_FLAG_PROTECTED);

@@ -14,6 +14,7 @@ Generator::Generator(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_out(this, im, 1, "out", MODE_W)
     , i_enable(this, im, 1, "enable", MODE_R, 1)
 {
+    m_clocked = true;   //clock() is overridden here
 }
 
 emulator::Result Generator::load_config(SystemData *sd)

@@ -40,6 +40,7 @@ Agat9Display::Agat9Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_a2_page(0)
     , m_color_mode(A9_COLOR_16)
 {
+    m_clocked = true;   //clock() is overridden here
     sx = 512; // Doubling 2*256 because of 64 chars mode;
     sy = 256;
 }
@@ -69,6 +70,7 @@ emulator::Result Agat9Display::load_config(SystemData *sd)
             m_pal_switch = dynamic_cast<PortAddress*>(im->dm->get_device_by_name(pal_switch));
             m_pal_mode = dynamic_cast<PortAddress*>(im->dm->get_device_by_name(pal_mode));
             m_pal_font = dynamic_cast<RAM*>(im->dm->get_device_by_name(pal_font));
+            if (m_pal_mem != nullptr) m_pal_mem->set_memory_callback(this, PALETTE_CALLBACK, MODE_W);
             m_pal_card = true;
             m_pal_card_out = true;
             m_pal_builtin = read_confg_value(cd, "pal_builtin", false, false);
@@ -96,6 +98,7 @@ emulator::Result Agat9Display::load_config(SystemData *sd)
 
 void Agat9Display::set_renderer(VideoRenderer &vr)
 {
+    m_pal_dirty = true;
     GenericDisplay::set_renderer(vr);
     vr.FillRGB(Agat_9_base_colors, Agat_RGBA16, 16);
     vr.FillRGB(Agat_9_gray_colors, Agat_RGBA16gray, 16);
@@ -138,6 +141,8 @@ void Agat9Display::memory_callback(unsigned int callback_id, unsigned int addres
         // std::cout << "1 mix: " << m_a2_mixed << std::endl;
         // std::cout << "2 page: " << m_a2_page << std::endl;
     }
+    //Any write to the palette card memory drops the cached colours
+    if (callback_id == PALETTE_CALLBACK) m_pal_dirty = true;
 }
 
 DeviceOptions Agat9Display::get_device_options()
@@ -209,10 +214,17 @@ uint32_t Agat9Display::convert_rgba(const unsigned c, const uint32_t rgba[]) con
         if (m_pal_builtin) return Agat_RGBA16_palcard_std[pal][c];
         return rgba[c];
     }
-    const uint8_t R = m_pal_mem->get_direct(0x00 + c) * 17;
-    const uint8_t G = m_pal_mem->get_direct(0x10 + c) * 17;
-    const uint8_t B = m_pal_mem->get_direct(0x20 + c) * 17;
-    return renderer->MapRGB(R, G, B);
+    //The programmable palette is 16 colours held in the card's memory. Reading
+    //them per pixel meant three get_direct() and a virtual MapRGB() on each of
+    //512x256 pixels; the table is rebuilt whenever that memory is written
+    if (m_pal_dirty) {
+        for (unsigned i = 0; i < 16; i++)
+            Agat_RGBA16_palcard[i] = renderer->MapRGB(m_pal_mem->get_direct(0x00 + i) * 17,
+                                                      m_pal_mem->get_direct(0x10 + i) * 17,
+                                                      m_pal_mem->get_direct(0x20 + i) * 17);
+        m_pal_dirty = false;
+    }
+    return Agat_RGBA16_palcard[c];
 }
 
 uint8_t Agat9Display::convert_font(unsigned chr, unsigned line) const

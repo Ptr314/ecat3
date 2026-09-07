@@ -18,6 +18,13 @@ private:
     unsigned int MixerWidth;
     unsigned int input;
 
+    //Last result of calc_sound_value() and the inputs it came from
+    bool cache_valid = false;
+    unsigned int cached_input = 0;
+    unsigned int cached_mixer = 0;
+    int64_t cached_amplitude = 0;
+    int16_t cached_value = 0;
+
     virtual int16_t calc_sound_value() override;
 
 public:

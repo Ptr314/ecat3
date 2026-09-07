@@ -38,6 +38,7 @@ public:
     bool get_busy() override;
     unsigned get_selected_drive() override;
     unsigned  get_value(unsigned  address) override;
+    unsigned  get_direct(unsigned  address) override;
     void set_value(unsigned  address, unsigned  value, bool force=false) override;
     emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;

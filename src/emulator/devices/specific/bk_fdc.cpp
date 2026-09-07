@@ -50,6 +50,7 @@ BKFDC::BKFDC(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_trace_next(0)
     , m_last_status(0)
 {
+    m_clocked = true;   //clock() is overridden here
     memset(m_trace, 0, sizeof(m_trace));
     addresable_size = 4;
     can_read = true;

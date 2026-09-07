@@ -32,6 +32,7 @@ GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_acc_counter(0)
     , m_last_input(0)
 {
+    m_clocked = true;   //clock() is overridden here
     m_amplitude = m_volume * 32000 / 100;
     m_buffer.resize(m_samples_per_buffer);
     cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu"));

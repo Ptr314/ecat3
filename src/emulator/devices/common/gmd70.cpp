@@ -111,6 +111,21 @@ unsigned GMD70::get_value(const unsigned address)
     return m_data;
 }
 
+unsigned GMD70::get_direct(const unsigned address)
+{
+    //The status register is computed from flags and reading it changes
+    //nothing, but the data register advances the sector buffer and eats the
+    //error code, so an inspection returns the last byte as it stands
+    if ((address & 1) == 0) {
+        return    (m_trq          ? 0x80 : 0)
+                | (m_ints_en      ? 0x40 : 0)
+                | ((m_error >= 0) ? 0x20 : 0)
+                | (m_done         ? 0x10 : 0)
+                | (m_error >= 0 ? (m_error & 0xF) : 0);
+    }
+    return m_data;
+}
+
 void GMD70::set_value(const unsigned  address, const unsigned  value, bool force)
 {
     if ((address & 1) == 0) {
@@ -145,9 +160,11 @@ void GMD70::set_value(const unsigned  address, const unsigned  value, bool force
                     m_done = true;
                     m_trq = false;
                     auto fdd = m_drives[m_selected_drive];
-                    if (fdd->get_loaded())
+                    //The track and the sector come from the port, so they are
+                    //whatever the program wrote there: an address the disk does
+                    //not have is answered, not translated into an offset
+                    if (fdd->get_loaded() && fdd->SeekSector(m_command_buffer[1], m_command_buffer[0]) > 0)
                     {
-                        fdd->SeekSector(m_command_buffer[1], m_command_buffer[0]);
                         for (unsigned int i = 0; i < 128; i++) m_buffer[i] = fdd->ReadNextByte();
                         m_counter = 0;
                     } else {
@@ -164,9 +181,8 @@ void GMD70::set_value(const unsigned  address, const unsigned  value, bool force
                     m_done = true;
                     m_trq = false;
                     auto fdd = m_drives[m_selected_drive];
-                    if (fdd->get_loaded())
+                    if (fdd->get_loaded() && fdd->SeekSector(m_command_buffer[1], m_command_buffer[0]) > 0)
                     {
-                        fdd->SeekSector(m_command_buffer[1], m_command_buffer[0]);
                         for (unsigned int i = 0; i < 128; i++) fdd->WriteNextByte(m_buffer[i]);
                         m_counter = 0;
                     } else {

@@ -25,6 +25,7 @@ BKTimer::BKTimer(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_counter(0)
     , m_control(BK_TIMER_HIGH_BITS)
 {
+    m_clocked = true;   //clock() is overridden here
     addresable_size = 6;
     can_read = true;
     can_write = true;

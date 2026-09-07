@@ -44,7 +44,9 @@ private:
     unsigned int clock_freq;
     unsigned int timer_res;
     unsigned int timer_delay;
-    unsigned int local_counter;
+    //Counted against a 64-bit number of ticks: a 32-bit one could never reach
+    //a slice longer than 2^32 cycles, and the loop that waits for it never ends
+    uint64_t local_counter;
 
     unsigned int screen_sx;
     unsigned int screen_sy;

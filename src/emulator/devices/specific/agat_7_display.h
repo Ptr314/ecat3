@@ -43,7 +43,9 @@ protected:
 
     std::atomic<unsigned> m_color_mode;
 
-    uint32_t Agat_RGBA16_palcard[16];
+    //Cache of the programmable palette, rebuilt on a write to it
+    mutable uint32_t Agat_RGBA16_palcard[16];
+    mutable bool m_pal_dirty = true;
     uint32_t Agat_RGBA16_palcard_std[8][16];
 
     void render_line(unsigned screen_line);
@@ -58,6 +60,7 @@ public:
     Agat7Display(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     void set_renderer(VideoRenderer &vr) override;
+    void memory_callback(unsigned int callback_id, unsigned int address) override;
 
     DeviceOptions get_device_options() override;
     void set_device_option(unsigned option_id, unsigned value_id) override;

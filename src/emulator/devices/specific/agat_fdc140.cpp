@@ -24,6 +24,7 @@ Agat_FDC140::Agat_FDC140(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_select(this, im, 2, "select", MODE_W)
     , i_motor_on(this, im, 1, "motor_on", MODE_W)
 {
+    m_clocked = true;   //clock() is overridden here
     selected_drive = -1;
 
     memset(&current_track, 0, sizeof(current_track));

@@ -23,6 +23,7 @@ Agat_FDC840::Agat_FDC840(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_motor_on(this, im, 1, "motor_on", MODE_W)
     , side(0)
 {
+    m_clocked = true;   //clock() is overridden here
     selected_drive = -1;
     memset(&current_track, 0, sizeof(current_track));
 }

@@ -55,6 +55,7 @@ BKDisplay::BKDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_mode_pending(false)
     , m_pending_color(true)
 {
+    m_clocked = true;   //clock() is overridden here
     // Video memory holds 256 lines of 64 bytes. Read as one bit per pixel that
     // is 512 dots across, read as two bits per pixel it is 256.
     sy = m_lines;

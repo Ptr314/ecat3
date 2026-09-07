@@ -70,6 +70,7 @@ class DeviceManager;
 class InterfaceManager;
 class Interface;
 class ComputerDevice;
+class AddressableDevice;
 class MemoryMapper;
 class CPU;
 
@@ -207,7 +208,9 @@ struct MapperRange {
     unsigned int        range_end;      	//Адрес конца диапазона
     unsigned int        address_mask;		//AND-маска, которая накладывается на адрес
     unsigned int        address_value;		//Число, с которым сравнивается адрес после маски
-    ComputerDevice *    device;             //Устройство, соответствующее наложенным условиям
+    //Already downcast: map() is on the path of every byte the CPU reads, and a
+    //dynamic_cast there walks the class hierarchy on each of them
+    AddressableDevice * device;             //Устройство, соответствующее наложенным условиям
     unsigned int        base;				//Адрес во внутр. адр. пр-ве устройства, соотв. RangeBegin системы
     unsigned int        mode;				//Режим допустимости чтения-записи для устройства
     bool                cache;              //Разрешение кеширования записи
@@ -217,7 +220,7 @@ struct MapperRange {
 struct MapperCacheEntry {
     unsigned int        range_begin;
     unsigned int        range_end;
-    ComputerDevice *    device;
+    AddressableDevice * device;
     unsigned int        base;
     unsigned int        counter;
 };
@@ -241,6 +244,8 @@ public:
     virtual emulator::Result load_config(SystemData *sd);
     virtual void clock(unsigned int counter);
     virtual void system_clock(unsigned int counter);
+    //Whether clocking this device does anything at all - see m_clocked
+    bool is_clocked() const { return m_clocked; }
 
     virtual DeviceOptions get_device_options();
     virtual void set_device_option(unsigned option_id, unsigned value_id);
@@ -278,6 +283,11 @@ protected:
     unsigned int clock_divider;
     CPU * cpu = nullptr;
     uint32_t m_system_clock = 0;
+    //Set by the constructor of every class that overrides clock() (or
+    //system_clock()). DeviceManager::clock() runs once per instruction and
+    //used to call through to RAM, ROM, ports and registers as well, where the
+    //call lands in an empty ComputerDevice::clock()
+    bool m_clocked = false;
 
     unsigned int clock_stored;
 
@@ -306,7 +316,9 @@ public:
     virtual unsigned get_value(unsigned address) = 0;
     virtual unsigned get_direct(unsigned address);
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) = 0;
-    virtual unsigned int get_size();
+    //Not virtual: no device has ever answered anything but its own size, and
+    //Memory::get_value() asks on every byte the CPU reads
+    unsigned int get_size() { return addresable_size; }
 
     // 16-bit (word) access, used by CPUs with a word-oriented bus (PDP-11 family).
     // The default implementation composes a word out of two byte accesses in
@@ -354,7 +366,9 @@ public:
     void set_mode(unsigned int new_mode);
     unsigned int get_mode();
     void change(unsigned int new_value); //Вызывается устройством для изменения выхода
-    void changed(LinkData link, unsigned int value); //Вызывается связанными интерфейсами при изменении значения на них
+    //Taken by reference: a LinkData is 40 bytes, and this is called for
+    //every link of every interface on every change
+    void changed(const LinkData &link, unsigned int value); //Вызывается связанными интерфейсами при изменении значения на них
     void clear();
     bool pos_edge(); //Триггеры фронтов для 0-го бита
     bool neg_edge();
@@ -482,6 +496,9 @@ public:
     unsigned int device_count;
     ComputerDevice *error_device;
     std::string error_message;
+    //Set by error(), cleared by whoever acts on it (Emulator::timer_proc stops
+    //the machine). The device and the message stay for the GUI to show
+    bool error_pending;
 
     emulator::Result add_device(InterfaceManager *im, EmulatorConfigDevice *d); //
     void clear(); //
@@ -499,6 +516,9 @@ public:
 
 private:
     DeviceDescription devices[MAX_DEVICES];
+    //Devices whose clock() does something, in device order and without the CPU.
+    //Filled by load_devices_config(), walked once per instruction
+    std::vector<ComputerDevice*> clocked_devices;
     unsigned int registered_devices_count;
     RegisteredDevice registered_devices[MAX_REGISTERED_DEVICES];
 

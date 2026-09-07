@@ -79,6 +79,7 @@ IrishaDisplay::IrishaDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     m_mode_index(0),
     m_page_size(0)
 {
+    m_clocked = true;   //clock() is overridden here
     sx = 320;
     sy = 240;
 }

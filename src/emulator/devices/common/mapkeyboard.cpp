@@ -123,7 +123,9 @@ void MapKeyboard::set_rus(bool new_rus)
 
     unsigned int ruslat_state = new_rus?rus_value:(rus_value ^ 1);
     if (port_ruslat != nullptr) {
-        unsigned int port_value = (port_ruslat->get_value(0) & ~(1 << ruslat_bit)) | (ruslat_state  << ruslat_bit);
+        //Reading the port to modify one bit of it must not pulse its access
+        //line: that is a strobe the CPU produces, not the keyboard
+        unsigned int port_value = (port_ruslat->get_direct(0) & ~(1 << ruslat_bit)) | (ruslat_state  << ruslat_bit);
         port_ruslat->set_value_word(port_value, port_value); // Alow using both port & port-address
     }
     i_ruslat.change(ruslat_state);

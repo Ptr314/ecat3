@@ -69,6 +69,31 @@ public:
         return result;
     }
 
+    virtual unsigned get_direct(unsigned address) override
+    {
+        //The address and count registers are read a byte at a time, and each
+        //read flips the pointer to the other half. An inspection reads the
+        //half the program will get next and leaves the pointer alone
+        unsigned int a = address & 0x0F;
+        unsigned int n = (a >> 1) & 0x03;
+        switch (a) {
+        case 0:
+        case 2:
+        case 4:
+        case 6:
+            return RgA[n*2 + PtrA[n]];
+        case 1:
+        case 3:
+        case 5:
+        case 7:
+            return RgC[n*2 + PtrC[n]];
+        case 8:
+            return RgState;
+        default:
+            return _FFFF;
+        }
+    }
+
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override
     {
         unsigned int a = address & 0x0F;

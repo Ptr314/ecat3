@@ -33,6 +33,7 @@ public:
         , i_address(this, im, 1, "address", MODE_R)
         , i_data(this, im, 8, "data", MODE_R)
     {
+        m_clocked = true;   //clock() is overridden here
         memset(&RegMode, 0, sizeof(RegMode));
         memset(&RegCursor, 0, sizeof(RegCursor));
     }

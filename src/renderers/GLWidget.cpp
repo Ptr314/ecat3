@@ -72,10 +72,13 @@ void GLWidget::paintGL() {
     QMutexLocker locker(&mutex);
     if (!pendingImage.isNull()) {
         if (texture) delete texture;
+        //DontGenerateMipMaps: the texture is drawn at or above 1:1 and both
+        //filters are Linear, so the mip chain built here 50 times a second was
+        //never sampled
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
-        texture = new QOpenGLTexture(pendingImage.flipped(Qt::Vertical));
+        texture = new QOpenGLTexture(pendingImage.flipped(Qt::Vertical), QOpenGLTexture::DontGenerateMipMaps);
 #else
-        texture = new QOpenGLTexture(pendingImage.mirrored());
+        texture = new QOpenGLTexture(pendingImage.mirrored(), QOpenGLTexture::DontGenerateMipMaps);
 #endif
         texture->setMinificationFilter(QOpenGLTexture::Linear);
         texture->setMagnificationFilter(QOpenGLTexture::Linear);

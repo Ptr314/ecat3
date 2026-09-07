@@ -75,6 +75,7 @@ static const uint8_t Agat_Apple_index[2][2] =  {
 };
 
 #define APPLE_MODE_CALLBACK     1
+#define PALETTE_CALLBACK        2
 
 class Agat9Display : public RasterDisplay
 {
@@ -124,7 +125,9 @@ protected:
     uint32_t Agat_RGBA16_8[16];
     uint32_t Agat_RGBA16ex[16];
 
-    uint32_t Agat_RGBA16_palcard[16];
+    //Cache of the programmable palette, rebuilt on a write to it
+    mutable uint32_t Agat_RGBA16_palcard[16];
+    mutable bool m_pal_dirty = true;
     uint32_t Agat_RGBA16_palcard_std[8][16];
 
 

@@ -22,6 +22,7 @@ TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
     , i_speaker(this, im, 1, "speaker", MODE_W)
     , i_motor(this, im, 1, "motor", MODE_R, 2)
 {
+    m_clocked = true;   //clock() is overridden here
     device_class = "tape";
 
     system_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;

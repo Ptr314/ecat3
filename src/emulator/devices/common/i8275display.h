@@ -25,6 +25,10 @@ private:
     bool AttrDelay;
     unsigned int RGB[3];
     bool RGBInv;
+    //The eight colours in the pixel format of the renderer. The screen has no
+    //invalidation source of its own, so it is repainted whole on every frame -
+    //78*6 x 30*10 is 140400 pixels, and MapRGB() is a virtual call
+    uint32_t rgba_colors[8];
 
 public:
     I8275Display(InterfaceManager *im, EmulatorConfigDevice *cd):
@@ -33,6 +37,13 @@ public:
     {
         sx = 78*6;
         sy = 30*10;
+        memset(&rgba_colors, 0, sizeof(rgba_colors));
+    }
+
+    void set_renderer(VideoRenderer &vr) override
+    {
+        GenericDisplay::set_renderer(vr);
+        vr.FillRGB(VG75_8Colors, rgba_colors, 8);
     }
 
     virtual emulator::Result load_config(SystemData *sd) override
@@ -203,12 +214,16 @@ protected:
                         || (FABlink && VG75->Blinker && (sign != 0x80))								//Attributes are always black?
                         || (FAUnder && (i>7))
                     ) V = ~V;
+                    //Index 0 of the palette is black, which is what a zero bit
+                    //produced before through MapRGB(0,0,0)
+                    const uint32_t fg = rgba_colors[FAColor];
+                    const uint32_t bg = rgba_colors[0];
                     for (unsigned int k = 0; k <6; k++)
                     {
                         uint8_t c1 = (V >> k) & 1;
                         unsigned int p1 = Ofs + (5-k)*4;
                         uint8_t * base = static_cast<uint8_t *>(render_pixels) + Adr*line_bytes + p1;
-                        *(uint32_t*)base = renderer->MapRGB(c1 * VG75_8Colors[FAColor][0], c1 * VG75_8Colors[FAColor][1], c1 * VG75_8Colors[FAColor][2]);
+                        *(uint32_t*)base = c1 ? fg : bg;
                     }
                 }
                 if (AttrDelay && (NextAttr != 0))

@@ -21,6 +21,11 @@
 #define FDD_MODE_SECTORS        0
 #define FDD_MODE_WHOLE_TRACK    1
 
+// SeekSector() failures: no disk in the drive, or an address that does not
+// exist on the one loaded (a real controller answers the second one with RNF)
+#define FDD_SEEK_NO_DISK        (-1)
+#define FDD_SEEK_NO_SECTOR      (-2)
+
 class FDD : public ComputerDevice
 {
 private:
@@ -65,6 +70,7 @@ private:
     AgatAIMCodes aim_codes;
 
     unsigned int translate_address();
+    bool sector_in_range();
     unsigned int image_track(int track, int side, bool sides_order);
     bool layout_for_file(const std::string &file_name);
     static bool parse_layout_word(const std::string &word, bool &sides_out);

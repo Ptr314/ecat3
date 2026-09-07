@@ -217,6 +217,9 @@ unsigned int parse_numeric_value(std::string str, unsigned int default_base)
 
     if (prefixed) s.erase(0, 1);
 
+    //A lone prefix ("$") leaves nothing to read
+    if (s.empty()) throw std::invalid_argument("Invalid numeric value: " + str);
+
     if (s[s.length() - 1] == 'K') {
         mult = 1024;
         s.erase(s.length() - 1, 1);

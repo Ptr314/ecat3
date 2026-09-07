@@ -42,6 +42,7 @@ I8253::I8253(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_gate(this, im, 3, "gate", MODE_R, 1)
     , per_channel_clock(false)
 {
+    m_clocked = true;   //clock() is overridden here
     for (int i = 0; i < 3; i++) {
         ch_clock_multiplier[i] = 1;
         ch_clock_divider[i] = 1;
@@ -171,6 +172,16 @@ unsigned int I8253::get_value(unsigned int address)
         Indexes[a] = Indexes[a] ^ 0x01;
     }
     return result;
+}
+
+unsigned I8253::get_direct(unsigned address)
+{
+    //Same byte get_value() would return, but the high/low byte toggle is left
+    //where it is: a LOG or an open port window must not shift what the next
+    //read of the counter gives the program
+    const unsigned a = address & 0x03;
+    if (a==3) return 0;
+    return ReadData[a*2 + Indexes[a]];
 }
 
 void I8253::set_value(const unsigned address, const unsigned value, bool force)

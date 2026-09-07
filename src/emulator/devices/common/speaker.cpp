@@ -22,6 +22,13 @@ int16_t Speaker::calc_sound_value()
 {
     if (InputWidth + MixerWidth == 0) return m_amplitude;
 
+    //Called once per instruction, while the inputs change only when the program
+    //touches the port. The mixer interface has no callback of its own, so the
+    //result is kept against the values it was computed from rather than being
+    //invalidated from elsewhere. Same number, bit for bit
+    if (cache_valid && input == cached_input && i_mixer.value == cached_mixer && m_amplitude == cached_amplitude)
+        return cached_value;
+
     int32_t V = 0;
     if (InputWidth != 0) {
         V += input;
@@ -29,7 +36,12 @@ int16_t Speaker::calc_sound_value()
     for (unsigned int i=0; i < MixerWidth; i++)
         V += (i_mixer.value >> i) & 0x01;
 
-    return (V * m_amplitude * 2 / (InputWidth + MixerWidth)) - m_amplitude;
+    cached_input = input;
+    cached_mixer = i_mixer.value;
+    cached_amplitude = m_amplitude;
+    cached_value = (V * m_amplitude * 2 / (InputWidth + MixerWidth)) - m_amplitude;
+    cache_valid = true;
+    return cached_value;
 }
 
 void Speaker::reset(bool cold)
@@ -37,6 +49,8 @@ void Speaker::reset(bool cold)
     GenericSound::reset(cold);
     InputWidth = (i_input.linked == 0) ? 0 : 1;
     MixerWidth = (i_mixer.linked == 0) ? 0 : CalcBits(i_mixer.linked_bits, 8);
+    //The widths are part of the formula, so the kept result no longer applies
+    cache_valid = false;
 }
 
 emulator::Result Speaker::load_config(SystemData *sd)

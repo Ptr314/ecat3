@@ -29,8 +29,6 @@ emulator::Result DisAsm::load_file(const std::string &file_name)
     const std::string hex_digits = "0123456789ABCDEF";
     const std::string letters = "abcdefghijklmnopqrstuvwxyz";
 
-    std::cerr << "Loading " << file_name << std::endl;
-
     std::string content = dsk_tools::utf8_read_file(file_name);
     if (content.empty()) {
         return emulator::Result::error(emulator::ErrorCode::ConfigError,

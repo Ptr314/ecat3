@@ -82,6 +82,7 @@ public:
 
     void reset(bool cold) override;
     unsigned int get_value(unsigned int address) override;
+    unsigned get_direct(unsigned address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
     void clock(unsigned int counter) override;
 
