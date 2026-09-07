@@ -22,6 +22,24 @@ static const uint8_t agat_840_header[]={
     0xAA, 0x6A, 0x95
 };
 
+// Commands of an AIM cell, as they are stored in the high byte of it.
+// A DESYNC comes in three flavours: $80 is the flag on its own, $01 the one
+// the reference dumps use, $81 both at once - all three mark the same thing,
+// a place where the controller loses bit sync and re-locks on the next mark.
+// $03 and $13 (the index pulse) also carry bit 0 and are NOT a DESYNC, so the
+// test has to name the values instead of masking them.
+#define AIM_CMD_DESYNC      0x01
+#define AIM_CMD_END         0x02
+#define AIM_CMD_INDEX_ON    0x03
+#define AIM_CMD_INDEX_OFF   0x13
+#define AIM_CMD_DESYNC_ALT  0x80
+#define AIM_CMD_DESYNC_BOTH 0x81
+
+inline bool aim_is_desync(int code)
+{
+    return code == AIM_CMD_DESYNC || code == AIM_CMD_DESYNC_ALT || code == AIM_CMD_DESYNC_BOTH;
+}
+
 #define AGAT_840_PROLOG_SIZE sizeof(agat_840_prolog)
 #define AGAT_840_HEADER_SIZE sizeof(agat_840_header)
 #define AGAT_840_PROLOG_TRACK  16

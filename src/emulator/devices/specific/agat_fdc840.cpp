@@ -160,7 +160,7 @@ void Agat_FDC840::read_next_byte()
         int pos = drives[selected_drive]->get_position();
         int aim_code = drives[selected_drive]->aim_code();
         uint8_t data = drives[selected_drive]->ReadNextByte();
-        if (aim_code == 1) {
+        if (aim_is_desync(aim_code)) {
             // if (data == 0) data = drives[selected_drive]->ReadNextByte();
             sector_sync = true;
             // qDebug() << "-- SYNC " << pos << ":" << hex << data;

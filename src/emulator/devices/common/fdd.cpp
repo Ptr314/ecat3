@@ -613,8 +613,12 @@ bool FDD::is_led_on()
 // Returns the AIM control code at the current position, or 0 if none exists
 int FDD::aim_code()
 {
-    auto code = aim_codes[track].find(get_position());
-    if (code != aim_codes[track].end())
+    //The codes are stored per physical track, the same index the data uses:
+    //taking them by cylinder alone hands side 1 the marks of another track
+    const unsigned int t = image_track(track, side, false);
+    if (t >= sizeof(aim_codes)/sizeof(aim_codes[0])) return 0;
+    auto code = aim_codes[t].find(get_position());
+    if (code != aim_codes[t].end())
         return code->second;
     else
         return 0;

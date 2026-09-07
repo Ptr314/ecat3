@@ -267,8 +267,8 @@ uint8_t * generate_mfm_agat_840(const std::string &file_name, int & sides, int &
                 *out++ = 0x5A;
 
                 int track_pos = sector * encoded_sector_size;
-                aim_codes[agat_track][track_pos + 12] = 0x01;
-                aim_codes[agat_track][track_pos + 21] = 0x01;
+                aim_codes[agat_track][track_pos + 12] = AIM_CMD_DESYNC;
+                aim_codes[agat_track][track_pos + 21] = AIM_CMD_DESYNC;
             }
 
             track_indexes[track_index].track_number = track;
