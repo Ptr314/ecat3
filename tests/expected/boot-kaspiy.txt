@@ -1,0 +1,38 @@
+=== Экран ===
+[display.resolution] 320x240
+=== Карта памяти и портов ===
+[mapper.map] 
+        0000-3FFF -> bios[0000] mode=r cfg=00:FFFF
+        4000-7FFF -> ram0[4000] mode=rw cfg=00:FFFF
+        8000-BFFF -> ram0[8000] mode=rw cfg=00:FFFF
+        C000-FFFF -> ram0[0000] mode=rw cfg=00:FFFF
+        0000-3FFF -> ram0[C000] mode=rw cfg=02:FFFF
+        4000-7FFF -> ram0[4000] mode=rw cfg=02:FFFF
+        8000-BFFF -> ram0[8000] mode=rw cfg=02:FFFF
+        C000-FFFF -> ram0[0000] mode=rw cfg=02:FFFF
+        0000-3FFF -> ram0[C000] mode=rw cfg=01:FFFF
+        4000-7FFF -> ram1[0000] mode=rw cfg=01:FFFF
+        8000-BFFF -> ram0[8000] mode=rw cfg=01:FFFF
+        C000-FFFF -> ram1[4000] mode=rw cfg=01:FFFF
+        0000-3FFF -> ram0[C000] mode=rw cfg=03:FFFF
+        4000-7FFF -> ram1[8000] mode=rw cfg=03:FFFF
+        8000-BFFF -> ram0[8000] mode=rw cfg=03:FFFF
+        C000-FFFF -> ram1[C000] mode=rw cfg=03:FFFF
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+        0000-0000 -> -[0000] mode=
+  port 04 -> port-kbd
+  port 06 -> serial
+  port 08 -> timer
+  port 0C -> pic
+  port 10 -> ppa
+  port 14 -> exrom
+  port D8 -> port-videomode
+  port D9 -> port-color
+  port DA -> port-videopage
