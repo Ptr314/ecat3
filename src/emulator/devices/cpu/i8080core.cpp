@@ -73,7 +73,7 @@ static const uint8_t TIMING[256][2] = {
     {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {5, 5},        // 50-5F
     {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {5, 5},
     {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {5, 5},        // 60-6F
-    {7, 7},   {7, 7},   {7, 7},   {7, 7},   {7, 7},   {7, 7},   {4, 4},   {7, 7},
+    {7, 7},   {7, 7},   {7, 7},   {7, 7},   {7, 7},   {7, 7},   {7, 7},   {7, 7},   //76 is HLT, 7 cycles
     {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {5, 5},   {7, 7},   {5, 5},        // 70-7F
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 80-8F
@@ -83,13 +83,13 @@ static const uint8_t TIMING[256][2] = {
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // A0-AF
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // B0-BF
-    {5, 11},  {11, 11}, {10, 10}, {10, 10}, {11, 17}, {11, 11}, {7, 7},   {11, 11},
+    {5, 11},  {10, 10}, {10, 10}, {10, 10}, {11, 17}, {11, 11}, {7, 7},   {11, 11},
     {5, 11},  {10, 10}, {10, 10}, {10, 10}, {11, 17}, {17, 17}, {7, 7},   {11, 11},      // C0-CF
-    {5, 11},  {11, 11}, {10, 10}, {10, 10}, {11, 17}, {11, 11}, {7, 7},   {11, 11},
+    {5, 11},  {10, 10}, {10, 10}, {10, 10}, {11, 17}, {11, 11}, {7, 7},   {11, 11},
     {5, 11},  {10, 10}, {10, 10}, {10, 10}, {11, 17}, {17, 17}, {7, 7},   {11, 11},      // D0-DF
-    {5, 11},  {11, 11}, {10, 10}, {18, 18}, {11, 17}, {11, 11}, {7, 7},   {11, 11},
+    {5, 11},  {10, 10}, {10, 10}, {18, 18}, {11, 17}, {11, 11}, {7, 7},   {11, 11},
     {5, 11},  {5, 5},   {10, 10}, {4, 4},   {11, 17}, {17, 17}, {7, 7},   {11, 11},      // E0-EF
-    {5, 11},  {11, 11}, {10, 10}, {4, 4},   {11, 17}, {11, 11}, {7, 7},   {11, 11},
+    {5, 11},  {10, 10}, {10, 10}, {4, 4},   {11, 17}, {11, 11}, {7, 7},   {11, 11},
     {5, 11},  {5, 5},   {10, 10}, {4, 4},   {11, 17}, {17, 17}, {7, 7},   {11, 11}};  	 // F0-FF
 
 static const uint8_t CONDITIONS[8][2] = {
@@ -214,6 +214,13 @@ unsigned int i8080core::execute()
     unsigned int XX, YYY, ZZZ, PP, Q;
     PartsRecLE T, D;
     unsigned int cycles;
+
+    //HLT stops the processor until an interrupt or a reset. Interrupts are not
+    //served here: the only machine that wires INT is Irisha, whose ВН59 hands
+    //the processor a CALL during the acknowledge cycle, and that cycle is not
+    //modelled (see i_inta of i8259, unconnected in every config). So a halted
+    //8080 stays halted, which is what the hardware does with interrupts off
+    if (context.halted) return 4;
 
     command = next_byte();
 
@@ -535,7 +542,10 @@ unsigned int i8080core::execute()
                 T.b.H = read_mem(static_cast<uint16_t>(context.registers.regs.SP+1));
                 if (PP == 3)
                 {
-                    context.registers.regs.F = T.b.L | F_BASE_8080;
+                    //The bits the 8080 does not have read back as zero,
+                    //whatever was pushed: PUSH PSW after POP PSW of junk
+                    //must not put them back
+                    context.registers.regs.F = (T.b.L & F_ALL) | F_BASE_8080;
                     context.registers.regs.A = T.b.H;
                 } else
                     context.registers.reg_array_16[PP] = T.w;

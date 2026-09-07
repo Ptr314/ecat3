@@ -217,15 +217,16 @@ void BKDisplay::render_all(const bool force_render)
     RAM * vmem = vram[m_page];
     if (vmem == nullptr) return;
 
+    //Marked valid before the repaint, not after - see O128Display::render_all()
+    screen_valid = true;
+    was_updated = true;
+
     const unsigned shown = m_quarter? (m_lines / 4) : m_lines;
     for (unsigned line = 0; line < m_lines; line++) {
         if (line >= shown) render_line_blank(line, color);
         else if (color) render_line_color(line, vmem, palette);
         else render_line_mono(line, vmem);
     }
-
-    screen_valid = true;
-    was_updated = true;
 }
 
 // Below the quarter screen the beam draws nothing

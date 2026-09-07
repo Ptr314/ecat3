@@ -637,8 +637,11 @@ void Emulator::render_screen()
 #else
         if (display->was_updated)
         {
-            renderer->render();
+            //Cleared before the frame goes out, not after: the emulation thread
+            //sets it whenever it changes the picture, and clearing afterwards
+            //would drop a change made while render() was running
             display->was_updated = false;
+            renderer->render();
         }
 #endif
 

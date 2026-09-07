@@ -103,7 +103,7 @@ static const uint8_t TIMING[256][2] = {
     {8, 13},  {10, 10}, {7, 7},   {6, 6},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
     {12, 12}, {11, 11}, {7, 7},   {6, 6},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 10-1F
     {7, 12},  {10, 10}, {16, 16}, {6, 6},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
-    {7, 12},  {11, 11}, {20, 20}, {6, 6},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 20-2F
+    {7, 12},  {11, 11}, {16, 16}, {6, 6},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 20-2F
     {7, 12},  {10, 10}, {13, 13}, {6, 6},   {11, 11}, {11, 11}, {10, 10}, {4, 4},
     {7, 12},  {11, 11}, {13, 13}, {6, 6},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 30-3F
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
@@ -159,6 +159,7 @@ z80core::z80core()
     context.NMI = 1;
     context.INT = 1;
     process_ints = true;
+    nmi_pending = false;
 }
 
 inline uint8_t z80core::next_byte()
@@ -424,7 +425,8 @@ inline void z80core::do_DD_FD_CB(unsigned int prefix, unsigned int * cycles)
     uint8_t d = next_byte();    //+4T
     uint8_t c = next_byte();    //+4T
 
-    address = ((prefix == 0xDD)?REG_IX:REG_IY) + static_cast<int16_t>(d);
+    //Signed displacement, so DD CB reaches the bytes below IX as well
+    address = ((prefix == 0xDD)?REG_IX:REG_IY) + static_cast<int8_t>(d);
 
     T.b.L = read_mem(address);  //+4T
 
@@ -497,6 +499,7 @@ void z80core::reset()
 {
     REG_PC = 0;
     context.halted = false;
+    nmi_pending = false;
 
     context.global_prefix = 0;
     context.index8_inc = 0;
@@ -560,6 +563,15 @@ inline void z80core::store_value_16(uint32_t value)
     }
 }
 
+//Reads the displacement byte and returns the address it points at. Unlike
+//get_first_8() it does not read what is there: a real Z80 does not either, and
+//on an Orion the i8255 ports live in the memory map, where a read pulses the
+//access line of the port
+inline uint32_t z80core::get_index_address()
+{
+    return get_first_16() + static_cast<int8_t>(next_byte());
+}
+
 inline uint8_t z80core::get_first_8(unsigned int YYY, uint32_t * address, unsigned int * cycles, bool force_hl)
 {
     // Obtain a 8 bit argument
@@ -577,8 +589,9 @@ inline uint8_t z80core::get_first_8(unsigned int YYY, uint32_t * address, unsign
         switch (YYY) {
         case 6:
             // [IX/IY + d]
-            *cycles += 4;
-            *address = get_first_16() + static_cast<int>(next_byte());
+            //The displacement is signed: -128..127, not 0..255
+            *cycles += 8;
+            *address = get_index_address();
             return read_mem(*address);
             break;
         case 4:
@@ -611,8 +624,8 @@ inline void z80core::store_value_8(unsigned int YYY, uint32_t address, uint8_t v
         switch (YYY) {
         case 6:
             // [IX/IY + d]
-            // The address has to be calculated by get_first_8 earlier
-            *cycles += 4;
+            // The address has to be calculated by get_first_8 earlier, and
+            // the cycles of the access were counted there as well
             write_mem(address, value);
             break;
         case 4:
@@ -784,8 +797,6 @@ inline void z80core::do_cpi_cpd(int16_t hlinc)
     uint8_t tmp = D.w - ((HC!=0)?1:0);
     REG_F |= tmp & F_B3;
     REG_F |= ((tmp & 0x02) != 0)?F_B5:0;
-
-    INC_R;
 }
 
 inline void z80core::do_ldi_ldd(int16_t hlinc)
@@ -808,8 +819,6 @@ inline void z80core::do_ldi_ldd(int16_t hlinc)
     REG_F |= (REG_BC != 0)?F_OVERFLOW:0;
     REG_F |= D.b.L & F_B3;
     REG_F |= ((D.b.L & 0x02) != 0)?F_B5:0;
-
-    INC_R;
 }
 
 
@@ -828,8 +837,6 @@ inline void z80core::do_ini_ind(int16_t hlinc)
         0,                              //Reset
         F_SIGN+F_ZERO+F_B5+F_B3         //To change
         );
-
-    INC_R;
 }
 
 inline void z80core::do_outi_outd(int16_t hlinc)
@@ -847,8 +854,6 @@ inline void z80core::do_outi_outd(int16_t hlinc)
         0,                              //Reset
         F_SIGN+F_ZERO+F_B5+F_B3         //To change
         );
-
-    INC_R;
 }
 
 inline void z80core::do_daa()
@@ -891,6 +896,9 @@ void z80core::do_rst(uint16_t address)
 
 void z80core::set_nmi(unsigned int nmi_val)
 {
+    //NMI is edge triggered: the request is latched on the falling edge and
+    //held until it is served, however short the pulse was
+    if (context.NMI != 0 && nmi_val == 0) nmi_pending = true;
     context.NMI = nmi_val;
 }
 
@@ -1152,7 +1160,9 @@ unsigned int z80core::execute_command()
         case 6:
             //00_YYY_110
             //LD DDD, d
-            if (context.global_prefix !=0 && YYY==6) get_first_8(YYY, &address, &cycles);        //Just to get an address for [IX/IY + d]
+            //LD (IX/IY + d), n: 19T in all, of which 4 for the prefix and 10
+            //for the base opcode
+            if (context.global_prefix !=0 && YYY==6) { address = get_index_address(); cycles += 5; }
             T.b.L = next_byte();
             store_value_8(YYY, address, T.b.L, &cycles);
             break;
@@ -1233,7 +1243,7 @@ unsigned int z80core::execute_command()
         } else {
             //LD DDD, SSS
             T.b.L = get_first_8(ZZZ, &address, &cycles, YYY == 0b110);
-            if (context.global_prefix !=0 && YYY==6) get_first_8(YYY, &address, &cycles);                        // Just to get an address for [IX, IY + d]
+            if (context.global_prefix !=0 && YYY==6) { address = get_index_address(); cycles += 8; }   // [IX, IY + d] as a destination
             store_value_8(YYY, address, T.b.L, &cycles, ZZZ == 0b110);
         }
         break;
@@ -1361,6 +1371,7 @@ unsigned int z80core::execute_command()
                 //11_001_011
                 //Prefix CB
                 command2 = next_byte(); cycles += 4;
+                INC_R;      //Both bytes of a prefixed instruction refresh
                 //XX YYY ZZZ
                 XX2 = command2 >> 6;
                 YYY2 = (command2 >> 3) & 0x07;
@@ -1527,6 +1538,7 @@ unsigned int z80core::execute_command()
                     //11_101_101
                     //Prefix ED
                     command2 = next_byte(); cycles += 4;
+                    INC_R;      //Both bytes of a prefixed instruction refresh
                     //XX YYY ZZZ
                     XX2 = command2 >> 6;
                     YYY2 = (command2 >> 3) & 0x07;
@@ -1707,6 +1719,15 @@ unsigned int z80core::execute_command()
                                 // ED 01 010 111
                                 // LD A, I
                                 REG_A = REG_I;
+                                //S, Z, 3 and 5 from the value, H and N cleared;
+                                //P/V shows IFF2 and is set below
+                                calc_z80_flags(
+                                    REG_A,                              //Value
+                                    REG_A,                              //For 3&5
+                                    0,                                  //Set none
+                                    F_SUB+F_HALF_CARRY,                 //Reset N & HC
+                                    F_SIGN+F_ZERO+F_B5+F_B3             //To change
+                                    );
                                 if (context.IFF2 == 1)
                                     REG_F |= F_PARITY;
                                 else
@@ -1717,6 +1738,15 @@ unsigned int z80core::execute_command()
                                 // ED 01 011 111
                                 // LD A, R
                                 REG_A = REG_R;
+                                //S, Z, 3 and 5 from the value, H and N cleared;
+                                //P/V shows IFF2 and is set below
+                                calc_z80_flags(
+                                    REG_A,                              //Value
+                                    REG_A,                              //For 3&5
+                                    0,                                  //Set none
+                                    F_SUB+F_HALF_CARRY,                 //Reset N & HC
+                                    F_SIGN+F_ZERO+F_B5+F_B3             //To change
+                                    );
                                 if (context.IFF2 == 1)
                                     REG_F |= F_PARITY;
                                 else
@@ -2059,17 +2089,35 @@ unsigned int z80core::execute_command()
 
 unsigned int z80core::execute()
 {
-    //TODO: Z80: IM 0 & 2
-
     unsigned int cycles = 0;
+
+    //NMI is served whatever IFF1 says, and wakes the processor from HALT
+    if (nmi_pending) {
+        nmi_pending = false;
+        context.halted = false;
+        context.IFF2 = context.IFF1;
+        context.IFF1 = 0;
+        INC_R;
+        do_rst(0x0066);
+        return 11;
+    }
 
     if (process_ints) {
         if ((context.INT == 0) && (context.IFF1 != 0))
         {
             context.IFF1 = 0;
             context.IFF2 = 0;
+            //An accepted interrupt ends the HALT: the processor resumes at the
+            //instruction after it once the handler returns
+            context.halted = false;
+            INC_R;
             switch (context.IM) {
             case 0:
+                //The device puts an instruction on the bus during the
+                //acknowledge cycle. Nothing here drives it, and a bus pulled
+                //up reads as FF - RST 38h, which is what the machines with a
+                //Z80 card do
+                do_rst(0x0038);
                 cycles = 13;
                 break;
             case 1:
@@ -2077,13 +2125,27 @@ unsigned int z80core::execute()
                 cycles = 13;
                 break;
             case 2:
-                cycles = 19;
+                {
+                    //The vector is (I << 8) | the byte from the bus; with
+                    //nothing driving it that byte is FF
+                    do_rst(0);   //pushes PC, PC is overwritten below
+                    uint16_t v = static_cast<uint16_t>(REG_I) << 8 | 0x00FF;
+                    REG_PC = read_mem(v) | (read_mem(static_cast<uint16_t>(v + 1)) << 8);
+                    cycles = 19;
+                }
                 break;
             }
             process_ints = true;
             return cycles;
         }
     };
+
+    //Halted and nothing to wake it: the processor keeps refreshing memory
+    //until an interrupt or a reset arrives
+    if (context.halted) {
+        INC_R;
+        return 4;
+    }
 
     do
     {

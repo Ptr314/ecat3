@@ -186,6 +186,13 @@ void IrishaDisplay::set_renderer(VideoRenderer &vr)
 void IrishaDisplay::render_all(const bool force_render)
 {
     if (!screen_valid || force_render) {
+        //Marked valid before the repaint, not after: the emulation thread
+        //clears the flag on every write to the video memory, and a write
+        //arriving while this loop runs would be swallowed by an assignment
+        //at the end - that byte would stay unpainted until something else
+        //touched the screen
+        screen_valid = true;
+        was_updated = true;
         // Blank fields
         const auto buf = static_cast<uint32_t *>(render_pixels);
         const uint32_t black = Irisha_RGBA4[0];
@@ -200,8 +207,6 @@ void IrishaDisplay::render_all(const bool force_render)
         else {
             render_blank();
         }
-        screen_valid = true;
-        was_updated = true;
     }
 }
 

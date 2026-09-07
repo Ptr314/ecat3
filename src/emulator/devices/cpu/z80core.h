@@ -15,6 +15,8 @@ class z80core
 {
 private:
     bool process_ints;
+    //A falling edge on NMI, kept until it is served
+    bool nmi_pending;
 
     uint8_t next_byte();
     uint8_t read_command();
@@ -60,6 +62,7 @@ private:
     uint32_t get_first_16();
     uint32_t get_second_16(uint32_t PP);
     void store_value_16(uint32_t value);
+    uint32_t get_index_address();
     uint8_t get_first_8(unsigned int YYY, uint32_t * address, unsigned int *cycles, bool force_hl = false);
     void store_value_8(unsigned int YYY, uint32_t address, uint8_t value, unsigned int * cycles, bool force_hl = false);
 

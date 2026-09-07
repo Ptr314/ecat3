@@ -97,9 +97,14 @@ void O128Display::render_all(bool force_render)
 {
     if (!screen_valid || force_render)
     {
-        for (unsigned int a=0; a < 0x3000; a++) render_byte(a);
+        //Marked valid before the repaint, not after: the emulation thread
+        //clears the flag on every write to the video memory, and a write
+        //arriving while this loop runs would be swallowed by an assignment
+        //at the end - that byte would stay unpainted until something else
+        //touched the screen
         screen_valid = true;
         was_updated = true;
+        for (unsigned int a=0; a < 0x3000; a++) render_byte(a);
     }
 }
 

@@ -145,20 +145,39 @@ void GLWidget::paintGL() {
     program->release();
 }
 
+//The three slots below are called from the emulator's render thread. A QWidget
+//belongs to the GUI thread, so the work is posted to it instead of being done
+//here: update() only asks for a repaint, but updateImageRect() reads the
+//geometry of the widget, which the GUI thread owns.
 void GLWidget::updateTexture(const QImage& image) {
-    QMutexLocker locker(&mutex);
-    pendingImage = image;
+    {
+        QMutexLocker locker(&mutex);
+        pendingImage = image;
+    }
+    QMetaObject::invokeMethod(this, "applyPendingUpdate", Qt::QueuedConnection);
+}
+
+void GLWidget::setImageSize(const QSize& size) {
+    QMetaObject::invokeMethod(this, "applyImageSize", Qt::QueuedConnection, Q_ARG(QSize, size));
+}
+
+void GLWidget::setAspectRatioScale(float scale) {
+    QMetaObject::invokeMethod(this, "applyAspectRatioScale", Qt::QueuedConnection, Q_ARG(float, scale));
+}
+
+//...and these run on the GUI thread
+void GLWidget::applyPendingUpdate() {
     updateImageRect();
     update();
 }
 
-void GLWidget::setImageSize(const QSize& size) {
+void GLWidget::applyImageSize(QSize size) {
     imageDisplaySize = size;
     updateImageRect();
     update();
 }
 
-void GLWidget::setAspectRatioScale(float scale) {
+void GLWidget::applyAspectRatioScale(float scale) {
     aspectRatioScale = scale;
     update();
 }

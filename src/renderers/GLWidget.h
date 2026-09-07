@@ -18,10 +18,17 @@ public:
     GLWidget(QWidget* parent = nullptr);
     ~GLWidget();
 
-public slots:
+public:
+    //Called from the emulator's render thread; each one posts to the GUI thread
     void updateTexture(const QImage& image);
     void setImageSize(const QSize& size); // (0,0) - растянуть с сохранением пропорций
     void setAspectRatioScale(float scale); // Установить коэффициент масштабирования пропорций
+
+public slots:
+    //Run on the GUI thread, which owns the widget
+    void applyPendingUpdate();
+    void applyImageSize(QSize size);
+    void applyAspectRatioScale(float scale);
 
 protected:
     void initializeGL() override;

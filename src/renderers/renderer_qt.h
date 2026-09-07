@@ -19,12 +19,15 @@ private:
 public:
     QtRenderWidget(QWidget *parent = nullptr) : QLabel(parent) {}
 
+    //Called from the emulator's render thread: the image is handed over under
+    //the mutex, and the repaint is asked for on the thread that owns the widget
     void set_image(const QImage& image)
     {
-        QMutexLocker locker(&image_mutex);
-        display_image = image;
-        locker.unlock();
-        update();
+        {
+            QMutexLocker locker(&image_mutex);
+            display_image = image;
+        }
+        QMetaObject::invokeMethod(this, "update", Qt::QueuedConnection);
     }
 
 protected:

@@ -120,6 +120,8 @@ void mos6502core::reset()
     REG_PCL = read_mem(0xFFFC);
     REG_PCH = read_mem(0xFFFD);
     REG_S = 0xFF;
+    //Interrupts are disabled by a reset, on both families
+    set_flag(F_I, F_I);
     context.stop = context.wait = false;
     if (context.type == MOS_6502_FAMILY_65C02)
         set_flag(F_D, 0);
@@ -815,8 +817,10 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int & cycles)
             D.b.H = read_mem(0);
         else
             D.b.H = read_mem(T.w+1);
-        // D.w += REG_Y;
-        D.w = calc_address(D.w, REG_Y, cycles);
+        //No page crossing penalty here: every instruction that asks for an
+        //address rather than a value (STA, STX, STY, the RMW group and the
+        //undocumented ones) has a fixed time, already in MOS6502_TIMES
+        D.w += REG_Y;
         result = D.w;
         break;
     case 5:
@@ -828,16 +832,14 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int & cycles)
         //abs, y
         T.b.L = next_byte();
         T.b.H = next_byte();
-        // T.w += REG_Y;
-        T.w = calc_address(T.w, REG_Y, cycles);
+        T.w += REG_Y;
         result = T.w;
         break;
     case 7:
         //abs, x
         T.b.L = next_byte();
         T.b.H = next_byte();
-        // T.w += REG_X;
-        T.w = calc_address(T.w, REG_X, cycles);
+        T.w += REG_X;
         result = T.w;
         break;
     default:
@@ -1171,7 +1173,7 @@ void mos6502core::_LDX(uint8_t command, unsigned int & cycles)
         //LDX ABS,Y
         T.b.L = next_byte();
         T.b.H = next_byte();
-        T.w += REG_Y;
+        T.w = calc_address(T.w, REG_Y, cycles);
         REG_X = read_mem(T.w);
         break;
     default:
@@ -1533,7 +1535,7 @@ void mos6502core::__LAX(uint8_t command, unsigned int & cycles)
             //abs, Y !!!!!!!!!
             T.b.L = next_byte();
             T.b.H = next_byte();
-            T.w += REG_Y;
+            T.w = calc_address(T.w, REG_Y, cycles);
             D.b.L = read_mem(T.w);
             break;
         default:

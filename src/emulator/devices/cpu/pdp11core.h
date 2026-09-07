@@ -15,8 +15,11 @@ protected:
 
     bool has_eis;               // MUL/DIV/ASH/ASHC, absent on the 1801ВМ1
 
-    // Interrupt inputs. All of them are level sensitive, the requesting
-    // device is responsible for dropping the line once served.
+    // Interrupt inputs. VIRQ follows the line - the requesting device drops it
+    // once served (a БК clears the keyboard ready flag when the program reads
+    // 0177662). IRQ2, IRQ3 and HALT are latched instead: they are driven by
+    // pulses from a generator, which a level sensitive input would miss
+    // between two instructions. See pdp11core::set_virq().
     bool is_virq;               // vectored request over the bus
     uint16_t virq_vector;
     bool is_irq2;               // fixed vector 0100

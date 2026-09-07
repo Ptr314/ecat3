@@ -107,12 +107,18 @@ uint16_t pdp11core::get_command()
     return read_word(context.R[PDP11::REG_PC] & 0xFFFE);
 }
 
-// Requests are latched on activation and cleared once served. Interrupt
-// sources in a configuration are often short pulses from a generator, and a
-// purely level sensitive input would drop them between two instructions.
+// IRQ2/IRQ3 are latched on activation and cleared once served: those inputs
+// carry short pulses from a generator in the configurations, and a purely
+// level sensitive input would drop them between two instructions.
+//
+// VIRQ is different - it is driven by a level. On a БК it is the keyboard
+// ready flag, which the program clears by reading 0177662 itself. Latching it
+// meant that a program polling the keyboard with interrupts disabled still
+// entered vector 060 afterwards, with the key already taken.
 void pdp11core::set_virq(bool state, uint16_t vector)
 {
-    if (state) { is_virq = true; virq_vector = vector; }
+    is_virq = state;
+    if (state) virq_vector = vector;
 }
 
 void pdp11core::set_irq2(bool state) { if (state) is_irq2 = true; }
