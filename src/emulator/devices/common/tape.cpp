@@ -25,7 +25,8 @@ TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
     m_clocked = true;   //clock() is overridden here
     device_class = "tape";
 
-    system_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
+    //No lookup of the CPU here: a constructor must not reach for another device.
+    //The clock arrives as m_system_clock from ComputerDevice::load_config()
 
     EmulatorConfigDevice * speaker_config = new EmulatorConfigDevice(name + "-speaker", "speaker");
     speaker_config->add_parameter("~input", "", name + ".speaker", "", "");
@@ -100,7 +101,7 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
             if ((old_value & 1) != 0 && (new_value & 1) == 0) {
                 if (has_last_edge) {
                     const uint64_t delta_cycles = cycle_counter - last_edge_cycles;
-                    // const unsigned delta_us = static_cast<unsigned int>(delta_cycles * 1000000 / system_clock);
+                    // const unsigned delta_us = static_cast<unsigned int>(delta_cycles * 1000000 / m_system_clock);
                     write_edge(delta_cycles);
                 }
                 last_edge_cycles = cycle_counter;
@@ -330,7 +331,7 @@ void TapeRecorder::volume(unsigned int volume)
 void TapeRecorder::set_baud_rate(unsigned int baud)
 {
     baud_rate = baud;
-    ticks_per_bit = system_clock / baud_rate;
+    ticks_per_bit = m_system_clock / baud_rate;
 }
 
 void TapeRecorder::set_data(const std::vector<uint8_t> &new_data){

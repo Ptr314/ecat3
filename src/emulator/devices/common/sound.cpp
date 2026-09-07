@@ -35,7 +35,9 @@ GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
     m_clocked = true;   //clock() is overridden here
     m_amplitude = m_volume * 32000 / 100;
     m_buffer.resize(m_samples_per_buffer);
-    cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu"));
+    //The CPU is not looked up here: a constructor must not reach for another
+    //device (it may not exist yet). ComputerDevice::load_config() fills in
+    //m_system_clock, and init_sound() below runs after that call
 }
 
 emulator::Result GenericSound::load_config(SystemData *sd)
@@ -62,7 +64,7 @@ emulator::Result GenericSound::load_config(SystemData *sd)
 
     //Without an audio device the whole sound path stays dormant: clock() drops
     //out on the very first line, so a silent run costs less than a loud one
-    if (sd->audio_enabled) init_sound(cpu->clock);
+    if (sd->audio_enabled) init_sound(m_system_clock);
 
     return emulator::Result::ok();
 }

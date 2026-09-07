@@ -40,7 +40,6 @@ private:
     Speaker * speaker;
 
 protected:
-    unsigned int system_clock;
     unsigned int baud_rate;
     unsigned int ticks_per_bit;
     unsigned int ticks_counter;

@@ -471,8 +471,6 @@ async function initEcat() {
     // Write default ecat.ini
     module.FS.writeFile("/ecat.ini", [
         "[Core]",
-        "TimerResolution=1",
-        "TimerDelay=20",
         "mapper_cache=8",
         "",
         "[Video]",

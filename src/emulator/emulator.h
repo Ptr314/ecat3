@@ -42,8 +42,6 @@ private:
     std::vector<Joystick*> joysticks;   // every device of the joystick class, fed with the same keys
 
     unsigned int clock_freq;
-    unsigned int timer_res;
-    unsigned int timer_delay;
     //Counted against a 64-bit number of ticks: a 32-bit one could never reach
     //a slice longer than 2^32 cycles, and the loop that waits for it never ends
     uint64_t local_counter;

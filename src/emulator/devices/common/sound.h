@@ -26,7 +26,6 @@ public:
 class GenericSound: public ComputerDevice
 {
 private:
-    CPU * cpu;
     std::vector<SoundSource*> m_sources;    // mixed into the output, see "mix"
     bool m_initialized;
     uint64_t m_clock_freq;

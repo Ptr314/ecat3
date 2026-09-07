@@ -388,9 +388,6 @@ void Emulator::run()
             reset(true);
 
             clock_freq = this->cpu->clock;
-            //Host settings in milliseconds, decimal whatever the machine uses
-            timer_res = parse_numeric_value(read_setup("Core", "TimerResolution", "1"), 10);
-            timer_delay = parse_numeric_value(read_setup("Core", "TimerDelay", "20"), 10);
 
             local_counter = 0;
             clock_counter = 0;
@@ -900,6 +897,5 @@ void Emulator::register_devices()
     dm->register_device("bk-display", create_bk_display);
     dm->register_device("bk-timer", create_bk_timer);
     dm->register_device("bk-fdc", create_bk_fdc);
-    dm->register_device("ram-address", create_ram_address);
     dm->register_device("agat-9-mapper", create_agat_9_mapper);
 }

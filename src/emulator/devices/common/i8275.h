@@ -75,7 +75,12 @@ public:
 
     virtual emulator::Result load_config(SystemData *sd) override
     {
-        SystemClock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
+        //Without the base call the ~ connections, sd and the reset behaviour of
+        //this device are silently ignored
+        emulator::Result res = AddressableDevice::load_config(sd);
+        if (!res) return res;
+
+        SystemClock = m_system_clock;
         BlinkTicks = SystemClock / 2;
         return emulator::Result::ok();
     }
