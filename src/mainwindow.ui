@@ -182,6 +182,7 @@
    <addaction name="separator"/>
    <addaction name="action_Cold_restart"/>
    <addaction name="action_Soft_restart"/>
+   <addaction name="actionCPUState"/>
    <addaction name="separator"/>
    <addaction name="actionDebugger"/>
    <addaction name="actionScreenshot"/>
@@ -224,6 +225,18 @@
    </property>
    <property name="text">
     <string>Soft restart</string>
+   </property>
+  </action>
+  <action name="actionCPUState">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/pause</normaloff>:/icons/pause</iconset>
+   </property>
+   <property name="text">
+    <string>Stop</string>
+   </property>
+   <property name="toolTip">
+    <string>Stop</string>
    </property>
   </action>
   <action name="actionDevice_one">

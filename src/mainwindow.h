@@ -64,6 +64,8 @@ private slots:
 
     void on_action_Soft_restart_triggered();
 
+    void on_actionCPUState_triggered();
+
     void set_volume(int value);
     void set_mute(bool muted);
 
@@ -109,6 +111,14 @@ signals:
     void send_stop();
 
 private:
+    //The tool bar button that stops and resumes the processor. Its icon and
+    //tool tip follow the state of the CPU, which the debug windows and the
+    //scripts change too, so it is refreshed from the same timer as the
+    //recording panel rather than only when it is clicked
+    void update_cpu_state_action();
+    //-1 until the first refresh, then the DEBUG_ mode the icon was drawn for
+    int cpu_state_shown = -1;
+
     Ui::MainWindow *ui;
 
     QWidget * screen;

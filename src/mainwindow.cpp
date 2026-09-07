@@ -169,6 +169,26 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
     resize(500,100);
 #endif
 
+    //The processor button is drawn at three quarters of the rest of the bar.
+    //A tool button whose parent is the tool bar takes the icon size of the bar
+    //(QToolButton::initStyleOption), so it lives in a holder of its own, the
+    //same way the recording panel below does. The action keeps its place in
+    //the bar: the holder goes in front of it, then the action itself leaves
+    QWidget * cpu_holder = new QWidget(this);
+    QBoxLayout * cpu_layout = new QBoxLayout(QBoxLayout::LeftToRight, cpu_holder);
+    cpu_layout->setContentsMargins(0, 0, 0, 0);
+    cpu_layout->setSpacing(0);
+
+    QToolButton * cpu_button = new QToolButton(cpu_holder);
+    cpu_button->setDefaultAction(ui->actionCPUState);
+    cpu_button->setIconSize(ui->toolBar->iconSize() * 3 / 4);
+    cpu_button->setAutoRaise(true);
+    cpu_button->setFocusPolicy(Qt::NoFocus);
+    cpu_layout->addWidget(cpu_button);
+
+    ui->toolBar->insertWidget(ui->actionCPUState, cpu_holder);
+    ui->toolBar->removeAction(ui->actionCPUState);
+
     //The recording controls sit at the far end of the tool bar, after a
     //stretch. UpdateToolbar() inserts everything before actionDebugger, so a
     //machine change never touches them. They are tool buttons of their own
@@ -807,6 +827,44 @@ void MainWindow::on_action_Soft_restart_triggered()
     e->record_verb(SCRIPT_CMD_RESET, std::vector<std::string>(1, "soft"));
 }
 
+//The same pair of actions as the "Stop" and "Run without debugging" buttons
+//of the CPU window, on a single tool bar button whose icon shows which one is
+//available now
+void MainWindow::on_actionCPUState_triggered()
+{
+    if (!e->loaded) return;
+    CPU * cpu = dynamic_cast<CPU*>(e->dm->get_device_by_name("cpu", false));
+    if (cpu == nullptr) return;
+
+    if (cpu->m_debug == DEBUG_STOPPED) {
+        cpu->m_debug = DEBUG_OFF;
+        e->record_command("cpu", "run", "");
+    } else {
+        cpu->m_debug = DEBUG_STOPPED;
+        e->record_command("cpu", "stop", "");
+    }
+    update_cpu_state_action();
+}
+
+void MainWindow::update_cpu_state_action()
+{
+    //The device manager only exists once a machine has been loaded
+    CPU * cpu = e->loaded? dynamic_cast<CPU*>(e->dm->get_device_by_name("cpu", false)) : nullptr;
+
+    ui->actionCPUState->setEnabled(cpu != nullptr);
+
+    //Anything but DEBUG_STOPPED is a running processor, DEBUG_BRAKES and
+    //DEBUG_STEP included, so the button offers to stop it
+    const int state = ((cpu != nullptr) && (cpu->m_debug == DEBUG_STOPPED))? DEBUG_STOPPED : DEBUG_OFF;
+    if (state == cpu_state_shown) return;
+    cpu_state_shown = state;
+
+    const bool stopped = (state == DEBUG_STOPPED);
+    ui->actionCPUState->setIcon(QIcon(stopped? ":/icons/play_fwd" : ":/icons/pause"));
+    ui->actionCPUState->setText(stopped? tr("Run without debugging") : tr("Stop"));
+    ui->actionCPUState->setToolTip(stopped? tr("Run without debugging") : tr("Stop"));
+}
+
 void MainWindow::set_volume(int value)
 {
     e->write_setup("Sound", "volume", std::to_string(value));
@@ -1275,6 +1333,10 @@ void MainWindow::rec_sync_option_combos(size_t from, size_t to)
 
 void MainWindow::rec_tick()
 {
+    //The processor is stopped and resumed from the debug windows and from the
+    //scripts as well, so the tool bar button is refreshed by polling
+    update_cpu_state_action();
+
     ScriptEngine * s = e->script_engine();
     const uint64_t now = e->clock_now();
 
