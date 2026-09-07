@@ -1443,12 +1443,12 @@ emulator::Result CPU::load_config(SystemData *sd)
                     "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "Invalid breakpoint address")) + "} " + name + ": " + item);
             }
         }
-
-        const bool stopped = read_confg_value(cd, "stopped", false, false);
-        const bool debug = read_confg_value(cd, "debug", false, false);
-        if (debug) m_debug = DEBUG_BRAKES;
-        if (stopped) m_debug = DEBUG_STOPPED;
     }
+
+    const bool stopped = read_confg_value(cd, "stopped", false, false);
+    const bool debug = read_confg_value(cd, "debug", false, false);
+    if (debug) m_debug = DEBUG_BRAKES;
+    if (stopped) m_debug = DEBUG_STOPPED;
 
     mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper"));
 
@@ -1508,9 +1508,9 @@ std::vector<DeviceCommandInfo> CPU::get_device_commands()
 {
     std::vector<DeviceCommandInfo> r = ComputerDevice::get_device_commands();
     r.push_back({"stop",        "",                 "Stops the execution"});
-    r.push_back({"run",         "",                 "Resumes the execution"});
+    r.push_back({"run",         "",                 "Resumes the execution, stopping at the breakpoints if any are set"});
     r.push_back({"step",        "",                 "Executes one command"});
-    r.push_back({"breakpoint",  "address",          "Adds a breakpoint"});
+    r.push_back({"breakpoint",  "[address]",        "Adds a breakpoint, without an address removes them all"});
     r.push_back({"setreg",      "name, value",      "Sets a register or a flag"});
     return r;
 }
@@ -1572,7 +1572,9 @@ emulator::Result CPU::send_command(const std::string &command, const std::string
         return emulator::Result::ok();
     }
     if (command == "run") {
-        m_debug = DEBUG_OFF;
+        // Breakpoints are only tested in DEBUG_BRAKES, so resuming has to keep
+        // that mode as long as at least one breakpoint is set
+        m_debug = (break_count > 0)? DEBUG_BRAKES : DEBUG_OFF;
         return emulator::Result::ok();
     }
     if (command == "step") {
@@ -1580,10 +1582,14 @@ emulator::Result CPU::send_command(const std::string &command, const std::string
         return emulator::Result::ok();
     }
     if (command == "breakpoint") {
-        if (p.empty())
-            return emulator::Result::error(emulator::ErrorCode::BadParameters,
-                "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "Command 'breakpoint' expects an address")) + "}");
+        if (p.empty()) {
+            // No address means "forget them all" and stop watching
+            clear_breakpoints();
+            if (m_debug == DEBUG_BRAKES) m_debug = DEBUG_OFF;
+            return emulator::Result::ok();
+        }
         add_breakpoint(parse_numeric_value(p[0]));
+        if (m_debug == DEBUG_OFF) m_debug = DEBUG_BRAKES;
         return emulator::Result::ok();
     }
     if (command == "setreg") {
