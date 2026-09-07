@@ -6,9 +6,8 @@
 #pragma once
 
 #include "emulator/core.h"
-#include "emulator/utils.h"
 
-class I8257:public AddressableDevice
+class I8257: public AddressableDevice
 {
 private:
     Interface i_address;
@@ -22,110 +21,29 @@ public:
     uint8_t RgMode;
     uint8_t RgState;
 
-    I8257(InterfaceManager *im, EmulatorConfigDevice *cd):
-          AddressableDevice(im, cd)
-        , i_address(this, im, 2, "address", MODE_R)
-        , i_data(this, im, 8, "data", MODE_R)
-    {
+    I8257(InterfaceManager *im, EmulatorConfigDevice *cd);
 
-        memset(&PtrA, 0, sizeof(PtrA));
-        memset(&PtrC, 0, sizeof(PtrC));
+    void reset(bool cold) override;
+
+    //A powered-up ВТ57 has no channel enabled, and that is what keeps the ВГ75
+    //from fetching garbage before the guest programs either of them
+    void clear_registers();
+
+    bool channel_enabled(unsigned int channel) const
+    {
+        return ((RgMode >> (channel & 3)) & 1) != 0;
     }
 
-    virtual void reset(bool cold) override
-    {
-        AddressableDevice::reset(cold);
-        memset(&PtrA, 0, sizeof(PtrA));
-        memset(&PtrC, 0, sizeof(PtrC));
-    }
+    //One DMA cycle on a channel: the address the bus master must read, with the
+    //channel registers advanced
+    unsigned int dma_next(unsigned int channel);
 
-    virtual unsigned int get_value(unsigned int address) override
-    {
-        unsigned int a = address & 0x0F;
-        unsigned int n = (a >> 1) & 0x03;
-        unsigned int result = _FFFF; //To avoid warnings
-        switch (a) {
-        case 0:
-        case 2:
-        case 4:
-        case 6:
-            result = RgA[n*2 + PtrA[n]];
-            PtrA[n] ^= 1;
-            break;
-        case 1:
-        case 3:
-        case 5:
-        case 7:
-            result = RgC[n*2 + PtrC[n]];
-            PtrC[n] ^= 1;
-            break;
-        case 8:
-            result = RgState;
-            break;
-        default:
-            im->dm->error(this, "i8257: reading from an unknown register");
-            break;
-        }
-        return result;
-    }
+    unsigned int get_value(unsigned int address) override;
+    unsigned get_direct(unsigned address) override;
+    void set_value(unsigned int address, unsigned int value, bool force=false) override;
 
-    virtual unsigned get_direct(unsigned address) override
-    {
-        //The address and count registers are read a byte at a time, and each
-        //read flips the pointer to the other half. An inspection reads the
-        //half the program will get next and leaves the pointer alone
-        unsigned int a = address & 0x0F;
-        unsigned int n = (a >> 1) & 0x03;
-        switch (a) {
-        case 0:
-        case 2:
-        case 4:
-        case 6:
-            return RgA[n*2 + PtrA[n]];
-        case 1:
-        case 3:
-        case 5:
-        case 7:
-            return RgC[n*2 + PtrC[n]];
-        case 8:
-            return RgState;
-        default:
-            return _FFFF;
-        }
-    }
-
-    virtual void set_value(unsigned int address, unsigned int value, bool force=false) override
-    {
-        unsigned int a = address & 0x0F;
-        unsigned int n = (a >> 1) & 0x03;
-        uint8_t v = value & 0xFF;
-        switch (a) {
-        case 0:
-        case 2:
-        case 4:
-        case 6:
-            RgA[n*2 + PtrA[n]] = v;
-            PtrA[n] ^= 1;
-            break;
-        case 1:
-        case 3:
-        case 5:
-        case 7:
-            RgC[n*2 + PtrC[n]] = v;
-            PtrC[n] ^= 1;
-            break;
-        case 8:
-            RgMode = v;
-            break;
-        default:
-            im->dm->error(this, "i8257: writing to an unknown register");
-            break;
-        }
-    }
-
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };
 
-ComputerDevice * create_i8257(InterfaceManager *im, EmulatorConfigDevice *cd)
-{
-    return new I8257(im, cd);
-}
+ComputerDevice * create_i8257(InterfaceManager *im, EmulatorConfigDevice *cd);

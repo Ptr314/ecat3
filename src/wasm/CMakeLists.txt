@@ -77,6 +77,9 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/common/i8251.cpp
     ${EMU_DIR}/devices/common/i8253.cpp
     ${EMU_DIR}/devices/common/i8259.cpp
+    ${EMU_DIR}/devices/common/i8257.cpp
+    ${EMU_DIR}/devices/common/i8275.cpp
+    ${EMU_DIR}/devices/common/i8275display.cpp
     ${EMU_DIR}/devices/common/keyboard.cpp
     ${EMU_DIR}/devices/common/scankeyboard.cpp
     ${EMU_DIR}/devices/common/mapkeyboard.cpp

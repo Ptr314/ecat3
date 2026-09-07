@@ -472,7 +472,7 @@ LOG ram0.value16(&024000, &024013)  // тот же участок словами
 | __port__, __port-address__ | __default__ &ndash; значение после сброса, __mask__ &ndash; маска записи |
 | __memory-mapper__ | __map__ &ndash; текущая карта памяти и портов, __config__ &ndash; значение регистра конфигурации |
 | __register__ | __value__, __default__, __mask__ |
-| __cpu__ (i8080, z80, 6502, 65c02, 1801vm1, 1801vm2) | __pc__, __command__, __registers__, __flags__, __clock__, __debug__ |
+| __cpu__ (i8080, z80, 6502, 65c02, 1801vm1, 1801vm2) | __pc__, __command__, __registers__, __flags__, __clock__, __debug__, __hold__ (тактов, отобранных ведущими шины &ndash; на РК-подобных машинах это регенерация экрана через ВТ57) |
 | __1801vm1__, __1801vm2__ дополнительно | __timeouts__, __timeout_address__, __timeout_pc__ &ndash; таймауты магистрали; __traps__, __trap_vector__, __trap_pc__ &ndash; последняя ловушка или прерывание |
 | __fdd__ | __loaded__, __file__, __layout__ (порядок дорожек загруженного образа: cylinders или sides), __protected__, __selected__, __motor__, __led__, __track__, __sector__, __side__, __position__, __generation__ (счетчик загрузок и извлечений образа) |
 | __wd1793__ | __status__, __track__, __sector__, __data__, __busy__, __drive__, __hld__, __command__ (последний байт команды), __reads__, __writes__ (счетчики прочитанных и записанных секторов) |
@@ -480,6 +480,8 @@ LOG ram0.value16(&024000, &024013)  // тот же участок словами
 | __bk-fdc__ | __status__, __command__, __drive__, __track__, __side__, __motor__, __writing__, __busy__, __position__; отладочные __raw(от,до)__, __marker(от,до)__, __trace(от,до)__ (см. [CONFIG.md](CONFIG.md#bk-fdc)) |
 | __taperecorder__ | __mode__ (0 &ndash; стоп, 1 &ndash; воспроизведение), __position__, __total__, __size__, __baudrate__, __recording__, __recorded__ |
 | __i8253__ | __counters__, __start__, __modes__, __outputs__, __gates__ |
+| __i8257__ | __address__, __count__ (регистры четырех каналов), __mode__ (регистр режима и регистр состояния) |
+| __i8275__ | __mode__ (четыре байта команды Reset), __cursor__, __command__, __geometry__ (знакомест в ряду, рядов, строк в ряду, тактов гашения строки, рядов гашения кадра), __status__, __display__, __burst__, __frame_rate__, __frames__, __dma_bytes__, __row__ |
 | __i8259__ | __imr__, __irr__, __isr__, __initialized__ |
 | __speaker__ | __volume__, __muted__ |
 | __ay8910__ | __regs__ (все регистры, __regs(от,до)__ &ndash; диапазон), __register__ (выбранный регистр), __level__ (сумма уровней каналов, 0-3000), __envelope__ (значение огибающей, 0-15) |

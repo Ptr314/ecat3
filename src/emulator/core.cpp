@@ -1414,6 +1414,8 @@ void PortAddress::reset(MAYBE_UNUSED bool cold)
 CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
       ComputerDevice(im, cd)
     , reset_mode(true)
+    , m_hold_cycles(0)
+    , m_hold_total(0)
     , i_address(this, im, 16, "address", MODE_W, 1)
     , i_data(this, im, 8, "data", MODE_RW)
 #ifdef CPU_STOPPED
@@ -1504,6 +1506,8 @@ void CPU::clear_breakpoints()
 void CPU::reset(bool cold)
 {
     this->reset_mode = true;
+    this->m_hold_cycles = 0;
+    this->m_hold_total = 0;
 }
 
 std::vector<DeviceFieldInfo> CPU::get_device_fields()
@@ -1515,6 +1519,7 @@ std::vector<DeviceFieldInfo> CPU::get_device_fields()
     r.push_back({"flags",       "All flags as name=value",      false});
     r.push_back({"clock",       "CPU frequency, Hz",            false});
     r.push_back({"debug",       "Debug mode of a CPU",          false});
+    r.push_back({"hold",        "Cycles taken by bus masters since reset", false});
     return r;
 }
 
@@ -1567,6 +1572,12 @@ bool CPU::get_field(const std::string &field, unsigned int from, unsigned int to
         out.numeric = true;
         out.width = 32;
         out.values.push_back(clock);
+        return true;
+    }
+    if (field == "hold") {
+        out.numeric = true;
+        out.width = 32;
+        out.values.push_back(static_cast<unsigned int>(m_hold_total));
         return true;
     }
     if (field == "debug") {

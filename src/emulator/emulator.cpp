@@ -604,14 +604,24 @@ void Emulator::init_video(void *p)
     else
         pixel_scale = ((double)screen_sy / (double)screen_sx);
 
+    //Under the surface lock, exactly like the resize in render_screen(): this
+    //runs on the interface thread, and with the MCP server the window is
+    //created when a machine is asked for - by then the render thread may
+    //already be drawing into the buffer this call is about to replace
+    d->lock_surface();
     renderer->init_screen(p, screen_sx, screen_sy, screen_scale, pixel_scale);
     d->set_renderer(*renderer);
+    d->unlock_surface();
     set_filtering(screen_filtering);
 }
 
 void Emulator::stop_video()
 {
+    //The renderer frees the surface here, so nothing may be drawing into it
+    GenericDisplay * d = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display", false));
+    if (d) d->lock_surface();
     renderer->stop();
+    if (d) d->unlock_surface();
 }
 
 void Emulator::render_screen()

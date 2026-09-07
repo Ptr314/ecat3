@@ -555,6 +555,10 @@ protected:
     Interface i_data;
     bool reset_mode;
 
+    //Cycles a bus master has taken away from the processor and not yet paid
+    //back to the emulator, and the running total of them
+    unsigned int m_hold_cycles;
+    uint64_t m_hold_total;
 
 public:
     unsigned int clock;
@@ -567,6 +571,22 @@ public:
 
     emulator::Result load_config(SystemData *sd) override;
     virtual unsigned int execute() = 0;
+
+    //A device that takes the bus away from the processor (the ВТ57 fetching a
+    //character row for the ВГ75) calls hold() with the length of the transfer.
+    //execute() then hands those cycles back to Emulator::timer_proc() instead
+    //of running an instruction, so emulated time and every clocked device move
+    //on while the processor stands still - which is what HOLD/HLDA does.
+    void hold(unsigned int cycles) { m_hold_cycles += cycles; m_hold_total += cycles; }
+    unsigned int take_hold()
+    {
+        //Handed back whole: a burst is one continuous stall on the real bus,
+        //and splitting it would only cost the emulator loop extra passes
+        unsigned int r = m_hold_cycles;
+        m_hold_cycles = 0;
+        return r;
+    }
+    uint64_t hold_total() const { return m_hold_total; }
     bool check_breakpoint(unsigned int address);
     void add_breakpoint(unsigned int address);
     void remove_breakpoint(unsigned int address);

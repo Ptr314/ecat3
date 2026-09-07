@@ -243,6 +243,10 @@ unsigned int k1801vm1::execute()
     if (m_debug == DEBUG_STOPPED)
         return 0;
 
+    //Cycles a DMA controller has taken off the bus, see CPU::hold()
+    unsigned int held = take_hold();
+    if (held > 0) return held;
+
     unsigned int cycles = core->execute();
 
     switch (m_debug) {

@@ -197,6 +197,10 @@ unsigned int z80::execute()
     if (m_debug == DEBUG_STOPPED)
         return 10;
 
+    //Cycles a DMA controller has taken off the bus, see CPU::hold()
+    unsigned int held = take_hold();
+    if (held > 0) return held;
+
 #ifndef EXTERNAL_Z80
     unsigned int cycles = core->execute();
 #else

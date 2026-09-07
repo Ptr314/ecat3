@@ -135,6 +135,11 @@ unsigned int i8080::execute()
     if (m_debug == DEBUG_STOPPED)
         return 10;
 
+    //The bus belongs to a DMA controller for these cycles: emulated time moves
+    //on, the processor does not, and an interrupt is not taken either
+    unsigned int held = take_hold();
+    if (held > 0) return held;
+
     unsigned int cycles = core->execute();
 
 
