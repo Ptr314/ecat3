@@ -80,6 +80,19 @@ static void store_html_callback(const MD_CHAR* text, MD_SIZE size, void* result)
 std::string md2html(const std::string &md)
 {
     std::string result;
-    md_html(md.c_str(), md.length(), store_html_callback, static_cast<void*>(&result), 0, 1);
+    md_html(md.c_str(), md.length(), store_html_callback, static_cast<void*>(&result), MD_FLAG_TABLES, 0);
+
+    // Qt's rich text engine draws a bare <table> without any grid, and before Qt 5.14
+    // it ignores CSS borders on tables completely, so the only portable way to get a
+    // visible table is the old HTML attributes, which md4c does not emit.
+    static const std::string plain = "<table>";
+    static const std::string bordered = "<table border=\"1\" cellspacing=\"0\" cellpadding=\"4\">";
+    size_t pos = 0;
+    while ((pos = result.find(plain, pos)) != std::string::npos)
+    {
+        result.replace(pos, plain.length(), bordered);
+        pos += bordered.length();
+    }
+
     return result;
 }

@@ -27,3 +27,15 @@ ul {
 li {
     margin-left: 0; margin-top: 0; margin-bottom: 1px;
 }
+
+table {
+    /* Qt 5.14+ merges the doubled cell/table borders into single thin lines;
+       older Qt ignores it and draws the same table with double lines. */
+    border-collapse: collapse;
+    border-color: #505050;
+    margin-top: 4px; margin-bottom: 6px;
+}
+
+th {
+    background-color: #e8e8e8;
+}
