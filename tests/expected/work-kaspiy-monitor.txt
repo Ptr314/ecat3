@@ -1,0 +1,2 @@
+[mconf.value] $00
+[ram0.value] $9000: $C3 $8D $9F $C3 $15 $90 $C3 $FA $9E $C3 $09 $9F $C3 $E0 $9E $C3 $B2
