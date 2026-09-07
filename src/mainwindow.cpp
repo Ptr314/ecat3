@@ -314,7 +314,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
 
     QString file_to_load = QString::fromStdString(e->read_setup("Startup", "default", ""));
 
-    last_path = QString::fromStdString(e->read_setup("Startup", "last_path", software_path.toStdString()));
+    last_path = QString::fromStdString(e->get_last_path());
 
     QString sound_volume = QString::fromStdString(e->read_setup("Sound", "volume", "50"));
     volume->setValue(sound_volume.toInt());
@@ -960,7 +960,7 @@ void MainWindow::on_actionOpen_triggered()
     if (!file_name.isEmpty()) {
         QFileInfo fi(file_name);
         last_path = fi.absolutePath();
-        e->write_setup("Startup", "last_path", last_path.toStdString());
+        e->set_last_path(last_path.toStdString());
 
         emulator::Result res = HandleExternalFile(e, file_name.toStdString());
         if (!res) {
@@ -1030,7 +1030,7 @@ void MainWindow::fdd_open(unsigned int n)
                 e->record_command(fdds[n]->name, "load", format_script_arg(fi.absoluteFilePath().toStdString()));
             }
             last_path = fi.absolutePath();
-            e->write_setup("Startup", "last_path", last_path.toStdString());
+            e->set_last_path(last_path.toStdString());
         }
     }
 }
@@ -1097,7 +1097,7 @@ void MainWindow::fdd_write(unsigned int n)
             }
             QFileInfo fi(file_name);
             last_path = fi.absolutePath();
-            e->write_setup("Startup", "last_path", last_path.toStdString());
+            e->set_last_path(last_path.toStdString());
         }
     }
 

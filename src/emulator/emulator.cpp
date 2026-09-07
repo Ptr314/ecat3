@@ -98,6 +98,18 @@ std::string Emulator::read_setup(std::string section, std::string ident, std::st
     return settings.get(section, ident, def_val);
 }
 
+std::string Emulator::get_last_path()
+{
+    std::string path = read_setup("Startup", "last_path", "");
+    if (path.empty()) path = software_path;
+    return path;
+}
+
+void Emulator::set_last_path(const std::string &path)
+{
+    write_setup("Startup", "last_path", path);
+}
+
 void Emulator::write_setup(std::string section, std::string ident, std::string new_val)
 {
     settings.set(section, ident, new_val);

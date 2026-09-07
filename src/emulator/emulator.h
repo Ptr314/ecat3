@@ -101,6 +101,13 @@ public:
     std::string read_setup(std::string section, std::string ident, std::string def_val);
     void write_setup(std::string section, std::string ident, std::string new_val);
 
+    //The directory the file dialogs open in. The distributed ini carries the
+    //entry with an empty value, which is not a directory any more than a
+    //missing entry is: both mean the software directory rather than whatever
+    //the current one happens to be
+    std::string get_last_path();
+    void set_last_path(const std::string &path);
+
     //An external driver runs many short sessions in the working tree, and
     //every one of them would otherwise rewrite the ini file
     void set_settings_readonly(bool on) { m_settings_readonly = on; }
