@@ -50,6 +50,7 @@ def parse_cfg_metadata(cfg_path):
     sys_type = ""
     charmap = ""
     debug = False
+    order = 0
 
     system_match = re.search(r'system\s*\{([^}]*)\}', content, re.DOTALL)
     if system_match:
@@ -64,6 +65,8 @@ def parse_cfg_metadata(cfg_path):
         if m: charmap = m.group(1).strip()
         m = re.search(r'debug\s*=\s*(.+)', block)
         if m: debug = m.group(1).strip() == "1"
+        m = re.search(r'order\s*=\s*(-?\d+)', block)
+        if m: order = int(m.group(1))
 
     # Find all "image = file" and "map = file" references (word boundary to avoid matching "charmap")
     files = []
@@ -76,6 +79,7 @@ def parse_cfg_metadata(cfg_path):
         "type": sys_type,
         "charmap": charmap,
         "debug": debug,
+        "order": order,
         "files": files,
     }
 
@@ -219,10 +223,20 @@ def main():
             "id": machine_id,
             "name": display_name,
             "type": meta["type"],
+            "order": meta["order"],
             "cfg_path": cfg_vfs_path,
             "bundle_url": f"{BUNDLES_DIR}/{bundle_name}",
             "data_bundle_url": f"{BUNDLES_DIR}/data.bundle" if meta["charmap"] else None,
         })
+
+    # The same "order" the desktop chooser uses. It moves a machine inside its
+    # own family and nowhere else, so only the machines of one type standing
+    # next to each other are reordered and the list keeps its overall shape
+    start = 0
+    for i in range(len(machines) + 1):
+        if i == len(machines) or machines[i]["type"] != machines[start]["type"]:
+            machines[start:i] = sorted(machines[start:i], key=lambda m: m["order"])
+            start = i
 
     # Write manifest
     manifest_path = os.path.join(output_dir, "machines.json")

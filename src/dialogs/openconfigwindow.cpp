@@ -8,6 +8,7 @@
 #include <QMessageBox>
 
 #include "emulator/config.h"
+#include "emulator/utils.h"
 #include "openconfigwindow.h"
 #include "ui_openconfigwindow.h"
 
@@ -21,14 +22,22 @@ ComputerFamily::ComputerFamily(QString type, QString name):
     setData(type);
 }
 
-ComputerModel::ComputerModel(QString type, QString name, QString version, QString path):
+ComputerModel::ComputerModel(QString type, QString name, QString version, QString path, int order):
     QStandardItem(version),
     type(type),
     name(name),
-    path(path)
+    path(path),
+    order(order)
 {
     setEditable(false);
     setData(path, Qt::UserRole);
+}
+
+bool ComputerModel::operator<(const QStandardItem &other) const
+{
+    const ComputerModel * m = dynamic_cast<const ComputerModel*>(&other);
+    if (m != nullptr && order != m->order) return order < m->order;
+    return QStandardItem::operator<(other);
 }
 
 
@@ -118,6 +127,15 @@ void OpenConfigWindow::list_machines(QString work_path)
                 QString name = QString::fromStdString(system->get_parameter("name").value);
                 QString version = QString::fromStdString((is_debug?"* ":"") + system->get_parameter("version", false).value);
 
+                // Position inside the family, 0 when not set. Always decimal:
+                // the chooser reads the file without the machine's own radix
+                int order = 0;
+                std::string order_str = system->get_parameter("order", false).value;
+                if (!order_str.empty())
+                    try {
+                        order = static_cast<int>(parse_numeric_value(order_str, 10));
+                    } catch (std::invalid_argument &) {}
+
                 int index = -1;
                 for (int i = 0; i < node->rowCount(); i++)
                     if (node->child(i)->data().toString() == type)
@@ -135,7 +153,7 @@ void OpenConfigWindow::list_machines(QString work_path)
 
                 //qDebug() << "DATA:" << family->data().toString();
 
-                ComputerModel * computer = new ComputerModel(type, name, (!version.isEmpty())?version:name, fi.absoluteFilePath());
+                ComputerModel * computer = new ComputerModel(type, name, (!version.isEmpty())?version:name, fi.absoluteFilePath(), order);
                 family->appendRow(computer);
 
                 //qDebug() << "DATA:" << computer->data().toString();

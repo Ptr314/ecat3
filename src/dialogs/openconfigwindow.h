@@ -10,6 +10,10 @@
 
 #include "emulator/emulator.h"
 
+// Items of the machine tree. Families stay alphabetical; the models inside a
+// family are ordered by "order" from the system section of the config first
+// and only then alphabetically, so a config can take a place of its own in
+// its family while everything without an "order" keeps the order it had.
 class ComputerFamily: public QStandardItem
 {
 public:
@@ -25,8 +29,11 @@ public:
     QString type;
     QString name;
     QString path;
+    int order;
 
-    ComputerModel(QString type, QString name, QString version, QString path);
+    ComputerModel(QString type, QString name, QString version, QString path, int order);
+
+    bool operator<(const QStandardItem &other) const override;
 };
 
 
