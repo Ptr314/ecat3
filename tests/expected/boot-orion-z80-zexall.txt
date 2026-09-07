@@ -19,16 +19,6 @@
         F900-F9FF -> port-page[0000] mode=w cfg=00:20
         FA00-FAFF -> port-screen[0000] mode=w cfg=00:20
         F400-FFFF -> mm3[F400] mode=rw cfg=20:20
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
   port F4 -> port-keyboard
   port F5 -> port-user1
   port F6 -> port-user2

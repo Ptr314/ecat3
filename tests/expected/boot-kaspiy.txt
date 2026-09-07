@@ -18,15 +18,6 @@
         4000-7FFF -> ram1[8000] mode=rw cfg=03:FFFF
         8000-BFFF -> ram0[8000] mode=rw cfg=03:FFFF
         C000-FFFF -> ram1[C000] mode=rw cfg=03:FFFF
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
-        0000-0000 -> -[0000] mode=
   port 04 -> port-kbd
   port 06 -> serial
   port 08 -> timer

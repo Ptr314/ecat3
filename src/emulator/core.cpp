@@ -1720,13 +1720,19 @@ emulator::Result MemoryMapper::load_config(SystemData *sd)
                 mask = "";
             }
 
+            //Only a memory range takes a slot in ranges[]: counting the
+            //ports in as well used to leave a hole of uninitialised memory
+            //per @port line inside 1..ranges_count, which map() then walked
+            //on every single access
             if (c == "*")
             {
                 index = 0;
                 this->first_range = 0;
                 c = "";
-            } else {
+            } else if (parameter_name == "@memory") {
                 index = ++this->ranges_count;
+            } else {
+                index = 0;
             }
 
             try {
