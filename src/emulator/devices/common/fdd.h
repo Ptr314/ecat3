@@ -75,6 +75,7 @@ private:
     bool layout_for_file(const std::string &file_name);
     static bool parse_layout_word(const std::string &word, bool &sides_out);
     void ConvertStreamFormat();
+    void clear_aim_desync();
 
 public:
     std::string files;
@@ -110,6 +111,7 @@ public:
     void change_protection();
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     int aim_code();
+    void mark_aim_desync();
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     std::vector<DeviceCommandInfo> get_device_commands() override;

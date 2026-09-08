@@ -474,7 +474,7 @@ LOG ram0.value16(&024000, &024013)  // тот же участок словами
 | __register__ | __value__, __default__, __mask__ |
 | __cpu__ (i8080, z80, 6502, 65c02, 1801vm1, 1801vm2) | __pc__, __command__, __registers__, __flags__, __clock__, __debug__, __hold__ (тактов, отобранных ведущими шины &ndash; на РК-подобных машинах это регенерация экрана через ВТ57) |
 | __1801vm1__, __1801vm2__ дополнительно | __timeouts__, __timeout_address__, __timeout_pc__ &ndash; таймауты магистрали; __traps__, __trap_vector__, __trap_pc__ &ndash; последняя ловушка или прерывание |
-| __fdd__ | __loaded__, __file__, __layout__ (порядок дорожек загруженного образа: cylinders или sides), __protected__, __selected__, __motor__, __led__, __track__, __sector__, __side__, __position__, __generation__ (счетчик загрузок и извлечений образа) |
+| __fdd__ | __loaded__, __file__, __layout__ (порядок дорожек загруженного образа: cylinders или sides), __protected__, __selected__, __motor__, __led__, __track__, __sector__, __side__, __position__, __generation__ (счетчик загрузок и извлечений образа), __raw__ (байты текущей дорожки, диапазонное), __marks__ (метки синхронизации на ней, «позиция:код») |
 | __wd1793__ | __status__, __track__, __sector__, __data__, __busy__, __drive__, __hld__, __command__ (последний байт команды), __reads__, __writes__ (счетчики прочитанных и записанных секторов) |
 | __joystick__ | __state__ &ndash; биты замкнутых контактов; клавиши джойстика нажимаются командой __KEY__ |
 | __bk-fdc__ | __status__, __command__, __drive__, __track__, __side__, __motor__, __writing__, __busy__, __position__; отладочные __raw(от,до)__, __marker(от,до)__, __trace(от,до)__ (см. [CONFIG.md](CONFIG.md#bk-fdc)) |

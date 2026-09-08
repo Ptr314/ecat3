@@ -401,6 +401,7 @@ void FDD::WriteNextByte(uint8_t value)
         }
     } else {
         if (!sector_in_range()) return;
+        clear_aim_desync();
         buffer[track_indexes[track*sides + side].mfmtrackoffset + position++] = value;
         if (position >= track_indexes[track*sides + side].mfmtracksize) position = 0;
     }
@@ -420,6 +421,7 @@ void FDD::WriteByte(uint8_t value)
         }
     } else {
         if (!sector_in_range()) return;
+        clear_aim_desync();
         buffer[track_indexes[track*sides + side].mfmtrackoffset + position] = value;
     }
 }
@@ -624,6 +626,28 @@ int FDD::aim_code()
         return 0;
 }
 
+// The controller has broken the bit stream at the byte under the head: that is
+// what a later read locks on, so the mark belongs on the medium and not in the
+// controller. Formatting a track lays these down one by one.
+void FDD::mark_aim_desync()
+{
+    const unsigned int t = image_track(track, side, false);
+    if (t >= sizeof(aim_codes)/sizeof(aim_codes[0])) return;
+    aim_codes[t][position] = AIM_CMD_DESYNC;
+}
+
+// Writing a byte over a place that used to hold a sync mark destroys it, which
+// is what lets a format replace the layout of a track instead of adding to it.
+// An index pulse is a property of the disk, not of the data, and stays put.
+void FDD::clear_aim_desync()
+{
+    const unsigned int t = image_track(track, side, false);
+    if (t >= sizeof(aim_codes)/sizeof(aim_codes[0])) return;
+    auto code = aim_codes[t].find(position);
+    if (code != aim_codes[t].end() && aim_is_desync(code->second))
+        aim_codes[t].erase(code);
+}
+
 //------------------- Introspection and control ----------------------------//
 
 std::vector<DeviceFieldInfo> FDD::get_device_fields()
@@ -641,6 +665,8 @@ std::vector<DeviceFieldInfo> FDD::get_device_fields()
     r.push_back({"side",        "Current side",                         false});
     r.push_back({"position",    "Current position on a track",          false});
     r.push_back({"generation",  "Incremented on every load and eject",  false});
+    r.push_back({"raw",         "Bytes of the track under the head",    true});
+    r.push_back({"marks",       "Sync marks on the track under the head", false});
     return r;
 }
 
@@ -680,6 +706,37 @@ bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to
     if (field == "position")    { out.values.push_back(position);           return true; }
     if (field == "generation")  { out.values.push_back(m_generation);       return true; }
     out.width = 0;
+
+    //The track as it lies on the medium, sync marks and all: the only way to
+    //see what a guest's formatter actually wrote
+    if (field == "raw" || field == "marks")
+    {
+        const unsigned int t = image_track(track, side, false);
+        if (!loaded || track_mode != FDD_MODE_WHOLE_TRACK
+            || t >= sizeof(track_indexes)/sizeof(track_indexes[0])) return false;
+
+        if (field == "marks")
+        {
+            out.numeric = false;
+            for (std::map<int,int>::const_iterator i = aim_codes[t].begin(); i != aim_codes[t].end(); ++i)
+            {
+                if (!out.text.empty()) out.text += " ";
+                out.text += std::to_string(i->first) + ":" + std::to_string(i->second);
+            }
+            return true;
+        }
+
+        const unsigned int len = track_indexes[t].mfmtracksize;
+        if (len == 0) return false;
+        if (to >= len) to = len - 1;
+        if (from > to) from = to;
+        out.numeric = true;
+        out.has_start = true;
+        out.start = from;
+        for (unsigned int i = from; i <= to; i++)
+            out.values.push_back(buffer[track_indexes[t].mfmtrackoffset + i]);
+        return true;
+    }
 
     out.numeric = false;
     return ComputerDevice::get_field(field, from, to, out);

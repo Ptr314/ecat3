@@ -33,7 +33,14 @@ emulator::Result Agat_FDC840::load_config(SystemData *sd)
     emulator::Result res = FDC::load_config(sd);
     if (!res) return res;
 
-    clock_divider = 64;
+    //One byte of the track per this many processor cycles. The number is the
+    //controller's, not ours: the loops of Агат ДОС are written to it, and the
+    //one that measures the gap between two sectors reads a byte every 32
+    //cycles - at 31 it misses bytes and an INIT never finishes. Together with
+    //AGAT_840_TRACK_LEN it also sets how fast the disk turns, which the ИКП
+    //test (ТЕСТ 'НГМД', "СКОРОСТЬ") times against the index pulse and expects
+    //to be 200 ms within one per cent
+    clock_divider = AGAT_840_BYTE_CYCLES;
 
     std::string s;
     try {
@@ -237,22 +244,17 @@ void Agat_FDC840::set_value(unsigned int address, unsigned int value, bool force
             break;
         case 0x5:
             dd15.set_value(A & 0x03, value);
-            if (write_sync && value==0x6A) {
-                // A dirty trick. As data desync is fixed, we have to force setting its position
-                if (selected_drive < drives_count) {
-                    int position = drives[selected_drive]->get_position();
-                    if (position % 282 > 20)
-                        drives[selected_drive]->set_position((position / 282) * 282 + 22);
-                }
-            }
             write_next_byte();
             break;
         case 0x7:
             dd15.set_value(A & 0x03, value);
             break;
         case 0x8:
-            // SYNC WRITE
-            // TODO: writing
+            // SYNC WRITE: the controller drops out of the bit stream here, and
+            // the mark it leaves on the track is what a read locks on later.
+            // A format lays down the whole layout of a track this way
+            if (write_mode && selected_drive < drives_count)
+                drives[selected_drive]->mark_aim_desync();
             write_sync = true;
             break;
         case 0x9:

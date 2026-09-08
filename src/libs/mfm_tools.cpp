@@ -234,15 +234,19 @@ uint8_t * generate_mfm_agat_840(const std::string &file_name, int & sides, int &
     tracks = 80;
     int sectors = 21;
     int sector_size = 256;
-    int encoded_sector_size = AGAT_840_HEADER_SIZE + AGAT_840_PROLOG_SIZE + sector_size + 1 + 1;
-    //   cs  footer
-    int track_len = encoded_sector_size * sectors;
+    int track_len = AGAT_840_TRACK_LEN;
+    //The drive's own formatter spaces the sectors evenly over the whole track,
+    //and so does this: packing them into the first 5922 bytes would leave the
+    //rest without a single sync mark, and a read starting in that stretch runs
+    //out of retries before it finds one
+    int sector_step = track_len / sectors;
     disk_size = tracks * track_len * sides;
     int image_size = sides * tracks * sectors * sector_size;
     uint8_t * image = load_image(file_name, image_size);
 
     uint8_t * buffer = new uint8_t[disk_size];
-    uint8_t * out = buffer;
+    //Everything the sectors do not cover is gap, and the gap byte is $AA
+    memset(buffer, 0xAA, disk_size);
 
     int track_index = 0;
 
@@ -251,30 +255,30 @@ uint8_t * generate_mfm_agat_840(const std::string &file_name, int & sides, int &
             int agat_track = track*2 + head;
             aim_codes[agat_track].clear();
             for (uint8_t sector = 0; sector < sectors; sector++) {
-                // Prologue
-                memcpy(out, &agat_840_prolog, AGAT_840_PROLOG_SIZE);
-                out[AGAT_840_PROLOG_TRACK] = agat_track;
-                out[AGAT_840_PROLOG_SECTOR] = sector;
-                out += AGAT_840_PROLOG_SIZE;
-                // Header
-                memcpy(out, &agat_840_header, AGAT_840_HEADER_SIZE); out += AGAT_840_HEADER_SIZE;
+                int track_pos = sector * sector_step;
+                uint8_t * out = buffer + agat_track*track_len + track_pos;
+                // Address field
+                aim_codes[agat_track][track_pos + AGAT_840_SYNC_OFFSET] = AIM_CMD_DESYNC;
+                memcpy(out, &agat_840_address_field, AGAT_840_ADDRESS_SIZE);
+                out[AGAT_840_ADDRESS_TRACK] = agat_track;
+                out[AGAT_840_ADDRESS_SECTOR] = sector;
+                out += AGAT_840_ADDRESS_SIZE;
+                // Data field
+                aim_codes[agat_track][track_pos + AGAT_840_ADDRESS_SIZE + AGAT_840_SYNC_OFFSET] = AIM_CMD_DESYNC;
+                memcpy(out, &agat_840_data_field, AGAT_840_DATA_SIZE); out += AGAT_840_DATA_SIZE;
                 // Data
-                uint8_t * data = &image[((track*2 + head) * sectors + sector) * sector_size];
+                uint8_t * data = &image[(agat_track * sectors + sector) * sector_size];
                 memcpy(out, data, sector_size); out += sector_size;
                 // Checksum
                 *out++ = agat_840_calc_cs(data, sector_size);
                 // Footer
                 *out++ = 0x5A;
-
-                int track_pos = sector * encoded_sector_size;
-                aim_codes[agat_track][track_pos + 12] = AIM_CMD_DESYNC;
-                aim_codes[agat_track][track_pos + 21] = AIM_CMD_DESYNC;
             }
 
             track_indexes[track_index].track_number = track;
             track_indexes[track_index].side_number = head;
             track_indexes[track_index].mfmtracksize = track_len;
-            track_indexes[track_index].mfmtrackoffset = (track*2 + head)*track_len;
+            track_indexes[track_index].mfmtrackoffset = agat_track*track_len;
             track_index++;
         }
 
@@ -287,7 +291,7 @@ uint8_t * load_aim_image(const std::string &file_name, int & sides, int & tracks
 {
     sides = 2;
     tracks = 80;
-    int track_len = 6464;
+    int track_len = AGAT_840_AIM_TRACK_LEN;
     disk_size = tracks * track_len * sides;
     uint16_t * image = reinterpret_cast<uint16_t*>(load_image(file_name, disk_size*2));
     uint8_t * out = new uint8_t[disk_size];
