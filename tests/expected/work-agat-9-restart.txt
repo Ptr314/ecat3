@@ -1,0 +1,7 @@
+-- menu
+[fdc840.drive] $01
+-- restarted
+[fdc840.drive] $00
+[fdc840.motor] $00
+[fdd0.track] $0D
+[display.resolution] 512x256

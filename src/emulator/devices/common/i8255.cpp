@@ -103,6 +103,19 @@ void I8255::set_value(unsigned int address, unsigned int value, bool force)
             i_port_ch.set_mode( ((value & 0x08) == 0)?MODE_W:MODE_R );
             i_port_cl.set_mode( ((value & 0x01) == 0)?MODE_W:MODE_R );
 
+            //A mode word resets every output register (8255A datasheet, "Mode
+            //Definition Format"), and that is not decoration: the Агат-840 boot ROM
+            //clears the drive select and the motor bit of port C by programming
+            //the mode and nothing else. Keeping the latch across a mode word
+            //leaves a warm restart addressing the drive the previous program
+            //left selected, where the recalibration loop waits for a track 00
+            //that never comes
+            registers[0] = registers[1] = registers[2] = 0;
+            if (i_port_a. get_mode() == MODE_W) i_port_a. change(0);
+            if (i_port_b. get_mode() == MODE_W) i_port_b. change(0);
+            if (i_port_ch.get_mode() == MODE_W) i_port_ch.change(0);
+            if (i_port_cl.get_mode() == MODE_W) i_port_cl.change(0);
+
             if (i_port_a. get_mode() == MODE_R) interface_callback(PORT_A, i_port_a.value, registers[0]);
             if (i_port_b. get_mode() == MODE_R) interface_callback(PORT_B, i_port_b.value, registers[1]);
             if (i_port_ch.get_mode() == MODE_R) interface_callback(PORT_CH, i_port_ch.value, registers[2] >> 4);

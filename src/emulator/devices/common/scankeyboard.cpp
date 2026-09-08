@@ -137,8 +137,11 @@ void ScanKeyboard::key_up(unsigned int key)
     else if (key == code_shift)
         i_shift.change(1);
     else if (key == code_ruslat) {
+        //Only the press toggles the register. Toggling on the release too
+        //cancels the press out, and what the machine is left with is whatever
+        //its own indicator line happened to say - which is why the Орион
+        //configs used to invert ruslat_led to get the right letters out
         i_ruslat.change(1);
-        set_rus(!rus_mode);
     } else {
         for (size_t i=0; i<scan_data.size(); i++)
             if (scan_data[i].key_code == key)
