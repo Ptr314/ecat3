@@ -139,4 +139,22 @@ LOG port-kbd.value
 KEYUP ^
 KEYUP ctrl
 
+# Холодный перезапуск обязан отпустить модификаторы. Пережившая его защелка
+# выглядит как отказавшая клавиатура: каждая клавиша уходит управляющим кодом,
+# а нажатой не числится ни одна -- экранная клавиатура при этом показывает,
+# что все отпущено, и лечилось это только закрытием ее окна.
+PRINT "=== холодный перезапуск отпускает модификаторы ==="
+KEYDOWN key_upr
+LOG keyboard.ctrl
+RESET cold
+WAIT 100
+# Алфавит после сброса снова берется с Caps Lock хоста, поэтому ЛАТ явно
+KEYDOWN key_lat
+KEYUP key_lat
+LOG keyboard.ctrl
+LOG keyboard.pressed
+KEYDOWN key_a
+LOG port-kbd.value
+KEYUP key_a
+
 EXIT

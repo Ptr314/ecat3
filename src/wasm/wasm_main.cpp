@@ -171,6 +171,16 @@ const char* wasm_leds_dark()
     return result.c_str();
 }
 
+// Grows by one on every reset of the keyboard. The panel latches modifiers on
+// its own, so it watches this and starts over: after a reset the machine holds
+// nothing, and a panel still showing УПР latched would send control codes.
+EMSCRIPTEN_KEEPALIVE
+int wasm_kbd_reset_count()
+{
+    Keyboard * k = wasm_keyboard();
+    return (k != nullptr) ? static_cast<int>(k->reset_count()) : 0;
+}
+
 // "led_rus=key_rus,led_lat=key_lat": which key each lamp makes redundant. Read
 // once, when the drawing is put into the page: a key whose lamp is there stops
 // being highlighted, so the alphabet is shown in one place, not two.

@@ -374,6 +374,12 @@ void MapKeyboard::reset(bool cool)
 
     keys_held.clear();
     ids_down.clear();
+    //The modifiers go with them: a key held across the reset is forgotten, and
+    //a modifier that survived would silently rewrite everything typed after
+    shift_pressed = false;
+    ctrl_pressed = false;
+    alt_pressed = false;
+    m_last_value = _FFFF;
     update_pressed();
 
     if (code_ruslat != 0)

@@ -78,6 +78,7 @@ bool KeyboardView::load()
 
     Keyboard * k = kbd();
     if (k == nullptr || k->picture_file().empty()) return false;
+    m_reset_seen = k->reset_count();
 
     const QString file = QString::fromStdString(k->picture_file());
     if (!QFile::exists(file) || !m_svg.load(file) || !m_svg.isValid()) return false;
@@ -327,6 +328,19 @@ void KeyboardView::poll()
 {
     Keyboard * k = kbd();
     if (k == nullptr) return;
+
+    //The machine has been reset since the last look: it is holding nothing any
+    //more, so the latches drawn here are stale. They are dropped rather than
+    //released - there is nothing left to release, and sending one would press
+    //the modifier back on. This is what kept a cold restart from working
+    //without closing the window: СУ stayed engaged in the keyboard while the
+    //picture showed it free.
+    const unsigned int seq = k->reset_count();
+    if (seq != m_reset_seen) {
+        m_reset_seen = seq;
+        m_latched.clear();
+        m_mouse_key.clear();
+    }
 
     const std::vector<std::string> held = k->ids_held();
     QStringList now;

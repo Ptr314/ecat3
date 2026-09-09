@@ -204,6 +204,7 @@ let kbdHeldId = null;
 let kbdLatched = [];
 let kbdDark = new Set();
 let kbdLampKeys = new Set();
+let kbdResetSeen = 0;
 
 function kbdRelease(module) {
     if (kbdHeldId !== null) {
@@ -220,6 +221,17 @@ function kbdReleaseAll(module) {
 }
 
 function kbdPoll(module, panel) {
+    // The machine has been reset since the last look: it holds nothing any
+    // more, so the latches shown here are stale. They are dropped rather than
+    // released - there is nothing left to release, and a release would press
+    // the modifier back on
+    const seq = module.ccall("wasm_kbd_reset_count", "number", [], []);
+    if (seq !== kbdResetSeen) {
+        kbdResetSeen = seq;
+        kbdLatched = [];
+        kbdHeldId = null;
+    }
+
     const text = module.ccall("wasm_keys_pressed", "string", [], []);
     const now = new Set(text ? text.split(",") : []);
     // A key whose lamp is drawn is left alone: the alphabet belongs on the
@@ -265,6 +277,7 @@ function setupOnScreenKeyboard(module) {
     kbdShown = new Set();
     kbdDark = new Set();
     kbdLampKeys = new Set();
+    kbdResetSeen = module.ccall("wasm_kbd_reset_count", "number", [], []);
     panel.innerHTML = "";
     panel.hidden = true;
 

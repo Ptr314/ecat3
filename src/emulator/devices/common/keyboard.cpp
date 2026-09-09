@@ -334,9 +334,15 @@ emulator::Result Keyboard::load_key_table(SystemData *sd)
     return parse_key_table(body, file);
 }
 
+// A reset forgets what was held: the key a script or a drawing left pressed is
+// gone, and so are the latches. Leaving a modifier behind is what made a cold
+// restart look like a dead keyboard - every key kept arriving as a control
+// code, while nothing showed as pressed any more.
 void Keyboard::reset(bool cool)
 {
     ComputerDevice::reset(cool);
+    m_case_lower = false;
+    m_reset_count++;
     compat_lock_guard lock(m_held_mutex);
     m_ids_held.clear();
 }

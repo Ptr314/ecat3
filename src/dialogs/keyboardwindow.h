@@ -70,6 +70,7 @@ private:
     QStringList m_lamp_keys;                //keys whose state a lamp already shows
     QString     m_mouse_key;                //held by the mouse, empty when none
     QStringList m_latched;                  //modifiers clicked on, held until clicked again
+    unsigned int m_reset_seen = 0;          //Keyboard::reset_count() at the last poll
 };
 
 class KeyboardWindow : public GenericDbgWnd

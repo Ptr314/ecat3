@@ -38,3 +38,8 @@
 [port-kbd.value] $FD
 [port-kbd.value] $FE
 [port-kbd.value] $9E
+=== холодный перезапуск отпускает модификаторы ===
+[keyboard.ctrl] $01
+[keyboard.ctrl] $00
+[keyboard.pressed] key_lat
+[port-kbd.value] $C1

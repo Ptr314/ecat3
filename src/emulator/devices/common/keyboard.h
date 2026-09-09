@@ -352,6 +352,9 @@ protected:
     // to letters alone, which is why digits keep working under it.
     bool m_case_lower = false;
 
+    // How many times this keyboard has been reset, see reset_count()
+    unsigned int m_reset_count = 0;
+
     // What the second control key adds to a code. On the БК АР2 raises it by
     // 100 octal, the same amount СУ takes away, which is how one keyboard
     // covers six registers.
@@ -430,6 +433,14 @@ public:
         std::string key;
     };
     virtual std::vector<Indicator> indicators() const;
+
+    // Grows by one on every reset of this device. A frontend that keeps a
+    // mirror of the keyboard state - the on-screen keyboard latches modifiers
+    // on its own, a pointer having only one contact point - watches it and
+    // starts over: a reset drops whatever the machine was holding, and a
+    // picture still showing СУ or УПР latched would send control codes into a
+    // machine that thinks nothing is pressed.
+    unsigned int reset_count() const { return m_reset_count; }
 
     // Tells whether the character is only reachable with Shift held on this
     // machine. The scripting engine uses it so that TYPE can produce quotes
