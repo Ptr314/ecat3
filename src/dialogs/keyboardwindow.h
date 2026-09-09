@@ -52,17 +52,22 @@ private:
     QString key_at(const QPoint &p) const;
     void press(const QString &id, bool down);
     QRectF map_box(const QRectF &box) const;
-    const QPixmap & mask_of(const QString &id, const QRectF &target);
+    QRectF doc_box(const QString &id) const;
+    const QPixmap & mask_of(const QString &id, const QRectF &target, const QColor &colour);
+    QStringList leds_dark() const;          //indicators that are not lit right now
 
     Emulator *  m_e;
     QSvgRenderer m_svg;
     QRectF      m_viewbox;
     QRectF      m_target;                   //aspect-fit area of the drawing inside the widget
     QVector<KeyBox> m_boxes;
+    QVector<KeyBox> m_leds;                 //indicator lamps, same shape as a key box
     QPixmap     m_cache;                    //the whole drawing, possibly at the previous size
     QTimer      m_rerender;                 //fires once the resizing has stopped
     QMap<QString, QPixmap> m_masks;         //highlight silhouettes, dropped on resize
     QStringList m_shown;                    //what the last repaint highlighted
+    QStringList m_dark;                     //what the last repaint shaded out
+    QStringList m_lamp_keys;                //keys whose state a lamp already shows
     QString     m_mouse_key;                //held by the mouse, empty when none
     QStringList m_latched;                  //modifiers clicked on, held until clicked again
 };

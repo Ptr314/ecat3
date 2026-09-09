@@ -30,7 +30,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
     -sALLOW_MEMORY_GROWTH=1 \
     -sFORCE_FILESYSTEM=1 \
     -sEXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap'] \
-    -sEXPORTED_FUNCTIONS=['_main','_wasm_key_event','_wasm_key_event_id','_wasm_key_click_mode','_wasm_key_ids','_wasm_keyboard_picture','_wasm_keys_pressed','_wasm_load_machine','_wasm_load_file','_wasm_reset','_wasm_set_volume','_wasm_set_muted','_wasm_get_screen_width','_wasm_get_screen_height','_malloc','_free'] \
+    -sEXPORTED_FUNCTIONS=['_main','_wasm_key_event','_wasm_key_event_id','_wasm_key_click_mode','_wasm_key_ids','_wasm_keyboard_picture','_wasm_keys_pressed','_wasm_leds_dark','_wasm_led_keys','_wasm_load_machine','_wasm_load_file','_wasm_reset','_wasm_set_volume','_wasm_set_muted','_wasm_get_screen_width','_wasm_get_screen_height','_malloc','_free'] \
     -sMODULARIZE=1 \
     -sEXPORT_NAME=EmuModule \
     -sENVIRONMENT=web,worker \

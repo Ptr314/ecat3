@@ -202,6 +202,8 @@ let kbdPollTimer = null;
 let kbdShown = new Set();
 let kbdHeldId = null;
 let kbdLatched = [];
+let kbdDark = new Set();
+let kbdLampKeys = new Set();
 
 function kbdRelease(module) {
     if (kbdHeldId !== null) {
@@ -220,6 +222,9 @@ function kbdReleaseAll(module) {
 function kbdPoll(module, panel) {
     const text = module.ccall("wasm_keys_pressed", "string", [], []);
     const now = new Set(text ? text.split(",") : []);
+    // A key whose lamp is drawn is left alone: the alphabet belongs on the
+    // picture once, where the machine itself shows it
+    for (const id of kbdLampKeys) now.delete(id);
 
     for (const id of kbdShown)
         if (!now.has(id)) {
@@ -232,6 +237,23 @@ function kbdPoll(module, panel) {
             if (el) el.classList.add("pressed");
         }
     kbdShown = now;
+
+    // A lamp shows what the machine is in, not what the user presses, so it is
+    // driven by state: the unlit one is blacked out and the burning one is left
+    // exactly as the drawing has it
+    const dark = module.ccall("wasm_leds_dark", "string", [], []);
+    const off = new Set(dark ? dark.split(",") : []);
+    for (const id of kbdDark)
+        if (!off.has(id)) {
+            const el = panel.querySelector("#" + CSS.escape(id));
+            if (el) el.classList.remove("led-off");
+        }
+    for (const id of off)
+        if (!kbdDark.has(id)) {
+            const el = panel.querySelector("#" + CSS.escape(id));
+            if (el) el.classList.add("led-off");
+        }
+    kbdDark = off;
 }
 
 function setupOnScreenKeyboard(module) {
@@ -241,6 +263,8 @@ function setupOnScreenKeyboard(module) {
     if (kbdPollTimer !== null) { clearInterval(kbdPollTimer); kbdPollTimer = null; }
     kbdReleaseAll(module);
     kbdShown = new Set();
+    kbdDark = new Set();
+    kbdLampKeys = new Set();
     panel.innerHTML = "";
     panel.hidden = true;
 
@@ -275,6 +299,14 @@ function setupOnScreenKeyboard(module) {
         return;
     }
     button.disabled = false;
+
+    for (const pair of (module.ccall("wasm_led_keys", "string", [], []) || "").split(",")) {
+        const [led, key] = pair.split("=");
+        if (key && panel.querySelector("#" + CSS.escape(led))) kbdLampKeys.add(key);
+    }
+
+    //The panel is polled only while it is open, so the lamps are set once here
+    kbdPoll(module, panel);
 
     const keyOf = (target) => {
         const el = target.closest ? target.closest('[id^="key_"]') : null;

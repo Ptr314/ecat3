@@ -169,6 +169,10 @@
         /* Drawn, but this machine has no such key */
         #kbd-panel svg [id^="key_"].unknown { pointer-events: none; cursor: default; }
 
+        /* An indicator lamp that is not lit. The burning one is left exactly as
+           drawn; 0.2 is what the desktop window gets from black at 80% */
+        #kbd-panel svg [id^="led_"].led-off { filter: brightness(0.2); }
+
         #overlay-text {
             color: #fff;
             font-size: 24px;

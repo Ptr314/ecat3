@@ -1,0 +1,142 @@
+# Агат-7: нативная таблица клавиш машины, та же, которой пользуется экранная
+# клавиатура. Имена начинаются с "key_" и обозначают клавишу самого Агата,
+# а не хоста, поэтому перекладка ЙЦУКЕН -> ЯВЕРТЫ к ним не применяется.
+#
+# У Агата один код на клавишу: РУС/ЛАТ переключает знакогенератор, а не
+# кодировку, поэтому записей /R в agat.keys нет. Проверяется то, чего
+# хостовая таблица не выражает: РЕГ дает вторую половину набора, УПР -
+# управляющий код, а СБР и ПВТ кода не имеют вовсе.
+#
+# Между нажатием и снятием кода время не идет: LOG выполняется в том же
+# такте, что и KEYDOWN, поэтому ПЗУ не успевает вычитать порт.
+# @timeout 45
+
+MACHINE "agat/Agat-7.cfg"
+WAIT 9000
+
+LOGDEFS 8,16
+
+# Начальный алфавит машина берет с Caps Lock хоста (ruslat = caps), поэтому
+# прогон начинается с ЛАТ: иначе эталон зависел бы от клавиатуры хоста
+KEYDOWN key_lat
+KEYUP key_lat
+
+PRINT "=== исходное состояние: защелка алфавита ==="
+LOG keyboard.rus
+LOG keyboard.pressed
+
+# СБР кода не шлет: он перезапускает машину, как Break в окне эмулятора.
+# Проверяется первым, пока ИКП крутит свой цикл выбора: после сброса
+# процессор уходит на вектор в ПЗУ, а монитор возвращает меню на место.
+PRINT "=== СБР перезапускает машину и не шлет кода ==="
+LOG cpu.pc
+KEYDOWN key_sbr
+LOG port-kbd.value
+KEYUP key_sbr
+WAIT 10
+LOG cpu.pc
+WAIT 2000
+
+PRINT "=== буква: сама, с РЕГ и с УПР ==="
+KEYDOWN key_a
+LOG port-kbd.value
+LOG keyboard.pressed
+KEYUP key_a
+KEYDOWN key_reg_1
+KEYDOWN key_a
+LOG port-kbd.value
+KEYUP key_a
+KEYUP key_reg_1
+KEYDOWN key_upr
+KEYDOWN key_a
+LOG port-kbd.value
+KEYUP key_a
+KEYUP key_upr
+
+PRINT "=== цифровой ряд: верхняя и нижняя надписи ==="
+KEYDOWN key_1
+LOG port-kbd.value
+KEYUP key_1
+KEYDOWN key_reg_2
+KEYDOWN key_1
+LOG port-kbd.value
+KEYUP key_1
+KEYUP key_reg_2
+
+PRINT "=== знаки, которых на хосте нет отдельной клавишей ==="
+KEYDOWN key_backsl
+LOG port-kbd.value
+KEYUP key_backsl
+KEYDOWN key_reg_1
+KEYDOWN key_backsl
+LOG port-kbd.value
+KEYUP key_backsl
+KEYUP key_reg_1
+KEYDOWN key_rbr
+LOG port-kbd.value
+KEYUP key_rbr
+KEYDOWN key_reg_1
+KEYDOWN key_rbr
+LOG port-kbd.value
+KEYUP key_rbr
+KEYUP key_reg_1
+
+PRINT "=== управление ==="
+KEYDOWN key_red
+LOG port-kbd.value
+KEYUP key_red
+KEYDOWN key_left
+LOG port-kbd.value
+KEYUP key_left
+KEYDOWN key_f1
+LOG port-kbd.value
+KEYUP key_f1
+KEYDOWN key_num_5
+LOG port-kbd.value
+KEYUP key_num_5
+
+# ПВТ своего кода не имеет: он повторяет последний посланный
+PRINT "=== ПВТ повторяет последний посланный код ==="
+KEYDOWN key_space
+LOG port-kbd.value
+KEYUP key_space
+KEYDOWN key_pvt
+LOG port-kbd.value
+LOG keyboard.pressed
+KEYUP key_pvt
+
+# РУС и ЛАТ кода не шлют: они дергают бит 7 порта port-kbd-ruslat, по
+# которому знакогенератор выбирает половину набора
+PRINT "=== РУС и ЛАТ переключают знакогенератор ==="
+KEYDOWN key_rus
+KEYUP key_rus
+LOG keyboard.rus
+LOG port-kbd-ruslat.value
+LOG keyboard.pressed
+KEYDOWN key_lat
+KEYUP key_lat
+LOG keyboard.rus
+LOG port-kbd-ruslat.value
+
+# Хостовая таблица: скобки и стрелка вверх верхнего регистра. В agat.map
+# правая фигурная скобка была объявлена левой, поэтому "}" не набиралась
+# вовсе, а УПР со стрелкой вверх давал код клавиши Ь.
+PRINT "=== скобки и ^ с хостовой клавиатуры ==="
+KEYDOWN shift
+KEYDOWN {
+LOG port-kbd.value
+KEYUP {
+KEYDOWN }
+LOG port-kbd.value
+KEYUP }
+KEYDOWN ^
+LOG port-kbd.value
+KEYUP ^
+KEYUP shift
+KEYDOWN ctrl
+KEYDOWN ^
+LOG port-kbd.value
+KEYUP ^
+KEYUP ctrl
+
+EXIT

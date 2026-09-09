@@ -152,6 +152,45 @@ const char* wasm_keys_pressed()
     return result.c_str();
 }
 
+// Indicator lamps that are not lit, so the page can black them out. The lit one
+// is left exactly as the drawing has it, which is the whole point of a lamp.
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_leds_dark()
+{
+    static std::string result;
+    result.clear();
+    Keyboard * k = wasm_keyboard();
+    if (k != nullptr) {
+        const std::vector<Keyboard::Indicator> leds = k->indicators();
+        for (size_t i = 0; i < leds.size(); i++)
+            if (!leds[i].lit) {
+                if (!result.empty()) result += ",";
+                result += leds[i].id;
+            }
+    }
+    return result.c_str();
+}
+
+// "led_rus=key_rus,led_lat=key_lat": which key each lamp makes redundant. Read
+// once, when the drawing is put into the page: a key whose lamp is there stops
+// being highlighted, so the alphabet is shown in one place, not two.
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_led_keys()
+{
+    static std::string result;
+    result.clear();
+    Keyboard * k = wasm_keyboard();
+    if (k != nullptr) {
+        const std::vector<Keyboard::Indicator> leds = k->indicators();
+        for (size_t i = 0; i < leds.size(); i++) {
+            if (leds[i].key.empty()) continue;
+            if (!result.empty()) result += ",";
+            result += leds[i].id + "=" + leds[i].key;
+        }
+    }
+    return result.c_str();
+}
+
 EMSCRIPTEN_KEEPALIVE
 void wasm_reset(int cold)
 {

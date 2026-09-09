@@ -317,7 +317,8 @@ enum KeyRole {
     KEY_ROLE_CASE_LOWER,    // latching small letters (БК: СТР)
     KEY_ROLE_ALT,           // second control key (БК: АР2), code shifted by alt-add
     KEY_ROLE_STOP,          // drives the ~stop line instead of sending a code (БК: СТОП)
-    KEY_ROLE_REPEAT         // repeats whatever went last (БК: ПОВТ)
+    KEY_ROLE_REPEAT,        // repeats whatever went last (БК: ПОВТ)
+    KEY_ROLE_RESET          // restarts the machine instead of sending a code (Агат: СБР)
 };
 
 class Keyboard: public ComputerDevice
@@ -413,6 +414,22 @@ public:
     bool case_shift() const { return m_case_lower != rus_mode; }
     std::vector<std::string> ids_held() const;
     const std::string & picture_file() const { return m_picture_file; }
+
+    // Indicator lamps of the drawing. Unlike a key, a lamp shows what the
+    // machine is in rather than what the user is doing, so it is derived from
+    // state and never pressed. The names are a convention of the drawing: a
+    // picture that has no such element simply ignores the answer, which is why
+    // nothing changes for a machine that shows its register on a key instead
+    // (the БК lights РУС and ЛАТ).
+    struct Indicator {
+        std::string id;     // element of the drawing
+        bool        lit;
+        // The key this lamp says the same thing as. A drawing that carries the
+        // lamp should stop lighting that key: the register belongs on the
+        // picture once, where the machine itself puts it.
+        std::string key;
+    };
+    virtual std::vector<Indicator> indicators() const;
 
     // Tells whether the character is only reachable with Shift held on this
     // machine. The scripting engine uses it so that TYPE can produce quotes

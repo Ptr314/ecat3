@@ -1,0 +1,40 @@
+=== исходное состояние: защелка алфавита ===
+[keyboard.rus] $00
+[keyboard.pressed] key_lat
+=== СБР перезапускает машину и не шлет кода ===
+[cpu.pc] $2A9E
+[port-kbd.value] $00
+[cpu.pc] $FB96
+=== буква: сама, с РЕГ и с УПР ===
+[port-kbd.value] $C1
+[keyboard.pressed] key_a,key_lat
+[port-kbd.value] $E1
+[port-kbd.value] $81
+=== цифровой ряд: верхняя и нижняя надписи ===
+[port-kbd.value] $B1
+[port-kbd.value] $A1
+=== знаки, которых на хосте нет отдельной клавишей ===
+[port-kbd.value] $DC
+[port-kbd.value] $FC
+[port-kbd.value] $DD
+[port-kbd.value] $FD
+=== управление ===
+[port-kbd.value] $9B
+[port-kbd.value] $88
+[port-kbd.value] $84
+[port-kbd.value] $B5
+=== ПВТ повторяет последний посланный код ===
+[port-kbd.value] $A0
+[port-kbd.value] $A0
+[keyboard.pressed] key_pvt,key_lat
+=== РУС и ЛАТ переключают знакогенератор ===
+[keyboard.rus] $01
+[port-kbd-ruslat.value] $00
+[keyboard.pressed] key_rus
+[keyboard.rus] $00
+[port-kbd-ruslat.value] $80
+=== скобки и ^ с хостовой клавиатуры ===
+[port-kbd.value] $FB
+[port-kbd.value] $FD
+[port-kbd.value] $FE
+[port-kbd.value] $9E

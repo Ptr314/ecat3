@@ -1,0 +1,196 @@
+// Клавиши клавиатуры самого Агата: то, что нарисовано на agat_keyboard.svg.
+// В отличие от agat.map, где слева стоит клавиша хоста, здесь слева -- имя
+// клавиши машины, и оно же служит идентификатором элемента в рисунке.
+//
+// Модификаторы:
+//   /S -- РЕГ (регистр), удерживается;
+//   /C -- УПР (управление), удерживается.
+//
+// Коды взяты из agat.map: у Агата один код на клавишу, РУС/ЛАТ переключает
+// не коды, а знакогенератор (линия бита 7 порта port-kbd-ruslat), поэтому
+// записей /R здесь нет вовсе. Все коды со старшим битом: клавиатура Агата
+// выставляет его как признак готовности, и порт C000 отдает их как есть.
+//
+// Верхняя надпись на клавише -- то, что она шлет без модификаторов, нижняя --
+// то, что с РЕГ. У букв РЕГ дает вторую половину знакогенератора (+$20).
+
+shift:      key_reg_1    // РЕГ слева
+shift:      key_reg_2    // РЕГ справа
+ctrl:       key_upr      // УПР
+rus-on:     key_rus      // РУС
+rus-off:    key_lat      // ЛАТ
+repeat:     key_pvt      // ПВТ, повторяет последний посланный код
+reset:      key_sbr      // СБР, перезапуск машины -- кода не имеет
+
+// --- Цифровой ряд -----------------------------------------------------
+
+key_semi:       $BB      // ;
+key_semi/S:     $AB      // +
+key_1:          $B1
+key_1/S:        $A1      // !
+key_2:          $B2
+key_2/S:        $A2      // "
+key_3:          $B3
+key_3/S:        $A3      // #
+key_4:          $B4
+key_4/S:        $A4      // $ (в русском наборе -- знак валюты)
+key_5:          $B5
+key_5/S:        $A5      // %
+key_6:          $B6
+key_6/S:        $A6      // &
+key_7:          $B7
+key_7/S:        $A7      // '
+key_8:          $B8
+key_8/S:        $A8      // (
+key_9:          $B9
+key_9/S:        $A9      // )
+key_0:          $B0
+key_0/S:        $B0      // второй надписи у нуля нет
+key_minus:      $AD      // -
+key_minus/S:    $BD      // =
+
+// --- Верхний буквенный ряд: Й Ц У К Е Н Г Ш Щ З Х -----------------------
+
+key_j:          $CA
+key_j/S:        $EA
+key_j/C:        $8A
+key_c:          $C3
+key_c/S:        $E3
+key_c/C:        $83
+key_u:          $D5
+key_u/S:        $F5
+key_u/C:        $95
+key_k:          $CB
+key_k/S:        $EB
+key_k/C:        $8B
+key_e:          $C5
+key_e/S:        $E5
+key_e/C:        $85
+key_n:          $CE
+key_n/S:        $EE
+key_n/C:        $8E
+key_g:          $C7
+key_g/S:        $E7
+key_g/C:        $87
+key_lbr:        $DB      // Ш / [
+key_lbr/S:      $FB      // {
+key_lbr/C:      $9B
+key_rbr:        $DD      // Щ / ]
+key_rbr/S:      $FD      // }
+key_rbr/C:      $9D
+key_z:          $DA
+key_z/S:        $FA
+key_z/C:        $9A
+key_h:          $C8
+key_h/S:        $E8
+key_h/C:        $88
+key_colon:      $BA      // :
+key_colon/S:    $AA      // *
+
+// --- Средний буквенный ряд: Ф Ы В А П Р О Л Д Ж Э -----------------------
+
+key_f:          $C6
+key_f/S:        $E6
+key_f/C:        $86
+key_y:          $D9
+key_y/S:        $F9
+key_y/C:        $99
+key_w:          $D7
+key_w/S:        $F7
+key_w/C:        $97
+key_a:          $C1
+key_a/S:        $E1
+key_a/C:        $81
+key_p:          $D0
+key_p/S:        $F0
+key_p/C:        $90
+key_r:          $D2
+key_r/S:        $F2
+key_r/C:        $92
+key_o:          $CF
+key_o/S:        $EF
+key_o/C:        $8F
+key_l:          $CC
+key_l/S:        $EC
+key_l/C:        $8C
+key_d:          $C4
+key_d/S:        $E4
+key_d/C:        $84
+key_v:          $D6
+key_v/S:        $F6
+key_v/C:        $96
+key_backsl:     $DC      // Э / \
+key_backsl/S:   $FC      // | -- в agat.map этой записи нет, шаг +$20 как у букв
+key_backsl/C:   $9C
+key_gt:         $AE      // .
+key_gt/S:       $BE      // >
+
+// --- Нижний буквенный ряд: Я Ч С М И Т Ь Б Ю ---------------------------
+
+key_q:          $D1
+key_q/S:        $F1
+key_q/C:        $91
+key_caret:      $DE      // Ч / ^
+key_caret/S:    $FE
+key_caret/C:    $9E
+key_s:          $D3
+key_s/S:        $F3
+key_s/C:        $93
+key_m:          $CD
+key_m/S:        $ED
+key_m/C:        $8D
+key_i:          $C9
+key_i/S:        $E9
+key_i/C:        $89
+key_t:          $D4
+key_t/S:        $F4
+key_t/C:        $94
+key_x:          $D8
+key_x/S:        $F8
+key_x/C:        $98
+key_b:          $C2
+key_b/S:        $E2
+key_b/C:        $82
+key_at:         $C0      // Ю / @
+key_at/S:       $C0      // так же, как в agat.map: у @ второго кода нет
+key_lt:         $AC      // ,
+key_lt/S:       $BC      // <
+key_slash:      $AF      // /
+key_slash/S:    $BF      // ?
+key_under:      $DF      // Ъ / _
+key_under/S:    $DF      // так же, как в agat.map
+key_under/C:    $9F
+
+// --- Управление -------------------------------------------------------
+
+key_space:      $A0
+key_enter:      $8D      // ВК
+key_red:        $9B      // РЕД -- это Esc: с него начинается правка строки
+key_left:       $88
+key_right:      $95
+key_up:         $99
+key_down:       $9A
+
+// --- Цифровой блок и функциональные клавиши ---------------------------
+// Цифры блока шлют то же, что и цифровой ряд; записаны после него, чтобы
+// подсветка от печати на хосте зажигала основной ряд, а не блок.
+
+key_num_0:      $B0
+key_num_1:      $B1
+key_num_2:      $B2
+key_num_3:      $B3
+key_num_4:      $B4
+key_num_5:      $B5
+key_num_6:      $B6
+key_num_7:      $B7
+key_num_8:      $B8
+key_num_9:      $B9
+key_num_dot:    $AE
+key_num_equal:  $BD
+key_f1:         $84
+key_f2:         $85
+key_f3:         $86
+
+// Собственного кода не имеют и потому в теле таблицы не значатся:
+// key_reg_1, key_reg_2, key_upr, key_rus, key_lat, key_pvt и key_sbr --
+// все они объявлены в заголовке.

@@ -188,6 +188,29 @@ std::vector<std::string> Keyboard::ids_held() const
     return r;
 }
 
+// Two lamps for one register: the Агат has РУС and ЛАТ drawn side by side, and
+// only one of them burns. A machine with a single lamp declares just that one
+// in its drawing and gets it dark in the other alphabet. Each lamp names the
+// key it makes redundant, so a drawing that has both would not say the same
+// thing twice; one toggling key answers for both lamps.
+std::vector<Keyboard::Indicator> Keyboard::indicators() const
+{
+    Indicator rus = {"led_rus", rus_mode, ""};
+    Indicator lat = {"led_lat", !rus_mode, ""};
+    for (size_t i = 0; i < m_key_roles.size(); i++)
+        switch (m_key_roles[i].second) {
+            case KEY_ROLE_RUS_ON:     rus.key = m_key_roles[i].first; break;
+            case KEY_ROLE_RUS_OFF:    lat.key = m_key_roles[i].first; break;
+            case KEY_ROLE_RUS_TOGGLE: rus.key = lat.key = m_key_roles[i].first; break;
+            default: break;
+        }
+
+    std::vector<Indicator> r;
+    r.push_back(rus);
+    r.push_back(lat);
+    return r;
+}
+
 void Keyboard::key_event_id(const std::string &id, bool press)
 {
     const KeyRole role = key_role(id);
@@ -225,6 +248,11 @@ void Keyboard::key_event_id(const std::string &id, bool press)
             break;
         case KEY_ROLE_REPEAT:
             repeat_key(id, press);
+            break;
+        case KEY_ROLE_RESET:
+            //The СБР of an Агат restarts the machine, which is exactly what
+            //Break does in the GUI: Emulator::reset() is this same call
+            if (press) im->dm->reset_devices(false);
             break;
         default:
             break;
@@ -275,6 +303,7 @@ emulator::Result Keyboard::load_key_table(SystemData *sd)
         {"alt",       KEY_ROLE_ALT},
         {"stop",      KEY_ROLE_STOP},
         {"repeat",    KEY_ROLE_REPEAT},
+        {"reset",     KEY_ROLE_RESET},
         {nullptr,     KEY_ROLE_NORMAL}
     };
 

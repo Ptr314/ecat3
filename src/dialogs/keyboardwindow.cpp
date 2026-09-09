@@ -18,6 +18,9 @@
 //Highlight of a pressed key. Alpha only: the fill is the accent colour and the
 //shape comes from the key itself, so it works on a keycap of any outline
 #define KEY_HIGHLIGHT       QColor(255, 196, 0, 110)
+//An indicator that is not lit. Black at 80% leaves a fifth of the original
+//colour, which is what the browser reproduces with filter: brightness(0.2)
+#define LED_OFF_SHADE       QColor(0, 0, 0, 204)
 #define POLL_INTERVAL_MS    40
 //Long enough that a drag never redraws the vector mid-flight, short enough that
 //the blurry stretch is not noticed once the mouse stops
@@ -51,12 +54,25 @@ Keyboard * KeyboardView::kbd() const
     return dynamic_cast<Keyboard*>(m_e->dm->get_device_by_name("keyboard", false));
 }
 
+// The box an element occupies in the coordinates the drawing is rendered in.
+// boundsOnElement() leaves the transforms of the parents out on purpose, and
+// Inkscape hangs one on every layer it makes - the keys of the Агат sit in a
+// layer moved by 4.76 mm. transformForElement() is exactly that missing chain,
+// and without it the highlight, and every click with it, lands millimetres off.
+QRectF KeyboardView::doc_box(const QString &id) const
+{
+    return m_svg.transformForElement(id).mapRect(m_svg.boundsOnElement(id));
+}
+
 bool KeyboardView::load()
 {
     m_boxes.clear();
+    m_leds.clear();
     m_masks.clear();
     m_cache = QPixmap();
     m_shown.clear();
+    m_dark.clear();
+    m_lamp_keys.clear();
     m_mouse_key.clear();
     m_latched.clear();
 
@@ -75,7 +91,7 @@ bool KeyboardView::load()
     for (size_t i = 0; i < ids.size(); i++) {
         const QString id = QString::fromStdString(ids[i]);
         if (!m_svg.elementExists(id)) continue;
-        const QRectF b = m_svg.boundsOnElement(id);
+        const QRectF b = doc_box(id);
         if (b.isEmpty()) continue;
         //A stroke bleeds half its width past the page edge, so the centre is
         //what has to be inside: a key whose middle is outside means the drawing
@@ -86,7 +102,39 @@ bool KeyboardView::load()
         kb.box = b;
         m_boxes.append(kb);
     }
-    return !m_boxes.isEmpty();
+    if (m_boxes.isEmpty()) return false;
+
+    //Lamps are optional and never clickable, so a drawing without them costs
+    //nothing here - which is why the БК picture is unaffected
+    const std::vector<Keyboard::Indicator> leds = k->indicators();
+    for (size_t i = 0; i < leds.size(); i++) {
+        const QString id = QString::fromStdString(leds[i].id);
+        if (!m_svg.elementExists(id)) continue;
+        const QRectF b = doc_box(id);
+        if (b.isEmpty() || !m_viewbox.contains(b.center())) continue;
+        KeyBox kb;
+        kb.id = id;
+        kb.box = b;
+        m_leds.append(kb);
+        //The lamp says which alphabet is on, so the key stops saying it too
+        const QString key = QString::fromStdString(leds[i].key);
+        if (!key.isEmpty() && !m_lamp_keys.contains(key)) m_lamp_keys.append(key);
+    }
+
+    //So that the first frame already shows the right lamp burning
+    poll();
+    return true;
+}
+
+QStringList KeyboardView::leds_dark() const
+{
+    QStringList r;
+    Keyboard * k = kbd();
+    if (k == nullptr) return r;
+    const std::vector<Keyboard::Indicator> leds = k->indicators();
+    for (size_t i = 0; i < leds.size(); i++)
+        if (!leds[i].lit) r.append(QString::fromStdString(leds[i].id));
+    return r;
 }
 
 QSize KeyboardView::sizeHint() const
@@ -134,11 +182,13 @@ void KeyboardView::rerender()
     update();
 }
 
-// The silhouette of one key: the element rendered alone, its alpha turned into
-// a solid stencil and filled with the accent colour. Thresholding the alpha
+// The silhouette of one element: it is rendered alone, its alpha turned into a
+// solid stencil and filled with the given colour. Thresholding the alpha
 // matters -- a gradient stop or a fill-opacity below 1 would otherwise wash the
-// highlight out exactly where the key is most transparent.
-const QPixmap & KeyboardView::mask_of(const QString &id, const QRectF &target)
+// overlay out exactly where the element is most transparent.
+// The cache is keyed by id alone: a key is only ever drawn with the highlight
+// and a lamp only ever with the shade, so one id means one colour.
+const QPixmap & KeyboardView::mask_of(const QString &id, const QRectF &target, const QColor &colour)
 {
     QMap<QString, QPixmap>::iterator it = m_masks.find(id);
     if (it != m_masks.end()) return it.value();
@@ -163,7 +213,7 @@ const QPixmap & KeyboardView::mask_of(const QString &id, const QRectF &target)
     {
         QPainter p(&stencil);
         p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-        p.fillRect(stencil.rect(), KEY_HIGHLIGHT);
+        p.fillRect(stencil.rect(), colour);
     }
 
     return m_masks.insert(id, QPixmap::fromImage(stencil)).value();
@@ -189,7 +239,14 @@ void KeyboardView::paintEvent(QPaintEvent *)
     for (int i = 0; i < m_boxes.size(); i++)
         if (m_shown.contains(m_boxes[i].id)) {
             const QRectF t = map_box(m_boxes[i].box);
-            p.drawPixmap(t.topLeft(), mask_of(m_boxes[i].id, t));
+            p.drawPixmap(t.topLeft(), mask_of(m_boxes[i].id, t, KEY_HIGHLIGHT));
+        }
+
+    //A lamp that is not lit is blacked out; the burning one is left as drawn
+    for (int i = 0; i < m_leds.size(); i++)
+        if (m_dark.contains(m_leds[i].id)) {
+            const QRectF t = map_box(m_leds[i].box);
+            p.drawPixmap(t.topLeft(), mask_of(m_leds[i].id, t, LED_OFF_SHADE));
         }
 }
 
@@ -273,11 +330,20 @@ void KeyboardView::poll()
 
     const std::vector<std::string> held = k->ids_held();
     QStringList now;
-    for (size_t i = 0; i < held.size(); i++) now.append(QString::fromStdString(held[i]));
+    for (size_t i = 0; i < held.size(); i++) {
+        const QString id = QString::fromStdString(held[i]);
+        //A key whose lamp is drawn is left alone: the register is on the
+        //picture once. keyboard.pressed still reports it - what the machine
+        //holds does not depend on what the drawing shows
+        if (m_lamp_keys.contains(id)) continue;
+        now.append(id);
+    }
+    const QStringList dark = leds_dark();
 
     //Repaint only on a change: this runs 25 times a second
-    if (now == m_shown) return;
+    if (now == m_shown && dark == m_dark) return;
     m_shown = now;
+    m_dark = dark;
     update();
 }
 
