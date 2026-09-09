@@ -39,6 +39,11 @@ endif()
 if(ENABLE_GUI)
     find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
     find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
+    # Optional: the on-screen keyboard draws an SVG through QSvgRenderer. The
+    # module is missing from the static Windows kit (BUILD.md configures it as
+    # qtbase,qttools,qttranslations) and from the Qt5 kits, so the feature
+    # compiles out instead of breaking those builds.
+    find_package(Qt${QT_VERSION_MAJOR} QUIET COMPONENTS Svg)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND ENABLE_GUI)
@@ -301,6 +306,7 @@ set(GUI_SOURCES
     dialogs/dosframe.h dialogs/dosframe.cpp
     dialogs/genericdbgwnd.h dialogs/genericdbgwnd.cpp
     dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
+    dialogs/keyboardwindow.h dialogs/keyboardwindow.cpp
 
     renderers/renderer_sdl2.h
     renderers/renderer_qt.h
@@ -438,6 +444,16 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     dsk_tools
 )
+
+# The flag is set on this target only: eCat3-headless is built from the same
+# directory and must not see it
+if(TARGET Qt${QT_VERSION_MAJOR}::Svg)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Svg)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE HAVE_QT_SVG)
+    message(STATUS "Qt Svg found: the on-screen keyboard is enabled")
+else()
+    message(STATUS "Qt Svg not found: the on-screen keyboard is disabled")
+endif()
 
 # SDL2 libraries (only when using SDL2 renderer or SDL2 audio)
 if(RENDERER_SDL2 OR USE_SDL_AUDIO)

@@ -43,6 +43,7 @@
         <file alias="sound2">resources/icons/amarok.png</file>
         <file alias="nosound2">resources/icons/arts.png</file>
         <file alias="tape">resources/icons/kdat.png</file>
+        <file alias="keyboard">resources/icons/keyboard.png</file>
         <file alias="elektronica-302">resources/icons/Electronica-302.png</file>
         <file alias="tape_flat_off">resources/icons/tape_flat_off.png</file>
         <file alias="tape_flat_on">resources/icons/tape_flat_on.png</file>

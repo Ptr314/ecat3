@@ -140,6 +140,12 @@ public:
     void render_screen();
 
     void key_event(int key, int modifiers, bool press);
+    void key_event_id(const std::string &id, bool press);
+
+    // The keyboard of the running machine, or nullptr between machines. Never
+    // cache it: load_config() deletes the whole device manager.
+    Keyboard * get_keyboard() const { return keyboard; }
+
     void set_volume(int value);
     void set_muted(bool muted);
     void reset(bool cold);

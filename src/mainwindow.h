@@ -91,6 +91,7 @@ private slots:
     void on_actionAbout_triggered();
 
     void on_actionTape_triggered();
+    void on_actionKeyboard_triggered();
 
     void on_actionRecOpen_triggered();
     void on_actionRecSave_triggered();
@@ -136,6 +137,7 @@ private:
     QToolButton * fdd_button[8];
     // QToolButton * tape_button = nullptr;
     QAction * tape_action = nullptr;
+    QAction * keyboard_action = nullptr;
     QAction * buttons_separator = nullptr;
     QList<QAction*> option_toolbar_actions;
     QMenu * fdd_menu[8];

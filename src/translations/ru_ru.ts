@@ -135,7 +135,7 @@
         <translation type="vanished">Некорректный список дисководов для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/agat_fdc840.cpp" line="+42"/>
+        <location filename="../emulator/devices/specific/agat_fdc840.cpp" line="+49"/>
         <source>Incorrect fdd list for</source>
         <translation>Некорректный список дисководов для</translation>
     </message>
@@ -171,7 +171,7 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+640"/>
+        <location filename="../emulator/core.cpp" line="+642"/>
         <source>No CPU clock value found</source>
         <translation>Не задана тактовая частота процессора</translation>
     </message>
@@ -180,12 +180,12 @@
         <translation type="vanished">Команда &apos;breakpoint&apos; требует адрес</translation>
     </message>
     <message>
-        <location line="+172"/>
+        <location line="+181"/>
         <source>Command &apos;setreg&apos; expects a name and a value</source>
         <translation>Команда &apos;setreg&apos; требует имя и значение</translation>
     </message>
     <message>
-        <location line="-155"/>
+        <location line="-164"/>
         <source>Invalid breakpoint address</source>
         <translation>Нерректная точка останова</translation>
     </message>
@@ -201,7 +201,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location line="-1025"/>
+        <location line="-1027"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -694,7 +694,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+141"/>
+        <location filename="../emulator/emulator.cpp" line="+153"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -835,13 +835,13 @@
         <translation>Некорректный размер файла образа</translation>
     </message>
     <message>
-        <location line="+274"/>
+        <location line="+276"/>
         <location line="+15"/>
         <source>Error exporting disk.</source>
         <translation>Ошибка экспорта диска.</translation>
     </message>
     <message>
-        <location line="+148"/>
+        <location line="+207"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; требует имя файла</translation>
     </message>
@@ -859,7 +859,7 @@
         <translation type="vanished">Формат файла &apos;%1&apos; не распознан</translation>
     </message>
     <message>
-        <location line="-484"/>
+        <location line="-545"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation>Файлы AIM поддерживаются только на дисководах 840 Кб Агат!</translation>
     </message>
@@ -877,7 +877,7 @@
         <translation type="vanished">Ошибка экспорта диска. %1 : %2</translation>
     </message>
     <message>
-        <location line="+301"/>
+        <location line="+303"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation>Дисковод работает в MFM-режиме. Сохранение в посекторные образы еще не поддерживается.</translation>
     </message>
@@ -1033,6 +1033,32 @@
     </message>
 </context>
 <context>
+    <name>Keyboard</name>
+    <message>
+        <location filename="../emulator/devices/common/keyboard.cpp" line="+246"/>
+        <source>This keyboard type has no native key table support</source>
+        <translation>Этот тип клавиатуры не поддерживает нативную таблицу клавиш</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Key table file not found</source>
+        <translation>Файл таблицы клавиш не найден</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Error reading key table file</source>
+        <translation>Ошибка чтения файла таблицы клавиш</translation>
+    </message>
+</context>
+<context>
+    <name>KeyboardWindow</name>
+    <message>
+        <location filename="../dialogs/keyboardwindow.cpp" line="+262"/>
+        <source>Keyboard</source>
+        <translation>Клавиатура</translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <source>MainWindow</source>
@@ -1058,7 +1084,7 @@
         <translation type="vanished">Помощь</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+34"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
@@ -1090,7 +1116,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+844"/>
+        <location filename="../mainwindow.cpp" line="+889"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -1136,6 +1162,18 @@
         <translation>Магнитофон</translation>
     </message>
     <message>
+        <location line="+15"/>
+        <location filename="../mainwindow.cpp" line="+376"/>
+        <source>Keyboard</source>
+        <translation>Клавиатура</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location filename="../mainwindow.cpp" line="-584"/>
+        <source>On-screen keyboard</source>
+        <translation>Экранная клавиатура</translation>
+    </message>
+    <message>
         <location line="+113"/>
         <source>Language</source>
         <translation>Переключить язык</translation>
@@ -1145,7 +1183,7 @@
         <translation type="vanished">Выбрать компьютер...</translation>
     </message>
     <message>
-        <location line="-217"/>
+        <location line="-235"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
@@ -1160,13 +1198,13 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-414"/>
-        <location line="+589"/>
+        <location filename="../mainwindow.cpp" line="-230"/>
+        <location line="+623"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-586"/>
+        <location line="-620"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -1192,18 +1230,18 @@
     <message>
         <location line="-87"/>
         <location line="+50"/>
-        <location line="+492"/>
-        <location line="+49"/>
+        <location line="+516"/>
+        <location line="+59"/>
         <location line="+61"/>
         <location line="+66"/>
-        <location line="+326"/>
+        <location line="+349"/>
         <location line="+29"/>
         <location line="+88"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-1111"/>
+        <location line="-1168"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -1268,13 +1306,13 @@
         <translation>Билинейное</translation>
     </message>
     <message>
-        <location line="+289"/>
+        <location line="+313"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
     </message>
     <message>
-        <location line="+92"/>
+        <location line="+102"/>
         <source>Load a file</source>
         <translation>Загрузить файл</translation>
     </message>
@@ -1314,17 +1352,22 @@
         <translation>Сохранение скриншота</translation>
     </message>
     <message>
-        <location line="+473"/>
+        <location line="+89"/>
+        <source>This machine has no usable keyboard picture</source>
+        <translation>У этой машины нет пригодного рисунка клавиатуры</translation>
+    </message>
+    <message>
+        <location line="+407"/>
         <source>The configuration did not load.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-135"/>
+        <location filename="../mainwindow.ui" line="-136"/>
         <source>Action recording</source>
         <translation>Запись действий</translation>
     </message>
     <message>
-        <location line="+236"/>
+        <location line="+255"/>
         <source>Open recording...</source>
         <translation>Открыть запись...</translation>
     </message>
@@ -1452,7 +1495,7 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/mapkeyboard.cpp" line="+31"/>
+        <location filename="../emulator/devices/common/mapkeyboard.cpp" line="+46"/>
         <source>Keyboard map file is expected</source>
         <translation>Не указан файл мэппинга</translation>
     </message>
@@ -1471,12 +1514,11 @@
     </message>
     <message>
         <location line="+10"/>
-        <location line="+4"/>
         <source>Map file entry is incorrect</source>
         <translation>Элемент файла мэппинга некорректен</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+28"/>
         <source>rus-on should be 0 or 1</source>
         <translation>Параметр rus-on должен быть 0 или 1</translation>
     </message>
@@ -1491,11 +1533,16 @@
         <translation>Некорректный параметр клавиатуры rusmode</translation>
     </message>
     <message>
+        <location line="+169"/>
+        <source>Key table entry is incorrect</source>
+        <translation>Элемент таблицы клавиш некорректен</translation>
+    </message>
+    <message>
         <source>Incorrect keyboard rusmode %1</source>
         <translation type="vanished">Некорректный параметр клавиатуры rusmode %1</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="-159"/>
         <source>rus_switches should have two values separated by &apos;/&apos;</source>
         <translation>Параметр rus_switches должен быть задан как два числа, разделённые &apos;/&apos;</translation>
     </message>
@@ -1544,12 +1591,12 @@
         <translation type="vanished">Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+688"/>
+        <location line="+699"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
     <message>
-        <location line="+85"/>
+        <location line="+91"/>
         <location filename="../emulator/devices/common/page_mapper.cpp" line="+47"/>
         <source>Incorrect range for</source>
         <translation>Некорректный диапазон для</translation>
@@ -1624,7 +1671,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-511"/>
+        <location filename="../emulator/core.cpp" line="-528"/>
         <source>Incorrect access mode</source>
         <translation>Некорректный режим доступа</translation>
     </message>

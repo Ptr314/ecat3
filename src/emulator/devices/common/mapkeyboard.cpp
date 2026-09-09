@@ -21,6 +21,21 @@ MapKeyboard::MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     m_rus_switches[1] = 0;
 }
 
+// One line of either table: "name[/modifiers]: value". The grammar is shared,
+// only the left hand side means a different thing in each: a host key name in
+// the .map file, a key of the machine itself in the native table.
+static bool parse_map_line(const std::string &line, std::string &name, std::string &mods, std::string &value)
+{
+    std::vector<std::string> parts = split_string(line, ':', true);
+    if (parts.size() != 2) return false;
+    std::vector<std::string> left = split_string(parts[0], '/', true);
+    if (left.size() < 1 || left.size() > 2) return false;
+    name  = str_trim(left[0]);
+    mods  = (left.size() > 1) ? str_trim(left[1]) : "";
+    value = str_trim(parts[1]);
+    return true;
+}
+
 emulator::Result MapKeyboard::load_config(SystemData *sd)
 {
     emulator::Result res = Keyboard::load_config(sd);
@@ -40,18 +55,10 @@ emulator::Result MapKeyboard::load_config(SystemData *sd)
         {
             std::string line = str_trim(lines[li]);
             if (!line.empty()) {
-                std::vector<std::string> parts = split_string(line, ':', true);
-                if (parts.size() != 2) {
+                std::string key, modificators, value;
+                if (!parse_map_line(line, key, modificators, value)) {
                     return emulator::Result::error(emulator::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Map file entry is incorrect")) + "} " + line);
                 }
-                std::vector<std::string> left_parts = split_string(parts[0], '/', true);
-                if (left_parts.size() < 1 || left_parts.size() > 2) {
-                    return emulator::Result::error(emulator::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Map file entry is incorrect")) + "} " + line);
-                }
-
-                std::string key = str_trim(left_parts[0]);
-                std::string modificators = (left_parts.size() > 1) ? str_trim(left_parts[1]) : "";
-                std::string value = str_trim(parts[1]);
                 key_map.push_back({
                     translate_key(key),
                     parse_numeric_value(value),
@@ -114,6 +121,9 @@ emulator::Result MapKeyboard::load_config(SystemData *sd)
 
     i_ready.change(1);
 
+    //Both tables exist by now, so the two namings can be matched up
+    build_code_to_id();
+
     return emulator::Result::ok();
 }
 
@@ -133,9 +143,35 @@ void MapKeyboard::set_rus(bool new_rus)
 
 void MapKeyboard::send_key(unsigned int value)
 {
+    m_last_value = value;
     port_value->set_value_word(value, value); // To use both port & port-address
     i_ready.change(0);
     i_ready.change(1);
+}
+
+// ПОВТ does not carry a code of its own: it makes the keyboard repeat the last
+// one. Sending it again and keeping the "a key is held" line up is enough -
+// the БК monitor's own auto repeat takes it from there.
+void MapKeyboard::repeat_key(const std::string &id, bool press)
+{
+    if (press) {
+        if (m_last_value == _FFFF) return;
+        bool known = false;
+        for (size_t i = 0; i < ids_down.size(); i++)
+            if (ids_down[i] == id) { known = true; break; }
+        if (!known) {
+            ids_down.push_back(id);
+            update_pressed();
+        }
+        send_key(m_last_value);
+    } else {
+        for (size_t i = 0; i < ids_down.size(); i++)
+            if (ids_down[i] == id) {
+                ids_down.erase(ids_down.begin() + i);
+                update_pressed();
+                break;
+            }
+    }
 }
 
 // Some machines have a line telling whether any key is held at the moment,
@@ -144,7 +180,7 @@ void MapKeyboard::send_key(unsigned int value)
 // after it has been read.
 void MapKeyboard::update_pressed()
 {
-    i_pressed.change(keys_held.empty()? 0 : 1);
+    i_pressed.change((keys_held.empty() && ids_down.empty())? 0 : 1);
 }
 
 void MapKeyboard::key_down(unsigned int key)
@@ -156,6 +192,9 @@ void MapKeyboard::key_down(unsigned int key)
         keys_held.push_back(key);
         update_pressed();
     }
+
+    //So that typing on the real keyboard lights the drawing up as well
+    note_id(id_of_code(key), true);
 
     if (key == EmuKey::Control)
         ctrl_pressed = true;
@@ -224,6 +263,109 @@ void MapKeyboard::key_up(unsigned int key)
         ctrl_pressed = false;
     else if (key == EmuKey::Shift)
         shift_pressed = false;
+
+    note_id(id_of_code(key), false);
+}
+
+emulator::Result MapKeyboard::parse_key_table(const std::vector<std::string> &body, const std::string &file)
+{
+    for (size_t i = 0; i < body.size(); i++)
+    {
+        std::string name, mods, value;
+        if (!parse_map_line(body[i], name, mods, value))
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Key table entry is incorrect")) + "} " + body[i] + " (" + file + ")");
+
+        id_map.push_back({
+            name,
+            parse_numeric_value(value),
+            (mods.find('S') != std::string::npos),
+            (mods.find('C') != std::string::npos),
+            (mods.find('R') != std::string::npos),
+            (mods.find('L') != std::string::npos)
+        });
+        register_key_id(name);
+    }
+    return emulator::Result::ok();
+}
+
+// An entry matching the Rus register wins, otherwise the register is ignored -
+// that is how a machine with no separate Rus entries, like the БК, keeps working.
+int MapKeyboard::find_id_entry(const std::string &id, bool shift, bool lcase, bool match_rus) const
+{
+    for (size_t i = 0; i < id_map.size(); i++)
+        if (id_map[i].id == id
+            && id_map[i].ctrl  == ctrl_pressed
+            && id_map[i].shift == shift
+            && id_map[i].lcase == lcase
+            && (!match_rus || id_map[i].rus == rus_mode))
+            return int(i);
+    return -1;
+}
+
+void MapKeyboard::send_key_id(const std::string &id, bool press)
+{
+    if (!press) {
+        for (size_t i = 0; i < ids_down.size(); i++)
+            if (ids_down[i] == id) {
+                ids_down.erase(ids_down.begin() + i);
+                update_pressed();
+                break;
+            }
+        return;
+    }
+
+    //The momentary shift wins over the latch: it is the key the user is
+    //holding right now. The latch applies only where the table declares a /L
+    //entry, so a key without one keeps sending what it always sends.
+    const bool want_shift = shift_pressed;
+    const bool want_lcase = !shift_pressed && case_shift();
+
+    int found = find_id_entry(id, want_shift, want_lcase, true);
+    if (found < 0) found = find_id_entry(id, want_shift, want_lcase, false);
+    if (found < 0 && want_lcase) {
+        //No letter-case form: this key is not one the latch touches
+        found = find_id_entry(id, want_shift, false, true);
+        if (found < 0) found = find_id_entry(id, want_shift, false, false);
+    }
+    if (found < 0) return;
+
+    bool known = false;
+    for (size_t i = 0; i < ids_down.size(); i++)
+        if (ids_down[i] == id) { known = true; break; }
+    if (!known) {
+        ids_down.push_back(id);
+        update_pressed();
+    }
+
+    //АР2 does not have entries of its own: it shifts whatever the key sends,
+    //which is how the БК gets its graphics and screen-control codes
+    send_key(id_map[found].value + (alt_pressed ? m_alt_add : 0));
+}
+
+// Two entries that send the same byte under the same modifiers describe the
+// same key of the machine, which is all the highlight needs to follow typing
+// on the real keyboard. Aliases (ret and ret2 on the БК) map to the same id.
+void MapKeyboard::build_code_to_id()
+{
+    for (size_t i = 0; i < key_map.size(); i++)
+        for (size_t j = 0; j < id_map.size(); j++)
+            if (key_map[i].value == id_map[j].value
+                && key_map[i].shift == id_map[j].shift
+                && key_map[i].ctrl  == id_map[j].ctrl
+                && key_map[i].rus   == id_map[j].rus
+                && !id_map[j].lcase)
+            {
+                code_to_id.push_back(std::make_pair(key_map[i].key_code, id_map[j].id));
+                break;
+            }
+}
+
+std::string MapKeyboard::id_of_code(unsigned int code) const
+{
+    for (size_t i = 0; i < code_to_id.size(); i++)
+        if (code_to_id[i].first == code) return code_to_id[i].second;
+    return "";
 }
 
 void MapKeyboard::reset(bool cool)
@@ -231,6 +373,7 @@ void MapKeyboard::reset(bool cool)
     Keyboard::reset(cool);
 
     keys_held.clear();
+    ids_down.clear();
     update_pressed();
 
     if (code_ruslat != 0)

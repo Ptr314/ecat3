@@ -68,9 +68,11 @@ def parse_cfg_metadata(cfg_path):
         m = re.search(r'order\s*=\s*(-?\d+)', block)
         if m: order = int(m.group(1))
 
-    # Find all "image = file" and "map = file" references (word boundary to avoid matching "charmap")
+    # Files a config refers to: ROM/disk images, the host keyboard map, and the
+    # native key table with the keyboard drawing the on-screen keyboard needs.
+    # The line must start with the parameter, or "charmap" would match too.
     files = []
-    for m in re.finditer(r'^\s*(?:image|map)\s*=\s*(\S+)', content, re.MULTILINE):
+    for m in re.finditer(r'^\s*(?:image|map|keys|picture)\s*=\s*(\S+)', content, re.MULTILINE):
         files.append(m.group(1))
 
     return {

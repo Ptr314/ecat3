@@ -82,6 +82,76 @@ void wasm_key_event(int key, int modifiers, int press)
     }
 }
 
+// The on-screen keyboard speaks the machine's own key names, not host codes,
+// so this path skips the ЙЦУКЕН -> ЯВЕРТЬ remap entirely.
+EMSCRIPTEN_KEEPALIVE
+void wasm_key_event_id(const char* id, int press)
+{
+    if (g_emulator && g_emulator->loaded && id != nullptr) {
+        g_emulator->key_event_id(std::string(id), press != 0);
+    }
+}
+
+// ccall(..., "string") copies the result at once, so one static buffer is safe
+static Keyboard * wasm_keyboard()
+{
+    if (!g_emulator || !g_emulator->loaded || g_emulator->dm == nullptr) return nullptr;
+    return dynamic_cast<Keyboard*>(g_emulator->dm->get_device_by_name("keyboard", false));
+}
+
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_keyboard_picture()
+{
+    static std::string result;
+    Keyboard * k = wasm_keyboard();
+    result = (k != nullptr) ? k->picture_file() : "";
+    return result.c_str();
+}
+
+// 0 hold, 1 toggle, 2 tap -- see Keyboard::ClickMode. The policy belongs to the
+// core so that the page and the desktop window treat a modifier the same way.
+EMSCRIPTEN_KEEPALIVE
+int wasm_key_click_mode(const char* id)
+{
+    Keyboard * k = wasm_keyboard();
+    if (k == nullptr || id == nullptr) return 0;
+    return static_cast<int>(k->click_mode(std::string(id)));
+}
+
+// The keys this machine actually has, so the page can light up and wire only
+// those, the way the desktop window does.
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_key_ids()
+{
+    static std::string result;
+    result.clear();
+    Keyboard * k = wasm_keyboard();
+    if (k != nullptr) {
+        const std::vector<std::string> &ids = k->key_ids();
+        for (size_t i = 0; i < ids.size(); i++) {
+            if (i > 0) result += ",";
+            result += ids[i];
+        }
+    }
+    return result.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_keys_pressed()
+{
+    static std::string result;
+    result.clear();
+    Keyboard * k = wasm_keyboard();
+    if (k != nullptr) {
+        const std::vector<std::string> held = k->ids_held();
+        for (size_t i = 0; i < held.size(); i++) {
+            if (i > 0) result += ",";
+            result += held[i];
+        }
+    }
+    return result.c_str();
+}
+
 EMSCRIPTEN_KEEPALIVE
 void wasm_reset(int cold)
 {

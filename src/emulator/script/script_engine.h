@@ -199,6 +199,9 @@ private:
     unsigned int                m_key_delay;
     unsigned int                m_key_hold;
     std::vector<unsigned int>   m_held_keys;    //Pressed by KEYDOWN, not yet released
+    //Machine keys pressed by id. Released through the id path they were
+    //pressed with: a release of an untranslated code would not match.
+    std::vector<std::string>    m_held_ids;
 
     size_t                      m_wait_pc;      //Index of the active WAITFOR
     uint64_t                    m_wait_deadline;

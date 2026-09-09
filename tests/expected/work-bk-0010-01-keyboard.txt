@@ -1,0 +1,37 @@
+=== исходное состояние: защелки регистров ===
+[keyboard.pressed] key_zagl,key_lat
+=== набор клавишами машины доходит до Бейсика ===
+=== ПОВТ повторяет последний посланный код ===
+[port-kbd-code.value] &000012
+[keyboard.pressed] key_povt,key_zagl,key_lat
+=== СТОП прерывает программу ===
+=== одна клавиша в двух регистрах ===
+[port-kbd-code.value] &000061
+[keyboard.pressed] key_1,key_zagl,key_lat
+[port-kbd-code.value] &000041
+=== регистр букв: ЛАТ+ЗАГЛ, ЛАТ+СТР, РУС+СТР, РУС+ЗАГЛ ===
+[port-kbd-code.value] &000101
+[port-kbd-code.value] &000141
+[port-kbd-code.value] &000101
+[port-kbd-code.value] &000141
+=== цифра под защелкой регистра не меняется ===
+[port-kbd-code.value] &000061
+[keyboard.pressed] key_zagl,key_rus
+=== функциональные клавиши ===
+[port-kbd-code.value] &000003
+[port-kbd-code.value] &000014
+[port-kbd-code.value] &000023
+[port-kbd-code.value] &000202
+[port-kbd-code.value] &000200
+=== РУС и ЛАТ переключают шрифт и шлют коды ===
+[port-kbd-code.value] &000016
+[keyboard.rus] &000001
+[keyboard.pressed] key_zagl,key_rus
+[port-kbd-code.value] &000017
+[keyboard.rus] &000000
+=== АР2 поднимает код на 100 ===
+[port-kbd-code.value] &000102
+[port-kbd-code.value] &000202
+=== клавиша Ъ: код 137, в нижнем регистре 177 ===
+[port-kbd-code.value] &000137
+[port-kbd-code.value] &000177

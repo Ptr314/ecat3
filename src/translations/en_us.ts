@@ -87,7 +87,7 @@
 <context>
     <name>Agat_FDC840</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_fdc840.cpp" line="+42"/>
+        <location filename="../emulator/devices/specific/agat_fdc840.cpp" line="+49"/>
         <source>Incorrect fdd list for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -119,17 +119,17 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+640"/>
+        <location filename="../emulator/core.cpp" line="+642"/>
         <source>No CPU clock value found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+172"/>
+        <location line="+181"/>
         <source>Command &apos;setreg&apos; expects a name and a value</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-155"/>
+        <location line="-164"/>
         <source>Invalid breakpoint address</source>
         <translation type="unfinished"></translation>
     </message>
@@ -137,7 +137,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location line="-1025"/>
+        <location line="-1027"/>
         <source>Incorrect interface definition for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -502,7 +502,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+141"/>
+        <location filename="../emulator/emulator.cpp" line="+153"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -572,7 +572,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+301"/>
+        <location line="+303"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -582,7 +582,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-517"/>
+        <location line="-519"/>
         <source>Incorrect fdd parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -619,13 +619,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+274"/>
+        <location line="+276"/>
         <location line="+15"/>
         <source>Error exporting disk.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+148"/>
+        <location line="+207"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -713,6 +713,32 @@
     </message>
 </context>
 <context>
+    <name>Keyboard</name>
+    <message>
+        <location filename="../emulator/devices/common/keyboard.cpp" line="+246"/>
+        <source>This keyboard type has no native key table support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Key table file not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Error reading key table file</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>KeyboardWindow</name>
+    <message>
+        <location filename="../dialogs/keyboardwindow.cpp" line="+262"/>
+        <source>Keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <location filename="../mainwindow.ui" line="+69"/>
@@ -730,7 +756,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="+43"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
@@ -757,7 +783,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+844"/>
+        <location filename="../mainwindow.cpp" line="+889"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -803,12 +829,24 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location line="+15"/>
+        <location filename="../mainwindow.cpp" line="+376"/>
+        <source>Keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location filename="../mainwindow.cpp" line="-584"/>
+        <source>On-screen keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+113"/>
         <source>Language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-217"/>
+        <location line="-235"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -823,20 +861,20 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-489"/>
+        <location filename="../mainwindow.cpp" line="-305"/>
         <location line="+50"/>
-        <location line="+492"/>
-        <location line="+49"/>
+        <location line="+516"/>
+        <location line="+59"/>
         <location line="+61"/>
         <location line="+66"/>
-        <location line="+326"/>
+        <location line="+349"/>
         <location line="+29"/>
         <location line="+88"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1111"/>
+        <location line="-1168"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -857,12 +895,12 @@
     </message>
     <message>
         <location line="+10"/>
-        <location line="+589"/>
+        <location line="+623"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-586"/>
+        <location line="-620"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -927,13 +965,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+289"/>
+        <location line="+313"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+92"/>
+        <location line="+102"/>
         <source>Load a file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -973,22 +1011,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+473"/>
+        <location line="+89"/>
+        <source>This machine has no usable keyboard picture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+407"/>
         <source>The configuration did not load.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-135"/>
+        <location filename="../mainwindow.ui" line="-136"/>
         <source>Action recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+24"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+213"/>
+        <location line="+231"/>
         <source>Open recording...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1112,7 +1155,7 @@
 <context>
     <name>MapKeyboard</name>
     <message>
-        <location filename="../emulator/devices/common/mapkeyboard.cpp" line="+31"/>
+        <location filename="../emulator/devices/common/mapkeyboard.cpp" line="+46"/>
         <source>Keyboard map file is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1123,12 +1166,11 @@
     </message>
     <message>
         <location line="+10"/>
-        <location line="+4"/>
         <source>Map file entry is incorrect</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+28"/>
         <source>rus-on should be 0 or 1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1145,6 +1187,11 @@
     <message>
         <location line="+10"/>
         <source>rus_switches should have two values separated by &apos;/&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+159"/>
+        <source>Key table entry is incorrect</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1184,12 +1231,12 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location line="+688"/>
+        <location line="+699"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+85"/>
+        <location line="+91"/>
         <location filename="../emulator/devices/common/page_mapper.cpp" line="+47"/>
         <source>Incorrect range for</source>
         <translation type="unfinished"></translation>
@@ -1264,7 +1311,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-511"/>
+        <location filename="../emulator/core.cpp" line="-528"/>
         <source>Incorrect access mode</source>
         <translation type="unfinished"></translation>
     </message>

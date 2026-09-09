@@ -757,6 +757,15 @@ void Emulator::key_event(int key, int modifiers, bool press)
     }
 }
 
+// A key of the machine's own keyboard, pressed on the drawing of it. It carries
+// an id instead of a host code, so nothing here goes through rus_translate():
+// the picture already shows the machine's layout.
+void Emulator::key_event_id(const std::string &id, bool press)
+{
+    if (!keyboard || !display) return;
+    keyboard->key_event_id(id, press);
+}
+
 void Emulator::set_volume(int value)
 {
     if (loaded) {

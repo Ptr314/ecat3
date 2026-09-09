@@ -191,6 +191,143 @@ function setupKeyboard(module) {
 }
 
 // ============================================================================
+// On-screen keyboard
+// ============================================================================
+//
+// The drawing is the same SVG the desktop uses. Keys are elements whose id is
+// the machine's own name for them ("key_1"), so no table has to be mirrored
+// here: the id goes straight back to the emulator.
+
+let kbdPollTimer = null;
+let kbdShown = new Set();
+let kbdHeldId = null;
+let kbdLatched = [];
+
+function kbdRelease(module) {
+    if (kbdHeldId !== null) {
+        module.ccall("wasm_key_event_id", null, ["string", "number"], [kbdHeldId, 0]);
+        kbdHeldId = null;
+    }
+}
+
+function kbdReleaseAll(module) {
+    kbdRelease(module);
+    for (const id of kbdLatched)
+        module.ccall("wasm_key_event_id", null, ["string", "number"], [id, 0]);
+    kbdLatched = [];
+}
+
+function kbdPoll(module, panel) {
+    const text = module.ccall("wasm_keys_pressed", "string", [], []);
+    const now = new Set(text ? text.split(",") : []);
+
+    for (const id of kbdShown)
+        if (!now.has(id)) {
+            const el = panel.querySelector("#" + CSS.escape(id));
+            if (el) el.classList.remove("pressed");
+        }
+    for (const id of now)
+        if (!kbdShown.has(id)) {
+            const el = panel.querySelector("#" + CSS.escape(id));
+            if (el) el.classList.add("pressed");
+        }
+    kbdShown = now;
+}
+
+function setupOnScreenKeyboard(module) {
+    const panel = document.getElementById("kbd-panel");
+    const button = document.getElementById("btn-keyboard");
+
+    if (kbdPollTimer !== null) { clearInterval(kbdPollTimer); kbdPollTimer = null; }
+    kbdReleaseAll(module);
+    kbdShown = new Set();
+    panel.innerHTML = "";
+    panel.hidden = true;
+
+    const path = module.ccall("wasm_keyboard_picture", "string", [], []);
+    if (!path) { button.disabled = true; return; }
+
+    let svg;
+    try {
+        svg = module.FS.readFile(path, { encoding: "utf8" });
+    } catch (e) {
+        console.warn("Keyboard picture not readable:", path, e);
+        button.disabled = true;
+        return;
+    }
+
+    // The picture is machine data, not code: a <script> in it would run with
+    // the page's privileges, so it goes before the drawing reaches the DOM
+    panel.innerHTML = svg.replace(/<script[\s\S]*?<\/script>/gi, "");
+
+    // Only the keys the machine really has react, the way the desktop window
+    // does: a drawing shared between machines then lights up just what fits
+    const ids = module.ccall("wasm_key_ids", "string", [], []);
+    const known = new Set(ids ? ids.split(",") : []);
+    let found = 0;
+    for (const el of panel.querySelectorAll('[id^="key_"]')) {
+        if (known.has(el.id)) found++;
+        else el.classList.add("unknown");
+    }
+    if (!found) {
+        panel.innerHTML = "";
+        button.disabled = true;
+        return;
+    }
+    button.disabled = false;
+
+    const keyOf = (target) => {
+        const el = target.closest ? target.closest('[id^="key_"]') : null;
+        return (el && known.has(el.id)) ? el.id : null;
+    };
+
+    const send = (id, press) =>
+        module.ccall("wasm_key_event_id", null, ["string", "number"], [id, press ? 1 : 0]);
+
+    panel.addEventListener("pointerdown", (e) => {
+        const id = keyOf(e.target);
+        if (id === null) return;
+        e.preventDefault();
+
+        // A finger or a mouse has one contact point, so a modifier the hardware
+        // expects to be held is clicked on and off instead. The core decides
+        // which is which, so the page and the desktop window agree.
+        const mode = module.ccall("wasm_key_click_mode", "number", ["string"], [id]);
+        if (mode === 2) {
+            send(id, true);
+            send(id, false);
+        } else if (mode === 1) {
+            const at = kbdLatched.indexOf(id);
+            if (at >= 0) { kbdLatched.splice(at, 1); send(id, false); }
+            else { kbdLatched.push(id); send(id, true); }
+        } else {
+            send(id, true);
+            kbdHeldId = id;
+            if (e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId);
+        }
+        kbdPoll(module, panel);
+    });
+
+    const up = (e) => { if (kbdHeldId !== null) { kbdRelease(module); kbdPoll(module, panel); } };
+    panel.addEventListener("pointerup", up);
+    panel.addEventListener("pointercancel", up);
+    panel.addEventListener("lostpointercapture", up);
+    window.addEventListener("blur", up);
+    document.addEventListener("visibilitychange", () => { if (document.hidden) up(); });
+
+    button.onclick = () => {
+        panel.hidden = !panel.hidden;
+        if (panel.hidden) {
+            clearInterval(kbdPollTimer);
+            kbdPollTimer = null;
+            kbdReleaseAll(module);
+        } else if (kbdPollTimer === null) {
+            kbdPollTimer = setInterval(() => kbdPoll(module, panel), 40);
+        }
+    };
+}
+
+// ============================================================================
 // Machine loading
 // ============================================================================
 
@@ -288,6 +425,9 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl) {
         document.getElementById("btn-reset").disabled = false;
         document.getElementById("btn-cold-reset").disabled = false;
         document.getElementById("disk-file").disabled = false;
+
+        // The drawing belongs to the machine, so it is rebuilt on every load
+        setupOnScreenKeyboard(module);
 
     } catch (err) {
         console.error("loadMachine error:", err);

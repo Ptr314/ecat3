@@ -38,6 +38,7 @@
 #include "emulator/devices/common/tape.h"
 #include "emulator/script/script_parser.h"
 #include "dialogs/taperecorder.h"
+#include "dialogs/keyboardwindow.h"
 
 #include "libs/lodepng/lodepng.h"
 
@@ -613,6 +614,11 @@ void MainWindow::UpdateToolbar()
         ui->toolBar->removeAction(tape_action);
     }
 
+    if (keyboard_action != nullptr) {
+        ui->toolBar->removeAction(keyboard_action);
+        keyboard_action = nullptr;
+    }
+
     if (buttons_separator != nullptr) {
         ui->toolBar->removeAction(buttons_separator);
     }
@@ -663,6 +669,25 @@ void MainWindow::UpdateToolbar()
         connect(tape_button, &QToolButton::clicked, this, &MainWindow::on_actionTape_triggered);
         tape_action = ui->toolBar->insertWidget(ui->actionDebugger, tape_button);
     }
+
+#ifdef HAVE_QT_SVG
+    //Only for a machine that carries a drawing of its keyboard
+    Keyboard * kbd = dynamic_cast<Keyboard*>(e->dm->get_device_by_name("keyboard", false));
+    const bool has_picture = (kbd != nullptr) && !kbd->picture_file().empty();
+    ui->actionKeyboard->setVisible(has_picture);
+    if (has_picture) {
+        buttons_added++;
+        QToolButton * keyboard_button = new QToolButton();
+        keyboard_button->setIcon(QIcon(":/icons/keyboard"));
+        keyboard_button->setToolTip(tr("On-screen keyboard"));
+        keyboard_button->setFocusPolicy(Qt::NoFocus);
+
+        connect(keyboard_button, &QToolButton::clicked, this, &MainWindow::on_actionKeyboard_triggered);
+        keyboard_action = ui->toolBar->insertWidget(ui->actionDebugger, keyboard_button);
+    }
+#else
+    ui->actionKeyboard->setVisible(false);
+#endif
 
     // Device options
     bool has_hw_buttons = (fdds_found > 0 || tape_devices.size() != 0);
@@ -925,6 +950,16 @@ void MainWindow::load_config(QString file_name, bool set_default)
 
     CreateDevicesMenu();
     UpdateToolbar();
+
+#ifdef HAVE_QT_SVG
+    //An open keyboard window belongs to the machine that is gone by now, so it
+    //either picks up the new drawing or closes
+    KeyboardWindow * kw = findChild<KeyboardWindow*>();
+    if (kw != nullptr) {
+        kw->reload();
+        if (!kw->valid()) kw->close();
+    }
+#endif
 
     e->set_volume(volume->value());
     e->set_muted(mute->isChecked());
@@ -1211,6 +1246,29 @@ void MainWindow::on_actionTape_triggered()
         w->setAttribute(Qt::WA_DeleteOnClose);
         w->show();
     }
+}
+
+void MainWindow::on_actionKeyboard_triggered()
+{
+#ifdef HAVE_QT_SVG
+    KeyboardWindow * w = findChild<KeyboardWindow*>();
+    if (w != nullptr) {
+        w->raise();
+        w->activateWindow();
+        return;
+    }
+
+    w = new KeyboardWindow(this, e);
+    if (!w->valid()) {
+        //A drawing that cannot be used is worse than none: say so instead of
+        //opening an empty window
+        delete w;
+        QMessageBox::warning(this, tr("Keyboard"), tr("This machine has no usable keyboard picture"));
+        return;
+    }
+    w->setAttribute(Qt::WA_DeleteOnClose);
+    w->show();
+#endif
 }
 
 //---------------------------- Action recording ----------------------------//

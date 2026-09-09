@@ -1,0 +1,161 @@
+# БК0010-01: нативная таблица клавиш машины, та же, которой пользуется
+# экранная клавиатура. Имена начинаются с "key_" и обозначают клавишу самой
+# БК, а не хоста, поэтому перекладка ЙЦУКЕН -> ЯВЕРТЬ к ним не применяется.
+#
+# Проверяется то, чего хостовая таблица выразить не может: в bk.map есть
+# запись "!/S", но записи "1/S" нет вовсе, потому что на хосте "!" - отдельная
+# клавиша, а на БК это два регистра одной. Заодно снимаются коды
+# функциональных клавиш, модификатор АР2 и поле keyboard.pressed.
+#
+# Печать идет первой: управляющие коды дальше по сценарию включают режим
+# вывода управляющих символов, и снимать экран после них бессмысленно.
+# Между нажатиями нужна пауза - клавиатура кладет код в порт, и без паузы
+# ПЗУ успевает прочитать только последний.
+# @timeout 30
+
+MACHINE "bk/BK-0010-01.cfg"
+WAIT _2000
+
+LOGDEFS _16,_8
+
+PRINT "=== исходное состояние: защелки регистров ==="
+LOG keyboard.pressed
+
+PRINT "=== набор клавишами машины доходит до Бейсика ==="
+KEYDOWN key_p
+KEYUP key_p
+WAIT _100
+KEYDOWN key_r
+KEYUP key_r
+WAIT _100
+KEYDOWN key_i
+KEYUP key_i
+WAIT _100
+KEYDOWN key_n
+KEYUP key_n
+WAIT _100
+KEYDOWN key_t
+KEYUP key_t
+WAIT _100
+KEYDOWN key_semi
+KEYUP key_semi
+WAIT _100
+KEYDOWN key_2
+KEYUP key_2
+WAIT _100
+KEYDOWN key_enter
+KEYUP key_enter
+WAIT _1500
+
+SCREEN "../results/work-bk-0010-01-keyboard.png"
+
+PRINT "=== ПОВТ повторяет последний посланный код ==="
+KEYDOWN key_povt
+LOG port-kbd-code.value
+LOG keyboard.pressed
+KEYUP key_povt
+
+# СТОП не шлет кода вовсе: он дергает линию HALT процессора, и Бейсик
+# сообщает, на какой строке программа была прервана.
+PRINT "=== СТОП прерывает программу ==="
+TYPE "10 GOTO 10\n"
+TYPE "RUN\n"
+WAIT _2000
+KEYDOWN key_stop
+KEYUP key_stop
+WAIT _2000
+SCREEN "../results/work-bk-0010-01-keyboard-stop.png"
+
+PRINT "=== одна клавиша в двух регистрах ==="
+KEYDOWN key_1
+LOG port-kbd-code.value
+LOG keyboard.pressed
+KEYUP key_1
+KEYDOWN key_shift
+KEYDOWN key_1
+LOG port-kbd-code.value
+KEYUP key_1
+KEYUP key_shift
+
+# Защелка регистра букв: РУС ее переворачивает, потому что в КОИ-7 русские
+# заглавные стоят там же, где латинские строчные. Цифрового ряда защелка не
+# касается вовсе, иначе под ЗАГЛ в русском единица давала бы восклицательный знак.
+PRINT "=== регистр букв: ЛАТ+ЗАГЛ, ЛАТ+СТР, РУС+СТР, РУС+ЗАГЛ ==="
+KEYDOWN key_zagl
+KEYUP key_zagl
+KEYDOWN key_a
+LOG port-kbd-code.value
+KEYUP key_a
+KEYDOWN key_str
+KEYUP key_str
+KEYDOWN key_a
+LOG port-kbd-code.value
+KEYUP key_a
+KEYDOWN key_rus
+KEYUP key_rus
+KEYDOWN key_a
+LOG port-kbd-code.value
+KEYUP key_a
+KEYDOWN key_zagl
+KEYUP key_zagl
+KEYDOWN key_a
+LOG port-kbd-code.value
+KEYUP key_a
+
+PRINT "=== цифра под защелкой регистра не меняется ==="
+KEYDOWN key_1
+LOG port-kbd-code.value
+KEYUP key_1
+LOG keyboard.pressed
+KEYDOWN key_lat
+KEYUP key_lat
+
+PRINT "=== функциональные клавиши ==="
+KEYDOWN key_kt
+LOG port-kbd-code.value
+KEYUP key_kt
+KEYDOWN key_sbr
+LOG port-kbd-code.value
+KEYUP key_sbr
+KEYDOWN key_vs
+LOG port-kbd-code.value
+KEYUP key_vs
+KEYDOWN key_ind_su
+LOG port-kbd-code.value
+KEYUP key_ind_su
+KEYDOWN key_step
+LOG port-kbd-code.value
+KEYUP key_step
+
+PRINT "=== РУС и ЛАТ переключают шрифт и шлют коды ==="
+KEYDOWN key_rus
+LOG port-kbd-code.value
+KEYUP key_rus
+LOG keyboard.rus
+LOG keyboard.pressed
+KEYDOWN key_lat
+LOG port-kbd-code.value
+KEYUP key_lat
+LOG keyboard.rus
+
+PRINT "=== АР2 поднимает код на 100 ==="
+KEYDOWN key_b
+LOG port-kbd-code.value
+KEYUP key_b
+KEYDOWN key_ar2
+KEYDOWN key_b
+LOG port-kbd-code.value
+KEYUP key_b
+KEYUP key_ar2
+
+PRINT "=== клавиша Ъ: код 137, в нижнем регистре 177 ==="
+KEYDOWN key_rcurl
+LOG port-kbd-code.value
+KEYUP key_rcurl
+KEYDOWN key_shift
+KEYDOWN key_rcurl
+LOG port-kbd-code.value
+KEYUP key_rcurl
+KEYUP key_shift
+
+EXIT

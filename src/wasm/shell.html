@@ -145,6 +145,30 @@
 
         #overlay.hidden { display: none; }
 
+        /* On-screen keyboard: the SVG is inlined into the DOM, so the browser
+           draws it and the keys are ordinary elements to click */
+        #kbd-panel {
+            width: 100%;
+            max-width: 1100px;
+            padding: 8px 16px 16px;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #kbd-panel svg { width: 100%; height: auto; display: block; }
+
+        /* A key drawn as an unfilled outline gets no pointer events otherwise */
+        #kbd-panel svg [id^="key_"] { pointer-events: all; cursor: pointer; }
+
+        /* Overriding fill would lose against Inkscape's inline style=, so the
+           highlight is a filter: it keeps the exact silhouette of the key */
+        #kbd-panel svg [id^="key_"].pressed { filter: brightness(1.45) saturate(1.35); }
+
+        /* Drawn, but this machine has no such key */
+        #kbd-panel svg [id^="key_"].unknown { pointer-events: none; cursor: default; }
+
         #overlay-text {
             color: #fff;
             font-size: 24px;
@@ -172,12 +196,15 @@
                 <button>Load Disk</button>
                 <input type="file" id="disk-file" accept=".dsk,.mfm,.hfe,.nib,.nic,.aim" disabled>
             </div>
+            <button id="btn-keyboard" disabled title="On-screen keyboard">Keyboard</button>
         </div>
     </header>
 
     <div id="canvas-container">
         <canvas id="canvas" width="512" height="256" tabindex="0"></canvas>
     </div>
+
+    <div id="kbd-panel" hidden></div>
 
     <div id="status">Initializing...</div>
 

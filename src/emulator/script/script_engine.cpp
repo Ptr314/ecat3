@@ -413,6 +413,10 @@ void ScriptEngine::release_keys()
     for (size_t i = 0; i < m_held_keys.size(); i++)
         e->key_event(static_cast<int>(m_held_keys[i]), 0, false);
     m_held_keys.clear();
+
+    for (size_t i = 0; i < m_held_ids.size(); i++)
+        e->key_event_id(m_held_ids[i], false);
+    m_held_ids.clear();
 }
 
 uint64_t ScriptEngine::get_position_ms(uint64_t clock_now) const
@@ -703,7 +707,28 @@ emulator::Result ScriptEngine::do_keyupdown(const ScriptCommand &c, bool press)
         return emulator::Result::error(emulator::ErrorCode::BadParameters,
             std::string(press?"KEYDOWN":"KEYUP") + " expects a key name");
 
-    unsigned int code = translate_key_name(unescape_text(c.args[0]));
+    const std::string name = unescape_text(c.args[0]);
+
+    //A key of the machine's own keyboard, named the way its picture names it.
+    //Those ids all start with "key_" and no host key name does, so the two
+    //namings never collide; the id path skips the host remap entirely.
+    Keyboard * kbd = dynamic_cast<Keyboard*>(e->dm->get_device_by_name("keyboard", false));
+    if (kbd != nullptr) {
+        const std::vector<std::string> &ids = kbd->key_ids();
+        for (size_t i = 0; i < ids.size(); i++)
+            if (ids[i] == name) {
+                e->key_event_id(name, press);
+                if (press) {
+                    m_held_ids.push_back(name);
+                } else {
+                    for (size_t j = 0; j < m_held_ids.size(); j++)
+                        if (m_held_ids[j] == name) { m_held_ids.erase(m_held_ids.begin() + j); break; }
+                }
+                return emulator::Result::ok();
+            }
+    }
+
+    unsigned int code = translate_key_name(name);
     if (code == _FFFF) {
         log_error(c, "unknown key '" + c.args[0] + "'");
         return emulator::Result::ok();

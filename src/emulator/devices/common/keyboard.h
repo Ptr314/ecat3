@@ -6,6 +6,7 @@
 #pragma once
 
 #include "emulator/core.h"
+#include "emulator/thread_compat.h"
 
 #define SHIFT_STATE_KEEP    0
 #define SHIFT_STATE_ON      1
@@ -303,15 +304,78 @@ unsigned int translate_key_name(const std::string &key);
 // Empty string for a code that has no name. Used by the script recorder.
 std::string key_name(unsigned int code);
 
+// What a key of the machine's own keyboard does. Everything but KEY_ROLE_NORMAL
+// is declared in the header of the native key table (shift:, ctrl:, rus: ...).
+enum KeyRole {
+    KEY_ROLE_NORMAL = 0,
+    KEY_ROLE_SHIFT,         // momentary upper register
+    KEY_ROLE_CTRL,          // momentary control
+    KEY_ROLE_RUS_TOGGLE,    // one key flipping the alphabet
+    KEY_ROLE_RUS_ON,        // separate РУС, like the БК has
+    KEY_ROLE_RUS_OFF,       // separate ЛАТ
+    KEY_ROLE_CASE_UPPER,    // latching capitals (БК: ЗАГЛ)
+    KEY_ROLE_CASE_LOWER,    // latching small letters (БК: СТР)
+    KEY_ROLE_ALT,           // second control key (БК: АР2), code shifted by alt-add
+    KEY_ROLE_STOP,          // drives the ~stop line instead of sending a code (БК: СТОП)
+    KEY_ROLE_REPEAT         // repeats whatever went last (БК: ПОВТ)
+};
+
 class Keyboard: public ComputerDevice
 {
 protected:
+    // Some keys are not part of the code matrix at all: on the БК СТОП is wired
+    // to the processor's HALT input, so it asserts a line and sends nothing.
+    Interface i_stop;
+
     bool rus_mode;
     bool use_remap = true;
     unsigned int translate_key(const std::string &key);
     bool known_key(unsigned int code);
     unsigned int rus_translate(unsigned int code);
     virtual void set_rus(bool new_rus);
+
+    // The drawing of this machine's keyboard and the table naming its keys.
+    // Both are optional: a machine without them simply has no on-screen keyboard.
+    std::string m_picture_file;
+    std::vector<std::string> m_key_ids;
+    std::vector<std::pair<std::string, KeyRole> > m_key_roles;
+
+    // Ids the machine currently sees as held, in the machine's own naming.
+    // Written by every input path, read by the frontends to light the drawing
+    // up, so it is guarded: the GUI polls it while emulation presses keys.
+    std::vector<std::string> m_ids_held;
+    mutable compat_mutex m_held_mutex;
+
+    // Set by a latching small-letters key (БК: СТР), cleared by the capitals
+    // one (ЗАГЛ). This is not the momentary shift a subclass tracks: it applies
+    // to letters alone, which is why digits keep working under it.
+    bool m_case_lower = false;
+
+    // What the second control key adds to a code. On the БК АР2 raises it by
+    // 100 octal, the same amount СУ takes away, which is how one keyboard
+    // covers six registers.
+    unsigned int m_alt_add = 0;
+
+    void register_key_id(const std::string &id, KeyRole role = KEY_ROLE_NORMAL);
+    void note_id(const std::string &id, bool press);
+    emulator::Result load_key_table(SystemData *sd);
+
+    // Body of the native key table, everything the header did not claim.
+    // The format is per keyboard type, so the base class only splits the file.
+    virtual emulator::Result parse_key_table(const std::vector<std::string> &body, const std::string &file);
+
+    // A key of the machine that carries a code. Modifier keys never reach this.
+    virtual void send_key_id(const std::string &id, bool press) { (void)id; (void)press; }
+
+    // Modifier state, held either by a momentary key or by a latching one.
+    virtual void set_shift_state(bool pressed) { (void)pressed; }
+    virtual void set_ctrl_state(bool pressed) { (void)pressed; }
+    virtual void set_alt_state(bool pressed) { (void)pressed; }
+
+    // Sends whatever the keyboard sent last, once more. The БК repeats it in
+    // the keyboard controller; here the code goes out again and the "a key is
+    // held" line stays up, which is what the monitor's own auto repeat watches.
+    virtual void repeat_key(const std::string &id, bool press) { (void)id; (void)press; }
 
 public:
     Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
@@ -320,10 +384,42 @@ public:
     virtual void key_down(unsigned int key) = 0;
     virtual void key_up(unsigned int key) = 0;
 
+    // A key of the machine's own keyboard, named the way the native table and
+    // the SVG drawing name it. Nothing here is a host key, so rus_translate()
+    // must not run: the picture shows the machine's layout, and pressing Й on
+    // an Орион drawing is EmuKey::Key_J already - remapping it again gives О.
+    virtual void key_event_id(const std::string &id, bool press);
+
+    const std::vector<std::string> & key_ids() const { return m_key_ids; }
+    KeyRole key_role(const std::string &id) const;
+    bool is_latching(const std::string &id) const;
+
+    // How a pointer should treat this key on a drawing of the keyboard. A mouse
+    // or a finger has one contact point, so a modifier the hardware expects to
+    // be held down has to be clicked on and off instead of following the button.
+    // Both frontends ask this, so the policy lives in one place.
+    enum ClickMode {
+        CLICK_HOLD = 0,     // ordinary key: down on press, up on release
+        CLICK_TOGGLE,       // momentary modifier: click it on, click it off
+        CLICK_TAP           // latch: pressed and let go at once, machine keeps the state
+    };
+    ClickMode click_mode(const std::string &id) const;
+
+    // Whether a letter key should send its shifted code right now. The Rus
+    // register inverts the latch, because КОИ-7 puts the Russian capitals
+    // exactly where the Latin small letters are: in ЛАТ "$41" prints A and
+    // "$61" prints a, in РУС "$41" prints а and "$61" prints А. Without the
+    // inversion ЗАГЛ and СТР would swap meaning the moment РУС is pressed.
+    bool case_shift() const { return m_case_lower != rus_mode; }
+    std::vector<std::string> ids_held() const;
+    const std::string & picture_file() const { return m_picture_file; }
+
     // Tells whether the character is only reachable with Shift held on this
     // machine. The scripting engine uses it so that TYPE can produce quotes
     // and other symbols of the upper register.
     virtual bool needs_shift(unsigned int key) { (void)key; return false; }
+
+    void reset(bool cool) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
