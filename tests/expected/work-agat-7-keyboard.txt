@@ -2,7 +2,6 @@
 [keyboard.rus] $00
 [keyboard.pressed] key_lat
 === СБР перезапускает машину и не шлет кода ===
-[cpu.pc] $2A9E
 [port-kbd.value] $00
 [cpu.pc] $FB96
 === буква: сама, с РЕГ и с УПР ===

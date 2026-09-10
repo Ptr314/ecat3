@@ -1,0 +1,147 @@
+# БК0010: режим текстовой графики драйвера ТВ, набранный клавишами машины.
+#
+# Сквозная проверка клавиатуры через ПЗУ. ГРАФ и ЗАП контроллер отдает через
+# второй вектор, 274, и восьмибитные 225 и 226 из них делает обработчик ПЗУ;
+# стрелки идут через 060. Длина отрезка набирается десятичным числом перед
+# стрелкой. Восемь отрезков по 30 точек - вправо, вправо-вниз, вниз,
+# влево-вниз, влево, влево-вверх, вверх, вправо-вверх - замыкаются в
+# правильный восьмиугольник только тогда, когда все коды и оба вектора верны.
+#
+# Фокал для этого не годится: его редактор строки передает драйверу только
+# стрелки влево и вправо, поэтому клавиши читает трехкомандная программа
+# в 001000, которая отдает драйверу все, что пришло с клавиатуры:
+#   001000: EMT 6          ; код клавиши в R0
+#   001002: EMT 16         ; на драйвер ТВ
+#   001004: BR 001000
+#
+# Скрипты БК читаются в восьмеричной системе: WAIT _3000, ram.set16(1000, ...).
+# @timeout 60
+
+MACHINE "bk/BK-0010.cfg"
+WAIT _3000
+
+COMMAND cpu.stop()
+COMMAND ram.set16(1000, 104006, 104016, 775)
+COMMAND cpu.setreg(SP, 1000)
+COMMAND cpu.setreg(PSW, 0)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+WAIT _200
+
+# ГРАФ, затем курсор без записи - 100 точек вниз и 120 вправо, к середине
+KEYDOWN key_graph
+KEYUP key_graph
+WAIT _150
+KEYDOWN key_1
+KEYUP key_1
+WAIT _150
+KEYDOWN key_0
+KEYUP key_0
+WAIT _150
+KEYDOWN key_0
+KEYUP key_0
+WAIT _150
+KEYDOWN key_down
+KEYUP key_down
+WAIT _150
+KEYDOWN key_1
+KEYUP key_1
+WAIT _150
+KEYDOWN key_2
+KEYUP key_2
+WAIT _150
+KEYDOWN key_0
+KEYUP key_0
+WAIT _150
+KEYDOWN key_right
+KEYUP key_right
+WAIT _150
+
+# ЗАП: дальше курсор оставляет след
+KEYDOWN key_zap
+KEYUP key_zap
+WAIT _150
+
+# Восемь сторон по 30 точек
+KEYDOWN key_3
+KEYUP key_3
+WAIT _150
+KEYDOWN key_0
+KEYUP key_0
+WAIT _150
+KEYDOWN key_right
+KEYUP key_right
+WAIT _300
+
+KEYDOWN key_3
+KEYUP key_3
+WAIT _150
+KEYDOWN key_0
+KEYUP key_0
+WAIT _150
+KEYDOWN key_right_down
+KEYUP key_right_down
+WAIT _300
+
+KEYDOWN key_3
+KEYUP key_3
+WAIT _150
+KEYDOWN key_0
+KEYUP key_0
+WAIT _150
+KEYDOWN key_down
+KEYUP key_down
+WAIT _300
+
+KEYDOWN key_3
+KEYUP key_3
+WAIT _150
+KEYDOWN key_0
+KEYUP key_0
+WAIT _150
+KEYDOWN key_left_down
+KEYUP key_left_down
+WAIT _300
+
+KEYDOWN key_3
+KEYUP key_3
+WAIT _150
+KEYDOWN key_0
+KEYUP key_0
+WAIT _150
+KEYDOWN key_left
+KEYUP key_left
+WAIT _300
+
+KEYDOWN key_3
+KEYUP key_3
+WAIT _150
+KEYDOWN key_0
+KEYUP key_0
+WAIT _150
+KEYDOWN key_left_up
+KEYUP key_left_up
+WAIT _300
+
+KEYDOWN key_3
+KEYUP key_3
+WAIT _150
+KEYDOWN key_0
+KEYUP key_0
+WAIT _150
+KEYDOWN key_up
+KEYUP key_up
+WAIT _300
+
+KEYDOWN key_3
+KEYUP key_3
+WAIT _150
+KEYDOWN key_0
+KEYUP key_0
+WAIT _150
+KEYDOWN key_right_up
+KEYUP key_right_up
+WAIT _300
+
+SCREEN "../results/work-bk-0010-graph.png"
+EXIT

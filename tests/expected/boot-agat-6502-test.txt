@@ -1,7 +1,0 @@
-=== Экран ===
-[display.resolution] 512x256
-=== Карта памяти и портов ===
-[mapper.map] 
-        0000-AFFF -> ram1[0000] mode=rw
-        B000-BFFF -> port-irq[0000] mode=rw
-        C000-FFFF -> ram1[C000] mode=rw
