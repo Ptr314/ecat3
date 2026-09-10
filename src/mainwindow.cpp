@@ -126,8 +126,6 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
 #error "Unknown platform"
 #endif
 
-    qDebug() << "emulator_root: " << emulator_root ;
-
     work_path = emulator_root + "/computers/";
     software_path = emulator_root + "/software/";
     data_path = emulator_root + "/data/";
@@ -978,7 +976,6 @@ void MainWindow::load_config(QString file_name, bool set_default)
         {
             QString new_file = file_name.right(file_name.length() - static_cast<int>(e->work_path.length()));
             e->write_setup("Startup", "default", new_file.toStdString());
-            qDebug() << new_file;
         }
     } else {
         qWarning() << "ui->screen->winId() is null!";

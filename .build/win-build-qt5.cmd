@@ -63,6 +63,10 @@ if not exist "%_BUILD_DIR%\ecat3.exe" (
     exit /b 1
 )
 
+REM The on-screen keyboard needs Qt Svg and Qt 5.15 or newer: the Windows 7
+REM kit gets it, the Windows XP one (5.6.3) does not
+call "%~dp0win-common.cmd" svg "%_BUILD_DIR%" "%_RENDERER%" "%_QT_PREFIX%"
+
 call "%~dp0win-common.cmd" reset "%_RELEASE_DIR%" || exit /b 1
 call "%~dp0win-common.cmd" deploy "%_RELEASE_DIR%" || exit /b 1
 copy /y "%_BUILD_DIR%\ecat3.exe" "%_RELEASE_DIR%" >nul || exit /b 1
@@ -76,6 +80,7 @@ echo Copying Qt runtime from "%_QT_PREFIX%"
 copy /y "%_QT_PREFIX%\bin\Qt5Core.dll"    "%_RELEASE_DIR%" >nul || exit /b 1
 copy /y "%_QT_PREFIX%\bin\Qt5Gui.dll"     "%_RELEASE_DIR%" >nul || exit /b 1
 copy /y "%_QT_PREFIX%\bin\Qt5Widgets.dll" "%_RELEASE_DIR%" >nul || exit /b 1
+if "%_SVG%"=="1" copy /y "%_QT_PREFIX%\bin\Qt5Svg.dll" "%_RELEASE_DIR%" >nul || exit /b 1
 
 mkdir "%_RELEASE_DIR%\platforms" || exit /b 1
 copy /y "%_QT_PLUGINS%\platforms\qwindows.dll" "%_RELEASE_DIR%\platforms\" >nul || exit /b 1

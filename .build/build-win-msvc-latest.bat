@@ -106,6 +106,10 @@ if not exist "%_BUILD_DIR%\%_EXE_NAME%" (
     exit /b 1
 )
 
+REM The on-screen keyboard is compiled in only when the kit has Qt Svg. A build
+REM without it looks like any other, so say it out loud
+call "%~dp0win-common.cmd" svg "%_BUILD_DIR%" "%_RENDERER%" "%_QT_KIT%"
+
 call "%~dp0win-common.cmd" reset "%_RELEASE_DIR%" || exit /b 1
 call "%~dp0win-common.cmd" deploy "%_RELEASE_DIR%" || exit /b 1
 copy /y "%_BUILD_DIR%\%_EXE_NAME%" "%_RELEASE_DIR%" >nul || exit /b 1
@@ -119,6 +123,7 @@ if /I "%_RENDERER%"=="HEADLESS" (
     copy /y "%_QT_KIT%\bin\Qt6Core.dll"    "%_RELEASE_DIR%" >nul || exit /b 1
     copy /y "%_QT_KIT%\bin\Qt6Gui.dll"     "%_RELEASE_DIR%" >nul || exit /b 1
     copy /y "%_QT_KIT%\bin\Qt6Widgets.dll" "%_RELEASE_DIR%" >nul || exit /b 1
+    if "%_SVG%"=="1" copy /y "%_QT_KIT%\bin\Qt6Svg.dll" "%_RELEASE_DIR%" >nul || exit /b 1
 
     if /I "%_RENDERER%"=="OPENGL" (
         copy /y "%_QT_KIT%\bin\Qt6OpenGL.dll"        "%_RELEASE_DIR%" >nul || exit /b 1

@@ -12,6 +12,9 @@ cmake-*/
 .qtcreator/
 .claude/
 
+# Генерируется из globals.h.in при настройке cmake
+src/globals.h
+
 # Результаты прогона тестов (эталоны в tests/expected коммитятся)
 tests/results/
 __pycache__/

@@ -79,8 +79,15 @@ for RENDERER in "${RENDERERS[@]}"; do
     cmake -S ../src -B "${BUILD_DIR}" -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_PREFIX_PATH="${QT_PATH}" \
-        -DRENDERER_${RENDERER^^}=1 \n        -DENABLE_MCP=${ENABLE_MCP}
+        -DRENDERER_${RENDERER^^}=1 \
+        -DENABLE_MCP=${ENABLE_MCP}
     cmake --build "${BUILD_DIR}"
+
+    # The on-screen keyboard is compiled in only when Qt has the Svg module;
+    # linuxdeployqt then picks libQt6Svg up by itself
+    if ! grep -q HAVE_QT_SVG "${BUILD_DIR}/build.ninja"; then
+        echo "WARNING: no Qt Svg in ${QT_PATH}: the on-screen keyboard is left out of this build" >&2
+    fi
 
     # The AppDir is recreated from scratch, otherwise leftovers from an earlier
     # build (configs of a machine that was renamed, say) end up in the AppImage.

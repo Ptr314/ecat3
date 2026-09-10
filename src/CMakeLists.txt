@@ -39,10 +39,9 @@ endif()
 if(ENABLE_GUI)
     find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
     find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
-    # Optional: the on-screen keyboard draws an SVG through QSvgRenderer. The
-    # module is missing from the static Windows kit (BUILD.md configures it as
-    # qtbase,qttools,qttranslations) and from the Qt5 kits, so the feature
-    # compiles out instead of breaking those builds.
+    # Optional: the on-screen keyboard draws an SVG through QSvgRenderer. A kit
+    # built without the qtsvg module (a static Qt configured with -submodules
+    # that leaves it out, see BUILD.md) simply goes without the keyboard.
     find_package(Qt${QT_VERSION_MAJOR} QUIET COMPONENTS Svg)
 endif()
 
@@ -446,11 +445,17 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 # The flag is set on this target only: eCat3-headless is built from the same
-# directory and must not see it
-if(TARGET Qt${QT_VERSION_MAJOR}::Svg)
+# directory and must not see it. QSvgRenderer::transformForElement(), which
+# places a key drawn inside a moved layer, exists from Qt 5.15 on: the Windows
+# XP kit (5.6.3) has the module but not the call, so it goes without the keyboard.
+# The release scripts look for HAVE_QT_SVG in build.ninja to decide whether the
+# Svg library has to be shipped.
+if(TARGET Qt${QT_VERSION_MAJOR}::Svg AND QT_VERSION VERSION_GREATER_EQUAL 5.15)
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Svg)
     target_compile_definitions(${PROJECT_NAME} PRIVATE HAVE_QT_SVG)
     message(STATUS "Qt Svg found: the on-screen keyboard is enabled")
+elseif(TARGET Qt${QT_VERSION_MAJOR}::Svg)
+    message(STATUS "Qt ${QT_VERSION} is older than 5.15: the on-screen keyboard is disabled")
 else()
     message(STATUS "Qt Svg not found: the on-screen keyboard is disabled")
 endif()

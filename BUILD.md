@@ -106,10 +106,14 @@ cd репозиторий-приложения\.build
 C:\DEV\venv\Scripts\activate.bat
 mkdir C:\Temp\qt-build
 cd C:\Temp\qt-build
-configure.bat -static -static-runtime -release -opensource -confirm-license -nomake examples -nomake tests -submodules qtbase,qttools,qttranslations -platform win32-msvc -prefix %_QT_PREFIX_STATIC%
+configure.bat -static -static-runtime -release -opensource -confirm-license -nomake examples -nomake tests -submodules qtbase,qtsvg,qttools,qttranslations -platform win32-msvc -prefix %_QT_PREFIX_STATIC%
 cmake --build . --parallel
 cmake --install .
 ```
+
+Модуль `qtsvg` нужен экранной клавиатуре (окно с рисунком клавиатуры машины). Без него программа собирается, но без клавиатуры: CMake пишет `Qt Svg not found: the on-screen keyboard is disabled`, скрипты выпуска повторяют это предупреждением. Набор, собранный раньше без `qtsvg`, придется пересобрать; есть ли модуль в готовом наборе, видно по каталогу `lib\cmake\Qt6Svg` внутри `%_QT_PREFIX_STATIC%`.
+
+Статический набор для MinGW собирается той же командой в окружении `vars-mingw-latest.cmd`, с `-platform win32-g++` вместо `win32-msvc`; устанавливается он в `_QT_PREFIX_STATIC` из этого файла.
 
 ##### Qt5 для Windows 7
 
@@ -130,6 +134,7 @@ mingw32-make install
 * `-no-opengl` используется для исключения установки OpenGL SDK.
 * `-skip qtdeclarative` позволяет избежать необходимости в установке Python, но отключает модули QtQuick, QtQml и некоторые другие.
 * `-skip qtlocation` исключает непонятную ошибку компиляции в этом модуле
+* `qtsvg` собирается по умолчанию: он нужен экранной клавиатуре, и скрипт выпуска кладет `Qt5Svg.dll` рядом с программой.
 
 ##### Qt5 для Windows XP
 
@@ -144,6 +149,8 @@ configure.bat -release -nomake examples -nomake tests -opensource -confirm-licen
 mingw32-make
 mingw32-make install
 ```
+
+Экранной клавиатуры в сборке для XP нет: ей нужен Qt 5.15 и новее (`QSvgRenderer::transformForElement`), и CMake выключает ее сам, даже если `qtsvg` в наборе есть.
 
 #### 4. Обновление языковых файлов
 
@@ -214,6 +221,7 @@ sudo xcodebuild -license
 * Распаковка происходит в `/tmp`.
 * Установка происходит в `~/Qt-$QT_VERSION-static-universal`.
 * После установки можно отдельно скопировать Qt в `/usr/local` и установить системные пути при необходимости.
+* Скрипт собирает все модули Qt, в том числе `qtsvg`, нужный экранной клавиатуре; ограничивать набор ключом `-submodules` без него нельзя.
 
 Перед запуском нужно актуализировать пути в первых строках файла.
 

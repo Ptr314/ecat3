@@ -4,10 +4,46 @@
 
 Копия текста лицензии должна поставляться вместе с программой, в противном случае вы можете найти ее по адресу <http://www.gnu.org/licenses/>
 
-Автор: Panther <http://www.emuverse.ru/wiki/User:Panther>
+Автор: Mikhail Revzin <http://www.emuverse.ru/wiki/User:Panther>
+
+Рисунки экранной клавиатуры (файлы *_keyboard.svg в каталоге computers/), Copyright (c) 2026 Mikhail Revzin, распространяются под лицензией Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) <https://creativecommons.org/licenses/by-sa/4.0/>.
 
 При создании программы использовались следующие сторонние разработки:
 
 Логотип: символ микросхемы <http://commons.wikimedia.org/wiki/File:Integrated_circuit_icon.svg>, созданный <http://commons.wikimedia.org/wiki/User:Ysangkok>, и распространяемый под лицензией GNU FDL.
 
 Кнопки и значки меню: набор Nuvola by David Vignoni <http://www.icon-king.com/projects/nuvola/>, распространяемый под лицензией GNU LGPL.
+
+Библиотека Qt <https://www.qt.io/>, The Qt Company Ltd., распространяемая под лицензией GNU LGPL версии 3. Исходные тексты Qt доступны по адресу <https://download.qt.io/>. Исходные тексты eCat3 открыты, поэтому программу можно пересобрать с другой версией Qt, в том числе при статической сборке.
+
+Библиотека SDL2 <https://www.libsdl.org/>, Copyright (C) 1997-2025 Sam Lantinga, распространяемая под лицензией zlib. Используется в сборках с выводом видео или звука через SDL2.
+
+Звуковая библиотека miniaudio <https://miniaud.io/>, David Reid, распространяемая как общественное достояние (public domain) или под лицензией MIT-0 на выбор.
+
+Библиотека LodePNG <https://github.com/lvandeve/lodepng>, Copyright (c) 2005-2023 Lode Vandevenne, распространяемая под лицензией zlib.
+
+Библиотека MD4C <https://github.com/mity/md4c>, Copyright (c) 2016-2024 Martin Mitáš, распространяемая под лицензией MIT.
+
+Библиотека mINI <https://github.com/metayeti/mINI>, Copyright (c) 2018 Danijel Durakovic, распространяемая под лицензией MIT.
+
+Библиотека PicoJSON <https://github.com/kazuho/picojson>, Copyright 2009-2010 Cybozu Labs, Inc., Copyright 2011-2014 Kazuho Oku, распространяемая под лицензией BSD (2 пункта). Используется в сборках с сервером MCP.
+
+Тексты лицензий MIT и BSD требуют сохранять в копиях следующее уведомление:
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+Образы ПЗУ, дисков и программ эмулируемых компьютеров (каталоги computers/ и software/) созданы их авторами и не подпадают под лицензию этой программы. Они включены для сохранения и изучения истории отечественной вычислительной техники; ссылки на источники приведены в описаниях машин.

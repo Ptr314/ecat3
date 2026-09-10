@@ -1,4 +1,4 @@
-# eCat v3
+# eCat
 
 [![GitHub Release](https://img.shields.io/github/release/ptr314/ecat3.svg?style=flat)]() 
 

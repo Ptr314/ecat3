@@ -36,22 +36,22 @@
     <message>
         <location filename="../emulator/core.cpp" line="+756"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
-        <translation type="unfinished"></translation>
+        <translation>Команда &apos;set&apos; требует адрес и хотя бы одно значение</translation>
     </message>
     <message>
         <location line="+10"/>
         <source>Command &apos;set16&apos; expects an even address</source>
-        <translation type="unfinished"></translation>
+        <translation>Команда &apos;set16&apos; требует четный адрес</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>A value is written past the end of the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Запись за пределы устройства</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Not a number</source>
-        <translation type="unfinished"></translation>
+        <translation>Не число</translation>
     </message>
     <message>
         <location line="+19"/>
@@ -764,7 +764,7 @@
     <message>
         <location line="+48"/>
         <source>radix must be 2, 8, 10 or 16</source>
-        <translation type="unfinished"></translation>
+        <translation>Параметр radix должен быть равен 2, 8, 10 или 16</translation>
     </message>
 </context>
 <context>
@@ -1359,7 +1359,7 @@
     <message>
         <location line="+407"/>
         <source>The configuration did not load.</source>
-        <translation type="unfinished"></translation>
+        <translation>Конфигурация не загружена.</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="-136"/>
@@ -1604,7 +1604,7 @@
     <message>
         <location line="+7"/>
         <source>Device is not addressable</source>
-        <translation type="unfinished"></translation>
+        <translation>Устройство не является адресуемым</translation>
     </message>
 </context>
 <context>
@@ -2581,22 +2581,22 @@
     <message>
         <location line="+6"/>
         <source>Act as an MCP server on stdin/stdout, needs a build with ENABLE_MCP, see MCP.md.</source>
-        <translation type="unfinished"></translation>
+        <translation>Работать сервером MCP через stdin/stdout. Требует сборки с ENABLE_MCP, см. MCP.md.</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Print the MCP conversation to stderr.</source>
-        <translation type="unfinished"></translation>
+        <translation>Выводить обмен по MCP в stderr.</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Directory to work in, normally the one holding computers/.</source>
-        <translation type="unfinished"></translation>
+        <translation>Рабочий каталог, обычно тот, в котором лежит computers/.</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>directory</source>
-        <translation type="unfinished"></translation>
+        <translation>каталог</translation>
     </message>
 </context>
 <context>

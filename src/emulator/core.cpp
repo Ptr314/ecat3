@@ -256,10 +256,8 @@ ComputerDevice * DeviceManager::get_device_by_name(const std::string &name, bool
         if (devices[i].device->name == name) return devices[i].device.get();
     }
     if (required)
-    {
-        std::cerr << "Exception: DeviceManager::get_device_by_name " << name << std::endl;
         throw std::runtime_error("Device not found: " + name);
-    } else
+    else
         return nullptr;
 }
 

@@ -10,6 +10,9 @@ REM   call win-common.cmd zip <dir> <name>   -- pack the CONTENTS of <dir> into 
 REM   call win-common.cmd report <dir>       -- print the size of every file in <dir>
 REM   call win-common.cmd checkgen <dir> <g> -- drop <dir> if it was configured
 REM                                             with a generator other than <g>
+REM   call win-common.cmd svg <build dir> <renderer> <qt kit>
+REM                                          -- %_SVG% = 1 if the build has the
+REM                                             on-screen keyboard, else warn
 REM ---------------------------------------------------------------------------
 
 if /I "%~1"=="find7z"   goto :find7z
@@ -19,6 +22,7 @@ if /I "%~1"=="deploy"   goto :deploy
 if /I "%~1"=="zip"      goto :zip
 if /I "%~1"=="report"   goto :report
 if /I "%~1"=="checkgen" goto :checkgen
+if /I "%~1"=="svg"      goto :svg
 
 echo win-common.cmd: unknown command "%~1"
 exit /b 1
@@ -107,4 +111,19 @@ if not exist "%~2\CMakeCache.txt" exit /b 0
 findstr /X /C:"CMAKE_GENERATOR:INTERNAL=%~3" "%~2\CMakeCache.txt" >nul && exit /b 0
 echo Build directory was configured with a different generator, reconfiguring from scratch.
 rmdir /s /q "%~2" || exit /b 1
+exit /b 0
+
+REM ---------------------------------------------------------------------------
+REM The on-screen keyboard is compiled in only when cmake found Qt Svg in a Qt
+REM 5.15 or newer, and then HAVE_QT_SVG shows up in build.ninja. The caller
+REM ships the Svg DLL of a shared kit when %_SVG% is 1. A release without the
+REM keyboard looks like any other, which is why the other case is reported.
+:svg
+set "_SVG=0"
+if /I "%~3"=="HEADLESS" exit /b 0
+findstr /C:"HAVE_QT_SVG" "%~2\build.ninja" >nul && set "_SVG=1"
+if "%_SVG%"=="0" (
+    echo WARNING: the on-screen keyboard is left out of this build: no Qt Svg
+    echo          ^(or Qt older than 5.15^) in "%~4". See BUILD.md.
+)
 exit /b 0

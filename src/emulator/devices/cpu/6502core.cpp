@@ -1458,7 +1458,7 @@ void mos6502core::__ARR(uint8_t command, unsigned int & cycles)
 {
     PartsRecLE T, D;
     T.w = get_operand(command, cycles);
-    if (FLAG_B == 0) {
+    if (FLAG_D == 0) {
         // Binary mode
         __ANE(0x8B, cycles);
         _ROR(0x6A, cycles);
@@ -1499,7 +1499,7 @@ void mos6502core::__ISB(uint8_t command, unsigned int & cycles)
     write_mem(T.w, D.b.L + 1);
 
     //SBC
-    if (FLAG_B == 0) {
+    if (FLAG_D == 0) {
         // Binary mode
         S.w = REG_A - D.b.L - FLAG_C;
         calc_flags(S.w, F_NZC);

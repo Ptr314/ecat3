@@ -25,12 +25,12 @@ APP_NAME="eCat3"
 # platform and the SDL2 one would add a dylib to every bundle.
 RENDERERS=("qt" "opengl")
 
-SCRIPT_DIR="$(ENABLE_MCP="OFF"
+ENABLE_MCP="OFF"
 for arg in "$@"; do
     if [ "${arg}" = "mcp" ]; then ENABLE_MCP="ON"; fi
 done
 
-cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 RELEASE_DIR="${SCRIPT_DIR}/release"
 
@@ -77,8 +77,15 @@ for RENDERER in "${RENDERERS[@]}"; do
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_PREFIX_PATH="${QT_PATH}" \
         -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
-        -DRENDERER_${RENDERER_UPPER}=1 \n        -DENABLE_MCP=${ENABLE_MCP}
+        -DRENDERER_${RENDERER_UPPER}=1 \
+        -DENABLE_MCP=${ENABLE_MCP}
   cmake --build "${BUILD_DIR}"
+
+  # The on-screen keyboard is compiled in only when Qt has the Svg module,
+  # which a static Qt links into the binary itself
+  if ! grep -q HAVE_QT_SVG "${BUILD_DIR}/build.ninja"; then
+      echo "WARNING: no Qt Svg in ${QT_PATH}: the on-screen keyboard is left out of this build" >&2
+  fi
 
   # Copy deploy data into the app bundle Resources. The payload directories are
   # dropped first, otherwise leftovers from an earlier build (configs of a
