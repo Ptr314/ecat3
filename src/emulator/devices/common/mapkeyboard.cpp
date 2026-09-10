@@ -16,6 +16,7 @@ MapKeyboard::MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_ruslat(this, im, 1, "ruslat", MODE_W)
     , i_ready(this, im, 1, "ready", MODE_W)
     , i_pressed(this, im, 1, "pressed", MODE_W)
+    , i_vector(this, im, 16, "vector", MODE_W)
 {
     m_rus_switches[0] = 0;
     m_rus_switches[1] = 0;
@@ -119,6 +120,17 @@ emulator::Result MapKeyboard::load_config(SystemData *sd)
         }
     }
 
+    m_vector = read_confg_value(cd, "vector", false, _FFFF);
+    if (m_vector != _FFFF) {
+        m_alt_vector = read_confg_value(cd, "alt-vector", false, m_vector);
+        std::vector<std::string> codes = split_string(cd->get_parameter("alt-codes", false).value, ',', true);
+        for (size_t i = 0; i < codes.size(); i++) {
+            const std::string c = str_trim(codes[i]);
+            if (!c.empty()) m_alt_codes.push_back(parse_numeric_value(c));
+        }
+        i_vector.change(m_vector);
+    }
+
     i_ready.change(1);
 
     //Both tables exist by now, so the two namings can be matched up
@@ -141,9 +153,28 @@ void MapKeyboard::set_rus(bool new_rus)
     i_ruslat.change(ruslat_state);
 }
 
-void MapKeyboard::send_key(unsigned int value)
+// The controller routes a code through the second vector when АР2 is held, when
+// the code is one it always sends that way (alt-codes), or when the table marks
+// the key with bit 7: a code of the controller has seven bits, so the eighth is
+// free to say "second vector" for a key wired as a chord, like ГРАФ on the БК0010.
+bool MapKeyboard::alt_vector_for(unsigned int code, bool alt) const
+{
+    if (alt || code > 0x7F) return true;
+    for (size_t i = 0; i < m_alt_codes.size(); i++)
+        if (m_alt_codes[i] == code) return true;
+    return false;
+}
+
+void MapKeyboard::send_key(unsigned int value, bool alt)
 {
     m_last_value = value;
+    m_last_alt = alt;
+    if (m_vector != _FFFF) {
+        //The processor takes the vector when the request goes up, so it has to
+        //be on the line before the ready pulse below
+        i_vector.change(alt_vector_for(value, alt) ? m_alt_vector : m_vector);
+        value &= 0x7F;
+    }
     port_value->set_value_word(value, value); // To use both port & port-address
     i_ready.change(0);
     i_ready.change(1);
@@ -163,7 +194,7 @@ void MapKeyboard::repeat_key(const std::string &id, bool press)
             ids_down.push_back(id);
             update_pressed();
         }
-        send_key(m_last_value);
+        send_key(m_last_value, m_last_alt);
     } else {
         for (size_t i = 0; i < ids_down.size(); i++)
             if (ids_down[i] == id) {
@@ -233,7 +264,8 @@ void MapKeyboard::key_down(unsigned int key)
                     break;
                 }
         }
-        if (found_with_rus || found_no_rus) send_key(key_map[key_index].value);
+        //АР2 latched on the drawing applies to the host keyboard as well
+        if (found_with_rus || found_no_rus) send_key(key_map[key_index].value, alt_pressed);
     }
 }
 
@@ -338,9 +370,10 @@ void MapKeyboard::send_key_id(const std::string &id, bool press)
         update_pressed();
     }
 
-    //АР2 does not have entries of its own: it shifts whatever the key sends,
-    //which is how the БК gets its graphics and screen-control codes
-    send_key(id_map[found].value + (alt_pressed ? m_alt_add : 0));
+    //АР2 does not have entries of its own: the code stays the same and goes
+    //through the second vector, where the БК firmware makes its graphics and
+    //screen-control codes out of it
+    send_key(id_map[found].value, alt_pressed);
 }
 
 // Two entries that send the same byte under the same modifiers describe the
@@ -380,6 +413,8 @@ void MapKeyboard::reset(bool cool)
     ctrl_pressed = false;
     alt_pressed = false;
     m_last_value = _FFFF;
+    m_last_alt = false;
+    if (m_vector != _FFFF) i_vector.change(m_vector);
     update_pressed();
 
     if (code_ruslat != 0)
@@ -398,11 +433,20 @@ std::vector<DeviceFieldInfo> MapKeyboard::get_device_fields()
     r.push_back({"ctrl",  "1 while Ctrl is held",                      false});
     r.push_back({"held",  "Codes of the keys currently down",          false});
     r.push_back({"count", "How many keys are currently down",          false});
+    if (m_vector != _FFFF)
+        r.push_back({"vector", "Interrupt vector of the last code",    false});
     return r;
 }
 
 bool MapKeyboard::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
+    if (field == "vector" && m_vector != _FFFF)
+    {
+        out.numeric = true;
+        out.values.push_back(i_vector.value);
+        return true;
+    }
+
     if (field == "shift" || field == "ctrl")
     {
         out.numeric = true;

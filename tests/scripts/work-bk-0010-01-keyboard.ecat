@@ -120,11 +120,16 @@ KEYUP key_sbr
 KEYDOWN key_vs
 LOG port-kbd-code.value
 KEYUP key_vs
+LOG keyboard.vector
+# Коды 0-2, 4-7, 11 и 13 контроллер отдает через второй вектор, 274, и
+# восьмибитный код из них делает ПЗУ: в порту семибитный код контроллера
 KEYDOWN key_ind_su
 LOG port-kbd-code.value
+LOG keyboard.vector
 KEYUP key_ind_su
 KEYDOWN key_step
 LOG port-kbd-code.value
+LOG keyboard.vector
 KEYUP key_step
 
 PRINT "=== РУС и ЛАТ переключают шрифт и шлют коды ==="
@@ -138,13 +143,17 @@ LOG port-kbd-code.value
 KEYUP key_lat
 LOG keyboard.rus
 
-PRINT "=== АР2 поднимает код на 100 ==="
+# АР2 кода не меняет: контроллер отдает тот же код через вектор 274, и уже
+# ПЗУ делает из него полуграфику
+PRINT "=== АР2 переводит код на второй вектор ==="
 KEYDOWN key_b
 LOG port-kbd-code.value
+LOG keyboard.vector
 KEYUP key_b
 KEYDOWN key_ar2
 KEYDOWN key_b
 LOG port-kbd-code.value
+LOG keyboard.vector
 KEYUP key_b
 KEYUP key_ar2
 

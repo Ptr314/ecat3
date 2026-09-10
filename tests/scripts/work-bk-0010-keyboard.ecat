@@ -1,0 +1,135 @@
+# БК0010: пленочная клавиатура, нативная таблица bk10.keys.
+#
+# Контроллер тот же, что у БК0010-01, но набор клавиш другой: ГРАФ, ЗАП,
+# СТИР, УСТ ТАБ, СБР ТАБ и диагональные стрелки, которых на -01 нет, там
+# набираются сочетаниями с СУ и АР2. Проверяется пара "код - вектор", которую
+# контроллер отдает процессору: через вектор 274 идут коды с НР (это АР2 -01)
+# и служебные коды 0-2, 4-7, 11, 13, 21, восьмибитный код из них делает ПЗУ.
+#
+# Коды диагоналей сверены с драйвером ТВ: 34, 35, 36 и 37, отданные через
+# EMT 16 в режиме ГРАФ, рисуют замкнутый восьмиугольник вместе с 31, 33, 10
+# и 32, то есть это стрелки влево-вверх, вправо-вверх, вправо-вниз и
+# влево-вниз.
+#
+# Скрипты БК читаются в восьмеричной системе: WAIT _2000, LOGDEFS _16,_8.
+# @timeout 30
+
+MACHINE "bk/BK-0010.cfg"
+WAIT _2000
+
+LOGDEFS _16,_8
+
+PRINT "=== исходное состояние ==="
+LOG keyboard.pressed
+LOG keyboard.vector
+
+PRINT "=== ГРАФ, ЗАП, СТИР: 25-27 через вектор 274 ==="
+KEYDOWN key_graph
+LOG port-kbd-code.value
+LOG keyboard.vector
+KEYUP key_graph
+KEYDOWN key_zap
+LOG port-kbd-code.value
+LOG keyboard.vector
+KEYUP key_zap
+KEYDOWN key_erase
+LOG port-kbd-code.value
+LOG keyboard.vector
+KEYUP key_erase
+
+PRINT "=== УСТ ТАБ, СБР ТАБ, ТАБ ==="
+KEYDOWN key_set_tab
+LOG port-kbd-code.value
+LOG keyboard.vector
+KEYUP key_set_tab
+KEYDOWN key_clear_tab
+LOG port-kbd-code.value
+LOG keyboard.vector
+KEYUP key_clear_tab
+KEYDOWN key_tab
+LOG port-kbd-code.value
+LOG keyboard.vector
+KEYUP key_tab
+
+PRINT "=== верхний ряд: ШАГ, КТ, ГТ, СБР, СБР со стрелкой ==="
+KEYDOWN key_step
+LOG port-kbd-code.value
+LOG keyboard.vector
+KEYUP key_step
+KEYDOWN key_kt
+LOG port-kbd-code.value
+KEYUP key_kt
+KEYDOWN key_gt
+LOG port-kbd-code.value
+KEYUP key_gt
+KEYDOWN key_sbr_rp
+LOG port-kbd-code.value
+LOG keyboard.vector
+KEYUP key_sbr_rp
+KEYDOWN key_clear
+LOG port-kbd-code.value
+LOG keyboard.vector
+KEYUP key_clear
+
+PRINT "=== СБР с НР - РП, тот же код через вектор 274 ==="
+KEYDOWN key_ar2
+KEYDOWN key_sbr_rp
+LOG port-kbd-code.value
+LOG keyboard.vector
+KEYUP key_sbr_rp
+KEYUP key_ar2
+
+PRINT "=== стрелки: в начало экрана и четыре диагонали ==="
+KEYDOWN key_home
+LOG port-kbd-code.value
+KEYUP key_home
+KEYDOWN key_left_up
+LOG port-kbd-code.value
+KEYUP key_left_up
+KEYDOWN key_right_up
+LOG port-kbd-code.value
+KEYUP key_right_up
+KEYDOWN key_right_down
+LOG port-kbd-code.value
+KEYUP key_right_down
+KEYDOWN key_left_down
+LOG port-kbd-code.value
+LOG keyboard.vector
+KEYUP key_left_down
+
+# ПР - правый регистр: знак справа на цифровой клавише, а буква под ним
+# всегда в половине $40-$5F, при любой защелке ЗАГЛ/СТР
+PRINT "=== ПР: цифра, буква под СТР, вторая клавиша ПР ==="
+KEYDOWN key_shift_1
+KEYDOWN key_1
+LOG port-kbd-code.value
+KEYUP key_1
+KEYUP key_shift_1
+KEYDOWN key_str
+KEYUP key_str
+KEYDOWN key_a
+LOG port-kbd-code.value
+KEYUP key_a
+KEYDOWN key_shift_2
+KEYDOWN key_a
+LOG port-kbd-code.value
+KEYUP key_a
+KEYUP key_shift_2
+KEYDOWN key_zagl
+KEYUP key_zagl
+
+PRINT "=== НР с цифрой - программируемый ключ К1 ==="
+KEYDOWN key_ar2
+KEYDOWN key_1
+LOG port-kbd-code.value
+LOG keyboard.vector
+LOG keyboard.pressed
+KEYUP key_1
+KEYUP key_ar2
+
+PRINT "=== ЗБ - клавиша Ъ ==="
+KEYDOWN key_zb
+LOG port-kbd-code.value
+KEYUP key_zb
+
+EXIT

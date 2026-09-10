@@ -27,8 +27,6 @@ emulator::Result Keyboard::load_config(SystemData *sd)
     const std::string picture = cd->get_parameter("picture", false).value;
     if (!picture.empty()) m_picture_file = find_file_location(sd, picture);
 
-    m_alt_add = read_confg_value(cd, "alt-add", false, (unsigned int)0);
-
     //Interfaces start at _FFFF, which a config that inverts the line would read
     //as the key being held down from the moment the machine starts
     i_stop.change(0);

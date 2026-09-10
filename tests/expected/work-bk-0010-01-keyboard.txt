@@ -21,17 +21,22 @@
 [port-kbd-code.value] &000003
 [port-kbd-code.value] &000014
 [port-kbd-code.value] &000023
-[port-kbd-code.value] &000202
-[port-kbd-code.value] &000200
+[keyboard.vector] &000060
+[port-kbd-code.value] &000002
+[keyboard.vector] &000274
+[port-kbd-code.value] &000000
+[keyboard.vector] &000274
 === РУС и ЛАТ переключают шрифт и шлют коды ===
 [port-kbd-code.value] &000016
 [keyboard.rus] &000001
 [keyboard.pressed] key_zagl,key_rus
 [port-kbd-code.value] &000017
 [keyboard.rus] &000000
-=== АР2 поднимает код на 100 ===
+=== АР2 переводит код на второй вектор ===
 [port-kbd-code.value] &000102
-[port-kbd-code.value] &000202
+[keyboard.vector] &000060
+[port-kbd-code.value] &000102
+[keyboard.vector] &000274
 === клавиша Ъ: код 137, в нижнем регистре 177 ===
 [port-kbd-code.value] &000137
 [port-kbd-code.value] &000177

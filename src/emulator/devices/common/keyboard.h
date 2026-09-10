@@ -315,7 +315,7 @@ enum KeyRole {
     KEY_ROLE_RUS_OFF,       // separate ЛАТ
     KEY_ROLE_CASE_UPPER,    // latching capitals (БК: ЗАГЛ)
     KEY_ROLE_CASE_LOWER,    // latching small letters (БК: СТР)
-    KEY_ROLE_ALT,           // second control key (БК: АР2), code shifted by alt-add
+    KEY_ROLE_ALT,           // second control key (БК: АР2), code goes through the alternative vector
     KEY_ROLE_STOP,          // drives the ~stop line instead of sending a code (БК: СТОП)
     KEY_ROLE_REPEAT,        // repeats whatever went last (БК: ПОВТ)
     KEY_ROLE_RESET          // restarts the machine instead of sending a code (Агат: СБР)
@@ -354,11 +354,6 @@ protected:
 
     // How many times this keyboard has been reset, see reset_count()
     unsigned int m_reset_count = 0;
-
-    // What the second control key adds to a code. On the БК АР2 raises it by
-    // 100 octal, the same amount СУ takes away, which is how one keyboard
-    // covers six registers.
-    unsigned int m_alt_add = 0;
 
     void register_key_id(const std::string &id, KeyRole role = KEY_ROLE_NORMAL);
     void note_id(const std::string &id, bool press);

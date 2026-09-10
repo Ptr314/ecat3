@@ -1,0 +1,46 @@
+=== исходное состояние ===
+[keyboard.pressed] key_zagl,key_lat
+[keyboard.vector] &000060
+=== ГРАФ, ЗАП, СТИР: 25-27 через вектор 274 ===
+[port-kbd-code.value] &000025
+[keyboard.vector] &000274
+[port-kbd-code.value] &000026
+[keyboard.vector] &000274
+[port-kbd-code.value] &000027
+[keyboard.vector] &000274
+=== УСТ ТАБ, СБР ТАБ, ТАБ ===
+[port-kbd-code.value] &000015
+[keyboard.vector] &000060
+[port-kbd-code.value] &000020
+[keyboard.vector] &000060
+[port-kbd-code.value] &000011
+[keyboard.vector] &000274
+=== верхний ряд: ШАГ, КТ, ГТ, СБР, СБР со стрелкой ===
+[port-kbd-code.value] &000000
+[keyboard.vector] &000274
+[port-kbd-code.value] &000003
+[port-kbd-code.value] &000024
+[port-kbd-code.value] &000014
+[keyboard.vector] &000060
+[port-kbd-code.value] &000013
+[keyboard.vector] &000274
+=== СБР с НР - РП, тот же код через вектор 274 ===
+[port-kbd-code.value] &000014
+[keyboard.vector] &000274
+=== стрелки: в начало экрана и четыре диагонали ===
+[port-kbd-code.value] &000022
+[port-kbd-code.value] &000034
+[port-kbd-code.value] &000035
+[port-kbd-code.value] &000036
+[port-kbd-code.value] &000037
+[keyboard.vector] &000060
+=== ПР: цифра, буква под СТР, вторая клавиша ПР ===
+[port-kbd-code.value] &000041
+[port-kbd-code.value] &000141
+[port-kbd-code.value] &000101
+=== НР с цифрой - программируемый ключ К1 ===
+[port-kbd-code.value] &000061
+[keyboard.vector] &000274
+[keyboard.pressed] key_ar2,key_1,key_zagl,key_lat
+=== ЗБ - клавиша Ъ ===
+[port-kbd-code.value] &000137

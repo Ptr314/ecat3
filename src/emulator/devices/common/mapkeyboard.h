@@ -39,6 +39,16 @@ private:
     Interface i_ready;
     Interface i_pressed;
 
+    // Interrupt vector handed to the processor with the code. The БК keyboard
+    // controller has two: a code typed with АР2, and a handful of control codes
+    // whatever the modifiers, go through the second one, and the firmware makes
+    // an eight-bit code out of the pair. _FFFF: the machine sees the code alone.
+    Interface i_vector;
+    unsigned int m_vector = _FFFF;
+    unsigned int m_alt_vector = _FFFF;
+    std::vector<unsigned int> m_alt_codes;
+    bool alt_vector_for(unsigned int code, bool alt) const;
+
     // Keys currently held down, to drive i_pressed. Keys pressed on the drawing
     // are counted separately: they carry an id, not a host code.
     std::vector<unsigned int> keys_held;
@@ -70,10 +80,11 @@ protected:
     std::vector<KeyIdData> id_map;
 
     void set_rus(bool new_rus) override;
-    void send_key(unsigned int value);
+    void send_key(unsigned int value, bool alt = false);
 
     //What went out last, so that ПОВТ can send it again
     unsigned int m_last_value = _FFFF;
+    bool m_last_alt = false;
     void repeat_key(const std::string &id, bool press) override;
 
     emulator::Result parse_key_table(const std::vector<std::string> &body, const std::string &file) override;
