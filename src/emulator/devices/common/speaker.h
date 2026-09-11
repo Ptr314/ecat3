@@ -13,9 +13,12 @@ class Speaker: public GenericSound
 private:
     Interface i_input;
     Interface i_mixer;
+    //Lets input through only while every connected bit is 1 (Микроша: PC1)
+    Interface i_enable;
     unsigned int mode;
     unsigned int InputWidth;
     unsigned int MixerWidth;
+    unsigned int enable_mask = 0;   //connected bits of i_enable, 0 - always enabled
     unsigned int input;
 
     //Last result of calc_sound_value() and the inputs it came from
@@ -33,6 +36,9 @@ public:
     virtual void reset(bool cold) override;
     virtual emulator::Result load_config(SystemData *sd) override;
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 };
 
 ComputerDevice * create_speaker(InterfaceManager *im, EmulatorConfigDevice *cd);

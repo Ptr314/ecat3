@@ -98,6 +98,14 @@ void I8253::init()
 
 void I8253::StartCount(unsigned int A)
 {
+    //A channel its gate holds does not start: OUT keeps the level the gate
+    //gave it, and the rising edge of the gate reloads the count and starts it.
+    //The Микроша ROM loads channel 2 with the gate down, and flipping OUT here
+    //left it stuck at 0 - the level that, ANDed with PC1, silences the speaker
+    if (Gates[A] == 0 && I8253_MODES[GATE_0_STOP][Modes[A]] == 1) {
+        Reload(A);
+        return;
+    }
     SetOut(A, COUNTER_START_OUT);
     //Загружаем регистры счетчиков
     Reload(A);

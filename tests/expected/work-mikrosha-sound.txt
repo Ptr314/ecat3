@@ -1,0 +1,21 @@
+=== ЛАТ: гейт закрыт, выход таймера в 1, динамик молчит ===
+[port-keyboard.c] $F0
+[timer.gates] $01 $01 $00
+[timer.outputs] $01 $01 $01
+[sound.enable] $00
+[sound.input] $00
+=== PC1 = 1 при закрытом гейте: вход динамика идет за PC1 ===
+[port-keyboard.c] $F2
+[timer.outputs] $01 $01 $01
+[sound.enable] $01
+[sound.input] $01
+=== PC1 = 0 ===
+[port-keyboard.c] $F0
+[sound.enable] $00
+[sound.input] $00
+=== РУС: гейт и разрешение открыты, выход таймера колеблется ===
+[port-keyboard.c] $FF
+[timer.gates] $01 $01 $01
+[sound.enable] $01
+[timer.modes] $00 $00 $03
+[timer.start] $0000 $0000 $0505

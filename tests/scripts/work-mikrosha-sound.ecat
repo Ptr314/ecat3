@@ -1,0 +1,61 @@
+# Микроша: звук по схеме. Динамик стоит за И-НЕ из PC1 и выхода канала 2
+# таймера (DD21.3/DD21.4), гейт канала 2 - PC2. В конфигурации это вход
+# ~enable у speaker: PC1 пропускает выход таймера, а пока гейт закрыт, выход
+# держится в 1, и PC1 дергает динамик сам - так звучат программы без таймера.
+#
+# ПЗУ загружает канал 2 (режим 3, $0505) при закрытом гейте. ВИ53 при этом не
+# должна трогать выход: раньше он переключался в 0 и так застревал, и PC1
+# динамик не доставал.
+#
+# COMMAND set пишет в порт без выхода на шину, поэтому PC1 выставляет сам
+# процессор: две программы по три команды, каждая зацикливается на себе.
+# @timeout 30
+
+MACHINE "mikrosha/Mikrosha.cfg"
+WAIT 2500
+
+LOGDEFS 8,16
+
+PRINT "=== ЛАТ: гейт закрыт, выход таймера в 1, динамик молчит ==="
+LOG port-keyboard.c
+LOG timer.gates
+LOG timer.outputs
+LOG sound.enable
+LOG sound.input
+
+# $3000: MVI A,$02 / STA $C002 / JMP $3005 - PC1 в 1
+# $3010: MVI A,$00 / STA $C002 / JMP $3015 - PC1 в 0
+COMMAND ram.set($3000, $3E,$02, $32,$02,$C0, $C3,$05,$30)
+COMMAND ram.set($3010, $3E,$00, $32,$02,$C0, $C3,$15,$30)
+
+PRINT "=== PC1 = 1 при закрытом гейте: вход динамика идет за PC1 ==="
+COMMAND cpu.setreg(PC,$3000)
+WAIT 10
+LOG port-keyboard.c
+LOG timer.outputs
+LOG sound.enable
+LOG sound.input
+
+PRINT "=== PC1 = 0 ==="
+COMMAND cpu.setreg(PC,$3010)
+WAIT 10
+LOG port-keyboard.c
+LOG sound.enable
+LOG sound.input
+
+# Флаг РУС ПЗУ пишет в порт C целиком ($FF), и встают и PC1, и PC2: по схеме
+# это тон канала 2, пока его не снимет звуковой сигнал или работа с лентой
+PRINT "=== РУС: гейт и разрешение открыты, выход таймера колеблется ==="
+RESET cold
+WAIT 2500
+KEYDOWN key_ruslat
+WAIT 100
+KEYUP key_ruslat
+WAIT 300
+LOG port-keyboard.c
+LOG timer.gates
+LOG sound.enable
+LOG timer.modes
+LOG timer.start
+
+EXIT
