@@ -348,10 +348,12 @@ Cross-Origin-Embedder-Policy: require-corp
 Для пробы на своей машине:
 
 ```
-python src/wasm/serve_wasm.py .build/release/ecat-<версия>-web 8080
+python src/wasm/serve_wasm.py .build/release/ecat-<версия>-web 8080 --open
 ```
 
-Обычный `python -m http.server` не годится: он этих заголовков не ставит.
+Под Windows то же делает `.build/serve-wasm.cmd` (с аргументом `build` —
+предварительно пересобрав пакет), см. `.build/README.md`. Обычный
+`python -m http.server` не годится: он этих заголовков не ставит.
 
 
 # Полезные ссылки
