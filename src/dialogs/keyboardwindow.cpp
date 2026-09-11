@@ -160,14 +160,31 @@ QRectF KeyboardView::map_box(const QRectF &box) const
                   box.width() * sx, box.height() * sy);
 }
 
+// A logical coordinate is not a pixel: under a fractional scale of the screen
+// (125% or 150% on Windows) it falls between two device pixels, and a pixmap
+// drawn there is resampled - which is what blurred the lettering even when the
+// cache itself was sharp.
+QPointF KeyboardView::snap(const QPointF &p) const
+{
+    return QPointF(qRound(p.x() * m_dpr) / m_dpr, qRound(p.y() * m_dpr) / m_dpr);
+}
+
+// Size and corner are rounded in device pixels, so that the cache rendered at
+// this size is copied onto the screen one to one.
+void KeyboardView::layout_target()
+{
+    const qreal k = qMin(width() / m_viewbox.width(), height() / m_viewbox.height());
+    const qreal w = qRound(m_viewbox.width() * k * m_dpr) / m_dpr;
+    const qreal h = qRound(m_viewbox.height() * k * m_dpr) / m_dpr;
+    m_target = QRectF(snap(QPointF((width() - w) / 2.0, (height() - h) / 2.0)), QSizeF(w, h));
+}
+
 void KeyboardView::resizeEvent(QResizeEvent *)
 {
     if (m_viewbox.width() <= 0) return;
 
-    const qreal k = qMin(width() / m_viewbox.width(), height() / m_viewbox.height());
-    const qreal w = m_viewbox.width() * k;
-    const qreal h = m_viewbox.height() * k;
-    m_target = QRectF((width() - w) / 2.0, (height() - h) / 2.0, w, h);
+    m_dpr = devicePixelRatioF();
+    layout_target();
 
     // Redrawing the whole picture costs 20 ms at 900 px and 44 ms at 2400 px,
     // and a drag fires resize events all the way. So the old pixmap is stretched
@@ -194,7 +211,9 @@ const QPixmap & KeyboardView::mask_of(const QString &id, const QRectF &target, c
     QMap<QString, QPixmap>::iterator it = m_masks.find(id);
     if (it != m_masks.end()) return it.value();
 
-    const QSize size = target.size().toSize().expandedTo(QSize(1, 1));
+    //In device pixels, like the cache: a silhouette made at the logical size
+    //would be stretched over a sharp key and soften its edge
+    const QSize size = (target.size() * m_dpr).toSize().expandedTo(QSize(1, 1));
     QImage img(size, QImage::Format_ARGB32_Premultiplied);
     img.fill(Qt::transparent);
     {
@@ -217,37 +236,60 @@ const QPixmap & KeyboardView::mask_of(const QString &id, const QRectF &target, c
         p.fillRect(stencil.rect(), colour);
     }
 
-    return m_masks.insert(id, QPixmap::fromImage(stencil)).value();
+    QPixmap mask = QPixmap::fromImage(stencil);
+    mask.setDevicePixelRatio(m_dpr);
+    return m_masks.insert(id, mask).value();
 }
 
 void KeyboardView::paintEvent(QPaintEvent *)
 {
     if (m_boxes.isEmpty() || m_target.isEmpty()) return;
 
+    //The window went to a screen of another scale: everything rendered so far
+    //was made for the old one
+    const qreal dpr = devicePixelRatioF();
+    if (dpr != m_dpr) {
+        m_dpr = dpr;
+        layout_target();
+        m_masks.clear();
+        m_cache = QPixmap();
+    }
+
+    //The vector is rendered at the resolution of the screen, not at the logical
+    //size: with Qt 6 a scale of 125% or 150% reaches the widget as it is, and
+    //a logical-size cache was stretched by that much on every paint
+    const QSize device = (m_target.size() * m_dpr).toSize();
     QPainter p(this);
     if (m_cache.isNull()) {
-        m_cache = QPixmap(m_target.size().toSize());
+        m_cache = QPixmap(device);
+        m_cache.setDevicePixelRatio(m_dpr);
         m_cache.fill(Qt::transparent);
         QPainter cp(&m_cache);
         cp.setRenderHint(QPainter::Antialiasing, true);
         m_svg.render(&cp, QRectF(QPointF(0, 0), m_target.size()));
     }
-    //Scaled, not blitted: while a drag is in flight the cache is still the size
-    //it had before, and stretching it is what keeps the drag smooth
-    p.setRenderHint(QPainter::SmoothPixmapTransform, true);
-    p.drawPixmap(m_target, m_cache, QRectF(m_cache.rect()));
+    if (m_cache.size() == device) {
+        //Copied one to one onto a corner snapped to the pixel grid: nothing is
+        //resampled, so the lettering is as sharp as the renderer made it
+        p.drawPixmap(m_target.topLeft(), m_cache);
+    } else {
+        //While a drag is in flight the cache is still the size it had before,
+        //and stretching it is what keeps the drag smooth
+        p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+        p.drawPixmap(m_target, m_cache, QRectF(m_cache.rect()));
+    }
 
     for (int i = 0; i < m_boxes.size(); i++)
         if (m_shown.contains(m_boxes[i].id)) {
             const QRectF t = map_box(m_boxes[i].box);
-            p.drawPixmap(t.topLeft(), mask_of(m_boxes[i].id, t, KEY_HIGHLIGHT));
+            p.drawPixmap(snap(t.topLeft()), mask_of(m_boxes[i].id, t, KEY_HIGHLIGHT));
         }
 
     //A lamp that is not lit is blacked out; the burning one is left as drawn
     for (int i = 0; i < m_leds.size(); i++)
         if (m_dark.contains(m_leds[i].id)) {
             const QRectF t = map_box(m_leds[i].box);
-            p.drawPixmap(t.topLeft(), mask_of(m_leds[i].id, t, LED_OFF_SHADE));
+            p.drawPixmap(snap(t.topLeft()), mask_of(m_leds[i].id, t, LED_OFF_SHADE));
         }
 }
 

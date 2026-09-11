@@ -53,6 +53,8 @@ private:
     void press(const QString &id, bool down);
     QRectF map_box(const QRectF &box) const;
     QRectF doc_box(const QString &id) const;
+    QPointF snap(const QPointF &p) const;   //to the device pixel grid
+    void layout_target();                   //m_target from the widget size and m_dpr
     const QPixmap & mask_of(const QString &id, const QRectF &target, const QColor &colour);
     QStringList leds_dark() const;          //indicators that are not lit right now
 
@@ -60,6 +62,7 @@ private:
     QSvgRenderer m_svg;
     QRectF      m_viewbox;
     QRectF      m_target;                   //aspect-fit area of the drawing inside the widget
+    qreal       m_dpr = 1;                  //device pixels per logical one the cache is made for
     QVector<KeyBox> m_boxes;
     QVector<KeyBox> m_leds;                 //indicator lamps, same shape as a key box
     QPixmap     m_cache;                    //the whole drawing, possibly at the previous size
