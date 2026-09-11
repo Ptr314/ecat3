@@ -1,0 +1,65 @@
+# Орион-128, Монитор-1: экранная клавиатура (data/rk.keys на рисунке
+# apogey_keyboard.svg). Клавиша рисунка замыкает свой контакт матрицы, код из
+# него делает ПЗУ, поэтому проверка идет через монитор: набранная клавишами
+# рисунка директива D0000 должна вывести дамп образца.
+#
+# РУС/ЛАТ - клавиша на своей линии (роль rus-line): регистр хранит ПЗУ (флаг
+# $F3E5) и выводит на индикатор PC3, откуда его берет keyboard.rus. Проверяется
+# до дампа: выведя 256 байт, монитор ждет ВК или точку, и первое нажатие
+# РУС/ЛАТ уходит в это ожидание, не переключив регистр.
+# @timeout 30
+
+MACHINE "orion-128/Orion-128-m1.cfg"
+WAIT 3000
+
+COMMAND ram0.set($0000, $11,$22,$33,$44,$55,$66,$77,$88,$99,$AA,$BB,$CC,$DD,$EE,$FF,$00)
+
+LOGDEFS 8,16
+
+PRINT "=== РУС/ЛАТ переключает регистр ПЗУ ==="
+LOG keyboard.rus
+KEYDOWN key_ruslat
+WAIT 100
+LOG keyboard.pressed
+KEYUP key_ruslat
+WAIT 100
+LOG keyboard.rus
+LOG ram0.value($F3E5,$F3E5)
+KEYDOWN key_ruslat
+WAIT 100
+KEYUP key_ruslat
+WAIT 100
+LOG keyboard.rus
+LOG ram0.value($F3E5,$F3E5)
+
+PRINT "=== D0000 набрано клавишами рисунка ==="
+KEYDOWN key_d
+WAIT 60
+LOG keyboard.pressed
+KEYUP key_d
+WAIT 60
+KEYDOWN key_0
+WAIT 60
+KEYUP key_0
+WAIT 60
+KEYDOWN key_0
+WAIT 60
+KEYUP key_0
+WAIT 60
+KEYDOWN key_0
+WAIT 60
+KEYUP key_0
+WAIT 60
+KEYDOWN key_0
+WAIT 60
+KEYUP key_0
+WAIT 60
+KEYDOWN key_enter
+WAIT 60
+KEYUP key_enter
+# 256 байт монитор выводит дольше полутора секунд
+WAIT 3000
+LOG keyboard.count
+
+SCREEN "../results/work-orion-m1-keyboard.png"
+EXIT

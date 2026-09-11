@@ -1,0 +1,17 @@
+=== D0,F набрано клавишами рисунка ===
+[keyboard.matrix] $0000: $FF $FF $FF $FF $EF $FF $FF $FF
+[keyboard.pressed] key_d
+[keyboard.count] $00
+=== РУС/ЛАТ переключает регистр ПЗУ и индикатор: Я, затем Q ===
+[keyboard.rus] $00
+[port-keyboard.c] $F0
+[keyboard.rus] $01
+[port-keyboard.c] $F8
+=== провал PC3 при опросе клавиатуры не трогает регистр ===
+[cpu.pc] $FE82
+[port-keyboard.c] $F0
+[keyboard.rus] $01
+[port-keyboard.c] $F8
+[keyboard.rus] $01
+[keyboard.rus] $00
+=== НР с цифрой дает верхнюю надпись ===

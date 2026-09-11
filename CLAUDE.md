@@ -170,7 +170,7 @@ cd .build
   stale build. The wrapper runs the emulator from a temporary copy and restarts it whenever the built exe
   gets newer, so a rebuild is picked up by the next tool call; it says so in the answer, and the emulated
   machine has to be loaded again. `ECAT3_MCP_NO_RELOAD=1` keeps only the copy. See `MCP.md`
-- **Manual `eCat3.exe` runs rewrite `deploy/ecat.ini`**; the test runner restores it, a hand-run does not. Check `git status` and `git checkout -- deploy/ecat.ini` before finishing
+- **`deploy/ecat.ini` is not in git** (`.gitignore`): every run rewrites it, so it is the developer's own file. The distributed defaults are `deploy/.ecat.ini`, which the release scripts package as `ecat.ini`. A missing `ecat.ini` is made a copy of `.ecat.ini` by both frontends and by `tests/run_tests.py` - without its `[TapeFiles]` no tape image loads, which is how a fresh checkout would otherwise break every tape test. A new default setting therefore goes into `.ecat.ini`
 - CPU tests: `src/tests/*.asm` and the `slow-*` scripts that run them (6502 functional test, zexall, Orion memory test)
 - Debug configurations (`debug = 1` in the `system` section) are hidden from the machine chooser unless `show_debug_versions=1` in the ini, and `src/wasm/package_machines.py` keeps them and their ROMs out of the web build entirely
 
@@ -184,10 +184,16 @@ cd .build
   included - while saving to tape, so the indicator line ends up data dependent while the monitor's own flag
   (`$F3E5`) does not move. `RUS_REMAP` then presses the key from the other half of the layout: `I` arrives as
   `$5B` and the monitor answers `?`, which looks exactly like a tape read failure. `LOG keyboard.rus` against
-  the machine's own flag separates them; two presses of РУС/ЛАТ resynchronise. Радио-86РК and Микроша are
-  immune - their ROM re-asserts the indicator from its own variable on every keyboard poll. Left as is on
-  purpose: the indicator is the only signal of the register, and the remap is what lets a ЙЦУКЕН host
-  keyboard drive a ЯВЕРТЬ machine
+  the machine's own flag separates them; two presses of РУС/ЛАТ resynchronise. Радио-86РК, Апогей and
+  Микроша are immune - their ROM re-asserts the indicator from its own variable on every keyboard poll. Left
+  as is on purpose: the indicator is the only signal of the register, and the remap is what lets a ЙЦУКЕН
+  host keyboard drive a ЯВЕРТЬ machine
+- **The indicator line is taken into the register at a scan write, never the moment it moves**: the
+  Радио-86РК and Апогей ROMs zero the whole of port C on every keyboard poll and set PC3 back from their flag
+  a few instructions later (Апогей `$FE7F-$FE89`). Following `~ruslat_led` instantly made the drawing's РУС
+  lamp flicker and could remap a host key typed inside that 20 us dip. `ScanKeyboard::interface_callback()`
+  latches the line and applies a change of it on the next write to the scan lines, which the ROM does before
+  the dip and after the restore
 - **No compile-time logging**: the old `LOGGER` / `LOG_*` macros and the `Logger` class are gone. To trace a device, expose its state through `get_device_fields()` / `get_field()` and read it from an `.ecat` script (`LOG dev.field`), like `bk-fdc` does with its `trace` field
 - **Debug Windows**: GUI provides disassembler, memory dump, port inspector, CPU state viewer
 - **Breakpoints**: Debug menu supports execution breakpoints and step modes

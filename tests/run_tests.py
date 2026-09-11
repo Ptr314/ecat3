@@ -522,6 +522,15 @@ class KeepIni(object):
         self.saved = None
 
     def __enter__(self):
+        # deploy/ecat.ini в git не лежит, в свежем клоне есть только настройки
+        # по умолчанию deploy/.ecat.ini, а без их [TapeFiles] ни один скрипт не
+        # загрузит ленту. Копия делается здесь и один раз, а не полусотней
+        # эмуляторов наперегонки
+        if not os.path.exists(self.path):
+            try:
+                shutil.copyfile(os.path.join(DEPLOY_DIR, ".ecat.ini"), self.path)
+            except OSError:
+                pass
         try:
             with open(self.path, "rb") as f:
                 self.saved = f.read()

@@ -287,13 +287,29 @@ void ScanKeyboard::calculate_out()
     i_output.change(new_value);
 }
 
+// The indicator is taken into the register when the machine scans the matrix,
+// not the moment the line moves. The Радио-86РК and Апогей ROMs write all of
+// port C with zero on every keyboard poll and set the indicator bit back from
+// their own flag right after ($FE7F-$FE89 in the Апогей ROM): the lamp is dark
+// for some 20 us, which nobody sees on a real one. Followed instantly, that
+// dip lights the drawing's lamp at random and, when a host key lands inside
+// it, remaps the key into the other alphabet. The scan write comes before the
+// dip and after the restore, so what it sees is the ROM's flag.
+//
+// Only a change of the line counts: a РУС/ЛАТ typed on the host keyboard flips
+// the register at once (key_down), and a scan that comes before the ROM has
+// polled that key must not flip it back.
 void ScanKeyboard::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
-    if (callback_id == SCAN_CALLBACK)
+    if (callback_id == SCAN_CALLBACK) {
         calculate_out();
-    else
+        if (led_line >= 0 && led_line != led_taken) {
+            led_taken = led_line;
+            set_rus(led_taken == 1);
+        }
+    } else
         // LED_CALLBACK
-        set_rus((i_ruslat_led.value & 1) == 1);
+        led_line = (int)(i_ruslat_led.value & 1);
 }
 
 void ScanKeyboard::set_rus(bool new_rus)

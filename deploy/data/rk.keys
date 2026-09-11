@@ -1,0 +1,28 @@
+// Клавиши клавиатуры Радио-86РК и совместимых с ним машин (Апогей, Орион-128,
+// Спектр-001): то, что нарисовано на apogey_keyboard.svg. В отличие от rk.kbd,
+// где в матрице стоят клавиши хоста, здесь стоят имена клавиш машины, они же
+// идентификаторы элементов рисунка.
+//
+// Раскладка та же, что в rk.kbd: строка -- выходная линия матрицы, столбец --
+// линия сканирования, "__" -- позиция без клавиши. Клавиша рисунка замыкает
+// ровно свой контакт матрицы, код из него делает ПЗУ, поэтому ни кодов, ни
+// принудительного НР здесь нет. Пустые строки и комментарии строк матрицы не
+// занимают.
+//
+// НР, УС и РУС/ЛАТ в матрицу не входят -- у каждой своя линия порта C.
+// РУС/ЛАТ -- обычная клавиша (rus-line): регистр хранит ПЗУ и показывает его
+// лампой РУС, которая на рисунке -- элемент led_rus. Поэтому таблица годится
+// только для машины с подключенным ~ruslat_led.
+
+shift:      key_shift    // НР
+ctrl:       key_ctrl     // УС
+rus-line:   key_ruslat   // РУС/ЛАТ
+
+key_home   key_tab    key_0  key_8      key_at  key_h  key_p  key_x
+key_str    key_ps     key_1  key_9      key_a   key_i  key_q  key_y
+key_ar2    key_enter  key_2  key_colon  key_b   key_j  key_r  key_z
+key_f1     key_bksp   key_3  key_semi   key_c   key_k  key_s  key_lbr
+key_f2     key_left   key_4  key_comma  key_d   key_l  key_t  key_bksl
+key_f3     key_up     key_5  key_minus  key_e   key_m  key_u  key_rbr
+key_f4     key_right  key_6  key_dot    key_f   key_n  key_v  key_caret
+__         key_down   key_7  key_slash  key_g   key_o  key_w  key_space

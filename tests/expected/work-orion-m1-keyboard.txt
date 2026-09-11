@@ -1,0 +1,10 @@
+=== РУС/ЛАТ переключает регистр ПЗУ ===
+[keyboard.rus] $00
+[keyboard.pressed] key_ruslat
+[keyboard.rus] $01
+[ram0.value] $F3E5: $FF
+[keyboard.rus] $00
+[ram0.value] $F3E5: $00
+=== D0000 набрано клавишами рисунка ===
+[keyboard.pressed] key_d
+[keyboard.count] $00

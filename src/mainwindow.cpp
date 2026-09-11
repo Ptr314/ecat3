@@ -75,6 +75,20 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
     QString current_path = QDir::currentPath();
     QString work_path, software_path, data_path, emulator_root, ini_path, ini_file;
 
+    //An ini that is not there yet is made a copy of the first source found.
+    //deploy/ecat.ini is the developer's own file and is not in git, so a fresh
+    //checkout carries only the distributed defaults, deploy/.ecat.ini - and
+    //without their [TapeFiles] no tape image loads. QFile::copy() never
+    //overwrites and never throws, unlike the std::filesystem call it replaces
+    auto seed_ini = [](const QString &target, const QStringList &sources) {
+        if (QFileInfo::exists(target)) return;
+        for (const QString &s : sources)
+            if (QFileInfo::exists(s)) {
+                QFile::copy(s, target);
+                return;
+            }
+    };
+
 #if defined(__linux__)
     if (std::filesystem::exists(QString(current_path + "/computers").toStdString())) {
         emulator_root = current_path;
@@ -84,13 +98,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
 
     ini_path = QString(getenv("HOME")) + "/.config";
     ini_file = ini_path + "/ecat.ini";
-    if (!std::filesystem::exists(ini_file.toStdString())) {
-        if (std::filesystem::exists(QString(emulator_root + "/ecat.ini").toStdString())) {
-            std::filesystem::copy_file(QString(emulator_root + "/ecat.ini").toStdString(), ini_file.toStdString());
-        } else {
-            std::filesystem::copy_file(QString(current_path + "/ecat.ini").toStdString(), ini_file.toStdString());
-        }
-    }
+    seed_ini(ini_file, {emulator_root + "/ecat.ini", current_path + "/ecat.ini", emulator_root + "/.ecat.ini"});
 #elif defined(__APPLE__)
     if (std::filesystem::exists(QString(current_path + "/computers").toStdString())) {
         emulator_root = current_path;
@@ -100,13 +108,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
 
     ini_path = QString(getenv("HOME"));
     ini_file = ini_path + "/.ecat.ini";
-    if (!std::filesystem::exists(ini_file.toStdString())) {
-        if (std::filesystem::exists(QString(emulator_root + "/ecat.ini").toStdString())) {
-            std::filesystem::copy_file(QString(emulator_root + "/ecat.ini").toStdString(), ini_file.toStdString());
-        } else {
-            std::filesystem::copy_file(QString(current_path + "/ecat.ini").toStdString(), ini_file.toStdString());
-        }
-    }
+    seed_ini(ini_file, {emulator_root + "/ecat.ini", current_path + "/ecat.ini", emulator_root + "/.ecat.ini"});
 #elif defined(_WIN32)
     QFileInfo ini_fi(app_path + "/ecat.ini");
     if (ini_fi.exists() && ini_fi.isFile()) {
@@ -122,6 +124,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
     } else {
         emulator_root = app_path;
     }
+    seed_ini(ini_file, {emulator_root + "/.ecat.ini"});
 #else
 #error "Unknown platform"
 #endif

@@ -1,0 +1,94 @@
+# Радио-86РК: нативная таблица клавиш сканирующей клавиатуры (data/rk.keys),
+# та же, которой пользуется экранная. Клавиша рисунка - это позиция матрицы
+# (rk.keys повторяет раскладку rk.kbd), код из нее делает ПЗУ, поэтому
+# проверка идет через монитор: набранное клавишами рисунка должно исполниться.
+#
+# РУС/ЛАТ - обычная клавиша на своей линии (роль rus-line): регистр хранит ПЗУ
+# и выводит на индикатор PC3, откуда его и берет keyboard.rus. Нажатие
+# держится 100 мс, иначе ПЗУ не успеет опросить линию.
+# @timeout 30
+
+MACHINE "radio-86rk/Radio-86rk.cfg"
+WAIT 2500
+
+LOGDEFS 8,16
+
+PRINT "=== клавиша рисунка замыкает свой контакт матрицы ==="
+KEYDOWN key_d
+WAIT 60
+LOG keyboard.matrix(0,7)
+LOG keyboard.pressed
+KEYUP key_d
+WAIT 60
+LOG keyboard.count
+
+KEYDOWN key_0
+WAIT 60
+KEYUP key_0
+WAIT 60
+KEYDOWN key_comma
+WAIT 60
+KEYUP key_comma
+WAIT 60
+KEYDOWN key_f
+WAIT 60
+KEYUP key_f
+WAIT 60
+KEYDOWN key_enter
+WAIT 60
+KEYUP key_enter
+WAIT 500
+
+PRINT "=== РУС/ЛАТ переключает регистр ПЗУ: Я, затем Q ==="
+LOG keyboard.rus
+KEYDOWN key_ruslat
+WAIT 100
+LOG keyboard.pressed
+KEYUP key_ruslat
+WAIT 100
+LOG keyboard.rus
+KEYDOWN key_q
+WAIT 60
+KEYUP key_q
+WAIT 60
+
+# Опрашивая клавиатуру, ПЗУ пишет в порт C ноль ($FE81) и тут же возвращает
+# PC3 по своему флагу ($FE8B). Провал длится ~20 мкс, и выборка по WAIT в него
+# не попадает, поэтому процессор останавливается прямо в нем, на $FE84: порт C
+# уже $F0, а регистр (и лампа рисунка) за линией идти не должен и остается $01
+PRINT "=== провал PC3 при опросе клавиатуры не трогает регистр ==="
+COMMAND cpu.breakpoint($FE84)
+WAITFOR cpu.pc == $FE84, 1000
+LOG cpu.pc
+LOG port-keyboard.c
+LOG keyboard.rus
+COMMAND cpu.breakpoint()
+COMMAND cpu.run()
+WAIT 100
+LOG port-keyboard.c
+LOG keyboard.rus
+
+KEYDOWN key_ruslat
+WAIT 100
+KEYUP key_ruslat
+WAIT 100
+LOG keyboard.rus
+KEYDOWN key_q
+WAIT 60
+KEYUP key_q
+WAIT 60
+
+PRINT "=== НР с цифрой дает верхнюю надпись, УС держится своей линией ==="
+KEYDOWN key_shift
+KEYDOWN key_1
+WAIT 60
+KEYUP key_1
+KEYUP key_shift
+WAIT 200
+KEYDOWN key_ctrl
+LOG keyboard.ctrl
+KEYUP key_ctrl
+LOG keyboard.ctrl
+
+SCREEN "../results/work-rk86-keyboard.png"
+EXIT

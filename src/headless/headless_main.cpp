@@ -153,6 +153,16 @@ Paths resolve_paths(const std::string &argv0)
     if (!fs::exists(p.ini)) p.ini = root + "/ecat.ini";
 #endif
 
+    //deploy/ecat.ini is the developer's own file and is not in git: a fresh
+    //checkout carries only the distributed defaults, and without their
+    //[TapeFiles] no tape image loads. The error code is swallowed, because a
+    //parallel test run may be making the same copy at the same moment
+    {
+        std::error_code ec;
+        if (!fs::exists(p.ini, ec) && fs::exists(root + "/.ecat.ini", ec))
+            fs::copy_file(root + "/.ecat.ini", p.ini, ec);
+    }
+
     p.work     = root + "/computers/";
     p.software = root + "/software/";
     p.data     = root + "/data/";

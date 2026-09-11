@@ -1,0 +1,18 @@
+=== клавиша рисунка замыкает свой контакт матрицы ===
+[keyboard.matrix] $0000: $FF $FF $FF $FF $EF $FF $FF $FF
+[keyboard.pressed] key_d
+[keyboard.count] $00
+=== РУС/ЛАТ переключает регистр ПЗУ: Я, затем Q ===
+[keyboard.rus] $00
+[keyboard.pressed] key_ruslat
+[keyboard.rus] $01
+=== провал PC3 при опросе клавиатуры не трогает регистр ===
+[cpu.pc] $FE84
+[port-keyboard.c] $F0
+[keyboard.rus] $01
+[port-keyboard.c] $F8
+[keyboard.rus] $01
+[keyboard.rus] $00
+=== НР с цифрой дает верхнюю надпись, УС держится своей линией ===
+[keyboard.ctrl] $00
+[keyboard.ctrl] $01

@@ -45,6 +45,11 @@ private:
 
     unsigned int stored_shift = 1;
 
+    // The Rus/Lat indicator line as last driven, and as last taken into the
+    // register; -1 until the machine drives it. See interface_callback()
+    int led_line = -1;
+    int led_taken = -1;
+
     void calculate_out();
 
     // Ids for the highlight of keys typed on the host keyboard

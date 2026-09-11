@@ -1,0 +1,90 @@
+# Апогей: экранная клавиатура (data/rk.keys на рисунке apogey_keyboard.svg).
+# Клавиша рисунка замыкает свой контакт матрицы, код из него делает ПЗУ,
+# поэтому проверка идет через монитор: набранное клавишами рисунка должно
+# исполниться.
+#
+# РУС/ЛАТ - клавиша на своей линии (роль rus-line). Регистр хранит ПЗУ и
+# выводит его в PC3, который подключен как ~ruslat_led: без этой линии
+# keyboard.rus после нажатия на рисунке не сменился бы.
+# @timeout 30
+
+MACHINE "apogey/Apogey.cfg"
+WAIT 2500
+
+LOGDEFS 8,16
+
+PRINT "=== D0,F набрано клавишами рисунка ==="
+KEYDOWN key_d
+WAIT 60
+LOG keyboard.matrix(0,7)
+LOG keyboard.pressed
+KEYUP key_d
+WAIT 60
+KEYDOWN key_0
+WAIT 60
+KEYUP key_0
+WAIT 60
+KEYDOWN key_comma
+WAIT 60
+KEYUP key_comma
+WAIT 60
+KEYDOWN key_f
+WAIT 60
+KEYUP key_f
+WAIT 60
+KEYDOWN key_enter
+WAIT 60
+KEYUP key_enter
+WAIT 500
+LOG keyboard.count
+
+PRINT "=== РУС/ЛАТ переключает регистр ПЗУ и индикатор: Я, затем Q ==="
+LOG keyboard.rus
+LOG port-keyboard.c
+KEYDOWN key_ruslat
+WAIT 100
+KEYUP key_ruslat
+WAIT 100
+LOG keyboard.rus
+LOG port-keyboard.c
+KEYDOWN key_q
+WAIT 60
+KEYUP key_q
+WAIT 60
+
+# Опрашивая клавиатуру, ПЗУ пишет в порт C ноль ($FE7F) и тут же возвращает
+# PC3 по своему флагу ($FE89). Провал длится ~20 мкс, и выборка по WAIT в него
+# не попадает, поэтому процессор останавливается прямо в нем, на $FE82: порт C
+# уже $F0, а регистр (и лампа рисунка) за линией идти не должен и остается $01
+PRINT "=== провал PC3 при опросе клавиатуры не трогает регистр ==="
+COMMAND cpu.breakpoint($FE82)
+WAITFOR cpu.pc == $FE82, 1000
+LOG cpu.pc
+LOG port-keyboard.c
+LOG keyboard.rus
+COMMAND cpu.breakpoint()
+COMMAND cpu.run()
+WAIT 100
+LOG port-keyboard.c
+LOG keyboard.rus
+
+KEYDOWN key_ruslat
+WAIT 100
+KEYUP key_ruslat
+WAIT 100
+LOG keyboard.rus
+KEYDOWN key_q
+WAIT 60
+KEYUP key_q
+WAIT 60
+
+PRINT "=== НР с цифрой дает верхнюю надпись ==="
+KEYDOWN key_shift
+KEYDOWN key_1
+WAIT 60
+KEYUP key_1
+KEYUP key_shift
+WAIT 200
+
+SCREEN "../results/work-apogey-keyboard.png"
+EXIT
