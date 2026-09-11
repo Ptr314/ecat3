@@ -14,6 +14,14 @@ struct ScanData {
     int shift_state;
 };
 
+// A key of the machine's own keyboard: a position of the matrix, named the way
+// the native table and the drawing name it
+struct ScanKeyId {
+    std::string id;
+    unsigned int scan_line;
+    unsigned int out_line;
+};
+
 class ScanKeyboard: public Keyboard
 {
 private:
@@ -24,22 +32,32 @@ private:
     Interface i_ruslat;
     Interface i_ruslat_led;
 
-    unsigned int scan_lines;
-    unsigned int out_lines;
+    unsigned int scan_lines = 0;
+    unsigned int out_lines = 0;
 
     std::vector<ScanData> scan_data;
+    std::vector<ScanKeyId> id_data;
     unsigned int key_array[15];
 
     unsigned int code_ctrl;
     unsigned int code_shift;
     unsigned int code_ruslat;
 
-    unsigned int stored_shift;
+    unsigned int stored_shift = 1;
 
     void calculate_out();
 
+    // Ids for the highlight of keys typed on the host keyboard
+    std::string id_at(unsigned int scan, unsigned int out) const;
+    std::string role_id(KeyRole role) const;
+
 protected:
     void set_rus(bool new_rus) override;
+
+    emulator::Result parse_key_table(const std::vector<std::string> &body, const std::string &file) override;
+    void send_key_id(const std::string &id, bool press) override;
+    void set_shift_state(bool pressed) override;
+    void set_ctrl_state(bool pressed) override;
 
 public:
     ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
@@ -50,6 +68,8 @@ public:
     void key_up(unsigned int key) override;
 
     emulator::Result load_config(SystemData *sd) override;
+
+    void reset(bool cool) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

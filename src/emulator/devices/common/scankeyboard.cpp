@@ -13,6 +13,22 @@
 #define SCAN_CALLBACK 1
 #define LED_CALLBACK 2
 
+//Both tables of this keyboard are laid out as the matrix: one line per output
+//line, one whitespace separated column per scan line
+static std::vector<std::string> split_columns(const std::string &line)
+{
+    std::vector<std::string> parts;
+    std::string token;
+    for (size_t ci = 0; ci < line.size(); ci++) {
+        if (line[ci] == ' ' || line[ci] == '\t' || line[ci] == '\r') {
+            if (!token.empty()) { parts.push_back(token); token.clear(); }
+        } else {
+            token += line[ci];
+        }
+    }
+    if (!token.empty()) parts.push_back(token);
+    return parts;
+}
 
 ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
       Keyboard(im, cd)
@@ -47,19 +63,7 @@ emulator::Result ScanKeyboard::load_config(SystemData *sd)
         {
             std::string line = str_trim(lines[out]);
             if (line.empty()) continue;
-            // Split by whitespace: find tokens separated by spaces/tabs
-            std::vector<std::string> parts;
-            {
-                std::string token;
-                for (size_t ci = 0; ci < line.size(); ci++) {
-                    if (line[ci] == ' ' || line[ci] == '\t' || line[ci] == '\r') {
-                        if (!token.empty()) { parts.push_back(token); token.clear(); }
-                    } else {
-                        token += line[ci];
-                    }
-                }
-                if (!token.empty()) parts.push_back(token);
-            }
+            std::vector<std::string> parts = split_columns(line);
             scan_lines = parts.size();
             for (unsigned int scan=0; scan<scan_lines; scan++)
             {
@@ -89,6 +93,14 @@ emulator::Result ScanKeyboard::load_config(SystemData *sd)
         }
     }
 
+    //The native table was read before the map (by Keyboard::load_config), so
+    //only now can it be checked against the matrix. A key outside it would be
+    //dead on the drawing, and one shifted by a row would close another contact
+    for (size_t i = 0; i < id_data.size(); i++)
+        if (id_data[i].scan_line >= scan_lines || id_data[i].out_line >= out_lines)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Key table does not fit the matrix")) + "} " + id_data[i].id);
+
     code_ctrl = translate_key(cd->get_parameter("ctrl").value);
     code_shift = translate_key(cd->get_parameter("shift").value);
     code_ruslat = translate_key(cd->get_parameter("ruslat").value);
@@ -100,16 +112,96 @@ emulator::Result ScanKeyboard::load_config(SystemData *sd)
     return emulator::Result::ok();
 }
 
+// The native table has the layout of the map file, with the machine's key names
+// in place of the host's. Its position is all a key of the drawing needs: it
+// closes that contact of the matrix and nothing else - no forced Shift like the
+// map file entries have, the drawing has a Shift of its own. Blank lines and
+// comments are gone by now, so the lines of the body are the output lines.
+emulator::Result ScanKeyboard::parse_key_table(const std::vector<std::string> &body, const std::string &file)
+{
+    const unsigned int max_scan = sizeof(key_array) / sizeof(key_array[0]);
+    const unsigned int max_out = sizeof(key_array[0]) * 8;
+    for (unsigned int out = 0; out < body.size(); out++)
+    {
+        const std::vector<std::string> parts = split_columns(body[out]);
+        if (out >= max_out || parts.size() > max_scan)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Key table does not fit the matrix")) + "} " + body[out] + " (" + file + ")");
+        for (unsigned int scan = 0; scan < parts.size(); scan++)
+        {
+            if (parts[scan] == "__") continue;
+            id_data.push_back({parts[scan], scan, out});
+            register_key_id(parts[scan]);
+        }
+    }
+    return emulator::Result::ok();
+}
+
+std::string ScanKeyboard::id_at(unsigned int scan, unsigned int out) const
+{
+    for (size_t i = 0; i < id_data.size(); i++)
+        if (id_data[i].scan_line == scan && id_data[i].out_line == out) return id_data[i].id;
+    return "";
+}
+
+std::string ScanKeyboard::role_id(KeyRole role) const
+{
+    for (size_t i = 0; i < m_key_roles.size(); i++)
+        if (m_key_roles[i].second == role) return m_key_roles[i].first;
+    return "";
+}
+
+void ScanKeyboard::send_key_id(const std::string &id, bool press)
+{
+    //РУС/ЛАТ is not in the matrix: it has a line of its own, which the firmware
+    //polls, flipping its own flag and the indicator. So the key is held for as
+    //long as the pointer holds it - a press and release in one instant would
+    //pass by between two polls unseen - and the register is left to the machine
+    if (key_role(id) == KEY_ROLE_RUS_LINE) {
+        i_ruslat.change(press ? 0 : 1);
+        return;
+    }
+
+    for (size_t i = 0; i < id_data.size(); i++)
+        if (id_data[i].id == id) {
+            const unsigned int mask = create_mask(1, id_data[i].out_line);
+            if (press)
+                key_array[id_data[i].scan_line] &= ~mask;
+            else
+                key_array[id_data[i].scan_line] |= mask;
+            calculate_out();
+            return;
+        }
+}
+
+//stored_shift follows every decision about Shift: a host key with a forced
+//Shift restores it on release, and must not bring back a state the drawing
+//has changed since
+void ScanKeyboard::set_shift_state(bool pressed)
+{
+    stored_shift = pressed ? 0 : 1;
+    i_shift.change(stored_shift);
+}
+
+void ScanKeyboard::set_ctrl_state(bool pressed)
+{
+    i_ctrl.change(pressed ? 0 : 1);
+}
+
 void ScanKeyboard::key_down(unsigned int key)
 {
     //qDebug() << "DOWN" << Qt::hex << key;
-    if (key == code_ctrl)
+    if (key == code_ctrl) {
         i_ctrl.change(0);
-    else if (key == code_shift)
+        note_id(role_id(KEY_ROLE_CTRL), true);
+    } else if (key == code_shift) {
+        stored_shift = 0;
         i_shift.change(0);
-    else if (key == code_ruslat) {
+        note_id(role_id(KEY_ROLE_SHIFT), true);
+    } else if (key == code_ruslat) {
         i_ruslat.change(0);
         set_rus(!rus_mode);
+        note_id(role_id(KEY_ROLE_RUS_LINE), true);
     } else {
         for (size_t i=0; i<scan_data.size(); i++)
             if (scan_data[i].key_code == key)
@@ -125,6 +217,9 @@ void ScanKeyboard::key_down(unsigned int key)
                 key_array[l] &= ~create_mask(1, scan_data[i].out_line);
                 calculate_out();
                 //qDebug() << l << Qt::hex << key_array[l];
+
+                //So that typing on the real keyboard lights the drawing up as well
+                note_id(id_at(l, scan_data[i].out_line), true);
             }
     }
 }
@@ -132,16 +227,20 @@ void ScanKeyboard::key_down(unsigned int key)
 void ScanKeyboard::key_up(unsigned int key)
 {
     //qDebug() << "UP" << key;
-    if (key == code_ctrl)
+    if (key == code_ctrl) {
         i_ctrl.change(1);
-    else if (key == code_shift)
+        note_id(role_id(KEY_ROLE_CTRL), false);
+    } else if (key == code_shift) {
+        stored_shift = 1;
         i_shift.change(1);
-    else if (key == code_ruslat) {
+        note_id(role_id(KEY_ROLE_SHIFT), false);
+    } else if (key == code_ruslat) {
         //Only the press toggles the register. Toggling on the release too
         //cancels the press out, and what the machine is left with is whatever
         //its own indicator line happened to say - which is why the Орион
         //configs used to invert ruslat_led to get the right letters out
         i_ruslat.change(1);
+        note_id(role_id(KEY_ROLE_RUS_LINE), false);
     } else {
         for (size_t i=0; i<scan_data.size(); i++)
             if (scan_data[i].key_code == key)
@@ -156,8 +255,24 @@ void ScanKeyboard::key_up(unsigned int key)
 
                 }
 
+                note_id(id_at(l, scan_data[i].out_line), false);
             }
     }
+}
+
+// A reset forgets what was held, as it does for the other keyboard type. The
+// drawing drops its latches on a reset without releasing them, so a Shift or a
+// Control it had engaged would otherwise stay down in the matrix while the
+// picture shows it free.
+void ScanKeyboard::reset(bool cool)
+{
+    Keyboard::reset(cool);
+    memset(&key_array, _FFFF, sizeof(key_array));
+    stored_shift = 1;
+    i_shift.change(1);
+    i_ctrl.change(1);
+    i_ruslat.change(1);
+    calculate_out();
 }
 
 void ScanKeyboard::calculate_out()

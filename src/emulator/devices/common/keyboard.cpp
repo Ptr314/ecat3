@@ -296,6 +296,7 @@ emulator::Result Keyboard::load_key_table(SystemData *sd)
         {"rus",       KEY_ROLE_RUS_TOGGLE},
         {"rus-on",    KEY_ROLE_RUS_ON},
         {"rus-off",   KEY_ROLE_RUS_OFF},
+        {"rus-line",  KEY_ROLE_RUS_LINE},
         {"case-upper", KEY_ROLE_CASE_UPPER},
         {"case-lower", KEY_ROLE_CASE_LOWER},
         {"alt",       KEY_ROLE_ALT},

@@ -1,0 +1,26 @@
+// Клавиши самой Микроши: то, что нарисовано на mikrosha_keyboard.svg.
+// В отличие от mikrosha.kbd, где в матрице стоят клавиши хоста, здесь стоят
+// имена клавиш машины, они же идентификаторы элементов рисунка.
+//
+// Раскладка та же, что в mikrosha.kbd: строка -- выходная линия матрицы,
+// столбец -- линия сканирования, "__" -- позиции без клавиши. Клавиша рисунка
+// замыкает ровно свой контакт матрицы, код из него делает ПЗУ, поэтому ни
+// кодов, ни принудительного НР здесь нет. Пустые строки и комментарии строк
+// матрицы не занимают.
+//
+// НР, УС и РУС/ЛАТ в матрицу не входят -- у каждой своя линия порта C.
+// РУС/ЛАТ -- обычная клавиша (rus-line): регистр хранит ПЗУ и показывает
+// его лампой РУС, которая на рисунке -- элемент led_rus.
+
+shift:      key_shift    // НР
+ctrl:       key_ctrl     // УС
+rus-line:   key_ruslat   // РУС/ЛАТ
+
+key_space  key_ar2   key_tab    key_ps     key_enter  key_str    key_left   key_right
+key_up     key_down  key_home   key_f1     key_f2     key_f3     key_f4     key_f5
+key_0      key_1     key_2      key_3      key_4      key_5      key_6      key_7
+key_8      key_9     key_colon  key_semi   key_comma  key_minus  key_dot    key_slash
+key_at     key_a     key_b      key_c      key_d      key_e      key_f      key_g
+key_h      key_i     key_j      key_k      key_l      key_m      key_n      key_o
+key_p      key_q     key_r      key_s      key_t      key_u      key_v      key_w
+key_x      key_y     key_z      key_lbr    key_bksl   key_rbr    key_caret  key_under

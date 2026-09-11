@@ -1,0 +1,84 @@
+# Микроша: нативная таблица клавиш сканирующей клавиатуры, та же, которой
+# пользуется экранная. Клавиша рисунка - это позиция матрицы (mikrosha.keys
+# повторяет раскладку mikrosha.kbd), код из нее делает ПЗУ, поэтому проверка
+# идет через монитор: набранное клавишами рисунка должно исполниться.
+#
+# РУС/ЛАТ здесь - обычная клавиша на своей линии (роль rus-line): регистр
+# хранит ПЗУ и выводит на индикатор, откуда его и берет keyboard.rus. Нажатие
+# держится 100 мс, иначе ПЗУ не успеет опросить линию.
+# @timeout 30
+
+MACHINE "mikrosha/Mikrosha.cfg"
+WAIT 2500
+
+LOGDEFS 8,16
+
+PRINT "=== клавиша рисунка замыкает свой контакт матрицы ==="
+KEYDOWN key_d
+WAIT 60
+LOG keyboard.matrix(0,7)
+LOG keyboard.pressed
+KEYUP key_d
+WAIT 60
+LOG keyboard.count
+
+KEYDOWN key_0
+WAIT 60
+KEYUP key_0
+WAIT 60
+KEYDOWN key_comma
+WAIT 60
+KEYUP key_comma
+WAIT 60
+KEYDOWN key_f
+WAIT 60
+KEYUP key_f
+WAIT 60
+KEYDOWN key_enter
+WAIT 60
+KEYUP key_enter
+WAIT 500
+
+PRINT "=== РУС/ЛАТ переключает регистр ПЗУ: Я, затем Q ==="
+LOG keyboard.rus
+KEYDOWN key_ruslat
+WAIT 100
+LOG keyboard.pressed
+KEYUP key_ruslat
+WAIT 100
+LOG keyboard.rus
+KEYDOWN key_q
+WAIT 60
+KEYUP key_q
+WAIT 60
+KEYDOWN key_ruslat
+WAIT 100
+KEYUP key_ruslat
+WAIT 100
+LOG keyboard.rus
+KEYDOWN key_q
+WAIT 60
+KEYUP key_q
+WAIT 60
+
+PRINT "=== НР с цифрой дает верхнюю надпись ==="
+KEYDOWN key_shift
+KEYDOWN key_1
+WAIT 60
+KEYUP key_1
+KEYUP key_shift
+WAIT 200
+
+SCREEN "../results/work-mikrosha-keyboard.png"
+
+# Рисунок снимает свои защелки при сбросе, не отпуская их, поэтому НР,
+# зажатая на нем, должна отпуститься сбросом самой клавиатуры
+PRINT "=== холодный перезапуск отпускает НР ==="
+KEYDOWN key_shift
+LOG keyboard.shift
+RESET cold
+WAIT 100
+LOG keyboard.shift
+LOG keyboard.pressed
+
+EXIT

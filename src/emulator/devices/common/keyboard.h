@@ -313,6 +313,7 @@ enum KeyRole {
     KEY_ROLE_RUS_TOGGLE,    // one key flipping the alphabet
     KEY_ROLE_RUS_ON,        // separate РУС, like the БК has
     KEY_ROLE_RUS_OFF,       // separate ЛАТ
+    KEY_ROLE_RUS_LINE,      // РУС/ЛАТ on a line of its own, the firmware keeps the register (Микроша)
     KEY_ROLE_CASE_UPPER,    // latching capitals (БК: ЗАГЛ)
     KEY_ROLE_CASE_LOWER,    // latching small letters (БК: СТР)
     KEY_ROLE_ALT,           // second control key (БК: АР2), code goes through the alternative vector
@@ -363,7 +364,8 @@ protected:
     // The format is per keyboard type, so the base class only splits the file.
     virtual emulator::Result parse_key_table(const std::vector<std::string> &body, const std::string &file);
 
-    // A key of the machine that carries a code. Modifier keys never reach this.
+    // A key of the machine that carries a code. Called for every key of the
+    // drawing, modifiers included; an id the table does not know is ignored.
     virtual void send_key_id(const std::string &id, bool press) { (void)id; (void)press; }
 
     // Modifier state, held either by a momentary key or by a latching one.
