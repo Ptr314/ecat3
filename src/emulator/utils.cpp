@@ -38,17 +38,24 @@ std::string str_trim(const std::string &s)
     return s.substr(start, end - start + 1);
 }
 
+// The cast to unsigned char is the contract of ::tolower / ::toupper, and the
+// strings these two get are not all ASCII: a key name or a modifier mistyped on
+// a Russian layout arrives as a byte above $7F, which as a signed char is a
+// negative index into the locale table - undefined, and an assert dialog in a
+// debug MSVC runtime instead of the "entry is incorrect" the file deserves.
 std::string str_tolower(const std::string &s)
 {
     std::string r = s;
-    std::transform(r.begin(), r.end(), r.begin(), ::tolower);
+    std::transform(r.begin(), r.end(), r.begin(),
+                   [](unsigned char c){ return static_cast<char>(::tolower(c)); });
     return r;
 }
 
 std::string str_toupper(const std::string &s)
 {
     std::string r = s;
-    std::transform(r.begin(), r.end(), r.begin(), ::toupper);
+    std::transform(r.begin(), r.end(), r.begin(),
+                   [](unsigned char c){ return static_cast<char>(::toupper(c)); });
     return r;
 }
 

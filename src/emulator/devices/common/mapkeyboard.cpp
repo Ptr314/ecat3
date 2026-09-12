@@ -25,15 +25,40 @@ MapKeyboard::MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
 // One line of either table: "name[/modifiers]: value". The grammar is shared,
 // only the left hand side means a different thing in each: a host key name in
 // the .map file, a key of the machine itself in the native table.
-static bool parse_map_line(const std::string &line, std::string &name, std::string &mods, std::string &value)
+//
+// Every rule below is here because the lax version passed a typo on in
+// silence. split_string() drops empty tokens, so "/S" used to parse as the key
+// "S" with no modifiers, and "A//S" as "A" - a line that looks like Shift and
+// is not. A modifier letter no one knows ("B/X") counted as no modifier at
+// all, and the entry stayed in the table sending the wrong code. The caller
+// says which letters it knows: a map file has S, C and R, the native table
+// adds the case latch L. Case is not part of the spelling ("up/r" means what
+// it looks like), but an unknown or repeated letter is an error.
+static bool parse_map_line(const std::string &line, const std::string &known_mods,
+                           std::string &name, std::string &mods, std::string &value)
 {
-    std::vector<std::string> parts = split_string(line, ':', true);
-    if (parts.size() != 2) return false;
-    std::vector<std::string> left = split_string(parts[0], '/', true);
-    if (left.size() < 1 || left.size() > 2) return false;
-    name  = str_trim(left[0]);
-    mods  = (left.size() > 1) ? str_trim(left[1]) : "";
-    value = str_trim(parts[1]);
+    const size_t colon = line.find(':');
+    if (colon == std::string::npos) return false;
+
+    value = str_trim(line.substr(colon + 1));
+    if (value.empty() || value.find(':') != std::string::npos) return false;
+
+    const std::string left = str_trim(line.substr(0, colon));
+    const size_t slash = left.find('/');
+    name = str_trim(left.substr(0, (slash == std::string::npos) ? left.size() : slash));
+    if (name.empty()) return false;
+
+    mods.clear();
+    if (slash == std::string::npos) return true;
+
+    const std::string tail = str_toupper(str_trim(left.substr(slash + 1)));
+    if (tail.empty() || tail.find('/') != std::string::npos) return false;
+    for (size_t i = 0; i < tail.size(); i++)
+    {
+        if (known_mods.find(tail[i]) == std::string::npos) return false;
+        if (mods.find(tail[i]) != std::string::npos) return false;
+        mods += tail[i];
+    }
     return true;
 }
 
@@ -51,22 +76,63 @@ emulator::Result MapKeyboard::load_config(SystemData *sd)
             return emulator::Result::error(emulator::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Error reading map file")) + "} " + map_file);
         }
 
+        //The source line of every entry, kept only while the file is read: it
+        //is what a duplicate is reported against
+        std::vector<std::string> key_lines;
+
         std::vector<std::string> lines = split_string(content, '\n', true);
         for (size_t li = 0; li < lines.size(); li++)
         {
+            //Comments are cut the way the native key table cuts them: the two
+            //files share a grammar, and a map that cannot explain itself
+            //invites the next reader to "fix" a code back. No entry is lost to
+            //this: the only name "//" could collide with is the slash key
+            //spelled "/", and a name cannot be written that way here - the
+            //part before the "/" would be empty, which parse_map_line()
+            //refuses. A map spells it "slash", as the key table does.
             std::string line = str_trim(lines[li]);
+            const size_t comment = line.find("//");
+            if (comment != std::string::npos) line = str_trim(line.substr(0, comment));
             if (!line.empty()) {
                 std::string key, modificators, value;
-                if (!parse_map_line(line, key, modificators, value)) {
+                if (!parse_map_line(line, "SCR", key, modificators, value)) {
                     return emulator::Result::error(emulator::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Map file entry is incorrect")) + "} " + line);
                 }
-                key_map.push_back({
-                    translate_key(key),
-                    parse_numeric_value(value),
-                    (modificators.find('S') != std::string::npos),
-                    (modificators.find('C') != std::string::npos),
-                    (modificators.find('R') != std::string::npos)
-                });
+
+                //A name the key table does not know reached the machine as
+                //_FFFF, a code no key ever sends: the line was in the file, in
+                //the table, and dead. The joystick already refused such a line
+                const unsigned int key_code = translate_key(key);
+                if (key_code == _FFFF)
+                    return emulator::Result::error(emulator::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Unknown key in the map file")) + "} " + line);
+
+                //parse_numeric_value() throws, and nothing on the way out of a
+                //config load catches it: one mistyped digit used to end the
+                //whole emulator with "terminate called", naming neither the
+                //file nor the line
+                unsigned int code;
+                try {
+                    code = parse_numeric_value(value);
+                } catch (const std::exception &) {
+                    return emulator::Result::error(emulator::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Invalid value in the map file")) + "} " + line);
+                }
+
+                const bool shift = (modificators.find('S') != std::string::npos);
+                const bool ctrl  = (modificators.find('C') != std::string::npos);
+                const bool rus   = (modificators.find('R') != std::string::npos);
+
+                //The first entry of a pair wins, so the second one is a line the
+                //author believes in and the machine never reads. The line it
+                //collides with is named too: the table matches by key code, and
+                //a name has synonyms - "minus" and "-" are one key, so are
+                //"enter" and "ret2" - so the two lines need not look alike
+                for (size_t i = 0; i < key_map.size(); i++)
+                    if (key_map[i].key_code == key_code && key_map[i].shift == shift
+                        && key_map[i].ctrl == ctrl && key_map[i].rus == rus)
+                        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Duplicate entry in the map file")) + "} " + line + " (== " + key_lines[i] + ")");
+
+                key_map.push_back({key_code, code, shift, ctrl, rus});
+                key_lines.push_back(line);
             }
         }
     }
@@ -304,18 +370,35 @@ emulator::Result MapKeyboard::parse_key_table(const std::vector<std::string> &bo
     for (size_t i = 0; i < body.size(); i++)
     {
         std::string name, mods, value;
-        if (!parse_map_line(body[i], name, mods, value))
+        if (!parse_map_line(body[i], "SCRL", name, mods, value))
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Key table entry is incorrect")) + "} " + body[i] + " (" + file + ")");
 
-        id_map.push_back({
-            name,
-            parse_numeric_value(value),
-            (mods.find('S') != std::string::npos),
-            (mods.find('C') != std::string::npos),
-            (mods.find('R') != std::string::npos),
-            (mods.find('L') != std::string::npos)
-        });
+        //A header line spelled wrong ("shft: key_shift") falls through to here,
+        //where the id would be "shft" and the value a key name: without this
+        //the value threw out of the whole load instead of naming the line
+        unsigned int code;
+        try {
+            code = parse_numeric_value(value);
+        } catch (const std::exception &) {
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Invalid value in the key table")) + "} " + body[i] + " (" + file + ")");
+        }
+
+        const bool shift = (mods.find('S') != std::string::npos);
+        const bool ctrl  = (mods.find('C') != std::string::npos);
+        const bool rus   = (mods.find('R') != std::string::npos);
+        const bool lcase = (mods.find('L') != std::string::npos);
+
+        //find_id_entry() takes the first match, so a second line for the same
+        //key and the same modifiers is one the drawing will never send
+        for (size_t j = 0; j < id_map.size(); j++)
+            if (id_map[j].id == name && id_map[j].shift == shift && id_map[j].ctrl == ctrl
+                && id_map[j].rus == rus && id_map[j].lcase == lcase)
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                    "{MapKeyboard|" + std::string(QT_TRANSLATE_NOOP("MapKeyboard", "Duplicate entry in the key table")) + "} " + body[i] + " (" + file + ")");
+
+        id_map.push_back({name, code, shift, ctrl, rus, lcase});
         register_key_id(name);
     }
     return emulator::Result::ok();

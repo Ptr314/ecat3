@@ -35,7 +35,12 @@ emulator::Result Joystick::load_config(SystemData *sd)
     std::vector<std::string> lines = split_string(content, '\n', true);
     for (size_t li = 0; li < lines.size(); li++)
     {
+        //The joystick map is a map file too, and CONFIG.md promises comments
+        //for those: a "// arrows" line copied from a keyboard map must not be
+        //what makes the machine refuse to start
         std::string line = str_trim(lines[li]);
+        const size_t comment = line.find("//");
+        if (comment != std::string::npos) line = str_trim(line.substr(0, comment));
         if (line.empty()) continue;
         std::vector<std::string> parts = split_string(line, ':', true);
         if (parts.size() != 2)
@@ -47,7 +52,15 @@ emulator::Result Joystick::load_config(SystemData *sd)
                 "{Joystick|" + std::string(QT_TRANSLATE_NOOP("Joystick", "Unknown key in the map file")) + "} " + line);
         Contact c;
         c.key = key;
-        c.bits = parse_numeric_value(str_trim(parts[1]));
+        //A mistyped digit throws, and a config load catches nothing on the way
+        //out: the emulator used to end with "terminate called", naming neither
+        //the file nor the line
+        try {
+            c.bits = parse_numeric_value(str_trim(parts[1]));
+        } catch (const std::exception &) {
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{Joystick|" + std::string(QT_TRANSLATE_NOOP("Joystick", "Map file entry is incorrect")) + "} " + line);
+        }
         m_contacts.push_back(c);
     }
 
