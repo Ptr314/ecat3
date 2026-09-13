@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Copyright (c) 2026 Mikhail Revzin. Licensed under CC BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/ -->
+
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
@@ -13,11 +14,11 @@
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <metadata
      id="metadata1">
     <rdf:RDF>
@@ -26,7 +27,6 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title>Клавиатура «Электроника БК0010-01», «БК0011М»</dc:title>
         <dc:date>2026</dc:date>
         <dc:creator>
           <cc:Agent>
@@ -70,8 +70,8 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.91064855"
-     inkscape:cx="495.25143"
-     inkscape:cy="255.86161"
+     inkscape:cx="549.05924"
+     inkscape:cy="197.66133"
      inkscape:window-width="1920"
      inkscape:window-height="1010"
      inkscape:window-x="-6"
@@ -3691,12 +3691,37 @@
        gradientUnits="userSpaceOnUse" />
   </defs>
   <g
-     inkscape:label="Слой 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer2"
+     inkscape:label="Back"
+     sodipodi:insensitive="true">
+    <path
+       style="fill:#e6c98d;fill-opacity:1;stroke:none;stroke-width:0.1;stroke-linecap:round;stroke-linejoin:round"
+       d="M 20,20 H 279.99999 V 39.999999 H 290 v 19.999999 h -15 v 20 H 250 V 99.999997 H 210 V 120 H 65.000001 V 99.999997 H 44.999999 V 79.999998 h -9.999998 v -20 H 30 V 39.999999 H 20 Z"
+       id="path6" />
+    <rect
+       style="fill:#b9b9b9;fill-opacity:1;stroke:none;stroke-width:0.1;stroke-linecap:round;stroke-linejoin:round"
+       id="rect6"
+       width="275"
+       height="19.999989"
+       x="-1.634923e-14"
+       y="0" />
+    <path
+       style="fill:#b9b9b9;fill-opacity:1;stroke:none;stroke-width:0.1;stroke-linecap:round;stroke-linejoin:round"
+       d="m 0,20 h 20 v 19.999999 h 10 v 19.999999 h 5.000001 v 20 h 9.999998 V 99.999997 H 65.000001 V 120 H 0 Z"
+       id="path7" />
+    <path
+       style="fill:#b9b9b9;fill-opacity:1;stroke:none;stroke-width:0.1;stroke-linecap:round;stroke-linejoin:round"
+       d="m 275,0 h 35.00001 V 120 H 210 V 99.999997 h 40 V 79.999998 h 25 v -20 h 15 V 39.999999 H 279.99999 V 20 H 275 Z"
+       id="path8" />
+  </g>
+  <g
+     inkscape:label="Keys"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="display:inline">
     <g
-       id="key_minus"
-       sodipodi:insensitive="true">
+       id="key_minus">
       <path
          id="rect1-7-8-2"
          style="fill:url(#grad_top_minus);stroke-width:0.308539"
@@ -3756,8 +3781,7 @@
          aria-label="=" />
     </g>
     <g
-       id="key_k"
-       sodipodi:insensitive="true">
+       id="key_k">
       <path
          id="rect1-1-3-4"
          style="fill:url(#grad_top_k);stroke-width:0.308539"
@@ -3817,8 +3841,7 @@
          aria-label="K" />
     </g>
     <g
-       id="key_e"
-       sodipodi:insensitive="true">
+       id="key_e">
       <path
          id="rect1-6-3"
          style="fill:url(#grad_top_e);stroke-width:0.308539"
@@ -3878,8 +3901,7 @@
          aria-label="E" />
     </g>
     <g
-       id="key_g"
-       sodipodi:insensitive="true">
+       id="key_g">
       <path
          id="rect1-7-8-1"
          style="fill:url(#grad_top_g);stroke-width:0.308539"
@@ -3939,8 +3961,7 @@
          aria-label="G" />
     </g>
     <g
-       id="key_lbr"
-       sodipodi:insensitive="true">
+       id="key_lbr">
       <path
          id="rect1-1-3-2-2"
          style="fill:url(#grad_top_lbr);stroke-width:0.308539"
@@ -4000,8 +4021,7 @@
          aria-label="[" />
     </g>
     <g
-       id="key_z"
-       sodipodi:insensitive="true">
+       id="key_z">
       <path
          id="rect1-6-3-5"
          style="fill:url(#grad_top_z);stroke-width:0.308539"
@@ -4061,8 +4081,7 @@
          aria-label="Z" />
     </g>
     <g
-       id="key_h"
-       sodipodi:insensitive="true">
+       id="key_h">
       <path
          id="rect1-1-7-9-4"
          style="fill:url(#grad_top_h);stroke-width:0.308539"
@@ -4122,8 +4141,7 @@
          aria-label="H" />
     </g>
     <g
-       id="key_rcurl"
-       sodipodi:insensitive="true">
+       id="key_rcurl">
       <path
          id="rect1-7-8-1-0"
          style="fill:url(#grad_top_rcurl);stroke-width:0.308539"
@@ -4183,8 +4201,7 @@
          aria-label="}" />
     </g>
     <g
-       id="key_y"
-       sodipodi:insensitive="true">
+       id="key_y">
       <path
          id="rect1-1-8-7"
          style="fill:url(#grad_top_y);stroke-width:0.308539"
@@ -4244,8 +4261,7 @@
          aria-label="Y" />
     </g>
     <g
-       id="key_a"
-       sodipodi:insensitive="true">
+       id="key_a">
       <path
          id="rect1-1-3-4-4"
          style="fill:url(#grad_top_a);stroke-width:0.308539"
@@ -4305,8 +4321,7 @@
          aria-label="A" />
     </g>
     <g
-       id="key_p"
-       sodipodi:insensitive="true">
+       id="key_p">
       <path
          id="rect1-6-3-7"
          style="fill:url(#grad_top_p);stroke-width:0.308539"
@@ -4366,8 +4381,7 @@
          aria-label="P" />
     </g>
     <g
-       id="key_r"
-       sodipodi:insensitive="true">
+       id="key_r">
       <path
          id="rect1-1-7-9-1"
          style="fill:url(#grad_top_r);stroke-width:0.308539"
@@ -4427,8 +4441,7 @@
          aria-label="R" />
     </g>
     <g
-       id="key_q"
-       sodipodi:insensitive="true">
+       id="key_q">
       <path
          id="rect1-0-6-2"
          style="fill:url(#grad_top_q);stroke-width:0.308539"
@@ -4488,8 +4501,7 @@
          aria-label="Q" />
     </g>
     <g
-       id="key_m"
-       sodipodi:insensitive="true">
+       id="key_m">
       <path
          id="rect1-1-3-4-4-9"
          style="fill:url(#grad_top_m);stroke-width:0.308539"
@@ -4549,8 +4561,7 @@
          aria-label="M" />
     </g>
     <g
-       id="key_i"
-       sodipodi:insensitive="true">
+       id="key_i">
       <path
          id="rect1-6-3-7-8"
          style="fill:url(#grad_top_i);stroke-width:0.308539"
@@ -4611,8 +4622,7 @@
     </g>
     <g
        id="key_space"
-       transform="translate(65.000001,99.999997)"
-       sodipodi:insensitive="true">
+       transform="translate(65.000001,99.999997)">
       <path
          id="rect1-6-3-7-8-8"
          style="fill:url(#linearGradient31);stroke-width:0.972195"
@@ -4662,8 +4672,7 @@
          d="M 0,0 H 145 V 20 H 0 Z" />
     </g>
     <g
-       id="key_t"
-       sodipodi:insensitive="true">
+       id="key_t">
       <path
          id="rect1-1-7-9-1-8"
          style="fill:url(#grad_top_t);stroke-width:0.308539"
@@ -4723,8 +4732,7 @@
          aria-label="T" />
     </g>
     <g
-       id="key_b"
-       sodipodi:insensitive="true">
+       id="key_b">
       <path
          id="rect1-1-3-2-2-5-4"
          style="fill:url(#grad_top_b);stroke-width:0.308539"
@@ -4784,8 +4792,7 @@
          aria-label="B" />
     </g>
     <g
-       id="key_at"
-       sodipodi:insensitive="true">
+       id="key_at">
       <path
          id="rect1-1-3-4-5-2-4"
          style="fill:url(#grad_top_at);stroke-width:0.308539"
@@ -4845,8 +4852,7 @@
          aria-label="@" />
     </g>
     <g
-       id="key_comma"
-       sodipodi:insensitive="true">
+       id="key_comma">
       <path
          id="rect11"
          style="fill:#e0bb70;stroke-width:0.750001"
@@ -4915,8 +4921,7 @@
          aria-label="&lt;" />
     </g>
     <g
-       id="key_slash"
-       sodipodi:insensitive="true">
+       id="key_slash">
       <path
          id="rect1-1-3-2-2-6"
          style="fill:url(#grad_top_slash);stroke-width:0.308539"
@@ -4976,8 +4981,7 @@
          aria-label="?" />
     </g>
     <g
-       id="key_semi"
-       sodipodi:insensitive="true">
+       id="key_semi">
       <path
          id="rect1"
          style="fill:url(#grad_top_semi);stroke-width:0.308539"
@@ -5037,8 +5041,7 @@
          aria-label="+" />
     </g>
     <g
-       id="key_j"
-       sodipodi:insensitive="true">
+       id="key_j">
       <path
          id="rect1-0"
          style="fill:url(#grad_top_j);stroke-width:0.308539"
@@ -5098,8 +5101,7 @@
          aria-label="J" />
     </g>
     <g
-       id="key_c"
-       sodipodi:insensitive="true">
+       id="key_c">
       <path
          id="rect1-1-8"
          style="fill:url(#grad_top_c);stroke-width:0.308539"
@@ -5159,8 +5161,7 @@
          aria-label="C" />
     </g>
     <g
-       id="key_f"
-       sodipodi:insensitive="true">
+       id="key_f">
       <path
          id="rect1-0-6"
          style="fill:url(#grad_top_f);stroke-width:0.308539"
@@ -5220,8 +5221,7 @@
          aria-label="F" />
     </g>
     <g
-       id="key_u"
-       sodipodi:insensitive="true">
+       id="key_u">
       <path
          id="rect1-7-3"
          style="fill:url(#grad_top_u);stroke-width:0.308539"
@@ -5281,8 +5281,7 @@
          aria-label="U" />
     </g>
     <g
-       id="key_4"
-       sodipodi:insensitive="true">
+       id="key_4">
       <path
          id="rect1-6"
          style="fill:url(#grad_top_4);stroke-width:0.308539"
@@ -5342,8 +5341,7 @@
          aria-label="¤" />
     </g>
     <g
-       id="key_5"
-       sodipodi:insensitive="true">
+       id="key_5">
       <path
          id="rect1-1-7"
          style="fill:url(#grad_top_5);stroke-width:0.308539"
@@ -5403,8 +5401,7 @@
          aria-label="%" />
     </g>
     <g
-       id="key_6"
-       sodipodi:insensitive="true">
+       id="key_6">
       <path
          id="rect1-7-8"
          style="fill:url(#grad_top_6);stroke-width:0.308539"
@@ -5464,8 +5461,7 @@
          aria-label="&amp;" />
     </g>
     <g
-       id="key_7"
-       sodipodi:insensitive="true">
+       id="key_7">
       <path
          id="rect1-1-3-2"
          style="fill:url(#grad_top_7);stroke-width:0.308539"
@@ -5525,8 +5521,7 @@
          aria-label="´" />
     </g>
     <g
-       id="key_8"
-       sodipodi:insensitive="true">
+       id="key_8">
       <path
          id="rect1-1-3-3"
          style="fill:url(#grad_top_8);stroke-width:0.308539"
@@ -5586,8 +5581,7 @@
          aria-label="(" />
     </g>
     <g
-       id="key_9"
-       sodipodi:insensitive="true">
+       id="key_9">
       <path
          id="rect1-6-1"
          style="fill:url(#grad_top_9);stroke-width:0.308539"
@@ -5647,8 +5641,7 @@
          aria-label=")" />
     </g>
     <g
-       id="key_0"
-       sodipodi:insensitive="true">
+       id="key_0">
       <path
          id="rect1-1-7-0"
          style="fill:url(#grad_top_0);stroke-width:0.308539"
@@ -5708,8 +5701,7 @@
          aria-label="{" />
     </g>
     <g
-       id="key_povt"
-       sodipodi:insensitive="true">
+       id="key_povt">
       <path
          id="rect1-3-4-8"
          style="fill:url(#grad_top_povt);stroke-width:0.403972"
@@ -5764,8 +5756,7 @@
          aria-label="ПОВТ" />
     </g>
     <g
-       id="key_tab"
-       sodipodi:insensitive="true">
+       id="key_tab">
       <path
          id="rect1-3-4"
          style="fill:url(#grad_top_tab);stroke-width:0.403972"
@@ -5820,8 +5811,7 @@
          aria-label="ТАБ" />
     </g>
     <g
-       id="key_kt"
-       sodipodi:insensitive="true">
+       id="key_kt">
       <path
          id="rect1-3-4-8-2"
          style="fill:url(#grad_top_kt);stroke-width:0.403972"
@@ -5876,8 +5866,7 @@
          aria-label="КТ" />
     </g>
     <g
-       id="key_stop"
-       sodipodi:insensitive="true">
+       id="key_stop">
       <path
          id="rect1-3-4-2-2-5"
          style="fill:url(#linearGradient42);stroke-width:0.444063"
@@ -5932,8 +5921,7 @@
          aria-label="СТОП" />
     </g>
     <g
-       id="key_step"
-       sodipodi:insensitive="true">
+       id="key_step">
       <path
          id="rect1-3-4-8-2-8-9"
          style="fill:url(#grad_top_step);stroke-width:0.403972"
@@ -5988,8 +5976,7 @@
          aria-label="ШАГ" />
     </g>
     <g
-       id="key_sbr"
-       sodipodi:insensitive="true">
+       id="key_sbr">
       <path
          id="rect1-3-4-2-2"
          style="fill:url(#grad_top_sbr);stroke-width:0.444063"
@@ -6044,8 +6031,7 @@
          aria-label="СБР" />
     </g>
     <g
-       id="key_block_ed"
-       sodipodi:insensitive="true">
+       id="key_block_ed">
       <path
          id="rect1-3-4-8-9-2"
          style="fill:url(#grad_top_block_ed);stroke-width:0.403972"
@@ -6100,16 +6086,15 @@
         <path
            style="line-height:100%;stroke-width:0.75"
            d="m 187.19792,2.3338722 h 2.94866 v 0.5364014 h -2.34714 v 1.4014648 h 1.0852 q 0.60151,0 0.95498,0.1147217 0.35657,0.1147216 0.57051,0.434082 0.21394,0.3162597 0.21394,0.7379394 0,0.3441651 -0.15503,0.6449219 -0.15193,0.2976562 -0.45579,0.486792 -0.30385,0.1891357 -1.03559,0.1891357 h -1.77974 z m 0.60152,4.0338622 h 1.20302 q 0.48679,0 0.72864,-0.1984375 0.24495,-0.1984375 0.24495,-0.5953124 0,-0.2821534 -0.13953,-0.4712891 -0.13953,-0.1891357 -0.38757,-0.2511475 -0.24805,-0.062012 -0.84646,-0.062012 h -0.80305 z m 3.86953,-4.0338622 h 2.84633 v 4.5454589 h -0.60151 V 2.8702736 h -1.64331 v 2.3409423 q 0,0.7131348 -0.0682,1.0448974 -0.0651,0.3317627 -0.27906,0.5177979 -0.21394,0.1829346 -0.5426,0.1829346 -0.19844,0 -0.47749,-0.074414 l 0.10232,-0.5333008 q 0.14883,0.062012 0.25425,0.062012 0.20464,0 0.30696,-0.1519287 0.10232,-0.1550293 0.10232,-0.7255371 z m 3.65249,2.3316406 q 0,-1.1317139 0.60771,-1.7704346 0.60772,-0.6418212 1.5689,-0.6418212 0.62942,0 1.13481,0.3007568 0.5054,0.3007568 0.76895,0.8402588 0.26665,0.5364013 0.26665,1.2185302 0,0.6914307 -0.27905,1.2371338 -0.27906,0.5457031 -0.79065,0.8278564 -0.5116,0.2790528 -1.10381,0.2790528 -0.64182,0 -1.14722,-0.3100586 -0.5054,-0.3100586 -0.76584,-0.84646 -0.26045,-0.5364013 -0.26045,-1.1348144 z m 0.62011,0.0093 q 0,0.8216553 0.44029,1.2960449 0.44338,0.4712891 1.11001,0.4712891 0.67902,0 1.11621,-0.4774902 0.44028,-0.4774903 0.44028,-1.3549561 0,-0.5550048 -0.18914,-0.9673828 -0.18603,-0.4154785 -0.5488,-0.6418212 -0.35967,-0.2294434 -0.80925,-0.2294434 -0.63872,0 -1.10071,0.4402832 -0.45889,0.4371826 -0.45889,1.4634765 z m 4.51136,-2.3409423 h 0.60151 v 1.9905761 q 0.41238,0 0.57981,-0.1581298 0.16743,-0.1612305 0.42788,-0.7689453 0.18914,-0.4464844 0.31006,-0.629419 0.12402,-0.1860351 0.35036,-0.3100586 0.22635,-0.127124 0.4992,-0.127124 0.34726,0 0.36587,0.0062 v 0.5208984 q -0.031,0 -0.12092,-0.0031 -0.0992,-0.0031 -0.12093,-0.0031 -0.28835,0 -0.42788,0.1395264 -0.14263,0.1395264 -0.32556,0.5953125 -0.22944,0.576709 -0.38757,0.7286377 -0.15813,0.1488281 -0.37827,0.2387451 0.44028,0.1209228 0.86816,0.8123535 l 0.93638,1.5130859 h -0.74725 l -0.75964,-1.2340332 q -0.31316,-0.5115966 -0.524,-0.7007324 -0.21084,-0.1922363 -0.5457,-0.1922363 v 2.1270019 h -0.60151 z"
-           id="path6" />
+           id="path11" />
         <path
            style="line-height:100%;stroke-width:0.75"
            d="M 189.27066,13.229331 V 8.6838721 h 1.71463 q 0.45268,0 0.69143,0.043408 0.33486,0.05581 0.5612,0.2139404 0.22635,0.1550293 0.36277,0.4371826 0.13953,0.2821534 0.13953,0.6201172 0,0.5798095 -0.36897,0.9828855 -0.36897,0.399976 -1.33325,0.399976 h -1.16582 v 1.847949 z m 0.60152,-2.384351 h 1.17512 q 0.58291,0 0.82786,-0.217041 0.24494,-0.217041 0.24494,-0.610815 0,-0.2852539 -0.14573,-0.486792 -0.14262,-0.2046386 -0.37827,-0.2697509 -0.15193,-0.040308 -0.5612,-0.040308 h -1.16272 z m 3.64629,2.384351 V 8.6838721 h 3.28662 v 0.5364014 h -2.68511 v 1.3921635 h 2.51457 v 0.5333 h -2.51457 v 1.547193 h 2.79053 v 0.536401 z m 4.63537,-4.5454589 h 2.76572 V 12.69293 h 0.40928 v 1.596801 h -0.5364 v -1.0604 h -3.00447 v 1.0604 h -0.5364 V 12.69293 h 0.35347 q 0.5488,-0.827857 0.5488,-3.3455325 z m 2.16421,0.5364014 h -1.5844 v 0.2325439 q 0,0.5798096 -0.10542,1.5874996 -0.10232,1.00459 -0.40618,1.652613 h 2.096 z"
-           id="path7" />
+           id="path12" />
       </g>
     </g>
     <g
-       id="key_ind_su"
-       sodipodi:insensitive="true">
+       id="key_ind_su">
       <path
          id="rect1-3-4-8-2-1"
          style="fill:url(#grad_top_ind_su);stroke-width:0.403972"
@@ -6164,16 +6149,15 @@
         <path
            style="line-height:100%;stroke-width:0.75"
            d="m 158.78629,2.3338722 h 0.5457 v 3.5997802 l 2.41846,-3.5997802 h 0.60462 v 4.5454589 h -0.54571 V 3.2888527 l -2.42155,3.5904784 h -0.60152 z m 4.57337,4.5454589 V 2.3338722 h 0.60151 v 1.8665527 h 2.36265 V 2.3338722 h 0.60151 v 4.5454589 h -0.60151 V 4.7368263 h -2.36265 v 2.1425048 z m 4.97954,-4.5454589 h 2.76572 v 4.0090576 h 0.40928 v 1.5968017 h -0.5364 V 6.8793311 h -3.00447 v 1.0604004 h -0.5364 V 6.3429298 h 0.35346 q 0.54881,-0.8278565 0.54881,-3.3455322 z m 2.16421,0.5364014 h -1.5844 v 0.2325439 q 0,0.5798096 -0.10542,1.5875 -0.10232,1.0045898 -0.40618,1.6526123 h 2.096 z"
-           id="path8" />
+           id="path9" />
         <path
            style="line-height:100%;stroke-width:0.75"
            d="m 164.54098,11.63563 0.60151,0.151929 q -0.18913,0.74104 -0.68213,1.131713 -0.48989,0.387574 -1.19992,0.387574 -0.73484,0 -1.19683,-0.297657 -0.45889,-0.300756 -0.70073,-0.868164 -0.23875,-0.567407 -0.23875,-1.21853 0,-0.710034 0.26975,-1.2371337 0.27286,-0.5302001 0.77205,-0.8030517 0.5023,-0.2759521 1.10381,-0.2759521 0.68213,0 1.14722,0.3472656 0.46508,0.3472656 0.64802,0.9766845 l -0.59221,0.1395264 q -0.15813,-0.4960937 -0.45889,-0.7224365 -0.30076,-0.2263428 -0.75654,-0.2263428 -0.524,0 -0.87747,0.2511475 -0.35037,0.2511474 -0.49299,0.6759278 -0.14263,0.42168 -0.14263,0.871265 0,0.579809 0.16743,1.013891 0.17053,0.430982 0.5271,0.644922 0.35657,0.21394 0.77205,0.21394 0.50539,0 0.85576,-0.291455 0.35037,-0.291455 0.47439,-0.865063 z m 0.67283,-2.9517579 h 0.60771 l 1.48208,2.7843259 1.29605,-2.7843259 h 0.59841 l -1.70532,3.5346679 q -0.31936,0.663525 -0.524,0.868164 -0.20464,0.204639 -0.58601,0.204639 -0.23255,0 -0.57051,-0.108521 v -0.514697 q 0.24184,0.139526 0.5116,0.139526 0.22014,0 0.37827,-0.139526 0.16123,-0.142627 0.35346,-0.644922 z"
-           id="path9" />
+           id="path10" />
       </g>
     </g>
     <g
-       id="key_su"
-       sodipodi:insensitive="true">
+       id="key_su">
       <path
          id="rect1-3-4-2"
          style="fill:url(#grad_top_su);stroke-width:0.444063"
@@ -6228,8 +6212,7 @@
          aria-label="СУ" />
     </g>
     <g
-       id="key_zagl"
-       sodipodi:insensitive="true">
+       id="key_zagl">
       <g
          id="g11"
          transform="translate(-1.275351e-7,60.000001)">
@@ -6288,8 +6271,7 @@
          aria-label="ЗАГЛ" />
     </g>
     <g
-       id="key_str"
-       sodipodi:insensitive="true">
+       id="key_str">
       <path
          id="rect1-3-6"
          style="fill:url(#grad_top_str);stroke-width:0.308539"
@@ -6344,8 +6326,7 @@
          aria-label="СТР" />
     </g>
     <g
-       id="key_rus"
-       sodipodi:insensitive="true">
+       id="key_rus">
       <path
          id="rect1-3-4-2-9"
          style="fill:url(#grad_top_rus);stroke-width:0.480823"
@@ -6400,8 +6381,7 @@
          aria-label="РУС" />
     </g>
     <g
-       id="key_lat"
-       sodipodi:insensitive="true">
+       id="key_lat">
       <path
          id="rect1-3-4-2-9-2"
          style="fill:url(#grad_top_lat);stroke-width:0.480823"
@@ -6456,8 +6436,7 @@
          aria-label="ЛАТ" />
     </g>
     <g
-       id="key_ar2"
-       sodipodi:insensitive="true">
+       id="key_ar2">
       <g
          id="g11-5"
          transform="translate(40.000001,79.999999)">
@@ -6516,8 +6495,7 @@
          aria-label="АР2" />
     </g>
     <g
-       id="key_vs"
-       sodipodi:insensitive="true">
+       id="key_vs">
       <path
          id="rect1-3-0"
          style="fill:url(#grad_top_vs);stroke-width:0.308539"
@@ -6572,8 +6550,7 @@
          aria-label="ВС" />
     </g>
     <g
-       id="key_shift"
-       sodipodi:insensitive="true">
+       id="key_shift">
       <path
          id="rect1-3"
          style="fill:url(#grad_top_shift);stroke-width:0.308539"
@@ -6628,8 +6605,7 @@
          sodipodi:nodetypes="cccccccc" />
     </g>
     <g
-       id="key_down"
-       sodipodi:insensitive="true">
+       id="key_down">
       <path
          id="rect1-3-6-1-7"
          style="fill:url(#grad_top_down);stroke-width:0.308539"
@@ -6684,8 +6660,7 @@
          sodipodi:nodetypes="cccccccc" />
     </g>
     <g
-       id="key_left"
-       sodipodi:insensitive="true">
+       id="key_left">
       <path
          id="rect12"
          style="fill:url(#linearGradient6);stroke-width:0.750001"
@@ -6748,8 +6723,7 @@
          sodipodi:nodetypes="cccccccc" />
     </g>
     <g
-       id="key_enter"
-       sodipodi:insensitive="true">
+       id="key_enter">
       <path
          id="rect1-3-4-2-7"
          style="fill:url(#linearGradient52);stroke-width:0.444063"
@@ -6804,8 +6778,7 @@
          sodipodi:nodetypes="cscccccsscc" />
     </g>
     <g
-       id="key_right"
-       sodipodi:insensitive="true">
+       id="key_right">
       <path
          id="rect12-1"
          style="fill:url(#linearGradient20);stroke-width:0.750001"
@@ -6868,8 +6841,7 @@
          sodipodi:nodetypes="cccccccc" />
     </g>
     <g
-       id="key_up"
-       sodipodi:insensitive="true">
+       id="key_up">
       <path
          id="rect1-3-6-1"
          style="fill:url(#grad_top_up);stroke-width:0.308539"
@@ -6924,8 +6896,7 @@
          sodipodi:nodetypes="cccccccc" />
     </g>
     <g
-       id="key_bksp"
-       sodipodi:insensitive="true">
+       id="key_bksp">
       <path
          id="rect1-3-4-4"
          style="fill:url(#grad_top_bksp);stroke-width:0.403972"
@@ -6988,8 +6959,7 @@
       </g>
     </g>
     <g
-       id="key_ins"
-       sodipodi:insensitive="true">
+       id="key_ins">
       <path
          id="rect1-3-4-8-92"
          style="fill:url(#grad_top_ins);stroke-width:0.403972"
@@ -7052,8 +7022,7 @@
       </g>
     </g>
     <g
-       id="key_1"
-       sodipodi:insensitive="true">
+       id="key_1">
       <path
          id="rect1-1"
          style="fill:url(#grad_top_1);stroke-width:0.308539"
@@ -7113,8 +7082,7 @@
          sodipodi:nodetypes="cc" />
     </g>
     <g
-       id="key_2"
-       sodipodi:insensitive="true">
+       id="key_2">
       <path
          id="rect1-7"
          style="fill:url(#grad_top_2);stroke-width:0.308539"
@@ -7174,8 +7142,7 @@
          sodipodi:nodetypes="cc" />
     </g>
     <g
-       id="key_clear"
-       sodipodi:insensitive="true">
+       id="key_clear">
       <path
          id="rect1-3-4-8-9"
          style="fill:url(#grad_top_clear);stroke-width:0.403972"
@@ -7238,8 +7205,7 @@
       </g>
     </g>
     <g
-       id="key_3"
-       sodipodi:insensitive="true">
+       id="key_3">
       <path
          id="rect1-1-3"
          style="fill:url(#grad_top_3);stroke-width:0.308539"
@@ -7299,8 +7265,7 @@
          sodipodi:nodetypes="cc" />
     </g>
     <g
-       id="key_del"
-       sodipodi:insensitive="true">
+       id="key_del">
       <path
          id="rect1-3-4-8-2-8"
          style="fill:url(#grad_top_del);stroke-width:0.403972"
@@ -7363,8 +7328,7 @@
       </g>
     </g>
     <g
-       id="key_colon"
-       sodipodi:insensitive="true">
+       id="key_colon">
       <path
          id="rect1-1-3-2-7"
          style="fill:url(#grad_top_colon);stroke-width:0.308539"
@@ -7424,8 +7388,7 @@
          aria-label="*" />
     </g>
     <g
-       id="key_dot"
-       sodipodi:insensitive="true">
+       id="key_dot">
       <path
          id="rect1-7-8-1-0-2"
          style="fill:url(#grad_top_dot);stroke-width:0.308539"
@@ -7485,8 +7448,7 @@
          aria-label="&gt;" />
     </g>
     <g
-       id="key_n"
-       sodipodi:insensitive="true">
+       id="key_n">
       <path
          id="rect1-1-7-9"
          style="fill:url(#grad_top_n);stroke-width:0.308539"
@@ -7546,8 +7508,7 @@
          aria-label="N" />
     </g>
     <g
-       id="key_rbr"
-       sodipodi:insensitive="true">
+       id="key_rbr">
       <path
          id="rect1-1-3-4-5"
          style="fill:url(#grad_top_rbr);stroke-width:0.308539"
@@ -7607,8 +7568,7 @@
          aria-label="]" />
     </g>
     <g
-       id="key_w"
-       sodipodi:insensitive="true">
+       id="key_w">
       <path
          id="rect1-7-3-1"
          style="fill:url(#grad_top_w);stroke-width:0.308539"
@@ -7668,8 +7628,7 @@
          aria-label="W" />
     </g>
     <g
-       id="key_d"
-       sodipodi:insensitive="true">
+       id="key_d">
       <path
          id="rect1-1-3-4-5-2"
          style="fill:url(#grad_top_d);stroke-width:0.308539"
@@ -7729,8 +7688,7 @@
          aria-label="D" />
     </g>
     <g
-       id="key_bksl"
-       sodipodi:insensitive="true">
+       id="key_bksl">
       <path
          id="rect1-1-7-9-4-8"
          style="fill:url(#grad_top_bksl);stroke-width:0.308539"
@@ -7790,8 +7748,7 @@
          aria-label="\" />
     </g>
     <g
-       id="key_o"
-       sodipodi:insensitive="true">
+       id="key_o">
       <path
          id="rect1-7-8-1-4"
          style="fill:url(#grad_top_o);stroke-width:0.308539"
@@ -7851,8 +7808,7 @@
          aria-label="O" />
     </g>
     <g
-       id="key_l"
-       sodipodi:insensitive="true">
+       id="key_l">
       <path
          id="rect1-1-3-2-2-5"
          style="fill:url(#grad_top_l);stroke-width:0.308539"
@@ -7912,8 +7868,7 @@
          aria-label="L" />
     </g>
     <g
-       id="key_v"
-       sodipodi:insensitive="true">
+       id="key_v">
       <path
          id="rect1-6-3-5-5"
          style="fill:url(#grad_top_v);stroke-width:0.308539"
@@ -7973,8 +7928,7 @@
          aria-label="V" />
     </g>
     <g
-       id="key_not"
-       sodipodi:insensitive="true">
+       id="key_not">
       <path
          id="rect1-1-8-7-5"
          style="fill:url(#grad_top_not);stroke-width:0.308539"
@@ -8034,8 +7988,7 @@
          aria-label="¬" />
     </g>
     <g
-       id="key_s"
-       sodipodi:insensitive="true">
+       id="key_s">
       <path
          id="rect1-7-3-1-1"
          style="fill:url(#grad_top_s);stroke-width:0.308539"
@@ -8095,8 +8048,7 @@
          aria-label="S" />
     </g>
     <g
-       id="key_x"
-       sodipodi:insensitive="true">
+       id="key_x">
       <g
          id="g19"
          transform="translate(165,79.999996)">

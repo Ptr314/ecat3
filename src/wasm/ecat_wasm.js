@@ -254,6 +254,10 @@ const I18N = {
         save:               "Save",
         eject:              "Eject",
         protect:            "Write protect",
+        openFile:           "Load a file",
+        openFileTitle:      "Load a program straight into the memory of the machine",
+        stFileLoaded:       "File loaded: {0}",
+        stFileFailed:       "Failed to load {0}: {1}",
         stInit:             "Initializing...",
         stListLoading:      "Loading machine list...",
         stListFailed:       "Failed to load machines.json: {0}",
@@ -319,6 +323,10 @@ const I18N = {
         save:               "Сохранить",
         eject:              "Извлечь",
         protect:            "Защита от записи",
+        openFile:           "Загрузить файл",
+        openFileTitle:      "Загрузить программу прямо в память машины",
+        stFileLoaded:       "Файл загружен: {0}",
+        stFileFailed:       "Не удалось загрузить {0}: {1}",
         stInit:             "Инициализация...",
         stListLoading:      "Загрузка списка машин...",
         stListFailed:       "Не удалось загрузить machines.json: {0}",
@@ -879,6 +887,7 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl) {
         setupDrives(module, configKey);
         setupDeviceOptions(module, configKey);
         setupTapes(module, configKey);
+        setupOpenFile(module);
 
         if (result !== 0) {
             setStatus("stMachineFailed", "error", result);
@@ -1040,6 +1049,83 @@ function renderDeviceOptions() {
     for (const opt of deviceOptions) {
         opt.caption.textContent = optionText(opt.title);
         opt.values.forEach((v, i) => { opt.select.options[i].textContent = optionText(v.title); });
+    }
+}
+
+// ============================================================================
+// Direct file loading
+// ============================================================================
+//
+// The "Load a file" of the desktop: a program goes straight into the memory of
+// the machine, bypassing tape and disk. Only a configuration whose system
+// section names the files it takes ("files") gets the button.
+
+// The messages of the core come as "{Context|text}"; the Russian ones are
+// those of src/translations/ru_ru.ts
+const CORE_MESSAGE_TEXT = {
+    ru: {
+        "Unknown file type":                         "Неизвестный тип файла",
+        "Error reading":                             "Ошибка чтения",
+        "Error reading HEX file":                    "Ошибка чтения HEX-файла",
+        "Error reading header data!":                "Ошибка чтения заголовка файла!",
+        "Error reading preamble data!":              "Ошибка чтения преамбулы файла!",
+        "Error reading CRC bytes!":                  "Не удалось прочитать CRC!",
+        "File is smaller than expected!":            "Размер файла меньше ожидаемого!",
+        "Unable to find a RAM page to store data":   "Не получилось найти страницу памяти для записи данных",
+        "Unable to find an expected preamble byte 0xE6!":     "Не удалось найти байт преамбулы 0xE6!",
+        "Unable to find an expected finalization byte 0xE6!": "Не удалось найти байт завершения 0xE6!",
+        "Can't load the file: all ramdisks are full!":        "Не удалось загрузить файл: все ram-диски уже заполнены!",
+    },
+};
+
+function coreMessage(message) {
+    const table = CORE_MESSAGE_TEXT[lang];
+    return message.replace(/\{[^|{}]*\|([^{}]*)\}/g, (m, text) => (table && table[text]) || text);
+}
+
+// The accept list of a file input. A filter that also offers all files
+// restricts nothing, as its dialog on the desktop does not
+function acceptFor(filter) {
+    return /\*\.\*/.test(filter) ? "" : filterExtensions(filter).join(",");
+}
+
+function setupOpenFile(module) {
+    const button = document.getElementById("btn-open");
+    const input = document.getElementById("open-file");
+
+    const files = module.ccall("wasm_system_files", "string", [], []);
+    button.hidden = !files;
+    input.accept = acceptFor(files || "");
+
+    // Assigned, not added: the machine changes, the button stays
+    button.onclick = () => {
+        button.blur();
+        input.click();
+    };
+    input.onchange = () => {
+        const file = input.files[0];
+        // Cleared so that the same file can be loaded again
+        const done = file ? openFile(module, file) : Promise.resolve();
+        done.then(() => { input.value = ""; });
+    };
+}
+
+async function openFile(module, file) {
+    try {
+        const data = new Uint8Array(await file.arrayBuffer());
+        // The extension decides the format, so the name stays as it is
+        mkdirRecursive(module, "/tmp/open");
+        const path = "/tmp/open/" + file.name;
+        module.FS.writeFile(path, data);
+
+        const error = module.ccall("wasm_open_file", "string", ["string"], [path]);
+        try { module.FS.unlink(path); } catch (e) { /* already gone */ }
+
+        if (!error) setStatus("stFileLoaded", "success", file.name);
+        else setStatus("stFileFailed", "error", file.name, coreMessage(error.split(path).join(file.name)));
+    } catch (err) {
+        console.error("File load error:", err);
+        setStatus("stError", "error", err.message);
     }
 }
 

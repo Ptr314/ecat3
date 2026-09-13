@@ -12,6 +12,7 @@
 #include <stdexcept>
 
 #include "emulator/emulator.h"
+#include "emulator/files.h"
 #include "emulator/devices/common/fdd.h"
 #include "emulator/devices/common/tape.h"
 #include "dsk_tools/dsk_tools.h"
@@ -324,6 +325,45 @@ int wasm_set_device_option(const char* device_name, int option_id, int value_id)
     if (dev == nullptr) return -2;
     dev->set_device_option(static_cast<unsigned>(option_id), static_cast<unsigned>(value_id));
     return 0;
+}
+
+// The file filter of the system section ("files"), the one the desktop gives
+// its "Load a file" dialog. Empty when the machine takes no files directly, and
+// then the page shows no such button.
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_system_files()
+{
+    static std::string result;
+    result.clear();
+    if (!g_emulator || !g_emulator->loaded) return result.c_str();
+    result = g_emulator->get_system_data()->allowed_files;
+    return result.c_str();
+}
+
+// Puts a file of the virtual FS straight into the memory of the machine, the
+// way the desktop "Load a file" does; the extension picks the format. Answers
+// an empty string on success, the message of the core otherwise.
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_open_file(const char* file_path)
+{
+    static std::string result;
+    result.clear();
+    if (!g_emulator || !g_emulator->loaded || file_path == nullptr) {
+        result = "No machine";
+        return result.c_str();
+    }
+
+    try {
+        emulator::Result res = HandleExternalFile(g_emulator, std::string(file_path));
+        if (!res) {
+            result = res.message.empty() ? "Error" : res.message;
+            printf("eCat3 WASM: loading '%s' failed: %s\n", file_path, result.c_str());
+        }
+    } catch (const std::exception& e) {
+        result = e.what();
+        printf("eCat3 WASM: loading '%s' failed: %s\n", file_path, e.what());
+    }
+    return result.c_str();
 }
 
 // A tape recorder by its device name, or nullptr when there is no such device
