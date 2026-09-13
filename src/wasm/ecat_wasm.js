@@ -214,7 +214,25 @@ function readUrlParams() {
         scale:    number("scale"),
         // "auto" follows the width of the screen, like a size never picked
         kbdScale: /^auto$/i.test(q.get("kbdscale") || "") ? "auto" : number("kbdscale"),
+        aspect:   aspectId(q.get("aspect") || ""),
+        filter:   filterId(q.get("filter") || ""),
     };
+}
+
+// The filtering modes of the screen: none, linear, sharp
+function filterId(text) {
+    const id = text.trim().toLowerCase();
+    return ["none", "linear", "sharp"].includes(id) ? id : null;
+}
+
+// The aspect modes of the screen, as the list offers them: 4:3, a square
+// screen, square pixels. The address takes aspect=4x3 or 4:3, square, 1x1 or
+// 1:1; anything else - the 4:3* of an earlier version too - is ignored. The
+// list lives inside: readUrlParams() calls this before a constant further
+// down the file would exist
+function aspectId(text) {
+    const id = text.trim().toLowerCase().replace(":", "x");
+    return ["4x3", "square", "1x1"].includes(id) ? id : null;
 }
 
 // A machine by its id in machines.json or by the name of its configuration
@@ -233,6 +251,8 @@ function currentPageUrl() {
     const q = new URLSearchParams();
     if (currentMachine) q.set("machine", currentMachine.id);
     q.set("scale", screenScale);
+    q.set("aspect", aspectMode());
+    q.set("filter", filterMode());
     // Only a machine with a drawing has a keyboard to speak of
     if (kbdBaseWidth > 0) {
         if (!document.getElementById("kbd-panel").hidden) q.set("kbd", "1");
@@ -396,6 +416,13 @@ const I18N = {
         stLinkFailed:       "Could not copy the link: {0}",
         stUrlMachine:       "Unknown machine in the address: {0}",
         clickToStart:       "Click or press a key to start",
+        aspectTitle:        "Shape of the screen. 4:3 - as on a TV set; Square screen - width equal to height; Square pixels - every pixel of the raster a square of whole screen pixels",
+        aspectSquareScreen: "Square screen",
+        aspectSquarePixels: "Square pixels",
+        filterTitle:        "Filtering when scaling. None - sharp, columns may come out uneven at a fractional scale; Linear - even but soft; Sharp - the whole part of the scale without filtering, only the fraction smoothed",
+        filterNone:         "None",
+        filterLinear:       "Linear",
+        filterSharp:        "Sharp",
     },
     ru: {
         title:              "eCat3 — эмулятор ретрокомпьютеров",
@@ -470,6 +497,13 @@ const I18N = {
         stLinkFailed:       "Не удалось скопировать ссылку: {0}",
         stUrlMachine:       "В адресе указана неизвестная машина: {0}",
         clickToStart:       "Щёлкните или нажмите клавишу, чтобы запустить",
+        aspectTitle:        "Форма экрана. 4:3 — как на телевизоре; Квадратный экран — ширина равна высоте; Квадратные пиксели — каждая точка растра квадратом из целого числа пикселей экрана",
+        aspectSquareScreen: "Квадратный экран",
+        aspectSquarePixels: "Квадратные пиксели",
+        filterTitle:        "Фильтрация при масштабировании. Нет — резко, при дробном масштабе столбцы бывают разной ширины; Линейная — ровно, но мягко; Резкая — целая часть масштаба без фильтрации, сглаживается только дробная",
+        filterNone:         "Нет",
+        filterLinear:       "Линейная",
+        filterSharp:        "Резкая",
     },
 };
 
@@ -1718,6 +1752,89 @@ const SCREEN_STEP = 25;
 
 let screenScale = 200;  // percent
 
+// An aspect mode given in the address stands in for the saved one until the
+// user picks one from the list
+let aspectFromUrl = urlParams.aspect;
+
+function aspectMode() {
+    if (aspectFromUrl !== null) return aspectFromUrl;
+    return aspectId(settings.get("aspect", "")) || "4x3";
+}
+
+// The same for the filtering
+let filterFromUrl = urlParams.filter;
+
+function filterMode() {
+    if (filterFromUrl !== null) return filterFromUrl;
+    return filterId(settings.get("filter", "")) || "none";
+}
+
+// Filtering "Sharp". The core draws into #canvas, which is hidden then; every
+// new frame is copied into #canvas-sharp enlarged by whole numbers without
+// filtering, and the browser brings that one to the size on the page with its
+// linear filter - so only the fraction of the scale is smoothed and a stroke
+// one pixel wide comes out the same width everywhere. The copy is made only
+// when the core has put a frame: putImageData of its context is wrapped, and
+// getContext() hands out that same object every time
+const sharpScreen = { active: false, dirty: false, raf: 0, hooked: false };
+
+function copySharpFrame() {
+    sharpScreen.raf = requestAnimationFrame(copySharpFrame);
+    if (!sharpScreen.dirty) return;
+    sharpScreen.dirty = false;
+    const src = document.getElementById("canvas");
+    const dst = document.getElementById("canvas-sharp");
+    const ctx = dst.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(src, 0, 0, dst.width, dst.height);
+}
+
+function applyFilter(width, height) {
+    const src = document.getElementById("canvas");
+    const dst = document.getElementById("canvas-sharp");
+    const mode = filterMode();
+    src.classList.toggle("filter-linear", mode === "linear");
+
+    if (mode !== "sharp") {
+        if (sharpScreen.active) {
+            cancelAnimationFrame(sharpScreen.raf);
+            sharpScreen.active = false;
+        }
+        dst.hidden = true;
+        src.hidden = false;
+        return;
+    }
+
+    if (!sharpScreen.hooked) {
+        const ctx = src.getContext("2d");
+        const put = ctx.putImageData.bind(ctx);
+        ctx.putImageData = (...args) => { put(...args); sharpScreen.dirty = true; };
+        sharpScreen.hooked = true;
+    }
+
+    // The whole part of the scale, per axis. The margin is for sizes that come
+    // in fractions of a layout pixel: 1023.99 device pixels over a raster 512
+    // wide are still two of them, not one
+    const dpr = window.devicePixelRatio || 1;
+    const kx = Math.max(1, Math.floor(width * dpr / src.width + 0.01));
+    const ky = Math.max(1, Math.floor(height * dpr / src.height + 0.01));
+    // Assigning the size clears the canvas, so only when it changes
+    if (dst.width !== src.width * kx) dst.width = src.width * kx;
+    if (dst.height !== src.height * ky) dst.height = src.height * ky;
+    dst.style.width = width + "px";
+    dst.style.height = height + "px";
+
+    // The last frame is drawn again at once: a machine that stands still puts
+    // no new one, and the canvas may just have been cleared
+    sharpScreen.dirty = true;
+    src.hidden = true;
+    dst.hidden = false;
+    if (!sharpScreen.active) {
+        sharpScreen.active = true;
+        sharpScreen.raf = requestAnimationFrame(copySharpFrame);
+    }
+}
+
 function updateScreenScaleUi() {
     const range = document.getElementById("screen-scale");
     range.value = screenScale;
@@ -1725,6 +1842,8 @@ function updateScreenScaleUi() {
     document.getElementById("screen-scale-value").textContent = t("percent", screenScale);
     document.getElementById("screen-minus").disabled = screenScale <= SCREEN_MIN;
     document.getElementById("screen-plus").disabled = screenScale >= SCREEN_MAX;
+    document.getElementById("aspect").value = aspectMode();
+    document.getElementById("filter").value = filterMode();
 }
 
 function updateCanvasSize() {
@@ -1735,20 +1854,59 @@ function updateCanvasSize() {
     const canvasH = canvas.height;
     if (canvasW === 0 || canvasH === 0) return;
 
-    // 4:3, the way the desktop renderers do it: the height is the lines of the
-    // raster times the scale and the width follows from it (render_w =
-    // sx * ss * ps, render_h = sy * ss). A machine that changes only its
-    // horizontal resolution - the БК between colour and monochrome - keeps its
-    // size; stretching the height of a wide raster instead made it jump
-    const displayH = canvasH;
-    const displayW = canvasH * 4 / 3;
+    const scale = screenScale / 100;
+    // A CSS pixel is not a pixel of the screen: under the display scaling of
+    // Windows (125%, 150%) or a zoomed page one of them is 1.25 or 1.5 device
+    // pixels, and a raster line drawn over 2.5 of them is rounded to 2 or 3 -
+    // lines of uneven height, as if scaled by a fraction
+    const dpr = window.devicePixelRatio || 1;
+    // Device pixels per pixel of the raster, a whole number near the scale asked for
+    const whole = Math.max(1, Math.round(scale * dpr));
+    let width, height;
 
-    // Whole pixels: a fractional size would smear the edges of the picture
-    canvas.style.width = Math.round(displayW * screenScale / 100) + "px";
-    canvas.style.height = Math.round(displayH * screenScale / 100) + "px";
+    switch (aspectMode()) {
+        case "1x1":
+            // Square pixels, each a whole number of device pixels on both axes
+            width = canvasW * whole / dpr;
+            height = canvasH * whole / dpr;
+            break;
+        case "square":
+            // A square screen: the height as in 4:3, the width equal to it
+            height = Math.round(canvasH * scale);
+            width = height;
+            break;
+        default:
+            // 4:3, the way the desktop renderers do it: the height is the lines
+            // of the raster times the scale and the width follows from it
+            // (render_w = sx * ss * ps, render_h = sy * ss). A machine that
+            // changes only its horizontal resolution - the БК between colour and
+            // monochrome - keeps its size; stretching the height of a wide
+            // raster instead made it jump. Whole CSS pixels: a fractional size
+            // would smear the edges of the picture
+            width = Math.round(canvasH * 4 / 3 * scale);
+            height = Math.round(canvasH * scale);
+            break;
+    }
+
+    canvas.style.width = width + "px";
+    canvas.style.height = height + "px";
+    applyFilter(width, height);
 
     // A keyboard that follows the screen follows it here
     layoutKeyboard();
+}
+
+// devicePixelRatio changes with the zoom of the page and when the window moves
+// to a screen of another scale; the query matches only the ratio it was made
+// for, so it is made anew after every change
+function watchPixelRatio() {
+    const query = window.matchMedia("(resolution: " + window.devicePixelRatio + "dppx)");
+    const changed = () => {
+        query.removeEventListener("change", changed);
+        updateCanvasSize();
+        watchPixelRatio();
+    };
+    query.addEventListener("change", changed);
 }
 
 function setScreenScale(value) {
@@ -1774,7 +1932,24 @@ function setupCanvasScaling() {
     document.getElementById("screen-minus").addEventListener("click", () => setScreenScale(screenScale - SCREEN_STEP));
     document.getElementById("screen-plus").addEventListener("click", () => setScreenScale(screenScale + SCREEN_STEP));
 
+    const aspect = document.getElementById("aspect");
+    aspect.addEventListener("change", () => {
+        aspectFromUrl = null;
+        settings.set("aspect", aspect.value);
+        updateCanvasSize();
+    });
+    releaseFocus(aspect);
+
+    const filter = document.getElementById("filter");
+    filter.addEventListener("change", () => {
+        filterFromUrl = null;
+        settings.set("filter", filter.value);
+        updateCanvasSize();
+    });
+    releaseFocus(filter);
+
     new MutationObserver(updateCanvasSize).observe(canvas, { attributes: true, attributeFilter: ["width", "height"] });
+    watchPixelRatio();
     updateCanvasSize();
 }
 

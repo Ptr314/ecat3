@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>eCat3</title>
+    <!-- The icon of the desktop window (src/resources/icons/tv.png), copied
+         next to the page by build-wasm -->
+    <link rel="icon" type="image/png" href="favicon.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -452,11 +455,27 @@
             line-height: 0;
         }
 
-        #canvas {
+        #canvas, #canvas-sharp {
             display: block;
             background: #000;
+        }
+
+        #canvas {
             image-rendering: pixelated;
             image-rendering: crisp-edges;
+        }
+
+        /* Filtering "Linear": the browser scales the raster with its own
+           linear filter */
+        #canvas.filter-linear {
+            image-rendering: auto;
+        }
+
+        /* Filtering "Sharp": the raster enlarged by whole numbers without
+           filtering is copied here, and only the fraction of the scale that is
+           left goes through the linear filter of the browser */
+        #canvas-sharp {
+            image-rendering: auto;
         }
 
         /* Device options (the output type), then the drives. An empty block
@@ -662,6 +681,31 @@
             padding: 2px 0;
             width: 2em;
             flex: none;
+        }
+
+        /* The shape and the filtering of the screen, a row of their own under
+           the scale, sharing its width; as low as the stepper buttons */
+        .screen-options {
+            gap: 8px;
+            /* Set apart from the slider: the thumb and its glow reach below
+               the track */
+            margin-top: 6px;
+        }
+
+        .screen-options select {
+            min-width: 0;
+            padding: 2px 4px;
+            font-size: 12px;
+        }
+
+        /* The shapes have the longer captions ("Квадратные пиксели"), so they
+           get the larger part of the row; an equal split cut them off */
+        #aspect {
+            flex: 5 1 0;
+        }
+
+        #filter {
+            flex: 3 1 0;
         }
 
         /* The keyboard has a row of its own under the columns, so its size
@@ -887,6 +931,18 @@
                     <input type="range" id="screen-scale" min="100" max="400" step="25" value="200">
                     <button id="screen-plus">+</button>
                 </div>
+                <div class="row screen-options">
+                    <select id="aspect" data-i18n-title="aspectTitle">
+                        <option value="4x3">4:3</option>
+                        <option value="square" data-i18n="aspectSquareScreen"></option>
+                        <option value="1x1" data-i18n="aspectSquarePixels"></option>
+                    </select>
+                    <select id="filter" data-i18n-title="filterTitle">
+                        <option value="none" data-i18n="filterNone"></option>
+                        <option value="linear" data-i18n="filterLinear"></option>
+                        <option value="sharp" data-i18n="filterSharp"></option>
+                    </select>
+                </div>
             </div>
 
             <div class="group">
@@ -906,6 +962,7 @@
         <section id="col-center" class="column">
             <div id="canvas-wrap">
                 <canvas id="canvas" width="512" height="256" tabindex="0"></canvas>
+                <canvas id="canvas-sharp" width="512" height="256" hidden></canvas>
             </div>
         </section>
 

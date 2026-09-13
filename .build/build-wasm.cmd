@@ -67,6 +67,8 @@ copy /y "..\src\wasm\ecat_wasm.js" "%_RELEASE_DIR%" >nul || exit /b 1
 REM The version the page shows in its footer. The redirection goes first, so
 REM that no space is written after the number.
 > "%_RELEASE_DIR%\version.txt" echo %_VERSION%
+REM The icon of the page is the one of the desktop window.
+copy /y "..\src\resources\icons\tv.png" "%_RELEASE_DIR%\favicon.png" >nul || exit /b 1
 
 REM Machine configs, ROMs and disk images, one .bundle per machine plus
 REM machines.json listing them for the page.
