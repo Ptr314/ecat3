@@ -69,6 +69,9 @@ protected:
     // one of them go must not release the other
     bool host_alt_pressed = false;
     bool alt_held() const { return alt_pressed || host_alt_pressed; }
+    // case-latch: a letter typed on the host follows the case latch and the
+    // Rus register the way the drawing does, see key_down()
+    bool m_case_latch = false;
     unsigned code_ruslat;
     unsigned ruslat_bit;
     unsigned rus_value;

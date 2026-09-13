@@ -32,6 +32,11 @@
 [keyboard.pressed] key_zagl,key_rus
 [port-kbd-code.value] &000017
 [keyboard.rus] &000000
+=== Caps Lock хоста шлет РУС и ЛАТ ===
+[port-kbd-code.value] &000016
+[keyboard.rus] &000001
+[port-kbd-code.value] &000017
+[keyboard.rus] &000000
 === АР2 переводит код на второй вектор ===
 [port-kbd-code.value] &000102
 [keyboard.vector] &000060
@@ -42,6 +47,12 @@
 [keyboard.vector] &000274
 [port-kbd-code.value] &000102
 [keyboard.vector] &000060
+=== буквы хоста: ЛАТ+ЗАГЛ, ЛАТ+СТР, РУС+СТР, РУС+ЗАГЛ, РУС+ЗАГЛ с Shift ===
+[port-kbd-code.value] &000101
+[port-kbd-code.value] &000141
+[port-kbd-code.value] &000101
+[port-kbd-code.value] &000141
+[port-kbd-code.value] &000141
 === клавиша Ъ: код 137, в нижнем регистре 177 ===
 [port-kbd-code.value] &000137
 [port-kbd-code.value] &000177

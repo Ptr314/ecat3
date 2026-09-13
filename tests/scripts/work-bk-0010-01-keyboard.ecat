@@ -143,6 +143,14 @@ LOG port-kbd-code.value
 KEYUP key_lat
 LOG keyboard.rus
 
+PRINT "=== Caps Lock хоста шлет РУС и ЛАТ ==="
+KEY _100,_100,caps
+LOG port-kbd-code.value
+LOG keyboard.rus
+KEY _100,_100,caps
+LOG port-kbd-code.value
+LOG keyboard.rus
+
 # АР2 кода не меняет: контроллер отдает тот же код через вектор 274, и уже
 # ПЗУ делает из него полуграфику
 PRINT "=== АР2 переводит код на второй вектор ==="
@@ -169,6 +177,35 @@ KEYDOWN b
 LOG port-kbd-code.value
 LOG keyboard.vector
 KEYUP b
+
+# Буквы клавиатуры хоста подчиняются защелке ЗАГЛ/СТР и регистру РУС так же,
+# как клавиши рисунка (case-latch). В РУС клавиша F по ЙЦУКЕН - это А.
+PRINT "=== буквы хоста: ЛАТ+ЗАГЛ, ЛАТ+СТР, РУС+СТР, РУС+ЗАГЛ, РУС+ЗАГЛ с Shift ==="
+KEYDOWN key_zagl
+KEYUP key_zagl
+KEYDOWN a
+LOG port-kbd-code.value
+KEYUP a
+KEYDOWN key_str
+KEYUP key_str
+KEYDOWN a
+LOG port-kbd-code.value
+KEYUP a
+KEY _100,_100,caps
+KEYDOWN f
+LOG port-kbd-code.value
+KEYUP f
+KEYDOWN key_zagl
+KEYUP key_zagl
+KEYDOWN f
+LOG port-kbd-code.value
+KEYUP f
+KEYDOWN shift
+KEYDOWN f
+LOG port-kbd-code.value
+KEYUP f
+KEYUP shift
+KEY _100,_100,caps
 
 PRINT "=== клавиша Ъ: код 137, в нижнем регистре 177 ==="
 KEYDOWN key_rcurl

@@ -186,6 +186,8 @@ emulator::Result MapKeyboard::load_config(SystemData *sd)
         }
     }
 
+    m_case_latch = read_confg_value(cd, "case-latch", false, false);
+
     m_vector = read_confg_value(cd, "vector", false, _FFFF);
     if (m_vector != _FFFF) {
         m_alt_vector = read_confg_value(cd, "alt-vector", false, m_vector);
@@ -333,8 +335,23 @@ void MapKeyboard::key_down(unsigned int key)
                     break;
                 }
         }
-        //АР2 latched on the drawing applies to the host keyboard as well
-        if (found_with_rus || found_no_rus) send_key(key_map[key_index].value, alt_held());
+        if (found_with_rus || found_no_rus) {
+            unsigned int value = key_map[key_index].value;
+            //A letter follows the case latch the way the drawing does: without
+            //Shift the machine key sends its /L form whenever case_shift() asks
+            //for it. The host table cannot say this by itself - in РУС the
+            //Russian capitals sit where the Latin small letters are
+            if (m_case_latch && !key_map[key_index].shift && !key_map[key_index].ctrl && case_shift()) {
+                const std::string id = id_of_code(key);
+                if (!id.empty()) {
+                    int l = find_id_entry(id, false, true, true);
+                    if (l < 0) l = find_id_entry(id, false, true, false);
+                    if (l >= 0) value = id_map[l].value;
+                }
+            }
+            //АР2 latched on the drawing applies to the host keyboard as well
+            send_key(value, alt_held());
+        }
     }
 }
 
