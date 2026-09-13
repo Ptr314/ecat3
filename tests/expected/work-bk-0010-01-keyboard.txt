@@ -37,6 +37,11 @@
 [keyboard.vector] &000060
 [port-kbd-code.value] &000102
 [keyboard.vector] &000274
+=== Alt хоста - та же АР2 ===
+[port-kbd-code.value] &000102
+[keyboard.vector] &000274
+[port-kbd-code.value] &000102
+[keyboard.vector] &000060
 === клавиша Ъ: код 137, в нижнем регистре 177 ===
 [port-kbd-code.value] &000137
 [port-kbd-code.value] &000177

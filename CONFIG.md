@@ -1478,7 +1478,7 @@ fdd0 : fdd {
 	sectors = 10
 	sector_size = 512
 	selector_value = 0
-	image = andos.img
+	image = andos330.img
 	~select = fdc.select[0-1]
 	~motor_on = fdc.motor_on
 }

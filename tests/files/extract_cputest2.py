@@ -1,16 +1,23 @@
-# Достает CPUTEST2 из образа ANDOS (deploy/software/bk/andos.img).
+# Достает CPUTEST2 из образа дискеты ANDOS.
+#
+# Файл был вынут с дискеты ANDOS 3.1 из комплекта другого эмулятора, которая
+# раньше лежала в deploy/software/bk/andos.img; в поставку она больше не
+# входит, поэтому путь к образу передается аргументом.
 #
 # Диск размечен под FAT12, но каталог у него плоский: подкаталоги ANDOS -
 # это записи с атрибутом метки тома, а файлы идут следом за своей меткой.
 # Нужный нам файл лежит в CPUTestS и грузится по адресу 030000 без заголовка.
 #
-#   py tests/files/extract_cputest2.py
+#   py tests/files/extract_cputest2.py <образ дискеты>
 
 import os
 import struct
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-IMAGE = os.path.join(HERE, '..', '..', 'deploy', 'software', 'bk', 'andos.img')
+if len(sys.argv) != 2:
+    raise SystemExit('usage: extract_cputest2.py <disk image>')
+IMAGE = sys.argv[1]
 NAME = 'CPUTEST2'
 
 d = open(IMAGE, 'rb').read()

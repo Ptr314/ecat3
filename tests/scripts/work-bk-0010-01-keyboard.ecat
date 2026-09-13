@@ -157,6 +157,19 @@ LOG keyboard.vector
 KEYUP key_b
 KEYUP key_ar2
 
+# Alt клавиатуры хоста работает как зажатая АР2, отпускание возвращает вектор 060
+PRINT "=== Alt хоста - та же АР2 ==="
+KEYDOWN alt
+KEYDOWN b
+LOG port-kbd-code.value
+LOG keyboard.vector
+KEYUP b
+KEYUP alt
+KEYDOWN b
+LOG port-kbd-code.value
+LOG keyboard.vector
+KEYUP b
+
 PRINT "=== клавиша Ъ: код 137, в нижнем регистре 177 ==="
 KEYDOWN key_rcurl
 LOG port-kbd-code.value

@@ -1,6 +1,6 @@
 === Заставка ===
 [fdd0.loaded] &000001
-[fdd0.file] andos.img
+[fdd0.file] andos330.img
 [fdc.motor] &000000
 [fdc.track] &000000
 [cpu.timeouts] &000001

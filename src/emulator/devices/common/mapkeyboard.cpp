@@ -297,6 +297,9 @@ void MapKeyboard::key_down(unsigned int key)
         ctrl_pressed = true;
     else if (key == EmuKey::Shift)
         shift_pressed = true;
+    else if (key == EmuKey::Alt)
+        //АР2 has no code of its own, see send_key_id()
+        host_alt_pressed = true;
     else if (key == code_ruslat) {
         set_rus(!rus_mode);
         if (m_use_codes && m_has_rus_switches) {
@@ -331,7 +334,7 @@ void MapKeyboard::key_down(unsigned int key)
                 }
         }
         //АР2 latched on the drawing applies to the host keyboard as well
-        if (found_with_rus || found_no_rus) send_key(key_map[key_index].value, alt_pressed);
+        if (found_with_rus || found_no_rus) send_key(key_map[key_index].value, alt_held());
     }
 }
 
@@ -361,6 +364,8 @@ void MapKeyboard::key_up(unsigned int key)
         ctrl_pressed = false;
     else if (key == EmuKey::Shift)
         shift_pressed = false;
+    else if (key == EmuKey::Alt)
+        host_alt_pressed = false;
 
     note_id(id_of_code(key), false);
 }
@@ -456,7 +461,7 @@ void MapKeyboard::send_key_id(const std::string &id, bool press)
     //АР2 does not have entries of its own: the code stays the same and goes
     //through the second vector, where the БК firmware makes its graphics and
     //screen-control codes out of it
-    send_key(id_map[found].value, alt_pressed);
+    send_key(id_map[found].value, alt_held());
 }
 
 // Two entries that send the same byte under the same modifiers describe the
@@ -495,6 +500,7 @@ void MapKeyboard::reset(bool cool)
     shift_pressed = false;
     ctrl_pressed = false;
     alt_pressed = false;
+    host_alt_pressed = false;
     m_last_value = _FFFF;
     m_last_alt = false;
     if (m_vector != _FFFF) i_vector.change(m_vector);

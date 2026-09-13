@@ -65,6 +65,10 @@ protected:
     bool shift_pressed;
     bool ctrl_pressed;
     bool alt_pressed = false;
+    // Alt of the host keyboard, kept apart from the latch on the drawing: letting
+    // one of them go must not release the other
+    bool host_alt_pressed = false;
+    bool alt_held() const { return alt_pressed || host_alt_pressed; }
     unsigned code_ruslat;
     unsigned ruslat_bit;
     unsigned rus_value;
