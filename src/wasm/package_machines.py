@@ -11,6 +11,9 @@ Generates, inside <output_dir>:
   - bundles/<machine-id>.bundle: per-machine asset archive
   - bundles/data.bundle: shared data files (charmaps, keyboard maps from
     deploy/data/)
+  - tapefiles.ini: the [TapeFiles] section of deploy/.ecat.ini, which the page
+    writes into the ini of the emulator - it says how a tape file of every
+    extension goes onto the tape, and the core reads it when recording too
 
 The bundles sit in their own subdirectory to keep the deployment package
 readable: everything the browser loads first (page, module, manifest) stays
@@ -22,6 +25,9 @@ without knowing the layout.
 # Subdirectory of the output directory that the .bundle files go into.
 # Referenced from machines.json, so changing it needs no change on the page.
 BUNDLES_DIR = "bundles"
+
+# The [TapeFiles] section of the desktop defaults, next to the page.
+TAPE_FILES_NAME = "tapefiles.ini"
 
 import os
 import re
@@ -120,6 +126,34 @@ def create_bundle(files_map, output_path):
         # End marker: empty name
         out.write(b"\x00")
 
+def write_tape_files(deploy_dir, output_dir):
+    """
+    Copy the [TapeFiles] section of deploy/.ecat.ini, the desktop defaults, so
+    the page and the desktop describe tape files from one place.
+    """
+    source = os.path.join(deploy_dir, ".ecat.ini")
+    if not os.path.isfile(source):
+        print(f"  WARNING: {source} not found, tapes will not load in the browser")
+        return
+
+    lines = []
+    inside = False
+    with open(source, "r", encoding="utf-8-sig") as f:
+        for line in f:
+            s = line.strip()
+            if s.startswith("[") and s.endswith("]"):
+                inside = s.lower() == "[tapefiles]"
+                if inside:
+                    lines.append(s)
+                continue
+            if inside and s and not s.startswith(";"):
+                lines.append(s)
+
+    target = os.path.join(output_dir, TAPE_FILES_NAME)
+    with open(target, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(lines) + "\n")
+    print(f"Wrote {target} ({max(len(lines) - 1, 0)} tape formats)")
+
 def main():
     if len(sys.argv) < 3:
         print(f"Usage: {sys.argv[0]} <deploy_dir> <output_dir>")
@@ -147,6 +181,8 @@ def main():
         data_bundle = os.path.join(bundles_dir, "data.bundle")
         create_bundle(data_files, data_bundle)
         print(f"Created {data_bundle} ({len(data_files)} files)")
+
+    write_tape_files(deploy_dir, output_dir)
 
     # Process each machine config
     machines = []
@@ -225,20 +261,28 @@ def main():
             "id": machine_id,
             "name": display_name,
             "type": meta["type"],
+            "family": meta["name"],
             "order": meta["order"],
             "cfg_path": cfg_vfs_path,
             "bundle_url": f"{BUNDLES_DIR}/{bundle_name}",
             "data_bundle_url": f"{BUNDLES_DIR}/data.bundle" if meta["charmap"] else None,
         })
 
-    # The same "order" the desktop chooser uses. It moves a machine inside its
-    # own family and nowhere else, so only the machines of one type standing
-    # next to each other are reordered and the list keeps its overall shape
-    start = 0
-    for i in range(len(machines) + 1):
-        if i == len(machines) or machines[i]["type"] != machines[start]["type"]:
-            machines[start:i] = sorted(machines[start:i], key=lambda m: m["order"])
-            start = i
+    # The arrangement of the desktop chooser (OpenConfigWindow::list_machines):
+    # machines are grouped by type under the name of the first config of that
+    # type, the families follow in the order of that name, and inside a family
+    # the machines go by "order", then by their own name. The page shows the
+    # manifest as it is, so the order is settled here once.
+    family_names = {}
+    for m in machines:
+        family_names.setdefault(m["type"], m["family"])
+    for m in machines:
+        m["family"] = family_names[m["type"]]
+
+    def text_key(s):
+        return (s.casefold(), s)
+
+    machines.sort(key=lambda m: (text_key(m["family"]), m["type"], m["order"], text_key(m["name"])))
 
     # Write manifest
     manifest_path = os.path.join(output_dir, "machines.json")

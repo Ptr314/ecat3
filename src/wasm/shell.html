@@ -3,133 +3,557 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>eCat3 - 8-bit Computer Emulator</title>
+    <title>eCat3</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        /* A class that sets display would otherwise win over the attribute */
+        [hidden] { display: none !important; }
+
+        /* Navy & Amber, see docs/ui_colors_navy_amber.md */
+        :root {
+            --bg: #0A1128;
+            --surface: #131F42;
+            --text: #FFFFFF;
+            --muted: #7A889B;
+            --primary: #FF9F1C;
+            --primary-hover: #FFAA33;
+            --primary-active: #E68A00;
+            --primary-ghost: rgba(255, 159, 28, 0.1);
+            --primary-pressed: rgba(255, 159, 28, 0.2);
+            --primary-glow: rgba(255, 159, 28, 0.4);
+            --track: #202E5C;
+            --success: #2EC4B6;
+            --warning: #FFD166;
+            --error: #FF4D6D;
+            --error-ghost: rgba(255, 77, 109, 0.12);
+            --error-glow: rgba(255, 77, 109, 0.5);
+        }
+
         body {
-            background: #1a1a2e;
-            color: #e0e0e0;
+            background: var(--bg);
+            color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 13px;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
         }
 
-        header {
-            width: 100%;
-            padding: 12px 24px;
-            background: #16213e;
-            border-bottom: 1px solid #0f3460;
-            display: flex;
-            align-items: center;
+        /* Three columns in the middle of the window. The middle one is as wide
+           as the screen; the outer two share one width, whatever the wider of
+           their contents needs: the 1fr tracks of a grid sized to max-content
+           come out equal and as large as the largest content asks for. Auto
+           margins centre the block and, unlike centring alignment, never push
+           its left edge out of reach when it is wider than the window - that
+           one scrolls instead. Only a phone-sized window stacks the columns */
+        #app {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: start;
             gap: 16px;
-            flex-wrap: wrap;
+            width: max-content;
+            margin-inline: auto;
+            padding: 16px;
         }
 
-        header h1 {
-            font-size: 18px;
+        @media (max-width: 720px) {
+            #app {
+                /* As wide as the window, not as the screen: a screen wider than
+                   the phone runs over the edge, the controls stay centred on it */
+                grid-template-columns: minmax(0, 1fr);
+                /* "safe": a column wider than the window starts at its left
+                   edge and scrolls, instead of spilling past both edges */
+                justify-items: safe center;
+                width: 100%;
+            }
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #col-left, #col-right {
+            max-width: 100%;
+        }
+
+        #col-center {
+            align-items: center;
+            gap: 8px;
+        }
+
+        h1 {
+            font-size: 22px;
             font-weight: 600;
-            color: #e94560;
-            margin-right: 8px;
+            color: var(--primary);
         }
 
-        .controls {
+        .caption {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .row {
             display: flex;
             align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
+            gap: 4px;
         }
 
-        select, button, input[type="file"] {
-            background: #0f3460;
-            color: #e0e0e0;
-            border: 1px solid #533483;
+        :focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* Buttons are the outline kind of the palette: an amber frame and
+           text, a faint amber wash under the pointer. Only a switch that is on
+           is filled */
+        button {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
             border-radius: 4px;
             padding: 6px 12px;
             font-size: 13px;
             cursor: pointer;
+            transition: background-color 0.12s, border-color 0.12s, color 0.12s;
         }
 
-        select:hover, button:hover {
-            background: #1a4a7a;
+        button:hover {
+            background: var(--primary-ghost);
         }
 
         button:active {
-            background: #533483;
+            background: var(--primary-pressed);
         }
 
-        button:disabled, select:disabled {
-            opacity: 0.5;
+        button.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: var(--bg);
+        }
+
+        button.active:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+        }
+
+        button.active:active {
+            background: var(--primary-active);
+            border-color: var(--primary-active);
+        }
+
+        select {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--track);
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: border-color 0.12s;
+        }
+
+        select:hover {
+            border-color: var(--primary);
+        }
+
+        option, optgroup {
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        button:disabled, select:disabled, input:disabled {
+            opacity: 0.45;
             cursor: not-allowed;
         }
 
-        .volume-control {
+        button:disabled:hover {
+            background: transparent;
+        }
+
+        select:disabled:hover {
+            border-color: var(--track);
+        }
+
+        /* As wide as its column, like the buttons under it */
+        #machine-select { width: 100%; }
+
+        /* Sliders: the filled part amber, the rest the track blue, a white thumb
+           in an amber ring. WebKit draws no filled part of its own, so the
+           script keeps --fill at the position of the thumb */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right,
+                var(--primary) var(--fill, 50%), var(--track) var(--fill, 50%));
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--text);
+            border: 2px solid var(--primary);
+            transition: box-shadow 0.12s;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--text);
+            border: 2px solid var(--primary);
+            transition: box-shadow 0.12s;
+        }
+
+        input[type="range"]::-moz-range-track {
+            background: transparent;
+        }
+
+        input[type="range"]:hover:not(:disabled)::-webkit-slider-thumb {
+            box-shadow: 0 0 0 4px var(--primary-glow);
+        }
+
+        input[type="range"]:hover:not(:disabled)::-moz-range-thumb {
+            box-shadow: 0 0 0 4px var(--primary-glow);
+        }
+
+        /* Checkbox: a muted frame when off, a filled amber square with a white
+           tick when on */
+        input[type="checkbox"] {
+            -webkit-appearance: none;
+            appearance: none;
+            flex: none;
+            display: inline-grid;
+            place-content: center;
+            width: 14px;
+            height: 14px;
+            border: 1.5px solid var(--muted);
+            border-radius: 3px;
+            background: var(--surface);
+            cursor: pointer;
+            transition: background-color 0.12s, border-color 0.12s;
+        }
+
+        input[type="checkbox"]::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            background: var(--text);
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+            transform: scale(0);
+            transition: transform 0.1s;
+        }
+
+        input[type="checkbox"]:checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        input[type="checkbox"]:checked::before {
+            transform: scale(1);
+        }
+
+        #canvas-wrap {
+            border: 2px solid var(--track);
+            border-radius: 4px;
+            line-height: 0;
+        }
+
+        #canvas {
+            display: block;
+            background: #000;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* Device options (the output type), then the drives. An empty block
+           would still take the gap of the column */
+        #options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #options select {
+            width: 100%;
+        }
+
+        #options:empty, #drives:empty, #tapes:empty {
+            display: none;
+        }
+
+        /* The head line of a drive or a tape block is a button that folds the
+           rest of the block away */
+        button.block-head {
+            width: 100%;
+            padding: 0;
+            background: none;
+            border: none;
+            border-radius: 0;
+            color: inherit;
+            font: inherit;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        button.block-head:hover, button.block-head:active {
+            background: none;
+        }
+
+        button.block-head:hover .drive-title,
+        button.block-head:hover .block-chevron {
+            color: var(--primary);
+        }
+
+        .block-chevron {
+            flex: none;
+            width: 12px;
+            font-size: 11px;
+            line-height: 1;
+            text-align: center;
+            color: var(--muted);
+            transition: transform 0.15s, color 0.12s;
+        }
+
+        .collapsed .block-chevron {
+            transform: rotate(-90deg);
+        }
+
+        .block-body {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* Drives */
+        #drives {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .drive {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 8px;
+            background: var(--surface);
+            border: 1px solid var(--track);
+            border-radius: 4px;
+        }
+
+        .drive-head {
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        .volume-control label {
-            font-size: 13px;
-            color: #aaa;
+        .drive-led {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--track);
+            flex: none;
         }
 
-        input[type="range"] {
-            width: 80px;
-            accent-color: #e94560;
+        /* A drive lamp burns red, as the lamps of the drives themselves did */
+        .drive-led.on {
+            background: var(--error);
+            box-shadow: 0 0 5px var(--error-glow), 0 0 2px var(--error);
         }
 
-        #canvas-container {
-            flex: 1;
+        .drive-device {
+            margin-left: auto;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .drive-file {
+            max-width: 15em;
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .drive .row button {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .drive-protect {
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-
-        #canvas {
-            background: #000;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-            border: 2px solid #0f3460;
-            border-radius: 4px;
-        }
-
-        #status {
-            padding: 8px 24px;
-            width: 100%;
-            background: #16213e;
-            border-top: 1px solid #0f3460;
+            gap: 6px;
             font-size: 12px;
-            color: #888;
-            text-align: center;
-        }
-
-        #status.loading {
-            color: #e94560;
-        }
-
-        #status.error {
-            color: #ff4444;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .file-input-wrapper input[type="file"] {
-            position: absolute;
-            left: 0; top: 0;
-            width: 100%; height: 100%;
-            opacity: 0;
             cursor: pointer;
         }
 
-        .file-input-wrapper button {
-            pointer-events: none;
+        /* Tape recorder: a name with a counter over one row of symbol buttons;
+           what a button does is in its hint */
+        #tapes {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .tape {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 8px;
+            background: var(--surface);
+            border: 1px solid var(--track);
+            border-radius: 4px;
+        }
+
+        .tape-info {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .tape-name {
+            max-width: 11em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tape-time {
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .tape-buttons button {
+            flex: 1;
+            min-width: 2.2em;
+            padding: 4px 0;
+            font-size: 14px;
+            line-height: 1;
+            /* Symbol fonts first, so the glyphs stay monochrome, not emoji */
+            font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "DejaVu Sans", sans-serif;
+        }
+
+        /* Recording is the one action that can overwrite something: it wears
+           the error colour, filled while it runs */
+        .tape-buttons button.tape-rec {
+            color: var(--error);
+            border-color: var(--error);
+        }
+
+        .tape-buttons button.tape-rec:hover {
+            background: var(--error-ghost);
+        }
+
+        .tape-buttons button.tape-rec.active {
+            background: var(--error);
+            border-color: var(--error);
+            color: var(--text);
+        }
+
+        .tape-buttons button.muted {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        /* A slider between a minus and a plus: the screen and the keyboard */
+        .stepper {
+            gap: 8px;
+        }
+
+        .stepper button {
+            padding: 2px 0;
+            width: 2em;
+            flex: none;
+        }
+
+        /* The keyboard has a row of its own under the columns, so its size
+           never pushes the side columns apart */
+        #kbd-row {
+            width: 100%;
+            display: flex;
+            justify-content: safe center;
+            padding: 0 16px 16px;
+        }
+
+        /* The bottom bar: the copyright, the status of the emulator in the
+           middle, the links of the project. A narrow window stacks them */
+        #footer {
+            margin-top: auto;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 4px 16px;
+            padding: 8px 24px;
+            background: var(--surface);
+            border-top: 1px solid var(--track);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        #status {
+            text-align: center;
+        }
+
+        .footer-links {
+            justify-self: end;
+            display: flex;
+            gap: 12px;
+        }
+
+        #footer a {
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.12s;
+        }
+
+        #footer a:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 720px) {
+            #footer {
+                grid-template-columns: 1fr;
+                justify-items: center;
+            }
+
+            .footer-links {
+                justify-self: center;
+            }
+        }
+
+        #status.success {
+            color: var(--success);
+        }
+
+        #status.loading {
+            color: var(--warning);
+        }
+
+        #status.error {
+            color: var(--error);
         }
 
         #overlay {
@@ -146,11 +570,12 @@
         #overlay.hidden { display: none; }
 
         /* On-screen keyboard: the SVG is inlined into the DOM, so the browser
-           draws it and the keys are ordinary elements to click */
+           draws it and the keys are ordinary elements to click. The width of
+           the panel is set from the script */
         #kbd-panel {
-            width: 100%;
-            max-width: 1100px;
-            padding: 8px 16px 16px;
+            /* A flex item would shrink to the window; a keyboard wider than
+               the window keeps its size and the page scrolls instead */
+            flex: none;
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
@@ -172,45 +597,82 @@
         /* An indicator lamp that is not lit. The burning one is left exactly as
            drawn; 0.2 is what the desktop window gets from black at 80% */
         #kbd-panel svg [id^="led_"].led-off { filter: brightness(0.2); }
-
-        #overlay-text {
-            color: #fff;
-            font-size: 24px;
-            text-align: center;
-        }
     </style>
 </head>
 <body>
     <div id="overlay" class="hidden">
     </div>
 
-    <header>
-        <h1>eCat3</h1>
-        <div class="controls">
+    <main id="app">
+        <aside id="col-left" class="column">
+            <h1>eCat3</h1>
+
             <select id="machine-select" disabled>
-                <option value="">Loading machines...</option>
+                <option value="" data-i18n="machinesLoading"></option>
             </select>
-            <button id="btn-reset" disabled title="Warm reset">Reset</button>
-            <button id="btn-cold-reset" disabled title="Cold reset (power cycle)">Power</button>
-            <div class="volume-control">
-                <label>Vol</label>
+
+            <button id="btn-power" disabled data-i18n="power" data-i18n-title="powerTitle"></button>
+            <button id="btn-reset" disabled data-i18n="reset" data-i18n-title="resetTitle"></button>
+
+            <div class="group">
+                <span class="caption"><span data-i18n="scale"></span> <span id="screen-scale-value"></span></span>
+                <div class="row stepper">
+                    <button id="screen-minus">&minus;</button>
+                    <input type="range" id="screen-scale" min="100" max="400" step="25" value="200">
+                    <button id="screen-plus">+</button>
+                </div>
+            </div>
+
+            <div class="group">
+                <label class="caption" for="volume" data-i18n="volume"></label>
                 <input type="range" id="volume" min="0" max="100" value="80">
             </div>
-            <div class="file-input-wrapper">
-                <button>Load Disk</button>
-                <input type="file" id="disk-file" accept=".dsk,.mfm,.hfe,.nib,.nic,.aim" disabled>
-            </div>
-            <button id="btn-keyboard" disabled title="On-screen keyboard">Keyboard</button>
-        </div>
-    </header>
 
-    <div id="canvas-container">
-        <canvas id="canvas" width="512" height="256" tabindex="0"></canvas>
+            <div class="group">
+                <label class="caption" for="lang" data-i18n="language"></label>
+                <select id="lang">
+                    <option value="ru">Русский</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+        </aside>
+
+        <section id="col-center" class="column">
+            <div id="canvas-wrap">
+                <canvas id="canvas" width="512" height="256" tabindex="0"></canvas>
+            </div>
+        </section>
+
+        <aside id="col-right" class="column">
+            <div id="options"></div>
+            <div id="drives"></div>
+            <div id="tapes"></div>
+
+            <button id="btn-keyboard" disabled hidden data-i18n="keyboard" data-i18n-title="keyboardTitle"></button>
+
+            <div id="kbd-size" class="group kbd-size" hidden>
+                <span class="caption"><span data-i18n="kbdSize"></span> <span id="kbd-scale-value"></span></span>
+                <div class="row stepper">
+                    <button id="kbd-minus" disabled>&minus;</button>
+                    <input type="range" id="kbd-scale" min="50" max="200" step="10" value="100" disabled>
+                    <button id="kbd-plus" disabled>+</button>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <div id="kbd-row">
+        <div id="kbd-panel" hidden></div>
     </div>
 
-    <div id="kbd-panel" hidden></div>
-
-    <div id="status">Initializing...</div>
+    <footer id="footer">
+        <span class="footer-copyright">© 2023–2026 Mikhail Revzin</span>
+        <span id="status"></span>
+        <span class="footer-links">
+            <a href="https://github.com/Ptr314/ecat3" target="_blank" rel="noopener" data-i18n-title="repoTitle">GitHub</a>
+            <a href="https://emuverse.ru" target="_blank" rel="noopener" data-i18n-title="emuverseTitle">Emuverse.ru</a>
+        </span>
+    </footer>
 
     <script defer src="ecat3.js"></script>
     <script defer src="ecat_wasm.js"></script>

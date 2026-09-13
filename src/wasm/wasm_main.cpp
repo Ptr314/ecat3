@@ -13,6 +13,8 @@
 
 #include "emulator/emulator.h"
 #include "emulator/devices/common/fdd.h"
+#include "emulator/devices/common/tape.h"
+#include "dsk_tools/dsk_tools.h"
 #include "renderer_wasm.h"
 
 static Emulator* g_emulator = nullptr;
@@ -55,6 +57,19 @@ int wasm_load_machine(const char* cfg_path)
         if (!res) {
             printf("eCat3 WASM: load_config failed: %s\n", res.message.c_str());
             return -2;
+        }
+
+        // A tape follows the motor line of the machine the way it does while
+        // the desktop recorder window is open - on the page the recorder is
+        // always in view. Its own sound gets the level that window gives it.
+        // The callback runs on the emulation thread, the one that clocks the tape.
+        for (ComputerDevice * dev : g_emulator->dm->find_devices_by_class("tape")) {
+            TapeRecorder * tape = dynamic_cast<TapeRecorder*>(dev);
+            if (tape == nullptr) continue;
+            tape->on_mode_changed = [tape](unsigned int mode) {
+                if (mode == TAPE_READ) tape->play(); else tape->stop();
+            };
+            tape->volume(10);
         }
 
         // Initialize video (nullptr for widget pointer - not used in WASM renderer)
@@ -245,22 +260,212 @@ int wasm_get_screen_height()
     return static_cast<int>(sy);
 }
 
+// The device options of the machine, the ones the desktop puts on its toolbar:
+// one line per dropdown, the fields separated by tabs:
+//   device  option_id  title  value_id  value_title  [value_id  value_title ...]
+// The titles are the untranslated source strings; the page translates them.
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_device_options()
+{
+    static std::string result;
+    result.clear();
+    if (!g_emulator || !g_emulator->loaded || g_emulator->dm == nullptr) return result.c_str();
+
+    for (unsigned int i = 0; i < g_emulator->dm->device_count; i++) {
+        ComputerDevice * dev = g_emulator->dm->get_device(i)->device.get();
+        DeviceOptions options = dev->get_device_options();
+        for (size_t j = 0; j < options.size(); j++) {
+            const DeviceOption & opt = options[j];
+            if (opt.type != DEVICE_OPTION_DROPDOWN || opt.values.empty()) continue;
+            result += dev->name + "\t" + std::to_string(opt.id) + "\t" + opt.title;
+            for (size_t v = 0; v < opt.values.size(); v++)
+                result += "\t" + std::to_string(opt.values[v].id) + "\t" + opt.values[v].title;
+            result += "\n";
+        }
+    }
+    return result.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_set_device_option(const char* device_name, int option_id, int value_id)
+{
+    if (!g_emulator || !g_emulator->loaded || g_emulator->dm == nullptr || device_name == nullptr) return -1;
+    ComputerDevice * dev = g_emulator->dm->get_device_by_name(std::string(device_name), false);
+    if (dev == nullptr) return -2;
+    dev->set_device_option(static_cast<unsigned>(option_id), static_cast<unsigned>(value_id));
+    return 0;
+}
+
+// A tape recorder by its device name, or nullptr when there is no such device
+static TapeRecorder * wasm_tape(const char * name)
+{
+    if (!g_emulator || !g_emulator->loaded || g_emulator->dm == nullptr || name == nullptr) return nullptr;
+    return dynamic_cast<TapeRecorder*>(g_emulator->dm->get_device_by_name(std::string(name), false));
+}
+
+// One line per tape recorder, the fields separated by tabs:
+//   name  mode  position  total  recorded  record_name  files
+// mode is TAPE_STOPPED or TAPE_READ, position and total are in seconds,
+// recorded is the size of what the machine has written so far.
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_tape_info()
+{
+    static std::string result;
+    result.clear();
+    if (!g_emulator || !g_emulator->loaded || g_emulator->dm == nullptr) return result.c_str();
+
+    for (ComputerDevice * dev : g_emulator->dm->find_devices_by_class("tape")) {
+        TapeRecorder * tape = dynamic_cast<TapeRecorder*>(dev);
+        if (tape == nullptr) continue;
+        result += tape->name + "\t"
+                + std::to_string(tape->get_mode()) + "\t"
+                + std::to_string(tape->get_position()) + "\t"
+                + std::to_string(tape->get_total()) + "\t"
+                + std::to_string(tape->get_record_size()) + "\t"
+                + tape->get_record_name() + "\t"
+                + tape->files + "\n";
+    }
+    return result.c_str();
+}
+
+// Puts a file of the virtual FS on the tape. How it goes there is the
+// [TapeFiles] entry for its extension, a machine specific one winning over the
+// generic one, exactly as in the desktop recorder window.
+EMSCRIPTEN_KEEPALIVE
+int wasm_tape_load(const char* device_name, const char* file_path)
+{
+    TapeRecorder * tape = wasm_tape(device_name);
+    if (tape == nullptr || file_path == nullptr) return -2;
+
+    std::string ext = dsk_tools::get_file_ext(file_path);
+    if (!ext.empty() && ext[0] == '.') ext = ext.substr(1);
+    if (ext.empty()) return -3;
+
+    SystemData * sd = g_emulator->get_system_data();
+    std::string fmt = g_emulator->read_setup("TapeFiles", sd->system_type + "." + ext, "");
+    if (fmt.empty()) fmt = g_emulator->read_setup("TapeFiles", ext, "");
+    if (fmt.empty()) return -3;
+
+    emulator::Result res = tape->load_file(std::string(file_path), fmt);
+    if (!res) {
+        printf("eCat3 WASM: tape load_file failed: %s\n", res.message.c_str());
+        return -4;
+    }
+    return 0;
+}
+
+// 0 play, 1 stop, 2 rewind, 3 recording (value 0/1), 4 mute (value 0/1)
+EMSCRIPTEN_KEEPALIVE
+int wasm_tape_control(const char* device_name, int action, int value)
+{
+    TapeRecorder * tape = wasm_tape(device_name);
+    if (tape == nullptr) return -2;
+    switch (action) {
+        case 0: tape->play(); break;
+        case 1: tape->stop(); break;
+        case 2: tape->rewind(); break;
+        case 3: tape->set_recording(value != 0); break;
+        case 4: tape->mute(value != 0); break;
+        default: return -3;
+    }
+    return 0;
+}
+
+// Writes what the machine has recorded to a file of the virtual FS, for the
+// page to hand to the browser. Answers the size, 0 when nothing was recorded.
+EMSCRIPTEN_KEEPALIVE
+int wasm_tape_save(const char* device_name, const char* file_path)
+{
+    TapeRecorder * tape = wasm_tape(device_name);
+    if (tape == nullptr || file_path == nullptr) return -2;
+
+    const std::vector<uint8_t> * data = tape->get_record_data();
+    if (data->empty()) return 0;
+
+    std::ofstream file(file_path, std::ios::binary);
+    if (!file.is_open()) return -4;
+    file.write(reinterpret_cast<const char*>(data->data()), static_cast<std::streamsize>(data->size()));
+    return static_cast<int>(data->size());
+}
+
+// A drive by its device name, or nullptr when there is no such drive
+static FDD * wasm_fdd(const char * name)
+{
+    if (!g_emulator || !g_emulator->loaded || g_emulator->dm == nullptr || name == nullptr) return nullptr;
+    return dynamic_cast<FDD*>(g_emulator->dm->get_device_by_name(std::string(name), false));
+}
+
+// One line per drive of the machine, the fields separated by tabs, because the
+// file filters themselves carry '|', ';' and spaces:
+//   name  loaded  protected  led  file_name  files  files_save
+// The page builds a block per line and polls this for the lamp and the disk.
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_fdd_info()
+{
+    static std::string result;
+    result.clear();
+    if (!g_emulator || !g_emulator->loaded || g_emulator->dm == nullptr) return result.c_str();
+
+    std::vector<ComputerDevice*> devices = g_emulator->dm->find_devices_by_class("fdd");
+    for (size_t i = 0; i < devices.size(); i++) {
+        FDD * fdd = dynamic_cast<FDD*>(devices[i]);
+        if (fdd == nullptr) continue;
+        std::string file = fdd->get_loaded() ? fdd->file_name : "";
+        for (size_t j = 0; j < file.size(); j++)
+            if (file[j] == '\t' || file[j] == '\n') file[j] = ' ';
+        result += fdd->name + "\t"
+                + (fdd->get_loaded() ? "1" : "0") + "\t"
+                + (fdd->is_protected() ? "1" : "0") + "\t"
+                + (fdd->is_led_on() ? "1" : "0") + "\t"
+                + file + "\t"
+                + fdd->files + "\t"
+                + fdd->files_save + "\n";
+    }
+    return result.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_fdd_eject(const char* device_name)
+{
+    FDD * fdd = wasm_fdd(device_name);
+    if (fdd == nullptr) return -2;
+    fdd->unload();
+    return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_fdd_protect(const char* device_name, int on)
+{
+    FDD * fdd = wasm_fdd(device_name);
+    if (fdd == nullptr) return -2;
+    if (fdd->is_protected() != (on != 0)) fdd->change_protection();
+    return 0;
+}
+
+// The image goes to a file of the virtual FS; its extension picks the format,
+// exactly as on the desktop. The page reads it back and hands it to the browser.
+EMSCRIPTEN_KEEPALIVE
+int wasm_fdd_save(const char* device_name, const char* file_path)
+{
+    FDD * fdd = wasm_fdd(device_name);
+    if (fdd == nullptr || file_path == nullptr) return -2;
+    if (!fdd->get_loaded()) return -3;
+
+    emulator::Result res = fdd->save_image(std::string(file_path));
+    if (!res) {
+        printf("eCat3 WASM: save_image failed: %s\n", res.message.c_str());
+        return -4;
+    }
+    return 0;
+}
+
 EMSCRIPTEN_KEEPALIVE
 int wasm_load_file(const char* device_name, const char* file_path)
 {
-    if (!g_emulator) return -1;
-
-    // Find the FDD device and load the image from the virtual FS path
-    ComputerDevice* dev = g_emulator->dm->get_device_by_name(std::string(device_name), false);
-    if (!dev) {
-        printf("eCat3 WASM: device '%s' not found\n", device_name);
+    FDD * fdd = wasm_fdd(device_name);
+    if (fdd == nullptr || file_path == nullptr) {
+        printf("eCat3 WASM: drive '%s' not found\n", device_name ? device_name : "");
         return -2;
-    }
-
-    FDD* fdd = dynamic_cast<FDD*>(dev);
-    if (!fdd) {
-        printf("eCat3 WASM: device '%s' is not an FDD\n", device_name);
-        return -3;
     }
 
     emulator::Result res = fdd->load_image(std::string(file_path));
