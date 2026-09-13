@@ -188,6 +188,97 @@ function clamp(value, lo, hi) {
     return Math.min(hi, Math.max(lo, value));
 }
 
+// ============================================================================
+// Page address
+// ============================================================================
+//
+// index.html?machine=Agat-7&kbd=1&scale=250&kbdscale=120 opens the page in that
+// state. It holds for this visit only: nothing read from the address goes into
+// the saved settings, so following somebody else's link leaves one's own
+// choices as they were. A machine picked or a slider moved by hand is saved as
+// usual. The link button next to the title builds such an address from what is
+// on the screen.
+
+const urlParams = readUrlParams();
+
+function readUrlParams() {
+    const q = new URLSearchParams(location.search);
+    const number = (name) => {
+        const value = parseInt(q.get(name), 10);
+        return isNaN(value) ? null : value;
+    };
+    const kbd = q.get("kbd");
+    return {
+        machine:  q.get("machine") || null,
+        keyboard: kbd !== null && !/^(0|false|no|off)$/i.test(kbd),
+        scale:    number("scale"),
+        // "auto" follows the width of the screen, like a size never picked
+        kbdScale: /^auto$/i.test(q.get("kbdscale") || "") ? "auto" : number("kbdscale"),
+    };
+}
+
+// A machine by its id in machines.json or by the name of its configuration
+// file, with or without .cfg, in any case
+function findMachine(machines, name) {
+    const want = name.toLowerCase().replace(/\.cfg$/, "");
+    const base = (m) => (m.cfg_path || "").split("/").pop().toLowerCase().replace(/\.cfg$/, "");
+    return machines.find((m) => m.id === name)
+        || machines.find((m) => m.id.toLowerCase() === want)
+        || machines.find((m) => base(m) === want)
+        || null;
+}
+
+// The address that opens the page the way it looks now
+function currentPageUrl() {
+    const q = new URLSearchParams();
+    if (currentMachine) q.set("machine", currentMachine.id);
+    q.set("scale", screenScale);
+    // Only a machine with a drawing has a keyboard to speak of
+    if (kbdBaseWidth > 0) {
+        if (!document.getElementById("kbd-panel").hidden) q.set("kbd", "1");
+        const chosen = kbdScaleChosen();
+        q.set("kbdscale", chosen === null ? "auto" : chosen);
+    }
+    return location.origin + location.pathname + "?" + q.toString();
+}
+
+async function copyText(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (e) {
+        // No clipboard API or no permission for it: the old way, a selection
+        const area = element("textarea", "", document.body);
+        area.value = text;
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        area.select();
+        let ok = false;
+        try { ok = document.execCommand("copy"); } catch (e2) { ok = false; }
+        area.remove();
+        return ok;
+    }
+}
+
+function setupLinkButton() {
+    const button = document.getElementById("btn-link");
+    let timer = null;
+    button.addEventListener("click", async () => {
+        // A focused button would take Space and Enter away from the machine
+        button.blur();
+        const url = currentPageUrl();
+        if (await copyText(url)) {
+            setStatus("stLinkCopied", "success");
+            // A check mark for a moment says that it worked
+            button.classList.add("copied");
+            clearTimeout(timer);
+            timer = setTimeout(() => button.classList.remove("copied"), 1500);
+        } else {
+            setStatus("stLinkFailed", "error", url);
+        }
+    });
+}
+
 // A control that kept the focus would keep the typing away from the machine:
 // the key handler leaves inputs and selects alone
 function releaseFocus(el) {
@@ -300,6 +391,11 @@ const I18N = {
         infoTitle:          "About this configuration",
         close:              "Close",
         infoMissing:        "There is no description for this configuration.",
+        linkTitle:          "Copy a link to this machine with the current settings",
+        stLinkCopied:       "Link copied to the clipboard",
+        stLinkFailed:       "Could not copy the link: {0}",
+        stUrlMachine:       "Unknown machine in the address: {0}",
+        clickToStart:       "Click or press a key to start",
     },
     ru: {
         title:              "eCat3 — эмулятор ретрокомпьютеров",
@@ -369,6 +465,11 @@ const I18N = {
         infoTitle:          "Информация о конфигурации",
         close:              "Закрыть",
         infoMissing:        "Для этой конфигурации нет описания.",
+        linkTitle:          "Скопировать ссылку на эту машину с текущими настройками",
+        stLinkCopied:       "Ссылка скопирована в буфер обмена",
+        stLinkFailed:       "Не удалось скопировать ссылку: {0}",
+        stUrlMachine:       "В адресе указана неизвестная машина: {0}",
+        clickToStart:       "Щёлкните или нажмите клавишу, чтобы запустить",
     },
 };
 
@@ -733,8 +834,15 @@ function svgBaseWidth(svg) {
     return (vb && vb.width > 0) ? vb.width : 0;
 }
 
+// A size given in the address: stands in for the saved one until the user picks
+// a size. undefined when the address has none, null for auto
+let kbdScaleFromUrl = urlParams.kbdScale === null ? undefined
+    : urlParams.kbdScale === "auto" ? null
+    : clamp(Math.round(urlParams.kbdScale / KBD_STEP) * KBD_STEP, KBD_MIN, KBD_MAX);
+
 // The size picked by the user, or null while the panel follows the screen
 function kbdScaleChosen() {
+    if (kbdScaleFromUrl !== undefined) return kbdScaleFromUrl;
     const value = parseInt(settings.get("kbdScale", ""), 10);
     return isNaN(value) ? null : clamp(value, KBD_MIN, KBD_MAX);
 }
@@ -787,6 +895,7 @@ function updateKbdScaleUi() {
 }
 
 function setKbdScale(value) {
+    kbdScaleFromUrl = undefined;
     settings.set("kbdScale", clamp(Math.round(value / KBD_STEP) * KBD_STEP, KBD_MIN, KBD_MAX));
     layoutKeyboard();
 }
@@ -861,7 +970,10 @@ function mkdirRecursive(module, path) {
     }
 }
 
-async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl) {
+// beforeStart, when given, is awaited once the files are in place and before
+// the machine is started: a machine that starts by itself waits there for the
+// first click, see waitForActivation()
+async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl, beforeStart = null) {
     try {
         setStatus("stAssets", "loading");
 
@@ -874,6 +986,11 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl) {
         // Load machine-specific bundle
         console.log("Loading machine bundle:", bundleUrl);
         await fetchAndMount(module, bundleUrl, "");
+
+        if (beforeStart) {
+            setStatus("clickToStart", "");
+            await beforeStart();
+        }
 
         console.log("Bundles loaded. Calling wasm_load_machine:", machinePath);
         setStatus("stStarting", "loading");
@@ -1644,10 +1761,12 @@ function setupCanvasScaling() {
     const canvas = document.getElementById("canvas");
     const range = document.getElementById("screen-scale");
 
-    // Before the slider the scale was a whole multiple kept under "scale"
+    // Before the slider the scale was a whole multiple kept under "scale". A
+    // scale from the address wins, and is saved only once the slider moves
     const saved = parseInt(settings.get("screenScale", ""), 10);
     const multiple = parseInt(settings.get("scale", ""), 10);
-    const value = !isNaN(saved) ? saved : (!isNaN(multiple) ? multiple * 100 : 200);
+    const value = urlParams.scale !== null ? urlParams.scale
+        : !isNaN(saved) ? saved : (!isNaN(multiple) ? multiple * 100 : 200);
     screenScale = clamp(Math.round(value / SCREEN_STEP) * SCREEN_STEP, SCREEN_MIN, SCREEN_MAX);
 
     range.addEventListener("input", () => setScreenScale(parseInt(range.value, 10)));
@@ -1677,17 +1796,37 @@ function unlockAudio() {
     }
 }
 
+// A machine that starts by itself - named in the address or left from the
+// previous visit - would run before the page has had a click or a key press,
+// and until then the browser keeps its sound off: whatever the machine plays
+// first, the start-up beep of an Агат, is lost for good. So such a machine
+// waits, its files already loaded, behind a curtain asking for the click. A
+// page that has had one already - a machine picked from the list - goes on at
+// once, and so does a browser that cannot say, as the page did before.
+function waitForActivation(machine) {
+    const active = navigator.userActivation ? navigator.userActivation.hasBeenActive : audioActivated;
+    if (active) return Promise.resolve();
+
+    const overlay = document.getElementById("overlay");
+    document.getElementById("overlay-machine").textContent = machine.name;
+    overlay.classList.remove("hidden");
+
+    return new Promise((resolve) => {
+        const go = () => {
+            overlay.removeEventListener("click", go);
+            document.removeEventListener("keydown", go, true);
+            overlay.classList.add("hidden");
+            unlockAudio();
+            resolve();
+        };
+        // A tap ends in a click as well. Any key will do, and it goes on to
+        // the machine as usual - there is none running yet to take it
+        overlay.addEventListener("click", go);
+        document.addEventListener("keydown", go, true);
+    });
+}
+
 function setupAudioActivation() {
-    let overlay = document.getElementById("overlay");
-
-    function activate() {
-        overlay.classList.add("hidden");
-        unlockAudio();
-    }
-
-    overlay.addEventListener("click", activate);
-    overlay.addEventListener("touchstart", activate);
-
     document.addEventListener("keydown", unlockAudio);
     document.addEventListener("mousedown", unlockAudio);
     document.addEventListener("touchstart", unlockAudio);
@@ -1706,6 +1845,21 @@ async function initEcat() {
     setupAudioActivation();
     setupCanvasScaling();
     setupKeyboardSize();
+    setupLinkButton();
+
+    // The version of the package, which build-wasm writes next to the page from
+    // the VERSION file. A page without it shows none; a server that answers
+    // every path with its own page is not taken for a version either
+    fetch("version.txt")
+        .then((resp) => (resp.ok ? resp.text() : ""))
+        .then((text) => {
+            const version = text.trim();
+            if (!/^[0-9A-Za-z.+-]{1,32}$/.test(version)) return;
+            const el = document.getElementById("version");
+            el.textContent = "eCat3 v" + version;
+            el.hidden = false;
+        })
+        .catch(() => { /* no version shown, nothing else lost */ });
 
     // Load machines manifest
     setStatus("stListLoading", "loading");
@@ -1792,18 +1946,25 @@ async function initEcat() {
     selectEl.disabled = false;
     setStatus("stReady", "");
 
-    const startMachine = async (machine) => {
+    // auto: the machine starts by itself, not by the user's choice, and waits
+    // for the first click or key press before it runs
+    const startMachine = async (machine, remember = true, auto = false) => {
         selectEl.value = machine.id;
         selectEl.disabled = true;
         currentMachine = machine;
         document.getElementById("btn-info").disabled = false;
-        const ok = await loadMachine(module, machine.cfg_path, machine.bundle_url, machine.data_bundle_url || null);
+        const ok = await loadMachine(module, machine.cfg_path, machine.bundle_url, machine.data_bundle_url || null,
+                                     auto ? () => waitForActivation(machine) : null);
         selectEl.disabled = false;
 
         // Remembered only once it runs, so that the next visit starts it again;
-        // a machine that fails to start is not brought back
-        if (ok) settings.set("machine", machine.id);
-        else if (settings.get("machine", "") === machine.id) settings.set("machine", "");
+        // a machine that fails to start is not brought back. One named in the
+        // address is not the user's own choice and leaves the saved one alone
+        if (remember) {
+            if (ok) settings.set("machine", machine.id);
+            else if (settings.get("machine", "") === machine.id) settings.set("machine", "");
+        }
+        return ok;
     };
 
     // Machine selection handler
@@ -1828,11 +1989,24 @@ async function initEcat() {
     });
     releaseFocus(volume);
 
-    // The machine of the previous visit starts by itself. The browser keeps
-    // its sound suspended until the first click or key press, which the audio
-    // activation above waits for
-    const last = machines.find((m) => m.id === settings.get("machine", ""));
-    if (last) await startMachine(last);
+    // The machine named in the address, otherwise the one of the previous
+    // visit, starts by itself - after the first click or key press, so that
+    // the browser lets it be heard from the very beginning
+    let first = null;
+    let remember = true;
+    if (urlParams.machine !== null) {
+        first = findMachine(machines, urlParams.machine);
+        remember = false;
+        if (!first) setStatus("stUrlMachine", "error", urlParams.machine);
+    } else {
+        first = machines.find((m) => m.id === settings.get("machine", "")) || null;
+    }
+    if (first && await startMachine(first, remember, true) && urlParams.keyboard) {
+        // Every load closes the panel, so it is opened after this one. A
+        // machine without a drawing has no button, and nothing opens
+        const button = document.getElementById("btn-keyboard");
+        if (!button.hidden && !button.disabled && document.getElementById("kbd-panel").hidden) button.click();
+    }
 }
 
 // Start when DOM is ready

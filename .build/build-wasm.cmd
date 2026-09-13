@@ -64,6 +64,9 @@ if exist "%_BUILD_DIR%\ecat3.worker.js" copy /y "%_BUILD_DIR%\ecat3.worker.js" "
 REM The page.
 copy /y "..\src\wasm\shell.html"   "%_RELEASE_DIR%\index.html" >nul || exit /b 1
 copy /y "..\src\wasm\ecat_wasm.js" "%_RELEASE_DIR%" >nul || exit /b 1
+REM The version the page shows in its footer. The redirection goes first, so
+REM that no space is written after the number.
+> "%_RELEASE_DIR%\version.txt" echo %_VERSION%
 
 REM Machine configs, ROMs and disk images, one .bundle per machine plus
 REM machines.json listing them for the page.

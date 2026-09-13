@@ -111,6 +111,7 @@ CMake и Ninja во всех случаях берутся из поставки
     index.html  ecat_wasm.js        страница
     ecat3.js  ecat3.wasm            сам эмулятор
     machines.json                   список машин для меню
+    version.txt                     версия из файла VERSION для подвала страницы
     bundles/<машина>.bundle         ПЗУ, конфиг и образы дисков одной машины
     bundles/data.bundle             знакогенераторы и раскладки
     README.md  LICENSE.TXT  COPYRIGHT.TXT  nginx.conf.example

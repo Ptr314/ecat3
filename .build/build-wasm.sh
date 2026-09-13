@@ -73,6 +73,8 @@ cp "${BUILD_DIR}/ecat3.wasm" "${RELEASE_DIR}/"
 # The page.
 cp ../src/wasm/shell.html   "${RELEASE_DIR}/index.html"
 cp ../src/wasm/ecat_wasm.js "${RELEASE_DIR}/"
+# The version the page shows in its footer.
+printf '%s\n' "${VERSION}" > "${RELEASE_DIR}/version.txt"
 
 # Machine configs, ROMs and disk images, one .bundle per machine plus
 # machines.json listing them for the page.
