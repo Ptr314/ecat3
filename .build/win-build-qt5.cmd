@@ -63,8 +63,7 @@ if not exist "%_BUILD_DIR%\ecat3.exe" (
     exit /b 1
 )
 
-REM The on-screen keyboard needs Qt Svg and Qt 5.15 or newer: the Windows 7
-REM kit gets it, the Windows XP one (5.6.3) does not
+REM The on-screen keyboard needs Qt Svg, which both Qt 5 kits build by default
 call "%~dp0win-common.cmd" svg "%_BUILD_DIR%" "%_RENDERER%" "%_QT_PREFIX%"
 
 call "%~dp0win-common.cmd" reset "%_RELEASE_DIR%" || exit /b 1

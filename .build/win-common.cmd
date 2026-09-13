@@ -114,8 +114,8 @@ rmdir /s /q "%~2" || exit /b 1
 exit /b 0
 
 REM ---------------------------------------------------------------------------
-REM The on-screen keyboard is compiled in only when cmake found Qt Svg in a Qt
-REM 5.15 or newer, and then HAVE_QT_SVG shows up in build.ninja. The caller
+REM The on-screen keyboard is compiled in only when cmake found Qt Svg, and
+REM then HAVE_QT_SVG shows up in build.ninja. The caller
 REM ships the Svg DLL of a shared kit when %_SVG% is 1. A release without the
 REM keyboard looks like any other, which is why the other case is reported.
 :svg

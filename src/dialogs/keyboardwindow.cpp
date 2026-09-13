@@ -59,9 +59,15 @@ Keyboard * KeyboardView::kbd() const
 // Inkscape hangs one on every layer it makes - the keys of the Агат sit in a
 // layer moved by 4.76 mm. transformForElement() is exactly that missing chain,
 // and without it the highlight, and every click with it, lands millimetres off.
+// Before Qt 5.15 the same call is named matrixForElement() and walks the same
+// chain of parents; an SVG transform is always affine, so QMatrix loses nothing.
 QRectF KeyboardView::doc_box(const QString &id) const
 {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     return m_svg.transformForElement(id).mapRect(m_svg.boundsOnElement(id));
+#else
+    return m_svg.matrixForElement(id).mapRect(m_svg.boundsOnElement(id));
+#endif
 }
 
 bool KeyboardView::load()
