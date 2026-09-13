@@ -16,7 +16,8 @@
 #include "emulator/script/script_types.h"
 
 //Highlight of a pressed key. Alpha only: the fill is the accent colour and the
-//shape comes from the key itself, so it works on a keycap of any outline
+//shape comes from the key itself, so it works on a keycap of any outline.
+//The web page repeats it as the SVG filter ecat-kbd-highlight in shell.html
 #define KEY_HIGHLIGHT       QColor(255, 196, 0, 110)
 //An indicator that is not lit. Black at 80% leaves a fifth of the original
 //colour, which is what the browser reproduces with filter: brightness(0.2)

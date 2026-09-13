@@ -734,8 +734,10 @@
         #kbd-panel svg [id^="key_"] { pointer-events: all; cursor: pointer; }
 
         /* Overriding fill would lose against Inkscape's inline style=, so the
-           highlight is a filter: it keeps the exact silhouette of the key */
-        #kbd-panel svg [id^="key_"].pressed { filter: brightness(1.45) saturate(1.35); }
+           highlight is a filter: it keeps the exact silhouette of the key. The
+           filter itself is at the top of <body>; it is the desktop window's
+           KEY_HIGHLIGHT, so both look the same */
+        #kbd-panel svg [id^="key_"].pressed { filter: url(#ecat-kbd-highlight); }
 
         /* Drawn, but this machine has no such key */
         #kbd-panel svg [id^="key_"].unknown { pointer-events: none; cursor: default; }
@@ -746,6 +748,26 @@
     </style>
 </head>
 <body>
+    <!-- The highlight of a pressed key, as KeyboardView::mask_of() makes it on
+         the desktop: every pixel of the key that is not fully transparent
+         becomes a solid stencil, filled with amber at 110/255 and laid over the
+         key. Thresholding matters - a key with fill-opacity below 1 would get a
+         paler highlight otherwise. Not display:none: a filter inside a hidden
+         SVG is not applied by every browser -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <filter id="ecat-kbd-highlight" color-interpolation-filters="sRGB">
+            <feComponentTransfer in="SourceAlpha" result="stencil">
+                <feFuncA type="linear" slope="255" intercept="0"/>
+            </feComponentTransfer>
+            <feFlood flood-color="rgb(255,196,0)" flood-opacity="0.4314"/>
+            <feComposite in2="stencil" operator="in" result="tint"/>
+            <feMerge>
+                <feMergeNode in="SourceGraphic"/>
+                <feMergeNode in="tint"/>
+            </feMerge>
+        </filter>
+    </svg>
+
     <div id="overlay" class="hidden">
     </div>
 
