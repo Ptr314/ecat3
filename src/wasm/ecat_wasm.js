@@ -293,6 +293,9 @@ const I18N = {
         expand:             "Expand",
         repoTitle:          "Source code on GitHub",
         emuverseTitle:      "Emuverse.ru, the encyclopedia of emulation (in Russian)",
+        infoTitle:          "About this configuration",
+        close:              "Close",
+        infoMissing:        "There is no description for this configuration.",
     },
     ru: {
         title:              "eCat3 — эмулятор ретрокомпьютеров",
@@ -355,6 +358,9 @@ const I18N = {
         expand:             "Развернуть",
         repoTitle:          "Исходный код на GitHub",
         emuverseTitle:      "Emuverse.ru — энциклопедия эмуляции",
+        infoTitle:          "Информация о конфигурации",
+        close:              "Закрыть",
+        infoMissing:        "Для этой конфигурации нет описания.",
     },
 };
 
@@ -393,7 +399,11 @@ function applyLanguage(value) {
     document.documentElement.lang = lang;
     document.title = t("title");
     for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
-    for (const el of document.querySelectorAll("[data-i18n-title]")) el.title = t(el.dataset.i18nTitle);
+    for (const el of document.querySelectorAll("[data-i18n-title]")) {
+        el.title = t(el.dataset.i18nTitle);
+        // A button with an icon and no caption is named by its hint
+        if (!el.textContent.trim()) el.setAttribute("aria-label", el.title);
+    }
     document.getElementById("lang").value = lang;
     renderStatus();
     renderDeviceOptions();
@@ -460,6 +470,8 @@ function setupKeyboard(module) {
         if (press) {
             // Don't intercept when focused on UI controls
             if (event.target.tagName === "SELECT" || event.target.tagName === "INPUT") return;
+            // Nor while the info window is open: Esc closes it, it is not a key of the machine
+            if (document.getElementById("info-dialog").open) return;
             emuKey = held.has(id) ? held.get(id) : translateKeyEvent(event);
             if (emuKey === null) return;
             held.set(id, emuKey);
@@ -894,6 +906,54 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl) {
         setStatus("stError", "error", msg);
         return false;
     }
+}
+
+// ============================================================================
+// Configuration info
+// ============================================================================
+//
+// The description the desktop shows beside a machine in its chooser: the .md
+// file next to the configuration, turned into HTML by the same md4c call.
+
+let currentMachine = null;
+
+function setupInfoDialog(module) {
+    const dialog = document.getElementById("info-dialog");
+    const button = document.getElementById("btn-info");
+
+    document.getElementById("info-close").addEventListener("click", () => dialog.close());
+    // A click on the dimmed page lands on the dialog element itself
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+    // The typing goes back to the machine, not to the button that opened it
+    dialog.addEventListener("close", () => button.blur());
+
+    button.addEventListener("click", () => {
+        if (currentMachine) showMachineInfo(module, currentMachine);
+    });
+}
+
+function showMachineInfo(module, machine) {
+    const dialog = document.getElementById("info-dialog");
+    const body = document.getElementById("info-body");
+
+    document.getElementById("info-title").textContent = machine.name;
+
+    const path = machine.cfg_path.replace(/\.cfg$/i, ".md");
+    const html = module.ccall("wasm_md2html", "string", ["string"], [path]);
+    body.innerHTML = "";
+    if (html) {
+        // The descriptions are files of the project, still nothing in them runs
+        body.innerHTML = html.replace(/<script[\s\S]*?<\/script>/gi, "");
+        for (const a of body.querySelectorAll("a[href]")) {
+            a.target = "_blank";
+            a.rel = "noopener";
+        }
+    } else {
+        element("p", "info-missing", body).textContent = t("infoMissing");
+    }
+
+    dialog.showModal();
+    body.scrollTop = 0;
 }
 
 // ============================================================================
@@ -1641,6 +1701,7 @@ async function initEcat() {
 
 
     setupKeyboard(module);
+    setupInfoDialog(module);
 
     selectEl.disabled = false;
     setStatus("stReady", "");
@@ -1648,6 +1709,8 @@ async function initEcat() {
     const startMachine = async (machine) => {
         selectEl.value = machine.id;
         selectEl.disabled = true;
+        currentMachine = machine;
+        document.getElementById("btn-info").disabled = false;
         const ok = await loadMachine(module, machine.cfg_path, machine.bundle_url, machine.data_bundle_url || null);
         selectEl.disabled = false;
 

@@ -15,6 +15,13 @@
 #include "emulator/devices/common/fdd.h"
 #include "emulator/devices/common/tape.h"
 #include "dsk_tools/dsk_tools.h"
+
+#include <iterator>
+
+// The same markdown renderer and settings the desktop chooser uses, see
+// md2html() in qt_utils.cpp
+#define MD4C_USE_UTF8
+#include "libs/md4c/md4c-html.h"
 #include "renderer_wasm.h"
 
 static Emulator* g_emulator = nullptr;
@@ -258,6 +265,29 @@ int wasm_get_screen_height()
         g_emulator->get_screen_constraints(&sx, &sy);
     }
     return static_cast<int>(sy);
+}
+
+static void md_append(const MD_CHAR* text, MD_SIZE size, void* result)
+{
+    static_cast<std::string*>(result)->append(text, size);
+}
+
+// A markdown file of the virtual FS as HTML, rendered the way the desktop
+// chooser renders a machine description: md4c with tables. Empty when the
+// file is not there.
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_md2html(const char* file_path)
+{
+    static std::string result;
+    result.clear();
+    if (file_path == nullptr) return result.c_str();
+
+    std::ifstream file(file_path, std::ios::binary);
+    if (!file.is_open()) return result.c_str();
+    const std::string md((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+    md_html(md.c_str(), static_cast<MD_SIZE>(md.size()), md_append, &result, MD_FLAG_TABLES, 0);
+    return result.c_str();
 }
 
 // The device options of the machine, the ones the desktop puts on its toolbar:

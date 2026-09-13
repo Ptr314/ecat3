@@ -10,8 +10,11 @@
         /* A class that sets display would otherwise win over the attribute */
         [hidden] { display: none !important; }
 
-        /* Navy & Amber, see docs/ui_colors_navy_amber.md */
+        /* Navy & Amber, see docs/ui_colors_navy_amber.md. The dark colour
+           scheme makes the parts the browser draws itself - scrollbars, the
+           lists of a select - dark as well */
         :root {
+            color-scheme: dark;
             --bg: #0A1128;
             --surface: #131F42;
             --text: #FFFFFF;
@@ -184,8 +187,151 @@
             border-color: var(--track);
         }
 
-        /* As wide as its column, like the buttons under it */
-        #machine-select { width: 100%; }
+        /* The machine list takes the width of its column, less the info button */
+        .machine-row {
+            gap: 6px;
+        }
+
+        .machine-row #machine-select {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* A square button with a symbol instead of a caption */
+        button.icon-button {
+            flex: none;
+            display: inline-grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            line-height: 1;
+        }
+
+        /* Configuration info: a modal window over the dimmed page. The UA sheet
+           hides a closed dialog; display is set only while it is open */
+        #info-dialog {
+            margin: auto;
+            width: min(640px, calc(100vw - 32px));
+            max-height: 80vh;
+            flex-direction: column;
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--track);
+            border-radius: 6px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        #info-dialog[open] {
+            display: flex;
+        }
+
+        #info-dialog::backdrop {
+            background: rgba(10, 17, 40, 0.75);
+        }
+
+        .modal-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 10px 10px 20px;
+            border-bottom: 1px solid var(--track);
+        }
+
+        .modal-head h2 {
+            flex: 1;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        #info-close {
+            width: 28px;
+            height: 28px;
+            font-size: 13px;
+        }
+
+        #info-body {
+            overflow-y: auto;
+            padding: 14px 20px 20px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* The description, rendered from markdown */
+        .md h1, .md h2 {
+            margin: 14px 0 6px;
+            font-size: 15px;
+            color: var(--text);
+        }
+
+        .md h3 {
+            margin: 12px 0 4px;
+            font-size: 13px;
+            color: var(--primary);
+        }
+
+        .md > :first-child {
+            margin-top: 0;
+        }
+
+        .md p {
+            margin: 0 0 8px;
+        }
+
+        .md ul, .md ol {
+            margin: 0 0 8px;
+            padding-left: 22px;
+        }
+
+        .md li {
+            margin-bottom: 2px;
+        }
+
+        .md li::marker {
+            color: var(--primary);
+        }
+
+        .md a {
+            color: var(--primary);
+        }
+
+        .md a:hover {
+            color: var(--primary-hover);
+        }
+
+        .md tt, .md code {
+            font-family: Consolas, "Courier New", monospace;
+            color: var(--warning);
+        }
+
+        .md table {
+            border-collapse: collapse;
+            margin: 6px 0 10px;
+        }
+
+        .md th, .md td {
+            border: 1px solid var(--track);
+            padding: 3px 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .md th {
+            background: var(--bg);
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .md hr {
+            border: none;
+            border-top: 1px solid var(--track);
+            margin: 12px 0;
+        }
+
+        .info-missing {
+            color: var(--muted);
+        }
 
         /* Sliders: the filled part amber, the rest the track blue, a white thumb
            in an amber ring. WebKit draws no filled part of its own, so the
@@ -607,9 +753,18 @@
         <aside id="col-left" class="column">
             <h1>eCat3</h1>
 
-            <select id="machine-select" disabled>
-                <option value="" data-i18n="machinesLoading"></option>
-            </select>
+            <div class="row machine-row">
+                <select id="machine-select" disabled>
+                    <option value="" data-i18n="machinesLoading"></option>
+                </select>
+                <button id="btn-info" class="icon-button" disabled data-i18n-title="infoTitle">
+                    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                        <circle cx="8" cy="8" r="6.75" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                        <rect x="7.25" y="6.75" width="1.5" height="5" rx="0.75" fill="currentColor"/>
+                        <circle cx="8" cy="4.6" r="0.95" fill="currentColor"/>
+                    </svg>
+                </button>
+            </div>
 
             <button id="btn-power" disabled data-i18n="power" data-i18n-title="powerTitle"></button>
             <button id="btn-reset" disabled data-i18n="reset" data-i18n-title="resetTitle"></button>
@@ -664,6 +819,14 @@
     <div id="kbd-row">
         <div id="kbd-panel" hidden></div>
     </div>
+
+    <dialog id="info-dialog" aria-labelledby="info-title">
+        <div class="modal-head">
+            <h2 id="info-title"></h2>
+            <button id="info-close" class="icon-button" data-i18n-title="close">✕</button>
+        </div>
+        <div id="info-body" class="md"></div>
+    </dialog>
 
     <footer id="footer">
         <span class="footer-copyright">© 2023–2026 Mikhail Revzin</span>

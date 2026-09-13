@@ -215,6 +215,12 @@ def main():
         archive_cfg_path = f"{machine_subdir}/{cfg_filename}"
         bundle_files[archive_cfg_path] = cfg_path
 
+        # The description beside the configuration, the one the desktop shows
+        # in its chooser: the page opens it from the info button
+        md_path = os.path.splitext(cfg_path)[0] + ".md"
+        if os.path.isfile(md_path):
+            bundle_files[f"{machine_subdir}/{os.path.splitext(cfg_filename)[0]}.md"] = md_path
+
         # Search directories for referenced files
         search_dirs = [cfg_dir, data_dir, software_dir]
         if os.path.isdir(os.path.join(cfg_dir, "files")):
