@@ -202,6 +202,7 @@ private:
     //Machine keys pressed by id. Released through the id path they were
     //pressed with: a release of an untranslated code would not match.
     std::vector<std::string>    m_held_ids;
+    bool                        m_mouse_buttons_held = false;   //MOUSE left a button down
 
     size_t                      m_wait_pc;      //Index of the active WAITFOR
     uint64_t                    m_wait_deadline;
@@ -228,6 +229,7 @@ private:
 
     emulator::Result do_key(const ScriptCommand &c);
     emulator::Result do_keyupdown(const ScriptCommand &c, bool press);
+    emulator::Result do_mouse(const ScriptCommand &c);
     emulator::Result do_type(const ScriptCommand &c);
     emulator::Result do_logdefs(const ScriptCommand &c);
     emulator::Result do_radix(const ScriptCommand &c);

@@ -54,6 +54,8 @@ protected:
     void paintEvent(QPaintEvent * event) override;
     void closeEvent(QCloseEvent *event) override;
     void showEvent(QShowEvent* event) override;
+    void changeEvent(QEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
     void load_config(QString file_name, bool set_default);
@@ -209,5 +211,23 @@ private:
     void CreateFDDMenu(unsigned int n);
 
     void set_title();
+
+    //------------------------- Machine mouse ------------------------------//
+    //A click on the screen hands the host mouse over to the mouse of the
+    //machine, if one is plugged in: the pointer is hidden and kept in the
+    //middle of the screen, and its movement becomes steps. Ctrl-Alt, the
+    //middle button or leaving the window gives it back
+    bool mouse_captured = false;
+    QPoint mouse_center;                //Global position the pointer is put back to
+    QPoint mouse_last;                  //Global position of the previous move
+    double mouse_acc_x = 0;             //Steps not sent yet, with the fraction
+    double mouse_acc_y = 0;
+    int mouse_buttons = 0;              //Bit 0 - left (button 1), bit 1 - right (button 2)
+    int mouse_speed = 25;               //Percent: steps a line of the machine's screen crossed by the host pointer
+    QMenu * mouse_speed_menu = nullptr; //Display > Mouse speed, made once
+    QTimer * mouse_timer = nullptr;     //Sends the steps in portions
+
+    void mouse_capture(bool on);
+    void mouse_flush(bool buttons_changed);
 
 };

@@ -104,6 +104,8 @@ namespace {
         "  KEY delay,hold,key1,key2,...   - press keys in turn (names: a..z, 0..9, ret, esc, space,\n"
         "                                   tab, back, del, up, down, left, right, f1..f12, shift+x)\n"
         "  KEYDOWN key / KEYUP key        - hold and release, for chords\n"
+        "  MOUSE dx,dy[,buttons]          - move the machine's mouse by steps (right/down positive),\n"
+        "                                   buttons 1 and 2 as a mask; the mouse must be plugged in\n"
         "  TYPE \"text\"[,delay,hold]       - type text; \\n is Return, \\t is Tab\n"
         "  LOG dev.field[(from[,to])]     - print a device property, e.g. LOG cpu.registers,\n"
         "                                   LOG mapper.map, LOG ram0.value($100,$110)\n"

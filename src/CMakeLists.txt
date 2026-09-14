@@ -234,6 +234,8 @@ set(EMULATOR_SOURCES
     emulator/devices/common/gmd70.h emulator/devices/common/gmd70.cpp
     emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp
     emulator/devices/common/joystick.h emulator/devices/common/joystick.cpp
+    emulator/devices/common/connector.h emulator/devices/common/connector.cpp
+    emulator/devices/common/mouse.h emulator/devices/common/mouse.cpp
     emulator/devices/common/i8257.h emulator/devices/common/i8257.cpp
     emulator/devices/common/i8275.h emulator/devices/common/i8275.cpp
     emulator/devices/common/i8275display.h emulator/devices/common/i8275display.cpp

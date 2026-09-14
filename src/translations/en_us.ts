@@ -30,7 +30,7 @@
 <context>
     <name>AddressableDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+756"/>
+        <location filename="../emulator/core.cpp" line="+754"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -175,6 +175,29 @@
     </message>
 </context>
 <context>
+    <name>Connector</name>
+    <message>
+        <location filename="../emulator/devices/common/connector.cpp" line="+43"/>
+        <source>A list of devices is expected for</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Not a device that can be plugged in</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>The default device is not in the list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+75"/>
+        <source>The device is not in the list</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DebugWindow</name>
     <message>
         <location filename="../dialogs/debugwindow.ui" line="+26"/>
@@ -285,7 +308,7 @@
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-420"/>
+        <location filename="../emulator/core.cpp" line="-418"/>
         <source>Can&apos;t create device</source>
         <translation type="unfinished"></translation>
     </message>
@@ -345,6 +368,26 @@
     <message>
         <location line="+1"/>
         <source>Monochrome</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/common/joystick.cpp" line="+88"/>
+        <source>Joystick</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/common/connector.cpp" line="-54"/>
+        <source>Connected device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Nothing connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/common/mouse.cpp" line="+205"/>
+        <source>Mouse</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -502,7 +545,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+153"/>
+        <location filename="../emulator/emulator.cpp" line="+156"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -692,7 +735,7 @@
 <context>
     <name>Joystick</name>
     <message>
-        <location filename="../emulator/devices/common/joystick.cpp" line="+28"/>
+        <location filename="../emulator/devices/common/joystick.cpp" line="-60"/>
         <source>Joystick map file is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -702,12 +745,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+15"/>
+        <location line="+14"/>
         <source>Map file entry is incorrect</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="-10"/>
         <source>Unknown key in the map file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -715,7 +759,7 @@
 <context>
     <name>Keyboard</name>
     <message>
-        <location filename="../emulator/devices/common/keyboard.cpp" line="+246"/>
+        <location filename="../emulator/devices/common/keyboard.cpp" line="+274"/>
         <source>This keyboard type has no native key table support</source>
         <translation type="unfinished"></translation>
     </message>
@@ -733,7 +777,7 @@
 <context>
     <name>KeyboardWindow</name>
     <message>
-        <location filename="../dialogs/keyboardwindow.cpp" line="+262"/>
+        <location filename="../dialogs/keyboardwindow.cpp" line="+421"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -783,7 +827,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+889"/>
+        <location filename="../mainwindow.cpp" line="+1125"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -830,13 +874,13 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="+376"/>
+        <location filename="../mainwindow.cpp" line="+378"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-584"/>
+        <location filename="../mainwindow.cpp" line="-780"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -861,10 +905,10 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-305"/>
+        <location filename="../mainwindow.cpp" line="-336"/>
         <location line="+50"/>
-        <location line="+516"/>
-        <location line="+59"/>
+        <location line="+744"/>
+        <location line="+58"/>
         <location line="+61"/>
         <location line="+66"/>
         <location line="+349"/>
@@ -874,7 +918,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1168"/>
+        <location line="-1395"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -895,12 +939,12 @@
     </message>
     <message>
         <location line="+10"/>
-        <location line="+623"/>
+        <location line="+850"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-620"/>
+        <location line="-847"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -920,7 +964,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+42"/>
+        <source>Mouse speed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+22"/>
         <source>Auto scale</source>
         <translation type="unfinished"></translation>
     </message>
@@ -965,13 +1014,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+313"/>
+        <location line="+507"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+102"/>
+        <location line="+104"/>
         <source>Load a file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1127,7 +1176,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="-688"/>
+        <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+731"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1155,7 +1209,7 @@
 <context>
     <name>MapKeyboard</name>
     <message>
-        <location filename="../emulator/devices/common/mapkeyboard.cpp" line="+46"/>
+        <location filename="../emulator/devices/common/mapkeyboard.cpp" line="+72"/>
         <source>Keyboard map file is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1165,12 +1219,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+23"/>
         <source>Map file entry is incorrect</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+8"/>
+        <source>Unknown key in the map file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Invalid value in the map file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Duplicate entry in the map file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+23"/>
         <source>rus-on should be 0 or 1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1190,15 +1259,25 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+159"/>
+        <location line="+212"/>
         <source>Key table entry is incorrect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Invalid value in the key table</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Duplicate entry in the key table</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+700"/>
+        <location filename="../emulator/core.cpp" line="+698"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1262,6 +1341,15 @@
     <message>
         <location line="+25"/>
         <source>Choose an address</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Mouse</name>
+    <message>
+        <location filename="../emulator/devices/common/mouse.cpp" line="-147"/>
+        <location line="+15"/>
+        <source>Incorrect value of a parameter</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1372,7 +1460,7 @@
 <context>
     <name>ScanKeyboard</name>
     <message>
-        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+37"/>
+        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+53"/>
         <source>Keyboard map file is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1382,15 +1470,21 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+31"/>
         <source>Unknown key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location line="+27"/>
+        <source>Key table does not fit the matrix</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Script</name>
     <message>
-        <location filename="../emulator/script/script_parser.cpp" line="+55"/>
+        <location filename="../emulator/script/script_parser.cpp" line="+56"/>
         <source>Line</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1443,7 +1537,7 @@
 <context>
     <name>Speaker</name>
     <message>
-        <location filename="../emulator/devices/common/speaker.cpp" line="+68"/>
+        <location filename="../emulator/devices/common/speaker.cpp" line="+75"/>
         <source>Unknown speaker type</source>
         <translation type="unfinished"></translation>
     </message>

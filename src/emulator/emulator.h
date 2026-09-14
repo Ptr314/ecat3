@@ -20,6 +20,7 @@
 #include "core.h"
 #include "emulator/devices/common/keyboard.h"
 #include "emulator/devices/common/joystick.h"
+#include "emulator/devices/common/mouse.h"
 #include "emulator/script/script_engine.h"
 #include "emulator/script/script_recorder.h"
 #include "renderer.h"
@@ -40,6 +41,7 @@ private:
     GenericDisplay * display;
     Keyboard * keyboard;
     std::vector<Joystick*> joysticks;   // every device of the joystick class, fed with the same keys
+    std::vector<Mouse*> mice;           // every device of the mouse class, moved together
 
     unsigned int clock_freq;
     //Counted against a 64-bit number of ticks: a 32-bit one could never reach
@@ -136,11 +138,21 @@ public:
     int get_ratio();
     int get_filtering();
 
+    //Resolution of the machine's screen, 0 until the first frame. Written by
+    //the render thread; a stale value only makes one mouse movement off
+    void get_screen_size(unsigned int * sx, unsigned int * sy) const { *sx = screen_sx; *sy = screen_sy; }
+
     void timer_proc(uint64_t time_ticks);
     void render_screen();
 
     void key_event(int key, int modifiers, bool press);
     void key_event_id(const std::string &id, bool press);
+
+    // Movement of the host mouse in steps of the machine's mouse (right and
+    // down are positive) and its buttons as a mask, a negative mask keeping
+    // them as they are. Reaches only a mouse that is plugged in.
+    void mouse_event(int dx, int dy, int buttons);
+    bool has_mouse() const;             // A mouse is plugged in right now
 
     // The keyboard of the running machine, or nullptr between machines. Never
     // cache it: load_config() deletes the whole device manager.

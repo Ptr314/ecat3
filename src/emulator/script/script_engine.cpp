@@ -417,6 +417,39 @@ void ScriptEngine::release_keys()
     for (size_t i = 0; i < m_held_ids.size(); i++)
         e->key_event_id(m_held_ids[i], false);
     m_held_ids.clear();
+
+    if (m_mouse_buttons_held) {
+        e->mouse_event(0, 0, 0);
+        m_mouse_buttons_held = false;
+    }
+}
+
+emulator::Result ScriptEngine::do_mouse(const ScriptCommand &c)
+{
+    //MOUSE dx, dy [, buttons]: steps of the machine's mouse, right and down
+    //positive. The numbers are machine values like every other argument, but
+    //a movement can go either way, so a minus sign is accepted in front
+    if (c.args.size() < 2)
+        return emulator::Result::error(emulator::ErrorCode::BadParameters,
+            "MOUSE expects two movements and optionally the buttons");
+
+    int d[2];
+    for (int i = 0; i < 2; i++) {
+        std::string s = str_trim(c.args[i]);
+        const bool negative = !s.empty() && s[0] == '-';
+        if (negative) s = s.substr(1);
+        const int v = s.empty()?0:static_cast<int>(parse_numeric_value(s));
+        d[i] = negative?-v:v;
+    }
+
+    int buttons = -1;
+    if (c.args.size() > 2 && !str_trim(c.args[2]).empty()) {
+        buttons = static_cast<int>(parse_numeric_value(str_trim(c.args[2]))) & 3;
+        m_mouse_buttons_held = (buttons != 0);
+    }
+
+    e->mouse_event(d[0], d[1], buttons);
+    return emulator::Result::ok();
 }
 
 uint64_t ScriptEngine::get_position_ms(uint64_t clock_now) const
@@ -553,6 +586,9 @@ emulator::Result ScriptEngine::execute(const ScriptCommand &c)
 
             case SCRIPT_CMD_KEYUP:
                 return do_keyupdown(c, false);
+
+            case SCRIPT_CMD_MOUSE:
+                return do_mouse(c);
 
             case SCRIPT_CMD_TYPE:
                 return do_type(c);

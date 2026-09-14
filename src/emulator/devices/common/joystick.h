@@ -7,13 +7,13 @@
 
 #include <vector>
 
-#include "emulator/core.h"
+#include "connector.h"
 
 // A set of contacts, each closed by a host key. The closed contacts are
 // presented as bits on the output interface, so a machine reads them through
 // whatever port the real joystick was plugged into. The key-to-bit table
 // comes from a map file in the format of the keyboard maps.
-class Joystick : public ComputerDevice
+class Joystick : public PluggableDevice
 {
 private:
     struct Contact { unsigned int key; unsigned int bits; };
@@ -25,11 +25,16 @@ private:
 
     void update();
 
+protected:
+    void plug_changed() override;
+
 public:
     Joystick(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;
+
+    const char * plug_title() const override;
 
     // Called by the emulator for every host key, alongside the keyboard
     void key_event(unsigned int key, bool press);

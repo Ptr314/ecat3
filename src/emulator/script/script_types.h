@@ -42,6 +42,7 @@ struct ScriptCommand {
 #define SCRIPT_CMD_KEYDOWN  15
 #define SCRIPT_CMD_KEYUP    16
 #define SCRIPT_CMD_RADIX    17
+#define SCRIPT_CMD_MOUSE    18
 
 //Comparison operators of WAITFOR
 #define SCRIPT_OP_EQ        0

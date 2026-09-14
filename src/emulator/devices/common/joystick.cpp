@@ -9,7 +9,7 @@
 #include "dsk_tools/dsk_tools.h"
 
 Joystick::Joystick(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd)
+    PluggableDevice(im, cd)
     , i_out(this, im, 16, "out", MODE_W)
     , m_state(0)
 {
@@ -18,7 +18,7 @@ Joystick::Joystick(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 emulator::Result Joystick::load_config(SystemData *sd)
 {
-    emulator::Result res = ComputerDevice::load_config(sd);
+    emulator::Result res = PluggableDevice::load_config(sd);
     if (!res) return res;
 
     // The map lists "key: bits" pairs, one per contact, in the keyboard map format
@@ -64,8 +64,28 @@ emulator::Result Joystick::load_config(SystemData *sd)
         m_contacts.push_back(c);
     }
 
-    i_out.change(0);
+    if (m_plugged) i_out.change(0);
     return emulator::Result::ok();
+}
+
+void Joystick::plug_changed()
+{
+    // A key held while the joystick is pulled out is not held on the new one
+    m_held.clear();
+    if (m_plugged) {
+        m_state = _FFFF;
+        update();
+    } else {
+        // Nothing else may be plugged in after it: a contact held while the
+        // joystick is pulled out must not stay closed on the port
+        m_state = 0;
+        i_out.change(0);
+    }
+}
+
+const char * Joystick::plug_title() const
+{
+    return QT_TRANSLATE_NOOP("DeviceOptions", "Joystick");
 }
 
 void Joystick::reset(MAYBE_UNUSED bool cold)
@@ -76,6 +96,7 @@ void Joystick::reset(MAYBE_UNUSED bool cold)
 
 void Joystick::key_event(unsigned int key, bool press)
 {
+    if (!m_plugged) return;
     bool known = false;
     for (size_t i = 0; i < m_contacts.size(); i++)
         if (m_contacts[i].key == key) { known = true; break; }
@@ -94,6 +115,7 @@ void Joystick::key_event(unsigned int key, bool press)
 // The output is the union of the contacts of all keys held down
 void Joystick::update()
 {
+    if (!m_plugged) return;
     unsigned int state = 0;
     for (size_t h = 0; h < m_held.size(); h++)
         for (size_t i = 0; i < m_contacts.size(); i++)
@@ -106,7 +128,7 @@ void Joystick::update()
 
 std::vector<DeviceFieldInfo> Joystick::get_device_fields()
 {
-    std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
+    std::vector<DeviceFieldInfo> r = PluggableDevice::get_device_fields();
     r.push_back({"state", "Bits of the contacts currently closed", false});
     return r;
 }
@@ -118,7 +140,7 @@ bool Joystick::get_field(const std::string &field, unsigned int from, unsigned i
     if (field == "state") { out.values.push_back(m_state); return true; }
     out.width = 0;
     out.numeric = false;
-    return ComputerDevice::get_field(field, from, to, out);
+    return PluggableDevice::get_field(field, from, to, out);
 }
 
 ComputerDevice * create_joystick(InterfaceManager *im, EmulatorConfigDevice *cd)

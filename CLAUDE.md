@@ -146,6 +146,7 @@ cd .build
 ./update_translations.bat  # Or update_translations.sh on Unix
 # Edit .ts files in Qt Linguist
 ```
+Without the IDE: `cmake --build <build dir> --target update_translations` (on Windows with `__COMPAT_LAYER=RunAsInvoker` in the environment) adds new strings to `src/translations/*.ts` as unfinished; the Russian text goes into `ru_ru.ts` by hand. The `.qm` files are generated on the next build and are not in git.
 
 **Build variants** (`src/CMakeLists.txt`):
 - `ENABLE_GUI` (ON): the windowed `eCat3`. With `OFF` no `find_package(Qt)` runs at all, so a console-only build configures on a machine without Qt.
@@ -160,6 +161,7 @@ cd .build
 - **Any stderr output fails every test**: the runner treats a non-empty stderr as a problem, so the core must not print diagnostics. Real discrepancies are listed per test in `tests/results/report.txt`. On Windows without `python` on PATH use `py tests/run_tests.py`
 - **A machine without a sound card is such an stderr source**: the audio driver says so and keeps going. `eCat3-headless --no-sound` (`SystemData::audio_enabled`, checked in `GenericSound::load_config`) opens no audio device at all, and the runner passes it whenever the chosen exe is the headless one — which is also the only build it finds on a machine without Qt. `sound.active` reports whether audio is really open. The flip side: `--no-sound` returns from `GenericSound::load_config()` before `init_sound()`, so a headless-only run never enters the audio setup path at all — a fault there shows up only when the suite runs the windowed build
 - **Keep test assets tiny**: every `"../results/…"` name in a script becomes a compared artifact, so do not save whole disk images from a test. Verify a write by reading it back on the machine (`DIR`, `TYPE`) plus a counter field such as `fdc.writes`. Synthetic images go in `tests/files/` next to the Python that generates them (an image shorter than the geometry is zero-padded on load)
+- **A test must set every device option it depends on**: `apply_saved_device_options()` reads `[DeviceOptions]` from the developer's own `deploy/ecat.ini`, which the runner keeps. A test relying on a default (`COMMAND up.plug(none)`, a display mode) sets it explicitly
 - **The runner prefers a windowed build over the headless one**: `tests/run_tests.py` scans
   `src/cmake-build-*/eCat3.exe` first and only falls back to `eCat3-headless`, and it prints the
   executable it picked. Rebuilding one directory and recording references with another silently bakes
@@ -195,6 +197,8 @@ cd .build
   latches the line and applies a change of it on the next write to the scan lines, which the ROM does before
   the dip and after the restore
 - **No compile-time logging**: the old `LOGGER` / `LOG_*` macros and the `Logger` class are gone. To trace a device, expose its state through `get_device_fields()` / `get_field()` and read it from an `.ecat` script (`LOG dev.field`), like `bk-fdc` does with its `trace` field
+- **PDF documents in `docs/`**: the Read tool cannot render them here (no poppler); `/mingw64/bin/pdftotext` from Git Bash or `pypdf` extracts the text layer
+- **The address label of `LOG dev.value(from,to)` follows the LOGDEFS base**: after `LOGDEFS _8,_16` on a БК the label `$0740` is hex (octal 003500), not an octal address
 - **Debug Windows**: GUI provides disassembler, memory dump, port inspector, CPU state viewer
 - **Breakpoints**: Debug menu supports execution breakpoints and step modes
 - **Scripts beat GUI automation**: `LOG mapper.map` prints the memory and port map in the order ranges are matched (with `[off]` on ranges disabled by `cancelinit`) — usually the fastest way to see that a window or page is wired to the wrong device. `LOG cpu.registers`, `LOG ram0.value(from,to)` and `SCREEN` cover most of the rest
@@ -343,6 +347,10 @@ See `CONFIG.md` for complete spec. Key points:
 - **`I8275::clock()` must jump between events, not step per character clock**: it is driven at the character clock (1.33 MHz on a Радио-86РК, and the loop body is entered ~7 times per emulated instruction), so stepping one tick at a time costs a quarter of the whole emulator. Only two things happen inside a character row — the next DMA transfer and the end of the row — so the beam advances straight to the nearer of them; `m_dma_delay` is the full period until the next transfer, counted down by `clock()`, and `dma_tick()` is called only when one is due. Getting that period off by one silently changes the burst pacing and every reference screenshot with it.
 - **The ВГ75 frame is drawn from a snapshot, never from live registers**: `I8275` runs on the emulation thread and may be reprogrammed at any moment, so `I8275Display` copies the row bytes plus the geometry, font bank, cursor and blink phase when the row is fetched, and the render thread lays the frame out from that alone. Reading `chars_per_row()` / `char_height()` while drawing means one row drawn with the width of one raster and the height of another.
 - **`fdd` `layout` picks the track order by file extension** (`cpm:sides|dsk:cylinders`); `save` to an extension with the other order reshuffles tracks on the way out, so the drive doubles as an image converter. Only the sector (`logical`) path honours it; MFM/whole-track paths index `track_indexes[track*sides+side]` directly.
+- **Input devices sharing one port go through a `connector`**: interface links are last-writer-wins, so a joystick and a mouse on the same `~data` lines are both `PluggableDevice`s and the `connector` (`devices = joystick|mouse`, `default = none`, `COMMAND up.plug(name|none)`) plugs one. An unplugged device must drive 0 when it leaves, or the port keeps its last value. On the БК the socket is empty by default: a joystick always on the host arrows made programs that poll 0177714 (the TDR demo) run the cursor into the edge
+- **A write reaches only the first matching range, unless it is `through = 1`**: `@memory[177714-177715] = ay {mode = w, through = 1}` followed by `port-ppi-out {mode = w}` delivers the write to both. Reads are unaffected; `LOG mapper.map` marks such ranges with `through`
+- **The machine mouse measures a step on the screen widget, not with `get_scale()`**: auto scale (`scale=0`, the shipped default) returns 0 there. The pointer is put back to the middle only when it strays past a quarter of the widget: doing it on every event loops under a fractional Windows scale. Capture lives in `MainWindow::eventFilter`, speed is `[Mouse] speed` in the Settings menu
+- **`MOUSE dx,dy[,buttons]` hands its steps out over time**: wait with `WAITFOR mouse.pending == 0`. A recorded movement is written as `_12` / `-_12`, because a БК reads unprefixed numbers as octal
 - **Some files are committed with CRLF** (`git ls-files --eol` shows `i/crlf`: `i8255.cpp`, `i8257.*`, `6502.*`, `i8080.*`, `z80.*`, `globals.h.in`). A script that rewrites such a file with LF turns the diff into the whole file; preserve the existing line endings.
 
 ## Language and Compiler Constraints

@@ -6,6 +6,8 @@
 
 MACHINE "bk/BK-0011M.cfg"
 WAIT _4000
+# Разъем УП по умолчанию пуст
+COMMAND up.plug(joystick)
 
 TYPE "10 IF PEEK(-52)=0 THEN 10\n"
 TYPE "20 PRINT PEEK(-52)\n"

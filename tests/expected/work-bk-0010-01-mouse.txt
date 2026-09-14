@@ -1,0 +1,8 @@
+[up.device] none
+[port-ppi.value] &000000
+[port-ppi.value] &000002
+[port-ppi.value] &000000
+[up.device] mouse
+[port-ppi-out.value] &000010
+[mouse.pending] &000000
+[mouse.state] &000000

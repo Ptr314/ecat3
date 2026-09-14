@@ -40,6 +40,8 @@
 #include "emulator/devices/common/wd1793.h"
 #include "emulator/devices/common/fdd.h"
 #include "emulator/devices/common/joystick.h"
+#include "emulator/devices/common/mouse.h"
+#include "emulator/devices/common/connector.h"
 #include "emulator/devices/common/i8257.h"
 #include "emulator/devices/common/i8275.h"
 #include "emulator/devices/common/i8275display.h"
@@ -136,6 +138,7 @@ emulator::Result Emulator::load_config(std::string file_name)
         display = nullptr;
         keyboard = nullptr;
         joysticks.clear();
+        mice.clear();
     }
 
     dm = new DeviceManager();
@@ -396,6 +399,11 @@ void Emulator::run()
             std::vector<ComputerDevice*> joystick_devices = dm->find_devices_by_class("joystick");
             for (size_t i = 0; i < joystick_devices.size(); i++)
                 joysticks.push_back(dynamic_cast<Joystick*>(joystick_devices[i]));
+
+            mice.clear();
+            std::vector<ComputerDevice*> mouse_devices = dm->find_devices_by_class("mouse");
+            for (size_t i = 0; i < mouse_devices.size(); i++)
+                mice.push_back(dynamic_cast<Mouse*>(mouse_devices[i]));
 
             reset(true);
 
@@ -766,6 +774,19 @@ void Emulator::key_event_id(const std::string &id, bool press)
     keyboard->key_event_id(id, press);
 }
 
+void Emulator::mouse_event(int dx, int dy, int buttons)
+{
+    if (!keyboard || !display) return;
+    for (size_t i = 0; i < mice.size(); i++) mice[i]->move(dx, dy, buttons);
+}
+
+bool Emulator::has_mouse() const
+{
+    for (size_t i = 0; i < mice.size(); i++)
+        if (mice[i]->is_plugged()) return true;
+    return false;
+}
+
 void Emulator::set_volume(int value)
 {
     if (loaded) {
@@ -923,6 +944,8 @@ void Emulator::register_devices()
     dm->register_device("agat-9-display", create_agat_9_display);
     dm->register_device("map-keyboard", create_mapkeyboard);
     dm->register_device("joystick", create_joystick);
+    dm->register_device("mouse", create_mouse);
+    dm->register_device("connector", create_connector);
     dm->register_device("ram-address", create_ram_address);
     dm->register_device("irisha-display", create_irisha_display);
     dm->register_device("bk-display", create_bk_display);

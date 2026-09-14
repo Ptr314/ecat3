@@ -18,6 +18,11 @@
 #include <QBoxLayout>
 // #include <QOverload>
 #include <QMessageBox>
+#include <cstdlib>
+#include <QCursor>
+#include <QMouseEvent>
+#include <QStatusBar>
+#include <QTimer>
 
 #include "dialogs/genericdbgwnd.h"
 #include "dialogs/i8255window.h"
@@ -164,6 +169,11 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
         screen = new GLWidget(this);
         setCentralWidget(screen);
     #endif
+
+    //The mouse of the machine takes the host mouse from the screen widget
+    screen->installEventFilter(this);
+    mouse_timer = new QTimer(this);
+    connect(mouse_timer, &QTimer::timeout, this, [this]() { mouse_flush(false); });
 
     add_languages();
 
@@ -490,6 +500,37 @@ MainWindow::~MainWindow()
 
 void MainWindow::CreateScreenMenu()
 {
+    //Speed of the machine's mouse, a setting of the host rather than of a machine
+    try {
+        mouse_speed = std::stoi(e->read_setup("Mouse", "speed", "25"));
+    } catch (const std::exception &) {
+        mouse_speed = 25;
+    }
+    if (mouse_speed < 1 || mouse_speed > 400) mouse_speed = 25;
+    if (mouse_speed_menu == nullptr) {
+        //Settings, after the host settings and before About
+        mouse_speed_menu = new QMenu(this);
+        const QList<QAction*> acts = ui->menuHelp->actions();
+        const int at = acts.indexOf(ui->actionRecPanel);
+        ui->menuHelp->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, mouse_speed_menu);
+    }
+    mouse_speed_menu->setTitle(tr("Mouse speed"));
+    mouse_speed_menu->clear();
+    QActionGroup * speed_group = new QActionGroup(mouse_speed_menu);
+    static const int SPEEDS[] = {100, 50, 25, 12};
+    for (size_t i = 0; i < sizeof(SPEEDS) / sizeof(SPEEDS[0]); i++) {
+        const int speed = SPEEDS[i];
+        QAction * sa = mouse_speed_menu->addAction(
+            QString::number(speed) + "%",
+            [this, speed]{
+                mouse_speed = speed;
+                e->write_setup("Mouse", "speed", std::to_string(speed));
+            });
+        sa->setActionGroup(speed_group);
+        sa->setCheckable(true);
+        sa->setChecked(mouse_speed == speed);
+    }
+
     ui->menuScale->clear();
     QActionGroup * scale_group = new QActionGroup(ui->menuScale);
 
@@ -803,6 +844,13 @@ void MainWindow::keyPressEvent( QKeyEvent *event )
     if (event->isAutoRepeat()) {
         event->ignore();
     } else {
+        //Ctrl-Alt gives the captured mouse back. The keys still reach the
+        //machine: swallowing one would leave the other held there
+        if (mouse_captured
+            && ((event->key() == Qt::Key_Control && (event->modifiers() & Qt::AltModifier))
+                || (event->key() == Qt::Key_Alt && (event->modifiers() & Qt::ControlModifier))))
+            mouse_capture(false);
+
         // qDebug() << "Key pressed: scan " << event->nativeScanCode() << "virtual" << event->nativeVirtualKey() << "key" << Qt::hex << event->key();
         e->key_event(event->key(), event->modifiers(), true);
 
@@ -827,6 +875,193 @@ void MainWindow::keyReleaseEvent( QKeyEvent *event )
         e->key_event(event->key(), event->modifiers(), false);
         e->record_key(static_cast<unsigned int>(event->key()), event->nativeScanCode(), false);
     }
+}
+
+//----------------------------- Machine mouse --------------------------------//
+
+//Portions of movement are sent this often: the machine takes a step no faster
+//than its polling anyway, and a recording gets a MOUSE line per portion rather
+//than one per host event
+#define MOUSE_FLUSH_MS 40
+
+//A step count in script syntax. The machine may count in octal, a movement is
+//written in decimal, so it carries the "_" mark; a minus goes in front of it
+static std::string mouse_steps_arg(int n)
+{
+    if (n == 0) return "0";
+    return std::string((n < 0)?"-_":"_") + std::to_string((n < 0)?-n:n);
+}
+
+//Positions are taken on the screen the widget is on: without one Qt converts
+//with the scale of the primary monitor, and a second monitor with another
+//scale puts the pointer somewhere else entirely
+static void mouse_set_pos(QWidget * w, const QPoint &p)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    if (w->screen() != nullptr) { QCursor::setPos(w->screen(), p); return; }
+#else
+    Q_UNUSED(w);
+#endif
+    QCursor::setPos(p);
+}
+
+static QPoint mouse_event_pos(const QMouseEvent * me)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return me->globalPosition().toPoint();
+#else
+    return me->globalPos();
+#endif
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched != screen) return QMainWindow::eventFilter(watched, event);
+
+    switch (event->type()) {
+        case QEvent::MouseButtonPress:
+        case QEvent::MouseButtonDblClick:
+        {
+            const QMouseEvent * me = static_cast<QMouseEvent*>(event);
+            if (!mouse_captured) {
+                //Only a click that captures is taken, the machine does not see it
+                if (me->button() == Qt::LeftButton && e->loaded && e->has_mouse()) {
+                    mouse_capture(true);
+                    return true;
+                }
+                break;
+            }
+            if (me->button() == Qt::MiddleButton) {
+                mouse_capture(false);
+                return true;
+            }
+            const int bit = (me->button() == Qt::LeftButton)?1:((me->button() == Qt::RightButton)?2:0);
+            if (bit != 0 && (mouse_buttons & bit) == 0) {
+                mouse_buttons |= bit;
+                mouse_flush(true);
+            }
+            return true;
+        }
+
+        case QEvent::MouseButtonRelease:
+        {
+            if (!mouse_captured) break;
+            const QMouseEvent * me = static_cast<QMouseEvent*>(event);
+            const int bit = (me->button() == Qt::LeftButton)?1:((me->button() == Qt::RightButton)?2:0);
+            if (bit != 0 && (mouse_buttons & bit) != 0) {
+                mouse_buttons &= ~bit;
+                mouse_flush(true);
+            }
+            return true;
+        }
+
+        case QEvent::MouseMove:
+        {
+            if (!mouse_captured) break;
+            //The movement is the distance from the previous event. The pointer
+            //is put back in the middle only when it strays far: a fractional
+            //scale of the desktop rounds the position it is put to, and doing
+            //it on every event made each correction an event of its own
+            const QPoint p = mouse_event_pos(static_cast<QMouseEvent*>(event));
+            const QPoint d = p - mouse_last;
+            mouse_last = p;
+            if (std::abs(p.x() - mouse_center.x()) > screen->width() / 4
+                || std::abs(p.y() - mouse_center.y()) > screen->height() / 4) {
+                mouse_set_pos(screen, mouse_center);
+                mouse_last = mouse_center;
+            }
+            if (d.isNull()) return true;
+            //At 100% a line of the machine's screen crossed by the host pointer
+            //is a step. The size of a line is measured on the widget, not
+            //taken from the scale setting: automatic scaling reports 0 there,
+            //and a maximized window draws the screen larger than any setting.
+            //Programs move their cursor by several pixels a step, some twice
+            //that when the movement goes on, hence the lower default
+            unsigned int sx, sy;
+            e->get_screen_size(&sx, &sy);
+            double line = (sy > 0)?static_cast<double>(screen->height()) / sy:1.0;
+            if (line < 1.0) line = 1.0;
+            const double k = mouse_speed / 100.0 / line;
+            mouse_acc_x += d.x() * k;
+            mouse_acc_y += d.y() * k;
+            return true;
+        }
+
+        case QEvent::ContextMenu:
+            if (mouse_captured) return true;
+            break;
+
+        default:
+            break;
+    }
+    return QMainWindow::eventFilter(watched, event);
+}
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    //A pointer kept hidden in the middle of an inactive window is lost to the user
+    if (event->type() == QEvent::ActivationChange && !isActiveWindow()) mouse_capture(false);
+    QMainWindow::changeEvent(event);
+}
+
+void MainWindow::mouse_capture(bool on)
+{
+    if (on == mouse_captured) return;
+
+    if (on) {
+        mouse_captured = true;
+        mouse_acc_x = 0;
+        mouse_acc_y = 0;
+        mouse_buttons = 0;
+        screen->setMouseTracking(true);
+        screen->grabMouse(QCursor(Qt::BlankCursor));
+        mouse_center = screen->mapToGlobal(screen->rect().center());
+        mouse_set_pos(screen, mouse_center);
+        mouse_last = mouse_center;
+        mouse_timer->start(MOUSE_FLUSH_MS);
+        statusBar()->showMessage(tr("The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it"));
+        return;
+    }
+
+    mouse_timer->stop();
+    //What is still on its way, and the buttons let go: the machine must not be
+    //left with a button held by a pointer that has gone
+    if (e->loaded) {
+        mouse_acc_x = 0;
+        mouse_acc_y = 0;
+        if (mouse_buttons != 0) {
+            mouse_buttons = 0;
+            mouse_flush(true);
+        }
+    }
+    mouse_buttons = 0;
+    mouse_captured = false;
+    screen->releaseMouse();
+    screen->setMouseTracking(false);
+    statusBar()->clearMessage();
+}
+
+void MainWindow::mouse_flush(bool buttons_changed)
+{
+    //The socket may have been switched to something else meanwhile
+    if (mouse_captured && !buttons_changed && !(e->loaded && e->has_mouse())) {
+        mouse_capture(false);
+        return;
+    }
+
+    const int dx = static_cast<int>(mouse_acc_x);
+    const int dy = static_cast<int>(mouse_acc_y);
+    mouse_acc_x -= dx;
+    mouse_acc_y -= dy;
+    if (dx == 0 && dy == 0 && !buttons_changed) return;
+
+    e->mouse_event(dx, dy, buttons_changed?mouse_buttons:-1);
+
+    std::vector<std::string> args;
+    args.push_back(mouse_steps_arg(dx));
+    args.push_back(mouse_steps_arg(dy));
+    if (buttons_changed) args.push_back(std::to_string(mouse_buttons));
+    e->record_verb(SCRIPT_CMD_MOUSE, args);
 }
 
 void MainWindow::resizeEvent(QResizeEvent * event)
@@ -924,6 +1159,9 @@ void MainWindow::load_config(QString file_name, bool set_default)
     if (e->loaded)
     {
         if (fdd_timer != nullptr) fdd_timer->stop();
+
+        //The mouse the pointer was captured for is about to be deleted
+        mouse_capture(false);
 
         //Switching the machine invalidates every device the script addresses.
         //The buffer is kept: a replay may be the reason for the switch

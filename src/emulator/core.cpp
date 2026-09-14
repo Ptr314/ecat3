@@ -1792,6 +1792,11 @@ emulator::Result MemoryMapper::load_config(SystemData *sd)
             // some firmware tells machines apart
             mr.strict = (this->cd->extended_parameter(i, "strict") == "1");
 
+            // A write to a through range goes on to the next ranges that match:
+            // several devices listen to one address, like the AY and the output
+            // register of the БК parallel port
+            mr.through = (this->cd->extended_parameter(i, "through") == "1");
+
             //Disable cache for complicated entries
             mr.cache = (mr.address_mask == 0) && (this->cache_size > 0);
 
@@ -1958,13 +1963,18 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
     unsigned int address_on_device, range_index;
     this->no_device = false;
     AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index);
-    if (d != nullptr)
-    {
-        //TODO: Cache
-        //if (mr->cache) this->add_cache_entry(); //this->ranges[range_index]
-        d->set_value(address_on_device, value);
-    } else
+    if (d == nullptr) {
         this->no_device = !this->responds(address, MODE_W);
+        return;
+    }
+    //TODO: Cache
+    //if (mr->cache) this->add_cache_entry(); //this->ranges[range_index]
+    d->set_value(address_on_device, value);
+    while (this->ranges[range_index].through && range_index < this->ranges_count) {
+        d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index);
+        if (d == nullptr) break;
+        d->set_value(address_on_device, value);
+    }
 }
 
 unsigned int MemoryMapper::read_word(unsigned int address)
@@ -1992,10 +2002,16 @@ void MemoryMapper::write_word(unsigned int address, unsigned int value)
     unsigned int address_on_device, range_index;
     this->no_device = false;
     AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index);
-    if (d != nullptr)
-        d->set_value_word(address_on_device, value);
-    else
+    if (d == nullptr) {
         this->no_device = !this->responds(address, MODE_W);
+        return;
+    }
+    d->set_value_word(address_on_device, value);
+    while (this->ranges[range_index].through && range_index < this->ranges_count) {
+        d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index);
+        if (d == nullptr) break;
+        d->set_value_word(address_on_device, value);
+    }
 }
 
 unsigned int MemoryMapper::read_port(unsigned int address)
@@ -2074,6 +2090,7 @@ bool MemoryMapper::get_field(const std::string &field, unsigned int from, unsign
                 s += " cfg=" + hex_str(r.config_value, 2) + ":" + hex_str(r.config_mask, 2);
             if (r.address_mask != 0)
                 s += " addr=" + hex_str(r.address_value, 4) + ":" + hex_str(r.address_mask, 4);
+            if (r.through) s += " through";
         }
         for (unsigned int i = 0; i < ports_count; i++)
         {
