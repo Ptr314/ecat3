@@ -111,11 +111,23 @@ for RENDERER in "${RENDERERS[@]}"; do
         "${APP_BINARY}"
   fi
 
+  # The volume shows the bundle next to a link to /Applications, so installing is
+  # a drag, and a visible copy of software/. The copy inside the bundle stays: the
+  # configs resolve their images from there. A file dialog does not enter a
+  # bundle, so without the visible copy the images are out of reach once the user
+  # leaves the folder the first dialog opens in.
+  STAGING="${BUILD_DIR}/dmg"
+  rm -rf "${STAGING}"
+  mkdir -p "${STAGING}"
+  ditto "${BUILD_DIR}/${APP_NAME}.app" "${STAGING}/${APP_NAME}.app"
+  ln -s /Applications "${STAGING}/Applications"
+  ditto "${REPO_DIR}/deploy/software" "${STAGING}/software"
+
   # hdiutil refuses to overwrite an existing image, and a stale .dmg here would
   # silently be shipped as the new release.
   rm -f "${RELEASE_DIR}/${DMG_NAME}"
   hdiutil create -volname "${APP_NAME}" \
-      -srcfolder "${BUILD_DIR}/${APP_NAME}.app" \
+      -srcfolder "${STAGING}" \
       -ov -format UDZO \
       "${RELEASE_DIR}/${DMG_NAME}"
 done

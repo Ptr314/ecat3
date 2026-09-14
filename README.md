@@ -20,17 +20,26 @@ eCat &ndash; универсальный эмулятор ретрокомпью�
 * Поддержка основных платформ - Windows XP+, macOS, Linux, WebAssembly.
 <hr>
 
-* [Скачать последнюю версию](https://github.com/Ptr314/ecat3/releases)
-* [Руководство пользователя](MANUAL.md)
-* [Документация по настройке](CONFIG.md)
-* [Скриптование и командная строка](SCRIPTING.md)
+* Программа
+  * [Скачать последнюю версию](https://github.com/Ptr314/ecat3/releases) для настольных систем.
+  * [Online-версия](https://ecat.emuverse.ru).
+* Руководства
+  * [Руководство пользователя](MANUAL.md).
+  * [Руководство пользователя online-версии](MANUAL_online.md).
+  * [Документация по настройке](CONFIG.md).
+  * [Сценарии и командная строка](SCRIPTING.md).
+* Компиляция
+  * [Настройка окружения](BUILD.md).
+  * [Подготовка установочных файлов](BUILD.md).
 * [История версий](HISTORY.md)
 * [Группа в Телеграме](https://t.me/ecat_emu)
+
+## Родственные проекты
 * [Emuverse.ru](https://emuverse.ru) &ndash; энциклопедия эмуляции на русском языке.
+* [DISK Commander](https://github.com/Ptr314/dsk_commander) &ndash; программа для просмотра, редактирования, анализа и конвертации файлов образов дискет ретро-компьютеров.
+* [Искра 226](https://github.com/Ptr314/Iskra-226) &ndash; Симулятор BASIC 02 микроЭВМ «Искра 226».
 
-<hr>
-
-Благодарности:
+## Благодарности:
 
 * David Vignoni за коллекцию иконок [Nuvola](https://commons.wikimedia.org/wiki/Category:Nuvola_icons);
 * [Владимиру McClaud](http://www.mcclaud.ru) за изображение магнитофона &laquo;Электроника-302&raquo; для эмулятора загрузки с магнитной ленты.
