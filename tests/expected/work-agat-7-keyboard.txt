@@ -1,9 +1,16 @@
 === исходное состояние: защелка алфавита ===
 [keyboard.rus] $00
 [keyboard.pressed] key_lat
-=== СБР перезапускает машину и не шлет кода ===
+=== СБР без УПР машину не трогает ===
 [port-kbd.value] $00
+[keyboard.pressed] key_sbr,key_lat
+[keyboard.pressed] key_lat
+[ram0.value] $01FE: $00 $00
+=== УПР+СБР перезапускает машину, не шлет кода и отпускает УПР ===
+[port-kbd.value] $00
+[keyboard.ctrl] $00
 [cpu.pc] $FB96
+[ram0.value] $01FE: $5B $FA
 === буква: сама, с РЕГ и с УПР ===
 [port-kbd.value] $C1
 [keyboard.pressed] key_a,key_lat

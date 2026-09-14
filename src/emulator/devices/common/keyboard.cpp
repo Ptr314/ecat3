@@ -249,8 +249,10 @@ void Keyboard::key_event_id(const std::string &id, bool press)
             break;
         case KEY_ROLE_RESET:
             //The СБР of an Агат restarts the machine, which is exactly what
-            //Break does in the GUI: Emulator::reset() is this same call
-            if (press) im->dm->reset_devices(false);
+            //Break does in the GUI: Emulator::reset() is this same call.
+            //Only together with УПР, as on the machine itself, so that a stray
+            //click on the drawing does not throw the work away
+            if (press && ctrl_state()) im->dm->reset_devices(false);
             break;
         default:
             break;

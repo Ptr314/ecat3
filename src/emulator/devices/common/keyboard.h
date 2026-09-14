@@ -319,7 +319,7 @@ enum KeyRole {
     KEY_ROLE_ALT,           // second control key (БК: АР2), code goes through the alternative vector
     KEY_ROLE_STOP,          // drives the ~stop line instead of sending a code (БК: СТОП)
     KEY_ROLE_REPEAT,        // repeats whatever went last (БК: ПОВТ)
-    KEY_ROLE_RESET          // restarts the machine instead of sending a code (Агат: СБР)
+    KEY_ROLE_RESET          // restarts the machine instead of sending a code, only with Ctrl held (Агат: УПР+СБР)
 };
 
 class Keyboard: public ComputerDevice
@@ -372,6 +372,9 @@ protected:
     virtual void set_shift_state(bool pressed) { (void)pressed; }
     virtual void set_ctrl_state(bool pressed) { (void)pressed; }
     virtual void set_alt_state(bool pressed) { (void)pressed; }
+
+    // Whether Ctrl is held right now, by the host keyboard or the drawing
+    virtual bool ctrl_state() const { return false; }
 
     // Sends whatever the keyboard sent last, once more. The БК repeats it in
     // the keyboard controller; here the code goes out again and the "a key is

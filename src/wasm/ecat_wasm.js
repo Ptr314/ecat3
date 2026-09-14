@@ -682,12 +682,13 @@ function kbdPoll(module, panel) {
     // The machine has been reset since the last look: it holds nothing any
     // more, so the latches shown here are stale. They are dropped rather than
     // released - there is nothing left to release, and a release would press
-    // the modifier back on
+    // the modifier back on. The key under the pointer is kept: its release
+    // still has to reach the machine, or the key that caused the reset (СБР)
+    // stays lit for good
     const seq = module.ccall("wasm_kbd_reset_count", "number", [], []);
     if (seq !== kbdResetSeen) {
         kbdResetSeen = seq;
         kbdLatched = [];
-        kbdHeldId = null;
     }
 
     const text = module.ccall("wasm_keys_pressed", "string", [], []);

@@ -384,11 +384,13 @@ void KeyboardView::poll()
     //the modifier back on. This is what kept a cold restart from working
     //without closing the window: СУ stayed engaged in the keyboard while the
     //picture showed it free.
+    //The key under the mouse is kept: the button is still down, and its
+    //release has to reach the machine. The key that caused the reset is noted
+    //as held after it, so dropping it here left the Агат-9 СБР lit for good
     const unsigned int seq = k->reset_count();
     if (seq != m_reset_seen) {
         m_reset_seen = seq;
         m_latched.clear();
-        m_mouse_key.clear();
     }
 
     const std::vector<std::string> held = k->ids_held();
