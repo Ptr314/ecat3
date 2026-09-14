@@ -374,6 +374,9 @@ const I18N = {
         stListFailed:       "Failed to load machines.json: {0}",
         stWasmLoading:      "Loading WASM module...",
         stWasmFailed:       "Failed to load WASM: {0}",
+        stWasmWaiting:      "Loading WASM module... still waiting after {0} s: {1}",
+        stNotSecure:       "The emulator cannot start at {0}: the page is not opened over HTTPS (or from localhost), and without that the browser gives threads no shared memory",
+        stNotIsolated:      "The emulator cannot start: the server does not send the Cross-Origin-Opener-Policy and Cross-Origin-Embedder-Policy headers, and without them the browser gives threads no shared memory",
         stReady:            "Ready. Select a machine to start.",
         stAssets:           "Loading machine assets...",
         stStarting:         "Starting emulation...",
@@ -455,6 +458,9 @@ const I18N = {
         stListFailed:       "Не удалось загрузить machines.json: {0}",
         stWasmLoading:      "Загрузка модуля WASM...",
         stWasmFailed:       "Не удалось загрузить WASM: {0}",
+        stWasmWaiting:      "Загрузка модуля WASM... ждём уже {0} с: {1}",
+        stNotSecure:       "Эмулятор не запустится по адресу {0}: страница открыта не по HTTPS (и не с localhost), а без этого браузер не даёт потокам общей памяти",
+        stNotIsolated:      "Эмулятор не запустится: сервер не отдаёт заголовки Cross-Origin-Opener-Policy и Cross-Origin-Embedder-Policy, а без них браузер не даёт потокам общей памяти",
         stReady:            "Готово. Выберите машину.",
         stAssets:           "Загрузка файлов машины...",
         stStarting:         "Запуск эмуляции...",
@@ -2012,6 +2018,104 @@ function setupAudioActivation() {
 // Initialization
 // ============================================================================
 
+// The module is downloaded by the page and compiled from the bytes, not with
+// the WebAssembly.instantiateStreaming() the runtime would use: that one tells
+// nothing until it is done. Here every step is named for the startup watcher,
+// so a load that hangs says whether it is the network or the compiler - an
+// iPhone behind a VPN that cut every response after a few dozen kilobytes
+// showed "downloading 35 KB", where streaming had only ever said "loading".
+// The module object is handed on: the runtime posts it to the thread workers
+async function instantiateWasmBytes(url, imports, startup) {
+    startup.wasm("downloading");
+    const response = await fetch(url, { credentials: "same-origin" });
+    if (!response.ok) throw new Error(url + ": HTTP " + response.status);
+
+    let bytes;
+    if (response.body && response.body.getReader) {
+        const reader = response.body.getReader();
+        const chunks = [];
+        let size = 0;
+        for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            size += value.length;
+            startup.wasm("downloading " + Math.round(size / 1024) + " KB");
+        }
+        bytes = new Uint8Array(size);
+        let at = 0;
+        for (const chunk of chunks) { bytes.set(chunk, at); at += chunk.length; }
+    } else {
+        bytes = new Uint8Array(await response.arrayBuffer());
+    }
+
+    startup.wasm("compiling " + Math.round(bytes.length / 1024) + " KB");
+    const module = await WebAssembly.compile(bytes);
+    startup.wasm("instantiating");
+    const instance = await WebAssembly.instantiate(module, imports);
+    startup.wasm("compiled");
+    return { instance, module };
+}
+
+// EmuModule() settles only once every thread worker has loaded the module, and
+// the runtime passes no failure on the way: a worker whose script does not
+// load, a rejection inside the runtime itself. The page would wait forever with
+// nothing to show for it, so here such a failure ends the wait, and a wait that
+// goes on reports what it is still waiting for. A slow network is not taken for
+// a failure: the message changes, the load goes on
+function watchStartup() {
+    const NativeWorker = window.Worker;
+    const started = Date.now();
+    const workers = { created: 0, loaded: 0 };
+    // How far the load got, for a report from a device with no console at hand
+    const stage = { wasm: "loading", error: "" };
+    const details = () => "wasm " + stage.wasm
+        + ", workers " + workers.loaded + "/" + workers.created
+        + ", isolated " + window.crossOriginIsolated
+        + (stage.error ? ", " + stage.error : "");
+
+    let fail;
+    const failed = new Promise((resolve, reject) => { fail = reject; });
+    const failWith = (what) => fail(new Error(what + " (" + details() + ")"));
+
+    window.Worker = function (url, options) {
+        const worker = new NativeWorker(url, options);
+        workers.created++;
+        worker.addEventListener("message", (e) => {
+            if (e.data && e.data.cmd === "loaded") workers.loaded++;
+        });
+        worker.addEventListener("error", (e) => failWith("worker: " + (e.message || "script error")));
+        worker.addEventListener("messageerror", () => failWith("worker: message error"));
+        return worker;
+    };
+    window.Worker.prototype = NativeWorker.prototype;
+
+    const onRejection = (e) => {
+        const reason = e.reason;
+        failWith(String((reason && reason.message) || reason));
+    };
+    window.addEventListener("unhandledrejection", onRejection);
+
+    const timer = setInterval(() => {
+        const seconds = Math.round((Date.now() - started) / 1000);
+        if (seconds >= 10) setStatus("stWasmWaiting", "loading", seconds, details());
+    }, 5000);
+
+    return {
+        failed,
+        // The last complaint of the runtime, shown with the rest
+        note(text) { stage.error = String(text); },
+        // What instantiateWasmBytes() is doing
+        wasm(text) { stage.wasm = text; },
+        fail(e) { failWith(String((e && e.message) || e)); },
+        stop() {
+            window.Worker = NativeWorker;
+            window.removeEventListener("unhandledrejection", onRejection);
+            clearInterval(timer);
+        },
+    };
+}
+
 async function initEcat() {
     let selectEl = document.getElementById("machine-select");
 
@@ -2091,22 +2195,53 @@ async function initEcat() {
         tapeFiles
     ].join("\n");
 
+    // The core runs in threads, and memory shared between them exists only on
+    // a cross-origin isolated page. Without it EmuModule() never settles: the
+    // memory cannot be posted to the thread workers, and the runtime loses that
+    // rejection (a DataCloneError in the console, nothing on the page). An
+    // iPhone opening the page at http://192.168.… is exactly that case
+    if (!window.crossOriginIsolated) {
+        if (!window.isSecureContext) setStatus("stNotSecure", "error", location.origin);
+        else setStatus("stNotIsolated", "error");
+        return;
+    }
+
     // Initialize WASM module
     setStatus("stWasmLoading", "loading");
+    // EmuModule() does its synchronous part - the shared memory, the thread
+    // workers - in this same task, so without a frame in between a start that
+    // fails right there would leave the message about the machine list on the
+    // screen. rAF alone never fires in a background tab, hence the timeout
+    await new Promise((resolve) => {
+        requestAnimationFrame(() => setTimeout(resolve, 0));
+        setTimeout(resolve, 100);
+    });
 
     let module;
+    const startup = watchStartup();
     try {
-        module = await EmuModule({
+        module = await Promise.race([startup.failed, EmuModule({
             print: (text) => console.log("eCat3:", text),
-            printErr: (text) => console.error("eCat3:", text),
+            printErr: (text) => { console.error("eCat3:", text); startup.note(text); },
+            // The module is instantiated by the page, see instantiateWasmBytes().
+            // The runtime waits for receiveInstance and has no failure path of
+            // its own here, so a failure ends the wait through the watcher
+            instantiateWasm: (imports, receiveInstance) => {
+                instantiateWasmBytes("ecat3.wasm", imports, startup)
+                    .then((r) => receiveInstance(r.instance, r.module))
+                    .catch((e) => startup.fail(e));
+                return {};
+            },
             // The emulator reads its ini once, when main() creates it, so the
             // file has to be there before main() runs - a write afterwards is
             // never seen by the core
             preRun: [(m) => m.FS.writeFile("/ecat.ini", iniText)],
-        });
+        })]);
     } catch (err) {
-        setStatus("stWasmFailed", "error", err.message);
+        setStatus("stWasmFailed", "error", (err && err.message) || String(err));
         return;
+    } finally {
+        startup.stop();
     }
 
     // Create required FS directories
