@@ -1,0 +1,15 @@
+[sound-card.device] ay
+[ay.plugged] &000001
+[covox.plugged] &000000
+[ay.regs] &000000: &000 &000 &252 &000
+[ay.register] &000002
+[covox.value] &000125
+[sound-card.device] covox
+[ay.plugged] &000000
+[covox.plugged] &000001
+[ay.regs] &000000: &000 &000 &000 &000
+[ay.register] &000000
+[covox.value] &000063
+[sound-card.device] none
+[ay.plugged] &000000
+[covox.plugged] &000000

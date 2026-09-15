@@ -1,26 +1,25 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: A socket that one of several input devices is plugged into
+// Description: A socket that one of several devices is plugged into
 
 #include "connector.h"
 #include "emulator/utils.h"
 
 #define CONNECTOR_OPTION_DEVICE 0
 
-//----------------------- PluggableDevice -----------------------------------//
+//----------------------- Pluggable -----------------------------------------//
 
-PluggableDevice::PluggableDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
-    ComputerDevice(im, cd)
-    , m_plugged(true)
-{
-}
-
-void PluggableDevice::set_plugged(bool on)
+void Pluggable::set_plugged(bool on)
 {
     if (on == m_plugged) return;
     m_plugged = on;
     plug_changed();
+}
+
+PluggableDevice::PluggableDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
+    ComputerDevice(im, cd)
+{
 }
 
 //----------------------- Connector -----------------------------------------//
@@ -28,6 +27,7 @@ void PluggableDevice::set_plugged(bool on)
 Connector::Connector(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd)
     , m_selected(0)
+    , m_title(QT_TRANSLATE_NOOP("DeviceOptions", "Connected device"))
 {
     device_class = "connector";
 }
@@ -44,12 +44,24 @@ emulator::Result Connector::load_config(SystemData *sd)
 
     for (size_t i = 0; i < names.size(); i++) {
         const std::string n = str_trim(names[i]);
-        PluggableDevice * d = dynamic_cast<PluggableDevice*>(im->dm->get_device_by_name(n, false));
+        Pluggable * d = dynamic_cast<Pluggable*>(im->dm->get_device_by_name(n, false));
         if (d == nullptr)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{Connector|" + std::string(QT_TRANSLATE_NOOP("Connector", "Not a device that can be plugged in")) + "} " + n);
         m_devices.push_back(d);
+        m_names.push_back(n);
     }
+
+    // What the socket is for, which only names the option list: a socket of
+    // input devices or a sound board slot
+    const std::string kind = str_tolower(str_trim(cd->get_parameter("kind", false).value));
+    if (kind.empty() || kind == "input")
+        m_title = QT_TRANSLATE_NOOP("DeviceOptions", "Connected device");
+    else if (kind == "sound")
+        m_title = QT_TRANSLATE_NOOP("DeviceOptions", "Sound board");
+    else
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{Connector|" + std::string(QT_TRANSLATE_NOOP("Connector", "Unknown connector kind")) + "} " + kind);
 
     // A file found the way other machine files are: next to the config, in files/, in data/
     m_icon = str_trim(cd->get_parameter("icon", false).value);
@@ -58,8 +70,8 @@ emulator::Result Connector::load_config(SystemData *sd)
     const std::string def = str_trim(cd->get_parameter("default", false).value);
     m_selected = 0;
     if (!def.empty() && str_tolower(def) != "none") {
-        for (size_t i = 0; i < m_devices.size(); i++)
-            if (m_devices[i]->name == def) m_selected = static_cast<unsigned int>(i + 1);
+        for (size_t i = 0; i < m_names.size(); i++)
+            if (m_names[i] == def) m_selected = static_cast<unsigned int>(i + 1);
         if (m_selected == 0)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{Connector|" + std::string(QT_TRANSLATE_NOOP("Connector", "The default device is not in the list")) + "} " + def);
@@ -83,7 +95,7 @@ DeviceOptions Connector::get_device_options()
     DeviceOption opt;
     opt.id = CONNECTOR_OPTION_DEVICE;
     opt.type = DEVICE_OPTION_DROPDOWN;
-    opt.title = QT_TRANSLATE_NOOP("DeviceOptions", "Connected device");
+    opt.title = m_title;
     // Without one the GUI draws a picture of its own
     opt.icon = m_icon;
     opt.values.push_back({0, QT_TRANSLATE_NOOP("DeviceOptions", "Nothing connected")});
@@ -110,7 +122,7 @@ std::vector<DeviceFieldInfo> Connector::get_device_fields()
 bool Connector::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
     if (field == "device") {
-        out.text = (m_selected > 0)?m_devices[m_selected - 1]->name:std::string("none");
+        out.text = (m_selected > 0)?m_names[m_selected - 1]:std::string("none");
         return true;
     }
     return ComputerDevice::get_field(field, from, to, out);
@@ -132,8 +144,8 @@ emulator::Result Connector::send_command(const std::string &command, const std::
             set_device_option(CONNECTOR_OPTION_DEVICE, 0);
             return emulator::Result::ok();
         }
-        for (size_t i = 0; i < m_devices.size(); i++)
-            if (m_devices[i]->name == n) {
+        for (size_t i = 0; i < m_names.size(); i++)
+            if (m_names[i] == n) {
                 set_device_option(CONNECTOR_OPTION_DEVICE, static_cast<unsigned>(i + 1));
                 return emulator::Result::ok();
             }

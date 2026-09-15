@@ -9,17 +9,19 @@
 
 #include "emulator/core.h"
 #include "emulator/devices/common/sound.h"
+#include "emulator/devices/common/connector.h"
 
 // Three square wave channels, a noise generator and an envelope generator.
 // The chip has no audio output of its own here: it is a SoundSource mixed
 // into a GenericSound device (mix = ay). Its registers are reached through
 // the memory map; the "bus" parameter picks how the two write kinds of the
 // host bus are turned into the register-select and data cycles of the chip.
+// A board that is pulled out of its connector hears no writes and is silent.
 
 #define AY_REGS             16
 #define AY_TONE_CHANNELS    3
 
-class AY8910 : public AddressableDevice, public SoundSource
+class AY8910 : public AddressableDevice, public SoundSource, public Pluggable
 {
 private:
     Interface i_porta;                  // I/O port A output (register 14)
@@ -54,6 +56,9 @@ private:
     void tick();
     unsigned int level();
 
+protected:
+    void plug_changed() override;
+
 public:
     AY8910(InterfaceManager *im, EmulatorConfigDevice *cd);
 
@@ -68,6 +73,8 @@ public:
     unsigned int get_direct(unsigned int address) override;
 
     int32_t sound_sample(int64_t amplitude) override;
+    bool sound_active() override;
+    const char * plug_title() const override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

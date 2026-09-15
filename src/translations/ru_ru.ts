@@ -267,12 +267,17 @@
         <translation>Устройство нельзя подключить к разъему</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+14"/>
+        <source>Unknown connector kind</source>
+        <translation>Неизвестное назначение разъема</translation>
+    </message>
+    <message>
+        <location line="+13"/>
         <source>The default device is not in the list</source>
         <translation>Устройства по умолчанию нет в списке</translation>
     </message>
     <message>
-        <location line="+75"/>
+        <location line="+76"/>
         <source>The device is not in the list</source>
         <translation>Устройства нет в списке</translation>
     </message>
@@ -488,12 +493,18 @@
         <translation>Джойстик</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/connector.cpp" line="-54"/>
+        <location filename="../emulator/devices/common/connector.cpp" line="-123"/>
+        <location line="+29"/>
         <source>Connected device</source>
         <translation>Подключенное устройство</translation>
     </message>
     <message>
         <location line="+2"/>
+        <source>Sound board</source>
+        <translation>Звуковая приставка</translation>
+    </message>
+    <message>
+        <location line="+40"/>
         <source>Nothing connected</source>
         <translation>Ничего не подключено</translation>
     </message>
@@ -501,6 +512,16 @@
         <location filename="../emulator/devices/common/mouse.cpp" line="+205"/>
         <source>Mouse</source>
         <translation>Мышь «Марсианка»</translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/common/ay8910.cpp" line="+172"/>
+        <source>AY-3-8910</source>
+        <translation>AY-3-8910</translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/common/covox.cpp" line="+35"/>
+        <source>Covox</source>
+        <translation>Covox</translation>
     </message>
 </context>
 <context>
@@ -737,7 +758,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+156"/>
+        <location filename="../emulator/emulator.cpp" line="+157"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -970,7 +991,7 @@
         <translation>Устройство не является источником звука</translation>
     </message>
     <message>
-        <location line="+221"/>
+        <location line="+233"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation>Команда &apos;volume&apos; требует значение</translation>
     </message>
@@ -1160,7 +1181,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1125"/>
+        <location filename="../mainwindow.cpp" line="+1123"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -1213,7 +1234,7 @@
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-780"/>
+        <location filename="../mainwindow.cpp" line="-778"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -1243,12 +1264,12 @@
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="-261"/>
-        <location line="+850"/>
+        <location line="+848"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-847"/>
+        <location line="-845"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -1274,7 +1295,7 @@
     <message>
         <location line="-87"/>
         <location line="+50"/>
-        <location line="+744"/>
+        <location line="+742"/>
         <location line="+58"/>
         <location line="+61"/>
         <location line="+66"/>
@@ -1285,7 +1306,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-1395"/>
+        <location line="-1393"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -1359,7 +1380,7 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+507"/>
+        <location line="+505"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>

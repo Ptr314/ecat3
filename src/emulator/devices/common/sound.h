@@ -21,6 +21,9 @@ class SoundSource
 public:
     virtual ~SoundSource() = default;
     virtual int32_t sound_sample(int64_t amplitude) = 0;
+    // A source that is switched off (a board pulled out of its connector)
+    // takes no share of the mix, so the others keep their loudness
+    virtual bool sound_active() { return true; }
 };
 
 class GenericSound: public ComputerDevice

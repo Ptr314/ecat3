@@ -186,6 +186,7 @@ void AY8910::tick()
 
 void AY8910::clock(unsigned int counter)
 {
+    if (!m_plugged) return;
     m_acc += counter * m_step;
     while (m_acc >= 0x10000) {
         m_acc -= 0x10000;
@@ -217,16 +218,40 @@ int32_t AY8910::sound_sample(int64_t amplitude)
     return (int32_t)((int64_t)level() * amplitude / 1500 - amplitude);
 }
 
+bool AY8910::sound_active()
+{
+    return m_plugged;
+}
+
+//------------------- Connector --------------------------------------------//
+
+void AY8910::plug_changed()
+{
+    // A board taken out and put back starts from power-on, and one that is
+    // out keeps no half-played note that would sound on its return
+    reset(true);
+}
+
+const char * AY8910::plug_title() const
+{
+    return QT_TRANSLATE_NOOP("DeviceOptions", "AY-3-8910");
+}
+
 //------------------- Bus --------------------------------------------------//
 
 unsigned int AY8910::get_value(unsigned int address)
 {
+    if (!m_plugged) return _FFFF;
     if (m_bus == AY_BUS_BK) return 0xFF;
     return (address & 1) ? read_reg(m_latch) : m_latch;
 }
 
-void AY8910::set_value(unsigned int address, unsigned int value, MAYBE_UNUSED bool force)
+void AY8910::set_value(unsigned int address, unsigned int value, bool force)
 {
+    // Out of its connector the chip is not on the bus: the writes of a
+    // program for another board (the samples of a Covox) must not reach it.
+    // A forced write is the debugger's and still sets the register
+    if (!m_plugged && !force) return;
     if (m_bus == AY_BUS_BK) {
         // A byte write to the port: only the low byte reaches the data lines
         if ((address & 1) == 0) write_reg(m_latch, (value ^ 0xFF) & 0xFF);
@@ -240,12 +265,14 @@ void AY8910::set_value(unsigned int address, unsigned int value, MAYBE_UNUSED bo
 
 unsigned int AY8910::get_value_word(unsigned int address)
 {
+    if (!m_plugged) return _FFFF;
     if (m_bus == AY_BUS_BK) return 0xFFFF;
     return get_value(address & ~1) | (get_value(address | 1) << 8);
 }
 
 void AY8910::set_value_word(unsigned int address, unsigned int value, bool force)
 {
+    if (!m_plugged && !force) return;
     if (m_bus == AY_BUS_BK) {
         // A word write to the port: the low byte selects the register
         select(value ^ 0xFF);
@@ -269,6 +296,7 @@ std::vector<DeviceFieldInfo> AY8910::get_device_fields()
     r.push_back({"register", "Selected register",                           false});
     r.push_back({"level",    "Output level, 0-3000",                        false});
     r.push_back({"envelope", "Current envelope volume, 0-15",               false});
+    r.push_back({"plugged",  "1 if the chip is plugged in",                 false});
     return r;
 }
 
@@ -290,6 +318,7 @@ bool AY8910::get_field(const std::string &field, unsigned int from, unsigned int
     if (field == "level")    { out.values.push_back(level());       return true; }
     out.width = 0;
     if (field == "envelope") { out.values.push_back(m_env_volume);  return true; }
+    if (field == "plugged")  { out.values.push_back(m_plugged?1:0); return true; }
 
     out.numeric = false;
     return ComputerDevice::get_field(field, from, to, out);

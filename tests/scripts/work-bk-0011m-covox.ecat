@@ -1,0 +1,51 @@
+# БК0011М: звуковая приставка на порту 0177714 - AY-3-8910 или Covox, выбор
+# разъемом sound-card. Программа в кодах выбирает регистр AY записью слова и
+# пишет байт, как это делают и музыка для AY, и вывод выборок на Covox (демо
+# TDR). С включенным AY байт попадает в регистр 2; с Covox он виден на входе
+# ЦАП, а AY записей не принимает: без этого выборки Covox ложились в регистр
+# формы огибающей, и вместо звука шел шум.
+# @timeout 40
+
+MACHINE "bk/BK-0011M.cfg"
+WAIT _3000
+COMMAND cpu.stop
+LOGDEFS _16,_8
+
+# Выбор приставки сохраняется в ecat.ini, так что умолчание здесь не проверить
+COMMAND sound-card.plug(ay)
+LOG sound-card.device
+LOG ay.plugged
+LOG covox.plugged
+
+COMMAND ram0.set16(024000, 106427, 000340)           # MTPS #340            ; запретить прерывания
+COMMAND ram0.set16(024004, 012737, 000375, 177714)   # MOV #375,@#177714    ; выбор регистра 2
+COMMAND ram0.set16(024012, 112737, 000125, 177714)   # MOVB #125,@#177714   ; AY: регистр 2 = 252
+COMMAND ram0.set16(024020, 000777)                   # BR .
+
+COMMAND cpu.setreg(PC, 024000)
+COMMAND cpu.run
+WAITFOR cpu.pc == 024020, _5000
+LOG ay.regs(0,3)
+LOG ay.register
+LOG covox.value
+
+# Covox вместо AY: вынутый AY сбрасывается и записей больше не видит
+COMMAND cpu.stop
+COMMAND sound-card.plug(covox)
+LOG sound-card.device
+LOG ay.plugged
+LOG covox.plugged
+COMMAND ram0.set16(024012, 112737, 000063, 177714)   # MOVB #63,@#177714    ; Covox: уровень 063
+COMMAND cpu.setreg(PC, 024004)
+COMMAND cpu.run
+WAITFOR cpu.pc == 024020, _5000
+LOG ay.regs(0,3)
+LOG ay.register
+LOG covox.value
+
+COMMAND cpu.stop
+COMMAND sound-card.plug(none)
+LOG sound-card.device
+LOG ay.plugged
+LOG covox.plugged
+EXIT

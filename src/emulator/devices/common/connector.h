@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: A socket that one of several input devices is plugged into
+// Description: A socket that one of several devices is plugged into
 
 #pragma once
 
@@ -9,13 +9,14 @@
 
 #include "emulator/core.h"
 
-// An input device that can be unplugged: a joystick or a mouse sharing one
-// socket of a machine. An unplugged device ignores the host and never drives
-// its output, so the lines it shares with the other devices belong to them.
-class PluggableDevice : public ComputerDevice
+// Something that can be pulled out of a socket. It is a mixin rather than a
+// device class, so that a device with a base of its own (the addressable
+// ay8910) can be plugged in as well as a plain input device.
+class Pluggable
 {
 public:
-    PluggableDevice(InterfaceManager *im, EmulatorConfigDevice *cd);
+    Pluggable(): m_plugged(true) {}
+    virtual ~Pluggable() = default;
 
     void set_plugged(bool on);
     bool is_plugged() const { return m_plugged; }
@@ -32,14 +33,25 @@ protected:
     bool m_plugged;
 };
 
+// An input device that can be unplugged: a joystick or a mouse sharing one
+// socket of a machine. An unplugged device ignores the host and never drives
+// its output, so the lines it shares with the other devices belong to them.
+class PluggableDevice : public ComputerDevice, public Pluggable
+{
+public:
+    PluggableDevice(InterfaceManager *im, EmulatorConfigDevice *cd);
+};
+
 // The socket itself. Its only option picks the device plugged into it, or
 // none; the choice is kept per machine like every other device option.
 class Connector : public ComputerDevice
 {
 private:
-    std::vector<PluggableDevice*> m_devices;
+    std::vector<Pluggable*> m_devices;
+    std::vector<std::string> m_names;   // device names, in the order of m_devices
     unsigned int m_selected;            // 0 - nothing, n - device n-1
     std::string m_icon;                 // picture next to the option list, empty - the GUI's own
+    const char * m_title;               // untranslated title of the option list
 
     void apply();
 

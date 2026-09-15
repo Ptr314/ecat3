@@ -135,16 +135,37 @@ void GenericSound::clock(unsigned int counter)
 {
     if (!m_initialized) return;
 
-    m_counter += counter << 8;
+    // The sources are averaged with the device's own output so that the sum
+    // stays within the amplitude; a source that is switched off takes no share
+    int64_t level = calc_sound_value();
+    int64_t shares = 1;
+    for (size_t i = 0; i < m_sources.size(); i++)
+        if (m_sources[i]->sound_active()) {
+            level += m_sources[i]->sound_sample(m_amplitude);
+            shares++;
+        }
+    if (shares > 1) level /= shares;
 
-    if (m_counter >= m_counts_per_sample) {
-        m_counter -= m_counts_per_sample;
+    // The level is weighted by the clock ticks it was held for. An instruction
+    // takes from a dozen ticks to a hundred, and counting every one of them
+    // once distorts a level that a program holds for a measured time: the
+    // bytes of a DAC, the pulse widths of a one-bit output
+    m_accumulator += level * counter;
+    m_acc_counter += counter;
+
+    m_counter += counter << 8;
+    if (m_counter < m_counts_per_sample) return;
 
 #if USE_QT_THREADING
-        QMutexLocker lock(&m_buffer_mutex);
+    QMutexLocker lock(&m_buffer_mutex);
 #else
-        std::lock_guard<std::mutex> lock(m_buffer_mutex);
+    std::lock_guard<std::mutex> lock(m_buffer_mutex);
 #endif
+
+    // A long slice (a bus master holding the CPU) may cover several samples:
+    // the first one takes the average, the rest repeat it
+    while (m_counter >= m_counts_per_sample) {
+        m_counter -= m_counts_per_sample;
 
         // Checking buffer overflow and discarding a part of it if expected
         if (m_buffer_pos >= m_buffer.size()) {
@@ -175,15 +196,6 @@ void GenericSound::clock(unsigned int counter)
         else if (out < -32768.0f) out = -32768.0f;
 
         m_buffer[m_buffer_pos++] = static_cast<int16_t>(out);
-    } else {
-        // Accumulating values between counts to get average when expected.
-        // The sources are averaged with the device's own output so that the
-        // sum stays within the amplitude.
-        int64_t v = calc_sound_value();
-        for (size_t i = 0; i < m_sources.size(); i++) v += m_sources[i]->sound_sample(m_amplitude);
-        if (!m_sources.empty()) v /= (int64_t)(m_sources.size() + 1);
-        m_accumulator += v;
-        m_acc_counter++;
     }
 }
 

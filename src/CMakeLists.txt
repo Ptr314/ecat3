@@ -228,6 +228,7 @@ set(EMULATOR_SOURCES
     emulator/devices/common/mapkeyboard.h emulator/devices/common/mapkeyboard.cpp
     emulator/devices/common/speaker.cpp emulator/devices/common/speaker.h
     emulator/devices/common/ay8910.cpp emulator/devices/common/ay8910.h
+    emulator/devices/common/covox.cpp emulator/devices/common/covox.h
     emulator/devices/common/sound.h emulator/devices/common/sound.cpp
     emulator/devices/common/tape.cpp emulator/devices/common/tape.h
     emulator/devices/common/wd1793.h emulator/devices/common/wd1793.cpp
