@@ -1319,7 +1319,11 @@ function setupMouse(module) {
 
     const buttonBit = (e) => (e.button === 0) ? 1 : ((e.button === 2) ? 2 : 0);
 
-    wrap.addEventListener("mousedown", (e) => {
+    // Only a real mouse captures. A finger also produces a mousedown, and Chrome
+    // on Android grants the lock to it: every tap on the page then went to the
+    // capture, and a phone has neither Esc nor Ctrl-Alt to give it back
+    wrap.addEventListener("pointerdown", (e) => {
+        if (e.pointerType !== "mouse") return;
         if (mouse.captured || e.button !== 0 || mouseState(module) !== 2) return;
         e.preventDefault();
         // Refused for a moment after Esc; newer browsers reject the promise,
@@ -1327,6 +1331,12 @@ function setupMouse(module) {
         const request = wrap.requestPointerLock();
         if (request && typeof request.catch === "function") request.catch(() => {});
     });
+
+    // A touch while captured (a tablet with a mouse) gives the pointer back:
+    // the fingers are then the only way out
+    document.addEventListener("pointerdown", (e) => {
+        if (mouse.captured && e.pointerType !== "mouse") document.exitPointerLock();
+    }, true);
 
     // While locked every event goes to the wrap; the capturing click has
     // already been handled above when its own release arrives, and a release
