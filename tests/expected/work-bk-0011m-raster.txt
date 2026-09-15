@@ -1,0 +1,4 @@
+[display.standard] vp1-037
+[display.lines] &000500
+[display.scroll] &001330
+[display.offset] &000000

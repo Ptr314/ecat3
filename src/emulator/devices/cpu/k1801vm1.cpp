@@ -81,6 +81,9 @@ emulator::Result k1801vm1::load_config(SystemData *sd)
     core->start_address = (uint16_t)read_confg_value(cd, "start_address", false, (unsigned int)0100000);
     core->start_from_vector = read_confg_value(cd, "start_vector", false, false);
     core->halt_vector = (uint16_t)read_confg_value(cd, "halt_vector", false, (unsigned int)PDP11::V_BUS_ERROR);
+    // Clock periods the memory takes to answer, which sets the length of every
+    // bus cycle: 2 on a 3 MHz БК0010, more where the memory is slower to reply
+    core->set_reply_delay(read_confg_value(cd, "reply_delay", false, (unsigned int)2));
 
     return emulator::Result::ok();
 }

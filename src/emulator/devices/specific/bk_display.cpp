@@ -11,6 +11,10 @@
 // A pixel value of 0 is always the background, the rest select one of three
 // colours. БК0010 has the single fixed palette below under number 0, БК0011М
 // switches between all sixteen through the register 0177662.
+// Palettes 6-10 use two intermediate levels of the red component only (C0 and
+// 8E), green and blue stay full or off. BKBTL and the Chipwiki table agree on
+// that (Chipwiki has 90 for 8E), the gid emulator has the same structure with
+// darker levels. Web colour names (DarkRed, BlueViolet...) are not the machine.
 uint8_t BK_Palettes[16][4][3] = {
     {{0,0,0}, {  0,  0,255}, {  0,255,  0}, {255,  0,  0}},     //  0 синий, зеленый, красный
     {{0,0,0}, {255,255,  0}, {255,  0,255}, {255,  0,  0}},     //  1 желтый, сиреневый, красный
@@ -40,31 +44,35 @@ uint8_t BK_Mono_2[2][3] = {
 
 uint32_t BK_RGBA2[2];
 
+// Raster of К1801ВП1-037, as reconstructed from the chip (github.com/1801BM1/k1801,
+// 037/rtl/va_037.v; the БК emulator by gid follows the same counters): 256
+// picture lines, then 64 service ones counted down from 077. The scroll
+// register is loaded into the line address while the counter passes 051 and
+// 050, the 22nd and 23rd service lines (0-based).
+static const unsigned BK_SCROLL_LATCH_LINE = 23;
+
 BKDisplay::BKDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
-    GenericDisplay(im, cd)
+    RasterDisplay(im, cd)
+    , i_frame(this, im, 1, "frame", MODE_W)
     , m_scroll_base(0330)
     , m_scroll(0330)
     , m_offset(0)
-    , m_quarter(false)
     , m_line_bytes(64)
-    , m_lines(256)
-    , m_control(0)
-    , m_palette(0)
-    , m_page(0)
+    , m_video_lines(256)
     , m_color(true)
     , m_mode_pending(false)
     , m_pending_color(true)
 {
-    m_clocked = true;   //clock() is overridden here
+    m_standart = "vp1-037";
     // Video memory holds 256 lines of 64 bytes. Read as one bit per pixel that
     // is 512 dots across, read as two bits per pixel it is 256.
-    sy = m_lines;
+    sy = m_video_lines;
     sx = m_color? 256 : 512;
 }
 
 emulator::Result BKDisplay::load_config(SystemData *sd)
 {
-    emulator::Result res = GenericDisplay::load_config(sd);
+    emulator::Result res = RasterDisplay::load_config(sd);
     if (!res) return res;
 
     vram[0] = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("vram").value));
@@ -86,30 +94,23 @@ emulator::Result BKDisplay::load_config(SystemData *sd)
 
     m_scroll_base = read_confg_value(cd, "scroll_base", false, (unsigned int)0330);
     m_line_bytes = read_confg_value(cd, "line_bytes", false, (unsigned int)64);
-    m_lines = read_confg_value(cd, "lines", false, (unsigned int)256);
+    m_video_lines = read_confg_value(cd, "lines", false, (unsigned int)256);
 
     // Colour or monochrome is a switch on the case of a real БК rather than a
     // register, so it starts from the configuration and is changed from the
     // toolbar afterwards.
     m_color = str_tolower(read_confg_value(cd, "mode", false, std::string("color"))) != "mono";
 
-    sy = m_lines;
+    sy = m_video_lines;
     sx = m_color? (m_line_bytes * 4) : (m_line_bytes * 8);
 
-    // Each video page reports writes under its own id, so a write to the page
-    // that is not on the screen does not cost a redraw
-    vram[0]->set_memory_callback(this, 1, MODE_W);
-    if (vram[1] != nullptr) vram[1]->set_memory_callback(this, 2, MODE_W);
+    latch_scroll();
+
+    // The pulse line is wired by now: settle it low, so the first frame is
+    // already an edge for whatever takes the interrupt from it
+    i_frame.change(0);
 
     return emulator::Result::ok();
-}
-
-void BKDisplay::memory_callback(unsigned int callback_id, MAYBE_UNUSED unsigned int address)
-{
-    if (callback_id - 1 != m_page) return;
-
-    screen_valid = false;
-    was_updated = true;
 }
 
 void BKDisplay::get_screen_constraints(unsigned int * sx, unsigned int * sy)
@@ -119,8 +120,8 @@ void BKDisplay::get_screen_constraints(unsigned int * sx, unsigned int * sy)
     // could land in the middle of a frame, leaving the width and the buffer
     // describing different resolutions.
     if (m_mode_pending) {
-        // Under the surface lock, so the switch cannot land inside a frame
-        // that another thread is drawing
+        // Under the surface lock, so the switch cannot land inside a line
+        // that the emulation thread is drawing
         lock_surface();
         m_mode_pending = false;
         if (m_pending_color != m_color) {
@@ -162,39 +163,6 @@ void BKDisplay::set_device_option(unsigned option_id, unsigned value_id)
     m_mode_pending = true;
 }
 
-void BKDisplay::clock(MAYBE_UNUSED unsigned int counter)
-{
-    if (port_scroll != nullptr) {
-        unsigned scroll = port_scroll->get_direct(0);
-        if (scroll != m_scroll) {
-            m_scroll = scroll;
-            // Only the low byte of the register matters: it names the video line
-            // shown at the top of the screen, counted from the base value. The
-            // firmware keeps adding to the register without masking it, so the
-            // upper bits are just an unused carry and the subtraction below has
-            // to come before the wrap.
-            m_offset = (scroll - m_scroll_base) % m_lines;
-            // Bit 9 cleared leaves only the top quarter of the screen (64 lines)
-            // on the air; the rest of the raster stays dark
-            m_quarter = (scroll & 0x200) == 0;
-            screen_valid = false;
-            was_updated = true;
-        }
-    }
-
-    if (port_control != nullptr) {
-        unsigned control = port_control->get_direct(0);
-        if (control != m_control) {
-            m_control = control;
-            // Bits 8-11 hold the palette number, bit 15 picks the video page
-            m_palette = (control >> 8) & 0x0F;
-            m_page = (vram[1] != nullptr)? ((control >> 15) & 1) : 0;
-            screen_valid = false;
-            was_updated = true;
-        }
-    }
-}
-
 void BKDisplay::set_renderer(VideoRenderer &vr)
 {
     GenericDisplay::set_renderer(vr);
@@ -203,74 +171,151 @@ void BKDisplay::set_renderer(VideoRenderer &vr)
     vr.FillRGB(BK_Mono_2, BK_RGBA2, 2);
 }
 
-void BKDisplay::render_all(const bool force_render)
+// Bits 8-11 hold the palette number, bit 15 picks the video page
+unsigned BKDisplay::control() const
 {
-    if (screen_valid && !force_render) return;
+    return (port_control != nullptr) ? port_control->get_direct(0) : 0;
+}
 
-    // The mode is sampled once, so a switch arriving in the middle of a frame
-    // cannot draw half of it at the other resolution, and the width is checked
-    // against the surface that is actually there.
+// Bit 9 cleared leaves only the top quarter of the screen (64 lines) on the air.
+// The controller looks at it on every word, not once a frame.
+bool BKDisplay::quarter() const
+{
+    return (port_scroll != nullptr) && (port_scroll->get_direct(0) & 0x200) == 0;
+}
+
+void BKDisplay::latch_scroll()
+{
+    if (port_scroll == nullptr) return;
+    m_scroll = port_scroll->get_direct(0);
+    // Only the low byte of the register matters: it names the video line
+    // shown at the top of the screen, counted from the base value. The
+    // firmware keeps adding to the register without masking it, so the
+    // upper bits are just an unused carry and the subtraction below has
+    // to come before the wrap.
+    m_offset = (m_scroll - m_scroll_base) % m_video_lines;
+}
+
+// The chip has no frame output of its own: the board takes the frame interrupt
+// from the vertical sync pulse inside its composite sync (pin 28), SYNC2 of the
+// reconstruction, active while the service line counter is 052..050 - the
+// 21st to 23rd service lines. Its start is the interrupt, 43 lines before the
+// first picture line.
+static const unsigned BK_FRAME_PULSE_LINE = 21;
+
+void BKDisplay::HSYNC(const unsigned line, const unsigned sync_val)
+{
+    if (sync_val == 0) {
+        if (line == m_video_lines) {
+            for (unsigned i = 0; i < m_video_lines && i < 256; i++)
+                m_frame_palette[i] = m_line_palette[i];
+        }
+        if (line == m_video_lines + BK_FRAME_PULSE_LINE) {
+            // Vertical sync: the frame interrupt, gated by bit 14 of 0177662
+            // outside the device
+            m_frames++;
+            i_frame.change(1);
+            i_frame.change(0);
+        }
+        if (line == m_video_lines + BK_SCROLL_LATCH_LINE) {
+            latch_scroll();
+        }
+    } else if (line < m_video_lines) {
+        render_line(line);
+    }
+}
+
+void BKDisplay::reset(const bool cold)
+{
+    RasterDisplay::reset(cold);
+    // The ports are reset before the display, so the frame starts from the
+    // scroll register the machine really has rather than from the one taken
+    // before the reset
+    latch_scroll();
+}
+
+// The picture is laid out line by line from the emulation thread. Only a
+// surface that has never been drawn - the first frame, a colour/mono switch -
+// is filled here at once, so that it shows even while the processor stands.
+// A forced repaint is ignored: the main window asks for one on every paint
+// event, and a whole frame drawn from the palette of that moment replaced a
+// frame split by a mid-frame palette change with a single colour (the INSULT
+// demo flickered). validate() already holds the surface lock.
+void BKDisplay::render_all(MAYBE_UNUSED const bool force_render)
+{
+    if (!screen_valid)
+        for (unsigned line = 0; line < m_video_lines; line++)
+            render_line_unlocked(line);
+    screen_valid = true;
+    was_updated = true;
+}
+
+void BKDisplay::render_line(const unsigned line)
+{
+    compat_lock_guard guard(m_surface_mutex);
+    render_line_unlocked(line);
+}
+
+void BKDisplay::render_line_unlocked(const unsigned line)
+{
+    if (!has_valid_renderer() || render_pixels == nullptr) return;
+
+    // The width is checked against the surface that is actually there: a mode
+    // switch reaches the surface only on the next frame of the render thread
     const bool color = m_color;
     const unsigned width = color? (m_line_bytes * 4) : (m_line_bytes * 8);
     if ((int)(width * 4) > line_bytes) return;
 
-    // The palette and the page can be switched from the emulation thread at any
-    // moment, so a frame is drawn entirely from one snapshot of them
-    const unsigned palette = m_palette;
-    RAM * vmem = vram[m_page];
-    if (vmem == nullptr) return;
+    uint8_t * base = static_cast<uint8_t*>(render_pixels) + line * line_bytes;
 
-    //Marked valid before the repaint, not after - see O128Display::render_all()
-    screen_valid = true;
-    was_updated = true;
+    const unsigned ctl = control();
+    RAM * vmem = vram[(vram[1] != nullptr) ? ((ctl >> 15) & 1) : 0];
 
-    const unsigned shown = m_quarter? (m_lines / 4) : m_lines;
-    for (unsigned line = 0; line < m_lines; line++) {
-        if (line >= shown) render_line_blank(line, color);
-        else if (color) render_line_color(line, vmem, palette);
-        else render_line_mono(line, vmem);
+    const bool blank = vmem == nullptr || (quarter() && line >= m_video_lines / 4);
+    if (line < 256) m_line_palette[line] = blank ? 16 : static_cast<uint8_t>((ctl >> 8) & 0x0F);
+
+    if (blank) {
+        render_line_blank(base, width);
+    } else {
+        // The quarter mode does not change the addressing: the firmware itself
+        // points the scroll register at the last quarter of the video memory
+        // (0070000-0077777), which is what the manuals describe as the extended
+        // memory mode
+        const unsigned src = ((line + m_offset) % m_video_lines) * m_line_bytes;
+        if (color) render_line_color(base, src, vmem, (ctl >> 8) & 0x0F);
+        else render_line_mono(base, src, vmem);
     }
+
+    if (line + 1 == m_video_lines) was_updated = true;
 }
 
 // Below the quarter screen the beam draws nothing
-void BKDisplay::render_line_blank(const unsigned line, const bool color) const
+void BKDisplay::render_line_blank(uint8_t * base, const unsigned width) const
 {
-    uint8_t * base = static_cast<uint8_t*>(render_pixels) + line * line_bytes;
-    const unsigned width = color? (m_line_bytes * 4) : (m_line_bytes * 8);
     for (unsigned i = 0; i < width; i++)
         *reinterpret_cast<uint32_t*>(base + i * 4) = BK_RGBA2[0];
 }
 
-// Video line shown at a screen line. The quarter mode does not change the
-// addressing: the firmware itself points the scroll register at the last
-// quarter of the video memory (0070000-0077777), which is what the manuals
-// describe as the extended memory mode
-unsigned BKDisplay::source_line(const unsigned line) const
+// The video memory is read straight from its buffer: a virtual get_direct() on
+// every byte of every line, 50 times a second, costs more than the drawing
+void BKDisplay::render_line_mono(uint8_t * base, const unsigned src, RAM * vmem) const
 {
-    return (line + m_offset) % m_lines;
-}
-
-void BKDisplay::render_line_mono(const unsigned line, RAM * vmem) const
-{
-    const unsigned src = source_line(line) * m_line_bytes;
-    uint8_t * base = static_cast<uint8_t*>(render_pixels) + line * line_bytes;
-
+    const uint8_t * video = vmem->get_buffer() + src;
     for (unsigned i = 0; i < m_line_bytes; i++) {
-        const uint8_t b = vmem->get_direct(src + i);
+        const uint8_t b = video[i];
         // Bit 0 is the leftmost dot
         for (unsigned k = 0; k < 8; k++)
             *reinterpret_cast<uint32_t*>(base + (i * 8 + k) * 4) = BK_RGBA2[(b >> k) & 1];
     }
 }
 
-void BKDisplay::render_line_color(const unsigned line, RAM * vmem, const unsigned palette) const
+void BKDisplay::render_line_color(uint8_t * base, const unsigned src, RAM * vmem, const unsigned palette) const
 {
-    const unsigned src = source_line(line) * m_line_bytes;
-    uint8_t * base = static_cast<uint8_t*>(render_pixels) + line * line_bytes;
     const uint32_t * colors = BK_RGBA4[palette];
+    const uint8_t * video = vmem->get_buffer() + src;
 
     for (unsigned i = 0; i < m_line_bytes; i++) {
-        const uint8_t b = vmem->get_direct(src + i);
+        const uint8_t b = video[i];
         // The lowest pair of bits is the leftmost dot
         for (unsigned k = 0; k < 4; k++)
             *reinterpret_cast<uint32_t*>(base + (i * 4 + k) * 4) = colors[(b >> (k * 2)) & 3];
@@ -279,28 +324,54 @@ void BKDisplay::render_line_color(const unsigned line, RAM * vmem, const unsigne
 
 std::vector<DeviceFieldInfo> BKDisplay::get_device_fields()
 {
-    std::vector<DeviceFieldInfo> r = GenericDisplay::get_device_fields();
-    r.push_back({"scroll",  "Scroll register 0177664 as last seen",            false});
+    std::vector<DeviceFieldInfo> r = RasterDisplay::get_device_fields();
+    r.push_back({"scroll",  "Scroll register 0177664 as taken for this frame", false});
     r.push_back({"offset",  "First video line shown at the top of the screen", false});
     r.push_back({"quarter", "1 when only the top quarter of the screen is shown", false});
-    r.push_back({"control", "Palette and page register 0177662 as last seen",  false});
+    r.push_back({"control", "Palette and page register 0177662",               false});
     r.push_back({"palette", "Palette number, 0 without the register",          false});
     r.push_back({"page",    "Video RAM shown, 0 on a machine with only one",   false});
     r.push_back({"vram",    "Name of the video RAM device being shown",        false});
     r.push_back({"color",   "1 for colour, 0 for the monochrome mode",         false});
+    r.push_back({"palettes", "Palette each line of the last completed frame was drawn with, 16 for a blank line", true});
+    r.push_back({"frames",   "Frame pulses given since the start",             false});
     return r;
 }
 
 bool BKDisplay::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
-    //These are written by the render thread and read here from the emulation
-    //one. They are single words describing what is on screen right now, so a
-    //value one frame old is exactly as useful as a perfectly synchronised one
+    // The whole last frame, taken when its picture lines ended, so that a
+    // mid-frame palette change is seen as it was drawn
+    if (field == "palettes")
+    {
+        const unsigned last = m_video_lines - 1;
+        if (to < from) to = from;
+        if (from > last) from = last;
+        if (to > last) to = last;
+        out.numeric = true;
+        out.has_start = true;
+        out.start = from;
+        for (unsigned int line = from; line <= to; line++)
+            out.values.push_back(m_frame_palette[line]);
+        return true;
+    }
+
+    if (field == "frames")
+    {
+        out.numeric = true;
+        out.width = 16;
+        out.values.push_back(m_frames & 0xFFFF);
+        return true;
+    }
+
+    const unsigned ctl = control();
+    const unsigned page = (vram[1] != nullptr) ? ((ctl >> 15) & 1) : 0;
+
     if (field == "scroll" || field == "control")
     {
         out.numeric = true;
         out.width = 16;
-        out.values.push_back((field == "scroll") ? m_scroll : m_control);
+        out.values.push_back((field == "scroll") ? m_scroll : ctl);
         return true;
     }
 
@@ -308,26 +379,26 @@ bool BKDisplay::get_field(const std::string &field, unsigned int from, unsigned 
     {
         out.numeric = true;
         if (field == "offset")       out.values.push_back(m_offset);
-        else if (field == "palette") out.values.push_back(m_palette);
-        else                         out.values.push_back(m_page);
+        else if (field == "palette") out.values.push_back((ctl >> 8) & 0x0F);
+        else                         out.values.push_back(page);
         return true;
     }
 
     if (field == "quarter" || field == "color")
     {
         out.numeric = true;
-        out.values.push_back(((field == "quarter") ? m_quarter : m_color) ? 1 : 0);
+        out.values.push_back(((field == "quarter") ? quarter() : m_color) ? 1 : 0);
         return true;
     }
 
     if (field == "vram")
     {
         out.numeric = false;
-        out.text = (vram[m_page] != nullptr) ? vram[m_page]->name : std::string("-");
+        out.text = (vram[page] != nullptr) ? vram[page]->name : std::string("-");
         return true;
     }
 
-    return GenericDisplay::get_field(field, from, to, out);
+    return RasterDisplay::get_field(field, from, to, out);
 }
 
 ComputerDevice * create_bk_display(InterfaceManager *im, EmulatorConfigDevice *cd)

@@ -11,16 +11,13 @@
 //     DATI  - a read                   7T + tn
 //     DATO  - a write, MOV only       10T + tn
 //     DATIO - a read-modify-write     13T + 2tn
-// tn is the delay before the memory answers, two periods on the BK. That makes
-// a register to register operation ten periods - the 300 000 operations per
-// second the BK0010 is specified for at 3 MHz - and every trap 52 periods,
-// which is the documented 42T + 5tn of EMT.
+// tn is the delay before the memory answers. It belongs to the machine rather
+// than to the chip and comes from the configuration (reply_delay). Two periods
+// on a 3 MHz БК0010 make a register to register operation ten periods - the
+// 300 000 operations per second the BK0010 is specified for - and every trap
+// 52 periods, which is the documented 42T + 5tn of EMT. The bus cycles and
+// everything built from them are therefore members, see set_reply_delay().
 namespace {
-    const unsigned int T_REPLY = 2;                     // tn
-    const unsigned int C_DATI  = 7 + T_REPLY;
-    const unsigned int C_DATO  = 10 + T_REPLY;
-    const unsigned int C_DATIO = 13 + 2 * T_REPLY;
-
     // Internal work on top of the bus cycles
     const unsigned int C_ALU      = 1;      // an operation on registers alone
     const unsigned int C_SRC_MEM  = 3;      // source operand taken from memory
@@ -33,17 +30,23 @@ namespace {
     const unsigned int C_SOB      = 9;      // 16T + tn
     const unsigned int C_SOB_END  = C_SOB;
     const unsigned int C_JUMP     = 5;
-    const unsigned int C_TRAP     = 2 * C_DATO + 2 * C_DATI + C_ALU;
-    const unsigned int C_HALT     = 54 + 7 * T_REPLY - C_DATI;
     const unsigned int C_IDLE     = 8;      // WAIT, idling until an interrupt
     const unsigned int C_RESET    = 30;     // INIT held on the bus
     const unsigned int C_EIS      = 40;     // MUL/DIV/ASH/ASHC of the 1801VM2
+}
+
+void pdp11core::set_reply_delay(unsigned int periods)
+{
+    C_DATI  = 7 + periods;
+    C_DATO  = 10 + periods;
+    C_DATIO = 13 + 2 * periods;
+    C_TRAP  = 2 * C_DATO + 2 * C_DATI + C_ALU;
+    C_HALT  = 54 + 7 * periods - C_DATI;
 
     // Address computation: the bus cycles a mode spends before the operand
     // itself is touched, plus the period an auto-decrement costs
-    const unsigned int MODE_CYCLES[8] = {
-        0, 0, 0, C_DATI, 1, C_DATI + 1, C_DATI, 2 * C_DATI
-    };
+    const unsigned int modes[8] = { 0, 0, 0, C_DATI, 1, C_DATI + 1, C_DATI, 2 * C_DATI };
+    for (int i = 0; i < 8; i++) MODE_CYCLES[i] = modes[i];
 }
 
 pdp11core::pdp11core(int family_type)

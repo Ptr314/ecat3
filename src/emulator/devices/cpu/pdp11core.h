@@ -49,8 +49,17 @@ protected:
     // What an instruction does with its operand, which decides the bus cycle
     // it spends on it and therefore how long it takes
     enum operand_access { OP_NONE, OP_READ, OP_WRITE, OP_MODIFY };
-    static unsigned int access_cycles(const pdp11operand & op, operand_access access);
-    static unsigned int single_op_cycles(const pdp11operand & op, operand_access access);
+    unsigned int access_cycles(const pdp11operand & op, operand_access access);
+    unsigned int single_op_cycles(const pdp11operand & op, operand_access access);
+
+    // Bus cycles, which depend on how long the memory takes to answer, and the
+    // times built from them. Set by set_reply_delay().
+    unsigned int C_DATI;        // a read                   7T + tn
+    unsigned int C_DATO;        // a write, MOV only       10T + tn
+    unsigned int C_DATIO;       // a read-modify-write     13T + 2tn
+    unsigned int C_TRAP;        // trap or interrupt entry
+    unsigned int C_HALT;        // entry into the halt mode
+    unsigned int MODE_CYCLES[8];    // address computation of each mode
 
     void push(uint16_t value);
     uint16_t pop();
@@ -76,6 +85,9 @@ public:
 
     pdp11core(int family_type);
     virtual ~pdp11core(){};
+
+    // Clock periods the memory takes to answer a bus cycle (tn), 2 by default
+    void set_reply_delay(unsigned int periods);
 
     // Bus access, provided by the emulator device
     virtual uint16_t read_word(uint16_t address) = 0;

@@ -31,11 +31,25 @@ emulator::Result RasterDisplay::load_config(SystemData *sd)
         m_top_blank = 23;
         m_bottom_blank = 4;
         m_hsync_length_ms = 12;
+        m_counts_per_line = (m_interlaced?2:1) * m_system_clock / m_lines / m_frame_rate;
+    } else if (m_standart == "vp1-037") {
+        // К1801ВП1-037 of the БК: 256 picture lines and 64 service ones, no
+        // interlace. A line is 48 words of the 750 kHz video clock, 64 us, so the
+        // frame is 20.48 ms rather than 20 and its rate is 48.8 Hz.
+        m_lines = 320;
+        m_half_frame_lines = m_lines;
+        m_frame_rate = 48;
+        m_interlaced = false;
+        m_top_blank = 0;
+        m_bottom_blank = 0;
+        // The "sync" event comes in the middle of the 32 picture words (42.7 us),
+        // which is where a line is sampled
+        m_hsync_length_ms = 21;
+        m_counts_per_line = m_system_clock / 1000 * 64 / 1000;
     } else {
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{RasterDisplay|" + std::string(QT_TRANSLATE_NOOP("RasterDisplay", "Unknown video standard")) + "}");
     }
 
-    m_counts_per_line = (m_interlaced?2:1) * m_system_clock / m_lines / m_frame_rate;
     m_counts_hsync = m_system_clock * m_hsync_length_ms / 1000000;
 
     return emulator::Result::ok();
@@ -49,11 +63,15 @@ void RasterDisplay::clock(unsigned int counter)
         if (m_interlaced) {
             m_screen_line = (m_current_line <= 312) ? (2 * m_current_line) : (2 * (m_current_line - 313) + 1);
         } else {
-            im->dm->error(this, "Non-interlaced mode is not supported yet");
+            m_screen_line = m_current_line;
         }
 
         if (m_current_line == 0)
             FRAME_SYNC();
+        // A progressive standard has no blanking described here (both blank
+        // counts are 0), so VSYNC(0) never comes for it: its subclass takes the
+        // frame events from the line numbers in HSYNC
+
         if (m_current_line == m_lines - m_bottom_blank || m_current_line == m_half_frame_lines - m_bottom_blank)
             VSYNC(0);
         if (m_current_line == m_top_blank || m_current_line == m_half_frame_lines + m_top_blank)
@@ -63,7 +81,11 @@ void RasterDisplay::clock(unsigned int counter)
         m_hsync_counter = 0;
         m_hsync_active = true;
 
-        if (m_current_line++ > 624) m_current_line = 0;
+        if (m_interlaced) {
+            if (m_current_line++ > 624) m_current_line = 0;
+        } else if (++m_current_line >= m_lines) {
+            m_current_line = 0;
+        }
     }
 
     m_hsync_counter += counter;
