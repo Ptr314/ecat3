@@ -16,8 +16,8 @@
 // прочитались бы восьмеричными.
 
 shift:      key_shift
-ctrl:       key_su
-alt:        key_ar2
+ctrl:       key_su once  // СУ отпускается сама после следующей клавиши
+alt:        key_ar2 once // АР2 отпускается сама после следующей клавиши
 case-upper: key_zagl
 case-lower: key_str
 rus-on:     key_rus

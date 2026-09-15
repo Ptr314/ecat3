@@ -1,0 +1,4 @@
+[keyboard.count] &000001
+[keyboard.count] &000000
+[keyboard.held] &00000000000
+[port-sys-rd.value16] &140340

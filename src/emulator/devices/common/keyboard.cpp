@@ -42,10 +42,32 @@ void Keyboard::key_event(unsigned int key, unsigned int native_key, bool press)
     else if (known_key(native_key))
         k = native_key;
     else return;
+
+    unsigned int code = _FFFF;
+    {
+        compat_lock_guard lock(m_host_mutex);
+        for (size_t i = 0; i < m_host_down.size(); i++)
+            if (m_host_down[i].first == k) {
+                code = m_host_down[i].second;
+                if (!press) m_host_down.erase(m_host_down.begin() + i);
+                break;
+            }
+        if (code == _FFFF) {
+            code = rus_translate(k);
+            if (press) m_host_down.push_back(std::make_pair(k, code));
+        }
+    }
+
     if (press)
-        key_down(rus_translate(k));
-    else
-        key_up(rus_translate(k));
+        key_down(code);
+    else {
+        key_up(code);
+        //A host modifier is not the key a "once" modifier waits for: Shift let
+        //go on the host must not drop АР2 latched on the drawing
+        if (k != EmuKey::Shift && k != EmuKey::Control && k != EmuKey::Alt
+            && k != EmuKey::CapsLock && k != EmuKey::NumLock && k != EmuKey::ScrollLock)
+            release_once_modifiers();
+    }
 }
 
 bool Keyboard::known_key(unsigned int code)
@@ -209,6 +231,25 @@ std::vector<Keyboard::Indicator> Keyboard::indicators() const
     return r;
 }
 
+// A modifier marked "once" stays latched only until the next key. It is let
+// go after that key's release, so the key itself still goes out with it. The
+// frontends see it gone from ids_held() and drop their latch
+void Keyboard::release_once_modifiers()
+{
+    if (m_once_ids.empty()) return;
+    std::vector<std::string> held;
+    {
+        compat_lock_guard lock(m_held_mutex);
+        held = m_ids_held;
+    }
+    for (size_t i = 0; i < m_once_ids.size(); i++)
+        for (size_t j = 0; j < held.size(); j++)
+            if (held[j] == m_once_ids[i]) {
+                key_event_id(m_once_ids[i], false);
+                break;
+            }
+}
+
 void Keyboard::key_event_id(const std::string &id, bool press)
 {
     const KeyRole role = key_role(id);
@@ -265,6 +306,11 @@ void Keyboard::key_event_id(const std::string &id, bool press)
 
     // Latching keys light up from the state they produced, handled in ids_held()
     if (!is_latching(id)) note_id(id, press);
+
+    // The key a "once" modifier was latched for has been let go. Other
+    // modifiers and the latches do not count: СУ+АР2+U is still one chord
+    if (!press && (role == KEY_ROLE_NORMAL || role == KEY_ROLE_REPEAT || role == KEY_ROLE_STOP))
+        release_once_modifiers();
 }
 
 emulator::Result Keyboard::parse_key_table(const std::vector<std::string> &body, const std::string &file)
@@ -323,7 +369,26 @@ emulator::Result Keyboard::load_key_table(SystemData *sd)
             const std::string left = str_tolower(str_trim(line.substr(0, colon)));
             for (int h = 0; HEADER[h].name != nullptr; h++)
                 if (left == HEADER[h].name) {
-                    register_key_id(str_trim(line.substr(colon + 1)), HEADER[h].role);
+                    //The key name, then its flags: "alt: key_ar2 once"
+                    std::string value = str_trim(line.substr(colon + 1));
+                    for (size_t c = 0; c < value.size(); c++)
+                        if (value[c] == '\t') value[c] = ' ';
+                    std::vector<std::string> words = split_string(value, ' ', true);
+                    const std::string id = words.empty() ? std::string() : str_trim(words[0]);
+                    register_key_id(id, HEADER[h].role);
+                    for (size_t w = 1; w < words.size(); w++) {
+                        const std::string flag = str_tolower(str_trim(words[w]));
+                        if (flag.empty()) continue;
+                        //Only a modifier the drawing latches with a click can let go by itself
+                        const bool clicked_on = HEADER[h].role == KEY_ROLE_SHIFT
+                                             || HEADER[h].role == KEY_ROLE_CTRL
+                                             || HEADER[h].role == KEY_ROLE_ALT;
+                        if (flag == "once" && clicked_on)
+                            m_once_ids.push_back(id);
+                        else
+                            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                                "{Keyboard|" + std::string(QT_TRANSLATE_NOOP("Keyboard", "Unknown flag of a modifier in the key table")) + "} " + line + " (" + file + ")");
+                    }
                     taken = true;
                     break;
                 }
@@ -344,6 +409,10 @@ void Keyboard::reset(bool cool)
     ComputerDevice::reset(cool);
     m_case_lower = false;
     m_reset_count++;
+    {
+        compat_lock_guard lock(m_host_mutex);
+        m_host_down.clear();
+    }
     compat_lock_guard lock(m_held_mutex);
     m_ids_held.clear();
 }

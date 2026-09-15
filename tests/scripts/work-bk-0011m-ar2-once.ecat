@@ -1,0 +1,46 @@
+# БК0011М: АР2 и СУ экранной клавиатуры отпускаются сами после первой обычной
+# клавиши (признак once в bk.keys). Для АР2 это видно по вектору, с которым ушел
+# код: 0274 - с АР2, 060 - без нее. Клавиша уходит с АР2, следующая - уже без.
+# То же с клавишей компьютера. У СУ вектор ничего не говорит (управляющие коды
+# идут через 0274 всегда), поэтому смотрится keyboard.pressed. Сочетание
+# СУ+АР2+U набирается по-прежнему: нажатие модификатора другой не отпускает, а
+# после U отпускаются оба.
+# @timeout 40
+
+MACHINE "bk/BK-0011M.cfg"
+WAIT _3000
+LOGDEFS _16,_8
+
+# АР2 с рисунка
+KEYDOWN key_ar2
+LOG keyboard.pressed
+KEYDOWN key_a
+KEYUP key_a
+LOG keyboard.vector
+LOG keyboard.pressed
+KEYDOWN key_a
+KEYUP key_a
+LOG keyboard.vector
+
+# АР2 и клавиша компьютера
+KEYDOWN key_ar2
+KEY _50,_50,a
+LOG keyboard.vector
+LOG keyboard.pressed
+
+# СУ с рисунка
+KEYDOWN key_su
+LOG keyboard.pressed
+KEYDOWN key_a
+KEYUP key_a
+LOG keyboard.pressed
+
+# СУ+АР2+U: оба держатся до U и отпускаются после нее
+KEYDOWN key_su
+KEYDOWN key_ar2
+LOG keyboard.pressed
+KEYDOWN key_u
+KEYUP key_u
+LOG keyboard.vector
+LOG keyboard.pressed
+EXIT

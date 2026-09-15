@@ -766,6 +766,39 @@ void Emulator::key_event(int key, int modifiers, bool press)
     }
 }
 
+int Emulator::host_key(int key, unsigned int scan, int modifiers, bool press)
+{
+    size_t i = 0;
+    for (; i < m_host_keys.size(); i++)
+        if ((scan != 0)?(m_host_keys[i].scan == scan):(m_host_keys[i].key == key)) break;
+
+    if (press) {
+        if (i == m_host_keys.size()) {
+            HostKey h;
+            h.scan = scan;
+            h.key = key;
+            m_host_keys.push_back(h);
+        }
+    } else if (i < m_host_keys.size()) {
+        key = m_host_keys[i].key;
+        m_host_keys.erase(m_host_keys.begin() + i);
+    }
+
+    key_event(key, modifiers, press);
+    return key;
+}
+
+void Emulator::release_host_keys()
+{
+    std::vector<HostKey> held;
+    held.swap(m_host_keys);
+    for (size_t i = 0; i < held.size(); i++) {
+        key_event(held[i].key, 0, false);
+        //A recording would otherwise keep the key down for the rest of it
+        record_key(static_cast<unsigned int>(held[i].key), held[i].scan, false);
+    }
+}
+
 // A key of the machine's own keyboard, pressed on the drawing of it. It carries
 // an id instead of a host code, so nothing here goes through rus_translate():
 // the picture already shows the machine's layout.

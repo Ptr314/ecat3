@@ -334,6 +334,13 @@ protected:
     unsigned int translate_key(const std::string &key);
     bool known_key(unsigned int code);
     unsigned int rus_translate(unsigned int code);
+
+    // Host keys held down, each with the code it went down as. The release
+    // lifts that same code: РУС/ЛАТ switched while a key is held would remap
+    // the release to another key, and this one would stay down in the machine.
+    // Filled by the host thread, cleared by a reset on the emulation thread.
+    std::vector<std::pair<unsigned int, unsigned int> > m_host_down;
+    compat_mutex m_host_mutex;
     virtual void set_rus(bool new_rus);
 
     // The drawing of this machine's keyboard and the table naming its keys.
@@ -341,6 +348,11 @@ protected:
     std::string m_picture_file;
     std::vector<std::string> m_key_ids;
     std::vector<std::pair<std::string, KeyRole> > m_key_roles;
+
+    // Modifiers marked "once" in the key table (БК: АР2). Latched on the
+    // drawing, such a key is let go by itself after the next ordinary key
+    std::vector<std::string> m_once_ids;
+    void release_once_modifiers();
 
     // Ids the machine currently sees as held, in the machine's own naming.
     // Written by every input path, read by the frontends to light the drawing

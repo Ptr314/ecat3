@@ -850,7 +850,7 @@ void MainWindow::keyPressEvent( QKeyEvent *event )
             mouse_capture(false);
 
         // qDebug() << "Key pressed: scan " << event->nativeScanCode() << "virtual" << event->nativeVirtualKey() << "key" << Qt::hex << event->key();
-        e->key_event(event->key(), event->modifiers(), true);
+        e->host_key(event->key(), event->nativeScanCode(), event->modifiers(), true);
 
         if (event->key() == EmuKey::Cancel) {
             //Pause/Break resets the machine, see Emulator::key_event(); the
@@ -870,8 +870,9 @@ void MainWindow::keyReleaseEvent( QKeyEvent *event )
         event->ignore();
     } else {
         //qDebug() << "Key released:" << event->nativeScanCode() << event->nativeVirtualKey() << event->key();
-        e->key_event(event->key(), event->modifiers(), false);
-        e->record_key(static_cast<unsigned int>(event->key()), event->nativeScanCode(), false);
+        //The physical key comes up as what it went down as, whatever Qt calls it now
+        const int key = e->host_key(event->key(), event->nativeScanCode(), event->modifiers(), false);
+        e->record_key(static_cast<unsigned int>(key), event->nativeScanCode(), false);
     }
 }
 
@@ -997,8 +998,12 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 
 void MainWindow::changeEvent(QEvent *event)
 {
-    //A pointer kept hidden in the middle of an inactive window is lost to the user
-    if (event->type() == QEvent::ActivationChange && !isActiveWindow()) mouse_capture(false);
+    if (event->type() == QEvent::ActivationChange && !isActiveWindow()) {
+        //A pointer kept hidden in the middle of an inactive window is lost to the user
+        mouse_capture(false);
+        //A key held while the focus goes away is released in another window
+        e->release_host_keys();
+    }
     QMainWindow::changeEvent(event);
 }
 

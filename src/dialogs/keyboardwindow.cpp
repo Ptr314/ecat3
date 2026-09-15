@@ -394,6 +394,18 @@ void KeyboardView::poll()
     }
 
     const std::vector<std::string> held = k->ids_held();
+
+    //A latched modifier the machine has let go of by itself - one marked
+    //"once" in the key table, released after the next key - is not latched
+    //here any more either: the next click has to press it on, not off
+    for (int i = m_latched.size() - 1; i >= 0; i--) {
+        const std::string id = m_latched[i].toStdString();
+        bool still = false;
+        for (size_t j = 0; j < held.size(); j++)
+            if (held[j] == id) { still = true; break; }
+        if (!still) m_latched.removeAt(i);
+    }
+
     QStringList now;
     for (size_t i = 0; i < held.size(); i++) {
         const QString id = QString::fromStdString(held[i]);
@@ -487,7 +499,7 @@ void KeyboardWindow::keyPressEvent(QKeyEvent *event)
 {
     if (event->isAutoRepeat()) { event->ignore(); return; }
 
-    m_e->key_event(event->key(), event->modifiers(), true);
+    m_e->host_key(event->key(), event->nativeScanCode(), event->modifiers(), true);
     if (event->key() == EmuKey::Cancel) {
         std::vector<std::string> args;
         args.push_back((event->modifiers() & Qt::AltModifier)?"cold":"soft");
@@ -501,8 +513,16 @@ void KeyboardWindow::keyReleaseEvent(QKeyEvent *event)
 {
     if (event->isAutoRepeat()) { event->ignore(); return; }
 
-    m_e->key_event(event->key(), event->modifiers(), false);
-    m_e->record_key(static_cast<unsigned int>(event->key()), event->nativeScanCode(), false);
+    const int key = m_e->host_key(event->key(), event->nativeScanCode(), event->modifiers(), false);
+    m_e->record_key(static_cast<unsigned int>(key), event->nativeScanCode(), false);
+}
+
+// Alt-Tab out of this window leaves its release to another program: without
+// this Alt stays down in the machine, and on the БК every key goes out with АР2
+void KeyboardWindow::changeEvent(QEvent *event)
+{
+    if (event->type() == QEvent::ActivationChange && !isActiveWindow()) m_e->release_host_keys();
+    GenericDbgWnd::changeEvent(event);
 }
 
 #endif // HAVE_QT_SVG

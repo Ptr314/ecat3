@@ -90,6 +90,7 @@ protected:
     void resizeEvent(QResizeEvent *) override;
     void keyPressEvent(QKeyEvent *) override;
     void keyReleaseEvent(QKeyEvent *) override;
+    void changeEvent(QEvent *) override;
 
 private:
     int height_for_window_width(int w) const;

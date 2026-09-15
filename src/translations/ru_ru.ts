@@ -519,7 +519,7 @@
         <translation>AY-3-8910</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/covox.cpp" line="+35"/>
+        <location filename="../emulator/devices/common/covox.cpp" line="+43"/>
         <source>Covox</source>
         <translation>Covox</translation>
     </message>
@@ -1100,7 +1100,7 @@
 <context>
     <name>Keyboard</name>
     <message>
-        <location filename="../emulator/devices/common/keyboard.cpp" line="+274"/>
+        <location filename="../emulator/devices/common/keyboard.cpp" line="+320"/>
         <source>This keyboard type has no native key table support</source>
         <translation>Этот тип клавиатуры не поддерживает нативную таблицу клавиш</translation>
     </message>
@@ -1114,11 +1114,16 @@
         <source>Error reading key table file</source>
         <translation>Ошибка чтения файла таблицы клавиш</translation>
     </message>
+    <message>
+        <location line="+51"/>
+        <source>Unknown flag of a modifier in the key table</source>
+        <translation>Неизвестный признак модификатора в таблице клавиш</translation>
+    </message>
 </context>
 <context>
     <name>KeyboardWindow</name>
     <message>
-        <location filename="../dialogs/keyboardwindow.cpp" line="+421"/>
+        <location filename="../dialogs/keyboardwindow.cpp" line="+433"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
@@ -1181,7 +1186,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1123"/>
+        <location filename="../mainwindow.cpp" line="+1128"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -1234,7 +1239,7 @@
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-778"/>
+        <location filename="../mainwindow.cpp" line="-783"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -1264,12 +1269,12 @@
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="-261"/>
-        <location line="+848"/>
+        <location line="+853"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-845"/>
+        <location line="-850"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
     </message>
@@ -1295,7 +1300,7 @@
     <message>
         <location line="-87"/>
         <location line="+50"/>
-        <location line="+742"/>
+        <location line="+747"/>
         <location line="+58"/>
         <location line="+61"/>
         <location line="+66"/>
@@ -1306,7 +1311,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-1393"/>
+        <location line="-1398"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -1380,7 +1385,7 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+505"/>
+        <location line="+510"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>

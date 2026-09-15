@@ -43,6 +43,13 @@ private:
     std::vector<Joystick*> joysticks;   // every device of the joystick class, fed with the same keys
     std::vector<Mouse*> mice;           // every device of the mouse class, moved together
 
+    // Host keys held down, see host_key()
+    struct HostKey {
+        unsigned int scan;              // native scan code, 0 if the event has none
+        int key;                        // the code the key went down as
+    };
+    std::vector<HostKey> m_host_keys;
+
     unsigned int clock_freq;
     //Counted against a 64-bit number of ticks: a 32-bit one could never reach
     //a slice longer than 2^32 cycles, and the loop that waits for it never ends
@@ -147,6 +154,19 @@ public:
 
     void key_event(int key, int modifiers, bool press);
     void key_event_id(const std::string &id, bool press);
+
+    // A key of the host keyboard as a window of the frontend gets it, with the
+    // physical key's scan code (0 if there is none). The windows share the list
+    // of held keys: the main window and the on-screen keyboard both take the
+    // focus, and a key pressed in one of them is released by whichever hears
+    // the release. The release goes out as the code the key went down as - Qt
+    // names a key after the layout and the modifiers of the moment, so Shift
+    // let go before 2 turns the release of @ into one of 2. Returns that code,
+    // the one to record. GUI thread only.
+    int host_key(int key, unsigned int scan, int modifiers, bool press);
+    // Releases, and records, every host key still held: a window that loses
+    // the focus (Alt-Tab) never hears the releases, they go elsewhere
+    void release_host_keys();
 
     // Movement of the host mouse in steps of the machine's mouse (right and
     // down are positive) and its buttons as a mask, a negative mask keeping

@@ -1,0 +1,11 @@
+[keyboard.pressed] key_ar2,key_zagl,key_lat
+[keyboard.vector] &000274
+[keyboard.pressed] key_zagl,key_lat
+[keyboard.vector] &000060
+[keyboard.vector] &000274
+[keyboard.pressed] key_zagl,key_lat
+[keyboard.pressed] key_su,key_zagl,key_lat
+[keyboard.pressed] key_zagl,key_lat
+[keyboard.pressed] key_su,key_ar2,key_zagl,key_lat
+[keyboard.vector] &000274
+[keyboard.pressed] key_zagl,key_lat

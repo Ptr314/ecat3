@@ -699,6 +699,10 @@ function kbdPoll(module, panel) {
 
     const text = module.ccall("wasm_keys_pressed", "string", [], []);
     const now = new Set(text ? text.split(",") : []);
+    // A latched modifier the machine has let go of by itself - one marked
+    // "once" in the key table, released after the next key - is not latched
+    // here any more either: the next click has to press it on, not off
+    kbdLatched = kbdLatched.filter((id) => now.has(id));
     // A key whose lamp is drawn is left alone: the alphabet belongs on the
     // picture once, where the machine itself shows it
     for (const id of kbdLampKeys) now.delete(id);
