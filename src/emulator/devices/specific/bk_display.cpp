@@ -144,7 +144,10 @@ DeviceOptions BKDisplay::get_device_options()
             {
                 {BK_COLOR_ON,  QT_TRANSLATE_NOOP("DeviceOptions", "RGB")},
                 {BK_COLOR_OFF, QT_TRANSLATE_NOOP("DeviceOptions", "Mono")}
-            }
+            },
+            // "mode = mono" of the config starts on the second entry; a switch
+            // not yet taken over by the render thread already counts
+            static_cast<unsigned>((m_mode_pending ? m_pending_color : m_color) ? BK_COLOR_ON : BK_COLOR_OFF)
         }
     };
 }

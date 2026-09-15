@@ -154,7 +154,8 @@ DeviceOptions Agat9Display::get_device_options()
                     {
                         {A9_PALCARD_ON, QT_TRANSLATE_NOOP("DeviceOptions", "Palette card")},
                         {A9_PALCARD_OFF, QT_TRANSLATE_NOOP("DeviceOptions", "Standard")}
-                    }
+                    },
+                    static_cast<unsigned>(m_pal_card_out ? A9_PALCARD_ON : A9_PALCARD_OFF)
                 }
         };
     if (m_color_options)
@@ -167,7 +168,8 @@ DeviceOptions Agat9Display::get_device_options()
                     {A9_COLOR_8, QT_TRANSLATE_NOOP("DeviceOptions", "8 colors")},
                     {A9_COLOR_BW, QT_TRANSLATE_NOOP("DeviceOptions", "Grayscale")},
                     {A9_COLOR_EX, QT_TRANSLATE_NOOP("DeviceOptions", "Experimental")}
-                }
+                },
+                m_color_mode.load()
             }
         };
     return {};

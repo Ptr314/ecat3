@@ -101,6 +101,8 @@ DeviceOptions Connector::get_device_options()
     opt.values.push_back({0, QT_TRANSLATE_NOOP("DeviceOptions", "None")});
     for (size_t i = 0; i < m_devices.size(); i++)
         opt.values.push_back({static_cast<unsigned>(i + 1), m_devices[i]->plug_title()});
+    // "default" of the config may plug in something other than the first entry
+    opt.current = m_selected;
     return {opt};
 }
 

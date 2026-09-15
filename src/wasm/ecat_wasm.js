@@ -1206,8 +1206,8 @@ function readDeviceOptions(module) {
         if (!line) continue;
         const f = line.split("\t");
         const values = [];
-        for (let i = 3; i + 1 < f.length; i += 2) values.push({ id: parseInt(f[i], 10), title: f[i + 1] });
-        list.push({ device: f[0], id: parseInt(f[1], 10), title: f[2], values: values });
+        for (let i = 4; i + 1 < f.length; i += 2) values.push({ id: parseInt(f[i], 10), title: f[i + 1] });
+        list.push({ device: f[0], id: parseInt(f[1], 10), title: f[2], current: parseInt(f[3], 10), values: values });
     }
     return list;
 }
@@ -1229,12 +1229,15 @@ function setupDeviceOptions(module, configKey) {
         opt.caption.htmlFor = opt.select.id;
         for (const v of opt.values) element("option", "", opt.select).value = v.id;
 
-        // The first value is what the device starts with, as on the desktop;
-        // a saved one goes to the device at once
+        // A saved choice goes to the device at once; without one the list shows
+        // what the device starts with, which need not be the first value (a
+        // socket with "default = ay")
         const saved = parseInt(settings.get(key, ""), 10);
         if (opt.values.some((v) => v.id === saved)) {
             opt.select.value = saved;
             apply(opt, saved);
+        } else if (opt.values.some((v) => v.id === opt.current)) {
+            opt.select.value = opt.current;
         }
 
         opt.select.addEventListener("change", () => {
@@ -1316,7 +1319,11 @@ function setupMouse(module) {
 
     const buttonBit = (e) => (e.button === 0) ? 1 : ((e.button === 2) ? 2 : 0);
 
-    wrap.addEventListener("mousedown", (e) => {
+    // Only a real mouse captures. A finger also produces a mousedown, and Chrome
+    // on Android grants the lock to it: every tap on the page then went to the
+    // capture, and a phone has neither Esc nor Ctrl-Alt to give it back
+    wrap.addEventListener("pointerdown", (e) => {
+        if (e.pointerType !== "mouse") return;
         if (mouse.captured || e.button !== 0 || mouseState(module) !== 2) return;
         e.preventDefault();
         // Refused for a moment after Esc; newer browsers reject the promise,
@@ -1324,6 +1331,12 @@ function setupMouse(module) {
         const request = wrap.requestPointerLock();
         if (request && typeof request.catch === "function") request.catch(() => {});
     });
+
+    // A touch while captured (a tablet with a mouse) gives the pointer back:
+    // the fingers are then the only way out
+    document.addEventListener("pointerdown", (e) => {
+        if (mouse.captured && e.pointerType !== "mouse") document.exitPointerLock();
+    }, true);
 
     // While locked every event goes to the wrap; the capturing click has
     // already been handled above when its own release arrives, and a release

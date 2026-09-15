@@ -769,16 +769,15 @@ void MainWindow::UpdateToolbar()
                 combo->setFocusPolicy(Qt::NoFocus);
                 combo->setToolTip(option_tooltip);
 
-                std::string settings_key = config_key.toStdString() + "_" + dev->name + "_" + std::to_string(opt.id);
-                QString saved = QString::fromStdString(e->read_setup("DeviceOptions", settings_key, ""));
-
+                //The device already has the saved choice (apply_saved_device_options),
+                //and without one its own start value, which need not be the first
                 int selected_index = 0;
                 for (size_t v = 0; v < opt.values.size(); v++) {
                     combo->addItem(
                         QCoreApplication::translate("DeviceOptions", opt.values[v].title.c_str()),
                         opt.values[v].id
                     );
-                    if (!saved.isEmpty() && opt.values[v].id == saved.toUInt()) {
+                    if (opt.values[v].id == opt.current) {
                         selected_index = static_cast<int>(v);
                     }
                 }
