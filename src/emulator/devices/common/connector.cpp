@@ -51,6 +51,9 @@ emulator::Result Connector::load_config(SystemData *sd)
         m_devices.push_back(d);
     }
 
+    // A file found the way other machine files are: next to the config, in files/, in data/
+    m_icon = str_trim(cd->get_parameter("icon", false).value);
+
     // What is plugged in until the user picks something else
     const std::string def = str_trim(cd->get_parameter("default", false).value);
     m_selected = 0;
@@ -81,7 +84,8 @@ DeviceOptions Connector::get_device_options()
     opt.id = CONNECTOR_OPTION_DEVICE;
     opt.type = DEVICE_OPTION_DROPDOWN;
     opt.title = QT_TRANSLATE_NOOP("DeviceOptions", "Connected device");
-    opt.icon = "input_devices_settings.png";
+    // Without one the GUI draws a picture of its own
+    opt.icon = m_icon;
     opt.values.push_back({0, QT_TRANSLATE_NOOP("DeviceOptions", "Nothing connected")});
     for (size_t i = 0; i < m_devices.size(); i++)
         opt.values.push_back({static_cast<unsigned>(i + 1), m_devices[i]->plug_title()});

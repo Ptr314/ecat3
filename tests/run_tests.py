@@ -510,7 +510,8 @@ def warn_about_orphans():
 
 class KeepIni(object):
     """
-    Сохраняет и возвращает на место deploy/ecat.ini.
+    Подменяет deploy/ecat.ini копией deploy/.ecat.ini на время прогона и
+    возвращает рабочий файл на место.
 
     Эмулятор переписывает свой ini при каждом выходе (запоминает последнюю
     машину, громкость, каталог), а прогон запускает его полсотни раз. Рабочий
@@ -522,20 +523,21 @@ class KeepIni(object):
         self.saved = None
 
     def __enter__(self):
-        # deploy/ecat.ini в git не лежит, в свежем клоне есть только настройки
-        # по умолчанию deploy/.ecat.ini, а без их [TapeFiles] ни один скрипт не
-        # загрузит ленту. Копия делается здесь и один раз, а не полусотней
-        # эмуляторов наперегонки
-        if not os.path.exists(self.path):
-            try:
-                shutil.copyfile(os.path.join(DEPLOY_DIR, ".ecat.ini"), self.path)
-            except OSError:
-                pass
+        # Прогон идет на настройках по умолчанию deploy/.ecat.ini, а не на рабочем
+        # файле разработчика: его [DeviceOptions] помнит выбранное в окне
+        # (монохромный дисплей БК, устройство в разъеме УП), и эталоны расходились
+        # только на этой машине. В свежем клоне deploy/ecat.ini нет вовсе, а без
+        # [TapeFiles] ни один скрипт не загрузит ленту. Копия делается здесь и
+        # один раз, а не полусотней эмуляторов наперегонки
         try:
             with open(self.path, "rb") as f:
                 self.saved = f.read()
         except OSError:
             self.saved = None
+        try:
+            shutil.copyfile(os.path.join(DEPLOY_DIR, ".ecat.ini"), self.path)
+        except OSError:
+            pass
         return self
 
     def __exit__(self, *exc):

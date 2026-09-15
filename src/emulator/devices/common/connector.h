@@ -39,6 +39,7 @@ class Connector : public ComputerDevice
 private:
     std::vector<PluggableDevice*> m_devices;
     unsigned int m_selected;            // 0 - nothing, n - device n-1
+    std::string m_icon;                 // picture next to the option list, empty - the GUI's own
 
     void apply();
 

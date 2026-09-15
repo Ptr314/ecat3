@@ -754,18 +754,16 @@ void MainWindow::UpdateToolbar()
 
                 QString option_tooltip = QCoreApplication::translate("DeviceOptions", opt.title.c_str());
 
-                QAction * icon_action = nullptr;
-                if (!opt.icon.empty()) {
-                    QString icon_path = QString::fromStdString(find_file_location(sd, opt.icon));
-                    if (!icon_path.isEmpty()) {
-                        QIcon icon(icon_path);
-                        icon.addPixmap(QPixmap(icon_path), QIcon::Disabled);
-                        icon_action = new QAction(icon, "", this);
-                        icon_action->setToolTip(option_tooltip);
-                        ui->toolBar->insertAction(ui->actionDebugger, icon_action);
-                        option_toolbar_actions.append(icon_action);
-                    }
-                }
+                //The picture comes with the machine; an option that names none, or
+                //names a file that is not there, gets the generic settings icon
+                QString icon_path = opt.icon.empty()?QString():QString::fromStdString(find_file_location(sd, opt.icon));
+                if (icon_path.isEmpty()) icon_path = ":/icons/kcmsystem";
+                QIcon icon(icon_path);
+                icon.addPixmap(QPixmap(icon_path), QIcon::Disabled);
+                QAction * icon_action = new QAction(icon, "", this);
+                icon_action->setToolTip(option_tooltip);
+                ui->toolBar->insertAction(ui->actionDebugger, icon_action);
+                option_toolbar_actions.append(icon_action);
 
                 QComboBox * combo = new QComboBox();
                 combo->setFocusPolicy(Qt::NoFocus);
