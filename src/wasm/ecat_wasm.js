@@ -426,6 +426,8 @@ const I18N = {
         filterNone:         "None",
         filterLinear:       "Linear",
         filterSharp:        "Sharp",
+        mouseSpeed:         "Mouse speed",
+        stMouseCaptured:    "The mouse is captured by the machine. Press Esc, Ctrl-Alt or the middle button to release it",
     },
     ru: {
         title:              "eCat3 — эмулятор ретрокомпьютеров",
@@ -510,6 +512,8 @@ const I18N = {
         filterNone:         "Нет",
         filterLinear:       "Линейная",
         filterSharp:        "Резкая",
+        mouseSpeed:         "Скорость мыши",
+        stMouseCaptured:    "Мышь захвачена машиной. Esc, Ctrl-Alt или средняя кнопка отпускает ее",
     },
 };
 
@@ -1037,6 +1041,9 @@ function mkdirRecursive(module, path) {
 // the machine is started: a machine that starts by itself waits there for the
 // first click, see waitForActivation()
 async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl, beforeStart = null) {
+    // The pointer captured for the machine being replaced is given back first
+    if (document.pointerLockElement) document.exitPointerLock();
+
     try {
         setStatus("stAssets", "loading");
 
@@ -1066,6 +1073,7 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl, before
         const configKey = machinePath.replace(/^.*\//, "").replace(/\.cfg$/i, "");
         setupDrives(module, configKey);
         setupDeviceOptions(module, configKey);
+        setupMouseSpeed(module);
         setupTapes(module, configKey);
         setupOpenFile(module);
 
@@ -1235,6 +1243,183 @@ function renderDeviceOptions() {
         opt.caption.textContent = optionText(opt.title);
         opt.values.forEach((v, i) => { opt.select.options[i].textContent = optionText(v.title); });
     }
+    if (mouse.speedCaption) mouse.speedCaption.textContent = t("mouseSpeed");
+}
+
+// ============================================================================
+// Machine mouse
+// ============================================================================
+//
+// The desktop grabs the host pointer for the mouse of the machine (see
+// MainWindow::eventFilter), the page locks it with the Pointer Lock API. A
+// click on the screen captures it, and the click itself is not given to the
+// machine. The movement goes over in portions, as on the desktop; Ctrl-Alt or
+// the middle button give the pointer back, and so does Esc, which the browser
+// keeps to itself, and leaving the page.
+
+// Portions of movement are sent this often, as MOUSE_FLUSH_MS of the desktop
+const MOUSE_FLUSH_MS = 40;
+// The choices of the desktop menu "Mouse speed"; a setting of the host, not of a machine
+const MOUSE_SPEEDS = [100, 50, 25, 12];
+
+const mouse = {
+    supported: false,
+    captured: false,
+    accX: 0,
+    accY: 0,
+    buttons: 0,
+    timer: 0,
+    speed: 25,
+    speedCaption: null,
+};
+
+function mouseState(module) {
+    return module.ccall("wasm_mouse_state", "number", [], []);
+}
+
+function setupMouse(module) {
+    const saved = parseInt(settings.get("mouseSpeed", ""), 10);
+    mouse.speed = MOUSE_SPEEDS.includes(saved) ? saved : 25;
+
+    // Both canvases sit in the wrap, and "Sharp" filtering swaps them; the
+    // lock is taken by the wrap, so a change of filtering does not drop it
+    const wrap = document.getElementById("canvas-wrap");
+    mouse.supported = typeof wrap.requestPointerLock === "function";
+    if (!mouse.supported) return;
+
+    // Buttons: bit 0 left, bit 1 right, -1 unchanged
+    const send = (dx, dy, buttons) =>
+        module.ccall("wasm_mouse_event", null, ["number", "number", "number"], [dx, dy, buttons]);
+
+    const flush = (buttonsChanged) => {
+        // The socket may have been switched to something else meanwhile
+        if (mouse.captured && !buttonsChanged && mouseState(module) !== 2) {
+            document.exitPointerLock();
+            return;
+        }
+        const dx = Math.trunc(mouse.accX);
+        const dy = Math.trunc(mouse.accY);
+        mouse.accX -= dx;
+        mouse.accY -= dy;
+        if (dx === 0 && dy === 0 && !buttonsChanged) return;
+        send(dx, dy, buttonsChanged ? mouse.buttons : -1);
+    };
+
+    const buttonBit = (e) => (e.button === 0) ? 1 : ((e.button === 2) ? 2 : 0);
+
+    wrap.addEventListener("mousedown", (e) => {
+        if (mouse.captured || e.button !== 0 || mouseState(module) !== 2) return;
+        e.preventDefault();
+        // Refused for a moment after Esc; newer browsers reject the promise,
+        // older ones only fire pointerlockerror, and either way nothing is lost
+        const request = wrap.requestPointerLock();
+        if (request && typeof request.catch === "function") request.catch(() => {});
+    });
+
+    // While locked every event goes to the wrap; the capturing click has
+    // already been handled above when its own release arrives, and a release
+    // of a button the machine never saw pressed is not passed on
+    document.addEventListener("mousedown", (e) => {
+        if (!mouse.captured) return;
+        e.preventDefault();
+        if (e.button === 1) {
+            document.exitPointerLock();
+            return;
+        }
+        const bit = buttonBit(e);
+        if (bit !== 0 && (mouse.buttons & bit) === 0) {
+            mouse.buttons |= bit;
+            flush(true);
+        }
+    });
+
+    document.addEventListener("mouseup", (e) => {
+        if (!mouse.captured) return;
+        e.preventDefault();
+        const bit = buttonBit(e);
+        if (bit !== 0 && (mouse.buttons & bit) !== 0) {
+            mouse.buttons &= ~bit;
+            flush(true);
+        }
+    });
+
+    document.addEventListener("mousemove", (e) => {
+        if (!mouse.captured) return;
+        // At 100% a line of the machine's screen crossed by the pointer is a
+        // step, the line measured on the page as the desktop measures it on
+        // the widget: the scale, the aspect and the zoom are all in it
+        const canvas = document.getElementById("canvas");
+        const shown = parseFloat(canvas.style.height) || canvas.height;
+        const line = Math.max(1, (canvas.height > 0) ? shown / canvas.height : 1);
+        const k = mouse.speed / 100 / line;
+        mouse.accX += e.movementX * k;
+        mouse.accY += e.movementY * k;
+    });
+
+    document.addEventListener("contextmenu", (e) => {
+        if (mouse.captured) e.preventDefault();
+    });
+
+    // Ctrl-Alt gives the pointer back. The keys still reach the machine:
+    // swallowing one would leave the other held there
+    document.addEventListener("keydown", (e) => {
+        if (mouse.captured && ((e.key === "Control" && e.altKey) || (e.key === "Alt" && e.ctrlKey)))
+            document.exitPointerLock();
+    });
+
+    // The browser ends the lock on its own too - Esc, another tab or window -
+    // so the capture follows this event, not the calls above
+    document.addEventListener("pointerlockchange", () => {
+        const on = document.pointerLockElement === wrap;
+        if (on === mouse.captured) return;
+
+        if (on) {
+            mouse.captured = true;
+            mouse.accX = 0;
+            mouse.accY = 0;
+            mouse.buttons = 0;
+            mouse.timer = setInterval(() => flush(false), MOUSE_FLUSH_MS);
+            setStatus("stMouseCaptured", "success");
+            return;
+        }
+
+        clearInterval(mouse.timer);
+        // What is still on its way, and the buttons let go: the machine must
+        // not be left with a button held by a pointer that has gone
+        mouse.accX = 0;
+        mouse.accY = 0;
+        if (mouse.buttons !== 0) {
+            mouse.buttons = 0;
+            flush(true);
+        }
+        mouse.captured = false;
+        if (statusState.key === "stMouseCaptured") setStatus("stRunning", "success");
+    });
+}
+
+// The speed is offered with the device options of a machine that has a mouse,
+// whether plugged in or not: the socket is chosen right there
+function setupMouseSpeed(module) {
+    mouse.speedCaption = null;
+    if (!mouse.supported || mouseState(module) === 0) return;
+
+    const group = element("div", "group", document.getElementById("options"));
+    mouse.speedCaption = element("label", "caption", group);
+    const select = element("select", "", group);
+    select.id = "mouse-speed";
+    mouse.speedCaption.htmlFor = select.id;
+    for (const speed of MOUSE_SPEEDS) {
+        const option = element("option", "", select);
+        option.value = speed;
+        option.textContent = speed + "%";
+    }
+    select.value = mouse.speed;
+    select.addEventListener("change", () => {
+        mouse.speed = parseInt(select.value, 10);
+        settings.set("mouseSpeed", mouse.speed);
+    });
+    releaseFocus(select);
+    renderDeviceOptions();
 }
 
 // ============================================================================
@@ -2279,6 +2464,7 @@ async function initEcat() {
 
 
     setupKeyboard(module);
+    setupMouse(module);
     setupInfoDialog(module);
 
     selectEl.disabled = false;

@@ -115,6 +115,27 @@ void wasm_key_event_id(const char* id, int press)
     }
 }
 
+// The mouse of the machine, moved by the host pointer the page has locked:
+// steps, and the buttons (bit 0 left, bit 1 right) or -1 when they have not
+// changed - as MainWindow::mouse_flush() hands them to the core
+EMSCRIPTEN_KEEPALIVE
+void wasm_mouse_event(int dx, int dy, int buttons)
+{
+    if (g_emulator && g_emulator->loaded) {
+        g_emulator->mouse_event(dx, dy, buttons);
+    }
+}
+
+// 0 the machine has no mouse, 1 it has one out of its socket, 2 one plugged in.
+// The page offers the speed for the first, captures the pointer only for the last
+EMSCRIPTEN_KEEPALIVE
+int wasm_mouse_state()
+{
+    if (!g_emulator || !g_emulator->loaded || g_emulator->dm == nullptr) return 0;
+    if (g_emulator->has_mouse()) return 2;
+    return g_emulator->dm->find_devices_by_class("mouse").empty() ? 0 : 1;
+}
+
 // ccall(..., "string") copies the result at once, so one static buffer is safe
 static Keyboard * wasm_keyboard()
 {
