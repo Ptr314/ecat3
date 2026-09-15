@@ -427,6 +427,10 @@ const I18N = {
         filterLinear:       "Linear",
         filterSharp:        "Sharp",
         mouseSpeed:         "Mouse speed",
+        blockMachine:       "Machine",
+        blockScreen:        "Screen",
+        blockFile:          "File",
+        blockDevices:       "Devices",
         stMouseCaptured:    "The mouse is captured by the machine. Press Esc, Ctrl-Alt or the middle button to release it",
     },
     ru: {
@@ -513,6 +517,10 @@ const I18N = {
         filterLinear:       "Линейная",
         filterSharp:        "Резкая",
         mouseSpeed:         "Скорость мыши",
+        blockMachine:       "Машина",
+        blockScreen:        "Экран",
+        blockFile:          "Файл",
+        blockDevices:       "Устройства",
         stMouseCaptured:    "Мышь захвачена машиной. Esc, Ctrl-Alt или средняя кнопка отпускает ее",
     },
 };
@@ -563,6 +571,7 @@ function applyLanguage(value) {
     renderDrives();
     renderTapes();
     updateKbdScaleUi();
+    for (const block of pageBlocks) block.renderHint();
 }
 
 function setupLanguageSelect() {
@@ -1541,15 +1550,9 @@ function filterExtensions(filter) {
     return list;
 }
 
-// A block of the right column that folds down to its head line. The state is
-// kept per configuration and device, so every machine remembers its own
-function collapsibleBlock(className, settingKey) {
-    const root = element("div", className);
-    const head = element("button", "block-head drive-head", root);
-    head.type = "button";
-    element("span", "block-chevron", head).textContent = "▼";
-    const body = element("div", "block-body", root);
-
+// A block that folds down to its head line: the head is a button, the body the
+// rest. Shared by the blocks written into the page and those built per machine
+function makeCollapsible(root, head, body, settingKey) {
     const block = { root, head, body };
     block.apply = (collapsed) => {
         root.classList.toggle("collapsed", collapsed);
@@ -1569,6 +1572,41 @@ function collapsibleBlock(className, settingKey) {
 
     block.apply(settings.get(settingKey, "0") === "1");
     return block;
+}
+
+// A drive or a tape block. The state is kept per configuration and device, so
+// every machine remembers its own
+function collapsibleBlock(className, settingKey) {
+    const root = element("div", className);
+    const head = element("button", "block-head drive-head", root);
+    head.type = "button";
+    element("span", "block-chevron", head).textContent = "▼";
+    const body = element("div", "block-body", root);
+    return makeCollapsible(root, head, body, settingKey);
+}
+
+// The blocks of shell.html, the side columns. Folded or not is a choice about
+// the page, not about a machine, so there is one setting per block. A block
+// whose content this machine lacks is hidden: the content is watched rather
+// than every place that shows or hides it being taught about the block
+const BLOCK_CONTENT = { file: "btn-open", keyboard: "btn-keyboard", options: "options" };
+const pageBlocks = [];
+
+function setupPageBlocks() {
+    for (const root of document.querySelectorAll(".block[data-block]")) {
+        const name = root.dataset.block;
+        pageBlocks.push(makeCollapsible(root, root.querySelector(".block-head"),
+                                        root.querySelector(".block-body"), "collapsed.block_" + name));
+
+        const content = BLOCK_CONTENT[name] ? document.getElementById(BLOCK_CONTENT[name]) : null;
+        if (!content) continue;
+        // A button is there when it is not hidden, a box when it has something in it
+        const sync = () => {
+            root.hidden = content.hidden || (content.tagName === "DIV" && content.children.length === 0);
+        };
+        new MutationObserver(sync).observe(content, { attributes: true, attributeFilter: ["hidden"], childList: true });
+        sync();
+    }
 }
 
 function setupDrives(module, configKey) {
@@ -2331,6 +2369,8 @@ function watchStartup() {
 async function initEcat() {
     let selectEl = document.getElementById("machine-select");
 
+    // Before the language: it renders the hints of the blocks
+    setupPageBlocks();
     applyLanguage(detectLanguage());
     setupLanguageSelect();
     for (const range of document.querySelectorAll('input[type="range"]')) paintRange(range);
