@@ -53,7 +53,11 @@
            come out equal and as large as the largest content asks for. Auto
            margins centre the block and, unlike centring alignment, never push
            its left edge out of reach when it is wider than the window - that
-           one scrolls instead. Only a phone-sized window stacks the columns */
+           one scrolls instead. Only a phone-sized window and a portrait tablet
+           stack the columns: three of them do not fit across an upright iPad
+           at the default scale. "pointer: coarse" keeps a tall narrow desktop
+           window side by side. watchKeyboardPlace() in ecat_wasm.js repeats
+           this query */
         #app {
             display: grid;
             grid-template-columns: 1fr auto 1fr;
@@ -64,7 +68,7 @@
             padding: 16px;
         }
 
-        @media (max-width: 720px) {
+        @media (max-width: 720px), (orientation: portrait) and (pointer: coarse) {
             #app {
                 /* As wide as the window, not as the screen: a screen wider than
                    the phone runs over the edge, the controls stay centred on it */
@@ -709,7 +713,8 @@
         }
 
         /* The keyboard has a row of its own under the columns, so its size
-           never pushes the side columns apart */
+           never pushes the side columns apart. Where the columns are stacked
+           the panel is moved under the screen instead (watchKeyboardPlace) */
         #kbd-row {
             width: 100%;
             display: flex;

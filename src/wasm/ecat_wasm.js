@@ -950,6 +950,24 @@ function setupKeyboardSize() {
     document.getElementById("kbd-plus").addEventListener("click",
         () => setKbdScale(parseInt(range.value, 10) + KBD_STEP));
     layoutKeyboard();
+    watchKeyboardPlace();
+}
+
+// Side by side the keyboard has a row of its own under the columns, so its
+// size never pushes them apart. Stacked one above another (the query is the
+// one that stacks #app in shell.html: a phone, a portrait tablet) it would end
+// up below the right column, out of sight of the screen, so there it goes right
+// under the screen. The node is moved, not copied: its listeners and pressed
+// keys stay with it
+function watchKeyboardPlace() {
+    const panel = document.getElementById("kbd-panel");
+    const query = window.matchMedia("(max-width: 720px), (orientation: portrait) and (pointer: coarse)");
+    const place = () => {
+        const parent = document.getElementById(query.matches ? "col-center" : "kbd-row");
+        if (panel.parentElement !== parent) parent.appendChild(panel);
+    };
+    query.addEventListener("change", place);
+    place();
 }
 
 // ============================================================================
