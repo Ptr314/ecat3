@@ -1157,7 +1157,7 @@ function showMachineInfo(module, machine) {
 // ones are those of src/translations/ru_ru.ts
 const DEVICE_OPTION_TEXT = {
     ru: {
-        "Output type":  "Тип видеовыхода",
+        "Video output": "Видеовыход",
         "Palette card": "Плата палитр",
         "Standard":     "RGB-выход",
         "16 colors":    "16 цветов",
@@ -1165,8 +1165,13 @@ const DEVICE_OPTION_TEXT = {
         "8 colors":     "8 цветов",
         "Grayscale":    "Оттенки серого",
         "Experimental": "Прототип",
-        "Color":        "Цветной",
-        "Monochrome":   "Монохромный",
+        "RGB":          "RGB",
+        "Mono":         "Моно",
+        "Input device": "Устройство ввода",
+        "Sound":        "Звук",
+        "None":         "Нет",
+        "Joystick":     "Джойстик",
+        "Mouse":        "Мышь",
     },
 };
 

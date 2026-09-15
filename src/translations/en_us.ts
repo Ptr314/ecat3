@@ -325,7 +325,7 @@
         <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+75"/>
         <location line="+10"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+143"/>
-        <source>Output type</source>
+        <source>Video output</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -367,12 +367,12 @@
     </message>
     <message>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+2"/>
-        <source>Color</source>
+        <source>RGB</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Monochrome</source>
+        <source>Mono</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -383,17 +383,17 @@
     <message>
         <location filename="../emulator/devices/common/connector.cpp" line="-123"/>
         <location line="+29"/>
-        <source>Connected device</source>
+        <source>Input device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>Sound board</source>
+        <source>Sound</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+40"/>
-        <source>Nothing connected</source>
+        <source>None</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

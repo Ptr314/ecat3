@@ -156,7 +156,7 @@ DeviceOptions Agat7Display::get_device_options()
     if (m_pal_card)
         return {
                     {
-                        A7_OPTION_PALCARD, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Output type"), "kscreensaver.png",
+                        A7_OPTION_PALCARD, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Video output"), "kscreensaver.png",
                         {
                             {A7_PALCARD_ON, QT_TRANSLATE_NOOP("DeviceOptions", "Palette card")},
                             {A7_PALCARD_OFF, QT_TRANSLATE_NOOP("DeviceOptions", "Standard")}

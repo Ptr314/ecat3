@@ -150,7 +150,7 @@ DeviceOptions Agat9Display::get_device_options()
     if (m_pal_card)
         return {
                 {
-                    A9_OPTION_PALCARD, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Output type"), "kscreensaver.png",
+                    A9_OPTION_PALCARD, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Video output"), "kscreensaver.png",
                     {
                         {A9_PALCARD_ON, QT_TRANSLATE_NOOP("DeviceOptions", "Palette card")},
                         {A9_PALCARD_OFF, QT_TRANSLATE_NOOP("DeviceOptions", "Standard")}
@@ -160,7 +160,7 @@ DeviceOptions Agat9Display::get_device_options()
     if (m_color_options)
         return {
             {
-                A9_OPTION_COLORS, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Output type"), "kscreensaver.png",
+                A9_OPTION_COLORS, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Video output"), "kscreensaver.png",
                 {
                     {A9_COLOR_16, QT_TRANSLATE_NOOP("DeviceOptions", "16 colors")},
                     {A9_COLOR_16i, QT_TRANSLATE_NOOP("DeviceOptions", "16 inverted")},

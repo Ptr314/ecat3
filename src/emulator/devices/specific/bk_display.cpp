@@ -140,10 +140,10 @@ DeviceOptions BKDisplay::get_device_options()
 {
     return {
         {
-            BK_OPTION_COLORS, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Output type"), "kscreensaver.png",
+            BK_OPTION_COLORS, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Video output"), "kscreensaver.png",
             {
-                {BK_COLOR_ON,  QT_TRANSLATE_NOOP("DeviceOptions", "Color")},
-                {BK_COLOR_OFF, QT_TRANSLATE_NOOP("DeviceOptions", "Monochrome")}
+                {BK_COLOR_ON,  QT_TRANSLATE_NOOP("DeviceOptions", "RGB")},
+                {BK_COLOR_OFF, QT_TRANSLATE_NOOP("DeviceOptions", "Mono")}
             }
         }
     };

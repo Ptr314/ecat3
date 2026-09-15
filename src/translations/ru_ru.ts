@@ -437,8 +437,8 @@
         <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+75"/>
         <location line="+10"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+143"/>
-        <source>Output type</source>
-        <translation>Тип видеовыхода</translation>
+        <source>Video output</source>
+        <translation>Видеовыход</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -479,13 +479,13 @@
     </message>
     <message>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+2"/>
-        <source>Color</source>
-        <translation>Цветной</translation>
+        <source>RGB</source>
+        <translation>RGB</translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Monochrome</source>
-        <translation>Монохромный</translation>
+        <source>Mono</source>
+        <translation>Моно</translation>
     </message>
     <message>
         <location filename="../emulator/devices/common/joystick.cpp" line="+88"/>
@@ -495,23 +495,23 @@
     <message>
         <location filename="../emulator/devices/common/connector.cpp" line="-123"/>
         <location line="+29"/>
-        <source>Connected device</source>
-        <translation>Подключенное устройство</translation>
+        <source>Input device</source>
+        <translation>Устройство ввода</translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>Sound board</source>
-        <translation>Звуковая приставка</translation>
+        <source>Sound</source>
+        <translation>Звук</translation>
     </message>
     <message>
         <location line="+40"/>
-        <source>Nothing connected</source>
-        <translation>Ничего не подключено</translation>
+        <source>None</source>
+        <translation>Нет</translation>
     </message>
     <message>
         <location filename="../emulator/devices/common/mouse.cpp" line="+205"/>
         <source>Mouse</source>
-        <translation>Мышь «Марсианка»</translation>
+        <translation>Мышь</translation>
     </message>
     <message>
         <location filename="../emulator/devices/common/ay8910.cpp" line="+172"/>

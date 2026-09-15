@@ -27,7 +27,7 @@ PluggableDevice::PluggableDevice(InterfaceManager *im, EmulatorConfigDevice *cd)
 Connector::Connector(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd)
     , m_selected(0)
-    , m_title(QT_TRANSLATE_NOOP("DeviceOptions", "Connected device"))
+    , m_title(QT_TRANSLATE_NOOP("DeviceOptions", "Input device"))
 {
     device_class = "connector";
 }
@@ -56,9 +56,9 @@ emulator::Result Connector::load_config(SystemData *sd)
     // input devices or a sound board slot
     const std::string kind = str_tolower(str_trim(cd->get_parameter("kind", false).value));
     if (kind.empty() || kind == "input")
-        m_title = QT_TRANSLATE_NOOP("DeviceOptions", "Connected device");
+        m_title = QT_TRANSLATE_NOOP("DeviceOptions", "Input device");
     else if (kind == "sound")
-        m_title = QT_TRANSLATE_NOOP("DeviceOptions", "Sound board");
+        m_title = QT_TRANSLATE_NOOP("DeviceOptions", "Sound");
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Connector|" + std::string(QT_TRANSLATE_NOOP("Connector", "Unknown connector kind")) + "} " + kind);
@@ -98,7 +98,7 @@ DeviceOptions Connector::get_device_options()
     opt.title = m_title;
     // Without one the GUI draws a picture of its own
     opt.icon = m_icon;
-    opt.values.push_back({0, QT_TRANSLATE_NOOP("DeviceOptions", "Nothing connected")});
+    opt.values.push_back({0, QT_TRANSLATE_NOOP("DeviceOptions", "None")});
     for (size_t i = 0; i < m_devices.size(); i++)
         opt.values.push_back({static_cast<unsigned>(i + 1), m_devices[i]->plug_title()});
     return {opt};
