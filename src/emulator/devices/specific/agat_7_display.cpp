@@ -160,7 +160,8 @@ DeviceOptions Agat7Display::get_device_options()
                         {
                             {A7_PALCARD_ON, QT_TRANSLATE_NOOP("DeviceOptions", "Palette card")},
                             {A7_PALCARD_OFF, QT_TRANSLATE_NOOP("DeviceOptions", "Standard")}
-                        }
+                        },
+                        static_cast<unsigned>(m_pal_card_out ? A7_PALCARD_ON : A7_PALCARD_OFF)
                     }
         };
     return {};

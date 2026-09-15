@@ -157,6 +157,7 @@ struct DeviceOption {
     std::string title;
     std::string icon;
     std::vector<DeviceOptionValue> values;
+    unsigned current;               // id of the value the device has now, not necessarily the first
 };
 
 typedef std::vector<DeviceOption> DeviceOptions;
