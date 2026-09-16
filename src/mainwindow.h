@@ -122,6 +122,10 @@ private:
     //-1 until the first refresh, then the DEBUG_ mode the icon was drawn for
     int cpu_state_shown = -1;
 
+    //Opens a debug window on one processor. A machine may have several, each
+    //with its own address space and breakpoints
+    void open_debugger_for(CPU * cpu);
+
     Ui::MainWindow *ui;
 
     QWidget * screen;

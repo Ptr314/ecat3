@@ -36,7 +36,18 @@ private:
 
     std::array<std::string, 256> charmap;
 
-    CPU * cpu;
+    //One clock domain per processor. A machine with two of them (the УК-НЦ:
+    //8 MHz central and 6.25 MHz peripheral) runs them interleaved, each in its
+    //own address space and with its own devices. With one processor scale is 1
+    //and the whole thing collapses into the loop this used to be
+    struct ClockDomain {
+        CPU *    cpu;
+        uint64_t scale;     // LCM(all frequencies) / this frequency
+        uint64_t norm;      // position in that normalised time, carried between slices
+    };
+    std::vector<ClockDomain> domains;
+
+    CPU * cpu;              // The master, domains[0].cpu - and the machine's time base
     MemoryMapper * mm;
     GenericDisplay * display;
     Keyboard * keyboard;
@@ -51,9 +62,6 @@ private:
     std::vector<HostKey> m_host_keys;
 
     unsigned int clock_freq;
-    //Counted against a 64-bit number of ticks: a 32-bit one could never reach
-    //a slice longer than 2^32 cycles, and the loop that waits for it never ends
-    uint64_t local_counter;
 
     unsigned int screen_sx;
     unsigned int screen_sy;

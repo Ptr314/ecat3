@@ -1096,23 +1096,26 @@ void MainWindow::on_action_Soft_restart_triggered()
 void MainWindow::on_actionCPUState_triggered()
 {
     if (!e->loaded) return;
-    CPU * cpu = dynamic_cast<CPU*>(e->dm->get_device_by_name("cpu", false));
-    if (cpu == nullptr) return;
+    const std::vector<CPU*> &cpus = e->dm->get_cpus();
+    if (cpus.empty()) return;
 
-    if (cpu->m_debug == DEBUG_STOPPED) {
-        cpu->m_debug = DEBUG_OFF;
-        e->record_command("cpu", "run", "");
-    } else {
-        cpu->m_debug = DEBUG_STOPPED;
-        e->record_command("cpu", "stop", "");
+    //The button stops and starts the machine, not one of its processors: on a
+    //two-processor machine leaving one of them running would freeze the other
+    //at the first channel handshake anyway. The master decides which way the
+    //button goes, and all of them follow it
+    const bool run = (cpus[0]->m_debug == DEBUG_STOPPED);
+    for (size_t i = 0; i < cpus.size(); i++) {
+        cpus[i]->m_debug = run? DEBUG_OFF : DEBUG_STOPPED;
+        e->record_command(cpus[i]->name, run? "run" : "stop", "");
     }
     update_cpu_state_action();
 }
 
 void MainWindow::update_cpu_state_action()
 {
-    //The device manager only exists once a machine has been loaded
-    CPU * cpu = e->loaded? dynamic_cast<CPU*>(e->dm->get_device_by_name("cpu", false)) : nullptr;
+    //The device manager only exists once a machine has been loaded. The state
+    //shown is the master's, which is the one the button acts on first
+    CPU * cpu = (e->loaded && !e->dm->get_cpus().empty())? e->dm->get_cpus()[0] : nullptr;
 
     ui->actionCPUState->setEnabled(cpu != nullptr);
 
@@ -1244,9 +1247,9 @@ void MainWindow::on_actionOpen_triggered()
     }
 }
 
-void MainWindow::on_actionDebugger_triggered()
+void MainWindow::open_debugger_for(CPU * cpu)
 {
-    CPU * cpu = dynamic_cast<CPU*>(e->dm->get_device_by_name("cpu"));
+    if (cpu == nullptr) return;
     DebugWndCreateFunc * f = DWM->get_create_func(cpu->type);
     if (f != nullptr)
     {
@@ -1261,6 +1264,29 @@ void MainWindow::on_actionDebugger_triggered()
             });
             w->show();
     }
+}
+
+void MainWindow::on_actionDebugger_triggered()
+{
+    if (!e->loaded) return;
+    const std::vector<CPU*> &cpus = e->dm->get_cpus();
+    if (cpus.empty()) return;
+
+    //One processor: straight to its window, as it always was. Several: a menu
+    //to pick one, since each has its own address space and its own breakpoints.
+    //The window titles itself after the device, so the two are told apart
+    if (cpus.size() == 1) {
+        open_debugger_for(cpus[0]);
+        return;
+    }
+
+    QMenu menu(this);
+    for (size_t i = 0; i < cpus.size(); i++) {
+        QAction * a = menu.addAction(QString::fromStdString(cpus[i]->name + " : " + cpus[i]->type));
+        CPU * c = cpus[i];
+        connect(a, &QAction::triggered, [this, c]() { open_debugger_for(c); });
+    }
+    menu.exec(QCursor::pos());
 }
 
 void MainWindow::closeEvent (QCloseEvent *event)

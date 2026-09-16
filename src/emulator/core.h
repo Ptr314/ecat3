@@ -249,6 +249,10 @@ public:
     //Whether clocking this device does anything at all - see m_clocked
     bool is_clocked() const { return m_clocked; }
 
+    //The processor whose clock this device counts in, set by load_config()
+    //from the clock_source parameter. Null on a processor itself
+    CPU * get_clock_source() const { return cpu; }
+
     virtual DeviceOptions get_device_options();
     virtual void set_device_option(unsigned option_id, unsigned value_id);
 
@@ -509,18 +513,26 @@ public:
     unsigned int get_device_index(const std::string &name);
     std::vector<ComputerDevice*> find_devices_by_class(const std::string &class_to_find);
     void reset_devices(bool cold);
-    void clock(unsigned int counter);
+    //Clocks the devices of one clock domain. A machine with a single processor
+    //has exactly one domain, number 0, and this is the old clock(counter)
+    void clock(unsigned int domain, unsigned int counter);
     void error(ComputerDevice *d, const std::string &message);
     void error_clear();
     DeviceDescription * get_device(unsigned int i); //
     void register_device(const std::string &device_type, CreateDeviceFunc func); //
 
+    //The processors of the machine, in the order they are declared, with the
+    //one named "cpu" first: that one is the master and its clock is the time
+    //base of the whole machine. Filled by load_devices_config()
+    const std::vector<CPU*> & get_cpus() const { return cpus; }
 
 private:
     DeviceDescription devices[MAX_DEVICES];
-    //Devices whose clock() does something, in device order and without the CPU.
-    //Filled by load_devices_config(), walked once per instruction
-    std::vector<ComputerDevice*> clocked_devices;
+    //Devices whose clock() does something, by clock domain and in device order,
+    //without the processors. Filled by load_devices_config(), walked once per
+    //instruction of the domain that owns them
+    std::vector<std::vector<ComputerDevice*>> clocked_devices;
+    std::vector<CPU*> cpus;
     unsigned int registered_devices_count;
     RegisteredDevice registered_devices[MAX_REGISTERED_DEVICES];
 

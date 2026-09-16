@@ -22,10 +22,11 @@ emulator::Result Generator::load_config(SystemData *sd)
     emulator::Result res = ComputerDevice::load_config(sd);
     if (!res) return res;
 
-    unsigned int main_clock = (dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu")))->clock;
-
+    //The frequency of this generator's own clock domain, set by the base class
+    //from clock_source - not the master processor's, which is all this used to
+    //be able to see
     unsigned int freq = parse_numeric_value(cd->get_parameter("frequency").value);
-    total_counts = main_clock / freq;
+    total_counts = m_system_clock / freq;
 
     std::string lens = cd->get_parameter("length", false).value;
     if (lens.empty())

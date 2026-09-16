@@ -166,7 +166,7 @@ DeviceManager::DeviceManager()
 {
     registered_devices_count = 0;
 
-    device_count = 2;
+    device_count = 0;
     error_message = "";
     error_device = nullptr;
     error_pending = false;
@@ -181,11 +181,12 @@ DeviceManager::~DeviceManager()
 void DeviceManager::clear()
 {
     clocked_devices.clear();
+    cpus.clear();
 
     for (unsigned int i=0; i < device_count; i++)
        devices[i].device.reset();  // unique_ptr handles deletion automatically
 
-    device_count = 2;
+    device_count = 0;
 
     //memset(&devices, 0, sizeof(devices));
 }
@@ -200,14 +201,15 @@ void DeviceManager::register_device(const std::string &device_type, CreateDevice
 
 emulator::Result DeviceManager::add_device(InterfaceManager *im, EmulatorConfigDevice *d)
 {
-    unsigned int index;
-    if (d->name == "cpu")
-        index=0;
-    else
-    if (d->name == "mapper")
-        index=1;
-    else
-        index = device_count++;
+    //Devices are kept in the order they are declared. The names "cpu" and
+    //"mapper" used to be forced into slots 0 and 1, which is what made a second
+    //processor impossible - and left a null slot behind whenever a config did
+    //not use both names
+    if (device_count >= MAX_DEVICES)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{DeviceManager|" + std::string(QT_TRANSLATE_NOOP("DeviceManager", "Too many devices")) + "} " + d->name);
+
+    unsigned int index = device_count++;
 
     CreateDeviceFunc create_func = nullptr;
     for (unsigned int i=0; i < registered_devices_count; i++)
@@ -240,11 +242,40 @@ emulator::Result DeviceManager::load_devices_config(SystemData *sd)
         if (!res) return res;
     }
 
-    //Index 0 is the CPU, clocked separately by Emulator::timer_proc()
-    clocked_devices.clear();
-    for (unsigned int i=1; i < device_count; i++)
-        if (devices[i].device->is_clocked())
-            clocked_devices.push_back(devices[i].device.get());
+    //The processors, in declaration order but with the master - the one named
+    //"cpu" - first. Its clock is the time base of the whole machine, so the
+    //order decides which frequency Emulator counts a time slice in
+    cpus.clear();
+    for (unsigned int i=0; i < device_count; i++)
+    {
+        CPU * c = dynamic_cast<CPU*>(devices[i].device.get());
+        if (c == nullptr) continue;
+        if (c->name == "cpu")
+            cpus.insert(cpus.begin(), c);
+        else
+            cpus.push_back(c);
+    }
+
+    if (cpus.empty())
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{DeviceManager|" + std::string(QT_TRANSLATE_NOOP("DeviceManager", "No processor found in config")) + "}");
+
+    //Every clocked device joins the domain of the processor it takes its clock
+    //from (clock_source, "cpu" by default). The processors are not in any of
+    //these lists: Emulator drives them itself
+    clocked_devices.assign(cpus.size(), std::vector<ComputerDevice*>());
+    for (unsigned int i=0; i < device_count; i++)
+    {
+        ComputerDevice * d = devices[i].device.get();
+        if (d->belongs_to_class("cpu")) continue;
+        if (!d->is_clocked()) continue;
+
+        size_t domain = 0;
+        for (size_t j=0; j < cpus.size(); j++)
+            if (cpus[j] == d->get_clock_source()) { domain = j; break; }
+
+        clocked_devices[domain].push_back(d);
+    }
 
     return emulator::Result::ok();
 }
@@ -291,13 +322,19 @@ void DeviceManager::reset_devices(bool cold)
     }
 }
 
-void DeviceManager::clock(unsigned int counter)
+void DeviceManager::clock(unsigned int domain, unsigned int counter)
 {
-    global_clock_counter += counter;
+    if (domain >= clocked_devices.size()) return;
+
+    //Counted in the master's cycles, so that the number stays what it always
+    //was on a machine with one processor
+    if (domain == 0) global_clock_counter += counter;
+
     //Only the devices that do something with a tick, in the order they are
-    //declared - the CPU (index 0) is clocked by its own execute()
-    for (size_t i=0; i < clocked_devices.size(); i++)
-        clocked_devices[i]->system_clock(counter);
+    //declared - the processors are clocked by their own execute()
+    std::vector<ComputerDevice*> &list = clocked_devices[domain];
+    for (size_t i=0; i < list.size(); i++)
+        list[i]->system_clock(counter);
 }
 
 void DeviceManager::error(ComputerDevice *d, const std::string &message)
@@ -498,8 +535,18 @@ emulator::Result ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
 
         }
     }
-    if (name != "cpu") {
-        cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu"));
+    //The processor this device counts time in. A machine with two processors
+    //running at different frequencies (the УК-НЦ) has devices on both, and
+    //everything that turns real units into cycles - a raster line, a baud rate,
+    //a sound step - has to use the frequency of its own side. The test is on
+    //the class, not on the name: a second processor called "ppu" would
+    //otherwise overwrite its own clock with the master's
+    if (!belongs_to_class("cpu")) {
+        const std::string clock_source = read_confg_value(cd, "clock_source", false, std::string("cpu"));
+        cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name(clock_source, false));
+        if (cpu == nullptr)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Clock source is not a processor")) + "} " + name + ": " + clock_source);
         m_system_clock = cpu->clock;
     }
 
@@ -557,6 +604,7 @@ std::vector<DeviceFieldInfo> ComputerDevice::get_device_fields()
         {"name",        "Device name",                          false},
         {"type",        "Device type",                          false},
         {"class",       "Device class",                         false},
+        {"clock_source","Processor whose clock this device counts in", false},
         {"interfaces",  "Values of all interfaces of a device", false}
     };
 }
@@ -581,6 +629,13 @@ bool ComputerDevice::get_field(const std::string &field, MAYBE_UNUSED unsigned i
     }
     if (field == "class") {
         out.text = device_class;
+        return true;
+    }
+    //Which clock domain this device belongs to - the question a machine with
+    //more than one processor makes worth asking. A processor answers "-": it is
+    //a domain of its own
+    if (field == "clock_source") {
+        out.text = (cpu != nullptr)? cpu->name : std::string("-");
         return true;
     }
     if (field == "interfaces") {
@@ -1423,11 +1478,21 @@ CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
 #endif
     , break_count(0)
 {
+    device_class = "cpu";
+
     try {
         clock = parse_numeric_value(this->cd->get_parameter("clock").value);
     } catch (std::exception &e) {
         clock = 0;
     }
+
+    //"clock" means two different things and both constructors read it: for a
+    //processor it is the frequency in Hz, for every other device a ratio
+    //against the system clock. ComputerDevice has already taken 8000000 for a
+    //multiplier, which would be a disaster the moment a processor was handed
+    //to system_clock()
+    clock_miltiplier = 1;
+    clock_divider = 1;
 }
 
 emulator::Result CPU::load_config(SystemData *sd)
@@ -1464,7 +1529,13 @@ emulator::Result CPU::load_config(SystemData *sd)
     if (debug) m_debug = DEBUG_BRAKES;
     if (stopped) m_debug = DEBUG_STOPPED;
 
-    mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper"));
+    //Each processor has its own address space. The default keeps every
+    //existing config working, where the one dispatcher is simply called "mapper"
+    const std::string mapper_name = read_confg_value(cd, "mapper", false, std::string("mapper"));
+    mm = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name(mapper_name, false));
+    if (mm == nullptr)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "Memory mapper not found")) + "} " + name + ": " + mapper_name);
 
     return emulator::Result::ok();
 }

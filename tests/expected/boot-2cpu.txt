@@ -1,0 +1,21 @@
+=== Процессоры ===
+[cpu.clock] &00036411000
+[ppu.clock] &00027657020
+=== Счётчики циклов: должны относиться как 32:25 ===
+[ram.value16] &000100: &077616
+[ppu-ram.value16] &000100: &061647
+=== Домены устройств ===
+[display.clock_source] cpu
+[timer.clock_source] cpu
+[ppu-timer.clock_source] ppu
+=== Карта памяти ведущего ===
+[mapper.map] 
+        0000-3FFF -> ram[0000] mode=rw
+        4000-7FFF -> vram[0000] mode=rw
+        8000-8005 -> counter[0000] mode=r
+        FFC6-FFCB -> timer[0000] mode=rw
+=== Карта памяти ведомого ===
+[ppu-mapper.map] 
+        0000-3FFF -> ppu-ram[0000] mode=rw
+        8000-8005 -> ppu-counter[0000] mode=r
+        FFC6-FFCB -> ppu-timer[0000] mode=rw

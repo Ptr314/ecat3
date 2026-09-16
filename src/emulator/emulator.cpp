@@ -84,7 +84,6 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , mm(nullptr)
     , display(nullptr)
     , keyboard(nullptr)
-    , local_counter(0)
     , clock_counter(0)
     , renderer(renderer)
     , m_running(false)
@@ -138,6 +137,7 @@ emulator::Result Emulator::load_config(std::string file_name)
         mm = nullptr;
         display = nullptr;
         keyboard = nullptr;
+        domains.clear();
         joysticks.clear();
         mice.clear();
     }
@@ -368,14 +368,39 @@ void Emulator::run()
 #endif
             setThreadPriority(true);
 
-            cpu = dynamic_cast<CPU*>(dm->get_device_by_name("cpu"));
-            if (!cpu) {
-                // qCritical() << "Error: CPU device not found or wrong type";
+            //One domain per processor, master first. load_devices_config() has
+            //already put them in that order
+            const std::vector<CPU*> &cpu_list = dm->get_cpus();
+            if (cpu_list.empty()) {
+                // qCritical() << "Error: no CPU device found";
                 m_running = false;
                 return;
             }
 
-            mm = dynamic_cast<MemoryMapper*>(dm->get_device_by_name("mapper"));
+            cpu = cpu_list[0];
+
+            //LCM of every frequency, so that a domain's position can be counted
+            //in whole units of a common time. For 8 MHz and 6.25 MHz the scales
+            //come out 25 and 32 - the 32:25 interleave the УК-НЦ really has.
+            //With one processor the LCM is its own clock and every scale is 1
+            uint64_t lcm = cpu_list[0]->clock;
+            for (size_t i = 1; i < cpu_list.size(); i++) {
+                const uint64_t c = cpu_list[i]->clock;
+                uint64_t a = lcm, b = c;
+                while (b != 0) { const uint64_t t = a % b; a = b; b = t; }
+                lcm = (a != 0) ? (lcm / a * c) : lcm;
+            }
+
+            domains.clear();
+            for (size_t i = 0; i < cpu_list.size(); i++) {
+                ClockDomain d;
+                d.cpu = cpu_list[i];
+                d.scale = (cpu_list[i]->clock != 0) ? (lcm / cpu_list[i]->clock) : 1;
+                d.norm = 0;
+                domains.push_back(d);
+            }
+
+            mm = cpu->mm;
             if (!mm) {
                 // qCritical() << "Error: Memory mapper device not found or wrong type";
                 m_running = false;
@@ -410,7 +435,7 @@ void Emulator::run()
 
             clock_freq = this->cpu->clock;
 
-            local_counter = 0;
+            for (size_t i = 0; i < domains.size(); i++) domains[i].norm = 0;
             clock_counter = 0;
 
             m_ready = true;
@@ -541,7 +566,7 @@ void Emulator::timer_proc(uint64_t time_ticks)
 
     // SDL_Event ev;
 
-    if (!busy)
+    if (!busy && !domains.empty())
     {
         busy = true;
 
@@ -550,13 +575,30 @@ void Emulator::timer_proc(uint64_t time_ticks)
         //     qDebug() << ev.type;
         // }
 
-        while (local_counter < time_ticks) {
+        //The slice arrives in the master's cycles; every domain is carried in
+        //the common normalised time instead, so that processors of different
+        //frequencies interleave by an exact integer ratio and a run stays
+        //reproducible to the byte
+        const uint64_t target = time_ticks * domains[0].scale;
 
-            unsigned int counter = cpu->execute();
+        while (true) {
+            //Whichever processor is furthest behind goes next. With one domain
+            //this is simply "has the slice been used up yet"
+            size_t k = 0;
+            for (size_t i = 1; i < domains.size(); i++)
+                if (domains[i].norm < domains[k].norm) k = i;
+            if (domains[k].norm >= target) break;
+
+            ClockDomain &d = domains[k];
+            unsigned int counter = d.cpu->execute();
             if (counter > 0) {
-                local_counter += counter;
-                clock_counter += counter;
-                dm->clock(counter);
+                d.norm += (uint64_t)counter * d.scale;
+
+                //Emulated time of the machine is the master's time: a script
+                //that waits 20 ms means 20 ms of the machine, whatever the
+                //other processors are doing
+                if (k == 0) clock_counter += counter;
+                dm->clock((unsigned int)k, counter);
 
                 //Scripts are advanced here, on the emulation thread, so they see
                 //the devices in the same state the CPU does. Ticking inside the
@@ -565,13 +607,14 @@ void Emulator::timer_proc(uint64_t time_ticks)
                 //depends on the host clock, the cycle counter does not.
                 if (script) script->tick(clock_counter);
             } else {
-                local_counter += 10;
+                //A stopped CPU produces no cycles, but its domain still has to
+                //move or the loop would never end. The script engine still runs:
+                //the commands that need no emulated time are how a debugging
+                //session steps, inspects and starts the CPU again. The delays
+                //stay frozen, which is the honest behaviour - they are counted
+                //in emulated time and that is what has stopped
+                d.norm += 10ull * d.scale;
 
-                //A stopped CPU produces no cycles, but the script engine still
-                //has to run: the commands that need no emulated time are how a
-                //debugging session steps, inspects and starts the CPU again.
-                //The delays stay frozen, which is the honest behaviour - they
-                //are counted in emulated time and that is what has stopped
                 if (script) script->tick(clock_counter);
             }
         }
@@ -581,11 +624,14 @@ void Emulator::timer_proc(uint64_t time_ticks)
         //the device manager. Starting the CPU again resumes until the next one
         if (dm->error_pending) {
             dm->error_pending = false;
-            cpu->m_debug = DEBUG_STOPPED;
+            for (size_t i = 0; i < domains.size(); i++)
+                domains[i].cpu->m_debug = DEBUG_STOPPED;
         }
 
         mm->sort_cache();
-        local_counter -= time_ticks;
+
+        //What a domain overshot the slice by is owed to the next one
+        for (size_t i = 0; i < domains.size(); i++) domains[i].norm -= target;
 
         busy = false;
     }
