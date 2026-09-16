@@ -688,6 +688,15 @@
             flex: none;
         }
 
+        /* The keyboard goes back to the size that follows the screen. The
+           arrow is drawn smaller than the plus and the minus by the font, and
+           it stands right up against the slider, so it gets a little air */
+        #kbd-auto {
+            margin-left: -2px;
+            font-size: 15px;
+            line-height: 1.1;
+        }
+
         /* The shape and the filtering of the screen, a row of their own under
            the scale, sharing its width; as low as the stepper buttons */
         .screen-options {
@@ -1015,6 +1024,8 @@
                             <button id="kbd-minus" disabled>&minus;</button>
                             <input type="range" id="kbd-scale" min="50" max="200" step="10" value="100" disabled>
                             <button id="kbd-plus" disabled>+</button>
+                            <!-- Back to the size that follows the screen -->
+                            <button id="kbd-auto" disabled data-i18n-title="kbdAutoTitle">⇔</button>
                         </div>
                     </div>
                 </div>

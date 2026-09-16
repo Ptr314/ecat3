@@ -182,6 +182,15 @@ const settings = {
             // Not remembered, nothing else is lost
         }
     },
+    // A setting taken away goes back to the default of the page: that is how
+    // the keyboard is put back to the size that follows the screen
+    remove(key) {
+        try {
+            localStorage.removeItem("ecat3." + key);
+        } catch (e) {
+            // Nothing was kept there in the first place
+        }
+    },
 };
 
 function clamp(value, lo, hi) {
@@ -383,6 +392,7 @@ const I18N = {
         kbdSize:            "Keyboard size",
         percent:            "{0}%",
         kbdPercentAuto:     "{0}% (auto)",
+        kbdAutoTitle:       "Size by the width of the screen",
         drive:              "Drive {0}",
         noDisk:             "No disk",
         load:               "Load",
@@ -473,6 +483,7 @@ const I18N = {
         kbdSize:            "Размер клавиатуры",
         percent:            "{0}%",
         kbdPercentAuto:     "{0}% (авто)",
+        kbdAutoTitle:       "Размер по ширине экрана",
         drive:              "Дисковод {0}",
         noDisk:             "Нет диска",
         load:               "Загрузить",
@@ -950,6 +961,7 @@ function updateKbdScaleUi() {
     const label = document.getElementById("kbd-scale-value");
     const minus = document.getElementById("kbd-minus");
     const plus = document.getElementById("kbd-plus");
+    const auto = document.getElementById("kbd-auto");
 
     // Sizing a keyboard that is not on the page means nothing, so the controls
     // are shown only together with it
@@ -957,7 +969,7 @@ function updateKbdScaleUi() {
         kbdBaseWidth <= 0 || document.getElementById("kbd-panel").hidden;
 
     if (kbdBaseWidth <= 0) {
-        range.disabled = minus.disabled = plus.disabled = true;
+        range.disabled = minus.disabled = plus.disabled = auto.disabled = true;
         label.textContent = "";
         return;
     }
@@ -973,12 +985,22 @@ function updateKbdScaleUi() {
     paintRange(range);
     minus.disabled = value <= KBD_MIN;
     plus.disabled = value >= KBD_MAX;
+    // Nothing to go back to while the size already follows the screen
+    auto.disabled = chosen === null;
     label.textContent = t(chosen !== null ? "percent" : "kbdPercentAuto", value);
 }
 
 function setKbdScale(value) {
     kbdScaleFromUrl = undefined;
     settings.set("kbdScale", clamp(Math.round(value / KBD_STEP) * KBD_STEP, KBD_MIN, KBD_MAX));
+    layoutKeyboard();
+}
+
+// Back to the width of the screen: a size is not so much set as unpicked, and
+// a size never picked is exactly what following the screen means
+function setKbdAuto() {
+    kbdScaleFromUrl = undefined;
+    settings.remove("kbdScale");
     layoutKeyboard();
 }
 
@@ -990,6 +1012,7 @@ function setupKeyboardSize() {
         () => setKbdScale(parseInt(range.value, 10) - KBD_STEP));
     document.getElementById("kbd-plus").addEventListener("click",
         () => setKbdScale(parseInt(range.value, 10) + KBD_STEP));
+    document.getElementById("kbd-auto").addEventListener("click", setKbdAuto);
     layoutKeyboard();
     watchKeyboardPlace();
 }
