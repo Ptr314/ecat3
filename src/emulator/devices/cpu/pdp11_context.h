@@ -19,7 +19,14 @@ struct pdp11context
     bool halted;                // WAIT executed, idling until an interrupt
     bool halt_mode;             // running in the halt (console) mode
     bool stop;                  // double bus error, dead until INIT
-    int type;
+    int type;                   // PDP11_FAMILY_*, what this chip is
+
+    // Копия счётчика команд (КРСК) и копия слова состояния (КРСП): теневая
+    // пара, в которую процессор прячет состояние прерванной программы при
+    // входе в пультовый режим. Пультовый монитор читает и правит её
+    // командами MFPC/MFPS/MTPC/MTPS, а RUN и STEP по ней запускаются
+    uint16_t console_pc;
+    uint16_t console_psw;
 };
 
 #pragma pack()

@@ -1,0 +1,44 @@
+=== Экран ===
+[display.resolution] 640x288
+[display.entries] &000463
+=== Обмен между процессорами ===
+[channels.channels]         ЦП->ПП 0: data=274 rx_ready=0 rx_irq=1 tx_ready=1 tx_irq=0
+        ЦП->ПП 1: data=000 rx_ready=0 rx_irq=1 tx_ready=1 tx_irq=0
+        ЦП->ПП 2: data=000 rx_ready=0 rx_irq=1 tx_ready=1 tx_irq=0
+        ПП->ЦП 0: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=1
+        ПП->ЦП 1: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+=== Ни одного таймаута магистрали ===
+[cpu.timeouts] &000000
+[ppu.timeouts] &000000
+=== Контроллер НГМД отвечает, без него меню не появляется ===
+[fdc-jumpers.value16] &010000
+[fdd0.track] &000000
+=== Карта памяти центрального процессора ===
+[mapper.map] 
+        0000-DFFF -> cpu-ram[0000] mode=rw
+        FD70-FD77 -> cpu-net[0000] mode=rw
+        FD78-FD7F -> cpu-serial[0000] mode=rw
+        FDA0-FDA3 -> cpu-indirect[0000] mode=rw
+        FDB0-FDB3 -> channels[0008] mode=rw
+        FDB4-FDB7 -> channels[000C] mode=rw
+        FDBC-FDBF -> channels[0010] mode=rw
+        FF70-FF73 -> channels[0000] mode=rw
+        FF74-FF77 -> channels[0004] mode=rw
+        E000-FFFF -> cpu-ram[E000] mode=rw cfg=01:01
+=== Карта памяти периферийного процессора ===
+[ppu-mapper.map] 
+        0000-7FFF -> plane0[0000] mode=rw
+        8000-FDFF -> rom[0000] mode=r
+        FE08-FE17 -> pp-video[0000] mode=rw
+        FE40-FE47 -> pp-printer[0000] mode=rw
+        FE2C-FE2D -> pp-win[0000] mode=rw
+        FE30-FE37 -> channels[0014] mode=rw
+        FE38-FE3F -> channels[001C] mode=rw
+        FE58-FE5B -> fdc[0000] mode=rw
+        FFC4-FFC5 -> fdc-jumpers[0000] mode=rw
+        FFC0-FFC1 -> pp-kbd-state[0000] mode=rw
+        FFC2-FFC3 -> pp-kbd-code[0000] mode=rw
+        FFC8-FFC9 -> pp-timer[0000] mode=rw
+        FFCA-FFCB -> pp-timer[0002] mode=w
+        FFCC-FFCD -> pp-timer[0004] mode=r
+        FFCE-FFCF -> pp-sys[0000] mode=rw

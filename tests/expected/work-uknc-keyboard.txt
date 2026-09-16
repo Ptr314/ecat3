@@ -1,0 +1,32 @@
+=== две раскладки: клавиши хоста и клавиши самой машины ===
+[keyboard.keys] &134
+[keyboard.ids] &130
+[keyboard.pressed] 
+=== УСТ с рисунка открывает меню УСТАНОВКА ===
+[keyboard.last] &152
+[keyboard.pressed] key_ust
+[keyboard.last] &352
+=== регистровая клавиша удерживается, а не срабатывает мгновенно ===
+[keyboard.last] &046
+[keyboard.pressed] key_ctrl
+[keyboard.last] &246
+[keyboard.pressed] 
+=== номера клавиш машины ===
+[keyboard.last] &072
+[keyboard.last] &027
+[keyboard.last] &105
+[keyboard.last] &105
+[keyboard.last] &034
+[keyboard.last] &150
+[keyboard.last] &154
+[keyboard.last] &171
+=== клавиатура хоста приходит теми же номерами ===
+[keyboard.last] &072
+[keyboard.last] &030
+[keyboard.last] &030
+[keyboard.last] &010
+[keyboard.codes] &034
+=== СТОП: ПЗУ ставит центральному процессору HALT ===
+[pp-sys.value16] &100020
+[keyboard.last] &204
+[pp-sys.value16] &100020

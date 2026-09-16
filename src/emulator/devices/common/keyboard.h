@@ -319,7 +319,13 @@ enum KeyRole {
     KEY_ROLE_ALT,           // second control key (БК: АР2), code goes through the alternative vector
     KEY_ROLE_STOP,          // drives the ~stop line instead of sending a code (БК: СТОП)
     KEY_ROLE_REPEAT,        // repeats whatever went last (БК: ПОВТ)
-    KEY_ROLE_RESET          // restarts the machine instead of sending a code, only with Ctrl held (Агат: УПР+СБР)
+    KEY_ROLE_RESET,         // restarts the machine instead of sending a code, only with Ctrl held (Агат: УПР+СБР)
+    // A modifier the machine keeps itself, from the code the key sends when it
+    // goes down and the one it sends when it comes up (УК-НЦ: НР, УПР, ГРАФ,
+    // АЛФ, ФИКС). Nothing here holds any state - the role exists so that a
+    // pointer, which has one contact point, clicks such a key on and off
+    // instead of letting it go the moment the button is released
+    KEY_ROLE_MODIFIER
 };
 
 class Keyboard: public ComputerDevice

@@ -13,7 +13,15 @@ class pdp11core
 protected:
     pdp11context context;
 
-    bool has_eis;               // MUL/DIV/ASH/ASHC, absent on the 1801ВМ1
+    // Что умеет именно этот кристалл. Проверки положительные: раньше EIS
+    // включался условием "семейство не ВМ1", и любое третье семейство
+    // получило бы его молча
+    bool has_eis;               // MUL/DIV/ASH/ASHC, есть у ВМ2
+    bool has_console;           // пультовый режим с командами RUN/STEP/MFPC..., есть у ВМ2
+
+    // Шаг по команде STEP: после одной выполненной команды процессор
+    // возвращается в пультовый режим
+    bool m_step_pending = false;
 
     // Interrupt inputs. VIRQ follows the line - the requesting device drops it
     // once served (a БК clears the keyboard ready flag when the program reads
@@ -64,7 +72,7 @@ protected:
     void push(uint16_t value);
     uint16_t pop();
     void do_trap(uint16_t vector);
-    void enter_halt_mode();
+    void enter_halt_mode(uint16_t vector);
     bool check_interrupts(unsigned int & cycles);
     void do_branch(uint16_t command, bool condition, unsigned int & cycles);
 
@@ -88,6 +96,15 @@ public:
 
     // Clock periods the memory takes to answer a bus cycle (tn), 2 by default
     void set_reply_delay(unsigned int periods);
+
+    // База векторов пультового режима (вывод SEL процессора). У УК-НЦ 0160000,
+    // и вектор берётся как halt_sel | vector. Ноль оставляет прежнее
+    // поведение: вход в режим идёт обычной ловушкой через halt_vector
+    unsigned int halt_sel = 0;
+
+    // Сообщает устройству о смене режима, чтобы оно подняло линию наружу:
+    // адресное пространство машины может от неё зависеть
+    virtual void on_halt_mode(bool state) { (void)state; }
 
     // Bus access, provided by the emulator device
     virtual uint16_t read_word(uint16_t address) = 0;

@@ -22,6 +22,9 @@ public:
     virtual void write_word(uint16_t address, uint16_t value) override;
     virtual uint8_t read_byte(uint16_t address) override;
     virtual void write_byte(uint16_t address, uint8_t value) override;
+    // Ядро сообщает о входе в пультовый режим и выходе из него, устройство
+    // поднимает линию наружу
+    virtual void on_halt_mode(bool state) override;
 };
 
 // Emulator device
@@ -38,6 +41,20 @@ private:
     Interface i_irq2;               // request with the fixed vector 0100
     Interface i_irq3;               // request with the fixed vector 0270
     Interface i_halt;               // console (halt mode) request
+    // Power-fail line. While it is asserted the processor is held in reset and
+    // executes nothing; releasing it starts the processor from its start
+    // address. On the УК-НЦ the peripheral processor drives this line (bit 5 of
+    // its register 177716), which is how the machine brings the central
+    // processor up - the ROM it boots from is on the peripheral side.
+    Interface i_dclo;
+
+    // Процессор в пультовом режиме. У машин, где от режима зависит карта
+    // памяти (УК-НЦ: в пультовом все 64 КБ - ОЗУ, в обычном верхние 8 КБ -
+    // страница ввода-вывода), эта линия заводится на ~config диспетчера
+    Interface i_halt_mode;
+
+    // True while ~dclo holds the processor down
+    bool m_held_in_reset = false;
 
     K1801VM1Core * core;
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
@@ -62,6 +79,7 @@ public:
     // timeout, and the processor turns it into a trap through vector 4.
     bool bus_timeout();
     void note_timeout(unsigned int address);
+    void set_halt_mode(bool state);
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

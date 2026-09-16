@@ -94,6 +94,8 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/common/mouse.cpp
     ${EMU_DIR}/devices/common/wd1793.cpp
     ${EMU_DIR}/devices/common/page_mapper.cpp
+    ${EMU_DIR}/devices/common/plane_pair.cpp
+    ${EMU_DIR}/devices/common/indirect_memory.cpp
     ${EMU_DIR}/devices/common/generator.cpp
     ${EMU_DIR}/devices/common/register.cpp
     ${EMU_DIR}/devices/common/mux.cpp
@@ -106,6 +108,11 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/specific/agat_7_display.cpp
     ${EMU_DIR}/devices/specific/agat_9_display.cpp
     ${EMU_DIR}/devices/specific/agat_9_mapper.cpp
+    ${EMU_DIR}/devices/specific/uknc_channels.cpp
+    ${EMU_DIR}/devices/specific/uknc_display.cpp
+    ${EMU_DIR}/devices/specific/uknc_graphics.cpp
+    ${EMU_DIR}/devices/specific/uknc_timer.cpp
+    ${EMU_DIR}/devices/specific/uknc_keyboard.cpp
     ${EMU_DIR}/devices/specific/irisha_display.cpp
     ${EMU_DIR}/devices/specific/bk_display.cpp
     ${EMU_DIR}/devices/specific/bk_timer.cpp

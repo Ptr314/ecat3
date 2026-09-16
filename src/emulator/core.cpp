@@ -1868,6 +1868,13 @@ emulator::Result MemoryMapper::load_config(SystemData *sd)
             // register of the БК parallel port
             mr.through = (this->cd->extended_parameter(i, "through") == "1");
 
+            // A read of an or_read range goes on the same way, and what the
+            // ranges return is OR-ed together: the УК-НЦ enables ROM and RAM in
+            // one window at once and both drive the bus. It makes such a window
+            // effectively write-only for the RAM behind it, which is exactly how
+            // the real machine behaves
+            mr.or_read = (this->cd->extended_parameter(i, "or_read") == "1");
+
             //Disable cache for complicated entries
             mr.cache = (mr.address_mask == 0) && (this->cache_size > 0);
 
@@ -1999,7 +2006,15 @@ unsigned int MemoryMapper::read(unsigned int address)
     {
         //TODO: Cache
         //if (mr->cache) this->add_cache_entry(); //this->ranges[range_index]
-        return d->get_value(address_on_device);
+        unsigned int v = d->get_value(address_on_device);
+
+        //Several devices answering one address, their outputs wired together
+        while (this->ranges[range_index].or_read && range_index < this->ranges_count) {
+            d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
+            if (d == nullptr) break;
+            v |= d->get_value(address_on_device);
+        }
+        return v;
 
     } else {
         this->no_device = !this->responds(address, MODE_R);
@@ -2060,9 +2075,17 @@ unsigned int MemoryMapper::read_word(unsigned int address)
     unsigned int address_on_device, range_index;
     this->no_device = false;
     AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
-    if (d != nullptr)
-        return d->get_value_word(address_on_device);
-    else {
+    if (d != nullptr) {
+        unsigned int v = d->get_value_word(address_on_device);
+
+        //See read(): ranges wired together answer at once, OR-ed
+        while (this->ranges[range_index].or_read && range_index < this->ranges_count) {
+            d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
+            if (d == nullptr) break;
+            v |= d->get_value_word(address_on_device);
+        }
+        return v;
+    } else {
         this->no_device = !this->responds(address, MODE_R);
         return _FFFF;
     }
@@ -2162,6 +2185,7 @@ bool MemoryMapper::get_field(const std::string &field, unsigned int from, unsign
             if (r.address_mask != 0)
                 s += " addr=" + hex_str(r.address_value, 4) + ":" + hex_str(r.address_mask, 4);
             if (r.through) s += " through";
+            if (r.or_read) s += " or_read";
         }
         for (unsigned int i = 0; i < ports_count; i++)
         {

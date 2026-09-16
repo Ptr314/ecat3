@@ -10,6 +10,7 @@
 #define CALLBACK_IRQ2   2
 #define CALLBACK_IRQ3   3
 #define CALLBACK_HALT   4
+#define CALLBACK_DCLO   5
 
 // ---------------------------  Library wrapper --------------------------------
 
@@ -48,6 +49,11 @@ void K1801VM1Core::write_byte(uint16_t address, uint8_t value)
     if (emulator_device->bus_timeout()) m_abort = true;
 }
 
+void K1801VM1Core::on_halt_mode(bool state)
+{
+    emulator_device->set_halt_mode(state);
+}
+
 // ---------------------------  Emulator device --------------------------------
 
 k1801vm1::k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd, int family_type):
@@ -57,6 +63,8 @@ k1801vm1::k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd, int family_ty
     , i_irq2(this, im, 1, "irq2", MODE_R, CALLBACK_IRQ2)
     , i_irq3(this, im, 1, "irq3", MODE_R, CALLBACK_IRQ3)
     , i_halt(this, im, 1, "halt", MODE_R, CALLBACK_HALT)
+    , i_dclo(this, im, 1, "dclo", MODE_R, CALLBACK_DCLO)
+    , i_halt_mode(this, im, 1, "halt_mode", MODE_W)
 {
     core = new K1801VM1Core(this, family_type);
 
@@ -85,12 +93,25 @@ emulator::Result k1801vm1::load_config(SystemData *sd)
     // bus cycle: 2 on a 3 MHz БК0010, more where the memory is slower to reply
     core->set_reply_delay(read_confg_value(cd, "reply_delay", false, (unsigned int)2));
 
+    // База векторов пультового режима - вывод SEL процессора. Ноль оставляет
+    // прежнее поведение: вход в режим идёт обычной ловушкой через halt_vector,
+    // как на БК. У УК-НЦ здесь 160000, и тогда работает настоящий пультовый
+    // режим с теневой парой КРСК/КРСП и командами RUN, STEP, MFPC и прочими
+    core->halt_sel = read_confg_value(cd, "halt_sel", false, (unsigned int)0);
+
+    // Линию режима надо выставить сразу: сообщается она только при смене, а
+    // диспетчер адресов читает её с первого же обращения. Незаданный интерфейс
+    // остаётся в _FFFF, и разряд режима читался бы единицей всегда
+    set_halt_mode(core->get_context()->halt_mode);
+
     return emulator::Result::ok();
 }
 
 void k1801vm1::reset(bool cold)
 {
     CPU::reset(cold);
+    // Сам режим выставит ядро в core->reset(), на первом же execute(): пуск
+    // по вектору - это вход в пультовый режим, и линия поднимется оттуда
 }
 
 unsigned int k1801vm1::read_mem(unsigned int address)
@@ -122,6 +143,11 @@ void k1801vm1::write_mem_word(unsigned int address, unsigned int data)
 bool k1801vm1::bus_timeout()
 {
     return mm->no_device;
+}
+
+void k1801vm1::set_halt_mode(bool state)
+{
+    i_halt_mode.change(state? 1 : 0);
 }
 
 void k1801vm1::note_timeout(unsigned int address)
@@ -232,11 +258,31 @@ void k1801vm1::interface_callback(unsigned int callback_id, unsigned int new_val
     case CALLBACK_HALT:
         core->set_halt(active);
         break;
+    case CALLBACK_DCLO:
+        // Held down while the line is active; released, the processor starts
+        // over from its start address. The line idles inactive, so a machine
+        // that leaves ~dclo unconnected runs exactly as before
+        if (active) {
+            m_held_in_reset = true;
+        } else if (m_held_in_reset) {
+            m_held_in_reset = false;
+            reset_mode = true;
+        }
+        break;
     }
 }
 
 unsigned int k1801vm1::execute()
 {
+    // Power-fail asserted: this processor runs nothing, but the machine around
+    // it does, so it spends idle bus cycles rather than no time at all - the
+    // same thing a WAIT instruction does (pdp11core::C_IDLE). Returning 0 here
+    // is what a processor stopped by the debugger does, and that is a different
+    // situation on purpose: there emulated time is meant to freeze. On a УК-НЦ
+    // the central processor is held like this from power-on until the
+    // peripheral one releases it, and the machine has to keep running meanwhile
+    if (m_held_in_reset) return 8;
+
     if (reset_mode)
     {
         core->reset();

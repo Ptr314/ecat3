@@ -159,6 +159,7 @@ Keyboard::ClickMode Keyboard::click_mode(const std::string &id) const
         case KEY_ROLE_SHIFT:
         case KEY_ROLE_CTRL:
         case KEY_ROLE_ALT:
+        case KEY_ROLE_MODIFIER:
             return CLICK_TOGGLE;
         case KEY_ROLE_RUS_TOGGLE:
         case KEY_ROLE_RUS_ON:
@@ -348,6 +349,7 @@ emulator::Result Keyboard::load_key_table(SystemData *sd)
         {"case-upper", KEY_ROLE_CASE_UPPER},
         {"case-lower", KEY_ROLE_CASE_LOWER},
         {"alt",       KEY_ROLE_ALT},
+        {"hold",      KEY_ROLE_MODIFIER},
         {"stop",      KEY_ROLE_STOP},
         {"repeat",    KEY_ROLE_REPEAT},
         {"reset",     KEY_ROLE_RESET},
@@ -382,7 +384,8 @@ emulator::Result Keyboard::load_key_table(SystemData *sd)
                         //Only a modifier the drawing latches with a click can let go by itself
                         const bool clicked_on = HEADER[h].role == KEY_ROLE_SHIFT
                                              || HEADER[h].role == KEY_ROLE_CTRL
-                                             || HEADER[h].role == KEY_ROLE_ALT;
+                                             || HEADER[h].role == KEY_ROLE_ALT
+                                             || HEADER[h].role == KEY_ROLE_MODIFIER;
                         if (flag == "once" && clicked_on)
                             m_once_ids.push_back(id);
                         else

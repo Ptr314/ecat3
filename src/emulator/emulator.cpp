@@ -53,6 +53,8 @@
 #include "emulator/devices/common/mux.h"
 #include "emulator/devices/cpu/z80.h"
 #include "emulator/devices/common/page_mapper.h"
+#include "emulator/devices/common/plane_pair.h"
+#include "emulator/devices/common/indirect_memory.h"
 #include "emulator/devices/common/generator.h"
 #include "emulator/devices/cpu/6502.h"
 #include "emulator/devices/cpu/k1801vm1.h"
@@ -69,6 +71,11 @@
 #include "devices/common/gmd70.h"
 #include "emulator/devices/common/ram_address.h"
 #include "emulator/devices/specific/agat_9_mapper.h"
+#include "emulator/devices/specific/uknc_channels.h"
+#include "emulator/devices/specific/uknc_display.h"
+#include "emulator/devices/specific/uknc_graphics.h"
+#include "emulator/devices/specific/uknc_timer.h"
+#include "emulator/devices/specific/uknc_keyboard.h"
 
 
 Emulator::Emulator(std::string work_path, std::string data_path, std::string software_path, std::string ini_file, VideoRenderer * renderer):
@@ -1014,6 +1021,8 @@ void Emulator::register_devices()
     dm->register_device("mux", create_mux);
     dm->register_device("z80", create_z80);
     dm->register_device("page-mapper", create_page_mapper);
+    dm->register_device("plane-pair", create_plane_pair);
+    dm->register_device("indirect-memory", create_indirect_memory);
     dm->register_device("generator", create_generator);
     dm->register_device("6502", create_mos6502);
     dm->register_device("65c02", create_wdc65c02);
@@ -1033,4 +1042,9 @@ void Emulator::register_devices()
     dm->register_device("bk-timer", create_bk_timer);
     dm->register_device("bk-fdc", create_bk_fdc);
     dm->register_device("agat-9-mapper", create_agat_9_mapper);
+    dm->register_device("uknc-channels", create_uknc_channels);
+    dm->register_device("uknc-display", create_uknc_display);
+    dm->register_device("uknc-graphics", create_uknc_graphics);
+    dm->register_device("uknc-timer", create_uknc_timer);
+    dm->register_device("uknc-keyboard", create_uknc_keyboard);
 }

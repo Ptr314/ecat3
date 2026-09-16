@@ -50,7 +50,8 @@ void pdp11core::set_reply_delay(unsigned int periods)
 }
 
 pdp11core::pdp11core(int family_type)
-    : has_eis(family_type != PDP11_FAMILY_1801VM1)
+    : has_eis(family_type == PDP11_FAMILY_1801VM2)
+    , has_console(family_type == PDP11_FAMILY_1801VM2)
     , is_virq(false)
     , virq_vector(0)
     , is_irq2(false)
@@ -76,6 +77,9 @@ void pdp11core::reset()
     context.halted = false;
     context.halt_mode = false;
     context.stop = false;
+    context.console_pc = 0;
+    context.console_psw = 0;
+    m_step_pending = false;
 
     is_virq = false;
     is_irq2 = false;
@@ -85,6 +89,15 @@ void pdp11core::reset()
     m_no_trace = false;
 
     if (start_from_vector) {
+        // Пуск по вектору - это вход в пультовый режим: подача питания
+        // приводит процессор туда же, куда команда HALT, и вектор лежит по
+        // выводу SEL. Режим выставляется ДО чтения вектора и сообщается
+        // наружу сразу: у машины, где от него зависит карта памяти, по этому
+        // адресу ОЗУ появляется только в пультовом режиме
+        if (has_console) {
+            context.halt_mode = true;
+            on_halt_mode(true);
+        }
         context.R[PDP11::REG_PC] = read_word(start_address);
         context.PSW = read_word(start_address + 2);
     } else {
@@ -311,27 +324,72 @@ void pdp11core::do_trap(uint16_t vector)
     m_abort = false;
 }
 
-void pdp11core::enter_halt_mode()
+void pdp11core::enter_halt_mode(uint16_t vector)
 {
-    // The console request and the HALT instruction both hand control to the
-    // monitor through a vector, which on the БК is the same 004 the СТОП key
-    // uses.
+    const bool was = context.halt_mode;
     context.halt_mode = true;
-    do_trap(halt_vector);
+    m_step_pending = false;
+
+    if (has_console && halt_sel != 0) {
+        // Пультовый режим настоящего 1801: состояние прерванной программы
+        // уходит не на стек, а в теневую пару КРСК/КРСП - пультовый монитор
+        // достаёт его оттуда командами MFPC и MFPS. Вектор берётся от вывода
+        // SEL, у УК-НЦ это 0160000
+        context.console_pc = context.R[PDP11::REG_PC];
+        context.console_psw = context.PSW;
+
+        // Режим сообщается наружу ДО чтения вектора. У машины, где от режима
+        // зависит карта памяти, сам вектор лежит в ОЗУ, которое появляется
+        // только в пультовом режиме: сообщив о смене после чтения, процессор
+        // читал бы вектор по карте обычного режима и получал таймаут шины
+        if (!was) on_halt_mode(true);
+
+        const uint16_t base = (uint16_t)(halt_sel | vector);
+        context.R[PDP11::REG_PC] = read_word(base);
+        context.PSW = read_word(base + 2);
+
+        // Выборка вектора - действие аппаратуры, а не команды: незакрытый
+        // признак аварии шины от неё свалил бы в ловушку следующую команду
+        m_abort = false;
+    } else {
+        // Прежнее поведение: у БК пультовый режим - это обычная ловушка через
+        // тот же вектор 004, которым работает клавиша СТОП
+        do_trap(halt_vector);
+        if (!was) on_halt_mode(true);
+    }
 }
 
 bool pdp11core::check_interrupts(unsigned int & cycles)
 {
     if (is_halt_req) {
         is_halt_req = false;
-        enter_halt_mode();
-        cycles += C_TRAP;
-        return true;
+        // Внешний запрос пульта. На УК-НЦ его даёт периферийный процессор
+        // разрядом 4 своего регистра 177716.
+        //
+        // В пультовом режиме запрос не обслуживается: там уже работает
+        // монитор, и повторный вход затёр бы теневую пару КРСК/КРСП тем, что
+        // монитор наработал сам. У УК-НЦ это видно сразу - монитор ЦП, входя,
+        // посылает ПП последовательность Esc ГРАФ-], по которой тот и ставит
+        // HALT; обслужи процессор этот запрос, монитор перезапускал бы себя
+        // без конца, заполняя экран надписью «ЗАВИСАНИЕ».
+        //
+        // У ВМ1 пультового режима нет, и halt_mode там взводится навсегда
+        // первым же входом, поэтому условие спрашивает и про halt_sel: у БК
+        // СТОП должен работать каждый раз
+        if (!(has_console && halt_sel != 0 && context.halt_mode)) {
+            enter_halt_mode((uint16_t)(halt_vector & 0377));
+            cycles += C_TRAP;
+            return true;
+        }
     }
 
     if ((context.PSW & PDP11::F_MASK) == 0) {
         if (is_irq2)      { is_irq2 = false; do_trap(PDP11::V_IRQ2); cycles += C_TRAP; return true; }
         else if (is_irq3) { is_irq3 = false; do_trap(PDP11::V_IRQ3); cycles += C_TRAP; return true; }
+        // Taking the request clears it: the line is read as a pulse. A device
+        // with several sources on one wire therefore has to make a fresh edge
+        // when the pending source changes, or only the first of a queue is ever
+        // delivered - see UKNCChannels::update_irq()
         else if (is_virq) { is_virq = false; do_trap(virq_vector);   cycles += C_TRAP; return true; }
     }
     return false;
@@ -868,7 +926,8 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
     switch (command) {
     case 0000000:                                       // HALT
         cycles += C_HALT;
-        enter_halt_mode();
+        // Вектор «по команде HALT»: у УК-НЦ 160170, то есть смещение 0170
+        enter_halt_mode((uint16_t)(has_console && halt_sel? 0170 : (halt_vector & 0377)));
         return true;
     case 0000001:                                       // WAIT
         cycles += C_IDLE;
@@ -903,13 +962,77 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         break;
     }
 
+    // Пультовые команды. В обычном режиме их нет ни у одного кристалла серии,
+    // а в пультовом ВМ2 выполняет ими всю работу монитора: правит теневую пару
+    // КРСК/КРСП, читает и пишет память прерванной программы и запускает её.
+    // Коды взяты из ПЗУ УК-НЦ, где монитор объявляет их мнемоники:
+    //   $RUN$ 12  $STEP$ 16  $MFPM$ 21  $MFPC$ 22  $MFPS$ 24
+    //   $MTPM$ 31  $MTPC$ 32  $MTPS$ 34
+    if (has_console && context.halt_mode) {
+        switch (command) {
+        case 0000012:                                   // RUN
+        case 0000016:                                   // STEP
+            // Запуск прерванной программы: режим снимается, PC и слово
+            // состояния берутся из теневой пары. STEP отличается тем, что
+            // после одной команды процессор вернётся в пультовый режим
+            cycles += C_HALT;
+            context.R[PDP11::REG_PC] = context.console_pc;
+            context.PSW = context.console_psw;
+            context.halt_mode = false;
+            m_step_pending = (command == 0000016);
+            on_halt_mode(false);
+            return true;
+        case 0000021: {                                 // MFPM: (R5)+ -> R0
+            cycles += C_DATI + C_ALU;
+            // ПЗУ УК-НЦ объявляет обе команды как «(R5)+ --> R0 (режим USER)»:
+            // обращение идёт в адресное пространство ПРЕРВАННОЙ программы, а
+            // не пультового режима. Для машины, у которой карта зависит от
+            // режима, это важно: пультовый монитор ЦП через MFPM/MTPM
+            // разговаривает с каналами по 177560-177566, а в пультовом режиме
+            // там ОЗУ. Наружу режим на время обращения снимается - то же, что
+            // делает сам процессор своим выводом
+            on_halt_mode(false);
+            context.R[0] = read_word_checked(context.R[5]);
+            on_halt_mode(true);
+            context.R[5] += 2;
+            return true;
+        }
+        case 0000031: {                                 // MTPM: R0 -> -(R5)
+            cycles += C_DATO + C_ALU;
+            context.R[5] -= 2;
+            on_halt_mode(false);
+            write_word_checked(context.R[5], context.R[0]);
+            on_halt_mode(true);
+            return true;
+        }
+        case 0000022:                                   // MFPC: КРСК -> R0
+            cycles += C_ALU;
+            context.R[0] = context.console_pc;
+            return true;
+        case 0000024:                                   // MFPS: КРСП -> R0
+            cycles += C_ALU;
+            context.R[0] = context.console_psw;
+            return true;
+        case 0000032:                                   // MTPC: R0 -> КРСК
+            cycles += C_ALU;
+            context.console_pc = context.R[0];
+            return true;
+        case 0000034:                                   // MTPS: R0 -> КРСП
+            cycles += C_ALU;
+            context.console_psw = context.R[0];
+            return true;
+        default:
+            break;
+        }
+    }
+
     // START (000010-000013) and STEP (000014-000017) belong to the console
     // (halt) mode. Executed in the OS mode they hand the processor over to
     // the halt mode exactly like HALT does, which on the БК is a trap
     // through vector 4 rather than the reserved instruction vector 10.
     if (command >= 0000010 && command <= 0000017) {
         cycles += C_HALT;
-        enter_halt_mode();
+        enter_halt_mode((uint16_t)(has_console && halt_sel? 0170 : (halt_vector & 0377)));
         return true;
     }
 
@@ -924,7 +1047,10 @@ unsigned int pdp11core::execute()
 
     if (context.stop) return C_IDLE;
 
-    if (check_interrupts(cycles)) return cycles;
+    // Шаг по команде STEP выполняется с маскировкой всех прерываний, так что
+    // проверка пропускается: следующая команда - та, на которую указывает PC,
+    // и ничто не может встать между ней и возвратом в пультовый режим
+    if (!m_step_pending && check_interrupts(cycles)) return cycles;
 
     if (context.halted) return C_IDLE;          // WAIT, idling until an interrupt
 
@@ -951,6 +1077,16 @@ unsigned int pdp11core::execute()
     } else if (trace) {
         cycles += C_TRAP;
         do_trap(PDP11::V_BPT);
+    }
+
+    // Команда, запущенная по STEP, выполнена - процессор возвращается под
+    // управление пультового монитора тем же вектором, которым входит по
+    // команде HALT: обработчик у монитора общий на все векторы 160xxx и сам
+    // разбирает, был это шаг или останов
+    if (m_step_pending) {
+        m_step_pending = false;
+        cycles += C_HALT;
+        enter_halt_mode((uint16_t)(halt_sel? 0170 : (halt_vector & 0377)));
     }
 
     return cycles;

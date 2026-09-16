@@ -1,0 +1,70 @@
+=== после сброса: каналы пусты, источники свободны ===
+[channels.channels]         ЦП->ПП 0: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+        ЦП->ПП 1: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+        ЦП->ПП 2: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+        ПП->ЦП 0: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+        ПП->ЦП 1: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+[channels.cpu_vector] &000000
+[channels.ppu_vector] &000000
+=== ЦП -> ПП, канал 0 ===
+состояние источника ЦП (177564): разряд 7 - готовность
+[mapper.value16] &177564: &000200
+ЦП кладёт байт 101 в 177566:
+[channels.channels]         ЦП->ПП 0: data=101 rx_ready=1 rx_irq=0 tx_ready=0 tx_irq=0
+        ЦП->ПП 1: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+        ЦП->ПП 2: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+        ПП->ЦП 0: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+        ПП->ЦП 1: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+источник ЦП занят, приёмник ПП (177066) показывает готовность канала 0:
+[mapper.value16] &177564: &000000
+[ppu-mapper.value16] &177066: &000010
+ПП забирает байт из 177060:
+[ppu-mapper.value16] &177060: &000101
+канал снова свободен:
+[channels.channels]         ЦП->ПП 0: data=101 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+        ЦП->ПП 1: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+        ЦП->ПП 2: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+        ПП->ЦП 0: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+        ПП->ЦП 1: data=000 rx_ready=0 rx_irq=0 tx_ready=1 tx_irq=0
+[ppu-mapper.value16] &177066: &000000
+=== прерывание приёмнику ПП ===
+ПП разрешает прерывание канала 0 (разряд 0 регистра 177066):
+[channels.ppu_vector] &000000
+ЦП кладёт байт - ПП обязан получить вектор 320:
+[channels.ppu_vector] &000320
+ПП забирает байт, запрос снимается:
+[ppu-mapper.value16] &177060: &000102
+[channels.ppu_vector] &000000
+=== ПП -> ЦП, канал 0 ===
+ЦП разрешает прерывание приёмника (разряд 6 регистра 177560):
+[channels.cpu_vector] &000000
+ПП кладёт байт 052 в 177070 - ЦП обязан получить вектор 060:
+[channels.cpu_vector] &000060
+[mapper.value16] &177560: &000300
+ЦП забирает байт из 177562:
+[mapper.value16] &177562: &000052
+[channels.cpu_vector] &000000
+=== канал 2 идёт только в одну сторону ===
+[ppu-mapper.value16] &177064: &000377
+=== приоритет: младший канал вперёд ===
+ПП разрешает прерывания всех трёх приёмников:
+заняты каналы 1 и 2, вектор обязан быть от канала 1 (330):
+[channels.ppu_vector] &000330
+после чтения канала 1 остаётся канал 2 (340):
+[ppu-mapper.value16] &177062: &000001
+[channels.ppu_vector] &000340
+=== счётчики переданного ===
+[channels.sent_c2p] &000005
+[channels.sent_p2c] &000001
+=== карты памяти ===
+[mapper.map] 
+        0000-3FFF -> ram[0000] mode=rw
+        FF70-FF73 -> channels[0000] mode=rw
+        FF74-FF77 -> channels[0004] mode=rw
+        FDB0-FDB3 -> channels[0008] mode=rw
+        FDB4-FDB7 -> channels[000C] mode=rw
+        FDBC-FDBF -> channels[0010] mode=rw
+[ppu-mapper.map] 
+        0000-3FFF -> ppu-ram[0000] mode=rw
+        FE30-FE37 -> channels[0014] mode=rw
+        FE38-FE3F -> channels[001C] mode=rw

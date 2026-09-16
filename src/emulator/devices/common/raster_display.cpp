@@ -46,6 +46,18 @@ emulator::Result RasterDisplay::load_config(SystemData *sd)
         // which is where a line is sampled
         m_hsync_length_ms = 21;
         m_counts_per_line = m_system_clock / 1000 * 64 / 1000;
+    } else if (m_standart == "uknc") {
+        // Видеоконтроллер УК-НЦ: 312 строк по 64 мкс без чересстрочности,
+        // 288 из них видимые (строки 19..306), по 640 точек в строке.
+        // Тактируется от периферийного процессора, который им и владеет.
+        m_lines = 312;
+        m_half_frame_lines = m_lines;
+        m_frame_rate = 50;
+        m_interlaced = false;
+        m_top_blank = 19;
+        m_bottom_blank = 5;
+        m_hsync_length_ms = 21;
+        m_counts_per_line = m_system_clock / m_lines / m_frame_rate;
     } else {
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{RasterDisplay|" + std::string(QT_TRANSLATE_NOOP("RasterDisplay", "Unknown video standard")) + "}");
     }

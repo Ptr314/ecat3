@@ -1,0 +1,80 @@
+# УК-НЦ: каналы обмена между процессорами.
+#
+# Проверяется квитирование: запись отдаёт байт приёмнику и занимает канал,
+# чтение забирает байт и освобождает его. Плюс прерывания - какой вектор
+# устройство выставляет каждой стороне и когда снимает.
+#
+# Оба процессора стоят, регистрами двигает сценарий - так виден сам протокол,
+# а не то, как его использует ПЗУ.
+# @timeout 30
+
+MACHINE "uknc/channels-test.cfg"
+LOGDEFS _16,_8
+
+PRINT "=== после сброса: каналы пусты, источники свободны ==="
+LOG channels.channels
+LOG channels.cpu_vector
+LOG channels.ppu_vector
+
+PRINT "=== ЦП -> ПП, канал 0 ==="
+PRINT "состояние источника ЦП (177564): разряд 7 - готовность"
+LOG mapper.value16(177564)
+PRINT "ЦП кладёт байт 101 в 177566:"
+COMMAND mapper.set16(177566, 101)
+LOG channels.channels
+PRINT "источник ЦП занят, приёмник ПП (177066) показывает готовность канала 0:"
+LOG mapper.value16(177564)
+LOG ppu-mapper.value16(177066)
+PRINT "ПП забирает байт из 177060:"
+LOG ppu-mapper.value16(177060)
+PRINT "канал снова свободен:"
+LOG channels.channels
+LOG ppu-mapper.value16(177066)
+
+PRINT "=== прерывание приёмнику ПП ==="
+PRINT "ПП разрешает прерывание канала 0 (разряд 0 регистра 177066):"
+COMMAND ppu-mapper.set16(177066, 1)
+LOG channels.ppu_vector
+PRINT "ЦП кладёт байт - ПП обязан получить вектор 320:"
+COMMAND mapper.set16(177566, 102)
+LOG channels.ppu_vector
+PRINT "ПП забирает байт, запрос снимается:"
+LOG ppu-mapper.value16(177060)
+LOG channels.ppu_vector
+
+PRINT "=== ПП -> ЦП, канал 0 ==="
+PRINT "ЦП разрешает прерывание приёмника (разряд 6 регистра 177560):"
+COMMAND mapper.set16(177560, 100)
+LOG channels.cpu_vector
+PRINT "ПП кладёт байт 052 в 177070 - ЦП обязан получить вектор 060:"
+COMMAND ppu-mapper.set16(177070, 52)
+LOG channels.cpu_vector
+LOG mapper.value16(177560)
+PRINT "ЦП забирает байт из 177562:"
+LOG mapper.value16(177562)
+LOG channels.cpu_vector
+
+PRINT "=== канал 2 идёт только в одну сторону ==="
+COMMAND mapper.set16(176676, 377)
+LOG ppu-mapper.value16(177064)
+
+PRINT "=== приоритет: младший канал вперёд ==="
+PRINT "ПП разрешает прерывания всех трёх приёмников:"
+COMMAND ppu-mapper.set16(177066, 7)
+COMMAND mapper.set16(176666, 1)
+COMMAND mapper.set16(176676, 2)
+PRINT "заняты каналы 1 и 2, вектор обязан быть от канала 1 (330):"
+LOG channels.ppu_vector
+PRINT "после чтения канала 1 остаётся канал 2 (340):"
+LOG ppu-mapper.value16(177062)
+LOG channels.ppu_vector
+
+PRINT "=== счётчики переданного ==="
+LOG channels.sent_c2p
+LOG channels.sent_p2c
+
+PRINT "=== карты памяти ==="
+LOG mapper.map
+LOG ppu-mapper.map
+
+EXIT

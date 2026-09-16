@@ -245,6 +245,8 @@ set(EMULATOR_SOURCES
     emulator/devices/common/i8259.h emulator/devices/common/i8259.cpp
     emulator/devices/common/register.h emulator/devices/common/register.cpp
     emulator/devices/common/page_mapper.h emulator/devices/common/page_mapper.cpp
+    emulator/devices/common/plane_pair.h emulator/devices/common/plane_pair.cpp
+    emulator/devices/common/indirect_memory.h emulator/devices/common/indirect_memory.cpp
     emulator/devices/common/generator.h emulator/devices/common/generator.cpp
     emulator/devices/common/raster_display.h emulator/devices/common/raster_display.cpp
     emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp
@@ -256,6 +258,11 @@ set(EMULATOR_SOURCES
     emulator/devices/specific/agat_7_display.h emulator/devices/specific/agat_7_display.cpp
     emulator/devices/specific/agat_9_display.h emulator/devices/specific/agat_9_display.cpp
     emulator/devices/specific/agat_9_mapper.h emulator/devices/specific/agat_9_mapper.cpp
+    emulator/devices/specific/uknc_channels.h emulator/devices/specific/uknc_channels.cpp
+    emulator/devices/specific/uknc_display.h emulator/devices/specific/uknc_display.cpp
+    emulator/devices/specific/uknc_graphics.h emulator/devices/specific/uknc_graphics.cpp
+    emulator/devices/specific/uknc_timer.h emulator/devices/specific/uknc_timer.cpp
+    emulator/devices/specific/uknc_keyboard.h emulator/devices/specific/uknc_keyboard.cpp
     emulator/devices/specific/agat_common.h
     emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp
     emulator/devices/specific/bk_display.h emulator/devices/specific/bk_display.cpp
