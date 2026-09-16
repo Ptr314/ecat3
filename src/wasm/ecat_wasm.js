@@ -193,7 +193,8 @@ function clamp(value, lo, hi) {
 // ============================================================================
 //
 // index.html?machine=Agat-7&kbd=1&scale=250&kbdscale=120 opens the page in that
-// state. It holds for this visit only: nothing read from the address goes into
+// state, and blocks=machine,-screen says which of the folding blocks are open.
+// It holds for this visit only: nothing read from the address goes into
 // the saved settings, so following somebody else's link leaves one's own
 // choices as they were. A machine picked or a slider moved by hand is saved as
 // usual. The link button next to the title builds such an address from what is
@@ -216,7 +217,24 @@ function readUrlParams() {
         kbdScale: /^auto$/i.test(q.get("kbdscale") || "") ? "auto" : number("kbdscale"),
         aspect:   aspectId(q.get("aspect") || ""),
         filter:   filterId(q.get("filter") || ""),
+        blocks:   blockStates(q.get("blocks") || ""),
     };
+}
+
+// blocks=machine,-screen,fdd0: a name on its own is an open block, a name with
+// a minus in front a folded one. The names are those of data-block in
+// shell.html plus the device name of a drive or a tape block - the seven of
+// the page (machine, screen, volume, language, file, keyboard, options) are
+// therefore reserved. A block the address says nothing about is left to the
+// choice saved in this browser
+function blockStates(text) {
+    const map = new Map();
+    for (const item of text.split(",")) {
+        const entry = item.trim();
+        const name = entry.replace(/^-/, "");
+        if (name) map.set(name, entry.startsWith("-"));
+    }
+    return map;
 }
 
 // The filtering modes of the screen: none, linear, sharp
@@ -259,7 +277,13 @@ function currentPageUrl() {
         const chosen = kbdScaleChosen();
         q.set("kbdscale", chosen === null ? "auto" : chosen);
     }
-    return location.origin + location.pathname + "?" + q.toString();
+    // Folded or not, for every block on the screen - those of the page and
+    // those built for this machine alike
+    const blocks = visibleBlocks().map((b) => (b.body.hidden ? "-" : "") + b.urlName);
+    if (blocks.length) q.set("blocks", blocks.join(","));
+    // A comma is allowed in a query string and keeps the address readable;
+    // URLSearchParams escapes it all the same
+    return location.origin + location.pathname + "?" + q.toString().replace(/%2C/g, ",");
 }
 
 async function copyText(text) {
@@ -1563,10 +1587,22 @@ function filterExtensions(filter) {
     return list;
 }
 
+// Every block that folds, in the order the page holds them. The ones built per
+// machine are made anew for every machine, so those taken off the page leave
+// the list as the next one is registered
+const collapsibleBlocks = [];
+
+// The blocks on the screen now: what the address describes and what it can put
+// back. A block whose content this machine lacks is hidden and left out
+function visibleBlocks() {
+    return collapsibleBlocks.filter((b) => b.root.isConnected && !b.root.hidden);
+}
+
 // A block that folds down to its head line: the head is a button, the body the
-// rest. Shared by the blocks written into the page and those built per machine
-function makeCollapsible(root, head, body, settingKey) {
-    const block = { root, head, body };
+// rest. Shared by the blocks written into the page and those built per machine.
+// urlName is how the address calls it, see blockStates()
+function makeCollapsible(root, head, body, settingKey, urlName) {
+    const block = { root, head, body, urlName };
     block.apply = (collapsed) => {
         root.classList.toggle("collapsed", collapsed);
         body.hidden = collapsed;
@@ -1579,23 +1615,31 @@ function makeCollapsible(root, head, body, settingKey) {
         const collapsed = !body.hidden;
         block.apply(collapsed);
         settings.set(settingKey, collapsed ? "1" : "0");
+        // A block folded or opened by hand stops following the address
+        urlParams.blocks.delete(urlName);
         // The typing belongs to the machine, not to this button
         head.blur();
     });
 
-    block.apply(settings.get(settingKey, "0") === "1");
+    for (let i = collapsibleBlocks.length - 1; i >= 0; i--)
+        if (!collapsibleBlocks[i].root.isConnected) collapsibleBlocks.splice(i, 1);
+    collapsibleBlocks.push(block);
+
+    // What the address says stands in for the saved choice
+    const fromUrl = urlParams.blocks.get(urlName);
+    block.apply(fromUrl !== undefined ? fromUrl : settings.get(settingKey, "0") === "1");
     return block;
 }
 
 // A drive or a tape block. The state is kept per configuration and device, so
 // every machine remembers its own
-function collapsibleBlock(className, settingKey) {
+function collapsibleBlock(className, settingKey, urlName) {
     const root = element("div", className);
     const head = element("button", "block-head drive-head", root);
     head.type = "button";
     element("span", "block-chevron", head).textContent = "▼";
     const body = element("div", "block-body", root);
-    return makeCollapsible(root, head, body, settingKey);
+    return makeCollapsible(root, head, body, settingKey, urlName);
 }
 
 // The blocks of shell.html, the side columns. Folded or not is a choice about
@@ -1609,7 +1653,7 @@ function setupPageBlocks() {
     for (const root of document.querySelectorAll(".block[data-block]")) {
         const name = root.dataset.block;
         pageBlocks.push(makeCollapsible(root, root.querySelector(".block-head"),
-                                        root.querySelector(".block-body"), "collapsed.block_" + name));
+                                        root.querySelector(".block-body"), "collapsed.block_" + name, name));
 
         const content = BLOCK_CONTENT[name] ? document.getElementById(BLOCK_CONTENT[name]) : null;
         if (!content) continue;
@@ -1650,7 +1694,7 @@ function pollDrives(module) {
 
 function buildDrive(module, drive, configKey) {
     const ui = {};
-    ui.block = collapsibleBlock("drive", "collapsed." + configKey + "_" + drive.name);
+    ui.block = collapsibleBlock("drive", "collapsed." + configKey + "_" + drive.name, drive.name);
     ui.root = ui.block.root;
     const body = ui.block.body;
 
@@ -1858,7 +1902,7 @@ function pollTapes(module) {
 
 function buildTape(module, tape, configKey) {
     const ui = {};
-    ui.block = collapsibleBlock("tape", "collapsed." + configKey + "_" + tape.name);
+    ui.block = collapsibleBlock("tape", "collapsed." + configKey + "_" + tape.name, tape.name);
     ui.root = ui.block.root;
     const body = ui.block.body;
 
