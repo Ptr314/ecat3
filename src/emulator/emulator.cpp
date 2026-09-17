@@ -76,6 +76,7 @@
 #include "emulator/devices/specific/uknc_graphics.h"
 #include "emulator/devices/specific/uknc_timer.h"
 #include "emulator/devices/specific/uknc_keyboard.h"
+#include "emulator/devices/specific/uknc_sound.h"
 
 
 Emulator::Emulator(std::string work_path, std::string data_path, std::string software_path, std::string ini_file, VideoRenderer * renderer):
@@ -1047,4 +1048,5 @@ void Emulator::register_devices()
     dm->register_device("uknc-graphics", create_uknc_graphics);
     dm->register_device("uknc-timer", create_uknc_timer);
     dm->register_device("uknc-keyboard", create_uknc_keyboard);
+    dm->register_device("uknc-sound", create_uknc_sound);
 }

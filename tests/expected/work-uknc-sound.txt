@@ -1,0 +1,23 @@
+=== в покое звука нет ===
+[sound.control] &000000
+[sound.level] &000000
+=== нажатие клавиши щёлкает динамиком ===
+[sound.control] &000001
+[sound.level] &000001
+[sound.control] &000000
+=== делитель сетки: 128000 отсчётов за секунду ===
+[sound.grid] 1050881
+[sound.grid] 1178881
+=== разряды 7 и 8: тон 62.5 Гц ===
+[sound.control] &000003
+[sound.level] &000000
+[sound.level] &000000
+[sound.level] &000001
+[sound.level] &000001
+[sound.level] &000000
+[sound.level] &000000
+=== разряд 7 в нуле глушит сетку ===
+[sound.control] &000002
+[sound.level] &000000
+[sound.level] &000000
+[sound.level] &000000
