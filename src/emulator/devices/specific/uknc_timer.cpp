@@ -35,6 +35,7 @@ UKNCTimer::UKNCTimer(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_virq_in(this, im, 1, "virq_in", MODE_R, CALLBACK_EVENT + 1)
     , i_vector_in(this, im, 16, "vector_in", MODE_R)
     , i_event(this, im, 1, "event", MODE_R, CALLBACK_EVENT)
+    , i_event_enable(this, im, 1, "event_enable", MODE_R)
 {
     m_clocked = true;   // clock() переопределён
     can_read = true;
@@ -66,6 +67,7 @@ void UKNCTimer::reset(MAYBE_UNUSED bool cold)
     m_divider = 0;
     m_acc = 0;
     m_zeroes = 0;
+    m_events = 0;
     m_offered = 0;
     update_irq();
 }
@@ -113,10 +115,16 @@ void UKNCTimer::clock(unsigned int counter)
 void UKNCTimer::interface_callback(unsigned int callback_id, MAYBE_UNUSED unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
 {
     if (callback_id == CALLBACK_EVENT) {
-        // Любой перепад на линии внешнего события взводит готовность и
-        // останавливает счёт до чтения регистра текущего значения
+        // Перепад на линии внешнего события взводит готовность и
+        // останавливает счёт до чтения регистра текущего значения. Счётчик
+        // не перезагружается: ПЗУ снимает с него время между перепадами
+        // (130600 `MOV @#177714,R5`), а перезагрузит его это чтение.
+        // Обратный вызов приходит и без смены уровня - от мультиплексора,
+        // у которого сменился невыбранный вход, - поэтому смотрится разряд
+        if (((new_value ^ old_value) & 1) == 0) return;
+        if ((i_event_enable.value & 1) == 0) return;
         m_flags |= F_EVENT;
-        m_counter = m_reload & COUNTER_MASK;
+        m_events++;
         update_irq();
     } else {
         // Чужой запрос по цепочке - пересчитать, что предложено процессору
@@ -235,6 +243,7 @@ std::vector<DeviceFieldInfo> UKNCTimer::get_device_fields()
     r.push_back({"period",  "Период счёта в микросекундах",              false});
     r.push_back({"running", "1, когда таймер считает",                   false});
     r.push_back({"zeroes",  "Сколько раз счётчик обнулялся с пуска",     false});
+    r.push_back({"events",  "Сколько внешних событий принято с пуска",   false});
     r.push_back({"vector",  "Вектор, предложенный процессору, или 0",    false});
     return r;
 }
@@ -247,6 +256,7 @@ bool UKNCTimer::get_field(const std::string &field, unsigned int from, unsigned 
     if (field == "reload")  { out.values.push_back(m_reload);  return true; }
     if (field == "counter") { out.values.push_back(m_counter); return true; }
     if (field == "zeroes")  { out.values.push_back(m_zeroes);  return true; }
+    if (field == "events")  { out.values.push_back(m_events);  return true; }
     if (field == "vector")  { out.values.push_back(m_offered); return true; }
     if (field == "running") { out.values.push_back((m_flags & F_RUN)? 1 : 0); return true; }
     if (field == "period")  {

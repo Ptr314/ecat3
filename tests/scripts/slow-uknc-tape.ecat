@@ -1,0 +1,56 @@
+# УК-НЦ: полный оборот ленты в кассетном Бейсике (картридж romctr_basic.bin).
+#
+# Программа пишется на ленту командой SAVE, снятый сигнал сохраняется файлом
+# .tap, программа стирается командой NEW, лента перезаряжается этим файлом и
+# читается обратно командой LOAD. Файл сравнивается с эталоном, так что тест
+# ловит и ошибки распознавания сигнала, и ошибки кодирования, а LOAD - ещё и
+# контрольную сумму, которую ПЗУ проверяет после данных.
+#
+# Магнитофоном занимается ПЗУ периферийного процессора: запись - переключение
+# разряда 1 регистра 177716 из прерывания таймера по нулю, чтение - перепады на
+# входе, которые таймер ловит как внешнее событие (вектор 310) и отдаёт время
+# между ними регистром 177714.
+# @timeout 120
+
+MACHINE "uknc/UKNC.cfg"
+LOGDEFS _16,_8
+
+WAIT _12000
+KEY _100,_100,2
+WAIT _200
+KEY _100,_100,ret
+WAIT _15000
+
+TYPE "10 FOR I=1 TO 3\n"
+WAIT _500
+TYPE "20 PRINT I,I*I\n"
+WAIT _500
+TYPE "30 NEXT I\n"
+WAIT _500
+
+PRINT "=== Запись на ленту ==="
+COMMAND tape.record(1)
+TYPE "SAVE \"TST\"\n"
+WAIT _20000
+COMMAND tape.record(0)
+LOG tape.recorded
+COMMAND tape.save("../results/slow-uknc-tape.tap")
+
+PRINT "=== Чтение обратно ==="
+TYPE "NEW\n"
+WAIT _500
+COMMAND tape.load("../results/slow-uknc-tape.tap")
+LOG tape.size
+TYPE "LOAD \"TST\"\n"
+WAIT _500
+COMMAND tape.play()
+WAITFOR tape.mode == 0, _60000
+WAIT _1000
+LOG pp-timer.events
+
+TYPE "LIST\n"
+WAIT _1000
+TYPE "RUN\n"
+WAIT _1500
+SCREEN "../results/slow-uknc-tape.png"
+EXIT

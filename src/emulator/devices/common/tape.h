@@ -11,6 +11,7 @@
 #include "emulator/devices/common/speaker.h"
 #include "emulator/devices/common/tape_bk.h"
 #include "emulator/devices/common/tape_rk86.h"
+#include "emulator/devices/common/tape_uknc.h"
 
 #define TAPE_STOPPED 0
 #define TAPE_READ    1
@@ -19,6 +20,7 @@
 enum class TapeEnc {
     MSX,
     RK86,
+    UKNC,
     BK
 };
 
@@ -73,6 +75,7 @@ protected:
     std::vector<uint8_t> recorded_bytes{};
     bk_tape::Decoder bk_decoder;
     rk86_tape::Decoder rk86_decoder;
+    uknc_tape::Decoder uknc_decoder;
 public:
     std::string files;
 

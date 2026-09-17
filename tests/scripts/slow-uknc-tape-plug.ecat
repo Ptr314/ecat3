@@ -1,0 +1,59 @@
+# УК-НЦ: заводской «Тест магнитофона (ЗАГЛ.)» из TEST.SAV на диске FODOS.
+#
+# Тест ждёт заглушку, замыкающую выход на ленту на вход: переключает разряд 1
+# регистра 177716 и считает внешние события таймера (вектор 310), которые эти
+# перепады дают при открытом входе (разряды 2-3). В конфигурации заглушка -
+# мультиплексор tape-line, вставляется записью в tape-plug.
+#
+# С заглушкой тест молча возвращается в меню, без неё пишет «ОБНАРУЖЕНЫ
+# ОШИБКИ» - так проверяется, что проходит он именно через неё.
+# @timeout 300
+
+MACHINE "uknc/UKNC.cfg"
+LOGDEFS _16,_8
+
+WAIT _12000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+# FODOS спрашивает дату, затем STARTS.COM грузит шрифт и назначения клавиш
+WAIT _60000
+KEY _100,_100,ret
+WAIT _25000
+TYPE "RU TEST\n"
+WAIT _10000
+
+PRINT "=== с заглушкой ==="
+COMMAND tape-plug.set(0,1)
+KEY _100,_300,down
+WAIT _500
+KEY _100,_300,down
+WAIT _500
+KEY _100,_300,down
+WAIT _500
+KEY _100,_300,down
+WAIT _500
+KEY _100,_300,down
+WAIT _500
+KEY _100,_100,ret
+WAIT _5000
+LOG pp-timer.events
+SCREEN "../results/slow-uknc-tape-plug-on.png"
+
+PRINT "=== без заглушки ==="
+COMMAND tape-plug.set(0,0)
+KEY _100,_300,down
+WAIT _500
+KEY _100,_300,down
+WAIT _500
+KEY _100,_300,down
+WAIT _500
+KEY _100,_300,down
+WAIT _500
+KEY _100,_300,down
+WAIT _500
+KEY _100,_100,ret
+WAIT _5000
+LOG pp-timer.events
+SCREEN "../results/slow-uknc-tape-plug-off.png"
+EXIT

@@ -51,6 +51,8 @@ emulator::Result TapeRecorder::load_config(SystemData *sd)
         m_tape_enc = TapeEnc::MSX;
     else if (enc_str == "rk86")
         m_tape_enc = TapeEnc::RK86;
+    else if (enc_str == "uknc")
+        m_tape_enc = TapeEnc::UKNC;
     else if (enc_str == "bk")
         m_tape_enc = TapeEnc::BK;
     else
@@ -82,6 +84,16 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
                     last_edge_cycles = cycle_counter;
                     has_last_edge = true;
                 }
+                return;
+            }
+            if (m_tape_enc == TapeEnc::UKNC) {
+                // The УК-НЦ reader times the interval between any two edges,
+                // so the decoder gets every one of them
+                if (((old_value ^ new_value) & 1) == 0) return;
+                if (has_last_edge)
+                    uknc_decoder.add_half((uint32_t)(cycle_counter - last_edge_cycles));
+                last_edge_cycles = cycle_counter;
+                has_last_edge = true;
                 return;
             }
             if (m_tape_enc == TapeEnc::RK86) {
@@ -190,6 +202,11 @@ void TapeRecorder::set_recording(bool recording)
         bk_decoder.reset();
         recorded_bytes.clear();
     }
+    if (is_recording && m_tape_enc == TapeEnc::UKNC) {
+        has_last_edge = false;
+        uknc_decoder.reset();
+        recorded_bytes.clear();
+    }
     if (is_recording && m_tape_enc == TapeEnc::RK86) {
         has_last_edge = false;
         rk86_decoder.reset();
@@ -208,6 +225,7 @@ void TapeRecorder::set_recording(bool recording)
 unsigned TapeRecorder::get_record_size()
 {
     if (m_tape_enc == TapeEnc::BK) return bk_decoder.file()->size();
+    if (m_tape_enc == TapeEnc::UKNC) return uknc_decoder.file()->size();
     if (m_tape_enc == TapeEnc::RK86) {
         const size_t size = rk86_decoder.file()->size();
         const size_t skip = (size != 0 && !record_keeps_sync())? 1 : 0;
@@ -273,7 +291,7 @@ bool TapeRecorder::record_keeps_sync()
 std::string TapeRecorder::get_record_name()
 {
     if (m_tape_enc == TapeEnc::BK) return bk_decoder.name();
-    if (m_tape_enc == TapeEnc::RK86) {
+    if (m_tape_enc == TapeEnc::RK86 || m_tape_enc == TapeEnc::UKNC) {
         // A Радио-86РК tape carries no name, only the addresses, but the
         // extension still decides how the file goes back on the tape, and the
         // one the machine loads from is the one it has just written
@@ -287,6 +305,10 @@ std::vector<uint8_t> * TapeRecorder::get_record_data()
 {
     if (m_tape_enc == TapeEnc::BK) {
         recorded_bytes = *bk_decoder.file();
+        return &recorded_bytes;
+    }
+    if (m_tape_enc == TapeEnc::UKNC) {
+        recorded_bytes = *uknc_decoder.file();
         return &recorded_bytes;
     }
     if (m_tape_enc == TapeEnc::RK86) {
@@ -437,6 +459,13 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
         set_baud_rate(baud*4);
         buffer_encoded.resize(256 * 4, 0xAA);
         encode_msx(buffer, buffer_encoded);
+        set_data(buffer_encoded);
+    } else
+    if (tape_format == "uknc") {
+        // Every bit of the УК-НЦ signal is four short half periods long, so
+        // the stream runs at four times the rate the format string names
+        set_baud_rate(baud * 4);
+        uknc_tape::encode(buffer, buffer_encoded);
         set_data(buffer_encoded);
     } else
     if (tape_format == "bk" || tape_format == "bk-ascii") {
