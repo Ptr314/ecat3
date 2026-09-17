@@ -1,0 +1,33 @@
+RT11DSK Utility  by Nikita Zeemin  [Oct  1 2008 23:29:03]
+
+ Volume: DBasic Disk 
+ Owner:  Alphaprog   
+ System: FODOS       
+
+ 6 available segments, last opened segment: 1
+
+ Filename  Blocks  Date      Start    Bytes
+---------- ------  --------- ----- --------
+SWAP  .SYS     26  10-Nov-92    18    13312
+MZ    .SYS      3  10-May-93    44     1536
+RT11SJ.SYS     72  10-May-93    47    36864
+TT    .SYS      2  07-Aug-87   119     1024
+VM    .SYS      3  03-Jul-93   121     1536
+LP    .SYS      3  10-Nov-92   124     1536
+DUP   .SAV     45  07-Aug-87   127    23040
+DIR   .SAV     19  07-Aug-87   172     9728
+PIP   .SAV     29  07-Aug-87   191    14848
+KBS   .SAV      2  26-Jun-93   220     1024
+RBTRON.SAV      2  10-Nov-92   222     1024
+DAY   .SAV      5  30-Mar-91   224     2560
+ROMAN .FNT      6  22-Dec-93   229     3072
+FNT   .SAV     11  10-Jun-93   235     5632
+STARTS.COM      1  01-Jan-94   246      512
+DBAS  .SAV     59  19-Dec-88   247    30208
+BASIC .SAV     56  02-Feb-90   306    28672
+NDBAS .SAV     57  08-Mar-94   362    29184
+< UNUSED >   1181              419   604672
+---------- ------  --------- ----- --------
+ 18 files, 401 blocks
+ 1181 free blocks
+

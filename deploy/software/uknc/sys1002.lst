@@ -1,0 +1,50 @@
+RT11DSK Utility  by Nikita Zeemin  [Oct  1 2008 23:29:03]
+
+ Volume: RT11A       
+ Owner:              
+ System: DECRT11A    
+
+ 4 available segments, last opened segment: 1
+
+ Filename  Blocks  Date      Start    Bytes
+---------- ------  --------- ----- --------
+RT11SJ.SYS     79  25-Feb-83    14    40448
+SWAP  .SYS     30  08-Jul-96    93    15360
+TT    .SYS      2  18-Mar-87   123     1024
+MZ    .SYS      4  15-Jan-90   125     2048
+KD    .SYS      2  08-Jan-96   129     1024
+SL    .SYS     10  28-Dec-87   131     5120
+RS    .SYS     26  04-May-73   141    13312
+LD    .SY1      8  18-Feb-92   167     4096
+DIR   .SAV     19  18-Mar-87   175     9728
+PIP   .SAV     30  18-Mar-87   194    15360
+DUP   .SAV     45  18-Mar-87   224    23040
+NED   .SAV     15  26-Nov-87   269     7680
+DUMP  .SAV      9  18-Mar-86   284     4608
+DSTAT .SAV      8  29-May-89   293     4096
+DESS  .SAV     19  29-May-89   301     9728
+HELP  .SAV    135  16-Nov-97   320    69120
+RESORC.SAV     22  18-Jan-84   455    11264
+DATE  .SAV      3  18-Oct-98   477     1536
+MZTEST.SAV     38  26-Apr-94   480    19456
+UKFORM.SAV     12  06-Feb-95   518     6144
+MCALC .SAV     44  21-Jun-90   530    22528
+DATE  .XXX      1  18-Oct-98   574      512
+PAS   .SAV     62  07-Jan-91   575    31744
+TTY   .SAV      3  19-Feb-92   637     1536
+DESS  .LST     13  09-Jan-90   640     6656
+TTY   .LST      2  19-Feb-92   653     1024
+SORDB .SAV     37  25-Jun-87   655    18944
+EDDB  .SAV     61  25-Jun-87   692    31232
+CREDB .SAV     27  25-Jun-87   753    13824
+RETDB .SAV    109  25-Jun-87   780    55808
+UNIDB .SAV     27  25-Jun-87   889    13824
+EDK   .SAV     20  19-Feb-92   916    10240
+KEYS  .SAV      2  27-Feb-92   936     1024
+STARTS.COM      1  08-Jan-77   938      512
+KO1P  .BAK      1  03-Jul-77   939      512
+< UNUSED >    660              940   337920
+---------- ------  --------- ----- --------
+ 35 files, 926 blocks
+ 660 free blocks
+

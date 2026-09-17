@@ -1,0 +1,106 @@
+RT11DSK Utility  by Nikita Zeemin  [Oct  1 2008 23:29:03]
+
+ Volume: FODOS       
+ Owner:              
+ System: FODOS       
+
+ 4 available segments, last opened segment: 2
+
+ Filename  Blocks  Date      Start    Bytes
+---------- ------  --------- ----- --------
+SWAP  .SYS     26  12-Sep-94    14    13312
+MZ    .SYS      3  12-Sep-94    40     1536
+RT11SJ.SYS     72  12-Sep-94    43    36864
+TT    .SYS      2  12-Sep-94   115     1024
+LD    .SYS      8  12-Sep-94   117     4096
+VM    .SYS      3  24-Dec-94   125     1536
+AC    .SYS      5  12-Sep-94   128     2560
+PM    .SYS      2  12-Sep-94   133     1024
+NL    .SYS      2  12-Sep-94   135     1024
+TY    .SYS      2  12-Sep-94   137     1024
+LP    .SYS      3  12-Sep-94   139     1536
+BP    .SYS     15  10-Nov-92   142     7680
+MH    .SYS      3  12-Sep-94   157     1536
+SL    .SYS     10  12-Sep-94   160     5120
+BG    .SYS     19  12-Sep-94   170     9728
+BUG   .SAV      5  12-Sep-94   189     2560
+DUP   .SAV     45  12-Sep-94   194    23040
+DIR   .SAV     19  12-Sep-94   239     9728
+PIP   .SAV     29  12-Sep-94   258    14848
+DUMP  .SAV      9  12-Sep-94   287     4608
+EDIK  .SAV     22  12-Sep-94   296    11264
+LINK  .SAV     49  12-Sep-94   318    25088
+KEY   .SAV      3  12-Sep-94   367     1536
+KEY   .COM      1  12-Sep-94   370      512
+IBMCHR.SAV      8  12-Sep-94   371     4096
+KBS   .SAV      2  12-Sep-94   379     1024
+RBTRON.SAV      2  12-Sep-94   381     1024
+DESS  .SAV     19  12-Sep-94   383     9728
+DAY   .SAV      5  12-Sep-94   402     2560
+MACRO .SAV     60  12-Sep-94   407    30720
+SYSMAC.SML     45  12-Sep-94   467    23040
+IND   .SAV     51  02-Feb-90   512    26112
+LIBR  .SAV     24  12-Sep-94   563    12288
+SRCCOM.SAV     26  12-Sep-94   587    13312
+BINCOM.SAV     24  12-Sep-94   613    12288
+RESORC.SAV     22  12-Sep-94   637    11264
+SYSLIB.OBJ     47  12-Sep-94   659    24064
+TESTMZ.SAV     15  12-Sep-94   706     7680
+HANDLE.SAV      7  12-Sep-94   721     3584
+UCL   .SAV      5  22-Oct-94   728     2560
+STARTS.COM      1  12-Sep-94   733      512
+UKFONT.MAC      1  12-Sep-94   734      512
+ITALIC.FNT      6  12-Sep-94   735     3072
+CREF  .SAV      6  12-Sep-94   741     3072
+ALTNUM.SAV      3  12-Sep-94   747     1536
+PMEM  .SAV      2  12-Sep-94   750     1024
+ALTNUM.MAC      6  12-Sep-94   752     3072
+CLS   .SAV      2  12-Sep-94   758     1024
+HIGH  .FNT      6  12-Sep-94   760     3072
+ESCFG .MAC      6  13-Nov-93   766     3072
+TI    .SYS      3  12-Sep-94   772     1536
+ESCFG .SAV      3  13-May-99   775     1536
+PMEM  .MAC      4  12-Sep-94   778     2048
+PRF   .MAC     13  12-Sep-94   782     6656
+PRF   .SAV      6  12-Sep-94   795     3072
+TAPE  .SAV      4  12-Sep-94   801     2048
+SCAN  .MAC      3  12-Sep-94   805     1536
+BOLDL .FNT      6  12-Sep-94   808     3072
+ROMAN .FNT      6  12-Sep-94   814     3072
+KOI8  .MAC      2  12-Sep-94   820     1024
+IBMCHR.FNT      6  12-Sep-94   822     3072
+UKNC  .FNT      6  12-Sep-94   828     3072
+FP    .SYS      2  12-Sep-94   834     1024
+FP    .MAC      2  12-Sep-94   836     1024
+UKFONT.SAV      2  12-Sep-94   838     1024
+FNT   .SAV     11  12-Sep-94   840     5632
+ROUND .FNT      6  12-Sep-94   851     3072
+AC    .MAC     15  12-Sep-94   857     7680
+BUP   .SAV     37  12-Sep-94   872    18944
+SCAN  .SAV      2  12-Sep-94   909     1024
+SYSMON.BIN     16  13-May-99   911     8192
+PRF1  .MAC     13  12-Sep-94   927     6656
+BB    .MAC     14  29-Sep-94   940     7168
+TEST  .SAV     27  12-Sep-94   954    13824
+MONIT .MAC      2  13-May-99   981     1024
+KBS   .MAC      5  13-Nov-93   983     2560
+KEYPAS.MAC      7  13-Nov-93   988     3584
+VM    .MAC      9  13-Nov-93   995     4608
+TAPE  .MAC      8  12-Sep-94  1004     4096
+GC    .FNT      6  12-Sep-94  1012     3072
+RBTRON.MAC      4  13-Nov-93  1018     2048
+SCRIPT.FNT      6  12-Sep-94  1022     3072
+ORATOR.FNT      6  12-Sep-94  1028     3072
+VMON  .UCL      1  28-May-99  1034      512
+VMOFF .UCL      1  28-May-99  1035      512
+ACM   .MAC      9  02-Jan-93  1036     4608
+SETKA .MAC      7  09-Jul-91  1045     3584
+SETKA .SAV      3    -BAD-    1052     1536
+SPEED .SAV      3  28-Nov-92  1055     1536
+RDRMC .SAV      2  31-Dec-99  1058     1024
+RDRMC .MAC      3  31-Dec-99  1060     1536
+< UNUSED >    537             1063   274944
+---------- ------  --------- ----- --------
+ 91 files, 1049 blocks
+ 537 free blocks
+
