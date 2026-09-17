@@ -106,6 +106,12 @@ public:
     // адресное пространство машины может от неё зависеть
     virtual void on_halt_mode(bool state) { (void)state; }
 
+    // Процессор взял векторное прерывание - то, что на магистрали 1801 делает
+    // сигнал IAKO. Устройство, чей это вектор, по нему снимает свой запрос:
+    // иначе запрос, выставленный однократно (готовность канала УК-НЦ), после
+    // любого чужого прерывания предлагался бы процессору снова
+    virtual void on_virq_ack(uint16_t vector) { (void)vector; }
+
     // Bus access, provided by the emulator device
     virtual uint16_t read_word(uint16_t address) = 0;
     virtual void write_word(uint16_t address, uint16_t value) = 0;

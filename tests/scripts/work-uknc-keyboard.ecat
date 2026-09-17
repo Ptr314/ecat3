@@ -12,6 +12,9 @@
 # Код снимается полем keyboard.last, а не регистром 177702: чтение регистра
 # снимает готовность (~read = pp-kbd-code.access), так что сценарий, который
 # заглядывает в него, отбирает код у машины, и та клавиши не видит.
+#
+# Нажатие встаёт в очередь контроллера, а машине код отдаётся на следующей
+# команде ПП - поэтому перед каждым LOG keyboard.last стоит короткое WAIT.
 # @timeout 60
 
 MACHINE "uknc/UKNC.cfg"
@@ -29,10 +32,12 @@ LOG keyboard.pressed
 # разрядом
 PRINT "=== УСТ с рисунка открывает меню УСТАНОВКА ==="
 KEYDOWN key_ust
+WAIT _10
 LOG keyboard.last
 LOG keyboard.pressed
 WAIT _100
 KEYUP key_ust
+WAIT _10
 LOG keyboard.last
 WAIT _10000
 SCREEN "../results/work-uknc-keyboard.png"
@@ -42,57 +47,71 @@ SCREEN "../results/work-uknc-keyboard.png"
 # это ничего не меняет - номер уходит на обоих фронтах
 PRINT "=== регистровая клавиша удерживается, а не срабатывает мгновенно ==="
 KEYDOWN key_ctrl
+WAIT _10
 LOG keyboard.last
 LOG keyboard.pressed
 KEYUP key_ctrl
+WAIT _10
 LOG keyboard.last
 LOG keyboard.pressed
 
 PRINT "=== номера клавиш машины ==="
 KEYDOWN key_a
+WAIT _10
 LOG keyboard.last
 KEYUP key_a
 KEYDOWN key_j
+WAIT _10
 LOG keyboard.last
 KEYUP key_j
 KEYDOWN key_shift_1
+WAIT _10
 LOG keyboard.last
 KEYUP key_shift_1
 # Обе клавиши НР дают один номер: для ПЗУ это одна и та же клавиша
 KEYDOWN key_shift_2
+WAIT _10
 LOG keyboard.last
 KEYUP key_shift_2
 # Цифра основной клавиатуры и цифра цифрового блока - разные клавиши с одним
 # символом: под НР первая даёт "%", вторая остаётся пятёркой
 KEYDOWN key_5
+WAIT _10
 LOG keyboard.last
 KEYUP key_5
 KEYDOWN key_num_5
+WAIT _10
 LOG keyboard.last
 KEYUP key_num_5
 # Стрелки в основном регистре не дают ничего, ESC A - ESC D лежат в таблице
 # ГРАФ-регистра, но номер клавиши машина получает всегда
 KEYDOWN key_up
+WAIT _10
 LOG keyboard.last
 KEYUP key_up
 # СБРОС - это не сброс машины, а код 014: очистка экрана
 KEYDOWN key_reset
+WAIT _10
 LOG keyboard.last
 KEYUP key_reset
 
 PRINT "=== клавиатура хоста приходит теми же номерами ==="
 KEYDOWN a
+WAIT _10
 LOG keyboard.last
 KEYUP a
 # Знак верхнего регистра отдан номеру своего нижнего соседа: Shift хоста сам
 # прижимает НР, и машина складывает их так же, как на своей клавише
 KEYDOWN 1
+WAIT _10
 LOG keyboard.last
 KEYUP 1
 KEYDOWN !
+WAIT _10
 LOG keyboard.last
 KEYUP !
 KEYDOWN f1
+WAIT _10
 LOG keyboard.last
 KEYUP f1
 LOG keyboard.codes
@@ -104,12 +123,26 @@ LOG keyboard.codes
 PRINT "=== СТОП: ПЗУ ставит центральному процессору HALT ==="
 LOG pp-sys.value16
 KEYDOWN key_stop
-# Пауза обязательна: контроллер кладёт код в один регистр, и без неё ПЗУ
-# успевает прочитать только код отпускания
 WAIT _100
 KEYUP key_stop
 WAIT _500
 LOG keyboard.last
 LOG pp-sys.value16
+
+# Нажатие и отпускание подряд, без паузы. Код отпускания ждёт в очереди,
+# пока ПЗУ не прочтёт код нажатия, и указатель записи буфера скан-кодов ПЗУ
+# (7200) сдвигается на два. Прежде отпускание затирало непрочитанное нажатие,
+# и клавиша терялась
+PRINT "=== нажатие и отпускание без паузы доходят оба ==="
+LOG plane0.value16(7200,7200)
+LOG keyboard.codes
+KEYDOWN key_down
+KEYUP key_down
+LOG keyboard.queued
+WAIT _100
+LOG plane0.value16(7200,7200)
+LOG keyboard.codes
+LOG keyboard.queued
+LOG keyboard.dropped
 
 EXIT

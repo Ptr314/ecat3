@@ -25,8 +25,16 @@
 [keyboard.last] &030
 [keyboard.last] &030
 [keyboard.last] &010
-[keyboard.codes] &034
+[keyboard.codes] &033
 === СТОП: ПЗУ ставит центральному процессору HALT ===
-[pp-sys.value16] &100020
+[pp-sys.value16] &100220
 [keyboard.last] &204
 [pp-sys.value16] &100020
+=== нажатие и отпускание без паузы доходят оба ===
+[plane0.value16] &007200: &002261
+[keyboard.codes] &036
+[keyboard.queued] &002
+[plane0.value16] &007200: &002263
+[keyboard.codes] &040
+[keyboard.queued] &000
+[keyboard.dropped] &000

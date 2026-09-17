@@ -9,6 +9,8 @@
 
 #define KEY_RELEASED    0200        // разряд 7 кода означает отпускание
 
+#define QUEUE_LIMIT     16          // столько кодов ждут машину, дальше не берём
+
 #define CALLBACK_READ   1           // чтение регистра кода
 #define CALLBACK_ENABLE 2           // разряд разрешения прерывания
 
@@ -23,6 +25,7 @@ UKNCKeyboard::UKNCKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_virq_in(this, im, 1, "virq_in", MODE_R, CALLBACK_ENABLE)
     , i_vector_in(this, im, 16, "vector_in", MODE_R)
 {
+    m_clocked = true;   // clock() отдаёт машине коды из очереди
 }
 
 emulator::Result UKNCKeyboard::load_config(SystemData *sd)
@@ -99,6 +102,11 @@ emulator::Result UKNCKeyboard::load_config(SystemData *sd)
 void UKNCKeyboard::reset(const bool cold)
 {
     Keyboard::reset(cold);
+    {
+        compat_lock_guard lock(m_queue_mutex);
+        m_queue.clear();
+        m_queued = false;
+    }
     m_codes = 0;
     m_last = 0;
     m_ready = false;
@@ -115,11 +123,46 @@ unsigned int UKNCKeyboard::scan_of(unsigned int host) const
     return _FFFF;
 }
 
-void UKNCKeyboard::send(unsigned int scan, bool press)
+// Любой поток: клавиша только встаёт в очередь
+void UKNCKeyboard::enqueue(unsigned int scan, bool press)
 {
     // Отпускание отличается от нажатия только разрядом 7
     const unsigned int code = (scan & 0177) | (press? 0 : KEY_RELEASED);
 
+    compat_lock_guard lock(m_queue_mutex);
+    if (m_queue.size() >= QUEUE_LIMIT) {
+        m_dropped++;
+        return;
+    }
+    m_queue.push_back(code);
+    m_queued = true;
+}
+
+// Поток эмуляции. Следующий код кладётся только после того, как прочитан
+// предыдущий, и не в самом чтении: строб порта приходит раньше, чем регистр
+// отдаёт значение, и код, положенный в обработчике строба, прочитался бы
+// вместо текущего
+void UKNCKeyboard::clock(MAYBE_UNUSED unsigned int counter)
+{
+    if (!m_queued || m_ready) return;
+
+    unsigned int code;
+    {
+        compat_lock_guard lock(m_queue_mutex);
+        if (m_queue.empty()) {
+            m_queued = false;
+            return;
+        }
+        code = m_queue.front();
+        m_queue.pop_front();
+        m_queued = !m_queue.empty();
+    }
+    send(code);
+}
+
+void UKNCKeyboard::send(unsigned int code)
+{
+    const bool press = (code & KEY_RELEASED) == 0;
     m_last = code;
     m_codes++;
 
@@ -172,7 +215,7 @@ void UKNCKeyboard::send_key_id(const std::string &id, bool press)
 {
     for (size_t i = 0; i < m_ids.size(); i++)
         if (m_ids[i].id == id) {
-            send(m_ids[i].scan, press);
+            enqueue(m_ids[i].scan, press);
             return;
         }
 }
@@ -214,14 +257,14 @@ void UKNCKeyboard::key_down(unsigned int key)
 {
     const unsigned int scan = scan_of(key);
     if (scan == _FFFF) return;
-    send(scan, true);
+    enqueue(scan, true);
 }
 
 void UKNCKeyboard::key_up(unsigned int key)
 {
     const unsigned int scan = scan_of(key);
     if (scan == _FFFF) return;
-    send(scan, false);
+    enqueue(scan, false);
 }
 
 std::vector<DeviceFieldInfo> UKNCKeyboard::get_device_fields()
@@ -231,6 +274,8 @@ std::vector<DeviceFieldInfo> UKNCKeyboard::get_device_fields()
     r.push_back({"last",  "Последний отданный код, разряд 7 - отпускание", false});
     r.push_back({"keys",  "Сколько клавиш в раскладке хоста",          false});
     r.push_back({"ids",   "Сколько клавиш у самой машины (рисунок)",   false});
+    r.push_back({"queued",  "Сколько кодов ждут, пока машина прочтёт предыдущий", false});
+    r.push_back({"dropped", "Сколько кодов не влезло в очередь",          false});
     return r;
 }
 
@@ -242,6 +287,12 @@ bool UKNCKeyboard::get_field(const std::string &field, unsigned int from, unsign
     if (field == "last")  { out.values.push_back(m_last);  return true; }
     if (field == "keys")  { out.values.push_back((unsigned int)m_keys.size()); return true; }
     if (field == "ids")   { out.values.push_back((unsigned int)m_ids.size());  return true; }
+    if (field == "dropped") { out.values.push_back(m_dropped); return true; }
+    if (field == "queued") {
+        compat_lock_guard lock(m_queue_mutex);
+        out.values.push_back((unsigned int)m_queue.size());
+        return true;
+    }
     out.numeric = false;
     out.width = 0;
     return Keyboard::get_field(field, from, to, out);

@@ -49,6 +49,11 @@ void K1801VM1Core::write_byte(uint16_t address, uint8_t value)
     if (emulator_device->bus_timeout()) m_abort = true;
 }
 
+void K1801VM1Core::on_virq_ack(uint16_t vector)
+{
+    emulator_device->virq_acknowledged(vector);
+}
+
 void K1801VM1Core::on_halt_mode(bool state)
 {
     emulator_device->set_halt_mode(state);
@@ -65,6 +70,7 @@ k1801vm1::k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd, int family_ty
     , i_halt(this, im, 1, "halt", MODE_R, CALLBACK_HALT)
     , i_dclo(this, im, 1, "dclo", MODE_R, CALLBACK_DCLO)
     , i_halt_mode(this, im, 1, "halt_mode", MODE_W)
+    , i_iako(this, im, 16, "iako", MODE_W)
 {
     core = new K1801VM1Core(this, family_type);
 
@@ -143,6 +149,12 @@ void k1801vm1::write_mem_word(unsigned int address, unsigned int data)
 bool k1801vm1::bus_timeout()
 {
     return mm->no_device;
+}
+
+void k1801vm1::virq_acknowledged(unsigned int vector)
+{
+    i_iako.change(vector & 0xFFFF);
+    i_iako.change(0);
 }
 
 void k1801vm1::set_halt_mode(bool state)

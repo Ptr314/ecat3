@@ -31,12 +31,17 @@
 #define ST_READY        0200        // bit 7, read only
 #define ST_IRQ_ENABLE   0100        // bit 6
 
+#define CALLBACK_CPU_IAKO   1
+#define CALLBACK_PPU_IAKO   2
+
 UKNCChannels::UKNCChannels(InterfaceManager *im, EmulatorConfigDevice *cd):
       AddressableDevice(im, cd)
     , i_cpu_virq(this, im, 1, "cpu_virq", MODE_W)
     , i_cpu_vector(this, im, 16, "cpu_vector", MODE_W)
     , i_ppu_virq(this, im, 1, "ppu_virq", MODE_W)
     , i_ppu_vector(this, im, 16, "ppu_vector", MODE_W)
+    , i_cpu_iako(this, im, 16, "cpu_iako", MODE_R, CALLBACK_CPU_IAKO)
+    , i_ppu_iako(this, im, 16, "ppu_iako", MODE_R, CALLBACK_PPU_IAKO)
 {
     can_read = true;
     can_write = true;
@@ -76,6 +81,8 @@ void UKNCChannels::reset(MAYBE_UNUSED bool cold)
         // A sender may write straight away: nothing is in the way yet
         m_c2p[i].tx_ready = true;
         m_c2p[i].tx_irq = false;
+        m_c2p[i].rx_pending = m_c2p[i].tx_pending = false;
+        m_c2p[i].rx_armed = m_c2p[i].tx_armed = true;
     }
     for (unsigned int i = 0; i < UKNC_CHAN_P2C; i++) {
         m_p2c[i].data = 0;
@@ -83,6 +90,8 @@ void UKNCChannels::reset(MAYBE_UNUSED bool cold)
         m_p2c[i].rx_irq = false;
         m_p2c[i].tx_ready = true;
         m_p2c[i].tx_irq = false;
+        m_p2c[i].rx_pending = m_p2c[i].tx_pending = false;
+        m_p2c[i].rx_armed = m_p2c[i].tx_armed = true;
     }
     m_sent_c2p = 0;
     m_sent_p2c = 0;
@@ -97,17 +106,75 @@ void UKNCChannels::write_pipe(Pipe &p, unsigned int value)
 {
     // The byte is handed over: the receiver now has something, the sender has
     // to wait until it is taken
+    const bool was_ready = p.rx_ready;
     p.data = value & 0xFF;
     p.rx_ready = true;
     p.tx_ready = false;
+
+    // Отправитель занят: его запрос снят, взвод возвращён
+    p.tx_pending = false;
+    p.tx_armed = true;
+
+    // Приёмник получил байт - запрос, если он его ждёт
+    if (p.rx_irq && !was_ready) {
+        p.rx_pending = true;
+        p.rx_armed = false;
+    }
 }
 
 unsigned int UKNCChannels::read_pipe(Pipe &p)
 {
     // Taking the byte frees the channel and lets the sender fill it again
+    const bool was_ready = p.tx_ready;
     p.rx_ready = false;
     p.tx_ready = true;
+
+    p.rx_pending = false;
+    p.rx_armed = true;
+
+    // Отправитель может слать дальше - запрос, если он его ждёт
+    if (p.tx_irq && !was_ready) {
+        p.tx_pending = true;
+        p.tx_armed = false;
+    }
     return p.data & 0xFF;
+}
+
+// Запись разрешения прерывания. Выключение снимает невзятый запрос и
+// возвращает взвод; включение при готовности и взводе выставляет запрос сразу.
+// У ЦП канал 0 взводится при выключении всегда - так делает UKNCBTL
+void UKNCChannels::set_enable(bool &irq, bool &pending, bool &armed, bool ready,
+                              bool value, bool always_rearm)
+{
+    const bool was = irq;
+    irq = value;
+    if (!value) {
+        if (pending || always_rearm) armed = true;
+        pending = false;
+    } else if (!was && ready && armed) {
+        pending = true;
+        armed = false;
+    }
+}
+
+void UKNCChannels::interface_callback(unsigned int callback_id, unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
+{
+    const unsigned int vector = new_value & 0xFFFF;
+    if (vector == 0) return;
+
+    // Процессор взял прерывание с этим вектором - снять его запрос
+    if (callback_id == CALLBACK_CPU_IAKO) {
+        for (unsigned int i = 0; i < UKNC_CHAN_P2C; i++)
+            if (m_vec_cpu_rx[i] == vector) m_p2c[i].rx_pending = false;
+        for (unsigned int i = 0; i < UKNC_CHAN_C2P; i++)
+            if (m_vec_cpu_tx[i] == vector) m_c2p[i].tx_pending = false;
+    } else if (callback_id == CALLBACK_PPU_IAKO) {
+        for (unsigned int i = 0; i < UKNC_CHAN_C2P; i++)
+            if (m_vec_ppu_rx[i] == vector) m_c2p[i].rx_pending = false;
+        for (unsigned int i = 0; i < UKNC_CHAN_P2C; i++)
+            if (m_vec_ppu_tx[i] == vector) m_p2c[i].tx_pending = false;
+    }
+    update_irq();
 }
 
 //--------------------------- Status registers -----------------------------//
@@ -123,8 +190,11 @@ void UKNCChannels::set_cpu_status(Pipe &p, bool receiver, unsigned int value)
 {
     // Only the interrupt enable is writable; READY belongs to the hardware and
     // a program that writes it back must not be able to invent a byte
-    if (receiver) p.rx_irq = (value & ST_IRQ_ENABLE) != 0;
-    else          p.tx_irq = (value & ST_IRQ_ENABLE) != 0;
+    // Канал 0 ЦП взводится при выключении разрешения всегда
+    const bool enable = (value & ST_IRQ_ENABLE) != 0;
+    const bool chan0 = (&p == &m_p2c[0]) || (&p == &m_c2p[0]);
+    if (receiver) set_enable(p.rx_irq, p.rx_pending, p.rx_armed, p.rx_ready, enable, chan0);
+    else          set_enable(p.tx_irq, p.tx_pending, p.tx_armed, p.tx_ready, enable, chan0);
 }
 
 // The peripheral processor sees all of its channels in one register: bits 5, 4
@@ -143,7 +213,8 @@ unsigned int UKNCChannels::ppu_rx_status() const
 void UKNCChannels::set_ppu_rx_status(unsigned int value)
 {
     for (unsigned int i = 0; i < UKNC_CHAN_C2P; i++)
-        m_c2p[i].rx_irq = (value & (1u << i)) != 0;
+        set_enable(m_c2p[i].rx_irq, m_c2p[i].rx_pending, m_c2p[i].rx_armed,
+                   m_c2p[i].rx_ready, (value & (1u << i)) != 0, false);
 }
 
 unsigned int UKNCChannels::ppu_tx_status() const
@@ -159,7 +230,8 @@ unsigned int UKNCChannels::ppu_tx_status() const
 void UKNCChannels::set_ppu_tx_status(unsigned int value)
 {
     for (unsigned int i = 0; i < UKNC_CHAN_P2C; i++)
-        m_p2c[i].tx_irq = (value & (1u << i)) != 0;
+        set_enable(m_p2c[i].tx_irq, m_p2c[i].tx_pending, m_p2c[i].tx_armed,
+                   m_p2c[i].tx_ready, (value & (1u << i)) != 0, false);
 }
 
 //--------------------------- Interrupt lines ------------------------------//
@@ -170,15 +242,15 @@ void UKNCChannels::update_irq()
     // on the bus. Only one vector can be offered at a time, the rest wait
     unsigned int cpu_vector = 0;
     for (unsigned int i = 0; i < UKNC_CHAN_P2C && cpu_vector == 0; i++)
-        if (m_p2c[i].rx_ready && m_p2c[i].rx_irq) cpu_vector = m_vec_cpu_rx[i];
+        if (m_p2c[i].rx_pending) cpu_vector = m_vec_cpu_rx[i];
     for (unsigned int i = 0; i < UKNC_CHAN_C2P && cpu_vector == 0; i++)
-        if (m_c2p[i].tx_ready && m_c2p[i].tx_irq) cpu_vector = m_vec_cpu_tx[i];
+        if (m_c2p[i].tx_pending) cpu_vector = m_vec_cpu_tx[i];
 
     unsigned int ppu_vector = 0;
     for (unsigned int i = 0; i < UKNC_CHAN_C2P && ppu_vector == 0; i++)
-        if (m_c2p[i].rx_ready && m_c2p[i].rx_irq) ppu_vector = m_vec_ppu_rx[i];
+        if (m_c2p[i].rx_pending) ppu_vector = m_vec_ppu_rx[i];
     for (unsigned int i = 0; i < UKNC_CHAN_P2C && ppu_vector == 0; i++)
-        if (m_p2c[i].tx_ready && m_p2c[i].tx_irq) ppu_vector = m_vec_ppu_tx[i];
+        if (m_p2c[i].tx_pending) ppu_vector = m_vec_ppu_tx[i];
 
     // The vector goes out before the request: the processor samples ~vector at
     // the moment ~virq becomes active.

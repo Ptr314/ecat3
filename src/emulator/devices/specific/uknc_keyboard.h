@@ -5,7 +5,10 @@
 
 #pragma once
 
+#include <deque>
+
 #include "emulator/devices/common/keyboard.h"
+#include "emulator/thread_compat.h"
 
 // The keyboard of the УК-НЦ is not like the one of the БК: its controller
 // hands the machine a SCAN CODE rather than a character, and it does so on
@@ -79,7 +82,20 @@ private:
     unsigned int m_last = 0;    // последний отданный код
 
     unsigned int scan_of(unsigned int host) const;
-    void send(unsigned int scan, bool press);
+    void send(unsigned int code);
+
+    // Коды, ещё не отданные машине. Нажатие окна приходит из потока GUI, а
+    // регистр кода, готовность и линия прерывания ПП живут в потоке эмуляции:
+    // тронь их отсюда - и запрос прерывания теряется, когда ПП в тот же миг
+    // берёт предыдущий или снимает готовность чтением. Поэтому клавиша только
+    // встаёт в очередь, а в регистр её кладёт clock(), и не раньше, чем
+    // прочитан предыдущий код - код отпускания больше не затирает непрочитанное
+    // нажатие. Настоящий МС7007 тоже ждёт машину: у него свой микроконтроллер
+    std::deque<unsigned int> m_queue;
+    compat_mutex m_queue_mutex;
+    volatile bool m_queued = false;     // быстрая проверка без захвата
+    unsigned int m_dropped = 0;         // не влезло в очередь
+    void enqueue(unsigned int scan, bool press);
 
     emulator::Result parse_key_table(const std::vector<std::string> &body, const std::string &file) override;
     void send_key_id(const std::string &id, bool press) override;
@@ -88,6 +104,7 @@ public:
     UKNCKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
     emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;
+    void clock(unsigned int counter) override;
 
     void key_down(unsigned int key) override;
     void key_up(unsigned int key) override;

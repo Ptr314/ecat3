@@ -1,0 +1,102 @@
+# УК-НЦ: быстрые нажатия стрелок в меню ЗАГРУЗКА не теряются.
+#
+# Стрелка приходит меню двумя символами - ESC и кодом (вниз - 201). Прежде
+# примерно каждое пятое нажатие пропадало: свободный передатчик канала 0 ПП
+# предлагал своё прерывание (вектор 324) заново после каждого чужого, а его
+# обработчик 175540 в меню забирает символ из буфера клавиатуры в никуда.
+# Меню получало код стрелки без ESC и отбрасывало его. Запрос канала теперь
+# однократный и снимается подтверждением прерывания (~iako).
+#
+# Номер текущего пункта меню - в ячейке 7174 ПП, пункты от 0 до 6 по кругу.
+# Семь быстрых нажатий возвращают на тот же пункт, четырнадцать - тоже.
+# @timeout 90
+
+MACHINE "uknc/UKNC.cfg"
+WAIT _12000
+
+LOGDEFS _16,_8
+
+PRINT "=== первое нажатие ставит меню на пункт 0 ==="
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _200
+LOG plane0.value16(7174,7174)
+
+PRINT "=== 14 быстрых нажатий: два полных круга, тот же пункт ==="
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+WAIT _300
+LOG plane0.value16(7174,7174)
+
+PRINT "=== ещё три: пункт 3 ==="
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _60
+KEYDOWN down
+WAIT _40
+KEYUP down
+WAIT _300
+LOG plane0.value16(7174,7174)
+SCREEN "../results/work-uknc-menu.png"
+
+EXIT

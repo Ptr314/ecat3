@@ -25,6 +25,7 @@ public:
     // Ядро сообщает о входе в пультовый режим и выходе из него, устройство
     // поднимает линию наружу
     virtual void on_halt_mode(bool state) override;
+    virtual void on_virq_ack(uint16_t vector) override;
 };
 
 // Emulator device
@@ -53,6 +54,11 @@ private:
     // страница ввода-вывода), эта линия заводится на ~config диспетчера
     Interface i_halt_mode;
 
+    // Подтверждение векторного прерывания (IAKO): на мгновение показывает
+    // взятый вектор и возвращается в ноль. Устройство, чей это вектор, снимает
+    // свой запрос. Не подключённая линия ничего не стоит
+    Interface i_iako;
+
     // True while ~dclo holds the processor down
     bool m_held_in_reset = false;
 
@@ -80,6 +86,7 @@ public:
     bool bus_timeout();
     void note_timeout(unsigned int address);
     void set_halt_mode(bool state);
+    void virq_acknowledged(unsigned int vector);
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

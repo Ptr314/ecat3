@@ -390,7 +390,14 @@ bool pdp11core::check_interrupts(unsigned int & cycles)
         // with several sources on one wire therefore has to make a fresh edge
         // when the pending source changes, or only the first of a queue is ever
         // delivered - see UKNCChannels::update_irq()
-        else if (is_virq) { is_virq = false; do_trap(virq_vector);   cycles += C_TRAP; return true; }
+        else if (is_virq) {
+            is_virq = false;
+            const uint16_t vector = virq_vector;
+            do_trap(vector);
+            on_virq_ack(vector);
+            cycles += C_TRAP;
+            return true;
+        }
     }
     return false;
 }

@@ -55,6 +55,20 @@ private:
         bool rx_irq;            // the receiver wants an interrupt for it
         bool tx_ready;          // the sender may put the next byte in
         bool tx_irq;            // the sender wants an interrupt when it may
+
+        // Запрос прерывания однократный, как в UKNCBTL. Он выставляется на
+        // ПЕРЕХОДЕ - готовность стала единицей при разрешённом прерывании или
+        // разрешение включилось при готовности и взводе - и снимается, когда
+        // процессор его взял (~iako), либо когда байт забран или разрешение
+        // выключено. Взвод возвращается пересылкой байта.
+        //
+        // Уровень «готов и разрешено» тут не годится. Передатчик ПП, свободный
+        // и с разрешённым прерыванием, стоит так часами; предложенный заново
+        // после любого чужого прерывания, он запускал обработчик 175540, а тот
+        // в меню ЗАГРУЗКА забирает символ из буфера клавиатуры в никуда. Так
+        // терялся ESC стрелки, и меню не двигалось
+        bool rx_pending, tx_pending;
+        bool rx_armed, tx_armed;
     };
 
     Pipe m_c2p[UKNC_CHAN_C2P];
@@ -73,6 +87,11 @@ private:
     Interface i_ppu_virq;
     Interface i_ppu_vector;
 
+    // Подтверждение прерывания от процессоров: взятый вектор
+    Interface i_cpu_iako;
+    Interface i_ppu_iako;
+    void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+
     // Counters, for scripts watching a handshake go wrong
     // Вектор, который уже предложен каждой стороне. Линия запроса одна на
     // несколько источников, и процессор слышит её по фронту, поэтому при
@@ -86,6 +105,8 @@ private:
 
     void write_pipe(Pipe &p, unsigned int value);   // a byte handed over
     unsigned int read_pipe(Pipe &p);                // a byte taken
+    static void set_enable(bool &irq, bool &pending, bool &armed, bool ready,
+                           bool value, bool always_rearm);
 
     void update_irq();                              // recomputes both request lines
     unsigned int cpu_status(const Pipe &p, bool receiver) const;
