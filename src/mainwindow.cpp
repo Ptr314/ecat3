@@ -838,6 +838,7 @@ void MainWindow::onDeviceMenuCalled(unsigned int i)
 
 void MainWindow::keyPressEvent( QKeyEvent *event )
 {
+    if (e == nullptr) return;       // the window is closing
     if (event->isAutoRepeat()) {
         event->ignore();
     } else {
@@ -865,6 +866,7 @@ void MainWindow::keyPressEvent( QKeyEvent *event )
 
 void MainWindow::keyReleaseEvent( QKeyEvent *event )
 {
+    if (e == nullptr) return;       // the key that closed the window
     if (event->isAutoRepeat()) {
         event->ignore();
     } else {
@@ -914,7 +916,7 @@ static QPoint mouse_event_pos(const QMouseEvent * me)
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-    if (watched != screen) return QMainWindow::eventFilter(watched, event);
+    if (watched != screen || e == nullptr) return QMainWindow::eventFilter(watched, event);
 
     switch (event->type()) {
         case QEvent::MouseButtonPress:
@@ -997,7 +999,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 
 void MainWindow::changeEvent(QEvent *event)
 {
-    if (event->type() == QEvent::ActivationChange && !isActiveWindow()) {
+    if (e != nullptr && event->type() == QEvent::ActivationChange && !isActiveWindow()) {
         //A pointer kept hidden in the middle of an inactive window is lost to the user
         mouse_capture(false);
         //A key held while the focus goes away is released in another window
@@ -1045,6 +1047,7 @@ void MainWindow::mouse_capture(bool on)
 
 void MainWindow::mouse_flush(bool buttons_changed)
 {
+    if (e == nullptr) return;
     //The socket may have been switched to something else meanwhile
     if (mouse_captured && !buttons_changed && !(e->loaded && e->has_mouse())) {
         mouse_capture(false);
@@ -1074,7 +1077,7 @@ void MainWindow::resizeEvent(QResizeEvent * event)
 void MainWindow::paintEvent(QPaintEvent * event)
 {
     //QMainWindow::paintEvent(event);
-    e->resize_screen();
+    if (e != nullptr) e->resize_screen();
 }
 
 void MainWindow::on_action_Cold_restart_triggered()
@@ -1296,6 +1299,8 @@ void MainWindow::closeEvent (QCloseEvent *event)
     // The timers must not fire once the emulator is gone
     if (fdd_timer != nullptr) fdd_timer->stop();
     if (rec_timer != nullptr) rec_timer->stop();
+    mouse_capture(false);
+    if (mouse_timer != nullptr) mouse_timer->stop();
 
     // Close all debug windows before destroying the emulator,
     // so their closeEvent handlers can safely access devices
@@ -1305,6 +1310,12 @@ void MainWindow::closeEvent (QCloseEvent *event)
 
     e->stop_emulation();
     delete e;
+    // The window keeps receiving events after this: it loses the activation
+    // (changeEvent releases the host keys), the key that closed it comes up,
+    // a paint arrives. Each of those used to reach the freed emulator, and a
+    // click on the close button of the active window crashed the process with
+    // 0xC0000005 once the memory had been reused - rarely, hence unnoticed
+    e = nullptr;
 
     event->accept();
 }
