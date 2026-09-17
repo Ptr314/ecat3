@@ -235,7 +235,9 @@ unsigned TapeRecorder::get_record_size()
 }
 
 // The first extension of a file mask like "Mikrosha (*.rkm)", with the dot.
-// Empty when the mask names none.
+// A compound one is kept whole: "*.uknc.tap" gives ".uknc.tap", so that a
+// recording is offered under the name the machine's own tapes carry. Empty
+// when the mask names none.
 static std::string first_file_extension(const std::string &mask)
 {
     const size_t p = mask.find("*.");
@@ -245,9 +247,12 @@ static std::string first_file_extension(const std::string &mask)
         const char c = mask[i];
         if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
             ext += c;
+        else if (c == '.' && ext.back() != '.')
+            ext += c;
         else
             break;
     }
+    if (!ext.empty() && ext.back() == '.') ext.pop_back();
     return (ext.size() > 1)? ext : std::string("");
 }
 

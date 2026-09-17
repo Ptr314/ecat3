@@ -1,7 +1,7 @@
 # УК-НЦ: полный оборот ленты в кассетном Бейсике (картридж romctr_basic.bin).
 #
 # Программа пишется на ленту командой SAVE, снятый сигнал сохраняется файлом
-# .tap, программа стирается командой NEW, лента перезаряжается этим файлом и
+# .uknc.tap, программа стирается командой NEW, лента перезаряжается этим файлом и
 # читается обратно командой LOAD. Файл сравнивается с эталоном, так что тест
 # ловит и ошибки распознавания сигнала, и ошибки кодирования, а LOAD - ещё и
 # контрольную сумму, которую ПЗУ проверяет после данных.
@@ -34,12 +34,12 @@ TYPE "SAVE \"TST\"\n"
 WAIT _20000
 COMMAND tape.record(0)
 LOG tape.recorded
-COMMAND tape.save("../results/slow-uknc-tape.tap")
+COMMAND tape.save("../results/slow-uknc-tape.uknc.tap")
 
 PRINT "=== Чтение обратно ==="
 TYPE "NEW\n"
 WAIT _500
-COMMAND tape.load("../results/slow-uknc-tape.tap")
+COMMAND tape.load("../results/slow-uknc-tape.uknc.tap")
 LOG tape.size
 TYPE "LOAD \"TST\"\n"
 WAIT _500
