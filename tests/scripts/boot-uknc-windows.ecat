@@ -1,0 +1,60 @@
+# УК-НЦ: окна 1-3 периферийного процессора, регистр 177054.
+#
+# ПЗУ в окнах 120000-137777, 140000-157777 и 160000-176777 не отключается
+# никогда. Разряды 5, 6 и 7 подключают к нему ОЗУ плана 0 того же адреса:
+# чтение отдаёт ПЗУ и ОЗУ, объединённые по ИЛИ, запись попадает только в ОЗУ.
+# Без разряда запись в окно пропадает, а чтение видит одно ПЗУ.
+#
+# Процессоры остановлены, всё делает сценарий через диспетчер ПП.
+# @timeout 30
+
+MACHINE "uknc/UKNC.cfg"
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+LOGDEFS _16,_8
+
+PRINT "=== ОЗУ в окнах отключено: 177054 = 1 ==="
+COMMAND pp-win.set16(0, 1)
+COMMAND ppu-mapper.set16(124000, 007700)
+COMMAND ppu-mapper.set16(144000, 007700)
+COMMAND ppu-mapper.set16(164000, 007700)
+PRINT "запись пропала, план 0 пуст:"
+LOG plane0.value16(124000)
+LOG plane0.value16(144000)
+LOG plane0.value16(164000)
+PRINT "чтение отдаёт ПЗУ:"
+LOG rom.value16(24000)
+LOG ppu-mapper.value16(124000)
+LOG rom.value16(44000)
+LOG ppu-mapper.value16(144000)
+LOG rom.value16(64000)
+LOG ppu-mapper.value16(164000)
+
+PRINT "=== разряд 5 - окно 1 ==="
+COMMAND pp-win.set16(0, 41)
+COMMAND ppu-mapper.set16(124000, 007700)
+COMMAND ppu-mapper.set16(144000, 007700)
+LOG plane0.value16(124000)
+LOG plane0.value16(144000)
+PRINT "окно 1 читает ПЗУ | ОЗУ, окно 2 - одно ПЗУ:"
+LOG ppu-mapper.value16(124000)
+LOG ppu-mapper.value16(144000)
+
+PRINT "=== разряд 6 - окно 2 ==="
+COMMAND pp-win.set16(0, 101)
+COMMAND ppu-mapper.set16(144000, 007700)
+LOG plane0.value16(144000)
+LOG ppu-mapper.value16(144000)
+PRINT "окно 1 снова без ОЗУ:"
+LOG ppu-mapper.value16(124000)
+
+PRINT "=== разряд 7 - окно 3, регистры 177000-177777 остаются на месте ==="
+COMMAND pp-win.set16(0, 201)
+COMMAND ppu-mapper.set16(164000, 007700)
+LOG plane0.value16(164000)
+LOG ppu-mapper.value16(164000)
+LOG ppu-mapper.value16(177054)
+
+PRINT "=== карта памяти ПП ==="
+LOG ppu-mapper.map
+EXIT
