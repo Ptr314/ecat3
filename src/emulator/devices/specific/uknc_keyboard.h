@@ -12,7 +12,7 @@
 
 // The keyboard of the УК-НЦ is not like the one of the БК: its controller
 // hands the machine a SCAN CODE rather than a character, and it does so on
-// both edges - bit 7 of the code register 177702 means the key was released.
+// both edges - a release is bit 7 plus only the low four bits of the number.
 // The ROM turns those numbers into characters itself, through five layout
 // tables it builds at start-up, so the register keys (ЗАГЛ, СТР, РУС, ЛАТ,
 // УПР) are ordinary keys with scan codes of their own and nothing here has to
@@ -20,7 +20,8 @@
 //
 //   177700  состояние   разряд 6 - разрешение прерывания (запись),
 //                       разряд 7 - готовность (чтение)
-//   177702  код клавиши разряды 0-6 - номер клавиши, разряд 7 - отпускание.
+//   177702  код клавиши разряды 0-6 - номер клавиши при нажатии; при
+//                       отпускании разряд 7 и только разряды 0-3 номера.
 //                       Чтение снимает готовность
 //
 // Note the polarity: on the БК bit 6 of the status register MASKS the
@@ -33,17 +34,25 @@
 // readiness and the register that shows it live in the configuration.
 //
 // Two layouts, both files of `name: number` lines: `map` names the host keys,
-// `keys` the machine's own, the ones drawn on ms7007_keyboard.svg. Neither has
-// a register mark - there is nothing to mark, since НР, УПР, ГРАФ, АЛФ and
-// ФИКС are keys with numbers of their own. They are declared `hold:` in the
-// native table so that a pointer clicks them on and off: the machine expects
-// them held, and a mouse has one contact point.
+// `keys` the machine's own, the ones drawn on ms7007_keyboard.svg. НР, УПР,
+// ГРАФ, АЛФ and ФИКС are keys with numbers of their own, declared `hold:` in
+// the native table so that a pointer clicks them on and off: the machine
+// expects them held, and a mouse has one contact point. The only mark there is
+// lives in the host map: `+shift` / `-shift` after a symbol's number, because
+// the host and the МС7007 put symbols on different shift levels.
 class UKNCKeyboard: public Keyboard
 {
 private:
+    // Регистр знака. Знак хоста живёт на клавише машины то без НР, то с НР,
+    // и Shift хоста тут не указ: `'` набирается на хосте без Shift, а на
+    // МС7007 это НР и 7; `:` - наоборот. Такой записи клавиатура сама ставит
+    // НР в нужное положение на время нажатия
+    enum ShiftMode { SHIFT_ANY, SHIFT_ON, SHIFT_OFF };
+
     struct KeyEntry {
         unsigned int host;      // код клавиши хоста
         unsigned int scan;      // номер клавиши для машины
+        ShiftMode    shift;     // пометка +shift / -shift в раскладке
     };
     std::vector<KeyEntry> m_keys;
 
@@ -81,7 +90,14 @@ private:
     unsigned int m_codes = 0;   // сколько кодов отдано, для сценариев
     unsigned int m_last = 0;    // последний отданный код
 
-    unsigned int scan_of(unsigned int host) const;
+    const KeyEntry * entry_of(unsigned int host) const;
+
+    // НР, каким его держит хост (Shift или клавиша рисунка), и каким его
+    // видит машина. Расходятся, пока нажат знак с пометкой регистра
+    bool m_shift_host = false;
+    bool m_shift_machine = false;
+    unsigned int m_forced = 0;          // сколько знаков с пометкой нажато
+    void press_key(unsigned int scan, ShiftMode shift, bool press);
     void send(unsigned int code);
 
     // Коды, ещё не отданные машине. Нажатие окна приходит из потока GUI, а

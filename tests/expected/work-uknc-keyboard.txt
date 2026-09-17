@@ -5,11 +5,11 @@
 === УСТ с рисунка открывает меню УСТАНОВКА ===
 [keyboard.last] &152
 [keyboard.pressed] key_ust
-[keyboard.last] &352
+[keyboard.last] &212
 === регистровая клавиша удерживается, а не срабатывает мгновенно ===
 [keyboard.last] &046
 [keyboard.pressed] key_ctrl
-[keyboard.last] &246
+[keyboard.last] &206
 [keyboard.pressed] 
 === номера клавиш машины ===
 [keyboard.last] &072
@@ -24,17 +24,20 @@
 [keyboard.last] &072
 [keyboard.last] &030
 [keyboard.last] &030
+[keyboard.last] &205
+=== после знака верхнего регистра НР не залипает ===
+[plane0.value16] &007212: &000000 &007234
 [keyboard.last] &010
-[keyboard.codes] &033
+[keyboard.codes] &035
 === СТОП: ПЗУ ставит центральному процессору HALT ===
 [pp-sys.value16] &100220
 [keyboard.last] &204
 [pp-sys.value16] &100020
 === нажатие и отпускание без паузы доходят оба ===
 [plane0.value16] &007200: &002261
-[keyboard.codes] &036
+[keyboard.codes] &040
 [keyboard.queued] &002
 [plane0.value16] &007200: &002263
-[keyboard.codes] &040
+[keyboard.codes] &042
 [keyboard.queued] &000
 [keyboard.dropped] &000

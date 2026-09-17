@@ -26,6 +26,7 @@ emulator::Result PlanePair::load_config(SystemData *sd)
             "{PlanePair|" + std::string(QT_TRANSLATE_NOOP("PlanePair", "Both planes must be memory devices")) + "} " + name);
 
     m_base = read_confg_value(cd, "base", false, (unsigned int)0);
+    m_index = read_confg_value(cd, "index", false, (unsigned int)0) != 0;
 
     // Two bytes of address space per byte of a plane, limited by the shallower
     // of the two and by whatever the base offset leaves
@@ -33,8 +34,9 @@ emulator::Result PlanePair::load_config(SystemData *sd)
     const unsigned int high_left = (m_high->get_size() > m_base)? (m_high->get_size() - m_base) : 0;
     const unsigned int depth = (low_left < high_left)? low_left : high_left;
 
-    addresable_size = read_confg_value(cd, "size", false, depth * 2);
-    if (addresable_size > depth * 2) addresable_size = depth * 2;
+    const unsigned int width = m_index? depth : depth * 2;
+    addresable_size = read_confg_value(cd, "size", false, width);
+    if (addresable_size > width) addresable_size = width;
 
     if (addresable_size == 0)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
@@ -45,21 +47,25 @@ emulator::Result PlanePair::load_config(SystemData *sd)
 
 unsigned int PlanePair::get_value(unsigned int address)
 {
-    // Bit 0 of the address picks the plane, the rest is the index in it
+    // Bit 0 of the address picks the plane, the rest is the index in it.
+    // Addressed by index, a byte access is the low byte of the word
+    if (m_index) return m_low->get_value(index_of(address)) & 0xFF;
     Memory * plane = (address & 1)? m_high : m_low;
-    return plane->get_value(m_base + (address >> 1));
+    return plane->get_value(index_of(address));
 }
 
 void PlanePair::set_value(unsigned int address, unsigned int value, bool force)
 {
+    if (m_index) { m_low->set_value(index_of(address), value & 0xFF, force); return; }
     Memory * plane = (address & 1)? m_high : m_low;
-    plane->set_value(m_base + (address >> 1), value & 0xFF, force);
+    plane->set_value(index_of(address), value & 0xFF, force);
 }
 
 unsigned int PlanePair::get_direct(unsigned int address)
 {
+    if (m_index) return m_low->get_direct(index_of(address)) & 0xFF;
     Memory * plane = (address & 1)? m_high : m_low;
-    return plane->get_direct(m_base + (address >> 1));
+    return plane->get_direct(index_of(address));
 }
 
 unsigned int PlanePair::get_value_word(unsigned int address)
@@ -67,13 +73,13 @@ unsigned int PlanePair::get_value_word(unsigned int address)
     // A word is one byte of each plane at the same index, which is why the
     // default two-byte composition of AddressableDevice would be wrong here:
     // it would read two consecutive indexes of alternating planes
-    const unsigned int index = m_base + ((address & ~1u) >> 1);
+    const unsigned int index = index_of(m_index? address : (address & ~1u));
     return (m_low->get_value(index) & 0xFF) | ((m_high->get_value(index) & 0xFF) << 8);
 }
 
 void PlanePair::set_value_word(unsigned int address, unsigned int value, bool force)
 {
-    const unsigned int index = m_base + ((address & ~1u) >> 1);
+    const unsigned int index = index_of(m_index? address : (address & ~1u));
     m_low->set_value(index, value & 0xFF, force);
     m_high->set_value(index, (value >> 8) & 0xFF, force);
 }
@@ -83,6 +89,7 @@ std::vector<DeviceFieldInfo> PlanePair::get_device_fields()
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
     r.push_back({"planes", "Names of the low and high memory planes", false});
     r.push_back({"base",   "Offset in the planes that address 0 maps to", false});
+    r.push_back({"index",  "1 when the address is a plane index rather than a processor address", false});
     return r;
 }
 
@@ -92,6 +99,14 @@ bool PlanePair::get_field(const std::string &field, unsigned int from, unsigned 
     {
         out.numeric = false;
         out.text = m_low->name + " / " + m_high->name;
+        return true;
+    }
+
+    if (field == "index")
+    {
+        out.numeric = true;
+        out.width = 8;
+        out.values.push_back(m_index? 1 : 0);
         return true;
     }
 

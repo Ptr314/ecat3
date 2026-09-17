@@ -126,6 +126,12 @@ public:
     uint16_t m_trap_vector = 0;
     uint16_t m_trap_pc = 0;
     unsigned int m_trap_count = 0;
+
+    // Адреса последних выполненных команд, кольцом: откуда программа пришла
+    // туда, где сломалась. Одна запись в массив на команду
+    enum { HISTORY_SIZE = 256 };
+    uint16_t m_history[HISTORY_SIZE] = {};
+    unsigned int m_history_pos = 0;
     uint16_t get_command();
 
     virtual void set_virq(bool state, uint16_t vector);

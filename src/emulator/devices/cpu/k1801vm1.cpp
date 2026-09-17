@@ -179,6 +179,7 @@ std::vector<DeviceFieldInfo> k1801vm1::get_device_fields()
     r.push_back({"traps",           "Number of traps and interrupts taken",     false});
     r.push_back({"trap_vector",     "Vector of the last trap or interrupt",     false});
     r.push_back({"trap_pc",         "PC saved by the last trap or interrupt",   false});
+    r.push_back({"history",         "Addresses of the last commands executed, oldest first (from,to count back from the newest)", true});
     return r;
 }
 
@@ -192,6 +193,14 @@ bool k1801vm1::get_field(const std::string &field, unsigned int from, unsigned i
     if (field == "traps")           { out.values.push_back(core->m_trap_count);  return true; }
     if (field == "trap_vector")     { out.values.push_back(core->m_trap_vector); return true; }
     if (field == "trap_pc")         { out.values.push_back(core->m_trap_pc);     return true; }
+    if (field == "history") {
+        // Без диапазона - всё кольцо; history(n) - последние n команд
+        const unsigned int size = pdp11core::HISTORY_SIZE;
+        unsigned int n = (from == 0 && to == 0)? size : ((from > size)? size : from);
+        for (unsigned int i = n; i > 0; i--)
+            out.values.push_back(core->m_history[(core->m_history_pos - i) & (size - 1)]);
+        return true;
+    }
     out.width = 0;
     out.numeric = false;
     return CPU::get_field(field, from, to, out);

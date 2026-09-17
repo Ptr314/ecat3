@@ -8,6 +8,7 @@
 #include "dsk_tools/dsk_tools.h"
 
 #define KEY_RELEASED    0200        // разряд 7 кода означает отпускание
+#define SCAN_SHIFT      0105        // НР, обе клавиши
 
 #define QUEUE_LIMIT     16          // столько кодов ждут машину, дальше не берём
 
@@ -44,8 +45,8 @@ emulator::Result UKNCKeyboard::load_config(SystemData *sd)
             "{UKNCKeyboard|" + std::string(QT_TRANSLATE_NOOP("UKNCKeyboard", "A port to put the key code into is expected")) + "} " + name);
 
     // Раскладка: имя клавиши хоста -> номер клавиши машины. Модификаторов
-    // здесь нет и быть не может - регистровые клавиши имеют свои номера,
-    // а перекодировкой занимается ПЗУ машины
+    // вида /S здесь нет - регистровые клавиши имеют свои номера, а
+    // перекодировкой занимается ПЗУ машины. Есть только пометка регистра знака
     const std::string map_file = find_file_location(sd, cd->get_parameter("map", false).value);
     if (map_file.empty())
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
@@ -70,7 +71,21 @@ emulator::Result UKNCKeyboard::load_config(SystemData *sd)
                 "{UKNCKeyboard|" + std::string(QT_TRANSLATE_NOOP("UKNCKeyboard", "Map file entry is incorrect")) + "} " + line);
 
         const std::string key_name = str_trim(line.substr(0, colon));
-        const std::string value = str_trim(line.substr(colon + 1));
+        std::string value = str_trim(line.substr(colon + 1));
+
+        // Пометка регистра за номером: +shift - знак набирается с НР,
+        // -shift - без него
+        ShiftMode shift = SHIFT_ANY;
+        const size_t space = value.find_first_of(" \t");
+        if (space != std::string::npos) {
+            const std::string mark = str_trim(value.substr(space));
+            value = str_trim(value.substr(0, space));
+            if      (mark == "+shift") shift = SHIFT_ON;
+            else if (mark == "-shift") shift = SHIFT_OFF;
+            else
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                    "{UKNCKeyboard|" + std::string(QT_TRANSLATE_NOOP("UKNCKeyboard", "Map file entry is incorrect")) + "} " + line);
+        }
 
         const unsigned int host = translate_key(key_name);
         if (host == _FFFF)
@@ -88,6 +103,7 @@ emulator::Result UKNCKeyboard::load_config(SystemData *sd)
         KeyEntry e;
         e.host = host;
         e.scan = scan & 0177;
+        e.shift = shift;
         m_keys.push_back(e);
     }
 
@@ -111,23 +127,68 @@ void UKNCKeyboard::reset(const bool cold)
     m_last = 0;
     m_ready = false;
     m_offered = 0;
+    m_shift_host = m_shift_machine = false;
+    m_forced = 0;
     i_ready.change(0);
     i_pressed.change(0);
     update_irq();
 }
 
-unsigned int UKNCKeyboard::scan_of(unsigned int host) const
+const UKNCKeyboard::KeyEntry * UKNCKeyboard::entry_of(unsigned int host) const
 {
     for (size_t i = 0; i < m_keys.size(); i++)
-        if (m_keys[i].host == host) return m_keys[i].scan;
-    return _FFFF;
+        if (m_keys[i].host == host) return &m_keys[i];
+    return nullptr;
+}
+
+// Нажатие или отпускание клавиши машины с учётом НР. Сам НР только
+// запоминается и уходит машине. Знак с пометкой регистра окружается НР
+// нужного положения, а когда отпущен последний такой знак, НР возвращается
+// туда, где его держит хост
+void UKNCKeyboard::press_key(unsigned int scan, ShiftMode shift, bool press)
+{
+    if (scan == SCAN_SHIFT) {
+        m_shift_host = press;
+        // Пока нажат знак с пометкой, машина держит его НР; хостовый дождётся
+        if (m_forced == 0 && m_shift_machine != press) {
+            m_shift_machine = press;
+            enqueue(scan, press);
+        }
+        return;
+    }
+
+    if (shift == SHIFT_ANY) {
+        enqueue(scan, press);
+        return;
+    }
+
+    if (press) {
+        const bool want = (shift == SHIFT_ON);
+        if (m_shift_machine != want) {
+            m_shift_machine = want;
+            enqueue(SCAN_SHIFT, want);
+        }
+        m_forced++;
+        enqueue(scan, true);
+    } else {
+        enqueue(scan, false);
+        if (m_forced > 0) m_forced--;
+        if (m_forced == 0 && m_shift_machine != m_shift_host) {
+            m_shift_machine = m_shift_host;
+            enqueue(SCAN_SHIFT, m_shift_host);
+        }
+    }
 }
 
 // Любой поток: клавиша только встаёт в очередь
 void UKNCKeyboard::enqueue(unsigned int scan, bool press)
 {
-    // Отпускание отличается от нажатия только разрядом 7
-    const unsigned int code = (scan & 0177) | (press? 0 : KEY_RELEASED);
+    // Код отпускания - не номер клавиши с разрядом 7, а разряд 7 и ЧЕТЫРЕ
+    // младших разряда номера. ПЗУ так его и разбирает: обычную клавишу ищет в
+    // буфере автоповтора по `BIC #177760` (104614), а регистровую сравнивает с
+    // ожидаемым кодом - 205 для НР (105), 206 для УПР и ГРАФ (46, 66), 207 для
+    // ФИКС (107). С полным номером буквы отпускались, а НР залипал навсегда
+    const unsigned int code = press? (scan & 0177) : (KEY_RELEASED | (scan & 017));
 
     compat_lock_guard lock(m_queue_mutex);
     if (m_queue.size() >= QUEUE_LIMIT) {
@@ -215,7 +276,7 @@ void UKNCKeyboard::send_key_id(const std::string &id, bool press)
 {
     for (size_t i = 0; i < m_ids.size(); i++)
         if (m_ids[i].id == id) {
-            enqueue(m_ids[i].scan, press);
+            press_key(m_ids[i].scan, SHIFT_ANY, press);
             return;
         }
 }
@@ -255,16 +316,14 @@ void UKNCKeyboard::interface_callback(unsigned int callback_id, MAYBE_UNUSED uns
 
 void UKNCKeyboard::key_down(unsigned int key)
 {
-    const unsigned int scan = scan_of(key);
-    if (scan == _FFFF) return;
-    enqueue(scan, true);
+    const KeyEntry * e = entry_of(key);
+    if (e != nullptr) press_key(e->scan, e->shift, true);
 }
 
 void UKNCKeyboard::key_up(unsigned int key)
 {
-    const unsigned int scan = scan_of(key);
-    if (scan == _FFFF) return;
-    enqueue(scan, false);
+    const KeyEntry * e = entry_of(key);
+    if (e != nullptr) press_key(e->scan, e->shift, false);
 }
 
 std::vector<DeviceFieldInfo> UKNCKeyboard::get_device_fields()

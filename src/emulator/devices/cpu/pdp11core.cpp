@@ -1065,8 +1065,21 @@ unsigned int pdp11core::execute()
     m_no_trace = false;
 
     m_abort = false;
+    m_history[m_history_pos++ & (HISTORY_SIZE - 1)] = context.R[PDP11::REG_PC];
     cycles += C_DATI;                           // reading the instruction
     uint16_t command = fetch();
+
+    // FADD/FSUB/FMUL/FDIV у ВМ2 не аппаратные: команда уводит процессор в
+    // пультовый режим по вектору 010, и арифметику делает пультовая программа
+    // (у УК-НЦ её кладёт в ОЗУ ЦП периферийный процессор). Разряд 7 вывода SEL
+    // говорит, что такой программы нет - тогда это резервная команда. Без
+    // этого дисковый Бейсик УК-НЦ отвечает «Ошибка» на любое действие
+    if (has_console && halt_sel != 0 && (command & 0177740) == 0075000 && !m_abort) {
+        cycles += C_TRAP;
+        if (halt_sel & 0200) do_trap(PDP11::V_RESERVED);
+        else                 enter_halt_mode(010);
+        return cycles;
+    }
 
     bool handled = false;
     if (!m_abort) {
