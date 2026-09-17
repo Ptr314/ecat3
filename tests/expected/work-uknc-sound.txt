@@ -16,3 +16,15 @@
 [sound.level] &000000
 [sound.level] &000000
 [sound.level] &000000
+=== Covox на порту A параллельного порта ===
+[lpt.device] covox
+[covox.plugged] &000001
+[pp-printer.a] &000200
+[covox.value] &000177
+[pp-printer.a] &000377
+[covox.value] &000000
+[pp-printer.a] &000000
+[covox.value] &000377
+=== вынутый из гнезда ЦАП молчит ===
+[lpt.device] none
+[covox.plugged] &000000

@@ -1056,6 +1056,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location line="+0"/>
+        <source>Open a hard disk image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+43"/>
         <source>Save disk image to a file</source>
         <translation type="unfinished"></translation>

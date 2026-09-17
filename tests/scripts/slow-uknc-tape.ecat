@@ -16,6 +16,11 @@ MACHINE "uknc/UKNC.cfg"
 LOGDEFS _16,_8
 
 WAIT _12000
+# Бейсик - вторая кассета ПЗУ: стрелка вправо, номер, ВК
+KEY _100,_100,2
+WAIT _200
+KEY _100,_300,right
+WAIT _200
 KEY _100,_100,2
 WAIT _200
 KEY _100,_100,ret

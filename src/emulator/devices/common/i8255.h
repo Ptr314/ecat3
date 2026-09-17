@@ -19,9 +19,17 @@ private:
 
     uint8_t registers [4];
 
+    //Управляющее слово, с которым микросхема оказывается после сброса. У
+    //отдельной ВВ55 его пишет программа, но в машине порт бывает и жёстко
+    //разведённым: параллельный порт УК-НЦ всегда выводит порт A, и ни ПЗУ, ни
+    //программы управляющего слова ему не пишут
+    unsigned int m_control_default;
+    bool m_has_control_default;
+
 public:
     I8255(InterfaceManager *im, EmulatorConfigDevice *cd);
 
+    emulator::Result load_config(SystemData *sd) override;
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     virtual unsigned int get_value(unsigned int address) override;
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;

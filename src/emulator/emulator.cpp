@@ -74,6 +74,7 @@
 #include "emulator/devices/specific/uknc_channels.h"
 #include "emulator/devices/specific/uknc_display.h"
 #include "emulator/devices/specific/uknc_graphics.h"
+#include "emulator/devices/specific/uknc_hdd.h"
 #include "emulator/devices/specific/uknc_timer.h"
 #include "emulator/devices/specific/uknc_keyboard.h"
 #include "emulator/devices/specific/uknc_sound.h"
@@ -1046,6 +1047,7 @@ void Emulator::register_devices()
     dm->register_device("uknc-channels", create_uknc_channels);
     dm->register_device("uknc-display", create_uknc_display);
     dm->register_device("uknc-graphics", create_uknc_graphics);
+    dm->register_device("uknc-hdd", create_uknc_hdd);
     dm->register_device("uknc-timer", create_uknc_timer);
     dm->register_device("uknc-keyboard", create_uknc_keyboard);
     dm->register_device("uknc-sound", create_uknc_sound);

@@ -261,6 +261,7 @@ set(EMULATOR_SOURCES
     emulator/devices/specific/uknc_channels.h emulator/devices/specific/uknc_channels.cpp
     emulator/devices/specific/uknc_display.h emulator/devices/specific/uknc_display.cpp
     emulator/devices/specific/uknc_graphics.h emulator/devices/specific/uknc_graphics.cpp
+    emulator/devices/specific/uknc_hdd.h emulator/devices/specific/uknc_hdd.cpp
     emulator/devices/specific/uknc_timer.h emulator/devices/specific/uknc_timer.cpp
     emulator/devices/specific/uknc_keyboard.h emulator/devices/specific/uknc_keyboard.cpp
     emulator/devices/specific/uknc_sound.h emulator/devices/specific/uknc_sound.cpp

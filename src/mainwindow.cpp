@@ -493,6 +493,41 @@ void MainWindow::CreateFDDMenu(unsigned int n)
     ui->toolBar->insertWidget(ui->actionDebugger, fdd_button[n] );
 }
 
+//Кнопка винчестера. В отличие от дисковода образ никуда не сохраняют: машина
+//пишет прямо в файл, поэтому пунктов всего три - открыть, защитить, вынуть
+void MainWindow::CreateHDDMenu(unsigned int n)
+{
+    hdd_menu[n] = new QMenu(this);
+    QAction * a1 = new QAction(MainWindow::tr("<Not loaded>"), this);
+    a1->setIcon(QIcon(":/icons/hdd_unmount"));
+    a1->setEnabled(false);
+    QAction * a2 = new QAction(QString(MainWindow::tr("Open an image...")), this);
+    a2->setIcon(QIcon(":/icons/open"));
+    connect(a2, &QAction::triggered, this, [this, n](){hdd_open(n);});
+    QAction * a3 = new QAction(QString(MainWindow::tr("Write protect")), this);
+    a3->setIcon(QIcon(":/icons/lock"));
+    a3->setCheckable(true);
+    connect(a3, &QAction::triggered, this, [this, n](){hdd_wp(n);});
+    QAction * a4 = new QAction(QString(MainWindow::tr("Eject")), this);
+    a4->setIcon(QIcon(":/icons/eject"));
+    connect(a4, &QAction::triggered, this, [this, n](){hdd_eject(n);});
+    hdd_menu[n]->addAction(a1);
+    hdd_menu[n]->addSeparator();
+    hdd_menu[n]->addAction(a2);
+    hdd_menu[n]->addAction(a3);
+    hdd_menu[n]->addAction(a4);
+
+    hdd_button[n] = new QToolButton();
+    hdd_button[n]->setIcon(QIcon(":/icons/hdd_unmount"));
+    hdd_button[n]->setMenu(hdd_menu[n]);
+    hdd_button[n]->setPopupMode(QToolButton::MenuButtonPopup);
+    hdd_button[n]->setFocusPolicy(Qt::NoFocus);
+
+    connect(hdd_button[n], &QToolButton::clicked, this, [this, n](){hdd_open(n);});
+
+    ui->toolBar->insertWidget(ui->actionDebugger, hdd_button[n]);
+}
+
 MainWindow::~MainWindow()
 {
     delete ui;
@@ -652,6 +687,15 @@ void MainWindow::UpdateToolbar()
     }
     if (fdd_timer != nullptr) fdd_timer->stop();
 
+    if (hdds_found > 0) {
+        for (unsigned int i = 0; i < hdds_found; i++) {
+            delete hdd_button[i];
+            delete hdd_menu[i];
+        }
+        hdds.clear();
+        hdds_found = 0;
+    }
+
     if (tape_action != nullptr) {
         ui->toolBar->removeAction(tape_action);
     }
@@ -701,6 +745,25 @@ void MainWindow::UpdateToolbar()
         fdd_timer->start(100);
     }
 
+    //Винчестеры. Образ - файл на сотни мегабайт, с машиной он не поставляется,
+    //поэтому гнездо обычно пустое, и вставляют образ отсюда
+    std::vector<ComputerDevice*> hdd_devices = e->dm->find_devices_by_class("hdd");
+    hdds_found = hdd_devices.size();
+    if (hdds_found > sizeof(hdd_button)/sizeof(hdd_button[0]))
+        hdds_found = sizeof(hdd_button)/sizeof(hdd_button[0]);
+
+    for (unsigned int i = 0; i < hdds_found; i++) {
+        UKNCHDD * hdd = dynamic_cast<UKNCHDD*>(hdd_devices[i]);
+        hdds.push_back(hdd);
+        CreateHDDMenu(i);
+        buttons_added++;
+        if (hdd != nullptr && hdd->is_attached()) {
+            hdd_menu[i]->actions().at(0)->setText(QString::fromStdString(hdd->image_name()));
+            hdd_button[i]->setIcon(QIcon(":/icons/hdd_mount"));
+        }
+        if (hdd != nullptr) hdd_menu[i]->actions().at(3)->setChecked(hdd->is_protected());
+    }
+
     std::vector<ComputerDevice*>tape_devices = e->dm->find_devices_by_class("tape");
     if (tape_devices.size() != 0) {
         buttons_added++;
@@ -732,7 +795,7 @@ void MainWindow::UpdateToolbar()
 #endif
 
     // Device options
-    bool has_hw_buttons = (fdds_found > 0 || tape_devices.size() != 0);
+    bool has_hw_buttons = (fdds_found > 0 || hdds_found > 0 || tape_devices.size() != 0);
     bool options_separator_added = false;
 
     SystemData * sd = e->get_system_data();
@@ -1295,6 +1358,7 @@ void MainWindow::on_actionDebugger_triggered()
 void MainWindow::closeEvent (QCloseEvent *event)
 {
     fdds_found = 0; // to prevent crashing on buttons update
+    hdds_found = 0;
 
     // The timers must not fire once the emulator is gone
     if (fdd_timer != nullptr) fdd_timer->stop();
@@ -1366,6 +1430,43 @@ void MainWindow::fdd_wp(unsigned int n)
             fdd_button[n]->setIcon(QIcon(":/icons/floppy_mount"));
         }
     }
+}
+
+void MainWindow::hdd_open(unsigned int n)
+{
+    if (hdds[n] == nullptr) return;
+
+    QString file_name = QFileDialog::getOpenFileName(this, MainWindow::tr("Open a hard disk image"), last_path, QString::fromStdString(hdds[n]->files));
+    if (file_name.isEmpty()) return;
+
+    QFileInfo fi(file_name);
+    emulator::Result res = hdds[n]->load_image(file_name.toStdString());
+    if (!res) {
+        QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
+    } else {
+        hdd_menu[n]->actions().at(0)->setText(fi.fileName());
+        hdd_button[n]->setIcon(QIcon(":/icons/hdd_mount"));
+        //Образ, который не открылся на запись, защищён и без спроса
+        hdd_menu[n]->actions().at(3)->setChecked(hdds[n]->is_protected());
+        e->record_command(hdds[n]->name, "load", format_script_arg(fi.absoluteFilePath().toStdString()));
+    }
+    last_path = fi.absolutePath();
+    e->set_last_path(last_path.toStdString());
+}
+
+void MainWindow::hdd_eject(unsigned int n)
+{
+    hdd_menu[n]->actions().at(0)->setText(MainWindow::tr("<Not loaded>"));
+    hdd_button[n]->setIcon(QIcon(":/icons/hdd_unmount"));
+    hdds[n]->unload();
+    e->record_command(hdds[n]->name, "eject", "");
+}
+
+void MainWindow::hdd_wp(unsigned int n)
+{
+    const bool on = hdd_menu[n]->actions().at(3)->isChecked();
+    hdds[n]->send_command("protect", on?"1":"0");
+    e->record_command(hdds[n]->name, "protect", on?"1":"0");
 }
 
 void MainWindow::fdd_write(unsigned int n)

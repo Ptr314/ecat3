@@ -57,6 +57,7 @@ pdp11core::pdp11core(int family_type)
     , is_irq2(false)
     , is_irq3(false)
     , is_halt_req(false)
+    , is_aclo(false)
     , m_abort(false)
     , m_no_trace(false)
     , start_address(0100000)
@@ -85,6 +86,7 @@ void pdp11core::reset()
     is_irq2 = false;
     is_irq3 = false;
     is_halt_req = false;
+    is_aclo = false;
     m_abort = false;
     m_no_trace = false;
 
@@ -139,6 +141,7 @@ void pdp11core::set_virq(bool state, uint16_t vector)
 
 void pdp11core::set_irq2(bool state) { if (state) is_irq2 = true; }
 void pdp11core::set_irq3(bool state) { if (state) is_irq3 = true; }
+void pdp11core::set_aclo(bool state) { if (state) is_aclo = true; }
 void pdp11core::set_halt(bool state) { if (state) is_halt_req = true; }
 
 //----------------------- Bus access -------------------------------//
@@ -361,6 +364,15 @@ void pdp11core::enter_halt_mode(uint16_t vector)
 
 bool pdp11core::check_interrupts(unsigned int & cycles)
 {
+    // Авария сети старше пульта и всех устройств. Запрещают её только оба
+    // разряда приоритета сразу, как и в UKNCBTL
+    if (is_aclo && (context.PSW & 0600) != 0600) {
+        is_aclo = false;
+        do_trap(PDP11::V_POWER_FAIL);
+        cycles += C_TRAP;
+        return true;
+    }
+
     if (is_halt_req) {
         is_halt_req = false;
         // Внешний запрос пульта. На УК-НЦ его даёт периферийный процессор

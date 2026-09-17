@@ -1,0 +1,115 @@
+# УК-НЦ: контроллер винчестера (плата ИДЕ в кассете ПЗУ).
+#
+# Регистры выбираются разрядами 1-3 адреса в обратном коде: 110000 - состояние
+# и команда, 110002 - головка, 110004 и 110006 - цилиндр, 110010 - сектор,
+# 110012 - их число, 110014 - ошибка, 110016 - данные. Данные на магистрали
+# 1801 идут в обратном коде, и плата их не переворачивает, поэтому сценарий
+# пишет в регистры дополнение значения, а читает дополнение ответа.
+#
+# Образ ../files/uknc-hdd.img делает make_uknc_hdd.py: 4 сектора, 2 головки,
+# 8 цилиндров. В каждом секторе записан его номер по порядку и тот же номер в
+# обратном коде, так что ошибка в пересчёте цилиндр-головка-сектор видна сразу.
+# @timeout 60
+
+MACHINE "uknc/hdd-test.cfg"
+LOGDEFS _16,_8
+
+# Процессору здесь нечего делать, но эмулированное время должно идти: пока
+# накопитель ищет дорожку, WAITFOR считает именно его
+COMMAND cpu.stop()
+COMMAND ram.set16(1000, 777)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+
+PRINT "=== образ вставлен ==="
+COMMAND hdd.load("../files/uknc-hdd.img")
+COMMAND hdd.protect(1)
+LOG hdd.attached
+LOG hdd.geometry
+LOG hdd.inverted
+LOG hdd.protected
+PRINT "сразу после сброса накопитель занят: разряд 7 состояния"
+LOG hdd.status
+WAIT _10
+PRINT "готов: 110000 отдаёт дополнение регистра состояния"
+LOG mapper.value16(110000)
+LOG hdd.status
+
+PRINT "=== чтение сектора 2 дорожки 0 (по порядку - второй) ==="
+COMMAND mapper.set16(110012, 177776)
+COMMAND mapper.set16(110010, 177775)
+COMMAND mapper.set16(110006, 177777)
+COMMAND mapper.set16(110004, 177777)
+COMMAND mapper.set16(110002, 177777)
+COMMAND mapper.set16(110000, 177737)
+WAITFOR hdd.reads == 1, _1000
+LOG mapper.value16(110000)
+LOG hdd.status
+PRINT "первые слова сектора: номер, номер в обратном коде, текст"
+LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+
+PRINT "=== чтение цилиндра 1, головки 1, сектора 3 - это сектор 16 по порядку ==="
+COMMAND mapper.set16(110012, 177776)
+COMMAND mapper.set16(110010, 177774)
+COMMAND mapper.set16(110006, 177776)
+COMMAND mapper.set16(110004, 177777)
+COMMAND mapper.set16(110002, 177776)
+COMMAND mapper.set16(110000, 177737)
+WAITFOR hdd.reads == 2, _1000
+LOG hdd.cylinder
+LOG hdd.head
+LOG hdd.sector
+LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+
+PRINT "=== линейная адресация: разряд 6 регистра 110002 ==="
+# Тот же сектор 16, но задан одним числом: разряды 0-7 в 110010, 8-23 в
+# цилиндре, 24-27 в младшей тетраде 110002. Геометрия при этом ни при чём
+COMMAND mapper.set16(110012, 177776)
+COMMAND mapper.set16(110010, 177761)
+COMMAND mapper.set16(110006, 177777)
+COMMAND mapper.set16(110004, 177777)
+COMMAND mapper.set16(110002, 177437)
+COMMAND mapper.set16(110000, 177737)
+WAITFOR hdd.reads == 3, _1000
+LOG hdd.lba
+LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+
+PRINT "=== чтение за краем образа: цилиндр 11 ==="
+COMMAND mapper.set16(110002, 177777)
+COMMAND mapper.set16(110012, 177776)
+COMMAND mapper.set16(110010, 177776)
+COMMAND mapper.set16(110006, 177766)
+COMMAND mapper.set16(110004, 177777)
+COMMAND mapper.set16(110002, 177777)
+COMMAND mapper.set16(110000, 177737)
+WAIT _100
+PRINT "разряд 0 состояния - ошибка, 110014 отдаёт её причину"
+LOG hdd.status
+LOG hdd.error
+LOG mapper.value16(110000)
+LOG mapper.value16(110014)
+
+PRINT "=== паспорт накопителя ==="
+# Паспорт накопитель отдаёт прямым кодом, а магистраль переворачивает его, как
+# и всё остальное: у образа в прямом коде машина видит дополнение. Так же
+# ведёт себя UKNCBTL, и ПЗУ плат с этим считаются
+COMMAND mapper.set16(110000, 177423)
+WAIT _10
+LOG hdd.command
+LOG hdd.status
+PRINT "слова 0-3: тип, цилиндры, 0, головки"
+LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+
+PRINT "=== итог ==="
+LOG hdd.reads
+LOG hdd.writes
+LOG mapper.map
+EXIT

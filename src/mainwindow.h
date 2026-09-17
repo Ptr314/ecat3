@@ -15,6 +15,7 @@
 #include "emulator/emulator.h"
 #include "emulator/debug.h"
 #include "emulator/devices/common/fdd.h"
+#include "emulator/devices/specific/uknc_hdd.h"
 #include "emulator/devices/common/tape.h"
 
 QT_BEGIN_NAMESPACE
@@ -86,6 +87,10 @@ private slots:
     void fdd_wp(unsigned int n);
     void fdd_write(unsigned int n);
 
+    void hdd_open(unsigned int n);
+    void hdd_eject(unsigned int n);
+    void hdd_wp(unsigned int n);
+
     void update_fdds();
 
     void on_actionScreenshot_triggered();
@@ -148,6 +153,13 @@ private:
     QList<QAction*> option_toolbar_actions;
     QMenu * fdd_menu[8];
     std::vector<FDD*> fdds;
+
+    //Винчестеры машины. Кнопка у каждого своя, как у дисководов, но моргать
+    //ей нечем: обращения к диску идут пачками и рисовать их нечем
+    QToolButton * hdd_button[4];
+    QMenu * hdd_menu[4];
+    std::vector<UKNCHDD*> hdds;
+    unsigned int hdds_found = 0;
     //FDC * fdc;
     // TapeRecorder * tape;
     unsigned int fdds_found = 0;
@@ -213,6 +225,7 @@ private:
     void UpdateToolbar();
     void CreateScreenMenu();
     void CreateFDDMenu(unsigned int n);
+    void CreateHDDMenu(unsigned int n);
 
     void set_title();
 

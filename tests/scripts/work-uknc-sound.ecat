@@ -5,6 +5,11 @@
 # таблица 32). Проверяется, что щелчок клавиши ПЗУ делает сама машина, что
 # тон сетки получается нужной длины и что разряд 7 его глушит.
 #
+# Здесь же Covox: восьмиразрядный ЦАП на выходных линиях порта A параллельного
+# порта (177100). Линии инвертированы, поэтому уровень - дополнение того, что
+# записано в порт, и ЦАП слышит запись, не дожидаясь управляющего слова: порт
+# машины разведён на вывод жёстко.
+#
 # @nomcp щелчок снимается ПЗУ по кадрам 50 Гц, а живая сессия гоняет машину
 # между загрузкой и первой командой
 # @timeout 60
@@ -63,4 +68,23 @@ WAIT _8
 LOG sound.level
 
 COMMAND pp-sys.set16(0,100020)
+
+PRINT "=== Covox на порту A параллельного порта ==="
+LOG lpt.device
+LOG covox.plugged
+COMMAND ppu-mapper.set(177100, 200)
+LOG pp-printer.a
+LOG covox.value
+COMMAND ppu-mapper.set(177100, 377)
+LOG pp-printer.a
+LOG covox.value
+COMMAND ppu-mapper.set(177100, 0)
+LOG pp-printer.a
+LOG covox.value
+
+PRINT "=== вынутый из гнезда ЦАП молчит ==="
+COMMAND lpt.plug(none)
+LOG lpt.device
+LOG covox.plugged
+COMMAND lpt.plug(covox)
 EXIT

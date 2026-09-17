@@ -11,6 +11,7 @@
 #define CALLBACK_IRQ3   3
 #define CALLBACK_HALT   4
 #define CALLBACK_DCLO   5
+#define CALLBACK_ACLO   6
 
 // ---------------------------  Library wrapper --------------------------------
 
@@ -69,6 +70,7 @@ k1801vm1::k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd, int family_ty
     , i_irq3(this, im, 1, "irq3", MODE_R, CALLBACK_IRQ3)
     , i_halt(this, im, 1, "halt", MODE_R, CALLBACK_HALT)
     , i_dclo(this, im, 1, "dclo", MODE_R, CALLBACK_DCLO)
+    , i_aclo(this, im, 1, "aclo", MODE_R, CALLBACK_ACLO)
     , i_halt_mode(this, im, 1, "halt_mode", MODE_W)
     , i_iako(this, im, 16, "iako", MODE_W)
 {
@@ -288,6 +290,18 @@ void k1801vm1::interface_callback(unsigned int callback_id, unsigned int new_val
         } else if (m_held_in_reset) {
             m_held_in_reset = false;
             reset_mode = true;
+        }
+        break;
+    case CALLBACK_ACLO:
+        // Запрос даёт снятие линии, а не её появление: так и на машине -
+        // прерывание по аварии сети приходит, когда напряжение возвращается.
+        // Пока процессор держат сбросом, ничего не происходит. Не подключённая
+        // линия стоит снятой и не даёт ни одного запроса
+        if (active) {
+            m_aclo_active = true;
+        } else if (m_aclo_active) {
+            m_aclo_active = false;
+            if (!m_held_in_reset) core->set_aclo(true);
         }
         break;
     }

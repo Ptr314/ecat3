@@ -111,6 +111,7 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/specific/uknc_channels.cpp
     ${EMU_DIR}/devices/specific/uknc_display.cpp
     ${EMU_DIR}/devices/specific/uknc_graphics.cpp
+    ${EMU_DIR}/devices/specific/uknc_hdd.cpp
     ${EMU_DIR}/devices/specific/uknc_timer.cpp
     ${EMU_DIR}/devices/specific/uknc_keyboard.cpp
     ${EMU_DIR}/devices/specific/uknc_sound.cpp

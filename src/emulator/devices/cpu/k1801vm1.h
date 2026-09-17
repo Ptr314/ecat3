@@ -49,6 +49,14 @@ private:
     // processor up - the ROM it boots from is on the peripheral side.
     Interface i_dclo;
 
+    // Линия аварии сети. Её снятие при работающем процессоре - прерывание по
+    // вектору 024, и оно старше всех остальных. У УК-НЦ линией управляет
+    // периферийный процессор разрядом 15 регистра 177716: единица прижимает
+    // линию, ноль отпускает. Резидент винчестера так и сообщает центральному
+    // процессору об окончании переноса - подставляет свой адрес в вектор 024
+    // и снимает линию на мгновение
+    Interface i_aclo;
+
     // Процессор в пультовом режиме. У машин, где от режима зависит карта
     // памяти (УК-НЦ: в пультовом все 64 КБ - ОЗУ, в обычном верхние 8 КБ -
     // страница ввода-вывода), эта линия заводится на ~config диспетчера
@@ -61,6 +69,9 @@ private:
 
     // True while ~dclo holds the processor down
     bool m_held_in_reset = false;
+
+    // True while ~aclo is asserted; the interrupt comes when it is released
+    bool m_aclo_active = false;
 
     K1801VM1Core * core;
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;

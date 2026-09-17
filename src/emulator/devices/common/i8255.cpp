@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include "i8255.h"
+#include "emulator/utils.h"
 
 #define PORT_A   1
 #define PORT_B   2
@@ -20,7 +21,25 @@ I8255::I8255(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_port_b(this, im, 8, "B", MODE_R, PORT_B)
     , i_port_ch(this, im, 4, "CH", MODE_R, PORT_CH)
     , i_port_cl(this, im, 4, "CL", MODE_R, PORT_CL)
+    , m_control_default(0)
+    , m_has_control_default(false)
 {}
+
+emulator::Result I8255::load_config(SystemData *sd)
+{
+    emulator::Result res = AddressableDevice::load_config(sd);
+    if (!res) return res;
+
+    //Без параметра всё как было: после сброса порты стоят на ввод и ждут
+    //управляющего слова от программы
+    const std::string s = cd->get_parameter("control", false).value;
+    if (!s.empty()) {
+        m_control_default = parse_numeric_value(s);
+        m_has_control_default = true;
+    }
+
+    return emulator::Result::ok();
+}
 
 void I8255::reset(bool cold)
 {
@@ -30,6 +49,11 @@ void I8255::reset(bool cold)
     i_port_b.set_mode(MODE_R);
     i_port_ch.set_mode(MODE_R);
     i_port_cl.set_mode(MODE_R);
+
+    //Жёстко разведённый порт: управляющее слово из конфигурации проходит тем
+    //же путём, что и записанное программой, - режимы, обнуление выходов и всё
+    //остальное делает оно само
+    if (m_has_control_default) set_value(3, m_control_default);
 }
 
 unsigned int I8255::get_value(unsigned int address)
@@ -121,8 +145,11 @@ void I8255::set_value(unsigned int address, unsigned int value, bool force)
             if (i_port_ch.get_mode() == MODE_R) interface_callback(PORT_CH, i_port_ch.value, registers[2] >> 4);
             if (i_port_cl.get_mode() == MODE_R) interface_callback(PORT_CL, i_port_cl.value, registers[2] & 0xF);
         } else {
-            //Bitwise operations on C
-            unsigned int bn = value >> 1;
+            //Bitwise operations on C. Номер разряда - это только разряды 1-3
+            //слова, остальные по паспорту безразличны: без маски команда
+            //`MOV #177,@#177103` (проигрыватель Bad Apple на УК-НЦ) давала
+            //сдвиг на 63 разряда
+            unsigned int bn = (value >> 1) & 7;
             unsigned int bv = (value & 1) << bn;
             unsigned int bm = 1 << bn;
             unsigned int v = (registers[2] & ~bm) | bv;

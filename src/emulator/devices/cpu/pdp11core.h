@@ -33,6 +33,12 @@ protected:
     bool is_irq2;               // fixed vector 0100
     bool is_irq3;               // fixed vector 0270
     bool is_halt_req;           // external console (halt mode) request
+    // Авария сети, вектор 024. Запрос даёт СНЯТИЕ линии ACLO при работающем
+    // процессоре, и он тоже защёлкивается - это событие, а не уровень. У
+    // УК-НЦ линией управляет периферийный процессор разрядом 15 регистра
+    // 177716, и резидент винчестера так сообщает центральному, что перенос
+    // окончен: подставляет свой адрес в вектор 024 и дёргает линию
+    bool is_aclo;
 
     // Set by a failed bus access; aborts the current instruction and
     // turns into a trap through vector 4 once it unwinds.
@@ -137,6 +143,7 @@ public:
     virtual void set_virq(bool state, uint16_t vector);
     virtual void set_irq2(bool state);
     virtual void set_irq3(bool state);
+    virtual void set_aclo(bool state);
     virtual void set_halt(bool state);
 
     unsigned int execute();
