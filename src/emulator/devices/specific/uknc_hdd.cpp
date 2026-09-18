@@ -151,6 +151,7 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
 
     m_file = f;
     m_file_name = file_name;
+    m_image_size = (uint64_t)size;
     m_attached = true;
     m_sectors = sectors;
     m_heads = heads;
@@ -169,6 +170,8 @@ void UKNCHDD::unload()
     }
     m_attached = false;
     m_file_name.clear();
+    m_image_size = 0;
+    m_overlay.clear();
     m_cylinders = m_heads = m_sectors = 0;
 }
 
@@ -179,6 +182,7 @@ emulator::Result UKNCHDD::load_config(SystemData *sd)
 
     files = read_confg_value(cd, "files", false, std::string(""));
     m_write_protect = read_confg_value(cd, "write_protect", false, false);
+    m_volatile = read_confg_value(cd, "volatile", false, false);
 
     // Время в микросекундах: у машины оно своё у каждого накопителя, а
     // драйверы ждут готовности со своими выдержками
@@ -233,17 +237,29 @@ bool UKNCHDD::read_sector()
     if (m_file == nullptr) return false;
     const uint64_t offset = sector_offset();
     if (offset > 0x7FFFFFFFull) return false;
-    if (std::fseek(m_file, (long)offset, SEEK_SET) != 0) return false;
-    if (std::fread(m_buffer, 1, SECTOR_SIZE, m_file) != SECTOR_SIZE) return false;
+    const auto kept = m_overlay.find(offset);
+    if (kept != m_overlay.end())
+        memcpy(m_buffer, kept->second.data(), SECTOR_SIZE);
+    else {
+        if (std::fseek(m_file, (long)offset, SEEK_SET) != 0) return false;
+        if (std::fread(m_buffer, 1, SECTOR_SIZE, m_file) != SECTOR_SIZE) return false;
+    }
     m_sectors_read++;
     return true;
 }
 
 bool UKNCHDD::write_sector()
 {
-    if (m_file == nullptr || m_read_only || m_write_protect) return false;
+    if (m_file == nullptr || m_write_protect) return false;
     const uint64_t offset = sector_offset();
-    if (offset > 0x7FFFFFFFull) return false;
+    if (offset + SECTOR_SIZE > m_image_size) return false;
+    if (m_volatile) {
+        // Файл только на чтение этому не мешает: в него ничего не пишется
+        memcpy(m_overlay[offset].data(), m_buffer, SECTOR_SIZE);
+        m_sectors_written++;
+        return true;
+    }
+    if (m_read_only || offset > 0x7FFFFFFFull) return false;
     if (std::fseek(m_file, (long)offset, SEEK_SET) != 0) return false;
     if (std::fwrite(m_buffer, 1, SECTOR_SIZE, m_file) != SECTOR_SIZE) return false;
     std::fflush(m_file);
@@ -568,6 +584,7 @@ std::vector<DeviceFieldInfo> UKNCHDD::get_device_fields()
     r.push_back({"inverted",  "1, когда образ снят в обратном коде",       false});
     r.push_back({"lba",       "1, когда адрес задан линейно, а не CHS",     false});
     r.push_back({"protected", "1, когда запись в образ запрещена",         false});
+    r.push_back({"volatile",  "1, когда запись идёт в память, а не в файл", false});
     r.push_back({"geometry",  "Цилиндры, головки и секторы образа",        false});
     r.push_back({"cylinders", "Число цилиндров",                          false});
     r.push_back({"heads",     "Число головок",                            false});
@@ -589,6 +606,7 @@ std::vector<DeviceCommandInfo> UKNCHDD::get_device_commands()
     r.push_back({"load",    "\"file\"", "Вставляет образ винчестера"});
     r.push_back({"eject",   "",         "Вынимает образ"});
     r.push_back({"protect", "[0|1]",    "Запрещает или разрешает запись в образ"});
+    r.push_back({"volatile", "[0|1]",   "Запись в память вместо файла; выключение забывает записанное"});
     return r;
 }
 
@@ -609,6 +627,7 @@ bool UKNCHDD::get_field(const std::string &field, unsigned int from, unsigned in
     if (field == "inverted")  { out.values.push_back(m_inverted? 1 : 0);  return true; }
     if (field == "lba")       { out.values.push_back(lba_mode()? 1 : 0);  return true; }
     if (field == "protected") { out.values.push_back((m_read_only || m_write_protect)? 1 : 0); return true; }
+    if (field == "volatile")  { out.values.push_back(m_volatile? 1 : 0);  return true; }
     if (field == "cylinders") { out.values.push_back(m_cylinders);        return true; }
     if (field == "heads")     { out.values.push_back(m_heads);            return true; }
     if (field == "sectors")   { out.values.push_back(m_sectors);          return true; }
@@ -650,6 +669,15 @@ emulator::Result UKNCHDD::send_command(const std::string &command, const std::st
             m_write_protect = !m_write_protect;
         else
             m_write_protect = (parse_numeric_value(p[0], 10) != 0);
+        return emulator::Result::ok();
+    }
+
+    if (command == "volatile") {
+        if (p.empty() || p[0].empty())
+            m_volatile = !m_volatile;
+        else
+            m_volatile = (parse_numeric_value(p[0], 10) != 0);
+        if (!m_volatile) m_overlay.clear();
         return emulator::Result::ok();
     }
 

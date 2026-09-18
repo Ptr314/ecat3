@@ -1,0 +1,305 @@
+# УК-НЦ: графика терминала периферийного процессора - контур ромба и заливка.
+#
+# Ромб рисуется так же, как в заводском «Тесте графики (ВОЗУ)» с sysimage.dsk:
+# четыре отрезка (ESC UH - перейти в точку, ESC UG - провести линию, координаты
+# в кодировке Tektronix 4014), затем ESC UF - заливка от затравочной точки и
+# ESC UB. Байты идут в терминал прямо в передатчик канала 0 ЦП (177566), пока
+# FODOS ждёт команду.
+#
+# Заливка ПЗУ пишет октеты командой MOVB в 177024. На шине 1801 байт пишется
+# циклом чтение-модификация-запись, и это чтение загружает фон октета с
+# экрана. Когда процессор байтовую запись без чтения делал, заливка затирала
+# контур по краям октетов и оставляла вертикальные штрихи.
+#
+# Лишняя строка LOG нужна MCP-прогону: он сравнивает журнал, а не снимок.
+# @timeout 180
+
+MACHINE "uknc/UKNC.cfg"
+WAIT _14000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+WAIT _22000
+# Программа DAY спрашивает дату, ВК оставляет предложенную
+KEY _100,_100,ret
+WAIT _25000
+PRINT "=== графический режим ==="
+COMMAND mapper.set(177566, 14)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 45)
+WAIT _5
+COMMAND mapper.set(177566, 41)
+WAIT _5
+COMMAND mapper.set(177566, 60)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 114)
+WAIT _5
+COMMAND mapper.set(177566, 111)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 67)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 61)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 61)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 45)
+WAIT _5
+COMMAND mapper.set(177566, 41)
+WAIT _5
+COMMAND mapper.set(177566, 63)
+WAIT _5
+COMMAND mapper.set(177566, 16)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 45)
+WAIT _5
+COMMAND mapper.set(177566, 41)
+WAIT _5
+COMMAND mapper.set(177566, 60)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 115)
+WAIT _5
+COMMAND mapper.set(177566, 120)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 42)
+WAIT _5
+PRINT "=== контур ==="
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 115)
+WAIT _5
+COMMAND mapper.set(177566, 114)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 62)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 125)
+WAIT _5
+COMMAND mapper.set(177566, 110)
+WAIT _5
+COMMAND mapper.set(177566, 41)
+WAIT _5
+COMMAND mapper.set(177566, 157)
+WAIT _5
+COMMAND mapper.set(177566, 153)
+WAIT _5
+COMMAND mapper.set(177566, 40)
+WAIT _5
+COMMAND mapper.set(177566, 105)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 125)
+WAIT _5
+COMMAND mapper.set(177566, 107)
+WAIT _5
+COMMAND mapper.set(177566, 41)
+WAIT _5
+COMMAND mapper.set(177566, 146)
+WAIT _5
+COMMAND mapper.set(177566, 156)
+WAIT _5
+COMMAND mapper.set(177566, 40)
+WAIT _5
+COMMAND mapper.set(177566, 121)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 115)
+WAIT _5
+COMMAND mapper.set(177566, 114)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 62)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 125)
+WAIT _5
+COMMAND mapper.set(177566, 110)
+WAIT _5
+COMMAND mapper.set(177566, 41)
+WAIT _5
+COMMAND mapper.set(177566, 146)
+WAIT _5
+COMMAND mapper.set(177566, 156)
+WAIT _5
+COMMAND mapper.set(177566, 40)
+WAIT _5
+COMMAND mapper.set(177566, 121)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 125)
+WAIT _5
+COMMAND mapper.set(177566, 107)
+WAIT _5
+COMMAND mapper.set(177566, 41)
+WAIT _5
+COMMAND mapper.set(177566, 155)
+WAIT _5
+COMMAND mapper.set(177566, 153)
+WAIT _5
+COMMAND mapper.set(177566, 40)
+WAIT _5
+COMMAND mapper.set(177566, 135)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 115)
+WAIT _5
+COMMAND mapper.set(177566, 114)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 62)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 125)
+WAIT _5
+COMMAND mapper.set(177566, 110)
+WAIT _5
+COMMAND mapper.set(177566, 41)
+WAIT _5
+COMMAND mapper.set(177566, 155)
+WAIT _5
+COMMAND mapper.set(177566, 153)
+WAIT _5
+COMMAND mapper.set(177566, 40)
+WAIT _5
+COMMAND mapper.set(177566, 135)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 125)
+WAIT _5
+COMMAND mapper.set(177566, 107)
+WAIT _5
+COMMAND mapper.set(177566, 41)
+WAIT _5
+COMMAND mapper.set(177566, 146)
+WAIT _5
+COMMAND mapper.set(177566, 151)
+WAIT _5
+COMMAND mapper.set(177566, 40)
+WAIT _5
+COMMAND mapper.set(177566, 121)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 115)
+WAIT _5
+COMMAND mapper.set(177566, 114)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 100)
+WAIT _5
+COMMAND mapper.set(177566, 62)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 125)
+WAIT _5
+COMMAND mapper.set(177566, 110)
+WAIT _5
+COMMAND mapper.set(177566, 41)
+WAIT _5
+COMMAND mapper.set(177566, 146)
+WAIT _5
+COMMAND mapper.set(177566, 151)
+WAIT _5
+COMMAND mapper.set(177566, 40)
+WAIT _5
+COMMAND mapper.set(177566, 121)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 125)
+WAIT _5
+COMMAND mapper.set(177566, 107)
+WAIT _5
+COMMAND mapper.set(177566, 41)
+WAIT _5
+COMMAND mapper.set(177566, 157)
+WAIT _5
+COMMAND mapper.set(177566, 153)
+WAIT _5
+COMMAND mapper.set(177566, 40)
+WAIT _5
+COMMAND mapper.set(177566, 105)
+WAIT _5
+WAIT _1000
+SCREEN "../results/work-uknc-fill-outline.png"
+PRINT "=== заливка ==="
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 125)
+WAIT _5
+COMMAND mapper.set(177566, 106)
+WAIT _5
+COMMAND mapper.set(177566, 41)
+WAIT _5
+COMMAND mapper.set(177566, 156)
+WAIT _5
+COMMAND mapper.set(177566, 153)
+WAIT _5
+COMMAND mapper.set(177566, 40)
+WAIT _5
+COMMAND mapper.set(177566, 121)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 125)
+WAIT _5
+COMMAND mapper.set(177566, 102)
+WAIT _5
+COMMAND mapper.set(177566, 33)
+WAIT _5
+COMMAND mapper.set(177566, 45)
+WAIT _5
+COMMAND mapper.set(177566, 41)
+WAIT _5
+COMMAND mapper.set(177566, 63)
+WAIT _5
+WAIT _1500
+LOGDEFS _16,_8
+LOG pp-video.draws
+SCREEN "../results/work-uknc-fill.png"
+EXIT

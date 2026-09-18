@@ -103,6 +103,12 @@ private:
     unsigned int m_sent_c2p = 0;
     unsigned int m_sent_p2c = 0;
 
+    // Последние байты терминального канала 0 от ЦП к ПП - то, что программа
+    // выводит на экран, вместе с управляющими последовательностями
+    static const unsigned int TRACE_SIZE = 1024;
+    uint8_t m_trace[TRACE_SIZE] = {};
+    unsigned int m_trace_pos = 0;
+
     void write_pipe(Pipe &p, unsigned int value);   // a byte handed over
     unsigned int read_pipe(Pipe &p);                // a byte taken
     static void set_enable(bool &irq, bool &pending, bool &armed, bool ready,

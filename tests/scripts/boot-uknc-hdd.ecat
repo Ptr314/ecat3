@@ -9,6 +9,9 @@
 # Образ ../files/uknc-hdd.img делает make_uknc_hdd.py: 4 сектора, 2 головки,
 # 8 цилиндров. В каждом секторе записан его номер по порядку и тот же номер в
 # обратном коде, так что ошибка в пересчёте цилиндр-головка-сектор видна сразу.
+#
+# Запись проверяется в режиме volatile: записанный сектор остаётся в памяти,
+# а файл образа не меняется, иначе тест испортил бы свой же образ.
 # @timeout 60
 
 MACHINE "uknc/hdd-test.cfg"
@@ -105,6 +108,56 @@ LOG hdd.status
 PRINT "слова 0-3: тип, цилиндры, 0, головки"
 LOG mapper.value16(110016)
 LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+
+PRINT "=== запись сектора 6 по порядку (цилиндр 0, головка 1, сектор 2) ==="
+# Запись идёт в память: файл образа из tests/files тест менять не должен.
+# Сектор передаёт программа процессора - 256 слов из буфера 3000 в регистр
+# данных: MOV #3000,R0; MOV #400,R1; MOV (R0)+,@#110016; SOB R1,.-4; BR .
+COMMAND hdd.protect(0)
+COMMAND hdd.volatile(1)
+LOG hdd.protected
+LOG hdd.volatile
+COMMAND ram.fill(3000, 3777, 125)
+COMMAND ram.set16(3000, 12345, 54321)
+COMMAND ram.set16(2000, 12700, 3000, 12701, 400, 12037, 110016, 77103, 777)
+COMMAND mapper.set16(110012, 177776)
+COMMAND mapper.set16(110010, 177775)
+COMMAND mapper.set16(110006, 177777)
+COMMAND mapper.set16(110004, 177777)
+COMMAND mapper.set16(110002, 177776)
+COMMAND mapper.set16(110000, 177717)
+PRINT "команда записи сразу открывает буфер: разряд 3 состояния"
+LOG hdd.status
+COMMAND cpu.stop()
+COMMAND cpu.setreg(PC, 2000)
+COMMAND cpu.run()
+WAITFOR hdd.writes == 1, _1000
+LOG hdd.status
+LOG hdd.error
+
+PRINT "=== тот же сектор читается записанным ==="
+COMMAND mapper.set16(110012, 177776)
+COMMAND mapper.set16(110010, 177775)
+COMMAND mapper.set16(110006, 177777)
+COMMAND mapper.set16(110004, 177777)
+COMMAND mapper.set16(110002, 177776)
+COMMAND mapper.set16(110000, 177737)
+WAITFOR hdd.reads == 4, _1000
+LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+
+PRINT "=== режим выключен: записанное забыто, в файле прежний сектор 6 ==="
+COMMAND hdd.volatile(0)
+COMMAND mapper.set16(110012, 177776)
+COMMAND mapper.set16(110010, 177775)
+COMMAND mapper.set16(110006, 177777)
+COMMAND mapper.set16(110004, 177777)
+COMMAND mapper.set16(110002, 177776)
+COMMAND mapper.set16(110000, 177737)
+WAITFOR hdd.reads == 5, _1000
 LOG mapper.value16(110016)
 LOG mapper.value16(110016)
 

@@ -108,6 +108,7 @@ void UKNCChannels::write_pipe(Pipe &p, unsigned int value)
     // to wait until it is taken
     const bool was_ready = p.rx_ready;
     p.data = value & 0xFF;
+    if (&p == &m_c2p[0]) m_trace[m_trace_pos++ & (TRACE_SIZE - 1)] = (uint8_t)p.data;
     p.rx_ready = true;
     p.tx_ready = false;
 
@@ -374,11 +375,21 @@ std::vector<DeviceFieldInfo> UKNCChannels::get_device_fields()
     r.push_back({"sent_p2c", "Bytes handed from the peripheral processor to the central", false});
     r.push_back({"cpu_vector", "Vector currently offered to the central processor", false});
     r.push_back({"ppu_vector", "Vector currently offered to the peripheral processor", false});
+    r.push_back({"trace", "Last bytes of terminal channel 0 from the central processor, oldest first; trace(n) - the last n", true});
     return r;
 }
 
 bool UKNCChannels::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
+    if (field == "trace") {
+        // Без диапазона - всё кольцо; trace(n) - последние n байтов
+        unsigned int n = (from == 0 && to == 0)? TRACE_SIZE : ((from > TRACE_SIZE)? TRACE_SIZE : from);
+        if (n > m_trace_pos) n = m_trace_pos;
+        out.numeric = true; out.width = 8;
+        for (unsigned int i = n; i > 0; i--)
+            out.values.push_back(m_trace[(m_trace_pos - i) & (TRACE_SIZE - 1)]);
+        return true;
+    }
     if (field == "sent_c2p") {
         out.numeric = true; out.width = 16;
         out.values.push_back(m_sent_c2p);

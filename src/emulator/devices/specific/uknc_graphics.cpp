@@ -175,14 +175,27 @@ unsigned int UKNCGraphics::get_value(unsigned int address)
 
 void UKNCGraphics::set_value(unsigned int address, unsigned int value, bool force)
 {
-    if (address & 1) {
-        // The high lane of a register whose low byte carries the meaning
-        const unsigned int w = get_value_word(address & ~1u);
-        set_value_word(address & ~1u, (w & 0x00FF) | ((value & 0xFF) << 8), force);
-    } else {
-        const unsigned int w = get_value_word(address & ~1u);
-        set_value_word(address & ~1u, (w & 0xFF00) | (value & 0xFF), force);
+    const unsigned int b = value & 0xFF;
+
+    // The plane 1 and 2 data register takes a byte into its own plane only
+    if ((address >> 1) == R_DATA12) {
+        const unsigned int a = m_address & 0xFFFF;
+        if (address & 1) {
+            m_data12 = (m_data12 & 0x00FF) | (b << 8);
+            m_plane[2]->set_value(a, b);
+        } else {
+            m_data12 = (m_data12 & 0xFF00) | b;
+            m_plane[1]->set_value(a, b);
+        }
+        return;
     }
+
+    // Any other register sees a byte as a word with the byte on its own lane
+    // and zeros on the other, as UKNCBTL has it. Nothing is read back first:
+    // reading 177024 loads the background from the screen, and a MOVB to it
+    // would otherwise draw over the dots under the octet instead of over the
+    // background the program put in 177020/177022
+    set_value_word(address & ~1u, (address & 1)? (b << 8) : b, force);
 }
 
 //------------------------- Introspection ----------------------------------//
@@ -194,6 +207,7 @@ std::vector<DeviceFieldInfo> UKNCGraphics::get_device_fields()
     r.push_back({"color",      "Foreground colour of a dot, 177016",         false});
     r.push_back({"background", "Background of the eight dots, 177020/177022", false});
     r.push_back({"mask",       "Planes writing is inhibited for, 177026",    false});
+    r.push_back({"octet",      "Last octet drawn through 177024",            false});
     r.push_back({"draws",      "Octets drawn since the machine came up",     false});
     return r;
 }
@@ -205,6 +219,7 @@ bool UKNCGraphics::get_field(const std::string &field, unsigned int from, unsign
     if (field == "address")    { out.values.push_back(m_address); return true; }
     if (field == "color")      { out.values.push_back(m_color);   return true; }
     if (field == "mask")       { out.values.push_back(m_mask);    return true; }
+    if (field == "octet")      { out.values.push_back(m_octet);   return true; }
     if (field == "draws")      { out.values.push_back(m_draws);   return true; }
     if (field == "background") {
         out.values.push_back(m_bg_low);

@@ -5,7 +5,9 @@
 
 #pragma once
 
+#include <array>
 #include <cstdio>
+#include <map>
 #include <string>
 
 #include "emulator/core.h"
@@ -53,6 +55,14 @@ private:
     bool m_read_only = true;        // образ открыт только на чтение
     bool m_write_protect = false;   // защита, заданная конфигурацией или сценарием
     bool m_inverted = false;        // образ снят в обратном коде
+    uint64_t m_image_size = 0;      // размер файла образа, байт
+
+    // Запись в память: записанные сектора остаются здесь, а файл образа не
+    // меняется - как у дисковода, который правит образ только в памяти.
+    // Ключ - смещение сектора в образе. Выключение режима и смена образа
+    // изменения забывают
+    bool m_volatile = false;
+    std::map<uint64_t, std::array<uint8_t, 512>> m_overlay;
 
     unsigned int m_cylinders = 0;
     unsigned int m_heads = 0;

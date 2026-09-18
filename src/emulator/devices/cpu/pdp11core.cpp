@@ -466,9 +466,15 @@ bool pdp11core::execute_double(uint16_t command, unsigned int & cycles)
     if (!src_op.is_reg) cycles += C_SRC_MEM;
     if (!dst_op.is_reg) cycles += C_DST_MEM;
 
-    // MOV and MOVB never read the destination, which matters for registers
-    // with a side effect on read.
-    uint16_t dst = (kind == 1)? 0 : read_operand(dst_op, is_byte);
+    // MOV never reads the destination, which matters for registers with a
+    // side effect on read. MOVB into memory does: the 1801 bus has no byte
+    // write of its own, a byte is written by a read-modify-write cycle
+    // (DATIOB), as BKBTL and UKNCBTL do it too. The УК-НЦ ROM fills areas with
+    // MOVB into 177024, and it is that read which loads the background of the
+    // octet from the screen - without it the fill wrote over stale dots
+    uint16_t dst = 0;
+    if (kind != 1) dst = read_operand(dst_op, is_byte);
+    else if (is_byte && !dst_op.is_reg) (void)read_operand(dst_op, true);
 
     if (m_abort) return true;
 
@@ -634,8 +640,12 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
                 uint16_t v = (uint16_t)(context.PSW & 0xFF);
                 if (op.is_reg)
                     context.R[op.reg] = (uint16_t)(int16_t)(int8_t)(v & 0xFF);
-                else
+                else {
+                    // A byte is written by a read-modify-write cycle, see MOVB
+                    (void)read_operand(op, true);
+                    if (m_abort) return true;
                     write_operand(op, true, v);
+                }
                 set_nz(v, true);
                 set_flag(PDP11::F_V, false);
                 return true;
@@ -654,8 +664,9 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
     // writes it in one bus cycle, CLR included - it is a DATIO on the 1801
     cycles += single_op_cycles(op, (sop == 057)? OP_READ : OP_MODIFY);
 
-    // CLR does not read its destination
-    uint16_t dst = (sop == 050)? 0 : read_operand(op, is_byte);
+    // CLR does not read its destination, CLRB into memory does: a byte is
+    // written by a read-modify-write cycle, see MOVB
+    uint16_t dst = (sop == 050 && !(is_byte && !op.is_reg))? 0 : read_operand(op, is_byte);
     if (m_abort) return true;
 
     switch (sop) {
