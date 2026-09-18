@@ -241,6 +241,8 @@ set(EMULATOR_SOURCES
     emulator/devices/common/i8275.h emulator/devices/common/i8275.cpp
     emulator/devices/common/i8275display.h emulator/devices/common/i8275display.cpp
     emulator/devices/common/i8251.h emulator/devices/common/i8251.cpp
+    emulator/devices/common/dl11.h emulator/devices/common/dl11.cpp
+    emulator/host_serial.h emulator/host_serial.cpp
     emulator/devices/common/i8253.h emulator/devices/common/i8253.cpp
     emulator/devices/common/i8259.h emulator/devices/common/i8259.cpp
     emulator/devices/common/register.h emulator/devices/common/register.cpp

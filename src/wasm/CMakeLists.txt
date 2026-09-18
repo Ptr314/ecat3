@@ -75,6 +75,8 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/cpu/k1801vm1.cpp
     ${EMU_DIR}/devices/common/i8255.cpp
     ${EMU_DIR}/devices/common/i8251.cpp
+    ${EMU_DIR}/devices/common/dl11.cpp
+    ${EMU_DIR}/host_serial.cpp
     ${EMU_DIR}/devices/common/i8253.cpp
     ${EMU_DIR}/devices/common/i8259.cpp
     ${EMU_DIR}/devices/common/i8257.cpp
