@@ -55,6 +55,11 @@ void K1801VM1Core::on_virq_ack(uint16_t vector)
     emulator_device->virq_acknowledged(vector);
 }
 
+void K1801VM1Core::on_bus_init()
+{
+    emulator_device->bus_init();
+}
+
 void K1801VM1Core::on_halt_mode(bool state)
 {
     emulator_device->set_halt_mode(state);
@@ -73,6 +78,7 @@ k1801vm1::k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd, int family_ty
     , i_aclo(this, im, 1, "aclo", MODE_R, CALLBACK_ACLO)
     , i_halt_mode(this, im, 1, "halt_mode", MODE_W)
     , i_iako(this, im, 16, "iako", MODE_W)
+    , i_init(this, im, 1, "init", MODE_W)
 {
     core = new K1801VM1Core(this, family_type);
 
@@ -157,6 +163,12 @@ void k1801vm1::virq_acknowledged(unsigned int vector)
 {
     i_iako.change(vector & 0xFFFF);
     i_iako.change(0);
+}
+
+void k1801vm1::bus_init()
+{
+    i_init.change(1);
+    i_init.change(0);
 }
 
 void k1801vm1::set_halt_mode(bool state)

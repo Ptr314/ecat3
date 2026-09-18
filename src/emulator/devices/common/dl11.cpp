@@ -20,6 +20,7 @@
 
 #define CALLBACK_CHAIN  1
 #define CALLBACK_IAKO   2
+#define CALLBACK_INIT   3
 
 // Посылок на символ: старт, восемь данных и стоп
 #define BITS_PER_CHAR   10
@@ -31,6 +32,7 @@ DL11::DL11(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_virq_in(this, im, 1, "virq_in", MODE_R, CALLBACK_CHAIN)
     , i_vector_in(this, im, 16, "vector_in", MODE_R)
     , i_iako(this, im, 16, "iako", MODE_R, CALLBACK_IAKO)
+    , i_init(this, im, 1, "init", MODE_R, CALLBACK_INIT)
 {
     m_clocked = true;   // clock() переопределён
     can_read = true;
@@ -45,6 +47,10 @@ emulator::Result DL11::load_config(SystemData *sd)
 
     m_rx_vector = read_confg_value(cd, "rx_vector", false, (unsigned int)060);
     m_tx_vector = read_confg_value(cd, "tx_vector", false, (unsigned int)064);
+    m_rcsr_mask = read_confg_value(cd, "rcsr_mask", false, (unsigned int)CSR_IE) & 0177;
+    m_xbuf_read = read_confg_value(cd, "xbuf_read", false, (unsigned int)0) & 0377;
+    const std::string station = str_trim(read_confg_value(cd, "station", false, std::string("")));
+    if (!station.empty()) set_station((int)parse_numeric_value(station, 10));
     m_baud = read_confg_value(cd, "baud", false, (unsigned int)9600);
     if (m_baud == 0 || m_system_clock == 0)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
@@ -59,7 +65,10 @@ emulator::Result DL11::load_config(SystemData *sd)
     return emulator::Result::ok();
 }
 
-void DL11::reset(MAYBE_UNUSED bool cold)
+// Сброс регистров - и при включении, и по INIT магистрали: приёмник пуст,
+// передатчик свободен, прерывания, петля и обрыв сняты. Заводской тест СА
+// проверяет это сразу после команды RESET
+void DL11::init_registers()
 {
     m_rcsr = 0;
     m_rbuf = 0;
@@ -70,8 +79,13 @@ void DL11::reset(MAYBE_UNUSED bool cold)
     m_rx_left = 0;
     m_rx_pending = false;
     m_tx_pending = false;
-    m_rx_queue.clear();
     update_irq();
+}
+
+void DL11::reset(MAYBE_UNUSED bool cold)
+{
+    m_rx_queue.clear();
+    init_registers();
 }
 
 //--------------------------- Линия -----------------------------------------//
@@ -98,7 +112,8 @@ void DL11::transmit_done()
     m_tx_busy = false;
     m_output[m_sent++ & (OUTPUT_SIZE - 1)] = b;
 
-    if (m_xcsr & XCSR_MAINT)
+    // Петля (разряд 2) и заглушка на разъёме возвращают байт в свой приёмник
+    if ((m_xcsr & XCSR_MAINT) || m_plug)
         receive(b);
     else
         (void)m_host.write(b);
@@ -130,16 +145,31 @@ void DL11::clock(unsigned int counter)
         receive(b);
         return;
     }
-    // В петле передатчик отключён от линии, и чужое сюда не приходит
-    if (m_xcsr & XCSR_MAINT) return;
+    // В петле и с заглушкой линия хоста отключена, чужое сюда не приходит
+    if ((m_xcsr & XCSR_MAINT) || m_plug) return;
     uint8_t b;
     if (m_host.read(b)) receive(b);
+}
+
+// Номер станции СА: разряды 0-3 номера ложатся в разряды 8-11 регистров,
+// разряды 4-5 - в 13-14, мимо разряда 12 (переполнения). Так же его кладёт
+// UKNCBTL и так же собирает обратно ПЗУ (165304)
+void DL11::set_station(int station)
+{
+    if (station < 0) { m_station = -1; m_station_bits = 0; return; }
+    m_station = station & 077;
+    const unsigned int n = (unsigned int)m_station;
+    m_station_bits = ((n & 017) | ((n & 060) << 1)) << 8;
 }
 
 //--------------------------- Прерывания ------------------------------------//
 
 void DL11::interface_callback(unsigned int callback_id, unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
 {
+    if (callback_id == CALLBACK_INIT) {
+        if ((new_value & 1) && !(old_value & 1)) init_registers();
+        return;
+    }
     if (callback_id == CALLBACK_IAKO) {
         // Процессор взял прерывание с этим вектором - снять его запрос
         const unsigned int vector = new_value & 0xFFFF;
@@ -178,7 +208,7 @@ void DL11::update_irq()
 void DL11::set_rcsr(unsigned int value)
 {
     const bool was = (m_rcsr & CSR_IE) != 0;
-    m_rcsr = (m_rcsr & ~CSR_IE) | (value & CSR_IE);
+    m_rcsr = (m_rcsr & ~m_rcsr_mask) | (value & m_rcsr_mask);
     const bool now = (m_rcsr & CSR_IE) != 0;
     if (!now) m_rx_pending = false;
     else if (!was && (m_rcsr & CSR_DONE)) m_rx_pending = true;
@@ -198,17 +228,20 @@ void DL11::set_xcsr(unsigned int value)
 
 unsigned int DL11::get_value_word(unsigned int address)
 {
+    // Номер станции СА виден в старших разрядах любого регистра
     switch ((address >> 1) & 3) {
-    case REG_RCSR: return m_rcsr;
+    case REG_RCSR: return m_rcsr | m_station_bits;
     case REG_RBUF: {
         const unsigned int v = m_rbuf & 0xFF;
         m_rcsr &= ~(CSR_DONE | RCSR_OVERRUN);
         m_rx_pending = false;
         update_irq();
-        return v;
+        return v | m_station_bits;
     }
-    case REG_XCSR: return m_xcsr;
-    default:       return 0;        // XBUF только для записи
+    case REG_XCSR: return m_xcsr | m_station_bits;
+    // XBUF только для записи; чтение даёт постоянный байт, у УК-НЦ - 0360 у СА
+    // и 0370 у С2 (их ждёт заводской тест СА, так же отвечает UKNCBTL)
+    default:       return m_xbuf_read | m_station_bits;
     }
 }
 
@@ -277,6 +310,8 @@ std::vector<DeviceFieldInfo> DL11::get_device_fields()
     r.push_back({"received",  "Сколько байтов принято",                                false});
     r.push_back({"queued",    "Сколько байтов сценария ждут приёма",                   false});
     r.push_back({"vector",    "Вектор, предложенный процессору, или 0",                false});
+    r.push_back({"station",   "Номер станции СА, -1 - его нет",                        false});
+    r.push_back({"plug",      "1, когда на разъёме заглушка: выход замкнут на вход",   false});
     r.push_back({"output",    "Последние переданные байты, старые первыми; output(n) - последние n", true});
     return r;
 }
@@ -302,6 +337,8 @@ bool DL11::get_field(const std::string &field, unsigned int from, unsigned int t
     if (field == "rcsr")      { out.values.push_back(m_rcsr);                    return true; }
     if (field == "xcsr")      { out.values.push_back(m_xcsr);                    return true; }
     if (field == "vector")    { out.values.push_back(m_offered);                 return true; }
+    if (field == "station")   { out.values.push_back((unsigned int)m_station);   return true; }
+    if (field == "plug")      { out.values.push_back(m_plug? 1 : 0);             return true; }
     if (field == "connected") { out.values.push_back(m_host.is_open()? 1 : 0);   return true; }
     out.width = 32;
     if (field == "sent")      { out.values.push_back(m_sent);                    return true; }
@@ -320,6 +357,8 @@ std::vector<DeviceCommandInfo> DL11::get_device_commands()
     r.push_back({"disconnect", "",         "Отключает линию от порта хоста"});
     r.push_back({"send",       "\"text\"", "Подаёт байты в приёмник (\\n, \\r, \\t, \\ooo)"});
     r.push_back({"sendfile",   "\"file\"", "Подаёт в приёмник содержимое файла"});
+    r.push_back({"station",    "n",        "Номер станции СА, 0-63"});
+    r.push_back({"plug",       "[0|1]",    "Заглушка на разъёме: выход линии замкнут на вход"});
     return r;
 }
 
@@ -343,6 +382,19 @@ emulator::Result DL11::send_command(const std::string &command, const std::strin
 
     if (command == "send") {
         for (char c : decode_send_text(arg)) m_rx_queue.push_back((uint8_t)c);
+        return emulator::Result::ok();
+    }
+
+    if (command == "plug") {
+        m_plug = arg.empty()? !m_plug : (parse_numeric_value(arg, 10) != 0);
+        return emulator::Result::ok();
+    }
+
+    if (command == "station") {
+        if (arg.empty())
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{DL11|" + std::string(QT_TRANSLATE_NOOP("DL11", "Command 'station' expects a number")) + "}");
+        set_station((int)parse_numeric_value(arg, 10));
         return emulator::Result::ok();
     }
 

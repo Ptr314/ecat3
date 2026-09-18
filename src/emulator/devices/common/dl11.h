@@ -26,6 +26,11 @@
 // и туда же можно подать байты командами send и sendfile - так сценарий
 // играет роль машины на другом конце.
 //
+// Сетевой адаптер УК-НЦ (СА, 176560-176566, векторы 360 и 364) - такой же
+// порт, но в старших разрядах всех его регистров виден номер станции: разряды
+// 8-11 и 13-14, разряд 12 пропущен, он занят переполнением (параметр station).
+// И программа пишет в его RCSR ещё разряд 2 (параметр rcsr_mask).
+//
 // Запрос прерывания однократный: он встаёт, когда готовность появляется при
 // разрешённом прерывании (или прерывание разрешают при готовности), и
 // снимается, когда процессор его взял (~iako) или условие пропало. Иначе
@@ -38,11 +43,18 @@ private:
     Interface i_virq_in;
     Interface i_vector_in;
     Interface i_iako;
+    Interface i_init;                   // INIT магистрали (команда RESET)
 
     unsigned int m_rcsr = 0;
     unsigned int m_rbuf = 0;
     unsigned int m_xcsr = 0200;         // передатчик свободен и до первого сброса
     unsigned int m_xbuf = 0;
+
+    unsigned int m_rcsr_mask = 0100;    // разряды RCSR, которые пишет программа
+    unsigned int m_xbuf_read = 0;       // что читается из XBUF
+    bool m_plug = false;                // заглушка на разъёме: выход замкнут на вход
+    int m_station = -1;                 // номер станции СА, -1 - его нет
+    unsigned int m_station_bits = 0;    // он же в разрядах регистров
 
     unsigned int m_rx_vector = 060;
     unsigned int m_tx_vector = 064;
@@ -72,6 +84,8 @@ private:
     void set_rcsr(unsigned int value);
     void set_xcsr(unsigned int value);
     void update_irq();
+    void set_station(int station);
+    void init_registers();
 
 public:
     DL11(InterfaceManager *im, EmulatorConfigDevice *cd);

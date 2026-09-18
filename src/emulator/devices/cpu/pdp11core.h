@@ -118,6 +118,10 @@ public:
     // любого чужого прерывания предлагался бы процессору снова
     virtual void on_virq_ack(uint16_t vector) { (void)vector; }
 
+    // Команда RESET выставила на магистраль INIT: устройства сбрасывают свои
+    // регистры. Сам процессор при этом не сбрасывается
+    virtual void on_bus_init() {}
+
     // Bus access, provided by the emulator device
     virtual uint16_t read_word(uint16_t address) = 0;
     virtual void write_word(uint16_t address, uint16_t value) = 0;

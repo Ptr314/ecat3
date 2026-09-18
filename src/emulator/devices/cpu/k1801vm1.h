@@ -26,6 +26,7 @@ public:
     // поднимает линию наружу
     virtual void on_halt_mode(bool state) override;
     virtual void on_virq_ack(uint16_t vector) override;
+    virtual void on_bus_init() override;
 };
 
 // Emulator device
@@ -67,6 +68,10 @@ private:
     // свой запрос. Не подключённая линия ничего не стоит
     Interface i_iako;
 
+    // INIT на магистрали: импульс 1-0 по команде RESET. Устройства, которые
+    // к нему подключены (~init), сбрасывают свои регистры
+    Interface i_init;
+
     // True while ~dclo holds the processor down
     bool m_held_in_reset = false;
 
@@ -98,6 +103,7 @@ public:
     void note_timeout(unsigned int address);
     void set_halt_mode(bool state);
     void virq_acknowledged(unsigned int vector);
+    void bus_init();
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

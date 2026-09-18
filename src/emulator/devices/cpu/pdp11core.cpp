@@ -998,8 +998,9 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         do_trap(PDP11::V_IOT);
         return true;
     case 0000005:                                       // RESET
-        // Peripheral initialisation is driven from the emulator device
+        // INIT for the peripherals is driven by the emulator device
         cycles += C_RESET;
+        on_bus_init();
         return true;
     case 0000006:                                       // RTT
         cycles += 2 * C_DATI + C_ALU;
