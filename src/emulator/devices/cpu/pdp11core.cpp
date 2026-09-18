@@ -459,8 +459,9 @@ bool pdp11core::execute_double(uint16_t command, unsigned int & cycles)
     uint16_t sign = is_byte? 0x0080 : 0x8000;
 
     // MOV writes the destination without reading it and CMP and BIT never
-    // write, the rest read and write it in a single read-modify-write cycle
-    operand_access dst_access = (kind == 1)? OP_WRITE
+    // write, the rest read and write it in a single read-modify-write cycle.
+    // MOVB is among the rest: a byte is written by a read-modify-write cycle
+    operand_access dst_access = (kind == 1 && !is_byte)? OP_WRITE
                               : ((kind == 2 || kind == 3)? OP_READ : OP_MODIFY);
     cycles += C_ALU + access_cycles(src_op, OP_READ) + access_cycles(dst_op, dst_access);
     if (!src_op.is_reg) cycles += C_SRC_MEM;
@@ -636,7 +637,8 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
             }
             case 067: {                                 // MFPS
                 pdp11operand op = decode_operand(spec, true, cycles);
-                cycles += single_op_cycles(op, OP_WRITE);
+                // A byte is written by a read-modify-write cycle, see MOVB
+                cycles += single_op_cycles(op, OP_MODIFY);
                 uint16_t v = (uint16_t)(context.PSW & 0xFF);
                 if (op.is_reg)
                     context.R[op.reg] = (uint16_t)(int16_t)(int8_t)(v & 0xFF);
