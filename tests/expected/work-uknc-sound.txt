@@ -28,3 +28,24 @@
 === вынутый из гнезда ЦАП молчит ===
 [lpt.device] none
 [covox.plugged] &000000
+=== звуковой модуль: до первой записи в миксе его нет ===
+[asm-ay1.active] &000000
+[asm-ay2.active] &000000
+[asm-ay3.active] &000000
+[asm-dac.active] &000000
+=== AY2: слово выбирает регистр, байт пишет данные ===
+[asm-ay2.register] &000010
+[asm-ay2.regs] &000007: &077 &017
+[asm-ay2.level] &001750
+[asm-ay2.active] &000001
+[asm-ay1.active] &000000
+чтение регистров модуля даёт 0
+[ppu-mapper.value16] &177362: &000000
+=== ЦАП модуля: байт без инверсии ===
+[asm-dac.value] &000200
+[asm-dac.active] &000001
+сброс возвращает модуль в молчание
+[asm-ay2.active] &000000
+[asm-ay2.regs] &000007: &000 &000
+[asm-dac.value] &000000
+[asm-dac.active] &000000

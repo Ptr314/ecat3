@@ -32,6 +32,11 @@ private:
     uint32_t m_step;                    // 16.16 tone ticks per system clock
     uint32_t m_acc;
 
+    // idle_share = 0: until the first register write after reset the chip
+    // takes no share of the mix, so a board nobody plays leaves the rest loud
+    bool m_idle_share;
+    bool m_used;
+
     uint8_t m_regs[AY_REGS];
     unsigned int m_latch;               // selected register
 

@@ -12,6 +12,9 @@
 #define AY_BUS_DIRECT   0   // even address: register select, odd address: data
 #define AY_BUS_BK       1   // БК, port 0177714: a word write selects a register,
                             // a byte write sends data; both are inverted by the port
+#define AY_BUS_WORD     2   // УК-НЦ sound module: a word write selects a register,
+                            // a byte write sends data, the board's buffers undo
+                            // the inversion of the bus; reads answer 0
 
 // БК sound boards run the chip from 12 MHz / 7
 #define AY_DEFAULT_FREQUENCY    1714275
@@ -35,6 +38,8 @@ AY8910::AY8910(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_frequency(AY_DEFAULT_FREQUENCY)
     , m_step(0)
     , m_acc(0)
+    , m_idle_share(true)
+    , m_used(false)
     , m_latch(0)
 {
     m_clocked = true;   //clock() is overridden here
@@ -55,11 +60,14 @@ emulator::Result AY8910::load_config(SystemData *sd)
         m_bus = AY_BUS_DIRECT;
     else if (bus == "bk")
         m_bus = AY_BUS_BK;
+    else if (bus == "word")
+        m_bus = AY_BUS_WORD;
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{AY8910|" + std::string(QT_TRANSLATE_NOOP("AY8910", "Unknown bus protocol")) + "} " + bus);
 
     m_frequency = read_confg_value(cd, "frequency", false, (unsigned int)AY_DEFAULT_FREQUENCY);
+    m_idle_share = read_confg_value(cd, "idle_share", false, true);
     if (m_frequency == 0 || m_system_clock == 0)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{AY8910|" + std::string(QT_TRANSLATE_NOOP("AY8910", "Incorrect clock frequency")) + "}");
@@ -75,6 +83,7 @@ void AY8910::reset(MAYBE_UNUSED bool cold)
     memset(m_regs, 0, sizeof(m_regs));
     m_latch = 0;
     m_acc = 0;
+    m_used = false;
     for (unsigned int c = 0; c < AY_TONE_CHANNELS; c++) {
         m_tone_count[c] = 0;
         m_tone_out[c] = 0;
@@ -98,6 +107,7 @@ void AY8910::write_reg(unsigned int reg, unsigned int value)
 {
     if (reg >= AY_REGS) return;
     m_regs[reg] = (uint8_t)(value & AY_REG_MASK[reg]);
+    m_used = true;
     switch (reg) {
     case 13:
         restart_envelope();
@@ -220,7 +230,7 @@ int32_t AY8910::sound_sample(int64_t amplitude)
 
 bool AY8910::sound_active()
 {
-    return m_plugged;
+    return m_plugged && (m_idle_share || m_used);
 }
 
 //------------------- Connector --------------------------------------------//
@@ -243,6 +253,7 @@ unsigned int AY8910::get_value(unsigned int address)
 {
     if (!m_plugged) return _FFFF;
     if (m_bus == AY_BUS_BK) return 0xFF;
+    if (m_bus == AY_BUS_WORD) return 0;
     return (address & 1) ? read_reg(m_latch) : m_latch;
 }
 
@@ -257,6 +268,11 @@ void AY8910::set_value(unsigned int address, unsigned int value, bool force)
         if ((address & 1) == 0) write_reg(m_latch, (value ^ 0xFF) & 0xFF);
         return;
     }
+    if (m_bus == AY_BUS_WORD) {
+        // A byte write of either half carries data
+        write_reg(m_latch, value & 0xFF);
+        return;
+    }
     if (address & 1)
         write_reg(m_latch, value);
     else
@@ -267,6 +283,7 @@ unsigned int AY8910::get_value_word(unsigned int address)
 {
     if (!m_plugged) return _FFFF;
     if (m_bus == AY_BUS_BK) return 0xFFFF;
+    if (m_bus == AY_BUS_WORD) return 0;
     return get_value(address & ~1) | (get_value(address | 1) << 8);
 }
 
@@ -276,6 +293,10 @@ void AY8910::set_value_word(unsigned int address, unsigned int value, bool force
     if (m_bus == AY_BUS_BK) {
         // A word write to the port: the low byte selects the register
         select(value ^ 0xFF);
+        return;
+    }
+    if (m_bus == AY_BUS_WORD) {
+        select(value & 0xFF);
         return;
     }
     set_value(address & ~1, value & 0xFF, force);
@@ -297,6 +318,7 @@ std::vector<DeviceFieldInfo> AY8910::get_device_fields()
     r.push_back({"level",    "Output level, 0-3000",                        false});
     r.push_back({"envelope", "Current envelope volume, 0-15",               false});
     r.push_back({"plugged",  "1 if the chip is plugged in",                 false});
+    r.push_back({"active",   "1 if the chip takes a share of the mix",      false});
     return r;
 }
 
@@ -319,6 +341,7 @@ bool AY8910::get_field(const std::string &field, unsigned int from, unsigned int
     out.width = 0;
     if (field == "envelope") { out.values.push_back(m_env_volume);  return true; }
     if (field == "plugged")  { out.values.push_back(m_plugged?1:0); return true; }
+    if (field == "active")   { out.values.push_back(sound_active()?1:0); return true; }
 
     out.numeric = false;
     return ComputerDevice::get_field(field, from, to, out);

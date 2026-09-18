@@ -20,6 +20,11 @@ class Covox : public ComputerDevice, public SoundSource, public Pluggable
 private:
     Interface i_input;
 
+    // idle_share = 0: until the input first leaves 0 after reset the DAC
+    // takes no share of the mix, so a board nobody plays leaves the rest loud
+    bool m_idle_share;
+    bool m_used;
+
     // Last sample and the inputs it came from: asked for once per instruction,
     // while the byte changes only when the program writes the port
     unsigned int m_cached_level;
@@ -31,6 +36,10 @@ protected:
 
 public:
     Covox(InterfaceManager *im, EmulatorConfigDevice *cd);
+
+    emulator::Result load_config(SystemData *sd) override;
+    void reset(bool cold) override;
+    void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
     int32_t sound_sample(int64_t amplitude) override;
     bool sound_active() override;

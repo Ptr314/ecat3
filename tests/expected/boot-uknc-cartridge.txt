@@ -3,15 +3,9 @@
         0000-7FFF -> plane0[0000] mode=rw
         8000-9FFF -> plane0[8000] mode=rw cfg=10:10
         8000-9FFF -> rom[0000] mode=r cfg=01:01
-        9000-9FFF -> hdd[0000] mode=rw cfg=02:0E
-        9000-9FFF -> hdd[0000] mode=rw cfg=04:0E
-        9000-9FFF -> hdd[0000] mode=rw cfg=06:0E
         8000-9FFF -> cart1[0000] mode=r cfg=02:0E
         8000-9FFF -> cart1[2000] mode=r cfg=04:0E
         8000-9FFF -> cart1[4000] mode=r cfg=06:0E
-        8000-9FFF -> cart2[0000] mode=r cfg=0A:0E
-        8000-9FFF -> cart2[2000] mode=r cfg=0C:0E
-        8000-9FFF -> cart2[4000] mode=r cfg=0E:0E
         A000-FDFF -> rom[2000] mode=r or_read
         A000-BFFF -> plane0[A000] mode=rw cfg=20:20
         C000-DFFF -> plane0[C000] mode=rw cfg=40:40
@@ -30,6 +24,5 @@
         FFCC-FFCD -> pp-timer[0004] mode=r
         FFCE-FFCF -> pp-sys[0000] mode=rw
 [cart1.size] &00000060000
-[cart2.size] &00000060000
-=== ЗАГРУЗКА: 2 - кассета ПЗУ, номер 2 ===
-[pp-win.value16] &000017
+=== ЗАГРУЗКА: 2 - кассета ПЗУ 1 ===
+[pp-win.value16] &000007
