@@ -32,7 +32,16 @@ namespace {
     const unsigned int C_JUMP     = 5;
     const unsigned int C_IDLE     = 8;      // WAIT, idling until an interrupt
     const unsigned int C_RESET    = 30;     // INIT held on the bus
-    const unsigned int C_EIS      = 40;     // MUL/DIV/ASH/ASHC of the 1801VM2
+    // MUL/DIV/ASH/ASHC of the 1801VM2, internal work on top of reading the
+    // instruction and its operand. From the timing tables of UKNCBTL (MUL 96,
+    // DIV 128, ASH 41 + 8 a bit, ASHC 57 + 8 a bit for a register operand,
+    // the fetch included), which agree with the SPEED test on real УК-НЦ
+    // machines: 80 thousand MUL and 64 thousand DIV a second at 8 MHz
+    const unsigned int C_MUL      = 85;
+    const unsigned int C_DIV      = 117;
+    const unsigned int C_ASH      = 30;
+    const unsigned int C_ASHC     = 46;
+    const unsigned int C_SHIFT    = 8;      // each bit ASH and ASHC shift by
 }
 
 void pdp11core::set_reply_delay(unsigned int periods)
@@ -860,12 +869,13 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
 
         unsigned int r = (command >> 6) & 7;
         pdp11operand op = decode_operand(command & 077, false, cycles);
-        cycles += C_EIS + access_cycles(op, OP_READ);
+        cycles += access_cycles(op, OP_READ);
         uint16_t src = read_operand(op, false);
         if (m_abort) return true;
 
         switch (group) {
         case 0: {                                       // MUL
+            cycles += C_MUL;
             int32_t product = (int32_t)(int16_t)context.R[r] * (int32_t)(int16_t)src;
             context.R[r] = (uint16_t)(product >> 16);
             if ((r & 1) == 0) context.R[r | 1] = (uint16_t)(product & 0xFFFF);
@@ -877,6 +887,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
             break;
         }
         case 1: {                                       // DIV
+            cycles += C_DIV;
             if ((r & 1) != 0 || src == 0) {
                 set_flag(PDP11::F_V, true);
                 set_flag(PDP11::F_C, src == 0);
@@ -901,6 +912,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         case 2: {                                       // ASH
             int shift = (int)(src & 077);
             if (shift > 31) shift -= 64;
+            cycles += C_ASH + C_SHIFT * (unsigned int)(shift < 0? -shift : shift);
             int32_t value = (int32_t)(int16_t)context.R[r];
             int32_t res;
             if (shift >= 0) { res = value << shift; set_flag(PDP11::F_C, shift > 0 && ((value << (shift - 1)) & 0x8000) != 0); }
@@ -913,6 +925,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         default: {                                      // ASHC
             int shift = (int)(src & 077);
             if (shift > 31) shift -= 64;
+            cycles += C_ASHC + C_SHIFT * (unsigned int)(shift < 0? -shift : shift);
             int32_t value = (int32_t)(((uint32_t)context.R[r] << 16) | context.R[r | 1]);
             int64_t res;
             if (shift >= 0) { res = (int64_t)value << shift; set_flag(PDP11::F_C, shift > 0 && (((int64_t)value << (shift - 1)) & 0x80000000LL) != 0); }
