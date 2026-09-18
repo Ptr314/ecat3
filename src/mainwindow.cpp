@@ -1373,7 +1373,19 @@ void MainWindow::closeEvent (QCloseEvent *event)
         w->close();
 
     e->stop_emulation();
+    // Under MCP the emulator is left alive, stopped, until the process ends
+    // (closing the window quits it). The MCP session was given the same
+    // pointer when it started: its destructor, run after this window's, clears
+    // the script sink through it, and the stdin reader thread may be in the
+    // middle of a request. Deleting here left both on freed memory, and a
+    // close after a long session - once that memory had been reused - crashed
+    // with 0xC0000005. Taking the session's lock instead could deadlock: it is
+    // held across blocking calls into this thread (load_machine)
+#ifdef ENABLE_MCP
+    if (mcp_bridge == nullptr) delete e;
+#else
     delete e;
+#endif
     // The window keeps receiving events after this: it loses the activation
     // (changeEvent releases the host keys), the key that closed it comes up,
     // a paint arrives. Each of those used to reach the freed emulator, and a

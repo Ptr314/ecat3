@@ -16,7 +16,7 @@
 === Карта памяти центрального процессора ===
 [mapper.map] 
         0000-DFFF -> cpu-ram[0000] mode=rw
-        FD70-FD77 -> cpu-net[0000] mode=rw
+        FD70-FD77 -> sa[0000] mode=rw
         FD78-FD7F -> c2[0000] mode=rw
         FDA0-FDA3 -> cpu-indirect[0000] mode=rw
         FDB0-FDB3 -> channels[0008] mode=rw
