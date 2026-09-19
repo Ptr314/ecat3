@@ -56,8 +56,11 @@ private:
     Emulator * e;
 
     QString selected_path;
-
     void list_machines(QString work_path);
+    QStringList all_versions() const;
+    void update_buttons();
+    void select_path(const QString &path);
+    void open_editor(bool copy);
 
 public slots:
     void set_description(QModelIndex index);
@@ -68,6 +71,11 @@ private slots:
     void on_debugCheck_toggled(bool checked);
 
     void on_okButton_clicked();
+
+    void on_userButton_toggled(bool checked);
+    void on_copyButton_clicked();
+    void on_editButton_clicked();
+    void on_deleteButton_clicked();
 
 signals:
     void load_config(QString file_name, bool set_default);

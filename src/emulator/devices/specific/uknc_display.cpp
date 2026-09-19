@@ -350,6 +350,19 @@ void UKNCDisplay::HSYNC(const unsigned line, const unsigned sync_val)
 
 //--------------------------- Introspection --------------------------------//
 
+ConfigFields UKNCDisplay::get_config_fields()
+{
+    ConfigField f;
+    f.name = "colors";
+    f.title = QT_TRANSLATE_NOOP("DeviceOptions", "Video output");
+    f.type = CONFIG_FIELD_CHOICE;
+    f.def = "rgb";
+    f.values.push_back({"rgb",  QT_TRANSLATE_NOOP("DeviceOptions", "RGB")});
+    f.values.push_back({"grb",  QT_TRANSLATE_NOOP("DeviceOptions", "GRB")});
+    f.values.push_back({"gray", QT_TRANSLATE_NOOP("DeviceOptions", "Mono")});
+    return {f};
+}
+
 std::vector<DeviceFieldInfo> UKNCDisplay::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = RasterDisplay::get_device_fields();

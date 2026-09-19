@@ -35,15 +35,68 @@ import sys
 import json
 import struct
 import glob
+import zipfile
+
+def is_extension(path):
+    """A configuration extension (.ext, or one packed as .ext.zip), see CONFIG.md."""
+    return path.lower().endswith(".ext") or path.lower().endswith(".ext.zip")
+
+def machine_stem(path):
+    """The file name without .cfg / .ext / .ext.zip."""
+    name = os.path.basename(path)
+    if name.lower().endswith(".ext.zip"):
+        return name[:-8]
+    return os.path.splitext(name)[0]
 
 def find_cfg_files(computers_dir):
-    """Find all .cfg files."""
+    """Find all machine files: .cfg and configuration extensions."""
     configs = []
     for root, dirs, files in os.walk(computers_dir):
         for f in files:
-            if f.endswith(".cfg"):
+            if f.endswith(".cfg") or is_extension(f):
                 configs.append(os.path.join(root, f))
     return sorted(configs)
+
+def read_extension(ext_path):
+    """
+    Text of an extension. A packed one is the single .ext at the top of its
+    archive; the archive goes into the bundle as it is and the emulator
+    unpacks it, so its own files need no collecting here.
+    """
+    if not ext_path.lower().endswith(".zip"):
+        with open(ext_path, "r", encoding="utf-8-sig") as f:
+            return f.read()
+    with zipfile.ZipFile(ext_path) as z:
+        names = [n for n in z.namelist() if "/" not in n and n.lower().endswith(".ext")]
+        if len(names) != 1:
+            return ""
+        return z.read(names[0]).decode("utf-8-sig")
+
+def parse_ext_metadata(ext_path):
+    """
+    @extends, @version, the system properties the extension changes and the
+    files its own lines refer to. Lines with inline data ({base64: ...}) refer
+    to nothing: the data is in the file.
+    """
+    text = read_extension(ext_path)
+    meta = {"extends": "", "version": "", "system": {}, "files": []}
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("@script"):
+            break
+        m = re.match(r'@(extends|version)\s+(.+)', s)
+        if m:
+            value = re.sub(r'\s+//.*$', '', m.group(2)).strip().strip('"')
+            meta[m.group(1)] = value
+            continue
+        m = re.match(r'system\s*:\s*(\w+)\s*=\s*(.+)', s)
+        if m:
+            meta["system"][m.group(1)] = m.group(2).strip()
+            continue
+        m = re.match(r'[^-/@][^:]*:\s*(?:image|map|keys|picture)\s*=\s*([^\s{]+)', s)
+        if m and "base64" not in s:
+            meta["files"].append(m.group(1).strip('"'))
+    return meta
 
 def parse_cfg_metadata(cfg_path):
     """Extract system name, type, and referenced files from a .cfg."""
@@ -188,8 +241,34 @@ def main():
     machines = []
     cfg_files = find_cfg_files(computers_dir)
 
-    for cfg_path in cfg_files:
+    for machine_path in cfg_files:
+        # An extension is packed together with its base: the bundle carries
+        # both, and the emulator applies one to the other as on the desktop
+        ext_path = None
+        ext_meta = None
+        if is_extension(machine_path):
+            ext_path = machine_path
+            ext_meta = parse_ext_metadata(ext_path)
+            if not ext_meta["extends"] or not ext_meta["version"]:
+                print(f"  WARNING: {os.path.basename(ext_path)}: no @extends or @version, skipped")
+                continue
+            cfg_path = os.path.normpath(os.path.join(computers_dir, ext_meta["extends"]))
+            if not os.path.isfile(cfg_path) or not cfg_path.startswith(os.path.normpath(computers_dir)):
+                print(f"  WARNING: {os.path.basename(ext_path)}: base {ext_meta['extends']} is not in computers/, skipped")
+                continue
+        else:
+            cfg_path = machine_path
+
         meta = parse_cfg_metadata(cfg_path)
+        if ext_meta is not None:
+            meta["version"] = ext_meta["version"]
+            system = ext_meta["system"]
+            if "name" in system: meta["name"] = system["name"]
+            if "type" in system: meta["type"] = system["type"]
+            if "charmap" in system: meta["charmap"] = system["charmap"]
+            if "debug" in system: meta["debug"] = system["debug"] == "1"
+            if "order" in system and re.match(r'-?\d+$', system["order"]):
+                meta["order"] = int(system["order"])
         if not meta["name"]:
             continue
 
@@ -198,15 +277,15 @@ def main():
         # setting; the page has no such setting, so they are not shipped at
         # all and their ROM images stay out of the download as well.
         if meta["debug"]:
-            print(f"Skipped {os.path.basename(cfg_path)} (debug configuration)")
+            print(f"Skipped {os.path.basename(machine_path)} (debug configuration)")
             continue
 
         cfg_dir = os.path.dirname(cfg_path)
         cfg_filename = os.path.basename(cfg_path)
         machine_subdir = os.path.relpath(cfg_dir, deploy_dir).replace("\\", "/")  # e.g. "computers/agat"
 
-        # Machine ID from config filename (without extension)
-        machine_id = os.path.splitext(cfg_filename)[0]
+        # Machine ID from the name of the file chosen (without extension)
+        machine_id = machine_stem(machine_path)
 
         # Collect files for this machine's bundle
         bundle_files = {}
@@ -247,6 +326,34 @@ def main():
             else:
                 missing.append(ref_file)
 
+        # The extension itself, its description and the files it names. They
+        # keep their place relative to computers/: the emulator looks for the
+        # files of an extension next to it first
+        archive_machine_path = archive_cfg_path
+        md_vfs_path = None
+        if ext_path is not None:
+            ext_dir = os.path.dirname(ext_path)
+            ext_subdir = os.path.relpath(ext_dir, deploy_dir).replace("\\", "/")
+            archive_machine_path = f"{ext_subdir}/{os.path.basename(ext_path)}"
+            bundle_files[archive_machine_path] = ext_path
+            ext_md = os.path.join(ext_dir, machine_id + ".md")
+            if os.path.isfile(ext_md):
+                bundle_files[f"{ext_subdir}/{machine_id}.md"] = ext_md
+                md_vfs_path = f"/{ext_subdir}/{machine_id}.md"
+            elif os.path.isfile(md_path):
+                md_vfs_path = f"/{machine_subdir}/{os.path.splitext(cfg_filename)[0]}.md"
+            for ref_file in ext_meta["files"]:
+                local_path = find_file(ref_file, [ext_dir])
+                if local_path:
+                    rel = os.path.relpath(local_path, deploy_dir)
+                    bundle_files[rel.replace("\\", "/")] = local_path
+                    continue
+                local_path = find_file(ref_file, search_dirs)
+                if local_path:
+                    bundle_files[f"{machine_subdir}/{os.path.basename(local_path)}"] = local_path
+                else:
+                    missing.append(ref_file)
+
         if missing:
             print(f"  WARNING: {machine_id}: missing files: {', '.join(missing)}")
 
@@ -258,12 +365,13 @@ def main():
         bundle_size = os.path.getsize(bundle_path)
         print(f"Created {bundle_name} ({len(bundle_files)} files, {bundle_size} bytes) - {meta['name']}")
 
-        # Virtual FS path for the .cfg
-        cfg_vfs_path = f"/{archive_cfg_path}"
+        # Virtual FS path of the file the emulator loads: the .cfg, or the
+        # extension, which finds its base in the same bundle
+        cfg_vfs_path = f"/{archive_machine_path}"
 
         display_name = meta["version"] if meta["version"] else meta["name"]
 
-        machines.append({
+        entry = {
             "id": machine_id,
             "name": display_name,
             "type": meta["type"],
@@ -272,7 +380,11 @@ def main():
             "cfg_path": cfg_vfs_path,
             "bundle_url": f"{BUNDLES_DIR}/{bundle_name}",
             "data_bundle_url": f"{BUNDLES_DIR}/data.bundle" if meta["charmap"] else None,
-        })
+        }
+        # An extension without a description of its own shows that of its base
+        if md_vfs_path:
+            entry["md_path"] = md_vfs_path
+        machines.append(entry)
 
     # The arrangement of the desktop chooser (OpenConfigWindow::list_machines):
     # machines are grouped by type under the name of the first config of that

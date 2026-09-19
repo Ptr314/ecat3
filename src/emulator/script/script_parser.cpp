@@ -180,11 +180,20 @@ emulator::Result parse_script_file(const std::string &file_name,
         return emulator::Result::error(emulator::ErrorCode::FileError,
             "{Script|" + std::string(QT_TRANSLATE_NOOP("Script", "Script file is not found")) + "} " + file_name);
 
-    std::string content = dsk_tools::utf8_read_file(file_name);
+    return parse_script_text(dsk_tools::utf8_read_file(file_name), out, errors);
+}
+
+emulator::Result parse_script_text(const std::string &content,
+                                   std::vector<ScriptCommand> &out,
+                                   std::vector<std::string> &errors,
+                                   unsigned int first_line)
+{
+    out.clear();
+    errors.clear();
 
     std::istringstream stream(content);
     std::string line;
-    unsigned int line_no = 0;
+    unsigned int line_no = first_line - 1;
 
     while (std::getline(stream, line))
     {

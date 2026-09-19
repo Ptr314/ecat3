@@ -80,6 +80,7 @@ struct SystemData {
     std::string     system_file;
     std::string     system_path;
     std::string     script_path;    //Directory of the running script, empty if none
+    std::string     ext_path;       //Directory of the configuration extension, empty for a plain .cfg
     std::string     system_type;
     std::string     system_name;
     std::string     system_version;
@@ -161,6 +162,32 @@ struct DeviceOption {
 };
 
 typedef std::vector<DeviceOption> DeviceOptions;
+
+//----------------- Parameters a configuration extension edits -------------//
+//What a device lets the user change through an .ext (the configuration
+//editor of the machine chooser). Described from the config parameters
+//alone: the editor constructs the devices without loading them
+
+#define CONFIG_FIELD_CHOICE     0   // one of values
+#define CONFIG_FIELD_STRING     1   // free text, def when not set (may be empty)
+#define CONFIG_FIELD_FILE       2   // a file name; files is the file dialog filter
+
+struct ConfigFieldValue {
+    std::string value;              // as written in the config
+    std::string title;              // QT_TRANSLATE_NOOP("DeviceOptions", ...)
+};
+
+struct ConfigField {
+    std::string name;               // the device parameter, e.g. "image"
+    std::string title;              // QT_TRANSLATE_NOOP("ConfigFields", ...)
+    unsigned type;
+    std::vector<ConfigFieldValue> values;
+    std::string def;
+    std::string files;
+    bool embeddable = true;         // a file may be stored inside the .ext
+};
+
+typedef std::vector<ConfigField> ConfigFields;
 
 //------------------- Device introspection and control ---------------------//
 // These types back the scripting engine (LOG / COMMAND) and are designed to be
@@ -259,6 +286,10 @@ public:
 
     virtual DeviceOptions get_device_options();
     virtual void set_device_option(unsigned option_id, unsigned value_id);
+
+    //Parameters the configuration editor offers for this device. Read from
+    //cd only: it is called on a device that was constructed but never loaded
+    virtual ConfigFields get_config_fields();
 
     //--------------------- Introspection and control ----------------------//
     //Self-description, used by SCRIPTING.md, the script engine and any

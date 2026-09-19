@@ -100,6 +100,7 @@ public:
     unsigned int get_value_word(unsigned int address) override;
     void set_value_word(unsigned int address, unsigned int value, bool force=false) override;
 
+    ConfigFields get_config_fields() override;
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
     std::vector<DeviceCommandInfo> get_device_commands() override;

@@ -1,0 +1,5 @@
+// Замена свойства, которое в базе задано дважды
+// @error several lines with this key, remove them first
+@extends bk/BK-0010-01.cfg
+@version ошибка
+port-ppi:~data[0-7] = joystick.out[0-7]

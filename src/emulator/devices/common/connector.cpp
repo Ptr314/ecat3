@@ -114,6 +114,27 @@ void Connector::set_device_option(unsigned option_id, unsigned value_id)
     apply();
 }
 
+ConfigFields Connector::get_config_fields()
+{
+    //From the config, not m_devices: the editor never loads the device. The
+    //devices it names are constructed by then, and their titles are constant
+    ConfigField f;
+    f.name = "default";
+    f.title = str_tolower(str_trim(cd->get_parameter("kind", false).value)) == "sound"
+            ? QT_TRANSLATE_NOOP("DeviceOptions", "Sound")
+            : QT_TRANSLATE_NOOP("DeviceOptions", "Input device");
+    f.type = CONFIG_FIELD_CHOICE;
+    f.def = "none";
+    f.values.push_back({"none", QT_TRANSLATE_NOOP("DeviceOptions", "None")});
+    std::vector<std::string> names = split_string(cd->get_parameter("devices", false).value, '|', true);
+    for (size_t i = 0; i < names.size(); i++) {
+        const std::string n = str_trim(names[i]);
+        Pluggable * d = dynamic_cast<Pluggable*>(im->dm->get_device_by_name(n, false));
+        f.values.push_back({n, d != nullptr ? d->plug_title() : n});
+    }
+    return {f};
+}
+
 std::vector<DeviceFieldInfo> Connector::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();

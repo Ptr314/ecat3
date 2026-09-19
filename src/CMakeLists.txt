@@ -130,7 +130,6 @@ if(ENABLE_MCP)
     set(MCP_FILES
         mcp/mcp_server.cpp   mcp/mcp_server.h
         mcp/mcp_session.cpp  mcp/mcp_session.h
-        mcp/mcp_base64.cpp   mcp/mcp_base64.h
         libs/picojson/picojson.h
     )
     # The bridge marshals to the GUI thread, so it belongs to the windowed
@@ -195,6 +194,9 @@ endif()
 # them would build in one variant and break the other.
 set(EMULATOR_SOURCES
     emulator/config.cpp emulator/config.h
+    emulator/config_ext.cpp emulator/config_ext.h
+    emulator/config_fields.cpp emulator/config_fields.h
+    emulator/base64.cpp emulator/base64.h
     emulator/core.cpp emulator/core.h
     emulator/debug.h
     emulator/result.h
@@ -281,6 +283,7 @@ set(EMULATOR_SOURCES
     libs/lodepng/lodepng.cpp libs/lodepng/lodepng.h
     libs/mfm_formats.h
     libs/mfm_tools.h libs/mfm_tools.cpp
+    libs/zip_reader.h libs/zip_reader.cpp
     libs/audio_filters.h
     libs/miniaudio/miniaudio.c
 
@@ -315,6 +318,7 @@ set(GUI_SOURCES
     dialogs/portwindow.h dialogs/portwindow.cpp dialogs/portwindow.ui
     dialogs/i8255window.h dialogs/i8255window.cpp dialogs/i8255window.ui
     dialogs/openconfigwindow.h dialogs/openconfigwindow.cpp dialogs/openconfigwindow.ui
+    dialogs/exteditorwindow.h dialogs/exteditorwindow.cpp dialogs/exteditorwindow.ui
     dialogs/hexeditorline.h dialogs/hexeditorline.cpp
     dialogs/dosframe.h dialogs/dosframe.cpp
     dialogs/genericdbgwnd.h dialogs/genericdbgwnd.cpp

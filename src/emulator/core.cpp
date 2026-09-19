@@ -596,6 +596,11 @@ void ComputerDevice::set_device_option(unsigned option_id, unsigned value_id)
     // Does nothing by default
 }
 
+ConfigFields ComputerDevice::get_config_fields()
+{
+    return {};
+}
+
 //------------------- Introspection and control ----------------------------//
 
 std::vector<DeviceFieldInfo> ComputerDevice::get_device_fields()

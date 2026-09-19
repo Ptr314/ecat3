@@ -299,6 +299,16 @@ static std::string decode_send_text(const std::string &s)
     return r;
 }
 
+ConfigFields DL11::get_config_fields()
+{
+    //The host port the line goes to; empty leaves the line unconnected
+    ConfigField f;
+    f.name = "port";
+    f.title = QT_TRANSLATE_NOOP("ConfigFields", "Serial port of the computer");
+    f.type = CONFIG_FIELD_STRING;
+    return {f};
+}
+
 std::vector<DeviceFieldInfo> DL11::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
@@ -404,17 +414,14 @@ emulator::Result DL11::send_command(const std::string &command, const std::strin
                 "{DL11|" + std::string(QT_TRANSLATE_NOOP("DL11", "Command 'sendfile' expects a file name")) + "}");
         std::string file = find_file_location(sd, arg);
         if (file.empty()) file = arg;
-        dsk_tools::UTF8_ifstream f(file, std::ios::binary);
-        if (!f.is_open())
+        if (!dsk_tools::file_exists(file))
             return emulator::Result::error(emulator::ErrorCode::FileError,
                 "{DL11|" + std::string(QT_TRANSLATE_NOOP("DL11", "File not found")) + "} " + arg);
-        // UTF8_ifstream у MinGW - не поток, а обёртка над файлом Windows с
-        // одним read(), поэтому файл читается кусками
-        char buf[512];
-        std::streamsize n;
-        while ((n = f.read(buf, sizeof(buf))) > 0)
-            for (std::streamsize i = 0; i < n; i++) m_rx_queue.push_back((uint8_t)buf[i]);
-        f.close();
+        // Целиком, одним вызовом: UTF8_ifstream у MinGW - обёртка над файлом
+        // Windows, чей read() возвращает число байт, а у остальных сборок это
+        // std::ifstream, чей read() возвращает сам поток
+        const std::string data = dsk_tools::utf8_read_file(file);
+        for (size_t i = 0; i < data.size(); i++) m_rx_queue.push_back((uint8_t)data[i]);
         return emulator::Result::ok();
     }
 

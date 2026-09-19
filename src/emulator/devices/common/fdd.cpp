@@ -650,6 +650,16 @@ void FDD::clear_aim_desync()
 
 //------------------- Introspection and control ----------------------------//
 
+ConfigFields FDD::get_config_fields()
+{
+    ConfigField f;
+    f.name = "image";
+    f.title = QT_TRANSLATE_NOOP("ConfigFields", "Disk image");
+    f.type = CONFIG_FIELD_FILE;
+    f.files = cd->get_parameter("files", false).value;
+    return {f};
+}
+
 std::vector<DeviceFieldInfo> FDD::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();

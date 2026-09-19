@@ -28,7 +28,7 @@ TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
     //No lookup of the CPU here: a constructor must not reach for another device.
     //The clock arrives as m_system_clock from ComputerDevice::load_config()
 
-    EmulatorConfigDevice * speaker_config = new EmulatorConfigDevice(name + "-speaker", "speaker");
+    speaker_config = new EmulatorConfigDevice(name + "-speaker", "speaker");
     speaker_config->add_parameter("~input", "", name + ".speaker", "", "");
 
     speaker = new Speaker(im, speaker_config);
@@ -37,6 +37,7 @@ TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
 TapeRecorder::~TapeRecorder()
 {
     delete speaker;
+    delete speaker_config;
 }
 
 emulator::Result TapeRecorder::load_config(SystemData *sd)

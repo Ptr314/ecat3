@@ -41,6 +41,11 @@ std::string resolve_output_path(SystemData * sd, const std::string &file_name);
 // on the command line or in a script has to be resolved against a base path.
 bool is_absolute_path(const std::string &path);
 
+// Where the configurations of the user (.ext) live: <root>/ecat-exts/ on
+// Windows, next to the emulator as everything else there, and ~/ecat-exts/
+// elsewhere. root is the directory holding computers/. Ends with a '/'
+std::string default_user_ext_path(const std::string &root);
+
 unsigned int read_confg_value(EmulatorConfigDevice * cd, const std::string &name, bool required, unsigned int def);
 std::string read_confg_value(EmulatorConfigDevice * cd, const std::string &name, bool required, const std::string &def);
 bool read_confg_value(EmulatorConfigDevice * cd, const std::string &name, bool required, bool def);

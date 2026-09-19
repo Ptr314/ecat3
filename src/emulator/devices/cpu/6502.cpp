@@ -41,6 +41,11 @@ mos6502::mos6502(InterfaceManager *im, EmulatorConfigDevice *cd, int family_type
     over_commands.push_back(0x20);
 }
 
+mos6502::~mos6502()
+{
+    delete core;
+}
+
 void mos6502::reset(bool cold)
 {
     CPU::reset(cold);

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <ctime>
 #include <random>
 #include <sstream>
@@ -288,6 +289,18 @@ bool is_absolute_path(const std::string &path)
     return false;
 }
 
+std::string default_user_ext_path(const std::string &root)
+{
+#ifdef _WIN32
+    std::string base = root;
+#else
+    const char * home = getenv("HOME");
+    std::string base = home != nullptr ? std::string(home) : root;
+#endif
+    if (!base.empty() && base[base.size() - 1] != '/' && base[base.size() - 1] != '\\') base += "/";
+    return base + "ecat-exts/";
+}
+
 std::string resolve_output_path(SystemData * sd, const std::string &file_name)
 {
     if (file_name.empty() || sd == nullptr) return file_name;
@@ -306,11 +319,24 @@ std::string find_file_location(SystemData * sd, const std::string &file_name)
         std::string dir = dsk_tools::parent_dir_name(system_path);
         std::string file;
 
+        // Inline data of a configuration is unpacked into the cache and
+        // referenced by its full name
+        if (is_absolute_path(file_name))
+            return dsk_tools::file_exists(file_name) ? file_name : "";
+
         // A script sets script_path while running, so files referenced by
         // COMMAND dev.load("...") are looked up next to the script first.
         if (!sd->script_path.empty())
         {
             file = sd->script_path + file_name;
+            if (dsk_tools::file_exists(file)) return file;
+        }
+
+        // A configuration extension brings its own files, which take
+        // precedence over those of the base it is built on
+        if (!sd->ext_path.empty())
+        {
+            file = sd->ext_path + file_name;
             if (dsk_tools::file_exists(file)) return file;
         }
 

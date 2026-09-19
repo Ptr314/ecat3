@@ -1,0 +1,6 @@
+=== Приводы ===
+[fdd0.loaded] &000000
+[fdd1.loaded] &000000
+=== Разъем и экран ===
+[up.device] joystick
+[display.color] &000000

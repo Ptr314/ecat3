@@ -1,0 +1,5 @@
+// Испорченные встроенные данные
+// @error Invalid base64 data
+@extends bk/BK-0010-01.cfg
+@version ошибка
+monitor:image = MONIT10.ROM {base64: не base64}

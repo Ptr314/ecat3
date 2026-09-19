@@ -39,6 +39,8 @@ int main()
 
     g_renderer = new WasmRenderer();
     g_emulator = new Emulator(WORK_PATH, DATA_PATH, SOFTWARE_PATH, INI_FILE, g_renderer);
+    // Inline data of a configuration and unpacked .ext.zip archives, in MEMFS
+    g_emulator->cache_path = "/tmp/ecat3-cache/";
 
     printf("eCat3 WASM: ready. Waiting for machine selection.\n");
 
@@ -57,7 +59,9 @@ int wasm_load_machine(const char* cfg_path)
     printf("eCat3 WASM: loading machine: %s\n", cfg_path);
 
     try {
-        // Stop current emulation if running
+        // Stop current emulation if running, and the demo script of the
+        // previous machine with it
+        g_emulator->stop_script();
         g_emulator->stop_emulation();
 
         // Load new configuration
@@ -85,6 +89,13 @@ int wasm_load_machine(const char* cfg_path)
 
         // Start emulation
         g_emulator->run();
+
+        // A configuration extension may carry a script: the start of a demo
+        if (g_emulator->has_embedded_script()) {
+            emulator::Result sres = g_emulator->load_embedded_script();
+            if (sres) g_emulator->start_script();
+            else printf("eCat3 WASM: embedded script failed: %s\n", sres.message.c_str());
+        }
 
         printf("eCat3 WASM: machine loaded and running.\n");
         return 0;

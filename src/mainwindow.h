@@ -59,7 +59,10 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
-    void load_config(QString file_name, bool set_default);
+    //run_embedded starts the @script of a configuration extension; false
+    //when something else is about to drive the machine (a script from the
+    //command line, a replayed recording, an MCP client)
+    void load_config(QString file_name, bool set_default, bool run_embedded = true);
 
     void onDeviceMenuCalled(unsigned int i);
 
@@ -180,10 +183,11 @@ private:
 
     //Set from the command line, see main.cpp
     QString cmdline_config;
+    bool startup_load = false;          //The machine of the command line is being loaded
     QString script_file;
 
     QString resolve_startup_path(const QString &file_name) const;
-    void start_script();
+    void start_script(bool from_cmdline = true);
 
     //------------------------- Action recording ---------------------------//
     //The recording and the replay share one buffer, the one of the script

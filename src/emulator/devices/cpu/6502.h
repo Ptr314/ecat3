@@ -38,6 +38,7 @@ protected:
 
 public:
     mos6502(InterfaceManager *im, EmulatorConfigDevice *cd, int family_type);
+    ~mos6502();
 
     virtual void reset(bool cold) override;
     virtual unsigned int execute() override;

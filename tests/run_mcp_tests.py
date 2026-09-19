@@ -256,6 +256,10 @@ def nomcp_reason(test):
     разный. В обычном прогоне сценарий стартует вместе с машиной, поэтому там
     та же величина повторяется.
     """
+    # Расширение конфигурации - не сценарий: его @script под MCP не запускается,
+    # машиной управляет клиент
+    if getattr(test, "kind", "ecat") != "ecat":
+        return "расширение конфигурации, а не сценарий"
     with open(test.path, encoding="utf-8") as f:
         m = re.search(r"^#\s*@nomcp\s*(.*)$", f.read(), re.M)
     if m is None:

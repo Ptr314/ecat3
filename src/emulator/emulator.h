@@ -18,12 +18,18 @@
 #endif
 
 #include "core.h"
+#include "config_ext.h"
 #include "emulator/devices/common/keyboard.h"
 #include "emulator/devices/common/joystick.h"
 #include "emulator/devices/common/mouse.h"
 #include "emulator/script/script_engine.h"
 #include "emulator/script/script_recorder.h"
 #include "renderer.h"
+
+//Every device type a configuration may name. Used by the emulator and by the
+//configuration editor, which constructs the devices of a machine it does not
+//run to ask them what can be changed (see config_fields.h)
+void register_all_devices(DeviceManager * dm);
 
 class Emulator
 {
@@ -32,6 +38,8 @@ private:
     bool busy;
     InterfaceManager *im;
     SystemData sd;
+    MachineSource m_source;
+    bool m_embedded_loaded = false;     //The script buffer holds m_source.script
     VideoRenderer * renderer;
 
     std::array<std::string, 256> charmap;
@@ -100,6 +108,12 @@ public:
     std::string work_path;
     std::string data_path;
     std::string software_path;
+    //Where inline data of a configuration and unpacked .ext.zip archives are
+    //written. Set by the frontend before the first load_config()
+    std::string cache_path;
+    //Configurations of the user (.ext), listed by the machine chooser next to
+    //those of computers/
+    std::string user_ext_path;
 
     bool loaded;
 
@@ -196,6 +210,13 @@ public:
     //A script is parsed before the machine is loaded, because its MACHINE
     //command may select the configuration to start with
     emulator::Result load_script(const std::string &file_name);
+
+    //The @script part of the loaded configuration extension. The frontend
+    //loads and starts it when nothing else drives the machine: an explicit
+    //script, a replayed recording and an MCP client all take precedence
+    bool has_embedded_script() const;
+    emulator::Result load_embedded_script();
+    const MachineSource & machine_source() const { return m_source; }
     std::string script_machine() const;
     void start_script();
     void stop_script();

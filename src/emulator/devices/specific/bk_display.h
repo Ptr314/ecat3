@@ -66,6 +66,7 @@ public:
     DeviceOptions get_device_options() override;
     void set_device_option(unsigned option_id, unsigned value_id) override;
 
+    ConfigFields get_config_fields() override;
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 

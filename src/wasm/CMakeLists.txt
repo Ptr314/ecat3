@@ -55,6 +55,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../globals.h.in ${CMAKE_CURRENT_BINAR
 # Emulator core sources
 set(EMULATOR_SOURCES
     ${EMU_DIR}/config.cpp
+    ${EMU_DIR}/config_ext.cpp
+    ${EMU_DIR}/config_fields.cpp
+    ${EMU_DIR}/base64.cpp
     ${EMU_DIR}/core.cpp
     ${EMU_DIR}/emulator.cpp
     ${EMU_DIR}/utils.cpp
@@ -129,6 +132,7 @@ set(LIB_SOURCES
     ${LIBS_DIR}/ini_wrapper.cpp
     ${LIBS_DIR}/crc16.cpp
     ${LIBS_DIR}/mfm_tools.cpp
+    ${LIBS_DIR}/zip_reader.cpp
     ${LIBS_DIR}/lodepng/lodepng.cpp
     ${LIBS_DIR}/miniaudio/miniaudio.c
     ${LIBS_DIR}/md4c/md4c.c

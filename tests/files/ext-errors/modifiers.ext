@@ -1,0 +1,5 @@
+// Свойство есть в базе под другими модификаторами: ~data[0-7] против ~data
+// @error with other modifiers, remove it first
+@extends bk/BK-0010-01.cfg
+@version ошибка
+port-ppi:~data = joystick.out

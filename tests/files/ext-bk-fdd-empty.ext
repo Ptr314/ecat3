@@ -1,0 +1,7 @@
+// Вариант БК0011М + КНГМД для теста ext-bk-fdd-empty: правки тех полей, что
+// дает редактор конфигураций (так он их и записывает)
+@extends bk/BK-0011M-fdd.cfg
+@version БК0011М + КНГМД (тест редактора)
+-fdd0:image
+up:default = joystick
+display:mode = mono

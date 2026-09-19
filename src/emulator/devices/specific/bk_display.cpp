@@ -322,6 +322,18 @@ void BKDisplay::render_line_color(uint8_t * base, const unsigned src, RAM * vmem
     }
 }
 
+ConfigFields BKDisplay::get_config_fields()
+{
+    ConfigField f;
+    f.name = "mode";
+    f.title = QT_TRANSLATE_NOOP("DeviceOptions", "Video output");
+    f.type = CONFIG_FIELD_CHOICE;
+    f.def = "color";
+    f.values.push_back({"color", QT_TRANSLATE_NOOP("DeviceOptions", "RGB")});
+    f.values.push_back({"mono",  QT_TRANSLATE_NOOP("DeviceOptions", "Mono")});
+    return {f};
+}
+
 std::vector<DeviceFieldInfo> BKDisplay::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = RasterDisplay::get_device_fields();

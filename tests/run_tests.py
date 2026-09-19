@@ -13,6 +13,12 @@
 Каждый сценарий запускается эмулятором с рабочим каталогом deploy/. То, что он
 оставляет после себя (лог, снимки экрана, файлы), складывается в tests/results
 и сравнивается с tests/expected. Подробности - в tests/README.md.
+
+Тестом бывает и расширение конфигурации tests/scripts/*.ext: эмулятор получает
+его вместо сценария и выполняет его собственную секцию @script. Файлы
+tests/files/ext-errors/*.ext - расширения с ошибкой: машина не должна
+загрузиться, а в stderr должна быть строка из их "// @error". Их гоняет только
+консольная сборка, оконная показала бы окно с сообщением и встала.
 """
 
 import argparse
@@ -34,6 +40,7 @@ RESULTS_DIR = os.path.join(TESTS_DIR, "results")
 DEPLOY_DIR = os.path.join(REPO_DIR, "deploy")
 
 DEFAULT_TIMEOUT = 90            # секунд, если в сценарии нет строки "# @timeout"
+EXT_ERRORS_DIR = os.path.join(TESTS_DIR, "files", "ext-errors")
 TEXT_SUFFIXES = (".txt", ".asc", ".log", ".cfg", ".map", ".csv")
 
 # Допуск на снимок экрана: доля точек, которой позволено отличаться.
@@ -209,24 +216,33 @@ def build_environment(exe):
 # --------------------------------------------------------------------------
 
 class Test(object):
-    def __init__(self, path):
+    # kind: "ecat" - сценарий, "ext" - расширение со своим @script,
+    # "error" - расширение, которое не должно загрузиться
+    def __init__(self, path, kind="ecat"):
         self.path = path
+        self.kind = kind
         self.name = os.path.splitext(os.path.basename(path))[0]
+        if kind == "error":
+            self.name = "ext-error-" + self.name
         self.tier = self.name.split("-", 1)[0]
         with open(path, encoding="utf-8") as f:
             text = f.read()
+        # У сценария комментарий начинается с #, у расширения - с //
+        comment = "#" if kind == "ecat" else "//"
         self.title = ""
         for line in text.splitlines():
-            if line.startswith("#") and not line.startswith("# @"):
-                self.title = line.lstrip("# ").strip()
+            if line.startswith(comment) and not line.startswith(comment + " @"):
+                self.title = line[len(comment):].strip()
                 break
-        m = re.search(r"^#\s*@timeout\s+(\d+)", text, re.M)
+        m = re.search(r"^(?:#|//)\s*@timeout\s+(\d+)", text, re.M)
         self.timeout = int(m.group(1)) if m else DEFAULT_TIMEOUT
+        m = re.search(r"^//\s*@error\s+(.+?)\s*$", text, re.M)
+        self.error = m.group(1) if m else None
         # Допуск на снимок экрана: сколько точек может отличаться. Нужен там,
         # где на экране есть мигающий элемент: фаза мигания задается тактами
         # процессора, а снимок делает поток отрисовки, и попасть он может
         # по обе стороны от переключения.
-        m = re.search(r"^#\s*@pixels\s+(\d+)", text, re.M)
+        m = re.search(r"^(?:#|//)\s*@pixels\s+(\d+)", text, re.M)
         self.pixels = int(m.group(1)) if m else None
         # Все, что сценарий пишет в tests/results
         self.artifacts = sorted(set(re.findall(r'"\.\./results/([^"]+)"', text)))
@@ -234,6 +250,9 @@ class Test(object):
 
 def collect_tests(filters, include_slow):
     tests = [Test(p) for p in sorted(glob.glob(os.path.join(SCRIPTS_DIR, "*.ecat")))]
+    tests += [Test(p, "ext") for p in sorted(glob.glob(os.path.join(SCRIPTS_DIR, "*.ext")))]
+    tests += [Test(p, "error") for p in sorted(glob.glob(os.path.join(EXT_ERRORS_DIR, "*.ext")))]
+    tests.sort(key=lambda t: t.name)
     if not include_slow:
         tests = [t for t in tests if t.tier != "slow"]
     if filters:
@@ -347,7 +366,35 @@ def script_logs(test):
             if stamped.search(os.path.basename(p))]
 
 
+def run_error_test(test, exe, env, exe_args=()):
+    """Расширение с ошибкой: эмулятор должен выйти с ненулевым кодом и сказать, почему."""
+    result = {"test": test, "problems": [], "artifacts": [], "seconds": 0.0}
+    if test.error is None:
+        result["problems"].append('в файле нет строки "// @error <текст сообщения>"')
+        return result
+    started = time.time()
+    try:
+        proc = subprocess.run(
+            [exe, test.path] + list(exe_args),
+            cwd=DEPLOY_DIR, env=env, timeout=test.timeout,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except subprocess.TimeoutExpired:
+        result["seconds"] = time.time() - started
+        result["problems"].append("эмулятор не завершился за %d с: машина загрузилась?" % test.timeout)
+        return result
+    result["seconds"] = time.time() - started
+    stderr = proc.stderr.decode("utf-8", errors="replace").strip()
+    if proc.returncode == 0:
+        result["problems"].append("машина загрузилась, а не должна была")
+    if test.error not in stderr:
+        result["problems"].append("в stderr нет строки \"%s\":\n    %s" % (test.error, stderr or "(пусто)"))
+    return result
+
+
 def run_test(test, exe, env, update, exe_args=()):
+    if test.kind == "error":
+        return run_error_test(test, exe, env, exe_args)
+
     result = {"test": test, "problems": [], "artifacts": [], "seconds": 0.0}
 
     # Хвосты прошлого прогона, чтобы не сравнить старый файл с новым эталоном
@@ -360,8 +407,10 @@ def run_test(test, exe, env, update, exe_args=()):
 
     started = time.time()
     try:
+        # Расширение передается как конфигурация: сценарий у него свой
+        command = [exe, test.path] if test.kind == "ext" else [exe, "--script", test.path]
         proc = subprocess.run(
-            [exe, "--script", test.path] + list(exe_args),
+            command + list(exe_args),
             cwd=DEPLOY_DIR, env=env, timeout=test.timeout,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         code = proc.returncode
@@ -455,6 +504,34 @@ def main():
     if "headless" in os.path.basename(exe).lower():
         exe_args.append("--no-sound")
 
+    # Расширения с ошибкой гоняет только консольная сборка: оконная на ошибке
+    # загрузки показывает окно с сообщением и ждет. Если выбрана оконная, ищется
+    # консольная среди остальных; нет ни одной - эти тесты пропускаются
+    error_tests = [t for t in tests if t.kind == "error"]
+    error_exe = None
+    if error_tests:
+        if exe_args:
+            error_exe = (exe, env)
+        else:
+            for candidate in find_emulators(None):
+                if "headless" not in os.path.basename(candidate).lower():
+                    continue
+                cenv = build_environment(candidate)
+                if check_emulator(candidate, cenv)[1] is None:
+                    error_exe = (candidate, cenv)
+                    break
+        if error_exe is None:
+            print("Консольной сборки нет: проверки ошибок в расширениях (%d) пропущены.\n"
+                  % len(error_tests))
+            tests = [t for t in tests if t.kind != "error"]
+            if not tests:
+                sys.exit("Под условия отбора не подошел ни один тест")
+
+    def run_one(t):
+        if t.kind == "error":
+            return run_test(t, error_exe[0], error_exe[1], args.update, ["--no-sound"])
+        return run_test(t, exe, env, args.update, exe_args)
+
     print("Эмулятор: %s%s%s" % (where, " (%s)" % version if version else "",
                                 ", без звука" if exe_args else ""))
     print("Тестов:   %d%s\n" % (len(tests), ", режим обновления эталонов" if args.update else ""))
@@ -474,14 +551,13 @@ def main():
     with KeepIni():
         if args.jobs > 1:
             with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
-                futures = {pool.submit(run_test, t, exe, env, args.update, exe_args): t
-                           for t in tests}
+                futures = {pool.submit(run_one, t): t for t in tests}
                 for future in concurrent.futures.as_completed(futures):
                     results.append(future.result())
                     report_one(results[-1], len(results), len(tests))
         else:
             for i, test in enumerate(tests, 1):
-                results.append(run_test(test, exe, env, args.update, exe_args))
+                results.append(run_one(test))
                 report_one(results[-1], i, len(tests))
 
     results.sort(key=lambda r: r["test"].name)

@@ -103,7 +103,8 @@ int main(int argc, char *argv[])
         QString suffix = QFileInfo(arg).suffix().toLower();
         if (suffix == "ecat") {
             if (script_file.isEmpty()) script_file = arg;
-        } else if (suffix == "cfg") {
+        } else if (is_machine_file(arg.toStdString())) {
+            //.cfg, or a configuration extension (.ext, .ext.zip)
             if (config_file.isEmpty()) config_file = arg;
         }
     }

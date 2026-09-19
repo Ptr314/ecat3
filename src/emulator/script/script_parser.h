@@ -25,6 +25,14 @@ emulator::Result parse_script_file(const std::string &file_name,
                                    std::vector<ScriptCommand> &out,
                                    std::vector<std::string> &errors);
 
+// The same for a script held in memory, such as the @script part of a
+// configuration extension. first_line numbers the lines in messages the way
+// they are numbered in the file the text came from
+emulator::Result parse_script_text(const std::string &content,
+                                   std::vector<ScriptCommand> &out,
+                                   std::vector<std::string> &errors,
+                                   unsigned int first_line = 1);
+
 // Name of a command, for messages and documentation
 std::string script_verb_name(unsigned int verb);
 

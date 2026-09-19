@@ -157,16 +157,35 @@ emulator::Result Emulator::load_config(std::string file_name)
 
     register_devices();
 
+    //The script of the previous extension belongs to that machine, and so
+    //does its directory in the file search. One loaded explicitly stays: a
+    //replay or a MACHINE line may be what switches machines. The emulation
+    //thread is stopped by now, a demo may still be waiting in a WAIT
+    if (m_embedded_loaded && script)
+    {
+        script->stop();
+        script->clear();
+        sd.script_path.clear();
+    }
+    m_embedded_loaded = false;
+
+    //A .cfg as it is, or an extension applied to its base
     EmulatorConfig config;
-    emulator::Result res = config.load_from_file(file_name);
+    MachinePaths paths;
+    paths.computers_path = work_path;
+    paths.cache_path = cache_path;
+    emulator::Result res = load_machine_description(file_name, paths, config, m_source);
     if (!res) return res;
 
     EmulatorConfigDevice * system = config.get_device("system");
     if (system == nullptr)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Device 'system' not found in config")) + "}");
+    //The file asked for names the machine (ini keys, MACHINE of a recording),
+    //the base is where its own files are
     sd.system_file = file_name;
-    sd.system_path = dsk_tools::get_file_path(file_name);
+    sd.system_path = dsk_tools::get_file_path(m_source.base_cfg);
+    sd.ext_path = m_source.ext_path;
     sd.system_type = system->get_parameter("type").value;
     sd.system_name = system->get_parameter("name").value;
     sd.system_version = system->get_parameter("version", false).value;
@@ -291,6 +310,24 @@ emulator::Result Emulator::load_script(const std::string &file_name)
     //Devices look up files next to the script first, so that a script and the
     //images it uses can live in one directory
     sd.script_path = s->get_path();
+    return emulator::Result::ok();
+}
+
+bool Emulator::has_embedded_script() const
+{
+    return loaded && !m_source.script.empty();
+}
+
+emulator::Result Emulator::load_embedded_script()
+{
+    ScriptEngine * s = script_engine();
+
+    //Named after the extension: the log goes next to it, and relative names
+    //in the script resolve there first
+    emulator::Result res = s->load_text(m_source.script, m_source.file, m_source.script_line);
+    if (!res) return res;
+    sd.script_path = s->get_path();
+    m_embedded_loaded = true;
     return emulator::Result::ok();
 }
 
@@ -997,6 +1034,11 @@ void Emulator::setThreadPriority(bool timeCritical) {
 
 
 void Emulator::register_devices()
+{
+    register_all_devices(dm);
+}
+
+void register_all_devices(DeviceManager * dm)
 {
     dm->register_device("ram", create_ram);
     dm->register_device("rom", create_rom);

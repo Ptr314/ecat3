@@ -122,15 +122,28 @@ size_t ScriptEngine::get_pc() const                            { return m_pc; }
 
 emulator::Result ScriptEngine::load(const std::string &file_name)
 {
-    compat_lock_guard lock(m_mutex);
-    if (active_state(m_state)) return emulator::Result::error(emulator::ErrorCode::ScriptError, "Script is running");
-
-    clear_locked();
-
     std::vector<ScriptCommand> commands;
     std::vector<std::string> errors;
     emulator::Result res = parse_script_file(file_name, commands, errors);
     if (!res) return res;
+    return load_commands(file_name, commands, errors);
+}
+
+emulator::Result ScriptEngine::load_text(const std::string &text, const std::string &file_name, unsigned int first_line)
+{
+    std::vector<ScriptCommand> commands;
+    std::vector<std::string> errors;
+    emulator::Result res = parse_script_text(text, commands, errors, first_line);
+    if (!res) return res;
+    return load_commands(file_name, commands, errors);
+}
+
+emulator::Result ScriptEngine::load_commands(const std::string &file_name, std::vector<ScriptCommand> &commands, std::vector<std::string> &errors)
+{
+    compat_lock_guard lock(m_mutex);
+    if (active_state(m_state)) return emulator::Result::error(emulator::ErrorCode::ScriptError, "Script is running");
+
+    clear_locked();
 
     m_commands.swap(commands);
     m_errors.swap(errors);
@@ -699,8 +712,17 @@ emulator::Result ScriptEngine::do_key(const ScriptCommand &c)
         return emulator::Result::error(emulator::ErrorCode::BadParameters,
             "KEY expects two delays and at least one key");
 
-    unsigned int delay = parse_numeric_value(c.args[0]);
-    unsigned int hold  = parse_numeric_value(c.args[1]);
+    //Keys written without the delays ("KEY down, ret") would otherwise report
+    //only that a key name is not a number
+    unsigned int delay, hold;
+    try {
+        delay = parse_numeric_value(c.args[0]);
+        hold  = parse_numeric_value(c.args[1]);
+    } catch (std::exception &) {
+        return emulator::Result::error(emulator::ErrorCode::BadParameters,
+            "KEY expects two delays before the keys (KEY delay, hold, key1, key2, ...), got '"
+            + c.args[0] + "', '" + c.args[1] + "'");
+    }
 
     std::vector<unsigned int> keys;
     std::vector<bool> shift;

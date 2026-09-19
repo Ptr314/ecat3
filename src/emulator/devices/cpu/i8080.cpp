@@ -59,7 +59,10 @@ i8080::i8080(InterfaceManager *im, EmulatorConfigDevice *cd):
 }
 
 i8080::~i8080()
-{}
+{
+    //The base class of the core has no virtual destructor
+    delete static_cast<I8080Core*>(core);
+}
 
 unsigned int i8080::get_pc()
 {

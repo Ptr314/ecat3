@@ -1,0 +1,19 @@
+# Поля редактора конфигураций: пустой дисковод, разъем, цветность
+# Расширение tests/files/ext-bk-fdd-empty.ext убирает образ из привода A
+# (-fdd0:image), вставляет джойстик в разъем УП и включает черно-белый экран.
+# Машина с пустым приводом обязана загружаться: так очищает поле редактор.
+# @timeout 29
+
+MACHINE "../../tests/files/ext-bk-fdd-empty.ext"
+WAIT _4000
+
+LOGDEFS _16,_8
+PRINT "=== Приводы ==="
+LOG fdd0.loaded
+LOG fdd1.loaded
+PRINT "=== Разъем и экран ==="
+LOG up.device
+LOG display.color
+
+SCREEN "../results/ext-bk-fdd-empty.png"
+EXIT

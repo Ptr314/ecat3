@@ -80,7 +80,7 @@ Options parse_options(int argc, char *argv[])
             //script or a configuration can simply be dropped on the executable
             const std::string ext = extension_of(a);
             if (ext == "ecat" && o.script.empty())     o.script = a;
-            else if (ext == "cfg" && o.config.empty()) o.config = a;
+            else if (is_machine_file(a) && o.config.empty()) o.config = a;
             else { o.bad = true; o.bad_argument = a; }
         }
     }
@@ -115,6 +115,8 @@ struct Paths
     std::string software;
     std::string data;
     std::string ini;
+    std::string user_ext;
+    std::string cache;
 };
 
 Paths resolve_paths(const std::string &argv0)
@@ -166,6 +168,12 @@ Paths resolve_paths(const std::string &argv0)
     p.work     = root + "/computers/";
     p.software = root + "/software/";
     p.data     = root + "/data/";
+    p.user_ext = default_user_ext_path(root);
+    {
+        std::error_code ec;
+        const fs::path tmp = fs::temp_directory_path(ec);
+        p.cache = ec ? root + "/ecat3-cache/" : (tmp / "ecat3-cache").generic_string() + "/";
+    }
     return p;
 }
 
@@ -306,6 +314,8 @@ int main(int argc, char *argv[])
     Emulator emulator(paths.work, paths.data, paths.software, paths.ini, &renderer);
     //Set before any machine is loaded, and it holds across a change of machine
     if (o.no_sound) emulator.set_audio_enabled(false);
+    emulator.user_ext_path = paths.user_ext;
+    emulator.cache_path = paths.cache;
     HeadlessHost host(&emulator, paths.work);
 
     //A script is parsed before the machine is loaded: its MACHINE command may
@@ -358,7 +368,21 @@ int main(int argc, char *argv[])
             return 2;
         }
 
-        if (!o.script.empty())
+        //A configuration extension may carry a script of its own. A script
+        //given explicitly takes its place
+        bool run_script = !o.script.empty();
+        if (!run_script && emulator.has_embedded_script())
+        {
+            emulator::Result res = emulator.load_embedded_script();
+            if (!res)
+            {
+                std::cerr << strip_message_context(res.message) << std::endl;
+                return 2;
+            }
+            run_script = true;
+        }
+
+        if (run_script)
         {
             emulator.start_script();
             //The windowed build polls the engine from a 100 ms timer; here the

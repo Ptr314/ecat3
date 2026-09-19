@@ -65,6 +65,11 @@
         <file alias="about">resources/icons/help.png</file>
         <file alias="record">resources/icons/krec.png</file>
         <file alias="rec_open">resources/icons/folder_yellow_open.png</file>
+        <file alias="cfg_copy">resources/icons/kpager.png</file>
+        <file alias="cfg_edit">resources/icons/package_editors.png</file>
+        <file alias="cfg_delete">resources/icons/trashcan_full.png</file>
+        <file alias="clear">resources/icons/empty.png</file>
+        <file alias="cfg_user">resources/icons/package_games_board.png</file>
         <file alias="rewind">resources/icons/player_start.png</file>
     </qresource>
     <qresource prefix="/fonts">

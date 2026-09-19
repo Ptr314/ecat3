@@ -576,6 +576,19 @@ void UKNCHDD::set_value(unsigned int address, unsigned int value, bool force)
 
 //--------------------------- Поля и команды --------------------------------//
 
+ConfigFields UKNCHDD::get_config_fields()
+{
+    //A link only: the image is written through as the machine works with it,
+    //and a copy unpacked from the configuration would lose every change
+    ConfigField f;
+    f.name = "image";
+    f.title = QT_TRANSLATE_NOOP("ConfigFields", "Hard disk image");
+    f.type = CONFIG_FIELD_FILE;
+    f.files = cd->get_parameter("files", false).value;
+    f.embeddable = false;
+    return {f};
+}
+
 std::vector<DeviceFieldInfo> UKNCHDD::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

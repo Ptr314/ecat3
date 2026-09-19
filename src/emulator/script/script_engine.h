@@ -71,6 +71,11 @@ public:
     //are skipped and reported by get_errors()
     emulator::Result load(const std::string &file_name);
 
+    //The same for a script held in memory: the @script part of a
+    //configuration extension. file_name names the buffer (log, relative
+    //paths) as above, first_line is where the text starts in that file
+    emulator::Result load_text(const std::string &text, const std::string &file_name, unsigned int first_line = 1);
+
     //Names the buffer after a file: the log and relative screenshot names go
     //next to it. Used after the GUI saves a recording
     void set_file_name(const std::string &file_name);
@@ -214,6 +219,7 @@ private:
 
     void     cache_ticks_per_ms();
     void     clear_locked();
+    emulator::Result load_commands(const std::string &file_name, std::vector<ScriptCommand> &commands, std::vector<std::string> &errors);
     void     refresh_machine();
     void     release_keys();                    //Lets go of everything the script holds down
     bool     active_state(int s) const;

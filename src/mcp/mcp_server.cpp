@@ -12,7 +12,7 @@
 #endif
 
 #include "libs/picojson/picojson.h"
-#include "mcp/mcp_base64.h"
+#include "emulator/base64.h"
 #include "mcp/mcp_server.h"
 #include "mcp/mcp_session.h"
 

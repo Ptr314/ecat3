@@ -1,0 +1,5 @@
+// Удаление свойства, которого в базе нет
+// @error No such property in the base configuration
+@extends bk/BK-0010-01.cfg
+@version ошибка
+-display:colour

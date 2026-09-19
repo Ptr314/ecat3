@@ -5,6 +5,7 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QStandardPaths>
 #include <QFontDatabase>
 #include <QEvent>
 #include <QComboBox>
@@ -321,6 +322,8 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
         renderer = new OpenGLRenderer();
     #endif
     e = new Emulator(work_path.toStdString(), data_path.toStdString(), software_path.toStdString(), ini_file.toStdString(), renderer);
+    e->user_ext_path = default_user_ext_path(emulator_root.toStdString());
+    e->cache_path = QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation)).absoluteFilePath("ecat3-cache").toStdString() + "/";
 
     // Signal/slot connections removed — using direct calls to Emulator methods
 
@@ -339,7 +342,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
 
     //A configuration given on the command line wins over the one saved in the ini
     first_config = cmdline_config.isEmpty()
-        ? (work_path + file_to_load)
+        ? (QFileInfo(file_to_load).isAbsolute() ? file_to_load : work_path + file_to_load)
         : resolve_startup_path(cmdline_config);
 
     //The engine runs on the emulation thread, so its progress is picked up
@@ -394,21 +397,23 @@ void MainWindow::showEvent(QShowEvent* event)
             }
         }
 
-        load_config(first_config, false);
+        startup_load = !cmdline_config.isEmpty();
+        load_config(first_config, false, script_file.isEmpty());
+        startup_load = false;
         CreateScreenMenu();
 
         if (!script_file.isEmpty()) start_script();
     }
 }
 
-void MainWindow::start_script()
+void MainWindow::start_script(bool from_cmdline)
 {
     if (!e->loaded) return;
 
     //A script from the command line runs through the same controls as a
     //recording, the only difference being that its EXIT closes the window
     e->start_script();
-    rec_cmdline = true;
+    rec_cmdline = from_cmdline;
     rec_ui_shown = true;
     rec_state = RecPlaying;
     rec_seen_pc = 0;
@@ -1225,7 +1230,7 @@ void MainWindow::set_title()
     setWindowTitle("[eCat " + QString(PROJECT_VERSION) + "] " + QString::fromStdString(sd->system_name) + " : " + QString::fromStdString(sd->system_version));
 }
 
-void MainWindow::load_config(QString file_name, bool set_default)
+void MainWindow::load_config(QString file_name, bool set_default, bool run_embedded)
 {
     if (e->loaded)
     {
@@ -1286,8 +1291,28 @@ void MainWindow::load_config(QString file_name, bool set_default)
 
         if (set_default)
         {
-            QString new_file = file_name.right(file_name.length() - static_cast<int>(e->work_path.length()));
+            //Relative to computers/ when it is there; a configuration of the
+            //user lives elsewhere and is stored with its full path
+            QString work = QString::fromStdString(e->work_path);
+            QString new_file = file_name.startsWith(work)
+                ? file_name.mid(work.length())
+                : file_name;
             e->write_setup("Startup", "default", new_file.toStdString());
+        }
+
+        //A configuration extension may bring a script to run on the machine.
+        //Never under an MCP client, even for a machine picked from the menu:
+        //the script would take over the client's command buffer
+#ifdef ENABLE_MCP
+        if (mcp_mode) run_embedded = false;
+#endif
+        if (run_embedded && e->has_embedded_script())
+        {
+            emulator::Result sres = e->load_embedded_script();
+            if (!sres)
+                QMessageBox::warning(this, tr("Error"), translateResultMessage(sres.message));
+            else
+                start_script(startup_load);
         }
     } else {
         qWarning() << "ui->screen->winId() is null!";
@@ -1298,13 +1323,23 @@ void MainWindow::load_config(QString file_name, bool set_default)
 void MainWindow::on_actionOpen_triggered()
 {
     SystemData * sd = e->get_system_data();
-    QString file_name = QFileDialog::getOpenFileName(this, tr("Load a file"), last_path, QString::fromStdString(sd->allowed_files));
+    //A configuration can be opened from here too, and then it replaces the
+    //machine instead of being loaded into its memory
+    QString filters = QString::fromStdString(sd->allowed_files);
+    if (!filters.isEmpty()) filters += ";;";
+    filters += tr("Configurations") + " (*.cfg *.ext *.ext.zip)";
+    QString file_name = QFileDialog::getOpenFileName(this, tr("Load a file"), last_path, filters);
 
 
     if (!file_name.isEmpty()) {
         QFileInfo fi(file_name);
         last_path = fi.absolutePath();
         e->set_last_path(last_path.toStdString());
+
+        if (is_machine_file(file_name.toStdString())) {
+            load_config(fi.absoluteFilePath(), false);
+            return;
+        }
 
         emulator::Result res = HandleExternalFile(e, file_name.toStdString());
         if (!res) {
@@ -1985,7 +2020,7 @@ void MainWindow::on_actionRecPlay_triggered()
             QMessageBox::warning(this, tr("Error"), tr("Configuration file is not found: ") + path);
             return;
         }
-        load_config(path, false);
+        load_config(path, false, false);
         if (!e->loaded) return;
     }
 
@@ -2057,7 +2092,9 @@ QString MainWindow::mcp_load_config(const QString &file_name)
     mcp_show_window();
 
     mcp_load_error.clear();
-    load_config(resolve_startup_path(file_name), false);
+    //The client drives the machine itself, the script of an extension would
+    //run under its feet
+    load_config(resolve_startup_path(file_name), false, false);
 
     if (!mcp_load_error.isEmpty()) return mcp_load_error;
     if (!e->loaded) return tr("The configuration did not load.");

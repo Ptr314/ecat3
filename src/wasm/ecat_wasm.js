@@ -262,11 +262,14 @@ function aspectId(text) {
     return ["4x3", "square", "1x1"].includes(id) ? id : null;
 }
 
+// The ending of a machine file: a configuration or an extension of one
+const MACHINE_SUFFIX = /\.(cfg|ext|ext\.zip)$/i;
+
 // A machine by its id in machines.json or by the name of its configuration
 // file, with or without .cfg, in any case
 function findMachine(machines, name) {
-    const want = name.toLowerCase().replace(/\.cfg$/, "");
-    const base = (m) => (m.cfg_path || "").split("/").pop().toLowerCase().replace(/\.cfg$/, "");
+    const want = name.toLowerCase().replace(MACHINE_SUFFIX, "");
+    const base = (m) => (m.cfg_path || "").split("/").pop().toLowerCase().replace(MACHINE_SUFFIX, "");
     return machines.find((m) => m.id === name)
         || machines.find((m) => m.id.toLowerCase() === want)
         || machines.find((m) => base(m) === want)
@@ -1126,7 +1129,8 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl, before
         // The drives and the options belong to the machine loaded now, or to
         // none at all. Options are named after the configuration file, the way
         // the desktop names them in its ini
-        const configKey = machinePath.replace(/^.*\//, "").replace(/\.cfg$/i, "");
+        // The desktop drops the last extension only: "x.ext.zip" keeps ".ext"
+        const configKey = machinePath.replace(/^.*\//, "").replace(/\.[^.]*$/, "");
         setupDrives(module, configKey);
         setupDeviceOptions(module, configKey);
         setupMouseSpeed(module);
@@ -1191,7 +1195,8 @@ function showMachineInfo(module, machine) {
 
     document.getElementById("info-title").textContent = machine.name;
 
-    const path = machine.cfg_path.replace(/\.cfg$/i, ".md");
+    // An extension without a description of its own shows that of its base
+    const path = machine.md_path || machine.cfg_path.replace(MACHINE_SUFFIX, ".md");
     const html = module.ccall("wasm_md2html", "string", ["string"], [path]);
     body.innerHTML = "";
     if (html) {

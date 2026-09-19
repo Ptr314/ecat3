@@ -1,0 +1,5 @@
+// Удаление строки, ключ которой в базе встречается трижды, без значения
+// @error several lines with this key, add the value
+@extends bk/BK-0010-01.cfg
+@version ошибка
+-mapper:@memory[177714-177715]

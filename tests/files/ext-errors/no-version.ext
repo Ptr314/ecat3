@@ -1,0 +1,4 @@
+// Нет обязательной директивы @version
+// @error has no @version
+@extends bk/BK-0010-01.cfg
+display:mode = mono

@@ -1,0 +1,4 @@
+// База расширения - не .cfg
+// @error can only be based on a .cfg
+@extends ../../tests/files/ext-bk-0010-01.ext
+@version ошибка

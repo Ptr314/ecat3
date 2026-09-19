@@ -29,6 +29,15 @@ Computer configurations live in **`.cfg` files** (text format, see CONFIG.md for
 
 This means most hardware behavior is **not hardcoded** - it's defined via config files. New machines can be added by creating `.cfg` files without code changes.
 
+**Configuration extensions (`.ext`, `.ext.zip`)** are variants written as edits to a base `.cfg` (`@extends`, `@version`, `dev:prop = value`, `-dev:key [= value]`, `@script`); `CONFIG.md` has the rules. Every machine file goes through one function, `load_machine_description()` (`emulator/config_ext.h`): a `.cfg` as is, an extension parsed by `ConfigExtension` and applied to the parsed `EmulatorConfig` before any device exists, a `.ext.zip` unpacked into `Emulator::cache_path` first. Both formats share the tokenizer (`ConfigReader`) and `parse_parameter()` in `config.cpp`, so a value means the same thing in either. Things to know:
+- A key (`name + left_range`) is **not unique** in a base: the БК mapper sends `@memory[177714-177715]` to three devices and `port-ppi` takes `~data[0-7]` from two. A removal picks one by value (`-mapper:@memory[177714-177715] = ay`); replacing an ambiguous key is an error.
+- `{base64: ...}` after a file name is decoded by `materialize_inline_data()` into `cache_path/inline/` and the parameter gets the absolute path, so no device loader knows about inline data. `find_file_location()` therefore takes absolute names as they are, and searches `SystemData::ext_path` (the extension's own directory) right after the script's.
+- `sd.system_file` is the file asked for (the `.ext`), which keys `[DeviceOptions]` and `MACHINE` of a recording; `sd.system_path` is the base's directory.
+- The `@script` is started by the frontend (`has_embedded_script()` / `load_embedded_script()`), and only when nothing else drives the machine: an explicit `--script`, a replay and an MCP client win.
+- `ConfigReader::next()` drops the last character of a text that ends without a line break. A `.cfg` always ends on `}`; the extension parser appends `\n` to each property it tokenizes.
+- **The editor** (`dialogs/exteditorwindow.*`, opened from the machine chooser) shows what `ComputerDevice::get_config_fields()` returns. `collect_config_fields()` (`emulator/config_fields.h`) constructs the machine's devices through `register_all_devices()` on a private `DeviceManager` and never calls `load_config`, so `get_config_fields()` must read `cd` only, and a constructor must stay free of side effects (and leaks: the editor builds a machine every time it opens). `ExtEditModel` is the Qt-free part: base and current values per field, `build()` rewrites only the edits of known fields and keeps the rest and `@script`. A new editable parameter is one override in the device, no GUI change.
+- Tests: `tests/scripts/*.ext` run as their own script, `tests/files/ext-errors/*.ext` must fail to load with the `// @error` text on stderr (headless only, see `tests/README.md`).
+
 ### Core Classes
 
 - **`Core`** (`emulator/core.h`): Base device class with interface management, memory read/write hooks, message passing
@@ -229,7 +238,7 @@ eCat3/
 │   ├── qt_utils.h/cpp      # Qt-dependent utilities (moved out of emulator core)
 │   ├── tests/              # CPU test suites (i8080, Z80, 6502)
 │   ├── headless/           # Console frontend (no Qt) + null renderer
-│   ├── mcp/                # MCP server: JSON-RPC, session, base64 (Qt-free)
+│   ├── mcp/                # MCP server: JSON-RPC, session (Qt-free; base64 is emulator/base64.*)
 │   ├── wasm/               # WebAssembly frontend + package_machines.py
 │   ├── libs/               # Third-party (dsk_tools, lodepng, md4c, miniaudio, mfm_tools, crc16, audio_filters)
 │   └── CMakeLists.txt

@@ -40,6 +40,7 @@ private:
     Interface i_motor;
 
     Speaker * speaker;
+    EmulatorConfigDevice * speaker_config;  //The speaker reads it in load_config(), so it lives as long
 
 protected:
     unsigned int baud_rate;

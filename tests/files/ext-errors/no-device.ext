@@ -1,0 +1,5 @@
+// Устройства нет в базовой конфигурации
+// @error No such device in the base configuration
+@extends bk/BK-0010-01.cfg
+@version ошибка
+nosuch:mode = 1
