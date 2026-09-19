@@ -46,6 +46,21 @@ static const uint32_t UKNC_GRAY_LEVELS[8] = {
 static uint8_t  UKNC_TABLE[128][3];
 static uint32_t UKNC_RGBA[128];
 
+// A plane byte spread over eight nibbles, bit N into bit 0 of nibble N. Three
+// of them OR-ed together, shifted by the plane number, give the colour index
+// of every dot of an octet at once
+static uint32_t UKNC_SPREAD[256];
+
+static void build_spread()
+{
+    for (unsigned b = 0; b < 256; b++) {
+        uint32_t v = 0;
+        for (unsigned bit = 0; bit < 8; bit++)
+            if (b & (1u << bit)) v |= 1u << (bit * 4);
+        UKNC_SPREAD[b] = v;
+    }
+}
+
 UKNCDisplay::UKNCDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
       RasterDisplay(im, cd)
     , i_frame(this, im, 1, "frame", MODE_W)
@@ -53,6 +68,7 @@ UKNCDisplay::UKNCDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     m_standart = "uknc";
     sx = UKNC_WIDTH;
     sy = UKNC_LINES;
+    if (UKNC_SPREAD[1] == 0) build_spread();
 }
 
 emulator::Result UKNCDisplay::load_config(SystemData *sd)
@@ -284,36 +300,38 @@ void UKNCDisplay::render_line(unsigned int y, unsigned int bits_address)
     const uint8_t * p1 = m_plane[1]->get_buffer();
     const uint8_t * p2 = m_plane[2]->get_buffer();
 
+    // 1, 2, 4 or 8 screen dots per pixel, so a line is a whole number of
+    // octets and no dot needs a check against the width
     const unsigned scale = m_scale;
+    const unsigned octets = UKNC_WIDTH / (8 * scale);
+    const uint32_t cursor_color = UKNC_RGBA[m_cursor_color & 127];
     unsigned addr = bits_address & 0xFFFF;
-    unsigned x = 0;
-    unsigned pos = 0;                       // octet along the line, for the cursor
+    uint32_t * dst = reinterpret_cast<uint32_t*>(base);
 
     if (y < UKNC_LINES) m_line_scale[y] = (uint8_t)scale;
 
-    while (x < UKNC_WIDTH) {
+    for (unsigned pos = 0; pos < octets; pos++) {
         // The same address in all three planes; plane 0 is the low bit of the
         // colour, and bit 0 of a byte is the leftmost dot of its octet
-        uint8_t s0 = p0[addr];
-        uint8_t s1 = p1[addr];
-        uint8_t s2 = p2[addr];
+        uint32_t dots = UKNC_SPREAD[p0[addr]] | (UKNC_SPREAD[p1[addr]] << 1) | (UKNC_SPREAD[p2[addr]] << 2);
+        addr = (addr + 1) & 0xFFFF;
 
-        for (unsigned bit = 0; bit < 8 && x < UKNC_WIDTH; bit++) {
-            const unsigned idx = (s0 & 1) | ((s1 & 1) << 1) | ((s2 & 1) << 2);
-            uint32_t color = m_line_colors[idx];
+        uint32_t colors[8];
+        for (unsigned bit = 0; bit < 8; bit++, dots >>= 4)
+            colors[bit] = m_line_colors[dots & 7];
 
-            if (m_cursor_on && pos == m_cursor_pos &&
-                (!m_cursor_graphic || bit == m_cursor_bit))
-                color = UKNC_RGBA[m_cursor_color & 127];
-
-            for (unsigned k = 0; k < scale && x < UKNC_WIDTH; k++, x++)
-                *reinterpret_cast<uint32_t*>(base + x * 4) = color;
-
-            s0 >>= 1; s1 >>= 1; s2 >>= 1;
+        // The cursor sits in one octet, the whole of it or one dot
+        if (m_cursor_on && pos == m_cursor_pos) {
+            if (m_cursor_graphic) colors[m_cursor_bit & 7] = cursor_color;
+            else for (unsigned bit = 0; bit < 8; bit++) colors[bit] = cursor_color;
         }
 
-        addr = (addr + 1) & 0xFFFF;
-        pos++;
+        if (scale == 1) {
+            for (unsigned bit = 0; bit < 8; bit++) *dst++ = colors[bit];
+        } else {
+            for (unsigned bit = 0; bit < 8; bit++)
+                for (unsigned k = 0; k < scale; k++) *dst++ = colors[bit];
+        }
     }
 
     if (y + 1 == UKNC_LINES) was_updated = true;

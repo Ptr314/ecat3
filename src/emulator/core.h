@@ -438,6 +438,9 @@ public:
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
     virtual uint8_t * get_buffer();
+    //No access hook and both directions allowed: the buffer may be read and
+    //written directly, as PlanePair does for the УК-НЦ processor
+    bool is_plain() const { return read_callback == 0 && write_callback == 0 && can_read && can_write; }
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     std::vector<DeviceCommandInfo> get_device_commands() override;
@@ -571,7 +574,6 @@ private:
     unsigned int registered_devices_count;
     RegisteredDevice registered_devices[MAX_REGISTERED_DEVICES];
 
-    int64_t global_clock_counter = 0;
 };
 
 
@@ -691,6 +693,22 @@ private:
         unsigned int * address_on_device,
         unsigned int * range_index
         );
+
+    // Where a write to the address read last goes. The read scan finds it for
+    // free when the range that answers the read takes writes too and no range
+    // before it matched the address in the other mode only - then it is also
+    // the first range a write would find. A read-modify-write instruction (INC,
+    // BIS, MOVB on a 1801) writes right back to where it read, and skips the
+    // second scan. The mapping depends only on the address, the config lines
+    // and first_range, so an entry never goes stale; it is simply overwritten
+    unsigned int        wm_address = ~0u;
+    unsigned int        wm_config = 0;
+    unsigned int        wm_first = 0;
+    AddressableDevice * wm_device = nullptr;
+    unsigned int        wm_offset = 0;
+    unsigned int        wm_range = 0;
+    AddressableDevice * map_read(unsigned int address, unsigned int * address_on_device, unsigned int * range_index);
+    AddressableDevice * map_write(unsigned int address, unsigned int * address_on_device, unsigned int * range_index);
 
 protected:
 

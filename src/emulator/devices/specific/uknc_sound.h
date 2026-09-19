@@ -33,11 +33,13 @@ private:
     // Bits 7-12 of the register: bit 0 here is the line, bits 1-5 the grid
     Interface i_input;
 
-    // The grid counter at 128 кГц, advanced from the ticks of the processor
-    // this device is clocked with. The remainder keeps the rate exact at any
-    // processor frequency
-    uint64_t m_grid = 0;
-    uint64_t m_grid_rest = 0;
+    // Ticks of the processor this device is clocked with. The grid counter at
+    // 128 кГц is computed from them only when a grid bit is on: clock() runs
+    // on every instruction of the processor, and a division there cost more
+    // than the rest of the sound together. The floor of the product is exactly
+    // what a running count with a carried remainder gives
+    uint64_t m_ticks = 0;
+    uint64_t grid() const;
 
     virtual int16_t calc_sound_value() override;
     bool level() const;

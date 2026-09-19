@@ -34,6 +34,14 @@ private:
     unsigned int m_base = 0;
 
     bool m_index = false;           // the address is a plane index
+
+    // The planes' own buffers, when both are plain RAM with no access hook:
+    // every word the УК-НЦ central processor touches comes through here, and
+    // two virtual Memory calls per word were a measurable part of its cost.
+    // Taken in reset(), after every device has loaded (and set its hooks)
+    uint8_t * m_low_buf = nullptr;
+    uint8_t * m_high_buf = nullptr;
+    unsigned int m_depth = 0;       // indexes both buffers hold
     unsigned int index_of(unsigned int address) const {
         return m_base + (m_index? address : (address >> 1));
     }
@@ -41,6 +49,7 @@ private:
 public:
     PlanePair(InterfaceManager *im, EmulatorConfigDevice *cd);
     emulator::Result load_config(SystemData *sd) override;
+    void reset(bool cold) override;
 
     unsigned int get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;

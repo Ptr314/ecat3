@@ -25,6 +25,11 @@
 // Посылок на символ: старт, восемь данных и стоп
 #define BITS_PER_CHAR   10
 
+// После стольких пустых опросов порт хоста опрашивается во столько раз реже:
+// у С2 на 9600 это раз в 8 мс
+#define IDLE_POLLS      4
+#define IDLE_SLOWDOWN   8
+
 DL11::DL11(InterfaceManager *im, EmulatorConfigDevice *cd):
       AddressableDevice(im, cd)
     , i_virq(this, im, 1, "virq", MODE_W)
@@ -146,9 +151,17 @@ void DL11::clock(unsigned int counter)
         return;
     }
     // В петле и с заглушкой линия хоста отключена, чужое сюда не приходит
-    if ((m_xcsr & XCSR_MAINT) || m_plug) return;
+    if ((m_xcsr & XCSR_MAINT) || m_plug || !m_host.is_open()) return;
     uint8_t b;
-    if (m_host.read(b)) receive(b);
+    if (m_host.read(b)) {
+        m_idle_polls = 0;
+        receive(b);
+        return;
+    }
+    // Молчащая линия опрашивается реже: системный вызов на каждое время
+    // символа - это тысячи вызовов в секунду из потока эмуляции. Пришедшее
+    // за это время ждёт в драйвере порта и берётся потом по байту за символ
+    if (++m_idle_polls >= IDLE_POLLS) m_rx_left = (int64_t)m_char_ticks * IDLE_SLOWDOWN;
 }
 
 // Номер станции СА: разряды 0-3 номера ложатся в разряды 8-11 регистров,

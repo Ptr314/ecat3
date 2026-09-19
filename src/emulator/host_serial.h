@@ -39,6 +39,13 @@ public:
     bool write(uint8_t value);
 
 private:
+    // What one system call brought in and read() has not handed out yet: the
+    // port is read in whole chunks rather than a byte per call
+    uint8_t m_rx[256];
+    unsigned int m_rx_pos = 0;
+    unsigned int m_rx_len = 0;
+    unsigned int read_raw(uint8_t * buffer, unsigned int size);
+
 #ifdef _WIN32
     void * m_handle = nullptr;          // HANDLE, INVALID_HANDLE_VALUE is kept as nullptr
 #else

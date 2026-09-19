@@ -328,7 +328,6 @@ void DeviceManager::clock(unsigned int domain, unsigned int counter)
 
     //Counted in the master's cycles, so that the number stays what it always
     //was on a machine with one processor
-    if (domain == 0) global_clock_counter += counter;
 
     //Only the devices that do something with a tick, in the order they are
     //declared - the processors are clocked by their own execute()
@@ -1992,6 +1991,46 @@ AddressableDevice * MemoryMapper::map_port(
     return this->map(&(this->ports), 0, this->ports_count-1, config, address, mode, address_on_device, range_index);
 }
 
+AddressableDevice * MemoryMapper::map_read(unsigned int address, unsigned int * address_on_device, unsigned int * range_index)
+{
+    const unsigned int config = this->i_config.value;
+    bool clean = true;
+    for (unsigned int i = this->first_range; i <= this->ranges_count; i++)
+    {
+        MapperRange * mr = &(this->ranges[i]);
+        if (
+            ( (config & mr->config_mask) == mr->config_value )
+            && (address >= mr->range_begin) && (address <= mr->range_end)
+            && ( (address & mr->address_mask) == mr->address_value)
+            )
+        {
+            if ((mr->mode & MODE_R) == 0) { clean = false; continue; }
+            * address_on_device = address - mr->range_begin + mr->base;
+            * range_index = i;
+            if (clean && (mr->mode & MODE_W) != 0) {
+                wm_address = address;
+                wm_config = config;
+                wm_first = this->first_range;
+                wm_device = mr->device;
+                wm_offset = * address_on_device;
+                wm_range = i;
+            }
+            return mr->device;
+        }
+    }
+    return nullptr;
+}
+
+AddressableDevice * MemoryMapper::map_write(unsigned int address, unsigned int * address_on_device, unsigned int * range_index)
+{
+    if (address == wm_address && this->i_config.value == wm_config && this->first_range == wm_first) {
+        * address_on_device = wm_offset;
+        * range_index = wm_range;
+        return wm_device;
+    }
+    return this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_W, address_on_device, range_index);
+}
+
 unsigned int MemoryMapper::read(unsigned int address)
 {
     //TODO: Cache
@@ -2006,7 +2045,7 @@ unsigned int MemoryMapper::read(unsigned int address)
 
     unsigned int address_on_device, range_index;
     this->no_device = false;
-    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
+    AddressableDevice * d = map_read(address, &address_on_device, &range_index);
     if (d != nullptr)
     {
         //TODO: Cache
@@ -2053,7 +2092,7 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
 
     unsigned int address_on_device, range_index;
     this->no_device = false;
-    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index);
+    AddressableDevice * d = map_write(address, &address_on_device, &range_index);
     if (d == nullptr) {
         this->no_device = !this->responds(address, MODE_W);
         return;
@@ -2079,7 +2118,7 @@ unsigned int MemoryMapper::read_word(unsigned int address)
 
     unsigned int address_on_device, range_index;
     this->no_device = false;
-    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
+    AddressableDevice * d = map_read(address, &address_on_device, &range_index);
     if (d != nullptr) {
         unsigned int v = d->get_value_word(address_on_device);
 
@@ -2100,7 +2139,7 @@ void MemoryMapper::write_word(unsigned int address, unsigned int value)
 {
     unsigned int address_on_device, range_index;
     this->no_device = false;
-    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index);
+    AddressableDevice * d = map_write(address, &address_on_device, &range_index);
     if (d == nullptr) {
         this->no_device = !this->responds(address, MODE_W);
         return;

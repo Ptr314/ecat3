@@ -32,6 +32,17 @@ HostSerialPort::~HostSerialPort()
     close();
 }
 
+bool HostSerialPort::read(uint8_t &value)
+{
+    if (m_rx_pos >= m_rx_len) {
+        m_rx_pos = 0;
+        m_rx_len = read_raw(m_rx, sizeof(m_rx));
+        if (m_rx_len == 0) return false;
+    }
+    value = m_rx[m_rx_pos++];
+    return true;
+}
+
 #if defined(_WIN32)
 
 //----------------------------- Windows ------------------------------------//
@@ -96,6 +107,7 @@ void HostSerialPort::close()
         CloseHandle((HANDLE)m_handle);
         m_handle = nullptr;
     }
+    m_rx_pos = m_rx_len = 0;
 }
 
 bool HostSerialPort::is_open() const
@@ -103,12 +115,12 @@ bool HostSerialPort::is_open() const
     return m_handle != nullptr;
 }
 
-bool HostSerialPort::read(uint8_t &value)
+unsigned int HostSerialPort::read_raw(uint8_t * buffer, unsigned int size)
 {
-    if (m_handle == nullptr) return false;
+    if (m_handle == nullptr) return 0;
     DWORD got = 0;
-    if (!ReadFile((HANDLE)m_handle, &value, 1, &got, nullptr)) return false;
-    return got == 1;
+    if (!ReadFile((HANDLE)m_handle, buffer, size, &got, nullptr)) return 0;
+    return (unsigned int)got;
 }
 
 bool HostSerialPort::write(uint8_t value)
@@ -186,6 +198,7 @@ void HostSerialPort::close()
         ::close(m_fd);
         m_fd = -1;
     }
+    m_rx_pos = m_rx_len = 0;
 }
 
 bool HostSerialPort::is_open() const
@@ -193,10 +206,11 @@ bool HostSerialPort::is_open() const
     return m_fd >= 0;
 }
 
-bool HostSerialPort::read(uint8_t &value)
+unsigned int HostSerialPort::read_raw(uint8_t * buffer, unsigned int size)
 {
-    if (m_fd < 0) return false;
-    return ::read(m_fd, &value, 1) == 1;
+    if (m_fd < 0) return 0;
+    const ssize_t got = ::read(m_fd, buffer, size);
+    return (got > 0)? (unsigned int)got : 0;
 }
 
 bool HostSerialPort::write(uint8_t value)
@@ -217,7 +231,7 @@ emulator::Result HostSerialPort::open(const std::string &name, unsigned int baud
 
 void HostSerialPort::close() {}
 bool HostSerialPort::is_open() const { return false; }
-bool HostSerialPort::read(uint8_t &value) { (void)value; return false; }
+unsigned int HostSerialPort::read_raw(uint8_t * buffer, unsigned int size) { (void)buffer; (void)size; return 0; }
 bool HostSerialPort::write(uint8_t value) { (void)value; return false; }
 
 #endif

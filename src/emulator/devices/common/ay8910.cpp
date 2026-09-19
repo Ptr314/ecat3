@@ -196,7 +196,11 @@ void AY8910::tick()
 
 void AY8910::clock(unsigned int counter)
 {
-    if (!m_plugged) return;
+    // A chip nobody has written to since the reset, and which takes no share
+    // of the mix until then, is not heard: its generators wait for the first
+    // write instead of ticking for nothing. The УК-НЦ carries three of them in
+    // the sound module, rarely used
+    if (!m_plugged || !(m_idle_share || m_used)) return;
     m_acc += counter * m_step;
     while (m_acc >= 0x10000) {
         m_acc -= 0x10000;

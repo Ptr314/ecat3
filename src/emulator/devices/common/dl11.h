@@ -69,6 +69,7 @@ private:
     bool m_tx_busy = false;
     int64_t m_tx_left = 0;
     int64_t m_rx_left = 0;
+    unsigned int m_idle_polls = 0;  // пустых опросов порта хоста подряд
 
     std::deque<uint8_t> m_rx_queue;     // поданное сценарием
     HostSerialPort m_host;

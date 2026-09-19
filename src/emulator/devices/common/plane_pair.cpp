@@ -3,6 +3,8 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: A word-wide address space built from two byte-wide memory planes
 
+#include <algorithm>
+
 #include "plane_pair.h"
 #include "emulator/utils.h"
 
@@ -45,8 +47,26 @@ emulator::Result PlanePair::load_config(SystemData *sd)
     return emulator::Result::ok();
 }
 
+void PlanePair::reset(MAYBE_UNUSED bool cold)
+{
+    m_low_buf = m_high_buf = nullptr;
+    m_depth = 0;
+    if (dynamic_cast<RAM*>(m_low) == nullptr || dynamic_cast<RAM*>(m_high) == nullptr) return;
+    if (!m_low->is_plain() || !m_high->is_plain()) return;
+    m_low_buf = m_low->get_buffer();
+    m_high_buf = m_high->get_buffer();
+    if (m_low_buf == nullptr || m_high_buf == nullptr) { m_low_buf = m_high_buf = nullptr; return; }
+    m_depth = std::min(m_low->get_size(), m_high->get_size());
+}
+
 unsigned int PlanePair::get_value(unsigned int address)
 {
+    if (m_low_buf != nullptr) {
+        const unsigned int index = index_of(address);
+        if (index < m_depth)
+            return m_index? m_low_buf[index] : ((address & 1)? m_high_buf : m_low_buf)[index];
+    }
+
     // Bit 0 of the address picks the plane, the rest is the index in it.
     // Addressed by index, a byte access is the low byte of the word
     if (m_index) return m_low->get_value(index_of(address)) & 0xFF;
@@ -56,6 +76,13 @@ unsigned int PlanePair::get_value(unsigned int address)
 
 void PlanePair::set_value(unsigned int address, unsigned int value, bool force)
 {
+    if (m_low_buf != nullptr) {
+        const unsigned int index = index_of(address);
+        if (index < m_depth) {
+            (m_index? m_low_buf : ((address & 1)? m_high_buf : m_low_buf))[index] = (uint8_t)value;
+            return;
+        }
+    }
     if (m_index) { m_low->set_value(index_of(address), value & 0xFF, force); return; }
     Memory * plane = (address & 1)? m_high : m_low;
     plane->set_value(index_of(address), value & 0xFF, force);
@@ -74,12 +101,18 @@ unsigned int PlanePair::get_value_word(unsigned int address)
     // default two-byte composition of AddressableDevice would be wrong here:
     // it would read two consecutive indexes of alternating planes
     const unsigned int index = index_of(m_index? address : (address & ~1u));
+    if (index < m_depth) return m_low_buf[index] | (m_high_buf[index] << 8);
     return (m_low->get_value(index) & 0xFF) | ((m_high->get_value(index) & 0xFF) << 8);
 }
 
 void PlanePair::set_value_word(unsigned int address, unsigned int value, bool force)
 {
     const unsigned int index = index_of(m_index? address : (address & ~1u));
+    if (index < m_depth) {
+        m_low_buf[index] = (uint8_t)value;
+        m_high_buf[index] = (uint8_t)(value >> 8);
+        return;
+    }
     m_low->set_value(index, value & 0xFF, force);
     m_high->set_value(index, (value >> 8) & 0xFF, force);
 }

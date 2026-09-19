@@ -30,6 +30,13 @@ class GenericSound: public ComputerDevice
 {
 private:
     std::vector<SoundSource*> m_sources;    // mixed into the output, see "mix"
+
+    // The sources taking a share of the mix and the number of shares, the
+    // device's own output included. Taken once a sample rather than on every
+    // clock: activity changes only when a source is first written to or reset
+    std::vector<SoundSource*> m_active;
+    int64_t m_shares = 1;
+    void refresh_sources();
     bool m_initialized;
     uint64_t m_clock_freq;
     unsigned int m_counter;

@@ -23,20 +23,21 @@ UKNCSound::UKNCSound(InterfaceManager *im, EmulatorConfigDevice *cd):
 void UKNCSound::reset(bool cold)
 {
     GenericSound::reset(cold);
-    m_grid = 0;
-    m_grid_rest = 0;
+    m_ticks = 0;
 }
 
 void UKNCSound::clock(unsigned int counter)
 {
-    // Сетку ведём всегда, даже без звукового устройства: поле level должно
+    // Такты считаем всегда, даже без звукового устройства: поле level должно
     // отвечать одинаково в любом прогоне
-    if (m_system_clock != 0) {
-        m_grid_rest += (uint64_t)counter * GRID_RATE;
-        m_grid += m_grid_rest / m_system_clock;
-        m_grid_rest %= m_system_clock;
-    }
+    m_ticks += counter;
     GenericSound::clock(counter);
+}
+
+uint64_t UKNCSound::grid() const
+{
+    // 2^64 / 128000 / 6,25 МГц - больше полугода работы машины без сброса
+    return (m_system_clock != 0)? m_ticks * GRID_RATE / m_system_clock : 0;
 }
 
 bool UKNCSound::level() const
@@ -48,12 +49,13 @@ bool UKNCSound::level() const
 
     const unsigned int grid = (in & IN_GRID) >> 1;
     if (grid == 0) return true;
+    const uint64_t counter = this->grid();
 
     // Включённые частоты собираются «по И»: звучит, пока ни одна из них не
     // подняла свой уровень. Это NOR, а не AND, но перевёрнутая волна звучит
     // так же, и UKNCBTL собирает именно так
     for (unsigned int i = 0; i < 5; i++)
-        if ((grid & (1u << i)) && ((m_grid >> GRID_TAPS[i]) & 1))
+        if ((grid & (1u << i)) && ((counter >> GRID_TAPS[i]) & 1))
             return false;
     return true;
 }
@@ -77,7 +79,7 @@ bool UKNCSound::get_field(const std::string &field, unsigned int from, unsigned 
     out.numeric = true;
     if (field == "control") { out.values.push_back(i_input.value & 077); return true; }
     if (field == "level")   { out.values.push_back(level()? 1 : 0);     return true; }
-    if (field == "grid")    { out.width = 32; out.values.push_back((unsigned int)m_grid); return true; }
+    if (field == "grid")    { out.width = 32; out.values.push_back((unsigned int)grid()); return true; }
     out.numeric = false;
     return GenericSound::get_field(field, from, to, out);
 }

@@ -100,6 +100,7 @@ void GenericSound::init_sound(unsigned int clock_freq)
     m_counts_per_sample = (m_clock_freq << 8) / m_sample_rate; // * 128 to make it more precise
 
     m_dc_blocker.setup(m_sample_rate, 20);
+    refresh_sources();
 
     if (m_use_lpf) m_filter.setup(m_sample_rate, m_lpf_coutoff);
 
@@ -131,20 +132,25 @@ void GenericSound::set_muted(bool muted)
     m_muted = muted;
 }
 
+void GenericSound::refresh_sources()
+{
+    m_active.clear();
+    for (size_t i = 0; i < m_sources.size(); i++)
+        if (m_sources[i]->sound_active()) m_active.push_back(m_sources[i]);
+    m_shares = 1 + (int64_t)m_active.size();
+}
+
 void GenericSound::clock(unsigned int counter)
 {
     if (!m_initialized) return;
 
     // The sources are averaged with the device's own output so that the sum
-    // stays within the amplitude; a source that is switched off takes no share
+    // stays within the amplitude; a source that is switched off takes no share.
+    // The sum is divided by the shares once a sample, not here: this runs on
+    // every instruction of the processor the device is clocked with
     int64_t level = calc_sound_value();
-    int64_t shares = 1;
-    for (size_t i = 0; i < m_sources.size(); i++)
-        if (m_sources[i]->sound_active()) {
-            level += m_sources[i]->sound_sample(m_amplitude);
-            shares++;
-        }
-    if (shares > 1) level /= shares;
+    for (size_t i = 0; i < m_active.size(); i++)
+        level += m_active[i]->sound_sample(m_amplitude);
 
     // The level is weighted by the clock ticks it was held for. An instruction
     // takes from a dozen ticks to a hundred, and counting every one of them
@@ -180,7 +186,7 @@ void GenericSound::clock(unsigned int counter)
         };
 
         // Using average value between counts
-        float v = (m_acc_counter > 0) ? static_cast<float>(m_accumulator) / m_acc_counter : m_last_input;
+        float v = (m_acc_counter > 0) ? static_cast<float>(m_accumulator) / (float)(m_acc_counter * m_shares) : m_last_input;
         m_last_input = v;
         m_accumulator = m_acc_counter = 0;
 
@@ -197,6 +203,7 @@ void GenericSound::clock(unsigned int counter)
 
         m_buffer[m_buffer_pos++] = static_cast<int16_t>(out);
     }
+    refresh_sources();
 }
 
 void GenericSound::audio_callback(void* userdata, uint8_t* stream, int len)
