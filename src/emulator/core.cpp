@@ -2210,6 +2210,20 @@ unsigned int MemoryMapper::get_value(unsigned int address)
     return read(address);
 }
 
+unsigned MemoryMapper::get_direct(unsigned address)
+{
+    unsigned int address_on_device, range_index;
+    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
+    if (d == nullptr) return _FFFF;
+    unsigned int v = d->get_direct(address_on_device);
+    while (this->ranges[range_index].or_read) {
+        d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
+        if (d == nullptr) break;
+        v |= d->get_direct(address_on_device);
+    }
+    return v;
+}
+
 void MemoryMapper::set_value(unsigned int address, unsigned int value, bool force)
 {
     write(address, value);

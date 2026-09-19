@@ -288,6 +288,18 @@ void UKNCChannels::update_irq()
 
 unsigned int UKNCChannels::get_value_word(unsigned int address)
 {
+    return read_register(address, false);
+}
+
+// The debugger and LOG see the byte in a channel without taking it
+unsigned UKNCChannels::get_direct(unsigned address)
+{
+    const unsigned int w = read_register(address & ~1u, true);
+    return (address & 1)? ((w >> 8) & 0xFF) : (w & 0xFF);
+}
+
+unsigned int UKNCChannels::read_register(unsigned int address, bool peek)
+{
     const unsigned int reg = (address >> 1);
     unsigned int v = 0;
 
@@ -299,11 +311,11 @@ unsigned int UKNCChannels::get_value_word(unsigned int address)
     case R_CPU_TX2_ST: v = cpu_status(m_c2p[2], false); break;
 
     // Reading a data register takes the byte, which frees the channel
-    case R_CPU_RX0_DT: v = read_pipe(m_p2c[0]); update_irq(); break;
-    case R_CPU_RX1_DT: v = read_pipe(m_p2c[1]); update_irq(); break;
-    case R_PPU_RX0_DT: v = read_pipe(m_c2p[0]); update_irq(); break;
-    case R_PPU_RX1_DT: v = read_pipe(m_c2p[1]); update_irq(); break;
-    case R_PPU_RX2_DT: v = read_pipe(m_c2p[2]); update_irq(); break;
+    case R_CPU_RX0_DT: v = peek? m_p2c[0].data : read_pipe(m_p2c[0]); break;
+    case R_CPU_RX1_DT: v = peek? m_p2c[1].data : read_pipe(m_p2c[1]); break;
+    case R_PPU_RX0_DT: v = peek? m_c2p[0].data : read_pipe(m_c2p[0]); break;
+    case R_PPU_RX1_DT: v = peek? m_c2p[1].data : read_pipe(m_c2p[1]); break;
+    case R_PPU_RX2_DT: v = peek? m_c2p[2].data : read_pipe(m_c2p[2]); break;
 
     // A sender reading back its own data register sees what it wrote; it does
     // not disturb the handshake
@@ -318,6 +330,10 @@ unsigned int UKNCChannels::get_value_word(unsigned int address)
 
     default: v = 0; break;
     }
+
+    if (!peek && (reg == R_CPU_RX0_DT || reg == R_CPU_RX1_DT || reg == R_PPU_RX0_DT
+                  || reg == R_PPU_RX1_DT || reg == R_PPU_RX2_DT))
+        update_irq();
 
     return v & 0xFFFF;
 }

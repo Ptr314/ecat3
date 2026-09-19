@@ -63,13 +63,17 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     ui->registers->set_frame(true, true, true, false, "╤═╤│ │╧─┴");
     ui->flags->set_frame(true, true, true, false, "╤═╗│ ║╧─╢");
 
+    // The dump shows the address space of this processor: a machine with two
+    // of them (УК-НЦ) has a mapper each, and the last one in the config is
+    // the other processor's
     memory_devices = 0;
-    device_mm = nullptr;
+    device_mm = this->cpu->mm;
     for (unsigned int i=0; i < e->dm->device_count; i++){
         DeviceDescription * d = e->dm->get_device(i);
         if (d->device_type == "memory-mapper")
         {
-            device_mm = dynamic_cast<AddressableDevice*>(d->device.get());
+            if (device_mm == nullptr)
+                device_mm = dynamic_cast<AddressableDevice*>(d->device.get());
         }
         else if (d->device_type == "ram" || d->device_type == "rom")
         {

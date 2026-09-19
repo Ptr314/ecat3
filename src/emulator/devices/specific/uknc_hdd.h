@@ -11,6 +11,7 @@
 #include <string>
 
 #include "emulator/core.h"
+#include "emulator/thread_compat.h"
 
 // Контроллер винчестера УК-НЦ: плата ИДЕ в кассете ПЗУ периферийного
 // процессора. Кассета отдаёт ему верхнюю половину своего окна - адреса
@@ -64,6 +65,11 @@ private:
     bool m_volatile = false;
     std::map<uint64_t, std::array<uint8_t, 512>> m_overlay;
 
+    // Файл и m_overlay: меню окна меняет образ из потока GUI, пока машина
+    // читает сектор в потоке эмуляции. Замок берётся раз на сектор
+    compat_mutex m_image_mutex;
+    void close_image();
+
     unsigned int m_cylinders = 0;
     unsigned int m_heads = 0;
     unsigned int m_sectors = 0;
@@ -94,7 +100,7 @@ private:
     unsigned int m_sectors_read = 0;
     unsigned int m_sectors_written = 0;
 
-    unsigned int read_port(unsigned int reg);
+    unsigned int read_port(unsigned int reg, bool peek = false);
     void set_port(unsigned int reg, unsigned int value);
     void handle_command(unsigned int command);
     void identify_drive();
@@ -129,6 +135,7 @@ public:
     unsigned int get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
     unsigned int get_value_word(unsigned int address) override;
+    unsigned get_direct(unsigned address) override;
     void set_value_word(unsigned int address, unsigned int value, bool force=false) override;
 
     ConfigFields get_config_fields() override;

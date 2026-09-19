@@ -736,6 +736,9 @@ public:
 
     //These two functions are needed to use the MM as an addressable device
     virtual unsigned int get_value(unsigned int address) override;
+    //What the debugger and LOG see: the mapped device's own get_direct, with
+    //no bus side effects (a register that clears on read, cancelinit)
+    unsigned get_direct(unsigned address) override;
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
     virtual unsigned int get_value_word(unsigned int address) override;
     virtual void set_value_word(unsigned int address, unsigned int value, bool force=false) override;

@@ -47,7 +47,8 @@ static uint8_t  UKNC_TABLE[128][3];
 static uint32_t UKNC_RGBA[128];
 
 UKNCDisplay::UKNCDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
-    RasterDisplay(im, cd)
+      RasterDisplay(im, cd)
+    , i_frame(this, im, 1, "frame", MODE_W)
 {
     m_standart = "uknc";
     sx = UKNC_WIDTH;
@@ -78,6 +79,9 @@ emulator::Result UKNCDisplay::load_config(SystemData *sd)
     sy = UKNC_LINES;
 
     reset_walk();
+
+    // Settle the pulse line low, so the first frame is already an edge
+    i_frame.change(0);
 
     return emulator::Result::ok();
 }
@@ -337,6 +341,8 @@ void UKNCDisplay::FRAME_SYNC()
     // A frame always starts at the top of the table
     reset_walk();
     m_frames++;
+    i_frame.change(1);
+    i_frame.change(0);
 }
 
 void UKNCDisplay::HSYNC(const unsigned line, const unsigned sync_val)

@@ -160,15 +160,28 @@ void UKNCTimer::update_irq()
 
 unsigned int UKNCTimer::get_value_word(unsigned int address)
 {
+    return read_register(address, false);
+}
+
+// Отладчик и LOG видят регистры, не снимая флагов и не перезагружая счётчик
+unsigned UKNCTimer::get_direct(unsigned address)
+{
+    const unsigned int w = read_register(address & ~1u, true);
+    return (address & 1)? ((w >> 8) & 0xFF) : (w & 0xFF);
+}
+
+unsigned int UKNCTimer::read_register(unsigned int address, bool peek)
+{
     switch (address >> 1) {
     case REG_STATE: {
         const unsigned int v = m_flags;
         // Чтение регистра состояния снимает ошибку переполнения
-        m_flags &= ~F_OVERFLOW;
+        if (!peek) m_flags &= ~F_OVERFLOW;
         return v;
     }
     case REG_COUNTER: {
         const unsigned int v = m_counter & COUNTER_MASK;
+        if (peek) return v;
         // Чтение текущего значения снимает обе готовности и перезагружает
         // счётчик - так делает и сама машина
         if (m_flags & (F_ZERO | F_EVENT)) {

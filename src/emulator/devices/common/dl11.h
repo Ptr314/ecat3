@@ -98,6 +98,7 @@ public:
     unsigned int get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
     unsigned int get_value_word(unsigned int address) override;
+    unsigned get_direct(unsigned address) override;
     void set_value_word(unsigned int address, unsigned int value, bool force=false) override;
 
     ConfigFields get_config_fields() override;

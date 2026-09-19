@@ -1503,6 +1503,7 @@ void MainWindow::hdd_open(unsigned int n)
 
 void MainWindow::hdd_eject(unsigned int n)
 {
+    if (hdds[n] == nullptr) return;
     hdd_menu[n]->actions().at(0)->setText(MainWindow::tr("<Not loaded>"));
     hdd_button[n]->setIcon(QIcon(":/icons/hdd_unmount"));
     hdds[n]->unload();
@@ -1511,6 +1512,7 @@ void MainWindow::hdd_eject(unsigned int n)
 
 void MainWindow::hdd_wp(unsigned int n)
 {
+    if (hdds[n] == nullptr) return;
     const bool on = hdd_menu[n]->actions().at(3)->isChecked();
     hdds[n]->send_command("protect", on?"1":"0");
     e->record_command(hdds[n]->name, "protect", on?"1":"0");

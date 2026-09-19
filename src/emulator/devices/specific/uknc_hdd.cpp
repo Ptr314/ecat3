@@ -94,12 +94,14 @@ static std::FILE * open_image(const std::string &file_name, bool for_write)
 
 emulator::Result UKNCHDD::load_image(const std::string &file_name)
 {
+    // Новый образ открывается и проверяется без замка; старый закрывается и
+    // заменяется уже под ним. Неудача оставляет гнездо пустым, как и раньше
     unload();
 
-    m_read_only = false;
+    bool read_only = false;
     std::FILE * f = open_image(file_name, true);
     if (f == nullptr) {
-        m_read_only = true;
+        read_only = true;
         f = open_image(file_name, false);
     }
     if (f == nullptr)
@@ -119,14 +121,15 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
     }
 
     unsigned int sectors = 0, heads = 0;
+    bool inverted = false;
     const uint16_t * w = (const uint16_t *)first;
     if ((w[0] == 0x54A9 && w[1] == 0xFFEF && w[2] == 0xFEFF)
         || (w[0] == 0xAB56 && w[1] == 0x0010 && w[2] == 0x0100)) {
         // Разметка HD: число секторов и их общее число на цилиндр лежат
         // словами, обратный код узнаётся по заголовку
-        m_inverted = (w[0] == 0xAB56);
+        inverted = (w[0] == 0xAB56);
         uint16_t nsec = w[4], ncyl = w[5];
-        if (m_inverted) { nsec = ~nsec; ncyl = ~ncyl; }
+        if (inverted) { nsec = ~nsec; ncyl = ~ncyl; }
         sectors = nsec;
         if (sectors != 0) heads = (ncyl / sectors) & 0xFF;
     } else {
@@ -134,9 +137,9 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
         // Образ в обратном коде узнаётся по пустому месту в конце сектора
         uint8_t test = 0xFF;
         for (int i = 0x1F0; i <= 0x1FB; i++) test &= first[i];
-        m_inverted = (test == 0xFF);
-        sectors = m_inverted? (uint8_t)~first[0] : first[0];
-        heads   = m_inverted? (uint8_t)~first[1] : first[1];
+        inverted = (test == 0xFF);
+        sectors = inverted? (uint8_t)~first[0] : first[0];
+        heads   = inverted? (uint8_t)~first[1] : first[1];
     }
 
     unsigned int cylinders = 0;
@@ -149,20 +152,26 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
             "{UKNCHDD|" + std::string(QT_TRANSLATE_NOOP("UKNCHDD", "Unrecognized hard disk geometry")) + "} " + file_name);
     }
 
-    m_file = f;
-    m_file_name = file_name;
-    m_image_size = (uint64_t)size;
-    m_attached = true;
-    m_sectors = sectors;
-    m_heads = heads;
-    m_cylinders = cylinders;
+    {
+        compat_lock_guard lock(m_image_mutex);
+        close_image();
+        m_file = f;
+        m_file_name = file_name;
+        m_image_size = (uint64_t)size;
+        m_read_only = read_only;
+        m_inverted = inverted;
+        m_attached = true;
+        m_sectors = sectors;
+        m_heads = heads;
+        m_cylinders = cylinders;
+    }
 
     reset(true);
 
     return emulator::Result::ok();
 }
 
-void UKNCHDD::unload()
+void UKNCHDD::close_image()
 {
     if (m_file != nullptr) {
         std::fclose(m_file);
@@ -173,6 +182,12 @@ void UKNCHDD::unload()
     m_image_size = 0;
     m_overlay.clear();
     m_cylinders = m_heads = m_sectors = 0;
+}
+
+void UKNCHDD::unload()
+{
+    compat_lock_guard lock(m_image_mutex);
+    close_image();
 }
 
 emulator::Result UKNCHDD::load_config(SystemData *sd)
@@ -234,6 +249,7 @@ uint64_t UKNCHDD::sector_offset() const
 
 bool UKNCHDD::read_sector()
 {
+    compat_lock_guard lock(m_image_mutex);
     if (m_file == nullptr) return false;
     const uint64_t offset = sector_offset();
     if (offset > 0x7FFFFFFFull) return false;
@@ -250,6 +266,7 @@ bool UKNCHDD::read_sector()
 
 bool UKNCHDD::write_sector()
 {
+    compat_lock_guard lock(m_image_mutex);
     if (m_file == nullptr || m_write_protect) return false;
     const uint64_t offset = sector_offset();
     if (offset + SECTOR_SIZE > m_image_size) return false;
@@ -476,7 +493,7 @@ void UKNCHDD::identify_drive()
 
 //--------------------------- Регистры накопителя ---------------------------//
 
-unsigned int UKNCHDD::read_port(unsigned int reg)
+unsigned int UKNCHDD::read_port(unsigned int reg, bool peek)
 {
     switch (reg) {
         case REG_DATA: {
@@ -484,6 +501,7 @@ unsigned int UKNCHDD::read_port(unsigned int reg)
             uint16_t data;
             memcpy(&data, m_buffer + m_bufferoffset, 2);
             if (!m_inverted) data = (uint16_t)~data;
+            if (peek) return data;
             m_bufferoffset += 2;
             if (m_bufferoffset >= SECTOR_SIZE) continue_read();
             return data;
@@ -550,6 +568,14 @@ unsigned int UKNCHDD::get_value_word(unsigned int address)
     if (!m_attached) return 0;
     // Магистраль 1801 несёт данные в обратном коде, и плата их не переворачивает
     return (~read_port(address_to_reg(address))) & 0xFFFF;
+}
+
+// Отладчик и LOG видят слово буфера, не продвигаясь по нему
+unsigned UKNCHDD::get_direct(unsigned address)
+{
+    if (!m_attached) return 0;
+    const unsigned int w = (~read_port(address_to_reg(address & ~1u), true)) & 0xFFFF;
+    return (address & 1)? ((w >> 8) & 0xFF) : (w & 0xFF);
 }
 
 void UKNCHDD::set_value_word(unsigned int address, unsigned int value, MAYBE_UNUSED bool force)
@@ -690,7 +716,10 @@ emulator::Result UKNCHDD::send_command(const std::string &command, const std::st
             m_volatile = !m_volatile;
         else
             m_volatile = (parse_numeric_value(p[0], 10) != 0);
-        if (!m_volatile) m_overlay.clear();
+        if (!m_volatile) {
+            compat_lock_guard lock(m_image_mutex);
+            m_overlay.clear();
+        }
         return emulator::Result::ok();
     }
 

@@ -167,7 +167,10 @@ void DL11::set_station(int station)
 void DL11::interface_callback(unsigned int callback_id, unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
 {
     if (callback_id == CALLBACK_INIT) {
-        if ((new_value & 1) && !(old_value & 1)) init_registers();
+        // Импульс RESET - это change(1) и change(0), и сброс делает первая
+        // половина. Прежнее значение не проверяется: до первого RESET линия
+        // хранит _FFFF, и по нему первый импульс был бы пропущен
+        if (new_value & 1) init_registers();
         return;
     }
     if (callback_id == CALLBACK_IAKO) {
@@ -261,6 +264,15 @@ void DL11::set_value_word(unsigned int address, unsigned int value, MAYBE_UNUSED
     default:
         break;                      // RBUF не пишется
     }
+}
+
+// Отладчик и LOG видят принятый байт, не снимая готовности приёмника
+unsigned DL11::get_direct(unsigned address)
+{
+    const unsigned int w = (((address >> 1) & 3) == REG_RBUF)
+                           ? ((m_rbuf & 0xFF) | m_station_bits)
+                           : get_value_word(address & ~1u);
+    return (address & 1)? ((w >> 8) & 0xFF) : (w & 0xFF);
 }
 
 unsigned int DL11::get_value(unsigned int address)

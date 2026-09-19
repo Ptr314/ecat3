@@ -111,6 +111,7 @@ private:
 
     void write_pipe(Pipe &p, unsigned int value);   // a byte handed over
     unsigned int read_pipe(Pipe &p);                // a byte taken
+    unsigned int read_register(unsigned int address, bool peek);
     static void set_enable(bool &irq, bool &pending, bool &armed, bool ready,
                            bool value, bool always_rearm);
 
@@ -130,6 +131,7 @@ public:
     unsigned int get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
     unsigned int get_value_word(unsigned int address) override;
+    unsigned get_direct(unsigned address) override;
     void set_value_word(unsigned int address, unsigned int value, bool force=false) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;

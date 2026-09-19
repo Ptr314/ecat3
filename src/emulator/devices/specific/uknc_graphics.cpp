@@ -123,6 +123,18 @@ void UKNCGraphics::draw_octet(unsigned int octet)
 
 unsigned int UKNCGraphics::get_value_word(unsigned int address)
 {
+    return read_register(address, false);
+}
+
+// The debugger and LOG read 177024 as zero without loading the background
+unsigned UKNCGraphics::get_direct(unsigned address)
+{
+    const unsigned int w = read_register(address & ~1u, true);
+    return (address & 1)? ((w >> 8) & 0xFF) : (w & 0xFF);
+}
+
+unsigned int UKNCGraphics::read_register(unsigned int address, bool peek)
+{
     switch (address >> 1) {
     case R_ADDRESS: return m_address & 0xFFFF;
     case R_DATA0:   return m_data0 & 0xFF;
@@ -133,7 +145,7 @@ unsigned int UKNCGraphics::get_value_word(unsigned int address)
     case R_OCTET:
         // A read is a command, not a value: it loads the background from the
         // screen and answers zero
-        load_background();
+        if (!peek) load_background();
         return 0;
     case R_MASK:    return m_mask & 7;
     default:        return 0;

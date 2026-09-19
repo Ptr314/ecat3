@@ -36,10 +36,10 @@
         8000-9FFF -> cart1[0000] mode=r cfg=02:0E
         8000-9FFF -> cart1[2000] mode=r cfg=04:0E
         8000-9FFF -> cart1[4000] mode=r cfg=06:0E
-        A000-FDFF -> rom[2000] mode=r or_read
-        A000-BFFF -> plane0[A000] mode=rw cfg=20:20
-        C000-DFFF -> plane0[C000] mode=rw cfg=40:40
-        E000-FDFF -> plane0[E000] mode=rw cfg=80:80
+        A000-BFFF -> plane0[A000] mode=rw cfg=20:20 or_read
+        C000-DFFF -> plane0[C000] mode=rw cfg=40:40 or_read
+        E000-FDFF -> plane0[E000] mode=rw cfg=80:80 or_read
+        A000-FDFF -> rom[2000] mode=r
         FE08-FE17 -> pp-video[0000] mode=rw
         FE40-FE47 -> pp-printer[0000] mode=rw
         FEF0-FEF1 -> asm-ay1[0000] mode=rw

@@ -31,6 +31,10 @@ class UKNCDisplay: public RasterDisplay
 private:
     RAM * m_plane[3]{};
 
+    // Frame pulse at the top of every frame: the EVNT interrupt (vector 100)
+    // of both processors comes from it, so it keeps step with the beam
+    Interface i_frame;
+
     // ---- state carried along the list while a frame is drawn ----
     unsigned int m_tag_address = 0;     // next descriptor
     bool     m_tag_four = false;        // the next descriptor is four words
