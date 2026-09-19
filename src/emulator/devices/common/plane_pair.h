@@ -16,12 +16,6 @@
 //
 // A byte access picks a plane by bit 0 of the address, a word access takes one
 // byte from each - so the device is exactly half as deep as it is wide.
-//
-// With `index = 1` the address is the byte index in the planes instead, and
-// every address holds a whole word. That is how the indirect registers see the
-// planes: the value written to 176640 on the УК-НЦ is a plane index, not a
-// processor address. Taking it for an address halved it, so writing through
-// "address" 070075 landed on the processor word 070074.
 class PlanePair: public AddressableDevice
 {
 private:
@@ -33,8 +27,6 @@ private:
     // of reach of the processor
     unsigned int m_base = 0;
 
-    bool m_index = false;           // the address is a plane index
-
     // The planes' own buffers, when both are plain RAM with no access hook:
     // every word the УК-НЦ central processor touches comes through here, and
     // two virtual Memory calls per word were a measurable part of its cost.
@@ -43,7 +35,7 @@ private:
     uint8_t * m_high_buf = nullptr;
     unsigned int m_depth = 0;       // indexes both buffers hold
     unsigned int index_of(unsigned int address) const {
-        return m_base + (m_index? address : (address >> 1));
+        return m_base + (address >> 1);
     }
 
 public:

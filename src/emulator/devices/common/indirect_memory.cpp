@@ -7,7 +7,8 @@
 #include "emulator/utils.h"
 
 IndirectMemory::IndirectMemory(InterfaceManager *im, EmulatorConfigDevice *cd):
-    AddressableDevice(im, cd)
+      AddressableDevice(im, cd)
+    , i_address(this, im, 16, "address", MODE_W)
 {
     can_read = true;
     can_write = true;
@@ -15,6 +16,8 @@ IndirectMemory::IndirectMemory(InterfaceManager *im, EmulatorConfigDevice *cd):
     for (unsigned int i = 0; i < INDIRECT_MAX_TARGETS; i++) {
         m_targets[i].device = nullptr;
         m_targets[i].value = 0;
+        m_targets[i].scale = 1;
+        m_targets[i].byte_wide = false;
     }
 }
 
@@ -46,6 +49,13 @@ emulator::Result IndirectMemory::load_config(SystemData *sd)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{IndirectMemory|" + std::string(QT_TRANSLATE_NOOP("IndirectMemory", "Device is not addressable")) + "} " + cd->parameters[i].value);
 
+        const std::string scale = cd->extended_parameter((unsigned int)i, "scale");
+        m_targets[id].scale = scale.empty() ? 1 : parse_numeric_value(scale, 10);
+        m_targets[id].byte_wide = cd->extended_parameter((unsigned int)i, "width") == "8";
+        if (m_targets[id].scale == 0)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{IndirectMemory|" + std::string(QT_TRANSLATE_NOOP("IndirectMemory", "Incorrect range for")) + "} " + name);
+
         if (id + 1 > m_count) m_count = id + 1;
     }
 
@@ -66,13 +76,29 @@ emulator::Result IndirectMemory::load_config(SystemData *sd)
 void IndirectMemory::reset(MAYBE_UNUSED bool cold)
 {
     m_address = 0;
+    i_address.change(0);
     for (unsigned int i = 0; i < m_count; i++) m_targets[i].value = 0;
+}
+
+void IndirectMemory::set_address(unsigned int value)
+{
+    m_address = value & m_address_mask;
+    i_address.change(m_address);
+    latch();
 }
 
 void IndirectMemory::latch()
 {
-    for (unsigned int i = 0; i < m_count; i++)
-        m_targets[i].value = m_targets[i].device->get_value_word(m_address) & 0xFFFF;
+    for (unsigned int i = 0; i < m_count; i++) {
+        Target &t = m_targets[i];
+        t.value = t.byte_wide ? (t.device->get_value(target_address(t)) & 0xFF)
+                              : (t.device->get_value_word(target_address(t)) & 0xFFFF);
+    }
+}
+
+void IndirectMemory::step()
+{
+    if (m_auto_increment) set_address(m_address + 2);
 }
 
 unsigned int IndirectMemory::get_value_word(unsigned int address)
@@ -94,21 +120,22 @@ void IndirectMemory::set_value_word(unsigned int address, unsigned int value, MA
     const unsigned int reg = address >> 1;   // 0 is the address register
 
     if (reg == 0) {
-        m_address = value & m_address_mask;
-        latch();
+        set_address(value);
         return;
     }
 
     const unsigned int id = reg - 1;
     if (id >= m_count) return;
 
-    m_targets[id].device->set_value_word(m_address, value & 0xFFFF);
-    m_targets[id].value = value & 0xFFFF;
-
-    if (m_auto_increment) {
-        m_address = (m_address + 2) & m_address_mask;
-        latch();
+    Target &t = m_targets[id];
+    if (t.byte_wide) {
+        t.value = value & 0xFF;
+        t.device->set_value(target_address(t), t.value);
+    } else {
+        t.value = value & 0xFFFF;
+        t.device->set_value_word(target_address(t), t.value);
     }
+    step();
 }
 
 unsigned int IndirectMemory::get_value(unsigned int address)
@@ -120,11 +147,22 @@ unsigned int IndirectMemory::get_value(unsigned int address)
 
 void IndirectMemory::set_value(unsigned int address, unsigned int value, bool force)
 {
-    const unsigned int w = get_value_word(address & ~1u);
-    const unsigned int merged = (address & 1)
-        ? ((w & 0x00FF) | ((value & 0xFF) << 8))
-        : ((w & 0xFF00) | (value & 0xFF));
-    set_value_word(address & ~1u, merged, force);
+    const unsigned int b = value & 0xFF;
+    const unsigned int reg = address >> 1;
+    const unsigned int id = reg - 1;
+
+    // A word-wide target takes the byte into its own lane only
+    if (reg != 0 && id < m_count && !m_targets[id].byte_wide) {
+        Target &t = m_targets[id];
+        if (address & 1) t.value = (t.value & 0x00FF) | (b << 8);
+        else             t.value = (t.value & 0xFF00) | b;
+        t.device->set_value(target_address(t) + (address & 1), b);
+        step();
+        return;
+    }
+
+    // Anything else sees a word with the byte on its lane and zero on the other
+    set_value_word(address & ~1u, (address & 1) ? (b << 8) : b, force);
 }
 
 std::vector<DeviceFieldInfo> IndirectMemory::get_device_fields()
@@ -153,6 +191,8 @@ bool IndirectMemory::get_field(const std::string &field, unsigned int from, unsi
             if (!out.text.empty()) out.text += "\n";
             out.text += "        " + std::to_string(i) + " -> "
                       + ((m_targets[i].device != nullptr)? m_targets[i].device->name : std::string("-"));
+            if (m_targets[i].scale != 1) out.text += " scale " + std::to_string(m_targets[i].scale);
+            if (m_targets[i].byte_wide) out.text += " width 8";
         }
         return true;
     }

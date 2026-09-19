@@ -8,6 +8,9 @@
 #include <cstring>
 
 #include "dsk_tools/dsk_tools.h"
+// MSVC resolves the "utils.h" inside dsk_tools.h against the includer's directory,
+// where it finds emulator/utils.h. Pull in the real one explicitly.
+#include "libs/dsk_tools/src/utils.h"
 
 #if defined(_WIN32)
     #ifndef NOMINMAX
@@ -94,7 +97,12 @@ emulator::Result HostSerialPort::open(const std::string &name, unsigned int baud
     memset(&t, 0, sizeof(t));
     t.ReadIntervalTimeout = MAXDWORD;
     t.WriteTotalTimeoutConstant = 50;
-    SetCommTimeouts(h, &t);
+    // Without these timeouts ReadFile waits for data, and it is called from
+    // the emulation thread: a port that refuses them is not used at all
+    if (!SetCommTimeouts(h, &t)) {
+        CloseHandle(h);
+        return port_error(QT_TRANSLATE_NOOP("HostSerialPort", "Cannot set up the serial port"), name);
+    }
     PurgeComm(h, PURGE_RXCLEAR | PURGE_TXCLEAR);
 
     m_handle = h;

@@ -114,6 +114,8 @@ public:
     EmulatorConfigDevice * get_device(int i);
     EmulatorConfigDevice * get_device(const std::string& name);
     unsigned int get_devices_count() const { return devices.size(); }
+    //False if there is no such device
+    bool remove_device(const std::string& name);
 
     //Reads system.radix into every device. Called after loading, and again
     //after an extension has changed the system section

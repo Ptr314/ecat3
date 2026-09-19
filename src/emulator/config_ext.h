@@ -23,10 +23,12 @@
 #include "config.h"
 
 struct ExtEdit {
-    enum Op { Set, Remove };
+    //RemoveDevice takes the whole device out: "-hdd", no property
+    enum Op { Set, Remove, RemoveDevice };
     Op                      op = Set;
     std::string             device;
-    //For Set the whole line; for Remove only name and left_range are filled
+    //For Set the whole line; for Remove only name and left_range are filled,
+    //for RemoveDevice nothing
     EmulatorConfigParameter param;
     int                     line = 0;
 };

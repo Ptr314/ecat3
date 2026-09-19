@@ -38,8 +38,8 @@ AY8910::AY8910(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_frequency(AY_DEFAULT_FREQUENCY)
     , m_step(0)
     , m_acc(0)
-    , m_idle_share(true)
     , m_used(false)
+    , m_idle_ticks(0)
     , m_latch(0)
 {
     m_clocked = true;   //clock() is overridden here
@@ -67,7 +67,6 @@ emulator::Result AY8910::load_config(SystemData *sd)
             "{AY8910|" + std::string(QT_TRANSLATE_NOOP("AY8910", "Unknown bus protocol")) + "} " + bus);
 
     m_frequency = read_confg_value(cd, "frequency", false, (unsigned int)AY_DEFAULT_FREQUENCY);
-    m_idle_share = read_confg_value(cd, "idle_share", false, true);
     if (m_frequency == 0 || m_system_clock == 0)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{AY8910|" + std::string(QT_TRANSLATE_NOOP("AY8910", "Incorrect clock frequency")) + "}");
@@ -84,6 +83,7 @@ void AY8910::reset(MAYBE_UNUSED bool cold)
     m_latch = 0;
     m_acc = 0;
     m_used = false;
+    m_idle_ticks = 0;
     for (unsigned int c = 0; c < AY_TONE_CHANNELS; c++) {
         m_tone_count[c] = 0;
         m_tone_out[c] = 0;
@@ -106,8 +106,12 @@ void AY8910::select(unsigned int reg)
 void AY8910::write_reg(unsigned int reg, unsigned int value)
 {
     if (reg >= AY_REGS) return;
+    if (!m_used) {
+        catch_up();
+        m_used = true;
+        sound_mode_changed();
+    }
     m_regs[reg] = (uint8_t)(value & AY_REG_MASK[reg]);
-    m_used = true;
     switch (reg) {
     case 13:
         restart_envelope();
@@ -194,14 +198,51 @@ void AY8910::tick()
     }
 }
 
+// The ticks a chip with every register at 0 has been counting instead of
+// running. With all periods 0 (taken as 1) the tone outputs flip on every
+// tick, and noise and envelope step on every other one: the noise LFSR comes
+// round every 131071 steps, and envelope shape 0 holds after its one slope
+void AY8910::catch_up()
+{
+    const uint64_t n = m_idle_ticks;
+    m_idle_ticks = 0;
+    if (n == 0) return;
+
+    if (n & 1)
+        for (unsigned int c = 0; c < AY_TONE_CHANNELS; c++) m_tone_out[c] ^= 1;
+
+    // Noise and envelope step when the prescaler comes back to 0
+    const uint64_t steps = m_prescale ? (n + 1) / 2 : n / 2;
+    m_prescale ^= (unsigned int)(n & 1);
+
+    for (uint64_t i = steps % 131071; i > 0; i--) {
+        m_rng ^= (((m_rng & 1) ^ ((m_rng >> 3) & 1)) << 17);
+        m_rng >>= 1;
+    }
+
+    for (uint64_t i = 0; i < steps && !m_env_holding; i++) {
+        m_env_step--;
+        if (m_env_step < 0) {
+            if (m_env_alternate) m_env_attack ^= 0x0F;
+            if (m_env_hold) {
+                m_env_holding = true;
+                m_env_step = 0;
+            } else
+                m_env_step = 15;
+        }
+        m_env_volume = (unsigned int)m_env_step ^ m_env_attack;
+    }
+}
+
 void AY8910::clock(unsigned int counter)
 {
-    // A chip nobody has written to since the reset, and which takes no share
-    // of the mix until then, is not heard: its generators wait for the first
-    // write instead of ticking for nothing. The УК-НЦ carries three of them in
-    // the sound module, rarely used
-    if (!m_plugged || !(m_idle_share || m_used)) return;
+    if (!m_plugged) return;
     m_acc += counter * m_step;
+    if (!m_used) {
+        m_idle_ticks += m_acc >> 16;
+        m_acc &= 0xFFFF;
+        return;
+    }
     while (m_acc >= 0x10000) {
         m_acc -= 0x10000;
         tick();
@@ -234,7 +275,7 @@ int32_t AY8910::sound_sample(int64_t amplitude)
 
 bool AY8910::sound_active()
 {
-    return m_plugged && (m_idle_share || m_used);
+    return m_plugged;
 }
 
 //------------------- Connector --------------------------------------------//
@@ -322,12 +363,12 @@ std::vector<DeviceFieldInfo> AY8910::get_device_fields()
     r.push_back({"level",    "Output level, 0-3000",                        false});
     r.push_back({"envelope", "Current envelope volume, 0-15",               false});
     r.push_back({"plugged",  "1 if the chip is plugged in",                 false});
-    r.push_back({"active",   "1 if the chip takes a share of the mix",      false});
     return r;
 }
 
 bool AY8910::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
+    if (!m_used) catch_up();
     out.numeric = true;
     if (field == "regs") {
         if (from == 0 && to == 0) to = AY_REGS - 1;
@@ -345,7 +386,6 @@ bool AY8910::get_field(const std::string &field, unsigned int from, unsigned int
     out.width = 0;
     if (field == "envelope") { out.values.push_back(m_env_volume);  return true; }
     if (field == "plugged")  { out.values.push_back(m_plugged?1:0); return true; }
-    if (field == "active")   { out.values.push_back(sound_active()?1:0); return true; }
 
     out.numeric = false;
     return ComputerDevice::get_field(field, from, to, out);

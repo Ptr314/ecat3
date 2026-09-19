@@ -32,10 +32,14 @@ private:
     uint32_t m_step;                    // 16.16 tone ticks per system clock
     uint32_t m_acc;
 
-    // idle_share = 0: until the first register write after reset the chip
-    // takes no share of the mix, so a board nobody plays leaves the rest loud
-    bool m_idle_share;
+    // Written to since the reset. Until then every register is 0 and the
+    // output is silence whatever the generators do, so the ticks are only
+    // counted, and catch_up() brings the generators to where ticking would
+    // have left them - exactly, before the first write or a look from a
+    // script. The УК-НЦ carries three such chips, rarely used
     bool m_used;
+    uint64_t m_idle_ticks;
+    void catch_up();
 
     uint8_t m_regs[AY_REGS];
     unsigned int m_latch;               // selected register
@@ -79,6 +83,9 @@ public:
 
     int32_t sound_sample(int64_t amplitude) override;
     bool sound_active() override;
+    // Before the first write every register is 0 and the output is silence;
+    // after it the generators move the level on their own
+    bool sound_volatile() override { return m_used; }
     const char * plug_title() const override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;

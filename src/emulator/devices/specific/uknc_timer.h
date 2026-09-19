@@ -6,6 +6,7 @@
 #pragma once
 
 #include "emulator/core.h"
+#include "emulator/devices/common/virq_line.h"
 
 // The programmable timer of the УК-НЦ, registers 177710-177714 on the
 // peripheral processor's bus. A 12 bit counter running down at 2, 4, 8 or
@@ -60,6 +61,7 @@ private:
     Interface i_vector;
     Interface i_virq_in;
     Interface i_vector_in;
+    VirqLine m_irq;
 
     // Внешнее событие: перепад на этой линии взводит разряд 5. У машины это
     // вход магнитофона, и перепады проходят только при единице на
@@ -69,8 +71,6 @@ private:
     Interface i_event;
     Interface i_event_enable;
     unsigned int m_events = 0;          // сколько событий принято
-
-    unsigned int m_offered = 0;         // вектор, уже предложенный процессору
 
     void base_tick();                   // один шаг базовой частоты
     void update_irq();

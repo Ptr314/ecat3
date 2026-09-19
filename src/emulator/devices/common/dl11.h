@@ -9,6 +9,7 @@
 
 #include "emulator/core.h"
 #include "emulator/host_serial.h"
+#include "emulator/devices/common/virq_line.h"
 
 // A serial line of the PDP-11 kind: four registers, a receiver and a
 // transmitter, each with its ready flag, interrupt enable and vector. У УК-НЦ
@@ -42,6 +43,7 @@ private:
     Interface i_vector;
     Interface i_virq_in;
     Interface i_vector_in;
+    VirqLine m_irq;
     Interface i_iako;
     Interface i_init;                   // INIT магистрали (команда RESET)
 
@@ -60,7 +62,6 @@ private:
     unsigned int m_tx_vector = 064;
     bool m_rx_pending = false;
     bool m_tx_pending = false;
-    unsigned int m_offered = 0;
 
     // Время символа в тактах домена и отсчёты до конца передачи и до
     // следующей попытки приёма

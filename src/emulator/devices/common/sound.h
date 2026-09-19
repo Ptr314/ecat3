@@ -12,18 +12,36 @@
 #include "libs/audio_filters.h"
 
 class AudioDriver;
+class GenericSound;
 
 // A device that produces sound but has no audio output of its own: its level is
 // added to the output of a GenericSound listed in its "mix" parameter. The
 // sample is expected in the range -amplitude..amplitude.
+//
+// The mix is summed on every instruction of its processor, and almost always
+// to the same value. A source that knows when its sample changes says so with
+// sound_changed() and answers false to sound_volatile(); the mix then keeps
+// the last sum until something is reported. A source that cannot tell stays
+// volatile, the default, and is asked on every clock as before.
 class SoundSource
 {
+    friend class GenericSound;
+    GenericSound * m_mixer = nullptr;
+
 public:
     virtual ~SoundSource() = default;
     virtual int32_t sound_sample(int64_t amplitude) = 0;
     // A source that is switched off (a board pulled out of its connector)
     // takes no share of the mix, so the others keep their loudness
     virtual bool sound_active() { return true; }
+    // The sample may change without sound_changed() being called
+    virtual bool sound_volatile() { return true; }
+
+protected:
+    // The sample has (or may have) changed
+    void sound_changed();
+    // sound_active() or sound_volatile() has changed as well
+    void sound_mode_changed();
 };
 
 class GenericSound: public ComputerDevice
@@ -36,7 +54,28 @@ private:
     // clock: activity changes only when a source is first written to or reset
     std::vector<SoundSource*> m_active;
     int64_t m_shares = 1;
+    bool m_sources_volatile = true;     // some source in m_active is volatile
     void refresh_sources();
+
+    // The sum of the device's own output and the sources, kept while nothing
+    // that makes it up changes
+    int64_t m_level = 0;
+    bool m_level_dirty = true;
+
+    // idle_share = 0: a source joins the mix only once it has been heard - its
+    // sample has left the one it gave just after the reset. Otherwise a board
+    // nobody plays would take its share and quieten everything else. Checked
+    // once a millisecond, with or without an audio device, so that a script
+    // sees the same "mixed" field in a silent run
+    std::vector<std::string> m_source_names;
+    std::vector<int32_t> m_idle_sample;
+    std::vector<char> m_heard;
+    bool m_idle_share = true;
+    bool m_idle_taken = false;          // m_idle_sample holds this reset's samples
+    bool m_listening = false;           // some source is still unheard
+    int64_t m_listen_left = 0;          // ticks to the next check
+    void listen_to_sources();
+    bool in_mix(size_t i) { return m_sources[i]->sound_active() && m_heard[i]; }
     bool m_initialized;
     uint64_t m_clock_freq;
     unsigned int m_counter;
@@ -70,6 +109,10 @@ protected:
     unsigned int m_volume;
     int64_t m_amplitude;
     bool m_muted;
+    // calc_sound_value() may change without sound_changed() - true for every
+    // device that does not know better, as speaker
+    bool m_self_volatile = true;
+    void sound_changed() { m_level_dirty = true; }
     void init_sound(unsigned int clock_freq);
     virtual int16_t calc_sound_value() = 0;
 
@@ -78,9 +121,14 @@ public:
     ~GenericSound();
 
     virtual emulator::Result load_config(SystemData *sd) override;
+    virtual void reset(bool cold) override;
     virtual void clock(unsigned int counter) override;
     virtual void set_volume(unsigned int volume);
     virtual void set_muted(bool muted);
+
+    // Called by the sources, see SoundSource
+    void source_changed() { m_level_dirty = true; }
+    void source_mode_changed() { refresh_sources(); }
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     std::vector<DeviceCommandInfo> get_device_commands() override;

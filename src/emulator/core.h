@@ -464,6 +464,7 @@ private:
 public:
     ROM(InterfaceManager *im, EmulatorConfigDevice *cd);
     emulator::Result load_config(SystemData *sd) override;
+    ConfigFields get_config_fields() override;
     unsigned get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
 };

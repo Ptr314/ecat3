@@ -1,0 +1,25 @@
+@extends uknc/UKNC.cfg
+@version УК-НЦ (Бейсик в ПЗУ)
+
+// Вариант машины без винчестера и звукового модуля: в первом слоте кассет
+// ПЗУ Бейсик, второй слот пуст, Covox остаётся на принтерном порту
+
+cart1:image = romctr_basic.bin
+
+// Платы винчестера нет: ни контроллера, ни его регистров в окне первого слота
+-hdd
+-ppu-mapper:@memory[2:16][110000-117777] = hdd
+-ppu-mapper:@memory[4:16][110000-117777] = hdd
+-ppu-mapper:@memory[6:16][110000-117777] = hdd
+
+// Звукового модуля во втором слоте нет
+-asm-ay1
+-asm-ay2
+-asm-ay3
+-asm-dac-reg
+-asm-dac
+-ppu-mapper:@memory[177360-177361] = asm-ay1
+-ppu-mapper:@memory[177362-177363] = asm-ay2
+-ppu-mapper:@memory[177364-177365] = asm-ay3
+-ppu-mapper:@memory[177372-177373] = asm-dac-reg
+sound:mix = covox

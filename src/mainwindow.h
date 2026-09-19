@@ -15,7 +15,6 @@
 #include "emulator/emulator.h"
 #include "emulator/debug.h"
 #include "emulator/devices/common/fdd.h"
-#include "emulator/devices/specific/uknc_hdd.h"
 #include "emulator/devices/common/tape.h"
 
 QT_BEGIN_NAMESPACE
@@ -161,7 +160,10 @@ private:
     //ей нечем: обращения к диску идут пачками и рисовать их нечем
     QToolButton * hdd_button[4];
     QMenu * hdd_menu[4];
-    std::vector<UKNCHDD*> hdds;
+    // Any device of class "hdd", driven through its commands (load, eject,
+    // protect) and fields (attached, file, protected) the way a script drives it
+    std::vector<ComputerDevice*> hdds;
+    void hdd_show(unsigned int n);
     unsigned int hdds_found = 0;
     //FDC * fdc;
     // TapeRecorder * tape;

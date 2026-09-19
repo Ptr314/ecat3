@@ -178,6 +178,16 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
         e.op = t[0] == '-' ? ExtEdit::Remove : ExtEdit::Set;
         const size_t start = e.op == ExtEdit::Remove ? 1 : 0;
         const size_t colon = t.find(':');
+        //A removal without a property removes the device itself
+        if (e.op == ExtEdit::Remove && colon == std::string::npos)
+        {
+            e.op = ExtEdit::RemoveDevice;
+            e.device = str_trim(strip_directive_comment(t.substr(1)));
+            if (e.device.empty() || e.device.find_first_of(" \t=[]{}") != std::string::npos)
+                return error_at(line_no, QT_TRANSLATE_NOOP("EmulatorConfig", "Expected device:property"), t);
+            edits.push_back(e);
+            continue;
+        }
         if (colon == std::string::npos || colon <= start)
             return error_at(line_no, QT_TRANSLATE_NOOP("EmulatorConfig", "Expected device:property"), t);
         e.device = str_trim(t.substr(start, colon - start));
@@ -244,6 +254,7 @@ std::string ConfigExtension::serialize() const
     for (size_t i = 0; i < edits.size(); i++)
     {
         const ExtEdit &e = edits[i];
+        if (e.op == ExtEdit::RemoveDevice) { s += "-" + e.device + "\n"; continue; }
         const bool set = e.op == ExtEdit::Set;
         std::string text = parameter_text(e.param, set);
         if (!set && !e.param.value.empty()) text += " = " + quote_value(e.param.value);
@@ -263,6 +274,15 @@ emulator::Result ConfigExtension::apply(EmulatorConfig &config, bool system_only
     {
         const ExtEdit &e = edits[i];
         if (system_only && e.device != "system") continue;
+
+        if (e.op == ExtEdit::RemoveDevice)
+        {
+            //What refers to the device - a mapper range, an interface link,
+            //a mix - has to go with it, or loading the machine names it
+            if (e.device == "system" || !config.remove_device(e.device))
+                return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "No such device in the base configuration"), e.device);
+            continue;
+        }
 
         EmulatorConfigDevice * dev = config.get_device(e.device);
         if (dev == nullptr)

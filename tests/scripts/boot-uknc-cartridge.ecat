@@ -14,7 +14,7 @@
 # первый слот занимает плата винчестера, а второй - звуковой модуль.
 # @timeout 60
 
-MACHINE "uknc/UKNC-basic.cfg"
+MACHINE "uknc/UKNC-basic.ext"
 LOGDEFS _16,_8
 
 PRINT "=== окно 0 периферийного процессора ==="

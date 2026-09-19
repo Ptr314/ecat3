@@ -12,7 +12,7 @@
 # между ними регистром 177714.
 # @timeout 120
 
-MACHINE "uknc/UKNC-basic.cfg"
+MACHINE "uknc/UKNC-basic.ext"
 LOGDEFS _16,_8
 
 WAIT _12000

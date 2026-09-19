@@ -25,6 +25,7 @@ UKNCKeyboard::UKNCKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_vector(this, im, 16, "vector", MODE_W)
     , i_virq_in(this, im, 1, "virq_in", MODE_R, CALLBACK_ENABLE)
     , i_vector_in(this, im, 16, "vector_in", MODE_R)
+    , m_irq(i_virq, i_vector)
 {
     m_clocked = true;   // clock() отдаёт машине коды из очереди
 }
@@ -119,16 +120,17 @@ void UKNCKeyboard::reset(const bool cold)
 {
     Keyboard::reset(cold);
     {
+        // Регистр НР ведёт и press_key() из потока окна - под тем же замком
         compat_lock_guard lock(m_queue_mutex);
         m_queue.clear();
         m_queued = false;
+        m_shift_host = m_shift_machine = false;
+        m_forced = 0;
     }
     m_codes = 0;
     m_last = 0;
     m_ready = false;
-    m_offered = 0;
-    m_shift_host = m_shift_machine = false;
-    m_forced = 0;
+    m_irq.clear();
     i_ready.change(0);
     i_pressed.change(0);
     update_irq();
@@ -147,18 +149,22 @@ const UKNCKeyboard::KeyEntry * UKNCKeyboard::entry_of(unsigned int host) const
 // туда, где его держит хост
 void UKNCKeyboard::press_key(unsigned int scan, ShiftMode shift, bool press)
 {
+    // Клавиши приходят из потока окна, а сброс машины обнуляет эти поля в
+    // потоке эмуляции: без замка НР мог залипнуть до следующего нажатия
+    compat_lock_guard lock(m_queue_mutex);
+
     if (scan == SCAN_SHIFT) {
         m_shift_host = press;
         // Пока нажат знак с пометкой, машина держит его НР; хостовый дождётся
         if (m_forced == 0 && m_shift_machine != press) {
             m_shift_machine = press;
-            enqueue(scan, press);
+            enqueue_locked(scan, press);
         }
         return;
     }
 
     if (shift == SHIFT_ANY) {
-        enqueue(scan, press);
+        enqueue_locked(scan, press);
         return;
     }
 
@@ -166,22 +172,28 @@ void UKNCKeyboard::press_key(unsigned int scan, ShiftMode shift, bool press)
         const bool want = (shift == SHIFT_ON);
         if (m_shift_machine != want) {
             m_shift_machine = want;
-            enqueue(SCAN_SHIFT, want);
+            enqueue_locked(SCAN_SHIFT, want);
         }
         m_forced++;
-        enqueue(scan, true);
+        enqueue_locked(scan, true);
     } else {
-        enqueue(scan, false);
+        enqueue_locked(scan, false);
         if (m_forced > 0) m_forced--;
         if (m_forced == 0 && m_shift_machine != m_shift_host) {
             m_shift_machine = m_shift_host;
-            enqueue(SCAN_SHIFT, m_shift_host);
+            enqueue_locked(SCAN_SHIFT, m_shift_host);
         }
     }
 }
 
 // Любой поток: клавиша только встаёт в очередь
 void UKNCKeyboard::enqueue(unsigned int scan, bool press)
+{
+    compat_lock_guard lock(m_queue_mutex);
+    enqueue_locked(scan, press);
+}
+
+void UKNCKeyboard::enqueue_locked(unsigned int scan, bool press)
 {
     // Код отпускания - не номер клавиши с разрядом 7, а разряд 7 и ЧЕТЫРЕ
     // младших разряда номера. ПЗУ так его и разбирает: обычную клавишу ищет в
@@ -190,7 +202,6 @@ void UKNCKeyboard::enqueue(unsigned int scan, bool press)
     // ФИКС (107). С полным номером буквы отпускались, а НР залипал навсегда
     const unsigned int code = press? (scan & 0177) : (KEY_RELEASED | (scan & 017));
 
-    compat_lock_guard lock(m_queue_mutex);
     if (m_queue.size() >= QUEUE_LIMIT) {
         m_dropped++;
         return;
@@ -287,21 +298,7 @@ void UKNCKeyboard::update_irq()
     // одноимённый разряд, наоборот, запрещает - здесь единица разрешает
     const bool enabled = (i_irq_enable.value & 1) != 0;
 
-    unsigned int vector = 0;
-    if (m_ready && enabled)              vector = m_vector;
-    else if ((i_virq_in.value & 1) == 0) vector = i_vector_in.value & 0xFFFF;
-
-    // Как у каналов и таймера: запрос берётся по фронту, поэтому при смене
-    // источника линию надо отпустить и прижать заново
-    if (vector != m_offered) {
-        if (vector != 0) {
-            i_vector.change(vector);
-            i_virq.change(1);
-            i_virq.change(0);
-        } else
-            i_virq.change(1);
-        m_offered = vector;
-    }
+    m_irq.offer(VirqLine::chain((m_ready && enabled) ? m_vector : 0, i_virq_in, i_vector_in));
 }
 
 void UKNCKeyboard::interface_callback(unsigned int callback_id, MAYBE_UNUSED unsigned int new_value, MAYBE_UNUSED unsigned int old_value)

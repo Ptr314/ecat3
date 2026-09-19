@@ -7,12 +7,11 @@
 
 #include "emulator/core.h"
 
-// Registers 177010-177026 on the peripheral processor's bus: how the УК-НЦ
-// reaches its three memory planes and how it draws.
+// Registers 177016-177026 on the peripheral processor's bus: how the УК-НЦ
+// draws. The three before them - 177010 address, 177012 plane 0, 177014
+// planes 1 and 2 - are indirect-memory (pp-indirect), and its address output
+// is where the octets go (~address = pp-indirect.address).
 //
-//   177010  адрес планов        запись сюда сразу читает три плана в 177012/177014
-//   177012  данные плана 0
-//   177014  данные планов 1 и 2 младший байт в план 1, старший в план 2
 //   177016  код цвета точки     три разряда, по одному на план
 //   177020  цвет фона, точки 1-4
 //   177022  цвет фона, точки 5-8
@@ -29,9 +28,9 @@ class UKNCGraphics: public AddressableDevice
 private:
     RAM * m_plane[3]{};
 
-    unsigned int m_address = 0;     // 177010
-    unsigned int m_data0 = 0;       // 177012
-    unsigned int m_data12 = 0;      // 177014
+    Interface i_address;            // 177010, the plane address of pp-indirect
+    unsigned int address() const { return i_address.value & 0xFFFF; }
+
     unsigned int m_color = 0;       // 177016, three bits
     unsigned int m_bg_low = 0;      // 177020, dots 0-3
     unsigned int m_bg_high = 0;     // 177022, dots 4-7
@@ -40,7 +39,6 @@ private:
 
     unsigned int m_draws = 0;       // octets drawn, for scripts
 
-    void latch_planes();                        // a write to 177010 samples memory
     void load_background();                     // reading 177024 takes the dots under the cursor
     void draw_octet(unsigned int octet);        // writing 177024 puts eight dots down
 

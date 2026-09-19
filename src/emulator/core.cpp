@@ -1205,6 +1205,20 @@ unsigned int ROM::get_value(unsigned int address)
     return value;
 }
 
+// Only a ROM the config marks as replaceable, by giving the file dialog a
+// filter: a cartridge slot, not the firmware every machine has
+ConfigFields ROM::get_config_fields()
+{
+    const std::string files = cd->get_parameter("files", false).value;
+    if (files.empty()) return {};
+    ConfigField f;
+    f.name = "image";
+    f.title = QT_TRANSLATE_NOOP("ConfigFields", "ROM image");
+    f.type = CONFIG_FIELD_FILE;
+    f.files = files;
+    return {f};
+}
+
 void ROM::set_value(unsigned int address, unsigned int value, bool force)
 {
     if (rom_mode == ROMMode::Normal) Memory::set_value(address, value, force);

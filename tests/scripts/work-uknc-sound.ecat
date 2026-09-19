@@ -93,11 +93,9 @@ LOG lpt.device
 LOG covox.plugged
 COMMAND lpt.plug(covox)
 
-PRINT "=== звуковой модуль: до первой записи в миксе его нет ==="
-LOG asm-ay1.active
-LOG asm-ay2.active
-LOG asm-ay3.active
-LOG asm-dac.active
+PRINT "=== звуковой модуль: пока он молчит, в миксе его нет ==="
+WAIT _2
+LOG sound.mixed
 
 # Регистр 7 - смеситель: 077 отключает и тон, и шум, и канал держит свою
 # громкость постоянной. Регистр 10 - громкость канала A, 17 - наибольшая
@@ -109,20 +107,21 @@ COMMAND ppu-mapper.set(177363, 17)
 LOG asm-ay2.register
 LOG asm-ay2.regs(7,10)
 LOG asm-ay2.level
-LOG asm-ay2.active
-LOG asm-ay1.active
+PRINT "AY2 зазвучал и занял долю, AY1 и AY3 - нет"
+WAIT _2
+LOG sound.mixed
 PRINT "чтение регистров модуля даёт 0"
 LOG ppu-mapper.value16(177362)
 
 PRINT "=== ЦАП модуля: байт без инверсии ==="
 COMMAND ppu-mapper.set(177372, 200)
 LOG asm-dac.value
-LOG asm-dac.active
+WAIT _2
+LOG sound.mixed
 PRINT "сброс возвращает модуль в молчание"
 RESET cold
 WAIT _10
-LOG asm-ay2.active
 LOG asm-ay2.regs(7,10)
 LOG asm-dac.value
-LOG asm-dac.active
+LOG sound.mixed
 EXIT

@@ -34,6 +34,7 @@ UKNCTimer::UKNCTimer(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_vector(this, im, 16, "vector", MODE_W)
     , i_virq_in(this, im, 1, "virq_in", MODE_R, CALLBACK_EVENT + 1)
     , i_vector_in(this, im, 16, "vector_in", MODE_R)
+    , m_irq(i_virq, i_vector)
     , i_event(this, im, 1, "event", MODE_R, CALLBACK_EVENT)
     , i_event_enable(this, im, 1, "event_enable", MODE_R)
 {
@@ -68,7 +69,7 @@ void UKNCTimer::reset(MAYBE_UNUSED bool cold)
     m_acc = 0;
     m_zeroes = 0;
     m_events = 0;
-    m_offered = 0;
+    m_irq.clear();
     update_irq();
 }
 
@@ -136,24 +137,11 @@ void UKNCTimer::interface_callback(unsigned int callback_id, MAYBE_UNUSED unsign
 
 void UKNCTimer::update_irq()
 {
-    unsigned int vector = 0;
-
     // Свой запрос вперёд чужого: таймер стоит на магистрали ближе к процессору
-    if ((m_flags & F_ZERO) && (m_flags & F_ZERO_IRQ))        vector = m_vector_zero;
-    else if ((m_flags & F_EVENT) && (m_flags & F_EVENT_IRQ)) vector = m_vector_event;
-    else if ((i_virq_in.value & 1) == 0)                     vector = i_vector_in.value & 0xFFFF;
-
-    // Как и у каналов: процессор слышит запрос по фронту, поэтому при смене
-    // источника линию надо отпустить и прижать заново
-    if (vector != m_offered) {
-        if (vector != 0) {
-            i_vector.change(vector);
-            i_virq.change(1);
-            i_virq.change(0);
-        } else
-            i_virq.change(1);
-        m_offered = vector;
-    }
+    unsigned int own = 0;
+    if ((m_flags & F_ZERO) && (m_flags & F_ZERO_IRQ))        own = m_vector_zero;
+    else if ((m_flags & F_EVENT) && (m_flags & F_EVENT_IRQ)) own = m_vector_event;
+    m_irq.offer(VirqLine::chain(own, i_virq_in, i_vector_in));
 }
 
 //--------------------------- Обращения с шины ------------------------------//
@@ -270,7 +258,7 @@ bool UKNCTimer::get_field(const std::string &field, unsigned int from, unsigned 
     if (field == "counter") { out.values.push_back(m_counter); return true; }
     if (field == "zeroes")  { out.values.push_back(m_zeroes);  return true; }
     if (field == "events")  { out.values.push_back(m_events);  return true; }
-    if (field == "vector")  { out.values.push_back(m_offered); return true; }
+    if (field == "vector")  { out.values.push_back(m_irq.offered()); return true; }
     if (field == "running") { out.values.push_back((m_flags & F_RUN)? 1 : 0); return true; }
     if (field == "period")  {
         out.values.push_back(m_period_us * TIMER_DIVIDERS[(m_flags & F_DIV_MASK) >> 1]);

@@ -16,6 +16,16 @@
     #include "emulator/audio/audio_driver_miniaudio.h"
 #endif
 
+void SoundSource::sound_changed()
+{
+    if (m_mixer != nullptr) m_mixer->source_changed();
+}
+
+void SoundSource::sound_mode_changed()
+{
+    if (m_mixer != nullptr) m_mixer->source_mode_changed();
+}
+
 GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
       ComputerDevice(im, cd)
     , m_initialized(false)
@@ -59,8 +69,13 @@ emulator::Result GenericSound::load_config(SystemData *sd)
                 return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{GenericSound|" + std::string(QT_TRANSLATE_NOOP("GenericSound", "Not a sound source")) + "} " + dev_name);
             m_sources.push_back(src);
+            m_source_names.push_back(dev_name);
+            src->m_mixer = this;
         }
     }
+    m_idle_share = read_confg_value(cd, "idle_share", false, true);
+    m_idle_sample.assign(m_sources.size(), 0);
+    m_heard.assign(m_sources.size(), m_idle_share ? 1 : 0);
 
     //Without an audio device the whole sound path stays dormant: clock() drops
     //out on the very first line, so a silent run costs less than a loud one
@@ -125,6 +140,7 @@ void GenericSound::set_volume(unsigned int volume)
 {
     m_volume = volume;
     m_amplitude = m_volume * 32000 / 100;
+    m_level_dirty = true;
 }
 
 void GenericSound::set_muted(bool muted)
@@ -135,22 +151,79 @@ void GenericSound::set_muted(bool muted)
 void GenericSound::refresh_sources()
 {
     m_active.clear();
+    m_sources_volatile = false;
     for (size_t i = 0; i < m_sources.size(); i++)
-        if (m_sources[i]->sound_active()) m_active.push_back(m_sources[i]);
+        if (in_mix(i)) {
+            m_active.push_back(m_sources[i]);
+            if (m_sources[i]->sound_volatile()) m_sources_volatile = true;
+        }
     m_shares = 1 + (int64_t)m_active.size();
+    m_level_dirty = true;
+}
+
+// A millisecond of the device's own clock
+static int64_t listen_period(uint64_t clock)
+{
+    return (clock >= 1000) ? (int64_t)(clock / 1000) : 1;
+}
+
+void GenericSound::reset(bool cold)
+{
+    ComputerDevice::reset(cold);
+    // The sources may be reset after this device, so their idle samples are
+    // taken at the first check rather than here
+    for (size_t i = 0; i < m_heard.size(); i++) m_heard[i] = m_idle_share ? 1 : 0;
+    m_idle_taken = false;
+    m_listening = !m_idle_share && !m_sources.empty();
+    m_listen_left = listen_period(m_system_clock);
+    refresh_sources();
+}
+
+// The same amplitude every time, whatever the volume: a sample is compared
+// with the idle one, not played
+#define LISTEN_AMPLITUDE 32000
+
+void GenericSound::listen_to_sources()
+{
+    m_listen_left += listen_period(m_system_clock);
+    if (!m_idle_taken) {
+        for (size_t i = 0; i < m_sources.size(); i++)
+            m_idle_sample[i] = m_sources[i]->sound_sample(LISTEN_AMPLITUDE);
+        m_idle_taken = true;
+        return;
+    }
+    bool unheard = false;
+    for (size_t i = 0; i < m_sources.size(); i++) {
+        if (m_heard[i]) continue;
+        if (m_sources[i]->sound_sample(LISTEN_AMPLITUDE) != m_idle_sample[i]) m_heard[i] = 1;
+        else unheard = true;
+    }
+    m_listening = unheard;
+    refresh_sources();
 }
 
 void GenericSound::clock(unsigned int counter)
 {
+    if (m_listening) {
+        m_listen_left -= counter;
+        if (m_listen_left <= 0) listen_to_sources();
+    }
+
     if (!m_initialized) return;
 
     // The sources are averaged with the device's own output so that the sum
     // stays within the amplitude; a source that is switched off takes no share.
     // The sum is divided by the shares once a sample, not here: this runs on
     // every instruction of the processor the device is clocked with
-    int64_t level = calc_sound_value();
-    for (size_t i = 0; i < m_active.size(); i++)
-        level += m_active[i]->sound_sample(m_amplitude);
+    // Summed again only when a part of it may have changed: that is most of
+    // the cost of sound, paid on every instruction for the same silence
+    if (m_level_dirty || m_self_volatile || m_sources_volatile) {
+        m_level_dirty = false;
+        m_level = calc_sound_value();
+        for (size_t i = 0; i < m_active.size(); i++)
+            m_level += m_active[i]->sound_sample(m_amplitude);
+    }
+    const int64_t level = m_level;
 
     // The level is weighted by the clock ticks it was held for. An instruction
     // takes from a dozen ticks to a hundred, and counting every one of them
@@ -268,6 +341,7 @@ std::vector<DeviceFieldInfo> GenericSound::get_device_fields()
     r.push_back({"muted",   "1 if the sound is muted",  false});
     r.push_back({"active",  "1 if an audio device is open. 0 means the machine "
                             "is silent: --no-sound, or no audio device at all",  false});
+    r.push_back({"mixed",   "Sources of mix taking a share of it now, '-' for none", false});
     return r;
 }
 
@@ -285,6 +359,14 @@ bool GenericSound::get_field(const std::string &field, unsigned int from, unsign
     if (field == "volume")  { out.values.push_back(m_volume);       return true; }
     if (field == "muted")   { out.values.push_back(m_muted?1:0);    return true; }
     if (field == "active")  { out.values.push_back(m_initialized?1:0); return true; }
+    if (field == "mixed") {
+        out.numeric = false;
+        std::string s;
+        for (size_t i = 0; i < m_sources.size(); i++)
+            if (in_mix(i)) s += (s.empty() ? "" : " ") + m_source_names[i];
+        out.text = s.empty() ? "-" : s;
+        return true;
+    }
 
     out.numeric = false;
     return ComputerDevice::get_field(field, from, to, out);

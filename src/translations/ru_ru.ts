@@ -4,12 +4,12 @@
 <context>
     <name>AY8910</name>
     <message>
-        <location filename="../emulator/devices/common/ay8910.cpp" line="+67"/>
+        <location filename="../emulator/devices/common/ay8910.cpp" line="+66"/>
         <source>Unknown bus protocol</source>
         <translation>Неизвестный протокол шины</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+5"/>
         <source>Incorrect clock frequency</source>
         <translation>Некорректная тактовая частота</translation>
     </message>
@@ -34,7 +34,7 @@
         <translation type="vanished">Команда &apos;set&apos; требует адрес и значение</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+814"/>
+        <location filename="../emulator/core.cpp" line="+813"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation>Команда &apos;set&apos; требует адрес и хотя бы одно значение</translation>
     </message>
@@ -171,7 +171,7 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+652"/>
+        <location filename="../emulator/core.cpp" line="+666"/>
         <source>No CPU clock value found</source>
         <translation>Не задана тактовая частота процессора</translation>
     </message>
@@ -206,7 +206,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location line="-1060"/>
+        <location line="-1074"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -272,14 +272,39 @@
         <translation>Образ диска</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="+307"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="+318"/>
         <source>Serial port of the computer</source>
         <translation>Последовательный порт компьютера</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+585"/>
+        <location line="+9"/>
+        <source>Network station number (0-63)</source>
+        <translation>Номер станции в сети (0-63)</translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+611"/>
         <source>Hard disk image</source>
         <translation>Образ жёсткого диска</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Hard disk writes</source>
+        <translation>Запись на винчестер</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Into the image file</source>
+        <translation>В файл образа</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Into memory only, the image stays as it was</source>
+        <translation>Только в память, образ не меняется</translation>
+    </message>
+    <message>
+        <location filename="../emulator/core.cpp" line="+514"/>
+        <source>ROM image</source>
+        <translation>Образ ПЗУ</translation>
     </message>
 </context>
 <context>
@@ -313,12 +338,12 @@
 <context>
     <name>DL11</name>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="-250"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="-264"/>
         <source>Incorrect baud rate</source>
         <translation>Некорректная скорость обмена</translation>
     </message>
     <message>
-        <location line="+326"/>
+        <location line="+343"/>
         <source>Command &apos;connect&apos; expects a port name</source>
         <translation>Команда &apos;connect&apos; ожидает имя порта</translation>
     </message>
@@ -452,7 +477,7 @@
     </message>
     <message>
         <location filename="../dialogs/debugwindow.cpp" line="+54"/>
-        <location line="+149"/>
+        <location line="+153"/>
         <location line="+66"/>
         <location line="+77"/>
         <source>Error</source>
@@ -481,7 +506,7 @@
         <translation type="vanished">Устройство %1 не найдено</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-493"/>
+        <location filename="../emulator/core.cpp" line="-1006"/>
         <source>Too many devices</source>
         <translation>Слишком много устройств</translation>
     </message>
@@ -502,8 +527,8 @@
         <location filename="../emulator/devices/specific/agat_7_display.cpp" line="+80"/>
         <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+75"/>
         <location line="+11"/>
-        <location filename="../emulator/devices/specific/uknc_display.cpp" line="+143"/>
-        <location line="+214"/>
+        <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
+        <location line="+218"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+144"/>
         <location line="+185"/>
         <source>Video output</source>
@@ -547,22 +572,22 @@
         <translation>Прототип</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-212"/>
-        <location line="+215"/>
+        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-216"/>
+        <location line="+219"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="-183"/>
         <location line="+186"/>
         <source>RGB</source>
         <translation>RGB</translation>
     </message>
     <message>
-        <location line="-214"/>
-        <location line="+215"/>
+        <location line="-218"/>
+        <location line="+219"/>
         <source>GRB</source>
         <translation>GRB</translation>
     </message>
     <message>
-        <location line="-214"/>
-        <location line="+215"/>
+        <location line="-218"/>
+        <location line="+219"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="-185"/>
         <location line="+186"/>
         <source>Mono</source>
@@ -598,12 +623,12 @@
         <translation>Мышь</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/ay8910.cpp" line="+174"/>
+        <location filename="../emulator/devices/common/ay8910.cpp" line="+176"/>
         <source>AY-3-8910</source>
         <translation>AY-3-8910</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/covox.cpp" line="+68"/>
+        <location filename="../emulator/devices/common/covox.cpp" line="+43"/>
         <source>Covox</source>
         <translation>Covox</translation>
     </message>
@@ -879,7 +904,7 @@
     </message>
     <message>
         <location filename="../emulator/config.cpp" line="+250"/>
-        <location filename="../emulator/config_ext.cpp" line="+373"/>
+        <location filename="../emulator/config_ext.cpp" line="+393"/>
         <location line="+57"/>
         <location filename="../emulator/config_fields.cpp" line="+104"/>
         <location line="+90"/>
@@ -906,7 +931,7 @@
         <location line="-97"/>
         <location line="+5"/>
         <location line="+13"/>
-        <location filename="../emulator/config_ext.cpp" line="-212"/>
+        <location filename="../emulator/config_ext.cpp" line="-222"/>
         <location line="+8"/>
         <source>Configuration error for device parameter</source>
         <translation>Ошибка конфигурации параметра устройства</translation>
@@ -917,7 +942,7 @@
         <translation>Параметр radix должен быть равен 2, 8, 10 или 16</translation>
     </message>
     <message>
-        <location filename="../emulator/config_ext.cpp" line="-66"/>
+        <location filename="../emulator/config_ext.cpp" line="-76"/>
         <source>Unknown directive</source>
         <translation>Неизвестная директива</translation>
     </message>
@@ -933,7 +958,8 @@
         <translation>Директива повторяется</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+17"/>
+        <location line="+5"/>
         <location line="+3"/>
         <location line="+28"/>
         <source>Expected device:property</source>
@@ -960,7 +986,8 @@
         <translation>В расширении нет директивы @version</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+36"/>
+        <location line="+6"/>
         <location line="+50"/>
         <source>No such device in the base configuration</source>
         <translation>В базовой конфигурации нет такого устройства</translation>
@@ -1336,7 +1363,7 @@
         <translation>Устройство не является источником звука</translation>
     </message>
     <message>
-        <location line="+233"/>
+        <location line="+299"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation>Команда &apos;volume&apos; требует значение</translation>
     </message>
@@ -1344,15 +1371,15 @@
 <context>
     <name>HostSerialPort</name>
     <message>
-        <location filename="../emulator/host_serial.cpp" line="+51"/>
-        <location line="+104"/>
+        <location filename="../emulator/host_serial.cpp" line="+62"/>
+        <location line="+105"/>
         <source>Cannot open the serial port</source>
         <translation>Не удалось открыть последовательный порт</translation>
     </message>
     <message>
-        <location line="-97"/>
+        <location line="-98"/>
         <location line="+19"/>
-        <location line="+83"/>
+        <location line="+84"/>
         <location line="+15"/>
         <source>Cannot set up the serial port</source>
         <translation>Не удалось настроить последовательный порт</translation>
@@ -1363,7 +1390,7 @@
         <translation>Неподдерживаемая скорость обмена для</translation>
     </message>
     <message>
-        <location line="+64"/>
+        <location line="+66"/>
         <source>Serial ports are not available here</source>
         <translation>Последовательные порты здесь недоступны</translation>
     </message>
@@ -1430,12 +1457,13 @@
 <context>
     <name>IndirectMemory</name>
     <message>
-        <location filename="../emulator/devices/common/indirect_memory.cpp" line="+35"/>
+        <location filename="../emulator/devices/common/indirect_memory.cpp" line="+38"/>
+        <location line="+19"/>
         <source>Incorrect range for</source>
         <translation>Некорректный диапазон для</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-14"/>
         <source>Too many data registers</source>
         <translation>Слишком много регистров данных</translation>
     </message>
@@ -1445,7 +1473,7 @@
         <translation>Устройство не адресуемое</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+14"/>
         <source>No data registers defined</source>
         <translation>Не заданы регистры данных</translation>
     </message>
@@ -1581,7 +1609,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1201"/>
+        <location filename="../mainwindow.cpp" line="+1196"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -1628,13 +1656,13 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="+489"/>
+        <location filename="../mainwindow.cpp" line="+515"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-899"/>
+        <location filename="../mainwindow.cpp" line="-925"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -1663,15 +1691,15 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-324"/>
+        <location filename="../mainwindow.cpp" line="-319"/>
         <location line="+38"/>
-        <location line="+957"/>
-        <location line="+43"/>
+        <location line="+952"/>
+        <location line="+39"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1035"/>
+        <location line="-1026"/>
         <location line="+38"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -1700,12 +1728,12 @@
     <message>
         <location line="-89"/>
         <location line="+52"/>
-        <location line="+815"/>
+        <location line="+810"/>
         <location line="+55"/>
         <location line="+33"/>
         <location line="+105"/>
-        <location line="+41"/>
-        <location line="+62"/>
+        <location line="+72"/>
+        <location line="+57"/>
         <location line="+349"/>
         <location line="+29"/>
         <location line="+88"/>
@@ -1713,7 +1741,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-1577"/>
+        <location line="-1598"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -1787,7 +1815,7 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+543"/>
+        <location line="+538"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
@@ -1808,12 +1836,12 @@
         <translation>Открыть образ диска</translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+73"/>
         <source>Open a hard disk image</source>
         <translation>Открыть образ винчестера</translation>
     </message>
     <message>
-        <location line="+37"/>
+        <location line="+33"/>
         <source>Save disk image to a file</source>
         <translation>Сохранить образ диска в файл</translation>
     </message>
@@ -1954,12 +1982,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-803"/>
+        <location line="-829"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+846"/>
+        <location line="+872"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -2071,7 +2099,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+722"/>
+        <location filename="../emulator/core.cpp" line="+721"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; требует имя файла</translation>
     </message>
@@ -2112,7 +2140,7 @@
         <translation type="vanished">Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+715"/>
+        <location line="+729"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
@@ -2174,7 +2202,7 @@
     </message>
     <message>
         <location line="+26"/>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+324"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+330"/>
         <source>Delete the configuration</source>
         <translation>Удалить конфигурацию</translation>
     </message>
@@ -2204,13 +2232,13 @@
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="-245"/>
-        <location line="+249"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="-247"/>
+        <location line="+251"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-249"/>
+        <location line="-251"/>
         <source>Error opening CSS file</source>
         <translation>Ошибка чтения файла CSS</translation>
     </message>
@@ -2220,7 +2248,7 @@
         <translation>Конфигурации с ошибками</translation>
     </message>
     <message>
-        <location line="+199"/>
+        <location line="+201"/>
         <source>Delete the configuration &quot;%1&quot;?
 %2</source>
         <translation>Удалить конфигурацию &quot;%1&quot;?
@@ -2240,12 +2268,12 @@
 <context>
     <name>PlanePair</name>
     <message>
-        <location filename="../emulator/devices/common/plane_pair.cpp" line="+26"/>
+        <location filename="../emulator/devices/common/plane_pair.cpp" line="+28"/>
         <source>Both planes must be memory devices</source>
         <translation>Оба плана должны быть устройствами памяти</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+16"/>
         <source>Planes are too small for the base offset</source>
         <translation>Планы слишком малы для базового смещения</translation>
     </message>
@@ -2334,7 +2362,7 @@
         <translation type="vanished">Ошибка чтения %1</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-179"/>
+        <location filename="../emulator/core.cpp" line="-193"/>
         <source>File not found</source>
         <translation>Файл не найден</translation>
     </message>
@@ -2619,7 +2647,7 @@
 <context>
     <name>UKNCDisplay</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-295"/>
+        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-302"/>
         <source>Plane must be a RAM device</source>
         <translation>План должен быть устройством ОЗУ</translation>
     </message>
@@ -2627,7 +2655,7 @@
 <context>
     <name>UKNCGraphics</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_graphics.cpp" line="+37"/>
+        <location filename="../emulator/devices/specific/uknc_graphics.cpp" line="+35"/>
         <source>Plane must be a RAM device</source>
         <translation>План должен быть устройством ОЗУ</translation>
     </message>
@@ -2635,7 +2663,7 @@
 <context>
     <name>UKNCHDD</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-478"/>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-513"/>
         <source>Hard disk image file not found</source>
         <translation>Файл образа жёсткого диска не найден</translation>
     </message>
@@ -2645,12 +2673,12 @@
         <translation>Нераспознанный образ жёсткого диска</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+32"/>
         <source>Unrecognized hard disk geometry</source>
         <translation>Нераспознанная геометрия жёсткого диска</translation>
     </message>
     <message>
-        <location line="+520"/>
+        <location line="+551"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; ожидает имя файла</translation>
     </message>
@@ -2658,7 +2686,7 @@
 <context>
     <name>UKNCKeyboard</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_keyboard.cpp" line="+45"/>
+        <location filename="../emulator/devices/specific/uknc_keyboard.cpp" line="+46"/>
         <source>A port to put the key code into is expected</source>
         <translation>Ожидается порт, в который записывается код клавиши</translation>
     </message>

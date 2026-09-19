@@ -6,6 +6,7 @@
 #pragma once
 
 #include "emulator/core.h"
+#include "emulator/devices/common/virq_line.h"
 
 // The five byte-wide channels between the two processors of the УК-НЦ: three
 // from the central processor to the peripheral one and two back. Each is a
@@ -86,6 +87,8 @@ private:
     Interface i_cpu_vector;
     Interface i_ppu_virq;
     Interface i_ppu_vector;
+    VirqLine m_cpu_irq;
+    VirqLine m_ppu_irq;
 
     // Подтверждение прерывания от процессоров: взятый вектор
     Interface i_cpu_iako;
@@ -93,13 +96,6 @@ private:
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
     // Counters, for scripts watching a handshake go wrong
-    // Вектор, который уже предложен каждой стороне. Линия запроса одна на
-    // несколько источников, и процессор слышит её по фронту, поэтому при
-    // смене источника её надо отпустить и прижать заново - иначе из целой
-    // очереди готовых каналов будет доставлен только первый
-    unsigned int m_cpu_offered = 0;
-    unsigned int m_ppu_offered = 0;
-
     unsigned int m_sent_c2p = 0;
     unsigned int m_sent_p2c = 0;
 

@@ -40,6 +40,8 @@ UKNCChannels::UKNCChannels(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_cpu_vector(this, im, 16, "cpu_vector", MODE_W)
     , i_ppu_virq(this, im, 1, "ppu_virq", MODE_W)
     , i_ppu_vector(this, im, 16, "ppu_vector", MODE_W)
+    , m_cpu_irq(i_cpu_virq, i_cpu_vector)
+    , m_ppu_irq(i_ppu_virq, i_ppu_vector)
     , i_cpu_iako(this, im, 16, "cpu_iako", MODE_R, CALLBACK_CPU_IAKO)
     , i_ppu_iako(this, im, 16, "ppu_iako", MODE_R, CALLBACK_PPU_IAKO)
 {
@@ -95,8 +97,8 @@ void UKNCChannels::reset(MAYBE_UNUSED bool cold)
     }
     m_sent_c2p = 0;
     m_sent_p2c = 0;
-    m_cpu_offered = 0;
-    m_ppu_offered = 0;
+    m_cpu_irq.clear();
+    m_ppu_irq.clear();
     update_irq();
 }
 
@@ -253,35 +255,10 @@ void UKNCChannels::update_irq()
     for (unsigned int i = 0; i < UKNC_CHAN_P2C && ppu_vector == 0; i++)
         if (m_p2c[i].tx_pending) ppu_vector = m_vec_ppu_tx[i];
 
-    // The vector goes out before the request: the processor samples ~vector at
-    // the moment ~virq becomes active.
-    //
-    // One wire carries several sources, and the processor takes the request on
-    // the edge, so a line that is already down delivers nothing new. When the
-    // source changes - one channel drained and the next one waiting - the line
-    // is released and pulled again to make that edge. While the same source
-    // stays pending the line is left alone: a handler that does not drain its
-    // channel then simply does not get called again, instead of re-entering
-    // itself until the stack runs off the bottom of memory
-    if (cpu_vector != m_cpu_offered) {
-        if (cpu_vector != 0) {
-            i_cpu_vector.change(cpu_vector);
-            i_cpu_virq.change(1);
-            i_cpu_virq.change(0);
-        } else
-            i_cpu_virq.change(1);
-        m_cpu_offered = cpu_vector;
-    }
-
-    if (ppu_vector != m_ppu_offered) {
-        if (ppu_vector != 0) {
-            i_ppu_vector.change(ppu_vector);
-            i_ppu_virq.change(1);
-            i_ppu_virq.change(0);
-        } else
-            i_ppu_virq.change(1);
-        m_ppu_offered = ppu_vector;
-    }
+    // One wire carries all the channels of a side; see VirqLine for why the
+    // line is released and pulled again when the source changes
+    m_cpu_irq.offer(cpu_vector);
+    m_ppu_irq.offer(ppu_vector);
 }
 
 //--------------------------- Bus access -----------------------------------//

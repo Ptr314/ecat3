@@ -36,6 +36,7 @@ DL11::DL11(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_vector(this, im, 16, "vector", MODE_W)
     , i_virq_in(this, im, 1, "virq_in", MODE_R, CALLBACK_CHAIN)
     , i_vector_in(this, im, 16, "vector_in", MODE_R)
+    , m_irq(i_virq, i_vector)
     , i_iako(this, im, 16, "iako", MODE_R, CALLBACK_IAKO)
     , i_init(this, im, 1, "init", MODE_R, CALLBACK_INIT)
 {
@@ -199,24 +200,9 @@ void DL11::interface_callback(unsigned int callback_id, unsigned int new_value, 
 
 void DL11::update_irq()
 {
-    unsigned int vector = 0;
-
     // Свой запрос вперёд чужого, приём старше передачи
-    if (m_rx_pending)                        vector = m_rx_vector;
-    else if (m_tx_pending)                   vector = m_tx_vector;
-    else if ((i_virq_in.value & 1) == 0)     vector = i_vector_in.value & 0xFFFF;
-
-    // Процессор слышит запрос по фронту: при смене источника линия
-    // отпускается и прижимается заново (как у uknc-timer)
-    if (vector != m_offered) {
-        if (vector != 0) {
-            i_vector.change(vector);
-            i_virq.change(1);
-            i_virq.change(0);
-        } else
-            i_virq.change(1);
-        m_offered = vector;
-    }
+    const unsigned int own = m_rx_pending ? m_rx_vector : (m_tx_pending ? m_tx_vector : 0);
+    m_irq.offer(VirqLine::chain(own, i_virq_in, i_vector_in));
 }
 
 //--------------------------- Регистры --------------------------------------//
@@ -296,10 +282,12 @@ unsigned int DL11::get_value(unsigned int address)
 
 void DL11::set_value(unsigned int address, unsigned int value, bool force)
 {
-    // Байт ложится на свою половину слова; значащие разряды всех регистров
-    // в младшем байте, кроме переполнения, которое программа не пишет
-    const unsigned int b = value & 0xFF;
-    set_value_word(address & ~1u, (address & 1)? (b << 8) : b, force);
+    // Все разряды, которые пишет программа, - в младшем байте, и передачу
+    // начинает запись младшего байта XBUF. Запись старшего байта ничего не
+    // меняет: раньше она становилась словом с нулевым младшим байтом, и MOVB
+    // в 176577 передавал ноль, а в 176571 снимал разрешение прерывания
+    if (address & 1) return;
+    set_value_word(address, value & 0xFF, force);
 }
 
 //--------------------------- Сценарии --------------------------------------//
@@ -331,7 +319,19 @@ ConfigFields DL11::get_config_fields()
     f.name = "port";
     f.title = QT_TRANSLATE_NOOP("ConfigFields", "Serial port of the computer");
     f.type = CONFIG_FIELD_STRING;
-    return {f};
+    ConfigFields r = {f};
+
+    //The station number means something only to a network adapter, and the
+    //config says which line is one by giving it a number at all
+    if (!str_trim(cd->get_parameter("station", false).value).empty()) {
+        ConfigField s;
+        s.name = "station";
+        s.title = QT_TRANSLATE_NOOP("ConfigFields", "Network station number (0-63)");
+        s.type = CONFIG_FIELD_STRING;
+        s.def = "0";
+        r.push_back(s);
+    }
+    return r;
 }
 
 std::vector<DeviceFieldInfo> DL11::get_device_fields()
@@ -371,7 +371,7 @@ bool DL11::get_field(const std::string &field, unsigned int from, unsigned int t
     out.width = 16;
     if (field == "rcsr")      { out.values.push_back(m_rcsr);                    return true; }
     if (field == "xcsr")      { out.values.push_back(m_xcsr);                    return true; }
-    if (field == "vector")    { out.values.push_back(m_offered);                 return true; }
+    if (field == "vector")    { out.values.push_back(m_irq.offered());                 return true; }
     if (field == "station")   { out.values.push_back((unsigned int)m_station);   return true; }
     if (field == "plug")      { out.values.push_back(m_plug? 1 : 0);             return true; }
     if (field == "connected") { out.values.push_back(m_host.is_open()? 1 : 0);   return true; }

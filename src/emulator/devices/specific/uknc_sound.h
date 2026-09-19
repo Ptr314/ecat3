@@ -43,12 +43,16 @@ private:
 
     virtual int16_t calc_sound_value() override;
     bool level() const;
+    // The level moves on its own only while a grid tap is on together with
+    // the line; otherwise only a write to the register changes it
+    void update_volatile();
 
 public:
     UKNCSound(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     void reset(bool cold) override;
     void clock(unsigned int counter) override;
+    void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

@@ -758,15 +758,10 @@ void MainWindow::UpdateToolbar()
         hdds_found = sizeof(hdd_button)/sizeof(hdd_button[0]);
 
     for (unsigned int i = 0; i < hdds_found; i++) {
-        UKNCHDD * hdd = dynamic_cast<UKNCHDD*>(hdd_devices[i]);
-        hdds.push_back(hdd);
+        hdds.push_back(hdd_devices[i]);
         CreateHDDMenu(i);
         buttons_added++;
-        if (hdd != nullptr && hdd->is_attached()) {
-            hdd_menu[i]->actions().at(0)->setText(QString::fromStdString(hdd->image_name()));
-            hdd_button[i]->setIcon(QIcon(":/icons/hdd_mount"));
-        }
-        if (hdd != nullptr) hdd_menu[i]->actions().at(3)->setChecked(hdd->is_protected());
+        hdd_show(i);
     }
 
     std::vector<ComputerDevice*>tape_devices = e->dm->find_devices_by_class("tape");
@@ -1479,40 +1474,64 @@ void MainWindow::fdd_wp(unsigned int n)
     }
 }
 
+static bool device_flag(ComputerDevice * d, const std::string &field)
+{
+    DeviceFieldValue v;
+    return d->get_field(field, 0, 0, v) && !v.values.empty() && v.values[0] != 0;
+}
+
+static std::string device_text(ComputerDevice * d, const std::string &field)
+{
+    DeviceFieldValue v;
+    return d->get_field(field, 0, 0, v) ? v.text : std::string();
+}
+
+//The menu and the button of a hard disk socket from the state of its device
+void MainWindow::hdd_show(unsigned int n)
+{
+    ComputerDevice * d = hdds[n];
+    const bool attached = device_flag(d, "attached");
+    const std::string file = device_text(d, "file");
+    hdd_menu[n]->actions().at(0)->setText(attached
+        ? QFileInfo(QString::fromStdString(file)).fileName()
+        : MainWindow::tr("<Not loaded>"));
+    hdd_button[n]->setIcon(QIcon(attached ? ":/icons/hdd_mount" : ":/icons/hdd_unmount"));
+    //Образ, который не открылся на запись, защищён и без спроса
+    hdd_menu[n]->actions().at(3)->setChecked(device_flag(d, "protected"));
+}
+
 void MainWindow::hdd_open(unsigned int n)
 {
-    if (hdds[n] == nullptr) return;
+    //The file dialog filter is the one the editor of extensions uses too
+    std::string files;
+    const ConfigFields fields = hdds[n]->get_config_fields();
+    for (size_t i = 0; i < fields.size(); i++)
+        if (fields[i].name == "image") files = fields[i].files;
 
-    QString file_name = QFileDialog::getOpenFileName(this, MainWindow::tr("Open a hard disk image"), last_path, QString::fromStdString(hdds[n]->files));
+    QString file_name = QFileDialog::getOpenFileName(this, MainWindow::tr("Open a hard disk image"), last_path, QString::fromStdString(files));
     if (file_name.isEmpty()) return;
 
     QFileInfo fi(file_name);
-    emulator::Result res = hdds[n]->load_image(file_name.toStdString());
-    if (!res) {
+    const std::string arg = format_script_arg(fi.absoluteFilePath().toStdString());
+    emulator::Result res = hdds[n]->send_command("load", arg);
+    if (!res)
         QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
-    } else {
-        hdd_menu[n]->actions().at(0)->setText(fi.fileName());
-        hdd_button[n]->setIcon(QIcon(":/icons/hdd_mount"));
-        //Образ, который не открылся на запись, защищён и без спроса
-        hdd_menu[n]->actions().at(3)->setChecked(hdds[n]->is_protected());
-        e->record_command(hdds[n]->name, "load", format_script_arg(fi.absoluteFilePath().toStdString()));
-    }
+    else
+        e->record_command(hdds[n]->name, "load", arg);
+    hdd_show(n);
     last_path = fi.absolutePath();
     e->set_last_path(last_path.toStdString());
 }
 
 void MainWindow::hdd_eject(unsigned int n)
 {
-    if (hdds[n] == nullptr) return;
-    hdd_menu[n]->actions().at(0)->setText(MainWindow::tr("<Not loaded>"));
-    hdd_button[n]->setIcon(QIcon(":/icons/hdd_unmount"));
-    hdds[n]->unload();
+    hdds[n]->send_command("eject", "");
     e->record_command(hdds[n]->name, "eject", "");
+    hdd_show(n);
 }
 
 void MainWindow::hdd_wp(unsigned int n)
 {
-    if (hdds[n] == nullptr) return;
     const bool on = hdd_menu[n]->actions().at(3)->isChecked();
     hdds[n]->send_command("protect", on?"1":"0");
     e->record_command(hdds[n]->name, "protect", on?"1":"0");

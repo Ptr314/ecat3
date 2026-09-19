@@ -40,7 +40,8 @@
         C000-DFFF -> plane0[C000] mode=rw cfg=40:40 or_read
         E000-FDFF -> plane0[E000] mode=rw cfg=80:80 or_read
         A000-FDFF -> rom[2000] mode=r
-        FE08-FE17 -> pp-video[0000] mode=rw
+        FE08-FE0D -> pp-indirect[0000] mode=rw
+        FE0E-FE17 -> pp-video[0000] mode=rw
         FE40-FE47 -> pp-printer[0000] mode=rw
         FEF0-FEF1 -> asm-ay1[0000] mode=rw
         FEF2-FEF3 -> asm-ay2[0000] mode=rw

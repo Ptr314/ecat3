@@ -32,7 +32,8 @@ protected:
     uint16_t virq_vector;
     bool is_irq2;               // fixed vector 0100
     bool is_irq3;               // fixed vector 0270
-    bool is_halt_req;           // external console (halt mode) request
+    bool is_halt_req;           // external console (halt mode) request, latched on the edge
+    bool halt_pin;              // the line itself, for a processor with a console
     // Авария сети, вектор 024. Запрос даёт СНЯТИЕ линии ACLO при работающем
     // процессоре, и он тоже защёлкивается - это событие, а не уровень. У
     // УК-НЦ линией управляет периферийный процессор разрядом 15 регистра

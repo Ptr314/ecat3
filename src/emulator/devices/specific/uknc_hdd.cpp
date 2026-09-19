@@ -290,6 +290,9 @@ void UKNCHDD::schedule(unsigned int event, unsigned int us)
 {
     m_event = event;
     m_timeout = us;
+    // The ticks left over from the previous event would make this one come
+    // early - by several microseconds after a long time slice
+    m_acc = 0;
 }
 
 void UKNCHDD::reset(MAYBE_UNUSED bool cold)
@@ -612,7 +615,15 @@ ConfigFields UKNCHDD::get_config_fields()
     f.type = CONFIG_FIELD_FILE;
     f.files = cd->get_parameter("files", false).value;
     f.embeddable = false;
-    return {f};
+
+    ConfigField v;
+    v.name = "volatile";
+    v.title = QT_TRANSLATE_NOOP("ConfigFields", "Hard disk writes");
+    v.type = CONFIG_FIELD_CHOICE;
+    v.def = "0";
+    v.values.push_back({"0", QT_TRANSLATE_NOOP("ConfigFields", "Into the image file")});
+    v.values.push_back({"1", QT_TRANSLATE_NOOP("ConfigFields", "Into memory only, the image stays as it was")});
+    return {f, v};
 }
 
 std::vector<DeviceFieldInfo> UKNCHDD::get_device_fields()

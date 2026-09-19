@@ -16,14 +16,30 @@ static const unsigned int GRID_TAPS[5] = {10, 8, 7, 6, 3};
 
 UKNCSound::UKNCSound(InterfaceManager *im, EmulatorConfigDevice *cd):
       GenericSound(im, cd)
-    , i_input(this, im, 6, "input", MODE_R)
+    , i_input(this, im, 6, "input", MODE_R, 1)
 {
+    m_self_volatile = false;
+}
+
+void UKNCSound::update_volatile()
+{
+    const unsigned int in = i_input.value;
+    m_self_volatile = (in & IN_LINE) != 0 && (in & IN_GRID) != 0;
+}
+
+void UKNCSound::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned int new_value, unsigned int old_value)
+{
+    if (((new_value ^ old_value) & (IN_LINE | IN_GRID)) == 0) return;
+    update_volatile();
+    sound_changed();
 }
 
 void UKNCSound::reset(bool cold)
 {
     GenericSound::reset(cold);
     m_ticks = 0;
+    update_volatile();
+    sound_changed();
 }
 
 void UKNCSound::clock(unsigned int counter)

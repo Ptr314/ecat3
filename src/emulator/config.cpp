@@ -324,6 +324,16 @@ EmulatorConfigDevice * EmulatorConfig::get_device(int i)
     return devices[i].get();
 }
 
+bool EmulatorConfig::remove_device(const std::string& name)
+{
+    for (size_t i = 0; i < devices.size(); i++)
+        if (devices[i]->name == name) {
+            devices.erase(devices.begin() + static_cast<std::ptrdiff_t>(i));
+            return true;
+        }
+    return false;
+}
+
 EmulatorConfigDevice * EmulatorConfig::get_device(const std::string& name)
 {
     for (unsigned int i=0; i<devices.size(); i++)

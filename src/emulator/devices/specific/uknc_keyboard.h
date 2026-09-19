@@ -8,6 +8,7 @@
 #include <deque>
 
 #include "emulator/devices/common/keyboard.h"
+#include "emulator/devices/common/virq_line.h"
 #include "emulator/thread_compat.h"
 
 // The keyboard of the УК-НЦ is not like the one of the БК: its controller
@@ -81,9 +82,9 @@ private:
     Interface i_vector;
     Interface i_virq_in;
     Interface i_vector_in;
+    VirqLine m_irq;
 
     bool m_ready = false;
-    unsigned int m_offered = 0;
     void update_irq();
 
     unsigned int m_vector = 0300;
@@ -112,6 +113,7 @@ private:
     volatile bool m_queued = false;     // быстрая проверка без захвата
     unsigned int m_dropped = 0;         // не влезло в очередь
     void enqueue(unsigned int scan, bool press);
+    void enqueue_locked(unsigned int scan, bool press);     // m_queue_mutex held
 
     emulator::Result parse_key_table(const std::vector<std::string> &body, const std::string &file) override;
     void send_key_id(const std::string &id, bool press) override;

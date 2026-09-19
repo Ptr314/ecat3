@@ -1,23 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: УК-НЦ graphics unit - indirect plane access and octet drawing
+// Description: УК-НЦ graphics unit - octet drawing
 
 #include "uknc_graphics.h"
 #include "emulator/utils.h"
 
-#define R_ADDRESS   0       // 177010
-#define R_DATA0     1       // 177012
-#define R_DATA12    2       // 177014
-#define R_COLOR     3       // 177016
-#define R_BG_LOW    4       // 177020
-#define R_BG_HIGH   5       // 177022
-#define R_OCTET     6       // 177024
-#define R_MASK      7       // 177026
-#define R_COUNT     8
+#define R_COLOR     0       // 177016
+#define R_BG_LOW    1       // 177020
+#define R_BG_HIGH   2       // 177022
+#define R_OCTET     3       // 177024
+#define R_MASK      4       // 177026
+#define R_COUNT     5
 
 UKNCGraphics::UKNCGraphics(InterfaceManager *im, EmulatorConfigDevice *cd):
-    AddressableDevice(im, cd)
+      AddressableDevice(im, cd)
+    , i_address(this, im, 16, "address", MODE_R)
 {
     can_read = true;
     can_write = true;
@@ -43,21 +41,11 @@ emulator::Result UKNCGraphics::load_config(SystemData *sd)
 
 void UKNCGraphics::reset(MAYBE_UNUSED bool cold)
 {
-    m_address = m_data0 = m_data12 = 0;
     m_color = m_bg_low = m_bg_high = m_octet = m_mask = 0;
     m_draws = 0;
 }
 
-//------------------------- Plane access -----------------------------------//
-
-void UKNCGraphics::latch_planes()
-{
-    // Writing the address register reads all three planes at once - the data
-    // registers are a latch, not a window
-    const unsigned int a = m_address & 0xFFFF;
-    m_data0  = m_plane[0]->get_direct(a) & 0xFF;
-    m_data12 = (m_plane[1]->get_direct(a) & 0xFF) | ((m_plane[2]->get_direct(a) & 0xFF) << 8);
-}
+//------------------------- Drawing ----------------------------------------//
 
 // The background registers hold eight dots of three bits each, one triad per
 // nibble: dot 0 in bits 0-2 of 177020, dot 7 in bits 12-14 of 177022
@@ -88,7 +76,7 @@ void UKNCGraphics::load_background()
 {
     // Reading 177024 takes the eight dots that are already on the screen at the
     // current address, so that a program can draw over them
-    const unsigned int a = m_address & 0xFFFF;
+    const unsigned int a = address();
     uint8_t planes[3];
     for (unsigned p = 0; p < 3; p++)
         planes[p] = (uint8_t)(m_plane[p]->get_direct(a) & 0xFF);
@@ -111,7 +99,7 @@ void UKNCGraphics::draw_octet(unsigned int octet)
     }
 
     // A plane whose mask bit is set is left alone
-    const unsigned int a = m_address & 0xFFFF;
+    const unsigned int a = address();
     for (unsigned p = 0; p < 3; p++)
         if ((m_mask & (1u << p)) == 0)
             m_plane[p]->set_value(a, planes[p]);
@@ -136,9 +124,6 @@ unsigned UKNCGraphics::get_direct(unsigned address)
 unsigned int UKNCGraphics::read_register(unsigned int address, bool peek)
 {
     switch (address >> 1) {
-    case R_ADDRESS: return m_address & 0xFFFF;
-    case R_DATA0:   return m_data0 & 0xFF;
-    case R_DATA12:  return m_data12 & 0xFFFF;
     case R_COLOR:   return m_color & 7;
     case R_BG_LOW:  return m_bg_low & 0xFFFF;
     case R_BG_HIGH: return m_bg_high & 0xFFFF;
@@ -154,22 +139,7 @@ unsigned int UKNCGraphics::read_register(unsigned int address, bool peek)
 
 void UKNCGraphics::set_value_word(unsigned int address, unsigned int value, MAYBE_UNUSED bool force)
 {
-    const unsigned int a = m_address & 0xFFFF;
-
     switch (address >> 1) {
-    case R_ADDRESS:
-        m_address = value & 0xFFFF;
-        latch_planes();
-        break;
-    case R_DATA0:
-        m_data0 = value & 0xFF;
-        m_plane[0]->set_value(a, m_data0);
-        break;
-    case R_DATA12:
-        m_data12 = value & 0xFFFF;
-        m_plane[1]->set_value(a, m_data12 & 0xFF);
-        m_plane[2]->set_value(a, (m_data12 >> 8) & 0xFF);
-        break;
     case R_COLOR:   m_color = value & 7; break;
     case R_BG_LOW:  m_bg_low = value & 0xFFFF; break;
     case R_BG_HIGH: m_bg_high = value & 0xFFFF; break;
@@ -189,21 +159,8 @@ void UKNCGraphics::set_value(unsigned int address, unsigned int value, bool forc
 {
     const unsigned int b = value & 0xFF;
 
-    // The plane 1 and 2 data register takes a byte into its own plane only
-    if ((address >> 1) == R_DATA12) {
-        const unsigned int a = m_address & 0xFFFF;
-        if (address & 1) {
-            m_data12 = (m_data12 & 0x00FF) | (b << 8);
-            m_plane[2]->set_value(a, b);
-        } else {
-            m_data12 = (m_data12 & 0xFF00) | b;
-            m_plane[1]->set_value(a, b);
-        }
-        return;
-    }
-
-    // Any other register sees a byte as a word with the byte on its own lane
-    // and zeros on the other, as UKNCBTL has it. Nothing is read back first:
+    // A register sees a byte as a word with the byte on its own lane and
+    // zeros on the other, as UKNCBTL has it. Nothing is read back first:
     // reading 177024 loads the background from the screen, and a MOVB to it
     // would otherwise draw over the dots under the octet instead of over the
     // background the program put in 177020/177022
@@ -215,7 +172,7 @@ void UKNCGraphics::set_value(unsigned int address, unsigned int value, bool forc
 std::vector<DeviceFieldInfo> UKNCGraphics::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
-    r.push_back({"address",    "Address register 177010",                    false});
+    r.push_back({"address",    "Address register 177010, from pp-indirect",  false});
     r.push_back({"color",      "Foreground colour of a dot, 177016",         false});
     r.push_back({"background", "Background of the eight dots, 177020/177022", false});
     r.push_back({"mask",       "Planes writing is inhibited for, 177026",    false});
@@ -228,7 +185,7 @@ bool UKNCGraphics::get_field(const std::string &field, unsigned int from, unsign
 {
     out.numeric = true;
     out.width = 16;
-    if (field == "address")    { out.values.push_back(m_address); return true; }
+    if (field == "address")    { out.values.push_back(address()); return true; }
     if (field == "color")      { out.values.push_back(m_color);   return true; }
     if (field == "mask")       { out.values.push_back(m_mask);    return true; }
     if (field == "octet")      { out.values.push_back(m_octet);   return true; }
