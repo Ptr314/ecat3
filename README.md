@@ -7,7 +7,8 @@ eCat &ndash; универсальный эмулятор ретрокомпью�
 * &laquo;Радио-86РК&raquo; (&laquo;Апогей БК-01Ц&raquo;, &laquo;Микроша&raquo;, &laquo;Спектр-001&raquo;).
 * &laquo;Агат-7&raquo;, &laquo;Агат-9&raquo;.
 * &laquo;Ириша&raquo; (&laquo;Диалог&raquo;, &laquo;Каспий&raquo;).
-* &laquo;БК 0010&raquo;, &laquo;БК 0010-01&raquo;, &laquo;БК 0011М&raquo;.
+* &laquo;БК 0010&raquo;, &laquo;БК 0010-01&raquo;, &laquo;БК 0011М&raquo; (Дисководы, Covox, AY).
+* &laquo;УК-НЦ&raquo; (HDD: CHS, LBA; Covox; [Aberrant Sound](https://github.com/aberranthacker/aberrant_sound_module))
 
 <p align="center">
 <img src="screenshots/main_window.png" width="600">

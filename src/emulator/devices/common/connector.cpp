@@ -63,6 +63,12 @@ emulator::Result Connector::load_config(SystemData *sd)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Connector|" + std::string(QT_TRANSLATE_NOOP("Connector", "Unknown connector kind")) + "} " + kind);
 
+    // A name of its own overrides the kind: it is what the tooltip of the
+    // toolbar icon and the row of the extension editor say. It is written in
+    // the config, so it goes to the screen as it is, without translation
+    const std::string label = str_trim(cd->get_parameter("label", false).value);
+    if (!label.empty()) m_title = label;
+
     // A file found the way other machine files are: next to the config, in files/, in data/
     m_icon = str_trim(cd->get_parameter("icon", false).value);
 
@@ -120,9 +126,11 @@ ConfigFields Connector::get_config_fields()
     //devices it names are constructed by then, and their titles are constant
     ConfigField f;
     f.name = "default";
-    f.title = str_tolower(str_trim(cd->get_parameter("kind", false).value)) == "sound"
-            ? QT_TRANSLATE_NOOP("DeviceOptions", "Sound")
-            : QT_TRANSLATE_NOOP("DeviceOptions", "Input device");
+    const std::string label = str_trim(cd->get_parameter("label", false).value);
+    f.title = !label.empty()? label
+            : (str_tolower(str_trim(cd->get_parameter("kind", false).value)) == "sound"
+               ? QT_TRANSLATE_NOOP("DeviceOptions", "Sound")
+               : QT_TRANSLATE_NOOP("DeviceOptions", "Input device"));
     f.type = CONFIG_FIELD_CHOICE;
     f.def = "none";
     f.values.push_back({"none", QT_TRANSLATE_NOOP("DeviceOptions", "None")});

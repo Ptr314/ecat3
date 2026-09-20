@@ -51,7 +51,10 @@ private:
     std::vector<std::string> m_names;   // device names, in the order of m_devices
     unsigned int m_selected;            // 0 - nothing, n - device n-1
     std::string m_icon;                 // picture next to the option list, empty - the GUI's own
-    const char * m_title;               // untranslated title of the option list
+    //What the option list and the icon are called. Without "label" it is the
+    //kind of the socket, translated; a label of the config is taken as it is,
+    //which is how a machine with several sockets tells them apart
+    std::string m_title;
 
     void apply();
 

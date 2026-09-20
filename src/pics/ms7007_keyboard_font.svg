@@ -68,16 +68,17 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     showgrid="true"
+     showgrid="false"
      inkscape:zoom="0.91064856"
-     inkscape:cx="859.82676"
-     inkscape:cy="231.703"
-     inkscape:window-width="1920"
-     inkscape:window-height="1010"
-     inkscape:window-x="-6"
-     inkscape:window-y="-6"
+     inkscape:cx="877.39665"
+     inkscape:cy="241.037"
+     inkscape:window-width="1680"
+     inkscape:window-height="979"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1">
+     inkscape:current-layer="key_right"
+     showguides="true">
     <inkscape:grid
        id="grid1"
        units="mm"
@@ -91,7 +92,7 @@
        opacity="0.14901961"
        empspacing="5"
        enabled="true"
-       visible="true" />
+       visible="false" />
   </sodipodi:namedview>
   <defs
      id="defs1">
@@ -3651,10 +3652,10 @@
        id="linearGradient49"
        gradientUnits="userSpaceOnUse"
        gradientTransform="translate(262.48194,63.199058)"
-       x1="23.06806"
-       y1="22.11344"
-       x2="38.991928"
-       y2="38.157223"
+       x1="29.518063"
+       y1="22.563442"
+       x2="38.518063"
+       y2="38.563442"
        spreadMethod="pad" />
     <linearGradient
        inkscape:collect="always"
@@ -3684,8 +3685,8 @@
        gradientTransform="translate(250.99999,118.7625)"
        x1="23.000002"
        y1="27.999998"
-       x2="37.000004"
-       y2="27.999998"
+       x2="26.95001"
+       y2="27.950003"
        spreadMethod="pad" />
     <linearGradient
        inkscape:collect="always"
@@ -3757,8 +3758,8 @@
        gradientTransform="translate(220.99999,138.76251)"
        x1="23.000002"
        y1="27.999998"
-       x2="37.000004"
-       y2="27.999998"
+       x2="26.95001"
+       y2="27.949993"
        spreadMethod="pad" />
     <linearGradient
        inkscape:collect="always"
@@ -3799,8 +3800,8 @@
        gradientTransform="translate(240.04999,94.812498)"
        x1="29.999996"
        y1="21.999998"
-       x2="29.999996"
-       y2="19.999998" />
+       x2="29.950012"
+       y2="18.950003" />
     <linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient20"
@@ -3922,10 +3923,10 @@
        id="linearGradient85"
        gradientUnits="userSpaceOnUse"
        gradientTransform="translate(240.04999,83.812498)"
-       x1="22.000008"
-       y1="22.000006"
-       x2="38.250004"
-       y2="32.250004"
+       x1="22.00001"
+       y1="22.000011"
+       x2="37.950012"
+       y2="30.950003"
        spreadMethod="pad" />
     <linearGradient
        inkscape:collect="always"
@@ -4009,8 +4010,8 @@
        gradientTransform="translate(280.04999,94.812498)"
        x1="29.999996"
        y1="21.999998"
-       x2="29.999996"
-       y2="19.999998" />
+       x2="29.950012"
+       y2="18.950003" />
     <linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient188"
@@ -4040,8 +4041,8 @@
        gradientTransform="translate(280.04999,83.812498)"
        x1="22.000008"
        y1="22.000006"
-       x2="38.250004"
-       y2="32.250004"
+       x2="37.950012"
+       y2="30.950003"
        spreadMethod="pad" />
     <linearGradient
        inkscape:collect="always"
@@ -5844,24 +5845,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="99.876862"
+         x="96.172691"
          y="126.77858"
          id="text7-0-8-3-5"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-4"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="99.876862"
+           x="96.172691"
            y="126.77858">К</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="99.889267"
+         x="103.59344"
          y="133.86411"
          id="text7-7-3-8-7-2"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-09"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="99.889267"
+           x="103.59344"
            y="133.86411">K</tspan></text>
     </g>
     <g
@@ -5910,24 +5911,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="119.58185"
+         x="115.87769"
          y="126.91087"
          id="text7-0-8-3-0"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-1"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="119.58185"
+           x="115.87769"
            y="126.91087">Е</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="119.58185"
+         x="123.28601"
          y="133.9964"
          id="text7-7-3-8-7-6"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-5"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="119.58185"
+           x="123.28601"
            y="133.9964">E</tspan></text>
     </g>
     <g
@@ -5976,24 +5977,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="160.0414"
+         x="156.33728"
          y="126.77858"
          id="text7-0-8-3-7"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-3"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="160.0414"
+           x="156.33728"
            y="126.77858">Г</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="160.32045"
+         x="164.02457"
          y="133.86411"
          id="text7-7-3-8-7-3"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-59"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="160.32045"
+           x="164.02457"
            y="133.86411">G</tspan></text>
     </g>
     <g
@@ -6047,25 +6048,36 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="179.64185"
+         x="175.93773"
          y="126.77858"
          id="text7-0-8-3-2"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-6"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="179.64185"
+           x="175.93773"
            y="126.77858">Ш</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="179.49733"
-         y="132.93806"
+         x="184.25977"
+         y="126.27353"
          id="text7-7-3-8-7-603"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-8"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="179.49733"
-           y="132.93806">[</tspan></text>
+           x="184.25977"
+           y="126.27353">[</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
+         x="184.29059"
+         y="132.80913"
+         id="text7-7-3-8-7-603-8"><tspan
+           sodipodi:role="line"
+           id="tspan7-6-9-3-8-8-2"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
+           x="184.29059"
+           y="132.80913">{</tspan></text>
     </g>
     <g
        id="key_z"
@@ -6118,24 +6130,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="219.7468"
+         x="216.04268"
          y="127.04317"
          id="text7-0-8-3-7-0"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-3-6"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="219.7468"
+           x="216.04268"
            y="127.04317">З</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="219.75455"
+         x="223.45866"
          y="134.12869"
          id="text7-7-3-8-7-3-1"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-59-8"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="219.75455"
+           x="223.45866"
            y="134.12869">Z</tspan></text>
     </g>
     <g
@@ -6189,24 +6201,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="239.51431"
+         x="235.8102"
          y="127.04317"
          id="text7-0-8-3-7-4"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-3-3"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="239.51431"
+           x="235.8102"
            y="127.04317">Х</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="239.50967"
+         x="243.21379"
          y="134.12869"
          id="text7-7-3-8-7-3-9"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-59-88"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="239.50967"
+           x="243.21379"
            y="134.12869">H</tspan></text>
     </g>
     <g
@@ -6260,24 +6272,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="70.225632"
+         x="66.521461"
          y="146.89308"
          id="text7-0-8-3-3"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-80"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="70.225632"
+           x="66.521461"
            y="146.89308">Ы</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="70.238022"
+         x="73.942192"
          y="153.97861"
          id="text7-7-3-8-7-8"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-80"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="70.238022"
+           x="73.942192"
            y="153.97861">Y</tspan></text>
     </g>
     <g
@@ -6331,24 +6343,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="110.24777"
+         x="106.54362"
          y="146.87201"
          id="text7-0-8-3-90"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-7"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="110.24777"
+           x="106.54362"
            y="146.87201">А</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="110.24777"
+         x="113.95195"
          y="153.95753"
          id="text7-7-3-8-7-81"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-58"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="110.24777"
+           x="113.95195"
            y="153.95753">A</tspan></text>
     </g>
     <g
@@ -6402,24 +6414,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="130.06468"
+         x="126.36053"
          y="146.9949"
          id="text7-0-8-3-25"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-86"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="130.06468"
+           x="126.36053"
            y="146.9949">П</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="129.95927"
+         x="133.66339"
          y="154.08043"
          id="text7-7-3-8-7-26"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-539"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="129.95927"
+           x="133.66339"
            y="154.08043">P</tspan></text>
     </g>
     <g
@@ -6473,24 +6485,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="150.25444"
+         x="146.55032"
          y="146.86421"
          id="text7-0-8-3-582"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-54"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="150.25444"
+           x="146.55032"
            y="146.86421">Р</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="150.15211"
+         x="153.85623"
          y="153.94975"
          id="text7-7-3-8-7-41"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-6"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="150.15211"
+           x="153.85623"
            y="153.94975">R</tspan></text>
     </g>
     <g
@@ -6544,24 +6556,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="60.140007"
+         x="56.435837"
          y="166.99524"
          id="text7-0-8-3-6"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-186"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="60.140007"
+           x="56.435837"
            y="166.99524">Я</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="59.910553"
+         x="63.614723"
          y="174.08076"
          id="text7-7-3-8-7-21"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-4"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="59.910553"
+           x="63.614723"
            y="174.08076">Q</tspan></text>
     </g>
     <g
@@ -6615,24 +6627,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="120.1243"
+         x="116.42014"
          y="166.71852"
          id="text7-0-8-3-6-5"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-186-8"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="120.1243"
+           x="116.42014"
            y="166.71852">М</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="120.1243"
+         x="123.82846"
          y="173.80403"
          id="text7-7-3-8-7-21-1"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-4-2"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="120.1243"
+           x="123.82846"
            y="173.80403">M</tspan></text>
     </g>
     <g
@@ -6686,24 +6698,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="139.69585"
+         x="135.99173"
          y="166.8602"
          id="text7-0-8-3-6-4"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-186-4"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="139.69585"
+           x="135.99173"
            y="166.8602">И</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="139.68654"
+         x="143.39066"
          y="173.94572"
          id="text7-7-3-8-7-21-4"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-4-29"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="139.68654"
+           x="143.39066"
            y="173.94572">I</tspan></text>
     </g>
     <g
@@ -6757,24 +6769,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="160.12177"
+         x="156.41765"
          y="166.85748"
          id="text7-0-8-3-6-8"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-186-7"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="160.12177"
+           x="156.41765"
            y="166.85748">Т</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="160.12177"
+         x="163.82588"
          y="173.94299"
          id="text7-7-3-8-7-21-30"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-4-3"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="160.12177"
+           x="163.82588"
            y="173.94299">T</tspan></text>
     </g>
     <g
@@ -6828,24 +6840,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="199.97211"
+         x="196.26799"
          y="166.82536"
          id="text7-0-8-3-6-2"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-186-1"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="199.97211"
+           x="196.26799"
            y="166.82536">Б</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="200.05582"
+         x="203.75993"
          y="173.91086"
          id="text7-7-3-8-7-21-13"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-4-25"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="200.05582"
+           x="203.75993"
            y="173.91086">B</tspan></text>
     </g>
     <g
@@ -6899,25 +6911,36 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="220.40118"
+         x="216.69707"
          y="166.74785"
          id="text7-0-8-3-6-22"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-186-64"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="220.40118"
+           x="216.69707"
            y="166.74785">Ю</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:'MS Reference Sans Serif';-inkscape-font-specification:'MS Reference Sans Serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="220.49731"
-         y="173.45921"
+         x="224.20143"
+         y="166.83467"
          id="text7-7-3-8-7-21-0"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-4-7"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:'MS Reference Sans Serif';-inkscape-font-specification:'MS Reference Sans Serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="220.49731"
-           y="173.45921">@</tspan></text>
+           x="224.20143"
+           y="166.83467">@</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.76111px;font-family:'MS Reference Sans Serif';-inkscape-font-specification:'MS Reference Sans Serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
+         x="224.32719"
+         y="176.60562"
+         id="text7-7-3-8-7-21-0-6"><tspan
+           sodipodi:role="line"
+           id="tspan7-6-9-3-8-4-7-1"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.76111px;font-family:'MS Reference Sans Serif';-inkscape-font-specification:'MS Reference Sans Serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
+           x="224.32719"
+           y="176.60562">`</tspan></text>
     </g>
     <g
        id="key_slash"
@@ -7183,24 +7206,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="39.957909"
+         x="36.253738"
          y="127.50667"
          id="text7-0-8"><tspan
            sodipodi:role="line"
            id="tspan7-0-1"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="39.957909"
+           x="36.253738"
            y="127.50667">Й</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="39.740868"
+         x="43.445038"
          y="133.90585"
          id="text7-7-3-8"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="39.740868"
+           x="43.445038"
            y="133.90585">J</tspan></text>
     </g>
     <g
@@ -7254,24 +7277,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="59.679657"
+         x="55.975487"
          y="126.97728"
          id="text7-0-8-3"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="59.679657"
+           x="55.975487"
            y="126.97728">Ц</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="59.786629"
+         x="63.490799"
          y="134.06281"
          id="text7-7-3-8-7"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="59.786629"
+           x="63.490799"
            y="134.06281">C</tspan></text>
     </g>
     <g
@@ -7325,24 +7348,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="49.889603"
+         x="46.185432"
          y="146.81105"
          id="text7-0-8-3-99"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-2"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="49.889603"
+           x="46.185432"
            y="146.81105">Ф</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="49.773331"
+         x="53.477501"
          y="153.89658"
          id="text7-7-3-8-7-5"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-53"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="49.773331"
+           x="53.477501"
            y="153.89658">F</tspan></text>
     </g>
     <g
@@ -7401,24 +7424,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="79.653549"
+         x="75.949379"
          y="126.84473"
          id="text7-0-8-3-9"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-8"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="79.653549"
+           x="75.949379"
            y="126.84473">У</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="79.665955"
+         x="83.370125"
          y="133.93025"
          id="text7-7-3-8-7-4"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-0"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="79.665955"
+           x="83.370125"
            y="133.93025">U</tspan></text>
     </g>
     <g
@@ -7544,13 +7567,13 @@
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
          x="230.03516"
-         y="110.51578"
+         y="107.02283"
          id="text7-0-9-8-5"><tspan
            sodipodi:role="line"
            id="tspan7-0-6-2-0"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
            x="230.03516"
-           y="110.51578">0</tspan></text>
+           y="107.02283">0</tspan></text>
     </g>
     <g
        id="key_under"
@@ -7598,25 +7621,25 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="279.88754"
+         x="276.18332"
          y="166.84474"
          id="text7-0-8-3-7-8"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-3-38"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="279.88754"
+           x="276.18332"
            y="166.84474">Ъ</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="280.30176"
-         y="173.88419"
+         x="283.47681"
+         y="171.23839"
          id="text7-7-3-8-7-3-3"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-59-7"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="280.30176"
-           y="173.88419">—</tspan></text>
+           x="283.47681"
+           y="171.23839">—</tspan></text>
       <path
          style="fill:#edd7ab;fill-opacity:1;stroke:#ede9de;stroke-width:0.264583;stroke-opacity:1"
          d="m 288.02001,161.77751 1.5,-1.49999"
@@ -7810,24 +7833,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="139.95012"
+         x="136.246"
          y="126.91087"
          id="text7-0-8-3-00"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-14"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="139.95012"
+           x="136.246"
            y="126.91087">Н</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="139.96716"
+         x="143.67128"
          y="133.9964"
          id="text7-7-3-8-7-60"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-7"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="139.96716"
+           x="143.67128"
            y="133.9964">N</tspan></text>
     </g>
     <g
@@ -7881,25 +7904,36 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="199.33305"
+         x="195.62894"
          y="126.91087"
          id="text7-0-8-3-2-8"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-6-3"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="199.33305"
+           x="195.62894"
            y="126.91087">Щ</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="199.60365"
-         y="133.07036"
+         x="204.36609"
+         y="126.40582"
          id="text7-7-3-8-7-603-5"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-8-1"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="199.60365"
-           y="133.07036">]</tspan></text>
+           x="204.36609"
+           y="126.40582">]</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
+         x="204.67453"
+         y="133.07373"
+         id="text7-7-3-8-7-603-5-7"><tspan
+           sodipodi:role="line"
+           id="tspan7-6-9-3-8-8-1-1"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
+           x="204.67453"
+           y="133.07373">}</tspan></text>
     </g>
     <g
        id="key_w"
@@ -7952,24 +7986,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="90.270233"
+         x="86.566063"
          y="146.95454"
          id="text7-0-8-3-8"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-9"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="90.270233"
+           x="86.566063"
            y="146.95454">В</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="90.330704"
+         x="94.034874"
          y="153.94652"
          id="text7-7-3-8-7-7"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-2"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="90.330704"
+           x="94.034874"
            y="153.94652">W</tspan></text>
     </g>
     <g
@@ -8023,24 +8057,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="209.99237"
+         x="206.28825"
          y="147.17145"
          id="text7-0-8-3-58"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-67"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="209.99237"
+           x="206.28825"
            y="147.17145">Д</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="209.80478"
+         x="213.5089"
          y="154.25697"
          id="text7-7-3-8-7-72"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-294"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="209.80478"
+           x="213.5089"
            y="154.25697">D</tspan></text>
     </g>
     <g
@@ -8094,25 +8128,36 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="249.89493"
+         x="246.19081"
          y="147.09395"
          id="text7-0-8-3-393"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-96"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="249.89493"
+           x="246.19081"
            y="147.09395">Э</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'MS Reference Sans Serif';-inkscape-font-specification:'MS Reference Sans Serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="249.71683"
-         y="153.33759"
+         x="253.42094"
+         y="146.75943"
          id="text7-7-3-8-7-79"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-97"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'MS Reference Sans Serif';-inkscape-font-specification:'MS Reference Sans Serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="249.71683"
-           y="153.33759">\</tspan></text>
+           x="253.42094"
+           y="146.75943">\</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'MS Reference Sans Serif';-inkscape-font-specification:'MS Reference Sans Serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
+         x="254.00737"
+         y="153.43015"
+         id="text7-7-3-8-7-79-6"><tspan
+           sodipodi:role="line"
+           id="tspan7-6-9-3-8-97-1"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'MS Reference Sans Serif';-inkscape-font-specification:'MS Reference Sans Serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
+           x="254.00737"
+           y="153.43015">|</tspan></text>
     </g>
     <g
        id="key_o"
@@ -8165,24 +8210,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="170.07388"
+         x="166.36977"
          y="147.00774"
          id="text7-0-8-3-1"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-19"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="170.07388"
+           x="166.36977"
            y="147.00774">О</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="170.07388"
+         x="173.778"
          y="154.09323"
          id="text7-7-3-8-7-76"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-29"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="170.07388"
+           x="173.778"
            y="154.09323">O</tspan></text>
     </g>
     <g
@@ -8236,24 +8281,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="189.98547"
+         x="186.28136"
          y="147.20488"
          id="text7-0-8-3-39"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-18"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="189.98547"
+           x="186.28136"
            y="147.20488">Л</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="189.64441"
+         x="193.34853"
          y="154.29041"
          id="text7-7-3-8-7-1"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-9"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="189.64441"
+           x="193.34853"
            y="154.29041">L</tspan></text>
     </g>
     <g
@@ -8307,24 +8352,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="229.82974"
+         x="226.12563"
          y="146.96509"
          id="text7-0-8-3-82"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-5"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="229.82974"
+           x="226.12563"
            y="146.96509">Ж</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="229.83902"
+         x="233.54314"
          y="154.05061"
          id="text7-7-3-8-7-54"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-91"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="229.83902"
+           x="233.54314"
            y="154.05061">V</tspan></text>
     </g>
     <g
@@ -8378,25 +8423,36 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="80.012085"
+         x="76.307915"
          y="166.94"
          id="text7-0-8-3-50"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-36"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="80.012085"
+           x="76.307915"
            y="166.94">Ч</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:'MS Reference Sans Serif';-inkscape-font-specification:'MS Reference Sans Serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="79.912872"
-         y="174.05486"
+         x="83.617043"
+         y="167.01132"
          id="text7-7-3-8-7-49"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-293"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:'MS Reference Sans Serif';-inkscape-font-specification:'MS Reference Sans Serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="79.912872"
-           y="174.05486">^</tspan></text>
+           x="83.617043"
+           y="167.01132">^</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:'MS Reference Sans Serif';-inkscape-font-specification:'MS Reference Sans Serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
+         x="83.490326"
+         y="172.01472"
+         id="text7-7-3-8-7-49-2"><tspan
+           sodipodi:role="line"
+           id="tspan7-6-9-3-8-293-1"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:'MS Reference Sans Serif';-inkscape-font-specification:'MS Reference Sans Serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
+           x="83.490326"
+           y="172.01472">—</tspan></text>
     </g>
     <g
        id="key_s"
@@ -8449,24 +8505,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="100.04401"
+         x="96.339836"
          y="166.91063"
          id="text7-0-8-3-6-9"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-186-6"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="100.04401"
+           x="96.339836"
            y="166.91063">С</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="100.09981"
+         x="103.80396"
          y="173.99615"
          id="text7-7-3-8-7-21-3"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-4-4"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="100.09981"
+           x="103.80396"
            y="173.99615">S</tspan></text>
     </g>
     <g
@@ -8520,24 +8576,24 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="180.47241"
+         x="176.7683"
          y="166.74785"
          id="text7-0-8-3-6-0"><tspan
            sodipodi:role="line"
            id="tspan7-0-1-6-186-3"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="180.47241"
+           x="176.7683"
            y="166.74785">Ь</tspan></text>
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.750001;stroke-dasharray:none;stroke-opacity:1"
-         x="180.61969"
+         x="184.32381"
          y="173.83337"
          id="text7-7-3-8-7-21-7"><tspan
            sodipodi:role="line"
            id="tspan7-6-9-3-8-4-297"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1a0808;fill-opacity:1;stroke:none;stroke-width:0.75"
-           x="180.61969"
+           x="184.32381"
            y="173.83337">X</tspan></text>
     </g>
     <g
@@ -9909,7 +9965,7 @@
          sodipodi:nodetypes="ccccc" />
       <path
          style="fill:url(#linearGradient48);stroke:none;stroke-width:0.187088;stroke-opacity:1"
-         d="m 300.5547,85.312498 1.4953,0.5 v 2 h -7 l -4.5,-2.5 z"
+         d="m 300.5547,85.312498 0.4453,0.450003 0,2 -5.95,0.05 -4.5,-2.5 z"
          id="path4-8-4-9-2"
          sodipodi:nodetypes="cccccc" />
       <path
@@ -9925,7 +9981,7 @@
       <path
          id="rect1-2-8-82-9"
          style="fill:url(#linearGradient49);stroke-width:0.308539"
-         d="m 292.05,85.812498 h 10 V 101.8125 h -10 z"
+         d="m 292.05,85.812498 8.95,-0.05 0,15.999999 -8.95,0.05 z"
          sodipodi:nodetypes="ccccc" />
     </g>
     <g
@@ -9973,12 +10029,12 @@
          sodipodi:nodetypes="ccccc" />
       <path
          style="fill:#edd7ab;fill-opacity:1;stroke:#ede9de;stroke-width:0.264583;stroke-opacity:1"
-         d="M 272.02001,154.7775 273,156.7625"
+         d="m 272.02001,154.7775 1.92999,1.935"
          id="path5-3-9-8-4"
          sodipodi:nodetypes="cc" />
       <path
          style="fill:#edd7ab;fill-opacity:1;stroke:#ede9de;stroke-width:0.264583;stroke-opacity:1"
-         d="m 272,141.7625 0.97998,-1.015"
+         d="m 272,141.7625 1.95,-1.05"
          id="path5-4-9-5-6-6"
          sodipodi:nodetypes="cc" />
       <path
@@ -9994,7 +10050,7 @@
       <path
          id="rect1-8-0-1-6-4"
          style="fill:url(#linearGradient52);stroke-width:0.308539"
-         d="M 272.97998,140.7475 278,140.7625 v 16 h -5 z"
+         d="m 273.95,140.7125 4.05,0.05 v 16 l -4.05,-0.05 z"
          sodipodi:nodetypes="ccccc" />
       <text
          xml:space="preserve"
@@ -10064,12 +10120,12 @@
          sodipodi:nodetypes="ccccc" />
       <path
          style="fill:#edd7ab;fill-opacity:1;stroke:#ede9de;stroke-width:0.264583;stroke-opacity:1"
-         d="M 242.02001,174.77751 243,176.76251"
+         d="M 242.02001,174.77751 243.95,176.7125"
          id="path5-3-9-8-4-7"
          sodipodi:nodetypes="cc" />
       <path
          style="fill:#edd7ab;fill-opacity:1;stroke:#ede9de;stroke-width:0.264583;stroke-opacity:1"
-         d="m 242,161.76251 0.97998,-1.015"
+         d="m 242,161.76251 1.95,-1.05001"
          id="path5-4-9-5-6-6-5"
          sodipodi:nodetypes="cc" />
       <path
@@ -10085,7 +10141,7 @@
       <path
          id="rect1-8-0-1-6-4-2"
          style="fill:url(#linearGradient59);stroke-width:0.308539"
-         d="m 242.97998,160.74751 5.02002,0.015 v 16 h -5 z"
+         d="m 243.95,160.7125 4.05,0.05 v 16 l -4.05,-0.05 z"
          sodipodi:nodetypes="ccccc" />
       <text
          xml:space="preserve"
@@ -10626,17 +10682,17 @@
        id="key_left">
       <path
          style="fill:url(#linearGradient70);stroke:none;stroke-width:0.229136;stroke-opacity:1"
-         d="m 260.59624,105.3125 1.75001,0.75 -0.29625,9.75001 2,1 -1e-5,13 -1.99999,2 0.29625,10.24999 -1.75001,2.25 z"
+         d="m 260.59624,105.3125 2.40376,0.45 -1,8 3,4 -0.95001,12.05001 -1.99999,2 0.29625,10.24999 -1.75001,2.25 z"
          id="path1-3-54-2-3"
          sodipodi:nodetypes="ccccccccc" />
       <path
          style="fill:url(#linearGradient71);stroke:none;stroke-width:0.229136;stroke-opacity:1"
-         d="m 276.05,116.81251 2,-1 -0.20376,-9.75001 1.75,-0.75 v 39 l -1.75,-2.75 0.20376,-9.74999 -1.99996,-3 z"
+         d="m 275,117.7625 3,-3 -0.15376,-8.7 1.75,-0.75 v 39 l -1.75,-2.75 0.20376,-9.74999 -1.99996,-3 z"
          id="path3-0-9-03-1"
          sodipodi:nodetypes="ccccccccc" />
       <path
          style="fill:url(#linearGradient72);stroke:none;stroke-width:0.24153;stroke-opacity:1"
-         d="m 278.05,131.81251 -1.57783,-3 h -12.84436 l -1.57781,3 z"
+         d="m 278.05,131.94733 -1.57783,-3.13482 h -12.84436 l -1.57781,3.13482 z"
          id="path2-7-6-7-4"
          sodipodi:nodetypes="ccccc" />
       <path
@@ -10651,7 +10707,7 @@
          sodipodi:nodetypes="cc" />
       <path
          style="fill:url(#linearGradient73);stroke:none;stroke-width:0.187088;stroke-opacity:1"
-         d="m 278.05,115.81251 -3,2 h -10 l -3,-2 z"
+         d="m 278,114.7625 -1.47339,3 -12.98886,0 -1.53775,-3 z"
          id="path4-8-4-2-8"
          sodipodi:nodetypes="ccccc" />
       <path
@@ -10666,7 +10722,7 @@
          sodipodi:nodetypes="cc" />
       <path
          style="fill:#edd7ab;fill-opacity:1;stroke:#cccccc;stroke-width:0.264583;stroke-opacity:1"
-         d="m 277.05,116.81251 1,-1"
+         d="M 277.05,116.81251 278,114.7625"
          id="path5-4-30-2-7-9"
          sodipodi:nodetypes="cc" />
       <path
@@ -10681,7 +10737,7 @@
          sodipodi:nodetypes="cc" />
       <path
          style="fill:#edd7ab;fill-opacity:1;stroke:#cccccc;stroke-width:0.264583;stroke-opacity:1"
-         d="m 263.05,116.81251 -1,-1"
+         d="M 263.05,116.81251 262,114.7625"
          id="path5-4-1-5-6-3-0"
          sodipodi:nodetypes="cc" />
       <path
@@ -10692,7 +10748,7 @@
       <path
          id="rect1-2-8-4-70-8"
          style="fill:url(#linearGradient85);stroke-width:0.308539"
-         d="m 262.05,105.81251 h 16 v 10 h -16 z"
+         d="m 262.05,105.81251 15.95,-0.05 v 9 l -16,0 z"
          sodipodi:nodetypes="ccccc" />
       <path
          id="rect1-2-8-4-70-8-3"
@@ -10709,17 +10765,17 @@
        id="key_right">
       <path
          style="fill:url(#linearGradient92);stroke:none;stroke-width:0.229136;stroke-opacity:1"
-         d="m 300.59624,105.3125 1.75001,0.75 -0.29625,9.75001 2,1 -1e-5,13 -1.99999,2 0.29625,10.24999 -1.75001,2.25 z"
+         d="m 300.59624,105.3125 1.75001,0.75 -0.34625,8.7 2.05,2.05001 -1e-5,13 -1.99999,2 0.29625,10.24999 -1.75001,2.25 z"
          id="path1-3-54-2-3-9"
          sodipodi:nodetypes="ccccccccc" />
       <path
          style="fill:url(#linearGradient93);stroke:none;stroke-width:0.229136;stroke-opacity:1"
-         d="m 316.05,116.81251 2,-1 -0.20376,-9.75001 1.75,-0.75 v 39 l -1.75,-2.75 0.20376,-9.74999 -1.99996,-3 z"
+         d="m 316.05,116.81251 1.95,-2.05001 -0.15376,-8.7 1.75,-0.75 v 39 l -1.75,-2.75 0.20376,-9.74999 -1.99996,-3 z"
          id="path3-0-9-03-1-2"
          sodipodi:nodetypes="ccccccccc" />
       <path
          style="fill:url(#linearGradient94);stroke:none;stroke-width:0.24153;stroke-opacity:1"
-         d="m 318.05,131.81251 -1.57783,-3 h -12.84436 l -1.57781,3 z"
+         d="m 318.05,131.9714 -1.57783,-3.15889 H 303.62781 L 302.05,131.9714 Z"
          id="path2-7-6-7-4-37"
          sodipodi:nodetypes="ccccc" />
       <path
@@ -10734,7 +10790,7 @@
          sodipodi:nodetypes="cc" />
       <path
          style="fill:url(#linearGradient96);stroke:none;stroke-width:0.187088;stroke-opacity:1"
-         d="m 318.05,115.81251 -3,2 h -10 l -3,-2 z"
+         d="m 318,114.7625 -2,3 h -12 l -2,-3 z"
          id="path4-8-4-2-8-5"
          sodipodi:nodetypes="ccccc" />
       <path
@@ -10749,7 +10805,7 @@
          sodipodi:nodetypes="cc" />
       <path
          style="fill:#edd7ab;fill-opacity:1;stroke:#cccccc;stroke-width:0.264583;stroke-opacity:1"
-         d="m 317.05,116.81251 1,-1"
+         d="M 317.05,116.81251 318,114.7625"
          id="path5-4-30-2-7-9-5"
          sodipodi:nodetypes="cc" />
       <path
@@ -10764,7 +10820,7 @@
          sodipodi:nodetypes="cc" />
       <path
          style="fill:#edd7ab;fill-opacity:1;stroke:#cccccc;stroke-width:0.264583;stroke-opacity:1"
-         d="m 303.05,116.81251 -1,-1"
+         d="M 303.05,116.81251 302,114.7625"
          id="path5-4-1-5-6-3-0-4"
          sodipodi:nodetypes="cc" />
       <path
@@ -10775,7 +10831,7 @@
       <path
          id="rect1-2-8-4-70-8-1"
          style="fill:url(#linearGradient99);stroke-width:0.308539"
-         d="m 302.05,105.81251 h 16 v 10 h -16 z"
+         d="m 302.05,105.81251 h 16 L 318,114.7625 h -16 z"
          sodipodi:nodetypes="ccccc" />
       <path
          id="rect1-2-8-4-70-8-3-5"
