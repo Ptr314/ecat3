@@ -2769,7 +2769,7 @@
     </message>
     <message>
         <location line="+4"/>
-        <source>Script to run, see SCRIPTING.md.</source>
+        <source>Script to run, see docs/SCRIPTING.md.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2789,7 +2789,7 @@
     </message>
     <message>
         <location line="+6"/>
-        <source>Act as an MCP server on stdin/stdout, needs a build with ENABLE_MCP, see MCP.md.</source>
+        <source>Act as an MCP server on stdin/stdout, needs a build with ENABLE_MCP, see docs/MCP.md.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

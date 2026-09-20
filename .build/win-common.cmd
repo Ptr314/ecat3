@@ -124,6 +124,6 @@ if /I "%~3"=="HEADLESS" exit /b 0
 findstr /C:"HAVE_QT_SVG" "%~2\build.ninja" >nul && set "_SVG=1"
 if "%_SVG%"=="0" (
     echo WARNING: the on-screen keyboard is left out of this build: no Qt Svg
-    echo          ^(or Qt older than 5.15^) in "%~4". See BUILD.md.
+    echo          ^(or Qt older than 5.15^) in "%~4". See docs/BUILD.md.
 )
 exit /b 0

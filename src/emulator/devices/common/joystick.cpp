@@ -35,7 +35,7 @@ emulator::Result Joystick::load_config(SystemData *sd)
     std::vector<std::string> lines = split_string(content, '\n', true);
     for (size_t li = 0; li < lines.size(); li++)
     {
-        //The joystick map is a map file too, and CONFIG.md promises comments
+        //The joystick map is a map file too, and docs/CONFIG.md promises comments
         //for those: a "// arrows" line copied from a keyboard map must not be
         //what makes the machine refuse to start
         std::string line = str_trim(lines[li]);

@@ -2,7 +2,7 @@
 .DS_Store
 build*/
 nuvola/
-docs/
+docs-external/
 deploy/USers*
 eCat3.pro.user*
 CMakeLists.txt.user*
@@ -23,5 +23,5 @@ __pycache__/
 # Значения по умолчанию лежат в deploy/.ecat.ini, из него ecat.ini и заводится
 deploy/ecat.ini
 
-# Конфигурации пользователя (.ext), см. CONFIG.md
+# Конфигурации пользователя (.ext), см. docs/CONFIG.md
 deploy/ecat-exts/

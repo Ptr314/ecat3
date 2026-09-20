@@ -7,7 +7,7 @@ rem _QT_PREFIX_STATIC -- static Qt build. When this directory exists,
 rem                      build-win-msvc-latest.bat picks it and produces an exe
 rem                      with no Qt DLLs and no MSVC runtime redistributable
 rem                      (Qt is configured with -static-runtime).
-rem                      See BUILD.md for how to build it.
+rem                      See docs/BUILD.md for how to build it.
 
 SET _QT_VERSION=6.11.2
 SET _ROOT_MSVC=C:\DEV\MSVC\msvc

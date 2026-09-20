@@ -2,7 +2,7 @@
 #
 # Release build for macOS: one universal (x86_64 + arm64) .dmg per renderer.
 #
-# Qt is linked statically (see BUILD.md and macos_build_qt_universal.sh), so the
+# Qt is linked statically (see docs/BUILD.md and macos_build_qt_universal.sh), so the
 # bundle carries no Qt frameworks. Only SDL2, when the binary actually links
 # against it, is copied into Contents/Frameworks.
 #
@@ -11,7 +11,7 @@
 #   mcp   build with the MCP server (-DENABLE_MCP=ON). Only the OpenGL renderer
 #         supports it in a windowed build, so the others are skipped. The console
 #         build is not packaged here; configure it by hand with
-#         -DENABLE_GUI=OFF -DENABLE_HEADLESS=ON, see MCP.md
+#         -DENABLE_GUI=OFF -DENABLE_HEADLESS=ON, see docs/MCP.md
 
 set -euo pipefail
 
@@ -55,7 +55,7 @@ for RENDERER in "${RENDERERS[@]}"; do
   echo
   echo "=== Renderer: ${RENDERER}"
 
-  # A windowed MCP build is only supported on OpenGL, see MCP.md
+  # A windowed MCP build is only supported on OpenGL, see docs/MCP.md
   if [ "${ENABLE_MCP}" = "ON" ] && [ "${RENDERER}" != "opengl" ]; then
       echo "=== Skipping ${RENDERER}: an MCP build needs the OpenGL renderer"
       continue

@@ -41,7 +41,7 @@ if(ENABLE_GUI)
     find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
     # Optional: the on-screen keyboard draws an SVG through QSvgRenderer. A kit
     # built without the qtsvg module (a static Qt configured with -submodules
-    # that leaves it out, see BUILD.md) simply goes without the keyboard.
+    # that leaves it out, see docs/BUILD.md) simply goes without the keyboard.
     find_package(Qt${QT_VERSION_MAJOR} QUIET COMPONENTS Svg)
 endif()
 
@@ -297,12 +297,12 @@ set(EMULATOR_SOURCES
 # are listed so that they show up in the IDE.
 set(GUI_SOURCES
     ../README.md
-    ../BUILD.md
-    ../MANUAL.md
-    ../CONFIG.md
-    ../SCRIPTING.md
-    ../HISTORY.md
-    ../MCP.md
+    ../docs/BUILD.md
+    ../docs/MANUAL.md
+    ../docs/CONFIG.md
+    ../docs/SCRIPTING.md
+    ../docs/HISTORY.md
+    ../docs/MCP.md
 
     main.cpp
     mainwindow.cpp mainwindow.h mainwindow.ui

@@ -73,7 +73,7 @@ if /I "%_RENDERER%"=="HEADLESS" (
     SET "_EXE_NAME=ecat3.exe"
 )
 
-REM A windowed MCP build is only supported on OpenGL, see MCP.md
+REM A windowed MCP build is only supported on OpenGL, see docs/MCP.md
 if /I "%_MCP%"=="ON" if /I not "%_RENDERER%"=="OPENGL" if /I not "%_RENDERER%"=="HEADLESS" (
     echo.
     echo === Skipping %_RENDERER%: an MCP build needs the OpenGL renderer

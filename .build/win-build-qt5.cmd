@@ -8,7 +8,7 @@ REM steps live here and build-win-i386.bat / build-win-7.bat only pick the kit.
 REM
 REM   call win-build-qt5.cmd <vars file> <platform label> [clean]
 REM
-REM Qt 5 cannot be configured as a static build here (see BUILD.md), so a
+REM Qt 5 cannot be configured as a static build here (see docs/BUILD.md), so a
 REM minimal set of DLLs is shipped next to the exe. The mingw runtime cannot be
 REM dropped -- the Qt5*.dll themselves import it, not just our exe.
 REM ---------------------------------------------------------------------------

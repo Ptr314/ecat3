@@ -297,7 +297,7 @@ public:
     virtual ConfigFields get_config_fields();
 
     //--------------------- Introspection and control ----------------------//
-    //Self-description, used by SCRIPTING.md, the script engine and any
+    //Self-description, used by docs/SCRIPTING.md, the script engine and any
     //external driver that needs to discover what a device offers
     virtual std::vector<DeviceFieldInfo> get_device_fields();
     virtual std::vector<DeviceCommandInfo> get_device_commands();

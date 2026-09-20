@@ -1,7 +1,7 @@
 @echo off
 
 rem Environment for the i386 / Windows XP build: Qt 5.6.3 + mingw 4.9.2.
-rem Qt 5.6.3 is rebuilt from sources with the -prefix below (see BUILD.md);
+rem Qt 5.6.3 is rebuilt from sources with the -prefix below (see docs/BUILD.md);
 rem the release ships Qt5*.dll and the mingw runtime next to the executable.
 
 SET _ROOT_QT=C:\DEV\Qt

@@ -1,6 +1,6 @@
 # Демонстрационный сценарий eCat3.
 # Запуск: ecat3 --script scripts/demo.ecat
-# Описание команд: SCRIPTING.md
+# Описание команд: docs/SCRIPTING.md
 
 MACHINE "orion-128/Orion-128-m3.cfg"
 

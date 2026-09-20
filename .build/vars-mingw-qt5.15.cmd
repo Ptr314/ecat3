@@ -8,7 +8,7 @@ rem
 rem It is assumed that the basic installation is done using the online installer.
 rem The Qt path is chosen as c:\DEV\Qt,
 rem so cmake, ninja and mingw are in c:\DEV\Qt\Tools.
-rem Qt 5.15 is rebuilt from sources with the -prefix below (see BUILD.md);
+rem Qt 5.15 is rebuilt from sources with the -prefix below (see docs/BUILD.md);
 rem the release ships Qt5*.dll and the mingw runtime next to the executable.
 
 SET _ROOT_QT=C:\DEV\Qt

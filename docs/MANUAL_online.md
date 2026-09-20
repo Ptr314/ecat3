@@ -5,7 +5,7 @@
 При первом заходе на страницу требуется кликнуть по окну либо нажать любую клавишу&nbsp;&mdash; это требование браузера, иначе не будет работать звук.
 
 <p align="center">
-<img src="screenshots/main_online.png" width="800">
+<img src="../screenshots/main_online.png" width="800">
 </p>
 
 ### Левая колонка

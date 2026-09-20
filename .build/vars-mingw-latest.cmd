@@ -7,7 +7,7 @@ rem The Qt path is chosen as c:\DEV\Qt,
 rem so cmake, ninja and mingw are in c:\DEV\Qt\Tools.
 rem The debug version of Qt with sources is in c:\DEV\Qt\X.X.X
 rem and the static version was compiled and placed in c:\DEV\Qt\X.X.X-static
-rem (see BUILD.md).
+rem (see docs/BUILD.md).
 rem
 rem _QT_PREFIX        -- regular (shared) Qt kit.
 rem _QT_PREFIX_STATIC -- static Qt kit. When this directory exists,

@@ -13,7 +13,7 @@
 //   WAIT _1000
 //
 // The base is parsed as usual, the edits are applied to the parsed
-// EmulatorConfig, and the machine is built from the result. See CONFIG.md.
+// EmulatorConfig, and the machine is built from the result. See docs/CONFIG.md.
 
 #pragma once
 

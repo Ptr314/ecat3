@@ -102,7 +102,7 @@ ExtEditorWindow::ExtEditorWindow(QWidget *parent, Emulator * e, const QString &p
 
     for (size_t i = 0; i < m_model.fields.size(); i++) add_field(static_cast<int>(i));
 
-    // The @script part, in the syntax of an .ecat file (SCRIPTING.md)
+    // The @script part, in the syntax of an .ecat file (docs/SCRIPTING.md)
     QFont mono("Consolas");
     mono.setStyleHint(QFont::Monospace);
     ui->scriptEdit->setFont(mono);

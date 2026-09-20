@@ -38,7 +38,7 @@ import glob
 import zipfile
 
 def is_extension(path):
-    """A configuration extension (.ext, or one packed as .ext.zip), see CONFIG.md."""
+    """A configuration extension (.ext, or one packed as .ext.zip), see docs/CONFIG.md."""
     return path.lower().endswith(".ext") or path.lower().endswith(".ext.zip")
 
 def machine_stem(path):

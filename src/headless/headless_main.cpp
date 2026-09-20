@@ -95,11 +95,11 @@ void print_help()
         << "Usage: eCat3-headless [options] [file]\n"
         << "\n"
         << "  -c, --config <file.cfg>   Machine configuration to load\n"
-        << "  -s, --script <file.ecat>  Script to run, see SCRIPTING.md\n"
+        << "  -s, --script <file.ecat>  Script to run, see docs/SCRIPTING.md\n"
         << "      --workdir <dir>       Directory to work in, the one holding computers/\n"
         << "      --no-sound            Do not open an audio device at all\n"
 #ifdef ENABLE_MCP
-        << "      --mcp                 Act as an MCP server on stdin/stdout, see MCP.md\n"
+        << "      --mcp                 Act as an MCP server on stdin/stdout, see docs/MCP.md\n"
         << "      --mcp-trace           Print the MCP conversation to stderr\n"
 #endif
         << "  -h, --help                Show this help\n"
@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
 #ifndef ENABLE_MCP
     if (o.mcp)
     {
-        std::cerr << "This build has no MCP server. Rebuild with -DENABLE_MCP=ON, see MCP.md."
+        std::cerr << "This build has no MCP server. Rebuild with -DENABLE_MCP=ON, see docs/MCP.md."
                   << std::endl;
         return 2;
     }

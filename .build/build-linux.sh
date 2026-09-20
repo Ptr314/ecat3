@@ -4,14 +4,14 @@
 #
 # Qt is linked dynamically here on purpose -- the AppImage bundles the Qt
 # libraries it actually needs, and a shared build keeps compatibility with a
-# wider range of distributions (see BUILD.md).
+# wider range of distributions (see docs/BUILD.md).
 #
 # Usage: ./build-linux.sh [clean] [mcp]
 #
 #   mcp   build with the MCP server (-DENABLE_MCP=ON). Only the OpenGL renderer
 #         supports it in a windowed build, so the others are skipped. The console
 #         build is not packaged here; configure it by hand with
-#         -DENABLE_GUI=OFF -DENABLE_HEADLESS=ON, see MCP.md
+#         -DENABLE_GUI=OFF -DENABLE_HEADLESS=ON, see docs/MCP.md
 
 set -euo pipefail
 
@@ -58,7 +58,7 @@ for RENDERER in "${RENDERERS[@]}"; do
     echo
     echo "=== Renderer: ${RENDERER}"
 
-    # A windowed MCP build is only supported on OpenGL, see MCP.md
+    # A windowed MCP build is only supported on OpenGL, see docs/MCP.md
     if [ "${ENABLE_MCP}" = "ON" ] && [ "${RENDERER}" != "opengl" ]; then
         echo "=== Skipping ${RENDERER}: an MCP build needs the OpenGL renderer"
         continue

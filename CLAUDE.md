@@ -21,7 +21,7 @@ The emulator uses a device-based architecture where computers are built from int
 
 ### Configuration-Driven System Design
 
-Computer configurations live in **`.cfg` files** (text format, see CONFIG.md for syntax). During startup:
+Computer configurations live in **`.cfg` files** (text format, see docs/CONFIG.md for syntax). During startup:
 1. Config parser reads device definitions and their parameter values
 2. Devices are instantiated and registered in device list
 3. Interface connections are established
@@ -29,7 +29,7 @@ Computer configurations live in **`.cfg` files** (text format, see CONFIG.md for
 
 This means most hardware behavior is **not hardcoded** - it's defined via config files. New machines can be added by creating `.cfg` files without code changes.
 
-**Configuration extensions (`.ext`, `.ext.zip`)** are variants written as edits to a base `.cfg` (`@extends`, `@version`, `dev:prop = value`, `-dev:key [= value]`, `@script`); `CONFIG.md` has the rules. Every machine file goes through one function, `load_machine_description()` (`emulator/config_ext.h`): a `.cfg` as is, an extension parsed by `ConfigExtension` and applied to the parsed `EmulatorConfig` before any device exists, a `.ext.zip` unpacked into `Emulator::cache_path` first. Both formats share the tokenizer (`ConfigReader`) and `parse_parameter()` in `config.cpp`, so a value means the same thing in either. Things to know:
+**Configuration extensions (`.ext`, `.ext.zip`)** are variants written as edits to a base `.cfg` (`@extends`, `@version`, `dev:prop = value`, `-dev:key [= value]`, `@script`); `docs/CONFIG.md` has the rules. Every machine file goes through one function, `load_machine_description()` (`emulator/config_ext.h`): a `.cfg` as is, an extension parsed by `ConfigExtension` and applied to the parsed `EmulatorConfig` before any device exists, a `.ext.zip` unpacked into `Emulator::cache_path` first. Both formats share the tokenizer (`ConfigReader`) and `parse_parameter()` in `config.cpp`, so a value means the same thing in either. Things to know:
 - `@protected` marks a shipped variant: the chooser's Edit and Delete are greyed out for it (`MachineSource::is_protected`, `Qt::UserRole + 3` of the item), Copy is not, and the copy drops the flag.
 - `-device` (no colon) removes a whole device before any exists. Nothing follows its references: the mapper ranges, links and `mix` entries naming it must be removed by the same extension, or the load stops at the first one (`UKNC-basic.ext` drops the hard disk and the sound module this way - they live in `ppu-mapper`, not `mapper`).
 - A key (`name + left_range`) is **not unique** in a base: the БК mapper sends `@memory[177714-177715]` to three devices and `port-ppi` takes `~data[0-7]` from two. A removal picks one by value (`-mapper:@memory[177714-177715] = ay`); replacing an ambiguous key is an error.
@@ -53,7 +53,7 @@ This means most hardware behavior is **not hardcoded** - it's defined via config
 
 ### Scripting
 
-`src/emulator/script/` is a Qt-free script runner driving the emulator from a text file (`SCRIPTING.md` has the full command reference, in Russian). Launch with `eCat3 --script <file.ecat>` (or `--config <file.cfg>`; a positional argument is dispatched by extension) from the `deploy/` working directory.
+`src/emulator/script/` is a Qt-free script runner driving the emulator from a text file (`docs/SCRIPTING.md` has the full command reference, in Russian). Launch with `eCat3 --script <file.ecat>` (or `--config <file.cfg>`; a positional argument is dispatched by extension) from the `deploy/` working directory.
 
 Scripts load a machine (`MACHINE`), wait, press keys (`KEY`, `TYPE`), take screenshots (`SCREEN`), dump device state to a log (`LOG dev.field`, `LOGDEFS` picks width and base), send device commands (`COMMAND dev.cmd(args)`), and `EXIT`. This is the practical way to reproduce a bug or verify a machine without driving the GUI by hand.
 
@@ -92,7 +92,7 @@ macOS:
 ```bash
 # Install Xcode, HomeBrew, CMake, Ninja
 brew install cmake ninja
-# Download Qt and SDL2 frameworks (see BUILD.md section 4-7)
+# Download Qt and SDL2 frameworks (see docs/BUILD.md section 4-7)
 # Use CLion/Qt Creator to build
 ```
 
@@ -105,7 +105,7 @@ cd src && cmake -B build && cmake --build build
 
 ### Release Builds
 
-See `BUILD.md` for detailed multi-platform release procedures. Key points:
+See `docs/BUILD.md` for detailed multi-platform release procedures. Key points:
 - **Windows**: Static Qt linking via custom build scripts (`.build/build-win-*.bat`)
 - **macOS**: Universal binary (x86_64+arm64) with static Qt
 - **Linux**: Dynamic Qt linking via linuxdeployqt AppImage creation
@@ -121,7 +121,7 @@ See `BUILD.md` for detailed multi-platform release procedures. Key points:
 
 - **CMakeLists.txt** (`src/CMakeLists.txt`): Build configuration, renderer selection, Qt module setup
 - **Configuration Files**: `deploy/computers/*.cfg` - machine definitions
-- **Scripts**: `deploy/scripts/*.ecat` - automation/test scripts (`SCRIPTING.md`)
+- **Scripts**: `deploy/scripts/*.ecat` - automation/test scripts (`docs/SCRIPTING.md`)
 - **Translations**: `src/translations/*.ts` - i18n files (update via `.build/update_translations.bat`)
 
 ### Common Tasks
@@ -163,7 +163,7 @@ Without the IDE: `cmake --build <build dir> --target update_translations` (on Wi
 **Build variants** (`src/CMakeLists.txt`):
 - `ENABLE_GUI` (ON): the windowed `eCat3`. With `OFF` no `find_package(Qt)` runs at all, so a console-only build configures on a machine without Qt.
 - `ENABLE_HEADLESS` (OFF): a second target `eCat3-headless` built from the same `EMULATOR_SOURCES` plus `src/headless/`. Console subsystem, links no Qt, draws into `NullRenderer`. Needs a C++17 toolchain, so the XP/Win7 kits refuse it. It reproduces the regression suite byte for byte, references included.
-- `ENABLE_MCP` (OFF): the MCP server (`src/mcp/`, `src/mcp_bridge.*`, vendored `libs/picojson`). Without the option not one of those files is compiled. A windowed MCP build requires `RENDERER_OPENGL` and fails configuration otherwise; see `MCP.md`.
+- `ENABLE_MCP` (OFF): the MCP server (`src/mcp/`, `src/mcp_bridge.*`, vendored `libs/picojson`). Without the option not one of those files is compiled. A windowed MCP build requires `RENDERER_OPENGL` and fails configuration otherwise; see `docs/MCP.md`.
 - The release scripts take `mcp` and `headless` as arguments, see `.build/README.md`.
 
 **Test changes:**
@@ -184,7 +184,7 @@ Without the IDE: `cmake --build <build dir> --target update_translations` (on Wi
   Permission denied`) and keeps answering from the core it was launched with - plausible answers from a
   stale build. The wrapper runs the emulator from a temporary copy and restarts it whenever the built exe
   gets newer, so a rebuild is picked up by the next tool call; it says so in the answer, and the emulated
-  machine has to be loaded again. `ECAT3_MCP_NO_RELOAD=1` keeps only the copy. See `MCP.md`
+  machine has to be loaded again. `ECAT3_MCP_NO_RELOAD=1` keeps only the copy. See `docs/MCP.md`
 - **`deploy/ecat.ini` is not in git** (`.gitignore`): every run rewrites it, so it is the developer's own file. The distributed defaults are `deploy/.ecat.ini`, which the release scripts package as `ecat.ini`. A missing `ecat.ini` is made a copy of `.ecat.ini` by both frontends and by `tests/run_tests.py` - without its `[TapeFiles]` no tape image loads, which is how a fresh checkout would otherwise break every tape test. A new default setting therefore goes into `.ecat.ini`
 - CPU tests: `src/tests/*.asm` and the `slow-*` scripts that run them (6502 functional test, zexall, Orion memory test)
 - Debug configurations (`debug = 1` in the `system` section) are hidden from the machine chooser unless `show_debug_versions=1` in the ini, and `src/wasm/package_machines.py` keeps them and their ROMs out of the web build entirely
@@ -211,7 +211,7 @@ Without the IDE: `cmake --build <build dir> --target update_translations` (on Wi
   latches the line and applies a change of it on the next write to the scan lines, which the ROM does before
   the dip and after the restore
 - **No compile-time logging**: the old `LOGGER` / `LOG_*` macros and the `Logger` class are gone. To trace a device, expose its state through `get_device_fields()` / `get_field()` and read it from an `.ecat` script (`LOG dev.field`), like `bk-fdc` does with its `trace` field
-- **PDF documents in `docs/`**: the Read tool cannot render them here (no poppler); `/mingw64/bin/pdftotext` from Git Bash or `pypdf` extracts the text layer
+- **PDF documents in `docs-external/`**: the Read tool cannot render them here (no poppler); `/mingw64/bin/pdftotext` from Git Bash or `pypdf` extracts the text layer
 - **The address label of `LOG dev.value(from,to)` follows the LOGDEFS base**: after `LOGDEFS _8,_16` on a БК the label `$0740` is hex (octal 003500), not an octal address
 - **Debug Windows**: GUI provides disassembler, memory dump, port inspector, CPU state viewer
 - **Breakpoints**: Debug menu supports execution breakpoints and step modes
@@ -250,15 +250,19 @@ eCat3/
 │   ├── scripts/            # .ecat automation scripts (demo.ecat)
 │   └── software/           # Default software/disk image directory
 ├── nuvola/                 # Nuvola icon theme
-├── screenshots/            # Screenshot images for docs
-├── docs/                   # Hardware documentation & references
+├── screenshots/            # Screenshot images for the documents
+├── docs/                   # Documentation of the project itself
+│   ├── BUILD.md            # Platform-specific build instructions
+│   ├── CONFIG.md           # Configuration file format reference
+│   ├── SCRIPTING.md        # .ecat script and command line reference (Russian)
+│   ├── MCP.md              # External control over stdin/stdout (Russian)
+│   ├── LINKS.md            # Reference links
+│   ├── MANUAL.md           # User manual (Russian)
+│   ├── MANUAL_online.md    # User manual of the web version (Russian)
+│   └── HISTORY.md          # Changelog (Russian)
+├── docs-external/          # Hardware documentation & references (not in git)
 ├── .build/                 # Build scripts and CI config
-├── BUILD.md                # Platform-specific build instructions
-├── CONFIG.md               # Configuration file format reference
-├── SCRIPTING.md            # .ecat script and command line reference (Russian)
-├── MCP.md                  # External control over stdin/stdout (Russian)
-├── LINKS.md                # Reference links
-├── MANUAL.md               # User manual (Russian)
+├── CLAUDE.md               # This file, read from the root of the project
 └── README.md               # Project overview
 
 ```
@@ -329,7 +333,7 @@ Display devices accumulate pixel data into buffer. Rendering happens on the rend
 
 ## Configuration File Format (Quick Reference)
 
-See `CONFIG.md` for complete spec. Key points:
+See `docs/CONFIG.md` for complete spec. Key points:
 - `device_id: device_type { ... }` declares device
 - `~interface_name = other_device.interface_name` connects devices
 - `parameter = value` sets device parameters
@@ -395,4 +399,4 @@ See `CONFIG.md` for complete spec. Key points:
 - Feature branches per machine/subsystem (e.g., `agat-9`, `irisha`)
 - Tag releases with version numbers (e.g., `v3.5.0`)
 
-See `HISTORY.md` for changelog.
+See `docs/HISTORY.md` for changelog.

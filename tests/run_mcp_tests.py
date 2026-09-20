@@ -95,7 +95,7 @@ def pick_server(explicit):
 
     if explicit and has_mcp(candidates[0]) is False:
         sys.exit("%s собран без ключа ENABLE_MCP, MCP-сервера в нем нет.\n"
-                 "См. MCP.md." % candidates[0])
+                 "См. docs/MCP.md." % candidates[0])
 
     # Сначала консольные, дальше те, про которые известно, что MCP в них есть
     candidates.sort(key=lambda p: (0 if is_headless(p) else 1,
@@ -103,7 +103,7 @@ def pick_server(explicit):
     candidates = [p for p in candidates if has_mcp(p) is not False]
     if not candidates:
         sys.exit("Ни одна из найденных сборок не собрана с ключом ENABLE_MCP.\n"
-                 "Соберите ее (см. MCP.md) или укажите ключом --exe.")
+                 "Соберите ее (см. docs/MCP.md) или укажите ключом --exe.")
 
     problems = []
     for exe in candidates:

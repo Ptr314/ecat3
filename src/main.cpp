@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     parser.addOption(configOption);
 
     QCommandLineOption scriptOption(QStringList() << "s" << "script",
-        QCoreApplication::translate("main", "Script to run, see SCRIPTING.md."),
+        QCoreApplication::translate("main", "Script to run, see docs/SCRIPTING.md."),
         QCoreApplication::translate("main", "file.ecat"));
     parser.addOption(scriptOption);
 
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     //with --mcp, and a build without the server has to say so on stderr and
     //exit rather than pop up a modal "unknown option" box that nobody sees
     QCommandLineOption mcpOption(QStringList() << "mcp",
-        QCoreApplication::translate("main", "Act as an MCP server on stdin/stdout, needs a build with ENABLE_MCP, see MCP.md."));
+        QCoreApplication::translate("main", "Act as an MCP server on stdin/stdout, needs a build with ENABLE_MCP, see docs/MCP.md."));
     parser.addOption(mcpOption);
 
     QCommandLineOption mcpTraceOption(QStringList() << "mcp-trace",
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 #ifndef ENABLE_MCP
     if (mcp_mode)
     {
-        std::cerr << "This build has no MCP server. Rebuild with -DENABLE_MCP=ON, see MCP.md."
+        std::cerr << "This build has no MCP server. Rebuild with -DENABLE_MCP=ON, see docs/MCP.md."
                   << std::endl;
         return 2;
     }

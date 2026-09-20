@@ -3259,8 +3259,8 @@
     </message>
     <message>
         <location line="+4"/>
-        <source>Script to run, see SCRIPTING.md.</source>
-        <translation>Сценарий для выполнения, см. SCRIPTING.md.</translation>
+        <source>Script to run, see docs/SCRIPTING.md.</source>
+        <translation>Сценарий для выполнения, см. docs/SCRIPTING.md.</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -3279,8 +3279,8 @@
     </message>
     <message>
         <location line="+6"/>
-        <source>Act as an MCP server on stdin/stdout, needs a build with ENABLE_MCP, see MCP.md.</source>
-        <translation>Работать сервером MCP через stdin/stdout. Требует сборки с ENABLE_MCP, см. MCP.md.</translation>
+        <source>Act as an MCP server on stdin/stdout, needs a build with ENABLE_MCP, see docs/MCP.md.</source>
+        <translation>Работать сервером MCP через stdin/stdout. Требует сборки с ENABLE_MCP, см. docs/MCP.md.</translation>
     </message>
     <message>
         <location line="+4"/>
