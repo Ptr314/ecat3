@@ -19,8 +19,6 @@
 #include "core.h"
 #include "emulator/utils.h"
 
-MapperCacheEntry MapperCache[15];
-
 #define PORT_FLIP  1
 #define PORT_RESET 2
 #define PORT_INPUT 3
@@ -1729,14 +1727,79 @@ MemoryMapper::MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd):
     , ports_to_mem(false)
     , first_range(1)
     , cancel_init_mask(0)
-    , read_cache_items(0)
-    , write_cache_items(0)
     , i_address(this, im, 16, "address", MODE_R)
     , i_config(this, im, 8, "config", MODE_R, MM_CONFIG)
 
 {
 
     addresable_size = 0x10000;
+    //A tag of 0 never matches, so an empty table needs no other marker
+    this->page_generation = 1;
+    memset(this->pages, 0, sizeof(this->pages));
+}
+
+void MemoryMapper::invalidate_pages()
+{
+    if (++this->page_generation == 0) {
+        //A tag of 0 means "empty", so the counter never stands on 0
+        this->page_generation = 1;
+        memset(this->pages, 0, sizeof(this->pages));
+    }
+}
+
+//Resolves a whole page at once, or marks it as one the scan has to walk every
+//time. Cacheable means: of the ranges that match this configuration, at most
+//one intersects the page, and if there is one it covers the page completely,
+//filters no addresses of its own (address_mask) and neither continues a read
+//(or_read) nor a write (through).
+//
+//With no range at all, a read and a write both answer nothing and report a bus
+//timeout, exactly as map() plus responds() would. With one range, it is the
+//only candidate for every address of the page, so the answer per direction is
+//the device when the mode fits, and otherwise a timeout when the range is
+//strict - which is what responds() says
+MapperPage * MemoryMapper::fill_page(unsigned int page, uint64_t tag)
+{
+    MapperPage * e = &this->pages[page];
+    const unsigned int p_begin = page << MM_PAGE_SHIFT;
+    const unsigned int p_end = p_begin + (1u << MM_PAGE_SHIFT) - 1;
+    const unsigned int config = this->i_config.value;
+
+    e->tag = tag;
+    e->uncached = false;
+    e->device_r = e->device_w = nullptr;
+    e->offset = 0;
+    e->timeout_r = e->timeout_w = true;
+
+    const MapperRange * found = nullptr;
+    for (unsigned int i = this->first_range; i <= this->ranges_count; i++)
+    {
+        const MapperRange * mr = &(this->ranges[i]);
+        if ((config & mr->config_mask) != mr->config_value) continue;
+        if (mr->range_end < p_begin || mr->range_begin > p_end) continue;
+        if (found != nullptr) {
+            //More than one range of this configuration in the page: which one
+            //answers depends on the address
+            e->uncached = true;
+            return nullptr;
+        }
+        found = mr;
+    }
+
+    if (found == nullptr) return e;         //nothing is mapped here
+
+    if (found->address_mask != 0 || found->or_read || found->through
+        || found->range_begin > p_begin || found->range_end < p_end) {
+        e->uncached = true;
+        return nullptr;
+    }
+
+    e->offset = found->base - found->range_begin;
+    if ((found->mode & MODE_R) != 0) { e->device_r = found->device; e->timeout_r = false; }
+    else e->timeout_r = found->strict;
+    if ((found->mode & MODE_W) != 0) { e->device_w = found->device; e->timeout_w = false; }
+    else e->timeout_w = found->strict;
+    return e;
 }
 
 emulator::Result MemoryMapper::load_config(SystemData *sd)
@@ -1745,12 +1808,6 @@ emulator::Result MemoryMapper::load_config(SystemData *sd)
 
     emulator::Result res = ComputerDevice::load_config(sd);
     if (!res) return res;
-
-    //sizeof of the array, not of the counter next to it: as written it was
-    //4/20 = 0, so mr.cache came out false for every range. The lookups that
-    //would use the flag are still commented out in read()/write(), so this
-    //only restores the intended value
-    this->cache_size = sizeof(this->read_cache) / sizeof(MapperCacheEntry);
 
     std::string config_device = this->cd->get_parameter("config", false).value;
 
@@ -1898,9 +1955,6 @@ emulator::Result MemoryMapper::load_config(SystemData *sd)
             // the real machine behaves
             mr.or_read = (this->cd->extended_parameter(i, "or_read") == "1");
 
-            //Disable cache for complicated entries
-            mr.cache = (mr.address_mask == 0) && (this->cache_size > 0);
-
             if (parameter_name == "@memory")
                 this->ranges[index] = mr;
             else
@@ -1908,24 +1962,7 @@ emulator::Result MemoryMapper::load_config(SystemData *sd)
         }
     }
 
-    //Also we need to disable cache for ranges crossing uncached ones
-    if (this->cache_size > 0)
-        for (unsigned int i = this->first_range; i <= this->ranges_count; i++)
-            if (!this->ranges[i].cache)
-                for (unsigned int j = this->first_range; j <= this->ranges_count; j++)
-                    if (
-                         !(
-                            (
-                                (this->ranges[j].range_end < this->ranges[i].range_begin)
-                                ||
-                                (this->ranges[j].range_begin > this->ranges[i].range_end)
-                            )
-                            &&
-                            (this->ranges[j].config_mask == this->ranges[i].config_mask)
-                            &&
-                            (this->ranges[j].config_value == this->ranges[i].config_value)
-                          )
-                       ) this->ranges[j].cache = false;
+    invalidate_pages();
 
     return emulator::Result::ok();
 }
@@ -1933,24 +1970,7 @@ emulator::Result MemoryMapper::load_config(SystemData *sd)
 void MemoryMapper::reset(MAYBE_UNUSED bool cold)
 {
     if (this->cancel_init_mask != 0) this->first_range = 0;
-    this->read_cache_items = 0;
-    this->write_cache_items = 0;
-}
-
-void MemoryMapper::interface_callback(MAYBE_UNUSED unsigned int callback_id, MAYBE_UNUSED unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
-{
-    this->read_cache_items = 0;
-    this->write_cache_items = 0;
-}
-
-void MemoryMapper::add_cache_entry(MapperCacheEntry * cache, unsigned int * cache_items, MapperRange * range)
-{
-    //TODO: Cache
-}
-
-void MemoryMapper::sort_cache()
-{
-    //TODO: Cache
+    invalidate_pages();
 }
 
 AddressableDevice * MemoryMapper::map(
@@ -2050,16 +2070,23 @@ AddressableDevice * MemoryMapper::map_write(unsigned int address, unsigned int *
     return this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_W, address_on_device, range_index);
 }
 
+
 unsigned int MemoryMapper::read(unsigned int address)
 {
-    //TODO: Cache
-    // for (unsigned int i = 0; i < this->read_cache_items; i++)
-
-    if ((this->first_range == 0) && ((address & this->cancel_init_mask) != 0))
-    {
+    if ((this->first_range == 0) && ((address & this->cancel_init_mask) != 0)) {
         this->first_range = 1;
-        this->read_cache_items = 0;
-        this->write_cache_items = 0;
+        invalidate_pages();
+    }
+
+    //The page this address falls into, resolved once per configuration
+    MapperPage * e = find_page(address, page_tag());
+    if (e != nullptr) {
+        if (e->device_r != nullptr) {
+            this->no_device = false;
+            return e->device_r->get_value(address + e->offset);
+        }
+        this->no_device = e->timeout_r;
+        return _FFFF;
     }
 
     unsigned int address_on_device, range_index;
@@ -2067,8 +2094,6 @@ unsigned int MemoryMapper::read(unsigned int address)
     AddressableDevice * d = map_read(address, &address_on_device, &range_index);
     if (d != nullptr)
     {
-        //TODO: Cache
-        //if (mr->cache) this->add_cache_entry(); //this->ranges[range_index]
         unsigned int v = d->get_value(address_on_device);
 
         //Several devices answering one address, their outputs wired together
@@ -2106,8 +2131,15 @@ bool MemoryMapper::responds(unsigned int address, unsigned int mode)
 
 void MemoryMapper::write(unsigned int address, unsigned int value)
 {
-    //TODO: Cache
-    // for (unsigned int i = 0; i < this->write_cache_items; i++)
+    MapperPage * e = find_page(address, page_tag());
+    if (e != nullptr) {
+        if (e->device_w != nullptr) {
+            this->no_device = false;
+            e->device_w->set_value(address + e->offset, value);
+        } else
+            this->no_device = e->timeout_w;
+        return;
+    }
 
     unsigned int address_on_device, range_index;
     this->no_device = false;
@@ -2116,8 +2148,6 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
         this->no_device = !this->responds(address, MODE_W);
         return;
     }
-    //TODO: Cache
-    //if (mr->cache) this->add_cache_entry(); //this->ranges[range_index]
     d->set_value(address_on_device, value);
     while (this->ranges[range_index].through && range_index < this->ranges_count) {
         d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index);
@@ -2128,11 +2158,21 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
 
 unsigned int MemoryMapper::read_word(unsigned int address)
 {
-    if ((this->first_range == 0) && ((address & this->cancel_init_mask) != 0))
-    {
+    if ((this->first_range == 0) && ((address & this->cancel_init_mask) != 0)) {
         this->first_range = 1;
-        this->read_cache_items = 0;
-        this->write_cache_items = 0;
+        invalidate_pages();
+    }
+
+    //A word is resolved by its own address, as below: a device composes the
+    //two bytes itself, so a word across a page boundary needs nothing special
+    MapperPage * e = find_page(address, page_tag());
+    if (e != nullptr) {
+        if (e->device_r != nullptr) {
+            this->no_device = false;
+            return e->device_r->get_value_word(address + e->offset);
+        }
+        this->no_device = e->timeout_r;
+        return _FFFF;
     }
 
     unsigned int address_on_device, range_index;
@@ -2156,6 +2196,16 @@ unsigned int MemoryMapper::read_word(unsigned int address)
 
 void MemoryMapper::write_word(unsigned int address, unsigned int value)
 {
+    MapperPage * e = find_page(address, page_tag());
+    if (e != nullptr) {
+        if (e->device_w != nullptr) {
+            this->no_device = false;
+            e->device_w->set_value_word(address + e->offset, value);
+        } else
+            this->no_device = e->timeout_w;
+        return;
+    }
+
     unsigned int address_on_device, range_index;
     this->no_device = false;
     AddressableDevice * d = map_write(address, &address_on_device, &range_index);

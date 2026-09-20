@@ -192,9 +192,6 @@ emulator::Result Emulator::load_config(std::string file_name)
     sd.system_charmap = system->get_parameter("charmap", false).value;
     sd.software_path = software_path;
     sd.data_path = data_path;
-    //A setting of the host, not a number of the machine
-    sd.mapper_cache = parse_numeric_value(read_setup("Core", "mapper_cache", "8"), 10);
-
     //From here on every value without a prefix is read in the notation this
     //machine uses. Validated by EmulatorConfig::load_from_file()
     sd.radix = system->radix;
@@ -674,8 +671,6 @@ void Emulator::timer_proc(uint64_t time_ticks)
             for (size_t i = 0; i < domains.size(); i++)
                 domains[i].cpu->m_debug = DEBUG_STOPPED;
         }
-
-        mm->sort_cache();
 
         //What a domain overshot the slice by is owed to the next one
         for (size_t i = 0; i < domains.size(); i++) domains[i].norm -= target;

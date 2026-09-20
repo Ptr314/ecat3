@@ -2522,7 +2522,6 @@ async function initEcat() {
 
     const iniText = [
         "[Core]",
-        "mapper_cache=8",
         "",
         "[Video]",
         "scale=2",

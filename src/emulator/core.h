@@ -90,7 +90,6 @@ struct SystemData {
     float           screen_ratio;
     unsigned int    screen_scale;
     std::string     allowed_files;
-    unsigned int    mapper_cache;
 
     //Base of the numbers the machine writes without a prefix: the "radix" of
     //the configuration, which a script can change with the RADIX command. Only
@@ -241,7 +240,6 @@ struct MapperRange {
     AddressableDevice * device;             //Устройство, соответствующее наложенным условиям
     unsigned int        base;				//Адрес во внутр. адр. пр-ве устройства, соотв. RangeBegin системы
     unsigned int        mode;				//Режим допустимости чтения-записи для устройства
-    bool                cache;              //Разрешение кеширования записи
     bool                strict;             //Обращение другого режима остается без ответа (таймаут магистрали)
     bool                through;            //Запись идет дальше, к следующим подходящим диапазонам
     //Чтение идет дальше, а результаты объединяются по ИЛИ: на шине отвечают
@@ -250,12 +248,19 @@ struct MapperRange {
     bool                or_read;
 };
 
-struct MapperCacheEntry {
-    unsigned int        range_begin;
-    unsigned int        range_end;
-    AddressableDevice * device;
-    unsigned int        base;
-    unsigned int        counter;
+//One page of the address space as it resolves under one configuration. The
+//value of the config lines is part of the tag, so a configuration change
+//invalidates nothing: the tags simply stop matching, and match again when the
+//configuration comes back. See MemoryMapper::fill_page() for when a page may
+//be resolved this way at all
+struct MapperPage {
+    uint64_t            tag;        //(generation << 32) | config value; 0 is empty
+    AddressableDevice * device_r;   //nullptr: nothing answers a read here
+    AddressableDevice * device_w;   //nullptr: nothing answers a write here
+    unsigned int        offset;     //address_on_device == address + offset
+    bool                uncached;   //this page needs the full scan under this tag
+    bool                timeout_r;  //what no_device becomes when device_r is null
+    bool                timeout_w;
 };
 
 enum class ROMMode {
@@ -675,14 +680,33 @@ private:
     unsigned int    ports_mask;
     unsigned int    first_range;
     unsigned int    cancel_init_mask;
-    unsigned int    cache_size;
     MapperArray     ranges;
     MapperArray     ports;
 
-    MapperCacheEntry read_cache[15];
-    MapperCacheEntry write_cache[15];
-    unsigned int     read_cache_items;
-    unsigned int     write_cache_items;
+    //A page of the address space per entry, filled on the first access and
+    //kept until the map changes. 512 bytes is the largest page that keeps the
+    //УК-НЦ ROM window (ending at 176777) whole and leaves the I/O registers
+    //(177000-177777) in one page of their own
+    enum { MM_PAGE_SHIFT = 9, MM_PAGE_COUNT = 0x10000 >> MM_PAGE_SHIFT };
+    MapperPage      pages[MM_PAGE_COUNT];
+    //Bumped by everything that changes the map: loading it, a reset and the
+    //cancelinit flip. Anything else that ever touches ranges[] or first_range
+    //has to bump it too
+    uint32_t        page_generation;
+
+    uint64_t page_tag() const { return ((uint64_t)page_generation << 32) | this->i_config.value; }
+    void invalidate_pages();
+    MapperPage * fill_page(unsigned int page, uint64_t tag);
+    //The entry for the address under this tag, or nullptr when the page does
+    //not resolve uniformly and the caller has to take the long way
+    MapperPage * find_page(unsigned int address, uint64_t tag)
+    {
+        const unsigned int page = address >> MM_PAGE_SHIFT;
+        if (page >= MM_PAGE_COUNT) return nullptr;
+        MapperPage * e = &this->pages[page];
+        if (e->tag != tag) return fill_page(page, tag);
+        return e->uncached? nullptr : e;
+    }
 
     AddressableDevice * map(
         MapperArray * map_ranges,
@@ -722,9 +746,6 @@ public:
     MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual emulator::Result load_config(SystemData *sd) override;
     virtual void reset(bool cold) override;
-    void sort_cache();
-    virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
-    void add_cache_entry(MapperCacheEntry * cache, unsigned int * cache_items, MapperRange * range);
 
     bool responds(unsigned int address, unsigned int mode = MODE_RW);
     unsigned int read(unsigned int address);
