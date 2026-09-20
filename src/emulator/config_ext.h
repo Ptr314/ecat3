@@ -38,6 +38,9 @@ class ConfigExtension
 public:
     std::string             extends;
     std::string             version;
+    //@protected: the editor of the machine chooser does not change or delete
+    //this file. A copy of it is the user's own and is not protected
+    bool                    is_protected = false;
     std::vector<ExtEdit>    edits;
     std::string             script;         //Text after @script, empty if none
     unsigned int            script_line = 0;    //Line of the file the script starts on
@@ -66,6 +69,7 @@ struct MachineSource {
     std::string script;         //Script of the extension, runs after loading
     unsigned int script_line = 1;   //Line of the extension the script starts on
     bool        is_extension = false;
+    bool        is_protected = false;    //@protected of the extension
 };
 
 //Directories the loader needs

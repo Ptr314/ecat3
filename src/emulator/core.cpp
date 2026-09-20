@@ -1174,11 +1174,16 @@ emulator::Result ROM::load_config(SystemData *sd)
                     "{ROM|" + std::string(QT_TRANSLATE_NOOP("ROM", "Can't open ROM image file")) + "} " + file_name);
             }
         }
-    } else {
+    } else if (!cd->get_parameter("data", false).right_extended.empty()) {
         std::vector<std::string> values = split_string(cd->get_parameter("data").right_extended, ',', true);
         set_size(values.size());
         for (size_t i=0; i<values.size(); i++)
             buffer[i] = parse_numeric_value(values[i]);
+    } else {
+        // Neither an image nor data: an empty socket of a cartridge, which
+        // answers its fill byte. The size is what the socket takes
+        set_size(parse_numeric_value(cd->get_parameter("size").value));
+        if (!buffer.empty()) memset(buffer.data(), fill, get_size());
     }
 
     try {

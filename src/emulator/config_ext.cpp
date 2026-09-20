@@ -125,6 +125,7 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
     m_file_name = file_name;
     extends.clear();
     version.clear();
+    is_protected = false;
     edits.clear();
     script.clear();
     script_line = 0;
@@ -155,6 +156,12 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
                 script = text.substr(p);
                 script_line = static_cast<unsigned int>(line_no) + 1;
                 break;
+            }
+            if (directive == "@protected")
+            {
+                //A bare @protected means 1
+                is_protected = arg.empty() || (arg != "0");
+                continue;
             }
             if (directive != "@extends" && directive != "@version")
                 return error_at(line_no, QT_TRANSLATE_NOOP("EmulatorConfig", "Unknown directive"), directive);
@@ -251,6 +258,7 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
 std::string ConfigExtension::serialize() const
 {
     std::string s = "@extends " + extends + "\n@version " + version + "\n";
+    if (is_protected) s += "@protected\n";
     for (size_t i = 0; i < edits.size(); i++)
     {
         const ExtEdit &e = edits[i];
@@ -468,6 +476,7 @@ emulator::Result load_machine_description(const std::string &file, const Machine
         if (!res) return res;
         source.script = ext.script;
         source.script_line = ext.script_line;
+        source.is_protected = ext.is_protected;
     }
 
     if (!res || system_only) return res;

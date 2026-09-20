@@ -56,6 +56,7 @@ private:
     Emulator * e;
 
     QString selected_path;
+    bool selected_protected = false;    //@protected: not the user's to change
     void list_machines(QString work_path);
     QStringList all_versions() const;
     void update_buttons();

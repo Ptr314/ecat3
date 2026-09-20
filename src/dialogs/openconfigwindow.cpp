@@ -182,6 +182,7 @@ void OpenConfigWindow::list_machines(QString work_path)
 
         ComputerModel * computer = new ComputerModel(type, name, (!version.isEmpty())?version:name, fi.absoluteFilePath(), order);
         computer->setData(description, Qt::UserRole + 2);
+        computer->setData(source.is_protected, Qt::UserRole + 3);
         family->appendRow(computer);
     };
 
@@ -225,9 +226,11 @@ void OpenConfigWindow::update_buttons()
     const bool is_cfg = p.endsWith(".cfg");
     const bool is_zip = p.endsWith(".ext.zip");
     const bool is_ext = p.endsWith(".ext");
+    //@protected keeps the shipped variants as they are: they are copied, not
+    //changed. The copy is the user's own
     ui->copyButton->setEnabled(is_cfg || is_ext);
-    ui->editButton->setEnabled(is_ext);
-    ui->deleteButton->setEnabled(is_ext || is_zip);
+    ui->editButton->setEnabled(is_ext && !selected_protected);
+    ui->deleteButton->setEnabled((is_ext || is_zip) && !selected_protected);
 }
 
 void OpenConfigWindow::select_path(const QString &path)
@@ -251,6 +254,7 @@ void OpenConfigWindow::select_path(const QString &path)
 void OpenConfigWindow::open_editor(bool copy)
 {
     if (selected_path.isEmpty()) return;
+    if (!copy && selected_protected) return;
     ExtEditorWindow editor(this, e, selected_path, copy, all_versions());
     if (!editor.is_valid()) return;
     editor.exec();
@@ -324,6 +328,7 @@ void OpenConfigWindow::on_deleteButton_clicked()
     const QString path = selected_path;
     const QString p = path.toLower();
     if (!p.endsWith(".ext") && !p.endsWith(".ext.zip")) return;
+    if (selected_protected) return;
     QString version;
     const QModelIndexList selected = ui->treeView->selectionModel()->selectedIndexes();
     if (!selected.isEmpty()) version = selected.first().data(Qt::DisplayRole).toString();
@@ -340,6 +345,7 @@ void OpenConfigWindow::on_deleteButton_clicked()
 void OpenConfigWindow::set_description(QModelIndex index)
 {
     selected_path = index.data(Qt::UserRole).toString();
+    selected_protected = index.data(Qt::UserRole + 3).toBool();
     update_buttons();
     if (!selected_path.isEmpty())
     {

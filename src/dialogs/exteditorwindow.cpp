@@ -86,6 +86,8 @@ ExtEditorWindow::ExtEditorWindow(QWidget *parent, Emulator * e, const QString &p
     // of its own
     if (copy) {
         m_model.file.clear();
+        //A copy belongs to the user, whatever the original said
+        m_model.ext.is_protected = false;
         std::vector<std::string> used;
         for (int i = 0; i < taken.size(); i++) used.push_back(taken[i].toStdString());
         m_model.version = unique_version(m_model.version, used);

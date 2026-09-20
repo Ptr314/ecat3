@@ -6,6 +6,9 @@
         8000-9FFF -> cart1[0000] mode=r cfg=02:0E
         8000-9FFF -> cart1[2000] mode=r cfg=04:0E
         8000-9FFF -> cart1[4000] mode=r cfg=06:0E
+        8000-9FFF -> cart2[0000] mode=r cfg=0A:0E
+        8000-9FFF -> cart2[2000] mode=r cfg=0C:0E
+        8000-9FFF -> cart2[4000] mode=r cfg=0E:0E
         A000-BFFF -> plane0[A000] mode=rw cfg=20:20 or_read
         C000-DFFF -> plane0[C000] mode=rw cfg=40:40 or_read
         E000-FDFF -> plane0[E000] mode=rw cfg=80:80 or_read
