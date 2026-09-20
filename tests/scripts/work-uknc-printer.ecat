@@ -1,0 +1,68 @@
+# УК-НЦ: принтерный порт (ВВ55 на 177100-177103) - заводской тест
+# «ПЕЧАТЬ (заглушка)».
+#
+# Порт машины разведён жёстко: A - данные на вывод, B - линии состояния
+# принтера на ввод, старшая тетрада C на вывод, младшая на ввод. Заглушка на
+# разъёме замыкает выходы на входы: A на B и старшую тетраду C на младшую.
+# COMMAND printer-plug.set(0,1) её вставляет.
+#
+# Тест с sysimage.dsk загружает в ОЗУ ПП свою программу, которая пишет в порт A
+# бегущий ноль и сравнивает прочитанное из B байт в байт, а затем делает то же
+# с тетрадами порта C. Без заглушки он пишет «ОБНАРУЖЕНЫ ОШИБКИ», с ней
+# возвращается в меню.
+# @timeout 240
+
+MACHINE "uknc/UKNC.cfg"
+LOGDEFS _16,_8
+
+PRINT "=== заглушка: что вывел порт A, то читается в порту B ==="
+COMMAND printer-plug.set(0,1)
+LOG printer-plug.value
+COMMAND ppu-mapper.set(177100, 252)
+LOG pp-printer.a
+LOG pp-printer.b
+COMMAND ppu-mapper.set(177100, 125)
+LOG pp-printer.b
+PRINT "старшая тетрада C замкнута на младшую"
+COMMAND ppu-mapper.set(177102, 240)
+LOG pp-printer.c
+PRINT "без заглушки на входах ничего"
+COMMAND printer-plug.set(0,0)
+COMMAND ppu-mapper.set(177100, 377)
+LOG pp-printer.b
+COMMAND printer-plug.set(0,1)
+
+WAIT _14000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+WAIT _22000
+# Программа DAY спрашивает дату, ВК оставляет предложенную
+KEY _100,_100,ret
+WAIT _25000
+TYPE "RU TEST\n"
+WAIT _15000
+
+PRINT "=== «Тест ПЕЧАТЬ (заглушка)» - девятый пункт меню ==="
+KEY _100,_100,down
+WAIT _300
+KEY _100,_100,down
+WAIT _300
+KEY _100,_100,down
+WAIT _300
+KEY _100,_100,down
+WAIT _300
+KEY _100,_100,down
+WAIT _300
+KEY _100,_100,down
+WAIT _300
+KEY _100,_100,down
+WAIT _300
+KEY _100,_100,down
+WAIT _300
+KEY _100,_100,ret
+WAIT _10000
+PRINT "тест вернулся в меню: ошибок нет"
+SCREEN "../results/work-uknc-printer.png"
+LOG pp-printer.ports
+EXIT
