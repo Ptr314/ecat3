@@ -109,6 +109,56 @@ emulator::Result load_error(const char * message, const std::string &detail)
         "{EmulatorConfig|" + std::string(message) + "} " + detail);
 }
 
+//The text of the extension itself, wherever it lies: an .ext is the file, an
+//.ext.zip holds exactly one of them at the top of the archive. The bytes of
+//the archive and the open reader come back with the text, so that the caller
+//unpacks the rest without reading the file twice; for a plain .ext archive
+//stays empty. ext_name only labels the messages of the parser
+emulator::Result read_extension_text(const std::string &file, ZipReader &zip,
+                                     std::string &archive, std::string &text,
+                                     std::string &ext_name)
+{
+    archive.clear();
+    text.clear();
+    ext_name = file;
+
+    if (!ends_with_ci(file, ".ext.zip"))
+    {
+        text = dsk_tools::utf8_read_file(file);
+        if (text.empty())
+            return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading config file"), file);
+        return emulator::Result::ok();
+    }
+
+    archive = dsk_tools::utf8_read_file(file);
+    if (archive.empty())
+        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading config file"), file);
+    if (!zip.open(archive))
+        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.error());
+
+    //The extension itself is the one .ext at the top of the archive
+    int ext_index = -1;
+    for (size_t i = 0; i < zip.entries().size(); i++)
+    {
+        const std::string &n = zip.entries()[i].name;
+        if (n.find('/') == std::string::npos && ends_with_ci(n, ".ext"))
+        {
+            if (ext_index >= 0)
+                return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "The archive must hold exactly one .ext file at its top level"), file);
+            ext_index = static_cast<int>(i);
+        }
+    }
+    if (ext_index < 0)
+        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "The archive must hold exactly one .ext file at its top level"), file);
+
+    std::vector<uint8_t> bytes;
+    if (!zip.read(static_cast<size_t>(ext_index), bytes))
+        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.error());
+    text.assign(bytes.begin(), bytes.end());
+    ext_name = file + "/" + zip.entries()[ext_index].name;
+    return emulator::Result::ok();
+}
+
 } // namespace
 
 //----------------------------------------------------------------------------
@@ -373,6 +423,33 @@ std::string machine_file_stem(const std::string &path)
     return path;
 }
 
+emulator::Result machine_base_file(const std::string &file, const MachinePaths &paths, std::string &base)
+{
+    base.clear();
+    if (!is_extension_file(file))
+    {
+        base = file;
+        return emulator::Result::ok();
+    }
+
+    std::string text, archive, ext_name;
+    ZipReader zip;
+    emulator::Result res = read_extension_text(file, zip, archive, text, ext_name);
+    if (!res) return res;
+
+    ConfigExtension ext;
+    res = ext.parse(text, ext_name);
+    if (!res) return res;
+
+    if (is_absolute_path(ext.extends))
+        base = ext.extends;
+    else
+        base = paths.computers_path + ext.extends;
+    if (!ends_with_ci(base, ".cfg"))
+        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "An extension can only be based on a .cfg file"), ext.extends);
+    return emulator::Result::ok();
+}
+
 emulator::Result load_machine_description(const std::string &file, const MachinePaths &paths,
                                           EmulatorConfig &config, MachineSource &source,
                                           bool system_only)
@@ -391,72 +468,39 @@ emulator::Result load_machine_description(const std::string &file, const Machine
     else
     {
         source.is_extension = true;
-        std::string text;
-        std::string ext_name = file;
+        std::string text, archive, ext_name;
+        ZipReader zip;
+        res = read_extension_text(file, zip, archive, text, ext_name);
+        if (!res) return res;
 
-        if (ends_with_ci(file, ".ext.zip"))
+        if (archive.empty())
+            source.ext_path = dsk_tools::get_file_path(file);
+        else if (!system_only)
         {
-            const std::string data = dsk_tools::utf8_read_file(file);
-            if (data.empty())
-                return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading config file"), file);
-            ZipReader zip;
-            if (!zip.open(data))
-                return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.error());
-
-            //The extension itself is the one .ext at the top of the archive
-            int ext_index = -1;
+            //Unpacked next to nothing else: the directory is named after
+            //the archive and its contents, so a changed archive never
+            //finds the files of an older one
+            if (paths.cache_path.empty())
+                return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "No cache directory to unpack into"), file);
+            const uint32_t crc = lodepng_crc32(reinterpret_cast<const unsigned char *>(archive.data()), archive.size());
+            const std::string dir = paths.cache_path + "ext/" + dsk_tools::get_filename(machine_file_stem(file)) + "-" + hex8(crc) + "/";
+            for (size_t i = 0; i < zip.entries().size(); i++)
+                if (!ZipReader::is_safe_name(zip.entries()[i].name))
+                    return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.entries()[i].name);
+            make_dirs(dir);
+            std::vector<uint8_t> bytes;
             for (size_t i = 0; i < zip.entries().size(); i++)
             {
-                const std::string &n = zip.entries()[i].name;
-                if (n.find('/') == std::string::npos && ends_with_ci(n, ".ext"))
-                {
-                    if (ext_index >= 0)
-                        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "The archive must hold exactly one .ext file at its top level"), file);
-                    ext_index = static_cast<int>(i);
-                }
+                const ZipReader::Entry &en = zip.entries()[i];
+                if (en.is_dir()) continue;
+                if (!zip.read(i, bytes))
+                    return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.error());
+                const std::string out = dir + en.name;
+                make_dirs(dsk_tools::get_file_path(out));
+                if (!write_cached(out, bytes.data(), bytes.size()))
+                    return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error writing file"), out);
             }
-            if (ext_index < 0)
-                return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "The archive must hold exactly one .ext file at its top level"), file);
-
-            std::vector<uint8_t> bytes;
-            if (!zip.read(static_cast<size_t>(ext_index), bytes))
-                return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.error());
-            text.assign(bytes.begin(), bytes.end());
-            ext_name = file + "/" + zip.entries()[ext_index].name;
-
-            if (!system_only)
-            {
-                //Unpacked next to nothing else: the directory is named after
-                //the archive and its contents, so a changed archive never
-                //finds the files of an older one
-                if (paths.cache_path.empty())
-                    return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "No cache directory to unpack into"), file);
-                const uint32_t crc = lodepng_crc32(reinterpret_cast<const unsigned char *>(data.data()), data.size());
-                const std::string dir = paths.cache_path + "ext/" + dsk_tools::get_filename(machine_file_stem(file)) + "-" + hex8(crc) + "/";
-                for (size_t i = 0; i < zip.entries().size(); i++)
-                    if (!ZipReader::is_safe_name(zip.entries()[i].name))
-                        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.entries()[i].name);
-                make_dirs(dir);
-                for (size_t i = 0; i < zip.entries().size(); i++)
-                {
-                    const ZipReader::Entry &en = zip.entries()[i];
-                    if (en.is_dir()) continue;
-                    if (!zip.read(i, bytes))
-                        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.error());
-                    const std::string out = dir + en.name;
-                    make_dirs(dsk_tools::get_file_path(out));
-                    if (!write_cached(out, bytes.data(), bytes.size()))
-                        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error writing file"), out);
-                }
-                source.ext_path = dir;
-            }
-        }
-        else
-        {
-            text = dsk_tools::utf8_read_file(file);
-            if (text.empty())
-                return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading config file"), file);
-            source.ext_path = dsk_tools::get_file_path(file);
+            source.ext_path = dir;
         }
 
         ConfigExtension ext;

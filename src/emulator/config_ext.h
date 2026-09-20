@@ -85,6 +85,13 @@ bool is_machine_file(const std::string &path);          //.cfg, .ext or .ext.zip
 //The name without .cfg / .ext / .ext.zip, for companion files (.md) and keys
 std::string machine_file_stem(const std::string &path);
 
+//The .cfg a machine file is built on, without loading anything: a .cfg is its
+//own base, an extension names one in @extends. The web frontend asks before it
+//loads an extension downloaded from a link, because the base and its files
+//arrive in a bundle of their own that has to be unpacked first
+emulator::Result machine_base_file(const std::string &file, const MachinePaths &paths,
+                                   std::string &base);
+
 //The one way a machine description is read, whatever the file: a .cfg as is,
 //an extension on top of its base. With system_only only the system section
 //comes back (the machine chooser), and nothing is written to the cache

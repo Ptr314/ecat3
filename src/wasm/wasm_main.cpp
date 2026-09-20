@@ -12,6 +12,7 @@
 #include <stdexcept>
 
 #include "emulator/emulator.h"
+#include "emulator/config_ext.h"
 #include "emulator/files.h"
 #include "emulator/devices/common/fdd.h"
 #include "emulator/devices/common/tape.h"
@@ -27,6 +28,8 @@
 
 static Emulator* g_emulator = nullptr;
 static WasmRenderer* g_renderer = nullptr;
+//What went wrong in the last load, for wasm_last_error()
+static std::string g_load_error;
 
 static const std::string WORK_PATH = "/computers/";
 static const std::string DATA_PATH = "/data/";
@@ -56,6 +59,7 @@ int wasm_load_machine(const char* cfg_path)
 {
     if (!g_emulator || !g_renderer) return -1;
 
+    g_load_error.clear();
     printf("eCat3 WASM: loading machine: %s\n", cfg_path);
 
     try {
@@ -67,6 +71,7 @@ int wasm_load_machine(const char* cfg_path)
         // Load new configuration
         emulator::Result res = g_emulator->load_config(std::string(cfg_path));
         if (!res) {
+            g_load_error = res.message;
             printf("eCat3 WASM: load_config failed: %s\n", res.message.c_str());
             return -2;
         }
@@ -100,12 +105,50 @@ int wasm_load_machine(const char* cfg_path)
         printf("eCat3 WASM: machine loaded and running.\n");
         return 0;
     } catch (const std::exception& e) {
+        g_load_error = e.what();
         printf("eCat3 WASM: C++ exception: %s\n", e.what());
         return -10;
     } catch (...) {
         printf("eCat3 WASM: unknown C++ exception\n");
         return -11;
     }
+}
+
+// The .cfg a machine file is built on, the way the loader resolves it
+// ("/computers/uknc/UKNC.cfg"), or an empty string when the file cannot be read
+// at all. The page asks before it starts an extension downloaded from a link:
+// the base machine and its ROMs live in a bundle of their own, and only the
+// manifest of the build knows which one
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_machine_base(const char* file_path)
+{
+    static std::string result;
+    result.clear();
+    g_load_error.clear();
+    if (file_path == nullptr) return result.c_str();
+
+    MachinePaths paths;
+    paths.computers_path = WORK_PATH;
+    if (g_emulator) paths.cache_path = g_emulator->cache_path;
+
+    std::string base;
+    emulator::Result res = machine_base_file(std::string(file_path), paths, base);
+    if (!res) {
+        g_load_error = res.message;
+        printf("eCat3 WASM: %s: %s\n", file_path, res.message.c_str());
+        return result.c_str();
+    }
+    result = base;
+    return result.c_str();
+}
+
+// The message of the last wasm_load_machine() or wasm_machine_base() that
+// failed: the return code alone says nothing about a configuration the page
+// downloaded itself
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_last_error()
+{
+    return g_load_error.c_str();
 }
 
 EMSCRIPTEN_KEEPALIVE

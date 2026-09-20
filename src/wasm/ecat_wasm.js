@@ -203,6 +203,9 @@ function clamp(value, lo, hi) {
 //
 // index.html?machine=Agat-7&kbd=1&scale=250&kbdscale=120 opens the page in that
 // state, and blocks=machine,-screen says which of the folding blocks are open.
+// index.html?load=https://host/game.ext.zip starts a machine that is not in
+// this build at all: the page downloads that configuration extension and runs
+// it, see startUrlMachine().
 // It holds for this visit only: nothing read from the address goes into
 // the saved settings, so following somebody else's link leaves one's own
 // choices as they were. A machine picked or a slider moved by hand is saved as
@@ -220,6 +223,8 @@ function readUrlParams() {
     const kbd = q.get("kbd");
     return {
         machine:  q.get("machine") || null,
+        // A configuration extension to download and start, by its own address
+        load:     q.get("load") || null,
         keyboard: kbd !== null && !/^(0|false|no|off)$/i.test(kbd),
         scale:    number("scale"),
         // "auto" follows the width of the screen, like a size never picked
@@ -276,10 +281,26 @@ function findMachine(machines, name) {
         || null;
 }
 
+// The name of the machine file a load= address points at: the last part of the
+// path, and only an .ext or an .ext.zip - every format of the core is picked by
+// extension, and the name becomes a file of the emulator's own filesystem
+function urlMachineFile(url) {
+    let name = "";
+    try {
+        name = decodeURIComponent(new URL(url, location.href).pathname.split("/").pop() || "");
+    } catch (e) {
+        return "";
+    }
+    return /^[^\\/:*?"<>|]+\.(ext|ext\.zip)$/i.test(name) ? name : "";
+}
+
 // The address that opens the page the way it looks now
 function currentPageUrl() {
     const q = new URLSearchParams();
-    if (currentMachine) q.set("machine", currentMachine.id);
+    // A machine downloaded by the address keeps the address it came from:
+    // there is nothing in this build to name it by
+    if (currentLoadUrl) q.set("load", currentLoadUrl);
+    else if (currentMachine) q.set("machine", currentMachine.id);
     q.set("scale", screenScale);
     q.set("aspect", aspectMode());
     q.set("filter", filterMode());
@@ -418,6 +439,11 @@ const I18N = {
         stAssets:           "Loading machine assets...",
         stStarting:         "Starting emulation...",
         stMachineFailed:    "Failed to load machine (error {0})",
+        stMachineError:     "Failed to load machine: {0}",
+        stLoadFetching:     "Downloading {0}...",
+        stLoadName:         "The address must name an .ext or .ext.zip file: {0}",
+        stLoadFailed:       "Failed to download {0}: {1}",
+        stLoadBase:         "{0} is built on a machine this build does not have: {1}",
         stRunning:          "Running",
         stError:            "Error: {0}",
         stDiskLoading:      "Loading disk image: {0}",
@@ -509,6 +535,11 @@ const I18N = {
         stAssets:           "Загрузка файлов машины...",
         stStarting:         "Запуск эмуляции...",
         stMachineFailed:    "Не удалось загрузить машину (ошибка {0})",
+        stMachineError:     "Не удалось загрузить машину: {0}",
+        stLoadFetching:     "Загрузка {0}...",
+        stLoadName:         "В адресе должен быть файл .ext или .ext.zip: {0}",
+        stLoadFailed:       "Не удалось скачать {0}: {1}",
+        stLoadBase:         "{0} построен на машине, которой нет в этой сборке: {1}",
         stRunning:          "Работает",
         stError:            "Ошибка: {0}",
         stDiskLoading:      "Загрузка образа диска: {0}",
@@ -1138,7 +1169,15 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl, before
         setupOpenFile(module);
 
         if (result !== 0) {
-            setStatus("stMachineFailed", "error", result);
+            // A machine of this build fails at most on a bug; one downloaded
+            // by the address fails on its own contents, and then the message
+            // of the core is the only thing that says what is wrong with it
+            const message = module.ccall("wasm_last_error", "string", [], []);
+            // The path inside the emulator means nothing to the reader: the
+            // name of the file is what he gave the page
+            const name = machinePath.replace(/^.*\//, "");
+            if (message) setStatus("stMachineError", "error", coreMessage(message.split(machinePath).join(name)));
+            else setStatus("stMachineFailed", "error", result);
             return false;
         }
 
@@ -1173,6 +1212,11 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl, before
 // file next to the configuration, turned into HTML by the same md4c call.
 
 let currentMachine = null;
+// The address a downloaded machine came from, for the link button, and the
+// line the list of machines gets for it
+let currentLoadUrl = null;
+let urlOption = null;
+const URL_MACHINE_ID = "__url__";
 
 function setupInfoDialog(module) {
     const dialog = document.getElementById("info-dialog");
@@ -1519,6 +1563,27 @@ const CORE_MESSAGE_TEXT = {
         "Unable to find an expected preamble byte 0xE6!":     "Не удалось найти байт преамбулы 0xE6!",
         "Unable to find an expected finalization byte 0xE6!": "Не удалось найти байт завершения 0xE6!",
         "Can't load the file: all ramdisks are full!":        "Не удалось загрузить файл: все ram-диски уже заполнены!",
+        "Error reading config file":                  "Ошибка чтения файла конфигурации компьютера",
+        "Error reading the archive":                  "Ошибка чтения архива",
+        "The archive must hold exactly one .ext file at its top level": "В корне архива должен быть ровно один файл .ext",
+        "An extension can only be based on a .cfg file": "Базой расширения может быть только файл .cfg",
+        "No cache directory to unpack into":          "Нет временного каталога для распаковки",
+        "No cache directory for inline data":         "Нет временного каталога для встроенных данных",
+        "Error writing file":                         "Ошибка записи файла",
+        "Invalid base64 data":                        "Некорректные данные base64",
+        "Unknown directive":                          "Неизвестная директива",
+        "Directive without a value":                  "У директивы нет значения",
+        "Duplicate directive":                        "Директива повторяется",
+        "Expected device:property":                   "Ожидалась строка вида устройство:свойство",
+        "Unterminated {":                             "Не закрыта скобка {",
+        "Unexpected text after the property":         "Лишний текст после свойства",
+        "The extension has no @extends":              "В расширении нет директивы @extends",
+        "The extension has no @version":              "В расширении нет директивы @version",
+        "No such device in the base configuration":   "В базовой конфигурации нет такого устройства",
+        "No such property in the base configuration, it must be written exactly as there": "В базовой конфигурации нет такого свойства; его нужно записать в точности как там",
+        "The base configuration has several lines with this key, add the value of the one to remove": "В базовой конфигурации несколько строк с этим ключом, укажите значение удаляемой",
+        "The base configuration has several lines with this key, remove them first": "В базовой конфигурации несколько строк с этим ключом, сначала удалите их",
+        "The base configuration has this property with other modifiers, remove it first": "В базовой конфигурации это свойство записано с другими модификаторами, сначала удалите его",
     },
 };
 
@@ -2597,6 +2662,9 @@ async function initEcat() {
     // auto: the machine starts by itself, not by the user's choice, and waits
     // for the first click or key press before it runs
     const startMachine = async (machine, remember = true, auto = false) => {
+        // A machine picked from the list takes the place of a downloaded one
+        if (urlOption) { urlOption.remove(); urlOption = null; }
+        currentLoadUrl = null;
         selectEl.value = machine.id;
         selectEl.disabled = true;
         currentMachine = machine;
@@ -2612,6 +2680,84 @@ async function initEcat() {
             if (ok) settings.set("machine", machine.id);
             else if (settings.get("machine", "") === machine.id) settings.set("machine", "");
         }
+        return ok;
+    };
+
+    // A machine that is not in this build at all, downloaded by the address:
+    // index.html?load=https://host/game.ext.zip. The page fetches that
+    // configuration extension, puts it into the emulator's filesystem and
+    // starts it like any other machine. Two things have to hold: the base
+    // configuration it extends is one of the machines of this build, because
+    // only that bundle carries the .cfg and the ROMs, and the server of the
+    // file allows the download from this page (CORS) - the page is
+    // cross-origin isolated, and a file without those headers never reaches
+    // it. Whatever fails is said in the status line and the list of machines
+    // is left as it is, so the visitor can still pick a machine by hand
+    const startUrlMachine = async (url) => {
+        const name = urlMachineFile(url);
+        if (!name) {
+            setStatus("stLoadName", "error", url);
+            return false;
+        }
+
+        setStatus("stLoadFetching", "loading", name);
+        let bytes;
+        try {
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error(resp.status + " " + resp.statusText);
+            bytes = new Uint8Array(await resp.arrayBuffer());
+        } catch (err) {
+            setStatus("stLoadFailed", "error", name, (err && err.message) || String(err));
+            return false;
+        }
+
+        // In a directory of its own: the files an extension names are looked
+        // for beside it before anywhere else, and an .ext.zip is unpacked by
+        // the core into its cache
+        const path = "/tmp/load/" + name;
+        try {
+            mkdirRecursive(module, "/tmp/load");
+            module.FS.writeFile(path, bytes);
+        } catch (err) {
+            setStatus("stError", "error", (err && err.message) || String(err));
+            return false;
+        }
+
+        // The bundle of the base machine has to be unpacked before the core
+        // looks for the .cfg, so the base is asked for first - reading the
+        // extension alone, without loading anything
+        const base = module.ccall("wasm_machine_base", "string", ["string"], [path]);
+        if (!base) {
+            // Not even readable as an extension: the core says why
+            const message = module.ccall("wasm_last_error", "string", [], []);
+            setStatus("stMachineError", "error", message ? coreMessage(message.split(path).join(name)) : name);
+            return false;
+        }
+        const machine = machines.find((m) => (m.cfg_path || "").toLowerCase() === base.toLowerCase());
+        if (!machine) {
+            setStatus("stLoadBase", "error", name, base);
+            return false;
+        }
+
+        // It is in no list, so it gets a line of its own at the top: the name
+        // is then visible, and another machine can still be chosen
+        urlOption = element("option", "");
+        urlOption.value = URL_MACHINE_ID;
+        urlOption.textContent = name;
+        selectEl.insertBefore(urlOption, selectEl.firstChild);
+        selectEl.value = URL_MACHINE_ID;
+        selectEl.disabled = true;
+
+        // The description is that of the base machine: the downloaded file
+        // carries none the page could reach, and the .md beside a .cfg is not
+        // named in the manifest - only an extension of the build has one
+        currentMachine = { id: machine.id, name: name, cfg_path: path,
+                           md_path: machine.md_path || machine.cfg_path.replace(MACHINE_SUFFIX, ".md") };
+        currentLoadUrl = url;
+        document.getElementById("btn-info").disabled = false;
+        const ok = await loadMachine(module, path, machine.bundle_url, machine.data_bundle_url || null,
+                                     () => waitForActivation(currentMachine));
+        selectEl.disabled = false;
         return ok;
     };
 
@@ -2639,17 +2785,26 @@ async function initEcat() {
 
     // The machine named in the address, otherwise the one of the previous
     // visit, starts by itself - after the first click or key press, so that
-    // the browser lets it be heard from the very beginning
-    let first = null;
-    let remember = true;
-    if (urlParams.machine !== null) {
-        first = findMachine(machines, urlParams.machine);
-        remember = false;
-        if (!first) setStatus("stUrlMachine", "error", urlParams.machine);
+    // the browser lets it be heard from the very beginning. A machine
+    // downloaded by the address comes before both, and when it fails nothing
+    // else is started in its place: the visitor is told why and picks a
+    // machine himself
+    let started = false;
+    if (urlParams.load !== null) {
+        started = await startUrlMachine(urlParams.load);
     } else {
-        first = machines.find((m) => m.id === settings.get("machine", "")) || null;
+        let first = null;
+        let remember = true;
+        if (urlParams.machine !== null) {
+            first = findMachine(machines, urlParams.machine);
+            remember = false;
+            if (!first) setStatus("stUrlMachine", "error", urlParams.machine);
+        } else {
+            first = machines.find((m) => m.id === settings.get("machine", "")) || null;
+        }
+        if (first) started = await startMachine(first, remember, true);
     }
-    if (first && await startMachine(first, remember, true) && urlParams.keyboard) {
+    if (started && urlParams.keyboard) {
         // Every load closes the panel, so it is opened after this one. A
         // machine without a drawing has no button, and nothing opens
         const button = document.getElementById("btn-keyboard");
