@@ -89,6 +89,14 @@ private:
     size_t m_buffer_pos = 0;
     mutable compat_mutex m_buffer_mutex;
 
+    // How often the audio device found the buffer short of what it asked for
+    // and had to pad it with a repeated sample, and how often the emulation
+    // outran the device and a slice of the buffer was thrown away. Both are
+    // audible - a pad is the buzz of an underrun - and both say the producer
+    // and the consumer are out of step rather than that the machine is wrong
+    uint64_t m_underruns = 0;
+    uint64_t m_overflows = 0;
+
     // Sample accumulator
     int64_t m_accumulator;
     int64_t m_acc_counter;

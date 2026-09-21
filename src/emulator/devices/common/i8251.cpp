@@ -347,6 +347,10 @@ void I8251::save_state(StateWriter &w)
     w.b("rx_enable", rx_enable);
     w.b("send_break", send_break);
     w.b("hunt_mode", hunt_mode);
+    //Whether anything is driving the C line. Not derivable from the line's
+    //value - it is set by the first edge that ever arrives - so it has to
+    //travel with the state, or a restored chip clocks itself instead
+    w.b("ext_clock", ext_clock);
     //Where the shift clocks stand: a character takes a number of them
     w.n("tx_clock_count", tx_clock_count);
     w.n("rx_clock_count", rx_clock_count);
@@ -356,7 +360,13 @@ emulator::Result I8251::load_state(const StateReader &r)
 {
     emulator::Result res = AddressableDevice::load_state(r);
     if (!res) return res;
-    r.u("mode_word", mode_word);
+    //Everything the mode word means - the baud factor, the character length,
+    //parity, the stop bits - is worked out when the word is written and kept
+    //in members of its own. Restoring the word alone left those at what init()
+    //gave them, and a chip programmed for x16 shifted characters sixteen times
+    //too fast. parse_mode_word() also moves control_state and the sync counter,
+    //which the two reads below then put back where the snapshot had them
+    if (r.u("mode_word", mode_word)) parse_mode_word(static_cast<uint8_t>(mode_word));
     r.u("command_word", command_word);
     uint32_t state = static_cast<uint32_t>(control_state);
     if (r.u("control_state", state)) control_state = static_cast<ControlState>(state);
@@ -371,6 +381,7 @@ emulator::Result I8251::load_state(const StateReader &r)
     r.b("rx_enable", rx_enable);
     r.b("send_break", send_break);
     r.b("hunt_mode", hunt_mode);
+    r.b("ext_clock", ext_clock);
     r.u("tx_clock_count", tx_clock_count);
     r.u("rx_clock_count", rx_clock_count);
     return emulator::Result::ok();

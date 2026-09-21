@@ -8,6 +8,12 @@
 #include "emulator/core.h"
 #include "emulator/devices/common/virq_line.h"
 
+// Сколько последних значений счётчика таймер держит для динамика. Команда
+// периферийного процессора - это десяток-другой тактов, шаг счёта - 12.5
+// такта, так что в одну команду укладывается пара шагов; тридцати двух хватает
+// и на самую длинную команду, и на догон после остановки
+#define UKNC_TIMER_STEP_LOG 32
+
 // The programmable timer of the УК-НЦ, registers 177710-177714 on the
 // peripheral processor's bus. A 12 bit counter running down at 2, 4, 8 or
 // 16 us per step; on zero it raises a flag, optionally interrupts through
@@ -75,8 +81,37 @@ private:
     void base_tick();                   // один шаг базовой частоты
     void update_irq();
 
+    // След последних значений счётчика, кольцом. Динамик снимает сетку частот
+    // с этого же счётчика, а тактуется раз в команду - на порядок реже, чем
+    // счётчик шагает. Посмотреть, где счётчик стоит сейчас, ему мало: пауза в
+    // мелодии УК-НЦ - это 55 кГц, и между двумя взглядами она успевает
+    // повториться дважды. Поэтому он спрашивает не точку, а пройденный путь
+    unsigned int m_step_log[UKNC_TIMER_STEP_LOG];
+    uint64_t m_steps = 0;               // сколько шагов сделано с пуска машины
+    void log_step() { m_step_log[m_steps % UKNC_TIMER_STEP_LOG] = m_counter; m_steps++; }
+
 public:
     UKNCTimer(InterfaceManager *im, EmulatorConfigDevice *cd);
+
+    // Текущее значение счётчика. Отводы этого же счётчика идут на динамик:
+    // разряды 8-12 регистра 177716 выбирают, какой из них пропустить, так что
+    // уставка таймера задаёт и высоту тона. См. UKNCSound
+    unsigned int counter() const { return m_counter; }
+
+    // Пройденный путь: steps() монотонно растёт с каждым шагом счёта, а
+    // step_value(0) - значение после последнего шага, step_value(1) - перед
+    // ним и так далее, не глубже UKNC_TIMER_STEP_LOG
+    uint64_t steps() const { return m_steps; }
+    unsigned int step_value(unsigned int back) const
+        { return m_step_log[(m_steps - 1 - back) % UKNC_TIMER_STEP_LOG]; }
+
+    // Сколько тактов занимает один шаг счёта и сколько их прошло с последнего
+    // шага. С этим динамик считает уровень точно по времени, а не по числу
+    // шагов: шаг - 12.5 такта, команда - десяток-другой, и граница команды
+    // почти никогда не совпадает с границей шага
+    double counter_step_cycles() const;
+    double counter_phase_cycles() const;
+
     emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;
     void clock(unsigned int counter) override;

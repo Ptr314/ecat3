@@ -1,0 +1,14 @@
+=== регистр, таймер и экран после загрузки состояния ===
+[sound.control] &000003
+[pp-timer.state] &000217
+[pp-timer.period] &000020
+[pp-timer.reload] &000000
+[display.resolution] 640x288
+=== уровень меняется сам ===
+[sound.moving] &000001
+=== тон идет: полупериод 16.4 мс ===
+[sound.level] &000001
+[sound.level] &000000
+[sound.level] &000001
+[sound.level] &000000
+=== машина продолжает работать ===

@@ -338,10 +338,13 @@ emulator::Result ScanKeyboard::load_state(const StateReader &r)
     r.u("led_line", led_line);
     r.u("led_taken", led_taken);
     r.u("stored_shift", stored_shift);
-    //Nobody is holding a key. The output lines are not recomputed from that:
+    //Nobody is holding a key, and in this matrix that is all ones: a bit goes
+    //to 0 while its key is down (key_down() clears it, reset() fills the array
+    //with _FFFF). Zeroed, the machine found every key of the matrix pressed at
+    //the first scan after a restore. The output lines are not recomputed here:
     //they are restored with everything else, and the machine's own scan puts
     //them right within microseconds - it writes the scan lines continuously
-    for (size_t i = 0; i < sizeof(key_array) / sizeof(key_array[0]); i++) key_array[i] = 0;
+    memset(&key_array, _FFFF, sizeof(key_array));
     return emulator::Result::ok();
 }
 

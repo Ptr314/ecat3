@@ -85,7 +85,10 @@ void UKNCTimer::base_tick()
     m_divider = 0;
 
     m_counter = (m_counter - 1) & COUNTER_MASK;
-    if (m_counter != 0) return;
+    if (m_counter != 0) {
+        log_step();
+        return;
+    }
 
     // Обнуление: если прежняя готовность ещё не снята, это переполнение
     if (m_flags & F_ZERO) m_flags |= F_OVERFLOW;
@@ -95,7 +98,24 @@ void UKNCTimer::base_tick()
     // Счёт цикличный: однократного режима у этого таймера нет
     m_counter = m_reload & COUNTER_MASK;
 
+    log_step();
     update_irq();
+}
+
+double UKNCTimer::counter_step_cycles() const
+{
+    if (m_system_clock == 0) return 0.0;
+    return (double)m_system_clock * m_period_us
+         * TIMER_DIVIDERS[(m_flags & F_DIV_MASK) >> 1] / 1000000.0;
+}
+
+double UKNCTimer::counter_phase_cycles() const
+{
+    if (m_system_clock == 0) return 0.0;
+    //Предделитель уже отсчитал m_divider базовых периодов, а внутри текущего
+    //накопилось m_acc в тех же долях, в каких его считает clock()
+    return (double)m_divider * m_system_clock * m_period_us / 1000000.0
+         + (double)m_acc / 1000000.0;
 }
 
 void UKNCTimer::clock(unsigned int counter)

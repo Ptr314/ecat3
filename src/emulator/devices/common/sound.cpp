@@ -255,7 +255,7 @@ void GenericSound::clock(unsigned int counter)
                 m_buffer.begin()
             );
             m_buffer_pos -= overflow_delta;
-            // std::cerr << "Sound buffer overflow!" << std::endl;
+            m_overflows++;
         };
 
         // Using average value between counts
@@ -323,6 +323,7 @@ void GenericSound::handle_audio_callback(uint8_t* stream, int len)
     }
 
     if (samples_to_copy < samples_requested) {
+        m_underruns++;
         // We need to fill in the missing data, so we do it at the beginning of the output.
         std::fill_n(
             reinterpret_cast<int16_t*>(stream),
@@ -412,6 +413,10 @@ std::vector<DeviceFieldInfo> GenericSound::get_device_fields()
     r.push_back({"active",  "1 if an audio device is open. 0 means the machine "
                             "is silent: --no-sound, or no audio device at all",  false});
     r.push_back({"mixed",   "Sources of mix taking a share of it now, '-' for none", false});
+    r.push_back({"moving",    "1 when the level changes without a write",     false});
+    r.push_back({"buffered",  "Samples waiting for the audio device",          false});
+    r.push_back({"underruns", "Times the device was handed a padded buffer",   false});
+    r.push_back({"overflows", "Times the emulation outran the device",         false});
     return r;
 }
 
@@ -429,6 +434,25 @@ bool GenericSound::get_field(const std::string &field, unsigned int from, unsign
     if (field == "volume")  { out.values.push_back(m_volume);       return true; }
     if (field == "muted")   { out.values.push_back(m_muted?1:0);    return true; }
     if (field == "active")  { out.values.push_back(m_initialized?1:0); return true; }
+    //Whether the device says its own level moves between writes. A device that
+    //cannot tell stays at 1; the УК-НЦ works it out from its register, and if
+    //a restored state left it at 0 while a tone is on, the mixer would hold a
+    //stale level and the tone would come out coarse
+    if (field == "moving")  { out.values.push_back(m_self_volatile?1:0); return true; }
+    if (field == "buffered" || field == "underruns" || field == "overflows") {
+        //Read under the same lock the audio callback takes: these are written
+        //from the host's audio thread
+#if USE_QT_THREADING
+        QMutexLocker lock(&m_buffer_mutex);
+#else
+        std::lock_guard<std::mutex> lock(m_buffer_mutex);
+#endif
+        out.width = 32;
+        if (field == "buffered")       out.values.push_back((unsigned int)m_buffer_pos);
+        else if (field == "underruns") out.values.push_back((unsigned int)m_underruns);
+        else                           out.values.push_back((unsigned int)m_overflows);
+        return true;
+    }
     if (field == "mixed") {
         out.numeric = false;
         std::string s;
