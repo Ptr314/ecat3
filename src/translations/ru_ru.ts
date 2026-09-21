@@ -1821,6 +1821,14 @@
         <translation>Запустить без отладки</translation>
     </message>
     <message>
+        <source>All supported files</source>
+        <translation>Все поддерживаемые файлы</translation>
+    </message>
+    <message>
+        <source>Saved states</source>
+        <translation>Сохраненные состояния</translation>
+    </message>
+    <message>
         <location line="+128"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>

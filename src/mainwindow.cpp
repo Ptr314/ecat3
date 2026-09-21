@@ -1316,15 +1316,60 @@ void MainWindow::load_config(QString file_name, bool set_default, bool run_embed
 }
 
 
+//Qt::SkipEmptyParts is Qt 5.14, and the same enum of QString before it, so
+//neither name fits every kit this builds on
+static QStringList split_nonempty(const QString &s, const QString &sep)
+{
+    QStringList r;
+    const QStringList parts = s.split(sep);
+    for (int i = 0; i < parts.size(); i++)
+        if (!parts.at(i).isEmpty()) r << parts.at(i);
+    return r;
+}
+
+//The masks of one entry of a Qt filter: whatever stands in the last brackets
+static QStringList filter_masks(const QString &entry)
+{
+    const int open = entry.lastIndexOf('(');
+    const int close = entry.lastIndexOf(')');
+    if (open < 0 || close < open) return QStringList();
+    return split_nonempty(entry.mid(open + 1, close - open - 1), " ");
+}
+
 void MainWindow::on_actionOpen_triggered()
 {
     SystemData * sd = e->get_system_data();
-    //A configuration can be opened from here too, and then it replaces the
-    //machine instead of being loaded into its memory
-    QString filters = QString::fromStdString(sd->allowed_files);
-    if (!filters.isEmpty()) filters += ";;";
-    filters += tr("Configurations") + " (*.cfg *.ext *.ext.zip)";
-    filters += ";;" + tr("Saved states") + " (*.ecats *.ecats.zip)";
+
+    //A file for the machine, another machine and a saved state all open from
+    //here. Kept as separate entries, the selected one was the first - the
+    //filter the machine declares in its system section - so a state took a
+    //trip through the drop-down every single time. The first entry is now one
+    //common filter holding every mask at once, and the particular ones stay
+    //behind it for narrowing the list down
+    QStringList entries;
+    const QString allowed = QString::fromStdString(sd->allowed_files);
+    entries += split_nonempty(allowed, ";;");
+    entries << tr("Configurations") + " (*.cfg *.ext *.ext.zip)";
+    entries << tr("Saved states") + " (*.ecats *.ecats.zip)";
+
+    //"All files" is an entry a machine declares itself, and its mask does not
+    //go into the common filter: with it the filter would stop differing from
+    //that entry alone. The entry itself stays in the list as it was
+    QStringList masks;
+    for (int i = 0; i < entries.size(); i++)
+    {
+        const QStringList entry_masks = filter_masks(entries.at(i));
+        for (int j = 0; j < entry_masks.size(); j++)
+        {
+            const QString mask = entry_masks.at(j);
+            if (mask != "*" && mask != "*.*" && !masks.contains(mask)) masks << mask;
+        }
+    }
+
+    QString filters;
+    if (!masks.isEmpty()) filters = tr("All supported files") + " (" + masks.join(' ') + ");;";
+    filters += entries.join(";;");
+
     QString file_name = QFileDialog::getOpenFileName(this, tr("Load a file"), last_path, filters);
 
 

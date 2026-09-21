@@ -271,6 +271,15 @@ function aspectId(text) {
 // saved state, which carries a whole machine inside itself
 const MACHINE_SUFFIX = /\.(cfg|ext|ext\.zip|ecats|ecats\.zip)$/i;
 
+// Of those, the ones a machine file may carry when it comes from outside this
+// build: a configuration extension, whose base machine the build completes,
+// and a saved state, which needs nothing at all. A plain .cfg is not among
+// them - it names ROMs that only its own bundle holds. A file of this kind is
+// started as a machine wherever it turns up: a load= address, or the button
+// that opens a file of this computer
+const OUTSIDE_MACHINE_EXTS = [".ext", ".ext.zip", ".ecats", ".ecats.zip"];
+const OUTSIDE_MACHINE_SUFFIX = /\.(ext|ext\.zip|ecats|ecats\.zip)$/i;
+
 // A machine by its id in machines.json or by the name of its configuration
 // file, with or without .cfg, in any case
 function findMachine(machines, name) {
@@ -294,7 +303,7 @@ function urlMachineFile(url) {
     } catch (e) {
         return "";
     }
-    return /^[^\\/:*?"<>|]+\.(ext|ext\.zip|ecats|ecats\.zip)$/i.test(name) ? name : "";
+    return /^[^\\/:*?"<>|]+$/.test(name) && OUTSIDE_MACHINE_SUFFIX.test(name) ? name : "";
 }
 
 // The address that opens the page the way it looks now
@@ -427,7 +436,7 @@ const I18N = {
         eject:              "Eject",
         protect:            "Write protect",
         openFile:           "Load a file",
-        openFileTitle:      "Load a program straight into the memory of the machine",
+        openFileTitle:      "Load a program into the memory of the machine, or open a saved state",
         stFileLoaded:       "File loaded: {0}",
         stFileFailed:       "Failed to load {0}: {1}",
         stInit:             "Initializing...",
@@ -523,7 +532,7 @@ const I18N = {
         eject:              "Извлечь",
         protect:            "Защита от записи",
         openFile:           "Загрузить файл",
-        openFileTitle:      "Загрузить программу прямо в память машины",
+        openFileTitle:      "Загрузить программу в память машины или открыть сохраненное состояние",
         stFileLoaded:       "Файл загружен: {0}",
         stFileFailed:       "Не удалось загрузить {0}: {1}",
         stInit:             "Инициализация...",
@@ -1222,6 +1231,10 @@ let currentMachine = null;
 // line the list of machines gets for it
 let currentLoadUrl = null;
 let urlOption = null;
+// Starts a machine from bytes the page has in hand, set up by initEcat(): the
+// file button lives outside that closure and needs the same path a load=
+// address takes
+let startMachineFile = null;
 const URL_MACHINE_ID = "__url__";
 
 function setupInfoDialog(module) {
@@ -1598,10 +1611,16 @@ function coreMessage(message) {
     return message.replace(/\{[^|{}]*\|([^{}]*)\}/g, (m, text) => (table && table[text]) || text);
 }
 
-// The accept list of a file input. A filter that also offers all files
-// restricts nothing, as its dialog on the desktop does not
+// The accept list of the file input of the machine. Machine files open
+// through the same button, so their endings are offered whatever the machine
+// itself takes. A filter that also offers all files restricts nothing, as its
+// dialog on the desktop does not
 function acceptFor(filter) {
-    return /\*\.\*/.test(filter) ? "" : filterExtensions(filter).join(",");
+    if (/\*\.\*/.test(filter)) return "";
+    const list = filterExtensions(filter);
+    for (const ext of OUTSIDE_MACHINE_EXTS)
+        if (!list.includes(ext)) list.push(ext);
+    return list.join(",");
 }
 
 function setupOpenFile(module) {
@@ -1609,7 +1628,11 @@ function setupOpenFile(module) {
     const input = document.getElementById("open-file");
 
     const files = module.ccall("wasm_system_files", "string", [], []);
-    button.hidden = !files;
+    // The button is there for every machine now, not only for one that names
+    // files of its own in its system section: a saved state opens through it,
+    // and the УК-НЦ, which names none, is exactly the machine whose states one
+    // wants to open
+    button.hidden = false;
     input.accept = acceptFor(files || "");
 
     // Assigned, not added: the machine changes, the button stays
@@ -1619,10 +1642,26 @@ function setupOpenFile(module) {
     };
     input.onchange = () => {
         const file = input.files[0];
+        // A file that carries a machine replaces the machine, the way the
+        // desktop dialog treats one; anything else goes into its memory
         // Cleared so that the same file can be loaded again
-        const done = file ? openFile(module, file) : Promise.resolve();
+        const done = !file ? Promise.resolve()
+            : OUTSIDE_MACHINE_SUFFIX.test(file.name) ? openMachine(file)
+            : openFile(module, file);
         done.then(() => { input.value = ""; });
     };
+}
+
+// A machine file picked on this computer: the same bytes a load= address would
+// bring, from the other side
+async function openMachine(file) {
+    if (startMachineFile === null) return;
+    try {
+        await startMachineFile(file.name, new Uint8Array(await file.arrayBuffer()));
+    } catch (err) {
+        console.error("Machine file load error:", err);
+        setStatus("stError", "error", (err && err.message) || String(err));
+    }
 }
 
 async function openFile(module, file) {
@@ -2717,6 +2756,13 @@ async function initEcat() {
             return false;
         }
 
+        return startMachineFile(name, bytes, url);
+    };
+
+    // Everything of that which does not care where the bytes came from: the
+    // address above, or a file picked on this computer, which has no address
+    // at all and therefore leaves the link button with the machine alone
+    startMachineFile = async (name, bytes, url = null) => {
         // In a directory of its own: the files an extension names are looked
         // for beside it before anywhere else, and an .ext.zip is unpacked by
         // the core into its cache
@@ -2754,7 +2800,10 @@ async function initEcat() {
         }
 
         // It is in no list, so it gets a line of its own at the top: the name
-        // is then visible, and another machine can still be chosen
+        // is then visible, and another machine can still be chosen. The line
+        // of the file opened before it goes - one at a time, and a file button
+        // can be used again and again
+        if (urlOption) { urlOption.remove(); urlOption = null; }
         urlOption = element("option", "");
         urlOption.value = URL_MACHINE_ID;
         urlOption.textContent = name;
