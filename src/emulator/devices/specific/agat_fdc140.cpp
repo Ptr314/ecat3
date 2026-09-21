@@ -252,6 +252,40 @@ void Agat_FDC140::clock(unsigned int counter)
     }
 }
 
+void Agat_FDC140::save_state(StateWriter &w)
+{
+    FDC::save_state(w);
+    w.n("prev_phase", static_cast<uint32_t>(prev_phase));
+    w.n("current_phase", static_cast<uint32_t>(current_phase));
+    w.n("track0", static_cast<uint32_t>(current_track[0]));
+    w.n("track1", static_cast<uint32_t>(current_track[1]));
+    w.n("selected_drive", static_cast<uint32_t>(selected_drive));
+    w.b("motor_on", motor_on);
+    w.b("write_mode", write_mode);
+    w.b("speed_mode", speed_mode);
+    w.u("data", data, 8);
+    w.b("data_ready", data_ready);
+    w.u("write_register", write_register, 8);
+}
+
+emulator::Result Agat_FDC140::load_state(const StateReader &r)
+{
+    emulator::Result res = FDC::load_state(r);
+    if (!res) return res;
+    r.u("prev_phase", prev_phase);
+    r.u("current_phase", current_phase);
+    r.u("track0", current_track[0]);
+    r.u("track1", current_track[1]);
+    r.u("selected_drive", selected_drive);
+    r.b("motor_on", motor_on);
+    r.b("write_mode", write_mode);
+    r.b("speed_mode", speed_mode);
+    r.u("data", data);
+    r.b("data_ready", data_ready);
+    r.u("write_register", write_register);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> Agat_FDC140::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = FDC::get_device_fields();

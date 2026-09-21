@@ -539,6 +539,73 @@ int TapeRecorder::get_mode()
 
 //------------------- Introspection and control ----------------------------//
 
+void TapeRecorder::save_state(StateWriter &w)
+{
+    ComputerDevice::save_state(w);
+
+    w.n("mode", tape_mode);
+    w.n("position", data_position);
+    w.n("ticks_counter", ticks_counter);
+    w.n("bit_shift", static_cast<uint32_t>(bit_shift));
+    w.n("baud_rate", baud_rate);
+    w.b("recording", is_recording);
+
+    //The writer side: where an edge was last seen, and the bit being measured
+    w.n64("cycle_counter", cycle_counter);
+    w.n64("last_edge_cycles", last_edge_cycles);
+    w.b("has_last_edge", has_last_edge);
+    w.u("last_level", last_level, 8);
+    w.n("writer_state", static_cast<uint32_t>(writer_state));
+    w.n("measured_counter", measured_counter);
+    w.n64("measured_time", measured_time);
+    w.n64("measured_time_x2", measured_time_x2);
+    w.n64("max_delta", max_delta);
+    w.n("byte_counter", byte_counter);
+    w.n("short_counter", short_counter);
+    w.u("current_byte", current_byte, 8);
+
+    //The tape itself, and what has been recorded onto it. A recording exists
+    //nowhere but here until somebody saves it, so a path would lose it
+    if (!data.empty())
+        w.blob("data", name + ".tape", data.data(), data.size());
+    if (!recorded_bytes.empty())
+        w.blob("recorded", name + "-rec.tape", recorded_bytes.data(), recorded_bytes.size());
+}
+
+emulator::Result TapeRecorder::load_state(const StateReader &r)
+{
+    emulator::Result res = ComputerDevice::load_state(r);
+    if (!res) return res;
+
+    r.u("mode", tape_mode);
+    r.u("position", data_position);
+    r.u("ticks_counter", ticks_counter);
+    r.u("bit_shift", bit_shift);
+    uint32_t baud = baud_rate;
+    if (r.u("baud_rate", baud)) set_baud_rate(baud);
+    r.b("recording", is_recording);
+
+    r.n64("cycle_counter", cycle_counter);
+    r.n64("last_edge_cycles", last_edge_cycles);
+    r.b("has_last_edge", has_last_edge);
+    r.u("last_level", last_level);
+    uint32_t state = static_cast<uint32_t>(writer_state);
+    if (r.u("writer_state", state)) writer_state = static_cast<TapeWriterState>(state);
+    r.u("measured_counter", measured_counter);
+    r.n64("measured_time", measured_time);
+    r.n64("measured_time_x2", measured_time_x2);
+    r.n64("max_delta", max_delta);
+    r.u("byte_counter", byte_counter);
+    r.u("short_counter", short_counter);
+    r.u("current_byte", current_byte);
+
+    std::vector<uint8_t> tape;
+    if (r.blob("data", tape)) { data.swap(tape); data_size = static_cast<unsigned int>(data.size()); }
+    recorded_bytes.clear();
+    r.blob("recorded", recorded_bytes);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> TapeRecorder::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();

@@ -182,6 +182,24 @@ void O128Display::render_byte(unsigned int address)
     }
 }
 
+void O128Display::save_state(StateWriter &w)
+{
+    GenericDisplay::save_state(w);
+    w.u("mode", mode, 8);
+    w.u("frame", frame, 8);
+    w.u("base_address", base_address, 16);
+}
+
+emulator::Result O128Display::load_state(const StateReader &r)
+{
+    emulator::Result res = GenericDisplay::load_state(r);
+    if (!res) return res;
+    r.u("mode", mode);
+    r.u("frame", frame);
+    r.u("base_address", base_address);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> O128Display::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = GenericDisplay::get_device_fields();

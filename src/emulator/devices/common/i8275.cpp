@@ -396,6 +396,71 @@ void I8275::clock(unsigned int counter)
     }
 }
 
+void I8275::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    w.u("mode", Mode, 8);
+    w.n("reg_index", static_cast<uint32_t>(RegIndex));
+    w.u("status", Status, 8);
+    w.array("reg_mode", RegMode, 4);
+    w.array("reg_cursor", RegCursor, 2);
+
+    //Where the beam is, and where the DMA stands. A frame is fetched in
+    //bursts, and a snapshot lands between two of them
+    w.n("row_pos", m_row_pos);
+    w.n("row", m_row);
+    w.b("display_on", m_display_on);
+    w.b("filling", m_filling);
+    w.b("frame_dma", m_frame_dma);
+    w.n("burst_left", m_burst_left);
+    w.n("dma_delay", m_dma_delay);
+    w.n("pending", m_pending);
+    w.n("fill_buf", m_fill_buf);
+    w.n("fill_len", m_fill_len);
+    w.n("fill_cols", m_fill_cols);
+    w.n("show_len", m_show_len);
+    w.n("frames", m_frames);
+    w.n64("dma_bytes", m_dma_bytes);
+    w.b("blinker", Blinker);
+    w.b("blinker_char", BlinkerChar);
+
+    //The double row buffer: one row is being fetched while the other is drawn
+    w.hex("row_buf0", m_row_buf[0], I8275_MAX_ROW);
+    w.hex("row_buf1", m_row_buf[1], I8275_MAX_ROW);
+}
+
+emulator::Result I8275::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.u("mode", Mode);
+    r.u("reg_index", RegIndex);
+    r.u("status", Status);
+    r.array("reg_mode", RegMode, 4);
+    r.array("reg_cursor", RegCursor, 2);
+    r.u("row_pos", m_row_pos);
+    r.u("row", m_row);
+    r.b("display_on", m_display_on);
+    r.b("filling", m_filling);
+    r.b("frame_dma", m_frame_dma);
+    r.u("burst_left", m_burst_left);
+    r.u("dma_delay", m_dma_delay);
+    r.u("pending", m_pending);
+    r.u("fill_buf", m_fill_buf);
+    r.u("fill_len", m_fill_len);
+    r.u("fill_cols", m_fill_cols);
+    r.u("show_len", m_show_len);
+    r.u("frames", m_frames);
+    r.n64("dma_bytes", m_dma_bytes);
+    r.b("blinker", Blinker);
+    r.b("blinker_char", BlinkerChar);
+    r.hex("row_buf0", m_row_buf[0], I8275_MAX_ROW);
+    r.hex("row_buf1", m_row_buf[1], I8275_MAX_ROW);
+    //The geometry follows the four Reset parameters, which are in RegMode
+    recalc_geometry();
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> I8275::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

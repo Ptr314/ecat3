@@ -108,6 +108,30 @@ void RasterDisplay::clock(unsigned int counter)
 
 }
 
+void RasterDisplay::save_state(StateWriter &w)
+{
+    GenericDisplay::save_state(w);
+    //Where the beam stands. A snapshot taken mid frame comes back mid frame,
+    //and the picture finishes the way it would have
+    w.n("line_counter", m_line_counter);
+    w.n("current_line", m_current_line);
+    w.n("screen_line", m_screen_line);
+    w.n("hsync_counter", m_hsync_counter);
+    w.b("hsync_active", m_hsync_active);
+}
+
+emulator::Result RasterDisplay::load_state(const StateReader &r)
+{
+    emulator::Result res = GenericDisplay::load_state(r);
+    if (!res) return res;
+    r.u("line_counter", m_line_counter);
+    r.u("current_line", m_current_line);
+    r.u("screen_line", m_screen_line);
+    r.u("hsync_counter", m_hsync_counter);
+    r.b("hsync_active", m_hsync_active);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> RasterDisplay::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = GenericDisplay::get_device_fields();

@@ -90,6 +90,23 @@ void Speaker::interface_callback(unsigned int callback_id, unsigned int new_valu
     input = new_input;
 }
 
+void Speaker::save_state(StateWriter &w)
+{
+    GenericSound::save_state(w);
+    w.u("input", input);
+}
+
+emulator::Result Speaker::load_state(const StateReader &r)
+{
+    emulator::Result res = GenericSound::load_state(r);
+    if (!res) return res;
+    r.u("input", input);
+    //The cached sample was computed from the inputs of the run that took the
+    //snapshot
+    cache_valid = false;
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> Speaker::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = GenericSound::get_device_fields();

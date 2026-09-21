@@ -246,6 +246,45 @@ void GMD70::do_command()
     }
 }
 
+void GMD70::save_state(StateWriter &w)
+{
+    FDC::save_state(w);
+    w.b("busy", m_busy);
+    w.n("selected_drive", m_selected_drive);
+    w.b("ints_en", m_ints_en);
+    w.n("command", m_command);
+    w.b("reserved", m_reserved);
+    w.b("trq", m_trq);
+    w.n("error", static_cast<uint32_t>(m_error));
+    w.b("done", m_done);
+    w.u("data", m_data, 8);
+    //The sector being handed over a byte at a time
+    w.hex("buffer", m_buffer, sizeof(m_buffer));
+    w.n("counter", m_counter);
+    w.n("command_counter", m_command_counter);
+    w.array("command_buffer", m_command_buffer, 2);
+}
+
+emulator::Result GMD70::load_state(const StateReader &r)
+{
+    emulator::Result res = FDC::load_state(r);
+    if (!res) return res;
+    r.b("busy", m_busy);
+    r.u("selected_drive", m_selected_drive);
+    r.b("ints_en", m_ints_en);
+    r.u("command", m_command);
+    r.b("reserved", m_reserved);
+    r.b("trq", m_trq);
+    r.u("error", m_error);
+    r.b("done", m_done);
+    r.u("data", m_data);
+    r.hex("buffer", m_buffer, sizeof(m_buffer));
+    r.u("counter", m_counter);
+    r.u("command_counter", m_command_counter);
+    r.array("command_buffer", m_command_buffer, 2);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> GMD70::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = FDC::get_device_fields();

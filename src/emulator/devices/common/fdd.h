@@ -117,6 +117,13 @@ public:
     std::vector<DeviceFieldInfo> get_device_fields() override;
     std::vector<DeviceCommandInfo> get_device_commands() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
+    //The image is the drive's own business: a snapshot writes what is in it
+    //now, the machine's writes included, and the configuration must not send
+    //the drive back to a file that never had them
+    bool state_owns_file(const std::string &parameter) const override
+        { return parameter == "image"; }
     emulator::Result send_command(const std::string &command, const std::string &parameters) override;
 };
 

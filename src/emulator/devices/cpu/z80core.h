@@ -79,6 +79,13 @@ public:
     virtual void write_port(uint16_t address, uint8_t value);
     virtual void reset();
     virtual z80context * get_context();
+
+    //The two flags that live outside the context: whether an interrupt may be
+    //taken after the instruction just run (EI defers it by one) and a falling
+    //edge on NMI that has not been served yet. A snapshot without them loses
+    //a pending interrupt
+    void get_pending(bool &process, bool &nmi) const { process = process_ints; nmi = nmi_pending; }
+    void set_pending(bool process, bool nmi) { process_ints = process; nmi_pending = nmi; }
     virtual uint8_t get_command();
     virtual uint16_t get_pc();
     virtual void set_nmi(unsigned int nmi_val);

@@ -23,6 +23,7 @@
 #include <QCursor>
 #include <QMouseEvent>
 #include <QStatusBar>
+#include <QThread>
 #include <QTimer>
 
 #include "dialogs/genericdbgwnd.h"
@@ -1323,6 +1324,7 @@ void MainWindow::on_actionOpen_triggered()
     QString filters = QString::fromStdString(sd->allowed_files);
     if (!filters.isEmpty()) filters += ";;";
     filters += tr("Configurations") + " (*.cfg *.ext *.ext.zip)";
+    filters += ";;" + tr("Saved states") + " (*.ecats *.ecats.zip)";
     QString file_name = QFileDialog::getOpenFileName(this, tr("Load a file"), last_path, filters);
 
 
@@ -1360,6 +1362,43 @@ void MainWindow::open_debugger_for(CPU * cpu)
             });
             w->show();
     }
+}
+
+void MainWindow::on_actionSaveState_triggered()
+{
+    if (!e->loaded) return;
+
+    //Named after the machine and the moment, in the directory the other file
+    //dialogs use. Not work_path: that is computers/, which the machine chooser
+    //lists - snapshots do not belong among the machines
+    const QString name = QString::fromStdString(
+            machine_file_stem(dsk_tools::get_filename(cur_config.toStdString())))
+        + "-" + QDateTime::currentDateTime().toString("yyyy-MM-dd-HH-mm-ss") + ".ecats.zip";
+    const QString suggested = QDir(last_path).filePath(name);
+
+    QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save state"), suggested,
+        MainWindow::tr("Saved states") + " (*.ecats.zip);;" + MainWindow::tr("Saved states, unpacked") + " (*.ecats)");
+    if (file_name.isEmpty()) return;
+    //A name typed without one: the extension picks the form, so it cannot be
+    //left to chance
+    if (!is_state_file(file_name.toStdString())) file_name += ".ecats.zip";
+    last_path = QFileInfo(file_name).absolutePath();
+
+    //Taken on the emulation thread, between two slices: a snapshot pulled out
+    //from here would catch the machine halfway through one
+    e->request_state(file_name.toStdString());
+
+    //A whole machine takes a moment to write. The request is picked up at a
+    //slice boundary, so a machine that is not running never takes it - and
+    //then the wait has to end with a message rather than with nothing
+    for (int i = 0; i < 500 && e->state_pending(); i++) QThread::msleep(10);
+
+    const std::string error = e->take_state_error();
+    if (!error.empty())
+        QMessageBox::critical(this, MainWindow::tr("Save state"), translateResultMessage(error));
+    else if (e->state_pending())
+        QMessageBox::critical(this, MainWindow::tr("Save state"),
+            MainWindow::tr("The machine is not running, so its state cannot be taken."));
 }
 
 void MainWindow::on_actionDebugger_triggered()

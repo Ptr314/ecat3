@@ -118,6 +118,9 @@ protected:
 
 public:
     GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd);
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
+    void state_restored() override;
     ~GenericSound();
 
     virtual emulator::Result load_config(SystemData *sd) override;

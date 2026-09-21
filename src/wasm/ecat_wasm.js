@@ -267,8 +267,9 @@ function aspectId(text) {
     return ["4x3", "square", "1x1"].includes(id) ? id : null;
 }
 
-// The ending of a machine file: a configuration or an extension of one
-const MACHINE_SUFFIX = /\.(cfg|ext|ext\.zip)$/i;
+// The ending of a machine file: a configuration, an extension of one, or a
+// saved state, which carries a whole machine inside itself
+const MACHINE_SUFFIX = /\.(cfg|ext|ext\.zip|ecats|ecats\.zip)$/i;
 
 // A machine by its id in machines.json or by the name of its configuration
 // file, with or without .cfg, in any case
@@ -282,8 +283,10 @@ function findMachine(machines, name) {
 }
 
 // The name of the machine file a load= address points at: the last part of the
-// path, and only an .ext or an .ext.zip - every format of the core is picked by
-// extension, and the name becomes a file of the emulator's own filesystem
+// path, and only an extension or a saved state - every format of the core is
+// picked by extension, and the name becomes a file of the emulator's own
+// filesystem. A plain .cfg is not among them: it names ROMs that only its own
+// bundle holds, while these two carry, or can find, everything they need
 function urlMachineFile(url) {
     let name = "";
     try {
@@ -291,7 +294,7 @@ function urlMachineFile(url) {
     } catch (e) {
         return "";
     }
-    return /^[^\\/:*?"<>|]+\.(ext|ext\.zip)$/i.test(name) ? name : "";
+    return /^[^\\/:*?"<>|]+\.(ext|ext\.zip|ecats|ecats\.zip)$/i.test(name) ? name : "";
 }
 
 // The address that opens the page the way it looks now
@@ -1143,9 +1146,12 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl, before
             await fetchAndMount(module, dataBundleUrl, "/data");
         }
 
-        // Load machine-specific bundle
-        console.log("Loading machine bundle:", bundleUrl);
-        await fetchAndMount(module, bundleUrl, "");
+        // Load machine-specific bundle. A saved state has none: it carries
+        // its own configuration, ROMs and key tables inside itself
+        if (bundleUrl) {
+            console.log("Loading machine bundle:", bundleUrl);
+            await fetchAndMount(module, bundleUrl, "");
+        }
 
         if (beforeStart) {
             setStatus("clickToStart", "");
@@ -2723,20 +2729,28 @@ async function initEcat() {
             return false;
         }
 
-        // The bundle of the base machine has to be unpacked before the core
-        // looks for the .cfg, so the base is asked for first - reading the
-        // extension alone, without loading anything
-        const base = module.ccall("wasm_machine_base", "string", ["string"], [path]);
-        if (!base) {
-            // Not even readable as an extension: the core says why
-            const message = module.ccall("wasm_last_error", "string", [], []);
-            setStatus("stMachineError", "error", message ? coreMessage(message.split(path).join(name)) : name);
-            return false;
-        }
-        const machine = machines.find((m) => (m.cfg_path || "").toLowerCase() === base.toLowerCase());
-        if (!machine) {
-            setStatus("stLoadBase", "error", name, base);
-            return false;
+        // A saved state carries the whole machine, so nothing has to be found
+        // in this build first - and the one way a load= address fails today,
+        // "the base machine is not here", cannot happen to it
+        const selfContained = module.ccall("wasm_machine_selfcontained", "number", ["string"], [path]) !== 0;
+
+        // Otherwise the bundle of the base machine has to be unpacked before
+        // the core looks for the .cfg, so the base is asked for first -
+        // reading the extension alone, without loading anything
+        let machine = null;
+        if (!selfContained) {
+            const base = module.ccall("wasm_machine_base", "string", ["string"], [path]);
+            if (!base) {
+                // Not even readable as an extension: the core says why
+                const message = module.ccall("wasm_last_error", "string", [], []);
+                setStatus("stMachineError", "error", message ? coreMessage(message.split(path).join(name)) : name);
+                return false;
+            }
+            machine = machines.find((m) => (m.cfg_path || "").toLowerCase() === base.toLowerCase());
+            if (!machine) {
+                setStatus("stLoadBase", "error", name, base);
+                return false;
+            }
         }
 
         // It is in no list, so it gets a line of its own at the top: the name
@@ -2750,12 +2764,19 @@ async function initEcat() {
 
         // The description is that of the base machine: the downloaded file
         // carries none the page could reach, and the .md beside a .cfg is not
-        // named in the manifest - only an extension of the build has one
-        currentMachine = { id: machine.id, name: name, cfg_path: path,
-                           md_path: machine.md_path || machine.cfg_path.replace(MACHINE_SUFFIX, ".md") };
+        // named in the manifest - only an extension of the build has one. A
+        // saved state has no base and therefore no description at all
+        currentMachine = machine
+            ? { id: machine.id, name: name, cfg_path: path,
+                md_path: machine.md_path || machine.cfg_path.replace(MACHINE_SUFFIX, ".md") }
+            : { id: URL_MACHINE_ID, name: name, cfg_path: path, md_path: null };
         currentLoadUrl = url;
-        document.getElementById("btn-info").disabled = false;
-        const ok = await loadMachine(module, path, machine.bundle_url, machine.data_bundle_url || null,
+        document.getElementById("btn-info").disabled = !currentMachine.md_path;
+        // The shared data bundle is small, always there, and covers a state
+        // written by hand that leans on a charmap of the installation
+        const dataBundle = machine ? (machine.data_bundle_url || null)
+                                   : (machines.find((m) => m.data_bundle_url) || {}).data_bundle_url || null;
+        const ok = await loadMachine(module, path, machine ? machine.bundle_url : null, dataBundle,
                                      () => waitForActivation(currentMachine));
         selectEl.disabled = false;
         return ok;

@@ -133,6 +133,8 @@ public:
     unsigned int char_height() const { return m_height; }
     bool transparent_attributes() const { return m_transparent; }
     bool display_on() const { return m_display_on; }
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
 };
 
 ComputerDevice * create_i8275(InterfaceManager *im, EmulatorConfigDevice *cd);

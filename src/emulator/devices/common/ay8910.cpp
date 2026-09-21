@@ -355,6 +355,55 @@ unsigned int AY8910::get_direct(unsigned int address)
 
 //------------------- Introspection ----------------------------------------//
 
+void AY8910::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    w.array("regs", m_regs, AY_REGS);
+    w.n("latch", m_latch);
+    w.b("used", m_used);
+    w.n64("idle_ticks", m_idle_ticks);
+    w.n("acc", m_acc);
+    w.array("tone_count", m_tone_count, AY_TONE_CHANNELS);
+    w.array("tone_out", m_tone_out, AY_TONE_CHANNELS);
+    w.n("prescale", m_prescale);
+    w.n("noise_count", m_noise_count);
+    //A 17 bit shift register. Left out, the noise comes back in a different
+    //place - inaudible, but a reference screenshot of a noise driven effect
+    //would fail and look like a random fault
+    w.u("rng", m_rng, 32);
+    w.n("env_count", m_env_count);
+    w.n("env_step", static_cast<uint32_t>(m_env_step));
+    w.n("env_attack", m_env_attack);
+    w.b("env_hold", m_env_hold);
+    w.b("env_alternate", m_env_alternate);
+    w.b("env_holding", m_env_holding);
+    w.n("env_volume", m_env_volume);
+}
+
+emulator::Result AY8910::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.array("regs", m_regs, AY_REGS);
+    r.u("latch", m_latch);
+    r.b("used", m_used);
+    r.n64("idle_ticks", m_idle_ticks);
+    r.u("acc", m_acc);
+    r.array("tone_count", m_tone_count, AY_TONE_CHANNELS);
+    r.array("tone_out", m_tone_out, AY_TONE_CHANNELS);
+    r.u("prescale", m_prescale);
+    r.u("noise_count", m_noise_count);
+    r.u("rng", m_rng);
+    r.u("env_count", m_env_count);
+    r.u("env_step", m_env_step);
+    r.u("env_attack", m_env_attack);
+    r.b("env_hold", m_env_hold);
+    r.b("env_alternate", m_env_alternate);
+    r.b("env_holding", m_env_holding);
+    r.u("env_volume", m_env_volume);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> AY8910::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();

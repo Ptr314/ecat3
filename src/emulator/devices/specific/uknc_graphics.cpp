@@ -169,6 +169,30 @@ void UKNCGraphics::set_value(unsigned int address, unsigned int value, bool forc
 
 //------------------------- Introspection ----------------------------------//
 
+void UKNCGraphics::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    w.u("color", m_color);
+    w.u("bg_low", m_bg_low);
+    w.u("bg_high", m_bg_high);
+    w.u("octet", m_octet);
+    w.u("mask", m_mask);
+    w.n("draws", m_draws);
+}
+
+emulator::Result UKNCGraphics::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.u("color", m_color);
+    r.u("bg_low", m_bg_low);
+    r.u("bg_high", m_bg_high);
+    r.u("octet", m_octet);
+    r.u("mask", m_mask);
+    r.u("draws", m_draws);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> UKNCGraphics::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

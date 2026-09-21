@@ -50,6 +50,9 @@ public:
     }
 
     unsigned int offered() const { return m_offered; }
+    //A saved state restores the line itself; this is the memory of what was
+    //offered on it, so that the same request is not made again
+    void set_offered(unsigned int vector) { m_offered = vector; }
     // Forgets the offer without touching the line, for a reset
     void clear() { m_offered = 0; }
 

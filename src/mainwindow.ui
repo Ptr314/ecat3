@@ -71,6 +71,8 @@
     <addaction name="action_Select_a_machine"/>
     <addaction name="separator"/>
     <addaction name="actionOpen"/>
+    <addaction name="separator"/>
+    <addaction name="actionSaveState"/>
     <addaction name="action_Exit"/>
    </widget>
    <widget class="QMenu" name="menuEmulation">
@@ -186,6 +188,7 @@
    <addaction name="actionCPUState"/>
    <addaction name="separator"/>
    <addaction name="actionDebugger"/>
+   <addaction name="actionSaveState"/>
    <addaction name="actionScreenshot"/>
    <addaction name="actionTape"/>
   </widget>
@@ -252,6 +255,18 @@
    </property>
    <property name="text">
     <string>Open...</string>
+   </property>
+  </action>
+  <action name="actionSaveState">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/savestate</normaloff>:/icons/savestate</iconset>
+   </property>
+   <property name="text">
+    <string>Save state...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save the state of the machine</string>
    </property>
   </action>
   <action name="actionDebugger">

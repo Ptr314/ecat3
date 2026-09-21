@@ -98,6 +98,8 @@ protected:
     int find_id_entry(const std::string &id, bool shift, bool lcase, bool match_rus) const;
     void send_key_id(const std::string &id, bool press) override;
     void set_shift_state(bool pressed) override { shift_pressed = pressed; }
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
     void set_ctrl_state(bool pressed) override { ctrl_pressed = pressed; }
     bool ctrl_state() const override { return ctrl_pressed; }
     void set_alt_state(bool pressed) override { alt_pressed = pressed; }

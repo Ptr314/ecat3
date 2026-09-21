@@ -18,6 +18,7 @@
 #endif
 
 #include "config.h"
+#include "state.h"
 #include "emulator/result.h"
 #include "globals.h"
 #include "thread_compat.h"
@@ -312,6 +313,32 @@ public:
     //Performs an action on the device. Parameters are a raw comma separated list.
     virtual emulator::Result send_command(const std::string &command, const std::string &parameters);
 
+    //-------------------------- Saved state -------------------------------//
+    //Everything about this device that a cold start does not reproduce, so
+    //that a machine restored from a snapshot cannot tell it was restarted.
+    //Every override calls its base class first - the base writes the lines of
+    //the device and its fractional clock, so no device does that itself
+    virtual void save_state(StateWriter &w);
+    //Read back after reset(true). The base restores the lines of this device
+    //first, so an override must neither depend on the value of an interface
+    //nor drive one: Interface::change() would cascade into devices that have
+    //not been restored yet. Assign members, nothing else. A key that is not
+    //in the file leaves the value alone: the device keeps what the reset gave
+    //it, which is how a snapshot of an older build still loads
+    virtual emulator::Result load_state(const StateReader &r);
+    //Once, after every device and every line has been restored. Caches that
+    //depend on a line or on another device's buffer are rebuilt here
+    virtual void state_restored() {}
+
+    //True for a configuration parameter naming a medium whose contents this
+    //device writes into the state itself - a disk image, a tape. The snapshot
+    //takes what is in the drive now, the machine's own writes included, and
+    //the parameter is dropped from the configuration it carries, so that
+    //opening the state does not send the device back to a file on disk that
+    //has meanwhile moved, changed or never had those writes at all
+    virtual bool state_owns_file(const std::string &parameter) const
+        { (void)parameter; return false; }
+
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value);
     virtual void memory_callback(unsigned int callback_id, unsigned int address);
     bool belongs_to_class(const std::string &class_to_check);
@@ -419,6 +446,19 @@ public:
     bool pos_edge(); //Триггеры фронтов для 0-го бита
     bool neg_edge();
     void pull(unsigned int new_value);
+
+    //---------------------------- Saved state -----------------------------//
+    //Everything about a line that a cold start does not reproduce. The
+    //topology (links, mask, size) comes from the configuration and is rebuilt
+    //by ComputerDevice::load_config(), but the value, the edge triggers and a
+    //mode the device changed at run time do not
+    void snapshot(unsigned int &v, unsigned int &old_v, unsigned int &edge_v, unsigned int &m) const
+        { v = value; old_v = old_value; edge_v = edge_value; m = mode; }
+    //A plain assignment: not change(), which would cascade through every
+    //linked interface and fire callbacks on half restored devices, and not
+    //set_mode(), which replays the writers of a line it switches to reading
+    void restore(unsigned int v, unsigned int old_v, unsigned int edge_v, unsigned int m)
+        { value = v; old_value = old_v; edge_value = edge_v; mode = m; }
 };
 
 class Memory: public AddressableDevice
@@ -447,6 +487,9 @@ public:
     //written directly, as PlanePair does for the УК-НЦ processor
     bool is_plain() const { return read_callback == 0 && write_callback == 0 && can_read && can_write; }
 
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
+
     std::vector<DeviceFieldInfo> get_device_fields() override;
     std::vector<DeviceCommandInfo> get_device_commands() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
@@ -472,6 +515,12 @@ public:
     ConfigFields get_config_fields() override;
     unsigned get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
+
+    //Deliberately not Memory's: the contents come back from the image, which
+    //a saved state carries as a file of its own. Only the read pointer of a
+    //stream ROM is state
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
 };
 
 class Port:public AddressableDevice
@@ -521,6 +570,9 @@ public:
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
 };
 
 class PortAddress:public Port
@@ -660,6 +712,9 @@ public:
 
     virtual void set_context_value(const std::string &name, unsigned int value) = 0;
 
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
+
     std::vector<DeviceFieldInfo> get_device_fields() override;
     std::vector<DeviceCommandInfo> get_device_commands() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
@@ -747,6 +802,13 @@ public:
     virtual emulator::Result load_config(SystemData *sd) override;
     virtual void reset(bool cold) override;
 
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
+    //The page cache and the write memo describe the map as it was before the
+    //restore. page_generation is deliberately not restored: a tag of the run
+    //the snapshot was taken in could match one of this run by accident
+    void state_restored() override;
+
     bool responds(unsigned int address, unsigned int mode = MODE_RW);
     unsigned int read(unsigned int address);
     void write(unsigned int address, unsigned int value);
@@ -811,6 +873,12 @@ public:
     virtual void reset(bool cold) override;
     virtual void set_renderer(VideoRenderer &vr);
     virtual void validate(bool force_render = false);
+
+    //A display that paints on every write to its video memory - the Орион,
+    //the Ириша - has a surface holding what the run that took the snapshot
+    //drew. The video memory has just been replaced under it, so the whole
+    //picture is laid out again from what is there now
+    void state_restored() override;
     virtual void change_resolution(unsigned new_x, unsigned new_y);
     virtual bool has_valid_renderer();
     void lock_surface();

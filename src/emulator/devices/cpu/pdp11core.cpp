@@ -125,6 +125,34 @@ pdp11context * pdp11core::get_context()
     return &context;
 }
 
+void pdp11core::get_latches(saved_latches &s) const
+{
+    s.step_pending = m_step_pending;
+    s.is_virq      = is_virq;
+    s.virq_vector  = virq_vector;
+    s.is_irq2      = is_irq2;
+    s.is_irq3      = is_irq3;
+    s.is_halt_req  = is_halt_req;
+    s.halt_pin     = halt_pin;
+    s.is_aclo      = is_aclo;
+    s.abort        = m_abort;
+    s.no_trace     = m_no_trace;
+}
+
+void pdp11core::set_latches(const saved_latches &s)
+{
+    m_step_pending = s.step_pending;
+    is_virq        = s.is_virq;
+    virq_vector    = s.virq_vector;
+    is_irq2        = s.is_irq2;
+    is_irq3        = s.is_irq3;
+    is_halt_req    = s.is_halt_req;
+    halt_pin       = s.halt_pin;
+    is_aclo        = s.is_aclo;
+    m_abort        = s.abort;
+    m_no_trace     = s.no_trace;
+}
+
 uint16_t pdp11core::get_pc()
 {
     return context.R[PDP11::REG_PC];

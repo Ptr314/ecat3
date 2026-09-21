@@ -280,6 +280,44 @@ void I8253::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned
     };
 }
 
+void I8253::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    w.array("modes", Modes, 3);
+    w.array("is_bcd", IsBCD, 3);
+    w.array("orders", Orders, 3);
+    w.array("indexes", Indexes, 3);
+    w.array("loaded", Loaded, 3);
+    w.array("counting", Counting, 3);
+    w.array("start_data", StartData, 6);
+    w.array("counters", Counters, 6);
+    w.array("read_data", ReadData, 6);
+    w.array("gates", Gates, 3);
+    w.array("need_restart", NeedRestart, 3);
+    //Fractional phase of a divided channel clock, the same thing
+    //ComputerDevice::clock_stored is for the device as a whole
+    if (per_channel_clock) w.array("ch_clock_stored", ch_clock_stored, 3);
+}
+
+emulator::Result I8253::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.array("modes", Modes, 3);
+    r.array("is_bcd", IsBCD, 3);
+    r.array("orders", Orders, 3);
+    r.array("indexes", Indexes, 3);
+    r.array("loaded", Loaded, 3);
+    r.array("counting", Counting, 3);
+    r.array("start_data", StartData, 6);
+    r.array("counters", Counters, 6);
+    r.array("read_data", ReadData, 6);
+    r.array("gates", Gates, 3);
+    r.array("need_restart", NeedRestart, 3);
+    r.array("ch_clock_stored", ch_clock_stored, 3);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> I8253::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

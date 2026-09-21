@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "config.h"
+#include "state.h"
 
 struct ExtEdit {
     //RemoveDevice takes the whole device out: "-hdd", no property
@@ -61,8 +62,10 @@ private:
 
 //Where a machine was loaded from
 struct MachineSource {
-    std::string file;           //What was asked for: .cfg, .ext or .ext.zip
-    std::string base_cfg;       //The .cfg the machine is built on
+    std::string file;           //What was asked for: .cfg, .ext, .ext.zip or .ecats[.zip]
+    //The .cfg the machine is built on. A saved state carries its own
+    //configuration and is therefore its own base
+    std::string base_cfg;
     //Directory of the extension (or of the unpacked archive), searched for
     //files before the base configuration's own. Empty for a plain .cfg
     std::string ext_path;
@@ -70,6 +73,12 @@ struct MachineSource {
     unsigned int script_line = 1;   //Line of the extension the script starts on
     bool        is_extension = false;
     bool        is_protected = false;    //@protected of the extension
+    //Body of the @state section of a .ecats, applied by Emulator::run() once
+    //the devices exist and have been reset. Empty for every other file
+    bool        is_state = false;
+    std::string state;
+    unsigned int state_version = 0;
+    std::string version;        //@version of a state, its name for the user
 };
 
 //Directories the loader needs
@@ -81,8 +90,9 @@ struct MachinePaths {
 };
 
 bool is_extension_file(const std::string &path);        //.ext or .ext.zip
-bool is_machine_file(const std::string &path);          //.cfg, .ext or .ext.zip
-//The name without .cfg / .ext / .ext.zip, for companion files (.md) and keys
+bool is_state_file(const std::string &path);            //.ecats or .ecats.zip
+bool is_machine_file(const std::string &path);          //any of the above, plus .cfg
+//The name without its extension, for companion files (.md) and for ini keys
 std::string machine_file_stem(const std::string &path);
 
 //The .cfg a machine file is built on, without loading anything: a .cfg is its

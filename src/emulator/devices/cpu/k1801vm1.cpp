@@ -128,6 +128,75 @@ void k1801vm1::reset(bool cold)
     // по вектору - это вход в пультовый режим, и линия поднимется оттуда
 }
 
+void k1801vm1::save_state(StateWriter &w)
+{
+    CPU::save_state(w);
+
+    pdp11context * c = core->get_context();
+    w.array("R", c->R, 8);
+    w.u("PSW", c->PSW);
+    w.b("halted", c->halted);
+    w.b("halt_mode", c->halt_mode);
+    w.b("stop", c->stop);
+    w.u("console_pc", c->console_pc);
+    w.u("console_psw", c->console_psw);
+
+    //Latched requests: a snapshot taken between two instructions with one
+    //pending has to bring it back, or the machine simply loses the interrupt
+    pdp11core::saved_latches s;
+    core->get_latches(s);
+    w.b("step_pending", s.step_pending);
+    w.b("virq", s.is_virq);
+    w.u("virq_vector", s.virq_vector);
+    w.b("irq2", s.is_irq2);
+    w.b("irq3", s.is_irq3);
+    w.b("halt_req", s.is_halt_req);
+    w.b("halt_pin", s.halt_pin);
+    w.b("aclo", s.is_aclo);
+    w.b("abort", s.abort);
+    w.b("no_trace", s.no_trace);
+
+    w.b("held_in_reset", m_held_in_reset);
+    w.b("aclo_active", m_aclo_active);
+
+    //The ring of executed addresses is what LOG cpu.history prints: a
+    //diagnostic, not machine state, and 256 lines of it in every snapshot
+    //would be pure noise
+}
+
+emulator::Result k1801vm1::load_state(const StateReader &r)
+{
+    emulator::Result res = CPU::load_state(r);
+    if (!res) return res;
+
+    pdp11context * c = core->get_context();
+    r.array("R", c->R, 8);
+    r.u("PSW", c->PSW);
+    r.b("halted", c->halted);
+    r.b("halt_mode", c->halt_mode);
+    r.b("stop", c->stop);
+    r.u("console_pc", c->console_pc);
+    r.u("console_psw", c->console_psw);
+
+    pdp11core::saved_latches s;
+    core->get_latches(s);
+    r.b("step_pending", s.step_pending);
+    r.b("virq", s.is_virq);
+    r.u("virq_vector", s.virq_vector);
+    r.b("irq2", s.is_irq2);
+    r.b("irq3", s.is_irq3);
+    r.b("halt_req", s.is_halt_req);
+    r.b("halt_pin", s.halt_pin);
+    r.b("aclo", s.is_aclo);
+    r.b("abort", s.abort);
+    r.b("no_trace", s.no_trace);
+    core->set_latches(s);
+
+    r.b("held_in_reset", m_held_in_reset);
+    r.b("aclo_active", m_aclo_active);
+    return emulator::Result::ok();
+}
+
 unsigned int k1801vm1::read_mem(unsigned int address)
 {
     unsigned int v = mm->read(address) & 0xFF;

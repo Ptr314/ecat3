@@ -83,6 +83,13 @@ public:
     TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual ~TapeRecorder();
 
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
+    //The tape in the machine is the drive's own business, the same way a
+    //floppy is: a recording exists nowhere else until it is saved
+    bool state_owns_file(const std::string &parameter) const override
+        { return parameter == "image" || parameter == "file"; }
+
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
     emulator::Result load_config(SystemData *sd) override;

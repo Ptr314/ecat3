@@ -99,6 +99,30 @@ void i8080::inte_changed(unsigned int inte)
     i_inte.change(inte);
 }
 
+void i8080::save_state(StateWriter &w)
+{
+    CPU::save_state(w);
+    i8080context * c = core->get_context();
+    w.array("regs", c->registers.reg_array_8, 8);
+    w.u("SP", c->registers.regs.SP);
+    w.u("PC", c->registers.regs.PC);
+    w.b("halted", c->halted);
+    w.u("int_enable", c->int_enable, 8);
+}
+
+emulator::Result i8080::load_state(const StateReader &r)
+{
+    emulator::Result res = CPU::load_state(r);
+    if (!res) return res;
+    i8080context * c = core->get_context();
+    r.array("regs", c->registers.reg_array_8, 8);
+    r.u("SP", c->registers.regs.SP);
+    r.u("PC", c->registers.regs.PC);
+    r.b("halted", c->halted);
+    r.u("int_enable", c->int_enable);
+    return emulator::Result::ok();
+}
+
 std::vector<std::pair<std::string, std::string>> i8080::get_registers()
 {
     i8080context * c = core->get_context();

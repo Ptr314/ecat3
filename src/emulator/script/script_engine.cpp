@@ -609,6 +609,18 @@ emulator::Result ScriptEngine::execute(const ScriptCommand &c)
             case SCRIPT_CMD_SCREEN:
                 return do_screen(c);
 
+            case SCRIPT_CMD_SAVESTATE:
+            {
+                //Synchronous, unlike SCREEN: tick() runs on the emulation
+                //thread between two instructions, which is both a consistent
+                //moment and a repeatable one - the same script saves the same
+                //state every run, so a snapshot can be a test reference
+                std::string name = (c.args.empty() || c.args[0].empty())
+                    ? ("state-" + timestamp_string() + ".ecats.zip") : c.args[0];
+                if (!is_absolute_path(name)) name = m_path + name;
+                return e->save_state(name);
+            }
+
             case SCRIPT_CMD_LOGDEFS:
                 return do_logdefs(c);
 

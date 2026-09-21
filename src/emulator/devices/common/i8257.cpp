@@ -161,6 +161,32 @@ void I8257::set_value(unsigned int address, unsigned int value, bool force)
     }
 }
 
+void I8257::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    w.array("rg_a", RgA, 8);
+    w.array("rg_c", RgC, 8);
+    //Two bytes of an address arrive through one register, and which half is
+    //next is a flip-flop. Left out, the next write lands in the wrong half
+    w.array("ptr_a", PtrA, 4);
+    w.array("ptr_c", PtrC, 4);
+    w.u("rg_mode", RgMode, 8);
+    w.u("rg_state", RgState, 8);
+}
+
+emulator::Result I8257::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.array("rg_a", RgA, 8);
+    r.array("rg_c", RgC, 8);
+    r.array("ptr_a", PtrA, 4);
+    r.array("ptr_c", PtrC, 4);
+    r.u("rg_mode", RgMode);
+    r.u("rg_state", RgState);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> I8257::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

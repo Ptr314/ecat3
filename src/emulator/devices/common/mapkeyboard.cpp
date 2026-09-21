@@ -532,6 +532,34 @@ void MapKeyboard::reset(bool cool)
         set_rus(false);
 }
 
+void MapKeyboard::save_state(StateWriter &w)
+{
+    Keyboard::save_state(w);
+    w.b("case_latch", m_case_latch);
+    w.n("rus_value", rus_value);
+    w.u("last_value", m_last_value, 32);
+    w.b("last_alt", m_last_alt);
+    //shift/ctrl/alt follow the host keyboard, which is holding nothing
+}
+
+emulator::Result MapKeyboard::load_state(const StateReader &r)
+{
+    emulator::Result res = Keyboard::load_state(r);
+    if (!res) return res;
+    r.b("case_latch", m_case_latch);
+    r.u("rus_value", rus_value);
+    r.u("last_value", m_last_value);
+    r.b("last_alt", m_last_alt);
+    keys_held.clear();
+    ids_down.clear();
+    shift_pressed = false;
+    ctrl_pressed = false;
+    alt_pressed = false;
+    host_alt_pressed = false;
+    return emulator::Result::ok();
+}
+
+
 std::vector<DeviceFieldInfo> MapKeyboard::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = Keyboard::get_device_fields();

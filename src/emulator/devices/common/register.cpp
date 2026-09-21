@@ -120,6 +120,20 @@ void Register::interface_callback(unsigned callback_id, unsigned new_value, unsi
     }
 }
 
+void Register::save_state(StateWriter &w)
+{
+    ComputerDevice::save_state(w);
+    w.u("value", register_value);
+}
+
+emulator::Result Register::load_state(const StateReader &r)
+{
+    emulator::Result res = ComputerDevice::load_state(r);
+    if (!res) return res;
+    r.u("value", register_value);
+    return emulator::Result::ok();
+}
+
 unsigned Register::get_value()
 {
     return register_value;

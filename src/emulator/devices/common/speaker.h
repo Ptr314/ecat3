@@ -32,6 +32,8 @@ private:
 
 public:
     Speaker(InterfaceManager *im, EmulatorConfigDevice *cd);
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
 
     virtual void reset(bool cold) override;
     virtual emulator::Result load_config(SystemData *sd) override;

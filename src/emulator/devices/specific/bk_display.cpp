@@ -334,6 +334,35 @@ ConfigFields BKDisplay::get_config_fields()
     return {f};
 }
 
+void BKDisplay::save_state(StateWriter &w)
+{
+    RasterDisplay::save_state(w);
+    w.u("scroll", m_scroll);
+    w.n("offset", m_offset);
+    w.n("frames", m_frames);
+    w.b("color", m_color);
+    w.b("pending_color", m_pending_color);
+    //The palette each line of the picture was drawn with. A snapshot taken
+    //mid frame is finished from the line it stopped on, and a program that
+    //changes the palette per line (every БК demo) keeps the lines above it
+    w.hex("line_palette", m_line_palette, sizeof(m_line_palette));
+    w.hex("frame_palette", m_frame_palette, sizeof(m_frame_palette));
+}
+
+emulator::Result BKDisplay::load_state(const StateReader &r)
+{
+    emulator::Result res = RasterDisplay::load_state(r);
+    if (!res) return res;
+    r.u("scroll", m_scroll);
+    r.u("offset", m_offset);
+    r.u("frames", m_frames);
+    r.b("color", m_color);
+    r.b("pending_color", m_pending_color);
+    r.hex("line_palette", m_line_palette, sizeof(m_line_palette));
+    r.hex("frame_palette", m_frame_palette, sizeof(m_frame_palette));
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> BKDisplay::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = RasterDisplay::get_device_fields();

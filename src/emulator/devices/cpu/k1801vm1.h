@@ -89,6 +89,9 @@ public:
     virtual void reset(bool cold) override;
     virtual unsigned int execute() override;
 
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
+
     // Byte access, used by the debugger and the disassembler
     virtual unsigned int read_mem(unsigned int address) override;
     virtual void write_mem(unsigned int address, unsigned int data) override;

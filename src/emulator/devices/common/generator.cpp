@@ -84,6 +84,24 @@ void Generator::system_clock(unsigned int counter)
     }
 }
 
+void Generator::save_state(StateWriter &w)
+{
+    ComputerDevice::save_state(w);
+    w.n("pulse_stored", pulse_stored);
+    w.b("in_pulse", in_pulse);
+    w.b("enabled", enabled);
+}
+
+emulator::Result Generator::load_state(const StateReader &r)
+{
+    emulator::Result res = ComputerDevice::load_state(r);
+    if (!res) return res;
+    r.u("pulse_stored", pulse_stored);
+    r.b("in_pulse", in_pulse);
+    r.b("enabled", enabled);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> Generator::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();

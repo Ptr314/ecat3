@@ -430,6 +430,37 @@ void Agat7Display::HSYNC(const unsigned line, const unsigned sync_val)
     }
 }
 
+void Agat7Display::save_state(StateWriter &w)
+{
+    RasterDisplay::save_state(w);
+    w.u("mode", mode, 8);
+    w.u("previous_mode", previous_mode, 8);
+    w.u("base_address", base_address, 16);
+    w.b("blinker", blinker);
+    w.n("clock_counter", clock_counter);
+    w.n("blink_ticks", blink_ticks);
+    w.n("irq_val", m_irq_val);
+    w.n("nmi_val", m_nmi_val);
+    w.n("mode_512", m_512_mode);
+}
+
+emulator::Result Agat7Display::load_state(const StateReader &r)
+{
+    emulator::Result res = RasterDisplay::load_state(r);
+    if (!res) return res;
+    r.u("mode", mode);
+    r.u("previous_mode", previous_mode);
+    r.u("base_address", base_address);
+    r.b("blinker", blinker);
+    r.u("clock_counter", clock_counter);
+    r.u("blink_ticks", blink_ticks);
+    r.u("irq_val", m_irq_val);
+    r.u("nmi_val", m_nmi_val);
+    r.u("mode_512", m_512_mode);
+    m_pal_dirty = true;
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> Agat7Display::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = RasterDisplay::get_device_fields();

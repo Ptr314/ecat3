@@ -133,6 +133,66 @@ void z80::reset(bool cold)
     CPU::reset(cold);
 }
 
+void z80::save_state(StateWriter &w)
+{
+    CPU::save_state(w);
+    z80context * c = core->get_context();
+    w.array("regs", c->registers.reg_array_8, 12);
+    w.u("I", c->registers.regs.I, 8);
+    w.u("R", c->registers.regs.R, 8);
+    w.u("SP", c->registers.regs.SP);
+    w.u("PC", c->registers.regs.PC);
+    //The shadow set, swapped in by EXX and EX AF,AF'
+    w.u("AF_", c->registers.regs.AF_);
+    w.u("BC_", c->registers.regs.BC_);
+    w.u("DE_", c->registers.regs.DE_);
+    w.u("HL_", c->registers.regs.HL_);
+    w.n("IFF1", c->IFF1);
+    w.n("IFF2", c->IFF2);
+    w.n("IM", c->IM);
+    w.b("halted", c->halted);
+    w.n("NMI", c->NMI);
+    w.n("INT", c->INT);
+    w.n("global_prefix", c->global_prefix);
+    w.n("index8_inc", c->index8_inc);
+
+    bool process = false, nmi = false;
+    core->get_pending(process, nmi);
+    w.b("process_ints", process);
+    w.b("nmi_pending", nmi);
+}
+
+emulator::Result z80::load_state(const StateReader &r)
+{
+    emulator::Result res = CPU::load_state(r);
+    if (!res) return res;
+    z80context * c = core->get_context();
+    r.array("regs", c->registers.reg_array_8, 12);
+    r.u("I", c->registers.regs.I);
+    r.u("R", c->registers.regs.R);
+    r.u("SP", c->registers.regs.SP);
+    r.u("PC", c->registers.regs.PC);
+    r.u("AF_", c->registers.regs.AF_);
+    r.u("BC_", c->registers.regs.BC_);
+    r.u("DE_", c->registers.regs.DE_);
+    r.u("HL_", c->registers.regs.HL_);
+    r.u("IFF1", c->IFF1);
+    r.u("IFF2", c->IFF2);
+    r.u("IM", c->IM);
+    r.b("halted", c->halted);
+    r.u("NMI", c->NMI);
+    r.u("INT", c->INT);
+    r.u("global_prefix", c->global_prefix);
+    r.u("index8_inc", c->index8_inc);
+
+    bool process = false, nmi = false;
+    core->get_pending(process, nmi);
+    r.b("process_ints", process);
+    r.b("nmi_pending", nmi);
+    core->set_pending(process, nmi);
+    return emulator::Result::ok();
+}
+
 std::vector<std::pair<std::string, std::string>> z80::get_registers()
 {
     std::vector<std::pair<std::string, std::string>> l;

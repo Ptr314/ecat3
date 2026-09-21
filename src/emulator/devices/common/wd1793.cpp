@@ -461,6 +461,46 @@ void WD1793::clock(unsigned int counter)
     }
 }
 
+void WD1793::save_state(StateWriter &w)
+{
+    FDC::save_state(w);
+    w.array("registers", registers, 5);
+    w.n("selected_drive", static_cast<uint32_t>(selected_drive));
+    //A command in flight: the controller counts out a step, a sector or a
+    //head load between two accesses, and a snapshot lands in the middle of it
+    w.u("command", command, 8);
+    w.n("delay", static_cast<uint32_t>(delay));
+    w.n("register_delay", static_cast<uint32_t>(register_delay));
+    w.u("register_to_write", register_to_write, 8);
+    w.u("value_to_write", value_to_write, 8);
+    w.n("bytes", static_cast<uint32_t>(bytes));
+    w.n("step_dir", static_cast<uint32_t>(step_dir));
+    w.b("hld", hld);
+    w.n("hld_timer", static_cast<uint32_t>(hld_timer));
+    w.n("sectors_read", sectors_read);
+    w.n("sectors_written", sectors_written);
+}
+
+emulator::Result WD1793::load_state(const StateReader &r)
+{
+    emulator::Result res = FDC::load_state(r);
+    if (!res) return res;
+    r.array("registers", registers, 5);
+    r.u("selected_drive", selected_drive);
+    r.u("command", command);
+    r.u("delay", delay);
+    r.u("register_delay", register_delay);
+    r.u("register_to_write", register_to_write);
+    r.u("value_to_write", value_to_write);
+    r.u("bytes", bytes);
+    r.u("step_dir", step_dir);
+    r.b("hld", hld);
+    r.u("hld_timer", hld_timer);
+    r.u("sectors_read", sectors_read);
+    r.u("sectors_written", sectors_written);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> WD1793::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

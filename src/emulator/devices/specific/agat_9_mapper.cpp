@@ -230,6 +230,31 @@ void Agat9Mapper::set_value(unsigned int address, unsigned int value, bool force
     }
 }
 
+void Agat9Mapper::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    //The bank latches: what answers at which address
+    w.n("wr", _WR);
+    w.n("rd", _RD);
+    w.n("hd", _HD);
+    w.n("d8_4", _D8_4);
+    w.n("bl_ram", _bl_RAM);
+    w.n("bl_rom", _bl_ROM);
+}
+
+emulator::Result Agat9Mapper::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.u("wr", _WR);
+    r.u("rd", _RD);
+    r.u("hd", _HD);
+    r.u("d8_4", _D8_4);
+    r.u("bl_ram", _bl_RAM);
+    r.u("bl_rom", _bl_ROM);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> Agat9Mapper::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

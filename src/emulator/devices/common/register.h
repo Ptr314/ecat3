@@ -27,6 +27,8 @@ public:
     virtual emulator::Result load_config(SystemData *sd) override;
     virtual void interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value) override;
     virtual unsigned get_value();
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

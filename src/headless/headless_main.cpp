@@ -3,7 +3,9 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Console entry point: the emulator without a graphical interface
 
+#include <algorithm>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -14,6 +16,9 @@
 #include "emulator/thread_compat.h"
 #include "emulator/utils.h"
 #include "headless/renderer_null.h"
+#include "libs/zip_reader.h"
+#include "libs/zip_writer.h"
+#include "emulator/state.h"
 
 #ifdef ENABLE_MCP
     #include "mcp/mcp_server.h"
@@ -32,6 +37,7 @@ struct Options
     bool mcp = false;
     bool mcp_trace = false;
     bool no_sound = false;
+    bool selftest = false;
     bool help = false;
     bool version = false;
     bool bad = false;
@@ -70,6 +76,7 @@ Options parse_options(int argc, char *argv[])
         else if (a == "--mcp")                   { o.mcp = true; }
         else if (a == "--mcp-trace")             { o.mcp_trace = true; }
         else if (a == "--no-sound")              { o.no_sound = true; }
+        else if (a == "--selftest")              { o.selftest = true; }
         else if ((a == "-c" || a == "--config")  && has_next) { o.config  = argv[++i]; }
         else if ((a == "-s" || a == "--script")  && has_next) { o.script  = argv[++i]; }
         else if (a == "--workdir"                && has_next) { o.workdir = argv[++i]; }
@@ -98,6 +105,7 @@ void print_help()
         << "  -s, --script <file.ecat>  Script to run, see docs/SCRIPTING.md\n"
         << "      --workdir <dir>       Directory to work in, the one holding computers/\n"
         << "      --no-sound            Do not open an audio device at all\n"
+        << "      --selftest            Check the internal invariants and exit\n"
 #ifdef ENABLE_MCP
         << "      --mcp                 Act as an MCP server on stdin/stdout, see docs/MCP.md\n"
         << "      --mcp-trace           Print the MCP conversation to stderr\n"
@@ -106,6 +114,228 @@ void print_help()
         << "  -v, --version             Show the version\n"
         << "\n"
         << "A positional argument is taken as a script or a configuration by its extension.\n";
+}
+
+//--------------------------------- Selftest --------------------------------//
+//A saved state (.ecats) carries the configuration of its machine inside
+//itself, written by serialize_config(). A value that does not survive the
+//round trip through the parser is a state that loads as a different machine -
+//and the ways that can happen are all silent: a lost duplicate mapper line, a
+//type written where the system section must have none, a value the tokenizer
+//breaks apart. So every configuration of the installation is checked
+
+std::string parameter_difference(const EmulatorConfigDevice * a, const EmulatorConfigDevice * b)
+{
+    if (a->name != b->name) return "device name '" + a->name + "' became '" + b->name + "'";
+    if (a->type != b->type) return "type of '" + a->name + "' became '" + b->type + "'";
+    if (a->parameters.size() != b->parameters.size())
+        return "'" + a->name + "' had " + std::to_string(a->parameters.size())
+             + " parameters, now " + std::to_string(b->parameters.size());
+    for (size_t i = 0; i < a->parameters.size(); i++)
+    {
+        const EmulatorConfigParameter &p = a->parameters[i];
+        const EmulatorConfigParameter &q = b->parameters[i];
+        if (p.name == q.name && p.left_range == q.left_range && p.value == q.value
+            && p.right_range == q.right_range && p.right_extended == q.right_extended) continue;
+        return "'" + a->name + "' parameter " + std::to_string(i) + ": '"
+             + config_parameter_text(p) + "' became '" + config_parameter_text(q) + "'";
+    }
+    return std::string();
+}
+
+bool check_config_round_trip(const std::string &file, std::string &message)
+{
+    EmulatorConfig original;
+    emulator::Result res = original.load_from_file(file);
+    if (!res) { message = strip_message_context(res.message); return false; }
+
+    EmulatorConfig again;
+    res = again.load_from_text(serialize_config(original));
+    if (!res) { message = "re-reading what was written: " + strip_message_context(res.message); return false; }
+
+    if (original.get_devices_count() != again.get_devices_count())
+    {
+        message = "had " + std::to_string(original.get_devices_count()) + " devices, now "
+                + std::to_string(again.get_devices_count());
+        return false;
+    }
+    for (unsigned int i = 0; i < original.get_devices_count(); i++)
+    {
+        message = parameter_difference(original.get_device(static_cast<int>(i)),
+                                       again.get_device(static_cast<int>(i)));
+        if (!message.empty()) return false;
+    }
+    return true;
+}
+
+//The archive a saved state is packed into is written by ZipWriter and read
+//back by ZipReader, which verifies both the size and the CRC of every entry -
+//so reading our own archive is a complete check of the headers
+bool check_zip_round_trip(std::string &message)
+{
+    struct Sample { const char * name; std::string data; };
+    std::vector<Sample> samples;
+    samples.push_back({"state.ecats", std::string()});                      //Empty
+    samples.push_back({"a.txt", "x"});                                      //One byte
+    samples.push_back({"rom/monitor.rom", std::string(4096, '\0')});        //Compresses away
+    samples.push_back({"media/disk.raw", std::string()});
+    //Incompressible: deflate comes out larger and the entry has to be stored
+    std::string noise;
+    for (unsigned i = 0; i < 8192; i++)
+        noise += static_cast<char>((i * 1103515245u + 12345u) >> 16);
+    samples[3].data = noise;
+
+    ZipWriter w;
+    for (size_t i = 0; i < samples.size(); i++) w.add(samples[i].name, samples[i].data);
+    std::string archive;
+    if (!w.build(archive)) { message = w.error(); return false; }
+
+
+    ZipReader r;
+    if (!r.open(archive)) { message = r.error(); return false; }
+    if (r.entries().size() != samples.size())
+    {
+        message = "wrote " + std::to_string(samples.size()) + " entries, read back "
+                + std::to_string(r.entries().size());
+        return false;
+    }
+    for (size_t i = 0; i < samples.size(); i++)
+    {
+        std::vector<uint8_t> back;
+        if (!r.read(samples[i].name, back)) { message = r.error(); return false; }
+        const std::string &want = samples[i].data;
+        if (back.size() != want.size()
+            || (!want.empty() && memcmp(back.data(), want.data(), want.size()) != 0))
+        {
+            message = std::string("entry '") + samples[i].name + "' came back different";
+            return false;
+        }
+    }
+
+    //An archive is a test reference only if building it twice gives the same
+    //bytes, so the fixed time stamp and the entry order are part of the deal
+    ZipWriter w2;
+    for (size_t i = 0; i < samples.size(); i++) w2.add(samples[i].name, samples[i].data);
+    std::string archive2;
+    if (!w2.build(archive2)) { message = w2.error(); return false; }
+    if (archive2 != archive) { message = "two identical archives came out different"; return false; }
+
+    //And it must refuse what the reader would reject
+    ZipWriter bad;
+    bad.add("../escape.txt", std::string("x"));
+    std::string ignored;
+    if (bad.build(ignored)) { message = "an unsafe entry name was accepted"; return false; }
+
+    return true;
+}
+
+//The hex dump is what a saved state writes RAM as, and the '*' folding is the
+//part of it that can silently put bytes at the wrong address
+bool check_hex_round_trip(std::string &message)
+{
+    struct Case { const char * what; std::vector<uint8_t> data; unsigned int bits; };
+    std::vector<Case> cases;
+
+    cases.push_back({"empty RAM", std::vector<uint8_t>(4096, 0), 8});
+    cases.push_back({"filled RAM", std::vector<uint8_t>(4096, 0xFF), 8});
+
+    //Data, a long identical stretch, data again: the folding has to resume at
+    //the right address on the far side of the '*'
+    std::vector<uint8_t> mixed(4096, 0);
+    for (unsigned i = 0; i < 64; i++) mixed[i] = static_cast<uint8_t>(i);
+    for (unsigned i = 3000; i < 3100; i++) mixed[i] = static_cast<uint8_t>(i & 0xFF);
+    cases.push_back({"data around a gap", mixed, 8});
+
+    //Not a multiple of the line, so the last line is short and must not
+    //become a folding pattern
+    std::vector<uint8_t> odd(1000, 0);
+    for (size_t i = 0; i < odd.size(); i++) odd[i] = static_cast<uint8_t>((i * 7) & 0xFF);
+    cases.push_back({"a size that is not a whole line", odd, 8});
+
+    std::vector<uint8_t> words(512, 0);
+    for (size_t i = 0; i < words.size(); i++) words[i] = static_cast<uint8_t>(i & 0xFF);
+    cases.push_back({"16 bit values", words, 16});
+
+    //Every byte value, so that no digit pair is misread
+    std::vector<uint8_t> all(256, 0);
+    for (unsigned i = 0; i < 256; i++) all[i] = static_cast<uint8_t>(i);
+    cases.push_back({"every byte value", all, 8});
+
+    for (size_t c = 0; c < cases.size(); c++)
+    {
+        const Case &t = cases[c];
+        const std::string dump = encode_hex_dump(t.data.data(), t.data.size(), t.bits, "  ");
+        //A restore starts from a device that has just been reset, so the
+        //buffer it decodes into is not the one it was encoded from
+        std::vector<uint8_t> back(t.data.size(), 0x5A);
+        std::string error;
+        if (!decode_hex_dump(dump, back.data(), back.size(), t.bits, error))
+        {
+            message = std::string(t.what) + ": " + error;
+            return false;
+        }
+        for (size_t i = 0; i < t.data.size(); i++)
+            if (back[i] != t.data[i])
+            {
+                message = std::string(t.what) + ": byte " + std::to_string(i) + " came back as "
+                        + std::to_string(back[i]) + " instead of " + std::to_string(t.data[i]);
+                return false;
+            }
+    }
+
+    //An untouched 64K of RAM has to cost a handful of lines, not four thousand
+    const std::vector<uint8_t> empty(65536, 0);
+    const std::string dump = encode_hex_dump(empty.data(), empty.size(), 8, "");
+    if (std::count(dump.begin(), dump.end(), '\n') > 4)
+    {
+        message = "folding did not work: 64K of zeroes took "
+                + std::to_string(std::count(dump.begin(), dump.end(), '\n')) + " lines";
+        return false;
+    }
+    return true;
+}
+
+int run_selftest(const std::string &work_path)
+{
+    std::vector<std::string> files;
+    std::error_code ec;
+    for (fs::recursive_directory_iterator it(work_path, ec), end; it != end; it.increment(ec))
+    {
+        if (ec) break;
+        if (it->is_regular_file(ec) && lowercase(it->path().extension().string()) == ".cfg")
+            files.push_back(it->path().generic_string());
+    }
+    std::sort(files.begin(), files.end());
+
+    if (files.empty())
+    {
+        std::cout << "No configurations found in " << work_path
+                  << " - run from the deploy directory or pass --workdir" << std::endl;
+        return 2;
+    }
+
+    unsigned int failed = 0;
+    for (size_t i = 0; i < files.size(); i++)
+    {
+        std::string message;
+        if (check_config_round_trip(files[i], message)) continue;
+        std::cout << "FAIL " << files[i] << ": " << message << std::endl;
+        failed++;
+    }
+    std::cout << "config round trip: " << (files.size() - failed) << " of " << files.size()
+              << " configurations" << (failed ? " - FAILED" : " - ok") << std::endl;
+
+    std::string message;
+    const bool zip_ok = check_zip_round_trip(message);
+    if (!zip_ok) { std::cout << "FAIL zip: " << message << std::endl; failed++; }
+    std::cout << "zip round trip: " << (zip_ok ? "ok" : "FAILED") << std::endl;
+
+    message.clear();
+    const bool hex_ok = check_hex_round_trip(message);
+    if (!hex_ok) { std::cout << "FAIL hex: " << message << std::endl; failed++; }
+    std::cout << "hex dump round trip: " << (hex_ok ? "ok" : "FAILED") << std::endl;
+
+    return failed ? 1 : 0;
 }
 
 //Mirrors the platform layout the windowed build resolves in its constructor
@@ -298,6 +528,8 @@ int main(int argc, char *argv[])
             return 2;
         }
     }
+
+    if (o.selftest) return run_selftest(resolve_paths(argv[0]).work);
 
     if (!o.mcp && o.script.empty() && o.config.empty())
     {

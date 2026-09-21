@@ -63,6 +63,42 @@ void mos6502::write_mem(unsigned int address, unsigned int data)
     mm->write(address, data);
 }
 
+void mos6502::save_state(StateWriter &w)
+{
+    CPU::save_state(w);
+    mos6502context * c = core->get_context();
+    w.u("A", c->A, 8);
+    w.u("X", c->X, 8);
+    w.u("Y", c->Y, 8);
+    w.u("P", c->P, 8);
+    w.u("S", c->S, 8);
+    w.u("PC", c->r16.PC);
+    w.b("is_nmi", c->is_nmi);
+    w.b("is_irq", c->is_irq);
+    w.b("stop", c->stop);
+    w.b("wait", c->wait);
+    //commands[] is a table of function pointers built from type, which comes
+    //from the configuration
+}
+
+emulator::Result mos6502::load_state(const StateReader &r)
+{
+    emulator::Result res = CPU::load_state(r);
+    if (!res) return res;
+    mos6502context * c = core->get_context();
+    r.u("A", c->A);
+    r.u("X", c->X);
+    r.u("Y", c->Y);
+    r.u("P", c->P);
+    r.u("S", c->S);
+    r.u("PC", c->r16.PC);
+    r.b("is_nmi", c->is_nmi);
+    r.b("is_irq", c->is_irq);
+    r.b("stop", c->stop);
+    r.b("wait", c->wait);
+    return emulator::Result::ok();
+}
+
 std::vector<std::pair<std::string, std::string>> mos6502::get_registers()
 {
     mos6502context * c = core->get_context();

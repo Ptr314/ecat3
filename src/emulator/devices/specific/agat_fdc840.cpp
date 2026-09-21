@@ -291,6 +291,44 @@ void Agat_FDC840::clock(unsigned int counter)
     }
 }
 
+void Agat_FDC840::save_state(StateWriter &w)
+{
+    FDC::save_state(w);
+    w.n("track0", static_cast<uint32_t>(current_track[0]));
+    w.n("track1", static_cast<uint32_t>(current_track[1]));
+    w.n("selected_drive", static_cast<uint32_t>(selected_drive));
+    w.b("motor_on", motor_on);
+    w.b("write_mode", write_mode);
+    w.n("step_dir", static_cast<uint32_t>(step_dir));
+    w.n("side", static_cast<uint32_t>(side));
+    w.b("sector_sync", sector_sync);
+    w.b("write_sync", write_sync);
+    w.b("data_ready", data_ready);
+    //Two ВВ55 that belong to this controller rather than to the machine: they
+    //are members, not devices of the configuration, so nobody else writes them
+    w.push("dd14"); dd14.save_state(w); w.pop();
+    w.push("dd15"); dd15.save_state(w); w.pop();
+}
+
+emulator::Result Agat_FDC840::load_state(const StateReader &r)
+{
+    emulator::Result res = FDC::load_state(r);
+    if (!res) return res;
+    r.u("track0", current_track[0]);
+    r.u("track1", current_track[1]);
+    r.u("selected_drive", selected_drive);
+    r.b("motor_on", motor_on);
+    r.b("write_mode", write_mode);
+    r.u("step_dir", step_dir);
+    r.u("side", side);
+    r.b("sector_sync", sector_sync);
+    r.b("write_sync", write_sync);
+    r.b("data_ready", data_ready);
+    dd14.load_state(r.sub("dd14"));
+    dd15.load_state(r.sub("dd15"));
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> Agat_FDC840::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = FDC::get_device_fields();

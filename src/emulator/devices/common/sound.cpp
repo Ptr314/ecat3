@@ -334,6 +334,76 @@ void GenericSound::handle_audio_callback(uint8_t* stream, int len)
 
 //------------------- Introspection and control ----------------------------//
 
+void GenericSound::save_state(StateWriter &w)
+{
+    ComputerDevice::save_state(w);
+    //Only what the emulation side carries between samples. The ring buffer of
+    //the audio driver belongs to the host, not to the machine, and the filter
+    //histories are worth one click at most
+    w.n("counter", m_counter);
+    w.n64("accumulator", static_cast<uint64_t>(m_accumulator));
+    w.n64("acc_counter", static_cast<uint64_t>(m_acc_counter));
+    w.n("volume", m_volume);
+    w.b("muted", m_muted);
+    //Which sources have been heard, and are therefore in the mix. Left out, a
+    //board that has been playing for an hour would be taken for idle again
+    w.b("idle_taken", m_idle_taken);
+    w.b("listening", m_listening);
+    w.n64("listen_left", static_cast<uint64_t>(m_listen_left));
+    if (!m_heard.empty())
+    {
+        std::vector<bool> heard(m_heard.size());
+        for (size_t i = 0; i < m_heard.size(); i++) heard[i] = m_heard[i] != 0;
+        std::vector<uint32_t> samples(m_idle_sample.size());
+        for (size_t i = 0; i < m_idle_sample.size(); i++)
+            samples[i] = static_cast<uint32_t>(m_idle_sample[i]);
+        //vector<bool> has no contiguous storage of its own
+        std::vector<char> flat(heard.size());
+        for (size_t i = 0; i < heard.size(); i++) flat[i] = heard[i] ? 1 : 0;
+        w.array("heard", reinterpret_cast<const uint8_t *>(flat.data()), flat.size());
+        if (!samples.empty()) w.array("idle_sample", samples.data(), samples.size());
+    }
+}
+
+emulator::Result GenericSound::load_state(const StateReader &r)
+{
+    emulator::Result res = ComputerDevice::load_state(r);
+    if (!res) return res;
+    r.u("counter", m_counter);
+    uint64_t v = 0;
+    if (r.n64("accumulator", v)) m_accumulator = static_cast<int64_t>(v);
+    if (r.n64("acc_counter", v)) m_acc_counter = static_cast<int64_t>(v);
+    r.u("volume", m_volume);
+    r.b("muted", m_muted);
+    r.b("idle_taken", m_idle_taken);
+    r.b("listening", m_listening);
+    if (r.n64("listen_left", v)) m_listen_left = static_cast<int64_t>(v);
+    if (!m_heard.empty())
+    {
+        std::vector<char> flat(m_heard.size(), 0);
+        for (size_t i = 0; i < m_heard.size(); i++) flat[i] = m_heard[i];
+        r.array("heard", reinterpret_cast<uint8_t *>(flat.data()), flat.size());
+        for (size_t i = 0; i < m_heard.size(); i++) m_heard[i] = flat[i];
+    }
+    if (!m_idle_sample.empty())
+    {
+        std::vector<uint32_t> samples(m_idle_sample.size());
+        for (size_t i = 0; i < m_idle_sample.size(); i++)
+            samples[i] = static_cast<uint32_t>(m_idle_sample[i]);
+        r.array("idle_sample", samples.data(), samples.size());
+        for (size_t i = 0; i < m_idle_sample.size(); i++)
+            m_idle_sample[i] = static_cast<int32_t>(samples[i]);
+    }
+    return emulator::Result::ok();
+}
+
+void GenericSound::state_restored()
+{
+    //Who is in the mix depends on every source having been restored first
+    refresh_sources();
+    m_level_dirty = true;
+}
+
 std::vector<DeviceFieldInfo> GenericSound::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();

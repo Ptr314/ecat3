@@ -38,6 +38,9 @@ private:
     bool busy;
     InterfaceManager *im;
     SystemData sd;
+    //The configuration of the machine that is loaded, already resolved. Lives
+    //as long as the machine does: ComputerDevice::cd points into it
+    EmulatorConfig m_config;
     MachineSource m_source;
     bool m_embedded_loaded = false;     //The script buffer holds m_source.script
     VideoRenderer * renderer;
@@ -100,8 +103,25 @@ private:
     std::vector<unsigned char> m_screenshot_png;//Guarded; the last image encoded
     uint64_t m_screenshot_serial = 0;           //Guarded; incremented for every image
     compat_mutex m_screenshot_mutex;
+    //A snapshot asked for from another thread, taken at a slice boundary the
+    //way a screenshot is. A script does not go through this: its tick() runs
+    //on the emulation thread already, between two instructions
+    std::string m_state_file;                   //Guarded by m_state_mutex
+    bool m_state_requested = false;             //Guarded
+    std::string m_state_error;                  //Guarded
+    compat_mutex m_state_mutex;
+    void store_state();
     bool m_settings_readonly = false;
     void store_screenshot();
+
+    //Applies the @state section of a .ecats. Called by run() on the emulation
+    //thread, after reset(true) and before the loop starts, so that no device
+    //is clocked between the reset and the restore
+    emulator::Result apply_state();
+    //What the state file said that this build could not use: unknown devices,
+    //unknown keys, sections with no device. Never printed - any output on
+    //stderr fails every regression test - but kept for whoever asks
+    std::string m_state_report;
 
 public:
     DeviceManager *dm;
@@ -128,6 +148,22 @@ public:
 
     emulator::Result load_config(std::string file_name);
     void apply_saved_device_options();
+
+    //--------------------------- Saved state ------------------------------//
+    //Writes everything the machine is into file_name: a .ecats.zip archive,
+    //or a .ecats text file with a <stem>.files/ directory beside it. Runs on
+    //the emulation thread - from a script verb, which is already there, or
+    //through request_state() from any other
+    emulator::Result save_state(const std::string &file_name);
+    //Asks for a snapshot at the next safe point. Thread safe
+    void request_state(const std::string &file_name);
+    //True while a requested snapshot has not been taken yet. False means it is
+    //finished, and take_state_error() then says whether it worked
+    bool state_pending();
+    //Empty until a requested snapshot has failed, and cleared by reading it
+    std::string take_state_error();
+    //What the state that was loaded did not fit into this build
+    const std::string & state_report() const { return m_state_report; }
 
     std::string read_setup(std::string section, std::string ident, std::string def_val);
     void write_setup(std::string section, std::string ident, std::string new_val);

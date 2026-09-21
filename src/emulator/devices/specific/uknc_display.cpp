@@ -387,6 +387,58 @@ ConfigFields UKNCDisplay::get_config_fields()
     return {f};
 }
 
+void UKNCDisplay::save_state(StateWriter &w)
+{
+    RasterDisplay::save_state(w);
+    //Where the walk through the display list stands. A snapshot taken mid
+    //frame finishes the frame from the entry it stopped on, which is what a
+    //program rewriting the list per line depends on
+    w.u("tag_address", m_tag_address);
+    w.b("tag_four", m_tag_four);
+    w.b("tag_palette", m_tag_palette);
+    w.u("palette", m_palette, 32);
+    w.n("pbpgpr", m_pbpgpr);
+    w.n("scale", m_scale);
+    w.b("cursor_on", m_cursor_on);
+    w.n("cursor_color", m_cursor_color);
+    w.b("cursor_graphic", m_cursor_graphic);
+    w.n("cursor_pos", m_cursor_pos);
+    w.n("cursor_bit", m_cursor_bit);
+    w.n("entries", m_entries);
+    w.n("entries_done", m_entries_done);
+    w.n("frames", m_frames);
+    w.n("colors", m_colors);
+    w.n("pending_colors", m_pending_colors);
+    //Scale of each line of the last completed frame, read by scripts
+    w.hex("line_scale", m_line_scale, sizeof(m_line_scale));
+}
+
+emulator::Result UKNCDisplay::load_state(const StateReader &r)
+{
+    emulator::Result res = RasterDisplay::load_state(r);
+    if (!res) return res;
+    r.u("tag_address", m_tag_address);
+    r.b("tag_four", m_tag_four);
+    r.b("tag_palette", m_tag_palette);
+    r.u("palette", m_palette);
+    r.u("pbpgpr", m_pbpgpr);
+    r.u("scale", m_scale);
+    r.b("cursor_on", m_cursor_on);
+    r.u("cursor_color", m_cursor_color);
+    r.b("cursor_graphic", m_cursor_graphic);
+    r.u("cursor_pos", m_cursor_pos);
+    r.u("cursor_bit", m_cursor_bit);
+    r.u("entries", m_entries);
+    r.u("entries_done", m_entries_done);
+    r.u("frames", m_frames);
+    r.u("colors", m_colors);
+    r.u("pending_colors", m_pending_colors);
+    r.hex("line_scale", m_line_scale, sizeof(m_line_scale));
+    //The eight colours of the line follow the palette and the colour set
+    rebuild_line_colors();
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> UKNCDisplay::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = RasterDisplay::get_device_fields();

@@ -420,6 +420,27 @@ void Keyboard::reset(bool cool)
     m_ids_held.clear();
 }
 
+void Keyboard::save_state(StateWriter &w)
+{
+    ComputerDevice::save_state(w);
+    w.b("rus", rus_mode);
+    w.b("case_lower", m_case_lower);
+    w.n("reset_count", m_reset_count);
+    //The lists of keys the host holds down are not written. Nobody is holding
+    //a key when a snapshot is opened, and one that came back down would stay
+    //down for good, auto repeat included
+}
+
+emulator::Result Keyboard::load_state(const StateReader &r)
+{
+    emulator::Result res = ComputerDevice::load_state(r);
+    if (!res) return res;
+    r.b("rus", rus_mode);
+    r.b("case_lower", m_case_lower);
+    r.u("reset_count", m_reset_count);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> Keyboard::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();

@@ -342,3 +342,39 @@ EmulatorConfigDevice * EmulatorConfig::get_device(const std::string& name)
     }
     return nullptr;
 }
+
+//----------------------------------------------------------------------------
+
+std::string config_quote_value(const std::string &v)
+{
+    if (v.find_first_of("=[]{}\r\n") != std::string::npos || v != str_trim(v))
+        return "\"" + v + "\"";
+    return v;
+}
+
+std::string config_parameter_text(const EmulatorConfigParameter &p, bool with_value)
+{
+    std::string s = p.name + p.left_range;
+    if (!with_value) return s;
+    s += " =";
+    if (!p.value.empty()) s += " " + config_quote_value(p.value) + p.right_range;
+    if (!p.right_extended.empty()) s += " {" + p.right_extended + "}";
+    return s;
+}
+
+std::string serialize_config(EmulatorConfig &config)
+{
+    std::string s;
+    for (unsigned int i = 0; i < config.get_devices_count(); i++)
+    {
+        EmulatorConfigDevice * d = config.get_device(static_cast<int>(i));
+        //Only the system section has no type, and load_from_text() knows it
+        //by name - writing "system : " back would not parse
+        s += d->type.empty() ? d->name : (d->name + " : " + d->type);
+        s += " {\n";
+        for (size_t j = 0; j < d->parameters.size(); j++)
+            s += "\t" + config_parameter_text(d->parameters[j]) + "\n";
+        s += "}\n\n";
+    }
+    return s;
+}

@@ -235,6 +235,37 @@ void UKNCTimer::set_value(unsigned int address, unsigned int value, bool force)
 
 //--------------------------- Поля для сценариев ----------------------------//
 
+void UKNCTimer::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    w.u("flags", m_flags);
+    w.u("reload", m_reload);
+    w.u("counter", m_counter);
+    w.n("divider", m_divider);
+    w.n64("acc", m_acc);
+    w.n("zeroes", m_zeroes);
+    w.n("events", m_events);
+    //What is being offered on the shared request line, so that a request
+    //already made is not made a second time
+    w.u("offered", m_irq.offered());
+}
+
+emulator::Result UKNCTimer::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.u("flags", m_flags);
+    r.u("reload", m_reload);
+    r.u("counter", m_counter);
+    r.u("divider", m_divider);
+    r.n64("acc", m_acc);
+    r.u("zeroes", m_zeroes);
+    r.u("events", m_events);
+    uint32_t offered = 0;
+    if (r.u("offered", offered)) m_irq.set_offered(offered);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> UKNCTimer::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

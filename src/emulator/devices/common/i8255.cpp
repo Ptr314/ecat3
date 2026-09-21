@@ -210,6 +210,21 @@ void I8255::interface_callback(unsigned int callback_id, unsigned int new_value,
 
 }
 
+void I8255::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    //Ports A, B, C and the control word: the whole chip
+    w.array("registers", registers, 4);
+}
+
+emulator::Result I8255::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.array("registers", registers, 4);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> I8255::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

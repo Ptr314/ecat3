@@ -660,6 +660,129 @@ ConfigFields FDD::get_config_fields()
     return {f};
 }
 
+void FDD::save_state(StateWriter &w)
+{
+    ComputerDevice::save_state(w);
+
+    //Where the head stands, whatever is in the drive
+    w.n("side", static_cast<uint32_t>(side));
+    w.n("track", static_cast<uint32_t>(track));
+    w.n("sector", static_cast<uint32_t>(sector));
+    w.n("position", static_cast<uint32_t>(position));
+    w.n("selector", selector);
+    w.b("motor_on", motor_on);
+    w.b("motor_was_on", m_motor_was_on);
+    w.b("protected", write_protect);
+    w.b("loaded", loaded);
+    w.n("generation", m_generation);
+    //The led is timed against the host clock and starts again from now
+
+    if (!loaded || buffer == nullptr || disk_size <= 0) return;
+
+    //The geometry the bytes are read with. A drive loads an image by its
+    //extension, and the state carries neither the extension nor the loader
+    w.s("file_name", file_name);
+    w.n("sides", static_cast<uint32_t>(sides));
+    w.n("tracks", static_cast<uint32_t>(tracks));
+    w.n("sectors", static_cast<uint32_t>(sectors));
+    w.n("sector_size", static_cast<uint32_t>(sector_size));
+    w.n("disk_size", static_cast<uint32_t>(disk_size));
+    w.n("fdd_mode", static_cast<uint32_t>(fdd_mode));
+    w.n("track_mode", static_cast<uint32_t>(track_mode));
+    w.n("stream_format", stream_format);
+    w.b("sides_layout", sides_layout);
+    w.n("physical_track_len", static_cast<uint32_t>(physical_track_len));
+
+    //Raw, not through save_image(): that converts by extension - it reshuffles
+    //tracks, rebuilds streams - and a round trip that is almost exact would
+    //give a machine that cannot tell it was restarted except on one sector
+    w.blob("data", dsk_tools::get_filename(file_name.empty() ? (name + ".raw") : file_name),
+           buffer, static_cast<size_t>(disk_size));
+
+    if (track_mode != FDD_MODE_SECTORS)
+    {
+        //The table that says where each physical track begins
+        const size_t count = sizeof(track_indexes) / sizeof(track_indexes[0]);
+        std::vector<uint32_t> number(count), side_no(count), size(count), offset(count);
+        for (size_t i = 0; i < count; i++)
+        {
+            number[i]  = track_indexes[i].track_number;
+            side_no[i] = track_indexes[i].side_number;
+            size[i]    = track_indexes[i].mfmtracksize;
+            offset[i]  = track_indexes[i].mfmtrackoffset;
+        }
+        w.array("track_number", number.data(), count);
+        w.array("track_side", side_no.data(), count);
+        w.array("track_size", size.data(), count);
+        w.array("track_offset", offset.data(), count);
+    }
+}
+
+emulator::Result FDD::load_state(const StateReader &r)
+{
+    emulator::Result res = ComputerDevice::load_state(r);
+    if (!res) return res;
+
+    r.u("side", side);
+    r.u("track", track);
+    r.u("sector", sector);
+    r.u("position", position);
+    r.u("selector", selector);
+    r.b("motor_on", motor_on);
+    r.b("motor_was_on", m_motor_was_on);
+    r.b("protected", write_protect);
+
+    bool was_loaded = false;
+    if (!r.b("loaded", was_loaded) || !was_loaded) return emulator::Result::ok();
+    r.u("generation", m_generation);
+
+    uint32_t size = 0;
+    if (!r.u("disk_size", size) || size == 0) return emulator::Result::ok();
+
+    r.s("file_name", file_name);
+    r.u("sides", sides);
+    r.u("tracks", tracks);
+    r.u("sectors", sectors);
+    r.u("sector_size", sector_size);
+    r.u("fdd_mode", fdd_mode);
+    r.u("track_mode", track_mode);
+    r.u("stream_format", stream_format);
+    r.b("sides_layout", sides_layout);
+    r.u("physical_track_len", physical_track_len);
+
+    delete [] buffer;
+    disk_size = static_cast<int>(size);
+    buffer = new uint8_t[disk_size];
+    memset(buffer, 0, static_cast<size_t>(disk_size));
+    if (!r.blob_into("data", buffer, static_cast<size_t>(disk_size)))
+    {
+        delete [] buffer;
+        buffer = nullptr;
+        disk_size = 0;
+        return emulator::Result::error(emulator::ErrorCode::FileError,
+            "{MachineState|Saved state} " + name + ": " + r.error());
+    }
+    loaded = true;
+
+    if (track_mode != FDD_MODE_SECTORS)
+    {
+        const size_t count = sizeof(track_indexes) / sizeof(track_indexes[0]);
+        std::vector<uint32_t> number(count, 0), side_no(count, 0), tsize(count, 0), offset(count, 0);
+        r.array("track_number", number.data(), count);
+        r.array("track_side", side_no.data(), count);
+        r.array("track_size", tsize.data(), count);
+        r.array("track_offset", offset.data(), count);
+        for (size_t i = 0; i < count; i++)
+        {
+            track_indexes[i].track_number   = static_cast<uint16_t>(number[i]);
+            track_indexes[i].side_number    = static_cast<uint8_t>(side_no[i]);
+            track_indexes[i].mfmtracksize   = tsize[i];
+            track_indexes[i].mfmtrackoffset = offset[i];
+        }
+    }
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> FDD::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();

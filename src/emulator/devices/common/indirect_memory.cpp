@@ -165,6 +165,21 @@ void IndirectMemory::set_value(unsigned int address, unsigned int value, bool fo
     set_value_word(address & ~1u, (address & 1) ? (b << 8) : b, force);
 }
 
+void IndirectMemory::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    //The latched address the data registers read and write through
+    w.u("address", m_address);
+}
+
+emulator::Result IndirectMemory::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.u("address", m_address);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> IndirectMemory::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

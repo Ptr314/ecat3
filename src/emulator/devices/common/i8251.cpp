@@ -330,6 +330,52 @@ void I8251::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned
     }
 }
 
+void I8251::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    w.u("mode_word", mode_word, 8);
+    w.u("command_word", command_word, 8);
+    w.n("control_state", static_cast<uint32_t>(control_state));
+    w.n("sync_chars_remaining", sync_chars_remaining);
+    w.array("sync_chars", sync_chars, 2);
+    w.u("status", status, 8);
+    w.u("tx_buffer", tx_buffer, 8);
+    w.u("rx_buffer", rx_buffer, 8);
+    w.b("tx_buffer_full", tx_buffer_full);
+    w.b("rx_buffer_full", rx_buffer_full);
+    w.b("tx_enable", tx_enable);
+    w.b("rx_enable", rx_enable);
+    w.b("send_break", send_break);
+    w.b("hunt_mode", hunt_mode);
+    //Where the shift clocks stand: a character takes a number of them
+    w.n("tx_clock_count", tx_clock_count);
+    w.n("rx_clock_count", rx_clock_count);
+}
+
+emulator::Result I8251::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.u("mode_word", mode_word);
+    r.u("command_word", command_word);
+    uint32_t state = static_cast<uint32_t>(control_state);
+    if (r.u("control_state", state)) control_state = static_cast<ControlState>(state);
+    r.u("sync_chars_remaining", sync_chars_remaining);
+    r.array("sync_chars", sync_chars, 2);
+    r.u("status", status);
+    r.u("tx_buffer", tx_buffer);
+    r.u("rx_buffer", rx_buffer);
+    r.b("tx_buffer_full", tx_buffer_full);
+    r.b("rx_buffer_full", rx_buffer_full);
+    r.b("tx_enable", tx_enable);
+    r.b("rx_enable", rx_enable);
+    r.b("send_break", send_break);
+    r.b("hunt_mode", hunt_mode);
+    r.u("tx_clock_count", tx_clock_count);
+    r.u("rx_clock_count", rx_clock_count);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> I8251::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

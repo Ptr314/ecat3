@@ -92,6 +92,21 @@ void PageMapper::set_value(const unsigned address, const unsigned value, bool fo
     }
 }
 
+void PageMapper::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    //Which page the window shows. Everything else is the map itself
+    w.u("frame", Frame, 16);
+}
+
+emulator::Result PageMapper::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.u("frame", Frame);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> PageMapper::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

@@ -50,6 +50,8 @@ public:
     virtual unsigned int get_command() override;
 
     virtual void set_context_value(const std::string &name, unsigned int value) override;
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
 
 };
 

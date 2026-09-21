@@ -323,6 +323,39 @@ void UKNCKeyboard::key_up(unsigned int key)
     if (e != nullptr) press_key(e->scan, e->shift, false);
 }
 
+void UKNCKeyboard::save_state(StateWriter &w)
+{
+    Keyboard::save_state(w);
+    w.b("ready", m_ready);
+    w.n("codes", m_codes);
+    w.u("last", m_last);
+    w.b("shift_machine", m_shift_machine);
+    w.u("offered", m_irq.offered());
+    //The queue holds what the host has typed and the machine has not taken.
+    //The host is typing nothing when a snapshot is opened, and m_shift_host
+    //follows the host keyboard the same way
+}
+
+emulator::Result UKNCKeyboard::load_state(const StateReader &r)
+{
+    emulator::Result res = Keyboard::load_state(r);
+    if (!res) return res;
+    r.b("ready", m_ready);
+    r.u("codes", m_codes);
+    r.u("last", m_last);
+    r.b("shift_machine", m_shift_machine);
+    uint32_t offered = 0;
+    if (r.u("offered", offered)) m_irq.set_offered(offered);
+    {
+        compat_lock_guard lock(m_queue_mutex);
+        m_queue.clear();
+        m_queued = false;
+    }
+    m_shift_host = false;
+    m_forced = 0;
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> UKNCKeyboard::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = Keyboard::get_device_fields();

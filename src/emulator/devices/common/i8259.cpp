@@ -159,6 +159,34 @@ void I8259::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned
     }
 }
 
+void I8259::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    w.array("icw", ICW, 4);
+    w.array("ocw", OCW, 3);
+    w.u("imr", IMR, 8);
+    w.u("irr", IRR, 8);
+    w.u("isr", ISR, 8);
+    w.n("icw_step", icw_step);
+    w.b("initialized", initialized);
+    w.b("read_isr", read_isr);
+}
+
+emulator::Result I8259::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.array("icw", ICW, 4);
+    r.array("ocw", OCW, 3);
+    r.u("imr", IMR);
+    r.u("irr", IRR);
+    r.u("isr", ISR);
+    r.u("icw_step", icw_step);
+    r.b("initialized", initialized);
+    r.b("read_isr", read_isr);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> I8259::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

@@ -334,6 +334,50 @@ ConfigFields DL11::get_config_fields()
     return r;
 }
 
+void DL11::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    w.u("rcsr", m_rcsr);
+    w.u("rbuf", m_rbuf);
+    w.u("xcsr", m_xcsr);
+    w.u("xbuf", m_xbuf);
+    w.b("rx_pending", m_rx_pending);
+    w.b("tx_pending", m_tx_pending);
+    w.n64("char_ticks", m_char_ticks);
+    w.b("tx_busy", m_tx_busy);
+    w.n("idle_polls", m_idle_polls);
+    w.n("sent", m_sent);
+    w.n("received", m_received);
+    //What a script has pushed in and the line has not handed over yet
+    if (!m_rx_queue.empty())
+    {
+        std::vector<uint8_t> queue(m_rx_queue.begin(), m_rx_queue.end());
+        w.array("rx_queue", queue.data(), queue.size());
+    }
+}
+
+emulator::Result DL11::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.u("rcsr", m_rcsr);
+    r.u("rbuf", m_rbuf);
+    r.u("xcsr", m_xcsr);
+    r.u("xbuf", m_xbuf);
+    r.b("rx_pending", m_rx_pending);
+    r.b("tx_pending", m_tx_pending);
+    r.n64("char_ticks", m_char_ticks);
+    r.b("tx_busy", m_tx_busy);
+    r.u("idle_polls", m_idle_polls);
+    r.u("sent", m_sent);
+    r.u("received", m_received);
+    m_rx_queue.clear();
+    std::vector<uint8_t> queue(256, 0);
+    if (r.array("rx_queue", queue.data(), queue.size()))
+        for (size_t i = 0; i < queue.size(); i++) m_rx_queue.push_back(queue[i]);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> DL11::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

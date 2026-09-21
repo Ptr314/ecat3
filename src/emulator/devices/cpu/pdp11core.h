@@ -133,6 +133,25 @@ public:
     virtual pdp11context * get_context();
     virtual uint16_t get_pc();
 
+    // Everything outside the context that a cold start does not reproduce:
+    // the latched interrupt requests and the two flags that unwind an
+    // instruction. A snapshot taken between two instructions with a request
+    // pending has to bring it back, or the machine loses the interrupt
+    struct saved_latches {
+        bool     step_pending;
+        bool     is_virq;
+        uint16_t virq_vector;
+        bool     is_irq2;
+        bool     is_irq3;
+        bool     is_halt_req;
+        bool     halt_pin;
+        bool     is_aclo;
+        bool     abort;
+        bool     no_trace;
+    };
+    void get_latches(saved_latches &s) const;
+    void set_latches(const saved_latches &s);
+
     // The last trap taken, for scripts: vector, PC of the trapped instruction, count
     uint16_t m_trap_vector = 0;
     uint16_t m_trap_pc = 0;

@@ -40,6 +40,11 @@ Interface::Interface(
     im(im),
     callback_id(callback_id),
     value(-1),
+    //Only set_size() used to fill it, so an interface whose size never
+    //changed carried whatever was on the stack. Nothing read it until a saved
+    //state needed the width of a line, and then the same machine wrote
+    //different files on two runs
+    mask(create_mask(size, 0)),
     name(name),
     linked(0),
     linked_bits(0),
@@ -578,6 +583,40 @@ void ComputerDevice::reset(MAYBE_UNUSED bool cold)
     //Does nothing by default, but may be overridden
 }
 
+//--------------------------- Saved state -----------------------------------//
+
+void ComputerDevice::save_state(StateWriter &w)
+{
+    //The fractional part of a divided clock: a device whose clock is not the
+    //processor's stands between two of its own ticks, and that phase is state
+    if (clock_stored != 0) w.n("clock_stored", clock_stored);
+
+    //Every line of this device, found through Interface::device - so that no
+    //device ever writes about its own interfaces. The topology is rebuilt by
+    //load_config(); what cannot be is the value, the edge triggers and a mode
+    //the device changed while running
+    if (im == nullptr) return;
+    for (size_t i = 0; i < im->interfaces.size(); i++)
+        if (im->interfaces[i]->device == this) w.iface(*im->interfaces[i]);
+}
+
+emulator::Result ComputerDevice::load_state(const StateReader &r)
+{
+    r.u("clock_stored", clock_stored);
+
+    if (im != nullptr)
+        for (size_t i = 0; i < im->interfaces.size(); i++)
+        {
+            Interface * f = im->interfaces[i];
+            if (f->device != this) continue;
+            unsigned int value = 0, old_value = 0, edge_value = 0, mode = 0;
+            f->snapshot(value, old_value, edge_value, mode);
+            if (r.iface(f->name, value, old_value, edge_value, mode))
+                f->restore(value, old_value, edge_value, mode);
+        }
+    return emulator::Result::ok();
+}
+
 bool ComputerDevice::belongs_to_class(const std::string &class_to_check)
 {
     return device_class == class_to_check;
@@ -944,6 +983,23 @@ uint8_t * Memory::get_buffer()
     return buffer.empty() ? nullptr : buffer.data();
 }
 
+void Memory::save_state(StateWriter &w)
+{
+    ComputerDevice::save_state(w);
+    //Whole, never a "changed pages" shortcut: a cold reset fills RAM with
+    //random bytes (RAM::reset), so what is not written here differs from run
+    //to run
+    if (can_write && !buffer.empty()) w.hex("data", buffer.data(), buffer.size());
+}
+
+emulator::Result Memory::load_state(const StateReader &r)
+{
+    emulator::Result res = ComputerDevice::load_state(r);
+    if (!res) return res;
+    if (!buffer.empty()) r.hex("data", buffer.data(), buffer.size());
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> Memory::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
@@ -1228,6 +1284,23 @@ void ROM::set_value(unsigned int address, unsigned int value, bool force)
     else stream_counter = 0;
 }
 
+void ROM::save_state(StateWriter &w)
+{
+    //ComputerDevice, not Memory: the contents come back from the image file,
+    //which a saved state carries in its archive. A stream ROM is read through
+    //a moving pointer, and that pointer is state
+    ComputerDevice::save_state(w);
+    if (rom_mode == ROMMode::Stream) w.n("stream_counter", stream_counter);
+}
+
+emulator::Result ROM::load_state(const StateReader &r)
+{
+    emulator::Result res = ComputerDevice::load_state(r);
+    if (!res) return res;
+    r.u("stream_counter", stream_counter);
+    return emulator::Result::ok();
+}
+
 //----------------------- class Port -------------------------------//
 
 Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
@@ -1401,6 +1474,25 @@ void Port::reset(MAYBE_UNUSED bool cold)
         i_alt.change(alt_value);
     }
     write_register(default_value);
+}
+
+void Port::save_state(StateWriter &w)
+{
+    ComputerDevice::save_state(w);
+    w.u("value", value, size > 8 ? 16 : 8);
+    if (alt_bit >= 0) w.u("alt_value", alt_value, size > 8 ? 16 : 8);
+}
+
+emulator::Result Port::load_state(const StateReader &r)
+{
+    emulator::Result res = ComputerDevice::load_state(r);
+    if (!res) return res;
+    //Assigned, not written through write_register(): that drives i_data and
+    //toggles the access strobe, which would reach devices that have not been
+    //restored yet
+    r.u("value", value);
+    r.u("alt_value", alt_value);
+    return emulator::Result::ok();
 }
 
 std::vector<DeviceFieldInfo> Port::get_device_fields()
@@ -1598,6 +1690,31 @@ void CPU::reset(bool cold)
     this->reset_mode = true;
     this->m_hold_cycles = 0;
     this->m_hold_total = 0;
+}
+
+void CPU::save_state(StateWriter &w)
+{
+    ComputerDevice::save_state(w);
+    if (m_hold_cycles) w.n("hold_cycles", m_hold_cycles);
+    if (m_hold_total)  w.n64("hold_total", m_hold_total);
+    //Breakpoints and the step mode belong to the debugging session, not to
+    //the machine. Restoring m_debug would hand back a snapshot that loads
+    //already stopped, which is not what "continue from here" means
+}
+
+emulator::Result CPU::load_state(const StateReader &r)
+{
+    emulator::Result res = ComputerDevice::load_state(r);
+    if (!res) return res;
+
+    //The state is applied after reset(true), and a reset is deferred: every
+    //execute() checks reset_mode and resets the core on the first
+    //instruction. Left set, it would throw away everything restored below
+    reset_mode = false;
+
+    r.u("hold_cycles", m_hold_cycles);
+    r.n64("hold_total", m_hold_total);
+    return emulator::Result::ok();
 }
 
 std::vector<DeviceFieldInfo> CPU::get_device_fields()
@@ -1970,6 +2087,30 @@ emulator::Result MemoryMapper::load_config(SystemData *sd)
 void MemoryMapper::reset(MAYBE_UNUSED bool cold)
 {
     if (this->cancel_init_mask != 0) this->first_range = 0;
+    invalidate_pages();
+}
+
+void MemoryMapper::save_state(StateWriter &w)
+{
+    ComputerDevice::save_state(w);
+    //One number that changes the whole visible map: with cancelinit, range 0
+    //answers only until the processor reads an address under the mask
+    w.n("first_range", first_range);
+    w.b("no_device", no_device);
+}
+
+emulator::Result MemoryMapper::load_state(const StateReader &r)
+{
+    emulator::Result res = ComputerDevice::load_state(r);
+    if (!res) return res;
+    r.u("first_range", first_range);
+    r.b("no_device", no_device);
+    return emulator::Result::ok();
+}
+
+void MemoryMapper::state_restored()
+{
+    //first_range and the config line have just changed under the cache
     invalidate_pages();
 }
 
@@ -2367,6 +2508,14 @@ void GenericDisplay::set_renderer(VideoRenderer & vr)
     m_renderer_valid = true;
 }
 
+
+void GenericDisplay::state_restored()
+{
+    //Redrawn by the render thread on its next pass, under the surface lock -
+    //not here, where the emulation thread has no claim on the surface
+    screen_valid = false;
+    was_updated = true;
+}
 
 void GenericDisplay::validate(bool force_render)
 {

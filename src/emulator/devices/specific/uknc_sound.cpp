@@ -81,6 +81,21 @@ int16_t UKNCSound::calc_sound_value()
     return (int16_t)(level() ? m_amplitude : -m_amplitude);
 }
 
+void UKNCSound::save_state(StateWriter &w)
+{
+    GenericSound::save_state(w);
+    //Where the 128 kHz grid stands: every tone of this machine is a tap of it
+    w.n64("ticks", m_ticks);
+}
+
+emulator::Result UKNCSound::load_state(const StateReader &r)
+{
+    emulator::Result res = GenericSound::load_state(r);
+    if (!res) return res;
+    r.n64("ticks", m_ticks);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> UKNCSound::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = GenericSound::get_device_fields();

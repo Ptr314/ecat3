@@ -243,6 +243,28 @@ void IrishaDisplay::render_blank() const
         buf[offset + i] = m_back_color;
 }
 
+void IrishaDisplay::save_state(StateWriter &w)
+{
+    GenericDisplay::save_state(w);
+    w.u("mode", m_mode, 8);
+    w.u("color", m_color, 8);
+    w.u("page", m_page, 8);
+    w.u("base_address", m_base_address, 16);
+    w.n("mode_index", m_mode_index);
+}
+
+emulator::Result IrishaDisplay::load_state(const StateReader &r)
+{
+    emulator::Result res = GenericDisplay::load_state(r);
+    if (!res) return res;
+    r.u("mode", m_mode);
+    r.u("color", m_color);
+    r.u("page", m_page);
+    r.u("base_address", m_base_address);
+    r.u("mode_index", m_mode_index);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> IrishaDisplay::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = GenericDisplay::get_device_fields();

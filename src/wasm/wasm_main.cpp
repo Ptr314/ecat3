@@ -142,6 +142,18 @@ const char* wasm_machine_base(const char* file_path)
     return result.c_str();
 }
 
+// 1 for a file that carries a whole machine inside itself - a saved state.
+// The page then fetches nothing else: no base machine of this build, no bundle
+// of ROMs, which is the one way a load= address fails today. Answered by the
+// core rather than by a regular expression in the page, so that a format added
+// later is recognised in one place
+EMSCRIPTEN_KEEPALIVE
+int wasm_machine_selfcontained(const char* file_path)
+{
+    if (file_path == nullptr) return 0;
+    return is_state_file(std::string(file_path)) ? 1 : 0;
+}
+
 // The message of the last wasm_load_machine() or wasm_machine_base() that
 // failed: the return code alone says nothing about a configuration the page
 // downloaded itself

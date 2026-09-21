@@ -71,6 +71,8 @@ public:
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
 };
 
 ComputerDevice * create_bk_display(InterfaceManager *im, EmulatorConfigDevice *cd);

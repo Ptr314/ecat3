@@ -213,6 +213,33 @@ void Mouse::move(int dx, int dy, int buttons)
     if (dy != 0) add_pending(m_dy, dy);
 }
 
+void Mouse::save_state(StateWriter &w)
+{
+    PluggableDevice::save_state(w);
+    w.n("ticks", m_ticks);
+    w.u("latch", m_latch);
+    w.u("unread", m_unread);
+    w.u("buttons_out", m_buttons_out);
+    w.u("state", m_state);
+    //m_dx, m_dy and m_buttons are what the host has moved and not handed over
+    //yet. The host is not moving anything when a snapshot is opened
+}
+
+emulator::Result Mouse::load_state(const StateReader &r)
+{
+    emulator::Result res = PluggableDevice::load_state(r);
+    if (!res) return res;
+    r.u("ticks", m_ticks);
+    r.u("latch", m_latch);
+    r.u("unread", m_unread);
+    r.u("buttons_out", m_buttons_out);
+    r.u("state", m_state);
+    m_dx = 0;
+    m_dy = 0;
+    m_buttons = 0;
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> Mouse::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = PluggableDevice::get_device_fields();

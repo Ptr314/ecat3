@@ -236,11 +236,15 @@ unsigned int parse_numeric_value(std::string str, unsigned int default_base)
     }
 
     char *end;
-    long value = strtol(s.c_str(), &end, base);
+    //Unsigned, like the result: strtol() stops at LONG_MAX, which is
+    //0x7FFFFFFF where long is 32 bits, so everything above 2^31 used to come
+    //back as that same wrong number. A saved state writes such values - a bus
+    //line nobody drives carries _FFFF, one driven in part carries most of it
+    unsigned long value = strtoul(s.c_str(), &end, base);
 
     if (*end != '\0') throw std::invalid_argument("Invalid numeric value: " + str);
 
-    return value * mult;
+    return static_cast<unsigned int>(value * static_cast<unsigned long>(mult));
 }
 
 unsigned int create_mask(unsigned int size, unsigned int shift)

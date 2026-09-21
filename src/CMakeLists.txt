@@ -196,6 +196,8 @@ set(EMULATOR_SOURCES
     emulator/config.cpp emulator/config.h
     emulator/config_ext.cpp emulator/config_ext.h
     emulator/config_fields.cpp emulator/config_fields.h
+    emulator/state.cpp emulator/state.h
+    emulator/state_save.cpp emulator/state_save.h
     emulator/base64.cpp emulator/base64.h
     emulator/core.cpp emulator/core.h
     emulator/debug.h
@@ -285,6 +287,7 @@ set(EMULATOR_SOURCES
     libs/mfm_formats.h
     libs/mfm_tools.h libs/mfm_tools.cpp
     libs/zip_reader.h libs/zip_reader.cpp
+    libs/zip_writer.h libs/zip_writer.cpp
     libs/audio_filters.h
     libs/miniaudio/miniaudio.c
 

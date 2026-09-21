@@ -318,6 +318,34 @@ void ScanKeyboard::set_rus(bool new_rus)
     Keyboard::set_rus(new_rus);
 }
 
+void ScanKeyboard::save_state(StateWriter &w)
+{
+    Keyboard::save_state(w);
+    //The Rus/Lat indicator line as last driven and as last taken into the
+    //register: the Орион monitor writes the whole of port C while saving to
+    //tape, and which of the two the register follows decides the alphabet
+    w.n("led_line", static_cast<uint32_t>(led_line));
+    w.n("led_taken", static_cast<uint32_t>(led_taken));
+    w.u("stored_shift", stored_shift, 16);
+    //key_array is the matrix the host is holding down, and the host holds
+    //nothing when a snapshot is opened
+}
+
+emulator::Result ScanKeyboard::load_state(const StateReader &r)
+{
+    emulator::Result res = Keyboard::load_state(r);
+    if (!res) return res;
+    r.u("led_line", led_line);
+    r.u("led_taken", led_taken);
+    r.u("stored_shift", stored_shift);
+    //Nobody is holding a key. The output lines are not recomputed from that:
+    //they are restored with everything else, and the machine's own scan puts
+    //them right within microseconds - it writes the scan lines continuously
+    for (size_t i = 0; i < sizeof(key_array) / sizeof(key_array[0]); i++) key_array[i] = 0;
+    return emulator::Result::ok();
+}
+
+
 std::vector<DeviceFieldInfo> ScanKeyboard::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = Keyboard::get_device_fields();

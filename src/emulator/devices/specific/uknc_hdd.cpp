@@ -626,6 +626,94 @@ ConfigFields UKNCHDD::get_config_fields()
     return {f, v};
 }
 
+void UKNCHDD::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+
+    w.u("status", m_status, 8);
+    w.u("error", m_error, 8);
+    w.u("command", m_command, 8);
+    w.n("sectorcount", m_sectorcount);
+    w.n("cursector", m_cursector);
+    w.n("curcylinder", m_curcylinder);
+    w.n("curhead", m_curhead);
+    w.n("curheadreg", m_curheadreg);
+    w.n("bufferoffset", m_bufferoffset);
+    w.hex("buffer", m_buffer, sizeof(m_buffer));
+    w.n("event", m_event);
+    w.n64("timeout", m_timeout);
+    w.n64("acc", m_acc);
+    w.n("sectors_read", m_sectors_read);
+    w.n("sectors_written", m_sectors_written);
+    w.b("write_protect", m_write_protect);
+
+    if (!m_attached) return;
+    w.b("attached", true);
+    w.b("inverted", m_inverted);
+    w.b("volatile", m_volatile);
+    w.n("cylinders", m_cylinders);
+    w.n("heads", m_heads);
+    w.n("sectors", m_sectors);
+
+    //The image with the written sectors already merged in. Simpler than
+    //carrying a sparse map, and byte for byte what the guest sees - which is
+    //the point: the file on disk never had those writes
+    compat_lock_guard lock(m_image_mutex);
+    if (m_file == nullptr || m_image_size == 0) return;
+    std::vector<uint8_t> image(static_cast<size_t>(m_image_size), 0);
+    std::fseek(m_file, 0, SEEK_SET);
+    if (std::fread(image.data(), 1, image.size(), m_file) != image.size()) return;
+    for (std::map<uint64_t, std::array<uint8_t, 512>>::const_iterator it = m_overlay.begin();
+         it != m_overlay.end(); ++it)
+        if (it->first + 512 <= image.size())
+            memcpy(image.data() + it->first, it->second.data(), 512);
+    w.blob("image", dsk_tools::get_filename(m_file_name.empty() ? (name + ".img") : m_file_name),
+           image.data(), image.size());
+}
+
+emulator::Result UKNCHDD::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+
+    r.u("status", m_status);
+    r.u("error", m_error);
+    r.u("command", m_command);
+    r.u("sectorcount", m_sectorcount);
+    r.u("cursector", m_cursector);
+    r.u("curcylinder", m_curcylinder);
+    r.u("curhead", m_curhead);
+    r.u("curheadreg", m_curheadreg);
+    r.u("bufferoffset", m_bufferoffset);
+    r.hex("buffer", m_buffer, sizeof(m_buffer));
+    r.u("event", m_event);
+    r.n64("timeout", m_timeout);
+    r.n64("acc", m_acc);
+    r.u("sectors_read", m_sectors_read);
+    r.u("sectors_written", m_sectors_written);
+    r.b("write_protect", m_write_protect);
+
+    bool attached = false;
+    if (!r.b("attached", attached) || !attached) return emulator::Result::ok();
+
+    //The state names the copy in its own bundle, and attach_image() opens it
+    //the way the configuration would have
+    std::string file;
+    if (!r.s("image", file) || file.empty()) return emulator::Result::ok();
+    const std::string path = find_file_location(sd, file);
+    if (path.empty())
+        return emulator::Result::error(emulator::ErrorCode::FileError,
+            "{MachineState|Saved state} " + name + ": file not found: " + file);
+
+    r.b("inverted", m_inverted);
+    r.b("volatile", m_volatile);
+    load_image(path);
+    r.u("cylinders", m_cylinders);
+    r.u("heads", m_heads);
+    r.u("sectors", m_sectors);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> UKNCHDD::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

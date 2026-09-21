@@ -126,3 +126,21 @@ private:
 
     EmulatorConfigDevice *add_device(std::string device_name, std::string device_type);
 };
+
+//----------------------- Writing a configuration back ----------------------//
+//The inverse of the parser above. A saved state carries the configuration it
+//was taken from, already resolved, so that it depends on no other file
+
+//Quotes a value the tokenizer would otherwise break apart. A value cannot
+//contain a quote or a comment marker: next() ends a string at the first " and
+//cuts everything from //, so such a value cannot come out of the parser either
+std::string config_quote_value(const std::string &v);
+//One parameter line, without the indent and the line break. With
+//with_value false only the key is written, which is what a removal needs
+std::string config_parameter_text(const EmulatorConfigParameter &p, bool with_value = true);
+//The whole configuration in .cfg syntax. Devices and parameters keep the order
+//they were read in - a mapper sends one range to several devices and the order
+//decides which of them answers, so this is not a detail. Values are written
+//back as the strings they were parsed from, so numbers keep their radix and
+//their prefixes. Comments of the original are not kept
+std::string serialize_config(EmulatorConfig &config);

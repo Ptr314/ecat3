@@ -359,6 +359,8 @@ protected:
     // drawing, such a key is let go by itself after the next ordinary key
     std::vector<std::string> m_once_ids;
     void release_once_modifiers();
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
 
     // Ids the machine currently sees as held, in the machine's own naming.
     // Written by every input path, read by the frontends to light the drawing

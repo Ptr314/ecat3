@@ -199,7 +199,10 @@ void OpenConfigWindow::list_machines(QString work_path)
 #else
             QFileInfo fi = QFileInfo(it.next());
 #endif
-            if (is_machine_file(fi.fileName().toStdString())) add_machine(fi, users);
+            //A saved state is a machine file too, but it is a snapshot, not a
+            //variant of a machine: it has no place in this list
+            const std::string n = fi.fileName().toStdString();
+            if (is_machine_file(n) && !is_state_file(n)) add_machine(fi, users);
         }
     }
 
@@ -296,7 +299,8 @@ QStringList OpenConfigWindow::all_versions() const
         QDirIterator it(roots[i], QDir::Files, QDirIterator::Subdirectories);
         while (it.hasNext()) {
             const QFileInfo fi(it.next());
-            if (!is_machine_file(fi.fileName().toStdString())) continue;
+            const std::string n = fi.fileName().toStdString();
+            if (!is_machine_file(n) || is_state_file(n)) continue;
             EmulatorConfig config;
             MachineSource source;
             if (!load_machine_description(fi.absoluteFilePath().toStdString(), paths, config, source, true)) continue;

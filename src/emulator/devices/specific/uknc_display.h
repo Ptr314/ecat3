@@ -93,6 +93,8 @@ public:
     ConfigFields get_config_fields() override;
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
 };
 
 ComputerDevice * create_uknc_display(InterfaceManager *im, EmulatorConfigDevice *cd);

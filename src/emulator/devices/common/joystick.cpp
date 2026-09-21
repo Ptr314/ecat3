@@ -126,6 +126,23 @@ void Joystick::update()
     }
 }
 
+void Joystick::save_state(StateWriter &w)
+{
+    PluggableDevice::save_state(w);
+    //What the contacts show. The list of host keys behind it is not restored:
+    //nobody is holding a key when a snapshot is opened
+    w.u("state", m_state);
+}
+
+emulator::Result Joystick::load_state(const StateReader &r)
+{
+    emulator::Result res = PluggableDevice::load_state(r);
+    if (!res) return res;
+    m_held.clear();
+    r.u("state", m_state);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> Joystick::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = PluggableDevice::get_device_fields();

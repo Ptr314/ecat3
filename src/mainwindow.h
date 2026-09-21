@@ -96,6 +96,7 @@ private slots:
     void update_fdds();
 
     void on_actionScreenshot_triggered();
+    void on_actionSaveState_triggered();
 
     void on_actionAbout_triggered();
 

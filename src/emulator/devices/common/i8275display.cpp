@@ -135,6 +135,78 @@ emulator::Result I8275Display::load_config(SystemData *sd)
     return emulator::Result::ok();
 }
 
+void I8275Display::save_state(StateWriter &w)
+{
+    GenericDisplay::save_state(w);
+    //A whole frame as the controller delivered it, row by row. It is rebuilt
+    //within 20 ms of running, but a screenshot taken right after a restore
+    //would otherwise come out blank
+    w.b("have_frame", m_have_frame);
+    w.n("frame_cpl", m_frame_cpl);
+    w.n("frame_lps", m_frame_lps);
+    w.n("frame_h", m_frame_h);
+    w.b("attr_delay", AttrDelay);
+    w.b("fa_reverse", FAReverse);
+    w.b("fa_under", FAUnder);
+    w.b("fa_blink", FABlink);
+    w.n("fa_color", FAColor);
+    w.u("next_attr", NextAttr, 8);
+
+    if (!m_have_frame) return;
+    const unsigned int rows = (m_frame_lps < I8275D_MAX_ROWS) ? m_frame_lps : I8275D_MAX_ROWS;
+    for (unsigned int i = 0; i < rows; i++)
+    {
+        const RowSnapshot &s = m_rows[i];
+        w.push(("row" + std::to_string(i)).c_str());
+        w.n("len", s.len);
+        w.n("font_bank", s.font_bank);
+        w.n("cursor_col", s.cursor_col);
+        w.n("cursor_row", s.cursor_row);
+        w.n("cursor_mode", s.cursor_mode);
+        w.n("add_mode", s.add_mode);
+        w.b("transparent", s.transparent);
+        w.b("blink", s.blink);
+        w.b("blink_char", s.blink_char);
+        if (s.len > 0) w.hex("data", s.data, s.len);
+        w.pop();
+    }
+}
+
+emulator::Result I8275Display::load_state(const StateReader &r)
+{
+    emulator::Result res = GenericDisplay::load_state(r);
+    if (!res) return res;
+    r.b("have_frame", m_have_frame);
+    r.u("frame_cpl", m_frame_cpl);
+    r.u("frame_lps", m_frame_lps);
+    r.u("frame_h", m_frame_h);
+    r.b("attr_delay", AttrDelay);
+    r.b("fa_reverse", FAReverse);
+    r.b("fa_under", FAUnder);
+    r.b("fa_blink", FABlink);
+    r.u("fa_color", FAColor);
+    r.u("next_attr", NextAttr);
+
+    if (!m_have_frame) return emulator::Result::ok();
+    const unsigned int rows = (m_frame_lps < I8275D_MAX_ROWS) ? m_frame_lps : I8275D_MAX_ROWS;
+    for (unsigned int i = 0; i < rows; i++)
+    {
+        RowSnapshot &s = m_rows[i];
+        const StateReader sr = r.sub(("row" + std::to_string(i)).c_str());
+        sr.u("len", s.len);
+        sr.u("font_bank", s.font_bank);
+        sr.u("cursor_col", s.cursor_col);
+        sr.u("cursor_row", s.cursor_row);
+        sr.u("cursor_mode", s.cursor_mode);
+        sr.u("add_mode", s.add_mode);
+        sr.b("transparent", s.transparent);
+        sr.b("blink", s.blink);
+        sr.b("blink_char", s.blink_char);
+        if (s.len > 0 && s.len <= I8275_MAX_ROW) sr.hex("data", s.data, s.len);
+    }
+    return emulator::Result::ok();
+}
+
 void I8275Display::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 {
     *sx = this->sx;

@@ -619,6 +619,98 @@ unsigned int BKFDC::get_direct(unsigned int address)
 
 //----------------------- Introspection ------------------------------------//
 
+void BKFDC::save_state(StateWriter &w)
+{
+    FDC::save_state(w);
+
+    //The track buffers are a write-back cache over the images. Flushing them
+    //first means the drives carry everything the machine has written, and the
+    //caches that go out below are only what is under the heads
+    flush_all();
+
+    w.n("selected", static_cast<uint32_t>(m_selected));
+    w.n("side", m_side);
+    w.u("command", m_command);
+    w.u("status", m_status);
+    w.u("datareg", m_datareg);
+    w.u("writereg", m_writereg);
+    w.u("shiftreg", m_shiftreg);
+    w.b("writeflag", m_writeflag);
+    w.b("shiftflag", m_shiftflag);
+    w.b("writemarker", m_writemarker);
+    w.b("shiftmarker", m_shiftmarker);
+    w.b("writing", m_writing);
+    w.b("search_armed", m_search_armed);
+    w.b("searching", m_searching);
+    w.b("crc_armed", m_crc_armed);
+    w.u("crc", m_crc);
+    w.n("ticks", m_ticks);
+
+    for (unsigned int i = 0; i < m_drives_count; i++)
+    {
+        const BKFDCDrive &d = m_drives[i];
+        w.push(("drive" + std::to_string(i)).c_str());
+        w.n("position", d.position);
+        w.n("track", static_cast<uint32_t>(d.track));
+        w.n("cached_track", static_cast<uint32_t>(d.cached_track));
+        w.n("cached_side", static_cast<uint32_t>(d.cached_side));
+        w.n("generation", d.generation);
+        w.b("valid", d.valid);
+        if (d.valid)
+        {
+            w.hex("data", d.data, BK_FDC_TRACK_BYTES);
+            w.array("marker", d.marker, BK_FDC_TRACK_WORDS);
+        }
+        w.pop();
+    }
+    //The ring of register accesses is a debugging aid, read by scripts
+}
+
+emulator::Result BKFDC::load_state(const StateReader &r)
+{
+    emulator::Result res = FDC::load_state(r);
+    if (!res) return res;
+
+    r.u("selected", m_selected);
+    r.u("side", m_side);
+    r.u("command", m_command);
+    r.u("status", m_status);
+    r.u("datareg", m_datareg);
+    r.u("writereg", m_writereg);
+    r.u("shiftreg", m_shiftreg);
+    r.b("writeflag", m_writeflag);
+    r.b("shiftflag", m_shiftflag);
+    r.b("writemarker", m_writemarker);
+    r.b("shiftmarker", m_shiftmarker);
+    r.b("writing", m_writing);
+    r.b("search_armed", m_search_armed);
+    r.b("searching", m_searching);
+    r.b("crc_armed", m_crc_armed);
+    r.u("crc", m_crc);
+    r.u("ticks", m_ticks);
+
+    for (unsigned int i = 0; i < m_drives_count; i++)
+    {
+        BKFDCDrive &d = m_drives[i];
+        const StateReader dr = r.sub(("drive" + std::to_string(i)).c_str());
+        dr.u("position", d.position);
+        dr.u("track", d.track);
+        dr.u("cached_track", d.cached_track);
+        dr.u("cached_side", d.cached_side);
+        dr.u("generation", d.generation);
+        dr.b("valid", d.valid);
+        if (d.valid)
+        {
+            dr.hex("data", d.data, BK_FDC_TRACK_BYTES);
+            dr.array("marker", d.marker, BK_FDC_TRACK_WORDS);
+        }
+        //Flushed before the snapshot was taken, so what is in the buffer is
+        //also in the image
+        d.dirty = false;
+    }
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> BKFDC::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

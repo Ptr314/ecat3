@@ -53,6 +53,28 @@ void BKTimer::reset(MAYBE_UNUSED bool cold)
     i_out.change(0);
 }
 
+void BKTimer::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    w.n("ticks", m_ticks);
+    w.n("prescaler", m_prescaler);
+    w.u("preset", m_preset);
+    w.u("counter", m_counter);
+    w.u("control", m_control);
+}
+
+emulator::Result BKTimer::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.u("ticks", m_ticks);
+    r.u("prescaler", m_prescaler);
+    r.u("preset", m_preset);
+    r.u("counter", m_counter);
+    r.u("control", m_control);
+    return emulator::Result::ok();
+}
+
 void BKTimer::tick()
 {
     // Bit 0 holds the counter loaded and stops it

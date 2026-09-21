@@ -360,6 +360,70 @@ void UKNCChannels::set_value(unsigned int address, unsigned int value, bool forc
 
 //--------------------------- Introspection --------------------------------//
 
+namespace {
+
+template<typename P>
+void save_pipe(StateWriter &w, const char * name, unsigned int index, const P &p)
+{
+    w.push((std::string(name) + std::to_string(index)).c_str());
+    w.u("data", p.data, 8);
+    w.b("rx_ready", p.rx_ready);
+    w.b("rx_irq", p.rx_irq);
+    w.b("tx_ready", p.tx_ready);
+    w.b("tx_irq", p.tx_irq);
+    //A request is made on the transition and taken back by the acknowledge,
+    //so these four say whether one is outstanding. Computed as "ready and
+    //enabled" instead, a free transmitter offers itself after every other
+    //interrupt - which is how the ЗАГРУЗКА menu used to lose every fifth arrow
+    w.b("rx_pending", p.rx_pending);
+    w.b("tx_pending", p.tx_pending);
+    w.b("rx_armed", p.rx_armed);
+    w.b("tx_armed", p.tx_armed);
+    w.pop();
+}
+
+template<typename P>
+void load_pipe(const StateReader &r, const char * name, unsigned int index, P &p)
+{
+    const StateReader pr = r.sub((std::string(name) + std::to_string(index)).c_str());
+    pr.u("data", p.data);
+    pr.b("rx_ready", p.rx_ready);
+    pr.b("rx_irq", p.rx_irq);
+    pr.b("tx_ready", p.tx_ready);
+    pr.b("tx_irq", p.tx_irq);
+    pr.b("rx_pending", p.rx_pending);
+    pr.b("tx_pending", p.tx_pending);
+    pr.b("rx_armed", p.rx_armed);
+    pr.b("tx_armed", p.tx_armed);
+}
+
+} // namespace
+
+void UKNCChannels::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    for (unsigned int i = 0; i < UKNC_CHAN_C2P; i++) save_pipe(w, "c2p", i, m_c2p[i]);
+    for (unsigned int i = 0; i < UKNC_CHAN_P2C; i++) save_pipe(w, "p2c", i, m_p2c[i]);
+    w.n("sent_c2p", m_sent_c2p);
+    w.n("sent_p2c", m_sent_p2c);
+    w.u("cpu_offered", m_cpu_irq.offered());
+    w.u("ppu_offered", m_ppu_irq.offered());
+}
+
+emulator::Result UKNCChannels::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    for (unsigned int i = 0; i < UKNC_CHAN_C2P; i++) load_pipe(r, "c2p", i, m_c2p[i]);
+    for (unsigned int i = 0; i < UKNC_CHAN_P2C; i++) load_pipe(r, "p2c", i, m_p2c[i]);
+    r.u("sent_c2p", m_sent_c2p);
+    r.u("sent_p2c", m_sent_p2c);
+    uint32_t offered = 0;
+    if (r.u("cpu_offered", offered)) m_cpu_irq.set_offered(offered);
+    if (r.u("ppu_offered", offered)) m_ppu_irq.set_offered(offered);
+    return emulator::Result::ok();
+}
+
 std::vector<DeviceFieldInfo> UKNCChannels::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();

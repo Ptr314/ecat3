@@ -37,7 +37,8 @@ namespace {
         {SCRIPT_CMD_KEYDOWN, "keydown", false},
         {SCRIPT_CMD_KEYUP,   "keyup",   false},
         {SCRIPT_CMD_RADIX,   "radix",   false},
-        {SCRIPT_CMD_MOUSE,   "mouse",   false}
+        {SCRIPT_CMD_MOUSE,   "mouse",   false},
+        {SCRIPT_CMD_SAVESTATE, "savestate", false}
     };
 
     const unsigned int VERBS_COUNT = sizeof(VERBS) / sizeof(VERBS[0]);

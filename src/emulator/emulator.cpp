@@ -27,6 +27,7 @@
 #include "emulator.h"
 #include "emulator/config.h"
 #include "emulator/utils.h"
+#include "emulator/state_save.h"
 #include "libs/lodepng/lodepng.h"
 
 #include "emulator/devices/cpu/i8080.h"
@@ -94,6 +95,11 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , mm(nullptr)
     , display(nullptr)
     , keyboard(nullptr)
+    //The destructor deletes both. Without this, quitting before the first
+    //machine has loaded - a script file that is not there, a bad argument -
+    //deletes whatever the stack happened to hold
+    , dm(nullptr)
+    , im(nullptr)
     , clock_counter(0)
     , renderer(renderer)
     , m_running(false)
@@ -139,6 +145,8 @@ emulator::Result Emulator::load_config(std::string file_name)
         //Delete loaded machine
         delete dm;
         delete im;
+        //Only now: every device holds a ComputerDevice::cd pointing into it
+        m_config.free_devices();
         loaded = false;
         //The devices these point at have just been destroyed. If the machine
         //being loaded now fails on the way in, nothing must be left pointing
@@ -169,8 +177,10 @@ emulator::Result Emulator::load_config(std::string file_name)
     }
     m_embedded_loaded = false;
 
-    //A .cfg as it is, or an extension applied to its base
-    EmulatorConfig config;
+    //A .cfg as it is, or an extension applied to its base. Kept for the
+    //lifetime of the machine: every ComputerDevice::cd points into it, and
+    //the snapshot writer writes it out as the state's own configuration
+    EmulatorConfig &config = m_config;
     MachinePaths paths;
     paths.computers_path = work_path;
     paths.cache_path = cache_path;
@@ -217,6 +227,189 @@ emulator::Result Emulator::load_config(std::string file_name)
     if (!res) return res;
     apply_saved_device_options();
     loaded = true;
+    return emulator::Result::ok();
+}
+
+//----------------------------- Saved state ---------------------------------//
+
+emulator::Result Emulator::save_state(const std::string &file_name)
+{
+    if (!loaded) return emulator::Result::error(emulator::ErrorCode::CommandFailed,
+        "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "No machine is loaded")) + "}");
+
+    StateSaveRequest request;
+    request.file_name = file_name;
+    request.config = &m_config;
+    request.dm = dm;
+    request.sd = &sd;
+    request.machine = dsk_tools::get_filename(m_source.base_cfg);
+    request.version = sd.system_version.empty() ? sd.system_name : sd.system_version;
+    request.clock = clock_counter;
+
+    //The positions are rebased on the one furthest behind. Kept as they are,
+    //the first timer_proc() after a restore would find every domain past its
+    //target, subtract it from all of them and wrap a uint64_t - and the
+    //machine would never run again. Only the difference between them means
+    //anything, and that is preserved exactly
+    uint64_t base = 0;
+    for (size_t i = 0; i < domains.size(); i++)
+        if (i == 0 || domains[i].norm < base) base = domains[i].norm;
+    for (size_t i = 0; i < domains.size(); i++)
+        request.domains.push_back(domains[i].norm - base);
+
+    return write_state_file(request);
+}
+
+void Emulator::request_state(const std::string &file_name)
+{
+    compat_lock_guard lock(m_state_mutex);
+    m_state_file = file_name;
+    m_state_error.clear();
+    m_state_requested = true;
+}
+
+bool Emulator::state_pending()
+{
+    compat_lock_guard lock(m_state_mutex);
+    return m_state_requested;
+}
+
+std::string Emulator::take_state_error()
+{
+    compat_lock_guard lock(m_state_mutex);
+    std::string r;
+    r.swap(m_state_error);
+    return r;
+}
+
+//Consumed at a slice boundary, where every domain has finished a whole slice.
+//A script does not come through here: its tick() already runs between two
+//instructions of the emulation thread, which is a finer and repeatable moment
+void Emulator::store_state()
+{
+    std::string file;
+    {
+        compat_lock_guard lock(m_state_mutex);
+        if (!m_state_requested) return;
+        file = m_state_file;
+    }
+    const emulator::Result res = save_state(file);
+    {
+        compat_lock_guard lock(m_state_mutex);
+        //Cleared last, so that the flag means "finished", not "started": the
+        //caller waits on it and then reads the error
+        if (!res) m_state_error = res.message;
+        m_state_requested = false;
+    }
+}
+
+emulator::Result Emulator::apply_state()
+{
+    m_state_report.clear();
+    if (!m_source.is_state || m_source.state.empty()) return emulator::Result::ok();
+
+    EmulatorConfig state;
+    emulator::Result res = state.load_from_text(m_source.state);
+    if (!res) return res;
+
+    std::string problems;
+
+    //Pass 1: the options first. Connector::set_device_option() plugs and
+    //unplugs whole devices, which decides who drives which line, and a
+    //display option changes the surface. Everything below assumes the machine
+    //is already wired the way the snapshot found it. This also overrides what
+    //apply_saved_device_options() took from the ini: the snapshot wins
+    for (unsigned int i = 0; i < state.get_devices_count(); i++)
+    {
+        EmulatorConfigDevice * sd_dev = state.get_device(static_cast<int>(i));
+        if (sd_dev->name == "system") continue;
+        ComputerDevice * d = dm->get_device_by_name(sd_dev->name, false);
+        if (d == nullptr) continue;
+        for (size_t k = 0; k < sd_dev->parameters.size(); k++)
+        {
+            const EmulatorConfigParameter &p = sd_dev->parameters[k];
+            if (p.name != "option" || p.left_range.size() < 3) continue;
+            try {
+                const unsigned int id = parse_numeric_value(
+                    p.left_range.substr(1, p.left_range.size() - 2), 10);
+                d->set_device_option(id, parse_numeric_value(p.value));
+            } catch (std::exception &e) {
+                problems += sd_dev->name + ".option: " + e.what() + "\n";
+            }
+        }
+    }
+
+    //Pass 2: the devices themselves, in the order they were declared. Each
+    //one restores its own lines through ComputerDevice::load_state()
+    for (unsigned int i = 0; i < state.get_devices_count(); i++)
+    {
+        EmulatorConfigDevice * sd_dev = state.get_device(static_cast<int>(i));
+        if (sd_dev->name == "system") continue;
+
+        ComputerDevice * d = dm->get_device_by_name(sd_dev->name, false);
+        if (d == nullptr)
+        {
+            //Not an error: the configuration is in the same file, so a
+            //section with no device means the file was edited by hand
+            problems += "no device named '" + sd_dev->name + "'\n";
+            continue;
+        }
+        if (!sd_dev->type.empty() && sd_dev->type != d->type)
+        {
+            problems += sd_dev->name + ": state says '" + sd_dev->type
+                      + "', the machine has '" + d->type + "'\n";
+            continue;
+        }
+
+        std::vector<char> used(sd_dev->parameters.size(), 0);
+        std::string error;
+        StateReader r(sd_dev, &sd, &used, &error);
+        res = d->load_state(r);
+        if (!res) return res;
+        if (!error.empty()) return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{MachineState|Saved state} " + error);
+
+        for (size_t k = 0; k < used.size(); k++)
+            if (!used[k] && sd_dev->parameters[k].name != "option")
+                problems += sd_dev->name + "." + sd_dev->parameters[k].key() + ": unknown here\n";
+    }
+
+    //Pass 3: caches that depend on a line or on another device's buffer
+    for (unsigned int i = 0; i < dm->device_count; i++)
+        dm->get_device(i)->device->state_restored();
+
+    //Pass 4: what belongs to the machine as a whole
+    EmulatorConfigDevice * sys = state.get_device("system");
+    if (sys != nullptr)
+    {
+        std::vector<char> used(sys->parameters.size(), 0);
+        std::string error;
+        StateReader r(sys, &sd, &used, &error);
+
+        unsigned int radix = sd.radix;
+        if (r.u("radix", radix) && (radix == 2 || radix == 8 || radix == 10 || radix == 16))
+        {
+            sd.radix = radix;
+            set_default_radix(radix);
+        }
+        r.n64("clock", clock_counter);
+        //Rebased by the writer, so the positions are small and the first
+        //slice after the restore behaves like any other
+        for (size_t k = 0; k < domains.size(); k++)
+            r.n64(("domain[" + std::to_string(k) + "]").c_str(), domains[k].norm);
+        if (!error.empty()) return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{MachineState|Saved state} " + error);
+    }
+
+    //The host is holding nothing at the moment a snapshot is opened. The
+    //keyboard's own lists of held keys were emptied by the reset this runs
+    //after, and nothing restores them: a key that comes back down would stay
+    //down forever, auto repeat included. Only the machine side of a keyboard
+    //- its code register and ready trigger, which are ports - is restored, so
+    //a program waiting for a keystroke sees exactly what it saw
+    m_host_keys.clear();
+
+    m_state_report = problems;
     return emulator::Result::ok();
 }
 
@@ -482,6 +675,24 @@ void Emulator::run()
             for (size_t i = 0; i < domains.size(); i++) domains[i].norm = 0;
             clock_counter = 0;
 
+            //A machine opened from a .ecats: everything is built and reset,
+            //nothing has been clocked yet, and this thread owns all of it -
+            //which is the only moment a whole machine can be replaced at once.
+            //Doing it here is also what makes every frontend support a saved
+            //state without a line of its own: they all load and then run()
+            {
+                const emulator::Result res = apply_state();
+                if (!res)
+                {
+                    //The same way a device refusing what the guest asked is
+                    //reported: the machine stands still and the message waits
+                    dm->error_message = res.message;
+                    dm->error_device = nullptr;
+                    for (size_t i = 0; i < domains.size(); i++)
+                        domains[i].cpu->m_debug = DEBUG_STOPPED;
+                }
+            }
+
             m_ready = true;
 
 #if USE_QT_THREADING
@@ -613,6 +824,11 @@ void Emulator::timer_proc(uint64_t time_ticks)
     if (!busy && !domains.empty())
     {
         busy = true;
+
+        //Before the slice: every domain has finished a whole one and its
+        //position has already been rebased by the "-= target" at the end of
+        //the previous pass, so the machine is as consistent as it ever gets
+        store_state();
 
         // while (SDL_PollEvent(&ev))
         // {
