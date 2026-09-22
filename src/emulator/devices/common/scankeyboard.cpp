@@ -143,8 +143,16 @@ emulator::Result ScanKeyboard::parse_key_table(const std::vector<std::string> &b
         for (unsigned int scan = 0; scan < parts.size(); scan++)
         {
             if (parts[scan] == "__") continue;
-            id_data.push_back({parts[scan], scan, out});
-            register_key_id(parts[scan]);
+            //Две клавиши могут сидеть на одном контакте: у Юниора обе НР
+            //соединены на плате параллельно, и на рисунке нажимается любая
+            const std::vector<std::string> ids = split_string(parts[scan], '|', true);
+            for (size_t k = 0; k < ids.size(); k++)
+            {
+                const std::string id = str_trim(ids[k]);
+                if (id.empty()) continue;
+                id_data.push_back({id, scan, out});
+                register_key_id(id);
+            }
         }
     }
     return emulator::Result::ok();

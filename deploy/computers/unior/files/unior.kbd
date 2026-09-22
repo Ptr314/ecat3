@@ -1,8 +1,8 @@
-end     esc     ;       ins     enter   plus    4       minus   mult    7       8
+end     esc     ;       f1      f2      f3      4       f4      f5      7       8
 pgdn    tab     J       1       2       3       E       5       6       [       ]
 __      shift   F       C       U       K       P       N       G       L       D
 __      alt     Q       Y       W       A       I       R       O       B       @
-ctrl    caps    scroll  ^       S       M       space   T       X       home    <
-f10     f2      f6      f7      pgup    left    up      del     >       \       V
-f11     f4      f5      f8      under   div     ret     right   :       H       Z
-f12     f1      f3      f9      ~       down    ?       }       =       0       9
+ctrl    caps    scroll  ^       S       M       space   T       X       ~       ,|<
+f10     plus    f6      f7      pgup    back    left    right   .|>     \       V
+f11     minus   num     f8      ins     home    ret     up      :       H       Z
+f12     enter   mult    f9      div     down    /|?     _|}     -|=     0       9

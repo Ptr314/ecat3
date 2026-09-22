@@ -1,0 +1,14 @@
+=== Коды всех клавиш матрицы ===
+[ram.value] $2000: $B9 $1B $3B $C1 $C2 $C3 $34 $C4 $C5 $37 $38 $B8 $09 $4A $31 $32 $33 $45 $35 $36 $5B $5D $46 $43 $55 $4B $50 $4E $47 $4C $44 $51 $59 $57 $41 $49 $52 $4F $42 $40 $5E $53 $4D $20 $54 $58 $13 $3C $B4 $AB $B0 $B1 $B7 $08 $14 $18 $3E $5C $56 $B5 $AD $AE $B2 $C8 $C7 $0D $15 $3A $48 $5A $B6 $AA $AC $B3 $C9 $0A $3F $7D $3D $30 $39
+=== key_alf ===
+[ram.value] $F7AF: $02
+=== key_fiks ===
+[ram.value] $F7AF: $22
+=== key_graf ===
+[ram.value] $F7AF: $2A
+=== key_shift_1 ===
+[ram.value] $F7AF: $23
+=== key_shift_2 ===
+[ram.value] $F7AF: $23
+=== key_ctrl ===
+[ram.value] $F7AF: $26
