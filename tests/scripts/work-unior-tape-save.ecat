@@ -1,0 +1,51 @@
+# Юниор ФВ-6506: кассета с записью машины уходит в файл .bt и читается обратно
+#
+# Записанное живет только в устройстве, пока его не сохранят: команда save
+# собирает всю кассету в контейнер .bt - слово заголовка, затем записи
+# [пауза][длина][преамбула и данные]. Здесь машина пишет на ленту свою запись
+# (тот же писатель, что и в work-unior-tape-write), кассета сохраняется,
+# загружается обратно из файла и читается уже машиной: если контейнер собран
+# неверно, загрузка либо откажет, либо запись не прочитается.
+# @timeout 60
+
+MACHINE "unior/Unior.cfg"
+WAIT 1500
+
+COMMAND tape.load("../files/unior-test.bt")
+LOGDEFS 8,16
+
+COMMAND ram.set($0100,$31,$88,$F7,$CD,$43,$FC,$21,$30,$01,$06,$11,$3E,$01)
+COMMAND ram.set($010D,$4E,$E5,$C5,$CD,$0C,$F8,$C1,$E1,$23,$AF,$05,$C2,$0D)
+COMMAND ram.set($011A,$01,$3E,$40,$D3,$ED,$CD,$37,$FC,$76)
+COMMAND ram.set($0130,$02,$00,$02,$08,$3E,$5A,$32,$00,$03,$76,$C3,$00,$02,$02,$08,$02,$08)
+
+COMMAND cpu.setreg(PC,$0100)
+WAIT 3000
+
+PRINT "=== Записано машиной ==="
+LOG tape.records
+LOG tape.writes
+
+COMMAND tape.save("../results/work-unior-tape-save.bt")
+COMMAND tape.load("../results/work-unior-tape-save.bt")
+
+PRINT "=== Загружено обратно из файла ==="
+LOG tape.records
+
+// Голова стояла в начале ленты, поэтому запись легла перед прежней
+COMMAND tape.seek(0)
+RESET cold
+WAIT 2000
+COMMAND ram.set($0200,$00,$00,$00,$00,$00,$00,$00,$00,$00)
+COMMAND ram.set($0300,$00)
+
+KEYDOWN I
+WAIT 100
+KEYUP I
+WAIT 4000
+
+PRINT "=== Прочитано с сохраненной кассеты и запущено ==="
+LOG ram.value($0200,$0208)
+LOG ram.value($0300,$0300)
+LOG cpu.pc
+EXIT

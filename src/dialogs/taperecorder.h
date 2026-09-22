@@ -56,6 +56,11 @@ private:
 
     QString loaded_file;
 
+    //Лента движется - воспроизведением или перемоткой. Счетчик идет в обоих
+    //случаях, а кнопка воспроизведения нажата только в первом
+    bool is_moving = false;
+    bool is_fast = false;       // Ролики на перемотке крутятся быстрее
+
 private slots:
     void set_mute(bool muted);
     void update_counter();
@@ -72,6 +77,15 @@ private slots:
     void on_buttonRewind_clicked();
     void on_buttonRec_clicked();
     void tape_mode_changed(unsigned int new_mode);
+    //Окно ничего не помнит само: состояние берется у устройства - и при
+    //открытии, и каждый раз, когда оно меняется. Иначе лента, запущенная
+    //машиной или сценарием до открытия окна, показывалась бы остановленной
+    void sync_from_device();
+    //Выгрузка записанного: у обычной ленты это то, что машина наговорила,
+    //у ленты-накопителя - вся кассета (см. TapeRecorder::get_save_data)
+    void save_recording();
+    //Ролики и счетчик: fast - перемотка, они крутятся быстрее
+    void show_movement(bool moving, bool fast);
 };
 
 GenericDbgWnd * CreateTapeWindow(QWidget *parent, Emulator * e, ComputerDevice * d);

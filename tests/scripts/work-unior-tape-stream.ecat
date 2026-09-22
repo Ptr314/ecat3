@@ -1,0 +1,40 @@
+# Юниор ФВ-6506: запись потоком, когда лентопротяжку ведет человек
+#
+# Так работает COPY: он выкладывает блоки на ленту точкой входа МОНИТОРа F80C
+# ($FF в A добавляет преамбулу) и лентопротяжку не трогает вовсе - запись
+# включает человек кнопкой на магнитофоне (здесь это COMMAND tape.record).
+# Между блоками программа занята, на ленте идет пауза, и каждый блок ложится
+# отдельной записью: без этого вся кассета стала бы одной записью.
+# @timeout 60
+
+MACHINE "unior/Unior.cfg"
+WAIT 1500
+
+COMMAND tape.load("../files/unior-blank.bt")
+LOGDEFS 8,16
+
+PRINT "=== Чистая кассета, нажата запись ==="
+COMMAND tape.record(1)
+LOG tape.records
+LOG tape.recording
+
+// Блок из двух байт с преамбулой, дальше пустой цикл: лента идет, данных нет
+COMMAND ram.set($0100,$31,$88,$F7,$3E,$01,$0E,$41,$CD,$0C,$F8,$3E,$00,$0E,$42,$CD,$0C,$F8,$C3,$11,$01)
+COMMAND cpu.setreg(PC,$0100)
+WAIT 1000
+
+// Пауза на ленте - и второй блок
+COMMAND ram.set($0120,$31,$88,$F7,$3E,$01,$0E,$43,$CD,$0C,$F8,$3E,$00,$0E,$44,$CD,$0C,$F8,$C3,$31,$01)
+COMMAND cpu.setreg(PC,$0120)
+WAIT 1000
+
+PRINT "=== Два блока на ленте ==="
+LOG tape.records
+LOG tape.writes
+
+COMMAND tape.record(0)
+PRINT "=== Лентопротяжка остановлена ==="
+LOG tape.records
+LOG tape.writes
+LOG tape.mode
+EXIT

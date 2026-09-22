@@ -66,11 +66,12 @@ bool looks_like_a_file(const EmulatorConfigDevice * d, const EmulatorConfigParam
     const size_t dot = p.value.find_last_of('.');
     if (dot == std::string::npos || dot + 1 == p.value.size()) return false;
 
-    //"dev.iface" is a reference to another device, not a file
-    const std::string head = p.value.substr(0, dot);
-    if (head.find_first_of("/\\") == std::string::npos && config->get_device(head) != nullptr)
-        return false;
-
+    //A file is what a file is found for. "dev.iface" is a reference to another
+    //device, and one is told apart by nothing else being there: no file of that
+    //name exists anywhere the machine looks. Deciding it by the name alone cost
+    //the Юниор its palette - the device is called palette and reads palette.rom,
+    //so the ROM never went into the bundle and the snapshot would not load back
+    (void)config;
     resolved = find_file_location(sd, p.value);
     return !resolved.empty();
 }

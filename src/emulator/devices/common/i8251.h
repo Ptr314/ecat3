@@ -43,6 +43,7 @@ private:
     bool    rx_enable;
     bool    send_break;
     bool    hunt_mode;
+    bool    sync_second_seen = false;   // Пришел первый символ двойной синхронизации
 
     // Control port state machine
     enum ControlState {
@@ -75,11 +76,14 @@ private:
     void update_status();
     void update_command(uint8_t value);
     void parse_mode_word(uint8_t value);
+    //Тактов передатчика на символ - см. set_char_clocks()
+    void set_char_clocks();
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
 public:
     I8251(InterfaceManager *im, EmulatorConfigDevice *cd);
 
+    emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;
     unsigned int get_value(unsigned int address) override;
     unsigned get_direct(unsigned address) override;

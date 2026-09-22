@@ -12,6 +12,10 @@ class I8257: public AddressableDevice
 private:
     Interface i_address;
     Interface i_data;
+    //Выход конечного счёта. У Юниора он заведен на контроллер экрана: тот
+    //перестает запрашивать ПДП до конца кадра, и выборка кадра снова
+    //начинается с адреса перезагрузки
+    Interface i_tc;
 
 public:
     uint8_t RgA[8];

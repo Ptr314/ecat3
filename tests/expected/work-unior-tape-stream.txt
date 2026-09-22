@@ -1,0 +1,10 @@
+=== Чистая кассета, нажата запись ===
+[tape.records] $0000
+[tape.recording] $01
+=== Два блока на ленте ===
+[tape.records] $0002
+[tape.writes] $00000002
+=== Лентопротяжка остановлена ===
+[tape.records] $0002
+[tape.writes] $00000002
+[tape.mode] $00

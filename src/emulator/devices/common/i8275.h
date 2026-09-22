@@ -48,6 +48,11 @@ private:
     Interface i_address;
     Interface i_data;
     Interface i_irq;
+    //Вход "прекратить запросы": у Юниора на него заведен конечный счет ВТ57.
+    //Дойдя до конца буфера, контроллер экрана замолкает до конца кадра, и
+    //следующий кадр выбирается с адреса перезагрузки. Без этой связи одна
+    //потерянная строка сдвигала бы картинку навсегда
+    Interface i_stop_drq;
 
     uint8_t Mode;                   //Last byte written to the command port
     int RegIndex;                   //Parameter sequencer of the current command
@@ -122,6 +127,7 @@ public:
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
     emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;
+    void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     void clock(unsigned int counter) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;

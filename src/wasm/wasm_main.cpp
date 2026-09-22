@@ -84,6 +84,9 @@ int wasm_load_machine(const char* cfg_path)
             TapeRecorder * tape = dynamic_cast<TapeRecorder*>(dev);
             if (tape == nullptr) continue;
             tape->on_mode_changed = [tape](unsigned int mode) {
+                //Лентопротяжку может вести сама машина (Юниор): тогда окно -
+                //и страница вместо него - только показывают, что происходит
+                if (tape->is_machine_driven()) return;
                 if (mode == TAPE_READ) tape->play(); else tape->stop();
             };
             tape->volume(10);

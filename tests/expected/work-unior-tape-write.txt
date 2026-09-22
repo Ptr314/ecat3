@@ -1,0 +1,14 @@
+=== До записи ===
+[tape.records] $0001
+[tape.writes] $00000000
+[tape.sound] $00000000
+=== После записи ===
+[cpu.pc] $0123
+[tape.transport] $00
+[tape.records] $0002
+[tape.writes] $00000001
+[tape.sound] $0000011A
+=== Прочитано обратно и запущено ===
+[ram.value] $0200: $3E $5A $32 $00 $03 $76 $C3 $00 $02
+[ram.value] $0300: $5A
+[cpu.pc] $0206

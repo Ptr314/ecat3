@@ -98,6 +98,72 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
             tape_mode_changed(new_mode);
         });
     };
+
+    //Машина или сценарий могли зарядить и запустить ленту задолго до того, как
+    //окно открыли: показываем то, что в лентопротяжке происходит сейчас
+    sync_from_device();
+}
+
+void TapeRecorderWindow::show_movement(bool moving, bool fast)
+{
+    if (moving) {
+        ui->left_roller->movie()->start();
+        ui->right_roller->movie()->start();
+        ui->left_roller->movie()->setSpeed(fast?200:50);
+        ui->right_roller->movie()->setSpeed(fast?400:100);
+        ui->left_roller->show();
+        ui->right_roller->show();
+        update_timer.start();
+    } else {
+        ui->left_roller->movie()->stop();
+        ui->right_roller->movie()->stop();
+        ui->left_roller->hide();
+        ui->right_roller->hide();
+        update_timer.stop();
+    }
+}
+
+void TapeRecorderWindow::sync_from_device()
+{
+    const int mode = d->get_mode();
+    //Перемотку машина ведет сама: в окне нажимаются ее клавиши, а кнопка
+    //воспроизведения остается отпущенной
+    const bool forward = (mode == TAPE_FORWARD);
+    const bool back = (mode == TAPE_BACK);
+    const bool playing = (mode != TAPE_STOPPED) && !forward && !back;
+    const bool recording = d->get_recording();
+
+    if (!d->get_loaded_name().empty())
+        loaded_file = QString::fromStdString(d->get_loaded_name());
+
+    if (!loaded_file.isEmpty()) {
+        ui->name_mask->setVisible(true);
+        ui->textLabel->setVisible(true);
+    }
+
+    is_recording = recording;
+    ui->buttonRec->setChecked(recording);
+
+    ui->buttonForward->setIcon(forward?btnIconOn:btnIconOff);
+    ui->buttonRewind->setIcon(back?btnIconOn:btnIconOff);
+
+    if (playing != (is_playing && !is_paused)) {
+        is_playing = playing;
+        is_paused = false;
+        ui->buttonPlay->setChecked(playing);
+        if (!playing) ui->buttonPause->setChecked(false);
+    }
+
+    //Только картинка: саму лентопротяжку трогать нельзя, она уже в том
+    //состоянии, о котором нам сообщили
+    const bool moving = (mode != TAPE_STOPPED);
+    const bool fast = forward || back;
+    if (moving != is_moving || fast != is_fast) {
+        is_moving = moving;
+        is_fast = fast;
+        show_movement(moving, fast);
+    }
+    update_counter();
 }
 
 void TapeRecorderWindow::set_mute(bool muted)
@@ -143,6 +209,14 @@ void TapeRecorderWindow::on_buttonEject_pressed()
         play_pause();
         e->record_command(d->name, "stop", "");
     } else {
+        //Кассета, на которую писала машина, живет только в устройстве: перед
+        //тем как сменить ее, спрашиваем, не сохранить ли
+        if (d->get_record_size() != 0
+            && QMessageBox::question(this, TapeRecorderWindow::tr("Tape Recorder"),
+                   TapeRecorderWindow::tr("The machine has written on this tape. Save it?"),
+                   QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
+            save_recording();
+
         QString path = QString::fromStdString(e->get_last_path());
         SystemData * sd = e->get_system_data();
         QString file_name = QFileDialog::getOpenFileName(this, tr("Load a file"), path, QString::fromStdString(d->files));
@@ -226,6 +300,8 @@ void TapeRecorderWindow::on_buttonPlay_clicked()
 
 void TapeRecorderWindow::play_pause()
 {
+    is_moving = is_playing && !is_paused;
+    is_fast = false;
     if (is_playing && !is_paused) {
         ui->left_roller->movie()->start();
         ui->right_roller->movie()->start();
@@ -287,7 +363,12 @@ void TapeRecorderWindow::on_buttonRec_clicked()
     }
     d->set_recording(is_recording);
     e->record_command(d->name, "record", is_recording?"1":"0");
-    if (!is_recording && d->get_record_size() != 0) {
+    if (!is_recording) save_recording();
+}
+
+void TapeRecorderWindow::save_recording()
+{
+    if (d->get_record_size() != 0) {
         QString path = QString::fromStdString(e->get_last_path());
         // The device knows what it has decoded, and for some formats the
         // extension decides how the file is put back on the tape
@@ -304,8 +385,9 @@ void TapeRecorderWindow::on_buttonRec_clicked()
             e->set_last_path(fi.absolutePath().toStdString());
             QFile file(file_name);
             if (file.open(QIODevice::WriteOnly)) {
-                const std::vector<uint8_t> * data = d->get_record_data();
-                file.write(reinterpret_cast<const char*>(data->data()), static_cast<qint64>(data->size()));
+                std::vector<uint8_t> data;
+                d->get_save_data(data);
+                file.write(reinterpret_cast<const char*>(data.data()), static_cast<qint64>(data.size()));
                 file.close();
                 e->record_command(d->name, "save", format_script_arg(fi.absoluteFilePath().toStdString()));
             } else {
@@ -318,13 +400,15 @@ void TapeRecorderWindow::on_buttonRec_clicked()
 void TapeRecorderWindow::closeEvent(QCloseEvent *event)
 {
     update_timer.stop();
-    d->stop();
+    //Лента, которую держит сама машина (линия двигателя поднята), закрытием
+    //окна не останавливается: окно к ней отношения не имеет
+    if (!d->is_machine_driven()) d->stop();
     GenericDbgWnd::closeEvent(event);
 }
 
 void TapeRecorderWindow::update_counter()
 {
-    if (is_playing){
+    if (is_playing || is_moving){
         if (d->get_mode() != TAPE_STOPPED) {
             int position = d->get_position();
             int total = d->get_total();
@@ -337,7 +421,11 @@ void TapeRecorderWindow::update_counter()
                 + ")"
             );
         } else {
-            if (!is_paused) {
+            //Лента кончилась сама. Перематывать ее назад можно только тогда,
+            //когда ее пустили из окна: машина, которая ведет лентопротяжку
+            //сама, держит головку там, где ей нужно, и перемотка из окна
+            //увела бы ее из-под системы
+            if (!is_paused && !d->is_machine_driven()) {
                 is_playing = false;
                 play_pause();
                 ui->buttonPlay->setChecked(false);
@@ -355,20 +443,9 @@ void TapeRecorderWindow::update_counter()
     }
 }
 
-void TapeRecorderWindow::tape_mode_changed(unsigned int new_mode)
+void TapeRecorderWindow::tape_mode_changed(MAYBE_UNUSED unsigned int new_mode)
 {
-    if (new_mode == TAPE_READ && !is_playing) {
-        is_playing = true;
-        is_paused = false;
-        ui->buttonPlay->setChecked(true);
-        play_pause();
-    } else if (new_mode == TAPE_STOPPED && is_playing) {
-        is_playing = false;
-        is_paused = false;
-        ui->buttonPlay->setChecked(false);
-        ui->buttonPause->setChecked(false);
-        play_pause();
-    }
+    sync_from_device();
 }
 
 GenericDbgWnd * CreateTapeWindow(QWidget *parent, Emulator * e, ComputerDevice * d)

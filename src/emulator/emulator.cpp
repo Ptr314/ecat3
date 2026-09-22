@@ -81,6 +81,7 @@
 #include "emulator/devices/specific/uknc_keyboard.h"
 #include "emulator/devices/specific/uknc_sound.h"
 #include "emulator/devices/specific/unior_memory.h"
+#include "emulator/devices/specific/unior_tape.h"
 
 
 Emulator::Emulator(std::string work_path, std::string data_path, std::string software_path, std::string ini_file, VideoRenderer * renderer):
@@ -1308,4 +1309,5 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("uknc-keyboard", create_uknc_keyboard);
     dm->register_device("uknc-sound", create_uknc_sound);
     dm->register_device("unior-memory", create_unior_memory);
+    dm->register_device("unior-tape", create_unior_tape);
 }

@@ -56,6 +56,8 @@ emulator::Result TapeRecorder::load_config(SystemData *sd)
         m_tape_enc = TapeEnc::UKNC;
     else if (enc_str == "bk")
         m_tape_enc = TapeEnc::BK;
+    else if (enc_str == "unior")
+        m_tape_enc = TapeEnc::UNIOR;
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect encoding")) + "} " + enc_str);
 
@@ -124,11 +126,17 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
     } else {
         // Motor changed
         // std::cout << "TapeRecorder: motor = " << (new_value & 1) << std::endl;
-        if ((new_value & 1)==1 && (old_value & 1)==0 && !is_recording && data_size>0) {
-            if (on_mode_changed) on_mode_changed(TAPE_READ);
+        //Линия двигателя ведет саму лентопротяжку, а не только картинку в
+        //окне: машина, которая управляет магнитофоном сама (Ириша поднимает
+        //DTR, Юниор командует лентопротяжкой по разъему ДУ), должна получать
+        //ленту в движении и без открытого окна - в том числе в сценариях
+        if ((new_value & 1)==1 && (old_value & 1)==0) {
+            motor_on = true;
+            if (!is_recording && data_size>0) set_tape_mode(TAPE_READ);
         }
-        if ((new_value & 1)==0 && (old_value & 1)==1 && tape_mode == TAPE_READ) {
-            if (on_mode_changed) on_mode_changed(TAPE_STOPPED);
+        if ((new_value & 1)==0 && (old_value & 1)==1) {
+            motor_on = false;
+            if (tape_mode == TAPE_READ) set_tape_mode(TAPE_STOPPED);
         }
     }
 }
@@ -221,6 +229,7 @@ void TapeRecorder::set_recording(bool recording)
         recorded_bytes.clear();
         recorded_bytes.reserve(1024);
     }
+    notify_state();
 }
 
 unsigned TapeRecorder::get_record_size()
@@ -326,16 +335,28 @@ std::vector<uint8_t> * TapeRecorder::get_record_data()
     return &recorded_bytes;
 }
 
+//Единственное место, где меняется режим лентопротяжки. Окно узнает о нем
+//отсюда, кто бы ни был источником - кнопка, сценарий или сама машина
+void TapeRecorder::set_tape_mode(unsigned int new_mode)
+{
+    if (tape_mode == new_mode) return;
+    tape_mode = new_mode;
+    notify_state();
+}
+
+void TapeRecorder::notify_state()
+{
+    if (on_mode_changed) on_mode_changed(tape_mode);
+}
+
 void TapeRecorder::play()
 {
-    if (data_size > 0) {
-        tape_mode = TAPE_READ;
-    }
+    if (data_size > 0) set_tape_mode(TAPE_READ);
 }
 
 void TapeRecorder::stop()
 {
-    tape_mode = TAPE_STOPPED;
+    set_tape_mode(TAPE_STOPPED);
 }
 
 void TapeRecorder::rewind()
@@ -364,7 +385,7 @@ void TapeRecorder::set_baud_rate(unsigned int baud)
 
 void TapeRecorder::set_data(const std::vector<uint8_t> &new_data){
     data = new_data;
-    tape_mode = TAPE_STOPPED;
+    set_tape_mode(TAPE_STOPPED);
     data_size = data.size();
     data_position = 0;
     bit_shift = 7;
@@ -406,6 +427,10 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
     if (parts.empty())
         return emulator::Result::error(emulator::ErrorCode::BadParameters,
             "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Tape file format is not defined")) + "}");
+
+    //Имя кассеты - тоже состояние устройства: окно показывает то, что лежит в
+    //лентопротяжке, кто бы ее туда ни положил - кнопка или сценарий
+    loaded_name = dsk_tools::get_filename(file_name);
 
     std::vector<std::string> first = split_string(parts[0], ':', true);
     if (first.size() < 2)
@@ -491,6 +516,7 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
             "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Unknown tape format!")) + "} " + tape_format);
     }
 
+    notify_state();
     return emulator::Result::ok();
 }
 
@@ -619,6 +645,12 @@ std::vector<DeviceFieldInfo> TapeRecorder::get_device_fields()
     return r;
 }
 
+void TapeRecorder::get_save_data(std::vector<uint8_t> &out)
+{
+    const std::vector<uint8_t> * data = get_record_data();
+    out = (data != nullptr)?*data:std::vector<uint8_t>();
+}
+
 std::vector<DeviceCommandInfo> TapeRecorder::get_device_commands()
 {
     std::vector<DeviceCommandInfo> r = ComputerDevice::get_device_commands();
@@ -692,7 +724,9 @@ emulator::Result TapeRecorder::send_command(const std::string &command, const st
     if (command == "save") {
         //Writes out what has been recorded, so that a script can check that a
         //tape written by the machine reads back into it
-        const std::vector<uint8_t> * out = get_record_data();
+        std::vector<uint8_t> image;
+        get_save_data(image);
+        const std::vector<uint8_t> * out = &image;
         if (out->empty())
             return emulator::Result::error(emulator::ErrorCode::BadParameters,
                 "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Nothing has been recorded")) + "}");

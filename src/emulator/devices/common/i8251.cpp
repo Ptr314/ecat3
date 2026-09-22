@@ -56,6 +56,19 @@ I8251::I8251(InterfaceManager *im, EmulatorConfigDevice *cd):
     init();
 }
 
+//Кто тактирует передатчик. Линия подведена - считать его такты системным
+//клоком нельзя: символ уходил бы за несколько машинных циклов вместо своих
+//восьми битовых интервалов
+emulator::Result I8251::load_config(SystemData *sd)
+{
+    emulator::Result res = AddressableDevice::load_config(sd);
+    if (!res) return res;
+
+    ext_clock = (i_txc.linked > 0) || (i_c.linked > 0);
+
+    return emulator::Result::ok();
+}
+
 void I8251::reset(const bool cold)
 {
     AddressableDevice::reset(cold);
@@ -102,6 +115,20 @@ void I8251::init()
     i_rts.change(0);
 }
 
+//Сколько тактов передатчика уходит на символ. В синхронном режиме это его
+//разряды (плюс четность), в асинхронном к ним добавляются старт и стоп, и
+//каждый разряд идет baud_factor тактов. Раньше символ уходил за один такт,
+//то есть в восемь-одиннадцать раз быстрее живой микросхемы: запись на ленту
+//Юниора укладывалась в миллисекунды вместо секунд, и услышать ее было нечем
+void I8251::set_char_clocks()
+{
+    unsigned int bits = char_length + (parity_enable?1u:0u);
+    if (!sync_mode) bits += 1 + ((stop_bits >= 3)?2u:1u);
+    tx_clock_divider = bits * baud_factor;
+    if (tx_clock_divider < 1) tx_clock_divider = 1;
+    rx_clock_divider = tx_clock_divider;
+}
+
 void I8251::parse_mode_word(uint8_t value)
 {
     mode_word = value;
@@ -115,6 +142,8 @@ void I8251::parse_mode_word(uint8_t value)
         char_length = 5 + ((value >> 2) & 0x03);
         parity_enable = (value & 0x10) != 0;
         even_parity = (value & 0x20) != 0;
+
+        set_char_clocks();
 
         // Need to receive sync characters next
         sync_chars_remaining = single_sync ? 1 : 2;
@@ -140,8 +169,7 @@ void I8251::parse_mode_word(uint8_t value)
             case 3:  stop_bits = 3; break; // 2 stop bits
         }
 
-        tx_clock_divider = baud_factor;
-        rx_clock_divider = baud_factor;
+        set_char_clocks();
 
         control_state = STATE_COMMAND;
     }
@@ -173,6 +201,9 @@ void I8251::update_command(uint8_t value)
     // Enter hunt mode (sync only)
     if ((value & CMD_EH) && sync_mode) {
         hunt_mode = true;
+        sync_second_seen = false;
+        status &= ~STATUS_SYNDET;
+        i_syndet.change(0);
     }
 
     update_status();
@@ -226,7 +257,12 @@ unsigned int I8251::get_value(unsigned int address)
     } else {
         // A0=1: Read status
         update_status();
-        return status;
+        const uint8_t v = status;
+        //SYNDET снимается чтением статуса (паспорт микросхемы), иначе ПЗУ
+        //Юниора приняло бы одну засечку синхронизации за все последующие
+        status &= ~STATUS_SYNDET;
+        if ((v & STATUS_SYNDET) != 0) i_syndet.change(0);
+        return v;
     }
 }
 
@@ -254,12 +290,18 @@ void I8251::set_value(const unsigned address, const unsigned value, bool force)
             case STATE_MODE:
                 parse_mode_word(value & 0xFF);
                 break;
-            case STATE_SYNC_CHAR:
-                sync_chars[2 - sync_chars_remaining] = value & 0xFF;
+            case STATE_SYNC_CHAR: {
+                //Индекс считается от того, сколько символов вообще ожидается:
+                //при одиночной синхронизации единственный символ - нулевой, а
+                //не первый. Раньше он ложился в sync_chars[1], и приемник искал
+                //в потоке совсем не тот байт
+                const unsigned int total = single_sync?1:2;
+                sync_chars[total - sync_chars_remaining] = value & 0xFF;
                 sync_chars_remaining--;
                 if (sync_chars_remaining == 0)
                     control_state = STATE_COMMAND;
                 break;
+            }
             case STATE_COMMAND:
                 update_command(value & 0xFF);
                 break;
@@ -291,6 +333,34 @@ void I8251::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned
     if (callback_id == CALLBACK_RXD) {
         // Data received on rxd interface
         if (rx_enable) {
+            // В синхронном режиме приемник сначала ищет синхросимвол и все, что
+            // до него, выбрасывает. Юниор на этом и держится: лента идет
+            // сплошным потоком, началом записи считается байт $E6, а ПЗУ ждет
+            // SYNDET, прежде чем брать данные (FBB3)
+            if (sync_mode && hunt_mode) {
+                const uint8_t v = (uint8_t)(new_value & 0xFF);
+                if (v == sync_chars[0]) {
+                    if (single_sync || sync_second_seen) {
+                        hunt_mode = false;
+                        sync_second_seen = false;
+                        status |= STATUS_SYNDET;
+                        i_syndet.change(1);
+                    } else {
+                        // Двойной синхросимвол: первый только что пришел
+                        sync_second_seen = true;
+                    }
+                } else
+                if (!single_sync && sync_second_seen && v == sync_chars[1]) {
+                    hunt_mode = false;
+                    sync_second_seen = false;
+                    status |= STATUS_SYNDET;
+                    i_syndet.change(1);
+                } else {
+                    sync_second_seen = false;
+                }
+                //Сам синхросимвол в буфер не попадает
+                return;
+            }
             if (rx_buffer_full) {
                 // Overrun error
                 status |= STATUS_OE;
@@ -347,6 +417,7 @@ void I8251::save_state(StateWriter &w)
     w.b("rx_enable", rx_enable);
     w.b("send_break", send_break);
     w.b("hunt_mode", hunt_mode);
+    w.b("sync_second_seen", sync_second_seen);
     //Whether anything is driving the C line. Not derivable from the line's
     //value - it is set by the first edge that ever arrives - so it has to
     //travel with the state, or a restored chip clocks itself instead
@@ -381,6 +452,7 @@ emulator::Result I8251::load_state(const StateReader &r)
     r.b("rx_enable", rx_enable);
     r.b("send_break", send_break);
     r.b("hunt_mode", hunt_mode);
+    r.b("sync_second_seen", sync_second_seen);
     r.b("ext_clock", ext_clock);
     r.u("tx_clock_count", tx_clock_count);
     r.u("rx_clock_count", rx_clock_count);

@@ -1,0 +1,11 @@
+[tape.mode] $02
+=== Лента прошла запись ===
+[tape.record] $0001 $0000
+[tape.mode] $01
+[tape.mode] $03
+=== После отката ===
+[tape.record] $0000 $0000
+[tape.mode] $00
+=== Прочитано после отката ===
+[tape.transport] $00
+[ram.value] $F802: $54 $41 $50 $45 $20 $4F $4B

@@ -2584,6 +2584,11 @@
         <translation>Магнитофон</translation>
     </message>
     <message>
+        <location filename="../dialogs/taperecorder.cpp" line="+201"/>
+        <source>The machine has written on this tape. Save it?</source>
+        <translation>Машина писала на эту кассету. Сохранить её?</translation>
+    </message>
+    <message>
         <location line="+43"/>
         <source>Record</source>
         <translation>Запись</translation>

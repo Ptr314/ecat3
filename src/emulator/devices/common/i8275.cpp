@@ -26,6 +26,7 @@ I8275::I8275(InterfaceManager *im, EmulatorConfigDevice *cd):
     , Status(0)
     , Blinker(false)
     , BlinkerChar(false)
+    , i_stop_drq(this, im, 1, "stop_drq", MODE_R, 1)
 {
     m_clocked = true;   //clock() is overridden here
     memset(&RegMode, 0, sizeof(RegMode));
@@ -265,6 +266,18 @@ void I8275::start_row_fill()
 }
 
 //One transfer, called by clock() only when the next one is due
+//Конечный счет ВТ57: выборка кадра закончена, до его конца больше ничего не
+//запрашивается. Строку, которая добиралась в этот момент, бросаем - она уже
+//вся в буфере, если счет совпадал с кадром
+void I8275::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
+{
+    if (callback_id == 1 && (new_value & 1) != 0 && (old_value & 1) == 0)
+    {
+        m_frame_dma = false;
+        m_filling = false;
+    }
+}
+
 void I8275::dma_tick()
 {
     if (!dma_ready())

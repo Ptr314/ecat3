@@ -12,6 +12,7 @@ I8257::I8257(InterfaceManager *im, EmulatorConfigDevice *cd):
       AddressableDevice(im, cd)
     , i_address(this, im, 2, "address", MODE_R)
     , i_data(this, im, 8, "data", MODE_R)
+    , i_tc(this, im, 1, "tc", MODE_W)
 {
     clear_registers();
 }
@@ -47,6 +48,10 @@ unsigned int I8257::dma_next(unsigned int channel)
     {
         //Terminal count
         RgState |= (1u << n);
+        //Импульс на выходе TC: у Юниора он останавливает запросы контроллера
+        //экрана до конца кадра
+        i_tc.change(1);
+        i_tc.change(0);
         if (n == 2 && (RgMode & 0x80) != 0)
         {
             //Auto load: channel 2 restarts from the copy kept in channel 3.

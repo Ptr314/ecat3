@@ -16,12 +16,19 @@
 #define TAPE_STOPPED 0
 #define TAPE_READ    1
 #define TAPE_WRITE   0
+//Перемотка: у ленты, которую ведет сама машина, в окне должны нажиматься
+//клавиши перемотки, а не воспроизведения
+#define TAPE_FORWARD 2
+#define TAPE_BACK    3
 
 enum class TapeEnc {
     MSX,
     RK86,
     UKNC,
-    BK
+    BK,
+    //Лента Юниора несет байты, а не полупериоды: модуляция у машины
+    //аппаратная, и кодировщики базового устройства для нее не работают
+    UNIOR
 };
 
 enum class TapeWriterState {
@@ -55,6 +62,18 @@ protected:
     void set_baud_rate(unsigned int baud);
     void set_data(const std::vector<uint8_t> &new_data);
     bool is_recording = false;
+    //Лентопротяжку держит машина: окно в этом случае только показывает, что
+    //происходит, и не останавливает ленту, закрываясь
+    bool motor_on = false;
+    std::string loaded_name;
+    //Единственное место, где меняется режим: отсюда же уходит извещение в окно
+    void set_tape_mode(unsigned int new_mode);
+    //Звук ленты. Машине, которая ведет ленту сама и получает с нее байты, а не
+    //полупериоды (Юниор), базовый clock() не годится, а слышно должно быть так
+    //же, как у остальных: она сама выдает уровень и крутит динамик
+    void tape_sound(unsigned int level) { i_speaker.change(level); }
+    void clock_sound(unsigned int counter) { speaker->clock(counter); }
+    void notify_state();
     TapeEnc m_tape_enc = TapeEnc::MSX;
     uint64_t cycle_counter = 0;
     uint64_t last_edge_cycles = 0;
@@ -105,7 +124,15 @@ public:
     virtual int get_total();
     virtual int get_mode();
     virtual void set_recording(bool recording);
+    //Состояние для окна: оно ничего не хранит само, а спрашивает устройство
+    bool get_recording() const { return is_recording; }
+    bool is_machine_driven() const { return motor_on; }
+    const std::string & get_loaded_name() const { return loaded_name; }
     virtual unsigned get_record_size();
+    //Что уходит в файл при сохранении. По умолчанию - то, что машина записала;
+    //лента-накопитель (Юниор) отдает здесь весь образ кассеты, потому что
+    //записанный сектор сам по себе не кассета
+    virtual void get_save_data(std::vector<uint8_t> &out);
     virtual std::string get_record_name();
     virtual std::vector<uint8_t> * get_record_data();
 
