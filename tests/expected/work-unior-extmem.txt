@@ -1,0 +1,12 @@
+=== Пересылки ===
+[ext-memory.transfers] $00000002
+[ext-memory.bytes] $00000200
+[ext-memory.last] $0003 $0100
+[ext-memory.direction] $00
+=== Что осталось в основной памяти (затерто) ===
+[ram.value] $2000: $00 $00 $00 $00 $00 $00 $00 $00 $00 $00 $00 $00 $00 $00 $00 $00
+=== Что приехало обратно из блока 3 ===
+[ram.value] $2100: $A5 $A4 $A7 $A6 $A1 $A0 $A3 $A2 $AD $AC $AF $AE $A9 $A8 $AB $AA $B5 $B4 $B7 $B6 $B1 $B0 $B3 $B2 $BD $BC $BF $BE $B9 $B8 $BB $BA
+=== Сам блок 3 ===
+[extram.value] $4000: $A5 $A4 $A7 $A6 $A1 $A0 $A3 $A2 $AD $AC $AF $AE $A9 $A8 $AB $AA
+[cpu.pc] $014C

@@ -16,6 +16,8 @@ static const uint8_t VG75_8Colors[8][3] = { {  0,   0,   0}, {  0,   0, 255}, { 
 I8275Display::I8275Display(InterfaceManager *im, EmulatorConfigDevice *cd):
       GenericDisplay(im, cd)
     , i_high(this, im, 1, "high", MODE_R)
+    , i_palette_page(this, im, 1, "palette_page", MODE_R)
+    , Palette(nullptr)
     , m_have_frame(false)
     , m_frame_cpl(78)
     , m_frame_lps(30)
@@ -29,11 +31,41 @@ I8275Display::I8275Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     reset_attr();
 }
 
-void I8275Display::set_attr(uint8_t v)
+//Порядок разрядов в ответе палитры свой у каждой машины: у Юниора 1 - это
+//красный, 2 - зелёный, 4 - синий (сверено с COLOR.ATR), а у рендерера
+//наоборот. Параметр rgb называет позиции R, G и B в байте цвета
+unsigned int I8275Display::map_color(unsigned int v)
 {
+    if (RGB[0] > 8) return v & 0x07;
+    return  ((v >> RGB[2]) & 0x01)
+         | (((v >> RGB[1]) & 0x01) << 1)
+         | (((v >> RGB[0]) & 0x01) << 2);
+}
+
+void I8275Display::set_attr(uint8_t v, unsigned int palette_base)
+{
+    //С таблицей цветов атрибутные биты - это адрес, а не набор признаков:
+    //подчеркивание и инверсия здесь такие же разряды цвета, как остальные.
+    //Мигание у Юниора стоит на разряде 1 (COLOR.ATR: $82 - "белый на черном
+    //миг."), а сама палитра его игнорирует - оттого в дампе половина адресов
+    //и повторяется
+    if (Palette != nullptr)
+    {
+        FAReverse = false;
+        FAUnder = false;
+        FABlink = (v & 0x02) != 0;
+        const unsigned int idx = (v & 0x01) | ((v >> 1) & 0x0E);
+        const unsigned int size = Palette->get_size();
+        const unsigned int mask = (size > 0)?(size - 1):0;
+        FAColor   = map_color(Palette->get_direct(((idx << 1) | palette_base) & mask));
+        FAColorBg = map_color(Palette->get_direct(((idx << 1) + 1 + palette_base) & mask));
+        return;
+    }
+
     FAReverse = (v & 0x10) != 0;
     FAUnder = (v & 0x20) != 0;
     FABlink = (v & 0x02) != 0;
+    FAColorBg = 0;
     if (RGB[0] > 8) {
         FAColor = 7;
     } else {
@@ -50,6 +82,7 @@ void I8275Display::reset_attr()
     FAUnder = false;
     FABlink = false;
     FAColor = 7;
+    FAColorBg = 0;
     NextAttr = 0;
 }
 
@@ -68,8 +101,12 @@ bool I8275Display::follow_resolution()
     const unsigned int h = m_frame_h;
 
     if ((cpl < 10) || (lps < 10) || (lps > I8275D_MAX_ROWS)) return false;
-    if (cpl*6 > (unsigned int)line_bytes / 4) return false;
 
+    //Размер объявляется до проверки поверхности, а не после: поверхность
+    //меняет размер по этим самым sx/sy (Emulator::render_screen), и машина
+    //шире стартовых 78 знакомест - Юниор с его 80 - иначе не получила бы её
+    //никогда: рисовать нельзя, потому что поверхность мала, а вырасти она не
+    //может, потому что мы не сказали, до чего
     if ((cpl*6 != sx) || (lps*h != sy))
     {
         sx = cpl*6;
@@ -78,6 +115,10 @@ bool I8275Display::follow_resolution()
         was_updated = true;
         return false;
     }
+
+    //Поверхность ещё прежнего размера: кадр рисуется на следующем проходе
+    if (cpl*6 > (unsigned int)line_bytes / 4) return false;
+
     return true;
 }
 
@@ -112,6 +153,9 @@ emulator::Result I8275Display::load_config(SystemData *sd)
     if (!res) return res;
     Memory = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram").value));
     Font = dynamic_cast<ROM*>(im->dm->get_device_by_name(cd->get_parameter("font").value));
+    const std::string palette_name = cd->get_parameter("palette", false).value;
+    if (!palette_name.empty())
+        Palette = dynamic_cast<ROM*>(im->dm->get_device_by_name(palette_name));
     VG75 = dynamic_cast<I8275*>(im->dm->get_device_by_name(cd->get_parameter("i8275").value));
     DMA = dynamic_cast<I8257*>(im->dm->get_device_by_name(cd->get_parameter("dma").value));
     Channel = parse_numeric_value(cd->get_parameter("channel").value);
@@ -150,6 +194,7 @@ void I8275Display::save_state(StateWriter &w)
     w.b("fa_under", FAUnder);
     w.b("fa_blink", FABlink);
     w.n("fa_color", FAColor);
+    w.n("fa_color_bg", FAColorBg);
     w.u("next_attr", NextAttr, 8);
 
     if (!m_have_frame) return;
@@ -160,6 +205,7 @@ void I8275Display::save_state(StateWriter &w)
         w.push(("row" + std::to_string(i)).c_str());
         w.n("len", s.len);
         w.n("font_bank", s.font_bank);
+        w.n("palette_base", s.palette_base);
         w.n("cursor_col", s.cursor_col);
         w.n("cursor_row", s.cursor_row);
         w.n("cursor_mode", s.cursor_mode);
@@ -185,6 +231,7 @@ emulator::Result I8275Display::load_state(const StateReader &r)
     r.b("fa_under", FAUnder);
     r.b("fa_blink", FABlink);
     r.u("fa_color", FAColor);
+    r.u("fa_color_bg", FAColorBg);
     r.u("next_attr", NextAttr);
 
     if (!m_have_frame) return emulator::Result::ok();
@@ -195,6 +242,7 @@ emulator::Result I8275Display::load_state(const StateReader &r)
         const StateReader sr = r.sub(("row" + std::to_string(i)).c_str());
         sr.u("len", s.len);
         sr.u("font_bank", s.font_bank);
+        sr.u("palette_base", s.palette_base);
         sr.u("cursor_col", s.cursor_col);
         sr.u("cursor_row", s.cursor_row);
         sr.u("cursor_mode", s.cursor_mode);
@@ -232,6 +280,10 @@ void I8275Display::row_complete(unsigned int row, const uint8_t * data, unsigned
     if (r.len > 0) memcpy(r.data, data, r.len);
 
     r.font_bank   = (i_high.linked > 0)?((i_high.value & 1) << 10):0;
+    //Обе модовые линии снимаются здесь же, на потоке эмуляции: страница
+    //палитры - это разряд 7 её адреса, банк знакогенератора - разряд 6
+    r.palette_base = ((i_high.linked > 0)?((i_high.value & 1) << 6):0)
+                   | ((i_palette_page.linked > 0)?((i_palette_page.value & 1) << 7):0);
     r.cursor_col  = VG75->RegCursor[0];
     r.cursor_row  = VG75->RegCursor[1];
     r.cursor_mode = VG75->RegMode[3] & 0x30;
@@ -275,6 +327,9 @@ void I8275Display::render_all(bool force_render)
     }
 
     reset_attr();
+    //Кадр начинается с "атрибутов нет", а это нулевая ячейка палитры текущей
+    //страницы, а не безусловно белое по черному
+    if (Palette != nullptr) set_attr(0x80, m_rows[0].palette_base);
     for (unsigned int row = 0; row < m_frame_lps; row++) draw_row(row);
 }
 
@@ -308,8 +363,15 @@ void I8275Display::draw_row(unsigned int Lin)
 
     for (unsigned int Col = 0; Col < CPL; Col++)
     {
+        //Знакоместо, на котором видео погашено: позиция атрибута поля в
+        //непрозрачном режиме, хвост строки после специального кода и всё, что
+        //ПДП не доставил. Рисовать его кодом 0 знакогенератора нельзя: у
+        //Юниора там настоящая буква (русские буквы лежат ниже $20), и она
+        //вылезала на экран в начале строки состояния МОНИТОРа
+        bool blanked = false;
         if (Blk || (P >= r.len)) {
             sign = 0x80;
+            blanked = true;
         } else {
             sign = r.data[P++];
             if ((sign & 0x80) != 0)
@@ -318,6 +380,7 @@ void I8275Display::draw_row(unsigned int Lin)
                 {
                     Blk = true;
                     sign = 0x80;
+                    blanked = true;
                     P++;
                 } else {
                     if ((sign & 0x40) == 0)
@@ -325,16 +388,20 @@ void I8275Display::draw_row(unsigned int Lin)
                         //Field Attributes
                         if (!AttrDelay)
                         {
-                            set_attr(sign);
+                            set_attr(sign, r.palette_base);
                             NextAttr = 0;
                         } else {
                             NextAttr = sign;
                         }
                         sign = 0x80;
+                        blanked = true;
                     }
                     if (r.transparent)
                     {
-                        sign = (P < r.len)?r.data[P++]:0x80;
+                        //В прозрачном режиме атрибут позиции не занимает:
+                        //место отдаётся следующему символу
+                        blanked = (P >= r.len);
+                        sign = blanked?0x80:r.data[P++];
                     }
                 }
             }
@@ -347,7 +414,7 @@ void I8275Display::draw_row(unsigned int Lin)
             unsigned int Adr = Lin*H + i;
             int ii = (int)i - (int)r.add_mode;
             if (ii < 0) ii += (int)H;
-            if (ii < 8) {
+            if ((ii < 8) && !blanked) {
                 V = ~(Font->get_value(r.font_bank + C*8 + static_cast<unsigned int>(ii)));
             } else {
                 V = 0;
@@ -364,14 +431,14 @@ void I8275Display::draw_row(unsigned int Lin)
                         ((r.cursor_mode == 0x30) && (i>7))                  //Non-blinking underline
                     )
                 )
-                || (FAReverse && (sign != 0x80))
-                || (FABlink && r.blink_char && (sign != 0x80))              //Attributes are always black?
+                || (FAReverse && !blanked)
+                || (FABlink && r.blink_char && !blanked)                    //Погашенные знакоместа не мигают и не инвертируются
                 || (FAUnder && (i>7))
             ) V = ~V;
             //Index 0 of the palette is black, which is what a zero bit produced
             //before through MapRGB(0,0,0)
             const uint32_t fg = rgba_colors[FAColor];
-            const uint32_t bg = rgba_colors[0];
+            const uint32_t bg = rgba_colors[FAColorBg];
             for (unsigned int k = 0; k <6; k++)
             {
                 uint8_t c1 = (V >> k) & 1;
@@ -382,7 +449,7 @@ void I8275Display::draw_row(unsigned int Lin)
         }
         if (AttrDelay && (NextAttr != 0))
         {
-            set_attr(NextAttr);
+            set_attr(NextAttr, r.palette_base);
             NextAttr = 0;
         }
     }

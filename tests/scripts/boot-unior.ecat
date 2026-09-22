@@ -1,0 +1,25 @@
+# Юниор ФВ-6506: приглашение монитора
+# Снимаются карта портов, разрешение экрана, геометрия ВГ75 и сам экран.
+# Цвет проверяется вместе со снимком: строка состояния монитора выводится
+# атрибутом $8D, а это "желтый на красном" по таблице COLOR.ATR самой машины.
+# @timeout 30
+
+MACHINE "unior/Unior.cfg"
+WAIT 2000
+
+LOGDEFS 8,16
+PRINT "=== Экран ==="
+LOG display.resolution
+LOG vg75.geometry
+LOG vg75.frame_rate
+
+PRINT "=== Карта памяти и портов ==="
+LOG mapper.map
+
+PRINT "=== Клавиатура ==="
+KEY 100,80,C
+WAIT 300
+LOG keyboard.count
+
+SCREEN "../results/boot-unior.png"
+EXIT

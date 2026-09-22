@@ -1,0 +1,17 @@
+=== Экран ===
+[display.resolution] 480x250
+[vg75.geometry] $50 $19 $0A $1A $04
+[vg75.frame_rate] $0032
+=== Карта памяти и портов ===
+[mapper.map] 
+        F800-FFFF -> bios[0000] mode=r
+        0000-FFFF -> ram[0000] mode=rw
+  port 30 -> dma
+  port 3C -> port-ext
+  port 4C -> port-kbd
+  port 50 -> ext-memory
+  port 60 -> vg75
+  port DC -> timer
+  port EC -> uart
+=== Клавиатура ===
+[keyboard.count] $00

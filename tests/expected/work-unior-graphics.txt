@@ -1,0 +1,7 @@
+=== Программа в памяти ===
+=== Графический режим ===
+[display.resolution] 480x256
+[vg75.geometry] $50 $40 $04 $1C $04
+[vg75.frame_rate] $0034
+[port-kbd.value] $0A
+[cpu.pc] $015A

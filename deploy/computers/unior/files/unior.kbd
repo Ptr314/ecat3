@@ -1,0 +1,8 @@
+end     esc     ;       ins     enter   plus    4       minus   mult    7       8
+pgdn    tab     J       1       2       3       E       5       6       [       ]
+__      shift   F       C       U       K       P       N       G       L       D
+__      alt     Q       Y       W       A       I       R       O       B       @
+ctrl    caps    scroll  ^       S       M       space   T       X       home    <
+f10     f2      f6      f7      pgup    left    up      del     >       \       V
+f11     f4      f5      f8      under   div     ret     right   :       H       Z
+f12     f1      f3      f9      ~       down    ?       }       =       0       9

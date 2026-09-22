@@ -122,6 +122,7 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/specific/uknc_timer.cpp
     ${EMU_DIR}/devices/specific/uknc_keyboard.cpp
     ${EMU_DIR}/devices/specific/uknc_sound.cpp
+    ${EMU_DIR}/devices/specific/unior_memory.cpp
     ${EMU_DIR}/devices/specific/irisha_display.cpp
     ${EMU_DIR}/devices/specific/bk_display.cpp
     ${EMU_DIR}/devices/specific/bk_timer.cpp

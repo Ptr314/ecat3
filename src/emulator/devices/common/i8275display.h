@@ -27,6 +27,7 @@ private:
         uint8_t         data[I8275_MAX_ROW];
         unsigned int    len;
         unsigned int    font_bank;
+        unsigned int    palette_base;       //Старшие разряды адреса палитры
         unsigned int    cursor_col;
         unsigned int    cursor_row;
         unsigned int    cursor_mode;        //RegMode[3] & 0x30
@@ -42,16 +43,27 @@ private:
     I8257 * DMA;
     unsigned int Channel;
     Interface i_high;             //Font select
+    //Палитра адресуется не только атрибутом: у Юниора её старшие разряды -
+    //те же линии, что выбирают банк знакогенератора (~high) и страницу
+    //цветов (~palette_page), так что одно и то же сочетание атрибутных бит
+    //даёт в тексте и в графике разные цвета
+    Interface i_palette_page;
     bool AttrDelay;
     unsigned int RGB[3];
     bool RGBInv;
     //The eight colours in the pixel format of the renderer
     uint32_t rgba_colors[8];
 
+    //Таблица цветов (ПЗУ палитры). Адрес: точка знакогенератора в разряде 0,
+    //атрибутные биты выше, банк и страница - в двух старших. Ответ - пара
+    //"цвет символа/цвет фона" в соседних ячейках
+    ROM * Palette;
+
     //Field attribute state. It carries from row to row down the screen, so it
     //lives here and is reset once per frame rather than once per row
     bool FAReverse, FAUnder, FABlink;
     unsigned int FAColor;
+    unsigned int FAColorBg;
     uint8_t NextAttr;
 
     RowSnapshot m_rows[I8275D_MAX_ROWS];
@@ -69,7 +81,8 @@ private:
     //on the interface thread, and drawing must stop at the buffer it built
     unsigned int m_surface_sy;
 
-    void set_attr(uint8_t v);
+    unsigned int map_color(unsigned int v);
+    void set_attr(uint8_t v, unsigned int palette_base);
     void reset_attr();
     void clear_rows();
     bool follow_resolution();

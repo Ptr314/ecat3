@@ -35,6 +35,13 @@ private:
     unsigned int scan_lines = 0;
     unsigned int out_lines = 0;
 
+    // The scan lines are driven one at a time through an external decoder, and
+    // what the machine writes is the number of the line rather than a mask of
+    // them. The Юниор has eleven columns behind a К555ИД3 and only the low
+    // four bits of the port to say which one - a matrix of that width does not
+    // fit a byte at all
+    bool decoded_scan = false;
+
     std::vector<ScanData> scan_data;
     std::vector<ScanKeyId> id_data;
     unsigned int key_array[15];

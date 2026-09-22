@@ -272,6 +272,7 @@ set(EMULATOR_SOURCES
     emulator/devices/specific/uknc_timer.h emulator/devices/specific/uknc_timer.cpp
     emulator/devices/specific/uknc_keyboard.h emulator/devices/specific/uknc_keyboard.cpp
     emulator/devices/specific/uknc_sound.h emulator/devices/specific/uknc_sound.cpp
+    emulator/devices/specific/unior_memory.h emulator/devices/specific/unior_memory.cpp
     emulator/devices/specific/agat_common.h
     emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp
     emulator/devices/specific/bk_display.h emulator/devices/specific/bk_display.cpp

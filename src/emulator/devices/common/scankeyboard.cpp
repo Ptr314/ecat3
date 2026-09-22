@@ -48,6 +48,8 @@ emulator::Result ScanKeyboard::load_config(SystemData *sd)
     emulator::Result res = Keyboard::load_config(sd);
     if (!res) return res;
 
+    decoded_scan = read_confg_value(cd, "decoder", false, false);
+
     std::string map_file = find_file_location(sd, cd->get_parameter("map", false).value);
     if (map_file.empty())
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Keyboard map file is expected")) + "}");
@@ -101,9 +103,20 @@ emulator::Result ScanKeyboard::load_config(SystemData *sd)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Key table does not fit the matrix")) + "} " + id_data[i].id);
 
-    code_ctrl = translate_key(cd->get_parameter("ctrl").value);
-    code_shift = translate_key(cd->get_parameter("shift").value);
-    code_ruslat = translate_key(cd->get_parameter("ruslat").value);
+    if (scan_lines > sizeof(key_array)/sizeof(key_array[0]))
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Too many scan lines in the map file")) + "} " + map_file);
+
+    //A machine whose modifiers sit in the matrix itself names none of these:
+    //on the Юниор the ROM finds РУС/ЛАТ and the register key among the scanned
+    //codes and keeps their state on its own, so the host keys must close those
+    //contacts like any other and not be taken away here
+    const std::string s_ctrl   = cd->get_parameter("ctrl", false).value;
+    const std::string s_shift  = cd->get_parameter("shift", false).value;
+    const std::string s_ruslat = cd->get_parameter("ruslat", false).value;
+    code_ctrl   = s_ctrl.empty()  ?_FFFF:translate_key(s_ctrl);
+    code_shift  = s_shift.empty() ?_FFFF:translate_key(s_shift);
+    code_ruslat = s_ruslat.empty()?_FFFF:translate_key(s_ruslat);
 
     i_shift.change(1);
     i_ctrl.change(1);
@@ -278,6 +291,18 @@ void ScanKeyboard::reset(bool cool)
 void ScanKeyboard::calculate_out()
 {
     unsigned int new_value = _FFFF;
+
+    //With an external decoder exactly one line is ever driven, and the port
+    //carries its number: the Юниор monitor walks the columns 0..10 by writing
+    //the low nibble of port A (F9AC), so there is no mask to walk here
+    if (decoded_scan)
+    {
+        const unsigned int line = i_scan.value & 0x0F;
+        if (line < scan_lines) new_value = key_array[line];
+        i_output.change(new_value);
+        return;
+    }
+
     for (unsigned int i = 0; i<scan_lines; i++)
     {
         unsigned int mask = create_mask(1, i);
