@@ -25,12 +25,18 @@
 #include <QStatusBar>
 #include <QThread>
 #include <QTimer>
+//Qt 5.6 не тянет QDateTime за собой: там, где он нужен, его надо позвать
+#include <QDateTime>
 
 #include "dialogs/genericdbgwnd.h"
 #include "dialogs/i8255window.h"
 #include "mainwindow.h"
 #include "emulator/utils.h"
 #include "dsk_tools/dsk_tools.h"
+//Часть помощников dsk_tools объявлена в его внутреннем заголовке, и звать
+//его надо по полному пути: короткий "utils.h" из dsk_tools.h у MSVC попадает
+//в emulator/utils.h - он ищет кавычечный include и по цепочке включающих
+#include "libs/dsk_tools/src/utils.h"
 #include "qevent.h"
 #include "ui_mainwindow.h"
 #include "dialogs/ui_aboutdlg.h"

@@ -316,9 +316,9 @@ KEYDOWN key_num_3
 WAIT 60
 KEYUP key_num_3
 WAIT 60
-KEYDOWN key_k1-0
+KEYDOWN key_isp
 WAIT 60
-KEYUP key_k1-0
+KEYUP key_isp
 WAIT 60
 KEYDOWN key_down
 WAIT 60

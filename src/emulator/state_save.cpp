@@ -12,6 +12,10 @@
 #include "utils.h"
 
 #include "dsk_tools/dsk_tools.h"
+//Часть помощников dsk_tools объявлена в его внутреннем заголовке, и звать
+//его надо по полному пути: короткий "utils.h" из dsk_tools.h у MSVC попадает
+//в emulator/utils.h - он ищет кавычечный include и по цепочке включающих
+#include "libs/dsk_tools/src/utils.h"
 #include "libs/zip_writer.h"
 
 namespace {

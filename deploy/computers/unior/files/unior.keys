@@ -28,4 +28,4 @@ __         key_graf     key_q         key_y       key_w     key_a         key_i 
 key_ctrl   key_alf      key_fiks      key_caret   key_s     key_m         key_space  key_t      key_x      key_stop    key_comma
 key_num_4  key_num_plus key_num_0     key_num_1   key_num_7 key_bksp      key_left   key_right  key_dot    key_bksl    key_v
 key_num_5  key_num_minus key_num_dot  key_num_2   key_ust   key_pom       key_enter  key_up     key_colon  key_h       key_z
-key_num_6  key_num_enter key_num_comma key_num_3  key_k1-0  key_down      key_slash  key_under  key_minus  key_0       key_9
+key_num_6  key_num_enter key_num_comma key_num_3  key_isp  key_down      key_slash  key_under  key_minus  key_0       key_9
