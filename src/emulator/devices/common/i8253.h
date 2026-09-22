@@ -14,6 +14,9 @@ private:
     Interface i_data;
     Interface i_output;
     Interface i_gate;
+    //Внешнее тактирование канала: у Юниора звуковой канал считает строчные
+    //импульсы ВГ75, а не такты процессора
+    Interface i_clk;
 
     uint8_t Modes[3];           //Режим работы счетчиков
     uint8_t IsBCD[3];           //Тип загруженных данных
@@ -32,6 +35,7 @@ private:
     unsigned int ch_clock_divider[3];
     unsigned int ch_clock_stored[3];
     bool per_channel_clock;
+    unsigned int ext_clock_mask;    //Каналы, у которых подведена своя линия такта
 
     void init();
     void StartCount(unsigned int A);

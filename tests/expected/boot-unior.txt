@@ -4,6 +4,7 @@
 [vg75.frame_rate] $0032
 === Карта памяти и портов ===
 [mapper.map] 
+  [off] 0000-07FF -> bios[0000] mode=r
         F800-FFFF -> bios[0000] mode=r
         0000-FFFF -> ram[0000] mode=rw
   port 30 -> dma

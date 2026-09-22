@@ -40,7 +40,9 @@ I8253::I8253(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_data(this, im, 8, "data", MODE_R)
     , i_output(this, im, 3, "output", MODE_W)
     , i_gate(this, im, 3, "gate", MODE_R, 1)
+    , i_clk(this, im, 3, "clk", MODE_R, 2)
     , per_channel_clock(false)
+    , ext_clock_mask(0)
 {
     m_clocked = true;   //clock() is overridden here
     for (int i = 0; i < 3; i++) {
@@ -72,6 +74,10 @@ emulator::Result I8253::load_config(SystemData *sd)
             per_channel_clock = true;
         }
     }
+
+    //Канал с подведенной линией такта считает ее фронты, а не такты своего
+    //домена: clock() его не трогает вовсе
+    ext_clock_mask = (i_clk.linked == 0) ? 0 : (i_clk.linked_bits & 0x07);
 
     return emulator::Result::ok();
 }
@@ -237,12 +243,13 @@ void I8253::set_value(const unsigned address, const unsigned value, bool force)
 
 void I8253::clock(const unsigned counter)
 {
-    if (!per_channel_clock) {
+    if (!per_channel_clock && ext_clock_mask == 0) {
         Count(0, counter);
         Count(1, counter);
         Count(2, counter);
     } else {
         for (int ch = 0; ch < 3; ch++) {
+            if (ext_clock_mask & (1u << ch)) continue;
             if (ch_clock_multiplier[ch] == ch_clock_divider[ch]) {
                 Count(ch, counter);
             } else {
@@ -257,8 +264,21 @@ void I8253::clock(const unsigned counter)
     }
 }
 
-void I8253::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned new_value, const unsigned old_value)
+void I8253::interface_callback(unsigned callback_id, const unsigned new_value, const unsigned old_value)
 {
+    //Внешний такт: считаем фронты той линии, что подведена к каналу
+    if (callback_id == 2)
+    {
+        for (unsigned int A=0; A<3; A++)
+        {
+            if (!(ext_clock_mask & (1u << A))) continue;
+            const unsigned C0 = (old_value >> A) & 0x01;
+            const unsigned C1 = (new_value >> A) & 0x01;
+            if (C1 == 1 && C0 == 0) Count(A, 1);
+        }
+        return;
+    }
+
     for (unsigned int A=0; A<3; A++)
     {
         const unsigned G0 = (old_value >> A) & 0x01;

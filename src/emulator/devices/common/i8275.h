@@ -53,6 +53,9 @@ private:
     //следующий кадр выбирается с адреса перезагрузки. Без этой связи одна
     //потерянная строка сдвигала бы картинку навсегда
     Interface i_stop_drq;
+    //Строчный синхроимпульс: один импульс на строку растра. У Юниора с него
+    //тактируется звуковой канал ВИ53, и высота тона поэтому идет за разверткой
+    Interface i_hrtc;
 
     uint8_t Mode;                   //Last byte written to the command port
     int RegIndex;                   //Parameter sequencer of the current command

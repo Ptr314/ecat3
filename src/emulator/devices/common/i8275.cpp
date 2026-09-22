@@ -27,6 +27,7 @@ I8275::I8275(InterfaceManager *im, EmulatorConfigDevice *cd):
     , Blinker(false)
     , BlinkerChar(false)
     , i_stop_drq(this, im, 1, "stop_drq", MODE_R, 1)
+    , i_hrtc(this, im, 1, "hrtc", MODE_W)
 {
     m_clocked = true;   //clock() is overridden here
     memset(&RegMode, 0, sizeof(RegMode));
@@ -397,8 +398,18 @@ void I8275::clock(unsigned int counter)
             }
         }
 
+        const unsigned int line_before = m_row_pos / m_chars_per_line;
         m_row_pos += step;
         counter -= step;
+
+        //Строчный синхроимпульс на каждой пройденной строке растра. Шаг тут
+        //прыгает от события к событию, поэтому строк за раз может быть больше
+        //одной, и импульсов должно быть столько же: на них считает ВИ53
+        for (unsigned int line = line_before; line < m_row_pos / m_chars_per_line; line++)
+        {
+            i_hrtc.change(1);
+            i_hrtc.change(0);
+        }
 
         if (m_row_pos >= m_row_len)
         {

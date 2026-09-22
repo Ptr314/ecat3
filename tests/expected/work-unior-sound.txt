@@ -1,0 +1,9 @@
+[timer.gates] 1 1 1
+=== Сколько насчитал канал 2 за секунду ===
+[timer.counters] 0 0 50715
+=== Уровень на динамике идет вверх-вниз ===
+[sound.enable] $01
+[sound.input] $00
+[sound.input] $01
+[sound.input] $00
+[sound.input] $01

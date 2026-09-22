@@ -8,6 +8,7 @@
 #include <cstring>
 #include <filesystem>
 #include <iostream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -19,6 +20,10 @@
 #include "libs/zip_reader.h"
 #include "libs/zip_writer.h"
 #include "emulator/state.h"
+//Часть помощников dsk_tools объявлена в его внутреннем заголовке, и звать
+//его надо по полному пути: короткий "utils.h" из dsk_tools.h у MSVC попадает
+//в emulator/utils.h - он ищет кавычечный include и по цепочке включающих
+#include "libs/dsk_tools/src/utils.h"
 
 #ifdef ENABLE_MCP
     #include "mcp/mcp_server.h"
@@ -168,6 +173,113 @@ bool check_config_round_trip(const std::string &file, std::string &message)
     return true;
 }
 
+//Имена клавиш машины: в таблице они стоят в ячейках матрицы и в заголовке
+//("hold: key_shift_1 once"), а на рисунке - в идентификаторах элементов. Все
+//они начинаются с "key_", чтобы не спутаться с именами клавиш хоста
+std::set<std::string> key_ids_of_table(const std::string &text)
+{
+    std::set<std::string> out;
+    std::vector<std::string> lines = split_string(text, '\n', true);
+    for (size_t i = 0; i < lines.size(); i++)
+    {
+        std::string line = lines[i];
+        const size_t comment = line.find("//");
+        if (comment != std::string::npos) line = line.substr(0, comment);
+        for (size_t c = 0; c < line.size(); c++)
+            if (line[c] == '\t' || line[c] == '|' || line[c] == ':' || line[c] == '\r') line[c] = ' ';
+        std::vector<std::string> words = split_string(line, ' ', true);
+        for (size_t w = 0; w < words.size(); w++)
+        {
+            std::string id = str_trim(words[w]);
+            //"key_0/S" - это та же клавиша key_0, взятая с модификатором:
+            //на рисунке она одна, а строк в таблице у нее несколько
+            const size_t slash = id.find('/');
+            if (slash != std::string::npos) id = id.substr(0, slash);
+            if (id.compare(0, 4, "key_") == 0) out.insert(id);
+        }
+    }
+    return out;
+}
+
+std::set<std::string> key_ids_of_picture(const std::string &text)
+{
+    std::set<std::string> out;
+    const std::string tag = "id=\"key_";
+    size_t pos = 0;
+    while ((pos = text.find(tag, pos)) != std::string::npos)
+    {
+        const size_t start = pos + 4;                   // за id="
+        const size_t end = text.find('"', start);
+        if (end == std::string::npos) break;
+        out.insert(text.substr(start, end - start));
+        pos = end;
+    }
+    return out;
+}
+
+std::string id_list(const std::set<std::string> &ids, size_t limit = 5)
+{
+    std::string out;
+    size_t n = 0;
+    for (std::set<std::string>::const_iterator it = ids.begin(); it != ids.end() && n < limit; ++it, ++n)
+        out += (out.empty() ? "" : " ") + *it;
+    if (ids.size() > limit) out += " ... (" + std::to_string(ids.size()) + ")";
+    return out;
+}
+
+//Клавиша рисунка доходит до матрицы по имени: идентификатор элемента в SVG
+//должен совпасть с именем в таблице клавиш машины. Разъедутся - клавиша молча
+//перестанет нажиматься, и этого не видит ни сборка, ни набор тестов. Так на
+//УК-НЦ осталась мертвой ИСП: в рисунке у нее был идентификатор копии Inkscape
+bool check_keyboard_picture(const std::string &file, const std::string &data_path,
+                            const std::string &software_path, std::string &message)
+{
+    EmulatorConfig config;
+    emulator::Result res = config.load_from_file(file);
+    if (!res) { message = strip_message_context(res.message); return false; }
+
+    //Так же, как их выставляет Emulator::load_config(): пути с разделителем
+    //на конце, иначе find_file_location() склеит их с именем файла впритык
+    SystemData sd;
+    sd.system_file = file;
+    sd.system_path = dsk_tools::get_file_path(file);
+    sd.data_path = data_path;
+    sd.software_path = software_path;
+
+    for (unsigned int i = 0; i < config.get_devices_count(); i++)
+    {
+        EmulatorConfigDevice * d = config.get_device(static_cast<int>(i));
+        const std::string keys = d->get_parameter("keys", false).value;
+        const std::string picture = d->get_parameter("picture", false).value;
+        if (keys.empty() || picture.empty()) continue;
+
+        const std::string keys_file = find_file_location(&sd, keys);
+        const std::string picture_file = find_file_location(&sd, picture);
+        if (keys_file.empty())    { message = "key table not found: " + keys; return false; }
+        if (picture_file.empty()) { message = "picture not found: " + picture; return false; }
+
+        const std::set<std::string> table = key_ids_of_table(dsk_tools::utf8_read_file(keys_file));
+        const std::set<std::string> drawn = key_ids_of_picture(dsk_tools::utf8_read_file(picture_file));
+        if (table.empty()) { message = "no key names in " + keys; return false; }
+        if (drawn.empty()) { message = "no key elements in " + picture; return false; }
+
+        //Проверяется одна сторона: имя из таблицы обязано быть на рисунке,
+        //иначе до этой клавиши не добраться мышью. Обратное - законно: у Ириши
+        //на панели нарисованы переключатели терминала 15ИЭ, которых машина не
+        //читает, и в таблице их нет намеренно
+        std::set<std::string> missing;
+        for (std::set<std::string>::const_iterator it = table.begin(); it != table.end(); ++it)
+            if (drawn.find(*it) == drawn.end()) missing.insert(*it);
+
+        if (!missing.empty())
+        {
+            message = "in " + keys + ", not drawn in " + picture + ": " + id_list(missing);
+            return false;
+        }
+    }
+    return true;
+}
+
 //The archive a saved state is packed into is written by ZipWriter and read
 //back by ZipReader, which verifies both the size and the CRC of every entry -
 //so reading our own archive is a complete check of the headers
@@ -295,7 +407,8 @@ bool check_hex_round_trip(std::string &message)
     return true;
 }
 
-int run_selftest(const std::string &work_path)
+int run_selftest(const std::string &work_path, const std::string &data_path,
+                 const std::string &software_path)
 {
     std::vector<std::string> files;
     std::error_code ec;
@@ -324,6 +437,27 @@ int run_selftest(const std::string &work_path)
     }
     std::cout << "config round trip: " << (files.size() - failed) << " of " << files.size()
               << " configurations" << (failed ? " - FAILED" : " - ok") << std::endl;
+
+    unsigned int drawn_failed = 0;
+    unsigned int drawn_checked = 0;
+    for (size_t i = 0; i < files.size(); i++)
+    {
+        std::string message;
+        EmulatorConfig probe;
+        if (!probe.load_from_file(files[i])) continue;
+        bool has_picture = false;
+        for (unsigned int k = 0; k < probe.get_devices_count() && !has_picture; k++)
+            has_picture = !probe.get_device(static_cast<int>(k))->get_parameter("picture", false).value.empty()
+                       && !probe.get_device(static_cast<int>(k))->get_parameter("keys", false).value.empty();
+        if (!has_picture) continue;
+        drawn_checked++;
+        if (check_keyboard_picture(files[i], data_path, software_path, message)) continue;
+        std::cout << "FAIL " << files[i] << ": " << message << std::endl;
+        drawn_failed++;
+    }
+    failed += drawn_failed;
+    std::cout << "keyboard pictures: " << (drawn_checked - drawn_failed) << " of " << drawn_checked
+              << " machines" << (drawn_failed ? " - FAILED" : " - ok") << std::endl;
 
     std::string message;
     const bool zip_ok = check_zip_round_trip(message);
@@ -529,7 +663,11 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (o.selftest) return run_selftest(resolve_paths(argv[0]).work);
+    if (o.selftest)
+    {
+        const Paths sp = resolve_paths(argv[0]);
+        return run_selftest(sp.work, sp.data, sp.software);
+    }
 
     if (!o.mcp && o.script.empty() && o.config.empty())
     {
