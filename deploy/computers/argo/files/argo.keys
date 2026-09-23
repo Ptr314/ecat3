@@ -1,0 +1,33 @@
+// Клавиши клавиатуры Арго ФВ-6511: то, что нарисовано на argo_keyboard.svg.
+// В отличие от argo.kbd, где в ячейках матрицы стоят клавиши хоста, здесь
+// стоят имена клавиш машины, они же идентификаторы элементов рисунка.
+//
+// Строка -- выходная линия матрицы (разряд, который читается из порта $A1),
+// столбец -- номер, который процессор выставляет на старших разрядах адреса.
+// Раскладка снята из таблицы кодов ПЗУ по адресу $F999: индекс ячейки там
+// равен row*11 + col + 1. Две клавиши в одной ячейке перечисляются через "|" --
+// на плате они соединены параллельно.
+//
+// Модификаторов в матрице три, ПЗУ ведет их в разрядах признака $F7AF
+// (таблица $F9F2): УПР -- маска 01, НР -- 04, ДОП -- 08. Проверено нажатием:
+// $F7AF становится $01, $04 и $08 соответственно.
+//
+// Четыре служебные клавиши ПЗУ кодов не дает, и расставлены они по смыслу,
+// а не по проверке: РУС/ЛАТ и ФИКС -- те две ячейки, что выдают коды $80 и
+// $81 (их разбирает уже ОС, монитор печатает на них "?"), а СТОП КАДР --
+// одна из двух ячеек с нулевым кодом, которые модификаторами не числятся.
+// Какая из них какая, без живой машины не выяснить.
+
+hold:  key_shift_1 once
+hold:  key_shift_2 once
+hold:  key_ctrl once
+hold:  key_dop once
+
+key_num_minus	key_ar2	key_1	key_f1	key_f2	key_f3	key_5	key_f4	key_f5	key_8	key_9
+key_f10	key_tab	key_q	key_2	key_3	key_4	key_t	key_6	key_7	key_i	key_o
+key_stop_kadr	key_ctrl	key_a	key_w	key_e	key_r	key_g	key_y	key_u	key_k	key_l
+__	key_dop	key_z	key_s	key_d	key_f	key_b	key_h	key_j	key_comma	key_dot
+key_shift_1|key_shift_2	key_ruslat	key_fiks	key_x	key_c	key_v	key_space	key_n	key_m	key_left	key_slash
+key_num_7	key_num_0	key_num_1	key_num_4	key_numlock	key_bksp	key_right	key_down	key_tilda	key_apo	key_semi
+key_num_8	key_num_dot	key_num_2	key_num_5	key_f8	key_f7	key_enter	key_up	key_rbr	key_lbr	key_p
+key_num_9	key_num_plus	key_num_3	key_num_6	key_f9	key_f6	key_asterisk	key_colon	key_equal	key_minus	key_0

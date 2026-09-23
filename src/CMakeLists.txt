@@ -272,6 +272,9 @@ set(EMULATOR_SOURCES
     emulator/devices/specific/uknc_timer.h emulator/devices/specific/uknc_timer.cpp
     emulator/devices/specific/uknc_keyboard.h emulator/devices/specific/uknc_keyboard.cpp
     emulator/devices/specific/uknc_sound.h emulator/devices/specific/uknc_sound.cpp
+    emulator/devices/specific/argo_keyboard.h emulator/devices/specific/argo_keyboard.cpp
+    emulator/devices/specific/argo_memory.h emulator/devices/specific/argo_memory.cpp
+    emulator/devices/specific/zx_keyboard.h emulator/devices/specific/zx_keyboard.cpp
     emulator/devices/specific/unior_memory.h emulator/devices/specific/unior_memory.cpp
     emulator/devices/specific/unior_tape.h emulator/devices/specific/unior_tape.cpp
     emulator/devices/specific/agat_common.h

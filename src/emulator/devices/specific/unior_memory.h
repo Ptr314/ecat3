@@ -22,20 +22,30 @@ class I8257;
 class UniorMemory: public AddressableDevice
 {
 private:
-    Interface i_block;              // Разряды 0-2 порта C, активный ноль
+    Interface i_block;              // Разряды номера блока со стороны канала 0
+    // Вторая линия выбора блока. У Юниора ее нет: номер блока там один, а
+    // сторону пересылки задает триггер порта $50. У Арго регистров выбора два
+    // ($A1 и $A9), номер блока стоит только в одном из них, и какой это
+    // регистр - то и есть направление
+    Interface i_block2;
 
     AddressableDevice * Main = nullptr;
     AddressableDevice * Ext = nullptr;
     I8257 * DMA = nullptr;
 
     unsigned int m_blocks = 1;
+    unsigned int m_block_mask = 0x07;   // Разряды номера блока в регистре
+    unsigned int m_block_shift = 0;
+    bool m_block_invert = true;         // Активный ноль, как у Юниора
     unsigned int m_direction = 0;   // Триггер по порту $50
     unsigned int m_last_block = 0;  // Номер блока последней пересылки
     unsigned int m_last_count = 0;
     uint64_t m_transfers = 0;
     uint64_t m_bytes = 0;
 
+    unsigned int block_of(const Interface &i) const;
     unsigned int selected_block() const;
+    unsigned int direction() const;
     unsigned int ext_read(unsigned int block, unsigned int address);
     void ext_write(unsigned int block, unsigned int address, unsigned int value);
     void run_transfer();

@@ -71,6 +71,7 @@ z80::z80(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_nmi(this, im, 1, "nmi", MODE_R, CALLBACK_NMI)
     , i_int(this, im, 1, "int", MODE_R, CALLBACK_INT)
     , i_m1(this, im, 1, "m1", MODE_W)
+    , i_io_address(this, im, 16, "io_address", MODE_W)
 {
 #ifndef EXTERNAL_Z80
     core = new z80Core(this);
@@ -119,12 +120,14 @@ void z80::write_mem(unsigned int address, unsigned int data)
 
 unsigned int z80::read_port(unsigned int address)
 {
+    i_io_address.change(address);
     unsigned int data = mm->read_port(address);
     return data;
 }
 
 void z80::write_port(unsigned int address, unsigned int data)
 {
+    i_io_address.change(address);
     mm->write_port(address, data);
 }
 

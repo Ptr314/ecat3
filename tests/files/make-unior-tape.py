@@ -2,7 +2,7 @@
 #
 # Контейнер снят с образов А. Морозова и сверен с ПЗУ машины:
 #   [dword]                                   - заголовок файла
-#   [dword пауза][dword длина][AA AA 19 00][данные]
+#   [dword начало][dword длительность][dword длина][AA AA 19 00][данные]
 # Пауза считается в битовых интервалах (2400 бод), данные начинаются с
 # синхросимвола $E6, который ВВ51 ловит в режиме охоты.
 #
@@ -45,8 +45,15 @@ checksum = sum(prog) & 0xFFFF
 body = bytes([0xE6, 0x00, start >> 8, start & 0xFF, end >> 8, end & 0xFF]) \
      + prog + bytes([checksum >> 8, checksum & 0xFF])
 
-record = struct.pack('<II', 2400, len(body)) + bytes([0xAA, 0xAA, 0x19, 0x00]) + body
-out = struct.pack('<I', 0) + record
+# Перед каждой записью в файле стоят три слова: когда она начинается, сколько
+# длится и какой она длины вместе с преамбулой. Первые два - в единицах, которых
+# на байт приходится 8000/скорость, то есть в миллисекундах при 2400 бод; пауза
+# перед записью получается как ее начало минус конец предыдущей
+LEADER = 1000                                   # Секунда ракорда перед записью
+length = 4 + len(body)
+duration = round(length * 8 * 1000 / 2400)
+record = struct.pack('<III', LEADER, duration, length) + bytes([0xAA, 0xAA, 0x19, 0x00]) + body
+out = record
 
 with open('unior-test.bt', 'wb') as f:
     f.write(out)

@@ -13,6 +13,9 @@ Generator::Generator(InterfaceManager *im, EmulatorConfigDevice *cd):
     , enabled(true)
     , i_out(this, im, 1, "out", MODE_W)
     , i_enable(this, im, 1, "enable", MODE_R, 1)
+    , i_trigger(this, im, 1, "trigger", MODE_R, 2)
+    , triggered(false)
+    , m_pulses(0)
 {
     m_clocked = true;   //clock() is overridden here
 }
@@ -25,8 +28,15 @@ emulator::Result Generator::load_config(SystemData *sd)
     //The frequency of this generator's own clock domain, set by the base class
     //from clock_source - not the master processor's, which is all this used to
     //be able to see
-    unsigned int freq = parse_numeric_value(cd->get_parameter("frequency").value);
-    total_counts = m_system_clock / freq;
+    triggered = (i_trigger.linked > 0);
+    if (triggered)
+    {
+        //У одновибратора своей частоты нет, её задаёт вход запуска
+        total_counts = 0;
+    } else {
+        unsigned int freq = parse_numeric_value(cd->get_parameter("frequency").value);
+        total_counts = m_system_clock / freq;
+    }
 
     std::string lens = cd->get_parameter("length", false).value;
     if (lens.empty())
@@ -50,7 +60,20 @@ emulator::Result Generator::load_config(SystemData *sd)
 
 void Generator::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
-    enabled = (new_value & 1) > 0;
+    if (callback_id == 1)
+    {
+        enabled = (new_value & 1) > 0;
+        return;
+    }
+
+    //Фронт входа запуска: выдать импульс, если разрешено
+    if (((new_value & 1) != 0) && ((old_value & 1) == 0) && enabled)
+    {
+        in_pulse = true;
+        pulse_stored = 0;
+        m_pulses++;
+        i_out.change(positive?1:0);
+    }
 }
 
 void Generator::system_clock(unsigned int counter)
@@ -69,6 +92,8 @@ void Generator::system_clock(unsigned int counter)
         }
     }
 
+    if (triggered) return;
+
     if (clock_stored >= total_counts)
     {
         clock_stored -= total_counts;
@@ -76,6 +101,7 @@ void Generator::system_clock(unsigned int counter)
         {
             in_pulse = true;
             pulse_stored = 0;
+            m_pulses++;
             if (positive)
                 i_out.change(1);
             else
@@ -108,6 +134,7 @@ std::vector<DeviceFieldInfo> Generator::get_device_fields()
     r.push_back({"enabled", "1 if the generator is running",    false});
     r.push_back({"out",     "Current level of the output",      false});
     r.push_back({"period",  "Period, in system clock counts",   false});
+    r.push_back({"pulses",  "Pulses emitted since reset",       false});
     return r;
 }
 
@@ -118,6 +145,7 @@ bool Generator::get_field(const std::string &field, unsigned int from, unsigned 
     if (field == "out")     { out.values.push_back(i_out.value);    return true; }
     out.width = 32;
     if (field == "period")  { out.values.push_back(total_counts);   return true; }
+    if (field == "pulses")  { out.values.push_back((unsigned int)m_pulses); return true; }
     out.width = 0;
 
     out.numeric = false;

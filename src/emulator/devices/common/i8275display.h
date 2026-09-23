@@ -38,7 +38,9 @@ private:
     };
 
     RAM * Memory;
-    ROM * Font;
+    //Знакогенератор - не обязательно ПЗУ: у Арго это ОЗУ, которое машина
+    //подставляет себе в адресное пространство и заполняет сама
+    AddressableDevice * Font;
     I8275 * VG75;
     I8257 * DMA;
     unsigned int Channel;
@@ -48,11 +50,21 @@ private:
     //цветов (~palette_page), так что одно и то же сочетание атрибутных бит
     //даёт в тексте и в графике разные цвета
     Interface i_palette_page;
+    //Режим ZX Spectrum у Арго: разряд 7 регистра конфигурации памяти. Что он
+    //делает на самом деле, со схемы не выяснить - как устроен режим, разобрано
+    //по ZX.COM и по работающему ПЗУ Спектрума, см. draw_row_zx()
+    Interface i_zx;
     bool AttrDelay;
     unsigned int RGB[3];
     bool RGBInv;
     //The eight colours in the pixel format of the renderer
     uint32_t rgba_colors[8];
+    //Шестнадцать цветов Спектрума в формате отрисовщика: три разряда цвета
+    //плюс яркость, ровно как RGBI у самого Арго
+    uint32_t zx_colors[16];
+    unsigned int m_zx_bitmap = 0;   //Где лежит битовая карта экрана Спектрума
+    unsigned int m_zx_attr = 0;     //Где лежат его атрибуты
+    bool m_frame_zx = false;        //Снят вместе с геометрией кадра
 
     //Таблица цветов (ПЗУ палитры). Адрес: точка знакогенератора в разряде 0,
     //атрибутные биты выше, банк и страница - в двух старших. Ответ - пара
@@ -81,6 +93,28 @@ private:
     //on the interface thread, and drawing must stop at the buffer it built
     unsigned int m_surface_sy;
 
+    //Разводка адреса знакогенератора. По умолчанию, как у Радио-86РК и
+    //родни, это банк, код знака и номер строки развёртки подряд:
+    //адрес = банк*1024 + код*8 + строка. Параметр font_address описывает
+    //другую разводку строкой из 11 знаков, от старшего разряда адреса к
+    //младшему: 0-7 - разряд кода знака, a/b/c/d - разряды счётчика строк,
+    //B - линия выбора банка (~high), '-' - постоянный ноль. Разряды
+    //независимы, поэтому адрес складывается из трёх заранее посчитанных
+    //слагаемых, а не собирается по биту на каждую точку
+    unsigned int m_font_code[256];
+    unsigned int m_font_line[16];
+    unsigned int m_font_high = 0;
+    bool m_font_mapped = false;
+    //Знакогенераторы Радио-86РК и родни хранят точки инвертированными, и
+    //разрядка знака получается из нулей. У Арго знакогенератор лежит в ОЗУ
+    //и пишется прямым - пустая ячейка там означает пустое знакоместо
+    bool m_font_invert = true;
+    //Начало знакогенератора в устройстве, названном font. У Арго он лежит
+    //не отдельной микросхемой, а страницей 3 второй банки того же ОЗУ
+    unsigned int m_font_base = 0;
+
+    unsigned int font_address(unsigned int code, unsigned int line, unsigned int bank) const;
+    void draw_row_zx(unsigned int Lin);
     unsigned int map_color(unsigned int v);
     void set_attr(uint8_t v, unsigned int palette_base);
     void reset_attr();

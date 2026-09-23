@@ -1,0 +1,13 @@
+=== обычный режим ===
+[display.resolution] 480x250
+[mem.pages] $00 $01 $02 $03
+=== режим ZX ===
+[display.resolution] 320x256
+[vg75.geometry] $50 $10 $10 $1C $03
+[mem.config] $C1 $00 $61
+[mem.pages] $00 $05 $02 $03
+=== клавиатура ZX ===
+[zx-kbd.rows] $FF $FF $FF $FF $FF $FF $FF $FF
+[zx-kbd.rows] $FF $FF $FE $FF $FF $FF $FF $FF
+[zx-kbd.rows] $FF $FF $FF $FF $FF $FF $FE $FE
+[zx-kbd.rows] $FF $FF $FF $FF $FF $FF $FF $FF

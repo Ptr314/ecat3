@@ -1,0 +1,8 @@
+@	esc	1	f1	f2	f3	5	f4	f5	8	9
+f10	tab	Q	2	3	4	T	6	7	I	O
+__	ctrl	A	W	E	R	G	Y	U	K	L
+__	alt	Z	S	D	F	B	H	J	,	.
+shift	caps	#	X	C	V	space	N	M	<	/
+home	ins	end	left	f11	back	>	scroll	~	'	;
+up	del	down	enter	f8	f7	ret	num	]	[	P
+pgup	plus	pgdn	right	f9	f6	*	\	=	-	0

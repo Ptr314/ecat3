@@ -72,6 +72,10 @@ emulator::Result I8251::load_config(SystemData *sd)
 void I8251::reset(const bool cold)
 {
     AddressableDevice::reset(cold);
+    //Счетчики обмена обнуляются только сбросом машины: внутренний сброс
+    //микросхемы ПЗУ шлет перед каждой записью ленты, и по нему их терять нельзя
+    m_rx_count = m_tx_count = m_hunt_count = m_sync_count = 0;
+    m_hunt_dropped = m_overruns = 0;
     init();
 }
 
@@ -200,6 +204,7 @@ void I8251::update_command(uint8_t value)
 
     // Enter hunt mode (sync only)
     if ((value & CMD_EH) && sync_mode) {
+        if (!hunt_mode) m_hunt_count++;
         hunt_mode = true;
         sync_second_seen = false;
         status &= ~STATUS_SYNDET;
@@ -316,6 +321,8 @@ void I8251::do_clock(const unsigned counter)
         if (tx_clock_count >= tx_clock_divider) {
             tx_clock_count -= tx_clock_divider;
             i_txd.change(tx_buffer);
+                    m_tx_count++;
+            m_tx_count++;
             tx_buffer_full = false;
             update_status();
         }
@@ -344,6 +351,7 @@ void I8251::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned
                         hunt_mode = false;
                         sync_second_seen = false;
                         status |= STATUS_SYNDET;
+                        m_sync_count++;
                         i_syndet.change(1);
                     } else {
                         // Двойной синхросимвол: первый только что пришел
@@ -354,19 +362,23 @@ void I8251::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned
                     hunt_mode = false;
                     sync_second_seen = false;
                     status |= STATUS_SYNDET;
+                    m_sync_count++;
                     i_syndet.change(1);
                 } else {
                     sync_second_seen = false;
                 }
+                m_hunt_dropped++;
                 //Сам синхросимвол в буфер не попадает
                 return;
             }
             if (rx_buffer_full) {
                 // Overrun error
                 status |= STATUS_OE;
+                m_overruns++;
             }
             rx_buffer = new_value & 0xFF;
             rx_buffer_full = true;
+            m_rx_count++;
             update_status();
         }
     } else if (callback_id == CALLBACK_DSR) {
@@ -471,11 +483,33 @@ std::vector<DeviceFieldInfo> I8251::get_device_fields()
     r.push_back({"rx",      "Byte in the receive buffer",                   false});
     r.push_back({"buffers", "Which of the two buffers are full",            false});
     r.push_back({"state",   "What the control port expects to be written next", false});
+    r.push_back({"traffic", "Counters: received, transmitted, hunts, sync chars, dropped while hunting, overruns", false});
+    r.push_back({"hunt",    "Hunt state: hunting now, SYNDET in the status",  false});
     return r;
 }
 
 bool I8251::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
+    if (field == "traffic")
+    {
+        out.numeric = true;
+        out.width = 32;
+        out.values.push_back(m_rx_count);
+        out.values.push_back(m_tx_count);
+        out.values.push_back(m_hunt_count);
+        out.values.push_back(m_sync_count);
+        out.values.push_back(m_hunt_dropped);
+        out.values.push_back(m_overruns);
+        return true;
+    }
+    if (field == "hunt")
+    {
+        out.numeric = true;
+        out.width = 1;
+        out.values.push_back(hunt_mode?1:0);
+        out.values.push_back(((status & STATUS_SYNDET) != 0)?1:0);
+        return true;
+    }
     if (field == "status" || field == "mode" || field == "command" ||
         field == "tx" || field == "rx")
     {

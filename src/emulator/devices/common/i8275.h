@@ -56,6 +56,10 @@ private:
     //Строчный синхроимпульс: один импульс на строку растра. У Юниора с него
     //тактируется звуковой канал ВИ53, и высота тона поэтому идет за разверткой
     Interface i_hrtc;
+    //Кадровый синхроимпульс. У микросхемы это отдельный вывод, и держится он
+    //всю обратную ходку - те строки кадра, что идут за последней видимой
+    Interface i_vrtc;
+    bool m_vrtc = false;
 
     uint8_t Mode;                   //Last byte written to the command port
     int RegIndex;                   //Parameter sequencer of the current command

@@ -15,7 +15,8 @@
 
 UniorMemory::UniorMemory(InterfaceManager *im, EmulatorConfigDevice *cd):
     AddressableDevice(im, cd)
-    , i_block(this, im, 3, "block", MODE_R)
+    , i_block(this, im, 8, "block", MODE_R)
+    , i_block2(this, im, 8, "block2", MODE_R)
 {
     m_clocked = true;   //clock() is overridden here
     addresable_size = 1;
@@ -40,6 +41,12 @@ emulator::Result UniorMemory::load_config(SystemData *sd)
     if (m_blocks < 1) m_blocks = 1;
     if (m_blocks > 7) m_blocks = 7;
 
+    m_block_mask = read_confg_value(cd, "block_mask", false, (unsigned int)0x07);
+    if (m_block_mask == 0) m_block_mask = 0x07;
+    m_block_shift = 0;
+    while (((m_block_mask >> m_block_shift) & 1) == 0) m_block_shift++;
+    m_block_invert = cd->get_parameter("block_invert", false).value != "0";
+
     return emulator::Result::ok();
 }
 
@@ -54,10 +61,27 @@ void UniorMemory::reset(MAYBE_UNUSED bool cold)
 // записью единиц (ORI $07 после пересылки), а выбирает блок, сбрасывая в ноль
 // разряды его номера (AND с дополнением). Ноль в ответе - блок не выбран, и
 // тогда обе стороны пересылки попадают в основное ОЗУ
+unsigned int UniorMemory::block_of(const Interface &i) const
+{
+    if (i.linked == 0) return 0;
+    const unsigned int v = (m_block_invert?(~i.value):i.value) & m_block_mask;
+    return v >> m_block_shift;
+}
+
 unsigned int UniorMemory::selected_block() const
 {
-    if (i_block.linked == 0) return 0;
-    return (~i_block.value) & 0x07;
+    if (i_block2.linked == 0) return block_of(i_block);
+    const unsigned int b1 = block_of(i_block2);
+    return (b1 != 0)?b1:block_of(i_block);
+}
+
+// Сторона, на которой стоит блок. У Юниора ее задает триггер порта $50, у Арго
+// - то, в какой из двух регистров выбора машина положила номер: МОНИТОР пишет
+// в один из них чистое $61, а в другой $61 с номером блока в разрядах 1-3
+unsigned int UniorMemory::direction() const
+{
+    if (i_block2.linked == 0) return m_direction;
+    return (block_of(i_block2) != 0)?1:0;
 }
 
 unsigned int UniorMemory::ext_read(unsigned int block, unsigned int address)
@@ -91,7 +115,7 @@ void UniorMemory::run_transfer()
     const unsigned int count_reg = DMA->RgC[0] | (DMA->RgC[1] << 8);
     const unsigned int count = (count_reg & 0x3FFF) + 1;
     const unsigned int block = selected_block();
-    const bool to_block = (m_direction != 0);
+    const bool to_block = (direction() != 0);
 
     for (unsigned int i = 0; i < count; i++)
     {

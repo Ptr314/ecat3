@@ -34,6 +34,11 @@
 // маркер. Синхросимвол $E6 идет уже первым байтом данных
 static const uint8_t BT_PREAMBLE[4] = {0xAA, 0xAA, 0x19, 0x00};
 
+static uint32_t rd32(const uint8_t * p)
+{
+    return (uint32_t)(p[0] | (p[1] << 8) | (p[2] << 16) | ((uint32_t)p[3] << 24));
+}
+
 UniorTape::UniorTape(InterfaceManager *im, EmulatorConfigDevice *cd):
       TapeRecorder(im, cd)
     , i_control(this, im, 8, "control", MODE_R, CB_CONTROL)
@@ -132,11 +137,27 @@ void UniorTape::locate(uint64_t pos)
     m_byte = 0;
 }
 
-// Образ кассеты в файле .bt: слово заголовка, затем записи
-// [пауза:4][длина:4][преамбула:4 + данные:длина]. Одна и та же раскладка
-// читается при загрузке, пишется при сохранении и кладется в снимок состояния:
-// носитель - это состояние, и кассета, на которую писала машина, не должна
-// теряться ни там, ни там
+// Образ кассеты в файле .bt: подряд записи
+// [начало:4][длительность:4][длина:4][преамбула:4 + данные:длина].
+//
+// Первые два слова - не пауза, а время: когда запись начинается и сколько
+// длится, в единицах, которых на байт приходится 3.3-3.6 (то есть в
+// миллисекундах при скорости около 2400 бод). Видно это по отношению
+// длительности к длине - у всех записей всех имеющихся лент, и Юниора и Арго,
+// оно одно и то же. Настоящая пауза перед записью - это ее начало минус конец
+// предыдущей, и получается она совсем другой: около 1100 мс перед маркером и
+// около 600 перед блоком данных, а не 111 и 6905, как читалось бы, прими мы
+// второе слово за паузу.
+//
+// Разница не косметическая. ПЗУ Арго после каждой отбракованной записи
+// перезапускает лентопротяжку и ждет 20 кадров ВГ75, около 400 мс, прежде чем
+// включить воспроизведение. При паузе 111 мс маркер за это время проходит
+// головку целиком, и драйвер тома не находит ни одного блока, кроме нулевого,
+// до которого доходит от начала ленты. При настоящих 1100 мс он успевает.
+//
+// Одна и та же раскладка читается при загрузке, пишется при сохранении и
+// кладется в снимок состояния: носитель - это состояние, и кассета, на которую
+// писала машина, не должна теряться ни там, ни там
 emulator::Result UniorTape::parse_image(const uint8_t * raw, size_t size, const std::string &where)
 {
     if (size < 4)
@@ -144,23 +165,41 @@ emulator::Result UniorTape::parse_image(const uint8_t * raw, size_t size, const 
             "{UniorTape|" + std::string(QT_TRANSLATE_NOOP("UniorTape", "Unable to read tape image")) + "} " + where);
 
     std::vector<Record> recs;
-    size_t off = 4;             // Первое слово файла - заголовок, а не запись
-    while (off + 8 <= size)
+    uint64_t sum_units = 0, sum_bits = 0, prev_end = 0;
+    size_t off = 0;
+    while (off + 12 <= size)
     {
-        const uint32_t gap = (uint32_t)(raw[off] | (raw[off+1] << 8) | (raw[off+2] << 16) | ((uint32_t)raw[off+3] << 24));
-        const uint32_t len = (uint32_t)(raw[off+4] | (raw[off+5] << 8) | (raw[off+6] << 16) | ((uint32_t)raw[off+7] << 24));
-        const size_t sync = off + 8;
-        if (sync + 4 + len > size) break;
+        const uint32_t start = rd32(raw + off);
+        const uint32_t dur   = rd32(raw + off + 4);
+        const uint32_t len   = rd32(raw + off + 8);
+        const size_t sync = off + 12;
+        // Длина считает запись целиком, вместе с преамбулой: у записи на
+        // настоящей ленте это $0021 при 33 байтах и $080A при 2058
+        if (len < 4 || sync + len > size) break;
         if (memcmp(&raw[sync], BT_PREAMBLE, 4) != 0)
             return emulator::Result::error(emulator::ErrorCode::FileError,
                 "{UniorTape|" + std::string(QT_TRANSLATE_NOOP("UniorTape", "Not a Unior tape image")) + "} " + where);
 
         Record r;
-        r.gap = gap;
-        r.bytes.assign(raw + sync, raw + sync + 4 + len);
+        r.file_gap = (uint32_t)((start > prev_end)?(start - prev_end):0);
+        r.file_dur = dur;
+        r.from_file = true;
+        r.bytes.assign(raw + sync, raw + sync + len);
         recs.push_back(r);
-        off = sync + 4 + len;
+
+        prev_end = (uint64_t)start + dur;
+        sum_units += dur;
+        sum_bits += (uint64_t)len * 8;
+        off = sync + len;
     }
+
+    //Единица времени у файла своя, и здесь она не нужна названной: важно лишь
+    //отношение, а его дают сами записи - их длительность против их длины
+    m_unit_per_bit = (sum_bits > 0 && sum_units > 0)
+                        ?((double)sum_units / (double)sum_bits)
+                        :(1000.0 / (double)((baud_rate > 0)?baud_rate:2400));
+    for (size_t i = 0; i < recs.size(); i++)
+        recs[i].gap = (uint32_t)((double)recs[i].file_gap / m_unit_per_bit + 0.5);
 
     //Файл из одного заголовка - это чистая кассета, ее и размечают с нуля.
     //Все, что длиннее, но записей не дало, - испорченный образ
@@ -170,7 +209,6 @@ emulator::Result UniorTape::parse_image(const uint8_t * raw, size_t size, const 
 
     m_blank = recs.empty();
 
-    m_file_header = (uint32_t)(raw[0] | (raw[1] << 8) | (raw[2] << 16) | ((uint32_t)raw[3] << 24));
     m_records.swap(recs);
     rebuild_timeline();
 
@@ -190,19 +228,30 @@ void UniorTape::build_image(std::vector<uint8_t> &out) const
     out.clear();
     if (m_records.empty()) return;
 
-    size_t total = 4;
-    for (size_t i = 0; i < m_records.size(); i++) total += 8 + m_records[i].bytes.size() + 4;
+    size_t total = 0;
+    for (size_t i = 0; i < m_records.size(); i++) total += 12 + m_records[i].bytes.size() + 4;
     out.reserve(total);
 
-    put32(out, m_file_header);
+    const double upb = (m_unit_per_bit > 0.0)
+                        ?m_unit_per_bit
+                        :(1000.0 / (double)((baud_rate > 0)?baud_rate:2400));
+    uint64_t pos = 0;
     for (size_t i = 0; i < m_records.size(); i++)
     {
         const Record &r = m_records[i];
         //Запись машины начинается с той же преамбулы, что и запись из файла,
         //но полагаться на это нельзя: без нее образ не загрузится обратно
         const bool has_preamble = r.bytes.size() >= 4 && memcmp(r.bytes.data(), BT_PREAMBLE, 4) == 0;
-        put32(out, r.gap);
-        put32(out, (uint32_t)(has_preamble?(r.bytes.size() - 4):r.bytes.size()));
+        const uint32_t len = (uint32_t)(r.bytes.size() + (has_preamble?0:4));
+        //Запись из файла отдает свои же числа, и образ уходит обратно байт в
+        //байт; у записи машины они считаются из пауз и длины
+        const uint32_t gap_units = r.from_file?r.file_gap:(uint32_t)((double)r.gap * upb + 0.5);
+        const uint32_t dur_units = r.from_file?r.file_dur:(uint32_t)((double)len * 8.0 * upb + 0.5);
+        pos += gap_units;
+        put32(out, (uint32_t)pos);
+        put32(out, dur_units);
+        put32(out, len);
+        pos += dur_units;
         if (!has_preamble) out.insert(out.end(), BT_PREAMBLE, BT_PREAMBLE + 4);
         out.insert(out.end(), r.bytes.begin(), r.bytes.end());
     }
@@ -374,6 +423,9 @@ void UniorTape::commit_write()
     {
         const uint64_t new_end = ws + (uint64_t)m_records[first].bytes.size() * 8;
         m_records[first + 1].gap = (uint32_t)((next_start > new_end)?(next_start - new_end):(baud_rate / 4));
+        //Пауза следующей записи пересчитана, значит ее числа из файла больше
+        //не описывают ленту
+        m_records[first + 1].from_file = false;
     }
 
     m_writes++;

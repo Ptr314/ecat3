@@ -13,10 +13,19 @@ static const uint8_t VG75_8Colors[8][3] = { {  0,   0,   0}, {  0,   0, 255}, { 
                                             {255,   0,   0}, {255,   0, 255}, {255, 255,   0}, {255, 255, 255}
                                           };
 
+//Цвета ZX Spectrum: те же RGBI, что и у самого Арго, порядок разрядов в
+//атрибуте - синий, красный, зелёный, яркость восьмым
+static const uint8_t ZX_16Colors[16][3] = { {  0,   0,   0}, {  0,   0, 192}, {192,   0,   0}, {192,   0, 192},
+                                            {  0, 192,   0}, {  0, 192, 192}, {192, 192,   0}, {192, 192, 192},
+                                            {  0,   0,   0}, {  0,   0, 255}, {255,   0,   0}, {255,   0, 255},
+                                            {  0, 255,   0}, {  0, 255, 255}, {255, 255,   0}, {255, 255, 255}
+                                          };
+
 I8275Display::I8275Display(InterfaceManager *im, EmulatorConfigDevice *cd):
       GenericDisplay(im, cd)
     , i_high(this, im, 1, "high", MODE_R)
     , i_palette_page(this, im, 1, "palette_page", MODE_R)
+    , i_zx(this, im, 1, "zx", MODE_R)
     , Palette(nullptr)
     , m_have_frame(false)
     , m_frame_cpl(78)
@@ -27,6 +36,8 @@ I8275Display::I8275Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     sx = 78*6;
     sy = 30*10;
     memset(&rgba_colors, 0, sizeof(rgba_colors));
+    memset(&m_font_code, 0, sizeof(m_font_code));
+    memset(&m_font_line, 0, sizeof(m_font_line));
     memset(&m_rows, 0, sizeof(m_rows));
     reset_attr();
 }
@@ -34,6 +45,14 @@ I8275Display::I8275Display(InterfaceManager *im, EmulatorConfigDevice *cd):
 //Порядок разрядов в ответе палитры свой у каждой машины: у Юниора 1 - это
 //красный, 2 - зелёный, 4 - синий (сверено с COLOR.ATR), а у рендерера
 //наоборот. Параметр rgb называет позиции R, G и B в байте цвета
+//Адрес точки в знакогенераторе. Слагаемые не пересекаются по разрядам,
+//поэтому сложение здесь - это сборка адреса, а не арифметика
+unsigned int I8275Display::font_address(unsigned int code, unsigned int line, unsigned int bank) const
+{
+    if (!m_font_mapped) return m_font_base + bank + code*8 + line;
+    return m_font_base + m_font_code[code & 0xFF] + m_font_line[line & 0x0F] + ((bank != 0)? m_font_high : 0);
+}
+
 unsigned int I8275Display::map_color(unsigned int v)
 {
     if (RGB[0] > 8) return v & 0x07;
@@ -107,9 +126,14 @@ bool I8275Display::follow_resolution()
     //шире стартовых 78 знакомест - Юниор с его 80 - иначе не получила бы её
     //никогда: рисовать нельзя, потому что поверхность мала, а вырасти она не
     //может, потому что мы не сказали, до чего
-    if ((cpl*6 != sx) || (lps*h != sy))
+    //В режиме ZX знакоместо не 6 точек, а 8, и берёт оно из потока два байта:
+    //80 знакомест кадра дают 40 видимых по 8 точек - те самые 320 на 256, в
+    //которых 256 на 192 занимает экран Спектрума
+    const unsigned int w = m_frame_zx?((cpl/2)*8):(cpl*6);
+
+    if ((w != sx) || (lps*h != sy))
     {
-        sx = cpl*6;
+        sx = w;
         sy = lps*h;
         screen_valid = false;
         was_updated = true;
@@ -117,7 +141,7 @@ bool I8275Display::follow_resolution()
     }
 
     //Поверхность ещё прежнего размера: кадр рисуется на следующем проходе
-    if (cpl*6 > (unsigned int)line_bytes / 4) return false;
+    if (w > (unsigned int)line_bytes / 4) return false;
 
     return true;
 }
@@ -144,6 +168,7 @@ void I8275Display::set_renderer(VideoRenderer &vr)
 {
     GenericDisplay::set_renderer(vr);
     vr.FillRGB(VG75_8Colors, rgba_colors, 8);
+    vr.FillRGB(ZX_16Colors, zx_colors, 16);
     m_surface_sy = sy;
 }
 
@@ -152,7 +177,42 @@ emulator::Result I8275Display::load_config(SystemData *sd)
     emulator::Result res = GenericDisplay::load_config(sd);
     if (!res) return res;
     Memory = dynamic_cast<RAM*>(im->dm->get_device_by_name(cd->get_parameter("ram").value));
-    Font = dynamic_cast<ROM*>(im->dm->get_device_by_name(cd->get_parameter("font").value));
+    Font = dynamic_cast<AddressableDevice*>(im->dm->get_device_by_name(cd->get_parameter("font").value));
+
+    m_font_invert = cd->get_parameter("font_invert", false).value != "0";
+    m_font_base = read_confg_value(cd, "font_base", false, (unsigned int)0);
+    m_zx_bitmap = read_confg_value(cd, "zx_bitmap", false, (unsigned int)0);
+    m_zx_attr   = read_confg_value(cd, "zx_attr", false, (unsigned int)0);
+
+    const std::string font_map = cd->get_parameter("font_address", false).value;
+    if (!font_map.empty())
+    {
+        if (font_map.size() != 11)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{I8275Display|" + std::string(QT_TRANSLATE_NOOP("I8275Display", "font_address must be 11 characters long")) + "} " + font_map);
+        for (unsigned int i = 0; i < 11; i++)
+        {
+            const unsigned int bit = 1u << (10 - i);
+            const char c = font_map[i];
+            if (c >= '0' && c <= '7')
+            {
+                for (unsigned int v = 0; v < 256; v++)
+                    if ((v >> (c - '0')) & 1) m_font_code[v] |= bit;
+            } else
+            if (c >= 'a' && c <= 'd')
+            {
+                for (unsigned int v = 0; v < 16; v++)
+                    if ((v >> (c - 'a')) & 1) m_font_line[v] |= bit;
+            } else
+            if (c == 'B')
+                m_font_high = bit;
+            else
+            if (c != '-')
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                    "{I8275Display|" + std::string(QT_TRANSLATE_NOOP("I8275Display", "Unknown font_address character")) + "} " + font_map);
+        }
+        m_font_mapped = true;
+    }
     const std::string palette_name = cd->get_parameter("palette", false).value;
     if (!palette_name.empty())
         Palette = dynamic_cast<ROM*>(im->dm->get_device_by_name(palette_name));
@@ -300,6 +360,7 @@ void I8275Display::frame_complete()
     m_frame_cpl = VG75->chars_per_row();
     m_frame_lps = VG75->rows_per_screen();
     m_frame_h   = VG75->char_height();
+    m_frame_zx  = (i_zx.linked > 0) && ((i_zx.value & 1) != 0) && (m_zx_bitmap != m_zx_attr);
     m_have_frame = true;
     screen_valid = false;       //The render thread draws the frame it has
     was_updated = true;
@@ -330,7 +391,78 @@ void I8275Display::render_all(bool force_render)
     //Кадр начинается с "атрибутов нет", а это нулевая ячейка палитры текущей
     //страницы, а не безусловно белое по черному
     if (Palette != nullptr) set_attr(0x80, m_rows[0].palette_base);
-    for (unsigned int row = 0; row < m_frame_lps; row++) draw_row(row);
+    for (unsigned int row = 0; row < m_frame_lps; row++)
+    {
+        if (m_frame_zx) draw_row_zx(row); else draw_row(row);
+    }
+}
+
+// Строка кадра в режиме ZX Spectrum.
+//
+// Как это устроено - разобрано по ZX.COM и проверено работающим ПЗУ Спектрума;
+// листа схемы с этим режимом нет.
+//
+// ZX.COM выкладывает для ВГ75 строку из 82 байт: восемь нулей, атрибут поля,
+// 32 пары, атрибут поля, восемь нулей. Атрибуты поля позиций не занимают
+// (прозрачный режим), так что на строку приходится 80 байт потока. Берутся они
+// по два: получается 40 знакомест по 8 точек - 4 бордюра, 32 столбца Спектрума
+// и снова 4 бордюра, то есть 256 точек в поле шириной 320. Строк 16 по 16
+// растровых - 12 из них рабочие, это 192 строки Спектрума.
+//
+// Пара - это младший и старший байты адреса атрибута Спектрума. Старший это
+// $58, $59 или $5A, то есть треть экрана; младший, точнее его разряды, машина
+// раскладывает тем же проводом, которым адресует знакогенератор в обычном
+// режиме ($60 в разряды 7-6, $1F в разряды 4-0), а свободный разряд 5 берёт
+// себе разряд 3 счётчика растровых строк. Тот же младший байт плюс разряды
+// 0-2 счётчика строк и треть дают адрес байта битовой карты. Отсюда и всё
+// остальное сходится: 4 знакоместа ВГ75 на строку, 32 пары на 32 столбца,
+// 16 растровых строк на два знакоместа Спектрума
+void I8275Display::draw_row_zx(unsigned int Lin)
+{
+    const RowSnapshot & r = m_rows[Lin];
+    const unsigned int CPL = m_frame_cpl;
+    const unsigned int H = m_frame_h;
+    const unsigned int cells = CPL / 2;
+
+    //Байты потока без атрибутов поля: их в прозрачном режиме на экране нет
+    uint8_t s[I8275_MAX_ROW];
+    unsigned int n = 0;
+    for (unsigned int p = 0; p < r.len && n < CPL; p++)
+    {
+        const uint8_t v = r.data[p];
+        if ((v & 0x80) != 0 && (v & 0x40) == 0) continue;   //Field attribute
+        s[n++] = v;
+    }
+    while (n < CPL) s[n++] = 0;
+
+    for (unsigned int c = 0; c < cells; c++)
+    {
+        const unsigned int A = s[c*2];
+        const unsigned int B = s[c*2 + 1];
+        //Бордюр: пара, которая не указывает в область атрибутов
+        const bool border = (B < 0x58) || (B > 0x5A);
+        const unsigned int T = border?0:(B - 0x58);
+        const unsigned int Ofs = c*32;
+
+        for (unsigned int i = 0; i < H; i++)
+        {
+            const unsigned int low = ((A & 0x60) << 1) | ((i >> 3) << 5) | (A & 0x1F);
+            uint8_t V = 0;
+            uint32_t fg = zx_colors[0], bg = zx_colors[0];
+            if (!border)
+            {
+                V = (uint8_t)Font->get_value(m_zx_bitmap + (T << 11) + ((i & 7) << 8) + low);
+                const unsigned int att = Font->get_value(m_zx_attr + (T << 8) + low);
+                const unsigned int bright = (att & 0x40)?8:0;
+                fg = zx_colors[(att & 0x07) | bright];
+                bg = zx_colors[((att >> 3) & 0x07) | bright];
+                if ((att & 0x80) != 0 && r.blink_char) { const uint32_t t = fg; fg = bg; bg = t; }
+            }
+            uint8_t * base = static_cast<uint8_t *>(render_pixels) + (Lin*H + i)*line_bytes + Ofs;
+            for (unsigned int k = 0; k < 8; k++)
+                *(uint32_t*)(base + (7-k)*4) = ((V >> k) & 1)?fg:bg;
+        }
+    }
 }
 
 //Draws one character row from the bytes DMA delivered for it. The special
@@ -415,7 +547,8 @@ void I8275Display::draw_row(unsigned int Lin)
             int ii = (int)i - (int)r.add_mode;
             if (ii < 0) ii += (int)H;
             if ((ii < 8) && !blanked) {
-                V = ~(Font->get_value(r.font_bank + C*8 + static_cast<unsigned int>(ii)));
+                V = Font->get_value(font_address(C, static_cast<unsigned int>(ii), r.font_bank));
+                if (m_font_invert) V = ~V;
             } else {
                 V = 0;
             }

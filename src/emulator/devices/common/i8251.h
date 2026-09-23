@@ -45,6 +45,18 @@ private:
     bool    hunt_mode;
     bool    sync_second_seen = false;   // Пришел первый символ двойной синхронизации
 
+    // Счетчики для отладки обмена. Приемник в синхронном режиме отдает не все,
+    // что слышит: до синхросимвола он выбрасывает, и по одному лишь регистру
+    // состояния не видно, идет ли прием вообще. Поле traffic это показывает,
+    // не останавливая машину, - точками останова такое не поймать, запись в
+    // 33 байта проходит за сотню миллисекунд
+    unsigned int m_rx_count = 0;        // Байт отдано процессору
+    unsigned int m_tx_count = 0;        // Байт передано
+    unsigned int m_hunt_count = 0;      // Входов в режим охоты
+    unsigned int m_sync_count = 0;      // Пойманных синхросимволов
+    unsigned int m_hunt_dropped = 0;    // Байт выброшено в охоте
+    unsigned int m_overruns = 0;        // Потерь по переполнению приемника
+
     // Control port state machine
     enum ControlState {
         STATE_MODE,             // Expecting mode word (after reset)

@@ -1,0 +1,87 @@
+# Арго ФВ-6511: режим ZX Spectrum
+# Настоящий режим включает ZX.COM с кассеты, но кассеты в наборе нет и быть не
+# может - она большая. Здесь то же самое делается руками, теми же значениями,
+# что пишет сама программа: ВГ75 на 80 знакомест в строке, 16 строк по 16
+# растровых, канал 2 ВТ57 на $4800, разряд 7 в регистре конфигурации памяти.
+#
+# Поток для ВГ75 выкладывается как у ZX.COM: восемь нулей, атрибут поля, 32
+# пары, атрибут поля, восемь нулей. Пара - это младший и старший байты адреса
+# атрибута Спектрума, и по ней же считается адрес битовой карты. Битовая карта
+# и атрибуты лежат во второй банке, куда разряд 7 уводит страницу 1.
+# @timeout 40
+
+MACHINE "argo/Argo.cfg"
+WAIT 1500
+
+LOGDEFS 8,16
+PRINT "=== обычный режим ==="
+LOG display.resolution
+LOG mem.pages
+
+# Экран Спектрума во второй банке: битовая карта с $14000, атрибуты с $15800
+COMMAND ram.fill($14000,$15FFF,$00)
+COMMAND ram.fill($15800,$15AFF,$38)
+# Строка 0 знакомест: рамка, решётка и сплошное поле в первых четырёх столбцах
+COMMAND ram.set($14000,$FF,$81,$81,$FF)
+COMMAND ram.set($14100,$81,$00,$00,$FF)
+COMMAND ram.set($14200,$81,$AA,$55,$FF)
+COMMAND ram.set($14300,$81,$55,$AA,$FF)
+COMMAND ram.set($14400,$81,$AA,$55,$FF)
+COMMAND ram.set($14500,$81,$55,$AA,$FF)
+COMMAND ram.set($14600,$81,$00,$00,$FF)
+COMMAND ram.set($14700,$FF,$81,$81,$FF)
+# Цвета: чёрное на белом, белое на чёрном, яркое красное, яркое синее
+COMMAND ram.set($15800,$38,$07,$4A,$51)
+
+# Поток знакомест в первой банке. Строка без атрибутов поля занимает ровно
+# 80 байт, поэтому девятая строка начинается с $4800 + 8*80 = $4A80
+COMMAND ram.fill($4800,$4D1F,$00)
+COMMAND ram.set($4A88,$8A)
+COMMAND ram.set($4A89,$00,$58,$01,$58,$02,$58,$03,$58,$04,$58,$05,$58,$06,$58,$07,$58)
+COMMAND ram.set($4A99,$08,$58,$09,$58,$0A,$58,$0B,$58,$0C,$58,$0D,$58,$0E,$58,$0F,$58)
+COMMAND ram.set($4AA9,$10,$58,$11,$58,$12,$58,$13,$58,$14,$58,$15,$58,$16,$58,$17,$58)
+COMMAND ram.set($4AB9,$18,$58,$19,$58,$1A,$58,$1B,$58,$1C,$58,$1D,$58,$1E,$58,$1F,$58)
+COMMAND ram.set($4AC9,$80)
+
+# ВГ75 теми же словами, что пишет ZX.COM
+COMMAND vg75.set($01,$00)
+COMMAND vg75.set($00,$4F)
+COMMAND vg75.set($00,$8F)
+COMMAND vg75.set($00,$FF)
+COMMAND vg75.set($00,$1D)
+COMMAND vg75.set($01,$E0)
+# ВТ57: канал 2 на $4800
+COMMAND dma.set($08,$80)
+COMMAND dma.set($04,$00)
+COMMAND dma.set($04,$48)
+COMMAND dma.set($05,$C2)
+COMMAND dma.set($05,$84)
+COMMAND vg75.set($01,$23)
+COMMAND dma.set($08,$E4)
+# И сам режим: разряд 7 конфигурации памяти
+COMMAND memcfg.set($00,$C1)
+
+WAIT 200
+PRINT "=== режим ZX ==="
+LOG display.resolution
+LOG vg75.geometry
+LOG mem.config
+LOG mem.pages
+
+SCREEN "../results/work-argo-zx.png"
+
+# Клавиатура Спектрума поверх клавиатуры машины: полуряды порта $FE, активный
+# ноль. Q - полуряд 2 разряд 0, ENTER - полуряд 6 разряд 0
+PRINT "=== клавиатура ZX ==="
+LOG zx-kbd.rows
+KEYDOWN key_q
+LOG zx-kbd.rows
+KEYUP key_q
+KEYDOWN key_enter
+KEYDOWN key_space
+LOG zx-kbd.rows
+KEYUP key_enter
+KEYUP key_space
+LOG zx-kbd.rows
+
+EXIT

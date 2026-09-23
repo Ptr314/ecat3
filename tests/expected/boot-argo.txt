@@ -1,0 +1,34 @@
+=== Экран ===
+[display.resolution] 480x250
+[vg75.geometry] $50 $19 $0A $1E $04
+[vg75.frame_rate] $0034
+=== Знакогенератор в ОЗУ ===
+[ram.value] $F881: $04 $1E $0E $1E $1F $1F $0E $11
+[memcfg.value] $61
+=== Диспетчер памяти ===
+[mem.config] $61 $00 $61
+[mem.pages] $00 $01 $02 $03
+=== Карта памяти и портов ===
+[mapper.map] 
+  [off] 0000-07FF -> bios[0000] mode=r
+        F800-FFFF -> bios[0000] mode=r
+        0000-FFFF -> mem[0000] mode=rw
+  port 80 -> sysctl
+  port 81 -> tapectl
+  port A0 -> timer
+  port A2 -> timer
+  port A4 -> timer
+  port A6 -> timer
+  port A1 -> kbd-port
+  port A1 -> memblk0
+  port A9 -> memblk1
+  port B1 -> memcfg
+  port B9 -> memcfg
+  port C0 -> vg75
+  port C4 -> vg75
+  port C1 -> uart
+  port C3 -> uart
+  port E0 -> dma
+  port FE -> zx-kbd
+=== Клавиатура ===
+[ram.value] $F850: $3C $44 $20 $20

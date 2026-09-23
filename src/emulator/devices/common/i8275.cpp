@@ -28,6 +28,7 @@ I8275::I8275(InterfaceManager *im, EmulatorConfigDevice *cd):
     , BlinkerChar(false)
     , i_stop_drq(this, im, 1, "stop_drq", MODE_R, 1)
     , i_hrtc(this, im, 1, "hrtc", MODE_W)
+    , i_vrtc(this, im, 1, "vrtc", MODE_W)
 {
     m_clocked = true;   //clock() is overridden here
     memset(&RegMode, 0, sizeof(RegMode));
@@ -344,6 +345,9 @@ void I8275::row_start()
 {
     if (m_row < m_lps)
     {
+        //Обратная ходка кончилась вместе с последней её строкой
+        if (m_vrtc) { m_vrtc = false; i_vrtc.change(0); }
+
         //The buffer filled during the previous row is what this one shows
         m_show_len = m_fill_len;
         if (m_sink != nullptr)
@@ -354,6 +358,7 @@ void I8275::row_start()
         //Start of the vertical retrace: the frame is whole and the interrupt,
         //which is what the monitors poll, goes up
         Status |= I8275_ST_IR;
+        if (!m_vrtc) { m_vrtc = true; i_vrtc.change(1); }
         if ((Status & I8275_ST_IE) != 0) i_irq.change(1);
         if (m_sink != nullptr) m_sink->frame_complete();
 

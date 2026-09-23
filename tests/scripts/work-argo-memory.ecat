@@ -1,0 +1,67 @@
+# Арго ФВ-6511: дополнительная память и пересылки ПДП
+# Машина ходит в дополнительную память только пересылками ВТ57 каналами 0 и 1,
+# и какой блок участвует - задает ячейка регистрового файла, своя у каждого
+# канала. Здесь то же самое делается руками: данные кладутся в основную
+# память, переливаются в блок 1, потом обратно в другое место основной, и
+# сверяется, что вернулось то же самое. Заодно видно, что процессор блока не
+# видит - для него по этим адресам по-прежнему основная память.
+# @timeout 40
+
+MACHINE "argo/Argo.cfg"
+WAIT 1000
+
+LOGDEFS 8,16
+PRINT "=== Что видит процессор ==="
+LOG mem.config
+LOG mem.pages
+
+PRINT "=== Кладем образец в основную память ==="
+COMMAND mem.set($3000,$11,$22,$33,$44,$55,$66,$77,$88)
+LOG mem.value($3000,$3007)
+
+# Канал 0 читает основную память (блок 0), канал 1 пишет в блок 1: $61 и $63,
+# ровно те значения, которые строит сам МОНИТОР в $FA18
+PRINT "=== Пересылка в блок 1 ==="
+COMMAND memblk0.set($00,$61)
+COMMAND memblk1.set($00,$63)
+COMMAND dma.set($00,$00)
+COMMAND dma.set($00,$30)
+COMMAND dma.set($01,$07)
+COMMAND dma.set($01,$80)
+COMMAND dma.set($02,$00)
+COMMAND dma.set($02,$00)
+COMMAND dma.set($03,$07)
+COMMAND dma.set($03,$40)
+COMMAND dma.set($08,$E3)
+WAIT 10
+LOG mem.blocks
+LOG mem.last
+LOG mem.transfers
+
+# Основная память под тем же адресом не тронута, а в блоке лежит образец
+LOG mem.value($0000,$0007)
+LOG ram.value($20000,$20007)
+
+# Обратно, в другое место основной памяти: теперь блок у нулевого канала
+PRINT "=== Пересылка из блока 1 обратно ==="
+COMMAND memblk0.set($00,$63)
+COMMAND memblk1.set($00,$61)
+COMMAND dma.set($00,$00)
+COMMAND dma.set($00,$00)
+COMMAND dma.set($01,$07)
+COMMAND dma.set($01,$80)
+COMMAND dma.set($02,$00)
+COMMAND dma.set($02,$20)
+COMMAND dma.set($03,$07)
+COMMAND dma.set($03,$40)
+COMMAND dma.set($08,$E3)
+WAIT 10
+LOG mem.blocks
+LOG mem.transfers
+LOG mem.bytes
+LOG mem.value($2000,$2007)
+
+PRINT "=== Знакогенератор - вторая банка основной памяти ==="
+LOG ram.value($1F881,$1F888)
+
+EXIT

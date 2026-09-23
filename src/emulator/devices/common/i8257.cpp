@@ -44,6 +44,14 @@ unsigned int I8257::dma_next(unsigned int channel)
     unsigned int next_addr = (addr + 1) & 0xFFFF;
     unsigned int next_cnt  = (cnt & 0xC000) | ((cnt - 1) & 0x3FFF);
 
+    //Флаг обновления (разряд 4 регистра состояния) ВТ57 ставит, перезагружая
+    //канал 2 из канала 3, и снимает на первой же пересылке нового кадра. Чтение
+    //состояния его не сбрасывает - в отличие от признаков конечного счета.
+    //Монитор Арго ловит им начало кадра: ждет сначала нуля, потом единицы
+    //($FA71), а поскольку конечный счет глушит запросы экрана до конца кадра,
+    //единица стоит ровно на обратном ходу луча
+    if (n == 2 && (cnt & 0x3FFF) != 0) RgState &= ~0x10u;
+
     if ((cnt & 0x3FFF) == 0)
     {
         //Terminal count
@@ -57,6 +65,7 @@ unsigned int I8257::dma_next(unsigned int channel)
             //Auto load: channel 2 restarts from the copy kept in channel 3.
             //Nothing programs channel 3 directly - a write to channel 2 is
             //duplicated there while the auto load bit is set, see set_value
+            RgState |= 0x10u;
             next_addr = RgA[6] | (RgA[7] << 8);
             next_cnt  = RgC[6] | (RgC[7] << 8);
         } else

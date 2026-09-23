@@ -80,6 +80,9 @@
 #include "emulator/devices/specific/uknc_timer.h"
 #include "emulator/devices/specific/uknc_keyboard.h"
 #include "emulator/devices/specific/uknc_sound.h"
+#include "emulator/devices/specific/argo_keyboard.h"
+#include "emulator/devices/specific/argo_memory.h"
+#include "emulator/devices/specific/zx_keyboard.h"
 #include "emulator/devices/specific/unior_memory.h"
 #include "emulator/devices/specific/unior_tape.h"
 
@@ -1308,6 +1311,9 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("uknc-timer", create_uknc_timer);
     dm->register_device("uknc-keyboard", create_uknc_keyboard);
     dm->register_device("uknc-sound", create_uknc_sound);
+    dm->register_device("argo-keyboard", create_argo_keyboard);
+    dm->register_device("argo-memory", create_argo_memory);
+    dm->register_device("zx-keyboard", create_zx_keyboard);
     dm->register_device("unior-memory", create_unior_memory);
     dm->register_device("unior-tape", create_unior_tape);
 }
