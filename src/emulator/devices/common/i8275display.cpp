@@ -111,6 +111,8 @@ void I8275Display::reset_attr()
 void I8275Display::clear_rows()
 {
     for (unsigned int i = 0; i < I8275D_MAX_ROWS; i++) m_rows[i].len = 0;
+    //Остановленный экран не должен держать полосы, оставшиеся от прошлого кадра
+    memset(m_border_line, 0, sizeof(m_border_line));
 }
 
 //Follows the geometry of the controller. Returns false while the renderer
@@ -260,6 +262,10 @@ void I8275Display::save_state(StateWriter &w)
     w.n("fa_color", FAColor);
     w.n("fa_color_bg", FAColorBg);
     w.u("next_attr", NextAttr, 8);
+    //Бордюр: сам цвет и счетчик смен. Строки кадра в снимок не идут - их
+    //перерисует первая же развертка, а до нее рамка будет ровного цвета
+    w.n("border", m_border);
+    w.n64("border_changes", m_border_changes);
 
     if (!m_have_frame) return;
     const unsigned int rows = (m_frame_lps < I8275D_MAX_ROWS) ? m_frame_lps : I8275D_MAX_ROWS;
@@ -297,6 +303,9 @@ emulator::Result I8275Display::load_state(const StateReader &r)
     r.u("fa_color", FAColor);
     r.u("fa_color_bg", FAColorBg);
     r.u("next_attr", NextAttr);
+    r.u("border", m_border);
+    r.n64("border_changes", m_border_changes);
+    memset(m_border_line, (uint8_t)(m_border & 0x07), sizeof(m_border_line));
 
     if (!m_have_frame) return emulator::Result::ok();
     const unsigned int rows = (m_frame_lps < I8275D_MAX_ROWS) ? m_frame_lps : I8275D_MAX_ROWS;
@@ -368,6 +377,15 @@ void I8275Display::frame_complete()
     m_have_frame = true;
     screen_valid = false;       //The render thread draws the frame it has
     was_updated = true;
+}
+
+//Луч прошел растровую строку - запомнить, какой на ней был бордюр. Цвет
+//берется на конце строки, а не на начале: разница в одну строку растра, и
+//полосы от нее не меняются
+void I8275Display::raster_line(unsigned int row, unsigned int line)
+{
+    if (row >= I8275D_MAX_ROWS || line >= I8275D_MAX_H) return;
+    m_border_line[row*I8275D_MAX_H + line] = (uint8_t)(m_border & 0x07);
 }
 
 void I8275Display::display_blanked()
@@ -452,7 +470,14 @@ void I8275Display::draw_row_zx(unsigned int Lin)
         {
             const unsigned int low = ((A & 0x60) << 1) | ((i >> 3) << 5) | (A & 0x1F);
             uint8_t V = 0;
-            uint32_t fg = zx_colors[0], bg = zx_colors[0];
+            //Цвет бордюра свой на каждую растровую строку. Раз в кадр брать
+            //его нельзя: ПЗУ Спектрума при загрузке с ленты дергает бордюр
+            //раз тридцать за кадр, и вместо полос вышло бы мигание сплошной
+            //заливкой
+            const unsigned int bi = (Lin < I8275D_MAX_ROWS && i < I8275D_MAX_H)
+                                        ?m_border_line[Lin*I8275D_MAX_H + i]:0;
+            const uint32_t bc = zx_colors[bi & 0x07];
+            uint32_t fg = bc, bg = bc;
             if (!border)
             {
                 V = (uint8_t)Font->get_value(m_zx_bitmap + (T << 11) + ((i & 7) << 8) + low);
@@ -608,6 +633,8 @@ std::vector<DeviceFieldInfo> I8275Display::get_device_fields()
     std::vector<DeviceFieldInfo> r = GenericDisplay::get_device_fields();
     r.push_back({"border",         "Border colour on the line, 0-7",      false});
     r.push_back({"border_changes", "Times the border colour has changed", false});
+    r.push_back({"border_lines",   "Border colour of each raster line, index = row*16 + line", true});
+    r.push_back({"border_seen",    "Bitmask of the border colours present in the frame", false});
     return r;
 }
 
@@ -615,6 +642,32 @@ bool I8275Display::get_field(const std::string &field, unsigned int from, unsign
 {
     if (field == "border")         { out.numeric = true; out.width = 8;  out.values.push_back(m_border); return true; }
     if (field == "border_changes") { out.numeric = true; out.width = 32; out.values.push_back((unsigned int)m_border_changes); return true; }
+    //Какие цвета встретились в кадре, по разряду на цвет. Полосы иначе не
+    //проверить: снимок их не годится (его берут с поверхности, которую красит
+    //поток отрисовки по настенным часам), а сами строки плавают фазой - момент
+    //съема гуляет на доли миллисекунды, потому что срезы тактования зависят от
+    //часов хоста. А набор цветов от фазы не зависит: при защелке раз в кадр
+    //разряд был бы ровно один, при построчной их столько, сколько цветов
+    //программа успела показать
+    if (field == "border_seen")
+    {
+        out.numeric = true; out.width = 16;
+        unsigned int mask = 0;
+        const unsigned int rows = (m_frame_lps < I8275D_MAX_ROWS)?m_frame_lps:I8275D_MAX_ROWS;
+        for (unsigned int i = 0; i < rows * I8275D_MAX_H; i++)
+            mask |= 1u << (m_border_line[i] & 0x07);
+        out.values.push_back(mask);
+        return true;
+    }
+    //Те же строки поштучно - смотреть глазами, когда что-то не сходится
+    if (field == "border_lines")
+    {
+        out.numeric = true; out.width = 8;
+        const unsigned int last = sizeof(m_border_line) - 1;
+        for (unsigned int i = from; i <= to && i <= last; i++)
+            out.values.push_back(m_border_line[i]);
+        return true;
+    }
     return GenericDisplay::get_field(field, from, to, out);
 }
 

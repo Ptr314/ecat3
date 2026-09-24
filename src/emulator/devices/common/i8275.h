@@ -37,6 +37,12 @@ public:
     //The beam has reached the vertical retrace: the frame is whole
     virtual void frame_complete() = 0;
 
+    //The beam has just passed one raster line of a character row. Not pure:
+    //a sink that has no use for it does nothing. It exists because a border
+    //colour changes faster than once a frame, and a picture drawn from a
+    //once-a-frame sample would flicker instead of showing bands
+    virtual void raster_line(MAYBE_UNUSED unsigned int row, MAYBE_UNUSED unsigned int line) {}
+
     //The controller is not displaying anything (Stop Display, or a Reset that
     //was never followed by a Start Display)
     virtual void display_blanked() = 0;

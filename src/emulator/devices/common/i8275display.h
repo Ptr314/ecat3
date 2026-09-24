@@ -12,6 +12,8 @@ class I8257;
 
 //The tallest screen the 8275 can be programmed for is 64 character rows
 #define I8275D_MAX_ROWS 64
+//Высота знакоместа у ВГ75 задается четырьмя разрядами, то есть не больше 16
+#define I8275D_MAX_H    16
 
 class I8275Display: public GenericDisplay, public I8275RowSink
 {
@@ -61,6 +63,15 @@ private:
     Interface i_border;
     unsigned int m_border = 0;
     uint64_t m_border_changes = 0;
+    //Цвет бордюра на каждую растровую строку кадра. Заполняется на потоке
+    //эмуляции по ходу развертки, читается при отрисовке на своем потоке -
+    //без замка, ровно как снимки строк рядом: худшее, что может выйти, это
+    //граница полосы, уехавшая на кадр.
+    //
+    //Шаг постоянный нарочно. Индекс считается на одном потоке, а читается на
+    //другом, и привязывать его к геометрии кадра, которая между ними может
+    //разойтись, незачем
+    uint8_t m_border_line[I8275D_MAX_ROWS * I8275D_MAX_H];
     bool AttrDelay;
     unsigned int RGB[3];
     bool RGBInv;
@@ -149,6 +160,7 @@ public:
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 
     void row_complete(unsigned int row, const uint8_t * data, unsigned int count) override;
+    void raster_line(unsigned int row, unsigned int line) override;
     void frame_complete() override;
     void display_blanked() override;
 

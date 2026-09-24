@@ -18,3 +18,10 @@
 [sound.input] $00
 [sound.input] $01
 [sound.input] $00
+=== бордюр: сплошной цвет ===
+[display.border] $00
+[display.border] $02
+=== бордюр: полосы ===
+[display.border_changes] 149
+--- какие цвета встретились в кадре ---
+[display.border_seen] $0024

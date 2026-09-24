@@ -414,6 +414,11 @@ void I8275::clock(unsigned int counter)
         {
             i_hrtc.change(1);
             i_hrtc.change(0);
+            //Здесь же приемник узнает, что луч прошел растровую строку: цвет
+            //бордюра у него свой на каждую. Цикл проходится раз на строку
+            //растра - шесть десятков символьных тактов, - так что на горячий
+            //путь clock() это не влияет
+            if (m_sink != nullptr) m_sink->raster_line(m_row, line);
         }
 
         if (m_row_pos >= m_row_len)
