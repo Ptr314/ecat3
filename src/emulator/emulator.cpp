@@ -84,7 +84,6 @@
 #include "emulator/devices/specific/argo_memory.h"
 #include "emulator/devices/specific/zx_keyboard.h"
 #include "emulator/devices/specific/unior_memory.h"
-#include "emulator/devices/specific/unior_tape.h"
 
 
 Emulator::Emulator(std::string work_path, std::string data_path, std::string software_path, std::string ini_file, VideoRenderer * renderer):
@@ -1315,5 +1314,8 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("argo-memory", create_argo_memory);
     dm->register_device("zx-keyboard", create_zx_keyboard);
     dm->register_device("unior-memory", create_unior_memory);
-    dm->register_device("unior-tape", create_unior_tape);
+    //unior-tape - тот же самый магнитофон. Имя типа оставлено навсегда:
+    //снимок состояния несет в себе разрешенную конфигурацию, и в
+    //tests/files/state-unior.ecats.zip записано именно оно
+    dm->register_device("unior-tape", create_tape_recorder);
 }

@@ -10,6 +10,7 @@
 ZXKeyboard::ZXKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     AddressableDevice(im, cd)
     , i_port(this, im, 16, "port", MODE_R)
+    , i_ear(this, im, 1, "ear", MODE_R)
 {
     addresable_size = 1;
     can_write = false;
@@ -85,10 +86,19 @@ unsigned int ZXKeyboard::get_value(MAYBE_UNUSED unsigned int address)
         }
     }
 
-    //Разряд 6 - вход магнитофона, разряды 5 и 7 не подключены: на живой машине
-    //они читаются единицами
-    m_last = res | 0xE0;
+    //Разряды 5 и 7 не подключены и читаются единицами, а разряд 6 - вход
+    //магнитофона. Пока линия не подведена или на ней никого нет, он тоже
+    //единица: так эта клавиатура и работала, пока ленты не было
+    m_last = res | 0xA0 | (ear_level()?0x40:0);
     return m_last;
+}
+
+// Что на линии магнитофона. Неподведенная линия и линия, которую никто не
+// ведет (_FFFF у ленты, лежащей в лентопротяжке молча), читаются единицей
+bool ZXKeyboard::ear_level() const
+{
+    if (i_ear.linked == 0 || i_ear.value == _FFFF) return true;
+    return (i_ear.value & 1) != 0;
 }
 
 unsigned int ZXKeyboard::get_direct(unsigned int address)
@@ -98,20 +108,27 @@ unsigned int ZXKeyboard::get_direct(unsigned int address)
 
 void ZXKeyboard::set_value(MAYBE_UNUSED unsigned int address, MAYBE_UNUSED unsigned int value, MAYBE_UNUSED bool force)
 {
-    //Запись в этот порт у Спектрума - цвет бордюра и динамик. У Арго и то и
-    //другое на своем порту ($80), а как они связаны в режиме ZX, со схемы не
-    //выяснить, поэтому запись здесь не делает ничего
+    //Запись в этот порт у Спектрума - цвет бордюра и динамик. У Арго они
+    //разведены отдельным портом ($FE на запись, устройство zx-port), чтобы
+    //разряды можно было развести по своим линиям; здесь не делается ничего
 }
 
 std::vector<DeviceFieldInfo> ZXKeyboard::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
     r.push_back({"rows", "All eight half-rows as the machine would read them", false});
+    r.push_back({"ear",  "Tape input, bit 6 of the port: 1 when nothing drives it", false});
     return r;
 }
 
 bool ZXKeyboard::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
+    if (field == "ear")
+    {
+        out.numeric = true; out.width = 8;
+        out.values.push_back(ear_level()?1:0);
+        return true;
+    }
     if (field == "rows")
     {
         out.numeric = true; out.width = 8;

@@ -21,11 +21,14 @@ static const uint8_t ZX_16Colors[16][3] = { {  0,   0,   0}, {  0,   0, 192}, {1
                                             {  0, 255,   0}, {  0, 255, 255}, {255, 255,   0}, {255, 255, 255}
                                           };
 
+#define CB_BORDER 20
+
 I8275Display::I8275Display(InterfaceManager *im, EmulatorConfigDevice *cd):
       GenericDisplay(im, cd)
     , i_high(this, im, 1, "high", MODE_R)
     , i_palette_page(this, im, 1, "palette_page", MODE_R)
     , i_zx(this, im, 1, "zx", MODE_R)
+    , i_border(this, im, 3, "border", MODE_R, CB_BORDER)
     , Palette(nullptr)
     , m_have_frame(false)
     , m_frame_cpl(78)
@@ -587,6 +590,32 @@ void I8275Display::draw_row(unsigned int Lin)
             NextAttr = 0;
         }
     }
+}
+
+void I8275Display::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
+{
+    if (callback_id == CB_BORDER)
+    {
+        const unsigned int v = new_value & 0x07;
+        if (v != m_border) { m_border = v; m_border_changes++; }
+        return;
+    }
+    GenericDisplay::interface_callback(callback_id, new_value, old_value);
+}
+
+std::vector<DeviceFieldInfo> I8275Display::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = GenericDisplay::get_device_fields();
+    r.push_back({"border",         "Border colour on the line, 0-7",      false});
+    r.push_back({"border_changes", "Times the border colour has changed", false});
+    return r;
+}
+
+bool I8275Display::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "border")         { out.numeric = true; out.width = 8;  out.values.push_back(m_border); return true; }
+    if (field == "border_changes") { out.numeric = true; out.width = 32; out.values.push_back((unsigned int)m_border_changes); return true; }
+    return GenericDisplay::get_field(field, from, to, out);
 }
 
 ComputerDevice * create_i8275display(InterfaceManager *im, EmulatorConfigDevice *cd)

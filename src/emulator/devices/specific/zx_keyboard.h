@@ -25,6 +25,11 @@ class ZXKeyboard: public AddressableDevice
 {
 private:
     Interface i_port;               // Полный адрес обращения к порту
+    // Вход магнитофона - разряд 6 того же чтения. У Спектрума лента и
+    // клавиатура живут в одном порту, и загрузчик ПЗУ пользуется обоими
+    // сразу: полуряд $7F он читает ради разряда 6, а по разряду 0 того же
+    // ответа бросает загрузку, если нажат пробел
+    Interface i_ear;
     Keyboard * Source = nullptr;    // У кого спрашивать нажатия
 
     // Восемь полурядов по пять клавиш, именами клавиш машины
@@ -32,6 +37,7 @@ private:
     unsigned int m_last = 0xFF;     // Последний ответ, для LOG
 
     void set_default_matrix();
+    bool ear_level() const;
 
 public:
     ZXKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);

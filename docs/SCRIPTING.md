@@ -561,7 +561,7 @@ LOG ram0.value16(&024000, &024013)  // тот же участок словами
 | __mouse__ | __state__ &ndash; триггеры направлений и кнопки на выходе, __pending__ &ndash; шагов, еще не забранных программой, __plugged__; мышь двигается командой [MOUSE](#mouse) |
 | __connector__ | __device__ &ndash; имя подключенного устройства или __none__; команда __plug(имя)__ |
 | __bk-fdc__ | __status__, __command__, __drive__, __track__, __side__, __motor__, __writing__, __busy__, __position__; отладочные __raw(от,до)__, __marker(от,до)__, __trace(от,до)__ (см. [CONFIG.md](CONFIG.md#bk-fdc)) |
-| __taperecorder__ | __mode__ (0 &ndash; стоп, 1 &ndash; воспроизведение), __position__, __total__, __size__, __baudrate__, __recording__, __recorded__ |
+| __taperecorder__ | __mode__ (0 &ndash; стоп, 1 &ndash; воспроизведение), __position__, __total__, __size__, __baudrate__, __recording__, __recorded__, __transport__ (0 стоп, 1 пуск, 2 запись, 3 назад, 4 вперед), __records__, __record__ (запись под головкой и байт в ней), __bytes__, __writes__, __sound__ (перепадов в динамике), __pulses(от,до)__ (полупериоды ленты Спектрума с ее начала, в тактах) |
 | __i8253__ | __counters__, __start__, __modes__, __outputs__, __gates__ |
 | __i8257__ | __address__, __count__ (регистры четырех каналов), __mode__ (регистр режима и регистр состояния) |
 | __i8275__ | __mode__ (четыре байта команды Reset), __cursor__, __command__, __geometry__ (знакомест в ряду, рядов, строк в ряду, тактов гашения строки, рядов гашения кадра), __status__, __display__, __burst__, __frame_rate__, __frames__, __dma_bytes__, __row__ |

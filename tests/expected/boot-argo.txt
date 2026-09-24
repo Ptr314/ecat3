@@ -11,7 +11,7 @@
 === Карта памяти и портов ===
 [mapper.map] 
   [off] 0000-07FF -> bios[0000] mode=r
-        F800-FFFF -> bios[0000] mode=r
+        F800-FFFF -> bios[0000] mode=r cfg=01:01
         0000-FFFF -> mem[0000] mode=rw
   port 80 -> sysctl
   port 81 -> tapectl

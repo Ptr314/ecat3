@@ -1,0 +1,25 @@
+=== без ленты ===
+[zx-kbd.ear] $01
+=== заряжена .tap ===
+[tape.records] $0002
+[tape.transport] $00
+[zx-kbd.ear] $01
+[tape.total] 10
+--- начало ленты: пилот-тон ---
+[tape.pulses] 2168 2168 2168 2168 2168 2168
+--- конец пилота, синхро, первые биты ---
+[tape.pulses] 2168 2168 2168 667 735 855 855 855 855 855 855 855 855 855
+=== пуск ===
+[tape.transport] $01
+[zx-kbd.ear] $00
+[zx-kbd.ear] $01
+[zx-kbd.ear] $00
+[tape.position] 3
+[tape.transport] $00
+=== заряжена .tzx ===
+[tape.records] $0002
+[tape.pulses] 2168 2168 2168 667 735 855 855 855 855 855 855 855 855 855
+=== неподдерживаемый блок ===
+ERROR line 66: Unable to read tape image Unsupported .tzx block $11
+--- в лентопротяжке осталась прежняя лента ---
+[tape.records] $0002

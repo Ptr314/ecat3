@@ -1458,16 +1458,18 @@ unsigned int z80core::execute_command()
             case 2:
                 //11_010_011
                 //OUT (d),A
+                //A real Z80 puts the accumulator on A8-A15 here, not the
+                //operand: the ZX Spectrum ROM loader relies on it, reading
+                //one keyboard half-row with LD A,$7F; IN A,($FE). Devices
+                //that watch the whole address see it through cpu.io_address
                 port = next_byte();
-                //write_port(port + (port << 8), REG_A);
-                write_port(port, REG_A);
+                write_port(static_cast<uint16_t>((REG_A << 8) | port), REG_A);
                 break;
             case 3:
                 //11_011_011
                 //IN A, (d)
                 port = next_byte();
-                //REG_A = read_port(port + (port << 8));
-                REG_A = read_port(port);
+                REG_A = read_port(static_cast<uint16_t>((REG_A << 8) | port));
                 break;
             case 4:
                 //11_100_011

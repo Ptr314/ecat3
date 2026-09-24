@@ -276,7 +276,6 @@ set(EMULATOR_SOURCES
     emulator/devices/specific/argo_memory.h emulator/devices/specific/argo_memory.cpp
     emulator/devices/specific/zx_keyboard.h emulator/devices/specific/zx_keyboard.cpp
     emulator/devices/specific/unior_memory.h emulator/devices/specific/unior_memory.cpp
-    emulator/devices/specific/unior_tape.h emulator/devices/specific/unior_tape.cpp
     emulator/devices/specific/agat_common.h
     emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp
     emulator/devices/specific/bk_display.h emulator/devices/specific/bk_display.cpp
