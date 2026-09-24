@@ -63,8 +63,6 @@ emulator::Result ArgoMemory::load_config(SystemData *sd)
     res = read_bits(cd, "page_bits", m_page_bits, 2);
     if (!res) return res;
 
-    m_flat_mask = read_confg_value(cd, "flat_mask", false, (unsigned int)0);
-    m_flat_page = read_confg_value(cd, "flat_page", false, (unsigned int)0xFFFFFFFF);
     m_bank_bit = read_confg_value(cd, "bank_bit", false, (unsigned int)7) & 7;
     m_bank_invert = read_confg_value(cd, "bank_invert", false, true);
 
@@ -110,17 +108,6 @@ unsigned int ArgoMemory::block_of(const Interface &i) const
 // адресуют прошивку, в ответе - номер страницы и банки
 unsigned int ArgoMemory::translate(unsigned int address, unsigned int value) const
 {
-    //Плоские 64 Кбайт первой банки. Разряд, который это включает, со схемы не
-    //снят - он и не может быть в регистровом файле, тот четырехразрядный.
-    //Выведен он из ZX.COM: программа перевода машины в режим "ZX Spectrum"
-    //пишет $C1, $CB и $D8 в $A1, $B1 и $B9, и во всех трех стоит разряд 7.
-    //Считать их строками прошивки нельзя: сама программа в этот миг исполняется
-    //по $9800, а $CB по прошивке уводит эту страницу во вторую банку - код
-    //исчез бы из-под процессора. Плоская же карта сходится со всем, что
-    //программа делает дальше: ПЗУ Спектрума она кладет в ОЗУ по $0000-$3FFF,
-    //экран Спектрума по $4000, и с такой картой ПЗУ Спектрума действительно
-    //запускается и доходит до ожидания клавиши
-    if (m_flat_mask != 0 && (value & m_flat_mask) != 0) return address & 0xFFFF;
     const unsigned int idx = ((address >> 14) & 0x03) | (config_index(value) << 2);
     const unsigned int v = Map->get_direct(idx);
 
@@ -141,18 +128,8 @@ unsigned int ArgoMemory::translate_cpu(unsigned int address) const
     if (!m_cpu_valid || m_cpu_value != i_cpu.value)
     {
         m_cpu_value = i_cpu.value;
-        const bool flat = (m_flat_mask != 0 && (m_cpu_value & m_flat_mask) != 0);
         for (unsigned int p = 0; p < 4; p++)
-        {
-            //В плоской карте одна страница у процессора все же во второй
-            //банке - та, куда ПЗУ Спектрума кладет экран. Поток знакомест для
-            //ВГ75 лежит в первой банке по тем же адресам, и канал ПДП читает
-            //его оттуда: иначе первая же очистка экрана его затерла бы
-            if (flat && p == m_flat_page)
-                m_cpu_pages[p] = 0x10000u | (p << 14);
-            else
-                m_cpu_pages[p] = translate(p << 14, m_cpu_value) & ~0x3FFFu;
-        }
+            m_cpu_pages[p] = translate(p << 14, m_cpu_value) & ~0x3FFFu;
         m_cpu_valid = true;
     }
     return m_cpu_pages[(address >> 14) & 3] | (address & 0x3FFF);

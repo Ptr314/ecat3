@@ -183,6 +183,7 @@ emulator::Result I8275Display::load_config(SystemData *sd)
     m_font_base = read_confg_value(cd, "font_base", false, (unsigned int)0);
     m_zx_bitmap = read_confg_value(cd, "zx_bitmap", false, (unsigned int)0);
     m_zx_attr   = read_confg_value(cd, "zx_attr", false, (unsigned int)0);
+    m_cursor_left = read_confg_value(cd, "cursor_left", false, (unsigned int)0);
 
     const std::string font_map = cd->get_parameter("font_address", false).value;
     if (!font_map.empty())
@@ -555,7 +556,7 @@ void I8275Display::draw_row(unsigned int Lin)
             if
             (
                 (
-                    (Col == r.cursor_col) && (Lin == r.cursor_row)
+                    (Col + m_cursor_left == r.cursor_col) && (Lin == r.cursor_row)
                     &&
                     (
                         ((r.cursor_mode == 0x00) && r.blink) ||             //Blinking block

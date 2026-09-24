@@ -112,6 +112,10 @@ private:
     //Начало знакогенератора в устройстве, названном font. У Арго он лежит
     //не отдельной микросхемой, а страницей 3 второй банки того же ОЗУ
     unsigned int m_font_base = 0;
+    //На сколько знакомест левее показывать курсор, чем говорит команда
+    //загрузки. Нужно машине, чья программа прибавляет к колонке единицу,
+    //которой нечего компенсировать - см. Argo.md
+    unsigned int m_cursor_left = 0;
 
     unsigned int font_address(unsigned int code, unsigned int line, unsigned int bank) const;
     void draw_row_zx(unsigned int Lin);

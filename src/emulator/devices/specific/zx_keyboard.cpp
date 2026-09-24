@@ -17,18 +17,31 @@ ZXKeyboard::ZXKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
 }
 
 // Матрица ZX Spectrum: полуряд выбирается разрядом адреса A8+N, разряды 0-4
-// ответа идут в том порядке, в каком клавиши перечислены здесь
+// ответа идут в том порядке, в каком клавиши перечислены здесь.
+//
+// Раскладка взята из руководства к машине: сорокаклавишная сетка Спектрума
+// положена на клавиатуру Арго по месту, а буквы в ней подписаны по-русски.
+// Ряд QWERTYUIOP - это ЙЦУКЕНГШЩЗ, ряд ASDFGHJKL - ФЫВАПРОЛД, ряд ZXCVBNM -
+// ЯЧСМИТЬ; у Арго это те же клавиши, потому что коды им ПЗУ дает латинские.
+//
+// А вот три служебные клавиши оказались не там, где их ждешь:
+//   CAPS SHIFT   - это ДОП, а не тот шифт, что в матрице Арго;
+//   SYMBOL SHIFT - клавиша Б, у Арго она дает запятую;
+//   SPACE (BREAK)- клавиша Ю, у Арго она дает точку.
+// Обе последние стоят в нижнем ряду там же, где у Спектрума его SYMBOL SHIFT и
+// пробел, так что наложение по месту сходится и здесь. Собственный пробел Арго
+// и его шифт в режиме ZX не делают ничего
 void ZXKeyboard::set_default_matrix()
 {
     static const char * m[8][5] = {
-        {"key_shift_1", "key_z",     "key_x",     "key_c",     "key_v"},
+        {"key_dop",     "key_z",     "key_x",     "key_c",     "key_v"},
         {"key_a",       "key_s",     "key_d",     "key_f",     "key_g"},
         {"key_q",       "key_w",     "key_e",     "key_r",     "key_t"},
         {"key_1",       "key_2",     "key_3",     "key_4",     "key_5"},
         {"key_0",       "key_9",     "key_8",     "key_7",     "key_6"},
         {"key_p",       "key_o",     "key_i",     "key_u",     "key_y"},
         {"key_enter",   "key_l",     "key_k",     "key_j",     "key_h"},
-        {"key_space",   "key_ctrl",  "key_m",     "key_n",     "key_b"}
+        {"key_dot",     "key_comma", "key_m",     "key_n",     "key_b"}
     };
     for (unsigned int r = 0; r < 8; r++)
         for (unsigned int b = 0; b < 5; b++)

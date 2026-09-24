@@ -68,13 +68,6 @@ private:
     unsigned int m_bank_bit = 7;                // Разряд ответа -> банка
     bool m_bank_invert = true;                  // 1 в нем - первая банка
 
-    // Разряды значения, при которых отображение не считается вовсе, а все
-    // 64 Кбайт идут в первую банку один к одному. Это не со схемы, см. ниже
-    unsigned int m_flat_mask = 0;
-    //Страница, которую в плоской карте процессор все же получает из второй
-    //банки: туда ПЗУ Спектрума пишет свой экран
-    unsigned int m_flat_page = 0xFFFFFFFF;
-
     unsigned int m_block_mask = 0x0E;           // Разряды значения с номером
     unsigned int m_block_shift = 1;
     unsigned int m_blocks = 8;                  // Блоков, считая основной

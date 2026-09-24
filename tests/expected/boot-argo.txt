@@ -22,7 +22,7 @@
   port A1 -> kbd-port
   port A1 -> memblk0
   port A9 -> memblk1
-  port B1 -> memcfg
+  port B1 -> memcfg-drq
   port B9 -> memcfg
   port C0 -> vg75
   port C4 -> vg75
@@ -30,5 +30,6 @@
   port C3 -> uart
   port E0 -> dma
   port FE -> zx-kbd
+  port FE -> zx-port
 === Клавиатура ===
 [ram.value] $F850: $3C $44 $20 $20
