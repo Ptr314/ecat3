@@ -1775,13 +1775,23 @@ void MainWindow::on_actionAbout_triggered()
 
 void MainWindow::on_actionTape_triggered()
 {
-    TapeRecorder * tape = dynamic_cast<TapeRecorder*>(e->dm->get_device_by_name("tape"));
-
-    if (tape != nullptr) {
-        TapeRecorderWindow * w = new TapeRecorderWindow(this, e, tape);
-        w->setAttribute(Qt::WA_DeleteOnClose);
-        w->show();
+    //Магнитофон у машины один, и окно у него одно: повторное нажатие кнопки
+    //поднимает уже открытое, а не заводит второе. Окно закрывается по
+    //WA_DeleteOnClose, так что после закрытия findChild его уже не находит и
+    //кнопка открывает новое - как у окна клавиатуры рядом
+    TapeRecorderWindow * w = findChild<TapeRecorderWindow*>();
+    if (w != nullptr) {
+        w->raise();
+        w->activateWindow();
+        return;
     }
+
+    TapeRecorder * tape = dynamic_cast<TapeRecorder*>(e->dm->get_device_by_name("tape"));
+    if (tape == nullptr) return;
+
+    w = new TapeRecorderWindow(this, e, tape);
+    w->setAttribute(Qt::WA_DeleteOnClose);
+    w->show();
 }
 
 void MainWindow::on_actionKeyboard_triggered()
