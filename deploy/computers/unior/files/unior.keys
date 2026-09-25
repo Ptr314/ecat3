@@ -5,9 +5,16 @@
 // Строка -- выходная линия матрицы (разряд порта B), столбец -- линия
 // сканирования (номер из дешифратора К555ИД3), "__" -- позиция без клавиши.
 // Раскладка снята из таблицы кодов ПЗУ по адресу $F9E0: индекс ячейки там
-// равен row*11 + col + 1, и код каждой клавиши известен. Две клавиши в одной
-// ячейке (обе НР) перечисляются через "|" -- на плате они соединены
-// параллельно.
+// равен row*11 + col + 1, и код каждой клавиши известен.
+//
+// Стрелки и СТОП по кодам не опознать - ПЗУ их не обрабатывает, - поэтому они
+// расставлены по игре Packman: она читает матрицу сама (процедура $0F1C берет
+// столбцы 6, 7 и 9) и двигает героя влево ячейкой [4,9], вправо [5,6], вниз
+// [5,7], вверх [6,7]. Те же четыре ячейки и в том же порядке стоят у Арго, у
+// которого клавиатура той же разводки, а СТОП остается в блоке ПОМ/УСТ/ИСП.
+//
+// Две клавиши в одной ячейке (обе НР) перечисляются через "|" -- на плате они
+// соединены параллельно.
 //
 // Модификаторы у этой машины лежат в самой матрице, их состояние ведет ПЗУ:
 // НР и УПР -- обычные ячейки, а АЛФ (РУС/ЛАТ), ГРАФ и ФИКС переключают разряды
@@ -25,7 +32,7 @@ key_num_9  key_ar2      key_semi      key_k1      key_k2    key_k3        key_4 
 key_num_8  key_tab      key_j         key_1       key_2     key_3         key_e      key_5      key_6      key_lbr     key_rbr
 __         key_shift_1|key_shift_2    key_f       key_c     key_u         key_k      key_p      key_n      key_g       key_l      key_d
 __         key_graf     key_q         key_y       key_w     key_a         key_i      key_r      key_o      key_b       key_at
-key_ctrl   key_alf      key_fiks      key_caret   key_s     key_m         key_space  key_t      key_x      key_stop    key_comma
-key_num_4  key_num_plus key_num_0     key_num_1   key_num_7 key_bksp      key_left   key_right  key_dot    key_bksl    key_v
+key_ctrl   key_alf      key_fiks      key_caret   key_s     key_m         key_space  key_t      key_x      key_left    key_comma
+key_num_4  key_num_plus key_num_0     key_num_1   key_num_7 key_bksp      key_right  key_down   key_dot    key_bksl    key_v
 key_num_5  key_num_minus key_num_dot  key_num_2   key_ust   key_pom       key_enter  key_up     key_colon  key_h       key_z
-key_num_6  key_num_enter key_num_comma key_num_3  key_isp  key_down      key_slash  key_under  key_minus  key_0       key_9
+key_num_6  key_num_enter key_num_comma key_num_3  key_isp  key_stop      key_slash  key_under  key_minus  key_0       key_9

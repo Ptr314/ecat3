@@ -185,6 +185,7 @@ emulator::Result I8275Display::load_config(SystemData *sd)
     Font = dynamic_cast<AddressableDevice*>(im->dm->get_device_by_name(cd->get_parameter("font").value));
 
     m_font_invert = cd->get_parameter("font_invert", false).value != "0";
+    m_font_high_wide = read_confg_value(cd, "font_high_wide", false, (unsigned int)0) != 0;
     m_font_base = read_confg_value(cd, "font_base", false, (unsigned int)0);
     m_zx_bitmap = read_confg_value(cd, "zx_bitmap", false, (unsigned int)0);
     m_zx_attr   = read_confg_value(cd, "zx_attr", false, (unsigned int)0);
@@ -606,9 +607,12 @@ void I8275Display::draw_row(unsigned int Lin)
             //before through MapRGB(0,0,0)
             const uint32_t fg = rgba_colors[FAColor];
             const uint32_t bg = rgba_colors[FAColorBg];
+            //В графическом банке точка вдвое шире: три псевдоточки из младших
+            //разрядов растягиваются на шесть точек знакоместа
+            const unsigned int wide = (m_font_high_wide && (r.font_bank != 0))?1:0;
             for (unsigned int k = 0; k <6; k++)
             {
-                uint8_t c1 = (V >> k) & 1;
+                uint8_t c1 = (V >> (k >> wide)) & 1;
                 unsigned int p1 = Ofs + (5-k)*4;
                 uint8_t * base = static_cast<uint8_t *>(render_pixels) + Adr*line_bytes + p1;
                 *(uint32_t*)base = c1 ? fg : bg;

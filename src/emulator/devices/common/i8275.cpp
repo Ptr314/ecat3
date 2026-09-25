@@ -70,8 +70,7 @@ bool I8275::dma_ready() const
     return m_dma != nullptr && m_memory != nullptr && m_dma->channel_enabled(m_channel);
 }
 
-//A frame begins at the first line of the vertical retrace, where the row that
-//will be displayed first is fetched before it is needed. Whether the frame is
+//A frame begins at the first line of the vertical retrace. Whether it is
 //fetched at all is decided here and once: a row started in the middle of a
 //frame would take its bytes from wherever the address counter happened to be,
 //and since the counter is the only thing tying the memory to the screen, the
@@ -80,7 +79,15 @@ void I8275::frame_start()
 {
     m_frame_dma = m_display_on && dma_ready();
     if (m_frame_dma)
-        start_row_fill();
+    {
+        //Нулевая строка набирается на ПОСЛЕДНЕЙ строке обратного хода, а не на
+        //первой: буфер строки заполняется за одну строку до показа, и обратный
+        //ход - это то время, когда программа переставляет ПДП на другой буфер.
+        //Начав выборку на первой же его строке, мы брали бы нулевую строку по
+        //старому адресу и старому счету, а остаток кадра - по новым: у Юниора
+        //это уводит конечный счет в обратный ход и гасит следующий кадр целиком
+        if (m_rows_total <= m_lps + 1) start_row_fill();
+    }
     else
     if (m_display_on)
         //Started, but with nothing to show: the frame underruns from its first
@@ -366,8 +373,15 @@ void I8275::row_start()
         Blinker     = ((m_frames / I8275_CURSOR_BLINK) & 1) != 0;
         BlinkerChar = ((m_frames / I8275_CHAR_BLINK) & 1) != 0;
 
-        //And the next frame begins: its first row is fetched here
+        //And the next frame begins
         frame_start();
+        return;
+    } else
+    if (m_row + 1 == m_rows_total)
+    {
+        //Последняя строка обратного хода: здесь набирается нулевая строка
+        //следующего кадра, см. frame_start()
+        if (m_frame_dma) start_row_fill();
         return;
     }
 

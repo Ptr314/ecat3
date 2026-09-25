@@ -3,7 +3,7 @@
 [int-frame.pulses] $00000000
 === разрешено ===
 [int-frame.enabled] $01
-[cpu.registers] AF=0044 BC=05A1 DE=0000 HL=F7AD IX=0000 IY=0000 AF'=0000 BC'=0000 DE'=0000 HL'=0000 SP=F77E PC=8008 I=00 R=45 IFF1=1 IFF2=1
+[cpu.registers] AF=0044 BC=05A1 DE=0000 HL=F7AD IX=0000 IY=0000 AF'=0000 BC'=0000 DE'=0000 HL'=0000 SP=F77E PC=8008 I=00 R=60 IFF1=1 IFF2=1
 === за секунду машинного времени ===
 [mem.value] $8300: $3F
 [int-frame.pulses] $0000003F

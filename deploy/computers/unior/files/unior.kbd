@@ -2,7 +2,7 @@ end     esc     ;       f1      f2      f3      4       f4      f5      7       
 pgdn    tab     J       1       2       3       E       5       6       [       ]
 __      shift   F       C       U       K       P       N       G       L       D
 __      alt     Q       Y       W       A       I       R       O       B       @
-ctrl    caps    scroll  ^       S       M       space   T       X       ~       ,|<
-f10     plus    f6      f7      pgup    back    left    right   .|>     \       V
+ctrl    caps    scroll  ^       S       M       space   T       X       left    ,|<
+f10     plus    f6      f7      pgup    back    right   down    .|>     \       V
 f11     minus   num     f8      ins     home    ret     up      :       H       Z
-f12     enter   mult    f9      div     down    /|?     _|}     -|=     0       9
+f12     enter   mult    f9      div     ~       /|?     _|}     -|=     0       9
