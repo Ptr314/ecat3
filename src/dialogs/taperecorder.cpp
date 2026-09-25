@@ -10,6 +10,7 @@
 #include <QTimer>
 #include <qevent.h>
 #include <QMessageBox>
+#include <QFontMetrics>
 
 #include "taperecorder.h"
 #include "ui_taperecorder.h"
@@ -84,10 +85,24 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
     QMovie *movie_left = new QMovie(":/icons/roller_left", QByteArray(), this);
     QMovie *movie_right = new QMovie(":/icons/roller_right", QByteArray(), this);
 
+    //Обратный ход перебирает кадры назад, а назад QMovie умеет ходить только
+    //по кешу: с CacheNone формат GIF прыгает лишь на нулевой кадр, и анимация
+    //на первом же шаге останавливается насовсем
+    movie_left->setCacheMode(QMovie::CacheAll);
+    movie_right->setCacheMode(QMovie::CacheAll);
+
     ui->left_roller->setMovie(movie_left);
     ui->right_roller->setMovie(movie_right);
     ui->left_roller->hide();
     ui->right_roller->hide();
+
+    //Шаг обратного хода берем у самой анимации, чтобы он не разъезжался с
+    //прямым, если ролики когда-нибудь перерисуют
+    movie_left->jumpToFrame(0);
+    roller_delay = qMax(1, movie_left->nextFrameDelay());
+
+    connect(&back_left, &QTimer::timeout, this, [this]() { step_back(ui->left_roller); });
+    connect(&back_right, &QTimer::timeout, this, [this]() { step_back(ui->right_roller); });
 
     this->d->volume(10);
 
@@ -104,23 +119,48 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
     sync_from_device();
 }
 
-void TapeRecorderWindow::show_movement(bool moving, bool fast)
+void TapeRecorderWindow::show_movement(bool moving, bool fast, bool back)
 {
     if (moving) {
-        ui->left_roller->movie()->start();
-        ui->right_roller->movie()->start();
-        ui->left_roller->movie()->setSpeed(fast?200:50);
-        ui->right_roller->movie()->setSpeed(fast?400:100);
-        ui->left_roller->show();
-        ui->right_roller->show();
+        roll(ui->left_roller, back_left, fast?200:50, back);
+        roll(ui->right_roller, back_right, fast?400:100, back);
         update_timer.start();
     } else {
-        ui->left_roller->movie()->stop();
-        ui->right_roller->movie()->stop();
-        ui->left_roller->hide();
-        ui->right_roller->hide();
+        stop_roller(ui->left_roller, back_left);
+        stop_roller(ui->right_roller, back_right);
         update_timer.stop();
     }
+}
+
+void TapeRecorderWindow::roll(QLabel * roller, QTimer & timer, int speed, bool back)
+{
+    QMovie * movie = roller->movie();
+    if (back) {
+        movie->stop();
+        timer.start(qMax(1, roller_delay * 100 / speed));
+    } else {
+        timer.stop();
+        movie->setSpeed(speed);
+        movie->start();
+    }
+    roller->show();
+}
+
+void TapeRecorderWindow::stop_roller(QLabel * roller, QTimer & timer)
+{
+    timer.stop();
+    roller->movie()->stop();
+    roller->hide();
+}
+
+void TapeRecorderWindow::step_back(QLabel * roller)
+{
+    QMovie * movie = roller->movie();
+    const int frames = movie->frameCount();
+    if (frames <= 0) return;
+    //Кадр еще не показывали - начинаем с последнего
+    const int current = movie->currentFrameNumber();
+    movie->jumpToFrame(((current <= 0)?frames:current) - 1);
 }
 
 void TapeRecorderWindow::sync_from_device()
@@ -158,10 +198,11 @@ void TapeRecorderWindow::sync_from_device()
     //состоянии, о котором нам сообщили
     const bool moving = (mode != TAPE_STOPPED);
     const bool fast = forward || back;
-    if (moving != is_moving || fast != is_fast) {
+    if (moving != is_moving || fast != is_fast || back != is_back) {
         is_moving = moving;
         is_fast = fast;
-        show_movement(moving, fast);
+        is_back = back;
+        show_movement(moving, fast, back);
     }
     update_counter();
 }
@@ -302,22 +343,12 @@ void TapeRecorderWindow::play_pause()
 {
     is_moving = is_playing && !is_paused;
     is_fast = false;
-    if (is_playing && !is_paused) {
-        ui->left_roller->movie()->start();
-        ui->right_roller->movie()->start();
-        ui->left_roller->movie()->setSpeed(50);
-        ui->right_roller->movie()->setSpeed(100);
+    is_back = false;
+    show_movement(is_moving, false, false);
+    if (is_moving) {
         d->play();
-        ui->left_roller->show();
-        ui->right_roller->show();
-        update_timer.start();
     } else {
-        ui->left_roller->movie()->stop();
-        ui->right_roller->movie()->stop();
-        ui->left_roller->hide();
-        ui->right_roller->hide();
         d->stop();
-        update_timer.stop();
         update_counter();
     }
 }
@@ -406,20 +437,44 @@ void TapeRecorderWindow::closeEvent(QCloseEvent *event)
     GenericDbgWnd::closeEvent(event);
 }
 
+static QString tape_time(int seconds)
+{
+    return QString::number(seconds / 60) + ":" + QString("%1").arg(seconds % 60, 2, 10, QChar('0'));
+}
+
+//Выедаем середину, а не конец: расширение говорит, что за лента.
+//QFontMetrics::elidedText тут не годится - он меряет без межбуквенного
+//интервала, который табло задает стилем, и на длинном имени промахивается
+static QString elide_middle(const QFontMetrics & fm, const QString & name, int width)
+{
+    if (fm.horizontalAdvance(name) <= width) return name;
+    for (int cut = 1; cut < name.length(); cut++) {
+        const int head = (name.length() - cut) / 2;
+        const QString s = name.left(head) + QString::fromUtf8("…") + name.mid(head + cut);
+        if (fm.horizontalAdvance(s) <= width) return s;
+    }
+    return QString::fromUtf8("…");
+}
+
+QString TapeRecorderWindow::fit_name(const QString & time) const
+{
+    //Стиль табло задает межбуквенный интервал, а до первого show() его еще не
+    //применили: без этого мы померяли бы куда более узкую строку
+    ui->textLabel->ensurePolished();
+    //Табло узкое и не растягивается, а имя - единственное, что можно ужать:
+    //время должно быть видно всегда
+    const QFontMetrics fm = ui->textLabel->fontMetrics();
+    const int left = ui->textLabel->width() - fm.horizontalAdvance(" " + time);
+    return elide_middle(fm, loaded_file, qMax(left, 0)) + " " + time;
+}
+
 void TapeRecorderWindow::update_counter()
 {
     if (is_playing || is_moving){
         if (d->get_mode() != TAPE_STOPPED) {
-            int position = d->get_position();
-            int total = d->get_total();
-            ui->textLabel->setText(
-                loaded_file
-                + " ("
-                + QString::number(position / 60) + ":" + QString("%1").arg(position % 60, 2, 10, QChar('0'))
-                + "/"
-                + QString::number(total / 60) + ":" + QString("%1").arg(total % 60, 2, 10, QChar('0'))
-                + ")"
-            );
+            ui->textLabel->setText(fit_name(
+                "(" + tape_time(d->get_position()) + "/" + tape_time(d->get_total()) + ")"
+            ));
         } else {
             //Лента кончилась сама. Перематывать ее назад можно только тогда,
             //когда ее пустили из окна: машина, которая ведет лентопротяжку
@@ -433,13 +488,7 @@ void TapeRecorderWindow::update_counter()
             }
         }
     } else {
-        int total = d->get_total();
-        ui->textLabel->setText(
-            loaded_file
-            + " ("
-            + QString::number(total / 60) + ":" + QString("%1").arg(total % 60, 2, 10, QChar('0'))
-            + ")"
-            );
+        ui->textLabel->setText(fit_name("(" + tape_time(d->get_total()) + ")"));
     }
 }
 
