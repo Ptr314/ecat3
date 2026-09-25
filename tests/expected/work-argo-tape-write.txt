@@ -1,0 +1,12 @@
+=== чистая кассета ===
+[tape.records] $0000
+[tape.transport] $00
+=== записано ===
+[tape.transport] $00
+[tapectl.value] $20
+[tape.records] $0001
+[tape.writes] $00000001
+=== образ загружен обратно ===
+[tape.records] $0001
+[tape.record] $0000 $0000
+[tape.transport] $00
