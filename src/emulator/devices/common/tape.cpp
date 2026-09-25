@@ -38,6 +38,8 @@ TapeRecorder::TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd)
     , data_position(0)
     , bit_shift(7)
     , ticks_counter(0)
+    , ticks_per_bit(1)
+    , total_seconds(0)
     , i_input(this, im, 1, "input", MODE_R, 1)
     , i_output(this, im, 1, "output", MODE_W)
     , i_speaker(this, im, 1, "speaker", MODE_W)
@@ -101,8 +103,8 @@ emulator::Result TapeRecorder::load_config(SystemData *sd)
     if (m_fast_speed < 1) m_fast_speed = 1;
 
     //Длина чистой кассеты: полчаса - это сторона С-60
-    const unsigned int blank_seconds = read_confg_value(cd, "blank_length", false, (unsigned int)1800);
-    m_blank_units = (uint64_t)blank_seconds * baud_rate;
+    m_blank_seconds = read_confg_value(cd, "blank_length", false, (unsigned int)1800);
+    m_blank_units = (uint64_t)m_blank_seconds * baud_rate;
 
     if (medium == TapeMedium::Bytes)
     {
@@ -171,6 +173,21 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
 
     if (callback_id == 1) {
         // Input changed
+        //Лента Спектрума пишется сигналом, а не байтами: ПЗУ дрыгает разрядом 3
+        //порта $FE из SA-BYTES. Лентопротяжку сюда не примешиваем - пишет тот,
+        //кто стоит на записи, кнопкой окна или по разъему ДУ
+        if (medium == TapeMedium::Pulses) {
+            if (m_transport != T_RECORD) return;
+            //Оба перепада равноправны: единица этого сигнала - полупериод
+            if (((old_value ^ new_value) & 1) == 0) return;
+            if (has_last_edge)
+                zx_write_edge((unsigned int)(cycle_counter - last_edge_cycles));
+            last_edge_cycles = cycle_counter;
+            has_last_edge = true;
+            //Пишущую ленту слышно так же, как читающую
+            sound_level((unsigned int)(new_value & 1));
+            return;
+        }
         if (is_recording) {
             if (m_tape_enc == TapeEnc::BK) {
                 // The БК decoder measures whole periods between rising edges,
@@ -290,9 +307,20 @@ void TapeRecorder::store_bit(const unsigned bit)
 
 void TapeRecorder::set_recording(bool recording)
 {
-    //На ленту Спектрума мы не пишем: у нее контейнер под готовые блоки, а не
-    //под сигнал, и запускать здесь чужой декодер значило бы молча писать мусор
-    if (medium == TapeMedium::Pulses) return;
+    //Лента Спектрума пишется своим декодером: те же длительности, какими она
+    //читается, разобранные обратно в блоки
+    if (medium == TapeMedium::Pulses)
+    {
+        is_recording = recording;
+        has_last_edge = false;
+        //Порядок важен: set_transport() на выходе из записи закрывает набранный
+        //блок, и гасить автомат до него значило бы терять последний блок - но
+        //только при остановке кнопкой, а не стрелкой, которая идет мимо сюда
+        set_transport(recording?T_RECORD:T_STOP);
+        m_zx_dec.clear();
+        notify_state();
+        return;
+    }
     if (medium == TapeMedium::Bytes) { set_transport(recording?T_RECORD:T_STOP); return; }
     if (!recording && is_recording && m_tape_enc == TapeEnc::RK86 && has_last_edge) {
         // The level the line was left at is the second half of the last bit
@@ -337,11 +365,26 @@ unsigned TapeRecorder::get_record_size()
     if (medium == TapeMedium::Bytes)
     {
         if (!m_dirty) return 0;
+        //Ровно то, что напишет build_bt: заголовок файла, по три слова на
+        //запись и преамбула у той, что пришла не из файла. Поле обещает размер
+        //файла, и оно должно его называть
         size_t total = 4;
-        for (size_t i = 0; i < m_records.size(); i++) total += 8 + m_records[i].data.size() + 4;
+        for (size_t i = 0; i < m_records.size(); i++)
+        {
+            const std::vector<uint8_t> &d = m_records[i].data;
+            const bool has_preamble = d.size() >= 4
+                && memcmp(d.data(), bt_tape::PREAMBLE, 4) == 0;
+            total += 12 + (has_preamble?0u:4u) + d.size();
+        }
         return (unsigned)total;
     }
-    if (medium == TapeMedium::Pulses) return 0;
+    if (medium == TapeMedium::Pulses)
+    {
+        if (!m_dirty) return 0;
+        size_t total = 0;
+        for (size_t i = 0; i < m_records.size(); i++) total += 2 + m_records[i].data.size();
+        return (unsigned)total;
+    }
     if (m_tape_enc == TapeEnc::BK) return bk_decoder.file()->size();
     if (m_tape_enc == TapeEnc::UKNC) return uknc_decoder.file()->size();
     if (m_tape_enc == TapeEnc::RK86) {
@@ -414,7 +457,16 @@ bool TapeRecorder::record_keeps_sync()
 std::string TapeRecorder::get_record_name()
 {
     if (medium == TapeMedium::Bytes) return loaded_name.empty()?std::string("tape.bt"):loaded_name;
-    if (medium == TapeMedium::Pulses) return "";
+    if (medium == TapeMedium::Pulses)
+    {
+        //Расширение меняется на .tap даже у кассеты, пришедшей из .tzx: то,
+        //что записано, лежит в другом контейнере, и звать его прежним именем
+        //значило бы подсунуть .tzx без сигнатуры
+        if (loaded_name.empty()) return "tape.tap";
+        const size_t dot = loaded_name.rfind('.');
+        return (dot == std::string::npos)?(loaded_name + ".tap")
+                                         :(loaded_name.substr(0, dot) + ".tap");
+    }
     if (m_tape_enc == TapeEnc::BK) return bk_decoder.name();
     if (m_tape_enc == TapeEnc::RK86 || m_tape_enc == TapeEnc::UKNC) {
         // A Радио-86РК tape carries no name, only the addresses, but the
@@ -752,9 +804,22 @@ void TapeRecorder::save_state(StateWriter &w)
             build_bt(image);
             if (!image.empty()) w.blob("tape", name + ".bt", image.data(), image.size());
         }
-        else if (!m_source.empty())
-            w.blob("zx", name + ".tap", m_source.data(), m_source.size());
+        else
+        {
+            //Записанное машиной есть только здесь, поэтому тронутая кассета
+            //едет в снимок собранной заново, а нетронутая - тем файлом, каким
+            //пришла: разворачивать .tzx обратно незачем
+            std::vector<uint8_t> image;
+            if (m_dirty) zx_tape::build_tap(m_records, image); else image = m_source;
+            if (!image.empty()) w.blob("zx", name + ".tap", image.data(), image.size());
+        }
 
+        //Носитель выбирает ЗАРЯЖЕННЫЙ ФАЙЛ, а не конфигурация машины: у Арго
+        //encoding = unior, и без этой строки снимок с лентой Спектрума
+        //восстанавливался бы как лента-накопитель - блок с .tap никто бы не
+        //спросил, и кассета пропадала целиком
+        w.n("medium", (unsigned int)medium);
+        w.b("blank", m_blank);
         w.b("dirty", m_dirty);
         w.n("transport", (unsigned int)m_transport);
         w.n64("pos", m_pos);
@@ -765,6 +830,34 @@ void TapeRecorder::save_state(StateWriter &w)
         w.n("write_bits", m_write_bits);
         w.n64("writes", m_writes);
         w.n64("bytes_read", m_bytes_read);
+
+        //Недописанная запись - тоже состояние. Без нее снимок, снятый посреди
+        //записи сектора, терял бы ее начало, а конец лег бы отдельной записью
+        //с того места, где снимок открыли
+        if (!m_write_buf.empty())
+            w.blob("write", name + "-wr.bin", m_write_buf.data(), m_write_buf.size());
+        w.n64("write_start", m_write_start);
+        w.n64("write_last", m_write_last);
+
+        if (medium == TapeMedium::Pulses)
+        {
+            //То же для ленты Спектрума: автомат разбора сигнала. Снимок
+            //посреди SAVE иначе теряет весь блок - данные без пилот-тона
+            //декодер не примет и будет ждать следующего
+            w.n("dec_phase", (unsigned int)m_zx_dec.phase);
+            w.n("dec_lock", m_zx_dec.lock);
+            w.n64("dec_sum", m_zx_dec.sum);
+            w.n("dec_unit", m_zx_dec.unit);
+            w.u("dec_cur", m_zx_dec.cur, 8);
+            w.n("dec_bits", m_zx_dec.bits);
+            w.b("dec_half", m_zx_dec.half);
+            w.n("dec_first", m_zx_dec.first);
+            if (!m_zx_dec.bytes.empty())
+                w.blob("dec_bytes", name + "-dec.bin",
+                       m_zx_dec.bytes.data(), m_zx_dec.bytes.size());
+            w.n64("block_pos", m_zx_block_pos);
+            w.b("erased", m_zx_erased);
+        }
     }
 }
 
@@ -800,8 +893,21 @@ emulator::Result TapeRecorder::load_state(const StateReader &r)
     recorded_bytes.clear();
     r.blob("recorded", recorded_bytes);
 
+    //Какой носитель был в лентопротяжке, говорит снимок, а не конфигурация:
+    //у Арго она дает ленту-накопитель, а заряжена могла быть лента Спектрума.
+    //Снимок, снятый старой сборкой, ключа не несет - там остается прежнее
     if (medium != TapeMedium::Levels)
     {
+        unsigned int med = (unsigned int)medium;
+        r.u("medium", med);
+        if (med == (unsigned int)TapeMedium::Pulses)
+        {
+            medium = TapeMedium::Pulses;
+            m_tape_enc = TapeEnc::ZX;
+            //Единица этой ленты - такт процессора
+            ticks_per_bit = 1;
+        }
+
         std::vector<uint8_t> image;
         if (medium == TapeMedium::Bytes)
         {
@@ -809,24 +915,31 @@ emulator::Result TapeRecorder::load_state(const StateReader &r)
             {
                 emulator::Result res2 = parse_bt(image.data(), image.size(), name);
                 if (!res2) return res2;
-                rebuild_timeline();
             }
         }
-        else if (r.blob("zx", image) && !image.empty())
+        else
         {
             //Волна строится заново из тех же байтов - она и есть производная
-            std::vector<TapeRecord> recs;
-            std::string err;
-            const bool tzx = image.size() > 7 && std::string((const char*)image.data(), 7) == "ZXTape!";
-            const bool ok = tzx?zx_tape::parse_tzx(image.data(), image.size(), m_system_clock, recs, err)
-                               :zx_tape::parse_tap(image.data(), image.size(), m_system_clock, recs, err);
-            if (!ok)
-                return emulator::Result::error(emulator::ErrorCode::FileError,
-                    "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Unable to read tape image")) + "} " + err);
-            m_source.swap(image);
-            m_records.swap(recs);
-            rebuild_timeline();
+            m_records.clear();
+            m_source.clear();
+            if (r.blob("zx", image) && !image.empty())
+            {
+                std::vector<TapeRecord> recs;
+                std::string err;
+                const bool tzx = image.size() > 7 && std::string((const char*)image.data(), 7) == "ZXTape!";
+                const bool ok = tzx?zx_tape::parse_tzx(image.data(), image.size(), m_system_clock, recs, err)
+                                   :zx_tape::parse_tap(image.data(), image.size(), m_system_clock, recs, err);
+                if (!ok)
+                    return emulator::Result::error(emulator::ErrorCode::FileError,
+                        "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Unable to read tape image")) + "} " + err);
+                m_source.swap(image);
+                m_records.swap(recs);
+            }
         }
+        r.b("blank", m_blank);
+        //Считается всегда: длина ленты нужна и пустой кассете, у которой
+        //записей нет, а лента есть
+        rebuild_timeline();
         r.b("dirty", m_dirty);
 
         unsigned int tr = 0;
@@ -839,9 +952,50 @@ emulator::Result TapeRecorder::load_state(const StateReader &r)
         r.u("write_bits", m_write_bits);
         r.n64("writes", m_writes);
         r.n64("bytes_read", m_bytes_read);
-        if (medium == TapeMedium::Pulses) zx_locate(m_pos); else locate(m_pos);
-        m_carrier = false;
-        i_ready.change(1);
+
+        m_write_buf.clear();
+        r.blob("write", m_write_buf);
+        r.n64("write_start", m_write_start);
+        r.n64("write_last", m_write_last);
+
+        if (medium == TapeMedium::Pulses)
+        {
+            unsigned int ph = (unsigned int)m_zx_dec.phase;
+            r.u("dec_phase", ph);
+            m_zx_dec.phase = (zx_tape::Decoder::Phase)ph;
+            r.u("dec_lock", m_zx_dec.lock);
+            r.n64("dec_sum", m_zx_dec.sum);
+            r.u("dec_unit", m_zx_dec.unit);
+            unsigned int cur = m_zx_dec.cur;
+            r.u("dec_cur", cur);
+            m_zx_dec.cur = (uint8_t)cur;
+            r.u("dec_bits", m_zx_dec.bits);
+            r.b("dec_half", m_zx_dec.half);
+            r.u("dec_first", m_zx_dec.first);
+            m_zx_dec.bytes.clear();
+            r.blob("dec_bytes", m_zx_dec.bytes);
+            r.n64("block_pos", m_zx_block_pos);
+            r.b("erased", m_zx_erased);
+        }
+        if (medium == TapeMedium::Pulses)
+        {
+            zx_locate(m_pos);
+            //m_zx_pulse после zx_locate - ОСТАТОК текущего полупериода, а
+            //m_ticks из снимка - его пройденная часть. Сложить их значит
+            //укоротить полупериод вдвое и порвать бит, на котором сняли снимок
+            m_ticks = 0;
+            //Уровень линии берется с самой линии: zx_locate считает четность
+            //внутри записи, а линия восстановлена базовым классом по всей
+            //ленте. Разойдись они - следующий перепад пришелся бы в то же
+            //значение, и загрузчик не увидел бы фронта
+            if (i_output.value != _FFFF) m_zx_level = i_output.value & 1;
+        }
+        else locate(m_pos);
+
+        //Несущая выводится из линии, а не вписывается в нее: вести линию из
+        //load_state() нельзя - каскад дойдет до ВВ51 прежде, чем тот
+        //восстановится, и затрет восстановленное значение
+        m_carrier = (i_ready.value != _FFFF) && ((i_ready.value & 1) == 0);
     }
     return emulator::Result::ok();
 }
@@ -865,6 +1019,7 @@ std::vector<DeviceFieldInfo> TapeRecorder::get_device_fields()
     r.push_back({"writes",    "Records written by the machine",                               false});
     r.push_back({"sound",     "Edges the tape has sent to the speaker",                       false});
     r.push_back({"pulses",    "Half period lengths of the loaded waveform, in machine cycles", true});
+    r.push_back({"pilot",     "Pilot half period measured while recording, in machine cycles",  false});
     return r;
 }
 
@@ -876,7 +1031,14 @@ void TapeRecorder::get_save_data(std::vector<uint8_t> &out)
         if (!out.empty()) m_dirty = false;
         return;
     }
-    if (medium == TapeMedium::Pulses) { out.clear(); return; }
+    if (medium == TapeMedium::Pulses)
+    {
+        //Всегда .tap: в записанном сигнале нет ничего, чего не описал бы он,
+        //а .tzx нес бы паузы и скорости, которых мы не измеряли
+        zx_tape::build_tap(m_records, out);
+        if (!out.empty()) m_dirty = false;
+        return;
+    }
     const std::vector<uint8_t> * data = get_record_data();
     out = (data != nullptr)?*data:std::vector<uint8_t>();
 }
@@ -936,6 +1098,9 @@ bool TapeRecorder::get_field(const std::string &field, unsigned int from, unsign
     if (field == "size")        { out.values.push_back(data_size);                  return true; }
     if (field == "baudrate")    { out.values.push_back(baud_rate);                  return true; }
     if (field == "recorded")    { out.values.push_back(get_record_size());          return true; }
+    //Мерка, по которой разбирается записываемый сигнал. Своя волна машины
+    //бывает длиннее спектрумовской - на Арго ее растягивает ПДП экрана
+    if (field == "pilot")       { out.values.push_back(m_zx_dec.unit); out.width = 16; return true; }
     out.width = 0;
 
     out.numeric = false;
@@ -1047,6 +1212,13 @@ void TapeRecorder::rebuild_timeline()
     //записанное, иначе разметка уперлась бы в конец ленты на первом же секторе
     if (m_blank && medium == TapeMedium::Bytes && m_total_units < m_blank_units)
         m_total_units = m_blank_units;
+    //У чистой кассеты Спектрума та же длина, только в тактах: единица этой
+    //ленты - такт процессора, а не битовый интервал
+    if (m_blank && medium == TapeMedium::Pulses)
+    {
+        const uint64_t len = (uint64_t)m_blank_seconds * m_system_clock;
+        if (m_total_units < len) m_total_units = len;
+    }
 }
 
 uint64_t TapeRecorder::record_start(size_t index) const
@@ -1086,12 +1258,20 @@ void TapeRecorder::set_transport(TapeTransport t)
     //Перемотка двигает только положение головки: какая запись под ней, никто
     //при этом не считает. Без пересчета лента после отката назад играла бы
     //в пустоту до той записи, на которой ее остановили в прошлый раз - машина
-    //ждала бы синхросимвола, которого уже не будет
-    locate(m_pos);
+    //ждала бы синхросимвола, которого уже не будет.
+    //
+    //У ленты Спектрума пересчитывать надо И автомат полупериодов: байтовый
+    //locate() ставит "головка внутри записи", не запустив Pulser, а тот держит
+    //указатель в данные записи. После смены кассеты этот указатель ведет в
+    //освобожденную память, и первый же полупериод читается из нее
+    if (medium == TapeMedium::Pulses) zx_locate(m_pos); else locate(m_pos);
     if (t == T_RECORD)
     {
         m_write_buf.clear();
         m_write_start = m_pos;
+        //Хвост кассеты стирается один раз за сеанс записи. Взводится признак
+        //здесь, а не в set_recording(): в запись входят и по разъему ДУ
+        m_zx_erased = false;
     }
 
     //Несущая снимается сразу: в паузе и на стоящей ленте сигнала нет
@@ -1218,6 +1398,8 @@ int TapeRecorder::next_write_bit()
 // прочитала, а писать начала после него - без маркера блок стал бы не найти.
 void TapeRecorder::commit_write()
 {
+    //У ленты Спектрума блок собирает декодер сигнала, а не поток байтов
+    if (medium == TapeMedium::Pulses) { zx_end_block(); return; }
     if (m_write_buf.size() < 5) { m_write_buf.clear(); return; }
 
     std::vector<uint64_t> starts(m_records.size(), 0);
@@ -1261,7 +1443,7 @@ void TapeRecorder::commit_write()
     const uint64_t next_start = has_next?starts[last]:0;
 
     TapeRecord r;
-    r.gap = (uint32_t)((ws > prev_end)?(ws - prev_end):0);
+    r.gap = (ws > prev_end)?(ws - prev_end):0;
     r.data = m_write_buf;
     r.units = (uint64_t)r.data.size() * 8;
 
@@ -1270,8 +1452,15 @@ void TapeRecorder::commit_write()
 
     if (has_next)
     {
-        const uint64_t new_end = ws + m_records[first].units;
-        m_records[first + 1].gap = (uint32_t)((next_start > new_end)?(next_start - new_end):(baud_rate / 4));
+        //Конец считается от того места, куда запись ЛЕГЛА, а не от того, где
+        //ее начали писать. Эти точки расходятся, когда головка начала писать
+        //внутри предыдущей записи, а ту оставили маркером: пауза тогда нулевая,
+        //и запись встает на конец предыдущей. Считая от ws, пауза следующей
+        //выходила бы длиннее на эту разницу, и лента удлинялась бы на каждой
+        //такой перезаписи
+        const uint64_t placed = prev_end + m_records[first].gap;
+        const uint64_t new_end = placed + m_records[first].units;
+        m_records[first + 1].gap = (next_start > new_end)?(next_start - new_end):(baud_rate / 4);
         //Пауза следующей записи пересчитана, значит ее числа из файла больше
         //не описывают ленту
         m_records[first + 1].from_file = false;
@@ -1326,7 +1515,15 @@ void TapeRecorder::reset(bool cold)
     if (medium == TapeMedium::Levels) return;
     m_transport = T_STOP;
     m_ticks = 0;
+    //Иначе окно осталось бы с нажатой кнопкой записи, а лента - "ведомой
+    //машиной": закрываясь, окно такую не останавливает
+    is_recording = false;
+    motor_on = false;
+    set_tape_mode(TAPE_STOPPED);
     m_write_buf.clear();
+    m_zx_dec.clear();
+    m_zx_erased = false;
+    has_last_edge = false;
     m_carrier = false;
     i_ready.change(1);
     if (medium == TapeMedium::Pulses) zx_locate(m_pos); else locate(m_pos);
@@ -1399,11 +1596,15 @@ emulator::Result TapeRecorder::bytes_load_file(const std::string &file_name)
 emulator::Result TapeRecorder::zx_load_file(const std::string &file_name, bool tzx)
 {
     const long long fsize = dsk_tools::utf8_file_size(file_name);
-    if (fsize < 2)
+    //Пустой файл - это чистая кассета: на ленту Спектрума теперь пишут, а
+    //взяться пустому .tap больше неоткуда
+    const bool blank = (fsize == 0);
+    if (fsize < 0 || (!blank && fsize < 2))
         return emulator::Result::error(emulator::ErrorCode::FileError,
             "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Unable to read tape image")) + "} " + file_name);
 
-    std::vector<uint8_t> image((size_t)fsize);
+    std::vector<uint8_t> image((size_t)(blank?0:fsize));
+    if (!blank)
     {
         dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
         if (!file.is_open())
@@ -1415,8 +1616,9 @@ emulator::Result TapeRecorder::zx_load_file(const std::string &file_name, bool t
 
     std::vector<TapeRecord> recs;
     std::string err;
-    const bool ok = tzx?zx_tape::parse_tzx(image.data(), image.size(), m_system_clock, recs, err)
-                       :zx_tape::parse_tap(image.data(), image.size(), m_system_clock, recs, err);
+    const bool ok = blank?true
+                  :(tzx?zx_tape::parse_tzx(image.data(), image.size(), m_system_clock, recs, err)
+                       :zx_tape::parse_tap(image.data(), image.size(), m_system_clock, recs, err));
     if (!ok)
         return emulator::Result::error(emulator::ErrorCode::FileError,
             "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Unable to read tape image")) + "} " + err);
@@ -1428,8 +1630,10 @@ emulator::Result TapeRecorder::zx_load_file(const std::string &file_name, bool t
     ticks_per_bit = 1;
     m_source.swap(image);
     m_records.swap(recs);
-    m_blank = false;
+    m_blank = blank;
     m_dirty = false;
+    m_zx_dec.clear();
+    m_zx_erased = false;
     rebuild_timeline();
     m_pos = 0;
     m_ticks = 0;
@@ -1457,7 +1661,7 @@ void TapeRecorder::zx_locate(uint64_t pos)
             //Пауза - это ровный уровень: у линии нет третьего состояния, и
             //первый перепад пилот-тона приходится на ее конец
             m_rec = i; m_in_gap = true; m_byte = 0;
-            m_zx_pulse = (unsigned int)(gap_end - pos);
+            m_zx_pulse = gap_end - pos;
             return;
         }
         if (pos < rec_end)
@@ -1467,7 +1671,7 @@ void TapeRecorder::zx_locate(uint64_t pos)
             uint64_t q = gap_end;
             unsigned int v = m_zx.next();
             while (v != 0 && q + v <= pos) { q += v; m_zx_level ^= 1; v = m_zx.next(); }
-            m_zx_pulse = (v != 0)?(unsigned int)(q + v - pos):0;
+            m_zx_pulse = (v != 0)?(q + v - pos):0;
             return;
         }
         p = rec_end;
@@ -1476,7 +1680,7 @@ void TapeRecorder::zx_locate(uint64_t pos)
 }
 
 // Длительность следующего полупериода. Ноль - лента кончилась
-unsigned int TapeRecorder::zx_next_pulse()
+uint64_t TapeRecorder::zx_next_pulse()
 {
     while (m_rec < m_records.size())
     {
@@ -1491,7 +1695,7 @@ unsigned int TapeRecorder::zx_next_pulse()
         if (m_rec < m_records.size())
         {
             m_in_gap = true;
-            return (unsigned int)m_records[m_rec].gap;
+            return m_records[m_rec].gap;
         }
     }
     return 0;
@@ -1499,20 +1703,31 @@ unsigned int TapeRecorder::zx_next_pulse()
 
 void TapeRecorder::zx_clock(unsigned int counter)
 {
+    //Часы записи: длительности полупериодов меряются по ним, а общий clock()
+    //до этого носителя не доходит
+    cycle_counter += counter;
+
     if (m_transport != T_STOP)
     {
         const unsigned int speed = (m_transport == T_BACK || m_transport == T_FORWARD)?m_fast_speed:1;
         const uint64_t step = (uint64_t)counter * speed;
         if (m_transport == T_BACK)
         {
+            //Пересчитывать автомат на ходу нельзя: zx_locate() внутри записи
+            //проигрывает Pulser от ее начала, а зовется это на КАЖДУЮ
+            //инструкцию. На блоке игры в сорок килобайт - под миллион шагов на
+            //вызов, и поток эмуляции встает намертво. Положение достаточно
+            //пересчитать один раз, когда лентопротяжка сменит режим
             m_pos = (m_pos > step)?(m_pos - step):0;
-            zx_locate(m_pos);
             if (m_pos == 0) set_transport(T_STOP);
         }
         else
         {
             m_pos += step;
-            if (m_pos >= m_total_units) { m_pos = m_total_units; set_transport(T_STOP); }
+            //Запись идет и за концом записанного: дальше на кассете чистая
+            //лента, и останавливает ее человек, а не последний блок
+            if (m_pos >= m_total_units && m_transport != T_RECORD)
+            { m_pos = m_total_units; set_transport(T_STOP); }
             else if (m_transport == T_PLAY)
             {
                 //Полупериоды здесь от 667 тактов и длиннее, а слайс - десяток,
@@ -1528,10 +1743,68 @@ void TapeRecorder::zx_clock(unsigned int counter)
                     m_zx_pulse = zx_next_pulse();
                 }
             }
-            else zx_locate(m_pos);
+            //T_FORWARD: то же самое - пересчет один раз, на смене режима
         }
+
+        //Машина перестала дрыгать линией - блок кончился. Ждать дольше нечего:
+        //самый длинный полупериод сигнала и есть пилот-тон
+        if (m_transport == T_RECORD && has_last_edge && m_zx_dec.active()
+            && cycle_counter > last_edge_cycles + zx_tape::SILENCE)
+            zx_end_block();
     }
     clock_sound(counter);
+}
+
+// Перепад на линии записи: его длительность и есть полупериод сигнала
+void TapeRecorder::zx_write_edge(unsigned int len)
+{
+    //Начало блока - первый импульс пилот-тона, а не тот, на котором автомат
+    //тон опознал: от него считается пауза перед записью
+    if (!m_zx_dec.active()) m_zx_block_pos = (m_pos > len)?(m_pos - len):0;
+    if (m_zx_dec.add(len)) zx_end_block();
+}
+
+// Блок кончился. Он ложится туда, где его написала головка, а хвост кассеты
+// за этим местом стирается: лента одна, и вписать блок в середину, ничего не
+// затерев, на ней нельзя
+void TapeRecorder::zx_end_block()
+{
+    //Автомат мог закрыть блок сам - тогда байты уже лежат в нем, а фаза сброшена;
+    //а мог и не закрыть, если сигнал просто оборвался на тишине
+    if (m_zx_dec.phase != zx_tape::Decoder::D_IDLE) m_zx_dec.close();
+    std::vector<uint8_t> block;
+    block.swap(m_zx_dec.bytes);
+    if (block.empty()) return;
+
+    if (!m_zx_erased)
+    {
+        uint64_t p = 0;
+        size_t keep = 0;
+        while (keep < m_records.size())
+        {
+            const uint64_t end = p + m_records[keep].gap + m_records[keep].units;
+            if (end > m_zx_block_pos) break;
+            p = end;
+            keep++;
+        }
+        m_records.resize(keep);
+        m_zx_erased = true;
+    }
+
+    uint64_t tail = 0;
+    for (size_t i = 0; i < m_records.size(); i++) tail += m_records[i].gap + m_records[i].units;
+
+    TapeRecord r;
+    r.gap = (m_zx_block_pos > tail)?(m_zx_block_pos - tail):0;
+    r.data.swap(block);
+    //Длительность берется каноническая, а не измеренная: в .tap лежат байты,
+    //и обратно лента играется теми же числами, какими ее читает ПЗУ
+    r.units = zx_tape::block_cycles(r.data.data(), r.data.size());
+    m_records.push_back(r);
+
+    m_writes++;
+    m_dirty = true;
+    rebuild_timeline();
 }
 
 

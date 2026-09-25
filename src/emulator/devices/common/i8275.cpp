@@ -488,6 +488,11 @@ emulator::Result I8275::load_state(const StateReader &r)
     r.n64("dma_bytes", m_dma_bytes);
     r.b("blinker", Blinker);
     r.b("blinker_char", BlinkerChar);
+    //Что устройство вывело в линию, оно обязано вывести заново: Interface
+    //восстанавливает значение, не вызывая обратных вызовов, а копия осталась
+    //от сброса. Снимок, снятый в обратной ходке, иначе не опустил бы VRTC на
+    //первой же видимой строке - и кадровое прерывание пропустило бы кадр
+    m_vrtc = (i_vrtc.value != _FFFF) && ((i_vrtc.value & 1) != 0);
     r.hex("row_buf0", m_row_buf[0], I8275_MAX_ROW);
     r.hex("row_buf1", m_row_buf[1], I8275_MAX_ROW);
     //The geometry follows the four Reset parameters, which are in RegMode

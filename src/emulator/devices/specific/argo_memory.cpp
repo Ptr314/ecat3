@@ -149,13 +149,40 @@ unsigned int ArgoMemory::get_value(unsigned int address)
     return Memory->get_value(translate_cpu(address));
 }
 
+// Отладочные чтения идут мимо кеша страниц, и это не мелочь: get_direct зовут
+// окно дампа, LOG mem.value и отладчик - то есть поток GUI, - а кеш
+// перестраивает поток эмуляции на каждой записи в регистр конфигурации (TCP/M
+// делает это на каждую пересылку квазидиска). Два потока, считающие в одни и
+// те же mutable поля, разъезжаются так: один прочитал старое значение, второй
+// пересчитал все четыре страницы и пометил кеш свежим, первый дописал в него
+// страницу по старому отображению. Процессор после этого молча ходит в чужую
+// банку до следующей смены конфигурации
 unsigned int ArgoMemory::get_direct(unsigned int address)
 {
-    return Memory->get_direct(translate_cpu(address));
+    return Memory->get_direct(translate(address, i_cpu.value));
 }
 
-void ArgoMemory::set_value(unsigned int address, unsigned int value, MAYBE_UNUSED bool force)
+// Разряд 0 действующей ячейки - защита первых 16 Кбайт от записи, и включает
+// ее НОЛЬ. Полярность видна по самим значениям, которые пишут программы:
+// монитор и TCP/M ставят $61, а система обязана писать в TPA с $0100 - значит
+// единица разрешает; ZX.COM последним действием пишет $D8, и по $0000-$3FFF в
+// этот момент лежит копия ПЗУ Спектрума, которой полагается быть ПЗУ. Для того
+// разряд и нужен: без него первая же программа, записавшая что-нибудь по
+// младшим адресам - а на Спектруме так делают, - убила бы образ ПЗУ вместе с
+// собственной машиной.
+//
+// Проверяется адрес до отображения: на схеме это разряды A14 и A15, то есть
+// первая страница адресного пространства, куда бы прошивка ее ни отправила.
+//
+// Пересылки ПДП здесь не проверяются. Гасит ли этот разряд запись и им, со
+// схемы не выяснить, а увидеть разницу не на чем: во всех значениях, которые
+// программы кладут в ячейки каналов ($61, $63, $CB), он стоит.
+void ArgoMemory::set_value(unsigned int address, unsigned int value, bool force)
 {
+    //force - это внутренняя запись мимо шины (COMMAND mem.set, редактор дампа,
+    //загрузка образа), и защита шины ее не касается: иначе правка ПЗУ Спектрума
+    //из скрипта молча пропадала бы, не сказав почему
+    if (!force && (address & 0xC000) == 0 && (i_cpu.value & 1) == 0) return;
     Memory->set_value(translate_cpu(address), value);
 }
 
@@ -167,8 +194,12 @@ void ArgoMemory::run_transfer()
 {
     const unsigned int addr0 = DMA->RgA[0] | (DMA->RgA[1] << 8);
     const unsigned int addr1 = DMA->RgA[2] | (DMA->RgA[3] << 8);
-    const unsigned int count_reg = DMA->RgC[0] | (DMA->RgC[1] << 8);
-    const unsigned int count = (count_reg & 0x3FFF) + 1;
+    //Длина - по более короткому из двух каналов: конечный счет останавливает
+    //оба (TC STOP, разряд 6 режима), и первый досчитавший обрывает пересылку.
+    //МОНИТОР строит одинаковые, так что сегодня это ничего не меняет
+    const unsigned int c0 = (DMA->RgC[0] | (DMA->RgC[1] << 8)) & 0x3FFF;
+    const unsigned int c1 = (DMA->RgC[2] | (DMA->RgC[3] << 8)) & 0x3FFF;
+    const unsigned int count = ((c0 < c1)?c0:c1) + 1;
 
     const unsigned int blk0 = block_of(i_dma0);
     const unsigned int blk1 = block_of(i_dma1);
@@ -188,15 +219,21 @@ void ArgoMemory::run_transfer()
         const unsigned int a = ((ch == 0)?addr0:addr1) + count;
         DMA->RgA[ch*2]     = (uint8_t)(a & 0xFF);
         DMA->RgA[ch*2 + 1] = (uint8_t)((a >> 8) & 0xFF);
-        DMA->RgC[ch*2]     = 0;
-        DMA->RgC[ch*2 + 1] = (uint8_t)(DMA->RgC[ch*2 + 1] & 0xC0);
+        //Счетчик на конечном счете переходит через ноль в $3FFF - так его
+        //кончает dma_next() у самого ВТ57, и одна микросхема должна кончать
+        //счет одинаково, чьей бы рукой пересылка ни была сделана
+        DMA->RgC[ch*2]     = 0xFF;
+        DMA->RgC[ch*2 + 1] = (uint8_t)((DMA->RgC[ch*2 + 1] & 0xC0) | 0x3F);
     }
     DMA->RgMode &= ~0x03;
     DMA->RgState |= 0x03;
 
-    if (m_log_count < ARGO_LOG_SIZE)
+    //Журнал кольцевой: разбирают в нем ту пересылку, которая только что была,
+    //а не первые шестнадцать со сброса - после загрузки TCP/M с квазидиска их
+    //набирается на порядок больше
     {
-        LogEntry &e = m_log[m_log_count++];
+        LogEntry &e = m_log[m_log_count % ARGO_LOG_SIZE];
+        m_log_count++;
         e.blk0 = blk0; e.blk1 = blk1;
         e.addr0 = addr0; e.addr1 = addr1; e.count = count;
         e.phys0 = translate_dma(addr0, blk0); e.phys1 = translate_dma(addr1, blk1);
@@ -244,7 +281,7 @@ bool ArgoMemory::get_field(const std::string &field, unsigned int from, unsigned
     {
         out.numeric = true; out.width = 8;
         for (unsigned int p = 0; p < 4; p++)
-            out.values.push_back(translate_cpu(p << 14) >> 14);
+            out.values.push_back(translate(p << 14, i_cpu.value) >> 14);
         return true;
     }
     if (field == "blocks")
@@ -257,9 +294,12 @@ bool ArgoMemory::get_field(const std::string &field, unsigned int from, unsigned
     if (field == "log")
     {
         out.numeric = true; out.width = 32;
-        for (unsigned int i = 0; i < m_log_count; i++)
+        //Кольцо отдается по порядку, от самой старой из сохранившихся
+        const unsigned int n = (m_log_count < ARGO_LOG_SIZE)?m_log_count:ARGO_LOG_SIZE;
+        const unsigned int first = m_log_count - n;
+        for (unsigned int i = 0; i < n; i++)
         {
-            const LogEntry &e = m_log[i];
+            const LogEntry &e = m_log[(first + i) % ARGO_LOG_SIZE];
             out.values.push_back(e.blk0);  out.values.push_back(e.blk1);
             out.values.push_back(e.addr0); out.values.push_back(e.addr1);
             out.values.push_back(e.count);

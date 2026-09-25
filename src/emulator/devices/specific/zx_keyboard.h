@@ -30,6 +30,13 @@ private:
     // сразу: полуряд $7F он читает ради разряда 6, а по разряду 0 того же
     // ответа бросает загрузку, если нажат пробел
     Interface i_ear;
+    // Команда лентопротяжке. В режиме ZX её ведут стрелки, а не процессор:
+    // на видео живой машины автор набирает LOAD "" и пускает ленту стрелкой
+    // вверх, причём это работает и в запущенной игре. Программой это быть не
+    // может - игра занимает машину целиком, а в образе ПЗУ Спектрума нет ни
+    // одного перехвата (проверены $0038, $0066, $028E, $0556, $05E7, NMIADD
+    // пуст). Значит клавиши разбирает то же железо, что собирает матрицу
+    Interface i_control;
     Keyboard * Source = nullptr;    // У кого спрашивать нажатия
 
     // Восемь полурядов по пять клавиш, именами клавиш машины
@@ -38,11 +45,31 @@ private:
 
     void set_default_matrix();
     bool ear_level() const;
+    void sample_keys();
+
+    // Сканирование включено. После входа в режим ZX клавиатуры нет, пока не
+    // нажмут Ф10 - так на живой машине, автор ролика так и говорит:
+    // «включается сканирование клавиатуры»
+    bool m_scan = false;
+    bool m_f10_down = false;
+    // Матрица, какой ее увидит машина: собирается раз в миллисекунду вместе с
+    // опросом клавиш, а не при чтении порта. ПЗУ Спектрума читает $FE в цикле
+    // (LD-EDGE-1, $05E7 - раз в полсотни тактов на всю загрузку с ленты), и
+    // брать там замок с копией вектора значило бы платить за это десятки тысяч
+    // раз в секунду
+    uint8_t m_rows[8] = {0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F};
+    unsigned int m_control = 0;     // Последняя команда лентопротяжке, она держится
+    unsigned int m_ticks = 0;       // Опрос клавиш раз в миллисекунду
 
 public:
     ZXKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     emulator::Result load_config(SystemData *sd) override;
+
+    void clock(unsigned int counter) override;
+    void reset(bool cold) override;
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
 
     unsigned int get_value(unsigned int address) override;
     unsigned int get_direct(unsigned int address) override;

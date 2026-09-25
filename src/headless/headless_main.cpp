@@ -20,6 +20,7 @@
 #include "libs/zip_reader.h"
 #include "libs/zip_writer.h"
 #include "emulator/state.h"
+#include "emulator/devices/common/tape_zx.h"
 //Часть помощников dsk_tools объявлена в его внутреннем заголовке, и звать
 //его надо по полному пути: короткий "utils.h" из dsk_tools.h у MSVC попадает
 //в emulator/utils.h - он ищет кавычечный include и по цепочке включающих
@@ -341,6 +342,73 @@ bool check_zip_round_trip(std::string &message)
     return true;
 }
 
+//SAVE and LOAD of a Spectrum tape are one waveform read in both directions:
+//Pulser hands out the half periods, Decoder puts the block back together. A
+//round trip here catches a misplaced boundary between two lengths, which on a
+//machine would only show as a checksum error deep inside a game
+bool check_zx_tape_round_trip(std::string &message)
+{
+    struct Case { const char * what; std::vector<uint8_t> data; };
+    std::vector<Case> cases;
+
+    //A header: the first byte below $80 is what gives it the long pilot tone
+    std::vector<uint8_t> header;
+    header.push_back(0x00);
+    for (unsigned i = 0; i < 17; i++) header.push_back(static_cast<uint8_t>(0x20 + i));
+    cases.push_back({"header", header});
+
+    //Every byte value, so that no bit pattern is misread
+    std::vector<uint8_t> all;
+    all.push_back(0xFF);
+    for (unsigned i = 0; i < 256; i++) all.push_back(static_cast<uint8_t>(i));
+    cases.push_back({"every byte value", all});
+
+    //All zeroes and all ones: the two lengths, one after the other with no
+    //change to resynchronise on
+    std::vector<uint8_t> flat(64, 0x00);
+    flat[0] = 0xFF;
+    for (size_t i = 32; i < flat.size(); i++) flat[i] = 0xFF;
+    cases.push_back({"one length at a time", flat});
+
+    //The second pass stretches every third half period by a third, the way a
+    //DMA burst does on the Арго: the decoder is supposed to survive that, and
+    //that is the whole reason it measures the pilot tone and sums the halves
+    for (size_t c = 0; c < cases.size() * 2; c++)
+    {
+        const Case &t = cases[c % cases.size()];
+        const bool bursts = c >= cases.size();
+        zx_tape::Pulser  pulser;
+        zx_tape::Decoder decoder;
+        pulser.start(t.data.data(), t.data.size());
+
+        std::vector<uint8_t> back;
+        unsigned int guard = 0;
+        for (unsigned int v = pulser.next(); v != 0; v = pulser.next())
+        {
+            if (++guard > 2000000) { message = std::string(t.what) + ": the waveform does not end"; return false; }
+            if (bursts && (guard % 3) == 0) v += v / 3;
+            if (decoder.add(v)) { back = decoder.bytes; decoder.clear(); }
+        }
+        //The last bit of a block is followed by nothing: on a tape that is the
+        //silence after it, and here it is the end of the waveform
+        if (back.empty() && decoder.close()) back = decoder.bytes;
+
+        if (back != t.data)
+        {
+            message = std::string(t.what) + (bursts?" with DMA bursts":"") + ": got " + std::to_string(back.size())
+                    + " bytes of " + std::to_string(t.data.size());
+            for (size_t i = 0; i < back.size() && i < t.data.size(); i++)
+                if (back[i] != t.data[i])
+                {
+                    message += ", first difference at " + std::to_string(i);
+                    break;
+                }
+            return false;
+        }
+    }
+    return true;
+}
+
 //The hex dump is what a saved state writes RAM as, and the '*' folding is the
 //part of it that can silently put bytes at the wrong address
 bool check_hex_round_trip(std::string &message)
@@ -468,6 +536,11 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     const bool hex_ok = check_hex_round_trip(message);
     if (!hex_ok) { std::cout << "FAIL hex: " << message << std::endl; failed++; }
     std::cout << "hex dump round trip: " << (hex_ok ? "ok" : "FAILED") << std::endl;
+
+    message.clear();
+    const bool zx_ok = check_zx_tape_round_trip(message);
+    if (!zx_ok) { std::cout << "FAIL zx tape: " << message << std::endl; failed++; }
+    std::cout << "ZX tape round trip: " << (zx_ok ? "ok" : "FAILED") << std::endl;
 
     return failed ? 1 : 0;
 }

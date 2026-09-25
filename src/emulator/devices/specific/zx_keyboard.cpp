@@ -11,7 +11,11 @@ ZXKeyboard::ZXKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     AddressableDevice(im, cd)
     , i_port(this, im, 16, "port", MODE_R)
     , i_ear(this, im, 1, "ear", MODE_R)
+    , i_control(this, im, 8, "control", MODE_W)
 {
+    //Клавиши опрашиваются по времени, а не при чтении порта: иначе удержание
+    //Ф10 переключало бы сканирование без конца
+    m_clocked = true;
     addresable_size = 1;
     can_write = false;
     set_default_matrix();
@@ -70,21 +74,18 @@ unsigned int ZXKeyboard::get_value(MAYBE_UNUSED unsigned int address)
     const unsigned int sel = (i_port.value >> 8) & 0xFF;
     unsigned int res = 0x1F;
 
-    const std::vector<std::string> held = Source->ids_held();
-    if (!held.empty())
+    //Сканирование выключено - клавиатуры для Спектрума просто нет. Вход
+    //магнитофона при этом остаётся: он не часть опроса клавиш
+    if (!m_scan)
     {
-        for (unsigned int r = 0; r < 8; r++)
-        {
-            if (((sel >> r) & 1) != 0) continue;
-            for (unsigned int b = 0; b < 5; b++)
-            {
-                const std::string & id = m_matrix[r][b];
-                if (id.empty()) continue;
-                for (size_t i = 0; i < held.size(); i++)
-                    if (held[i] == id) { res &= ~(1u << b); break; }
-            }
-        }
+        m_last = res | 0xA0 | (ear_level()?0x40:0);
+        return m_last;
     }
+
+    //Матрица уже собрана опросом клавиш, здесь остается только И выбранных
+    //полурядов - за это и платит цикл ПЗУ, читающий порт без передышки
+    for (unsigned int r = 0; r < 8; r++)
+        if (((sel >> r) & 1) == 0) res &= m_rows[r];
 
     //Разряды 5 и 7 не подключены и читаются единицами, а разряд 6 - вход
     //магнитофона. Пока линия не подведена или на ней никого нет, он тоже
@@ -118,11 +119,18 @@ std::vector<DeviceFieldInfo> ZXKeyboard::get_device_fields()
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
     r.push_back({"rows", "All eight half-rows as the machine would read them", false});
     r.push_back({"ear",  "Tape input, bit 6 of the port: 1 when nothing drives it", false});
+    r.push_back({"scan", "1 while key scanning is on, F10 toggles it",                 false});
     return r;
 }
 
 bool ZXKeyboard::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
+    if (field == "scan")
+    {
+        out.numeric = true; out.width = 8;
+        out.values.push_back(m_scan?1:0);
+        return true;
+    }
     if (field == "ear")
     {
         out.numeric = true; out.width = 8;
@@ -132,18 +140,119 @@ bool ZXKeyboard::get_field(const std::string &field, unsigned int from, unsigned
     if (field == "rows")
     {
         out.numeric = true; out.width = 8;
-        const std::vector<std::string> held = Source?Source->ids_held():std::vector<std::string>();
-        for (unsigned int r = 0; r < 8; r++)
+        //То, что прочитает машина: при выключенном сканировании клавиш нет
+        if (!m_scan)
         {
-            unsigned int v = 0x1F;
-            for (unsigned int b = 0; b < 5; b++)
-                for (size_t i = 0; i < held.size(); i++)
-                    if (held[i] == m_matrix[r][b]) { v &= ~(1u << b); break; }
-            out.values.push_back(v | 0xE0);
+            for (unsigned int r = 0; r < 8; r++) out.values.push_back(0xFF);
+            return true;
         }
+        for (unsigned int r = 0; r < 8; r++) out.values.push_back(m_rows[r] | 0xE0u);
         return true;
     }
     return AddressableDevice::get_field(field, from, to, out);
+}
+
+void ZXKeyboard::reset(MAYBE_UNUSED bool cold)
+{
+    //После сброса клавиатуры нет, пока не нажмут Ф10
+    m_scan = false;
+    m_f10_down = false;
+    m_ticks = 0;
+    m_control = 0;
+    for (unsigned int r = 0; r < 8; r++) m_rows[r] = 0x1F;
+}
+
+// Признак сканирования и команда лентопротяжке - защелки самой платы, а не
+// состояние хоста: снимок, снятый в режиме ZX с включенной клавиатурой, должен
+// открываться с включенной. Матрица сюда не идет - ее держат нажатые клавиши
+// хоста, а их после восстановления никто не держит, и она соберется заново
+// на первом же опросе
+void ZXKeyboard::save_state(StateWriter &w)
+{
+    AddressableDevice::save_state(w);
+    w.b("scan", m_scan);
+    w.u("control", m_control, 8);
+}
+
+emulator::Result ZXKeyboard::load_state(const StateReader &r)
+{
+    emulator::Result res = AddressableDevice::load_state(r);
+    if (!res) return res;
+    r.b("scan", m_scan);
+    r.u("control", m_control);
+    m_f10_down = false;
+    return emulator::Result::ok();
+}
+
+// Разряды команды те же, что понимает лентопротяжка: она их и получает
+#define ZXK_PLAY     0x10
+#define ZXK_BACK     0x20
+#define ZXK_FORWARD  0x40
+#define ZXK_STOP     0x80
+
+void ZXKeyboard::clock(unsigned int counter)
+{
+    //Раз в миллисекунду: перепада нажатия этого хватает с запасом, а
+    //ids_held() копирует вектор под замком и на каждую команду его звать
+    //нельзя
+    m_ticks += counter;
+    const unsigned int step = (m_system_clock > 0)?(m_system_clock / 1000):1000;
+    if (m_ticks < step) return;
+    m_ticks -= step;
+    sample_keys();
+}
+
+// Ф10 и стрелки железо разбирает само - процессор об этом не знает, потому
+// управление лентой и работает под запущенной игрой
+void ZXKeyboard::sample_keys()
+{
+    if (Source == nullptr) return;
+    const std::vector<std::string> held = Source->ids_held();
+
+    for (unsigned int r = 0; r < 8; r++)
+    {
+        unsigned int v = 0x1F;
+        for (unsigned int b = 0; b < 5; b++)
+        {
+            const std::string & id = m_matrix[r][b];
+            if (id.empty()) continue;
+            for (size_t i = 0; i < held.size(); i++)
+                if (held[i] == id) { v &= ~(1u << b); break; }
+        }
+        m_rows[r] = (uint8_t)v;
+    }
+
+    bool f10 = false, up = false, down = false, left = false, right = false;
+    for (size_t i = 0; i < held.size(); i++)
+    {
+        const std::string & k = held[i];
+        if      (k == "key_f10")   f10 = true;
+        else if (k == "key_up")    up = true;
+        else if (k == "key_down")  down = true;
+        else if (k == "key_left")  left = true;
+        else if (k == "key_right") right = true;
+    }
+
+    //Ф10 переключает сканирование по нажатию, а не по уровню
+    if (f10 && !m_f10_down) m_scan = !m_scan;
+    m_f10_down = f10;
+
+    //Стрелки работают только при включённом сканировании: пока железо не
+    //опрашивает клавиатуру, оно и стрелок не видит
+    if (!m_scan) return;
+
+    //Команда держится до следующей стрелки, как кнопка лентопротяжки: иначе
+    //лента вставала бы на отпускании клавиши
+    unsigned int c = m_control;
+    if (up)         c = ZXK_PLAY;
+    else if (down)  c = ZXK_STOP;
+    else if (left)  c = ZXK_BACK;
+    else if (right) c = ZXK_FORWARD;
+    if (c != m_control)
+    {
+        m_control = c;
+        i_control.change(c);
+    }
 }
 
 ComputerDevice * create_zx_keyboard(InterfaceManager *im, EmulatorConfigDevice *cd)

@@ -7,7 +7,7 @@
 # видит - для него по этим адресам по-прежнему основная память.
 # @timeout 40
 
-MACHINE "argo/Argo.cfg"
+MACHINE "unior/Argo.cfg"
 WAIT 1000
 
 LOGDEFS 8,16

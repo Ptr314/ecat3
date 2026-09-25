@@ -6,6 +6,11 @@
 [vg75.geometry] $50 $10 $10 $1C $03
 [mem.config] $D8 $00 $61
 [mem.pages] $00 $06 $02 $03
+=== клавиатура ZX: пока заперта ===
+[zx-kbd.scan] $00
+[zx-kbd.rows] $FF $FF $FF $FF $FF $FF $FF $FF
+=== Ф10 включает сканирование ===
+[zx-kbd.scan] $01
 === клавиатура ZX ===
 [zx-kbd.rows] $FF $FF $FF $FF $FF $FF $FF $FF
 [zx-kbd.rows] $FF $FF $FE $FF $FF $FF $FF $FF
@@ -25,3 +30,31 @@
 [display.border_changes] 149
 --- какие цвета встретились в кадре ---
 [display.border_seen] $0024
+=== стрелки ведут лентопротяжку ===
+[tape.transport] $00
+[tape.transport] $01
+[tape.transport] $00
+=== SAVE: чистая кассета ===
+[tape.records] $0000
+[tape.transport] $02
+=== записано ===
+[tape.records] $0001
+[tape.writes] $00000001
+[tape.recorded] 9
+=== образ загружен обратно ===
+[tape.records] $0001
+[tape.record] $0000 $0000
+=== защита первых 16 Кбайт ===
+[mem.config] $D8 $00 $61
+--- ниже $4000 запись не прошла, выше прошла ---
+[mem.value] $0100: $00
+[mem.value] $7F00: $AA
+=== разряд 0 в единицу - защиты нет ===
+[mem.value] $0100: $AA
+=== теплый сброс режим не трогает ===
+[display.resolution] 320x256
+[vg75.geometry] $50 $10 $10 $1C $03
+[mem.config] $D8 $00 $61
+=== холодный возвращает машину в исходное ===
+[display.resolution] 480x250
+[mem.config] $61 $00 $61

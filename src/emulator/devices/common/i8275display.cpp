@@ -255,6 +255,10 @@ void I8275Display::save_state(StateWriter &w)
     w.n("frame_cpl", m_frame_cpl);
     w.n("frame_lps", m_frame_lps);
     w.n("frame_h", m_frame_h);
+    //Вместе с геометрией: без него кадр режима ZX до первого frame_complete()
+    //рисуется шириной текстового, и поверхность дважды меняет размер - ровно
+    //то, ради чего геометрия кадра и едет в снимок
+    w.b("frame_zx", m_frame_zx);
     w.b("attr_delay", AttrDelay);
     w.b("fa_reverse", FAReverse);
     w.b("fa_under", FAUnder);
@@ -296,6 +300,7 @@ emulator::Result I8275Display::load_state(const StateReader &r)
     r.u("frame_cpl", m_frame_cpl);
     r.u("frame_lps", m_frame_lps);
     r.u("frame_h", m_frame_h);
+    r.b("frame_zx", m_frame_zx);
     r.b("attr_delay", AttrDelay);
     r.b("fa_reverse", FAReverse);
     r.b("fa_under", FAUnder);

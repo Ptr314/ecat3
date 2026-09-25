@@ -14,7 +14,7 @@
 #
 # Запуск из каталога deploy:  eCat3 --script scripts/argo-zx-game.ecat
 
-MACHINE "argo/Argo.cfg"
+MACHINE "unior/Argo.cfg"
 WAIT 1500
 
 # Поток знакомест: двенадцать рабочих строк, по 82 байта каждая. Строки 0-1 и

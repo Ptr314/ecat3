@@ -11,7 +11,7 @@
 # и допуск по умолчанию проглатывает даже смену цвета всего текста
 # @timeout 60
 
-MACHINE "argo/Argo.cfg"
+MACHINE "unior/Argo.cfg"
 WAIT 1500
 
 COMMAND tape.load("../files/argo-test.bt")

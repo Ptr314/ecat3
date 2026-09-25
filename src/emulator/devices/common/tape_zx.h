@@ -245,4 +245,154 @@ namespace zx_tape
         if (out.empty()) { err = "Not a ZX tape image"; return false; }
         return true;
     }
+
+    // Обратное Pulser: полупериоды приходят по одному, а на выходе блоки - те
+    // же, что лягут в .tap. Это SAVE: ПЗУ дрыгает разрядом 3 порта $FE из
+    // SA-BYTES ($04C2), теми же длительностями, какие потом читает LD-BYTES.
+    //
+    // Мерить их абсолютными числами нельзя, и вот почему. ВГ75 снимает
+    // процессор с шины пачками - восемьдесят пересылок подряд в начале каждой
+    // знакоместной строки, - а SA-BYTES считает СВОИ такты. Пачка либо попала
+    // в полупериод, либо нет, и один и тот же ноль выходит то 855 тактов, то
+    // 1175: разброс в треть, больше любого разумного допуска. Машина этого не
+    // замечает, потому что LD-BYTES меряет тем же аршином и с тем же
+    // разбросом, а декодер обязан.
+    //
+    // Поэтому здесь два приема, оба взяты у настоящего загрузчика:
+    //   - сначала ловится пилот-тон и по нему берется мерка. Все границы
+    //     потом считаются в долях от нее, а не от 2168;
+    //   - бит решается по СУММЕ двух полупериодов. Пачка попадает в один из
+    //     них, и в сумме ее вес вдвое меньше; вдобавок между половинками бита
+    //     машина успевает сделать еще что-то, и первая всегда чуть длиннее.
+    // Что остается абсолютным - только конец блока, и тот по тишине.
+    const unsigned int LIM_SUM   = T_BIT0 + T_BIT1;             //2565
+
+    // Столько полупериодов подряд считаются пилот-тоном, а не помехой. ПЗУ
+    // выдает 3223 даже перед данными, так что запас здесь огромный
+    const unsigned int PILOT_LOCK = 64;
+
+    // В какие рамки должен уложиться полупериод, чтобы вообще считаться
+    // пилот-тоном, пока мерки еще нет
+    const unsigned int PILOT_MIN = T_PILOT / 2;
+    const unsigned int PILOT_MAX = T_PILOT * 3;
+
+    // Тишина, после которой блок считается кончившимся. Сам сигнал молчать
+    // так долго не может: самый длинный его полупериод - пилот-тон
+    const unsigned int SILENCE = 4 * T_PILOT;
+
+    struct Decoder
+    {
+        enum Phase { D_IDLE, D_PILOT, D_SYNC2, D_DATA };
+
+        Phase        phase = D_IDLE;
+        unsigned int lock  = 0;             //Насчитано полупериодов пилот-тона
+        uint64_t     sum   = 0;             //Их сумма: из нее и берется мерка
+        unsigned int unit  = T_PILOT;       //Измеренный полупериод пилот-тона
+        std::vector<uint8_t> bytes;         //Собранный блок
+        uint8_t      cur   = 0;
+        unsigned int bits  = 0;
+        bool         half  = false;         //Первый полупериод бита уже был
+        unsigned int first = 0;             //Его длина
+
+        //Заметно короче пилот-тона - это синхроимпульс: 667 и 735 против 2168,
+        //и никакой разброс их не сблизит
+        bool is_short(unsigned int t) const { return t * 5 < (uint64_t)unit * 3; }
+        //Заметно длиннее - это уже не сигнал
+        bool is_long(unsigned int t)  const { return t * 2 > (uint64_t)unit * 3; }
+
+        //Пилот-тон - это не «импульс нужной длины», а ряд ОДИНАКОВЫХ импульсов.
+        //Так он и ловится: длина берется какая есть, лишь бы соседние сходились
+        void pilot_edge(unsigned int t)
+        {
+            if (t < PILOT_MIN || t > PILOT_MAX) { lock = 0; sum = 0; return; }
+            if (lock != 0)
+            {
+                const unsigned int mean = (unsigned int)(sum / lock);
+                const unsigned int d = (t > mean)?(t - mean):(mean - t);
+                if (d * 4 > mean) { lock = 0; sum = 0; }
+            }
+            lock++;
+            sum += t;
+            if (lock >= PILOT_LOCK)
+            {
+                unit = (unsigned int)(sum / lock);
+                phase = D_PILOT;
+            }
+        }
+
+        //Автомат что-то слышит: тишина в этот момент и есть конец блока
+        bool active() const { return phase != D_IDLE || lock != 0; }
+
+        void clear()
+        {
+            phase = D_IDLE; lock = 0; sum = 0; unit = T_PILOT;
+            cur = 0; bits = 0; half = false; first = 0;
+            bytes.clear();
+        }
+
+        //Блок кончился. Недобранный байт не байт: блок обрывается на целом,
+        //а сами байты остаются в bytes - их забирает тот, кто спрашивал
+        bool close()
+        {
+            const bool got = (phase == D_DATA) && !bytes.empty();
+            phase = D_IDLE; lock = 0; sum = 0;
+            cur = 0; bits = 0; half = false; first = 0;
+            return got;
+        }
+
+        //true - блок собран и лежит в bytes
+        bool add(unsigned int t)
+        {
+            switch (phase)
+            {
+                case D_IDLE:
+                    pilot_edge(t);
+                    return false;
+
+                case D_PILOT:
+                    //Пилот-тон кончается синхроимпульсом, и только им
+                    if (is_short(t)) { phase = D_SYNC2; return false; }
+                    if (is_long(t)) close();
+                    return false;
+
+                case D_SYNC2:
+                    //Второй синхроимпульс длиннее первого, но мерка им одна:
+                    //различать их незачем, важно что их два
+                    if (is_short(t))
+                    {
+                        phase = D_DATA;
+                        bytes.clear(); cur = 0; bits = 0; half = false;
+                    }
+                    else close();
+                    return false;
+
+                default:    //D_DATA
+                {
+                    //Блок кончается тишиной, а не коротким импульсом: ноль с
+                    //пачкой ПДП внутри и синхроимпульс без нее различаются уже
+                    //плохо, и строгая нижняя граница рвала бы блок на середине
+                    if (is_long(t)) return close();
+                    if (!half) { first = t; half = true; return false; }
+                    half = false;
+                    const unsigned int lim = (unsigned int)((uint64_t)LIM_SUM * unit / T_PILOT);
+                    cur = (uint8_t)((cur << 1) | (((first + t) >= lim)?1u:0u));
+                    if (++bits == 8) { bytes.push_back(cur); cur = 0; bits = 0; }
+                    return false;
+                }
+            }
+        }
+    };
+
+    // .tap из готовых блоков: длина и блок, длина сама себя не считает
+    inline void build_tap(const std::vector<TapeRecord> &recs, std::vector<uint8_t> &out)
+    {
+        out.clear();
+        for (size_t i = 0; i < recs.size(); i++)
+        {
+            const std::vector<uint8_t> &d = recs[i].data;
+            out.push_back((uint8_t)(d.size() & 0xFF));
+            out.push_back((uint8_t)((d.size() >> 8) & 0xFF));
+            out.insert(out.end(), d.begin(), d.end());
+        }
+    }
 }

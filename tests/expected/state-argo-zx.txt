@@ -1,0 +1,9 @@
+=== лента Спектрума в снимке ===
+[tape.records] 2
+[tape.total] 10
+[tape.position] 2
+[tape.record] 0 0
+=== играет дальше с того же места ===
+[tape.position] 4
+[tape.sound] 6234
+[tape.transport] 1

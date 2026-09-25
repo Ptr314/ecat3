@@ -18,7 +18,7 @@
 # ($FAD1-$FADD), и без неё образ не загрузится обратно.
 # @timeout 40
 
-MACHINE "argo/Argo.cfg"
+MACHINE "unior/Argo.cfg"
 WAIT 1500
 LOGDEFS 8,16
 

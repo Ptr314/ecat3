@@ -843,9 +843,13 @@ inline void z80core::do_outi_outd(int16_t hlinc)
 {
     PartsRecLE T, D;
     T.b.L = read_mem(REG_HL);
+    //B уменьшается ДО обращения к порту: у OUTI на A8-A15 уходит уже новое
+    //значение, в отличие от INI, где порядок обратный. Видно это только
+    //устройству, читающему полный адрес порта, - у нас такие есть на Арго,
+    //и оба по чтению, так что поведение машин не меняется
+    REG_B--;
     write_port(REG_BC, T.b.L);
     REG_HL += hlinc;
-    REG_B--;
 
     calc_z80_flags(
         REG_B,                          //Value

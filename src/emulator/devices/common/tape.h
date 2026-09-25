@@ -131,6 +131,8 @@ protected:
     //Чистая кассета: записей нет, а лента есть
     bool     m_blank = false;
     uint64_t m_blank_units = 0;
+    //То же в секундах: у ленты Спектрума единица - такт, а не битовый интервал
+    unsigned int m_blank_seconds = 1800;
     bool     m_dirty = false;   // Машина писала на кассету, а в файл это еще не легло
 
     TapeTransport m_transport = T_STOP;
@@ -183,14 +185,25 @@ protected:
     // Волна не разворачивается: в m_records лежат блоки как они были в файле,
     // а полупериоды выдает автомат. Почему - написано в tape_zx.h
     zx_tape::Pulser m_zx;
-    unsigned int m_zx_pulse = 0;    // Сколько тактов идет текущий полупериод
+    // Сколько тактов идет текущий полупериод. Шестьдесят четыре разряда не
+    // роскошь: пауза - это тоже "полупериод", а на чистой кассете в полчаса
+    // при 3.4 МГц она доходит до шести миллиардов тактов
+    uint64_t m_zx_pulse = 0;
     unsigned int m_zx_level = 0;
     std::vector<uint8_t> m_source;  // Исходный файл: он же и едет в снимок
+
+    // Запись: SAVE Спектрума - это тот же сигнал, разобранный обратно. Сюда
+    // приходят длительности полупериодов, отсюда выходят блоки
+    zx_tape::Decoder m_zx_dec;
+    uint64_t m_zx_block_pos = 0;    // Где на ленте начался собираемый блок
+    bool     m_zx_erased = false;   // Хвост кассеты уже срезан этой записью
 
     emulator::Result zx_load_file(const std::string &file_name, bool tzx);
     void zx_clock(unsigned int counter);
     void zx_locate(uint64_t pos);
-    unsigned int zx_next_pulse();
+    uint64_t zx_next_pulse();
+    void zx_write_edge(unsigned int len);
+    void zx_end_block();
 
 public:
     std::string files;

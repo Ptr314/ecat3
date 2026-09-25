@@ -8,7 +8,7 @@
 # и допуск по умолчанию проглатывает даже смену цвета всего текста
 # @timeout 40
 
-MACHINE "argo/Argo.cfg"
+MACHINE "unior/Argo.cfg"
 WAIT 2000
 
 LOGDEFS 8,16
