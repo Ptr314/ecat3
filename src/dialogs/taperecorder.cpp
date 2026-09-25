@@ -431,6 +431,11 @@ void TapeRecorderWindow::save_recording()
 void TapeRecorderWindow::closeEvent(QCloseEvent *event)
 {
     update_timer.stop();
+    //Лентопротяжка зовет окно на каждой смене режима, и этот вызов идет с
+    //потока эмуляции. Окно сейчас будет удалено (WA_DeleteOnClose), так что
+    //сначала снимаем обработчик, иначе машина, продолжающая крутить ленту,
+    //позовет его уже по освобожденной памяти
+    d->on_mode_changed = nullptr;
     //Лента, которую держит сама машина (линия двигателя поднята), закрытием
     //окна не останавливается: окно к ней отношения не имеет
     if (!d->is_machine_driven()) d->stop();
@@ -442,16 +447,27 @@ static QString tape_time(int seconds)
     return QString::number(seconds / 60) + ":" + QString("%1").arg(seconds % 60, 2, 10, QChar('0'));
 }
 
+//horizontalAdvance появился в Qt 5.11, а сборка для XP идет на 5.6; width()
+//в Qt 6 убрали совсем
+static int text_width(const QFontMetrics & fm, const QString & s)
+{
+    #if QT_VERSION < QT_VERSION_CHECK(5, 11, 0)
+        return fm.width(s);
+    #else
+        return fm.horizontalAdvance(s);
+    #endif
+}
+
 //Выедаем середину, а не конец: расширение говорит, что за лента.
 //QFontMetrics::elidedText тут не годится - он меряет без межбуквенного
 //интервала, который табло задает стилем, и на длинном имени промахивается
 static QString elide_middle(const QFontMetrics & fm, const QString & name, int width)
 {
-    if (fm.horizontalAdvance(name) <= width) return name;
+    if (text_width(fm, name) <= width) return name;
     for (int cut = 1; cut < name.length(); cut++) {
         const int head = (name.length() - cut) / 2;
         const QString s = name.left(head) + QString::fromUtf8("…") + name.mid(head + cut);
-        if (fm.horizontalAdvance(s) <= width) return s;
+        if (text_width(fm, s) <= width) return s;
     }
     return QString::fromUtf8("…");
 }
@@ -464,7 +480,7 @@ QString TapeRecorderWindow::fit_name(const QString & time) const
     //Табло узкое и не растягивается, а имя - единственное, что можно ужать:
     //время должно быть видно всегда
     const QFontMetrics fm = ui->textLabel->fontMetrics();
-    const int left = ui->textLabel->width() - fm.horizontalAdvance(" " + time);
+    const int left = ui->textLabel->width() - text_width(fm, " " + time);
     return elide_middle(fm, loaded_file, qMax(left, 0)) + " " + time;
 }
 

@@ -1248,6 +1248,21 @@ void MainWindow::load_config(QString file_name, bool set_default, bool run_embed
         e->stop_script();
 
         e->stop_emulation();
+
+        //Отладочные окна держат указатели на устройства, а те сейчас исчезнут
+        //вместе со старой машиной. Окно магнитофона, например, раз в секунду
+        //опрашивает лентопротяжку и останавливает ее на закрытии - и то и
+        //другое уходило на освобожденную память. Закрываем их здесь, как и при
+        //выходе; окно клавиатуры закрытия не требует, оно умеет перечитать
+        //рисунок новой машины (см. ниже)
+        const QList<GenericDbgWnd*> dbg_windows = findChildren<GenericDbgWnd*>();
+        for (auto * w : dbg_windows)
+        {
+#ifdef HAVE_QT_SVG
+            if (qobject_cast<KeyboardWindow*>(w) != nullptr) continue;
+#endif
+            w->close();
+        }
     }
 
     emulator::Result res = e->load_config(file_name.toStdString());
