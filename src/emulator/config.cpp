@@ -65,10 +65,15 @@ void EmulatorConfigDevice::set_parameter(const EmulatorConfigParameter &p)
 
 std::string EmulatorConfigDevice::extended_parameter(unsigned int i, std::string expected_name)
 {
+    if (i >= parameters.size()) return "";
     std::vector<std::string> list = split_string(parameters[i].right_extended, ',', true);
     for (size_t i = 0; i < list.size(); i++)
     {
+        //A block comes from the file as is - `{strict}` or `{ }` in an
+        //extension a page downloaded - so an entry without "=" is skipped
+        //rather than read past the end of the split
         std::vector<std::string> parameter = split_string(list[i], '=', true);
+        if (parameter.size() < 2) continue;
         std::string name = str_tolower(str_trim(parameter[0]));
         std::string value = str_tolower(str_trim(parameter[1]));
         if (name == expected_name) return value;

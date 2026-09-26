@@ -76,6 +76,10 @@ public:
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;
+    void state_restored() override;
+
+private:
+    bool m_relatch = false;             // a state without the latches: take them again
 };
 
 ComputerDevice * create_indirect_memory(InterfaceManager *im, EmulatorConfigDevice *cd);

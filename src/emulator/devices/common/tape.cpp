@@ -1576,6 +1576,10 @@ emulator::Result TapeRecorder::bytes_load_file(const std::string &file_name)
 
     medium = TapeMedium::Bytes;
     m_tape_enc = TapeEnc::UNIOR;
+    //До этой ленты могла стоять лента Спектрума, у которой единица - такт
+    //процессора: без пересчета байтовая лента шла бы во столько раз быстрее
+    ticks_per_bit = (baud_rate > 0)?(m_system_clock / baud_rate):1;
+    if (ticks_per_bit < 1) ticks_per_bit = 1;
     emulator::Result res = parse_bt(image.data(), image.size(), file_name);
     if (!res) return res;
 
@@ -1695,7 +1699,11 @@ uint64_t TapeRecorder::zx_next_pulse()
         if (m_rec < m_records.size())
         {
             m_in_gap = true;
-            return m_records[m_rec].gap;
+            //Блок .tzx с паузой 0 идет вплотную к предыдущему. Вернуть этот
+            //ноль нельзя - он значит «лента кончилась», и лентопротяжка
+            //осталась бы в PLAY без единого перепада. Паузы нет - сразу
+            //первый полупериод следующего блока
+            if (m_records[m_rec].gap != 0) return m_records[m_rec].gap;
         }
     }
     return 0;

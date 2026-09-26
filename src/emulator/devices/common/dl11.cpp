@@ -352,6 +352,7 @@ void DL11::save_state(StateWriter &w)
     if (!m_rx_queue.empty())
     {
         std::vector<uint8_t> queue(m_rx_queue.begin(), m_rx_queue.end());
+        w.n64("rx_queued", queue.size());
         w.array("rx_queue", queue.data(), queue.size());
     }
 }
@@ -371,10 +372,16 @@ emulator::Result DL11::load_state(const StateReader &r)
     r.u("idle_polls", m_idle_polls);
     r.u("sent", m_sent);
     r.u("received", m_received);
+    //The queue is as long as the script made it - a sendfile can be any
+    //length - so its length is stated beside it, and only that much is read
     m_rx_queue.clear();
-    std::vector<uint8_t> queue(256, 0);
-    if (r.array("rx_queue", queue.data(), queue.size()))
-        for (size_t i = 0; i < queue.size(); i++) m_rx_queue.push_back(queue[i]);
+    uint64_t queued = 0;
+    if (r.n64("rx_queued", queued) && queued > 0)
+    {
+        std::vector<uint8_t> queue(static_cast<size_t>(queued), 0);
+        if (r.array("rx_queue", queue.data(), queue.size()))
+            m_rx_queue.assign(queue.begin(), queue.end());
+    }
     return emulator::Result::ok();
 }
 

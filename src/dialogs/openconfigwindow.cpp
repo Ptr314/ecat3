@@ -87,12 +87,19 @@ OpenConfigWindow::OpenConfigWindow(QWidget *parent, Emulator * e) :
     ui->textBrowser->document()->setDefaultStyleSheet(file.readAll());
     file.close();
 
+    show_default_description();
+}
+
+//The text shown while no machine is selected
+void OpenConfigWindow::show_default_description()
+{
     QFile default_md(QString::fromStdString(e->work_path + "default.md"));
     if (default_md.open(QIODevice::ReadOnly)) {
         QString html = "<body>" + QString::fromStdString(md2html(default_md.readAll().toStdString())) + "</body>";
         ui->textBrowser->document()->setHtml(html);
         default_md.close();
-    }
+    } else
+        ui->textBrowser->clear();
 }
 
 
@@ -105,7 +112,11 @@ void OpenConfigWindow::list_machines(QString work_path)
 {
     bool load_debugs = ui->debugCheck->isChecked();
 
+    //Nothing is selected in the new list, so nothing is described either: after
+    //Delete the text of the removed machine would stay on screen
     selected_path = "";
+    selected_protected = false;
+    show_default_description();
 
     QStandardItemModel * model = new QStandardItemModel();
     QStandardItem * node = model->invisibleRootItem();

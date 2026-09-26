@@ -48,13 +48,14 @@ def write_tap(path, blocks):
     print('%-28s %4d байт, блоков %d' % (os.path.basename(path), len(out), len(blocks)))
 
 
-def write_tzx(path, blocks, extra=b''):
+def write_tzx(path, blocks, extra=b'', pauses=None):
     out = bytearray(b'ZXTape!\x1a\x01\x14')
     # $30 - текстовое описание: его разбор обязан пропускать
     text = b'eCat3 test tape'
     out += bytes([0x30, len(text)]) + text
-    for b in blocks:
-        out += bytes([0x10, PAUSE_MS & 0xFF, PAUSE_MS >> 8, len(b) & 0xFF, len(b) >> 8]) + b
+    for i, b in enumerate(blocks):
+        ms = PAUSE_MS if pauses is None else pauses[i]
+        out += bytes([0x10, ms & 0xFF, ms >> 8, len(b) & 0xFF, len(b) >> 8]) + b
     out += extra
     io.open(path, 'wb').write(bytes(out))
     print('%-28s %4d байт' % (os.path.basename(path), len(out)))
@@ -67,3 +68,6 @@ write_tzx(os.path.join(here, 'zx-test.tzx'), blocks)
 # Лента с блоком, которого мы не умеем: $11 - запись на нестандартной скорости.
 # Такую надо отвергать, а не играть до нее и вставать
 write_tzx(os.path.join(here, 'zx-bad.tzx'), blocks[:1], extra=bytes([0x11]) + bytes(20))
+# Пауза 0 у заголовка: блок данных идет вплотную за ним. Ноль паузы совпадал
+# со значением «лента кончилась», и второй блок не звучал вовсе
+write_tzx(os.path.join(here, 'zx-nopause.tzx'), blocks, pauses=[0, PAUSE_MS])

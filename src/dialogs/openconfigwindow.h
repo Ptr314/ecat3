@@ -60,6 +60,7 @@ private:
     void list_machines(QString work_path);
     QStringList all_versions() const;
     void update_buttons();
+    void show_default_description();
     void select_path(const QString &path);
     void open_editor(bool copy);
 

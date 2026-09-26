@@ -321,7 +321,6 @@ void I8251::do_clock(const unsigned counter)
         if (tx_clock_count >= tx_clock_divider) {
             tx_clock_count -= tx_clock_divider;
             i_txd.change(tx_buffer);
-                    m_tx_count++;
             m_tx_count++;
             tx_buffer_full = false;
             update_status();
@@ -393,6 +392,7 @@ void I8251::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned
                 if (tx_clock_count >= tx_clock_divider) {
                     tx_clock_count = 0;
                     i_txd.change(tx_buffer);
+                    m_tx_count++;
                     tx_buffer_full = false;
                     update_status();
                 }

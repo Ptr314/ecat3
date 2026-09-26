@@ -270,6 +270,7 @@ void Emulator::request_state(const std::string &file_name)
     m_state_file = file_name;
     m_state_error.clear();
     m_state_requested = true;
+    m_state_serial++;
 }
 
 bool Emulator::state_pending()
@@ -292,18 +293,24 @@ std::string Emulator::take_state_error()
 void Emulator::store_state()
 {
     std::string file;
+    uint64_t serial = 0;
     {
         compat_lock_guard lock(m_state_mutex);
         if (!m_state_requested) return;
         file = m_state_file;
+        serial = m_state_serial;
     }
     const emulator::Result res = save_state(file);
     {
         compat_lock_guard lock(m_state_mutex);
         //Cleared last, so that the flag means "finished", not "started": the
-        //caller waits on it and then reads the error
-        if (!res) m_state_error = res.message;
-        m_state_requested = false;
+        //caller waits on it and then reads the error. A request that came in
+        //while this file was being written is still to be served - it keeps
+        //the flag up and is taken at the next slice
+        if (serial == m_state_serial) {
+            if (!res) m_state_error = res.message;
+            m_state_requested = false;
+        }
     }
 }
 
@@ -411,7 +418,10 @@ emulator::Result Emulator::apply_state()
     //down forever, auto repeat included. Only the machine side of a keyboard
     //- its code register and ready trigger, which are ports - is restored, so
     //a program waiting for a keystroke sees exactly what it saw
-    m_host_keys.clear();
+    {
+        compat_lock_guard lock(m_host_keys_mutex);
+        m_host_keys.clear();
+    }
 
     m_state_report = problems;
     return emulator::Result::ok();
@@ -1076,20 +1086,23 @@ void Emulator::key_event(int key, int modifiers, bool press)
 
 int Emulator::host_key(int key, unsigned int scan, int modifiers, bool press)
 {
-    size_t i = 0;
-    for (; i < m_host_keys.size(); i++)
-        if ((scan != 0)?(m_host_keys[i].scan == scan):(m_host_keys[i].key == key)) break;
+    {
+        compat_lock_guard lock(m_host_keys_mutex);
+        size_t i = 0;
+        for (; i < m_host_keys.size(); i++)
+            if ((scan != 0)?(m_host_keys[i].scan == scan):(m_host_keys[i].key == key)) break;
 
-    if (press) {
-        if (i == m_host_keys.size()) {
-            HostKey h;
-            h.scan = scan;
-            h.key = key;
-            m_host_keys.push_back(h);
+        if (press) {
+            if (i == m_host_keys.size()) {
+                HostKey h;
+                h.scan = scan;
+                h.key = key;
+                m_host_keys.push_back(h);
+            }
+        } else if (i < m_host_keys.size()) {
+            key = m_host_keys[i].key;
+            m_host_keys.erase(m_host_keys.begin() + i);
         }
-    } else if (i < m_host_keys.size()) {
-        key = m_host_keys[i].key;
-        m_host_keys.erase(m_host_keys.begin() + i);
     }
 
     key_event(key, modifiers, press);
@@ -1099,7 +1112,10 @@ int Emulator::host_key(int key, unsigned int scan, int modifiers, bool press)
 void Emulator::release_host_keys()
 {
     std::vector<HostKey> held;
-    held.swap(m_host_keys);
+    {
+        compat_lock_guard lock(m_host_keys_mutex);
+        held.swap(m_host_keys);
+    }
     for (size_t i = 0; i < held.size(); i++) {
         key_event(held[i].key, 0, false);
         //A recording would otherwise keep the key down for the rest of it

@@ -170,6 +170,11 @@ void IndirectMemory::save_state(StateWriter &w)
     AddressableDevice::save_state(w);
     //The latched address the data registers read and write through
     w.u("address", m_address);
+    //And what they latched: a data register reads the latch, not the memory,
+    //and the memory may have changed since the address was written
+    uint16_t latched[INDIRECT_MAX_TARGETS];
+    for (unsigned int i = 0; i < m_count; i++) latched[i] = (uint16_t)m_targets[i].value;
+    w.array("latched", latched, m_count);
 }
 
 emulator::Result IndirectMemory::load_state(const StateReader &r)
@@ -177,7 +182,21 @@ emulator::Result IndirectMemory::load_state(const StateReader &r)
     emulator::Result res = AddressableDevice::load_state(r);
     if (!res) return res;
     r.u("address", m_address);
+    uint16_t latched[INDIRECT_MAX_TARGETS] = {0, 0, 0, 0};
+    m_relatch = !r.array("latched", latched, m_count);
+    if (!m_relatch)
+        for (unsigned int i = 0; i < m_count; i++) m_targets[i].value = latched[i];
     return emulator::Result::ok();
+}
+
+void IndirectMemory::state_restored()
+{
+    //A state written before the latches were saved: the targets are restored
+    //by now, and the address register has not moved since it was written, so
+    //sampling them again gives what they held unless the program wrote the
+    //memory behind the latch after that
+    if (m_relatch) latch();
+    m_relatch = false;
 }
 
 std::vector<DeviceFieldInfo> IndirectMemory::get_device_fields()

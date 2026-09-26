@@ -228,6 +228,9 @@ namespace zx_tape
                 if (p + 20 > size) break;
                 uint64_t n = 0;
                 for (int i = 0; i < 4; i++) n |= (uint64_t)raw[p + 16 + i] << (8 * i);
+                //A 32-bit length from the file: added to p on a 32-bit size_t
+                //it could wrap p backwards and loop over the same bytes forever
+                if (n > (uint64_t)(size - p - 20)) break;
                 p += 20 + (size_t)n;
             }
             else if (id == 0x5A)                                    //Glue

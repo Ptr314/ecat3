@@ -8,6 +8,7 @@
 # Программа пишет "LOAD OK" в экранный буфер и останавливается. Буквы взяты из
 # тех тридцати знаков, что монитор кладет в знакогенератор при старте: полного
 # шрифта без ленты с TCP/M на этой машине нет, и "TAPE OK" вышло бы дырявым.
+import os
 import struct
 
 ORG = 0x0100
@@ -48,7 +49,9 @@ duration = round(length * 8 * 1000 / 2400)
 record = struct.pack('<III', LEADER, duration, length) + bytes([0xAA, 0xAA, 0x19, 0x00]) + body
 out = record
 
-with open('argo-test.bt', 'wb') as f:
+# Рядом со сценарием, а не в текущем каталоге: запущенный из корня
+# репозитория, он оставлял там устаревшую копию
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'argo-test.bt'), 'wb') as f:
     f.write(out)
 
 print('argo-test.bt: %d байт, программа %04X..%04X (%d байт), сумма %04X, пуск с %04X'

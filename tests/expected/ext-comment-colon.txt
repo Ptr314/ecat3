@@ -1,0 +1,2 @@
+[mapper.map] 
+        0000-3FFF -> ram[0000] mode=rw

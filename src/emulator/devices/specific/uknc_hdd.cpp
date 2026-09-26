@@ -680,6 +680,34 @@ emulator::Result UKNCHDD::load_state(const StateReader &r)
     emulator::Result res = AddressableDevice::load_state(r);
     if (!res) return res;
 
+    //The image goes in first: load_image() ends in a reset, which would throw
+    //away every register read before it - a snapshot taken in the middle of a
+    //transfer would come back as a drive that has just been powered on
+    bool attached = false;
+    if (r.b("attached", attached) && attached) {
+        //The state names the copy in its own bundle, and load_image() opens it
+        //the way the configuration would have
+        std::string file;
+        if (r.s("image", file) && !file.empty()) {
+            const std::string path = find_file_location(sd, file);
+            if (path.empty())
+                return emulator::Result::error(emulator::ErrorCode::FileError,
+                    "{MachineState|Saved state} " + name + ": file not found: " + file);
+            res = load_image(path);
+            if (!res) return res;
+            r.b("inverted", m_inverted);
+            //The file is the snapshot's own copy, and its RAM beside it was
+            //taken against exactly these sectors. Written through, the first
+            //write of the guest would put the two out of step, and opening
+            //the snapshot again would give an inconsistent file system. So a
+            //restored disk keeps its writes in memory, as a floppy does
+            m_volatile = true;
+            r.u("cylinders", m_cylinders);
+            r.u("heads", m_heads);
+            r.u("sectors", m_sectors);
+        }
+    }
+
     r.u("status", m_status);
     r.u("error", m_error);
     r.u("command", m_command);
@@ -696,25 +724,6 @@ emulator::Result UKNCHDD::load_state(const StateReader &r)
     r.u("sectors_read", m_sectors_read);
     r.u("sectors_written", m_sectors_written);
     r.b("write_protect", m_write_protect);
-
-    bool attached = false;
-    if (!r.b("attached", attached) || !attached) return emulator::Result::ok();
-
-    //The state names the copy in its own bundle, and attach_image() opens it
-    //the way the configuration would have
-    std::string file;
-    if (!r.s("image", file) || file.empty()) return emulator::Result::ok();
-    const std::string path = find_file_location(sd, file);
-    if (path.empty())
-        return emulator::Result::error(emulator::ErrorCode::FileError,
-            "{MachineState|Saved state} " + name + ": file not found: " + file);
-
-    r.b("inverted", m_inverted);
-    r.b("volatile", m_volatile);
-    load_image(path);
-    r.u("cylinders", m_cylinders);
-    r.u("heads", m_heads);
-    r.u("sectors", m_sectors);
     return emulator::Result::ok();
 }
 

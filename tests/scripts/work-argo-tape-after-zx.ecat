@@ -1,0 +1,28 @@
+# Арго ФВ-6511: лента .bt после ленты ZX Spectrum
+# Единица ленты Спектрума - такт процессора, поэтому, заряжая .tap или .tzx,
+# магнитофон ставит один такт на единицу. Заряженная следом лента .bt этот
+# шаг не пересчитывала и шла в сотни раз быстрее: машина не находила на ней
+# ни одной записи.
+#
+# Лента и порядок те же, что в work-argo-tape.ecat, только перед ней в
+# лентопротяжке побывала zx-test.tzx. Программа с ленты пишет "LOAD OK" в
+# экранный буфер - он и проверяется.
+# @timeout 60
+
+MACHINE "unior/Argo.cfg"
+WAIT 1500
+
+COMMAND tape.load("../files/zx-test.tzx")
+COMMAND tape.load("../files/argo-test.bt")
+LOGDEFS 8,16
+PRINT "=== Лента заряжена ==="
+LOG tape.records
+LOG tape.baudrate
+
+KEY 200,100,I
+WAIT 4000
+
+PRINT "=== После загрузки: LOAD OK в экранном буфере ==="
+LOG tape.transport
+LOG ram.value($F8A2,$F8A9)
+EXIT

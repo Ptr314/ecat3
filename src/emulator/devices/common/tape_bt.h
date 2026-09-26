@@ -82,7 +82,9 @@ namespace bt_tape
             const uint32_t dur   = rd32(raw + off + 4);
             const uint32_t len   = rd32(raw + off + 8);
             const size_t sync = off + 12;
-            if (len < 4 || sync + len > size) break;
+            //The length comes from the file: sync + len would wrap on a 32-bit
+            //size_t, and sync <= size is already known from the loop condition
+            if (len < 4 || len > size - sync) break;
             if (memcmp(&raw[sync], PREAMBLE, 4) != 0) { err = "preamble"; return false; }
 
             TapeRecord r;

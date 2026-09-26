@@ -1,0 +1,6 @@
+=== Лента заряжена ===
+[tape.records] $0001
+[tape.baudrate] $00000960
+=== После загрузки: LOAD OK в экранном буфере ===
+[tape.transport] $00
+[ram.value] $F8A2: $4C $4F $41 $44 $20 $4F $4B $20

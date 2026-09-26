@@ -130,9 +130,14 @@ def parse_cfg_metadata(cfg_path):
     # Files a config refers to: ROM/disk images, the host keyboard map, and the
     # native key table with the keyboard drawing the on-screen keyboard needs.
     # The line must start with the parameter, or "charmap" would match too.
+    # A "map" may also name a device of the same machine - the page table of
+    # an Argo memory controller is a ROM device, map = memcfg-rom - and such a
+    # value is not a file to pack
+    devices = set(re.findall(r'^\s*([\w-]+)\s*:\s*[\w-]+\s*\{', content, re.MULTILINE))
     files = []
     for m in re.finditer(r'^\s*(?:image|map|keys|picture)\s*=\s*(\S+)', content, re.MULTILINE):
-        files.append(m.group(1))
+        if m.group(1) not in devices:
+            files.append(m.group(1))
 
     return {
         "name": name,
@@ -142,6 +147,7 @@ def parse_cfg_metadata(cfg_path):
         "debug": debug,
         "order": order,
         "files": files,
+        "devices": devices,
     }
 
 def find_file(filename, search_dirs):
@@ -343,6 +349,9 @@ def main():
             elif os.path.isfile(md_path):
                 md_vfs_path = f"/{machine_subdir}/{os.path.splitext(cfg_filename)[0]}.md"
             for ref_file in ext_meta["files"]:
+                # The devices are the base's: an extension names them too
+                if ref_file in meta["devices"]:
+                    continue
                 local_path = find_file(ref_file, [ext_dir])
                 if local_path:
                     rel = os.path.relpath(local_path, deploy_dir)

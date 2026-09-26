@@ -252,7 +252,11 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
         e.line = line_no;
         e.op = t[0] == '-' ? ExtEdit::Remove : ExtEdit::Set;
         const size_t start = e.op == ExtEdit::Remove ? 1 : 0;
-        const size_t colon = t.find(':');
+        //The colon of device:property, looked for before the comment: in
+        //"-hdd // note: not fitted" the only colon belongs to the note. The
+        //device part comes first, so a colon found here is at the same place
+        //in t
+        const size_t colon = strip_directive_comment(t).find(':');
         //A removal without a property removes the device itself
         if (e.op == ExtEdit::Remove && colon == std::string::npos)
         {

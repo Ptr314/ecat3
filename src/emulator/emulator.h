@@ -70,7 +70,10 @@ private:
         unsigned int scan;              // native scan code, 0 if the event has none
         int key;                        // the code the key went down as
     };
-    std::vector<HostKey> m_host_keys;
+    std::vector<HostKey> m_host_keys;   // Guarded by m_host_keys_mutex
+    //The window presses and releases on the GUI thread, a restored state
+    //empties the list on the emulation thread
+    compat_mutex m_host_keys_mutex;
 
     unsigned int clock_freq;
 
@@ -109,6 +112,7 @@ private:
     std::string m_state_file;                   //Guarded by m_state_mutex
     bool m_state_requested = false;             //Guarded
     std::string m_state_error;                  //Guarded
+    uint64_t m_state_serial = 0;                //Guarded; incremented for every request
     compat_mutex m_state_mutex;
     void store_state();
     bool m_settings_readonly = false;
