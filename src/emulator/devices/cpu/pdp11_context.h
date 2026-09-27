@@ -37,6 +37,7 @@ struct pdp11operand
     bool is_reg;
     unsigned int reg;
     uint16_t addr;
+    bool stream;                // #immediate: the operand is a word of the instruction stream
 };
 
 namespace PDP11

@@ -1,9 +1,9 @@
 [ay.regs] &000000: &144 &000 &000 &001 &000 &000 &007 &036 &017 &020 &014 &100 &000 &016 &000 &000
 [ay.register] &000015
-[ay.level] &001766
+[ay.level] &001110
 [ay.envelope] &000001
-[ay.level] &002637
+[ay.level] &003515
 [ay.envelope] &000016
-[ay.level] &002361
+[ay.level] &000411
 [ay.envelope] &000011
 [port-ppi.value] &000000

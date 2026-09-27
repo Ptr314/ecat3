@@ -373,6 +373,21 @@ private:
     bool m_soft_reset = true;
 };
 
+//How a memory answers a bus cycle whose processor times every cycle it runs
+//(К1801ВМ1 with timing = vm1). A device that names no bus-timing device
+//answers at once. The БК dynamic RAM sits behind the ВП1-037, which takes a
+//request only at one moment of its own 1333 ns cycle, and only when the strobe
+//came early enough before it; the reply follows a fixed delay later. All in
+//ns, the processor converts them into its own clock. See vm1_timing.h
+struct BusReply {
+    unsigned int window_ns = 0;     //period of the points a request is taken at, 0: no window
+    unsigned int setup_read_ns = 0; //how early DIN must be before such a point
+    unsigned int setup_write_ns = 0;//the same for DOUT of a write
+    unsigned int setup_rmw_ns = 0;  //the same for DOUT of the write half of a read-modify-write
+    unsigned int reply_ns = 0;      //from the point to RPLY
+    unsigned int rmw_extra = 0;     //half clocks a fast memory adds to the write half of a read-modify-write
+};
+
 class AddressableDevice: public ComputerDevice
 {
 protected:
@@ -380,6 +395,11 @@ protected:
     bool can_write;
     unsigned int addresable_size;
 public:
+    //Null for a device that answers at once, see BusReply. Set by
+    //load_bus_reply() from the bus-timing device the parameter "bus_timing" names;
+    //ComputerDevice::load_config() calls it
+    const BusReply * bus_reply = nullptr;
+    emulator::Result load_bus_reply();
     AddressableDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
         ComputerDevice(im, cd),
         addresable_size(0),
@@ -797,6 +817,16 @@ public:
     // Machines whose bus reports a timeout use it to raise an exception, so a
     // read-only range answering a write does not count as a missing device.
     bool no_device = false;
+    // The device that answered the last access, null when none did. A
+    // processor that times its bus cycles asks it how it replies. Meaningful
+    // on the emulation thread only: a debugger window reading memory through
+    // read() from the GUI thread overwrites it (as it does no_device), which
+    // can hand one cycle a wrong reply while the machine runs
+    AddressableDevice * last_device = nullptr;
+    // The device a read of the address would reach, without touching it or
+    // anything else (no cancelinit flip): the timing of a prefetch the
+    // emulator does not perform
+    AddressableDevice * peek_read_device(unsigned int address);
 
     MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual emulator::Result load_config(SystemData *sd) override;
@@ -903,6 +933,18 @@ public:
 //----------------------- Creation functions -------------------------------//
 
 ComputerDevice * create_ram(InterfaceManager *im, EmulatorConfigDevice *cd);
+
+//The memory controller of a machine as a processor that times its bus cycles
+//sees it (see BusReply). A device answers through it when its "bus_timing" parameter
+//names it; one controller serves every RAM chip behind it, as the ВП1-037 does
+class BusTiming: public ComputerDevice
+{
+public:
+    BusReply reply;
+    BusTiming(InterfaceManager *im, EmulatorConfigDevice *cd);
+    emulator::Result load_config(SystemData *sd) override;
+};
+ComputerDevice * create_bus_timing(InterfaceManager *im, EmulatorConfigDevice *cd);
 ComputerDevice * create_rom(InterfaceManager *im, EmulatorConfigDevice *cd);
 ComputerDevice * create_memory_mapper(InterfaceManager *im, EmulatorConfigDevice *cd);
 ComputerDevice * create_port(InterfaceManager *im, EmulatorConfigDevice *cd);

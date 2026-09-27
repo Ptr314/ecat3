@@ -1273,6 +1273,7 @@ void Emulator::register_devices()
 void register_all_devices(DeviceManager * dm)
 {
     dm->register_device("ram", create_ram);
+    dm->register_device("bus-timing", create_bus_timing);
     dm->register_device("rom", create_rom);
     dm->register_device("memory-mapper", create_memory_mapper);
     dm->register_device("port", create_port);

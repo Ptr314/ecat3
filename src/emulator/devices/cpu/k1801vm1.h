@@ -7,6 +7,7 @@
 
 #include "emulator/core.h"
 #include "pdp11core.h"
+#include "vm1_timing.h"
 
 class k1801vm1;
 
@@ -79,6 +80,13 @@ private:
     bool m_aclo_active = false;
 
     K1801VM1Core * core;
+
+    // timing = vm1: bus cycles timed from a simulation of the chip, see
+    // vm1_timing.h. Null for the old formulas (timing = legacy), which the
+    // УК-НЦ keeps
+    Vm1BusTiming * m_timing = nullptr;
+    unsigned int timed_cycles(unsigned int legacy);
+
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
 public:
@@ -103,6 +111,9 @@ public:
     // True when nothing answered the last access. On the МПИ bus that is a
     // timeout, and the processor turns it into a trap through vector 4.
     bool bus_timeout();
+    // What answered the last access, for the timing model
+    Vm1BusTiming * timing() { return m_timing; }
+    const BusReply * last_reply() { return (mm->last_device != nullptr) ? mm->last_device->bus_reply : nullptr; }
     void note_timeout(unsigned int address);
     void set_halt_mode(bool state);
     void virq_acknowledged(unsigned int vector);

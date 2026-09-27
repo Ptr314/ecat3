@@ -1,0 +1,50 @@
+# БК0010-01: время команд К1801ВМ1 с ОЗУ за контроллером ВП1-037 (timing = vm1).
+#
+# Программы Manwe меряют таймером, сколько тактов идет одна команда, повторенная
+# много раз: 45com-lo - 45 команд разных видов, test-mov/cmp/add - все пары
+# режимов адресации. Снимки должны совпадать с настоящей машиной:
+#   45com-lo  - фото с настоящей БК0010 (все 45 значений: 12, 32, 24, 28, ...);
+#   test-*    - колонка "slow/slow" таблицы замеров BK0010-11-instructions-speed.
+# Модель сверена с таблицей целиком, кроме восьми форм ADD с приемником в
+# памяти, где таблица сама себе противоречит (slow меньше fast), см.
+# tools/bk-timing/README.md.
+#
+# Файл .bin грузится целиком по 000774: заголовок (адрес и длина) ложится
+# в 774-776, программа - ровно на свой адрес 1000.
+# @timeout 90
+
+MACHINE "bk/BK-0010-01.cfg"
+WAIT _4000
+
+COMMAND cpu.stop()
+COMMAND ram.load("../files/bk-timing/45com-lo.bin", 774)
+COMMAND cpu.setreg(SP, 1000)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+WAIT _6000
+SCREEN "../results/timing-bk0010-45com.png"
+
+COMMAND cpu.stop()
+COMMAND ram.load("../files/bk-timing/test-mov.bin", 774)
+COMMAND cpu.setreg(SP, 1000)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+WAIT _12000
+SCREEN "../results/timing-bk0010-mov.png"
+
+COMMAND cpu.stop()
+COMMAND ram.load("../files/bk-timing/test-cmp.bin", 774)
+COMMAND cpu.setreg(SP, 1000)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+WAIT _12000
+SCREEN "../results/timing-bk0010-cmp.png"
+
+COMMAND cpu.stop()
+COMMAND ram.load("../files/bk-timing/test-add.bin", 774)
+COMMAND cpu.setreg(SP, 1000)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+WAIT _12000
+SCREEN "../results/timing-bk0010-add.png"
+EXIT

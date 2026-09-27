@@ -560,7 +560,56 @@ emulator::Result ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
             "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect parameters for")) + "} " + name);
     }
 
+    //Here and not in AddressableDevice::load_config(): many devices call
+    //ComputerDevice::load_config() directly
+    if (AddressableDevice * ad = dynamic_cast<AddressableDevice*>(this))
+        return ad->load_bus_reply();
+
     return emulator::Result::ok();
+}
+
+emulator::Result AddressableDevice::load_bus_reply()
+{
+    bus_reply = nullptr;
+    const std::string bus = cd->get_parameter("bus_timing", false).value;
+    if (bus.empty()) return emulator::Result::ok();
+    BusTiming * bt = dynamic_cast<BusTiming*>(im->dm->get_device_by_name(bus, false));
+    if (bt == nullptr)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Not a bus-timing device")) + "} " + name + ": " + bus);
+    bus_reply = &bt->reply;
+    return emulator::Result::ok();
+}
+
+BusTiming::BusTiming(InterfaceManager *im, EmulatorConfigDevice *cd):
+    ComputerDevice(im, cd)
+{
+}
+
+//Times in ns, rmw_extra in half clocks of the processor. The values are read
+//here and not in the constructor: a device must be free of side effects there,
+//and a mistyped number has to stop the load rather than silently mean "no window"
+emulator::Result BusTiming::load_config(SystemData *sd)
+{
+    emulator::Result res = ComputerDevice::load_config(sd);
+    if (!res) return res;
+    try {
+        reply.window_ns      = read_confg_value(cd, "window", false, (unsigned int)0);
+        reply.setup_read_ns  = read_confg_value(cd, "setup_read", false, (unsigned int)0);
+        reply.setup_write_ns = read_confg_value(cd, "setup_write", false, (unsigned int)0);
+        reply.setup_rmw_ns   = read_confg_value(cd, "setup_rmw", false, (unsigned int)0);
+        reply.reply_ns       = read_confg_value(cd, "reply", false, (unsigned int)0);
+        reply.rmw_extra      = read_confg_value(cd, "rmw_extra", false, (unsigned int)0);
+    } catch (std::exception &) {
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect parameters for")) + "} " + name);
+    }
+    return emulator::Result::ok();
+}
+
+ComputerDevice * create_bus_timing(InterfaceManager *im, EmulatorConfigDevice *cd)
+{
+    return new BusTiming(im, cd);
 }
 
 bool ComputerDevice::get_reset_behavior(bool is_cold)
@@ -2222,6 +2271,7 @@ unsigned int MemoryMapper::read(unsigned int address)
     //The page this address falls into, resolved once per configuration
     MapperPage * e = find_page(address, page_tag());
     if (e != nullptr) {
+        this->last_device = e->device_r;
         if (e->device_r != nullptr) {
             this->no_device = false;
             return e->device_r->get_value(address + e->offset);
@@ -2233,6 +2283,7 @@ unsigned int MemoryMapper::read(unsigned int address)
     unsigned int address_on_device, range_index;
     this->no_device = false;
     AddressableDevice * d = map_read(address, &address_on_device, &range_index);
+    this->last_device = d;
     if (d != nullptr)
     {
         unsigned int v = d->get_value(address_on_device);
@@ -2253,6 +2304,15 @@ unsigned int MemoryMapper::read(unsigned int address)
 
 // Whether anything is mapped at the address at all: a range of the other
 // mode still counts, unless it is strict
+AddressableDevice * MemoryMapper::peek_read_device(unsigned int address)
+{
+    MapperPage * e = find_page(address, page_tag());
+    if (e != nullptr) return e->device_r;
+    unsigned int address_on_device, range_index;
+    return this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value,
+                     address, MODE_R, &address_on_device, &range_index);
+}
+
 bool MemoryMapper::responds(unsigned int address, unsigned int mode)
 {
     unsigned int config = this->i_config.value;
@@ -2274,6 +2334,7 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
 {
     MapperPage * e = find_page(address, page_tag());
     if (e != nullptr) {
+        this->last_device = e->device_w;
         if (e->device_w != nullptr) {
             this->no_device = false;
             e->device_w->set_value(address + e->offset, value);
@@ -2285,6 +2346,7 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
     unsigned int address_on_device, range_index;
     this->no_device = false;
     AddressableDevice * d = map_write(address, &address_on_device, &range_index);
+    this->last_device = d;
     if (d == nullptr) {
         this->no_device = !this->responds(address, MODE_W);
         return;
@@ -2308,6 +2370,7 @@ unsigned int MemoryMapper::read_word(unsigned int address)
     //two bytes itself, so a word across a page boundary needs nothing special
     MapperPage * e = find_page(address, page_tag());
     if (e != nullptr) {
+        this->last_device = e->device_r;
         if (e->device_r != nullptr) {
             this->no_device = false;
             return e->device_r->get_value_word(address + e->offset);
@@ -2319,6 +2382,7 @@ unsigned int MemoryMapper::read_word(unsigned int address)
     unsigned int address_on_device, range_index;
     this->no_device = false;
     AddressableDevice * d = map_read(address, &address_on_device, &range_index);
+    this->last_device = d;
     if (d != nullptr) {
         unsigned int v = d->get_value_word(address_on_device);
 
@@ -2339,6 +2403,7 @@ void MemoryMapper::write_word(unsigned int address, unsigned int value)
 {
     MapperPage * e = find_page(address, page_tag());
     if (e != nullptr) {
+        this->last_device = e->device_w;
         if (e->device_w != nullptr) {
             this->no_device = false;
             e->device_w->set_value_word(address + e->offset, value);
@@ -2350,6 +2415,7 @@ void MemoryMapper::write_word(unsigned int address, unsigned int value)
     unsigned int address_on_device, range_index;
     this->no_device = false;
     AddressableDevice * d = map_write(address, &address_on_device, &range_index);
+    this->last_device = d;
     if (d == nullptr) {
         this->no_device = !this->responds(address, MODE_W);
         return;

@@ -50,6 +50,7 @@ protected:
 
 
     uint16_t fetch();
+    uint16_t read_stream(uint16_t address);
     uint16_t read_word_checked(uint16_t address);
     void write_word_checked(uint16_t address, uint16_t value);
 
@@ -171,4 +172,16 @@ public:
     virtual void set_halt(bool state);
 
     unsigned int execute();
+
+    // For a timing model outside the core (timing = vm1). m_stream is set
+    // while an access reads the instruction stream: an opcode, an index, an
+    // immediate or an absolute address. The rest tells what the last
+    // execute() did
+    bool m_stream = false;
+    enum { LAST_NONE, LAST_INSN, LAST_INTERRUPT, LAST_IDLE };
+    unsigned int m_last_kind = LAST_NONE;
+    uint16_t m_last_command = 0;
+    bool m_last_trapped = false;        // it ended in a trap: reserved, bus error, trace
+    bool m_last_taken = false;          // a branch or SOB whose condition held
+    bool m_last_iako = false;           // LAST_INTERRUPT: a vectored one, with IAKO
 };

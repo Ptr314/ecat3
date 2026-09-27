@@ -28,6 +28,7 @@ uint16_t K1801VM1Core::read_word(uint16_t address)
 {
     uint16_t v = (uint16_t)emulator_device->read_mem_word(address);
     if (emulator_device->bus_timeout()) m_abort = true;
+    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, false, m_stream, emulator_device->last_reply());
     return v;
 }
 
@@ -35,12 +36,14 @@ void K1801VM1Core::write_word(uint16_t address, uint16_t value)
 {
     emulator_device->write_mem_word(address, value);
     if (emulator_device->bus_timeout()) m_abort = true;
+    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, true, false, emulator_device->last_reply());
 }
 
 uint8_t K1801VM1Core::read_byte(uint16_t address)
 {
     uint8_t v = (uint8_t)emulator_device->read_mem(address);
     if (emulator_device->bus_timeout()) m_abort = true;
+    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, false, m_stream, emulator_device->last_reply());
     return v;
 }
 
@@ -48,6 +51,7 @@ void K1801VM1Core::write_byte(uint16_t address, uint8_t value)
 {
     emulator_device->write_mem(address, value);
     if (emulator_device->bus_timeout()) m_abort = true;
+    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, true, false, emulator_device->last_reply());
 }
 
 void K1801VM1Core::on_virq_ack(uint16_t vector)
@@ -91,6 +95,7 @@ k1801vm1::k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd, int family_ty
 k1801vm1::~k1801vm1()
 {
     delete core;
+    delete m_timing;
 }
 
 emulator::Result k1801vm1::load_config(SystemData *sd)
@@ -106,6 +111,18 @@ emulator::Result k1801vm1::load_config(SystemData *sd)
     // Clock periods the memory takes to answer, which sets the length of every
     // bus cycle: 2 on a 3 MHz БК0010, more where the memory is slower to reply
     core->set_reply_delay(read_confg_value(cd, "reply_delay", false, (unsigned int)2));
+
+    // Which clock count this processor keeps. legacy: the formulas above,
+    // built from reply_delay. vm1: every bus cycle placed in time from a
+    // simulation of the chip, with each memory replying as its BusReply says
+    const std::string timing = read_confg_value(cd, "timing", false, std::string("legacy"));
+    delete m_timing;
+    m_timing = nullptr;
+    if (timing == "vm1")
+        m_timing = new Vm1BusTiming(clock);
+    else if (timing != "legacy")
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "Unknown timing")) + "} " + name + ": " + timing);
 
     // База векторов пультового режима - вывод SEL процессора. Ноль оставляет
     // прежнее поведение: вход в режим идёт обычной ловушкой через halt_vector,
@@ -159,6 +176,13 @@ void k1801vm1::save_state(StateWriter &w)
     w.b("held_in_reset", m_held_in_reset);
     w.b("aclo_active", m_aclo_active);
 
+    //Where the chain of bus cycles stands against the 037 cycle: without it a
+    //restored БК0011М would run with another phase of the windows
+    if (m_timing) {
+        w.n64("timing_now", m_timing->m_now);
+        w.n64("timing_start", m_timing->m_start);
+    }
+
     //The ring of executed addresses is what LOG cpu.history prints: a
     //diagnostic, not machine state, and 256 lines of it in every snapshot
     //would be pure noise
@@ -194,6 +218,11 @@ emulator::Result k1801vm1::load_state(const StateReader &r)
 
     r.b("held_in_reset", m_held_in_reset);
     r.b("aclo_active", m_aclo_active);
+    if (m_timing) {
+        r.n64("timing_now", m_timing->m_now);
+        r.n64("timing_start", m_timing->m_start);
+        m_timing->state_restored();
+    }
     return emulator::Result::ok();
 }
 
@@ -397,12 +426,16 @@ unsigned int k1801vm1::execute()
     // situation on purpose: there emulated time is meant to freeze. On a УК-НЦ
     // the central processor is held like this from power-on until the
     // peripheral one releases it, and the machine has to keep running meanwhile
-    if (m_held_in_reset) return 8;
+    if (m_held_in_reset) {
+        if (m_timing) m_timing->idle(8);
+        return 8;
+    }
 
     if (reset_mode)
     {
         core->reset();
         reset_mode = false;
+        if (m_timing) m_timing->discard();
     }
 
     if (m_debug == DEBUG_STOPPED)
@@ -410,9 +443,13 @@ unsigned int k1801vm1::execute()
 
     //Cycles a DMA controller has taken off the bus, see CPU::hold()
     unsigned int held = take_hold();
-    if (held > 0) return held;
+    if (held > 0) {
+        if (m_timing) m_timing->idle(held);
+        return held;
+    }
 
     unsigned int cycles = core->execute();
+    if (m_timing) cycles = timed_cycles(cycles);
 
     switch (m_debug) {
     case DEBUG_STEP:
@@ -426,6 +463,37 @@ unsigned int k1801vm1::execute()
     }
 
     return cycles;
+}
+
+// The clocks the last core->execute() took under timing = vm1. Anything the
+// table has no template for - an instruction that ended in a trap, WAIT idling -
+// keeps the count of the old formulas and only moves the chain along
+unsigned int k1801vm1::timed_cycles(unsigned int legacy)
+{
+    const uint16_t pc = (uint16_t)core->get_pc();
+    unsigned int form = Vm1BusTiming::F_COUNT;
+    bool skip_opcode = false;
+    switch (core->m_last_kind) {
+    case pdp11core::LAST_INSN:
+        if (!core->m_last_trapped) {
+            form = Vm1BusTiming::form_of(core->m_last_command, core->m_last_taken);
+            skip_opcode = true;
+        }
+        break;
+    case pdp11core::LAST_INTERRUPT:
+        form = core->m_last_iako ? Vm1BusTiming::F_INTERRUPT_VIRQ : Vm1BusTiming::F_INTERRUPT;
+        break;
+    default:
+        break;
+    }
+    if (form < Vm1BusTiming::F_COUNT) {
+        AddressableDevice * d = mm->peek_read_device(pc);
+        const int c = m_timing->finish(form, (d != nullptr) ? d->bus_reply : nullptr, skip_opcode);
+        if (c >= 0) return (unsigned int)c;
+    }
+    m_timing->discard();
+    m_timing->idle(legacy);
+    return legacy;
 }
 
 ComputerDevice * create_k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd)

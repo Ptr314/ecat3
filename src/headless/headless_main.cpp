@@ -21,6 +21,7 @@
 #include "libs/zip_writer.h"
 #include "emulator/state.h"
 #include "emulator/devices/common/tape_zx.h"
+#include "emulator/devices/cpu/vm1_timing.h"
 //Часть помощников dsk_tools объявлена в его внутреннем заголовке, и звать
 //его надо по полному пути: короткий "utils.h" из dsk_tools.h у MSVC попадает
 //в emulator/utils.h - он ищет кавычечный include и по цепочке включающих
@@ -475,6 +476,66 @@ bool check_hex_round_trip(std::string &message)
     return true;
 }
 
+// The К1801ВМ1 timing table (timing = vm1): every opcode lands on a form or on
+// the fallback, every template ends with the prefetch, and a few forms repeated
+// in a loop give what the chip and the real machines give. Fast memory is the
+// "fast/fast" column of BK0010-11-instructions-speed.xlsx (the chip simulated
+// gives the same), the ВП1-037 ones are photos of a real БК0010 and БК0011М
+bool check_vm1_timing(std::string &message)
+{
+    for (unsigned int w = 0; w < 0x10000; w++)
+        for (int taken = 0; taken < 2; taken++) {
+            const unsigned int f = Vm1BusTiming::form_of((uint16_t)w, taken != 0);
+            if (f > Vm1BusTiming::F_COUNT) { message = "opcode " + oct_str(w, 6) + " maps outside the table"; return false; }
+            const Vm1BusTiming::Step * s = nullptr;
+            const unsigned int n = Vm1BusTiming::steps_of(f, &s);
+            if (n > 0 && (s[n - 1].kind != Vm1BusTiming::K_READ || s[n - 1].role != Vm1BusTiming::R_STREAM)) {
+                message = "the form of " + oct_str(w, 6) + " does not end with the prefetch"; return false;
+            }
+        }
+
+    BusReply vp037;             // the БК configurations, deploy/computers/bk
+    vp037.window_ns = 1333; vp037.setup_read_ns = 250; vp037.setup_write_ns = 400;
+    vp037.setup_rmw_ns = 700; vp037.reply_ns = 550;
+
+    // clocks of one instruction, the form repeated with code and data behind reply
+    auto loop = [](unsigned int clock, uint16_t w, const BusReply * reply) -> double {
+        Vm1BusTiming t(clock);
+        const unsigned int form = Vm1BusTiming::form_of(w, true);
+        const Vm1BusTiming::Step * s = nullptr;
+        const unsigned int n = Vm1BusTiming::steps_of(form, &s);
+        unsigned int sum = 0;
+        for (int i = 0; i < 48; i++) {
+            for (unsigned int k = 0; k + 1 < n; k++)
+                t.record(0, s[k].kind == Vm1BusTiming::K_WRITE, s[k].role == Vm1BusTiming::R_STREAM, reply);
+            const int c = t.finish(form, reply, false);
+            if (i >= 24) sum += (unsigned int)c;
+        }
+        return sum / 24.0;
+    };
+    struct Case { const char * name; uint16_t w; double fast, bk10, bk11; };
+    static const Case cases[] = {
+        { "CMP R1,R2",   0020102,  8, 12, 16 },
+        { "CMP (R1),R2", 0021102, 18, 28, 32 },
+        { "MOV R1,(R2)", 0010112, 26, 36, 32 },
+        { "TST -(R1)",   0005741,  0, 28, 32 },
+        { "CLR @-(R2)",  0005052,  0, 48, 48 },
+        { "COM (R0)",    0005110,  0, 32, 37.333 },
+    };
+    for (const Case & c : cases) {
+        const double got[3] = { loop(3000000, c.w, nullptr), loop(3000000, c.w, &vp037), loop(4000000, c.w, &vp037) };
+        const double want[3] = { c.fast, c.bk10, c.bk11 };
+        static const char * where[3] = { "static memory", "БК0010", "БК0011М" };
+        for (int k = 0; k < 3; k++)
+            if (want[k] > 0 && (got[k] < want[k] - 0.01 || got[k] > want[k] + 0.01)) {
+                message = std::string(c.name) + " on " + where[k] + ": " + std::to_string(got[k])
+                        + " clocks instead of " + std::to_string(want[k]);
+                return false;
+            }
+    }
+    return true;
+}
+
 int run_selftest(const std::string &work_path, const std::string &data_path,
                  const std::string &software_path)
 {
@@ -541,6 +602,11 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     const bool zx_ok = check_zx_tape_round_trip(message);
     if (!zx_ok) { std::cout << "FAIL zx tape: " << message << std::endl; failed++; }
     std::cout << "ZX tape round trip: " << (zx_ok ? "ok" : "FAILED") << std::endl;
+
+    message.clear();
+    const bool vm1_ok = check_vm1_timing(message);
+    if (!vm1_ok) { std::cout << "FAIL vm1 timing: " << message << std::endl; failed++; }
+    std::cout << "К1801ВМ1 timing table: " << (vm1_ok ? "ok" : "FAILED") << std::endl;
 
     return failed ? 1 : 0;
 }

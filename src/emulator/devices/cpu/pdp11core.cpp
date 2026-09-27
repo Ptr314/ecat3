@@ -201,8 +201,16 @@ void pdp11core::write_word_checked(uint16_t address, uint16_t value)
 
 uint16_t pdp11core::fetch()
 {
-    uint16_t value = read_word_checked(context.R[PDP11::REG_PC]);
+    uint16_t value = read_stream(context.R[PDP11::REG_PC]);
     context.R[PDP11::REG_PC] += 2;
+    return value;
+}
+
+uint16_t pdp11core::read_stream(uint16_t address)
+{
+    m_stream = true;
+    uint16_t value = read_word_checked(address);
+    m_stream = false;
     return value;
 }
 
@@ -240,6 +248,7 @@ pdp11operand pdp11core::decode_operand(unsigned int spec, bool is_byte, unsigned
     op.is_reg = false;
     op.reg = reg;
     op.addr = 0;
+    op.stream = (mode == 2 && reg == PDP11::REG_PC);
 
     cycles += MODE_CYCLES[mode];
 
@@ -258,7 +267,7 @@ pdp11operand pdp11core::decode_operand(unsigned int spec, bool is_byte, unsigned
         context.R[reg] += (reg == PDP11::REG_PC)? 2 : step;
         break;
     case 3:                                     // @(Rn)+ and @#absolute
-        op.addr = read_word_checked(context.R[reg]);
+        op.addr = (reg == PDP11::REG_PC) ? read_stream(context.R[reg]) : read_word_checked(context.R[reg]);
         context.R[reg] += 2;
         break;
     case 4:                                     // -(Rn)
@@ -288,6 +297,7 @@ uint16_t pdp11core::read_operand(const pdp11operand & op, bool is_byte)
     if (op.is_reg)
         return is_byte? (uint16_t)(context.R[op.reg] & 0xFF) : context.R[op.reg];
 
+    if (op.stream) return is_byte ? (uint16_t)(read_stream(op.addr) & 0xFF) : read_stream(op.addr);
     if (is_byte) return read_byte(op.addr);
     return read_word_checked(op.addr);
 }
@@ -453,6 +463,7 @@ bool pdp11core::check_interrupts(unsigned int & cycles)
         // delivered - see UKNCChannels::update_irq()
         else if (is_virq) {
             is_virq = false;
+            m_last_iako = true;
             const uint16_t vector = virq_vector;
             do_trap(vector);
             on_virq_ack(vector);
@@ -465,6 +476,7 @@ bool pdp11core::check_interrupts(unsigned int & cycles)
 
 void pdp11core::do_branch(uint16_t command, bool condition, unsigned int & cycles)
 {
+    m_last_taken = condition;
     if (condition) {
         int8_t offset = (int8_t)(command & 0xFF);
         context.R[PDP11::REG_PC] = (uint16_t)(context.R[PDP11::REG_PC] + offset * 2);
@@ -902,6 +914,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
     if ((command & 0177000) == 0077000) {
         unsigned int r = (command >> 6) & 7;
         context.R[r]--;
+        m_last_taken = context.R[r] != 0;
         if (context.R[r] != 0) {
             context.R[PDP11::REG_PC] -= (uint16_t)((command & 077) * 2);
             cycles += C_SOB;
@@ -1131,14 +1144,19 @@ unsigned int pdp11core::execute()
 {
     unsigned int cycles = 0;
 
+    m_last_kind = LAST_IDLE;
+    m_last_trapped = false;
+    m_last_iako = false;
     if (context.stop) return C_IDLE;
 
     // Шаг по команде STEP выполняется с маскировкой всех прерываний, так что
     // проверка пропускается: следующая команда - та, на которую указывает PC,
     // и ничто не может встать между ней и возвратом в пультовый режим
-    if (!m_step_pending && check_interrupts(cycles)) return cycles;
+    if (!m_step_pending && check_interrupts(cycles)) { m_last_kind = LAST_INTERRUPT; return cycles; }
 
     if (context.halted) return C_IDLE;          // WAIT, idling until an interrupt
+
+    m_last_kind = LAST_INSN;
 
     bool trace = get_flag(PDP11::F_T) && !m_no_trace;
     m_no_trace = false;
@@ -1147,6 +1165,7 @@ unsigned int pdp11core::execute()
     m_history[m_history_pos++ & (HISTORY_SIZE - 1)] = context.R[PDP11::REG_PC];
     cycles += C_DATI;                           // reading the instruction
     uint16_t command = fetch();
+    m_last_command = command;
 
     // FADD/FSUB/FMUL/FDIV у ВМ2 не аппаратные: команда уводит процессор в
     // пультовый режим по вектору 010, и арифметику делает пультовая программа
@@ -1170,12 +1189,15 @@ unsigned int pdp11core::execute()
     if (m_abort) {
         cycles += C_TRAP;
         do_trap(PDP11::V_BUS_ERROR);
+        m_last_trapped = true;
     } else if (!handled) {
         cycles += C_TRAP;
         do_trap(PDP11::V_RESERVED);
+        m_last_trapped = true;
     } else if (trace) {
         cycles += C_TRAP;
         do_trap(PDP11::V_BPT);
+        m_last_trapped = true;
     }
 
     // Команда, запущенная по STEP, выполнена - процессор возвращается под

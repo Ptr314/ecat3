@@ -78,6 +78,7 @@ set(EMULATOR_SOURCES
     ${EMU_DIR}/devices/cpu/6502core.cpp
     ${EMU_DIR}/devices/cpu/pdp11core.cpp
     ${EMU_DIR}/devices/cpu/k1801vm1.cpp
+    ${EMU_DIR}/devices/cpu/vm1_timing.cpp
     ${EMU_DIR}/devices/common/i8255.cpp
     ${EMU_DIR}/devices/common/i8251.cpp
     ${EMU_DIR}/devices/common/dl11.cpp

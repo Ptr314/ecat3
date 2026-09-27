@@ -223,6 +223,7 @@ set(EMULATOR_SOURCES
     emulator/devices/cpu/6502.h emulator/devices/cpu/6502.cpp
     emulator/devices/cpu/pdp11_context.h emulator/devices/cpu/pdp11core.h emulator/devices/cpu/pdp11core.cpp
     emulator/devices/cpu/k1801vm1.h emulator/devices/cpu/k1801vm1.cpp
+    emulator/devices/cpu/vm1_timing.h emulator/devices/cpu/vm1_timing.cpp emulator/devices/cpu/vm1_timing_table.inc
     emulator/devices/cpu/z80.h emulator/devices/cpu/z80.cpp
     emulator/devices/cpu/cpu_utils.h
 
