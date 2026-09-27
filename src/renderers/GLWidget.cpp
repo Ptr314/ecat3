@@ -30,7 +30,7 @@ static const char* fragmentShaderSrc = R"(
 
 GLWidget::GLWidget(QWidget* parent)
     : QOpenGLWidget(parent), program(nullptr), texture(nullptr), vbo(0),
-    imageDisplaySize(0, 0), aspectRatioScale(1.0f) {}
+    imageDisplaySize(0, 0), aspectRatioScale(1.0f), linearFiltering(false) {}
 
 GLWidget::~GLWidget() {
     makeCurrent();
@@ -62,26 +62,33 @@ void GLWidget::initializeGL() {
 }
 
 void GLWidget::resizeGL(int w, int h) {
-    glViewport(0, 0, w, h);
-    updateImageRect();
+    //The viewport is set in paintGL(): w and h are in logical pixels, the
+    //framebuffer is in physical ones
+    Q_UNUSED(w);
+    Q_UNUSED(h);
 }
 
 void GLWidget::paintGL() {
+    //Everything below is counted in physical pixels of the framebuffer. In
+    //logical ones an image rect of whole numbers lands on fractions of a pixel
+    //under any Windows scale other than 100%
+    const qreal dpr = devicePixelRatioF();
+    const int fbW = qRound(width() * dpr);
+    const int fbH = qRound(height() * dpr);
+    glViewport(0, 0, fbW, fbH);
     glClear(GL_COLOR_BUFFER_BIT);
 
     QMutexLocker locker(&mutex);
     if (!pendingImage.isNull()) {
         if (texture) delete texture;
-        //DontGenerateMipMaps: the texture is drawn at or above 1:1 and both
-        //filters are Linear, so the mip chain built here 50 times a second was
+        //DontGenerateMipMaps: the texture is drawn at or above 1:1 and neither
+        //filter uses mipmaps, so the mip chain built here 50 times a second was
         //never sampled
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
         texture = new QOpenGLTexture(pendingImage.flipped(Qt::Vertical), QOpenGLTexture::DontGenerateMipMaps);
 #else
         texture = new QOpenGLTexture(pendingImage.mirrored(), QOpenGLTexture::DontGenerateMipMaps);
 #endif
-        texture->setMinificationFilter(QOpenGLTexture::Linear);
-        texture->setMagnificationFilter(QOpenGLTexture::Linear);
         //The default wrap mode is Repeat: the linear filter then blends the last
         //row and column with the first ones, which drew a thin copy of the
         //opposite edge along the right and the bottom of the picture
@@ -94,40 +101,51 @@ void GLWidget::paintGL() {
     program->bind();
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-    float scaleX, scaleY, offsetX, offsetY;
+    const QOpenGLTexture::Filter filter = linearFiltering ? QOpenGLTexture::Linear : QOpenGLTexture::Nearest;
+    texture->setMinificationFilter(filter);
+    texture->setMagnificationFilter(filter);
 
+    // Размер изображения в физических пикселях
+    int imgW, imgH;
     if (imageDisplaySize.isNull()) {
         // Режим растягивания с сохранением пропорций
-        float widgetAspect = (float)width() / height();
+        float widgetAspect = (float)fbW / fbH;
         float imageAspect = (float)texture->width() / texture->height();
 
-        int borderWidth = 20;
-        float borderAspect = std::min((float)(width() - 2*borderWidth)/width(), (float)(height() - 2*borderWidth)/height());
+        float borderWidth = 20 * dpr;
+        float borderAspect = std::min((fbW - 2*borderWidth)/fbW, (fbH - 2*borderWidth)/fbH);
 
         // Применяем коэффициент масштабирования пропорций
         imageAspect *= aspectRatioScale;
 
+        float w, h;
         if (widgetAspect > imageAspect) {
             // Шире, чем изображение - ограничиваем по высоте
-            scaleY = 1.0f;
-            scaleX = imageAspect / widgetAspect;
+            h = fbH;
+            w = fbH * imageAspect;
         } else {
             // Уже, чем изображение - ограничиваем по ширине
-            scaleX = 1.0f;
-            scaleY = widgetAspect / imageAspect;
+            w = fbW;
+            h = fbW / imageAspect;
         }
-        scaleY *= borderAspect;
-        scaleX *= borderAspect;
-
-        offsetX = 0.0f;
-        offsetY = 0.0f;
+        imgW = qRound(w * borderAspect);
+        imgH = qRound(h * borderAspect);
     } else {
         // Режим фиксированного размера с центрированием
-        scaleX = (float)imageRect.width() / width();
-        scaleY = (float)imageRect.height() / height();
-        offsetX = (float)(imageRect.x() + imageRect.width() / 2) / (width() / 2) - 1.0f;
-        offsetY = 1.0f - (float)(imageRect.y() + imageRect.height() / 2) / (height() / 2);
+        imgW = qRound(imageDisplaySize.width() * dpr);
+        imgH = qRound(imageDisplaySize.height() * dpr);
     }
+
+    //The corner is a whole pixel, so at an integer scale every texel covers
+    //the same number of screen pixels. The old code divided by width() / 2 in
+    //integers, which moved the picture by a fraction of a pixel whenever the
+    //widget was an odd number of pixels wide
+    const int imgX = (fbW - imgW) / 2;
+    const int imgY = (fbH - imgH) / 2;
+    const float scaleX = (float)imgW / fbW;
+    const float scaleY = (float)imgH / fbH;
+    const float offsetX = (float)(2 * imgX + imgW) / fbW - 1.0f;
+    const float offsetY = 1.0f - (float)(2 * imgY + imgH) / fbH;
 
     program->setUniformValue("imageScale", scaleX, scaleY);
     program->setUniformValue("imageOffset", offsetX, offsetY);
@@ -149,10 +167,9 @@ void GLWidget::paintGL() {
     program->release();
 }
 
-//The three slots below are called from the emulator's render thread. A QWidget
+//The setters below are called from the emulator's render thread. A QWidget
 //belongs to the GUI thread, so the work is posted to it instead of being done
-//here: update() only asks for a repaint, but updateImageRect() reads the
-//geometry of the widget, which the GUI thread owns.
+//here: the fields they change are read by paintGL() on the GUI thread.
 void GLWidget::updateTexture(const QImage& image) {
     {
         QMutexLocker locker(&mutex);
@@ -169,15 +186,17 @@ void GLWidget::setAspectRatioScale(float scale) {
     QMetaObject::invokeMethod(this, "applyAspectRatioScale", Qt::QueuedConnection, Q_ARG(float, scale));
 }
 
+void GLWidget::setFiltering(bool linear) {
+    QMetaObject::invokeMethod(this, "applyFiltering", Qt::QueuedConnection, Q_ARG(bool, linear));
+}
+
 //...and these run on the GUI thread
 void GLWidget::applyPendingUpdate() {
-    updateImageRect();
     update();
 }
 
 void GLWidget::applyImageSize(QSize size) {
     imageDisplaySize = size;
-    updateImageRect();
     update();
 }
 
@@ -186,17 +205,7 @@ void GLWidget::applyAspectRatioScale(float scale) {
     update();
 }
 
-void GLWidget::updateImageRect() {
-    if (imageDisplaySize.isNull()) {
-        // В режиме сохранения пропорций imageRect не используется,
-        // так как масштабирование делается в шейдере
-        imageRect = QRect(0, 0, width(), height());
-        return;
-    }
-
-    // Центрируем изображение с заданным размером
-    int x = (width() - imageDisplaySize.width()) / 2;
-    int y = (height() - imageDisplaySize.height()) / 2;
-
-    imageRect = QRect(x, y, imageDisplaySize.width(), imageDisplaySize.height());
+void GLWidget::applyFiltering(bool linear) {
+    linearFiltering = linear;
+    update();
 }

@@ -669,8 +669,25 @@ void MainWindow::CreateScreenMenu()
         af2->setCheckable(true);
         af2->setChecked(e->get_filtering() == SCREEN_FILTERING_LINEAR);
     #elif defined(RENDERER_OPENGL)
+        //The texture filter of GLWidget: anything but NONE is linear, and an
+        //anisotropic filter does nothing for a picture that is never minified
         ui->menuFiltering->clear();
-        ui->menuFiltering->setDisabled(true);
+        QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);
+        QAction * af1 = ui->menuFiltering->addAction(
+            tr("Nearest pixel"),
+            [this]{e->set_filtering(SCREEN_FILTERING_NONE);}
+            );
+        af1->setActionGroup(filtering_group);
+        af1->setCheckable(true);
+        af1->setChecked(e->get_filtering() == SCREEN_FILTERING_NONE);
+
+        QAction * af2 = ui->menuFiltering->addAction(
+            tr("Linear"),
+            [this]{e->set_filtering(SCREEN_FILTERING_LINEAR);}
+            );
+        af2->setActionGroup(filtering_group);
+        af2->setCheckable(true);
+        af2->setChecked(e->get_filtering() != SCREEN_FILTERING_NONE);
     #endif
 }
 

@@ -1208,6 +1208,7 @@ void Emulator::set_ratio(int ratio)
 
 void Emulator::set_filtering(int filtering)
 {
+    screen_filtering = filtering;
     renderer->set_filtering(filtering);
     write_setup("Video", "filtering", std::to_string(filtering));
     screen_sx = 0;

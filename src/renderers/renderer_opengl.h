@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "emulator/core.h"
 #include "emulator/renderer.h"
 #include "GLWidget.h"
 
@@ -34,6 +35,11 @@ public:
         VideoRenderer::init_screen(p, sx, sy, ss, ps);
         widget = reinterpret_cast<GLWidget *>(p);
         resize(sx, sy, ss, ps);
+    }
+
+    void set_filtering(int value) override
+    {
+        if (widget != nullptr) widget->setFiltering(value != SCREEN_FILTERING_NONE);
     }
 
     void stop() override

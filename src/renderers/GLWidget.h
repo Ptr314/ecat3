@@ -23,12 +23,14 @@ public:
     void updateTexture(const QImage& image);
     void setImageSize(const QSize& size); // (0,0) - растянуть с сохранением пропорций
     void setAspectRatioScale(float scale); // Установить коэффициент масштабирования пропорций
+    void setFiltering(bool linear);
 
 public slots:
     //Run on the GUI thread, which owns the widget
     void applyPendingUpdate();
     void applyImageSize(QSize size);
     void applyAspectRatioScale(float scale);
+    void applyFiltering(bool linear);
 
 protected:
     void initializeGL() override;
@@ -42,7 +44,6 @@ private:
     QMutex mutex;
     GLuint vbo;
     QSize imageDisplaySize; // (0,0) - режим растягивания с пропорциями
-    QRect imageRect;
     float aspectRatioScale; // Коэффициент масштабирования пропорций
-    void updateImageRect();
+    bool linearFiltering;
 };
