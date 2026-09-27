@@ -8,30 +8,24 @@ REM   build-win-i386.bat           Windows XP,  i386,   Qt 5.6.3 + mingw 4.9.2
 REM   build-win-7.bat              Windows 7,   i386,   Qt 5.15.2 + mingw 8.1
 REM   build-win-mingw-latest.bat   Windows 10+, x86_64, Qt 6 + mingw
 REM   build-win-msvc-latest.bat    Windows 10+, x86_64, Qt 6 + MSVC
+REM                                (each also makes its MCP and console variants)
 REM   build-wasm.cmd               browser
 REM
 REM Each script runs in its own cmd.exe, so the toolchain one of them puts on
 REM PATH never reaches the next. A failed build does not stop the rest: the
 REM summary at the end lists what failed, and the exit code is 1 then.
 REM
-REM Arguments, in any order:
+REM Arguments:
 REM   clean      wipe the build directories first
-REM   headless   also build the console executable of the two x86_64 targets
-REM   mcp        additionally build the MCP variants of the two x86_64 targets
-REM              (OpenGL only, archives get the -mcp suffix)
 REM ---------------------------------------------------------------------------
 
 SET "_HERE=%~dp0"
 SET "_CLEAN="
-SET "_HEADLESS="
-SET "_MCP=0"
 for %%A in (%*) do (
     SET "_KNOWN="
-    if /I "%%A"=="clean"    (SET "_CLEAN=clean" & SET "_KNOWN=1")
-    if /I "%%A"=="headless" (SET "_HEADLESS=headless" & SET "_KNOWN=1")
-    if /I "%%A"=="mcp"      (SET "_MCP=1" & SET "_KNOWN=1")
+    if /I "%%A"=="clean" (SET "_CLEAN=clean" & SET "_KNOWN=1")
     if not defined _KNOWN (
-        echo ERROR: unknown argument "%%A". Allowed: clean, headless, mcp
+        echo ERROR: unknown argument "%%A". Allowed: clean
         exit /b 1
     )
 )
@@ -42,13 +36,8 @@ SET "_STARTED=%DATE% %TIME%"
 
 call :step build-win-i386.bat         "%_CLEAN%"
 call :step build-win-7.bat            "%_CLEAN%"
-call :step build-win-mingw-latest.bat "%_HEADLESS% %_CLEAN%"
-call :step build-win-msvc-latest.bat  "%_HEADLESS% %_CLEAN%"
-if "%_MCP%"=="1" (
-    REM The build directories were already cleaned by the passes above
-    call :step build-win-mingw-latest.bat "mcp"
-    call :step build-win-msvc-latest.bat  "mcp"
-)
+call :step build-win-mingw-latest.bat "%_CLEAN%"
+call :step build-win-msvc-latest.bat  "%_CLEAN%"
 call :step build-wasm.cmd             "%_CLEAN%"
 
 echo.

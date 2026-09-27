@@ -10,6 +10,85 @@
 команд, который исполняет тот же `tick()`. Отсюда следует приятное: живая сессия — это по
 сути сценарий, и всё, что работает в `.ecat`, работает и здесь.
 
+## Готовый выпуск
+
+Собирать ничего не нужно. MCP-сервер есть в двух вариантах выпуска:
+
+- оконный с суффиксом `-mcp`: `ecat-<версия>-windows-x86_64-OPENGL-mcp.zip`,
+  `ecat-<версия>-macos-universal-opengl-mcp.dmg`, `ecat-<версия>-linux-x86_64-opengl-mcp.AppImage`;
+- консольный, без окна и без Qt: `ecat-<версия>-windows-x86_64-HEADLESS.zip`,
+  `ecat-<версия>-macos-universal-headless.tar.gz`, `ecat-<версия>-linux-x86_64-headless.tar.gz`.
+
+Обычный оконный выпуск на `--mcp` отвечает ошибкой и кодом возврата 2.
+
+Сетевой порт серверу не нужен, и настраивать его не надо. У MCP два транспорта: stdio, где
+клиент сам запускает программу и разговаривает с ней через stdin/stdout, и HTTP — для
+сервера, который работает отдельно от клиента. eCat3 работает по stdio: этот способ для
+локальных серверов понимают Claude Code, Claude Desktop, Cursor и VS Code. Клиенту
+достаточно сказать, какую программу запускать и с каким ключом, — эмулятор он стартует
+сам, и окно появляется при загрузке первой машины.
+
+`--workdir` в выпуске не нужен: программа сама находит свои `computers/`, `data/` и
+`software/` — рядом с `eCat3.exe` в Windows, в `eCat3.app/Contents/Resources` на macOS,
+в `usr/share/ecat` внутри AppImage, в `share/ecat` рядом с `bin/` у консольного `.tar.gz`.
+Путь к программе — абсолютный.
+
+**Windows** — распакуйте архив в постоянное место:
+
+```
+claude mcp add ecat3 -- C:\Programs\eCat3\eCat3.exe --mcp
+```
+
+Для консольного выпуска то же с `eCat3-headless.exe`; если в компьютере нет звуковой
+карты, добавьте `--no-sound`.
+
+**macOS** — перетащите `eCat3` из `.dmg` в «Программы»:
+
+```
+claude mcp add ecat3 -- /Applications/eCat3.app/Contents/MacOS/eCat3 --mcp
+```
+
+Выпуск не подписан. Если сервер не стартует, запустите программу один раз из Finder
+(правая кнопка, «Открыть») или снимите карантин: `xattr -dr com.apple.quarantine /Applications/eCat3.app`.
+
+**Linux** — сделайте файл исполняемым (`chmod +x`), ключ AppImage передаёт программе как есть:
+
+```
+claude mcp add ecat3 -- /home/<имя>/Apps/ecat-<версия>-linux-x86_64-opengl-mcp.AppImage --mcp
+```
+
+Нужен FUSE 2, как и для обычного запуска (см. `MANUAL.md`).
+
+**Консольный выпуск на macOS и Linux** — распакуйте архив (`tar -xzf ...`) в постоянное
+место; программа лежит в `bin/`, машины — в `share/ecat/`, и так их и надо оставить:
+
+```
+claude mcp add ecat3 -- /home/<имя>/Apps/ecat-<версия>-linux-x86_64-headless/bin/eCat3-headless --mcp
+```
+
+На macOS консольный файл тоже не подписан, и карантин с распакованного каталога
+снимается той же командой `xattr -dr com.apple.quarantine <каталог>`.
+
+**Claude Desktop и другие клиенты** описывают сервер в своём файле настроек тем же
+набором — программа и аргументы. У Claude Desktop это `claude_desktop_config.json`
+(«Settings» → «Developer» → «Edit Config»):
+
+```json
+{
+  "mcpServers": {
+    "ecat3": {
+      "command": "/Applications/eCat3.app/Contents/MacOS/eCat3",
+      "args": ["--mcp"]
+    }
+  }
+}
+```
+
+В Windows пути в JSON пишутся с двойной обратной чертой: `"C:\\Programs\\eCat3\\eCat3.exe"`.
+
+После перезапуска клиента сервер виден в его списке (в Claude Code — команда `/mcp`), а
+первым вызовом идёт `ecat_machine` с именем конфигурации, см. «Инструменты» ниже.
+
 ## Сборка
 
 Сервер собирается только по ключу, без него ни один его файл не компилируется:
@@ -63,6 +142,37 @@ cmake --build build
   нужен вовсе, и это самый простой вариант, если с библиотеками возникли сложности.
 - `ECAT3_RELOADER` — путь к обёртке, `ECAT3_PYTHON` — чем её запускать, если `py` не
   подходит.
+
+### macOS
+
+`.mcp.json` в репозитории настроен под Windows: `py`, пути с `\` и `PATH` через `;`,
+который на macOS испортил бы переменную. Отдельной записью для мака туда ничего не
+добавлено, потому что клиент запускает все серверы из файла, и на другой платформе
+запись висела бы упавшей. На маке `.mcp.json` заменяется таким:
+
+```json
+{
+  "mcpServers": {
+    "ecat3": {
+      "command": "${ECAT3_PYTHON:-python3}",
+      "args": [
+        "${ECAT3_RELOADER:-/Users/<имя>/eCat3/.build/mcp_reload.py}",
+        "--exe", "${ECAT3_EXE:-/Users/<имя>/eCat3/build-mcp/eCat3.app/Contents/MacOS/eCat3}",
+        "--",
+        "--mcp", "--workdir", "${ECAT3_DEPLOY:-/Users/<имя>/eCat3/deploy}"
+      ]
+    }
+  }
+}
+```
+
+Сборка — `cmake ... -DRENDERER_OPENGL=1 -DENABLE_MCP=ON`, как выше, с `CMAKE_PREFIX_PATH`
+к Qt; `.build/build-macos.sh` среди прочих вариантов собирает и этот и упаковывает в `.dmg`. Обёртка
+копирует из бандла только исполняемый файл, поэтому рассчитана на статический Qt
+(как в `build-macos.sh`); с динамическим Qt копия может не найти свои фреймворки, и тогда
+`command` — сам `eCat3.app/Contents/MacOS/eCat3`, а `args` — те, что идут после `--`.
+Консольной сборке (`-DENABLE_GUI=OFF -DENABLE_HEADLESS=ON`) библиотеки Qt не нужны
+вовсе: `--exe` указывает на `eCat3-headless`.
 
 Консольная сборка понимает ещё ключ `--no-sound`: с ним ни одно звуковое устройство не
 открывает аудиодрайвер. Нужен там, где звуковой карты нет (сервер сборки, контейнер), —

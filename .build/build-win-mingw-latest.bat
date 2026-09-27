@@ -13,31 +13,29 @@ REM NOTE: in a shared build the mingw runtime (libstdc++-6.dll and friends)
 REM cannot be dropped -- the Qt6*.dll themselves import it, not just our exe.
 REM A static Qt is the only way to get a DLL-free build here.
 REM
-REM Arguments, in any order:
+REM Every run builds four variants, each into its own archive:
+REM   QT, OPENGL   the windowed emulator
+REM   OPENGL_MCP   the same with the MCP server (-DENABLE_MCP=ON), archive
+REM                suffix -mcp; a windowed MCP build needs the OpenGL renderer
+REM   HEADLESS     the console executable, no Qt at all, MCP server included
+REM
+REM Arguments:
 REM   clean      wipe the build directories first
-REM   mcp        build with the MCP server (-DENABLE_MCP=ON). Only the OpenGL
-REM              renderer supports it, the other GUI variants are skipped
-REM   headless   also build the console executable, which needs no Qt at all
 REM ---------------------------------------------------------------------------
 
 cd /d "%~dp0"
 call "%~dp0vars-mingw-latest.cmd" || exit /b 1
 
 SET "_CLEAN="
-SET "_MCP=OFF"
-SET "_HEADLESS=0"
 for %%A in (%*) do (
-    if /I "%%A"=="clean"    SET "_CLEAN=clean"
-    if /I "%%A"=="mcp"      SET "_MCP=ON"
-    if /I "%%A"=="headless" SET "_HEADLESS=1"
+    if /I "%%A"=="clean" SET "_CLEAN=clean"
 )
 SET _ARCHITECTURE=x86_64
 SET _COMPILER=mingw
 SET _PLATFORM=windows
 SET "CC=%_ROOT_MINGW%\gcc.exe"
 
-SET RENDERERS=QT OPENGL
-if "%_HEADLESS%"=="1" SET RENDERERS=%RENDERERS% HEADLESS
+SET RENDERERS=QT OPENGL OPENGL_MCP HEADLESS
 
 call "%~dp0win-common.cmd" version "..\VERSION" || exit /b 1
 
@@ -66,29 +64,35 @@ REM ---------------------------------------------------------------------------
 :build_one
 SET _RENDERER=%~1
 
-REM HEADLESS is not a renderer but a whole variant: the console executable,
-REM built from the same sources with no Qt linked at all
+REM A variant is a renderer (_GL, the one whose runtime DLLs are copied) plus
+REM the MCP switch and the archive suffix. HEADLESS is not a renderer but a
+REM whole variant: the console executable, built from the same sources with no
+REM Qt linked at all. It always carries the MCP server: a console emulator is
+REM mostly driven from outside anyway. A windowed MCP build is only supported
+REM on OpenGL, see docs/MCP.md
+SET "_MCP=OFF"
+SET "_EXE_NAME=ecat3.exe"
+SET "_GL=%_RENDERER%"
+SET "_SUFFIX=%_RENDERER%"
+if /I "%_RENDERER%"=="OPENGL_MCP" (
+    SET "_GL=OPENGL"
+    SET "_MCP=ON"
+    SET "_SUFFIX=OPENGL-mcp"
+)
 if /I "%_RENDERER%"=="HEADLESS" (
     SET "_VARIANT_FLAGS=-DENABLE_GUI=OFF -DENABLE_HEADLESS=ON"
     SET "_EXE_NAME=ecat3-headless.exe"
+    SET "_MCP=ON"
 ) else (
-    SET "_VARIANT_FLAGS=-DRENDERER_%_RENDERER%=1"
-    SET "_EXE_NAME=ecat3.exe"
+    SET "_VARIANT_FLAGS=-DRENDERER_%_GL%=1"
 )
 
-REM A windowed MCP build is only supported on OpenGL, see docs/MCP.md
-if /I "%_MCP%"=="ON" if /I not "%_RENDERER%"=="OPENGL" if /I not "%_RENDERER%"=="HEADLESS" (
-    echo.
-    echo === Skipping %_RENDERER%: an MCP build needs the OpenGL renderer
-    exit /b 0
-)
 SET _BUILD_DIR=.\build\%_PLATFORM%_%_ARCHITECTURE%_%_COMPILER%_%_RENDERER%
-SET _RELEASE_NAME=ecat-%_VERSION%-%_PLATFORM%-%_ARCHITECTURE%-%_RENDERER%
-if /I "%_MCP%"=="ON" SET _RELEASE_NAME=%_RELEASE_NAME%-mcp
+SET _RELEASE_NAME=ecat-%_VERSION%-%_PLATFORM%-%_ARCHITECTURE%-%_SUFFIX%
 SET _RELEASE_DIR=.\release\%_RELEASE_NAME%
 
 echo.
-echo === Renderer: %_RENDERER%
+echo === Variant: %_SUFFIX%
 
 if /I "%_CLEAN%"=="clean" if exist "%_BUILD_DIR%" rmdir /s /q "%_BUILD_DIR%"
 call "%~dp0win-common.cmd" checkgen "%_BUILD_DIR%" Ninja || exit /b 1
@@ -124,7 +128,7 @@ if /I "%_RENDERER%"=="HEADLESS" (
     copy /y "%_QT_KIT%\bin\Qt6Widgets.dll" "%_RELEASE_DIR%" >nul || exit /b 1
     if "%_SVG%"=="1" copy /y "%_QT_KIT%\bin\Qt6Svg.dll" "%_RELEASE_DIR%" >nul || exit /b 1
 
-    if /I "%_RENDERER%"=="OPENGL" (
+    if /I "%_GL%"=="OPENGL" (
         copy /y "%_QT_KIT%\bin\Qt6OpenGL.dll"        "%_RELEASE_DIR%" >nul || exit /b 1
         copy /y "%_QT_KIT%\bin\Qt6OpenGLWidgets.dll" "%_RELEASE_DIR%" >nul || exit /b 1
     )

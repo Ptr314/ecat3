@@ -33,8 +33,8 @@ cmake -S src -B build-headless -G Ninja -DCMAKE_BUILD_TYPE=Release       -DENABL
 cmake --build build-headless
 ```
 
-У скриптов выпуска для современных платформ появились аргументы `mcp` и
-`headless`, см. [.build/README.md](../.build/README.md).
+Скрипты выпуска для современных платформ собирают вместе с оконными
+вариантами MCP-вариант и консольный, см. [.build/README.md](../.build/README.md).
 
 Версии х86_64 для Windows 10+ и х86_64+arm64 для macOS используют статическую сборку. Версия для Linux использует динамическую сборку в целях лучшей совместимости с разными дистрибутивами. Компиляция происходит в Ubuntu 20.04. 
 

@@ -1,17 +1,20 @@
 #!/bin/bash
 #
-# Release build for macOS: one universal (x86_64 + arm64) .dmg per renderer.
+# Release build for macOS: universal (x86_64 + arm64) binaries, one archive per
+# variant:
+#
+#   qt, opengl   the windowed emulator, a .dmg each
+#   opengl-mcp   the same with the MCP server (-DENABLE_MCP=ON), a .dmg; a
+#                windowed MCP build needs the OpenGL renderer
+#   headless     the console executable with the MCP server, no Qt at all, a
+#                .tar.gz: bin/eCat3-headless next to share/ecat/, which is where
+#                the console build looks for its machines
 #
 # Qt is linked statically (see docs/BUILD.md and macos_build_qt_universal.sh), so the
 # bundle carries no Qt frameworks. Only SDL2, when the binary actually links
 # against it, is copied into Contents/Frameworks.
 #
-# Usage: ./build-macos.sh [clean] [mcp]
-#
-#   mcp   build with the MCP server (-DENABLE_MCP=ON). Only the OpenGL renderer
-#         supports it in a windowed build, so the others are skipped. The console
-#         build is not packaged here; configure it by hand with
-#         -DENABLE_GUI=OFF -DENABLE_HEADLESS=ON, see docs/MCP.md
+# Usage: ./build-macos.sh [clean]
 
 set -euo pipefail
 
@@ -23,11 +26,11 @@ APP_NAME="eCat3"
 
 # SDL2 is not built here: the Qt and OpenGL renderers already cover this
 # platform and the SDL2 one would add a dylib to every bundle.
-RENDERERS=("qt" "opengl")
+VARIANTS=("qt" "opengl" "opengl-mcp" "headless")
 
-ENABLE_MCP="OFF"
+CLEAN=0
 for arg in "$@"; do
-    if [ "${arg}" = "mcp" ]; then ENABLE_MCP="ON"; fi
+    if [ "${arg}" = "clean" ]; then CLEAN=1; fi
 done
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -48,38 +51,56 @@ if [ -z "${APP_VERSION}" ]; then
     exit 1
 fi
 
+# Copies deploy/ into $1, with the distributed defaults as ecat.ini:
+# deploy/ecat.ini is the developer's own working copy and must not be released
+copy_deploy() {
+    cp -r "${REPO_DIR}/deploy/" "$1"
+    rm -f "$1/ecat.ini" "$1/.ecat.ini"
+    cp "${REPO_DIR}/deploy/.ecat.ini" "$1/ecat.ini"
+}
+
 echo "Building ${APP_NAME} ${APP_VERSION} for ${PLATFORM} ${ARCHITECTURE}"
 mkdir -p "${RELEASE_DIR}"
 
-for RENDERER in "${RENDERERS[@]}"; do
+for VARIANT in "${VARIANTS[@]}"; do
   echo
-  echo "=== Renderer: ${RENDERER}"
+  echo "=== Variant: ${VARIANT}"
 
-  # A windowed MCP build is only supported on OpenGL, see docs/MCP.md
-  if [ "${ENABLE_MCP}" = "ON" ] && [ "${RENDERER}" != "opengl" ]; then
-      echo "=== Skipping ${RENDERER}: an MCP build needs the OpenGL renderer"
-      continue
-  fi
+  BUILD_DIR="${SCRIPT_DIR}/build/${PLATFORM}-${ARCHITECTURE}-${VARIANT}"
+  RELEASE_NAME="ecat-${APP_VERSION}-${PLATFORM}-${ARCHITECTURE}-${VARIANT}"
 
-  BUILD_DIR="${SCRIPT_DIR}/build/${PLATFORM}-${ARCHITECTURE}-${RENDERER}"
-  RENDERER_UPPER=$(echo "${RENDERER}" | tr '[:lower:]' '[:upper:]')
-  DMG_SUFFIX=""
-  if [ "${ENABLE_MCP}" = "ON" ]; then DMG_SUFFIX="-mcp"; fi
-  DMG_NAME="ecat-${APP_VERSION}-${PLATFORM}-${ARCHITECTURE}-${RENDERER}${DMG_SUFFIX}.dmg"
+  case "${VARIANT}" in
+      headless)   FLAGS=(-DENABLE_GUI=OFF -DENABLE_HEADLESS=ON -DENABLE_MCP=ON) ;;
+      opengl-mcp) FLAGS=(-DRENDERER_OPENGL=1 -DENABLE_MCP=ON) ;;
+      *)          FLAGS=(-DRENDERER_$(echo "${VARIANT}" | tr '[:lower:]' '[:upper:]')=1 -DENABLE_MCP=OFF) ;;
+  esac
 
-  if [ "${1:-}" = "clean" ]; then
+  if [ "${CLEAN}" = "1" ]; then
       rm -rf "${BUILD_DIR}"
   fi
 
   # Always reconfigure and rebuild: cmake and ninja work out what actually
-  # changed, and a stale executable never reaches the .dmg.
+  # changed, and a stale executable never reaches the release.
   cmake -S "${REPO_DIR}/src" -B "${BUILD_DIR}" -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_PREFIX_PATH="${QT_PATH}" \
         -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
-        -DRENDERER_${RENDERER_UPPER}=1 \
-        -DENABLE_MCP=${ENABLE_MCP}
+        "${FLAGS[@]}"
   cmake --build "${BUILD_DIR}"
+
+  if [ "${VARIANT}" = "headless" ]; then
+      # A console program gains nothing from a bundle or a .dmg. The layout is
+      # the one resolve_paths() in src/headless/headless_main.cpp falls back to
+      # when the working directory holds no computers/: <bin>/../share/ecat
+      STAGING="${BUILD_DIR}/pkg/${RELEASE_NAME}"
+      rm -rf "${BUILD_DIR}/pkg"
+      mkdir -p "${STAGING}/bin" "${STAGING}/share/ecat"
+      cp "${BUILD_DIR}/${APP_NAME}-headless" "${STAGING}/bin/"
+      copy_deploy "${STAGING}/share/ecat"
+      rm -f "${RELEASE_DIR}/${RELEASE_NAME}.tar.gz"
+      tar -czf "${RELEASE_DIR}/${RELEASE_NAME}.tar.gz" -C "${BUILD_DIR}/pkg" "${RELEASE_NAME}"
+      continue
+  fi
 
   # The on-screen keyboard is compiled in only when Qt has the Svg module,
   # which a static Qt links into the binary itself
@@ -93,11 +114,7 @@ for RENDERER in "${RENDERERS[@]}"; do
   # wiped -- it also holds the icon put there by cmake.
   RESOURCES="${BUILD_DIR}/${APP_NAME}.app/Contents/Resources"
   rm -rf "${RESOURCES}/computers" "${RESOURCES}/data" "${RESOURCES}/software"
-  cp -r "${REPO_DIR}/deploy/" "${RESOURCES}"
-  # deploy/ecat.ini is the developer's own working copy and must not be
-  # released -- the distributed defaults live in deploy/.ecat.ini.
-  rm -f "${RESOURCES}/ecat.ini" "${RESOURCES}/.ecat.ini"
-  cp "${REPO_DIR}/deploy/.ecat.ini" "${RESOURCES}/ecat.ini"
+  copy_deploy "${RESOURCES}"
 
   # Bundle SDL2 dylib
   APP_BINARY="${BUILD_DIR}/${APP_NAME}.app/Contents/MacOS/${APP_NAME}"
@@ -125,13 +142,13 @@ for RENDERER in "${RENDERERS[@]}"; do
 
   # hdiutil refuses to overwrite an existing image, and a stale .dmg here would
   # silently be shipped as the new release.
-  rm -f "${RELEASE_DIR}/${DMG_NAME}"
+  rm -f "${RELEASE_DIR}/${RELEASE_NAME}.dmg"
   hdiutil create -volname "${APP_NAME}" \
       -srcfolder "${STAGING}" \
       -ov -format UDZO \
-      "${RELEASE_DIR}/${DMG_NAME}"
+      "${RELEASE_DIR}/${RELEASE_NAME}.dmg"
 done
 
 echo
 echo "=== Release contents:"
-ls -l "${RELEASE_DIR}"/*.dmg
+ls -l "${RELEASE_DIR}"/*-${PLATFORM}-*.dmg "${RELEASE_DIR}"/*-${PLATFORM}-*.tar.gz

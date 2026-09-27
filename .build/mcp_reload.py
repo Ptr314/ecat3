@@ -149,7 +149,9 @@ class Wrapper(object):
                 target = os.path.join(self.dir, str(self.copies))
                 os.makedirs(target)
                 target = os.path.join(target, os.path.basename(self.exe))
-                shutil.copyfile(self.exe, target)
+                # copy2, а не copyfile: та не переносит права, и на macOS и
+                # Linux копия без бита исполнения не запускается
+                shutil.copy2(self.exe, target)
                 # Файл не менялся, пока копировался, - значит, дописан
                 if os.path.getmtime(self.exe) == built_at:
                     return target, built_at

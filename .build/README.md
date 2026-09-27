@@ -8,45 +8,39 @@
 |---|---|---|
 | `build-win-i386.bat` | Windows XP+, 32 бита, Qt 5.6.3 + MinGW 4.9.2 | `ecat-<версия>-windows-i386-<рендерер>.zip` |
 | `build-win-7.bat` | Windows 7+, 32 бита, Qt 5.15.2 + MinGW 8.1 | `ecat-<версия>-windows_7-i386-<рендерер>.zip` |
-| `build-win-mingw-latest.bat` | Windows 10+, 64 бита, Qt 6 + MinGW 13 | `ecat-<версия>-windows-x86_64-<рендерер>.zip` |
-| `build-win-msvc-latest.bat` | Windows 10+, 64 бита, Qt 6 + MSVC | `ecat-<версия>-windows-x86_64-msvc-<рендерер>.zip` |
-| `build-linux.sh` | Linux x86_64, AppImage | `ecat-<версия>-linux-x86_64-<рендерер>.AppImage` |
-| `build-macos.sh` | macOS, универсальный бинарник | `ecat-<версия>-macos-universal-<рендерер>.dmg` |
+| `build-win-mingw-latest.bat` | Windows 10+, 64 бита, Qt 6 + MinGW 13 | `ecat-<версия>-windows-x86_64-<вариант>.zip` |
+| `build-win-msvc-latest.bat` | Windows 10+, 64 бита, Qt 6 + MSVC | `ecat-<версия>-windows-x86_64-msvc-<вариант>.zip` |
+| `build-linux.sh` | Linux x86_64, AppImage | `ecat-<версия>-linux-x86_64-<вариант>.AppImage`, консольный — `.tar.gz` |
+| `build-macos.sh` | macOS, универсальный бинарник | `ecat-<версия>-macos-universal-<вариант>.dmg`, консольный — `.tar.gz` |
 | `build-wasm.cmd`, `build-wasm.sh` | браузер | `ecat-<версия>-web.zip` и каталог рядом |
 
-Каждый скрипт собирает все свои рендереры (`QT`, `OPENGL`, `SDL2` — набор
-свой у каждой цели) и делает по архиву на рендерер. Аргумент `clean`
-предварительно удаляет build-директории.
+Каждый скрипт собирает все свои варианты и делает по архиву на вариант.
+Единственный аргумент — `clean`, он предварительно удаляет build-директории.
+
+Старые киты (XP и Windows 7) собирают только оконные рендереры. Скрипты
+для Windows 10+, macOS и Linux делают четыре варианта (у Windows имена
+заглавными, у macOS и Linux строчными):
+
+| Вариант | Что это |
+|---|---|
+| `QT`, `OPENGL` | Обычный оконный эмулятор |
+| `OPENGL-mcp` | Он же с MCP-сервером (`-DENABLE_MCP=ON`). Оконный MCP-вариант бывает только на OpenGL. См. `docs/MCP.md` |
+| `HEADLESS` | Консольный вариант без графического интерфейса и без Qt (`-DENABLE_GUI=OFF -DENABLE_HEADLESS=ON`), всегда с MCP-сервером. Файл — `eCat3-headless` (имя цели CMake). В Windows это обычный zip с exe рядом с машинами; на macOS и Linux — `.tar.gz` с `bin/eCat3-headless` и `share/ecat/`: там консольная сборка ищет машины, если в рабочем каталоге нет `computers/` |
+
+У каждого варианта свой build-каталог, так что они не пересобирают друг
+друга. Эти варианты требуют C++17, поэтому старым китам недоступны.
 
 `build_all.bat` собирает подряд все Windows-выпуски и пакет для браузера. Каждый скрипт идёт в отдельном `cmd.exe`,
 чтобы цепочка одного не оставалась в `PATH` следующего; упавшая сборка
 остальные не останавливает, в конце печатается сводка, а код возврата тогда
-1. Понимает `clean`, `headless` (консольный вариант обеих x86_64 сборок) и
-`mcp` — последний добавляет MCP-варианты обеих x86_64 сборок отдельным
-проходом.
+1. Понимает `clean`.
 
-### Дополнительные аргументы современных целей
-
-Действуют у `build-win-mingw-latest.bat`, `build-win-msvc-latest.bat`,
-`build-linux.sh` и `build-macos.sh`; порядок аргументов любой. Старые киты
-(XP и Windows 7) их не знают — эти возможности требуют C++17.
-
-| Аргумент | Что делает |
-|---|---|
-| `mcp` | Собирает с MCP-сервером (`-DENABLE_MCP=ON`), к имени архива добавляется `-mcp`. Оконный вариант поддерживается только на `OPENGL`, остальные рендереры пропускаются с сообщением, а не с ошибкой. См. `docs/MCP.md` |
-| `headless` | Дополнительно собирает консольный вариант без графического интерфейса (`-DENABLE_GUI=OFF -DENABLE_HEADLESS=ON`). Только у Windows-скриптов: получается обычный zip (`ecat-<версия>-windows-x86_64-HEADLESS`, у MSVC `…-x86_64-msvc-HEADLESS`) с `eCat3-headless.exe` (имя цели CMake), которому не нужны ни Qt, ни его плагины |
-
-Без этих аргументов выход скриптов ровно такой же, как раньше.
-
-Консольный вариант под Linux и macOS собирается руками — упаковывать
-консольную программу в AppImage или .dmg смысла мало:
+Qt при `ENABLE_GUI=OFF` не ищется вовсе, так что консольную сборку можно
+собрать и руками на машине, где Qt не установлен:
 
 ```
-cmake -S src -B build-headless -G Ninja -DCMAKE_BUILD_TYPE=Release       -DENABLE_GUI=OFF -DENABLE_HEADLESS=ON
+cmake -S src -B build-headless -G Ninja -DCMAKE_BUILD_TYPE=Release       -DENABLE_GUI=OFF -DENABLE_HEADLESS=ON -DENABLE_MCP=ON
 ```
-
-Qt при `ENABLE_GUI=OFF` не ищется вовсе, так что эта сборка проходит и на
-машине, где Qt не установлен.
 
 Версия берётся из файла `VERSION` в корне репозитория — это единственное
 место, где её надо править. Оттуда же её читает `project()` в

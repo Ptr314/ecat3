@@ -187,7 +187,7 @@ Without the IDE: `cmake --build <build dir> --target update_translations` (on Wi
 - `ENABLE_GUI` (ON): the windowed `eCat3`. With `OFF` no `find_package(Qt)` runs at all, so a console-only build configures on a machine without Qt.
 - `ENABLE_HEADLESS` (OFF): a second target `eCat3-headless` built from the same `EMULATOR_SOURCES` plus `src/headless/`. Console subsystem, links no Qt, draws into `NullRenderer`. Needs a C++17 toolchain, so the XP/Win7 kits refuse it. It reproduces the regression suite byte for byte, references included.
 - `ENABLE_MCP` (OFF): the MCP server (`src/mcp/`, `src/mcp_bridge.*`, vendored `libs/picojson`). Without the option not one of those files is compiled. A windowed MCP build requires `RENDERER_OPENGL` and fails configuration otherwise; see `docs/MCP.md`.
-- The release scripts take `mcp` and `headless` as arguments, see `.build/README.md`.
+- The release scripts of Windows 10+, macOS and Linux build every variant in one run: `QT`, `OPENGL`, `OPENGL-mcp` and `HEADLESS` (console, always with MCP; a `.tar.gz` of `bin/` + `share/ecat/` on macOS and Linux), see `.build/README.md`.
 
 **Test changes:**
 - Most behavior testing is via `.cfg` file modifications

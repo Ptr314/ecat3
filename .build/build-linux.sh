@@ -1,17 +1,19 @@
 #!/bin/bash
 #
-# Release build for Linux x86_64: one AppImage per renderer, via linuxdeployqt.
+# Release build for Linux x86_64, one archive per variant:
+#
+#   qt, opengl   the windowed emulator, an AppImage each (via linuxdeployqt)
+#   opengl-mcp   the same with the MCP server (-DENABLE_MCP=ON); a windowed MCP
+#                build needs the OpenGL renderer
+#   headless     the console executable with the MCP server, no Qt at all, a
+#                .tar.gz: bin/eCat3-headless next to share/ecat/, which is where
+#                the console build looks for its machines
 #
 # Qt is linked dynamically here on purpose -- the AppImage bundles the Qt
 # libraries it actually needs, and a shared build keeps compatibility with a
 # wider range of distributions (see docs/BUILD.md).
 #
-# Usage: ./build-linux.sh [clean] [mcp]
-#
-#   mcp   build with the MCP server (-DENABLE_MCP=ON). Only the OpenGL renderer
-#         supports it in a windowed build, so the others are skipped. The console
-#         build is not packaged here; configure it by hand with
-#         -DENABLE_GUI=OFF -DENABLE_HEADLESS=ON, see docs/MCP.md
+# Usage: ./build-linux.sh [clean]
 
 set -euo pipefail
 
@@ -22,11 +24,11 @@ LINUXDEPLOYQT="${HOME}/Downloads/linuxdeployqt-continuous-x86_64.AppImage"
 
 # SDL2 is not built here: the AppImage would have to carry libSDL2, and the Qt
 # and OpenGL renderers already cover this platform.
-RENDERERS=("qt" "opengl")
+VARIANTS=("qt" "opengl" "opengl-mcp" "headless")
 
-ENABLE_MCP="OFF"
+CLEAN=0
 for arg in "$@"; do
-    if [ "${arg}" = "mcp" ]; then ENABLE_MCP="ON"; fi
+    if [ "${arg}" = "clean" ]; then CLEAN=1; fi
 done
 
 cd "$(dirname "$0")"
@@ -51,37 +53,58 @@ if [ -z "${APP_VERSION}" ]; then
     exit 1
 fi
 
+# Copies deploy/ into $1, with the distributed defaults as ecat.ini:
+# deploy/ecat.ini is the developer's own working copy and must not be released
+copy_deploy() {
+    cp -r ../deploy/. "$1"
+    rm -f "$1/ecat.ini" "$1/.ecat.ini"
+    cp ../deploy/.ecat.ini "$1/ecat.ini"
+}
+
 echo "Building eCat3 ${APP_VERSION} for ${PLATFORM} ${ARCHITECTURE}"
 mkdir -p release
 
-for RENDERER in "${RENDERERS[@]}"; do
+for VARIANT in "${VARIANTS[@]}"; do
     echo
-    echo "=== Renderer: ${RENDERER}"
+    echo "=== Variant: ${VARIANT}"
 
-    # A windowed MCP build is only supported on OpenGL, see docs/MCP.md
-    if [ "${ENABLE_MCP}" = "ON" ] && [ "${RENDERER}" != "opengl" ]; then
-        echo "=== Skipping ${RENDERER}: an MCP build needs the OpenGL renderer"
-        continue
-    fi
+    BUILD_DIR="${BUILD_ROOT}/build/${PLATFORM}-${ARCHITECTURE}-${VARIANT}"
+    RELEASE_NAME="ecat-${APP_VERSION}-${PLATFORM}-${ARCHITECTURE}-${VARIANT}"
 
-    BUILD_DIR="${BUILD_ROOT}/build/${PLATFORM}-${ARCHITECTURE}-${RENDERER}"
-    RELEASE_NAME="ecat-${APP_VERSION}-${PLATFORM}-${ARCHITECTURE}-${RENDERER}"
-    if [ "${ENABLE_MCP}" = "ON" ]; then RELEASE_NAME="${RELEASE_NAME}-mcp"; fi
-    RELEASE_DIR="${BUILD_ROOT}/release/${RELEASE_NAME}.AppDir"
-    RESOURCES="${RELEASE_DIR}/usr/share/ecat"
+    case "${VARIANT}" in
+        headless)   FLAGS=(-DENABLE_GUI=OFF -DENABLE_HEADLESS=ON -DENABLE_MCP=ON) ;;
+        opengl-mcp) FLAGS=(-DRENDERER_OPENGL=1 -DENABLE_MCP=ON) ;;
+        *)          FLAGS=(-DRENDERER_${VARIANT^^}=1 -DENABLE_MCP=OFF) ;;
+    esac
 
-    if [ "${1:-}" = "clean" ]; then
+    if [ "${CLEAN}" = "1" ]; then
         rm -rf "${BUILD_DIR}"
     fi
 
     # Always reconfigure and rebuild: cmake and ninja work out what actually
-    # changed, and a stale executable never reaches the AppImage.
+    # changed, and a stale executable never reaches the release.
     cmake -S ../src -B "${BUILD_DIR}" -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_PREFIX_PATH="${QT_PATH}" \
-        -DRENDERER_${RENDERER^^}=1 \
-        -DENABLE_MCP=${ENABLE_MCP}
+        "${FLAGS[@]}"
     cmake --build "${BUILD_DIR}"
+
+    if [ "${VARIANT}" = "headless" ]; then
+        # A console program gains nothing from an AppImage. The layout is the
+        # one resolve_paths() in src/headless/headless_main.cpp falls back to
+        # when the working directory holds no computers/: <bin>/../share/ecat
+        STAGING="${BUILD_DIR}/pkg/${RELEASE_NAME}"
+        rm -rf "${BUILD_DIR}/pkg"
+        mkdir -p "${STAGING}/bin" "${STAGING}/share/ecat"
+        cp "${BUILD_DIR}/eCat3-headless" "${STAGING}/bin/"
+        copy_deploy "${STAGING}/share/ecat"
+        rm -f "release/${RELEASE_NAME}.tar.gz"
+        tar -czf "release/${RELEASE_NAME}.tar.gz" -C "${BUILD_DIR}/pkg" "${RELEASE_NAME}"
+        continue
+    fi
+
+    RELEASE_DIR="${BUILD_ROOT}/release/${RELEASE_NAME}.AppDir"
+    RESOURCES="${RELEASE_DIR}/usr/share/ecat"
 
     # The on-screen keyboard is compiled in only when Qt has the Svg module;
     # linuxdeployqt then picks libQt6Svg up by itself
@@ -95,17 +118,12 @@ for RENDERER in "${RENDERERS[@]}"; do
     mkdir -p "${RELEASE_DIR}/usr/bin" "${RESOURCES}"
     cp -r ./.linux/ecat3.AppDir/* "${RELEASE_DIR}"
     cp "${BUILD_DIR}/eCat3" "${RELEASE_DIR}/usr/bin/"
-
-    # deploy/ecat.ini is the developer's own working copy and must not be
-    # released -- the distributed defaults live in deploy/.ecat.ini.
-    cp -r ../deploy/* "${RESOURCES}"
-    rm -f "${RESOURCES}/ecat.ini"
-    cp ../deploy/.ecat.ini "${RESOURCES}/ecat.ini"
+    copy_deploy "${RESOURCES}"
 
     (
         cd release
         # linuxdeployqt names the image after the .desktop entry and $VERSION.
-        export VERSION="${APP_VERSION}-${PLATFORM}-${RENDERER}"
+        export VERSION="${APP_VERSION}-${PLATFORM}-${VARIANT}"
         rm -f "eCat3-${VERSION}-${ARCHITECTURE}.AppImage" "${RELEASE_NAME}.AppImage"
         "${LINUXDEPLOYQT}" \
             "${RELEASE_DIR}/usr/share/applications/ecat3.desktop" \
@@ -120,4 +138,4 @@ done
 
 echo
 echo "=== Release contents:"
-ls -l release/*.AppImage
+ls -l release/*-${PLATFORM}-*.AppImage release/*-${PLATFORM}-*.tar.gz
