@@ -77,8 +77,11 @@ REM ---------------------------------------------------------------------------
 REM deploy\ holds the machine configs, ROMs and software shipped with the
 REM emulator. deploy\ecat.ini is the developer's own working copy and must not
 REM be released -- the distributed defaults live in deploy\.ecat.ini.
+REM deploy\ecat-exts and deploy\scripts are the developer's working files too.
 :deploy
 xcopy "%~dp0..\deploy\*" "%~2\" /E /I /Y /Q >nul || exit /b 1
+if exist "%~2\ecat-exts" rmdir /s /q "%~2\ecat-exts"
+if exist "%~2\scripts" rmdir /s /q "%~2\scripts"
 if exist "%~2\ecat.ini" del /q "%~2\ecat.ini"
 if exist "%~2\.ecat.ini" del /q "%~2\.ecat.ini"
 copy /y "%~dp0..\deploy\.ecat.ini" "%~2\ecat.ini" >nul || exit /b 1

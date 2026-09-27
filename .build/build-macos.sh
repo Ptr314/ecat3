@@ -52,9 +52,11 @@ if [ -z "${APP_VERSION}" ]; then
 fi
 
 # Copies deploy/ into $1, with the distributed defaults as ecat.ini:
-# deploy/ecat.ini is the developer's own working copy and must not be released
+# deploy/ecat.ini is the developer's own working copy and must not be released,
+# and neither are deploy/ecat-exts and deploy/scripts
 copy_deploy() {
     cp -r "${REPO_DIR}/deploy/" "$1"
+    rm -rf "$1/ecat-exts" "$1/scripts"
     rm -f "$1/ecat.ini" "$1/.ecat.ini"
     cp "${REPO_DIR}/deploy/.ecat.ini" "$1/ecat.ini"
 }
