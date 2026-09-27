@@ -82,6 +82,10 @@ void GLWidget::paintGL() {
 #endif
         texture->setMinificationFilter(QOpenGLTexture::Linear);
         texture->setMagnificationFilter(QOpenGLTexture::Linear);
+        //The default wrap mode is Repeat: the linear filter then blends the last
+        //row and column with the first ones, which drew a thin copy of the
+        //opposite edge along the right and the bottom of the picture
+        texture->setWrapMode(QOpenGLTexture::ClampToEdge);
         pendingImage = QImage();
     }
 
