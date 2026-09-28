@@ -118,6 +118,23 @@ emulator::Result ScanKeyboard::load_config(SystemData *sd)
     code_shift  = s_shift.empty() ?_FFFF:translate_key(s_shift);
     code_ruslat = s_ruslat.empty()?_FFFF:translate_key(s_ruslat);
 
+    //The Юниор gives '>' for the key marked '.' and '.' only with НР, so a
+    //host '.' has to close НР along with it - and НР there is a contact of the
+    //matrix, not a line of its own
+    const std::string s_mshift = cd->get_parameter("matrix_shift", false).value;
+    mshift_scan = mshift_out = -1;
+    if (!s_mshift.empty()) {
+        for (size_t i = 0; i < id_data.size(); i++)
+            if (id_data[i].id == s_mshift) {
+                mshift_scan = (int)id_data[i].scan_line;
+                mshift_out = (int)id_data[i].out_line;
+                break;
+            }
+        if (mshift_scan < 0)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{ScanKeyboard|" + std::string(QT_TRANSLATE_NOOP("ScanKeyboard", "Unknown key")) + "} " + s_mshift);
+    }
+
     i_shift.change(1);
     i_ctrl.change(1);
     i_ruslat.change(1);
@@ -209,6 +226,18 @@ void ScanKeyboard::set_ctrl_state(bool pressed)
     i_ctrl.change(pressed ? 0 : 1);
 }
 
+bool ScanKeyboard::matrix_shift_pressed() const
+{
+    return (key_array[mshift_scan] & create_mask(1, mshift_out)) == 0;
+}
+
+void ScanKeyboard::set_matrix_shift(bool pressed)
+{
+    const unsigned int mask = create_mask(1, mshift_out);
+    if (pressed) key_array[mshift_scan] &= ~mask;
+    else         key_array[mshift_scan] |= mask;
+}
+
 void ScanKeyboard::key_down(unsigned int key)
 {
     //qDebug() << "DOWN" << Qt::hex << key;
@@ -229,9 +258,13 @@ void ScanKeyboard::key_down(unsigned int key)
             {
                 //qDebug() << "SCAN INDEX" << i;
                 if (scan_data[i].shift_state != SHIFT_STATE_KEEP) {
-                    stored_shift = i_shift.value;
-                    i_shift.change(scan_data[i].shift_state==SHIFT_STATE_ON?0:1);
-                    // qDebug() << "SHIFT " << ((scan_data[i].shift_state==SHIFT_STATE_ON)?0:1);
+                    if (mshift_scan >= 0) {
+                        mshift_saved = matrix_shift_pressed();
+                        set_matrix_shift(scan_data[i].shift_state == SHIFT_STATE_ON);
+                    } else {
+                        stored_shift = i_shift.value;
+                        i_shift.change(scan_data[i].shift_state==SHIFT_STATE_ON?0:1);
+                    }
                 }
 
                 unsigned int l = scan_data[i].scan_line;
@@ -271,9 +304,11 @@ void ScanKeyboard::key_up(unsigned int key)
                 calculate_out();
 
                 if (scan_data[i].shift_state != SHIFT_STATE_KEEP) {
-                    i_shift.change(stored_shift);
-                    // qDebug() << "SHIFT " << stored_shift;
-
+                    if (mshift_scan >= 0) {
+                        set_matrix_shift(mshift_saved);
+                        calculate_out();
+                    } else
+                        i_shift.change(stored_shift);
                 }
 
                 note_id(id_at(l, scan_data[i].out_line), false);

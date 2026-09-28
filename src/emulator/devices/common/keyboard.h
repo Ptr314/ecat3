@@ -366,6 +366,10 @@ protected:
     // Written by every input path, read by the frontends to light the drawing
     // up, so it is guarded: the GUI polls it while emulation presses keys.
     std::vector<std::string> m_ids_held;
+    // The "once" modifiers latched from the drawing. Only these are let go
+    // after the next key: on the Юниор the host Shift closes the same contact
+    // as НР of the drawing, and a Shift still held on the host must stay down
+    std::vector<std::string> m_once_latched;
     mutable compat_mutex m_held_mutex;
 
     // Set by a latching small-letters key (БК: СТР), cleared by the capitals

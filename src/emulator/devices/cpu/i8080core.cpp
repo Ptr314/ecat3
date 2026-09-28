@@ -127,6 +127,7 @@ i8080core::i8080core()
     context.registers.regs.PC = 0;
     context.halted = false;
     context.int_enable = 0;
+    context.ei_delay = false;
 }
 
 inline uint8_t i8080core::next_byte()
@@ -189,6 +190,7 @@ void i8080core::reset()
     context.registers.regs.PC = 0;
     context.halted = false;
     context.int_enable = 0;
+    context.ei_delay = false;
     inte_changed(context.int_enable);
 }
 
@@ -207,6 +209,17 @@ void i8080core::write_port(uint16_t address, uint8_t value)
 void i8080core::inte_changed(unsigned int inte)
 {}
 
+bool i8080core::int_request()
+{
+    return false;
+}
+
+uint8_t i8080core::int_acknowledge()
+{
+    //Nobody drives the bus: the pull-ups read as RST 7
+    return 0xFF;
+}
+
 unsigned int i8080core::execute()
 {
     uint8_t command;
@@ -215,11 +228,30 @@ unsigned int i8080core::execute()
     PartsRecLE T, D;
     unsigned int cycles;
 
-    //HLT stops the processor until an interrupt or a reset. Interrupts are not
-    //served here: the only machine that wires INT is Irisha, whose ВН59 hands
-    //the processor a CALL during the acknowledge cycle, and that cycle is not
-    //modelled (see i_inta of i8259, unconnected in every config). So a halted
-    //8080 stays halted, which is what the hardware does with interrupts off
+    //INT is sampled before every instruction, as a level. EI opens the gate
+    //only after the instruction that follows it, so the usual EI; RET at the
+    //end of a handler returns before the next request can be taken
+    if (context.ei_delay)
+        context.ei_delay = false;
+    else
+    if (context.int_enable != 0 && int_request())
+    {
+        //The acknowledge closes the gate and wakes a halted processor. Only a
+        //one-byte instruction is taken from the bus, which is RST n: a CALL
+        //handed over in three acknowledge cycles (the ВН59 of Irisha) is not
+        //modelled, so the machine that needs it keeps INT unconnected
+        context.halted = false;
+        context.int_enable = 0;
+        inte_changed(context.int_enable);
+        const uint8_t v = int_acknowledge();
+        context.registers.regs.SP -= 2;
+        write_mem(context.registers.regs.SP, context.registers.regs.PC & 0xFF);
+        write_mem(static_cast<uint16_t>(context.registers.regs.SP+1), context.registers.regs.PC >> 8);
+        context.registers.regs.PC = v & 0x38;
+        return 11;
+    }
+
+    //HLT stops the processor until an interrupt or a reset
     if (context.halted) return 4;
 
     command = next_byte();
@@ -639,6 +671,7 @@ unsigned int i8080core::execute()
                 //11_111_011
                 //EI
                 context.int_enable = 1;
+                context.ei_delay = true;
                 inte_changed(context.int_enable);
                 break;
             }

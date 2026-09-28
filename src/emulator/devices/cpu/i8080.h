@@ -26,6 +26,8 @@ public:
     virtual uint8_t read_port(uint16_t address) override;
     virtual void write_port(uint16_t address, uint8_t value) override;
     virtual void inte_changed(unsigned int inte) override;
+    virtual bool int_request() override;
+    virtual uint8_t int_acknowledge() override;
 };
 
 //Emulator class
@@ -38,6 +40,10 @@ private:
     Interface i_m1;
 
     i8080core * core;
+
+    //Instruction read during the interrupt acknowledge, or 0x100 when this
+    //machine does not take interrupts on INT at all
+    unsigned int m_int_opcode;
 
 protected:
     virtual unsigned int get_pc() override;
@@ -52,6 +58,8 @@ public:
     virtual unsigned int read_port(unsigned int address);
     virtual void write_port(unsigned int address, unsigned int data);
     virtual void inte_changed(unsigned int inte);
+    bool int_request();
+    uint8_t int_acknowledge();
 
     virtual std::vector<std::pair<std::string, std::string>> get_registers() override;
     virtual std::vector<std::pair<std::string, std::string>> get_flags() override;

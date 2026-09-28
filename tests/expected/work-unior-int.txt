@@ -1,0 +1,6 @@
+=== Кадров за секунду ===
+[ram.value] $0200: $33
+[cpu.interfaces] address=-, data=-, nmi=-, int=FFFFFFFE, inte=01, m1=-
+[ram.value] $0200: $34
+=== Прерывание ВГ75 выключено: счет стоит ===
+[ram.value] $0200: $34

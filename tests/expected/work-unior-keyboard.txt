@@ -7,8 +7,22 @@
 === key_graf ===
 [ram.value] $F7AF: $2A
 === key_shift_1 ===
-[ram.value] $F7AF: $23
-=== key_shift_2 ===
-[ram.value] $F7AF: $23
-=== key_ctrl ===
 [ram.value] $F7AF: $26
+=== key_shift_2 ===
+[ram.value] $F7AF: $26
+=== key_ctrl ===
+[ram.value] $F7AF: $23
+=== Точка хоста: ячейка точки и НР ===
+[keyboard.matrix] $0000: $FFEF $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF $FFDF $FFFF $FFFF
+=== '>' хоста при нажатом Shift: НР отпущена ===
+[keyboard.matrix] $0000: $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF $FFDF $FFFF $FFFF
+=== Shift хоста снова прижимает НР ===
+[keyboard.matrix] $0000: $FFEF
+=== '!' хоста: единица и НР ===
+[keyboard.matrix] $0000: $FFEF $FFFF $FFFF $FFFD $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF
+[keyboard.count] $0000
+=== '*' хоста при нажатом Shift: ячейка '*' цифрового блока, НР отпущена ===
+[keyboard.matrix] $0000: $FFFF $FF7F $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF
+=== ':' хоста при нажатом Shift: ячейка ':', НР отпущена ===
+[keyboard.matrix] $0000: $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF $FFFF $FFBF $FFFF $FFFF
+[keyboard.count] $0000

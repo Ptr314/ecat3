@@ -27,6 +27,8 @@ struct i8080context
     //TODO: i8080 maybe it should be bool
     unsigned int int_enable;
     unsigned int debug_mode;
+    //EI was the last instruction: interrupts are taken only after the next one
+    bool ei_delay;
 };
 
 #pragma pack()

@@ -40,6 +40,16 @@ void I8080Core::inte_changed(unsigned int inte)
     emulator_device->inte_changed(inte);
 }
 
+bool I8080Core::int_request()
+{
+    return emulator_device->int_request();
+}
+
+uint8_t I8080Core::int_acknowledge()
+{
+    return emulator_device->int_acknowledge();
+}
+
 //----------------------- Emulator device -----------------------------------
 
 i8080::i8080(InterfaceManager *im, EmulatorConfigDevice *cd):
@@ -51,6 +61,10 @@ i8080::i8080(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 {
     core = new I8080Core(this);
+
+    //Interrupts are taken only where the config says what the acknowledge
+    //reads, since a machine with a ВН59 (Irisha) would need a CALL there
+    m_int_opcode = read_confg_value(cd, "int_opcode", false, (unsigned int)0x100);
 
     over_commands.push_back(0xCD);
     over_commands.push_back(0xDD);
@@ -99,6 +113,16 @@ void i8080::inte_changed(unsigned int inte)
     i_inte.change(inte);
 }
 
+bool i8080::int_request()
+{
+    return m_int_opcode <= 0xFF && i_int.linked > 0 && (i_int.value & 1) != 0;
+}
+
+uint8_t i8080::int_acknowledge()
+{
+    return static_cast<uint8_t>(m_int_opcode);
+}
+
 void i8080::save_state(StateWriter &w)
 {
     CPU::save_state(w);
@@ -108,6 +132,7 @@ void i8080::save_state(StateWriter &w)
     w.u("PC", c->registers.regs.PC);
     w.b("halted", c->halted);
     w.u("int_enable", c->int_enable, 8);
+    w.b("ei_delay", c->ei_delay);
 }
 
 emulator::Result i8080::load_state(const StateReader &r)
@@ -120,6 +145,7 @@ emulator::Result i8080::load_state(const StateReader &r)
     r.u("PC", c->registers.regs.PC);
     r.b("halted", c->halted);
     r.u("int_enable", c->int_enable);
+    r.b("ei_delay", c->ei_delay);
     return emulator::Result::ok();
 }
 

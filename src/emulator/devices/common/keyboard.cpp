@@ -238,22 +238,29 @@ std::vector<Keyboard::Indicator> Keyboard::indicators() const
 void Keyboard::release_once_modifiers()
 {
     if (m_once_ids.empty()) return;
-    std::vector<std::string> held;
+    std::vector<std::string> latched;
     {
         compat_lock_guard lock(m_held_mutex);
-        held = m_ids_held;
+        latched = m_once_latched;
     }
-    for (size_t i = 0; i < m_once_ids.size(); i++)
-        for (size_t j = 0; j < held.size(); j++)
-            if (held[j] == m_once_ids[i]) {
-                key_event_id(m_once_ids[i], false);
-                break;
-            }
+    //What only looks held - the same contact closed by a key of the host,
+    //which note_id() lights up under this name - is not a latch of the drawing
+    for (size_t i = 0; i < latched.size(); i++)
+        key_event_id(latched[i], false);
 }
 
 void Keyboard::key_event_id(const std::string &id, bool press)
 {
     const KeyRole role = key_role(id);
+
+    for (size_t i = 0; i < m_once_ids.size(); i++)
+        if (m_once_ids[i] == id) {
+            compat_lock_guard lock(m_held_mutex);
+            for (size_t j = 0; j < m_once_latched.size(); j++)
+                if (m_once_latched[j] == id) { m_once_latched.erase(m_once_latched.begin() + j); break; }
+            if (press) m_once_latched.push_back(id);
+            break;
+        }
 
     // A latching key acts on the press alone. Toggling on the release too
     // cancels the press out - the same reason ScanKeyboard::key_up() only
@@ -418,6 +425,7 @@ void Keyboard::reset(bool cool)
     }
     compat_lock_guard lock(m_held_mutex);
     m_ids_held.clear();
+    m_once_latched.clear();
 }
 
 void Keyboard::save_state(StateWriter &w)

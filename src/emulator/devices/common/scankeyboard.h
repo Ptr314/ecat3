@@ -52,6 +52,15 @@ private:
 
     unsigned int stored_shift = 1;
 
+    // A machine whose Shift is a key of the matrix (the Юниор) has no line for
+    // the forced Shift of the map entries (^ and _): they press or release this
+    // contact instead. -1 when the config names none
+    int mshift_scan = -1;
+    int mshift_out = -1;
+    bool mshift_saved = false;      // the contact as it was before the forcing
+    void set_matrix_shift(bool pressed);
+    bool matrix_shift_pressed() const;
+
     // The Rus/Lat indicator line as last driven, and as last taken into the
     // register; -1 until the machine drives it. See interface_callback()
     int led_line = -1;

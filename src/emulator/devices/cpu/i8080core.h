@@ -31,6 +31,10 @@ public:
     virtual uint8_t read_port(uint16_t address);
     virtual void write_port(uint16_t address, uint8_t value);
     virtual void inte_changed(unsigned int inte);
+    //INT is a level: asked before every instruction while interrupts are on
+    virtual bool int_request();
+    //The instruction the interrupting device puts on the bus during INTA
+    virtual uint8_t int_acknowledge();
     virtual void reset();
     virtual i8080context * get_context();
 
