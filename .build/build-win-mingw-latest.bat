@@ -13,29 +13,34 @@ REM NOTE: in a shared build the mingw runtime (libstdc++-6.dll and friends)
 REM cannot be dropped -- the Qt6*.dll themselves import it, not just our exe.
 REM A static Qt is the only way to get a DLL-free build here.
 REM
-REM Every run builds four variants, each into its own archive:
-REM   QT, OPENGL   the windowed emulator
+REM Every run builds these variants, each into its own archive:
+REM   OPENGL       the windowed emulator
 REM   OPENGL_MCP   the same with the MCP server (-DENABLE_MCP=ON), archive
 REM                suffix -mcp; a windowed MCP build needs the OpenGL renderer
 REM   HEADLESS     the console executable, no Qt at all, MCP server included
+REM   QT           the windowed emulator on the Qt renderer, only with "all"
 REM
 REM Arguments:
 REM   clean      wipe the build directories first
+REM   all        also build the QT variant
 REM ---------------------------------------------------------------------------
 
 cd /d "%~dp0"
 call "%~dp0vars-mingw-latest.cmd" || exit /b 1
 
 SET "_CLEAN="
+SET "_ALL="
 for %%A in (%*) do (
     if /I "%%A"=="clean" SET "_CLEAN=clean"
+    if /I "%%A"=="all" SET "_ALL=1"
 )
 SET _ARCHITECTURE=x86_64
 SET _COMPILER=mingw
 SET _PLATFORM=windows
 SET "CC=%_ROOT_MINGW%\gcc.exe"
 
-SET RENDERERS=QT OPENGL OPENGL_MCP HEADLESS
+SET RENDERERS=OPENGL OPENGL_MCP HEADLESS
+if defined _ALL SET RENDERERS=QT %RENDERERS%
 
 call "%~dp0win-common.cmd" version "..\VERSION" || exit /b 1
 

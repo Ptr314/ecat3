@@ -586,6 +586,13 @@ if(ENABLE_HEADLESS)
     # std::thread and std::mutex, never the Qt ones: there is no Qt here
     target_compile_definitions(${HEADLESS_TARGET} PRIVATE FORCE_STD_THREADING USE_MINI_INI)
 
+    # The flags Qt puts on the windowed target for MSVC. Without -permissive-
+    # the core does not compile (it spells && and || as "and" and "or"), and
+    # without -utf-8 the Cyrillic string literals are read in the ANSI codepage
+    if(MSVC)
+        target_compile_options(${HEADLESS_TARGET} PRIVATE -Zc:__cplusplus -permissive- -utf-8)
+    endif()
+
     if(USE_SDL_AUDIO)
         target_link_libraries(${HEADLESS_TARGET} PRIVATE ${SDL2_LIBRARIES})
     else()

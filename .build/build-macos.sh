@@ -3,18 +3,19 @@
 # Release build for macOS: universal (x86_64 + arm64) binaries, one archive per
 # variant:
 #
-#   qt, opengl   the windowed emulator, a .dmg each
+#   opengl       the windowed emulator, a .dmg each
 #   opengl-mcp   the same with the MCP server (-DENABLE_MCP=ON), a .dmg; a
 #                windowed MCP build needs the OpenGL renderer
 #   headless     the console executable with the MCP server, no Qt at all, a
 #                .tar.gz: bin/eCat3-headless next to share/ecat/, which is where
 #                the console build looks for its machines
+#   qt           the windowed emulator on the Qt renderer, only with "all"
 #
 # Qt is linked statically (see docs/BUILD.md and macos_build_qt_universal.sh), so the
 # bundle carries no Qt frameworks. Only SDL2, when the binary actually links
 # against it, is copied into Contents/Frameworks.
 #
-# Usage: ./build-macos.sh [clean]
+# Usage: ./build-macos.sh [clean] [all]
 
 set -euo pipefail
 
@@ -26,11 +27,12 @@ APP_NAME="eCat3"
 
 # SDL2 is not built here: the Qt and OpenGL renderers already cover this
 # platform and the SDL2 one would add a dylib to every bundle.
-VARIANTS=("qt" "opengl" "opengl-mcp" "headless")
+VARIANTS=("opengl" "opengl-mcp" "headless")
 
 CLEAN=0
 for arg in "$@"; do
     if [ "${arg}" = "clean" ]; then CLEAN=1; fi
+    if [ "${arg}" = "all" ]; then VARIANTS=("qt" "${VARIANTS[@]}"); fi
 done
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

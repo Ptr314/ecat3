@@ -11,28 +11,33 @@ REM configured with -static-runtime) and no platforms\ / styles\ directories.
 REM Otherwise a shared build is produced and a minimal set of DLLs is copied
 REM next to the executable.
 REM
-REM Every run builds four variants, each into its own archive:
-REM   QT, OPENGL   the windowed emulator
+REM Every run builds these variants, each into its own archive:
+REM   OPENGL       the windowed emulator
 REM   OPENGL_MCP   the same with the MCP server (-DENABLE_MCP=ON), archive
 REM                suffix -mcp; a windowed MCP build needs the OpenGL renderer
 REM   HEADLESS     the console executable, no Qt at all, MCP server included
+REM   QT           the windowed emulator on the Qt renderer, only with "all"
 REM
 REM Arguments:
 REM   clean      wipe the build directories first
+REM   all        also build the QT variant
 REM ---------------------------------------------------------------------------
 
 cd /d "%~dp0"
 call "%~dp0vars-msvc-latest.cmd" || exit /b 1
 
 SET "_CLEAN="
+SET "_ALL="
 for %%A in (%*) do (
     if /I "%%A"=="clean" SET "_CLEAN=clean"
+    if /I "%%A"=="all" SET "_ALL=1"
 )
 SET _ARCHITECTURE=x86_64
 SET _COMPILER=msvc
 SET _PLATFORM=windows
 
-SET RENDERERS=QT OPENGL OPENGL_MCP HEADLESS
+SET RENDERERS=OPENGL OPENGL_MCP HEADLESS
+if defined _ALL SET RENDERERS=QT %RENDERERS%
 
 call "%~dp0win-common.cmd" version "..\VERSION" || exit /b 1
 

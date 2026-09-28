@@ -175,7 +175,7 @@ update_translations.bat
     * Windows 7: `./.build/build-win-7.bat`.
     * Windows 10+: `./.build/build-win-mingw-latest.bat` или `./.build/build-win-msvc-latest.bat`.
 
-  Каждый скрипт собирает все свои рендереры и упаковывает по zip-архиву на рендерер в `.build/release/`. Аргумент `clean` (например `build-win-msvc-latest.bat clean`) предварительно удаляет build-директории.
+  Каждый скрипт собирает свои рендереры и упаковывает по zip-архиву на рендерер в `.build/release/`. Аргумент `clean` (например `build-win-msvc-latest.bat clean`) предварительно удаляет build-директории, аргумент `all` добавляет варианты на рендерере Qt, которые по умолчанию не собираются.
 
 ---
 ## macOS

@@ -6,7 +6,9 @@ REM Shared body of the two i386 / Qt5 release builds (Windows XP and Windows 7).
 REM Both differ only in the toolchain and the platform label, so the actual
 REM steps live here and build-win-i386.bat / build-win-7.bat only pick the kit.
 REM
-REM   call win-build-qt5.cmd <vars file> <platform label> [clean]
+REM   call win-build-qt5.cmd <vars file> <platform label> [clean] [all]
+REM
+REM Builds the SDL2 renderer; "all" adds the Qt one.
 REM
 REM Qt 5 cannot be configured as a static build here (see docs/BUILD.md), so a
 REM minimal set of DLLs is shipped next to the exe. The mingw runtime cannot be
@@ -16,7 +18,15 @@ REM ---------------------------------------------------------------------------
 cd /d "%~dp0"
 
 SET "_PLATFORM=%~2"
-SET "_CLEAN=%~3"
+SET "_CLEAN="
+SET "_RENDERERS=SDL2"
+:args
+if "%~3"=="" goto args_done
+if /I "%~3"=="clean" SET "_CLEAN=clean"
+if /I "%~3"=="all" SET "_RENDERERS=SDL2 QT"
+shift /3
+goto args
+:args_done
 
 call "%~dp0%~1" || exit /b 1
 
@@ -31,7 +41,7 @@ if not exist "%_QT_PREFIX%\bin\Qt5Core.dll" (
     exit /b 1
 )
 
-for %%R in (SDL2 QT) do call :build_one %%R || exit /b 1
+for %%R in (%_RENDERERS%) do call :build_one %%R || exit /b 1
 
 ENDLOCAL
 exit /b 0

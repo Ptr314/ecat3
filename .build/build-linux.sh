@@ -2,18 +2,19 @@
 #
 # Release build for Linux x86_64, one archive per variant:
 #
-#   qt, opengl   the windowed emulator, an AppImage each (via linuxdeployqt)
+#   opengl       the windowed emulator, an AppImage each (via linuxdeployqt)
 #   opengl-mcp   the same with the MCP server (-DENABLE_MCP=ON); a windowed MCP
 #                build needs the OpenGL renderer
 #   headless     the console executable with the MCP server, no Qt at all, a
 #                .tar.gz: bin/eCat3-headless next to share/ecat/, which is where
 #                the console build looks for its machines
+#   qt           the windowed emulator on the Qt renderer, only with "all"
 #
 # Qt is linked dynamically here on purpose -- the AppImage bundles the Qt
 # libraries it actually needs, and a shared build keeps compatibility with a
 # wider range of distributions (see docs/BUILD.md).
 #
-# Usage: ./build-linux.sh [clean]
+# Usage: ./build-linux.sh [clean] [all]
 
 set -euo pipefail
 
@@ -24,11 +25,12 @@ LINUXDEPLOYQT="${HOME}/Downloads/linuxdeployqt-continuous-x86_64.AppImage"
 
 # SDL2 is not built here: the AppImage would have to carry libSDL2, and the Qt
 # and OpenGL renderers already cover this platform.
-VARIANTS=("qt" "opengl" "opengl-mcp" "headless")
+VARIANTS=("opengl" "opengl-mcp" "headless")
 
 CLEAN=0
 for arg in "$@"; do
     if [ "${arg}" = "clean" ]; then CLEAN=1; fi
+    if [ "${arg}" = "all" ]; then VARIANTS=("qt" "${VARIANTS[@]}"); fi
 done
 
 cd "$(dirname "$0")"

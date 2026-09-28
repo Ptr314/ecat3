@@ -6,7 +6,6 @@ REM Builds every Windows release plus the browser package, one after another:
 REM
 REM   build-win-i386.bat           Windows XP,  i386,   Qt 5.6.3 + mingw 4.9.2
 REM   build-win-7.bat              Windows 7,   i386,   Qt 5.15.2 + mingw 8.1
-REM   build-win-mingw-latest.bat   Windows 10+, x86_64, Qt 6 + mingw
 REM   build-win-msvc-latest.bat    Windows 10+, x86_64, Qt 6 + MSVC
 REM                                (each also makes its MCP and console variants)
 REM   build-wasm.cmd               browser
@@ -17,15 +16,18 @@ REM summary at the end lists what failed, and the exit code is 1 then.
 REM
 REM Arguments:
 REM   clean      wipe the build directories first
+REM   all        also build the Qt-renderer variants
 REM ---------------------------------------------------------------------------
 
 SET "_HERE=%~dp0"
 SET "_CLEAN="
+SET "_ALL="
 for %%A in (%*) do (
     SET "_KNOWN="
     if /I "%%A"=="clean" (SET "_CLEAN=clean" & SET "_KNOWN=1")
+    if /I "%%A"=="all" (SET "_ALL=all" & SET "_KNOWN=1")
     if not defined _KNOWN (
-        echo ERROR: unknown argument "%%A". Allowed: clean
+        echo ERROR: unknown argument "%%A". Allowed: clean, all
         exit /b 1
     )
 )
@@ -34,10 +36,9 @@ SET _N=0
 SET _FAILED=0
 SET "_STARTED=%DATE% %TIME%"
 
-call :step build-win-i386.bat         "%_CLEAN%"
-call :step build-win-7.bat            "%_CLEAN%"
-call :step build-win-mingw-latest.bat "%_CLEAN%"
-call :step build-win-msvc-latest.bat  "%_CLEAN%"
+call :step build-win-i386.bat         "%_CLEAN% %_ALL%"
+call :step build-win-7.bat            "%_CLEAN% %_ALL%"
+call :step build-win-msvc-latest.bat  "%_CLEAN% %_ALL%"
 call :step build-wasm.cmd             "%_CLEAN%"
 
 echo.
