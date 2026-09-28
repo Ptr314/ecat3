@@ -4,21 +4,30 @@
 
 module tb_bk();
 
-// Base tick: 1 unit. Half periods are parameters, set from the command line.
-parameter real CPU_HALF  = 4;     // 3 MHz CPU: period 8 units
-parameter real C037_HALF = 2;     // 6 MHz 037: period 4 units
-parameter real C037_SKEW = 0;     // phase offset of the 037 clock, units
-parameter FAST_CODE = 0;     // addresses below 060000 answered without the 037
-parameter FAST_DATA = 0;     // addresses from 060000 answered without the 037
-parameter real RDELAY    = 0;
+// All times in ns; the parameters are set from the command line (run_sim.sh).
+parameter real CPU_HALF  = 166.667; // half period of the CPU clock, ns (3 MHz)
+parameter real CPU_HIGH  = 0;       // high time of the CPU clock, ns; 0 - a square wave
+parameter real C037_HALF = 83.333;  // half period of the 037 clock, ns (6 MHz)
+parameter real C037_SKEW = 0;       // phase offset of the 037 clock, ns
+parameter FAST_CODE = 0;            // addresses below 060000 answered without the 037
+parameter FAST_DATA = 0;            // addresses from 060000 answered without the 037
+// RPLY of the 037 on its way to the processor:
+//   0 - straight;  1 / 2 - through a flip-flop on the rising / falling edge of
+//   the model's clk (both БК have one clocked by the processor clock, 1 fits);
+//   3 / 4 - two stages; 5 / 6 - flip-flop on the 037 clock rising / falling;
+//   7..10 - as 1, 2, 5, 6 but released at once (asynchronous set)
 parameter RSYNC = 0;
-parameter TRACE = 0;
-parameter real ODELAY = 0;   // delay of the CPU bus outputs as the 037 sees them, ns
-parameter DUMP_FROM = 0, DUMP_TO = 0;          // 0 none, 1 posedge, 2 negedge, 3 negedge then posedge, 4 posedge then negedge     // rise time of the released RPLY line, units
+parameter real RDELAY    = 0;       // extra rise time of the released RPLY, ns
+parameter real ODELAY    = 0;       // delay of DIN/DOUT as the 037 sees them, ns
+parameter TRACE = 0;                // 1 - event trace in half clocks
+parameter DUMP_FROM = 0, DUMP_TO = 0;   // signal dump window, CPU clocks (behavioural 037 only)
 parameter LIMIT     = 400000000;
 
 reg clk = 0, clk037 = 0;
-always #(CPU_HALF) clk = ~clk;
+initial begin
+   if (CPU_HIGH == 0) forever #(CPU_HALF) clk = ~clk;
+   else forever begin #(2 * CPU_HALF - CPU_HIGH) clk = 1; #(CPU_HIGH) clk = 0; end
+end
 initial begin #(C037_SKEW); forever #(C037_HALF) clk037 = ~clk037; end
 
 integer ncpu = 0;
@@ -131,7 +140,17 @@ always @(posedge nrply037) if (RDELAY == 0) rply037_d = 1; else rply037_d <= #(R
 reg rs1 = 1, rs2 = 1;
 always @(posedge clk) begin if (RSYNC == 1) rs1 <= rply037_d; if (RSYNC == 3) rs2 <= rs1; if (RSYNC == 4) rs1 <= rply037_d; end
 always @(negedge clk) begin if (RSYNC == 2) rs1 <= rply037_d; if (RSYNC == 3) rs1 <= rply037_d; if (RSYNC == 4) rs2 <= rs1; end
-wire rply037_s = (RSYNC == 0) ? rply037_d : (RSYNC >= 3) ? rs2 : rs1;
+// 5/6: one flop on the 037 clock, rising/falling edge; 7/8: flop on the CPU
+// clock rising/falling, 9/10: flop on the 037 clock rising/falling - for 7-10
+// only the assertion goes through the flop, the release is immediate (a flop
+// with an asynchronous set, as a trigger on the RPLY input would be wired)
+reg rs5 = 1;
+always @(posedge clk037) if (RSYNC == 5 || RSYNC == 9) rs5 <= rply037_d;
+always @(negedge clk037) if (RSYNC == 6 || RSYNC == 10) rs5 <= rply037_d;
+always @(posedge clk) if (RSYNC == 7) rs5 <= rply037_d;
+always @(negedge clk) if (RSYNC == 8) rs5 <= rply037_d;
+always @(posedge rply037_d) if (RSYNC >= 7) rs5 = 1;
+wire rply037_s = (RSYNC == 0) ? rply037_d : (RSYNC >= 5) ? rs5 : (RSYNC >= 3) ? rs2 : rs1;
 assign rply = (frply & rply037_s) ? 1'bz : 1'b0;
 
 // ---------------------------------------------------------------- log
