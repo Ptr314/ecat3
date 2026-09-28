@@ -540,6 +540,28 @@ void TapeRecorder::rewind()
     data_position = 0;
     bit_shift = 7;
     ticks_counter = 0;
+    //Режим не сменился, а головка ушла: окну надо перерисовать счетчик
+    notify_state();
+}
+
+//Вторая клавиша перемотки: головка встает за последнюю запись, и то, что
+//машина запишет дальше, ляжет после всего, что на кассете уже есть
+void TapeRecorder::wind_to_end()
+{
+    if (medium != TapeMedium::Levels)
+    {
+        set_transport(T_STOP);
+        m_pos = m_total_units;
+        m_ticks = 0;
+        if (medium == TapeMedium::Pulses) zx_locate(m_pos); else locate(m_pos);
+        notify_state();
+        return;
+    }
+    set_tape_mode(TAPE_STOPPED);
+    data_position = data_size;
+    bit_shift = 7;
+    ticks_counter = 0;
+    notify_state();
 }
 
 void TapeRecorder::mute(bool muted)
@@ -1050,6 +1072,7 @@ std::vector<DeviceCommandInfo> TapeRecorder::get_device_commands()
     r.push_back({"play",    "",                         "Starts playback"});
     r.push_back({"stop",    "",                         "Stops playback"});
     r.push_back({"rewind",  "",                         "Rewinds to the beginning"});
+    r.push_back({"forward", "",                         "Winds to the end"});
     r.push_back({"record",  "[0|1]",                    "Switches recording on or off"});
     r.push_back({"save",    "[\"file\"]",                 "Writes the recorded data out, by default under the name the machine used"});
     r.push_back({"seek",    "<record>",                 "Moves the head to a record by its number"});
@@ -1156,6 +1179,7 @@ emulator::Result TapeRecorder::send_command(const std::string &command, const st
     if (command == "play")   { play();   return emulator::Result::ok(); }
     if (command == "stop")   { stop();   return emulator::Result::ok(); }
     if (command == "rewind") { rewind(); return emulator::Result::ok(); }
+    if (command == "forward") { wind_to_end(); return emulator::Result::ok(); }
 
     if (command == "record") {
         bool on = p.empty() || p[0].empty() || parse_numeric_value(p[0]) != 0;

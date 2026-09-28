@@ -468,9 +468,11 @@ static TapeRecorder * wasm_tape(const char * name)
 }
 
 // One line per tape recorder, the fields separated by tabs:
-//   name  mode  position  total  recorded  record_name  files
-// mode is TAPE_STOPPED or TAPE_READ, position and total are in seconds,
-// recorded is the size of what the machine has written so far.
+//   name  mode  position  total  recorded  record_name  files  loaded_name
+// mode is TAPE_STOPPED, TAPE_READ, TAPE_FORWARD or TAPE_BACK, position and
+// total are in seconds, recorded is the size of what the machine has written
+// so far. loaded_name is the file on the tape, whoever put it there - the page
+// or the machine's own configuration.
 EMSCRIPTEN_KEEPALIVE
 const char* wasm_tape_info()
 {
@@ -487,7 +489,8 @@ const char* wasm_tape_info()
                 + std::to_string(tape->get_total()) + "\t"
                 + std::to_string(tape->get_record_size()) + "\t"
                 + tape->get_record_name() + "\t"
-                + tape->files + "\n";
+                + tape->files + "\t"
+                + tape->get_loaded_name() + "\n";
     }
     return result.c_str();
 }
@@ -518,7 +521,8 @@ int wasm_tape_load(const char* device_name, const char* file_path)
     return 0;
 }
 
-// 0 play, 1 stop, 2 rewind, 3 recording (value 0/1), 4 mute (value 0/1)
+// 0 play, 1 stop, 2 rewind, 3 recording (value 0/1), 4 mute (value 0/1),
+// 5 wind to the end
 EMSCRIPTEN_KEEPALIVE
 int wasm_tape_control(const char* device_name, int action, int value)
 {
@@ -530,6 +534,7 @@ int wasm_tape_control(const char* device_name, int action, int value)
         case 2: tape->rewind(); break;
         case 3: tape->set_recording(value != 0); break;
         case 4: tape->mute(value != 0); break;
+        case 5: tape->wind_to_end(); break;
         default: return -3;
     }
     return 0;

@@ -173,8 +173,11 @@ void TapeRecorderWindow::sync_from_device()
     const bool playing = (mode != TAPE_STOPPED) && !forward && !back;
     const bool recording = d->get_recording();
 
-    if (!d->get_loaded_name().empty())
-        loaded_file = QString::fromStdString(d->get_loaded_name());
+    if (!d->get_loaded_name().empty()) {
+        const QString name = QString::fromStdString(d->get_loaded_name());
+        if (name != loaded_file) tape_moved = false;
+        loaded_file = name;
+    }
 
     if (!loaded_file.isEmpty()) {
         ui->name_mask->setVisible(true);
@@ -279,6 +282,7 @@ void TapeRecorderWindow::on_buttonEject_pressed()
                 ui->textLabel->setVisible(true);
 
                 loaded_file = fi.fileName();
+                tape_moved = false;
 
                 emulator::Result res = d->load_file(file_name.toStdString(), fmt.toStdString());
                 if (!res) {
@@ -382,6 +386,7 @@ void TapeRecorderWindow::on_buttonRewind_clicked()
     }
     d->rewind();
     e->record_command(d->name, "rewind", "");
+    update_counter();
 }
 
 void TapeRecorderWindow::on_buttonRec_clicked()
@@ -486,26 +491,27 @@ QString TapeRecorderWindow::fit_name(const QString & time) const
 
 void TapeRecorderWindow::update_counter()
 {
-    if (is_playing || is_moving){
-        if (d->get_mode() != TAPE_STOPPED) {
-            ui->textLabel->setText(fit_name(
-                "(" + tape_time(d->get_position()) + "/" + tape_time(d->get_total()) + ")"
-            ));
-        } else {
-            //Лента кончилась сама. Перематывать ее назад можно только тогда,
-            //когда ее пустили из окна: машина, которая ведет лентопротяжку
-            //сама, держит головку там, где ей нужно, и перемотка из окна
-            //увела бы ее из-под системы
-            if (!is_paused && !d->is_machine_driven()) {
-                is_playing = false;
-                play_pause();
-                ui->buttonPlay->setChecked(false);
-                d->rewind();
-            }
+    if ((is_playing || is_moving) && d->get_mode() == TAPE_STOPPED) {
+        //Лента кончилась сама. Перематывать ее назад можно только тогда,
+        //когда ее пустили из окна: машина, которая ведет лентопротяжку
+        //сама, держит головку там, где ей нужно, и перемотка из окна
+        //увела бы ее из-под системы
+        if (!is_paused && !d->is_machine_driven()) {
+            is_playing = false;
+            play_pause();
+            ui->buttonPlay->setChecked(false);
+            d->rewind();
         }
-    } else {
-        ui->textLabel->setText(fit_name("(" + tape_time(d->get_total()) + ")"));
     }
+    //Где стоит головка, видно и на остановленной ленте; только что
+    //вставленная кассета показывает одну свою длину
+    if (d->get_mode() != TAPE_STOPPED || d->get_position() != 0) tape_moved = true;
+    if (tape_moved)
+        ui->textLabel->setText(fit_name(
+            "(" + tape_time(d->get_position()) + "/" + tape_time(d->get_total()) + ")"
+        ));
+    else
+        ui->textLabel->setText(fit_name("(" + tape_time(d->get_total()) + ")"));
 }
 
 void TapeRecorderWindow::tape_mode_changed(MAYBE_UNUSED unsigned int new_mode)

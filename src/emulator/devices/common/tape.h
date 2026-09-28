@@ -233,6 +233,7 @@ public:
     virtual void play();
     virtual void stop();
     virtual void rewind();
+    virtual void wind_to_end();
     virtual void mute(bool muted);
     virtual void volume(unsigned int volume);
     virtual int get_position();

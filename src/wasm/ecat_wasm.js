@@ -470,6 +470,7 @@ const I18N = {
         bytes:              "{0} B",
         tapeLoad:           "Load a tape file",
         tapeRewind:         "Rewind to the beginning",
+        tapeForward:        "Wind to the end",
         tapePlay:           "Play",
         tapePause:          "Pause",
         tapeRecord:         "Record what the machine writes",
@@ -566,6 +567,7 @@ const I18N = {
         bytes:              "{0} Б",
         tapeLoad:           "Загрузить запись",
         tapeRewind:         "Перемотать в начало",
+        tapeForward:        "Перемотать в конец",
         tapePlay:           "Воспроизвести",
         tapePause:          "Пауза",
         tapeRecord:         "Записывать то, что выводит машина",
@@ -1957,16 +1959,18 @@ function saveDisk(module, drive) {
 // Tape recorder
 // ============================================================================
 //
-// A small deck per tape recorder of the machine: load, rewind, play/pause,
-// record, sound. Where the machine drives the motor the tape starts and stops
-// by itself (wasm_load_machine wires that), so the state is polled, not assumed.
+// A small deck per tape recorder of the machine: load, rewind to either end,
+// play/pause, record, sound. Where the machine drives the motor the tape starts,
+// stops and winds by itself (wasm_load_machine wires that), so the state is
+// polled, not assumed.
 
-const TAPE_READ = 1;
-const TAPE_PLAY = 0, TAPE_STOP = 1, TAPE_REWIND = 2, TAPE_RECORD = 3, TAPE_MUTE = 4;
+const TAPE_STOPPED = 0, TAPE_READ = 1, TAPE_FORWARD = 2, TAPE_BACK = 3;
+const TAPE_PLAY = 0, TAPE_STOP = 1, TAPE_REWIND = 2, TAPE_RECORD = 3, TAPE_MUTE = 4, TAPE_TO_END = 5;
 
 const TAPE_SYMBOL = {
-    load:   "⏏︎",
-    rewind: "⏮︎",
+    load:    "⏏︎",
+    rewind:  "⏮︎",
+    forward: "⏭︎",
     play:   "▶︎",
     pause:  "⏸︎",
     record: "●",
@@ -1990,6 +1994,9 @@ function readTapes(module) {
             recorded: parseInt(f[4], 10) || 0,
             recordName: f[5] || "",
             files: f[6] || "",
+            // The file on the tape, also one the machine's configuration put
+            // there before the page had a say
+            file: f[7] || "",
         });
     }
     return list;
@@ -2009,10 +2016,10 @@ function setupTapes(module, configKey) {
     box.innerHTML = "";
     tapes = readTapes(module);
     for (const tape of tapes) {
-        tape.file = "";
         tape.recording = false;
         tape.muted = false;
         tape.wasPlaying = false;
+        tape.moved = false;
         tape.ui = buildTape(module, tape, configKey);
         box.appendChild(tape.ui.root);
     }
@@ -2025,8 +2032,10 @@ function pollTapes(module) {
     for (const tape of tapes) {
         const state = now.find((t) => t.name === tape.name);
         if (!state) continue;
+        if (state.file !== tape.file) tape.moved = false;
         Object.assign(tape, { mode: state.mode, position: state.position, total: state.total,
-                              recorded: state.recorded, recordName: state.recordName });
+                              recorded: state.recorded, recordName: state.recordName,
+                              file: state.file });
         // The end of the tape, not a stop in the middle: rewound, as the
         // desktop recorder does, so that the next play starts from the top
         if (tape.wasPlaying && tape.mode !== TAPE_READ && tape.total > 0 && tape.position >= tape.total) {
@@ -2034,6 +2043,7 @@ function pollTapes(module) {
             tape.position = 0;
         }
         tape.wasPlaying = tape.mode === TAPE_READ;
+        if (tape.mode !== TAPE_STOPPED || tape.position !== 0) tape.moved = true;
     }
     renderTapes();
 }
@@ -2060,6 +2070,7 @@ function buildTape(module, tape, configKey) {
     };
     ui.load = button(TAPE_SYMBOL.load);
     ui.rewind = button(TAPE_SYMBOL.rewind);
+    ui.forward = button(TAPE_SYMBOL.forward);
     ui.play = button(TAPE_SYMBOL.play);
     ui.record = button(TAPE_SYMBOL.record, "tape-rec");
     ui.sound = button(TAPE_SYMBOL.sound);
@@ -2080,6 +2091,11 @@ function buildTape(module, tape, configKey) {
     ui.rewind.addEventListener("click", () => {
         tapeControl(module, tape, TAPE_STOP);
         tapeControl(module, tape, TAPE_REWIND);
+        pollTapes(module);
+    });
+
+    ui.forward.addEventListener("click", () => {
+        tapeControl(module, tape, TAPE_TO_END);
         pollTapes(module);
     });
 
@@ -2116,22 +2132,32 @@ function renderTapes() {
             ui.time.textContent = t("bytes", tape.recorded);
         } else {
             ui.name.textContent = tape.file || t("tapeEmpty");
-            ui.time.textContent = tape.file ? formatTime(tape.position) + " / " + formatTime(tape.total) : "";
+            // Where the head is, also on a tape standing still; a cassette
+            // just put in shows only its length, as on the desktop recorder
+            ui.time.textContent = !tape.file ? ""
+                : tape.moved ? formatTime(tape.position) + " / " + formatTime(tape.total)
+                : formatTime(tape.total);
         }
         ui.name.title = tape.file;
 
         ui.play.textContent = playing ? TAPE_SYMBOL.pause : TAPE_SYMBOL.play;
         ui.play.classList.toggle("active", playing);
+        // A machine that drives the transport winds the tape itself: its keys
+        // are the ones shown pressed, as on the desktop recorder
+        ui.rewind.classList.toggle("active", tape.mode === TAPE_BACK);
+        ui.forward.classList.toggle("active", tape.mode === TAPE_FORWARD);
         ui.record.classList.toggle("active", tape.recording);
         ui.sound.classList.toggle("muted", tape.muted);
 
         ui.load.disabled = tape.recording;
         ui.rewind.disabled = !tape.file || tape.recording;
+        ui.forward.disabled = !tape.file || tape.recording;
         ui.play.disabled = !tape.file || tape.recording;
 
         const hint = (b, key) => { b.title = t(key); b.setAttribute("aria-label", b.title); };
         hint(ui.load, "tapeLoad");
         hint(ui.rewind, "tapeRewind");
+        hint(ui.forward, "tapeForward");
         hint(ui.play, playing ? "tapePause" : "tapePlay");
         hint(ui.record, tape.recording ? "tapeRecordStop" : "tapeRecord");
         hint(ui.sound, tape.muted ? "tapeUnmute" : "tapeMute");
@@ -2150,6 +2176,7 @@ async function loadTape(module, tape, file) {
         if (result === 0) {
             tape.file = file.name;
             tape.wasPlaying = false;
+            tape.moved = false;
             setStatus("stTapeLoaded", "", file.name);
         } else if (result === -3) {
             setStatus("stTapeUnknown", "error", file.name);
