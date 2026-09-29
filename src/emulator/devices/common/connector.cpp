@@ -50,6 +50,7 @@ emulator::Result Connector::load_config(SystemData *sd)
                 "{Connector|" + std::string(QT_TRANSLATE_NOOP("Connector", "Not a device that can be plugged in")) + "} " + n);
         m_devices.push_back(d);
         m_names.push_back(n);
+        m_titles.push_back(plug_title_of(n, d));
     }
 
     // What the socket is for, which only names the option list: a socket of
@@ -87,6 +88,17 @@ emulator::Result Connector::load_config(SystemData *sd)
     return emulator::Result::ok();
 }
 
+// What the option list calls a device: its "title" when the config gives one
+// (the board, not the chip: "2xAY TurboSound" for the ay8910 of a БК), taken
+// as it is, without translation; otherwise the device's own translated name
+std::string Connector::plug_title_of(const std::string &device, Pluggable * d)
+{
+    ComputerDevice * cd_owner = im->dm->get_device_by_name(device, false);
+    const std::string title = (cd_owner != nullptr) ? str_trim(cd_owner->config_parameter("title")) : std::string();
+    if (!title.empty()) return title;
+    return (d != nullptr) ? std::string(d->plug_title()) : device;
+}
+
 // The device being unplugged goes first: it stops driving the shared lines
 // before the new one puts its own state on them
 void Connector::apply()
@@ -106,7 +118,7 @@ DeviceOptions Connector::get_device_options()
     opt.icon = m_icon;
     opt.values.push_back({0, QT_TRANSLATE_NOOP("DeviceOptions", "None")});
     for (size_t i = 0; i < m_devices.size(); i++)
-        opt.values.push_back({static_cast<unsigned>(i + 1), m_devices[i]->plug_title()});
+        opt.values.push_back({static_cast<unsigned>(i + 1), m_titles[i]});
     // "default" of the config may plug in something other than the first entry
     opt.current = m_selected;
     return {opt};
@@ -138,7 +150,7 @@ ConfigFields Connector::get_config_fields()
     for (size_t i = 0; i < names.size(); i++) {
         const std::string n = str_trim(names[i]);
         Pluggable * d = dynamic_cast<Pluggable*>(im->dm->get_device_by_name(n, false));
-        f.values.push_back({n, d != nullptr ? d->plug_title() : n});
+        f.values.push_back({n, plug_title_of(n, d)});
     }
     return {f};
 }
@@ -147,6 +159,7 @@ std::vector<DeviceFieldInfo> Connector::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
     r.push_back({"device", "Name of the plugged device, none if the socket is empty", false});
+    r.push_back({"devices", "The devices of the list and what the option list calls them", false});
     return r;
 }
 
@@ -154,6 +167,13 @@ bool Connector::get_field(const std::string &field, unsigned int from, unsigned 
 {
     if (field == "device") {
         out.text = (m_selected > 0)?m_names[m_selected - 1]:std::string("none");
+        return true;
+    }
+    if (field == "devices") {
+        for (size_t i = 0; i < m_names.size(); i++) {
+            if (!out.text.empty()) out.text += "\n";
+            out.text += "        " + m_names[i] + ": " + m_titles[i];
+        }
         return true;
     }
     return ComputerDevice::get_field(field, from, to, out);

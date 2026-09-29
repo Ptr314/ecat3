@@ -1,0 +1,52 @@
+# БК0011М: плата 2xAY (TurboSound, GryphonSound) на порту 0177714.
+#
+# Два AY - устройства ay (chip = 1) и ay2 (chip = 2, pair = ay) на одном
+# порту, оба с through = 1. Порт инвертирует, поэтому сценарий пишет
+# дополнения: слово - выбор регистра, байт - данные.
+#   * Слово 0 (регистр 0377 после инверсии) выбирает первый AY, слово 1
+#     (0376) - второй: так выбирает TurboSound.
+#   * Разряды 15 и 14 слова выбора регистра (после инверсии) - GryphonSound:
+#     1x - первый, x1 - второй, оба - запись в оба сразу.
+# Пока второй AY не выбран, он молчит и в смесь не входит: программа для
+# одного AY звучит как прежде. Демо sight4 (CSI) играет на таком проигрывателе
+# две партии, и с одним AY они смешивались в кашу.
+# @timeout 30
+
+MACHINE "bk/BK-0011M.cfg"
+LOGDEFS _16,_8
+WAIT _500
+COMMAND cpu.stop()
+
+PRINT "=== Список звуковой приставки: название платы задано title у ay ==="
+LOG sound-card.devices
+
+PRINT "=== После сброса: пишет только первый AY ==="
+LOG ay.selected
+LOG ay2.selected
+LOG sound.mixed
+
+PRINT "=== TurboSound: регистр 1 второго AY = 5, первого = 3 ==="
+COMMAND mapper.set16(177714, 000001)
+COMMAND mapper.set16(177714, 177776)
+COMMAND mapper.set(177714, 372)
+COMMAND mapper.set16(177714, 000000)
+COMMAND mapper.set16(177714, 177776)
+COMMAND mapper.set(177714, 374)
+LOG ay.regs(0, 2)
+LOG ay2.regs(0, 2)
+LOG ay.selected
+LOG ay2.selected
+
+PRINT "=== GryphonSound: регистр 2 обоих = 9 ==="
+COMMAND mapper.set16(177714, 037775)
+COMMAND mapper.set(177714, 366)
+LOG ay.regs(0, 2)
+LOG ay2.regs(0, 2)
+LOG sound.mixed
+
+PRINT "=== GryphonSound: регистр 0 только второго = 7 ==="
+COMMAND mapper.set16(177714, 137777)
+COMMAND mapper.set(177714, 370)
+LOG ay.regs(0, 2)
+LOG ay2.regs(0, 2)
+EXIT

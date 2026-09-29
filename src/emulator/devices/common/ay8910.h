@@ -17,6 +17,16 @@
 // the memory map; the "bus" parameter picks how the two write kinds of the
 // host bus are turned into the register-select and data cycles of the chip.
 // A board that is pulled out of its connector hears no writes and is silent.
+//
+// Two chips on one port - the 2xAY boards of the БК, TurboSound and
+// GryphonSound - are two such devices, both on 0177714 with through = 1 and
+// with chip = 1 and chip = 2. Each follows the register-select words itself:
+// register 0377 selects the first chip and 0376 the second (TurboSound), bits
+// 15 and 14 of the word select the first, the second or both (GryphonSound).
+// A chip takes data only while it is selected; after a reset the first one
+// is. The second names the first in "pair": it is plugged in and out with it,
+// and takes a share of the mix only once a program has written to it, so a
+// program for a single AY sounds exactly as before.
 
 #define AY_REGS             16
 #define AY_TONE_CHANNELS    3
@@ -31,6 +41,12 @@ private:
     unsigned int m_frequency;           // chip clock, Hz
     uint32_t m_step;                    // 16.16 tone ticks per system clock
     uint32_t m_acc;
+
+    unsigned int m_board_chip = 0;      // 1 or 2 on a 2xAY board, 0 alone
+    bool m_selected = true;             // this chip takes the data writes
+    AY8910 * m_pair = nullptr;          // the first chip, for the second
+    AY8910 * m_partner = nullptr;       // the second chip, for the first
+    bool plugged() const { return m_pair ? m_pair->m_plugged : m_plugged; }
 
     // Written to since the reset. Until then every register is 0 and the
     // output is silence whatever the generators do, so the ticks are only

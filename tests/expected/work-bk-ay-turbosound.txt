@@ -1,0 +1,19 @@
+=== Список звуковой приставки: название платы задано title у ay ===
+[sound-card.devices]         ay: 2xAY TurboSound
+        covox: Covox
+=== После сброса: пишет только первый AY ===
+[ay.selected] &000001
+[ay2.selected] &000000
+[sound.mixed] ay
+=== TurboSound: регистр 1 второго AY = 5, первого = 3 ===
+[ay.regs] &000000: &000 &003 &000
+[ay2.regs] &000000: &000 &005 &000
+[ay.selected] &000001
+[ay2.selected] &000000
+=== GryphonSound: регистр 2 обоих = 9 ===
+[ay.regs] &000000: &000 &003 &011
+[ay2.regs] &000000: &000 &005 &011
+[sound.mixed] ay ay2
+=== GryphonSound: регистр 0 только второго = 7 ===
+[ay.regs] &000000: &000 &003 &011
+[ay2.regs] &000000: &007 &005 &011

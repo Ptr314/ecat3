@@ -49,6 +49,7 @@ class Connector : public ComputerDevice
 private:
     std::vector<Pluggable*> m_devices;
     std::vector<std::string> m_names;   // device names, in the order of m_devices
+    std::vector<std::string> m_titles;  // what the option list says for each
     unsigned int m_selected;            // 0 - nothing, n - device n-1
     std::string m_icon;                 // picture next to the option list, empty - the GUI's own
     //What the option list and the icon are called. Without "label" it is the
@@ -57,6 +58,7 @@ private:
     std::string m_title;
 
     void apply();
+    std::string plug_title_of(const std::string &device, Pluggable * d);
 
 public:
     Connector(InterfaceManager *im, EmulatorConfigDevice *cd);

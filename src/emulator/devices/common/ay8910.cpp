@@ -74,6 +74,21 @@ emulator::Result AY8910::load_config(SystemData *sd)
     // Tone ticks per system clock, 16.16
     m_step = (uint32_t)(((uint64_t)m_frequency << 16) / 8 / m_system_clock);
 
+    // A chip of a 2xAY board, see ay8910.h
+    m_board_chip = read_confg_value(cd, "chip", false, (unsigned int)0);
+    if (m_board_chip > 2 || (m_board_chip != 0 && m_bus != AY_BUS_BK))
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{AY8910|" + std::string(QT_TRANSLATE_NOOP("AY8910", "Incorrect chip number")) + "}");
+    m_selected = (m_board_chip != 2);
+    const std::string pair = cd->get_parameter("pair", false).value;
+    if (!pair.empty()) {
+        m_pair = dynamic_cast<AY8910*>(im->dm->get_device_by_name(pair, false));
+        if (m_pair == nullptr || m_pair == this)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{AY8910|" + std::string(QT_TRANSLATE_NOOP("AY8910", "Not an AY-3-8910")) + "} " + pair);
+        m_pair->m_partner = this;
+    }
+
     return emulator::Result::ok();
 }
 
@@ -91,6 +106,7 @@ void AY8910::reset(MAYBE_UNUSED bool cold)
     m_prescale = 0;
     m_noise_count = 0;
     m_rng = 1;
+    m_selected = (m_board_chip != 2);
     restart_envelope();
     i_porta.change(0);
     i_portb.change(0);
@@ -236,7 +252,7 @@ void AY8910::catch_up()
 
 void AY8910::clock(unsigned int counter)
 {
-    if (!m_plugged) return;
+    if (!plugged()) return;
     m_acc += counter * m_step;
     if (!m_used) {
         m_idle_ticks += m_acc >> 16;
@@ -275,6 +291,8 @@ int32_t AY8910::sound_sample(int64_t amplitude)
 
 bool AY8910::sound_active()
 {
+    // The second chip of a 2xAY board joins the mix once it is played
+    if (m_pair != nullptr) return plugged() && m_used;
     return m_plugged;
 }
 
@@ -285,6 +303,10 @@ void AY8910::plug_changed()
     // A board taken out and put back starts from power-on, and one that is
     // out keeps no half-played note that would sound on its return
     reset(true);
+    if (m_partner != nullptr) {
+        m_partner->reset(true);
+        m_partner->sound_mode_changed();
+    }
 }
 
 const char * AY8910::plug_title() const
@@ -296,7 +318,7 @@ const char * AY8910::plug_title() const
 
 unsigned int AY8910::get_value(unsigned int address)
 {
-    if (!m_plugged) return _FFFF;
+    if (!plugged()) return _FFFF;
     if (m_bus == AY_BUS_BK) return 0xFF;
     if (m_bus == AY_BUS_WORD) return 0;
     return (address & 1) ? read_reg(m_latch) : m_latch;
@@ -307,9 +329,11 @@ void AY8910::set_value(unsigned int address, unsigned int value, bool force)
     // Out of its connector the chip is not on the bus: the writes of a
     // program for another board (the samples of a Covox) must not reach it.
     // A forced write is the debugger's and still sets the register
-    if (!m_plugged && !force) return;
+    if (!plugged() && !force) return;
     if (m_bus == AY_BUS_BK) {
-        // A byte write to the port: only the low byte reaches the data lines
+        // A byte write to the port: only the low byte reaches the data lines.
+        // On a 2xAY board only the selected chip takes it
+        if (!m_selected) return;
         if ((address & 1) == 0) write_reg(m_latch, (value ^ 0xFF) & 0xFF);
         return;
     }
@@ -326,7 +350,7 @@ void AY8910::set_value(unsigned int address, unsigned int value, bool force)
 
 unsigned int AY8910::get_value_word(unsigned int address)
 {
-    if (!m_plugged) return _FFFF;
+    if (!plugged()) return _FFFF;
     if (m_bus == AY_BUS_BK) return 0xFFFF;
     if (m_bus == AY_BUS_WORD) return 0;
     return get_value(address & ~1) | (get_value(address | 1) << 8);
@@ -334,9 +358,20 @@ unsigned int AY8910::get_value_word(unsigned int address)
 
 void AY8910::set_value_word(unsigned int address, unsigned int value, bool force)
 {
-    if (!m_plugged && !force) return;
+    if (!plugged() && !force) return;
     if (m_bus == AY_BUS_BK) {
         // A word write to the port: the low byte selects the register
+        if (m_board_chip != 0) {
+            // On a 2xAY board the word may choose the chip instead: register
+            // 0377 or 0376 (TurboSound) or bits 15 and 14 (GryphonSound), as
+            // the BK emulator of bk-catalog (Ivan Kalininskiy) decodes it
+            const unsigned int v = (value ^ 0xFFFF) & 0xFFFF;
+            const unsigned int reg = v & 0xFF;
+            if (reg == 0xFF) { m_selected = (m_board_chip == 1); return; }
+            if (reg == 0xFE) { m_selected = (m_board_chip == 2); return; }
+            if (v & 0xC000) m_selected = (v & (m_board_chip == 1 ? 0x8000u : 0x4000u)) != 0;
+            if (!m_selected) return;
+        }
         select(value ^ 0xFF);
         return;
     }
@@ -378,6 +413,7 @@ void AY8910::save_state(StateWriter &w)
     w.b("env_alternate", m_env_alternate);
     w.b("env_holding", m_env_holding);
     w.n("env_volume", m_env_volume);
+    if (m_board_chip != 0) w.b("selected", m_selected);
 }
 
 emulator::Result AY8910::load_state(const StateReader &r)
@@ -401,6 +437,7 @@ emulator::Result AY8910::load_state(const StateReader &r)
     r.b("env_alternate", m_env_alternate);
     r.b("env_holding", m_env_holding);
     r.u("env_volume", m_env_volume);
+    if (m_board_chip != 0) r.b("selected", m_selected);
     return emulator::Result::ok();
 }
 
@@ -412,6 +449,7 @@ std::vector<DeviceFieldInfo> AY8910::get_device_fields()
     r.push_back({"level",    "Output level, 0-3000",                        false});
     r.push_back({"envelope", "Current envelope volume, 0-15",               false});
     r.push_back({"plugged",  "1 if the chip is plugged in",                 false});
+    r.push_back({"selected", "1 if the chip takes the data writes (a chip of a 2xAY board)", false});
     return r;
 }
 
@@ -434,7 +472,8 @@ bool AY8910::get_field(const std::string &field, unsigned int from, unsigned int
     if (field == "level")    { out.values.push_back(level());       return true; }
     out.width = 0;
     if (field == "envelope") { out.values.push_back(m_env_volume);  return true; }
-    if (field == "plugged")  { out.values.push_back(m_plugged?1:0); return true; }
+    if (field == "plugged")  { out.values.push_back(plugged()?1:0); return true; }
+    if (field == "selected") { out.values.push_back(m_selected?1:0); return true; }
 
     out.numeric = false;
     return ComputerDevice::get_field(field, from, to, out);

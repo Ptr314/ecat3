@@ -607,6 +607,11 @@ emulator::Result BusTiming::load_config(SystemData *sd)
     return emulator::Result::ok();
 }
 
+std::string ComputerDevice::config_parameter(const std::string &parameter) const
+{
+    return (cd != nullptr) ? cd->get_parameter(parameter, false).value : std::string();
+}
+
 ComputerDevice * create_bus_timing(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new BusTiming(im, cd);

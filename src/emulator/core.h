@@ -360,6 +360,11 @@ public:
     //time instead of being cached
     unsigned int radix() const { return (sd != nullptr)?sd->radix:10; }
 
+    //A parameter of this device's configuration as it is written, empty when
+    //there is none - for another device that reads it, as a connector reads
+    //the "title" of the devices in its list
+    std::string config_parameter(const std::string &parameter) const;
+
 protected:
     SystemData * sd = nullptr;      //Stored by load_config(), used to locate files
     unsigned int clock_miltiplier;

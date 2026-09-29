@@ -13,6 +13,16 @@
         <source>Incorrect clock frequency</source>
         <translation>Некорректная тактовая частота</translation>
     </message>
+    <message>
+        <location line="+9"/>
+        <source>Incorrect chip number</source>
+        <translation>Некорректный номер микросхемы</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Not an AY-3-8910</source>
+        <translation>Не является AY-3-8910</translation>
+    </message>
 </context>
 <context>
     <name>About</name>
@@ -34,7 +44,7 @@
         <translation type="vanished">Команда &apos;set&apos; требует адрес и значение</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+899"/>
+        <location filename="../emulator/core.cpp" line="+904"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation>Команда &apos;set&apos; требует адрес и хотя бы одно значение</translation>
     </message>
@@ -210,7 +220,7 @@
     <message>
         <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+125"/>
         <source>Unknown timing</source>
-        <translation type="unfinished"></translation>
+        <translation>Неизвестный способ расчета времени</translation>
     </message>
 </context>
 <context>
@@ -224,7 +234,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1215"/>
+        <location filename="../emulator/core.cpp" line="-1220"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -248,16 +258,17 @@
     <message>
         <location line="+9"/>
         <location line="+45"/>
+        <location filename="../emulator/devices/specific/smk512.cpp" line="+71"/>
         <source>Incorrect parameters for</source>
         <translation>Неправильно указаны параметры для</translation>
     </message>
     <message>
         <location line="-26"/>
         <source>Not a bus-timing device</source>
-        <translation type="unfinished"></translation>
+        <translation>Не является устройством bus-timing</translation>
     </message>
     <message>
-        <location line="+203"/>
+        <location line="+208"/>
         <source>Command &apos;option&apos; expects an option id and a value</source>
         <translation>Команда &apos;option&apos; требует идентификатор параметра и значение</translation>
     </message>
@@ -306,7 +317,7 @@
         <translation>Номер станции в сети (0-63)</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+618"/>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+682"/>
         <source>Hard disk image</source>
         <translation>Образ жёсткого диска</translation>
     </message>
@@ -344,7 +355,7 @@
         <translation>Устройство нельзя подключить к разъему</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+15"/>
         <source>Unknown connector kind</source>
         <translation>Неизвестное назначение разъема</translation>
     </message>
@@ -354,7 +365,7 @@
         <translation>Устройства по умолчанию нет в списке</translation>
     </message>
     <message>
-        <location line="+101"/>
+        <location line="+112"/>
         <source>The device is not in the list</source>
         <translation>Устройства нет в списке</translation>
     </message>
@@ -530,7 +541,7 @@
         <translation type="vanished">Устройство %1 не найдено</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1111"/>
+        <location filename="../emulator/core.cpp" line="-1116"/>
         <source>Too many devices</source>
         <translation>Слишком много устройств</translation>
     </message>
@@ -623,15 +634,15 @@
         <translation>Джойстик</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/connector.cpp" line="-154"/>
-        <location line="+29"/>
-        <location line="+74"/>
+        <location filename="../emulator/devices/common/connector.cpp" line="-166"/>
+        <location line="+30"/>
+        <location line="+85"/>
         <source>Input device</source>
         <translation>Устройство ввода</translation>
     </message>
     <message>
-        <location line="-72"/>
-        <location line="+71"/>
+        <location line="-83"/>
+        <location line="+82"/>
         <source>Sound</source>
         <translation>Звук</translation>
     </message>
@@ -647,7 +658,7 @@
         <translation>Мышь</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/ay8910.cpp" line="+220"/>
+        <location filename="../emulator/devices/common/ay8910.cpp" line="+226"/>
         <source>AY-3-8910</source>
         <translation>AY-3-8910</translation>
     </message>
@@ -891,7 +902,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+197"/>
+        <location filename="../emulator/emulator.cpp" line="+198"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -1392,12 +1403,17 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+70"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+73"/>
         <source>Not a sound source</source>
         <translation>Устройство не является источником звука</translation>
     </message>
     <message>
-        <location line="+406"/>
+        <location line="+70"/>
+        <source>Error writing</source>
+        <translation>Ошибка записи</translation>
+    </message>
+    <message>
+        <location line="+365"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation>Команда &apos;volume&apos; требует значение</translation>
     </message>
@@ -1674,7 +1690,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1243"/>
+        <location filename="../mainwindow.cpp" line="+1251"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -1801,8 +1817,8 @@
         <translation type="vanished">Все файлы (*.*)</translation>
     </message>
     <message>
-        <location line="-89"/>
-        <location line="+52"/>
+        <location line="-96"/>
+        <location line="+59"/>
         <location line="+865"/>
         <location line="+55"/>
         <location line="+79"/>
@@ -2219,7 +2235,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+821"/>
+        <location filename="../emulator/core.cpp" line="+826"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; требует имя файла</translation>
     </message>
@@ -2666,7 +2682,7 @@
         <translation>Некорректный формат файла записи</translation>
     </message>
     <message>
-        <location line="+320"/>
+        <location line="+330"/>
         <location line="+615"/>
         <location line="+18"/>
         <location line="+7"/>
@@ -2725,7 +2741,7 @@
         <translation type="vanished">Некорректно задан способ кодирования данных для магнитофона %1</translation>
     </message>
     <message>
-        <location line="-849"/>
+        <location line="-859"/>
         <source>Unknown tape format!</source>
         <translation>Неизвестный формат файла записи!</translation>
     </message>
@@ -2831,7 +2847,7 @@
 <context>
     <name>UKNCHDD</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-516"/>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-580"/>
         <source>Hard disk image file not found</source>
         <translation>Файл образа жёсткого диска не найден</translation>
     </message>
@@ -2841,12 +2857,12 @@
         <translation>Нераспознанный образ жёсткого диска</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+42"/>
         <source>Unrecognized hard disk geometry</source>
         <translation>Нераспознанная геометрия жёсткого диска</translation>
     </message>
     <message>
-        <location line="+651"/>
+        <location line="+705"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; ожидает имя файла</translation>
     </message>

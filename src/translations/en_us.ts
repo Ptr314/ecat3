@@ -13,6 +13,16 @@
         <source>Incorrect clock frequency</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location line="+9"/>
+        <source>Incorrect chip number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Not an AY-3-8910</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>About</name>
@@ -30,7 +40,7 @@
 <context>
     <name>AddressableDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+899"/>
+        <location filename="../emulator/core.cpp" line="+904"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -160,7 +170,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1215"/>
+        <location filename="../emulator/core.cpp" line="-1220"/>
         <source>Incorrect interface definition for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -184,6 +194,7 @@
     <message>
         <location line="+9"/>
         <location line="+45"/>
+        <location filename="../emulator/devices/specific/smk512.cpp" line="+71"/>
         <source>Incorrect parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -193,7 +204,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+203"/>
+        <location line="+208"/>
         <source>Command &apos;option&apos; expects an option id and a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -226,7 +237,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+618"/>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+682"/>
         <source>Hard disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -264,7 +275,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+15"/>
         <source>Unknown connector kind</source>
         <translation type="unfinished"></translation>
     </message>
@@ -274,7 +285,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+101"/>
+        <location line="+112"/>
         <source>The device is not in the list</source>
         <translation type="unfinished"></translation>
     </message>
@@ -418,7 +429,7 @@
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1111"/>
+        <location filename="../emulator/core.cpp" line="-1116"/>
         <source>Too many devices</source>
         <translation type="unfinished"></translation>
     </message>
@@ -511,15 +522,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/connector.cpp" line="-154"/>
-        <location line="+29"/>
-        <location line="+74"/>
+        <location filename="../emulator/devices/common/connector.cpp" line="-166"/>
+        <location line="+30"/>
+        <location line="+85"/>
         <source>Input device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-72"/>
-        <location line="+71"/>
+        <location line="-83"/>
+        <location line="+82"/>
         <source>Sound</source>
         <translation type="unfinished"></translation>
     </message>
@@ -535,7 +546,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/ay8910.cpp" line="+220"/>
+        <location filename="../emulator/devices/common/ay8910.cpp" line="+226"/>
         <source>AY-3-8910</source>
         <translation type="unfinished"></translation>
     </message>
@@ -699,7 +710,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+197"/>
+        <location filename="../emulator/emulator.cpp" line="+198"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1108,12 +1119,17 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+70"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+73"/>
         <source>Not a sound source</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+406"/>
+        <location line="+70"/>
+        <source>Error writing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+365"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1333,7 +1349,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1243"/>
+        <location filename="../mainwindow.cpp" line="+1251"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1421,8 +1437,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-436"/>
-        <location line="+52"/>
+        <location filename="../mainwindow.cpp" line="-443"/>
+        <location line="+59"/>
         <location line="+865"/>
         <location line="+55"/>
         <location line="+79"/>
@@ -1855,7 +1871,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+821"/>
+        <location filename="../emulator/core.cpp" line="+826"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2205,7 +2221,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+236"/>
+        <location line="+246"/>
         <location line="+615"/>
         <location line="+18"/>
         <location line="+7"/>
@@ -2357,7 +2373,7 @@
 <context>
     <name>UKNCHDD</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-516"/>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-580"/>
         <source>Hard disk image file not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2367,12 +2383,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+42"/>
         <source>Unrecognized hard disk geometry</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+651"/>
+        <location line="+705"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
