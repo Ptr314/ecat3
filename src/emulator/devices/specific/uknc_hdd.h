@@ -56,6 +56,15 @@ private:
     bool m_read_only = true;        // образ открыт только на чтение
     bool m_write_protect = false;   // защита, заданная конфигурацией или сценарием
     bool m_inverted = false;        // образ снят в обратном коде
+
+    // Та же плата АльтПро в СМК БК (board = bk, регистры 177740-177757):
+    // в старших байтах 177740 и 177742 - адрес накопителя и дополнительное
+    // состояние, запись байта 177743 - регистр управления, а геометрия лежит
+    // в таблице разделов блока 7
+    bool m_bk = false;
+    bool altpro_geometry(std::FILE * f, long size, unsigned int &cylinders,
+                         unsigned int &heads, unsigned int &sectors);
+    unsigned int drive_address() const;
     uint64_t m_image_size = 0;      // размер файла образа, байт
 
     // Запись в память: записанные сектора остаются здесь, а файл образа не

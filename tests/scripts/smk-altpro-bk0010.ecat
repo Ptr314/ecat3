@@ -1,0 +1,35 @@
+# БК0010-01 + СМК-512: тест контроллеров АльтПро v4.77F (gid, gid.pdp-11.net).
+#
+# То же, что smk-altpro-bk0011m, по таблице CODS для БК10: опознан
+# «SMK512 (ПЛИС репл.)», 512 КБ, регистры винчестера и его буфер в норме,
+# разряд 2 блокирует чтение 0177130/0177132, разряд 3 ПЗУ Бейсика не
+# подключает, RESET на режим не влияет, тест режимов - «ОК» во всех восьми
+# режимах, при переключении страниц ошибки только в 0100->0020 и 0000->0020.
+# На 3 МГц тест идет медленнее, чем на БК0011М.
+# @timeout 180
+
+MACHINE "bk/BK-0010-01-smk512.cfg"
+LOGDEFS _16,_8
+WAIT _300
+
+COMMAND cpu.stop()
+COMMAND ram.load("../files/altpro/ALTV477F.BIN", 774)
+COMMAND cpu.setreg(SP, 1000)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+
+# Длительность длинного теста памяти: 0 - без него
+WAIT _2000
+KEY _100,_100,0
+KEY _100,_100,ret
+WAIT _15000
+SCREEN "../results/smk-altpro-bk0010-1.png"
+KEY _100,_100,space
+WAIT _15000
+SCREEN "../results/smk-altpro-bk0010-2.png"
+KEY _100,_100,space
+WAIT _60000
+SCREEN "../results/smk-altpro-bk0010-3.png"
+LOG smk.mode
+EXIT

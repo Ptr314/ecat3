@@ -110,6 +110,16 @@ private:
     int m_lpf_coutoff;
     ButterworthLowPassFilter m_filter;
 
+    // Запись того, что уходит в звуковое устройство, в WAV (команда record).
+    // Работает и без устройства (--no-sound): тогда тракт выборок заводится
+    // только ради записи, на 44100 Гц
+    bool m_capture = false;
+    bool m_pipeline = false;            // m_counts_per_sample и фильтры настроены
+    std::string m_capture_file;
+    std::vector<int16_t> m_capture_data;
+    void setup_pipeline();
+    emulator::Result write_capture();
+
     static void audio_callback(void* userdata, uint8_t* stream, int len);
     void handle_audio_callback(uint8_t* stream, int len);
 

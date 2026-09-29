@@ -473,6 +473,9 @@ unsigned int k1801vm1::timed_cycles(unsigned int legacy)
     const uint16_t pc = (uint16_t)core->get_pc();
     unsigned int form = Vm1BusTiming::F_COUNT;
     bool skip_opcode = false;
+    // Вход в пультовое исключение и возврат из него - свои циклы шины (RMW
+    // 0177716, 0177674/0177676), которых нет ни в одном шаблоне
+    if (!core->m_last_console)
     switch (core->m_last_kind) {
     case pdp11core::LAST_INSN:
         if (!core->m_last_trapped) {

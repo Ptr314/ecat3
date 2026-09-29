@@ -1,0 +1,33 @@
+=== Режим и страница платы после загрузки состояния ===
+[smk.register] &000124
+[smk.mode] &120
+[smk.page] &000002
+[smk.read_off] &000000
+[smk.layout]         100000: page 2 segment 0
+        110000: page 2 segment 1
+        120000: page 2 segment 2
+        130000: page 2 segment 3
+        140000: page 2 segment 4
+        150000: page 2 segment 5
+        160000: page 2 segment 6
+        170000: page 2 segment 7
+        177000: machine
+=== Страница 2 через окно: 0100000 и 0160000 ===
+[mapper.value16] &100000: &012345 &054321
+[mapper.value16] &160000: &011111
+=== Переключение на страницу 8 тем же режимом ===
+[smk.page] &000010
+[mapper.value16] &100000: &070707 &060606
+[mapper.value16] &170000: &050505
+=== Режим SYS: ПЗУ платы в 0160000, сегменты 0 и 1 страницы в 0140000 ===
+[smk.layout]         100000: none
+        110000: none
+        120000: page 8 segment 6
+        130000: page 8 segment 7
+        140000: page 8 segment 0
+        150000: page 8 segment 1
+        160000: rom
+        170000: rom
+        177000: rom
+[mapper.value16] &140000: &070707 &060606
+[mapper.value16] &167776: &177605

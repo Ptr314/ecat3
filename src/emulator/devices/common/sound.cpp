@@ -7,6 +7,9 @@
 #include <iostream>
 
 #include "sound.h"
+#include "dsk_tools/dsk_tools.h"
+//UTF8_ofstream: see the same pair of includes in core.cpp
+#include "libs/dsk_tools/src/utils.h"
 #include "emulator/utils.h"
 #include "emulator/audio/audio_driver.h"
 
@@ -112,15 +115,42 @@ void GenericSound::init_sound(unsigned int clock_freq)
     m_buffer.resize(m_samples_per_buffer*2);
     m_buffer_pos = 0;
 
+    setup_pipeline();
+
+    m_audio_driver->start();
+    m_initialized = true;
+}
+
+void GenericSound::setup_pipeline()
+{
+    if (m_clock_freq == 0) m_clock_freq = m_system_clock;
     m_counts_per_sample = (m_clock_freq << 8) / m_sample_rate; // * 128 to make it more precise
 
     m_dc_blocker.setup(m_sample_rate, 20);
     refresh_sources();
 
     if (m_use_lpf) m_filter.setup(m_sample_rate, m_lpf_coutoff);
+    m_pipeline = true;
+}
 
-    m_audio_driver->start();
-    m_initialized = true;
+// 16-bit mono PCM, the rate the samples were produced at
+emulator::Result GenericSound::write_capture()
+{
+    const std::string file = resolve_output_path(sd, m_capture_file);
+    dsk_tools::UTF8_ofstream f(file, std::ios::binary);
+    if (!f.is_open())
+        return emulator::Result::error(emulator::ErrorCode::FileError,
+            "{GenericSound|" + std::string(QT_TRANSLATE_NOOP("GenericSound", "Error writing")) + "} " + file);
+    auto u32 = [&](uint32_t v) { char b[4] = {(char)v, (char)(v >> 8), (char)(v >> 16), (char)(v >> 24)}; f.write(b, 4); };
+    auto u16 = [&](uint16_t v) { char b[2] = {(char)v, (char)(v >> 8)}; f.write(b, 2); };
+    const uint32_t data = (uint32_t)(m_capture_data.size() * 2);
+    f.write("RIFF", 4); u32(36 + data); f.write("WAVE", 4);
+    f.write("fmt ", 4); u32(16); u16(1); u16(1); u32(m_sample_rate); u32(m_sample_rate * 2); u16(2); u16(16);
+    f.write("data", 4); u32(data);
+    for (int16_t s : m_capture_data) u16((uint16_t)s);
+    f.close();
+    m_capture_data.clear();
+    return emulator::Result::ok();
 }
 
 GenericSound::~GenericSound()
@@ -209,7 +239,7 @@ void GenericSound::clock(unsigned int counter)
         if (m_listen_left <= 0) listen_to_sources();
     }
 
-    if (!m_initialized) return;
+    if (!m_initialized && !m_capture) return;
 
     // The sources are averaged with the device's own output so that the sum
     // stays within the amplitude; a source that is switched off takes no share.
@@ -247,7 +277,7 @@ void GenericSound::clock(unsigned int counter)
         m_counter -= m_counts_per_sample;
 
         // Checking buffer overflow and discarding a part of it if expected
-        if (m_buffer_pos >= m_buffer.size()) {
+        if (m_initialized && m_buffer_pos >= m_buffer.size()) {
             size_t overflow_delta = m_samples_per_buffer / 8;
             std::copy(
                 m_buffer.begin() + overflow_delta,
@@ -274,7 +304,8 @@ void GenericSound::clock(unsigned int counter)
         if (out > 32767.0f) out = 32767.0f;
         else if (out < -32768.0f) out = -32768.0f;
 
-        m_buffer[m_buffer_pos++] = static_cast<int16_t>(out);
+        if (m_capture) m_capture_data.push_back(static_cast<int16_t>(out));
+        if (m_initialized) m_buffer[m_buffer_pos++] = static_cast<int16_t>(out);
     }
     refresh_sources();
 }
@@ -425,6 +456,7 @@ std::vector<DeviceCommandInfo> GenericSound::get_device_commands()
     std::vector<DeviceCommandInfo> r = ComputerDevice::get_device_commands();
     r.push_back({"volume",  "0-100",    "Sets the volume"});
     r.push_back({"mute",    "[0|1]",    "Mutes or unmutes the sound"});
+    r.push_back({"record",  "[\"file.wav\"]", "Starts writing the output to a WAV file; without a name stops and writes it"});
     return r;
 }
 
@@ -476,6 +508,25 @@ emulator::Result GenericSound::send_command(const std::string &command, const st
                 "{GenericSound|" + std::string(QT_TRANSLATE_NOOP("GenericSound", "Command 'volume' expects a value")) + "}");
         set_volume(parse_numeric_value(p[0]));
         return emulator::Result::ok();
+    }
+
+    // record("file.wav") starts writing the output to a file, record() stops
+    // and writes it. With an audio device the file has its rate; without one
+    // (--no-sound) the samples are made for the file alone, at 44100 Hz
+    if (command == "record") {
+        if (!p.empty() && !p[0].empty()) {
+            if (!m_pipeline) {
+                if (!m_initialized) m_sample_rate = 44100;
+                setup_pipeline();
+            }
+            m_capture_file = p[0];
+            m_capture_data.clear();
+            m_capture = true;
+            return emulator::Result::ok();
+        }
+        if (!m_capture) return emulator::Result::ok();
+        m_capture = false;
+        return write_capture();
     }
 
     if (command == "mute") {

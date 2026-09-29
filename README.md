@@ -7,7 +7,7 @@ eCat &ndash; универсальный эмулятор ретрокомпью�
 * &laquo;Радио-86РК&raquo; (&laquo;Апогей БК-01Ц&raquo;, &laquo;Микроша&raquo;, &laquo;Спектр-001&raquo;).
 * &laquo;Агат-7&raquo;, &laquo;Агат-9&raquo;.
 * &laquo;Ириша&raquo; (&laquo;Диалог&raquo;, &laquo;Каспий&raquo;).
-* &laquo;БК 0010&raquo;, &laquo;БК 0010-01&raquo;, &laquo;БК 0011М&raquo; (Дисководы, Covox, AY).
+* &laquo;БК 0010&raquo;, &laquo;БК 0010-01&raquo;, &laquo;БК 0011М&raquo; (Дисководы, СМК-512, Covox, AY).
 * &laquo;УК-НЦ&raquo; (HDD: CHS, LBA; Covox; [Aberrant Sound](https://github.com/aberranthacker/aberrant_sound_module)).
 * &laquo;Юниор ФВ-6506&raquo;, &laquo;Арго ФВ-6511&raquo; (TCP/M с ленты, управление магнитофоном, режим ZX).
 
@@ -50,4 +50,5 @@ eCat &ndash; универсальный эмулятор ретрокомпью�
 * Олегу Одинцову за исходники [эмулятора](http://agatcomp.ru/agat/PCutils/WinEmul.shtml), которые использовались как референс для решения некоторых вопросов по устройству &laquo;Агатов&raquo;;
 * [Koka77](https://zx-pk.ru/members/6456) за документацию по &laquo;Ирише&raquo;.
 * Никите Зимину за эмуляторы [BKBTL](https://github.com/nzeemin/bkbtl) и [UKNCBTL](https://github.com/nzeemin/ukncbtl), которые использовались как референс при добавлении поддержки компьютеров &laquo;БК&raquo; и &laquo;УК-НЦ&raquo;.
+* gid ([gid.pdp-11.net](https://gid.pdp-11.net)) за тест контроллеров АльтПро, по которому сверена плата СМК-512, и Виктору Антоновичу за эмулятор [bkemu-android](https://github.com/3cky/bkemu-android), откуда взяты образ ПЗУ СМК-512 и тестовый образ винчестера.
 * [alemorf](https://github.com/alemorf) за собрание [retro_computers](https://alemorf.github.io/retro_computers/) &ndash; дампы ПЗУ и ленты &laquo;Юниора&raquo; и &laquo;Арго&raquo;.

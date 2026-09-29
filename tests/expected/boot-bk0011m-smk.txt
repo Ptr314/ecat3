@@ -1,0 +1,24 @@
+=== Сразу после сброса: режим SYS ===
+[smk.mode] &160
+[smk.layout]         100000: none
+        110000: none
+        120000: page 0 segment 6
+        130000: page 0 segment 7
+        140000: page 0 segment 0
+        150000: page 0 segment 1
+        160000: rom
+        170000: rom
+        177000: rom
+[hdd.geometry] 40/16/63
+=== Система загружена с винчестера ===
+[smk.mode] &140
+[smk.layout]         100000: machine
+        110000: machine
+        120000: machine
+        130000: machine
+        140000: machine
+        150000: machine
+        160000: rom
+        170000: page 0 segment 7
+        177000: machine
+[hdd.reads] &00000000111

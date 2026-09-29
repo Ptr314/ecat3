@@ -1,0 +1,43 @@
+# Сборка эталонного снимка состояния для state-bk-smk.ecat.
+#
+# Запускается руками, а не набором тестов: снимок - это двоичный эталон,
+# который обновляют осознанно. Из каталога deploy/:
+#
+#   eCat3-headless --no-sound --script ../tests/files/make-state-bk-smk.ecat
+#
+# Плата СМК-512 переводится из SYS в режим 0120 (ОЗУ10) со страницей 2 (код 4),
+# в память платы кладутся образцы - в страницу 2 через окно и в страницу 8 (код
+# 1) - и состояние снимается в ../files/state-bk-smk.ecats.zip. Процессор в этот
+# момент крутится на BR . по 01000, в ОЗУ машины, которое режим платы не трогает.
+
+MACHINE "bk/BK-0011M-smk512.cfg"
+LOGDEFS _16,_8
+WAIT _500
+
+COMMAND cpu.stop()
+# Дискета не нужна, а снимок унес бы ее образ целиком
+COMMAND fdd0.eject()
+COMMAND ram0.set16(1000, 000777)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 1000)
+
+# Страница 8 в режиме ОЗУ10: образец в ее сегменты 0 и 7
+COMMAND mapper.set16(177130, 6)
+COMMAND mapper.set16(177130, 121)
+COMMAND mapper.set16(177130, 0)
+COMMAND mapper.set16(100000, 070707, 060606)
+COMMAND mapper.set16(170000, 050505)
+
+# Страница 2 в режиме ОЗУ10 - то, с чем машина и снимается
+COMMAND mapper.set16(177130, 6)
+COMMAND mapper.set16(177130, 124)
+COMMAND mapper.set16(177130, 0)
+COMMAND mapper.set16(100000, 012345, 054321)
+COMMAND mapper.set16(160000, 011111)
+LOG smk.register
+LOG smk.layout
+
+COMMAND cpu.run()
+WAIT _100
+SAVESTATE "state-bk-smk.ecats.zip"
+EXIT

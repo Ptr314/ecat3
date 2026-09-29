@@ -19,6 +19,21 @@ protected:
     bool has_eis;               // MUL/DIV/ASH/ASHC, есть у ВМ2
     bool has_console;           // пультовый режим с командами RUN/STEP/MFPC..., есть у ВМ2
 
+    // Пультовый режим ВМ1. Своего режима в кристалле нет: вход в пультовое
+    // исключение - это цикл чтение-модификация-запись 0177716 с установкой
+    // разряда 3 (его разбирает внешняя схема), сохранение PSW в 0177676 и PC
+    // в 0177674 и вектор 0160002; START и STEP читают их обратно и сбрасывают
+    // разряд 3. Тайм-аут на любом шаге - обычное исключение по зависанию: на
+    // БК, где по 0177676 никто не отвечает, так и получается ловушка через
+    // 004 по клавише СТОП и команде HALT. Разряды 10 и 11 PSW ставит только
+    // вектор пультового исключения. Описание кристалла - 1801BM1/cpu11,
+    // vm1/doc/1801vm1.docx, «Процедура входа в пультовые исключения»
+    bool vm1_console;
+    void vm1_console_entry(uint16_t vector, int depth);
+    void vm1_console_return(bool step);
+    void vm1_timeout(int depth);
+    void vm1_trap(uint16_t vector, int depth);
+
     // Шаг по команде STEP: после одной выполненной команды процессор
     // возвращается в пультовый режим
     bool m_step_pending = false;
@@ -182,6 +197,7 @@ public:
     unsigned int m_last_kind = LAST_NONE;
     uint16_t m_last_command = 0;
     bool m_last_trapped = false;        // it ended in a trap: reserved, bus error, trace
+    bool m_last_console = false;        // ВМ1 entered or left the console: no template
     bool m_last_taken = false;          // a branch or SOB whose condition held
     bool m_last_iako = false;           // LAST_INTERRUPT: a vectored one, with IAKO
 };

@@ -1,0 +1,20 @@
+# БК0010-01 + СМК-512: время команд К1801ВМ1 в статической памяти платы.
+#
+# Та же программа 45com-hi, что в timing-bk0011m-smk: код в 0140000 и данные с
+# 0145000 в памяти платы (режим 040). Формы MOV из таблицы замеров совпадают с
+# ее колонкой D («fast/fast» на 3 МГц) все: 8, 18, 29, 31, 28, 31, 28, 34, 34,
+# 39. Для статической памяти эти числа на 3 и 4 МГц одинаковы.
+# @timeout 60
+
+MACHINE "bk/BK-0010-01-smk512.cfg"
+WAIT _3000
+
+COMMAND cpu.stop()
+COMMAND ram.load("../files/bk-timing/45com-hi.bin", 774)
+COMMAND cpu.setreg(SP, 1000)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+WAIT _6000
+SCREEN "../results/timing-bk0010-smk-45com.png"
+EXIT

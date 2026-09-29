@@ -36,6 +36,13 @@
 #define MODE_W                  2
 #define MODE_RW                 MODE_R + MODE_W
 
+//What AddressableDevice::route() answers for an address of a routed range
+#define ROUTE_ANSWER            0
+#define ROUTE_PASS              1
+#define ROUTE_TIMEOUT           2
+#define ROUTE_THROUGH           3
+#define ROUTE_OR                4
+
 #define DEBUG_OFF               0
 #define DEBUG_STOPPED           1
 #define DEBUG_STEP              2
@@ -247,6 +254,9 @@ struct MapperRange {
     //сразу несколько устройств. Так устроены окна УК-НЦ (регистр 177054), где
     //ПЗУ и ОЗУ отдают данные одновременно
     bool                or_read;
+    //Устройство само решает по каждому адресу, отвечает ли оно (route()):
+    //плата, которая по режиму перекрывает или отключает память машины
+    bool                routed;
 };
 
 //One page of the address space as it resolves under one configuration. The
@@ -419,6 +429,18 @@ public:
     // Devices holding true 16-bit registers override these to stay atomic.
     virtual unsigned int get_value_word(unsigned int address);
     virtual void set_value_word(unsigned int address, unsigned int value, bool force=false);
+
+    //Asked by the mapper for a range marked "routed = 1", before the access and
+    //with the same address the device would get: does this device answer here
+    //(ROUTE_ANSWER), leave the address to the ranges after it (ROUTE_PASS),
+    //hold the bus without an answer (ROUTE_TIMEOUT), or answer a write and let
+    //it go on to the ranges after it as well (ROUTE_THROUGH), or answer a read
+    //wired together with the ranges after it, OR-ed like "or_read" (ROUTE_OR).
+    //A board that
+    //switches parts of the machine's own memory off, like the СМК of the БК,
+    //decides this by its mode. Must be free of side effects: the debugger and
+    //the bus timing ask too
+    virtual unsigned int route(unsigned int address, unsigned int mode) { (void)address; (void)mode; return ROUTE_ANSWER; }
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     std::vector<DeviceCommandInfo> get_device_commands() override;
@@ -840,6 +862,8 @@ public:
     void state_restored() override;
 
     bool responds(unsigned int address, unsigned int mode = MODE_RW);
+    bool goes_through(unsigned int range_index, AddressableDevice * d, unsigned int address_on_device);
+    bool reads_on(unsigned int range_index, AddressableDevice * d, unsigned int address_on_device);
     unsigned int read(unsigned int address);
     void write(unsigned int address, unsigned int value);
     unsigned int read_port(unsigned int address);

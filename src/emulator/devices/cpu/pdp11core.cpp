@@ -61,6 +61,7 @@ void pdp11core::set_reply_delay(unsigned int periods)
 pdp11core::pdp11core(int family_type)
     : has_eis(family_type == PDP11_FAMILY_1801VM2)
     , has_console(family_type == PDP11_FAMILY_1801VM2)
+    , vm1_console(family_type == PDP11_FAMILY_1801VM1)
     , is_virq(false)
     , virq_vector(0)
     , is_irq2(false)
@@ -352,6 +353,14 @@ uint16_t pdp11core::pop()
 
 void pdp11core::do_trap(uint16_t vector)
 {
+    // У ВМ1 тайм-аут при входе в исключение - новое исключение, а не останов.
+    // Зависание шины и резервная команда - те исключения, повторный тайм-аут
+    // в которых кристалл считает двойной ошибкой
+    if (vm1_console) {
+        vm1_trap(vector, (vector == PDP11::V_BUS_ERROR || vector == PDP11::V_RESERVED) ? 1 : 0);
+        return;
+    }
+
     uint16_t old_psw = context.PSW;
     uint16_t old_pc  = context.R[PDP11::REG_PC];
 
@@ -377,6 +386,15 @@ void pdp11core::do_trap(uint16_t vector)
 
 void pdp11core::enter_halt_mode(uint16_t vector)
 {
+    if (vm1_console) {
+        // Команда HALT, запрос по nIRQ1 (клавиша СТОП у БК), START/STEP вне
+        // пульта: у всех вектор 0160002, а ловушка через 004 получается сама
+        (void)vector;
+        m_step_pending = false;
+        vm1_console_entry(0160002, 0);
+        return;
+    }
+
     const bool was = context.halt_mode;
     context.halt_mode = true;
     m_step_pending = false;
@@ -415,11 +433,120 @@ void pdp11core::enter_halt_mode(uint16_t vector)
     }
 }
 
+//----------------------- Пультовый режим ВМ1 -------------------------------//
+
+// Ловушка ВМ1 через вектор пользовательского режима: PSW и PC в стек, новые
+// из вектора. depth - сколько исключений по зависанию сейчас обрабатывается:
+// тайм-аут внутри такого исключения - уже двойная ошибка
+void pdp11core::vm1_trap(uint16_t vector, int depth)
+{
+    const uint16_t old_psw = context.PSW;
+    const uint16_t old_pc  = context.R[PDP11::REG_PC];
+
+    m_trap_vector = vector;
+    m_trap_pc = old_pc;
+    m_trap_count++;
+
+    m_abort = false;
+    push(old_psw);
+    if (!m_abort) push(old_pc);
+    if (!m_abort) context.R[PDP11::REG_PC] = read_word_checked(vector);
+    // Разряды 10 и 11 ставит только вектор пультового исключения
+    if (!m_abort) context.PSW = (uint16_t)(read_word_checked(vector + 2) & ~06000);
+    context.halted = false;
+
+    if (m_abort) {
+        m_abort = false;
+        vm1_timeout(depth);
+    }
+}
+
+// Исключение по зависанию шины. Обычно это ловушка через 004, но при
+// взведенных разрядах 10 или 11 PSW (внутри пультового обработчика) - снова
+// пультовое исключение 0160002, а тайм-аут при обработке зависания - двойная
+// ошибка, 0160006. Кристалл на третьем круге так и крутится вечно; эмулятор,
+// как и прежде при сбое записи в стек, останавливает процессор
+void pdp11core::vm1_timeout(int depth)
+{
+    if (depth >= 2) {
+        context.stop = true;
+        return;
+    }
+    if (depth == 1) {
+        vm1_console_entry(0160006, 2);
+        return;
+    }
+    if ((context.PSW & 06000) != 0) vm1_console_entry(0160002, 1);
+    else vm1_trap(PDP11::V_BUS_ERROR, 1);
+}
+
+// Вход в пультовое исключение, микрокод из описания кристалла: RMW 0177716 с
+// установкой разряда 3, PSW в 0177676, PC в 0177674, затем PC и PSW из
+// вектора. Стек пользовательского режима не трогается. Адреса не зависят от
+// номера процессора
+void pdp11core::vm1_console_entry(uint16_t vector, int depth)
+{
+    m_last_console = true;
+    m_step_pending = false;
+    m_trap_vector = vector;
+    m_trap_pc = context.R[PDP11::REG_PC];
+    m_trap_count++;
+
+    m_abort = false;
+    const uint16_t sel = read_word_checked(0177716);
+    if (!m_abort) write_word_checked(0177716, (uint16_t)(sel | 010));
+    if (!m_abort) write_word_checked(0177676, context.PSW);
+    if (!m_abort) write_word_checked(0177674, context.R[PDP11::REG_PC]);
+    if (!m_abort) context.R[PDP11::REG_PC] = read_word_checked(vector);
+    if (!m_abort) context.PSW = read_word_checked(vector + 2);
+    context.halted = false;
+
+    if (m_abort) {
+        m_abort = false;
+        vm1_timeout(depth);
+        return;
+    }
+    if (!context.halt_mode) {
+        context.halt_mode = true;
+        on_halt_mode(true);
+    }
+}
+
+// START и STEP: PC из 0177674, PSW из 0177676, затем RMW 0177716 со сбросом
+// разряда 3. STEP, как RTT, откладывает ловушку трассировки на команду
+void pdp11core::vm1_console_return(bool step)
+{
+    m_last_console = true;
+    m_abort = false;
+    const uint16_t pc = read_word_checked(0177674);
+    const uint16_t psw = m_abort ? 0 : read_word_checked(0177676);
+    if (!m_abort) {
+        context.R[PDP11::REG_PC] = pc;
+        context.PSW = psw;
+        const uint16_t sel = read_word_checked(0177716);
+        if (!m_abort) write_word_checked(0177716, (uint16_t)(sel & ~010));
+    }
+    if (m_abort) {
+        m_abort = false;
+        vm1_timeout(0);
+        return;
+    }
+    if (step) m_no_trace = true;
+    if (context.halt_mode) {
+        context.halt_mode = false;
+        on_halt_mode(false);
+    }
+}
+
 bool pdp11core::check_interrupts(unsigned int & cycles)
 {
     // Авария сети старше пульта и всех устройств. Запрещают её только оба
     // разряда приоритета сразу, как и в UKNCBTL
-    if (is_aclo && (context.PSW & 0600) != 0600) {
+    // Разряд 10 PSW, который ставит вектор пультового исключения ВМ1,
+    // запрещает все прерывания, кроме исключений самого процессора
+    const bool vm1_masked = vm1_console && (context.PSW & 02000) != 0;
+
+    if (is_aclo && (context.PSW & 0600) != 0600 && !vm1_masked) {
         is_aclo = false;
         do_trap(PDP11::V_POWER_FAIL);
         cycles += C_TRAP;
@@ -437,24 +564,35 @@ bool pdp11core::check_interrupts(unsigned int & cycles)
     // которой тот и ставит HALT). Но линия, которая всё ещё прижата, когда
     // монитор выходит командой RUN, вводит процессор в пульт снова.
     //
-    // У ВМ1 пультового режима нет, и halt_mode там взводится навсегда первым
-    // же входом: запрос защёлкивается по фронту, иначе удерживаемая у БК
-    // клавиша СТОП входила бы заново на каждой команде.
+    // У ВМ1 запрос защёлкивается по фронту: иначе удерживаемая у БК клавиша
+    // СТОП, вход по которой на простой БК кончается ловушкой через 004 (разряды
+    // 10 и 11 ее не маскируют), входила бы заново на каждой команде.
     //
     // Вектор у ВМ2 тот же, что у команды HALT, - 0170, как и в UKNCBTL.
     // Вектор 004 пультового режима - «зависание» магистрали: монитор УК-НЦ
     // входит по нему, не сохраняя регистров, и по СТОП печатал «ЗАВИСАНИЕ» с
     // адресом 000000 вместо адреса прерванной программы
     const bool console = has_console && halt_sel != 0;
-    if (console ? (halt_pin && !context.halt_mode) : is_halt_req) {
+    if (vm1_console) {
+        // У ВМ1 запрос пульта запрещают разряды 10 и 11 PSW - пока работает
+        // пультовый обработчик. Запрос при этом не теряется: линия ждет
+        if (is_halt_req && (context.PSW & 06000) == 0) {
+            is_halt_req = false;
+            enter_halt_mode(0);
+            cycles += C_TRAP;
+            return true;
+        }
+    } else {
+        if (console ? (halt_pin && !context.halt_mode) : is_halt_req) {
+            is_halt_req = false;
+            enter_halt_mode((uint16_t)(console ? 0170 : (halt_vector & 0377)));
+            cycles += C_TRAP;
+            return true;
+        }
         is_halt_req = false;
-        enter_halt_mode((uint16_t)(console ? 0170 : (halt_vector & 0377)));
-        cycles += C_TRAP;
-        return true;
     }
-    is_halt_req = false;
 
-    if ((context.PSW & PDP11::F_MASK) == 0) {
+    if ((context.PSW & PDP11::F_MASK) == 0 && !vm1_masked) {
         if (is_irq2)      { is_irq2 = false; do_trap(PDP11::V_IRQ2); cycles += C_TRAP; return true; }
         else if (is_irq3) { is_irq3 = false; do_trap(PDP11::V_IRQ3); cycles += C_TRAP; return true; }
         // Taking the request clears it: the line is read as a pulse. A device
@@ -679,7 +817,8 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
                 uint16_t v = read_operand(op, true);
                 if (m_abort) return true;
                 // The trace bit cannot be set this way
-                context.PSW = (uint16_t)((context.PSW & PDP11::F_T) | (v & 0xFF & ~PDP11::F_T));
+                // and the console bits 10 and 11 of the ВМ1 stay as they are
+                context.PSW = (uint16_t)((context.PSW & (PDP11::F_T | 06000)) | (v & 0xFF & ~PDP11::F_T));
                 return true;
             }
             case 067: {                                 // MFPS
@@ -1035,6 +1174,8 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         cycles += 2 * C_DATI + C_ALU;
         context.R[PDP11::REG_PC] = pop();
         context.PSW = pop();
+        // Разряды 10 и 11 ВМ1 RTI и RTT сбрасывают, что бы ни лежало в стеке
+        if (vm1_console) context.PSW &= ~06000;
         return true;
     }
     case 0000003:                                       // BPT
@@ -1054,6 +1195,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         cycles += 2 * C_DATI + C_ALU;
         context.R[PDP11::REG_PC] = pop();
         context.PSW = pop();
+        if (vm1_console) context.PSW &= ~06000;
         // RTT defers the trace trap until after the next instruction
         m_no_trace = true;
         return true;
@@ -1131,6 +1273,13 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
     // through vector 4 rather than the reserved instruction vector 10.
     if (command >= 0000010 && command <= 0000017) {
         cycles += C_HALT;
+        // У ВМ1 это возврат из пультового исключения, аналог RTI и RTT: PC и
+        // PSW из 0177674/0177676 и сброс разряда 3 в 0177716. Где этих ячеек
+        // нет (на простой БК), тайм-аут дает ту же ловушку через 004
+        if (vm1_console) {
+            vm1_console_return(command >= 0000014);
+            return true;
+        }
         enter_halt_mode((uint16_t)(has_console && halt_sel? 0170 : (halt_vector & 0377)));
         return true;
     }
@@ -1146,6 +1295,7 @@ unsigned int pdp11core::execute()
 
     m_last_kind = LAST_IDLE;
     m_last_trapped = false;
+    m_last_console = false;
     m_last_iako = false;
     if (context.stop) return C_IDLE;
 
@@ -1188,7 +1338,8 @@ unsigned int pdp11core::execute()
 
     if (m_abort) {
         cycles += C_TRAP;
-        do_trap(PDP11::V_BUS_ERROR);
+        if (vm1_console) { m_abort = false; vm1_timeout(0); }
+        else do_trap(PDP11::V_BUS_ERROR);
         m_last_trapped = true;
     } else if (!handled) {
         cycles += C_TRAP;

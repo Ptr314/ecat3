@@ -1,0 +1,42 @@
+# БК0011М + СМК-512: режим, страница и память платы переживают снимок состояния.
+#
+# ../tests/files/state-bk-smk.ecats.zip (от deploy/) снят скриптом
+# ../files/make-state-bk-smk.ecat в режиме 0120 (ОЗУ10) со страницей 2: в ней
+# по 0100000 лежит 012345, 054321, по 0160000 - 011111, а в странице 8 по ее
+# сегментам 0 и 7 - 070707, 060606 и 050505.
+#
+# Проверяется, что после загрузки окно показывает ту же страницу в том же
+# режиме, что защелка режима живая (переключение на страницу 8 показывает ее
+# образцы) и что память платы восстановлена целиком, а не только видимая часть.
+# @timeout 40
+
+MACHINE "../tests/files/state-bk-smk.ecats.zip"
+LOGDEFS _16,_8
+
+PRINT "=== Режим и страница платы после загрузки состояния ==="
+LOG smk.register
+LOG smk.mode
+LOG smk.page
+LOG smk.read_off
+LOG smk.layout
+
+PRINT "=== Страница 2 через окно: 0100000 и 0160000 ==="
+LOG mapper.value16(100000, 100003)
+LOG mapper.value16(160000, 160001)
+
+PRINT "=== Переключение на страницу 8 тем же режимом ==="
+COMMAND mapper.set16(177130, 6)
+COMMAND mapper.set16(177130, 121)
+COMMAND mapper.set16(177130, 0)
+LOG smk.page
+LOG mapper.value16(100000, 100003)
+LOG mapper.value16(170000, 170001)
+
+PRINT "=== Режим SYS: ПЗУ платы в 0160000, сегменты 0 и 1 страницы в 0140000 ==="
+COMMAND mapper.set16(177130, 6)
+COMMAND mapper.set16(177130, 161)
+COMMAND mapper.set16(177130, 0)
+LOG smk.layout
+LOG mapper.value16(140000, 140003)
+LOG mapper.value16(167776, 167777)
+EXIT

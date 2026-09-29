@@ -124,10 +124,20 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
             "{UKNCHDD|" + std::string(QT_TRANSLATE_NOOP("UKNCHDD", "Unrecognized hard disk image")) + "} " + file_name);
     }
 
-    unsigned int sectors = 0, heads = 0;
+    unsigned int sectors = 0, heads = 0, table_cylinders = 0;
     bool inverted = false;
     const uint16_t * w = (const uint16_t *)first;
-    if ((w[0] == 0x54A9 && w[1] == 0xFFEF && w[2] == 0xFEFF)
+    if (m_bk) {
+        // Винчестер СМК БК: геометрия - из таблицы разделов в блоке 7, а без
+        // нее - 16 головок по 63 сектора, как у bkemu. Образ хранит то, что
+        // лежит на накопителе, и машина через свою магистраль видит его в
+        // обратном коде
+        inverted = true;
+        if (!altpro_geometry(f, size, table_cylinders, heads, sectors)) {
+            sectors = 63;
+            heads = 16;
+        }
+    } else if ((w[0] == 0x54A9 && w[1] == 0xFFEF && w[2] == 0xFEFF)
         || (w[0] == 0xAB56 && w[1] == 0x0010 && w[2] == 0x0100)) {
         // Разметка HD: число секторов и их общее число на цилиндр лежат
         // словами, обратный код узнаётся по заголовку
@@ -146,11 +156,11 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
         heads   = inverted? (uint8_t)~first[1] : first[1];
     }
 
-    unsigned int cylinders = 0;
-    if (sectors != 0 && heads != 0)
+    unsigned int cylinders = table_cylinders;
+    if (cylinders == 0 && sectors != 0 && heads != 0)
         cylinders = (unsigned int)(size / SECTOR_SIZE / sectors / heads);
 
-    if (sectors == 0 || heads == 0 || cylinders == 0 || cylinders > 1024) {
+    if (sectors == 0 || heads == 0 || cylinders == 0 || cylinders > (m_bk ? 65535u : 1024u)) {
         std::fclose(f);
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{UKNCHDD|" + std::string(QT_TRANSLATE_NOOP("UKNCHDD", "Unrecognized hard disk geometry")) + "} " + file_name);
@@ -173,6 +183,39 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
     reset(true);
 
     return emulator::Result::ok();
+}
+
+// Таблица разделов АльтПро: блок 7, слова в обратном коде идут от конца
+// блока вниз - цилиндры (776), головки (774), секторы (772), число логических
+// дисков в младшем байте 770, дальше по два слова на диск. Над ними лежит
+// контрольная сумма: она минус сумма всех слов таблицы дает 012701
+bool UKNCHDD::altpro_geometry(std::FILE * f, long size, unsigned int &cylinders,
+                              unsigned int &heads, unsigned int &sectors)
+{
+    if (size < 8 * SECTOR_SIZE) return false;
+    uint8_t block[SECTOR_SIZE];
+    if (std::fseek(f, 7 * SECTOR_SIZE, SEEK_SET) != 0
+        || std::fread(block, 1, SECTOR_SIZE, f) != SECTOR_SIZE) {
+        std::fseek(f, 0, SEEK_SET);
+        return false;
+    }
+    std::fseek(f, 0, SEEK_SET);
+    auto word = [&](unsigned int offset) -> unsigned int {
+        return (~(block[offset] | (block[offset + 1] << 8))) & 0xFFFF;
+    };
+    const unsigned int disks = word(0770) & 0xFF;
+    if (disks > 125) return false;
+    unsigned int pos = 0770 - disks * 4 - 2;
+    unsigned int sum = word(pos);
+    do {
+        pos += 2;
+        sum -= word(pos);
+    } while (pos < 0776);
+    if ((sum & 0xFFFF) != 012701) return false;
+    sectors = word(0772);
+    heads = word(0774) & 0xFF;
+    cylinders = word(0776);
+    return sectors != 0 && sectors <= 255 && heads != 0 && heads <= 16 && cylinders != 0;
 }
 
 void UKNCHDD::close_image()
@@ -200,6 +243,7 @@ emulator::Result UKNCHDD::load_config(SystemData *sd)
     if (!res) return res;
 
     files = read_confg_value(cd, "files", false, std::string(""));
+    m_bk = read_confg_value(cd, "board", false, std::string("uknc")) == "bk";
     m_write_protect = read_confg_value(cd, "write_protect", false, false);
     m_volatile = read_confg_value(cd, "volatile", false, false);
 
@@ -518,8 +562,11 @@ unsigned int UKNCHDD::read_port(unsigned int reg, bool peek)
         case REG_SECTOR_NUMBER: return 0xFF00 | (m_cursector & 0xFF);
         case REG_CYLINDER_LSB:  return 0xFF00 | (m_curcylinder & 0xFF);
         case REG_CYLINDER_MSB:  return 0xFF00 | ((m_curcylinder >> 8) & 0xFF);
-        case REG_HEAD_NUMBER:   return 0xFF00 | (m_curheadreg & 0xFF);
-        default:                return 0xFF00 | m_status;
+        case REG_HEAD_NUMBER:
+            // У платы БК в старшем байте - дополнительное состояние
+            return (m_bk ? (m_status << 8) : 0xFF00) | (m_curheadreg & 0xFF);
+        default:
+            return (m_bk ? (drive_address() << 8) : 0xFF00) | m_status;
     }
 }
 
@@ -569,10 +616,21 @@ static inline unsigned int address_to_reg(unsigned int address)
     return (~(address >> 1)) & 7;
 }
 
+// Регистр адреса накопителя (3F7 у IDE): выбранные головка и накопитель,
+// оба в обратном коде
+unsigned int UKNCHDD::drive_address() const
+{
+    const unsigned int drive = (m_curheadreg >> 4) & 1;
+    return 0xC0 | (((~m_curhead) & 0x0F) << 2) | (drive ? 0x01 : 0x02);
+}
+
 unsigned int UKNCHDD::get_value_word(unsigned int address)
 {
-    // Пустое гнездо: на магистрали никто не отвечает, и линии стоят в нуле
-    if (!m_attached) return 0;
+    // Пустое гнездо: на магистрали никто не отвечает, и линии стоят в нуле.
+    // У платы БК регистры отвечают и без накопителя, а линии данных ИДЕ
+    // стянуты к нулю (так и задумано в ИДЕ: занятым пустой канал не выглядит),
+    // что через инвертирующую магистраль читается единицами
+    if (!m_attached) return m_bk ? 0xFFFF : 0;
     // Магистраль 1801 несёт данные в обратном коде, и плата их не переворачивает
     return (~read_port(address_to_reg(address))) & 0xFFFF;
 }
@@ -580,7 +638,7 @@ unsigned int UKNCHDD::get_value_word(unsigned int address)
 // Отладчик и LOG видят слово буфера, не продвигаясь по нему
 unsigned UKNCHDD::get_direct(unsigned address)
 {
-    if (!m_attached) return 0;
+    if (!m_attached) return m_bk ? 0xFF : 0;
     const unsigned int w = (~read_port(address_to_reg(address & ~1u), true)) & 0xFFFF;
     return (address & 1)? ((w >> 8) & 0xFF) : (w & 0xFF);
 }
@@ -603,6 +661,12 @@ void UKNCHDD::set_value(unsigned int address, unsigned int value, bool force)
 {
     // Байт становится словом со своей половины, как и в UKNCBTL: на шине
     // 1801 обмен всё равно идёт словами, а половину выбирает разряд 0 адреса
+    // У платы БК байт по 177743 - регистр управления: сброс накопителя
+    // разрядом 2
+    if (m_bk && (address & 1) && address_to_reg(address & ~1u) == REG_HEAD_NUMBER) {
+        if (m_attached && ((~value) & 0x04)) reset(false);
+        return;
+    }
     const unsigned int w = (address & 1)? ((value & 0xFF) << 8) : (value & 0xFF);
     set_value_word(address & ~1u, w, force);
 }
