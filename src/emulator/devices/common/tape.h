@@ -213,6 +213,8 @@ public:
 
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;
+    //Окно магнитофона могло быть открыто до восстановления: пусть перечитает
+    void state_restored() override { notify_state(); }
     //The tape in the machine is the drive's own business, the same way a
     //floppy is: a recording exists nowhere else until it is saved
     bool state_owns_file(const std::string &parameter) const override

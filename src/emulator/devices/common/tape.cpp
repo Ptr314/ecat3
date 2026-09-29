@@ -793,6 +793,11 @@ void TapeRecorder::save_state(StateWriter &w)
     w.n("bit_shift", static_cast<uint32_t>(bit_shift));
     w.n("baud_rate", baud_rate);
     w.b("recording", is_recording);
+    //Имя кассеты и то, что лентопротяжку держит машина: окно магнитофона
+    //показывает табло только при известном имени, а закрываясь, останавливает
+    //ленту, которую не ведет машина
+    if (!loaded_name.empty()) w.s("tape_name", loaded_name);
+    w.b("motor", motor_on);
 
     //The writer side: where an edge was last seen, and the bit being measured
     w.n64("cycle_counter", cycle_counter);
@@ -895,6 +900,9 @@ emulator::Result TapeRecorder::load_state(const StateReader &r)
     uint32_t baud = baud_rate;
     if (r.u("baud_rate", baud)) set_baud_rate(baud);
     r.b("recording", is_recording);
+    loaded_name.clear();
+    r.s("tape_name", loaded_name);
+    r.b("motor", motor_on);
 
     r.n64("cycle_counter", cycle_counter);
     r.n64("last_edge_cycles", last_edge_cycles);
@@ -912,6 +920,8 @@ emulator::Result TapeRecorder::load_state(const StateReader &r)
 
     std::vector<uint8_t> tape;
     if (r.blob("data", tape)) { data.swap(tape); data_size = static_cast<unsigned int>(data.size()); }
+    //Длина ленты - производная от данных и скорости, в снимок она не идет
+    total_seconds = (baud_rate > 0)?(data_size * 8) / baud_rate:0;
     recorded_bytes.clear();
     r.blob("recorded", recorded_bytes);
 
