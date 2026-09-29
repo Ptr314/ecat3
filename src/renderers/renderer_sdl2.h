@@ -193,6 +193,13 @@ public:
         SDL_DestroyTexture(SDLTexture);
     }
 
+    //The size the picture is drawn at in the window, set by render()
+    void get_render_size(int * w, int * h) const
+    {
+        *w = render_rect.w;
+        *h = render_rect.h;
+    }
+
     uint32_t MapRGB(uint8_t R, uint8_t G, uint8_t B) override
     {
         return SDL_MapRGB(device_surface->format, R, G, B);

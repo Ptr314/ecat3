@@ -96,7 +96,10 @@ void GLWidget::paintGL() {
         pendingImage = QImage();
     }
 
-    if (!texture) return;
+    if (!texture) {
+        pictureRect = QRect();
+        return;
+    }
 
     program->bind();
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -142,6 +145,7 @@ void GLWidget::paintGL() {
     //widget was an odd number of pixels wide
     const int imgX = (fbW - imgW) / 2;
     const int imgY = (fbH - imgH) / 2;
+    pictureRect = QRect(imgX, imgY, imgW, imgH);
     const float scaleX = (float)imgW / fbW;
     const float scaleY = (float)imgH / fbH;
     const float offsetX = (float)(2 * imgX + imgW) / fbW - 1.0f;
@@ -165,6 +169,21 @@ void GLWidget::paintGL() {
     program->disableAttributeArray(posLoc);
     program->disableAttributeArray(texLoc);
     program->release();
+}
+
+QImage GLWidget::grabPicture() {
+    //grabFramebuffer() runs paintGL() into an offscreen buffer of the widget's
+    //size, so the texture, the filter and pictureRect are those of this frame.
+    //A picture larger than the window (a fixed scale) is cut where it is cut
+    //on the screen
+    const QImage frame = grabFramebuffer();
+    const QRect r = pictureRect.intersected(frame.rect());
+    if (r.isEmpty()) return QImage();
+    QImage picture = frame.copy(r);
+    picture.setDevicePixelRatio(1);
+    //Opaque: the frame keeps the alpha of the clear colour, the PNG should not
+    picture = picture.convertToFormat(QImage::Format_RGB32);
+    return picture;
 }
 
 //The setters below are called from the emulator's render thread. A QWidget

@@ -34,7 +34,7 @@
         <translation type="vanished">Команда &apos;set&apos; требует адрес и значение</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+850"/>
+        <location filename="../emulator/core.cpp" line="+899"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation>Команда &apos;set&apos; требует адрес и хотя бы одно значение</translation>
     </message>
@@ -207,6 +207,11 @@
         <source>Invalid breakpoint address</source>
         <translation>Нерректная точка останова</translation>
     </message>
+    <message>
+        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+125"/>
+        <source>Unknown timing</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ComputerDevice</name>
@@ -219,7 +224,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location line="-1166"/>
+        <location filename="../emulator/core.cpp" line="-1215"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -242,11 +247,17 @@
     </message>
     <message>
         <location line="+9"/>
+        <location line="+45"/>
         <source>Incorrect parameters for</source>
         <translation>Неправильно указаны параметры для</translation>
     </message>
     <message>
-        <location line="+173"/>
+        <location line="-26"/>
+        <source>Not a bus-timing device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+203"/>
         <source>Command &apos;option&apos; expects an option id and a value</source>
         <translation>Команда &apos;option&apos; требует идентификатор параметра и значение</translation>
     </message>
@@ -356,7 +367,7 @@
         <translation>Некорректная скорость обмена</translation>
     </message>
     <message>
-        <location line="+389"/>
+        <location line="+396"/>
         <source>Command &apos;connect&apos; expects a port name</source>
         <translation>Команда &apos;connect&apos; ожидает имя порта</translation>
     </message>
@@ -519,7 +530,7 @@
         <translation type="vanished">Устройство %1 не найдено</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1062"/>
+        <location filename="../emulator/core.cpp" line="-1111"/>
         <source>Too many devices</source>
         <translation>Слишком много устройств</translation>
     </message>
@@ -921,7 +932,7 @@
         <translation type="vanished">Устройство %1 не найдено</translation>
     </message>
     <message>
-        <location filename="../emulator/config.cpp" line="+250"/>
+        <location filename="../emulator/config.cpp" line="+255"/>
         <location filename="../emulator/config_ext.cpp" line="+114"/>
         <location line="+6"/>
         <location filename="../emulator/config_fields.cpp" line="+104"/>
@@ -949,7 +960,7 @@
         <location line="-97"/>
         <location line="+5"/>
         <location line="+13"/>
-        <location filename="../emulator/config_ext.cpp" line="+183"/>
+        <location filename="../emulator/config_ext.cpp" line="+187"/>
         <location line="+8"/>
         <source>Configuration error for device parameter</source>
         <translation>Ошибка конфигурации параметра устройства</translation>
@@ -960,7 +971,7 @@
         <translation>Параметр radix должен быть равен 2, 8, 10 или 16</translation>
     </message>
     <message>
-        <location filename="../emulator/config_ext.cpp" line="-178"/>
+        <location filename="../emulator/config_ext.cpp" line="-182"/>
         <location line="+5"/>
         <source>The archive must hold exactly one file of its own type at its top level</source>
         <translation>В корне архива должен лежать ровно один файл его типа</translation>
@@ -982,7 +993,7 @@
         <translation>Директива повторяется</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+21"/>
         <location line="+5"/>
         <location line="+3"/>
         <location line="+28"/>
@@ -1037,7 +1048,7 @@
         <translation>В базовой конфигурации это свойство записано с другими модификаторами, сначала удалите его</translation>
     </message>
     <message>
-        <location line="-283"/>
+        <location line="-287"/>
         <location line="+20"/>
         <location line="+20"/>
         <location line="+8"/>
@@ -1055,7 +1066,7 @@
     </message>
     <message>
         <location line="+17"/>
-        <location line="+446"/>
+        <location line="+450"/>
         <source>Error writing file</source>
         <translation>Ошибка записи файла</translation>
     </message>
@@ -1560,7 +1571,7 @@
 <context>
     <name>Keyboard</name>
     <message>
-        <location filename="../emulator/devices/common/keyboard.cpp" line="+321"/>
+        <location filename="../emulator/devices/common/keyboard.cpp" line="+328"/>
         <source>This keyboard type has no native key table support</source>
         <translation>Этот тип клавиатуры не поддерживает нативную таблицу клавиш</translation>
     </message>
@@ -1663,7 +1674,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1203"/>
+        <location filename="../mainwindow.cpp" line="+1243"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -1720,13 +1731,13 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="+623"/>
+        <location filename="../mainwindow.cpp" line="+657"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1033"/>
+        <location filename="../mainwindow.cpp" line="-1067"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -1755,15 +1766,15 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-319"/>
+        <location filename="../mainwindow.cpp" line="-359"/>
         <location line="+38"/>
-        <location line="+1050"/>
+        <location line="+1090"/>
         <location line="+39"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1124"/>
+        <location line="-1164"/>
         <location line="+38"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -1792,20 +1803,20 @@
     <message>
         <location line="-89"/>
         <location line="+52"/>
-        <location line="+825"/>
+        <location line="+865"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+142"/>
         <location line="+72"/>
         <location line="+57"/>
-        <location line="+359"/>
+        <location line="+393"/>
         <location line="+29"/>
         <location line="+88"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-1706"/>
+        <location line="-1780"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -1830,7 +1841,7 @@
         <translation>Скорость мыши</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+45"/>
         <source>Auto scale</source>
         <translation>Автоматически</translation>
     </message>
@@ -1851,16 +1862,18 @@
     </message>
     <message>
         <location line="+11"/>
+        <location line="+46"/>
         <source>Nearest pixel</source>
         <translation>Ближайший пиксель</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="-38"/>
+        <location line="+46"/>
         <source>Linear</source>
         <translation>Линейное</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="-38"/>
         <source>Anisotropic</source>
         <translation>Анизотропное</translation>
     </message>
@@ -1879,7 +1892,7 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+538"/>
+        <location line="+555"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
@@ -1896,7 +1909,22 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-73"/>
+        <location line="-898"/>
+        <source>Screenshot type</source>
+        <translation>Тип скриншота</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>As on screen</source>
+        <translation>Как на экране</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Original</source>
+        <translation>Оригинал</translation>
+    </message>
+    <message>
+        <location line="+819"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>
     </message>
@@ -1958,12 +1986,12 @@
         <translation>Ошибка создания резервной копии. Возможно, файл с расширением *.bak уже существует.</translation>
     </message>
     <message>
-        <location line="+51"/>
+        <location line="+79"/>
         <source>Save screenshot</source>
         <translation>Сохранение скриншота</translation>
     </message>
     <message>
-        <location line="+99"/>
+        <location line="+105"/>
         <source>This machine has no usable keyboard picture</source>
         <translation>У этой машины нет пригодного рисунка клавиатуры</translation>
     </message>
@@ -2074,12 +2102,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-937"/>
+        <location line="-971"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+980"/>
+        <location line="+1014"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -2191,7 +2219,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+772"/>
+        <location filename="../emulator/core.cpp" line="+821"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; требует имя файла</translation>
     </message>
@@ -2294,7 +2322,7 @@
     </message>
     <message>
         <location line="+26"/>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+339"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+350"/>
         <source>Delete the configuration</source>
         <translation>Удалить конфигурацию</translation>
     </message>
@@ -2324,18 +2352,18 @@
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="-256"/>
-        <location line="+260"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="-267"/>
+        <location line="+271"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-260"/>
+        <location line="-271"/>
         <source>Error opening CSS file</source>
         <translation>Ошибка чтения файла CSS</translation>
     </message>
     <message>
-        <location line="+47"/>
+        <location line="+58"/>
         <source>Configurations with errors</source>
         <translation>Конфигурации с ошибками</translation>
     </message>
@@ -2522,17 +2550,18 @@
     </message>
     <message>
         <location line="+31"/>
+        <location line="+45"/>
         <source>Unknown key</source>
         <translation>Неизвестная клавиша</translation>
     </message>
     <message>
-        <location line="+14"/>
-        <location line="+38"/>
+        <location line="-31"/>
+        <location line="+55"/>
         <source>Key table does not fit the matrix</source>
         <translation>Таблица клавиш не помещается в матрицу</translation>
     </message>
     <message>
-        <location line="-34"/>
+        <location line="-51"/>
         <source>Too many scan lines in the map file</source>
         <translation>Слишком много линий сканирования в файле раскладки</translation>
     </message>
@@ -2627,7 +2656,7 @@
         <translation>Файл образа ленты не найден</translation>
     </message>
     <message>
-        <location line="+477"/>
+        <location line="+499"/>
         <source>Tape file format is not defined</source>
         <translation>Не задан формат файла записи</translation>
     </message>
@@ -2638,17 +2667,17 @@
     </message>
     <message>
         <location line="+320"/>
-        <location line="+613"/>
+        <location line="+615"/>
         <location line="+18"/>
         <location line="+7"/>
-        <location line="+32"/>
+        <location line="+36"/>
         <location line="+8"/>
         <location line="+12"/>
         <source>Unable to read tape image</source>
         <translation>Не удалось прочитать образ ленты</translation>
     </message>
     <message>
-        <location line="-506"/>
+        <location line="-511"/>
         <source>Command &apos;seek&apos; expects a record number</source>
         <translation>Команда &apos;seek&apos; требует номер записи</translation>
     </message>
@@ -2668,7 +2697,7 @@
         <translation>Неизвестный формат файла записи для</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+24"/>
         <source>Nothing has been recorded</source>
         <translation>Ничего не записано</translation>
     </message>
@@ -2696,7 +2725,7 @@
         <translation type="vanished">Некорректно задан способ кодирования данных для магнитофона %1</translation>
     </message>
     <message>
-        <location line="-847"/>
+        <location line="-849"/>
         <source>Unknown tape format!</source>
         <translation>Неизвестный формат файла записи!</translation>
     </message>
@@ -2705,7 +2734,7 @@
     <name>TapeRecorderWindow</name>
     <message>
         <location filename="../dialogs/taperecorder.ui" line="+14"/>
-        <location filename="../dialogs/taperecorder.cpp" line="+256"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+259"/>
         <source>Tape Recorder</source>
         <translation>Магнитофон</translation>
     </message>
@@ -2761,19 +2790,19 @@
         <translation>Загрузить файл</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+23"/>
         <location line="+12"/>
-        <location line="+128"/>
+        <location line="+129"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-128"/>
+        <location line="-129"/>
         <source>Unknown tape file format!</source>
         <translation>Неизвестный формат файла записи!</translation>
     </message>
     <message>
-        <location line="+116"/>
+        <location line="+117"/>
         <source>Save recorded data</source>
         <translation>Сохранить записанные данные</translation>
     </message>
@@ -2817,7 +2846,7 @@
         <translation>Нераспознанная геометрия жёсткого диска</translation>
     </message>
     <message>
-        <location line="+642"/>
+        <location line="+651"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; ожидает имя файла</translation>
     </message>

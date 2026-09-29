@@ -6,6 +6,7 @@
 #pragma once
 
 #include <QComboBox>
+#include <QImage>
 #include <QLabel>
 #include <QMainWindow>
 #include <QSlider>
@@ -249,6 +250,9 @@ private:
     int mouse_buttons = 0;              //Bit 0 - left (button 1), bit 1 - right (button 2)
     int mouse_speed = 25;               //Percent: steps a line of the machine's screen crossed by the host pointer
     QMenu * mouse_speed_menu = nullptr; //Display > Mouse speed, made once
+    bool screenshot_as_shown = false;   //Settings > Screenshot type: the picture of the window, not the machine's pixels
+    QMenu * screenshot_menu = nullptr;  //Settings > Screenshot type, made once
+    QImage picture_as_shown(const std::vector<uint8_t> &raw, unsigned int sx, unsigned int sy);
     QTimer * mouse_timer = nullptr;     //Sends the steps in portions
 
     void mouse_capture(bool on);

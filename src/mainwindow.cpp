@@ -578,6 +578,29 @@ void MainWindow::CreateScreenMenu()
         sa->setChecked(mouse_speed == speed);
     }
 
+    screenshot_as_shown = e->read_setup("Video", "screenshot", "original") == "shown";
+    if (screenshot_menu == nullptr) {
+        screenshot_menu = new QMenu(this);
+        const QList<QAction*> acts = ui->menuHelp->actions();
+        const int at = acts.indexOf(mouse_speed_menu->menuAction());
+        ui->menuHelp->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, screenshot_menu);
+    }
+    screenshot_menu->setTitle(tr("Screenshot type"));
+    screenshot_menu->clear();
+    QActionGroup * shot_group = new QActionGroup(screenshot_menu);
+    for (int i = 0; i < 2; i++) {
+        const bool shown = i == 1;
+        QAction * sa = screenshot_menu->addAction(
+            shown?tr("As on screen"):tr("Original"),
+            [this, shown]{
+                screenshot_as_shown = shown;
+                e->write_setup("Video", "screenshot", shown?"shown":"original");
+            });
+        sa->setActionGroup(shot_group);
+        sa->setCheckable(true);
+        sa->setChecked(screenshot_as_shown == shown);
+    }
+
     ui->menuScale->clear();
     QActionGroup * scale_group = new QActionGroup(ui->menuScale);
 
@@ -1733,11 +1756,39 @@ void MainWindow::update_fdds()
     }
 }
 
+//The picture the way the window shows it: scaled, with the pixel aspect and the
+//filter, without the border. A null image means "save the original instead"
+QImage MainWindow::picture_as_shown(const std::vector<uint8_t> &raw, unsigned int sx, unsigned int sy)
+{
+#if defined(RENDERER_OPENGL)
+    Q_UNUSED(raw); Q_UNUSED(sx); Q_UNUSED(sy);
+    return static_cast<GLWidget*>(screen)->grabPicture();
+#elif defined(RENDERER_QT)
+    Q_UNUSED(raw); Q_UNUSED(sx); Q_UNUSED(sy);
+    return static_cast<QtRenderWidget*>(screen)->displayed_image();
+#elif defined(RENDERER_SDL2)
+    //The window belongs to SDL and cannot be read back from here; the picture
+    //is scaled again to the size it is drawn at, with the filter chosen
+    if (raw.size() != (size_t)sx * sy * 4) return QImage();
+    int w, h;
+    static_cast<SDL2Renderer*>(renderer)->get_render_size(&w, &h);
+    if (w <= 0 || h <= 0) return QImage();
+    const QImage original(raw.data(), sx, sy, sx * 4, QImage::Format_RGBA8888);
+    return original.scaled(w, h, Qt::IgnoreAspectRatio,
+        (e->get_filtering() == SCREEN_FILTERING_NONE)?Qt::FastTransformation:Qt::SmoothTransformation);
+#else
+    Q_UNUSED(raw); Q_UNUSED(sx); Q_UNUSED(sy);
+    return QImage();
+#endif
+}
+
 void MainWindow::on_actionScreenshot_triggered()
 {
     unsigned int sx, sy;
     e->get_screen_constraints(&sx, &sy);
     std::vector<uint8_t> image = renderer->get_screenshot();
+    QImage shown;
+    if (screenshot_as_shown) shown = picture_as_shown(image, sx, sy);
 
     //The image is taken before the dialog, so the recording refers to that moment
     uint64_t taken_at = e->clock_now();
@@ -1746,10 +1797,16 @@ void MainWindow::on_actionScreenshot_triggered()
 
     if (!file_name.isEmpty())
     {
-        unsigned error;
-        std::vector<unsigned char> png;
-        error = lodepng::encode(png, image, sx, sy);
-        lodepng::save_file(png, file_name.toUtf8().constData());
+        if (!shown.isNull()) {
+            shown.save(file_name, "PNG");
+        } else {
+            std::vector<unsigned char> png;
+            lodepng::encode(png, image, sx, sy);
+            lodepng::save_file(png, file_name.toUtf8().constData());
+        }
+
+        //A replay writes the machine's pixels whatever the type: SCREEN has
+        //no window to take the picture from
 
         e->record_verb_at(SCRIPT_CMD_SCREEN,
             std::vector<std::string>(1, QFileInfo(file_name).absoluteFilePath().toStdString()), taken_at);

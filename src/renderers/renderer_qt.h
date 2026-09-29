@@ -30,6 +30,13 @@ public:
         QMetaObject::invokeMethod(this, "update", Qt::QueuedConnection);
     }
 
+    //The scaled picture the widget draws, GUI thread
+    QImage displayed_image() const
+    {
+        QMutexLocker locker(&image_mutex);
+        return display_image;
+    }
+
 protected:
     void paintEvent(QPaintEvent *event) override
     {

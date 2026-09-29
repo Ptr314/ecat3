@@ -24,6 +24,9 @@ public:
     void setImageSize(const QSize& size); // (0,0) - растянуть с сохранением пропорций
     void setAspectRatioScale(float scale); // Установить коэффициент масштабирования пропорций
     void setFiltering(bool linear);
+    //The picture the way the window shows it, without the border around it;
+    //GUI thread only. Null before the first frame
+    QImage grabPicture();
 
 public slots:
     //Run on the GUI thread, which owns the widget
@@ -46,4 +49,5 @@ private:
     QSize imageDisplaySize; // (0,0) - режим растягивания с пропорциями
     float aspectRatioScale; // Коэффициент масштабирования пропорций
     bool linearFiltering;
+    QRect pictureRect;      // Где картинка легла в последнем кадре, в физических пикселях
 };
