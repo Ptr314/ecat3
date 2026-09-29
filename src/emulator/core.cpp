@@ -1948,6 +1948,35 @@ MapperPage * MemoryMapper::fill_page(unsigned int page, uint64_t tag)
         const MapperRange * mr = &(this->ranges[i]);
         if ((config & mr->config_mask) != mr->config_value) continue;
         if (mr->range_end < p_begin || mr->range_begin > p_end) continue;
+        if (mr->routed && found == nullptr) {
+            //A routed range is asked once for the whole page: its device keeps
+            //route() constant over a page except where it answers THROUGH or
+            //OR, and calls routing_changed() when the answers change. It is
+            //asked at both ends of the page, both ways
+            if (mr->range_begin > p_begin || mr->range_end < p_end || mr->address_mask != 0) {
+                e->uncached = true;
+                return nullptr;
+            }
+            const unsigned int a0 = p_begin - mr->range_begin + mr->base;
+            const unsigned int a1 = p_end - mr->range_begin + mr->base;
+            const unsigned int r = mr->device->route(a0, MODE_R);
+            const unsigned int w = mr->device->route(a0, MODE_W);
+            if (r != mr->device->route(a1, MODE_R) || w != mr->device->route(a1, MODE_W)
+                || r == ROUTE_OR || r == ROUTE_THROUGH || w == ROUTE_OR || w == ROUTE_THROUGH
+                || (r == ROUTE_PASS) != (w == ROUTE_PASS)) {
+                e->uncached = true;
+                return nullptr;
+            }
+            //Left to the ranges after it both ways: as if it were not there
+            if (r == ROUTE_PASS) continue;
+            //It decides the page; what follows it is shadowed
+            e->offset = mr->base - mr->range_begin;
+            if (r == ROUTE_ANSWER) { e->device_r = mr->device; e->timeout_r = false; }
+            else e->timeout_r = true;
+            if (w == ROUTE_ANSWER) { e->device_w = mr->device; e->timeout_w = false; }
+            else e->timeout_w = true;
+            return e;
+        }
         if (found != nullptr) {
             //More than one range of this configuration in the page: which one
             //answers depends on the address
@@ -2182,7 +2211,8 @@ AddressableDevice * MemoryMapper::map(
                                         unsigned int address,
                                         unsigned int mode,
                                         unsigned int * address_on_device,
-                                        unsigned int * range_index
+                                        unsigned int * range_index,
+                                        unsigned int * route
                                     )
 {
     for (unsigned int i = index_from; i <= index_to; i++)
@@ -2202,11 +2232,13 @@ AddressableDevice * MemoryMapper::map(
         {
             * address_on_device = address - mr->range_begin + mr->base;
             * range_index = i;
+            unsigned int r = ROUTE_ANSWER;
             if (mr->routed) {
-                const unsigned int r = mr->device->route(* address_on_device, mode);
+                r = mr->device->route(* address_on_device, mode);
                 if (r == ROUTE_PASS) continue;
                 if (r == ROUTE_TIMEOUT) return nullptr;
             }
+            if (route != nullptr) * route = r;
             return mr->device;
         }
     }
@@ -2236,7 +2268,7 @@ AddressableDevice * MemoryMapper::map_port(
     return this->map(&(this->ports), 0, this->ports_count-1, config, address, mode, address_on_device, range_index);
 }
 
-AddressableDevice * MemoryMapper::map_read(unsigned int address, unsigned int * address_on_device, unsigned int * range_index)
+AddressableDevice * MemoryMapper::map_read(unsigned int address, unsigned int * address_on_device, unsigned int * range_index, unsigned int * route)
 {
     const unsigned int config = this->i_config.value;
     bool clean = true;
@@ -2252,14 +2284,16 @@ AddressableDevice * MemoryMapper::map_read(unsigned int address, unsigned int * 
             if ((mr->mode & MODE_R) == 0) { clean = false; continue; }
             * address_on_device = address - mr->range_begin + mr->base;
             * range_index = i;
+            unsigned int r = ROUTE_ANSWER;
             if (mr->routed) {
                 //A routed device may answer a write differently from a read,
                 //so the write of a read-modify-write is not remembered past it
                 clean = false;
-                const unsigned int r = mr->device->route(* address_on_device, MODE_R);
+                r = mr->device->route(* address_on_device, MODE_R);
                 if (r == ROUTE_PASS) continue;
                 if (r == ROUTE_TIMEOUT) return nullptr;
             }
+            if (route != nullptr) * route = r;
             if (clean && (mr->mode & MODE_W) != 0) {
                 wm_address = address;
                 wm_config = config;
@@ -2274,14 +2308,15 @@ AddressableDevice * MemoryMapper::map_read(unsigned int address, unsigned int * 
     return nullptr;
 }
 
-AddressableDevice * MemoryMapper::map_write(unsigned int address, unsigned int * address_on_device, unsigned int * range_index)
+AddressableDevice * MemoryMapper::map_write(unsigned int address, unsigned int * address_on_device, unsigned int * range_index, unsigned int * route)
 {
     if (address == wm_address && this->i_config.value == wm_config && this->first_range == wm_first) {
         * address_on_device = wm_offset;
         * range_index = wm_range;
+        if (route != nullptr) * route = ROUTE_ANSWER;   //never a routed range
         return wm_device;
     }
-    return this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_W, address_on_device, range_index);
+    return this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_W, address_on_device, range_index, route);
 }
 
 
@@ -2306,15 +2341,16 @@ unsigned int MemoryMapper::read(unsigned int address)
 
     unsigned int address_on_device, range_index;
     this->no_device = false;
-    AddressableDevice * d = map_read(address, &address_on_device, &range_index);
+    unsigned int route = ROUTE_ANSWER;
+    AddressableDevice * d = map_read(address, &address_on_device, &range_index, &route);
     this->last_device = d;
     if (d != nullptr)
     {
         unsigned int v = d->get_value(address_on_device);
 
         //Several devices answering one address, their outputs wired together
-        while (reads_on(range_index, d, address_on_device) && range_index < this->ranges_count) {
-            d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
+        while (reads_on(range_index, route) && range_index < this->ranges_count) {
+            d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index, &route);
             if (d == nullptr) break;
             v |= d->get_value(address_on_device);
         }
@@ -2340,19 +2376,18 @@ AddressableDevice * MemoryMapper::peek_read_device(unsigned int address)
 //A write goes on past this range: always for a "through" one, and for a
 //routed one when its device says so for this address
 //A read goes on past this range, the answers OR-ed: always for an "or_read"
-//one, and for a routed one when its device says so for this address
-bool MemoryMapper::reads_on(unsigned int range_index, AddressableDevice * d, unsigned int address_on_device)
+//one, and for a routed one when its device said so for this address - the
+//answer map() reported, so route() is not asked twice
+bool MemoryMapper::reads_on(unsigned int range_index, unsigned int route) const
 {
     const MapperRange & mr = this->ranges[range_index];
-    if (mr.or_read) return true;
-    return mr.routed && d->route(address_on_device, MODE_R) == ROUTE_OR;
+    return mr.or_read || (mr.routed && route == ROUTE_OR);
 }
 
-bool MemoryMapper::goes_through(unsigned int range_index, AddressableDevice * d, unsigned int address_on_device)
+bool MemoryMapper::goes_through(unsigned int range_index, unsigned int route) const
 {
     const MapperRange & mr = this->ranges[range_index];
-    if (mr.through) return true;
-    return mr.routed && d->route(address_on_device, MODE_W) == ROUTE_THROUGH;
+    return mr.through || (mr.routed && route == ROUTE_THROUGH);
 }
 
 bool MemoryMapper::responds(unsigned int address, unsigned int mode)
@@ -2395,15 +2430,16 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
 
     unsigned int address_on_device, range_index;
     this->no_device = false;
-    AddressableDevice * d = map_write(address, &address_on_device, &range_index);
+    unsigned int route = ROUTE_ANSWER;
+    AddressableDevice * d = map_write(address, &address_on_device, &range_index, &route);
     this->last_device = d;
     if (d == nullptr) {
         this->no_device = !this->responds(address, MODE_W);
         return;
     }
     d->set_value(address_on_device, value);
-    while (goes_through(range_index, d, address_on_device) && range_index < this->ranges_count) {
-        d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index);
+    while (goes_through(range_index, route) && range_index < this->ranges_count) {
+        d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index, &route);
         if (d == nullptr) break;
         d->set_value(address_on_device, value);
     }
@@ -2431,14 +2467,15 @@ unsigned int MemoryMapper::read_word(unsigned int address)
 
     unsigned int address_on_device, range_index;
     this->no_device = false;
-    AddressableDevice * d = map_read(address, &address_on_device, &range_index);
+    unsigned int route = ROUTE_ANSWER;
+    AddressableDevice * d = map_read(address, &address_on_device, &range_index, &route);
     this->last_device = d;
     if (d != nullptr) {
         unsigned int v = d->get_value_word(address_on_device);
 
         //See read(): ranges wired together answer at once, OR-ed
-        while (reads_on(range_index, d, address_on_device) && range_index < this->ranges_count) {
-            d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
+        while (reads_on(range_index, route) && range_index < this->ranges_count) {
+            d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index, &route);
             if (d == nullptr) break;
             v |= d->get_value_word(address_on_device);
         }
@@ -2464,15 +2501,16 @@ void MemoryMapper::write_word(unsigned int address, unsigned int value)
 
     unsigned int address_on_device, range_index;
     this->no_device = false;
-    AddressableDevice * d = map_write(address, &address_on_device, &range_index);
+    unsigned int route = ROUTE_ANSWER;
+    AddressableDevice * d = map_write(address, &address_on_device, &range_index, &route);
     this->last_device = d;
     if (d == nullptr) {
         this->no_device = !this->responds(address, MODE_W);
         return;
     }
     d->set_value_word(address_on_device, value);
-    while (goes_through(range_index, d, address_on_device) && range_index < this->ranges_count) {
-        d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index);
+    while (goes_through(range_index, route) && range_index < this->ranges_count) {
+        d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index, &route);
         if (d == nullptr) break;
         d->set_value_word(address_on_device, value);
     }
@@ -2579,11 +2617,12 @@ unsigned int MemoryMapper::get_value(unsigned int address)
 unsigned MemoryMapper::get_direct(unsigned address)
 {
     unsigned int address_on_device, range_index;
-    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
+    unsigned int route = ROUTE_ANSWER;
+    AddressableDevice * d = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index, &route);
     if (d == nullptr) return _FFFF;
     unsigned int v = d->get_direct(address_on_device);
-    while (reads_on(range_index, d, address_on_device)) {
-        d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index);
+    while (reads_on(range_index, route)) {
+        d = this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_R, &address_on_device, &range_index, &route);
         if (d == nullptr) break;
         v |= d->get_direct(address_on_device);
     }

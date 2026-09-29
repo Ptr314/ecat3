@@ -73,26 +73,40 @@ emulator::Result SMK512::load_config(SystemData *sd)
     const std::string machine = cd->get_parameter("machine", false).value;
     m_bk11 = (machine == "bk11");
 
+    m_ram_buf = m_ram->is_plain() ? m_ram->get_buffer() : nullptr;
+    m_rom_buf = m_rom->get_buffer();
+    m_mapper = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper", false));
+
     return emulator::Result::ok();
 }
 
 void SMK512::reset(bool cold)
 {
     AddressableDevice::reset(cold);
-    m_value = 0160;         // SYS, страница 0: с него БК и стартует
+    set_register(0160);     // SYS, страница 0: с него БК и стартует
     m_strobe = false;
     m_rd_off = false;
 }
 
 // Номер первого сегмента 4 КБ страницы: разряды 10, 2, 3, 0 значения
-unsigned int SMK512::page_base() const
+unsigned int SMK512::base_of(unsigned int value)
 {
     unsigned int p = 0;
-    if (m_value & 02000) p += 010;
-    if (m_value & 4)     p += 020;
-    if (m_value & 010)   p += 040;
-    if (m_value & 1)     p += 0100;
+    if (value & 02000) p += 010;
+    if (value & 4)     p += 020;
+    if (value & 010)   p += 040;
+    if (value & 1)     p += 0100;
     return p;
+}
+
+// Новые режим и страница. Ответы route() зависят только от режима, поэтому
+// разобранные диспетчером страницы сбрасываются лишь при его смене
+void SMK512::set_register(unsigned int value)
+{
+    const bool mode_changed = ((value ^ m_value) & 0160) != 0;
+    m_value = value & 0177777;
+    m_base = base_of(m_value);
+    if (mode_changed && m_mapper != nullptr) m_mapper->routing_changed();
 }
 
 // Источник байта по смещению в окне, для чтения: номер сегмента страницы, R или N.
@@ -166,13 +180,15 @@ unsigned int SMK512::read_byte(unsigned int offset, bool direct)
     const int src = source(offset);
     if (src == N) return _FFFF;
     const unsigned int in_segment = offset & 07777;
-    if (src == R)
-        return direct ? m_rom->get_direct(in_segment) : m_rom->get_value(in_segment);
-    const unsigned int a = ((page_base() + src) << 12) + in_segment;
+    if (src == R) return m_rom_buf[in_segment];
+    const unsigned int a = ((m_base + src) << 12) + in_segment;
+    if (m_ram_buf != nullptr) return m_ram_buf[a];
     return direct ? m_ram->get_direct(a) : m_ram->get_value(a);
 }
 
-void SMK512::write_byte(unsigned int offset, unsigned int value)
+// Куда ложится запись: сегмент страницы или N. ПЗУ, Hlt10 ниже 110000 и
+// 177000-177777 вне режимов Hlt записи не принимают
+int SMK512::write_source(unsigned int offset) const
 {
     const unsigned int m = mode_index();
     int src;
@@ -180,9 +196,18 @@ void SMK512::write_byte(unsigned int offset, unsigned int value)
         src = (m == M_HLT10 || m == M_HLT11) ? 7 : N;
     else
         src = SEGMENTS[m][offset >> 12];
-    if (src == N || src == R) return;
-    if (m == M_HLT10 && offset < 010000) return;
-    m_ram->set_value(((page_base() + src) << 12) + (offset & 07777), value);
+    if (src == R) return N;
+    if (m == M_HLT10 && offset < 010000) return N;
+    return src;
+}
+
+void SMK512::write_byte(unsigned int offset, unsigned int value)
+{
+    const int src = write_source(offset);
+    if (src == N) return;
+    const unsigned int a = ((m_base + src) << 12) + (offset & 07777);
+    if (m_ram_buf != nullptr) m_ram_buf[a] = (uint8_t)value;
+    else m_ram->set_value(a, value);
 }
 
 // Запись в 177130. Реплика защелкивает значение записью, которая идет сразу
@@ -191,7 +216,7 @@ void SMK512::write_byte(unsigned int offset, unsigned int value)
 void SMK512::write_177130(unsigned int value)
 {
     const bool strobe = (value & 017) == 06;
-    if (m_strobe && !strobe) m_value = value & 0177777;
+    if (m_strobe && !strobe) set_register(value);
     m_strobe = strobe;
     m_rd_off = (value & 4) != 0;
 }
@@ -206,6 +231,20 @@ unsigned int SMK512::get_direct(unsigned int address)
     return read_byte(address, true);
 }
 
+// Слово по четному адресу не пересекает ни сегмент 4 КБ, ни границу 177000:
+// источник у обоих байтов один
+unsigned int SMK512::get_value_word(unsigned int address)
+{
+    const int src = source(address);
+    if (src == N) return _FFFF;
+    const unsigned int in_segment = address & 07776;
+    const uint8_t * p;
+    if (src == R) p = m_rom_buf + in_segment;
+    else if (m_ram_buf != nullptr) p = m_ram_buf + ((m_base + src) << 12) + in_segment;
+    else return read_byte(address, false) | (read_byte(address + 1, false) << 8);
+    return p[0] | (p[1] << 8);
+}
+
 void SMK512::set_value(unsigned int address, unsigned int value, bool force)
 {
     (void)force;
@@ -218,8 +257,17 @@ void SMK512::set_value(unsigned int address, unsigned int value, bool force)
 void SMK512::set_value_word(unsigned int address, unsigned int value, bool force)
 {
     (void)force;
-    write_byte(address, value & 0xFF);
-    write_byte(address + 1, (value >> 8) & 0xFF);
+    const int src = write_source(address);
+    if (src != N) {
+        const unsigned int a = ((m_base + src) << 12) + (address & 07776);
+        if (m_ram_buf != nullptr) {
+            m_ram_buf[a] = (uint8_t)value;
+            m_ram_buf[a + 1] = (uint8_t)(value >> 8);
+        } else {
+            m_ram->set_value(a, value & 0xFF);
+            m_ram->set_value(a + 1, (value >> 8) & 0xFF);
+        }
+    }
     if (address == OFF_REG) write_177130(value);
 }
 
@@ -236,6 +284,7 @@ emulator::Result SMK512::load_state(const StateReader &r)
     emulator::Result res = AddressableDevice::load_state(r);
     if (!res) return res;
     r.u("register", m_value);
+    m_base = base_of(m_value);
     r.b("strobe", m_strobe);
     r.b("read_off", m_rd_off);
     return emulator::Result::ok();

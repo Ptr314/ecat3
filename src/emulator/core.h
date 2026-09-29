@@ -818,7 +818,8 @@ private:
         unsigned int address,
         unsigned int mode,
         unsigned int * address_on_device,
-        unsigned int * range_index
+        unsigned int * range_index,
+        unsigned int * route = nullptr
         );
 
     // Where a write to the address read last goes. The read scan finds it for
@@ -834,8 +835,8 @@ private:
     AddressableDevice * wm_device = nullptr;
     unsigned int        wm_offset = 0;
     unsigned int        wm_range = 0;
-    AddressableDevice * map_read(unsigned int address, unsigned int * address_on_device, unsigned int * range_index);
-    AddressableDevice * map_write(unsigned int address, unsigned int * address_on_device, unsigned int * range_index);
+    AddressableDevice * map_read(unsigned int address, unsigned int * address_on_device, unsigned int * range_index, unsigned int * route = nullptr);
+    AddressableDevice * map_write(unsigned int address, unsigned int * address_on_device, unsigned int * range_index, unsigned int * route = nullptr);
 
 protected:
 
@@ -867,8 +868,13 @@ public:
     void state_restored() override;
 
     bool responds(unsigned int address, unsigned int mode = MODE_RW);
-    bool goes_through(unsigned int range_index, AddressableDevice * d, unsigned int address_on_device);
-    bool reads_on(unsigned int range_index, AddressableDevice * d, unsigned int address_on_device);
+    bool goes_through(unsigned int range_index, unsigned int route) const;
+    bool reads_on(unsigned int range_index, unsigned int route) const;
+
+    //A routed device (AddressableDevice::route()) whose answers have changed -
+    //the СМК-512 switching its mode - drops the resolved pages, which are then
+    //resolved again through route() on their next access
+    void routing_changed() { invalidate_pages(); }
     unsigned int read(unsigned int address);
     void write(unsigned int address, unsigned int value);
     unsigned int read_port(unsigned int address);

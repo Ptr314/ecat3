@@ -36,12 +36,25 @@ private:
     Memory * m_rom = nullptr;
     bool m_bk11 = false;
 
+    // Память платы читается и пишется прямо в буферах smk-ram и smk-rom: у
+    // них нет обработчиков обращений, а плата сама следит за границами
+    uint8_t * m_ram_buf = nullptr;
+    const uint8_t * m_rom_buf = nullptr;
+
+    // Смена режима меняет ответы route(), и диспетчер забывает разобранные
+    // страницы (routing_changed())
+    MemoryMapper * m_mapper = nullptr;
+
     unsigned int m_value = 0160;    // защелкнутые режим и страница
+    unsigned int m_base = 0;        // первый сегмент 4 КБ страницы, из m_value
     bool m_strobe = false;          // предыдущая запись в 177130 была стробом 0110
     bool m_rd_off = false;          // чтение 177130/177132 запрещено разрядом 2
 
     unsigned int mode_index() const { return (m_value >> 4) & 7; }
-    unsigned int page_base() const;
+    unsigned int page_base() const { return m_base; }
+    static unsigned int base_of(unsigned int value);
+    void set_register(unsigned int value);
+    int write_source(unsigned int offset) const;
     int source(unsigned int offset) const;
     bool base_disabled(unsigned int segment) const;
     void write_177130(unsigned int value);
@@ -56,6 +69,7 @@ public:
     unsigned int route(unsigned int address, unsigned int mode) override;
     unsigned int get_value(unsigned int address) override;
     unsigned int get_direct(unsigned int address) override;
+    unsigned int get_value_word(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
     void set_value_word(unsigned int address, unsigned int value, bool force=false) override;
 

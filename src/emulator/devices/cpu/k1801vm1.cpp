@@ -475,19 +475,20 @@ unsigned int k1801vm1::timed_cycles(unsigned int legacy)
     bool skip_opcode = false;
     // Вход в пультовое исключение и возврат из него - свои циклы шины (RMW
     // 0177716, 0177674/0177676), которых нет ни в одном шаблоне
-    if (!core->m_last_console)
-    switch (core->m_last_kind) {
-    case pdp11core::LAST_INSN:
-        if (!core->m_last_trapped) {
-            form = Vm1BusTiming::form_of(core->m_last_command, core->m_last_taken);
-            skip_opcode = true;
+    if (!core->m_last_console) {
+        switch (core->m_last_kind) {
+        case pdp11core::LAST_INSN:
+            if (!core->m_last_trapped) {
+                form = Vm1BusTiming::form_of(core->m_last_command, core->m_last_taken);
+                skip_opcode = true;
+            }
+            break;
+        case pdp11core::LAST_INTERRUPT:
+            form = core->m_last_iako ? Vm1BusTiming::F_INTERRUPT_VIRQ : Vm1BusTiming::F_INTERRUPT;
+            break;
+        default:
+            break;
         }
-        break;
-    case pdp11core::LAST_INTERRUPT:
-        form = core->m_last_iako ? Vm1BusTiming::F_INTERRUPT_VIRQ : Vm1BusTiming::F_INTERRUPT;
-        break;
-    default:
-        break;
     }
     if (form < Vm1BusTiming::F_COUNT) {
         AddressableDevice * d = mm->peek_read_device(pc);

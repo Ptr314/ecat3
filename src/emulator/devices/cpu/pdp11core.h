@@ -31,6 +31,7 @@ protected:
     bool vm1_console;
     void vm1_console_entry(uint16_t vector, int depth);
     void vm1_console_return(bool step);
+    void vm1_leave_console_psw();
     void vm1_timeout(int depth);
     void vm1_trap(uint16_t vector, int depth);
 

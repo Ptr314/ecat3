@@ -1,19 +1,31 @@
-=== Список звуковой приставки: название платы задано title у ay ===
-[sound-card.devices]         ay: 2xAY TurboSound
+=== Список звуковой приставки ===
+[sound-card.devices]         ay: AY-3-8910
         covox: Covox
-=== После сброса: пишет только первый AY ===
-[ay.selected] &000001
-[ay2.selected] &000000
+        ts-ay1: 2xAY TurboSound
+[sound-card.device] ay
+=== Одиночный AY: регистр 7 = 070, номер записан словом 000370 ===
+[ay.regs] &000006: &000 &070
+[ts-ay1.regs] &000006: &000 &000
+[ts-ay2.regs] &000006: &000 &000
 [sound.mixed] ay
+=== Плата 2xAY: после подключения пишет только первый AY ===
+[sound-card.device] ts-ay1
+[ts-ay1.selected] &000001
+[ts-ay2.selected] &000000
+[ts-ay2.plugged] &000001
 === TurboSound: регистр 1 второго AY = 5, первого = 3 ===
-[ay.regs] &000000: &000 &003 &000
-[ay2.regs] &000000: &000 &005 &000
-[ay.selected] &000001
-[ay2.selected] &000000
+[ts-ay1.regs] &000000: &000 &003 &000
+[ts-ay2.regs] &000000: &000 &005 &000
+[ts-ay1.selected] &000001
+[ts-ay2.selected] &000000
 === GryphonSound: регистр 2 обоих = 9 ===
-[ay.regs] &000000: &000 &003 &011
-[ay2.regs] &000000: &000 &005 &011
-[sound.mixed] ay ay2
+[ts-ay1.regs] &000000: &000 &003 &011
+[ts-ay2.regs] &000000: &000 &005 &011
+[sound.mixed] ts-ay1 ts-ay2
 === GryphonSound: регистр 0 только второго = 7 ===
-[ay.regs] &000000: &000 &003 &011
-[ay2.regs] &000000: &007 &005 &011
+[ts-ay1.regs] &000000: &000 &003 &011
+[ts-ay2.regs] &000000: &007 &005 &011
+=== Covox: плата вынута целиком ===
+[ts-ay1.plugged] &000000
+[ts-ay2.plugged] &000000
+[sound.mixed] covox

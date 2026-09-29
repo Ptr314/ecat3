@@ -63,9 +63,12 @@ private:
     // в таблице разделов блока 7
     bool m_bk = false;
     bool altpro_geometry(std::FILE * f, long size, unsigned int &cylinders,
-                         unsigned int &heads, unsigned int &sectors);
+                         unsigned int &heads, unsigned int &sectors, long base);
     unsigned int drive_address() const;
     uint64_t m_image_size = 0;      // размер файла образа, байт
+    // Образ *.hdi начинается с паспорта накопителя (ответ на IDENTIFY, 512
+    // байт), и сектора идут после него
+    uint64_t m_data_offset = 0;
 
     // Запись в память: записанные сектора остаются здесь, а файл образа не
     // меняется - как у дисковода, который правит образ только в памяти.

@@ -15,7 +15,8 @@
         FFC4-FFC5 -> port-177704[0000] mode=rw
         FFC6-FFCB -> timer[0000] mode=rw
         FFCC-FFCD -> ay[0000] mode=w through
-        FFCC-FFCD -> ay2[0000] mode=w through
+        FFCC-FFCD -> ts-ay1[0000] mode=w through
+        FFCC-FFCD -> ts-ay2[0000] mode=w through
         FFCC-FFCD -> port-ppi-out[0000] mode=w
         FFCC-FFCD -> port-ppi[0000] mode=r
         FFCE-FFCF -> port-sys[0000] mode=w

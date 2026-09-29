@@ -512,6 +512,18 @@ void pdp11core::vm1_console_entry(uint16_t vector, int depth)
     }
 }
 
+// RTI и RTT у ВМ1: разряды 10 и 11 PSW сброшены, и пультового обработчика
+// больше нет. Разряд 3 в 0177716 при этом остается взведенным - его снимают
+// только START и STEP, - но флаг режима эмулятора его и не отражает
+void pdp11core::vm1_leave_console_psw()
+{
+    context.PSW &= ~06000;
+    if (context.halt_mode) {
+        context.halt_mode = false;
+        on_halt_mode(false);
+    }
+}
+
 // START и STEP: PC из 0177674, PSW из 0177676, затем RMW 0177716 со сбросом
 // разряда 3. STEP, как RTT, откладывает ловушку трассировки на команду
 void pdp11core::vm1_console_return(bool step)
@@ -1174,8 +1186,9 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         cycles += 2 * C_DATI + C_ALU;
         context.R[PDP11::REG_PC] = pop();
         context.PSW = pop();
-        // Разряды 10 и 11 ВМ1 RTI и RTT сбрасывают, что бы ни лежало в стеке
-        if (vm1_console) context.PSW &= ~06000;
+        // Разряды 10 и 11 ВМ1 RTI и RTT сбрасывают, что бы ни лежало в стеке,
+        // и пультовый обработчик, вышедший так, а не по START, из пульта ушел
+        if (vm1_console) vm1_leave_console_psw();
         return true;
     }
     case 0000003:                                       // BPT
@@ -1195,7 +1208,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         cycles += 2 * C_DATI + C_ALU;
         context.R[PDP11::REG_PC] = pop();
         context.PSW = pop();
-        if (vm1_console) context.PSW &= ~06000;
+        if (vm1_console) vm1_leave_console_psw();
         // RTT defers the trace trap until after the next instruction
         m_no_trace = true;
         return true;

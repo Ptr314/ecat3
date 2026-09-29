@@ -521,6 +521,9 @@ emulator::Result GenericSound::send_command(const std::string &command, const st
             }
             m_capture_file = p[0];
             m_capture_data.clear();
+            // Выборки добавляются под замком буфера, который берет и звуковой
+            // поток: минута вперед, чтобы рост вектора не приходился на него
+            m_capture_data.reserve((size_t)m_sample_rate * 60);
             m_capture = true;
             return emulator::Result::ok();
         }

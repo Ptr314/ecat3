@@ -1,15 +1,17 @@
-# БК0011М: плата 2xAY (TurboSound, GryphonSound) на порту 0177714.
+# БК0011М: одиночный AY и плата 2xAY (TurboSound, GryphonSound) на порту 0177714.
 #
-# Два AY - устройства ay (chip = 1) и ay2 (chip = 2, pair = ay) на одном
-# порту, оба с through = 1. Порт инвертирует, поэтому сценарий пишет
-# дополнения: слово - выбор регистра, байт - данные.
-#   * Слово 0 (регистр 0377 после инверсии) выбирает первый AY, слово 1
-#     (0376) - второй: так выбирает TurboSound.
-#   * Разряды 15 и 14 слова выбора регистра (после инверсии) - GryphonSound:
-#     1x - первый, x1 - второй, оба - запись в оба сразу.
-# Пока второй AY не выбран, он молчит и в смесь не входит: программа для
-# одного AY звучит как прежде. Демо sight4 (CSI) играет на таком проигрывателе
-# две партии, и с одним AY они смешивались в кашу.
+# В списке звуковой приставки это разные пункты: ay - одиночный AY-3-8910, как
+# прежде, ts-ay1 - плата 2xAY (ts-ay1 с chip = 1 и ts-ay2 с chip = 2, pair =
+# ts-ay1, оба на порту с through = 1; называет ее title). Порт инвертирует,
+# поэтому сценарий пишет дополнения: слово - выбор регистра, байт - данные.
+#   * Одиночный AY слов выбора микросхемы не разбирает: слово 000370 (старший
+#     байт 0, после инверсии 0377 - на плате это выбор обоих AY) только
+#     выбирает регистр 7.
+#   * На плате слово 0 (регистр 0377 после инверсии) выбирает первый AY, слово 1
+#     (0376) - второй: так выбирает TurboSound. Разряды 15 и 14 слова (после
+#     инверсии) - GryphonSound: 1x - первый, x1 - второй, оба - запись в оба.
+# Демо sight4 (CSI) играет на такой плате две партии; на одиночном AY они
+# смешиваются в кашу.
 # @timeout 30
 
 MACHINE "bk/BK-0011M.cfg"
@@ -17,13 +19,24 @@ LOGDEFS _16,_8
 WAIT _500
 COMMAND cpu.stop()
 
-PRINT "=== Список звуковой приставки: название платы задано title у ay ==="
+PRINT "=== Список звуковой приставки ==="
 LOG sound-card.devices
+LOG sound-card.device
 
-PRINT "=== После сброса: пишет только первый AY ==="
-LOG ay.selected
-LOG ay2.selected
+PRINT "=== Одиночный AY: регистр 7 = 070, номер записан словом 000370 ==="
+COMMAND mapper.set16(177714, 000370)
+COMMAND mapper.set(177714, 307)
+LOG ay.regs(6, 7)
+LOG ts-ay1.regs(6, 7)
+LOG ts-ay2.regs(6, 7)
 LOG sound.mixed
+
+PRINT "=== Плата 2xAY: после подключения пишет только первый AY ==="
+COMMAND sound-card.plug(ts-ay1)
+LOG sound-card.device
+LOG ts-ay1.selected
+LOG ts-ay2.selected
+LOG ts-ay2.plugged
 
 PRINT "=== TurboSound: регистр 1 второго AY = 5, первого = 3 ==="
 COMMAND mapper.set16(177714, 000001)
@@ -32,21 +45,27 @@ COMMAND mapper.set(177714, 372)
 COMMAND mapper.set16(177714, 000000)
 COMMAND mapper.set16(177714, 177776)
 COMMAND mapper.set(177714, 374)
-LOG ay.regs(0, 2)
-LOG ay2.regs(0, 2)
-LOG ay.selected
-LOG ay2.selected
+LOG ts-ay1.regs(0, 2)
+LOG ts-ay2.regs(0, 2)
+LOG ts-ay1.selected
+LOG ts-ay2.selected
 
 PRINT "=== GryphonSound: регистр 2 обоих = 9 ==="
 COMMAND mapper.set16(177714, 037775)
 COMMAND mapper.set(177714, 366)
-LOG ay.regs(0, 2)
-LOG ay2.regs(0, 2)
+LOG ts-ay1.regs(0, 2)
+LOG ts-ay2.regs(0, 2)
 LOG sound.mixed
 
 PRINT "=== GryphonSound: регистр 0 только второго = 7 ==="
 COMMAND mapper.set16(177714, 137777)
 COMMAND mapper.set(177714, 370)
-LOG ay.regs(0, 2)
-LOG ay2.regs(0, 2)
+LOG ts-ay1.regs(0, 2)
+LOG ts-ay2.regs(0, 2)
+
+PRINT "=== Covox: плата вынута целиком ==="
+COMMAND sound-card.plug(covox)
+LOG ts-ay1.plugged
+LOG ts-ay2.plugged
+LOG sound.mixed
 EXIT

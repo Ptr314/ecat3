@@ -127,15 +127,37 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
     unsigned int sectors = 0, heads = 0, table_cylinders = 0;
     bool inverted = false;
     const uint16_t * w = (const uint16_t *)first;
+
+    // *.hdi: первые 512 байт - паспорт накопителя (IDENTIFY), сектора - после
+    // него. Геометрия паспорта - слова 1 (цилиндры), 3 (головки) и 6 (секторы),
+    // как читает такие образы bkemu
+    long base = 0;
+    unsigned int hdi_cylinders = 0, hdi_heads = 0, hdi_sectors = 0;
+    {
+        const std::string ext = str_tolower(dsk_tools::get_file_ext(file_name));
+        if (ext == ".hdi" && size > SECTOR_SIZE) {
+            base = SECTOR_SIZE;
+            hdi_cylinders = w[1];
+            hdi_heads = w[3] & 0xFF;
+            hdi_sectors = w[6] & 0xFF;
+        }
+    }
+
     if (m_bk) {
         // Винчестер СМК БК: геометрия - из таблицы разделов в блоке 7, а без
         // нее - 16 головок по 63 сектора, как у bkemu. Образ хранит то, что
         // лежит на накопителе, и машина через свою магистраль видит его в
         // обратном коде
         inverted = true;
-        if (!altpro_geometry(f, size, table_cylinders, heads, sectors)) {
-            sectors = 63;
-            heads = 16;
+        if (!altpro_geometry(f, size, table_cylinders, heads, sectors, base)) {
+            if (hdi_sectors != 0 && hdi_heads != 0 && hdi_cylinders != 0) {
+                table_cylinders = hdi_cylinders;
+                heads = hdi_heads;
+                sectors = hdi_sectors;
+            } else {
+                sectors = 63;
+                heads = 16;
+            }
         }
     } else if ((w[0] == 0x54A9 && w[1] == 0xFFEF && w[2] == 0xFEFF)
         || (w[0] == 0xAB56 && w[1] == 0x0010 && w[2] == 0x0100)) {
@@ -158,7 +180,7 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
 
     unsigned int cylinders = table_cylinders;
     if (cylinders == 0 && sectors != 0 && heads != 0)
-        cylinders = (unsigned int)(size / SECTOR_SIZE / sectors / heads);
+        cylinders = (unsigned int)((size - base) / SECTOR_SIZE / sectors / heads);
 
     if (sectors == 0 || heads == 0 || cylinders == 0 || cylinders > (m_bk ? 65535u : 1024u)) {
         std::fclose(f);
@@ -172,6 +194,7 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
         m_file = f;
         m_file_name = file_name;
         m_image_size = (uint64_t)size;
+        m_data_offset = (uint64_t)base;
         m_read_only = read_only;
         m_inverted = inverted;
         m_attached = true;
@@ -190,11 +213,11 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
 // дисков в младшем байте 770, дальше по два слова на диск. Над ними лежит
 // контрольная сумма: она минус сумма всех слов таблицы дает 012701
 bool UKNCHDD::altpro_geometry(std::FILE * f, long size, unsigned int &cylinders,
-                              unsigned int &heads, unsigned int &sectors)
+                              unsigned int &heads, unsigned int &sectors, long base)
 {
-    if (size < 8 * SECTOR_SIZE) return false;
+    if (size < base + 8 * SECTOR_SIZE) return false;
     uint8_t block[SECTOR_SIZE];
-    if (std::fseek(f, 7 * SECTOR_SIZE, SEEK_SET) != 0
+    if (std::fseek(f, base + 7 * SECTOR_SIZE, SEEK_SET) != 0
         || std::fread(block, 1, SECTOR_SIZE, f) != SECTOR_SIZE) {
         std::fseek(f, 0, SEEK_SET);
         return false;
@@ -227,6 +250,7 @@ void UKNCHDD::close_image()
     m_attached = false;
     m_file_name.clear();
     m_image_size = 0;
+    m_data_offset = 0;
     m_overlay.clear();
     m_cylinders = m_heads = m_sectors = 0;
 }
@@ -285,14 +309,14 @@ uint64_t UKNCHDD::sector_offset() const
     // число - разряды 0-7 в номере сектора, 8-23 в цилиндре, 24-27 в младшей
     // тетраде регистра головки. Геометрия при этом ни при чём
     if (lba_mode())
-        return (uint64_t)(((uint32_t)(m_curheadreg & HEAD_MASK) << 24)
+        return m_data_offset + (uint64_t)(((uint32_t)(m_curheadreg & HEAD_MASK) << 24)
                           | ((m_curcylinder & 0xFFFF) << 8)
                           | (m_cursector & 0xFF)) * SECTOR_SIZE;
 
     // Цилиндр-головка-сектор: сектора на дорожке нумеруются с единицы
     const uint64_t sector = ((uint64_t)m_curcylinder * m_heads + m_curhead) * m_sectors
                           + (m_cursector > 0? m_cursector - 1 : 0);
-    return sector * SECTOR_SIZE;
+    return m_data_offset + sector * SECTOR_SIZE;
 }
 
 bool UKNCHDD::read_sector()
