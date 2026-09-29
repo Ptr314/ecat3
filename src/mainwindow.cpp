@@ -11,6 +11,7 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QSlider>
+#include <QFile>
 #include <QFileDialog>
 #include <QWidgetAction>
 #include <QPushButton>
@@ -430,8 +431,15 @@ void MainWindow::start_script(bool from_cmdline)
 
 bool MainWindow::switch_language(const QString & lang, bool init)
 {
-    if (translator.load(":/i18n/" + lang)) {
-        qApp->installTranslator(&translator);
+    //The sources are in English, so en_us.qm holds no messages, and Qt 5.6
+    //refuses to load a file without them (later versions accept it). A file
+    //that is there but empty is the source language: nothing to install
+    const QString file = ":/i18n/" + lang;
+    const bool loaded = translator.load(file);
+    if (loaded || QFile::exists(file)) {
+        qApp->removeTranslator(&translator);
+        qApp->removeTranslator(&qtTranslator);
+        if (loaded) qApp->installTranslator(&translator);
 
         QString t = QString(":/i18n/qtbase_%1.qm").arg(lang.split("_")[0]);
         if (qtTranslator.load(t)) {
