@@ -351,7 +351,11 @@ std::vector<std::pair<std::string, std::string>> k1801vm1::get_flags()
 
 unsigned int k1801vm1::get_command()
 {
-    return core->get_command();
+    //Asked by the debugger and by LOG cpu.command, not by the processor. A
+    //bus cycle here would leave a timeout for the next instruction to trap on
+    //and a record in the timing chain that no instruction made
+    const unsigned int pc = get_pc() & 0xFFFE;
+    return peek_mem(pc) | (peek_mem(pc + 1) << 8);
 }
 
 unsigned int k1801vm1::get_pc()

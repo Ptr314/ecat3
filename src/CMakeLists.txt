@@ -99,6 +99,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(QT_VERSION VERSION_GREATER_EQUAL "5.15" OR NOT ENABLE_GUI)
     if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9"))
         add_compile_definitions(USE_MINI_INI)
+        # A variable as well: add_compile_definitions() creates none, so the
+        # if(USE_MINI_INI) below never held and ini_wrapper.cpp was not given
+        # C++17 - Qt 6 raises the whole target to it, Qt 5.15 does not
+        set(USE_MINI_INI ON)
     endif()
 endif()
 
@@ -174,7 +178,8 @@ set(TS_FILES
 # Source files
 
 set(INI_FILES libs/ini_wrapper.h libs/ini_wrapper.cpp)
-if(USE_MINI_INI)
+if(USE_MINI_INI AND NOT MSVC)
+    # GCC/Clang syntax; MSVC builds are Qt 6, which sets C++17 for the target
     set_source_files_properties(libs/ini_wrapper.cpp PROPERTIES COMPILE_FLAGS "-std=c++17")
 endif()
 
@@ -488,6 +493,12 @@ if(RENDERER_SDL2 OR USE_SDL_AUDIO)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_LIBRARIES})
 endif()
 
+# The render thread asks Windows for a 1 ms timer (timeBeginPeriod), whatever
+# the audio back end is
+if(WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE winmm)
+endif()
+
 # miniaudio platform dependencies
 if(NOT USE_SDL_AUDIO)
     if(WIN32)
@@ -584,6 +595,10 @@ if(ENABLE_HEADLESS)
 
     target_link_libraries(${HEADLESS_TARGET} PRIVATE dsk_tools)
 
+    if(WIN32)
+        target_link_libraries(${HEADLESS_TARGET} PRIVATE winmm)
+    endif()
+
     # std::thread and std::mutex, never the Qt ones: there is no Qt here
     target_compile_definitions(${HEADLESS_TARGET} PRIVATE FORCE_STD_THREADING USE_MINI_INI)
 
@@ -621,4 +636,21 @@ if(ENABLE_HEADLESS)
     install(TARGETS ${HEADLESS_TARGET}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
+endif()
+
+# The compiler's own warnings. Off by default: the tree has not been cleaned
+# against them, and a release build is not the place to read a thousand lines.
+# A pass with them on is the cheapest search there is for a class of bugs -
+# operator precedence, uninitialised members, signed/unsigned comparisons
+option(ENABLE_WARNINGS "Build with the compiler warnings on (-Wall -Wextra, /W4)" OFF)
+if(ENABLE_WARNINGS)
+    foreach(WARN_TARGET ${PROJECT_NAME} ${PROJECT_NAME}-headless)
+        if(TARGET ${WARN_TARGET})
+            if(MSVC)
+                target_compile_options(${WARN_TARGET} PRIVATE /W4)
+            else()
+                target_compile_options(${WARN_TARGET} PRIVATE -Wall -Wextra)
+            endif()
+        endif()
+    endforeach()
 endif()

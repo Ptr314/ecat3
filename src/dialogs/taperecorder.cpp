@@ -104,15 +104,18 @@ TapeRecorderWindow::TapeRecorderWindow(QWidget *parent, Emulator * e, ComputerDe
     connect(&back_left, &QTimer::timeout, this, [this]() { step_back(ui->left_roller); });
     connect(&back_right, &QTimer::timeout, this, [this]() { step_back(ui->right_roller); });
 
-    this->d->volume(10);
+    //The deck belongs to the emulation thread, which runs the tape and reads
+    //it on every instruction: whatever the window does to it is done there
+    this->e->invoke([&]() { this->d->volume(10); });
 
     update_timer.setInterval(1000);
     connect(&update_timer, &QTimer::timeout, this, &TapeRecorderWindow::update_counter);
-    this->d->on_mode_changed = [this](unsigned int new_mode) {
+    const std::function<void(unsigned int)> mode_handler = [this](unsigned int new_mode) {
         QTimer::singleShot(0, this, [this, new_mode]() {
             tape_mode_changed(new_mode);
         });
     };
+    this->e->invoke([&]() { this->d->on_mode_changed = mode_handler; });
 
     //Машина или сценарий могли зарядить и запустить ленту задолго до того, как
     //окно открыли: показываем то, что в лентопротяжке происходит сейчас
@@ -284,7 +287,8 @@ void TapeRecorderWindow::on_buttonEject_pressed()
                 loaded_file = fi.fileName();
                 tape_moved = false;
 
-                emulator::Result res = d->load_file(file_name.toStdString(), fmt.toStdString());
+                emulator::Result res = emulator::Result::ok();
+                e->invoke([&]() { res = d->load_file(file_name.toStdString(), fmt.toStdString()); });
                 if (!res) {
                     QMessageBox::warning(this, TapeRecorderWindow::tr("Error"), translateResultMessage(res.message));
                     return;
@@ -350,9 +354,9 @@ void TapeRecorderWindow::play_pause()
     is_back = false;
     show_movement(is_moving, false, false);
     if (is_moving) {
-        d->play();
+        e->invoke([&]() { d->play(); });
     } else {
-        d->stop();
+        e->invoke([&]() { d->stop(); });
         update_counter();
     }
 }
@@ -373,7 +377,8 @@ void TapeRecorderWindow::on_buttonPause_clicked()
 
 void TapeRecorderWindow::on_buttonMute_clicked()
 {
-    d->mute(ui->buttonMute->isChecked());
+    const bool muted = ui->buttonMute->isChecked();
+    e->invoke([&]() { d->mute(muted); });
 }
 
 void TapeRecorderWindow::on_buttonRewind_clicked()
@@ -384,7 +389,7 @@ void TapeRecorderWindow::on_buttonRewind_clicked()
         ui->buttonPlay->setChecked(false);
         e->record_command(d->name, "stop", "");
     }
-    d->rewind();
+    e->invoke([&]() { d->rewind(); });
     e->record_command(d->name, "rewind", "");
     update_counter();
 }
@@ -397,7 +402,7 @@ void TapeRecorderWindow::on_buttonRec_clicked()
     } else {
         is_recording = false;
     }
-    d->set_recording(is_recording);
+    e->invoke([&]() { d->set_recording(is_recording); });
     e->record_command(d->name, "record", is_recording?"1":"0");
     if (!is_recording) save_recording();
 }
@@ -422,7 +427,7 @@ void TapeRecorderWindow::save_recording()
             QFile file(file_name);
             if (file.open(QIODevice::WriteOnly)) {
                 std::vector<uint8_t> data;
-                d->get_save_data(data);
+                e->invoke([&]() { d->get_save_data(data); });
                 file.write(reinterpret_cast<const char*>(data.data()), static_cast<qint64>(data.size()));
                 file.close();
                 e->record_command(d->name, "save", format_script_arg(fi.absoluteFilePath().toStdString()));
@@ -440,10 +445,14 @@ void TapeRecorderWindow::closeEvent(QCloseEvent *event)
     //потока эмуляции. Окно сейчас будет удалено (WA_DeleteOnClose), так что
     //сначала снимаем обработчик, иначе машина, продолжающая крутить ленту,
     //позовет его уже по освобожденной памяти
-    d->on_mode_changed = nullptr;
+    //Снимается на потоке эмуляции: там его и зовут, и после возврата отсюда
+    //вызов уже не может быть в пути
     //Лента, которую держит сама машина (линия двигателя поднята), закрытием
     //окна не останавливается: окно к ней отношения не имеет
-    if (!d->is_machine_driven()) d->stop();
+    e->invoke([&]() {
+        d->on_mode_changed = nullptr;
+        if (!d->is_machine_driven()) d->stop();
+    });
     GenericDbgWnd::closeEvent(event);
 }
 
@@ -500,7 +509,7 @@ void TapeRecorderWindow::update_counter()
             is_playing = false;
             play_pause();
             ui->buttonPlay->setChecked(false);
-            d->rewind();
+            e->invoke([&]() { d->rewind(); });
         }
     }
     //Где стоит головка, видно и на остановленной ленте; только что

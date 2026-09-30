@@ -76,8 +76,15 @@ IrishaDisplay::IrishaDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     m_mode(0),
     m_color(0),
     m_page(0),
+    //Mode 3 never sets the foreground and takes whatever mode 1 left; a machine
+    //entering it first drew with an uninitialised colour
+    m_fore_color(0xFFFFFFFF),
+    m_back_color(0xFF000000),
     m_mode_index(0),
-    m_page_size(0)
+    m_page_size(0),
+    i_mode_data(this, im, 8, "mode_data", MODE_R, 11),
+    i_color_data(this, im, 8, "color_data", MODE_R, 12),
+    i_page_data(this, im, 8, "page_data", MODE_R, 13)
 {
     m_clocked = true;   //clock() is overridden here
     sx = 320;
@@ -96,7 +103,28 @@ emulator::Result IrishaDisplay::load_config(SystemData *sd)
 
     vram->set_memory_callback(this, 1, MODE_W);
 
+    //Three virtual reads and three comparisons on every instruction were the
+    //whole of clock(): now the ports call back when written, and the display
+    //leaves the list of clocked devices. All three are read, not short-circuited
+    const bool followed = follow_port(i_mode_data, port_mode->name)
+                        & follow_port(i_color_data, port_color->name)
+                        & follow_port(i_page_data, port_page->name);
+    m_poll_ports = !followed;
+    m_clocked = m_poll_ports;
+
     return emulator::Result::ok();
+}
+
+void IrishaDisplay::interface_callback(unsigned int callback_id, MAYBE_UNUSED unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
+{
+    if (callback_id >= 11 && callback_id <= 13) apply_ports();
+}
+
+void IrishaDisplay::state_restored()
+{
+    GenericDisplay::state_restored();
+    m_mode = _FFFF;
+    apply_ports();
 }
 
 void IrishaDisplay::memory_callback(unsigned int callback_id, unsigned int address)
@@ -113,10 +141,23 @@ void IrishaDisplay::get_screen_constraints(unsigned int * sx, unsigned int * sy)
     *sy = this->sy;
 }
 
-void IrishaDisplay::clock(unsigned int counter)
+void IrishaDisplay::clock(MAYBE_UNUSED unsigned int counter)
+{
+    if (m_poll_ports) apply_ports();
+}
+
+void IrishaDisplay::apply_ports()
 {
     if ( (m_mode != port_mode->get_direct(0)) || (m_color != port_color->get_direct(0)) || (m_page != port_page->get_direct(0)))
     {
+        //Under the surface lock: the render thread (and the window, on a
+        //repaint) is drawing the screen from these very fields. Changed under
+        //its hands, a page of 8000 bytes became one of 16000 in the middle of
+        //the loop that paints eight dots a byte, and the loop ran 200 KB past
+        //the end of the surface - a crash at once or, worse, a heap quietly
+        //broken until something freed it. Only a change of the mode, the
+        //colour or the page comes here, so the lock costs nothing per instruction
+        compat_lock_guard guard(m_surface_mutex);
         m_mode = port_mode->get_direct(0);
         m_color = port_color->get_direct(0);
         m_page = port_page->get_direct(0);
@@ -262,6 +303,12 @@ emulator::Result IrishaDisplay::load_state(const StateReader &r)
     r.u("page", m_page);
     r.u("base_address", m_base_address);
     r.u("mode_index", m_mode_index);
+    //The page size and the colours are derived from the three ports, and
+    //clock() derives them only when a port changes - after a restore none
+    //does, and the page size stayed 0: the screen came back empty until the
+    //program touched a video port. A mode no port can hold makes the next
+    //clock() derive everything again from the restored ports
+    m_mode = _FFFF;
     return emulator::Result::ok();
 }
 

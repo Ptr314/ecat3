@@ -212,8 +212,6 @@ emulator::Result DeviceManager::add_device(InterfaceManager *im, EmulatorConfigD
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{DeviceManager|" + std::string(QT_TRANSLATE_NOOP("DeviceManager", "Too many devices")) + "} " + d->name);
 
-    unsigned int index = device_count++;
-
     CreateDeviceFunc create_func = nullptr;
     for (unsigned int i=0; i < registered_devices_count; i++)
     {
@@ -222,9 +220,13 @@ emulator::Result DeviceManager::add_device(InterfaceManager *im, EmulatorConfigD
 
     if (create_func != nullptr)
     {
+        //Counted only once it exists: a slot without a device is a null
+        //pointer to everything that walks the list
+        unsigned int index = device_count;
         devices[index].device_type = d->type;
         devices[index].device_name = d->name;
         devices[index].device.reset(create_func(im, d));  // Wrap raw pointer in unique_ptr
+        device_count++;
     } else
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{DeviceManager|" + std::string(QT_TRANSLATE_NOOP("DeviceManager", "Can't create device")) + "} " + d->name + ":" + d->type);
@@ -266,7 +268,7 @@ emulator::Result DeviceManager::load_devices_config(SystemData *sd)
     //Every clocked device joins the domain of the processor it takes its clock
     //from (clock_source, "cpu" by default). The processors are not in any of
     //these lists: Emulator drives them itself
-    clocked_devices.assign(cpus.size(), std::vector<ComputerDevice*>());
+    clocked_devices.assign(cpus.size(), std::vector<ClockedDevice>());
     for (unsigned int i=0; i < device_count; i++)
     {
         ComputerDevice * d = devices[i].device.get();
@@ -277,7 +279,10 @@ emulator::Result DeviceManager::load_devices_config(SystemData *sd)
         for (size_t j=0; j < cpus.size(); j++)
             if (cpus[j] == d->get_clock_source()) { domain = j; break; }
 
-        clocked_devices[domain].push_back(d);
+        ClockedDevice c;
+        c.device = d;
+        c.direct = !d->own_system_clock() && d->clock_ratio_one();
+        clocked_devices[domain].push_back(c);
     }
 
     return emulator::Result::ok();
@@ -334,9 +339,11 @@ void DeviceManager::clock(unsigned int domain, unsigned int counter)
 
     //Only the devices that do something with a tick, in the order they are
     //declared - the processors are clocked by their own execute()
-    std::vector<ComputerDevice*> &list = clocked_devices[domain];
-    for (size_t i=0; i < list.size(); i++)
-        list[i]->system_clock(counter);
+    std::vector<ClockedDevice> &list = clocked_devices[domain];
+    for (size_t i=0; i < list.size(); i++) {
+        if (list[i].direct) list[i].device->clock(counter);
+        else list[i].device->system_clock(counter);
+    }
 }
 
 void DeviceManager::error(ComputerDevice *d, const std::string &message)
@@ -401,6 +408,26 @@ Interface * InterfaceManager::get_interface_by_name(const std::string &device_na
 }
 
 //----------------------- class ComputerDevice -------------------------------//
+
+bool ComputerDevice::follow_port(Interface &line, const std::string &port_name)
+{
+    //A port's output is "value"; "data" is its input
+    Interface * data = im->get_interface_by_name(port_name, "value");
+    if (data == nullptr) return false;
+
+    LinkedInterface s, d;
+    s.i = &line;
+    s.shift = 0;
+    s.mask = create_mask(line.get_size(), 0);
+    d.i = data;
+    d.shift = 0;
+    d.mask = s.mask;
+    line.connect(s, d, false);
+
+    Interface * input = im->get_interface_by_name(port_name, "data");
+    Interface * reset = im->get_interface_by_name(port_name, "reset");
+    return (input == nullptr || input->linked == 0) && (reset == nullptr || reset->linked == 0);
+}
 
 ComputerDevice::ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd):
     type(cd->type),
@@ -1705,6 +1732,11 @@ emulator::Result CPU::load_config(SystemData *sd)
             "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "Memory mapper not found")) + "} " + name + ": " + mapper_name);
 
     return emulator::Result::ok();
+}
+
+unsigned int CPU::peek_mem(unsigned int address)
+{
+    return mm->get_direct(address) & 0xFF;
 }
 
 bool CPU::check_breakpoint(unsigned int address)

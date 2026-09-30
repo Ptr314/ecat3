@@ -58,8 +58,9 @@ void DumpArea::go_to(int offset, int address)
     buffer_is_valid = false;
 
     if (lines_count > 0) {
-        scroll_size = data_size - lines_count*16;
-        if (scroll_size < 0) scroll_size = data_size;
+        //Both unsigned: the old "< 0" test was never true, and a device smaller
+        //than the window (a 4-byte port) wrapped the scroll range to 4 GB
+        scroll_size = (data_size > lines_count*16) ? (data_size - lines_count*16) : data_size;
     }
     set_scroll(scroll_size, address);
     update();
@@ -85,7 +86,13 @@ void DumpArea::paintEvent(MAYBE_UNUSED QPaintEvent *event)
 
     if (d != nullptr)
     {
-        lines_count = size().height() / font_height - 1 - (frame_top?1:0);
+        //As many lines as the window holds, but no more than the two fixed
+        //buffers below have room for: a dialog stretched on a tall monitor
+        //went past 64 lines and wrote beyond them. Nor fewer than none - the
+        //count is unsigned, and a window shorter than two lines wrapped around
+        const int fit = size().height() / font_height - 1 - (frame_top?1:0);
+        const int room = static_cast<int>(sizeof(buffer[0]) / 16);
+        lines_count = static_cast<unsigned int>(fit < 0 ? 0 : (fit > room ? room : fit));
 
         if (!buffer_is_valid) fill_buffer(true);
 
@@ -187,7 +194,7 @@ void DumpArea::editor_return_pressed()
     editor->hide();
     QString str_value = editor->text();
     uint32_t value = parse_numeric_value(("$" + str_value).toStdString());
-    d->set_value(editor_address, value, true);
+    e->invoke([&]() { d->set_value(editor_address, value, true); });
     update();
 }
 

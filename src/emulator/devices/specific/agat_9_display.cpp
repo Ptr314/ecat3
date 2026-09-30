@@ -35,6 +35,7 @@ Agat9Display::Agat9Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_50hz(this, im, 1, "50hz", MODE_W)
     , i_500hz(this, im, 1, "500hz", MODE_W)
     , i_ints_en(this, im, 1, "ints_en", MODE_R, 1)
+    , i_mode_data(this, im, 8, "mode_data", MODE_R, 11)
     , m_a2_text(0)
     , m_a2_mixed(0)
     , m_a2_page(0)
@@ -82,6 +83,10 @@ emulator::Result Agat9Display::load_config(SystemData *sd)
     m_mode_apple->set_memory_callback(this, APPLE_MODE_CALLBACK, MODE_W);
 
     blink_ticks = m_system_clock / (5*2);     // 5 Hz
+
+    //The mode port calls back when written; clock() used to read it on every
+    //instruction
+    m_poll_mode = !follow_port(i_mode_data, m_mode_agat->name);
 
     i_50hz.change(m_nmi_val);
     i_500hz.change(m_irq_val);
@@ -184,6 +189,10 @@ void Agat9Display::set_device_option(unsigned option_id, unsigned value_id)
 
 void Agat9Display::interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value)
 {
+    if (callback_id == 11) {
+        if (previous_mode != (new_value & 0xFF)) set_mode(new_value & 0xFF);
+        return;
+    }
     if (callback_id == 1) {
         if ((new_value & 1) != 0) {
             // Return both the signals to 1 after disabling interrupts
@@ -198,8 +207,10 @@ void Agat9Display::clock(unsigned int counter)
 {
     RasterDisplay::clock(counter);
 
-    uint8_t mode_value = m_mode_agat->get_direct(0);
-    if (previous_mode != mode_value) set_mode(mode_value);
+    if (m_poll_mode) {
+        uint8_t mode_value = m_mode_agat->get_direct(0);
+        if (previous_mode != mode_value) set_mode(mode_value);
+    }
 
     clock_counter += counter;
     if (clock_counter >= blink_ticks) {
@@ -211,7 +222,7 @@ void Agat9Display::clock(unsigned int counter)
 uint32_t Agat9Display::convert_rgba(const unsigned c, const uint32_t rgba[]) const
 {
     if (!m_pal_card || !m_pal_card_out) return rgba[c];
-    const auto pal = m_pal_switch->get_direct(0);
+    const auto pal = m_line_pal;
     if (pal < 8) {
         if (m_pal_builtin) return Agat_RGBA16_palcard_std[pal][c];
         return rgba[c];
@@ -233,7 +244,7 @@ uint8_t Agat9Display::convert_font(unsigned chr, unsigned line) const
 {
     const unsigned a = chr*8 + line;
     if (!m_pal_card) return m_font->get_direct(a);
-    if ((m_pal_mode->get_direct(0) & 0x02) != 0) return m_pal_font->get_direct(a) >> 1;
+    if (m_line_pal_font) return m_pal_font->get_direct(a) >> 1;
     return m_font->get_direct(a);
 
 }
@@ -241,6 +252,10 @@ uint8_t Agat9Display::convert_font(unsigned chr, unsigned line) const
 void Agat9Display::render_line(unsigned int screen_line)
 {
     compat_lock_guard guard(m_surface_mutex);
+    if (m_pal_card) {
+        m_line_pal = m_pal_card_out ? m_pal_switch->get_direct(0) : 0;
+        m_line_pal_font = (m_pal_mode->get_direct(0) & 0x02) != 0;
+    }
     if (has_valid_renderer()) {
         // As we physically have 256 doubled lines, we use a half of screen_line in a 512-line mode
         unsigned line = (m_512_mode==M_512_ON) ? (screen_line / 2) : screen_line;
@@ -440,14 +455,19 @@ void Agat9Display::render_line(unsigned int screen_line)
                         uint8_t chr;
                         uint8_t inv;
                         switch (IP_ME){
+                            //The glyphs of codes 00-7F are those of 80-BF,
+                            //drawn inverted or blinking. Written without the
+                            //parentheses this was v & 0xBF: the glyphs came
+                            //from the font's own 00-3F, its pseudographics -
+                            //an inverse 0 was a small raised circle
                             case 0b00:
                                 // Inverse
-                                chr = v & 0x3F + 0x80;
+                                chr = (v & 0x3F) + 0x80;
                                 inv = 1;
                                 break;
                             case 0b01:
                                 // Blinking
-                                chr = v & 0x3F + 0x80;
+                                chr = (v & 0x3F) + 0x80;
                                 inv = blinker?1:0;
                                 break;
                             default:
@@ -589,6 +609,14 @@ void Agat9Display::save_state(StateWriter &w)
     w.n("a2_mixed", m_a2_mixed);
     w.n("a2_page", m_a2_page);
     w.n("memory_bank", _memory_bank);
+}
+
+//Everything set_mode() derives - the page size, the bank - comes back from the
+//mode port, which is restored already; the state carried only part of it
+void Agat9Display::state_restored()
+{
+    RasterDisplay::state_restored();
+    set_mode(m_mode_agat->get_direct(0) & 0xFF);
 }
 
 emulator::Result Agat9Display::load_state(const StateReader &r)

@@ -110,6 +110,9 @@ void AY8910::reset(MAYBE_UNUSED bool cold)
     restart_envelope();
     i_porta.change(0);
     i_portb.change(0);
+    //Not used any more: the second chip of a 2xAY board leaves the mix, and
+    //the mixer may have been reset before this device
+    sound_mode_changed();
 }
 
 //------------------- Registers --------------------------------------------//

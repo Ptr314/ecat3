@@ -26,7 +26,9 @@ uint8_t Orion128_16Colors[16][3] = {
 O128Display::O128Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     GenericDisplay(im, cd),
     mode(_FFFF),
-    frame(_FFFF)
+    frame(_FFFF),
+    i_mode_data(this, im, 8, "mode_data", MODE_R, 11),
+    i_frame_data(this, im, 8, "frame_data", MODE_R, 12)
 {
     m_clocked = true;   //clock() is overridden here
     sx = 384;
@@ -46,7 +48,26 @@ emulator::Result O128Display::load_config(SystemData *sd)
     page_main->set_memory_callback(this, 1, MODE_W);
     page_color->set_memory_callback(this, 2, MODE_W);
 
+    //The two ports call back when written, and the display leaves the list of
+    //clocked devices: clock() did nothing but read them on every instruction
+    const bool followed = follow_port(i_mode_data, port_mode->name)
+                        & follow_port(i_frame_data, port_frame->name);
+    m_poll_ports = !followed;
+    m_clocked = m_poll_ports;
+
     return emulator::Result::ok();
+}
+
+void O128Display::interface_callback(unsigned int callback_id, MAYBE_UNUSED unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
+{
+    if (callback_id == 11 || callback_id == 12) apply_ports();
+}
+
+void O128Display::state_restored()
+{
+    GenericDisplay::state_restored();
+    mode = frame = _FFFF;
+    apply_ports();
 }
 
 void O128Display::memory_callback(unsigned int callback_id, unsigned int address)
@@ -76,7 +97,12 @@ void O128Display::set_renderer(VideoRenderer &vr)
     vr.FillRGB(Orion128_16Colors, rgba_16colors, 16);
 }
 
-void O128Display::clock(unsigned int counter)
+void O128Display::clock(MAYBE_UNUSED unsigned int counter)
+{
+    if (m_poll_ports) apply_ports();
+}
+
+void O128Display::apply_ports()
 {
     //get_direct(), not get_value(): this runs on every instruction, and reading
     //a port through get_value() pulses its access line. Irisha and BK read the

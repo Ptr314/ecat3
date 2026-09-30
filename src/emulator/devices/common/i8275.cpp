@@ -495,6 +495,7 @@ emulator::Result I8275::load_state(const StateReader &r)
     r.u("dma_delay", m_dma_delay);
     r.u("pending", m_pending);
     r.u("fill_buf", m_fill_buf);
+    m_fill_buf &= 1;                //Индекс одного из двух буферов строки
     r.u("fill_len", m_fill_len);
     r.u("fill_cols", m_fill_cols);
     r.u("show_len", m_show_len);

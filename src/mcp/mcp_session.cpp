@@ -273,6 +273,15 @@ McpResult McpSession::run_locked(const std::string &commands, unsigned int timeo
 
         if (w == WaitStalled)
         {
+            //When the machine stopped for a reason of its own, that reason is
+            //the answer - not the guess that the CPU was halted
+            bool fatal = false;
+            const std::string why = e->machine_error(&fatal);
+            if (!why.empty())
+                output.push_back(std::string(fatal ? "[dead] The emulation thread has ended: "
+                                                   : "[machine] The machine stopped itself: ")
+                                     + strip_message_context(why));
+
             if (done < first)
                 //The queue is ordered, so a command abandoned earlier blocks
                 //everything behind it. Different problem, different cure

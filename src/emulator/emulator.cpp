@@ -109,6 +109,7 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , renderer(renderer)
     , m_running(false)
     , m_ready(false)
+    , m_calls_pending(false)
     , settings(ini_file)
 {
 
@@ -143,28 +144,58 @@ void Emulator::write_setup(std::string section, std::string ident, std::string n
 }
 
 
+void Emulator::drop_machine()
+{
+    //Whatever stopped the old machine is no news about the next one
+    clear_machine_error();
+
+    //Not only a loaded machine: one that failed on the way in has its devices
+    //too, some of them with an audio device already open
+    delete dm;
+    delete im;
+    dm = nullptr;
+    im = nullptr;
+    //Only now: every device holds a ComputerDevice::cd pointing into it
+    m_config.free_devices();
+    loaded = false;
+    //The devices these point at have just been destroyed. If the machine
+    //being loaded now fails on the way in, nothing must be left pointing
+    //into them: the window stays open and its keys keep arriving
+    cpu = nullptr;
+    mm = nullptr;
+    display = nullptr;
+    keyboard = nullptr;
+    domains.clear();
+    joysticks.clear();
+    mice.clear();
+}
+
 emulator::Result Emulator::load_config(std::string file_name)
 {
-    if (loaded)
-    {
-        //Delete loaded machine
-        delete dm;
-        delete im;
-        //Only now: every device holds a ComputerDevice::cd pointing into it
-        m_config.free_devices();
-        loaded = false;
-        //The devices these point at have just been destroyed. If the machine
-        //being loaded now fails on the way in, nothing must be left pointing
-        //into them: the window stays open and its keys keep arriving
-        cpu = nullptr;
-        mm = nullptr;
-        display = nullptr;
-        keyboard = nullptr;
-        domains.clear();
-        joysticks.clear();
-        mice.clear();
+    drop_machine();
+
+    emulator::Result res = emulator::Result::ok();
+    try {
+        res = build_machine(file_name);
+    } catch (const std::exception &ex) {
+        //A required parameter that is missing throws, and so may a device
+        //constructor; no frontend expects an exception from a load
+        res = emulator::Result::error(emulator::ErrorCode::ConfigError, ex.what());
     }
 
+    if (!res)
+    {
+        //Half a machine is of no use to anybody, and the frontend would go on
+        //listing its devices. What is left is a machine with no devices
+        drop_machine();
+        dm = new DeviceManager();
+        im = new InterfaceManager(dm);
+    }
+    return res;
+}
+
+emulator::Result Emulator::build_machine(const std::string &file_name)
+{
     dm = new DeviceManager();
     im = new InterfaceManager(dm);
 
@@ -441,7 +472,12 @@ void Emulator::apply_saved_device_options()
                 std::string settings_key = config_key + "_" + dev->name + "_" + std::to_string(opt.id);
                 std::string saved = read_setup("DeviceOptions", settings_key, "");
                 if (!saved.empty()) {
-                    dev->set_device_option(opt.id, static_cast<unsigned int>(std::stoul(saved)));
+                    //Written by the window, but the ini is the user's file: an
+                    //entry that does not parse is skipped, not thrown
+                    try {
+                        dev->set_device_option(opt.id, static_cast<unsigned int>(std::stoul(saved)));
+                    } catch (const std::exception &) {
+                    }
                 }
             }
         }
@@ -484,9 +520,104 @@ const std::string & Emulator::translate_char(unsigned int char_code)
     return charmap[char_code];
 }
 
+//----------------------- Why the machine stopped ----------------------------//
+
+void Emulator::set_machine_error(const std::string &message, bool fatal)
+{
+    compat_lock_guard lock(m_error_mutex);
+    //The first cause is the one worth telling; a fatal one wins over a device
+    //that merely stopped the machine
+    if (!m_machine_error.empty() && (m_machine_fatal || !fatal)) return;
+    m_machine_error = message.empty() ? std::string("unknown error") : message;
+    m_machine_fatal = fatal;
+}
+
+std::string Emulator::machine_error(bool * fatal) const
+{
+    compat_lock_guard lock(m_error_mutex);
+    if (fatal != nullptr) *fatal = m_machine_fatal;
+    return m_machine_error;
+}
+
+void Emulator::clear_machine_error()
+{
+    compat_lock_guard lock(m_error_mutex);
+    m_machine_error.clear();
+    m_machine_fatal = false;
+}
+
+//--------------------- Calls from other threads ----------------------------//
+
+void Emulator::invoke(const std::function<void()> &fn)
+{
+    PendingCall call(&fn);
+    bool queued = false;
+    {
+        compat_lock_guard lock(m_calls_mutex);
+        if (m_calls_open && !(m_calls_thread == compat_this_thread_id()))
+        {
+            m_calls.push_back(&call);
+            m_calls_pending = true;
+            queued = true;
+        }
+    }
+
+    if (!queued)
+    {
+        //Nobody to race with, or this is the emulation thread asking itself
+        fn();
+        return;
+    }
+
+    //The emulation thread looks at the queue at least once a millisecond, so
+    //this is normally over within one; a call that takes long (an image being
+    //read) is not worth a core spinning for it
+    unsigned int spins = 0;
+    while (!call.done)
+    {
+        if (++spins < 5000) compat_yield(); else compat_sleep_ms(1);
+    }
+
+    if (call.failed) throw std::runtime_error(call.error);
+}
+
+void Emulator::run_pending_calls()
+{
+    std::vector<PendingCall*> calls;
+    {
+        compat_lock_guard lock(m_calls_mutex);
+        calls.swap(m_calls);
+        m_calls_pending = false;
+    }
+
+    for (size_t i = 0; i < calls.size(); i++)
+    {
+        PendingCall * c = calls[i];
+        try {
+            (*c->fn)();
+        } catch (const std::exception &ex) {
+            c->failed = true;
+            c->error = ex.what();
+        }
+        //Its owner wakes up on this and the entry is gone with its stack frame
+        c->done = true;
+    }
+}
+
+void Emulator::close_calls()
+{
+    {
+        compat_lock_guard lock(m_calls_mutex);
+        m_calls_open = false;
+    }
+    //Whoever got in before the door closed is still waiting
+    run_pending_calls();
+}
+
 void Emulator::reset(bool cold)
 {
-    dm->reset_devices(cold);
+    if (!loaded || dm == nullptr) return;
+    invoke([this, cold]() { dm->reset_devices(cold); });
 }
 
 //----------------------------- Scripting ----------------------------------//
@@ -613,18 +744,33 @@ void Emulator::run()
         m_ready = false;
         m_running = true;
 
+        //From here on the machine belongs to the emulation thread, and a call
+        //from any other one waits for it - also while that thread is still
+        //setting the machine up
+        {
+            compat_lock_guard lock(m_calls_mutex);
+            m_calls_open = true;
+            m_calls_thread = compat_thread_id();
+        }
+
 #if USE_QT_THREADING
         emulationThread = EmuThread::create([this]() {
 #else
         emulationThread = std::thread([this]() {
 #endif
+            {
+                compat_lock_guard lock(m_calls_mutex);
+                m_calls_thread = compat_this_thread_id();
+            }
+            CallsGuard calls_guard(this);
+
             setThreadPriority(true);
 
             //One domain per processor, master first. load_devices_config() has
             //already put them in that order
             const std::vector<CPU*> &cpu_list = dm->get_cpus();
             if (cpu_list.empty()) {
-                // qCritical() << "Error: no CPU device found";
+                set_machine_error("No processor found in the configuration", true);
                 m_running = false;
                 return;
             }
@@ -654,21 +800,23 @@ void Emulator::run()
 
             mm = cpu->mm;
             if (!mm) {
-                // qCritical() << "Error: Memory mapper device not found or wrong type";
+                set_machine_error("The processor has no memory mapper", true);
                 m_running = false;
                 return;
             }
 
-            display = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display"));
+            //Not required=true: that throws, and nothing catches here. A
+            //machine without either loads fine and would end the process
+            display = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display", false));
             if (!display) {
-                // qCritical() << "Error: Display device not found or wrong type";
+                set_machine_error("No display device named \"display\" in the configuration", true);
                 m_running = false;
                 return;
             }
 
-            keyboard = dynamic_cast<Keyboard*>(dm->get_device_by_name("keyboard"));
+            keyboard = dynamic_cast<Keyboard*>(dm->get_device_by_name("keyboard", false));
             if (!keyboard) {
-                // qCritical() << "Error: Keyboard device not found or wrong type";
+                set_machine_error("No keyboard device named \"keyboard\" in the configuration", true);
                 m_running = false;
                 return;
             }
@@ -683,8 +831,6 @@ void Emulator::run()
             for (size_t i = 0; i < mouse_devices.size(); i++)
                 mice.push_back(dynamic_cast<Mouse*>(mouse_devices[i]));
 
-            reset(true);
-
             clock_freq = this->cpu->clock;
 
             for (size_t i = 0; i < domains.size(); i++) domains[i].norm = 0;
@@ -695,17 +841,24 @@ void Emulator::run()
             //which is the only moment a whole machine can be replaced at once.
             //Doing it here is also what makes every frontend support a saved
             //state without a line of its own: they all load and then run()
-            {
+            //The reset and the restore run outside the loop below and its
+            //catch, and an exception leaving this thread ends the process
+            try {
+                reset(true);
+
                 const emulator::Result res = apply_state();
                 if (!res)
                 {
                     //The same way a device refusing what the guest asked is
                     //reported: the machine stands still and the message waits
-                    dm->error_message = res.message;
-                    dm->error_device = nullptr;
+                    set_machine_error(res.message, false);
                     for (size_t i = 0; i < domains.size(); i++)
                         domains[i].cpu->m_debug = DEBUG_STOPPED;
                 }
+            } catch (const std::exception &ex) {
+                set_machine_error(ex.what(), true);
+                m_running = false;
+                return;
             }
 
             m_ready = true;
@@ -715,6 +868,8 @@ void Emulator::run()
             timer.start();
             qint64 lastUsecs = timer.nsecsElapsed() / 1000;
             while (m_running) {
+                if (m_calls_pending) run_pending_calls();
+
                 qint64 nowUsecs = timer.nsecsElapsed() / 1000;
                 qint64 elapsed = nowUsecs - lastUsecs;
 
@@ -730,6 +885,10 @@ void Emulator::run()
             //would freeze the machine until the wall clock caught up again
             auto lastTime = std::chrono::steady_clock::now();
             while (m_running) {
+                //Between two slices: every instruction is finished, and what
+                //another thread wants done to the machine is done here
+                if (m_calls_pending) run_pending_calls();
+
                 auto now = std::chrono::steady_clock::now();
                 auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime).count();
 
@@ -752,10 +911,18 @@ void Emulator::run()
                 //process without a word. Devices report through
                 //DeviceManager::error() instead, but a stray std::stoi or a
                 //bad_alloc must not take the application down with it
+                //The message is kept for the frontend: a window that simply froze,
+                //a console run that waited forever for a script that could no
+                //longer finish, is all this used to leave behind
                 try {
                     timer_proc(time_ticks);
-                } catch (const std::exception &) {
+                } catch (const std::exception &ex) {
                     busy = false;
+                    set_machine_error(ex.what(), true);
+                    m_running = false;
+                } catch (...) {
+                    busy = false;
+                    set_machine_error("unknown exception in the emulation thread", true);
                     m_running = false;
                 }
             }
@@ -765,6 +932,20 @@ void Emulator::run()
         renderThread = EmuThread::create([this]() {
 #else
         renderThread = std::thread([this]() {
+#endif
+#ifdef _WIN32
+            //The default timer of Windows ticks every 15.6 ms, and a sleep ends
+            //on a tick: 20 ms became 31, and the screen ran at 31 frames a
+            //second instead of 50 (measured). A 1 ms period for as long as the
+            //render thread lives - the emulation thread spins anyway, so the
+            //power this costs is already being spent
+            timeBeginPeriod(1);
+#endif
+#if !USE_QT_THREADING
+            //Frames are due at fixed moments, not 20 ms after the previous one
+            //was done: the time a frame takes and the sleep overshoot no longer
+            //add up into a slower rate
+            auto next_frame = std::chrono::steady_clock::now();
 #endif
             while (m_running) {
                 if (!m_ready) {
@@ -785,17 +966,19 @@ void Emulator::run()
                 int delay = std::max(static_cast<qint64>(0), 20 - elapsedMs);
                 if (delay > 0) QThread::msleep(delay);
 #else
-                auto start = std::chrono::high_resolution_clock::now();
-
                 render_screen();
 
-                auto end = std::chrono::high_resolution_clock::now();
-                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-                int delay = std::max(0, 20 - static_cast<int>(elapsed)); // ~50 FPS
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+                //~50 FPS. A frame that came too late is not made up for with a
+                //burst of quick ones: the schedule starts again from now
+                next_frame += std::chrono::milliseconds(20);
+                const auto now = std::chrono::steady_clock::now();
+                if (next_frame < now) next_frame = now;
+                std::this_thread::sleep_until(next_frame);
 #endif
             }
+#ifdef _WIN32
+            timeEndPeriod(1);
+#endif
         });
     }
 }
@@ -855,6 +1038,7 @@ void Emulator::timer_proc(uint64_t time_ticks)
         //frequencies interleave by an exact integer ratio and a run stays
         //reproducible to the byte
         const uint64_t target = time_ticks * domains[0].scale;
+        const uint64_t clock_before = clock_counter;
 
         while (true) {
             //Whichever processor is furthest behind goes next. With one domain
@@ -899,9 +1083,15 @@ void Emulator::timer_proc(uint64_t time_ticks)
         //the device manager. Starting the CPU again resumes until the next one
         if (dm->error_pending) {
             dm->error_pending = false;
+            set_machine_error((dm->error_device != nullptr ? dm->error_device->name + ": " : std::string())
+                              + dm->error_message, false);
             for (size_t i = 0; i < domains.size(); i++)
                 domains[i].cpu->m_debug = DEBUG_STOPPED;
         }
+
+        //The master stood still for the whole slice: a WAITFOR or a SCREEN
+        //would wait for an emulated millisecond that is not coming
+        if (script && time_ticks > 0 && clock_counter == clock_before) script->tick_frozen(clock_counter);
 
         //What a domain overshot the slice by is owed to the next one
         for (size_t i = 0; i < domains.size(); i++) domains[i].norm -= target;
@@ -920,9 +1110,18 @@ void Emulator::init_video(void *p)
     }
 
     d->get_screen_constraints(&screen_sx, &screen_sy);
-    screen_scale = std::stod(read_setup("Video", "scale", "2"));
-    screen_ratio = std::stoi(read_setup("Video", "ratio", std::to_string(SCREEN_RATIO_43)));
-    screen_filtering = std::stoi(read_setup("Video", "filtering", std::to_string(SCREEN_FILTERING_NONE)));
+    //The ini is the user's own file: a value left empty or mistyped keeps the
+    //default instead of throwing out of the window's slot at every start
+    auto video_setting = [this](const char * ident, double def) -> double {
+        try {
+            return std::stod(read_setup("Video", ident, ""));
+        } catch (const std::exception &) {
+            return def;
+        }
+    };
+    screen_scale = video_setting("scale", 2);
+    screen_ratio = static_cast<int>(video_setting("ratio", SCREEN_RATIO_43));
+    screen_filtering = static_cast<int>(video_setting("filtering", SCREEN_FILTERING_NONE));
 
     if (screen_ratio == SCREEN_RATIO_SQ)
         pixel_scale = 1;
@@ -1164,9 +1363,10 @@ void Emulator::set_muted(bool muted)
 
 Emulator::~Emulator()
 {
-    delete im;
+    //The devices first, as in drop_machine(): their interfaces are registered
+    //in the manager
     delete dm;
-
+    delete im;
 }
 
 void Emulator::get_screen_constraints(unsigned int * sx, unsigned int * sy)

@@ -35,6 +35,7 @@ Agat7Display::Agat7Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_50hz(this, im, 1, "50hz", MODE_W)
     , i_500hz(this, im, 1, "500hz", MODE_W)
     , i_ints_en(this, im, 1, "ints_en", MODE_R, 1)
+    , i_mode_data(this, im, 8, "mode_data", MODE_R, 11)
 {
     m_clocked = true;   //clock() is overridden here
     sx = 512; // Doubling 2*256 because of 64 chars mode;
@@ -51,6 +52,10 @@ emulator::Result Agat7Display::load_config(SystemData *sd)
     m_font =      dynamic_cast<ROM*>(im->dm->get_device_by_name(cd->get_parameter("font").value));
 
     blink_ticks = m_system_clock / (5*2);     // 5 Hz
+
+    //The mode port calls back when written; clock() used to read it on every
+    //instruction
+    m_poll_mode = !follow_port(i_mode_data, m_port_mode->name);
 
     i_50hz.change(m_nmi_val);
     i_500hz.change(m_irq_val);
@@ -127,6 +132,10 @@ void Agat7Display::set_mode(unsigned int new_mode)
 
 void Agat7Display::interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value)
 {
+    if (callback_id == 11) {
+        if (previous_mode != (new_value & 0xFF)) set_mode(new_value & 0xFF);
+        return;
+    }
     if (callback_id == 1) {
         if ((new_value & 1) != 0) {
             // Return both the signals to 1 after disabling interrupts
@@ -141,8 +150,10 @@ void Agat7Display::clock(unsigned int counter)
 {
     RasterDisplay::clock(counter);
 
-    uint8_t mode_value = m_port_mode->get_direct(0);
-    if (previous_mode != mode_value) set_mode(mode_value);
+    if (m_poll_mode) {
+        uint8_t mode_value = m_port_mode->get_direct(0);
+        if (previous_mode != mode_value) set_mode(mode_value);
+    }
 
     clock_counter += counter;
     if (clock_counter >= blink_ticks) {
@@ -181,7 +192,7 @@ void Agat7Display::memory_callback(MAYBE_UNUSED unsigned int callback_id, MAYBE_
 uint32_t Agat7Display::convert_rgba(const unsigned c, const uint32_t rgba[]) const
 {
     if (!m_pal_card || !m_pal_card_out) return rgba[c];
-    const auto pal = m_pal_switch->get_direct(0);
+    const auto pal = m_line_pal;
     if (pal < 8) {
         if (m_pal_builtin) return Agat_RGBA16_palcard_std[pal][c];
         return rgba[c];
@@ -203,7 +214,7 @@ uint8_t Agat7Display::convert_font(unsigned chr, unsigned line) const
 {
     const unsigned a = chr*8 + line;
     if (!m_pal_card) return m_font->get_direct(a);
-    if ((m_pal_mode->get_direct(0) & 0x02) != 0) {
+    if (m_line_pal_font) {
         uint8_t v = m_pal_font->get_direct(a);
         v = ((v & 0xAA) >> 1) | ((v & 0x55) << 1);
         v = ((v & 0xCC) >> 2) | ((v & 0x33) << 2);
@@ -218,6 +229,10 @@ void Agat7Display::render_line(unsigned int screen_line)
 {
     compat_lock_guard guard(m_surface_mutex);
     if (!has_valid_renderer()) return;
+    if (m_pal_card) {
+        m_line_pal = m_pal_card_out ? m_pal_switch->get_direct(0) : 0;
+        m_line_pal_font = (m_pal_mode->get_direct(0) & 0x02) != 0;
+    }
     uint8_t * pixel_address;
     unsigned int p, screen_offset, font_line, char_address, inv;
     uint8_t v, v1, v2, font_val;
@@ -442,6 +457,14 @@ void Agat7Display::save_state(StateWriter &w)
     w.n("irq_val", m_irq_val);
     w.n("nmi_val", m_nmi_val);
     w.n("mode_512", m_512_mode);
+}
+
+//Everything set_mode() derives - the page size, the bank - comes back from the
+//mode port, which is restored already; the state carried only part of it
+void Agat7Display::state_restored()
+{
+    RasterDisplay::state_restored();
+    set_mode(m_port_mode->get_direct(0) & 0xFF);
 }
 
 emulator::Result Agat7Display::load_state(const StateReader &r)

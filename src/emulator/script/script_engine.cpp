@@ -487,6 +487,14 @@ void ScriptEngine::delay_ms(unsigned int ms)
     m_state = StateDelay;
 }
 
+void ScriptEngine::tick_frozen(uint64_t clock_counter)
+{
+    const int s = m_state.load(std::memory_order_relaxed);
+    if (s != StateWaitFor && s != StateScreenshot) return;
+    m_poll_at = clock_counter;
+    tick(clock_counter);
+}
+
 void ScriptEngine::tick(uint64_t clock_counter)
 {
     //Lock free part: this is where nearly every call ends
@@ -997,6 +1005,16 @@ emulator::Result ScriptEngine::do_waitfor(const ScriptCommand &c)
         ? parse_numeric_value(c.args[2])
         : SCRIPT_WAITFOR_TIMEOUT;
 
+    //Checked now, while execute() catches what it throws: the comparison is
+    //evaluated later from tick(), and a value that does not parse (an 8 on a
+    //machine counting in octal) or a field that cannot be read would throw
+    //from there, out of the emulation thread
+    parse_numeric_value(c.args[1]);
+    DeviceFieldValue probe;
+    if (!read_field(c, probe) || !probe.numeric || probe.values.empty())
+        return emulator::Result::error(emulator::ErrorCode::BadParameters,
+            "WAITFOR: field '" + c.member + "' is not a number");
+
     m_wait_pc = m_pc - 1;
     m_wait_deadline = m_now + ms_to_ticks(timeout);
     m_poll_at = m_now;          //Evaluate the condition right away
@@ -1009,14 +1027,22 @@ bool ScriptEngine::waitfor_step()
     const ScriptCommand &c = m_commands[m_wait_pc];
 
     DeviceFieldValue v;
-    if (!read_field(c, v) || !v.numeric || v.values.empty()) {
-        log_error(c, "WAITFOR: field '" + c.member + "' is not a number");
+    unsigned int op = 0, expected = 0;
+    //do_waitfor() has tried all of this once already; whatever still throws
+    //here (a field that stops answering) ends the wait, not the thread
+    try {
+        if (!read_field(c, v) || !v.numeric || v.values.empty()) {
+            log_error(c, "WAITFOR: field '" + c.member + "' is not a number");
+            return true;
+        }
+
+        //The operator is stored as a code by the parser, not written by a human
+        op = parse_numeric_value(c.args[0], 10);
+        expected = parse_numeric_value(c.args[1]);
+    } catch (const std::exception &ex) {
+        log_error(c, std::string("WAITFOR: ") + ex.what());
         return true;
     }
-
-    //The operator is stored as a code by the parser, not written by a human
-    unsigned int op = parse_numeric_value(c.args[0], 10);
-    unsigned int expected = parse_numeric_value(c.args[1]);
     unsigned int actual = v.values[0];
 
     bool matched = false;

@@ -805,6 +805,10 @@ emulator::Result UKNCHDD::load_state(const StateReader &r)
     r.u("curhead", m_curhead);
     r.u("curheadreg", m_curheadreg);
     r.u("bufferoffset", m_bufferoffset);
+    //Обмен идет словами, и смещение - индекс в буфере сектора: нечетное или
+    //лежащее за ним вывело бы memcpy за буфер
+    m_bufferoffset &= ~1u;
+    if (m_bufferoffset > SECTOR_SIZE - 2) m_bufferoffset = 0;
     r.hex("buffer", m_buffer, sizeof(m_buffer));
     r.u("event", m_event);
     r.n64("timeout", m_timeout);

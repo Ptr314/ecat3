@@ -49,24 +49,30 @@ static const uint8_t MOS6502_TIMES[256] = {
                        2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7
                     };
 
-//TODO: fill values
+//The 65C02 (WDC 65C02S datasheet): no 8-cycle undocumented opcodes - the
+//unused codes are NOPs of one to eight cycles - (zp) addressing, the bit
+//instructions (RMB/SMB 5, BBR/BBS 5), PHX/PHY 3, PLX/PLY 4, JMP (abs,X) 6,
+//and DEC/INC abs,X fixed at 7. Branches, BRA included, add the taken and the
+//page crossing cycles in code, as reads crossing a page do. Not modelled:
+//the extra cycle of ADC/SBC in decimal mode, and of ASL/LSR/ROL/ROR abs,X
+//crossing a page
 static const uint8_t WDC65c02_TIMES[256] = {
-                        7,6,2,8,3,3,5,5,3,2,2,2,4,4,6,6,
-                        2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
-                        6,6,2,8,3,3,5,5,4,2,2,2,4,4,6,6,
-                        2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
-                        6,6,2,8,3,3,5,5,3,2,2,2,3,4,6,6,
-                        2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
-                        6,6,2,8,3,3,5,5,4,2,2,2,5,4,6,6,
-                        2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
-                        2,6,2,6,3,3,3,3,2,2,2,2,4,4,4,4,
-                        2,6,2,6,4,4,4,4,2,5,2,5,5,5,5,5,
-                        2,6,2,6,3,3,3,3,2,2,2,2,4,4,4,4,
-                        2,5,2,5,4,4,4,4,2,4,2,5,4,4,4,4,
-                        2,6,2,8,3,3,5,5,2,2,2,2,4,4,6,6,
-                        2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
-                        2,6,2,8,3,3,5,5,2,2,2,2,4,4,6,6,
-                        2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7
+                        7,6,2,1,5,3,5,5,3,2,2,1,6,4,6,5,
+                        2,5,5,1,5,4,6,5,2,4,2,1,6,4,6,5,
+                        6,6,2,1,3,3,5,5,4,2,2,1,4,4,6,5,
+                        2,5,5,1,4,4,6,5,2,4,2,1,4,4,6,5,
+                        6,6,2,1,3,3,5,5,3,2,2,1,3,4,6,5,
+                        2,5,5,1,4,4,6,5,2,4,3,1,8,4,6,5,
+                        6,6,2,1,3,3,5,5,4,2,2,1,6,4,6,5,
+                        2,5,5,1,4,4,6,5,2,4,4,1,6,4,6,5,
+                        2,6,2,1,3,3,3,5,2,2,2,1,4,4,4,5,
+                        2,6,5,1,4,4,4,5,2,5,2,1,4,5,5,5,
+                        2,6,2,1,3,3,3,5,2,2,2,1,4,4,4,5,
+                        2,5,5,1,4,4,4,5,2,4,2,1,4,4,4,5,
+                        2,6,2,1,3,3,5,5,2,2,2,3,4,4,6,5,
+                        2,5,5,1,4,4,6,5,2,4,3,3,4,4,7,5,
+                        2,6,2,1,3,3,5,5,2,2,2,1,4,4,6,5,
+                        2,5,5,1,4,4,6,5,2,4,4,1,4,4,7,5
 };
 
 static const uint8_t ZERO_SIGN[256] = {
@@ -839,6 +845,12 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int & cycles)
         //abs, x
         T.b.L = next_byte();
         T.b.H = next_byte();
+        //The one exception on the 65C02: ASL, ROL, LSR and ROR abs,X take
+        //a cycle more when the index crosses a page (6 or 7), where the
+        //NMOS part always takes 7 - the table has 6 for them
+        if (context.type == MOS_6502_FAMILY_65C02 && (command & 0x9F) == 0x1E
+            && ((T.w ^ static_cast<uint16_t>(T.w + REG_X)) & 0xFF00) != 0)
+            cycles++;
         T.w += REG_X;
         result = T.w;
         break;
@@ -896,9 +908,14 @@ inline void mos6502core::doADC(uint8_t v)
     }
 }
 
+//The 65C02 spends one more cycle on ADC and SBC in decimal mode, the price
+//of its valid N, Z and V there; the NMOS part does not
+#define C02_DECIMAL_CYCLE if (context.type == MOS_6502_FAMILY_65C02 && FLAG_D != 0) cycles++
+
 void mos6502core::_ADC(uint8_t command, unsigned int & cycles)
 {
     doADC(get_operand(command, cycles));
+    C02_DECIMAL_CYCLE;
 }
 
 inline void mos6502core::doAND(uint8_t v)
@@ -1353,6 +1370,7 @@ inline void mos6502core::doSBC(uint8_t v)
 void mos6502core::_SBC(uint8_t command, unsigned int & cycles)
 {
     doSBC(get_operand(command, cycles));
+    C02_DECIMAL_CYCLE;
 }
 
 void mos6502core::_SEC(uint8_t command, unsigned int & cycles)
@@ -1442,32 +1460,46 @@ void mos6502core::__ANE(uint8_t command, unsigned int & cycles)
     calc_flags(REG_A, F_NZ);
 }
 
+//The undocumented NMOS opcodes, after "No More Secrets" (NMOS 6510 Unintended
+//Opcodes) and the way VICE implements them. Klaus Dormann's functional test
+//runs without them, so nothing in the tree checked any of these
+
+//AND #imm, then C is a copy of N: the accumulator itself is not shifted.
+//0B and 2B are the same instruction
 void mos6502core::__ANC(uint8_t command, unsigned int & cycles)
 {
-    __ANE(0x8B, cycles);
-    _ASL(0x0A, cycles);
+    REG_A &= next_byte();
+    calc_flags(REG_A, F_NZ);
+    set_flag(F_C, (REG_A & 0x80) ? F_C : 0);
 }
 
 void mos6502core::__ANC2(uint8_t command, unsigned int & cycles)
 {
-    __ANE(0x8B, cycles);
-    _ROL(0x2A, cycles);
+    __ANC(command, cycles);
 }
 
+//AND #imm, then ROR A - with flags of its own, and a decimal mode of its own.
+//It used to read its operand twice, which made it three bytes long
 void mos6502core::__ARR(uint8_t command, unsigned int & cycles)
 {
-    PartsRecLE T, D;
-    T.w = get_operand(command, cycles);
-    if (FLAG_D == 0) {
-        // Binary mode
-        __ANE(0x8B, cycles);
-        _ROR(0x6A, cycles);
-        set_flag(F_N + F_V, REG_A);
-        calc_flags(REG_A, F_Z);
-        set_flag(F_C, ((REG_A  >> 1) ^ REG_A) >> 5);
+    const uint8_t t = REG_A & next_byte();
+    const uint8_t carry_in = FLAG_C ? 1 : 0;
+    REG_A = static_cast<uint8_t>((t >> 1) | (carry_in << 7));
+    if (FLAG_D == 0 || context.type != MOS_6502_FAMILY_BASIC) {
+        calc_flags(REG_A, F_NZ);
+        set_flag(F_C, (REG_A & 0x40) ? F_C : 0);
+        set_flag(F_V, (((REG_A >> 6) ^ (REG_A >> 5)) & 1) ? F_V : 0);
     } else {
-        // BCD mode
-        //TODO: 6502 BCD ADC
+        set_flag(F_N, carry_in ? F_N : 0);
+        set_flag(F_Z, (REG_A == 0) ? F_Z : 0);
+        set_flag(F_V, ((t ^ REG_A) & 0x40) ? F_V : 0);
+        const unsigned lo = t & 0x0F, hi = t >> 4;
+        if (lo + (lo & 1) > 5) REG_A = static_cast<uint8_t>((REG_A & 0xF0) | ((REG_A + 6) & 0x0F));
+        if (hi + (hi & 1) > 5) {
+            REG_A = static_cast<uint8_t>(REG_A + 0x60);
+            set_flag(F_C, F_C);
+        } else
+            set_flag(F_C, 0);
     }
 }
 
@@ -1477,38 +1509,23 @@ void mos6502core::__ASR(uint8_t command, unsigned int & cycles)
     _LSR(0x4A, cycles);
 }
 
+//DEC memory, then CMP with the decremented value (it compared with the address)
 void mos6502core::__DCP(uint8_t command, unsigned int & cycles)
 {
-    //DEC
-    PartsRecLE T, D, S;
-    T.w = get_address(command, cycles);
-    D.w = read_mem(T.w);
-    write_mem(T.w, D.b.L - 1);
-
-    //CMP
-    S.w = static_cast<uint16_t>(REG_A) - T.w;
-    calc_flags(S.w, F_NZC);
+    const uint16_t address = get_address(command, cycles);
+    const uint8_t v = static_cast<uint8_t>(read_mem(address) - 1);
+    write_mem(address, v);
+    doCMP(v);
 }
 
+//INC memory, then SBC with the incremented value - borrow, overflow and the
+//decimal mode exactly as SBC has them
 void mos6502core::__ISB(uint8_t command, unsigned int & cycles)
 {
-    PartsRecLE T, D, S;
-    //INC
-    T.w = get_address(command, cycles);
-    D.w = read_mem(T.w);
-    write_mem(T.w, D.b.L + 1);
-
-    //SBC
-    if (FLAG_D == 0) {
-        // Binary mode
-        S.w = REG_A - D.b.L - FLAG_C;
-        calc_flags(S.w, F_NZC);
-        set_flag(F_V, (REG_A ^ D.b.L ^ S.b.L) >> 1);
-        REG_A = S.b.L;
-    } else {
-        // BCD mode
-        //TODO: 6502 BCD ADC
-    }
+    const uint16_t address = get_address(command, cycles);
+    const uint8_t v = static_cast<uint8_t>(read_mem(address) + 1);
+    write_mem(address, v);
+    doSBC(v);
 }
 
 void mos6502core::__LAS(uint8_t command, unsigned int & cycles)
@@ -1552,40 +1569,28 @@ void mos6502core::__LXA(uint8_t command, unsigned int & cycles)
     calc_flags(REG_A, F_NZ);
 }
 
+//ROL memory, then AND with the rotated value (it took the value before the
+//rotation)
 void mos6502core::__RLA(uint8_t command, unsigned int & cycles)
 {
-    PartsRecLE T, D, S;
-    // ROL mem
-    T.w = get_address(command, cycles);
-    D.w = read_mem(T.w);
-    S.w = (D.w << 1) | FLAG_C;
-    set_flag(F_C, S.b.H);
-    calc_flags(S.b.L, F_NZ);
-    write_mem(T.w, S.b.L);
-
-    //AND mem
-    REG_A &= D.b.L;
+    const uint16_t address = get_address(command, cycles);
+    const uint8_t v = read_mem(address);
+    const uint8_t r = static_cast<uint8_t>((v << 1) | (FLAG_C ? 1 : 0));
+    set_flag(F_C, (v & 0x80) ? F_C : 0);
+    write_mem(address, r);
+    REG_A &= r;
     calc_flags(REG_A, F_NZ);
 }
 
+//ROR memory, then ADC with the rotated value and the carry the rotation left
 void mos6502core::__RRA(uint8_t command, unsigned int & cycles)
 {
-    PartsRecLE T, D, S;
-    //ROR mem
-    T.w = get_address(command, cycles);
-    D.w = read_mem(T.w);
-    S.b.H = FLAG_C;
-    S.b.L = D.b.L;
-    set_flag(F_C, S.b.L);
-    S.b.L = (S.w >> 1) & 0xFF;
-    calc_flags(S.b.L, F_NZ);
-    write_mem(T.w, S.b.L);
-
-    //ADC mem
-    S.w = REG_A + D.w + FLAG_C;                 //TODO: check which C should be here
-    calc_flags(S.w, F_NZC);
-    set_flag(F_V, (REG_A ^ D.b.L ^ S.b.L) >> 1);
-    REG_A = S.b.L;
+    const uint16_t address = get_address(command, cycles);
+    const uint8_t v = read_mem(address);
+    const uint8_t r = static_cast<uint8_t>((v >> 1) | (FLAG_C ? 0x80 : 0));
+    set_flag(F_C, (v & 0x01) ? F_C : 0);
+    write_mem(address, r);
+    doADC(r);
 }
 
 void mos6502core::__SAX(uint8_t command, unsigned int & cycles)
@@ -1603,24 +1608,21 @@ void mos6502core::__SAX(uint8_t command, unsigned int & cycles)
     write_mem(A.w, REG_A & REG_X);
 }
 
+//EB is SBC #imm and nothing else: the flags came from A before the
+//subtraction, the borrow was inverted and the decimal mode ignored
 void mos6502core::__SBC(uint8_t command, unsigned int & cycles)
 {
-    PartsRecLE T, D;
-    T.w = next_byte();
-    D.w = REG_A - T.b.L - FLAG_C;
-    calc_flags(REG_A, F_NZC);
-    set_flag(F_V, (REG_A ^ T.b.L ^ D.b.L) >> 1);
-    REG_A = D.b.L;
+    doSBC(next_byte());
 }
 
 
+//X = (A AND X) - imm, flags as CMP has them: C set when nothing was borrowed
 void mos6502core::__SBX(uint8_t command, unsigned int & cycles)
 {
-    PartsRecLE D;
-    uint8_t v = next_byte();
-    D.w = (REG_A & REG_X) - v;
-    REG_X = D.b.L;
-    calc_flags(D.w, F_NZC);
+    const uint8_t v = next_byte();
+    const unsigned int r = static_cast<unsigned int>(REG_A & REG_X) + 0x100 - v;
+    REG_X = static_cast<uint8_t>(r);
+    calc_flags(r, F_NZC);
 }
 
 void mos6502core::__SHA(uint8_t command, unsigned int & cycles)
@@ -1664,40 +1666,48 @@ void mos6502core::__SHY(uint8_t command, unsigned int & cycles)
     write_mem(A.w, REG_Y & (A.b.H + 1)); //TODO: check the right index register
 }
 
+//ASL memory, then ORA with the shifted value (it took the value before the
+//shift)
 void mos6502core::__SLO(uint8_t command, unsigned int & cycles)
 {
-    PartsRecLE T, D, S;
-    // ASL mem
-    T.w = get_address(command, cycles);
-    D.w = read_mem(T.w);
-    S.w = D.w << 1;
-    calc_flags(S.w, F_NZC);
-    write_mem(T.w, S.b.L);
-
-    //ORA
-    REG_A |= D.b.L;
+    const uint16_t address = get_address(command, cycles);
+    const uint8_t v = read_mem(address);
+    const uint8_t r = static_cast<uint8_t>(v << 1);
+    set_flag(F_C, (v & 0x80) ? F_C : 0);
+    write_mem(address, r);
+    REG_A |= r;
     calc_flags(REG_A, F_NZ);
 }
 
+//LSR memory, then EOR with the shifted value
 void mos6502core::__SRE(uint8_t command, unsigned int & cycles)
 {
-    PartsRecLE T, D, S;
-    //LSR mem
-    T.w = get_address(command, cycles);
-    D.b.L = read_mem(T.w);
-    set_flag(F_C, D.b.L);
-    S.b.L = D.b.L >> 1;
-    calc_flags(S.b.L, F_NZ);
-    write_mem(T.w, S.b.L);
-
-    //XOR
-    REG_A ^= D.b.L;
+    const uint16_t address = get_address(command, cycles);
+    const uint8_t v = read_mem(address);
+    const uint8_t r = static_cast<uint8_t>(v >> 1);
+    set_flag(F_C, (v & 0x01) ? F_C : 0);
+    write_mem(address, r);
+    REG_A ^= r;
     calc_flags(REG_A, F_NZ);
 }
 
+//The mode cannot be taken from the opcode bits for all of them: 1A, 3A, 5A,
+//7A, DA and FA are one byte long, and those bits call them abs,Y - they ate
+//the next two bytes. 80, 82, C2 and E2 take an immediate byte and read
+//nothing, where the bits say (zp,X). The rest decode like any other opcode
 void mos6502core::__NOP(uint8_t command, unsigned int & cycles)
 {
-    get_operand(command, cycles);
+    switch (command & 0x1F) {
+        case 0x1A:
+            return;
+        case 0x00:
+        case 0x02:
+            next_byte();
+            return;
+        default:
+            get_operand(command, cycles);
+            return;
+    }
 }
 
 void mos6502core::__KILL(uint8_t command, unsigned int & cycles)
@@ -1779,6 +1789,7 @@ void mos6502core::_ADCc02(uint8_t command, unsigned int & cycles)
 {
     // 65c02 ADC (zp)
     doADC(read_mem(get_address_zp(cycles)));
+    C02_DECIMAL_CYCLE;
 }
 
 void mos6502core::_ANDc02(uint8_t command, unsigned int & cycles)
@@ -1829,6 +1840,7 @@ void mos6502core::_SBCc02(uint8_t command, unsigned int & cycles)
 {
     // 65c02 SBC (zp)
     doSBC(read_mem(get_address_zp(cycles)));
+    C02_DECIMAL_CYCLE;
 }
 
 void mos6502core::_STAc02(uint8_t command, unsigned int & cycles)
@@ -1839,7 +1851,11 @@ void mos6502core::_STAc02(uint8_t command, unsigned int & cycles)
 
 void mos6502core::_BRA(uint8_t command, unsigned int & cycles)
 {
-    REG_PC += static_cast<int8_t>(next_byte());
+    //Always taken, so always the extra cycle of a taken branch, and one more
+    //when the target is on another page - as _BRANCH counts them
+    const int8_t offset = static_cast<int8_t>(next_byte());
+    REG_PC = calc_address(REG_PC, static_cast<int16_t>(offset), cycles);
+    cycles++;
 }
 
 void mos6502core::_PHX(uint8_t command, unsigned int & cycles)
@@ -1989,9 +2005,16 @@ unsigned int mos6502core::execute()
         context.wait = false;
         _IRQ(0, cycles);
     } else {
-        if (context.wait) return 5;
+        //WAI ends on an interrupt request whether or not I lets it be taken:
+        //with I set the 65C02 simply goes on with the next instruction, and
+        //SEI / WAI is the documented way to wait for a device without an
+        //interrupt handler. It used to wait for good
+        if (context.wait) {
+            if (!context.is_irq) return 5;
+            context.wait = false;
+        }
         uint8_t command = next_byte();
-        cycles += MOS6502_TIMES[command];
+        cycles += (context.type == MOS_6502_FAMILY_65C02) ? WDC65c02_TIMES[command] : MOS6502_TIMES[command];
         (this->*(commands[command]))(command, cycles);
     }
     return cycles;

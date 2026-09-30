@@ -14,9 +14,50 @@
 #include <QLocale>
 #include <QTranslator>
 
+#include <QMessageBox>
+
 #if defined(RENDERER_SDL2) || defined(USE_SDL_AUDIO)
     #include <SDL.h>
 #endif
+
+//The core reports through Result, but it still throws in places - a device
+//looked up by a name the configuration does not have, a std::stoi on a value
+//typed by hand - and an exception leaving a slot ends the process without a
+//word. Caught here it becomes a message. Qt does not promise a consistent
+//state after an exception has passed through its frames, so this is the last
+//line, not a way of handling errors: the known throwers are fixed where they
+//are, and what lands here is a bug to report
+class EcatApplication : public QApplication
+{
+public:
+    EcatApplication(int &argc, char **argv) : QApplication(argc, argv) {}
+
+    bool notify(QObject * receiver, QEvent * event) override
+    {
+        try {
+            return QApplication::notify(receiver, event);
+        } catch (const std::exception &ex) {
+            report(ex.what());
+        } catch (...) {
+            report("unknown exception");
+        }
+        return false;
+    }
+
+private:
+    bool m_reporting = false;
+
+    void report(const char * what)
+    {
+        std::cerr << "Unhandled exception: " << what << std::endl;
+        //A timer that throws on every tick must not pile up message boxes
+        if (m_reporting) return;
+        m_reporting = true;
+        QMessageBox::critical(nullptr, "eCat3",
+            QCoreApplication::translate("main", "Internal error, the program may be unstable:") + "\n" + what);
+        m_reporting = false;
+    }
+};
 
 int main(int argc, char *argv[])
 {
@@ -29,7 +70,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
 
-    QApplication a(argc, argv);
+    EcatApplication a(argc, argv);
 
     QCoreApplication::setApplicationName("eCat3");
     QCoreApplication::setApplicationVersion(PROJECT_VERSION);

@@ -71,7 +71,7 @@ uint16_t DisAsmArea::area_crc16()
     uint16_t CRC = 0;
     for (unsigned int a = address_first; a < address_last + lines[lines_count-1].len; a++)
     {
-        uint8_t b = cpu->read_mem(a);
+        uint8_t b = cpu->peek_mem(a);
         CRC16_update(&CRC, &b, 1);
     }
 
@@ -161,10 +161,14 @@ void DisAsmArea::disassemble_lines(int index, int count, unsigned int address)
     } else
         a = lines[lines_count-1].address + lines[lines_count-1].len;
 
+    //The buffer is a fixed array, and every PageDown used to add to it
+    if (index + count > DISASM_SIZE) count = DISASM_SIZE - index;
+    if (count < 0) count = 0;
+
     for (unsigned int i = index; i < index+count; i++)
     {
         for (unsigned int j = 0; j < disasm->max_command_length; j++)
-            buffer[j] = cpu->read_mem(a+j);
+            buffer[j] = cpu->peek_mem(a+j);
         std::string s;
         unsigned int c = disasm->disassemle(&buffer, a, disasm->max_command_length, &s);
         lines[i].address = a;
@@ -290,7 +294,13 @@ void DisAsmArea::move_cursor(int increment)
         {
             //We need to extend our buffer
             int lines_to_add = first_line + screen_size + increment - lines_count;
-            disassemble_lines(lines_count, lines_to_add);
+            if (lines_count + lines_to_add > DISASM_SIZE)
+            {
+                //No room left: start the buffer again from the top of the screen
+                disassemble_lines(0, screen_size + increment, lines[first_line].address);
+                first_line = 0;
+            } else
+                disassemble_lines(lines_count, lines_to_add);
         }
         first_line += increment;
     } else

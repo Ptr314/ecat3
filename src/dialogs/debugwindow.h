@@ -85,6 +85,10 @@ private:
 
     void update_registers();
 
+    void set_debug(unsigned int mode);
+    void add_breakpoint(unsigned int address);
+    void remove_breakpoint(unsigned int address);
+
     void resizeEvent(QResizeEvent*) override;
 };
 

@@ -6,6 +6,8 @@
 #include "mmwindow.h"
 #include "ui_mmwindow.h"
 
+#include <QMessageBox>
+
 #include "emulator/utils.h"
 #include "emulator/emulator.h"
 
@@ -36,8 +38,14 @@ void MemoryMapperWindow::on_pushButton_clicked()
 
 void MemoryMapperWindow::on_process_button_clicked()
 {
-    unsigned int cfg = parse_numeric_value(("$" + ui->config_edit->text()).toStdString());
-    unsigned int address = parse_numeric_value(("$" + ui->address_edit->text()).toStdString());
+    unsigned int cfg, address;
+    try {
+        cfg = parse_numeric_value(("$" + ui->config_edit->text()).toStdString());
+        address = parse_numeric_value(("$" + ui->address_edit->text()).toStdString());
+    } catch (const std::exception &) {
+        QMessageBox::critical(this, MemoryMapperWindow::tr("Error"), MemoryMapperWindow::tr("Incorrect address value"));
+        return;
+    }
     // qDebug() << cfg << address;
     unsigned int address_on_device, range_index;
 
@@ -49,7 +57,12 @@ void MemoryMapperWindow::on_process_button_clicked()
                                                                   &range_index
                                                                 );
 
-    unsigned int value = d->get_value(address_on_device);
+    //Nothing answers there. And no get_value(): the window looks, it does not
+    //read - a read strobes a port or clears a register
+    if (d == nullptr) {
+        ui->device_name->setText(MemoryMapperWindow::tr("No device"));
+        return;
+    }
     QString s = QString::fromStdString(d->name + " " + d->type);
     ui->device_name->setText(s);
 

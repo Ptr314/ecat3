@@ -51,15 +51,29 @@ void mos6502::reset(bool cold)
     CPU::reset(cold);
 }
 
+//The address line is driven for the few configurations that wire something
+//to it (the Агат-7 ROM card mapper takes A12-A13). A change of it cascades to
+//every consumer and its callbacks, and it came on every memory access - three
+//per instruction - whether or not the wired bits had moved, which they mostly
+//have not. Only then is it driven; otherwise the value is simply kept, as the
+//consumers would see nothing different anyway
+inline void mos6502::drive_address(unsigned int address)
+{
+    if (((address ^ i_address.value) & i_address.linked_bits) != 0)
+        i_address.change(address);
+    else
+        i_address.value = address;
+}
+
 unsigned int mos6502::read_mem(unsigned int address)
 {
-    i_address.change(address);
+    drive_address(address);
     return mm->read(address);
 }
 
 void mos6502::write_mem(unsigned int address, unsigned int data)
 {
-    i_address.change(address);
+    drive_address(address);
     mm->write(address, data);
 }
 
@@ -130,7 +144,8 @@ std::vector<std::pair<std::string, std::string>> mos6502::get_flags()
 
 unsigned int mos6502::get_command()
 {
-    return core->get_command();
+    //Asked by the debugger and by LOG cpu.command, not by the processor
+    return peek_mem(get_pc());
 }
 
 unsigned int mos6502::get_pc()

@@ -75,6 +75,18 @@ inline uint64_t compat_now_ms()
     return static_cast<uint64_t>(timer.elapsed());
 }
 
+typedef Qt::HANDLE compat_thread_id;
+
+inline compat_thread_id compat_this_thread_id()
+{
+    return QThread::currentThreadId();
+}
+
+inline void compat_yield()
+{
+    QThread::yieldCurrentThread();
+}
+
 #else // USE_QT_THREADING == 0
 
 #include <thread>
@@ -92,6 +104,18 @@ inline uint64_t compat_now_ms()
 {
     return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count());
+}
+
+typedef std::thread::id compat_thread_id;
+
+inline compat_thread_id compat_this_thread_id()
+{
+    return std::this_thread::get_id();
+}
+
+inline void compat_yield()
+{
+    std::this_thread::yield();
 }
 
 #endif

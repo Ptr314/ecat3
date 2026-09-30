@@ -58,6 +58,7 @@ public:
     emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;
     void system_clock(unsigned int counter) override;
+    bool own_system_clock() const override { return true; }
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
     const char * plug_title() const override;

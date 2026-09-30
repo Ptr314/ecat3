@@ -22,6 +22,14 @@ private:
     Port * port_mode{};
     Port * port_color{};
     Port * port_page{};
+
+    //The three ports tell about a write through these (follow_port); polled
+    //on every instruction only when they cannot
+    Interface i_mode_data;
+    Interface i_color_data;
+    Interface i_page_data;
+    bool m_poll_ports = false;
+    void apply_ports();
     RAM * vram{};
 
 
@@ -38,6 +46,8 @@ public:
     void set_renderer(VideoRenderer &vr) override;
 
     void clock(unsigned int counter) override;
+    void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+    void state_restored() override;
     emulator::Result load_config(SystemData *sd) override;
 
     void memory_callback(unsigned int callback_id, unsigned int address) override;

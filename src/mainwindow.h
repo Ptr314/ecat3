@@ -188,6 +188,7 @@ private:
     //Set from the command line, see main.cpp
     QString cmdline_config;
     bool startup_load = false;          //The machine of the command line is being loaded
+    bool cmdline_starting = false;      //The machine of a command line script is being loaded
     QString script_file;
 
     QString resolve_startup_path(const QString &file_name) const;

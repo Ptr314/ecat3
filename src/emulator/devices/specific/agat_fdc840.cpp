@@ -208,7 +208,7 @@ unsigned int Agat_FDC840::get_value(unsigned int address)
             value = dd14.get_value(A & 0x03);
             break;
         case 0x4:
-            if (drives[selected_drive]->get_loaded() && motor_on) {
+            if (selected_drive < drives_count && drives[selected_drive]->get_loaded() && motor_on) {
                 // if (data_ready) {
                     value = dd15.get_value(A & 0x03);
                 // } else {
@@ -317,6 +317,8 @@ emulator::Result Agat_FDC840::load_state(const StateReader &r)
     r.u("track0", current_track[0]);
     r.u("track1", current_track[1]);
     r.u("selected_drive", selected_drive);
+    //It indexes drives[] and current_track[], and the file is not trusted
+    selected_drive &= 1;
     r.b("motor_on", motor_on);
     r.b("write_mode", write_mode);
     r.u("step_dir", step_dir);

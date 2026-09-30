@@ -16,6 +16,12 @@ private:
 
     Port * port_mode;
     Port * port_frame;
+
+    //The ports call back on a write (follow_port); polled only when they cannot
+    Interface i_mode_data;
+    Interface i_frame_data;
+    bool m_poll_ports = false;
+    void apply_ports();
     RAM * page_main;
     RAM * page_color;
 
@@ -35,6 +41,8 @@ public:
     O128Display(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     virtual void clock(unsigned int counter) override;
+    void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+    void state_restored() override;
     virtual emulator::Result load_config(SystemData *sd) override;
     void set_renderer(VideoRenderer &vr) override;
 

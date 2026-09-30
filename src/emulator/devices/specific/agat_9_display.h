@@ -97,6 +97,9 @@ protected:
     Interface i_50hz;
     Interface i_500hz;
     Interface i_ints_en;
+    //The mode port calls back on a write (follow_port); polled only when it cannot
+    Interface i_mode_data;
+    bool m_poll_mode = false;
 
     unsigned m_irq_val;
     unsigned m_nmi_val;
@@ -128,6 +131,11 @@ protected:
     //Cache of the programmable palette, rebuilt on a write to it
     mutable uint32_t Agat_RGBA16_palcard[16];
     mutable bool m_pal_dirty = true;
+    //The palette card's switches as they are for the line being drawn: read
+    //once per line, not once per pixel (a virtual get_direct() on each of
+    //512x256 dots) or per character
+    unsigned m_line_pal = 0;
+    bool m_line_pal_font = false;
     uint32_t Agat_RGBA16_palcard_std[8][16];
 
 
@@ -147,6 +155,7 @@ public:
     void clock(unsigned int counter) override;
     emulator::Result load_config(SystemData *sd) override;
     void interface_callback(unsigned callback_id, unsigned new_value, unsigned old_value) override;
+    void state_restored() override;
 
     DeviceOptions get_device_options() override;
     void set_device_option(unsigned option_id, unsigned value_id) override;

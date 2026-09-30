@@ -21,6 +21,7 @@
 // #include <QOverload>
 #include <QMessageBox>
 #include <cstdlib>
+#include <iostream>
 #include <QCursor>
 #include <QMouseEvent>
 #include <QStatusBar>
@@ -406,7 +407,9 @@ void MainWindow::showEvent(QShowEvent* event)
         }
 
         startup_load = !cmdline_config.isEmpty();
+        cmdline_starting = !script_file.isEmpty();
         load_config(first_config, false, script_file.isEmpty());
+        cmdline_starting = false;
         startup_load = false;
         CreateScreenMenu();
 
@@ -906,7 +909,8 @@ void MainWindow::UpdateToolbar()
                 connect(combo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                     [this, combo, dev, option_id, config_key, device_name](int index) {
                         unsigned value_id = combo->itemData(index).toUInt();
-                        dev->set_device_option(option_id, value_id);
+                        //A connector plugs and unplugs devices here, lines and all
+                        e->invoke([&]() { dev->set_device_option(option_id, value_id); });
                         std::string key = config_key.toStdString() + "_" + device_name + "_" + std::to_string(option_id);
                         e->write_setup("DeviceOptions", key, std::to_string(value_id));
                         e->record_command(device_name, "option", std::to_string(option_id) + "," + std::to_string(value_id));
@@ -1200,6 +1204,7 @@ void MainWindow::paintEvent(QPaintEvent * event)
 
 void MainWindow::on_action_Cold_restart_triggered()
 {
+    if (!e->loaded) return;
     e->reset(true);
     e->record_verb(SCRIPT_CMD_RESET, std::vector<std::string>(1, "cold"));
 }
@@ -1207,6 +1212,7 @@ void MainWindow::on_action_Cold_restart_triggered()
 
 void MainWindow::on_action_Soft_restart_triggered()
 {
+    if (!e->loaded) return;
     e->reset(false);
     e->record_verb(SCRIPT_CMD_RESET, std::vector<std::string>(1, "soft"));
 }
@@ -1225,10 +1231,12 @@ void MainWindow::on_actionCPUState_triggered()
     //at the first channel handshake anyway. The master decides which way the
     //button goes, and all of them follow it
     const bool run = (cpus[0]->m_debug == DEBUG_STOPPED);
-    for (size_t i = 0; i < cpus.size(); i++) {
-        cpus[i]->m_debug = run? DEBUG_OFF : DEBUG_STOPPED;
+    e->invoke([&]() {
+        for (size_t i = 0; i < cpus.size(); i++)
+            cpus[i]->m_debug = run? DEBUG_OFF : DEBUG_STOPPED;
+    });
+    for (size_t i = 0; i < cpus.size(); i++)
         e->record_command(cpus[i]->name, run? "run" : "stop", "");
-    }
     update_cpu_state_action();
 }
 
@@ -1310,16 +1318,34 @@ void MainWindow::load_config(QString file_name, bool set_default, bool run_embed
             if (qobject_cast<KeyboardWindow*>(w) != nullptr) continue;
 #endif
             w->close();
+            //At once, as in closeEvent(): a deferred delete waits for the event
+            //loop, and the box that reports a machine which failed to load is
+            //one - under it the CPU window kept polling a deleted processor
+            delete w;
         }
     }
 
     emulator::Result res = e->load_config(file_name.toStdString());
     if (!res) {
+        //The machine that was running is gone and nothing took its place: the
+        //drive buttons, the option boxes and the device menu still held its
+        //devices. Rebuilt for a machine without devices, they are simply empty
+        CreateDevicesMenu();
+        UpdateToolbar();
 #ifdef ENABLE_MCP
         //A modal box here would block the GUI thread that the MCP client is
         //waiting on, so the error is reported through the protocol instead
         if (mcp_mode) { mcp_load_error = translateResultMessage(res.message); return; }
 #endif
+        //Nobody is there to dismiss a box under a command line script: the run
+        //waited for it until the runner killed it. It says why and ends
+        if (cmdline_starting || rec_cmdline) {
+            std::cerr << "Unable to load the machine: " << strip_message_context(res.message) << std::endl;
+            rec_timer->stop();
+            rec_exit_code = 2;
+            QTimer::singleShot(0, this, &QWidget::close);
+            return;
+        }
         QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
         return;
     }
@@ -1552,8 +1578,15 @@ void MainWindow::closeEvent (QCloseEvent *event)
     // Close all debug windows before destroying the emulator,
     // so their closeEvent handlers can safely access devices
     QList<GenericDbgWnd*> dbgWindows = findChildren<GenericDbgWnd*>();
-    for (auto *w : dbgWindows)
+    for (auto *w : dbgWindows) {
         w->close();
+        //Deleted here, not left to WA_DeleteOnClose: that is a deferred delete,
+        //and until the event loop gets to it the window is only hidden - its
+        //timers still fire (the CPU window polls every 200 ms, the keyboard
+        //every 40) and it still hears the loss of activation, all of it
+        //through pointers to the emulator and its devices deleted just below
+        delete w;
+    }
 
     e->stop_emulation();
     // Under MCP the emulator is left alive, stopped, until the process ends
@@ -1594,7 +1627,9 @@ void MainWindow::fdd_open(unsigned int n)
             QFileInfo fi(file_name);
             fdd_menu[n]->actions().at(0)->setText(fi.fileName());
             fdd_button[n]->setIcon(QIcon(":/icons/floppy_mount"));
-            emulator::Result res = fdds[n]->load_image(file_name.toStdString());
+            //The controller may be in the middle of a sector of the old disk
+            emulator::Result res = emulator::Result::ok();
+            e->invoke([&]() { res = fdds[n]->load_image(file_name.toStdString()); });
             if (!res) {
                 QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
             } else {
@@ -1610,13 +1645,13 @@ void MainWindow::fdd_eject(unsigned int n)
 {
     fdd_menu[n]->actions().at(0)->setText(MainWindow::tr("<Not loaded>"));
     fdd_button[n]->setIcon(QIcon(":/icons/floppy_unmount"));
-    fdds[n]->unload();
+    e->invoke([&]() { fdds[n]->unload(); });
     e->record_command(fdds[n]->name, "eject", "");
 }
 
 void MainWindow::fdd_wp(unsigned int n)
 {
-    fdds[n]->change_protection();
+    e->invoke([&]() { fdds[n]->change_protection(); });
     e->record_command(fdds[n]->name, "protect", fdds[n]->is_protected()?"1":"0");
     if (fdds[n]->get_loaded()) {
         if (fdds[n]->is_protected()) {
@@ -1711,16 +1746,17 @@ void MainWindow::fdd_write(unsigned int n)
             }
 
             emulator::Result save_res;
+            //Written between two instructions, not while a sector is going in
             if (reply == QMessageBox::Yes)
             {
-                save_res = fdds[n]->save_image(std_file_name);
+                e->invoke([&]() { save_res = fdds[n]->save_image(std_file_name); });
             } else
             if (reply == QMessageBox::No)
             {
                 QString backup_name = file_name + ".bak";
                 bool result = QFile::rename(file_name, backup_name);
                 if (result)
-                    save_res = fdds[n]->save_image(std_file_name);
+                    e->invoke([&]() { save_res = fdds[n]->save_image(std_file_name); });
                 else
                     QMessageBox::critical(this, MainWindow::tr("Backup error"), MainWindow::tr("Error creating a backup. Probably *.bak already exists."));
             }
@@ -1883,7 +1919,12 @@ void MainWindow::on_actionTape_triggered()
         return;
     }
 
-    TapeRecorder * tape = dynamic_cast<TapeRecorder*>(e->dm->get_device_by_name("tape"));
+    //By class, the way the tool bar button is put up: the menu item is there
+    //for every machine, and most of them have no device named "tape" - looked
+    //up by that name, its absence was an exception leaving the slot
+    if (!e->loaded) return;
+    std::vector<ComputerDevice*> tape_devices = e->dm->find_devices_by_class("tape");
+    TapeRecorder * tape = tape_devices.empty() ? nullptr : dynamic_cast<TapeRecorder*>(tape_devices[0]);
     if (tape == nullptr) return;
 
     w = new TapeRecorderWindow(this, e, tape);
@@ -2034,6 +2075,37 @@ void MainWindow::rec_sync_option_combos(size_t from, size_t to)
 
 void MainWindow::rec_tick()
 {
+    //The machine stopped by itself. The core keeps the reason and tells no
+    //one; before, the window simply froze, and a command line script waited
+    //for its EXIT until the runner gave up
+    bool fatal = false;
+    const std::string why = e->machine_error(&fatal);
+    //Under MCP it is left where it is: the client learns it from the command
+    //that stalls on it (McpSession), and a box would block this thread
+#ifdef ENABLE_MCP
+    const bool under_mcp = mcp_mode;
+#else
+    const bool under_mcp = false;
+#endif
+    if (!why.empty() && !under_mcp) {
+        e->clear_machine_error();
+        if (rec_cmdline) {
+            //A device that stops the machine is part of what a script may
+            //test, and any output on stderr fails a test: only a dead
+            //emulation thread is reported, and the run ends with it
+            if (fatal) {
+                std::cerr << "Emulation stopped: " << strip_message_context(why) << std::endl;
+                rec_timer->stop();
+                rec_exit_code = 3;
+                close();
+                return;
+            }
+        } else {
+            QMessageBox::warning(this, fatal ? tr("Emulation stopped") : tr("The machine stopped"),
+                                 translateResultMessage(why));
+        }
+    }
+
     //The processor is stopped and resumed from the debug windows and from the
     //scripts as well, so the tool bar button is refreshed by polling
     update_cpu_state_action();

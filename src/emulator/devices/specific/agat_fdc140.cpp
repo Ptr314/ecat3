@@ -79,19 +79,22 @@ unsigned int Agat_FDC140::get_selected_drive()
 
 void Agat_FDC140::phase_on(int n)
 {
+    //The second socket may be empty: most configurations carry one drive, and
+    //the program selects the other one all the same (CATALOG,D2)
+    FDD * drive = drives[selected_drive];
     if (prev_phase >= 0) {
         if ( ((prev_phase-1) & 0x03) == n ) {
             //Step down
             if (current_track[selected_drive] > 0) {
                 current_track[selected_drive]--;
-                drives[selected_drive]->SeekSector(current_track[selected_drive] / 2, 0);
+                if (drive != nullptr) drive->SeekSector(current_track[selected_drive] / 2, 0);
             }
         } else
         if ( ((prev_phase+1) & 0x03) == n ) {
             //Step up
             if (current_track[selected_drive] < 68) {
                 current_track[selected_drive]++;
-                drives[selected_drive]->SeekSector(current_track[selected_drive] / 2, 0);
+                if (drive != nullptr) drive->SeekSector(current_track[selected_drive] / 2, 0);
             }
         }
     }
@@ -144,7 +147,7 @@ unsigned int Agat_FDC140::get_value(unsigned int address)
             // TODO: timings imitation
             if (write_mode) {
                 // Writing
-                if (motor_on) {
+                if (motor_on && drives[selected_drive] != nullptr) {
                     if (speed_mode) {
                         // Speed mode
                         drives[selected_drive]->WriteNextByte(write_register);
@@ -215,7 +218,7 @@ void Agat_FDC140::set_value(unsigned int address, unsigned int value, bool force
             select_drive(A & 0x01);
             break;
         case 0xC:
-            if (motor_on) {
+            if (motor_on && drives[selected_drive] != nullptr) {
                 if (speed_mode) {
                     // Speed mode
                     drives[selected_drive]->WriteNextByte(write_register);
@@ -277,6 +280,8 @@ emulator::Result Agat_FDC140::load_state(const StateReader &r)
     r.u("track0", current_track[0]);
     r.u("track1", current_track[1]);
     r.u("selected_drive", selected_drive);
+    //It indexes drives[] and current_track[], and the file is not trusted
+    selected_drive &= 1;
     r.b("motor_on", motor_on);
     r.b("write_mode", write_mode);
     r.b("speed_mode", speed_mode);

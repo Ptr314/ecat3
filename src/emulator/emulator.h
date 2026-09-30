@@ -8,6 +8,8 @@
 #include <memory>
 #include <array>
 #include <string>
+#include <functional>
+#include <atomic>
 
 #include "libs/ini_wrapper.h"
 
@@ -85,6 +87,9 @@ private:
     int screen_filtering = 0;
 
     void register_devices();
+    //The two halves of load_config(): what is there goes, the new one is built
+    void drop_machine();
+    emulator::Result build_machine(const std::string &file_name);
 
     std::atomic<bool> m_running;
 #if USE_QT_THREADING
@@ -115,6 +120,37 @@ private:
     uint64_t m_state_serial = 0;                //Guarded; incremented for every request
     compat_mutex m_state_mutex;
     void store_state();
+
+    //Calls handed over by invoke(), waiting for the emulation thread to reach
+    //the gap between two time slices. Each entry lives on the stack of the
+    //thread that waits for it
+    struct PendingCall {
+        const std::function<void()> * fn;
+        std::atomic<bool> done;
+        bool failed;
+        std::string error;
+        explicit PendingCall(const std::function<void()> * f) : fn(f), done(false), failed(false) {}
+    };
+    std::vector<PendingCall*> m_calls;          //Guarded by m_calls_mutex
+    bool m_calls_open = false;                  //Guarded; an emulation thread is there to take them
+    compat_thread_id m_calls_thread = compat_thread_id();   //Guarded; that thread
+    std::atomic<bool> m_calls_pending;          //The queue is not empty: all the loop looks at
+    compat_mutex m_calls_mutex;
+    void run_pending_calls();
+    void close_calls();
+    //Closes the queue when the emulation thread leaves, however it leaves
+    struct CallsGuard {
+        Emulator * e;
+        explicit CallsGuard(Emulator * emulator) : e(emulator) {}
+        ~CallsGuard() { e->close_calls(); }
+    };
+
+    //Why the machine stopped on its own, see machine_error()
+    std::string m_machine_error;                //Guarded by m_error_mutex
+    bool m_machine_fatal = false;               //Guarded
+    mutable compat_mutex m_error_mutex;
+    void set_machine_error(const std::string &message, bool fatal);
+
     bool m_settings_readonly = false;
     void store_screenshot();
 
@@ -240,9 +276,28 @@ public:
     // cache it: load_config() deletes the whole device manager.
     Keyboard * get_keyboard() const { return keyboard; }
 
+    //Runs fn on the emulation thread, between two time slices, and returns
+    //when it has run. This is how any other thread changes the machine: a
+    //device is not locked, it belongs to the emulation thread, and a disk
+    //swapped or a reset done from the window would otherwise land in the
+    //middle of an instruction. With no emulation thread running - nothing
+    //loaded, the machine stopped - and on that thread itself, fn runs at once.
+    //An exception fn throws comes out of invoke() as std::runtime_error.
+    //fn must not wait for the calling thread: that one is waiting here
+    void invoke(const std::function<void()> &fn);
+
     void set_volume(int value);
     void set_muted(bool muted);
+    //From any thread, see invoke()
     void reset(bool cold);
+
+    //Why the machine stopped by itself: a device refused what the guest asked
+    //of it, the saved state could not be applied, or - fatal - the emulation
+    //thread ended on an exception and nothing runs any more. Empty when none
+    //of that happened. The core never prints it (stderr fails every test):
+    //the frontend decides whom to tell. Thread safe
+    std::string machine_error(bool * fatal = nullptr) const;
+    void clear_machine_error();
     void resize_screen();
     void stop_emulation();
 

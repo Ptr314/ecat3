@@ -295,6 +295,12 @@ public:
     virtual void system_clock(unsigned int counter);
     //Whether clocking this device does anything at all - see m_clocked
     bool is_clocked() const { return m_clocked; }
+    //True for a class with a system_clock() of its own. The others count in
+    //the domain's cycles when their clock ratio is 1:1, and DeviceManager then
+    //calls clock() straight away: two virtual calls per device per instruction
+    //were one too many for what system_clock() does in that case - nothing
+    virtual bool own_system_clock() const { return false; }
+    bool clock_ratio_one() const { return clock_miltiplier == clock_divider; }
 
     //The processor whose clock this device counts in, set by load_config()
     //from the clock_source parameter. Null on a processor itself
@@ -378,6 +384,15 @@ protected:
     bool m_clocked = false;
 
     unsigned int clock_stored;
+
+    //Makes 'line' follow the output of a port another device names by
+    //parameter, as a "~line = port.value" in the configuration would: the
+    //port calls this device back on every write instead of this device
+    //reading the port on every instruction. False when the port can also
+    //change without a write - a ~data (input) or ~reset line wired to it
+    //assigns the value without driving it out - and the caller has to keep
+    //polling
+    bool follow_port(Interface &line, const std::string &port_name);
 
     EmulatorConfigDevice * cd;
     InterfaceManager * im;
@@ -674,7 +689,11 @@ private:
     //Devices whose clock() does something, by clock domain and in device order,
     //without the processors. Filled by load_devices_config(), walked once per
     //instruction of the domain that owns them
-    std::vector<std::vector<ComputerDevice*>> clocked_devices;
+    struct ClockedDevice {
+        ComputerDevice * device;
+        bool direct;        //clock() itself: no divider, no system_clock() of its own
+    };
+    std::vector<std::vector<ClockedDevice>> clocked_devices;
     std::vector<CPU*> cpus;
     unsigned int registered_devices_count;
     RegisteredDevice registered_devices[MAX_REGISTERED_DEVICES];
@@ -753,6 +772,12 @@ public:
 
     virtual unsigned int read_mem(unsigned int address) = 0;
     virtual void write_mem(unsigned int address, unsigned int data) = 0;
+
+    //A byte of this processor's address space as the debugger sees it: no bus
+    //cycle, so no strobe, no register cleared by the read, no cancelinit and
+    //no timeout left for the instruction being executed. read_mem() is the
+    //processor's own access and belongs to the emulation thread only
+    unsigned int peek_mem(unsigned int address);
 
     virtual std::vector<std::pair<std::string, std::string>> get_registers() = 0;
     virtual std::vector<std::pair<std::string, std::string>> get_flags() = 0;

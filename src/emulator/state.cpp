@@ -211,6 +211,12 @@ void StateWriter::b(const char * key, bool value)
 
 void StateWriter::s(const char * key, const std::string &value)
 {
+    //The .cfg syntax has no empty value: "key =" takes the next line's key for
+    //its value, and even "" is dropped by the tokenizer, so a snapshot with an
+    //empty string in it could not be opened. An empty string is left out
+    //instead, and the reader, finding no key, keeps what it had - every
+    //load_state() that reads a string clears it first when empty is possible
+    if (value.empty()) return;
     line(m_prefix + key + " = " + config_quote_value(value));
 }
 

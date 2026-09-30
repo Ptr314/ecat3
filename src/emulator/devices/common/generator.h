@@ -33,6 +33,7 @@ public:
     virtual emulator::Result load_config(SystemData *sd) override;
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     virtual void system_clock(unsigned int counter) override;
+    bool own_system_clock() const override { return true; }
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

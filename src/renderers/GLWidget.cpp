@@ -48,12 +48,15 @@ void GLWidget::initializeGL() {
     program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSrc);
     program->link();
 
+    //The texture holds the frame as the image has it, top row first, so the
+    //quad takes it upside down: t = 0 at the top. The image used to be
+    //mirrored on the CPU instead, a full copy of the frame 50 times a second
     static const float vertices[] = {
         // pos      // tex
-        -1, -1,    0, 0,
-        1, -1,    1, 0,
-        -1,  1,    0, 1,
-        1,  1,    1, 1,
+        -1, -1,    0, 1,
+        1, -1,    1, 1,
+        -1,  1,    0, 0,
+        1,  1,    1, 0,
     };
 
     glGenBuffers(1, &vbo);
@@ -80,19 +83,29 @@ void GLWidget::paintGL() {
 
     QMutexLocker locker(&mutex);
     if (!pendingImage.isNull()) {
-        if (texture) delete texture;
-        //DontGenerateMipMaps: the texture is drawn at or above 1:1 and neither
-        //filter uses mipmaps, so the mip chain built here 50 times a second was
-        //never sampled
-#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
-        texture = new QOpenGLTexture(pendingImage.flipped(Qt::Vertical), QOpenGLTexture::DontGenerateMipMaps);
-#else
-        texture = new QOpenGLTexture(pendingImage.mirrored(), QOpenGLTexture::DontGenerateMipMaps);
-#endif
-        //The default wrap mode is Repeat: the linear filter then blends the last
-        //row and column with the first ones, which drew a thin copy of the
-        //opposite edge along the right and the bottom of the picture
-        texture->setWrapMode(QOpenGLTexture::ClampToEdge);
+        //One texture for as long as the frame keeps its size, and the frame
+        //copied straight into it: a new QOpenGLTexture from a QImage converts
+        //the image to RGBA and allocates the storage again on every frame
+        const QImage frame = (pendingImage.format() == QImage::Format_RGB32
+                              || pendingImage.format() == QImage::Format_ARGB32)
+                             ? pendingImage : pendingImage.convertToFormat(QImage::Format_RGB32);
+        if (!texture || texture->width() != frame.width() || texture->height() != frame.height()) {
+            delete texture;
+            texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
+            texture->setFormat(QOpenGLTexture::RGBA8_UNorm);
+            texture->setSize(frame.width(), frame.height());
+            //No mip chain: the texture is drawn at or above 1:1 and neither
+            //filter uses one
+            texture->setMipLevels(1);
+            texture->allocateStorage(QOpenGLTexture::BGRA, QOpenGLTexture::UInt8);
+            //The default wrap mode is Repeat: the linear filter then blends the last
+            //row and column with the first ones, which drew a thin copy of the
+            //opposite edge along the right and the bottom of the picture
+            texture->setWrapMode(QOpenGLTexture::ClampToEdge);
+        }
+        //RGB32 is 0xFFRRGGBB, stored B, G, R, A in memory; rows are packed,
+        //four bytes a pixel, so the default unpack alignment fits
+        texture->setData(QOpenGLTexture::BGRA, QOpenGLTexture::UInt8, frame.constBits());
         pendingImage = QImage();
     }
 

@@ -204,6 +204,9 @@ void I8253::set_value(const unsigned address, const unsigned value, bool force)
     if (a==3) {
         //control word
         unsigned int C = (value >> 6) & 0x03;				 	//Номер канала
+        //Каналов три. Слово с номером 3 ВИ53 не принимает (у ВИ54 это команда
+        //обратного чтения), а здесь оно писало бы за массивы каналов
+        if (C == 3) return;
         if ((value & 0x30) != 0)
         {
             IsBCD[C] = value & 0x01;  				//BCD-режим

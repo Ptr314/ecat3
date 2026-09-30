@@ -307,7 +307,9 @@ void GenericSound::clock(unsigned int counter)
         if (m_capture) m_capture_data.push_back(static_cast<int16_t>(out));
         if (m_initialized) m_buffer[m_buffer_pos++] = static_cast<int16_t>(out);
     }
-    refresh_sources();
+    //The mix used to be rebuilt here, for every sample: who is in it changes
+    //only when a source is written for the first time, plugged, unplugged or
+    //reset, and each of those says so through sound_mode_changed()
 }
 
 void GenericSound::audio_callback(void* userdata, uint8_t* stream, int len)

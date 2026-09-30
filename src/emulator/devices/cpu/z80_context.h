@@ -32,6 +32,11 @@ struct z80context
 
     unsigned int global_prefix;
     unsigned int index8_inc;
+
+    //MEMPTR (WZ): the internal address register. Nothing reads it but BIT
+    //n,(HL), which takes its flags 3 and 5 from the high byte - see the rules
+    //in "memptr_eng.txt" (Boo-boo, Vladimir Kladov) that z80core follows
+    uint16_t memptr;
 };
 
 #pragma pack()

@@ -158,6 +158,7 @@ void z80::save_state(StateWriter &w)
     w.n("INT", c->INT);
     w.n("global_prefix", c->global_prefix);
     w.n("index8_inc", c->index8_inc);
+    w.u("memptr", c->memptr);
 
     bool process = false, nmi = false;
     core->get_pending(process, nmi);
@@ -187,6 +188,7 @@ emulator::Result z80::load_state(const StateReader &r)
     r.u("INT", c->INT);
     r.u("global_prefix", c->global_prefix);
     r.u("index8_inc", c->index8_inc);
+    r.u("memptr", c->memptr);
 
     bool process = false, nmi = false;
     core->get_pending(process, nmi);
@@ -263,9 +265,11 @@ unsigned int z80::execute()
         reset_mode = false;
     }
 
-    //TODO: use HALT imitation
+    //No cycles, as the other processors do: Emulator::timer_proc() then keeps
+    //the machine's time still. Returning 10 here let the clock, the timers,
+    //the screen and the tape run on while the debugger held the processor
     if (m_debug == DEBUG_STOPPED)
-        return 10;
+        return 0;
 
     //Cycles a DMA controller has taken off the bus, see CPU::hold()
     unsigned int held = take_hold();
@@ -310,11 +314,8 @@ void z80::set_context_value(const std::string &name, unsigned int value)
 
 unsigned int z80::get_command()
 {
-#ifndef EXTERNAL_Z80
-    return core->get_command();
-#else
-    return read_mem(core_ext->reg.PC);
-#endif
+    //Asked by the debugger and by LOG cpu.command, not by the processor
+    return peek_mem(get_pc());
 }
 
 void z80::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)

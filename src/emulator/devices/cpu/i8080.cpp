@@ -128,6 +128,8 @@ void i8080::save_state(StateWriter &w)
     CPU::save_state(w);
     i8080context * c = core->get_context();
     w.array("regs", c->registers.reg_array_8, 8);
+    //The flags follow A in the context and are not part of that array
+    w.u("F", c->registers.regs.F, 8);
     w.u("SP", c->registers.regs.SP);
     w.u("PC", c->registers.regs.PC);
     w.b("halted", c->halted);
@@ -141,6 +143,7 @@ emulator::Result i8080::load_state(const StateReader &r)
     if (!res) return res;
     i8080context * c = core->get_context();
     r.array("regs", c->registers.reg_array_8, 8);
+    r.u("F", c->registers.regs.F);
     r.u("SP", c->registers.regs.SP);
     r.u("PC", c->registers.regs.PC);
     r.b("halted", c->halted);
@@ -184,9 +187,11 @@ unsigned int i8080::execute()
         reset_mode = false;
     }
 
-    //TODO: use HALT imitation
+    //No cycles, as the other processors do: Emulator::timer_proc() then keeps
+    //the machine's time still. Returning 10 here let the clock, the timers,
+    //the screen and the tape run on while the debugger held the processor
     if (m_debug == DEBUG_STOPPED)
-        return 10;
+        return 0;
 
     //The bus belongs to a DMA controller for these cycles: emulated time moves
     //on, the processor does not, and an interrupt is not taken either
@@ -220,7 +225,8 @@ void i8080::set_context_value(const std::string &name, unsigned int value)
 
 unsigned int i8080::get_command()
 {
-    return core->get_command();
+    //Asked by the debugger and by LOG cpu.command, not by the processor
+    return peek_mem(get_pc());
 }
 
 

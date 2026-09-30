@@ -130,6 +130,12 @@ public:
     void pause();                               //Keeps the position; releases the keys held by the script
     void stop();                                //Keeps the pointer; releases the keys held by the script
     void tick(uint64_t clock_counter);
+    //Called by the emulator after a time slice in which the master processor
+    //ran no cycle at all (stopped, at a breakpoint). A polled state - WAITFOR,
+    //SCREEN - is sampled once per emulated millisecond, and with the clock
+    //frozen that millisecond never comes: it is sampled now instead, once per
+    //slice of real time. The delays stay frozen, as they should
+    void tick_frozen(uint64_t clock_counter);
 
     bool is_active() const;                     //Running or waiting for something
     bool is_paused() const;

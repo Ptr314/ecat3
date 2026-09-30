@@ -1107,6 +1107,13 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
             }
             int32_t dividend = (int32_t)(((uint32_t)context.R[r] << 16) | context.R[r | 1]);
             int32_t divisor = (int32_t)(int16_t)src;
+            //The one quotient that does not fit into 32 bits either: dividing
+            //it is undefined, and on x86 a trap that ends the process
+            if (dividend == INT32_MIN && divisor == -1) {
+                set_flag(PDP11::F_V, true);
+                set_flag(PDP11::F_C, false);
+                break;
+            }
             int32_t quotient = dividend / divisor;
             if (quotient > 32767 || quotient < -32768) {
                 set_flag(PDP11::F_V, true);
@@ -1125,28 +1132,46 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
             int shift = (int)(src & 077);
             if (shift > 31) shift -= 64;
             cycles += C_ASH + C_SHIFT * (unsigned int)(shift < 0? -shift : shift);
-            int32_t value = (int32_t)(int16_t)context.R[r];
-            int32_t res;
-            if (shift >= 0) { res = value << shift; set_flag(PDP11::F_C, shift > 0 && ((value << (shift - 1)) & 0x8000) != 0); }
-            else            { res = value >> (-shift); set_flag(PDP11::F_C, ((value >> (-shift - 1)) & 1) != 0); }
+            //Counted in 64 bits and by multiplication: a left shift of a
+            //negative value is undefined in C++11, and a right shift by 32
+            //of a 32-bit one is too (x86 masks the count, so ASH #-32 left
+            //the register as it was instead of filling it with the sign)
+            const int64_t value = (int16_t)context.R[r];
+            int64_t res;
+            if (shift >= 0) {
+                res = value * ((int64_t)1 << shift);
+                set_flag(PDP11::F_C, shift > 0 && (((value * ((int64_t)1 << (shift - 1))) >> 15) & 1) != 0);
+            } else {
+                res = value >> (-shift);
+                set_flag(PDP11::F_C, ((value >> (-shift - 1)) & 1) != 0);
+            }
             context.R[r] = (uint16_t)res;
             set_nz((uint16_t)res, false);
-            set_flag(PDP11::F_V, ((value ^ res) & 0x8000) != 0);
+            //V: the sign changed at some point of the shift, which is exactly
+            //the result not being its own 16-bit value. Comparing only the
+            //first and the last sign missed 040000 shifted by two
+            set_flag(PDP11::F_V, (int64_t)(int16_t)(uint16_t)res != res);
             break;
         }
         default: {                                      // ASHC
             int shift = (int)(src & 077);
             if (shift > 31) shift -= 64;
             cycles += C_ASHC + C_SHIFT * (unsigned int)(shift < 0? -shift : shift);
-            int32_t value = (int32_t)(((uint32_t)context.R[r] << 16) | context.R[r | 1]);
+            const int64_t value = (int32_t)(((uint32_t)context.R[r] << 16) | context.R[r | 1]);
             int64_t res;
-            if (shift >= 0) { res = (int64_t)value << shift; set_flag(PDP11::F_C, shift > 0 && (((int64_t)value << (shift - 1)) & 0x80000000LL) != 0); }
-            else            { res = (int64_t)value >> (-shift); set_flag(PDP11::F_C, (((int64_t)value >> (-shift - 1)) & 1) != 0); }
+            if (shift >= 0) {
+                res = value * ((int64_t)1 << shift);
+                set_flag(PDP11::F_C, shift > 0 && (((value * ((int64_t)1 << (shift - 1))) >> 31) & 1) != 0);
+            } else {
+                res = value >> (-shift);
+                set_flag(PDP11::F_C, ((value >> (-shift - 1)) & 1) != 0);
+            }
             context.R[r] = (uint16_t)(((uint32_t)res >> 16) & 0xFFFF);
             context.R[r | 1] = (uint16_t)((uint32_t)res & 0xFFFF);
             set_flag(PDP11::F_N, ((uint32_t)res & 0x80000000u) != 0);
             set_flag(PDP11::F_Z, ((uint32_t)res) == 0);
-            set_flag(PDP11::F_V, ((value ^ (int32_t)res) & 0x80000000u) != 0);
+            //As for ASH: the sign changed somewhere along the shift
+            set_flag(PDP11::F_V, (int64_t)(int32_t)(uint32_t)res != res);
             break;
         }
         }

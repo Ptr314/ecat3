@@ -130,43 +130,73 @@ emulator::Result FDD::load_image(const std::string &file_name)
         HXC_MFM_HEADER hxc_header;
         dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
         if (file.is_open()){
+            const emulator::Result bad_format = emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unrecognized MFM format")) + "}");
+
+            //Every read below is checked against the length of the file
+            //beforehand, so none of them can come back short
+            const long long file_size = dsk_tools::utf8_file_size(file_name);
+            if (file_size < (long long)sizeof(HXC_MFM_HEADER)) return bad_format;
+
             file.read(reinterpret_cast<char*>(&hxc_header), sizeof(HXC_MFM_HEADER));
-            if (memcmp(hxc_header.headername, "HXCMFM", 6) == 0) {
-                sides = hxc_header.number_of_side;
-                tracks = hxc_header.number_of_track;
+            if (memcmp(hxc_header.headername, "HXCMFM", 6) != 0) return bad_format;
 
-                //The track table comes straight from the file, so its length
-                //has to fit ours before anything is read into it
-                if (tracks <= 0 || tracks > (int)(sizeof(track_indexes)/sizeof(track_indexes[0]))) {
-                    file.close();
-                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
-                        "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unrecognized MFM format")) + "}");
-                }
+            //Everything below comes straight from the file. It is read into
+            //locals and checked there; the drive keeps the disk it has until
+            //the new one has been accepted as a whole
+            const int new_sides = hxc_header.number_of_side;
+            const int new_tracks = hxc_header.number_of_track;
+            const size_t table_size = sizeof(track_indexes)/sizeof(track_indexes[0]);
 
-                file.seekg(hxc_header.mfmtracklistoffset, std::ios::beg);
-                file.read(reinterpret_cast<char*>(&track_indexes), sizeof(HXC_MFM_TRACK_INFO)*tracks);
+            //The table holds an entry per track per side, and that is how the
+            //drive indexes it (track*sides + side)
+            if (new_sides <= 0 || new_tracks <= 0
+                || (size_t)new_sides * (size_t)new_tracks > table_size)
+                return bad_format;
+            const size_t entries = (size_t)new_sides * (size_t)new_tracks;
 
-                disk_size = track_indexes[0].mfmtracksize * tracks;
-                if (buffer != nullptr) delete [] buffer;
-                buffer = new uint8_t[disk_size];
+            if ((uint64_t)hxc_header.mfmtracklistoffset + sizeof(HXC_MFM_TRACK_INFO)*entries > (uint64_t)file_size)
+                return bad_format;
+            std::vector<HXC_MFM_TRACK_INFO> table(entries);
+            file.seekg(hxc_header.mfmtracklistoffset, std::ios::beg);
+            file.read(reinterpret_cast<char*>(table.data()), sizeof(HXC_MFM_TRACK_INFO)*entries);
 
-                int data_begin = track_indexes[0].mfmtrackoffset;
-                for (int i=0; i < tracks; i++) track_indexes[i].mfmtrackoffset -= data_begin;
-
-                file.seekg(data_begin, std::ios::beg);
-                file.read(reinterpret_cast<char*>(buffer), disk_size);
-
-                track_mode = FDD_MODE_WHOLE_TRACK;
-                position = 0;
-                loaded = true;
-                m_generation++;
-                this->file_name = base_name;
-            } else {
-                file.close();
-                return emulator::Result::error(emulator::ErrorCode::ConfigError,
-                    "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unrecognized MFM format")) + "}");
+            //The tracks need not be equal, nor follow one another: the data is
+            //everything between the first byte of the lowest track and the
+            //last byte of the highest
+            uint64_t data_begin = table[0].mfmtrackoffset;
+            uint64_t data_end = 0;
+            for (size_t i = 0; i < entries; i++) {
+                const uint64_t from = table[i].mfmtrackoffset;
+                const uint64_t to = from + table[i].mfmtracksize;
+                if (table[i].mfmtracksize == 0) return bad_format;
+                if (from < data_begin) data_begin = from;
+                if (to > data_end) data_end = to;
             }
+            if (data_end - data_begin > 64u * 1024 * 1024 || data_end > (uint64_t)file_size)
+                return bad_format;
+
+            const size_t new_size = (size_t)(data_end - data_begin);
+            uint8_t * new_buffer = new uint8_t[new_size];
+            file.seekg((std::streamoff)data_begin, std::ios::beg);
+            file.read(reinterpret_cast<char*>(new_buffer), new_size);
             file.close();
+
+            if (buffer != nullptr) delete [] buffer;
+            buffer = new_buffer;
+            disk_size = (int)new_size;
+            sides = new_sides;
+            tracks = new_tracks;
+            for (size_t i = 0; i < entries; i++) {
+                track_indexes[i] = table[i];
+                track_indexes[i].mfmtrackoffset = (uint32_t)(table[i].mfmtrackoffset - data_begin);
+            }
+
+            track_mode = FDD_MODE_WHOLE_TRACK;
+            position = 0;
+            loaded = true;
+            m_generation++;
+            this->file_name = base_name;
         } else {
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
@@ -352,7 +382,13 @@ void FDD::NextPosition()
         position = 0;
         return;
     }
-    if (++position >= track_indexes[track*sides + side].mfmtracksize) position = 0;
+    //A sector image may have more tracks than the table of physical ones
+    const unsigned int index = image_track(track, side, false);
+    if (index >= sizeof(track_indexes)/sizeof(track_indexes[0])) {
+        position = 0;
+        return;
+    }
+    if (++position >= track_indexes[index].mfmtracksize) position = 0;
 }
 
 uint8_t FDD::ReadNextByte()
@@ -743,6 +779,8 @@ emulator::Result FDD::load_state(const StateReader &r)
     uint32_t size = 0;
     if (!r.u("disk_size", size) || size == 0) return emulator::Result::ok();
 
+    //An empty name is not written at all (StateWriter::s)
+    file_name.clear();
     r.s("file_name", file_name);
     r.u("sides", sides);
     r.u("tracks", tracks);
@@ -754,36 +792,90 @@ emulator::Result FDD::load_state(const StateReader &r)
     r.b("sides_layout", sides_layout);
     r.u("physical_track_len", physical_track_len);
 
+    //A saved state is a file like any other and may come from anywhere (the
+    //web page opens one by a link). The guest reaches the buffer through the
+    //geometry, so the two are made to agree here, once: sector_in_range()
+    //checks a request against the geometry and nothing checks it again
+    //against the size of the buffer
+    const uint32_t max_disk = 64u * 1024 * 1024;        //No more than an archive entry may hold
+    const size_t table_size = sizeof(track_indexes) / sizeof(track_indexes[0]);
+    const emulator::Result bad_geometry = emulator::Result::error(emulator::ErrorCode::FileError,
+        "{MachineState|Saved state} " + name + ": the disk geometry does not fit the image");
+
     delete [] buffer;
-    disk_size = static_cast<int>(size);
-    buffer = new uint8_t[disk_size];
-    memset(buffer, 0, static_cast<size_t>(disk_size));
-    if (!r.blob_into("data", buffer, static_cast<size_t>(disk_size)))
+    buffer = nullptr;
+    loaded = false;
+    disk_size = 0;
+
+    if (size > max_disk || sides <= 0 || sides > 255 || tracks <= 0 || tracks > 65535)
+        return bad_geometry;
+
+    uint64_t alloc = size;
+    if (track_mode == FDD_MODE_SECTORS)
+    {
+        //Of a drive that works with whole tracks these two mean nothing
+        if (sectors < 0 || sectors > 65535 || sector_size < 0 || sector_size > 65536)
+            return bad_geometry;
+        //An image shorter than its geometry is a disk whose last tracks are
+        //blank, the same as when it is loaded from a file
+        const uint64_t need = static_cast<uint64_t>(sides) * tracks * sectors * sector_size;
+        if (need > max_disk) return bad_geometry;
+        if (need > alloc) alloc = need;
+    } else {
+        if (static_cast<uint64_t>(sides) * tracks > table_size) return bad_geometry;
+    }
+
+    buffer = new uint8_t[static_cast<size_t>(alloc)];
+    memset(buffer, 0, static_cast<size_t>(alloc));
+    if (!r.blob_into("data", buffer, static_cast<size_t>(size)))
     {
         delete [] buffer;
         buffer = nullptr;
-        disk_size = 0;
         return emulator::Result::error(emulator::ErrorCode::FileError,
             "{MachineState|Saved state} " + name + ": " + r.error());
     }
-    loaded = true;
+    disk_size = static_cast<int>(alloc);
 
     if (track_mode != FDD_MODE_SECTORS)
     {
-        const size_t count = sizeof(track_indexes) / sizeof(track_indexes[0]);
+        const size_t count = table_size;
         std::vector<uint32_t> number(count, 0), side_no(count, 0), tsize(count, 0), offset(count, 0);
         r.array("track_number", number.data(), count);
         r.array("track_side", side_no.data(), count);
         r.array("track_size", tsize.data(), count);
         r.array("track_offset", offset.data(), count);
+
+        const size_t used = static_cast<size_t>(sides) * static_cast<size_t>(tracks);
         for (size_t i = 0; i < count; i++)
         {
+            //A track is read from its offset even when its length is zero
+            const uint64_t end = static_cast<uint64_t>(offset[i]) + (tsize[i] != 0 ? tsize[i] : 1);
+            if (end > alloc)
+            {
+                if (i < used)
+                {
+                    delete [] buffer;
+                    buffer = nullptr;
+                    disk_size = 0;
+                    return bad_geometry;
+                }
+                //An entry no track uses holds whatever was there when the
+                //state was taken; it is only made harmless
+                tsize[i] = 0;
+                offset[i] = 0;
+            }
             track_indexes[i].track_number   = static_cast<uint16_t>(number[i]);
             track_indexes[i].side_number    = static_cast<uint8_t>(side_no[i]);
             track_indexes[i].mfmtracksize   = tsize[i];
             track_indexes[i].mfmtrackoffset = offset[i];
         }
+
+        //The head stands somewhere on the track it is over, or at its start
+        if (position < 0 || !sector_in_range()
+            || static_cast<uint32_t>(position) >= track_indexes[track*sides + side].mfmtracksize)
+            position = 0;
     }
+    loaded = true;
     return emulator::Result::ok();
 }
 

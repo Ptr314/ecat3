@@ -23,7 +23,8 @@ void Covox::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned i
 
 void Covox::plug_changed()
 {
-    // Nothing to do: the byte is held by the port, not by the DAC
+    // The byte is held by the port, not by the DAC; only the mix changes
+    sound_mode_changed();
 }
 
 int32_t Covox::sound_sample(int64_t amplitude)

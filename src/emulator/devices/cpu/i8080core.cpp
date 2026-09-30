@@ -4,6 +4,8 @@
 // Description: Intel 8080 (КР580ВМ80) CPU core
 
 #include "cpu_utils.h"
+#include <cstring>
+
 #include "i8080core.h"
 
 using namespace I8080;
@@ -124,6 +126,12 @@ static const uint8_t CONDITIONS[8][2] = {
 
 i8080core::i8080core()
 {
+    //The registers start from a known value: left as they were, they held
+    //whatever the heap had there, so PUSH PSW before the first arithmetic and
+    //LOG cpu.registers right after start-up differed from run to run. Only
+    //here, not in reset(): the real ВМ80 keeps its registers over a reset
+    memset(&context, 0, sizeof(context));
+    context.registers.regs.F = I8080::F_BASE_8080;
     context.registers.regs.PC = 0;
     context.halted = false;
     context.int_enable = 0;

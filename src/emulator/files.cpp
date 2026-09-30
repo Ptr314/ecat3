@@ -16,10 +16,19 @@
 
 #define MIN(a, b)   ((a<b)?a:b)
 
+static emulator::Result file_error(const char * text)
+{
+    return emulator::Result::error(emulator::ErrorCode::ConfigError, std::string("{Emulator|") + text + "}");
+}
+
 static emulator::Result ReadHeader(const std::string &file_name, unsigned int bytes, uint8_t* buffer, bool has_start)
 {
     dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
-    if (file.is_open())
+    //A file that did not open, or ended inside the header, used to come back
+    //as success with the header never filled in
+    if (!file.is_open())
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading")) + "} " + file_name);
     {
         if (has_start)
         {
@@ -32,7 +41,9 @@ static emulator::Result ReadHeader(const std::string &file_name, unsigned int by
             }
         }
         file.read(reinterpret_cast<char*>(buffer), bytes);
+        const bool complete = file.good();
         file.close();
+        if (!complete) return file_error(QT_TRANSLATE_NOOP("Emulator", "File is smaller than expected!"));
     }
     return emulator::Result::ok();
 }
@@ -82,7 +93,10 @@ static emulator::Result load_rk(Emulator* e, const std::string &file_name)
     {
         unsigned int offset = (has_start) ? 5 : 4;
         unsigned int delta = static_cast<unsigned int>(header[0]) * 256 + header[1];
-        unsigned int len = static_cast<unsigned int>(header[2]) * 256 + header[3] - delta;
+        const unsigned int end = static_cast<unsigned int>(header[2]) * 256 + header[3];
+        //An end before the start made the length wrap around to four gigabytes
+        if (end < delta) return file_error(QT_TRANSLATE_NOOP("Emulator", "Incorrect addresses in the file header"));
+        unsigned int len = end - delta;
 
         RAM* m;
         res = find_ram(e, &m);
@@ -90,6 +104,7 @@ static emulator::Result load_rk(Emulator* e, const std::string &file_name)
 
         uint8_t* buffer = m->get_buffer();
         unsigned int page_size = m->get_size();
+        if (delta >= page_size) return file_error(QT_TRANSLATE_NOOP("Emulator", "The file does not fit into the memory"));
 
         dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
         if (!file.is_open())
@@ -193,6 +208,7 @@ static emulator::Result load_hex(Emulator* e, const std::string &file_name)
     if (!res) return res;
 
     uint8_t* buffer = m->get_buffer();
+    const unsigned int page_size = m->get_size();
 
     std::string content = dsk_tools::utf8_read_file(file_name);
     if (content.empty())
@@ -203,17 +219,29 @@ static emulator::Result load_hex(Emulator* e, const std::string &file_name)
 
     std::istringstream stream(content);
     std::string line;
-    while (std::getline(stream, line))
-    {
-        if (line.size() < 9) continue;
-        unsigned int len = parse_numeric_value("$" + line.substr(1, 2));
-        unsigned int addr = parse_numeric_value("$" + line.substr(3, 4));
-        unsigned int type = parse_numeric_value("$" + line.substr(7, 2));
-        if (type == 0)
+    //A record says how many bytes it carries and where they go; neither may be
+    //believed. A line shorter than its count, or a digit that is not one,
+    //used to throw out of the window's slot, and an address near the top
+    //wrote past the end of a RAM smaller than 64K
+    try {
+        while (std::getline(stream, line))
         {
-            for (unsigned int j = 0; j < len; j++)
-                buffer[addr + j] = parse_numeric_value("$" + line.substr(9 + j * 2, 2));
+            if (line.size() < 9) continue;
+            unsigned int len = parse_numeric_value("$" + line.substr(1, 2), 16);
+            unsigned int addr = parse_numeric_value("$" + line.substr(3, 4), 16);
+            unsigned int type = parse_numeric_value("$" + line.substr(7, 2), 16);
+            if (type == 0)
+            {
+                if (line.size() < 9 + len * 2)
+                    return file_error(QT_TRANSLATE_NOOP("Emulator", "Incorrect HEX file"));
+                if (addr + len > page_size)
+                    return file_error(QT_TRANSLATE_NOOP("Emulator", "The file does not fit into the memory"));
+                for (unsigned int j = 0; j < len; j++)
+                    buffer[addr + j] = parse_numeric_value("$" + line.substr(9 + j * 2, 2), 16);
+            }
         }
+    } catch (const std::exception &) {
+        return file_error(QT_TRANSLATE_NOOP("Emulator", "Incorrect HEX file"));
     }
     return emulator::Result::ok();
 }
@@ -308,6 +336,11 @@ static emulator::Result load_rko(Emulator* e, const std::string &file_name)
     }
     uint8_t header_data[8];
     file.read(reinterpret_cast<char*>(&header_data), sizeof(header_data));
+    if (!file.good())
+    {
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Error reading header data!")) + "}");
+    }
     uint16_t header_start = (header_data[1] << 8) + header_data[0];
     uint16_t header_size = (header_data[3] << 8) + header_data[2];
 
@@ -319,27 +352,38 @@ static emulator::Result load_rko(Emulator* e, const std::string &file_name)
     RAM* m;
     if (add_to_disk)
     {
-        m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram1", false));
-        buffer = m->get_buffer();
-        page_size = 48 * 1024;
-        address = get_ramdisk_position(buffer, page_size);
-        if (address < 0 || address + read_length > page_size)
+        //The ORDOS RAM disks of an Орион: pages ram1 (48K of it) and ram2,
+        //ram3 (60K). Another machine has no such pages, or smaller ones - the
+        //disk walk reads 16 bytes past a file's start and the end mark goes one
+        //byte past its data, so a page must be a little larger than its disk
+        struct RamDisk { const char * name; unsigned int size; };
+        static const RamDisk disks[] = { {"ram1", 48 * 1024}, {"ram2", 60 * 1024}, {"ram3", 60 * 1024} };
+        m = nullptr;
+        address = -1;
+        buffer = nullptr;
+        page_size = 0;
+        bool any = false;
+        for (size_t i = 0; i < sizeof(disks) / sizeof(disks[0]); i++)
         {
-            m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram2", false));
-            buffer = m->get_buffer();
-            page_size = 60 * 1024;
-            address = get_ramdisk_position(buffer, page_size);
-            if (address < 0 || address + read_length > page_size)
+            RAM * r = dynamic_cast<RAM*>(e->dm->get_device_by_name(disks[i].name, false));
+            if (r == nullptr || r->get_size() < disks[i].size + 16) continue;
+            any = true;
+            const int a = get_ramdisk_position(r->get_buffer(), disks[i].size);
+            if (a >= 0 && (unsigned int)a + read_length < disks[i].size)
             {
-                m = dynamic_cast<RAM*>(e->dm->get_device_by_name("ram3", false));
-                buffer = m->get_buffer();
-                address = get_ramdisk_position(buffer, page_size);
-                if (address < 0 || address + read_length > page_size)
-                {
-                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
-                        "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Can't load the file: all ramdisks are full!")) + "}");
-                }
+                m = r;
+                buffer = r->get_buffer();
+                page_size = disks[i].size;
+                address = a;
+                break;
             }
+        }
+        if (!any)
+            return file_error(QT_TRANSLATE_NOOP("Emulator", "This machine has no RAM disk to put the file on"));
+        if (m == nullptr)
+        {
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{Emulator|" + std::string(QT_TRANSLATE_NOOP("Emulator", "Can't load the file: all ramdisks are full!")) + "}");
         }
     }
     else
@@ -352,6 +396,8 @@ static emulator::Result load_rko(Emulator* e, const std::string &file_name)
         file_offset += 16;
         read_length -= 16;
         address = header_start;
+        if ((unsigned int)address >= page_size)
+            return file_error(QT_TRANSLATE_NOOP("Emulator", "The file does not fit into the memory"));
     }
 
     file.seekg(file_offset, std::ios::beg);

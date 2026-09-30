@@ -348,6 +348,10 @@ void DL11::save_state(StateWriter &w)
     w.n("idle_polls", m_idle_polls);
     w.n("sent", m_sent);
     w.n("received", m_received);
+    //The loopback plug: part of what the program on the machine sees - with
+    //it on, what it sends comes back - so a snapshot taken with it plugged
+    //has to open with it plugged
+    w.b("plug", m_plug);
     //What a script has pushed in and the line has not handed over yet
     if (!m_rx_queue.empty())
     {
@@ -372,11 +376,14 @@ emulator::Result DL11::load_state(const StateReader &r)
     r.u("idle_polls", m_idle_polls);
     r.u("sent", m_sent);
     r.u("received", m_received);
+    r.b("plug", m_plug);
     //The queue is as long as the script made it - a sendfile can be any
     //length - so its length is stated beside it, and only that much is read
     m_rx_queue.clear();
     uint64_t queued = 0;
-    if (r.n64("rx_queued", queued) && queued > 0)
+    //The length comes from the file: a queue longer than any script would
+    //push is not allocated
+    if (r.n64("rx_queued", queued) && queued > 0 && queued <= 16u * 1024 * 1024)
     {
         std::vector<uint8_t> queue(static_cast<size_t>(queued), 0);
         if (r.array("rx_queue", queue.data(), queue.size()))

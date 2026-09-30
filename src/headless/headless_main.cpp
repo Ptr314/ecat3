@@ -36,6 +36,22 @@ namespace fs = std::filesystem;
 
 namespace {
 
+//True once the emulation thread has ended on an error: nothing will move any
+//more, and a script waiting for the machine would wait until the process is
+//killed. Says why, once - a run that died is exactly what stderr is for
+bool emulation_died(const Emulator &emulator)
+{
+    bool fatal = false;
+    const std::string why = emulator.machine_error(&fatal);
+    if (!fatal) return false;
+    static bool told = false;
+    if (!told) {
+        told = true;
+        std::cerr << "Emulation stopped: " << strip_message_context(why) << std::endl;
+    }
+    return true;
+}
+
 struct Options
 {
     std::string config;
@@ -896,14 +912,15 @@ int main(int argc, char *argv[])
             emulator.start_script();
             //The windowed build polls the engine from a 100 ms timer; here the
             //main thread has nothing else to do
-            while (!emulator.script_finished() && !host.should_quit())
+            while (!emulator.script_finished() && !host.should_quit() && !emulation_died(emulator))
                 compat_sleep_ms(10);
-            exit_code = emulator.script_exit_code();
+            exit_code = emulation_died(emulator) ? 3 : emulator.script_exit_code();
         }
         else
         {
             //A machine with no script: run it until the process is killed
-            while (!host.should_quit()) compat_sleep_ms(50);
+            while (!host.should_quit() && !emulation_died(emulator)) compat_sleep_ms(50);
+            if (emulation_died(emulator)) exit_code = 3;
         }
     }
 

@@ -271,6 +271,8 @@ emulator::Result GMD70::load_state(const StateReader &r)
     if (!res) return res;
     r.b("busy", m_busy);
     r.u("selected_drive", m_selected_drive);
+    //Both index fixed arrays, and the file is not trusted
+    if (m_selected_drive >= m_drives_count) m_selected_drive = 0;
     r.b("ints_en", m_ints_en);
     r.u("command", m_command);
     r.b("reserved", m_reserved);
@@ -280,6 +282,7 @@ emulator::Result GMD70::load_state(const StateReader &r)
     r.u("data", m_data);
     r.hex("buffer", m_buffer, sizeof(m_buffer));
     r.u("counter", m_counter);
+    m_counter %= sizeof(m_buffer);
     r.u("command_counter", m_command_counter);
     r.array("command_buffer", m_command_buffer, 2);
     return emulator::Result::ok();

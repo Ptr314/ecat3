@@ -169,6 +169,13 @@ protected:
     void sound_level(unsigned int level);
     void locate(uint64_t pos);
     uint64_t record_start(size_t index) const;
+    //Where the data of every record begins, and where the last one ends:
+    //built by rebuild_timeline(), which every change of m_records is followed
+    //by. record_start() is asked twice for every bit interval of the tape,
+    //and summing the records from the first each time cost a pass over the
+    //whole tape per bit
+    std::vector<uint64_t> m_rec_starts;
+    uint64_t m_records_end = 0;
     void advance_unit();
     void set_transport(TapeTransport t);
     void commit_write();

@@ -897,8 +897,11 @@ emulator::Result TapeRecorder::load_state(const StateReader &r)
     r.u("position", data_position);
     r.u("ticks_counter", ticks_counter);
     r.u("bit_shift", bit_shift);
+    //Номер бита в байте: по нему сдвигают, а файл может быть чей угодно
+    if (bit_shift < 0 || bit_shift > 7) bit_shift = 7;
     uint32_t baud = baud_rate;
-    if (r.u("baud_rate", baud)) set_baud_rate(baud);
+    //На скорость делят
+    if (r.u("baud_rate", baud) && baud != 0) set_baud_rate(baud);
     r.b("recording", is_recording);
     loaded_name.clear();
     r.s("tape_name", loaded_name);
@@ -1228,8 +1231,13 @@ emulator::Result TapeRecorder::send_command(const std::string &command, const st
 void TapeRecorder::rebuild_timeline()
 {
     m_total_units = 0;
+    m_rec_starts.resize(m_records.size());
     for (size_t i = 0; i < m_records.size(); i++)
+    {
+        m_rec_starts[i] = m_total_units + m_records[i].gap;
         m_total_units += m_records[i].gap + m_records[i].units;
+    }
+    m_records_end = m_total_units;
 
     //После последней записи на кассете остается ракорд. Без него лента
     //кончалась бы ровно на последнем байте, а машина этот байт читает уже
@@ -1257,6 +1265,10 @@ void TapeRecorder::rebuild_timeline()
 
 uint64_t TapeRecorder::record_start(size_t index) const
 {
+    if (m_rec_starts.size() == m_records.size())
+        return (index < m_rec_starts.size()) ? m_rec_starts[index] : m_records_end;
+
+    //Records changed and the timeline not rebuilt yet: counted the long way
     uint64_t p = 0;
     for (size_t i = 0; i < index && i < m_records.size(); i++)
         p += m_records[i].gap + m_records[i].units;

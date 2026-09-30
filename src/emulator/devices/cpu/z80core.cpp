@@ -45,6 +45,7 @@ using namespace Z80;
 #define REG_DE_     context.registers.regs.DE_
 #define REG_HL_     context.registers.regs.HL_
 
+#define MEMPTR      context.memptr
 #define INC_R       REG_R = (REG_R & 0x80) | ((REG_R + 1) & 0x7F)    //incrementing lower 7 bits
 
 const uint32_t FLAGS_35 = F_B3 + F_B5;
@@ -200,6 +201,7 @@ inline void z80core::do_ret()
     T.b.L = read_mem(REG_SP);
     T.b.H = read_mem(static_cast<uint16_t>(REG_SP+1));
     REG_PC = T.w;
+    MEMPTR = T.w;
     REG_SP += 2;
 }
 
@@ -209,6 +211,7 @@ inline void z80core::do_jump()
     T.b.L = next_byte();
     T.b.H = next_byte();
     REG_PC = T.w;
+    MEMPTR = T.w;
 }
 
 inline void z80core::do_call()
@@ -220,6 +223,7 @@ inline void z80core::do_call()
     write_mem(REG_SP, REG_PC & 0xFF);
     write_mem(static_cast<uint16_t>(REG_SP+1), REG_PC >> 8);
     REG_PC = T.w;
+    MEMPTR = T.w;
 }
 
 inline unsigned int z80core::do_jr(unsigned int command, bool cond)
@@ -227,6 +231,7 @@ inline unsigned int z80core::do_jr(unsigned int command, bool cond)
     uint8_t e = next_byte();
     if (cond) {
         REG_PC += (int8_t)e;
+        MEMPTR = REG_PC;
         return TIMING[command][1];
     } else {
         return TIMING[command][0];
@@ -427,6 +432,7 @@ inline void z80core::do_DD_FD_CB(unsigned int prefix, unsigned int * cycles)
 
     //Signed displacement, so DD CB reaches the bytes below IX as well
     address = ((prefix == 0xDD)?REG_IX:REG_IY) + static_cast<int8_t>(d);
+    MEMPTR = static_cast<uint16_t>(address);
 
     T.b.L = read_mem(address);  //+4T
 
@@ -472,7 +478,11 @@ inline void z80core::do_DD_FD_CB(unsigned int prefix, unsigned int * cycles)
         }
         break;
     case 1:
-        D.b.L = do_bit_ind(YYY, T.b.L, address);
+        //Flags 3 and 5 of BIT n,(IX+d) are bits 3 and 5 of the high byte of
+        //the address, not of the low one (Undocumented Z80 Documented, 4.1).
+        //zexall cannot see it: its test address 0103 has both bits clear in
+        //either byte
+        D.b.L = do_bit_ind(YYY, T.b.L, address >> 8);
         break;
     case 2:
         D.b.L = do_res(YYY, T.b.L);
@@ -569,7 +579,9 @@ inline void z80core::store_value_16(uint32_t value)
 //access line of the port
 inline uint32_t z80core::get_index_address()
 {
-    return get_first_16() + static_cast<int8_t>(next_byte());
+    const uint32_t address = get_first_16() + static_cast<int8_t>(next_byte());
+    MEMPTR = static_cast<uint16_t>(address);
+    return address;
 }
 
 inline uint8_t z80core::get_first_8(unsigned int YYY, uint32_t * address, unsigned int * cycles, bool force_hl)
@@ -780,6 +792,7 @@ inline void z80core::do_cpi_cpd(int16_t hlinc)
     T.w = read_mem(REG_HL);
     REG_HL += hlinc;
     REG_BC--;
+    MEMPTR += hlinc;
     D.w = static_cast<uint16_t>(REG_A) - T.w;
 
     calc_z80_flags(
@@ -826,6 +839,7 @@ inline void z80core::do_ini_ind(int16_t hlinc)
 {
     PartsRecLE T, D;
     T.b.L = read_port(REG_BC);
+    MEMPTR = REG_BC + hlinc;
     write_mem(REG_HL, T.b.L);
     REG_HL += hlinc;
     REG_B--;
@@ -849,6 +863,7 @@ inline void z80core::do_outi_outd(int16_t hlinc)
     //и оба по чтению, так что поведение машин не меняется
     REG_B--;
     write_port(REG_BC, T.b.L);
+    MEMPTR = REG_BC + hlinc;
     REG_HL += hlinc;
 
     calc_z80_flags(
@@ -896,6 +911,7 @@ void z80core::do_rst(uint16_t address)
     write_mem(REG_SP, T.b.L);
     write_mem(static_cast<uint16_t>(REG_SP+1), T.b.H);
     REG_PC = address;
+    MEMPTR = address;
 }
 
 void z80core::set_nmi(unsigned int nmi_val)
@@ -972,6 +988,7 @@ unsigned int z80core::execute_command()
                 REG_B--;
                 if (REG_B != 0) {
                     REG_PC += (int8_t)T.b.L;
+                    MEMPTR = REG_PC;
                     cycles = TIMING[command][1];
                 }
                 break;
@@ -1024,6 +1041,7 @@ unsigned int z80core::execute_command()
                 T1.dw = get_first_16();
                 T2.dw = get_second_16(PP);
                 D.dw = T1.dw + T2.dw;
+                MEMPTR = static_cast<uint16_t>(T1.dw + 1);
                 store_value_16(D.dw);
 
                 calc_z80_flags(
@@ -1046,12 +1064,14 @@ unsigned int z80core::execute_command()
                 //00_0R0_010
                 //LD [R], A
                 write_mem(context.registers.reg_array_16[PP & 0x01], REG_A);
+                MEMPTR = static_cast<uint16_t>(((context.registers.reg_array_16[PP & 0x01] + 1) & 0xFF) | (REG_A << 8));
                 break;
             case 1:
             case 3:
                 //00_0R1_010
                 //LD A, [R]
                 REG_A = read_mem(context.registers.reg_array_16[PP & 0x01]);
+                MEMPTR = static_cast<uint16_t>(context.registers.reg_array_16[PP & 0x01] + 1);
                 break;
             case 4:
                 //00_100_010
@@ -1072,6 +1092,7 @@ unsigned int z80core::execute_command()
                             write_mem(static_cast<uint16_t>(T.w+1), REG_IYH);
                             break;
                 }
+                MEMPTR = static_cast<uint16_t>(T.w + 1);
                 break;
             case 5:
                 //00_101_010
@@ -1081,6 +1102,7 @@ unsigned int z80core::execute_command()
                 D.b.L = read_mem(T.w);
                 D.b.H = read_mem(static_cast<uint16_t>(T.w+1));
                 store_value_16(D.w);
+                MEMPTR = static_cast<uint16_t>(T.w + 1);
                 break;
             case 6:
                 //00_110_010
@@ -1088,6 +1110,7 @@ unsigned int z80core::execute_command()
                 T.b.L = next_byte();
                 T.b.H = next_byte();
                 write_mem(T.w, REG_A);
+                MEMPTR = static_cast<uint16_t>(((T.w + 1) & 0xFF) | (REG_A << 8));
                 break;
             case 7:
                 //00_111_010
@@ -1095,6 +1118,7 @@ unsigned int z80core::execute_command()
                 T.b.L = next_byte();
                 T.b.H = next_byte();
                 REG_A = read_mem(T.w);
+                MEMPTR = static_cast<uint16_t>(T.w + 1);
             }
             break;
         case 3:
@@ -1362,6 +1386,7 @@ unsigned int z80core::execute_command()
             } else {
                 T.b.L = next_byte();
                 T.b.H = next_byte();
+                MEMPTR = T.w;           //Taken or not
             }
             break;
         case 3:
@@ -1431,7 +1456,9 @@ unsigned int z80core::execute_command()
                     // CB 01_bit_SSS
                     //BIT bit, SSS
                     if (ZZZ2 == 6)
-                        D.b.L = do_bit_ind(YYY2, T.b.L, REG_HL);    //Should not be stored back
+                        //Flags 3 and 5 from the high byte of MEMPTR, which
+                        //is where the last instruction that set it left it
+                        D.b.L = do_bit_ind(YYY2, T.b.L, MEMPTR >> 8);    //Should not be stored back
                     else
                         D.b.L = do_bit(YYY2, T.b.L);    //Should not be stored back
                     break;
@@ -1468,11 +1495,13 @@ unsigned int z80core::execute_command()
                 //that watch the whole address see it through cpu.io_address
                 port = next_byte();
                 write_port(static_cast<uint16_t>((REG_A << 8) | port), REG_A);
+                MEMPTR = static_cast<uint16_t>(((port + 1) & 0xFF) | (REG_A << 8));
                 break;
             case 3:
                 //11_011_011
                 //IN A, (d)
                 port = next_byte();
+                MEMPTR = static_cast<uint16_t>(((REG_A << 8) | port) + 1);
                 REG_A = read_port(static_cast<uint16_t>((REG_A << 8) | port));
                 break;
             case 4:
@@ -1484,6 +1513,7 @@ unsigned int z80core::execute_command()
                 write_mem(REG_SP, D.b.L);
                 write_mem(static_cast<uint16_t>(REG_SP+1), D.b.H);
                 store_value_16(T.w);
+                MEMPTR = T.w;
                 break;
             case 5:
                 //11_101_011
@@ -1513,6 +1543,7 @@ unsigned int z80core::execute_command()
             } else {
                 T.b.L = next_byte();
                 T.b.H = next_byte();
+                MEMPTR = T.w;           //Taken or not
             }
             break;
         case 5:
@@ -1561,6 +1592,7 @@ unsigned int z80core::execute_command()
                             // ED 01 YYY 000
                             // IN YYY, [C]
                             D.b.L = read_port(REG_BC); cycles += 4;
+                            MEMPTR = static_cast<uint16_t>(REG_BC + 1);
                             if (YYY2 != 0b110)                      //110: only flags are set (undoc)
                                 context.registers.reg_array_8[REGISTERS8[YYY2]] = D.b.L;
                             calc_z80_flags(
@@ -1577,10 +1609,12 @@ unsigned int z80core::execute_command()
                                 // ED 01 110 001
                                 // *OUT [C], 0
                                 write_port(REG_BC, 0);  cycles += 4;
+                                MEMPTR = static_cast<uint16_t>(REG_BC + 1);
                             } else {
                                 // ED 01 YYY 001
                                 // OUT [C], YYY
                                 write_port(REG_BC, context.registers.reg_array_8[REGISTERS8[YYY2]]);  cycles += 4;
+                                MEMPTR = static_cast<uint16_t>(REG_BC + 1);
                             }
                             break;
                         case 2:
@@ -1593,6 +1627,7 @@ unsigned int z80core::execute_command()
                                 T2.dw = (PP2==3)?REG_SP:context.registers.reg_array_16[PP2];
                                 D.dw = T1.dw - T2.dw - CARRY;
                                 REG_HL = D.w;
+                                MEMPTR = static_cast<uint16_t>(T1.dw + 1);
 
                                 calc_z80_flags(
                                     D.dw >> 8,                              //For carry and sign
@@ -1617,6 +1652,7 @@ unsigned int z80core::execute_command()
                                 T2.dw = (PP2==3)?REG_SP:context.registers.reg_array_16[PP2];
                                 D.dw = T1.dw + T2.dw + CARRY;
                                 REG_HL = D.w;
+                                MEMPTR = static_cast<uint16_t>(T1.dw + 1);
 
                                 calc_z80_flags(
                                     D.dw >> 8,                                  //For carry  and sign
@@ -1650,6 +1686,7 @@ unsigned int z80core::execute_command()
                                     write_mem(T.w, LO8(context.registers.reg_array_16[PP2]));
                                     write_mem(T.w + 1, HI8(context.registers.reg_array_16[PP2]));
                                 }
+                                MEMPTR = static_cast<uint16_t>(T.w + 1);
                                 cycles += 12;
                             } else {
                                 // ED 01 RP1 011
@@ -1662,6 +1699,7 @@ unsigned int z80core::execute_command()
                                     REG_SP = D.w;
                                 else
                                     context.registers.reg_array_16[PP2] = D.w;
+                                MEMPTR = static_cast<uint16_t>(T.w + 1);
                                 cycles += 12;
                             }
                             break;
@@ -1764,6 +1802,7 @@ unsigned int z80core::execute_command()
                                 // RRD
                                 T.b.L = read_mem(REG_HL);
                                 D.b.L = (LO4(REG_A) << 4) | HI4(T.b.L);
+                                MEMPTR = static_cast<uint16_t>(REG_HL + 1);
                                 REG_A = (REG_A & 0xF0) | LO4(T.b.L);
                                 write_mem(REG_HL, D.b.L);
                                 calc_z80_flags(
@@ -1780,6 +1819,7 @@ unsigned int z80core::execute_command()
                                 // RLD
                                 T.b.L = read_mem(REG_HL);
                                 D.b.L = (LO4(T.b.L) << 4) | LO4(REG_A);
+                                MEMPTR = static_cast<uint16_t>(REG_HL + 1);
                                 REG_A = (REG_A & 0xF0) | HI4(T.b.L);
                                 write_mem(REG_HL, D.b.L);
                                 calc_z80_flags(
@@ -1893,6 +1933,7 @@ unsigned int z80core::execute_command()
                                 } else {
                                     cycles = 21;
                                     REG_PC -= 2;
+                                    MEMPTR = static_cast<uint16_t>(REG_PC + 1);
                                 }
                                 break;
                             case 1:
@@ -1904,6 +1945,7 @@ unsigned int z80core::execute_command()
                                 } else {
                                     cycles = 21;
                                     REG_PC -= 2;
+                                    MEMPTR = static_cast<uint16_t>(REG_PC + 1);
                                 }
                                 break;
                             case 2:
@@ -1949,6 +1991,7 @@ unsigned int z80core::execute_command()
                                 } else {
                                     cycles = 21;
                                     REG_PC -= 2;
+                                    MEMPTR = static_cast<uint16_t>(REG_PC + 1);
                                 }
                                 break;
                             case 1:
@@ -1960,6 +2003,7 @@ unsigned int z80core::execute_command()
                                 } else {
                                     cycles = 21;
                                     REG_PC -= 2;
+                                    MEMPTR = static_cast<uint16_t>(REG_PC + 1);
                                 }
                                 break;
                             case 2:
@@ -2137,6 +2181,7 @@ unsigned int z80core::execute()
                     do_rst(0);   //pushes PC, PC is overwritten below
                     uint16_t v = static_cast<uint16_t>(REG_I) << 8 | 0x00FF;
                     REG_PC = read_mem(v) | (read_mem(static_cast<uint16_t>(v + 1)) << 8);
+                    MEMPTR = REG_PC;
                     cycles = 19;
                 }
                 break;

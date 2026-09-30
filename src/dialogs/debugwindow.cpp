@@ -125,6 +125,23 @@ void DebugWindow::update_registers()
     emit data_changed(this);
 }
 
+//The processor belongs to the emulation thread, which reads the mode and the
+//breakpoint list on every instruction: the buttons change them there
+void DebugWindow::set_debug(unsigned int mode)
+{
+    e->invoke([&]() { cpu->m_debug = mode; });
+}
+
+void DebugWindow::add_breakpoint(unsigned int address)
+{
+    e->invoke([&]() { cpu->add_breakpoint(address); });
+}
+
+void DebugWindow::remove_breakpoint(unsigned int address)
+{
+    e->invoke([&]() { cpu->remove_breakpoint(address); });
+}
+
 GenericDbgWnd * CreateDebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d)
 {
     return new DebugWindow(parent, e, d);
@@ -140,7 +157,7 @@ void DebugWindow::on_stepButton_clicked()
 {
     if (cpu->m_debug == DEBUG_STOPPED)
     {
-        cpu->m_debug = DEBUG_STEP;
+        set_debug(DEBUG_STEP);
         QTimer::singleShot(100, this, &DebugWindow::on_toPCButton_clicked);
     }
 }
@@ -155,14 +172,14 @@ void DebugWindow::on_toPCButton_clicked()
 
 void DebugWindow::on_addBRButton_clicked()
 {
-    cpu->add_breakpoint(ui->codeview->get_address_at_cursor());
+    add_breakpoint(ui->codeview->get_address_at_cursor());
     ui->codeview->update();
 }
 
 
 void DebugWindow::on_removeBRButton_clicked()
 {
-    cpu->remove_breakpoint(ui->codeview->get_address_at_cursor());
+    remove_breakpoint(ui->codeview->get_address_at_cursor());
     ui->codeview->update();
 
 }
@@ -170,7 +187,7 @@ void DebugWindow::on_removeBRButton_clicked()
 
 void DebugWindow::on_runButton_clicked()
 {
-    cpu->m_debug = DEBUG_OFF;
+    set_debug(DEBUG_OFF);
     stop_tracking = true;
 }
 
@@ -182,7 +199,7 @@ void DebugWindow::track()
     {
         QTimer::singleShot(200, this, &DebugWindow::track);
     } else {
-        if (temporary_break >= 0) cpu->remove_breakpoint(temporary_break);
+        if (temporary_break >= 0) remove_breakpoint(temporary_break);
         on_toPCButton_clicked();
     }
 
@@ -191,7 +208,7 @@ void DebugWindow::track()
 
 void DebugWindow::on_stopTrackingButton_clicked()
 {
-    cpu->m_debug = DEBUG_STOPPED;
+    set_debug(DEBUG_STOPPED);
     stop_tracking = true;
     on_toPCButton_clicked();
 }
@@ -201,7 +218,7 @@ void DebugWindow::on_toolButton_clicked()
 {
     try {
         unsigned int v = parse_numeric_value(("$" + ui->valueEdit->text()).toStdString());
-        cpu->set_context_value("PC", v);
+        e->invoke([&]() { cpu->set_context_value("PC", v); });
         on_toPCButton_clicked();
     } catch (std::exception &e) {
         QMessageBox::critical(0, DebugWindow::tr("Error"), DebugWindow::tr("Incorrect address value"));
@@ -214,7 +231,7 @@ void DebugWindow::on_stepOverButton_clicked()
 {
     if (cpu->m_debug == DEBUG_STOPPED)
     {
-        if (temporary_break >= 0) cpu->remove_breakpoint(temporary_break);
+        if (temporary_break >= 0) remove_breakpoint(temporary_break);
 
         unsigned int a = cpu->get_pc();
         unsigned int command = cpu->get_command();
@@ -227,19 +244,19 @@ void DebugWindow::on_stepOverButton_clicked()
         {
             uint8_t bytes[15];
             for (unsigned int i = 0; i < disasm->max_command_length; i++)
-                bytes[i] = cpu->read_mem(a+i);
+                bytes[i] = cpu->peek_mem(a+i);
 
             std::string tmp;
             unsigned int len = disasm->disassemle(&bytes, a, sizeof(bytes), &tmp);
 
             temporary_break = a+len;
-            cpu->add_breakpoint(temporary_break);
+            add_breakpoint(temporary_break);
 
-            cpu->m_debug = DEBUG_BRAKES;
+            set_debug(DEBUG_BRAKES);
             QTimer::singleShot(200, this, &DebugWindow::track);
             stop_tracking = false;
         } else {
-            cpu->m_debug = DEBUG_STEP;
+            set_debug(DEBUG_STEP);
             QTimer::singleShot(100, this, &DebugWindow::on_toPCButton_clicked);
         }
     }
@@ -251,12 +268,12 @@ void DebugWindow::on_runUntilButton_clicked()
 {
     if (cpu->m_debug == DEBUG_STOPPED)
     {
-        if (temporary_break >= 0) cpu->remove_breakpoint(temporary_break);
+        if (temporary_break >= 0) remove_breakpoint(temporary_break);
 
         temporary_break = ui->codeview->get_address_at_cursor();
-        cpu->add_breakpoint(temporary_break);
+        add_breakpoint(temporary_break);
 
-        cpu->m_debug = DEBUG_BRAKES;
+        set_debug(DEBUG_BRAKES);
         QTimer::singleShot(200, this, &DebugWindow::track);
         stop_tracking = false;
     }
@@ -279,7 +296,7 @@ void DebugWindow::on_runDebuggedButton_clicked()
 {
     if (cpu->m_debug == DEBUG_STOPPED)
     {
-        cpu->m_debug = DEBUG_BRAKES;
+        set_debug(DEBUG_BRAKES);
         stop_tracking = false;
         QTimer::singleShot(200, this, &DebugWindow::track);
     }

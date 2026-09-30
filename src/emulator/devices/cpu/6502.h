@@ -41,6 +41,7 @@ public:
     ~mos6502();
 
     virtual void reset(bool cold) override;
+    void drive_address(unsigned int address);
     virtual unsigned int execute() override;
     virtual unsigned int read_mem(unsigned int address) override;
     virtual void write_mem(unsigned int address, unsigned int data) override;
