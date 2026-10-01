@@ -12,7 +12,7 @@
 # панели стоят на A:.
 # @timeout 90
 
-MACHINE "bk/BK-0011M-smk512.cfg"
+MACHINE "bk/BK-0011M-smk512.ext"
 LOGDEFS _16,_8
 
 WAITFOR fdd0.track != 0, _30000

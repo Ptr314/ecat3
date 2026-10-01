@@ -1,0 +1,4 @@
+// Пара к loop-a.ext
+// @error built on each other in a loop
+@extends ../../tests/files/ext-errors/loop-a.ext
+@version петля B

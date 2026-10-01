@@ -83,6 +83,7 @@ private:
     int hld_timer;
     unsigned int sectors_read;
     unsigned int sectors_written;
+    bool intrq_forced;      //INTRQ held by Force Interrupt I3 until a $D0
 
     void SetDRQ();
     bool GetDRQ();

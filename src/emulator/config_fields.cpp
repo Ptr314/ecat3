@@ -106,7 +106,6 @@ emulator::Result ExtEditModel::open(const std::string &path, const MachinePaths 
         if (!res) return res;
         file = path;
         extends = ext.extends;
-        base_cfg = is_absolute_path(extends) ? extends : paths.computers_path + extends;
         version = ext.version;
     }
     else
@@ -121,8 +120,11 @@ emulator::Result ExtEditModel::open(const std::string &path, const MachinePaths 
         for (size_t i = 0; i < extends.size(); i++) if (extends[i] == '\\') extends[i] = '/';
     }
 
+    //The base may be an extension itself: what the fields are compared with
+    //is the machine it describes
     EmulatorConfig base;
-    emulator::Result res = base.load_from_file(base_cfg);
+    emulator::Result res = file.empty() ? base.load_from_file(base_cfg)
+                                        : load_extension_base(ext, paths, base, base_cfg);
     if (!res) return res;
     EmulatorConfigDevice * system = base.get_device("system");
     base_version = system != nullptr ? system->get_parameter("version", false).value : std::string();
@@ -130,7 +132,8 @@ emulator::Result ExtEditModel::open(const std::string &path, const MachinePaths 
 
     //The same base with the extension applied: the values in effect
     EmulatorConfig current;
-    res = current.load_from_file(base_cfg);
+    res = file.empty() ? current.load_from_file(base_cfg)
+                       : load_extension_base(ext, paths, current, base_cfg);
     if (!res) return res;
     if (!file.empty())
     {
@@ -167,6 +170,31 @@ std::string ExtEditModel::build()
             kept.push_back(e);
         }
         ext.edits.swap(kept);
+
+        //A device the extension itself adds has no base to differ from: the
+        //value goes into its block, and clearing it takes it out of there
+        ExtEdit * block = nullptr;
+        for (size_t j = 0; j < ext.edits.size(); j++)
+            if (ext.edits[j].op == ExtEdit::AddDevice && ext.edits[j].device == f.device)
+                block = &ext.edits[j];
+        if (block != nullptr)
+        {
+            std::vector<EmulatorConfigParameter> &params = block->params;
+            size_t at = params.size();
+            for (size_t j = 0; j < params.size(); j++)
+                if (params[j].name == f.field.name && params[j].left_range.empty()) { at = j; break; }
+            if (!f.present)
+            {
+                if (at < params.size()) params.erase(params.begin() + static_cast<std::ptrdiff_t>(at));
+                continue;
+            }
+            EmulatorConfigParameter p;
+            p.name = f.field.name;
+            p.value = f.value;
+            p.right_extended = f.extended;
+            if (at < params.size()) params[at] = p; else params.push_back(p);
+            continue;
+        }
 
         if (!f.changed()) continue;
 

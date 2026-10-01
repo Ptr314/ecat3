@@ -8,7 +8,7 @@
 # На 3 МГц тест идет медленнее, чем на БК0011М.
 # @timeout 180
 
-MACHINE "bk/BK-0010-01-smk512.cfg"
+MACHINE "bk/BK-0010-01-smk512.ext"
 LOGDEFS _16,_8
 WAIT _300
 

@@ -46,18 +46,13 @@ emulator::Result Agat_FDC140::load_config(SystemData *sd)
 
     clock_divider = 32; // Byte timer for the syncro mode
 
-    std::string s;
-    try {
-        s = cd->get_parameter("drives").value;
-    } catch (std::exception &e) {
-        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{Agat_FDC140|" + std::string(QT_TRANSLATE_NOOP("Agat_FDC140", "Incorrect fdd list for")) + "} " + name);
-    }
-
+    //Two drive selects
     memset(&drives, 0, sizeof(drives));
-    std::vector<std::string> parts = split_string(s, '|', true);
-    drives_count = parts.size();
-    for (unsigned int i = 0; i < drives_count; i++)
-        drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));
+    std::vector<FDD*> list;
+    res = load_drives(1, sizeof(drives)/sizeof(drives[0]), list);
+    if (!res) return res;
+    drives_count = (int)list.size();
+    for (int i = 0; i < drives_count; i++) drives[i] = list[i];
 
     selected_drive = 0;
 
@@ -227,6 +222,9 @@ void Agat_FDC140::set_value(unsigned int address, unsigned int value, bool force
                     drives[selected_drive]->WriteByte(write_register);
                 }
             }
+            // As it always has, the access also loads the byte on the bus
+            // into the write register
+            // fall through
         case 0xD:
             write_register = value;
             break;

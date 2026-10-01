@@ -4,7 +4,7 @@
 # «Что нельзя проверять» в tests/README.md.
 # @timeout 30
 
-MACHINE "radio-86rk/Spektr001.cfg"
+MACHINE "radio-86rk/Spektr001.ext"
 WAIT 2500
 
 TYPE "D0000,001F\n"

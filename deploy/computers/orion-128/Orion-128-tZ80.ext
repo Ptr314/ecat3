@@ -1,0 +1,12 @@
+// Отладочный вариант Ориона с Z80 Card II: вместо монитора в ПЗУ - тест
+// процессора Чистякова, дисковод пуст.
+@extends orion-128/Orion-128-Z80.cfg
+@version Z80 Card II / Тест Чистякова
+@protected
+
+system:files = "Orion-128 (*.bru *.ord *.rko)"
+system:debug = 1
+system:order = 1000
+
+bios:image = TestZ80.bin
+-fdd0:image

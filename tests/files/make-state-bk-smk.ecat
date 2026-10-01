@@ -10,7 +10,7 @@
 # 1) - и состояние снимается в ../files/state-bk-smk.ecats.zip. Процессор в этот
 # момент крутится на BR . по 01000, в ОЗУ машины, которое режим платы не трогает.
 
-MACHINE "bk/BK-0011M-smk512.cfg"
+MACHINE "bk/BK-0011M-smk512.ext"
 LOGDEFS _16,_8
 WAIT _500
 

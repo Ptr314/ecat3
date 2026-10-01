@@ -1,0 +1,62 @@
+// Агат-7 в максимальной комплектации: 64 Кб на плате, 128 Кб псевдо-ПЗУ и
+// 128 Кб ДопОЗУ, два дисковода 840 Кб. Верхние 32 Кб памяти платы видны в
+// окне $8000-$BFFF по 16 Кб: половину выбирает разряд 0 порта $C0F0, и он же
+// стал разрядом 0 конфигурации диспетчера - остальные сдвинуты на один.
+@extends agat/Agat-7-840.cfg
+@version Агат-7 Max
+@protected
+
+ram0:size = 64k
+rom-card-ram:size = 128k
+ram-card-ram:size = 128k
+
+// Восемь сегментов вместо двух
+-rom-card:~segment[2]
+rom-card:~segment[2-4] = rom-card-port.value[0-2]
+-ram-card:~segment[0]
+ram-card:~segment[0-2] = ram-card-port.value[0-2]
+
+fdc840:drives = fdd0|fdd1
+fdd0:image = IKP7_840.dsk
+
+@before display
+fdd1 : fdd {
+	sides = 2
+	tracks = 80
+	sectors = 21
+	sector_size = 256
+    mode = mfm_agat_840
+	image = GAMES.DSK
+	files = "Disk images 840K (*.dsk)"
+	files_save = "Disk images (*.dsk)"
+	selector_value = 1
+	soft_reset = 0
+
+	~select  = fdc840.select[0-1]
+	~motor_on = fdc840.motor_on
+}
+
+// Разряд 0 конфигурации - порт памяти, остальные сдвинуты на один
+-mapper:~config[0-1]
+-mapper:~config[2]
+mapper:~config[0] = port-memory.value[0]
+mapper:~config[1-2] = ram-card-port.value[3-4]
+mapper:~config[3] = rom-card-port.value[5]
+
+-mapper:@memory[#011:#011][$8000-$BFFF]
+-mapper:@memory[#001:#011][$8000-$BFFF]
+-mapper:@memory[#000:#100][$D000-$FFFF]
+-mapper:@memory[#000:#100][$F800-$FFFF]
+-mapper:@memory[#100:#100][$D000-$FFFF]
+mapper:@memory[#0000:#1000][$D000-$FFFF] = rom-card {mode = w}
+mapper:@memory[#0000:#1000][$F800-$FFFF] = bios {mode = r}
+mapper:@memory[#1000:#1000][$D000-$FFFF] = rom-card {mode = r}
+
+@before mapper:@memory[$C000-$C00F]
+mapper:@memory[#0110:#0110][$8000-$BFFF] = ram-card {mode = r}
+mapper:@memory[#0010:#0110][$8000-$BFFF] = ram-card
+mapper:@memory[#0000:#0011][$8000-$BFFF] = ram0[$8000]
+mapper:@memory[#0001:#0011][$8000-$BFFF] = ram0[$C000]
+
+@before mapper:@memory[$C200-$C2FF]
+mapper:@memory[$C0F0-$C0FF] = port-memory

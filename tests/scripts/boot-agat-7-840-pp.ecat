@@ -11,7 +11,7 @@
 # @pixels 800
 # @timeout 34
 
-MACHINE "agat/Agat-7-840-pp.cfg"
+MACHINE "agat/Agat-7-840-pp.ext"
 WAIT 9000
 
 LOGDEFS 8,16

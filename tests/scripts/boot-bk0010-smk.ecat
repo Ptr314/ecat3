@@ -5,7 +5,7 @@
 # на плате совместим с К1801ВП1-128, тот же bk-fdc, что у КНГМД.
 # @timeout 60
 
-MACHINE "bk/BK-0010-01-smk512.cfg"
+MACHINE "bk/BK-0010-01-smk512.ext"
 LOGDEFS _16,_8
 
 WAITFOR fdd0.track != 0, _30000

@@ -1,0 +1,7 @@
+// Блок устройства с именем, которое в базе уже есть
+// @error The device already exists in the base configuration
+@extends uknc/reset-test.cfg
+@version ошибка
+ram : ram {
+	size = _16k
+}

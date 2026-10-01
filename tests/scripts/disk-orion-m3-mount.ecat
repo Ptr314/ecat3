@@ -1,7 +1,7 @@
 # Орион-128: подключение образа диска на ходу и состояние контроллера ВГ93.
 # @timeout 40
 
-MACHINE "orion-128/Orion-128-m3.cfg"
+MACHINE "orion-128/Orion-128-m3.ext"
 WAIT 3000
 
 COMMAND fdd0.load("Disk2.ODI")

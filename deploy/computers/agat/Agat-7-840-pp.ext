@@ -1,0 +1,43 @@
+// Агат-7 840 Кб с платой цветовых палитр и загружаемого знакогенератора (ПП)
+// в слоте 1: ОЗУ палитр по $C100-$C12F, переключатель по $C130-$C13F, режим
+// по $C140-$C143 и ОЗУ знакогенератора, подключаемое в $C800-$CFFF разрядом
+// режима. В дисководе по умолчанию - диск ИКП.
+@extends agat/Agat-7-840.cfg
+@version Агат-7 840 Кб (ПП)
+@protected
+
+fdd0:image = IKP7_840.dsk
+
+display:pal_mem = pal-mem
+display:pal_switch = pal-switch
+display:pal_mode = pal-mode
+display:pal_font = pal-font
+display:pal_builtin = 1
+
+@before mapper
+pal-mem : ram {
+	size = $30
+}
+
+pal-switch : port-address {
+	store_on_read = 1
+	default = 0
+}
+
+pal-mode : port-address {
+	store_on_read = 1
+}
+
+pal-font : ram {
+	size = $800
+}
+
+mapper:~config[3] = pal-mode.value[0]
+
+@before mapper:@memory[$C200-$C2FF]
+mapper:@memory[$C100-$C12F] = pal-mem
+mapper:@memory[$C130-$C13F] = pal-switch
+mapper:@memory[$C140-$C143] = pal-mode
+
+@before mapper:@memory[#000:#100][$D000-$FFFF]
+mapper:@memory[#1000:#1000][$C800-$CFFF] = pal-font

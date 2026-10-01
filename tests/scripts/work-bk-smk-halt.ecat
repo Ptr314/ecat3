@@ -19,7 +19,7 @@
 #    стеку программы, как на простой БК; обработчик 04000 отмечает 044 в 01504.
 # @timeout 40
 
-MACHINE "bk/BK-0011M-smk512.cfg"
+MACHINE "bk/BK-0011M-smk512.ext"
 LOGDEFS _16,_8
 WAIT _300
 COMMAND cpu.stop()

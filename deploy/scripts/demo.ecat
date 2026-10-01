@@ -2,7 +2,7 @@
 # Запуск: ecat3 --script scripts/demo.ecat
 # Описание команд: docs/SCRIPTING.md
 
-MACHINE "orion-128/Orion-128-m3.cfg"
+MACHINE "orion-128/Orion-128-m3.ext"
 
 # Даем машине выйти на приглашение монитора
 WAIT 2000

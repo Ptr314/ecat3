@@ -187,6 +187,8 @@ protected:
 
 public:
     mos6502core(int family_type);
+    //The device deletes its core through this type
+    virtual ~mos6502core() {}
     virtual uint8_t read_mem(uint16_t address) = 0;
     virtual void write_mem(uint16_t address, uint8_t value) = 0;
     virtual void reset();

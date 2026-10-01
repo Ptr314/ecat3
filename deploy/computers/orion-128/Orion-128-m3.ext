@@ -1,0 +1,65 @@
+// Орион-128 с Монитором-3: к машине с Монитором-1 добавлены две страницы
+// ОЗУ по 64 Кб (всего 256 Кб) и контроллер дисковода КР1818ВГ93 с портом
+// управления по $F700-$F72F, два привода 800 Кб. ROM-диск - четвертой версии.
+@extends orion-128/Orion-128-m1.cfg
+@version КР580ВМ80 / Монитор-3
+@protected
+
+system:files = "Orion-128 (*.bru *.ord *.rko);;All files (*.*)"
+bios:image = Orion128_M31.rom
+romdisk:image = Orion128_RomDisk4.rom
+
+@before bios
+port-fdc : port {}
+
+@before sound
+ram2 : ram {
+	size = 64k
+	fill = 0
+}
+
+ram3 : ram {
+	size = 64k
+	fill=0
+}
+
+@before keyboard
+fdc : wd1793 {
+	drives = fdd0|fdd1
+}
+
+fdd0 : fdd {
+	sides = 2
+	tracks = 80
+	sectors = 5
+	sector_size = 1k
+	selector_value = 0
+	files = "Orion-128 disk images (*.odi)"
+	image= RusEmulatotsRu01.odi
+	~select  = port-fdc.value[0-1]
+	~side    = port-fdc.value[4]
+	~density = port-fdc.value[6]
+	~motor_on = !fdc.hld
+}
+
+fdd1 : fdd {
+	sides = 2
+	tracks = 80
+	sectors = 5
+	sector_size = 1k
+	selector_value = 1
+	files = "Orion-128 disk images (*.odi)"
+	~select  = port-fdc.value[0-1]
+	~side    = port-fdc.value[4]
+	~density = port-fdc.value[6]
+	~motor_on = !fdc.hld
+}
+
+@before mapper:@memory[$F000-$F3FF]
+mapper:@memory[2][$0000-$EFFF] = ram2
+mapper:@memory[3][$0000-$EFFF] = ram3
+
+@before mapper:@memory[$F800-$F8FF] = port-videomode
+mapper:@memory[$F700-$F72F] = fdc {mode = r}
+mapper:@memory[$F700-$F72F] = fdc {mode = w, addr_mask=$24, addr_value=0}
+mapper:@memory[$F700-$F72F] = port-fdc {mode = w}

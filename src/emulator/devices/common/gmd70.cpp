@@ -59,17 +59,12 @@ emulator::Result GMD70::load_config(SystemData *sd)
     emulator::Result res = FDC::load_config(sd);
     if (!res) return res;
 
-    std::string s;
-    try {
-        s = cd->get_parameter("drives").value;
-    } catch (std::exception &e) {
-        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{GMD70|" + std::string(QT_TRANSLATE_NOOP("GMD70", "Incorrect fdd list for")) + "} " + name);
-    }
-
-    std::vector<std::string> parts = split_string(s, '|', true);
-    m_drives_count = parts.size();
-    for (unsigned int i = 0; i < m_drives_count; i++)
-        m_drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));
+    //Two drive selects
+    std::vector<FDD*> list;
+    res = load_drives(1, sizeof(m_drives)/sizeof(m_drives[0]), list);
+    if (!res) return res;
+    m_drives_count = list.size();
+    for (unsigned int i = 0; i < m_drives_count; i++) m_drives[i] = list[i];
 
     reset_fdc();
 

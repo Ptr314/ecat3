@@ -631,7 +631,7 @@ void MainWindow::CreateScreenMenu()
             );
         a->setActionGroup(scale_group);
         a->setCheckable(true);
-        a->setChecked(e->get_scale() == i);
+        a->setChecked(e->get_scale() == (int)i);
     };
 
     ui->menuScreen_ratio->clear();
@@ -742,7 +742,7 @@ void MainWindow::CreateDevicesMenu()
 void MainWindow::UpdateToolbar()
 {
     if (fdds_found > 0) {
-        for (int i=0; i < fdds_found; i++) {
+        for (unsigned int i=0; i < fdds_found; i++) {
             delete fdd_button[i];
             delete fdd_menu[i];
         }
@@ -784,9 +784,12 @@ void MainWindow::UpdateToolbar()
     fdds_found = 0;
 
     std::vector<ComputerDevice*>fdd_devices = e->dm->find_devices_by_class("fdd");
-    fdds_found = fdd_devices.size();
+    //The buttons and menus are fixed arrays: drives beyond them get none,
+    //instead of being written past the end
+    const unsigned int max_fdds = sizeof(fdd_button)/sizeof(fdd_button[0]);
+    fdds_found = std::min((unsigned int)fdd_devices.size(), max_fdds);
 
-    for (int i=0; i < fdds_found; i++) {
+    for (unsigned int i=0; i < fdds_found; i++) {
         FDD * fdd = dynamic_cast<FDD*>(fdd_devices[i]);
         fdds.push_back(fdd);
         CreateFDDMenu(i);

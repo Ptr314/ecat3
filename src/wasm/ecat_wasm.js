@@ -2820,6 +2820,13 @@ async function initEcat() {
                 return false;
             }
             machine = machines.find((m) => (m.cfg_path || "").toLowerCase() === base.toLowerCase());
+            // A variant that used to be a whole .cfg and is an extension now:
+            // an extension written against the old name loads on top of it,
+            // as on the desktop (cfg_or_ext() in config_ext.cpp)
+            if (!machine && /\.cfg$/i.test(base)) {
+                const asExt = base.replace(/\.cfg$/i, ".ext").toLowerCase();
+                machine = machines.find((m) => (m.cfg_path || "").toLowerCase() === asExt);
+            }
             if (!machine) {
                 setStatus("stLoadBase", "error", name, base);
                 return false;

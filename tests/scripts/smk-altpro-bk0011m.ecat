@@ -15,7 +15,7 @@
 # Длинный тест памяти (по минуте на страницу) сценарий не ждет.
 # @timeout 150
 
-MACHINE "bk/BK-0011M-smk512.cfg"
+MACHINE "bk/BK-0011M-smk512.ext"
 LOGDEFS _16,_8
 WAIT _300
 

@@ -837,7 +837,7 @@ inline void z80core::do_ldi_ldd(int16_t hlinc)
 
 inline void z80core::do_ini_ind(int16_t hlinc)
 {
-    PartsRecLE T, D;
+    PartsRecLE T;
     T.b.L = read_port(REG_BC);
     MEMPTR = REG_BC + hlinc;
     write_mem(REG_HL, T.b.L);
@@ -855,7 +855,7 @@ inline void z80core::do_ini_ind(int16_t hlinc)
 
 inline void z80core::do_outi_outd(int16_t hlinc)
 {
-    PartsRecLE T, D;
+    PartsRecLE T;
     T.b.L = read_mem(REG_HL);
     //B уменьшается ДО обращения к порту: у OUTI на A8-A15 уходит уже новое
     //значение, в отличие от INI, где порядок обратный. Видно это только
@@ -942,7 +942,6 @@ unsigned int z80core::execute_command()
 {
     uint8_t command, command2;
     uint16_t port;
-    uint32_t tmp_carry;
     unsigned int XX, YYY, ZZZ, PP, Q, XX2, YYY2, ZZZ2, PP2;
     PartsRecLE T, D, T1, T2;
     unsigned int cycles;

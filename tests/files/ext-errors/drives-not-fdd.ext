@@ -1,0 +1,6 @@
+// В списке дисководов ВГ93 стоит устройство, которое не дисковод: раньше
+// машина падала на первой команде контроллера
+// @error Not a fdd device
+@extends irisha/Irisha-kngmd.cfg
+@version ошибка
+fdc:drives = fdd0|port38

@@ -1,0 +1,6 @@
+// Блок устройства без закрывающей скобки
+// @error Configuration error for device - incorrect parameters
+@extends uknc/reset-test.cfg
+@version ошибка
+spare : port {
+	size = _16

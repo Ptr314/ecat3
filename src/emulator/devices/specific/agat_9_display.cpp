@@ -348,7 +348,7 @@ void Agat9Display::render_line(unsigned int screen_line)
                         for (unsigned k=0; k<7; k++) {              // Char is 7 pixels wide
                             unsigned c = (font_val >> k) & 0x01;
                             unsigned ccl;
-                            if ( (((v2 & 0x20) != 0) || ((v2 & 0x08) != 0) && blinker) )
+                            if ( ((v2 & 0x20) != 0) || (((v2 & 0x08) != 0) && blinker) )
                                 ccl = cl * c;
                             else
                                 ccl = cl * (c ^ 0x01);

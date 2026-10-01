@@ -14,6 +14,8 @@
 
 #include "globals.h"
 #include "emulator/emulator.h"
+#include "emulator/config_ext.h"
+#include "emulator/config_fields.h"
 #include "emulator/thread_compat.h"
 #include "emulator/utils.h"
 #include "headless/renderer_null.h"
@@ -61,6 +63,7 @@ struct Options
     bool mcp_trace = false;
     bool no_sound = false;
     bool selftest = false;
+    std::string print_config;
     bool help = false;
     bool version = false;
     bool bad = false;
@@ -103,6 +106,7 @@ Options parse_options(int argc, char *argv[])
         else if ((a == "-c" || a == "--config")  && has_next) { o.config  = argv[++i]; }
         else if ((a == "-s" || a == "--script")  && has_next) { o.script  = argv[++i]; }
         else if (a == "--workdir"                && has_next) { o.workdir = argv[++i]; }
+        else if (a == "--print-config"           && has_next) { o.print_config = argv[++i]; }
         else if (!a.empty() && a[0] == '-')      { o.bad = true; o.bad_argument = a; }
         else
         {
@@ -129,6 +133,8 @@ void print_help()
         << "      --workdir <dir>       Directory to work in, the one holding computers/\n"
         << "      --no-sound            Do not open an audio device at all\n"
         << "      --selftest            Check the internal invariants and exit\n"
+        << "      --print-config <file>     Print the configuration a machine file resolves to\n"
+        << "                            (an extension applied to its base) and exit\n"
 #ifdef ENABLE_MCP
         << "      --mcp                 Act as an MCP server on stdin/stdout, see docs/MCP.md\n"
         << "      --mcp-trace           Print the MCP conversation to stderr\n"
@@ -166,10 +172,21 @@ std::string parameter_difference(const EmulatorConfigDevice * a, const EmulatorC
     return std::string();
 }
 
-bool check_config_round_trip(const std::string &file, std::string &message)
+bool check_config_round_trip(const std::string &file, const std::string &computers_path, std::string &message)
 {
+    //An extension of the installation is checked as the machine it builds:
+    //its base with its edits applied, the chain included
     EmulatorConfig original;
-    emulator::Result res = original.load_from_file(file);
+    emulator::Result res = emulator::Result::ok();
+    if (is_extension_file(file))
+    {
+        MachinePaths mp;
+        mp.computers_path = computers_path;
+        MachineSource source;
+        res = load_machine_description(file, mp, original, source);
+    }
+    else
+        res = original.load_from_file(file);
     if (!res) { message = strip_message_context(res.message); return false; }
 
     EmulatorConfig again;
@@ -492,6 +509,138 @@ bool check_hex_round_trip(std::string &message)
     return true;
 }
 
+// A device block and @before in an extension: where things land is the whole
+// point, and nothing a script can read shows the order of the devices. Then
+// the extension is written back and read again, which must change nothing
+bool check_ext_devices(std::string &message)
+{
+    const std::string base_text =
+        "system {\n\tversion = base\n}\n"
+        "cpu : i8080 {\n\tclock = 1000000\n}\n"
+        "ram : ram {\n\tsize = 64k\n}\n"
+        "mapper : memory-mapper {\n\t@memory[$0000-$7FFF] = ram\n\t@memory[$8000-$FFFF] = ram\n}\n";
+    const std::string ext_text =
+        "@extends base.cfg\n@version variant\n"
+        "// first a block at the end, then one placed\n"
+        "rom : rom {\n\tdata = {$C3, $00, $00}\n\tsize = 3 // a comment\n}\n"
+        "// one @before for a run of blocks, which keeps its order\n"
+        "@before ram\n"
+        "port : port { default = $12 }\n"
+        "\n"
+        "port2 : port { default = 1 }\n"
+        "@before mapper:@memory[$8000-$FFFF] = ram\n"
+        "mapper:@memory[$8000-$8002] = rom {mode = r}\n"
+        "mapper:@memory[$8003-$8003] = port2 {mode = r}\n"
+        "// the same range to the same device again, for writing: not a line of the base\n"
+        "mapper:@memory[$8003-$8003] = port2 {mode = w}\n"
+        "// an edit of another kind ends the run: the next range goes to the end\n"
+        "rom:size = 4\n"
+        "mapper:@memory[$F000-$F000] = port\n";
+
+    EmulatorConfig config;
+    emulator::Result res = config.load_from_text(base_text);
+    if (!res) { message = "base: " + res.message; return false; }
+    ConfigExtension ext;
+    res = ext.parse(ext_text, "selftest.ext");
+    if (!res) { message = "parse: " + res.message; return false; }
+    res = ext.apply(config);
+    if (!res) { message = "apply: " + res.message; return false; }
+
+    std::string order;
+    for (unsigned int i = 0; i < config.get_devices_count(); i++)
+        order += (i ? "," : "") + config.get_device(static_cast<int>(i))->name;
+    if (order != "system,cpu,port,port2,ram,mapper,rom") { message = "device order " + order; return false; }
+
+    EmulatorConfigDevice * mapper = config.get_device("mapper");
+    std::string lines;
+    for (size_t i = 0; i < mapper->parameters.size(); i++)
+        lines += (i ? "," : "") + mapper->parameters[i].left_range + "=" + mapper->parameters[i].value;
+    if (lines != "[$0000-$7FFF]=ram,[$8000-$8002]=rom,[$8003-$8003]=port2,[$8003-$8003]=port2,[$8000-$FFFF]=ram,[$F000-$F000]=port")
+    { message = "mapper order " + lines; return false; }
+
+    EmulatorConfigDevice * rom = config.get_device("rom");
+    if (rom->get_parameter("size", false).value != "4" || rom->get_parameter("data", false).right_extended.empty())
+    { message = "the block of rom or the edit after it is lost"; return false; }
+
+    //Written back and read again: the same machine
+    const std::string first = serialize_config(config);
+    ConfigExtension again;
+    res = again.parse(ext.serialize(), "selftest-again.ext");
+    if (!res) { message = "parse of the written extension: " + res.message + "\n" + ext.serialize(); return false; }
+    EmulatorConfig config2;
+    config2.load_from_text(base_text);
+    res = again.apply(config2);
+    if (!res) { message = "apply of the written extension: " + res.message; return false; }
+    if (serialize_config(config2) != first) { message = "the written extension builds another machine"; return false; }
+
+    //What must be refused
+    struct Bad { const char * what; const char * text; };
+    static const Bad bad[] = {
+        { "a device the base has",      "ram : ram { size = 1k }\n" },
+        { "@before a missing device",   "@before nothing\nx : port { default = 0 }\n" },
+        { "@before a missing line",     "@before mapper:@memory[$1000-$1FFF]\nmapper:@memory[$1000-$1000] = ram\n" },
+        { "@before a plain property",   "@before ram:size\nram:size = 1k\n" },
+        { "@before of another device",  "@before cpu:clock\nmapper:@memory[$1000-$1000] = ram\n" },
+        { "@before a removal",          "@before ram\n-cpu:clock\n" },
+        { "@before with nothing after", "@before ram\n" },
+        { "@before that placed nothing","@before ram\n@before cpu\nx : port { default = 0 }\n" },
+        { "a placed line the base has", "@before mapper:@memory[$0000-$7FFF]\nmapper:@memory[$8000-$FFFF] = ram\n" },
+    };
+    for (const Bad &b : bad)
+    {
+        EmulatorConfig c;
+        c.load_from_text(base_text);
+        ConfigExtension e;
+        res = e.parse(std::string("@extends base.cfg\n@version bad\n") + b.text, "bad.ext");
+        if (res) res = e.apply(c);
+        if (res) { message = std::string("accepted: ") + b.what; return false; }
+    }
+    return true;
+}
+
+// The editor of the machine chooser rewrites an extension from its model: the
+// device blocks and the @before lines must survive a save with no change
+bool check_ext_editor_keeps_blocks(const std::string &computers_path, std::string &message)
+{
+    const std::string base = "uknc/reset-test.cfg";
+    if (!dsk_tools::file_exists(computers_path + base)) return true;
+    const std::string text =
+        "@extends " + base + "\n@version editor\n"
+        "counter2 : rom {\n\tdata = {$9F,$0A,$42,$00,$FD,$01}\n}\n"
+        "@before mapper:@memory[100000-100005]\n"
+        "mapper:@memory[100000-100005] = counter2 {mode = r}\n"
+        "@before ram\nspare : port {\n\tsize = _16\n}\n"
+        "display:mode = mono\n";
+    const std::string path = (fs::temp_directory_path() / "ecat3-selftest-editor.ext").generic_string();
+    {
+        dsk_tools::UTF8_ofstream f(path, std::ios::binary);
+        f.write(text.data(), static_cast<std::streamsize>(text.size()));
+    }
+    MachinePaths paths;
+    paths.computers_path = computers_path;
+    ExtEditModel model;
+    emulator::Result res = model.open(path, paths);
+    std::error_code ec;
+    fs::remove(path, ec);
+    if (!res) { message = "open: " + res.message; return false; }
+    const std::string saved = model.build();
+
+    std::string machine[2];
+    const std::string texts[2] = { text, saved };
+    for (int k = 0; k < 2; k++)
+    {
+        EmulatorConfig c;
+        res = c.load_from_file(computers_path + base);
+        ConfigExtension e;
+        if (res) res = e.parse(texts[k], "editor.ext");
+        if (res) res = e.apply(c);
+        if (!res) { message = (k ? "the saved text: " : "the original: ") + res.message + (k ? "\n" + saved : ""); return false; }
+        machine[k] = serialize_config(c);
+    }
+    if (machine[0] != machine[1]) { message = "a save without changes builds another machine:\n" + saved; return false; }
+    return true;
+}
+
 // The К1801ВМ1 timing table (timing = vm1): every opcode lands on a form or on
 // the fallback, every template ends with the prefetch, and a few forms repeated
 // in a loop give what the chip and the real machines give. Fast memory is the
@@ -560,7 +709,8 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     for (fs::recursive_directory_iterator it(work_path, ec), end; it != end; it.increment(ec))
     {
         if (ec) break;
-        if (it->is_regular_file(ec) && lowercase(it->path().extension().string()) == ".cfg")
+        const std::string ext = lowercase(it->path().extension().string());
+        if (it->is_regular_file(ec) && (ext == ".cfg" || ext == ".ext"))
             files.push_back(it->path().generic_string());
     }
     std::sort(files.begin(), files.end());
@@ -576,7 +726,7 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     for (size_t i = 0; i < files.size(); i++)
     {
         std::string message;
-        if (check_config_round_trip(files[i], message)) continue;
+        if (check_config_round_trip(files[i], work_path, message)) continue;
         std::cout << "FAIL " << files[i] << ": " << message << std::endl;
         failed++;
     }
@@ -608,6 +758,12 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     const bool zip_ok = check_zip_round_trip(message);
     if (!zip_ok) { std::cout << "FAIL zip: " << message << std::endl; failed++; }
     std::cout << "zip round trip: " << (zip_ok ? "ok" : "FAILED") << std::endl;
+
+    message.clear();
+    bool ext_ok = check_ext_devices(message);
+    if (ext_ok) ext_ok = check_ext_editor_keeps_blocks(work_path, message);
+    if (!ext_ok) { std::cout << "FAIL ext devices: " << message << std::endl; failed++; }
+    std::cout << "extension device blocks: " << (ext_ok ? "ok" : "FAILED") << std::endl;
 
     message.clear();
     const bool hex_ok = check_hex_round_trip(message);
@@ -824,7 +980,7 @@ int main(int argc, char *argv[])
         return run_selftest(sp.work, sp.data, sp.software);
     }
 
-    if (!o.mcp && o.script.empty() && o.config.empty())
+    if (!o.mcp && o.script.empty() && o.config.empty() && o.print_config.empty())
     {
         std::cerr << "Nothing to do: the console build needs a script, a configuration or --mcp."
                   << std::endl;
@@ -833,6 +989,26 @@ int main(int argc, char *argv[])
     }
 
     const Paths paths = resolve_paths(argv[0]);
+
+    //The machine as the emulator would build it, in .cfg syntax: what a saved
+    //state carries. Two files that print the same are the same machine, which
+    //is how a .cfg rewritten as an extension is checked
+    if (!o.print_config.empty())
+    {
+        MachinePaths mp;
+        mp.computers_path = paths.work;
+        mp.cache_path = paths.cache;
+        EmulatorConfig cfg;
+        MachineSource source;
+        emulator::Result res = load_machine_description(resolve_startup_path(o.print_config, paths.work), mp, cfg, source);
+        if (!res)
+        {
+            std::cerr << strip_message_context(res.message) << std::endl;
+            return 2;
+        }
+        std::cout << serialize_config(cfg);
+        return 0;
+    }
 
     NullRenderer renderer;
     //The order is work, data, software - not the order they are declared in

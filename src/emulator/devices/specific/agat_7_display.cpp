@@ -313,7 +313,7 @@ void Agat7Display::render_line(unsigned int screen_line)
             for (unsigned int k=1; k<=7; k++) {              // Char is 7 pixels wide
                 unsigned int c = (font_val >> k) & 0x01;
                 unsigned int ccl;
-                if ( (((v2 & 0x20) != 0) || ((v2 & 0x08) != 0) && blinker) )
+                if ( ((v2 & 0x20) != 0) || (((v2 & 0x08) != 0) && blinker) )
                     ccl = cl * c;
                 else
                     ccl = cl * (c ^ 0x01);

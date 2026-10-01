@@ -16,7 +16,7 @@
 # машины, с таблицей их не сравнить.
 # @timeout 60
 
-MACHINE "bk/BK-0011M-smk512.cfg"
+MACHINE "bk/BK-0011M-smk512.ext"
 WAIT _3000
 
 COMMAND cpu.stop()

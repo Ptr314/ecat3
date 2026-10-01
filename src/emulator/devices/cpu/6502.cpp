@@ -35,10 +35,16 @@ mos6502::mos6502(InterfaceManager *im, EmulatorConfigDevice *cd, int family_type
     , i_nmi(this, im, 1, "nmi", MODE_R, CALLBACK_NMI)
     , i_irq(this, im, 1, "irq", MODE_R, CALLBACK_INT)
     , i_so(this, im, 1, "so", MODE_R)
+    , m_family(family_type)
 {
     core = new mos6502Core(this, family_type);
 
     over_commands.push_back(0x20);
+}
+
+std::string mos6502::disasm_table() const
+{
+    return (m_family == MOS_6502_FAMILY_65C02) ? "65c02.dis" : "6502.dis";
 }
 
 mos6502::~mos6502()

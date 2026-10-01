@@ -24,13 +24,25 @@
 #include "state.h"
 
 struct ExtEdit {
-    //RemoveDevice takes the whole device out: "-hdd", no property
-    enum Op { Set, Remove, RemoveDevice };
+    //RemoveDevice takes the whole device out: "-hdd", no property. AddDevice
+    //is a device block written as in a .cfg: "fdc : bk-fdc { ... }"
+    enum Op { Set, Remove, RemoveDevice, AddDevice };
     Op                      op = Set;
     std::string             device;
     //For Set the whole line; for Remove only name and left_range are filled,
-    //for RemoveDevice nothing
+    //for RemoveDevice and AddDevice nothing
     EmulatorConfigParameter param;
+    //AddDevice: the type and the parameters of the new device
+    std::string             type;
+    std::vector<EmulatorConfigParameter> params;
+    //From an @before line above the edit: where an AddDevice or a Set of a
+    //mapper range goes instead of the end. before_device alone is a device
+    //("@before mapper"); with before_key it is a line of that device
+    //("@before mapper:@memory[100000-137777]", before_value picking one of
+    //several lines with that key)
+    std::string             before_device;
+    std::string             before_key;
+    std::string             before_value;
     int                     line = 0;
 };
 
@@ -58,6 +70,7 @@ public:
 private:
     std::string m_file_name;
     emulator::Result error_at(int line, const char * message, const std::string &detail = "") const;
+    emulator::Result attach_before(ExtEdit &e, const ExtEdit &pending, bool &has_before, int &placed) const;
 };
 
 //Where a machine was loaded from
@@ -95,16 +108,26 @@ bool is_machine_file(const std::string &path);          //any of the above, plus
 //The name without its extension, for companion files (.md) and for ini keys
 std::string machine_file_stem(const std::string &path);
 
-//The .cfg a machine file is built on, without loading anything: a .cfg is its
-//own base, an extension names one in @extends. The web frontend asks before it
-//loads an extension downloaded from a link, because the base and its files
-//arrive in a bundle of their own that has to be unpacked first
+//The file a machine file is built on, without loading anything: a .cfg is its
+//own base, an extension names one in @extends - a .cfg or another extension.
+//The web frontend asks before it loads an extension downloaded from a link,
+//because the base and its files arrive in a bundle of their own that has to
+//be unpacked first
 emulator::Result machine_base_file(const std::string &file, const MachinePaths &paths,
                                    std::string &base);
 
+//The configuration an extension is built on, without the extension itself: its
+//.cfg, or the chain of extensions down to one, applied. base_file is what its
+//@extends resolves to. Nothing is unpacked and no inline data is written: the
+//editor of the machine chooser compares against it
+emulator::Result load_extension_base(const ConfigExtension &ext, const MachinePaths &paths,
+                                     EmulatorConfig &config, std::string &base_file);
+
 //The one way a machine description is read, whatever the file: a .cfg as is,
-//an extension on top of its base. With system_only only the system section
-//comes back (the machine chooser), and nothing is written to the cache
+//an extension on top of its base (which may be an extension in turn, down to a
+//.cfg). A .cfg that is not there is taken as an .ext of the same name, if that
+//is. With system_only only the system section comes back (the machine
+//chooser), and nothing is written to the cache
 emulator::Result load_machine_description(const std::string &file, const MachinePaths &paths,
                                           EmulatorConfig &config, MachineSource &source,
                                           bool system_only = false);

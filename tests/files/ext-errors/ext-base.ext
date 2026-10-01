@@ -1,4 +1,5 @@
-// База расширения - не .cfg
-// @error can only be based on a .cfg
-@extends ../../tests/files/ext-bk-0010-01.ext
+// База расширения - упакованное расширение: базой бывает только .cfg или
+// простое .ext, архив перед загрузкой некому распаковать
+// @error can only be based on a .cfg or an .ext file
+@extends ../../tests/files/ext-vm1.ext.zip
 @version ошибка

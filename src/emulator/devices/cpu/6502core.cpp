@@ -1143,6 +1143,9 @@ void mos6502core::_JMP(uint8_t command, unsigned int & cycles)
         break;
     default:
         // TODO: 6502 generate an error
+        // Not reached: only the JMP opcodes come here. Stays where it is
+        // rather than jumping to an uninitialised address
+        D.w = REG_PC;
         break;
     }
     REG_PC = D.w;
@@ -1202,7 +1205,6 @@ void mos6502core::_LDX(uint8_t command, unsigned int & cycles)
 
 void mos6502core::_LDY(uint8_t command, unsigned int & cycles)
 {
-    PartsRecLE T;
 
     switch (command) {
     case 0xA0:

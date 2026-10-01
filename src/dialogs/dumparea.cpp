@@ -148,7 +148,7 @@ void DumpArea::show_editor(unsigned int address)
 
 unsigned int DumpArea::mouse_to_offset(unsigned int  x, unsigned int y)
 {
-    int border = char_width * (LEFT_PADDING + 6 /* addr */ + 16*3 /* data */ + 2);
+    unsigned int border = char_width * (LEFT_PADDING + 6 /* addr */ + 16*3 /* data */ + 2);
     if (x<border)
     {
         int xc = floor((x-floor(char_width * LEFT_PADDING))/char_width);
@@ -213,11 +213,13 @@ void DumpArea::editor_escape_pressed()
 void DumpArea::page_down()
 {
     if (lines_count > 0) {
-        int new_address = start_address + lines_count*16;
-        if (new_address > data_size - lines_count*16)
+        //Compared as a sum: data_size - page wrapped round on a device smaller
+        //than a page (a port), and the last page was never reached
+        const unsigned int page = lines_count*16;
+        if (start_address + 2*page > data_size)
             go_to(-1);
         else
-            go_to(global_offset, new_address);
+            go_to(global_offset, start_address + page);
     }
 }
 

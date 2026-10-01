@@ -1,0 +1,6 @@
+// @before перед строкой карты, которой в базе нет
+// @error No such property in the base configuration
+@extends uknc/reset-test.cfg
+@version ошибка
+@before mapper:@memory[040000-077777]
+mapper:@memory[040000-040001] = ram

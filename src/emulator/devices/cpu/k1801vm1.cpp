@@ -4,6 +4,7 @@
 // Description: К1801ВМ1 / К1801ВМ2 emulator interface class
 
 #include "k1801vm1.h"
+#include "emulator/disasm_pdp11.h"
 #include "emulator/utils.h"
 
 #define CALLBACK_VIRQ   1
@@ -85,6 +86,7 @@ k1801vm1::k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd, int family_ty
     , i_init(this, im, 1, "init", MODE_W)
 {
     core = new K1801VM1Core(this, family_type);
+    m_family = family_type;
 
     // JSR, EMT and TRAP are the instructions worth stepping over. They occupy
     // whole opcode ranges rather than single codes, so the list is filled in.
@@ -96,6 +98,15 @@ k1801vm1::~k1801vm1()
 {
     delete core;
     delete m_timing;
+}
+
+// The PDP-11 family decodes bit fields instead of whole opcode bytes and
+// therefore brings its own decoder rather than a table file; the ВМ2 has the
+// EIS instructions on top
+DisAsm * k1801vm1::create_disasm(MAYBE_UNUSED const std::string &data_path, emulator::Result &res)
+{
+    res = emulator::Result::ok();
+    return new DisAsmPDP11(m_family == PDP11_FAMILY_1801VM2);
 }
 
 emulator::Result k1801vm1::load_config(SystemData *sd)

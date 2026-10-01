@@ -18,6 +18,9 @@ DisAsmArea::DisAsmArea(QWidget *parent)
     address_first(_FFFF),
     address_last(_FFFF),
     max_lines(0),
+    screen_size(1),
+    first_line(0),
+    cursor_line(0),
     data_valid(false),
     CRC(0)
 {
@@ -56,7 +59,9 @@ void DisAsmArea::invalidate()
 
 void DisAsmArea::go_to(unsigned int address)
 {
-    if (address == address_last + lines[lines_count-1].len) disassemble_lines(lines_count, 1);
+    //An empty buffer has no last line: set_data() comes here with none, and
+    //this read lines[-1]
+    if (lines_count > 0 && address == address_last + lines[lines_count-1].len) disassemble_lines(lines_count, 1);
     this->address = address;
     data_valid = false;
     update();
@@ -69,6 +74,7 @@ unsigned int DisAsmArea::get_address_at_cursor()
 uint16_t DisAsmArea::area_crc16()
 {
     uint16_t CRC = 0;
+    if (lines_count <= 0) return CRC;
     for (unsigned int a = address_first; a < address_last + lines[lines_count-1].len; a++)
     {
         uint8_t b = cpu->peek_mem(a);
@@ -81,7 +87,12 @@ uint16_t DisAsmArea::area_crc16()
 void DisAsmArea::update_data()
 {
     data_valid = true;
-    screen_size = size().height() / font_height - 2;
+    //At least one line, at most the buffer: a window squeezed below two lines
+    //made this zero or negative, and lines[first_line + screen_size - 1] below
+    //indexed outside the array
+    screen_size = (int)(size().height() / font_height) - 2;
+    if (screen_size < 1) screen_size = 1;
+    if (screen_size > DISASM_SIZE / 2) screen_size = DISASM_SIZE / 2;
     if (CRC != 0)
     {
         uint16_t CRC2 = area_crc16();
@@ -96,7 +107,7 @@ void DisAsmArea::update_data()
         if ( (address >= screen_first) && (address <= screen_last) )
         {
             //adddres is inside of both the buffer and the screen
-            for (unsigned int i = first_line; i < first_line+screen_size; i++)
+            for (int i = first_line; i < first_line+screen_size; i++)
             {
                 if (lines[i].address == address){
                     cursor_line = i-first_line;
@@ -165,7 +176,7 @@ void DisAsmArea::disassemble_lines(int index, int count, unsigned int address)
     if (index + count > DISASM_SIZE) count = DISASM_SIZE - index;
     if (count < 0) count = 0;
 
-    for (unsigned int i = index; i < index+count; i++)
+    for (int i = index; i < index+count; i++)
     {
         for (unsigned int j = 0; j < disasm->max_command_length; j++)
             buffer[j] = cpu->peek_mem(a+j);
@@ -212,9 +223,9 @@ void DisAsmArea::paintEvent(QPaintEvent *event)
 
     //unsigned int lines_count = screen_size;
 
-    for (unsigned int i=0; i < screen_size; i++)
+    for (int i=0; i < screen_size; i++)
     {
-        unsigned int line = first_line + i;
+        int line = first_line + i;
         if (line < lines_count)
         {
             unsigned int x = char_width*2;

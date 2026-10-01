@@ -1,0 +1,7 @@
+// @before перед правкой обычного свойства: место бывает только у нового
+// устройства и у строки карты
+// @error @before must be followed by a device block or a mapper range
+@extends uknc/reset-test.cfg
+@version ошибка
+@before ram:size
+ram:size = _8k

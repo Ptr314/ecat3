@@ -64,6 +64,7 @@ public:
     virtual std::vector<std::pair<std::string, std::string>> get_registers() override;
     virtual std::vector<std::pair<std::string, std::string>> get_flags() override;
     virtual unsigned int get_command() override;
+    virtual std::string disasm_table() const override { return "i8080.dis"; }
 
     virtual void set_context_value(const std::string &name, unsigned int value) override;
     void save_state(StateWriter &w) override;

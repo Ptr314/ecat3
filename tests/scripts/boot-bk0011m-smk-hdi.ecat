@@ -10,7 +10,7 @@
 # @timeout 60
 # @nomcp образ винчестера вставляется до того, как BIOS опросит канал, а живая сессия успевает пройти опрос раньше первой команды
 
-MACHINE "bk/BK-0011M-smk512.cfg"
+MACHINE "bk/BK-0011M-smk512.ext"
 LOGDEFS _16,_8
 
 COMMAND fdd0.eject()

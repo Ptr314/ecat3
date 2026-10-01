@@ -6,7 +6,7 @@
 # 39. Для статической памяти эти числа на 3 и 4 МГц одинаковы.
 # @timeout 60
 
-MACHINE "bk/BK-0010-01-smk512.cfg"
+MACHINE "bk/BK-0010-01-smk512.ext"
 WAIT _3000
 
 COMMAND cpu.stop()

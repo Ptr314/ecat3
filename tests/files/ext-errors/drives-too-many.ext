@@ -1,0 +1,6 @@
+// Контроллеру Агат-840 названо три дисковода, а выборок у него две: раньше
+// третий записывался за конец массива
+// @error Incorrect fdd list for
+@extends agat/Agat-7-max.ext
+@version ошибка
+fdc840:drives = fdd0|fdd1|fdd0

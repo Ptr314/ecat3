@@ -17,6 +17,7 @@
 #endif
 
 #include "core.h"
+#include "disasm.h"
 #include "emulator/utils.h"
 
 #define PORT_FLIP  1
@@ -313,11 +314,11 @@ unsigned int DeviceManager::get_device_index(const std::string &name)
 void DeviceManager::reset_devices(bool cold)
 {
     int devlist[MAX_DEVICES];
-    for (int i=0; i < device_count; i++)
+    for (unsigned int i=0; i < device_count; i++)
         devlist[i] = i;
 
-    for (int i=0; i< device_count; i++)
-        for (int j=0; j < device_count - i - 1; j++)
+    for (unsigned int i=0; i < device_count; i++)
+        for (unsigned int j=0; j + i + 1 < device_count; j++)
             if (devices[devlist[j]].device->reset_priority > devices[devlist[j+1]].device->reset_priority) {
                 int t = devlist[j];
                 devlist[j] = devlist[j+1];
@@ -348,12 +349,15 @@ void DeviceManager::clock(unsigned int domain, unsigned int counter)
 
 void DeviceManager::error(ComputerDevice *d, const std::string &message)
 {
-    //Reached from the emulation thread on something the guest asked for and the
-    //emulator does not model: an unsupported i8255 mode, a multi-sector WD1793
-    //command, a register the i8257 does not have. Throwing here ended the
-    //process - nothing catches an exception on that thread - and the line in
-    //cerr failed every test on its way out. The first error is kept instead,
-    //and Emulator::timer_proc stops the machine on it.
+    //A fault of the emulator itself, reached from the emulation thread: a
+    //drive asked for a byte outside its sector, a device called through an
+    //interface it does not have. Something the guest is merely allowed to do
+    //and a device does not model (an i8255 mode, a register the i8257 does not
+    //have) is not one: that goes to ComputerDevice::note_unsupported() and the
+    //machine runs on. Throwing here ended the process - nothing catches an
+    //exception on that thread - and the line in cerr failed every test on its
+    //way out. The first error is kept instead, and Emulator::timer_proc stops
+    //the machine on it.
     if (error_pending) return;
     error_device = d;
     error_message = message;
@@ -727,8 +731,16 @@ std::vector<DeviceFieldInfo> ComputerDevice::get_device_fields()
         {"type",        "Device type",                          false},
         {"class",       "Device class",                         false},
         {"clock_source","Processor whose clock this device counts in", false},
-        {"interfaces",  "Values of all interfaces of a device", false}
+        {"interfaces",  "Values of all interfaces of a device", false},
+        {"unsupported", "Guest requests this device does not model, since start", false},
+        {"unsupported_last", "The last of them", false}
     };
+}
+
+void ComputerDevice::note_unsupported(const std::string &what)
+{
+    m_unsupported++;
+    m_unsupported_last = what;
 }
 
 std::vector<DeviceCommandInfo> ComputerDevice::get_device_commands()
@@ -751,6 +763,16 @@ bool ComputerDevice::get_field(const std::string &field, MAYBE_UNUSED unsigned i
     }
     if (field == "class") {
         out.text = device_class;
+        return true;
+    }
+    if (field == "unsupported") {
+        out.numeric = true;
+        out.width = 32;
+        out.values.push_back(m_unsupported);
+        return true;
+    }
+    if (field == "unsupported_last") {
+        out.text = m_unsupported_last;
         return true;
     }
     //Which clock domain this device belongs to - the question a machine with
@@ -1737,6 +1759,13 @@ emulator::Result CPU::load_config(SystemData *sd)
 unsigned int CPU::peek_mem(unsigned int address)
 {
     return mm->get_direct(address) & 0xFF;
+}
+
+DisAsm * CPU::create_disasm(const std::string &data_path, emulator::Result &res)
+{
+    DisAsm * d = new DisAsm();
+    res = d->load_file(data_path + disasm_table());
+    return d;
 }
 
 bool CPU::check_breakpoint(unsigned int address)

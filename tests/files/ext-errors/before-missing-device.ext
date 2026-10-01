@@ -1,0 +1,8 @@
+// @before перед устройством, которого в базе нет
+// @error No such device in the base configuration
+@extends uknc/reset-test.cfg
+@version ошибка
+@before nothing
+spare : port {
+	size = _16
+}

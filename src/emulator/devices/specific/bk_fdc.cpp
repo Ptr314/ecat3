@@ -63,19 +63,10 @@ emulator::Result BKFDC::load_config(SystemData *sd)
     emulator::Result res = FDC::load_config(sd);
     if (!res) return res;
 
-    std::string s;
-    try {
-        s = cd->get_parameter("drives").value;
-    } catch (std::exception &e) {
-        return emulator::Result::error(emulator::ErrorCode::ConfigError,
-            "{BKFDC|" + std::string(QT_TRANSLATE_NOOP("BKFDC", "Incorrect fdd list for")) + "} " + name);
-    }
-
-    std::vector<std::string> parts = split_string(s, '|', true);
-    if (parts.empty() || parts.size() > BK_FDC_MAX_DRIVES)
-        return emulator::Result::error(emulator::ErrorCode::ConfigError,
-            "{BKFDC|" + std::string(QT_TRANSLATE_NOOP("BKFDC", "Incorrect fdd list for")) + "} " + name);
-    m_drives_count = parts.size();
+    std::vector<FDD*> list;
+    res = load_drives(1, BK_FDC_MAX_DRIVES, list);
+    if (!res) return res;
+    m_drives_count = list.size();
 
     // The side line is shared by all drives, exactly as on the cable
     LinkData ld;
@@ -84,18 +75,14 @@ emulator::Result BKFDC::load_config(SystemData *sd)
     ld.s.mask = create_mask(1, 0);
 
     for (unsigned int i = 0; i < m_drives_count; i++) {
-        FDD * fdd = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));
-        if (fdd == nullptr)
-            return emulator::Result::error(emulator::ErrorCode::ConfigError,
-                "{BKFDC|" + std::string(QT_TRANSLATE_NOOP("BKFDC", "Not a fdd device")) + "} " + parts[i]);
-        m_drives[i].fdd = fdd;
+        m_drives[i].fdd = list[i];
         m_drives[i].track = 0;
         m_drives[i].valid = false;
 
-        ld.d.i = im->get_interface_by_name(parts[i], "side");
+        ld.d.i = im->get_interface_by_name(list[i]->name, "side");
         if (ld.d.i == nullptr)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
-                "{BKFDC|" + std::string(QT_TRANSLATE_NOOP("BKFDC", "Interface not found")) + "} " + parts[i] + ":side");
+                "{BKFDC|" + std::string(QT_TRANSLATE_NOOP("BKFDC", "Interface not found")) + "} " + list[i]->name + ":side");
         ld.d.shift = 0;
         ld.d.mask = create_mask(1, 0);
         ld.s.i->connect(ld.s, ld.d, false);

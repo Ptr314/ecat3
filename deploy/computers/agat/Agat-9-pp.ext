@@ -1,0 +1,41 @@
+// Агат-9 с платой цветовых палитр и загружаемого знакогенератора (ПП) в
+// слоте 3: ОЗУ палитр по $C300-$C32F, переключатель по $C330-$C33F, режим по
+// $C340-$C343 и ОЗУ знакогенератора, подключаемое в $C800-$CFFF разрядом
+// режима.
+@extends agat/Agat-9.cfg
+@version Агат-9 (ПП)
+@protected
+
+// Выбора цветовой схемы в опциях дисплея нет: цвета задает плата
+display:color_options = 0
+display:pal_mem = pal-mem
+display:pal_switch = pal-switch
+display:pal_mode = pal-mode
+display:pal_font = pal-font
+display:pal_builtin = 0
+
+@before mapper
+pal-mem : ram {
+	size = $30
+}
+
+pal-switch : port-address {
+	store_on_read = 1
+	default = 0
+}
+
+pal-mode : port-address {
+	store_on_read = 1
+}
+
+pal-font : ram {
+	size = $800
+}
+
+mapper:config = pal-mode
+mapper:@memory[1:1][$C800-$CFFF] = pal-font
+
+@before mapper:@memory[$C500-$C5FF]
+mapper:@memory[$C300-$C32F] = pal-mem
+mapper:@memory[$C330-$C33F] = pal-switch
+mapper:@memory[$C340-$C343] = pal-mode

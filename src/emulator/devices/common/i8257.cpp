@@ -110,7 +110,9 @@ unsigned int I8257::get_value(unsigned int address)
         RgState &= ~0x0Fu;
         break;
     default:
-        im->dm->error(this, "i8257: reading from an unknown register");
+        //Addresses 9-15 (A3 set, A0-A2 not zero) are not described for the
+        //chip: the bus gets nothing
+        note_unsupported("i8257: read of register " + std::to_string(a));
         break;
     }
     return result;
@@ -170,7 +172,7 @@ void I8257::set_value(unsigned int address, unsigned int value, bool force)
         RgMode = v;
         break;
     default:
-        im->dm->error(this, "i8257: writing to an unknown register");
+        note_unsupported("i8257: write to register " + std::to_string(a));
         break;
     }
 }

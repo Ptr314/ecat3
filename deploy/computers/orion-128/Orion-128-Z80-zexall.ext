@@ -1,0 +1,11 @@
+// Отладочный вариант Ориона с Z80 Card II для теста команд процессора
+// zexall: в дисководе - диск с тестом.
+@extends orion-128/Orion-128-Z80.cfg
+@version Z80 Card II / Zexall
+@protected
+
+system:files = "Orion-128 (*.bru *.ord *.rko)"
+system:debug = 1
+-system:order
+
+fdd0:image = zexall.odi

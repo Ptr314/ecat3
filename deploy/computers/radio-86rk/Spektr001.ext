@@ -1,0 +1,8 @@
+// Спектр-001 - полный аналог Радио-86РК: отличается только ПЗУ монитора,
+// в приглашении которого стоит свое название.
+@extends radio-86rk/Radio-86rk.cfg
+@version Спектр-001
+@protected
+
+system:order = 400
+bios:image = spektr001.rom

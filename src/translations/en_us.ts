@@ -40,7 +40,7 @@
 <context>
     <name>AddressableDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+904"/>
+        <location filename="../emulator/core.cpp" line="+953"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -68,7 +68,7 @@
 <context>
     <name>Agat7Display</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_7_display.cpp" line="+79"/>
+        <location filename="../emulator/devices/specific/agat_7_display.cpp" line="+84"/>
         <source>Incorrect display config - palette card</source>
         <translation type="unfinished"></translation>
     </message>
@@ -76,7 +76,7 @@
 <context>
     <name>Agat9Display</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+78"/>
+        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+79"/>
         <source>Incorrect display config - palette card</source>
         <translation type="unfinished"></translation>
     </message>
@@ -88,21 +88,11 @@
         <source>Unknown speed mode</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <location line="+8"/>
-        <source>Incorrect fdd list for</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>Agat_FDC840</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_fdc840.cpp" line="+49"/>
-        <source>Incorrect fdd list for</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+18"/>
+        <location filename="../emulator/devices/specific/agat_fdc840.cpp" line="+63"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -123,18 +113,7 @@
 <context>
     <name>BKFDC</name>
     <message>
-        <location filename="../emulator/devices/specific/bk_fdc.cpp" line="+71"/>
-        <location line="+6"/>
-        <source>Incorrect fdd list for</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>Not a fdd device</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
+        <location filename="../emulator/devices/specific/bk_fdc.cpp" line="+85"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -152,17 +131,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+179"/>
+        <location line="+191"/>
         <source>Command &apos;setreg&apos; expects a name and a value</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-195"/>
+        <location line="-207"/>
         <source>Invalid breakpoint address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+125"/>
+        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+136"/>
         <source>Unknown timing</source>
         <translation type="unfinished"></translation>
     </message>
@@ -170,7 +149,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1220"/>
+        <location filename="../emulator/core.cpp" line="-1238"/>
         <source>Incorrect interface definition for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -204,7 +183,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+208"/>
+        <location line="+226"/>
         <source>Command &apos;option&apos; expects an option id and a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -222,7 +201,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+661"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+717"/>
         <source>Disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -237,7 +216,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+682"/>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+706"/>
         <source>Hard disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -285,7 +264,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+112"/>
+        <location line="+120"/>
         <source>The device is not in the list</source>
         <translation type="unfinished"></translation>
     </message>
@@ -298,7 +277,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+396"/>
+        <location line="+403"/>
         <source>Command &apos;connect&apos; expects a port name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -411,8 +390,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/debugwindow.cpp" line="+54"/>
-        <location line="+153"/>
+        <location filename="../dialogs/debugwindow.cpp" line="+37"/>
+        <location line="+170"/>
         <location line="+66"/>
         <location line="+77"/>
         <source>Error</source>
@@ -429,12 +408,12 @@
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1116"/>
+        <location filename="../emulator/core.cpp" line="-1164"/>
         <source>Too many devices</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+19"/>
         <source>Can&apos;t create device</source>
         <translation type="unfinished"></translation>
     </message>
@@ -447,8 +426,8 @@
 <context>
     <name>DeviceOptions</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_7_display.cpp" line="+80"/>
-        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+75"/>
+        <location filename="../emulator/devices/specific/agat_7_display.cpp" line="+86"/>
+        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+79"/>
         <location line="+11"/>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
         <location line="+218"/>
@@ -522,7 +501,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/connector.cpp" line="-166"/>
+        <location filename="../emulator/devices/common/connector.cpp" line="-174"/>
         <location line="+30"/>
         <location line="+85"/>
         <source>Input device</source>
@@ -546,12 +525,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/ay8910.cpp" line="+226"/>
+        <location filename="../emulator/devices/common/ay8910.cpp" line="+229"/>
         <source>AY-3-8910</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/covox.cpp" line="+49"/>
+        <location filename="../emulator/devices/common/covox.cpp" line="+50"/>
         <source>Covox</source>
         <translation type="unfinished"></translation>
     </message>
@@ -645,18 +624,19 @@
 <context>
     <name>Emulator</name>
     <message>
-        <location filename="../emulator/files.cpp" line="+31"/>
+        <location filename="../emulator/files.cpp" line="+40"/>
         <source>Unable to find an expected preamble byte 0xE6!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+22"/>
-        <location line="+354"/>
+        <location line="+24"/>
+        <location line="+389"/>
         <source>Unable to find a RAM page to store data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-299"/>
+        <location line="-407"/>
+        <location line="+77"/>
         <source>File is smaller than expected!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -672,22 +652,41 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-40"/>
+        <location line="-122"/>
+        <location line="+82"/>
         <location line="+75"/>
         <location line="+7"/>
-        <location line="+76"/>
-        <location line="+124"/>
+        <location line="+89"/>
+        <location line="+142"/>
         <location line="+7"/>
         <source>Error reading</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-186"/>
+        <location line="-335"/>
+        <source>Incorrect addresses in the file header</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+131"/>
+        <location line="+162"/>
+        <source>The file does not fit into the memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-183"/>
         <source>Error reading HEX file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+68"/>
+        <location line="+19"/>
+        <location line="+8"/>
+        <source>Incorrect HEX file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+53"/>
         <location line="+10"/>
         <location line="+8"/>
         <location line="+7"/>
@@ -696,11 +695,17 @@
     </message>
     <message>
         <location line="+13"/>
+        <location line="+7"/>
         <source>Error reading header data!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+40"/>
+        <source>This machine has no RAM disk to put the file on</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Can&apos;t load the file: all ramdisks are full!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -710,7 +715,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+198"/>
+        <location filename="../emulator/emulator.cpp" line="+229"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -723,57 +728,62 @@
 <context>
     <name>EmulatorConfig</name>
     <message>
-        <location filename="../emulator/config.cpp" line="+255"/>
-        <location filename="../emulator/config_ext.cpp" line="+114"/>
+        <location filename="../emulator/config.cpp" line="+273"/>
+        <location filename="../emulator/config_ext.cpp" line="+129"/>
         <location line="+6"/>
+        <location line="+589"/>
         <location filename="../emulator/config_fields.cpp" line="+104"/>
-        <location line="+90"/>
+        <location line="+118"/>
         <source>Error reading config file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+19"/>
         <location line="+3"/>
+        <location filename="../emulator/config_ext.cpp" line="-370"/>
         <source>Configuration error for device - no type found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+5"/>
+        <location filename="../emulator/config_ext.cpp" line="+3"/>
         <source>Configuration error for device - no description found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="-68"/>
+        <location filename="../emulator/config_ext.cpp" line="+6"/>
         <source>Configuration error for device - incorrect parameters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-97"/>
+        <location line="-41"/>
         <location line="+5"/>
         <location line="+13"/>
-        <location filename="../emulator/config_ext.cpp" line="+187"/>
+        <location filename="../emulator/config_ext.cpp" line="+78"/>
         <location line="+8"/>
         <source>Configuration error for device parameter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+112"/>
+        <location line="+119"/>
         <source>radix must be 2, 8, 10 or 16</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/config_ext.cpp" line="-182"/>
+        <location filename="../emulator/config_ext.cpp" line="-301"/>
         <location line="+5"/>
         <source>The archive must hold exactly one file of its own type at its top level</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+97"/>
+        <location line="+176"/>
         <source>Unknown directive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-31"/>
+        <location line="+33"/>
         <source>Directive without a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -784,8 +794,10 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+21"/>
-        <location line="+5"/>
+        <location line="-33"/>
+        <location line="+8"/>
+        <location line="+84"/>
+        <location line="+7"/>
         <location line="+3"/>
         <location line="+28"/>
         <source>Expected device:property</source>
@@ -797,12 +809,28 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="-98"/>
+        <location line="+49"/>
+        <location line="+81"/>
         <source>Unexpected text after the property</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-231"/>
+        <location line="+55"/>
+        <location line="+18"/>
+        <location line="+165"/>
+        <source>@before must be followed by a device block or a mapper range</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-101"/>
+        <location line="+167"/>
+        <source>The device already exists in the base configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-64"/>
         <source>The extension has no @extends</source>
         <translation type="unfinished"></translation>
     </message>
@@ -812,34 +840,56 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+37"/>
-        <location line="+6"/>
-        <location line="+50"/>
+        <location line="+53"/>
+        <location line="+17"/>
+        <location line="+10"/>
+        <location line="+92"/>
         <source>No such device in the base configuration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-43"/>
+        <location line="-85"/>
+        <location line="+42"/>
         <source>No such property in the base configuration, it must be written exactly as there</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="-39"/>
         <source>The base configuration has several lines with this key, add the value of the one to remove</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+35"/>
+        <source>This line is already in the base configuration: change it outside @before, or remove it first</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>The base configuration has several lines with this key, add the value of the one meant</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>The base configuration has several lines with this key, remove them first</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+15"/>
         <source>The base configuration has this property with other modifiers, remove it first</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-287"/>
+        <location line="+69"/>
+        <source>An extension can only be based on a .cfg or an .ext file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>The extensions are built on each other in a loop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-583"/>
         <location line="+20"/>
         <location line="+20"/>
         <location line="+8"/>
@@ -853,18 +903,12 @@
     </message>
     <message>
         <location line="+17"/>
-        <location line="+450"/>
+        <location line="+720"/>
         <source>Error writing file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-131"/>
-        <location line="+75"/>
-        <source>An extension can only be based on a .cfg file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+28"/>
+        <location line="-28"/>
         <source>No cache directory for inline data</source>
         <translation type="unfinished"></translation>
     </message>
@@ -874,7 +918,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/config_fields.cpp" line="-96"/>
+        <location filename="../emulator/config_fields.cpp" line="-124"/>
         <source>A packed extension cannot be edited</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1021,21 +1065,33 @@
     </message>
 </context>
 <context>
+    <name>FDC</name>
+    <message>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-686"/>
+        <source>Incorrect fdd list for</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Not a fdd device</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>FDD</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-532"/>
-        <location line="+49"/>
+        <location line="+111"/>
+        <location line="+79"/>
         <source>FDD device is working in a logical mode, no physical formats are supported</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-35"/>
-        <location line="+24"/>
+        <location line="-74"/>
         <source>Unrecognized MFM format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+53"/>
+        <location line="+116"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1045,7 +1101,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+303"/>
+        <location line="+309"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1055,7 +1111,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-519"/>
+        <location line="-555"/>
         <source>Incorrect fdd parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1075,7 +1131,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+90"/>
         <location line="+37"/>
         <location line="+44"/>
         <source>Error opening file</source>
@@ -1092,13 +1148,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+276"/>
+        <location line="+282"/>
         <location line="+15"/>
         <source>Error exporting disk.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+340"/>
+        <location line="+396"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1109,17 +1165,9 @@
     </message>
 </context>
 <context>
-    <name>GMD70</name>
-    <message>
-        <location filename="../emulator/devices/common/gmd70.cpp" line="+66"/>
-        <source>Incorrect fdd list for</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+73"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+76"/>
         <source>Not a sound source</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1129,7 +1177,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+365"/>
+        <location line="+367"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1349,7 +1397,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1251"/>
+        <location filename="../mainwindow.cpp" line="+1262"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1406,13 +1454,13 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="+657"/>
+        <location filename="../mainwindow.cpp" line="+690"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1067"/>
+        <location filename="../mainwindow.cpp" line="-1105"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1437,22 +1485,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-443"/>
-        <location line="+59"/>
-        <location line="+865"/>
+        <location filename="../mainwindow.cpp" line="-448"/>
+        <location line="+61"/>
+        <location line="+891"/>
         <location line="+55"/>
         <location line="+79"/>
-        <location line="+142"/>
+        <location line="+151"/>
         <location line="+72"/>
-        <location line="+57"/>
-        <location line="+393"/>
+        <location line="+58"/>
+        <location line="+429"/>
         <location line="+29"/>
         <location line="+88"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1780"/>
+        <location line="-1852"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -1474,13 +1522,13 @@
     <message>
         <location line="+10"/>
         <location line="+38"/>
-        <location line="+1090"/>
+        <location line="+1125"/>
         <location line="+39"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1164"/>
+        <location line="-1199"/>
         <location line="+38"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -1570,13 +1618,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+555"/>
+        <location line="+563"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+169"/>
+        <location line="+187"/>
         <source>Configurations</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1614,12 +1662,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+76"/>
+        <location line="+83"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+73"/>
+        <location line="+75"/>
         <source>Open a hard disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1639,7 +1687,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+19"/>
         <source>Backup error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1654,12 +1702,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+105"/>
+        <location line="+110"/>
         <source>This machine has no usable keyboard picture</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+409"/>
+        <location line="+154"/>
+        <source>Emulation stopped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>The machine stopped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+286"/>
         <source>The configuration did not load.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1696,13 +1754,13 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-329"/>
-        <location line="+207"/>
+        <location filename="../mainwindow.cpp" line="-360"/>
+        <location line="+238"/>
         <source>Start recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-207"/>
+        <location filename="../mainwindow.cpp" line="-238"/>
         <source>Pause recording</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1743,7 +1801,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+145"/>
+        <location filename="../mainwindow.cpp" line="+176"/>
         <location line="+7"/>
         <location line="+13"/>
         <source>Open recording</source>
@@ -1770,12 +1828,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-971"/>
+        <location line="-1039"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1014"/>
+        <location line="+1082"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1871,7 +1929,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+826"/>
+        <location filename="../emulator/core.cpp" line="+872"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1904,7 +1962,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location line="+854"/>
+        <location line="+895"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1935,6 +1993,21 @@
     <message>
         <location line="+25"/>
         <source>Choose an address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../dialogs/mmwindow.cpp" line="+46"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Incorrect address value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>No device</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2044,7 +2117,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-647"/>
+        <location filename="../emulator/core.cpp" line="-688"/>
         <source>Incorrect access mode</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2221,8 +2294,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+246"/>
-        <location line="+615"/>
+        <location line="+249"/>
+        <location line="+624"/>
         <location line="+18"/>
         <location line="+7"/>
         <location line="+36"/>
@@ -2232,7 +2305,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-511"/>
+        <location line="-520"/>
         <source>Command &apos;seek&apos; expects a record number</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2262,7 +2335,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+359"/>
+        <location line="+368"/>
         <source>Not a Unior tape image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2276,7 +2349,7 @@
     <name>TapeRecorderWindow</name>
     <message>
         <location filename="../dialogs/taperecorder.ui" line="+14"/>
-        <location filename="../dialogs/taperecorder.cpp" line="+259"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+262"/>
         <source>Tape Recorder</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2332,19 +2405,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+24"/>
         <location line="+12"/>
-        <location line="+129"/>
+        <location line="+130"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-129"/>
+        <location line="-130"/>
         <source>Unknown tape file format!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+118"/>
         <source>Save recorded data</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2373,7 +2446,7 @@
 <context>
     <name>UKNCHDD</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-580"/>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-604"/>
         <source>Hard disk image file not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2383,12 +2456,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="+64"/>
         <source>Unrecognized hard disk geometry</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+705"/>
+        <location line="+711"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2450,14 +2523,6 @@
     <message>
         <location filename="../emulator/devices/specific/unior_memory.cpp" line="+38"/>
         <source>Memory, extension and DMA devices are expected</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>WD1793</name>
-    <message>
-        <location filename="../emulator/devices/common/wd1793.cpp" line="+46"/>
-        <source>Incorrect fdd list for</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2957,7 +3022,12 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../main.cpp" line="+38"/>
+        <location filename="../main.cpp" line="+57"/>
+        <source>Internal error, the program may be unstable:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+22"/>
         <source>eCat3, a universal emulator of retro computers</source>
         <translation type="unfinished"></translation>
     </message>

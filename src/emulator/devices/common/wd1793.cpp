@@ -24,6 +24,7 @@ WD1793::WD1793(InterfaceManager *im, EmulatorConfigDevice *cd):
     , hld_timer(0)
     , sectors_read(0)
     , sectors_written(0)
+    , intrq_forced(false)
     , i_address(this, im, 2, "address", MODE_R)
     , i_data(this, im, 8, "data", MODE_R)
     , i_INTRQ(this, im, 1, "intrq", MODE_W)
@@ -39,17 +40,12 @@ emulator::Result WD1793::load_config(SystemData *sd)
     emulator::Result res = FDC::load_config(sd);
     if (!res) return res;
 
-    std::string s;
-    try {
-        s = cd->get_parameter("drives").value;
-    } catch (std::exception &e) {
-        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{WD1793|" + std::string(QT_TRANSLATE_NOOP("WD1793", "Incorrect fdd list for")) + "} " + name);
-    }
-
-    std::vector<std::string> parts = split_string(s, '|', true);
-    drives_count = parts.size();
-    for (unsigned int i = 0; i < drives_count; i++)
-        drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));
+    //Four drive selects
+    std::vector<FDD*> list;
+    res = load_drives(1, sizeof(drives)/sizeof(drives[0]), list);
+    if (!res) return res;
+    drives_count = list.size();
+    for (unsigned int i = 0; i < drives_count; i++) drives[i] = list[i];
 
     // Address bits selecting a copy of the data register whose access waits
     // for DRQ/INTRQ (the Irisha KNGMD holds READY low on port 37 this way)
@@ -124,7 +120,7 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
     {
         //Command register
         registers[4] = value;
-        ClearINTRQ();
+        if (!intrq_forced) ClearINTRQ();
         FindSelectedDrive();
         unsigned int c = (value & 0xF0) >> 4;
         //Execute commands
@@ -164,45 +160,41 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
             SetFlag(wd1793_FLAG_BUSY);
             break;
 
+        //With the m flag both go on to the next sector until the sector
+        //register runs past the track, which ends the command with Record
+        //Not Found - see the end of a sector in ExecuteCommand()
         case 0x08:
         case 0x09: //Read sector
-            if ((value & wd1793_PARAM_m) > 0)
-            {
-                im->dm->error(this, "Reading of more than one sector at once is not supported!");
-            } else {
-                delay = wd1793_DELAY_SECTOR;
-                command = wd1793_COMMAND_READ_SECTOR;
-                SetFlag(wd1793_FLAG_BUSY);
-                SetHLD(true);
-            }
+            delay = wd1793_DELAY_SECTOR;
+            command = wd1793_COMMAND_READ_SECTOR;
+            SetFlag(wd1793_FLAG_BUSY);
+            SetHLD(true);
             break;
 
         case 0x0A:
         case 0x0B: //Write sector
-            if ((value & wd1793_PARAM_m) > 0)
-            {
-                im->dm->error(this, "Writing of more than one sector at once is not supported!");
-            } else {
-                delay = wd1793_DELAY_SECTOR;
-                command = wd1793_COMMAND_WRITE_SECTOR;
-                SetFlag(wd1793_FLAG_BUSY);
-                SetHLD(true);
-            }
+            delay = wd1793_DELAY_SECTOR;
+            command = wd1793_COMMAND_WRITE_SECTOR;
+            SetFlag(wd1793_FLAG_BUSY);
+            SetHLD(true);
             break;
 
         case 0x0C: //Read address
+            note_unsupported("wd1793: Read Address");
             SetHLD(true);
             SetFlag(wd1793_FLAG_NOT_READY);
             SetINTRQ();
             break;
 
         case 0x0E: //Read track
+            note_unsupported("wd1793: Read Track");
             SetHLD(true);
             SetFlag(wd1793_FLAG_NOT_READY);
             SetINTRQ();
             break;
 
         case 0x0F: //Write track
+            note_unsupported("wd1793: Write Track");
             SetHLD(true);
             SetFlag(wd1793_FLAG_NOT_READY);
             SetINTRQ();
@@ -213,8 +205,20 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
             command = 0;
             delay = 0;
             ClearDRQ();
-            if ((value & 0x0F) !=0)
-                im->dm->error(this, "Force Interrupt command with parameters is not supported!");
+            //I3 - an interrupt at once, which neither a status read nor the
+            //next command clears: only a Force Interrupt without conditions
+            //does. Copiers and BIOSes reset the controller with $D8
+            intrq_forced = (value & 0x08) != 0;
+            if (intrq_forced) SetINTRQ();
+            //I2 - on every index pulse: there are no index pulses here, so
+            //once, as soon as the first would come. I0/I1 - on a change of
+            //the ready line, which no drive here ever changes
+            else if ((value & 0x04) != 0) SetINTRQ();
+            //No condition: the command ends without an interrupt, and this
+            //is what releases one forced by I3
+            else ClearINTRQ();
+            if ((value & 0x07) != 0)
+                note_unsupported("wd1793: Force Interrupt on index or ready");
             break;
         }
     } else {
@@ -256,7 +260,7 @@ unsigned int WD1793::get_value(unsigned int address)
     unsigned int a = address & 0x03;
     if (a==wd1793_REG_DATA && (address & sync_mask) != 0) SyncAccess();
     if (a==wd1793_REG_DATA) ClearDRQ();
-    if (a==wd1793_REG_STATUS) ClearINTRQ();
+    if (a==wd1793_REG_STATUS && !intrq_forced) ClearINTRQ();
     return registers[a];
 }
 
@@ -406,6 +410,14 @@ void WD1793::ExecuteCommand()
             } else {
                 //Reached sector's end
                 sectors_read++;
+                if ((registers[4] & wd1793_PARAM_m) != 0) {
+                    //Multiple sectors: on to the next one, still busy. The
+                    //one past the track is not found, and that ends it
+                    registers[wd1793_REG_SECTOR]++;
+                    delay = wd1793_DELAY_SECTOR;
+                    command = wd1793_COMMAND_READ_SECTOR;
+                    break;
+                }
                 SetTypeIIFlags();
                 ClearFlag(wd1793_FLAG_PROTECTED);
                 ClearFlag(wd1793_FLAG_DATA_TYPE);
@@ -427,6 +439,12 @@ void WD1793::ExecuteCommand()
             } else {
                 //Reached sector's end
                 sectors_written++;
+                if ((registers[4] & wd1793_PARAM_m) != 0) {
+                    registers[wd1793_REG_SECTOR]++;
+                    delay = wd1793_DELAY_SECTOR;
+                    command = wd1793_COMMAND_WRITE_SECTOR;
+                    break;
+                }
                 SetTypeIIFlags();
                 ClearFlag(wd1793_FLAG_ERR_WRITE);
                 SetINTRQ();
@@ -479,6 +497,7 @@ void WD1793::save_state(StateWriter &w)
     w.n("hld_timer", static_cast<uint32_t>(hld_timer));
     w.n("sectors_read", sectors_read);
     w.n("sectors_written", sectors_written);
+    w.b("intrq_forced", intrq_forced);
 }
 
 emulator::Result WD1793::load_state(const StateReader &r)
@@ -498,6 +517,7 @@ emulator::Result WD1793::load_state(const StateReader &r)
     r.u("hld_timer", hld_timer);
     r.u("sectors_read", sectors_read);
     r.u("sectors_written", sectors_written);
+    r.b("intrq_forced", intrq_forced);
     return emulator::Result::ok();
 }
 

@@ -1347,18 +1347,23 @@ bool Emulator::has_mouse() const
 
 void Emulator::set_volume(int value)
 {
-    if (loaded) {
-        GenericSound * sound = dynamic_cast<GenericSound*>(dm->get_device_by_name("sound", false));
-        if (sound != nullptr) sound->set_volume(value);
-    }
+    //Every audio output of the machine, by class: the name "sound" used to be
+    //reserved for it without being written down anywhere, and a device named
+    //otherwise ignored the volume control
+    if (loaded)
+        for (ComputerDevice * d : dm->find_devices_by_class("sound")) {
+            GenericSound * sound = dynamic_cast<GenericSound*>(d);
+            if (sound != nullptr) sound->set_volume(value);
+        }
 }
 
 void Emulator::set_muted(bool muted)
 {
-    if (loaded) {
-        GenericSound * sound = dynamic_cast<GenericSound*>(dm->get_device_by_name("sound", false));
-        if (sound != nullptr) sound->set_muted(muted);
-    }
+    if (loaded)
+        for (ComputerDevice * d : dm->find_devices_by_class("sound")) {
+            GenericSound * sound = dynamic_cast<GenericSound*>(d);
+            if (sound != nullptr) sound->set_muted(muted);
+        }
 }
 
 Emulator::~Emulator()

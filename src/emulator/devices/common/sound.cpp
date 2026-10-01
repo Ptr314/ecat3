@@ -46,6 +46,9 @@ GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_last_input(0)
 {
     m_clocked = true;   //clock() is overridden here
+    //The volume and mute of the window find the audio outputs by this class,
+    //whatever the config calls them
+    device_class = "sound";
     m_amplitude = m_volume * 32000 / 100;
     m_buffer.resize(m_samples_per_buffer);
     //The CPU is not looked up here: a constructor must not reach for another

@@ -10,7 +10,7 @@
 #include "debugwindow.h"
 #include "emulator/utils.h"
 #include "ui_debugwindow.h"
-#include "emulator/disasm_pdp11.h"
+#include "emulator/disasm.h"
 
 DebugWindow::DebugWindow(QWidget *parent) :
     GenericDbgWnd(parent),
@@ -29,27 +29,10 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
 
     this->setWindowTitle(QString::fromStdString(d->name + " : " + d->type));
 
-    QString file_name;
-    if (d->type == "i8080")
-        file_name = QString::fromStdString(e->data_path + "i8080.dis");
-    else
-    if (d->type == "z80")
-        file_name = QString::fromStdString(e->data_path + "z80.dis");
-    else
-    if (d->type == "6502")
-        file_name = QString::fromStdString(e->data_path + "6502.dis");
-    else
-    if (d->type == "65c02")
-        file_name = QString::fromStdString(e->data_path + "65c02.dis");
-
-    // The PDP-11 family decodes bit fields instead of whole opcode bytes and
-    // therefore brings its own decoder rather than a table file.
-    if (d->type == "1801vm1" || d->type == "1801vm2")
-        disasm = new DisAsmPDP11(d->type == "1801vm2");
-    else
-        disasm = new DisAsm();
-
-    emulator::Result res = disasm->load_file(file_name.toStdString());
+    // The processor knows its instruction set: a table file or a decoder of
+    // its own, whatever the config calls its type
+    emulator::Result res = emulator::Result::ok();
+    disasm = cpu->create_disasm(e->data_path, res);
     if (!res) {
         QMessageBox::warning(this, DebugWindow::tr("Error"), translateResultMessage(res.message));
     }

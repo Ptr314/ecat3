@@ -81,6 +81,8 @@ class ComputerDevice;
 class AddressableDevice;
 class MemoryMapper;
 class CPU;
+class DisAsm;
+class FDD;
 
 typedef uint8_t ScreenColor[3];
 
@@ -287,6 +289,13 @@ public:
     std::string device_class;
     unsigned int reset_priority;
 
+    //Something the guest asked for that this device does not model, counted
+    //and remembered instead of stopping the machine: the fields "unsupported"
+    //and "unsupported_last" show it to a script or an MCP client.
+    //DeviceManager::error() stays for faults of the emulator itself
+    void note_unsupported(const std::string &what);
+    unsigned int unsupported_count() const { return m_unsupported; }
+
     ComputerDevice(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual ~ComputerDevice() = default;
     virtual void reset(bool cold);
@@ -401,6 +410,8 @@ protected:
 private:
     bool m_cold_reset = true;
     bool m_soft_reset = true;
+    unsigned int m_unsupported = 0;
+    std::string m_unsupported_last;
 };
 
 //How a memory answers a bus cycle whose processor times every cycle it runs
@@ -779,6 +790,13 @@ public:
     //processor's own access and belongs to the emulation thread only
     unsigned int peek_mem(unsigned int address);
 
+    //The disassembler of this instruction set, for the debugger, which owns it.
+    //By default the table-driven one loaded from data_path + disasm_table(); a
+    //processor whose instructions are bit fields returns its own decoder. A
+    //table that fails to load comes back in res, with the (empty) decoder
+    virtual DisAsm * create_disasm(const std::string &data_path, emulator::Result &res);
+    virtual std::string disasm_table() const { return ""; }
+
     virtual std::vector<std::pair<std::string, std::string>> get_registers() = 0;
     virtual std::vector<std::pair<std::string, std::string>> get_flags() = 0;
 
@@ -988,6 +1006,14 @@ public:
     //Every controller can answer these two, so they are asked here once
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+
+protected:
+    //The "drives" parameter, "fdd0|fdd1": the drives this controller selects,
+    //from min to max of them, each one an fdd device. Written once here: five
+    //controllers used to parse it, and only one of them checked the count or
+    //the type - a third drive wrote past an array, a typo crashed on the first
+    //command. Defined in fdd.cpp, beside the class it returns
+    emulator::Result load_drives(unsigned int min, unsigned int max, std::vector<FDD*> &drives);
 };
 
 //----------------------- Creation functions -------------------------------//

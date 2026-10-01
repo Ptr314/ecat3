@@ -7,7 +7,7 @@
 # «Что нельзя проверять» в tests/README.md.
 # @timeout 27
 
-MACHINE "radio-86rk/Spektr001.cfg"
+MACHINE "radio-86rk/Spektr001.ext"
 WAIT 2500
 
 LOGDEFS 8,16

@@ -73,6 +73,8 @@ protected:
 
 public:
     z80core();
+    //The device deletes its core through this type
+    virtual ~z80core() {}
     virtual uint8_t read_mem(uint16_t address) = 0;
     virtual void write_mem(uint16_t address, uint8_t value) = 0;
     virtual uint8_t read_port(uint16_t address);

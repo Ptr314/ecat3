@@ -79,11 +79,22 @@ def parse_ext_metadata(ext_path):
     to nothing: the data is in the file.
     """
     text = read_extension(ext_path)
-    meta = {"extends": "", "version": "", "system": {}, "files": []}
+    meta = {"extends": "", "version": "", "system": {}, "files": [], "devices": set()}
     for line in text.splitlines():
         s = line.strip()
         if s.startswith("@script"):
             break
+        # A device the extension adds, written as in a .cfg: its own lines
+        # name files without a "device:" in front, and a "map" may name one
+        # of these devices rather than a file
+        m = re.match(r'([\w-]+)\s*:\s*[\w-]+\s*\{', s)
+        if m:
+            meta["devices"].add(m.group(1))
+            continue
+        m = re.match(r'(?:image|map|keys|picture)\s*=\s*([^\s{]+)', s)
+        if m and "base64" not in s:
+            meta["files"].append(m.group(1).strip('"'))
+            continue
         m = re.match(r'@(extends|version)\s+(.+)', s)
         if m:
             value = re.sub(r'\s+//.*$', '', m.group(2)).strip().strip('"')
@@ -259,6 +270,13 @@ def main():
                 print(f"  WARNING: {os.path.basename(ext_path)}: no @extends or @version, skipped")
                 continue
             cfg_path = os.path.normpath(os.path.join(computers_dir, ext_meta["extends"]))
+            # An extension built on another extension (or on a .cfg that has
+            # become one) is not packed yet: the bundle would need the whole
+            # chain. The emulator loads such a file; the page skips it
+            as_ext = os.path.splitext(cfg_path)[0] + ".ext"
+            if cfg_path.lower().endswith(".ext") or (not os.path.isfile(cfg_path) and os.path.isfile(as_ext)):
+                print(f"  WARNING: {os.path.basename(ext_path)}: built on another extension, not packed")
+                continue
             if not os.path.isfile(cfg_path) or not cfg_path.startswith(os.path.normpath(computers_dir)):
                 print(f"  WARNING: {os.path.basename(ext_path)}: base {ext_meta['extends']} is not in computers/, skipped")
                 continue
@@ -349,8 +367,9 @@ def main():
             elif os.path.isfile(md_path):
                 md_vfs_path = f"/{machine_subdir}/{os.path.splitext(cfg_filename)[0]}.md"
             for ref_file in ext_meta["files"]:
-                # The devices are the base's: an extension names them too
-                if ref_file in meta["devices"]:
+                # A "map" naming a device - of the base, or one the extension
+                # adds - is not a file
+                if ref_file in meta["devices"] or ref_file in ext_meta["devices"]:
                     continue
                 local_path = find_file(ref_file, [ext_dir])
                 if local_path:

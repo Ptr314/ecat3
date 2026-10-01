@@ -24,6 +24,10 @@ LOG pp-timer.state
 LOG pp-timer.period
 LOG pp-timer.reload
 LOG display.resolution
+# Кадр УК-НЦ рисуется по строкам на потоке эмуляции, а снимок берет поток
+# отрисовки: сразу после загрузки он ловил кадр недорисованным, и сколько
+# строк успело встать, зависело от хоста. Один целый кадр перед снимком
+WAIT _40
 SCREEN "../results/state-uknc-sound-restored.png"
 
 PRINT "=== уровень меняется сам ==="

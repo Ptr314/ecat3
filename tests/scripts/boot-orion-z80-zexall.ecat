@@ -7,7 +7,7 @@
 # «Что нельзя проверять» в tests/README.md.
 # @timeout 34
 
-MACHINE "orion-128/Orion-128-Z80-zexall.cfg"
+MACHINE "orion-128/Orion-128-Z80-zexall.ext"
 WAIT 9000
 
 LOGDEFS 8,16

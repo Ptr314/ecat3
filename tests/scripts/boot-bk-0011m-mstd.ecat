@@ -7,7 +7,7 @@
 # «Что нельзя проверять» в tests/README.md.
 # @timeout 29
 
-MACHINE "bk/BK-0011M-mstd.cfg"
+MACHINE "bk/BK-0011M-mstd.ext"
 WAIT _4000
 
 LOGDEFS _16,_8

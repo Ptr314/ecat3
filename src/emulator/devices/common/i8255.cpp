@@ -82,7 +82,13 @@ void I8255::set_value(unsigned int address, unsigned int value, bool force)
                 i_port_a.change(value);
             }
         } else {
-            im->dm->error(this, "i8255:A is in an unsupported mode");
+            //Modes 1 and 2 (strobed, bidirectional) are not modelled. The byte
+            //is latched and goes out on the lines as in mode 0, unless mode 1
+            //made the port an input; the handshake bits of port C stay put
+            note_unsupported("i8255: port A written in mode 1 or 2");
+            registers[n] = (uint8_t)value;
+            if ((registers[3] & 0x40) != 0 || (registers[3] & 0x10) == 0)
+                i_port_a.change(value);
         }
         break;
     case 1:
@@ -173,7 +179,9 @@ void I8255::interface_callback(unsigned int callback_id, unsigned int new_value,
             // TODO: check if we have to do nothing here
             break;
         default: // Bi-directional Bus
-            im->dm->error(this, "i8255:A is in an unsupported mode");
+            //Not modelled: what arrives is taken as in mode 0
+            note_unsupported("i8255: port A input in mode 2");
+            registers[0] = (uint8_t)new_value;
             break;
         }
         break;

@@ -18,7 +18,7 @@
 # @pixels 800
 # @timeout 70
 
-MACHINE "bk/BK-0010-01-fdd.cfg"
+MACHINE "bk/BK-0010-01-fdd.ext"
 WAIT _3000
 
 TYPE "S160000"

@@ -52,98 +52,11 @@ set(EXTERNAL_Z80 0)
 set(CPU_STOPPED 0)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../globals.h.in ${CMAKE_CURRENT_BINARY_DIR}/globals.h @ONLY NEWLINE_STYLE LF)
 
-# Emulator core sources
-set(EMULATOR_SOURCES
-    ${EMU_DIR}/config.cpp
-    ${EMU_DIR}/config_ext.cpp
-    ${EMU_DIR}/state.cpp
-    ${EMU_DIR}/state_save.cpp
-    ${EMU_DIR}/config_fields.cpp
-    ${EMU_DIR}/base64.cpp
-    ${EMU_DIR}/core.cpp
-    ${EMU_DIR}/emulator.cpp
-    ${EMU_DIR}/utils.cpp
-    ${EMU_DIR}/disasm.cpp
-    ${EMU_DIR}/disasm_pdp11.cpp
-    ${EMU_DIR}/files.cpp
-    ${EMU_DIR}/script/script_parser.cpp
-    ${EMU_DIR}/script/script_log.cpp
-    ${EMU_DIR}/script/script_engine.cpp
-    ${EMU_DIR}/script/script_recorder.cpp
-    ${EMU_DIR}/devices/cpu/i8080.cpp
-    ${EMU_DIR}/devices/cpu/i8080core.cpp
-    ${EMU_DIR}/devices/cpu/z80.cpp
-    ${EMU_DIR}/devices/cpu/z80core.cpp
-    ${EMU_DIR}/devices/cpu/6502.cpp
-    ${EMU_DIR}/devices/cpu/6502core.cpp
-    ${EMU_DIR}/devices/cpu/pdp11core.cpp
-    ${EMU_DIR}/devices/cpu/k1801vm1.cpp
-    ${EMU_DIR}/devices/cpu/vm1_timing.cpp
-    ${EMU_DIR}/devices/common/i8255.cpp
-    ${EMU_DIR}/devices/common/i8251.cpp
-    ${EMU_DIR}/devices/common/dl11.cpp
-    ${EMU_DIR}/host_serial.cpp
-    ${EMU_DIR}/devices/common/i8253.cpp
-    ${EMU_DIR}/devices/common/i8259.cpp
-    ${EMU_DIR}/devices/common/i8257.cpp
-    ${EMU_DIR}/devices/common/i8275.cpp
-    ${EMU_DIR}/devices/common/i8275display.cpp
-    ${EMU_DIR}/devices/common/keyboard.cpp
-    ${EMU_DIR}/devices/common/scankeyboard.cpp
-    ${EMU_DIR}/devices/common/mapkeyboard.cpp
-    ${EMU_DIR}/devices/common/speaker.cpp
-    ${EMU_DIR}/devices/common/ay8910.cpp
-    ${EMU_DIR}/devices/common/covox.cpp
-    ${EMU_DIR}/devices/common/sound.cpp
-    ${EMU_DIR}/devices/common/tape.cpp
-    ${EMU_DIR}/devices/common/fdd.cpp
-    ${EMU_DIR}/devices/common/joystick.cpp
-    ${EMU_DIR}/devices/common/connector.cpp
-    ${EMU_DIR}/devices/common/mouse.cpp
-    ${EMU_DIR}/devices/common/wd1793.cpp
-    ${EMU_DIR}/devices/common/page_mapper.cpp
-    ${EMU_DIR}/devices/common/plane_pair.cpp
-    ${EMU_DIR}/devices/common/indirect_memory.cpp
-    ${EMU_DIR}/devices/common/generator.cpp
-    ${EMU_DIR}/devices/common/register.cpp
-    ${EMU_DIR}/devices/common/mux.cpp
-    ${EMU_DIR}/devices/common/raster_display.cpp
-    ${EMU_DIR}/devices/common/ram_address.cpp
-    ${EMU_DIR}/devices/common/gmd70.cpp
-    ${EMU_DIR}/devices/specific/o128display.cpp
-    ${EMU_DIR}/devices/specific/agat_fdc140.cpp
-    ${EMU_DIR}/devices/specific/agat_fdc840.cpp
-    ${EMU_DIR}/devices/specific/agat_7_display.cpp
-    ${EMU_DIR}/devices/specific/agat_9_display.cpp
-    ${EMU_DIR}/devices/specific/agat_9_mapper.cpp
-    ${EMU_DIR}/devices/specific/uknc_channels.cpp
-    ${EMU_DIR}/devices/specific/uknc_display.cpp
-    ${EMU_DIR}/devices/specific/uknc_graphics.cpp
-    ${EMU_DIR}/devices/specific/uknc_hdd.cpp
-    ${EMU_DIR}/devices/specific/smk512.cpp
-    ${EMU_DIR}/devices/specific/uknc_timer.cpp
-    ${EMU_DIR}/devices/specific/uknc_keyboard.cpp
-    ${EMU_DIR}/devices/specific/uknc_sound.cpp
-    ${EMU_DIR}/devices/specific/argo_keyboard.cpp
-    ${EMU_DIR}/devices/specific/argo_memory.cpp
-    ${EMU_DIR}/devices/specific/zx_keyboard.cpp
-    ${EMU_DIR}/devices/specific/unior_memory.cpp
-    ${EMU_DIR}/devices/specific/irisha_display.cpp
-    ${EMU_DIR}/devices/specific/bk_display.cpp
-    ${EMU_DIR}/devices/specific/bk_timer.cpp
-    ${EMU_DIR}/devices/specific/bk_fdc.cpp
-    ${EMU_DIR}/audio/audio_driver_miniaudio.cpp
-)
+# Emulator core sources: the same list as the desktop build, from one file
+include(${CMAKE_CURRENT_SOURCE_DIR}/../emulator_sources.cmake)
 
-# Library sources
+# What only the browser build has: the Markdown renderer of the manual page
 set(LIB_SOURCES
-    ${LIBS_DIR}/ini_wrapper.cpp
-    ${LIBS_DIR}/crc16.cpp
-    ${LIBS_DIR}/mfm_tools.cpp
-    ${LIBS_DIR}/zip_reader.cpp
-    ${LIBS_DIR}/zip_writer.cpp
-    ${LIBS_DIR}/lodepng/lodepng.cpp
-    ${LIBS_DIR}/miniaudio/miniaudio.c
     ${LIBS_DIR}/md4c/md4c.c
     ${LIBS_DIR}/md4c/md4c-html.c
     ${LIBS_DIR}/md4c/entity.c
@@ -156,12 +69,12 @@ set(WASM_SOURCES
 )
 
 add_executable(${PROJECT_NAME}
-    ${EMULATOR_SOURCES}
+    ${ECAT_CORE_SOURCES}
     ${LIB_SOURCES}
     ${WASM_SOURCES}
 )
 
-# Binary dir first so generated globals.h takes precedence over source tree version
+# Binary dir first: the generated globals.h lives there
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/..

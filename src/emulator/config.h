@@ -101,6 +101,11 @@ emulator::Result parse_parameter_key(ConfigReader &r, const std::string &name, s
 emulator::Result parse_parameter(ConfigReader &r, const std::string &name, EmulatorConfigParameter &p,
                                  std::string &next, const std::string &context);
 
+//Reads the parameters of a device whose opening { has already been read, up
+//to and including the closing }. A .cfg and a device block of an .ext go
+//through it alike
+emulator::Result parse_device_parameters(ConfigReader &r, EmulatorConfigDevice &dev);
+
 class EmulatorConfig
 {
 public:
@@ -116,6 +121,11 @@ public:
     unsigned int get_devices_count() const { return devices.size(); }
     //False if there is no such device
     bool remove_device(const std::string& name);
+    //Position of the first device with this name, -1 if there is none
+    int device_index(const std::string& name) const;
+    //A new device at this position, or at the end past the last one. The order
+    //is part of the machine: devices are clocked and reset in it
+    EmulatorConfigDevice * insert_device(const std::string &name, const std::string &type, size_t index);
 
     //Reads system.radix into every device. Called after loading, and again
     //after an extension has changed the system section
@@ -138,6 +148,9 @@ std::string config_quote_value(const std::string &v);
 //One parameter line, without the indent and the line break. With
 //with_value false only the key is written, which is what a removal needs
 std::string config_parameter_text(const EmulatorConfigParameter &p, bool with_value = true);
+//One device description, "name : type {" to "}" with its line break
+std::string config_device_text(const std::string &name, const std::string &type,
+                               const std::vector<EmulatorConfigParameter> &parameters);
 //The whole configuration in .cfg syntax. Devices and parameters keep the order
 //they were read in - a mapper sends one range to several devices and the order
 //decides which of them answers, so this is not a detail. Values are written

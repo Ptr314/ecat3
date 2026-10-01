@@ -31,6 +31,7 @@ private:
     Interface i_so;
 
     mos6502Core * core;
+    int m_family;
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
 protected:
@@ -49,6 +50,7 @@ public:
     virtual std::vector<std::pair<std::string, std::string>> get_registers() override;
     virtual std::vector<std::pair<std::string, std::string>> get_flags() override;
     virtual unsigned int get_command() override;
+    virtual std::string disasm_table() const override;
 
     virtual void set_context_value(const std::string &name, unsigned int value) override;
     void save_state(StateWriter &w) override;

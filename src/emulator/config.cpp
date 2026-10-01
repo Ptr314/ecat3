@@ -223,6 +223,24 @@ emulator::Result parse_parameter(ConfigReader &r, const std::string &name, Emula
     return emulator::Result::ok();
 }
 
+emulator::Result parse_device_parameters(ConfigReader &r, EmulatorConfigDevice &dev)
+{
+    std::string param_name = r.next();
+    while (param_name != "}")
+    {
+        if (param_name.empty() || param_name == "=" || param_name == "[" || param_name == "{")
+            return config_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device - incorrect parameters"), dev.name);
+
+        EmulatorConfigParameter p;
+        std::string next;
+        emulator::Result res = parse_parameter(r, param_name, p, next, dev.name);
+        if (!res) return res;
+        dev.parameters.push_back(p);
+        param_name = next;
+    }
+    return emulator::Result::ok();
+}
+
 //----------------------------------------------------------------------------
 
 EmulatorConfig::EmulatorConfig()
@@ -281,19 +299,8 @@ emulator::Result EmulatorConfig::load_from_text(const std::string &text, bool sy
         if (r.next() != "{")
             return config_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device - no description found"), device_name);
 
-        std::string param_name = r.next();
-        while (param_name != "}")
-        {
-            if (param_name.empty() || param_name == "=" || param_name == "[" || param_name == "{")
-                return config_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device - incorrect parameters"), device_name);
-
-            EmulatorConfigParameter p;
-            std::string next;
-            emulator::Result res = parse_parameter(r, param_name, p, next, device_name);
-            if (!res) return res;
-            new_device->parameters.push_back(p);
-            param_name = next;
-        }
+        emulator::Result res = parse_device_parameters(r, *new_device);
+        if (!res) return res;
 
         if (system_only && device_name == "system") break;
     }
@@ -327,6 +334,22 @@ emulator::Result EmulatorConfig::apply_radix()
 EmulatorConfigDevice * EmulatorConfig::get_device(int i)
 {
     return devices[i].get();
+}
+
+int EmulatorConfig::device_index(const std::string& name) const
+{
+    for (size_t i = 0; i < devices.size(); i++)
+        if (devices[i]->name == name) return static_cast<int>(i);
+    return -1;
+}
+
+EmulatorConfigDevice * EmulatorConfig::insert_device(const std::string &name, const std::string &type, size_t index)
+{
+    if (index > devices.size()) index = devices.size();
+    auto new_device = make_unique<EmulatorConfigDevice>(name, type);
+    EmulatorConfigDevice * ptr = new_device.get();
+    devices.insert(devices.begin() + static_cast<std::ptrdiff_t>(index), std::move(new_device));
+    return ptr;
 }
 
 bool EmulatorConfig::remove_device(const std::string& name)
@@ -367,19 +390,26 @@ std::string config_parameter_text(const EmulatorConfigParameter &p, bool with_va
     return s;
 }
 
+std::string config_device_text(const std::string &name, const std::string &type,
+                               const std::vector<EmulatorConfigParameter> &parameters)
+{
+    //Only the system section has no type, and load_from_text() knows it by
+    //name - writing "system : " back would not parse
+    std::string s = type.empty() ? name : (name + " : " + type);
+    s += " {\n";
+    for (size_t j = 0; j < parameters.size(); j++)
+        s += "\t" + config_parameter_text(parameters[j]) + "\n";
+    s += "}\n";
+    return s;
+}
+
 std::string serialize_config(EmulatorConfig &config)
 {
     std::string s;
     for (unsigned int i = 0; i < config.get_devices_count(); i++)
     {
         EmulatorConfigDevice * d = config.get_device(static_cast<int>(i));
-        //Only the system section has no type, and load_from_text() knows it
-        //by name - writing "system : " back would not parse
-        s += d->type.empty() ? d->name : (d->name + " : " + d->type);
-        s += " {\n";
-        for (size_t j = 0; j < d->parameters.size(); j++)
-            s += "\t" + config_parameter_text(d->parameters[j]) + "\n";
-        s += "}\n\n";
+        s += config_device_text(d->name, d->type, d->parameters) + "\n";
     }
     return s;
 }

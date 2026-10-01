@@ -1,0 +1,4 @@
+// Два расширения построены друг на друге: петля, а не машина
+// @error built on each other in a loop
+@extends ../../tests/files/ext-errors/loop-b.ext
+@version петля A

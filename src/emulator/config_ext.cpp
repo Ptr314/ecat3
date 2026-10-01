@@ -44,6 +44,21 @@ std::string strip_directive_comment(const std::string &s)
     return s;
 }
 
+//"name : type {" - a colon with a lone word after it and the brace on the same
+//line. A device:property line always has "=" before any brace
+bool is_device_block_start(const std::string &s)
+{
+    const size_t colon = s.find(':');
+    if (colon == std::string::npos) return false;
+    const std::string name = str_trim(s.substr(0, colon));
+    if (name.empty() || name.find_first_of(" \t=[]{}") != std::string::npos) return false;
+    const std::string rest = s.substr(colon + 1);
+    const size_t brace = rest.find('{');
+    if (brace == std::string::npos) return false;
+    const std::string type = str_trim(rest.substr(0, brace));
+    return !type.empty() && type.find_first_of(" \t=[]{}:\"") == std::string::npos;
+}
+
 std::string unquote(const std::string &s)
 {
     if (s.size() >= 2 && s[0] == '"' && s[s.size() - 1] == '"') return s.substr(1, s.size() - 2);
@@ -188,6 +203,33 @@ emulator::Result ConfigExtension::error_at(int line, const char * message, const
     return load_error(message, where);
 }
 
+//Gives the edit the place an @before above it asked for. Only two edits have a
+//place: a new device (before a device) and a mapper range (before a line of
+//the same device). An @before covers the whole run of such edits that follows
+//it - each goes in front of the same place, so the run keeps its order - and
+//the first edit of another kind ends the run. An @before that placed nothing
+//is a mistake worth saying; placed counts the edits of the run so far
+emulator::Result ConfigExtension::attach_before(ExtEdit &e, const ExtEdit &pending, bool &has_before, int &placed) const
+{
+    if (!has_before) return emulator::Result::ok();
+    const bool device_place = pending.before_key.empty();
+    const bool fits = e.op == ExtEdit::AddDevice
+        ? device_place
+        : (e.op == ExtEdit::Set && e.param.is_list() && !device_place && pending.before_device == e.device);
+    if (!fits)
+    {
+        if (placed == 0)
+            return error_at(pending.line, QT_TRANSLATE_NOOP("EmulatorConfig", "@before must be followed by a device block or a mapper range"));
+        has_before = false;
+        return emulator::Result::ok();
+    }
+    e.before_device = pending.before_device;
+    e.before_key = pending.before_key;
+    e.before_value = pending.before_value;
+    placed++;
+    return emulator::Result::ok();
+}
+
 emulator::Result ConfigExtension::parse(const std::string &text, const std::string &file_name)
 {
     m_file_name = file_name;
@@ -203,8 +245,19 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
     //A UTF-8 byte order mark, which Windows editors like to add
     if (starts_with(text, "\xEF\xBB\xBF")) p = 3;
 
+    //A device block is read by the tokenizer of the .cfg straight from the
+    //text. It loses the last character of a text without a final line break,
+    //which would be the closing brace of a block at the very end
+    const std::string padded = text + "\n";
+
+    //An @before and the run of edits it places
+    ExtEdit pending_before;
+    bool has_before = false;
+    int before_placed = 0;
+
     while (p < text.size())
     {
+        const size_t line_begin = p;
         size_t eol = text.find('\n', p);
         if (eol == std::string::npos) eol = text.size();
         const std::string t = str_trim(text.substr(p, eol - p));
@@ -220,6 +273,8 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
             const std::string arg = sp == std::string::npos ? "" : unquote(strip_directive_comment(str_trim(t.substr(sp))));
             if (directive == "@script")
             {
+                if (has_before && before_placed == 0)
+                    return error_at(pending_before.line, QT_TRANSLATE_NOOP("EmulatorConfig", "@before must be followed by a device block or a mapper range"));
                 //Everything below belongs to the script, comments included
                 script = text.substr(p);
                 script_line = static_cast<unsigned int>(line_no) + 1;
@@ -229,6 +284,45 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
             {
                 //A bare @protected means 1
                 is_protected = arg.empty() || (arg != "0");
+                continue;
+            }
+            if (directive == "@before")
+            {
+                //Where the next run of edits goes: before a device, or before
+                //a line of a device - the key as in a removal, with the value
+                //when the key is not unique
+                if (has_before && before_placed == 0)
+                    return error_at(pending_before.line, QT_TRANSLATE_NOOP("EmulatorConfig", "@before must be followed by a device block or a mapper range"));
+                before_placed = 0;
+                if (arg.empty())
+                    return error_at(line_no, QT_TRANSLATE_NOOP("EmulatorConfig", "Directive without a value"), directive);
+                pending_before = ExtEdit();
+                pending_before.line = line_no;
+                const size_t c = arg.find(':');
+                if (c == std::string::npos)
+                {
+                    pending_before.before_device = arg;
+                    if (arg.find_first_of(" \t=[]{}") != std::string::npos)
+                        return error_at(line_no, QT_TRANSLATE_NOOP("EmulatorConfig", "Expected device:property"), arg);
+                } else {
+                    pending_before.before_device = str_trim(arg.substr(0, c));
+                    const std::string body = arg.substr(c + 1) + "\n";
+                    ConfigReader r(body);
+                    const std::string name = r.next();
+                    std::string range, next;
+                    if (pending_before.before_device.empty() || name.empty() || name.find_first_of("=[]{}") != std::string::npos)
+                        return error_at(line_no, QT_TRANSLATE_NOOP("EmulatorConfig", "Expected device:property"), arg);
+                    parse_parameter_key(r, name, range, next);
+                    pending_before.before_key = name + range;
+                    if (next == "=")
+                    {
+                        pending_before.before_value = r.next();
+                        next = r.next();
+                    }
+                    if (!next.empty())
+                        return error_at(line_no, QT_TRANSLATE_NOOP("EmulatorConfig", "Unexpected text after the property"), next);
+                }
+                has_before = true;
                 continue;
             }
             if (directive != "@extends" && directive != "@version")
@@ -248,6 +342,44 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
             continue;
         }
 
+        //A new device, written as in a .cfg and read by the same code
+        if (t[0] != '-' && is_device_block_start(strip_directive_comment(t)))
+        {
+            ExtEdit e;
+            e.op = ExtEdit::AddDevice;
+            e.line = line_no;
+            ConfigReader r(padded, line_begin);
+            e.device = r.next(":");
+            if (r.next(":") != ":")
+                return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device - no type found"), e.device);
+            e.type = r.next();
+            if (r.next() != "{")
+                return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device - no description found"), e.device);
+            if (e.device == "system")
+                return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "The device already exists in the base configuration"), e.device);
+            EmulatorConfigDevice dev(e.device, e.type);
+            emulator::Result res = parse_device_parameters(r, dev);
+            if (!res)
+                return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "Configuration error for device - incorrect parameters"), e.device);
+            e.params = dev.parameters;
+
+            //Nothing but a comment may follow the closing brace on its line
+            const size_t q = r.position();
+            size_t end = padded.find('\n', q);
+            if (end == std::string::npos) end = padded.size();
+            const std::string rest = str_trim(padded.substr(q, end - q));
+            if (!rest.empty() && !starts_with(rest, "//"))
+                return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "Unexpected text after the property"), rest);
+            for (size_t i = line_begin; i < end && i < text.size(); i++)
+                if (text[i] == '\n') line_no++;
+            p = end < text.size() ? end + 1 : text.size();
+
+            res = attach_before(e, pending_before, has_before, before_placed);
+            if (!res) return res;
+            edits.push_back(e);
+            continue;
+        }
+
         ExtEdit e;
         e.line = line_no;
         e.op = t[0] == '-' ? ExtEdit::Remove : ExtEdit::Set;
@@ -264,6 +396,8 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
             e.device = str_trim(strip_directive_comment(t.substr(1)));
             if (e.device.empty() || e.device.find_first_of(" \t=[]{}") != std::string::npos)
                 return error_at(line_no, QT_TRANSLATE_NOOP("EmulatorConfig", "Expected device:property"), t);
+            emulator::Result res = attach_before(e, pending_before, has_before, before_placed);
+            if (!res) return res;
             edits.push_back(e);
             continue;
         }
@@ -317,9 +451,13 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
         }
         if (!next.empty())
             return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "Unexpected text after the property"), next);
+        res = attach_before(e, pending_before, has_before, before_placed);
+        if (!res) return res;
         edits.push_back(e);
     }
 
+    if (has_before && before_placed == 0)
+        return error_at(pending_before.line, QT_TRANSLATE_NOOP("EmulatorConfig", "@before must be followed by a device block or a mapper range"));
     if (extends.empty())
         return error_at(1, QT_TRANSLATE_NOOP("EmulatorConfig", "The extension has no @extends"));
     if (version.empty())
@@ -334,6 +472,22 @@ std::string ConfigExtension::serialize() const
     for (size_t i = 0; i < edits.size(); i++)
     {
         const ExtEdit &e = edits[i];
+        //One @before for a run: the edit before this one went to the same
+        //place and is of the same kind, so the run read back is the same
+        const ExtEdit * prev = i > 0 ? &edits[i - 1] : nullptr;
+        const bool same_run = prev != nullptr && prev->op == e.op && prev->device == e.device
+            && prev->before_device == e.before_device && prev->before_key == e.before_key
+            && prev->before_value == e.before_value;
+        const bool same_kind_run = prev != nullptr && prev->op == e.op && e.op == ExtEdit::AddDevice
+            && prev->before_device == e.before_device && prev->before_key.empty() && e.before_key.empty();
+        if (!e.before_device.empty() && !same_run && !same_kind_run)
+        {
+            s += "@before " + e.before_device;
+            if (!e.before_key.empty()) s += ":" + e.before_key;
+            if (!e.before_value.empty()) s += " = " + config_quote_value(e.before_value);
+            s += "\n";
+        }
+        if (e.op == ExtEdit::AddDevice) { s += config_device_text(e.device, e.type, e.params); continue; }
         if (e.op == ExtEdit::RemoveDevice) { s += "-" + e.device + "\n"; continue; }
         const bool set = e.op == ExtEdit::Set;
         std::string text = config_parameter_text(e.param, set);
@@ -364,6 +518,27 @@ emulator::Result ConfigExtension::apply(EmulatorConfig &config, bool system_only
             continue;
         }
 
+        if (e.op == ExtEdit::AddDevice)
+        {
+            //A name taken twice would leave one of the two unreachable: every
+            //lookup by name finds the first
+            if (config.get_device(e.device) != nullptr)
+                return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "The device already exists in the base configuration"), e.device);
+            //At the end unless placed: the order is the order of clocking and
+            //of reset, which some machines depend on
+            size_t index = config.get_devices_count();
+            if (!e.before_device.empty())
+            {
+                const int at = config.device_index(e.before_device);
+                if (at < 0)
+                    return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "No such device in the base configuration"), e.before_device);
+                index = static_cast<size_t>(at);
+            }
+            EmulatorConfigDevice * added = config.insert_device(e.device, e.type, index);
+            added->parameters = e.params;
+            continue;
+        }
+
         EmulatorConfigDevice * dev = config.get_device(e.device);
         if (dev == nullptr)
             return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "No such device in the base configuration"), e.device);
@@ -387,6 +562,42 @@ emulator::Result ConfigExtension::apply(EmulatorConfig &config, bool system_only
             //A range of a mapper is a list entry: the same range to the same
             //device is replaced (its options change), anything else is added
             const std::vector<size_t> found = dev->find_parameters(key, &e.param.value);
+            if (!e.before_key.empty())
+            {
+                //Placed: the order of the ranges decides who answers. A line
+                //the base already has is refused rather than moved: in a run
+                //under one @before, the change of options of an existing
+                //line would otherwise move it along with the new ones. A line
+                //this extension has itself added above is not the base's:
+                //one range may go to one device twice, for reading and for
+                //writing (the Орион М3 controller does)
+                bool in_base = false;
+                for (size_t k = 0; k < found.size() && !in_base; k++)
+                {
+                    const EmulatorConfigParameter &line = dev->parameters[found[k]];
+                    bool added = false;
+                    for (size_t j = 0; j < i && !added; j++)
+                    {
+                        const ExtEdit &p = edits[j];
+                        added = p.op == ExtEdit::Set && p.device == e.device && p.param.key() == line.key()
+                             && p.param.value == line.value && p.param.right_range == line.right_range
+                             && p.param.right_extended == line.right_extended;
+                    }
+                    in_base = !added;
+                }
+                if (in_base)
+                    return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "This line is already in the base configuration: change it outside @before, or remove it first"),
+                                    e.device + ":" + key + " = " + e.param.value);
+                const std::vector<size_t> at = dev->find_parameters(e.before_key, e.before_value.empty() ? nullptr : &e.before_value);
+                if (at.empty())
+                    return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "No such property in the base configuration, it must be written exactly as there"),
+                                    "@before " + e.device + ":" + e.before_key);
+                if (at.size() > 1)
+                    return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "The base configuration has several lines with this key, add the value of the one meant"),
+                                    "@before " + e.device + ":" + e.before_key + " = " + dev->parameters[at[0]].value);
+                dev->parameters.insert(dev->parameters.begin() + static_cast<std::ptrdiff_t>(at[0]), e.param);
+                continue;
+            }
             if (found.empty())
                 dev->parameters.push_back(e.param);
             else
@@ -401,13 +612,19 @@ emulator::Result ConfigExtension::apply(EmulatorConfig &config, bool system_only
         if (found.empty())
         {
             //A property the base has under other modifiers (~data against
-            //~data[0-7]) is not replaced silently: which of them was meant
-            //is for the author to say
+            //~data[0-7], data against ~data) is not replaced silently: which
+            //of them was meant is for the author to say. Another part of an
+            //interface wired in parts (~config[3] beside ~config[0-1]) is no
+            //such case: both name their bits, and it is added
             const std::string bare = e.param.bare_name();
             for (size_t j = 0; j < dev->parameters.size(); j++)
-                if (dev->parameters[j].bare_name() == bare)
+            {
+                const EmulatorConfigParameter &b = dev->parameters[j];
+                const bool another_part = b.name == e.param.name && !b.left_range.empty() && !e.param.left_range.empty();
+                if (b.bare_name() == bare && !another_part)
                     return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "The base configuration has this property with other modifiers, remove it first"),
                                     e.device + ":" + key + " / -" + e.device + ":" + dev->parameters[j].key());
+            }
             dev->parameters.push_back(e.param);
         }
         else
@@ -452,6 +669,83 @@ std::string machine_file_stem(const std::string &path)
     return path;
 }
 
+namespace {
+
+//A machine file named as .cfg that is not there, but is as an .ext of the same
+//name: a variant that used to be a whole .cfg and became an extension. Old
+//scripts, recordings, ini settings and extensions written against the .cfg
+//keep finding it
+std::string cfg_or_ext(const std::string &path)
+{
+    if (ends_with_ci(path, ".cfg") && !dsk_tools::file_exists(path))
+    {
+        const std::string ext = path.substr(0, path.size() - 4) + ".ext";
+        if (dsk_tools::file_exists(ext)) return ext;
+    }
+    return path;
+}
+
+//Where an @extends points: relative to computers/, a .cfg or a plain .ext. A
+//packed extension or a state cannot be a base - neither is a file to build on
+emulator::Result resolve_base(const ConfigExtension &ext, const MachinePaths &paths, std::string &base)
+{
+    base = cfg_or_ext(is_absolute_path(ext.extends) ? ext.extends : paths.computers_path + ext.extends);
+    if (ends_with_ci(base, ".cfg") || ends_with_ci(base, ".ext")) return emulator::Result::ok();
+    return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "An extension can only be based on a .cfg or an .ext file"), ext.extends);
+}
+
+std::string path_key(const std::string &path)
+{
+    std::string s = str_tolower(path);
+    for (size_t i = 0; i < s.size(); i++) if (s[i] == '\\') s[i] = '/';
+    return s;
+}
+
+//Builds what an extension stands on and applies the extension to it. A base
+//that is itself an extension is built the same way first, down to the .cfg at
+//the bottom, which comes back in base_cfg. seen holds the files of the chain:
+//one met twice is a loop
+emulator::Result load_extension_chain(const ConfigExtension &ext, const MachinePaths &paths,
+                                      EmulatorConfig &config, std::string &base_cfg, bool system_only,
+                                      std::vector<std::string> &seen, bool apply_self = true)
+{
+    std::string base;
+    emulator::Result res = resolve_base(ext, paths, base);
+    if (!res) return res;
+    if (ends_with_ci(base, ".ext"))
+    {
+        const std::string key = path_key(base);
+        for (size_t i = 0; i < seen.size(); i++)
+            if (seen[i] == key)
+                return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "The extensions are built on each other in a loop"), base);
+        seen.push_back(key);
+        const std::string text = dsk_tools::utf8_read_file(base);
+        if (text.empty())
+            return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading config file"), base);
+        ConfigExtension parent;
+        res = parent.parse(text, base);
+        if (!res) return res;
+        res = load_extension_chain(parent, paths, config, base_cfg, system_only, seen);
+    } else {
+        base_cfg = base;
+        res = config.load_from_file(base, system_only);
+    }
+    if (!res || !apply_self) return res;
+    return ext.apply(config, system_only);
+}
+
+} // namespace
+
+emulator::Result load_extension_base(const ConfigExtension &ext, const MachinePaths &paths,
+                                     EmulatorConfig &config, std::string &base_file)
+{
+    emulator::Result res = resolve_base(ext, paths, base_file);
+    if (!res) return res;
+    std::string base_cfg;
+    std::vector<std::string> seen;
+    return load_extension_chain(ext, paths, config, base_cfg, false, seen, false);
+}
+
 emulator::Result machine_base_file(const std::string &file, const MachinePaths &paths, std::string &base)
 {
     base.clear();
@@ -485,19 +779,16 @@ emulator::Result machine_base_file(const std::string &file, const MachinePaths &
     res = ext.parse(text, ext_name);
     if (!res) return res;
 
-    if (is_absolute_path(ext.extends))
-        base = ext.extends;
-    else
-        base = paths.computers_path + ext.extends;
-    if (!ends_with_ci(base, ".cfg"))
-        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "An extension can only be based on a .cfg file"), ext.extends);
-    return emulator::Result::ok();
+    //The file it stands on directly, which may be an extension in turn: the
+    //page fetches the bundle of that machine, and the bundle holds the rest
+    return resolve_base(ext, paths, base);
 }
 
-emulator::Result load_machine_description(const std::string &file, const MachinePaths &paths,
+emulator::Result load_machine_description(const std::string &asked, const MachinePaths &paths,
                                           EmulatorConfig &config, MachineSource &source,
                                           bool system_only)
 {
+    const std::string file = cfg_or_ext(asked);
     source = MachineSource();
     source.file = file;
     config.free_devices();
@@ -560,16 +851,10 @@ emulator::Result load_machine_description(const std::string &file, const Machine
         res = ext.parse(text, ext_name);
         if (!res) return res;
 
-        if (is_absolute_path(ext.extends))
-            source.base_cfg = ext.extends;
-        else
-            source.base_cfg = paths.computers_path + ext.extends;
-        if (!ends_with_ci(source.base_cfg, ".cfg"))
-            return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "An extension can only be based on a .cfg file"), ext.extends);
-
-        res = config.load_from_file(source.base_cfg, system_only);
-        if (!res) return res;
-        res = ext.apply(config, system_only);
+        //base_cfg is the .cfg at the bottom of the chain: its directory is
+        //where the machine's own files are looked for
+        std::vector<std::string> seen(1, path_key(file));
+        res = load_extension_chain(ext, paths, config, source.base_cfg, system_only, seen);
         if (!res) return res;
         source.script = ext.script;
         source.script_line = ext.script_line;

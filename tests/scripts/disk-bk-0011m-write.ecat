@@ -12,7 +12,7 @@
 # Код ошибки драйвера лежит в байте 52.
 # @timeout 60
 
-MACHINE "bk/BK-0011M-fdd.cfg"
+MACHINE "bk/BK-0011M-fdd.ext"
 WAIT _12000
 COMMAND cpu.stop
 

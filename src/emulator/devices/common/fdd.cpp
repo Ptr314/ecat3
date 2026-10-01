@@ -21,6 +21,26 @@
 #define CALLBACK_SELECT     1
 #define CALLBACK_MOTOR_ON   2
 
+emulator::Result FDC::load_drives(unsigned int min, unsigned int max, std::vector<FDD*> &drives)
+{
+    drives.clear();
+    const std::string list = cd->get_parameter("drives", false).value;
+    const std::vector<std::string> parts = split_string(list, '|', true);
+    if (list.empty() || parts.size() < min || parts.size() > max)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{FDC|" + std::string(QT_TRANSLATE_NOOP("FDC", "Incorrect fdd list for")) + "} " + name);
+    for (size_t i = 0; i < parts.size(); i++)
+    {
+        //Not there at all: the lookup itself reports it, by name
+        FDD * fdd = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));
+        if (fdd == nullptr)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{FDC|" + std::string(QT_TRANSLATE_NOOP("FDC", "Not a fdd device")) + "} " + parts[i]);
+        drives.push_back(fdd);
+    }
+    return emulator::Result::ok();
+}
+
 FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
       ComputerDevice(im, cd)
     , loaded(false)
@@ -388,7 +408,7 @@ void FDD::NextPosition()
         position = 0;
         return;
     }
-    if (++position >= track_indexes[index].mfmtracksize) position = 0;
+    if (++position >= (int)track_indexes[index].mfmtracksize) position = 0;
 }
 
 uint8_t FDD::ReadNextByte()
@@ -415,7 +435,7 @@ uint8_t FDD::ReadNextByte()
         } else {
             if (!sector_in_range()) return 0xFF;
             uint8_t result = buffer[track_indexes[track*sides + side].mfmtrackoffset + position++];
-            if (position >= track_indexes[track*sides + side].mfmtracksize) {
+            if (position >= (int)track_indexes[track*sides + side].mfmtracksize) {
                 position = 0;
             }
             return result;
@@ -443,7 +463,7 @@ void FDD::WriteNextByte(uint8_t value)
         if (!sector_in_range()) return;
         clear_aim_desync();
         buffer[track_indexes[track*sides + side].mfmtrackoffset + position++] = value;
-        if (position >= track_indexes[track*sides + side].mfmtracksize) position = 0;
+        if (position >= (int)track_indexes[track*sides + side].mfmtracksize) position = 0;
     }
 }
 

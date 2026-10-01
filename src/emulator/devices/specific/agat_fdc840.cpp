@@ -42,29 +42,25 @@ emulator::Result Agat_FDC840::load_config(SystemData *sd)
     //to be 200 ms within one per cent
     clock_divider = AGAT_840_BYTE_CYCLES;
 
-    std::string s;
-    try {
-        s = cd->get_parameter("drives").value;
-    } catch (std::exception &e) {
-        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{Agat_FDC840|" + std::string(QT_TRANSLATE_NOOP("Agat_FDC840", "Incorrect fdd list for")) + "} " + name);
-    }
-
+    //Two drive selects
     memset(&drives, 0, sizeof(drives));
-    std::vector<std::string> parts = split_string(s, '|', true);
-    drives_count = parts.size();
+    std::vector<FDD*> list;
+    res = load_drives(1, sizeof(drives)/sizeof(drives[0]), list);
+    if (!res) return res;
+    drives_count = (int)list.size();
 
     LinkData ld;
     ld.s.i = &i_side;
     ld.s.shift = 0;
     ld.s.mask = create_mask(1, 0);
 
-    for (unsigned int i = 0; i < drives_count; i++) {
-        drives[i] = dynamic_cast<FDD*>(im->dm->get_device_by_name(parts[i]));
+    for (int i = 0; i < drives_count; i++) {
+        drives[i] = list[i];
 
-        ld.d.i = im->get_interface_by_name(parts[i], "side");
+        ld.d.i = im->get_interface_by_name(list[i]->name, "side");
         if (ld.d.i == nullptr)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
-                "{Agat_FDC840|" + std::string(QT_TRANSLATE_NOOP("Agat_FDC840", "Interface not found")) + "} " + parts[i] + ":side");
+                "{Agat_FDC840|" + std::string(QT_TRANSLATE_NOOP("Agat_FDC840", "Interface not found")) + "} " + list[i]->name + ":side");
         ld.d.shift = 0;
         ld.d.mask = create_mask(1, 0);
         ld.s.i->connect(ld.s, ld.d, false);
@@ -164,13 +160,12 @@ void Agat_FDC840::update_state()
 void Agat_FDC840::read_next_byte()
 {
     if (selected_drive < drives_count) {
-        int pos = drives[selected_drive]->get_position();
         int aim_code = drives[selected_drive]->aim_code();
         uint8_t data = drives[selected_drive]->ReadNextByte();
         if (aim_is_desync(aim_code)) {
             // if (data == 0) data = drives[selected_drive]->ReadNextByte();
             sector_sync = true;
-            // qDebug() << "-- SYNC " << pos << ":" << hex << data;
+            // qDebug() << "-- SYNC " << drives[selected_drive]->get_position() << ":" << hex << data;
         } else {
             // qDebug() << hex << data;
         }
