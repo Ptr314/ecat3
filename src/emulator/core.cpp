@@ -2013,8 +2013,10 @@ MapperPage * MemoryMapper::fill_page(unsigned int page, uint64_t tag)
             //A routed range is asked once for the whole page: its device keeps
             //route() constant over a page except where it answers THROUGH or
             //OR, and calls routing_changed() when the answers change. It is
-            //asked at both ends of the page, both ways
-            if (mr->range_begin > p_begin || mr->range_end < p_end || mr->address_mask != 0) {
+            //asked at both ends of the page, both ways. One that takes a
+            //single direction is left to map(), which skips it for the other
+            if (mr->range_begin > p_begin || mr->range_end < p_end || mr->address_mask != 0
+                || mr->mode != MODE_RW) {
                 e->uncached = true;
                 return nullptr;
             }

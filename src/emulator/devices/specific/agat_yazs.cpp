@@ -1152,6 +1152,15 @@ emulator::Result AgatYazs::load_state(const StateReader &r)
         k.pending_n = f[6][i];      k.has_pending = f[7][i] != 0;
         k.gate = f[8][i] != 0;      k.out = f[9][i] != 0;     k.state = (uint8_t)f[10][i];
         k.phase = (uint8_t)f[11][i]; k.left = f[12][i];
+        // A snapshot may come from a link: a counter that would never reach its
+        // next event (nothing to count, a state that does not exist) would
+        // hold the emulation thread in step() for good
+        if (k.mode > 5) k.mode = 0;
+        if (k.rw < 1 || k.rw > 3) k.rw = 3;
+        if (k.state > Vi53Counter::DONE) k.state = Vi53Counter::IDLE;
+        if (k.n == 0 || k.n > 65536) k.n = 65536;
+        if (k.pending_n == 0 || k.pending_n > 65536) k.has_pending = false;
+        if (k.left == 0) k.left = 1;
     }
 
     bool bits[TONES * 3 + 4];
