@@ -1,0 +1,55 @@
+// Агат-9 с ячейкой звукового синтеза 5/2 (ЯЗС) в слоте 1 ($C090-$C09F) и
+// двумя дисководами: 840 Кб на контроллере слота 5 и 140 Кб на контроллере
+// слота 6 ($C0E0-$C0EF, загрузчик в $C600).
+@extends agat/Agat-9.cfg
+@version Агат-9 (ЯЗС)
+@protected
+
+fdd0:image = music-d.dsk
+
+// Прерывание ячейки - открытый коллектор на линии IRQ: ячейка берет линию
+// остальной машины и выдает процессору обе
+cpu:~irq = yazs.irq
+
+// Звук ячейки подмешивается к динамику; ячейка объявлена раньше динамика,
+// чтобы считать свой отрезок времени до того, как он его выслушает
+sound:mix = yazs
+
+@before sound
+yazs : agat-yazs {
+	~irq_in = display.500hz
+}
+
+@before display
+boot140 : rom {
+	size = 256
+	image = flop140.boot.v2.bin
+}
+
+fdc140 : agat-fdc140 {
+	drives = fdd1
+	speed_mode = fast
+	soft_reset = 0
+}
+
+fdd1 : fdd {
+	sides = 1
+	tracks = 35
+	sectors = 16
+	sector_size = 256
+	mode = mfm_agat_140
+	image = IKP7_140.dsk
+	files = "All formats (*.dsk *.mfm *.nic *.nib);;Disk images 140K (*.dsk);;HXC MFM (*.mfm);;NIB (*.nib);;NIC (*.nic)"
+	files_save = "Disk images 140K (*.dsk);;HXC MFM (*.mfm)"
+	selector_value = 0
+	soft_reset = 0
+	~select  = fdc140.select[0-1]
+	~motor_on = !fdc140.motor_on
+}
+
+@before mapper:@memory[$C0D0-$C0DF]
+mapper:@memory[$C090-$C09F] = yazs
+mapper:@memory[$C0E0-$C0EF] = fdc140
+
+@before mapper:@memory[$C700-$C7FF]
+mapper:@memory[$C600-$C6FF] = boot140 {mode = r}

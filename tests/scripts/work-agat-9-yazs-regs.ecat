@@ -1,0 +1,71 @@
+# Агат-9 + ЯЗС 5/2: регистры ячейки, прерывание таймера и огибающие каналов.
+# Пишет в регистры ячейки напрямую (yazs.set - запись по шине) и смотрит на
+# флаг прерывания, счетчик его взведений и напряжения схемы:
+# - таймер прерываний (третий счетчик второй ВИ53, 7980 Гц) с делителем 80
+#   дает 100 Гц, пока разрешен разрядом 7 регистра $C09F; запись в любой
+#   регистр таймеров сбрасывает флаг;
+# - тон 1 кГц в первом канале: D5 плавно поднимает огибающую (узел F,
+#   ~0.1 с) и снимает ее, D4 дает всплеск, спадающий сам;
+# - ударный 6 запускается фронтом D4;
+# - когда все стихло, ячейка засыпает (аналоговая часть не считается).
+# Напряжения - в милливольтах; ИКП в это время стоит в меню. Огибающая
+# пишется там, где она уже стоит, а всплеск - пиком (yazs.peak): на склоне
+# значение зависит от того, в какой момент среза выполнилась команда
+# сценария, а это зависит от загрузки машины.
+# @timeout 40
+
+MACHINE "agat/Agat-9-yazs.ext"
+WAIT 9000
+LOGDEFS 8,16
+
+PRINT "=== Прерывание таймера: 7980 / 80 = 100 Гц ==="
+COMMAND yazs.set($7,$B6)
+COMMAND yazs.set($6,$50)
+COMMAND yazs.set($6,$00)
+COMMAND yazs.set($F,$40)
+WAIT 1000
+LOG yazs.irqs
+LOG yazs.cet
+PRINT "-- запрет и сброс флага"
+COMMAND yazs.set($F,$C0)
+COMMAND yazs.set($7,$80)
+LOG yazs.status
+LOG yazs.cet
+WAIT 200
+LOG yazs.irqs
+COMMAND yazs.set($F,$40)
+
+PRINT "=== Канал 1: 1 кГц на СЧ, включение D5 ==="
+COMMAND yazs.set($3,$36)
+COMMAND yazs.set($0,$FD)
+COMMAND yazs.set($0,$03)
+COMMAND yazs.set($8,$22)
+WAIT 30
+LOG yazs.env
+WAIT 1000
+LOG yazs.env
+LOG yazs.counters
+PRINT "-- выключение"
+COMMAND yazs.set($8,$02)
+WAIT 300
+LOG yazs.env
+PRINT "-- импульс D4"
+COMMAND yazs.set($8,$12)
+WAIT 500
+LOG yazs.peak
+LOG yazs.env
+COMMAND yazs.set($8,$00)
+
+PRINT "=== Ударный 6 ==="
+COMMAND yazs.set($D,$10)
+WAIT 500
+LOG yazs.peak
+LOG yazs.drums
+COMMAND yazs.set($D,$00)
+
+PRINT "=== Тишина ==="
+WAIT 3000
+LOG yazs.sleeping
+LOG yazs.idle
+LOG yazs.level
+EXIT

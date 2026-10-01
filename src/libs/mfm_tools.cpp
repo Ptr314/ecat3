@@ -41,7 +41,10 @@ static const unsigned char FlipBit3[4] = { 0, 32, 16, 48 };
 uint8_t * load_image(const std::string &file_name, int image_size)
 {
     long long file_size = dsk_tools::utf8_file_size(file_name);
-    if (file_size == image_size)
+    // A short tail past the sectors is ignored (the demo disk of the Agat
+    // sound card ends in four bytes). Less than a sector, so that an image of
+    // another format - an 840K disk opened in a 140K drive - is still refused
+    if (file_size >= image_size && file_size - image_size < 256)
     {
         dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
         if (file.is_open()){

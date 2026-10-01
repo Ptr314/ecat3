@@ -1,0 +1,2 @@
+[fdd1.file] IKP7_140.dsk
+[fdc140.drives] $01

@@ -308,19 +308,33 @@ emulator::Result FDD::load_image(const std::string &file_name)
                     "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect disk image size for")) + "} " + file_name);
             }
         } else {
-            // Convert to MFM
-            if (buffer != nullptr) delete [] buffer;
-            switch (fdd_mode) {
-                case FDD_MODE_AGAT_140:
-                    buffer = generate_mfm_agat_140(file_name, sides, tracks, disk_size, track_indexes);
-                    break;
-                case FDD_MODE_AGAT_840:
-                    buffer = generate_mfm_agat_840(file_name, sides, tracks, disk_size, track_indexes, aim_codes);
-                    break;
-                default:
-                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
-                        "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Expected conversion from DSK to MFM is not supported yet.")) + "}");
+            // Convert to MFM. The converters throw on a file they cannot take
+            // (too short, unreadable); the drive keeps its disk then, and the
+            // error is reported instead of leaving the drive silently empty
+            uint8_t * converted = nullptr;
+            // The converters set the geometry before they read the file: put
+            // it back if they fail, it describes the disk that stays
+            const int old_sides = sides, old_tracks = tracks, old_size = disk_size;
+            try {
+                switch (fdd_mode) {
+                    case FDD_MODE_AGAT_140:
+                        converted = generate_mfm_agat_140(file_name, sides, tracks, disk_size, track_indexes);
+                        break;
+                    case FDD_MODE_AGAT_840:
+                        converted = generate_mfm_agat_840(file_name, sides, tracks, disk_size, track_indexes, aim_codes);
+                        break;
+                    default:
+                        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                            "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Expected conversion from DSK to MFM is not supported yet.")) + "}");
+                }
+            } catch (const std::exception &e) {
+                sides = old_sides;
+                tracks = old_tracks;
+                disk_size = old_size;
+                return emulator::Result::error(emulator::ErrorCode::ConfigError, e.what());
             }
+            if (buffer != nullptr) delete [] buffer;
+            buffer = converted;
             track_mode = FDD_MODE_WHOLE_TRACK;
             position = 0;
             loaded = true;

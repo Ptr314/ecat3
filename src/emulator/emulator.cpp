@@ -73,6 +73,7 @@
 #include "devices/common/gmd70.h"
 #include "emulator/devices/common/ram_address.h"
 #include "emulator/devices/specific/agat_9_mapper.h"
+#include "emulator/devices/specific/agat_yazs.h"
 #include "emulator/devices/specific/uknc_channels.h"
 #include "emulator/devices/specific/uknc_display.h"
 #include "emulator/devices/specific/uknc_graphics.h"
@@ -1527,6 +1528,7 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("bk-timer", create_bk_timer);
     dm->register_device("bk-fdc", create_bk_fdc);
     dm->register_device("agat-9-mapper", create_agat_9_mapper);
+    dm->register_device("agat-yazs", create_agat_yazs);
     dm->register_device("uknc-channels", create_uknc_channels);
     dm->register_device("uknc-display", create_uknc_display);
     dm->register_device("uknc-graphics", create_uknc_graphics);
