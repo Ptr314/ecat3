@@ -34,6 +34,7 @@
 #include "dialogs/i8255window.h"
 #include "mainwindow.h"
 #include "emulator/utils.h"
+#include "emulator/cache.h"
 #include "dsk_tools/dsk_tools.h"
 //Часть помощников dsk_tools объявлена в его внутреннем заголовке, и звать
 //его надо по полному пути: короткий "utils.h" из dsk_tools.h у MSVC попадает
@@ -333,6 +334,8 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
     e = new Emulator(work_path.toStdString(), data_path.toStdString(), software_path.toStdString(), ini_file.toStdString(), renderer);
     e->user_ext_path = default_user_ext_path(emulator_root.toStdString());
     e->cache_path = QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation)).absoluteFilePath("ecat3-cache").toStdString() + "/";
+    //Unpacked archives and inline data nobody has used for a month
+    cache_cleanup(e->cache_path, CACHE_MAX_AGE_DAYS);
 
     // Signal/slot connections removed — using direct calls to Emulator methods
 

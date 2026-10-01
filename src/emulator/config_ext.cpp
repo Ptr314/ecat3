@@ -4,6 +4,7 @@
 // Description: Configuration extensions (.ext, .ext.zip), source
 
 #include "config_ext.h"
+#include "cache.h"
 #include "utils.h"
 
 #include <cstdio>
@@ -101,6 +102,16 @@ bool write_cached(const std::string &path, const uint8_t * data, size_t size)
     return write_file(path, data, size);
 }
 
+//What one archive may unpack into, and how many files it may hold. A browser
+//unpacks into the memory of its tab, hence less there. Far above anything a
+//machine carries: the largest real member is a hard disk image of tens of MB
+#ifdef WASM_BUILD
+const uint64_t ARCHIVE_UNPACKED_LIMIT = 256ULL << 20;
+#else
+const uint64_t ARCHIVE_UNPACKED_LIMIT = 1ULL << 30;
+#endif
+const size_t ARCHIVE_ENTRIES_LIMIT = 4096;
+
 emulator::Result load_error(const char * message, const std::string &detail)
 {
     return emulator::Result::error(emulator::ErrorCode::ConfigError,
@@ -130,11 +141,28 @@ emulator::Result read_extension_text(const std::string &file, ZipReader &zip,
         return emulator::Result::ok();
     }
 
+    //The archive is read whole, so its own size is bounded first
+    if (static_cast<uint64_t>(dsk_tools::utf8_file_size(file)) > ARCHIVE_UNPACKED_LIMIT)
+        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "The archive is too large"), file);
     archive = dsk_tools::utf8_read_file(file);
     if (archive.empty())
         return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading config file"), file);
     if (!zip.open(archive))
         return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.error());
+
+    //Each entry is bounded by ZipReader, but not their sum: a few megabytes of
+    //compressed zeros unpack into gigabytes - on the disk, or in the memory of
+    //a browser tab that followed a link. The sizes in the directory are what
+    //unpacking will write: ZipReader::read() refuses an entry whose data comes
+    //out of any other size. So the sum is checked before a byte is written
+    if (zip.entries().size() > ARCHIVE_ENTRIES_LIMIT)
+        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "The archive holds too many files"),
+                          file + " (" + std::to_string(zip.entries().size()) + ")");
+    uint64_t unpacked = 0;
+    for (size_t i = 0; i < zip.entries().size(); i++) unpacked += zip.entries()[i].size;
+    if (unpacked > ARCHIVE_UNPACKED_LIMIT)
+        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "The archive is too large"),
+                          file + " (" + std::to_string(unpacked >> 20) + " MB)");
 
     //The text itself is the one member with that suffix at the top of the
     //archive; everything else beside it is a file the machine loads
@@ -176,6 +204,9 @@ emulator::Result unpack_archive(const std::string &file, const std::string &cach
         if (!ZipReader::is_safe_name(zip.entries()[i].name))
             return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.entries()[i].name);
     make_dirs(dir);
+    //Used now: the cache cleanup goes by the time of this directory, and a
+    //load that finds every file already there writes nothing that would move it
+    cache_touch(dir);
     std::vector<uint8_t> bytes;
     for (size_t i = 0; i < zip.entries().size(); i++)
     {
@@ -907,6 +938,8 @@ emulator::Result materialize_inline_data(EmulatorConfig &config, const std::stri
             make_dirs(dir);
             if (!write_cached(path, data.data(), data.size()))
                 return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error writing file"), path);
+            //Used now, even when the same bytes were already there
+            cache_touch(path);
             p.value = path;
             p.right_extended.clear();
         }

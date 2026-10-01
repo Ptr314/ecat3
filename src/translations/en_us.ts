@@ -82,6 +82,14 @@
     </message>
 </context>
 <context>
+    <name>AgatYazs</name>
+    <message>
+        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+387"/>
+        <source>Incorrect step or clock</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Agat_FDC140</name>
     <message>
         <location filename="../emulator/devices/specific/agat_fdc140.cpp" line="+45"/>
@@ -201,7 +209,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+717"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+731"/>
         <source>Disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -715,7 +723,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+229"/>
+        <location filename="../emulator/emulator.cpp" line="+230"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -729,11 +737,11 @@
     <name>EmulatorConfig</name>
     <message>
         <location filename="../emulator/config.cpp" line="+273"/>
-        <location filename="../emulator/config_ext.cpp" line="+129"/>
-        <location line="+6"/>
-        <location line="+589"/>
+        <location filename="../emulator/config_ext.cpp" line="+140"/>
+        <location line="+9"/>
+        <location line="+606"/>
         <location filename="../emulator/config_fields.cpp" line="+104"/>
-        <location line="+118"/>
+        <location line="+121"/>
         <source>Error reading config file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -771,13 +779,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/config_ext.cpp" line="-301"/>
+        <location filename="../emulator/config_ext.cpp" line="-304"/>
         <location line="+5"/>
         <source>The archive must hold exactly one file of its own type at its top level</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+176"/>
+        <location line="+179"/>
         <source>Unknown directive</source>
         <translation type="unfinished"></translation>
     </message>
@@ -816,7 +824,18 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-231"/>
+        <location line="-338"/>
+        <location line="+18"/>
+        <source>The archive is too large</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-5"/>
+        <source>The archive holds too many files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+94"/>
         <location line="+55"/>
         <location line="+18"/>
         <location line="+165"/>
@@ -889,20 +908,20 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-583"/>
+        <location line="-600"/>
+        <location line="+34"/>
         <location line="+20"/>
-        <location line="+20"/>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Error reading the archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-16"/>
         <source>No cache directory to unpack into</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+20"/>
         <location line="+720"/>
         <source>Error writing file</source>
         <translation type="unfinished"></translation>
@@ -918,7 +937,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/config_fields.cpp" line="-124"/>
+        <location filename="../emulator/config_fields.cpp" line="-127"/>
         <source>A packed extension cannot be edited</source>
         <translation type="unfinished"></translation>
     </message>
@@ -927,7 +946,7 @@
     <name>ExtEditorWindow</name>
     <message>
         <location filename="../dialogs/exteditorwindow.ui" line="+14"/>
-        <location filename="../dialogs/exteditorwindow.cpp" line="+379"/>
+        <location filename="../dialogs/exteditorwindow.cpp" line="+383"/>
         <location line="+19"/>
         <source>Configuration editor</source>
         <translation type="unfinished"></translation>
@@ -1067,7 +1086,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-686"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-700"/>
         <source>Incorrect fdd list for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1096,12 +1115,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+58"/>
         <source>Expected conversion from DSK to MFM is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+309"/>
+        <location line="+317"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1111,7 +1130,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-555"/>
+        <location line="-569"/>
         <source>Incorrect fdd parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1148,7 +1167,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+282"/>
+        <location line="+296"/>
         <location line="+15"/>
         <source>Error exporting disk.</source>
         <translation type="unfinished"></translation>
@@ -1397,7 +1416,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1262"/>
+        <location filename="../mainwindow.cpp" line="+1265"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1962,7 +1981,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location line="+895"/>
+        <location line="+897"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2117,7 +2136,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-688"/>
+        <location filename="../emulator/core.cpp" line="-690"/>
         <source>Incorrect access mode</source>
         <translation type="unfinished"></translation>
     </message>

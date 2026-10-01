@@ -15,6 +15,7 @@
 #include "globals.h"
 #include "emulator/emulator.h"
 #include "emulator/config_ext.h"
+#include "emulator/cache.h"
 #include "emulator/config_fields.h"
 #include "emulator/thread_compat.h"
 #include "emulator/utils.h"
@@ -1065,6 +1066,8 @@ int main(int argc, char *argv[])
     if (o.no_sound) emulator.set_audio_enabled(false);
     emulator.user_ext_path = paths.user_ext;
     emulator.cache_path = paths.cache;
+    //Unpacked archives and inline data nobody has used for a month
+    cache_cleanup(emulator.cache_path, CACHE_MAX_AGE_DAYS);
     HeadlessHost host(&emulator, paths.work);
 
     //A script is parsed before the machine is loaded: its MACHINE command may

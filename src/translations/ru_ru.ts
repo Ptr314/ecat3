@@ -110,6 +110,14 @@
     </message>
 </context>
 <context>
+    <name>AgatYazs</name>
+    <message>
+        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+387"/>
+        <source>Incorrect step or clock</source>
+        <translation>Неверный шаг расчета (substep) или частота</translation>
+    </message>
+</context>
+<context>
     <name>Agat_FDC140</name>
     <message>
         <source>Error</source>
@@ -297,7 +305,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+717"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+731"/>
         <source>Disk image</source>
         <translation>Образ диска</translation>
     </message>
@@ -923,7 +931,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+229"/>
+        <location filename="../emulator/emulator.cpp" line="+230"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -965,11 +973,11 @@
     </message>
     <message>
         <location filename="../emulator/config.cpp" line="+273"/>
-        <location filename="../emulator/config_ext.cpp" line="+129"/>
-        <location line="+6"/>
-        <location line="+589"/>
+        <location filename="../emulator/config_ext.cpp" line="+140"/>
+        <location line="+9"/>
+        <location line="+606"/>
         <location filename="../emulator/config_fields.cpp" line="+104"/>
-        <location line="+118"/>
+        <location line="+121"/>
         <source>Error reading config file</source>
         <translation>Ошибка чтения файла конфигурации компьютера</translation>
     </message>
@@ -1007,13 +1015,13 @@
         <translation>Параметр radix должен быть равен 2, 8, 10 или 16</translation>
     </message>
     <message>
-        <location filename="../emulator/config_ext.cpp" line="-301"/>
+        <location filename="../emulator/config_ext.cpp" line="-304"/>
         <location line="+5"/>
         <source>The archive must hold exactly one file of its own type at its top level</source>
         <translation>В корне архива должен лежать ровно один файл его типа</translation>
     </message>
     <message>
-        <location line="+176"/>
+        <location line="+179"/>
         <source>Unknown directive</source>
         <translation>Неизвестная директива</translation>
     </message>
@@ -1052,7 +1060,18 @@
         <translation>Лишний текст после свойства</translation>
     </message>
     <message>
-        <location line="-231"/>
+        <location line="-338"/>
+        <location line="+18"/>
+        <source>The archive is too large</source>
+        <translation>Архив слишком велик</translation>
+    </message>
+    <message>
+        <location line="-5"/>
+        <source>The archive holds too many files</source>
+        <translation>В архиве слишком много файлов</translation>
+    </message>
+    <message>
+        <location line="+94"/>
         <location line="+55"/>
         <location line="+18"/>
         <location line="+165"/>
@@ -1125,10 +1144,10 @@
         <translation>Расширения ссылаются друг на друга по кругу</translation>
     </message>
     <message>
-        <location line="-583"/>
+        <location line="-600"/>
+        <location line="+34"/>
         <location line="+20"/>
-        <location line="+20"/>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Error reading the archive</source>
         <translation>Ошибка чтения архива</translation>
     </message>
@@ -1137,12 +1156,12 @@
         <translation type="vanished">В корне архива должен быть ровно один файл .ext</translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-16"/>
         <source>No cache directory to unpack into</source>
         <translation>Нет временного каталога для распаковки</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+20"/>
         <location line="+720"/>
         <source>Error writing file</source>
         <translation>Ошибка записи файла</translation>
@@ -1162,7 +1181,7 @@
         <translation>Некорректные данные base64</translation>
     </message>
     <message>
-        <location filename="../emulator/config_fields.cpp" line="-124"/>
+        <location filename="../emulator/config_fields.cpp" line="-127"/>
         <source>A packed extension cannot be edited</source>
         <translation>Упакованное расширение нельзя редактировать</translation>
     </message>
@@ -1171,7 +1190,7 @@
     <name>ExtEditorWindow</name>
     <message>
         <location filename="../dialogs/exteditorwindow.ui" line="+14"/>
-        <location filename="../dialogs/exteditorwindow.cpp" line="+379"/>
+        <location filename="../dialogs/exteditorwindow.cpp" line="+383"/>
         <location line="+19"/>
         <source>Configuration editor</source>
         <translation>Редактор конфигурации</translation>
@@ -1315,7 +1334,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-686"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-700"/>
         <source>Incorrect fdd list for</source>
         <translation>Некорректный список дисководов для</translation>
     </message>
@@ -1392,7 +1411,7 @@
         <translation>Некорректный размер файла образа</translation>
     </message>
     <message>
-        <location line="+282"/>
+        <location line="+296"/>
         <location line="+15"/>
         <source>Error exporting disk.</source>
         <translation>Ошибка экспорта диска.</translation>
@@ -1416,7 +1435,7 @@
         <translation type="vanished">Формат файла &apos;%1&apos; не распознан</translation>
     </message>
     <message>
-        <location line="-740"/>
+        <location line="-754"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation>Файлы AIM поддерживаются только на дисководах 840 Кб Агат!</translation>
     </message>
@@ -1425,7 +1444,7 @@
         <translation type="vanished">Некорректный файл образа диска &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+58"/>
         <source>Expected conversion from DSK to MFM is not supported yet.</source>
         <translation>Необходимая конвертация из посекторного в физический формат еще не поддерживается.</translation>
     </message>
@@ -1434,7 +1453,7 @@
         <translation type="vanished">Ошибка экспорта диска. %1 : %2</translation>
     </message>
     <message>
-        <location line="+309"/>
+        <location line="+317"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation>Дисковод работает в MFM-режиме. Сохранение в посекторные образы еще не поддерживается.</translation>
     </message>
@@ -1765,7 +1784,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1262"/>
+        <location filename="../mainwindow.cpp" line="+1265"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2361,7 +2380,7 @@
         <translation type="vanished">Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+895"/>
+        <location line="+897"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
@@ -2517,7 +2536,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-688"/>
+        <location filename="../emulator/core.cpp" line="-690"/>
         <source>Incorrect access mode</source>
         <translation>Некорректный режим доступа</translation>
     </message>

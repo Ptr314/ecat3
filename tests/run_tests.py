@@ -31,6 +31,7 @@ import shutil
 import subprocess
 import sys
 import time
+import zipfile
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_DIR = os.path.dirname(TESTS_DIR)
@@ -222,11 +223,19 @@ class Test(object):
         self.path = path
         self.kind = kind
         self.name = os.path.splitext(os.path.basename(path))[0]
+        if self.name.lower().endswith(".ext"):
+            self.name = self.name[:-4]
         if kind == "error":
             self.name = "ext-error-" + self.name
         self.tier = self.name.split("-", 1)[0]
-        with open(path, encoding="utf-8") as f:
-            text = f.read()
+        if path.lower().endswith(".zip"):
+            # Упакованное расширение: заголовок с @error - в .ext в корне архива
+            with zipfile.ZipFile(path) as z:
+                ext = [n for n in z.namelist() if "/" not in n and n.lower().endswith(".ext")]
+                text = z.read(ext[0]).decode("utf-8") if ext else ""
+        else:
+            with open(path, encoding="utf-8") as f:
+                text = f.read()
         # У сценария комментарий начинается с #, у расширения - с //
         comment = "#" if kind == "ecat" else "//"
         self.title = ""
@@ -251,7 +260,8 @@ class Test(object):
 def collect_tests(filters, include_slow):
     tests = [Test(p) for p in sorted(glob.glob(os.path.join(SCRIPTS_DIR, "*.ecat")))]
     tests += [Test(p, "ext") for p in sorted(glob.glob(os.path.join(SCRIPTS_DIR, "*.ext")))]
-    tests += [Test(p, "error") for p in sorted(glob.glob(os.path.join(EXT_ERRORS_DIR, "*.ext")))]
+    tests += [Test(p, "error") for p in sorted(glob.glob(os.path.join(EXT_ERRORS_DIR, "*.ext"))
+                                               + glob.glob(os.path.join(EXT_ERRORS_DIR, "*.ext.zip")))]
     tests.sort(key=lambda t: t.name)
     if not include_slow:
         tests = [t for t in tests if t.tier != "slow"]
