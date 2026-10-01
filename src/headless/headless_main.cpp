@@ -641,6 +641,53 @@ bool check_ext_editor_keeps_blocks(const std::string &computers_path, std::strin
     return true;
 }
 
+// The chooser's Copy of an extension stands on it: the editor writes an @extends
+// of the copied file and none of its edits, and saving that unchanged builds
+// the very machine copied. A copy repeating the edits on the bottom .cfg would
+// load on the desktop, but the web page fetches the bundle of the machine an
+// extension names, and that of the plain base lacks the variant's files
+bool check_ext_editor_copy(const std::string &computers_path, std::string &message)
+{
+    const std::string original = "agat/Agat-9-yazs.ext";
+    if (!dsk_tools::file_exists(computers_path + original)) return true;
+    MachinePaths paths;
+    paths.computers_path = computers_path;
+    ExtEditModel model;
+    emulator::Result res = model.open(computers_path + original, paths, true);
+    if (!res) { message = "open: " + res.message; return false; }
+    if (model.extends != original) { message = "the copy stands on " + model.extends; return false; }
+    for (size_t i = 0; i < model.fields.size(); i++)
+        if (model.fields[i].changed()) { message = "the copy differs in " + model.fields[i].device + ":" + model.fields[i].field.name; return false; }
+    const std::string saved = model.build();
+    if (saved.find("@extends " + original) == std::string::npos) { message = "saved without its base:\n" + saved; return false; }
+
+    const std::string path = (fs::temp_directory_path() / "ecat3-selftest-copy.ext").generic_string();
+    {
+        dsk_tools::UTF8_ofstream f(path, std::ios::binary);
+        f.write(saved.data(), static_cast<std::streamsize>(saved.size()));
+    }
+    std::string machine[2];
+    const std::string files[2] = { computers_path + original, path };
+    for (int k = 0; k < 2; k++)
+    {
+        EmulatorConfig c;
+        MachineSource source;
+        res = load_machine_description(files[k], paths, c, source);
+        if (!res) break;
+        machine[k] = serialize_config(c);
+    }
+    std::error_code ec;
+    fs::remove(path, ec);
+    if (!res) { message = "load: " + res.message + "\n" + saved; return false; }
+    // The version is the copy's own; everything else must be the same
+    for (int k = 0; k < 2; k++) {
+        const size_t v = machine[k].find("version");
+        if (v != std::string::npos) machine[k].erase(v, machine[k].find('\n', v) - v);
+    }
+    if (machine[0] != machine[1]) { message = "the copy builds another machine:\n" + saved; return false; }
+    return true;
+}
+
 // The К1801ВМ1 timing table (timing = vm1): every opcode lands on a form or on
 // the fallback, every template ends with the prefetch, and a few forms repeated
 // in a loop give what the chip and the real machines give. Fast memory is the
@@ -762,6 +809,7 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     message.clear();
     bool ext_ok = check_ext_devices(message);
     if (ext_ok) ext_ok = check_ext_editor_keeps_blocks(work_path, message);
+    if (ext_ok) ext_ok = check_ext_editor_copy(work_path, message);
     if (!ext_ok) { std::cout << "FAIL ext devices: " << message << std::endl; failed++; }
     std::cout << "extension device blocks: " << (ext_ok ? "ok" : "FAILED") << std::endl;
 

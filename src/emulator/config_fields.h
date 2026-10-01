@@ -51,9 +51,11 @@ public:
     ConfigExtension ext;            //Edits the editor does not know are kept as they are
     std::vector<DeviceConfigField> fields;
 
-    //A .cfg starts a new extension of it; an .ext is opened for editing. A
-    //packed one (.ext.zip) is not: it cannot be written back
-    emulator::Result open(const std::string &path, const MachinePaths &paths);
+    //A .cfg starts a new extension of it; an .ext is opened for editing, or
+    //with derive starts a new extension standing on it, as a .cfg does - the
+    //chooser's Copy. A packed one (.ext.zip) is neither: it cannot be written
+    //back, and @extends does not take it
+    emulator::Result open(const std::string &path, const MachinePaths &paths, bool derive = false);
 
     //Replaces the edits of the known fields by what the fields hold now and
     //returns the text of the extension

@@ -75,7 +75,11 @@ ExtEditorWindow::ExtEditorWindow(QWidget *parent, Emulator * e, const QString &p
     MachinePaths paths;
     paths.computers_path = e->work_path;
     paths.cache_path = e->cache_path;
-    emulator::Result res = m_model.open(path.toStdString(), paths);
+    // A copy of an extension stands on it rather than repeating its edits on
+    // its base: a shipped variant brings its own files (the web page fetches
+    // the bundle of the machine an extension names), and its fixes reach the
+    // copy
+    emulator::Result res = m_model.open(path.toStdString(), paths, copy);
     if (!res) {
         QMessageBox::warning(parent, tr("Error"), translateResultMessage(res.message));
         return;

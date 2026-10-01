@@ -88,7 +88,7 @@ emulator::Result collect_config_fields(EmulatorConfig &config, std::vector<Devic
     return res;
 }
 
-emulator::Result ExtEditModel::open(const std::string &path, const MachinePaths &paths)
+emulator::Result ExtEditModel::open(const std::string &path, const MachinePaths &paths, bool derive)
 {
     file.clear();
     ext = ConfigExtension();
@@ -97,7 +97,7 @@ emulator::Result ExtEditModel::open(const std::string &path, const MachinePaths 
     if (ends_with_ci(path, ".ext.zip"))
         return model_error(QT_TRANSLATE_NOOP("EmulatorConfig", "A packed extension cannot be edited"), path);
 
-    if (is_extension_file(path))
+    if (is_extension_file(path) && !derive)
     {
         const std::string text = dsk_tools::utf8_read_file(path);
         if (text.empty())
@@ -118,13 +118,16 @@ emulator::Result ExtEditModel::open(const std::string &path, const MachinePaths 
         if (!root.empty() && path.compare(0, root.size(), root) == 0)
             extends = path.substr(root.size());
         for (size_t i = 0; i < extends.size(); i++) if (extends[i] == '\\') extends[i] = '/';
+        ext.extends = extends;
     }
 
     //The base may be an extension itself: what the fields are compared with
-    //is the machine it describes
+    //is the machine it describes. Only a new extension of a .cfg reads it
+    //directly; one standing on an extension builds the chain under it
+    const bool plain_cfg = file.empty() && !is_extension_file(base_cfg);
     EmulatorConfig base;
-    emulator::Result res = file.empty() ? base.load_from_file(base_cfg)
-                                        : load_extension_base(ext, paths, base, base_cfg);
+    emulator::Result res = plain_cfg ? base.load_from_file(base_cfg)
+                                     : load_extension_base(ext, paths, base, base_cfg);
     if (!res) return res;
     EmulatorConfigDevice * system = base.get_device("system");
     base_version = system != nullptr ? system->get_parameter("version", false).value : std::string();
@@ -132,8 +135,8 @@ emulator::Result ExtEditModel::open(const std::string &path, const MachinePaths 
 
     //The same base with the extension applied: the values in effect
     EmulatorConfig current;
-    res = file.empty() ? current.load_from_file(base_cfg)
-                       : load_extension_base(ext, paths, current, base_cfg);
+    res = plain_cfg ? current.load_from_file(base_cfg)
+                    : load_extension_base(ext, paths, current, base_cfg);
     if (!res) return res;
     if (!file.empty())
     {
