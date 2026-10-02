@@ -298,8 +298,8 @@ eCat3/
 │   ├── scripts/            # .ecat automation scripts (demo.ecat)
 │   └── software/           # Default software/disk image directory
 ├── nuvola/                 # Nuvola icon theme
-├── screenshots/            # Screenshot images for the documents
 ├── docs/                   # Documentation of the project itself
+│   ├── screenshots/        # Screenshot images for the documents
 │   ├── BUILD.md            # Platform-specific build instructions
 │   ├── CONFIG.md           # Configuration file format reference
 │   ├── SCRIPTING.md        # .ecat script and command line reference (Russian)

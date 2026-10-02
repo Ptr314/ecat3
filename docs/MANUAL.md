@@ -53,7 +53,7 @@
 
 ## Главное окно
 <p align="center">
-<img src="../screenshots/main_window.png" width="600">
+<img src="screenshots/main_window.png" width="600">
 </p>
 
 ## Основные операции
@@ -61,7 +61,7 @@
 ### Выбор компьютера
 
 <p align="center">
-<img src="../screenshots/choose_machine.png" width="600">
+<img src="screenshots/choose_machine.png" width="600">
 </p>
 
 * Вариант 1: с помощью кнопки <img src="../src/resources/icons/tv.png" width="30"> на панели главного окна.
@@ -161,7 +161,7 @@
 ### Дисководы
 
 <p align="center">
-<img src="../screenshots/fdd_menu.png" width="400">
+<img src="screenshots/fdd_menu.png" width="400">
 </p>
 
 Если в конфигурации компьютера есть дисководы, то в панели управления появляется одна или несколько кнопок <img src="../src/resources/icons/5floppy_mount.png" width="30">. У каждой кнопки есть дополнительное меню, с помощью которого можно посмотреть, какой образ загружен, загрузить другой файл, сохранить измененный образ на диск. 
@@ -175,7 +175,7 @@
 ### Загрузка с магнитофона
 
 <p align="center">
-<img src="../screenshots/Electronica-302.png" width="600"><br/>
+<img src="screenshots/Electronica-302.png" width="600"><br/>
 <small>Автор изображения &ndash; <a href="http://www.mcclaud.ru">McClaud</a></small>
 </p>
 
@@ -213,7 +213,7 @@
 
 ### Состояние устройств
 <p align="center">
-<img src="../screenshots/menu_devices.png" width="600">
+<img src="screenshots/menu_devices.png" width="600">
 </p>
 
 Все доступные устройства перечислены в меню &laquo;Эмуляция/Устройства&raquo;. Те устройства, для которых доступно отладочное окно, выводятся черным цветом. Если отладочное окно недоступно &ndash; серым.
@@ -223,7 +223,7 @@
 ### Основной отладчик
 
 <p align="center">
-<img src="../screenshots/debug_z80.png" width="600"><br/>
+<img src="screenshots/debug_z80.png" width="600"><br/>
 <small>Окно отладчика для процессора Z80</small>
 </p>
 

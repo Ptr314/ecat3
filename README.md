@@ -12,7 +12,7 @@ eCat &ndash; универсальный эмулятор ретрокомпью�
 * &laquo;Юниор ФВ-6506&raquo;, &laquo;Арго ФВ-6511&raquo; (TCP/M с ленты, управление магнитофоном, режим ZX).
 
 <p align="center">
-<img src="screenshots/main_window.png" width="600">
+<img src="docs/screenshots/main_window.png" width="600">
 </p>
 
 Основные идеи и отличия от существующих вариантов:
