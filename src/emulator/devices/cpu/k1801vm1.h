@@ -36,7 +36,6 @@ class k1801vm1 : public CPU
 private:
     // The last bus timeout, for scripts hunting holes in a memory map
     unsigned int m_timeouts = 0;
-    int m_family = 0;
     unsigned int m_timeout_address = 0;
     unsigned int m_timeout_pc = 0;
 
@@ -127,7 +126,6 @@ public:
     virtual std::vector<std::pair<std::string, std::string>> get_flags() override;
     virtual unsigned int get_pc() override;
     virtual unsigned int get_command() override;
-    virtual DisAsm * create_disasm(const std::string &data_path, emulator::Result &res) override;
 
     virtual void set_context_value(const std::string &name, unsigned int value) override;
 };
