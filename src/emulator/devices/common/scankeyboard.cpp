@@ -34,6 +34,7 @@ ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
       Keyboard(im, cd)
     , i_scan(this, im, 8, "scan", MODE_R, SCAN_CALLBACK)
     , i_output(this, im, 8, "output", MODE_W)
+    , i_output_hi(this, im, 8, "output_hi", MODE_W)
     , i_shift(this, im, 1, "shift", MODE_W)
     , i_ctrl(this, im, 1, "ctrl", MODE_W)
     , i_ruslat(this, im, 1, "ruslat", MODE_W)
@@ -343,6 +344,7 @@ void ScanKeyboard::calculate_out()
         const unsigned int line = i_scan.value & 0x0F;
         if (line < scan_lines) new_value = key_array[line];
         i_output.change(new_value);
+        if (i_output_hi.linked > 0) i_output_hi.change(new_value >> 8);
         return;
     }
 
@@ -353,6 +355,7 @@ void ScanKeyboard::calculate_out()
             new_value &= key_array[i];
     }
     i_output.change(new_value);
+    if (i_output_hi.linked > 0) i_output_hi.change(new_value >> 8);
 }
 
 // The indicator is taken into the register when the machine scans the matrix,

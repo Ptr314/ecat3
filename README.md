@@ -10,6 +10,7 @@ eCat &ndash; универсальный эмулятор ретрокомпью�
 * &laquo;БК 0010&raquo;, &laquo;БК 0010-01&raquo;, &laquo;БК 0011М&raquo; (Дисководы, СМК-512, Covox, AY).
 * &laquo;УК-НЦ&raquo; (HDD: CHS, LBA; Covox; [Aberrant Sound](https://github.com/aberranthacker/aberrant_sound_module)).
 * &laquo;Юниор ФВ-6506&raquo;, &laquo;Арго ФВ-6511&raquo; (TCP/M с ленты, управление магнитофоном, режим ZX).
+* &laquo;Поиск-1&raquo; (IBM PC-совместимый: дисковод, MS-DOS, кассеты IBM PC, картридж ОЗУ).
 
 <p align="center">
 <img src="docs/screenshots/main_window.png" width="600">

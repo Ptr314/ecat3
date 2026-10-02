@@ -17,6 +17,7 @@ I8259::I8259(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_ir(this, im, 8, "ir", MODE_R, CALLBACK_IR)
     , i_int(this, im, 1, "int", MODE_W)
     , i_inta(this, im, 1, "inta", MODE_R, CALLBACK_INTA)
+    , i_vector(this, im, 8, "vector", MODE_W)
 {
     init();
 }
@@ -153,6 +154,13 @@ void I8259::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned
                 // Place vector on data bus
                 uint8_t vector = (ICW[1] & 0xF8) | highest;
                 i_data.change(vector);
+                //data is an input of the bus side and drives nothing; the
+                //processor takes the vector from this line instead
+                i_vector.change(vector);
+            } else {
+                //Nobody is asking any more (the request went away before the
+                //acknowledge): the 8259 answers with its lowest level
+                i_vector.change((ICW[1] & 0xF8) | 7);
             }
             i_int.change(0);
         }

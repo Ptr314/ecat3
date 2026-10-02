@@ -151,7 +151,10 @@ std::string timestamp_string()
 
 std::string format_number(unsigned int value, unsigned int base, unsigned int width_bits)
 {
-    if (width_bits != 16 && width_bits != 32) width_bits = 8;
+    //Anything up to a word is a byte or a word; wider is taken as it is - the
+    //20-bit PC of an 8088 is five hex digits, not a byte of it
+    if (width_bits < 16) width_bits = 8;
+    else if (width_bits > 32) width_bits = 32;
     unsigned int mask = (width_bits >= 32)?_FFFF:((1u << width_bits) - 1);
     value &= mask;
 
@@ -174,7 +177,7 @@ std::string format_number(unsigned int value, unsigned int base, unsigned int wi
         case 10:
             return std::to_string(value);
         default:
-            return "$" + hex_str(value, static_cast<int>(width_bits / 4));
+            return "$" + hex_str(value, static_cast<int>((width_bits + 3) / 4));
     }
 }
 

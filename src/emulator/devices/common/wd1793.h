@@ -104,6 +104,11 @@ public:
     uint8_t registers[5];
     WD1793(InterfaceManager *im, EmulatorConfigDevice *cd);
     bool get_busy() override;
+    //For a board whose own register holds the processor until DRQ or INTRQ
+    //(the B504 of the Поиск-1, port C4h): runs the controller forward to that
+    //point, as "sync" does for a data register
+    void wait_ready() { SyncAccess(); }
+    bool drq_active() { return GetDRQ(); }
     unsigned get_selected_drive() override;
     unsigned get_value(unsigned int address) override;
     unsigned get_direct(unsigned address) override;

@@ -1,0 +1,42 @@
+# Поиск-1: клавиатурная матрица на первом ВВ55
+# Машина из tests/files/poisk-kbd.ext (без BIOS): программа выводит в порт
+# 60h маску строк из 0000:0400 и кладет порты 69h (B) и 6Ah (C) в 0401 и
+# 0402. Нажатая клавиша дает 0 в своем разряде: 0-7 - порт B, 8-11 -
+# младшая половина C. Ожидается: A - строка Y5 (10h), разряд 6 B (BF);
+# R - Y5, разряд 11 (C = 07); при строке Y1 R не видна; Enter - Y1,
+# разряд 5 (DF); ! - Y8 разряд 6 и Shift на Y6 разряд 0 (BE)
+# @timeout 30
+MACHINE "../../tests/files/poisk-kbd.ext"
+LOGDEFS 8,16
+COMMAND ram0.set($400, $10)
+WAIT 10
+PRINT "=== ничего не нажато, строка Y5 ==="
+LOG ram0.value($401, $402)
+PRINT "=== A: Y5, разряд 6 порта B ==="
+KEYDOWN A
+WAIT 10
+LOG ram0.value($401, $402)
+KEYUP A
+PRINT "=== R: Y5, разряд 11 - разряд 3 порта C ==="
+KEYDOWN R
+WAIT 10
+LOG ram0.value($401, $402)
+PRINT "=== R, но выбрана строка Y1: не видна ==="
+COMMAND ram0.set($400, $01)
+WAIT 10
+LOG ram0.value($401, $402)
+KEYUP R
+PRINT "=== Enter: Y1, разряд 5 ==="
+KEYDOWN ret
+WAIT 10
+LOG ram0.value($401, $402)
+KEYUP ret
+PRINT "=== ! набирается с Shift: Y8 разряд 6 и Y6 разряд 0 ==="
+COMMAND ram0.set($400, $A0)
+KEYDOWN !
+WAIT 10
+LOG ram0.value($401, $402)
+KEYUP !
+WAIT 10
+LOG ram0.value($401, $402)
+EXIT

@@ -60,6 +60,7 @@
 #include "emulator/devices/common/generator.h"
 #include "emulator/devices/cpu/6502.h"
 #include "emulator/devices/cpu/k1801vm1.h"
+#include "emulator/devices/cpu/i8086.h"
 #include "emulator/devices/specific/agat_fdc140.h"
 #include "emulator/devices/specific/agat_fdc840.h"
 #include "emulator/devices/specific/agat_7_display.h"
@@ -68,6 +69,7 @@
 #include "emulator/devices/common/ram_address.h"
 #include "emulator/devices/specific/irisha_display.h"
 #include "emulator/devices/specific/bk_display.h"
+#include "emulator/devices/specific/poisk.h"
 #include "emulator/devices/specific/bk_timer.h"
 #include "emulator/devices/specific/bk_fdc.h"
 #include "devices/common/gmd70.h"
@@ -1514,6 +1516,8 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("65c02", create_wdc65c02);
     dm->register_device("1801vm1", create_k1801vm1);
     dm->register_device("1801vm2", create_k1801vm2);
+    dm->register_device("i8086", create_i8086);
+    dm->register_device("i8088", create_i8088);
     dm->register_device("agat-fdc140", create_agat_fdc140);
     dm->register_device("agat-fdc840", create_agat_fdc840);
     dm->register_device("agat-7-display", create_agat_7_display);
@@ -1525,6 +1529,10 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("ram-address", create_ram_address);
     dm->register_device("irisha-display", create_irisha_display);
     dm->register_device("bk-display", create_bk_display);
+    dm->register_device("poisk-display", create_poisk_display);
+    dm->register_device("poisk-trap", create_poisk_trap);
+    dm->register_device("poisk-vram", create_poisk_vram);
+    dm->register_device("poisk-fdc-control", create_poisk_fdc_control);
     dm->register_device("bk-timer", create_bk_timer);
     dm->register_device("bk-fdc", create_bk_fdc);
     dm->register_device("agat-9-mapper", create_agat_9_mapper);

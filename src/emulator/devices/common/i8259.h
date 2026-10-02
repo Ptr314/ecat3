@@ -15,6 +15,7 @@ private:
     Interface i_ir;             // Interrupt request inputs IR0-IR7
     Interface i_int;            // Interrupt output to CPU
     Interface i_inta;           // Interrupt acknowledge from CPU
+    Interface i_vector;         // The vector of the last acknowledge, for an 8086
 
     uint8_t ICW[4];             // Initialization Command Words
     uint8_t OCW[3];             // Operation Command Words

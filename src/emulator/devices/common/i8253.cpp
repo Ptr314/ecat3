@@ -96,9 +96,11 @@ void I8253::init()
     memset(&Indexes,     0, sizeof(Indexes));
     memset(&Counting,    0, sizeof(Counting));
     memset(&StartData,   0, sizeof(StartData));
+    memset(&LowByte,     0, sizeof(LowByte));
     memset(&Counters,    0, sizeof(Counters));
     memset(&NeedRestart, 0, sizeof(NeedRestart));
     memset(&Loaded,      0, sizeof(Loaded));
+    memset(&Latched,     0, sizeof(Latched));
     memset(&ch_clock_stored, 0, sizeof(ch_clock_stored));
 }
 
@@ -182,8 +184,11 @@ unsigned int I8253::get_value(unsigned int address)
     if (a==3)
         result = 0;
     else {
-        result = ReadData[a*2 + Indexes[a]];
+        //A latched count stays until the program has read it; without a
+        //latch the read sees the counter as it runs
+        result = Latched[a] ? ReadData[a*2 + Indexes[a]] : Counters[a*2 + Indexes[a]];
         Indexes[a] = Indexes[a] ^ 0x01;
+        if (Orders[a] != 3 || Indexes[a] == 0) Latched[a] = 0;
     }
     return result;
 }
@@ -195,7 +200,7 @@ unsigned I8253::get_direct(unsigned address)
     //read of the counter gives the program
     const unsigned a = address & 0x03;
     if (a==3) return 0;
-    return ReadData[a*2 + Indexes[a]];
+    return Latched[a] ? ReadData[a*2 + Indexes[a]] : Counters[a*2 + Indexes[a]];
 }
 
 void I8253::set_value(const unsigned address, const unsigned value, bool force)
@@ -223,22 +228,39 @@ void I8253::set_value(const unsigned address, const unsigned value, bool force)
             i_output.change( (i_output.value & ~(1 << C)) | (V << C));
         } else {
             //Фиксация счетчиков для чтения
+            //Both bytes are latched at once: the Поиск-1 BIOS times the
+            //tape signal with the full count of channel 0
             ReadData[C*2] = Counters[C*2];
+            ReadData[C*2+1] = Counters[C*2+1];
+            Latched[C] = 1;
             Indexes[C] = 0;
             //Следующие строки надо включить если окажется,
             //что данные не всегда читаются по два, и нужно учесть влияние режима
             //if (Orders[C] == 2) Indexes[C]++;
         }
     } else {
-        //counters
-        StartData[a*2+Indexes[a]] = static_cast<uint8_t>(value);
+        //counters. A count of two bytes reaches the counter whole, as on
+        //the chip: a reload between the two writes takes the old count, not
+        //the new low byte with the old high one
+        if (Orders[a] == 3 && Indexes[a] == 0)
+            LowByte[a] = static_cast<uint8_t>(value);
+        else if (Orders[a] == 3) {
+            StartData[a*2] = LowByte[a];
+            StartData[a*2+1] = static_cast<uint8_t>(value);
+        } else
+            StartData[a*2+Indexes[a]] = static_cast<uint8_t>(value);
         Indexes[a] = Indexes[a] ^ 0x01;
         //Если надо загрузить только один байт,
         //или уже загружено два, запускаем процесс
         if ((Orders[a] != 3) || (Indexes[a]==0))
         {
             Loaded[a] = 1;
-            if (I8253_MODES[COUNTER_LOAD_AUTO_START][Modes[a]] != 0)
+            //In modes 2 and 3 a count written while the channel runs waits for
+            //the next reload and leaves OUT alone. Restarting here flipped OUT
+            //on every write: the cassette BIOS of the Поиск-1 writes channel 2
+            //anew after each edge, and every bit got a spurious one
+            if (I8253_MODES[COUNTER_LOAD_AUTO_START][Modes[a]] != 0
+                && !(Counting[a] == 1 && (Modes[a] & 2) != 0))
                 NeedRestart[a] = 1;
         };
     }
@@ -313,8 +335,10 @@ void I8253::save_state(StateWriter &w)
     w.array("loaded", Loaded, 3);
     w.array("counting", Counting, 3);
     w.array("start_data", StartData, 6);
+    w.array("low_byte", LowByte, 3);
     w.array("counters", Counters, 6);
     w.array("read_data", ReadData, 6);
+    w.array("latched", Latched, 3);
     w.array("gates", Gates, 3);
     w.array("need_restart", NeedRestart, 3);
     //Fractional phase of a divided channel clock, the same thing
@@ -333,8 +357,10 @@ emulator::Result I8253::load_state(const StateReader &r)
     r.array("loaded", Loaded, 3);
     r.array("counting", Counting, 3);
     r.array("start_data", StartData, 6);
+    r.array("low_byte", LowByte, 3);
     r.array("counters", Counters, 6);
     r.array("read_data", ReadData, 6);
+    r.array("latched", Latched, 3);
     r.array("gates", Gates, 3);
     r.array("need_restart", NeedRestart, 3);
     r.array("ch_clock_stored", ch_clock_stored, 3);

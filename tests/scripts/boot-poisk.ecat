@@ -1,0 +1,19 @@
+# Поиск-1: загрузка с дискеты через картридж B504
+# Тестовая дискета tests/files/poisk-boot.img (make_poisk_boot_disk.py):
+# BIOS находит ПЗУ картриджа по E0000, грузит загрузочный сектор, и тот через
+# INT 13h читает дорожку 1, сторону 1, сектор 3, пишет его на дорожку 2,
+# сектор 5 и читает обратно. На экране - три строки и прочитанный текст
+# дважды. Образ на диске не меняется: записанное живет в памяти привода
+# @timeout 60
+MACHINE "poisk/Poisk-1.cfg"
+LOGDEFS 16,16
+COMMAND fdd0.load("../files/poisk-boot.img")
+WAIT 6000
+PRINT "=== сектора прочитаны и записаны ==="
+LOG fdc.reads
+LOG fdc.writes
+LOG fdd0.track
+PRINT "=== загрузочный сектор стоит на JMP $ ==="
+LOG cpu.registers
+SCREEN "../results/boot-poisk.png"
+EXIT

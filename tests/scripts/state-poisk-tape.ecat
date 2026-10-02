@@ -1,0 +1,29 @@
+# Поиск-1: снимок состояния посреди чтения кассеты.
+#
+# ../tests/files/state-poisk-tape.ecats.zip (от deploy/) снят скриптом
+# ../files/make-state-poisk-tape.ecat: BIOS нашел на poisk-test.cas заголовок
+# test и читает запись с программой. Чтобы дочитать ее после загрузки снимка,
+# должно вернуться все сразу: процессор внутри INT 15h с очередью команд,
+# канал 0 таймера (BIOS мерит им полупериоды и читает зафиксированный
+# счетчик по байтам), вход ленты во втором ВВ55, ВН59 и кассета в архиве с
+# головкой на том же месте. Сбой любого из них - "Ошибка чтения!" вместо
+# "Запуск (ВК)", и программа не печатает свою строку
+# @timeout 60
+
+MACHINE "../tests/files/state-poisk-tape.ecats.zip"
+LOGDEFS 16,16
+
+PRINT "=== лента в снимке ==="
+LOG tape.mode
+LOG tape.total
+
+PRINT "=== чтение дошло до конца ==="
+WAITFOR tape.mode == 0, 20000
+WAIT 1000
+KEY 100,200,ret
+WAIT 1000
+LOG ram0.value($600,$614)
+LOG cpu.registers
+
+SCREEN "../results/state-poisk-tape.png"
+EXIT

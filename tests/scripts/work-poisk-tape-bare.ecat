@@ -1,0 +1,25 @@
+# Поиск-1: загрузка с кассеты файла без записи - одной программы, как часто
+# хранят оцифрованные кассеты (без пилот-тона, заголовка и CRC). Магнитофон
+# сам делает из нее две записи, как их пишет BIOS: заголовок с именем файла
+# (pbare) и данные. Программа - та же, что на poisk-test.cas
+# @timeout 90
+MACHINE "../../tests/files/poisk-nofdd.ext"
+LOGDEFS 16,16
+COMMAND tape.load("../files/pbare.cas")
+WAIT 3000
+KEY 100,200,f1
+WAIT 500
+TYPE "pbare", 100, 120
+KEY 100,200,ret
+WAIT 500
+KEY 100,200,ret
+WAIT 300
+COMMAND tape.play()
+WAIT 15000
+KEY 100,200,ret
+WAIT 1000
+PRINT "=== программа с ленты загружена в 0060:0000 и работает ==="
+LOG ram0.value($600, $614)
+LOG cpu.registers
+SCREEN "../results/work-poisk-tape-bare.png"
+EXIT

@@ -27,6 +27,10 @@ class ScanKeyboard: public Keyboard
 private:
     Interface i_scan;
     Interface i_output;
+    // Return lines 8-15, for a matrix wider than a byte (the Поиск-1 reads
+    // twelve). A line of its own, so that the 8-bit output of every other
+    // machine stays what it was
+    Interface i_output_hi;
     Interface i_shift;
     Interface i_ctrl;
     Interface i_ruslat;

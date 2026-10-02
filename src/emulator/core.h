@@ -429,6 +429,19 @@ struct BusReply {
     unsigned int rmw_extra = 0;     //half clocks a fast memory adds to the write half of a read-modify-write
 };
 
+//A device that holds the processor up on the memory it shares with it: the
+//video of the Поиск-1 fetches from the main RAM, and a processor cycle there
+//waits for a free slot. A processor that counts wait states (i8088) asks it
+//after every memory cycle; a memory names it with "wait = <device>". offset
+//is the T1 of the cycle, in processor clocks after the point up to which the
+//devices have been clocked: the device knows where its beam is at that point
+class WaitSource
+{
+public:
+    virtual ~WaitSource() {}
+    virtual unsigned int wait_states(unsigned int address, bool write, unsigned int offset) = 0;
+};
+
 class AddressableDevice: public ComputerDevice
 {
 protected:
@@ -436,6 +449,9 @@ protected:
     bool can_write;
     unsigned int addresable_size;
 public:
+    //Null for a memory nobody contends for. Set by load_bus_reply() from the
+    //parameter "wait"
+    WaitSource * wait_source = nullptr;
     //Null for a device that answers at once, see BusReply. Set by
     //load_bus_reply() from the bus-timing device the parameter "bus_timing" names;
     //ComputerDevice::load_config() calls it
@@ -506,7 +522,9 @@ public:
         unsigned int callback_id = 0
         );
 
-    void connect(LinkedInterface s, LinkedInterface d, bool invert=false);
+    //False when either end has no room for another link (MAX_LINKS); the
+    //link is then not made at all
+    bool connect(LinkedInterface s, LinkedInterface d, bool invert=false);
     unsigned int get_size();
     void set_size(unsigned int new_size);
     void set_mode(unsigned int new_mode);
@@ -832,8 +850,13 @@ private:
     //kept until the map changes. 512 bytes is the largest page that keeps the
     //УК-НЦ ROM window (ending at 176777) whole and leaves the I/O registers
     //(177000-177777) in one page of their own
-    enum { MM_PAGE_SHIFT = 9, MM_PAGE_COUNT = 0x10000 >> MM_PAGE_SHIFT };
-    MapperPage      pages[MM_PAGE_COUNT];
+    //The table covers the address space the parameter address_bits gives (16
+    //by default, 20 for an 8088); an address above it takes the long way
+    enum { MM_PAGE_SHIFT = 9 };
+    std::vector<MapperPage> pages;
+    MapperPage *    m_pages;        //pages.data(), read on every access
+    unsigned int    m_page_count;
+    void            size_pages(unsigned int address_bits);
     //Bumped by everything that changes the map: loading it, a reset and the
     //cancelinit flip. Anything else that ever touches ranges[] or first_range
     //has to bump it too
@@ -847,8 +870,8 @@ private:
     MapperPage * find_page(unsigned int address, uint64_t tag)
     {
         const unsigned int page = address >> MM_PAGE_SHIFT;
-        if (page >= MM_PAGE_COUNT) return nullptr;
-        MapperPage * e = &this->pages[page];
+        if (page >= m_page_count) return nullptr;
+        MapperPage * e = &this->m_pages[page];
         if (e->tag != tag) return fill_page(page, tag);
         return e->uncached? nullptr : e;
     }

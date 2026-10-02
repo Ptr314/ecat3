@@ -1,0 +1,2 @@
+[tape.recording] $0001
+[tape.recorded] $00000410

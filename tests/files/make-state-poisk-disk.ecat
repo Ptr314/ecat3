@@ -1,0 +1,34 @@
+# Сборка эталонного снимка состояния для state-poisk-disk.ecat.
+#
+# Запускается руками, а не набором тестов: снимок - это двоичный эталон,
+# который обновляют осознанно. Из каталога deploy/:
+#
+#   eCat3-headless --no-sound --script ../tests/files/make-state-poisk-disk.ecat
+#
+# Поиск-1 с картриджем дисковода. Загрузочный сектор poisk-boot.img (тот же,
+# что в boot-poisk) пишет сектор на дорожку 2 и стоит на JMP $; записанное
+# живет только в буфере привода, на диске его нет. Затем программа по
+# 0050:0000 ставит через INT 10h режим 320x200 и заливает видеопамять
+# полосами: в снимок попадают режим и палитра в порту 68h и экран в верхних
+# 32 КБ ОЗУ платы
+
+MACHINE "../../deploy/computers/poisk/Poisk-1.cfg"
+COMMAND fdd0.load("poisk-boot.img")
+WAIT 6000
+
+#  0: mov ax,4 / int 10h                 - 320x200, четыре цвета
+#  5: mov ax,B800h / mov es,ax / xor di,di
+#  C: mov ax,1B1Bh / mov cx,1000h / rep stosw   - четные строки
+# 14: mov ax,E4E4h / mov cx,1000h / rep stosw   - нечетные строки
+# 1C: jmp $
+COMMAND ram0.set($500, $B8, $04, $00, $CD, $10, $B8, $00, $B8, $8E, $C0, $31, $FF)
+COMMAND ram0.set($50C, $B8, $1B, $1B, $B9, $00, $10, $F3, $AB)
+COMMAND ram0.set($514, $B8, $E4, $E4, $B9, $00, $10, $F3, $AB, $EB, $FE)
+COMMAND cpu.setreg(CS, $50)
+COMMAND cpu.setreg(IP, 0)
+WAITFOR cpu.pc == $51C, 5000
+WAIT 500
+
+SAVESTATE "state-poisk-disk.ecats.zip"
+SCREEN "state-poisk-disk-made.png"
+EXIT

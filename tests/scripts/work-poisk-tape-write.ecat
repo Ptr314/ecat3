@@ -1,0 +1,55 @@
+# Поиск-1: запись на кассету и чтение записанного обратно
+# В меню BIOS записи нет, поэтому в 0700:0000 кладется программа, которая
+# дважды зовет INT 15h AH=03 (запись блока): заголовок (A5h, имя test, длина
+# по смещению 0Ah) и программа, печатающая "TAPE WRITE OK". Магнитофон снимает
+# выход канала 2 таймера и сохраняет записанное файлом .cas, файл сравнивается
+# с эталоном. Затем после сброса он же загружается из меню BIOS (F1) и
+# запускается - это проверка и распознавания сигнала, и CRC, которую BIOS
+# сверяет при чтении
+# @timeout 120
+MACHINE "../../tests/files/poisk-nofdd.ext"
+LOGDEFS 16,16
+WAIT 3000
+
+PRINT "=== Запись ==="
+#  0: push cs / pop es
+#  2: mov bx,20h / mov cx,11h / mov ah,3 / int 15h  - заголовок
+#  C: mov bx,40h / mov cx,25h / mov ah,3 / int 15h  - программа
+# 16: jmp $
+COMMAND ram0.set($7000, $0E, $07, $BB, $20, $00, $B9, $11, $00, $B4, $03, $CD, $15)
+COMMAND ram0.set($700C, $BB, $40, $00, $B9, $25, $00, $B4, $03, $CD, $15, $EB, $FE)
+# Заголовок: A5h, имя, тип, длина 25h, сегмент 0060h, смещение 0
+COMMAND ram0.set($7020, $A5, $74, $65, $73, $74, $20, $20, $20, $20, $01, $25, $00, $60, $00, $00, $00, $00)
+# Программа: та же, что на poisk-test.cas, со своей строкой
+COMMAND ram0.set($7040, $0E, $1F, $BE, $15, $00, $AC, $08, $C0, $74, $09, $B4, $0E, $BB, $07, $00, $CD, $10)
+COMMAND ram0.set($7051, $EB, $F2, $EB, $FE)
+COMMAND ram0.set($7055, $54, $41, $50, $45, $20, $57, $52, $49, $54, $45, $20, $4F, $4B, $0D, $0A, $00)
+COMMAND tape.record(1)
+COMMAND cpu.setreg(CS, $700)
+COMMAND cpu.setreg(IP, 0)
+WAITFOR cpu.pc == $7016, 30000
+WAIT 100
+COMMAND tape.record(0)
+LOG tape.recorded
+COMMAND tape.save("../results/work-poisk-tape-write.cas")
+
+PRINT "=== Чтение обратно ==="
+RESET
+COMMAND tape.load("../results/work-poisk-tape-write.cas")
+LOG tape.size
+WAIT 3000
+KEY 100,200,f1
+WAIT 500
+TYPE "test", 100, 120
+KEY 100,200,ret
+WAIT 500
+KEY 100,200,ret
+WAIT 300
+COMMAND tape.play()
+WAITFOR tape.mode == 0, 30000
+WAIT 1000
+KEY 100,200,ret
+WAIT 1000
+LOG ram0.value($600, $624)
+SCREEN "../results/work-poisk-tape-write.png"
+EXIT

@@ -1,0 +1,9 @@
+=== 320x200, полосы ===
+[display.mode] $29
+[cpu.registers] AX=0000 BX=0000 CX=0000 DX=0000 SI=0069 DI=0008 BP=0000 SP=0400 CS=FFF0 DS=0000 ES=2000 SS=0000 IP=004C F=F046
+=== цикл в ОЗУ платы ===
+[ram0.value16] $0600: $1A21
+[display.waits] $0002488C
+=== тот же цикл в ОЗУ картриджа ===
+[cart.value16] $0100: $211B
+[display.waits] $00024894

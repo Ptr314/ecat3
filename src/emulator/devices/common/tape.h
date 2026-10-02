@@ -11,6 +11,7 @@
 #include "emulator/devices/common/speaker.h"
 #include "emulator/devices/common/tape_bk.h"
 #include "emulator/devices/common/tape_bt.h"
+#include "emulator/devices/common/tape_ibmpc.h"
 #include "emulator/devices/common/tape_record.h"
 #include "emulator/devices/common/tape_rk86.h"
 #include "emulator/devices/common/tape_uknc.h"
@@ -32,7 +33,9 @@ enum class TapeEnc {
     //Лента Юниора несет байты, а не полупериоды: модуляция у машины
     //аппаратная, и кодировщики полупериодов для нее не работают
     UNIOR,
-    ZX
+    ZX,
+    //Кассета IBM PC, которую повторяет BIOS Поиска-1: файлы *.cas
+    IBMPC
 };
 
 // Чем записана лента. Само устройство одно на все машины: и лентопротяжка, и
@@ -119,6 +122,9 @@ protected:
     bk_tape::Decoder bk_decoder;
     rk86_tape::Decoder rk86_decoder;
     uknc_tape::Decoder uknc_decoder;
+    ibmpc_tape::Decoder ibmpc_decoder;
+    //Sets the decoder's thresholds from the machine clock and empties it
+    void start_ibmpc_decoder();
 
     //----------------------- Лента как таймлайн ----------------------------//
     // Записи с паузами между ними, положение головки в единицах ленты и все,

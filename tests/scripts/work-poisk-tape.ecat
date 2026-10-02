@@ -1,0 +1,27 @@
+# Поиск-1: загрузка программы с кассеты из меню BIOS
+# Кассета tests/files/poisk-test.cas (make_poisk_tape.py) в формате CAS:
+# заголовок с именем test и программа, печатающая "TAPE LOAD OK". В меню BIOS
+# (машина без дисковода, tests/files/poisk-nofdd.ext) F1, имя, Enter, пуск
+# ленты, Enter: BIOS ищет запись с этим именем, читает ее через INT 15h
+# и после "Запуск (ВК)" и Enter передает управление в 0060:0000
+# @timeout 90
+MACHINE "../../tests/files/poisk-nofdd.ext"
+LOGDEFS 16,16
+COMMAND tape.load("../files/poisk-test.cas")
+WAIT 3000
+KEY 100,200,f1
+WAIT 500
+TYPE "test", 100, 120
+KEY 100,200,ret
+WAIT 500
+KEY 100,200,ret
+WAIT 300
+COMMAND tape.play()
+WAIT 15000
+KEY 100,200,ret
+WAIT 1000
+PRINT "=== программа с ленты загружена в 0060:0000 и работает ==="
+LOG ram0.value($600, $614)
+LOG cpu.registers
+SCREEN "../results/work-poisk-tape.png"
+EXIT

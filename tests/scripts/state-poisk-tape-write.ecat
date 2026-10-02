@@ -1,0 +1,23 @@
+# Поиск-1: снимок состояния посреди записи на кассету.
+#
+# ../tests/files/state-poisk-tape-write.ecats.zip (от deploy/) снят скриптом
+# ../files/make-state-poisk-tape-write.ecat на пилот-тоне первой записи
+# (заголовка), когда магнитофон пишет. Пороги декодера ленты задаются при
+# включении записи, а восстановленный снимок этого включения не видит: без
+# них каждый полупериод закрывал запись, и в файл не попадало ничего. То,
+# что декодер успел разобрать до снимка, в снимок не входит (как у БК и
+# УК-НЦ), но снимок взят на пилот-тоне: его остатка хватает, чтобы узнать
+# начало записи, и обе записи приходят целиком - тот же файл, что пишет
+# work-poisk-tape-write без снимка
+# @timeout 60
+
+MACHINE "../tests/files/state-poisk-tape-write.ecats.zip"
+LOGDEFS 16,16
+
+LOG tape.recording
+WAITFOR cpu.pc == $7016, 30000
+WAIT 100
+COMMAND tape.record(0)
+LOG tape.recorded
+COMMAND tape.save("../results/state-poisk-tape-write.cas")
+EXIT

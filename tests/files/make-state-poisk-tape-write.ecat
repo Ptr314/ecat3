@@ -1,0 +1,26 @@
+# Сборка эталонного снимка состояния для state-poisk-tape-write.ecat.
+#
+# Запускается руками, а не набором тестов: снимок - это двоичный эталон,
+# который обновляют осознанно. Из каталога deploy/:
+#
+#   eCat3-headless --no-sound --script ../tests/files/make-state-poisk-tape-write.ecat
+#
+# Поиск-1 без дисковода посреди записи на кассету: программа из
+# work-poisk-tape-write пишет через INT 15h AH=03 заголовок и данные, запись
+# магнитофона включена, снимок берется на пилот-тоне первой записи
+
+MACHINE "../../tests/files/poisk-nofdd.ext"
+WAIT 3000
+COMMAND ram0.set($7000, $0E, $07, $BB, $20, $00, $B9, $11, $00, $B4, $03, $CD, $15)
+COMMAND ram0.set($700C, $BB, $40, $00, $B9, $25, $00, $B4, $03, $CD, $15, $EB, $FE)
+COMMAND ram0.set($7020, $A5, $74, $65, $73, $74, $20, $20, $20, $20, $01, $25, $00, $60, $00, $00, $00, $00)
+COMMAND ram0.set($7040, $0E, $1F, $BE, $15, $00, $AC, $08, $C0, $74, $09, $B4, $0E, $BB, $07, $00, $CD, $10)
+COMMAND ram0.set($7051, $EB, $F2, $EB, $FE)
+COMMAND ram0.set($7055, $54, $41, $50, $45, $20, $57, $52, $49, $54, $45, $20, $4F, $4B, $0D, $0A, $00)
+COMMAND tape.record(1)
+COMMAND cpu.setreg(CS, $700)
+COMMAND cpu.setreg(IP, 0)
+WAIT 1000
+
+SAVESTATE "state-poisk-tape-write.ecats.zip"
+EXIT

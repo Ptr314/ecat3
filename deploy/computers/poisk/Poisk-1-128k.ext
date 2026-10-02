@@ -1,0 +1,11 @@
+// Поиск-1 со 128 КБ ОЗУ на плате, как в первых выпусках. Видеопамять -
+// верхние 32 КБ (18000-1FFFF), процессору остаются 96 КБ: этого хватает для
+// программ с кассеты и ранних DOS, но не для MS-DOS 5.0
+@extends poisk/Poisk-1.cfg
+@version Поиск-1 (128 КБ)
+@protected
+
+ram0:size = 128k
+-mapper:@memory[$00000-$77FFF] = ram0
+@before mapper:@memory[$B8000-$BFFFF]
+mapper:@memory[$00000-$17FFF] = ram0

@@ -54,22 +54,35 @@ Interface::Interface(
     im->register_interface(this);
 }
 
-void Interface::connect(LinkedInterface s, LinkedInterface d, bool invert)
+bool Interface::connect(LinkedInterface s, LinkedInterface d, bool invert)
 {
     int index = -1;
 
+    //The same link seen from the other end stops the recursion below. Two
+    //lines of one pair of interfaces with other bits are two links: the
+    //Поиск-1 takes IR0 and IR6 of its 8259 from outputs 0 and 1 of one timer,
+    //and the second of them used to be dropped here without a word
     for (unsigned int i=0; i < linked; i++)
-        if (linked_interfaces[i].d.i == d.i) index = i;
+        if (linked_interfaces[i].d.i == d.i
+            && linked_interfaces[i].s.mask == s.mask && linked_interfaces[i].s.shift == s.shift
+            && linked_interfaces[i].d.mask == d.mask && linked_interfaces[i].d.shift == d.shift)
+            index = i;
 
     if (index < 0)
     {
+        if (linked >= MAX_LINKS) return false;
         linked++;
         linked_interfaces[linked-1].s = s;
         linked_interfaces[linked-1].d = d;
         linked_interfaces[linked-1].inversion = invert?_FFFF:0;
-        d.i->connect(d, s, invert);
+        //The other end has no room: no half of a link is left behind
+        if (!d.i->connect(d, s, invert)) {
+            linked--;
+            return false;
+        }
         linked_bits |= s.mask;
     }
+    return true;
 }
 
 void Interface::set_size(unsigned int new_size)
@@ -564,7 +577,9 @@ emulator::Result ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
                 ld.d.shift = bit_1;
                 ld.d.mask = create_mask(bit_2 - bit_1 + 1, bit_1);
             }
-            ld.s.i->connect(ld.s, ld.d, inverted);
+            if (!ld.s.i->connect(ld.s, ld.d, inverted))
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                    "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Too many links of an interface")) + "} " + name + ":" + interface_name);
 
         }
     }
@@ -601,6 +616,15 @@ emulator::Result ComputerDevice::load_config(MAYBE_UNUSED SystemData * sd)
 
 emulator::Result AddressableDevice::load_bus_reply()
 {
+    wait_source = nullptr;
+    const std::string wait = cd->get_parameter("wait", false).value;
+    if (!wait.empty()) {
+        wait_source = dynamic_cast<WaitSource*>(im->dm->get_device_by_name(wait, false));
+        if (wait_source == nullptr)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Not a device that adds wait states")) + "} " + name + ": " + wait);
+    }
+
     bus_reply = nullptr;
     const std::string bus = cd->get_parameter("bus_timing", false).value;
     if (bus.empty()) return emulator::Result::ok();
@@ -812,7 +836,13 @@ std::string ComputerDevice::log_device(const std::string &field, std::pair<unsig
     unsigned int width = (v.width != 0)?v.width:fmt.width;
 
     std::string s;
-    if (v.has_start) s += format_number(v.start, fmt.base, 16) + ":";
+    if (v.has_start) {
+        //A 16-bit label as before, wider only where the address needs it:
+        //the 1 MB of the Поиск-1 would otherwise be labelled modulo 64 KB
+        const unsigned last = v.start + (unsigned)(v.values.empty() ? 0 : v.values.size() - 1);
+        const unsigned label = (last <= 0xFFFF) ? 16 : (last <= 0xFFFFF) ? 20 : 32;
+        s += format_number(v.start, fmt.base, label) + ":";
+    }
 
     for (size_t i = 0; i < v.values.size(); i++)
         s += ((s.empty())?"":" ") + format_number(v.values[i], fmt.base, width);
@@ -1873,7 +1903,11 @@ bool CPU::get_field(const std::string &field, unsigned int from, unsigned int to
 {
     if (field == "pc") {
         out.numeric = true;
-        out.width = 16;
+        //As wide as the address space: 20 bits on an 8088, whose PC is the
+        //linear address of CS:IP
+        unsigned int bits = 16;
+        while (mm != nullptr && bits < 32 && (1ull << bits) < mm->get_size()) bits++;
+        out.width = bits;
         out.values.push_back(get_pc());
         return true;
     }
@@ -1964,10 +1998,19 @@ MemoryMapper::MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 {
 
-    addresable_size = 0x10000;
     //A tag of 0 never matches, so an empty table needs no other marker
     this->page_generation = 1;
-    memset(this->pages, 0, sizeof(this->pages));
+    size_pages(16);
+}
+
+void MemoryMapper::size_pages(unsigned int address_bits)
+{
+    addresable_size = 1u << address_bits;
+    m_page_count = addresable_size >> MM_PAGE_SHIFT;
+    MapperPage empty;
+    memset(&empty, 0, sizeof(empty));
+    pages.assign(m_page_count, empty);
+    m_pages = pages.data();
 }
 
 void MemoryMapper::invalidate_pages()
@@ -1975,7 +2018,7 @@ void MemoryMapper::invalidate_pages()
     if (++this->page_generation == 0) {
         //A tag of 0 means "empty", so the counter never stands on 0
         this->page_generation = 1;
-        memset(this->pages, 0, sizeof(this->pages));
+        memset(m_pages, 0, m_page_count * sizeof(MapperPage));
     }
 }
 
@@ -1992,7 +2035,7 @@ void MemoryMapper::invalidate_pages()
 //strict - which is what responds() says
 MapperPage * MemoryMapper::fill_page(unsigned int page, uint64_t tag)
 {
-    MapperPage * e = &this->pages[page];
+    MapperPage * e = &this->m_pages[page];
     const unsigned int p_begin = page << MM_PAGE_SHIFT;
     const unsigned int p_end = p_begin + (1u << MM_PAGE_SHIFT) - 1;
     const unsigned int config = this->i_config.value;
@@ -2099,6 +2142,23 @@ emulator::Result MemoryMapper::load_config(SystemData *sd)
     this->ports_to_mem = this->cd->get_parameter("portstomemory", false).value == "1";
 
     this->ports_mask = (this->cd->get_parameter("wideports", false).value == "1")?(unsigned int)(-1):0xFF;
+
+    //The width of the address space, in bits and in decimal whatever the
+    //machine's radix: 16 for the 8-bit processors and the БК, 20 for an 8088
+    const std::string bits = this->cd->get_parameter("address_bits", false).value;
+    if (!bits.empty()) {
+        unsigned int n;
+        try {
+            n = parse_numeric_value(bits, 10);
+        } catch (std::exception &) {
+            n = 0;
+        }
+        if (n < 16 || n > 24)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{MemoryMapper|" + std::string(QT_TRANSLATE_NOOP("MemoryMapper", "Incorrect parameters for")) + "} " + name + ": address_bits");
+        size_pages(n);
+        i_address.set_size(n);
+    }
 
     std::string m = this->cd->get_parameter("cancelinit", false).value;
     this->cancel_init_mask = (!m.empty())?parse_numeric_value(m):0;

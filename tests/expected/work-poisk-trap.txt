@@ -1,0 +1,11 @@
+=== две ловушки: запись в B8000 и OUT 3D8h ===
+[ram0.value] $0413: $0002
+[ram0.value] $0420: $0005 $0080 $0041 $0000 $00D8 $00C3 $0009 $0000
+[trap.count] $0002
+[trap.nmi] $0000
+[vram.value] $0005: $0041
+=== тики таймера за секунду ===
+[ram0.value16] $0414: $0013
+[pic.isr] $0000
+[pic.imr] $00FE
+[cpu.registers] AX=B809 BX=0000 CX=0000 DX=03D8 SI=0000 DI=0000 BP=0000 SP=0400 CS=FFF0 DS=0000 ES=B800 SS=0000 IP=0057 F=F246

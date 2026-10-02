@@ -1,0 +1,13 @@
+// Поиск-1 без картриджа дисковода: BIOS сразу открывает свое меню (F1 -
+// кассета, F2 - ПЗУ), не дожидаясь тайм-аута пустого привода
+@extends poisk/Poisk-1.cfg
+@version Поиск-1 без дисковода
+
+-fddrom
+-fdc
+-fdc-ctl
+-fdd0
+-fdd1
+-mapper:@memory[$E0000-$E07FF]
+-mapper:@port[$C0-$C3]
+-mapper:@port[$C4-$C7]

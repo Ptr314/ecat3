@@ -85,6 +85,8 @@ emulator::Result TapeRecorder::load_config(SystemData *sd)
         m_tape_enc = TapeEnc::BK;
     else if (enc_str == "unior")
         m_tape_enc = TapeEnc::UNIOR;
+    else if (enc_str == "ibmpc")
+        m_tape_enc = TapeEnc::IBMPC;
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect encoding")) + "} " + enc_str);
 
@@ -200,6 +202,18 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
                 }
                 return;
             }
+            if (m_tape_enc == TapeEnc::IBMPC) {
+                // The square wave of the timer: every edge closes a half period.
+                // A pause longer than 32 bits can count is still a pause
+                if (((old_value ^ new_value) & 1) == 0) return;
+                if (has_last_edge) {
+                    const uint64_t half = cycle_counter - last_edge_cycles;
+                    ibmpc_decoder.add_half(half > 0xFFFFFFFFu ? 0xFFFFFFFFu : (uint32_t)half);
+                }
+                last_edge_cycles = cycle_counter;
+                has_last_edge = true;
+                return;
+            }
             if (m_tape_enc == TapeEnc::UKNC) {
                 // The УК-НЦ reader times the interval between any two edges,
                 // so the decoder gets every one of them
@@ -250,6 +264,14 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
             if (tape_mode == TAPE_READ) set_tape_mode(TAPE_STOPPED);
         }
     }
+}
+
+void TapeRecorder::start_ibmpc_decoder()
+{
+    // A half period of a bit 1 is 474 us, of a bit 0 237 us; the BIOS stops
+    // the timer between two records
+    ibmpc_decoder.reset((uint32_t)((uint64_t)m_system_clock * 355 / 1000000),
+                        (uint32_t)((uint64_t)m_system_clock * 5 / 1000));
 }
 
 void TapeRecorder::write_edge(uint64_t counter)
@@ -331,7 +353,14 @@ void TapeRecorder::set_recording(bool recording)
         rk86_decoder.add_run(last_level, (uint32_t)(cycle_counter - last_edge_cycles));
         has_last_edge = false;
     }
+    if (!recording && is_recording && m_tape_enc == TapeEnc::IBMPC)
+        ibmpc_decoder.finish();
     is_recording = recording;
+    if (is_recording && m_tape_enc == TapeEnc::IBMPC) {
+        has_last_edge = false;
+        start_ibmpc_decoder();
+        recorded_bytes.clear();
+    }
     if (is_recording && m_tape_enc == TapeEnc::BK) {
         has_last_edge = false;
         bk_decoder.reset();
@@ -387,6 +416,7 @@ unsigned TapeRecorder::get_record_size()
     }
     if (m_tape_enc == TapeEnc::BK) return bk_decoder.file()->size();
     if (m_tape_enc == TapeEnc::UKNC) return uknc_decoder.file()->size();
+    if (m_tape_enc == TapeEnc::IBMPC) return ibmpc_decoder.file()->size();
     if (m_tape_enc == TapeEnc::RK86) {
         const size_t size = rk86_decoder.file()->size();
         const size_t skip = (size != 0 && !record_keeps_sync())? 1 : 0;
@@ -468,7 +498,7 @@ std::string TapeRecorder::get_record_name()
                                          :(loaded_name.substr(0, dot) + ".tap");
     }
     if (m_tape_enc == TapeEnc::BK) return bk_decoder.name();
-    if (m_tape_enc == TapeEnc::RK86 || m_tape_enc == TapeEnc::UKNC) {
+    if (m_tape_enc == TapeEnc::RK86 || m_tape_enc == TapeEnc::UKNC || m_tape_enc == TapeEnc::IBMPC) {
         // A Радио-86РК tape carries no name, only the addresses, but the
         // extension still decides how the file goes back on the tape, and the
         // one the machine loads from is the one it has just written
@@ -487,6 +517,10 @@ std::vector<uint8_t> * TapeRecorder::get_record_data()
     }
     if (m_tape_enc == TapeEnc::UKNC) {
         recorded_bytes = *uknc_decoder.file();
+        return &recorded_bytes;
+    }
+    if (m_tape_enc == TapeEnc::IBMPC) {
+        recorded_bytes = *ibmpc_decoder.file();
         return &recorded_bytes;
     }
     if (m_tape_enc == TapeEnc::RK86) {
@@ -703,6 +737,25 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
         uknc_tape::encode(buffer, buffer_encoded);
         set_data(buffer_encoded);
     } else
+    if (tape_format == "ibmpc") {
+        // The rate is the steps of the signal, one step being the half period
+        // of a bit 0: 4223 at the 1.25 MHz timer of the Поиск-1
+        set_baud_rate(baud);
+        if (!ibmpc_tape::is_recording(buffer)) {
+            //Not a recording but the file itself: it gets the header the BIOS
+            //menu looks for, named after the file. The BIOS compares the name
+            //as typed, capitals included, so it is left as the file has it
+            if (buffer.size() > 0xFFFF)
+                return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                    "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "The file is too large for a cassette record")) + "} " + file_name);
+            const std::string name = loaded_name.substr(0, loaded_name.find('.'));
+            std::vector<uint8_t> cas;
+            ibmpc_tape::wrap_file(name, buffer, cas);
+            buffer.swap(cas);
+        }
+        ibmpc_tape::encode(buffer, buffer_encoded);
+        set_data(buffer_encoded);
+    } else
     if (tape_format == "bk" || tape_format == "bk-ascii") {
         // For the БК the rate is given directly in units, one unit being the
         // half period of a synchronisation pulse
@@ -903,6 +956,11 @@ emulator::Result TapeRecorder::load_state(const StateReader &r)
     //На скорость делят
     if (r.u("baud_rate", baud) && baud != 0) set_baud_rate(baud);
     r.b("recording", is_recording);
+    //The decoder's thresholds come with the start of a recording, which a
+    //restored one never sees; without them every half period ends a record.
+    //What it had decoded before the snapshot is not in it - as with the БК
+    //and the УК-НЦ, the file starts from here
+    if (is_recording && m_tape_enc == TapeEnc::IBMPC) start_ibmpc_decoder();
     loaded_name.clear();
     r.s("tape_name", loaded_name);
     r.b("motor", motor_on);

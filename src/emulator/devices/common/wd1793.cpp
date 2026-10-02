@@ -283,6 +283,13 @@ void WD1793::set_value(unsigned int address, unsigned int value, bool force)
         return;
     }
     if (wd1793_DELAY_REGISTER > 0){
+        //There is room for one delayed write only. A 16-bit OUT of the 8088
+        //writes two registers within one instruction, before the devices are
+        //clocked: the first one is applied now rather than overwritten
+        if (register_delay > 0) {
+            register_delay = 0;
+            WriteRegister(register_to_write, value_to_write);
+        }
         register_delay = wd1793_DELAY_REGISTER;
         register_to_write = address;
         value_to_write = value;

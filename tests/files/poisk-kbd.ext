@@ -1,0 +1,22 @@
+// Поиск-1 без BIOS: опрос клавиатурной матрицы
+// Программа по FFF00 ставит первый ВВ55 так, как его программирует BIOS
+// (83h: A и старшая половина C - вывод, B и младшая половина C - ввод), и в
+// цикле выводит в порт 60h маску строк из 0000:0400, а прочитанные порты 69h
+// и 6Ah кладет в 0000:0401 и 0000:0402
+@extends poisk/Poisk-1.cfg
+@version Поиск-1, тест клавиатуры
+
+-bios
+-mapper:@memory[$FE000-$FFFFF]
+
+//   FFF00  cli / ds = ss = 0 / sp = 400h / out 6Bh,83h
+//   FFF0E  L: mov al,[400h] / out 60h,al / in al,69h / mov [401h],al
+//             in al,6Ah / mov [402h],al / jmp L
+testrom : rom {
+	data = {$FA,$31,$C0,$8E,$D8,$8E,$D0,$BC,$00,$04,$B0,$83,$E6,$6B,$A0,$00,$04,$E6,$60,$E4,$69,$A2,$01,$04,$E4,$6A,$A2,$02,$04,$EB,$EF}
+}
+resetrom : rom {
+	data = {$EA,$00,$00,$F0,$FF}
+}
+mapper:@memory[$FFF00-$FFF1E] = testrom {mode = r}
+mapper:@memory[$FFFF0-$FFFF4] = resetrom {mode = r}

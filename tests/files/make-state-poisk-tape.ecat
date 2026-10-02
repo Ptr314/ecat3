@@ -1,0 +1,30 @@
+# Сборка эталонного снимка состояния для state-poisk-tape.ecat.
+#
+# Запускается руками, а не набором тестов: снимок - это двоичный эталон,
+# который обновляют осознанно. Из каталога deploy/:
+#
+#   eCat3-headless --no-sound --script ../tests/files/make-state-poisk-tape.ecat
+#
+# Поиск-1 без дисковода посреди чтения кассеты poisk-test.cas из меню BIOS:
+# заголовок уже прочитан, идет запись с программой. В эту минуту в работе
+# почти все: процессор внутри INT 15h, канал 0 таймера, которым BIOS мерит
+# полупериоды (счетчик зафиксирован и читается по байтам), второй ВВ55 со
+# входом ленты, ВН59 и сама кассета на своем месте
+
+MACHINE "../../tests/files/poisk-nofdd.ext"
+COMMAND tape.load("poisk-test.cas")
+WAIT 3000
+KEY 100,200,f1
+WAIT 500
+TYPE "test", 100, 120
+KEY 100,200,ret
+WAIT 500
+KEY 100,200,ret
+WAIT 300
+COMMAND tape.play()
+WAIT 6000
+
+SAVESTATE "state-poisk-tape.ecats.zip"
+# Снимок экрана рядом с архивом - чтобы глазами сверить, что снималось
+SCREEN "state-poisk-tape-made.png"
+EXIT

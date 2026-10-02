@@ -1,0 +1,24 @@
+// Клавиши клавиатуры Поиска-1 (BIOS 1991 года) по матрице, как ее описывает
+// MAME (kb_poisk1.h, poisk1_keyboard_v91).
+//
+// Строка -- линия возврата: разряды 0-7 читаются из порта 69h (B первого
+// ВВ55), 8-11 -- из младшей половины порта 6Ah. Столбец -- строка матрицы,
+// которую выбирает разряд порта 60h (Y1..Y8 -- разряды 0..7).
+//
+// Правый Ctrl переключает латиницу и кириллицу, F4 -- щелчок клавиш. F11 и
+// F12 на клавиатуре Поиска -- украинские І и Ї, серый + и серый - -- Ё и Є.
+// Модификаторы в шапке не объявлены: все они -- контакты матрицы, и их
+// состояние ведет BIOS
+
+key_rbr	key_equal	key_f	key_f2	key_e	key_lshift	__	key_3
+key_num_5	key_num_4	key_num_9	__	__	key_rctrl	key_numlock	key_prtsc
+__	key_num_0	key_num_3	__	key_caps	key_lctrl	key_num_del	key_tab
+key_semi	key_f6	key_n	key_f5	key_h	key_c	__	key_y
+key_num_plus	key_bslash	key_d	key_f1	key_w	key_x	key_num_minus	key_2
+key_enter	key_bksp	key_s	key_esc	key_q	key_lalt	key_f9	key_f10
+key_num_8	key_num_7	key_z	key_tilda	key_a	key_ralt	key_scroll	key_1
+key_num_2	key_num_1	__	key_pause	key_f12	key_rshift	key_num_6	key_f11
+key_0	key_8	key_m	key_6	key_j	key_dot	key_l	__
+key_o	key_9	key_k	key_7	key_i	key_comma	key_f7	key_u
+key_minus	key_p	key_b	key_f4	key_t	key_v	key_slash	key_5
+key_apo	key_lbr	key_g	key_f3	key_r	key_space	key_f8	key_4

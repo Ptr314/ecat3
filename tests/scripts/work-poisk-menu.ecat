@@ -1,0 +1,23 @@
+# Поиск-1: меню BIOS 1991 года и клавиатура
+# Машина без картриджа дисковода (tests/files/poisk-nofdd.ext): BIOS сразу
+# выводит меню: F1 - кассета, F2 - ПЗУ. На F1 он спрашивает имя файла; набранное имя (не длиннее 8 знаков) и Enter дают
+# просьбу включить магнитофон. Клавиатура опрашивается по IRQ6 (канал 1
+# таймера) - этот тест держит и его, и связь двух каналов таймера с ВН59
+# @timeout 60
+MACHINE "../../tests/files/poisk-nofdd.ext"
+LOGDEFS 16,16
+WAIT 3000
+PRINT "=== меню BIOS ==="
+LOG display.mode
+LOG pic.imr
+KEY 100,200,f1
+WAIT 500
+TYPE "game1"
+WAIT 300
+KEY 100,200,ret
+WAIT 1000
+PRINT "=== все нажатия забраны из буфера клавиатуры ==="
+LOG ram0.value16($41A)
+LOG ram0.value16($41C)
+SCREEN "../results/work-poisk-menu.png"
+EXIT

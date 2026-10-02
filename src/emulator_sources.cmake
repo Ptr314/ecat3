@@ -27,6 +27,7 @@ set(ECAT_CORE_SOURCES
     emulator/renderer.h
     emulator/disasm.h emulator/disasm.cpp
     emulator/disasm_pdp11.h emulator/disasm_pdp11.cpp
+    emulator/disasm_x86.h emulator/disasm_x86.cpp
 
     emulator/script/script_types.h
     emulator/script/script_parser.cpp emulator/script/script_parser.h
@@ -41,6 +42,8 @@ set(ECAT_CORE_SOURCES
     emulator/devices/cpu/6502.h emulator/devices/cpu/6502.cpp
     emulator/devices/cpu/pdp11_context.h emulator/devices/cpu/pdp11core.h emulator/devices/cpu/pdp11core.cpp
     emulator/devices/cpu/k1801vm1.h emulator/devices/cpu/k1801vm1.cpp
+    emulator/devices/cpu/i8086_context.h emulator/devices/cpu/i8086core.h emulator/devices/cpu/i8086core.cpp
+    emulator/devices/cpu/i8086.h emulator/devices/cpu/i8086.cpp
     emulator/devices/cpu/vm1_timing.h emulator/devices/cpu/vm1_timing.cpp emulator/devices/cpu/vm1_timing_table.inc
     emulator/devices/cpu/z80.h emulator/devices/cpu/z80.cpp
     emulator/devices/cpu/cpu_utils.h
@@ -100,6 +103,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/agat_common.h
     emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp
     emulator/devices/specific/bk_display.h emulator/devices/specific/bk_display.cpp
+    emulator/devices/specific/poisk.h emulator/devices/specific/poisk.cpp
     emulator/devices/specific/bk_timer.h emulator/devices/specific/bk_timer.cpp
     emulator/devices/specific/bk_fdc.h emulator/devices/specific/bk_fdc.cpp
 
