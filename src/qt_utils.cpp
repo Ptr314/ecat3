@@ -4,6 +4,7 @@
 // Description: Qt-dependent utility functions (not part of the emulator core)
 
 #include "qt_utils.h"
+#include <QKeyEvent>
 
 #define MD4C_USE_UTF8
 #include "libs/md4c/md4c-html.h"
@@ -95,4 +96,36 @@ std::string md2html(const std::string &md)
     }
 
     return result;
+}
+
+//Under a non-Latin host layout (Russian) Qt reports a letter key as the
+//character it types, Й = 0x419, which no machine's map knows: nothing was typed
+//at all. Such a key is taken from the Windows virtual key code instead, which
+//does not depend on the layout - letters and digits are their ASCII codes, the
+//OEM keys are the punctuation of the US layout. Latin characters stay as Qt
+//gives them, so an English layout works exactly as before
+int host_layout_key(const QKeyEvent *event)
+{
+    const int key = event->key();
+#ifdef Q_OS_WIN
+    if (key > 0xFF && key < Qt::Key_Escape) {
+        const quint32 vk = event->nativeVirtualKey();
+        if ((vk >= 0x30 && vk <= 0x39) || (vk >= 0x41 && vk <= 0x5A)) return (int)vk;
+        switch (vk) {
+        case 0xBA: return Qt::Key_Semicolon;        // VK_OEM_1: Ж
+        case 0xBB: return Qt::Key_Equal;            // VK_OEM_PLUS
+        case 0xBC: return Qt::Key_Comma;            // VK_OEM_COMMA: Б
+        case 0xBD: return Qt::Key_Minus;            // VK_OEM_MINUS
+        case 0xBE: return Qt::Key_Period;           // VK_OEM_PERIOD: Ю
+        case 0xBF: return Qt::Key_Slash;            // VK_OEM_2
+        case 0xC0: return Qt::Key_QuoteLeft;        // VK_OEM_3: Ё
+        case 0xDB: return Qt::Key_BracketLeft;      // VK_OEM_4: Х
+        case 0xDC: return Qt::Key_Backslash;        // VK_OEM_5
+        case 0xDD: return Qt::Key_BracketRight;     // VK_OEM_6: Ъ
+        case 0xDE: return Qt::Key_Apostrophe;       // VK_OEM_7: Э
+        default: break;
+        }
+    }
+#endif
+    return key;
 }

@@ -141,8 +141,12 @@ emulator::Result read_extension_text(const std::string &file, ZipReader &zip,
         return emulator::Result::ok();
     }
 
-    //The archive is read whole, so its own size is bounded first
-    if (static_cast<uint64_t>(dsk_tools::utf8_file_size(file)) > ARCHIVE_UNPACKED_LIMIT)
+    //The archive is read whole, so its own size is bounded first. A missing
+    //file has size -1, which the cast would turn into "too large"
+    const auto archive_size = dsk_tools::utf8_file_size(file);
+    if (archive_size < 0)
+        return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading config file"), file);
+    if (static_cast<uint64_t>(archive_size) > ARCHIVE_UNPACKED_LIMIT)
         return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "The archive is too large"), file);
     archive = dsk_tools::utf8_read_file(file);
     if (archive.empty())

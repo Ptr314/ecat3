@@ -19,10 +19,10 @@ private:
 
 public:
     K1801VM1Core(k1801vm1 * emulator_device, int family_type);
-    virtual uint16_t read_word(uint16_t address) override;
-    virtual void write_word(uint16_t address, uint16_t value) override;
-    virtual uint8_t read_byte(uint16_t address) override;
-    virtual void write_byte(uint16_t address, uint8_t value) override;
+    virtual uint16_t read_word(uint32_t address) override;
+    virtual void write_word(uint32_t address, uint16_t value) override;
+    virtual uint8_t read_byte(uint32_t address) override;
+    virtual void write_byte(uint32_t address, uint8_t value) override;
     // Ядро сообщает о входе в пультовый режим и выходе из него, устройство
     // поднимает линию наружу
     virtual void on_halt_mode(bool state) override;
@@ -76,6 +76,7 @@ private:
 
     // True while ~dclo holds the processor down
     bool m_held_in_reset = false;
+    bool m_dclo_active = false;     // линия ~dclo сейчас активна
 
     // True while ~aclo is asserted; the interrupt comes when it is released
     bool m_aclo_active = false;
@@ -127,6 +128,7 @@ public:
     virtual std::vector<std::pair<std::string, std::string>> get_flags() override;
     virtual unsigned int get_pc() override;
     virtual unsigned int get_command() override;
+    unsigned int peek_mem(unsigned int address) override;
     virtual DisAsm * create_disasm(const std::string &data_path, emulator::Result &res) override;
 
     virtual void set_context_value(const std::string &name, unsigned int value) override;
@@ -134,3 +136,4 @@ public:
 
 ComputerDevice * create_k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd);
 ComputerDevice * create_k1801vm2(InterfaceManager *im, EmulatorConfigDevice *cd);
+ComputerDevice * create_k1801vm3(InterfaceManager *im, EmulatorConfigDevice *cd);

@@ -21,6 +21,7 @@
 #define CALLBACK_CHAIN  1
 #define CALLBACK_IAKO   2
 #define CALLBACK_INIT   3
+#define CALLBACK_RXD    4
 
 // Посылок на символ: старт, восемь данных и стоп
 #define BITS_PER_CHAR   10
@@ -39,6 +40,8 @@ DL11::DL11(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_irq(i_virq, i_vector)
     , i_iako(this, im, 16, "iako", MODE_R, CALLBACK_IAKO)
     , i_init(this, im, 1, "init", MODE_R, CALLBACK_INIT)
+    , i_txd(this, im, 8, "txd", MODE_W)
+    , i_rxd(this, im, 8, "rxd", MODE_R, CALLBACK_RXD)
 {
     m_clocked = true;   // clock() переопределён
     can_read = true;
@@ -121,8 +124,10 @@ void DL11::transmit_done()
     // Петля (разряд 2) и заглушка на разъёме возвращают байт в свой приёмник
     if ((m_xcsr & XCSR_MAINT) || m_plug)
         receive(b);
-    else
+    else {
         (void)m_host.write(b);
+        if (i_txd.linked > 0) i_txd.change(b);
+    }
 
     m_xcsr |= CSR_DONE;
     if (m_xcsr & CSR_IE) m_tx_pending = true;
@@ -180,6 +185,12 @@ void DL11::set_station(int station)
 
 void DL11::interface_callback(unsigned int callback_id, unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
 {
+    if (callback_id == CALLBACK_RXD) {
+        // Байт с другого конца линии. Устройство там шлёт его со своей
+        // скоростью; в приёмник он попадает по времени символа этой линии
+        m_rx_queue.push_back((uint8_t)(new_value & 0xFF));
+        return;
+    }
     if (callback_id == CALLBACK_INIT) {
         // Импульс RESET - это change(1) и change(0), и сброс делает первая
         // половина. Прежнее значение не проверяется: до первого RESET линия
@@ -406,6 +417,7 @@ std::vector<DeviceFieldInfo> DL11::get_device_fields()
     r.push_back({"station",   "Номер станции СА, -1 - его нет",                        false});
     r.push_back({"plug",      "1, когда на разъёме заглушка: выход замкнут на вход",   false});
     r.push_back({"output",    "Последние переданные байты, старые первыми; output(n) - последние n", true});
+    r.push_back({"text",      "Те же байты текстом: ВК пропускается, прочие управляющие - точкой", true});
     return r;
 }
 
@@ -413,6 +425,18 @@ bool DL11::get_field(const std::string &field, unsigned int from, unsigned int t
 {
     if (field == "port") {
         out.text = m_port_name;
+        return true;
+    }
+    if (field == "text") {
+        unsigned int n = (from == 0 && to == 0)? OUTPUT_SIZE : ((from > OUTPUT_SIZE)? OUTPUT_SIZE : from);
+        if (n > m_sent) n = m_sent;
+        out.numeric = false;
+        out.text.clear();
+        for (unsigned int i = n; i > 0; i--) {
+            const uint8_t c = m_output[(m_sent - i) & (OUTPUT_SIZE - 1)] & 0177;
+            if (c == 015) continue;
+            out.text += (c == 012 || (c >= 040 && c < 0177)) ? (char)c : '.';
+        }
         return true;
     }
     if (field == "output") {

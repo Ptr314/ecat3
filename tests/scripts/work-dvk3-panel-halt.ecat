@@ -1,0 +1,34 @@
+# Пульт ДВК, тумблер «Пульт» (линия ОСТ на ~halt процессора).
+#
+# В ОЗУ - цикл INC R0 / BR .-2 с 1000 и обработчик сетевого таймера (RTI),
+# монитор 055 пускает его командой 1000G. Тумблер в положении «Пульт» уводит
+# процессор в пультовый режим: монитор печатает адрес остановки и @. Пока
+# тумблер включён, программа выйти из пульта не может; вернули в «Работа» -
+# 1000G пускает цикл снова.
+# @timeout 60
+MACHINE "dvk/DVK-3.cfg"
+WAIT _2000
+KEY _100,_50,ret
+WAIT _300
+COMMAND ram.set16(100, 001100, 000340)
+COMMAND ram.set16(1100, 000002)
+COMMAND ram.set16(1000, 005200, 000776)
+TYPE "1000G"
+WAIT _500
+LOGDEFS _16,_8
+PRINT "=== Программа идёт ==="
+LOG cpu.pc
+LOG panel.halt
+COMMAND panel.option(0,1)
+WAIT _300
+PRINT "=== Тумблер «Пульт» ==="
+LOG panel.halt
+LOG display.text
+COMMAND panel.option(0,0)
+WAIT _300
+TYPE "1000G"
+WAIT _500
+PRINT "=== Снова «Работа», 1000G ==="
+LOG cpu.pc
+LOG display.text
+EXIT

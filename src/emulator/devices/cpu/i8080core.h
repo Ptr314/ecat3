@@ -37,6 +37,9 @@ public:
     virtual bool int_request();
     //The instruction the interrupting device puts on the bus during INTA
     virtual uint8_t int_acknowledge();
+    //The address of the CALL a ВН59 in the 8080 mode hands over in the two
+    //acknowledge cycles that follow the opcode, when int_acknowledge() was CALL
+    virtual uint16_t int_call_address();
     virtual void reset();
     virtual i8080context * get_context();
 

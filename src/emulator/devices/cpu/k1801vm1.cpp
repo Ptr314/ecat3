@@ -25,7 +25,7 @@ K1801VM1Core::K1801VM1Core(k1801vm1 * emulator_device, int family_type):
 // An address nobody answers ends the cycle with a timeout on the bus, which
 // aborts the current instruction and traps through vector 4. The firmware of
 // the БК relies on it to find out which ROM blocks are actually installed.
-uint16_t K1801VM1Core::read_word(uint16_t address)
+uint16_t K1801VM1Core::read_word(uint32_t address)
 {
     uint16_t v = (uint16_t)emulator_device->read_mem_word(address);
     if (emulator_device->bus_timeout()) m_abort = true;
@@ -33,14 +33,14 @@ uint16_t K1801VM1Core::read_word(uint16_t address)
     return v;
 }
 
-void K1801VM1Core::write_word(uint16_t address, uint16_t value)
+void K1801VM1Core::write_word(uint32_t address, uint16_t value)
 {
     emulator_device->write_mem_word(address, value);
     if (emulator_device->bus_timeout()) m_abort = true;
     if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, true, false, emulator_device->last_reply());
 }
 
-uint8_t K1801VM1Core::read_byte(uint16_t address)
+uint8_t K1801VM1Core::read_byte(uint32_t address)
 {
     uint8_t v = (uint8_t)emulator_device->read_mem(address);
     if (emulator_device->bus_timeout()) m_abort = true;
@@ -48,7 +48,7 @@ uint8_t K1801VM1Core::read_byte(uint16_t address)
     return v;
 }
 
-void K1801VM1Core::write_byte(uint16_t address, uint8_t value)
+void K1801VM1Core::write_byte(uint32_t address, uint8_t value)
 {
     emulator_device->write_mem(address, value);
     if (emulator_device->bus_timeout()) m_abort = true;
@@ -106,7 +106,7 @@ k1801vm1::~k1801vm1()
 DisAsm * k1801vm1::create_disasm(MAYBE_UNUSED const std::string &data_path, emulator::Result &res)
 {
     res = emulator::Result::ok();
-    return new DisAsmPDP11(m_family == PDP11_FAMILY_1801VM2);
+    return new DisAsmPDP11(m_family == PDP11_FAMILY_1801VM2 || m_family == PDP11_FAMILY_1801VM3);
 }
 
 emulator::Result k1801vm1::load_config(SystemData *sd)
@@ -140,6 +140,11 @@ emulator::Result k1801vm1::load_config(SystemData *sd)
     // как на БК. У УК-НЦ здесь 160000, и тогда работает настоящий пультовый
     // режим с теневой парой КРСК/КРСП и командами RUN, STEP, MFPC и прочими
     core->halt_sel = read_confg_value(cd, "halt_sel", false, (unsigned int)0);
+    // Регистр начального пуска для пультовой команды 000020. По умолчанию -
+    // адрес пуска без режима
+    core->una_value = read_confg_value(cd, "una_value", false, (unsigned int)core->start_address);
+    // ВМ3: после пуска сразу в пульт - переключатель платы на «пульт»
+    core->start_in_halt = read_confg_value(cd, "start_halt", false, false);
 
     // Линию режима надо выставить сразу: сообщается она только при смене, а
     // диспетчер адресов читает её с первого же обращения. Незаданный интерфейс
@@ -185,7 +190,14 @@ void k1801vm1::save_state(StateWriter &w)
     w.b("no_trace", s.no_trace);
 
     w.b("held_in_reset", m_held_in_reset);
+    w.b("dclo_active", m_dclo_active);
     w.b("aclo_active", m_aclo_active);
+
+    if (core->is_vm3()) {
+        uint16_t v[pdp11core::VM3_STATE_WORDS];
+        core->get_vm3(v);
+        w.array("vm3", v, pdp11core::VM3_STATE_WORDS);
+    }
 
     //Where the chain of bus cycles stands against the 037 cycle: without it a
     //restored БК0011М would run with another phase of the windows
@@ -228,7 +240,12 @@ emulator::Result k1801vm1::load_state(const StateReader &r)
     core->set_latches(s);
 
     r.b("held_in_reset", m_held_in_reset);
+    r.b("dclo_active", m_dclo_active);
     r.b("aclo_active", m_aclo_active);
+    if (core->is_vm3()) {
+        uint16_t v[pdp11core::VM3_STATE_WORDS] = {};
+        if (r.array("vm3", v, pdp11core::VM3_STATE_WORDS)) core->set_vm3(v);
+    }
     if (m_timing) {
         r.n64("timing_now", m_timing->m_now);
         r.n64("timing_start", m_timing->m_start);
@@ -289,7 +306,7 @@ void k1801vm1::note_timeout(unsigned int address)
 {
     if (!mm->no_device) return;
     m_timeouts++;
-    m_timeout_address = address & 0xFFFF;
+    m_timeout_address = address & (core->is_vm3() ? 0x7FFFFFu : 0xFFFFu);
     m_timeout_pc = core->get_pc();
 }
 
@@ -303,6 +320,13 @@ std::vector<DeviceFieldInfo> k1801vm1::get_device_fields()
     r.push_back({"trap_vector",     "Vector of the last trap or interrupt",     false});
     r.push_back({"trap_pc",         "PC saved by the last trap or interrupt",   false});
     r.push_back({"history",         "Addresses of the last commands executed, oldest first (from,to count back from the newest)", true});
+    r.push_back({"halt_history",    "The same ring as it was at the last entry into the console (halt) mode", true});
+    if (core->is_vm3()) {
+        r.push_back({"mmu",  "ВМ3: SR0, SR2, SR3, HPAR", false});
+        r.push_back({"sps",  "ВМ3: указатели стека ядра и пользователя (вне текущего режима)", false});
+        r.push_back({"par",  "ВМ3: PAR ядра 0-7, затем пользователя 0-7", false});
+        r.push_back({"pdr",  "ВМ3: PDR ядра 0-7, затем пользователя 0-7", false});
+    }
     return r;
 }
 
@@ -316,12 +340,26 @@ bool k1801vm1::get_field(const std::string &field, unsigned int from, unsigned i
     if (field == "traps")           { out.values.push_back(core->m_trap_count);  return true; }
     if (field == "trap_vector")     { out.values.push_back(core->m_trap_vector); return true; }
     if (field == "trap_pc")         { out.values.push_back(core->m_trap_pc);     return true; }
-    if (field == "history") {
+    if (core->is_vm3() && (field == "mmu" || field == "sps" || field == "par" || field == "pdr")) {
+        uint16_t v[pdp11core::VM3_STATE_WORDS];
+        core->get_vm3(v);
+        unsigned int from_i = 0, count = 0;
+        if (field == "sps") { from_i = 0; count = 4; }
+        else if (field == "par") { from_i = 4; count = 16; }
+        else if (field == "pdr") { from_i = 20; count = 16; }
+        else { from_i = 36; count = 4; }
+        for (unsigned int i = 0; i < count; i++) out.values.push_back(v[from_i + i]);
+        return true;
+    }
+    if (field == "history" || field == "halt_history") {
         // Без диапазона - всё кольцо; history(n) - последние n команд
+        const bool halt = (field == "halt_history");
+        const uint16_t * ring = halt ? core->m_halt_history : core->m_history;
+        const unsigned int pos = halt ? core->m_halt_history_pos : core->m_history_pos;
         const unsigned int size = pdp11core::HISTORY_SIZE;
         unsigned int n = (from == 0 && to == 0)? size : ((from > size)? size : from);
         for (unsigned int i = n; i > 0; i--)
-            out.values.push_back(core->m_history[(core->m_history_pos - i) & (size - 1)]);
+            out.values.push_back(ring[(pos - i) & (size - 1)]);
         return true;
     }
     out.width = 0;
@@ -358,6 +396,15 @@ std::vector<std::pair<std::string, std::string>> k1801vm1::get_flags()
         {"T", std::to_string(((c->PSW & PDP11::F_T) != 0) ? 1 : 0)},
         {"I", std::to_string(((c->PSW & PDP11::F_MASK) != 0) ? 1 : 0)}
     };
+}
+
+// У ВМ3 отладчик видит память так же, как процессор: через диспетчер, в
+// пульте - теневую. Адрес физический, если он уже шире 16 разрядов
+unsigned int k1801vm1::peek_mem(unsigned int address)
+{
+    if (core->is_vm3() && address <= 0xFFFF)
+        return mm->get_direct(core->vm3_peek_address((uint16_t)address)) & 0xFF;
+    return CPU::peek_mem(address);
 }
 
 unsigned int k1801vm1::get_command()
@@ -410,9 +457,14 @@ void k1801vm1::interface_callback(unsigned int callback_id, unsigned int new_val
         // Held down while the line is active; released, the processor starts
         // over from its start address. The line idles inactive, so a machine
         // that leaves ~dclo unconnected runs exactly as before
+        // that leaves ~dclo unconnected runs exactly as before. Released while
+        // ~aclo is still active, it is the power-up sequence (the ДВК panel
+        // drops АИП 10 ms before АСП): the processor starts once ~aclo goes
+        // too, and that release is the start, not a power-fail interrupt
+        m_dclo_active = active;
         if (active) {
             m_held_in_reset = true;
-        } else if (m_held_in_reset) {
+        } else if (m_held_in_reset && !m_aclo_active) {
             m_held_in_reset = false;
             reset_mode = true;
         }
@@ -427,6 +479,10 @@ void k1801vm1::interface_callback(unsigned int callback_id, unsigned int new_val
         } else if (m_aclo_active) {
             m_aclo_active = false;
             if (!m_held_in_reset) core->set_aclo(true);
+            else if (!m_dclo_active) {
+                m_held_in_reset = false;
+                reset_mode = true;
+            }
         }
         break;
     }
@@ -523,4 +579,9 @@ ComputerDevice * create_k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd)
 ComputerDevice * create_k1801vm2(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new k1801vm1(im, cd, PDP11_FAMILY_1801VM2);
+}
+
+ComputerDevice * create_k1801vm3(InterfaceManager *im, EmulatorConfigDevice *cd)
+{
+    return new k1801vm1(im, cd, PDP11_FAMILY_1801VM3);
 }

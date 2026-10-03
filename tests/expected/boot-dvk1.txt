@@ -1,0 +1,28 @@
+[sel1.value] &160001
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+
+160442
+@
+@140000G
+       b|jsik  dwk nc
+@0
+vdu
+
+PRINT 2+2
+ 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+

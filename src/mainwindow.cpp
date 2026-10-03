@@ -36,6 +36,7 @@
 #include "emulator/utils.h"
 #include "emulator/cache.h"
 #include "dsk_tools/core.h"
+#include "qt_utils.h"
 //Часть помощников dsk_tools объявлена в его внутреннем заголовке, и звать
 //его надо по полному пути: короткий "utils.h" из dsk_tools.h у MSVC попадает
 //в emulator/utils.h - он ищет кавычечный include и по цепочке включающих
@@ -978,16 +979,17 @@ void MainWindow::keyPressEvent( QKeyEvent *event )
             mouse_capture(false);
 
         // qDebug() << "Key pressed: scan " << event->nativeScanCode() << "virtual" << event->nativeVirtualKey() << "key" << Qt::hex << event->key();
-        e->host_key(event->key(), event->nativeScanCode(), event->modifiers(), true);
+        const int key = host_layout_key(event);
+        e->host_key(key, event->nativeScanCode(), event->modifiers(), true);
 
-        if (event->key() == EmuKey::Cancel) {
+        if (key == EmuKey::Cancel) {
             //Pause/Break resets the machine, see Emulator::key_event(); the
             //key has no script name, so the reset itself is recorded
             std::vector<std::string> args;
             args.push_back((event->modifiers() & Qt::AltModifier)?"cold":"soft");
             e->record_verb(SCRIPT_CMD_RESET, args);
         } else {
-            e->record_key(static_cast<unsigned int>(event->key()), event->nativeScanCode(), true);
+            e->record_key(static_cast<unsigned int>(key), event->nativeScanCode(), true);
         }
     }
 }
@@ -1000,7 +1002,7 @@ void MainWindow::keyReleaseEvent( QKeyEvent *event )
     } else {
         //qDebug() << "Key released:" << event->nativeScanCode() << event->nativeVirtualKey() << event->key();
         //The physical key comes up as what it went down as, whatever Qt calls it now
-        const int key = e->host_key(event->key(), event->nativeScanCode(), event->modifiers(), false);
+        const int key = e->host_key(host_layout_key(event), event->nativeScanCode(), event->modifiers(), false);
         e->record_key(static_cast<unsigned int>(key), event->nativeScanCode(), false);
     }
 }

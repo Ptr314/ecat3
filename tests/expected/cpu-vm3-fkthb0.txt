@@ -1,0 +1,9 @@
+=== FKTHB0 ===
+[tt.text] 
+..CFKTHB0  11/34 MEMORY MGMT. DIAG.
+..
+..SWR = 000000  NEW = 
+..
+..END PASS #     1  TOTAL ERRORS SINCE LAST REPORT      0
+..
+[cpu.mmu] &000000 &023036 &000000 &000000

@@ -9,6 +9,7 @@
 
 #define PDP11_FAMILY_1801VM1  0
 #define PDP11_FAMILY_1801VM2  1
+#define PDP11_FAMILY_1801VM3  2
 
 #pragma pack(1)
 
@@ -65,6 +66,7 @@ namespace PDP11
     const uint16_t V_POWER_FAIL = 0024;
     const uint16_t V_EMT        = 0030;
     const uint16_t V_TRAP       = 0034;
+    const uint16_t V_MMU        = 0250;     // К1801ВМ3: abort of the memory management unit
 
     // Fixed vectors of the 1801 series interrupt inputs
     const uint16_t V_IRQ2       = 0100;

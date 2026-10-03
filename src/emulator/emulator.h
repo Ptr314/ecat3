@@ -65,7 +65,7 @@ private:
     GenericDisplay * display;
     Keyboard * keyboard;
     std::vector<Joystick*> joysticks;   // every device of the joystick class, fed with the same keys
-    std::vector<Mouse*> mice;           // every device of the mouse class, moved together
+    std::vector<HostMouse*> mice;           // every device of the mouse class, moved together
 
     // Host keys held down, see host_key()
     struct HostKey {

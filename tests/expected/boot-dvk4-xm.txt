@@ -1,0 +1,56 @@
+=== SHOW CONFIG ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+22 bit addressing is on
+
+USR   is set NOSWAP
+EXIT  is set SWAP
+KMON  is set NOIND
+TT    is set QUIET
+ERROR is set ERROR
+SL    is set OFF
+EDIT  is set K52
+KMON nesting depth is 3
+Global .SCCA flag is disabled
+
+PDP 11/34 Processor
+1024KB of memory
+Extended Instruction Set (EIS)
+Memory Management Unit
+50 Cycle System Clock
+
+Device I/O time-out support
+System job support
+Global .SCCA support
+
+
+.
+=== MY ===
+[my.dma] &006530 &121225
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+001000    ..BG..    18518.
+
+
+.DIR
+
+RT11SJ.SYS    79  31-Aug-88      RT11FB.SYS    93  31-Aug-88
+MY    .SYS     3  19-Feb-80      MX    .SYS     9  20-May-88
+DW    .SYS     7  08-Mar-90      SWAP  .SYS    27  31-Aug-88
+TT    .SYS     2  31-Aug-88      SL    .SYS    10  06-Apr-90
+LD    .SYS     8  19-Dec-88      DIR   .SAV    19  12-Dec-88
+DUMP  .SAV     9  01-Feb-88      DUP   .SAV    45  29-Feb-84
+K52   .SAV    55  13-Apr-90      PIP   .SAV    29  10-Mar-83
+RESORC.SAV    25  31-Aug-88      STARTS.COM     1
+HELP  .MX      8  13-Apr-90      README.MX     69  13-Apr-90
+MYP   .TXT     4  04-Sep-91      MY    .MAC    12  26-Apr-91
+MYFORM.SAV     5  14-Feb-86      TDW   .SAV    50  09-Nov-89
+TESTDW.SAV    47  18-Mar-87      TESTMX.SAV    13  26-Sep-89
+TESTMY.SAV    16  27-Dec-88      DD    .SYS     5  18-Feb-80
+RT11XM.SYS   106                 MYX   .SYS     3
+MXX   .SYS    10                 STARTX.COM     1
+ 30 Files, 770 Blocks
+ 816 Free blocks
+
+.

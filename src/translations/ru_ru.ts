@@ -44,7 +44,7 @@
         <translation type="vanished">Команда &apos;set&apos; требует адрес и значение</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+953"/>
+        <location filename="../emulator/core.cpp" line="+983"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation>Команда &apos;set&apos; требует адрес и хотя бы одно значение</translation>
     </message>
@@ -185,7 +185,7 @@
         <translation type="vanished">Устройство не является дисководом</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/bk_fdc.cpp" line="+85"/>
+        <location filename="../emulator/devices/specific/bk_fdc.cpp" line="+86"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
@@ -211,12 +211,12 @@
         <translation type="vanished">Команда &apos;breakpoint&apos; требует адрес</translation>
     </message>
     <message>
-        <location line="+191"/>
+        <location line="+195"/>
         <source>Command &apos;setreg&apos; expects a name and a value</source>
         <translation>Команда &apos;setreg&apos; требует имя и значение</translation>
     </message>
     <message>
-        <location line="-207"/>
+        <location line="-211"/>
         <source>Invalid breakpoint address</source>
         <translation>Нерректная точка останова</translation>
     </message>
@@ -224,6 +224,16 @@
         <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+136"/>
         <source>Unknown timing</source>
         <translation>Неизвестный способ расчета времени</translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/cpu/i8080.cpp" line="+137"/>
+        <source>int_opcode = $CD needs ~int_address</source>
+        <translation>int_opcode = $CD требует подключённого ~int_address</translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/cpu/i8086.cpp" line="+113"/>
+        <source>Incorrect parameters for</source>
+        <translation>Неправильно указаны параметры для</translation>
     </message>
 </context>
 <context>
@@ -237,7 +247,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1238"/>
+        <location filename="../emulator/core.cpp" line="-1255"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -254,24 +264,35 @@
         <translation>Некорректное соединение интерфейсов для</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+36"/>
+        <source>Too many links of an interface</source>
+        <translation>Слишком много связей у интерфейса</translation>
+    </message>
+    <message>
+        <location line="+15"/>
         <source>Clock source is not a processor</source>
         <translation>Источник тактирования не является процессором</translation>
     </message>
     <message>
         <location line="+9"/>
-        <location line="+45"/>
+        <location line="+54"/>
         <location filename="../emulator/devices/specific/smk512.cpp" line="+71"/>
+        <location filename="../emulator/devices/specific/a16m.cpp" line="+71"/>
         <source>Incorrect parameters for</source>
         <translation>Неправильно указаны параметры для</translation>
     </message>
     <message>
-        <location line="-26"/>
+        <location line="-35"/>
+        <source>Not a device that adds wait states</source>
+        <translation>Устройство не добавляет тактов ожидания</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>Not a bus-timing device</source>
         <translation>Не является устройством bus-timing</translation>
     </message>
     <message>
-        <location line="+226"/>
+        <location line="+232"/>
         <source>Command &apos;option&apos; expects an option id and a value</source>
         <translation>Команда &apos;option&apos; требует идентификатор параметра и значение</translation>
     </message>
@@ -310,7 +331,7 @@
         <translation>Образ диска</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="+320"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="+331"/>
         <source>Serial port of the computer</source>
         <translation>Последовательный порт компьютера</translation>
     </message>
@@ -376,12 +397,12 @@
 <context>
     <name>DL11</name>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="-266"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="-274"/>
         <source>Incorrect baud rate</source>
         <translation>Некорректная скорость обмена</translation>
     </message>
     <message>
-        <location line="+403"/>
+        <location line="+424"/>
         <source>Command &apos;connect&apos; expects a port name</source>
         <translation>Команда &apos;connect&apos; ожидает имя порта</translation>
     </message>
@@ -399,6 +420,22 @@
         <location line="+5"/>
         <source>File not found</source>
         <translation>Файл не найден</translation>
+    </message>
+</context>
+<context>
+    <name>DVKKMD</name>
+    <message>
+        <location filename="../emulator/devices/specific/dvk_kmd.cpp" line="+59"/>
+        <source>Memory mapper is expected</source>
+        <translation>Ожидается диспетчер памяти</translation>
+    </message>
+</context>
+<context>
+    <name>DVKMX</name>
+    <message>
+        <location filename="../emulator/devices/specific/dvk_mx.cpp" line="+62"/>
+        <source>Interface not found</source>
+        <translation>Интерфейс не найден</translation>
     </message>
 </context>
 <context>
@@ -544,7 +581,7 @@
         <translation type="vanished">Устройство %1 не найдено</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1164"/>
+        <location filename="../emulator/core.cpp" line="-1181"/>
         <source>Too many devices</source>
         <translation>Слишком много устройств</translation>
     </message>
@@ -670,6 +707,36 @@
         <source>Covox</source>
         <translation>Covox</translation>
     </message>
+    <message>
+        <location filename="../emulator/devices/specific/dvk_panel.cpp" line="+125"/>
+        <source>Panel switch &quot;Halt&quot;</source>
+        <translation>Тумблер «Пульт»</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Run</source>
+        <translation>Работа</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Halt</source>
+        <translation>Пульт</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Line clock 50 Hz</source>
+        <translation>Тумблер «Прерывания», 50 Гц</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Interrupts off</source>
+        <translation>Прерывания выкл.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Interrupts on</source>
+        <translation>Прерывания вкл.</translation>
+    </message>
 </context>
 <context>
     <name>DisAsm</name>
@@ -686,7 +753,7 @@
         <translation type="vanished">Длина инструкции %1 указана некорректно</translation>
     </message>
     <message>
-        <location filename="../emulator/disasm.cpp" line="+35"/>
+        <location filename="../emulator/disasm.cpp" line="+36"/>
         <source>Error reading CPU instructions file</source>
         <translation>Ошибка чтения файла инструкций</translation>
     </message>
@@ -931,7 +998,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+230"/>
+        <location filename="../emulator/emulator.cpp" line="+242"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -974,7 +1041,8 @@
     <message>
         <location filename="../emulator/config.cpp" line="+273"/>
         <location filename="../emulator/config_ext.cpp" line="+140"/>
-        <location line="+9"/>
+        <location line="+8"/>
+        <location line="+5"/>
         <location line="+606"/>
         <location filename="../emulator/config_fields.cpp" line="+104"/>
         <location line="+121"/>
@@ -1679,6 +1747,50 @@
     </message>
 </context>
 <context>
+    <name>KCGD</name>
+    <message>
+        <location filename="../emulator/devices/specific/dvk_kcgd.cpp" line="+64"/>
+        <source>KCGD mouse device is expected</source>
+        <translation>Ожидается мышь КЦГД</translation>
+    </message>
+</context>
+<context>
+    <name>KCGDDisplay</name>
+    <message>
+        <location line="+439"/>
+        <source>KCGD device is expected</source>
+        <translation>Ожидается устройство КЦГД</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Character generator device is expected</source>
+        <translation>Ожидается знакогенератор</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Incorrect parameters for</source>
+        <translation>Неправильно указаны параметры для</translation>
+    </message>
+</context>
+<context>
+    <name>KSMDisplay</name>
+    <message>
+        <location filename="../emulator/devices/specific/dvk_ksm_display.cpp" line="+38"/>
+        <source>Video memory device is expected</source>
+        <translation>Ожидается устройство видеопамяти</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Character generator device is expected</source>
+        <translation>Ожидается знакогенератор</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Graphics controller device is expected</source>
+        <translation>Ожидается графический контроллер</translation>
+    </message>
+</context>
+<context>
     <name>Keyboard</name>
     <message>
         <location filename="../emulator/devices/common/keyboard.cpp" line="+328"/>
@@ -1704,9 +1816,43 @@
 <context>
     <name>KeyboardWindow</name>
     <message>
-        <location filename="../dialogs/keyboardwindow.cpp" line="+433"/>
+        <location filename="../dialogs/keyboardwindow.cpp" line="+434"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
+    </message>
+</context>
+<context>
+    <name>MS7004</name>
+    <message>
+        <location filename="../emulator/devices/specific/ms7004.cpp" line="+40"/>
+        <source>Keyboard map file is expected</source>
+        <translation>Ожидается файл раскладки клавиатуры</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Error reading map file</source>
+        <translation>Ошибка чтения файла мэппинга</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <location line="+14"/>
+        <source>Map file entry is incorrect</source>
+        <translation>Элемент файла мэппинга некорректен</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Unknown key in the map file</source>
+        <translation>Неизвестная клавиша в файле мэппинга</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Invalid value in the map file</source>
+        <translation>Некорректное значение в файле мэппинга</translation>
+    </message>
+    <message>
+        <location line="+213"/>
+        <source>Invalid key code</source>
+        <translation>Некорректный код клавиши</translation>
     </message>
 </context>
 <context>
@@ -1784,7 +1930,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1265"/>
+        <location filename="../mainwindow.cpp" line="+1267"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -1847,7 +1993,7 @@
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1105"/>
+        <location filename="../mainwindow.cpp" line="-1106"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -1878,13 +2024,13 @@
     <message>
         <location filename="../mainwindow.cpp" line="-362"/>
         <location line="+38"/>
-        <location line="+1125"/>
+        <location line="+1126"/>
         <location line="+39"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1199"/>
+        <location line="-1200"/>
         <location line="+38"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -1913,7 +2059,7 @@
     <message>
         <location line="-98"/>
         <location line="+61"/>
-        <location line="+891"/>
+        <location line="+892"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+151"/>
@@ -1926,7 +2072,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-1852"/>
+        <location line="-1853"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2002,7 +2148,7 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+563"/>
+        <location line="+564"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
@@ -2019,7 +2165,7 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-924"/>
+        <location line="-925"/>
         <source>Screenshot type</source>
         <translation>Тип скриншота</translation>
     </message>
@@ -2034,7 +2180,7 @@
         <translation>Оригинал</translation>
     </message>
     <message>
-        <location line="+845"/>
+        <location line="+846"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>
     </message>
@@ -2339,7 +2485,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+872"/>
+        <location filename="../emulator/core.cpp" line="+889"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; требует имя файла</translation>
     </message>
@@ -2380,12 +2526,17 @@
         <translation type="vanished">Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+897"/>
+        <location line="+910"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
     <message>
-        <location line="+91"/>
+        <location line="+31"/>
+        <source>Incorrect parameters for</source>
+        <translation>Неправильно указаны параметры для</translation>
+    </message>
+    <message>
+        <location line="+77"/>
         <location filename="../emulator/devices/common/page_mapper.cpp" line="+47"/>
         <source>Incorrect range for</source>
         <translation>Некорректный диапазон для</translation>
@@ -2534,9 +2685,50 @@
     </message>
 </context>
 <context>
+    <name>PoiskDisplay</name>
+    <message>
+        <location filename="../emulator/devices/specific/poisk.cpp" line="+65"/>
+        <source>The board RAM is expected in &apos;ram&apos;</source>
+        <translation>Ожидается ОЗУ платы в устройстве «ram»</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <location line="+6"/>
+        <source>Incorrect parameters for</source>
+        <translation>Неправильно указаны параметры для</translation>
+    </message>
+</context>
+<context>
+    <name>PoiskFdcControl</name>
+    <message>
+        <location line="+408"/>
+        <source>Not a wd1793 device</source>
+        <translation>Устройство - не wd1793</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+5"/>
+        <source>Incorrect parameters for</source>
+        <translation>Неправильно указаны параметры для</translation>
+    </message>
+</context>
+<context>
+    <name>PoiskVram</name>
+    <message>
+        <location line="-67"/>
+        <source>The display is expected in &apos;display&apos;</source>
+        <translation>Ожидается дисплей в устройстве «display»</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Not a trap device</source>
+        <translation>Устройство - не ловушка</translation>
+    </message>
+</context>
+<context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-690"/>
+        <location filename="../emulator/core.cpp" line="-720"/>
         <source>Incorrect access mode</source>
         <translation>Некорректный режим доступа</translation>
     </message>
@@ -2674,7 +2866,7 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+55"/>
+        <location filename="../emulator/devices/common/scankeyboard.cpp" line="+56"/>
         <source>Keyboard map file is expected</source>
         <translation>Не указан файл мэппинга</translation>
     </message>
@@ -2781,7 +2973,7 @@
 <context>
     <name>TapeRecorder</name>
     <message>
-        <location filename="../emulator/devices/common/tape.cpp" line="+89"/>
+        <location filename="../emulator/devices/common/tape.cpp" line="+91"/>
         <source>Incorrect encoding</source>
         <translation>Некорректно задан способ кодирования данных для магнитофона</translation>
     </message>
@@ -2791,7 +2983,7 @@
         <translation>Файл образа ленты не найден</translation>
     </message>
     <message>
-        <location line="+499"/>
+        <location line="+531"/>
         <source>Tape file format is not defined</source>
         <translation>Не задан формат файла записи</translation>
     </message>
@@ -2801,7 +2993,12 @@
         <translation>Некорректный формат файла записи</translation>
     </message>
     <message>
-        <location line="+333"/>
+        <location line="+80"/>
+        <source>The file is too large for a cassette record</source>
+        <translation>Файл слишком велик для записи на кассету</translation>
+    </message>
+    <message>
+        <location line="+277"/>
         <location line="+624"/>
         <location line="+18"/>
         <location line="+7"/>
@@ -2860,7 +3057,7 @@
         <translation type="vanished">Некорректно задан способ кодирования данных для магнитофона %1</translation>
     </message>
     <message>
-        <location line="-871"/>
+        <location line="-876"/>
         <source>Unknown tape format!</source>
         <translation>Неизвестный формат файла записи!</translation>
     </message>
@@ -3092,7 +3289,7 @@
 <context>
     <name>errors</name>
     <message>
-        <location filename="../libs/dsk_tools/src/dsk_tools.cpp" line="+334"/>
+        <location filename="../libs/dsk_tools/src/dsk_tools.cpp" line="+160"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_raw.cpp" line="+28"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_aim.cpp" line="+102"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+56"/>
@@ -3161,7 +3358,7 @@
         <translation>Неизвестный формат файла</translation>
     </message>
     <message>
-        <location line="+289"/>
+        <location filename="../libs/dsk_tools/src/disk_codecs.cpp" line="+301"/>
         <source>Agat 840 track decode error</source>
         <translation>Ошибка декодирования дорожки в формате диска Агат 840 Кб</translation>
     </message>
@@ -3392,6 +3589,7 @@
         <location line="-7"/>
         <location line="+3"/>
         <location line="+38"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_fat.cpp" line="+1185"/>
         <source>Sector is not free</source>
         <translation>Сектор уже занят</translation>
     </message>
@@ -3490,7 +3688,7 @@
         <translation>User # выходит за допустимые пределы</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_fat.cpp" line="+213"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_fat.cpp" line="-968"/>
         <source>Cannot read FAT boot sector</source>
         <translation>Не удалось прочитать загрузочный сектор FAT</translation>
     </message>
@@ -3534,6 +3732,11 @@
         <location line="-11"/>
         <source>FAT: data region beyond disk</source>
         <translation>FAT: область данных за пределами диска</translation>
+    </message>
+    <message>
+        <location line="+923"/>
+        <source>Cannot find a free name</source>
+        <translation>Не удаётся подобрать свободное имя</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/converters/converter.cpp" line="+7"/>

@@ -40,7 +40,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/cpu/i8080core.h emulator/devices/cpu/i8080core.cpp
     emulator/devices/cpu/6502core.h emulator/devices/cpu/6502core.cpp
     emulator/devices/cpu/6502.h emulator/devices/cpu/6502.cpp
-    emulator/devices/cpu/pdp11_context.h emulator/devices/cpu/pdp11core.h emulator/devices/cpu/pdp11core.cpp
+    emulator/devices/cpu/pdp11_context.h emulator/devices/cpu/pdp11core.h emulator/devices/cpu/pdp11core.cpp emulator/devices/cpu/pdp11core_vm3.cpp
     emulator/devices/cpu/k1801vm1.h emulator/devices/cpu/k1801vm1.cpp
     emulator/devices/cpu/i8086_context.h emulator/devices/cpu/i8086core.h emulator/devices/cpu/i8086core.cpp
     emulator/devices/cpu/i8086.h emulator/devices/cpu/i8086.cpp
@@ -96,6 +96,15 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/a16m.h emulator/devices/specific/a16m.cpp
     emulator/devices/specific/uknc_timer.h emulator/devices/specific/uknc_timer.cpp
     emulator/devices/specific/uknc_keyboard.h emulator/devices/specific/uknc_keyboard.cpp
+    emulator/devices/specific/ms7004.h emulator/devices/specific/ms7004.cpp
+    emulator/devices/specific/dvk_ksm_display.h emulator/devices/specific/dvk_ksm_display.cpp
+    emulator/devices/specific/dvk_mx.h emulator/devices/specific/dvk_mx.cpp
+    emulator/devices/specific/dvk_kgd.h emulator/devices/specific/dvk_kgd.cpp
+    emulator/devices/specific/dvk_dx.h emulator/devices/specific/dvk_dx.cpp
+    emulator/devices/specific/dvk_lks.h emulator/devices/specific/dvk_lks.cpp
+    emulator/devices/specific/dvk_panel.h emulator/devices/specific/dvk_panel.cpp
+    emulator/devices/specific/dvk_kcgd.h emulator/devices/specific/dvk_kcgd.cpp
+    emulator/devices/specific/dvk_kmd.h emulator/devices/specific/dvk_kmd.cpp
     emulator/devices/specific/uknc_sound.h emulator/devices/specific/uknc_sound.cpp
     emulator/devices/specific/argo_keyboard.h emulator/devices/specific/argo_keyboard.cpp
     emulator/devices/specific/argo_memory.h emulator/devices/specific/argo_memory.cpp

@@ -1,0 +1,31 @@
+=== MX ===
+[mx.reads] &000105
+[mx.writes] &000004
+[mx.track] &000000
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+.SET SL ON
+
+.ASS MX1 DK
+
+.DAY
+wREMQ           dATA
+00:00:20        26-dEK-2012, sREDA
+
+.DIR MX0:
+ 26-Dec-2012
+RT11SJ.SYS    78  16-Dec-2012    SWAP  .SYS    30  25-Mar-2003
+SL    .SYS    10  28-Dec-1987    EM    .SYS     4  04-Mar-2012
+TT    .SYS     2  23-Jan-1980    MX    .SYS     9  30-Aug-2011
+STARTS.COM     1  21-Dec-2012    DIR   .SAV    19  04-Jul-2002
+PIP   .SAV    30  31-Oct-1998    UCL   .SAV    16  18-Jan-1988
+UCL   .DAT     9  04-Dec-2011    DAY   .SAV     4  19-Dec-2012
+DUMP  .SAV     9  27-Dec-1983    DESS  .SAV    20  04-Nov-1993
+EDIK  .SAV    22  19-Mar-2003    DUP   .SAV    45  27-Dec-1983
+RESORC.SAV    25  01-Mar-2012    BINCOM.SAV    24  18-Jan-1988
+BASIC .SAV    56  12-Sep-2011    HAND  .SAV     8  08-Nov-2011
+ 20 Files, 421 Blocks
+ 11 Free blocks
+
+.

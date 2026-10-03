@@ -1,0 +1,27 @@
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+        test prerywanij
+konec prohoda
+        test prerywanij
+konec prohoda
+        test prerywanij
+konec prohoda
+,;
+
+,; ** test prerywanij   :    okon~en **
+
+,;-------------------------------------------
+
+,L CKMBA0
+
+,D 10400=1
+
+,S
+
+     test ozu
+
+granicy prowerki ozu: 00000000 - 03777776
+            00020000
+konec testa          prohod 1
+

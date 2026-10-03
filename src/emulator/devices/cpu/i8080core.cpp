@@ -228,6 +228,11 @@ uint8_t i8080core::int_acknowledge()
     return 0xFF;
 }
 
+uint16_t i8080core::int_call_address()
+{
+    return 0;
+}
+
 unsigned int i8080core::execute()
 {
     uint8_t command;
@@ -244,10 +249,9 @@ unsigned int i8080core::execute()
     else
     if (context.int_enable != 0 && int_request())
     {
-        //The acknowledge closes the gate and wakes a halted processor. Only a
-        //one-byte instruction is taken from the bus, which is RST n: a CALL
-        //handed over in three acknowledge cycles (the ВН59 of Irisha) is not
-        //modelled, so the machine that needs it keeps INT unconnected
+        //The acknowledge closes the gate and wakes a halted processor. The
+        //bus gives either RST n or CALL: a ВН59 in the 8080 mode hands the
+        //CALL over in three acknowledge cycles, the address in the last two
         context.halted = false;
         context.int_enable = 0;
         inte_changed(context.int_enable);
@@ -255,6 +259,10 @@ unsigned int i8080core::execute()
         context.registers.regs.SP -= 2;
         write_mem(context.registers.regs.SP, context.registers.regs.PC & 0xFF);
         write_mem(static_cast<uint16_t>(context.registers.regs.SP+1), context.registers.regs.PC >> 8);
+        if (v == 0xCD) {
+            context.registers.regs.PC = int_call_address();
+            return 17;
+        }
         context.registers.regs.PC = v & 0x38;
         return 11;
     }

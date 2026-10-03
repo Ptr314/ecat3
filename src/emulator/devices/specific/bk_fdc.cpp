@@ -21,6 +21,7 @@
 #define MARK_BYTE   0xA1
 #define MARK_HEADER 0xFE
 #define MARK_DATA   0xFB
+#define MARK_DELETED 0xF8
 
 BKFDC::BKFDC(InterfaceManager *im, EmulatorConfigDevice *cd):
     FDC(im, cd)
@@ -181,6 +182,19 @@ void BKFDC::crc_byte(uint8_t b)
 
 //----------------------- Track buffers ------------------------------------//
 
+// The deleted data flags of a track; forgotten when another image is put in
+uint16_t & BKFDC::deleted_sectors(BKFDCDrive * d, int track, int side)
+{
+    unsigned int gen = (d->fdd != nullptr) ? d->fdd->get_generation() : 0;
+    if (d->deleted_generation != gen) {
+        memset(d->deleted, 0, sizeof(d->deleted));
+        d->deleted_generation = gen;
+    }
+    if (track < 0) track = 0;
+    if (track >= BK_FDC_TRACKS) track = BK_FDC_TRACKS - 1;
+    return d->deleted[track][side & 1];
+}
+
 // Builds the raw track for the head position of the drive from the sectors
 // of its image. Tracks beyond the image are blank but properly formatted, so
 // that a short image reads as a disk with empty tracks.
@@ -203,6 +217,7 @@ void BKFDC::encode_track(BKFDCDrive * d)
     unsigned int p = 0;
     unsigned int gap = GAP_FIRST;
     uint16_t saved_crc = m_crc;
+    const uint16_t deleted = deleted_sectors(d, d->track, (int)m_side);
 
     for (int sect = 0; sect < BK_FDC_SECTORS; sect++) {
         for (unsigned int i = 0; i < gap; i++) d->data[p++] = GAP_BYTE;
@@ -230,7 +245,7 @@ void BKFDC::encode_track(BKFDCDrive * d)
         m_crc = 0xFFFF;
         start = p;
         d->data[p++] = MARK_BYTE; d->data[p++] = MARK_BYTE; d->data[p++] = MARK_BYTE;
-        d->data[p++] = MARK_DATA;
+        d->data[p++] = (deleted & (1u << sect)) ? MARK_DELETED : MARK_DATA;
         if (have) {
             d->fdd->SeekSector(d->track, sect + 1);
             for (int i = 0; i < BK_FDC_SECTOR_SIZE; i++) d->data[p++] = d->fdd->ReadNextByte();
@@ -252,12 +267,14 @@ void BKFDC::encode_track(BKFDCDrive * d)
 // Parses a raw track back into sectors, in the order they lie on the track.
 // Returns false when the stream does not look like a formatted track; the
 // address marks are found by their bytes, the marker flags are not consulted.
-bool BKFDC::decode_track(BKFDCDrive * d, uint8_t * sectors, int &count)
+// A sector with the deleted data mark sets its bit in deleted.
+bool BKFDC::decode_track(BKFDCDrive * d, uint8_t * sectors, int &count, uint16_t &deleted)
 {
     const unsigned int total = BK_FDC_SECTORS * BK_FDC_SECTOR_SIZE;
     unsigned int p = 0;
     unsigned int out = 0;
     count = 0;
+    deleted = 0;
 
     for (;;) {
         while (p < BK_FDC_TRACK_BYTES && d->data[p] == GAP_BYTE) p++;
@@ -280,7 +297,10 @@ bool BKFDC::decode_track(BKFDCDrive * d, uint8_t * sectors, int &count)
         while (p < BK_FDC_TRACK_BYTES && d->data[p] == GAP_BYTE) p++;
         while (p < BK_FDC_TRACK_BYTES && d->data[p] == 0) p++;
         for (int i = 0; i < 3 && p < BK_FDC_TRACK_BYTES && d->data[p] == MARK_BYTE; i++) p++;
-        if (p >= BK_FDC_TRACK_BYTES || d->data[p++] != MARK_DATA) return false;
+        if (p >= BK_FDC_TRACK_BYTES) return false;
+        const uint8_t mark = d->data[p++];
+        if (mark != MARK_DATA && mark != MARK_DELETED) return false;
+        if (mark == MARK_DELETED && out < total) deleted |= (uint16_t)(1u << (out / BK_FDC_SECTOR_SIZE));
 
         if (p + size + 2 > BK_FDC_TRACK_BYTES) return false;
         for (unsigned int i = 0; i < size; i++) {
@@ -316,9 +336,11 @@ void BKFDC::flush_track(BKFDCDrive * d)
 
     uint8_t sectors[BK_FDC_SECTORS * BK_FDC_SECTOR_SIZE];
     int count;
+    uint16_t deleted;
     // A track that does not parse back into sectors is silently dropped:
     // the image keeps what it had, the trace field shows what happened
-    if (!decode_track(d, sectors, count)) return;
+    if (!decode_track(d, sectors, count, deleted)) return;
+    deleted_sectors(d, d->cached_track, d->cached_side) = deleted;
 
     i_side.change((~d->cached_side) & 1);
     for (int s = 0; s < count && s < BK_FDC_SECTORS; s++) {
@@ -643,6 +665,15 @@ void BKFDC::save_state(StateWriter &w)
         w.n("cached_side", static_cast<uint32_t>(d.cached_side));
         w.n("generation", d.generation);
         w.b("valid", d.valid);
+        // Almost always all zero: written only when some sector carries the mark
+        bool any_deleted = false;
+        for (int t = 0; t < BK_FDC_TRACKS && !any_deleted; t++)
+            any_deleted = d.deleted[t][0] != 0 || d.deleted[t][1] != 0;
+        if (any_deleted)
+        {
+            w.n("deleted_generation", d.deleted_generation);
+            w.array("deleted", &d.deleted[0][0], BK_FDC_TRACKS * 2);
+        }
         if (d.valid)
         {
             w.hex("data", d.data, BK_FDC_TRACK_BYTES);
@@ -686,6 +717,10 @@ emulator::Result BKFDC::load_state(const StateReader &r)
         dr.u("cached_side", d.cached_side);
         dr.u("generation", d.generation);
         dr.b("valid", d.valid);
+        memset(d.deleted, 0, sizeof(d.deleted));
+        d.deleted_generation = d.generation;
+        dr.u("deleted_generation", d.deleted_generation);
+        dr.array("deleted", &d.deleted[0][0], BK_FDC_TRACKS * 2);
         if (d.valid)
         {
             dr.hex("data", d.data, BK_FDC_TRACK_BYTES);

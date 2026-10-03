@@ -22,6 +22,7 @@
 #define BK_FDC_SECTOR_SIZE  512
 #define BK_FDC_MAX_TRACK    82          // the head does not go further
 #define BK_FDC_WORDS_PER_S  15625       // 300 rpm, 3125 words per revolution
+#define BK_FDC_TRACKS       (BK_FDC_MAX_TRACK + 1)
 
 // Command register (0177130 write)
 #define BK_FDC_CMD_DRIVES   0x000F      // bits 0-3 select drives 0-3
@@ -52,6 +53,12 @@ struct BKFDCDrive {
     unsigned int generation;            // FDD image generation the buffer was made from
     bool valid;
     bool dirty;                         // written to, not yet stored into the image
+
+    // Sectors written with the deleted data mark (F8), a bit per sector of
+    // each track and side. A flat image has no room for it, so it lives as
+    // long as the image it was written to stays in the drive
+    uint16_t deleted[BK_FDC_TRACKS][2];
+    unsigned int deleted_generation;
 };
 
 class BKFDC : public FDC
@@ -100,7 +107,8 @@ private:
     void crc_byte(uint8_t b);
 
     void encode_track(BKFDCDrive * d);
-    bool decode_track(BKFDCDrive * d, uint8_t * sectors, int &count);
+    bool decode_track(BKFDCDrive * d, uint8_t * sectors, int &count, uint16_t &deleted);
+    uint16_t & deleted_sectors(BKFDCDrive * d, int track, int side);
     void ensure_track(BKFDCDrive * d);
     void flush_track(BKFDCDrive * d);
     void flush_all();

@@ -1,0 +1,34 @@
+# ДВК-3: запись на дискету MX.
+#
+# Контроллер MX пишет дорожку целиком: драйвер сам выдаёт синхрослово, номер
+# дорожки, 11 секторов с суммами и хвост, а запись кончает, сняв разряд
+# WRITE, и сразу пускает контрольное чтение (SET MX VERIFY). Дорожка
+# разбирается обратно в сектора образа. Файл копируется и читается обратно:
+# DIR видит его, TYPE выводит то же, что исходный.
+# @timeout 150
+# @nomcp на экране часы RT-11, а в живой сессии машина успевает поработать до первой команды
+MACHINE "dvk/DVK-3.cfg"
+WAIT _2000
+KEY _100,_50,ret
+WAIT _300
+TYPE "BMX"
+KEY _100,_50,ret
+WAIT _25000
+KEY _100,_50,ret
+WAIT _3000
+TYPE "ASS MX0 DK"
+KEY _100,_50,ret
+WAIT _2000
+TYPE "COPY STARTS.COM TEST.COM"
+KEY _100,_50,ret
+WAIT _10000
+TYPE "TYPE TEST.COM"
+KEY _100,_50,ret
+WAIT _8000
+
+LOGDEFS _16,_8
+LOG mx.writes
+LOG mx.underruns
+PRINT "=== Экран ==="
+LOG display.text
+EXIT

@@ -84,6 +84,15 @@
 #include "emulator/devices/specific/a16m.h"
 #include "emulator/devices/specific/uknc_timer.h"
 #include "emulator/devices/specific/uknc_keyboard.h"
+#include "emulator/devices/specific/ms7004.h"
+#include "emulator/devices/specific/dvk_ksm_display.h"
+#include "emulator/devices/specific/dvk_mx.h"
+#include "emulator/devices/specific/dvk_kgd.h"
+#include "emulator/devices/specific/dvk_dx.h"
+#include "emulator/devices/specific/dvk_lks.h"
+#include "emulator/devices/specific/dvk_panel.h"
+#include "emulator/devices/specific/dvk_kcgd.h"
+#include "emulator/devices/specific/dvk_kmd.h"
 #include "emulator/devices/specific/uknc_sound.h"
 #include "emulator/devices/specific/argo_keyboard.h"
 #include "emulator/devices/specific/argo_memory.h"
@@ -833,7 +842,7 @@ void Emulator::run()
             mice.clear();
             std::vector<ComputerDevice*> mouse_devices = dm->find_devices_by_class("mouse");
             for (size_t i = 0; i < mouse_devices.size(); i++)
-                mice.push_back(dynamic_cast<Mouse*>(mouse_devices[i]));
+                if (HostMouse * m = dynamic_cast<HostMouse*>(mouse_devices[i])) mice.push_back(m);
 
             clock_freq = this->cpu->clock;
 
@@ -1345,7 +1354,7 @@ void Emulator::mouse_event(int dx, int dy, int buttons)
 bool Emulator::has_mouse() const
 {
     for (size_t i = 0; i < mice.size(); i++)
-        if (mice[i]->is_plugged()) return true;
+        if (mice[i]->mouse_plugged()) return true;
     return false;
 }
 
@@ -1517,6 +1526,7 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("65c02", create_wdc65c02);
     dm->register_device("1801vm1", create_k1801vm1);
     dm->register_device("1801vm2", create_k1801vm2);
+    dm->register_device("1801vm3", create_k1801vm3);
     dm->register_device("i8086", create_i8086);
     dm->register_device("i8088", create_i8088);
     dm->register_device("agat-fdc140", create_agat_fdc140);
@@ -1546,6 +1556,17 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("a16m", create_a16m);
     dm->register_device("uknc-timer", create_uknc_timer);
     dm->register_device("uknc-keyboard", create_uknc_keyboard);
+    dm->register_device("ms7004", create_ms7004);
+    dm->register_device("ksm-display", create_ksm_display);
+    dm->register_device("dvk-mx", create_dvk_mx);
+    dm->register_device("dvk-kgd", create_dvk_kgd);
+    dm->register_device("dvk-dx", create_dvk_dx);
+    dm->register_device("dvk-lks", create_dvk_lks);
+    dm->register_device("dvk-panel", create_dvk_panel);
+    dm->register_device("kcgd", create_kcgd);
+    dm->register_device("kcgd-display", create_kcgd_display);
+    dm->register_device("kcgd-mouse", create_kcgd_mouse);
+    dm->register_device("dvk-kmd", create_dvk_kmd);
     dm->register_device("uknc-sound", create_uknc_sound);
     dm->register_device("argo-keyboard", create_argo_keyboard);
     dm->register_device("argo-memory", create_argo_memory);

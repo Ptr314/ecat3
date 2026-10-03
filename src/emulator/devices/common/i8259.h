@@ -16,6 +16,9 @@ private:
     Interface i_int;            // Interrupt output to CPU
     Interface i_inta;           // Interrupt acknowledge from CPU
     Interface i_vector;         // The vector of the last acknowledge, for an 8086
+    Interface i_call;           // The CALL address of the last acknowledge, for an 8080
+
+    void acknowledge(int level);
 
     uint8_t ICW[4];             // Initialization Command Words
     uint8_t OCW[3];             // Operation Command Words

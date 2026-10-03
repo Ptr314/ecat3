@@ -50,6 +50,11 @@ uint8_t I8080Core::int_acknowledge()
     return emulator_device->int_acknowledge();
 }
 
+uint16_t I8080Core::int_call_address()
+{
+    return emulator_device->int_call_address();
+}
+
 //----------------------- Emulator device -----------------------------------
 
 i8080::i8080(InterfaceManager *im, EmulatorConfigDevice *cd):
@@ -58,6 +63,8 @@ i8080::i8080(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_int(this, im, 1, "int", MODE_R)
     , i_inte(this, im, 1, "inte", MODE_W)
     , i_m1(this, im, 1, "m1", MODE_W)
+    , i_inta(this, im, 1, "inta", MODE_W)
+    , i_int_address(this, im, 16, "int_address", MODE_R)
 
 {
     core = new I8080Core(this);
@@ -106,6 +113,8 @@ void i8080::write_port(unsigned int address, unsigned int data)
 void i8080::reset(bool cold)
 {
     CPU::reset(cold);
+    //Lines start at _FFFF: the first acknowledge would not be an edge
+    i_inta.change(0);
 }
 
 void i8080::inte_changed(unsigned int inte)
@@ -118,9 +127,29 @@ bool i8080::int_request()
     return m_int_opcode <= 0xFF && i_int.linked > 0 && (i_int.value & 1) != 0;
 }
 
+emulator::Result i8080::load_config(SystemData *sd)
+{
+    emulator::Result res = CPU::load_config(sd);
+    if (!res) return res;
+    //CALL без адреса ушёл бы на FFFF молча
+    if (m_int_opcode == 0xCD && i_int_address.linked == 0)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "int_opcode = $CD needs ~int_address")) + "} " + name);
+    return emulator::Result::ok();
+}
+
 uint8_t i8080::int_acknowledge()
 {
+    //A ВН59 picks the level to serve on the strobe and answers with the CALL
+    //address on int_address; int_opcode = $CD says the machine has one
+    i_inta.change(1);
+    i_inta.change(0);
     return static_cast<uint8_t>(m_int_opcode);
+}
+
+uint16_t i8080::int_call_address()
+{
+    return static_cast<uint16_t>(i_int_address.value);
 }
 
 void i8080::save_state(StateWriter &w)

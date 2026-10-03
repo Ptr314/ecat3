@@ -1,0 +1,39 @@
+# ДВК-4: RT-11XM с поставочной дискеты MY - 22-разрядный диспетчер памяти
+# под настоящей ОС.
+#
+# Монитор 134 грузит RT-11SJ (BMY0), из неё BOOT MY0:RT11XM перезагружает
+# систему монитором XM (драйвер MYX.SYS с той же дискеты). SHOW CONFIG должна
+# назвать 22-разрядный режим, PDP 11/34, 1024 КБ и диспетчер памяти;
+# SHOW MEMORY - память выше 64 КБ, DIR - что диск читается через MYX.
+# @timeout 180
+# @nomcp часы RT-11 идут от сетевого таймера, а в живой сессии машина успевает поработать до первой команды
+MACHINE "dvk/DVK-4.cfg"
+WAIT _12000
+TYPE "BMY0"
+WAIT _25000
+KEY _100,_50,ret
+WAIT _3000
+TYPE "BOOT MY0:RT11XM"
+KEY _100,_50,ret
+WAIT _20000
+KEY _100,_50,ret
+WAIT _3000
+TYPE "SHOW CONFIG"
+KEY _100,_50,ret
+WAIT _5000
+PRINT "=== SHOW CONFIG ==="
+LOG display.text
+TYPE "SHOW MEMORY"
+KEY _100,_50,ret
+WAIT _5000
+TYPE "DIR"
+KEY _100,_50,ret
+WAIT _8000
+
+LOGDEFS _16,_8
+PRINT "=== MY ==="
+LOG my.dma
+PRINT "=== Экран ==="
+LOG display.text
+SCREEN "../results/boot-dvk4-xm.png"
+EXIT

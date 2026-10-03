@@ -1,0 +1,27 @@
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+
+,; test displeq simwolxnogo:
+
+,;;1234567890- JCUKENG[]ZH: FYWAPROLDV\. Q^SMITXB@,/
+
+,;+!"#$%&'()0= jcukeng{}zh* fywaproldv|> q~smitxb`<?_
+
+,;;1234567890- jcukeng{}zh: fywaproldv|. q~smitxb`,/
+
+,;+!"#$%&'()0=JJCUKENG[]ZH* FYWAPROLDV\>_ Q^SMITXB@<?_
+
+,;-------------------------------------------
+
+,;test pamqti :
+
+,L 791324
+
+,D 3476=1
+
+,S
+
+000000-157776
+pEPEM
+K pPOXOd #   0

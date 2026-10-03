@@ -1,0 +1,71 @@
+# МС7004 и прошивка КСМ: ВР и СУ, нажатые вместе и отпущенные в любом
+# порядке, не должны оставаться нажатыми у терминала. Так Windows переключает
+# раскладку (Ctrl+Shift), и ВР, отпущенный под СУ, раньше залипал: буквы
+# уходили в машину строчными, монитор их не принимал.
+#
+# Прошивка КСМ держит СУ в ячейке 20B3 своего ОЗУ (FF - нажат), ВР - в
+# разряде 0 ячейки 20B4; код «все отпущены» снимает сначала СУ, потом ВР.
+# После каждого порядка нажатий обе должны быть сняты; пока клавиши держат -
+# стоять. В конце набирается команда монитора, и экран показывает её
+# заглавными.
+# @timeout 60
+MACHINE "dvk/DVK-3.cfg"
+WAIT _2000
+KEY _100,_50,ret
+WAIT _300
+LOGDEFS _16,_8
+
+PRINT "=== Ctrl, Shift; отпустить Shift, потом Ctrl ==="
+KEYDOWN ctrl
+WAIT _50
+KEYDOWN shift
+WAIT _50
+LOG ksm-ram.value($B3,$B4)
+KEYUP shift
+WAIT _50
+LOG ksm-ram.value($B3,$B4)
+KEYUP ctrl
+WAIT _50
+LOG ksm-ram.value($B3,$B4)
+
+PRINT "=== Ctrl, Shift; отпустить Ctrl, потом Shift ==="
+KEYDOWN ctrl
+WAIT _50
+KEYDOWN shift
+WAIT _50
+KEYUP ctrl
+WAIT _50
+LOG ksm-ram.value($B3,$B4)
+KEYUP shift
+WAIT _50
+LOG ksm-ram.value($B3,$B4)
+
+PRINT "=== Shift, Ctrl; отпустить Shift, потом Ctrl ==="
+KEYDOWN shift
+WAIT _50
+KEYDOWN ctrl
+WAIT _50
+KEYUP shift
+WAIT _50
+LOG ksm-ram.value($B3,$B4)
+KEYUP ctrl
+WAIT _50
+LOG ksm-ram.value($B3,$B4)
+
+PRINT "=== Shift, Ctrl; отпустить Ctrl, потом Shift ==="
+KEYDOWN shift
+WAIT _50
+KEYDOWN ctrl
+WAIT _50
+KEYUP ctrl
+WAIT _50
+LOG ksm-ram.value($B3,$B4)
+KEYUP shift
+WAIT _50
+LOG ksm-ram.value($B3,$B4)
+
+TYPE "BMX"
+WAIT _500
+PRINT "=== Экран ==="
+LOG display.text
+EXIT

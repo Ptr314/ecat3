@@ -9,6 +9,20 @@
 
 #include "connector.h"
 
+// What the emulator hands the host mouse to: every device of the "mouse"
+// class has it, whatever its hardware - the БК's «Марсианка» below, the
+// counters of the КЦГД (dvk_kcgd.h)
+class HostMouse
+{
+public:
+    virtual ~HostMouse() = default;
+    // Movement in steps, right and down; a negative mask keeps the buttons
+    virtual void move(int dx, int dy, int buttons) = 0;
+    // Whether the machine has it plugged in now (the window captures the
+    // pointer only then)
+    virtual bool mouse_plugged() const = 0;
+};
+
 // A mouse of the УВК-01 «Марсианка» kind. It has no counters: every step of
 // the ball (0.5 mm) sets a flip-flop of its direction, and the flip-flops
 // stay set until the computer pulls the reset line. The buttons are plain
@@ -21,7 +35,7 @@
 // is reset before the program has read it gives its step back, so the program
 // gets every step the host made. The real mouse loses such steps - programs
 // often clear the lines twice a poll - which only makes the pointer lag.
-class Mouse : public PluggableDevice
+class Mouse : public PluggableDevice, public HostMouse
 {
 private:
     Interface i_out;
@@ -65,7 +79,8 @@ public:
 
     // Called by the emulator: movement in steps, buttons as a mask, a negative
     // mask leaves the buttons as they are
-    void move(int dx, int dy, int buttons);
+    void move(int dx, int dy, int buttons) override;
+    bool mouse_plugged() const override { return is_plugged(); }
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

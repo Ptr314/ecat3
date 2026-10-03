@@ -1,0 +1,29 @@
+[mx.writes] &000010
+[mx.underruns] &000000
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+
+.SET SL ON
+
+.ASS MX1 DK
+
+.DAY
+wREMQ           dATA
+00:00:20        26-dEK-2012, sREDA
+
+.ASS MX0 DK
+
+.COPY STARTS.COM TEST.COM
+
+.TYPE TEST.COM
+SET USR NOSWAP
+SET EXIT NOSWAP
+SET TT SCOPE
+SET EM ON
+SET SL ON
+ASS MX1 DK
+DAY
+
+
+.

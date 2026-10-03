@@ -1,0 +1,9 @@
+=== Первая секунда ===
+[panel.phase] 3
+[lks.ticks] 23
+=== Тумблер выключен ===
+[panel.prt] 0
+[lks.ticks] 23
+=== Тумблер включён ===
+[panel.prt] 1
+[lks.ticks] 73

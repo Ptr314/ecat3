@@ -806,7 +806,8 @@ public:
     //cycle, so no strobe, no register cleared by the read, no cancelinit and
     //no timeout left for the instruction being executed. read_mem() is the
     //processor's own access and belongs to the emulation thread only
-    unsigned int peek_mem(unsigned int address);
+    //A processor with its own address translation (the КМ1801ВМ3) overrides it
+    virtual unsigned int peek_mem(unsigned int address);
 
     //The disassembler of this instruction set, for the debugger, which owns it.
     //By default the table-driven one loaded from data_path + disasm_table(); a

@@ -14,3 +14,8 @@ QString pad_string(QString s, QChar c, int len, bool from_left = true);
 unsigned decodeBMP(std::vector<unsigned char>& image, unsigned& w, unsigned& h, const std::vector<unsigned char>& bmp);
 
 std::string md2html(const std::string &md);
+
+class QKeyEvent;
+// The key a host key event stands for, the same under any host layout: a
+// non-Latin character (Russian layout) is replaced by the key of the US layout
+int host_layout_key(const QKeyEvent *event);

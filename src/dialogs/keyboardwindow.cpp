@@ -14,6 +14,7 @@
 #include <QFile>
 
 #include "emulator/script/script_types.h"
+#include "qt_utils.h"
 
 //Highlight of a pressed key. Alpha only: the fill is the accent colour and the
 //shape comes from the key itself, so it works on a keycap of any outline.
@@ -499,13 +500,14 @@ void KeyboardWindow::keyPressEvent(QKeyEvent *event)
 {
     if (event->isAutoRepeat()) { event->ignore(); return; }
 
-    m_e->host_key(event->key(), event->nativeScanCode(), event->modifiers(), true);
-    if (event->key() == EmuKey::Cancel) {
+    const int key = host_layout_key(event);
+    m_e->host_key(key, event->nativeScanCode(), event->modifiers(), true);
+    if (key == EmuKey::Cancel) {
         std::vector<std::string> args;
         args.push_back((event->modifiers() & Qt::AltModifier)?"cold":"soft");
         m_e->record_verb(SCRIPT_CMD_RESET, args);
     } else {
-        m_e->record_key(static_cast<unsigned int>(event->key()), event->nativeScanCode(), true);
+        m_e->record_key(static_cast<unsigned int>(key), event->nativeScanCode(), true);
     }
 }
 
@@ -513,7 +515,7 @@ void KeyboardWindow::keyReleaseEvent(QKeyEvent *event)
 {
     if (event->isAutoRepeat()) { event->ignore(); return; }
 
-    const int key = m_e->host_key(event->key(), event->nativeScanCode(), event->modifiers(), false);
+    const int key = m_e->host_key(host_layout_key(event), event->nativeScanCode(), event->modifiers(), false);
     m_e->record_key(static_cast<unsigned int>(key), event->nativeScanCode(), false);
 }
 

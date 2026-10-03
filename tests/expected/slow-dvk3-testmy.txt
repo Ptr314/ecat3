@@ -1,0 +1,28 @@
+[my.commands] &000065
+=== Экран ===
+[display.text] 
+                             lin  rus  wr             9600  0 0 0  0 0 0  0 0 1
+        t e s t   k m d   i   n g m d
+
+                   ustanowka parametrow
+                   formatirowanie
+              ---> funkcionalxnyj test
+                   zapisx
+                   ~tenie
+                   wybor ustrojstwa
+
+
+
+--------------------------------------------------------------------------------
+test samodiagnostiki.
+wybor dorovki.
+~tenie zagolowka.
+zapisx.
+~tenie.
+~tenie dorovki.
+zapisx s metkoj.
+~tenie s metkoj.
+otrabotka IE.
+otrabotka RESET   prohod  1
+
+

@@ -28,6 +28,7 @@ public:
     virtual void inte_changed(unsigned int inte) override;
     virtual bool int_request() override;
     virtual uint8_t int_acknowledge() override;
+    virtual uint16_t int_call_address() override;
 };
 
 //Emulator class
@@ -38,6 +39,9 @@ private:
     Interface i_int;
     Interface i_inte;
     Interface i_m1;
+    //The acknowledge strobe of a ВН59 and the CALL address it answers with
+    Interface i_inta;
+    Interface i_int_address;
 
     i8080core * core;
 
@@ -52,6 +56,7 @@ public:
     i8080(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~i8080();
     virtual void reset(bool cold) override;
+    emulator::Result load_config(SystemData *sd) override;
     virtual unsigned int execute() override;
     virtual unsigned int read_mem(unsigned int address) override;
     virtual void write_mem(unsigned int address, unsigned int data) override;
@@ -60,6 +65,7 @@ public:
     virtual void inte_changed(unsigned int inte);
     bool int_request();
     uint8_t int_acknowledge();
+    uint16_t int_call_address();
 
     virtual std::vector<std::pair<std::string, std::string>> get_registers() override;
     virtual std::vector<std::pair<std::string, std::string>> get_flags() override;

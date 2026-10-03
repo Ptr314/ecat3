@@ -1,0 +1,27 @@
+# Заводские тесты ВМ3 на ДВК-4: диск тестов ФОДОС (FODOSTMO.DSK), монитор
+# тестов FTMON, цепочка VM3.CCC: основной тест команд CPCAA0, тест
+# прерываний CINAA0, тест памяти CKMBA0 по всему мегабайту.
+#
+# Сетевой таймер выключен тумблером пульта: FTMON переписывает область
+# векторов при разрешённых прерываниях, и тик по уже затёртому вектору 100
+# останавливает машину.
+# @timeout 900
+# @nomcp часы RT-11 и время прогона
+MACHINE "dvk/DVK-4.cfg"
+COMMAND my0.load("FODOSTMO.DSK")
+WAIT _12000
+TYPE "BMY0"
+WAIT _20000
+KEY _100,_50,ret
+WAIT _1000
+TYPE "R FTMON"
+KEY _100,_50,ret
+WAIT _5000
+COMMAND panel.option(1,0)
+TYPE "C VM3"
+KEY _100,_50,ret
+WAIT _360000
+
+PRINT "=== Экран ==="
+LOG display.text
+EXIT

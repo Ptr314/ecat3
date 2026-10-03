@@ -1,0 +1,28 @@
+[my.dma] &012024 &004456
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+Symbol  Status  Value
+------  ------  -----
+^E      auto    SET SL LET
+^       auto    RUN K78
+^H              HELP
+^B      auto    BASIC
+^D              DIR/VOL/FU/BLO
+^T              PRINT
+^P      auto    SET SL PRINT
+^N      auto    SET SL NOPRINT
+^^      auto    DESS
+^L      auto    DEL/LOG/NOQ *.BAK
+---------------------
+Empty bytes: 178.
+
+.COPY STARTS.COM TEST.COM
+
+.TYPE TEST.COM
+SET TT QUIET
+SET SL ON
+SET EDI K52
+
+
+.

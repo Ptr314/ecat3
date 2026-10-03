@@ -59,8 +59,9 @@ void pdp11core::set_reply_delay(unsigned int periods)
 }
 
 pdp11core::pdp11core(int family_type)
-    : has_eis(family_type == PDP11_FAMILY_1801VM2)
+    : has_eis(family_type == PDP11_FAMILY_1801VM2 || family_type == PDP11_FAMILY_1801VM3)
     , has_console(family_type == PDP11_FAMILY_1801VM2)
+    , vm3(family_type == PDP11_FAMILY_1801VM3)
     , vm1_console(family_type == PDP11_FAMILY_1801VM1)
     , is_virq(false)
     , virq_vector(0)
@@ -101,18 +102,29 @@ void pdp11core::reset()
     m_abort = false;
     m_no_trace = false;
 
+    if (vm3) {
+        vm3_reset();
+        return;
+    }
+
     if (start_from_vector) {
-        // Пуск по вектору - это вход в пультовый режим: подача питания
-        // приводит процессор туда же, куда команда HALT, и вектор лежит по
-        // выводу SEL. Режим выставляется ДО чтения вектора и сообщается
-        // наружу сразу: у машины, где от него зависит карта памяти, по этому
-        // адресу ОЗУ появляется только в пультовом режиме
+        // Пуск по вектору у ВМ2: вектор начального пуска читается, как вектор
+        // пультового прерывания, при поднятом SEL - режим выставляется ДО
+        // чтения и сообщается наружу сразу: у машины, где от него зависит
+        // карта памяти, монитор по этому адресу виден только в пульте (ДВК-3).
+        // Дальше режим задаёт разряд 8 взятого PSW (0 - USER, 1 - HALT):
+        // монитор ДВК-3 кладёт туда 740 и работает в пульте, прошивка КЦГД -
+        // 340 и работает обычной программой
         if (has_console) {
             context.halt_mode = true;
             on_halt_mode(true);
         }
         context.R[PDP11::REG_PC] = read_word(start_address);
         context.PSW = read_word(start_address + 2);
+        if (has_console && (context.PSW & 0400) == 0) {
+            context.halt_mode = false;
+            on_halt_mode(false);
+        }
     } else {
         // The БК begins executing straight from the start address with the
         // interrupts masked
@@ -159,11 +171,6 @@ uint16_t pdp11core::get_pc()
     return context.R[PDP11::REG_PC];
 }
 
-uint16_t pdp11core::get_command()
-{
-    return read_word(context.R[PDP11::REG_PC] & 0xFFFE);
-}
-
 // IRQ2/IRQ3 are latched on activation and cleared once served: those inputs
 // carry short pulses from a generator in the configurations, and a purely
 // level sensitive input would drop them between two instructions.
@@ -192,18 +199,23 @@ void pdp11core::set_halt(bool state) { halt_pin = state; if (state) is_halt_req 
 // makes every FOR loop end with "СТОП".
 uint16_t pdp11core::read_word_checked(uint16_t address)
 {
+    if (vm3) return vm3_read(address, false);
     return read_word(address & 0xFFFE);
 }
 
 void pdp11core::write_word_checked(uint16_t address, uint16_t value)
 {
+    if (vm3) { vm3_write(address, value, false); return; }
     write_word(address & 0xFFFE, value);
 }
 
 uint16_t pdp11core::fetch()
 {
+    const bool was = m_abort;
     uint16_t value = read_stream(context.R[PDP11::REG_PC]);
-    context.R[PDP11::REG_PC] += 2;
+    // ВМ3 при аварии на выборке оставляет PC на том слове, которое не
+    // прочиталось: ловушка кладёт в стек его адрес
+    if (!(vm3 && m_abort && !was)) context.R[PDP11::REG_PC] += 2;
     return value;
 }
 
@@ -266,17 +278,27 @@ pdp11operand pdp11core::decode_operand(unsigned int spec, bool is_byte, unsigned
     case 2:                                     // (Rn)+ and #immediate
         op.addr = context.R[reg];
         context.R[reg] += (reg == PDP11::REG_PC)? 2 : step;
+        if (vm3 && reg != PDP11::REG_PC && m_inc_count < 4) {
+            m_inc_reg[m_inc_count] = (uint8_t)reg;
+            m_inc_step[m_inc_count++] = (uint8_t)step;
+        }
         break;
     case 3:                                     // @(Rn)+ and @#absolute
         op.addr = (reg == PDP11::REG_PC) ? read_stream(context.R[reg]) : read_word_checked(context.R[reg]);
         context.R[reg] += 2;
+        if (vm3 && reg != PDP11::REG_PC && m_inc_count < 4) {
+            m_inc_reg[m_inc_count] = (uint8_t)reg;
+            m_inc_step[m_inc_count++] = 2;
+        }
         break;
     case 4:                                     // -(Rn)
         context.R[reg] -= (reg == PDP11::REG_PC)? 2 : step;
         op.addr = context.R[reg];
+        if (vm3 && reg == PDP11::REG_SP) vm3_stack_check();
         break;
     case 5:                                     // @-(Rn)
         context.R[reg] -= 2;
+        if (vm3 && reg == PDP11::REG_SP) vm3_stack_check();
         op.addr = read_word_checked(context.R[reg]);
         break;
     case 6: {                                   // X(Rn), PC-relative when Rn is PC
@@ -299,7 +321,7 @@ uint16_t pdp11core::read_operand(const pdp11operand & op, bool is_byte)
         return is_byte? (uint16_t)(context.R[op.reg] & 0xFF) : context.R[op.reg];
 
     if (op.stream) return is_byte ? (uint16_t)(read_stream(op.addr) & 0xFF) : read_stream(op.addr);
-    if (is_byte) return read_byte(op.addr);
+    if (is_byte) return vm3 ? vm3_read(op.addr, true) : read_byte(op.addr);
     return read_word_checked(op.addr);
 }
 
@@ -311,7 +333,7 @@ void pdp11core::write_operand(const pdp11operand & op, bool is_byte, uint16_t va
         else
             context.R[op.reg] = value;
     } else {
-        if (is_byte) write_byte(op.addr, (uint8_t)value);
+        if (is_byte) { if (vm3) vm3_write(op.addr, value, true); else write_byte(op.addr, (uint8_t)value); }
         else write_word_checked(op.addr, value);
     }
 }
@@ -340,24 +362,47 @@ unsigned int pdp11core::single_op_cycles(const pdp11operand & op, operand_access
 
 void pdp11core::push(uint16_t value)
 {
-    context.R[PDP11::REG_SP] -= 2;
-    write_word_checked(context.R[PDP11::REG_SP], value);
+    uint16_t & sp = stack_reg();
+    sp -= 2;
+    if (vm3) vm3_stack_check();
+    write_word_checked(sp, value);
 }
 
 uint16_t pdp11core::pop()
 {
-    uint16_t value = read_word_checked(context.R[PDP11::REG_SP]);
-    context.R[PDP11::REG_SP] += 2;
+    uint16_t & sp = stack_reg();
+    uint16_t value = read_word_checked(sp);
+    sp += 2;
     return value;
 }
 
 void pdp11core::do_trap(uint16_t vector)
 {
+    if (vm3) { vm3_trap(vector); return; }
     // У ВМ1 тайм-аут при входе в исключение - новое исключение, а не останов.
     // Зависание шины и резервная команда - те исключения, повторный тайм-аут
     // в которых кристалл считает двойной ошибкой
     if (vm1_console) {
         vm1_trap(vector, (vector == PDP11::V_BUS_ERROR || vector == PDP11::V_RESERVED) ? 1 : 0);
+        return;
+    }
+
+    // ВМ2: зависание магистрали в пультовом режиме - переход по вектору пульта
+    // SEL+004 («по зависанию в HALT», так он подписан в исходнике прошивки
+    // КЦГД), без сохранения: пультовая программа работает со стеком прерванной
+    // программы, которого в пультовом пространстве может не быть (эмулятор FIS
+    // монитора ДВК-3 читает операнды по MFPM, и тест 791403 даёт ему адрес
+    // без памяти - запись в стек остановила бы процессор)
+    if (has_console && halt_sel != 0 && context.halt_mode && vector == PDP11::V_BUS_ERROR) {
+        m_trap_vector = vector;
+        m_trap_pc = context.R[PDP11::REG_PC];
+        m_trap_count++;
+        m_abort = false;
+        const uint16_t base = (uint16_t)(halt_sel | 004);
+        context.R[PDP11::REG_PC] = read_word(base);
+        context.PSW = read_word(base + 2);
+        context.halted = false;
+        m_abort = false;
         return;
     }
 
@@ -386,6 +431,8 @@ void pdp11core::do_trap(uint16_t vector)
 
 void pdp11core::enter_halt_mode(uint16_t vector)
 {
+    if (vm3) { (void)vector; vm3_enter_halt(); return; }
+    if (!context.halt_mode) snapshot_history();
     if (vm1_console) {
         // Команда HALT, запрос по nIRQ1 (клавиша СТОП у БК), START/STEP вне
         // пульта: у всех вектор 0160002, а ловушка через 004 получается сама
@@ -486,6 +533,7 @@ void pdp11core::vm1_timeout(int depth)
 // номера процессора
 void pdp11core::vm1_console_entry(uint16_t vector, int depth)
 {
+    snapshot_history();
     m_last_console = true;
     m_step_pending = false;
     m_trap_vector = vector;
@@ -552,6 +600,8 @@ void pdp11core::vm1_console_return(bool step)
 
 bool pdp11core::check_interrupts(unsigned int & cycles)
 {
+    if (vm3) return vm3_interrupts(cycles);
+
     // Авария сети старше пульта и всех устройств. Запрещают её только оба
     // разряда приоритета сразу, как и в UKNCBTL
     // Разряд 10 PSW, который ставит вектор пультового исключения ВМ1,
@@ -649,6 +699,10 @@ bool pdp11core::execute_double(uint16_t command, unsigned int & cycles)
 
     pdp11operand src_op = decode_operand((command >> 6) & 077, is_byte, cycles);
     uint16_t src = read_operand(src_op, is_byte);
+    // ВМ3 бросает команду на сорванном источнике: приёмник не разбирается, и
+    // его автодекремент не случается
+    if (vm3 && m_abort) return true;
+    m_dest = true;
     pdp11operand dst_op = decode_operand(command & 077, is_byte, cycles);
 
     unsigned int kind = op_id & 07;             // 1 MOV, 2 CMP, 3 BIT, 4 BIC, 5 BIS, 6 ADD/SUB
@@ -748,6 +802,7 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
     unsigned int sop = (command >> 6) & 0777;   // the byte flag is masked out here
     bool is_byte = (command & 0100000) != 0;
     unsigned int spec = command & 077;
+    m_dest = true;
 
     uint32_t mask = is_byte? 0xFFu : 0xFFFFu;
     uint16_t sign = is_byte? 0x0080 : 0x8000;
@@ -1234,8 +1289,11 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         context.R[PDP11::REG_PC] = pop();
         context.PSW = pop();
         if (vm1_console) vm1_leave_console_psw();
-        // RTT defers the trace trap until after the next instruction
-        m_no_trace = true;
+        // RTT defers the trace trap until after the next instruction. That
+        // happens by itself: the trace of an instruction is taken from T at its
+        // start. ВМ1 keeps the extra delay of one more instruction it has always
+        // had here - nothing measured on the chip says otherwise yet
+        if (!has_console) m_no_trace = true;
         return true;
     default:
         break;
@@ -1284,6 +1342,11 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
             on_halt_mode(true);
             return true;
         }
+        case 0000020:                                   // R0 <- регистр начального пуска
+            // Безадресное чтение: ответ - регистр платы, не память
+            cycles += C_DATI;
+            context.R[0] = (uint16_t)una_value;
+            return true;
         case 0000022:                                   // MFPC: КРСК -> R0
             cycles += C_ALU;
             context.R[0] = context.console_pc;
@@ -1337,6 +1400,13 @@ unsigned int pdp11core::execute()
     m_last_iako = false;
     if (context.stop) return C_IDLE;
 
+    // У ВМ2 слово состояния - младший байт: признаки, T, приоритет. Разряд 8 -
+    // флаг пультового режима, он у нас отдельный (context.halt_mode), а
+    // старших разрядов у кристалла нет. Слово, загруженное целиком (RTI, вектор,
+    // КРСП при RUN), иначе несло их дальше - в стек ловушки и в КРСП при входе
+    // в пульт: тест FIS 791403 (диск ФОДОС) получал на стеке 004012 вместо 012
+    if (has_console) context.PSW &= 0377;
+
     // Шаг по команде STEP выполняется с маскировкой всех прерываний, так что
     // проверка пропускается: следующая команда - та, на которую указывает PC,
     // и ничто не может встать между ней и возвратом в пультовый режим
@@ -1350,9 +1420,21 @@ unsigned int pdp11core::execute()
     m_no_trace = false;
 
     m_abort = false;
+    if (vm3) {
+        // SR2 - адрес команды, пока авария его не заморозила
+        m_mmu_abort = false;
+        m_psw_written = false;
+        m_yellow = false;
+        m_inc_count = 0;
+        m_dest = false;
+    }
+    const uint16_t fetch_pc = context.R[PDP11::REG_PC];
     m_history[m_history_pos++ & (HISTORY_SIZE - 1)] = context.R[PDP11::REG_PC];
     cycles += C_DATI;                           // reading the instruction
     uint16_t command = fetch();
+    // SR2 - адрес последней удачно выбранной команды, пока авария его не
+    // заморозила (тест 35 FKTHB0)
+    if (vm3 && !m_abort && (m_sr0 & 0160000) == 0) m_sr2 = fetch_pc;
     m_last_command = command;
 
     // FADD/FSUB/FMUL/FDIV у ВМ2 не аппаратные: команда уводит процессор в
@@ -1368,20 +1450,42 @@ unsigned int pdp11core::execute()
     }
 
     bool handled = false;
-    if (!m_abort) {
+    if (vm3 && !m_abort) handled = vm3_execute(command, cycles);
+    if (!handled && !m_abort) {
         handled = execute_double(command, cycles);
         if (!handled) handled = execute_single(command, cycles);
         if (!handled) handled = execute_misc(command, cycles);
     }
+    if (vm3 && m_psw_written && !m_abort) context.PSW = m_psw_value;
+    // ВМ2 и ВМ3, как PDP-11: разряд T, поставленный командой RTI, даёт
+    // ловушку сразу после неё; RTT откладывает её на команду. Для ВМ2 это
+    // проверяет заводской тест КЦГД (KC.SAV, ошибка 15), для ВМ3 - FKABD0
+    if ((vm3 || has_console) && command == 0000002 && get_flag(PDP11::F_T) && !context.halt_mode) trace = true;
+    // Команда-ловушка (BPT, IOT, EMT, TRAP) ловушку трассировки за собой не
+    // тянет (у ВМ3 тест 101 FKABD0, у ВМ2 - 060 теста 791404 диска ФОДОС:
+    // RTT, затем IOT)
+    if ((vm3 || has_console) && (command == 0000003 || command == 0000004 || (command & 0177000) == 0104000)) trace = false;
 
     if (m_abort) {
         cycles += C_TRAP;
+        if (vm3)
+            while (m_inc_count > 0) {
+                m_inc_count--;
+                context.R[m_inc_reg[m_inc_count]] -= m_inc_step[m_inc_count];
+            }
         if (vm1_console) { m_abort = false; vm1_timeout(0); }
+        else if (vm3 && m_mmu_abort) { m_mmu_abort = false; do_trap(PDP11::V_MMU); }
         else do_trap(PDP11::V_BUS_ERROR);
         m_last_trapped = true;
     } else if (!handled) {
         cycles += C_TRAP;
         do_trap(PDP11::V_RESERVED);
+        m_last_trapped = true;
+    } else if (vm3 && m_yellow) {
+        cycles += C_TRAP;
+        m_yellow_trap = true;
+        do_trap(PDP11::V_BUS_ERROR);
+        m_yellow_trap = false;
         m_last_trapped = true;
     } else if (trace) {
         cycles += C_TRAP;

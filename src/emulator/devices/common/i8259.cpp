@@ -18,6 +18,7 @@ I8259::I8259(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_int(this, im, 1, "int", MODE_W)
     , i_inta(this, im, 1, "inta", MODE_R, CALLBACK_INTA)
     , i_vector(this, im, 8, "vector", MODE_W)
+    , i_call(this, im, 16, "call", MODE_W)
 {
     init();
 }
@@ -151,20 +152,32 @@ void I8259::interface_callback(MAYBE_UNUSED unsigned callback_id, const unsigned
             if (highest >= 0) {
                 ISR |= (1 << highest);
                 IRR &= ~(1 << highest);
-                // Place vector on data bus
-                uint8_t vector = (ICW[1] & 0xF8) | highest;
-                i_data.change(vector);
-                //data is an input of the bus side and drives nothing; the
-                //processor takes the vector from this line instead
-                i_vector.change(vector);
-            } else {
-                //Nobody is asking any more (the request went away before the
-                //acknowledge): the 8259 answers with its lowest level
-                i_vector.change((ICW[1] & 0xF8) | 7);
             }
+            //Nobody asking any more (the request went away before the
+            //acknowledge): the 8259 answers with its lowest level
+            acknowledge(highest >= 0 ? highest : 7);
             i_int.change(0);
         }
     }
+}
+
+//What the controller puts on the bus for a level. An 8086 takes a vector
+//number; an 8080 a CALL whose address is the page of ICW2 plus the level at
+//an interval of 4 or 8 (ICW1 bit 2), the low bits coming from ICW1
+void I8259::acknowledge(int level)
+{
+    const uint8_t vector = (ICW[1] & 0xF8) | level;
+    i_data.change(vector);
+    //data is an input of the bus side and drives nothing; the processor takes
+    //the vector from this line instead
+    i_vector.change(vector);
+
+    unsigned int low;
+    if (ICW[0] & 0x04)
+        low = (ICW[0] & 0xE0) | (level << 2);
+    else
+        low = (ICW[0] & 0xC0) | (level << 3);
+    i_call.change((ICW[1] << 8) | low);
 }
 
 void I8259::save_state(StateWriter &w)

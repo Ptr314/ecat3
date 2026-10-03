@@ -1,0 +1,40 @@
+=== Ctrl, Shift; отпустить Shift, потом Ctrl ===
+[ksm-ram.value] &000263: &000377 &000003
+[ksm-ram.value] &000263: &000377 &000002
+[ksm-ram.value] &000263: &000000 &000002
+=== Ctrl, Shift; отпустить Ctrl, потом Shift ===
+[ksm-ram.value] &000263: &000000 &000003
+[ksm-ram.value] &000263: &000000 &000002
+=== Shift, Ctrl; отпустить Shift, потом Ctrl ===
+[ksm-ram.value] &000263: &000377 &000002
+[ksm-ram.value] &000263: &000000 &000002
+=== Shift, Ctrl; отпустить Ctrl, потом Shift ===
+[ksm-ram.value] &000263: &000000 &000003
+[ksm-ram.value] &000263: &000000 &000002
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+ 000000
+@
+@B
+$MX
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
