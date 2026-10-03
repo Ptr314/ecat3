@@ -1,0 +1,26 @@
+=== Сразу после сброса: режим Start ===
+[a16m.mode] &160
+[a16m.layout]         100000: machine
+        110000: machine
+        120000: segment 2
+        130000: segment 3
+        140000: segment 0
+        150000: segment 1
+        160000: rom
+        170000: rom
+        177000: rom
+[cpu.pc] &164102
+=== ПЗУ перешло к дисководу ===
+[a16m.mode] &060
+=== Оболочка ANDOS прочитала каталог ===
+[mapper.value] &000052: &000000
+[a16m.mode] &060
+[a16m.layout]         100000: machine
+        110000: machine
+        120000: segment 2
+        130000: segment 3
+        140000: segment 0
+        150000: segment 1
+        160000: rom
+        170000: none
+        177000: machine

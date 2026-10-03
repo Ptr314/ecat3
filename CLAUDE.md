@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**eCat3** is a universal emulator for retro computers (Orion-128, Radio-86RK, Agat-7, Agat-9, Apogey, Mikrosha, Irisha, and the 16-bit БК0010 / БК0010-01 / БК0011М, the latter two also with the СМК-512 board, and the IBM PC clone Поиск-1) written in C++. The emulator core (`src/emulator/`) is **Qt-free** — it uses only the C++ standard library, making it portable to WebAssembly and other non-Qt targets. The Qt framework is used only for the desktop GUI layer (`src/mainwindow.*`, `src/dialogs/`, `src/renderers/`). The project targets Windows 7+, macOS, and Linux with support for multiple rendering backends (Qt, SDL2, OpenGL).
+**eCat3** is a universal emulator for retro computers (Orion-128, Radio-86RK, Agat-7, Agat-9, Apogey, Mikrosha, Irisha, and the 16-bit БК0010 / БК0010-01 / БК0011М, the latter two also with the СМК-512 board and the А16М floppy controller, and the IBM PC clone Поиск-1) written in C++. The emulator core (`src/emulator/`) is **Qt-free** — it uses only the C++ standard library, making it portable to WebAssembly and other non-Qt targets. The Qt framework is used only for the desktop GUI layer (`src/mainwindow.*`, `src/dialogs/`, `src/renderers/`). The project targets Windows 7+, macOS, and Linux with support for multiple rendering backends (Qt, SDL2, OpenGL).
 
 ## Key Architecture
 

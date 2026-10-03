@@ -1,0 +1,36 @@
+=== Режим и разряды после загрузки состояния ===
+[a16m.register] &000120
+[a16m.mode] &120
+[a16m.read_off] &000001
+[a16m.basic] &000001
+[a16m.layout]         100000: segment 0
+        110000: segment 1
+        120000: machine (basic)
+        130000: machine (basic)
+        140000: machine (basic)
+        150000: machine (basic)
+        160000: machine (basic)
+        170000: machine (basic)
+        177000: machine
+=== 0100000 и 0110000 - сегменты 0 и 1, 0120000 и 0177130 - БЕЙСИК ===
+[mapper.value16] &100000: &012345
+[mapper.value16] &110000: &023456
+[mapper.value16] &120000: &012701
+[mapper.value16] &177130: &012600
+=== Запись 0 в 0177130: БЕЙСИК снят, сегменты 2 и 3 на месте ===
+[a16m.basic] &000000
+[mapper.value16] &120000: &034567
+[mapper.value16] &130000: &045670
+=== Режим Start: ПЗУ платы в 0160000, сегменты 0 и 1 в 0140000 ===
+[a16m.layout]         100000: machine
+        110000: machine
+        120000: segment 2
+        130000: segment 3
+        140000: segment 0
+        150000: segment 1
+        160000: rom
+        170000: rom
+        177000: rom
+[mapper.value16] &140000: &012345
+[mapper.value16] &150000: &023456
+[mapper.value16] &167776: &175044

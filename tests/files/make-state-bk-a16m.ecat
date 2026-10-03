@@ -1,0 +1,39 @@
+# Сборка эталонного снимка состояния для state-bk-a16m.ecat.
+#
+# Запускается руками, а не набором тестов: снимок - это двоичный эталон,
+# который обновляют осознанно. Из каталога deploy/:
+#
+#   eCat3-headless --no-sound --script ../tests/files/make-state-bk-a16m.ecat
+#
+# Плата А16М на БК0010-01 переводится из Start в режим 0120 (ОЗУ10), в ее
+# сегменты 0-3 (0100000-0137777) кладутся образцы, и последней записью в
+# 0177130 ставятся разряды 2 и 3: регистры дисковода закрыты на чтение,
+# подключен БЕЙСИК. Состояние снимается в ../files/state-bk-a16m.ecats.zip.
+# Процессор в этот момент крутится на BR . по 01000, в ОЗУ машины.
+
+MACHINE "bk/BK-0010-01-a16m.ext"
+LOGDEFS _16,_8
+WAIT _500
+
+COMMAND cpu.stop()
+# Дискета не нужна, а снимок унес бы ее образ целиком
+COMMAND fdd0.eject()
+COMMAND ram.set16(1000, 000777)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 1000)
+
+COMMAND mapper.set16(177130, 6)
+COMMAND mapper.set16(177130, 120)
+COMMAND mapper.set16(177130, 0)
+COMMAND mapper.set16(100000, 012345)
+COMMAND mapper.set16(110000, 023456)
+COMMAND mapper.set16(120000, 034567)
+COMMAND mapper.set16(130000, 045670)
+COMMAND mapper.set16(177130, 14)
+LOG a16m.register
+LOG a16m.layout
+
+COMMAND cpu.run()
+WAIT _100
+SAVESTATE "state-bk-a16m.ecats.zip"
+EXIT

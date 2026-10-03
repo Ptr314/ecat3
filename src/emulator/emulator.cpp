@@ -81,6 +81,7 @@
 #include "emulator/devices/specific/uknc_graphics.h"
 #include "emulator/devices/specific/uknc_hdd.h"
 #include "emulator/devices/specific/smk512.h"
+#include "emulator/devices/specific/a16m.h"
 #include "emulator/devices/specific/uknc_timer.h"
 #include "emulator/devices/specific/uknc_keyboard.h"
 #include "emulator/devices/specific/uknc_sound.h"
@@ -1542,6 +1543,7 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("uknc-graphics", create_uknc_graphics);
     dm->register_device("uknc-hdd", create_uknc_hdd);
     dm->register_device("smk512", create_smk512);
+    dm->register_device("a16m", create_a16m);
     dm->register_device("uknc-timer", create_uknc_timer);
     dm->register_device("uknc-keyboard", create_uknc_keyboard);
     dm->register_device("uknc-sound", create_uknc_sound);
