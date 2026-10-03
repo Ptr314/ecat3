@@ -6,7 +6,7 @@
 #include "joystick.h"
 #include "keyboard.h"
 #include "emulator/utils.h"
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 
 Joystick::Joystick(InterfaceManager *im, EmulatorConfigDevice *cd):
     PluggableDevice(im, cd)

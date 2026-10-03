@@ -6,7 +6,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 #include "emulator/utils.h"
 #include "disasm.h"
 

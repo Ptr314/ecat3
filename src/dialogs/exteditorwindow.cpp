@@ -24,7 +24,7 @@
 #include "ui_exteditorwindow.h"
 #include "genericdbgwnd.h"
 #include "emulator/utils.h"
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 // MSVC resolves the "utils.h" inside dsk_tools.h against the includer's
 // directory; the path helpers are in the real one
 #include "libs/dsk_tools/src/utils.h"

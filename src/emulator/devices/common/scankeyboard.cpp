@@ -8,7 +8,7 @@
 #include "emulator/utils.h"
 #include "emulator/config.h"
 #include "scankeyboard.h"
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 
 #define SCAN_CALLBACK 1
 #define LED_CALLBACK 2

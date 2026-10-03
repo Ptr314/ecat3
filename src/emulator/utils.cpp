@@ -16,7 +16,7 @@
 #endif
 
 #include "utils.h"
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 
 std::vector<std::string> split_string(const std::string &s, char delimiter, bool skip_empty)
 {

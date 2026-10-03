@@ -6,7 +6,7 @@
 #include "config.h"
 #include "utils.h"
 
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 
 static emulator::Result config_error(const char * message, const std::string &detail)
 {

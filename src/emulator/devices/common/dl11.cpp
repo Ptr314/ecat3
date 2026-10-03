@@ -5,7 +5,7 @@
 
 #include "dl11.h"
 #include "emulator/utils.h"
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 
 #define REG_RCSR        0
 #define REG_RBUF        1

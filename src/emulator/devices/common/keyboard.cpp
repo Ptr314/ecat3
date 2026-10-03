@@ -5,7 +5,7 @@
 
 #include "keyboard.h"
 #include "emulator/utils.h"
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 
 Keyboard::Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     ComputerDevice(im, cd),

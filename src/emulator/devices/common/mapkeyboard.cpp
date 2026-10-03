@@ -5,7 +5,7 @@
 
 #include "emulator/utils.h"
 #include "mapkeyboard.h"
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 
 MapKeyboard::MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
       Keyboard(im, cd)

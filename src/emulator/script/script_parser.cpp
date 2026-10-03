@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <sstream>
 
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 
 #include "emulator/script/script_parser.h"
 #include "emulator/utils.h"

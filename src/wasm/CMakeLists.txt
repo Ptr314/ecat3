@@ -43,9 +43,9 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
 set(EMU_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../emulator)
 set(LIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../libs)
 
-# dsk_tools as subdirectory
+# dsk_tools as subdirectory; only dsk_tools_core is linked, the rest is not built
 set(ENABLE_DSK_TOOLS OFF CACHE BOOL "Disable command line tools" FORCE)
-add_subdirectory(${LIBS_DIR}/dsk_tools/ ${CMAKE_CURRENT_BINARY_DIR}/dsk_tools)
+add_subdirectory(${LIBS_DIR}/dsk_tools/ ${CMAKE_CURRENT_BINARY_DIR}/dsk_tools EXCLUDE_FROM_ALL)
 
 # Generate globals.h from template
 set(EXTERNAL_Z80 0)
@@ -81,7 +81,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${LIBS_DIR}/dsk_tools/include/
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE dsk_tools)
+target_link_libraries(${PROJECT_NAME} PRIVATE dsk_tools_core)
 
 # Output as ecat3.js + ecat3.wasm
 set_target_properties(${PROJECT_NAME} PROPERTIES

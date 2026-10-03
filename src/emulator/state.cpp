@@ -13,7 +13,7 @@
 #include "core.h"
 #include "utils.h"
 
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 //base64_decode() лежит во внутреннем заголовке dsk_tools, и звать его надо по
 //полному пути: у MSVC "utils.h" из dsk_tools.h попадает в emulator/utils.h,
 //потому что он ищет кавычечный include и по цепочке включающих файлов

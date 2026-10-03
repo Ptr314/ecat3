@@ -5,7 +5,7 @@
 
 #include "uknc_keyboard.h"
 #include "emulator/utils.h"
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 
 #define KEY_RELEASED    0200        // разряд 7 кода означает отпускание
 #define SCAN_SHIFT      0105        // НР, обе клавиши

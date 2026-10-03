@@ -170,7 +170,9 @@ endif()
 
 set(ENABLE_DSK_TOOLS OFF CACHE BOOL "Disable command line tools from the library")
 set(CMAKE_INCLUDE_CURRENT_DIR OFF)
-add_subdirectory(${CMAKE_SOURCE_DIR}/libs/dsk_tools/)
+# Only dsk_tools_core (helpers and track decoders) is linked: EXCLUDE_FROM_ALL keeps the
+# loaders, file systems and viewers of the full library out of the build
+add_subdirectory(${CMAKE_SOURCE_DIR}/libs/dsk_tools/ EXCLUDE_FROM_ALL)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Translations
@@ -365,7 +367,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
-    dsk_tools
+    dsk_tools_core
 )
 
 # The flag is set on this target only: eCat3-headless is built from the same
@@ -493,7 +495,7 @@ if(ENABLE_HEADLESS)
         ${CMAKE_SOURCE_DIR}/libs/dsk_tools/include/
     )
 
-    target_link_libraries(${HEADLESS_TARGET} PRIVATE dsk_tools)
+    target_link_libraries(${HEADLESS_TARGET} PRIVATE dsk_tools_core)
 
     if(WIN32)
         target_link_libraries(${HEADLESS_TARGET} PRIVATE winmm)

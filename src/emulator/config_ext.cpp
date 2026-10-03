@@ -10,7 +10,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 #include "libs/dsk_tools/src/utils.h"
 #include "libs/lodepng/lodepng.h"
 #include "libs/zip_reader.h"

@@ -8,7 +8,7 @@
 #include "emulator.h"
 #include "utils.h"
 
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 #include "libs/dsk_tools/src/utils.h"
 
 namespace {

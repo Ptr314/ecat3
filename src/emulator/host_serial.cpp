@@ -7,7 +7,7 @@
 
 #include <cstring>
 
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 // MSVC resolves the "utils.h" inside dsk_tools.h against the includer's directory,
 // where it finds emulator/utils.h. Pull in the real one explicitly.
 #include "libs/dsk_tools/src/utils.h"

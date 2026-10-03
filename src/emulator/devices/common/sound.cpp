@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include "sound.h"
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 //UTF8_ofstream: see the same pair of includes in core.cpp
 #include "libs/dsk_tools/src/utils.h"
 #include "emulator/utils.h"

@@ -6,7 +6,7 @@
 #include <cstring>
 #include <stdexcept>
 #include "libs/mfm_tools.h"
-#include "dsk_tools/dsk_tools.h"
+#include "dsk_tools/core.h"
 
 const uint8_t gcr62_encode_table[64] =
     {
