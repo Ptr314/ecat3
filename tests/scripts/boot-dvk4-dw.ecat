@@ -4,7 +4,7 @@
 # Монитор 134 грузит так же, как 279: сброс, сектор 1, чтение, проверка NOP.
 # @timeout 150
 # @nomcp в живой сессии машина успевает поработать до первой команды, а загрузка RT-11 зависит от времени
-MACHINE "dvk/DVK-4.cfg"
+MACHINE "../../tests/files/dvk4-ksm.ext"
 COMMAND dw.load("rt11-dw.dsk")
 COMMAND dw.volatile(1)
 WAIT _12000

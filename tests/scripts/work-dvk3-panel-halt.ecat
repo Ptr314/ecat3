@@ -7,6 +7,7 @@
 # 1000G пускает цикл снова.
 # @timeout 60
 MACHINE "dvk/DVK-3.cfg"
+COMMAND monitor.option(0,1)
 WAIT _2000
 KEY _100,_50,ret
 WAIT _300

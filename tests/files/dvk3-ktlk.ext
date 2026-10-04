@@ -1,7 +1,7 @@
 // ДВК-3 с MY и платой КТЛК: второй канал ИРПС на 176560-176566, векторы
 // 320 и 324, первым в цепочке прерываний. Для теста TESTDL с диска ФОДОС
 // (work-dvk3-testdl): заглушка на разъёме - COMMAND tl.plug(1)
-@extends dvk/DVK-3-MY.ext
+@extends dvk/DVK-3.cfg
 @version ДВК-3 с КТЛК (тест)
 
 cpu:~virq = tl.virq

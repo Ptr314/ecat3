@@ -6,7 +6,7 @@
 # MOUSE 5,-3 с левой кнопкой: X = 5, Y = -3 (видно 5), в X горит кнопка.
 # Шаги идут не чаще одного за 4 мс, их дожидается WAITFOR.
 # @timeout 60
-MACHINE "dvk/DVK-3-KCGD.ext"
+MACHINE "../../tests/files/dvk3-kcgd.ext"
 LOGDEFS _16,_8
 WAIT _1000
 MOUSE _5,-_3,1

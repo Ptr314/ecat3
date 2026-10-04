@@ -9,7 +9,7 @@
 # короче дискеты и дополняется нулями: дорожки ВП1-128 строит сама.
 # @timeout 600
 # @nomcp в живой сессии машина успевает поработать до первой команды, а загрузка ФОДОС зависит от времени
-MACHINE "dvk/DVK-3-MY.ext"
+MACHINE "dvk/DVK-3.cfg"
 COMMAND my0.load("FODOSTMO.DSK")
 COMMAND my1.load("../files/my-blank.img")
 WAIT _2000

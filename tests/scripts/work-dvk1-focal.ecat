@@ -1,7 +1,8 @@
 # ДВК-1 с ФОКАЛом (ПЗУ 058): запуск из монитора 140000G, вычисление и
 # программа из одной строки с циклом.
 # @timeout 60
-MACHINE "dvk/DVK-1-FOCAL.ext"
+MACHINE "dvk/DVK-1.cfg"
+COMMAND user-rom.option(0,1)
 WAIT _2000
 KEY _100,_50,ret
 WAIT _300

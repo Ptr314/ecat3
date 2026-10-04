@@ -16,7 +16,7 @@
 # его первом проходе.
 # @timeout 900
 # @nomcp часы RT-11 и время прогона
-MACHINE "dvk/DVK-3-MY.ext"
+MACHINE "dvk/DVK-3.cfg"
 COMMAND my0.load("FODOSTMO.DSK")
 WAIT _2000
 KEY _100,_50,ret

@@ -8,7 +8,8 @@
 # номер и стоит; без ошибок машина выводит «тест КЦГД окончен».
 # @timeout 400
 # @nomcp тест опирается на фазу кадрового прерывания от пуска машины
-MACHINE "dvk/DVK-4-KCGD.ext"
+MACHINE "dvk/DVK-4.cfg"
+COMMAND kcgd-rom.option(0,2)
 COMMAND my0.load("FODOSTMO.DSK")
 WAIT _12000
 TYPE "BMY0"

@@ -4,7 +4,7 @@
 # и «к проход» - конец прохода без ошибок.
 # @timeout 120
 # @nomcp в живой сессии машина успевает поработать до первой команды, а загрузка RT-11 зависит от времени
-MACHINE "dvk/DVK-3-MY.ext"
+MACHINE "dvk/DVK-3.cfg"
 COMMAND my0.load("FODOSTMO.DSK")
 WAIT _2000
 KEY _100,_50,ret

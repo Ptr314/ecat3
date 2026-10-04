@@ -128,10 +128,13 @@ private:
     unsigned m_font_offset = 0;
     unsigned m_font_column = 2;           // первая точка знака в знакоместе
     unsigned m_font_map_offset = 0;
-    uint8_t m_font_map[96] = {};          // код 040-0177 -> номер знака шрифта
+    // Копия шрифта прошивки для screen_text(): берётся из ПЗУ при каждом
+    // чтении, потому что прошивку можно сменить переключателем машины
+    mutable uint8_t m_font_map[96] = {};          // код 040-0177 -> номер знака шрифта
     unsigned m_font_map_h1_offset = 0;
-    uint8_t m_font_map_h1[64] = {};       // кириллица КОИ-7 Н1, коды 0100-0177
-    std::vector<uint8_t> m_font;            // 256 знаков по 10 байт
+    mutable uint8_t m_font_map_h1[64] = {};       // кириллица КОИ-7 Н1, коды 0100-0177
+    mutable std::vector<uint8_t> m_font;            // 256 знаков по 10 байт
+    void load_font() const;
     uint32_t m_colors[64] = {};             // все 64 значения регистра палитры
     unsigned m_channel[3] = {0, 1, 2};      // выход U55/U56/U57 -> R, G, B
 

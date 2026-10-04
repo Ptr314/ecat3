@@ -534,11 +534,16 @@ emulator::Result KCGDDisplay::load_config(SystemData *sd)
     return emulator::Result::ok();
 }
 
-// Шрифт копируется при сбросе: ПЗУ, объявленное после дисплея, к
-// load_config ещё не прочло образ
 void KCGDDisplay::reset(bool cold)
 {
     GenericDisplay::reset(cold);
+}
+
+// Шрифт копируется при чтении текста, а не в load_config: ПЗУ, объявленное
+// после дисплея, к load_config ещё не прочло образ, а переключатель машины
+// меняет прошивку уже после сброса
+void KCGDDisplay::load_font() const
+{
     m_font.assign(KCGD_FONT_SIZE, 0);
     for (unsigned c = 0; c < 96; c++) m_font_map[c] = (uint8_t)(c + 040);
     if (m_font_rom != nullptr) {
@@ -634,6 +639,7 @@ unsigned KCGDDisplay::pixel(unsigned a, unsigned x) const
 // Не найденное в шрифте - точка, пустое место - пробел
 std::string KCGDDisplay::screen_text() const
 {
+    load_font();
     std::string text;
     for (unsigned row = 0; row < 24; row++) {
         unsigned lines[10];

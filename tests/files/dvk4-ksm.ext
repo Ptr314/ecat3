@@ -1,0 +1,107 @@
+// ДВК-4 с терминалом КСМ вместо КЦГД - для тестов: КСМ читается полем
+// display.text, а шрифт прошивки КЦГД 182 нет. Поставочный ДВК-4 - с КЦГД
+@extends dvk/DVK-4.cfg
+@version ДВК-4 с КСМ (тест)
+
+-kcgd-cpu
+-kcgd-rom
+-kcgd
+-kcgd-kbd
+-kcgd-host
+-display
+-mouse
+-keyboard
+-kcgd-mapper
+
+tt:baud = _9600
+tt:~rxd = ksm-line.txd
+
+//=========================== Терминал КСМ =================================//
+
+// Контроллер символьного монитора - отдельная машина на КР580ВМ80А со своим
+// ПЗУ (ksm_04/05), знакогенератором (ksm_03) и 16 КБ видеопамяти. С ДВК
+// его связывает только линия ИРПС; клавиатура МС7004 подключена к нему же.
+ksm-cpu : i8080 {
+	clock = _1540000
+	mapper = ksm-mapper
+	// Прерывания даёт ВН59 в режиме 8080: CALL на 0BC0 + 4 * уровень
+	int_opcode = $CD
+	~int = ksm-pic.int
+	~int_address = ksm-pic.call
+}
+
+ksm-rom : rom {
+	size = _4k
+	image = ksm.rom
+}
+
+ksm-ram : ram {
+	clock_source = ksm-cpu
+	size = _256
+}
+
+ksm-vram : ram {
+	clock_source = ksm-cpu
+	size = _16k
+}
+
+ksm-cg : rom {
+	size = _2k
+	image = ksm_cg.rom
+}
+
+ksm-pic : i8259 {
+	clock_source = ksm-cpu
+	~inta = ksm-cpu.inta
+	~ir[1] = ksm-kbd.rxrdy
+	~ir[3] = ksm-line.rxrdy
+}
+
+// D42 - линия к ДВК, 9600 бод (x16 от генератора скорости)
+ksm-line : i8251 {
+	clock_source = ksm-cpu
+	clock = 1/_12
+	~rxd = tt.txd
+}
+
+// D41 - линия от клавиатуры, 4800 бод
+ksm-kbd : i8251 {
+	clock_source = ksm-cpu
+	clock = 1/_24
+	~rxd = keyboard.data
+}
+
+// D30. Порт A - первая строка кольца видеопамяти на экране, B - переключатели
+// SA1 (1 стоп-бит, без чётности, КОИ-7 Н0/Н1), младшая половина C -
+// переключатели SA2 (9600 бод, без XON/XOFF)
+ksm-ppi : i8255 {
+	clock_source = ksm-cpu
+	~B = 1
+	~CL = 0
+}
+
+display : ksm-display {
+	clock_source = ksm-cpu
+	vram = ksm-vram
+	font = ksm-cg
+	~line = ksm-ppi.A
+}
+
+keyboard : ms7004 {
+	clock_source = ksm-cpu
+	map = ms7004.map
+	use_remap = 0
+	// Символ на 4800 бод - 2,3 мс, 3500 тактов процессора КСМ
+	interval = _3500
+}
+
+ksm-mapper : memory-mapper {
+	@memory[$0000-$0FFF] = ksm-rom {mode = r}
+	@memory[$2000-$20FF] = ksm-ram
+	@memory[$C000-$FFFF] = ksm-vram
+
+	@port[$5E-$5F] = ksm-pic
+	@port[$6E-$6F] = ksm-kbd
+	@port[$76-$77] = ksm-line
+	@port[$78-$7B] = ksm-ppi
+}

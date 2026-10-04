@@ -7,7 +7,7 @@
 # SHOW MEMORY - память выше 64 КБ, DIR - что диск читается через MYX.
 # @timeout 180
 # @nomcp часы RT-11 идут от сетевого таймера, а в живой сессии машина успевает поработать до первой команды
-MACHINE "dvk/DVK-4.cfg"
+MACHINE "../../tests/files/dvk4-ksm.ext"
 WAIT _12000
 TYPE "BMY0"
 WAIT _25000

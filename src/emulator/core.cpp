@@ -1292,13 +1292,67 @@ emulator::Result ROM::load_config(SystemData *sd)
         this->fill = 0xFF;
     }
 
-    const bool repeat = read_confg_value(cd, "repeat", false, false);
-
     std::string image = cd->get_parameter("image", false).value;
+    m_partial = read_confg_value(cd, "partial", false, false);
+    m_image_length = 0;
+
+    // Сменные микросхемы: image_1, image_2, ... Названный в image файл (его
+    // ставит расширение конфигурации) важнее, переключателя тогда нет
+    m_variant_files.clear();
+    m_variant_titles.clear();
+    if (image.empty()) {
+        for (unsigned n = 1; ; n++) {
+            const std::string file = str_trim(cd->get_parameter("image_" + std::to_string(n), false).value);
+            if (file.empty()) break;
+            std::string title = str_trim(cd->get_parameter("title_" + std::to_string(n), false).value);
+            m_variant_files.push_back(file);
+            m_variant_titles.push_back(title.empty() ? file : title);
+        }
+        // Подпись и картинка переключателя пишутся в конфигурации и выводятся
+        // как есть, без перевода, как у connector
+        m_variant_label = str_trim(cd->get_parameter("label", false).value);
+        m_variant_icon = str_trim(cd->get_parameter("icon", false).value);
+        if (m_variant >= m_variant_files.size()) m_variant = 0;
+        if (!m_variant_files.empty()) image = m_variant_files[m_variant];
+    }
 
     if (!image.empty()) {
-
         set_size(parse_numeric_value(cd->get_parameter("size").value));
+        res = load_image(image);
+        if (!res) return res;
+    } else if (!cd->get_parameter("data", false).right_extended.empty()) {
+        std::vector<std::string> values = split_string(cd->get_parameter("data").right_extended, ',', true);
+        set_size(values.size());
+        for (size_t i=0; i<values.size(); i++)
+            buffer[i] = parse_numeric_value(values[i]);
+    } else {
+        // Neither an image nor data: an empty socket of a cartridge, which
+        // answers its fill byte. The size is what the socket takes
+        set_size(parse_numeric_value(cd->get_parameter("size").value));
+        if (!buffer.empty()) memset(buffer.data(), fill, get_size());
+    }
+
+    try {
+        std::string s = str_tolower(cd->get_parameter("mode").value);
+        if ((s == "stream")) rom_mode = ROMMode::Stream;
+        else if ((s == "normal")) rom_mode = ROMMode::Normal;
+        else
+        {
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{ROM|" + std::string(QT_TRANSLATE_NOOP("ROM", "Incorrect mode set for")) + "} " + this->name);
+        }
+    } catch (std::exception &e) {
+        rom_mode = ROMMode::Normal;
+    }
+
+    return emulator::Result::ok();
+}
+
+// The image fills the buffer the size already gave, the rest is the fill byte
+emulator::Result ROM::load_image(const std::string &image)
+{
+    const bool repeat = read_confg_value(cd, "repeat", false, false);
+    {
         if (!buffer.empty()) memset(buffer.data(), fill, get_size());
 
         std::string file_name = find_file_location(sd, image);
@@ -1344,6 +1398,7 @@ emulator::Result ROM::load_config(SystemData *sd)
             if (file.is_open()){
                 file.read(reinterpret_cast<char*>(this->buffer.data()), file_size);
                 file.close();
+                m_image_length = static_cast<unsigned>(file_size);
 
                 // A chip smaller than the area it is mapped to repeats itself when
                 // the high address lines are left undecoded. That is a property of
@@ -1361,32 +1416,56 @@ emulator::Result ROM::load_config(SystemData *sd)
                     "{ROM|" + std::string(QT_TRANSLATE_NOOP("ROM", "Can't open ROM image file")) + "} " + file_name);
             }
         }
-    } else if (!cd->get_parameter("data", false).right_extended.empty()) {
-        std::vector<std::string> values = split_string(cd->get_parameter("data").right_extended, ',', true);
-        set_size(values.size());
-        for (size_t i=0; i<values.size(); i++)
-            buffer[i] = parse_numeric_value(values[i]);
-    } else {
-        // Neither an image nor data: an empty socket of a cartridge, which
-        // answers its fill byte. The size is what the socket takes
-        set_size(parse_numeric_value(cd->get_parameter("size").value));
-        if (!buffer.empty()) memset(buffer.data(), fill, get_size());
     }
-
-    try {
-        std::string s = str_tolower(cd->get_parameter("mode").value);
-        if ((s == "stream")) rom_mode = ROMMode::Stream;
-        else if ((s == "normal")) rom_mode = ROMMode::Normal;
-        else
-        {
-            return emulator::Result::error(emulator::ErrorCode::ConfigError,
-                "{ROM|" + std::string(QT_TRANSLATE_NOOP("ROM", "Incorrect mode set for")) + "} " + this->name);
-        }
-    } catch (std::exception &e) {
-        rom_mode = ROMMode::Normal;
-    }
-
     return emulator::Result::ok();
+}
+
+#define ROM_OPTION_VARIANT  0
+
+DeviceOptions ROM::get_device_options()
+{
+    if (m_variant_files.size() < 2) return {};
+    DeviceOption opt;
+    opt.id = ROM_OPTION_VARIANT;
+    opt.type = DEVICE_OPTION_DROPDOWN;
+    opt.title = m_variant_label.empty() ? std::string(QT_TRANSLATE_NOOP("DeviceOptions", "ROM")) : m_variant_label;
+    opt.icon = m_variant_icon;
+    for (size_t i = 0; i < m_variant_titles.size(); i++)
+        opt.values.push_back({static_cast<unsigned>(i), m_variant_titles[i]});
+    opt.current = m_variant;
+    return {opt};
+}
+
+// The chip is swapped at once, as with the power off: what was running from
+// the old one goes on with the new contents, and the machine is restarted by
+// its power button. A saved state restores the choice before anything runs
+void ROM::set_device_option(unsigned option_id, unsigned value_id)
+{
+    if (option_id != ROM_OPTION_VARIANT || value_id >= m_variant_files.size()) return;
+    if (value_id == m_variant) return;
+    const unsigned old = m_variant;
+    m_variant = value_id;
+    if (!load_image(m_variant_files[m_variant])) {
+        m_variant = old;
+        load_image(m_variant_files[m_variant]);
+    }
+    // A shorter image leaves more of the window empty: the mappers resolve
+    // their pages again
+    if (m_partial)
+        for (unsigned int i = 0; i < im->dm->device_count; i++) {
+            MemoryMapper * mm = dynamic_cast<MemoryMapper*>(im->dm->get_device(i)->device.get());
+            if (mm != nullptr) mm->routing_changed();
+        }
+}
+
+// Past the end of the image of a partial ROM the sockets are empty: the
+// address is left to the ranges after this one, and with none there the bus
+// times out
+unsigned int ROM::route(unsigned int address, unsigned int mode)
+{
+    (void)mode;
+    if (m_partial && address >= m_image_length) return ROUTE_PASS;
+    return ROUTE_ANSWER;
 }
 
 unsigned int ROM::get_value(unsigned int address)
