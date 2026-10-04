@@ -41,7 +41,7 @@
 // пишут DW.SYS (сектор = (блок + 1) & 15) и мониторы 279 и 134 (загрузка
 // читает сектор 1 - блок 0). Образ - блоки подряд, блок = (цилиндр * 4 +
 // головка) * 16 + сектор - 1, как DW_System54.DSK эмулятора Патронова.
-class DVKDW: public AddressableDevice
+class DVKDW: public AddressableDevice, public HddImageOwner
 {
 private:
     Interface i_virq;
@@ -118,6 +118,8 @@ private:
 
 public:
     std::string files;
+    HddImage & hdd_image() override { return m_image; }
+    const std::string & hdd_files() const override { return files; }
 
     DVKDW(InterfaceManager *im, EmulatorConfigDevice *cd);
 

@@ -39,6 +39,9 @@ private:
     bool m_prt = false;         // тумблер «Прерывания»
     unsigned int m_prt_half = 1;    // полпериода ПРТ в тактах
     unsigned int m_prt_ticks = 0;
+    // Картинки тумблеров на панели инструментов (файлы машины)
+    std::string m_halt_icon;
+    std::string m_prt_icon;
 
     unsigned int m_pg_ticks = 1;
     unsigned int m_aip_ticks = 1;

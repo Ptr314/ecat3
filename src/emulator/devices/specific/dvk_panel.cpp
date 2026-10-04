@@ -39,6 +39,8 @@ emulator::Result DVKPanel::load_config(SystemData *sd)
     // Положение тумблеров при включении; потом их переключают на панели
     m_halt = read_confg_value(cd, "halt", false, false);
     m_prt = read_confg_value(cd, "prt", false, false);
+    m_halt_icon = str_trim(cd->get_parameter("halt_icon", false).value);
+    m_prt_icon = str_trim(cd->get_parameter("prt_icon", false).value);
     i_ost.change(m_halt ? 0 : 1);
     i_prt.change(0);
     m_prt_ticks = 0;
@@ -122,7 +124,7 @@ DeviceOptions DVKPanel::get_device_options()
 {
     return {
         {
-            OPTION_HALT, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Panel switch \"Halt\""), "",
+            OPTION_HALT, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Panel switch \"Halt\""), m_halt_icon,
             {
                 {0, QT_TRANSLATE_NOOP("DeviceOptions", "Run")},
                 {1, QT_TRANSLATE_NOOP("DeviceOptions", "Halt")}
@@ -130,7 +132,7 @@ DeviceOptions DVKPanel::get_device_options()
             static_cast<unsigned>(m_halt ? 1 : 0)
         },
         {
-            OPTION_PRT, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Line clock 50 Hz"), "",
+            OPTION_PRT, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Line clock 50 Hz"), m_prt_icon,
             {
                 {0, QT_TRANSLATE_NOOP("DeviceOptions", "Interrupts off")},
                 {1, QT_TRANSLATE_NOOP("DeviceOptions", "Interrupts on")}

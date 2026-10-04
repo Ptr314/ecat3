@@ -44,7 +44,7 @@
 // 110010 - разряды 0-7, 110006 - 8-15, 110004 - 16-23, младшая тетрада 110002 -
 // 24-27. Драйвер приезжает вместе с диском, а не лежит в ПЗУ платы, поэтому на
 // одной и той же плате один образ работает по цилиндрам, а другой линейно.
-class UKNCHDD: public AddressableDevice
+class UKNCHDD: public AddressableDevice, public HddImageOwner
 {
 private:
     // Файл образа: открытие, защита от записи, запись в память вместо файла,
@@ -112,6 +112,8 @@ private:
 
 public:
     std::string files;
+    HddImage & hdd_image() override { return m_image; }
+    const std::string & hdd_files() const override { return files; }
 
     UKNCHDD(InterfaceManager *im, EmulatorConfigDevice *cd);
     ~UKNCHDD();

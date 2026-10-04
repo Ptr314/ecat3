@@ -18,6 +18,8 @@
 #include <share.h>
 #endif
 
+HddImage::SourceFactory HddImage::source_factory = nullptr;
+
 HddImage::~HddImage()
 {
     close();
@@ -40,6 +42,24 @@ static std::FILE * open_file(const std::string &file_name, bool for_write)
 bool HddImage::open(const std::string &file_name, std::string &error)
 {
     close();
+
+    if (source_factory != nullptr) {
+        std::unique_ptr<HddSource> source = source_factory(file_name);
+        if (source) {
+            const uint64_t size = source->size();
+            if (size == 0 || (size % SECTOR_SIZE) != 0) {
+                error = "size";
+                return false;
+            }
+            compat_lock_guard lock(m_mutex);
+            close_locked();
+            m_source = std::move(source);
+            m_file_name = file_name;
+            m_size = size;
+            m_read_only = true;
+            return true;
+        }
+    }
 
     bool read_only = false;
     std::FILE * f = open_file(file_name, true);
@@ -76,6 +96,7 @@ void HddImage::close_locked()
         std::fclose(m_file);
         m_file = nullptr;
     }
+    m_source.reset();
     m_file_name.clear();
     m_size = 0;
     m_overlay.clear();
@@ -97,12 +118,14 @@ void HddImage::set_volatile(bool on)
 bool HddImage::read(uint64_t offset, uint8_t * buffer)
 {
     compat_lock_guard lock(m_mutex);
-    if (m_file == nullptr || offset + SECTOR_SIZE > m_size || offset > 0x7FFFFFFFull) return false;
+    if (!attached() || offset + SECTOR_SIZE > m_size) return false;
     const auto kept = m_overlay.find(offset);
     if (kept != m_overlay.end()) {
         memcpy(buffer, kept->second.data(), SECTOR_SIZE);
         return true;
     }
+    if (m_source) return m_source->read(offset, buffer, SECTOR_SIZE);
+    if (offset > 0x7FFFFFFFull) return false;
     if (std::fseek(m_file, (long)offset, SEEK_SET) != 0) return false;
     return std::fread(buffer, 1, SECTOR_SIZE, m_file) == SECTOR_SIZE;
 }
@@ -110,9 +133,10 @@ bool HddImage::read(uint64_t offset, uint8_t * buffer)
 bool HddImage::write(uint64_t offset, const uint8_t * buffer)
 {
     compat_lock_guard lock(m_mutex);
-    if (m_file == nullptr || m_write_protect || offset + SECTOR_SIZE > m_size) return false;
-    if (m_volatile) {
-        // Файл только на чтение этому не мешает: в него ничего не пишется
+    if (!attached() || m_write_protect || offset + SECTOR_SIZE > m_size) return false;
+    if (m_volatile || m_source) {
+        // Файл только на чтение этому не мешает: в него ничего не пишется.
+        // Внешний источник иначе и не пишется
         memcpy(m_overlay[offset].data(), buffer, SECTOR_SIZE);
         return true;
     }
@@ -123,19 +147,41 @@ bool HddImage::write(uint64_t offset, const uint8_t * buffer)
     return true;
 }
 
-void HddImage::save_state(StateWriter &w, const char * key, const std::string &device_name)
+//The image with the written sectors already merged in: byte for byte what
+//the guest sees, which the file on disk may never have had
+bool HddImage::contents_locked(std::vector<uint8_t> &image)
 {
-    //The image with the written sectors already merged in: byte for byte
-    //what the guest sees, which the file on disk may never have had
-    compat_lock_guard lock(m_mutex);
-    if (m_file == nullptr || m_size == 0) return;
-    std::vector<uint8_t> image(static_cast<size_t>(m_size), 0);
-    std::fseek(m_file, 0, SEEK_SET);
-    if (std::fread(image.data(), 1, image.size(), m_file) != image.size()) return;
+    if (!attached() || m_size == 0) return false;
+    image.assign(static_cast<size_t>(m_size), 0);
+    if (m_source) {
+        //In pieces, so that one request does not hold the source for long
+        const size_t piece = 1024 * 1024;
+        for (size_t p = 0; p < image.size(); p += piece) {
+            const size_t n = (image.size() - p < piece) ? image.size() - p : piece;
+            if (!m_source->read(p, image.data() + p, n)) return false;
+        }
+    } else {
+        std::fseek(m_file, 0, SEEK_SET);
+        if (std::fread(image.data(), 1, image.size(), m_file) != image.size()) return false;
+    }
     for (std::map<uint64_t, std::array<uint8_t, SECTOR_SIZE>>::const_iterator it = m_overlay.begin();
          it != m_overlay.end(); ++it)
         if (it->first + SECTOR_SIZE <= image.size())
             memcpy(image.data() + it->first, it->second.data(), SECTOR_SIZE);
+    return true;
+}
+
+bool HddImage::contents(std::vector<uint8_t> &image)
+{
+    compat_lock_guard lock(m_mutex);
+    return contents_locked(image);
+}
+
+void HddImage::save_state(StateWriter &w, const char * key, const std::string &device_name)
+{
+    compat_lock_guard lock(m_mutex);
+    std::vector<uint8_t> image;
+    if (!contents_locked(image)) return;
     w.blob(key, dsk_tools::get_filename(m_file_name.empty() ? (device_name + ".img") : m_file_name),
            image.data(), image.size());
 }

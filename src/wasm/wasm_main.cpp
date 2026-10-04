@@ -10,12 +10,17 @@
 #include <string>
 #include <fstream>
 #include <stdexcept>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <vector>
 
 #include "emulator/emulator.h"
 #include "emulator/config_ext.h"
 #include "emulator/files.h"
 #include "emulator/devices/common/fdd.h"
 #include "emulator/devices/common/tape.h"
+#include "emulator/devices/common/hdd_image.h"
 #include "dsk_tools/core.h"
 //Часть помощников dsk_tools объявлена в его внутреннем заголовке, и звать
 //его надо по полному пути: короткий "utils.h" из dsk_tools.h у MSVC попадает
@@ -40,6 +45,212 @@ static const std::string DATA_PATH = "/data/";
 static const std::string SOFTWARE_PATH = "/software/";
 static const std::string INI_FILE = "/ecat.ini";
 
+// ============================================================================
+// Hard disk images from the visitor's computer
+// ============================================================================
+//
+// A hard disk image can be hundreds of megabytes, and MEMFS is the tab's
+// memory, so a picked image is not copied into it. The page hands the File to
+// a worker of its own (hostFileWorker in ecat_wasm.js) together with the wasm
+// memory and a mailbox in it, and the worker reads what is asked for with
+// FileReaderSync, straight into the asker's buffer. The asker is whatever
+// thread reads the disk: the emulation thread, or the browser's main thread
+// when a controller looks at the image while it is being attached. None of
+// them needs the main thread's event loop, so none of them can deadlock on
+// it; the main thread waits by spinning, as emscripten_futex_wait does there.
+// Nothing is ever written to the file: HddImage keeps the writes in memory.
+//
+// The mailbox, 32-bit words:
+//   [0] request  sequence number, raised by the asker
+//   [1] done     sequence number of the request answered
+//   [2] length   bytes to read; -1 tells the worker to stop
+//   [3] buffer   address in the wasm memory
+//   [4] [5]      offset, low and high word
+//   [6] result   bytes read, -1 on an error
+
+class HostFile
+{
+public:
+    HostFile(uint64_t size) : m_size(size)
+    {
+        m_box = static_cast<int32_t*>(calloc(8, sizeof(int32_t)));
+    }
+    ~HostFile()
+    {
+        // The worker answers the stop and closes itself. The mailbox is freed
+        // only once it has answered: a worker still looking at it would take
+        // whatever the memory gets reused for as a request
+        const int32_t seq = post(0, nullptr, -1);
+        const double deadline = emscripten_get_now() + 1000.0;
+        while (__atomic_load_n(&m_box[1], __ATOMIC_SEQ_CST) != seq) {
+            if (emscripten_get_now() > deadline) return;
+            emscripten_futex_wait(&m_box[1], (uint32_t)(seq - 1), 100.0);
+        }
+        free(m_box);
+    }
+
+    uint64_t size() const { return m_size; }
+    int32_t * box() { return m_box; }
+
+    bool read(uint64_t offset, uint8_t * buffer, size_t length)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (offset + length > m_size) return false;
+        while (length > 0) {
+            const uint64_t base = offset - offset % BLOCK;
+            const size_t from = (size_t)(offset - base);
+            size_t n = BLOCK - from;
+            if (n > length) n = length;
+            if (from == 0 && length >= BLOCK) {
+                // Whole blocks go straight to the asker, past the cache
+                n = length - length % BLOCK;
+                if (!request(offset, buffer, n)) return false;
+            } else {
+                const std::vector<uint8_t> * block = cached(base);
+                if (block == nullptr) return false;
+                memcpy(buffer, block->data() + from, n);
+            }
+            offset += n;
+            buffer += n;
+            length -= n;
+        }
+        return true;
+    }
+
+private:
+    // Sectors are read one at a time, and each request is a round trip to
+    // another thread: a few blocks are kept instead
+    static const size_t BLOCK = 64 * 1024;
+    static const size_t BLOCKS = 16;
+
+    int32_t * m_box;
+    uint64_t m_size;
+    std::mutex m_mutex;
+    bool m_broken = false;
+    std::vector<uint64_t> m_bases;
+    std::vector<std::vector<uint8_t>> m_blocks;
+    size_t m_next = 0;
+
+    const std::vector<uint8_t> * cached(uint64_t base)
+    {
+        for (size_t i = 0; i < m_bases.size(); i++)
+            if (m_bases[i] == base) return &m_blocks[i];
+        size_t slot;
+        if (m_bases.size() < BLOCKS) {
+            slot = m_bases.size();
+            m_bases.push_back(base);
+            m_blocks.push_back(std::vector<uint8_t>());
+        } else {
+            slot = m_next;
+            m_next = (m_next + 1) % BLOCKS;
+        }
+        const size_t n = (m_size - base < BLOCK) ? (size_t)(m_size - base) : BLOCK;
+        m_blocks[slot].assign(n, 0);
+        m_bases[slot] = base;
+        if (!request(base, m_blocks[slot].data(), n)) {
+            m_bases[slot] = UINT64_MAX;
+            return nullptr;
+        }
+        return &m_blocks[slot];
+    }
+
+    int32_t post(uint64_t offset, uint8_t * buffer, int32_t length)
+    {
+        const int32_t seq = __atomic_load_n(&m_box[0], __ATOMIC_SEQ_CST) + 1;
+        m_box[2] = length;
+        m_box[3] = (int32_t)(uintptr_t)buffer;
+        m_box[4] = (int32_t)(uint32_t)(offset & 0xFFFFFFFFu);
+        m_box[5] = (int32_t)(uint32_t)(offset >> 32);
+        m_box[6] = 0;
+        __atomic_store_n(&m_box[0], seq, __ATOMIC_SEQ_CST);
+        emscripten_futex_wake(&m_box[0], 1);
+        return seq;
+    }
+
+    bool request(uint64_t offset, uint8_t * buffer, size_t length)
+    {
+        if (m_broken) return false;
+        const int32_t seq = post(offset, buffer, (int32_t)length);
+        // A worker that does not answer (the page closed it, the file went
+        // away) must not hang the machine: the image just stops reading
+        const double deadline = emscripten_get_now() + 10000.0;
+        while (__atomic_load_n(&m_box[1], __ATOMIC_SEQ_CST) != seq) {
+            if (emscripten_get_now() > deadline) {
+                m_broken = true;
+                return false;
+            }
+            emscripten_futex_wait(&m_box[1], (uint32_t)(seq - 1), 100.0);
+        }
+        return __atomic_load_n(&m_box[6], __ATOMIC_SEQ_CST) == (int32_t)length;
+    }
+};
+
+class HostFileSource: public HddSource
+{
+public:
+    explicit HostFileSource(const std::shared_ptr<HostFile> &file) : m_file(file) {}
+    uint64_t size() const override { return m_file->size(); }
+    bool read(uint64_t offset, uint8_t * buffer, size_t length) override
+    {
+        return m_file->read(offset, buffer, length);
+    }
+private:
+    std::shared_ptr<HostFile> m_file;
+};
+
+// Files the page has handed over and no controller has taken yet. A
+// controller takes its file out of the list: the file then lives as long as
+// the image, and its worker stops with it
+static std::map<int, std::shared_ptr<HostFile>> g_host_files;
+static std::mutex g_host_files_mutex;
+static int g_host_file_next = 1;
+
+static const char HOST_FILE_PREFIX[] = "/host/";
+
+// "/host/<id>/<name>" is a file of the list, anything else is not
+static std::unique_ptr<HddSource> host_file_source(const std::string &file_name)
+{
+    const size_t prefix = sizeof(HOST_FILE_PREFIX) - 1;
+    if (file_name.compare(0, prefix, HOST_FILE_PREFIX) != 0) return std::unique_ptr<HddSource>();
+    const int id = atoi(file_name.c_str() + prefix);
+    std::lock_guard<std::mutex> lock(g_host_files_mutex);
+    auto it = g_host_files.find(id);
+    if (it == g_host_files.end()) return std::unique_ptr<HddSource>();
+    std::unique_ptr<HddSource> source(new HostFileSource(it->second));
+    g_host_files.erase(it);
+    return source;
+}
+
+// A hard disk controller by its device name
+static HddImageOwner * wasm_hdd(const char * name)
+{
+    if (!g_emulator || !g_emulator->loaded || g_emulator->dm == nullptr || name == nullptr) return nullptr;
+    return dynamic_cast<HddImageOwner*>(g_emulator->dm->get_device_by_name(std::string(name), false));
+}
+
+// A device command on the emulation thread: the controller resets itself on
+// a new image, which must not happen under the running processor
+static int wasm_hdd_command(const char * name, const std::string &command, const std::string &parameters)
+{
+    HddImageOwner * hdd = wasm_hdd(name);
+    if (hdd == nullptr) return -2;
+    ComputerDevice * device = dynamic_cast<ComputerDevice*>(hdd);
+    int code = 0;
+    try {
+        g_emulator->invoke([&]() {
+            emulator::Result res = device->send_command(command, parameters);
+            if (!res) {
+                g_load_error = res.message;
+                code = -4;
+            }
+        });
+    } catch (const std::exception &e) {
+        g_load_error = e.what();
+        code = -4;
+    }
+    return code;
+}
+
 int main()
 {
     printf("eCat3 WASM: initializing...\n");
@@ -48,6 +259,8 @@ int main()
     g_emulator = new Emulator(WORK_PATH, DATA_PATH, SOFTWARE_PATH, INI_FILE, g_renderer);
     // Inline data of a configuration and unpacked .ext.zip archives, in MEMFS
     g_emulator->cache_path = "/tmp/ecat3-cache/";
+    // Hard disk images picked on the visitor's computer, read where they lie
+    HddImage::source_factory = host_file_source;
 
     printf("eCat3 WASM: ready. Waiting for machine selection.\n");
 
@@ -645,6 +858,112 @@ int wasm_load_file(const char* device_name, const char* file_path)
 
     printf("eCat3 WASM: loaded disk image '%s' into %s\n", file_path, device_name);
     return 0;
+}
+
+// A file of the visitor's computer, of the given size, is about to be read by
+// a worker of the page. Answers its number; the image is then attached as
+// "/host/<number>/<name>". The page gives the worker the wasm memory, which
+// only code inside the module sees, and the mailbox
+EMSCRIPTEN_KEEPALIVE
+int wasm_host_file_create(double size)
+{
+    if (size <= 0) return 0;
+    EM_ASM({ Module.ecatMemory = wasmMemory; });
+    std::lock_guard<std::mutex> lock(g_host_files_mutex);
+    const int id = g_host_file_next++;
+    g_host_files[id] = std::make_shared<HostFile>((uint64_t)size);
+    return id;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_host_file_box(int id)
+{
+    std::lock_guard<std::mutex> lock(g_host_files_mutex);
+    auto it = g_host_files.find(id);
+    return (it == g_host_files.end()) ? 0 : (int)(uintptr_t)it->second->box();
+}
+
+// The page is done with the attach: a file no controller took is dropped,
+// which stops its worker
+EMSCRIPTEN_KEEPALIVE
+void wasm_host_file_release(int id)
+{
+    std::shared_ptr<HostFile> file;
+    {
+        std::lock_guard<std::mutex> lock(g_host_files_mutex);
+        auto it = g_host_files.find(id);
+        if (it == g_host_files.end()) return;
+        file = it->second;
+        g_host_files.erase(it);
+    }
+}
+
+// One line per hard disk of the machine, tab separated:
+//   name  loaded  protected  file_name  files
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_hdd_info()
+{
+    static std::string result;
+    result.clear();
+    if (!g_emulator || !g_emulator->loaded || g_emulator->dm == nullptr) return result.c_str();
+
+    std::vector<ComputerDevice*> devices = g_emulator->dm->find_devices_by_class("hdd");
+    for (size_t i = 0; i < devices.size(); i++) {
+        HddImageOwner * owner = dynamic_cast<HddImageOwner*>(devices[i]);
+        if (owner == nullptr) continue;
+        HddImage &image = owner->hdd_image();
+        std::string file = image.attached() ? image.file_name() : "";
+        for (size_t j = 0; j < file.size(); j++)
+            if (file[j] == '\t' || file[j] == '\n') file[j] = ' ';
+        std::string files = owner->hdd_files();
+        for (size_t j = 0; j < files.size(); j++)
+            if (files[j] == '\t' || files[j] == '\n') files[j] = ' ';
+        result += devices[i]->name + "\t"
+                + (image.attached() ? "1" : "0") + "\t"
+                + (image.write_protect() ? "1" : "0") + "\t"
+                + file + "\t"
+                + files + "\n";
+    }
+    return result.c_str();
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_hdd_load(const char* device_name, const char* file_path)
+{
+    if (file_path == nullptr) return -2;
+    std::string path(file_path);
+    for (size_t i = 0; i < path.size(); i++)
+        if (path[i] == '"' || path[i] == ',') path[i] = '_';
+    g_load_error.clear();
+    return wasm_hdd_command(device_name, "load", "\"" + path + "\"");
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_hdd_eject(const char* device_name)
+{
+    return wasm_hdd_command(device_name, "eject", "");
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_hdd_protect(const char* device_name, int on)
+{
+    return wasm_hdd_command(device_name, "protect", on ? "1" : "0");
+}
+
+// The image as the machine sees it, written sectors included, into a file of
+// the virtual FS for the page to hand to the browser
+EMSCRIPTEN_KEEPALIVE
+int wasm_hdd_save(const char* device_name, const char* file_path)
+{
+    HddImageOwner * hdd = wasm_hdd(device_name);
+    if (hdd == nullptr || file_path == nullptr) return -2;
+    if (!hdd->hdd_image().attached()) return -3;
+    std::vector<uint8_t> image;
+    if (!hdd->hdd_image().contents(image)) return -4;
+    std::ofstream out(file_path, std::ios::binary);
+    if (!out) return -4;
+    out.write(reinterpret_cast<const char*>(image.data()), (std::streamsize)image.size());
+    return out ? 0 : -4;
 }
 
 } // extern "C"

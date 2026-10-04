@@ -432,6 +432,8 @@ const I18N = {
         kbdAutoTitle:       "Size by the width of the screen",
         drive:              "Drive {0}",
         noDisk:             "No disk",
+        hardDisk:           "Hard disk {0}",
+        hddNote:            "The image is read from your computer; writes stay in the browser, the file is not changed",
         load:               "Load",
         save:               "Save",
         eject:              "Eject",
@@ -465,6 +467,7 @@ const I18N = {
         stDiskSaved:        "Disk image saved: {0}",
         stSaveFailed:       "Failed to save disk image (error {0})",
         stSaveUnsupported:  "This drive cannot save its image as {0}",
+        stHddFailed:        "Failed to attach the hard disk image: {0}",
         tape:               "Tape recorder",
         tapeEmpty:          "No tape",
         tapeRecording:      "Recording",
@@ -530,6 +533,8 @@ const I18N = {
         kbdAutoTitle:       "Размер по ширине экрана",
         drive:              "Дисковод {0}",
         noDisk:             "Нет диска",
+        hardDisk:           "Винчестер {0}",
+        hddNote:            "Образ читается с вашего компьютера; записанное остаётся в браузере, файл не меняется",
         load:               "Загрузить",
         save:               "Сохранить",
         eject:              "Извлечь",
@@ -563,6 +568,7 @@ const I18N = {
         stDiskSaved:        "Образ диска сохранён: {0}",
         stSaveFailed:       "Не удалось сохранить образ диска (ошибка {0})",
         stSaveUnsupported:  "Этот дисковод не умеет сохранять образ в формате {0}",
+        stHddFailed:        "Не удалось вставить образ винчестера: {0}",
         tape:               "Магнитофон",
         tapeEmpty:          "Нет записи",
         tapeRecording:      "Идёт запись",
@@ -1689,6 +1695,7 @@ function readDrives(module) {
         if (!line) continue;
         const f = line.split("\t");
         list.push({
+            kind: "fdd",
             name: f[0],
             loaded: f[1] === "1",
             protected: f[2] === "1",
@@ -1698,7 +1705,7 @@ function readDrives(module) {
             filesSave: f[6] || "",
         });
     }
-    return list;
+    return list.concat(readHardDisks(module));
 }
 
 // "Образы дисков Орион-128 (*.odi)|*.odi" -> [".odi"]
@@ -1831,6 +1838,7 @@ function buildDrive(module, drive, configKey) {
     element("span", "drive-device", head).textContent = drive.name;
 
     ui.file = element("div", "drive-file", body);
+    if (drive.kind === "hdd") ui.note = element("div", "drive-note", body);
 
     const buttons = element("div", "row", body);
     ui.load = element("button", "", buttons);
@@ -1851,17 +1859,19 @@ function buildDrive(module, drive, configKey) {
     ui.load.addEventListener("click", () => input.click());
     input.addEventListener("change", async () => {
         const file = input.files[0];
-        if (file) await loadDisk(module, drive, file);
+        if (file && drive.kind === "hdd") await loadHardDisk(module, drive, file);
+        else if (file) await loadDisk(module, drive, file);
         // Cleared so that the same file can be loaded again
         input.value = "";
     });
-    ui.save.addEventListener("click", () => saveDisk(module, drive));
+    const api = drive.kind === "hdd" ? "wasm_hdd_" : "wasm_fdd_";
+    ui.save.addEventListener("click", () => drive.kind === "hdd" ? saveHardDisk(module, drive) : saveDisk(module, drive));
     ui.eject.addEventListener("click", () => {
-        module.ccall("wasm_fdd_eject", "number", ["string"], [drive.name]);
+        module.ccall(api + "eject", "number", ["string"], [drive.name]);
         pollDrives(module);
     });
     ui.protect.addEventListener("change", () => {
-        module.ccall("wasm_fdd_protect", "number", ["string", "number"], [drive.name, ui.protect.checked ? 1 : 0]);
+        module.ccall(api + "protect", "number", ["string", "number"], [drive.name, ui.protect.checked ? 1 : 0]);
         pollDrives(module);
     });
     releaseFocus(ui.protect);
@@ -1870,9 +1880,12 @@ function buildDrive(module, drive, configKey) {
 }
 
 function renderDrives() {
-    drives.forEach((drive, i) => {
+    const count = { fdd: 0, hdd: 0 };
+    drives.forEach((drive) => {
         const ui = drive.ui;
-        ui.title.textContent = t("drive", i + 1);
+        const number = ++count[drive.kind];
+        ui.title.textContent = t(drive.kind === "hdd" ? "hardDisk" : "drive", number);
+        if (ui.note) ui.note.textContent = t("hddNote");
         ui.block.renderHint();
         ui.file.textContent = drive.loaded ? drive.file : t("noDisk");
         ui.file.title = drive.loaded ? drive.file : "";
@@ -1937,6 +1950,115 @@ function saveDisk(module, drive) {
         return;
     }
 
+    downloadFile(fileName, data);
+    setStatus("stDiskSaved", "", fileName);
+}
+
+// ============================================================================
+// Hard disks
+// ============================================================================
+//
+// A hard disk image is not copied into the virtual FS: it can be hundreds of
+// megabytes, and that FS is the tab's memory. The File stays where the
+// visitor picked it, and a worker of its own reads the pieces the machine
+// asks for (see "Hard disk images from the visitor's computer" in
+// wasm_main.cpp for the mailbox). Writes stay in memory, the file is never
+// changed; Save hands the image with them to the browser as a new file.
+
+const HOST_FILE_WORKER = `
+onmessage = (event) => {
+    const { memory, box, file } = event.data;
+    const reader = new FileReaderSync();
+    const at = box >>> 2;
+    let seen = 0;
+    for (;;) {
+        Atomics.wait(new Int32Array(memory.buffer), at, seen);
+        let w = new Int32Array(memory.buffer);
+        const seq = Atomics.load(w, at);
+        if (seq === seen) continue;
+        seen = seq;
+        const length = w[at + 2];
+        let result = -1;
+        if (length >= 0) {
+            const ptr = w[at + 3] >>> 0;
+            const offset = (w[at + 4] >>> 0) + (w[at + 5] >>> 0) * 4294967296;
+            try {
+                const data = new Uint8Array(reader.readAsArrayBuffer(file.slice(offset, offset + length)));
+                new Uint8Array(memory.buffer).set(data, ptr);
+                result = data.length;
+            } catch (e) { /* the file went away: the machine sees a read error */ }
+            w = new Int32Array(memory.buffer);
+        }
+        Atomics.store(w, at + 6, result);
+        Atomics.store(w, at + 1, seq);
+        Atomics.notify(w, at + 1);
+        if (length < 0) break;
+    }
+    close();
+};`;
+
+let hostFileWorkerUrl = null;
+
+function readHardDisks(module) {
+    const text = module.ccall("wasm_hdd_info", "string", [], []);
+    const list = [];
+    for (const line of (text || "").split("\n")) {
+        if (!line) continue;
+        const f = line.split("\t");
+        list.push({
+            kind: "hdd",
+            name: f[0],
+            loaded: f[1] === "1",
+            protected: f[2] === "1",
+            led: false,
+            file: (f[3] || "").replace(/^\/host\/\d+\//, ""),
+            files: f[4] || "",
+            filesSave: f[4] || "",
+        });
+    }
+    return list;
+}
+
+async function loadHardDisk(module, drive, file) {
+    setStatus("stDiskLoading", "loading", file.name);
+    const id = module.ccall("wasm_host_file_create", "number", ["number"], [file.size]);
+    if (!id) {
+        setStatus("stHddFailed", "error", file.name);
+        return;
+    }
+    try {
+        if (!hostFileWorkerUrl)
+            hostFileWorkerUrl = URL.createObjectURL(new Blob([HOST_FILE_WORKER], { type: "text/javascript" }));
+        const worker = new Worker(hostFileWorkerUrl);
+        const box = module.ccall("wasm_host_file_box", "number", ["number"], [id]);
+        worker.postMessage({ memory: module.ecatMemory, box, file });
+        const path = "/host/" + id + "/" + file.name;
+        const result = module.ccall("wasm_hdd_load", "number", ["string", "string"], [drive.name, path]);
+        if (result === 0) setStatus("stDiskLoaded", "", file.name);
+        else setStatus("stHddFailed", "error", module.ccall("wasm_last_error", "string", [], []) || result);
+    } catch (err) {
+        console.error("Hard disk load error:", err);
+        setStatus("stError", "error", err.message);
+    }
+    // A file the controller did not take stops its worker here
+    module.ccall("wasm_host_file_release", null, ["number"], [id]);
+    pollDrives(module);
+}
+
+// The image with what the machine wrote, under the name of the file it came
+// from: the visitor's own file is never changed
+function saveHardDisk(module, drive) {
+    const fileName = drive.file.replace(/^.*[\\/]/, "") || (drive.name + ".img");
+    mkdirRecursive(module, "/tmp/save");
+    const path = "/tmp/save/" + fileName;
+    try { module.FS.unlink(path); } catch (e) { /* nothing left from before */ }
+    const result = module.ccall("wasm_hdd_save", "number", ["string", "string"], [drive.name, path]);
+    if (result !== 0) {
+        setStatus("stSaveFailed", "error", result);
+        return;
+    }
+    const data = module.FS.readFile(path);
+    module.FS.unlink(path);
     downloadFile(fileName, data);
     setStatus("stDiskSaved", "", fileName);
 }

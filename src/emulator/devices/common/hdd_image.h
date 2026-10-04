@@ -9,7 +9,9 @@
 #include <cstdint>
 #include <cstdio>
 #include <map>
+#include <memory>
 #include <string>
+#include <vector>
 
 #include "emulator/thread_compat.h"
 
@@ -24,9 +26,25 @@ class StateReader;
 //
 // Меню окна вставляет и вынимает образ из потока GUI, пока машина читает
 // сектор в потоке эмуляции, поэтому каждый обмен берёт замок.
+// Образ, которого нет в файловой системе процесса: в браузере - файл, выбранный
+// посетителем на своём компьютере; он читается по кускам и в память целиком
+// не попадает. Писать в него нельзя, записи остаются в памяти
+class HddSource
+{
+public:
+    virtual ~HddSource() {}
+    virtual uint64_t size() const = 0;
+    virtual bool read(uint64_t offset, uint8_t * buffer, size_t length) = 0;
+};
+
 class HddImage
 {
 public:
+    // Источник по имени файла, или пустой, если имя обычное. Ставит фронтенд
+    // (веб-версия); в настольной сборке не задан
+    typedef std::unique_ptr<HddSource> (*SourceFactory)(const std::string &file_name);
+    static SourceFactory source_factory;
+
     static const unsigned int SECTOR_SIZE = 512;
 
     ~HddImage();
@@ -35,7 +53,7 @@ public:
     bool open(const std::string &file_name, std::string &error);
     void close();
 
-    bool attached() const { return m_file != nullptr; }
+    bool attached() const { return m_file != nullptr || m_source; }
     const std::string & file_name() const { return m_file_name; }
     uint64_t size() const { return m_size; }
     bool is_protected() const { return m_read_only || m_write_protect; }
@@ -49,6 +67,9 @@ public:
     bool read(uint64_t offset, uint8_t * buffer);
     bool write(uint64_t offset, const uint8_t * buffer);
 
+    // Образ целиком, с записанными секторами
+    bool contents(std::vector<uint8_t> &image);
+
     // Образ вместе с записанными секторами - в снимок под ключом key. Снимок
     // кладёт копию файла в свой архив; при восстановлении устройство
     // открывает эту копию и пишет уже только в память (set_volatile)
@@ -56,6 +77,7 @@ public:
 
 private:
     std::FILE * m_file = nullptr;
+    std::unique_ptr<HddSource> m_source;
     std::string m_file_name;
     uint64_t m_size = 0;
     bool m_read_only = true;
@@ -65,4 +87,16 @@ private:
     compat_mutex m_mutex;
 
     void close_locked();
+    bool contents_locked(std::vector<uint8_t> &image);
+};
+
+// Контроллер с образом винчестера: через это веб-страница показывает образ
+// и сохраняет его, не зная, какой это контроллер
+class HddImageOwner
+{
+public:
+    virtual ~HddImageOwner() {}
+    virtual HddImage & hdd_image() = 0;
+    // Фильтр файлов образа, как в параметре files
+    virtual const std::string & hdd_files() const = 0;
 };
