@@ -58,6 +58,8 @@ python3 src/wasm/serve_wasm.py <каталог пакета> 8080
 index.html  ecat_wasm.js       страница
 ecat3.js  ecat3.wasm           сам эмулятор
 machines.json                  список машин для меню
+device_options.json            переводы переключателей машин (из src/translations)
+tapefiles.ini                  как файлы магнитофона ложатся на ленту ([TapeFiles] из .ecat.ini)
 version.txt                    версия, которую страница пишет в подвале
 favicon.png                    значок вкладки — тот же, что у окна настольной версии
 bundles/<машина>.bundle        ПЗУ, конфиг и образы дисков одной машины

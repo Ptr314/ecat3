@@ -428,6 +428,7 @@ const I18N = {
         kbdSize:            "Keyboard size",
         percent:            "{0}%",
         kbdPercentAuto:     "{0}% (auto)",
+        screenPercentFit:   "{0}% (fits the window)",
         kbdAutoTitle:       "Size by the width of the screen",
         drive:              "Drive {0}",
         noDisk:             "No disk",
@@ -525,6 +526,7 @@ const I18N = {
         kbdSize:            "Размер клавиатуры",
         percent:            "{0}%",
         kbdPercentAuto:     "{0}% (авто)",
+        screenPercentFit:   "{0}% (по окну)",
         kbdAutoTitle:       "Размер по ширине экрана",
         drive:              "Дисковод {0}",
         noDisk:             "Нет диска",
@@ -1287,27 +1289,11 @@ function showMachineInfo(module, machine) {
 // of a display. A choice is kept per configuration, device and option, under
 // the name the desktop gives it in its ini, and put back on every load.
 
-// The core hands over the untranslated strings of the desktop; the Russian
-// ones are those of src/translations/ru_ru.ts
-const DEVICE_OPTION_TEXT = {
-    ru: {
-        "Video output": "Видеовыход",
-        "Palette card": "Плата палитр",
-        "Standard":     "RGB-выход",
-        "16 colors":    "16 цветов",
-        "16 inverted":  "16 инверсный",
-        "8 colors":     "8 цветов",
-        "Grayscale":    "Оттенки серого",
-        "Experimental": "Прототип",
-        "RGB":          "RGB",
-        "Mono":         "Моно",
-        "Input device": "Устройство ввода",
-        "Sound":        "Звук",
-        "None":         "Нет",
-        "Joystick":     "Джойстик",
-        "Mouse":        "Мышь",
-    },
-};
+// The core hands over the untranslated strings of the desktop. Their
+// translations are those of src/translations/*.ts: package_machines.py writes
+// them into device_options.json, {language: {source: translation}}, which the
+// page loads with the machine list. Without it the options stay in English
+let DEVICE_OPTION_TEXT = {};
 
 function optionText(text) {
     const table = DEVICE_OPTION_TEXT[lang];
@@ -2314,26 +2300,41 @@ function applyFilter(width, height) {
     }
 }
 
-function updateScreenScaleUi() {
+// shown is the scale the screen is drawn with: the chosen one, or less when
+// the window has no room for it
+function updateScreenScaleUi(shown = screenScale) {
     const range = document.getElementById("screen-scale");
-    range.value = screenScale;
+    range.value = shown;
     paintRange(range);
-    document.getElementById("screen-scale-value").textContent = t("percent", screenScale);
-    document.getElementById("screen-minus").disabled = screenScale <= SCREEN_MIN;
+    document.getElementById("screen-scale-value").textContent =
+        t(shown < screenScale ? "screenPercentFit" : "percent", shown);
+    document.getElementById("screen-minus").disabled = shown <= SCREEN_MIN;
     document.getElementById("screen-plus").disabled = screenScale >= SCREEN_MAX;
     document.getElementById("aspect").value = aspectMode();
     document.getElementById("filter").value = filterMode();
 }
 
-function updateCanvasSize() {
-    updateScreenScaleUi();
+// The room the screen column has: the window less the side columns, the gaps
+// and the padding of the page. Stacked one above another (a phone) the screen
+// has the width of the window and no limit in height - the page scrolls
+function screenRoom() {
+    const app = document.getElementById("app");
+    const style = getComputedStyle(app);
+    const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+    const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+    const stacked = style.gridTemplateColumns.trim().split(/\s+/).length < 3;
+    let width = document.documentElement.clientWidth - padX;
+    if (!stacked) {
+        const gap = parseFloat(style.columnGap) || 0;
+        width -= document.getElementById("col-left").offsetWidth
+               + document.getElementById("col-right").offsetWidth + 2 * gap;
+    }
+    const height = stacked ? Infinity : window.innerHeight - padY;
+    return { width: width, height: height };
+}
 
-    const canvas = document.getElementById("canvas");
-    const canvasW = canvas.width;
-    const canvasH = canvas.height;
-    if (canvasW === 0 || canvasH === 0) return;
-
-    const scale = screenScale / 100;
+// The size of the screen on the page at a scale (a fraction)
+function screenSize(canvasW, canvasH, scale) {
     // A CSS pixel is not a pixel of the screen: under the display scaling of
     // Windows (125%, 150%) or a zoomed page one of them is 1.25 or 1.5 device
     // pixels, and a raster line drawn over 2.5 of them is rounded to 2 or 3 -
@@ -2366,6 +2367,38 @@ function updateCanvasSize() {
             height = Math.round(canvasH * scale);
             break;
     }
+    return { width: width, height: height };
+}
+
+// The scale the screen is drawn with: the one chosen, stepped down until the
+// screen fits the room it has. A screen of 480 lines at the default 200% was
+// wider than the window and pushed the drives column out of sight; a screen
+// of 200 lines keeps its 200%. Never below the smallest step - a window too
+// narrow even for that scrolls
+function fittedScale(canvasW, canvasH) {
+    const room = screenRoom();
+    let scale = screenScale;
+    while (scale > SCREEN_MIN) {
+        const size = screenSize(canvasW, canvasH, scale / 100);
+        if (size.width <= room.width && size.height <= room.height) break;
+        scale -= SCREEN_STEP;
+    }
+    return scale;
+}
+
+function updateCanvasSize() {
+    const canvas = document.getElementById("canvas");
+    const canvasW = canvas.width;
+    const canvasH = canvas.height;
+    if (canvasW === 0 || canvasH === 0) {
+        updateScreenScaleUi();
+        return;
+    }
+
+    const shown = fittedScale(canvasW, canvasH);
+    updateScreenScaleUi(shown);
+    const size = screenSize(canvasW, canvasH, shown / 100);
+    const width = size.width, height = size.height;
 
     canvas.style.width = width + "px";
     canvas.style.height = height + "px";
@@ -2428,6 +2461,14 @@ function setupCanvasScaling() {
     releaseFocus(filter);
 
     new MutationObserver(updateCanvasSize).observe(canvas, { attributes: true, attributeFilter: ["width", "height"] });
+    // The room of the screen changes with the window and with the side
+    // columns, which another machine fills differently (its drives)
+    window.addEventListener("resize", updateCanvasSize);
+    if (typeof ResizeObserver !== "undefined") {
+        const sides = new ResizeObserver(() => updateCanvasSize());
+        sides.observe(document.getElementById("col-left"));
+        sides.observe(document.getElementById("col-right"));
+    }
     watchPixelRatio();
     updateCanvasSize();
 }
@@ -2618,6 +2659,13 @@ async function initEcat() {
     // Load machines manifest
     setStatus("stListLoading", "loading");
 
+    // The translations of the device options come along; a page without them
+    // still works, in English
+    const optionTexts = fetch("device_options.json")
+        .then(resp => resp.ok ? resp.json() : {})
+        .then(table => { DEVICE_OPTION_TEXT = table || {}; })
+        .catch(() => {});
+
     let machines;
     try {
         let resp = await fetch("machines.json");
@@ -2626,6 +2674,7 @@ async function initEcat() {
         setStatus("stListFailed", "error", err.message);
         return;
     }
+    await optionTexts;
 
     // Populate dropdown; the placeholder is translated with the rest of the page
     selectEl.innerHTML = "";

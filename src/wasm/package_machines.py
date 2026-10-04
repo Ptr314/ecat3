@@ -14,6 +14,10 @@ Generates, inside <output_dir>:
   - tapefiles.ini: the [TapeFiles] section of deploy/.ecat.ini, which the page
     writes into the ini of the emulator - it says how a tape file of every
     extension goes onto the tape, and the core reads it when recording too
+  - device_options.json: the translations of the device options (the
+    DeviceOptions context of src/translations/*.ts) by page language. The core
+    hands the page the untranslated strings of the desktop; a table kept by
+    hand in the page lagged behind every new option (the ДВК panel switches)
 
 The bundles sit in their own subdirectory to keep the deployment package
 readable: everything the browser loads first (page, module, manifest) stays
@@ -28,6 +32,13 @@ BUNDLES_DIR = "bundles"
 
 # The [TapeFiles] section of the desktop defaults, next to the page.
 TAPE_FILES_NAME = "tapefiles.ini"
+
+# The translations of the device options, next to the page.
+DEVICE_OPTIONS_NAME = "device_options.json"
+
+# Translation files of the desktop by the page language they serve. English is
+# the source text itself and needs no table
+TRANSLATIONS = {"ru": "ru_ru.ts"}
 
 import os
 import re
@@ -435,6 +446,33 @@ def main():
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(machines, f, indent=2, ensure_ascii=False)
     print(f"\nWrote {manifest_path} with {len(machines)} machines")
+    write_device_options(output_dir)
+
+def write_device_options(output_dir):
+    """The DeviceOptions context of the desktop translations as
+    {language: {source: translation}}; an empty translation is left out, and
+    the page shows the source text for it."""
+    import html
+    import xml.etree.ElementTree as ET
+    ts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "translations")
+    result = {}
+    for lang, file_name in TRANSLATIONS.items():
+        table = {}
+        root = ET.parse(os.path.join(ts_dir, file_name)).getroot()
+        for context in root.iter("context"):
+            if (context.findtext("name") or "") != "DeviceOptions":
+                continue
+            for message in context.iter("message"):
+                source = message.findtext("source") or ""
+                translation = message.findtext("translation") or ""
+                if source and translation:
+                    table[html.unescape(source)] = html.unescape(translation)
+        result[lang] = table
+    path = os.path.join(output_dir, DEVICE_OPTIONS_NAME)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(result, f, indent=2, ensure_ascii=False)
+    print(f"Wrote {path} ({', '.join(f'{k}: {len(v)}' for k, v in result.items())})")
+
 
 if __name__ == "__main__":
     main()
