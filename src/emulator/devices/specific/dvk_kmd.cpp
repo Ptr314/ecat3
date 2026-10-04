@@ -23,7 +23,6 @@
 #define BASE_HOST       0000000     // 172140-172143
 #define BASE_LOCAL      0000100     // 177100-177103
 #define BASE_MODE       0000110     // 177716
-#define BASE_RAMBASE    0000120     // 177760
 #define BASE_DMA        0400000     // 40000-77777
 
 // Регистр режима платы (177716): так он читается в MAME

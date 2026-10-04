@@ -1,0 +1,19 @@
+# ДВК-4 с монитором 377 (НПП «Кристалл», 1991; описание - docs-external/DVK/377.pdf)
+# вместо 134: тесты HALT-режима, ОЗУ, ДП и прерываний, НЖД (винчестер), затем
+# автоматическая загрузка - MY0, MY1, DW. Без винчестера тест НЖД даёт ошибку и
+# монитор остаётся в пульте, поэтому образ DW вставлен; грузится RT-11 с MY0, и
+# уже она ставит драйвер DW. Потом - B и имя устройства (Boot: MY0)
+# @timeout 200
+# @nomcp в живой сессии машина успевает поработать до первой команды
+MACHINE "../../tests/files/dvk4-ksm.ext"
+COMMAND monitor.option(0,1)
+COMMAND dw.load("rt11-dw.dsk")
+COMMAND dw.volatile(1)
+WAIT _40000
+
+LOGDEFS _16,_8
+PRINT "=== Экран ==="
+LOG display.text
+LOG my.commands
+SCREEN "../results/boot-dvk4-377.png"
+EXIT

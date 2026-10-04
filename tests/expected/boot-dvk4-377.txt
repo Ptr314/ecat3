@@ -1,0 +1,28 @@
+=== Экран ===
+[display.text] 
+                             lin  lat  wr       zwyw  9600  0 0 0  0 0 0  0 0 1
+
+tEST HALT-REVIMA*
+dOSTUPNOE ozu  -  1024 k*
+tEST dp I PRERYWANIJ*
+tEST nvd*2J7m3;13H3             4;13H3 |lektronika 5;13H4 |lektronika 6;13H3
+         27m?2l
+
+
+                         aWTOMATI^ESKAQ ZAGRUZKA!
+
+ DW V05.08 [RYG] rOVDESTWIN `.g. 1990 G. (S) T. 322-12-14
+primenqjte komandu "SET MX INFORM"
+
+SL V08.00 [SW] sTOROVEWYH s.w. 1988
+
+RT-11SJ  V05.04 (Rus\Lat)
+
+
+
+
+
+
+
+
+[my.commands] &000032
