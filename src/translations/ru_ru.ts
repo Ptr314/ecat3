@@ -342,21 +342,25 @@
     </message>
     <message>
         <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+706"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+526"/>
         <source>Hard disk image</source>
         <translation>Образ жёсткого диска</translation>
     </message>
     <message>
         <location line="+7"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+7"/>
         <source>Hard disk writes</source>
         <translation>Запись на винчестер</translation>
     </message>
     <message>
         <location line="+3"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+3"/>
         <source>Into the image file</source>
         <translation>В файл образа</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+1"/>
         <source>Into memory only, the image stays as it was</source>
         <translation>Только в память, образ не меняется</translation>
     </message>
@@ -420,6 +424,24 @@
         <location line="+5"/>
         <source>File not found</source>
         <translation>Файл не найден</translation>
+    </message>
+</context>
+<context>
+    <name>DVKDW</name>
+    <message>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-447"/>
+        <source>Hard disk image file not found</source>
+        <translation>Файл образа жёсткого диска не найден</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Unrecognized hard disk geometry</source>
+        <translation>Нераспознанная геометрия жёсткого диска</translation>
+    </message>
+    <message>
+        <location line="+524"/>
+        <source>Command &apos;load&apos; expects a file name</source>
+        <translation>Команда &apos;load&apos; ожидает имя файла</translation>
     </message>
 </context>
 <context>
@@ -998,7 +1020,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+242"/>
+        <location filename="../emulator/emulator.cpp" line="+243"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>

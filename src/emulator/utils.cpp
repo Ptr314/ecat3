@@ -13,10 +13,31 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#else
+#include <sys/stat.h>
 #endif
 
 #include "utils.h"
 #include "dsk_tools/core.h"
+
+// Есть ли такой файл. Не открывая его: dsk_tools::file_exists() открывает
+// поток на чтение, а на Windows такое открытие не разделяет файл с тем, кто
+// держит его открытым на запись. Образ винчестера, открытый одним
+// процессом, другой тогда «не находил» - так падал параллельный прогон тестов
+static bool file_present(const std::string &path)
+{
+#ifdef _WIN32
+    const int n = MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, nullptr, 0);
+    if (n <= 0) return false;
+    std::wstring w((size_t)n, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, &w[0], n);
+    const DWORD attr = GetFileAttributesW(w.c_str());
+    return attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY) == 0;
+#else
+    struct stat st;
+    return stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode);
+#endif
+}
 
 std::vector<std::string> split_string(const std::string &s, char delimiter, bool skip_empty)
 {
@@ -329,14 +350,14 @@ std::string find_file_location(SystemData * sd, const std::string &file_name)
         // Inline data of a configuration is unpacked into the cache and
         // referenced by its full name
         if (is_absolute_path(file_name))
-            return dsk_tools::file_exists(file_name) ? file_name : "";
+            return file_present(file_name) ? file_name : "";
 
         // A script sets script_path while running, so files referenced by
         // COMMAND dev.load("...") are looked up next to the script first.
         if (!sd->script_path.empty())
         {
             file = sd->script_path + file_name;
-            if (dsk_tools::file_exists(file)) return file;
+            if (file_present(file)) return file;
         }
 
         // A configuration extension brings its own files, which take
@@ -344,23 +365,23 @@ std::string find_file_location(SystemData * sd, const std::string &file_name)
         if (!sd->ext_path.empty())
         {
             file = sd->ext_path + file_name;
-            if (dsk_tools::file_exists(file)) return file;
+            if (file_present(file)) return file;
         }
 
         file = system_path + file_name;
-        if (dsk_tools::file_exists(file)) return file;
+        if (file_present(file)) return file;
 
         file = system_path + "files/" + file_name;
-        if (dsk_tools::file_exists(file)) return file;
+        if (file_present(file)) return file;
 
         file = software_path + file_name;
-        if (dsk_tools::file_exists(file)) return file;
+        if (file_present(file)) return file;
 
         file = software_path + dir + "/" + file_name;
-        if (dsk_tools::file_exists(file)) return file;
+        if (file_present(file)) return file;
 
         file = data_path + file_name;
-        if (dsk_tools::file_exists(file)) return file;
+        if (file_present(file)) return file;
     }
     return "";
 }

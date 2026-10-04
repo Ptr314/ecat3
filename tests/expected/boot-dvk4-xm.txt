@@ -26,7 +26,7 @@ Global .SCCA support
 
 .
 === MY ===
-[my.dma] &006530 &121225
+[my.dma] &006524 &120625
 === Экран ===
 [display.text] 
                              lin  lat  wr             9600  0 0 0  0 0 0  0 0 1

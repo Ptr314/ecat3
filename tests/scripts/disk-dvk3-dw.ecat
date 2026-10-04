@@ -1,0 +1,36 @@
+# ДВК-3 с винчестером DW: загрузка RT-11 и запись на винчестер.
+#
+# Монитор 279 командой BDW сбрасывает контроллер (разряд 10 SI), пишет в
+# регистр сектора 1 и читает его: сектора на дорожке нумеруются с единицы,
+# так что это блок 0. Дальше RT-11 работает с диском через DW.SYS. Файл
+# копируется и выводится обратно; запись идёт в память (volatile), образ в
+# software/dvk не меняется.
+# @timeout 150
+# @nomcp в живой сессии машина успевает поработать до первой команды, а загрузка RT-11 зависит от времени
+MACHINE "dvk/DVK-3-MY.ext"
+COMMAND dw.load("rt11-dw.dsk")
+COMMAND dw.volatile(1)
+WAIT _2000
+KEY _100,_50,ret
+WAIT _300
+TYPE "BDW"
+KEY _100,_50,ret
+WAIT _20000
+# DAY спрашивает дату стрелками: ВК её оставляет
+KEY _100,_50,ret
+WAIT _1000
+TYPE "COPY STARTS.COM TEST.COM"
+KEY _100,_50,ret
+WAIT _5000
+TYPE "TYPE TEST.COM"
+KEY _100,_50,ret
+WAIT _5000
+
+LOGDEFS _16,_8
+LOG dw.geometry
+LOG dw.writes
+LOG dw.err
+PRINT "=== Экран ==="
+LOG display.text
+SCREEN "../results/disk-dvk3-dw.png"
+EXIT

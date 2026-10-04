@@ -1,0 +1,30 @@
+[dw.geometry] 153/4/16
+[dw.writes] &00000000024
+[dw.err] &000000
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+.SET USR  NOSWAP
+
+.SET EXIT NOSWAP
+
+.SET TT SCOPE
+
+.SET SL ON
+
+.DAY
+wREMQ           dATA
+00:00:17        24-i@L-2019, sREDA
+
+.COPY STARTS.COM TEST.COM
+
+.TYPE TEST.COM
+SET USR  NOSWAP
+SET EXIT NOSWAP
+SET TT SCOPE
+!SET EM ON
+SET SL ON
+DAY
+
+
+.

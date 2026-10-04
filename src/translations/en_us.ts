@@ -246,21 +246,25 @@
     </message>
     <message>
         <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+706"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+526"/>
         <source>Hard disk image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+7"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+7"/>
         <source>Hard disk writes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+3"/>
         <source>Into the image file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+1"/>
         <source>Into memory only, the image stays as it was</source>
         <translation type="unfinished"></translation>
     </message>
@@ -323,6 +327,24 @@
     <message>
         <location line="+5"/>
         <source>File not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>DVKDW</name>
+    <message>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-447"/>
+        <source>Hard disk image file not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Unrecognized hard disk geometry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+524"/>
+        <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -790,7 +812,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+242"/>
+        <location filename="../emulator/emulator.cpp" line="+243"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>

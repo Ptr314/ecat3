@@ -5,13 +5,10 @@
 
 #pragma once
 
-#include <array>
-#include <cstdio>
-#include <map>
 #include <string>
 
 #include "emulator/core.h"
-#include "emulator/thread_compat.h"
+#include "emulator/devices/common/hdd_image.h"
 
 // Контроллер винчестера УК-НЦ: плата ИДЕ в кассете ПЗУ периферийного
 // процессора. Кассета отдаёт ему верхнюю половину своего окна - адреса
@@ -50,11 +47,9 @@
 class UKNCHDD: public AddressableDevice
 {
 private:
-    std::FILE * m_file = nullptr;
-    std::string m_file_name;
-    bool m_attached = false;
-    bool m_read_only = true;        // образ открыт только на чтение
-    bool m_write_protect = false;   // защита, заданная конфигурацией или сценарием
+    // Файл образа: открытие, защита от записи, запись в память вместо файла,
+    // копия в снимок состояния - общие у всех винчестеров (HddImage)
+    HddImage m_image;
     bool m_inverted = false;        // образ снят в обратном коде
 
     // Та же плата АльтПро в СМК БК (board = bk, регистры 177740-177757):
@@ -62,25 +57,12 @@ private:
     // состояние, запись байта 177743 - регистр управления, а геометрия лежит
     // в таблице разделов блока 7
     bool m_bk = false;
-    bool altpro_geometry(std::FILE * f, long size, unsigned int &cylinders,
-                         unsigned int &heads, unsigned int &sectors, long base);
+    bool altpro_geometry(uint64_t size, unsigned int &cylinders,
+                         unsigned int &heads, unsigned int &sectors, uint64_t base);
     unsigned int drive_address() const;
-    uint64_t m_image_size = 0;      // размер файла образа, байт
     // Образ *.hdi начинается с паспорта накопителя (ответ на IDENTIFY, 512
     // байт), и сектора идут после него
     uint64_t m_data_offset = 0;
-
-    // Запись в память: записанные сектора остаются здесь, а файл образа не
-    // меняется - как у дисковода, который правит образ только в памяти.
-    // Ключ - смещение сектора в образе. Выключение режима и смена образа
-    // изменения забывают
-    bool m_volatile = false;
-    std::map<uint64_t, std::array<uint8_t, 512>> m_overlay;
-
-    // Файл и m_overlay: меню окна меняет образ из потока GUI, пока машина
-    // читает сектор в потоке эмуляции. Замок берётся раз на сектор
-    compat_mutex m_image_mutex;
-    void close_image();
 
     unsigned int m_cylinders = 0;
     unsigned int m_heads = 0;
@@ -137,9 +119,9 @@ public:
     emulator::Result load_config(SystemData *sd) override;
     emulator::Result load_image(const std::string &file_name);
     void unload();
-    bool is_attached() const { return m_attached; }
-    bool is_protected() const { return m_read_only || m_write_protect; }
-    const std::string & image_name() const { return m_file_name; }
+    bool is_attached() const { return m_image.attached(); }
+    bool is_protected() const { return m_image.is_protected(); }
+    const std::string & image_name() const { return m_image.file_name(); }
 
     void reset(bool cold) override;
     void clock(unsigned int counter) override;

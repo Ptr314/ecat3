@@ -1,0 +1,27 @@
+=== Экран ===
+[display.text] 
+                             lin  rus  wr             9600  0 0 0  0 0 0  0 0 1
+****  dostupnoe  ozu  -   1 M *
+@ 001000
+@B
+$DW0
+
+SL V08.00 [SW] sTOROVEWYH s.w. 1988
+primenqjte komandu "SET MX INFORM"
+
+RT-11SJ (Y) V05.04 G
+
+.SET USR  NOSWAP
+
+.SET EXIT NOSWAP
+
+.SET TT SCOPE
+
+.SET SL ON
+
+.DAY
+wREMQ           dATA
+iSPO
+
+
+

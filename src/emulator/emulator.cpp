@@ -93,6 +93,7 @@
 #include "emulator/devices/specific/dvk_panel.h"
 #include "emulator/devices/specific/dvk_kcgd.h"
 #include "emulator/devices/specific/dvk_kmd.h"
+#include "emulator/devices/specific/dvk_dw.h"
 #include "emulator/devices/specific/uknc_sound.h"
 #include "emulator/devices/specific/argo_keyboard.h"
 #include "emulator/devices/specific/argo_memory.h"
@@ -1567,6 +1568,7 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("kcgd-display", create_kcgd_display);
     dm->register_device("kcgd-mouse", create_kcgd_mouse);
     dm->register_device("dvk-kmd", create_dvk_kmd);
+    dm->register_device("dvk-dw", create_dvk_dw);
     dm->register_device("uknc-sound", create_uknc_sound);
     dm->register_device("argo-keyboard", create_argo_keyboard);
     dm->register_device("argo-memory", create_argo_memory);

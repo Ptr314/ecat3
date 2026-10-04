@@ -13,10 +13,6 @@
 //в emulator/utils.h - он ищет кавычечный include и по цепочке включающих
 #include "libs/dsk_tools/src/utils.h"
 
-#ifdef _WIN32
-#include <cwchar>
-#endif
-
 #define SECTOR_SIZE         512
 
 // Регистры накопителя, номер - разряды 1-3 адреса в обратном коде
@@ -83,43 +79,25 @@ UKNCHDD::~UKNCHDD()
 
 //--------------------------- Образ винчестера ------------------------------//
 
-// Имя файла в кодировке UTF-8: на Windows его надо перевести в UTF-16, иначе
-// путь с кириллицей не откроется. Образ открывается на чтение и запись -
-// машина пишет прямо в него, как настоящая в свой диск
-static std::FILE * open_image(const std::string &file_name, bool for_write)
-{
-#ifdef _WIN32
-    std::wstring w = dsk_tools::utf8_to_wide(file_name);
-    return _wfopen(w.c_str(), for_write? L"r+b" : L"rb");
-#else
-    return std::fopen(file_name.c_str(), for_write? "r+b" : "rb");
-#endif
-}
-
 emulator::Result UKNCHDD::load_image(const std::string &file_name)
 {
-    // Новый образ открывается и проверяется без замка; старый закрывается и
-    // заменяется уже под ним. Неудача оставляет гнездо пустым, как и раньше
+    // Образ открывается на чтение и запись - машина пишет прямо в него, как
+    // настоящая в свой диск. Неудача оставляет гнездо пустым
     unload();
 
-    bool read_only = false;
-    std::FILE * f = open_image(file_name, true);
-    if (f == nullptr) {
-        read_only = true;
-        f = open_image(file_name, false);
-    }
-    if (f == nullptr)
+    std::string error;
+    if (!m_image.open(file_name, error)) {
+        if (error == "size")
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{UKNCHDD|" + std::string(QT_TRANSLATE_NOOP("UKNCHDD", "Unrecognized hard disk image")) + "} " + file_name);
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{UKNCHDD|" + std::string(QT_TRANSLATE_NOOP("UKNCHDD", "Hard disk image file not found")) + "} " + file_name);
-
-    std::fseek(f, 0, SEEK_END);
-    const long size = std::ftell(f);
-    std::fseek(f, 0, SEEK_SET);
+    }
+    const uint64_t size = m_image.size();
 
     uint8_t first[SECTOR_SIZE];
-    if (size <= 0 || (size % SECTOR_SIZE) != 0
-        || std::fread(first, 1, SECTOR_SIZE, f) != SECTOR_SIZE) {
-        std::fclose(f);
+    if (!m_image.read(0, first)) {
+        m_image.close();
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{UKNCHDD|" + std::string(QT_TRANSLATE_NOOP("UKNCHDD", "Unrecognized hard disk image")) + "} " + file_name);
     }
@@ -131,7 +109,7 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
     // *.hdi: первые 512 байт - паспорт накопителя (IDENTIFY), сектора - после
     // него. Геометрия паспорта - слова 1 (цилиндры), 3 (головки) и 6 (секторы),
     // как читает такие образы bkemu
-    long base = 0;
+    uint64_t base = 0;
     unsigned int hdi_cylinders = 0, hdi_heads = 0, hdi_sectors = 0;
     {
         const std::string ext = str_tolower(dsk_tools::get_file_ext(file_name));
@@ -149,7 +127,7 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
         // лежит на накопителе, и машина через свою магистраль видит его в
         // обратном коде
         inverted = true;
-        if (!altpro_geometry(f, size, table_cylinders, heads, sectors, base)) {
+        if (!altpro_geometry(size, table_cylinders, heads, sectors, base)) {
             if (hdi_sectors != 0 && hdi_heads != 0 && hdi_cylinders != 0) {
                 table_cylinders = hdi_cylinders;
                 heads = hdi_heads;
@@ -183,25 +161,16 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
         cylinders = (unsigned int)((size - base) / SECTOR_SIZE / sectors / heads);
 
     if (sectors == 0 || heads == 0 || cylinders == 0 || cylinders > (m_bk ? 65535u : 1024u)) {
-        std::fclose(f);
+        m_image.close();
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{UKNCHDD|" + std::string(QT_TRANSLATE_NOOP("UKNCHDD", "Unrecognized hard disk geometry")) + "} " + file_name);
     }
 
-    {
-        compat_lock_guard lock(m_image_mutex);
-        close_image();
-        m_file = f;
-        m_file_name = file_name;
-        m_image_size = (uint64_t)size;
-        m_data_offset = (uint64_t)base;
-        m_read_only = read_only;
-        m_inverted = inverted;
-        m_attached = true;
-        m_sectors = sectors;
-        m_heads = heads;
-        m_cylinders = cylinders;
-    }
+    m_data_offset = base;
+    m_inverted = inverted;
+    m_sectors = sectors;
+    m_heads = heads;
+    m_cylinders = cylinders;
 
     reset(true);
 
@@ -212,17 +181,12 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
 // блока вниз - цилиндры (776), головки (774), секторы (772), число логических
 // дисков в младшем байте 770, дальше по два слова на диск. Над ними лежит
 // контрольная сумма: она минус сумма всех слов таблицы дает 012701
-bool UKNCHDD::altpro_geometry(std::FILE * f, long size, unsigned int &cylinders,
-                              unsigned int &heads, unsigned int &sectors, long base)
+bool UKNCHDD::altpro_geometry(uint64_t size, unsigned int &cylinders,
+                              unsigned int &heads, unsigned int &sectors, uint64_t base)
 {
     if (size < base + 8 * SECTOR_SIZE) return false;
     uint8_t block[SECTOR_SIZE];
-    if (std::fseek(f, base + 7 * SECTOR_SIZE, SEEK_SET) != 0
-        || std::fread(block, 1, SECTOR_SIZE, f) != SECTOR_SIZE) {
-        std::fseek(f, 0, SEEK_SET);
-        return false;
-    }
-    std::fseek(f, 0, SEEK_SET);
+    if (!m_image.read(base + 7 * SECTOR_SIZE, block)) return false;
     auto word = [&](unsigned int offset) -> unsigned int {
         return (~(block[offset] | (block[offset + 1] << 8))) & 0xFFFF;
     };
@@ -241,24 +205,11 @@ bool UKNCHDD::altpro_geometry(std::FILE * f, long size, unsigned int &cylinders,
     return sectors != 0 && sectors <= 255 && heads != 0 && heads <= 16 && cylinders != 0;
 }
 
-void UKNCHDD::close_image()
-{
-    if (m_file != nullptr) {
-        std::fclose(m_file);
-        m_file = nullptr;
-    }
-    m_attached = false;
-    m_file_name.clear();
-    m_image_size = 0;
-    m_data_offset = 0;
-    m_overlay.clear();
-    m_cylinders = m_heads = m_sectors = 0;
-}
-
 void UKNCHDD::unload()
 {
-    compat_lock_guard lock(m_image_mutex);
-    close_image();
+    m_image.close();
+    m_data_offset = 0;
+    m_cylinders = m_heads = m_sectors = 0;
 }
 
 emulator::Result UKNCHDD::load_config(SystemData *sd)
@@ -268,8 +219,8 @@ emulator::Result UKNCHDD::load_config(SystemData *sd)
 
     files = read_confg_value(cd, "files", false, std::string(""));
     m_bk = read_confg_value(cd, "board", false, std::string("uknc")) == "bk";
-    m_write_protect = read_confg_value(cd, "write_protect", false, false);
-    m_volatile = read_confg_value(cd, "volatile", false, false);
+    m_image.set_write_protect(read_confg_value(cd, "write_protect", false, false));
+    m_image.set_volatile(read_confg_value(cd, "volatile", false, false));
 
     // Время в микросекундах: у машины оно своё у каждого накопителя, а
     // драйверы ждут готовности со своими выдержками
@@ -321,37 +272,14 @@ uint64_t UKNCHDD::sector_offset() const
 
 bool UKNCHDD::read_sector()
 {
-    compat_lock_guard lock(m_image_mutex);
-    if (m_file == nullptr) return false;
-    const uint64_t offset = sector_offset();
-    if (offset > 0x7FFFFFFFull) return false;
-    const auto kept = m_overlay.find(offset);
-    if (kept != m_overlay.end())
-        memcpy(m_buffer, kept->second.data(), SECTOR_SIZE);
-    else {
-        if (std::fseek(m_file, (long)offset, SEEK_SET) != 0) return false;
-        if (std::fread(m_buffer, 1, SECTOR_SIZE, m_file) != SECTOR_SIZE) return false;
-    }
+    if (!m_image.read(sector_offset(), m_buffer)) return false;
     m_sectors_read++;
     return true;
 }
 
 bool UKNCHDD::write_sector()
 {
-    compat_lock_guard lock(m_image_mutex);
-    if (m_file == nullptr || m_write_protect) return false;
-    const uint64_t offset = sector_offset();
-    if (offset + SECTOR_SIZE > m_image_size) return false;
-    if (m_volatile) {
-        // Файл только на чтение этому не мешает: в него ничего не пишется
-        memcpy(m_overlay[offset].data(), m_buffer, SECTOR_SIZE);
-        m_sectors_written++;
-        return true;
-    }
-    if (m_read_only || offset > 0x7FFFFFFFull) return false;
-    if (std::fseek(m_file, (long)offset, SEEK_SET) != 0) return false;
-    if (std::fwrite(m_buffer, 1, SECTOR_SIZE, m_file) != SECTOR_SIZE) return false;
-    std::fflush(m_file);
+    if (!m_image.write(sector_offset(), m_buffer)) return false;
     m_sectors_written++;
     return true;
 }
@@ -654,7 +582,7 @@ unsigned int UKNCHDD::get_value_word(unsigned int address)
     // У платы БК регистры отвечают и без накопителя, а линии данных ИДЕ
     // стянуты к нулю (так и задумано в ИДЕ: занятым пустой канал не выглядит),
     // что через инвертирующую магистраль читается единицами
-    if (!m_attached) return m_bk ? 0xFFFF : 0;
+    if (!m_image.attached()) return m_bk ? 0xFFFF : 0;
     // Магистраль 1801 несёт данные в обратном коде, и плата их не переворачивает
     return (~read_port(address_to_reg(address))) & 0xFFFF;
 }
@@ -662,14 +590,14 @@ unsigned int UKNCHDD::get_value_word(unsigned int address)
 // Отладчик и LOG видят слово буфера, не продвигаясь по нему
 unsigned UKNCHDD::get_direct(unsigned address)
 {
-    if (!m_attached) return m_bk ? 0xFF : 0;
+    if (!m_image.attached()) return m_bk ? 0xFF : 0;
     const unsigned int w = (~read_port(address_to_reg(address & ~1u), true)) & 0xFFFF;
     return (address & 1)? ((w >> 8) & 0xFF) : (w & 0xFF);
 }
 
 void UKNCHDD::set_value_word(unsigned int address, unsigned int value, MAYBE_UNUSED bool force)
 {
-    if (!m_attached) return;
+    if (!m_image.attached()) return;
     set_port(address_to_reg(address), (~value) & 0xFFFF);
 }
 
@@ -688,7 +616,7 @@ void UKNCHDD::set_value(unsigned int address, unsigned int value, bool force)
     // У платы БК байт по 177743 - регистр управления: сброс накопителя
     // разрядом 2
     if (m_bk && (address & 1) && address_to_reg(address & ~1u) == REG_HEAD_NUMBER) {
-        if (m_attached && ((~value) & 0x04)) reset(false);
+        if (m_image.attached() && ((~value) & 0x04)) reset(false);
         return;
     }
     const unsigned int w = (address & 1)? ((value & 0xFF) << 8) : (value & 0xFF);
@@ -737,30 +665,19 @@ void UKNCHDD::save_state(StateWriter &w)
     w.n64("acc", m_acc);
     w.n("sectors_read", m_sectors_read);
     w.n("sectors_written", m_sectors_written);
-    w.b("write_protect", m_write_protect);
+    w.b("write_protect", m_image.write_protect());
 
-    if (!m_attached) return;
+    if (!m_image.attached()) return;
     w.b("attached", true);
     w.b("inverted", m_inverted);
-    w.b("volatile", m_volatile);
+    w.b("volatile", m_image.is_volatile());
     w.n("cylinders", m_cylinders);
     w.n("heads", m_heads);
     w.n("sectors", m_sectors);
 
-    //The image with the written sectors already merged in. Simpler than
-    //carrying a sparse map, and byte for byte what the guest sees - which is
-    //the point: the file on disk never had those writes
-    compat_lock_guard lock(m_image_mutex);
-    if (m_file == nullptr || m_image_size == 0) return;
-    std::vector<uint8_t> image(static_cast<size_t>(m_image_size), 0);
-    std::fseek(m_file, 0, SEEK_SET);
-    if (std::fread(image.data(), 1, image.size(), m_file) != image.size()) return;
-    for (std::map<uint64_t, std::array<uint8_t, 512>>::const_iterator it = m_overlay.begin();
-         it != m_overlay.end(); ++it)
-        if (it->first + 512 <= image.size())
-            memcpy(image.data() + it->first, it->second.data(), 512);
-    w.blob("image", dsk_tools::get_filename(m_file_name.empty() ? (name + ".img") : m_file_name),
-           image.data(), image.size());
+    //The image with the written sectors already merged in: the file on disk
+    //never had those writes
+    m_image.save_state(w, "image", name);
 }
 
 emulator::Result UKNCHDD::load_state(const StateReader &r)
@@ -789,7 +706,7 @@ emulator::Result UKNCHDD::load_state(const StateReader &r)
             //write of the guest would put the two out of step, and opening
             //the snapshot again would give an inconsistent file system. So a
             //restored disk keeps its writes in memory, as a floppy does
-            m_volatile = true;
+            m_image.set_volatile(true);
             r.u("cylinders", m_cylinders);
             r.u("heads", m_heads);
             r.u("sectors", m_sectors);
@@ -815,7 +732,8 @@ emulator::Result UKNCHDD::load_state(const StateReader &r)
     r.n64("acc", m_acc);
     r.u("sectors_read", m_sectors_read);
     r.u("sectors_written", m_sectors_written);
-    r.b("write_protect", m_write_protect);
+    bool write_protect = false;
+    if (r.b("write_protect", write_protect)) m_image.set_write_protect(write_protect);
     return emulator::Result::ok();
 }
 
@@ -856,7 +774,7 @@ std::vector<DeviceCommandInfo> UKNCHDD::get_device_commands()
 bool UKNCHDD::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
     if (field == "file") {
-        out.text = m_file_name;
+        out.text = m_image.file_name();
         return true;
     }
     if (field == "geometry") {
@@ -866,11 +784,11 @@ bool UKNCHDD::get_field(const std::string &field, unsigned int from, unsigned in
 
     out.numeric = true;
     out.width = 16;
-    if (field == "attached")  { out.values.push_back(m_attached? 1 : 0);  return true; }
+    if (field == "attached")  { out.values.push_back(m_image.attached()? 1 : 0);  return true; }
     if (field == "inverted")  { out.values.push_back(m_inverted? 1 : 0);  return true; }
     if (field == "lba")       { out.values.push_back(lba_mode()? 1 : 0);  return true; }
-    if (field == "protected") { out.values.push_back((m_read_only || m_write_protect)? 1 : 0); return true; }
-    if (field == "volatile")  { out.values.push_back(m_volatile? 1 : 0);  return true; }
+    if (field == "protected") { out.values.push_back(m_image.is_protected()? 1 : 0); return true; }
+    if (field == "volatile")  { out.values.push_back(m_image.is_volatile()? 1 : 0);  return true; }
     if (field == "cylinders") { out.values.push_back(m_cylinders);        return true; }
     if (field == "heads")     { out.values.push_back(m_heads);            return true; }
     if (field == "sectors")   { out.values.push_back(m_sectors);          return true; }
@@ -908,22 +826,15 @@ emulator::Result UKNCHDD::send_command(const std::string &command, const std::st
     }
 
     if (command == "protect") {
-        if (p.empty() || p[0].empty())
-            m_write_protect = !m_write_protect;
-        else
-            m_write_protect = (parse_numeric_value(p[0], 10) != 0);
+        m_image.set_write_protect((p.empty() || p[0].empty()) ? !m_image.write_protect()
+                                                               : parse_numeric_value(p[0], 10) != 0);
         return emulator::Result::ok();
     }
 
     if (command == "volatile") {
-        if (p.empty() || p[0].empty())
-            m_volatile = !m_volatile;
-        else
-            m_volatile = (parse_numeric_value(p[0], 10) != 0);
-        if (!m_volatile) {
-            compat_lock_guard lock(m_image_mutex);
-            m_overlay.clear();
-        }
+        // Выключение забывает записанное в память
+        m_image.set_volatile((p.empty() || p[0].empty()) ? !m_image.is_volatile()
+                                                          : parse_numeric_value(p[0], 10) != 0);
         return emulator::Result::ok();
     }
 

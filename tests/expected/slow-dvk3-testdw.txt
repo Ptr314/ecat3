@@ -1,0 +1,29 @@
+=== Код завершения TESTDW (015 - без ошибок) ===
+[ram.value16] &001000: &000015
+=== Экран ===
+[display.text] 
+                             lin  rus  wr             9600  0 0 0  0 0 0  0 0 1
+
+                   d i a g n o s t i k a
+
+
+        operaciq zawer{ena
+
+
+dlq prodolveniq navmite l`bu` klawi{u
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
