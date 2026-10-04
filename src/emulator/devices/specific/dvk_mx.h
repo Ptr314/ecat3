@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <map>
 #include <vector>
 
 #include "emulator/core.h"
@@ -57,7 +58,17 @@ private:
     struct Drive {
         FDD * fdd = nullptr;
         int track = 0;          // физическая дорожка под головкой
+        // Дорожки, записанные программой, слово в слово (ключ - дорожка * 2 +
+        // сторона): читаются такими, какими их записали, пока в приводе тот
+        // же образ. Формат дорожки задаёт программа, а не контроллер: TESTMX
+        // пишет после секторов одно слово дорожка * 2 + сторона, RT-11 - три
+        // слова 0101400 + то же; собранная по образцу RT-11 дорожка давала
+        // тесту «ошибку стороны»
+        std::map<unsigned int, std::vector<uint16_t>> written;
+        unsigned int generation = 0;    // образ, к которому они относятся
+        bool adopt = false;             // после снимка: принять образ, какой есть
     };
+    void sync_written(Drive * d);
     Drive m_drives[DVK_MX_MAX_DRIVES];
     unsigned int m_drives_count = 0;
 
@@ -74,6 +85,9 @@ private:
     std::vector<uint16_t> m_track;  // дорожка под головкой, словами
     unsigned int m_pos = 0;         // следующее слово дорожки
     unsigned int m_shift = 0;       // слово, которое пишется сейчас
+    // Запись прошла индекс: дальше слова ложатся на начало той же дорожки
+    bool m_wrapped = false;
+    unsigned int m_wrap = 0;
 
     // Время в тактах домена: оборот, слово, индексный импульс, тик таймера
     uint64_t m_rev_ticks = 0;
@@ -105,6 +119,7 @@ private:
     void build_track();
     void store_track();
     void start_word();
+    void put_word(uint16_t w);
 
 public:
     DVKMX(InterfaceManager *im, EmulatorConfigDevice *cd);

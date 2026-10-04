@@ -1,0 +1,41 @@
+# ДВК-3: заводской тест ИРПС TESTDL («тест КТЛК») с диска ФОДОС на втором
+# канале (176560, векторы 320/324) с заглушкой на разъёме: адресация,
+# передача, приём, прерывания и символ должны быть «+» и 377-377. Канал
+# терминала тест проверять не годится - его вывод шёл бы в тот же канал.
+# @timeout 120
+# @nomcp в живой сессии машина успевает поработать до первой команды, а загрузка RT-11 зависит от времени
+MACHINE "../../tests/files/dvk3-ktlk.ext"
+COMMAND tl.plug(1)
+COMMAND my0.load("FODOSTMO.DSK")
+WAIT _2000
+KEY _100,_50,ret
+WAIT _300
+TYPE "BMY"
+KEY _100,_50,ret
+WAIT _20000
+KEY _100,_50,ret
+WAIT _1000
+COMMAND panel.option(1,0)
+TYPE "R TESTDL"
+KEY _100,_50,ret
+WAIT _5000
+# Каналов 1, адреса стандартные, канал 1, проверять полностью
+TYPE "1"
+KEY _100,_50,ret
+WAIT _2000
+TYPE "d"
+KEY _100,_50,ret
+WAIT _2000
+TYPE "1"
+KEY _100,_50,ret
+WAIT _2000
+TYPE "n"
+KEY _100,_50,ret
+WAIT _10000
+
+LOGDEFS _16,_8
+LOG tl.sent
+LOG tl.received
+PRINT "=== Экран ==="
+LOG display.text
+EXIT

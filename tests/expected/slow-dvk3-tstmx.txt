@@ -1,0 +1,29 @@
+[mx.writes] &000120
+[mx.underruns] &000120
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+Y- wybor tipa nakopitelq
+B- wybor priwoda
+L- kompleks komand: V,R,P,S,T,G
+H- spisok komand
+K- konec raboty
+
+(n-spisok) komanda--> F
+ 39
+ 39
+
+(n-spisok) komanda--> L
+zapisx slu~ajnyh ~isel na disk:
+ 39
+~tenie s diska:
+ 39
+poisk dorovek:
+ 39
+period wra}eniq diska: 200,5 ms
+wremq pereme}.golowok na sosedn.dor.: t= ms
+    dwivenie  k centru - T=  3
+    dwivenie ot centra - T=  3
+wremq podwoda golowki k disku: t =2 ms
+
+(n-spisok) komanda-->

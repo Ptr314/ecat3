@@ -1,0 +1,27 @@
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+.R FTMON
+
+***fodos-tmos*** monitor FTMON APR-87
+zapusk: R FTMON  pow.pusk: 30124   wyhod: su/C
+
+komandy monitora
+L imq<wk> zagruvaet programmu
+R imq<wk> zagruvaet i zapuskaet programmu
+O imq<wk> zagruvaet i wypolnqet programmu odin raz
+C imq<wk> wypolnqet cepo~nyj fajl
+D<wk> wywodit sprawo~nyj fajl na terminal
+H<wk> wywodit |to soob}enie
+
+
+,R TTIN
+wwedite sledu`}ie simwoly:
+
+1 2 3 4 J C U K
+1 2 3 4 J C U K
+k prohod
+wwedite sledu`}ie simwoly:
+
+1 2 3 4 J C U K
+

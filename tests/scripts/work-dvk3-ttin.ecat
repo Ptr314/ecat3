@@ -1,0 +1,29 @@
+# ДВК-3: заводской тест последовательного интерфейса TTIN под монитором
+# тестов FTMON (диск ФОДОС): маски прерываний приёмника и передатчика, затем
+# ввод с клавиатуры строки «1 2 3 4 J C U K», которую тест возвращает эхом,
+# и «к проход» - конец прохода без ошибок.
+# @timeout 120
+# @nomcp в живой сессии машина успевает поработать до первой команды, а загрузка RT-11 зависит от времени
+MACHINE "dvk/DVK-3-MY.ext"
+COMMAND my0.load("FODOSTMO.DSK")
+WAIT _2000
+KEY _100,_50,ret
+WAIT _300
+TYPE "BMY"
+KEY _100,_50,ret
+WAIT _20000
+KEY _100,_50,ret
+WAIT _1000
+TYPE "R FTMON"
+KEY _100,_50,ret
+WAIT _5000
+COMMAND panel.option(1,0)
+TYPE "R TTIN"
+KEY _100,_50,ret
+WAIT _5000
+TYPE "1234JCUK"
+WAIT _5000
+
+PRINT "=== Экран ==="
+LOG display.text
+EXIT

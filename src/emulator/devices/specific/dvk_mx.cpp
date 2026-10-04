@@ -120,8 +120,23 @@ unsigned int DVKMX::get_selected_drive()
     return (m_csr & MX_DRIVE) >> 2;
 }
 
-// Дорожка под головкой выбранного привода, словами, так, как её записал бы
-// стандартный драйвер MX
+// Записанные дорожки относятся к образу, в который их писали: другой образ
+// (или вынутый) их забывает
+void DVKMX::sync_written(Drive * d)
+{
+    const unsigned int gen = d->fdd->get_generation();
+    if (d->adopt) {
+        d->generation = gen;
+        d->adopt = false;
+    }
+    if (d->generation != gen) {
+        d->written.clear();
+        d->generation = gen;
+    }
+}
+
+// Дорожка под головкой выбранного привода, словами: записанная программой -
+// как она её записала, иначе так, как её записал бы стандартный драйвер MX
 void DVKMX::build_track()
 {
     const unsigned int words = (unsigned int)(m_rev_ticks / m_word_ticks);
@@ -133,6 +148,15 @@ void DVKMX::build_track()
     const int side = (m_csr & MX_TOPHEAD) ? 1 : 0;
     const int track = d->track;
     if (track < 0 || track >= f->get_tracks() || side >= f->get_sides()) return;
+
+    sync_written(d);
+    const auto kept = d->written.find((unsigned int)(track * 2 + side));
+    if (kept != d->written.end()) {
+        const size_t n = (kept->second.size() < m_track.size()) ? kept->second.size() : m_track.size();
+        std::copy(kept->second.begin(), kept->second.begin() + n, m_track.begin());
+        return;
+    }
+
     if (f->get_sector_size() != DVK_MX_SECTOR_SIZE || f->get_sectors() < DVK_MX_SECTORS) return;
 
     unsigned int p = MX_LEAD_WORDS;
@@ -167,6 +191,11 @@ void DVKMX::store_track()
     const int side = (m_csr & MX_TOPHEAD) ? 1 : 0;
     const int track = d->track;
     if (track < 0 || track >= f->get_tracks() || side >= f->get_sides()) return;
+
+    // Дорожка остаётся такой, какой её записали, - и стёртая тоже
+    sync_written(d);
+    d->written[(unsigned int)(track * 2 + side)] = m_track;
+
     if (f->get_sector_size() != DVK_MX_SECTOR_SIZE || f->get_sectors() < DVK_MX_SECTORS) return;
 
     size_t p = 0;
@@ -185,7 +214,22 @@ void DVKMX::store_track()
     }
 }
 
-// Индекс: пуск, ждавший его, начинается, идущая операция кончается
+// Слово записи на дорожку: после индекса - поверх её начала
+void DVKMX::put_word(uint16_t w)
+{
+    if (!m_wrapped) {
+        m_track.push_back(w);
+        return;
+    }
+    if (m_wrap < m_track.size()) m_track[m_wrap] = w;
+    m_wrap++;
+}
+
+// Индекс: пуск, ждавший его, начинается, чтение кончается. Запись индекс
+// не останавливает (так и в MAME): она идёт, пока программа подаёт слова
+// или не снимет разряд записи. TSTMX пишет заполнитель 177777, пока не
+// увидит индекс, и только потом бросает - остановленная на индексе запись
+// не давала ему готовности, и тест висел
 void DVKMX::start_word()
 {
     switch (m_op) {
@@ -204,14 +248,15 @@ void DVKMX::start_word()
     case OP_WAIT_WRITE:
         m_op = OP_WRITE;
         m_track.clear();
+        m_wrapped = false;
+        m_wrap = 0;
         m_shift = m_wbuf;
         m_tr = true;
         m_word_left = m_word_ticks;
         break;
     case OP_WRITE:
-        m_track.push_back((uint16_t)m_shift);
-        store_track();
-        m_op = OP_IDLE;
+        m_wrapped = true;
+        m_wrap = 0;
         break;
     default:
         break;
@@ -265,7 +310,7 @@ void DVKMX::clock(unsigned int counter)
                 }
                 m_word_left = m_word_ticks;
             } else {
-                m_track.push_back((uint16_t)m_shift);
+                put_word((uint16_t)m_shift);
                 if (m_tr) {
                     // Программа не поспела со следующим словом
                     m_err = true;
@@ -339,7 +384,7 @@ void DVKMX::set_value_word(unsigned int address, unsigned int value, MAYBE_UNUSE
     // последнего слова (BIC #60241), не дожидаясь индекса, и тут же пускает
     // контрольное чтение. Слово, которое ещё уходило, остаётся на дорожке
     if (m_op == OP_WRITE && (value & MX_WRITE) == 0) {
-        m_track.push_back((uint16_t)m_shift);
+        put_word((uint16_t)m_shift);
         store_track();
         m_op = OP_IDLE;
         m_tr = false;
@@ -438,6 +483,8 @@ void DVKMX::save_state(StateWriter &w)
     w.n("op", m_op);
     w.n("pos", m_pos);
     w.u("shift", m_shift);
+    w.b("wrapped", m_wrapped);
+    w.n("wrap", m_wrap);
     w.n64("angle", m_angle);
     w.n64("word_left", m_word_left);
     w.n64("timer_left", m_timer_left);
@@ -445,6 +492,22 @@ void DVKMX::save_state(StateWriter &w)
     w.b("step_dir", m_step_dir);
     for (unsigned int i = 0; i < m_drives_count; i++)
         w.n_at("track", i, (unsigned int)m_drives[i].track);
+    // Записанные дорожки: их служебных слов в образе нет
+    for (unsigned int i = 0; i < m_drives_count; i++) {
+        const Drive &d = m_drives[i];
+        if (d.written.empty()) continue;
+        w.push(("written" + std::to_string(i)).c_str());
+        std::vector<uint32_t> keys;
+        for (const auto &e : d.written) keys.push_back(e.first);
+        w.n("count", (unsigned int)keys.size());
+        w.array("keys", keys.data(), keys.size());
+        for (const auto &e : d.written) {
+            w.n(("words" + std::to_string(e.first)).c_str(), (unsigned int)e.second.size());
+            if (!e.second.empty())
+                w.array(("track" + std::to_string(e.first)).c_str(), e.second.data(), e.second.size());
+        }
+        w.pop();
+    }
     // Дорожка, которая читается или пишется: записанной ещё нет в образе
     if (m_op == OP_WRITE || m_op == OP_READ) {
         w.n("track_words", (unsigned int)m_track.size());
@@ -465,6 +528,8 @@ emulator::Result DVKMX::load_state(const StateReader &r)
     r.u("op", m_op);
     r.u("pos", m_pos);
     r.u("shift", m_shift);
+    r.b("wrapped", m_wrapped);
+    r.u("wrap", m_wrap);
     r.n64("angle", m_angle);
     r.n64("word_left", m_word_left);
     r.n64("timer_left", m_timer_left);
@@ -473,6 +538,23 @@ emulator::Result DVKMX::load_state(const StateReader &r)
     for (unsigned int i = 0; i < m_drives_count; i++) {
         uint32_t t = 0;
         if (r.u_at("track", i, t)) m_drives[i].track = (int)t;
+        // Образ привода снимок открывает заново, и номер его другой: дорожки
+        // относятся к тому, что окажется в приводе
+        Drive &d = m_drives[i];
+        d.written.clear();
+        d.adopt = true;
+        const StateReader sub = r.sub(("written" + std::to_string(i)).c_str());
+        uint32_t count = 0;
+        if (!sub.u("count", count) || count == 0 || count > 1024) continue;
+        std::vector<uint32_t> keys(count, 0);
+        if (!sub.array("keys", keys.data(), keys.size())) continue;
+        for (uint32_t key : keys) {
+            uint32_t words = 0;
+            if (!sub.u(("words" + std::to_string(key)).c_str(), words) || words > 65536) continue;
+            std::vector<uint16_t> data(words, 0);
+            if (words > 0) sub.array(("track" + std::to_string(key)).c_str(), data.data(), data.size());
+            d.written[key] = data;
+        }
     }
     m_track.clear();
     uint32_t words = 0;

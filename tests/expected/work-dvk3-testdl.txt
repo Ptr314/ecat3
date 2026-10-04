@@ -1,0 +1,29 @@
+[tl.sent] &00000000014
+[tl.received] &00000000014
+=== Экран ===
+[display.text] 
+                             lin  rus  wr             9600  0 0 0  0 0 0  0 0 1
+**********************  tEST  KONTROLQ  ktlk 4,6  **************************
+
+N        aDRESA        aDRESACIQ    pEREDA^A   pRIEM     wEKTOR     sIMWOL
+
+1    176560B-176566B       +           +         +     320B-326B   377B-377B
+
+
+
+
+
+
+
+
+
+
+
+*************************** q^EJKA PROWERENA... ****************************
+
+
+
+
+
+e]E BUDEM PROWERQTX?(d/n)
+
