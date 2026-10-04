@@ -1,0 +1,23 @@
+# ДВК-1 с ФОКАЛом (ПЗУ 058): запуск из монитора 140000G, вычисление и
+# программа из одной строки с циклом.
+# @timeout 60
+MACHINE "dvk/DVK-1-FOCAL.ext"
+WAIT _2000
+KEY _100,_50,ret
+WAIT _300
+TYPE "140000G"
+WAIT _5000
+TYPE "TYPE 2+2"
+KEY _100,_50,ret
+WAIT _2000
+TYPE "1.1 FOR I=1,5;TYPE I*I"
+KEY _100,_50,ret
+WAIT _1000
+TYPE "GO"
+KEY _100,_50,ret
+WAIT _3000
+
+PRINT "=== Экран ==="
+LOG display.text
+SCREEN "../results/work-dvk1-focal.png"
+EXIT
