@@ -1,0 +1,28 @@
+[dw.writes] &00000000004
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+
+                  *** tEST    k v d   OKON^EN ***
+
+
+        o[IBOK NE OBNARUVENO
+
+.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

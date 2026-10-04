@@ -1,0 +1,27 @@
+# ДВК-3: системный тест SYST2 под FTMON (диск ФОДОС) - вариант без
+# печатающего устройства из цепочки MXPSI3: маски, готовность и прерывания
+# терминала и диска; каждый проход кончается «к проход». SYST и SYST1
+# проверяют ещё и принтер, которого у машины нет, и стоят на зависании шины.
+# @timeout 300
+# @nomcp в живой сессии машина успевает поработать до первой команды, а загрузка RT-11 зависит от времени
+MACHINE "dvk/DVK-3-MY.ext"
+COMMAND my0.load("FODOSTMO.DSK")
+WAIT _2000
+KEY _100,_50,ret
+WAIT _300
+TYPE "BMY"
+KEY _100,_50,ret
+WAIT _20000
+KEY _100,_50,ret
+WAIT _1000
+TYPE "R FTMON"
+KEY _100,_50,ret
+WAIT _5000
+COMMAND panel.option(1,0)
+TYPE "R SYST2"
+KEY _100,_50,ret
+WAIT _30000
+
+PRINT "=== Экран ==="
+LOG display.text
+EXIT

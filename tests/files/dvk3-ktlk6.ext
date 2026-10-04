@@ -1,0 +1,76 @@
+// ДВК-3 с MY и платой КТЛК-6 (МС4622, нижняя половина): шесть каналов ИРПС
+// на 176560-176636, векторы 320-376, впереди цепочки прерываний. Для теста
+// TSDL6N с диска ФОДОС (work-dvk3-tsdl6n), заглушки - COMMAND kN.plug(1)
+@extends dvk/DVK-3-MY.ext
+@version ДВК-3 с КТЛК-6 (тест)
+
+cpu:~virq = k1.virq
+cpu:~vector = k1.vector
+
+@before mapper
+k1 : dl11 {
+	baud = _9600
+	rx_vector = 320
+	tx_vector = 324
+	~virq_in = k2.virq
+	~vector_in = k2.vector
+	~iako = cpu.iako
+	~init = cpu.init
+}
+
+k2 : dl11 {
+	baud = _9600
+	rx_vector = 330
+	tx_vector = 334
+	~virq_in = k3.virq
+	~vector_in = k3.vector
+	~iako = cpu.iako
+	~init = cpu.init
+}
+
+k3 : dl11 {
+	baud = _9600
+	rx_vector = 340
+	tx_vector = 344
+	~virq_in = k4.virq
+	~vector_in = k4.vector
+	~iako = cpu.iako
+	~init = cpu.init
+}
+
+k4 : dl11 {
+	baud = _9600
+	rx_vector = 350
+	tx_vector = 354
+	~virq_in = k5.virq
+	~vector_in = k5.vector
+	~iako = cpu.iako
+	~init = cpu.init
+}
+
+k5 : dl11 {
+	baud = _9600
+	rx_vector = 360
+	tx_vector = 364
+	~virq_in = k6.virq
+	~vector_in = k6.vector
+	~iako = cpu.iako
+	~init = cpu.init
+}
+
+k6 : dl11 {
+	baud = _9600
+	rx_vector = 370
+	tx_vector = 374
+	~virq_in = dw.virq
+	~vector_in = dw.vector
+	~iako = cpu.iako
+	~init = cpu.init
+}
+
+mapper:@memory[0:1][176560-176567] = k1
+mapper:@memory[0:1][176570-176577] = k2
+mapper:@memory[0:1][176600-176607] = k3
+mapper:@memory[0:1][176610-176617] = k4
+mapper:@memory[0:1][176620-176627] = k5
+mapper:@memory[0:1][176630-176637] = k6

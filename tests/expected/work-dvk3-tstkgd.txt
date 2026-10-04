@@ -1,0 +1,27 @@
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+
+prowerka okon~ena. **test o{ibok ne obnaruvil**
+
+komanda(<m>-men`) --->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

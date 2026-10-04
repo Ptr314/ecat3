@@ -1,0 +1,30 @@
+# ДВК-3: заводской тест платы КТЛК-6 (МС4622) TSDL6N с диска ФОДОС на
+# шести каналах ИРПС 176560-176636 (векторы 320-376) с заглушками: адресация,
+# передача, приём, прерывания «+» и символ 377-377 на каждом канале.
+# Конфигурация - tests/files/dvk3-ktlk6.ext.
+# @timeout 300
+# @nomcp в живой сессии машина успевает поработать до первой команды, а загрузка RT-11 зависит от времени
+MACHINE "../../tests/files/dvk3-ktlk6.ext"
+COMMAND k1.plug(1)
+COMMAND k2.plug(1)
+COMMAND k3.plug(1)
+COMMAND k4.plug(1)
+COMMAND k5.plug(1)
+COMMAND k6.plug(1)
+COMMAND my0.load("FODOSTMO.DSK")
+WAIT _2000
+KEY _100,_50,ret
+WAIT _300
+TYPE "BMY"
+KEY _100,_50,ret
+WAIT _20000
+KEY _100,_50,ret
+WAIT _1000
+COMMAND panel.option(1,0)
+TYPE "R TSDL6N"
+KEY _100,_50,ret
+WAIT _90000
+
+PRINT "=== Экран ==="
+LOG display.text
+EXIT
