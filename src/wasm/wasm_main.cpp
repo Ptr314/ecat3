@@ -903,7 +903,7 @@ void wasm_host_file_release(int id)
 }
 
 // One line per hard disk of the machine, tab separated:
-//   name  loaded  protected  file_name  files
+//   name  loaded  protected  led  file_name  files
 EMSCRIPTEN_KEEPALIVE
 const char* wasm_hdd_info()
 {
@@ -925,6 +925,7 @@ const char* wasm_hdd_info()
         result += devices[i]->name + "\t"
                 + (image.attached() ? "1" : "0") + "\t"
                 + (image.write_protect() ? "1" : "0") + "\t"
+                + (image.is_led_on() ? "1" : "0") + "\t"
                 + file + "\t"
                 + files + "\n";
     }

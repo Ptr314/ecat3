@@ -6,6 +6,8 @@
 #pragma once
 
 #include <array>
+#include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <map>
@@ -67,6 +69,11 @@ public:
     bool read(uint64_t offset, uint8_t * buffer);
     bool write(uint64_t offset, const uint8_t * buffer);
 
+    // Лампочка обращения: горит, пока идут чтения и записи, и ещё полсекунды
+    // после последнего. Обмены отмечает поток эмуляции, спрашивает окно или
+    // страница - один опрашивающий поток
+    bool is_led_on();
+
     // Образ целиком, с записанными секторами
     bool contents(std::vector<uint8_t> &image);
 
@@ -85,6 +92,10 @@ private:
     bool m_volatile = false;
     std::map<uint64_t, std::array<uint8_t, SECTOR_SIZE>> m_overlay;
     compat_mutex m_mutex;
+    std::atomic<unsigned> m_accesses{0};
+    unsigned m_led_seen = 0;
+    bool m_led_active = false;
+    std::chrono::steady_clock::time_point m_led_start;
 
     void close_locked();
     bool contents_locked(std::vector<uint8_t> &image);

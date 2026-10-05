@@ -32,6 +32,7 @@
         <file alias="floppy_locked">resources/icons/5floppy_locked.png</file>
         <file alias="floppy_mount">resources/icons/5floppy_mount.png</file>
         <file alias="floppy_unmount">resources/icons/5floppy_unmount.png</file>
+        <file alias="hdd_access">resources/icons/hdd_access.png</file>
         <file alias="hdd_mount">resources/icons/hdd_mount.png</file>
         <file alias="hdd_unmount">resources/icons/hdd_unmount.png</file>
         <file alias="lock">resources/icons/encrypted.png</file>

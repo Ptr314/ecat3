@@ -2041,10 +2041,10 @@ function readHardDisks(module) {
             name: f[0],
             loaded: f[1] === "1",
             protected: f[2] === "1",
-            led: false,
-            file: (f[3] || "").replace(/^\/host\/\d+\//, ""),
-            files: f[4] || "",
-            filesSave: f[4] || "",
+            led: f[3] === "1",
+            file: (f[4] || "").replace(/^\/host\/\d+\//, ""),
+            files: f[5] || "",
+            filesSave: f[5] || "",
         });
     }
     return list;

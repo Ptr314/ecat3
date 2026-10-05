@@ -115,10 +115,25 @@ void HddImage::set_volatile(bool on)
     if (!on) m_overlay.clear();
 }
 
+bool HddImage::is_led_on()
+{
+    const unsigned n = m_accesses.load();
+    const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+    if (n != m_led_seen) {
+        m_led_seen = n;
+        m_led_start = now;
+        m_led_active = true;
+    } else if (m_led_active && now - m_led_start > std::chrono::milliseconds(500)) {
+        m_led_active = false;
+    }
+    return m_led_active;
+}
+
 bool HddImage::read(uint64_t offset, uint8_t * buffer)
 {
     compat_lock_guard lock(m_mutex);
     if (!attached() || offset + SECTOR_SIZE > m_size) return false;
+    m_accesses++;
     const auto kept = m_overlay.find(offset);
     if (kept != m_overlay.end()) {
         memcpy(buffer, kept->second.data(), SECTOR_SIZE);
@@ -134,6 +149,7 @@ bool HddImage::write(uint64_t offset, const uint8_t * buffer)
 {
     compat_lock_guard lock(m_mutex);
     if (!attached() || m_write_protect || offset + SECTOR_SIZE > m_size) return false;
+    m_accesses++;
     if (m_volatile || m_source) {
         // Файл только на чтение этому не мешает: в него ничего не пишется.
         // Внешний источник иначе и не пишется

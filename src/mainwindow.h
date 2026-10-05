@@ -94,7 +94,7 @@ private slots:
     void hdd_eject(unsigned int n);
     void hdd_wp(unsigned int n);
 
-    void update_fdds();
+    void update_fdds();                 //The lamps of the floppy and hard disk drives
 
     void on_actionScreenshot_triggered();
     void on_actionSaveState_triggered();

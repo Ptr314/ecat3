@@ -52,6 +52,7 @@
 #include "dialogs/portwindow.h"
 #include "dialogs/openconfigwindow.h"
 #include "emulator/devices/common/fdd.h"
+#include "emulator/devices/common/hdd_image.h"
 #include "emulator/devices/common/tape.h"
 #include "emulator/script/script_parser.h"
 #include "dialogs/taperecorder.h"
@@ -806,15 +807,6 @@ void MainWindow::UpdateToolbar()
         }
 
     }
-    if (fdds_found > 0) {
-        if (fdd_timer == nullptr)
-        {
-            fdd_timer = new QTimer(this);
-            connect(fdd_timer, &QTimer::timeout, this, &MainWindow::update_fdds);
-        }
-        fdd_timer->start(100);
-    }
-
     //Винчестеры. Образ - файл на сотни мегабайт, с машиной он не поставляется,
     //поэтому гнездо обычно пустое, и вставляют образ отсюда
     std::vector<ComputerDevice*> hdd_devices = e->dm->find_devices_by_class("hdd");
@@ -827,6 +819,15 @@ void MainWindow::UpdateToolbar()
         CreateHDDMenu(i);
         buttons_added++;
         hdd_show(i);
+    }
+
+    if (fdds_found > 0 || hdds_found > 0) {
+        if (fdd_timer == nullptr)
+        {
+            fdd_timer = new QTimer(this);
+            connect(fdd_timer, &QTimer::timeout, this, &MainWindow::update_fdds);
+        }
+        fdd_timer->start(100);
     }
 
     std::vector<ComputerDevice*>tape_devices = e->dm->find_devices_by_class("tape");
@@ -1716,7 +1717,9 @@ void MainWindow::hdd_show(unsigned int n)
     hdd_menu[n]->actions().at(0)->setText(attached
         ? QFileInfo(QString::fromStdString(file)).fileName()
         : MainWindow::tr("<Not loaded>"));
-    hdd_button[n]->setIcon(QIcon(attached ? ":/icons/hdd_mount" : ":/icons/hdd_unmount"));
+    const char * icon = attached ? ":/icons/hdd_mount" : ":/icons/hdd_unmount";
+    hdd_button[n]->setIcon(QIcon(icon));
+    hdd_button[n]->setProperty("led_icon", QString(icon));
     //Образ, который не открылся на запись, защищён и без спроса
     hdd_menu[n]->actions().at(3)->setChecked(device_flag(d, "protected"));
 }
@@ -1809,11 +1812,13 @@ void MainWindow::fdd_write(unsigned int n)
 void MainWindow::update_fdds()
 {
     // TODO: this event may happen after exiting or stopping emulator
+    //One phase for every lamp of the tick: flipped per lit drive, two lit
+    //drives flipped it back and both pictures froze - the first one lit, the
+    //other one dark
+    fdd_blinker = !fdd_blinker;
     for (unsigned int i=0; i<fdds_found; i++)
     {
-        //if (fdc->get_busy() && fdc->get_selected_drive()==i) {
         if (fdds[i]->is_led_on()) {
-            fdd_blinker = !fdd_blinker;
             if (fdd_blinker) {
                 fdd_button[i]->setIcon(QIcon(":/icons/floppy_access"));
             } else {
@@ -1829,6 +1834,20 @@ void MainWindow::update_fdds()
             } else {
                 fdd_button[i]->setIcon(QIcon(":/icons/floppy_unmount"));
             }
+        }
+    }
+    for (unsigned int i = 0; i < hdds_found; i++)
+    {
+        HddImageOwner * owner = dynamic_cast<HddImageOwner*>(hdds[i]);
+        if (owner == nullptr) continue;
+        HddImage & image = owner->hdd_image();
+        const char * icon = !image.attached() ? ":/icons/hdd_unmount"
+                          : (image.is_led_on() && fdd_blinker) ? ":/icons/hdd_access"
+                          : ":/icons/hdd_mount";
+        //Set only on a change: the button would otherwise repaint ten times a second
+        if (hdd_button[i]->property("led_icon").toString() != icon) {
+            hdd_button[i]->setIcon(QIcon(icon));
+            hdd_button[i]->setProperty("led_icon", QString(icon));
         }
     }
 }
