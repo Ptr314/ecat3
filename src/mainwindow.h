@@ -199,10 +199,12 @@ private:
     //engine, so a session can be recorded, replayed, cut and continued
     enum RecState { RecIdle, RecRecording, RecPlaying, RecPaused };
 
+    //A dropdown, or a button that stays pressed (combo is null then)
     struct OptionCombo {
         std::string device;
         unsigned int option;
         QComboBox * combo;
+        QAction * toggle;
     };
 
     RecState rec_state = RecIdle;
@@ -216,7 +218,7 @@ private:
     size_t rec_seen_pc = 0;             //Commands before it were checked for option changes
     uint64_t rec_total_ms = 0;
     QString rec_file;                   //Last opened or saved .ecat
-    QList<OptionCombo> option_combos;   //Device option dropdowns of the tool bar
+    QList<OptionCombo> option_combos;   //Device option dropdowns and buttons of the tool bar
 
     bool rec_save();
     void rec_stop_all();

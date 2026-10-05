@@ -1,0 +1,5 @@
+// ДВК-4 с прошивкой КЦГД 181 (без KeyGP), как записан тест work-dvk4-kcgd-factory
+@extends dvk/DVK-4.cfg
+@version ДВК-4 с прошивкой КЦГД 181 (тест)
+
+kcgd-rom:image = kcgd181.rom

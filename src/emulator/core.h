@@ -159,7 +159,7 @@ struct DeviceOptionValue {
 };
 
 #define DEVICE_OPTION_DROPDOWN  0
-#define DEVICE_OPTION_CHECKBOX  1
+#define DEVICE_OPTION_TOGGLE    1   // a button that stays pressed: values 0 (off) and 1 (on)
 
 struct DeviceOption {
     unsigned id;
@@ -600,14 +600,6 @@ class ROM: public Memory
 private:
     ROMMode rom_mode = ROMMode::Normal;
     unsigned stream_counter = 0;
-    // Сменные микросхемы одного гнезда (image_1, image_2, ... с подписями
-    // title_1, ...): переключатель машины, как плата в разъёме. Пусто, когда
-    // ПЗУ одно
-    std::vector<std::string> m_variant_files;
-    std::vector<std::string> m_variant_titles;
-    unsigned m_variant = 0;
-    std::string m_variant_label;
-    std::string m_variant_icon;
     // partial = 1: образ короче окна - остаток гнёзд пуст и на шине не
     // отвечает (диапазон в карте помечается routed = 1)
     bool m_partial = false;
@@ -617,8 +609,6 @@ public:
     ROM(InterfaceManager *im, EmulatorConfigDevice *cd);
     emulator::Result load_config(SystemData *sd) override;
     ConfigFields get_config_fields() override;
-    DeviceOptions get_device_options() override;
-    void set_device_option(unsigned option_id, unsigned value_id) override;
     unsigned int route(unsigned int address, unsigned int mode) override;
     unsigned get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;

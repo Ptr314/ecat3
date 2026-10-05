@@ -1296,25 +1296,10 @@ emulator::Result ROM::load_config(SystemData *sd)
     m_partial = read_confg_value(cd, "partial", false, false);
     m_image_length = 0;
 
-    // Сменные микросхемы: image_1, image_2, ... Названный в image файл (его
-    // ставит расширение конфигурации) важнее, переключателя тогда нет
-    m_variant_files.clear();
-    m_variant_titles.clear();
-    if (image.empty()) {
-        for (unsigned n = 1; ; n++) {
-            const std::string file = str_trim(cd->get_parameter("image_" + std::to_string(n), false).value);
-            if (file.empty()) break;
-            std::string title = str_trim(cd->get_parameter("title_" + std::to_string(n), false).value);
-            m_variant_files.push_back(file);
-            m_variant_titles.push_back(title.empty() ? file : title);
-        }
-        // Подпись и картинка переключателя пишутся в конфигурации и выводятся
-        // как есть, без перевода, как у connector
-        m_variant_label = str_trim(cd->get_parameter("label", false).value);
-        m_variant_icon = str_trim(cd->get_parameter("icon", false).value);
-        if (m_variant >= m_variant_files.size()) m_variant = 0;
-        if (!m_variant_files.empty()) image = m_variant_files[m_variant];
-    }
+    // Сменные микросхемы гнезда: image_1, image_2, ... - список, из которого
+    // выбирают в редакторе конфигурации; выбранная пишется в image. Без него
+    // стоит первая
+    if (image.empty()) image = str_trim(cd->get_parameter("image_1", false).value);
 
     if (!image.empty()) {
         set_size(parse_numeric_value(cd->get_parameter("size").value));
@@ -1420,44 +1405,6 @@ emulator::Result ROM::load_image(const std::string &image)
     return emulator::Result::ok();
 }
 
-#define ROM_OPTION_VARIANT  0
-
-DeviceOptions ROM::get_device_options()
-{
-    if (m_variant_files.size() < 2) return {};
-    DeviceOption opt;
-    opt.id = ROM_OPTION_VARIANT;
-    opt.type = DEVICE_OPTION_DROPDOWN;
-    opt.title = m_variant_label.empty() ? std::string(QT_TRANSLATE_NOOP("DeviceOptions", "ROM")) : m_variant_label;
-    opt.icon = m_variant_icon;
-    for (size_t i = 0; i < m_variant_titles.size(); i++)
-        opt.values.push_back({static_cast<unsigned>(i), m_variant_titles[i]});
-    opt.current = m_variant;
-    return {opt};
-}
-
-// The chip is swapped at once, as with the power off: what was running from
-// the old one goes on with the new contents, and the machine is restarted by
-// its power button. A saved state restores the choice before anything runs
-void ROM::set_device_option(unsigned option_id, unsigned value_id)
-{
-    if (option_id != ROM_OPTION_VARIANT || value_id >= m_variant_files.size()) return;
-    if (value_id == m_variant) return;
-    const unsigned old = m_variant;
-    m_variant = value_id;
-    if (!load_image(m_variant_files[m_variant])) {
-        m_variant = old;
-        load_image(m_variant_files[m_variant]);
-    }
-    // A shorter image leaves more of the window empty: the mappers resolve
-    // their pages again
-    if (m_partial)
-        for (unsigned int i = 0; i < im->dm->device_count; i++) {
-            MemoryMapper * mm = dynamic_cast<MemoryMapper*>(im->dm->get_device(i)->device.get());
-            if (mm != nullptr) mm->routing_changed();
-        }
-}
-
 // Past the end of the image of a partial ROM the sockets are empty: the
 // address is left to the ranges after this one, and with none there the bus
 // times out
@@ -1476,10 +1423,29 @@ unsigned int ROM::get_value(unsigned int address)
     return value;
 }
 
-// Only a ROM the config marks as replaceable, by giving the file dialog a
-// filter: a cartridge slot, not the firmware every machine has
+// A socket with a list of chips (image_1, image_2, ... titled title_N, the
+// field called by label: written in the config and shown as it is, like the
+// title of a connector) offers that list; otherwise only a ROM the config
+// marks as replaceable, by giving the file dialog a filter: a cartridge slot,
+// not the firmware every machine has
 ConfigFields ROM::get_config_fields()
 {
+    const std::string first = str_trim(cd->get_parameter("image_1", false).value);
+    if (!first.empty()) {
+        ConfigField f;
+        f.name = "image";
+        const std::string label = str_trim(cd->get_parameter("label", false).value);
+        f.title = label.empty() ? std::string(QT_TRANSLATE_NOOP("ConfigFields", "ROM image")) : label;
+        f.type = CONFIG_FIELD_CHOICE;
+        f.def = first;
+        for (unsigned n = 1; ; n++) {
+            const std::string file = str_trim(cd->get_parameter("image_" + std::to_string(n), false).value);
+            if (file.empty()) break;
+            const std::string title = str_trim(cd->get_parameter("title_" + std::to_string(n), false).value);
+            f.values.push_back({file, title.empty() ? file : title});
+        }
+        return {f};
+    }
     const std::string files = cd->get_parameter("files", false).value;
     if (files.empty()) return {};
     ConfigField f;

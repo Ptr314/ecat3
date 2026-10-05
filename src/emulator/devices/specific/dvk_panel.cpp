@@ -124,7 +124,7 @@ DeviceOptions DVKPanel::get_device_options()
 {
     return {
         {
-            OPTION_HALT, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Panel switch \"Halt\""), m_halt_icon,
+            OPTION_HALT, DEVICE_OPTION_TOGGLE, QT_TRANSLATE_NOOP("DeviceOptions", "Panel switch \"Halt\""), m_halt_icon,
             {
                 {0, QT_TRANSLATE_NOOP("DeviceOptions", "Run")},
                 {1, QT_TRANSLATE_NOOP("DeviceOptions", "Halt")}
@@ -132,7 +132,7 @@ DeviceOptions DVKPanel::get_device_options()
             static_cast<unsigned>(m_halt ? 1 : 0)
         },
         {
-            OPTION_PRT, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Line clock 50 Hz"), m_prt_icon,
+            OPTION_PRT, DEVICE_OPTION_TOGGLE, QT_TRANSLATE_NOOP("DeviceOptions", "Line clock 50 Hz"), m_prt_icon,
             {
                 {0, QT_TRANSLATE_NOOP("DeviceOptions", "Interrupts off")},
                 {1, QT_TRANSLATE_NOOP("DeviceOptions", "Interrupts on")}

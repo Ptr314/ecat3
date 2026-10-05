@@ -9,8 +9,7 @@
 # стоять. В конце набирается команда монитора, и экран показывает её
 # заглавными.
 # @timeout 60
-MACHINE "dvk/DVK-3.cfg"
-COMMAND monitor.option(0,1)
+MACHINE "../../tests/files/dvk3-055.ext"
 WAIT _2000
 KEY _100,_50,ret
 WAIT _300

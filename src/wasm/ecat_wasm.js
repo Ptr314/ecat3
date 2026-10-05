@@ -1315,8 +1315,9 @@ function readDeviceOptions(module) {
         if (!line) continue;
         const f = line.split("\t");
         const values = [];
-        for (let i = 4; i + 1 < f.length; i += 2) values.push({ id: parseInt(f[i], 10), title: f[i + 1] });
-        list.push({ device: f[0], id: parseInt(f[1], 10), title: f[2], current: parseInt(f[3], 10), values: values });
+        for (let i = 5; i + 1 < f.length; i += 2) values.push({ id: parseInt(f[i], 10), title: f[i + 1] });
+        list.push({ device: f[0], id: parseInt(f[1], 10), toggle: f[2] === "toggle", title: f[3],
+                    current: parseInt(f[4], 10), values: values });
     }
     return list;
 }
@@ -1332,6 +1333,32 @@ function setupDeviceOptions(module, configKey) {
     for (const opt of deviceOptions) {
         const key = "option." + configKey + "_" + opt.device + "_" + opt.id;
         const group = element("div", "group", box);
+
+        // Two positions, off and on: a button that stays pressed while it is on
+        if (opt.toggle) {
+            opt.button = element("button", "", group);
+            opt.button.type = "button";
+            const show = (on) => {
+                opt.button.classList.toggle("active", on);
+                opt.button.setAttribute("aria-pressed", on ? "true" : "false");
+            };
+            const saved = parseInt(settings.get(key, ""), 10);
+            if (saved === 0 || saved === 1) {
+                apply(opt, saved);
+                show(saved === 1);
+            } else {
+                show(opt.current !== 0);
+            }
+            opt.button.addEventListener("click", () => {
+                const value = opt.button.classList.contains("active") ? 0 : 1;
+                apply(opt, value);
+                settings.set(key, value);
+                show(value === 1);
+                opt.button.blur();
+            });
+            continue;
+        }
+
         opt.caption = element("label", "caption", group);
         opt.select = element("select", "", group);
         opt.select.id = "option-" + opt.device + "-" + opt.id;
@@ -1361,6 +1388,10 @@ function setupDeviceOptions(module, configKey) {
 
 function renderDeviceOptions() {
     for (const opt of deviceOptions) {
+        if (opt.toggle) {
+            opt.button.textContent = optionText(opt.title);
+            continue;
+        }
         opt.caption.textContent = optionText(opt.title);
         opt.values.forEach((v, i) => { opt.select.options[i].textContent = optionText(v.title); });
     }

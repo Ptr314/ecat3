@@ -5,8 +5,7 @@
 # уже она ставит драйвер DW. Потом - B и имя устройства (Boot: MY0)
 # @timeout 200
 # @nomcp в живой сессии машина успевает поработать до первой команды
-MACHINE "../../tests/files/dvk4-ksm.ext"
-COMMAND monitor.option(0,1)
+MACHINE "../../tests/files/dvk4-ksm-377.ext"
 COMMAND dw.load("rt11-dw.dsk")
 COMMAND dw.volatile(1)
 WAIT _40000

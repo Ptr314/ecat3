@@ -599,8 +599,10 @@ const char* wasm_md2html(const char* file_path)
 }
 
 // The device options of the machine, the ones the desktop puts on its toolbar:
-// one line per dropdown, the fields separated by tabs:
-//   device  option_id  title  current_value_id  value_id  value_title  [value_id  value_title ...]
+// one line per option, the fields separated by tabs:
+//   device  option_id  type  title  current_value_id  value_id  value_title  [value_id  value_title ...]
+// type is "list" for a dropdown and "toggle" for a button that stays pressed
+// (values 0 and 1).
 // The titles are the untranslated source strings; the page translates them.
 EMSCRIPTEN_KEEPALIVE
 const char* wasm_device_options()
@@ -614,8 +616,10 @@ const char* wasm_device_options()
         DeviceOptions options = dev->get_device_options();
         for (size_t j = 0; j < options.size(); j++) {
             const DeviceOption & opt = options[j];
-            if (opt.type != DEVICE_OPTION_DROPDOWN || opt.values.empty()) continue;
-            result += dev->name + "\t" + std::to_string(opt.id) + "\t" + opt.title + "\t" + std::to_string(opt.current);
+            if ((opt.type != DEVICE_OPTION_DROPDOWN && opt.type != DEVICE_OPTION_TOGGLE) || opt.values.empty()) continue;
+            result += dev->name + "\t" + std::to_string(opt.id)
+                    + (opt.type == DEVICE_OPTION_TOGGLE ? "\ttoggle\t" : "\tlist\t")
+                    + opt.title + "\t" + std::to_string(opt.current);
             for (size_t v = 0; v < opt.values.size(); v++)
                 result += "\t" + std::to_string(opt.values[v].id) + "\t" + opt.values[v].title;
             result += "\n";

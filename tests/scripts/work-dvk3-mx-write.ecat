@@ -7,8 +7,7 @@
 # DIR видит его, TYPE выводит то же, что исходный.
 # @timeout 150
 # @nomcp на экране часы RT-11, а в живой сессии машина успевает поработать до первой команды
-MACHINE "dvk/DVK-3.cfg"
-COMMAND monitor.option(0,1)
+MACHINE "../../tests/files/dvk3-055.ext"
 WAIT _2000
 KEY _100,_50,ret
 WAIT _300

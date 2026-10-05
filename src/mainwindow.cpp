@@ -872,7 +872,7 @@ void MainWindow::UpdateToolbar()
         DeviceOptions options = dev->get_device_options();
         for (size_t j = 0; j < options.size(); j++) {
             const DeviceOption & opt = options[j];
-            if (opt.type == DEVICE_OPTION_DROPDOWN && !opt.values.empty()) {
+            if ((opt.type == DEVICE_OPTION_DROPDOWN || opt.type == DEVICE_OPTION_TOGGLE) && !opt.values.empty()) {
                 if (has_hw_buttons && !options_separator_added) {
                     QAction * sep = ui->toolBar->insertSeparator(ui->actionDebugger);
                     option_toolbar_actions.append(sep);
@@ -893,6 +893,32 @@ void MainWindow::UpdateToolbar()
                 ui->toolBar->insertAction(ui->actionDebugger, icon_action);
                 option_toolbar_actions.append(icon_action);
 
+                unsigned option_id = opt.id;
+                std::string device_name = dev->name;
+
+                //Two positions, off and on: the picture is the switch, pressed
+                //while it is on
+                if (opt.type == DEVICE_OPTION_TOGGLE) {
+                    icon_action->setText(option_tooltip);
+                    icon_action->setCheckable(true);
+                    icon_action->setChecked(opt.current != 0);
+                    connect(icon_action, &QAction::toggled,
+                        [this, dev, option_id, config_key, device_name](bool on) {
+                            unsigned value_id = on ? 1 : 0;
+                            e->invoke([&]() { dev->set_device_option(option_id, value_id); });
+                            std::string key = config_key.toStdString() + "_" + device_name + "_" + std::to_string(option_id);
+                            e->write_setup("DeviceOptions", key, std::to_string(value_id));
+                            e->record_command(device_name, "option", std::to_string(option_id) + "," + std::to_string(value_id));
+                        });
+                    OptionCombo oc;
+                    oc.device = device_name;
+                    oc.option = option_id;
+                    oc.combo = nullptr;
+                    oc.toggle = icon_action;
+                    option_combos.append(oc);
+                    continue;
+                }
+
                 QComboBox * combo = new QComboBox();
                 combo->setFocusPolicy(Qt::NoFocus);
                 combo->setToolTip(option_tooltip);
@@ -911,8 +937,6 @@ void MainWindow::UpdateToolbar()
                 }
                 combo->setCurrentIndex(selected_index);
 
-                unsigned option_id = opt.id;
-                std::string device_name = dev->name;
                 connect(combo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                     [this, combo, dev, option_id, config_key, device_name](int index) {
                         unsigned value_id = combo->itemData(index).toUInt();
@@ -937,6 +961,7 @@ void MainWindow::UpdateToolbar()
                 oc.device = device_name;
                 oc.option = option_id;
                 oc.combo = combo;
+                oc.toggle = nullptr;
                 option_combos.append(oc);
             }
         }
@@ -2072,6 +2097,11 @@ void MainWindow::rec_sync_option_combos(size_t from, size_t to)
         {
             const OptionCombo &oc = option_combos[j];
             if (oc.device != c.device || oc.option != option_id) continue;
+            if (oc.toggle != nullptr) {
+                QSignalBlocker blocker(oc.toggle);
+                oc.toggle->setChecked(value_id != 0);
+                continue;
+            }
             int index = oc.combo->findData(value_id);
             if (index >= 0) {
                 QSignalBlocker blocker(oc.combo);

@@ -1,0 +1,5 @@
+// ДВК-4 с КСМ (dvk4-ksm.ext) и монитором 377 вместо 134
+@extends ../../tests/files/dvk4-ksm.ext
+@version ДВК-4 с КСМ и монитором 377 (тест)
+
+monitor:image = 377.rom
