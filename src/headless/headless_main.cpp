@@ -749,6 +749,75 @@ bool check_vm1_timing(std::string &message)
     return true;
 }
 
+// The КМ1801ВМ2 timing table (timing = vm2): every opcode lands on a form or on
+// the fallback, and a few loops give what the simulated chip gives
+// (tools/vm2-timing), with a static memory and with the КЦГД video memory: a
+// processor window every 12 clocks, RPLY 4 clocks after it
+bool check_vm2_timing(std::string &message)
+{
+    for (unsigned int w = 0; w < 0x10000; w++)
+        for (int taken = 0; taken < 2; taken++)
+            for (int v = 0; v < 2; v++)
+                if (Vm1BusTiming::form2_of((uint16_t)w, taken != 0, v != 0) > Vm1BusTiming::F2_COUNT) {
+                    message = "opcode " + oct_str(w, 6) + " maps outside the table"; return false;
+                }
+
+    struct Window : public WaitSource {
+        uint64_t now = 0;           //where the device is clocked to
+        unsigned int wait_states(unsigned int address, bool, unsigned int offset) override {
+            if (address >= 0100000) return 0;
+            const uint64_t t = now + offset;
+            const uint64_t z = t + 12 - (t + 6) % 12;   //the first window point after t
+            return (unsigned int)(z + 4 - t);
+        }
+    };
+    // One loop iteration: the forms and what the core reads and writes in each
+    struct Access { unsigned int address; bool write; bool stream; };
+    struct Form { uint16_t w; bool taken; std::vector<Access> acc; };
+    auto loop = [](const std::vector<Form> & forms, bool window) -> double {
+        Vm1BusTiming t(7700000, Vm1BusTiming::CHIP_VM2);
+        Window vram;
+        WaitSource * wait = window ? &vram : nullptr;
+        unsigned int sum = 0;
+        for (int i = 0; i < 48; i++)
+            for (const Form & f : forms) {
+                //The opcode fetch first, as the core reads it: finish() skips it
+                t.record(01000, false, true, nullptr, wait);
+                for (const Access & a : f.acc)
+                    t.record(a.address, a.write, a.stream, nullptr, a.address < 0100000 ? wait : nullptr);
+                const int c = t.finish(Vm1BusTiming::form2_of(f.w, f.taken, false), nullptr, true, wait, 01000);
+                vram.now += (unsigned int)c;
+                if (i >= 24) sum += (unsigned int)c;
+            }
+        return sum / 24.0;
+    };
+    const Form sob = { 0077104, true, {} };
+    struct Case { const char * name; std::vector<Form> forms; double fast, kcgd; };
+    const std::vector<Case> cases = {
+        { "TST @#a; BMI; SOB", { { 0005737, false, { { 01006, false, true }, { 0167774, false, false } } },
+                                 { 0100775, false, {} }, sob }, 62, 132 },
+        { "MOV (R2),R4; SOB",  { { 0011204, false, { { 060000, false, false } } }, sob }, 44, 96 },
+        { "MUL R1,R4; SOB",    { { 0070401, false, {} }, sob }, 120, 144 },
+        // The chip: 48 on a static memory - after INC the microprogram of SOB
+        // starts while the write is still on the bus, which the model does
+        // not see from its templates (tools/vm2-timing/README.md)
+        { "INC (R2); SOB",     { { 0005212, false, { { 060000, false, false }, { 060000, true, false } } }, sob }, 50, 120 },
+        { "MOV R4,(R2); SOB",  { { 0010412, false, { { 060000, true, false } } }, sob }, 44, 96 },
+    };
+    for (const Case & c : cases) {
+        const double got[2] = { loop(c.forms, false), loop(c.forms, true) };
+        const double want[2] = { c.fast, c.kcgd };
+        static const char * where[2] = { "static memory", "КЦГД video memory" };
+        for (int k = 0; k < 2; k++)
+            if (got[k] < want[k] - 0.01 || got[k] > want[k] + 0.01) {
+                message = std::string(c.name) + " on " + where[k] + ": " + std::to_string(got[k])
+                        + " clocks instead of " + std::to_string(want[k]);
+                return false;
+            }
+    }
+    return true;
+}
+
 int run_selftest(const std::string &work_path, const std::string &data_path,
                  const std::string &software_path)
 {
@@ -828,6 +897,11 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     const bool vm1_ok = check_vm1_timing(message);
     if (!vm1_ok) { std::cout << "FAIL vm1 timing: " << message << std::endl; failed++; }
     std::cout << "К1801ВМ1 timing table: " << (vm1_ok ? "ok" : "FAILED") << std::endl;
+
+    message.clear();
+    const bool vm2_ok = check_vm2_timing(message);
+    if (!vm2_ok) { std::cout << "FAIL vm2 timing: " << message << std::endl; failed++; }
+    std::cout << "КМ1801ВМ2 timing table: " << (vm2_ok ? "ok" : "FAILED") << std::endl;
 
     return failed ? 1 : 0;
 }

@@ -46,6 +46,7 @@ namespace {
 
 void pdp11core::set_reply_delay(unsigned int periods)
 {
+    C_REPLY = periods;
     C_DATI  = 7 + periods;
     C_DATO  = 10 + periods;
     C_DATIO = 13 + 2 * periods;
@@ -1155,6 +1156,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         }
         case 1: {                                       // DIV
             cycles += C_DIV;
+            m_last_div_v = true;            // cleared below when it divides
             if ((r & 1) != 0 || src == 0) {
                 set_flag(PDP11::F_V, true);
                 set_flag(PDP11::F_C, src == 0);
@@ -1177,6 +1179,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
             }
             context.R[r] = (uint16_t)quotient;
             context.R[r | 1] = (uint16_t)(dividend % divisor);
+            m_last_div_v = false;
             set_flag(PDP11::F_N, quotient < 0);
             set_flag(PDP11::F_Z, quotient == 0);
             set_flag(PDP11::F_V, false);
@@ -1187,6 +1190,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
             int shift = (int)(src & 077);
             if (shift > 31) shift -= 64;
             cycles += C_ASH + C_SHIFT * (unsigned int)(shift < 0? -shift : shift);
+            m_last_shift = (unsigned int)(shift < 0 ? -shift - 1 : shift);
             //Counted in 64 bits and by multiplication: a left shift of a
             //negative value is undefined in C++11, and a right shift by 32
             //of a 32-bit one is too (x86 masks the count, so ASH #-32 left
@@ -1212,6 +1216,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
             int shift = (int)(src & 077);
             if (shift > 31) shift -= 64;
             cycles += C_ASHC + C_SHIFT * (unsigned int)(shift < 0? -shift : shift);
+            m_last_shift = (unsigned int)(shift < 0 ? -shift - 1 : shift);
             const int64_t value = (int32_t)(((uint32_t)context.R[r] << 16) | context.R[r | 1]);
             int64_t res;
             if (shift >= 0) {

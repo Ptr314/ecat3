@@ -17,7 +17,17 @@ class K1801VM1Core: public pdp11core
 private:
     k1801vm1 * emulator_device;
 
+    // Под старыми формулами (timing = legacy) каждый цикл шины стоит tn =
+    // reply_delay. Память, которая отвечает в своё время (параметр wait,
+    // WaitSource), называет время ответа сама; разница с tn копится здесь.
+    // Где в команде идёт цикл, формулы не знают: место считается сложением
+    // циклов шины, внутренняя работа процессора в него не входит
+    void bus_cycle(uint32_t address, bool write);
+
 public:
+    unsigned int bus_offset = 0;    // тактов от начала команды до текущего цикла
+    int bus_extra = 0;              // сколько память добавила к tn за команду
+
     K1801VM1Core(k1801vm1 * emulator_device, int family_type);
     virtual uint16_t read_word(uint32_t address) override;
     virtual void write_word(uint32_t address, uint16_t value) override;
@@ -87,7 +97,9 @@ private:
     // vm1_timing.h. Null for the old formulas (timing = legacy), which the
     // УК-НЦ keeps
     Vm1BusTiming * m_timing = nullptr;
+    bool m_timing_vm2 = false;      // timing = vm2: the tables of the КМ1801ВМ2
     unsigned int timed_cycles(unsigned int legacy);
+    unsigned int timed_cycles_vm2(unsigned int legacy, uint16_t pc);
 
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
@@ -116,6 +128,7 @@ public:
     // What answered the last access, for the timing model
     Vm1BusTiming * timing() { return m_timing; }
     const BusReply * last_reply() { return (mm->last_device != nullptr) ? mm->last_device->bus_reply : nullptr; }
+    WaitSource * last_wait() { return (mm->last_device != nullptr) ? mm->last_device->wait_source : nullptr; }
     void note_timeout(unsigned int address);
     void set_halt_mode(bool state);
     void virq_acknowledged(unsigned int vector);

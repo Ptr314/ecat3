@@ -29,7 +29,8 @@ uint16_t K1801VM1Core::read_word(uint32_t address)
 {
     uint16_t v = (uint16_t)emulator_device->read_mem_word(address);
     if (emulator_device->bus_timeout()) m_abort = true;
-    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, false, m_stream, emulator_device->last_reply());
+    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, false, m_stream, emulator_device->last_reply(), emulator_device->last_wait());
+    else bus_cycle(address, false);
     return v;
 }
 
@@ -37,14 +38,16 @@ void K1801VM1Core::write_word(uint32_t address, uint16_t value)
 {
     emulator_device->write_mem_word(address, value);
     if (emulator_device->bus_timeout()) m_abort = true;
-    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, true, false, emulator_device->last_reply());
+    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, true, false, emulator_device->last_reply(), emulator_device->last_wait());
+    else bus_cycle(address, true);
 }
 
 uint8_t K1801VM1Core::read_byte(uint32_t address)
 {
     uint8_t v = (uint8_t)emulator_device->read_mem(address);
     if (emulator_device->bus_timeout()) m_abort = true;
-    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, false, m_stream, emulator_device->last_reply());
+    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, false, m_stream, emulator_device->last_reply(), emulator_device->last_wait());
+    else bus_cycle(address, false);
     return v;
 }
 
@@ -52,7 +55,26 @@ void K1801VM1Core::write_byte(uint32_t address, uint8_t value)
 {
     emulator_device->write_mem(address, value);
     if (emulator_device->bus_timeout()) m_abort = true;
-    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, true, false, emulator_device->last_reply());
+    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, true, false, emulator_device->last_reply(), emulator_device->last_wait());
+    else bus_cycle(address, true);
+}
+
+// Такты от начала цикла шины до строба данных (DIN, DOUT): оценка, по ней
+// память узнаёт, в какой момент её спросили
+#define BUS_STROBE  2
+
+void K1801VM1Core::bus_cycle(uint32_t address, bool write)
+{
+    int cycle = (int)(write ? C_DATO : C_DATI);
+    if (WaitSource * w = emulator_device->last_wait()) {
+        const unsigned int reply = w->wait_states(address, write, bus_offset + BUS_STROBE);
+        if (reply != 0) {
+            const int extra = (int)reply - (int)C_REPLY;
+            bus_extra += extra;
+            cycle += extra;
+        }
+    }
+    if (cycle > 0) bus_offset += (unsigned int)cycle;
 }
 
 void K1801VM1Core::on_virq_ack(uint16_t vector)
@@ -124,16 +146,20 @@ emulator::Result k1801vm1::load_config(SystemData *sd)
     core->set_reply_delay(read_confg_value(cd, "reply_delay", false, (unsigned int)2));
 
     // Which clock count this processor keeps. legacy: the formulas above,
-    // built from reply_delay. vm1: every bus cycle placed in time from a
-    // simulation of the chip, with each memory replying as its BusReply says
+    // built from reply_delay. vm1, vm2: every bus cycle placed in time from a
+    // simulation of the chip (К1801ВМ1 or КМ1801ВМ2), with each memory
+    // replying as its BusReply or its WaitSource says
     const std::string timing = read_confg_value(cd, "timing", false, std::string("legacy"));
     delete m_timing;
     m_timing = nullptr;
     if (timing == "vm1")
         m_timing = new Vm1BusTiming(clock);
+    else if (timing == "vm2")
+        m_timing = new Vm1BusTiming(clock, Vm1BusTiming::CHIP_VM2);
     else if (timing != "legacy")
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "Unknown timing")) + "} " + name + ": " + timing);
+    m_timing_vm2 = (timing == "vm2");
 
     // База векторов пультового режима - вывод SEL процессора. Ноль оставляет
     // прежнее поведение: вход в режим идёт обычной ловушкой через halt_vector,
@@ -204,6 +230,11 @@ void k1801vm1::save_state(StateWriter &w)
     if (m_timing) {
         w.n64("timing_now", m_timing->m_now);
         w.n64("timing_start", m_timing->m_start);
+        if (m_timing_vm2) {
+            w.n64("timing_s0", m_timing->m_s0);
+            w.u("timing_kind", m_timing->m_kind2);
+            w.u("timing_flags", m_timing->m_flags2);
+        }
     }
 
     //The ring of executed addresses is what LOG cpu.history prints: a
@@ -249,6 +280,15 @@ emulator::Result k1801vm1::load_state(const StateReader &r)
     if (m_timing) {
         r.n64("timing_now", m_timing->m_now);
         r.n64("timing_start", m_timing->m_start);
+        if (m_timing_vm2) {
+            unsigned int kind = 0;
+            r.n64("timing_s0", m_timing->m_s0);
+            r.u("timing_kind", kind);
+            m_timing->m_kind2 = (uint8_t)(kind < 3 ? kind : 0);
+            unsigned int flags = Vm1BusTiming::F2_PREV_DATA_FREE;
+            r.u("timing_flags", flags);
+            m_timing->m_flags2 = (uint8_t)(flags & 3);
+        }
         m_timing->state_restored();
     }
     return emulator::Result::ok();
@@ -519,8 +559,14 @@ unsigned int k1801vm1::execute()
         return held;
     }
 
+    core->bus_offset = 0;
+    core->bus_extra = 0;
     unsigned int cycles = core->execute();
     if (m_timing) cycles = timed_cycles(cycles);
+    else if (core->bus_extra != 0) {
+        const int c = (int)cycles + core->bus_extra;
+        cycles = (c > 0) ? (unsigned int)c : 1;
+    }
 
     switch (m_debug) {
     case DEBUG_STEP:
@@ -542,6 +588,7 @@ unsigned int k1801vm1::execute()
 unsigned int k1801vm1::timed_cycles(unsigned int legacy)
 {
     const uint16_t pc = (uint16_t)core->get_pc();
+    if (m_timing_vm2) return timed_cycles_vm2(legacy, pc);
     unsigned int form = Vm1BusTiming::F_COUNT;
     bool skip_opcode = false;
     // Вход в пультовое исключение и возврат из него - свои циклы шины (RMW
@@ -564,6 +611,43 @@ unsigned int k1801vm1::timed_cycles(unsigned int legacy)
     if (form < Vm1BusTiming::F_COUNT) {
         AddressableDevice * d = mm->peek_read_device(pc);
         const int c = m_timing->finish(form, (d != nullptr) ? d->bus_reply : nullptr, skip_opcode);
+        if (c >= 0) return (unsigned int)c;
+    }
+    m_timing->discard();
+    m_timing->idle(legacy);
+    return legacy;
+}
+
+// The same under timing = vm2: the forms of the ВМ2, the steps of an ASH or
+// ASHC shift on top of its template, and the memory of the next opcode with
+// its WaitSource
+unsigned int k1801vm1::timed_cycles_vm2(unsigned int legacy, uint16_t pc)
+{
+    unsigned int form = Vm1BusTiming::F2_COUNT;
+    unsigned int extra = 0;
+    bool skip_opcode = false;
+    if (!core->m_last_console) {
+        switch (core->m_last_kind) {
+        case pdp11core::LAST_INSN:
+            if (!core->m_last_trapped) {
+                const uint16_t w = core->m_last_command;
+                form = Vm1BusTiming::form2_of(w, core->m_last_taken,
+                                              (w & 0177000) == 0071000 && core->m_last_div_v);
+                if ((w & 0176000) == 0072000) extra = core->m_last_shift * Vm1BusTiming::VM2_SHIFT_CLOCKS;
+                skip_opcode = true;
+            }
+            break;
+        case pdp11core::LAST_INTERRUPT:
+            form = core->m_last_iako ? Vm1BusTiming::F2_INTERRUPT_VIRQ : Vm1BusTiming::F2_INTERRUPT;
+            break;
+        default:
+            break;
+        }
+    }
+    if (form < Vm1BusTiming::F2_COUNT) {
+        AddressableDevice * d = mm->peek_read_device(pc);
+        const int c = m_timing->finish(form, (d != nullptr) ? d->bus_reply : nullptr, skip_opcode,
+                                       (d != nullptr) ? d->wait_source : nullptr, pc, extra);
         if (c >= 0) return (unsigned int)c;
     }
     m_timing->discard();

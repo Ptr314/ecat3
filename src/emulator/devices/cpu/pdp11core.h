@@ -146,6 +146,7 @@ protected:
     unsigned int C_TRAP;        // trap or interrupt entry
     unsigned int C_HALT;        // entry into the halt mode
     unsigned int MODE_CYCLES[8];    // address computation of each mode
+    unsigned int C_REPLY;       // tn itself, the reply_delay they were built from
 
     void push(uint16_t value);
     uint16_t pop();
@@ -282,4 +283,8 @@ public:
     bool m_last_console = false;        // ВМ1 entered or left the console: no template
     bool m_last_taken = false;          // a branch or SOB whose condition held
     bool m_last_iako = false;           // LAST_INTERRUPT: a vectored one, with IAKO
+    // ВМ2: ASH/ASHC - сколько шагов сдвига сделал кристалл (влево n - n,
+    // вправо n - n-1); DIV - кончился переполнением или делением на ноль
+    unsigned int m_last_shift = 0;
+    bool m_last_div_v = false;
 };

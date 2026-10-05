@@ -41,7 +41,24 @@ class KCGDMouse;
 //   167774 - чтение: мышь в разрядах 8-11 (KCGDMouse), разряд 2 управления
 //            выбирает ось
 // По MAME (dvk_kcgd.cpp), сверено с прошивкой 181 и нетлистом реплики.
-class KCGD: public AddressableDevice
+//
+// Развёртка - по нетлисту и дампам ПЗУ К556РТ4 (docs-external/DVK/KCGD):
+// D33 делит 30,8 МГц на знакоместо в 16 тактов (4 такта процессора, его
+// частота - тот же делитель); D57/D58 считают знакоместа строки (Q1-Q7), D61
+// и D62 по их номеру и половине знакоместа (U32) дают строб строки (её конец
+// - разряд V6, он же счёт строк), гашение, синхронизацию, RAS и окна
+// процессора; D59/D60 считают строки (Q8-Q15, загрузка 061), D85 - поле
+// (Q16) и полукадр чересстрочной развёртки (Q17); D63 по номеру строки,
+// Q7 и Q17 даёт конец поля (V10 - загрузка счётчика), кадровый импульс,
+// гашение и синхронизацию кадра. Защёлки D68-D70 берут выходы ПЗУ по
+// фронтам D33. Всё это при загрузке прогоняется по полузнакоместам один
+// раз (build_scan()), и дальше развёртка - таблица событий поля.
+//
+// Видеопамять процессор получает в окне: обращение к ней (окно 000000-077777
+// и регистр данных 160002) ждёт знакоместа, в конце которого D61 (разряд 3)
+// открывает окно, и RPLY приходит в конце следующего за окном (защёлка D70,
+// D30, D19). ПЗУ, ВП1-033, ВП1-065 и регистр адреса 160000 отвечают сами
+class KCGD: public AddressableDevice, public WaitSource
 {
 public:
     static const unsigned VRAM_WORDS = 65536;
@@ -54,6 +71,9 @@ private:
     VirqLine m_irq;
     Interface i_iako;
     Interface i_init;
+    // Кадровый импульс на EVNT процессора (вектор 100), уровень вывода
+    // защёлки D70: 1 - покой, 0 - импульс
+    Interface i_evnt;
 
     std::vector<uint32_t> m_vram;
     KCGDMouse * m_mouse = nullptr;
@@ -70,10 +90,30 @@ private:
     bool m_pending_b = false;
     unsigned m_vector_a = 0300;
     unsigned m_vector_b = 0304;
-    unsigned m_line_ticks = 1;      // тактов на строку развёртки
-    unsigned m_lines = 525;         // строк в кадре
-    unsigned m_line = 0;            // строка развёртки (счётчик Q8-Q17)
-    unsigned m_timer_ticks = 0;     // тактов в текущей строке
+
+    // Развёртка, построенная build_scan(). Время - в тактах процессора
+    struct ScanStep {
+        uint32_t t;                 // от начала поля
+        uint8_t evnt;               // EVNT с этого момента
+        uint8_t reqb;               // Q12 с этого момента
+    };
+    unsigned m_line_clocks = 1;                 // строка
+    std::vector<uint16_t> m_reply;              // по такту строки: от строба до RPLY
+    std::vector<ScanStep> m_field[2];           // смены по полю, по Q17
+    uint32_t m_field_clocks[2] = {1, 1};
+    unsigned m_field_hpos = 0;                  // место в строке, где поле начинается
+    unsigned m_evnt_bit = 1;                    // выход D63, взятый на EVNT
+    // Где развёртка сейчас
+    unsigned m_hpos = 0;                        // такт строки
+    uint32_t m_fpos = 0;                        // такт поля
+    unsigned m_q17 = 0;                         // полукадр
+    unsigned m_step = 0;                        // следующая смена в m_field[m_q17]
+    unsigned m_fields = 0;                      // полей с пуска
+
+    emulator::Result build_scan(const std::vector<uint8_t> &d61, const std::vector<uint8_t> &d62,
+                                const std::vector<uint8_t> &d63);
+    void scan_apply(unsigned evnt, unsigned reqb);
+    void scan_seek(bool apply);
 
     void write_vram(unsigned index, unsigned value, unsigned mask);
     bool reqa() const;
@@ -87,6 +127,9 @@ public:
     void reset(bool cold) override;
     void clock(unsigned int counter) override;
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
+    unsigned int wait_states(unsigned int address, bool write, unsigned int offset) override;
+    // Полей с пуска: изображение перерисовывается по смене поля
+    unsigned fields() const { return m_fields; }
 
     unsigned int get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
@@ -107,7 +150,7 @@ public:
     emulator::Result load_state(const StateReader &r) override;
 };
 
-// Изображение КЦГД: 800 x 480, 60 кадров в секунду. Строку растра задаёт
+// Изображение КЦГД: 800 x 480, по 240 строк в поле. Строку растра задаёт
 // таблица адресов в видеопамяти (набор 0 - с байта 015574 окна, набор 1 - с
 // 005574), по 100 слов на строку. Без чересстрочной развёртки (прошивка 181)
 // каждая строка таблицы показывается дважды. Цвет точки - регистр палитры:
@@ -117,12 +160,10 @@ public:
 // ЦАП на резисторах): U55 - красный, U56 - зелёный, U57 - синий (по словам
 // автора реплики). Параметр rgb оставлен для другой разводки кабеля.
 //
-// Импульс кадра выходит на ~vsync (прерывание 60 Гц прошивки, вектор 100).
+// Своей развёртки у изображения нет: поле меняется по счётчику KCGD.
 class KCGDDisplay: public GenericDisplay
 {
 private:
-    Interface i_vsync;
-
     KCGD * m_kcgd = nullptr;
     Memory * m_font_rom = nullptr;
     unsigned m_font_offset = 0;
@@ -138,10 +179,7 @@ private:
     uint32_t m_colors[64] = {};             // все 64 значения регистра палитры
     unsigned m_channel[3] = {0, 1, 2};      // выход U55/U56/U57 -> R, G, B
 
-    unsigned int m_frame_ticks = 1;
-    unsigned int m_ticks = 0;
-    unsigned int m_frame = 0;
-    bool m_pulse = false;
+    unsigned int m_field = 0;           // поле KCGD, которое уже нарисовано
 
     unsigned line_address(unsigned y) const;
     unsigned pixel(unsigned a, unsigned x) const;

@@ -102,7 +102,7 @@ def parse_ext_metadata(ext_path):
         if m:
             meta["devices"].add(m.group(1))
             continue
-        m = re.match(r'(?:image(?:_\d+)?|map|keys|picture)\s*=\s*([^\s{]+)', s)
+        m = re.match(r'(?:image(?:_\w+)?|map|keys|picture)\s*=\s*([^\s{]+)', s)
         if m and "base64" not in s:
             meta["files"].append(m.group(1).strip('"'))
             continue
@@ -115,7 +115,7 @@ def parse_ext_metadata(ext_path):
         if m:
             meta["system"][m.group(1)] = m.group(2).strip()
             continue
-        m = re.match(r'[^-/@][^:]*:\s*(?:image(?:_\d+)?|map|keys|picture)\s*=\s*([^\s{]+)', s)
+        m = re.match(r'[^-/@][^:]*:\s*(?:image(?:_\w+)?|map|keys|picture)\s*=\s*([^\s{]+)', s)
         if m and "base64" not in s:
             meta["files"].append(m.group(1).strip('"'))
     return meta
@@ -157,7 +157,7 @@ def parse_cfg_metadata(cfg_path):
     # value is not a file to pack
     devices = set(re.findall(r'^\s*([\w-]+)\s*:\s*[\w-]+\s*\{', content, re.MULTILINE))
     files = []
-    for m in re.finditer(r'^\s*(?:image(?:_\d+)?|map|keys|picture)\s*=\s*(\S+)', content, re.MULTILINE):
+    for m in re.finditer(r'^\s*(?:image(?:_\w+)?|map|keys|picture)\s*=\s*(\S+)', content, re.MULTILINE):
         if m.group(1) not in devices:
             files.append(m.group(1))
 

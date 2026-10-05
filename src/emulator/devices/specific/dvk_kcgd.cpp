@@ -7,6 +7,7 @@
 
 #include "dvk_kcgd.h"
 #include "emulator/utils.h"
+#include "dsk_tools/core.h"
 
 #define CALLBACK_CHAIN  1
 #define CALLBACK_IAKO   2
@@ -41,8 +42,9 @@ KCGD::KCGD(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_irq(i_virq, i_vector)
     , i_iako(this, im, 16, "iako", MODE_R, CALLBACK_IAKO)
     , i_init(this, im, 1, "init", MODE_R, CALLBACK_INIT)
+    , i_evnt(this, im, 1, "evnt", MODE_W)
 {
-    m_clocked = true;   // триггер таймера
+    m_clocked = true;   // развёртка
     can_read = true;
     can_write = true;
     addresable_size = 0200000;
@@ -63,16 +65,158 @@ emulator::Result KCGD::load_config(SystemData *sd)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{KCGD|" + std::string(QT_TRANSLATE_NOOP("KCGD", "KCGD mouse device is expected")) + "} " + mouse);
     }
-    // REQB - разряд Q12 счётчика строк развёртки (D59/D60 по нетлисту): он
-    // меняется каждые 16 строк. Строк в кадре и кадров в секунду - как у
-    // изображения (kcgd-display), 525 и 60
-    m_lines = read_confg_value(cd, "lines", false, (unsigned int)525);
-    if (m_lines == 0) m_lines = 1;
-    const unsigned hz = read_confg_value(cd, "frame_frequency", false, (unsigned int)60);
-    m_line_ticks = (hz != 0 && m_system_clock != 0) ? m_system_clock / (hz * m_lines) : 1;
-    if (m_line_ticks == 0) m_line_ticks = 1;
+    // Развёртка - из образов ПЗУ D61, D62, D63 (по 256 тетрад)
+    std::vector<uint8_t> prom[3];
+    static const char * const names[3] = {"image_d61", "image_d62", "image_d63"};
+    for (unsigned i = 0; i < 3; i++) {
+        const std::string name = cd->get_parameter(names[i]).value;
+        const std::string file = find_file_location(sd, name);
+        if (file.empty())
+            return emulator::Result::error(emulator::ErrorCode::FileError,
+                "{KCGD|" + std::string(QT_TRANSLATE_NOOP("KCGD", "File not found")) + "} " + name);
+        const std::string data = dsk_tools::utf8_read_file(file);
+        if (data.size() != 256)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{KCGD|" + std::string(QT_TRANSLATE_NOOP("KCGD", "A scan PROM image must be 256 bytes")) + "} " + name);
+        prom[i].assign(data.begin(), data.end());
+    }
+    // Какой выход D63 идёт на EVNT: по нетлисту V9 (разряд 1)
+    m_evnt_bit = read_confg_value(cd, "evnt_bit", false, (unsigned int)1) & 3;
+    res = build_scan(prom[0], prom[1], prom[2]);
+    if (!res) return res;
+    // Свою видеопамять плата отдаёт процессору в окнах развёртки
+    wait_source = this;
     i_virq.change(1);
+    i_evnt.change(1);
     return emulator::Result::ok();
+}
+
+// Прогон развёртки по полузнакоместам (8 тактов 30,8 МГц = 2 такта
+// процессора). Выходы ПЗУ - открытый коллектор с подтяжкой: невыбранная
+// микросхема отдаёт единицы. Разряд 0 тетрады образа - вывод 12 микросхемы,
+// разряд 3 - вывод 9: только так строб строки D62 (V6, вывод 10) приходится
+// на её конец, а не на всю строку. Защёлки берут выходы ПЗУ в конце
+// полузнакоместа (D68, D69 по U31n) или знакоместа (D70 по U33)
+emulator::Result KCGD::build_scan(const std::vector<uint8_t> &d61, const std::vector<uint8_t> &d62,
+                                  const std::vector<uint8_t> &d63)
+{
+    const auto fail = [this](const char * what) {
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{KCGD|" + std::string(what) + "} " + name);
+    };
+
+    // Строка: знакоместа до первого V6 (D62, разряд 2). Защёлкнутый в конце
+    // знакоместа, он сбрасывает счётчик Q1-Q7 (U41) и считает строку
+    unsigned line = 0;
+    for (unsigned q = 0; q < 128 && line == 0; q++) {
+        if (d62[q * 2] & 4) return fail(QT_TRANSLATE_NOOP("KCGD", "The line ends in the middle of a character cell"));
+        if (d62[q * 2 + 1] & 4) line = q + 1;
+    }
+    if (line == 0) return fail(QT_TRANSLATE_NOOP("KCGD", "The scan PROM never ends a line"));
+    m_line_clocks = line * 4;
+
+    // Окно процессора: D70 в конце знакоместа берёт U37 - разряд 3 D61, на
+    // открытом коллекторе вместе со стробом данных и выбором видеопамяти.
+    // Взятая единица (U1) отдаёт память процессору, а RPLY (D30 по U38)
+    // встаёт в конце знакоместа, где взят снова ноль
+    std::vector<bool> win(line);
+    bool any = false;
+    for (unsigned s = 0; s < line; s++) any |= (win[s] = (d61[s * 2 + 1] & 8) != 0);
+    if (!any) return fail(QT_TRANSLATE_NOOP("KCGD", "The scan PROM gives the processor no memory window"));
+    m_reply.assign(m_line_clocks, 0);
+    for (unsigned t = 0; t < m_line_clocks; t++) {
+        const unsigned s = t / 4;           // его конец - первый после строба
+        unsigned n = 0;
+        while (!win[(s + n) % line]) n++;
+        while (win[(s + n) % line]) n++;
+        m_reply[t] = (uint16_t)(4 * (s + n + 1) - t);
+    }
+
+    // Поле. D59/D60 считают строки (по U41, загрузка 061 по U45), D85.1
+    // переключается переносом (Q16 - его инверсный выход) и ставится в 1 по
+    // U45, D85.2 переключается фронтом D85.1 (Q17 - инверсный выход). D63
+    // выбран, пока D85.1 в нуле; адрес - Q7, Q8-Q13, Q17. В конце знакоместа
+    // D70 берёт его V10 (U45, загрузка) и выход на EVNT. Прогон - с
+    // чересстрочной развёрткой, чтобы получить поля обоих полукадров
+    const unsigned max_steps = line * 2 * 2048;
+    std::vector<uint8_t> ev(max_steps), rb(max_steps), qq(max_steps);
+    std::vector<uint16_t> hp(max_steps);
+    std::vector<unsigned> loads;
+    unsigned q = 0, half = 0, c = 0, ff1 = 1, q17 = 0, evnt = 1;
+    for (unsigned k = 0; k < max_steps && loads.size() < 3; k++) {
+        hp[k] = (uint16_t)((q * 2 + half) * 2);
+        bool load = false;
+        if (half) {
+            const unsigned v = ff1 ? 0xF : (d63[((q >> 6) & 1) | ((c & 63) << 1) | (q17 << 7)] & 0xF);
+            evnt = (v >> m_evnt_bit) & 1;
+            const bool line_end = (q + 1 == line);
+            q = line_end ? 0 : q + 1;
+            if (line_end) {
+                if (c == 255) {
+                    c = 0;
+                    ff1 ^= 1;
+                    if (ff1) q17 ^= 1;
+                } else c++;
+            }
+            if ((v & 1) == 0) {
+                c = 061;
+                if (!ff1) { ff1 = 1; q17 ^= 1; }
+                load = true;
+            }
+        }
+        ev[k] = (uint8_t)evnt;
+        rb[k] = (uint8_t)((c >> 4) & 1);
+        qq[k] = (uint8_t)q17;
+        if (load) loads.push_back(k);
+        half ^= 1;
+    }
+    if (loads.size() < 3) return fail(QT_TRANSLATE_NOOP("KCGD", "The scan PROM never ends a field"));
+
+    // Поле - от загрузки до загрузки; смена в конце шага k действует с
+    // момента 2 * (k - начало поля)
+    for (unsigned f = 0; f < 2; f++) {
+        const unsigned a = loads[f], b = loads[f + 1];
+        std::vector<ScanStep> &steps = m_field[qq[a]];
+        steps.clear();
+        steps.push_back({0, ev[a], rb[a]});
+        for (unsigned k = a + 1; k < b; k++)
+            if (ev[k] != ev[k - 1] || rb[k] != rb[k - 1])
+                steps.push_back({2 * (k - a), ev[k], rb[k]});
+        m_field_clocks[qq[a]] = 2 * (b - a);
+        if (qq[a] == 0) m_field_hpos = hp[a + 1];
+    }
+    if (m_field[0].empty() || m_field[1].empty())
+        return fail(QT_TRANSLATE_NOOP("KCGD", "The scan PROM gives no interlaced fields"));
+    return emulator::Result::ok();
+}
+
+void KCGD::scan_apply(unsigned evnt, unsigned reqb)
+{
+    if (i_evnt.value != evnt) i_evnt.change(evnt);
+    if ((reqb != 0) != m_reqb) {
+        m_reqb = reqb != 0;
+        update_requests();
+    }
+}
+
+// Найти место в таблице поля по m_fpos; apply - выставить линии, как там
+void KCGD::scan_seek(bool apply)
+{
+    const std::vector<ScanStep> &f = m_field[m_q17];
+    unsigned i = 0;
+    while (i + 1 < f.size() && f[i + 1].t <= m_fpos) i++;
+    m_step = i + 1;
+    if (apply) scan_apply(f[i].evnt, f[i].reqb);
+}
+
+// Обращение процессора КЦГД: offset - его строб данных от точки, до
+// которой развёртка досчитана. Видеопамять отвечает в окне, остальное -
+// как обычно (0)
+unsigned int KCGD::wait_states(unsigned int address, MAYBE_UNUSED bool write, unsigned int offset)
+{
+    const unsigned a = address & 0177776;
+    if (a >= WINDOW_END && !(a >= REG_RA_BASE && a < REG_RA_END && (a & 2))) return 0;
+    return m_reply[(m_hpos + offset) % m_line_clocks];
 }
 
 void KCGD::reset_registers()
@@ -92,26 +236,36 @@ void KCGD::reset(bool cold)
         m_ra = 0;
         m_control = 0;
         m_out = 0;
-        m_reqa = m_reqb = false;
-        m_timer_ticks = 0;
-        m_line = 0;
+        m_reqa = false;
         m_csr = 0;
+        // Развёртку INIT не трогает; при включении она - в начале поля
+        m_q17 = 0;
+        m_fpos = 0;
+        m_hpos = m_field_hpos;
+        m_fields = 0;
     }
     m_irq.clear();
     i_virq.change(1);
     reset_registers();
+    if (cold) scan_seek(true);
 }
 
 void KCGD::clock(unsigned int counter)
 {
-    m_timer_ticks += counter;
-    while (m_timer_ticks >= m_line_ticks) {
-        m_timer_ticks -= m_line_ticks;
-        if (++m_line >= m_lines) m_line = 0;
-        const bool reqb = ((m_line >> 4) & 1) != 0;
-        if (reqb == m_reqb) continue;
-        m_reqb = reqb;
-        update_requests();
+    m_hpos = (m_hpos + counter) % m_line_clocks;
+    m_fpos += counter;
+    for (;;) {
+        const std::vector<ScanStep> &f = m_field[m_q17];
+        while (m_step < f.size() && f[m_step].t <= m_fpos) {
+            scan_apply(f[m_step].evnt, f[m_step].reqb);
+            m_step++;
+        }
+        if (m_fpos < m_field_clocks[m_q17]) break;
+        m_fpos -= m_field_clocks[m_q17];
+        m_fields++;
+        // Без чересстрочной развёртки D85.2 держится установленным (Q17 = 0)
+        m_q17 = interlace() ? (m_q17 ^ 1) : 0;
+        m_step = 0;
     }
 }
 
@@ -219,6 +373,10 @@ void KCGD::set_value_word(unsigned int address, unsigned int value, MAYBE_UNUSED
     case 0:
         m_csr = (m_csr & ~CSR_WRITE) | (value & CSR_WRITE);
         update_requests();
+        if (!interlace() && m_q17 != 0) {
+            m_q17 = 0;
+            scan_seek(true);
+        }
         break;
     case 2:
         m_out = value;
@@ -269,6 +427,7 @@ std::vector<DeviceFieldInfo> KCGD::get_device_fields()
     r.push_back({"control", "Регистр управления (младший байт 167772)", false});
     r.push_back({"palette", "Регистры палитры 0-15", false});
     r.push_back({"vram",    "Слова видеопамяти, vram(с,по), с 17-м разрядом", false});
+    r.push_back({"scan",    "Развёртка: строка поля, такт строки, полукадр Q17, полей с пуска", false});
     return r;
 }
 
@@ -279,6 +438,13 @@ bool KCGD::get_field(const std::string &field, unsigned int from, unsigned int t
     if (field == "csr")     { out.values.push_back(get_value_word(REG_PIC_BASE)); return true; }
     if (field == "control") { out.values.push_back(m_control); return true; }
     if (field == "palette") { for (unsigned i = 0; i < 16; i++) out.values.push_back(m_palette[i]); return true; }
+    if (field == "scan") {
+        out.values.push_back(m_fpos / m_line_clocks);
+        out.values.push_back(m_hpos);
+        out.values.push_back(m_q17);
+        out.values.push_back(m_fields);
+        return true;
+    }
     if (field == "vram") {
         out.width = 32;
         if (to < from) to = from;
@@ -310,8 +476,10 @@ void KCGD::save_state(StateWriter &w)
     w.b("pending_b", m_pending_b);
     w.b("line_a", m_line_a);
     w.b("line_b", m_line_b);
-    w.n("timer_ticks", m_timer_ticks);
-    w.n("line", m_line);
+    w.n("hpos", m_hpos);
+    w.n("fpos", m_fpos);
+    w.n("q17", m_q17);
+    w.n("fields", m_fields);
     w.u("offered", m_irq.offered());
 }
 
@@ -336,8 +504,13 @@ emulator::Result KCGD::load_state(const StateReader &r)
     r.b("pending_b", m_pending_b);
     r.b("line_a", m_line_a);
     r.b("line_b", m_line_b);
-    r.u("timer_ticks", m_timer_ticks);
-    r.u("line", m_line);
+    r.u("hpos", m_hpos);
+    r.u("fpos", m_fpos);
+    r.u("q17", m_q17);
+    r.u("fields", m_fields);
+    m_hpos %= m_line_clocks;
+    m_q17 &= 1;
+    scan_seek(false);
     unsigned offered = 0;
     r.u("offered", offered);
     m_irq.set_offered(offered);
@@ -485,7 +658,6 @@ ComputerDevice * create_kcgd_mouse(InterfaceManager *im, EmulatorConfigDevice *c
 
 KCGDDisplay::KCGDDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
       GenericDisplay(im, cd)
-    , i_vsync(this, im, 1, "vsync", MODE_W)
 {
     m_clocked = true;
     sx = KCGD_WIDTH;
@@ -527,10 +699,6 @@ emulator::Result KCGDDisplay::load_config(SystemData *sd)
         m_channel[i] = (c == 'r') ? 0 : (c == 'g') ? 1 : 2;
     }
 
-    const unsigned hz = read_confg_value(cd, "frequency", false, (unsigned int)60);
-    m_frame_ticks = (hz != 0 && m_system_clock != 0) ? m_system_clock / hz : 1;
-    if (m_frame_ticks == 0) m_frame_ticks = 1;
-    i_vsync.change(0);
     return emulator::Result::ok();
 }
 
@@ -573,20 +741,11 @@ void KCGDDisplay::get_screen_constraints(unsigned int * sx, unsigned int * sy)
     *sy = this->sy;
 }
 
-void KCGDDisplay::clock(unsigned int counter)
+void KCGDDisplay::clock(MAYBE_UNUSED unsigned int counter)
 {
-    if (m_pulse) {
-        m_pulse = false;
-        i_vsync.change(0);
-    }
-    m_ticks += counter;
-    if (m_ticks >= m_frame_ticks) {
-        m_ticks -= m_frame_ticks;
-        m_frame++;
-        m_pulse = true;
-        i_vsync.change(1);
-        screen_valid = false;
-    }
+    if (m_kcgd->fields() == m_field) return;
+    m_field = m_kcgd->fields();
+    screen_valid = false;
 }
 
 // Слово видеопамяти, с которого идёт строка растра y
@@ -676,7 +835,7 @@ std::string KCGDDisplay::screen_text() const
 std::vector<DeviceFieldInfo> KCGDDisplay::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = GenericDisplay::get_device_fields();
-    r.push_back({"frame", "Кадров с пуска", false});
+    r.push_back({"frame", "Полей развёртки с пуска", false});
     r.push_back({"text",  "Текст экрана, 24 строки по 80 знаков (по шрифту прошивки)", false});
     return r;
 }
@@ -685,7 +844,7 @@ bool KCGDDisplay::get_field(const std::string &field, unsigned int from, unsigne
 {
     if (field == "frame") {
         out.numeric = true;
-        out.values.push_back(m_frame);
+        out.values.push_back(m_kcgd->fields());
         return true;
     }
     if (field == "text") {
@@ -699,18 +858,14 @@ bool KCGDDisplay::get_field(const std::string &field, unsigned int from, unsigne
 void KCGDDisplay::save_state(StateWriter &w)
 {
     GenericDisplay::save_state(w);
-    w.n("ticks", m_ticks);
-    w.n("frame", m_frame);
-    w.b("pulse", m_pulse);
+    w.n("field", m_field);
 }
 
 emulator::Result KCGDDisplay::load_state(const StateReader &r)
 {
     emulator::Result res = GenericDisplay::load_state(r);
     if (!res) return res;
-    r.u("ticks", m_ticks);
-    r.u("frame", m_frame);
-    r.b("pulse", m_pulse);
+    r.u("field", m_field);
     return emulator::Result::ok();
 }
 

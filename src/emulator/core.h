@@ -436,7 +436,10 @@ struct BusReply {
 //waits for a free slot. A processor that counts wait states (i8088) asks it
 //after every memory cycle; a memory names it with "wait = <device>". offset
 //is the T1 of the cycle, in processor clocks after the point up to which the
-//devices have been clocked: the device knows where its beam is at that point
+//devices have been clocked: the device knows where its beam is at that point.
+//A 1801 processor under timing = legacy (the КЦГД) asks the same way, but
+//offset is the moment of its data strobe and the answer is the whole time
+//until RPLY, which replaces reply_delay for that cycle; 0 keeps reply_delay
 class WaitSource
 {
 public:
