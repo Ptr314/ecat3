@@ -42,6 +42,8 @@ DL11::DL11(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_init(this, im, 1, "init", MODE_R, CALLBACK_INIT)
     , i_txd(this, im, 8, "txd", MODE_W)
     , i_rxd(this, im, 8, "rxd", MODE_R, CALLBACK_RXD)
+    , i_rx_free(this, im, 1, "rx_free", MODE_W)
+    , i_cts(this, im, 1, "cts", MODE_R)
 {
     m_clocked = true;   // clock() переопределён
     can_read = true;
@@ -84,11 +86,28 @@ void DL11::init_registers()
     m_xcsr = CSR_DONE;
     m_xbuf = 0;
     m_tx_busy = false;
+    m_tx_hold = false;
     m_tx_left = 0;
     m_rx_left = 0;
     m_rx_pending = false;
     m_tx_pending = false;
     update_irq();
+    update_rx_free();
+}
+
+// Готовность приёмника наружу: 1, пока в нём нет непрочитанного байта
+void DL11::update_rx_free()
+{
+    if (i_rx_free.linked == 0) return;
+    const unsigned int v = (m_rcsr & CSR_DONE) ? 0 : 1;
+    if ((i_rx_free.value & 1) != v) i_rx_free.change(v);
+}
+
+// Передатчик начинает символ, только когда на ~cts разрешение (если линия
+// подключена)
+bool DL11::tx_blocked()
+{
+    return i_cts.linked > 0 && (i_cts.value & 1) == 0;
 }
 
 void DL11::reset(MAYBE_UNUSED bool cold)
@@ -103,9 +122,11 @@ void DL11::receive(uint8_t value)
 {
     // Байт, пришедший в занятый приёмник, пропадает, а в RCSR встаёт
     // переполнение. Из порта хоста и из сценария так не бывает - оттуда байт
-    // берётся, только когда приёмник свободен; переполниться может петля
+    // берётся, только когда приёмник свободен; переполниться могут петля и
+    // линия к другому устройству (~rxd)
     if (m_rcsr & CSR_DONE) {
         m_rcsr |= RCSR_OVERRUN;
+        m_overruns++;
         return;
     }
     m_rbuf = value;
@@ -113,6 +134,7 @@ void DL11::receive(uint8_t value)
     m_received++;
     if (m_rcsr & CSR_IE) m_rx_pending = true;
     update_irq();
+    update_rx_free();
 }
 
 void DL11::transmit_done()
@@ -137,8 +159,12 @@ void DL11::transmit_done()
 void DL11::clock(unsigned int counter)
 {
     if (m_tx_busy) {
-        m_tx_left -= counter;
-        if (m_tx_left <= 0) transmit_done();
+        if (m_tx_hold) {
+            if (!tx_blocked()) m_tx_hold = false;
+        } else {
+            m_tx_left -= counter;
+            if (m_tx_left <= 0) transmit_done();
+        }
     }
 
     // Приёмник смотрит на линию раз в время символа: так байты идут с
@@ -186,9 +212,12 @@ void DL11::set_station(int station)
 void DL11::interface_callback(unsigned int callback_id, unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
 {
     if (callback_id == CALLBACK_RXD) {
-        // Байт с другого конца линии. Устройство там шлёт его со своей
-        // скоростью; в приёмник он попадает по времени символа этой линии
-        m_rx_queue.push_back((uint8_t)(new_value & 0xFF));
+        // Байт с другого конца линии. Устройство там выставляет его, когда
+        // последняя посылка уже прошла (так делают и dl11, и i8251), и
+        // приёмник берёт его сразу: не успела программа забрать прошлый -
+        // переполнение, как на настоящей линии. Очередь - только для
+        // сценария и порта хоста, которые ждут готовности приёмника
+        receive((uint8_t)(new_value & 0xFF));
         return;
     }
     if (callback_id == CALLBACK_INIT) {
@@ -249,6 +278,7 @@ unsigned int DL11::get_value_word(unsigned int address)
         m_rcsr &= ~(CSR_DONE | RCSR_OVERRUN);
         m_rx_pending = false;
         update_irq();
+        update_rx_free();
         return v | m_station_bits;
     }
     case REG_XCSR: return m_xcsr | m_station_bits;
@@ -268,6 +298,7 @@ void DL11::set_value_word(unsigned int address, unsigned int value, MAYBE_UNUSED
         m_xcsr &= ~CSR_DONE;
         m_tx_pending = false;
         m_tx_busy = true;
+        m_tx_hold = tx_blocked();
         m_tx_left = (int64_t)m_char_ticks;
         update_irq();
         break;
@@ -356,6 +387,8 @@ void DL11::save_state(StateWriter &w)
     w.b("tx_pending", m_tx_pending);
     w.n64("char_ticks", m_char_ticks);
     w.b("tx_busy", m_tx_busy);
+    w.b("tx_hold", m_tx_hold);
+    w.n64("tx_left", (uint64_t)m_tx_left);
     w.n("idle_polls", m_idle_polls);
     w.n("sent", m_sent);
     w.n("received", m_received);
@@ -384,6 +417,9 @@ emulator::Result DL11::load_state(const StateReader &r)
     r.b("tx_pending", m_tx_pending);
     r.n64("char_ticks", m_char_ticks);
     r.b("tx_busy", m_tx_busy);
+    r.b("tx_hold", m_tx_hold);
+    uint64_t tx_left = 0;
+    if (r.n64("tx_left", tx_left)) m_tx_left = (int64_t)tx_left;
     r.u("idle_polls", m_idle_polls);
     r.u("sent", m_sent);
     r.u("received", m_received);
@@ -412,6 +448,7 @@ std::vector<DeviceFieldInfo> DL11::get_device_fields()
     r.push_back({"port",      "Имя порта хоста",                                       false});
     r.push_back({"sent",      "Сколько байтов передано",                               false});
     r.push_back({"received",  "Сколько байтов принято",                                false});
+    r.push_back({"overruns",  "Сколько байтов пропало: приёмник был занят",            false});
     r.push_back({"queued",    "Сколько байтов сценария ждут приёма",                   false});
     r.push_back({"vector",    "Вектор, предложенный процессору, или 0",                false});
     r.push_back({"station",   "Номер станции СА, -1 - его нет",                        false});
@@ -460,6 +497,7 @@ bool DL11::get_field(const std::string &field, unsigned int from, unsigned int t
     out.width = 32;
     if (field == "sent")      { out.values.push_back(m_sent);                    return true; }
     if (field == "received")  { out.values.push_back(m_received);                return true; }
+    if (field == "overruns")  { out.values.push_back(m_overruns); return true; }
     if (field == "queued")    { out.values.push_back((unsigned int)m_rx_queue.size()); return true; }
 
     out.numeric = false;

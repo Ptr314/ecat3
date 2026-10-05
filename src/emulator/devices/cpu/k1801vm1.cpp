@@ -357,6 +357,7 @@ std::vector<DeviceFieldInfo> k1801vm1::get_device_fields()
     r.push_back({"timeout_address", "Address of the last bus timeout",          false});
     r.push_back({"timeout_pc",      "PC of the instruction that timed out last", false});
     r.push_back({"traps",           "Number of traps and interrupts taken",     false});
+    r.push_back({"irq2_requests",   "Requests that came on ~irq2 (EVNT), taken or not", false});
     r.push_back({"trap_vector",     "Vector of the last trap or interrupt",     false});
     r.push_back({"trap_pc",         "PC saved by the last trap or interrupt",   false});
     r.push_back({"history",         "Addresses of the last commands executed, oldest first (from,to count back from the newest)", true});
@@ -378,6 +379,7 @@ bool k1801vm1::get_field(const std::string &field, unsigned int from, unsigned i
     if (field == "timeout_address") { out.values.push_back(m_timeout_address); return true; }
     if (field == "timeout_pc")      { out.values.push_back(m_timeout_pc);      return true; }
     if (field == "traps")           { out.values.push_back(core->m_trap_count);  return true; }
+    if (field == "irq2_requests")   { out.values.push_back(m_irq2_edges);        return true; }
     if (field == "trap_vector")     { out.values.push_back(core->m_trap_vector); return true; }
     if (field == "trap_pc")         { out.values.push_back(core->m_trap_pc);     return true; }
     if (core->is_vm3() && (field == "mmu" || field == "sps" || field == "par" || field == "pdr")) {
@@ -485,6 +487,7 @@ void k1801vm1::interface_callback(unsigned int callback_id, unsigned int new_val
         core->set_virq(active, (uint16_t)i_vector.value);
         break;
     case CALLBACK_IRQ2:
+        if (active && (old_value & 1) != 0) m_irq2_edges++;
         core->set_irq2(active);
         break;
     case CALLBACK_IRQ3:

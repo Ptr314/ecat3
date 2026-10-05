@@ -1,4 +1,4 @@
-[my.commands] &000065
+[my.commands] &000052
 === Экран ===
 [display.text] 
                              lin  rus  wr             9600  0 0 0  0 0 0  0 0 1
@@ -22,7 +22,7 @@ zapisx.
 ~tenie dorovki.
 zapisx s metkoj.
 ~tenie s metkoj.
-otrabotka IE.
-otrabotka RESET   prohod  1
+otrabotka IE.otrabotka RESET   prohod  1
+
 
 

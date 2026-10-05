@@ -84,6 +84,10 @@ private:
     unsigned int m_event = 0;
     uint64_t m_timeout = 0;
     uint64_t m_acc = 0;
+    // «Слово готово» - своё, отдельно от операции
+    bool m_word_pending = false;
+    uint64_t m_word_timeout = 0;
+    uint64_t m_word_acc = 0;
     unsigned int m_seek_us = 0;
     unsigned int m_step_us = 0;
     unsigned int m_word_us = 0;
@@ -107,6 +111,7 @@ private:
     void clear_drqb();
     void command(unsigned int cmd);
     void schedule(unsigned int event, unsigned int us);
+    void schedule_word(unsigned int us);
     unsigned int seek_us(unsigned int cylinder) const;
     bool sector_offset(uint64_t &offset) const;
     void fail(unsigned int err);

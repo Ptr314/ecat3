@@ -25,8 +25,14 @@
 #define BASE_MODE       0000110     // 177716
 #define BASE_DMA        0400000     // 40000-77777
 
-// Регистр режима платы (177716): так он читается в MAME
-#define MODE_VALUE      0010001
+// Регистр режима платы (177716), по нетлисту: на SEL1 процессора платы
+// драйвер D18 (531АП2) выставляет AD12 - старший байт 020, пуск с 010000 - и
+// через двухпозиционный переключатель SA1 разряды AD0 и AD1. Прошивка 255
+// сравнивает младший байт с 3 (оба замкнуты - каждый самотест повторяется
+// 31 раз) и проверяет на ноль (тогда другие параметры привода в таблице:
+// 020200/020200/006060/030 вместо 014140/014140/001274/0120). MAME читает
+// 010001 - замкнут первый
+#define MODE_START      0010000
 
 DVKKMD::DVKKMD(InterfaceManager *im, EmulatorConfigDevice *cd):
       AddressableDevice(im, cd)
@@ -58,6 +64,7 @@ emulator::Result DVKKMD::load_config(SystemData *sd)
             "{DVKKMD|" + std::string(QT_TRANSLATE_NOOP("DVKKMD", "Memory mapper is expected")) + "} " + mapper);
 
     m_vector = read_confg_value(cd, "vector", false, (unsigned int)0170);
+    m_switches = read_confg_value(cd, "switches", false, (unsigned int)1) & 3;
     const unsigned bits = read_confg_value(cd, "address_bits", false, (unsigned int)16);
     m_address_mask = (bits >= 32) ? 0xFFFFFFFFu : ((1u << bits) - 1);
     i_virq.change(1);
@@ -137,7 +144,7 @@ unsigned int DVKKMD::get_value_word(unsigned int address)
     case BASE_HOST + 2:  return m_dr;
     case BASE_LOCAL:     return m_cr;
     case BASE_LOCAL + 2: return m_dr;
-    case BASE_MODE:      return MODE_VALUE;
+    case BASE_MODE:      return MODE_START | m_switches;
     default:             return 0;
     }
 }
@@ -219,6 +226,20 @@ void DVKKMD::set_value(unsigned int address, unsigned int value, bool force)
         return;
     }
     set_value_word(a, v, force);
+}
+
+ConfigFields DVKKMD::get_config_fields()
+{
+    ConfigField f;
+    f.name = "switches";
+    f.title = QT_TRANSLATE_NOOP("ConfigFields", "MY board switch SA1");
+    f.type = CONFIG_FIELD_CHOICE;
+    f.def = "1";
+    f.values.push_back({"1", QT_TRANSLATE_NOOP("ConfigFields", "1 on, 2 off (normal)")});
+    f.values.push_back({"2", QT_TRANSLATE_NOOP("ConfigFields", "1 off, 2 on")});
+    f.values.push_back({"3", QT_TRANSLATE_NOOP("ConfigFields", "Both on (self-tests repeated)")});
+    f.values.push_back({"0", QT_TRANSLATE_NOOP("ConfigFields", "Both off (other drive parameters)")});
+    return {f};
 }
 
 std::vector<DeviceFieldInfo> DVKKMD::get_device_fields()

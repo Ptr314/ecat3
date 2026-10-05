@@ -1,9 +1,9 @@
 === Первая секунда ===
 [panel.phase] 3
-[lks.ticks] 23
+[cpu.irq2_requests] 0
 === Тумблер выключен ===
 [panel.prt] 0
-[lks.ticks] 23
+[cpu.irq2_requests] 0
 === Тумблер включён ===
 [panel.prt] 1
-[lks.ticks] 73
+[cpu.irq2_requests] 50

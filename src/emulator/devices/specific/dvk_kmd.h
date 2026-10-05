@@ -26,7 +26,8 @@
 // Со стороны процессора платы (диапазоны с базой):
 //   kmd[0100] - 177100/177102: те же регистры, прошивка ставит «готово»,
 //               ошибку и TR и пишет MYDR
-//   kmd[0110] - 177716: регистр режима платы, читается 010001
+//   kmd[0110] - 177716: регистр режима платы, 010000 + переключатель SA1
+//               (switches, по умолчанию 1: читается 010001)
 //   kmd[0400000] - 40000-77777: окно в память машины, 16 КБ. Разряды адреса
 //               14-21 - младший байт MYDR: прошивка пишет туда разряды 14-15
 //               адреса буфера и 16-21 из MYCSR (в MAME окно 16-разрядное и
@@ -49,6 +50,7 @@ private:
 
     MemoryMapper * m_host = nullptr;
     unsigned m_vector = 0170;
+    unsigned m_switches = 1;        // SA1: разряды 0-1 регистра 177716
     uint32_t m_address_mask = 0177777;
 
     unsigned m_cr = 0;
@@ -78,6 +80,7 @@ public:
     void set_value_word(unsigned int address, unsigned int value, bool force=false) override;
     unsigned get_direct(unsigned address) override;
 
+    ConfigFields get_config_fields() override;
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
     void save_state(StateWriter &w) override;

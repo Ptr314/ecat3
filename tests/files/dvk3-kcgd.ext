@@ -31,9 +31,11 @@ monitor:image = 055.rom
 -mapper:@memory[0:1][176640-176647]
 -dma-mapper:@memory[176640-176647]
 
-// Линия ИРПС машины идёт в КЦГД
+// Линия ИРПС машины идёт в КЦГД: 57600 бод (FR3-FR0 = 1100 у D9/D10 КЦГД),
+// с квитированием
 tt:baud = _57600
 tt:~rxd = kcgd-host.txd
+tt:~cts = kcgd-host.rx_free
 
 //=========================== КЦГД =========================================//
 
@@ -106,6 +108,7 @@ kcgd-host : dl11 {
 	~iako = kcgd-cpu.iako
 	~init = kcgd-cpu.init
 	~rxd = tt.txd
+	~cts = tt.rx_free
 }
 
 // Изображение 800 x 480. Шрифт прошивки (для поля text) - с 012236 ПЗУ.

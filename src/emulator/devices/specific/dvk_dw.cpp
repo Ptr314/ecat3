@@ -52,7 +52,6 @@
 
 // Отложенные события
 #define EV_NONE         0
-#define EV_WORD         1       // следующее слово готово
 #define EV_SEEK         2       // головки на дорожке 0
 #define EV_READ         3       // сектор прочитан в буфер
 #define EV_WRITE        4       // буфер записан
@@ -153,6 +152,7 @@ void DVKDW::init_controller()
     m_count_read = m_count_write = 0;
     m_format = false;
     m_op = OP_NONE;
+    m_word_pending = false;
     schedule(EV_SEEK, m_init_us);
     update_irq();
 }
@@ -217,6 +217,15 @@ void DVKDW::schedule(unsigned int event, unsigned int us)
     m_acc = 0;
 }
 
+// «Слово готово» идёт своим ходом: обращение к регистру данных во время
+// операции (сброса, чтения, записи) не должно её отменять
+void DVKDW::schedule_word(unsigned int us)
+{
+    m_word_pending = true;
+    m_word_timeout = us;
+    m_word_acc = 0;
+}
+
 unsigned int DVKDW::seek_us(unsigned int cylinder) const
 {
     const unsigned int d = (cylinder > m_track) ? cylinder - m_track : m_track - cylinder;
@@ -225,7 +234,19 @@ unsigned int DVKDW::seek_us(unsigned int cylinder) const
 
 void DVKDW::clock(unsigned int counter)
 {
-    if (m_event == EV_NONE || m_system_clock == 0) return;
+    if (m_system_clock == 0) return;
+    if (m_word_pending) {
+        m_word_acc += (uint64_t)counter * 1000000ull;
+        while (m_word_acc >= m_system_clock && m_word_timeout > 0) {
+            m_word_acc -= m_system_clock;
+            m_word_timeout--;
+        }
+        if (m_word_timeout == 0) {
+            m_word_pending = false;
+            raise_drqb();
+        }
+    }
+    if (m_event == EV_NONE) return;
 
     m_acc += (uint64_t)counter * 1000000ull;
     const uint64_t step = m_system_clock;
@@ -238,9 +259,6 @@ void DVKDW::clock(unsigned int counter)
     const unsigned int event = m_event;
     m_event = EV_NONE;
     switch (event) {
-    case EV_WORD:
-        raise_drqb();
-        break;
     case EV_SEEK:
         m_track = 0;
         m_si &= ~SI_BUSY;
@@ -337,6 +355,7 @@ void DVKDW::command(unsigned int cmd)
     m_err &= ~ERR_WR;
     m_csr &= ~CSR_ERR;
     m_op = OP_NONE;
+    m_word_pending = false;
 
     switch (cmd) {
     case CMD_TRK0:
@@ -389,12 +408,12 @@ unsigned int DVKDW::read_reg(unsigned int reg, bool peek)
             m_count_read = 0;
             m_op = OP_NONE;
             m_csr &= ~CSR_DRQ2;
-            m_event = EV_NONE;
+            m_word_pending = false;
             raise_drqa();
         } else {
             // Без команды буфер читается по кругу
             if (m_count_read >= 256) m_count_read = 0;
-            schedule(EV_WORD, m_word_us);
+            schedule_word(m_word_us);
         }
         return data;
     }
@@ -435,7 +454,7 @@ void DVKDW::write_reg(unsigned int reg, unsigned int value)
         } else {
             // Без команды буфер пишется по кругу
             if (m_count_write >= 256) m_count_write = 0;
-            schedule(EV_WORD, m_word_us);
+            schedule_word(m_word_us);
         }
         break;
     case REG_CYL:
@@ -663,6 +682,9 @@ void DVKDW::save_state(StateWriter &w)
     w.n("event", m_event);
     w.n64("timeout", m_timeout);
     w.n64("acc", m_acc);
+    w.b("word_pending", m_word_pending);
+    w.n64("word_timeout", m_word_timeout);
+    w.n64("word_acc", m_word_acc);
     w.n("reads", m_reads);
     w.n("writes", m_writes);
     w.u("offered", m_irq.offered());
@@ -716,6 +738,11 @@ emulator::Result DVKDW::load_state(const StateReader &r)
     r.u("event", m_event);
     r.n64("timeout", m_timeout);
     r.n64("acc", m_acc);
+    r.b("word_pending", m_word_pending);
+    r.n64("word_timeout", m_word_timeout);
+    r.n64("word_acc", m_word_acc);
+    // снимок прежнего вида: «слово готово» лежало в общем событии (1)
+    if (m_event == 1) { m_event = EV_NONE; m_word_pending = true; m_word_timeout = m_timeout; m_word_acc = m_acc; }
     r.u("reads", m_reads);
     r.u("writes", m_writes);
     unsigned int offered = 0;

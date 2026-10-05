@@ -48,9 +48,17 @@ private:
     Interface i_iako;
     Interface i_init;                   // INIT магистрали (команда RESET)
     // Линия к устройству эмулятора на другом конце (терминал КСМ): байт
-    // целиком, как у i8251. Принятое ждёт в той же очереди, что и сценарий
+    // целиком, как у i8251, в конце его времени символа. Приёмник берёт его
+    // сразу, при занятом - переполнение
     Interface i_txd;
     Interface i_rxd;
+    // Квитирование ВП1-065, когда два канала связаны на одной плате (КЦГД:
+    // D9 и D10, выводы 29 и 31 накрест): готовность приёмника одного -
+    // разрешение передачи другого. Передатчик не начинает символ, пока
+    // приёмник на том конце не забрал прошлый, и байты не теряются, как бы
+    // долго программа там ни была занята
+    Interface i_rx_free;
+    Interface i_cts;
 
     unsigned int m_rcsr = 0;
     unsigned int m_rbuf = 0;
@@ -73,6 +81,7 @@ private:
     unsigned int m_baud = 9600;
     uint64_t m_char_ticks = 0;
     bool m_tx_busy = false;
+    bool m_tx_hold = false;             // символ ждёт разрешения на ~cts
     int64_t m_tx_left = 0;
     int64_t m_rx_left = 0;
     unsigned int m_idle_polls = 0;  // пустых опросов порта хоста подряд
@@ -83,10 +92,13 @@ private:
 
     unsigned int m_sent = 0;
     unsigned int m_received = 0;
+    unsigned int m_overruns = 0;
     static const unsigned int OUTPUT_SIZE = 1024;
     uint8_t m_output[OUTPUT_SIZE] = {};
 
     void receive(uint8_t value);
+    void update_rx_free();
+    bool tx_blocked();
     void transmit_done();
     void set_rcsr(unsigned int value);
     void set_xcsr(unsigned int value);

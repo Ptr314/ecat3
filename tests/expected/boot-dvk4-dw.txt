@@ -1,12 +1,6 @@
 === Экран ===
 [display.text] 
-                             lin  rus  wr             9600  0 0 0  0 0 0  0 0 1
-****  dostupnoe  ozu  -   1 M *
-@ 001000
-@B
-$DW0
-
-SL V08.00 [SW] sTOROVEWYH s.w. 1988
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
 primenqjte komandu "SET MX INFORM"
 
 RT-11SJ (Y) V05.04 G
@@ -21,7 +15,13 @@ RT-11SJ (Y) V05.04 G
 
 .DAY
 wREMQ           dATA
-iSPO
+00:00:16        24-i@L-2019, sREDA
 
+.DIR TE*.*
+ 24-Jul-2019
+TESTMY.SAV    16  27-Dec-1988    TESTDW.SAV    47  27-Dec-1988
+TETRIS.SAV    28  04-Apr-1985
+ 3 Files, 91 Blocks
+ 8408 Free blocks
 
-
+.

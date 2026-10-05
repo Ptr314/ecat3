@@ -116,6 +116,7 @@ private:
     Drive * current();
     bool selected_loaded();
     void update_drive_lines();
+    int head_side(FDD * f);
     void build_track();
     void store_track();
     void start_word();

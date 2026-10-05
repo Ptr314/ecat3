@@ -135,6 +135,13 @@ void DVKMX::sync_written(Drive * d)
     }
 }
 
+// Сторона под головкой: у одностороннего привода головка одна, и линию
+// выбора стороны он не слушает (как и FDD)
+int DVKMX::head_side(FDD * f)
+{
+    return (f->get_sides() > 1 && (m_csr & MX_TOPHEAD)) ? 1 : 0;
+}
+
 // Дорожка под головкой выбранного привода, словами: записанная программой -
 // как она её записала, иначе так, как её записал бы стандартный драйвер MX
 void DVKMX::build_track()
@@ -145,7 +152,7 @@ void DVKMX::build_track()
     Drive * d = current();
     if (d == nullptr || d->fdd == nullptr || d->fdd->get_loaded() == 0) return;
     FDD * f = d->fdd;
-    const int side = (m_csr & MX_TOPHEAD) ? 1 : 0;
+    const int side = head_side(f);
     const int track = d->track;
     if (track < 0 || track >= f->get_tracks() || side >= f->get_sides()) return;
 
@@ -188,7 +195,7 @@ void DVKMX::store_track()
     if (d == nullptr || d->fdd == nullptr || d->fdd->get_loaded() == 0) return;
     FDD * f = d->fdd;
     if (f->is_protected()) return;
-    const int side = (m_csr & MX_TOPHEAD) ? 1 : 0;
+    const int side = head_side(f);
     const int track = d->track;
     if (track < 0 || track >= f->get_tracks() || side >= f->get_sides()) return;
 

@@ -49,6 +49,9 @@ private:
     int m_family = 0;
     unsigned int m_timeout_address = 0;
     unsigned int m_timeout_pc = 0;
+    // Запросы на ~irq2 (EVNT), взятые или нет: проверка, что сетевой таймер
+    // доходит до процессора
+    unsigned int m_irq2_edges = 0;
 
     Interface i_virq;               // vectored interrupt request
     Interface i_vector;             // vector supplied by the requesting device

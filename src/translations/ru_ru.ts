@@ -365,6 +365,31 @@
         <translation>Только в память, образ не меняется</translation>
     </message>
     <message>
+        <location filename="../emulator/devices/specific/dvk_kmd.cpp" line="+1"/>
+        <source>MY board switch SA1</source>
+        <translation>Переключатель SA1 платы MY</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>1 on, 2 off (normal)</source>
+        <translation>1 замкнут, 2 разомкнут (обычно)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>1 off, 2 on</source>
+        <translation>1 разомкнут, 2 замкнут</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Both on (self-tests repeated)</source>
+        <translation>Оба замкнуты (повтор самотестов)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Both off (other drive parameters)</source>
+        <translation>Оба разомкнуты (другие параметры привода)</translation>
+    </message>
+    <message>
         <location filename="../emulator/core.cpp" line="+566"/>
         <location line="+15"/>
         <source>ROM image</source>

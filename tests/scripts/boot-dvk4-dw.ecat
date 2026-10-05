@@ -8,8 +8,14 @@ MACHINE "../../tests/files/dvk4-ksm.ext"
 COMMAND dw.load("rt11-dw.dsk")
 COMMAND dw.volatile(1)
 WAIT _12000
+# Тумблер «Прерывания» - после теста памяти монитора: часы RT-11 идут от него
+COMMAND panel.option(1,1)
 TYPE "BDW0"
 WAIT _30000
+# Стартовый файл кончается DAY - часы, которые идут на экране до нажатия
+# клавиши
+KEY _100,_50,ret
+WAIT _3000
 TYPE "DIR TE*.*"
 KEY _100,_50,ret
 WAIT _5000

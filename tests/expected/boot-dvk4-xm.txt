@@ -1,6 +1,7 @@
 === SHOW CONFIG ===
 [display.text] 
                              lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+Booted from MY0:RT11XM
 22 bit addressing is on
 
 USR   is set NOSWAP
@@ -17,7 +18,6 @@ PDP 11/34 Processor
 1024KB of memory
 Extended Instruction Set (EIS)
 Memory Management Unit
-50 Cycle System Clock
 
 Device I/O time-out support
 System job support
