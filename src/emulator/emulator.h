@@ -6,6 +6,7 @@
 #pragma once
 
 #include <memory>
+#include <map>
 #include <array>
 #include <string>
 #include <functional>
@@ -32,6 +33,14 @@
 //configuration editor, which constructs the devices of a machine it does not
 //run to ask them what can be changed (see config_fields.h)
 void register_all_devices(DeviceManager * dm);
+
+//What a drive holds: an image (empty: none) and its write protection
+struct DiskChoice {
+    std::string file;
+    bool protect = false;
+    bool operator==(const DiskChoice &o) const { return file == o.file && protect == o.protect; }
+    bool operator!=(const DiskChoice &o) const { return !(*this == o); }
+};
 
 class Emulator
 {
@@ -152,6 +161,17 @@ private:
     void set_machine_error(const std::string &message, bool fatal);
 
     bool m_settings_readonly = false;
+
+    //Remembered disks, see DiskChoice
+    bool m_restore_disks = false;
+    std::map<std::string, DiskChoice> m_disk_defaults;
+    std::vector<ComputerDevice*> disk_devices();
+    std::string machine_disk_key(const std::string &device) const;
+    std::string root_path() const;
+    std::string disk_path(const std::string &file);
+    void apply_disk_choice(ComputerDevice * dev, const DiskChoice &c);
+    void record_disk_choice(ComputerDevice * dev, const DiskChoice &from, const DiskChoice &to);
+    void restore_disks();
     void store_screenshot();
 
     //Applies the @state section of a .ecats. Called by run() on the emulation
@@ -188,6 +208,32 @@ public:
 
     emulator::Result load_config(std::string file_name);
     void apply_saved_device_options();
+
+    //------------------------ Remembered disks -----------------------------//
+    //The third step after .cfg and .ext: what the user put into a drive (an
+    //image, nothing, write protection) is kept in [Disks] of the ini, keyed by
+    //the file that was opened - not by the base of its chain - and the drive
+    //name. Only the windowed frontend turns the restore on, and only when no
+    //script, replay or MCP client drives the machine
+    //Applies to the next load_config()
+    void set_restore_disks(bool on) { m_restore_disks = on; }
+    //What the drive holds now, and what the machine's configuration put in it
+    DiskChoice disk_state(ComputerDevice * dev);
+    DiskChoice disk_default(const std::string &device) const;
+    //Writes the drive's state into the ini, or removes the entry when the
+    //state is the configuration's own
+    void remember_disk(ComputerDevice * dev);
+    bool has_remembered_disk(const std::string &device);
+    //The key of the drive's entry in [Disks], for a frontend that keeps the
+    //entries elsewhere (the web page: in the browser's storage)
+    std::string disk_key(const std::string &device) const { return machine_disk_key(device); }
+    //Puts the configuration's image back (on the emulation thread) and drops
+    //the entry. Also records the commands while recording
+    void restore_default_disk(ComputerDevice * dev);
+    void forget_all_disks();
+    //Commands that turn the configuration's drives into what they hold now.
+    //A recording starts with them, since a replay restores nothing
+    void record_disk_changes();
 
     //--------------------------- Saved state ------------------------------//
     //Writes everything the machine is into file_name: a .ecats.zip archive,

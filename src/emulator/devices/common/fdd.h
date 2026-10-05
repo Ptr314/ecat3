@@ -81,6 +81,7 @@ public:
     std::string files;
     std::string files_save;
     std::string file_name;
+    std::string image_path;     //file_name with its directory, empty when not known (a snapshot)
     unsigned int stream_format;
 
     FDD(InterfaceManager *im, EmulatorConfigDevice *cd);

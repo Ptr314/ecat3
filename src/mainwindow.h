@@ -94,6 +94,10 @@ private slots:
     void hdd_eject(unsigned int n);
     void hdd_wp(unsigned int n);
 
+    //Remembered disks: the configuration's image back into the drive
+    void fdd_default(unsigned int n);
+    void hdd_default(unsigned int n);
+
     void update_fdds();                 //The lamps of the floppy and hard disk drives
 
     void on_actionScreenshot_triggered();
@@ -111,6 +115,8 @@ private slots:
     void on_actionRecRewind_triggered();
     void on_actionRecStop_triggered();
     void on_actionRecPanel_toggled(bool checked);
+    void on_actionRememberDisks_toggled(bool checked);
+    void on_actionForgetDisks_triggered();
 
     void rec_tick();
 
@@ -167,6 +173,12 @@ private:
     std::vector<ComputerDevice*> hdds;
     void hdd_show(unsigned int n);
     unsigned int hdds_found = 0;
+    void fdd_show(unsigned int n);
+    //Writes what a drive holds into the ini when the setting is on
+    void disk_changed(ComputerDevice * dev);
+    //Set by those who drive the machine themselves (a replay, MCP): the next
+    //load_config() leaves the configuration's disks in the drives
+    bool no_disk_restore = false;
     //FDC * fdc;
     // TapeRecorder * tape;
     unsigned int fdds_found = 0;

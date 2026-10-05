@@ -971,4 +971,76 @@ int wasm_hdd_save(const char* device_name, const char* file_path)
     return out ? 0 : -4;
 }
 
+//--------------------------- Remembered disks ------------------------------//
+// The page keeps the entries of [Disks] in the browser's storage, the floppy
+// images themselves too, since a file of the visitor's computer cannot be
+// opened again by its name. The ini of the core lives in MEMFS and is gone
+// with the tab: before every load the page empties its [Disks], puts back the
+// entries of the machine it is about to start and says whether to restore.
+// The core then restores them exactly as on the desktop, before the machine runs
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_disks_prepare(int restore)
+{
+    if (!g_emulator) return;
+    g_emulator->forget_all_disks();
+    g_emulator->set_restore_disks(restore != 0);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_disk_set_entry(const char* key, const char* value)
+{
+    if (!g_emulator || key == nullptr || value == nullptr) return;
+    g_emulator->write_setup("Disks", key, value);
+}
+
+static ComputerDevice * wasm_disk_device(const char * name)
+{
+    if (!g_emulator || !g_emulator->loaded || g_emulator->dm == nullptr || name == nullptr) return nullptr;
+    return g_emulator->dm->get_device_by_name(std::string(name), false);
+}
+
+// Writes what the drive holds into [Disks] (or drops the entry when it is the
+// configuration's) and answers "key<TAB>value", the value empty for no entry
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_disk_remember(const char* device_name)
+{
+    static std::string result;
+    result.clear();
+    ComputerDevice * dev = wasm_disk_device(device_name);
+    if (dev == nullptr) return result.c_str();
+    g_emulator->remember_disk(dev);
+    const std::string key = g_emulator->disk_key(dev->name);
+    result = key + "\t" + g_emulator->read_setup("Disks", key, "");
+    return result.c_str();
+}
+
+// The configuration's image back into the drive; answers the key of the entry
+// it dropped, empty when there is no such drive
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_disk_default(const char* device_name)
+{
+    static std::string result;
+    result.clear();
+    ComputerDevice * dev = wasm_disk_device(device_name);
+    if (dev == nullptr) return result.c_str();
+    try {
+        g_emulator->restore_default_disk(dev);
+    } catch (const std::exception &) {
+    }
+    result = g_emulator->disk_key(dev->name);
+    return result.c_str();
+}
+
+// The key a drive of the machine that is loaded is remembered under
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_disk_key(const char* device_name)
+{
+    static std::string result;
+    result.clear();
+    ComputerDevice * dev = wasm_disk_device(device_name);
+    if (dev != nullptr) result = g_emulator->disk_key(dev->name);
+    return result.c_str();
+}
+
 } // extern "C"

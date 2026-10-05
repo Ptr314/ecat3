@@ -100,6 +100,18 @@ void IniSettings::set(const std::string &section, const std::string &ident, cons
     d->data[section][ident] = value;
 }
 
+//mINI writes out what the structure holds, so a key gone from it is gone from
+//the file on the next save
+void IniSettings::remove(const std::string &section, const std::string &ident)
+{
+    if (d->data.has(section)) d->data[section].remove(ident);
+}
+
+void IniSettings::remove_section(const std::string &section)
+{
+    d->data.remove(section);
+}
+
 // Replaces one file with another in a single step. std::filesystem::rename is
 // specified to do it, but on Windows GCC's implementation goes through _wrename,
 // which refuses to overwrite an existing name, so there the call is made by hand.
@@ -212,6 +224,18 @@ void IniSettings::set(const std::string &section, const std::string &ident, cons
 {
     if (!d->qs) return;
     d->qs->setValue(QString::fromStdString(section + "/" + ident), QString::fromStdString(value));
+}
+
+void IniSettings::remove(const std::string &section, const std::string &ident)
+{
+    if (!d->qs) return;
+    d->qs->remove(QString::fromStdString(section + "/" + ident));
+}
+
+void IniSettings::remove_section(const std::string &section)
+{
+    if (!d->qs) return;
+    d->qs->remove(QString::fromStdString(section));
 }
 
 void IniSettings::save()

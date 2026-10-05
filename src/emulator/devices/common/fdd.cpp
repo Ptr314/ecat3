@@ -342,6 +342,9 @@ emulator::Result FDD::load_image(const std::string &file_name)
             this->file_name = base_name;
         }
     }
+    //Every branch that took the image ends by naming it; one that did not
+    //(an unknown extension) leaves the previous image and its path alone
+    if (loaded && this->file_name == base_name) image_path = file_name;
     return emulator::Result::ok();
 }
 
@@ -533,6 +536,7 @@ void FDD::unload(){
     sides_layout = default_sides_layout;
     m_generation++;
     file_name = "";
+    image_path.clear();
 }
 
 int FDD::get_sector_size()
@@ -813,8 +817,10 @@ emulator::Result FDD::load_state(const StateReader &r)
     uint32_t size = 0;
     if (!r.u("disk_size", size) || size == 0) return emulator::Result::ok();
 
-    //An empty name is not written at all (StateWriter::s)
+    //An empty name is not written at all (StateWriter::s). The contents come
+    //from the snapshot, so no file on disk is this image any more
     file_name.clear();
+    image_path.clear();
     r.s("file_name", file_name);
     r.u("sides", sides);
     r.u("tracks", tracks);
@@ -918,6 +924,7 @@ std::vector<DeviceFieldInfo> FDD::get_device_fields()
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
     r.push_back({"loaded",      "1 if an image is loaded",              false});
     r.push_back({"file",        "Name of the loaded image",             false});
+    r.push_back({"path",        "Full path of the loaded image",        false});
     r.push_back({"layout",      "Track order of the loaded image",      false});
     r.push_back({"protected",   "1 if the image is write protected",    false});
     r.push_back({"selected",    "1 if the drive is selected",           false});
@@ -947,6 +954,10 @@ bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to
 {
     if (field == "file") {
         out.text = file_name;
+        return true;
+    }
+    if (field == "path") {
+        out.text = image_path;
         return true;
     }
     if (field == "layout") {

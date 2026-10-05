@@ -22,6 +22,8 @@ public:
     bool has(const std::string &section, const std::string &ident) const;
     std::string get(const std::string &section, const std::string &ident, const std::string &def_val = "") const;
     void set(const std::string &section, const std::string &ident, const std::string &value);
+    void remove(const std::string &section, const std::string &ident);
+    void remove_section(const std::string &section);
     void save();
 
 private:

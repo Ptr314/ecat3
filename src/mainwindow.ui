@@ -120,6 +120,9 @@
     <addaction name="actionLanguage"/>
     <addaction name="actionRecPanel"/>
     <addaction name="separator"/>
+    <addaction name="actionRememberDisks"/>
+    <addaction name="actionForgetDisks"/>
+    <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuDisplay">
@@ -449,6 +452,22 @@
    </property>
    <property name="toolTip">
     <string>Show the recording buttons on the tool bar</string>
+   </property>
+  </action>
+  <action name="actionRememberDisks">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Remember disk choice</string>
+   </property>
+   <property name="toolTip">
+    <string>Put the disks chosen last into the drives when a machine is loaded</string>
+   </property>
+  </action>
+  <action name="actionForgetDisks">
+   <property name="text">
+    <string>Forget the disks of all machines</string>
    </property>
   </action>
   <action name="actionLanguage">

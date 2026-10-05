@@ -237,8 +237,8 @@ function readUrlParams() {
 
 // blocks=machine,-screen,fdd0: a name on its own is an open block, a name with
 // a minus in front a folded one. The names are those of data-block in
-// shell.html plus the device name of a drive or a tape block - the seven of
-// the page (machine, screen, volume, language, file, keyboard, options) are
+// shell.html plus the device name of a drive or a tape block - the eight of
+// the page (machine, screen, volume, language, settings, file, keyboard, options) are
 // therefore reserved. A block the address says nothing about is left to the
 // choice saved in this browser
 function blockStates(text) {
@@ -438,6 +438,13 @@ const I18N = {
         save:               "Save",
         eject:              "Eject",
         protect:            "Write protect",
+        diskDefault:        "Default",
+        diskDefaultTitle:   "Put the disk of the configuration back and forget the one chosen",
+        settingsBlock:      "Settings",
+        rememberDisks:      "Remember disk choice",
+        rememberDisksTitle: "Put the disks chosen last back into the drives when the machine is started again; the images are kept in this browser",
+        forgetDisks:        "Forget the disks of all machines",
+        forgetDisksAsk:     "Forget the disks chosen for every machine? The disks in the drives now stay where they are.",
         openFile:           "Load a file",
         openFileTitle:      "Load a program into the memory of the machine, or open a saved state",
         stFileLoaded:       "File loaded: {0}",
@@ -539,6 +546,13 @@ const I18N = {
         save:               "Сохранить",
         eject:              "Извлечь",
         protect:            "Защита от записи",
+        diskDefault:        "По умолчанию",
+        diskDefaultTitle:   "Вернуть диск из конфигурации и забыть выбранный",
+        settingsBlock:      "Настройки",
+        rememberDisks:      "Запоминать выбор дисков",
+        rememberDisksTitle: "Вставлять последние выбранные диски при следующем запуске машины; образы хранятся в этом браузере",
+        forgetDisks:        "Забыть диски всех машин",
+        forgetDisksAsk:     "Забыть выбранные диски всех машин? Диски, вставленные сейчас, останутся на месте.",
         openFile:           "Загрузить файл",
         openFileTitle:      "Загрузить программу в память машины или открыть сохраненное состояние",
         stFileLoaded:       "Файл загружен: {0}",
@@ -1179,6 +1193,8 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl, before
 
         console.log("Bundles loaded. Calling wasm_load_machine:", machinePath);
         setStatus("stStarting", "loading");
+
+        await prepareRememberedDisks(module, machinePath);
 
         let result = module.ccall("wasm_load_machine", "number", ["string"], [machinePath]);
 
@@ -1830,6 +1846,184 @@ function setupPageBlocks() {
     }
 }
 
+// ----------------------------------------------------------------------------
+// Remembered disks
+// ----------------------------------------------------------------------------
+//
+// The same entries as the [Disks] of the desktop ini - the key is the machine
+// file and the drive ("computers/agat/Agat-7-max.ext|fdd1"), the value the
+// image and its protection ("tmp/fdd1/game.dsk|0", an empty image for an
+// ejected disk) - kept in localStorage as disk.<key>. The core writes them; the
+// page only stores them and hands them back before the next start, when the
+// core restores them before the machine runs, as on the desktop.
+//
+// A file of the visitor's computer cannot be opened again by its name, so the
+// bytes of a remembered floppy are kept in IndexedDB under the same key
+// (localStorage holds a few MB in all). A hard disk image is not kept at all -
+// it may be hundreds of MB: only its ejection and protection are remembered.
+
+const DISK_DB_NAME = "ecat3";
+const DISK_DB_STORE = "disks";
+let diskDbPromise = null;
+
+function rememberDisksOn() {
+    return settings.get("rememberDisks", "0") === "1";
+}
+
+// null where the browser gives no IndexedDB (a private window may not): the
+// floppies are then not remembered, the rest still is
+function diskDb() {
+    if (!diskDbPromise) {
+        diskDbPromise = new Promise((resolve) => {
+            try {
+                const request = indexedDB.open(DISK_DB_NAME, 1);
+                request.onupgradeneeded = () => request.result.createObjectStore(DISK_DB_STORE);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => resolve(null);
+                request.onblocked = () => resolve(null);
+            } catch (e) {
+                resolve(null);
+            }
+        });
+    }
+    return diskDbPromise;
+}
+
+// One request in its own transaction; its result once the transaction is
+// committed, null on any failure
+async function diskDbRequest(mode, makeRequest) {
+    const db = await diskDb();
+    if (!db) return null;
+    return new Promise((resolve) => {
+        try {
+            const tx = db.transaction(DISK_DB_STORE, mode);
+            const request = makeRequest(tx.objectStore(DISK_DB_STORE));
+            tx.oncomplete = () => resolve(request.result === undefined ? true : request.result);
+            tx.onerror = () => resolve(null);
+            tx.onabort = () => resolve(null);
+        } catch (e) {
+            resolve(null);
+        }
+    });
+}
+
+function diskEntries(prefix) {
+    const list = [];
+    try {
+        const full = "ecat3.disk." + prefix;
+        for (let i = 0; i < localStorage.length; i++) {
+            const name = localStorage.key(i);
+            if (name && name.startsWith(full))
+                list.push([name.substring("ecat3.disk.".length), localStorage.getItem(name)]);
+        }
+    } catch (e) {
+        // No storage, nothing remembered
+    }
+    return list;
+}
+
+function hasDiskEntry(key) {
+    return !!key && settings.get("disk." + key, null) !== null;
+}
+
+function forgetDiskEntry(key) {
+    settings.remove("disk." + key);
+    diskDbRequest("readwrite", (store) => store.delete(key));
+}
+
+// "path|protect" -> the path, "" for no image
+function diskEntryFile(value) {
+    const bar = value.lastIndexOf("|");
+    return bar < 0 ? "" : value.substring(0, bar);
+}
+
+// After the visitor changed what a drive holds. The core decides what the
+// entry is (nothing, when the drive is as the configuration has it)
+async function rememberDisk(module, drive) {
+    if (!rememberDisksOn()) return;
+    const answer = module.ccall("wasm_disk_remember", "string", ["string"], [drive.name]) || "";
+    const tab = answer.indexOf("\t");
+    if (tab <= 0) return;
+    const key = answer.substring(0, tab);
+    const value = answer.substring(tab + 1);
+    const file = diskEntryFile(value);
+
+    if (!value || (drive.kind === "hdd" && file.startsWith("host/"))) {
+        if (value) module.ccall("wasm_disk_set_entry", null, ["string", "string"], [key, ""]);
+        forgetDiskEntry(key);
+        renderDrives();
+        return;
+    }
+    // An image the page put into MEMFS is gone with the tab: its bytes are
+    // kept. One of the machine's bundle is fetched again on the next start
+    if (file.startsWith("tmp/")) {
+        let stored = null;
+        try {
+            const data = module.FS.readFile("/" + file);
+            stored = await diskDbRequest("readwrite", (store) => store.put(data, key));
+        } catch (e) {
+            stored = null;
+        }
+        if (!stored) {
+            // Without the bytes the entry could not be restored anyway
+            forgetDiskEntry(key);
+            renderDrives();
+            return;
+        }
+    } else if (!file) {
+        diskDbRequest("readwrite", (store) => store.delete(key));
+    }
+    settings.set("disk." + key, value);
+    renderDrives();
+}
+
+// Called right before the machine is loaded: the core gets the entries of
+// this machine, the images they name are put back into MEMFS
+async function prepareRememberedDisks(module, machinePath) {
+    // A saved state carries its media itself
+    const on = rememberDisksOn() && !/\.ecats(\.zip)?$/i.test(machinePath);
+    module.ccall("wasm_disks_prepare", null, ["number"], [on ? 1 : 0]);
+    if (!on) return;
+    // The key of the core: the machine file relative to the root of MEMFS
+    const prefix = machinePath.replace(/^\/+/, "") + "|";
+    for (const [key, value] of diskEntries(prefix)) {
+        const file = diskEntryFile(value);
+        if (file.startsWith("tmp/")) {
+            const data = await diskDbRequest("readonly", (store) => store.get(key));
+            // Bytes lost (storage cleared): the configuration's disk stays
+            if (!(data instanceof Uint8Array)) continue;
+            try {
+                const path = "/" + file;
+                module.FS.mkdirTree(path.substring(0, path.lastIndexOf("/")));
+                module.FS.writeFile(path, data);
+            } catch (e) {
+                continue;
+            }
+        }
+        module.ccall("wasm_disk_set_entry", null, ["string", "string"], [key, value]);
+    }
+}
+
+function forgetAllDisks() {
+    for (const [key] of diskEntries("")) settings.remove("disk." + key);
+    diskDbRequest("readwrite", (store) => store.clear());
+    renderDrives();
+}
+
+function setupDiskSettings() {
+    const box = document.getElementById("remember-disks");
+    box.checked = rememberDisksOn();
+    // Turning it off keeps the entries: they are neither applied nor updated
+    // until it is on again
+    box.addEventListener("change", () => settings.set("rememberDisks", box.checked ? "1" : "0"));
+    releaseFocus(box);
+    const forget = document.getElementById("forget-disks");
+    forget.addEventListener("click", () => {
+        if (window.confirm(t("forgetDisksAsk"))) forgetAllDisks();
+    });
+    releaseFocus(forget);
+}
+
 function setupDrives(module, configKey) {
     if (drivesTimer !== null) { clearInterval(drivesTimer); drivesTimer = null; }
     const box = document.getElementById("drives");
@@ -1875,6 +2069,8 @@ function buildDrive(module, drive, configKey) {
     ui.load = element("button", "", buttons);
     ui.save = element("button", "", buttons);
     ui.eject = element("button", "", buttons);
+    ui.reset = element("button", "", buttons);
+    drive.diskKey = module.ccall("wasm_disk_key", "string", ["string"], [drive.name]) || "";
 
     const input = element("input", "", body);
     input.type = "file";
@@ -1899,10 +2095,17 @@ function buildDrive(module, drive, configKey) {
     ui.save.addEventListener("click", () => drive.kind === "hdd" ? saveHardDisk(module, drive) : saveDisk(module, drive));
     ui.eject.addEventListener("click", () => {
         module.ccall(api + "eject", "number", ["string"], [drive.name]);
+        rememberDisk(module, drive);
+        pollDrives(module);
+    });
+    ui.reset.addEventListener("click", () => {
+        const key = module.ccall("wasm_disk_default", "string", ["string"], [drive.name]);
+        if (key) forgetDiskEntry(key);
         pollDrives(module);
     });
     ui.protect.addEventListener("change", () => {
         module.ccall(api + "protect", "number", ["string", "number"], [drive.name, ui.protect.checked ? 1 : 0]);
+        rememberDisk(module, drive);
         pollDrives(module);
     });
     releaseFocus(ui.protect);
@@ -1924,9 +2127,14 @@ function renderDrives() {
         ui.load.textContent = t("load");
         ui.save.textContent = t("save");
         ui.eject.textContent = t("eject");
+        ui.reset.textContent = t("diskDefault");
+        ui.reset.title = t("diskDefaultTitle");
         ui.protectText.textContent = t("protect");
         ui.save.disabled = !drive.loaded;
         ui.eject.disabled = !drive.loaded;
+        // Whenever something is remembered, the setting on or off: it is also
+        // how an entry is got rid of
+        ui.reset.disabled = !hasDiskEntry(drive.diskKey);
         ui.protect.checked = drive.protected;
     });
 }
@@ -1936,12 +2144,19 @@ async function loadDisk(module, drive, file) {
     try {
         const data = new Uint8Array(await file.arrayBuffer());
 
-        // Write file to Emscripten virtual FS, then tell C++ to load it
-        const path = "/tmp/" + file.name;
+        // Write file to Emscripten virtual FS, then tell C++ to load it. A
+        // directory per drive: two disks of one name in two drives are two
+        // files, which matters once they are remembered by their paths
+        const dir = "/tmp/" + drive.name;
+        module.FS.mkdirTree(dir);
+        const path = dir + "/" + file.name;
         module.FS.writeFile(path, data);
 
         const result = module.ccall("wasm_load_file", "number", ["string", "string"], [drive.name, path]);
-        if (result === 0) setStatus("stDiskLoaded", "", file.name);
+        if (result === 0) {
+            setStatus("stDiskLoaded", "", file.name);
+            await rememberDisk(module, drive);
+        }
         else setStatus("stDiskFailed", "error", result);
     } catch (err) {
         console.error("Disk load error:", err);
@@ -2065,7 +2280,12 @@ async function loadHardDisk(module, drive, file) {
         worker.postMessage({ memory: module.ecatMemory, box, file });
         const path = "/host/" + id + "/" + file.name;
         const result = module.ccall("wasm_hdd_load", "number", ["string", "string"], [drive.name, path]);
-        if (result === 0) setStatus("stDiskLoaded", "", file.name);
+        if (result === 0) {
+            setStatus("stDiskLoaded", "", file.name);
+            // A hard disk image is not kept in the browser (hundreds of MB):
+            // this drops whatever was remembered for the drive
+            rememberDisk(module, drive);
+        }
         else setStatus("stHddFailed", "error", module.ccall("wasm_last_error", "string", [], []) || result);
     } catch (err) {
         console.error("Hard disk load error:", err);
@@ -2789,6 +3009,7 @@ async function initEcat() {
     setupPageBlocks();
     applyLanguage(detectLanguage());
     setupLanguageSelect();
+    setupDiskSettings();
     for (const range of document.querySelectorAll('input[type="range"]')) paintRange(range);
     setupAudioActivation();
     setupCanvasScaling();

@@ -353,6 +353,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
 
     //The recording block of the tool bar can be hidden from the Display menu
     ui->actionRecPanel->setChecked(e->read_setup("Video", "recording_panel", "1") != "0");
+    ui->actionRememberDisks->setChecked(e->read_setup("Core", "remember_disks", "0") == "1");
 
     //A configuration given on the command line wins over the one saved in the ini
     first_config = cmdline_config.isEmpty()
@@ -457,8 +458,17 @@ bool MainWindow::switch_language(const QString & lang, bool init)
             ui->retranslateUi(this);
             CreateScreenMenu();
             rec_update_ui();
-            m_settings->set("interface", "language", lang.toStdString());
-            m_settings->save();
+            //Through the emulator's copy of the ini: each copy writes out the
+            //whole file as it holds it, and this one was read before the
+            //emulator wrote anything (options, disks), which a save from here
+            //would drop - just as the emulator's next save would drop the
+            //language written here
+            if (e != nullptr) {
+                e->write_setup("interface", "language", lang.toStdString());
+            } else {
+                m_settings->set("interface", "language", lang.toStdString());
+                m_settings->save();
+            }
         }
         return true;
     } else {
@@ -503,12 +513,20 @@ void MainWindow::CreateFDDMenu(unsigned int n)
     QAction * a5 = new QAction(QString(MainWindow::tr("Write to a file...")), this);
     connect(a5, &QAction::triggered, this, [this, n](){fdd_write(n);});
     a5->setIcon(QIcon(":/icons/file_save"));
+    QAction * a6 = new QAction(QString(MainWindow::tr("Default image")), this);
+    connect(a6, &QAction::triggered, this, [this, n](){fdd_default(n);});
     fdd_menu[n]->addAction(a1);
     fdd_menu[n]->addSeparator();
     fdd_menu[n]->addAction(a2);
     fdd_menu[n]->addAction(a3);
     fdd_menu[n]->addAction(a4);
+    fdd_menu[n]->addAction(a6);
     fdd_menu[n]->addAction(a5);
+    //Available whenever something is remembered, the setting on or off: it is
+    //also how an entry is got rid of
+    connect(fdd_menu[n], &QMenu::aboutToShow, this, [this, n, a6](){
+        a6->setEnabled(n < fdds.size() && e->has_remembered_disk(fdds[n]->name));
+    });
 
     fdd_button[n] = new QToolButton();
     fdd_button[n]->setIcon(QIcon(":/icons/floppy_unmount"));
@@ -539,11 +557,17 @@ void MainWindow::CreateHDDMenu(unsigned int n)
     QAction * a4 = new QAction(QString(MainWindow::tr("Eject")), this);
     a4->setIcon(QIcon(":/icons/eject"));
     connect(a4, &QAction::triggered, this, [this, n](){hdd_eject(n);});
+    QAction * a5 = new QAction(QString(MainWindow::tr("Default image")), this);
+    connect(a5, &QAction::triggered, this, [this, n](){hdd_default(n);});
     hdd_menu[n]->addAction(a1);
     hdd_menu[n]->addSeparator();
     hdd_menu[n]->addAction(a2);
     hdd_menu[n]->addAction(a3);
     hdd_menu[n]->addAction(a4);
+    hdd_menu[n]->addAction(a5);
+    connect(hdd_menu[n], &QMenu::aboutToShow, this, [this, n, a5](){
+        a5->setEnabled(n < hdds.size() && e->has_remembered_disk(hdds[n]->name));
+    });
 
     hdd_button[n] = new QToolButton();
     hdd_button[n]->setIcon(QIcon(":/icons/hdd_unmount"));
@@ -798,14 +822,7 @@ void MainWindow::UpdateToolbar()
         FDD * fdd = dynamic_cast<FDD*>(fdd_devices[i]);
         fdds.push_back(fdd);
         CreateFDDMenu(i);
-        if (fdd->get_loaded())
-        {
-            fdd_menu[i]->actions().at(0)->setText(QString::fromStdString(fdd->file_name));
-            fdd_button[i]->setIcon(QIcon(":/icons/floppy_mount"));
-            if (fdd->is_protected())
-                fdd_button[i]->setIcon(QIcon(":/icons/floppy_locked"));
-        }
-
+        fdd_show(i);
     }
     //Винчестеры. Образ - файл на сотни мегабайт, с машиной он не поставляется,
     //поэтому гнездо обычно пустое, и вставляют образ отсюда
@@ -1359,6 +1376,15 @@ void MainWindow::load_config(QString file_name, bool set_default, bool run_embed
         }
     }
 
+    //The remembered disks are the user's, for a machine the user opens: a
+    //script, a replay or an MCP client expects the configuration's own
+    bool restore_disks = ui->actionRememberDisks->isChecked() && !no_disk_restore && !cmdline_starting;
+#ifdef ENABLE_MCP
+    if (mcp_mode) restore_disks = false;
+#endif
+    no_disk_restore = false;
+    e->set_restore_disks(restore_disks);
+
     emulator::Result res = e->load_config(file_name.toStdString());
     if (!res) {
         //The machine that was running is gone and nothing took its place: the
@@ -1668,6 +1694,7 @@ void MainWindow::fdd_open(unsigned int n)
                 QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
             } else {
                 e->record_command(fdds[n]->name, "load", format_script_arg(fi.absoluteFilePath().toStdString()));
+                disk_changed(fdds[n]);
             }
             last_path = fi.absolutePath();
             e->set_last_path(last_path.toStdString());
@@ -1681,12 +1708,14 @@ void MainWindow::fdd_eject(unsigned int n)
     fdd_button[n]->setIcon(QIcon(":/icons/floppy_unmount"));
     e->invoke([&]() { fdds[n]->unload(); });
     e->record_command(fdds[n]->name, "eject", "");
+    disk_changed(fdds[n]);
 }
 
 void MainWindow::fdd_wp(unsigned int n)
 {
     e->invoke([&]() { fdds[n]->change_protection(); });
     e->record_command(fdds[n]->name, "protect", fdds[n]->is_protected()?"1":"0");
+    disk_changed(fdds[n]);
     if (fdds[n]->get_loaded()) {
         if (fdds[n]->is_protected()) {
             fdd_button[n]->setIcon(QIcon(":/icons/floppy_locked"));
@@ -1694,6 +1723,36 @@ void MainWindow::fdd_wp(unsigned int n)
             fdd_button[n]->setIcon(QIcon(":/icons/floppy_mount"));
         }
     }
+}
+
+//The menu and the button of a floppy drive from the state of its device
+void MainWindow::fdd_show(unsigned int n)
+{
+    FDD * fdd = fdds[n];
+    if (fdd->get_loaded()) {
+        fdd_menu[n]->actions().at(0)->setText(QString::fromStdString(fdd->file_name));
+        fdd_button[n]->setIcon(QIcon(fdd->is_protected() ? ":/icons/floppy_locked" : ":/icons/floppy_mount"));
+    } else {
+        fdd_menu[n]->actions().at(0)->setText(MainWindow::tr("<Not loaded>"));
+        fdd_button[n]->setIcon(QIcon(":/icons/floppy_unmount"));
+    }
+}
+
+void MainWindow::fdd_default(unsigned int n)
+{
+    e->restore_default_disk(fdds[n]);
+    fdd_show(n);
+}
+
+void MainWindow::hdd_default(unsigned int n)
+{
+    e->restore_default_disk(hdds[n]);
+    hdd_show(n);
+}
+
+void MainWindow::disk_changed(ComputerDevice * dev)
+{
+    if (ui->actionRememberDisks->isChecked()) e->remember_disk(dev);
 }
 
 static bool device_flag(ComputerDevice * d, const std::string &field)
@@ -1740,8 +1799,10 @@ void MainWindow::hdd_open(unsigned int n)
     emulator::Result res = hdds[n]->send_command("load", arg);
     if (!res)
         QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
-    else
+    else {
         e->record_command(hdds[n]->name, "load", arg);
+        disk_changed(hdds[n]);
+    }
     hdd_show(n);
     last_path = fi.absolutePath();
     e->set_last_path(last_path.toStdString());
@@ -1751,6 +1812,7 @@ void MainWindow::hdd_eject(unsigned int n)
 {
     hdds[n]->send_command("eject", "");
     e->record_command(hdds[n]->name, "eject", "");
+    disk_changed(hdds[n]);
     hdd_show(n);
 }
 
@@ -1759,6 +1821,7 @@ void MainWindow::hdd_wp(unsigned int n)
     const bool on = hdd_menu[n]->actions().at(3)->isChecked();
     hdds[n]->send_command("protect", on?"1":"0");
     e->record_command(hdds[n]->name, "protect", on?"1":"0");
+    disk_changed(hdds[n]);
 }
 
 void MainWindow::fdd_write(unsigned int n)
@@ -2337,7 +2400,11 @@ void MainWindow::on_actionRecord_triggered()
         }
     }
 
+    const bool fresh = s->size() == 0;
     r->begin(e->clock_now(), e->ticks_per_ms(), rec_machine_string().toStdString());
+    //A replay loads the machine with the configuration's disks, so a new
+    //recording starts by putting in what the drives hold now
+    if (fresh) e->record_disk_changes();
     rec_cmdline = false;
     rec_state = RecRecording;
     rec_ui_shown = true;
@@ -2367,6 +2434,7 @@ void MainWindow::on_actionRecPlay_triggered()
             QMessageBox::warning(this, tr("Error"), tr("Configuration file is not found: ") + path);
             return;
         }
+        no_disk_restore = true;
         load_config(path, false, false);
         if (!e->loaded) return;
     }
@@ -2402,6 +2470,22 @@ void MainWindow::on_actionRecPanel_toggled(bool checked)
     if (rec_panel_separator != nullptr) rec_panel_separator->setVisible(checked);
     if (rec_panel_widget != nullptr) rec_panel_widget->setVisible(checked);
     if (e != nullptr) e->write_setup("Video", "recording_panel", checked?"1":"0");
+}
+
+//Turning it off keeps the entries: they are neither applied nor updated until
+//it is on again
+void MainWindow::on_actionRememberDisks_toggled(bool checked)
+{
+    if (e != nullptr) e->write_setup("Core", "remember_disks", checked?"1":"0");
+}
+
+void MainWindow::on_actionForgetDisks_triggered()
+{
+    if (e == nullptr) return;
+    QMessageBox::StandardButton reply = QMessageBox::question(this, tr("Remembered disks"),
+        tr("Forget the disks chosen for every machine? The disks in the drives now stay where they are."),
+        QMessageBox::Yes|QMessageBox::Cancel);
+    if (reply == QMessageBox::Yes) e->forget_all_disks();
 }
 
 

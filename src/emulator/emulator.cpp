@@ -8,6 +8,7 @@
 // where it finds emulator/utils.h. Pull in the real one explicitly.
 #include "libs/dsk_tools/src/utils.h"
 #include "host_helpers.h"
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 
@@ -28,6 +29,7 @@
 #include "emulator/config.h"
 #include "emulator/utils.h"
 #include "emulator/state_save.h"
+#include "emulator/script/script_parser.h"
 #include "libs/lodepng/lodepng.h"
 
 #include "emulator/devices/cpu/i8080.h"
@@ -276,6 +278,15 @@ emulator::Result Emulator::build_machine(const std::string &file_name)
     res = dm->load_devices_config(&sd);
     if (!res) return res;
     apply_saved_device_options();
+
+    //What the configuration put into the drives, before the ini changes it:
+    //"Default image" goes back to it, and an entry equal to it is not kept
+    m_disk_defaults.clear();
+    if (!m_source.is_state) {
+        std::vector<ComputerDevice*> devs = disk_devices();
+        for (size_t i = 0; i < devs.size(); i++) m_disk_defaults[devs[i]->name] = disk_state(devs[i]);
+        if (m_restore_disks) restore_disks();
+    }
     loaded = true;
     return emulator::Result::ok();
 }
@@ -496,6 +507,181 @@ void Emulator::apply_saved_device_options()
             }
         }
     }
+}
+
+//----------------------------- Remembered disks -----------------------------//
+
+static const char * const DISKS_SECTION = "Disks";
+
+std::vector<ComputerDevice*> Emulator::disk_devices()
+{
+    std::vector<ComputerDevice*> r;
+    if (dm == nullptr) return r;
+    for (unsigned int i = 0; i < dm->device_count; i++) {
+        ComputerDevice * dev = dm->get_device(i)->device.get();
+        if (dev->device_class == "fdd" || dev->device_class == "hdd") r.push_back(dev);
+    }
+    return r;
+}
+
+//The directory holding computers/ and software/: paths under it are written
+//relative to it, so the entries survive the installation being moved
+std::string Emulator::root_path() const
+{
+    std::string p = work_path;
+    std::replace(p.begin(), p.end(), '\\', '/');
+    while (!p.empty() && p[p.size() - 1] == '/') p.erase(p.size() - 1);
+    size_t slash = p.rfind('/');
+    return slash == std::string::npos ? std::string() : p.substr(0, slash + 1);
+}
+
+static std::string relative_to(const std::string &root, const std::string &path)
+{
+    std::string p = path;
+    std::replace(p.begin(), p.end(), '\\', '/');
+    if (root.empty() || p.size() <= root.size()) return p;
+#ifdef _WIN32
+    if (str_tolower(p.substr(0, root.size())) == str_tolower(root)) return p.substr(root.size());
+#else
+    if (p.compare(0, root.size(), root) == 0) return p.substr(root.size());
+#endif
+    return p;
+}
+
+//The file that was opened, not the base of its chain: an .ext standing on a
+//.cfg has entries of its own and leaves those of the .cfg alone
+std::string Emulator::machine_disk_key(const std::string &device) const
+{
+    return relative_to(root_path(), sd.system_file) + "|" + device;
+}
+
+DiskChoice Emulator::disk_state(ComputerDevice * dev)
+{
+    DiskChoice c;
+    DeviceFieldValue v;
+    //A floppy drive keeps the bare name in "file" and the whole one in "path";
+    //the hard disks keep the whole one in "file"
+    bool loaded = false;
+    if (dev->get_field("loaded", 0, 0, v) || dev->get_field("attached", 0, 0, v))
+        loaded = !v.values.empty() && v.values[0] != 0;
+    if (loaded) {
+        v = DeviceFieldValue();
+        if ((dev->get_field("path", 0, 0, v) && !v.text.empty()) || dev->get_field("file", 0, 0, v))
+            c.file = relative_to(root_path(), v.text);
+    }
+    v = DeviceFieldValue();
+    if (dev->get_field("protected", 0, 0, v)) c.protect = !v.values.empty() && v.values[0] != 0;
+    return c;
+}
+
+DiskChoice Emulator::disk_default(const std::string &device) const
+{
+    std::map<std::string, DiskChoice>::const_iterator it = m_disk_defaults.find(device);
+    return it == m_disk_defaults.end() ? DiskChoice() : it->second;
+}
+
+//An entry is relative to the root when it lies under it; the configuration's
+//own image may be relative to wherever the machine was found (a frontend that
+//names it by a relative path), so it is looked for the way the drive did.
+//Empty when the file is not there
+std::string Emulator::disk_path(const std::string &file)
+{
+    std::string path = find_file_location(&sd, is_absolute_path(file) ? file : root_path() + file);
+    if (path.empty() && !is_absolute_path(file)) path = find_file_location(&sd, file);
+    return path;
+}
+
+//Runs where the devices are owned: from build_machine(), or through invoke()
+void Emulator::apply_disk_choice(ComputerDevice * dev, const DiskChoice &c)
+{
+    DiskChoice now = disk_state(dev);
+    if (c.file.empty()) {
+        if (!now.file.empty()) dev->send_command("eject", "");
+    } else if (c.file != now.file) {
+        std::string path = disk_path(c.file);
+        //An image that is gone, or will not load, leaves the configuration's
+        if (path.empty()) return;
+        if (!dev->send_command("load", format_script_arg(path))) return;
+    }
+    if (disk_state(dev).protect != c.protect)
+        dev->send_command("protect", c.protect ? "1" : "0");
+}
+
+void Emulator::restore_disks()
+{
+    std::vector<ComputerDevice*> devs = disk_devices();
+    for (size_t i = 0; i < devs.size(); i++) {
+        std::string key = machine_disk_key(devs[i]->name);
+        if (!settings.has(DISKS_SECTION, key)) continue;
+        //"<path>|<protect>"; the ini is the user's file, so anything else is skipped
+        std::string value = settings.get(DISKS_SECTION, key);
+        size_t bar = value.rfind('|');
+        if (bar == std::string::npos) continue;
+        DiskChoice c;
+        c.file = value.substr(0, bar);
+        c.protect = value.substr(bar + 1) == "1";
+        try {
+            apply_disk_choice(devs[i], c);
+        } catch (const std::exception &) {
+        }
+    }
+}
+
+void Emulator::remember_disk(ComputerDevice * dev)
+{
+    //A snapshot carries its media itself, and they are no file on disk
+    if (!loaded || m_source.is_state) return;
+    DiskChoice c = disk_state(dev);
+    std::string key = machine_disk_key(dev->name);
+    if (c == disk_default(dev->name))
+        settings.remove(DISKS_SECTION, key);
+    else
+        settings.set(DISKS_SECTION, key, c.file + "|" + (c.protect ? "1" : "0"));
+    if (!m_settings_readonly) settings.save();
+}
+
+bool Emulator::has_remembered_disk(const std::string &device)
+{
+    if (!loaded || m_source.is_state) return false;
+    return settings.has(DISKS_SECTION, machine_disk_key(device));
+}
+
+void Emulator::record_disk_choice(ComputerDevice * dev, const DiskChoice &from, const DiskChoice &to)
+{
+    if (from.file != to.file) {
+        if (to.file.empty())
+            record_command(dev->name, "eject", "");
+        else {
+            std::string path = disk_path(to.file);
+            record_command(dev->name, "load", format_script_arg(path.empty() ? to.file : path));
+        }
+    }
+    if (from.protect != to.protect) record_command(dev->name, "protect", to.protect ? "1" : "0");
+}
+
+void Emulator::restore_default_disk(ComputerDevice * dev)
+{
+    if (!loaded || m_source.is_state) return;
+    DiskChoice before = disk_state(dev);
+    DiskChoice def = disk_default(dev->name);
+    invoke([&]() { apply_disk_choice(dev, def); });
+    record_disk_choice(dev, before, disk_state(dev));
+    settings.remove(DISKS_SECTION, machine_disk_key(dev->name));
+    if (!m_settings_readonly) settings.save();
+}
+
+void Emulator::forget_all_disks()
+{
+    settings.remove_section(DISKS_SECTION);
+    if (!m_settings_readonly) settings.save();
+}
+
+void Emulator::record_disk_changes()
+{
+    if (!loaded || m_source.is_state) return;
+    std::vector<ComputerDevice*> devs = disk_devices();
+    for (size_t i = 0; i < devs.size(); i++)
+        record_disk_choice(devs[i], disk_default(devs[i]->name), disk_state(devs[i]));
 }
 
 void Emulator::load_charmap()
