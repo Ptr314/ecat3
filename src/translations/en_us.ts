@@ -1585,7 +1585,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1310"/>
+        <location filename="../mainwindow.cpp" line="+1320"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1688,9 +1688,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-464"/>
+        <location filename="../mainwindow.cpp" line="-474"/>
         <location line="+70"/>
-        <location line="+933"/>
+        <location line="+943"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+151"/>
@@ -1703,7 +1703,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1958"/>
+        <location line="-1968"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -1725,14 +1725,14 @@
     <message>
         <location line="+10"/>
         <location line="+46"/>
-        <location line="+1160"/>
+        <location line="+1170"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1274"/>
+        <location line="-1284"/>
         <location line="+46"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -1802,18 +1802,18 @@
     </message>
     <message>
         <location line="+11"/>
-        <location line="+46"/>
+        <location line="+47"/>
         <source>Nearest pixel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-38"/>
-        <location line="+46"/>
+        <location line="-39"/>
+        <location line="+47"/>
         <source>Linear</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-38"/>
+        <location line="-39"/>
         <source>Anisotropic</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1828,7 +1828,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+582"/>
+        <location line="+30"/>
+        <source>Picture tube</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+562"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>

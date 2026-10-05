@@ -156,6 +156,8 @@ public:
     void reset(bool cold) override;
     void set_renderer(VideoRenderer &vr) override;
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
+    //Every line of the table is shown twice
+    unsigned int get_scan_lines() override { return sy / 2; }
     void clock(unsigned int counter) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;

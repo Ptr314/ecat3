@@ -66,6 +66,13 @@ void WasmRenderer::set_filtering(int value)
     }, value);
 }
 
+//Called on the render thread right before render(), which hands the number to
+//the page with the frame: the "Picture tube" filtering draws this many lines
+void WasmRenderer::set_scan_lines(int lines)
+{
+    scan_lines = lines;
+}
+
 uint8_t* WasmRenderer::get_buffer()
 {
     return buffer;
@@ -127,8 +134,11 @@ void WasmRenderer::render()
         var len = w * h * 4;
         var imgData = ctx.createImageData(w, h);
         imgData.data.set(HEAPU8.subarray(ptr, ptr + len));
+        // Read by the "Picture tube" filtering of the page, before the frame
+        // is put: putImageData is what tells it a new frame has come
+        canvas.ecatScanLines = $3;
         ctx.putImageData(imgData, 0, 0);
-    }, screen_x, screen_y, buffer);
+    }, screen_x, screen_y, buffer, scan_lines);
 }
 
 // On little-endian WASM: uint32 bytes in memory are [byte0, byte1, byte2, byte3]

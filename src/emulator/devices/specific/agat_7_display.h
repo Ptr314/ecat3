@@ -79,6 +79,8 @@ public:
     void state_restored() override;
 
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
+    //The 512 mode draws every line twice
+    unsigned int get_scan_lines() override { return 256; }
 
     void VSYNC(unsigned sync_val) override;
     void HSYNC(unsigned line, unsigned sync_val) override;

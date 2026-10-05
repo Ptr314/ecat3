@@ -161,6 +161,8 @@ public:
     void set_device_option(unsigned option_id, unsigned value_id) override;
 
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
+    //The 512 mode draws every line twice
+    unsigned int get_scan_lines() override { return 256; }
     void memory_callback(unsigned int callback_id, unsigned int address) override;
 
     void VSYNC(const unsigned sync_val) override;

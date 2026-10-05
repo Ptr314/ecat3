@@ -251,10 +251,10 @@ function blockStates(text) {
     return map;
 }
 
-// The filtering modes of the screen: none, linear, sharp
+// The filtering modes of the screen: none, linear, sharp, picture tube
 function filterId(text) {
     const id = text.trim().toLowerCase();
-    return ["none", "linear", "sharp"].includes(id) ? id : null;
+    return ["none", "linear", "sharp", "crt"].includes(id) ? id : null;
 }
 
 // The aspect modes of the screen, as the list offers them: 4:3, a square
@@ -509,10 +509,11 @@ const I18N = {
         aspectTitle:        "Shape of the screen. 4:3 - as on a TV set; Square screen - width equal to height; Square pixels - every pixel of the raster a square of whole screen pixels",
         aspectSquareScreen: "Square screen",
         aspectSquarePixels: "Square pixels",
-        filterTitle:        "Filtering when scaling. None - sharp, columns may come out uneven at a fractional scale; Linear - even but soft; Sharp - the whole part of the scale without filtering, only the fraction smoothed",
+        filterTitle:        "Filtering when scaling. None - sharp, columns may come out uneven at a fractional scale; Linear - even but soft; Sharp - the whole part of the scale without filtering, only the fraction smoothed; Picture tube - scan lines and the mask of a monitor",
         filterNone:         "None",
         filterLinear:       "Linear",
         filterSharp:        "Sharp",
+        filterCrt:          "Picture tube",
         mouseSpeed:         "Mouse speed",
         blockMachine:       "Machine",
         blockScreen:        "Screen",
@@ -617,10 +618,11 @@ const I18N = {
         aspectTitle:        "Форма экрана. 4:3 — как на телевизоре; Квадратный экран — ширина равна высоте; Квадратные пиксели — каждая точка растра квадратом из целого числа пикселей экрана",
         aspectSquareScreen: "Квадратный экран",
         aspectSquarePixels: "Квадратные пиксели",
-        filterTitle:        "Фильтрация при масштабировании. Нет — резко, при дробном масштабе столбцы бывают разной ширины; Линейная — ровно, но мягко; Резкая — целая часть масштаба без фильтрации, сглаживается только дробная",
+        filterTitle:        "Фильтрация при масштабировании. Нет — резко, при дробном масштабе столбцы бывают разной ширины; Линейная — ровно, но мягко; Резкая — целая часть масштаба без фильтрации, сглаживается только дробная; Кинескоп — строки развертки и маска монитора",
         filterNone:         "Нет",
         filterLinear:       "Линейная",
         filterSharp:        "Резкая",
+        filterCrt:          "Кинескоп",
         mouseSpeed:         "Скорость мыши",
         blockMachine:       "Машина",
         blockScreen:        "Экран",
@@ -1449,7 +1451,7 @@ function setupMouse(module) {
     const saved = parseInt(settings.get("mouseSpeed", ""), 10);
     mouse.speed = MOUSE_SPEEDS.includes(saved) ? saved : 25;
 
-    // Both canvases sit in the wrap, and "Sharp" filtering swaps them; the
+    // All the canvases sit in the wrap, and the filtering swaps them; the
     // lock is taken by the wrap, so a change of filtering does not drop it
     const wrap = document.getElementById("canvas-wrap");
     mouse.supported = typeof wrap.requestPointerLock === "function";
@@ -2614,7 +2616,189 @@ function filterMode() {
 // one pixel wide comes out the same width everywhere. The copy is made only
 // when the core has put a frame: putImageData of its context is wrapped, and
 // getContext() hands out that same object every time
-const sharpScreen = { active: false, dirty: false, raf: 0, hooked: false };
+const sharpScreen = { active: false, dirty: false, raf: 0 };
+let framesHooked = false;
+
+// Marks a new frame for whichever copy is running
+function hookFrames() {
+    if (framesHooked) return;
+    const ctx = document.getElementById("canvas").getContext("2d");
+    const put = ctx.putImageData.bind(ctx);
+    ctx.putImageData = (...args) => {
+        put(...args);
+        sharpScreen.dirty = true;
+        crtScreen.dirty = true;
+    };
+    framesHooked = true;
+}
+
+// Filtering "Picture tube": every new frame of #canvas goes into a texture of
+// #canvas-crt, a WebGL canvas of the size on the page in device pixels, drawn
+// by the same shader as the desktop's OpenGL renderer - keep the two alike
+// (crtFragmentShaderSrc in src/renderers/GLWidget.cpp). Each scan line is a
+// beam with a flat top and a steep edge, a little wider where it is brighter,
+// then a light aperture grille. The core tells how many lines the beam draws
+// (canvas.ecatScanLines): a machine that doubles its lines in the raster
+// still gets one beam per line of its own
+const CRT_VERTEX = `
+    attribute vec2 position;
+    attribute vec2 texCoord;
+    varying vec2 vTexCoord;
+    void main() {
+        gl_Position = vec4(position, 0.0, 1.0);
+        vTexCoord = texCoord;
+    }
+`;
+
+const CRT_FRAGMENT = `
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+    #else
+    precision mediump float;
+    #endif
+    varying vec2 vTexCoord;
+    uniform sampler2D tex;
+    uniform vec2 texSize;
+    uniform vec2 outSize;
+    uniform float scanLines;
+
+    vec3 texel(float x, float line) {
+        vec2 uv = vec2((x + 0.5) / texSize.x, (line + 0.5) / scanLines);
+        vec3 c = texture2D(tex, uv).rgb;
+        return c * c;
+    }
+
+    vec3 row(float line) {
+        float x = vTexCoord.x * texSize.x - 0.5;
+        float x0 = floor(x);
+        float f = x - x0;
+        float sharp = max(outSize.x / texSize.x, 1.0);
+        f = clamp((f - 0.5) * sharp + 0.5, 0.0, 1.0);
+        return mix(texel(max(x0, 0.0), line), texel(min(x0 + 1.0, texSize.x - 1.0), line), f);
+    }
+
+    vec3 beam(vec3 c, float d) {
+        vec3 w = mix(vec3(0.30), vec3(0.40), sqrt(c));
+        vec3 x = vec3(d) / w;
+        x *= x;
+        return c * exp(-x * x);
+    }
+
+    //The centre of a scan line, in screen pixels from the top, put on the
+    //centre of a pixel: at two pixels a line, both pixels of it would
+    //otherwise lie half a pixel off the centre and come out alike - no lines
+    float lineCentre(float line, float ppl) {
+        return floor((line + 0.5) * ppl) + 0.5;
+    }
+
+    vec3 lineAt(float line, float py, float ppl) {
+        if (line < 0.0 || line > scanLines - 1.0) return vec3(0.0);
+        return beam(row(line), abs(py - lineCentre(line, ppl)) / ppl);
+    }
+
+    void main() {
+        float ppl = outSize.y / scanLines;
+        float py = vTexCoord.y * outSize.y;
+        float l = floor(py / ppl);
+        vec3 c = lineAt(l - 1.0, py, ppl) + lineAt(l, py, ppl) + lineAt(l + 1.0, py, ppl);
+
+        float m = mod(floor(gl_FragCoord.x), 3.0);
+        vec3 mask = vec3(0.88);
+        if (m < 0.5) mask.r = 1.0; else if (m < 1.5) mask.g = 1.0; else mask.b = 1.0;
+        c *= mask * 1.75;
+
+        vec3 plain = texel(floor(vTexCoord.x * texSize.x), floor(vTexCoord.y * scanLines));
+        float strength = clamp((ppl - 1.75) / 0.25, 0.0, 1.0);
+        c = mix(plain, c, strength);
+        gl_FragColor = vec4(sqrt(c), 1.0);
+    }
+`;
+
+// failed: no WebGL or the shader does not build - the mode then shows the
+// plain picture
+const crtScreen = { active: false, dirty: false, raf: 0, gl: null, failed: false, uniforms: null };
+
+function crtSetup(dst) {
+    if (crtScreen.gl || crtScreen.failed) return crtScreen.gl !== null;
+    const gl = dst.getContext("webgl", { alpha: false, antialias: false, depth: false });
+    if (!gl) {
+        crtScreen.failed = true;
+        return false;
+    }
+    const shader = (type, text) => {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, text);
+        gl.compileShader(s);
+        return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
+    };
+    const vs = shader(gl.VERTEX_SHADER, CRT_VERTEX);
+    const fs = shader(gl.FRAGMENT_SHADER, CRT_FRAGMENT);
+    const prog = gl.createProgram();
+    if (vs && fs) {
+        gl.attachShader(prog, vs);
+        gl.attachShader(prog, fs);
+        gl.linkProgram(prog);
+    }
+    if (!vs || !fs || !gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        crtScreen.failed = true;
+        return false;
+    }
+    gl.useProgram(prog);
+
+    // The texture takes the raster top row first, so t = 0 is the top
+    const vbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+        -1, -1, 0, 1,
+         1, -1, 1, 1,
+        -1,  1, 0, 0,
+         1,  1, 1, 0,
+    ]), gl.STATIC_DRAW);
+    const pos = gl.getAttribLocation(prog, "position");
+    const tc = gl.getAttribLocation(prog, "texCoord");
+    gl.enableVertexAttribArray(pos);
+    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 16, 0);
+    gl.enableVertexAttribArray(tc);
+    gl.vertexAttribPointer(tc, 2, gl.FLOAT, false, 16, 8);
+
+    // A raster of any size: WebGL 1 takes a texture that is not a power of
+    // two only without mipmaps and with the edges clamped
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    crtScreen.uniforms = {
+        texSize: gl.getUniformLocation(prog, "texSize"),
+        outSize: gl.getUniformLocation(prog, "outSize"),
+        scanLines: gl.getUniformLocation(prog, "scanLines"),
+    };
+    crtScreen.gl = gl;
+    return true;
+}
+
+function drawCrtFrame() {
+    crtScreen.raf = requestAnimationFrame(drawCrtFrame);
+    if (!crtScreen.dirty) return;
+    crtScreen.dirty = false;
+    const src = document.getElementById("canvas");
+    const dst = document.getElementById("canvas-crt");
+    const gl = crtScreen.gl;
+    const u = crtScreen.uniforms;
+    gl.viewport(0, 0, dst.width, dst.height);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+    // A count that does not divide the rows (a frame of a new size whose
+    // lines have not come yet) is taken as the rows themselves
+    const rows = src.height;
+    const asked = src.ecatScanLines | 0;
+    const lines = (asked > 0 && asked <= rows && rows % asked === 0) ? asked : rows;
+    gl.uniform2f(u.texSize, src.width, rows);
+    gl.uniform2f(u.outSize, dst.width, dst.height);
+    gl.uniform1f(u.scanLines, lines);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
 
 function copySharpFrame() {
     sharpScreen.raf = requestAnimationFrame(copySharpFrame);
@@ -2630,25 +2814,45 @@ function copySharpFrame() {
 function applyFilter(width, height) {
     const src = document.getElementById("canvas");
     const dst = document.getElementById("canvas-sharp");
-    const mode = filterMode();
+    const crt = document.getElementById("canvas-crt");
+    let mode = filterMode();
+    if (mode === "crt" && !crtSetup(crt)) mode = "none";
     src.classList.toggle("filter-linear", mode === "linear");
 
-    if (mode !== "sharp") {
-        if (sharpScreen.active) {
-            cancelAnimationFrame(sharpScreen.raf);
-            sharpScreen.active = false;
+    if (mode !== "sharp" && sharpScreen.active) {
+        cancelAnimationFrame(sharpScreen.raf);
+        sharpScreen.active = false;
+    }
+    if (mode !== "crt" && crtScreen.active) {
+        cancelAnimationFrame(crtScreen.raf);
+        crtScreen.active = false;
+    }
+    dst.hidden = mode !== "sharp";
+    crt.hidden = mode !== "crt";
+    src.hidden = mode === "sharp" || mode === "crt";
+
+    if (mode === "crt") {
+        hookFrames();
+        // Device pixels: the beams and the mask are drawn per pixel of the
+        // screen, a canvas the browser enlarged further would smear them.
+        // Assigning the size clears the canvas, so only when it changes
+        const dpr = window.devicePixelRatio || 1;
+        const w = Math.max(1, Math.round(width * dpr));
+        const h = Math.max(1, Math.round(height * dpr));
+        if (crt.width !== w) crt.width = w;
+        if (crt.height !== h) crt.height = h;
+        crt.style.width = width + "px";
+        crt.style.height = height + "px";
+        crtScreen.dirty = true;
+        if (!crtScreen.active) {
+            crtScreen.active = true;
+            crtScreen.raf = requestAnimationFrame(drawCrtFrame);
         }
-        dst.hidden = true;
-        src.hidden = false;
         return;
     }
+    if (mode !== "sharp") return;
 
-    if (!sharpScreen.hooked) {
-        const ctx = src.getContext("2d");
-        const put = ctx.putImageData.bind(ctx);
-        ctx.putImageData = (...args) => { put(...args); sharpScreen.dirty = true; };
-        sharpScreen.hooked = true;
-    }
+    hookFrames();
 
     // The whole part of the scale, per axis. The margin is for sizes that come
     // in fractions of a layout pixel: 1023.99 device pixels over a raster 512
@@ -2665,8 +2869,6 @@ function applyFilter(width, height) {
     // The last frame is drawn again at once: a machine that stands still puts
     // no new one, and the canvas may just have been cleared
     sharpScreen.dirty = true;
-    src.hidden = true;
-    dst.hidden = false;
     if (!sharpScreen.active) {
         sharpScreen.active = true;
         sharpScreen.raf = requestAnimationFrame(copySharpFrame);
@@ -2702,7 +2904,13 @@ function screenRoom() {
         width -= document.getElementById("col-left").offsetWidth
                + document.getElementById("col-right").offsetWidth + 2 * gap;
     }
-    const height = stacked ? Infinity : window.innerHeight - padY;
+    let height = stacked ? Infinity : window.innerHeight - padY;
+    // The margins and the border of the wrap round the screen
+    const wrap = getComputedStyle(document.getElementById("canvas-wrap"));
+    width -= parseFloat(wrap.paddingLeft) + parseFloat(wrap.paddingRight)
+           + parseFloat(wrap.borderLeftWidth) + parseFloat(wrap.borderRightWidth);
+    height -= parseFloat(wrap.paddingTop) + parseFloat(wrap.paddingBottom)
+            + parseFloat(wrap.borderTopWidth) + parseFloat(wrap.borderBottomWidth);
     return { width: width, height: height };
 }
 

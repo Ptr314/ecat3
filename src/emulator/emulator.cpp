@@ -1374,6 +1374,7 @@ void Emulator::render_screen()
         }
 
         display->validate();
+        renderer->set_scan_lines(static_cast<int>(display->get_scan_lines()));
 
 #ifdef WASM_BUILD
         // Always render: raster displays (Agat) write pixels in clock() on the emulation

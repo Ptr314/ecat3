@@ -57,6 +57,8 @@
 #define SCREEN_FILTERING_NONE           0
 #define SCREEN_FILTERING_LINEAR         1
 #define SCREEN_FILTERING_ANISOTROPIC    2
+//Scan lines and a mask of a picture tube; the OpenGL renderer only
+#define SCREEN_FILTERING_CRT            3
 
 #define SCREEN_FILTERING_SOFT_SMOOTH    1
 
@@ -1008,6 +1010,10 @@ public:
 
     GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) = 0;
+    //How many lines the beam draws in a frame: a display that doubles its
+    //lines in the surface (the Агат in 512 mode, the Поиск-1, the КЦГД)
+    //answers less than sy. The tube look of the renderer draws this many
+    virtual unsigned int get_scan_lines() { return sy; }
     virtual void reset(bool cold) override;
     virtual void set_renderer(VideoRenderer &vr);
     virtual void validate(bool force_render = false);

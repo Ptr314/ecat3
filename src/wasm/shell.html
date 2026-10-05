@@ -453,13 +453,18 @@
             transform: scale(1);
         }
 
+        /* Black margins round the picture, as the dark glass round the raster
+           of a monitor: a screen that ends right at the border of the block
+           looks cut off. screenRoom() takes them off the room of the screen */
         #canvas-wrap {
             border: 2px solid var(--track);
             border-radius: 4px;
             line-height: 0;
+            background: #000;
+            padding: clamp(8px, 1.6vw, 20px);
         }
 
-        #canvas, #canvas-sharp {
+        #canvas, #canvas-sharp, #canvas-crt {
             display: block;
             background: #000;
         }
@@ -480,6 +485,12 @@
            left goes through the linear filter of the browser */
         #canvas-sharp {
             image-rendering: auto;
+        }
+
+        /* Filtering "Picture tube": drawn by a shader in device pixels, the
+           browser only places it */
+        #canvas-crt {
+            image-rendering: pixelated;
         }
 
         /* Device options, inside their own block. An empty box of drives or
@@ -972,6 +983,7 @@
                                 <option value="none" data-i18n="filterNone"></option>
                                 <option value="linear" data-i18n="filterLinear"></option>
                                 <option value="sharp" data-i18n="filterSharp"></option>
+                                <option value="crt" data-i18n="filterCrt"></option>
                             </select>
                         </div>
                     </div>
@@ -1014,6 +1026,7 @@
             <div id="canvas-wrap">
                 <canvas id="canvas" width="512" height="256" tabindex="0"></canvas>
                 <canvas id="canvas-sharp" width="512" height="256" hidden></canvas>
+                <canvas id="canvas-crt" width="512" height="256" hidden></canvas>
             </div>
         </section>
 

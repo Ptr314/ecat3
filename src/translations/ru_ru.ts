@@ -1953,7 +1953,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1310"/>
+        <location filename="../mainwindow.cpp" line="+1320"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2060,16 +2060,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-369"/>
+        <location filename="../mainwindow.cpp" line="-379"/>
         <location line="+46"/>
-        <location line="+1160"/>
+        <location line="+1170"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1274"/>
+        <location line="-1284"/>
         <location line="+46"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2098,7 +2098,7 @@
     <message>
         <location line="-107"/>
         <location line="+70"/>
-        <location line="+933"/>
+        <location line="+943"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+151"/>
@@ -2111,7 +2111,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-1958"/>
+        <location line="-1968"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2157,18 +2157,18 @@
     </message>
     <message>
         <location line="+11"/>
-        <location line="+46"/>
+        <location line="+47"/>
         <source>Nearest pixel</source>
         <translation>Ближайший пиксель</translation>
     </message>
     <message>
-        <location line="-38"/>
-        <location line="+46"/>
+        <location line="-39"/>
+        <location line="+47"/>
         <source>Linear</source>
         <translation>Линейное</translation>
     </message>
     <message>
-        <location line="-38"/>
+        <location line="-39"/>
         <source>Anisotropic</source>
         <translation>Анизотропное</translation>
     </message>
@@ -2187,7 +2187,7 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+582"/>
+        <location line="+592"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
@@ -2204,7 +2204,7 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1064"/>
+        <location line="-1074"/>
         <location line="+44"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -2225,7 +2225,12 @@
         <translation>Оригинал</translation>
     </message>
     <message>
-        <location line="+873"/>
+        <location line="+124"/>
+        <source>Picture tube</source>
+        <translation>Кинескоп</translation>
+    </message>
+    <message>
+        <location line="+759"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>
     </message>

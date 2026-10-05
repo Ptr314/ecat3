@@ -6,6 +6,7 @@
 #include <cmath>
 
 #include "GLWidget.h"
+#include "emulator/core.h"
 
 static const char* vertexShaderSrc = R"(
     attribute vec2 position;
@@ -28,13 +29,86 @@ static const char* fragmentShaderSrc = R"(
     }
 )";
 
+//A picture tube: every scan line is a beam with a flat top and a steep edge
+//(exp(-(d/w)^4), not a gaussian, whose long tails filled the gaps and made
+//text look merely blurred), a little wider where it is brighter, summed with
+//the beams of the lines above and below in linear light, then a light
+//aperture grille of screen pixels. The texture is sampled at
+//the centres of its texels (nearest filter), so a surface that doubles its
+//lines still gives each scan line one colour. Where a scan line has less than
+//two screen pixels the beams cannot be drawn without moire, and the effect
+//fades to the plain picture
+static const char* crtFragmentShaderSrc = R"(
+    varying vec2 vTexCoord;
+    uniform sampler2D tex;
+    uniform vec2 texSize;
+    uniform vec2 outSize;
+    uniform float scanLines;
+
+    vec3 texel(float x, float line) {
+        vec2 uv = vec2((x + 0.5) / texSize.x, (line + 0.5) / scanLines);
+        vec3 c = texture2D(tex, uv).rgb;
+        return c * c;
+    }
+
+    //Neighbouring texels of a line blended over a short slope only: the dots
+    //of a tube are soft, but not as soft as a linear filter makes them
+    vec3 row(float line) {
+        float x = vTexCoord.x * texSize.x - 0.5;
+        float x0 = floor(x);
+        float f = x - x0;
+        float sharp = max(outSize.x / texSize.x, 1.0);
+        f = clamp((f - 0.5) * sharp + 0.5, 0.0, 1.0);
+        return mix(texel(max(x0, 0.0), line), texel(min(x0 + 1.0, texSize.x - 1.0), line), f);
+    }
+
+    vec3 beam(vec3 c, float d) {
+        vec3 w = mix(vec3(0.30), vec3(0.40), sqrt(c));
+        vec3 x = vec3(d) / w;
+        x *= x;
+        return c * exp(-x * x);
+    }
+
+    //The centre of a scan line, in screen pixels from the top, put on the
+    //centre of a pixel: at two pixels a line, both pixels of it would
+    //otherwise lie half a pixel off the centre and come out alike - no lines
+    float lineCentre(float line, float ppl) {
+        return floor((line + 0.5) * ppl) + 0.5;
+    }
+
+    vec3 lineAt(float line, float py, float ppl) {
+        if (line < 0.0 || line > scanLines - 1.0) return vec3(0.0);
+        return beam(row(line), abs(py - lineCentre(line, ppl)) / ppl);
+    }
+
+    void main() {
+        float ppl = outSize.y / scanLines;
+        float py = vTexCoord.y * outSize.y;
+        float l = floor(py / ppl);
+        vec3 c = lineAt(l - 1.0, py, ppl) + lineAt(l, py, ppl) + lineAt(l + 1.0, py, ppl);
+
+        float m = mod(floor(gl_FragCoord.x), 3.0);
+        vec3 mask = vec3(0.88);
+        if (m < 0.5) mask.r = 1.0; else if (m < 1.5) mask.g = 1.0; else mask.b = 1.0;
+        //The beam covers about 0.6 of its line: brought back to the level of
+        //the plain picture
+        c *= mask * 1.75;
+
+        vec3 plain = texel(floor(vTexCoord.x * texSize.x), floor(vTexCoord.y * scanLines));
+        float strength = clamp((ppl - 1.75) / 0.25, 0.0, 1.0);
+        c = mix(plain, c, strength);
+        gl_FragColor = vec4(sqrt(c), 1.0);
+    }
+)";
+
 GLWidget::GLWidget(QWidget* parent)
-    : QOpenGLWidget(parent), program(nullptr), texture(nullptr), vbo(0),
-    imageDisplaySize(0, 0), aspectRatioScale(1.0f), linearFiltering(false) {}
+    : QOpenGLWidget(parent), program(nullptr), crtProgram(nullptr), texture(nullptr), vbo(0),
+    imageDisplaySize(0, 0), aspectRatioScale(1.0f), filterMode(SCREEN_FILTERING_NONE), scanLines(0) {}
 
 GLWidget::~GLWidget() {
     makeCurrent();
     delete program;
+    delete crtProgram;
     delete texture;
     if (vbo) glDeleteBuffers(1, &vbo);
     doneCurrent();
@@ -47,6 +121,15 @@ void GLWidget::initializeGL() {
     program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSrc);
     program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSrc);
     program->link();
+
+    crtProgram = new QOpenGLShaderProgram();
+    crtProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSrc);
+    crtProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, crtFragmentShaderSrc);
+    //A driver that cannot compile it leaves the plain picture
+    if (!crtProgram->link()) {
+        delete crtProgram;
+        crtProgram = nullptr;
+    }
 
     //The texture holds the frame as the image has it, top row first, so the
     //quad takes it upside down: t = 0 at the top. The image used to be
@@ -114,10 +197,14 @@ void GLWidget::paintGL() {
         return;
     }
 
-    program->bind();
+    const bool crt = filterMode == SCREEN_FILTERING_CRT && crtProgram != nullptr;
+    QOpenGLShaderProgram * const prog = crt ? crtProgram : program;
+    prog->bind();
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-    const QOpenGLTexture::Filter filter = linearFiltering ? QOpenGLTexture::Linear : QOpenGLTexture::Nearest;
+    //The CRT shader picks the texels itself and must get them unblended
+    const QOpenGLTexture::Filter filter = (filterMode == SCREEN_FILTERING_NONE || crt)
+                                          ? QOpenGLTexture::Nearest : QOpenGLTexture::Linear;
     texture->setMinificationFilter(filter);
     texture->setMagnificationFilter(filter);
 
@@ -164,24 +251,33 @@ void GLWidget::paintGL() {
     const float offsetX = (float)(2 * imgX + imgW) / fbW - 1.0f;
     const float offsetY = 1.0f - (float)(2 * imgY + imgH) / fbH;
 
-    program->setUniformValue("imageScale", scaleX, scaleY);
-    program->setUniformValue("imageOffset", offsetX, offsetY);
+    prog->setUniformValue("imageScale", scaleX, scaleY);
+    prog->setUniformValue("imageOffset", offsetX, offsetY);
+    if (crt) {
+        //A count that does not divide the rows (a frame of a new size whose
+        //lines have not come yet) is taken as the rows themselves
+        const int rows = texture->height();
+        const int lines = (scanLines > 0 && scanLines <= rows && rows % scanLines == 0) ? scanLines : rows;
+        prog->setUniformValue("texSize", (float)texture->width(), (float)rows);
+        prog->setUniformValue("outSize", (float)imgW, (float)imgH);
+        prog->setUniformValue("scanLines", (float)lines);
+    }
 
-    int posLoc = program->attributeLocation("position");
-    int texLoc = program->attributeLocation("texCoord");
+    int posLoc = prog->attributeLocation("position");
+    int texLoc = prog->attributeLocation("texCoord");
 
-    program->enableAttributeArray(posLoc);
-    program->setAttributeBuffer(posLoc, GL_FLOAT, 0, 2, 4 * sizeof(float));
-    program->enableAttributeArray(texLoc);
-    program->setAttributeBuffer(texLoc, GL_FLOAT, 2 * sizeof(float), 2, 4 * sizeof(float));
+    prog->enableAttributeArray(posLoc);
+    prog->setAttributeBuffer(posLoc, GL_FLOAT, 0, 2, 4 * sizeof(float));
+    prog->enableAttributeArray(texLoc);
+    prog->setAttributeBuffer(texLoc, GL_FLOAT, 2 * sizeof(float), 2, 4 * sizeof(float));
 
     texture->bind();
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     texture->release();
 
-    program->disableAttributeArray(posLoc);
-    program->disableAttributeArray(texLoc);
-    program->release();
+    prog->disableAttributeArray(posLoc);
+    prog->disableAttributeArray(texLoc);
+    prog->release();
 }
 
 QImage GLWidget::grabPicture() {
@@ -218,8 +314,12 @@ void GLWidget::setAspectRatioScale(float scale) {
     QMetaObject::invokeMethod(this, "applyAspectRatioScale", Qt::QueuedConnection, Q_ARG(float, scale));
 }
 
-void GLWidget::setFiltering(bool linear) {
-    QMetaObject::invokeMethod(this, "applyFiltering", Qt::QueuedConnection, Q_ARG(bool, linear));
+void GLWidget::setFiltering(int mode) {
+    QMetaObject::invokeMethod(this, "applyFiltering", Qt::QueuedConnection, Q_ARG(int, mode));
+}
+
+void GLWidget::setScanLines(int lines) {
+    QMetaObject::invokeMethod(this, "applyScanLines", Qt::QueuedConnection, Q_ARG(int, lines));
 }
 
 //...and these run on the GUI thread
@@ -237,7 +337,12 @@ void GLWidget::applyAspectRatioScale(float scale) {
     update();
 }
 
-void GLWidget::applyFiltering(bool linear) {
-    linearFiltering = linear;
+void GLWidget::applyFiltering(int mode) {
+    filterMode = mode;
+    update();
+}
+
+void GLWidget::applyScanLines(int lines) {
+    scanLines = lines;
     update();
 }

@@ -23,7 +23,10 @@ public:
     void updateTexture(const QImage& image);
     void setImageSize(const QSize& size); // (0,0) - растянуть с сохранением пропорций
     void setAspectRatioScale(float scale); // Установить коэффициент масштабирования пропорций
-    void setFiltering(bool linear);
+    //SCREEN_FILTERING_NONE, _LINEAR (or any other) and _CRT of core.h
+    void setFiltering(int mode);
+    //Lines the beam draws per frame, for the CRT look
+    void setScanLines(int lines);
     //The picture the way the window shows it, without the border around it;
     //GUI thread only. Null before the first frame
     QImage grabPicture();
@@ -33,7 +36,8 @@ public slots:
     void applyPendingUpdate();
     void applyImageSize(QSize size);
     void applyAspectRatioScale(float scale);
-    void applyFiltering(bool linear);
+    void applyFiltering(int mode);
+    void applyScanLines(int lines);
 
 protected:
     void initializeGL() override;
@@ -42,12 +46,14 @@ protected:
 
 private:
     QOpenGLShaderProgram* program;
+    QOpenGLShaderProgram* crtProgram;
     QOpenGLTexture* texture;
     QImage pendingImage;
     QMutex mutex;
     GLuint vbo;
     QSize imageDisplaySize; // (0,0) - режим растягивания с пропорциями
     float aspectRatioScale; // Коэффициент масштабирования пропорций
-    bool linearFiltering;
+    int filterMode;
+    int scanLines;          // 0 - as many as the texture has rows
     QRect pictureRect;      // Где картинка легла в последнем кадре, в физических пикселях
 };

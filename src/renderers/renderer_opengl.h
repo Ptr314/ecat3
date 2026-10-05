@@ -14,6 +14,7 @@ class OpenGLRenderer: public VideoRenderer
 private:
     QImage * surface = nullptr;
     GLWidget * widget = nullptr;
+    int scan_lines = 0;
 
 public:
     OpenGLRenderer():
@@ -34,12 +35,21 @@ public:
     {
         VideoRenderer::init_screen(p, sx, sy, ss, ps);
         widget = reinterpret_cast<GLWidget *>(p);
+        scan_lines = 0;
         resize(sx, sy, ss, ps);
     }
 
     void set_filtering(int value) override
     {
-        if (widget != nullptr) widget->setFiltering(value != SCREEN_FILTERING_NONE);
+        if (widget != nullptr) widget->setFiltering(value);
+    }
+
+    //Called every frame from the render thread: posted only when it changes
+    void set_scan_lines(int lines) override
+    {
+        if (lines == scan_lines || widget == nullptr) return;
+        scan_lines = lines;
+        widget->setScanLines(lines);
     }
 
     void stop() override

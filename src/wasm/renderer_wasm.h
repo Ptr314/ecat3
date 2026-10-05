@@ -17,6 +17,7 @@ class WasmRenderer : public VideoRenderer
 private:
     uint8_t* buffer;
     int line_bytes;
+    int scan_lines = 0;
     std::mutex render_mutex;
 
 public:
@@ -27,6 +28,7 @@ public:
     void init_screen(void *p, int sx, int sy, double ss, double ps) override;
     void stop() override;
     void set_filtering(int value) override;
+    void set_scan_lines(int lines) override;
     uint8_t* get_buffer() override;
     int get_line_bytes() override;
     void fill(uint32_t c) override;
