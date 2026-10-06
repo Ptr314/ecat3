@@ -158,7 +158,7 @@ bool DVKDX::read_sector(FDD * drive, unsigned int track, unsigned int sector, bo
     std::vector<uint8_t> t;
     if (f == nullptr || !f->read_track((int)track, 0, t)) return false;
     int size = 0;
-    const int mark = find_sector_ibm_fm(t.data(), t.size(), (int)track, (int)sector, deleted, size);
+    const int mark = dsk_tools::ibm_fm_find_sector(t.data(), t.size(), (int)track, (int)sector, deleted, size);
     if (mark < 0 || size != DVK_DX_SECTOR_SIZE) return false;
     memcpy(m_buffer, t.data() + mark + 1, DVK_DX_SECTOR_SIZE);
     return true;
@@ -186,10 +186,10 @@ void DVKDX::execute()
         bool deleted = false;
         int size = 0;
         const int mark = f->read_track((int)m_track, 0, t)
-            ? find_sector_ibm_fm(t.data(), t.size(), (int)m_track, (int)m_sector, deleted, size) : -1;
+            ? dsk_tools::ibm_fm_find_sector(t.data(), t.size(), (int)m_track, (int)m_sector, deleted, size) : -1;
         if (mark < 0 || size != DVK_DX_SECTOR_SIZE) { finish(true, ERR_SECTOR); return; }
         // Функция 6 пишет метку удаления F8, функция 2 - обычную FB
-        put_sector_ibm_fm(t.data(), t.size(), mark, m_buffer, DVK_DX_SECTOR_SIZE, m_func == FN_WRITE_DD);
+        dsk_tools::ibm_fm_put_sector(t.data(), t.size(), mark, m_buffer, DVK_DX_SECTOR_SIZE, m_func == FN_WRITE_DD);
         f->write_track((int)m_track, 0, t);
         m_writes++;
     }

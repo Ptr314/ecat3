@@ -167,4 +167,16 @@ COMMAND dx.set16(2, 3)
 COMMAND dx.set16(2, 5)
 WAIT _50
 LOG dx.rxes
+PRINT "=== После .hfe: дорожки и пометки те же (checksum) ==="
+LOG dx0.checksum
+COMMAND dx0.save("../../tests/results/work-dvk2-dx-deleted.hfe")
+COMMAND dx0.eject()
+COMMAND dx0.load("../../tests/results/work-dvk2-dx-deleted.hfe")
+LOG dx0.checksum
+LOG dx0.deleted
+COMMAND dx.set16(0, 7)
+COMMAND dx.set16(2, 3)
+COMMAND dx.set16(2, 5)
+WAIT _50
+LOG dx.rxes
 EXIT

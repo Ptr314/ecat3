@@ -9,3 +9,8 @@
 === После .mfm ===
 [dx0.deleted] &000001
 [dx.rxes] &000304
+=== После .hfe: дорожки и пометки те же (checksum) ===
+[dx0.checksum] &05143100205
+[dx0.checksum] &05143100205
+[dx0.deleted] &000001
+[dx.rxes] &000304

@@ -1579,6 +1579,11 @@
         <translation>Сохранение образов для данного типа устройств еще не поддерживается.</translation>
     </message>
     <message>
+        <location line="+7"/>
+        <source>HFE images are not supported for this drive</source>
+        <translation>Образы HFE для этого дисковода не поддерживаются</translation>
+    </message>
+    <message>
         <source>Expected conversion form DSK to MFM is not supperted yet.</source>
         <translation type="vanished">Необходимая конвертация из посекторного в физический формат еще не поддерживается.</translation>
     </message>

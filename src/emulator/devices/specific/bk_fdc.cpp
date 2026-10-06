@@ -205,8 +205,11 @@ void BKFDC::load_track(BKFDCDrive * d)
         f->read_track_marks(d->track, (int)m_side, marks);
         memcpy(d->data, bytes.data(), bytes.size() < sizeof(d->data) ? bytes.size() : sizeof(d->data));
     } else {
+        dsk_tools::BYTES data, special;
+        dsk_tools::ibm_mfm_format_track(data, special, d->track, (int)m_side, BK_FDC_SECTORS, BK_FDC_SECTOR_SIZE, nullptr, 0);
+        memcpy(d->data, data.data(), sizeof(d->data));
         std::map<int, int> blank;
-        encode_track_ibm_mfm(nullptr, BK_FDC_SECTORS, BK_FDC_SECTOR_SIZE, d->track, (int)m_side, 0, d->data, blank);
+        marks_from_special(special, true, blank);
         for (const auto &e : blank) marks.push_back(e.first);
     }
     for (int p : marks)

@@ -1,7 +1,11 @@
 [my.commands] &000052
 === Сектора с меткой удаления ===
-[my1.deleted] &000156
-[my1.deleted] &000156
+[my1.deleted] &000200
+[my1.deleted] &000200
+=== После .hfe: дорожки и пометки те же (checksum) ===
+[my1.checksum] &20172562240
+[my1.checksum] &20172562240
+[my1.deleted] &000200
 === Экран ===
 [display.text] 
                              lin  rus  wr             9600  0 0 0  0 0 0  0 0 1

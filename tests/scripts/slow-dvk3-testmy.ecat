@@ -72,6 +72,13 @@ COMMAND my1.save("../../tests/results/slow-dvk3-testmy.mfm")
 COMMAND my1.eject()
 COMMAND my1.load("../../tests/results/slow-dvk3-testmy.mfm")
 LOG my1.deleted
+PRINT "=== После .hfe: дорожки и пометки те же (checksum) ==="
+LOG my1.checksum
+COMMAND my1.save("../../tests/results/slow-dvk3-testmy.hfe")
+COMMAND my1.eject()
+COMMAND my1.load("../../tests/results/slow-dvk3-testmy.hfe")
+LOG my1.checksum
+LOG my1.deleted
 PRINT "=== Экран ==="
 LOG display.text
 SCREEN "../results/slow-dvk3-testmy.png"

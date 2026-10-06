@@ -48,6 +48,13 @@ COMMAND mx1.eject()
 COMMAND mx1.load("../../tests/results/slow-dvk3-testmx.mfm")
 PRINT "=== Он же после .mfm ==="
 LOG mx.disk(_1424,_1434)
+PRINT "=== После .hfe: дорожки и пометки те же (checksum) ==="
+LOG mx1.checksum
+COMMAND mx1.save("../../tests/results/slow-dvk3-testmx.hfe")
+COMMAND mx1.eject()
+COMMAND mx1.load("../../tests/results/slow-dvk3-testmx.hfe")
+LOG mx1.checksum
+LOG mx.disk(_1424,_1434)
 PRINT "=== Экран ==="
 LOG display.text
 EXIT

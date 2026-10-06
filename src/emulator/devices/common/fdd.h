@@ -110,6 +110,8 @@ public:
     void write_track_marks(int track, int side, const std::vector<int> &positions);
     void rebuild_ibm_mfm(const uint16_t * deleted);
     void rebuild_ibm_fm();
+    emulator::Result load_hfe(const std::string &file_name);
+    emulator::Result save_hfe(const std::string &file_name);
     void NextPosition();
     uint8_t  ReadNextByte();
     void WriteNextByte(uint8_t value);

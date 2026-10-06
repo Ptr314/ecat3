@@ -152,7 +152,15 @@ emulator::Result FDD::load_image(const std::string &file_name)
     std::string ext = dsk_tools::get_file_ext(file_name);  // returns ".ext" lowercase
     std::string base_name = dsk_tools::get_filename(file_name);
 
-    if (ext == ".mfm" || ext == ".hfe") {
+    if (ext == ".hfe") {
+        if (fdd_mode != FDD_MODE_IBM_MFM && fdd_mode != FDD_MODE_IBM_FM && fdd_mode != FDD_MODE_DVK_MX)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "HFE images are not supported for this drive")) + "}");
+        emulator::Result r = load_hfe(file_name);
+        if (!r) return r;
+        this->file_name = base_name;
+    } else
+    if (ext == ".mfm") {
         if (fdd_mode == FDD_MODE_LOGICAL)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "FDD device is working in a logical mode, no physical formats are supported")) + "}");
@@ -338,7 +346,7 @@ emulator::Result FDD::load_image(const std::string &file_name)
                         // Плоский образ секторов - дорожки, какими их пишет
                         // RT-11. Образ короче геометрии - недостающие пустые
                         const long long file_size = dsk_tools::utf8_file_size(file_name);
-                        const long long flat_size = (long long)sides * tracks * DVK_MX_IMAGE_SECTORS * DVK_MX_IMAGE_SECTOR;
+                        const long long flat_size = (long long)sides * tracks * DVK_MX_SECTORS * DVK_MX_SECTOR_SIZE;
                         if (file_size <= 0 || file_size > flat_size)
                             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect disk image size for")) + "} " + file_name);
@@ -561,6 +569,131 @@ void FDD::WriteByte(uint8_t value)
     }
 }
 
+
+//------------------------- HFE ---------------------------------------------//
+
+// Режим дорожек привода - в разметку dsk_tools: скорость, обороты и
+// кодирование HFE берутся оттуда (MX - 125 кбит/с, FM - 360 об/мин)
+static dsk_tools::TrackLayout hfe_layout(int mode)
+{
+    switch (mode) {
+    case FDD_MODE_IBM_MFM: return dsk_tools::TrackLayout::IbmMfm;
+    case FDD_MODE_IBM_FM:  return dsk_tools::TrackLayout::IbmFm;
+    case FDD_MODE_DVK_MX:  return dsk_tools::TrackLayout::DvkMx;
+    default:               return dsk_tools::TrackLayout::None;
+    }
+}
+
+// Байт дорожки в буфере привода: у MX целые слова, оборот же 1562,5 слова
+static int hfe_buffer_bytes(int mode, const dsk_tools::DiskFormatParams &format)
+{
+    return (mode == FDD_MODE_DVK_MX) ? DVK_MX_TRACK_WORDS * 2 : dsk_tools::track_bytes(format);
+}
+
+// Дорожки в ячейках - как они проходят под головкой. Пометки синхро
+// становятся байтами без синхроимпульса: у MFM вся серия A1 от пометки, у
+// FM каждая метка. Слово MX уходит старшим разрядом вперёд
+emulator::Result FDD::save_hfe(const std::string &file_name)
+{
+    dsk_tools::DiskFormatParams format;
+    format.layout = hfe_layout(fdd_mode);
+    if (!whole_track() || format.layout == dsk_tools::TrackLayout::None)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "HFE images are not supported for this drive")) + "}");
+    format.tracks = tracks;
+    format.heads = sides;
+    dsk_tools::HfeImage img;
+    dsk_tools::track_hfe_params(format, img);
+    img.write_allowed = !write_protect;
+    const size_t turn = (size_t)dsk_tools::track_bytes(format);
+    for (int t = 0; t < tracks; t++)
+        for (int s = 0; s < sides; s++) {
+            const unsigned int i = image_track(t, s, false);
+            std::vector<uint8_t> data(buffer + track_indexes[i].mfmtrackoffset,
+                                      buffer + track_indexes[i].mfmtrackoffset + track_indexes[i].mfmtracksize);
+            std::vector<uint8_t> special(data.size(), 0);
+            if (fdd_mode == FDD_MODE_DVK_MX) {
+                for (size_t k = 0; k + 1 < data.size(); k += 2) std::swap(data[k], data[k + 1]);
+                // Оборот - 1562,5 слова: последние полслова - нули
+                data.resize(turn, 0);
+                special.resize(turn, 0);
+            } else
+                special_from_marks(aim_codes[i], data.data(), data.size(), fdd_mode == FDD_MODE_IBM_MFM, special);
+            if (fdd_mode == FDD_MODE_IBM_MFM)
+                dsk_tools::mfm_encode(data.data(), special.data(), data.size(), img.cells[(size_t)t * sides + s]);
+            else
+                dsk_tools::fm_encode(data.data(), special.data(), data.size(), img.cells[(size_t)t * sides + s]);
+        }
+    dsk_tools::BYTES out;
+    dsk_tools::hfe_write(img, out);
+    dsk_tools::UTF8_ofstream file(file_name, std::ios::binary);
+    if (!file.is_open())
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
+    file.write(reinterpret_cast<const char*>(out.data()), (std::streamsize)out.size());
+    return emulator::Result::ok();
+}
+
+emulator::Result FDD::load_hfe(const std::string &file_name)
+{
+    const long long size = dsk_tools::utf8_file_size(file_name);
+    if (size <= 0 || size > 64ll * 1024 * 1024)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect disk image size for")) + "} " + file_name);
+    dsk_tools::BYTES in((size_t)size);
+    {
+        dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
+        if (!file.is_open())
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
+        file.read(reinterpret_cast<char*>(in.data()), (std::streamsize)in.size());
+    }
+    dsk_tools::HfeImage img;
+    const dsk_tools::Result res = dsk_tools::hfe_read(in, img);
+    const size_t table = sizeof(track_indexes) / sizeof(track_indexes[0]);
+    if (!res || (size_t)img.tracks * img.sides > table)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unrecognized MFM format")) + "} " + res.message);
+
+    dsk_tools::DiskFormatParams format;
+    format.layout = hfe_layout(fdd_mode);
+    const size_t turn = (size_t)dsk_tools::track_bytes(format);
+    const int track_bytes = hfe_buffer_bytes(fdd_mode, format);
+    const int new_size = img.tracks * img.sides * track_bytes;
+    uint8_t * new_buffer = new uint8_t[new_size];
+    for (size_t i = 0; i < table; i++) aim_codes[i].clear();
+    for (int t = 0; t < img.tracks; t++)
+        for (int s = 0; s < img.sides; s++) {
+            const int i = t * img.sides + s;
+            dsk_tools::BYTES data, special;
+            const dsk_tools::BYTES &cells = img.cells[(size_t)i];
+            if (fdd_mode == FDD_MODE_IBM_MFM) dsk_tools::mfm_decode(cells, track_bytes, data, special);
+            else dsk_tools::fm_decode(cells, turn, data, special);
+            if (fdd_mode == FDD_MODE_DVK_MX)
+                for (size_t k = 0; k + 1 < (size_t)track_bytes; k += 2) std::swap(data[k], data[k + 1]);
+            memcpy(new_buffer + (size_t)i * track_bytes, data.data(), track_bytes);
+            // Пометка у MFM - первый байт серии синхро, у FM - каждая метка
+            special.resize(track_bytes);
+            marks_from_special(special, fdd_mode == FDD_MODE_IBM_MFM, aim_codes[i]);
+            track_indexes[i].track_number = (uint16_t)t;
+            track_indexes[i].side_number = (uint8_t)s;
+            track_indexes[i].mfmtracksize = track_bytes;
+            track_indexes[i].mfmtrackoffset = (uint32_t)(i * track_bytes);
+        }
+    if (buffer != nullptr) delete [] buffer;
+    buffer = new_buffer;
+    disk_size = new_size;
+    sides = img.sides;
+    tracks = img.tracks;
+    track_mode = FDD_MODE_WHOLE_TRACK;
+    position = 0;
+    loaded = true;
+    // Защищённый от записи образ (у Gotek - флаг в заголовке) защищает и
+    // привод; снять защиту можно как обычно
+    if (!img.write_allowed) write_protect = true;
+    m_generation++;
+    return emulator::Result::ok();
+}
 
 bool FDD::whole_track() const
 {
@@ -838,6 +971,8 @@ emulator::Result FDD::save_image(const std::string &file_name)
                 return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "FDD is working in a physical mode now, generating of DSK images is not supported yet.")) + "}");
             }
+        } else if (ext == ".hfe") {
+            return save_hfe(file_name);
         } else if (ext == ".mfm") {
             if (fdd_mode == FDD_MODE_AGAT_140
                 || ((fdd_mode == FDD_MODE_DVK_MX || fdd_mode == FDD_MODE_IBM_MFM || fdd_mode == FDD_MODE_IBM_FM)
@@ -1159,6 +1294,7 @@ std::vector<DeviceFieldInfo> FDD::get_device_fields()
     r.push_back({"raw",         "Bytes of the track under the head",    true});
     r.push_back({"marks",       "Sync marks on the track under the head", false});
     r.push_back({"deleted",     "IBM MFM/FM disk: sectors with the deleted data mark", false});
+    r.push_back({"checksum",    "Whole-track disk: a hash of the tracks and their sync marks", false});
     return r;
 }
 
@@ -1205,6 +1341,26 @@ bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to
 
     //The track as it lies on the medium, sync marks and all: the only way to
     //see what a guest's formatter actually wrote
+    if (field == "checksum")
+    {
+        if (!loaded || track_mode != FDD_MODE_WHOLE_TRACK) return false;
+        //FNV-1a over every track of the geometry and its marks: equal after a
+        //round trip through a file means the tracks came back as they were
+        uint32_t h = 2166136261u;
+        auto mix = [&h](uint32_t v) { h = (h ^ v) * 16777619u; };
+        for (int t = 0; t < tracks; t++)
+            for (int sd = 0; sd < sides; sd++)
+            {
+                const unsigned int i = image_track(t, sd, false);
+                for (uint32_t k = 0; k < track_indexes[i].mfmtracksize; k++)
+                    mix(buffer[track_indexes[i].mfmtrackoffset + k]);
+                for (const auto &e : aim_codes[i]) { mix((uint32_t)e.first); mix((uint32_t)e.second); }
+            }
+        out.width = 32;
+        out.values.push_back(h);
+        return true;
+    }
+
     if (field == "deleted")
     {
         if (!loaded || track_mode != FDD_MODE_WHOLE_TRACK
@@ -1218,10 +1374,10 @@ bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to
                 int n = 0;
                 uint16_t del = 0;
                 const bool ok = (fdd_mode == FDD_MODE_IBM_FM)
-                    ? decode_track_ibm_fm(buffer + track_indexes[i].mfmtrackoffset, track_indexes[i].mfmtracksize,
-                                          sectors, sector_size, tmp.data(), n, del)
-                    : decode_track_ibm_mfm(buffer + track_indexes[i].mfmtrackoffset, track_indexes[i].mfmtracksize,
-                                           sectors, sector_size, tmp.data(), n, del);
+                    ? dsk_tools::ibm_fm_read_track(buffer + track_indexes[i].mfmtrackoffset, track_indexes[i].mfmtracksize,
+                                                   sectors, sector_size, tmp.data(), del, n)
+                    : dsk_tools::ibm_mfm_read_track(buffer + track_indexes[i].mfmtrackoffset, track_indexes[i].mfmtracksize,
+                                                    sectors, sector_size, tmp.data(), del, n);
                 if (ok)
                     for (; del != 0; del &= (uint16_t)(del - 1)) count++;
             }
