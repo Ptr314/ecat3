@@ -136,10 +136,16 @@ emulator::Result k1801vm1::load_config(SystemData *sd)
     emulator::Result res = CPU::load_config(sd);
     if (!res) return res;
 
-    // The startup address is wired outside the chip. The БК begins executing
-    // straight from it; machines that keep a PC/PSW pair there set start_vector.
+    // Адрес пуска задаёт плата, не кристалл. ВМ1 читает его сам из регистра
+    // 177716 + 020 * номер процессора (cpu_number, входы nPA0/nPA1) - его
+    // start_address не касается. ВМ2 берёт его из регистра SEL: параметр sel
+    // - это значение регистра, вектор пуска - его старший байт, векторы
+    // пультового режима - от того же байта, а безадресное чтение (000020)
+    // отдаёт регистр целиком. Прежние start_address, start_vector, halt_sel
+    // и una_value остались для испытательных стендов и старых снимков
     core->start_address = (uint16_t)read_confg_value(cd, "start_address", false, (unsigned int)0100000);
     core->start_from_vector = read_confg_value(cd, "start_vector", false, false);
+    core->cpu_number = read_confg_value(cd, "cpu_number", false, (unsigned int)0) & 3;
     core->halt_vector = (uint16_t)read_confg_value(cd, "halt_vector", false, (unsigned int)PDP11::V_BUS_ERROR);
     // Clock periods the memory takes to answer, which sets the length of every
     // bus cycle: 2 on a 3 MHz БК0010, more where the memory is slower to reply
@@ -169,6 +175,14 @@ emulator::Result k1801vm1::load_config(SystemData *sd)
     // Регистр начального пуска для пультовой команды 000020. По умолчанию -
     // адрес пуска без режима
     core->una_value = read_confg_value(cd, "una_value", false, (unsigned int)core->start_address);
+    const std::string sel = read_confg_value(cd, "sel", false, std::string(""));
+    if (!sel.empty() && m_family == PDP11_FAMILY_1801VM2) {
+        const unsigned int v = parse_numeric_value(sel) & 0177777;
+        core->halt_sel = v;
+        core->una_value = v;
+        core->start_address = (uint16_t)(v & 0177400);
+        core->start_from_vector = true;
+    }
     // ВМ3: после пуска сразу в пульт - переключатель платы на «пульт»
     core->start_in_halt = read_confg_value(cd, "start_halt", false, false);
 
@@ -214,6 +228,7 @@ void k1801vm1::save_state(StateWriter &w)
     w.b("aclo", s.is_aclo);
     w.b("abort", s.abort);
     w.b("no_trace", s.no_trace);
+    w.b("no_poll", s.no_poll);
 
     w.b("held_in_reset", m_held_in_reset);
     w.b("dclo_active", m_dclo_active);
@@ -268,6 +283,7 @@ emulator::Result k1801vm1::load_state(const StateReader &r)
     r.b("aclo", s.is_aclo);
     r.b("abort", s.abort);
     r.b("no_trace", s.no_trace);
+    r.b("no_poll", s.no_poll);
     core->set_latches(s);
 
     r.b("held_in_reset", m_held_in_reset);
@@ -358,6 +374,7 @@ std::vector<DeviceFieldInfo> k1801vm1::get_device_fields()
     r.push_back({"timeout_pc",      "PC of the instruction that timed out last", false});
     r.push_back({"traps",           "Number of traps and interrupts taken",     false});
     r.push_back({"irq2_requests",   "Requests that came on ~irq2 (EVNT), taken or not", false});
+    r.push_back({"aclo_edges",      "Edges of ~aclo: asserted, released", false});
     r.push_back({"trap_vector",     "Vector of the last trap or interrupt",     false});
     r.push_back({"trap_pc",         "PC saved by the last trap or interrupt",   false});
     r.push_back({"history",         "Addresses of the last commands executed, oldest first (from,to count back from the newest)", true});
@@ -379,6 +396,7 @@ bool k1801vm1::get_field(const std::string &field, unsigned int from, unsigned i
     if (field == "timeout_address") { out.values.push_back(m_timeout_address); return true; }
     if (field == "timeout_pc")      { out.values.push_back(m_timeout_pc);      return true; }
     if (field == "traps")           { out.values.push_back(core->m_trap_count);  return true; }
+    if (field == "aclo_edges")      { out.values.push_back(m_aclo_asserts); out.values.push_back(m_aclo_releases); return true; }
     if (field == "irq2_requests")   { out.values.push_back(m_irq2_edges);        return true; }
     if (field == "trap_vector")     { out.values.push_back(core->m_trap_vector); return true; }
     if (field == "trap_pc")         { out.values.push_back(core->m_trap_pc);     return true; }
@@ -513,16 +531,21 @@ void k1801vm1::interface_callback(unsigned int callback_id, unsigned int new_val
         }
         break;
     case CALLBACK_ACLO:
-        // Запрос даёт снятие линии, а не её появление: так и на машине -
-        // прерывание по аварии сети приходит, когда напряжение возвращается.
-        // Пока процессор держат сбросом, ничего не происходит. Не подключённая
-        // линия стоит снятой и не даёт ни одного запроса
+        // Прерывание по аварии сети (вектор 024) даёт появление линии - срез
+        // nACLO, раннее оповещение о пропадании питания (описание ВМ1,
+        // детектор aclo_fall модели ВМ2; так же и в UKNCBTL). Снятие линии -
+        // это пуск: после сброса по DCLO процессор ждёт его, чтобы начать
+        // работу, а у работающего оно ничего не делает (у ВМ1 вход ACIN
+        // нужен только для начального пуска). Пока процессор держат сбросом,
+        // запрос не встаёт. Не подключённая линия стоит снятой
+        if (active && !m_aclo_active) m_aclo_asserts++;
+        if (!active && m_aclo_active) m_aclo_releases++;
         if (active) {
+            if (!m_aclo_active && !m_held_in_reset) core->set_aclo(true);
             m_aclo_active = true;
         } else if (m_aclo_active) {
             m_aclo_active = false;
-            if (!m_held_in_reset) core->set_aclo(true);
-            else if (!m_dclo_active) {
+            if (m_held_in_reset && !m_dclo_active) {
                 m_held_in_reset = false;
                 reset_mode = true;
             }

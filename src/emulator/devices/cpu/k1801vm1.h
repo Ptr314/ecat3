@@ -52,6 +52,9 @@ private:
     // Запросы на ~irq2 (EVNT), взятые или нет: проверка, что сетевой таймер
     // доходит до процессора
     unsigned int m_irq2_edges = 0;
+    // Фронты ~aclo: сколько раз линию прижали и отпустили
+    unsigned int m_aclo_asserts = 0;
+    unsigned int m_aclo_releases = 0;
 
     Interface i_virq;               // vectored interrupt request
     Interface i_vector;             // vector supplied by the requesting device

@@ -117,6 +117,9 @@ protected:
 
     // RTT defers the trace trap until after the following instruction
     bool m_no_trace;
+    // ВМ1: RTT и STEP кончаются выборкой следующей команды без опроса блока
+    // прерываний, и между ними и этой командой запрос не берётся
+    bool m_no_poll = false;
 
 
     uint16_t fetch();
@@ -152,6 +155,16 @@ protected:
     uint16_t pop();
     void do_trap(uint16_t vector);
     void enter_halt_mode(uint16_t vector);
+    // ВМ2: слово состояния с разрядом 8 - флагом пультового режима. Он у нас
+    // отдельный (context.halt_mode), а на кристалле это разряд PSW: в
+    // пультовом режиме его пишет загрузка PSW словом (вектор, RTI, RTT,
+    // START, STEP), и в стек PSW уходит вместе с ним. RTI и RTT - только при
+    // возврате в 160000-177777 (load_psw_return)
+    bool vm2_sel() const { return has_console && halt_sel != 0; }
+    uint16_t psw_word() const;
+    void load_psw_word(uint16_t value);
+    void load_psw_return(uint16_t value);
+    uint16_t sel_base() const { return (uint16_t)(halt_sel & 0177400); }
     bool check_interrupts(unsigned int & cycles);
     void do_branch(uint16_t command, bool condition, unsigned int & cycles);
 
@@ -166,6 +179,9 @@ public:
     // with start_from_vector.
     uint16_t start_address;
     bool start_from_vector;
+    // ВМ1: номер процессора (входы nPA0, nPA1). Регистр начального пуска -
+    // 177716 + 020 * номер
+    unsigned int cpu_number = 0;
     // ВМ3: после пуска сразу войти в пульт (переключатель платы на «пульт»)
     bool start_in_halt = false;
 
@@ -230,6 +246,7 @@ public:
         bool     is_aclo;
         bool     abort;
         bool     no_trace;
+        bool     no_poll;
     };
     void get_latches(saved_latches &s) const;
     void set_latches(const saved_latches &s);

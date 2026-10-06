@@ -102,6 +102,7 @@ void pdp11core::reset()
     is_aclo = false;
     m_abort = false;
     m_no_trace = false;
+    m_no_poll = false;
 
     if (vm3) {
         vm3_reset();
@@ -121,14 +122,21 @@ void pdp11core::reset()
             on_halt_mode(true);
         }
         context.R[PDP11::REG_PC] = read_word(start_address);
-        context.PSW = read_word(start_address + 2);
-        if (has_console && (context.PSW & 0400) == 0) {
-            context.halt_mode = false;
-            on_halt_mode(false);
-        }
+        if (has_console) load_psw_word(read_word(start_address + 2));
+        else context.PSW = read_word(start_address + 2);
+    } else if (vm1_console) {
+        // Начальный пуск ВМ1 (микрокод 01-22 описания кристалла): чтение
+        // регистра 177716 + 020 * номер процессора, PC - его старший байт,
+        // PSW = 340. Регистр - на плате: у БК в нём 100000 или 140000, у СМК
+        // и А16М старший байт даёт их ПЗУ, у ДВК-1/2 - перемычки (160000), у
+        // платы КМД - 010000
+        m_abort = false;
+        const uint16_t sel1 = read_word((uint16_t)(0177716 + 020 * (cpu_number & 3)));
+        m_abort = false;
+        context.R[PDP11::REG_PC] = (uint16_t)(sel1 & 0177400);
+        context.PSW = 0340;
     } else {
-        // The БК begins executing straight from the start address with the
-        // interrupts masked
+        // Испытательные стенды ВМ2 без вектора пуска: прямо со start_address
         context.R[PDP11::REG_PC] = start_address;
         context.PSW = 0340;
     }
@@ -151,6 +159,7 @@ void pdp11core::get_latches(saved_latches &s) const
     s.is_aclo      = is_aclo;
     s.abort        = m_abort;
     s.no_trace     = m_no_trace;
+    s.no_poll      = m_no_poll;
 }
 
 void pdp11core::set_latches(const saved_latches &s)
@@ -165,6 +174,38 @@ void pdp11core::set_latches(const saved_latches &s)
     is_aclo        = s.is_aclo;
     m_abort        = s.abort;
     m_no_trace     = s.no_trace;
+    m_no_poll      = s.no_poll;
+}
+
+// RTI и RTT ВМ2: слово из стека задаёт режим, только когда возврат идёт в
+// 160000-177777, иначе берётся младший байт и режим остаётся прежним. В
+// модели кристалла такая проверка есть - признак dc_b7 (ax[15:13] == 111)
+// уходит в микропрограмму условием br[7]; так же решает и UKNCBTL. Оба
+// заводских случая это подтверждают: дисковый Бейсик УК-НЦ возвращается
+// RTI из обычного режима в пультовый (PSW 000401, PC 166556), а ОС с диска
+// ФОДОС при загрузке на ДВК-3 делает RTI со словом 052404 в стеке на
+// 155654 и в пульт уходить не должна (там 140000-157777 - ПЗУ монитора)
+void pdp11core::load_psw_return(uint16_t value)
+{
+    if (vm2_sel() && context.R[PDP11::REG_PC] < 0160000) context.PSW = (uint16_t)(value & 0377);
+    else load_psw_word(value);
+}
+
+uint16_t pdp11core::psw_word() const
+{
+    if (vm2_sel() && context.halt_mode) return (uint16_t)(context.PSW | 0400);
+    return context.PSW;
+}
+
+void pdp11core::load_psw_word(uint16_t value)
+{
+    if (!vm2_sel()) { context.PSW = value; return; }
+    context.PSW = (uint16_t)(value & 0377);
+    const bool halt = (value & 0400) != 0;
+    if (halt != context.halt_mode) {
+        context.halt_mode = halt;
+        on_halt_mode(halt);
+    }
 }
 
 uint16_t pdp11core::get_pc()
@@ -399,15 +440,15 @@ void pdp11core::do_trap(uint16_t vector)
         m_trap_pc = context.R[PDP11::REG_PC];
         m_trap_count++;
         m_abort = false;
-        const uint16_t base = (uint16_t)(halt_sel | 004);
+        const uint16_t base = (uint16_t)(sel_base() | 004);
         context.R[PDP11::REG_PC] = read_word(base);
-        context.PSW = read_word(base + 2);
+        load_psw_word(read_word(base + 2));
         context.halted = false;
         m_abort = false;
         return;
     }
 
-    uint16_t old_psw = context.PSW;
+    uint16_t old_psw = psw_word();
     uint16_t old_pc  = context.R[PDP11::REG_PC];
 
     m_trap_vector = vector;
@@ -425,7 +466,7 @@ void pdp11core::do_trap(uint16_t vector)
     }
 
     context.R[PDP11::REG_PC] = read_word_checked(vector);
-    context.PSW = read_word_checked(vector + 2);
+    load_psw_word(read_word_checked(vector + 2));
     context.halted = false;
     m_abort = false;
 }
@@ -461,9 +502,11 @@ void pdp11core::enter_halt_mode(uint16_t vector)
         // читал бы вектор по карте обычного режима и получал таймаут шины
         if (!was) on_halt_mode(true);
 
-        const uint16_t base = (uint16_t)(halt_sel | vector);
+        // Вектор - в пультовом пространстве, от старшего байта SEL. Слово
+        // состояния из вектора задаёт и режим: разряд 8
+        const uint16_t base = (uint16_t)(sel_base() | vector);
         context.R[PDP11::REG_PC] = read_word(base);
-        context.PSW = read_word(base + 2);
+        load_psw_word(read_word(base + 2));
 
         // Вход в пульт выводит процессор из WAIT, как и любая ловушка: иначе
         // СТОП во время ожидания оставил бы его стоять, а пультовый монитор
@@ -592,7 +635,9 @@ void pdp11core::vm1_console_return(bool step)
         vm1_timeout(0);
         return;
     }
-    if (step) m_no_trace = true;
+    // STEP, как RTT, кончается выборкой следующей команды без опроса
+    // прерываний (микрокод 7A-6A): ловушка трассировки придёт после неё
+    if (step) m_no_poll = true;
     if (context.halt_mode) {
         context.halt_mode = false;
         on_halt_mode(false);
@@ -603,13 +648,16 @@ bool pdp11core::check_interrupts(unsigned int & cycles)
 {
     if (vm3) return vm3_interrupts(cycles);
 
-    // Авария сети старше пульта и всех устройств. Запрещают её только оба
-    // разряда приоритета сразу, как и в UKNCBTL
     // Разряд 10 PSW, который ставит вектор пультового исключения ВМ1,
     // запрещает все прерывания, кроме исключений самого процессора
     const bool vm1_masked = vm1_console && (context.PSW & 02000) != 0;
 
-    if (is_aclo && (context.PSW & 0600) != 0600 && !vm1_masked) {
+    // Авария сети старше пульта и всех устройств. У ВМ1 её запрещает только
+    // разряд 10 PSW (описание кристалла), у ВМ2 - пультовый режим с
+    // приоритетом 7 (qri[1] модели: psw[7] & psw[8])
+    const bool aclo_masked = vm1_console ? vm1_masked
+        : ((context.PSW & 0200) != 0 && (has_console ? context.halt_mode : (context.PSW & 0400) != 0));
+    if (is_aclo && !aclo_masked) {
         is_aclo = false;
         do_trap(PDP11::V_POWER_FAIL);
         cycles += C_TRAP;
@@ -627,9 +675,8 @@ bool pdp11core::check_interrupts(unsigned int & cycles)
     // которой тот и ставит HALT). Но линия, которая всё ещё прижата, когда
     // монитор выходит командой RUN, вводит процессор в пульт снова.
     //
-    // У ВМ1 запрос защёлкивается по фронту: иначе удерживаемая у БК клавиша
-    // СТОП, вход по которой на простой БК кончается ловушкой через 004 (разряды
-    // 10 и 11 ее не маскируют), входила бы заново на каждой команде.
+    // У ВМ1 вход nIRQ1 чувствителен к уровню (описание кристалла): пока
+    // линия прижата и разряды 10 и 11 PSW сняты, запрос встаёт снова.
     //
     // Вектор у ВМ2 тот же, что у команды HALT, - 0170, как и в UKNCBTL.
     // Вектор 004 пультового режима - «зависание» магистрали: монитор УК-НЦ
@@ -639,8 +686,8 @@ bool pdp11core::check_interrupts(unsigned int & cycles)
     if (vm1_console) {
         // У ВМ1 запрос пульта запрещают разряды 10 и 11 PSW - пока работает
         // пультовый обработчик. Запрос при этом не теряется: линия ждет
-        if (is_halt_req && (context.PSW & 06000) == 0) {
-            is_halt_req = false;
+        is_halt_req = false;
+        if (halt_pin && (context.PSW & 06000) == 0) {
             enter_halt_mode(0);
             cycles += C_TRAP;
             return true;
@@ -1270,7 +1317,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
     case 0000002: {                                     // RTI
         cycles += 2 * C_DATI + C_ALU;
         context.R[PDP11::REG_PC] = pop();
-        context.PSW = pop();
+        load_psw_return(pop());
         // Разряды 10 и 11 ВМ1 RTI и RTT сбрасывают, что бы ни лежало в стеке,
         // и пультовый обработчик, вышедший так, а не по START, из пульта ушел
         if (vm1_console) vm1_leave_console_psw();
@@ -1292,13 +1339,15 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
     case 0000006:                                       // RTT
         cycles += 2 * C_DATI + C_ALU;
         context.R[PDP11::REG_PC] = pop();
-        context.PSW = pop();
+        load_psw_return(pop());
         if (vm1_console) vm1_leave_console_psw();
         // RTT defers the trace trap until after the next instruction. That
         // happens by itself: the trace of an instruction is taken from T at its
-        // start. ВМ1 keeps the extra delay of one more instruction it has always
-        // had here - nothing measured on the chip says otherwise yet
-        if (!has_console) m_no_trace = true;
+        // start. ВМ1 (описание кристалла, микрокод 6A): RTT кончается выборкой
+        // следующей команды без опроса прерываний - ни запрос, ни ловушка
+        // трассировки между RTT и этой командой не встают
+        if (vm1_console) m_no_poll = true;
+        else if (!has_console) m_no_trace = true;
         return true;
     default:
         break;
@@ -1312,17 +1361,27 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
     //   $MTPM$ 31  $MTPC$ 32  $MTPS$ 34
     if (has_console && context.halt_mode) {
         switch (command) {
-        case 0000012:                                   // RUN
-        case 0000016:                                   // STEP
+        case 0000010:                                   // RUN (дешифратор: 10-13)
+        case 0000011:
+        case 0000012:
+        case 0000013:
+        case 0000014:                                   // STEP (14-17)
+        case 0000015:
+        case 0000016:
+        case 0000017:
             // Запуск прерванной программы: режим снимается, PC и слово
             // состояния берутся из теневой пары. STEP отличается тем, что
             // после одной команды процессор вернётся в пультовый режим
             cycles += C_HALT;
             context.R[PDP11::REG_PC] = context.console_pc;
-            context.PSW = context.console_psw;
-            context.halt_mode = false;
-            m_step_pending = (command == 0000016);
-            on_halt_mode(false);
+            m_step_pending = ((command & 014) == 014);
+            // Режим - разряд 8 КРСП (у прерванной программы он ноль)
+            if (vm2_sel()) load_psw_word((uint16_t)context.console_psw);
+            else {
+                context.PSW = context.console_psw;
+                context.halt_mode = false;
+                on_halt_mode(false);
+            }
             return true;
         case 0000021: {                                 // MFPM: (R5)+ -> R0
             cycles += C_DATI + C_ALU;
@@ -1353,18 +1412,26 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
             context.R[0] = (uint16_t)una_value;
             return true;
         case 0000022:                                   // MFPC: КРСК -> R0
+        case 0000023:                                   // (дешифратор: 22-23)
             cycles += C_ALU;
             context.R[0] = context.console_pc;
             return true;
         case 0000024:                                   // MFPS: КРСП -> R0
+        case 0000025:                                   // (дешифратор: 24-27)
+        case 0000026:
+        case 0000027:
             cycles += C_ALU;
             context.R[0] = context.console_psw;
             return true;
         case 0000032:                                   // MTPC: R0 -> КРСК
+        case 0000033:                                   // (дешифратор: 32-33)
             cycles += C_ALU;
             context.console_pc = context.R[0];
             return true;
         case 0000034:                                   // MTPS: R0 -> КРСП
+        case 0000035:                                   // (дешифратор: 34-37)
+        case 0000036:
+        case 0000037:
             cycles += C_ALU;
             context.console_psw = context.R[0];
             return true;
@@ -1386,7 +1453,15 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
             vm1_console_return(command >= 0000014);
             return true;
         }
-        enter_halt_mode((uint16_t)(has_console && halt_sel? 0170 : (halt_vector & 0377)));
+        // ВМ2: пультовые команды вне пультового режима - резервный код,
+        // ловушка через 010 (bkbtl-doc «1801vm1 vs 1801vm2»)
+        if (has_console) {
+            cycles += C_TRAP;
+            do_trap(PDP11::V_RESERVED);
+            m_last_trapped = true;
+            return true;
+        }
+        enter_halt_mode((uint16_t)(halt_vector & 0377));
         return true;
     }
 
@@ -1415,7 +1490,9 @@ unsigned int pdp11core::execute()
     // Шаг по команде STEP выполняется с маскировкой всех прерываний, так что
     // проверка пропускается: следующая команда - та, на которую указывает PC,
     // и ничто не может встать между ней и возвратом в пультовый режим
-    if (!m_step_pending && check_interrupts(cycles)) { m_last_kind = LAST_INTERRUPT; return cycles; }
+    const bool no_poll = m_no_poll;
+    m_no_poll = false;
+    if (!m_step_pending && !no_poll && check_interrupts(cycles)) { m_last_kind = LAST_INTERRUPT; return cycles; }
 
     if (context.halted) return C_IDLE;          // WAIT, idling until an interrupt
 
@@ -1465,7 +1542,9 @@ unsigned int pdp11core::execute()
     // ВМ2 и ВМ3, как PDP-11: разряд T, поставленный командой RTI, даёт
     // ловушку сразу после неё; RTT откладывает её на команду. Для ВМ2 это
     // проверяет заводской тест КЦГД (KC.SAV, ошибка 15), для ВМ3 - FKABD0
-    if ((vm3 || has_console) && command == 0000002 && get_flag(PDP11::F_T) && !context.halt_mode) trace = true;
+    // ВМ1 так же: RTI кончается опросом прерываний (микрокод 2F-11), а RTT
+    // и STEP - без него
+    if ((vm3 || has_console || vm1_console) && command == 0000002 && get_flag(PDP11::F_T) && !context.halt_mode) trace = true;
     // Команда-ловушка (BPT, IOT, EMT, TRAP) ловушку трассировки за собой не
     // тянет (у ВМ3 тест 101 FKABD0, у ВМ2 - 060 теста 791404 диска ФОДОС:
     // RTT, затем IOT)

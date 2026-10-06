@@ -14,8 +14,10 @@
         4000-7FFF -> vram[0000] mode=rw
         8000-8005 -> counter[0000] mode=r
         FFC6-FFCB -> timer[0000] mode=rw
+        FFCE-FFCF -> sel1[0000] mode=r
 === Карта памяти ведомого ===
 [ppu-mapper.map] 
         0000-3FFF -> ppu-ram[0000] mode=rw
         8000-8005 -> ppu-counter[0000] mode=r
         FFC6-FFCB -> ppu-timer[0000] mode=rw
+        FFCE-FFCF -> sel1[0000] mode=r
