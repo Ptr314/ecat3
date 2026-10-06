@@ -1,0 +1,5 @@
+// ДВК-4 с прошивкой КЦГД 182 и ПЗУ KeyGP, как записан тест work-dvk4-kcgd-gp
+@extends dvk/DVK-4.cfg
+@version ДВК-4 с прошивкой КЦГД 182 + KeyGP (тест)
+
+kcgd-rom:image = kcgd182-keygp.rom
