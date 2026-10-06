@@ -469,3 +469,60 @@ void find_marks_ibm_fm(const uint8_t * data, size_t len, std::map<int, int> & ma
     dsk_tools::ibm_fm_find_marks(data, len, special);
     marks_from_special(special, false, marks);
 }
+
+//------------------------- Агат 840 в ячейках ------------------------------//
+
+#define AGAT_840_SYNC_CELLS 0x4490      // $A4 без синхроимпульса разряда 0
+
+void agat_840_to_cells(const uint8_t * data, size_t len, const std::map<int, int> & marks, std::vector<uint8_t> & cells)
+{
+    dsk_tools::mfm_encode(data, nullptr, len, cells);
+    if (len == 0) return;
+    for (const auto &e : marks) {
+        if (!aim_is_desync(e.second) || e.first < 0 || (size_t)e.first >= len) continue;
+        // Синхробайт - байт перед пометкой; у него пропадает синхроимпульс
+        // последнего разряда, 15-я ячейка его слова, считая с первой
+        const size_t sync = (e.first == 0) ? len - 1 : (size_t)e.first - 1;
+        const size_t bit = sync * 16 + 14;
+        cells[bit >> 3] &= (uint8_t)~(1u << (bit & 7));
+    }
+}
+
+void agat_840_from_cells(const std::vector<uint8_t> & cells, std::vector<uint8_t> & data, std::map<int, int> & marks)
+{
+    const size_t bits = cells.size() * 8;
+    const size_t len = cells.size() / 2;
+    data.assign(len, 0xAA);
+    marks.clear();
+    if (bits < 16) return;
+    auto cell = [&](size_t b) { return (cells[b >> 3] >> (b & 7)) & 1; };
+
+    // Синхробайты: 16 ячеек 4490h. В обычном MFM четырёх нулей подряд не
+    // бывает, так что сдвинутое окно с ними не совпадёт
+    std::vector<size_t> syncs;
+    uint16_t w = 0;
+    for (size_t b = 0; b < bits; b++) {
+        w = (uint16_t)((w << 1) | cell(b));
+        if (b >= 15 && w == AGAT_840_SYNC_CELLS) syncs.push_back(b - 15);
+    }
+
+    // Байты: сетка от каждого синхробайта до следующего; до первого - по
+    // фазе первого, после последнего - по его фазе
+    const size_t first_phase = syncs.empty() ? 0 : syncs[0] % 16;
+    for (size_t k = 0; k <= syncs.size(); k++) {
+        const size_t phase = (k == 0) ? first_phase : syncs[k - 1] % 16;
+        const size_t from = (k == 0) ? 0 : syncs[k - 1] / 16;
+        const size_t to = (k < syncs.size()) ? syncs[k] / 16 : len;
+        for (size_t i = from; i < to && i < len; i++) {
+            const size_t b0 = i * 16 + phase;
+            if (b0 + 16 > bits) break;
+            uint8_t d = 0;
+            for (int j = 0; j < 8; j++) d = (uint8_t)((d << 1) | cell(b0 + 2 * j + 1));
+            data[i] = d;
+        }
+    }
+    for (size_t k = 0; k < syncs.size(); k++) {
+        const size_t i = syncs[k] / 16;
+        if (i < len) marks[(int)((i + 1) % len)] = AIM_CMD_DESYNC;
+    }
+}

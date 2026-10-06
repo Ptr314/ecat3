@@ -27,8 +27,8 @@ fdd1 : fdd {
 	sector_size = 256
     mode = mfm_agat_840
 	image = GAMES.DSK
-	files = "Disk images 840K (*.dsk)"
-	files_save = "Disk images (*.dsk)"
+	files = "All formats (*.dsk *.hfe);;Disk images 840K (*.dsk);;HxC Floppy Emulator (*.hfe)"
+	files_save = "Disk images (*.dsk);;HxC Floppy Emulator (*.hfe)"
 	selector_value = 1
 	soft_reset = 0
 

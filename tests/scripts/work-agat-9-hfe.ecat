@@ -1,0 +1,25 @@
+# Агат-9: диск 840 Кб в образе HFE (HxC Floppy Emulator, Gotek).
+#
+# Поставляемый диск ИКП сохраняется в .hfe и загружается обратно: дорожки и
+# пометки синхронизации должны остаться те же (fdd0.checksum), а машина -
+# загрузиться с него. В ячейках HFE синхробайт Агата - $A4 без синхроимпульса
+# перед последним разрядом (4490h), как его пишет dsk_tools.
+#
+# Допуск на снимок, как у boot-agat-9: в меню ИКП мигает выделенная строка.
+# @pixels 800
+# @timeout 40
+
+MACHINE "agat/Agat-9.cfg"
+LOGDEFS 8,16
+PRINT "=== Диск ИКП ==="
+LOG fdd0.checksum
+COMMAND fdd0.save("../../tests/results/work-agat-9-hfe.hfe")
+COMMAND fdd0.load("../../tests/results/work-agat-9-hfe.hfe")
+PRINT "=== После .hfe ==="
+LOG fdd0.checksum
+LOG fdd0.protected
+
+RESET cold
+WAIT 9000
+SCREEN "../results/work-agat-9-hfe.png"
+EXIT

@@ -113,3 +113,11 @@ void marks_from_special(const std::vector<uint8_t> & special, bool mfm, std::map
 void special_from_marks(const std::map<int, int> & marks, const uint8_t * data, size_t len, bool mfm, std::vector<uint8_t> & special);
 void find_marks_ibm_mfm(const uint8_t * data, size_t len, std::map<int, int> & marks);
 void find_marks_ibm_fm(const uint8_t * data, size_t len, std::map<int, int> & marks);
+
+// Дорожка Агата 840 в ячейках HFE. Кодирование - обычное MFM (таблица Агата с
+// ним совпадает), синхробайт - $A4 без синхроимпульса перед последним
+// разрядом (ячейки 4490h, dsk_tools пишет их байтами 22 09). Пометка
+// рассинхронизации в дорожке привода стоит на байте после него ($FF), как в
+// образах AIM. Чтение берёт сетку байтов заново от каждого синхробайта
+void agat_840_to_cells(const uint8_t * data, size_t len, const std::map<int, int> & marks, std::vector<uint8_t> & cells);
+void agat_840_from_cells(const std::vector<uint8_t> & cells, std::vector<uint8_t> & data, std::map<int, int> & marks);

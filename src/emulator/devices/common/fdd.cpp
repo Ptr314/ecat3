@@ -153,7 +153,8 @@ emulator::Result FDD::load_image(const std::string &file_name)
     std::string base_name = dsk_tools::get_filename(file_name);
 
     if (ext == ".hfe") {
-        if (fdd_mode != FDD_MODE_IBM_MFM && fdd_mode != FDD_MODE_IBM_FM && fdd_mode != FDD_MODE_DVK_MX)
+        if (fdd_mode != FDD_MODE_IBM_MFM && fdd_mode != FDD_MODE_IBM_FM && fdd_mode != FDD_MODE_DVK_MX
+            && fdd_mode != FDD_MODE_AGAT_840)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "HFE images are not supported for this drive")) + "}");
         emulator::Result r = load_hfe(file_name);
@@ -597,20 +598,36 @@ emulator::Result FDD::save_hfe(const std::string &file_name)
 {
     dsk_tools::DiskFormatParams format;
     format.layout = hfe_layout(fdd_mode);
-    if (!whole_track() || format.layout == dsk_tools::TrackLayout::None)
+    const bool agat = (fdd_mode == FDD_MODE_AGAT_840);
+    if (!whole_track() || (format.layout == dsk_tools::TrackLayout::None && !agat))
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "HFE images are not supported for this drive")) + "}");
     format.tracks = tracks;
     format.heads = sides;
     dsk_tools::HfeImage img;
-    dsk_tools::track_hfe_params(format, img);
+    if (agat) {
+        // Заголовок - как у dsk_tools: MFM 250 кбит/с; дорожка - сколько
+        // байт в ней у привода (6381 у построенной из образа, 6464 у AIM)
+        img.tracks = tracks;
+        img.sides = sides;
+        img.bitrate = 250;
+        img.rpm = AGAT_840_RPM;
+        img.encoding = ISOIBM_MFM_ENCODING;
+        img.interface_mode = GENERIC_SHUGGART_DD_FLOPPYMODE;
+        img.cells.resize((size_t)tracks * sides);
+    } else
+        dsk_tools::track_hfe_params(format, img);
     img.write_allowed = !write_protect;
-    const size_t turn = (size_t)dsk_tools::track_bytes(format);
+    const size_t turn = agat ? 0 : (size_t)dsk_tools::track_bytes(format);
     for (int t = 0; t < tracks; t++)
         for (int s = 0; s < sides; s++) {
             const unsigned int i = image_track(t, s, false);
             std::vector<uint8_t> data(buffer + track_indexes[i].mfmtrackoffset,
                                       buffer + track_indexes[i].mfmtrackoffset + track_indexes[i].mfmtracksize);
+            if (agat) {
+                agat_840_to_cells(data.data(), data.size(), aim_codes[i], img.cells[(size_t)t * sides + s]);
+                continue;
+            }
             std::vector<uint8_t> special(data.size(), 0);
             if (fdd_mode == FDD_MODE_DVK_MX) {
                 for (size_t k = 0; k + 1 < data.size(); k += 2) std::swap(data[k], data[k + 1]);
@@ -657,8 +674,19 @@ emulator::Result FDD::load_hfe(const std::string &file_name)
 
     dsk_tools::DiskFormatParams format;
     format.layout = hfe_layout(fdd_mode);
-    const size_t turn = (size_t)dsk_tools::track_bytes(format);
-    const int track_bytes = hfe_buffer_bytes(fdd_mode, format);
+    const bool agat = (fdd_mode == FDD_MODE_AGAT_840);
+    // У Агата дорожка - сколько байт в ячейках (у образов dsk_tools 6464), у
+    // всех одна, по самой длинной: контроллер длины не знает, от неё зависит
+    // только оборот
+    size_t agat_len = 0;
+    if (agat)
+        for (size_t i = 0; i < img.cells.size(); i++)
+            if (img.cells[i].size() / 2 > agat_len) agat_len = img.cells[i].size() / 2;
+    const size_t turn = agat ? agat_len : (size_t)dsk_tools::track_bytes(format);
+    const int track_bytes = agat ? (int)agat_len : hfe_buffer_bytes(fdd_mode, format);
+    if (track_bytes <= 0)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unrecognized MFM format")) + "} " + file_name);
     const int new_size = img.tracks * img.sides * track_bytes;
     uint8_t * new_buffer = new uint8_t[new_size];
     for (size_t i = 0; i < table; i++) aim_codes[i].clear();
@@ -667,6 +695,19 @@ emulator::Result FDD::load_hfe(const std::string &file_name)
             const int i = t * img.sides + s;
             dsk_tools::BYTES data, special;
             const dsk_tools::BYTES &cells = img.cells[(size_t)i];
+            if (agat) {
+                // Короткая дорожка добивается щелью: ячейки 22h - это $AA
+                std::vector<uint8_t> padded(cells);
+                padded.resize(turn * 2, 0x22);
+                std::vector<uint8_t> track;
+                agat_840_from_cells(padded, track, aim_codes[i]);
+                memcpy(new_buffer + (size_t)i * track_bytes, track.data(), track_bytes);
+                track_indexes[i].track_number = (uint16_t)t;
+                track_indexes[i].side_number = (uint8_t)s;
+                track_indexes[i].mfmtracksize = track_bytes;
+                track_indexes[i].mfmtrackoffset = (uint32_t)(i * track_bytes);
+                continue;
+            }
             if (fdd_mode == FDD_MODE_IBM_MFM) dsk_tools::mfm_decode(cells, track_bytes, data, special);
             else dsk_tools::fm_decode(cells, turn, data, special);
             if (fdd_mode == FDD_MODE_DVK_MX)
