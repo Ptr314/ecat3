@@ -72,7 +72,10 @@ fdd0 : fdd {
 	sector_size = _512
 	selector_value = 0
 	image = andos330.img
-	files = "Образы дискет БК (*.img *.bkd *.dsk);;Все файлы (*.*)"
+	// Дорожки целиком, как их пишет контроллер (К1801ВП1-128); .mfm хранит их
+	// без потерь, с метками удаления и нестандартной разметкой
+	mode = mfm_ibm
+	files = "Образы дискет БК (*.img *.bkd *.dsk *.mfm);;Все файлы (*.*)"
 	~select = fdc.select[0-1]
 	~motor_on = fdc.motor_on
 }
@@ -83,7 +86,10 @@ fdd1 : fdd {
 	sectors = _10
 	sector_size = _512
 	selector_value = 1
-	files = "Образы дискет БК (*.img *.bkd *.dsk);;Все файлы (*.*)"
+	// Дорожки целиком, как их пишет контроллер (К1801ВП1-128); .mfm хранит их
+	// без потерь, с метками удаления и нестандартной разметкой
+	mode = mfm_ibm
+	files = "Образы дискет БК (*.img *.bkd *.dsk *.mfm);;Все файлы (*.*)"
 	~select = fdc.select[0-1]
 	~motor_on = fdc.motor_on
 }

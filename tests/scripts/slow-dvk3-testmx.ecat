@@ -37,6 +37,17 @@ WAIT _300000
 LOGDEFS _16,_8
 LOG mx.writes
 LOG mx.underruns
+# Хвост последней дорожки, как её разметил тест: после 11 секторов одно
+# слово дорожка * 2 + сторона (000116), не три слова RT-11. Дорожки лежат на
+# диске слово в слово, и .mfm хранит их без потерь: после сохранения и
+# загрузки хвост тот же (плоский .dsk пересобрал бы его по образцу RT-11)
+PRINT "=== Хвост дорожки 39 ==="
+LOG mx.disk(_1424,_1434)
+COMMAND mx1.save("../../tests/results/slow-dvk3-testmx.mfm")
+COMMAND mx1.eject()
+COMMAND mx1.load("../../tests/results/slow-dvk3-testmx.mfm")
+PRINT "=== Он же после .mfm ==="
+LOG mx.disk(_1424,_1434)
 PRINT "=== Экран ==="
 LOG display.text
 EXIT

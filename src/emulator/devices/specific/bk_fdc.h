@@ -10,12 +10,15 @@
 
 // The controller is a raw MFM engine: it feeds the CPU 16-bit words of the
 // track byte stream and detects address marks; all sector logic lives in the
-// DISK ROM. Everything below follows the standard КНГМД (registers 0177130
+// DISK ROM. The disk itself is whole tracks in the drive (fdd mode mfm_ibm):
+// the bytes and the sync marks, so a track reads back exactly as the ROM
+// wrote it - a deleted data mark, a non-standard layout - and a flat image
+// is turned into tracks by the drive when it is loaded. Everything below follows the standard КНГМД (registers 0177130
 // and 0177132) as described in the БК-0011 system programmer's guide and as
 // reproduced by the BKBTL emulator, which runs the same ROM.
 
 #define BK_FDC_MAX_DRIVES   4
-#define BK_FDC_TRACK_BYTES  6250        // raw track length, bytes
+#define BK_FDC_TRACK_BYTES  IBM_MFM_TRACK_BYTES     // raw track length, bytes
 #define BK_FDC_TRACK_WORDS  (BK_FDC_TRACK_BYTES / 2)
 #define BK_FDC_INDEX_BYTES  30          // index hole length, bytes of the track
 #define BK_FDC_SECTORS      10
@@ -52,13 +55,7 @@ struct BKFDCDrive {
     int cached_side;
     unsigned int generation;            // FDD image generation the buffer was made from
     bool valid;
-    bool dirty;                         // written to, not yet stored into the image
-
-    // Sectors written with the deleted data mark (F8), a bit per sector of
-    // each track and side. A flat image has no room for it, so it lives as
-    // long as the image it was written to stays in the drive
-    uint16_t deleted[BK_FDC_TRACKS][2];
-    unsigned int deleted_generation;
+    bool dirty;                         // written to, not yet stored on the disk
 };
 
 class BKFDC : public FDC
@@ -70,6 +67,10 @@ private:
     Interface i_control;                // copy of the command word for the memory map
 
     BKFDCDrive m_drives[BK_FDC_MAX_DRIVES];
+    // Deleted data marks of a snapshot taken before the drives kept whole
+    // tracks: laid onto the tracks in state_restored()
+    uint16_t m_legacy_deleted[BK_FDC_MAX_DRIVES][BK_FDC_TRACKS][2];
+    bool m_legacy[BK_FDC_MAX_DRIVES];
     unsigned int m_drives_count;
     int m_selected;                     // -1 when no drive is selected
     unsigned int m_side;
@@ -106,9 +107,8 @@ private:
     void tick();
     void crc_byte(uint8_t b);
 
-    void encode_track(BKFDCDrive * d);
-    bool decode_track(BKFDCDrive * d, uint8_t * sectors, int &count, uint16_t &deleted);
-    uint16_t & deleted_sectors(BKFDCDrive * d, int track, int side);
+    FDD * track_drive(BKFDCDrive * d);
+    void load_track(BKFDCDrive * d);
     void ensure_track(BKFDCDrive * d);
     void flush_track(BKFDCDrive * d);
     void flush_all();
@@ -138,6 +138,7 @@ public:
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;
+    void state_restored() override;
 };
 
 ComputerDevice * create_bk_fdc(InterfaceManager *im, EmulatorConfigDevice *cd);

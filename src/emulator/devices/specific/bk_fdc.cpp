@@ -12,16 +12,6 @@
 #define REG_STATUS  0
 #define REG_DATA    2
 
-// Track layout, in bytes of the decoded MFM stream
-#define GAP_FIRST   42          // GAP4a + GAP1 before the first sector
-#define GAP_SECTOR  36          // GAP3 between sectors
-#define GAP_HEADER  22          // GAP2 between the header and the data
-#define SYNC_BYTES  12
-#define GAP_BYTE    0x4E
-#define MARK_BYTE   0xA1
-#define MARK_HEADER 0xFE
-#define MARK_DATA   0xFB
-#define MARK_DELETED 0xF8
 
 BKFDC::BKFDC(InterfaceManager *im, EmulatorConfigDevice *cd):
     FDC(im, cd)
@@ -57,6 +47,8 @@ BKFDC::BKFDC(InterfaceManager *im, EmulatorConfigDevice *cd):
     can_read = true;
     can_write = true;
     memset(m_drives, 0, sizeof(m_drives));
+    memset(m_legacy_deleted, 0, sizeof(m_legacy_deleted));
+    memset(m_legacy, 0, sizeof(m_legacy));
 }
 
 emulator::Result BKFDC::load_config(SystemData *sd)
@@ -182,23 +174,20 @@ void BKFDC::crc_byte(uint8_t b)
 
 //----------------------- Track buffers ------------------------------------//
 
-// The deleted data flags of a track; forgotten when another image is put in
-uint16_t & BKFDC::deleted_sectors(BKFDCDrive * d, int track, int side)
+// The drive keeps the disk as whole tracks (mode mfm_ibm). One left with a
+// sector image - a configuration without that mode, a snapshot from before
+// it - is turned into tracks on first use
+FDD * BKFDC::track_drive(BKFDCDrive * d)
 {
-    unsigned int gen = (d->fdd != nullptr) ? d->fdd->get_generation() : 0;
-    if (d->deleted_generation != gen) {
-        memset(d->deleted, 0, sizeof(d->deleted));
-        d->deleted_generation = gen;
-    }
-    if (track < 0) track = 0;
-    if (track >= BK_FDC_TRACKS) track = BK_FDC_TRACKS - 1;
-    return d->deleted[track][side & 1];
+    if (!drive_loaded(d)) return nullptr;
+    if (!d->fdd->whole_track()) d->fdd->rebuild_ibm_mfm(nullptr);
+    return d->fdd->whole_track() ? d->fdd : nullptr;
 }
 
-// Builds the raw track for the head position of the drive from the sectors
-// of its image. Tracks beyond the image are blank but properly formatted, so
-// that a short image reads as a disk with empty tracks.
-void BKFDC::encode_track(BKFDCDrive * d)
+// The raw track under the head of the drive, from its disk. A track beyond
+// the disk (the head goes a couple further than the image) reads as a
+// formatted blank one, so that a short image is a disk with empty tracks
+void BKFDC::load_track(BKFDCDrive * d)
 {
     memset(d->data, 0, sizeof(d->data));
     memset(d->marker, 0, sizeof(d->marker));
@@ -209,109 +198,19 @@ void BKFDC::encode_track(BKFDCDrive * d)
     d->valid = true;
     d->dirty = false;
 
-    bool have = drive_loaded(d)
-                && d->track < d->fdd->get_tracks()
-                && (int)m_side < d->fdd->get_sides();
-    if (have) i_side.change((~m_side) & 1);
-
-    unsigned int p = 0;
-    unsigned int gap = GAP_FIRST;
-    uint16_t saved_crc = m_crc;
-    const uint16_t deleted = deleted_sectors(d, d->track, (int)m_side);
-
-    for (int sect = 0; sect < BK_FDC_SECTORS; sect++) {
-        for (unsigned int i = 0; i < gap; i++) d->data[p++] = GAP_BYTE;
-        for (unsigned int i = 0; i < SYNC_BYTES; i++) d->data[p++] = 0;
-
-        // Header: the mark, cylinder, head, sector, size code, CRC
-        d->marker[p / 2] = true;
-        m_crc = 0xFFFF;
-        unsigned int start = p;
-        d->data[p++] = MARK_BYTE; d->data[p++] = MARK_BYTE; d->data[p++] = MARK_BYTE;
-        d->data[p++] = MARK_HEADER;
-        d->data[p++] = (uint8_t)d->track;
-        d->data[p++] = (uint8_t)m_side;
-        d->data[p++] = (uint8_t)(sect + 1);
-        d->data[p++] = 2;
-        for (unsigned int i = start; i < p; i++) crc_byte(d->data[i]);
-        d->data[p++] = (uint8_t)(m_crc >> 8);
-        d->data[p++] = (uint8_t)(m_crc & 0xFF);
-
-        for (unsigned int i = 0; i < GAP_HEADER; i++) d->data[p++] = GAP_BYTE;
-        for (unsigned int i = 0; i < SYNC_BYTES; i++) d->data[p++] = 0;
-
-        // Data: the mark, 512 bytes, CRC
-        d->marker[p / 2] = true;
-        m_crc = 0xFFFF;
-        start = p;
-        d->data[p++] = MARK_BYTE; d->data[p++] = MARK_BYTE; d->data[p++] = MARK_BYTE;
-        d->data[p++] = (deleted & (1u << sect)) ? MARK_DELETED : MARK_DATA;
-        if (have) {
-            d->fdd->SeekSector(d->track, sect + 1);
-            for (int i = 0; i < BK_FDC_SECTOR_SIZE; i++) d->data[p++] = d->fdd->ReadNextByte();
-        } else {
-            p += BK_FDC_SECTOR_SIZE;
-        }
-        for (unsigned int i = start; i < p; i++) crc_byte(d->data[i]);
-        d->data[p++] = (uint8_t)(m_crc >> 8);
-        d->data[p++] = (uint8_t)(m_crc & 0xFF);
-
-        gap = GAP_SECTOR;
+    std::vector<uint8_t> bytes;
+    std::vector<int> marks;
+    FDD * f = track_drive(d);
+    if (f != nullptr && f->read_track(d->track, (int)m_side, bytes)) {
+        f->read_track_marks(d->track, (int)m_side, marks);
+        memcpy(d->data, bytes.data(), bytes.size() < sizeof(d->data) ? bytes.size() : sizeof(d->data));
+    } else {
+        std::map<int, int> blank;
+        encode_track_ibm_mfm(nullptr, BK_FDC_SECTORS, BK_FDC_SECTOR_SIZE, d->track, (int)m_side, 0, d->data, blank);
+        for (const auto &e : blank) marks.push_back(e.first);
     }
-    while (p < BK_FDC_TRACK_BYTES) d->data[p++] = GAP_BYTE;
-
-    m_crc = saved_crc;
-
-}
-
-// Parses a raw track back into sectors, in the order they lie on the track.
-// Returns false when the stream does not look like a formatted track; the
-// address marks are found by their bytes, the marker flags are not consulted.
-// A sector with the deleted data mark sets its bit in deleted.
-bool BKFDC::decode_track(BKFDCDrive * d, uint8_t * sectors, int &count, uint16_t &deleted)
-{
-    const unsigned int total = BK_FDC_SECTORS * BK_FDC_SECTOR_SIZE;
-    unsigned int p = 0;
-    unsigned int out = 0;
-    count = 0;
-    deleted = 0;
-
-    for (;;) {
-        while (p < BK_FDC_TRACK_BYTES && d->data[p] == GAP_BYTE) p++;
-        if (p >= BK_FDC_TRACK_BYTES) break;                     // end of track
-        while (p < BK_FDC_TRACK_BYTES && d->data[p] == 0) p++;
-        if (p >= BK_FDC_TRACK_BYTES) return false;
-
-        for (int i = 0; i < 3 && p < BK_FDC_TRACK_BYTES && d->data[p] == MARK_BYTE; i++) p++;
-        if (p >= BK_FDC_TRACK_BYTES || d->data[p++] != MARK_HEADER) return false;
-
-        if (p + 6 > BK_FDC_TRACK_BYTES) return false;
-        uint8_t size_code = d->data[p + 3];
-        p += 4 + 2;                                             // header fields and CRC
-        unsigned int size;
-        if (size_code == 1) size = 256;
-        else if (size_code == 2) size = 512;
-        else if (size_code == 3) size = 1024;
-        else return false;
-
-        while (p < BK_FDC_TRACK_BYTES && d->data[p] == GAP_BYTE) p++;
-        while (p < BK_FDC_TRACK_BYTES && d->data[p] == 0) p++;
-        for (int i = 0; i < 3 && p < BK_FDC_TRACK_BYTES && d->data[p] == MARK_BYTE; i++) p++;
-        if (p >= BK_FDC_TRACK_BYTES) return false;
-        const uint8_t mark = d->data[p++];
-        if (mark != MARK_DATA && mark != MARK_DELETED) return false;
-        if (mark == MARK_DELETED && out < total) deleted |= (uint16_t)(1u << (out / BK_FDC_SECTOR_SIZE));
-
-        if (p + size + 2 > BK_FDC_TRACK_BYTES) return false;
-        for (unsigned int i = 0; i < size; i++) {
-            if (out >= total) break;
-            sectors[out++] = d->data[p++];
-        }
-        p += 2;                                                 // data CRC
-    }
-
-    count = out / BK_FDC_SECTOR_SIZE;
-    return true;
+    for (int p : marks)
+        if (p >= 0 && p / 2 < BK_FDC_TRACK_WORDS) d->marker[p / 2] = true;
 }
 
 void BKFDC::ensure_track(BKFDCDrive * d)
@@ -321,35 +220,26 @@ void BKFDC::ensure_track(BKFDCDrive * d)
         return;
     if (d->valid && d->dirty && d->generation == gen)
         flush_track(d);
-    encode_track(d);
+    load_track(d);
 }
 
-// Stores a written track back into the image of the drive
+// Stores a written track on the disk of the drive, bytes and sync marks as
+// they are: a deleted data mark or a layout of its own reads back as written
 void BKFDC::flush_track(BKFDCDrive * d)
 {
     if (!d->valid || !d->dirty) return;
     d->dirty = false;
 
-    if (!drive_loaded(d) || d->fdd->is_protected()) return;
-    if (d->generation != d->fdd->get_generation()) return;    // another disk is in the drive now
-    if (d->cached_track >= d->fdd->get_tracks() || d->cached_side >= d->fdd->get_sides()) return;
+    FDD * f = track_drive(d);
+    if (f == nullptr || f->is_protected()) return;
+    if (d->generation != f->get_generation()) return;      // another disk is in the drive now
 
-    uint8_t sectors[BK_FDC_SECTORS * BK_FDC_SECTOR_SIZE];
-    int count;
-    uint16_t deleted;
-    // A track that does not parse back into sectors is silently dropped:
-    // the image keeps what it had, the trace field shows what happened
-    if (!decode_track(d, sectors, count, deleted)) return;
-    deleted_sectors(d, d->cached_track, d->cached_side) = deleted;
-
-    i_side.change((~d->cached_side) & 1);
-    for (int s = 0; s < count && s < BK_FDC_SECTORS; s++) {
-        d->fdd->SeekSector(d->cached_track, s + 1);
-        for (int i = 0; i < BK_FDC_SECTOR_SIZE; i++)
-            d->fdd->WriteNextByte(sectors[s * BK_FDC_SECTOR_SIZE + i]);
-    }
-    i_side.change((~m_side) & 1);
-
+    std::vector<uint8_t> bytes(d->data, d->data + BK_FDC_TRACK_BYTES);
+    std::vector<int> marks;
+    for (int w = 0; w < BK_FDC_TRACK_WORDS; w++)
+        if (d->marker[w]) marks.push_back(w * 2);
+    if (f->write_track(d->cached_track, d->cached_side, bytes))
+        f->write_track_marks(d->cached_track, d->cached_side, marks);
 }
 
 void BKFDC::flush_all()
@@ -665,15 +555,6 @@ void BKFDC::save_state(StateWriter &w)
         w.n("cached_side", static_cast<uint32_t>(d.cached_side));
         w.n("generation", d.generation);
         w.b("valid", d.valid);
-        // Almost always all zero: written only when some sector carries the mark
-        bool any_deleted = false;
-        for (int t = 0; t < BK_FDC_TRACKS && !any_deleted; t++)
-            any_deleted = d.deleted[t][0] != 0 || d.deleted[t][1] != 0;
-        if (any_deleted)
-        {
-            w.n("deleted_generation", d.deleted_generation);
-            w.array("deleted", &d.deleted[0][0], BK_FDC_TRACKS * 2);
-        }
         if (d.valid)
         {
             w.hex("data", d.data, BK_FDC_TRACK_BYTES);
@@ -717,10 +598,10 @@ emulator::Result BKFDC::load_state(const StateReader &r)
         dr.u("cached_side", d.cached_side);
         dr.u("generation", d.generation);
         dr.b("valid", d.valid);
-        memset(d.deleted, 0, sizeof(d.deleted));
-        d.deleted_generation = d.generation;
-        dr.u("deleted_generation", d.deleted_generation);
-        dr.array("deleted", &d.deleted[0][0], BK_FDC_TRACKS * 2);
+        // A snapshot from before the drives kept whole tracks carries the
+        // deleted data marks here; they go onto the tracks in state_restored()
+        memset(m_legacy_deleted[i], 0, sizeof(m_legacy_deleted[i]));
+        m_legacy[i] = dr.array("deleted", &m_legacy_deleted[i][0][0], BK_FDC_TRACKS * 2);
         if (d.valid)
         {
             dr.hex("data", d.data, BK_FDC_TRACK_BYTES);
@@ -731,6 +612,24 @@ emulator::Result BKFDC::load_state(const StateReader &r)
         d.dirty = false;
     }
     return emulator::Result::ok();
+}
+
+void BKFDC::state_restored()
+{
+    FDC::state_restored();
+    for (unsigned int i = 0; i < m_drives_count; i++) {
+        BKFDCDrive &d = m_drives[i];
+        if (!drive_loaded(&d) || d.fdd->whole_track()) { m_legacy[i] = false; continue; }
+        // A drive restored with a sector image: its tracks are built now,
+        // with the deleted data marks the controller used to keep itself
+        std::vector<uint16_t> deleted((size_t)d.fdd->get_tracks() * d.fdd->get_sides(), 0);
+        if (m_legacy[i])
+            for (int t = 0; t < d.fdd->get_tracks() && t < BK_FDC_TRACKS; t++)
+                for (int sd = 0; sd < d.fdd->get_sides() && sd < 2; sd++)
+                    deleted[(size_t)t * d.fdd->get_sides() + sd] = m_legacy_deleted[i][t][sd];
+        d.fdd->rebuild_ibm_mfm(deleted.data());
+        m_legacy[i] = false;
+    }
 }
 
 std::vector<DeviceFieldInfo> BKFDC::get_device_fields()

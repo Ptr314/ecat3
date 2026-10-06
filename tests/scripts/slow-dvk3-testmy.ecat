@@ -63,6 +63,15 @@ WAIT _40000
 
 LOGDEFS _16,_8
 LOG my.commands
+# Сектора, которые тест записал с меткой удаления (F8). Диск в приводе -
+# дорожки целиком, и .mfm хранит их без потерь: после сохранения и загрузки
+# меток столько же (в плоском .dsk их не было бы вовсе)
+PRINT "=== Сектора с меткой удаления ==="
+LOG my1.deleted
+COMMAND my1.save("../../tests/results/slow-dvk3-testmy.mfm")
+COMMAND my1.eject()
+COMMAND my1.load("../../tests/results/slow-dvk3-testmy.mfm")
+LOG my1.deleted
 PRINT "=== Экран ==="
 LOG display.text
 SCREEN "../results/slow-dvk3-testmy.png"

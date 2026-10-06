@@ -1,4 +1,7 @@
 [my.commands] &000052
+=== Сектора с меткой удаления ===
+[my1.deleted] &000156
+[my1.deleted] &000156
 === Экран ===
 [display.text] 
                              lin  rus  wr             9600  0 0 0  0 0 0  0 0 1

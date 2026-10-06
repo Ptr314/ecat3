@@ -30,8 +30,13 @@
 // удаления, 7 - прочитать регистр ошибок. Конец функции - «готово» и
 // прерывание по вектору 264. Сброс читает сектор 1 дорожки 1 привода 0.
 //
-// Образ - 77 дорожек по 26 секторов по 128 байт подряд, 256256 байт (SIMH).
-// Приводы - fdd с sides = _1, sectors = _26, sector_size = _128.
+// Диск в приводе - дорожки IBM 3740 FM целиком (fdd mode fm_ibm): сектор
+// ищется по заголовку на дорожке, метка удаления F8 пишется функцией 6 и
+// показывается при чтении разрядом DD в RXES. Образ - 77 дорожек по 26
+// секторов по 128 байт подряд, 256256 байт (SIMH): привод при загрузке
+// размечает его в дорожки, при сохранении разбирает обратно (меток удаления
+// в нём нет), .mfm хранит дорожки как есть. Приводы - fdd с sides = _1,
+// sectors = _26, sector_size = _128.
 class DVKDX: public FDC
 {
 private:
@@ -77,6 +82,8 @@ private:
     void finish(bool error, unsigned int code);
     void execute();
     void init_controller();
+    FDD * track_drive(FDD * f);
+    bool read_sector(FDD * drive, unsigned int track, unsigned int sector, bool &deleted);
     unsigned int status() const;
 
 public:

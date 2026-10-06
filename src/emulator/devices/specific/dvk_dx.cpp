@@ -95,9 +95,8 @@ void DVKDX::init_controller()
     m_error_code = 0;
     m_left = 0;
     memset(m_buffer, 0, sizeof(m_buffer));
-    FDD * f = (m_drives_count > 0) ? m_drives[0] : nullptr;
-    if (f != nullptr && f->get_loaded() != 0 && f->SeekSector(1, 1) >= 0)
-        for (int i = 0; i < DVK_DX_SECTOR_SIZE; i++) m_buffer[i] = f->ReadNextByte();
+    bool deleted = false;
+    if (m_drives_count > 0) read_sector(m_drives[0], 1, 1, deleted);
     m_rxes = RXES_ID;
     m_done = true;
     m_db = status();
@@ -142,22 +141,56 @@ void DVKDX::finish(bool error, unsigned int code)
     update_irq();
 }
 
+// Диск в приводе - дорожки IBM 3740 FM (режим fm_ibm). Привод с образом
+// секторов - конфигурация без этого режима или снимок, сделанный до него, -
+// перестраивается в дорожки при первом обращении
+FDD * DVKDX::track_drive(FDD * f)
+{
+    if (f == nullptr || f->get_loaded() == 0) return nullptr;
+    if (!f->whole_track()) f->rebuild_ibm_fm();
+    return f->whole_track() ? f : nullptr;
+}
+
+// Сектор в буфер - по его заголовку на дорожке; deleted - метка удаления F8
+bool DVKDX::read_sector(FDD * drive, unsigned int track, unsigned int sector, bool &deleted)
+{
+    FDD * f = track_drive(drive);
+    std::vector<uint8_t> t;
+    if (f == nullptr || !f->read_track((int)track, 0, t)) return false;
+    int size = 0;
+    const int mark = find_sector_ibm_fm(t.data(), t.size(), (int)track, (int)sector, deleted, size);
+    if (mark < 0 || size != DVK_DX_SECTOR_SIZE) return false;
+    memcpy(m_buffer, t.data() + mark + 1, DVK_DX_SECTOR_SIZE);
+    return true;
+}
+
 // Операция с диском, когда дорожка и сектор приняты
 void DVKDX::execute()
 {
-    FDD * f = (m_unit < m_drives_count) ? m_drives[m_unit] : nullptr;
-    if (f == nullptr || f->get_loaded() == 0) { finish(true, ERR_NODISK); return; }
+    FDD * drive = (m_unit < m_drives_count) ? m_drives[m_unit] : nullptr;
+    FDD * f = track_drive(drive);
+    if (f == nullptr) { finish(true, ERR_NODISK); return; }
     if (m_track >= DVK_DX_TRACKS) { finish(true, ERR_TRACK); return; }
     if (m_sector < 1 || m_sector > DVK_DX_SECTORS) { finish(true, ERR_SECTOR); return; }
-    if (f->SeekSector((int)m_track, (int)m_sector) < 0) { finish(true, ERR_SECTOR); return; }
 
     m_rxes &= ~RXES_DD;
     if (m_func == FN_READ) {
-        for (int i = 0; i < DVK_DX_SECTOR_SIZE; i++) m_buffer[i] = f->ReadNextByte();
+        bool deleted = false;
+        if (!read_sector(f, m_track, m_sector, deleted)) { finish(true, ERR_SECTOR); return; }
+        // Сектор с меткой удаления читается, и RXES это показывает
+        if (deleted) m_rxes |= RXES_DD;
         m_reads++;
     } else {
         if (f->is_protected()) { finish(true, ERR_SECTOR); return; }
-        for (int i = 0; i < DVK_DX_SECTOR_SIZE; i++) f->WriteNextByte(m_buffer[i]);
+        std::vector<uint8_t> t;
+        bool deleted = false;
+        int size = 0;
+        const int mark = f->read_track((int)m_track, 0, t)
+            ? find_sector_ibm_fm(t.data(), t.size(), (int)m_track, (int)m_sector, deleted, size) : -1;
+        if (mark < 0 || size != DVK_DX_SECTOR_SIZE) { finish(true, ERR_SECTOR); return; }
+        // Функция 6 пишет метку удаления F8, функция 2 - обычную FB
+        put_sector_ibm_fm(t.data(), t.size(), mark, m_buffer, DVK_DX_SECTOR_SIZE, m_func == FN_WRITE_DD);
+        f->write_track((int)m_track, 0, t);
         m_writes++;
     }
     finish(false, 0);

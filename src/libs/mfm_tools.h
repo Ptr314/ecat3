@@ -7,6 +7,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 #include "mfm_formats.h"
 
 // A sector as the drive's own formatter lays it down (ПЗУ $E47D and $DECD):
@@ -75,10 +76,82 @@ inline bool aim_is_desync(int code)
 #define AGAT_840_ADDRESS_TRACK  5
 #define AGAT_840_ADDRESS_SECTOR 6
 
-typedef std::map<int, int> AgatAIMCodes[160];
+// Пометки дорожки по позиции байта: у Агата 840 - коды ячеек AIM, у
+// дорожек IBM MFM - места синхробайтов A1 с пропуском синхроимпульса. По
+// одной карте на физическую дорожку (дорожка * сторон + сторона)
+typedef std::map<int, int> AgatAIMCodes[200];
 
 uint8_t * generate_mfm_agat_140(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[]);
 uint8_t * generate_mfm_agat_840(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes);
 uint8_t * load_aim_image(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes);
 
 void save_mfm_file(const std::string &file_name, int sides, int tracks, int track_size, HXC_MFM_TRACK_INFO track_indexes[], uint8_t * data);
+
+// ДВК, контроллер MX (FM, 5,25", 300 об/мин). Контроллер секторов не знает:
+// он читает и пишет дорожку словами, по слову за 128 мкс, так что за оборот
+// (200 мс) под головкой проходит 1562 слова. Дорожка привода - эти слова,
+// младший байт первым. Плоский образ (11 секторов по 256 байт на сторону,
+// стороны дорожки подряд) переводится в формат RT-11: 8 нулевых слов,
+// синхрослово 000363, номер дорожки, 11 секторов по 128 слов, за каждым -
+// сумма его слов, и три слова 0101400 + дорожка * 2 + сторона. Остаток
+// оборота - нули.
+#define DVK_MX_TRACK_WORDS      1562
+#define DVK_MX_SYNC_WORD        0000363
+#define DVK_MX_IMAGE_SECTORS    11
+#define DVK_MX_IMAGE_SECTOR     256
+
+uint8_t * generate_tracks_dvk_mx(const uint8_t * flat, size_t flat_size, int sides, int tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[]);
+void encode_track_dvk_mx(const uint8_t * flat_track, int track, int side, uint8_t * out);
+// Сектора дорожки по синхрослову обратно в плоский образ. Дорожка без
+// синхрослова (стёртая) или короткая оставляет его сектора нулями
+void decode_tracks_dvk_mx(const uint8_t * buffer, int sides, int tracks, const HXC_MFM_TRACK_INFO track_indexes[], std::vector<uint8_t> & flat);
+
+// Дорожка IBM MFM, как её видит К1801ВП1-128 (КНГМД БК, контроллер УК-НЦ,
+// плата КМД ДВК): поток декодированных байтов, 6250 за оборот (250 кбит/с,
+// 300 об/мин). Перед каждым полем - промежуток 4E, 12 нулей и три
+// синхробайта A1 с пропуском синхроимпульса: первый из них помечается в
+// карте пометок кодом AIM_CMD_DESYNC (контроллер ловит пометку словом, и
+// метка всегда на чётной позиции). Заголовок FE, дорожка, сторона, сектор,
+// код размера, CRC; данные FB (F8 - с меткой удаления), сектор, CRC.
+// CRC-16-CCITT, начальное FFFF с первого A1
+#define IBM_MFM_TRACK_BYTES     6250
+
+// Размер кода сектора: 128 << код
+int ibm_mfm_size_code(int sector_size);
+void encode_track_ibm_mfm(const uint8_t * flat_track, int sectors, int sector_size, int track, int side, uint16_t deleted, uint8_t * out, std::map<int, int> & marks);
+// flat - сектора подряд; sides_order - порядок дорожек образа (все дорожки
+// стороны 0, затем стороны 1) или по цилиндрам. deleted - по слову на
+// физическую дорожку (бит на сектор), может быть nullptr
+uint8_t * generate_tracks_ibm_mfm(const uint8_t * flat, size_t flat_size, int sides, int tracks, int sectors, int sector_size, bool sides_order,
+                                  const uint16_t * deleted, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & marks);
+// Сектора одной дорожки в порядке, в каком они лежат; false - дорожка не
+// разбирается (не размечена или испорчена)
+bool decode_track_ibm_mfm(const uint8_t * data, size_t len, int sectors, int sector_size, uint8_t * out, int & count, uint16_t & deleted);
+void decode_tracks_ibm_mfm(const uint8_t * buffer, int sides, int tracks, int sectors, int sector_size, bool sides_order,
+                           const HXC_MFM_TRACK_INFO track_indexes[], std::vector<uint8_t> & flat);
+// Пометки синхро по самим байтам: в .mfm их нет, а A1 A1 A1 перед FE, FB
+// или F8 после нулей - это и есть адресная метка
+void find_marks_ibm_mfm(const uint8_t * data, size_t len, std::map<int, int> & marks);
+
+// Дорожка IBM 3740 FM (8", 360 об/мин, 250 кбит/с: 5208 байт за оборот) -
+// RX01, контроллер DX ДВК. Промежуток FF, 6 нулей, индексная метка FC, FF;
+// у каждого сектора 6 нулей, ID FE (дорожка, сторона, сектор, код размера,
+// CRC), 11 FF, 6 нулей, данные FB (F8 - с меткой удаления), сектор, CRC,
+// 27 FF. Метки FC, FE, FB, F8 пишутся с особым синхроимпульсом: это они и
+// помечены в карте пометок. CRC-16-CCITT, начальное FFFF с байта метки
+#define IBM_FM_TRACK_BYTES      5208
+
+void encode_track_ibm_fm(const uint8_t * flat_track, int sectors, int sector_size, int track, int side, uint16_t deleted, uint8_t * out, std::map<int, int> & marks);
+uint8_t * generate_tracks_ibm_fm(const uint8_t * flat, size_t flat_size, int sides, int tracks, int sectors, int sector_size, bool sides_order,
+                                 const uint16_t * deleted, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & marks);
+// Сектора дорожки на места по номерам из заголовков (1..sectors); deleted -
+// бит на сектор с меткой удаления. false - дорожка не разбирается
+bool decode_track_ibm_fm(const uint8_t * data, size_t len, int sectors, int sector_size, uint8_t * out, int & count, uint16_t & deleted);
+void decode_tracks_ibm_fm(const uint8_t * buffer, int sides, int tracks, int sectors, int sector_size, bool sides_order,
+                          const HXC_MFM_TRACK_INFO track_indexes[], std::vector<uint8_t> & flat);
+void find_marks_ibm_fm(const uint8_t * data, size_t len, std::map<int, int> & marks);
+// Метка данных сектора с этим номером и дорожкой в заголовке: смещение байта
+// метки или -1; deleted - метка F8. size - размер сектора по заголовку
+int find_sector_ibm_fm(const uint8_t * data, size_t len, int track, int sector, bool & deleted, int & size);
+// Данные сектора на место (метка FB/F8 и CRC пересчитываются)
+void put_sector_ibm_fm(uint8_t * data, size_t len, int mark, const uint8_t * src, int size, bool deleted);

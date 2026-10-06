@@ -25,8 +25,6 @@
 #define MX_STORED   (MX_WRITE | MX_TOPHEAD | MX_MON | MX_DIR | MX_DRIVE | MX_DRVSE_L)
 
 #define MX_SYNC         0000363
-#define MX_LEAD_WORDS   8           // нулевых слов от индекса до синхрослова
-#define MX_SECTOR_WORDS (DVK_MX_SECTOR_SIZE / 2)
 #define MX_MAX_TRACK    84          // дальше головка не идёт
 
 DVKMX::DVKMX(InterfaceManager *im, EmulatorConfigDevice *cd):
@@ -120,19 +118,14 @@ unsigned int DVKMX::get_selected_drive()
     return (m_csr & MX_DRIVE) >> 2;
 }
 
-// Записанные дорожки относятся к образу, в который их писали: другой образ
-// (или вынутый) их забывает
-void DVKMX::sync_written(Drive * d)
+// Привод работает дорожками целиком (режим fm_dvk_mx). Если он оказался в
+// режиме секторов - конфигурация без этого режима или снимок, сделанный до
+// него, - плоский образ перестраивается в дорожки при первом обращении
+FDD * DVKMX::track_drive(Drive * d)
 {
-    const unsigned int gen = d->fdd->get_generation();
-    if (d->adopt) {
-        d->generation = gen;
-        d->adopt = false;
-    }
-    if (d->generation != gen) {
-        d->written.clear();
-        d->generation = gen;
-    }
+    if (d == nullptr || d->fdd == nullptr || d->fdd->get_loaded() == 0) return nullptr;
+    if (!d->fdd->whole_track()) d->fdd->rebuild_dvk_mx();
+    return d->fdd->whole_track() ? d->fdd : nullptr;
 }
 
 // Сторона под головкой: у одностороннего привода головка одна, и линию
@@ -142,83 +135,41 @@ int DVKMX::head_side(FDD * f)
     return (f->get_sides() > 1 && (m_csr & MX_TOPHEAD)) ? 1 : 0;
 }
 
-// Дорожка под головкой выбранного привода, словами: записанная программой -
-// как она её записала, иначе так, как её записал бы стандартный драйвер MX
+// Дорожка под головкой выбранного привода, словами - как она лежит на диске:
+// и записанная программой, и собранная из плоского образа по образцу RT-11
 void DVKMX::build_track()
 {
     const unsigned int words = (unsigned int)(m_rev_ticks / m_word_ticks);
     m_track.assign(words, 0);
 
     Drive * d = current();
-    if (d == nullptr || d->fdd == nullptr || d->fdd->get_loaded() == 0) return;
-    FDD * f = d->fdd;
-    const int side = head_side(f);
-    const int track = d->track;
-    if (track < 0 || track >= f->get_tracks() || side >= f->get_sides()) return;
-
-    sync_written(d);
-    const auto kept = d->written.find((unsigned int)(track * 2 + side));
-    if (kept != d->written.end()) {
-        const size_t n = (kept->second.size() < m_track.size()) ? kept->second.size() : m_track.size();
-        std::copy(kept->second.begin(), kept->second.begin() + n, m_track.begin());
-        return;
-    }
-
-    if (f->get_sector_size() != DVK_MX_SECTOR_SIZE || f->get_sectors() < DVK_MX_SECTORS) return;
-
-    unsigned int p = MX_LEAD_WORDS;
-    m_track[p++] = MX_SYNC;
-    m_track[p++] = (uint16_t)track;
-    for (int s = 0; s < DVK_MX_SECTORS; s++) {
-        uint16_t sum = 0;
-        if (f->SeekSector(track, s + 1) < 0) return;
-        for (int i = 0; i < MX_SECTOR_WORDS; i++) {
-            const uint16_t lo = f->ReadNextByte();
-            const uint16_t w = (uint16_t)(lo | (f->ReadNextByte() << 8));
-            m_track[p++] = w;
-            sum = (uint16_t)(sum + w);
-        }
-        m_track[p++] = sum;
-    }
-    for (int i = 0; i < 3; i++) m_track[p++] = (uint16_t)(0101400 | (track * 2 + side));
+    FDD * f = track_drive(d);
+    if (f == nullptr) return;
+    std::vector<uint8_t> bytes;
+    if (!f->read_track(d->track, head_side(f), bytes)) return;
+    const size_t n = bytes.size() / 2 < m_track.size() ? bytes.size() / 2 : m_track.size();
+    for (size_t i = 0; i < n; i++)
+        m_track[i] = (uint16_t)(bytes[i * 2] | (bytes[i * 2 + 1] << 8));
 }
 
-// Записанная дорожка обратно в образ: от синхрослова номер дорожки и 11
-// секторов с суммами. Дорожка без синхрослова - стёртая, её сектора остаются
-// как были: в плоском образе пустую дорожку не выразить
+// Записанные слова - на дорожку с индекса, как их положила головка; дальше
+// дорожка остаётся, какой была. Формат дорожки - программы: TESTMX кончает
+// её одним словом дорожка * 2 + сторона, RT-11 - тремя словами 0101400 + то
+// же, тест разметки может оставить её без синхрослова
 void DVKMX::store_track()
 {
     m_writes++;
     m_written = (unsigned int)m_track.size();
     m_last_write = m_track;
     Drive * d = current();
-    if (d == nullptr || d->fdd == nullptr || d->fdd->get_loaded() == 0) return;
-    FDD * f = d->fdd;
-    if (f->is_protected()) return;
-    const int side = head_side(f);
-    const int track = d->track;
-    if (track < 0 || track >= f->get_tracks() || side >= f->get_sides()) return;
-
-    // Дорожка остаётся такой, какой её записали, - и стёртая тоже
-    sync_written(d);
-    d->written[(unsigned int)(track * 2 + side)] = m_track;
-
-    if (f->get_sector_size() != DVK_MX_SECTOR_SIZE || f->get_sectors() < DVK_MX_SECTORS) return;
-
-    size_t p = 0;
-    while (p < m_track.size() && m_track[p] != MX_SYNC) p++;
-    p += 2;     // синхрослово и номер дорожки
-    if (p + DVK_MX_SECTORS * (MX_SECTOR_WORDS + 1) > m_track.size()) return;
-
-    for (int s = 0; s < DVK_MX_SECTORS; s++) {
-        if (f->SeekSector(track, s + 1) < 0) return;
-        for (int i = 0; i < MX_SECTOR_WORDS; i++) {
-            const uint16_t w = m_track[p++];
-            f->WriteNextByte((uint8_t)(w & 0xFF));
-            f->WriteNextByte((uint8_t)(w >> 8));
-        }
-        p++;    // сумма
+    FDD * f = track_drive(d);
+    if (f == nullptr || f->is_protected()) return;
+    std::vector<uint8_t> bytes(m_track.size() * 2);
+    for (size_t i = 0; i < m_track.size(); i++) {
+        bytes[i * 2] = (uint8_t)(m_track[i] & 0xFF);
+        bytes[i * 2 + 1] = (uint8_t)(m_track[i] >> 8);
     }
+    f->write_track(d->track, head_side(f), bytes);
 }
 
 // Слово записи на дорожку: после индекса - поверх её начала
@@ -444,6 +395,7 @@ std::vector<DeviceFieldInfo> DVKMX::get_device_fields()
     r.push_back({"steps",     "Сколько шагов головки",                       false});
     r.push_back({"written",   "Слов в последней записанной дорожке",         false});
     r.push_back({"lastwrite", "Слова последней записанной дорожки (from,to)", false});
+    r.push_back({"disk",      "Слова дорожки под головкой привода из MXCS, как они на диске (from,to)", true});
     r.push_back({"trace",     "Последние записи в MXCS, старые первыми",     false});
     return r;
 }
@@ -458,6 +410,17 @@ bool DVKMX::get_field(const std::string &field, unsigned int from, unsigned int 
     if (field == "underruns") { out.values.push_back(m_underruns); return true; }
     if (field == "steps")     { out.values.push_back(m_steps);     return true; }
     if (field == "written")   { out.values.push_back(m_written);   return true; }
+    if (field == "disk") {
+        // Привод - по номеру в MXCS, даже когда выбор снят
+        const unsigned int n = (m_csr & MX_DRIVE) >> 2;
+        Drive * d = (n < m_drives_count) ? &m_drives[n] : nullptr;
+        std::vector<uint8_t> bytes;
+        if (d != nullptr && d->fdd != nullptr && d->fdd->whole_track())
+            d->fdd->read_track(d->track, head_side(d->fdd), bytes);
+        for (unsigned int i = from; i <= to && (size_t)i * 2 + 1 < bytes.size(); i++)
+            out.values.push_back(bytes[i * 2] | (bytes[i * 2 + 1] << 8));
+        return true;
+    }
     if (field == "lastwrite") {
         for (unsigned int i = from; i <= to && i < m_last_write.size(); i++)
             out.values.push_back(m_last_write[i]);
@@ -499,22 +462,6 @@ void DVKMX::save_state(StateWriter &w)
     w.b("step_dir", m_step_dir);
     for (unsigned int i = 0; i < m_drives_count; i++)
         w.n_at("track", i, (unsigned int)m_drives[i].track);
-    // Записанные дорожки: их служебных слов в образе нет
-    for (unsigned int i = 0; i < m_drives_count; i++) {
-        const Drive &d = m_drives[i];
-        if (d.written.empty()) continue;
-        w.push(("written" + std::to_string(i)).c_str());
-        std::vector<uint32_t> keys;
-        for (const auto &e : d.written) keys.push_back(e.first);
-        w.n("count", (unsigned int)keys.size());
-        w.array("keys", keys.data(), keys.size());
-        for (const auto &e : d.written) {
-            w.n(("words" + std::to_string(e.first)).c_str(), (unsigned int)e.second.size());
-            if (!e.second.empty())
-                w.array(("track" + std::to_string(e.first)).c_str(), e.second.data(), e.second.size());
-        }
-        w.pop();
-    }
     // Дорожка, которая читается или пишется: записанной ещё нет в образе
     if (m_op == OP_WRITE || m_op == OP_READ) {
         w.n("track_words", (unsigned int)m_track.size());
@@ -545,11 +492,9 @@ emulator::Result DVKMX::load_state(const StateReader &r)
     for (unsigned int i = 0; i < m_drives_count; i++) {
         uint32_t t = 0;
         if (r.u_at("track", i, t)) m_drives[i].track = (int)t;
-        // Образ привода снимок открывает заново, и номер его другой: дорожки
-        // относятся к тому, что окажется в приводе
-        Drive &d = m_drives[i];
-        d.written.clear();
-        d.adopt = true;
+        // Снимок, сделанный до режима дорожек: записанные программой дорожки
+        // хранил контроллер. Их кладут на диск, когда восстановлен и привод
+        m_legacy[i].clear();
         const StateReader sub = r.sub(("written" + std::to_string(i)).c_str());
         uint32_t count = 0;
         if (!sub.u("count", count) || count == 0 || count > 1024) continue;
@@ -560,7 +505,7 @@ emulator::Result DVKMX::load_state(const StateReader &r)
             if (!sub.u(("words" + std::to_string(key)).c_str(), words) || words > 65536) continue;
             std::vector<uint16_t> data(words, 0);
             if (words > 0) sub.array(("track" + std::to_string(key)).c_str(), data.data(), data.size());
-            d.written[key] = data;
+            m_legacy[i][key] = data;
         }
     }
     m_track.clear();
@@ -570,6 +515,25 @@ emulator::Result DVKMX::load_state(const StateReader &r)
         r.array("track_data", m_track.data(), m_track.size());
     }
     return emulator::Result::ok();
+}
+
+void DVKMX::state_restored()
+{
+    FDC::state_restored();
+    for (unsigned int i = 0; i < m_drives_count; i++) {
+        if (m_legacy[i].empty()) continue;
+        FDD * f = track_drive(&m_drives[i]);
+        if (f != nullptr)
+            for (const auto &e : m_legacy[i]) {
+                std::vector<uint8_t> bytes(e.second.size() * 2);
+                for (size_t k = 0; k < e.second.size(); k++) {
+                    bytes[k * 2] = (uint8_t)(e.second[k] & 0xFF);
+                    bytes[k * 2 + 1] = (uint8_t)(e.second[k] >> 8);
+                }
+                f->write_track((int)(e.first / 2), (int)(e.first & 1), bytes);
+            }
+        m_legacy[i].clear();
+    }
 }
 
 ComputerDevice * create_dvk_mx(InterfaceManager *im, EmulatorConfigDevice *cd)

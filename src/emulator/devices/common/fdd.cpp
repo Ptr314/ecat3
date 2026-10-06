@@ -17,6 +17,9 @@
 #define FDD_MODE_LOGICAL    0
 #define FDD_MODE_AGAT_140   1
 #define FDD_MODE_AGAT_840   2
+#define FDD_MODE_DVK_MX     3
+#define FDD_MODE_IBM_MFM    4
+#define FDD_MODE_IBM_FM     5
 
 #define CALLBACK_SELECT     1
 #define CALLBACK_MOTOR_ON   2
@@ -93,6 +96,12 @@ emulator::Result FDD::load_config(SystemData *sd)
         fdd_mode = FDD_MODE_AGAT_140;
     else if (s == "mfm_agat_840")
         fdd_mode = FDD_MODE_AGAT_840;
+    else if (s == "fm_dvk_mx")
+        fdd_mode = FDD_MODE_DVK_MX;
+    else if (s == "mfm_ibm")
+        fdd_mode = FDD_MODE_IBM_MFM;
+    else if (s == "fm_ibm")
+        fdd_mode = FDD_MODE_IBM_FM;
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unknown fdd mode")) + "} " + s);
 
@@ -217,6 +226,14 @@ emulator::Result FDD::load_image(const std::string &file_name)
             loaded = true;
             m_generation++;
             this->file_name = base_name;
+            // Пометок синхро в .mfm нет: у IBM MFM их видно по самим байтам
+            for (size_t i = 0; i < entries && i < sizeof(aim_codes) / sizeof(aim_codes[0]); i++) {
+                aim_codes[i].clear();
+                if (fdd_mode == FDD_MODE_IBM_MFM)
+                    find_marks_ibm_mfm(buffer + track_indexes[i].mfmtrackoffset, track_indexes[i].mfmtracksize, aim_codes[i]);
+                else if (fdd_mode == FDD_MODE_IBM_FM)
+                    find_marks_ibm_fm(buffer + track_indexes[i].mfmtrackoffset, track_indexes[i].mfmtracksize, aim_codes[i]);
+            }
         } else {
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
@@ -317,6 +334,47 @@ emulator::Result FDD::load_image(const std::string &file_name)
             const int old_sides = sides, old_tracks = tracks, old_size = disk_size;
             try {
                 switch (fdd_mode) {
+                    case FDD_MODE_DVK_MX: {
+                        // Плоский образ секторов - дорожки, какими их пишет
+                        // RT-11. Образ короче геометрии - недостающие пустые
+                        const long long file_size = dsk_tools::utf8_file_size(file_name);
+                        const long long flat_size = (long long)sides * tracks * DVK_MX_IMAGE_SECTORS * DVK_MX_IMAGE_SECTOR;
+                        if (file_size <= 0 || file_size > flat_size)
+                            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect disk image size for")) + "} " + file_name);
+                        std::vector<uint8_t> flat((size_t)file_size, 0);
+                        dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
+                        if (!file.is_open())
+                            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
+                        file.read(reinterpret_cast<char*>(flat.data()), (std::streamsize)flat.size());
+                        converted = generate_tracks_dvk_mx(flat.data(), flat.size(), sides, tracks, disk_size, track_indexes);
+                        break;
+                    }
+                    case FDD_MODE_IBM_FM:
+                    case FDD_MODE_IBM_MFM: {
+                        // Плоский образ секторов - дорожки, как их размечает
+                        // ПЗУ. Образ короче геометрии - остаток пустой
+                        const long long file_size = dsk_tools::utf8_file_size(file_name);
+                        const long long flat_size = (long long)sides * tracks * sectors * sector_size;
+                        if (file_size <= 0 || file_size > flat_size)
+                            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect disk image size for")) + "} " + file_name);
+                        std::vector<uint8_t> flat((size_t)file_size, 0);
+                        dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
+                        if (!file.is_open())
+                            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
+                        file.read(reinterpret_cast<char*>(flat.data()), (std::streamsize)flat.size());
+                        sides_layout = layout_for_file(file_name);
+                        if (fdd_mode == FDD_MODE_IBM_FM)
+                            converted = generate_tracks_ibm_fm(flat.data(), flat.size(), sides, tracks, sectors, sector_size,
+                                                               sides_layout, nullptr, disk_size, track_indexes, aim_codes);
+                        else
+                            converted = generate_tracks_ibm_mfm(flat.data(), flat.size(), sides, tracks, sectors, sector_size,
+                                                                sides_layout, nullptr, disk_size, track_indexes, aim_codes);
+                        break;
+                    }
                     case FDD_MODE_AGAT_140:
                         converted = generate_mfm_agat_140(file_name, sides, tracks, disk_size, track_indexes);
                         break;
@@ -504,6 +562,111 @@ void FDD::WriteByte(uint8_t value)
 }
 
 
+bool FDD::whole_track() const
+{
+    return loaded && buffer != nullptr && track_mode == FDD_MODE_WHOLE_TRACK;
+}
+
+// Дорожка целиком - для контроллера, который пишет и читает её от индекса до
+// индекса сам. Сторона задана явно: у одностороннего привода её выбирает
+// контроллер (head_side), линию стороны привод не слушает
+bool FDD::read_track(int track, int side, std::vector<uint8_t> &out)
+{
+    out.clear();
+    if (!whole_track() || track < 0 || track >= tracks || side < 0 || side >= sides) return false;
+    const unsigned int i = image_track(track, side, false);
+    if (i >= sizeof(track_indexes) / sizeof(track_indexes[0])) return false;
+    const HXC_MFM_TRACK_INFO &ti = track_indexes[i];
+    if ((uint64_t)ti.mfmtrackoffset + ti.mfmtracksize > (uint64_t)disk_size) return false;
+    out.assign(buffer + ti.mfmtrackoffset, buffer + ti.mfmtrackoffset + ti.mfmtracksize);
+    // Головка привода - над этой дорожкой (поля track и side)
+    this->track = track;
+    this->side = side;
+    return true;
+}
+
+// Записанное ложится с начала дорожки (с индекса); что дальше - остаётся
+bool FDD::write_track(int track, int side, const std::vector<uint8_t> &data)
+{
+    if (!whole_track() || track < 0 || track >= tracks || side < 0 || side >= sides) return false;
+    const unsigned int i = image_track(track, side, false);
+    if (i >= sizeof(track_indexes) / sizeof(track_indexes[0])) return false;
+    const HXC_MFM_TRACK_INFO &ti = track_indexes[i];
+    if ((uint64_t)ti.mfmtrackoffset + ti.mfmtracksize > (uint64_t)disk_size) return false;
+    const size_t n = data.size() < ti.mfmtracksize ? data.size() : ti.mfmtracksize;
+    if (n > 0) memcpy(buffer + ti.mfmtrackoffset, data.data(), n);
+    this->track = track;
+    this->side = side;
+    return true;
+}
+
+// Пометки синхро дорожки - позиции байтов
+void FDD::read_track_marks(int track, int side, std::vector<int> &positions)
+{
+    positions.clear();
+    if (!whole_track() || track < 0 || track >= tracks || side < 0 || side >= sides) return;
+    const unsigned int i = image_track(track, side, false);
+    if (i >= sizeof(aim_codes) / sizeof(aim_codes[0])) return;
+    for (const auto &e : aim_codes[i])
+        if (aim_is_desync(e.second)) positions.push_back(e.first);
+}
+
+void FDD::write_track_marks(int track, int side, const std::vector<int> &positions)
+{
+    if (!whole_track() || track < 0 || track >= tracks || side < 0 || side >= sides) return;
+    const unsigned int i = image_track(track, side, false);
+    if (i >= sizeof(aim_codes) / sizeof(aim_codes[0])) return;
+    aim_codes[i].clear();
+    for (int p : positions) aim_codes[i][p] = AIM_CMD_DESYNC;
+}
+
+// Привод в режиме секторов (снимок или конфигурация до режима дорожек):
+// плоский образ в памяти перестраивается в дорожки IBM MFM. deleted - метки
+// удаления по физическим дорожкам, если они известны
+void FDD::rebuild_ibm_mfm(const uint16_t * deleted)
+{
+    if (!loaded || buffer == nullptr || track_mode != FDD_MODE_SECTORS) return;
+    int size = 0;
+    uint8_t * converted = generate_tracks_ibm_mfm(buffer, (size_t)disk_size, sides, tracks, sectors, sector_size,
+                                                  sides_layout, deleted, size, track_indexes, aim_codes);
+    delete [] buffer;
+    buffer = converted;
+    disk_size = size;
+    fdd_mode = FDD_MODE_IBM_MFM;
+    track_mode = FDD_MODE_WHOLE_TRACK;
+    position = 0;
+}
+
+// То же для дорожек IBM 3740 FM (RX01)
+void FDD::rebuild_ibm_fm()
+{
+    if (!loaded || buffer == nullptr || track_mode != FDD_MODE_SECTORS) return;
+    int size = 0;
+    uint8_t * converted = generate_tracks_ibm_fm(buffer, (size_t)disk_size, sides, tracks, sectors, sector_size,
+                                                 sides_layout, nullptr, size, track_indexes, aim_codes);
+    delete [] buffer;
+    buffer = converted;
+    disk_size = size;
+    fdd_mode = FDD_MODE_IBM_FM;
+    track_mode = FDD_MODE_WHOLE_TRACK;
+    position = 0;
+}
+
+// Привод, восстановленный из снимка, сделанного до режима дорожек: плоский
+// образ в памяти перестраивается в дорожки MX
+void FDD::rebuild_dvk_mx()
+{
+    if (!loaded || buffer == nullptr || track_mode != FDD_MODE_SECTORS) return;
+    int size = 0;
+    uint8_t * converted = generate_tracks_dvk_mx(buffer, (size_t)disk_size, sides, tracks, size, track_indexes);
+    delete [] buffer;
+    buffer = converted;
+    disk_size = size;
+    fdd_mode = FDD_MODE_DVK_MX;
+    track_mode = FDD_MODE_WHOLE_TRACK;
+    position = 0;
+}
+
 bool FDD::is_selected()
 {
     return (i_select.value & 0x03) == selector;
@@ -623,6 +786,33 @@ emulator::Result FDD::save_image(const std::string &file_name)
                         "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error exporting disk.")) + "} " + dsk_tools::decode_error(decode_res) + " : " + decode_res.message);
                 }
             } else
+            if ((fdd_mode == FDD_MODE_IBM_MFM || fdd_mode == FDD_MODE_IBM_FM) && track_mode == FDD_MODE_WHOLE_TRACK) {
+                // Сектора по меткам; метки удаления и нестандартная
+                // разметка в плоский образ не попадают
+                std::vector<uint8_t> flat;
+                if (fdd_mode == FDD_MODE_IBM_FM)
+                    decode_tracks_ibm_fm(buffer, sides, tracks, sectors, sector_size, layout_for_file(file_name),
+                                         track_indexes, flat);
+                else
+                    decode_tracks_ibm_mfm(buffer, sides, tracks, sectors, sector_size, layout_for_file(file_name),
+                                          track_indexes, flat);
+                dsk_tools::UTF8_ofstream file(file_name, std::ios::binary);
+                if (file.is_open()) {
+                    file.write(reinterpret_cast<char*>(flat.data()), (std::streamsize)flat.size());
+                    file.close();
+                }
+            } else
+            if (fdd_mode == FDD_MODE_DVK_MX && track_mode == FDD_MODE_WHOLE_TRACK) {
+                // Сектора дорожек по синхрослову; служебные слова и
+                // нестандартная разметка в плоский образ не попадают
+                std::vector<uint8_t> flat;
+                decode_tracks_dvk_mx(buffer, sides, tracks, track_indexes, flat);
+                dsk_tools::UTF8_ofstream file(file_name, std::ios::binary);
+                if (file.is_open()) {
+                    file.write(reinterpret_cast<char*>(flat.data()), (std::streamsize)flat.size());
+                    file.close();
+                }
+            } else
             if (fdd_mode == FDD_MODE_LOGICAL) {
                 dsk_tools::UTF8_ofstream file(file_name, std::ios::binary);
                 if (file.is_open()){
@@ -649,7 +839,9 @@ emulator::Result FDD::save_image(const std::string &file_name)
                     "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "FDD is working in a physical mode now, generating of DSK images is not supported yet.")) + "}");
             }
         } else if (ext == ".mfm") {
-            if (fdd_mode == FDD_MODE_AGAT_140) {
+            if (fdd_mode == FDD_MODE_AGAT_140
+                || ((fdd_mode == FDD_MODE_DVK_MX || fdd_mode == FDD_MODE_IBM_MFM || fdd_mode == FDD_MODE_IBM_FM)
+                    && track_mode == FDD_MODE_WHOLE_TRACK)) {
                 save_mfm_file(file_name, sides, tracks, track_indexes[0].mfmtracksize, track_indexes, buffer);
             } else {
                 return emulator::Result::error(emulator::ErrorCode::ConfigError,
@@ -793,6 +985,22 @@ void FDD::save_state(StateWriter &w)
         w.array("track_side", side_no.data(), count);
         w.array("track_size", size.data(), count);
         w.array("track_offset", offset.data(), count);
+
+        //Sync marks and AIM codes: positions and codes of the marked bytes,
+        //a pair per mark, for every track that has any
+        const size_t codes = sizeof(aim_codes) / sizeof(aim_codes[0]);
+        for (size_t t = 0; t < codes; t++)
+        {
+            if (aim_codes[t].empty()) continue;
+            std::vector<uint32_t> pairs;
+            for (const auto &e : aim_codes[t])
+            {
+                pairs.push_back(static_cast<uint32_t>(e.first));
+                pairs.push_back(static_cast<uint32_t>(e.second));
+            }
+            w.n_at("marks", static_cast<unsigned int>(t), static_cast<unsigned int>(pairs.size() / 2));
+            w.array(("mark" + std::to_string(t)).c_str(), pairs.data(), pairs.size());
+        }
     }
 }
 
@@ -910,6 +1118,19 @@ emulator::Result FDD::load_state(const StateReader &r)
             track_indexes[i].mfmtrackoffset = offset[i];
         }
 
+        //Sync marks and AIM codes; a snapshot from before they were saved
+        //has none, and the tracks keep what the reset left (nothing)
+        for (size_t t = 0; t < sizeof(aim_codes) / sizeof(aim_codes[0]); t++)
+        {
+            aim_codes[t].clear();
+            uint32_t n = 0;
+            if (!r.u_at("marks", static_cast<unsigned int>(t), n) || n == 0 || n > 65536) continue;
+            std::vector<uint32_t> pairs(n * 2, 0);
+            if (!r.array(("mark" + std::to_string(t)).c_str(), pairs.data(), pairs.size())) continue;
+            for (uint32_t k = 0; k < n; k++)
+                aim_codes[t][static_cast<int>(pairs[k * 2])] = static_cast<int>(pairs[k * 2 + 1]);
+        }
+
         //The head stands somewhere on the track it is over, or at its start
         if (position < 0 || !sector_in_range()
             || static_cast<uint32_t>(position) >= track_indexes[track*sides + side].mfmtracksize)
@@ -937,6 +1158,7 @@ std::vector<DeviceFieldInfo> FDD::get_device_fields()
     r.push_back({"generation",  "Incremented on every load and eject",  false});
     r.push_back({"raw",         "Bytes of the track under the head",    true});
     r.push_back({"marks",       "Sync marks on the track under the head", false});
+    r.push_back({"deleted",     "IBM MFM/FM disk: sectors with the deleted data mark", false});
     return r;
 }
 
@@ -983,6 +1205,30 @@ bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to
 
     //The track as it lies on the medium, sync marks and all: the only way to
     //see what a guest's formatter actually wrote
+    if (field == "deleted")
+    {
+        if (!loaded || track_mode != FDD_MODE_WHOLE_TRACK
+            || (fdd_mode != FDD_MODE_IBM_MFM && fdd_mode != FDD_MODE_IBM_FM)) return false;
+        unsigned int count = 0;
+        std::vector<uint8_t> tmp((size_t)sectors * sector_size);
+        for (int t = 0; t < tracks; t++)
+            for (int sd = 0; sd < sides; sd++)
+            {
+                const unsigned int i = image_track(t, sd, false);
+                int n = 0;
+                uint16_t del = 0;
+                const bool ok = (fdd_mode == FDD_MODE_IBM_FM)
+                    ? decode_track_ibm_fm(buffer + track_indexes[i].mfmtrackoffset, track_indexes[i].mfmtracksize,
+                                          sectors, sector_size, tmp.data(), n, del)
+                    : decode_track_ibm_mfm(buffer + track_indexes[i].mfmtrackoffset, track_indexes[i].mfmtracksize,
+                                           sectors, sector_size, tmp.data(), n, del);
+                if (ok)
+                    for (; del != 0; del &= (uint16_t)(del - 1)) count++;
+            }
+        out.values.push_back(count);
+        return true;
+    }
+
     if (field == "raw" || field == "marks")
     {
         const unsigned int t = image_track(track, side, false);

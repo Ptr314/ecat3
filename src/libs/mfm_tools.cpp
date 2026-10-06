@@ -322,3 +322,409 @@ uint8_t * load_aim_image(const std::string &file_name, int & sides, int & tracks
     delete [] image;
     return out;
 }
+
+//------------------------- ДВК, контроллер MX ------------------------------//
+
+void encode_track_dvk_mx(const uint8_t * flat_track, int track, int side, uint8_t * out)
+{
+    memset(out, 0, DVK_MX_TRACK_WORDS * 2);
+    unsigned int p = 8;     // нулевые слова от индекса до синхрослова
+    auto put = [&](uint16_t w) {
+        out[p * 2] = (uint8_t)(w & 0xFF);
+        out[p * 2 + 1] = (uint8_t)(w >> 8);
+        p++;
+    };
+    put(DVK_MX_SYNC_WORD);
+    put((uint16_t)track);
+    for (int s = 0; s < DVK_MX_IMAGE_SECTORS; s++) {
+        uint16_t sum = 0;
+        const uint8_t * d = flat_track + s * DVK_MX_IMAGE_SECTOR;
+        for (int i = 0; i < DVK_MX_IMAGE_SECTOR; i += 2) {
+            const uint16_t w = (uint16_t)(d[i] | (d[i + 1] << 8));
+            put(w);
+            sum = (uint16_t)(sum + w);
+        }
+        put(sum);
+    }
+    for (int i = 0; i < 3; i++) put((uint16_t)(0101400 | (track * 2 + side)));
+}
+
+uint8_t * generate_tracks_dvk_mx(const uint8_t * flat, size_t flat_size, int sides, int tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[])
+{
+    const int track_bytes = DVK_MX_TRACK_WORDS * 2;
+    const size_t flat_track = DVK_MX_IMAGE_SECTORS * DVK_MX_IMAGE_SECTOR;
+    disk_size = sides * tracks * track_bytes;
+    uint8_t * buffer = new uint8_t[disk_size];
+    std::vector<uint8_t> blank(flat_track, 0);
+    for (int t = 0; t < tracks; t++)
+        for (int s = 0; s < sides; s++) {
+            const int i = t * sides + s;
+            const size_t from = (size_t)i * flat_track;
+            // Образ короче геометрии - недостающие дорожки пустые
+            const uint8_t * src = (from + flat_track <= flat_size) ? flat + from : blank.data();
+            if (from < flat_size && from + flat_track > flat_size) {
+                memcpy(blank.data(), flat + from, flat_size - from);
+                src = blank.data();
+            }
+            encode_track_dvk_mx(src, t, s, buffer + (size_t)i * track_bytes);
+            if (src == blank.data()) memset(blank.data(), 0, flat_track);
+            track_indexes[i].track_number = (uint16_t)t;
+            track_indexes[i].side_number = (uint8_t)s;
+            track_indexes[i].mfmtracksize = track_bytes;
+            track_indexes[i].mfmtrackoffset = (uint32_t)(i * track_bytes);
+        }
+    return buffer;
+}
+
+void decode_tracks_dvk_mx(const uint8_t * buffer, int sides, int tracks, const HXC_MFM_TRACK_INFO track_indexes[], std::vector<uint8_t> & flat)
+{
+    const size_t flat_track = DVK_MX_IMAGE_SECTORS * DVK_MX_IMAGE_SECTOR;
+    flat.assign((size_t)sides * tracks * flat_track, 0);
+    for (int t = 0; t < tracks; t++)
+        for (int s = 0; s < sides; s++) {
+            const int i = t * sides + s;
+            const uint8_t * tr = buffer + track_indexes[i].mfmtrackoffset;
+            const size_t words = track_indexes[i].mfmtracksize / 2;
+            size_t p = 0;
+            while (p < words && (tr[p * 2] | (tr[p * 2 + 1] << 8)) != DVK_MX_SYNC_WORD) p++;
+            p += 2;     // синхрослово и номер дорожки
+            if (p + DVK_MX_IMAGE_SECTORS * (DVK_MX_IMAGE_SECTOR / 2 + 1) > words) continue;
+            uint8_t * out = flat.data() + (size_t)i * flat_track;
+            for (int sec = 0; sec < DVK_MX_IMAGE_SECTORS; sec++) {
+                memcpy(out + sec * DVK_MX_IMAGE_SECTOR, tr + p * 2, DVK_MX_IMAGE_SECTOR);
+                p += DVK_MX_IMAGE_SECTOR / 2 + 1;   // слова сектора и сумма
+            }
+        }
+}
+
+//------------------------- IBM MFM (К1801ВП1-128) --------------------------//
+
+#define IBM_GAP_FIRST   42      // GAP4a + GAP1 перед первым сектором
+#define IBM_GAP_SECTOR  36      // GAP3 между секторами
+#define IBM_GAP_HEADER  22      // GAP2 между заголовком и данными
+#define IBM_SYNC_BYTES  12
+#define IBM_GAP_BYTE    0x4E
+#define IBM_MARK_BYTE   0xA1
+#define IBM_MARK_HEADER 0xFE
+#define IBM_MARK_DATA   0xFB
+#define IBM_MARK_DELETED 0xF8
+
+static uint16_t ibm_crc(uint16_t crc, const uint8_t * p, size_t n)
+{
+    for (size_t k = 0; k < n; k++) {
+        crc ^= (uint16_t)(p[k] << 8);
+        for (int i = 0; i < 8; i++)
+            crc = (crc & 0x8000) ? (uint16_t)((crc << 1) ^ 0x1021) : (uint16_t)(crc << 1);
+    }
+    return crc;
+}
+
+int ibm_mfm_size_code(int sector_size)
+{
+    int code = 0;
+    while ((128 << code) < sector_size && code < 6) code++;
+    return code;
+}
+
+void encode_track_ibm_mfm(const uint8_t * flat_track, int sectors, int sector_size, int track, int side, uint16_t deleted, uint8_t * out, std::map<int, int> & marks)
+{
+    memset(out, IBM_GAP_BYTE, IBM_MFM_TRACK_BYTES);
+    marks.clear();
+    unsigned int p = 0;
+    unsigned int gap = IBM_GAP_FIRST;
+    for (int sect = 0; sect < sectors; sect++) {
+        p += gap;
+        memset(out + p, 0, IBM_SYNC_BYTES); p += IBM_SYNC_BYTES;
+
+        marks[(int)p] = AIM_CMD_DESYNC;
+        unsigned int start = p;
+        out[p++] = IBM_MARK_BYTE; out[p++] = IBM_MARK_BYTE; out[p++] = IBM_MARK_BYTE;
+        out[p++] = IBM_MARK_HEADER;
+        out[p++] = (uint8_t)track;
+        out[p++] = (uint8_t)side;
+        out[p++] = (uint8_t)(sect + 1);
+        out[p++] = (uint8_t)ibm_mfm_size_code(sector_size);
+        uint16_t crc = ibm_crc(0xFFFF, out + start, p - start);
+        out[p++] = (uint8_t)(crc >> 8);
+        out[p++] = (uint8_t)(crc & 0xFF);
+
+        p += IBM_GAP_HEADER;
+        memset(out + p, 0, IBM_SYNC_BYTES); p += IBM_SYNC_BYTES;
+
+        marks[(int)p] = AIM_CMD_DESYNC;
+        start = p;
+        out[p++] = IBM_MARK_BYTE; out[p++] = IBM_MARK_BYTE; out[p++] = IBM_MARK_BYTE;
+        out[p++] = (deleted & (1u << sect)) ? IBM_MARK_DELETED : IBM_MARK_DATA;
+        if (flat_track != nullptr) memcpy(out + p, flat_track + (size_t)sect * sector_size, sector_size);
+        else memset(out + p, 0, sector_size);
+        p += sector_size;
+        crc = ibm_crc(0xFFFF, out + start, p - start);
+        out[p++] = (uint8_t)(crc >> 8);
+        out[p++] = (uint8_t)(crc & 0xFF);
+
+        gap = IBM_GAP_SECTOR;
+    }
+}
+
+uint8_t * generate_tracks_ibm_mfm(const uint8_t * flat, size_t flat_size, int sides, int tracks, int sectors, int sector_size, bool sides_order,
+                                  const uint16_t * deleted, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & marks)
+{
+    const size_t flat_track = (size_t)sectors * sector_size;
+    disk_size = sides * tracks * IBM_MFM_TRACK_BYTES;
+    uint8_t * buffer = new uint8_t[disk_size];
+    std::vector<uint8_t> tmp(flat_track, 0);
+    for (int t = 0; t < tracks; t++)
+        for (int s = 0; s < sides; s++) {
+            const int i = t * sides + s;
+            const size_t from = (size_t)(sides_order ? (s * tracks + t) : i) * flat_track;
+            // Образ короче геометрии - недостающие дорожки размечены, но пусты
+            memset(tmp.data(), 0, flat_track);
+            if (from < flat_size)
+                memcpy(tmp.data(), flat + from, (from + flat_track <= flat_size) ? flat_track : flat_size - from);
+            encode_track_ibm_mfm(tmp.data(), sectors, sector_size, t, s, deleted ? deleted[i] : 0,
+                                 buffer + (size_t)i * IBM_MFM_TRACK_BYTES, marks[i]);
+            track_indexes[i].track_number = (uint16_t)t;
+            track_indexes[i].side_number = (uint8_t)s;
+            track_indexes[i].mfmtracksize = IBM_MFM_TRACK_BYTES;
+            track_indexes[i].mfmtrackoffset = (uint32_t)(i * IBM_MFM_TRACK_BYTES);
+        }
+    return buffer;
+}
+
+// Метки находятся по самим байтам; пометки синхро тут не нужны
+bool decode_track_ibm_mfm(const uint8_t * data, size_t len, int sectors, int sector_size, uint8_t * out, int & count, uint16_t & deleted)
+{
+    const size_t total = (size_t)sectors * sector_size;
+    size_t p = 0, o = 0;
+    count = 0;
+    deleted = 0;
+    for (;;) {
+        while (p < len && data[p] == IBM_GAP_BYTE) p++;
+        if (p >= len) break;                                    // конец дорожки
+        while (p < len && data[p] == 0) p++;
+        if (p >= len) return false;
+        for (int i = 0; i < 3 && p < len && data[p] == IBM_MARK_BYTE; i++) p++;
+        if (p >= len || data[p++] != IBM_MARK_HEADER) return false;
+        if (p + 6 > len) return false;
+        const uint8_t size_code = data[p + 3];
+        p += 4 + 2;                                             // поля заголовка и CRC
+        if (size_code > 6) return false;
+        const size_t size = (size_t)128 << size_code;
+
+        while (p < len && data[p] == IBM_GAP_BYTE) p++;
+        while (p < len && data[p] == 0) p++;
+        for (int i = 0; i < 3 && p < len && data[p] == IBM_MARK_BYTE; i++) p++;
+        if (p >= len) return false;
+        const uint8_t mark = data[p++];
+        if (mark != IBM_MARK_DATA && mark != IBM_MARK_DELETED) return false;
+        if (mark == IBM_MARK_DELETED && o < total) deleted |= (uint16_t)(1u << (o / sector_size));
+        if (p + size + 2 > len) return false;
+        for (size_t i = 0; i < size; i++) {
+            if (o >= total) break;
+            out[o++] = data[p++];
+        }
+        p += 2;                                                 // CRC данных
+    }
+    count = (int)(o / sector_size);
+    return true;
+}
+
+void decode_tracks_ibm_mfm(const uint8_t * buffer, int sides, int tracks, int sectors, int sector_size, bool sides_order,
+                           const HXC_MFM_TRACK_INFO track_indexes[], std::vector<uint8_t> & flat)
+{
+    const size_t flat_track = (size_t)sectors * sector_size;
+    flat.assign((size_t)sides * tracks * flat_track, 0);
+    std::vector<uint8_t> tmp(flat_track, 0);
+    for (int t = 0; t < tracks; t++)
+        for (int s = 0; s < sides; s++) {
+            const int i = t * sides + s;
+            int count = 0;
+            uint16_t deleted = 0;
+            memset(tmp.data(), 0, flat_track);
+            // Дорожка, которая не разбирается, остаётся в образе пустой
+            if (!decode_track_ibm_mfm(buffer + track_indexes[i].mfmtrackoffset, track_indexes[i].mfmtracksize,
+                                      sectors, sector_size, tmp.data(), count, deleted)) continue;
+            const size_t to = (size_t)(sides_order ? (s * tracks + t) : i) * flat_track;
+            memcpy(flat.data() + to, tmp.data(), flat_track);
+        }
+}
+
+void find_marks_ibm_mfm(const uint8_t * data, size_t len, std::map<int, int> & marks)
+{
+    marks.clear();
+    for (size_t p = 1; p + 3 < len; p++)
+        if (data[p - 1] == 0 && data[p] == IBM_MARK_BYTE && data[p + 1] == IBM_MARK_BYTE && data[p + 2] == IBM_MARK_BYTE
+            && (data[p + 3] == IBM_MARK_HEADER || data[p + 3] == IBM_MARK_DATA || data[p + 3] == IBM_MARK_DELETED))
+            marks[(int)p] = AIM_CMD_DESYNC;
+}
+
+//------------------------- IBM 3740 FM (RX01) ------------------------------//
+
+#define FM_GAP4A        40
+#define FM_GAP1         26
+#define FM_GAP2         11
+#define FM_GAP3         27
+#define FM_SYNC         6
+#define FM_GAP_BYTE     0xFF
+#define FM_MARK_INDEX   0xFC
+#define FM_MARK_ID      0xFE
+#define FM_MARK_DATA    0xFB
+#define FM_MARK_DELETED 0xF8
+
+void encode_track_ibm_fm(const uint8_t * flat_track, int sectors, int sector_size, int track, int side, uint16_t deleted, uint8_t * out, std::map<int, int> & marks)
+{
+    memset(out, FM_GAP_BYTE, IBM_FM_TRACK_BYTES);
+    marks.clear();
+    unsigned int p = FM_GAP4A;
+    memset(out + p, 0, FM_SYNC); p += FM_SYNC;
+    marks[(int)p] = AIM_CMD_DESYNC;
+    out[p++] = FM_MARK_INDEX;
+    p += FM_GAP1;
+    for (int sect = 0; sect < sectors; sect++) {
+        memset(out + p, 0, FM_SYNC); p += FM_SYNC;
+        marks[(int)p] = AIM_CMD_DESYNC;
+        unsigned int start = p;
+        out[p++] = FM_MARK_ID;
+        out[p++] = (uint8_t)track;
+        out[p++] = (uint8_t)side;
+        out[p++] = (uint8_t)(sect + 1);
+        out[p++] = (uint8_t)ibm_mfm_size_code(sector_size);
+        uint16_t crc = ibm_crc(0xFFFF, out + start, p - start);
+        out[p++] = (uint8_t)(crc >> 8);
+        out[p++] = (uint8_t)(crc & 0xFF);
+        p += FM_GAP2;
+        memset(out + p, 0, FM_SYNC); p += FM_SYNC;
+        marks[(int)p] = AIM_CMD_DESYNC;
+        start = p;
+        out[p++] = (deleted & (1u << sect)) ? FM_MARK_DELETED : FM_MARK_DATA;
+        if (flat_track != nullptr) memcpy(out + p, flat_track + (size_t)sect * sector_size, sector_size);
+        else memset(out + p, 0, sector_size);
+        p += sector_size;
+        crc = ibm_crc(0xFFFF, out + start, p - start);
+        out[p++] = (uint8_t)(crc >> 8);
+        out[p++] = (uint8_t)(crc & 0xFF);
+        p += FM_GAP3;
+    }
+}
+
+uint8_t * generate_tracks_ibm_fm(const uint8_t * flat, size_t flat_size, int sides, int tracks, int sectors, int sector_size, bool sides_order,
+                                 const uint16_t * deleted, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & marks)
+{
+    const size_t flat_track = (size_t)sectors * sector_size;
+    disk_size = sides * tracks * IBM_FM_TRACK_BYTES;
+    uint8_t * buffer = new uint8_t[disk_size];
+    std::vector<uint8_t> tmp(flat_track, 0);
+    for (int t = 0; t < tracks; t++)
+        for (int s = 0; s < sides; s++) {
+            const int i = t * sides + s;
+            const size_t from = (size_t)(sides_order ? (s * tracks + t) : i) * flat_track;
+            memset(tmp.data(), 0, flat_track);
+            if (from < flat_size)
+                memcpy(tmp.data(), flat + from, (from + flat_track <= flat_size) ? flat_track : flat_size - from);
+            encode_track_ibm_fm(tmp.data(), sectors, sector_size, t, s, deleted ? deleted[i] : 0,
+                                buffer + (size_t)i * IBM_FM_TRACK_BYTES, marks[i]);
+            track_indexes[i].track_number = (uint16_t)t;
+            track_indexes[i].side_number = (uint8_t)s;
+            track_indexes[i].mfmtracksize = IBM_FM_TRACK_BYTES;
+            track_indexes[i].mfmtrackoffset = (uint32_t)(i * IBM_FM_TRACK_BYTES);
+        }
+    return buffer;
+}
+
+// Проход по полям дорожки: для каждой метки - её смещение и байт. Метка -
+// байт FC/FE/FB/F8 после нулей; за ID идут 6 байт, за данными - сектор по
+// коду размера последнего ID и CRC
+template <typename F>
+static void fm_walk(const uint8_t * data, size_t len, F field)
+{
+    size_t p = 0;
+    int size = 128;
+    while (p < len) {
+        if (data[p] != 0) { p++; continue; }
+        while (p < len && data[p] == 0) p++;
+        if (p >= len) break;
+        const uint8_t m = data[p];
+        if (m == FM_MARK_INDEX) { field((int)p, m, 0); p++; continue; }
+        if (m == FM_MARK_ID) {
+            if (p + 7 > len) break;
+            const uint8_t code = data[p + 4];
+            size = (code <= 6) ? (128 << code) : 128;
+            field((int)p, m, 0);
+            p += 7;
+            continue;
+        }
+        if (m == FM_MARK_DATA || m == FM_MARK_DELETED) {
+            field((int)p, m, size);
+            p += 1 + (size_t)size + 2;
+            continue;
+        }
+        p++;
+    }
+}
+
+bool decode_track_ibm_fm(const uint8_t * data, size_t len, int sectors, int sector_size, uint8_t * out, int & count, uint16_t & deleted)
+{
+    count = 0;
+    deleted = 0;
+    int id_sector = -1;
+    fm_walk(data, len, [&](int p, uint8_t m, int size) {
+        if (m == FM_MARK_ID) { id_sector = data[p + 3]; return; }
+        if ((m == FM_MARK_DATA || m == FM_MARK_DELETED) && id_sector >= 1 && id_sector <= sectors
+            && size == sector_size && (size_t)p + 1 + size <= len) {
+            memcpy(out + (size_t)(id_sector - 1) * sector_size, data + p + 1, size);
+            if (m == FM_MARK_DELETED) deleted |= (uint16_t)(1u << (id_sector - 1));
+            count++;
+        }
+        id_sector = -1;
+    });
+    return count > 0;
+}
+
+void decode_tracks_ibm_fm(const uint8_t * buffer, int sides, int tracks, int sectors, int sector_size, bool sides_order,
+                          const HXC_MFM_TRACK_INFO track_indexes[], std::vector<uint8_t> & flat)
+{
+    const size_t flat_track = (size_t)sectors * sector_size;
+    flat.assign((size_t)sides * tracks * flat_track, 0);
+    for (int t = 0; t < tracks; t++)
+        for (int s = 0; s < sides; s++) {
+            const int i = t * sides + s;
+            const size_t to = (size_t)(sides_order ? (s * tracks + t) : i) * flat_track;
+            int count = 0;
+            uint16_t deleted = 0;
+            decode_track_ibm_fm(buffer + track_indexes[i].mfmtrackoffset, track_indexes[i].mfmtracksize,
+                                sectors, sector_size, flat.data() + to, count, deleted);
+        }
+}
+
+void find_marks_ibm_fm(const uint8_t * data, size_t len, std::map<int, int> & marks)
+{
+    marks.clear();
+    fm_walk(data, len, [&](int p, uint8_t, int) { marks[p] = AIM_CMD_DESYNC; });
+}
+
+int find_sector_ibm_fm(const uint8_t * data, size_t len, int track, int sector, bool & deleted, int & size)
+{
+    int found = -1;
+    bool want = false;
+    fm_walk(data, len, [&](int p, uint8_t m, int sz) {
+        if (found >= 0) return;
+        if (m == FM_MARK_ID) { want = data[p + 1] == track && data[p + 3] == sector; return; }
+        if ((m == FM_MARK_DATA || m == FM_MARK_DELETED) && want && (size_t)p + 1 + sz + 2 <= len) {
+            found = p;
+            deleted = (m == FM_MARK_DELETED);
+            size = sz;
+        }
+        want = false;
+    });
+    return found;
+}
+
+void put_sector_ibm_fm(uint8_t * data, size_t len, int mark, const uint8_t * src, int size, bool deleted)
+{
+    if (mark < 0 || (size_t)mark + 1 + size + 2 > len) return;
+    data[mark] = deleted ? FM_MARK_DELETED : FM_MARK_DATA;
+    memcpy(data + mark + 1, src, size);
+    const uint16_t crc = ibm_crc(0xFFFF, data + mark, 1 + (size_t)size);
+    data[mark + 1 + size] = (uint8_t)(crc >> 8);
+    data[mark + 2 + size] = (uint8_t)(crc & 0xFF);
+}

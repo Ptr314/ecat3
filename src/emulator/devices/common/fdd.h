@@ -101,6 +101,15 @@ public:
     int get_position();
     void set_position(int value);
     int SeekSector(int track, int sector);
+    // Дорожки целиком (режим дорожек: Агат, MX)
+    bool whole_track() const;
+    bool read_track(int track, int side, std::vector<uint8_t> &out);
+    bool write_track(int track, int side, const std::vector<uint8_t> &data);
+    void rebuild_dvk_mx();
+    void read_track_marks(int track, int side, std::vector<int> &positions);
+    void write_track_marks(int track, int side, const std::vector<int> &positions);
+    void rebuild_ibm_mfm(const uint16_t * deleted);
+    void rebuild_ibm_fm();
     void NextPosition();
     uint8_t  ReadNextByte();
     void WriteNextByte(uint8_t value);
