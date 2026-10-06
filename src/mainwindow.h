@@ -141,6 +141,10 @@ private:
     //with its own address space and breakpoints
     void open_debugger_for(CPU * cpu);
 
+    //Puts a window where it was the last time a window of the same key was
+    //closed, and remembers where it is when it closes
+    void remember_geometry(QDialog * w, const QString & key);
+
     Ui::MainWindow *ui;
 
     QWidget * screen;

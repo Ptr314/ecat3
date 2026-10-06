@@ -355,6 +355,12 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
     ui->actionRecPanel->setChecked(e->read_setup("Video", "recording_panel", "1") != "0");
     ui->actionRememberDisks->setChecked(e->read_setup("Core", "remember_disks", "0") == "1");
 
+    //Size, position and the maximized state of the previous run. Qt moves a
+    //window saved on a monitor that is gone back onto an existing one
+    std::string geometry = e->read_setup("Window", "geometry", "");
+    if (!geometry.empty())
+        restoreGeometry(QByteArray::fromHex(QByteArray::fromStdString(geometry)));
+
     //A configuration given on the command line wins over the one saved in the ini
     first_config = cmdline_config.isEmpty()
         ? (QFileInfo(file_to_load).isAbsolute() ? file_to_load : work_path + file_to_load)
@@ -1007,6 +1013,7 @@ void MainWindow::onDeviceMenuCalled(unsigned int i)
     {
         GenericDbgWnd * w = f(this, e, e->dm->get_device(i)->device.get());
         w->setAttribute(Qt::WA_DeleteOnClose);
+        remember_geometry(w, QString::fromStdString(e->dm->get_device(i)->device_name));
         DWM->add_window(w);
         connect(w, &GenericDbgWnd::data_changed, [this](GenericDbgWnd * src) {
             DWM->data_changed(src);
@@ -1563,6 +1570,7 @@ void MainWindow::open_debugger_for(CPU * cpu)
     {
             GenericDbgWnd * w = f(this, e, cpu);
             w->setAttribute(Qt::WA_DeleteOnClose);
+            remember_geometry(w, QString::fromStdString(cpu->name));
             DWM->add_window(w);
             connect(w, &GenericDbgWnd::data_changed, [this](GenericDbgWnd * src) {
                 DWM->data_changed(src);
@@ -1572,6 +1580,27 @@ void MainWindow::open_debugger_for(CPU * cpu)
             });
             w->show();
     }
+}
+
+void MainWindow::remember_geometry(QDialog * w, const QString & key)
+{
+    //By the kind of window and the device it shows: the debugger of "cpu"
+    //opens in the same place on every machine, a second processor's apart
+    QString ident = QString::fromLatin1(w->metaObject()->className());
+    if (!key.isEmpty()) ident += "." + key;
+    const std::string name = "geometry." + ident.toStdString();
+
+    std::string geometry = e->read_setup("Window", name, "");
+    if (!geometry.empty())
+        w->restoreGeometry(QByteArray::fromHex(QByteArray::fromStdString(geometry)));
+
+    //finished() comes both from a close (QDialog::closeEvent rejects) and from
+    //Esc, while the window still exists; the windows closed by the main
+    //window on exit and on a machine change go through it before the emulator
+    //is deleted
+    connect(w, &QDialog::finished, this, [this, w, name]() {
+        if (e != nullptr) e->write_setup("Window", name, w->saveGeometry().toHex().toStdString());
+    });
 }
 
 void MainWindow::on_actionSaveState_triggered()
@@ -1644,6 +1673,11 @@ void MainWindow::closeEvent (QCloseEvent *event)
     if (rec_timer != nullptr) rec_timer->stop();
     mouse_capture(false);
     if (mouse_timer != nullptr) mouse_timer->stop();
+
+    // A window never shown (an MCP session no client asked a machine of)
+    // has no geometry worth keeping
+    if (e != nullptr && isVisible())
+        e->write_setup("Window", "geometry", saveGeometry().toHex().toStdString());
 
     // Close all debug windows before destroying the emulator,
     // so their closeEvent handlers can safely access devices
@@ -2054,6 +2088,7 @@ void MainWindow::on_actionTape_triggered()
 
     w = new TapeRecorderWindow(this, e, tape);
     w->setAttribute(Qt::WA_DeleteOnClose);
+    remember_geometry(w, "");
     w->show();
 }
 
@@ -2076,6 +2111,7 @@ void MainWindow::on_actionKeyboard_triggered()
         return;
     }
     w->setAttribute(Qt::WA_DeleteOnClose);
+    remember_geometry(w, "");
     w->show();
 #endif
 }
