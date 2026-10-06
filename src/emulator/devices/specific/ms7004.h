@@ -40,6 +40,10 @@
 // повторами 7710 циклов ожидания с передачей и щелчком. Не воспроизведено:
 // пока идёт автоповтор, прошивка не опрашивает других клавиш.
 //
+// Цифровой блок хоста - цифровой блок МС7004 со своими кодами (92h-A0h, ВВОД
+// 95h): клавиатура берёт клавиши с EmuKey::Keypad (keypad_keys()), а клавиша
+// блока, которой нет в раскладке, - то же, что в основном поле.
+//
 // Раскладка - файл map, строки `клавиша хоста: код [+shift|-shift]`, как у
 // УК-НЦ: латинские буквы отданы клавишам с той же латинской надписью, в
 // русском регистре получается ЙЦУКЕН самой МС7004 (use_remap = 0). Пометка
@@ -115,6 +119,7 @@ public:
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     void key_down(unsigned int key) override;
     void key_up(unsigned int key) override;
+    bool keypad_keys() const override { return true; }
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

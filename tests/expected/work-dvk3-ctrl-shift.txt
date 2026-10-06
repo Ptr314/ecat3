@@ -13,15 +13,19 @@
 [ksm-ram.value] &000263: &000000 &000002
 === Автоповтор ===
 [keyboard.repeats] &005
+=== Цифровой блок ===
+[keyboard.last] &231
+[keyboard.last] &320
+[keyboard.last] &263
 === Экран ===
 [display.text] 
                              lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
  000000
 @
 @111111
+@44
 @B
 $MX
-
 
 
 

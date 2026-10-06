@@ -149,6 +149,9 @@ const MS7004::KeyEntry * MS7004::entry_of(unsigned int host) const
 {
     for (size_t i = 0; i < m_keys.size(); i++)
         if (m_keys[i].host == host) return &m_keys[i];
+    // Клавиша цифрового блока хоста, которой нет в раскладке, - та же, что в
+    // основном поле
+    if (host & EmuKey::Keypad) return entry_of(host & ~(unsigned int)EmuKey::Keypad);
     return nullptr;
 }
 

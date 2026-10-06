@@ -63,6 +63,9 @@ const EmuModifier = {
     AltModifier:     0x08000000,
 };
 
+// A key of the numeric keypad (Qt::KeypadModifier)
+const KEYPAD = 0x20000000;
+
 // Map KeyboardEvent.code to EmuKey values
 const CODE_TO_EMUKEY = {
     "Escape":       EmuKey.Escape,
@@ -119,16 +122,17 @@ const CODE_TO_EMUKEY = {
     "Digit3": EmuKey.Key_3, "Digit4": EmuKey.Key_4, "Digit5": EmuKey.Key_5,
     "Digit6": EmuKey.Key_6, "Digit7": EmuKey.Key_7, "Digit8": EmuKey.Key_8,
     "Digit9": EmuKey.Key_9,
-    // Numpad
-    "Numpad0": EmuKey.Key_0, "Numpad1": EmuKey.Key_1, "Numpad2": EmuKey.Key_2,
-    "Numpad3": EmuKey.Key_3, "Numpad4": EmuKey.Key_4, "Numpad5": EmuKey.Key_5,
-    "Numpad6": EmuKey.Key_6, "Numpad7": EmuKey.Key_7, "Numpad8": EmuKey.Key_8,
-    "Numpad9": EmuKey.Key_9,
-    "NumpadMultiply":  EmuKey.Asterisk,
-    "NumpadAdd":       EmuKey.Plus,
-    "NumpadSubtract":  EmuKey.Minus,
-    "NumpadDecimal":   EmuKey.Period,
-    "NumpadDivide":    EmuKey.Slash,
+    // Numpad: the digit or sign with the keypad bit (EmuKey::Keypad of the
+    // core), which drops it for every machine but one with a keypad of its own
+    "Numpad0": EmuKey.Key_0 | KEYPAD, "Numpad1": EmuKey.Key_1 | KEYPAD, "Numpad2": EmuKey.Key_2 | KEYPAD,
+    "Numpad3": EmuKey.Key_3 | KEYPAD, "Numpad4": EmuKey.Key_4 | KEYPAD, "Numpad5": EmuKey.Key_5 | KEYPAD,
+    "Numpad6": EmuKey.Key_6 | KEYPAD, "Numpad7": EmuKey.Key_7 | KEYPAD, "Numpad8": EmuKey.Key_8 | KEYPAD,
+    "Numpad9": EmuKey.Key_9 | KEYPAD,
+    "NumpadMultiply":  EmuKey.Asterisk | KEYPAD,
+    "NumpadAdd":       EmuKey.Plus | KEYPAD,
+    "NumpadSubtract":  EmuKey.Minus | KEYPAD,
+    "NumpadDecimal":   EmuKey.Period | KEYPAD,
+    "NumpadDivide":    EmuKey.Slash | KEYPAD,
     // Pause/Break -> Cancel (used for reset)
     "Pause":           EmuKey.Cancel,
 };

@@ -1477,10 +1477,13 @@ void Emulator::key_event(int key, int modifiers, bool press)
     //failed to load or has not started yet
     if (!keyboard || !display) return;
 
-    keyboard->key_event(key, key, press);
-    for (size_t i = 0; i < joysticks.size(); i++) joysticks[i]->key_event((unsigned int)key, press);
-    if (key == EmuKey::F12) display->validate(true);
-    if (press && key == EmuKey::Cancel) {
+    //A keypad key is the plain one to everything but a keyboard that has a
+    //keypad of its own
+    const int plain = key & ~(int)EmuKey::Keypad;
+    keyboard->key_event(keyboard->keypad_keys() ? key : plain, plain, press);
+    for (size_t i = 0; i < joysticks.size(); i++) joysticks[i]->key_event((unsigned int)plain, press);
+    if (plain == EmuKey::F12) display->validate(true);
+    if (press && plain == EmuKey::Cancel) {
         reset(modifiers & EmuKey::AltModifier);
     }
 }

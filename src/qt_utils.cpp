@@ -6,6 +6,8 @@
 #include "qt_utils.h"
 #include <QKeyEvent>
 
+#include "emulator/devices/common/keyboard.h"
+
 #define MD4C_USE_UTF8
 #include "libs/md4c/md4c-html.h"
 
@@ -103,10 +105,21 @@ std::string md2html(const std::string &md)
 //at all. Such a key is taken from the Windows virtual key code instead, which
 //does not depend on the layout - letters and digits are their ASCII codes, the
 //OEM keys are the punctuation of the US layout. Latin characters stay as Qt
-//gives them, so an English layout works exactly as before
+//gives them, so an English layout works exactly as before.
+//
+//A digit or a sign of the numeric keypad carries EmuKey::Keypad (Qt's own
+//KeypadModifier bit), which the core drops for every machine but one with a
+//keypad of its own. The decimal key gives a comma under a Russian layout; it is
+//the same key. Not the arrows: macOS marks them as keypad keys too
 int host_layout_key(const QKeyEvent *event)
 {
     const int key = event->key();
+    if (event->modifiers() & Qt::KeypadModifier) {
+        if ((key >= Qt::Key_0 && key <= Qt::Key_9) || key == Qt::Key_Period
+            || key == Qt::Key_Plus || key == Qt::Key_Minus || key == Qt::Key_Asterisk || key == Qt::Key_Slash)
+            return key | EmuKey::Keypad;
+        if (key == Qt::Key_Comma) return Qt::Key_Period | EmuKey::Keypad;
+    }
 #ifdef Q_OS_WIN
     if (key > 0xFF && key < Qt::Key_Escape) {
         const quint32 vk = event->nativeVirtualKey();

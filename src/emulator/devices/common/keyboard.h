@@ -128,6 +128,11 @@ namespace EmuKey {
         ControlModifier = 0x04000000,
         AltModifier     = 0x08000000,
     };
+
+    // A key of the host's numeric keypad: its digit or sign with this bit
+    // (Qt::KeypadModifier). Only a keyboard that keypad_keys() gets it as is;
+    // every other machine gets the plain key, as before the bit existed
+    enum { Keypad = 0x20000000 };
 }
 
 struct KeyDescription {
@@ -250,6 +255,21 @@ static const KeyDescription KEYS[] ={
     {EmuKey::AsciiCircum, "^"},
     {EmuKey::AsciiCircum, "circum"},
     {EmuKey::Bar, "bar"},
+    {EmuKey::Key_0 | EmuKey::Keypad, "kp0"},
+    {EmuKey::Key_1 | EmuKey::Keypad, "kp1"},
+    {EmuKey::Key_2 | EmuKey::Keypad, "kp2"},
+    {EmuKey::Key_3 | EmuKey::Keypad, "kp3"},
+    {EmuKey::Key_4 | EmuKey::Keypad, "kp4"},
+    {EmuKey::Key_5 | EmuKey::Keypad, "kp5"},
+    {EmuKey::Key_6 | EmuKey::Keypad, "kp6"},
+    {EmuKey::Key_7 | EmuKey::Keypad, "kp7"},
+    {EmuKey::Key_8 | EmuKey::Keypad, "kp8"},
+    {EmuKey::Key_9 | EmuKey::Keypad, "kp9"},
+    {EmuKey::Period | EmuKey::Keypad, "kpdot"},
+    {EmuKey::Plus | EmuKey::Keypad, "kpplus"},
+    {EmuKey::Minus | EmuKey::Keypad, "kpminus"},
+    {EmuKey::Asterisk | EmuKey::Keypad, "kpmult"},
+    {EmuKey::Slash | EmuKey::Keypad, "kpdiv"},
 };
 
 static const unsigned int RUS_REMAP[][2] = {
@@ -411,6 +431,11 @@ public:
     virtual void key_event(unsigned int key, unsigned int native_key, bool press);
     virtual void key_down(unsigned int key) = 0;
     virtual void key_up(unsigned int key) = 0;
+
+    // Whether the host's numeric keypad is a keyboard of its own here (the
+    // МС7004 has one): such a keyboard gets the keypad keys with
+    // EmuKey::Keypad, any other one the plain digits and signs
+    virtual bool keypad_keys() const { return false; }
 
     // A key of the machine's own keyboard, named the way the native table and
     // the SVG drawing name it. Nothing here is a host key, so rus_translate()
