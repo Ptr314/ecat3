@@ -16,7 +16,8 @@
 #define KSM_TEXT        0x2030      // начало кольца относительно C000
 #define KSM_STATUS      0x38B0      // служебная строка, F8B0
 #define KSM_CURSOR      0x2000      // курсорная плоскость на 8 КБ ниже
-#define KSM_KGD_TOP     5           // линия растра КГД, с которой идёт текст
+#define KSM_BLANK_ROW   0x3830      // F830: строка над служебной (строки 4-6 ПЗУ D16)
+#define KSM_KGD_TOP     11          // линия растра КГД, с которой идёт текст
 
 KSMDisplay::KSMDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
       GenericDisplay(im, cd)
@@ -97,12 +98,13 @@ void KSMDisplay::clock(unsigned int counter)
     }
 }
 
-void KSMDisplay::render_row(unsigned row, unsigned offset, bool blink)
+// Строка знаков с линии растра top
+void KSMDisplay::render_row(unsigned top, unsigned offset, bool blink)
 {
     const uint8_t * vram = m_vram->get_buffer();
     const unsigned size = (unsigned)m_vram->get_size();
     for (unsigned y = 0; y < KSM_CELL_H; y++) {
-        uint8_t * base = static_cast<uint8_t*>(render_pixels) + (m_text_top + row * KSM_CELL_H + y) * line_bytes;
+        uint8_t * base = static_cast<uint8_t*>(render_pixels) + (top + y) * line_bytes;
         uint32_t * p = reinterpret_cast<uint32_t*>(base);
         const unsigned src = (y > 7) ? offset - KSM_CURSOR : offset;
         const unsigned ra = y % 8;
@@ -135,21 +137,18 @@ void KSMDisplay::render_graphics()
 void KSMDisplay::render_all(MAYBE_UNUSED bool force_render)
 {
     if (m_vram != nullptr && render_pixels != nullptr) {
-        // Линии растра без текста - над ним и под ним, когда растр КГД выше
-        for (unsigned y = 0; y < sy; y++) {
-            if (y >= m_text_top && y < m_text_top + KSM_ROWS * KSM_CELL_H) continue;
-            uint32_t * p = reinterpret_cast<uint32_t*>(static_cast<uint8_t*>(render_pixels) + y * line_bytes);
-            for (unsigned x = 0; x < sx; x++) p[x] = m_colors[0];
-        }
         const bool text = (m_kgd == nullptr) || !m_kgd->text_off();
         if (text) {
             const bool blink = (m_frame % 10) > 4;
             const unsigned line = i_line.value & 0xFF;
-            render_row(0, KSM_STATUS, blink);
+            // Над служебной строкой растра КГД - строка знаков из F830
+            // (прошивка держит там пробелы)
+            if (m_text_top >= KSM_CELL_H) render_row(m_text_top - KSM_CELL_H, KSM_BLANK_ROW, blink);
+            render_row(m_text_top, KSM_STATUS, blink);
             for (unsigned r = 1; r < KSM_ROWS; r++)
-                render_row(r, KSM_TEXT + (((line + r - 1) % KSM_RING) * KSM_ROW_BYTES), blink);
+                render_row(m_text_top + r * KSM_CELL_H, KSM_TEXT + (((line + r - 1) % KSM_RING) * KSM_ROW_BYTES), blink);
         } else {
-            for (unsigned y = m_text_top; y < m_text_top + KSM_ROWS * KSM_CELL_H; y++) {
+            for (unsigned y = 0; y < sy; y++) {
                 uint32_t * p = reinterpret_cast<uint32_t*>(static_cast<uint8_t*>(render_pixels) + y * line_bytes);
                 for (unsigned x = 0; x < sx; x++) p[x] = m_colors[0];
             }

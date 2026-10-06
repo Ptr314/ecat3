@@ -8,7 +8,12 @@
 
 #define KGD_CR_MASK     0140000
 #define KGD_AR_MASK     0037777
-#define KGD_FRAME_LINES 312
+// Своей развёртки у КГД нет: кадровый и строчный синхроимпульсы (КСИ, ССИ) и
+// тактовые (ГТИ) приходят от терминала (XP2), его кадр - 28 строк знаков по
+// 11 линий, линия - 1000 точек по 15,4 МГц (MAME dvk_ksm; ПЗУ строк КСМ D16)
+#define KGD_FRAME_LINES 308
+#define KGD_LINE_DOTS   1000
+#define KGD_DOT_CLOCK   15400000
 
 DVKKGD::DVKKGD(InterfaceManager *im, EmulatorConfigDevice *cd):
       AddressableDevice(im, cd)
@@ -24,8 +29,8 @@ emulator::Result DVKKGD::load_config(SystemData *sd)
 {
     emulator::Result res = AddressableDevice::load_config(sd);
     if (!res) return res;
-    // Строка растра 64 мкс
-    m_line_ticks = (m_system_clock != 0) ? m_system_clock / 15625 : 512;
+    // Линия растра терминала, 64,9 мкс
+    m_line_ticks = (m_system_clock != 0) ? (unsigned int)((uint64_t)m_system_clock * KGD_LINE_DOTS / KGD_DOT_CLOCK) : 512;
     if (m_line_ticks == 0) m_line_ticks = 1;
     return emulator::Result::ok();
 }
