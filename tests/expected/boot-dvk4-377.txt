@@ -18,11 +18,11 @@ SL V08.00 [SW] sTOROVEWYH s.w. 1988
 
 RT-11SJ  V05.04 (Rus\Lat)
 
+.SET TT QUIET
 
-
-
-
-
-
-
-[my.commands] &000032
+Assignments:
+Symbol  Status  Value
+------  ------  -----
+^E      auto    SET SL LET
+^       auto    RUN K78
+[my.commands] &000051

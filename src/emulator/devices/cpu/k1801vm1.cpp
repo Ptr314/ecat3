@@ -7,6 +7,10 @@
 #include "emulator/disasm_pdp11.h"
 #include "emulator/utils.h"
 
+namespace {
+#include "vm3_timing_table.inc"
+}
+
 #define CALLBACK_VIRQ   1
 #define CALLBACK_IRQ2   2
 #define CALLBACK_IRQ3   3
@@ -162,10 +166,16 @@ emulator::Result k1801vm1::load_config(SystemData *sd)
         m_timing = new Vm1BusTiming(clock);
     else if (timing == "vm2")
         m_timing = new Vm1BusTiming(clock, Vm1BusTiming::CHIP_VM2);
-    else if (timing != "legacy")
+    else if (timing != "legacy" && timing != "vm3")
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "Unknown timing")) + "} " + name + ": " + timing);
     m_timing_vm2 = (timing == "vm2");
+    m_timing_vm3 = (timing == "vm3");
+    // Через сколько тактов CLC память отвечает на DIN/DOUT (timing = vm3).
+    // Ответ ДОЗУ МС1201.04 даёт КР1801ВП1-119 (D14, ERPLY через D38/D40),
+    // модели его нет; 4 - быстродействие МС1201.03/.04 в 800 тысяч команд
+    // регистр-регистр в секунду на 5,5 МГц (MOV R,R на модели ВМ3 - 7 тактов)
+    m_reply_clocks = read_confg_value(cd, "reply_clocks", false, (unsigned int)4);
 
     // База векторов пультового режима - вывод SEL процессора. Ноль оставляет
     // прежнее поведение: вход в режим идёт обычной ловушкой через halt_vector,
@@ -589,6 +599,7 @@ unsigned int k1801vm1::execute()
     core->bus_extra = 0;
     unsigned int cycles = core->execute();
     if (m_timing) cycles = timed_cycles(cycles);
+    else if (m_timing_vm3) cycles = vm3_cycles(cycles);
     else if (core->bus_extra != 0) {
         const int c = (int)cycles + core->bus_extra;
         cycles = (c > 0) ? (unsigned int)c : 1;
@@ -606,6 +617,30 @@ unsigned int k1801vm1::execute()
     }
 
     return cycles;
+}
+
+// timing = vm3: команда, для формы которой стенд снял время, идёт его;
+// прерывание, ловушка и неснятая форма - по старым формулам
+unsigned int k1801vm1::vm3_cycles(unsigned int legacy)
+{
+    if (core->m_last_kind != pdp11core::LAST_INSN || core->m_last_trapped) return legacy;
+    const unsigned int f = Vm1BusTiming::form2_of(core->m_last_command, core->m_last_taken, core->m_last_div_v);
+    if (f >= Vm1BusTiming::F2_COUNT || VM3_FORM_CLOCKS[f] == 0) return legacy;
+    // Время снято при ответе через VM3_REF_REPLY тактов; от задержки оно не
+    // линейно (при малой шина прячется за микропрограммой), поэтому другая
+    // задержка - поправкой по наклону, снятому между REF и REF + 2
+    int c = VM3_FORM_CLOCKS[f]
+        + ((int)VM3_FORM_SLOPE2[f] * ((int)m_reply_clocks - (int)VM3_REF_REPLY)) / 2;
+    if (c < 1) c = 1;
+    const uint16_t w = core->m_last_command;
+    // ASH и ASHC: влево на n - 3n - 3 такта сверх формы, вправо на n - 3n + 3
+    // (стенд: сдвиги 0, 5, 10 влево и 5 вправо)
+    if ((w & 0177000) == 0072000 || (w & 0177000) == 0073000) {
+        const int n = core->m_last_shift_n;
+        if (n > 0) c += (int)VM3_SHIFT_CLOCKS * n - (int)VM3_SHIFT_CLOCKS;
+        else if (n < 0) c += (int)VM3_SHIFT_CLOCKS * -n + (int)VM3_SHIFT_CLOCKS;
+    }
+    return (unsigned int)c;
 }
 
 // The clocks the last core->execute() took under timing = vm1. Anything the

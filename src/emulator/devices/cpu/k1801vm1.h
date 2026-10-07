@@ -106,6 +106,13 @@ private:
     bool m_timing_vm2 = false;      // timing = vm2: the tables of the КМ1801ВМ2
     unsigned int timed_cycles(unsigned int legacy);
     unsigned int timed_cycles_vm2(unsigned int legacy, uint16_t pc);
+    // timing = vm3: КМ1801ВМ3, время команды по её форме при ответе памяти
+    // через reply_clocks тактов (vm3_timing_table.inc, tools/vm3-timing). Цепочки циклов,
+    // как у ВМ1 и ВМ2, нет: вся память ДВК-4 - одна динамическая память
+    // КР1801ВП1-119, и одной задержки ответа на всё хватает
+    bool m_timing_vm3 = false;
+    unsigned int m_reply_clocks = 4;
+    unsigned int vm3_cycles(unsigned int legacy);
 
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 

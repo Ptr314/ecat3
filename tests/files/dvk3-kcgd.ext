@@ -139,7 +139,7 @@ kcgd-mapper : memory-mapper {
 	portstomemory = 1
 	// Младшие 16К слов видеопамяти - ОЗУ процессора КЦГД
 	@memory[000000-077777] = kcgd
-	@memory[100000-117777] = kcgd-rom {mode = r}
+	@memory[100000-117777] = kcgd-rom {mode = r, strict = 1}
 	@memory[160000-163777] = kcgd[160000]
 	@memory[167770-167777] = kcgd[167770]
 	@memory[176560-176567] = kcgd-host

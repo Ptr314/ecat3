@@ -1241,6 +1241,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
             if (shift > 31) shift -= 64;
             cycles += C_ASH + C_SHIFT * (unsigned int)(shift < 0? -shift : shift);
             m_last_shift = (unsigned int)(shift < 0 ? -shift - 1 : shift);
+            m_last_shift_n = shift;
             //Counted in 64 bits and by multiplication: a left shift of a
             //negative value is undefined in C++11, and a right shift by 32
             //of a 32-bit one is too (x86 masks the count, so ASH #-32 left
@@ -1267,6 +1268,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
             if (shift > 31) shift -= 64;
             cycles += C_ASHC + C_SHIFT * (unsigned int)(shift < 0? -shift : shift);
             m_last_shift = (unsigned int)(shift < 0 ? -shift - 1 : shift);
+            m_last_shift_n = shift;
             const int64_t value = (int32_t)(((uint32_t)context.R[r] << 16) | context.R[r | 1]);
             int64_t res;
             if (shift >= 0) {
@@ -1373,11 +1375,18 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         case 0000016:
         case 0000017:
             // Запуск прерванной программы: режим снимается, PC и слово
-            // состояния берутся из теневой пары. STEP отличается тем, что
-            // после одной команды процессор вернётся в пультовый режим
+            // состояния берутся из теневой пары. STEP отличается от RUN, как
+            // RTT от RTI: первая команда выбирается без опроса прерываний, так
+            // что запрос пульта, который ещё держат, не уводит обратно до неё.
+            // В пульт после неё STEP сам не возвращает - так у ВМ1 по описанию,
+            // и на этом стоят загрузчики KCGD81/KCGD82: их код в пульте
+            // ставит КРСК на расшифровщик и уходит в него STEP'ом. Раньше
+            // здесь был возврат в пульт после одной команды (догадка при
+            // добавлении УК-НЦ), и он не давал выполниться даже ей
             cycles += C_HALT;
             context.R[PDP11::REG_PC] = context.console_pc;
-            m_step_pending = ((command & 014) == 014);
+            m_step_pending = false;
+            if ((command & 014) == 014) m_no_poll = true;
             // Режим - разряд 8 КРСП (у прерванной программы он ноль)
             if (vm2_sel()) load_psw_word((uint16_t)context.console_psw);
             else {
