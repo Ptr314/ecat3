@@ -345,7 +345,10 @@ enum KeyRole {
     // АЛФ, ФИКС). Nothing here holds any state - the role exists so that a
     // pointer, which has one contact point, clicks such a key on and off
     // instead of letting it go the moment the button is released
-    KEY_ROLE_MODIFIER
+    KEY_ROLE_MODIFIER,
+    // A switch of the keyboard itself, on and off by turns, with no code (15ИЭ:
+    // ДУП, ЛИН, РЕД, ПЧ, СДВ). The keyboard keeps its state, see toggled()
+    KEY_ROLE_TOGGLE
 };
 
 class Keyboard: public ComputerDevice
@@ -396,6 +399,18 @@ protected:
     // one (ЗАГЛ). This is not the momentary shift a subclass tracks: it applies
     // to letters alone, which is why digits keep working under it.
     bool m_case_lower = false;
+
+    // Switches (KEY_ROLE_TOGGLE) that are on. Guarded by m_held_mutex: the
+    // drawing reads them through ids_held()
+    std::vector<std::string> m_toggled;
+    bool toggled(const std::string &id) const;
+    void set_toggled(const std::string &id, bool on);
+
+    // Lamps of the drawing nothing in this machine drives (led_off), reported
+    // dark: a lamp nobody answers for is drawn as drawn, that is lit. And the
+    // lamp of the case latch (led_case_lower), lit while small letters are on
+    std::vector<std::string> m_led_off;
+    std::string m_led_case_lower;
 
     // How many times this keyboard has been reset, see reset_count()
     unsigned int m_reset_count = 0;

@@ -87,7 +87,10 @@ protected:
     std::vector<KeyIdData> id_map;
 
     void set_rus(bool new_rus) override;
-    void send_key(unsigned int value, bool alt = false);
+    // Where a code goes. Virtual for a keyboard that hands it to a terminal
+    // (ie15-keyboard) instead of a port the machine reads
+    virtual void send_key(unsigned int value, bool alt = false);
+    virtual bool port_required() const { return true; }
 
     //What went out last, so that ПОВТ can send it again
     unsigned int m_last_value = _FFFF;

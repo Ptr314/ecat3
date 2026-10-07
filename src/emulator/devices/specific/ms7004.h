@@ -34,7 +34,12 @@
 //     ждёт заводской тест КЦГД KC.SAV, ошибка 17), автоповтор снова включён;
 //     $AB - $01, $00; $89 - ответ $B7, и до $8B клавиатура молчит (коды
 //     пропадают); $D3 - ответ $BA; $E1 и $D9 выключают автоповтор, $E3
-//     включает. Индикаторы, звонок и щелчок принимаются и ничего не меняют.
+//     включает. Звонок и щелчок принимаются и ничего не меняют;
+//   - индикаторы (0421-066E): $13 и байт зажигает, $11 и байт гасит. Байт
+//     1000abcd: d - ОЖИД (порт P2.4), c - КОМПОЗ (P2.5), b - ФКС (P2.6), a -
+//     СТОП КАДР (P2.7); 1001xxxx - ЛАТ (P1.5), и он наоборот: $13 снимает
+//     разряд, $11 ставит. $89 зажигает ОЖИД, $8B гасит; при включении и по
+//     $FD все гаснут. Лампа ЛАТ горит при поставленном P1.5.
 // Времена автоповтора посчитаны по тактам прошивки (46 машинных циклов - 150
 // мкс по её комментарию): проход матрицы ~33 мс, задержка 11 проходов, между
 // повторами 7710 циклов ожидания с передачей и щелчком. Не воспроизведено:
@@ -92,6 +97,16 @@ private:
     bool m_repeat_on = true;
     bool m_inhibit = false;
     bool m_second = false;              // команда ждёт второго байта
+    unsigned int m_led_command = 0;     // $11 или $13, ждущая своего байта
+
+    // Индикаторы: разряды 0-3 - ОЖИД, КОМПОЗ, ФКС, СТОП КАДР (P2.4-P2.7),
+    // разряд 4 - P1.5 (ЛАТ)
+    volatile unsigned int m_leds = 0;
+
+    // Клавиши рисунка (keys): имя и код. Нажатая с рисунка клавиша держится
+    // под «кодом хоста» KEY_ID_BASE + номер, чтобы не спутаться с хостом
+    std::vector<std::pair<std::string, unsigned int> > m_id_codes;
+    std::string id_of_code(unsigned int code) const;
 
     std::deque<unsigned int> m_queue;
     compat_mutex m_queue_mutex;
@@ -100,6 +115,7 @@ private:
     unsigned int m_codes = 0;
     unsigned int m_last = 0;
     unsigned int m_commands = 0;
+    std::deque<unsigned int> m_command_log;     // последние 16 байтов от терминала
     unsigned int m_repeats = 0;
 
     const KeyEntry * entry_of(unsigned int host) const;
@@ -109,6 +125,11 @@ private:
     void send_locked(unsigned int code);
     void enqueue_locked(unsigned int code);
     void command(unsigned int code);
+    void led_byte(unsigned int command, unsigned int value);
+
+protected:
+    emulator::Result parse_key_table(const std::vector<std::string> &body, const std::string &file) override;
+    void send_key_id(const std::string &id, bool press) override;
 
 public:
     MS7004(InterfaceManager *im, EmulatorConfigDevice *cd);
@@ -120,6 +141,7 @@ public:
     void key_down(unsigned int key) override;
     void key_up(unsigned int key) override;
     bool keypad_keys() const override { return true; }
+    std::vector<Indicator> indicators() const override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

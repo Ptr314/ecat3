@@ -1,0 +1,89 @@
+=== Лампы при включении ===
+[keyboard.leds] led_lat,led_prd,led_dup,led_lin
+=== Экран после команд VT52 ===
+[display.text] 
+
+
+
+     ABC
+      АБЦabc
+
+
+              X
+          123
+
+
+
+
+
+
+
+
+
+
+
+
+LAST
+
+    SCROLLED
+[display.cursor] &000027 &000014
+=== Ответ на ESC Z ===
+[display.sent] &000003
+=== ЛИН выключен: набор только на экран ===
+[keyboard.leds] led_lat,led_prd,led_dup
+[display.sent] &000003
+[display.text] 
+LOCAL
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== ЛИН включён, ДУП выключен: эхо и терминала, и монитора ===
+[keyboard.leds] led_lat,led_prd,led_lin
+[display.sent] &000004
+[display.text] 
+QQ?
+@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== НР ===
+[keyboard.leds] led_lat,led_nr,led_prd,led_lin

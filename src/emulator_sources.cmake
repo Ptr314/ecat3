@@ -98,6 +98,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/uknc_keyboard.h emulator/devices/specific/uknc_keyboard.cpp
     emulator/devices/specific/ms7004.h emulator/devices/specific/ms7004.cpp
     emulator/devices/specific/dvk_ksm_display.h emulator/devices/specific/dvk_ksm_display.cpp
+    emulator/devices/specific/dvk_ie15.h emulator/devices/specific/dvk_ie15.cpp
     emulator/devices/specific/dvk_mx.h emulator/devices/specific/dvk_mx.cpp
     emulator/devices/specific/dvk_kgd.h emulator/devices/specific/dvk_kgd.cpp
     emulator/devices/specific/dvk_dx.h emulator/devices/specific/dvk_dx.cpp

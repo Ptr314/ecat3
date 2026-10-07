@@ -17,7 +17,10 @@ KEY _100,_50,ret
 WAIT _3000
 KEY _100,_50,ret
 WAIT _3000
-TYPE "PRINT 2+2"
+TYPE "PRINT 2+3"
+# Backspace хоста - ЗБ (DEL): БЕЙСИК стирает 3 и показывает это «\»
+KEY _100,_50,back
+TYPE "2"
 KEY _100,_50,ret
 WAIT _2000
 

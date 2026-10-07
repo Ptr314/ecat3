@@ -334,26 +334,6 @@ void DL11::set_value(unsigned int address, unsigned int value, bool force)
 
 //--------------------------- Сценарии --------------------------------------//
 
-// Строка команды send: \n, \r, \t, \\, \" и восьмеричные \ooo
-static std::string decode_send_text(const std::string &s)
-{
-    std::string r;
-    for (size_t i = 0; i < s.length(); i++) {
-        if (s[i] != '\\' || i + 1 >= s.length()) { r += s[i]; continue; }
-        const char c = s[++i];
-        if (c == 'n')      r += '\n';
-        else if (c == 'r') r += '\r';
-        else if (c == 't') r += '\t';
-        else if (c >= '0' && c <= '7') {
-            unsigned int v = (unsigned int)(c - '0');
-            for (int k = 0; k < 2 && i + 1 < s.length() && s[i+1] >= '0' && s[i+1] <= '7'; k++)
-                v = v * 8 + (unsigned int)(s[++i] - '0');
-            r += (char)(v & 0xFF);
-        } else r += c;
-    }
-    return r;
-}
-
 ConfigFields DL11::get_config_fields()
 {
     //The host port the line goes to; empty leaves the line unconnected

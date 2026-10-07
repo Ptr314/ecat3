@@ -1,0 +1,42 @@
+# ДВК-4: индикаторы клавиатуры МС7004 и клавиши её рисунка.
+#
+# Лампы зажигает терминал командами $13/$11 и байтом (прошивка МС7004,
+# 0531/05FF): КЦГД 181 при пуске шлёт $11 $90, $13 $90, $11 $90 - ЛАТ
+# (P1.5, который $11 ставит, а $13 снимает) остаётся гореть. СТОП КАДР
+# (Ф1) прошивка КЦГД отмечает лампой: $13 $88, повторное нажатие - $11 $88.
+# Клавиша рисунка отдаёт код LK201 из ms7004.keys: Й/J - $C1, ЗБ - $BC.
+MACHINE "dvk/DVK-4.cfg"
+WAIT _3000
+LOGDEFS _16,_16
+
+PRINT "=== После пуска КЦГД ==="
+LOG keyboard.command_log
+LOG keyboard.leds
+
+PRINT "=== СТОП КАДР ==="
+KEYDOWN key_f1
+WAIT _50
+KEYUP key_f1
+WAIT _500
+LOG keyboard.command_log
+LOG keyboard.leds
+KEYDOWN key_f1
+WAIT _50
+KEYUP key_f1
+WAIT _500
+LOG keyboard.command_log
+LOG keyboard.leds
+
+PRINT "=== Клавиши рисунка ==="
+KEYDOWN key_j
+WAIT _50
+LOG keyboard.pressed
+KEYUP key_j
+WAIT _50
+LOG keyboard.last
+KEYDOWN key_bksp
+WAIT _50
+KEYUP key_bksp
+WAIT _50
+LOG keyboard.last
+EXIT

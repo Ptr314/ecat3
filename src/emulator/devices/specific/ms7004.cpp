@@ -30,6 +30,14 @@
 
 #define CALLBACK_RXD    1
 
+#define CMD_LEDS_OFF    0x11
+#define CMD_LEDS_ON     0x13
+#define LED_WAIT        0x01        // ОЖИД, P2.4
+#define LED_LAT         0x10        // P1.5
+
+// «Код хоста» клавиши, нажатой на рисунке: старше любого EmuKey
+#define KEY_ID_BASE     0x80000000u
+
 // Проходов матрицы до первого автоповтора (байт 27H, 01AC); счётчик, дошедший
 // до нуля, на следующем проходе заворачивается - ещё 255 проходов
 #define REPEAT_PASSES   11
@@ -143,6 +151,89 @@ void MS7004::reset(const bool cold)
     m_repeat_on = true;
     m_inhibit = false;
     m_second = false;
+    m_led_command = 0;
+    m_leds = 0;
+}
+
+// Таблица клавиш рисунка: `имя: код`, код - LK201, как в map
+emulator::Result MS7004::parse_key_table(const std::vector<std::string> &body, const std::string &file)
+{
+    m_id_codes.clear();
+    for (size_t i = 0; i < body.size(); i++) {
+        const size_t colon = body[i].find(':');
+        if (colon == std::string::npos)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{MS7004|" + std::string(QT_TRANSLATE_NOOP("MS7004", "Key table entry is incorrect")) + "} " + body[i] + " (" + file + ")");
+        const std::string id = str_trim(body[i].substr(0, colon));
+        unsigned int code;
+        try {
+            code = parse_numeric_value(str_trim(body[i].substr(colon + 1)));
+        } catch (const std::exception &) {
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{MS7004|" + std::string(QT_TRANSLATE_NOOP("MS7004", "Invalid value in the key table")) + "} " + body[i] + " (" + file + ")");
+        }
+        for (size_t j = 0; j < m_id_codes.size(); j++)
+            if (m_id_codes[j].first == id)
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                    "{MS7004|" + std::string(QT_TRANSLATE_NOOP("MS7004", "Duplicate entry in the key table")) + "} " + body[i] + " (" + file + ")");
+        m_id_codes.push_back(std::make_pair(id, code & 0xFF));
+        register_key_id(id);
+    }
+    return emulator::Result::ok();
+}
+
+// Клавиша рисунка - то же, что клавиша хоста с её кодом, без пометок регистра
+void MS7004::send_key_id(const std::string &id, bool down)
+{
+    for (size_t i = 0; i < m_id_codes.size(); i++)
+        if (m_id_codes[i].first == id) {
+            KeyEntry e;
+            e.host = KEY_ID_BASE + (unsigned int)i;
+            e.code = m_id_codes[i].second;
+            e.shift = SHIFT_ANY;
+            press(e, down);
+            return;
+        }
+}
+
+// Чтобы набор на хосте зажигал клавиши рисунка
+std::string MS7004::id_of_code(unsigned int code) const
+{
+    for (size_t i = 0; i < m_id_codes.size(); i++)
+        if (m_id_codes[i].second == code) return m_id_codes[i].first;
+    return "";
+}
+
+std::vector<Keyboard::Indicator> MS7004::indicators() const
+{
+    // РУС/ЛАТ у МС7004 - обычная клавиша, регистр держит терминал: ламп
+    // базового класса (по rus_mode) здесь нет, только то, что велел терминал
+    const unsigned int leds = m_leds;
+    std::vector<Indicator> r;
+    Indicator wait    = {"led_wait",    (leds & 0x01) != 0, ""};
+    Indicator compose = {"led_compose", (leds & 0x02) != 0, ""};
+    Indicator caps    = {"led_caps",    (leds & 0x04) != 0, ""};
+    Indicator stop    = {"led_stop",    (leds & 0x08) != 0, ""};
+    Indicator lat     = {"led_lat",     (leds & LED_LAT) != 0, ""};
+    r.push_back(wait);
+    r.push_back(compose);
+    r.push_back(caps);
+    r.push_back(stop);
+    r.push_back(lat);
+    return r;
+}
+
+// Второй байт команды индикаторов (0531, 05FF): 1000abcd - четыре лампы
+// порта P2, 1001xxxx - ЛАТ, остальное прошивка пропускает
+void MS7004::led_byte(unsigned int command, unsigned int value)
+{
+    if ((value & 0xE0) != 0x80) return;
+    const bool on = (command == CMD_LEDS_ON);
+    if (value & 0x10) {
+        if (on) m_leds &= ~LED_LAT; else m_leds |= LED_LAT;
+        return;
+    }
+    if (on) m_leds |= (value & 0x0F); else m_leds &= ~(value & 0x0F);
 }
 
 const MS7004::KeyEntry * MS7004::entry_of(unsigned int host) const
@@ -262,10 +353,16 @@ void MS7004::command(unsigned int code)
 {
     compat_lock_guard lock(m_queue_mutex);
     m_commands++;
+    m_command_log.push_back(code);
+    if (m_command_log.size() > 16) m_command_log.pop_front();
     // Второй байт команд индикаторов, звука и щелчка ($11, $13, $1B, $23)
     // разбирается как параметр, а не как $89/$8B (0465)
     const bool second = m_second;
+    const unsigned int led_command = m_led_command;
     m_second = (code == 0x11 || code == 0x13 || code == 0x1B || code == 0x23);
+    m_led_command = (code == CMD_LEDS_OFF || code == CMD_LEDS_ON) ? code : 0;
+    // $99 (запрет щелчка) прошивка разбирает раньше второго байта (044E)
+    if (second && led_command != 0 && code != 0x99) led_byte(led_command, code);
     if (second && (code == CMD_INHIBIT || code == CMD_RESUME)) return;
 
     switch (code) {
@@ -278,6 +375,7 @@ void MS7004::command(unsigned int code)
         send_locked(0);
         m_inhibit = false;
         m_repeat_on = true;
+        m_leds = 0;         // 031B: лампы гаснут, ЛАТ тоже
         break;
     case CMD_REQUEST_ID:
         send_locked(KEYBOARD_ID);
@@ -286,9 +384,11 @@ void MS7004::command(unsigned int code)
     case CMD_INHIBIT:
         send_locked(CODE_INHIBITED);
         m_inhibit = true;
+        m_leds |= LED_WAIT;     // 0477: ORL P2,#10
         break;
     case CMD_RESUME:
         m_inhibit = false;
+        m_leds &= ~LED_WAIT;    // 0487
         break;
     case CMD_TEST:
         send_locked(CODE_TEST);
@@ -308,13 +408,17 @@ void MS7004::command(unsigned int code)
 void MS7004::key_down(unsigned int key)
 {
     const KeyEntry * e = entry_of(key);
-    if (e != nullptr) press(*e, true);
+    if (e == nullptr) return;
+    press(*e, true);
+    note_id(id_of_code(e->code), true);
 }
 
 void MS7004::key_up(unsigned int key)
 {
     const KeyEntry * e = entry_of(key);
-    if (e != nullptr) press(*e, false);
+    if (e == nullptr) return;
+    press(*e, false);
+    note_id(id_of_code(e->code), false);
 }
 
 // Поток эмуляции: автоповтор и код на линию не чаще, чем раз в символ
@@ -369,6 +473,7 @@ std::vector<DeviceFieldInfo> MS7004::get_device_fields()
     r.push_back({"queued",  "Сколько кодов ждут своей очереди на линии",  false});
     r.push_back({"dropped", "Сколько кодов не влезло в очередь",          false});
     r.push_back({"commands", "Сколько команд прислал терминал",            false});
+    r.push_back({"command_log", "Последние 16 байтов от терминала",        false});
     r.push_back({"repeats", "Сколько кодов автоповтора ($B4) отдано",     false});
     r.push_back({"repeat",  "Автоповтор включён (команды $E1/$D9/$E3)",   false});
     r.push_back({"inhibit", "Выдача кодов запрещена командой $89",        false});
@@ -386,6 +491,12 @@ bool MS7004::get_field(const std::string &field, unsigned int from, unsigned int
     if (field == "repeats") { out.values.push_back(m_repeats); return true; }
     if (field == "repeat")  { out.values.push_back(m_repeat_on ? 1 : 0); return true; }
     if (field == "inhibit") { out.values.push_back(m_inhibit ? 1 : 0); return true; }
+    if (field == "command_log") {
+        compat_lock_guard lock(m_queue_mutex);
+        for (size_t i = 0; i < m_command_log.size(); i++) out.values.push_back(m_command_log[i]);
+        if (m_command_log.empty()) out.values.push_back(0);
+        return true;
+    }
     if (field == "queued") {
         compat_lock_guard lock(m_queue_mutex);
         out.values.push_back((unsigned int)m_queue.size());
@@ -429,6 +540,7 @@ void MS7004::save_state(StateWriter &w)
     w.b("repeat_on", m_repeat_on);
     w.b("inhibit", m_inhibit);
     w.u("wait", m_wait);
+    w.n("leds", m_leds);
 }
 
 emulator::Result MS7004::load_state(const StateReader &r)
@@ -441,6 +553,9 @@ emulator::Result MS7004::load_state(const StateReader &r)
     r.b("repeat_on", m_repeat_on);
     r.b("inhibit", m_inhibit);
     r.u("wait", m_wait);
+    unsigned int leds = 0;
+    if (r.u("leds", leds)) m_leds = leds;
+    m_led_command = 0;
     m_queue.clear();
     m_queued = false;
     m_shift_host = m_ctrl_host = false;

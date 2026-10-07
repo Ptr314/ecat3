@@ -73,6 +73,9 @@ std::string strip_message_context(const std::string &message);
 // Every item is trimmed and surrounding quotes are stripped.
 // Used both by the script parser and by device send_command() implementations.
 std::vector<std::string> split_params(const std::string &s);
+// Text of a script command that feeds bytes (dl11 send, ie15 receive):
+// \n, \r, \t, \\, \" and octal \ooo
+std::string decode_send_text(const std::string &s);
 
 // Formats a value according to the current LOGDEFS settings:
 // base 16 -> $XX, base 2 -> #0101, base 8 -> &777, base 10 -> plain decimal.

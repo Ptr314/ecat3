@@ -1,12 +1,11 @@
 === Экран ===
 [display.text] 
-                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
 
 160442
 @
 @140000G
 ?00 AT  0.00
-gotownostx k rabote
+ГОТОВНОСТЬ К РАБОТЕ
 *TYPE 2+2
      4.0000*1.1 FOR I=1,5;TYPE I*I
 *GO

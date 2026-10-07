@@ -88,6 +88,7 @@
 #include "emulator/devices/specific/uknc_keyboard.h"
 #include "emulator/devices/specific/ms7004.h"
 #include "emulator/devices/specific/dvk_ksm_display.h"
+#include "emulator/devices/specific/dvk_ie15.h"
 #include "emulator/devices/specific/dvk_mx.h"
 #include "emulator/devices/specific/dvk_kgd.h"
 #include "emulator/devices/specific/dvk_dx.h"
@@ -1749,6 +1750,8 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("uknc-keyboard", create_uknc_keyboard);
     dm->register_device("ms7004", create_ms7004);
     dm->register_device("ksm-display", create_ksm_display);
+    dm->register_device("ie15", create_ie15_terminal);
+    dm->register_device("ie15-keyboard", create_ie15_keyboard);
     dm->register_device("dvk-mx", create_dvk_mx);
     dm->register_device("dvk-kgd", create_dvk_kgd);
     dm->register_device("dvk-dx", create_dvk_dx);

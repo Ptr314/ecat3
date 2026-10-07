@@ -69,15 +69,15 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.64392577"
-     inkscape:cx="990.79743"
-     inkscape:cy="406.8792"
+     inkscape:zoom="0.45532428"
+     inkscape:cx="923.51763"
+     inkscape:cy="250.37101"
      inkscape:window-width="1920"
      inkscape:window-height="1010"
      inkscape:window-x="-6"
      inkscape:window-y="-6"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1">
+     inkscape:current-layer="layer3">
     <inkscape:grid
        id="grid1"
        units="mm"
@@ -11525,8 +11525,7 @@
      inkscape:groupmode="layer"
      id="layer3"
      inkscape:label="Leds"
-     style="display:inline"
-     sodipodi:insensitive="true">
+     style="display:inline">
     <rect
        style="fill:#9c9c9c;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
        id="rect732"
@@ -11566,17 +11565,20 @@
        height="6.9999995"
        x="424"
        y="34" />
-    <rect
-       style="display:inline;fill:#929292;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
-       id="rect733-9"
-       width="5"
-       height="4.9999995"
-       x="425"
-       y="35.000004" />
-    <path
-       id="rect746-2"
-       style="display:inline;fill:#6e6e6e;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
-       d="m 428.99999,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    <g
+       id="led_prd">
+      <rect
+         style="display:inline;fill:#e8e8e8;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         id="rect733-9"
+         width="5"
+         height="4.9999995"
+         x="425"
+         y="35.000004" />
+      <path
+         id="rect746-2"
+         style="display:inline;fill:#e86d00;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
+         d="m 428.99999,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    </g>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:110%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#d9d9d9;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
@@ -11595,17 +11597,20 @@
        height="6.9999995"
        x="368.94464"
        y="34" />
-    <rect
-       style="display:inline;fill:#929292;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
-       id="rect733-9-8"
-       width="5"
-       height="4.9999995"
-       x="369.94464"
-       y="35.000004" />
-    <path
-       id="rect746-2-1"
-       style="display:inline;fill:#6e6e6e;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
-       d="m 373.94462,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    <g
+       id="led_sdv">
+      <rect
+         style="display:inline;fill:#e8e8e8;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         id="rect733-9-8"
+         width="5"
+         height="4.9999995"
+         x="369.94464"
+         y="35.000004" />
+      <path
+         id="rect746-2-1"
+         style="display:inline;fill:#e86d00;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
+         d="m 373.94462,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    </g>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:110%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#d9d9d9;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
@@ -11624,17 +11629,20 @@
        height="6.9999995"
        x="313.88928"
        y="34" />
-    <rect
-       style="display:inline;fill:#929292;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
-       id="rect733-9-9"
-       width="5"
-       height="4.9999995"
-       x="314.88928"
-       y="35.000004" />
-    <path
-       id="rect746-2-5"
-       style="display:inline;fill:#6e6e6e;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
-       d="m 318.88926,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    <g
+       id="led_red">
+      <rect
+         style="display:inline;fill:#e8e8e8;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         id="rect733-9-9"
+         width="5"
+         height="4.9999995"
+         x="314.88928"
+         y="35.000004" />
+      <path
+         id="rect746-2-5"
+         style="display:inline;fill:#e86d00;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
+         d="m 318.88926,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    </g>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:110%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#d9d9d9;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
@@ -11653,17 +11661,20 @@
        height="6.9999995"
        x="258.83389"
        y="34" />
-    <rect
-       style="display:inline;fill:#929292;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
-       id="rect733-9-0"
-       width="5"
-       height="4.9999995"
-       x="259.83389"
-       y="35.000004" />
-    <path
-       id="rect746-2-9"
-       style="display:inline;fill:#6e6e6e;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
-       d="m 263.83389,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    <g
+       id="led_lin">
+      <rect
+         style="display:inline;fill:#e8e8e8;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         id="rect733-9-0"
+         width="5"
+         height="4.9999995"
+         x="259.83389"
+         y="35.000004" />
+      <path
+         id="rect746-2-9"
+         style="display:inline;fill:#e86d00;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
+         d="m 263.83389,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    </g>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:110%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#d9d9d9;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
@@ -11682,17 +11693,20 @@
        height="6.9999995"
        x="203.77853"
        y="34" />
-    <rect
-       style="display:inline;fill:#929292;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
-       id="rect733-9-85"
-       width="5"
-       height="4.9999995"
-       x="204.77853"
-       y="35.000004" />
-    <path
-       id="rect746-2-7"
-       style="display:inline;fill:#6e6e6e;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
-       d="m 208.77852,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    <g
+       id="led_dup">
+      <rect
+         style="display:inline;fill:#e8e8e8;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         id="rect733-9-85"
+         width="5"
+         height="4.9999995"
+         x="204.77853"
+         y="35.000004" />
+      <path
+         id="rect746-2-7"
+         style="display:inline;fill:#e86d00;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
+         d="m 208.77852,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    </g>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:110%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#d9d9d9;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
@@ -11711,17 +11725,20 @@
        height="6.9999995"
        x="148.72318"
        y="34" />
-    <rect
-       style="display:inline;fill:#929292;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
-       id="rect733-9-1"
-       width="5"
-       height="4.9999995"
-       x="149.72318"
-       y="35.000004" />
-    <path
-       id="rect746-2-0"
-       style="display:inline;fill:#6e6e6e;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
-       d="m 153.72316,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    <g
+       id="led_pch">
+      <rect
+         style="display:inline;fill:#e8e8e8;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         id="rect733-9-1"
+         width="5"
+         height="4.9999995"
+         x="149.72318"
+         y="35.000004" />
+      <path
+         id="rect746-2-0"
+         style="display:inline;fill:#e86d00;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
+         d="m 153.72316,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    </g>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:110%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#d9d9d9;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
@@ -11740,17 +11757,20 @@
        height="6.9999995"
        x="93.667809"
        y="34" />
-    <rect
-       style="display:inline;fill:#929292;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
-       id="rect733-9-2"
-       width="5"
-       height="4.9999995"
-       x="94.667809"
-       y="35.000004" />
-    <path
-       id="rect746-2-8"
-       style="display:inline;fill:#6e6e6e;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
-       d="m 98.667794,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    <g
+       id="led_nr">
+      <rect
+         style="display:inline;fill:#e8e8e8;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         id="rect733-9-2"
+         width="5"
+         height="4.9999995"
+         x="94.667809"
+         y="35.000004" />
+      <path
+         id="rect746-2-8"
+         style="display:inline;fill:#e86d00;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round"
+         d="m 98.667794,39.000001 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1.000004 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999998 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-1 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m 3,-0.999996 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z m -2,0 h 1 v 1 h -1 z" />
+    </g>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:110%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#d9d9d9;fill-opacity:1;stroke:#cccccc;stroke-width:0.01;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"

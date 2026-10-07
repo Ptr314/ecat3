@@ -136,7 +136,9 @@ emulator::Result MapKeyboard::load_config(SystemData *sd)
             }
         }
     }
-    port_value = dynamic_cast<Port*>(im->dm->get_device_by_name(cd->get_parameter("port-value").value));
+    //Optional only for a keyboard that sends its codes elsewhere (ie15-keyboard)
+    const std::string pv = cd->get_parameter("port-value", port_required()).value;
+    port_value = pv.empty() ? nullptr : dynamic_cast<Port*>(im->dm->get_device_by_name(pv));
 
     std::string s = cd->get_parameter("port-ruslat", false).value;
     if (!s.empty()) {
@@ -243,7 +245,8 @@ void MapKeyboard::send_key(unsigned int value, bool alt)
         i_vector.change(alt_vector_for(value, alt) ? m_alt_vector : m_vector);
         value &= 0x7F;
     }
-    port_value->set_value_word(value, value); // To use both port & port-address
+    if (port_value != nullptr)
+        port_value->set_value_word(value, value); // To use both port & port-address
     i_ready.change(0);
     i_ready.change(1);
 }

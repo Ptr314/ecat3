@@ -2,8 +2,7 @@
 [dx.rxes] &000204
 === Экран ===
 [display.text] 
-                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
-SL V08.00 [SW] sTOROVEWYH s.w. 1988
+SL V08.00 [SW] Сторожевых С.В. 1988
 
 RT-11SJ (Y) V05.04 G
 
@@ -14,8 +13,8 @@ RT-11SJ (Y) V05.04 G
 .SET SL ON
 
 .DAY
-wREMQ           dATA
-00:00:11        10-aPR-2013, sREDA
+Время           Дата
+00:00:11        10-Апр-2013, Среда
 
 .COPY SWAP.SYS TEST.SYS
 ?PIP-W-Reboot

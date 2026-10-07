@@ -27,6 +27,17 @@ emulator::Result Keyboard::load_config(SystemData *sd)
     const std::string picture = cd->get_parameter("picture", false).value;
     if (!picture.empty()) m_picture_file = find_file_location(sd, picture);
 
+    // Lamps of the drawing this machine leaves dark, and the lamp of the case
+    // latch. The drawing of a keyboard is shared by machines that wire its
+    // lamps differently (15ВВВ: the 15ИЭ drives all eight, the Ириша two)
+    m_led_off.clear();
+    const std::vector<std::string> off = split_string(cd->get_parameter("led_off", false).value, '|', true);
+    for (size_t i = 0; i < off.size(); i++) {
+        const std::string id = str_trim(off[i]);
+        if (!id.empty()) m_led_off.push_back(id);
+    }
+    m_led_case_lower = str_trim(cd->get_parameter("led_case_lower", false).value);
+
     //Interfaces start at _FFFF, which a config that inverts the line would read
     //as the key being held down from the moment the machine starts
     i_stop.change(0);
@@ -147,10 +158,30 @@ bool Keyboard::is_latching(const std::string &id) const
         case KEY_ROLE_RUS_OFF:
         case KEY_ROLE_CASE_LOWER:
         case KEY_ROLE_CASE_UPPER:
+        case KEY_ROLE_TOGGLE:
             return true;
         default:
             return false;
     }
+}
+
+bool Keyboard::toggled(const std::string &id) const
+{
+    compat_lock_guard lock(m_held_mutex);
+    for (size_t i = 0; i < m_toggled.size(); i++)
+        if (m_toggled[i] == id) return true;
+    return false;
+}
+
+void Keyboard::set_toggled(const std::string &id, bool on)
+{
+    compat_lock_guard lock(m_held_mutex);
+    for (size_t i = 0; i < m_toggled.size(); i++)
+        if (m_toggled[i] == id) {
+            if (!on) m_toggled.erase(m_toggled.begin() + i);
+            return;
+        }
+    if (on) m_toggled.push_back(id);
 }
 
 Keyboard::ClickMode Keyboard::click_mode(const std::string &id) const
@@ -166,6 +197,7 @@ Keyboard::ClickMode Keyboard::click_mode(const std::string &id) const
         case KEY_ROLE_RUS_OFF:
         case KEY_ROLE_CASE_UPPER:
         case KEY_ROLE_CASE_LOWER:
+        case KEY_ROLE_TOGGLE:
             return CLICK_TAP;
         default:
             return CLICK_HOLD;
@@ -193,6 +225,7 @@ std::vector<std::string> Keyboard::ids_held() const
     {
         compat_lock_guard lock(m_held_mutex);
         r = m_ids_held;
+        r.insert(r.end(), m_toggled.begin(), m_toggled.end());
     }
     for (size_t i = 0; i < m_key_roles.size(); i++) {
         bool on = false;
@@ -229,6 +262,17 @@ std::vector<Keyboard::Indicator> Keyboard::indicators() const
     std::vector<Indicator> r;
     r.push_back(rus);
     r.push_back(lat);
+
+    if (!m_led_case_lower.empty()) {
+        Indicator lower = {m_led_case_lower, m_case_lower, ""};
+        for (size_t i = 0; i < m_key_roles.size(); i++)
+            if (m_key_roles[i].second == KEY_ROLE_CASE_LOWER) lower.key = m_key_roles[i].first;
+        r.push_back(lower);
+    }
+    for (size_t i = 0; i < m_led_off.size(); i++) {
+        Indicator off = {m_led_off[i], false, ""};
+        r.push_back(off);
+    }
     return r;
 }
 
@@ -286,6 +330,9 @@ void Keyboard::key_event_id(const std::string &id, bool press)
             break;
         case KEY_ROLE_CASE_UPPER:
             if (press) m_case_lower = false;
+            break;
+        case KEY_ROLE_TOGGLE:
+            if (press) set_toggled(id, !toggled(id));
             break;
         case KEY_ROLE_ALT:
             set_alt_state(press);
@@ -360,6 +407,7 @@ emulator::Result Keyboard::load_key_table(SystemData *sd)
         {"stop",      KEY_ROLE_STOP},
         {"repeat",    KEY_ROLE_REPEAT},
         {"reset",     KEY_ROLE_RESET},
+        {"toggle",    KEY_ROLE_TOGGLE},
         {nullptr,     KEY_ROLE_NORMAL}
     };
 
@@ -434,6 +482,12 @@ void Keyboard::save_state(StateWriter &w)
     w.b("rus", rus_mode);
     w.b("case_lower", m_case_lower);
     w.n("reset_count", m_reset_count);
+    {
+        compat_lock_guard lock(m_held_mutex);
+        std::string t;
+        for (size_t i = 0; i < m_toggled.size(); i++) t += (i ? "|" : "") + m_toggled[i];
+        if (!t.empty()) w.s("toggled", t);
+    }
     //The lists of keys the host holds down are not written. Nobody is holding
     //a key when a snapshot is opened, and one that came back down would stay
     //down for good, auto repeat included
@@ -446,6 +500,11 @@ emulator::Result Keyboard::load_state(const StateReader &r)
     r.b("rus", rus_mode);
     r.b("case_lower", m_case_lower);
     r.u("reset_count", m_reset_count);
+    std::string t;
+    if (r.s("toggled", t)) {
+        compat_lock_guard lock(m_held_mutex);
+        m_toggled = split_string(t, '|', true);
+    }
     return emulator::Result::ok();
 }
 
@@ -454,6 +513,7 @@ std::vector<DeviceFieldInfo> Keyboard::get_device_fields()
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
     r.push_back({"rus", "1 when the keyboard is in the Rus register", false});
     r.push_back({"pressed", "Ids of the machine keys currently held", false});
+    r.push_back({"leds",    "Lamps of the drawing that are lit",      false});
     return r;
 }
 
@@ -476,6 +536,19 @@ bool Keyboard::get_field(const std::string &field, unsigned int from, unsigned i
             if (i > 0) out.text += ",";
             out.text += held[i];
         }
+        return true;
+    }
+
+    //What the drawing shows, whether or not this machine's picture has the lamp
+    if (field == "leds")
+    {
+        const std::vector<Indicator> ind = indicators();
+        out.numeric = false;
+        for (size_t i = 0; i < ind.size(); i++)
+            if (ind[i].lit) {
+                if (!out.text.empty()) out.text += ",";
+                out.text += ind[i].id;
+            }
         return true;
     }
 

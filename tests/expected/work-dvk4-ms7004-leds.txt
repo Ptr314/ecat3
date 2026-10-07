@@ -1,0 +1,12 @@
+=== После пуска КЦГД ===
+[keyboard.command_log] $11 $90 $13 $90 $11 $90
+[keyboard.leds] led_lat
+=== СТОП КАДР ===
+[keyboard.command_log] $11 $90 $13 $90 $11 $90 $13 $88
+[keyboard.leds] led_stop,led_lat
+[keyboard.command_log] $11 $90 $13 $90 $11 $90 $13 $88 $11 $88
+[keyboard.leds] led_lat
+=== Клавиши рисунка ===
+[keyboard.pressed] key_j
+[keyboard.last] $C1
+[keyboard.last] $BC

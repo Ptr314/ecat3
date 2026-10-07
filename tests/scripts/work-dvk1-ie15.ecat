@@ -1,0 +1,59 @@
+# ДВК-1 с терминалом 15ИЭ-00-013 и клавиатурой 15ВВВ.
+#
+# Команды VT52 (ESC Y строка столбец, ESC H/J/K, ESC A/B/C/D), кириллица по
+# SO/SI и прокрутка - байтами «как от ЭВМ» (display.receive), монитору 000
+# они не по пути. ESC Z терминал сам отвечает ESC / K - в ЭВМ уходят три
+# байта (display.sent). Лампы над клавиатурой (keyboard.leds): при включении
+# горят ЛАТ, ПРД, ДУП и ЛИН. ЛИН выключен - терминал «местный»: набор идёт
+# на экран, а не в линию. ДУП выключен - полудуплекс: знак показывает и сам
+# терминал, и эхо монитора. НР зажигает свою лампу.
+MACHINE "dvk/DVK-1.cfg"
+WAIT _2000
+LOGDEFS _16,_8
+
+PRINT "=== Лампы при включении ==="
+LOG keyboard.leds
+
+COMMAND display.receive("\033H\033J\033Y%%ABC\033Y&&\016abc\017abc\r\n\033Y**12345\033D\033D\033K\033A\033CX")
+COMMAND display.receive("\033Y\067\040LAST\n\nSCROLLED")
+PRINT "=== Экран после команд VT52 ==="
+LOG display.text
+LOG display.cursor
+
+COMMAND display.receive("\033Z")
+WAIT _100
+PRINT "=== Ответ на ESC Z ==="
+LOG display.sent
+
+PRINT "=== ЛИН выключен: набор только на экран ==="
+KEYDOWN key_lin
+WAIT _50
+KEYUP key_lin
+LOG keyboard.leds
+COMMAND display.receive("\033H\033J")
+TYPE "LOCAL"
+WAIT _500
+LOG display.sent
+LOG display.text
+
+PRINT "=== ЛИН включён, ДУП выключен: эхо и терминала, и монитора ==="
+KEYDOWN key_lin
+WAIT _50
+KEYUP key_lin
+KEYDOWN key_dup
+WAIT _50
+KEYUP key_dup
+LOG keyboard.leds
+COMMAND display.receive("\033H\033J")
+TYPE "Q"
+WAIT _500
+LOG display.sent
+LOG display.text
+
+PRINT "=== НР ==="
+KEYDOWN key_lowcase
+WAIT _50
+KEYUP key_lowcase
+LOG keyboard.leds
+SCREEN "../results/work-dvk1-ie15.png"
+EXIT
