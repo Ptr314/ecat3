@@ -21,12 +21,16 @@
 // #include <QOverload>
 #include <QMessageBox>
 #include <cstdlib>
+#include <cstring>
+#include <QCoreApplication>
+#include <QFileInfo>
 #include <iostream>
 #include <QCursor>
 #include <QMouseEvent>
 #include <QStatusBar>
 #include <QThread>
 #include <QTimer>
+#include <QProgressDialog>
 //Qt 5.6 не тянет QDateTime за собой: там, где он нужен, его надо позвать
 #include <QDateTime>
 
@@ -647,6 +651,59 @@ void MainWindow::CreateScreenMenu()
         sa->setChecked(screenshot_as_shown == shown);
     }
 
+    if (video_menu == nullptr) {
+        video_menu = new QMenu(this);
+        const QList<QAction*> acts = ui->menuHelp->actions();
+        const int at = acts.indexOf(screenshot_menu->menuAction());
+        ui->menuHelp->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, video_menu);
+    }
+    video_menu->setTitle(tr("Video recording"));
+    video_menu->clear();
+    qDeleteAll(video_menu->findChildren<QMenu*>(QString(), Qt::FindDirectChildrenOnly));
+    {
+        const int codec = VideoRecorder::codec_by_name(e->read_setup("Video", "video_codec", "h264"));
+        QMenu * codec_menu = video_menu->addMenu(tr("Codec"));
+        QActionGroup * codec_group = new QActionGroup(codec_menu);
+        static const int CODECS[] = {VIDEO_CODEC_ZMBV, VIDEO_CODEC_H264, VIDEO_CODEC_H265, VIDEO_CODEC_PRORES};
+        static const char * const CODEC_TITLES[] = {"ZMBV (AVI)", "H.264 (MP4)", "H.265 (MP4)", "ProRes (MOV)"};
+        for (int i = 0; i < 4; i++) {
+            const int c = CODECS[i];
+            QAction * ca = codec_menu->addAction(CODEC_TITLES[i], [this, c]{
+                e->write_setup("Video", "video_codec", VideoRecorder::codec_name(c));
+            });
+            ca->setActionGroup(codec_group);
+            ca->setCheckable(true);
+            ca->setChecked(codec == c);
+        }
+
+        int fps = 50;
+        try { fps = std::stoi(e->read_setup("Video", "video_fps", "50")); } catch (const std::exception &) {}
+        QMenu * fps_menu = video_menu->addMenu(tr("Frame rate"));
+        QActionGroup * fps_group = new QActionGroup(fps_menu);
+        static const int RATES[] = {25, 30, 50, 60};
+        for (int i = 0; i < 4; i++) {
+            const int r = RATES[i];
+            QAction * fa = fps_menu->addAction(QString::number(r) + " " + tr("fps"), [this, r]{
+                e->write_setup("Video", "video_fps", std::to_string(r));
+            });
+            fa->setActionGroup(fps_group);
+            fa->setCheckable(true);
+            fa->setChecked(fps == r);
+        }
+
+        video_menu->addSeparator();
+        video_menu->addAction(tr("Folder for videos..."), [this]{
+            QString dir = QString::fromStdString(e->read_setup("Video", "video_folder", ""));
+            if (dir.isEmpty()) dir = QString::fromStdString(e->work_path) + "/video";
+            dir = QFileDialog::getExistingDirectory(this, tr("Folder for videos"), dir);
+            if (!dir.isEmpty()) e->write_setup("Video", "video_folder", QDir::toNativeSeparators(dir).toStdString());
+        });
+        video_menu->addAction(tr("Path to ffmpeg..."), [this]{
+            const QString file = QFileDialog::getOpenFileName(this, tr("Path to ffmpeg"), find_ffmpeg());
+            if (!file.isEmpty()) e->write_setup("Video", "ffmpeg", QDir::toNativeSeparators(file).toStdString());
+        });
+    }
+
     ui->menuScale->clear();
     QActionGroup * scale_group = new QActionGroup(ui->menuScale);
 
@@ -768,6 +825,7 @@ void MainWindow::CreateScreenMenu()
         af3->setCheckable(true);
         af3->setChecked(e->get_filtering() == SCREEN_FILTERING_CRT);
     #endif
+    video_update_action();
 }
 
 void MainWindow::CreateDevicesMenu()
@@ -1693,6 +1751,28 @@ void MainWindow::closeEvent (QCloseEvent *event)
     }
 
     e->stop_emulation();
+
+    // The video stopped with the machine and is being finished in the
+    // background; deleting the emulator would wait for it with the window
+    // frozen, and a window that does not answer gets killed
+    if (video_timer != nullptr) video_timer->stop();
+    if (video_frame_timer != nullptr) video_frame_timer->stop();
+#if defined(RENDERER_OPENGL)
+    static_cast<GLWidget*>(screen)->setFrameHook(nullptr);
+#endif
+    if (e->video_state() == VideoRecorder::FINISHING) {
+        QProgressDialog wait(tr("Finishing the video..."), QString(), 0, 0, this);
+        wait.setWindowTitle(tr("Video recording"));
+        wait.setCancelButton(nullptr);
+        wait.setMinimumDuration(0);
+        wait.setWindowModality(Qt::WindowModal);
+        wait.show();
+        while (e->video_state() == VideoRecorder::FINISHING) {
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+            QThread::msleep(20);
+        }
+    }
+
     // Under MCP the emulator is left alive, stopped, until the process ends
     // (closing the window quits it). The MCP session was given the same
     // pointer when it started: its destructor, run after this window's, clears
@@ -2016,6 +2096,167 @@ void MainWindow::on_actionScreenshot_triggered()
     }
 }
 
+
+//------------------------- Video recording ----------------------------//
+
+//The one named in the ini, the one next to the emulator, the one on the PATH
+QString MainWindow::find_ffmpeg()
+{
+    const QString named = QString::fromStdString(e->read_setup("Video", "ffmpeg", ""));
+    if (!named.isEmpty() && QFileInfo(named).isFile()) return named;
+#ifdef Q_OS_WIN
+    const QString exe = "ffmpeg.exe";
+#else
+    const QString exe = "ffmpeg";
+#endif
+    const QString local = QCoreApplication::applicationDirPath() + "/" + exe;
+    if (QFileInfo(local).isFile()) return local;
+    return QStandardPaths::findExecutable("ffmpeg");
+}
+
+void MainWindow::on_actionVideo_triggered()
+{
+    if (e == nullptr) return;
+    if (e->video_recording()) video_stop();
+    else if (e->video_state() != VideoRecorder::FINISHING) video_start();
+    video_update_action();
+}
+
+void MainWindow::video_start()
+{
+    if (!e->loaded) return;
+
+    QString ffmpeg = find_ffmpeg();
+    if (ffmpeg.isEmpty()) {
+        QMessageBox::information(this, tr("Video recording"),
+            tr("Video is recorded by ffmpeg, which is not found next to the emulator or on the PATH. Please show where it is."));
+        ffmpeg = QFileDialog::getOpenFileName(this, tr("Path to ffmpeg"));
+        if (ffmpeg.isEmpty()) return;
+        e->write_setup("Video", "ffmpeg", QDir::toNativeSeparators(ffmpeg).toStdString());
+    }
+
+    QString folder = QString::fromStdString(e->read_setup("Video", "video_folder", ""));
+    if (folder.isEmpty()) folder = QString::fromStdString(e->work_path) + "/video";
+    if (!QDir().mkpath(folder)) {
+        QMessageBox::warning(this, tr("Error"), tr("Unable to create the folder ") + folder);
+        return;
+    }
+
+    VideoSettings s;
+    s.codec = VideoRecorder::codec_by_name(e->read_setup("Video", "video_codec", "h264"));
+    try { s.fps = (unsigned int)std::stoi(e->read_setup("Video", "video_fps", "50")); } catch (const std::exception &) { s.fps = 50; }
+    if (s.fps == 0 || s.fps > 240) s.fps = 50;
+    QString machine = QFileInfo(QString::fromStdString(e->get_system_data()->system_file)).completeBaseName();
+    if (machine.isEmpty()) machine = "ecat3";
+    const QString file = folder + "/" + machine + "-" +
+                         QDateTime::currentDateTime().toString("yyyy-MM-dd-HH-mm-ss") +
+                         VideoRecorder::extension(s.codec);
+    s.file = QDir::toNativeSeparators(file).toStdString();
+    s.ffmpeg = QDir::toNativeSeparators(ffmpeg).toStdString();
+    //One per process: two emulators recording at once would read each other's
+    s.log_file = QDir::toNativeSeparators(QDir::tempPath() + "/ecat3-ffmpeg-" +
+                 QString::number(QCoreApplication::applicationPid()) + ".log").toStdString();
+
+    std::string error;
+    if (!e->start_video_recording(s, screenshot_as_shown, error)) {
+        QMessageBox::warning(this, tr("Error"), QString::fromStdString(error));
+        return;
+    }
+    video_active = true;
+
+    if (screenshot_as_shown) {
+#if defined(RENDERER_OPENGL)
+        //Every frame the window draws, read back from what it has just drawn
+        static_cast<GLWidget*>(screen)->setFrameHook([this](const uint8_t * rgba, int w, int h) {
+            if (e != nullptr) e->video_frame(rgba, (unsigned int)w, (unsigned int)h, true);
+        });
+        screen->update();
+#else
+        if (video_frame_timer == nullptr) {
+            video_frame_timer = new QTimer(this);
+            connect(video_frame_timer, &QTimer::timeout, this, &MainWindow::video_send_shown_frame);
+        }
+        video_send_shown_frame();
+        video_frame_timer->start(1000 / (int)s.fps);
+#endif
+    }
+
+    if (video_timer == nullptr) {
+        video_timer = new QTimer(this);
+        connect(video_timer, &QTimer::timeout, this, &MainWindow::video_tick);
+    }
+    video_timer->start(250);
+    statusBar()->showMessage(tr("Recording video to ") + file);
+}
+
+void MainWindow::video_send_shown_frame()
+{
+    if (e == nullptr || !e->video_recording()) return;
+#if defined(RENDERER_QT)
+    //The widget's own scaled image: the machine's pixels are not needed
+    const QImage shown = picture_as_shown(std::vector<uint8_t>(), 0, 0);
+#else
+    unsigned int sx, sy;
+    const std::vector<uint8_t> raw = e->grab_screen(&sx, &sy);
+    const QImage shown = picture_as_shown(raw, sx, sy);
+#endif
+    if (shown.isNull()) return;
+    const QImage rgba = shown.convertToFormat(QImage::Format_RGBA8888);
+    std::vector<uint8_t> pixels((size_t)rgba.width() * rgba.height() * 4);
+    for (int y = 0; y < rgba.height(); y++)
+        memcpy(pixels.data() + (size_t)y * rgba.width() * 4, rgba.constScanLine(y), (size_t)rgba.width() * 4);
+    e->video_frame(pixels.data(), (unsigned int)rgba.width(), (unsigned int)rgba.height());
+}
+
+void MainWindow::video_stop()
+{
+    e->stop_video_recording();
+#if defined(RENDERER_OPENGL)
+    static_cast<GLWidget*>(screen)->setFrameHook(nullptr);
+#endif
+    if (video_frame_timer != nullptr) video_frame_timer->stop();
+    statusBar()->showMessage(tr("Finishing the video..."));
+}
+
+//The recording may also end without the button: another machine, a fault of
+//ffmpeg. Says how it went once it has
+void MainWindow::video_tick()
+{
+    if (e == nullptr) return;
+    const VideoRecorder::State st = e->video_state();
+    if (video_active && st != VideoRecorder::RECORDING) {
+#if defined(RENDERER_OPENGL)
+        static_cast<GLWidget*>(screen)->setFrameHook(nullptr);
+#endif
+        if (video_frame_timer != nullptr) video_frame_timer->stop();
+    }
+    if (st == VideoRecorder::FAILED) e->stop_video_recording();
+    if (st == VideoRecorder::DONE || st == VideoRecorder::FAILED) {
+        if (video_active) {
+            video_active = false;
+            if (video_timer != nullptr) video_timer->stop();
+            const QString msg = QString::fromStdString(e->video_message());
+            if (st == VideoRecorder::DONE)
+                statusBar()->showMessage(tr("Video saved: ") + msg, 15000);
+            else {
+                statusBar()->clearMessage();
+                QMessageBox::warning(this, tr("Video recording"), msg);
+            }
+        }
+    }
+    video_update_action();
+}
+
+void MainWindow::video_update_action()
+{
+    if (e == nullptr) return;
+    const VideoRecorder::State st = e->video_state();
+    const bool recording = st == VideoRecorder::RECORDING;
+    ui->actionVideo->setIcon(QIcon(recording?":/icons/stop":":/icons/video"));
+    ui->actionVideo->setText(recording?tr("Stop video recording"):tr("Record video"));
+    ui->actionVideo->setToolTip(ui->actionVideo->text());
+    ui->actionVideo->setEnabled(st != VideoRecorder::FINISHING);
+}
 
 void MainWindow::on_actionAbout_triggered()
 {

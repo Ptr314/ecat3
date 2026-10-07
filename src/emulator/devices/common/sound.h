@@ -120,6 +120,11 @@ private:
     void setup_pipeline();
     emulator::Result write_capture();
 
+    // The sound of a video being recorded, taken away by the render thread
+    // (take_video_samples) and so never more than a few frames long
+    bool m_video_capture = false;
+    std::vector<int16_t> m_video_data;
+
     static void audio_callback(void* userdata, uint8_t* stream, int len);
     void handle_audio_callback(uint8_t* stream, int len);
 
@@ -146,6 +151,17 @@ public:
     virtual void clock(unsigned int counter) override;
     virtual void set_volume(unsigned int volume);
     virtual void set_muted(bool muted);
+
+    // The sound of a video, see VideoRecorder. begin and end on the emulation
+    // thread, take from any; samples at sample_rate(), counted in emulated time
+    void begin_video_capture();
+    void end_video_capture();
+    void take_video_samples(std::vector<int16_t> &out);
+    unsigned int sample_rate() const { return m_sample_rate; }
+    // The rate the samples really come at in emulated time: the divider
+    // m_counts_per_sample is rounded down, so there are a few more of them
+    // than sample_rate() says - 0.6 s an hour on a 1 MHz machine
+    unsigned int produced_rate() const;
 
     // Called by the sources, see SoundSource
     void source_changed() { m_level_dirty = true; }

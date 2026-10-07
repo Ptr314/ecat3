@@ -13,6 +13,7 @@ set(ECAT_CORE_SOURCES
     emulator/config.cpp emulator/config.h
     emulator/config_ext.cpp emulator/config_ext.h
     emulator/cache.cpp emulator/cache.h
+    emulator/video_recorder.cpp emulator/video_recorder.h
     emulator/config_fields.cpp emulator/config_fields.h
     emulator/state.cpp emulator/state.h
     emulator/state_save.cpp emulator/state_save.h

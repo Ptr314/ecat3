@@ -156,6 +156,37 @@ emulator::Result GenericSound::write_capture()
     return emulator::Result::ok();
 }
 
+unsigned int GenericSound::produced_rate() const
+{
+    if (m_counts_per_sample == 0) return m_sample_rate;
+    return (unsigned int)((((uint64_t)m_clock_freq << 8) + m_counts_per_sample / 2) / m_counts_per_sample);
+}
+
+void GenericSound::begin_video_capture()
+{
+    if (!m_pipeline) {
+        if (!m_initialized) m_sample_rate = 44100;
+        setup_pipeline();
+    }
+    compat_lock_guard lock(m_buffer_mutex);
+    m_video_data.clear();
+    m_video_data.reserve((size_t)m_sample_rate * 2);
+    m_video_capture = true;
+}
+
+void GenericSound::end_video_capture()
+{
+    compat_lock_guard lock(m_buffer_mutex);
+    m_video_capture = false;
+}
+
+void GenericSound::take_video_samples(std::vector<int16_t> &out)
+{
+    compat_lock_guard lock(m_buffer_mutex);
+    out.insert(out.end(), m_video_data.begin(), m_video_data.end());
+    m_video_data.clear();
+}
+
 GenericSound::~GenericSound()
 {
     if (m_initialized) {
@@ -242,7 +273,7 @@ void GenericSound::clock(unsigned int counter)
         if (m_listen_left <= 0) listen_to_sources();
     }
 
-    if (!m_initialized && !m_capture) return;
+    if (!m_initialized && !m_capture && !m_video_capture) return;
 
     // The sources are averaged with the device's own output so that the sum
     // stays within the amplitude; a source that is switched off takes no share.
@@ -299,13 +330,17 @@ void GenericSound::clock(unsigned int counter)
         // Removing DC offset so silence sits at 0 regardless of the device's idle level
         float out = m_dc_blocker.process(v);
 
-        if (m_muted) out = 0;
-
         // Applying LPF if expected
         if (m_use_lpf) out = m_filter.process(out);
 
         if (out > 32767.0f) out = 32767.0f;
         else if (out < -32768.0f) out = -32768.0f;
+
+        // A video takes the sound whether the window is muted or not: the
+        // sound of the speakers is not the sound of the machine
+        if (m_video_capture) m_video_data.push_back(static_cast<int16_t>(out));
+
+        if (m_muted) out = 0;
 
         if (m_capture) m_capture_data.push_back(static_cast<int16_t>(out));
         if (m_initialized) m_buffer[m_buffer_pos++] = static_cast<int16_t>(out);

@@ -11,6 +11,8 @@
 #include <QOpenGLTexture>
 #include <QImage>
 #include <QMutex>
+#include <functional>
+#include <vector>
 
 class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
     Q_OBJECT
@@ -30,6 +32,12 @@ public:
     //The picture the way the window shows it, without the border around it;
     //GUI thread only. Null before the first frame
     QImage grabPicture();
+    //Called on the GUI thread with every frame drawn, as RGBA rows from the
+    //bottom, the way OpenGL reads them: the picture without the border, cut
+    //as grabPicture() cuts it but read from the frame just drawn instead of
+    //drawing it again. Null: none
+    typedef std::function<void(const uint8_t * rgba, int w, int h)> FrameHook;
+    void setFrameHook(FrameHook hook) { frameHook = hook; }
 
 public slots:
     //Run on the GUI thread, which owns the widget
@@ -56,4 +64,6 @@ private:
     int filterMode;
     int scanLines;          // 0 - as many as the texture has rows
     QRect pictureRect;      // Где картинка легла в последнем кадре, в физических пикселях
+    FrameHook frameHook;
+    std::vector<uint8_t> frameRows;     // Кадр для frameHook, снизу вверх, как его отдает OpenGL
 };

@@ -127,6 +127,7 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , m_running(false)
     , m_ready(false)
     , m_calls_pending(false)
+    , m_video_from_screen(false)
     , settings(ini_file)
 {
 
@@ -163,6 +164,9 @@ void Emulator::write_setup(std::string section, std::string ident, std::string n
 
 void Emulator::drop_machine()
 {
+    //The sound outputs it takes the samples from are about to go
+    stop_video_recording();
+
     //Whatever stopped the old machine is no news about the next one
     clear_machine_error();
 
@@ -1186,6 +1190,9 @@ void Emulator::run()
 
 void Emulator::stop_emulation()
 {
+    //While the emulation thread is still there to stop the sound capture
+    stop_video_recording();
+
     if (this->loaded)
     {
         m_running = m_ready = false;
@@ -1383,6 +1390,7 @@ void Emulator::render_screen()
         renderer->render();
         display->was_updated = false;
 #else
+        bool rendered = false;
         if (display->was_updated)
         {
             //Cleared before the frame goes out, not after: the emulation thread
@@ -1390,6 +1398,19 @@ void Emulator::render_screen()
             //would drop a change made while render() was running
             display->was_updated = false;
             renderer->render();
+            rendered = true;
+        }
+
+        if (m_video.recording()) {
+            //The picture only when it has changed: the recorder repeats the
+            //last one for as many frames as pass
+            if (!m_video_from_screen && (rendered || m_video.frames() == 0)) {
+                std::vector<uint8_t> image = renderer->get_screenshot();
+                if (image.size() >= (size_t)screen_sx * screen_sy * 4)
+                    m_video.set_frame(image.data(), screen_sx, screen_sy);
+            }
+            collect_video_audio(false);
+            m_video.advance(clock_counter);
         }
 #endif
 
@@ -1397,6 +1418,124 @@ void Emulator::render_screen()
         //right after a frame has been rendered
         store_screenshot();
     }
+}
+
+std::vector<GenericSound*> Emulator::sound_outputs()
+{
+    std::vector<GenericSound*> out;
+    if (dm == nullptr) return out;
+    std::vector<ComputerDevice*> list = dm->find_devices_by_class("sound");
+    for (size_t i = 0; i < list.size(); i++) {
+        GenericSound * s = dynamic_cast<GenericSound*>(list[i]);
+        if (s != nullptr) out.push_back(s);
+    }
+    return out;
+}
+
+//Takes what the audio outputs have produced and hands the recorder their sum,
+//as far as every one of them has got. flush: the capture has ended, the rest
+//goes as it is
+void Emulator::collect_video_audio(bool flush)
+{
+    compat_lock_guard lock(m_video_audio_mutex);
+    std::vector<GenericSound*> outputs = sound_outputs();
+    if (outputs.empty()) return;
+    if (m_video_audio.size() != outputs.size()) m_video_audio.assign(outputs.size(), std::vector<int16_t>());
+    size_t n = SIZE_MAX;
+    for (size_t i = 0; i < outputs.size(); i++) {
+        outputs[i]->take_video_samples(m_video_audio[i]);
+        n = std::min(n, m_video_audio[i].size());
+    }
+    if (flush) {
+        n = 0;
+        for (size_t i = 0; i < outputs.size(); i++) n = std::max(n, m_video_audio[i].size());
+    }
+    if (n == 0) return;
+    std::vector<int16_t> mix(n);
+    for (size_t k = 0; k < n; k++) {
+        int32_t v = 0;
+        for (size_t i = 0; i < outputs.size(); i++)
+            if (k < m_video_audio[i].size()) v += m_video_audio[i][k];
+        mix[k] = (int16_t)std::max(-32768, std::min(32767, v));
+    }
+    for (size_t i = 0; i < outputs.size(); i++) {
+        std::vector<int16_t> &b = m_video_audio[i];
+        b.erase(b.begin(), b.begin() + std::min(n, b.size()));
+    }
+    m_video.add_audio(mix.data(), n, outputs[0]->produced_rate());
+}
+
+bool Emulator::start_video_recording(VideoSettings s, bool from_screen, std::string &error)
+{
+    if (!loaded || cpu == nullptr || display == nullptr) {
+        error = "No machine is running";
+        return false;
+    }
+    //The pixel aspect of the picture as the window would show it; a picture
+    //taken from the window has it already
+    s.sar = from_screen ? 1.0 : pixel_scale;
+    s.upscale = !from_screen;
+    m_video_from_screen = from_screen;
+    if (!m_video.start(s, clock_freq, error)) return false;
+
+    //Frame 0 and the first sample belong to one moment of the machine
+    {
+        compat_lock_guard lock(m_video_audio_mutex);
+        m_video_audio.clear();
+    }
+    try {
+        invoke([this]() {
+            std::vector<GenericSound*> outputs = sound_outputs();
+            for (size_t i = 0; i < outputs.size(); i++) outputs[i]->begin_video_capture();
+            m_video.set_start(clock_counter);
+        });
+        m_video_capturing = true;
+    } catch (const std::exception &ex) {
+        m_video.stop(0);
+        error = ex.what();
+        return false;
+    }
+    return true;
+}
+
+void Emulator::stop_video_recording()
+{
+    //Also after the recorder has failed on its own: the outputs would go on
+    //capturing into buffers nobody empties
+    if (!m_video_capturing) return;
+    m_video_capturing = false;
+    uint64_t end = 0;
+    try {
+        invoke([this, &end]() {
+            std::vector<GenericSound*> outputs = sound_outputs();
+            for (size_t i = 0; i < outputs.size(); i++) outputs[i]->end_video_capture();
+            end = clock_counter;
+        });
+    } catch (const std::exception &) {
+        std::vector<GenericSound*> outputs = sound_outputs();
+        for (size_t i = 0; i < outputs.size(); i++) outputs[i]->end_video_capture();
+        end = clock_counter;
+    }
+    collect_video_audio(true);
+    m_video.stop(end);
+}
+
+void Emulator::video_frame(const uint8_t * rgba, unsigned int w, unsigned int h, bool bottom_up)
+{
+    if (m_video_from_screen) m_video.set_frame(rgba, w, h, bottom_up);
+}
+
+std::vector<uint8_t> Emulator::grab_screen(unsigned int * sx, unsigned int * sy)
+{
+    std::vector<uint8_t> image;
+    *sx = *sy = 0;
+    if (display == nullptr) return image;
+    display->lock_surface();
+    *sx = screen_sx;
+    *sy = screen_sy;
+    image = renderer->get_screenshot();
+    display->unlock_surface();
+    return image;
 }
 
 void Emulator::request_screenshot(const std::string &file_name)
@@ -1573,6 +1712,7 @@ void Emulator::set_muted(bool muted)
 
 Emulator::~Emulator()
 {
+    stop_video_recording();
     //The devices first, as in drop_machine(): their interfaces are registered
     //in the manager
     delete dm;

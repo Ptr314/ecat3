@@ -2245,6 +2245,66 @@
         <translation>Тип скриншота</translation>
     </message>
     <message>
+        <source>Record video</source>
+        <translation>Записать видео</translation>
+    </message>
+    <message>
+        <source>Stop video recording</source>
+        <translation>Остановить запись видео</translation>
+    </message>
+    <message>
+        <source>Video recording</source>
+        <translation>Запись видео</translation>
+    </message>
+    <message>
+        <source>Codec</source>
+        <translation>Кодек</translation>
+    </message>
+    <message>
+        <source>Frame rate</source>
+        <translation>Частота кадров</translation>
+    </message>
+    <message>
+        <source>fps</source>
+        <translation>кадр/с</translation>
+    </message>
+    <message>
+        <source>Folder for videos...</source>
+        <translation>Папка для видео...</translation>
+    </message>
+    <message>
+        <source>Folder for videos</source>
+        <translation>Папка для видео</translation>
+    </message>
+    <message>
+        <source>Path to ffmpeg...</source>
+        <translation>Путь к ffmpeg...</translation>
+    </message>
+    <message>
+        <source>Path to ffmpeg</source>
+        <translation>Путь к ffmpeg</translation>
+    </message>
+    <message>
+        <source>Video is recorded by ffmpeg, which is not found next to the emulator or on the PATH. Please show where it is.</source>
+        <translation>Видео записывает программа ffmpeg, но она не найдена ни рядом с эмулятором, ни в PATH. Укажите, где она лежит.</translation>
+    </message>
+    <message>
+        <source>Unable to create the folder </source>
+        <translation>Не удалось создать папку </translation>
+    </message>
+    <message>
+        <source>Recording video to </source>
+        <translation>Идет запись видео в </translation>
+    </message>
+    <message>
+        <source>Finishing the video...</source>
+        <translation>Видео дописывается...</translation>
+    </message>
+    <message>
+        <source>Video saved: </source>
+        <translation>Видео сохранено: </translation>
+    </message>
+    <message>
         <location line="+6"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>

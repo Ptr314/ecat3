@@ -101,6 +101,7 @@ private slots:
     void update_fdds();                 //The lamps of the floppy and hard disk drives
 
     void on_actionScreenshot_triggered();
+    void on_actionVideo_triggered();
     void on_actionSaveState_triggered();
 
     void on_actionAbout_triggered();
@@ -272,6 +273,21 @@ private:
     bool screenshot_as_shown = false;   //Settings > Screenshot type: the picture of the window, not the machine's pixels
     QMenu * screenshot_menu = nullptr;  //Settings > Screenshot type, made once
     QImage picture_as_shown(const std::vector<uint8_t> &raw, unsigned int sx, unsigned int sy);
+
+    //------------------------- Video recording ----------------------------//
+    //Settings > Video: the codec, the frame rate, the folder and ffmpeg. The
+    //frames follow the screenshot type: the machine's pixels come from the
+    //render thread of the core, the window's picture from here
+    QMenu * video_menu = nullptr;       //Settings > Video, made once
+    QTimer * video_timer = nullptr;     //Follows the recording and its finishing
+    QTimer * video_frame_timer = nullptr;   //The window's picture, for the renderers that do not hand it over
+    bool video_active = false;          //A recording or its finishing is under way
+    QString find_ffmpeg();
+    void video_start();
+    void video_stop();
+    void video_tick();
+    void video_update_action();
+    void video_send_shown_frame();
     QTimer * mouse_timer = nullptr;     //Sends the steps in portions
 
     void mouse_capture(bool on);

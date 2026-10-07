@@ -148,6 +148,7 @@
      <addaction name="actionFilter_one"/>
     </widget>
     <addaction name="actionScreenshot"/>
+    <addaction name="actionVideo"/>
     <addaction name="menuScale"/>
     <addaction name="menuScreen_ratio"/>
     <addaction name="menuFiltering"/>
@@ -193,6 +194,7 @@
    <addaction name="actionDebugger"/>
    <addaction name="actionSaveState"/>
    <addaction name="actionScreenshot"/>
+   <addaction name="actionVideo"/>
    <addaction name="actionTape"/>
   </widget>
   <action name="action_Select_a_machine">
@@ -287,13 +289,25 @@
   <action name="actionScreenshot">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/icons/camera</normaloff>:/icons/camera</iconset>
+     <normaloff>:/icons/screenshot</normaloff>:/icons/screenshot</iconset>
    </property>
    <property name="text">
     <string>Screenshot</string>
    </property>
    <property name="toolTip">
     <string>Get a screenshot</string>
+   </property>
+  </action>
+  <action name="actionVideo">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/video</normaloff>:/icons/video</iconset>
+   </property>
+   <property name="text">
+    <string>Record video</string>
+   </property>
+   <property name="toolTip">
+    <string>Record video</string>
    </property>
   </action>
   <action name="actionAbout">

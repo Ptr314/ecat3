@@ -278,6 +278,18 @@ void GLWidget::paintGL() {
     prog->disableAttributeArray(posLoc);
     prog->disableAttributeArray(texLoc);
     prog->release();
+
+    if (frameHook) {
+        const QRect r = pictureRect.intersected(QRect(0, 0, fbW, fbH));
+        if (!r.isEmpty()) {
+            frameRows.resize((size_t)r.width() * 4 * r.height());
+            glPixelStorei(GL_PACK_ALIGNMENT, 4);
+            //The framebuffer counts rows from the bottom
+            glReadPixels(r.x(), fbH - r.y() - r.height(), r.width(), r.height(),
+                         GL_RGBA, GL_UNSIGNED_BYTE, frameRows.data());
+            frameHook(frameRows.data(), r.width(), r.height());
+        }
+    }
 }
 
 QImage GLWidget::grabPicture() {

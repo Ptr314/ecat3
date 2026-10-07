@@ -28,6 +28,9 @@
 #include "emulator/script/script_engine.h"
 #include "emulator/script/script_recorder.h"
 #include "renderer.h"
+#include "video_recorder.h"
+
+class GenericSound;
 
 //Every device type a configuration may name. Used by the emulator and by the
 //configuration editor, which constructs the devices of a machine it does not
@@ -173,6 +176,19 @@ private:
     void record_disk_choice(ComputerDevice * dev, const DiskChoice &from, const DiskChoice &to);
     void restore_disks();
     void store_screenshot();
+
+    //The video being recorded. The render thread feeds it the machine's
+    //picture (unless the frontend sends the picture of the window) and the
+    //sound of every audio output, see VideoRecorder
+    VideoRecorder m_video;
+    std::atomic<bool> m_video_from_screen;
+    //Samples of each audio output not yet mixed: the outputs may be clocked
+    //by different processors and hand out their samples unevenly
+    std::vector<std::vector<int16_t> > m_video_audio;
+    compat_mutex m_video_audio_mutex;
+    bool m_video_capturing = false;     //The sound outputs capture for it; GUI thread
+    void collect_video_audio(bool flush);
+    std::vector<GenericSound*> sound_outputs();
 
     //Applies the @state section of a .ecats. Called by run() on the emulation
     //thread, after reset(true) and before the loop starts, so that no device
@@ -389,6 +405,22 @@ public:
     //Copies the last image the render thread produced. The serial tells the
     //caller whether it is looking at its own image or at an older one
     bool take_screenshot_png(std::vector<unsigned char> &out, uint64_t * serial = nullptr);
+
+    //------------------------- Video recording ----------------------------//
+    //Starts a video of the running machine. from_screen: the frontend sends
+    //the picture as the window shows it with video_frame(), otherwise the
+    //render thread takes the machine's own pixels. GUI thread
+    bool start_video_recording(VideoSettings s, bool from_screen, std::string &error);
+    //Ends it; the file is finished in the background, see video_state()
+    void stop_video_recording();
+    //RGBA, any thread
+    void video_frame(const uint8_t * rgba, unsigned int w, unsigned int h, bool bottom_up = false);
+    //The machine's picture, RGBA, taken under the surface lock: the render
+    //thread replaces the surface when the video mode changes
+    std::vector<uint8_t> grab_screen(unsigned int * sx, unsigned int * sy);
+    bool video_recording() const { return m_video.recording(); }
+    VideoRecorder::State video_state() const { return m_video.state(); }
+    std::string video_message() { return m_video.message(); }
 
 private:
 public:
