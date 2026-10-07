@@ -53,10 +53,18 @@ public:
 private:
     Ui::OpenConfigWindow *ui;
 
-    Emulator * e;
+    Emulator * e = nullptr;
 
     QString selected_path;
     bool selected_protected = false;    //@protected: not the user's to change
+    QStringList expanded_groups;        //Families the user has opened, by type
+    void group_toggled(const QModelIndex &index, bool expanded);
+    void scroll_description_to_top();
+
+protected:
+    void showEvent(QShowEvent *event) override;
+
+private:
     void list_machines(QString work_path);
     QStringList all_versions() const;
     void update_buttons();

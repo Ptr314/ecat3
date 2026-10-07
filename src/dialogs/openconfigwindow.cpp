@@ -5,6 +5,8 @@
 
 #include <QDirIterator>
 #include <QFile>
+#include <QScrollBar>
+#include <QTimer>
 #include <QTreeView>
 #include <QMessageBox>
 
@@ -75,6 +77,19 @@ OpenConfigWindow::OpenConfigWindow(QWidget *parent, Emulator * e) :
     connect(ui->treeView, &QTreeView::clicked, this, &OpenConfigWindow::set_description);
     connect(ui->treeView, &QTreeView::doubleClicked, this, &OpenConfigWindow::on_item_double_clicked);
 
+    //Families start collapsed; those the user opened stay open next time
+    expanded_groups = QString::fromStdString(e->read_setup("Startup", "expanded_families", "")).split('|');
+    expanded_groups.removeAll(QString());
+    connect(ui->treeView, &QTreeView::expanded, this, [this](const QModelIndex &index) { group_toggled(index, true); });
+    connect(ui->treeView, &QTreeView::collapsed, this, [this](const QModelIndex &index) { group_toggled(index, false); });
+
+    const QStringList sizes = QString::fromStdString(e->read_setup("Startup", "chooser_splitter", "")).split(',');
+    if (sizes.size() == 2) {
+        const int list = sizes[0].toInt();
+        const int description = sizes[1].toInt();
+        if (list > 0 && description > 0) ui->splitter->setSizes(QList<int>() << list << description);
+    }
+
     list_machines(QString::fromStdString(e->work_path));
     update_buttons();
 
@@ -88,6 +103,8 @@ OpenConfigWindow::OpenConfigWindow(QWidget *parent, Emulator * e) :
     file.close();
 
     show_default_description();
+    //The machine chosen last time is selected again, its family opened
+    select_path(QString::fromStdString(e->read_setup("Startup", "chooser_selected", "")));
 }
 
 //The text shown while no machine is selected
@@ -105,12 +122,46 @@ void OpenConfigWindow::show_default_description()
 
 OpenConfigWindow::~OpenConfigWindow()
 {
+    if (e != nullptr) {
+        const QList<int> sizes = ui->splitter->sizes();
+        if (sizes.size() == 2)
+            e->write_setup("Startup", "chooser_splitter",
+                           QString("%1,%2").arg(sizes[0]).arg(sizes[1]).toStdString());
+        if (!selected_path.isEmpty())
+            e->write_setup("Startup", "chooser_selected", selected_path.toStdString());
+    }
     delete ui;
+}
+
+void OpenConfigWindow::scroll_description_to_top()
+{
+    ui->textBrowser->moveCursor(QTextCursor::Start);
+    ui->textBrowser->verticalScrollBar()->setValue(0);
+}
+
+void OpenConfigWindow::showEvent(QShowEvent *event)
+{
+    QDialog::showEvent(event);
+    //The text set before the window was shown is laid out only now, and the
+    //browser ends up scrolled to its end
+    QTimer::singleShot(0, this, [this]() { scroll_description_to_top(); });
+}
+
+void OpenConfigWindow::group_toggled(const QModelIndex &index, bool expanded)
+{
+    const QString type = index.data(Qt::UserRole + 1).toString();
+    if (type.isEmpty()) return;
+    if (expanded == expanded_groups.contains(type)) return;
+    if (expanded) expanded_groups << type;
+    else expanded_groups.removeAll(type);
+    e->write_setup("Startup", "expanded_families", expanded_groups.join('|').toStdString());
 }
 
 void OpenConfigWindow::list_machines(QString work_path)
 {
     bool load_debugs = ui->debugCheck->isChecked();
+    //Selected again in the new list if it is still there
+    const QString previous = selected_path;
 
     //Nothing is selected in the new list, so nothing is described either: after
     //Delete the text of the removed machine would stay on screen
@@ -222,7 +273,11 @@ void OpenConfigWindow::list_machines(QString work_path)
     QAbstractItemModel * old_model = ui->treeView->model();
     ui->treeView->setModel(model);
     if (old_model != nullptr) delete old_model;
-    ui->treeView->expandAll();
+    for (int i = 0; i < model->rowCount(); i++) {
+        const QModelIndex family = model->index(i, 0);
+        if (expanded_groups.contains(family.data(Qt::UserRole + 1).toString()))
+            ui->treeView->expand(family);
+    }
 
     //A new model comes with a new selection model. The keyboard and
     //accessibility tools select an item too, not only a click
@@ -231,6 +286,7 @@ void OpenConfigWindow::list_machines(QString work_path)
                 if (!selected.indexes().isEmpty()) set_description(selected.indexes().first());
             });
     update_buttons();
+    select_path(previous);
 }
 
 void OpenConfigWindow::update_buttons()
@@ -250,7 +306,7 @@ void OpenConfigWindow::update_buttons()
 void OpenConfigWindow::select_path(const QString &path)
 {
     QAbstractItemModel * model = ui->treeView->model();
-    if (model == nullptr) return;
+    if (model == nullptr || path.isEmpty()) return;
     for (int i = 0; i < model->rowCount(); i++) {
         const QModelIndex family = model->index(i, 0);
         for (int j = 0; j < model->rowCount(family); j++) {
@@ -374,6 +430,7 @@ void OpenConfigWindow::set_description(QModelIndex index)
 
         QString html = "<body>" + QString::fromStdString(md2html(file.readAll().toStdString())) +"</body>";
         ui->textBrowser->document()->setHtml(html);
+        scroll_description_to_top();
 
         file.close();
     }
