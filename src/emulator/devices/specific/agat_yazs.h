@@ -148,6 +148,10 @@ private:
     double m_h;                         // step, seconds
     double m_tick_on, m_tick_off;       // base drive decay per clock, key on and off
     double m_gain;
+    // The share of the tones and of each drum in the mix, 1 = as the card
+    // (tones, drum6, drum7 of the config, percent): the current each puts on
+    // the buses is scaled, nothing of the circuit behind it
+    double m_mix_tones, m_mix_drum6, m_mix_drum7;
     std::vector<double> m_ch_inv;       // 16 configurations x 36
     std::vector<double> m_bus_inv;      // 216 configurations x 81, filled on demand
     std::vector<char> m_bus_valid;

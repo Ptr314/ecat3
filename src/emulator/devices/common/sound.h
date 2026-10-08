@@ -188,6 +188,10 @@ public:
     void source_changed() { m_level_dirty = true; }
     void source_mode_changed() { refresh_sources(); }
 
+    // The cutoff of the filter, offered to the configuration editor only by a
+    // machine that sets lpf_editable = 1 (the Агат with the ЯЗС)
+    ConfigFields get_config_fields() override;
+
     std::vector<DeviceFieldInfo> get_device_fields() override;
     std::vector<DeviceCommandInfo> get_device_commands() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

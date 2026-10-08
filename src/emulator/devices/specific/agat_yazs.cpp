@@ -425,6 +425,9 @@ AgatYazs::AgatYazs(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_tick_on(0)
     , m_tick_off(0)
     , m_gain(1 / 1.5)
+    , m_mix_tones(1)
+    , m_mix_drum6(1)
+    , m_mix_drum7(1)
 {
     // Read here and not in load_config(): the mixer asks sound_stereo() in its
     // own load_config(), which may come first
@@ -453,6 +456,17 @@ emulator::Result AgatYazs::load_config(SystemData *sd)
     // about where a loud chord with a drum peaks. The card is far quieter
     // than the speaker by its circuit: a channel alone gives 0.1-0.3 V
     m_gain = read_confg_value(cd, "volume", false, (unsigned int)100) / 100.0 / 1.5;
+
+    // The balance of the tones and the drums, percent of the card's
+    const char * mix_names[3] = {"tones", "drum6", "drum7"};
+    double * mix_values[3] = {&m_mix_tones, &m_mix_drum6, &m_mix_drum7};
+    for (int i = 0; i < 3; i++) {
+        const unsigned int pct = read_confg_value(cd, mix_names[i], false, (unsigned int)100);
+        if (pct > 400)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{AgatYazs|" + std::string(QT_TRANSLATE_NOOP("AgatYazs", "A share of the mix must be 0-400%")) + "} " + mix_names[i]);
+        *mix_values[i] = pct / 100.0;
+    }
 
     prepare();
     return emulator::Result::ok();
@@ -940,6 +954,9 @@ void AgatYazs::bus_step(const double *chout, double i_drums)
     const double h = m_h;
     const double *o = m_bus;
     double rhs[BUS_NODES];
+    s_hh *= m_mix_tones;
+    s_mh *= m_mix_tones;
+    s_lh *= m_mix_tones;
     rhs[MH]  = C43 / h * o[MH] + C46 / h * (o[MH] - o[MC]) + s_mh / R_BUS;
     rhs[MC]  = -C46 / h * (o[MH] - o[MC]);
     rhs[LH]  = C44 / h * o[LH] + s_lh / R_BUS;
@@ -1074,6 +1091,7 @@ double AgatYazs::drums_step(double vs, bool full)
         m_delta = std::max(m_delta, std::fabs(y[2] - m_d6_m));
         m_d6_m = y[2];
         i_out += g36 * ((y[3] - vs) - m_d6_c36);
+        i_out *= m_mix_drum6;
         m_d6_c36 = y[3] - vs;
     }
 
@@ -1107,7 +1125,7 @@ double AgatYazs::drums_step(double vs, bool full)
         m_delta = std::max(m_delta, std::fabs(k - m_d7_k));
         m_d7_k = k;
         m_d7_c42 = k - w;
-        i_out += (w - vs) / R125;
+        i_out += m_mix_drum7 * (w - vs) / R125;
     }
     return i_out;
 }
@@ -1315,6 +1333,7 @@ void AgatYazs::state_restored()
 
 ConfigFields AgatYazs::get_config_fields()
 {
+    ConfigFields r;
     ConfigField f;
     f.name = "stereo";
     f.title = QT_TRANSLATE_NOOP("DeviceOptions", "Sound output");
@@ -1322,7 +1341,23 @@ ConfigFields AgatYazs::get_config_fields()
     f.def = "0";
     f.values.push_back({"0", QT_TRANSLATE_NOOP("DeviceOptions", "Mono (RIGHT output)")});
     f.values.push_back({"1", QT_TRANSLATE_NOOP("DeviceOptions", "Stereo (both line outputs)")});
-    return {f};
+    r.push_back(f);
+
+    const char * names[3] = {"tones", "drum6", "drum7"};
+    const char * titles[3] = {
+        QT_TRANSLATE_NOOP("ConfigFields", "Tones in the mix, % (0-400)"),
+        QT_TRANSLATE_NOOP("ConfigFields", "Drum 6 in the mix, % (0-400)"),
+        QT_TRANSLATE_NOOP("ConfigFields", "Drum 7 in the mix, % (0-400)")
+    };
+    for (int i = 0; i < 3; i++) {
+        ConfigField m;
+        m.name = names[i];
+        m.title = titles[i];
+        m.type = CONFIG_FIELD_STRING;
+        m.def = "100";
+        r.push_back(m);
+    }
+    return r;
 }
 
 std::vector<DeviceFieldInfo> AgatYazs::get_device_fields()

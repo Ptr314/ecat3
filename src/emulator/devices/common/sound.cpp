@@ -528,6 +528,20 @@ void GenericSound::state_restored()
     m_level_dirty = true;
 }
 
+ConfigFields GenericSound::get_config_fields()
+{
+    // Read from cd only: the editor builds the machine without load_config()
+    const std::string editable = str_trim(cd->get_parameter("lpf_editable", false).value);
+    if (editable.empty() || parse_numeric_value(editable, 10) == 0) return {};
+    ConfigField f;
+    f.name = "lpf";
+    f.title = QT_TRANSLATE_NOOP("ConfigFields", "Low-pass filter cutoff, Hz (0 - off)");
+    f.type = CONFIG_FIELD_STRING;
+    // What sounds when the configuration says nothing: the constructor's
+    f.def = "5000";
+    return {f};
+}
+
 std::vector<DeviceFieldInfo> GenericSound::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();

@@ -84,8 +84,13 @@
 <context>
     <name>AgatYazs</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+445"/>
+        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+453"/>
         <source>Incorrect step or clock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>A share of the mix must be 0-400%</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -297,6 +302,26 @@
     <message>
         <location line="+1"/>
         <source>Both off (other drive parameters)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/common/sound.cpp" line="+538"/>
+        <source>Low-pass filter cutoff, Hz (0 - off)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+881"/>
+        <source>Tones in the mix, % (0-400)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Drum 6 in the mix, % (0-400)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Drum 7 in the mix, % (0-400)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -658,17 +683,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+870"/>
+        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="-11"/>
         <source>Sound output</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Stereo (both line outputs)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-1"/>
         <source>Mono (RIGHT output)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1332,7 +1357,7 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+71"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-467"/>
         <source>Incorrect sample rate</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1347,7 +1372,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+429"/>
+        <location line="+443"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation type="unfinished"></translation>
     </message>
