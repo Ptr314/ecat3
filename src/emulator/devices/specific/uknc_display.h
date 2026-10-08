@@ -89,6 +89,8 @@ public:
     void set_device_option(unsigned option_id, unsigned value_id) override;
 
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
+    //312 lines of 64 us: 15625/312, about 50.08 frames a second
+    bool native_frame_rate(uint64_t &num, uint64_t &den) override { return raster_frame_rate(num, den); }
 
     ConfigFields get_config_fields() override;
     std::vector<DeviceFieldInfo> get_device_fields() override;

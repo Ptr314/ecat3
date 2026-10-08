@@ -163,6 +163,8 @@ public:
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
     //The 512 mode draws every line twice
     unsigned int get_scan_lines() override { return 256; }
+    //A picture in each field: 50 a second
+    bool native_frame_rate(uint64_t &num, uint64_t &den) override { return raster_frame_rate(num, den, 2); }
     void memory_callback(unsigned int callback_id, unsigned int address) override;
 
     void VSYNC(const unsigned sync_val) override;

@@ -11,6 +11,11 @@
 // picture that does not change costs nothing: the queue holds a picture and
 // the number of times it is to be written.
 //
+// A display that knows its own frame rate (the БК, 3125/64) can instead lock
+// the video to the machine: frame_locked, and push_frame() once per frame of
+// the machine at the end of its picture, so frame N is frame N of the machine,
+// never two halves of neighbouring ones, and the clock adds nothing.
+//
 // The sound comes the same way, as samples counted in emulated time, and goes
 // into a temporary WAV; stop() writes what is left and a second run of ffmpeg
 // puts the two together without encoding the picture again.
@@ -42,7 +47,10 @@ struct VideoSettings {
     std::string file;           // The final file, with the extension of the codec
     std::string log_file;       // Where ffmpeg writes what it has to say
     int codec = VIDEO_CODEC_H264;
-    unsigned int fps = 50;
+    uint64_t fps_num = 50;      // Frames a second as a fraction: 3125/64 for the БК
+    uint64_t fps_den = 1;
+    bool frame_locked = false;  // One frame per push_frame(), none from the clock
+    bool native = false;        // Asked for the rate of the machine; Emulator resolves it
     bool upscale = false;       // Small pictures are enlarged for codecs with 4:2:0 colour
     double sar = 1.0;           // Pixel aspect of the picture, 1 for square pixels
 };
@@ -70,6 +78,10 @@ public:
     //bottom_up, as OpenGL reads them); a picture of another size than the
     //first one is scaled to it
     void set_frame(const uint8_t * rgba, unsigned int w, unsigned int h, bool bottom_up = false);
+    //frame_locked: the picture of one whole frame of the machine, written
+    //once. The emulation thread calls it and never waits: when ffmpeg falls
+    //far behind, the last picture is repeated instead, which keeps the count
+    void push_frame(const uint8_t * rgba, unsigned int w, unsigned int h);
     //The render thread: writes the frames due by this moment. May wait when
     //ffmpeg falls behind, so that no frame is lost
     void advance(uint64_t clock);
@@ -136,6 +148,8 @@ private:
     void fail(const std::string &why);
     bool launch(std::string &error);
     void queue_due(uint64_t clock);
+    void queue_last(uint64_t count);
+    std::shared_ptr<std::vector<uint8_t> > make_picture(const uint8_t * rgba, unsigned int w, unsigned int h, bool bottom_up);
     std::string log_tail();
 
     static bool spawn(const std::vector<std::string> &args, const std::string &log, bool with_input, Process &p, std::string &error);

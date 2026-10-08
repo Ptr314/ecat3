@@ -182,6 +182,7 @@ private:
     //sound of every audio output, see VideoRecorder
     VideoRecorder m_video;
     std::atomic<bool> m_video_from_screen;
+    std::atomic<bool> m_video_locked;   //Frames come from the display's frame hook
     //Samples of each audio output not yet mixed: the outputs may be clocked
     //by different processors and hand out their samples unevenly
     std::vector<std::vector<int16_t> > m_video_audio;

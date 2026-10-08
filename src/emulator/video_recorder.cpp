@@ -186,7 +186,7 @@ bool VideoRecorder::start(const VideoSettings &s, uint64_t clock_freq, std::stri
         error = "ffmpeg is not found";
         return false;
     }
-    if (clock_freq == 0 || s.fps == 0) {
+    if (clock_freq == 0 || s.fps_num == 0 || s.fps_den == 0) {
         error = "No machine is running";
         return false;
     }
@@ -241,7 +241,9 @@ bool VideoRecorder::launch(std::string &error)
     a.push_back("-f"); a.push_back("rawvideo");
     a.push_back("-pix_fmt"); a.push_back("rgba");
     a.push_back("-s"); a.push_back(std::to_string(m_width) + "x" + std::to_string(m_height));
-    a.push_back("-framerate"); a.push_back(std::to_string(s.fps));
+    a.push_back("-framerate");
+    a.push_back(s.fps_den == 1 ? std::to_string(s.fps_num)
+                               : std::to_string(s.fps_num) + "/" + std::to_string(s.fps_den));
     a.push_back("-i"); a.push_back("pipe:0");
 
     //4:2:0 colour halves the resolution of the colour both ways, which smears
@@ -295,14 +297,10 @@ bool VideoRecorder::launch(std::string &error)
     return true;
 }
 
-void VideoRecorder::set_frame(const uint8_t * rgba, unsigned int w, unsigned int h, bool bottom_up)
+//Under the lock. The first picture fixes the size and starts ffmpeg; null
+//when that failed
+std::shared_ptr<std::vector<uint8_t> > VideoRecorder::make_picture(const uint8_t * rgba, unsigned int w, unsigned int h, bool bottom_up)
 {
-    if (rgba == nullptr || w == 0 || h == 0) return;
-    if (m_state.load() != RECORDING) return;
-
-    compat_lock_guard lock(m_mutex);
-    if (m_state.load() != RECORDING || m_stopping) return;
-
     if (m_width == 0) {
         m_width = w;
         m_height = h;
@@ -311,7 +309,7 @@ void VideoRecorder::set_frame(const uint8_t * rgba, unsigned int w, unsigned int
             m_message = error;
             m_stopping = true;
             m_state = FAILED;
-            return;
+            return std::shared_ptr<std::vector<uint8_t> >();
         }
     }
 
@@ -334,16 +332,53 @@ void VideoRecorder::set_frame(const uint8_t * rgba, unsigned int w, unsigned int
                 *out++ = row[(uint64_t)x * w / m_width];
         }
     }
-    m_last = p;
+    return p;
+}
+
+void VideoRecorder::set_frame(const uint8_t * rgba, unsigned int w, unsigned int h, bool bottom_up)
+{
+    if (rgba == nullptr || w == 0 || h == 0) return;
+    if (m_state.load() != RECORDING) return;
+
+    compat_lock_guard lock(m_mutex);
+    if (m_state.load() != RECORDING || m_stopping || m_settings.frame_locked) return;
+
+    std::shared_ptr<std::vector<uint8_t> > p = make_picture(rgba, w, h, bottom_up);
+    if (p) m_last = p;
+}
+
+void VideoRecorder::push_frame(const uint8_t * rgba, unsigned int w, unsigned int h)
+{
+    if (rgba == nullptr || w == 0 || h == 0) return;
+    if (m_state.load() != RECORDING) return;
+
+    compat_lock_guard lock(m_mutex);
+    if (m_state.load() != RECORDING || m_stopping || !m_settings.frame_locked || !m_started) return;
+
+    //Far behind: the frame still counts, as a copy of the last picture
+    if (!m_last || m_queued_bytes <= 2 * QUEUE_LIMIT) {
+        std::shared_ptr<std::vector<uint8_t> > p = make_picture(rgba, w, h, false);
+        if (!p) return;
+        //A picture that has not changed is written as another copy of the last
+        if (!m_last || *p != *m_last) m_last = p;
+    }
+    queue_last(1);
 }
 
 void VideoRecorder::queue_due(uint64_t clock)
 {
+    if (m_settings.frame_locked) return;
     if (!m_started || !m_last || clock < m_start) return;
-    const uint64_t due = (clock - m_start) * m_settings.fps / m_clock_freq + 1;
+    const uint64_t due = (clock - m_start) * m_settings.fps_num / (m_clock_freq * m_settings.fps_den) + 1;
     if (due <= m_due) return;
-    const uint64_t count = due - m_due;
+    queue_last(due - m_due);
     m_due = due;
+}
+
+//Under the lock: the last picture, count more times
+void VideoRecorder::queue_last(uint64_t count)
+{
+    if (!m_last || count == 0) return;
     if (!m_queue.empty() && m_queue.back().pixels == m_last) {
         m_queue.back().count += count;
         return;

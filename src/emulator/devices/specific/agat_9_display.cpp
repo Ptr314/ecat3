@@ -574,20 +574,15 @@ void Agat9Display::HSYNC(const unsigned line, const unsigned sync_val)
     } else {
         // And rendering a line _after_ HSYNC
         constexpr int top_pos = 8;  // Experimentally set
-        int screen_line;
-        if (m_512_mode == M_512_ON) {
-            // Render all 512 interlaced lines
-            screen_line = static_cast<int>(line - m_top_blank*2 + top_pos);
-            if (screen_line >= 0 && screen_line < 512)
-                render_line(screen_line);
-        } else {
-            // Render 256 lines, using even or odd lines of the full 625-lines frame only
-            screen_line = static_cast<int>(line - m_top_blank*2 + top_pos) / 2;
-            if (screen_line >= 0 && screen_line < 256 && ((line & 1) == m_512_mode)) {
-                render_line(screen_line);
-                // uint8_t * pixel_address = static_cast<uint8_t *>(render_pixels) + screen_line*line_bytes;
-                // *(uint32_t*)pixel_address = Agat_RGBA16[mode & 0x3];
-            }
+        // Position in the 512 interlaced lines: even ones in the first field,
+        // odd ones in the second
+        const int raw = static_cast<int>(line) - static_cast<int>(m_top_blank*2) + top_pos;
+        if (raw >= 0 && raw < 512) {
+            // All 512 lines, or the 256 of the picture drawn in each field, as
+            // the machine shows them: the picture changes 50 times a second
+            render_line((m_512_mode == M_512_ON) ? raw : raw / 2);
+            // The last line of a field: a picture is whole
+            if (raw >= 510) frame_complete();
         }
     }
 }

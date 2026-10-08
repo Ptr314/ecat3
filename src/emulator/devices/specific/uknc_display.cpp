@@ -271,7 +271,11 @@ void UKNCDisplay::next_line(unsigned int raster_line)
 
     if (raster_line >= UKNC_TOP_BLANK) {
         const unsigned y = raster_line - UKNC_TOP_BLANK;
-        if (y < UKNC_LINES) render_line(y, bits_address);
+        if (y < UKNC_LINES) {
+            render_line(y, bits_address);
+            // The last picture line is on the surface: the frame is whole
+            if (y + 1 == UKNC_LINES) frame_complete();
+        }
     }
 }
 

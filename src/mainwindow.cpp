@@ -676,10 +676,20 @@ void MainWindow::CreateScreenMenu()
             ca->setChecked(codec == c);
         }
 
+        const std::string fps_setting = e->read_setup("Video", "video_fps", "50");
         int fps = 50;
-        try { fps = std::stoi(e->read_setup("Video", "video_fps", "50")); } catch (const std::exception &) {}
+        try { fps = std::stoi(fps_setting); } catch (const std::exception &) {}
         QMenu * fps_menu = video_menu->addMenu(tr("Frame rate"));
         QActionGroup * fps_group = new QActionGroup(fps_menu);
+        //Frame by frame with the machine where its display knows its rate
+        //(48.828125 on the БК), 50 elsewhere
+        QAction * native_action = fps_menu->addAction(tr("As the machine"), [this]{
+            e->write_setup("Video", "video_fps", "native");
+        });
+        native_action->setActionGroup(fps_group);
+        native_action->setCheckable(true);
+        native_action->setChecked(fps_setting == "native");
+        if (fps_setting == "native") fps = 0;
         static const int RATES[] = {25, 30, 50, 60};
         for (int i = 0; i < 4; i++) {
             const int r = RATES[i];
@@ -2144,8 +2154,12 @@ void MainWindow::video_start()
 
     VideoSettings s;
     s.codec = VideoRecorder::codec_by_name(e->read_setup("Video", "video_codec", "h264"));
-    try { s.fps = (unsigned int)std::stoi(e->read_setup("Video", "video_fps", "50")); } catch (const std::exception &) { s.fps = 50; }
-    if (s.fps == 0 || s.fps > 240) s.fps = 50;
+    const std::string fps_setting = e->read_setup("Video", "video_fps", "50");
+    s.native = fps_setting == "native";
+    if (!s.native) {
+        try { s.fps_num = (unsigned int)std::stoi(fps_setting); } catch (const std::exception &) { s.fps_num = 50; }
+        if (s.fps_num == 0 || s.fps_num > 240) s.fps_num = 50;
+    }
     QString machine = QFileInfo(QString::fromStdString(e->get_system_data()->system_file)).completeBaseName();
     if (machine.isEmpty()) machine = "ecat3";
     const QString file = folder + "/" + machine + "-" +
@@ -2177,7 +2191,7 @@ void MainWindow::video_start()
             connect(video_frame_timer, &QTimer::timeout, this, &MainWindow::video_send_shown_frame);
         }
         video_send_shown_frame();
-        video_frame_timer->start(1000 / (int)s.fps);
+        video_frame_timer->start(s.native ? 20 : 1000 / (int)s.fps_num);
 #endif
     }
 

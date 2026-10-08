@@ -128,6 +128,7 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , m_ready(false)
     , m_calls_pending(false)
     , m_video_from_screen(false)
+    , m_video_locked(false)
     , settings(ini_file)
 {
 
@@ -1404,7 +1405,7 @@ void Emulator::render_screen()
         if (m_video.recording()) {
             //The picture only when it has changed: the recorder repeats the
             //last one for as many frames as pass
-            if (!m_video_from_screen && (rendered || m_video.frames() == 0)) {
+            if (!m_video_from_screen && !m_video_locked && (rendered || m_video.frames() == 0)) {
                 std::vector<uint8_t> image = renderer->get_screenshot();
                 if (image.size() >= (size_t)screen_sx * screen_sy * 4)
                     m_video.set_frame(image.data(), screen_sx, screen_sy);
@@ -1475,7 +1476,22 @@ bool Emulator::start_video_recording(VideoSettings s, bool from_screen, std::str
     //taken from the window has it already
     s.sar = from_screen ? 1.0 : pixel_scale;
     s.upscale = !from_screen;
+    //The rate of the machine: frame by frame from the display when the picture
+    //is the machine's own, only the exact rate when it is the window's
+    s.frame_locked = false;
+    if (s.native) {
+        uint64_t num = 0, den = 0;
+        if (display->native_frame_rate(num, den)) {
+            s.fps_num = num;
+            s.fps_den = den;
+            s.frame_locked = !from_screen;
+        } else {
+            s.fps_num = 50;
+            s.fps_den = 1;
+        }
+    }
     m_video_from_screen = from_screen;
+    m_video_locked = s.frame_locked;
     if (!m_video.start(s, clock_freq, error)) return false;
 
     //Frame 0 and the first sample belong to one moment of the machine
@@ -1484,10 +1500,23 @@ bool Emulator::start_video_recording(VideoSettings s, bool from_screen, std::str
         m_video_audio.clear();
     }
     try {
-        invoke([this]() {
+        const bool locked = s.frame_locked;
+        invoke([this, locked]() {
             std::vector<GenericSound*> outputs = sound_outputs();
             for (size_t i = 0; i < outputs.size(); i++) outputs[i]->begin_video_capture();
             m_video.set_start(clock_counter);
+            if (locked)
+                display->set_frame_hook([this]() {
+                    //The surface lock keeps the render thread from resizing
+                    //it under the copy
+                    if (renderer == nullptr) return;
+                    display->lock_surface();
+                    std::vector<uint8_t> image = renderer->get_screenshot();
+                    const int w = renderer->width(), h = renderer->height();
+                    display->unlock_surface();
+                    if (w > 0 && h > 0 && image.size() >= (size_t)w * h * 4)
+                        m_video.push_frame(image.data(), (unsigned int)w, (unsigned int)h);
+                });
         });
         m_video_capturing = true;
     } catch (const std::exception &ex) {
@@ -1509,9 +1538,11 @@ void Emulator::stop_video_recording()
         invoke([this, &end]() {
             std::vector<GenericSound*> outputs = sound_outputs();
             for (size_t i = 0; i < outputs.size(); i++) outputs[i]->end_video_capture();
+            if (display != nullptr) display->set_frame_hook(std::function<void()>());
             end = clock_counter;
         });
     } catch (const std::exception &) {
+        if (display != nullptr) display->set_frame_hook(std::function<void()>());
         std::vector<GenericSound*> outputs = sound_outputs();
         for (size_t i = 0; i < outputs.size(); i++) outputs[i]->end_video_capture();
         end = clock_counter;

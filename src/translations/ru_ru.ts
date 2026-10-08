@@ -2265,6 +2265,10 @@
         <translation>Частота кадров</translation>
     </message>
     <message>
+        <source>As the machine</source>
+        <translation>Как у машины</translation>
+    </message>
+    <message>
         <source>fps</source>
         <translation>кадр/с</translation>
     </message>

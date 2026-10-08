@@ -1008,8 +1008,21 @@ protected:
 
     virtual void render_all(bool force_render = false) = 0;
 
+    //Called by a display at the end of the picture of every frame, on the
+    //emulation thread and outside the surface lock
+    void frame_complete() { if (m_frame_hook) m_frame_hook(); }
+
+private:
+    std::function<void()> m_frame_hook;
+
 public:
     bool was_updated;               //Means we need to send surface to screen
+
+    //The frame rate of the machine as an exact fraction, for a display that
+    //also reports the end of each frame through frame_complete()
+    virtual bool native_frame_rate(uint64_t &, uint64_t &) { return false; }
+    //Set and cleared on the emulation thread only (through Emulator::invoke)
+    void set_frame_hook(const std::function<void()> &hook) { m_frame_hook = hook; }
 
     GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) = 0;

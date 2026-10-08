@@ -32,6 +32,9 @@ public:
     //Lines the beam draws per frame (GenericDisplay::get_scan_lines()), asked
     //for every frame; only a renderer that draws scan lines needs it
     virtual void set_scan_lines(int lines) {};
+    //The size of the surface, as get_screenshot() returns it
+    int width() const { return screen_x; }
+    int height() const { return screen_y; }
     virtual uint8_t * get_buffer() = 0;
     virtual int get_line_bytes() = 0;
     virtual void fill(uint32_t c) = 0;

@@ -31,7 +31,10 @@ emulator::Result RasterDisplay::load_config(SystemData *sd)
         m_top_blank = 23;
         m_bottom_blank = 4;
         m_hsync_length_ms = 12;
-        m_counts_per_line = (m_interlaced?2:1) * m_system_clock / m_lines / m_frame_rate;
+        // Two fields of exactly 1/50 s: at 1.021 MHz (Агат-9) a line is 65.34
+        // clocks, and the remainder is spread over the lines below
+        m_frame_clocks = 2 * m_system_clock / m_frame_rate;
+        m_counts_per_line = m_frame_clocks / m_lines;
     } else if (m_standart == "vp1-037") {
         // К1801ВП1-037 of the БК: 256 picture lines and 64 service ones, no
         // interlace. A line is 48 words of the 750 kHz video clock, 64 us, so the
@@ -46,6 +49,7 @@ emulator::Result RasterDisplay::load_config(SystemData *sd)
         // which is where a line is sampled
         m_hsync_length_ms = 21;
         m_counts_per_line = m_system_clock / 1000 * 64 / 1000;
+        m_frame_clocks = m_counts_per_line * m_lines;
     } else if (m_standart == "uknc") {
         // Видеоконтроллер УК-НЦ: 312 строк по 64 мкс без чересстрочности,
         // 288 из них видимые (строки 19..306), по 640 точек в строке.
@@ -57,12 +61,17 @@ emulator::Result RasterDisplay::load_config(SystemData *sd)
         m_top_blank = 19;
         m_bottom_blank = 5;
         m_hsync_length_ms = 21;
+        // 400 clocks of 6.25 MHz, 64 us: the frame is 19.968 ms, 50.08 Hz
         m_counts_per_line = m_system_clock / m_lines / m_frame_rate;
+        m_frame_clocks = m_counts_per_line * m_lines;
     } else {
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{RasterDisplay|" + std::string(QT_TRANSLATE_NOOP("RasterDisplay", "Unknown video standard")) + "}");
     }
 
     m_counts_hsync = m_system_clock * m_hsync_length_ms / 1000000;
+    m_line_rem = m_frame_clocks % m_lines;
+    m_rem_acc = 0;
+    m_line_length = m_counts_per_line;
 
     return emulator::Result::ok();
 }
@@ -70,8 +79,16 @@ emulator::Result RasterDisplay::load_config(SystemData *sd)
 void RasterDisplay::clock(unsigned int counter)
 {
     m_line_counter += counter;
-    if (m_line_counter >= m_counts_per_line) {
-        m_line_counter -= m_counts_per_line;
+    if (m_line_counter >= m_line_length) {
+        m_line_counter -= m_line_length;
+        // The next line is one clock longer whenever the remainder has built
+        // up to a whole clock: a frame of exactly m_frame_clocks
+        m_rem_acc += m_line_rem;
+        m_line_length = m_counts_per_line;
+        if (m_rem_acc >= m_lines) {
+            m_rem_acc -= m_lines;
+            m_line_length++;
+        }
         if (m_interlaced) {
             m_screen_line = (m_current_line <= 312) ? (2 * m_current_line) : (2 * (m_current_line - 313) + 1);
         } else {
@@ -93,11 +110,9 @@ void RasterDisplay::clock(unsigned int counter)
         m_hsync_counter = 0;
         m_hsync_active = true;
 
-        if (m_interlaced) {
-            if (m_current_line++ > 624) m_current_line = 0;
-        } else if (++m_current_line >= m_lines) {
-            m_current_line = 0;
-        }
+        // 625 lines of an interlaced frame: 313 in the first field, 312 in the
+        // second. It used to count 626, which made a frame 64 us too long
+        if (++m_current_line >= m_lines) m_current_line = 0;
     }
 
     m_hsync_counter += counter;
@@ -106,6 +121,17 @@ void RasterDisplay::clock(unsigned int counter)
         m_hsync_active = false;
     }
 
+}
+
+bool RasterDisplay::raster_frame_rate(uint64_t &num, uint64_t &den, const unsigned pictures) const
+{
+    const uint64_t a = (uint64_t)m_system_clock * pictures, b = frame_clocks();
+    if (a == 0 || b == 0) return false;
+    uint64_t x = a, y = b;
+    while (y != 0) { const uint64_t t = x % y; x = y; y = t; }
+    num = a / x;
+    den = b / x;
+    return true;
 }
 
 void RasterDisplay::save_state(StateWriter &w)
@@ -118,6 +144,8 @@ void RasterDisplay::save_state(StateWriter &w)
     w.n("screen_line", m_screen_line);
     w.n("hsync_counter", m_hsync_counter);
     w.b("hsync_active", m_hsync_active);
+    w.n("rem_acc", m_rem_acc);
+    w.n("line_length", m_line_length);
 }
 
 emulator::Result RasterDisplay::load_state(const StateReader &r)
@@ -129,6 +157,11 @@ emulator::Result RasterDisplay::load_state(const StateReader &r)
     r.u("screen_line", m_screen_line);
     r.u("hsync_counter", m_hsync_counter);
     r.b("hsync_active", m_hsync_active);
+    r.u("rem_acc", m_rem_acc);
+    r.u("line_length", m_line_length);
+    if (m_rem_acc >= m_lines) m_rem_acc = 0;
+    if (m_line_length != m_counts_per_line && m_line_length != m_counts_per_line + 1)
+        m_line_length = m_counts_per_line;
     return emulator::Result::ok();
 }
 
@@ -138,6 +171,7 @@ std::vector<DeviceFieldInfo> RasterDisplay::get_device_fields()
     r.push_back({"standard",    "Name of the raster standard from the config",  false});
     r.push_back({"frame_rate",  "Frames per second",                            false});
     r.push_back({"lines",       "Lines in a frame, blanking included",          false});
+    r.push_back({"frame_clocks", "Clocks of the display's domain per frame",    false});
     r.push_back({"line",        "Raster line the beam is on right now",         false});
     r.push_back({"screen_line", "Visible line it corresponds to",               false});
     r.push_back({"hsync",       "1 while the horizontal sync pulse is active",  false});
@@ -156,7 +190,8 @@ bool RasterDisplay::get_field(const std::string &field, unsigned int from, unsig
     }
 
     if (field == "frame_rate" || field == "lines" || field == "line" ||
-        field == "screen_line" || field == "hsync" || field == "interlaced")
+        field == "screen_line" || field == "hsync" || field == "interlaced" ||
+        field == "frame_clocks")
     {
         out.numeric = true;
         if (field == "frame_rate")       out.values.push_back(m_frame_rate);
@@ -164,6 +199,7 @@ bool RasterDisplay::get_field(const std::string &field, unsigned int from, unsig
         else if (field == "line")        out.values.push_back(m_current_line);
         else if (field == "screen_line") out.values.push_back(m_screen_line);
         else if (field == "hsync")       out.values.push_back(m_hsync_active ? 1 : 0);
+        else if (field == "frame_clocks") out.values.push_back(frame_clocks());
         else                             out.values.push_back(m_interlaced ? 1 : 0);
         return true;
     }

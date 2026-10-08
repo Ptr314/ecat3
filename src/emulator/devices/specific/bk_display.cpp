@@ -209,6 +209,8 @@ void BKDisplay::HSYNC(const unsigned line, const unsigned sync_val)
         if (line == m_video_lines) {
             for (unsigned i = 0; i < m_video_lines && i < 256; i++)
                 m_frame_palette[i] = m_line_palette[i];
+            // The last picture line is on the surface: the frame is whole
+            frame_complete();
         }
         if (line == m_video_lines + BK_FRAME_PULSE_LINE) {
             // Vertical sync: the frame interrupt, gated by bit 14 of 0177662
@@ -223,6 +225,13 @@ void BKDisplay::HSYNC(const unsigned line, const unsigned sync_val)
     } else if (line < m_video_lines) {
         render_line(line);
     }
+}
+
+// 320 lines of 64 us: 20.48 ms, 3125/64 = 48.828125 frames a second at both
+// 3 and 4 MHz
+bool BKDisplay::native_frame_rate(uint64_t &num, uint64_t &den)
+{
+    return raster_frame_rate(num, den);
 }
 
 void BKDisplay::reset(const bool cold)
