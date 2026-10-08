@@ -242,7 +242,12 @@ void OpenConfigWindow::list_machines(QString work_path)
         if (!QFileInfo::exists(description))
             description = QString::fromStdString(machine_file_stem(source.base_cfg)) + ".md";
 
-        ComputerModel * computer = new ComputerModel(type, name, (!version.isEmpty())?version:name, fi.absoluteFilePath(), order);
+        //An archive usually lies beside the extension it was packed from and
+        //carries the same version: without a mark the two lines look the same
+        QString title = (!version.isEmpty())?version:name;
+        if (fi.fileName().endsWith(".ext.zip", Qt::CaseInsensitive)) title += " (zip)";
+
+        ComputerModel * computer = new ComputerModel(type, name, title, fi.absoluteFilePath(), order);
         computer->setData(description, Qt::UserRole + 2);
         computer->setData(source.is_protected, Qt::UserRole + 3);
         family->appendRow(computer);
