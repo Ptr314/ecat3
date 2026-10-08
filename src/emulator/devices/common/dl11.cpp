@@ -336,12 +336,18 @@ void DL11::set_value(unsigned int address, unsigned int value, bool force)
 
 ConfigFields DL11::get_config_fields()
 {
-    //The host port the line goes to; empty leaves the line unconnected
-    ConfigField f;
-    f.name = "port";
-    f.title = QT_TRANSLATE_NOOP("ConfigFields", "Serial port of the computer");
-    f.type = CONFIG_FIELD_STRING;
-    ConfigFields r = {f};
+    //The host port the line goes to; empty leaves the line unconnected. Most
+    //lines are inside the machine (to the terminal, the keyboard), so the
+    //choice is offered only where the config says the line goes out of it
+    ConfigFields r;
+    const std::string host_port = str_trim(cd->get_parameter("host_port", false).value);
+    if (!host_port.empty() && parse_numeric_value(host_port, 10) != 0) {
+        ConfigField f;
+        f.name = "port";
+        f.title = QT_TRANSLATE_NOOP("ConfigFields", "Serial port of the computer");
+        f.type = CONFIG_FIELD_STRING;
+        r.push_back(f);
+    }
 
     //The station number means something only to a network adapter, and the
     //config says which line is one by giving it a number at all
