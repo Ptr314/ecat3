@@ -23,6 +23,13 @@ class GenericSound;
 // sound_changed() and answers false to sound_volatile(); the mix then keeps
 // the last sum until something is reported. A source that cannot tell stays
 // volatile, the default, and is asked on every clock as before.
+//
+// A source may be stereo (the Агат ЯЗС has two line outputs). sound_sample()
+// is then its right channel and the one a mono output takes, so it must be
+// the sample that sounds right alone: summing two channels of a pseudo-stereo
+// source cancels what one of them has turned over. sound_sample_left() is the
+// other channel. A GenericSound with a stereo source opens its device in
+// stereo, and every mono source sounds the same in both channels
 class SoundSource
 {
     friend class GenericSound;
@@ -31,6 +38,9 @@ class SoundSource
 public:
     virtual ~SoundSource() = default;
     virtual int32_t sound_sample(int64_t amplitude) = 0;
+    // Decided by the configuration, asked once when the output is opened
+    virtual bool sound_stereo() { return false; }
+    virtual int32_t sound_sample_left(int64_t amplitude) { return sound_sample(amplitude); }
     // A source that is switched off (a board pulled out of its connector)
     // takes no share of the mix, so the others keep their loudness
     virtual bool sound_active() { return true; }
@@ -60,7 +70,12 @@ private:
     // The sum of the device's own output and the sources, kept while nothing
     // that makes it up changes
     int64_t m_level = 0;
+    int64_t m_level_left = 0;           // stereo only: the left channel of it
     bool m_level_dirty = true;
+
+    // 2 when a source of the mix is stereo: the buffer, the capture and the
+    // device then take frames of left and right
+    unsigned int m_channels = 1;
 
     // idle_share = 0: a source joins the mix only once it has been heard - its
     // sample has left the one it gave just after the reset. Otherwise a board
@@ -99,16 +114,21 @@ private:
 
     // Sample accumulator
     int64_t m_accumulator;
+    int64_t m_accumulator_left = 0;
     int64_t m_acc_counter;
     float m_last_input;
+    float m_last_input_left = 0;
 
     // DC offset removal, keeps silence at 0 to avoid clicks on start/stop/mute
     DCBlocker m_dc_blocker;
+    DCBlocker m_dc_blocker_left;
 
     // Low pass filter
     bool m_use_lpf;
+    bool m_lpf_on = false;              // m_use_lpf, and the cutoff below half the sample rate
     int m_lpf_coutoff;
     ButterworthLowPassFilter m_filter;
+    ButterworthLowPassFilter m_filter_left;
 
     // Запись того, что уходит в звуковое устройство, в WAV (команда record).
     // Работает и без устройства (--no-sound): тогда тракт выборок заводится
@@ -116,12 +136,13 @@ private:
     bool m_capture = false;
     bool m_pipeline = false;            // m_counts_per_sample и фильтры настроены
     std::string m_capture_file;
-    std::vector<int16_t> m_capture_data;
+    std::vector<int16_t> m_capture_data;    // m_channels to a frame
     void setup_pipeline();
     emulator::Result write_capture();
 
     // The sound of a video being recorded, taken away by the render thread
-    // (take_video_samples) and so never more than a few frames long
+    // (take_video_samples) and so never more than a few frames long. Mono
+    // always: the right channel, see SoundSource
     bool m_video_capture = false;
     std::vector<int16_t> m_video_data;
 

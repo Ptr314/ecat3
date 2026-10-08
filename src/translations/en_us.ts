@@ -84,7 +84,7 @@
 <context>
     <name>AgatYazs</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+387"/>
+        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+445"/>
         <source>Incorrect step or clock</source>
         <translation type="unfinished"></translation>
     </message>
@@ -655,6 +655,21 @@
     <message>
         <location line="+1"/>
         <source>Interrupts on</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+870"/>
+        <source>Sound output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Stereo (both line outputs)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Mono (RIGHT output)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1317,17 +1332,22 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+76"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+71"/>
+        <source>Incorrect sample rate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
         <source>Not a sound source</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+70"/>
+        <location line="+86"/>
         <source>Error writing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+402"/>
+        <location line="+429"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation type="unfinished"></translation>
     </message>

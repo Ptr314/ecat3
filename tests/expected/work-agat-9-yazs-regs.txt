@@ -7,17 +7,17 @@
 [yazs.irqs] $00000063
 === Канал 1: 1 кГц на СЧ, включение D5 ===
 [yazs.env] 0 0 0 0 0
-[yazs.env] 876 0 0 0 0
+[yazs.env] 1373 0 0 0 0
 [yazs.counters] $000003FD $00000000 $00000000 $00000000 $00000000 $00000050
 -- выключение
-[yazs.env] 1 0 0 0 0
--- импульс D4
-[yazs.peak] 3027 0 0 0 0 0 0
 [yazs.env] 0 0 0 0 0
+-- импульс D4
+[yazs.peak] 3680 0 0 0 0 0 0
+[yazs.env] 234 0 0 0 0
 === Ударный 6 ===
-[yazs.peak] 0 0 0 0 0 3800 0
-[yazs.drums] 4 0
+[yazs.peak] 233 0 0 0 0 3800 0
+[yazs.drums] 16 0
 === Тишина ===
 [yazs.sleeping] $01
 [yazs.idle] $3F
-[yazs.level] -3
+[yazs.level] 0

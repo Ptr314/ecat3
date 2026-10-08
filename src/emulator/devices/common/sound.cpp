@@ -61,6 +61,17 @@ emulator::Result GenericSound::load_config(SystemData *sd)
     emulator::Result res = ComputerDevice::load_config(sd);
     if (!res) return res;
 
+    // The rate the audio device is opened at. 22050 Hz cuts everything above
+    // 11 kHz, which a one-bit beeper does not miss and the Агат ЯЗС does: its
+    // drum 7 hisses at 6-13 kHz. The buffer keeps its length in time, and so
+    // the latency
+    const unsigned int rate = read_confg_value(cd, "sample_rate", false, (unsigned int)22050);
+    if (rate < 8000 || rate > 192000)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{GenericSound|" + std::string(QT_TRANSLATE_NOOP("GenericSound", "Incorrect sample rate")) + "} " + name);
+    m_samples_per_buffer = (unsigned int)((uint64_t)2048 * rate / 22050);
+    m_sample_rate = rate;
+
     m_lpf_coutoff = read_confg_value(cd, "lpf", false, (unsigned int)m_lpf_coutoff);
     m_use_lpf = (m_lpf_coutoff > 0);
 
@@ -82,6 +93,12 @@ emulator::Result GenericSound::load_config(SystemData *sd)
     m_idle_share = read_confg_value(cd, "idle_share", false, true);
     m_idle_sample.assign(m_sources.size(), 0);
     m_heard.assign(m_sources.size(), m_idle_share ? 1 : 0);
+
+    // A source's configuration is read by its constructor, so it can answer
+    // here whatever order the devices are loaded in
+    m_channels = 1;
+    for (size_t i = 0; i < m_sources.size(); i++)
+        if (m_sources[i]->sound_stereo()) m_channels = 2;
 
     //Without an audio device the whole sound path stays dormant: clock() drops
     //out on the very first line, so a silent run costs less than a loud one
@@ -105,7 +122,7 @@ void GenericSound::init_sound(unsigned int clock_freq)
     m_audio_driver = new MiniaudioDriver();
 #endif
 
-    if (!m_audio_driver->open(m_sample_rate, 1, m_samples_per_buffer, audio_callback, this)) {
+    if (!m_audio_driver->open(m_sample_rate, m_channels, m_samples_per_buffer, audio_callback, this)) {
         std::cerr << "Audio driver: failed to open device" << std::endl;
         delete m_audio_driver;
         m_audio_driver = NULL;
@@ -115,7 +132,7 @@ void GenericSound::init_sound(unsigned int clock_freq)
     m_sample_rate = m_audio_driver->getObtainedSampleRate();
     m_samples_per_buffer = m_audio_driver->getObtainedBufferSamples();
 
-    m_buffer.resize(m_samples_per_buffer*2);
+    m_buffer.resize(m_samples_per_buffer * 2 * m_channels);
     m_buffer_pos = 0;
 
     setup_pipeline();
@@ -130,13 +147,23 @@ void GenericSound::setup_pipeline()
     m_counts_per_sample = (m_clock_freq << 8) / m_sample_rate; // * 128 to make it more precise
 
     m_dc_blocker.setup(m_sample_rate, 20);
+    m_dc_blocker_left.setup(m_sample_rate, 20);
     refresh_sources();
 
-    if (m_use_lpf) m_filter.setup(m_sample_rate, m_lpf_coutoff);
+    // A cutoff at or above half the sample rate is no filter at all, and
+    // ButterworthLowPassFilter::setup() leaves its coefficients unset for it:
+    // the output was garbage and the machine went silent (lpf = 16000 at the
+    // 22050 Hz of the window)
+    m_lpf_on = m_use_lpf && m_lpf_coutoff < (int)(m_sample_rate / 2);
+    if (m_lpf_on) {
+        m_filter.setup(m_sample_rate, m_lpf_coutoff);
+        m_filter_left.setup(m_sample_rate, m_lpf_coutoff);
+    }
     m_pipeline = true;
 }
 
-// 16-bit mono PCM, the rate the samples were produced at
+// 16-bit PCM, mono or stereo as the output is, the rate the samples were
+// produced at
 emulator::Result GenericSound::write_capture()
 {
     const std::string file = resolve_output_path(sd, m_capture_file);
@@ -148,7 +175,8 @@ emulator::Result GenericSound::write_capture()
     auto u16 = [&](uint16_t v) { char b[2] = {(char)v, (char)(v >> 8)}; f.write(b, 2); };
     const uint32_t data = (uint32_t)(m_capture_data.size() * 2);
     f.write("RIFF", 4); u32(36 + data); f.write("WAVE", 4);
-    f.write("fmt ", 4); u32(16); u16(1); u16(1); u32(m_sample_rate); u32(m_sample_rate * 2); u16(2); u16(16);
+    const uint16_t ch = (uint16_t)m_channels;
+    f.write("fmt ", 4); u32(16); u16(1); u16(ch); u32(m_sample_rate); u32(m_sample_rate * 2 * ch); u16(2 * ch); u16(16);
     f.write("data", 4); u32(data);
     for (int16_t s : m_capture_data) u16((uint16_t)s);
     f.close();
@@ -284,8 +312,12 @@ void GenericSound::clock(unsigned int counter)
     if (m_level_dirty || m_self_volatile || m_sources_volatile) {
         m_level_dirty = false;
         m_level = calc_sound_value();
+        m_level_left = m_level;
         for (size_t i = 0; i < m_active.size(); i++)
             m_level += m_active[i]->sound_sample(m_amplitude);
+        if (m_channels == 2)
+            for (size_t i = 0; i < m_active.size(); i++)
+                m_level_left += m_active[i]->sound_sample_left(m_amplitude);
     }
     const int64_t level = m_level;
 
@@ -294,6 +326,7 @@ void GenericSound::clock(unsigned int counter)
     // once distorts a level that a program holds for a measured time: the
     // bytes of a DAC, the pulse widths of a one-bit output
     m_accumulator += level * counter;
+    if (m_channels == 2) m_accumulator_left += m_level_left * counter;
     m_acc_counter += counter;
 
     m_counter += counter << 8;
@@ -312,7 +345,7 @@ void GenericSound::clock(unsigned int counter)
 
         // Checking buffer overflow and discarding a part of it if expected
         if (m_initialized && m_buffer_pos >= m_buffer.size()) {
-            size_t overflow_delta = m_samples_per_buffer / 8;
+            size_t overflow_delta = m_samples_per_buffer / 8 * m_channels;
             std::copy(
                 m_buffer.begin() + overflow_delta,
                 m_buffer.begin() + m_buffer_pos,
@@ -325,23 +358,38 @@ void GenericSound::clock(unsigned int counter)
         // Using average value between counts
         float v = (m_acc_counter > 0) ? static_cast<float>(m_accumulator) / (float)(m_acc_counter * m_shares) : m_last_input;
         m_last_input = v;
-        m_accumulator = m_acc_counter = 0;
 
         // Removing DC offset so silence sits at 0 regardless of the device's idle level
         float out = m_dc_blocker.process(v);
 
         // Applying LPF if expected
-        if (m_use_lpf) out = m_filter.process(out);
+        if (m_lpf_on) out = m_filter.process(out);
 
         if (out > 32767.0f) out = 32767.0f;
         else if (out < -32768.0f) out = -32768.0f;
+
+        // The left channel the same way; a frame is left, right
+        float out_left = 0;
+        if (m_channels == 2) {
+            float vl = (m_acc_counter > 0) ? static_cast<float>(m_accumulator_left) / (float)(m_acc_counter * m_shares) : m_last_input_left;
+            m_last_input_left = vl;
+            out_left = m_dc_blocker_left.process(vl);
+            if (m_lpf_on) out_left = m_filter_left.process(out_left);
+            if (out_left > 32767.0f) out_left = 32767.0f;
+            else if (out_left < -32768.0f) out_left = -32768.0f;
+        }
+        m_accumulator = m_accumulator_left = m_acc_counter = 0;
 
         // A video takes the sound whether the window is muted or not: the
         // sound of the speakers is not the sound of the machine
         if (m_video_capture) m_video_data.push_back(static_cast<int16_t>(out));
 
-        if (m_muted) out = 0;
+        if (m_muted) out = out_left = 0;
 
+        if (m_channels == 2) {
+            if (m_capture) m_capture_data.push_back(static_cast<int16_t>(out_left));
+            if (m_initialized) m_buffer[m_buffer_pos++] = static_cast<int16_t>(out_left);
+        }
         if (m_capture) m_capture_data.push_back(static_cast<int16_t>(out));
         if (m_initialized) m_buffer[m_buffer_pos++] = static_cast<int16_t>(out);
     }
@@ -373,10 +421,13 @@ void GenericSound::handle_audio_callback(uint8_t* stream, int len)
     // We use 'fill_value' later to fill missed samples.
     // The default value is 0 - "silence" in case the buffer is totally empty.
     // And the first buffer value, if we have less values than expected
-    int16_t fill_value = 0;
+    // A frame of two in stereo: the pad repeats the first one whole, or the
+    // channels would trade places
+    int16_t fill_value[2] = {0, 0};
 
     if (samples_to_copy > 0) {
-        fill_value = m_buffer[0];
+        fill_value[0] = m_buffer[0];
+        fill_value[1] = m_buffer[m_channels - 1];
         // We have some data, putting it to the end of the output
         std::copy_n(
             m_buffer.data(),
@@ -396,11 +447,9 @@ void GenericSound::handle_audio_callback(uint8_t* stream, int len)
     if (samples_to_copy < samples_requested) {
         m_underruns++;
         // We need to fill in the missing data, so we do it at the beginning of the output.
-        std::fill_n(
-            reinterpret_cast<int16_t*>(stream),
-            samples_requested - samples_to_copy,
-            fill_value
-        );
+        int16_t *pad = reinterpret_cast<int16_t*>(stream);
+        for (int i = 0; i < samples_requested - samples_to_copy; i++)
+            pad[i] = fill_value[(m_channels == 2) ? (i & 1) : 0];
     }
 }
 
@@ -415,6 +464,7 @@ void GenericSound::save_state(StateWriter &w)
     w.n("counter", m_counter);
     w.n64("accumulator", static_cast<uint64_t>(m_accumulator));
     w.n64("acc_counter", static_cast<uint64_t>(m_acc_counter));
+    if (m_channels == 2) w.n64("accumulator_left", static_cast<uint64_t>(m_accumulator_left));
     w.n("volume", m_volume);
     w.b("muted", m_muted);
     //Which sources have been heard, and are therefore in the mix. Left out, a
@@ -445,6 +495,8 @@ emulator::Result GenericSound::load_state(const StateReader &r)
     uint64_t v = 0;
     if (r.n64("accumulator", v)) m_accumulator = static_cast<int64_t>(v);
     if (r.n64("acc_counter", v)) m_acc_counter = static_cast<int64_t>(v);
+    m_accumulator_left = m_accumulator;
+    if (r.n64("accumulator_left", v)) m_accumulator_left = static_cast<int64_t>(v);
     r.u("volume", m_volume);
     r.b("muted", m_muted);
     r.b("idle_taken", m_idle_taken);
@@ -485,7 +537,8 @@ std::vector<DeviceFieldInfo> GenericSound::get_device_fields()
                             "is silent: --no-sound, or no audio device at all",  false});
     r.push_back({"mixed",   "Sources of mix taking a share of it now, '-' for none", false});
     r.push_back({"moving",    "1 when the level changes without a write",     false});
-    r.push_back({"buffered",  "Samples waiting for the audio device",          false});
+    r.push_back({"buffered",  "Samples (frames in stereo) waiting for the audio device", false});
+    r.push_back({"channels",  "2 if a source of the mix is stereo, else 1",       false});
     r.push_back({"underruns", "Times the device was handed a padded buffer",   false});
     r.push_back({"overflows", "Times the emulation outran the device",         false});
     return r;
@@ -506,6 +559,7 @@ bool GenericSound::get_field(const std::string &field, unsigned int from, unsign
     if (field == "volume")  { out.values.push_back(m_volume);       return true; }
     if (field == "muted")   { out.values.push_back(m_muted?1:0);    return true; }
     if (field == "active")  { out.values.push_back(m_initialized?1:0); return true; }
+    if (field == "channels") { out.values.push_back(m_channels); return true; }
     //Whether the device says its own level moves between writes. A device that
     //cannot tell stays at 1; the УК-НЦ works it out from its register, and if
     //a restored state left it at 0 while a tone is on, the mixer would hold a
@@ -520,7 +574,7 @@ bool GenericSound::get_field(const std::string &field, unsigned int from, unsign
         std::lock_guard<std::mutex> lock(m_buffer_mutex);
 #endif
         out.width = 32;
-        if (field == "buffered")       out.values.push_back((unsigned int)m_buffer_pos);
+        if (field == "buffered")       out.values.push_back((unsigned int)(m_buffer_pos / m_channels));
         else if (field == "underruns") out.values.push_back((unsigned int)m_underruns);
         else                           out.values.push_back((unsigned int)m_overflows);
         return true;

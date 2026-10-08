@@ -30,9 +30,21 @@ const double G_OFF      = 1e-9;
 const double R_SW       = 300;      // К561КТ3 key
 
 // Tone channel (one of five identical ones)
-const double R16 = 620, R17 = 150e3, R21 = 24e3, R22 = 68e3, R23 = 120e3;
-const double R24 = 150e3, R25 = 150e3, R26 = 150e3;
-const double C3 = 5e-6, C4 = 47e-9, C5 = 3.3e-9, C6 = 0.1e-6;
+// The envelope former does not behave by the schematic either: the burst of
+// D4 died in 0.2 s where the card's fades evenly for 0.5 s and more, the
+// level D5 holds was 7 dB under the card's, and a note ran down to silence
+// between two writes the card plays legato. These values are fitted to the
+// same recording - all 270 notes of the test, with the drums for the balance
+// - and are an equivalent of the card, not its parts: other sets fit nearly
+// as well (R23 at 120K with C3 15 uF, R17 20K, R21 9.1K, for one)
+const double R16 = 620, R22 = 68e3;
+const double R17 = 270e3;           // 150K
+const double R21 = 100e3;           // 24K
+const double R23 = 2.7e6;           // 120K
+const double R24 = 150e3, R26 = 150e3;
+const double R25 = 180e3;           // 150K
+const double C3 = 1.8e-6;           // 5 uF
+const double C4 = 47e-9, C5 = 3.3e-9, C6 = 0.1e-6;
 const double V_NEG = -12.0;
 const double R18 = 15e3, R19 = 47e3, C2 = 22e-9;
 // The key VT1 conducts once the voltage behind C2 lifts its base to VBE
@@ -49,22 +61,53 @@ const double C45 = 3.3e-9, R126 = 24e3, C47 = 3.3e-9, R133 = 47e3;
 const double C50 = 1e-6, R136 = 100e3, C53 = 150e-12;
 // К157УД2 at +12 V, its non-inverting input at +8 V
 const double VO_MAX = 2.5, VO_MIN = -6.5;
+// DA1.2, the all-pass of the LEFT output
+const double R137 = 47e3, C55 = 22e-9;
 
 enum { MH = 0, LH, HH, LM, HM, N48, SND, MC, HC };
 
+// The drums do not sound by the values of the schematic: drum 7 would buzz
+// at 100 Hz where the card hisses at 6-13 kHz. Their values below are fitted
+// to a recording of a real card (the automatic mode of SOUNDTEST by
+// avivanov76, forum.agatcomp.ru topic 515), with the schematic's in comments:
+// pitch, envelope and level of all 24 sounds of the test. On that card D0 of
+// drum 6 changed nothing - each pitch sounded twice, D0 = 0 and 1 alike - but
+// on the card of the NCL demo recording (DemoNCL/01-Hangs up) it does: the
+// demo plays drum 6 with D0 set, and that card's drum sounds at 120-140 Hz,
+// which D0 and R106 give. The first card had the key of R106 broken
+//
 // Drum 6
-const double R95_C27 = 5e-6, R97 = 33e3, C29 = 1e-6, R98 = 510e3, R100 = 15e3;
+const double C27 = 6.8e-6;          // 5 uF
+const double R97 = 33e3, C29 = 1e-6, R98 = 510e3, R100 = 15e3;
 const double C65 = 0.15e-6, R103 = 33e3;
-const double C30 = 22e-9, C31 = 22e-9, R101 = 680e3, R102 = 680e3;
-const double R105 = 150e3, R106 = 680e3, R107 = 360e3;
+const double C30 = 15e-9;           // 22 nF
+const double C31 = 20e-9;           // 22 nF
+const double R101 = 680e3, R102 = 680e3;
+const double R105 = 180e3;          // 150K
+const double R106 = 390e3;          // 680K
+const double R107 = 360e3;
 const double R96 = 68e3, C28 = 10e-9, R99 = 47e3;
-const double R112 = 47e3, C33 = 47e-9, C35 = 0.1e-6, R115 = 47e3;
-const double C32 = 0.1e-6, R110 = 240e3, R111 = 10e3, R113 = 3.3e3, C34 = 15e-9;
-const double R114 = 68e3, C36 = 33e-9;
+// The output resistors of both drums are twice the schematic's: by it the
+// drums came out 8 dB too loud against the tones
+const double R112 = 47e3, C33 = 47e-9, C35 = 0.1e-6;
+const double R115 = 91e3;           // 47K
+const double C32 = 0.1e-6, R110 = 240e3, R111 = 10e3, C34 = 15e-9;
+const double R113 = 6.8e3;          // 3K3
+const double R114 = 130e3;          // 68K
+const double C36 = 33e-9;
 // Drum 7
-const double C37 = 5e-6, R117 = 67e3, C38 = 1e-6, R118 = 10e3, R119 = 24e3;
-const double C39 = 22e-9, C40 = 22e-9, C41 = 1e-9, R121 = 330e3, R122 = 330e3, R124 = 510e3;
-const double R150 = 150e3, R123 = 2.2e3, C42 = 330e-12, R125 = 240e3;
+const double C37 = 10e-6;           // 5 uF
+const double R117 = 67e3, C38 = 1e-6, R118 = 10e3, R119 = 24e3;
+const double C39 = 390e-12;         // 22 nF
+const double C40 = 270e-12;         // 22 nF
+const double C41 = 560e-12;         // 1 nF
+const double R121 = 330e3, R122 = 330e3, R124 = 510e3;
+const double R150 = 150e3, R123 = 2.2e3, C42 = 330e-12;
+const double R125 = 390e3;          // 240K
+// VD19 (КД521А) as an exponential diode: by the threshold alone it stops
+// chopping the envelope once that falls under VD, and the drum broke off
+// 20 dB above where the card's sound fades
+const double VD_IS = 2.5e-9, VD_NVT = 1.75 * 0.026;
 // Noise: R14 and C1 after the shift register
 const double TAU_NOISE = 47e3 * 330e-12;
 
@@ -129,6 +172,21 @@ void solve2(double a, double b, double c, double d, double e, double f, double &
     const double det = a * d - b * c;
     x = (e * d - b * f) / det;
     y = (a * f - c * e) / det;
+}
+
+// The root t of a * (exp(t) - 1) + c * t = y, with a, c > 0. The left side is
+// convex and increasing, and Newton started right of the root comes down to
+// it without overshooting
+double exp_root(double a, double c, double y)
+{
+    double t = (y > 0) ? std::log1p(y / a) : 0.0;
+    for (int it = 0; it < 30; it++) {
+        const double e = std::exp(t);
+        const double d = (a * (e - 1) + c * t - y) / (a * e + c);
+        t -= d;
+        if (std::fabs(d) < 1e-9) break;
+    }
+    return t;
 }
 
 // Two cross-coupled CMOS inverters (К561ЛН2), each fed back by its own
@@ -368,6 +426,11 @@ AgatYazs::AgatYazs(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_tick_off(0)
     , m_gain(1 / 1.5)
 {
+    // Read here and not in load_config(): the mixer asks sound_stereo() in its
+    // own load_config(), which may come first
+    // Mono by default: summed by a mono speaker or a mono downmix, the two
+    // outputs cancel the treble - the tones lose 8-16 dB, drum 7 nearly all
+    m_stereo = read_confg_value(cd, "stereo", false, false);
     m_clocked = true;
     addresable_size = 16;
     can_read = true;
@@ -519,6 +582,9 @@ void AgatYazs::cold_analog()
     m_out_sum = 0;
     m_out_count = 0;
     m_out = 0;
+    m_lp = 0;
+    m_out_left_sum = 0;
+    m_out_left = 0;
     m_sleeping = true;
     m_quiet = 0;
     m_delta = 0;
@@ -553,6 +619,21 @@ void AgatYazs::wake_channel(int c)
 
 void AgatYazs::wake_drums()
 {
+    if (m_dr_quiet >= IDLE_STEPS) {
+        // The output networks were left as they settled - no current, every
+        // node but SOUND at 0 - while SOUND went on relaxing. Put them at
+        // rest against where it is now, or the first step lets the
+        // difference through as a click
+        const double vs = m_bus[SND];
+        m_d6_a33 = 0;
+        m_d6_c35 = -vs;
+        m_d6_c32 = 0;
+        m_d6_n = 0;
+        m_d6_m = 0;
+        m_d6_c36 = -vs;
+        m_d7_k = 0;
+        m_d7_c42 = -vs;
+    }
     m_dr_quiet = 0;
     wake();
 }
@@ -663,7 +744,9 @@ void AgatYazs::clock(unsigned int counter)
     run(counter);
     if (m_out_count) {
         m_out = m_out_sum / m_out_count;
+        m_out_left = m_out_left_sum / m_out_count;
         m_out_sum = 0;
+        m_out_left_sum = 0;
         m_out_count = 0;
     }
 }
@@ -771,6 +854,10 @@ void AgatYazs::step()
 
     m_out_sum += m_vo;
     m_out_count++;
+    if (m_stereo) {
+        m_lp += (m_vo - m_lp) * m_h / (R137 * C55 + m_h);
+        m_out_left_sum += std::min(VO_MAX, std::max(VO_MIN, 2 * m_lp - m_vo));
+    }
 
     // Asleep once nothing else moves and the mixer has settled as well
     if (idle && m_delta < 1e-6) {
@@ -896,7 +983,7 @@ double AgatYazs::drums_step(double vs, bool full)
     double a = (r6 & 0x10) ? V_LATCH_HI : V_LATCH_LO;
     double b = a - m_d6_c27;
     if (b < -VD) { b = -VD; m_d6_c27 = a + VD; }
-    m_d6_c27 += h * (b / R97) / R95_C27;
+    m_d6_c27 += h * (b / R97) / C27;
 
     const double O1 = m_d6_o1 ? VCC : 0, O2 = m_d6_o2 ? VCC : 0;
     const double I1 = O2 - m_d6_c30, I2 = O1 - m_d6_c31;
@@ -1007,21 +1094,16 @@ double AgatYazs::drums_step(double vs, bool full)
     flip_pair(m_d7_o3, m_d7_o4, m_d7_c39, m_d7_c40);
 
     // R123 from the emitter of VT15, VD19 to the output of D9.4, C42 and
-    // R125 into SOUND
+    // R125 into SOUND. W, behind C42, is linear in K, which leaves one
+    // equation in K: Gk * K - Bk + Id(K - o3) = 0
     {
         const double g42 = C42 / h;
         const double o3 = m_d7_o3 ? VCC : 0;
-        bool dn = m_d7_k - o3 > VD;
-        double k = 0, w = 0;
-        for (int it = 0; it < 3; it++) {
-            const double gd = dn ? G_ON : G_OFF;
-            solve2(1 / R123 + gd + g42, -g42, -g42, g42 + 1 / R125,
-                   e7 / R123 + gd * (dn ? o3 + VD : o3) + g42 * m_d7_c42,
-                   -g42 * m_d7_c42 + vs / R125, k, w);
-            const bool nd = k - o3 > VD;
-            if (nd == dn) break;
-            dn = nd;
-        }
+        const double gw = g42 + 1 / R125;
+        const double gk = 1 / R123 + g42 * (1 - g42 / gw);
+        const double bk = e7 / R123 + g42 * m_d7_c42 * (1 - g42 / gw) + g42 * vs / (R125 * gw);
+        const double k = o3 + VD_NVT * exp_root(VD_IS, gk * VD_NVT, bk - gk * o3);
+        const double w = (g42 * (k - m_d7_c42) + vs / R125) / gw;
         m_delta = std::max(m_delta, std::fabs(k - m_d7_k));
         m_d7_k = k;
         m_d7_c42 = k - w;
@@ -1035,6 +1117,14 @@ double AgatYazs::drums_step(double vs, bool full)
 int32_t AgatYazs::sound_sample(int64_t amplitude)
 {
     double s = m_out * m_gain;
+    if (s > 1) s = 1;
+    if (s < -1) s = -1;
+    return (int32_t)(s * amplitude);
+}
+
+int32_t AgatYazs::sound_sample_left(int64_t amplitude)
+{
+    double s = m_out_left * m_gain;
     if (s > 1) s = 1;
     if (s < -1) s = -1;
     return (int32_t)(s * amplitude);
@@ -1115,6 +1205,16 @@ void AgatYazs::save_state(StateWriter &w)
         for (int b = 0; b < 8; b++) raw[i * 8 + b] = (uint8_t)(u >> (b * 8));
     }
     w.hex("analog", raw.data(), raw.size());
+
+    // Apart from "analog", which keeps its layout for older snapshots
+    double lr[3] = {m_lp, m_out_left_sum, m_out_left};
+    uint8_t rlr[24];
+    for (int i = 0; i < 3; i++) {
+        uint64_t u;
+        memcpy(&u, &lr[i], 8);
+        for (int b = 0; b < 8; b++) rlr[i * 8 + b] = (uint8_t)(u >> (b * 8));
+    }
+    w.hex("left", rlr, 24);
 }
 
 emulator::Result AgatYazs::load_state(const StateReader &r)
@@ -1186,6 +1286,22 @@ emulator::Result AgatYazs::load_state(const StateReader &r)
             memcpy(v[i], &u, 8);
             if (!std::isfinite(*v[i])) *v[i] = 0;
         }
+
+    double *lr[3] = {&m_lp, &m_out_left_sum, &m_out_left};
+    uint8_t rlr[24];
+    if (r.hex("left", rlr, 24))
+        for (int i = 0; i < 3; i++) {
+            uint64_t u = 0;
+            for (int b = 0; b < 8; b++) u |= (uint64_t)rlr[i * 8 + b] << (b * 8);
+            memcpy(lr[i], &u, 8);
+            if (!std::isfinite(*lr[i])) *lr[i] = 0;
+        }
+    else {
+        // A snapshot from before the left output: start it where the mixer is
+        m_lp = m_vo;
+        m_out_left = m_out;
+        m_out_left_sum = 0;
+    }
     return emulator::Result::ok();
 }
 
@@ -1196,6 +1312,18 @@ void AgatYazs::state_restored()
 }
 
 //------------------- Introspection ----------------------------------------//
+
+ConfigFields AgatYazs::get_config_fields()
+{
+    ConfigField f;
+    f.name = "stereo";
+    f.title = QT_TRANSLATE_NOOP("DeviceOptions", "Sound output");
+    f.type = CONFIG_FIELD_CHOICE;
+    f.def = "0";
+    f.values.push_back({"0", QT_TRANSLATE_NOOP("DeviceOptions", "Mono (RIGHT output)")});
+    f.values.push_back({"1", QT_TRANSLATE_NOOP("DeviceOptions", "Stereo (both line outputs)")});
+    return {f};
+}
 
 std::vector<DeviceFieldInfo> AgatYazs::get_device_fields()
 {

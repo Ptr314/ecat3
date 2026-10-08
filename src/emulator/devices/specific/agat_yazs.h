@@ -122,6 +122,15 @@ private:
     double m_out_sum;
     unsigned int m_out_count;
     double m_out;                       // the last slice's average
+
+    // The second line output, LEFT: DA1.2 behind the mixer is an all-pass
+    // (R137, C55 into its + input, R138/R139 at gain -1), so the two outputs
+    // agree in the bass and are opposite in the treble - the card's pseudo
+    // stereo. m_lp is C55; RIGHT is the mixer itself
+    bool m_stereo;
+    double m_lp;
+    double m_out_left_sum;
+    double m_out_left;
     double m_peak[7];                   // highest envelope since the last write: tones, drums
 
     // Nothing sounds and nothing moves: the analog part is not stepped
@@ -176,11 +185,15 @@ public:
     unsigned int get_direct(unsigned int address) override;
 
     int32_t sound_sample(int64_t amplitude) override;
+    bool sound_stereo() override { return m_stereo; }
+    int32_t sound_sample_left(int64_t amplitude) override;
     bool sound_volatile() override { return !m_sleeping; }
 
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;
     void state_restored() override;
+
+    ConfigFields get_config_fields() override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
