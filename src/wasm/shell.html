@@ -235,6 +235,40 @@
             min-width: 0;
         }
 
+        /* The settings block is two columns: the caption of the language on
+           the left, the list and everything below it on the right, so that
+           the disk settings line up under the list */
+        .block-body.settings-body {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            column-gap: 6px;
+            row-gap: 6px;
+            align-items: center;
+        }
+
+        .settings-body > :not(.caption) {
+            grid-column: 2;
+        }
+
+        /* The disk switch and its "forget" button share a line */
+        .disks-row {
+            gap: 6px;
+        }
+
+        .disks-row button {
+            margin-left: auto;
+        }
+
+        /* Power and Reset side by side, halves of the row */
+        .power-row {
+            gap: 6px;
+        }
+
+        .power-row button {
+            flex: 1;
+            min-width: 0;
+        }
+
         /* A square button with a symbol instead of a caption */
         button.icon-button {
             flex: none;
@@ -596,8 +630,11 @@
             color: var(--muted);
         }
 
+        /* The disk in the head line, after the drive's name: cut short when
+           long, the whole name is in the tooltip */
         .drive-file {
-            max-width: 15em;
+            flex: 0 1 auto;
+            min-width: 0;
             font-size: 12px;
             color: var(--muted);
             white-space: nowrap;
@@ -606,7 +643,6 @@
         }
 
         .drive-note {
-            max-width: 15em;
             font-size: 11px;
             color: var(--muted);
         }
@@ -958,8 +994,10 @@
                         </button>
                     </div>
 
-                    <button id="btn-power" disabled data-i18n="power" data-i18n-title="powerTitle"></button>
-                    <button id="btn-reset" disabled data-i18n="reset" data-i18n-title="resetTitle"></button>
+                    <div class="row power-row">
+                        <button id="btn-power" disabled data-i18n="power" data-i18n-title="powerTitle"></button>
+                        <button id="btn-reset" disabled data-i18n="reset" data-i18n-title="resetTitle"></button>
+                    </div>
                 </div>
             </div>
 
@@ -998,25 +1036,20 @@
                 </div>
             </div>
 
-            <div class="block" data-block="language">
-                <button class="block-head drive-head" type="button"><span class="block-chevron">▼</span><span class="drive-title" id="head-lang" data-i18n="language"></span></button>
-                <div class="block-body">
-                    <select id="lang" aria-labelledby="head-lang">
+            <div class="block" data-block="settings">
+                <button class="block-head drive-head" type="button"><span class="block-chevron">▼</span><span class="drive-title" data-i18n="settingsBlock"></span></button>
+                <div class="block-body settings-body">
+                    <label class="caption" for="lang" data-i18n="language"></label>
+                    <select id="lang">
                         <option value="ru">Русский</option>
                         <option value="en">English</option>
                     </select>
-                </div>
-            </div>
-
-            <div class="block" data-block="settings">
-                <button class="block-head drive-head" type="button"><span class="block-chevron">▼</span><span class="drive-title" data-i18n="settingsBlock"></span></button>
-                <div class="block-body">
-                    <label class="drive-protect" data-i18n-title="rememberDisksTitle">
-                        <input type="checkbox" id="remember-disks">
-                        <span data-i18n="rememberDisks"></span>
-                    </label>
-                    <div class="row">
-                        <button type="button" id="forget-disks" data-i18n="forgetDisks"></button>
+                    <div class="row disks-row">
+                        <label class="drive-protect" data-i18n-title="rememberDisksTitle">
+                            <input type="checkbox" id="remember-disks">
+                            <span data-i18n="rememberDisks"></span>
+                        </label>
+                        <button type="button" id="forget-disks" data-i18n="forgetDisks" data-i18n-title="forgetDisksTitle"></button>
                     </div>
                 </div>
             </div>

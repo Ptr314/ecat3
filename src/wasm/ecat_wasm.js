@@ -241,8 +241,8 @@ function readUrlParams() {
 
 // blocks=machine,-screen,fdd0: a name on its own is an open block, a name with
 // a minus in front a folded one. The names are those of data-block in
-// shell.html plus the device name of a drive or a tape block - the eight of
-// the page (machine, screen, volume, language, settings, file, keyboard, options) are
+// shell.html plus the device name of a drive or a tape block - the seven of
+// the page (machine, screen, volume, settings, file, keyboard, options) are
 // therefore reserved. A block the address says nothing about is left to the
 // choice saved in this browser
 function blockStates(text) {
@@ -435,9 +435,9 @@ const I18N = {
         screenPercentFit:   "{0}% (fits the window)",
         kbdAutoTitle:       "Size by the width of the screen",
         drive:              "Drive {0}",
-        noDisk:             "No disk",
+        noDisk:             "no disk",
         hardDisk:           "Hard disk {0}",
-        hddNote:            "The image is read from your computer; writes stay in the browser, the file is not changed",
+        hddNote:            "Writes stay in the browser, the file is not changed",
         load:               "Load",
         save:               "Save",
         eject:              "Eject",
@@ -445,9 +445,10 @@ const I18N = {
         diskDefault:        "Default",
         diskDefaultTitle:   "Put the disk of the configuration back and forget the one chosen",
         settingsBlock:      "Settings",
-        rememberDisks:      "Remember disk choice",
+        rememberDisks:      "Remember disks",
         rememberDisksTitle: "Put the disks chosen last back into the drives when the machine is started again; the images are kept in this browser",
-        forgetDisks:        "Forget the disks of all machines",
+        forgetDisks:        "Forget all",
+        forgetDisksTitle:   "Forget the disks of all machines",
         forgetDisksAsk:     "Forget the disks chosen for every machine? The disks in the drives now stay where they are.",
         openFile:           "Load a file",
         openFileTitle:      "Load a program into the memory of the machine, or open a saved state",
@@ -544,9 +545,9 @@ const I18N = {
         screenPercentFit:   "{0}% (по окну)",
         kbdAutoTitle:       "Размер по ширине экрана",
         drive:              "Дисковод {0}",
-        noDisk:             "Нет диска",
+        noDisk:             "нет диска",
         hardDisk:           "Винчестер {0}",
-        hddNote:            "Образ читается с вашего компьютера; записанное остаётся в браузере, файл не меняется",
+        hddNote:            "Запись остаётся в браузере, файл не меняется",
         load:               "Загрузить",
         save:               "Сохранить",
         eject:              "Извлечь",
@@ -554,9 +555,10 @@ const I18N = {
         diskDefault:        "По умолчанию",
         diskDefaultTitle:   "Вернуть диск из конфигурации и забыть выбранный",
         settingsBlock:      "Настройки",
-        rememberDisks:      "Запоминать выбор дисков",
+        rememberDisks:      "Запоминать диски",
         rememberDisksTitle: "Вставлять последние выбранные диски при следующем запуске машины; образы хранятся в этом браузере",
-        forgetDisks:        "Забыть диски всех машин",
+        forgetDisks:        "Забыть все",
+        forgetDisksTitle:   "Забыть диски всех машин",
         forgetDisksAsk:     "Забыть выбранные диски всех машин? Диски, вставленные сейчас, останутся на месте.",
         openFile:           "Загрузить файл",
         openFileTitle:      "Загрузить программу в память машины или открыть сохраненное состояние",
@@ -2067,11 +2069,12 @@ function buildDrive(module, drive, configKey) {
     const head = ui.block.head;
     ui.led = element("span", "drive-led", head);
     ui.title = element("span", "drive-title", head);
+    // The disk goes into the head line too, so that the block is one line lower
+    ui.file = element("span", "drive-file", head);
     // The device name only when it says more than the title (not "dw" under "DW")
     if (drive.title.toLowerCase() !== drive.name.toLowerCase())
         element("span", "drive-device", head).textContent = drive.name;
 
-    ui.file = element("div", "drive-file", body);
     if (drive.kind === "hdd") ui.note = element("div", "drive-note", body);
 
     const buttons = element("div", "row", body);
@@ -2131,7 +2134,7 @@ function renderDrives() {
         ui.title.textContent = drive.title || t(drive.kind === "hdd" ? "hardDisk" : "drive", number);
         if (ui.note) ui.note.textContent = t("hddNote");
         ui.block.renderHint();
-        ui.file.textContent = drive.loaded ? drive.file : t("noDisk");
+        ui.file.textContent = "(" + (drive.loaded ? drive.file : t("noDisk")) + ")";
         ui.file.title = drive.loaded ? drive.file : "";
         ui.led.classList.toggle("on", drive.led);
         ui.load.textContent = t("load");
