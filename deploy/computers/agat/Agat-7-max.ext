@@ -18,9 +18,11 @@ ram-card:~segment[0-2] = ram-card-port.value[0-2]
 
 fdc840:drives = fdd0|fdd1
 fdd0:image = IKP7_840.dsk
+fdd0:title = 840K D1
 
 @before display
 fdd1 : fdd {
+	title = 840K D2
 	sides = 2
 	tracks = 80
 	sectors = 21

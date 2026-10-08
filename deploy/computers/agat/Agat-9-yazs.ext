@@ -33,6 +33,7 @@ fdc140 : agat-fdc140 {
 }
 
 fdd1 : fdd {
+	title = 140K
 	sides = 1
 	tracks = 35
 	sectors = 16

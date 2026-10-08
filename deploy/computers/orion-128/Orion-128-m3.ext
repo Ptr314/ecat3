@@ -29,6 +29,7 @@ fdc : wd1793 {
 }
 
 fdd0 : fdd {
+	title = A:
 	sides = 2
 	tracks = 80
 	sectors = 5
@@ -43,6 +44,7 @@ fdd0 : fdd {
 }
 
 fdd1 : fdd {
+	title = B:
 	sides = 2
 	tracks = 80
 	sectors = 5

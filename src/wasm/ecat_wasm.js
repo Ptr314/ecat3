@@ -1756,6 +1756,7 @@ function readDrives(module) {
             file: f[4] || "",
             files: f[5] || "",
             filesSave: f[6] || "",
+            title: f[7] || "",
         });
     }
     return list.concat(readHardDisks(module));
@@ -2066,7 +2067,9 @@ function buildDrive(module, drive, configKey) {
     const head = ui.block.head;
     ui.led = element("span", "drive-led", head);
     ui.title = element("span", "drive-title", head);
-    element("span", "drive-device", head).textContent = drive.name;
+    // The device name only when it says more than the title (not "dw" under "DW")
+    if (drive.title.toLowerCase() !== drive.name.toLowerCase())
+        element("span", "drive-device", head).textContent = drive.name;
 
     ui.file = element("div", "drive-file", body);
     if (drive.kind === "hdd") ui.note = element("div", "drive-note", body);
@@ -2124,7 +2127,8 @@ function renderDrives() {
     drives.forEach((drive) => {
         const ui = drive.ui;
         const number = ++count[drive.kind];
-        ui.title.textContent = t(drive.kind === "hdd" ? "hardDisk" : "drive", number);
+        // The name the configuration gives (MY0, A:), the number otherwise
+        ui.title.textContent = drive.title || t(drive.kind === "hdd" ? "hardDisk" : "drive", number);
         if (ui.note) ui.note.textContent = t("hddNote");
         ui.block.renderHint();
         ui.file.textContent = drive.loaded ? drive.file : t("noDisk");
@@ -2266,6 +2270,7 @@ function readHardDisks(module) {
             file: (f[4] || "").replace(/^\/host\/\d+\//, ""),
             files: f[5] || "",
             filesSave: f[5] || "",
+            title: f[6] || "",
         });
     }
     return list;

@@ -18,6 +18,7 @@
 #include "emulator/emulator.h"
 #include "emulator/config_ext.h"
 #include "emulator/files.h"
+#include "emulator/utils.h"
 #include "emulator/devices/common/fdd.h"
 #include "emulator/devices/common/tape.h"
 #include "emulator/devices/common/hdd_image.h"
@@ -781,9 +782,19 @@ static FDD * wasm_fdd(const char * name)
     return dynamic_cast<FDD*>(g_emulator->dm->get_device_by_name(std::string(name), false));
 }
 
+// The name a drive goes by on the page, "title" of its configuration (MY0, A:),
+// empty when the configuration gives none and the page numbers the drives
+static std::string wasm_drive_title(const ComputerDevice * device)
+{
+    std::string title = str_trim(device->config_parameter("title"));
+    for (size_t j = 0; j < title.size(); j++)
+        if (title[j] == '\t' || title[j] == '\n') title[j] = ' ';
+    return title;
+}
+
 // One line per drive of the machine, the fields separated by tabs, because the
 // file filters themselves carry '|', ';' and spaces:
-//   name  loaded  protected  led  file_name  files  files_save
+//   name  loaded  protected  led  file_name  files  files_save  title
 // The page builds a block per line and polls this for the lamp and the disk.
 EMSCRIPTEN_KEEPALIVE
 const char* wasm_fdd_info()
@@ -805,7 +816,8 @@ const char* wasm_fdd_info()
                 + (fdd->is_led_on() ? "1" : "0") + "\t"
                 + file + "\t"
                 + fdd->files + "\t"
-                + fdd->files_save + "\n";
+                + fdd->files_save + "\t"
+                + wasm_drive_title(fdd) + "\n";
     }
     return result.c_str();
 }
@@ -903,7 +915,7 @@ void wasm_host_file_release(int id)
 }
 
 // One line per hard disk of the machine, tab separated:
-//   name  loaded  protected  led  file_name  files
+//   name  loaded  protected  led  file_name  files  title
 EMSCRIPTEN_KEEPALIVE
 const char* wasm_hdd_info()
 {
@@ -927,7 +939,8 @@ const char* wasm_hdd_info()
                 + (image.write_protect() ? "1" : "0") + "\t"
                 + (image.is_led_on() ? "1" : "0") + "\t"
                 + file + "\t"
-                + files + "\n";
+                + files + "\t"
+                + wasm_drive_title(devices[i]) + "\n";
     }
     return result.c_str();
 }

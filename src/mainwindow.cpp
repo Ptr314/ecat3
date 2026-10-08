@@ -504,6 +504,13 @@ void MainWindow::add_languages()
     langsAction->setMenu(subMenu);
 }
 
+//What the tooltip of a drive button says: the name the configuration gives
+//the drive ("title": MY0, A:), or the fallback numbering the drives
+static QString drive_title(ComputerDevice * d, const QString &fallback)
+{
+    const std::string title = str_trim(d->config_parameter("title"));
+    return title.empty() ? fallback : QString::fromStdString(title);
+}
 
 void MainWindow::CreateFDDMenu(unsigned int n)
 {
@@ -543,6 +550,7 @@ void MainWindow::CreateFDDMenu(unsigned int n)
     fdd_button[n]->setMenu(fdd_menu[n]);
     fdd_button[n]->setPopupMode(QToolButton::MenuButtonPopup);
     fdd_button[n]->setFocusPolicy(Qt::NoFocus);
+    fdd_button[n]->setToolTip(drive_title(fdds[n], MainWindow::tr("Floppy drive %1").arg(n + 1)));
 
     connect(fdd_button[n], &QToolButton::clicked, this, [this, n](){fdd_open(n);});
 
@@ -584,6 +592,7 @@ void MainWindow::CreateHDDMenu(unsigned int n)
     hdd_button[n]->setMenu(hdd_menu[n]);
     hdd_button[n]->setPopupMode(QToolButton::MenuButtonPopup);
     hdd_button[n]->setFocusPolicy(Qt::NoFocus);
+    hdd_button[n]->setToolTip(drive_title(hdds[n], MainWindow::tr("Hard disk %1").arg(n + 1)));
 
     connect(hdd_button[n], &QToolButton::clicked, this, [this, n](){hdd_open(n);});
 

@@ -121,7 +121,7 @@
 <context>
     <name>BKFDC</name>
     <message>
-        <location filename="../emulator/devices/specific/bk_fdc.cpp" line="+86"/>
+        <location filename="../emulator/devices/specific/bk_fdc.cpp" line="+78"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -149,7 +149,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+136"/>
+        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+171"/>
         <source>Unknown timing</source>
         <translation type="unfinished"></translation>
     </message>
@@ -230,23 +230,23 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+735"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1103"/>
         <source>Disk image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="+331"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="+347"/>
         <source>Serial port of the computer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Network station number (0-63)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+634"/>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+526"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+545"/>
         <source>Hard disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -272,6 +272,31 @@
         <location filename="../emulator/core.cpp" line="+566"/>
         <location line="+15"/>
         <source>ROM image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/specific/dvk_kmd.cpp" line="+235"/>
+        <source>MY board switch SA1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>1 on, 2 off (normal)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>1 off, 2 on</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Both on (self-tests repeated)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Both off (other drive parameters)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -306,12 +331,12 @@
 <context>
     <name>DL11</name>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="-274"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="-289"/>
         <source>Incorrect baud rate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+424"/>
+        <location line="+446"/>
         <source>Command &apos;connect&apos; expects a port name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -334,7 +359,7 @@
 <context>
     <name>DVKDW</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-447"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-467"/>
         <source>Hard disk image file not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -344,7 +369,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+524"/>
+        <location line="+544"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -352,7 +377,7 @@
 <context>
     <name>DVKKMD</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_kmd.cpp" line="+58"/>
+        <location filename="../emulator/devices/specific/dvk_kmd.cpp" line="-177"/>
         <source>Memory mapper is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -360,7 +385,7 @@
 <context>
     <name>DVKMX</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_mx.cpp" line="+62"/>
+        <location filename="../emulator/devices/specific/dvk_mx.cpp" line="+60"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -498,9 +523,9 @@
         <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+79"/>
         <location line="+11"/>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
-        <location line="+218"/>
+        <location line="+222"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+144"/>
-        <location line="+185"/>
+        <location line="+194"/>
         <source>Video output</source>
         <translation type="unfinished"></translation>
     </message>
@@ -542,24 +567,24 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-216"/>
-        <location line="+219"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-183"/>
-        <location line="+186"/>
+        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-220"/>
+        <location line="+223"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-192"/>
+        <location line="+195"/>
         <source>RGB</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-218"/>
-        <location line="+219"/>
+        <location line="-222"/>
+        <location line="+223"/>
         <source>GRB</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-218"/>
-        <location line="+219"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-185"/>
-        <location line="+186"/>
+        <location line="-222"/>
+        <location line="+223"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-194"/>
+        <location line="+195"/>
         <source>Mono</source>
         <translation type="unfinished"></translation>
     </message>
@@ -813,7 +838,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+245"/>
+        <location filename="../emulator/emulator.cpp" line="+251"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1177,7 +1202,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-704"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1069"/>
         <source>Incorrect fdd list for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1190,43 +1215,45 @@
 <context>
     <name>FDD</name>
     <message>
-        <location line="+111"/>
-        <location line="+79"/>
+        <location line="+126"/>
+        <location line="+87"/>
         <source>FDD device is working in a logical mode, no physical formats are supported</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-74"/>
+        <location line="-82"/>
+        <location line="+501"/>
+        <location line="+16"/>
         <source>Unrecognized MFM format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+116"/>
+        <location line="-393"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location line="+99"/>
         <source>Expected conversion from DSK to MFM is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+321"/>
+        <location line="+618"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+11"/>
         <source>Saving images for this type of drive is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-573"/>
+        <location line="-938"/>
         <source>Incorrect fdd parameters for</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+20"/>
         <source>Unknown fdd mode</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1241,30 +1268,43 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+90"/>
+        <location line="+18"/>
+        <location line="+445"/>
+        <source>HFE images are not supported for this drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-356"/>
         <location line="+37"/>
         <location line="+44"/>
+        <location line="+29"/>
+        <location line="+18"/>
+        <location line="+273"/>
+        <location line="+16"/>
         <source>Error opening file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-39"/>
+        <location line="-375"/>
         <source>File is in unknown format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+44"/>
+        <location line="+19"/>
+        <location line="+18"/>
+        <location line="+288"/>
         <source>Incorrect disk image size for</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+300"/>
+        <location line="+286"/>
         <location line="+15"/>
         <source>Error exporting disk.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+403"/>
+        <location line="+509"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1287,7 +1327,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+367"/>
+        <location line="+402"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1367,6 +1407,19 @@
     </message>
 </context>
 <context>
+    <name>IE15Terminal</name>
+    <message>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+136"/>
+        <source>Character generator device is expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Keyboard of type ie15-keyboard is expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>IndirectMemory</name>
     <message>
         <location filename="../emulator/devices/common/indirect_memory.cpp" line="+38"/>
@@ -1417,15 +1470,50 @@
 <context>
     <name>KCGD</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_kcgd.cpp" line="+64"/>
+        <location filename="../emulator/devices/specific/dvk_kcgd.cpp" line="+66"/>
         <source>KCGD mouse device is expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>File not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>A scan PROM image must be 256 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>The line ends in the middle of a character cell</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The scan PROM never ends a line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>The scan PROM gives the processor no memory window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+48"/>
+        <source>The scan PROM never ends a field</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>The scan PROM gives no interlaced fields</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>KCGDDisplay</name>
     <message>
-        <location line="+439"/>
+        <location line="+486"/>
         <source>KCGD device is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1443,7 +1531,7 @@
 <context>
     <name>KSMDisplay</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ksm_display.cpp" line="+38"/>
+        <location filename="../emulator/devices/specific/dvk_ksm_display.cpp" line="+39"/>
         <source>Video memory device is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1461,7 +1549,7 @@
 <context>
     <name>Keyboard</name>
     <message>
-        <location filename="../emulator/devices/common/keyboard.cpp" line="+328"/>
+        <location filename="../emulator/devices/common/keyboard.cpp" line="+375"/>
         <source>This keyboard type has no native key table support</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1476,7 +1564,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+53"/>
+        <location line="+54"/>
         <source>Unknown flag of a modifier in the key table</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1492,7 +1580,7 @@
 <context>
     <name>MS7004</name>
     <message>
-        <location filename="../emulator/devices/specific/ms7004.cpp" line="+40"/>
+        <location filename="../emulator/devices/specific/ms7004.cpp" line="+78"/>
         <source>Keyboard map file is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1518,7 +1606,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+213"/>
+        <location line="+41"/>
+        <source>Key table entry is incorrect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Invalid value in the key table</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Duplicate entry in the key table</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+349"/>
         <source>Invalid key code</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1578,14 +1681,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+61"/>
+        <location line="+63"/>
         <source>Select a machine...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1320"/>
+        <location filename="../mainwindow.cpp" line="+1404"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1627,6 +1730,13 @@
     </message>
     <message>
         <location line="+9"/>
+        <location line="+3"/>
+        <location filename="../mainwindow.cpp" line="+874"/>
+        <source>Record video</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>About...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1642,13 +1752,13 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="+754"/>
+        <location filename="../mainwindow.cpp" line="+95"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1195"/>
+        <location filename="../mainwindow.cpp" line="-1411"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1673,7 +1783,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-263"/>
+        <location line="-275"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1688,22 +1798,24 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-474"/>
+        <location filename="../mainwindow.cpp" line="-547"/>
         <location line="+70"/>
-        <location line="+943"/>
+        <location line="+1017"/>
         <location line="+55"/>
         <location line="+79"/>
-        <location line="+151"/>
+        <location line="+200"/>
         <location line="+107"/>
         <location line="+62"/>
-        <location line="+450"/>
+        <location line="+154"/>
+        <location line="+25"/>
+        <location line="+438"/>
         <location line="+29"/>
         <location line="+92"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1968"/>
+        <location line="-2258"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -1723,45 +1835,55 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+46"/>
-        <location line="+1170"/>
+        <location line="+17"/>
+        <location line="+47"/>
+        <location line="+1285"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1284"/>
-        <location line="+46"/>
+        <location line="-1400"/>
+        <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-43"/>
-        <location line="+46"/>
+        <location line="-44"/>
+        <location line="+47"/>
         <source>Write protect</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-43"/>
-        <location line="+47"/>
+        <location line="-44"/>
+        <location line="+48"/>
         <source>Eject</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-44"/>
+        <location line="-45"/>
         <source>Write to a file...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location line="+44"/>
+        <location line="+45"/>
         <source>Default image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+44"/>
+        <location line="-25"/>
+        <source>Floppy drive %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <source>Hard disk %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+28"/>
         <source>Mouse speed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1781,7 +1903,56 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+16"/>
+        <location line="+1115"/>
+        <location line="+366"/>
+        <location line="+116"/>
+        <source>Video recording</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-1592"/>
+        <source>Codec</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Frame rate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>As the machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>fps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Folder for videos...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Folder for videos</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Path to ffmpeg...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+1431"/>
+        <source>Path to ffmpeg</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-1421"/>
         <source>Auto scale</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1833,7 +2004,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+562"/>
+        <location line="+564"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
@@ -1845,12 +2016,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+72"/>
+        <location line="+94"/>
         <source>Saved states</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="-77"/>
         <source>All supported files</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1860,7 +2031,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+51"/>
+        <location line="+73"/>
         <location line="+19"/>
         <location line="+2"/>
         <source>Save state</source>
@@ -1877,7 +2048,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+83"/>
+        <location line="+66"/>
+        <location line="+458"/>
+        <source>Finishing the video...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-414"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1917,12 +2094,37 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+110"/>
+        <location line="+53"/>
+        <source>Video is recorded by ffmpeg, which is not found next to the emulator or on the PATH. Please show where it is.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Unable to create the folder </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+52"/>
+        <source>Recording video to </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+51"/>
+        <source>Video saved: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Stop video recording</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+95"/>
         <source>This machine has no usable keyboard picture</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+159"/>
+        <location line="+160"/>
         <source>Emulation stopped</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1947,7 +2149,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-140"/>
+        <location filename="../mainwindow.ui" line="-142"/>
         <source>Action recording</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1957,7 +2159,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+247"/>
+        <location line="+261"/>
         <source>Open recording...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2053,12 +2255,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1108"/>
+        <location line="-1324"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1151"/>
+        <location line="+1367"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2116,7 +2318,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+25"/>
         <source>rus-on should be 0 or 1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2136,7 +2338,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+212"/>
+        <location line="+213"/>
         <source>Key table entry is incorrect</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2258,7 +2460,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+55"/>
         <source>Copy to a new configuration</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2269,7 +2471,7 @@
     </message>
     <message>
         <location line="+26"/>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+350"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+406"/>
         <source>Delete the configuration</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2284,7 +2486,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+71"/>
         <source>Set as default</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2299,23 +2501,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="-267"/>
-        <location line="+271"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="-308"/>
+        <location line="+312"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-271"/>
+        <location line="-312"/>
         <source>Error opening CSS file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location line="+94"/>
         <source>Configurations with errors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+210"/>
+        <location line="+215"/>
         <source>Delete the configuration &quot;%1&quot;?
 %2</source>
         <translation type="unfinished"></translation>
@@ -2433,7 +2635,7 @@
 <context>
     <name>RasterDisplay</name>
     <message>
-        <location filename="../emulator/devices/common/raster_display.cpp" line="+62"/>
+        <location filename="../emulator/devices/common/raster_display.cpp" line="+68"/>
         <source>Unknown video standard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2706,7 +2908,7 @@
 <context>
     <name>UKNCDisplay</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-302"/>
+        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-306"/>
         <source>Plane must be a RAM device</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2822,11 +3024,10 @@
 <context>
     <name>errors</name>
     <message>
-        <location filename="../libs/dsk_tools/src/dsk_tools.cpp" line="+192"/>
+        <location filename="../libs/dsk_tools/src/dsk_tools.cpp" line="+376"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_raw.cpp" line="+28"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_aim.cpp" line="+102"/>
-        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+56"/>
-        <location line="+40"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+28"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_fil.cpp" line="+23"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_mfm.cpp" line="+236"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_imd.cpp" line="+30"/>
@@ -2850,13 +3051,13 @@
     </message>
     <message>
         <location line="-13"/>
-        <location line="+123"/>
+        <location line="+125"/>
         <location filename="../libs/dsk_tools/src/filesystems/fs_prodos.cpp" line="+157"/>
         <source>ProDOS volume header not found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-100"/>
+        <location line="-102"/>
         <source>Invalid file size for NIB format</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2881,7 +3082,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+26"/>
         <location line="+17"/>
         <source>Invalid HFE file format</source>
         <translation type="unfinished"></translation>
@@ -2918,6 +3119,7 @@
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/loaders/loader.h" line="+33"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+93"/>
         <source>Not implemented</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2941,40 +3143,38 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../libs/dsk_tools/src/hfe.cpp" line="+102"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_aim.cpp" line="+8"/>
-        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="-33"/>
         <location filename="../libs/dsk_tools/src/viewers/agat/agat_font_bft.cpp" line="+31"/>
         <location line="+13"/>
         <source>File is too small</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_aim.cpp" line="+58"/>
         <source>Invalid index mark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+7"/>
-        <location line="+42"/>
+        <location filename="../libs/dsk_tools/src/hfe.cpp" line="+4"/>
         <source>Invalid HFE signature</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-41"/>
-        <location line="+4"/>
-        <location line="+6"/>
-        <location line="+37"/>
-        <location line="+26"/>
+        <location line="+2"/>
+        <location line="+13"/>
+        <location line="+11"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="-50"/>
         <source>Invalid HFE parameters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-16"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+37"/>
         <source>Unsupported disk type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+37"/>
+        <location line="-14"/>
         <source>Failed to decode track data</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3044,12 +3244,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/writers/writer_hxc_hfe.cpp" line="+73"/>
+        <location filename="../libs/dsk_tools/src/writers/writer_hxc_hfe.cpp" line="+68"/>
+        <location line="+16"/>
         <source>Format not supported for HFE format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+8"/>
         <source>Track substitution not supported for HFE format</source>
         <translation type="unfinished"></translation>
     </message>

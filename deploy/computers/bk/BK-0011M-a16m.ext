@@ -51,6 +51,7 @@ fdc : bk-fdc {
 // Образ - дамп секторов (*.img, *.bkd, *.dsk); укороченные образы на 40
 // дорожек читаются как дискеты с пустым остатком.
 fdd0 : fdd {
+	title = A:
 	sides = _2
 	tracks = _80
 	sectors = _10
@@ -66,6 +67,7 @@ fdd0 : fdd {
 }
 
 fdd1 : fdd {
+	title = B:
 	sides = _2
 	tracks = _80
 	sectors = _10
