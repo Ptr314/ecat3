@@ -11,7 +11,7 @@
         C040-C04F -> port-int-en[0040] mode=rw
         C050-C057 -> port-C05x[0000] mode=rw
         C058-C05B -> port-pal[0000] mode=rw
-        C063-C063 -> port-kbd-ruslat[0000] mode=rw
+        C063-C063 -> port-kbd-ruslat[0000] mode=r
         C080-C08F -> main-mapper[C080] mode=rw
         C0D0-C0DF -> fdc840[0000] mode=rw
         C0F0-C0FF -> pm[0000] mode=w

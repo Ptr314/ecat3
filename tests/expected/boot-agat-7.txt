@@ -9,7 +9,7 @@
         C010-C01F -> port-kbd-reset[0000] mode=rw
         C030-C03F -> port-sound[0000] mode=rw
         C040-C05F -> port-int-en[0000] mode=rw
-        C063-C063 -> port-kbd-ruslat[0000] mode=rw
+        C063-C063 -> port-kbd-ruslat[0000] mode=r
         C0B0-C0BF -> fdc140[0000] mode=rw
         C200-C2FF -> rom-card-port[0000] mode=rw
         C300-C3FF -> boot140[0000] mode=r

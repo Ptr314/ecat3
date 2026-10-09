@@ -9,7 +9,7 @@
         C040-C04F -> port-int-en[0040] mode=rw
         C050-C057 -> port-C05x[0000] mode=rw
         C058-C05B -> port-pal[0000] mode=rw
-        C063-C063 -> port-kbd-ruslat[0000] mode=rw
+        C063-C063 -> port-kbd-ruslat[0000] mode=r
         C080-C08F -> main-mapper[C080] mode=rw
         C090-C09F -> yazs[0000] mode=rw
         C0E0-C0EF -> fdc140[0000] mode=rw
