@@ -1094,7 +1094,7 @@
     </message>
     <message>
         <location filename="../emulator/config_fields.cpp" line="-127"/>
-        <source>A packed extension cannot be edited</source>
+        <source>A packed extension that changes more than the fields cannot be copied</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

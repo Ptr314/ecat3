@@ -108,6 +108,15 @@ bool is_machine_file(const std::string &path);          //any of the above, plus
 //The name without its extension, for companion files (.md) and for ini keys
 std::string machine_file_stem(const std::string &path);
 
+//The text of an extension, an .ext or the one .ext inside an .ext.zip.
+//ext_name labels the parser's messages; other_files, if asked, counts the
+//files an archive holds beside the text (0 for a plain .ext)
+emulator::Result read_extension_file(const std::string &file, std::string &text, std::string &ext_name,
+                                     size_t * other_files = nullptr);
+//Writes it back the same way. An existing archive keeps the files beside the
+//text and the text's own name; a new one holds <stem>.ext alone
+emulator::Result write_extension_file(const std::string &file, const std::string &text);
+
 //The file a machine file is built on, without loading anything: a .cfg is its
 //own base, an extension names one in @extends - a .cfg or another extension.
 //The web frontend asks before it loads an extension downloaded from a link,

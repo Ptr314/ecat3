@@ -78,7 +78,8 @@ ExtEditorWindow::ExtEditorWindow(QWidget *parent, Emulator * e, const QString &p
     // A copy of an extension stands on it rather than repeating its edits on
     // its base: a shipped variant brings its own files (the web page fetches
     // the bundle of the machine an extension names), and its fixes reach the
-    // copy
+    // copy. A user's copy that only sets fields is not stood on: the new one
+    // takes its base and its edits
     emulator::Result res = m_model.open(path.toStdString(), paths, copy);
     if (!res) {
         QMessageBox::warning(parent, tr("Error"), translateResultMessage(res.message));
@@ -354,13 +355,12 @@ bool ExtEditorWindow::save()
     m_model.ext.script = script.trimmed().isEmpty() ? std::string() : script.toStdString();
     const std::string text = m_model.build();
 
-    QFile out(path);
-    if (!out.open(QIODevice::WriteOnly | QIODevice::Truncate) ||
-        out.write(text.data(), static_cast<qint64>(text.size())) != static_cast<qint64>(text.size())) {
+    // An archive keeps whatever it carries beside the text
+    emulator::Result res = write_extension_file(path.toStdString(), text);
+    if (!res) {
         QMessageBox::warning(this, tr("Error"), tr("Cannot write the file") + " " + path);
         return false;
     }
-    out.close();
 
     m_model.file = path.toStdString();
     m_file_edit->setText(QDir::toNativeSeparators(path));

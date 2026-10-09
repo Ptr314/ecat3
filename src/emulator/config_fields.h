@@ -50,12 +50,18 @@ public:
     std::string version;            //Of the extension
     ConfigExtension ext;            //Edits the editor does not know are kept as they are
     std::vector<DeviceConfigField> fields;
+    size_t other_files = 0;         //Of an archive opened, beside its text
 
-    //A .cfg starts a new extension of it; an .ext is opened for editing, or
-    //with derive starts a new extension standing on it, as a .cfg does - the
-    //chooser's Copy. A packed one (.ext.zip) is neither: it cannot be written
-    //back, and @extends does not take it
+    //A .cfg starts a new extension of it; an .ext or .ext.zip is opened for
+    //editing, or with derive starts a new extension standing on it, as a .cfg
+    //does - the chooser's Copy, which takes the @script along. An unprotected
+    //one that only sets fields is not stood on: the copy takes its base and
+    //its edits, with no file name. An archive can be copied only so, since
+    //@extends does not take one
     emulator::Result open(const std::string &path, const MachinePaths &paths, bool derive = false);
+
+    //Every edit of ext is a field of the editor: nothing added, removed or wired
+    bool only_field_edits() const;
 
     //Replaces the edits of the known fields by what the fields hold now and
     //returns the text of the extension
@@ -69,5 +75,6 @@ public:
 //name is dropped first, so a copy of a copy is not "Name (1) (1)"
 std::string unique_version(const std::string &name, const std::vector<std::string> &taken);
 
-//"<dir><stem>-<n>.ext" with the first n that is not there yet
+//"<dir><stem>-<n>.ext.zip" with the first n taken neither as .ext nor as
+//.ext.zip: what the editor saves a new extension as
 std::string unique_ext_file(const std::string &dir, const std::string &stem);

@@ -93,16 +93,37 @@ emulator::Result ExtEditModel::open(const std::string &path, const MachinePaths 
     file.clear();
     ext = ConfigExtension();
     fields.clear();
+    other_files = 0;
 
-    if (ends_with_ci(path, ".ext.zip"))
-        return model_error(QT_TRANSLATE_NOOP("EmulatorConfig", "A packed extension cannot be edited"), path);
+    const bool packed = ends_with_ci(path, ".ext.zip");
+
+    //A copy of the user's own copy that only sets fields describes no machine
+    //of its own: the new one stands on the same base and repeats the edits.
+    //A shipped variant, or one that adds, removes or wires anything, is stood
+    //on - which an archive cannot be, @extends does not take one. Nor can the
+    //files an archive carries beside its text go into a copy
+    if (derive && is_extension_file(path))
+    {
+        emulator::Result res = open(path, paths, false);
+        if (!res) return res;
+        if (!ext.is_protected && only_field_edits() && other_files == 0)
+        {
+            file.clear();
+            return res;
+        }
+        file.clear();
+        ext = ConfigExtension();
+        fields.clear();
+        if (packed)
+            return model_error(QT_TRANSLATE_NOOP("EmulatorConfig", "A packed extension that changes more than the fields cannot be copied"), path);
+    }
 
     if (is_extension_file(path) && !derive)
     {
-        const std::string text = dsk_tools::utf8_read_file(path);
-        if (text.empty())
-            return model_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading config file"), path);
-        emulator::Result res = ext.parse(text, path);
+        std::string text, ext_name;
+        emulator::Result res = read_extension_file(path, text, ext_name, &other_files);
+        if (!res) return res;
+        res = ext.parse(text, ext_name);
         if (!res) return res;
         file = path;
         extends = ext.extends;
@@ -119,6 +140,20 @@ emulator::Result ExtEditModel::open(const std::string &path, const MachinePaths 
             extends = path.substr(root.size());
         for (size_t i = 0; i < extends.size(); i++) if (extends[i] == '\\') extends[i] = '/';
         ext.extends = extends;
+
+        //Only the script of the file opened runs, not those of the chain
+        //under it: a copy that did not carry it would lose it
+        if (derive && is_extension_file(path))
+        {
+            std::string text, ext_name;
+            emulator::Result res = read_extension_file(path, text, ext_name);
+            if (!res) return res;
+            ConfigExtension source;
+            res = source.parse(text, ext_name);
+            if (!res) return res;
+            ext.script = source.script;
+            ext.script_line = source.script_line;
+        }
     }
 
     //The base may be an extension itself: what the fields are compared with
@@ -153,6 +188,21 @@ emulator::Result ExtEditModel::open(const std::string &path, const MachinePaths 
         read_line(current, f.device, f.field.name, f.present, f.value, f.extended);
     }
     return emulator::Result::ok();
+}
+
+bool ExtEditModel::only_field_edits() const
+{
+    for (size_t i = 0; i < ext.edits.size(); i++)
+    {
+        const ExtEdit &e = ext.edits[i];
+        if (e.op != ExtEdit::Set && e.op != ExtEdit::Remove) return false;
+        if (!e.param.left_range.empty() || !e.before_device.empty()) return false;
+        bool known = false;
+        for (size_t j = 0; j < fields.size() && !known; j++)
+            known = fields[j].device == e.device && fields[j].field.name == e.param.name;
+        if (!known) return false;
+    }
+    return true;
 }
 
 std::string ExtEditModel::build()
@@ -265,7 +315,10 @@ std::string unique_ext_file(const std::string &dir, const std::string &stem)
 {
     for (unsigned n = 1; ; n++)
     {
-        const std::string candidate = dir + stem + "-" + std::to_string(n) + ".ext";
-        if (!dsk_tools::file_exists(candidate)) return candidate;
+        //Free in both forms: the two would share the description and the
+        //unpacked directory
+        const std::string candidate = dir + stem + "-" + std::to_string(n);
+        if (!dsk_tools::file_exists(candidate + ".ext") && !dsk_tools::file_exists(candidate + ".ext.zip"))
+            return candidate + ".ext.zip";
     }
 }

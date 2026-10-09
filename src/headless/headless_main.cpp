@@ -642,6 +642,81 @@ bool check_ext_editor_keeps_blocks(const std::string &computers_path, std::strin
     return true;
 }
 
+// The editor saves a new extension as an .ext.zip and edits one in place: the
+// text goes back under its own name and the files beside it stay. A copy of a
+// user's archive that only sets fields takes its base; one that carries files
+// cannot be stood on (@extends takes no archive) and is refused
+bool check_ext_editor_zip(const std::string &computers_path, std::string &message)
+{
+    const std::string base = "agat/Agat-9-yazs.ext";
+    if (!dsk_tools::file_exists(computers_path + base)) return true;
+    MachinePaths paths;
+    paths.computers_path = computers_path;
+
+    const std::string dir = fs::temp_directory_path().generic_string() + "/";
+    const std::string path = unique_ext_file(dir, "ecat3-selftest-zip");
+    if (path.size() < 8 || path.compare(path.size() - 8, 8, ".ext.zip") != 0) { message = "a new file is named " + path; return false; }
+    const std::string script = "WAIT _100\nEXIT\n";
+    std::error_code ec;
+    auto fail = [&](const std::string &m) { fs::remove(path, ec); message = m; return false; };
+
+    ExtEditModel model;
+    emulator::Result res = model.open(computers_path + base, paths, true);
+    if (!res) return fail("open: " + res.message);
+    model.version = "Zip";
+    model.ext.script = script;
+    res = write_extension_file(path, model.build());
+    if (!res) return fail("write: " + res.message);
+
+    // A file beside the text, as a packed extension may carry
+    {
+        ZipReader r;
+        if (!r.open(dsk_tools::utf8_read_file(path)) || r.entries().size() != 1) return fail("a new archive holds more than its text");
+        std::vector<uint8_t> text;
+        r.read(0, text);
+        ZipWriter w;
+        w.add(r.entries()[0].name, std::string(text.begin(), text.end()));
+        w.add("files/data.bin", std::string("\x01\x02\x03", 3));
+        std::string out;
+        w.build(out);
+        dsk_tools::UTF8_ofstream f(path, std::ios::binary);
+        f.write(out.data(), static_cast<std::streamsize>(out.size()));
+    }
+
+    ExtEditModel edit;
+    res = edit.open(path, paths);
+    if (!res) return fail("open of the archive: " + res.message);
+    if (edit.file != path || edit.extends != base || edit.version != "Zip" || edit.ext.script != script || edit.other_files != 1)
+        return fail("the archive came back as another extension");
+    edit.version = "Zip 2";
+    res = write_extension_file(path, edit.build());
+    if (!res) return fail("rewrite: " + res.message);
+    {
+        ZipReader r;
+        std::vector<uint8_t> data;
+        if (!r.open(dsk_tools::utf8_read_file(path)) || r.entries().size() != 2 || !r.read("files/data.bin", data) || data.size() != 3)
+            return fail("a rewrite lost the files beside the text");
+    }
+    EmulatorConfig c;
+    MachineSource source;
+    res = load_machine_description(path, paths, c, source, true);
+    if (!res || source.script != script) return fail("the rewritten archive does not load: " + res.message);
+
+    ExtEditModel copy;
+    if (copy.open(path, paths, true)) return fail("a copy of an archive carrying files was not refused");
+
+    // Without the file it is a user's copy: the next one stands on its base
+    res = write_extension_file(path + ".plain.ext.zip", edit.build());
+    if (res) res = copy.open(path + ".plain.ext.zip", paths, true);
+    fs::remove(path + ".plain.ext.zip", ec);
+    if (!res) return fail("copy of an archive: " + res.message);
+    if (copy.extends != base || copy.ext.script != script || !copy.file.empty())
+        return fail("a copy of an archive stands on " + copy.extends);
+
+    fs::remove(path, ec);
+    return true;
+}
+
 // The chooser's Copy of an extension stands on it: the editor writes an @extends
 // of the copied file and none of its edits, and saving that unchanged builds
 // the very machine copied. A copy repeating the edits on the bottom .cfg would
@@ -686,6 +761,44 @@ bool check_ext_editor_copy(const std::string &computers_path, std::string &messa
         if (v != std::string::npos) machine[k].erase(v, machine[k].find('\n', v) - v);
     }
     if (machine[0] != machine[1]) { message = "the copy builds another machine:\n" + saved; return false; }
+
+    // Only the script of the file opened runs, so the copy carries it along,
+    // whether it stands on the file copied or takes that file's base. A user's
+    // copy that only sets a field is not stood on; a protected one is
+    const DeviceConfigField *field = nullptr;
+    for (size_t i = 0; i < model.fields.size() && field == nullptr; i++)
+        if (model.fields[i].present && model.fields[i].extended.empty()) field = &model.fields[i];
+    if (field == nullptr) { message = "no field to edit in " + original; return false; }
+    const std::string script = "WAIT _100\nEXIT\n";
+    const std::string scripted = (fs::temp_directory_path() / "ecat3-selftest-scripted.ext").generic_string();
+    for (int is_protected = 0; is_protected < 2; is_protected++)
+    {
+        {
+            const std::string text = "@extends " + original + "\n@version Scripted\n"
+                                   + (is_protected ? "@protected\n" : "")
+                                   + field->device + ":" + field->field.name + " = " + field->value + "\n"
+                                   + "@script\n" + script;
+            dsk_tools::UTF8_ofstream f(scripted, std::ios::binary);
+            f.write(text.data(), static_cast<std::streamsize>(text.size()));
+        }
+        ExtEditModel copy;
+        res = copy.open(scripted, paths, true);
+        // Before build(), which drops an edit giving the base's own value
+        const bool edit_kept = res && copy.ext.edits.size() == 1;
+        const std::string copied = res ? copy.build() : std::string();
+        fs::remove(scripted, ec);
+        if (!res) { message = "open of a scripted extension: " + res.message; return false; }
+        if (copy.ext.script != script || copied.find("@script\n" + script) == std::string::npos) {
+            message = "the copy lost the script:\n" + copied; return false;
+        }
+        const bool on_base = copy.extends == original;
+        if (on_base == (is_protected != 0) || edit_kept == (is_protected != 0)) {
+            message = std::string(is_protected ? "a copy of a protected extension" : "a copy of a copy that sets a field")
+                    + " stands on " + copy.extends + ":\n" + copied;
+            return false;
+        }
+        if (!copy.file.empty()) { message = "the copy has a file name: " + copy.file; return false; }
+    }
     return true;
 }
 
@@ -880,6 +993,7 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     bool ext_ok = check_ext_devices(message);
     if (ext_ok) ext_ok = check_ext_editor_keeps_blocks(work_path, message);
     if (ext_ok) ext_ok = check_ext_editor_copy(work_path, message);
+    if (ext_ok) ext_ok = check_ext_editor_zip(work_path, message);
     if (!ext_ok) { std::cout << "FAIL ext devices: " << message << std::endl; failed++; }
     std::cout << "extension device blocks: " << (ext_ok ? "ok" : "FAILED") << std::endl;
 

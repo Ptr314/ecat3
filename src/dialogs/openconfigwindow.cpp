@@ -242,10 +242,13 @@ void OpenConfigWindow::list_machines(QString work_path)
         if (!QFileInfo::exists(description))
             description = QString::fromStdString(machine_file_stem(source.base_cfg)) + ".md";
 
-        //An archive usually lies beside the extension it was packed from and
-        //carries the same version: without a mark the two lines look the same
+        //An archive packed from an extension that lies beside it carries the
+        //same version: without a mark the two lines look the same. Alone - as
+        //the editor saves every new one - it needs none
         QString title = (!version.isEmpty())?version:name;
-        if (fi.fileName().endsWith(".ext.zip", Qt::CaseInsensitive)) title += " (zip)";
+        if (fi.fileName().endsWith(".ext.zip", Qt::CaseInsensitive) &&
+            QFileInfo::exists(QString::fromStdString(machine_file_stem(fi.absoluteFilePath().toStdString())) + ".ext"))
+            title += " (zip)";
 
         ComputerModel * computer = new ComputerModel(type, name, title, fi.absoluteFilePath(), order);
         computer->setData(description, Qt::UserRole + 2);
@@ -303,8 +306,8 @@ void OpenConfigWindow::update_buttons()
     const bool is_ext = p.endsWith(".ext");
     //@protected keeps the shipped variants as they are: they are copied, not
     //changed. The copy is the user's own
-    ui->copyButton->setEnabled(is_cfg || is_ext);
-    ui->editButton->setEnabled(is_ext && !selected_protected);
+    ui->copyButton->setEnabled(is_cfg || is_ext || is_zip);
+    ui->editButton->setEnabled((is_ext || is_zip) && !selected_protected);
     ui->deleteButton->setEnabled((is_ext || is_zip) && !selected_protected);
 }
 

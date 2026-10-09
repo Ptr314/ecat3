@@ -14,6 +14,7 @@
 #include "libs/dsk_tools/src/utils.h"
 #include "libs/lodepng/lodepng.h"
 #include "libs/zip_reader.h"
+#include "libs/zip_writer.h"
 
 namespace {
 
@@ -693,6 +694,67 @@ bool is_state_file(const std::string &path)
 bool is_machine_file(const std::string &path)
 {
     return ends_with_ci(path, ".cfg") || is_extension_file(path) || is_state_file(path);
+}
+
+emulator::Result read_extension_file(const std::string &file, std::string &text, std::string &ext_name,
+                                     size_t * other_files)
+{
+    std::string archive;
+    ZipReader zip;
+    emulator::Result res = read_extension_text(file, zip, archive, text, ext_name);
+    if (res && other_files != nullptr)
+    {
+        *other_files = 0;
+        for (size_t i = 0; i < zip.entries().size(); i++)
+        {
+            const std::string &n = zip.entries()[i].name;
+            if (!zip.entries()[i].is_dir() && !(n.find('/') == std::string::npos && ends_with_ci(n, ".ext")))
+                (*other_files)++;
+        }
+    }
+    return res;
+}
+
+emulator::Result write_extension_file(const std::string &file, const std::string &text)
+{
+    std::string out = text;
+    if (ends_with_ci(file, ".ext.zip"))
+    {
+        //The text is the archive's one .ext at the top; the files beside it
+        //stay as they were, under the name the text had
+        ZipWriter zw;
+        std::string member = dsk_tools::get_filename(machine_file_stem(file)) + ".ext";
+        std::vector<std::pair<std::string, std::vector<uint8_t>>> rest;
+        if (dsk_tools::file_exists(file))
+        {
+            std::string old_text, archive, ext_name;
+            ZipReader zip;
+            emulator::Result res = read_extension_text(file, zip, archive, old_text, ext_name);
+            if (!res) return res;
+            for (size_t i = 0; i < zip.entries().size(); i++)
+            {
+                const std::string &n = zip.entries()[i].name;
+                if (n.find('/') == std::string::npos && ends_with_ci(n, ".ext")) { member = n; continue; }
+                if (zip.entries()[i].is_dir()) continue;
+                std::vector<uint8_t> bytes;
+                if (!zip.read(i, bytes))
+                    return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.error());
+                rest.push_back(std::make_pair(n, bytes));
+            }
+        }
+        zw.add(member, text);
+        for (size_t i = 0; i < rest.size(); i++)
+            zw.add(rest[i].first, rest[i].second.data(), rest[i].second.size());
+        if (!zw.build(out))
+            return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error writing file"), file + ": " + zw.error());
+    }
+    dsk_tools::UTF8_ofstream f(file, std::ios::binary);
+    if (!f.good()) return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error writing file"), file);
+    f.write(out.data(), static_cast<std::streamsize>(out.size()));
+    const bool written = f.good();
+    f.close();
+    if (!written) return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error writing file"), file);
+    return emulator::Result::ok();
 }
 
 std::string machine_file_stem(const std::string &path)
