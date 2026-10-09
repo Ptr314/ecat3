@@ -426,8 +426,8 @@ AgatYazs::AgatYazs(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_tick_off(0)
     , m_gain(1 / 1.5)
     , m_mix_tones(1)
-    , m_mix_drum6(1)
-    , m_mix_drum7(1)
+    , m_mix_drum6(1.15)
+    , m_mix_drum7(1.15)
 {
     // Read here and not in load_config(): the mixer asks sound_stereo() in its
     // own load_config(), which may come first
@@ -460,8 +460,10 @@ emulator::Result AgatYazs::load_config(SystemData *sd)
     // The balance of the tones and the drums, percent of the card's
     const char * mix_names[3] = {"tones", "drum6", "drum7"};
     double * mix_values[3] = {&m_mix_tones, &m_mix_drum6, &m_mix_drum7};
+    // The drums are 115% of the fitted balance by default
+    const unsigned int mix_defaults[3] = {100, 115, 115};
     for (int i = 0; i < 3; i++) {
-        const unsigned int pct = read_confg_value(cd, mix_names[i], false, (unsigned int)100);
+        const unsigned int pct = read_confg_value(cd, mix_names[i], false, mix_defaults[i]);
         if (pct > 400)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{AgatYazs|" + std::string(QT_TRANSLATE_NOOP("AgatYazs", "A share of the mix must be 0-400%")) + "} " + mix_names[i]);
@@ -1354,7 +1356,7 @@ ConfigFields AgatYazs::get_config_fields()
         m.name = names[i];
         m.title = titles[i];
         m.type = CONFIG_FIELD_STRING;
-        m.def = "100";
+        m.def = i == 0 ? "100" : "115";
         r.push_back(m);
     }
     return r;
