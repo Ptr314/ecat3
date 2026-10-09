@@ -363,6 +363,36 @@ const char* wasm_machine_base(const char* file_path)
     return result.c_str();
 }
 
+// What the machine of a file is called, read from its system section without
+// loading it: the version (an extension's @version, "ДВК-4 (Квант-4С)"), the
+// name when there is none - what the list of the page shows for a machine of
+// the build. Empty when the file cannot be read; the page then keeps the file
+// name. Asked once the base bundle is unpacked: an extension needs its base
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_machine_title(const char* file_path)
+{
+    static std::string result;
+    result.clear();
+    if (file_path == nullptr) return result.c_str();
+
+    MachinePaths paths;
+    paths.computers_path = WORK_PATH;
+    if (g_emulator) paths.cache_path = g_emulator->cache_path;
+
+    EmulatorConfig config;
+    MachineSource source;
+    emulator::Result res = load_machine_description(std::string(file_path), paths, config, source, true);
+    if (!res) return result.c_str();
+    for (unsigned int i = 0; i < config.get_devices_count(); i++) {
+        EmulatorConfigDevice * d = config.get_device(static_cast<int>(i));
+        if (d->name != "system") continue;
+        result = d->get_parameter("version", false).value;
+        if (result.empty()) result = d->get_parameter("name", false).value;
+        break;
+    }
+    return result.c_str();
+}
+
 // 1 for a file that carries a whole machine inside itself - a saved state.
 // The page then fetches nothing else: no base machine of this build, no bundle
 // of ROMs, which is the one way a load= address fails today. Answered by the

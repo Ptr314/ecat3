@@ -2126,10 +2126,22 @@ void MainWindow::on_actionScreenshot_triggered()
     //The image is taken before the dialog, so the recording refers to that moment
     uint64_t taken_at = e->clock_now();
 
-    QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save screenshot"), QString::fromStdString(e->work_path), "PNG (*.png)");
+    //The folder of the previous screenshot, and a name like a video's:
+    //the machine and the moment
+    QString folder = QString::fromStdString(e->read_setup("Video", "screenshot_folder", ""));
+    if (folder.isEmpty() || !QDir(folder).exists()) folder = QString::fromStdString(e->work_path);
+    QString machine = QFileInfo(QString::fromStdString(e->get_system_data()->system_file)).completeBaseName();
+    if (machine.isEmpty()) machine = "ecat3";
+    const QString suggested = QDir(folder).filePath(machine + "-" +
+                              QDateTime::currentDateTime().toString("yyyy-MM-dd-HH-mm-ss") + ".png");
+
+    QString file_name = QFileDialog::getSaveFileName(this, MainWindow::tr("Save screenshot"), suggested, "PNG (*.png)");
 
     if (!file_name.isEmpty())
     {
+        e->write_setup("Video", "screenshot_folder",
+                       QDir::toNativeSeparators(QFileInfo(file_name).absolutePath()).toStdString());
+
         if (!shown.isNull()) {
             shown.save(file_name, "PNG");
         } else {

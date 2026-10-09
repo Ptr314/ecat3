@@ -3116,12 +3116,12 @@ function unlockAudio() {
 // waits, its files already loaded, behind a curtain asking for the click. A
 // page that has had one already - a machine picked from the list - goes on at
 // once, and so does a browser that cannot say, as the page did before.
-function waitForActivation(machine) {
+function waitForActivation(title) {
     const active = navigator.userActivation ? navigator.userActivation.hasBeenActive : audioActivated;
     if (active) return Promise.resolve();
 
     const overlay = document.getElementById("overlay");
-    document.getElementById("overlay-machine").textContent = machine.name;
+    document.getElementById("overlay-machine").textContent = title;
     overlay.classList.remove("hidden");
 
     return new Promise((resolve) => {
@@ -3410,7 +3410,7 @@ async function initEcat() {
         currentMachine = machine;
         document.getElementById("btn-info").disabled = false;
         const ok = await loadMachine(module, machine.cfg_path, machine.bundle_url, machine.data_bundle_url || null,
-                                     auto ? () => waitForActivation(machine) : null);
+                                     auto ? () => waitForActivation(machine.name) : null);
         selectEl.disabled = false;
 
         // Remembered only once it runs, so that the next visit starts it again;
@@ -3527,8 +3527,20 @@ async function initEcat() {
         // written by hand that leans on a charmap of the installation
         const dataBundle = machine ? (machine.data_bundle_url || null)
                                    : (machines.find((m) => m.data_bundle_url) || {}).data_bundle_url || null;
-        const ok = await loadMachine(module, path, machine ? machine.bundle_url : null, dataBundle,
-                                     () => waitForActivation(currentMachine));
+        // The line and the curtain name the machine as the list does, not by
+        // the file: known only once the base is unpacked, since the core reads
+        // an extension through it - which is where this is called
+        const option = urlOption;
+        const loaded = currentMachine;
+        const named = () => {
+            const title = module.ccall("wasm_machine_title", "string", ["string"], [path]);
+            if (title) {
+                option.textContent = title;
+                loaded.name = title;
+            }
+            return waitForActivation(title || name);
+        };
+        const ok = await loadMachine(module, path, machine ? machine.bundle_url : null, dataBundle, named);
         selectEl.disabled = false;
         return ok;
     };
