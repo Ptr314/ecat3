@@ -892,19 +892,18 @@
     <name>EmulatorConfig</name>
     <message>
         <location filename="../emulator/config.cpp" line="+273"/>
-        <location filename="../emulator/config_ext.cpp" line="+140"/>
+        <location filename="../emulator/config_ext.cpp" line="+141"/>
         <location line="+8"/>
         <location line="+5"/>
-        <location line="+606"/>
-        <location filename="../emulator/config_fields.cpp" line="+104"/>
-        <location line="+121"/>
+        <location line="+667"/>
+        <location filename="../emulator/config_fields.cpp" line="+275"/>
         <source>Error reading config file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+19"/>
         <location line="+3"/>
-        <location filename="../emulator/config_ext.cpp" line="-370"/>
+        <location filename="../emulator/config_ext.cpp" line="-431"/>
         <source>Configuration error for device - no type found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1054,7 +1053,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+69"/>
+        <location line="+130"/>
         <source>An extension can only be based on a .cfg or an .ext file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1064,21 +1063,25 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-600"/>
+        <location line="-661"/>
         <location line="+34"/>
         <location line="+20"/>
         <location line="+11"/>
+        <location line="+520"/>
         <source>Error reading the archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-16"/>
+        <location line="-536"/>
         <source>No cache directory to unpack into</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+20"/>
-        <location line="+720"/>
+        <location line="+524"/>
+        <location line="+3"/>
+        <location line="+4"/>
+        <location line="+250"/>
         <source>Error writing file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1093,7 +1096,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/config_fields.cpp" line="-127"/>
+        <location filename="../emulator/config_fields.cpp" line="-157"/>
         <source>A packed extension that changes more than the fields cannot be copied</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1128,7 +1131,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/exteditorwindow.cpp" line="-318"/>
+        <location filename="../dialogs/exteditorwindow.cpp" line="-317"/>
         <location line="+200"/>
         <location line="+22"/>
         <location line="+20"/>
@@ -1229,7 +1232,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+23"/>
         <source>The configuration has to be saved before it runs. Save it?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1594,7 +1597,17 @@
 <context>
     <name>Keyboard</name>
     <message>
-        <location filename="../emulator/devices/common/keyboard.cpp" line="+375"/>
+        <location filename="../emulator/devices/common/keyboard.cpp" line="+63"/>
+        <source>Error reading remap file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Remap file entry is incorrect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+357"/>
         <source>This keyboard type has no native key table support</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1733,7 +1746,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1404"/>
+        <location filename="../mainwindow.cpp" line="+1435"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1797,7 +1810,8 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="+95"/>
+        <location filename="../mainwindow.cpp" line="-1570"/>
+        <location line="+1665"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1843,9 +1857,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-547"/>
+        <location filename="../mainwindow.cpp" line="-578"/>
         <location line="+70"/>
-        <location line="+1017"/>
+        <location line="+1048"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+200"/>
@@ -1860,7 +1874,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2258"/>
+        <location line="-2289"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -1882,14 +1896,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1285"/>
+        <location line="+1316"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1400"/>
+        <location line="-1431"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -1949,14 +1963,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1115"/>
+        <location line="+1146"/>
         <location line="+366"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1592"/>
+        <location line="-1623"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1992,12 +2006,27 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1431"/>
+        <location line="+1462"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1421"/>
+        <location line="-1438"/>
+        <source>No remapping</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Numeric keypad on arrows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Numeric keypad on letters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+17"/>
         <source>Auto scale</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2516,7 +2545,7 @@
     </message>
     <message>
         <location line="+26"/>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+406"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+414"/>
         <source>Delete the configuration</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2546,13 +2575,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="-308"/>
-        <location line="+312"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="-316"/>
+        <location line="+320"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-312"/>
+        <location line="-320"/>
         <source>Error opening CSS file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2562,7 +2591,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+215"/>
+        <location line="+223"/>
         <source>Delete the configuration &quot;%1&quot;?
 %2</source>
         <translation type="unfinished"></translation>

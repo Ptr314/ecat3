@@ -324,6 +324,17 @@ unsigned int translate_key_name(const std::string &key);
 // Empty string for a code that has no name. Used by the script recorder.
 std::string key_name(unsigned int code);
 
+// How host keys are moved onto other host keys before a keyboard sees them,
+// a setting of the frontend (Settings > Keyboard). Each mode is a table the
+// machine names in its keyboard section (remap_arrows, remap_letters); a machine
+// without one is left as it is. Only keys typed on the host go through it
+enum KeyRemapMode {
+    KEY_REMAP_NONE = 0,
+    KEY_REMAP_ARROWS,       // the arrows are the keypad 4/6/8/2
+    KEY_REMAP_LETTERS,      // U I O / J K L / M , . are the keypad 7-9 / 4-6 / 1-3
+    KEY_REMAP_COUNT
+};
+
 // What a key of the machine's own keyboard does. Everything but KEY_ROLE_NORMAL
 // is declared in the header of the native key table (shift:, ctrl:, rus: ...).
 enum KeyRole {
@@ -371,6 +382,14 @@ protected:
     std::vector<std::pair<unsigned int, unsigned int> > m_host_down;
     compat_mutex m_host_mutex;
     virtual void set_rus(bool new_rus);
+
+    // Host key -> host key, one table per KeyRemapMode (the first one stays
+    // empty), and the mode in force. Guarded by m_host_mutex: the frontend
+    // switches the mode while keys arrive
+    std::vector<std::pair<unsigned int, unsigned int> > m_remap[KEY_REMAP_COUNT];
+    int m_remap_mode = KEY_REMAP_NONE;
+    emulator::Result load_remap(SystemData *sd, const std::string &param, int mode);
+    unsigned int remap_locked(unsigned int key) const;
 
     // The drawing of this machine's keyboard and the table naming its keys.
     // Both are optional: a machine without them simply has no on-screen keyboard.
@@ -443,8 +462,19 @@ protected:
 public:
     Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
     emulator::Result load_config(SystemData *sd) override;
-    virtual void key_event(unsigned int key, unsigned int native_key, bool press);
+    // host: the key was typed on the host, so the remap table of the current
+    // mode applies. Scripts and MCP press keys as they are, or a test would
+    // depend on the developer's setting
+    virtual void key_event(unsigned int key, unsigned int native_key, bool press, bool host = false);
     virtual void key_down(unsigned int key) = 0;
+
+    // Settings > Keyboard, see KeyRemapMode. A key held while the mode changes
+    // is let go as the key it went down as
+    void set_remap_mode(int mode);
+    // What a host key becomes under the current mode (the key itself when
+    // nothing remaps it). The recorder writes this, so a recording replays the
+    // same under any mode
+    unsigned int remap_key(unsigned int key);
     virtual void key_up(unsigned int key) = 0;
 
     // Whether the host's numeric keypad is a keyboard of its own here (the

@@ -279,6 +279,7 @@ private:
     //frames follow the screenshot type: the machine's pixels come from the
     //render thread of the core, the window's picture from here
     QMenu * video_menu = nullptr;       //Settings > Video, made once
+    QMenu * key_remap_menu = nullptr;   //Settings > Keyboard, made once
     QTimer * video_timer = nullptr;     //Follows the recording and its finishing
     QTimer * video_frame_timer = nullptr;   //The window's picture, for the renderers that do not hand it over
     bool video_active = false;          //A recording or its finishing is under way

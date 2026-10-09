@@ -888,7 +888,9 @@ uint64_t Emulator::ticks_per_ms() const
 
 void Emulator::record_key(unsigned int code, unsigned int native, bool press)
 {
-    if (recorder && recorder->is_recording()) recorder->key(code, native, press, clock_counter);
+    //The key the machine got, not the one typed: a replay is not remapped
+    if (recorder && recorder->is_recording())
+        recorder->key(keyboard ? keyboard->remap_key(code) : code, native, press, clock_counter);
 }
 
 void Emulator::record_command(const std::string &device, const std::string &member, const std::string &params)
@@ -1026,6 +1028,7 @@ void Emulator::run()
                 m_running = false;
                 return;
             }
+            keyboard->set_remap_mode(m_key_remap);
 
             joysticks.clear();
             std::vector<ComputerDevice*> joystick_devices = dm->find_devices_by_class("joystick");
@@ -1642,7 +1645,7 @@ void Emulator::resize_screen()
     if (display) display->validate(true);
 }
 
-void Emulator::key_event(int key, int modifiers, bool press)
+void Emulator::key_event(int key, int modifiers, bool press, bool host)
 {
     //Reached from the GUI thread, which knows nothing about a machine that
     //failed to load or has not started yet
@@ -1651,7 +1654,7 @@ void Emulator::key_event(int key, int modifiers, bool press)
     //A keypad key is the plain one to everything but a keyboard that has a
     //keypad of its own
     const int plain = key & ~(int)EmuKey::Keypad;
-    keyboard->key_event(keyboard->keypad_keys() ? key : plain, plain, press);
+    keyboard->key_event(keyboard->keypad_keys() ? key : plain, plain, press, host);
     for (size_t i = 0; i < joysticks.size(); i++) joysticks[i]->key_event((unsigned int)plain, press);
     if (plain == EmuKey::F12) display->validate(true);
     if (press && plain == EmuKey::Cancel) {
@@ -1680,8 +1683,14 @@ int Emulator::host_key(int key, unsigned int scan, int modifiers, bool press)
         }
     }
 
-    key_event(key, modifiers, press);
+    key_event(key, modifiers, press, true);
     return key;
+}
+
+void Emulator::set_key_remap(int mode)
+{
+    m_key_remap = mode;
+    if (keyboard) keyboard->set_remap_mode(mode);
 }
 
 void Emulator::release_host_keys()

@@ -85,6 +85,7 @@ private:
         int key;                        // the code the key went down as
     };
     std::vector<HostKey> m_host_keys;   // Guarded by m_host_keys_mutex
+    int m_key_remap = 0;                // KeyRemapMode, see set_key_remap()
     //The window presses and releases on the GUI thread, a restored state
     //empties the list on the emulation thread
     compat_mutex m_host_keys_mutex;
@@ -313,8 +314,16 @@ public:
     void timer_proc(uint64_t time_ticks);
     void render_screen();
 
-    void key_event(int key, int modifiers, bool press);
+    // host: typed on the host keyboard, so the remap of Settings > Keyboard
+    // applies (see set_key_remap); scripts and MCP leave it false
+    void key_event(int key, int modifiers, bool press, bool host = false);
     void key_event_id(const std::string &id, bool press);
+
+    // Settings > Keyboard, a KeyRemapMode: which remap table of the machine's
+    // keyboard host keys go through. Kept across machine loads; the console
+    // build never sets it, so the tests run without a remap
+    void set_key_remap(int mode);
+    int key_remap() const { return m_key_remap; }
 
     // A key of the host keyboard as a window of the frontend gets it, with the
     // physical key's scan code (0 if there is none). The windows share the list

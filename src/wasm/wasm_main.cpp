@@ -388,8 +388,16 @@ EMSCRIPTEN_KEEPALIVE
 void wasm_key_event(int key, int modifiers, int press)
 {
     if (g_emulator && g_emulator->loaded) {
-        g_emulator->key_event(key, modifiers, press != 0);
+        g_emulator->key_event(key, modifiers, press != 0, true);
     }
+}
+
+// Settings > Keyboard of the page, a KeyRemapMode. The emulator keeps it
+// across machine loads
+EMSCRIPTEN_KEEPALIVE
+void wasm_set_key_remap(int mode)
+{
+    if (g_emulator) g_emulator->set_key_remap(mode);
 }
 
 // The on-screen keyboard speaks the machine's own key names, not host codes,

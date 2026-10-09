@@ -445,6 +445,11 @@ const I18N = {
         diskDefault:        "Default",
         diskDefaultTitle:   "Put the disk of the configuration back and forget the one chosen",
         settingsBlock:      "Settings",
+        keyRemap:           "Keyboard",
+        keyRemapTitle:      "Host keys moved onto the numeric keypad of the machine, for a keyboard without one (DVK games)",
+        keyRemapNone:       "No remapping",
+        keyRemapArrows:     "Numeric keypad on arrows",
+        keyRemapLetters:    "Numeric keypad on letters",
         rememberDisks:      "Remember disks",
         rememberDisksTitle: "Put the disks chosen last back into the drives when the machine is started again; the images are kept in this browser",
         forgetDisks:        "Forget all",
@@ -555,6 +560,11 @@ const I18N = {
         diskDefault:        "По умолчанию",
         diskDefaultTitle:   "Вернуть диск из конфигурации и забыть выбранный",
         settingsBlock:      "Настройки",
+        keyRemap:           "Клавиатура",
+        keyRemapTitle:      "Клавиши хоста вместо цифрового блока машины, для клавиатуры без него (игры ДВК)",
+        keyRemapNone:       "Не переназначать",
+        keyRemapArrows:     "Цифровой блок стрелками",
+        keyRemapLetters:    "Цифровой блок буквами",
         rememberDisks:      "Запоминать диски",
         rememberDisksTitle: "Вставлять последние выбранные диски при следующем запуске машины; образы хранятся в этом браузере",
         forgetDisks:        "Забыть все",
@@ -2017,6 +2027,21 @@ function forgetAllDisks() {
     for (const [key] of diskEntries("")) settings.remove("disk." + key);
     diskDbRequest("readwrite", (store) => store.clear());
     renderDrives();
+}
+
+// Settings > Keyboard: host keys moved onto the keypad of the machine, by the
+// tables its configuration names. The emulator keeps the mode across loads
+function setupKeyRemap(module) {
+    const select = document.getElementById("key-remap");
+    const send = () => module.ccall("wasm_set_key_remap", null, ["number"], [parseInt(select.value, 10)]);
+    select.value = settings.get("keyRemap", "0");
+    if (select.selectedIndex < 0) select.value = "0";
+    send();
+    select.addEventListener("change", () => {
+        settings.set("keyRemap", select.value);
+        send();
+    });
+    releaseFocus(select);
 }
 
 function setupDiskSettings() {
@@ -3529,6 +3554,8 @@ async function initEcat() {
         module.ccall("wasm_set_volume", null, ["number"], [parseInt(e.target.value)]);
     });
     releaseFocus(volume);
+
+    setupKeyRemap(module);
 
     // The machine named in the address, otherwise the one of the previous
     // visit, starts by itself - after the first click or key press, so that

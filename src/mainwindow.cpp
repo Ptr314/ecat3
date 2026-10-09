@@ -723,6 +723,37 @@ void MainWindow::CreateScreenMenu()
         });
     }
 
+    //Host keys moved onto the machine's keypad, for keyboards that lack one.
+    //What a mode remaps is the machine's business: its keyboard names the tables
+    static const char * const REMAP_NAMES[KEY_REMAP_COUNT] = {"none", "arrows", "letters"};
+    const std::string remap_setting = e->read_setup("Keyboard", "remap", "none");
+    int remap = KEY_REMAP_NONE;
+    for (int i = 0; i < KEY_REMAP_COUNT; i++)
+        if (remap_setting == REMAP_NAMES[i]) remap = i;
+    e->set_key_remap(remap);
+    if (key_remap_menu == nullptr) {
+        key_remap_menu = new QMenu(this);
+        const QList<QAction*> acts = ui->menuHelp->actions();
+        const int at = acts.indexOf(video_menu->menuAction());
+        ui->menuHelp->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, key_remap_menu);
+    }
+    key_remap_menu->setTitle(tr("Keyboard"));
+    key_remap_menu->clear();
+    {
+        QActionGroup * remap_group = new QActionGroup(key_remap_menu);
+        const QString titles[KEY_REMAP_COUNT] = {
+            tr("No remapping"), tr("Numeric keypad on arrows"), tr("Numeric keypad on letters")};
+        for (int i = 0; i < KEY_REMAP_COUNT; i++) {
+            QAction * ra = key_remap_menu->addAction(titles[i], [this, i]{
+                e->set_key_remap(i);
+                e->write_setup("Keyboard", "remap", REMAP_NAMES[i]);
+            });
+            ra->setActionGroup(remap_group);
+            ra->setCheckable(true);
+            ra->setChecked(remap == i);
+        }
+    }
+
     ui->menuScale->clear();
     QActionGroup * scale_group = new QActionGroup(ui->menuScale);
 

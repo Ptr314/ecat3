@@ -1128,19 +1128,18 @@
     </message>
     <message>
         <location filename="../emulator/config.cpp" line="+273"/>
-        <location filename="../emulator/config_ext.cpp" line="+140"/>
+        <location filename="../emulator/config_ext.cpp" line="+141"/>
         <location line="+8"/>
         <location line="+5"/>
-        <location line="+606"/>
-        <location filename="../emulator/config_fields.cpp" line="+104"/>
-        <location line="+121"/>
+        <location line="+667"/>
+        <location filename="../emulator/config_fields.cpp" line="+275"/>
         <source>Error reading config file</source>
         <translation>Ошибка чтения файла конфигурации компьютера</translation>
     </message>
     <message>
         <location line="+19"/>
         <location line="+3"/>
-        <location filename="../emulator/config_ext.cpp" line="-370"/>
+        <location filename="../emulator/config_ext.cpp" line="-431"/>
         <source>Configuration error for device - no type found</source>
         <translation>Ошибка конфигурации устройства - не найден тип</translation>
     </message>
@@ -1290,7 +1289,7 @@
         <translation>В базовой конфигурации это свойство записано с другими модификаторами, сначала удалите его</translation>
     </message>
     <message>
-        <location line="+69"/>
+        <location line="+130"/>
         <source>An extension can only be based on a .cfg or an .ext file</source>
         <translation>Базой расширения может быть только файл .cfg или .ext</translation>
     </message>
@@ -1300,10 +1299,11 @@
         <translation>Расширения ссылаются друг на друга по кругу</translation>
     </message>
     <message>
-        <location line="-600"/>
+        <location line="-661"/>
         <location line="+34"/>
         <location line="+20"/>
         <location line="+11"/>
+        <location line="+520"/>
         <source>Error reading the archive</source>
         <translation>Ошибка чтения архива</translation>
     </message>
@@ -1312,13 +1312,16 @@
         <translation type="vanished">В корне архива должен быть ровно один файл .ext</translation>
     </message>
     <message>
-        <location line="-16"/>
+        <location line="-536"/>
         <source>No cache directory to unpack into</source>
         <translation>Нет временного каталога для распаковки</translation>
     </message>
     <message>
         <location line="+20"/>
-        <location line="+720"/>
+        <location line="+524"/>
+        <location line="+3"/>
+        <location line="+4"/>
+        <location line="+250"/>
         <source>Error writing file</source>
         <translation>Ошибка записи файла</translation>
     </message>
@@ -1337,7 +1340,7 @@
         <translation>Некорректные данные base64</translation>
     </message>
     <message>
-        <location filename="../emulator/config_fields.cpp" line="-127"/>
+        <location filename="../emulator/config_fields.cpp" line="-157"/>
         <source>A packed extension that changes more than the fields cannot be copied</source>
         <translation>Упакованное расширение, меняющее не только поля, нельзя скопировать</translation>
     </message>
@@ -1376,7 +1379,7 @@
         <translation type="vanished">Отмена</translation>
     </message>
     <message>
-        <location filename="../dialogs/exteditorwindow.cpp" line="-318"/>
+        <location filename="../dialogs/exteditorwindow.cpp" line="-317"/>
         <location line="+200"/>
         <location line="+22"/>
         <location line="+20"/>
@@ -1477,7 +1480,7 @@
         <translation>Не удалось записать файл</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+23"/>
         <source>The configuration has to be saved before it runs. Save it?</source>
         <translation>Перед запуском конфигурацию нужно сохранить. Сохранить?</translation>
     </message>
@@ -1949,7 +1952,17 @@
 <context>
     <name>Keyboard</name>
     <message>
-        <location filename="../emulator/devices/common/keyboard.cpp" line="+375"/>
+        <location filename="../emulator/devices/common/keyboard.cpp" line="+63"/>
+        <source>Error reading remap file</source>
+        <translation>Ошибка чтения файла переназначения клавиш</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Remap file entry is incorrect</source>
+        <translation>Неверная строка в файле переназначения клавиш</translation>
+    </message>
+    <message>
+        <location line="+357"/>
         <source>This keyboard type has no native key table support</source>
         <translation>Этот тип клавиатуры не поддерживает нативную таблицу клавиш</translation>
     </message>
@@ -2101,7 +2114,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1404"/>
+        <location filename="../mainwindow.cpp" line="+1435"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2158,7 +2171,8 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="+969"/>
+        <location filename="../mainwindow.cpp" line="-696"/>
+        <location line="+1665"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
@@ -2208,16 +2222,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-445"/>
+        <location filename="../mainwindow.cpp" line="-476"/>
         <location line="+47"/>
-        <location line="+1285"/>
+        <location line="+1316"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1400"/>
+        <location line="-1431"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2246,7 +2260,7 @@
     <message>
         <location line="-114"/>
         <location line="+70"/>
-        <location line="+1017"/>
+        <location line="+1048"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+200"/>
@@ -2261,7 +2275,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2258"/>
+        <location line="-2289"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2286,7 +2300,7 @@
         <translation>Скорость мыши</translation>
     </message>
     <message>
-        <location line="+108"/>
+        <location line="+139"/>
         <source>Auto scale</source>
         <translation>Автоматически</translation>
     </message>
@@ -2354,7 +2368,7 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1163"/>
+        <location line="-1194"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -2367,7 +2381,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+71"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1632"/>
+        <location filename="../mainwindow.cpp" line="+1663"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -2377,15 +2391,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1610"/>
-        <location line="+1115"/>
+        <location line="-1641"/>
+        <location line="+1146"/>
         <location line="+366"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1592"/>
+        <location line="-1623"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2421,7 +2435,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1431"/>
+        <location line="+1462"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -2452,7 +2466,7 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1610"/>
+        <location line="-1641"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
@@ -2472,7 +2486,22 @@
         <translation>Оригинал</translation>
     </message>
     <message>
-        <location line="+187"/>
+        <location line="+92"/>
+        <source>No remapping</source>
+        <translation>Не переназначать</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Numeric keypad on arrows</source>
+        <translation>Цифровой блок стрелками</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Numeric keypad on letters</source>
+        <translation>Цифровой блок буквами</translation>
+    </message>
+    <message>
+        <location line="+126"/>
         <source>Picture tube</source>
         <translation>Кинескоп</translation>
     </message>
@@ -2915,7 +2944,7 @@
     </message>
     <message>
         <location line="+26"/>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+406"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+414"/>
         <source>Delete the configuration</source>
         <translation>Удалить конфигурацию</translation>
     </message>
@@ -2945,13 +2974,13 @@
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="-308"/>
-        <location line="+312"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="-316"/>
+        <location line="+320"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-312"/>
+        <location line="-320"/>
         <source>Error opening CSS file</source>
         <translation>Ошибка чтения файла CSS</translation>
     </message>
@@ -2961,7 +2990,7 @@
         <translation>Конфигурации с ошибками</translation>
     </message>
     <message>
-        <location line="+215"/>
+        <location line="+223"/>
         <source>Delete the configuration &quot;%1&quot;?
 %2</source>
         <translation>Удалить конфигурацию &quot;%1&quot;?

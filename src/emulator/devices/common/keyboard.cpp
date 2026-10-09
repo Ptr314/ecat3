@@ -42,10 +42,70 @@ emulator::Result Keyboard::load_config(SystemData *sd)
     //as the key being held down from the moment the machine starts
     i_stop.change(0);
 
+    res = load_remap(sd, "remap_arrows", KEY_REMAP_ARROWS);
+    if (!res) return res;
+    res = load_remap(sd, "remap_letters", KEY_REMAP_LETTERS);
+    if (!res) return res;
+
     return load_key_table(sd);
 }
 
-void Keyboard::key_event(unsigned int key, unsigned int native_key, bool press)
+emulator::Result Keyboard::load_remap(SystemData *sd, const std::string &param, int mode)
+{
+    m_remap[mode].clear();
+    const std::string name = cd->get_parameter(param, false).value;
+    if (name.empty()) return emulator::Result::ok();
+
+    const std::string file = find_file_location(sd, name);
+    const std::string content = file.empty() ? std::string() : dsk_tools::utf8_read_file(file);
+    if (content.empty())
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{Keyboard|" + std::string(QT_TRANSLATE_NOOP("Keyboard", "Error reading remap file")) + "} " + name);
+
+    // "host key: host key", both by their script names. The colon is looked
+    // for after the first character, so ":" itself can be remapped
+    const std::vector<std::string> lines = split_string(content, '\n', true);
+    for (size_t li = 0; li < lines.size(); li++) {
+        std::string line = str_trim(lines[li]);
+        const size_t comment = line.find("//");
+        if (comment != std::string::npos) line = str_trim(line.substr(0, comment));
+        if (line.empty()) continue;
+        const size_t colon = line.find(':', 1);
+        const unsigned int from = colon == std::string::npos ? _FFFF : translate_key_name(str_trim(line.substr(0, colon)));
+        const unsigned int to = colon == std::string::npos ? _FFFF : translate_key_name(str_trim(line.substr(colon + 1)));
+        if (from == _FFFF || to == _FFFF)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{Keyboard|" + std::string(QT_TRANSLATE_NOOP("Keyboard", "Remap file entry is incorrect")) + "} " + line);
+        m_remap[mode].push_back(std::make_pair(from, to));
+    }
+    return emulator::Result::ok();
+}
+
+unsigned int Keyboard::remap_locked(unsigned int key) const
+{
+    const std::vector<std::pair<unsigned int, unsigned int> > &table = m_remap[m_remap_mode];
+    for (size_t i = 0; i < table.size(); i++)
+        if (table[i].first == key) {
+            //A keypad key reaches a keyboard without a keypad as the plain one,
+            //the way Emulator::key_event() hands it over
+            return keypad_keys() ? table[i].second : (table[i].second & ~(unsigned int)EmuKey::Keypad);
+        }
+    return key;
+}
+
+void Keyboard::set_remap_mode(int mode)
+{
+    compat_lock_guard lock(m_host_mutex);
+    m_remap_mode = (mode >= 0 && mode < KEY_REMAP_COUNT) ? mode : KEY_REMAP_NONE;
+}
+
+unsigned int Keyboard::remap_key(unsigned int key)
+{
+    compat_lock_guard lock(m_host_mutex);
+    return remap_locked(key);
+}
+
+void Keyboard::key_event(unsigned int key, unsigned int native_key, bool press, bool host)
 {
     unsigned int k;
     if (known_key(key))
@@ -64,7 +124,7 @@ void Keyboard::key_event(unsigned int key, unsigned int native_key, bool press)
                 break;
             }
         if (code == _FFFF) {
-            code = rus_translate(k);
+            code = rus_translate(host ? remap_locked(k) : k);
             if (press) m_host_down.push_back(std::make_pair(k, code));
         }
     }
