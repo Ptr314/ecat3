@@ -30,20 +30,20 @@ const double G_OFF      = 1e-9;
 const double R_SW       = 300;      // К561КТ3 key
 
 // Tone channel (one of five identical ones)
-// The envelope former does not behave by the schematic either: the burst of
-// D4 died in 0.2 s where the card's fades evenly for 0.5 s and more, the
-// level D5 holds was 7 dB under the card's, and a note ran down to silence
-// between two writes the card plays legato. These values are fitted to the
-// same recording - all 270 notes of the test, with the drums for the balance
-// - and are an equivalent of the card, not its parts: other sets fit nearly
-// as well (R23 at 120K with C3 15 uF, R17 20K, R21 9.1K, for one)
+// The envelope former: R23 (R39, R55, R71, R87 in the other channels) is
+// 470K on the card, the 120K of the schematic is one of its known errors -
+// with it the level D5 holds was 7 dB under the card's. R17 and C3 are
+// fitted to the recording of SOUNDTEST (all 270 notes of the test, with the
+// drums for the balance) with R23 at 470K: by the schematic a note with D5
+// clear ran down to silence between two writes the card plays legato. R21
+// and R25 came out as the schematic's
 const double R16 = 620, R22 = 68e3;
-const double R17 = 270e3;           // 150K
-const double R21 = 100e3;           // 24K
-const double R23 = 2.7e6;           // 120K
+const double R17 = 62e3;            // 150K
+const double R21 = 24e3;
+const double R23 = 470e3;           // 120K, a known error of the schematic
 const double R24 = 150e3, R26 = 150e3;
-const double R25 = 180e3;           // 150K
-const double C3 = 1.8e-6;           // 5 uF
+const double R25 = 150e3;
+const double C3 = 6.8e-6;           // 5 uF
 const double C4 = 47e-9, C5 = 3.3e-9, C6 = 0.1e-6;
 const double V_NEG = -12.0;
 const double R18 = 15e3, R19 = 47e3, C2 = 22e-9;
@@ -87,23 +87,27 @@ const double R105 = 180e3;          // 150K
 const double R106 = 390e3;          // 680K
 const double R107 = 360e3;
 const double R96 = 68e3, C28 = 10e-9, R99 = 47e3;
-// The output resistors of both drums are twice the schematic's: by it the
-// drums came out 8 dB too loud against the tones
+// The output resistors of both drums are 1.4-1.7 times the schematic's: by it
+// the drums came out too loud against the tones (8 dB while R23 was 120K)
 const double R112 = 47e3, C33 = 47e-9, C35 = 0.1e-6;
-const double R115 = 91e3;           // 47K
+const double R115 = 75e3;           // 47K
 const double C32 = 0.1e-6, R110 = 240e3, R111 = 10e3, C34 = 15e-9;
-const double R113 = 6.8e3;          // 3K3
-const double R114 = 130e3;          // 68K
+const double R113 = 5.6e3;          // 3K3
+const double R114 = 110e3;          // 68K
 const double C36 = 33e-9;
 // Drum 7
 const double C37 = 10e-6;           // 5 uF
 const double R117 = 67e3, C38 = 1e-6, R118 = 10e3, R119 = 24e3;
-const double C39 = 390e-12;         // 22 nF
-const double C40 = 270e-12;         // 22 nF
+// C39 and C40 are 330 pF on the card: the 22 nF of the schematic is one of
+// its known errors. The recording gave 390 and 270 pF, the same period - it
+// cannot tell the halves apart. C41 is fitted: with the 1 nF of the
+// schematic drum 7 with D1 = 0 would sound 5 semitones under the recording
+const double C39 = 330e-12;
+const double C40 = 330e-12;
 const double C41 = 560e-12;         // 1 nF
 const double R121 = 330e3, R122 = 330e3, R124 = 510e3;
 const double R150 = 150e3, R123 = 2.2e3, C42 = 330e-12;
-const double R125 = 390e3;          // 240K
+const double R125 = 330e3;          // 240K
 // VD19 (КД521А) as an exponential diode: by the threshold alone it stops
 // chopping the envelope once that falls under VD, and the drum broke off
 // 20 dB above where the card's sound fades
