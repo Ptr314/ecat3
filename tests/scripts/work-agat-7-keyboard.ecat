@@ -116,6 +116,7 @@ KEYUP key_left
 KEYDOWN key_f1
 LOG port-kbd.value
 KEYUP key_f1
+# функц 5 правого блока - свой код $94 (приложение 2 ТО Агата-9), не цифра
 KEYDOWN key_num_5
 LOG port-kbd.value
 KEYUP key_num_5

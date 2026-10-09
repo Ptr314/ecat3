@@ -172,24 +172,57 @@ key_up:         $99
 key_down:       $9A
 
 // --- Цифровой блок и функциональные клавиши ---------------------------
-// Цифры блока шлют то же, что и цифровой ряд; записаны после него, чтобы
-// подсветка от печати на хосте зажигала основной ряд, а не блок.
+// Правый блок -- функциональные клавиши "функц 1".."функц 0", "функц .",
+// "функц =" и F1-F3. Коды -- из приложения 2 ТО Агата-9 ("Коды символов
+// клавиатуры"): у каждой свой, один и тот же с РЕГ и с УПР. Это не цифры:
+// цифру дает только основной ряд. Расположение на клавиатуре Агата:
+//   1 2 3 / 4 5 6 / 7 8 9 / 0 . = / F1 F2 F3
 
-key_num_0:      $B0
-key_num_1:      $B1
-key_num_2:      $B2
-key_num_3:      $B3
-key_num_4:      $B4
-key_num_5:      $B5
-key_num_6:      $B6
-key_num_7:      $B7
-key_num_8:      $B8
-key_num_9:      $B9
-key_num_dot:    $AE
-key_num_equal:  $BD
-key_f1:         $84
-key_f2:         $85
-key_f3:         $86
+key_num_1:        $90
+key_num_1/S:      $90
+key_num_1/C:      $90
+key_num_2:        $91
+key_num_2/S:      $91
+key_num_2/C:      $91
+key_num_3:        $92
+key_num_3/S:      $92
+key_num_3/C:      $92
+key_num_4:        $93
+key_num_4/S:      $93
+key_num_4/C:      $93
+key_num_5:        $94
+key_num_5/S:      $94
+key_num_5/C:      $94
+key_num_6:        $9C
+key_num_6/S:      $9C
+key_num_6/C:      $9C
+key_num_7:        $9D
+key_num_7/S:      $9D
+key_num_7/C:      $9D
+key_num_8:        $9E
+key_num_8/S:      $9E
+key_num_8/C:      $9E
+key_num_9:        $9F
+key_num_9/S:      $9F
+key_num_9/C:      $9F
+key_num_0:        $81
+key_num_0/S:      $81
+key_num_0/C:      $81
+key_num_dot:      $82
+key_num_dot/S:    $82
+key_num_dot/C:    $82
+key_num_equal:    $83
+key_num_equal/S:  $83
+key_num_equal/C:  $83
+key_f1:           $84
+key_f1/S:         $84
+key_f1/C:         $84
+key_f2:           $85
+key_f2/S:         $85
+key_f2/C:         $85
+key_f3:           $86
+key_f3/S:         $86
+key_f3/C:         $86
 
 // Собственного кода не имеют и потому в теле таблицы не значатся:
 // key_reg_1, key_reg_2, key_upr, key_rus, key_lat, key_pvt и key_sbr --

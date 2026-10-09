@@ -61,6 +61,12 @@ private:
     void build_code_to_id();
     std::string id_of_code(unsigned int code) const;
 
+    // The map names keys of the host keypad (kp0..kp9, kpdot...): the keypad
+    // is then this machine's, see keypad_keys(). A keypad key the map lacks is
+    // the plain key, as for a keyboard without a keypad
+    bool m_keypad = false;
+    unsigned int resolve_keypad(unsigned int key) const;
+
 protected:
     bool shift_pressed;
     bool ctrl_pressed;
@@ -113,6 +119,7 @@ public:
     void key_down(unsigned int key) override;
     void key_up(unsigned int key) override;
     bool needs_shift(unsigned int key) override;
+    bool keypad_keys() const override { return m_keypad; }
 
     emulator::Result load_config(SystemData *sd) override;
 

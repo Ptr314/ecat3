@@ -133,6 +133,7 @@ emulator::Result MapKeyboard::load_config(SystemData *sd)
 
                 key_map.push_back({key_code, code, shift, ctrl, rus});
                 key_lines.push_back(line);
+                if (key_code & EmuKey::Keypad) m_keypad = true;
             }
         }
     }
@@ -285,8 +286,17 @@ void MapKeyboard::update_pressed()
     i_pressed.change((keys_held.empty() && ids_down.empty())? 0 : 1);
 }
 
+unsigned int MapKeyboard::resolve_keypad(unsigned int key) const
+{
+    if (!(key & EmuKey::Keypad)) return key;
+    for (size_t i = 0; i < key_map.size(); i++)
+        if (key_map[i].key_code == key) return key;
+    return key & ~(unsigned int)EmuKey::Keypad;
+}
+
 void MapKeyboard::key_down(unsigned int key)
 {
+    key = resolve_keypad(key);
     bool known = false;
     for (size_t i = 0; i < keys_held.size(); i++)
         if (keys_held[i] == key) { known = true; break; }
@@ -373,6 +383,7 @@ bool MapKeyboard::needs_shift(unsigned int key)
 
 void MapKeyboard::key_up(unsigned int key)
 {
+    key = resolve_keypad(key);
     for (size_t i = 0; i < keys_held.size(); i++)
         if (keys_held[i] == key) {
             keys_held.erase(keys_held.begin() + i);

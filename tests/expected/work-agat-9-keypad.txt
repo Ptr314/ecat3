@@ -1,0 +1,14 @@
+[port-kbd.value] $90
+[port-kbd.value] $92
+[port-kbd.value] $9C
+[port-kbd.value] $9D
+[port-kbd.value] $81
+[port-kbd.value] $82
+[port-kbd.value] $83
+[port-kbd.value] $AD
+[port-kbd.value] $91
+[port-kbd.value] $90
+[port-kbd.value] $9F
+[port-kbd.value] $83
+[port-kbd.value] $84
+[port-kbd.value] $B1

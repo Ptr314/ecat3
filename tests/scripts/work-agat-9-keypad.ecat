@@ -1,0 +1,67 @@
+# Агат-9: правый блок клавиатуры. Коды - из приложения 2 ТО Агата-9 («Коды
+# символов клавиатуры»): функц 1-5 = $90-$94, функц 6-9 = $9C-$9F, функц 0 /
+# . / = = $81 / $82 / $83, F1-F3 = $84-$86, одни и те же с РЕГ и с УПР.
+#
+# Цифровой блок хоста нажимает блок Агата по расположению: у Агата сверху
+# 1 2 3, у PC сверху 7 8 9, так что kp7 - функц 1, kp1 - функц 7, kp+ -
+# функц =. Знаков / * - в карте Агата нет, и kp- дает обычный минус ($AD).
+# Клавиши рисунка (key_num_*) шлют те же коды, что и надписи на них.
+#
+# Процессор остановлен, чтобы ПЗУ не гасило строб: в порту клавиатуры
+# остается код последней клавиши, со стробом в бите 7.
+
+MACHINE "agat/Agat-9.cfg"
+WAIT 3000
+COMMAND cpu.stop()
+LOGDEFS 8,16
+
+KEYDOWN kp7
+LOG port-kbd.value(0)
+KEYUP kp7
+KEYDOWN kp9
+LOG port-kbd.value(0)
+KEYUP kp9
+KEYDOWN kp6
+LOG port-kbd.value(0)
+KEYUP kp6
+KEYDOWN kp1
+LOG port-kbd.value(0)
+KEYUP kp1
+KEYDOWN kp0
+LOG port-kbd.value(0)
+KEYUP kp0
+KEYDOWN kpdot
+LOG port-kbd.value(0)
+KEYUP kpdot
+KEYDOWN kpplus
+LOG port-kbd.value(0)
+KEYUP kpplus
+KEYDOWN kpminus
+LOG port-kbd.value(0)
+KEYUP kpminus
+
+# С РЕГ код тот же
+KEYDOWN shift
+KEYDOWN kp8
+LOG port-kbd.value(0)
+KEYUP kp8
+KEYUP shift
+
+# Рисунок клавиатуры
+KEYDOWN key_num_1
+LOG port-kbd.value(0)
+KEYUP key_num_1
+KEYDOWN key_num_9
+LOG port-kbd.value(0)
+KEYUP key_num_9
+KEYDOWN key_num_equal
+LOG port-kbd.value(0)
+KEYUP key_num_equal
+KEYDOWN key_f1
+LOG port-kbd.value(0)
+KEYUP key_f1
+# Основной ряд по-прежнему дает цифру
+KEYDOWN 1
+LOG port-kbd.value(0)
+KEYUP 1
+EXIT
