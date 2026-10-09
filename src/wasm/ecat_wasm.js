@@ -1799,8 +1799,9 @@ function visibleBlocks() {
 
 // A block that folds down to its head line: the head is a button, the body the
 // rest. Shared by the blocks written into the page and those built per machine.
-// urlName is how the address calls it, see blockStates()
-function makeCollapsible(root, head, body, settingKey, urlName) {
+// urlName is how the address calls it, see blockStates(). folded is how the
+// block starts when neither the address nor a choice by hand says otherwise
+function makeCollapsible(root, head, body, settingKey, urlName, folded = false) {
     const block = { root, head, body, urlName };
     block.apply = (collapsed) => {
         root.classList.toggle("collapsed", collapsed);
@@ -1824,21 +1825,23 @@ function makeCollapsible(root, head, body, settingKey, urlName) {
         if (!collapsibleBlocks[i].root.isConnected) collapsibleBlocks.splice(i, 1);
     collapsibleBlocks.push(block);
 
-    // What the address says stands in for the saved choice
+    // What the address says stands in for the saved choice, and that for the
+    // default of the block
     const fromUrl = urlParams.blocks.get(urlName);
-    block.apply(fromUrl !== undefined ? fromUrl : settings.get(settingKey, "0") === "1");
+    const saved = settings.get(settingKey, null);
+    block.apply(fromUrl !== undefined ? fromUrl : saved !== null ? saved === "1" : folded);
     return block;
 }
 
 // A drive or a tape block. The state is kept per configuration and device, so
 // every machine remembers its own
-function collapsibleBlock(className, settingKey, urlName) {
+function collapsibleBlock(className, settingKey, urlName, folded = false) {
     const root = element("div", className);
     const head = element("button", "block-head drive-head", root);
     head.type = "button";
     element("span", "block-chevron", head).textContent = "▼";
     const body = element("div", "block-body", root);
-    return makeCollapsible(root, head, body, settingKey, urlName);
+    return makeCollapsible(root, head, body, settingKey, urlName, folded);
 }
 
 // The blocks of shell.html, the side columns. Folded or not is a choice about
@@ -2086,7 +2089,10 @@ function pollDrives(module) {
 
 function buildDrive(module, drive, configKey) {
     const ui = {};
-    ui.block = collapsibleBlock("drive", "collapsed." + configKey + "_" + drive.name, drive.name);
+    // An empty drive starts folded: its head line still says "no disk", and a
+    // machine with four drives and one disk shows that one. Only the start -
+    // a block is not folded under the hand that has just ejected the disk
+    ui.block = collapsibleBlock("drive", "collapsed." + configKey + "_" + drive.name, drive.name, !drive.loaded);
     ui.root = ui.block.root;
     const body = ui.block.body;
 
