@@ -143,6 +143,11 @@ for VARIANT in "${VARIANTS[@]}"; do
   ditto "${BUILD_DIR}/${APP_NAME}.app" "${STAGING}/${APP_NAME}.app"
   ln -s /Applications "${STAGING}/Applications"
   ditto "${REPO_DIR}/deploy/software" "${STAGING}/software"
+  # The user documentation goes beside it, also in plain sight
+  mkdir -p "${STAGING}/docs"
+  cp "${REPO_DIR}/docs/MANUAL.md" "${REPO_DIR}/docs/MCP.md" "${REPO_DIR}/docs/SCRIPTING.md" \
+      "${REPO_DIR}/docs/CONFIG.md" \
+      "${STAGING}/docs/"
 
   # hdiutil refuses to overwrite an existing image, and a stale .dmg here would
   # silently be shipped as the new release.
