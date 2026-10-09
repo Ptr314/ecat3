@@ -826,6 +826,14 @@ void MainWindow::CreateScreenMenu()
         af3->setActionGroup(filtering_group);
         af3->setCheckable(true);
         af3->setChecked(e->get_filtering() == SCREEN_FILTERING_ANISOTROPIC);
+
+        QAction * af4 = ui->menuFiltering->addAction(
+            tr("Sharp"),
+            [this]{e->set_filtering(SCREEN_FILTERING_SHARP);}
+            );
+        af4->setActionGroup(filtering_group);
+        af4->setCheckable(true);
+        af4->setChecked(e->get_filtering() == SCREEN_FILTERING_SHARP);
     #elif defined(RENDERER_QT)
         ui->menuFiltering->clear();
         QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);
@@ -845,9 +853,9 @@ void MainWindow::CreateScreenMenu()
         af2->setCheckable(true);
         af2->setChecked(e->get_filtering() == SCREEN_FILTERING_LINEAR);
     #elif defined(RENDERER_OPENGL)
-        //The texture filter of GLWidget: NONE is nearest, the tube is a
-        //shader of its own, anything else is linear - an anisotropic filter
-        //does nothing for a picture that is never minified
+        //The texture filter of GLWidget: NONE is nearest, the tube and the
+        //sharp mode are shaders of their own, anything else is linear - an
+        //anisotropic filter does nothing for a picture that is never minified
         ui->menuFiltering->clear();
         QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);
         QAction * af1 = ui->menuFiltering->addAction(
@@ -865,7 +873,16 @@ void MainWindow::CreateScreenMenu()
         af2->setActionGroup(filtering_group);
         af2->setCheckable(true);
         af2->setChecked(e->get_filtering() != SCREEN_FILTERING_NONE
+                        && e->get_filtering() != SCREEN_FILTERING_SHARP
                         && e->get_filtering() != SCREEN_FILTERING_CRT);
+
+        QAction * af4 = ui->menuFiltering->addAction(
+            tr("Sharp"),
+            [this]{e->set_filtering(SCREEN_FILTERING_SHARP);}
+            );
+        af4->setActionGroup(filtering_group);
+        af4->setCheckable(true);
+        af4->setChecked(e->get_filtering() == SCREEN_FILTERING_SHARP);
 
         QAction * af3 = ui->menuFiltering->addAction(
             tr("Picture tube"),

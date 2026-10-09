@@ -59,6 +59,9 @@
 #define SCREEN_FILTERING_ANISOTROPIC    2
 //Scan lines and a mask of a picture tube; the OpenGL renderer only
 #define SCREEN_FILTERING_CRT            3
+//Each texel a flat block, smoothed only at its edge: a shader in OpenGL, an
+//enlargement by whole numbers and a linear rest in SDL2
+#define SCREEN_FILTERING_SHARP          4
 
 #define SCREEN_FILTERING_SOFT_SMOOTH    1
 

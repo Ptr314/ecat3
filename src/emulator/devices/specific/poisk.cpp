@@ -43,10 +43,11 @@ PoiskDisplay::PoiskDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_vsync(this, im, 1, "vsync", MODE_W)
 {
     m_clocked = true;
-    //The picture lines are doubled: 200 lines of 640 dots look like a 4:3
-    //screen only drawn twice as high
+    //200 lines of 640 dots, stretched to 4:3 by the window. Not doubled in
+    //the surface: the window's height follows the surface's lines, and with
+    //400 of them it came out twice as high as any other machine's
     sx = 640;
-    sy = PICTURE_LINES * 2;
+    sy = PICTURE_LINES;
     for (unsigned i = 0; i < 16; i++) m_rgba[i] = 0;
     static_assert(PICTURE_ROWS == PICTURE_LINES, "one flag per picture line");
     memset(m_dirty, 0, sizeof(m_dirty));
@@ -227,7 +228,7 @@ void PoiskDisplay::render_line_unlocked(unsigned line)
     if (src + LINE_BYTES > m_ram->get_size()) return;
     const uint8_t * video = m_ram->get_buffer() + src;
 
-    uint32_t * p = reinterpret_cast<uint32_t*>(static_cast<uint8_t*>(render_pixels) + line * 2 * line_bytes);
+    uint32_t * p = reinterpret_cast<uint32_t*>(static_cast<uint8_t*>(render_pixels) + line * line_bytes);
     const unsigned bg = background(mode);
 
     if (mode & 0x80) {
@@ -267,10 +268,6 @@ void PoiskDisplay::render_line_unlocked(unsigned line)
             }
         }
     }
-
-    //Each line is shown twice
-    memcpy(static_cast<uint8_t*>(render_pixels) + (line * 2 + 1) * line_bytes,
-           static_cast<uint8_t*>(render_pixels) + line * 2 * line_bytes, sx * 4);
 }
 
 std::vector<DeviceFieldInfo> PoiskDisplay::get_device_fields()

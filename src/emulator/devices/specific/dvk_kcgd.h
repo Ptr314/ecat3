@@ -153,7 +153,7 @@ public:
 // Изображение КЦГД: 800 x 480, по 240 строк в поле. Строку растра задаёт
 // таблица адресов в видеопамяти (набор 0 - с байта 015574 окна, набор 1 - с
 // 005574), по 100 слов на строку. Без чересстрочной развёртки (прошивка 181)
-// каждая строка таблицы показывается дважды. Цвет точки - регистр палитры:
+// каждая строка таблицы показывается дважды, и поверхность тогда 800 x 240. Цвет точки - регистр палитры:
 // у 2-разрядной точки v - регистр 5*v, у 4-разрядной - её значение.
 //
 // Регистр палитры - 6 разрядов, по два на выход (U55, U56, U57 разъёма XP4,
@@ -180,6 +180,7 @@ private:
     unsigned m_channel[3] = {0, 1, 2};      // выход U55/U56/U57 -> R, G, B
 
     unsigned int m_field = 0;           // поле KCGD, которое уже нарисовано
+    unsigned int m_surface_lines = 0;   // строк в поверхности отрисовщика
 
     unsigned line_address(unsigned y) const;
     unsigned pixel(unsigned a, unsigned x) const;
@@ -194,8 +195,8 @@ public:
     void reset(bool cold) override;
     void set_renderer(VideoRenderer &vr) override;
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
-    //Every line of the table is shown twice
-    unsigned int get_scan_lines() override { return sy / 2; }
+    //240 lines a field in either mode
+    unsigned int get_scan_lines() override { return 240; }
     void clock(unsigned int counter) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;

@@ -84,12 +84,12 @@
 <context>
     <name>AgatYazs</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+453"/>
+        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+457"/>
         <source>Incorrect step or clock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+18"/>
         <source>A share of the mix must be 0-400%</source>
         <translation type="unfinished"></translation>
     </message>
@@ -305,12 +305,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+538"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+555"/>
         <source>Low-pass filter cutoff, Hz (0 - off)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+881"/>
+        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+884"/>
+        <source>Volume, % (100 = 1.5 V full scale)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Tones in the mix, % (0-400)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -683,7 +688,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="-11"/>
+        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="-18"/>
         <source>Sound output</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1360,12 +1365,12 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-467"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-483"/>
         <source>Incorrect sample rate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+17"/>
         <source>Not a sound source</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1375,7 +1380,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+443"/>
+        <location line="+458"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1746,7 +1751,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1435"/>
+        <location filename="../mainwindow.cpp" line="+1444"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1789,7 +1794,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+874"/>
+        <location filename="../mainwindow.cpp" line="+886"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1810,14 +1815,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1570"/>
-        <location line="+1665"/>
+        <location filename="../mainwindow.cpp" line="-1591"/>
+        <location line="+1686"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1411"/>
+        <location filename="../mainwindow.cpp" line="-1423"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1857,15 +1862,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-578"/>
+        <location filename="../mainwindow.cpp" line="-587"/>
         <location line="+70"/>
-        <location line="+1048"/>
+        <location line="+1057"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+200"/>
         <location line="+107"/>
         <location line="+62"/>
-        <location line="+154"/>
+        <location line="+166"/>
         <location line="+25"/>
         <location line="+438"/>
         <location line="+29"/>
@@ -1874,7 +1879,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2289"/>
+        <location line="-2310"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -1896,14 +1901,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1316"/>
+        <location line="+1325"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1431"/>
+        <location line="-1440"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -1963,14 +1968,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1146"/>
-        <location line="+366"/>
+        <location line="+1155"/>
+        <location line="+378"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1623"/>
+        <location line="-1644"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2006,12 +2011,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1462"/>
+        <location line="+1483"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1438"/>
+        <location line="-1459"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2073,7 +2078,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+31"/>
+        <source>Sharp</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Picture tube</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2123,12 +2133,12 @@
     </message>
     <message>
         <location line="+66"/>
-        <location line="+458"/>
+        <location line="+470"/>
         <source>Finishing the video...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-414"/>
+        <location line="-426"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2163,12 +2173,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+95"/>
+        <location line="+104"/>
         <source>Save screenshot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+53"/>
+        <location line="+56"/>
         <source>Video is recorded by ffmpeg, which is not found next to the emulator or on the PATH. Please show where it is.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2329,12 +2339,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1324"/>
+        <location line="-1336"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1367"/>
+        <location line="+1379"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2392,7 +2402,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+26"/>
         <source>rus-on should be 0 or 1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2412,7 +2422,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+213"/>
+        <location line="+223"/>
         <source>Key table entry is incorrect</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2623,7 +2633,7 @@
 <context>
     <name>PoiskDisplay</name>
     <message>
-        <location filename="../emulator/devices/specific/poisk.cpp" line="+65"/>
+        <location filename="../emulator/devices/specific/poisk.cpp" line="+66"/>
         <source>The board RAM is expected in &apos;ram&apos;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2637,7 +2647,7 @@
 <context>
     <name>PoiskFdcControl</name>
     <message>
-        <location line="+408"/>
+        <location line="+404"/>
         <source>Not a wd1793 device</source>
         <translation type="unfinished"></translation>
     </message>

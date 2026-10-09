@@ -79,8 +79,6 @@ public:
     void set_renderer(VideoRenderer &vr) override;
     void clock(unsigned int counter) override;
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
-    //200 lines, drawn twice in the surface
-    unsigned int get_scan_lines() override { return sy / 2; }
 
     unsigned int wait_states(unsigned int address, bool write, unsigned int offset) override;
 

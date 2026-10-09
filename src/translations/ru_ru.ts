@@ -112,12 +112,12 @@
 <context>
     <name>AgatYazs</name>
     <message>
-        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+453"/>
+        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+457"/>
         <source>Incorrect step or clock</source>
         <translation>Неверный шаг расчета (substep) или частота</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+18"/>
         <source>A share of the mix must be 0-400%</source>
         <translation>Доля в смеси должна быть от 0 до 400%</translation>
     </message>
@@ -401,12 +401,12 @@
         <translation>Образ ПЗУ</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+538"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+555"/>
         <source>Low-pass filter cutoff, Hz (0 - off)</source>
         <translation>Срез фильтра нижних частот, Гц (0 - выключен)</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+881"/>
+        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+891"/>
         <source>Tones in the mix, % (0-400)</source>
         <translation>Тоны в смеси, % (0-400)</translation>
     </message>
@@ -421,6 +421,7 @@
         <translation>Ударный 7 в смеси, % (0-400)</translation>
     </message>
     <message>
+        <location line="-9"/>
         <source>Volume, % (100 = 1.5 V full scale)</source>
         <translation>Громкость, % (100 = шкала 1.5 В)</translation>
     </message>
@@ -815,7 +816,7 @@
         <translation>Прерывания вкл.</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="-11"/>
+        <location filename="../emulator/devices/specific/agat_yazs.cpp" line="-9"/>
         <source>Sound output</source>
         <translation>Звуковой выход</translation>
     </message>
@@ -1675,12 +1676,12 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-467"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-483"/>
         <source>Incorrect sample rate</source>
         <translation>Неверная частота дискретизации</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+17"/>
         <source>Not a sound source</source>
         <translation>Устройство не является источником звука</translation>
     </message>
@@ -1690,7 +1691,7 @@
         <translation>Ошибка записи</translation>
     </message>
     <message>
-        <location line="+443"/>
+        <location line="+458"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation>Команда &apos;volume&apos; требует значение</translation>
     </message>
@@ -2118,7 +2119,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1435"/>
+        <location filename="../mainwindow.cpp" line="+1444"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2175,14 +2176,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-696"/>
-        <location line="+1665"/>
+        <location filename="../mainwindow.cpp" line="-705"/>
+        <location line="+1686"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1411"/>
+        <location filename="../mainwindow.cpp" line="-1423"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -2226,16 +2227,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-476"/>
+        <location filename="../mainwindow.cpp" line="-485"/>
         <location line="+47"/>
-        <location line="+1316"/>
+        <location line="+1325"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1431"/>
+        <location line="-1440"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2264,13 +2265,13 @@
     <message>
         <location line="-114"/>
         <location line="+70"/>
-        <location line="+1048"/>
+        <location line="+1057"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+200"/>
         <location line="+107"/>
         <location line="+62"/>
-        <location line="+154"/>
+        <location line="+166"/>
         <location line="+25"/>
         <location line="+438"/>
         <location line="+29"/>
@@ -2279,7 +2280,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2289"/>
+        <location line="-2310"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2355,7 +2356,7 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+594"/>
+        <location line="+603"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
@@ -2372,7 +2373,7 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1194"/>
+        <location line="-1203"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -2385,7 +2386,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+71"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1663"/>
+        <location filename="../mainwindow.cpp" line="+1684"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -2395,15 +2396,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1641"/>
-        <location line="+1146"/>
-        <location line="+366"/>
+        <location line="-1662"/>
+        <location line="+1155"/>
+        <location line="+378"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1623"/>
+        <location line="-1644"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2439,7 +2440,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1462"/>
+        <location line="+1483"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -2459,8 +2460,8 @@
         <translation>Идет запись видео в </translation>
     </message>
     <message>
-        <location line="-429"/>
-        <location line="+458"/>
+        <location line="-441"/>
+        <location line="+470"/>
         <source>Finishing the video...</source>
         <translation>Видео дописывается...</translation>
     </message>
@@ -2470,7 +2471,7 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1641"/>
+        <location line="-1662"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
@@ -2505,7 +2506,12 @@
         <translation>Цифровой блок буквами</translation>
     </message>
     <message>
-        <location line="+126"/>
+        <location line="+127"/>
+        <source>Sharp</source>
+        <translation>Резкое</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Picture tube</source>
         <translation>Кинескоп</translation>
     </message>
@@ -2572,12 +2578,12 @@
         <translation>Ошибка создания резервной копии. Возможно, файл с расширением *.bak уже существует.</translation>
     </message>
     <message>
-        <location line="+95"/>
+        <location line="+104"/>
         <source>Save screenshot</source>
         <translation>Сохранение скриншота</translation>
     </message>
     <message>
-        <location line="+276"/>
+        <location line="+279"/>
         <source>This machine has no usable keyboard picture</source>
         <translation>У этой машины нет пригодного рисунка клавиатуры</translation>
     </message>
@@ -2708,12 +2714,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1324"/>
+        <location line="-1336"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1367"/>
+        <location line="+1379"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -2783,7 +2789,7 @@
         <translation>Повторяющийся элемент в файле мэппинга</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+26"/>
         <source>rus-on should be 0 or 1</source>
         <translation>Параметр rus-on должен быть 0 или 1</translation>
     </message>
@@ -2798,7 +2804,7 @@
         <translation>Некорректный параметр клавиатуры rusmode</translation>
     </message>
     <message>
-        <location line="+223"/>
+        <location line="+233"/>
         <source>Key table entry is incorrect</source>
         <translation>Элемент таблицы клавиш некорректен</translation>
     </message>
@@ -2817,7 +2823,7 @@
         <translation type="vanished">Некорректный параметр клавиатуры rusmode %1</translation>
     </message>
     <message>
-        <location line="-237"/>
+        <location line="-247"/>
         <source>rus_switches should have two values separated by &apos;/&apos;</source>
         <translation>Параметр rus_switches должен быть задан как два числа, разделённые &apos;/&apos;</translation>
     </message>
@@ -3027,7 +3033,7 @@
 <context>
     <name>PoiskDisplay</name>
     <message>
-        <location filename="../emulator/devices/specific/poisk.cpp" line="+65"/>
+        <location filename="../emulator/devices/specific/poisk.cpp" line="+66"/>
         <source>The board RAM is expected in &apos;ram&apos;</source>
         <translation>Ожидается ОЗУ платы в устройстве «ram»</translation>
     </message>
@@ -3041,7 +3047,7 @@
 <context>
     <name>PoiskFdcControl</name>
     <message>
-        <location line="+408"/>
+        <location line="+404"/>
         <source>Not a wd1793 device</source>
         <translation>Устройство - не wd1793</translation>
     </message>

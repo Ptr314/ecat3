@@ -8,8 +8,11 @@
 #include <qdebug.h>
 #include <qlogging.h>
 
+#include <algorithm>
+
 #include <SDL.h>
 
+#include "emulator/core.h"
 #include "emulator/renderer.h"
 #include "qt_utils.h"
 
@@ -24,6 +27,20 @@ private:
     SDL_Rect render_rect;
     int cached_window_w = 0;
     int cached_window_h = 0;
+    int filtering = SCREEN_FILTERING_NONE;
+    //The sharp mode: the frame enlarged by whole numbers without filtering,
+    //as the page does it; only the rest of the scale is linear
+    SDL_Texture * sharp_target = nullptr;
+    int sharp_w = 0;
+    int sharp_h = 0;
+
+    void destroy_sharp_target()
+    {
+        if (sharp_target != nullptr) SDL_DestroyTexture(sharp_target);
+        sharp_target = nullptr;
+        sharp_w = 0;
+        sharp_h = 0;
+    }
 
     void create_black_box()
     {
@@ -39,6 +56,7 @@ private:
 
     void recreate_renderer()
     {
+        destroy_sharp_target();
         if (black_box != nullptr) { SDL_DestroyTexture(black_box); black_box = nullptr; }
         if (SDLRendererRef != nullptr) SDL_DestroyRenderer(SDLRendererRef);
         SDLRendererRef = SDL_CreateRenderer(SDLWindowRef, -1, SDL_RENDERER_ACCELERATED);
@@ -60,6 +78,7 @@ public:
 
     virtual ~SDL2Renderer() override
     {
+        destroy_sharp_target();
         if (black_box != nullptr) SDL_DestroyTexture(black_box);
         if (device_surface != nullptr) SDL_FreeSurface(device_surface);
         if (SDLRendererRef != nullptr) SDL_DestroyRenderer(SDLRendererRef);
@@ -91,6 +110,7 @@ public:
 
     void stop() override
     {
+        destroy_sharp_target();
         if (black_box != nullptr) SDL_DestroyTexture(black_box);
         if (device_surface != nullptr) SDL_FreeSurface(device_surface);
         if (SDLRendererRef != nullptr) SDL_DestroyRenderer(SDLRendererRef);
@@ -102,11 +122,11 @@ public:
         cached_window_h = 0;
     }
 
+    //The hint is read when a texture is created, and render() creates the
+    //frame's texture anew every time, so it sets the hint itself
     void set_filtering(int value) override
     {
-        std::string s = std::to_string(value);
-        char const *pchar = s.c_str();
-        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, pchar);
+        filtering = value;
     }
 
     uint8_t * get_buffer() override
@@ -177,6 +197,11 @@ public:
         render_rect.x = (rx - render_rect.w) / 2;
         render_rect.y = (ry - render_rect.h) / 2;
 
+        const bool sharp = filtering == SCREEN_FILTERING_SHARP
+                           && SDL_RenderTargetSupported(SDLRendererRef);
+        const std::string quality = sharp ? std::string("0") : std::to_string(filtering);
+        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, quality.c_str());
+
         SDLTexture = SDL_CreateTextureFromSurface(SDLRendererRef, device_surface);
         if (SDLTexture == nullptr) {
             // Renderer may be in a bad state (e.g. D3D device lost), try recovery
@@ -186,8 +211,32 @@ public:
             if (SDLTexture == nullptr) return;
         }
 
+        SDL_Texture * picture = SDLTexture;
+        if (sharp) {
+            const int kx = std::max(1, render_rect.w / screen_x);
+            const int ky = std::max(1, render_rect.h / screen_y);
+            const int tw = screen_x * kx;
+            const int th = screen_y * ky;
+            if (sharp_target == nullptr || tw != sharp_w || th != sharp_h) {
+                destroy_sharp_target();
+                SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+                sharp_target = SDL_CreateTexture(SDLRendererRef, SDL_PIXELFORMAT_RGBA8888,
+                                                 SDL_TEXTUREACCESS_TARGET, tw, th);
+                if (sharp_target != nullptr) {
+                    sharp_w = tw;
+                    sharp_h = th;
+                }
+            }
+            //Without the target the frame goes to the window unfiltered
+            if (sharp_target != nullptr && SDL_SetRenderTarget(SDLRendererRef, sharp_target) == 0) {
+                SDL_RenderCopy(SDLRendererRef, SDLTexture, NULL, NULL);
+                SDL_SetRenderTarget(SDLRendererRef, NULL);
+                picture = sharp_target;
+            }
+        }
+
         SDL_RenderClear(SDLRendererRef);
-        SDL_RenderCopy(SDLRendererRef, SDLTexture, NULL, &render_rect);
+        SDL_RenderCopy(SDLRendererRef, picture, NULL, &render_rect);
         SDL_RenderPresent(SDLRendererRef);
 
         SDL_DestroyTexture(SDLTexture);

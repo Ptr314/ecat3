@@ -55,6 +55,7 @@ protected:
 private:
     QOpenGLShaderProgram* program;
     QOpenGLShaderProgram* crtProgram;
+    QOpenGLShaderProgram* sharpProgram;
     QOpenGLTexture* texture;
     QImage pendingImage;
     QMutex mutex;

@@ -101,14 +101,35 @@ static const char* crtFragmentShaderSrc = R"(
     }
 )";
 
+//Sharp: every texel is drawn flat, and only the screen pixel its edge falls
+//into is blended with the neighbour by the linear filter of the texture. At a
+//fractional scale the columns then come out even without the softness of a
+//plain linear filter - what the page does with a canvas enlarged by a whole
+//number. Where the picture is not enlarged (scale under 1) it is plain linear
+static const char* sharpFragmentShaderSrc = R"(
+    varying vec2 vTexCoord;
+    uniform sampler2D tex;
+    uniform vec2 texSize;
+    uniform vec2 outSize;
+    void main() {
+        vec2 t = vTexCoord * texSize;
+        vec2 scale = max(outSize / texSize, vec2(1.0));
+        vec2 inner = vec2(0.5) - vec2(0.5) / scale;
+        vec2 d = fract(t) - vec2(0.5);
+        vec2 f = (d - clamp(d, -inner, inner)) * scale + vec2(0.5);
+        gl_FragColor = texture2D(tex, (floor(t) + f) / texSize);
+    }
+)";
+
 GLWidget::GLWidget(QWidget* parent)
-    : QOpenGLWidget(parent), program(nullptr), crtProgram(nullptr), texture(nullptr), vbo(0),
+    : QOpenGLWidget(parent), program(nullptr), crtProgram(nullptr), sharpProgram(nullptr), texture(nullptr), vbo(0),
     imageDisplaySize(0, 0), aspectRatioScale(1.0f), filterMode(SCREEN_FILTERING_NONE), scanLines(0) {}
 
 GLWidget::~GLWidget() {
     makeCurrent();
     delete program;
     delete crtProgram;
+    delete sharpProgram;
     delete texture;
     if (vbo) glDeleteBuffers(1, &vbo);
     doneCurrent();
@@ -129,6 +150,14 @@ void GLWidget::initializeGL() {
     if (!crtProgram->link()) {
         delete crtProgram;
         crtProgram = nullptr;
+    }
+
+    sharpProgram = new QOpenGLShaderProgram();
+    sharpProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSrc);
+    sharpProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, sharpFragmentShaderSrc);
+    if (!sharpProgram->link()) {
+        delete sharpProgram;
+        sharpProgram = nullptr;
     }
 
     //The texture holds the frame as the image has it, top row first, so the
@@ -198,7 +227,9 @@ void GLWidget::paintGL() {
     }
 
     const bool crt = filterMode == SCREEN_FILTERING_CRT && crtProgram != nullptr;
-    QOpenGLShaderProgram * const prog = crt ? crtProgram : program;
+    //Without its program the sharp mode is plain linear: the filter below
+    const bool sharp = filterMode == SCREEN_FILTERING_SHARP && sharpProgram != nullptr;
+    QOpenGLShaderProgram * const prog = crt ? crtProgram : sharp ? sharpProgram : program;
     prog->bind();
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
@@ -261,6 +292,10 @@ void GLWidget::paintGL() {
         prog->setUniformValue("texSize", (float)texture->width(), (float)rows);
         prog->setUniformValue("outSize", (float)imgW, (float)imgH);
         prog->setUniformValue("scanLines", (float)lines);
+    }
+    if (sharp) {
+        prog->setUniformValue("texSize", (float)texture->width(), (float)texture->height());
+        prog->setUniformValue("outSize", (float)imgW, (float)imgH);
     }
 
     int posLoc = prog->attributeLocation("position");

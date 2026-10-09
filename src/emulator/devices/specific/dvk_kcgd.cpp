@@ -661,7 +661,7 @@ KCGDDisplay::KCGDDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
 {
     m_clocked = true;
     sx = KCGD_WIDTH;
-    sy = KCGD_HEIGHT;
+    sy = KCGD_HEIGHT / 2;
 }
 
 emulator::Result KCGDDisplay::load_config(SystemData *sd)
@@ -733,10 +733,23 @@ void KCGDDisplay::set_renderer(VideoRenderer &vr)
         for (unsigned ch = 0; ch < 3; ch++)
             table[v][m_channel[ch]] = (uint8_t)(85 * ((v >> (ch * 2)) & 3));
     vr.FillRGB(table, m_colors, 64);
+    m_surface_lines = (unsigned)vr.height();
 }
 
+// Без чересстрочной развёртки поверхность - 240 строк, по строке таблицы на
+// две строки растра: высота окна идёт за числом строк поверхности, и с 480
+// повторёнными строками окно ДВК-4 было почти вдвое выше, чем у других машин
+// при том же масштабе. 480 - только с чересстрочной, где все строки свои.
+// Высота меняется здесь, на потоке отрисовки, как режим у БК
 void KCGDDisplay::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 {
+    const unsigned lines = (m_kcgd != nullptr && m_kcgd->interlace()) ? KCGD_HEIGHT : KCGD_HEIGHT / 2;
+    if (lines != this->sy) {
+        lock_surface();
+        this->sy = lines;
+        screen_valid = false;
+        unlock_surface();
+    }
     *sx = this->sx;
     *sy = this->sy;
 }
@@ -761,9 +774,13 @@ void KCGDDisplay::render_all(MAYBE_UNUSED bool force_render)
     if (m_kcgd != nullptr && render_pixels != nullptr) {
         uint32_t pal[16];
         for (unsigned i = 0; i < 16; i++) pal[i] = m_colors[m_kcgd->palette(i)];
-        for (unsigned y = 0; y < KCGD_HEIGHT; y++) {
+        // По поверхности, а не по sy: пока окно не догнало смену режима,
+        // поверхность ещё прежней высоты
+        const unsigned lines = (m_surface_lines < KCGD_HEIGHT) ? m_surface_lines : KCGD_HEIGHT;
+        const unsigned step = (lines == KCGD_HEIGHT) ? 1 : 2;
+        for (unsigned y = 0; y < lines; y++) {
             uint32_t * p = reinterpret_cast<uint32_t*>(static_cast<uint8_t*>(render_pixels) + y * line_bytes);
-            unsigned a = line_address(y);
+            unsigned a = line_address(y * step);
             for (unsigned i = 0; i < KCGD_LINE_WORDS; i++) {
                 const uint32_t w = m_kcgd->vram(a++);
                 if (w & HIRES_BIT) {
