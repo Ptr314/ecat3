@@ -11,6 +11,7 @@ eCat &ndash; универсальный эмулятор ретрокомпью�
 * &laquo;УК-НЦ&raquo; (HDD: CHS, LBA; Covox; [Aberrant Sound](https://github.com/aberranthacker/aberrant_sound_module)).
 * &laquo;Юниор ФВ-6506&raquo;, &laquo;Арго ФВ-6511&raquo; (TCP/M с ленты, управление магнитофоном, режим ZX).
 * &laquo;Поиск-1&raquo; (Дисковод, кассеты, картридж ОЗУ).
+* ДВК-1, ДВК-2, ДВК-3, ДВК-4 (К1801ВМ1 &mdash; КМ1801ВМ3, КСМ, КГД, КЦГД, DX, MX, MY, DW).
 
 <p align="center">
 <img src="docs/screenshots/main_window.png" width="600">
