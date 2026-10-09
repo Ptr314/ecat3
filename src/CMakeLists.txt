@@ -322,7 +322,17 @@ else()
     foreach(_ts_file ${TS_FILES})
         get_filename_component(_qt_id ${_ts_file} NAME_WE)
         set(QM_FILE ${CMAKE_BINARY_DIR}/${_qt_id}.qm)
+        # Made at configure time too: the resource rule lists the files of the
+        # qrc then, and a missing one breaks it. The command below remakes it
+        # whenever the .ts changes; without it a translation edited after the
+        # configure never reached the build
         execute_process(COMMAND ${LRELEASE_EXECUTABLE} ${_ts_file} -qm  ${QM_FILE})
+        add_custom_command(
+            OUTPUT ${QM_FILE}
+            COMMAND ${LRELEASE_EXECUTABLE} ${_ts_file} -qm ${QM_FILE}
+            DEPENDS ${_ts_file}
+            VERBATIM
+        )
         file(APPEND ${QRC_FILE} "        <file alias=\"${_qt_id}\">${QM_FILE}</file>\n")
     endforeach()
 
