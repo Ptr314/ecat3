@@ -420,6 +420,10 @@
         <source>Drum 7 in the mix, % (0-400)</source>
         <translation>Ударный 7 в смеси, % (0-400)</translation>
     </message>
+    <message>
+        <source>Volume, % (100 = 1.5 V full scale)</source>
+        <translation>Громкость, % (100 = шкала 1.5 В)</translation>
+    </message>
 </context>
 <context>
     <name>Connector</name>

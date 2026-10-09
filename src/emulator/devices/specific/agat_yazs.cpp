@@ -424,7 +424,7 @@ AgatYazs::AgatYazs(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_h(0)
     , m_tick_on(0)
     , m_tick_off(0)
-    , m_gain(1 / 1.5)
+    , m_gain(4 / 1.5)
     , m_mix_tones(1)
     , m_mix_drum6(1.15)
     , m_mix_drum7(1.15)
@@ -454,8 +454,10 @@ emulator::Result AgatYazs::load_config(SystemData *sd)
     m_port_value = read_confg_value(cd, "port_value", false, (unsigned int)0) & 0xFF;
     // volume, percent: at 100 the full scale is 1.5 V at the mixer output,
     // about where a loud chord with a drum peaks. The card is far quieter
-    // than the speaker by its circuit: a channel alone gives 0.1-0.3 V
-    m_gain = read_confg_value(cd, "volume", false, (unsigned int)100) / 100.0 / 1.5;
+    // than the speaker by its circuit: a channel alone gives 0.1-0.3 V, so
+    // the default is 400 (full scale 0.375 V); what goes above it is left to
+    // the limiter of the mixer
+    m_gain = read_confg_value(cd, "volume", false, (unsigned int)400) / 100.0 / 1.5;
 
     // The balance of the tones and the drums, percent of the card's
     const char * mix_names[3] = {"tones", "drum6", "drum7"};
@@ -1134,20 +1136,23 @@ double AgatYazs::drums_step(double vs, bool full)
 
 //------------------- Sound ------------------------------------------------//
 
+// Not clipped at full scale: the output carries spikes of up to 1.5 V that a
+// sample of the mixer averages away, and clipped here, at a high volume, they
+// took the music with them. The mixer limits what is left after the average
+// (limiter = 1 of the speaker); the bound only keeps the sum in range
+static double bounded(double s)
+{
+    return s > 16 ? 16 : (s < -16 ? -16 : s);
+}
+
 int32_t AgatYazs::sound_sample(int64_t amplitude)
 {
-    double s = m_out * m_gain;
-    if (s > 1) s = 1;
-    if (s < -1) s = -1;
-    return (int32_t)(s * amplitude);
+    return (int32_t)(bounded(m_out * m_gain) * amplitude);
 }
 
 int32_t AgatYazs::sound_sample_left(int64_t amplitude)
 {
-    double s = m_out_left * m_gain;
-    if (s > 1) s = 1;
-    if (s < -1) s = -1;
-    return (int32_t)(s * amplitude);
+    return (int32_t)(bounded(m_out_left * m_gain) * amplitude);
 }
 
 //------------------- State ------------------------------------------------//
@@ -1344,6 +1349,13 @@ ConfigFields AgatYazs::get_config_fields()
     f.values.push_back({"0", QT_TRANSLATE_NOOP("DeviceOptions", "Mono (RIGHT output)")});
     f.values.push_back({"1", QT_TRANSLATE_NOOP("DeviceOptions", "Stereo (both line outputs)")});
     r.push_back(f);
+
+    ConfigField v;
+    v.name = "volume";
+    v.title = QT_TRANSLATE_NOOP("ConfigFields", "Volume, % (100 = 1.5 V full scale)");
+    v.type = CONFIG_FIELD_STRING;
+    v.def = "400";
+    r.push_back(v);
 
     const char * names[3] = {"tones", "drum6", "drum7"};
     const char * titles[3] = {

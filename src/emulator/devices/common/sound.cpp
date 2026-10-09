@@ -4,6 +4,7 @@
 // Description: Generic sound device class
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 
 #include "sound.h"
@@ -74,6 +75,7 @@ emulator::Result GenericSound::load_config(SystemData *sd)
 
     m_lpf_coutoff = read_confg_value(cd, "lpf", false, (unsigned int)m_lpf_coutoff);
     m_use_lpf = (m_lpf_coutoff > 0);
+    m_limiter = read_confg_value(cd, "limiter", false, false);
 
     // Other sound devices whose output is mixed into this one: mix = ay|dac
     std::string mix = cd->get_parameter("mix", false).value;
@@ -294,6 +296,19 @@ void GenericSound::listen_to_sources()
     refresh_sources();
 }
 
+// Linear up to the knee, then bent smoothly towards full scale, so a loud
+// passage is compressed instead of being cut flat, which wheezes. The slope is
+// 1 on both sides of the knee
+static float soft_limit(float v)
+{
+    const float full = 32767.0f;
+    const float knee = 0.7f * full;
+    const float room = full - knee;
+    if (v > knee) return knee + room * std::tanh((v - knee) / room);
+    if (v < -knee) return -knee - room * std::tanh((-v - knee) / room);
+    return v;
+}
+
 void GenericSound::clock(unsigned int counter)
 {
     if (m_listening) {
@@ -364,6 +379,7 @@ void GenericSound::clock(unsigned int counter)
 
         // Applying LPF if expected
         if (m_lpf_on) out = m_filter.process(out);
+        if (m_limiter) out = soft_limit(out);
 
         if (out > 32767.0f) out = 32767.0f;
         else if (out < -32768.0f) out = -32768.0f;
@@ -375,6 +391,7 @@ void GenericSound::clock(unsigned int counter)
             m_last_input_left = vl;
             out_left = m_dc_blocker_left.process(vl);
             if (m_lpf_on) out_left = m_filter_left.process(out_left);
+            if (m_limiter) out_left = soft_limit(out_left);
             if (out_left > 32767.0f) out_left = 32767.0f;
             else if (out_left < -32768.0f) out_left = -32768.0f;
         }

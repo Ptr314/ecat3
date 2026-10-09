@@ -125,6 +125,7 @@ private:
 
     // Low pass filter
     bool m_use_lpf;
+    bool m_limiter = false;             // soft limiting of the final sample (limiter = 1)
     bool m_lpf_on = false;              // m_use_lpf, and the cutoff below half the sample rate
     int m_lpf_coutoff;
     ButterworthLowPassFilter m_filter;
