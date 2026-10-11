@@ -394,7 +394,7 @@ unsigned int i8080core::execute()
             else
                 T.b.L = context.registers.reg_array_8[REGISTERS8[YYY]];
             D.dw = static_cast<uint32_t>(T.b.L) + 1;
-            context.registers.regs.F &= F_CARRY;                                    //Clear flags except carry & HC
+            context.registers.regs.F &= F_CARRY;                                    //Clear flags except carry
             context.registers.regs.F |= calc_base_flags(D.dw) & (F_ALL - F_CARRY);  //Then set other
             context.registers.regs.F |= calc_half_carry(T.b.L, 1, 0);               //HC
             if (YYY == 6)
@@ -410,7 +410,7 @@ unsigned int i8080core::execute()
             else
                 T.b.L = context.registers.reg_array_8[REGISTERS8[YYY]];
             D.dw = static_cast<uint32_t>(T.b.L) - 1;
-            context.registers.regs.F &= F_CARRY;                                    //Clear flags except carry & HC
+            context.registers.regs.F &= F_CARRY;                                    //Clear flags except carry
             context.registers.regs.F |= calc_base_flags(D.dw) & (F_ALL - F_CARRY);  //Then set other
             context.registers.regs.F |= calc_half_carry(T.b.L, 0x0F, 0);            //HC
             if (YYY == 6)
@@ -461,7 +461,6 @@ unsigned int i8080core::execute()
             case 4:
                 //00_100_111
                 //DAA
-                //TODO: DAA
                 T.w = static_cast<uint16_t>(context.registers.regs.A);
                 if ((LO4(T.b.L) > 9) || (HALF_CARRY != 0))
                 {

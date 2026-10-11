@@ -394,10 +394,10 @@ unsigned TapeRecorder::get_record_size()
     if (medium == TapeMedium::Bytes)
     {
         if (!m_dirty) return 0;
-        //Ровно то, что напишет build_bt: заголовок файла, по три слова на
-        //запись и преамбула у той, что пришла не из файла. Поле обещает размер
-        //файла, и оно должно его называть
-        size_t total = 4;
+        //Ровно то, что напишет build_bt: по три слова на запись и преамбула у
+        //той, что пришла не из файла; заголовка у файла нет. Поле обещает
+        //размер файла, и оно должно его называть
+        size_t total = 0;
         for (size_t i = 0; i < m_records.size(); i++)
         {
             const std::vector<uint8_t> &d = m_records[i].data;

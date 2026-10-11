@@ -17,7 +17,7 @@ Generator::Generator(InterfaceManager *im, EmulatorConfigDevice *cd):
     , triggered(false)
     , m_pulses(0)
 {
-    m_clocked = true;   //clock() is overridden here
+    m_clocked = true;   //system_clock() is overridden here
 }
 
 emulator::Result Generator::load_config(SystemData *sd)
@@ -25,9 +25,6 @@ emulator::Result Generator::load_config(SystemData *sd)
     emulator::Result res = ComputerDevice::load_config(sd);
     if (!res) return res;
 
-    //The frequency of this generator's own clock domain, set by the base class
-    //from clock_source - not the master processor's, which is all this used to
-    //be able to see
     triggered = (i_trigger.linked > 0);
     if (triggered)
     {
@@ -35,6 +32,9 @@ emulator::Result Generator::load_config(SystemData *sd)
         total_counts = 0;
     } else {
         unsigned int freq = parse_numeric_value(cd->get_parameter("frequency").value);
+        //m_system_clock is the frequency of this generator's own clock domain,
+        //set by the base class from clock_source - not the master processor's,
+        //which is all this used to be able to see
         total_counts = m_system_clock / freq;
     }
 
@@ -134,7 +134,7 @@ std::vector<DeviceFieldInfo> Generator::get_device_fields()
     r.push_back({"enabled", "1 if the generator is running",    false});
     r.push_back({"out",     "Current level of the output",      false});
     r.push_back({"period",  "Period, in system clock counts",   false});
-    r.push_back({"pulses",  "Pulses emitted since reset",       false});
+    r.push_back({"pulses",  "Pulses emitted since start",       false});
     return r;
 }
 

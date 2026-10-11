@@ -91,7 +91,7 @@ z80::z80(InterfaceManager *im, EmulatorConfigDevice *cd):
 z80::~z80()
 {
 #ifndef EXTERNAL_Z80
-    //The base class of the core has no virtual destructor
+    //The core's destructor is virtual, the cast is not needed
     delete static_cast<z80Core*>(core);
 #else
     delete core_ext;

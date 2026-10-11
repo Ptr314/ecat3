@@ -36,7 +36,7 @@ emulator::Result BKTimer::load_config(SystemData *sd)
     emulator::Result res = AddressableDevice::load_config(sd);
     if (!res) return res;
 
-    // One count every 128 system clocks gives the 42.9 us step of a 3 MHz БК
+    // One count every 128 system clocks gives the 42.7 us step of a 3 MHz БК
     m_divider = read_confg_value(cd, "divider", false, (unsigned int)128);
     if (m_divider == 0) m_divider = 1;
 

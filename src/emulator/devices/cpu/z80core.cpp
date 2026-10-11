@@ -113,7 +113,7 @@ static const uint8_t TIMING[256][2] = {
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 50-5F
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 60-6F
-    {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
+    {7, 7},   {7, 7},   {7, 7},   {7, 7},   {7, 7},   {7, 7},   {4, 4},   {7, 7},
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 70-7F
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},
     {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {4, 4},   {7, 7},   {4, 4},        // 80-8F
@@ -636,8 +636,9 @@ inline void z80core::store_value_8(unsigned int YYY, uint32_t address, uint8_t v
         switch (YYY) {
         case 6:
             // [IX/IY + d]
-            // The address has to be calculated by get_first_8 earlier, and
-            // the cycles of the access were counted there as well
+            // The address has to be calculated earlier (get_first_8 or
+            // get_index_address), and the cycles of the access counted there
+            // or by the caller
             write_mem(address, value);
             break;
         case 4:
@@ -748,7 +749,7 @@ inline uint8_t z80core::do_xor8(uint8_t a, uint8_t b)
     calc_z80_flags(
         D.w,                                //Value
         D.b.L,                              //For 3&5
-        0,                                  //Set HC
+        0,                                  //Set none
         F_HALF_CARRY + F_SUB + F_CARRY,     //Reset HC=0, N=0, CY=0
         F_SIGN+F_ZERO+F_B5+F_B3+F_PARITY    //To change
         );
@@ -762,7 +763,7 @@ inline uint8_t z80core::do_or8(uint8_t a, uint8_t b)
     calc_z80_flags(
         D.w,                                //Value
         D.b.L,                              //For 3&5
-        0,                                  //Set HC
+        0,                                  //Set none
         F_HALF_CARRY + F_SUB + F_CARRY,     //Reset HC=0, N=0, CY=0
         F_SIGN+F_ZERO+F_B5+F_B3+F_PARITY    //To change
         );
@@ -1030,7 +1031,7 @@ unsigned int z80core::execute_command()
                     case 3: REG_SP = T.w; break;                    //SP
                     case 2: store_value_16(T.w); break;             //HL, IX, IY
                     default:
-                        context.registers.reg_array_16[PP] = T.w;   //DC, DE
+                        context.registers.reg_array_16[PP] = T.w;   //BC, DE
                         break;
                 }
                 break;
@@ -1489,9 +1490,8 @@ unsigned int z80core::execute_command()
                 //11_010_011
                 //OUT (d),A
                 //A real Z80 puts the accumulator on A8-A15 here, not the
-                //operand: the ZX Spectrum ROM loader relies on it, reading
-                //one keyboard half-row with LD A,$7F; IN A,($FE). Devices
-                //that watch the whole address see it through cpu.io_address
+                //operand. Devices that watch the whole address see it
+                //through cpu.io_address
                 port = next_byte();
                 write_port(static_cast<uint16_t>((REG_A << 8) | port), REG_A);
                 MEMPTR = static_cast<uint16_t>(((port + 1) & 0xFF) | (REG_A << 8));
@@ -1499,6 +1499,9 @@ unsigned int z80core::execute_command()
             case 3:
                 //11_011_011
                 //IN A, (d)
+                //A8-A15 are the accumulator, as for OUT: the ZX Spectrum ROM
+                //loader relies on it, reading one keyboard half-row with
+                //LD A,$7F; IN A,($FE)
                 port = next_byte();
                 MEMPTR = static_cast<uint16_t>(((REG_A << 8) | port) + 1);
                 REG_A = read_port(static_cast<uint16_t>((REG_A << 8) | port));

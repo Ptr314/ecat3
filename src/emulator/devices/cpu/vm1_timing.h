@@ -51,7 +51,8 @@ public:
         uint8_t role;       // Role
         uint8_t gap;        // table units from the previous release to SYNC
         uint8_t strobe;     // table units from SYNC to DIN or DOUT
-        uint8_t r2w;        // K_RMW: table units from the read release to DOUT
+        uint8_t r2w;        // K_RMW: table units from the read release to DOUT;
+                            // ВМ2 K_WRITE: DOUT anchor from s0; R_NONE: DIN to release
     };
 
     // Special forms, after the ones decoded from an opcode (see form_of())

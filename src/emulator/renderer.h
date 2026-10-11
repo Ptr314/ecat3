@@ -48,7 +48,7 @@ public:
     }
     //The screen as raw RGBA, exactly screen_x * screen_y * 4 bytes, R first.
     //Not an encoded image: Emulator::store_screenshot() makes the PNG itself,
-    //and a buffer of any other size is dropped. Renderers whose surface keeps
+    //and a smaller buffer is dropped. Renderers whose surface keeps
     //another byte order (the Qt ones) undo it here, so that the screenshots of
     //every renderer stay comparable with each other
     virtual std::vector<uint8_t> get_screenshot() = 0;

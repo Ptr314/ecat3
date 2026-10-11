@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: PDP-11 compatible CPU core (К1801ВМ1, К1801ВМ2)
+// Description: PDP-11 compatible CPU core (К1801ВМ1, К1801ВМ2, КМ1801ВМ3)
 
 #include "pdp11core.h"
 
@@ -9,14 +9,18 @@
 // instruction times are exactly the bus cycles an instruction runs plus a
 // period or two of internal work:
 //     DATI  - a read                   7T + tn
-//     DATO  - a write, MOV only       10T + tn
+//     DATO  - a write alone           10T + tn   (MOV, a push)
 //     DATIO - a read-modify-write     13T + 2tn
 // tn is the delay before the memory answers. It belongs to the machine rather
-// than to the chip and comes from the configuration (reply_delay). Two periods
-// on a 3 MHz БК0010 make a register to register operation ten periods - the
-// 300 000 operations per second the BK0010 is specified for - and every trap
-// 52 periods, which is the documented 42T + 5tn of EMT. The bus cycles and
-// everything built from them are therefore members, see set_reply_delay().
+// than to the chip and comes from the configuration (reply_delay); with two
+// periods a register to register operation is ten periods and EMT 52, the
+// documented 42T + 5tn. The bus cycles and everything built from them are
+// therefore members, see set_reply_delay().
+// These formulas serve timing = legacy only (the УК-НЦ, the ДВК-1/2/3, the
+// КМД board's processor). The БК machines use
+// timing = vm1 (vm1_timing.h): measured on real БК0010s, a register to
+// register operation takes 12 periods in RAM (the ВП1-037 window) and 8 from
+// ROM.
 namespace {
     // Internal work on top of the bus cycles
     const unsigned int C_ALU      = 1;      // an operation on registers alone
@@ -35,8 +39,12 @@ namespace {
     // MUL/DIV/ASH/ASHC of the 1801VM2, internal work on top of reading the
     // instruction and its operand. From the timing tables of UKNCBTL (MUL 96,
     // DIV 128, ASH 41 + 8 a bit, ASHC 57 + 8 a bit for a register operand,
-    // the fetch included), which agree with the SPEED test on real УК-НЦ
-    // machines: 80 thousand MUL and 64 thousand DIV a second at 8 MHz
+    // the fetch included), less a fetch of 11 periods. The УК-НЦ fetch is 12
+    // (reply_delay 5), so there every one of them is a period longer: MUL 97,
+    // DIV 129. SPEED counts in steps of 8 thousand and shows 80 thousand MUL
+    // and 64 thousand DIV a second at 8 MHz, as real УК-НЦ machines do
+    // (work-uknc-speed). The chip model (tools/vm2-timing) shifts 4 clocks a
+    // step, n - 1 steps to the right; the 8 a bit here are UKNCBTL's
     const unsigned int C_MUL      = 85;
     const unsigned int C_DIV      = 117;
     const unsigned int C_ASH      = 30;
@@ -517,8 +525,8 @@ void pdp11core::enter_halt_mode(uint16_t vector)
         // признак аварии шины от неё свалил бы в ловушку следующую команду
         m_abort = false;
     } else {
-        // Прежнее поведение: у БК пультовый режим - это обычная ловушка через
-        // тот же вектор 004, которым работает клавиша СТОП
+        // ВМ2 без SEL (halt_sel == 0): вход в пульт - обычная ловушка через
+        // halt_vector
         do_trap(halt_vector);
         if (!was) on_halt_mode(true);
     }
@@ -762,7 +770,8 @@ bool pdp11core::execute_double(uint16_t command, unsigned int & cycles)
 
     // MOV writes the destination without reading it and CMP and BIT never
     // write, the rest read and write it in a single read-modify-write cycle.
-    // MOVB is among the rest: a byte is written by a read-modify-write cycle
+    // MOVB is counted among the rest, as the ВМ2 does it; the ВМ1 writes a
+    // byte with a plain DATO (the chip models, vm1/vm2_timing_table.inc)
     operand_access dst_access = (kind == 1 && !is_byte)? OP_WRITE
                               : ((kind == 2 || kind == 3)? OP_READ : OP_MODIFY);
     cycles += C_ALU + access_cycles(src_op, OP_READ) + access_cycles(dst_op, dst_access);
@@ -770,11 +779,12 @@ bool pdp11core::execute_double(uint16_t command, unsigned int & cycles)
     if (!dst_op.is_reg) cycles += C_DST_MEM;
 
     // MOV never reads the destination, which matters for registers with a
-    // side effect on read. MOVB into memory does: the 1801 bus has no byte
-    // write of its own, a byte is written by a read-modify-write cycle
-    // (DATIOB), as BKBTL and UKNCBTL do it too. The УК-НЦ ROM fills areas with
-    // MOVB into 177024, and it is that read which loads the background of the
-    // octet from the screen - without it the fill wrote over stale dots
+    // side effect on read. MOVB into memory does: the ВМ2 writes a byte by a
+    // read-modify-write cycle (DATIOB), as BKBTL and UKNCBTL do it too. The
+    // УК-НЦ ROM fills areas with MOVB into 177024, and it is that read which
+    // loads the background of the octet from the screen - without it the fill
+    // wrote over stale dots. The ВМ1 chip model writes a byte without a read
+    // (DATO with WTBT); the read is done for every processor all the same
     uint16_t dst = 0;
     if (kind != 1) dst = read_operand(dst_op, is_byte);
     else if (is_byte && !dst_op.is_reg) (void)read_operand(dst_op, true);
@@ -941,13 +951,14 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
             }
             case 067: {                                 // MFPS
                 pdp11operand op = decode_operand(spec, true, cycles);
-                // A byte is written by a read-modify-write cycle, see MOVB
+                // A read-modify-write cycle on both the ВМ1 and the ВМ2 (the
+                // chip models)
                 cycles += single_op_cycles(op, OP_MODIFY);
                 uint16_t v = (uint16_t)(context.PSW & 0xFF);
                 if (op.is_reg)
                     context.R[op.reg] = (uint16_t)(int16_t)(int8_t)(v & 0xFF);
                 else {
-                    // A byte is written by a read-modify-write cycle, see MOVB
+                    // The read of that read-modify-write cycle
                     (void)read_operand(op, true);
                     if (m_abort) return true;
                     write_operand(op, true, v);
@@ -967,11 +978,12 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
 
     pdp11operand op = decode_operand(spec, is_byte, cycles);
     // TST only reads its operand; everything else in the group reads and
-    // writes it in one bus cycle, CLR included - it is a DATIO on the 1801
+    // writes it in one bus cycle. CLR is counted so too: a DATIO on the ВМ1,
+    // while the ВМ2 writes it with a plain DATO (the chip models)
     cycles += single_op_cycles(op, (sop == 057)? OP_READ : OP_MODIFY);
 
-    // CLR does not read its destination, CLRB into memory does: a byte is
-    // written by a read-modify-write cycle, see MOVB
+    // CLR does not read its destination, although the ВМ1 does; CLRB into
+    // memory does, a read-modify-write cycle on both chips
     uint16_t dst = (sop == 050 && !(is_byte && !op.is_reg))? 0 : read_operand(op, is_byte);
     if (m_abort) return true;
 
@@ -1453,9 +1465,9 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
     }
 
     // START (000010-000013) and STEP (000014-000017) belong to the console
-    // (halt) mode. Executed in the OS mode they hand the processor over to
-    // the halt mode exactly like HALT does, which on the БК is a trap
-    // through vector 4 rather than the reserved instruction vector 10.
+    // (halt) mode. Outside it the ВМ1 returns from the console exception,
+    // the ВМ2 takes the reserved instruction trap through 010, and anything
+    // else enters the halt mode as HALT does.
     if (command >= 0000010 && command <= 0000017) {
         cycles += C_HALT;
         // У ВМ1 это возврат из пультового исключения, аналог RTI и RTT: PC и
@@ -1499,9 +1511,8 @@ unsigned int pdp11core::execute()
     // в пульт: тест FIS 791403 (диск ФОДОС) получал на стеке 004012 вместо 012
     if (has_console) context.PSW &= 0377;
 
-    // Шаг по команде STEP выполняется с маскировкой всех прерываний, так что
-    // проверка пропускается: следующая команда - та, на которую указывает PC,
-    // и ничто не может встать между ней и возвратом в пультовый режим
+    // После RTT и STEP (m_no_poll) опрос прерываний перед следующей командой
+    // пропускается; m_step_pending приходит только из старых снимков
     const bool no_poll = m_no_poll;
     m_no_poll = false;
     if (!m_step_pending && !no_poll && check_interrupts(cycles)) { m_last_kind = LAST_INTERRUPT; return cycles; }
@@ -1589,6 +1600,7 @@ unsigned int pdp11core::execute()
         m_last_trapped = true;
     }
 
+    // Только для старых снимков (m_step_pending сейчас не ставится).
     // Команда, запущенная по STEP, выполнена - процессор возвращается под
     // управление пультового монитора тем же вектором, которым входит по
     // команде HALT: обработчик у монитора общий на все векторы 160xxx и сам

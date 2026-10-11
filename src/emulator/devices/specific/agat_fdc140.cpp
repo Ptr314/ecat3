@@ -304,12 +304,14 @@ std::vector<DeviceFieldInfo> Agat_FDC140::get_device_fields()
 
 bool Agat_FDC140::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
-    //Signed, and -1 means no phase is energised, which as an unsigned value
-    //would print as a very large number
+    //Signed, and -1 means no phase was energised since power-on, which as an
+    //unsigned value would print as a very large number. The phase is the last
+    //one turned on (prev_phase): phase_off() changes nothing, so the head
+    //stays where that phase pulled it
     if (field == "phase")
     {
         out.numeric = false;
-        out.text = (current_phase < 0) ? "none" : std::to_string(current_phase);
+        out.text = (prev_phase < 0) ? "none" : std::to_string(prev_phase);
         return true;
     }
 

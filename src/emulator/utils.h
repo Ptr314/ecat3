@@ -77,9 +77,10 @@ std::vector<std::string> split_params(const std::string &s);
 // \n, \r, \t, \\, \" and octal \ooo
 std::string decode_send_text(const std::string &s);
 
-// Formats a value according to the current LOGDEFS settings:
+// Formats a value in the given base (for LOG output LOGDEFS supplies it):
 // base 16 -> $XX, base 2 -> #0101, base 8 -> &777, base 10 -> plain decimal.
-// width_bits is 8 or 16 and defines zero padding for bases 2, 8 and 16.
+// width_bits sets the zero padding for bases 2, 8 and 16: anything below 16 is
+// a byte, wider is taken as it is, up to 32.
 std::string format_number(unsigned int value, unsigned int base, unsigned int width_bits);
 
 // std::make_unique copy for C++11 and Mingw 4.9.2 compatibility

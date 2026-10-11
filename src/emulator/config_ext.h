@@ -29,8 +29,9 @@ struct ExtEdit {
     enum Op { Set, Remove, RemoveDevice, AddDevice };
     Op                      op = Set;
     std::string             device;
-    //For Set the whole line; for Remove only name and left_range are filled,
-    //for RemoveDevice and AddDevice nothing
+    //For Set the whole line; for Remove name and left_range, and the value
+    //when the key alone is not unique ("-mapper:@memory[...] = ay"); for
+    //RemoveDevice and AddDevice nothing
     EmulatorConfigParameter param;
     //AddDevice: the type and the parameters of the new device
     std::string             type;
@@ -60,8 +61,8 @@ public:
 
     //file_name only labels the error messages
     emulator::Result parse(const std::string &text, const std::string &file_name);
-    //The text parse() reads back into the same extension. For the future
-    //configuration editor, which saves what the user changed as an .ext
+    //The text parse() reads back into the same extension. The configuration
+    //editor saves what the user changed with it (ExtEditModel::build())
     std::string serialize() const;
     //Applies the edits to a parsed base. With system_only, as the machine
     //chooser loads only the system section, edits of other devices are skipped
@@ -75,7 +76,7 @@ private:
 
 //Where a machine was loaded from
 struct MachineSource {
-    std::string file;           //What was asked for: .cfg, .ext, .ext.zip or .ecats[.zip]
+    std::string file;           //What was loaded: .cfg, .ext, .ext.zip or .ecats[.zip]; for a missing X.cfg the X.ext taken instead (cfg_or_ext())
     //The .cfg the machine is built on. A saved state carries its own
     //configuration and is therefore its own base
     std::string base_cfg;

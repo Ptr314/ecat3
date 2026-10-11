@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: К1801ВМ1 / К1801ВМ2 emulator interface class
+// Description: К1801ВМ1 / К1801ВМ2 / КМ1801ВМ3 emulator interface class
 
 #pragma once
 
@@ -62,18 +62,18 @@ private:
     Interface i_irq3;               // request with the fixed vector 0270
     Interface i_halt;               // console (halt mode) request
     // Power-fail line. While it is asserted the processor is held in reset and
-    // executes nothing; releasing it starts the processor from its start
-    // address. On the УК-НЦ the peripheral processor drives this line (bit 5 of
+    // executes nothing; releasing it (with ~aclo inactive, otherwise when
+    // ~aclo goes too) starts the processor over. On the УК-НЦ the peripheral processor drives this line (bit 5 of
     // its register 177716), which is how the machine brings the central
     // processor up - the ROM it boots from is on the peripheral side.
     Interface i_dclo;
 
-    // Линия аварии сети. Её снятие при работающем процессоре - прерывание по
-    // вектору 024, и оно старше всех остальных. У УК-НЦ линией управляет
-    // периферийный процессор разрядом 15 регистра 177716: единица прижимает
-    // линию, ноль отпускает. Резидент винчестера так и сообщает центральному
-    // процессору об окончании переноса - подставляет свой адрес в вектор 024
-    // и снимает линию на мгновение
+    // Линия аварии сети. Её появление при работающем процессоре - прерывание
+    // по вектору 024, и оно старше всех остальных; снятие - пуск после сброса.
+    // У УК-НЦ линией управляет периферийный процессор разрядом 15 регистра
+    // 177716: ноль прижимает линию, единица отпускает. Резидент винчестера так
+    // и сообщает центральному процессору об окончании переноса - подставляет
+    // свой адрес в вектор 024 и прижимает линию на мгновение
     Interface i_aclo;
 
     // Процессор в пультовом режиме. У машин, где от режима зависит карта
@@ -94,14 +94,15 @@ private:
     bool m_held_in_reset = false;
     bool m_dclo_active = false;     // линия ~dclo сейчас активна
 
-    // True while ~aclo is asserted; the interrupt comes when it is released
+    // True while ~aclo is asserted; the interrupt comes when it is asserted,
+    // its release starts a processor held after ~dclo
     bool m_aclo_active = false;
 
     K1801VM1Core * core;
 
     // timing = vm1: bus cycles timed from a simulation of the chip, see
     // vm1_timing.h. Null for the old formulas (timing = legacy), which the
-    // УК-НЦ keeps
+    // УК-НЦ keeps, and for timing = vm3
     Vm1BusTiming * m_timing = nullptr;
     bool m_timing_vm2 = false;      // timing = vm2: the tables of the КМ1801ВМ2
     unsigned int timed_cycles(unsigned int legacy);

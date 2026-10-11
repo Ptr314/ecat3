@@ -23,7 +23,7 @@ private:
     Port * port_scroll{};
     Port * port_control{};
 
-    Interface i_frame;              // frame pulse at the end of the picture lines
+    Interface i_frame;              // frame pulse at the vertical sync, the 21st service line
 
     unsigned m_scroll_base;         // scroll register value that means "not scrolled"
     unsigned m_scroll;              // scroll register as taken for the current frame

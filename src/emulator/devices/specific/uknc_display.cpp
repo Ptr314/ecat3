@@ -15,8 +15,8 @@
 #define UKNC_WIDTH          640
 
 // Colour is four bits, YRGB, and the brightness modifier of a params
-// descriptor picks one of eight blocks of sixteen: a cleared bit of 177054...
-// no - of the descriptor - dims that channel, 0x80 to 0x60 and 0xFF to 0xDF.
+// descriptor picks one of eight blocks of sixteen: a cleared bit of the
+// descriptor dims that channel, 0x80 to 0x60 and 0xFF to 0xDF.
 // Taken from UKNCBTL (ScreenView_StandardRGBColors), which matches the machine.
 static const uint32_t UKNC_RGB[128] = {
     0x000000,0x000080,0x008000,0x008080,0x800000,0x800080,0x808000,0x808080,

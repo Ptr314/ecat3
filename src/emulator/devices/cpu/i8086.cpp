@@ -267,8 +267,9 @@ void i8086::set_context_value(const std::string &name, unsigned int value)
 
 //The queue goes in too, with its bytes as they were fetched: the program may
 //have changed the memory behind them since, and on the chip that change is
-//not seen until the queue is emptied. Times are absolute and restored as such:
-//the core only ever compares them with each other
+//not seen until the queue is emptied. Times are absolute and restored as such
+//(the queue bytes' times relative to t): the core only ever compares them with
+//each other
 void i8086::save_state(StateWriter &w)
 {
     CPU::save_state(w);

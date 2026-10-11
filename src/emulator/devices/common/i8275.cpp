@@ -274,7 +274,6 @@ void I8275::start_row_fill()
     m_pending = 0;
 }
 
-//One transfer, called by clock() only when the next one is due
 //Конечный счет ВТ57: выборка кадра закончена, до его конца больше ничего не
 //запрашивается. Строку, которая добиралась в этот момент, бросаем - она уже
 //вся в буфере, если счет совпадал с кадром
@@ -287,6 +286,7 @@ void I8275::interface_callback(unsigned int callback_id, unsigned int new_value,
     }
 }
 
+//One transfer, called by clock() only when the next one is due
 void I8275::dma_tick()
 {
     if (!dma_ready())

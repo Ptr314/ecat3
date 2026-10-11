@@ -53,7 +53,9 @@ public:
 // from the interface thread, so a pause(), stop() or a buffer edit never
 // catches a command half way. The command list is only modified from the
 // interface thread and only while the engine is not active, so the interface
-// thread may read it without the lock while a replay runs.
+// thread may read it without the lock while a replay runs. The exception is
+// submit() in interactive mode, which appends under the lock while the engine
+// runs.
 //
 // execute() accepts a single command, so the engine can also be driven by an
 // external source, for example an MCP server, without a script file. The
@@ -116,8 +118,9 @@ public:
     int    get_state() const;                   //One of State, for diagnostics
     static const char * state_name(int state);
 
-    //Abandons whatever the current command is still waiting for and parks the
-    //engine at the end of the buffer. The keys held down are released
+    //Abandons whatever the current command is still waiting for and moves the
+    //engine to the end of the buffer: parked there in interactive mode,
+    //finished otherwise. The keys held down are released
     void   interrupt();
 
     //The engine does not own the sink and never deletes it. Pass nullptr to

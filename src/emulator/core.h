@@ -107,9 +107,9 @@ struct SystemData {
     std::string     allowed_files;
 
     //Base of the numbers the machine writes without a prefix: the "radix" of
-    //the configuration, which a script can change with the RADIX command. Only
-    //machine values are read in it - addresses, vectors, register contents -
-    //never delays, counts or frequencies
+    //the configuration, which a script can change with the RADIX command. Every
+    //number without a prefix is read in it, so delays, counts and frequencies,
+    //which are not the machine's own values, are written with "_" (decimal)
     unsigned int    radix = 10;
 
     //False keeps every sound device from opening an audio device at all. A
@@ -253,7 +253,7 @@ struct MapperRange {
     //Already downcast: map() is on the path of every byte the CPU reads, and a
     //dynamic_cast there walks the class hierarchy on each of them
     AddressableDevice * device;             //Устройство, соответствующее наложенным условиям
-    unsigned int        base;				//Адрес во внутр. адр. пр-ве устройства, соотв. RangeBegin системы
+    unsigned int        base;				//Адрес во внутр. адр. пр-ве устройства, соотв. range_begin системы
     unsigned int        mode;				//Режим допустимости чтения-записи для устройства
     bool                strict;             //Обращение другого режима остается без ответа (таймаут магистрали)
     bool                through;            //Запись идет дальше, к следующим подходящим диапазонам
@@ -982,7 +982,7 @@ public:
         unsigned int * range_index
         );
 
-    //These two functions are needed to use the MM as an addressable device
+    //These functions are needed to use the MM as an addressable device
     virtual unsigned int get_value(unsigned int address) override;
     //What the debugger and LOG see: the mapped device's own get_direct, with
     //no bus side effects (a register that clears on read, cancelinit)
@@ -1030,7 +1030,7 @@ public:
     GenericDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual void get_screen_constraints(unsigned int * sx, unsigned int * sy) = 0;
     //How many lines the beam draws in a frame: a display that doubles its
-    //lines in the surface (the Агат in 512 mode, the Поиск-1, the КЦГД)
+    //lines in the surface (the Агат in 512 mode, the КЦГД)
     //answers less than sy. The tube look of the renderer draws this many
     virtual unsigned int get_scan_lines() { return sy; }
     virtual void reset(bool cold) override;

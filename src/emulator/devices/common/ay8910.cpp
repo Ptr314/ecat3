@@ -17,7 +17,7 @@
                             // the inversion of the bus; reads answer 0
 
 // БК sound boards run the chip from 12 MHz / 7
-#define AY_DEFAULT_FREQUENCY    1714275
+#define AY_DEFAULT_FREQUENCY    1714286
 
 // Output level of the 16 volume steps, 0..1000 (logarithmic DAC of the 8910)
 static const unsigned int AY_VOLUME[16] = {

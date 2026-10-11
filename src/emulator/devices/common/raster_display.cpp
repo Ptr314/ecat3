@@ -97,7 +97,7 @@ void RasterDisplay::clock(unsigned int counter)
 
         if (m_current_line == 0)
             FRAME_SYNC();
-        // A progressive standard has no blanking described here (both blank
+        // vp1-037 has no blanking described here (both blank
         // counts are 0), so VSYNC(0) never comes for it: its subclass takes the
         // frame events from the line numbers in HSYNC
 

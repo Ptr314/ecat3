@@ -423,7 +423,8 @@ bool FDD::sector_in_range()
 {
     if (side < 0 || side >= sides || track < 0 || track >= tracks) return false;
     if (track_mode == FDD_MODE_SECTORS)
-        //sector 0 is the gap before the data, hence <= and not <
+        //sectors are numbered from 1, hence <=; sector 0 is the gap before
+        //the data
         return sector >= 0 && sector <= sectors;
     else
         return image_track(track, side, false) < (unsigned int)(sizeof(track_indexes)/sizeof(track_indexes[0]));
@@ -1380,8 +1381,6 @@ bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to
     if (field == "generation")  { out.values.push_back(m_generation);       return true; }
     out.width = 0;
 
-    //The track as it lies on the medium, sync marks and all: the only way to
-    //see what a guest's formatter actually wrote
     if (field == "checksum")
     {
         if (!loaded || track_mode != FDD_MODE_WHOLE_TRACK) return false;
@@ -1426,6 +1425,8 @@ bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to
         return true;
     }
 
+    //The track as it lies on the medium, sync marks and all: the only way to
+    //see what a guest's formatter actually wrote
     if (field == "raw" || field == "marks")
     {
         const unsigned int t = image_track(track, side, false);

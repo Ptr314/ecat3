@@ -11,9 +11,9 @@
 // because the reader calibrates itself on whatever it receives.
 //
 //   sync pulse   1 unit high, 1 unit low
-//   marker       4 units low, 4 units high
+//   marker       4 units high, 4 units low
 //   data bit 0   short pulse (1 unit high, 1 unit low) plus a 1 unit separator
-//   data bit 1   long pulse (2 units low, 2 units high) plus a 1 unit separator
+//   data bit 1   long pulse (2 units high, 2 units low) plus a 1 unit separator
 //
 // Bits of a byte go out least significant first. The reader in the monitor
 // measures whole periods and calibrates itself on the leading sync series, so

@@ -348,8 +348,8 @@ void DeviceManager::clock(unsigned int domain, unsigned int counter)
 {
     if (domain >= clocked_devices.size()) return;
 
-    //Counted in the master's cycles, so that the number stays what it always
-    //was on a machine with one processor
+    //Counted in the cycles of the domain's own processor; on a machine with
+    //one processor that is the master, so the number stays what it always was
 
     //Only the devices that do something with a tick, in the order they are
     //declared - the processors are clocked by their own execute()
@@ -1119,9 +1119,9 @@ uint8_t * Memory::get_buffer()
 void Memory::save_state(StateWriter &w)
 {
     ComputerDevice::save_state(w);
-    //Whole, never a "changed pages" shortcut: a cold reset fills RAM with
-    //random bytes (RAM::reset), so what is not written here differs from run
-    //to run
+    //Whole, never a "changed pages" shortcut: a cold reset may fill RAM with
+    //random bytes (RAM::reset with fill = random), so what is not written here
+    //can differ from run to run
     if (can_write && !buffer.empty()) w.hex("data", buffer.data(), buffer.size());
 }
 
@@ -1508,7 +1508,9 @@ Port::Port(InterfaceManager *im, EmulatorConfigDevice *cd):
 
     //Everything a port holds is a machine value: it is what the programs of
     //this machine read and write, and its documentation writes it in the
-    //machine's own radix. The width and the bit numbers below are not
+    //machine's own radix. The width above and the bit numbers below are not,
+    //but they are read in the radix too: a config in another radix writes
+    //them with "_"
     try {
         default_value = parse_numeric_value(this->cd->get_parameter("default").value);
     } catch (std::exception &e) {
@@ -2530,8 +2532,7 @@ unsigned int MemoryMapper::read(unsigned int address)
     }
 }
 
-// Whether anything is mapped at the address at all: a range of the other
-// mode still counts, unless it is strict
+// The device a read of the address would reach, without touching it
 AddressableDevice * MemoryMapper::peek_read_device(unsigned int address)
 {
     MapperPage * e = find_page(address, page_tag());
@@ -2541,8 +2542,6 @@ AddressableDevice * MemoryMapper::peek_read_device(unsigned int address)
                      address, MODE_R, &address_on_device, &range_index);
 }
 
-//A write goes on past this range: always for a "through" one, and for a
-//routed one when its device says so for this address
 //A read goes on past this range, the answers OR-ed: always for an "or_read"
 //one, and for a routed one when its device said so for this address - the
 //answer map() reported, so route() is not asked twice
@@ -2552,12 +2551,16 @@ bool MemoryMapper::reads_on(unsigned int range_index, unsigned int route) const
     return mr.or_read || (mr.routed && route == ROUTE_OR);
 }
 
+//A write goes on past this range: always for a "through" one, and for a
+//routed one when its device says so for this address
 bool MemoryMapper::goes_through(unsigned int range_index, unsigned int route) const
 {
     const MapperRange & mr = this->ranges[range_index];
     return mr.through || (mr.routed && route == ROUTE_THROUGH);
 }
 
+// Whether anything is mapped at the address at all: a range of the other
+// mode still counts, unless it is strict
 bool MemoryMapper::responds(unsigned int address, unsigned int mode)
 {
     unsigned int config = this->i_config.value;

@@ -162,8 +162,8 @@ static emulator::Result load_rk(Emulator* e, const std::string &file_name)
 
         if (crc != expected_crc)
         {
-            // Non-fatal: load anyway but warn via result message
-            // We still copy the data below, so just note the warning
+            // A bad checksum is ignored: the data is loaded anyway and no
+            // warning is reported
         }
 
         memcpy(&(buffer[delta]), data.data(), MIN(len, page_size-delta));

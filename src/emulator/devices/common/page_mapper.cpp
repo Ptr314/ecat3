@@ -95,7 +95,8 @@ void PageMapper::set_value(const unsigned address, const unsigned value, bool fo
 void PageMapper::save_state(StateWriter &w)
 {
     AddressableDevice::save_state(w);
-    //Which page the window shows. Everything else is the map itself
+    //The window size. The page in view comes back with the page line, the
+    //rest is the map itself
     w.u("frame", Frame, 16);
 }
 

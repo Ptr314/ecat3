@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: К1801ВМ1 / К1801ВМ2 emulator interface class
+// Description: К1801ВМ1 / К1801ВМ2 / КМ1801ВМ3 emulator interface class
 
 #include "k1801vm1.h"
 #include "emulator/disasm_pdp11.h"
@@ -127,8 +127,8 @@ k1801vm1::~k1801vm1()
 }
 
 // The PDP-11 family decodes bit fields instead of whole opcode bytes and
-// therefore brings its own decoder rather than a table file; the ВМ2 has the
-// EIS instructions on top
+// therefore brings its own decoder rather than a table file; the ВМ2 and the
+// ВМ3 have the EIS instructions on top
 DisAsm * k1801vm1::create_disasm(MAYBE_UNUSED const std::string &data_path, emulator::Result &res)
 {
     res = emulator::Result::ok();
@@ -178,8 +178,8 @@ emulator::Result k1801vm1::load_config(SystemData *sd)
     m_reply_clocks = read_confg_value(cd, "reply_clocks", false, (unsigned int)4);
 
     // База векторов пультового режима - вывод SEL процессора. Ноль оставляет
-    // прежнее поведение: вход в режим идёт обычной ловушкой через halt_vector,
-    // как на БК. У УК-НЦ здесь 160000, и тогда работает настоящий пультовый
+    // прежнее поведение ВМ2: вход в режим идёт обычной ловушкой через
+    // halt_vector (ВМ1 этот параметр не читает). У УК-НЦ здесь 160000, и тогда работает настоящий пультовый
     // режим с теневой парой КРСК/КРСП и командами RUN, STEP, MFPC и прочими
     core->halt_sel = read_confg_value(cd, "halt_sel", false, (unsigned int)0);
     // Регистр начального пуска для пультовой команды 000020. По умолчанию -
@@ -527,7 +527,6 @@ void k1801vm1::interface_callback(unsigned int callback_id, unsigned int new_val
     case CALLBACK_DCLO:
         // Held down while the line is active; released, the processor starts
         // over from its start address. The line idles inactive, so a machine
-        // that leaves ~dclo unconnected runs exactly as before
         // that leaves ~dclo unconnected runs exactly as before. Released while
         // ~aclo is still active, it is the power-up sequence (the ДВК panel
         // drops АИП 10 ms before АСП): the processor starts once ~aclo goes

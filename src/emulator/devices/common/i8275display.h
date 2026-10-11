@@ -56,8 +56,8 @@ private:
     //режим, разобрано по ZX.COM и по работающему ПЗУ Спектрума, см.
     //draw_row_zx()
     Interface i_zx;
-    //Цвет бордюра. Рисовать его здесь пока нечем - его не рисует ни одна
-    //машина проекта, - но линия заведена и видна сценарию: во время загрузки
+    //Цвет бордюра. Рисуется только в режиме ZX (draw_row_zx()); линия видна
+    //и сценарию: во время загрузки
     //с ленты ПЗУ Спектрума гоняет по бордюру полосы, и это единственный
     //признак, что лента читается
     Interface i_border;
@@ -160,11 +160,11 @@ public:
     emulator::Result load_state(const StateReader &r) override;
     void reset(bool cold) override;
 
-    //--------------------- I8275RowSink, on the emulation thread -------------
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
 
+    //--------------------- I8275RowSink, on the emulation thread -------------
     void row_complete(unsigned int row, const uint8_t * data, unsigned int count) override;
     void raster_line(unsigned int row, unsigned int line) override;
     void frame_complete() override;

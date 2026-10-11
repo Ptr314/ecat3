@@ -60,8 +60,9 @@ private:
     std::vector<SoundSource*> m_sources;    // mixed into the output, see "mix"
 
     // The sources taking a share of the mix and the number of shares, the
-    // device's own output included. Taken once a sample rather than on every
-    // clock: activity changes only when a source is first written to or reset
+    // device's own output included. Rebuilt by refresh_sources() only when the
+    // mix may have changed: a source first written to, plugged, unplugged or
+    // reset (sound_mode_changed()), and the idle-share checks
     std::vector<SoundSource*> m_active;
     int64_t m_shares = 1;
     bool m_sources_volatile = true;     // some source in m_active is volatile

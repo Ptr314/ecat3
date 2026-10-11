@@ -241,8 +241,8 @@ void UKNCChannels::set_ppu_tx_status(unsigned int value)
 
 void UKNCChannels::update_irq()
 {
-    // Lowest channel first, receiver before sender - the order the devices sit
-    // on the bus. Only one vector can be offered at a time, the rest wait
+    // All receivers first, lowest channel first, then all senders in the same
+    // order. Only one vector can be offered at a time, the rest wait
     unsigned int cpu_vector = 0;
     for (unsigned int i = 0; i < UKNC_CHAN_P2C && cpu_vector == 0; i++)
         if (m_p2c[i].rx_pending) cpu_vector = m_vec_cpu_rx[i];

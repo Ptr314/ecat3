@@ -70,7 +70,8 @@ i8080::i8080(InterfaceManager *im, EmulatorConfigDevice *cd):
     core = new I8080Core(this);
 
     //Interrupts are taken only where the config says what the acknowledge
-    //reads, since a machine with a ВН59 (Irisha) would need a CALL there
+    //reads: an RST n, or $CD for a ВН59 in the 8080 mode, which then takes
+    //the address from ~int_address
     m_int_opcode = read_confg_value(cd, "int_opcode", false, (unsigned int)0x100);
 
     over_commands.push_back(0xCD);
@@ -81,7 +82,7 @@ i8080::i8080(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 i8080::~i8080()
 {
-    //The base class of the core has no virtual destructor
+    //The core's destructor is virtual, the cast is not needed
     delete static_cast<I8080Core*>(core);
 }
 

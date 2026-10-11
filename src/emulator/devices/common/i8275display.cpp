@@ -45,9 +45,6 @@ I8275Display::I8275Display(InterfaceManager *im, EmulatorConfigDevice *cd):
     reset_attr();
 }
 
-//Порядок разрядов в ответе палитры свой у каждой машины: у Юниора 1 - это
-//красный, 2 - зелёный, 4 - синий (сверено с COLOR.ATR), а у рендерера
-//наоборот. Параметр rgb называет позиции R, G и B в байте цвета
 //Адрес точки в знакогенераторе. Слагаемые не пересекаются по разрядам,
 //поэтому сложение здесь - это сборка адреса, а не арифметика
 unsigned int I8275Display::font_address(unsigned int code, unsigned int line, unsigned int bank) const
@@ -56,6 +53,9 @@ unsigned int I8275Display::font_address(unsigned int code, unsigned int line, un
     return m_font_base + m_font_code[code & 0xFF] + m_font_line[line & 0x0F] + ((bank != 0)? m_font_high : 0);
 }
 
+//Порядок разрядов в ответе палитры свой у каждой машины: у Юниора 1 - это
+//красный, 2 - зелёный, 4 - синий (сверено с COLOR.ATR), а у рендерера
+//наоборот. Параметр rgb называет позиции R, G и B в байте цвета
 unsigned int I8275Display::map_color(unsigned int v)
 {
     if (RGB[0] > 8) return v & 0x07;

@@ -476,7 +476,7 @@ uint64_t ScriptEngine::get_position_ms(uint64_t clock_now) const
 
 uint64_t ScriptEngine::ms_to_ticks(unsigned int ms) const
 {
-    //m_ticks_per_ms is cached in start(): tick() is called for every executed
+    //m_ticks_per_ms is cached in start() and resume(): tick() is called for every executed
     //instruction, so a device lookup here would be far too expensive
     return static_cast<uint64_t>(ms) * m_ticks_per_ms;
 }
@@ -590,7 +590,8 @@ emulator::Result ScriptEngine::execute(const ScriptCommand &c)
                 return emulator::Result::ok();
 
             case SCRIPT_CMD_MACHINE:
-                //Handled before the emulator starts, see Emulator::load_script()
+                //Handled before the emulator starts: the frontend takes it from
+                //Emulator::script_machine() (see refresh_machine()) and loads it
                 return emulator::Result::ok();
 
             case SCRIPT_CMD_WAIT:

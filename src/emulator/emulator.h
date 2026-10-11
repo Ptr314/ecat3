@@ -215,7 +215,8 @@ public:
 
     bool loaded;
 
-    //CPU cycles since the machine was started. Written on the emulation
+    //Cycles of the master CPU since the machine was started (a restored
+    //state puts back its own count). Written on the emulation
     //thread for every instruction; the interface thread reads it to time
     //stamp recorded events, a stale or torn value there costs at most one
     //delay that is a few milliseconds off
@@ -231,8 +232,8 @@ public:
     //The third step after .cfg and .ext: what the user put into a drive (an
     //image, nothing, write protection) is kept in [Disks] of the ini, keyed by
     //the file that was opened - not by the base of its chain - and the drive
-    //name. Only the windowed frontend turns the restore on, and only when no
-    //script, replay or MCP client drives the machine
+    //name. Only the windowed frontend and the web page turn the restore on,
+    //and only when no script, replay or MCP client drives the machine
     //Applies to the next load_config()
     void set_restore_disks(bool on) { m_restore_disks = on; }
     //What the drive holds now, and what the machine's configuration put in it

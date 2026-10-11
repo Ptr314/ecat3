@@ -261,7 +261,7 @@ emulator::Result Emulator::build_machine(const std::string &file_name)
     sd.software_path = software_path;
     sd.data_path = data_path;
     //From here on every value without a prefix is read in the notation this
-    //machine uses. Validated by EmulatorConfig::load_from_file()
+    //machine uses. Validated by EmulatorConfig::apply_radix()
     sd.radix = system->radix;
     set_default_radix(sd.radix);
     sd.read_setup = [this](const std::string &section, const std::string &ident, const std::string &def) {
@@ -1419,7 +1419,7 @@ void Emulator::render_screen()
 #endif
 
         //A screenshot requested by a script is taken here, on the render thread,
-        //right after a frame has been rendered
+        //at the end of a pass of the render loop
         store_screenshot();
     }
 }

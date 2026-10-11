@@ -281,8 +281,8 @@ emulator::Result UKNCKeyboard::parse_key_table(const std::vector<std::string> &b
 }
 
 // Клавиша нажата на рисунке. Здесь нет ни перекодировки, ни регистра: имя
-// уже принадлежит машине, а номер уходит ей как есть - и при нажатии, и при
-// отпускании, разрядом 7
+// уже принадлежит машине, а номер уходит ей как есть при нажатии, а при
+// отпускании - разряд 7 и младшая тетрада номера
 void UKNCKeyboard::send_key_id(const std::string &id, bool press)
 {
     for (size_t i = 0; i < m_ids.size(); i++)

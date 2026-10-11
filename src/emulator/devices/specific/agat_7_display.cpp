@@ -17,8 +17,8 @@ uint8_t Agat_16Colors[16][3]  = {
 
 uint32_t Agat_RGBA16[16];
 
-#define     M_256_EVEN  0       // Render even lines only
-#define     M_256_ODD   1       // Render odd lines only
+#define     M_256_EVEN  0       // 256 lines, each drawn in both fields
+#define     M_256_ODD   1       // Not used
 #define     M_512_ON    2       // Render all 512 interlaced lines
 
 #define     A7_OPTION_PALCARD   1
@@ -482,12 +482,12 @@ emulator::Result Agat7Display::load_state(const StateReader &r)
 std::vector<DeviceFieldInfo> Agat7Display::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = RasterDisplay::get_device_fields();
-    r.push_back({"mode",      "Value of the mode port",                        false});
+    r.push_back({"mode",      "Mode bits of the mode port (mask $83)",         false});
     r.push_back({"base",      "Address the shown page starts at",              false});
     r.push_back({"page_size", "Bytes in one video page",                       false});
     r.push_back({"blinker",   "Phase of the blinking attribute",               false});
-    r.push_back({"wide",      "1 in the 512 dot mode",                         false});
-    r.push_back({"colors",    "Colour scheme selected in the device options",  false});
+    r.push_back({"wide",      "2 when all 512 lines are drawn, 0 for 256 doubled", false});
+    r.push_back({"colors",    "Video output: 0 palette card, 1 standard",      false});
     r.push_back({"irq",       "State of the interrupt line the display drives", false});
     r.push_back({"nmi",       "State of the non maskable interrupt line",      false});
     return r;
@@ -502,7 +502,7 @@ bool Agat7Display::get_field(const std::string &field, unsigned int from, unsign
         if (field == "mode")         out.values.push_back(mode);
         else if (field == "blinker") out.values.push_back(blinker ? 1 : 0);
         else if (field == "wide")    out.values.push_back(m_512_mode);
-        else if (field == "colors")  out.values.push_back(m_color_mode.load());
+        else if (field == "colors")  out.values.push_back((m_pal_card && m_pal_card_out) ? A7_PALCARD_ON : A7_PALCARD_OFF);
         else if (field == "irq")     out.values.push_back(m_irq_val);
         else                         out.values.push_back(m_nmi_val);
         return true;

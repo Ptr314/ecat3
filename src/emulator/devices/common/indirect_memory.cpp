@@ -63,7 +63,7 @@ emulator::Result IndirectMemory::load_config(SystemData *sd)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{IndirectMemory|" + std::string(QT_TRANSLATE_NOOP("IndirectMemory", "No data registers defined")) + "} " + name);
 
-    // The address register is as wide as the deepest target can use
+    // The width of the address register: address_mask, 16 bits by default
     m_address_mask = read_confg_value(cd, "address_mask", false, (unsigned int)0xFFFF);
     m_auto_increment = read_confg_value(cd, "auto_increment", false, false);
 

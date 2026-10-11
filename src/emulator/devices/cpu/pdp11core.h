@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: PDP-11 compatible CPU core (К1801ВМ1, К1801ВМ2)
+// Description: PDP-11 compatible CPU core (К1801ВМ1, К1801ВМ2, КМ1801ВМ3)
 
 #pragma once
 
@@ -16,7 +16,7 @@ protected:
     // Что умеет именно этот кристалл. Проверки положительные: раньше EIS
     // включался условием "семейство не ВМ1", и любое третье семейство
     // получило бы его молча
-    bool has_eis;               // MUL/DIV/ASH/ASHC, есть у ВМ2
+    bool has_eis;               // MUL/DIV/ASH/ASHC, есть у ВМ2 и ВМ3
     bool has_console;           // пультовый режим с командами RUN/STEP/MFPC..., есть у ВМ2
 
     // К1801ВМ3: режимы ядра и пользователя со своими указателями стека,
@@ -39,7 +39,8 @@ protected:
     bool m_psw_written = false;
     uint16_t m_psw_value = 0;
     // Стек ядра опустился ниже 400 («жёлтая зона»): ловушка через 4 после
-    // команды. При входе в ловушку проверки нет
+    // команды. При входе в ловушку проверка своя - в vm3_trap() после записи
+    // в стек
     bool m_yellow = false;
     bool m_in_trap = false;
     bool m_yellow_trap = false;     // идёт ловушка по самой жёлтой зоне
@@ -89,22 +90,24 @@ protected:
     void vm1_timeout(int depth);
     void vm1_trap(uint16_t vector, int depth);
 
-    // Шаг по команде STEP: после одной выполненной команды процессор
-    // возвращается в пультовый режим
+    // Шаг по STEP с возвратом в пультовый режим после одной команды. Сейчас
+    // не ставится (STEP сам в пульт не возвращает), приходит только из
+    // старых снимков
     bool m_step_pending = false;
 
     // Interrupt inputs. VIRQ follows the line - the requesting device drops it
     // once served (a БК clears the keyboard ready flag when the program reads
-    // 0177662). IRQ2, IRQ3 and HALT are latched instead: they are driven by
-    // pulses from a generator, which a level sensitive input would miss
-    // between two instructions. See pdp11core::set_virq().
+    // 0177662) - and is also dropped when taken. IRQ2, IRQ3 and HALT are
+    // latched instead: they are driven by pulses from a generator, which a
+    // level sensitive input would miss between two instructions; HALT is also
+    // seen as a level (halt_pin). See pdp11core::set_virq().
     bool is_virq;               // vectored request over the bus
     uint16_t virq_vector;
     bool is_irq2;               // fixed vector 0100
     bool is_irq3;               // fixed vector 0270
     bool is_halt_req;           // external console (halt mode) request, latched on the edge
     bool halt_pin;              // the line itself, for a processor with a console
-    // Авария сети, вектор 024. Запрос даёт СНЯТИЕ линии ACLO при работающем
+    // Авария сети, вектор 024. Запрос даёт ПОЯВЛЕНИЕ линии ACLO при работающем
     // процессоре, и он тоже защёлкивается - это событие, а не уровень. У
     // УК-НЦ линией управляет периферийный процессор разрядом 15 регистра
     // 177716, и резидент винчестера так сообщает центральному, что перенос
@@ -144,7 +147,7 @@ protected:
     // Bus cycles, which depend on how long the memory takes to answer, and the
     // times built from them. Set by set_reply_delay().
     unsigned int C_DATI;        // a read                   7T + tn
-    unsigned int C_DATO;        // a write, MOV only       10T + tn
+    unsigned int C_DATO;        // a write alone (MOV, push) 10T + tn
     unsigned int C_DATIO;       // a read-modify-write     13T + 2tn
     unsigned int C_TRAP;        // trap or interrupt entry
     unsigned int C_HALT;        // entry into the halt mode
@@ -173,10 +176,9 @@ protected:
     bool execute_misc(uint16_t command, unsigned int & cycles);
 
 public:
-    // Where execution begins after INIT. The address is wired outside the chip
-    // and differs between systems: the БК starts executing straight from it,
-    // while other 1801 machines keep a PC/PSW pair there and are configured
-    // with start_from_vector.
+    // Where execution begins after INIT, for the ВМ2 test rigs and the ВМ3;
+    // with start_from_vector a PC/PSW pair is read from it. The ВМ1 ignores it
+    // and starts from its 177716 register.
     uint16_t start_address;
     bool start_from_vector;
     // ВМ1: номер процессора (входы nPA0, nPA1). Регистр начального пуска -
@@ -185,7 +187,8 @@ public:
     // ВМ3: после пуска сразу войти в пульт (переключатель платы на «пульт»)
     bool start_in_halt = false;
 
-    // Vector used by the HALT instruction and the external console request
+    // Vector of HALT and the console request for a ВМ2 without SEL
+    // (halt_sel == 0); the ВМ1 and the ВМ3 do not use it
     uint16_t halt_vector;
 
     pdp11core(int family_type);
@@ -252,7 +255,8 @@ public:
     void set_latches(const saved_latches &s);
 
     // Состояние ВМ3 вне контекста для снимка: указатели стека режимов, PAR и
-    // PDR ядра и пользователя, SR0, SR2, SR3, HPAR - VM3_STATE_WORDS слов
+    // PDR ядра и пользователя, SR0, SR2, SR3, HPAR и стек пульта (m_hsp) -
+    // VM3_STATE_WORDS слов
     enum { VM3_STATE_WORDS = 4 + 32 + 4 + 1 };
     bool is_vm3() const { return vm3; }
     // Физический адрес виртуального - для отладчика, без аварий и отметок

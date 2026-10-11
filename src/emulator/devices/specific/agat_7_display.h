@@ -44,8 +44,6 @@ protected:
     PortAddress * m_pal_mode;
     RAM * m_pal_font;
 
-    std::atomic<unsigned> m_color_mode;
-
     //Cache of the programmable palette, rebuilt on a write to it
     mutable uint32_t Agat_RGBA16_palcard[16];
     mutable bool m_pal_dirty = true;

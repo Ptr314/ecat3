@@ -15,8 +15,8 @@
 // hands the machine a SCAN CODE rather than a character, and it does so on
 // both edges - a release is bit 7 plus only the low four bits of the number.
 // The ROM turns those numbers into characters itself, through five layout
-// tables it builds at start-up, so the register keys (ЗАГЛ, СТР, РУС, ЛАТ,
-// УПР) are ordinary keys with scan codes of their own and nothing here has to
+// tables it builds at start-up, so the register keys (НР, УПР, ГРАФ, АЛФ,
+// ФИКС) are ordinary keys with scan codes of their own and nothing here has to
 // know about Rus or case.
 //
 //   177700  состояние   разряд 6 - разрешение прерывания (запись),
@@ -28,11 +28,11 @@
 // Note the polarity: on the БК bit 6 of the status register MASKS the
 // interrupt, here it ENABLES it - the ROM writes `MOV #100,@#177700` with the
 // comment «Разрешить прерывания от клавиатуры» and `CLR @#177700` to forbid
-// them. The gating itself is done outside, in the configuration.
+// them. The gating is done here, by the ~irq_enable input wired to bit 6.
 //
 // The device writes the code into a port named by the port-value parameter and
-// pulses ~ready, exactly the way map-keyboard does - the flip-flop that holds
-// readiness and the register that shows it live in the configuration.
+// holds ~ready up until the program reads that port (the ~read strobe); the
+// configuration only shows ~ready as bit 7 of 177700.
 //
 // Two layouts, both files of `name: number` lines: `map` names the host keys,
 // `keys` the machine's own, the ones drawn on ms7007_keyboard.svg. НР, УПР,

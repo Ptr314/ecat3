@@ -101,7 +101,7 @@ public:
     int get_position();
     void set_position(int value);
     int SeekSector(int track, int sector);
-    // Дорожки целиком (режим дорожек: Агат, MX)
+    // Дорожки целиком (режим дорожек: MX, IBM FM/MFM - контроллеры MX, DX, БК)
     bool whole_track() const;
     bool read_track(int track, int side, std::vector<uint8_t> &out);
     bool write_track(int track, int side, const std::vector<uint8_t> &data);

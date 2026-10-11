@@ -342,7 +342,7 @@ std::vector<DeviceFieldInfo> Agat_FDC840::get_device_fields()
 
 bool Agat_FDC840::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
-    //Signed: a step outwards is negative
+    //The direction bit of the last step, 0 or 1
     if (field == "step")
     {
         out.numeric = false;

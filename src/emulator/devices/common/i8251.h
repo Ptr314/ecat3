@@ -81,7 +81,7 @@ private:
     unsigned int tx_clock_divider;
     unsigned int rx_clock_divider;
 
-    bool ext_clock;             // true if i_c interface is connected (auto-detected)
+    bool ext_clock;             // true if txc or c is connected, or once an edge arrives on c
 
     void init();
     void do_clock(unsigned int counter);

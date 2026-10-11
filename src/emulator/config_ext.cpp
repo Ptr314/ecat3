@@ -193,7 +193,7 @@ emulator::Result read_extension_text(const std::string &file, ZipReader &zip,
     return emulator::Result::ok();
 }
 
-//Unpacks everything beside the text into a directory of its own, named after
+//Unpacks the whole archive, the text included, into a directory of its own, named after
 //the archive and its contents so that a changed archive never finds the files
 //of an older one. That directory becomes MachineSource::ext_path, which
 //find_file_location() searches first - which is the whole reason a packed

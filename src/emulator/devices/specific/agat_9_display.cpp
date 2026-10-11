@@ -9,8 +9,8 @@
 #include "agat_common.h"
 
 
-#define     M_256_EVEN  0       // Render even lines only
-#define     M_256_ODD   1       // Render odd lines only
+#define     M_256_EVEN  0       // 256 lines, each drawn in both fields
+#define     M_256_ODD   1       // Not used
 #define     M_512_ON    2       // Render all 512 interlaced lines
 
 #define     A9_OPTION_COLORS    0
@@ -606,7 +606,7 @@ void Agat9Display::save_state(StateWriter &w)
     w.n("memory_bank", _memory_bank);
 }
 
-//Everything set_mode() derives - the page size, the bank - comes back from the
+//Everything set_mode() derives - the base address, the bank - comes back from the
 //mode port, which is restored already; the state carried only part of it
 void Agat9Display::state_restored()
 {

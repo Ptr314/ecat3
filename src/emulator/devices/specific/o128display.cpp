@@ -104,7 +104,8 @@ void O128Display::clock(MAYBE_UNUSED unsigned int counter)
 
 void O128Display::apply_ports()
 {
-    //get_direct(), not get_value(): this runs on every instruction, and reading
+    //get_direct(), not get_value(): this runs on every port write (on every
+    //instruction when the ports are polled), and reading
     //a port through get_value() pulses its access line. Irisha and BK read the
     //same way here
     const unsigned int new_mode = port_mode->get_direct(0);

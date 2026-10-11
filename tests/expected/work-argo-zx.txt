@@ -57,4 +57,4 @@
 [mem.config] $D8 $00 $61
 === холодный возвращает машину в исходное ===
 [display.resolution] 480x250
-[mem.config] $61 $00 $61
+[mem.config] $63 $00 $61

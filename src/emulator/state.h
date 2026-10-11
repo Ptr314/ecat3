@@ -11,20 +11,37 @@
 //   // eCat3 machine state
 //   @ecats 1
 //   @version БК0010-01 (Бейсик)
-//   @machine BK-0010-01.cfg          // where it was taken from, informative
+//   @machine BK-0010-01.cfg
 //
 //   @config
-//   system { type = bk10  radix = 8 }
-//   cpu : 1801vm1 { clock = _3000000 }
-//   monitor : rom { image = rom/MONIT10.ROM }
+//   system {
+//       type = bk10
+//       radix = 8
+//   }
+//   cpu : 1801vm1 {
+//       clock = _3000000
+//   }
+//   monitor : rom {
+//       image = rom/MONIT10.ROM
+//   }
 //
 //   @state 1
-//   system { clock = _1843200000 }
-//   cpu : 1801vm1 { PSW = &000200  ~halt = &1 {old = &1} }
-//   ram : ram { data = {hex:
+//   system {
+//       clock = _1843200000
+//   }
+//   cpu : 1801vm1 {
+//       PSW = &000200
+//       ~halt = &1 {old = &1, mode = r}
+//   }
+//   ram : ram {
+//       data = {hex:
 //       000000: 40 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 //       *
-//   } }
+//       }
+//   }
+//
+// One parameter a line, as in a .cfg. @machine (the base .cfg) is informative;
+// a comment after a header directive would become part of its value.
 //
 // Both sections are in .cfg syntax and are read by EmulatorConfig, so the
 // tokenizer, the ranges, the {extended} blocks, the quoting and the comments
@@ -70,15 +87,16 @@ public:
     emulator::Result parse(const std::string &text, const std::string &file_name);
 
     //The header directives, without either section. The writer builds the
-    //file as header() + "@config\n" + config + "\n@state 1\n" + state
+    //file as header() + "\n@config\n" + config + "\n@state <version>\n\n" + state
     std::string header() const;
 };
 
 //------------------------------- Large blobs -------------------------------//
 
 //Where a whole medium goes. The snapshot writer implements it with the
-//archive it is building; with no archive (a single text file) it is null and
-//the writer falls back to an inline {base64: ...} block
+//archive or the .files directory it is building; without one (null - no
+//caller passes that today) the writer falls back to an inline {base64: ...}
+//block
 class StateBlobSink
 {
 public:
@@ -194,7 +212,8 @@ public:
 
     //One line of a device. Only what the file mentions is changed: the value
     //is the line itself, the rest lives in the {old = ..., edge = ...,
-    //mode = ...} block and is left out when it equals the value
+    //mode = ...} block: old and edge are left out when they equal the value
+    //(and then follow it), mode is always written
     bool iface(const std::string &name, unsigned int &value, unsigned int &old_value,
                unsigned int &edge_value, unsigned int &mode) const;
 

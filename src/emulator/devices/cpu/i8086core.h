@@ -47,7 +47,7 @@ struct i8086bus_state
     bool     nmi_level;
     bool     intr;          //level of INTR
     bool     inhibit;       //no interrupt after this instruction (MOV SS, STI...)
-    bool     trap;          //TF was set when the last instruction began
+    bool     trap;          //a single-step trap is pending: TF was set before and after the last instruction
 
     //A repeated string instruction runs one iteration per execute(); between
     //iterations its decoded form is kept here

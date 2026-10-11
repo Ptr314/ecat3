@@ -103,7 +103,8 @@ emulator::Result GenericSound::load_config(SystemData *sd)
         if (m_sources[i]->sound_stereo()) m_channels = 2;
 
     //Without an audio device the whole sound path stays dormant: clock() drops
-    //out on the very first line, so a silent run costs less than a loud one
+    //out right after the idle-share check, so a silent run costs less than a
+    //loud one
     if (sd->audio_enabled) init_sound(m_system_clock);
 
     return emulator::Result::ok();
@@ -146,7 +147,7 @@ void GenericSound::init_sound(unsigned int clock_freq)
 void GenericSound::setup_pipeline()
 {
     if (m_clock_freq == 0) m_clock_freq = m_system_clock;
-    m_counts_per_sample = (m_clock_freq << 8) / m_sample_rate; // * 128 to make it more precise
+    m_counts_per_sample = (m_clock_freq << 8) / m_sample_rate; // * 256 (8.8 fixed point) to make it more precise
 
     m_dc_blocker.setup(m_sample_rate, 20);
     m_dc_blocker_left.setup(m_sample_rate, 20);

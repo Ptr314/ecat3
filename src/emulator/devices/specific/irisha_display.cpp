@@ -304,10 +304,11 @@ emulator::Result IrishaDisplay::load_state(const StateReader &r)
     r.u("base_address", m_base_address);
     r.u("mode_index", m_mode_index);
     //The page size and the colours are derived from the three ports, and
-    //clock() derives them only when a port changes - after a restore none
-    //does, and the page size stayed 0: the screen came back empty until the
-    //program touched a video port. A mode no port can hold makes the next
-    //clock() derive everything again from the restored ports
+    //apply_ports() derives them only when a port changes - after a restore
+    //none does, and the page size stayed 0: the screen came back empty until
+    //the program touched a video port. A mode no port can hold makes
+    //apply_ports(), called from state_restored(), derive everything again
+    //from the restored ports
     m_mode = _FFFF;
     return emulator::Result::ok();
 }

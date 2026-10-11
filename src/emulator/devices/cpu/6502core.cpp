@@ -53,9 +53,9 @@ static const uint8_t MOS6502_TIMES[256] = {
 //unused codes are NOPs of one to eight cycles - (zp) addressing, the bit
 //instructions (RMB/SMB 5, BBR/BBS 5), PHX/PHY 3, PLX/PLY 4, JMP (abs,X) 6,
 //and DEC/INC abs,X fixed at 7. Branches, BRA included, add the taken and the
-//page crossing cycles in code, as reads crossing a page do. Not modelled:
-//the extra cycle of ADC/SBC in decimal mode, and of ASL/LSR/ROL/ROR abs,X
-//crossing a page
+//page crossing cycles in code, as reads crossing a page do. So do the extra
+//cycle of ADC/SBC in decimal mode (C02_DECIMAL_CYCLE) and of ASL/LSR/ROL/ROR
+//abs,X crossing a page (get_address())
 static const uint8_t WDC65c02_TIMES[256] = {
                         7,6,2,1,5,3,5,5,3,2,2,1,6,4,6,5,
                         2,5,5,1,5,4,6,5,2,4,2,1,6,4,6,5,

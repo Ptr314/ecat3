@@ -12,9 +12,11 @@
 //
 // The layout (read off А. Морозов's images and checked against the ROM):
 //
-//   [dword]                                  file header
 //   [start:4][duration:4][length:4][AA AA 19 00][data]
 //   ...
+//
+// The first record starts at offset 0, there is no file header; a blank
+// cassette is a 4-byte file of zeros.
 //
 // length counts the record INCLUDING the four preamble bytes - $0021 for a
 // 33 byte record, $080A for a 2058 byte one. The preamble is what the ROM

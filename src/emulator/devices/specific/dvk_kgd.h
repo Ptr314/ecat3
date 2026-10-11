@@ -34,7 +34,7 @@ private:
     unsigned int m_ar = 0;
     std::vector<uint8_t> m_vram;
     uint64_t m_ticks = 0;           // для счётчика развёртки
-    unsigned int m_line_ticks = 1;  // тактов на строку растра, 64 мкс
+    unsigned int m_line_ticks = 1;  // тактов на строку растра терминала, 64,9 мкс
 
 public:
     DVKKGD(InterfaceManager *im, EmulatorConfigDevice *cd);

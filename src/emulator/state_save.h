@@ -62,7 +62,7 @@ struct StateSaveRequest
     EmulatorConfig * config;        //The resolved configuration of the machine
     DeviceManager *  dm;
     SystemData *     sd;
-    std::string      machine;       //What the machine was loaded from
+    std::string      machine;       //File name of the base .cfg (MachineSource::base_cfg), informative
     std::string      version;       //Name to show for this state
     uint64_t         clock;         //Emulator::clock_counter
     std::vector<uint64_t> domains;  //ClockDomain::norm, already rebased

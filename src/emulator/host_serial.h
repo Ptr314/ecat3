@@ -11,9 +11,10 @@
 #include "emulator/result.h"
 
 // The emulated serial line goes out through a real or virtual (com0com, socat)
-// port of the host. Everything is polled from the emulation thread, so neither
-// read() nor write() may wait: a byte that is not there yet is simply not
-// there. The frame is always 8N1 without flow control.
+// port of the host. Everything is polled from the emulation thread, so read()
+// never waits: a byte that is not there yet is simply not there. write() does
+// not wait either, except on Windows, where a byte the driver cannot take is
+// given up after 50 ms. The frame is always 8N1 without flow control.
 //
 // The name is what the user types:
 //   Windows - COM5, opened as \\.\COM5 (the only form COM10 and up accept);

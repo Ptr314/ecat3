@@ -32,8 +32,8 @@ public:
     explicit ScriptRecorder(ScriptEngine * engine);
 
     //Starts or continues recording. An empty buffer receives MACHINE first.
-    //A valid cursor is kept, so the time spent not recording is added as a
-    //WAIT before the next event; an invalid one is set to clock_now
+    //A valid cursor is kept, and the time spent not recording is written as
+    //a WAIT at once; an invalid one is set to clock_now
     void begin(uint64_t clock_now, uint64_t ticks_per_ms, const std::string &machine);
 
     //Pauses or stops: writes out the pending key, releases the held ones and
