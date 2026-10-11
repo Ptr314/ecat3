@@ -56,7 +56,7 @@
            one scrolls instead. Only a phone-sized window and a portrait tablet
            stack the columns: three of them do not fit across an upright iPad
            at the default scale. "pointer: coarse" keeps a tall narrow desktop
-           window side by side. watchKeyboardPlace() in ecat_wasm.js repeats
+           window side by side. stackedQuery in ecat_wasm.js repeats
            this query */
         #app {
             display: grid;
@@ -775,9 +775,10 @@
             flex: 3 1 0;
         }
 
-        /* The keyboard has a row of its own under the columns, so its size
-           never pushes the side columns apart. Where the columns are stacked
-           the panel is moved under the screen instead (watchKeyboardPlace) */
+        /* A keyboard wider than the screen has a row of its own under the
+           columns, so its size never pushes the side columns apart. One no
+           wider than the screen, and any keyboard where the columns are
+           stacked, is moved under the screen instead (placeKeyboard) */
         #kbd-row {
             width: 100%;
             display: flex;

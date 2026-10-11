@@ -1028,19 +1028,24 @@ function kbdScaleChosen() {
     return isNaN(value) ? null : clamp(value, KBD_MIN, KBD_MAX);
 }
 
+// The width of the screen block as it stands on the page: the picture with its
+// black margins and border. A keyboard following the canvas alone came out
+// narrower than the block above it
 function screenCssWidth() {
-    return parseFloat(document.getElementById("canvas").style.width) || 0;
+    return document.getElementById("canvas-wrap").getBoundingClientRect().width;
 }
 
 function layoutKeyboard() {
     const panel = document.getElementById("kbd-panel");
+    let width = 0;
     if (kbdBaseWidth > 0) {
         const chosen = kbdScaleChosen();
-        const width = (chosen !== null) ? kbdBaseWidth * chosen / 100 : (screenCssWidth() || kbdBaseWidth);
-        panel.style.width = Math.round(width) + "px";
+        width = Math.round((chosen !== null) ? kbdBaseWidth * chosen / 100 : (screenCssWidth() || kbdBaseWidth));
+        panel.style.width = width + "px";
     } else {
         panel.style.width = "";
     }
+    placeKeyboard(width);
     updateKbdScaleUi();
 }
 
@@ -1105,21 +1110,25 @@ function setupKeyboardSize() {
     watchKeyboardPlace();
 }
 
-// Side by side the keyboard has a row of its own under the columns, so its
-// size never pushes them apart. Stacked one above another (the query is the
-// one that stacks #app in shell.html: a phone, a portrait tablet) it would end
-// up below the right column, out of sight of the screen, so there it goes right
-// under the screen. The node is moved, not copied: its listeners and pressed
-// keys stay with it
-function watchKeyboardPlace() {
+// The query that stacks #app in shell.html: a phone, a portrait tablet
+const stackedQuery = window.matchMedia("(max-width: 720px), (orientation: portrait) and (pointer: coarse)");
+
+// A keyboard no wider than the screen goes right under it, in the middle
+// column, where it belongs with the picture. A wider one would push the side
+// columns apart there, so it takes the row of its own under all the columns.
+// Stacked one above another the columns would leave it below the right one,
+// out of sight of the screen, so there it always goes under the screen. The
+// node is moved, not copied: its listeners and pressed keys stay with it
+function placeKeyboard(width) {
     const panel = document.getElementById("kbd-panel");
-    const query = window.matchMedia("(max-width: 720px), (orientation: portrait) and (pointer: coarse)");
-    const place = () => {
-        const parent = document.getElementById(query.matches ? "col-center" : "kbd-row");
-        if (panel.parentElement !== parent) parent.appendChild(panel);
-    };
-    query.addEventListener("change", place);
-    place();
+    // Half a pixel for the rounding of a width that follows the screen
+    const under = stackedQuery.matches || width <= screenCssWidth() + 0.5;
+    const parent = document.getElementById(under ? "col-center" : "kbd-row");
+    if (panel.parentElement !== parent) parent.appendChild(panel);
+}
+
+function watchKeyboardPlace() {
+    stackedQuery.addEventListener("change", layoutKeyboard);
 }
 
 // ============================================================================
@@ -2634,6 +2643,7 @@ const SCREEN_MAX = 400;
 const SCREEN_STEP = 25;
 
 let screenScale = 200;  // percent
+let screenShown = 200;  // the scale the screen is drawn with: screenScale or less, to fit the window
 
 // An aspect mode given in the address stands in for the saved one until the
 // user picks one from the list
@@ -2926,8 +2936,8 @@ function updateScreenScaleUi(shown = screenScale) {
     paintRange(range);
     document.getElementById("screen-scale-value").textContent =
         t(shown < screenScale ? "screenPercentFit" : "percent", shown);
-    document.getElementById("screen-minus").disabled = shown <= SCREEN_MIN;
-    document.getElementById("screen-plus").disabled = screenScale >= SCREEN_MAX;
+    document.getElementById("screen-minus").disabled = screenStep(shown, -1) === null;
+    document.getElementById("screen-plus").disabled = screenStep(shown, +1) === null;
     document.getElementById("aspect").value = aspectMode();
     document.getElementById("filter").value = filterMode();
 }
@@ -3010,16 +3020,46 @@ function fittedScale(canvasW, canvasH) {
     return scale;
 }
 
+// The scale the buttons go to from the one shown (dir = -1 or +1): the nearest
+// step that really changes the size of the screen and, going up, still fits
+// the window; null when there is none. A step past what fits only raised the
+// chosen scale out of sight - the screen stood still, and the minus then had
+// to walk all those steps back before anything moved. Square pixels round the
+// scale to whole device pixels, so neighbouring steps can give one size
+function screenStep(shown, dir) {
+    const canvas = document.getElementById("canvas");
+    const canvasW = canvas.width, canvasH = canvas.height;
+    const next = shown + dir * SCREEN_STEP;
+    if (next < SCREEN_MIN || next > SCREEN_MAX) return null;
+    if (canvasW === 0 || canvasH === 0) return next;
+
+    const room = screenRoom();
+    const now = screenSize(canvasW, canvasH, shown / 100);
+    for (let scale = next; scale >= SCREEN_MIN && scale <= SCREEN_MAX; scale += dir * SCREEN_STEP) {
+        const size = screenSize(canvasW, canvasH, scale / 100);
+        if (dir > 0 && (size.width > room.width || size.height > room.height)) return null;
+        if (size.width !== now.width || size.height !== now.height) return scale;
+    }
+    return null;
+}
+
+function stepScreenScale(dir) {
+    const scale = screenStep(screenShown, dir);
+    if (scale !== null) setScreenScale(scale);
+}
+
 function updateCanvasSize() {
     const canvas = document.getElementById("canvas");
     const canvasW = canvas.width;
     const canvasH = canvas.height;
     if (canvasW === 0 || canvasH === 0) {
+        screenShown = screenScale;
         updateScreenScaleUi();
         return;
     }
 
     const shown = fittedScale(canvasW, canvasH);
+    screenShown = shown;
     updateScreenScaleUi(shown);
     const size = screenSize(canvasW, canvasH, shown / 100);
     const width = size.width, height = size.height;
@@ -3065,8 +3105,8 @@ function setupCanvasScaling() {
 
     range.addEventListener("input", () => setScreenScale(parseInt(range.value, 10)));
     releaseFocus(range);
-    document.getElementById("screen-minus").addEventListener("click", () => setScreenScale(screenScale - SCREEN_STEP));
-    document.getElementById("screen-plus").addEventListener("click", () => setScreenScale(screenScale + SCREEN_STEP));
+    document.getElementById("screen-minus").addEventListener("click", () => stepScreenScale(-1));
+    document.getElementById("screen-plus").addEventListener("click", () => stepScreenScale(+1));
 
     const aspect = document.getElementById("aspect");
     aspect.addEventListener("change", () => {
