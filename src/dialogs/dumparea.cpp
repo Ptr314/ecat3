@@ -9,6 +9,7 @@
 #include <cmath>
 
 #include "dialogs/dialogs.h"
+#include "dialogs/numfmt.h"
 #include "emulator/utils.h"
 
 #include "dumparea.h"
@@ -23,8 +24,11 @@ DumpArea::DumpArea(QWidget *parent)
     start_address(0),
     hilight_address(_FFFF),
     lines_count(0),
+    data_size(0),
+    current_buffer(0),
     buffer_is_valid(false),
-    current_buffer(0)
+    m_base(16),
+    m_word(false)
 {
 //    QFont font(FONT_NAME, FONT_SIZE);
     QFontMetrics fm(*font);
@@ -51,8 +55,36 @@ void DumpArea::set_data(Emulator * e, AddressableDevice * d, unsigned int start_
     go_to(start_address);
 }
 
+void DumpArea::set_view(int base, bool word)
+{
+    m_base = (base == 8) ? 8 : 16;
+    m_word = word;
+    editor->hide();
+    editor->set_format(m_base, cell_digits(m_base, m_word));
+    if (d != nullptr) go_to(global_offset, start_address);
+}
+
+//Wide enough for the last address of the device, as it is shown
+int DumpArea::address_digits() const
+{
+    const unsigned int last = (data_size > 0) ? data_size - 1 : 0;
+    return addr_digits(last + global_offset, m_base);
+}
+
+//A byte, or the little-endian word from the address: every processor here
+//keeps the low byte first
+unsigned int DumpArea::cell_value(unsigned int address)
+{
+    unsigned int v = d->get_direct(address) & 0xFF;
+    if (m_word && address + 1 < data_size)
+        v |= (d->get_direct(address + 1) & 0xFF) << 8;
+    return v;
+}
+
 void DumpArea::go_to(int offset, int address)
 {
+    //A word starts on an even address
+    if (m_word) address &= ~1;
     global_offset = offset;
     start_address = address;
     buffer_is_valid = false;
@@ -96,6 +128,11 @@ void DumpArea::paintEvent(MAYBE_UNUSED QPaintEvent *event)
 
         if (!buffer_is_valid) fill_buffer(true);
 
+        //16 bytes a line, as 16 bytes or 8 words; the characters follow the cells
+        const unsigned int u = unit();
+        const int digits = cell_digits(m_base, m_word);
+        const int adigits = address_digits();
+        const unsigned int chars_x = (16/u) * (digits+1) + 2;
         for (unsigned int i=0; i < lines_count; i++)
         {
             unsigned int address = start_address + i*16;
@@ -103,26 +140,31 @@ void DumpArea::paintEvent(MAYBE_UNUSED QPaintEvent *event)
             {
                 unsigned int x = char_width * LEFT_PADDING;
                 unsigned int y = font_height * (i+1+(frame_top?1:0)) - 4;
-                QString address_str = QString("%1: ").arg(address + global_offset, 4, 16, QChar('0')).toUpper();
+                QString address_str = fmt_num(address + global_offset, m_base, adigits) + ": ";
                 painter.setPen(TEXT_COLOR);
                 painter.drawText(x, y, address_str);
                 x += address_str.length() * char_width;
-                for (unsigned int j=0; j<16; j++)
+                for (unsigned int j=0; j<16; j+=u)
                 {
                     address = start_address + i*16 + j;
                     if (address < d->get_size())
                     {
-                        uint8_t data = d->get_direct(address);
-                        QString data_str = QString("%1 ").arg(data, 2, 16, QChar('0')).toUpper();
-                        if (address == hilight_address || data != buffer[current_buffer][i*16 + j])
+                        unsigned int value = cell_value(address);
+                        bool changed = false;
+                        for (unsigned int k=0; k<u && j+k<16 && address+k < data_size; k++)
+                            if (((value >> (8*k)) & 0xFF) != buffer[current_buffer][i*16 + j + k]) changed = true;
+                        if ((hilight_address >= address && hilight_address < address + u) || changed)
                         {
                             painter.setPen(TEXT_HILIGHT);
                         } else {
                             painter.setPen(TEXT_COLOR);
                         }
-                        painter.drawText(x + j*data_str.length()*char_width, y, data_str);
-                        QString c = QString::fromStdString(e->translate_char(data));
-                        painter.drawText(x + char_width*(16 * data_str.length() + 2 + j), y, c);
+                        painter.drawText(x + (j/u)*(digits+1)*char_width, y, fmt_num(value, m_base, digits));
+                        for (unsigned int k=0; k<u && address+k < data_size; k++)
+                        {
+                            QString c = QString::fromStdString(e->translate_char((value >> (8*k)) & 0xFF));
+                            painter.drawText(x + char_width*(chars_x + j + k), y, c);
+                        }
                     }
                 }
             }
@@ -132,15 +174,16 @@ void DumpArea::paintEvent(MAYBE_UNUSED QPaintEvent *event)
 
 void DumpArea::show_editor(unsigned int address)
 {
-    //qDebug() << Qt::hex << address;
+    //A word is edited from its even address
+    if (m_word) address &= ~1u;
+    if (address >= data_size) return;
     editor_address = address;
+    const int digits = cell_digits(m_base, m_word);
     int yc = (editor_address - start_address) / 16;
-    int xb = (editor_address - start_address) % 16;
-    editor->move((xb*3 + 6 + LEFT_PADDING)*char_width - char_width/2, (yc+(frame_top?1:0))*font_height+3-4);
+    int xb = ((editor_address - start_address) % 16) / unit();
+    editor->move((xb*(digits+1) + address_digits() + 2 + LEFT_PADDING)*char_width - char_width/2, (yc+(frame_top?1:0))*font_height+3-4);
 
-    uint8_t data = d->get_direct(editor_address);
-    QString data_str = QString("%1").arg(data, 2, 16, QChar('0')).toUpper();
-    editor->setText(data_str);
+    editor->setText(fmt_num(cell_value(editor_address), m_base, digits));
     editor->show();
     editor->selectAll();
     editor->setFocus();
@@ -148,21 +191,25 @@ void DumpArea::show_editor(unsigned int address)
 
 unsigned int DumpArea::mouse_to_offset(unsigned int  x, unsigned int y)
 {
-    unsigned int border = char_width * (LEFT_PADDING + 6 /* addr */ + 16*3 /* data */ + 2);
+    const int digits = cell_digits(m_base, m_word);
+    const int addr = address_digits() + 2;
+    const int cells = 16 / unit();
+    unsigned int border = char_width * (LEFT_PADDING + addr + cells*(digits+1) + 2);
+    int yc = (int)(y/font_height) - (frame_top?1:0);
+    if (yc < 0) yc = 0;
     if (x<border)
     {
-        int xc = floor((x-floor(char_width * LEFT_PADDING))/char_width);
-        int yc = floor(y/font_height - (frame_top?1:0));
-        int xb = (xc - 6) / 3;
+        int xc = ((int)x - (int)(char_width * LEFT_PADDING)) / (int)char_width;
+        int xb = (xc - addr) / (digits+1);
 
-        if (yc < 0) yc = 0;
         if (xb < 0) xb = 0;
-        if (xb > 15) xb = 15;
+        if (xb > cells-1) xb = cells-1;
 
-        return yc*16 + xb;
+        return yc*16 + xb*unit();
     } else {
         int xc = (x-border)/char_width;
-        int yc = y/font_height - (frame_top?1:0);
+        if (xc > 15) xc = 15;
+        if (m_word) xc &= ~1;
         return yc*16 + xc;
     }
 }
@@ -193,8 +240,19 @@ void DumpArea::editor_return_pressed()
 {
     editor->hide();
     QString str_value = editor->text();
-    uint32_t value = parse_numeric_value(("$" + str_value).toStdString());
-    e->invoke([&]() { d->set_value(editor_address, value, true); });
+    if (str_value.isEmpty()) return;
+    uint32_t value;
+    try {
+        value = parse_input(str_value, m_base);
+    } catch (std::exception &) {
+        return;
+    }
+    //A word goes in low byte first, both in one pass of the emulation thread
+    e->invoke([&]() {
+        d->set_value(editor_address, value & 0xFF, true);
+        if (m_word && editor_address + 1 < data_size)
+            d->set_value(editor_address + 1, (value >> 8) & 0xFF, true);
+    });
     update();
 }
 
@@ -202,7 +260,7 @@ void DumpArea::editor_tab_pressed()
 {
     //TODO: HEX editor: Do something if the next address is below the last line
     editor_return_pressed();
-    show_editor(editor_address + 1);
+    show_editor(editor_address + unit());
 }
 
 void DumpArea::editor_escape_pressed()

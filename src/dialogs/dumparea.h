@@ -26,6 +26,10 @@ public:
     void page_up();
     void update_view();
     void reset_buffer();
+    //Hex or octal (16 / 8), bytes or little-endian words
+    void set_view(int base, bool word);
+    int get_base() const { return m_base; }
+    bool get_word() const { return m_word; }
 
 signals:
 
@@ -55,6 +59,12 @@ private:
     void fill_buffer(bool prefill=false);
 
     void show_editor(unsigned int address);
+
+    int m_base;
+    bool m_word;
+    unsigned int unit() const { return m_word ? 2 : 1; }
+    int address_digits() const;
+    unsigned int cell_value(unsigned int address);
 
 private slots:
     void editor_return_pressed();

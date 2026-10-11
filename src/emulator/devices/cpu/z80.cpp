@@ -296,13 +296,27 @@ unsigned int z80::execute()
     return cycles;
 }
 
+//Every register get_registers() shows, by the same name
 void z80::set_context_value(const std::string &name, unsigned int value)
 {
 #ifndef EXTERNAL_Z80
-    if (name == "PC")
-    {
-        core->get_context()->registers.regs.PC = value;
-    }
+    z80context * c = core->get_context();
+    if (name == "AF")        c->registers.reg_pairs.AF = (uint16_t)value;
+    else if (name == "BC")   c->registers.reg_pairs.BC = (uint16_t)value;
+    else if (name == "DE")   c->registers.reg_pairs.DE = (uint16_t)value;
+    else if (name == "HL")   c->registers.reg_pairs.HL = (uint16_t)value;
+    else if (name == "IX")   c->registers.reg_pairs.IX = (uint16_t)value;
+    else if (name == "IY")   c->registers.reg_pairs.IY = (uint16_t)value;
+    else if (name == "AF'")  c->registers.regs.AF_ = (uint16_t)value;
+    else if (name == "BC'")  c->registers.regs.BC_ = (uint16_t)value;
+    else if (name == "DE'")  c->registers.regs.DE_ = (uint16_t)value;
+    else if (name == "HL'")  c->registers.regs.HL_ = (uint16_t)value;
+    else if (name == "SP")   c->registers.regs.SP = (uint16_t)value;
+    else if (name == "PC")   c->registers.regs.PC = (uint16_t)value;
+    else if (name == "I")    c->registers.regs.I = (uint8_t)value;
+    else if (name == "R")    c->registers.regs.R = (uint8_t)value;
+    else if (name == "IFF1") c->IFF1 = value & 1;
+    else if (name == "IFF2") c->IFF2 = value & 1;
 #else
     if (name == "PC")
     {

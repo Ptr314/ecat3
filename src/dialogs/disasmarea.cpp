@@ -9,6 +9,7 @@
 
 #include "emulator/utils.h"
 #include "dialogs/dialogs.h"
+#include "dialogs/numfmt.h"
 #include "libs/crc16.h"
 #include "disasmarea.h"
 
@@ -22,7 +23,8 @@ DisAsmArea::DisAsmArea(QWidget *parent)
     first_line(0),
     cursor_line(0),
     data_valid(false),
-    CRC(0)
+    CRC(0),
+    base(16)
 {
     //QFont font(FONT_NAME, FONT_SIZE);
     QFontMetrics fm(*font);
@@ -41,6 +43,7 @@ void DisAsmArea::set_data(Emulator * e, CPU * cpu, DisAsm * disasm, unsigned int
     this->e = e;
     this->cpu = cpu;
     this->disasm = disasm;
+    base = view_base(cpu);
     lines_count = 0;                                    //Disassembled buffer size
     first_line = 0;                                     //First buffer line on screen
     address_first = _FFFF;                              //Address at first buffer line
@@ -187,7 +190,14 @@ void DisAsmArea::disassemble_lines(int index, int count, unsigned int address)
         lines[i].current = (a == pc);
         lines[i].breakpoint = false;
         lines[i].len = c;
-        lines[i].code = QString::fromStdString(bytes_dump(&buffer, c));
+        if (base == 8) {
+            //Words, low byte first, as a PDP-11 listing shows them
+            QString code;
+            for (unsigned int j = 0; j < c; j += 2)
+                code += fmt_num(buffer[j] | ((j + 1 < c ? buffer[j+1] : 0) << 8), 8, 6) + " ";
+            lines[i].code = code;
+        } else
+            lines[i].code = QString::fromStdString(bytes_dump(&buffer, c));
         a += c;
     }
 
@@ -196,6 +206,36 @@ void DisAsmArea::disassemble_lines(int index, int count, unsigned int address)
     address_last = lines[lines_count-1].address;
 
     CRC = area_crc16();
+}
+
+//The number of lines follows the height. update_data() computes it too, but it
+//runs only when the address or the memory changes: a window made lower kept
+//drawing the old number of lines over the frame and into the dump below
+void DisAsmArea::resizeEvent(QResizeEvent *event)
+{
+    DOSFrame::resizeEvent(event);
+
+    int new_size = (int)(size().height() / font_height) - 2;
+    if (new_size < 1) new_size = 1;
+    if (new_size > DISASM_SIZE / 2) new_size = DISASM_SIZE / 2;
+    screen_size = new_size;
+
+    if (lines_count <= 0) return;
+
+    //The cursor stays on its line, scrolling the screen if it fell below
+    if (cursor_line >= screen_size) {
+        first_line += cursor_line - screen_size + 1;
+        cursor_line = screen_size - 1;
+    }
+
+    //A taller screen needs more lines than the buffer has
+    if (first_line + screen_size > lines_count) {
+        if (first_line + screen_size > DISASM_SIZE) {
+            disassemble_lines(0, screen_size, lines[first_line].address);
+            first_line = 0;
+        } else
+            disassemble_lines(lines_count, first_line + screen_size - lines_count);
+    }
 }
 
 void DisAsmArea::mousePressEvent(QMouseEvent *event)
@@ -223,6 +263,16 @@ void DisAsmArea::paintEvent(QPaintEvent *event)
 
     //unsigned int lines_count = screen_size;
 
+    //One width for the whole column: a 16-bit address as 4 hex or 6 octal
+    //digits, more when a line on screen needs them (the 20-bit 8088)
+    unsigned int max_address = 0;
+    for (int i=0; i < screen_size && first_line + i < lines_count; i++)
+        if (lines[first_line + i].address > max_address) max_address = lines[first_line + i].address;
+    const int adigits = addr_digits(max_address, base);
+    //Code column: bytes "XX " or words "oooooo "
+    const unsigned int code_width = (base == 8) ? 7 * ((disasm->max_command_length + 1) / 2)
+                                                : 3 * disasm->max_command_length;
+
     for (int i=0; i < screen_size; i++)
     {
         int line = first_line + i;
@@ -242,16 +292,16 @@ void DisAsmArea::paintEvent(QPaintEvent *event)
             x += char_width * (prefix_str.length()+1);
 
 
-            QString address_str = QString("%1").arg(lines[line].address, 4, 16, QChar('0')).toUpper() + " :";
+            QString address_str = fmt_num(lines[line].address, base, adigits) + " :";
             painter.drawText(x, y, address_str);
-            x += char_width * (6+1);
+            x += char_width * (adigits+2+1);
 
             QString postfix_str = (cpu->check_breakpoint(lines[line].address))?"@":" ";
             painter.drawText(x, y, postfix_str);
             x += char_width * (postfix_str.length()+1);
 
             painter.drawText(x, y, lines[line].code);
-            x += char_width * (3*disasm->max_command_length+4);
+            x += char_width * (code_width+4);
 
             painter.drawText(x, y, lines[line].command);
         }

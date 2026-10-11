@@ -39,8 +39,9 @@ uint16_t word_at(CommandBytes bytes, unsigned int index)
 
 } // namespace
 
-DisAsmPDP11::DisAsmPDP11(bool has_eis):
-    has_eis(has_eis)
+DisAsmPDP11::DisAsmPDP11(bool has_eis, Console console):
+    has_eis(has_eis),
+    console(console)
 {
     // Opcode word plus up to two operand words
     max_command_length = 6;
@@ -194,8 +195,30 @@ unsigned int DisAsmPDP11::disassemle(CommandBytes bytes, unsigned int PC, unsign
         static const char * NO_OPERAND[8] = {
             "HALT", "WAIT", "RTI", "BPT", "IOT", "RESET", "RTT", ".WORD"
         };
+        // Console instructions, decoded in ranges as the chips do
+        // (bkbtl-doc «1801vm1 vs 1801vm2»); 000030 is reserved on the ВМ2,
+        // 000020-000037 on the ВМ1, the whole block on the ВМ3. The ВМ2 names
+        // are those the УК-НЦ ROM declares for its monitor ($RUN$ 12, $STEP$ 16,
+        // $MFPM$ 21, $MFPC$ 22, $MFPS$ 24, $MTPM$ 31, $MTPC$ 32, $MTPS$ 34);
+        // it has none for 000020, which keeps the bkbtl-doc RSEL. MFPS and
+        // MTPS here are not the byte instructions 1067DD / 1064SS
+        static const char * CONSOLE_VM2_NAMES[030] = {
+            "RUN",   "RUN",   "RUN",   "RUN",   "STEP", "STEP", "STEP", "STEP",     // 10-17
+            "RSEL",  "MFPM",  "MFPC",  "MFPC",  "MFPS", "MFPS", "MFPS", "MFPS",     // 20-27
+            nullptr, "MTPM",  "MTPC",  "MTPC",  "MTPS", "MTPS", "MTPS", "MTPS"      // 30-37
+        };
+        const char * console_name = nullptr;
+        if (cmd >= 010 && cmd <= 037) {
+            if (console == CONSOLE_VM2)
+                console_name = CONSOLE_VM2_NAMES[cmd - 010];
+            else if (console == CONSOLE_VM1 && cmd <= 017)
+                console_name = (cmd < 014) ? "START" : "STEP";  // the ВМ1 description's names
+        }
+
         if (cmd <= 6)
             mnemonic = NO_OPERAND[cmd];
+        else if (console_name != nullptr)
+            mnemonic = console_name;
         else {
             mnemonic = ".WORD";
             operands = oct6(cmd);

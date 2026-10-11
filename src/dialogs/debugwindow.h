@@ -76,6 +76,8 @@ private:
     DisAsm * disasm;
     bool stop_tracking;
     int temporary_break;
+    //16 or 8: the notation of the fields, the code view and the dump
+    int base;
 
     QTimer * state_timer;
 

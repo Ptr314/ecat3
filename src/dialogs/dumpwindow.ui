@@ -57,15 +57,12 @@
         </property>
         <property name="maximumSize">
          <size>
-          <width>50</width>
+          <width>72</width>
           <height>16777215</height>
          </size>
         </property>
         <property name="toolTip">
          <string>Base</string>
-        </property>
-        <property name="inputMask">
-         <string notr="true">NNNN</string>
         </property>
         <property name="text">
          <string notr="true">0000</string>
@@ -82,7 +79,7 @@
         </property>
         <property name="maximumSize">
          <size>
-          <width>50</width>
+          <width>72</width>
           <height>16777215</height>
          </size>
         </property>
@@ -175,6 +172,44 @@
         <property name="icon">
          <iconset resource="../resources.qrc">
           <normaloff>:/icons/file_save</normaloff>:/icons/file_save</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="baseButton">
+        <property name="minimumSize">
+         <size>
+          <width>40</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Number base: hex or octal</string>
+        </property>
+        <property name="text">
+         <string notr="true">HEX</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="wordButton">
+        <property name="minimumSize">
+         <size>
+          <width>40</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Show bytes (8) or words (16)</string>
+        </property>
+        <property name="text">
+         <string notr="true">8</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
         </property>
        </widget>
       </item>

@@ -14,6 +14,9 @@ public:
     HexEditorLine(QWidget *parent);
     HexEditorLine(QWidget *parent, QFont font, unsigned int char_width, unsigned int font_height);
 
+    //The base and the number of digits of a cell: a byte or a word, in hex or octal
+    void set_format(int base, int digits);
+
 signals:
     void tab_pressed();
     void return_pressed();
@@ -22,4 +25,8 @@ signals:
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     bool event(QEvent *event) override;
+
+private:
+    unsigned int m_char_width;
+    unsigned int m_font_height;
 };

@@ -9,6 +9,7 @@
 #include "ui_i8255window.h"
 
 #include "emulator/devices/common/i8255.h"
+#include "dialogs/numfmt.h"
 
 I8255Window::I8255Window(QWidget *parent) :
     GenericDbgWnd(parent),
@@ -46,15 +47,18 @@ void I8255Window::update()
     unsigned int vb = d->get_value(1);
     unsigned int vc = d->get_value(2);
     unsigned int vd = d->get_value(3);
+    //Octal on an octal machine, hex elsewhere
+    const int base = view_base(d);
+    const int digits = cell_digits(base, false);
     ui->binA->setText(QString("%1").arg(va, 8, 2, QChar('0')));
-    ui->hexA->setText(QString("%1").arg(va, 2, 16, QChar('0')).toUpper());
+    ui->hexA->setText(fmt_num(va, base, digits));
     ui->binB->setText(QString("%1").arg(vb, 8, 2, QChar('0')));
-    ui->hexB->setText(QString("%1").arg(vb, 2, 16, QChar('0')).toUpper());
+    ui->hexB->setText(fmt_num(vb, base, digits));
     ui->binCH->setText(QString("%1").arg(vc >> 4, 4, 2, QChar('0')));
     ui->binCL->setText(QString("%1").arg(vc & 0x0F, 4, 2, QChar('0')));
-    ui->hexC->setText(QString("%1").arg(vc, 2, 16, QChar('0')).toUpper());
+    ui->hexC->setText(fmt_num(vc, base, digits));
     ui->binD->setText(QString("%1").arg(vd, 8, 2, QChar('0')));
-    ui->hexD->setText(QString("%1").arg(vd, 2, 16, QChar('0')).toUpper());
+    ui->hexD->setText(fmt_num(vd, base, digits));
 
     ui->modeA->setText(((vd &  0x10) != 0)?I8255Window::tr("Input"):I8255Window::tr("Output"));
     ui->modeB->setText(((vd &  0x02) != 0)?I8255Window::tr("Input"):I8255Window::tr("Output"));

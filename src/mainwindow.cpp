@@ -326,6 +326,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
     DWM->register_debug_window("65c02", &CreateDebugWindow);
     DWM->register_debug_window("1801vm1", &CreateDebugWindow);
     DWM->register_debug_window("1801vm2", &CreateDebugWindow);
+    DWM->register_debug_window("1801vm3", &CreateDebugWindow);
     DWM->register_debug_window("taperecorder", &CreateTapeWindow);
     DWM->register_debug_window("ram-address", &CreateDumpWindow);
     DWM->register_debug_window("register", &CreatePortWindow);

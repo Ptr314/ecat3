@@ -144,12 +144,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+195"/>
+        <location line="+203"/>
         <source>Command &apos;setreg&apos; expects a name and a value</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-211"/>
+        <location line="-219"/>
         <source>Invalid breakpoint address</source>
         <translation type="unfinished"></translation>
     </message>
@@ -493,7 +493,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+91"/>
+        <location line="+86"/>
         <source>Address for the dump</source>
         <translation type="unfinished"></translation>
     </message>
@@ -518,8 +518,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/debugwindow.cpp" line="+37"/>
-        <location line="+170"/>
+        <location filename="../dialogs/debugwindow.cpp" line="+49"/>
+        <location line="+180"/>
         <location line="+66"/>
         <location line="+77"/>
         <source>Error</source>
@@ -527,6 +527,10 @@
     </message>
     <message>
         <location line="-143"/>
+        <source>Incorrect value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+66"/>
         <location line="+77"/>
         <source>Incorrect address value</source>
@@ -734,7 +738,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+22"/>
         <source>Offset</source>
         <translation type="unfinished"></translation>
     </message>
@@ -769,12 +773,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+17"/>
+        <source>Number base: hex or octal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Show bytes (8) or words (16)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+26"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/dumpwindow.cpp" line="+55"/>
+        <location filename="../dialogs/dumpwindow.cpp" line="+82"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1430,7 +1444,7 @@
         <location line="+13"/>
         <location line="+140"/>
         <location line="+16"/>
-        <location filename="../dialogs/i8255window.cpp" line="+59"/>
+        <location filename="../dialogs/i8255window.cpp" line="+63"/>
         <location line="+1"/>
         <location line="+1"/>
         <location line="+1"/>
@@ -1756,7 +1770,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1452"/>
+        <location filename="../mainwindow.cpp" line="+1453"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -2479,7 +2493,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location line="+957"/>
+        <location line="+965"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2508,17 +2522,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+221"/>
+        <location line="+248"/>
+        <source>Number base: hex or octal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Show bytes (8) or words (16)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+26"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="-61"/>
         <source>Choose an address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/mmwindow.cpp" line="+46"/>
+        <location filename="../dialogs/mmwindow.cpp" line="+81"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2680,7 +2704,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-720"/>
+        <location filename="../emulator/core.cpp" line="-728"/>
         <source>Incorrect access mode</source>
         <translation type="unfinished"></translation>
     </message>

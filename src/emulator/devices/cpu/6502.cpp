@@ -163,10 +163,13 @@ void mos6502::set_context_value(const std::string &name, unsigned int value)
 {
     mos6502context * c = core->get_context();
 
-    if (name == "PC")
-    {
-        c->r16.PC = value;
-    }
+    //Every register get_registers() shows, by the same name
+    if (name == "A")       c->A = (uint8_t)value;
+    else if (name == "X")  c->X = (uint8_t)value;
+    else if (name == "Y")  c->Y = (uint8_t)value;
+    else if (name == "S")  c->S = (uint8_t)value;
+    else if (name == "P")  c->P = (uint8_t)value;
+    else if (name == "PC") c->r16.PC = (uint16_t)value;
 }
 
 void mos6502::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)

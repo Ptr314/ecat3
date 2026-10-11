@@ -28,11 +28,21 @@ private slots:
 
     void on_process_button_clicked();
 
+    void on_baseButton_toggled(bool checked);
+
+    void on_wordButton_toggled(bool checked);
+
+public slots:
+    virtual void update_view() override;
+
 private:
+    void apply_view();
+
     Ui::MemoryMapperWindow *ui;
 
     Emulator * e;
     ComputerDevice * d;
+    bool has_device;
 };
 
 GenericDbgWnd *CreateMMWindow(QWidget *parent, Emulator * e, ComputerDevice * d);

@@ -38,6 +38,10 @@ private slots:
 
     void on_saveButton_clicked();
 
+    void on_baseButton_toggled(bool checked);
+
+    void on_wordButton_toggled(bool checked);
+
 public slots:
     virtual void update_view() override;
 
@@ -48,6 +52,7 @@ private:
     ComputerDevice * d;
 
     void keyPressEvent(QKeyEvent *event) override;
+    void apply_view();
 };
 
 GenericDbgWnd *CreateDumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d);

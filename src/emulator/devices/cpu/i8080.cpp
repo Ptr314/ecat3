@@ -245,12 +245,16 @@ unsigned int i8080::execute()
     return cycles;
 }
 
+//Every register get_registers() shows, by the same name
 void i8080::set_context_value(const std::string &name, unsigned int value)
 {
-    if (name == "PC")
-    {
-        core->get_context()->registers.regs.PC = value;
-    }
+    i8080context * c = core->get_context();
+    if (name == "A")       c->registers.regs.A = (uint8_t)value;
+    else if (name == "BC") c->registers.reg_pairs.BC = (uint16_t)value;
+    else if (name == "DE") c->registers.reg_pairs.DE = (uint16_t)value;
+    else if (name == "HL") c->registers.reg_pairs.HL = (uint16_t)value;
+    else if (name == "SP") c->registers.regs.SP = (uint16_t)value;
+    else if (name == "PC") c->registers.regs.PC = (uint16_t)value;
 }
 
 unsigned int i8080::get_command()

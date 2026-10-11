@@ -834,6 +834,10 @@ public:
     virtual std::vector<std::pair<std::string, std::string>> get_flags() = 0;
 
     virtual void set_context_value(const std::string &name, unsigned int value) = 0;
+    //The names set_context_value() takes, for the debugger's register list. By
+    //default the registers get_registers() shows, without the separators, so
+    //every processor must accept each of those names
+    virtual std::vector<std::string> get_context_names();
 
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;

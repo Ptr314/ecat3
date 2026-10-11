@@ -215,6 +215,7 @@ set(GUI_SOURCES
     qt_utils.cpp qt_utils.h
 
     dialogs/dialogs.h
+    dialogs/numfmt.h
     dialogs/aboutdlg.ui
     dialogs/dumparea.cpp dialogs/dumparea.h
     dialogs/dumpwindow.cpp dialogs/dumpwindow.h dialogs/dumpwindow.ui

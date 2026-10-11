@@ -37,12 +37,15 @@ public:
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
     Emulator * e;
     CPU * cpu;
     DisAsm * disasm;
     uint16_t CRC;
+    //Octal for a machine written in octal, which also shows its code as words
+    int base;
 
     unsigned int font_height;
     unsigned int char_width;

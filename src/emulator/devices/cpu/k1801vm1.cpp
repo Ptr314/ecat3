@@ -132,7 +132,12 @@ k1801vm1::~k1801vm1()
 DisAsm * k1801vm1::create_disasm(MAYBE_UNUSED const std::string &data_path, emulator::Result &res)
 {
     res = emulator::Result::ok();
-    return new DisAsmPDP11(m_family == PDP11_FAMILY_1801VM2 || m_family == PDP11_FAMILY_1801VM3);
+    // The console instructions are the ВМ1's START/STEP and the whole ВМ2
+    // set; the ВМ3 has none (000007-000077 are reserved there)
+    DisAsmPDP11::Console console = DisAsmPDP11::CONSOLE_NONE;
+    if (m_family == PDP11_FAMILY_1801VM1) console = DisAsmPDP11::CONSOLE_VM1;
+    else if (m_family == PDP11_FAMILY_1801VM2) console = DisAsmPDP11::CONSOLE_VM2;
+    return new DisAsmPDP11(m_family == PDP11_FAMILY_1801VM2 || m_family == PDP11_FAMILY_1801VM3, console);
 }
 
 emulator::Result k1801vm1::load_config(SystemData *sd)

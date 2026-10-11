@@ -9,6 +9,7 @@
 #include "ui_portwindow.h"
 
 #include "emulator/devices/common/register.h"
+#include "dialogs/numfmt.h"
 
 PortWindow::PortWindow(QWidget *parent) :
     GenericDbgWnd(parent),
@@ -47,7 +48,9 @@ void PortWindow::update()
         return;
     }
     ui->binaryEdit->setText(QString("%1").arg(v, 8, 2, QChar('0')));
-    ui->hexEdit->setText(QString("%1").arg(v, 2, 16, QChar('0')).toUpper());
+    //Octal on an octal machine, hex elsewhere
+    const int base = view_base(d);
+    ui->hexEdit->setText(fmt_num(v, base, cell_digits(base, false)));
 }
 
 GenericDbgWnd * CreatePortWindow(QWidget *parent, Emulator * e, ComputerDevice * d)

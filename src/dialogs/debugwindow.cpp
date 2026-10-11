@@ -11,6 +11,7 @@
 #include "emulator/utils.h"
 #include "ui_debugwindow.h"
 #include "emulator/disasm.h"
+#include "dialogs/numfmt.h"
 
 DebugWindow::DebugWindow(QWidget *parent) :
     GenericDbgWnd(parent),
@@ -26,8 +27,19 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
     this->e = e;
     this->cpu = dynamic_cast<CPU*>(d);
     temporary_break = -1;
+    base = view_base(cpu);
 
     this->setWindowTitle(QString::fromStdString(d->name + " : " + d->type));
+
+    ui->valueEdit->setText(fmt_num(0, base, addr_digits(0, base)));
+    ui->dumpAddr->setText(fmt_num(0, base, addr_digits(0, base)));
+
+    // Every register the processor can set, PC first chosen
+    ui->valueSelect->clear();
+    for (const std::string &n : cpu->get_context_names())
+        ui->valueSelect->addItem(QString::fromStdString(n));
+    int pc_index = ui->valueSelect->findText("PC");
+    if (pc_index >= 0) ui->valueSelect->setCurrentIndex(pc_index);
 
     // The processor knows its instruction set: a table file or a decoder of
     // its own, whatever the config calls its type
@@ -66,6 +78,8 @@ DebugWindow::DebugWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
 
     ui->dump->set_frame(false, true, true, true, "╔═╗║ ║╚═╝");
 
+    // An octal machine is a word machine: 8 words a line
+    ui->dump->set_view(base, base == 8);
     if (device_mm != nullptr)
         ui->dump->set_data(e, device_mm);
 
@@ -199,12 +213,20 @@ void DebugWindow::on_stopTrackingButton_clicked()
 
 void DebugWindow::on_toolButton_clicked()
 {
+    const std::string name = ui->valueSelect->currentText().toStdString();
+    if (name.empty()) return;
     try {
-        unsigned int v = parse_numeric_value(("$" + ui->valueEdit->text()).toStdString());
-        e->invoke([&]() { cpu->set_context_value("PC", v); });
-        on_toPCButton_clicked();
+        unsigned int v = parse_input(ui->valueEdit->text(), base);
+        e->invoke([&]() { cpu->set_context_value(name, v); });
+        // A new PC moves the code view there, any other register only changes the panel
+        if (name == "PC" || name == "IP" || name == "CS")
+            on_toPCButton_clicked();
+        else {
+            ui->codeview->invalidate();
+            update_registers();
+        }
     } catch (std::exception &e) {
-        QMessageBox::critical(0, DebugWindow::tr("Error"), DebugWindow::tr("Incorrect address value"));
+        QMessageBox::critical(0, DebugWindow::tr("Error"), DebugWindow::tr("Incorrect value"));
     }
 
 }
@@ -266,7 +288,7 @@ void DebugWindow::on_runUntilButton_clicked()
 void DebugWindow::on_gotoButton_clicked()
 {
     try {
-        unsigned int v = parse_numeric_value(("$" + ui->valueEdit->text()).toStdString());
+        unsigned int v = parse_input(ui->valueEdit->text(), base);
         ui->codeview->go_to(v);
         update_registers();
     } catch (std::exception &e) {
@@ -343,7 +365,7 @@ void DebugWindow::command_key(QKeyEvent *event)
 void DebugWindow::on_dumpGotoButton_clicked()
 {
     try {
-        unsigned int v = parse_numeric_value(("$" + ui->dumpAddr->text()).toStdString());
+        unsigned int v = parse_input(ui->dumpAddr->text(), base);
         ui->dump->reset_buffer();
         ui->dump->go_to(v);
     } catch (std::exception &e) {

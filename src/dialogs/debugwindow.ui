@@ -359,13 +359,13 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>50</width>
+            <width>72</width>
             <height>0</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>50</width>
+            <width>72</width>
             <height>16777215</height>
            </size>
           </property>
@@ -385,7 +385,7 @@
            <string notr="true">0000</string>
           </property>
           <property name="maxLength">
-           <number>4</number>
+           <number>8</number>
           </property>
          </widget>
         </item>
@@ -484,11 +484,6 @@
           <property name="toolTip">
            <string>Register to set</string>
           </property>
-          <item>
-           <property name="text">
-            <string notr="true">PC</string>
-           </property>
-          </item>
          </widget>
         </item>
         <item>
@@ -562,13 +557,13 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>50</width>
+            <width>72</width>
             <height>0</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>50</width>
+            <width>72</width>
             <height>16777215</height>
            </size>
           </property>
@@ -582,7 +577,7 @@
            <string notr="true">0000</string>
           </property>
           <property name="maxLength">
-           <number>4</number>
+           <number>8</number>
           </property>
           <property name="frame">
            <bool>true</bool>
@@ -739,7 +734,7 @@
       <widget class="KeyValueArea" name="registers" native="true">
        <property name="minimumSize">
         <size>
-         <width>117</width>
+         <width>126</width>
          <height>0</height>
         </size>
        </property>

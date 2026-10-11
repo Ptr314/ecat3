@@ -10,6 +10,7 @@
 
 #include "emulator/utils.h"
 #include "emulator/emulator.h"
+#include "dialogs/numfmt.h"
 
 MemoryMapperWindow::MemoryMapperWindow(QWidget *parent) :
     GenericDbgWnd(parent),
@@ -23,7 +24,40 @@ MemoryMapperWindow::MemoryMapperWindow(QWidget *parent, Emulator * e, ComputerDe
 {
     this->e = e;
     this->d = d;
+    has_device = false;
     setWindowTitle(QString::fromStdString(d->name + " : " + d->type));
+    ui->dump_area->set_frame(true, true, true, true);
+    // As the dump window: an octal machine starts in octal words, any other
+    // in hex bytes
+    const bool octal = view_base(d) == 8;
+    ui->address_edit->setText(fmt_num(0, octal ? 8 : 16, addr_digits(0, octal ? 8 : 16)));
+    ui->baseButton->setChecked(octal);
+    ui->wordButton->setChecked(octal);
+    apply_view();
+}
+
+void MemoryMapperWindow::apply_view()
+{
+    const int base = ui->baseButton->isChecked() ? 8 : 16;
+    const bool word = ui->wordButton->isChecked();
+    ui->baseButton->setText(base == 8 ? "OCT" : "HEX");
+    ui->wordButton->setText(word ? "16" : "8");
+    ui->dump_area->set_view(base, word);
+}
+
+void MemoryMapperWindow::on_baseButton_toggled(bool)
+{
+    apply_view();
+}
+
+void MemoryMapperWindow::on_wordButton_toggled(bool)
+{
+    apply_view();
+}
+
+void MemoryMapperWindow::update_view()
+{
+    if (has_device) ui->dump_area->update_view();
 }
 
 MemoryMapperWindow::~MemoryMapperWindow()
@@ -40,8 +74,9 @@ void MemoryMapperWindow::on_process_button_clicked()
 {
     unsigned int cfg, address;
     try {
-        cfg = parse_numeric_value(("$" + ui->config_edit->text()).toStdString());
-        address = parse_numeric_value(("$" + ui->address_edit->text()).toStdString());
+        const int base = ui->dump_area->get_base();
+        cfg = parse_input(ui->config_edit->text(), base);
+        address = parse_input(ui->address_edit->text(), base);
     } catch (const std::exception &) {
         QMessageBox::critical(this, MemoryMapperWindow::tr("Error"), MemoryMapperWindow::tr("Incorrect address value"));
         return;
@@ -67,6 +102,7 @@ void MemoryMapperWindow::on_process_button_clicked()
     ui->device_name->setText(s);
 
     ui->dump_area->set_data(e, dynamic_cast<AddressableDevice*>(d), address_on_device);
+    has_device = true;
     ui->dump_area->update();
 }
 

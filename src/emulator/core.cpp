@@ -1845,6 +1845,14 @@ DisAsm * CPU::create_disasm(const std::string &data_path, emulator::Result &res)
     return d;
 }
 
+std::vector<std::string> CPU::get_context_names()
+{
+    std::vector<std::string> names;
+    for (const auto &p : get_registers())
+        if (!p.first.empty() && p.first[0] != '-') names.push_back(p.first);
+    return names;
+}
+
 bool CPU::check_breakpoint(unsigned int address)
 {
     for (unsigned int i=0; i<break_count; i++)

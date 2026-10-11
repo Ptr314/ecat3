@@ -9,6 +9,7 @@
 
 #include "dumpwindow.h"
 #include "emulator/utils.h"
+#include "dialogs/numfmt.h"
 #include "ui_dumpwindow.h"
 
 DumpWindow::DumpWindow(QWidget *parent) :
@@ -23,9 +24,34 @@ DumpWindow::DumpWindow(QWidget *parent, Emulator * e, ComputerDevice * d):
 {
     this->e = e;
     this->d = d;
+    // An octal machine starts in octal words, any other in hex bytes. The
+    // view is set before the device, which set_data() then aligns to it
+    const bool octal = view_base(d) == 8;
+    ui->baseButton->setChecked(octal);
+    ui->wordButton->setChecked(octal);
+    apply_view();
     ui->dump_area->set_data(e, dynamic_cast<AddressableDevice*>(d));
     ui->dump_area->set_frame(true, true, true, true);
     setWindowTitle(QString::fromStdString(d->name + " : " + d->type));
+}
+
+void DumpWindow::apply_view()
+{
+    const int base = ui->baseButton->isChecked() ? 8 : 16;
+    const bool word = ui->wordButton->isChecked();
+    ui->baseButton->setText(base == 8 ? "OCT" : "HEX");
+    ui->wordButton->setText(word ? "16" : "8");
+    ui->dump_area->set_view(base, word);
+}
+
+void DumpWindow::on_baseButton_toggled(bool)
+{
+    apply_view();
+}
+
+void DumpWindow::on_wordButton_toggled(bool)
+{
+    apply_view();
 }
 
 DumpWindow::~DumpWindow()
@@ -48,8 +74,9 @@ void DumpWindow::on_toolButton_clicked()
     QString so = ui->offsetEdit->text();
     QString sa = ui->addressEdit->text();
     try {
-        unsigned int offset = parse_numeric_value(("$" + so).toStdString());
-        unsigned int address = parse_numeric_value(("$" + sa).toStdString());
+        const int base = ui->dump_area->get_base();
+        unsigned int offset = parse_input(so, base);
+        unsigned int address = parse_input(sa, base);
         ui->dump_area->go_to(offset, address);
     } catch (std::exception &e) {
         QMessageBox::critical(0, DumpWindow::tr("Error"), DumpWindow::tr("Incorrect address value"));
