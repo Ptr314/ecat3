@@ -7,6 +7,7 @@
 
 #include "emulator/core.h"
 #include "emulator/thread_compat.h"
+#include <map>
 
 #define SHIFT_STATE_KEEP    0
 #define SHIFT_STATE_ON      1
@@ -391,6 +392,24 @@ protected:
     emulator::Result load_remap(SystemData *sd, const std::string &param, int mode);
     unsigned int remap_locked(unsigned int key) const;
 
+    // Keys of one scan line (`groups` file: a line per group, the machine's key
+    // names). A host key held in a group hides the others of that group: they
+    // neither go down nor come up until it is let go, as on a matrix whose
+    // controller sees one key of a line at a time. A key swallowed so stays
+    // swallowed until its own release. Host keys only; guarded by m_host_mutex
+    std::map<std::string, int> m_key_group;     // machine key -> group
+    std::vector<unsigned int> m_group_owner;    // per group: host key holding it, or _FFFF
+    std::vector<unsigned int> m_group_blocked;  // host keys whose press was swallowed
+    unsigned int m_blocked_count = 0;
+    bool m_last_host_swallowed = false;
+    emulator::Result load_groups(SystemData *sd);
+    // true when the host key event must not reach the machine
+    bool group_filter_locked(unsigned int k, unsigned int code, bool press);
+
+    // The machine key a host code lands on (after the remap), by the name of
+    // the native table; empty when the keyboard cannot tell. Needed by `groups`
+    virtual std::string host_key_id(unsigned int code) const { (void)code; return std::string(); }
+
     // The drawing of this machine's keyboard and the table naming its keys.
     // Both are optional: a machine without them simply has no on-screen keyboard.
     std::string m_picture_file;
@@ -477,6 +496,10 @@ public:
     unsigned int remap_key(unsigned int key);
     virtual void key_up(unsigned int key) = 0;
 
+    // Whether the last host key event was swallowed by a key group: the
+    // recorder leaves such a key out, a replay goes without the groups
+    bool last_host_swallowed();
+
     // Whether the host's numeric keypad is a keyboard of its own here (the
     // МС7004 has one): such a keyboard gets the keypad keys with
     // EmuKey::Keypad, any other one the plain digits and signs
@@ -545,4 +568,6 @@ public:
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+    std::vector<DeviceCommandInfo> get_device_commands() override;
+    emulator::Result send_command(const std::string &command, const std::string &parameters) override;
 };

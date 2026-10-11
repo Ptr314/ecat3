@@ -1,0 +1,72 @@
+# УК-НЦ: группы клавиш МС7007 (ms7007.grp, параметр groups клавиатуры).
+#
+# Группа - столбец матрицы. Пока на хосте держится клавиша столбца, остальные
+# клавиши того же столбца машине не уходят: ни нажатие, ни отпускание, пока не
+# отпущена первая. Клавиша, проглоченная так, остается ненажатой до своего
+# собственного отпускания. Касается только клавиш хоста, поэтому здесь не KEY,
+# а COMMAND keyboard.host(...) - нажатие так, будто оно пришло с хоста.
+#
+# Й (27), Ф (47) и Я (67) - столбец 2, Ц (50) - столбец 3. keyboard.last -
+# последний отданный машине код, keyboard.codes - их число.
+# @timeout 60
+
+MACHINE "uknc/UKNC.cfg"
+WAIT _4000
+
+LOGDEFS _16,_8
+
+PRINT "=== Й держится, Ф того же столбца не уходит ==="
+COMMAND keyboard.host("j",1)
+WAIT _10
+LOG keyboard.last
+LOG keyboard.codes
+COMMAND keyboard.host("f",1)
+WAIT _10
+LOG keyboard.last
+LOG keyboard.codes
+LOG keyboard.blocked
+
+PRINT "=== Й отпущена, Ф все еще держится, но машина ее не видит ==="
+COMMAND keyboard.host("j",0)
+WAIT _10
+LOG keyboard.last
+COMMAND keyboard.host("q",1)
+WAIT _10
+LOG keyboard.last
+COMMAND keyboard.host("q",0)
+WAIT _10
+LOG keyboard.last
+COMMAND keyboard.host("f",0)
+WAIT _10
+LOG keyboard.last
+LOG keyboard.codes
+
+PRINT "=== Й и Ц - разные столбцы, уходят обе ==="
+COMMAND keyboard.host("j",1)
+WAIT _10
+COMMAND keyboard.host("c",1)
+WAIT _10
+LOG keyboard.last
+COMMAND keyboard.host("c",0)
+WAIT _10
+COMMAND keyboard.host("j",0)
+WAIT _10
+LOG keyboard.last
+LOG keyboard.codes
+LOG keyboard.blocked
+
+PRINT "=== не с хоста группы не действуют ==="
+KEYDOWN j
+WAIT _10
+KEYDOWN f
+WAIT _10
+LOG keyboard.last
+KEYUP f
+WAIT _10
+KEYUP j
+WAIT _10
+LOG keyboard.last
+LOG keyboard.codes
+LOG keyboard.blocked
+
+EXIT

@@ -888,8 +888,9 @@ uint64_t Emulator::ticks_per_ms() const
 
 void Emulator::record_key(unsigned int code, unsigned int native, bool press)
 {
-    //The key the machine got, not the one typed: a replay is not remapped
-    if (recorder && recorder->is_recording())
+    //The key the machine got, not the one typed: a replay is not remapped.
+    //A key a key group swallowed did not reach the machine at all
+    if (recorder && recorder->is_recording() && !(keyboard && keyboard->last_host_swallowed()))
         recorder->key(keyboard ? keyboard->remap_key(code) : code, native, press, clock_counter);
 }
 
@@ -1701,7 +1702,8 @@ void Emulator::release_host_keys()
         held.swap(m_host_keys);
     }
     for (size_t i = 0; i < held.size(); i++) {
-        key_event(held[i].key, 0, false);
+        //As a host key: one a key group swallowed is let go there too
+        key_event(held[i].key, 0, false, true);
         //A recording would otherwise keep the key down for the rest of it
         record_key(static_cast<unsigned int>(held[i].key), held[i].scan, false);
     }

@@ -117,6 +117,7 @@ private:
 
     emulator::Result parse_key_table(const std::vector<std::string> &body, const std::string &file) override;
     void send_key_id(const std::string &id, bool press) override;
+    std::string host_key_id(unsigned int code) const override;
 
 public:
     UKNCKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);

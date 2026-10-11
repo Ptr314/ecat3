@@ -1,0 +1,19 @@
+// Группы клавиш МС7007: одна строка - один столбец матрицы, имена клавиш те же,
+// что в uknc.keys и на рисунке. Пока на хосте держится клавиша столбца,
+// остальные клавиши того же столбца не нажимаются и не отпускаются - контроллер
+// клавиатуры видит в столбце одну клавишу. Касается только клавиш хоста.
+//
+// Столбец по номеру клавиши: (номер & 17) - 5, строка - номер >> 4.
+// СТОП (номер 4) стоит в своем столбце один и групп не образует.
+
+key_num_comma key_num_minus key_shift_1 key_shift_2 key_num_7 key_num_8 key_num_9  // 0
+key_ar2 key_tab key_ctrl key_graf key_alf key_num_0 key_num_dot key_num_enter      // 1
+key_semi key_j key_f key_q key_fiks key_num_1 key_num_2 key_num_3                  // 2
+key_k1 key_1 key_c key_y key_caret key_num_4 key_num_5 key_num_6                   // 3
+key_k2 key_2 key_u key_w key_s key_num_plus key_isp key_reset                      // 4
+key_k3 key_3 key_k key_a key_m key_bksp key_ust key_pom                            // 5
+key_4 key_e key_p key_i key_space key_right key_enter key_slash                    // 6
+key_k4 key_5 key_n key_r key_t key_down key_up key_colon                           // 7
+key_k5 key_6 key_g key_o key_x key_dot key_under key_minus                         // 8
+key_7 key_lbr key_l key_b key_left key_bksl key_h key_0                            // 9
+key_8 key_rbr key_d key_at key_comma key_v key_z key_9                             // 10

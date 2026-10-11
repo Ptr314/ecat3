@@ -292,6 +292,18 @@ void UKNCKeyboard::send_key_id(const std::string &id, bool press)
         }
 }
 
+// Клавиша МС7007, на которую ложится клавиша хоста: по номеру, первое имя с
+// ним. Обе НР делят номер 105 и отвечают как key_shift_1. Пометка регистра
+// знака тут не участвует - НР, поставленный на время знака, групп не проверяет
+std::string UKNCKeyboard::host_key_id(unsigned int code) const
+{
+    const KeyEntry * e = entry_of(code);
+    if (e == nullptr) return std::string();
+    for (size_t i = 0; i < m_ids.size(); i++)
+        if (m_ids[i].scan == e->scan) return m_ids[i].id;
+    return std::string();
+}
+
 void UKNCKeyboard::update_irq()
 {
     // Прерывание от клавиатуры разрешено разрядом 6 регистра 177700. У БК

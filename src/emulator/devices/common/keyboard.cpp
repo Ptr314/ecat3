@@ -47,7 +47,94 @@ emulator::Result Keyboard::load_config(SystemData *sd)
     res = load_remap(sd, "remap_letters", KEY_REMAP_LETTERS);
     if (!res) return res;
 
-    return load_key_table(sd);
+    res = load_key_table(sd);
+    if (!res) return res;
+
+    return load_groups(sd);
+}
+
+emulator::Result Keyboard::load_groups(SystemData *sd)
+{
+    {
+        compat_lock_guard lock(m_host_mutex);
+        m_key_group.clear();
+        m_group_owner.clear();
+        m_group_blocked.clear();
+    }
+    const std::string name = cd->get_parameter("groups", false).value;
+    if (name.empty()) return emulator::Result::ok();
+
+    const std::string file = find_file_location(sd, name);
+    const std::string content = file.empty() ? std::string() : dsk_tools::utf8_read_file(file);
+    if (content.empty())
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{Keyboard|" + std::string(QT_TRANSLATE_NOOP("Keyboard", "Error reading key group file")) + "} " + name);
+
+    // A line is a group, the machine's key names separated by spaces
+    std::map<std::string, int> groups;
+    int count = 0;
+    const std::vector<std::string> lines = split_string(content, '\n', true);
+    for (size_t li = 0; li < lines.size(); li++) {
+        std::string line = str_trim(lines[li]);
+        const size_t comment = line.find("//");
+        if (comment != std::string::npos) line = str_trim(line.substr(0, comment));
+        if (line.empty()) continue;
+        for (size_t c = 0; c < line.size(); c++)
+            if (line[c] == '\t') line[c] = ' ';
+        const std::vector<std::string> words = split_string(line, ' ', true);
+        for (size_t w = 0; w < words.size(); w++) {
+            const std::string id = str_trim(words[w]);
+            if (id.empty()) continue;
+            bool known = false;
+            for (size_t i = 0; i < m_key_ids.size() && !known; i++) known = (m_key_ids[i] == id);
+            if (!known || groups.count(id) != 0)
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                    "{Keyboard|" + std::string(QT_TRANSLATE_NOOP("Keyboard", "Key group file entry is incorrect")) + "} " + id + " (" + file + ")");
+            groups[id] = count;
+        }
+        count++;
+    }
+
+    compat_lock_guard lock(m_host_mutex);
+    m_key_group.swap(groups);
+    m_group_owner.assign(count, _FFFF);
+    return emulator::Result::ok();
+}
+
+bool Keyboard::group_filter_locked(unsigned int k, unsigned int code, bool press)
+{
+    if (m_key_group.empty()) return false;
+
+    for (size_t i = 0; i < m_group_blocked.size(); i++)
+        if (m_group_blocked[i] == k) {
+            //Swallowed when it went down: its release is swallowed too, and so
+            //is a second press of it before that
+            if (!press) m_group_blocked.erase(m_group_blocked.begin() + i);
+            return true;
+        }
+
+    if (!press) {
+        for (size_t g = 0; g < m_group_owner.size(); g++)
+            if (m_group_owner[g] == k) m_group_owner[g] = _FFFF;
+        return false;
+    }
+
+    const std::map<std::string, int>::const_iterator it = m_key_group.find(host_key_id(code));
+    if (it == m_key_group.end()) return false;
+    unsigned int &owner = m_group_owner[it->second];
+    if (owner == _FFFF || owner == k) {
+        owner = k;
+        return false;
+    }
+    m_group_blocked.push_back(k);
+    m_blocked_count++;
+    return true;
+}
+
+bool Keyboard::last_host_swallowed()
+{
+    compat_lock_guard lock(m_host_mutex);
+    return m_last_host_swallowed;
 }
 
 emulator::Result Keyboard::load_remap(SystemData *sd, const std::string &param, int mode)
@@ -117,6 +204,16 @@ void Keyboard::key_event(unsigned int key, unsigned int native_key, bool press, 
     unsigned int code = _FFFF;
     {
         compat_lock_guard lock(m_host_mutex);
+        if (host) {
+            //The code the key went down as decides the group, the same way the
+            //release below lifts that code
+            unsigned int down = _FFFF;
+            for (size_t i = 0; i < m_host_down.size() && down == _FFFF; i++)
+                if (m_host_down[i].first == k) down = m_host_down[i].second;
+            if (down == _FFFF) down = rus_translate(remap_locked(k));
+            m_last_host_swallowed = group_filter_locked(k, down, press);
+            if (m_last_host_swallowed) return;
+        }
         for (size_t i = 0; i < m_host_down.size(); i++)
             if (m_host_down[i].first == k) {
                 code = m_host_down[i].second;
@@ -530,6 +627,8 @@ void Keyboard::reset(bool cool)
     {
         compat_lock_guard lock(m_host_mutex);
         m_host_down.clear();
+        m_group_owner.assign(m_group_owner.size(), _FFFF);
+        m_group_blocked.clear();
     }
     compat_lock_guard lock(m_held_mutex);
     m_ids_held.clear();
@@ -574,7 +673,29 @@ std::vector<DeviceFieldInfo> Keyboard::get_device_fields()
     r.push_back({"rus", "1 when the keyboard is in the Rus register", false});
     r.push_back({"pressed", "Ids of the machine keys currently held", false});
     r.push_back({"leds",    "Lamps of the drawing that are lit",      false});
+    r.push_back({"blocked", "Host key presses swallowed by a key group", false});
     return r;
+}
+
+std::vector<DeviceCommandInfo> Keyboard::get_device_commands()
+{
+    std::vector<DeviceCommandInfo> r = ComputerDevice::get_device_commands();
+    r.push_back({"host", "key, 0|1", "Presses (1) or releases (0) a key as if typed on the host: remap and key groups apply"});
+    return r;
+}
+
+emulator::Result Keyboard::send_command(const std::string &command, const std::string &parameters)
+{
+    if (command == "host") {
+        const std::vector<std::string> p = split_params(parameters);
+        const unsigned int key = p.empty() ? _FFFF : translate_key_name(str_trim(p[0]));
+        if (key == _FFFF || p.size() < 2)
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{Keyboard|" + std::string(QT_TRANSLATE_NOOP("Keyboard", "Command 'host' expects a key name and 0 or 1")) + "}");
+        key_event(key, key, parse_numeric_value(p[1]) != 0, true);
+        return emulator::Result::ok();
+    }
+    return ComputerDevice::send_command(command, parameters);
 }
 
 bool Keyboard::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
@@ -584,6 +705,14 @@ bool Keyboard::get_field(const std::string &field, unsigned int from, unsigned i
     {
         out.numeric = true;
         out.values.push_back(rus_mode ? 1 : 0);
+        return true;
+    }
+
+    if (field == "blocked")
+    {
+        compat_lock_guard lock(m_host_mutex);
+        out.numeric = true;
+        out.values.push_back(m_blocked_count);
         return true;
     }
 

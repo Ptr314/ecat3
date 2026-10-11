@@ -1986,6 +1986,18 @@
         <translation>Неверная строка в файле переназначения клавиш</translation>
     </message>
     <message>
+        <source>Error reading key group file</source>
+        <translation>Ошибка чтения файла групп клавиш</translation>
+    </message>
+    <message>
+        <source>Key group file entry is incorrect</source>
+        <translation>Неверная клавиша в файле групп клавиш</translation>
+    </message>
+    <message>
+        <source>Command &apos;host&apos; expects a key name and 0 or 1</source>
+        <translation>Команде &apos;host&apos; нужны имя клавиши и 0 или 1</translation>
+    </message>
+    <message>
         <location line="+357"/>
         <source>This keyboard type has no native key table support</source>
         <translation>Этот тип клавиатуры не поддерживает нативную таблицу клавиш</translation>
