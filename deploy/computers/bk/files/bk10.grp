@@ -1,0 +1,12 @@
+// Группа клавиш БК0010 (клавиатура старого образца): вся матрица контроллера
+// К1801ВП1-014 - одна группа, имена клавиш те же, что в bk10.keys и на
+// рисунке. Почему одна группа и что значит @hold - см. bk.grp: контроллер тот
+// же. Касается только клавиш хоста.
+//
+// Схемы этой клавиатуры нет; клавиши матрицы взяты по кодам bk10.keys (код
+// ВП1-014 - место клавиши). ЗАП и СТИР (026 и 027 через вектор 274) по коду
+// совпадают со сдвижкой и раздвижкой, так что их место неизвестно и в группу
+// они не вошли. СТОП, ПРОБЕЛ, СУ, АР2, ЗАГЛ, СТР и ПР в матрицу не входят.
+
+@hold
+key_step key_ind_su key_kt key_block_ed key_left key_tab key_enter key_clear key_sbr_rp key_set_tab key_rus key_lat key_clear_tab key_home key_vs key_gt key_graph key_del key_ins key_bksp key_right key_up key_down key_left_up key_right_up key_right_down key_left_down key_0 key_1 key_2 key_3 key_4 key_5 key_6 key_7 key_8 key_9 key_colon key_semi key_comma key_minus key_dot key_slash key_at key_a key_b key_c key_d key_e key_f key_g key_h key_i key_j key_k key_l key_m key_n key_o key_p key_q key_r key_s key_t key_u key_v key_w key_x key_y key_z key_lbr key_bksl key_rbr key_not key_zb

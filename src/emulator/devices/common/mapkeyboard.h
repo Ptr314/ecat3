@@ -60,6 +60,8 @@ private:
     std::vector<std::pair<unsigned int, std::string> > code_to_id;
     void build_code_to_id();
     std::string id_of_code(unsigned int code) const;
+    // The same lookup for the key groups (`groups`) of the base class
+    std::string host_key_id(unsigned int code) const override { return id_of_code(resolve_keypad(code)); }
 
     // The map names keys of the host keypad (kp0..kp9, kpdot...): the keypad
     // is then this machine's, see keypad_keys(). A keypad key the map lacks is

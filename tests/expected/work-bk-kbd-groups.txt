@@ -1,0 +1,28 @@
+=== A держится, B (та же линия) и H (другая) кода не дают ===
+[port-kbd-code.value] &000101
+[port-kbd-code.value] &000101
+[keyboard.pressed] key_a,key_zagl,key_lat
+[keyboard.count] &000001
+[keyboard.blocked] &000002
+=== A отпущена, но машина видит ее нажатой, пока держатся B и H ===
+[keyboard.count] &000001
+[keyboard.pressed] key_a,key_zagl,key_lat
+--- повторное нажатие A тоже проглочено ---
+[port-kbd-code.value] &000101
+[keyboard.count] &000001
+--- отпущена последняя: A отпускается и для машины ---
+[keyboard.count] &000000
+[keyboard.pressed] key_zagl,key_lat
+[keyboard.blocked] &000003
+=== вторая отпущена раньше первой: первая отпускается сразу ===
+[keyboard.count] &000001
+[port-kbd-code.value] &000112
+[keyboard.count] &000000
+=== после отпускания всех группа свободна ===
+[port-kbd-code.value] &000110
+[keyboard.count] &000000
+=== не с хоста группа не действует ===
+[port-kbd-code.value] &000102
+[keyboard.count] &000002
+[keyboard.count] &000000
+[keyboard.blocked] &000004

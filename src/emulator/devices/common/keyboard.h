@@ -7,6 +7,7 @@
 
 #include "emulator/core.h"
 #include "emulator/thread_compat.h"
+#include "emulator/utils.h"     // _FFFF in a field initializer below
 #include <map>
 
 #define SHIFT_STATE_KEEP    0
@@ -396,15 +397,25 @@ protected:
     // names). A host key held in a group hides the others of that group: they
     // neither go down nor come up until it is let go, as on a matrix whose
     // controller sees one key of a line at a time. A key swallowed so stays
-    // swallowed until its own release. Host keys only; guarded by m_host_mutex
+    // swallowed until its own release. Host keys only; guarded by m_host_mutex.
+    // "@hold" in the file: the key that took a group stays down for the machine
+    // until the last key swallowed in that group is up as well - the
+    // 1801ВП1-014 of the БК, whose whole matrix is one group, waits for every
+    // line to go high before it takes the key as released
     std::map<std::string, int> m_key_group;     // machine key -> group
     std::vector<unsigned int> m_group_owner;    // per group: host key holding it, or _FFFF
-    std::vector<unsigned int> m_group_blocked;  // host keys whose press was swallowed
+    std::vector<char> m_group_deferred;         // per group: its key is up, the machine not told yet
+    std::vector<std::pair<unsigned int, int> > m_group_blocked;  // swallowed host keys and their groups
+    bool m_group_hold = false;
     unsigned int m_blocked_count = 0;
     bool m_last_host_swallowed = false;
+    unsigned int m_last_host_released = _FFFF;
     emulator::Result load_groups(SystemData *sd);
-    // true when the host key event must not reach the machine
-    bool group_filter_locked(unsigned int k, unsigned int code, bool press);
+    // true when the host key event must not reach the machine; release is a
+    // host key the machine is to see come up instead (hold mode), or _FFFF
+    bool group_filter_locked(unsigned int k, unsigned int code, bool press, unsigned int &release);
+    bool group_busy_locked(int g) const;
+    void host_release(unsigned int k);
 
     // The machine key a host code lands on (after the remap), by the name of
     // the native table; empty when the keyboard cannot tell. Needed by `groups`
@@ -499,6 +510,9 @@ public:
     // Whether the last host key event was swallowed by a key group: the
     // recorder leaves such a key out, a replay goes without the groups
     bool last_host_swallowed();
+    // The host key that came up for the machine with that swallowed event
+    // (hold mode), or _FFFF: the recorder writes its release instead
+    unsigned int last_host_released();
 
     // Whether the host's numeric keypad is a keyboard of its own here (the
     // МС7004 has one): such a keyboard gets the keypad keys with

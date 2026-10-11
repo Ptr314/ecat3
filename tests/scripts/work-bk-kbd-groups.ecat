@@ -1,0 +1,87 @@
+# БК0010-01: группа клавиш (bk.grp, параметр groups клавиатуры).
+#
+# К1801ВП1-014 матрицу не сканирует: нажатая клавиша сама тянет к нулю свою
+# линию X, и контроллер ждет, пока все линии станут высокими. Поэтому вся
+# матрица - одна группа с пометкой @hold: пока держится первая клавиша, другие
+# кода не дают, а первая для машины отпускается только тогда, когда отпущены
+# все. Касается только клавиш хоста, поэтому здесь не KEY, а
+# COMMAND keyboard.host(...).
+#
+# A и B - одна линия X6, H - X7. keyboard.count - сколько клавиш хоста машина
+# видит нажатыми (это разряд 6 177716), port-kbd-code - последний код в 177662.
+# @timeout 30
+
+MACHINE "bk/BK-0010-01.cfg"
+WAIT _2000
+
+LOGDEFS _16,_8
+
+PRINT "=== A держится, B (та же линия) и H (другая) кода не дают ==="
+COMMAND keyboard.host("a",1)
+WAIT _50
+LOG port-kbd-code.value
+COMMAND keyboard.host("b",1)
+WAIT _50
+COMMAND keyboard.host("h",1)
+WAIT _50
+LOG port-kbd-code.value
+LOG keyboard.pressed
+LOG keyboard.count
+LOG keyboard.blocked
+
+PRINT "=== A отпущена, но машина видит ее нажатой, пока держатся B и H ==="
+COMMAND keyboard.host("a",0)
+WAIT _50
+LOG keyboard.count
+LOG keyboard.pressed
+PRINT "--- повторное нажатие A тоже проглочено ---"
+COMMAND keyboard.host("a",1)
+WAIT _50
+LOG port-kbd-code.value
+COMMAND keyboard.host("a",0)
+WAIT _50
+COMMAND keyboard.host("b",0)
+WAIT _50
+LOG keyboard.count
+PRINT "--- отпущена последняя: A отпускается и для машины ---"
+COMMAND keyboard.host("h",0)
+WAIT _50
+LOG keyboard.count
+LOG keyboard.pressed
+LOG keyboard.blocked
+
+PRINT "=== вторая отпущена раньше первой: первая отпускается сразу ==="
+COMMAND keyboard.host("j",1)
+WAIT _50
+COMMAND keyboard.host("1",1)
+WAIT _50
+COMMAND keyboard.host("1",0)
+WAIT _50
+LOG keyboard.count
+COMMAND keyboard.host("j",0)
+WAIT _50
+LOG port-kbd-code.value
+LOG keyboard.count
+
+PRINT "=== после отпускания всех группа свободна ==="
+COMMAND keyboard.host("h",1)
+WAIT _50
+LOG port-kbd-code.value
+COMMAND keyboard.host("h",0)
+WAIT _50
+LOG keyboard.count
+
+PRINT "=== не с хоста группа не действует ==="
+KEYDOWN a
+WAIT _50
+KEYDOWN b
+WAIT _50
+LOG port-kbd-code.value
+LOG keyboard.count
+KEYUP b
+KEYUP a
+WAIT _50
+LOG keyboard.count
+LOG keyboard.blocked
+
+EXIT

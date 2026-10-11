@@ -1,0 +1,19 @@
+// Группа клавиш БК0010-01 и БК0011М: вся матрица контроллера К1801ВП1-014 -
+// одна группа, имена клавиш те же, что в bk.keys и на рисунке.
+//
+// ВП1-014 матрицу не сканирует (forum.pk-fpga.ru, тема 5550; реверс кристалла
+// github.com/1801BM1/k1801, 014): нажатая клавиша сбрасывает триггер своего
+// столбца Y, и столбец сам тянет к нулю ее линию X; дальше контроллер ждет,
+// пока все линии X снова станут высокими. Пока держится первая клавиша, любая
+// другая кода не дает - на любой линии и в любом столбце, - и отпускание
+// первой машина не видит, пока не отпущены все. Это и есть @hold: клавиша,
+// занявшая группу, для машины остается нажатой, пока в группе держится хоть
+// одна проглоченная. Касается только клавиш хоста. Проверено прогоном
+// Verilog-модели ВП1-014 с резистивной матрицей.
+//
+// Места клавиш (линии SCAN_X0..X9, docs-external/BK/keybk.pdf): X0-X3 - коды
+// 8*X + Y, X4-X9 - 060 + 8*(X-4) + Y. СТОП, ПРОБЕЛ, СУ, АР2, ЗАГЛ, СТР и НР
+// в матрицу не входят - у каждой своя линия.
+
+@hold
+key_step key_povt key_ind_su key_kt key_block_ed key_left key_tab key_enter key_clear key_sbr key_rus key_lat key_vs key_del key_ins key_bksp key_right key_up key_down key_0 key_1 key_2 key_3 key_4 key_5 key_6 key_7 key_8 key_9 key_colon key_semi key_comma key_minus key_dot key_slash key_at key_a key_b key_c key_d key_e key_f key_g key_h key_i key_j key_k key_l key_m key_n key_o key_p key_q key_r key_s key_t key_u key_v key_w key_x key_y key_z key_lbr key_bksl key_rbr key_not key_rcurl

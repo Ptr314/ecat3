@@ -888,10 +888,17 @@ uint64_t Emulator::ticks_per_ms() const
 
 void Emulator::record_key(unsigned int code, unsigned int native, bool press)
 {
-    //The key the machine got, not the one typed: a replay is not remapped.
-    //A key a key group swallowed did not reach the machine at all
-    if (recorder && recorder->is_recording() && !(keyboard && keyboard->last_host_swallowed()))
-        recorder->key(keyboard ? keyboard->remap_key(code) : code, native, press, clock_counter);
+    if (!recorder || !recorder->is_recording()) return;
+    //A key a key group swallowed did not reach the machine at all; with it,
+    //though, the key that held the group may have come up (hold mode)
+    if (keyboard && keyboard->last_host_swallowed()) {
+        code = keyboard->last_host_released();
+        if (code == _FFFF) return;
+        native = 0;
+        press = false;
+    }
+    //The key the machine got, not the one typed: a replay is not remapped
+    recorder->key(keyboard ? keyboard->remap_key(code) : code, native, press, clock_counter);
 }
 
 void Emulator::record_command(const std::string &device, const std::string &member, const std::string &params)

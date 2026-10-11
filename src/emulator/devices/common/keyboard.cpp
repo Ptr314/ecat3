@@ -59,7 +59,9 @@ emulator::Result Keyboard::load_groups(SystemData *sd)
         compat_lock_guard lock(m_host_mutex);
         m_key_group.clear();
         m_group_owner.clear();
+        m_group_deferred.clear();
         m_group_blocked.clear();
+        m_group_hold = false;
     }
     const std::string name = cd->get_parameter("groups", false).value;
     if (name.empty()) return emulator::Result::ok();
@@ -70,8 +72,10 @@ emulator::Result Keyboard::load_groups(SystemData *sd)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Keyboard|" + std::string(QT_TRANSLATE_NOOP("Keyboard", "Error reading key group file")) + "} " + name);
 
-    // A line is a group, the machine's key names separated by spaces
+    // A line is a group, the machine's key names separated by spaces. A line
+    // "@hold" switches the whole file to the hold mode, see m_group_hold
     std::map<std::string, int> groups;
+    bool hold = false;
     int count = 0;
     const std::vector<std::string> lines = split_string(content, '\n', true);
     for (size_t li = 0; li < lines.size(); li++) {
@@ -79,6 +83,10 @@ emulator::Result Keyboard::load_groups(SystemData *sd)
         const size_t comment = line.find("//");
         if (comment != std::string::npos) line = str_trim(line.substr(0, comment));
         if (line.empty()) continue;
+        if (line == "@hold") {
+            hold = true;
+            continue;
+        }
         for (size_t c = 0; c < line.size(); c++)
             if (line[c] == '\t') line[c] = ' ';
         const std::vector<std::string> words = split_string(line, ' ', true);
@@ -98,43 +106,100 @@ emulator::Result Keyboard::load_groups(SystemData *sd)
     compat_lock_guard lock(m_host_mutex);
     m_key_group.swap(groups);
     m_group_owner.assign(count, _FFFF);
+    m_group_deferred.assign(count, 0);
+    m_group_hold = hold;
     return emulator::Result::ok();
 }
 
-bool Keyboard::group_filter_locked(unsigned int k, unsigned int code, bool press)
+bool Keyboard::group_filter_locked(unsigned int k, unsigned int code, bool press, unsigned int &release)
 {
+    release = _FFFF;
     if (m_key_group.empty()) return false;
 
     for (size_t i = 0; i < m_group_blocked.size(); i++)
-        if (m_group_blocked[i] == k) {
+        if (m_group_blocked[i].first == k) {
             //Swallowed when it went down: its release is swallowed too, and so
             //is a second press of it before that
-            if (!press) m_group_blocked.erase(m_group_blocked.begin() + i);
+            if (!press) {
+                const int g = m_group_blocked[i].second;
+                m_group_blocked.erase(m_group_blocked.begin() + i);
+                //The last key held in a group whose own key has been let go:
+                //only now does the machine see that key come up
+                if (m_group_deferred[g] && !group_busy_locked(g)) {
+                    release = m_group_owner[g];
+                    m_group_owner[g] = _FFFF;
+                    m_group_deferred[g] = 0;
+                }
+            }
             return true;
         }
 
     if (!press) {
         for (size_t g = 0; g < m_group_owner.size(); g++)
-            if (m_group_owner[g] == k) m_group_owner[g] = _FFFF;
+            if (m_group_owner[g] == k && !m_group_deferred[g]) {
+                //With other keys of the group still held the hold mode keeps
+                //this one down for the machine (1801ВП1-014: the line it pulls
+                //low stays low until every key is up)
+                if (m_group_hold && group_busy_locked((int)g)) {
+                    m_group_deferred[g] = 1;
+                    return true;
+                }
+                m_group_owner[g] = _FFFF;
+            }
         return false;
     }
 
     const std::map<std::string, int>::const_iterator it = m_key_group.find(host_key_id(code));
     if (it == m_key_group.end()) return false;
     unsigned int &owner = m_group_owner[it->second];
-    if (owner == _FFFF || owner == k) {
+    if (owner == _FFFF || (owner == k && !m_group_deferred[it->second])) {
         owner = k;
         return false;
     }
-    m_group_blocked.push_back(k);
+    m_group_blocked.push_back(std::make_pair(k, it->second));
     m_blocked_count++;
     return true;
+}
+
+bool Keyboard::group_busy_locked(int g) const
+{
+    for (size_t i = 0; i < m_group_blocked.size(); i++)
+        if (m_group_blocked[i].second == g) return true;
+    return false;
 }
 
 bool Keyboard::last_host_swallowed()
 {
     compat_lock_guard lock(m_host_mutex);
     return m_last_host_swallowed;
+}
+
+unsigned int Keyboard::last_host_released()
+{
+    compat_lock_guard lock(m_host_mutex);
+    return m_last_host_released;
+}
+
+// A host key let go for the machine: the code it went down as comes up
+void Keyboard::host_release(unsigned int k)
+{
+    unsigned int code = _FFFF;
+    {
+        compat_lock_guard lock(m_host_mutex);
+        for (size_t i = 0; i < m_host_down.size(); i++)
+            if (m_host_down[i].first == k) {
+                code = m_host_down[i].second;
+                m_host_down.erase(m_host_down.begin() + i);
+                break;
+            }
+    }
+    if (code == _FFFF) return;
+    key_up(code);
+    //A host modifier is not the key a "once" modifier waits for: Shift let
+    //go on the host must not drop АР2 latched on the drawing
+    if (k != EmuKey::Shift && k != EmuKey::Control && k != EmuKey::Alt
+        && k != EmuKey::CapsLock && k != EmuKey::NumLock && k != EmuKey::ScrollLock)
+        release_once_modifiers();
 }
 
 emulator::Result Keyboard::load_remap(SystemData *sd, const std::string &param, int mode)
@@ -202,6 +267,8 @@ void Keyboard::key_event(unsigned int key, unsigned int native_key, bool press, 
     else return;
 
     unsigned int code = _FFFF;
+    bool swallowed = false;
+    unsigned int deferred = _FFFF;     // a key the group held down, let go now
     {
         compat_lock_guard lock(m_host_mutex);
         if (host) {
@@ -211,19 +278,29 @@ void Keyboard::key_event(unsigned int key, unsigned int native_key, bool press, 
             for (size_t i = 0; i < m_host_down.size() && down == _FFFF; i++)
                 if (m_host_down[i].first == k) down = m_host_down[i].second;
             if (down == _FFFF) down = rus_translate(remap_locked(k));
-            m_last_host_swallowed = group_filter_locked(k, down, press);
-            if (m_last_host_swallowed) return;
+            swallowed = group_filter_locked(k, down, press, deferred);
+            m_last_host_swallowed = swallowed;
+            m_last_host_released = deferred;
         }
-        for (size_t i = 0; i < m_host_down.size(); i++)
-            if (m_host_down[i].first == k) {
-                code = m_host_down[i].second;
-                if (!press) m_host_down.erase(m_host_down.begin() + i);
-                break;
+        if (!swallowed) {
+            for (size_t i = 0; i < m_host_down.size(); i++)
+                if (m_host_down[i].first == k) {
+                    code = m_host_down[i].second;
+                    if (!press) m_host_down.erase(m_host_down.begin() + i);
+                    break;
+                }
+            if (code == _FFFF) {
+                code = rus_translate(host ? remap_locked(k) : k);
+                if (press) m_host_down.push_back(std::make_pair(k, code));
             }
-        if (code == _FFFF) {
-            code = rus_translate(host ? remap_locked(k) : k);
-            if (press) m_host_down.push_back(std::make_pair(k, code));
         }
+    }
+
+    if (swallowed) {
+        //The swallowed key was the last one holding its group, and the key
+        //that took the group was let go before it: that one comes up now
+        if (deferred != _FFFF) host_release(deferred);
+        return;
     }
 
     if (press)
@@ -628,6 +705,7 @@ void Keyboard::reset(bool cool)
         compat_lock_guard lock(m_host_mutex);
         m_host_down.clear();
         m_group_owner.assign(m_group_owner.size(), _FFFF);
+        m_group_deferred.assign(m_group_deferred.size(), 0);
         m_group_blocked.clear();
     }
     compat_lock_guard lock(m_held_mutex);
