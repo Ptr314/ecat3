@@ -1780,7 +1780,7 @@
     <message>
         <location line="+16"/>
         <source>Control</source>
-        <translation>Управление</translation>
+        <translation>Конфиг.</translation>
     </message>
     <message>
         <location filename="../dialogs/i8255window.cpp" line="-3"/>
