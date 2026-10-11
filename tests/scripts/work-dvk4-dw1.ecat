@@ -1,0 +1,56 @@
+# ДВК-4: второй контроллер DW (174060-174100, вектор 310) с геометрией из
+# конфигурации - 8 головок, 8 секторов, 2 цилиндра (tests/files/dvk4-dw1.ext,
+# образ - make_dw_geometry.py: в начале сектора его блок, цилиндр, головка и
+# сектор). Чтение головки 5 доходит до своего блока, сектор 0 - последний на
+# дорожке; прерывание приходит по вектору 310 и не путается с первым DW.
+# @timeout 60
+MACHINE "../../tests/files/dvk4-dw1.ext"
+LOGDEFS _16,_8
+PRINT "=== Геометрия: цилиндры/головки/секторы ==="
+LOG dw1.geometry
+LOG dw.geometry
+WAIT _12000
+# Программа: на 1000 - MTPS #0 и ожидание на месте; обработчик вектора 310
+# на 2000 - INC @#3000, RTI. Вектор 300 (первый DW) - на HALT по 2200
+COMMAND ram.set16(1000, 106427, 0, 000777)
+COMMAND ram.set16(2000, 005237, 3000, 000002)
+COMMAND ram.set16(2200, 0)
+COMMAND ram.set16(3000, 0)
+COMMAND ram.set16(300, 2200, 340)
+COMMAND ram.set16(310, 2000, 340)
+TYPE "1000G"
+WAIT _100
+PRINT "=== Регистры второго DW: ID, SI ==="
+LOG dw1.value16(0,0)
+LOG dw1.value16(20,20)
+PRINT "=== Чтение: цилиндр 1, головка 5, сектор 3, прерывания разрешены ==="
+COMMAND dw1.set16(20, 100)
+COMMAND dw1.set16(12, 1)
+COMMAND dw1.set16(14, 5)
+COMMAND dw1.set16(6, 3)
+COMMAND dw1.set16(16, 40)
+WAIT _50
+LOG cpu.trap_vector
+LOG ram.value16(3000,3000)
+PRINT "=== Сектор: блок, цилиндр, головка, сектор ==="
+LOG dw1.value16(10,10)
+LOG dw1.value16(10,10)
+LOG dw1.value16(10,10)
+LOG dw1.value16(10,10)
+LOG dw1.reads
+PRINT "=== Сектор 0 - последний (8-й) на дорожке, головка 7 ==="
+COMMAND dw1.set16(20, 0)
+COMMAND dw1.set16(12, 0)
+COMMAND dw1.set16(14, 7)
+COMMAND dw1.set16(6, 0)
+COMMAND dw1.set16(16, 40)
+WAIT _50
+LOG dw1.value16(10,10)
+LOG dw1.value16(10,10)
+LOG dw1.value16(10,10)
+LOG dw1.value16(10,10)
+PRINT "=== Первый DW не тронут, обработчик вызван один раз, программа в цикле ==="
+LOG dw.reads
+LOG ram.value16(3000,3000)
+LOG cpu.pc
+EXIT

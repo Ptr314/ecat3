@@ -87,9 +87,11 @@ emulator::Result DVKDW::attach(const std::string &file_name)
     if (!m_image.open(file_name, error))
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{DVKDW|" + std::string(QT_TRANSLATE_NOOP("DVKDW", "Hard disk image file not found")) + "} " + file_name);
-    // Цилиндры - по размеру файла; 4 головки по 16 секторов, как у DW.SYS
-    m_cylinders = (unsigned int)(m_image.size() / HddImage::SECTOR_SIZE / (m_heads * m_sectors));
-    if (m_cylinders == 0 || m_cylinders > 1024) {
+    // Цилиндры - из конфигурации или по размеру файла; образ больше
+    // заданной геометрии допустим, хвост не используется
+    const uint64_t image_cylinders = m_image.size() / HddImage::SECTOR_SIZE / (m_heads * m_sectors);
+    m_cylinders = (m_cfg_cylinders != 0) ? m_cfg_cylinders : (unsigned int)image_cylinders;
+    if (m_cylinders == 0 || m_cylinders > 1024 || image_cylinders < m_cylinders) {
         m_image.close();
         m_cylinders = 0;
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
@@ -108,6 +110,19 @@ emulator::Result DVKDW::load_config(SystemData *sd)
     m_vector = read_confg_value(cd, "vector", false, (unsigned int)0300);
     m_image.set_write_protect(read_confg_value(cd, "write_protect", false, false));
     m_image.set_volatile(read_confg_value(cd, "volatile", false, false));
+
+    // Геометрия: регистр головки - 3 разряда, сектора - с единицы до 16,
+    // цилиндра - 10 разрядов
+    m_heads = read_confg_value(cd, "heads", false, (unsigned int)4);
+    m_sectors = read_confg_value(cd, "sectors", false, (unsigned int)16);
+    m_cfg_cylinders = read_confg_value(cd, "cylinders", false, (unsigned int)0);
+    if (m_heads < 1 || m_heads > 8 || m_sectors < 1 || m_sectors > 16 || m_cfg_cylinders > 1024)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{DVKDW|" + std::string(QT_TRANSLATE_NOOP("DVKDW", "Unsupported hard disk geometry")) + "} " + name);
+    // Разряд «5 МБ» регистра SI - перемычка накопителя; без параметра - по
+    // числу цилиндров, как у накопителя на 4 головки
+    const std::string small_jumper = cd->get_parameter("small", false).value;
+    m_small = small_jumper.empty() ? -1 : (parse_numeric_value(small_jumper) != 0 ? 1 : 0);
 
     // Времена в микросекундах: поиск и поворот до сектора,
     // переход головок на цилиндр, выдача слова из буфера контроллера
@@ -147,7 +162,7 @@ void DVKDW::init_controller()
     m_csr = CSR_DONE | CSR_DRDY;
     // Сброс - операция: «занят», а «закончено» поднимется в её конце
     m_si = SI_BUSY;
-    if (m_cylinders != 0 && m_cylinders <= SMALL_CYLINDERS) m_si |= SI_SMALL;
+    if (m_small > 0 || (m_small < 0 && m_cylinders != 0 && m_cylinders <= SMALL_CYLINDERS)) m_si |= SI_SMALL;
     m_drqa = m_drqb = false;
     m_count_read = m_count_write = 0;
     m_format = false;
@@ -273,10 +288,10 @@ void DVKDW::clock(unsigned int counter)
     }
 }
 
-// Сектор в регистре - с единицы, 16-й пишется как 0
+// Сектор в регистре - с единицы, последний (16-й) пишется и как 0
 bool DVKDW::sector_offset(uint64_t &offset) const
 {
-    const unsigned int sector = (m_sector - 1) & 15;
+    const unsigned int sector = ((m_sector & 037) + m_sectors - 1) % m_sectors;
     if (!m_image.attached() || m_cyl >= m_cylinders || m_head >= m_heads || sector >= m_sectors)
         return false;
     offset = ((uint64_t)(m_cyl * m_heads + m_head) * m_sectors + sector) * HddImage::SECTOR_SIZE;
@@ -325,7 +340,7 @@ void DVKDW::write_done()
         const unsigned int keep = m_sector;
         for (unsigned int s = 1; s <= m_sectors && ok; s++) {
             uint64_t offset;
-            m_sector = s & 15;
+            m_sector = s;
             ok = sector_offset(offset) && m_image.write(offset, data);
         }
         m_sector = keep;

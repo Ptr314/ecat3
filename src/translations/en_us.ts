@@ -134,7 +134,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+769"/>
+        <location filename="../emulator/core.cpp" line="+771"/>
         <source>No CPU clock value found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -159,7 +159,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/i8080.cpp" line="+137"/>
+        <location filename="../emulator/devices/cpu/i8080.cpp" line="+138"/>
         <source>int_opcode = $CD needs ~int_address</source>
         <translation type="unfinished"></translation>
     </message>
@@ -172,7 +172,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1300"/>
+        <location filename="../emulator/core.cpp" line="-1302"/>
         <source>Incorrect interface definition for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -235,7 +235,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+1103"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1104"/>
         <source>Disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -251,7 +251,7 @@
     </message>
     <message>
         <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+634"/>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+545"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+560"/>
         <source>Hard disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -305,7 +305,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+555"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+556"/>
         <source>Low-pass filter cutoff, Hz (0 - off)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -389,17 +389,22 @@
 <context>
     <name>DVKDW</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-467"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-482"/>
         <source>Hard disk image file not found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+9"/>
         <source>Unrecognized hard disk geometry</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+544"/>
+        <location line="+23"/>
+        <source>Unsupported hard disk geometry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+534"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1250,7 +1255,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-1069"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1070"/>
         <source>Incorrect fdd list for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1270,13 +1275,13 @@
     </message>
     <message>
         <location line="-82"/>
-        <location line="+501"/>
+        <location line="+502"/>
         <location line="+16"/>
         <source>Unrecognized MFM format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-393"/>
+        <location line="-394"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1286,7 +1291,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+618"/>
+        <location line="+619"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1296,7 +1301,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-938"/>
+        <location line="-939"/>
         <source>Incorrect fdd parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1317,23 +1322,23 @@
     </message>
     <message>
         <location line="+18"/>
-        <location line="+445"/>
+        <location line="+446"/>
         <source>HFE images are not supported for this drive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-356"/>
+        <location line="-357"/>
         <location line="+37"/>
         <location line="+44"/>
         <location line="+29"/>
         <location line="+18"/>
-        <location line="+273"/>
+        <location line="+274"/>
         <location line="+16"/>
         <source>Error opening file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-375"/>
+        <location line="-376"/>
         <source>File is in unknown format</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1341,7 +1346,7 @@
         <location line="+44"/>
         <location line="+19"/>
         <location line="+18"/>
-        <location line="+288"/>
+        <location line="+289"/>
         <source>Incorrect disk image size for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1365,7 +1370,7 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-483"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-484"/>
         <source>Incorrect sample rate</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1375,7 +1380,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+86"/>
+        <location line="+87"/>
         <source>Error writing</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1751,7 +1756,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1444"/>
+        <location filename="../mainwindow.cpp" line="+1452"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1815,8 +1820,8 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1591"/>
-        <location line="+1686"/>
+        <location filename="../mainwindow.cpp" line="-1599"/>
+        <location line="+1694"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1862,9 +1867,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-587"/>
+        <location filename="../mainwindow.cpp" line="-595"/>
         <location line="+70"/>
-        <location line="+1057"/>
+        <location line="+1065"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+200"/>
@@ -1879,7 +1884,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2310"/>
+        <location line="-2318"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -1901,14 +1906,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1325"/>
+        <location line="+1333"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1440"/>
+        <location line="-1448"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -1968,14 +1973,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1155"/>
+        <location line="+1163"/>
         <location line="+378"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1644"/>
+        <location line="-1652"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2011,12 +2016,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1483"/>
+        <location line="+1491"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1459"/>
+        <location line="-1467"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2052,23 +2057,23 @@
     </message>
     <message>
         <location line="+11"/>
-        <location line="+47"/>
+        <location line="+55"/>
         <source>Nearest pixel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-39"/>
-        <location line="+47"/>
+        <location line="-47"/>
+        <location line="+55"/>
         <source>Linear</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-39"/>
+        <location line="-47"/>
         <source>Anisotropic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+18"/>
         <source>Fast, no smoothing</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2078,7 +2083,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="-18"/>
+        <location line="+49"/>
         <source>Sharp</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2473,7 +2479,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location line="+955"/>
+        <location line="+957"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2690,7 +2696,7 @@
 <context>
     <name>ROM</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-221"/>
+        <location filename="../emulator/core.cpp" line="-223"/>
         <source>File not found</source>
         <translation type="unfinished"></translation>
     </message>

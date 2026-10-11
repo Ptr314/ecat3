@@ -202,7 +202,7 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+769"/>
+        <location filename="../emulator/core.cpp" line="+771"/>
         <source>No CPU clock value found</source>
         <translation>Не задана тактовая частота процессора</translation>
     </message>
@@ -231,7 +231,7 @@
         <translation>Неизвестный способ расчета времени</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/i8080.cpp" line="+137"/>
+        <location filename="../emulator/devices/cpu/i8080.cpp" line="+138"/>
         <source>int_opcode = $CD needs ~int_address</source>
         <translation>int_opcode = $CD требует подключённого ~int_address</translation>
     </message>
@@ -252,7 +252,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1300"/>
+        <location filename="../emulator/core.cpp" line="-1302"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -331,7 +331,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+1103"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1104"/>
         <source>Disk image</source>
         <translation>Образ диска</translation>
     </message>
@@ -347,7 +347,7 @@
     </message>
     <message>
         <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+634"/>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+545"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+560"/>
         <source>Hard disk image</source>
         <translation>Образ жёсткого диска</translation>
     </message>
@@ -401,7 +401,7 @@
         <translation>Образ ПЗУ</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+555"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+556"/>
         <source>Low-pass filter cutoff, Hz (0 - off)</source>
         <translation>Срез фильтра нижних частот, Гц (0 - выключен)</translation>
     </message>
@@ -485,17 +485,22 @@
 <context>
     <name>DVKDW</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-467"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-482"/>
         <source>Hard disk image file not found</source>
         <translation>Файл образа жёсткого диска не найден</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+9"/>
         <source>Unrecognized hard disk geometry</source>
         <translation>Нераспознанная геометрия жёсткого диска</translation>
     </message>
     <message>
-        <location line="+544"/>
+        <location line="+23"/>
+        <source>Unsupported hard disk geometry</source>
+        <translation>Неподдерживаемая геометрия жёсткого диска</translation>
+    </message>
+    <message>
+        <location line="+534"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; ожидает имя файла</translation>
     </message>
@@ -1498,7 +1503,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-1069"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1070"/>
         <source>Incorrect fdd list for</source>
         <translation>Некорректный список дисководов для</translation>
     </message>
@@ -1554,24 +1559,24 @@
     </message>
     <message>
         <location line="-82"/>
-        <location line="+501"/>
+        <location line="+502"/>
         <location line="+16"/>
         <source>Unrecognized MFM format</source>
         <translation>Файл формата MFM не распознан</translation>
     </message>
     <message>
-        <location line="-441"/>
+        <location line="-442"/>
         <location line="+37"/>
         <location line="+44"/>
         <location line="+29"/>
         <location line="+18"/>
-        <location line="+273"/>
+        <location line="+274"/>
         <location line="+16"/>
         <source>Error opening file</source>
         <translation>Ошибка открытия файла</translation>
     </message>
     <message>
-        <location line="-375"/>
+        <location line="-376"/>
         <source>File is in unknown format</source>
         <translation>Формат файла не распознан</translation>
     </message>
@@ -1579,7 +1584,7 @@
         <location line="+44"/>
         <location line="+19"/>
         <location line="+18"/>
-        <location line="+288"/>
+        <location line="+289"/>
         <source>Incorrect disk image size for</source>
         <translation>Некорректный размер файла образа</translation>
     </message>
@@ -1608,7 +1613,7 @@
         <translation type="vanished">Формат файла &apos;%1&apos; не распознан</translation>
     </message>
     <message>
-        <location line="-1182"/>
+        <location line="-1183"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation>Файлы AIM поддерживаются только на дисководах 840 Кб Агат!</translation>
     </message>
@@ -1626,7 +1631,7 @@
         <translation type="vanished">Ошибка экспорта диска. %1 : %2</translation>
     </message>
     <message>
-        <location line="+618"/>
+        <location line="+619"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation>Дисковод работает в MFM-режиме. Сохранение в посекторные образы еще не поддерживается.</translation>
     </message>
@@ -1636,8 +1641,8 @@
         <translation>Сохранение образов для данного типа устройств еще не поддерживается.</translation>
     </message>
     <message>
-        <location line="-865"/>
-        <location line="+445"/>
+        <location line="-866"/>
+        <location line="+446"/>
         <source>HFE images are not supported for this drive</source>
         <translation>Образы HFE для этого дисковода не поддерживаются</translation>
     </message>
@@ -1676,7 +1681,7 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-483"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-484"/>
         <source>Incorrect sample rate</source>
         <translation>Неверная частота дискретизации</translation>
     </message>
@@ -1686,7 +1691,7 @@
         <translation>Устройство не является источником звука</translation>
     </message>
     <message>
-        <location line="+86"/>
+        <location line="+87"/>
         <source>Error writing</source>
         <translation>Ошибка записи</translation>
     </message>
@@ -2119,7 +2124,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1444"/>
+        <location filename="../mainwindow.cpp" line="+1452"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2176,8 +2181,8 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-705"/>
-        <location line="+1686"/>
+        <location filename="../mainwindow.cpp" line="-713"/>
+        <location line="+1694"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
@@ -2227,16 +2232,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-485"/>
+        <location filename="../mainwindow.cpp" line="-493"/>
         <location line="+47"/>
-        <location line="+1325"/>
+        <location line="+1333"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1440"/>
+        <location line="-1448"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2265,7 +2270,7 @@
     <message>
         <location line="-114"/>
         <location line="+70"/>
-        <location line="+1057"/>
+        <location line="+1065"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+200"/>
@@ -2280,7 +2285,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2310"/>
+        <location line="-2318"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2326,23 +2331,23 @@
     </message>
     <message>
         <location line="+11"/>
-        <location line="+47"/>
+        <location line="+55"/>
         <source>Nearest pixel</source>
         <translation>Ближайший пиксель</translation>
     </message>
     <message>
-        <location line="-39"/>
-        <location line="+47"/>
+        <location line="-47"/>
+        <location line="+55"/>
         <source>Linear</source>
         <translation>Линейное</translation>
     </message>
     <message>
-        <location line="-39"/>
+        <location line="-47"/>
         <source>Anisotropic</source>
         <translation>Анизотропное</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+18"/>
         <source>Fast, no smoothing</source>
         <translation>Выключено</translation>
     </message>
@@ -2373,7 +2378,7 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1203"/>
+        <location line="-1211"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -2386,7 +2391,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+71"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1684"/>
+        <location filename="../mainwindow.cpp" line="+1692"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -2396,15 +2401,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1662"/>
-        <location line="+1155"/>
+        <location line="-1670"/>
+        <location line="+1163"/>
         <location line="+378"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1644"/>
+        <location line="-1652"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2440,7 +2445,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1483"/>
+        <location line="+1491"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -2471,7 +2476,7 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1662"/>
+        <location line="-1670"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
@@ -2506,7 +2511,8 @@
         <translation>Цифровой блок буквами</translation>
     </message>
     <message>
-        <location line="+127"/>
+        <location line="+86"/>
+        <location line="+49"/>
         <source>Sharp</source>
         <translation>Резкое</translation>
     </message>
@@ -2872,7 +2878,7 @@
         <translation type="vanished">Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+955"/>
+        <location line="+957"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
@@ -3155,7 +3161,7 @@
         <translation type="vanished">Ошибка чтения %1</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-221"/>
+        <location filename="../emulator/core.cpp" line="-223"/>
         <source>File not found</source>
         <translation>Файл не найден</translation>
     </message>

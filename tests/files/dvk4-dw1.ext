@@ -1,0 +1,11 @@
+// ДВК-4 с КСМ и образом во втором контроллере DW (174060, вектор 310) с
+// геометрией не по умолчанию: 8 головок, 8 секторов, 2 цилиндра. Образ -
+// make_dw_geometry.py
+@extends ../../tests/files/dvk4-ksm.ext
+@version ДВК-4, второй DW на 8 головок (тест)
+
+dw1:heads = _8
+dw1:sectors = _8
+dw1:cylinders = _2
+dw1:image = dw-8heads.img
+dw1:volatile = 1
