@@ -24,3 +24,8 @@
 Для дисковода 840&nbsp;Кб поддерживаются образы DSK и AIM, для дисковода 140&nbsp;Кб&nbsp;&ndash; DSK, MFM, NIB и NIC.
 
 Информацию о компьютере см. в&nbsp;описании основной конфигурации.
+
+## Информация о ЯЗС
+* Отдельная благодарность Игорю Филатову, который смог достать живой экземпляр платы и ПО к нему.
+* [На сайте agatcomp.ru](https://agatcomp.su/agat/Hardware/SoundNCL/jzs52.shtml)
+* [Схема и плата](https://agat-hardware.sourceforge.io/agat-sound.html) от Олега Одинцова
