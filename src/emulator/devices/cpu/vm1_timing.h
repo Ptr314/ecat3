@@ -98,13 +98,16 @@ public:
     // One bus access as the emulator performed it. Whether a read and the
     // write after it are one read-modify-write cycle is the template's to say:
     // MOV (R1),@0(R1) reads a pointer from where it then writes, in two cycles
-    void record(unsigned int address, bool write, bool stream, const BusReply * reply, WaitSource * wait = nullptr)
+    // byte: a byte write, which a WaitSource may time apart (wait_cycle)
+    void record(unsigned int address, bool write, bool stream, const BusReply * reply, WaitSource * wait = nullptr,
+                bool byte = false)
     {
         if (m_count < MAX_ACCESSES) {
             Access & a = m_acc[m_count++];
             a.address = address;
             a.kind = write ? K_WRITE : K_READ;
             a.role = stream ? R_STREAM : R_DATA;
+            a.byte = byte;
             a.reply = reply;
             a.wait = wait;
         }
@@ -149,7 +152,9 @@ public:
     uint64_t m_s0 = 0;          // ВМ2: where the next instruction's microprogram starts
     uint8_t m_kind2 = 0;        // ВМ2: the kind of the last cycle released
     uint8_t m_flags2 = 0;       // ВМ2: F2_* of the last form
-    enum { F2_LAST_DATA_READ = 1, F2_PREV_DATA_FREE = 2 };
+    // F2_REFETCH: the last form wrote the word it had already fetched as the
+    // next opcode, and the next instruction fetches it again
+    enum { F2_LAST_DATA_READ = 1, F2_PREV_DATA_FREE = 2, F2_REFETCH = 4 };
 
 private:
     enum { MAX_ACCESSES = 16 };
@@ -157,6 +162,7 @@ private:
         unsigned int address;
         uint8_t kind;
         uint8_t role;
+        bool byte;
         const BusReply * reply;
         WaitSource * wait;
     };
@@ -179,7 +185,7 @@ private:
     uint32_t reply_time(uint32_t strobe, uint8_t kind, bool rmw_write, const BusReply * reply);
     // ВМ2: release of the strobe at t, counted from m_start
     uint32_t release_vm2(uint32_t strobe, uint8_t kind, const BusReply * reply, WaitSource * wait,
-                         unsigned int address);
+                         unsigned int address, unsigned int flags = 0);
     // ВМ2: m_start on the edges the chip releases its strobes on
     void align_vm2();
 

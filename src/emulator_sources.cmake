@@ -93,6 +93,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/uknc_display.h emulator/devices/specific/uknc_display.cpp
     emulator/devices/specific/uknc_graphics.h emulator/devices/specific/uknc_graphics.cpp
     emulator/devices/specific/uknc_hdd.h emulator/devices/specific/uknc_hdd.cpp
+    emulator/devices/specific/uknc_ram_timing.h emulator/devices/specific/uknc_ram_timing.cpp
     emulator/devices/specific/smk512.h emulator/devices/specific/smk512.cpp
     emulator/devices/specific/a16m.h emulator/devices/specific/a16m.cpp
     emulator/devices/specific/uknc_timer.h emulator/devices/specific/uknc_timer.cpp

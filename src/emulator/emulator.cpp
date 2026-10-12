@@ -82,6 +82,7 @@
 #include "emulator/devices/specific/uknc_display.h"
 #include "emulator/devices/specific/uknc_graphics.h"
 #include "emulator/devices/specific/uknc_hdd.h"
+#include "emulator/devices/specific/uknc_ram_timing.h"
 #include "emulator/devices/specific/smk512.h"
 #include "emulator/devices/specific/a16m.h"
 #include "emulator/devices/specific/uknc_timer.h"
@@ -1932,6 +1933,7 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("uknc-channels", create_uknc_channels);
     dm->register_device("uknc-display", create_uknc_display);
     dm->register_device("uknc-graphics", create_uknc_graphics);
+    dm->register_device("uknc-ram-timing", create_uknc_ram_timing);
     dm->register_device("uknc-hdd", create_uknc_hdd);
     dm->register_device("smk512", create_smk512);
     dm->register_device("a16m", create_a16m);

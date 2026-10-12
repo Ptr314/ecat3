@@ -1,0 +1,51 @@
+# УК-НЦ: время команд обоих процессоров по тесту TSSPD v0.1i (Titus).
+#
+# TSSPD заполняет буфер копиями одной команды и за одно поле (20 мс) считает,
+# сколько их выполнено: сначала в ПП, потом в ЦП, всё в ОЗУ. Снимки должны
+# быть близки к фотографиям с настоящей машины литеры 7 с 1515ХМ1-031
+# (Alex_K, emuverse «УКНЦ Расчёт точного времени выполнения команд»): ПП -
+# NOP 20, MOV (R0),R1 40, MOV R1,(R0) 36, INC (R0) 56, MOVB R1,(R0) 52; ЦП -
+# NOP 14.05, MOV R0,R0 12.32, MOV (R0),R1 33.1, MOV R1,(R0) 35.2,
+# INC (R0) 40.3. Модель памяти и её подбор - tools/uknc-timing/README.md.
+#
+# Диск - tests/files/uknc-timing/timing.dsk (make_disk.py).
+# @timeout 400
+
+MACHINE "uknc/UKNC.cfg"
+WAIT _12000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+WAIT _15000
+
+# Программа DAY спрашивает дату, ВК оставляет предложенную
+KEY _100,_100,ret
+WAIT _18000
+
+COMMAND fdd1.load("../files/uknc-timing/timing.dsk")
+WAIT _500
+TYPE "RU MZ1:TSSPD\n"
+WAIT _15000
+SCREEN "../results/slow-uknc-tsspd-1.png"
+KEY _100,_100,ret
+WAIT _15000
+SCREEN "../results/slow-uknc-tsspd-2.png"
+KEY _100,_100,ret
+WAIT _15000
+SCREEN "../results/slow-uknc-tsspd-3.png"
+KEY _100,_100,ret
+WAIT _15000
+SCREEN "../results/slow-uknc-tsspd-4.png"
+KEY _100,_100,ret
+WAIT _15000
+SCREEN "../results/slow-uknc-tsspd-5.png"
+KEY _100,_100,ret
+WAIT _15000
+SCREEN "../results/slow-uknc-tsspd-6.png"
+KEY _100,_100,ret
+WAIT _15000
+SCREEN "../results/slow-uknc-tsspd-7.png"
+KEY _100,_100,ret
+WAIT _15000
+SCREEN "../results/slow-uknc-tsspd-8.png"
+EXIT

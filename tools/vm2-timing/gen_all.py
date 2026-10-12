@@ -44,28 +44,29 @@ def operand(mi, reg):
 
 def forms():
     out = []
+    # Приёмник #n - это (PC)+: команда пишет в слово за своим кодом. Код
+    # стенд не пишет никогда, так что программа от этого не портится; без
+    # своего шаблона форма бралась от (R)+, где нет выборки кода следующей
+    # команды за этим словом
     for op, code in DOUBLE.items():
         for si in range(12):
             for di in range(12):
-                if di == 8: continue
                 out.append(dict(name='%s %s,%s' % (op, MODES[si][0], MODES[di][0]),
                                 kind='double', op=code, src=si, dst=di))
     for op, code in SINGLE.items():
         for di in range(12):
-            if di == 8 and op not in ('TST', 'TSTB', 'MTPS'): continue
             out.append(dict(name='%s %s' % (op, MODES[di][0]), kind='single', op=code, dst=di))
     for op, code in EIS.items():
         for si in range(12):
             out.append(dict(name='%s %s,R4' % (op, MODES[si][0]), kind='eis', eis=op, op=code, src=si))
     for di in range(12):
-        if di == 8: continue
         out.append(dict(name='XOR R,%s' % MODES[di][0], kind='xor', dst=di))
     for cond, code, taken in (('BR', 0o000400, 1), ('BNE', 0o001000, 1), ('BEQ', 0o001400, 0),
                               ('BCS', 0o103400, 1), ('BCC', 0o103000, 0), ('BPL', 0o100000, 1)):
         out.append(dict(name='%s %s' % (cond, 'taken' if taken else 'not'), kind='branch', op=code))
-    for mode in ('@#a', 'X(R)', '@X(R)', '@(R)+', 'a'):
+    for mode in ('@#a', 'X(R)', '@X(R)', '@(R)+', 'a', '(PC)', '(R)', '(R)+', '-(R)'):
         out.append(dict(name='JMP ' + mode, kind='jmp', mode=mode))
-    for mode in ('@#a', 'X(R)', '@X(R)', '@(R)+', 'a'):
+    for mode in ('@#a', 'X(R)', '@X(R)', '@(R)+', 'a', '(PC)', '(R)', '(R)+', '-(R)'):
         out.append(dict(name='JSR PC,' + mode, kind='jsr', mode=mode))
     out.append(dict(name='RTS PC', kind='rts'))
     out.append(dict(name='RTI', kind='rti'))
@@ -157,6 +158,11 @@ def build_case(p, f):
             p.ins(0o012704, 0 if f['eis'] == 'DIV' else 0o077777)
             p.ins(0o012705, 5 if f['eis'] == 'DIV' else 0)
             p.ins(0o000261)
+        if kind in ('jmp', 'jsr') and f['mode'] in ('(R)', '(R)+', '-(R)'):
+            # R3 - на команду сразу за переходом: MOV #,R3 (4 байта), SEC,
+            # переход (2); у -(R) - на слово дальше
+            p.ins(0o012703, p.a + 8 + (2 if f['mode'] == '-(R)' else 0))
+            p.ins(0o000261)
         copies.append(p.a)
         if kind == 'double':
             ms, rs, ks = operand(f['src'], 1); md, rd, kd = operand(f['dst'], 2)
@@ -200,6 +206,10 @@ def build_case(p, f):
                 p.tw(p.a)
             elif m == 'a':                # относительный, X(PC) = 0
                 p.ins(base | 0o67, 0)
+            elif m == '(PC)':             # на слово за собой - следующую копию
+                p.ins(base | 0o17)
+            elif m in ('(R)', '(R)+', '-(R)'):  # R3 поставлен перед копией
+                p.ins(base | {'(R)': 0o13, '(R)+': 0o23, '-(R)': 0o43}[m])
         elif kind == 'rts':
             p.ins(0o000207); p.tw(p.a)
         elif kind in ('rti', 'rtt'):

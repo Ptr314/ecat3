@@ -59,7 +59,7 @@ void K1801VM1Core::write_byte(uint32_t address, uint8_t value)
 {
     emulator_device->write_mem(address, value);
     if (emulator_device->bus_timeout()) m_abort = true;
-    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, true, false, emulator_device->last_reply(), emulator_device->last_wait());
+    if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, true, false, emulator_device->last_reply(), emulator_device->last_wait(), true);
     else bus_cycle(address, true);
 }
 
@@ -318,7 +318,7 @@ emulator::Result k1801vm1::load_state(const StateReader &r)
             m_timing->m_kind2 = (uint8_t)(kind < 3 ? kind : 0);
             unsigned int flags = Vm1BusTiming::F2_PREV_DATA_FREE;
             r.u("timing_flags", flags);
-            m_timing->m_flags2 = (uint8_t)(flags & 3);
+            m_timing->m_flags2 = (uint8_t)(flags & 7);
         }
         m_timing->state_restored();
     }

@@ -35,8 +35,10 @@ KEY _100,_300,down
 WAIT _500
 KEY _100,_300,down
 WAIT _500
+# Тест идёт в ОЗУ ПП, а ПП с памятью за 031 вдвое медленнее ЦП: меню
+# возвращается секунд через шесть
 KEY _100,_100,ret
-WAIT _5000
+WAIT _9000
 LOG pp-timer.events
 SCREEN "../results/slow-uknc-tape-plug-on.png"
 

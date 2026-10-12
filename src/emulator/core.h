@@ -448,6 +448,13 @@ class WaitSource
 public:
     virtual ~WaitSource() {}
     virtual unsigned int wait_states(unsigned int address, bool write, unsigned int offset) = 0;
+    //The same with what kind of cycle it is, for a memory that times them apart
+    //(the УК-НЦ plane 0 writes a byte in one access and a word in two, and the
+    //write half of a read-modify-write is shorter than a write of its own).
+    //Only timing = vm2 tells more than WAIT_WRITE; the default ignores the rest
+    enum { WAIT_WRITE = 1, WAIT_BYTE = 2, WAIT_RMW = 4 };
+    virtual unsigned int wait_cycle(unsigned int address, unsigned int flags, unsigned int offset)
+        { return wait_states(address, (flags & WAIT_WRITE) != 0, offset); }
 };
 
 class AddressableDevice: public ComputerDevice
