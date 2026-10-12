@@ -1,0 +1,47 @@
+# УК-НЦ: тесты Patron JSR v1.1 и IRQ v1.2 - время переходов, подпрограмм,
+# ловушек и прерываний в ЦП.
+#
+# JSR печатает такты на SOB, циклы с прерыванием и без, IOT, TRAP и JSR по
+# всем режимам. IRQ считает, сколько раз за 20 мс выполняются RESET, NOP,
+# RTI, IOT, TRAP и связки с ними. На настоящей машине (литера 7,
+# 1515ХМ1-031, снимал Alex_K, zx-pk.ru тема 14702): RESET 153, MOV R2,(R3)
+# 6231, «Loop +Interrupt» 853 и 848 на двух платах. Эмулятор: RESET держит
+# INIT 1042 такта, запрос, поднятый во время команды, берётся после
+# следующей (tools/uknc-timing/README.md, раздел о прерываниях). Без этого
+# «Loop +Interrupt» вкладывался сам в себя («Overrun»).
+#
+# На запрос частоты JSR отвечаем 8013 кГц, IRQ ничего не спрашивает. Диск -
+# tests/files/uknc-timing/timing.dsk (make_disk.py). Перед снимком оба
+# процессора останавливаются, чтобы следующая программа началась в том же
+# эмулированном моменте при любой загрузке хоста
+# @timeout 300
+
+MACHINE "uknc/UKNC.cfg"
+WAIT _12000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+WAIT _15000
+
+# Программа DAY спрашивает дату, ВК оставляет предложенную
+KEY _100,_100,ret
+WAIT _18000
+
+COMMAND fdd1.load("../files/uknc-timing/timing.dsk")
+WAIT _500
+TYPE "RU MZ1:JSR\n"
+WAIT _3000
+TYPE "8013\n"
+WAIT _30000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-patron-jsr.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
+
+TYPE "RU MZ1:IRQ\n"
+WAIT _30000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-patron-irq.png"
+EXIT

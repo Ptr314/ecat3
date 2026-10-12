@@ -9,6 +9,12 @@
 # INC (R0) 40.3. Модель памяти и её подбор - tools/uknc-timing/README.md.
 #
 # Диск - tests/files/uknc-timing/timing.dsk (make_disk.py).
+#
+# SCREEN ждёт кадр от потока отрисовки, и то, что идёт после него, попадало
+# бы в момент, зависящий от загрузки хоста: следующую страницу TSSPD меряет
+# сразу после нажатия, и её числа дрожали на единицу. Поэтому перед каждым
+# снимком оба процессора останавливаются (ПП работает в своём домене и
+# без этого считал бы дальше), а после пускаются снова
 # @timeout 400
 
 MACHINE "uknc/UKNC.cfg"
@@ -26,26 +32,58 @@ COMMAND fdd1.load("../files/uknc-timing/timing.dsk")
 WAIT _500
 TYPE "RU MZ1:TSSPD\n"
 WAIT _15000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
 SCREEN "../results/slow-uknc-tsspd-1.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
 KEY _100,_100,ret
 WAIT _15000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
 SCREEN "../results/slow-uknc-tsspd-2.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
 KEY _100,_100,ret
 WAIT _15000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
 SCREEN "../results/slow-uknc-tsspd-3.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
 KEY _100,_100,ret
 WAIT _15000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
 SCREEN "../results/slow-uknc-tsspd-4.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
 KEY _100,_100,ret
 WAIT _15000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
 SCREEN "../results/slow-uknc-tsspd-5.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
 KEY _100,_100,ret
 WAIT _15000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
 SCREEN "../results/slow-uknc-tsspd-6.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
 KEY _100,_100,ret
 WAIT _15000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
 SCREEN "../results/slow-uknc-tsspd-7.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
 KEY _100,_100,ret
 WAIT _15000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
 SCREEN "../results/slow-uknc-tsspd-8.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
 EXIT

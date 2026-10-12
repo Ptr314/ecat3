@@ -124,6 +124,9 @@ public:
     virtual emulator::Result load_config(SystemData *sd) override;
     virtual void reset(bool cold) override;
     virtual unsigned int execute() override;
+    // execute() lets the cycles of a processor held by ~dclo go before it
+    // looks at the debugger's stop
+    bool frozen() const override { return !m_held_in_reset && m_debug == DEBUG_STOPPED; }
 
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;

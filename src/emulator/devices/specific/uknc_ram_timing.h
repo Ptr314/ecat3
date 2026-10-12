@@ -15,8 +15,8 @@
 // the tables of Patron's tests; tools/uknc-timing has the bench and the fit):
 //
 // - a cycle starts on a point of the controller's grid (`grid`, 640 ns: eight
-//   points of the 12.5 MHz scan), the first one at or after the strobe and
-//   after the previous cycle of the same processor is over;
+//   points of the 12.5 MHz scan), the first one at least `setup` after the
+//   strobe and after the previous cycle of the same processor is over;
 // - RPLY comes `reply` after that point (`reply_write` for a write);
 // - the cycle keeps the memory for `read`, `write` or `write_byte`, and for
 //   `rmw_write` / `rmw_write_byte` when the write is the second half of a
@@ -24,7 +24,7 @@
 //   is eight bits wide, so a word of the peripheral processor takes two
 //   accesses and a byte one: its read is 3.2 us, a word write 2.56, a byte
 //   write 1.92, in a read-modify-write too. The central processor has planes
-//   1 and 2 side by side, a word is one access: a read 0.96 us, a write 1.92,
+//   1 and 2 side by side, a word is one access: a read 0.96 us, a write 2.24,
 //   the write of a read-modify-write 0.64 - the row is open already.
 //
 // Each processor has its own device: the measurements show no contention
@@ -57,13 +57,17 @@ private:
     unsigned int m_rmw_write_byte = 0;
     unsigned int m_late = 0;
     unsigned int m_drift = 0;
+    unsigned int m_setup = 0;
 
     unsigned int m_period = 0;      // processor clock, ps
+    uint32_t m_grid_ps = 1;         // the grid with its drift, ps
     uint64_t m_pos = 0;             // clocks counted
     uint64_t m_busy = 0;            // the memory is free from this moment, ps
+    uint64_t m_last = 0;            // a point of the grid not after m_busy, ps
     uint64_t m_cycles = 0;          // cycles timed, for scripts
 
     unsigned int answer(unsigned int flags, unsigned int offset);
+    uint64_t grid_floor(uint64_t t) const;
 
 public:
     UKNCRamTiming(InterfaceManager *im, EmulatorConfigDevice *cd);

@@ -1293,7 +1293,25 @@ void Emulator::timer_proc(uint64_t time_ticks)
                 //session steps, inspects and starts the CPU again. The delays
                 //stay frozen, which is the honest behaviour - they are counted
                 //in emulated time and that is what has stopped
-                d.norm += 10ull * d.scale;
+                //
+                //When every processor is stopped, all the domains move by the
+                //same amount, to the end of the slice: stepping them in turns
+                //shifted them against each other by an amount that depended on
+                //how long the host took meanwhile, and two processors resumed
+                //from a script (stop, SCREEN, run) interleaved differently from
+                //run to run - TSSPD's numbers on the УК-НЦ moved by a count
+                //"Stopped" is what execute() does, not the debugger's flag: a
+                //К1801ВМ1 held by ~dclo spends cycles while stopped, and moving
+                //it with the others would make time crawl instead of stand
+                bool all_stopped = true;
+                for (const ClockDomain &o : domains)
+                    if (!o.cpu->frozen()) { all_stopped = false; break; }
+                if (all_stopped) {
+                    const uint64_t step = target - d.norm;
+                    for (ClockDomain &o : domains) o.norm += step;
+                } else {
+                    d.norm += 10ull * d.scale;
+                }
 
                 if (script) script->tick(clock_counter);
             }

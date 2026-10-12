@@ -1,8 +1,8 @@
-# Часть X: то, что основной генератор не раскладывает подряд, и вход в
-# прерывание. JMP/JSR (R)+ с R3 по копиям выполняются дважды каждая (переход
-# на себя, потом на следующую). Прерывания: MOV R0,@#маркер, по которому
-# стенд даёт импульс EVNT (вектор 100) или поднимает VIRQ (вектор 340 с
-# циклом IAKO); обработчик - RTI.
+# Часть X: вход в прерывание, которое основной генератор не раскладывает
+# подряд: MOV R0,@#маркер, по которому стенд даёт импульс EVNT (вектор 100)
+# или поднимает VIRQ (вектор 340 с циклом IAKO); обработчик - RTI.
+# JMP/JSR (R)+ здесь больше не снимаются: переход на себя давал в шаблоне
+# лишнее чтение, их снимает gen_all.py.
 import json
 COPIES = 8
 FILL = 0o070000
@@ -25,16 +25,6 @@ def preamble(r3=0):
     ins(0o012706, 0o077000)
     ins(0o106427, 0o000000)                           # MTPS #0: прерывания разрешены
     return fix
-for name, word in (('JMP (R)+', 0o000123), ('JSR PC,(R)+', 0o004723)):
-    start = a
-    flow = []
-    fix = preamble()
-    copies = []
-    for k in range(COPIES):
-        copies.append(a); w(word)
-    mem[fix >> 1] = copies[0]
-    for c in copies: flow += [c, c]
-    cases.append(dict(name=name, kind='twice', start=start, copies=copies, end=a, flow=list(flow)))
 for name, marker, vec in (('IRQ', 0o177704, 0o100), ('VIRQ', 0o177706, 0o340)):
     start = a
     flow = []

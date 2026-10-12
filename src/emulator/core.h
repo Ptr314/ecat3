@@ -797,6 +797,11 @@ public:
     emulator::Result load_config(SystemData *sd) override;
     virtual unsigned int execute() = 0;
 
+    //True when execute() will return 0, i.e. the processor's emulated time
+    //stands still: stopped by the debugger. A processor that spends cycles
+    //even while stopped (a К1801ВМ1 held down by ~dclo) says false then
+    virtual bool frozen() const { return m_debug == DEBUG_STOPPED; }
+
     //A device that takes the bus away from the processor (the ВТ57 fetching a
     //character row for the ВГ75) calls hold() with the length of the transfer.
     //execute() then hands those cycles back to Emulator::timer_proc() instead

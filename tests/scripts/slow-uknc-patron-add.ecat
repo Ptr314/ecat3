@@ -1,0 +1,34 @@
+# УК-НЦ: тест Patron ADD v1.1 - время в ЦП команды ADD по всем сочетаниям
+# режимов адресации источника и приёмника, в тактах (CLC).
+# На настоящей машине (литера 7, 1515ХМ1-031) таблицы снимал Alex_K
+# (zx-pk.ru, тема 14702; таблица MOV - tools/uknc-timing/patron.py).
+# Эмулятор с моделью памяти uknc-ram-timing расходится с машиной на 1-3
+# такта, сильнее всего на формах с двумя чтениями данных
+# (tools/uknc-timing/README.md); тест сторожит, чтобы числа не уехали тихо.
+#
+# На запрос частоты отвечаем 8013 кГц, как на машине. Диск -
+# tests/files/uknc-timing/timing.dsk (make_disk.py). Перед снимком оба
+# процессора останавливаются: SCREEN ждёт поток отрисовки
+# @timeout 500
+
+MACHINE "uknc/UKNC.cfg"
+WAIT _12000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+WAIT _15000
+
+# Программа DAY спрашивает дату, ВК оставляет предложенную
+KEY _100,_100,ret
+WAIT _18000
+
+COMMAND fdd1.load("../files/uknc-timing/timing.dsk")
+WAIT _500
+TYPE "RU MZ1:ADD\n"
+WAIT _3000
+TYPE "8013\n"
+WAIT _170000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-patron-add.png"
+EXIT

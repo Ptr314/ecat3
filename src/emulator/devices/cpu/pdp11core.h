@@ -113,6 +113,14 @@ protected:
     // 177716, и резидент винчестера так сообщает центральному, что перенос
     // окончен: подставляет свой адрес в вектор 024 и дёргает линию
     bool is_aclo;
+    // ВМ2: какие из запросов IRQ2, IRQ3, VIRQ (разряды 0, 1, 2) были на
+    // прошлом опросе. Запрос, появившийся за время команды, кристалл
+    // замечает только при опросе после следующей: модель cpu11 даёт
+    // выполниться ещё одной команде после той, чья запись подняла VIRQ или
+    // EVNT. Тест JSR (Patron) включает прерывание передатчика канала и
+    // ждёт, что SOB за этой командой выполнится, - иначе цикл вкладывается
+    // сам в себя без счёта
+    uint8_t m_irq_seen = 0;
 
     // Set by a failed bus access; aborts the current instruction and
     // turns into a trap through vector 4 once it unwinds.
@@ -247,6 +255,7 @@ public:
         bool     is_halt_req;
         bool     halt_pin;
         bool     is_aclo;
+        uint8_t  irq_seen;
         bool     abort;
         bool     no_trace;
         bool     no_poll;

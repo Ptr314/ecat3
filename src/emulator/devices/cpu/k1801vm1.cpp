@@ -238,6 +238,7 @@ void k1801vm1::save_state(StateWriter &w)
     w.u("virq_vector", s.virq_vector);
     w.b("irq2", s.is_irq2);
     w.b("irq3", s.is_irq3);
+    w.u("irq_seen", s.irq_seen);
     w.b("halt_req", s.is_halt_req);
     w.b("halt_pin", s.halt_pin);
     w.b("aclo", s.is_aclo);
@@ -293,6 +294,8 @@ emulator::Result k1801vm1::load_state(const StateReader &r)
     r.u("virq_vector", s.virq_vector);
     r.b("irq2", s.is_irq2);
     r.b("irq3", s.is_irq3);
+    uint32_t seen = s.irq_seen;
+    if (r.u("irq_seen", seen)) s.irq_seen = (uint8_t)seen;
     r.b("halt_req", s.is_halt_req);
     r.b("halt_pin", s.halt_pin);
     r.b("aclo", s.is_aclo);

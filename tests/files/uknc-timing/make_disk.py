@@ -1,5 +1,5 @@
 # Диск RT-11 с тестами времени команд УК-НЦ: TSSPD v0.1i (Titus) и тесты
-# Patron (MOV, MOVB, CMP, ADD, OP1, JSR) из темы zx-pk.ru 14702. Образ
+# Patron (MOV, MOVB, CMP, ADD, OP1, JSR, IRQ v1.2) из темы zx-pk.ru 14702. Образ
 # обрезан по последнему занятому блоку: эмулятор дополняет его нулями до
 # размера дискеты.
 #
@@ -7,7 +7,7 @@
 import os, struct
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-FILES = ['TSSPD.SAV', 'MOV.SAV', 'MOVB.SAV', 'CMP.SAV', 'ADD.SAV', 'OP1.SAV', 'JSR.SAV']
+FILES = ['TSSPD.SAV', 'MOV.SAV', 'MOVB.SAV', 'CMP.SAV', 'ADD.SAV', 'OP1.SAV', 'JSR.SAV', 'IRQ.SAV']
 TOTAL = 1600                    # блоков на дискете МХ: 80 дорожек, 2 стороны
 R50 = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ$.%0123456789'
 

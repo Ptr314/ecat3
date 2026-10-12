@@ -35,10 +35,22 @@ emulator::Result UKNCRamTiming::load_config(SystemData *sd)
     m_rmw_write_byte = read_confg_value(cd, "rmw_write_byte", false, byte_given ? m_write_byte : m_rmw_write);
     m_late = read_confg_value(cd, "late", false, (unsigned int)0);
     m_drift = read_confg_value(cd, "drift", false, (unsigned int)0);
+    m_setup = read_confg_value(cd, "setup", false, (unsigned int)0);
     if (m_grid == 0) m_grid = 1;
     m_phase %= m_grid;
     m_period = m_system_clock ? (unsigned int)((1000000000000ull + m_system_clock / 2) / m_system_clock) : 0;
+    const uint64_t g = (uint64_t)m_grid * PS * (1000000 + m_drift) / 1000000;
+    m_grid_ps = (g == 0) ? 1 : (g > 0x7FFFFFFFull ? 0x7FFFFFFFu : (uint32_t)g);
+    m_last = grid_floor(m_busy);
     return emulator::Result::ok();
+}
+
+// Точка сетки не позже t (или первая, если t раньше фазы)
+uint64_t UKNCRamTiming::grid_floor(uint64_t t) const
+{
+    const uint64_t phase = (uint64_t)m_phase * PS;
+    if (t <= phase) return phase;
+    return (t - phase) / m_grid_ps * m_grid_ps + phase;
 }
 
 void UKNCRamTiming::reset(bool cold)
@@ -47,6 +59,7 @@ void UKNCRamTiming::reset(bool cold)
     if (cold) {
         m_pos = 0;
         m_busy = 0;
+        m_last = grid_floor(0);
     }
 }
 
@@ -58,18 +71,31 @@ void UKNCRamTiming::clock(unsigned int counter)
 // offset - строб (DIN или DOUT) в тактах процессора от точки, до которой
 // устройство дотактовано; ответ - такты от строба до RPLY. RPLY приходит
 // чуть позже точки сетки, поэтому процессор видит его на следующем своём
-// такте и тогда, когда точка ровно на такте
+// такте и тогда, когда точка ровно на такте.
+//
+// Вызывается на каждый цикл шины обоих процессоров, поэтому делит в 32
+// разрядах: до первой точки сетки считается от m_last, точки, на которой
+// начался прошлый цикл, а это от силы несколько микросекунд. 64-разрядное
+// деление (в 32-разрядной сборке - вызов __udivdi3) остаётся для долгой
+// паузы без обращений к памяти
 unsigned int UKNCRamTiming::answer(unsigned int flags, unsigned int offset)
 {
     if (m_period == 0) return 0;
-    const uint64_t grid = m_grid * PS * (1000000 + m_drift) / 1000000;
-    const uint64_t phase = m_phase * PS;
     const uint64_t strobe = (m_pos + offset) * m_period;
-    const uint64_t from = (strobe > m_busy) ? strobe : m_busy;
-    // первая точка сетки не раньше from
-    uint64_t start = (from > phase) ? from - phase : 0;
-    start = (start + grid - 1) / grid * grid + phase;
-    if (start < from) start += grid;
+    // Строб берётся в точке сетки, которая не меньше чем на setup позже него
+    const uint64_t asked = strobe + (uint64_t)m_setup * PS;
+    const uint64_t from = (asked > m_busy) ? asked : m_busy;
+    // первая точка сетки не раньше from; m_last не позже m_busy, а значит и from
+    uint64_t start;
+    const uint64_t delta = from - m_last;
+    if (delta < 0x80000000ull) {
+        const uint32_t d = (uint32_t)delta;
+        start = m_last + (uint64_t)((d + m_grid_ps - 1) / m_grid_ps) * m_grid_ps;
+    } else {
+        start = grid_floor(from);
+        if (start < from) start += m_grid_ps;
+    }
+    m_last = start;
     unsigned int keep = m_read;
     if (flags & WAIT_WRITE) {
         const bool byte = (flags & WAIT_BYTE) != 0;
@@ -79,7 +105,8 @@ unsigned int UKNCRamTiming::answer(unsigned int flags, unsigned int offset)
     m_busy = start + (uint64_t)keep * PS;
     m_cycles++;
     const uint64_t rply = start + (uint64_t)((flags & WAIT_WRITE) ? m_reply_write : m_reply) * PS;
-    return (unsigned int)((rply - strobe) / m_period) + m_late;
+    const uint64_t wait = rply - strobe;
+    return (unsigned int)(wait < 0x100000000ull ? (uint32_t)wait / m_period : wait / m_period) + m_late;
 }
 
 unsigned int UKNCRamTiming::wait_states(MAYBE_UNUSED unsigned int address, bool write, unsigned int offset)
@@ -126,6 +153,7 @@ emulator::Result UKNCRamTiming::load_state(const StateReader &r)
     r.n64("pos", m_pos);
     r.n64("busy", m_busy);
     r.n64("cycles", m_cycles);
+    m_last = grid_floor(m_busy);
     return emulator::Result::ok();
 }
 

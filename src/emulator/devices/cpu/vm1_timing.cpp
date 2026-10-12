@@ -58,6 +58,13 @@ static const int VM2_EARLY_LIMIT = 3;
 // УК-НЦ (TSSPD «пропуск», MOV (R2),(R2)+ with R2 at the next opcode)
 static const int VM2_REFETCH_GAP = 17;
 static const int VM2_REFETCH_GAP2 = 3;
+// SOB that loops fetches its target this many clocks after the strobe of its
+// prefetch, not a fixed gap after its release: the microprogram decrements
+// the register and works out the target while the prefetch waits for the
+// memory. Static memory cannot tell the two apart (11 after the release is 15
+// after DIN); the УК-НЦ ЦП memory can - the chip model runs SOB R3,. in 28.5
+// clocks there, the gap after the release made it 34 (the machines: 30-31.5)
+static const int VM2_SOB_TARGET = 15;
 
 // The ВМ2 has two things to wait for, the bus and its microprogram, and runs
 // a cycle when both are ready. The tables are measured where the bus waits
@@ -222,6 +229,11 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
         for (unsigned int i = 0; i < n; i++) {
             const Step & s = steps[i];
             int64_t sync = (int64_t)t + (int64_t)s.gap * TICKS_PER_CLOCK;
+            if (form == F2_SOB_TAKEN && i == 1) {
+                sync = (int64_t)t + (int64_t)VM2_BUS_GAP[K_READ] * TICKS_PER_CLOCK;
+                const int64_t target = (int64_t)last_strobe + (int64_t)VM2_SOB_TARGET * TICKS_PER_CLOCK;
+                if (sync < target) sync = target;
+            }
             if (i == 0) {
                 sync = s0 + (int64_t)s.gap * TICKS_PER_CLOCK;
                 const int64_t bus = (int64_t)((m_flags2 & F2_LAST_DATA_READ) ? VM2_GAP_AFTER_DATA
@@ -269,7 +281,11 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
                     refetch = true;
                 }
             }
-            if (i == 0 && (m_flags2 & F2_REFETCH)) {
+            //An interrupt entry replaces the fetch of the next opcode, so it
+            //has nothing to fetch again; a first step that is no bus cycle
+            //has no address to fetch from
+            if (i == 0 && (m_flags2 & F2_REFETCH) && s.role != R_NONE
+                && form != F2_INTERRUPT && form != F2_INTERRUPT_VIRQ) {
                 //The opcode at the word before this one, then this word again,
                 //from the same memory
                 const uint32_t a = (address - 2) & 0xFFFF;

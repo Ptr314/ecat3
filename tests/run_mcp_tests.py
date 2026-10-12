@@ -300,6 +300,10 @@ def prepare(test):
 
         s = s.replace('"../files/', as_path_prefix(FILES_DIR))
         s = s.replace('"../results/', as_path_prefix(MCP_RESULTS_DIR))
+        # Промежуточный файл, который не должен попасть в сравнение (образ
+        # .hfe, сохранённый и загруженный обратно), сценарий кладёт в
+        # "../../tests/results/" - тоже от своего каталога
+        s = s.replace('"../../tests/', as_path_prefix(TESTS_DIR))
         commands.append(s)
 
     return machine, commands
@@ -371,7 +375,10 @@ def run_test(test, exe, env, extra_args):
     # "ok" сервер отвечает, когда команды ничего не напечатали
     if output.strip() == "ok":
         output = ""
-    if output and not output.endswith("\n"):
+    # Сервер склеивает строки через "\n" без завершающего: последняя пустая
+    # строка (нижняя строка экрана в display.text) даёт ответ, который уже
+    # кончается на "\n", и проверка по концу ответа её теряла
+    if output:
         output += "\n"
     with open(actual, "w", encoding="utf-8", newline="") as f:
         f.write(output)

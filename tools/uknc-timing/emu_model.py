@@ -35,7 +35,10 @@ SINGLE_OPS = [0o0050, 0o0051, 0o0052, 0o0053, 0o0054, 0o0055, 0o0056, 0o0057, 0o
 
 def spec(sp): return ((sp >> 3) & 7) * 2 + (1 if (sp & 7) == 7 else 0)
 
-def form2(w):
+def form2(w, taken=True):
+    if (w & 0o177000) == 0o077000: return F2_SOB_TAKEN if taken else F2_SOB_NOT
+    b = w & 0o177400
+    if (0o000400 <= b <= 0o003400) or (0o100000 <= b <= 0o103400): return F2_BR_TAKEN if taken else F2_BR_NOT
     if (w & 0o170000) == 0o070000 and ((w >> 9) & 7) <= 3:
         return F2_EIS + ((w >> 9) & 7) * 16 + spec(w & 0o77)
     di = DOUBLE_INDEX[w >> 12]
@@ -56,12 +59,14 @@ BUS_GAP = [3, 4, 4]
 GAP_AFTER_DATA = 7
 EARLY = 3
 REFETCH_GAP, REFETCH_GAP2 = 17, 3
+SOB_TARGET = 15
 
 class Mem:
     """UKNCRamTiming, времена в пс"""
     def __init__(self, period_ps, grid=640, phase=0, reply=320, reply_write=None, read=0, write=0,
-                 write_byte=None, rmw_write=None, rmw_write_byte=None, late=0):
-        self.p = period_ps; self.grid = grid * 1000; self.phase = phase * 1000
+                 write_byte=None, rmw_write=None, rmw_write_byte=None, late=0, setup=0, drift=0):
+        self.p = period_ps; self.grid = grid * 1000 * (1000000 + drift) // 1000000; self.phase = phase * 1000
+        self.setup = setup * 1000
         self.reply = reply * 1000; self.reply_write = (reply if reply_write is None else reply_write) * 1000
         self.read = read * 1000; self.write = write * 1000
         self.write_byte = (write if write_byte is None else write_byte) * 1000
@@ -70,7 +75,7 @@ class Mem:
         self.late = late; self.busy = 0
     def answer(self, write, byte, rmw, strobe_clk):
         strobe = strobe_clk * self.p
-        frm = max(strobe, self.busy)
+        frm = max(strobe + self.setup, self.busy)
         st = max(frm - self.phase, 0)
         st = -(-st // self.grid) * self.grid + self.phase
         if st < frm: st += self.grid
@@ -93,9 +98,10 @@ class Chain:
         d = -(-(rply - strobe) // TPC)
         d += d & 1
         return strobe + (d + RELEASE[K_READ if kind == K_READ else K_WRITE]) * TPC
-    def finish(self, w, writes_next=False):
-        """writes_next: команда пишет в слово своего следующего кода"""
-        form = form2(w)
+    def finish(self, w, writes_next=False, taken=True):
+        """writes_next: команда пишет в слово своего следующего кода;
+        taken: переход или SOB, условие которого выполнено"""
+        form = form2(w, taken)
         n = COUNT[form]
         if n == 0: return None
         steps = STEPS[FIRST[form]:FIRST[form] + n]
@@ -109,6 +115,9 @@ class Chain:
         pc_dest = form < F2_EIS and (form & 15) == 3
         for i, (kind, role, gap, so, r2w) in enumerate(steps):
             sync = t + gap * TPC
+            if form == F2_SOB_TAKEN and i == 1:
+                # выборка цели - от строба выборки наперёд, не от её отпускания
+                sync = max(t + BUS_GAP[K_READ] * TPC, last_strobe + SOB_TARGET * TPC)
             if i == 0:
                 sync = s0 + gap * TPC
                 bus = self.start + (GAP_AFTER_DATA if self.last_data_read else BUS_GAP[self.kind2]) * TPC
@@ -148,11 +157,11 @@ class Chain:
         self.refetch = refetch
         return max(self.s0, self.start)
 
-def period(w, mem, n1=50, n2=250, writes_next=False):
+def period(w, mem, n1=50, n2=250, writes_next=False, taken=True):
     c = Chain(mem)
     ends = []
     for i in range(n2):
-        e = c.finish(w, writes_next)
+        e = c.finish(w, writes_next, taken)
         if e is None: return None
         ends.append(e)
     return (ends[n2 - 1] - ends[n1 - 1]) / (n2 - n1) / TPC

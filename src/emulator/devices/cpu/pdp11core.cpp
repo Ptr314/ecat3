@@ -36,6 +36,11 @@ namespace {
     const unsigned int C_JUMP     = 5;
     const unsigned int C_IDLE     = 8;      // WAIT, idling until an interrupt
     const unsigned int C_RESET    = 30;     // INIT held on the bus
+    // ВМ2 держит INIT долго: на модели кристалла (cpu11, tools/vm2-timing)
+    // RESET идёт 1042 такта CLC от своей выборки до следующей, на УК-НЦ - около
+    // 1060 (тест IRQ Patron: 153 RESET за 20 мс при 8 МГц), у UKNCBTL 1073.
+    // Без выборки команды (12 тактов при reply_delay 5)
+    const unsigned int C_RESET_VM2 = 1030;
     // MUL/DIV/ASH/ASHC of the 1801VM2, internal work on top of reading the
     // instruction and its operand. From the timing tables of UKNCBTL (MUL 96,
     // DIV 128, ASH 41 + 8 a bit, ASHC 57 + 8 a bit for a register operand,
@@ -108,6 +113,7 @@ void pdp11core::reset()
     is_irq3 = false;
     is_halt_req = false;
     is_aclo = false;
+    m_irq_seen = 0;
     m_abort = false;
     m_no_trace = false;
     m_no_poll = false;
@@ -165,6 +171,7 @@ void pdp11core::get_latches(saved_latches &s) const
     s.is_halt_req  = is_halt_req;
     s.halt_pin     = halt_pin;
     s.is_aclo      = is_aclo;
+    s.irq_seen     = m_irq_seen;
     s.abort        = m_abort;
     s.no_trace     = m_no_trace;
     s.no_poll      = m_no_poll;
@@ -180,6 +187,7 @@ void pdp11core::set_latches(const saved_latches &s)
     is_halt_req    = s.is_halt_req;
     halt_pin       = s.halt_pin;
     is_aclo        = s.is_aclo;
+    m_irq_seen     = s.irq_seen;
     m_abort        = s.abort;
     m_no_trace     = s.no_trace;
     m_no_poll      = s.no_poll;
@@ -713,15 +721,24 @@ bool pdp11core::check_interrupts(unsigned int & cycles)
         is_halt_req = false;
     }
 
+    // У ВМ2 запрос берётся, только если он был и на прошлом опросе: тот,
+    // что встал за время последней команды, ждёт ещё одну (m_irq_seen).
+    // Принятый запрос снимает свой разряд и там: новый фронт той же линии
+    // (каналы УК-НЦ поднимают его сразу после подтверждения) - новый запрос,
+    // и ждёт так же
+    const uint8_t now = (uint8_t)((is_irq2 ? 1 : 0) | (is_irq3 ? 2 : 0) | (is_virq ? 4 : 0));
+    const uint8_t ready = has_console ? (uint8_t)(now & m_irq_seen) : now;
+    m_irq_seen = now;
     if ((context.PSW & PDP11::F_MASK) == 0 && !vm1_masked) {
-        if (is_irq2)      { is_irq2 = false; do_trap(PDP11::V_IRQ2); cycles += C_TRAP; return true; }
-        else if (is_irq3) { is_irq3 = false; do_trap(PDP11::V_IRQ3); cycles += C_TRAP; return true; }
+        if (ready & 1)      { is_irq2 = false; m_irq_seen &= (uint8_t)~1; do_trap(PDP11::V_IRQ2); cycles += C_TRAP; return true; }
+        else if (ready & 2) { is_irq3 = false; m_irq_seen &= (uint8_t)~2; do_trap(PDP11::V_IRQ3); cycles += C_TRAP; return true; }
         // Taking the request clears it: the line is read as a pulse. A device
         // with several sources on one wire therefore has to make a fresh edge
         // when the pending source changes, or only the first of a queue is ever
         // delivered - see UKNCChannels::update_irq()
-        else if (is_virq) {
+        else if (ready & 4) {
             is_virq = false;
+            m_irq_seen &= (uint8_t)~4;
             m_last_iako = true;
             const uint16_t vector = virq_vector;
             do_trap(vector);
@@ -1350,7 +1367,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         return true;
     case 0000005:                                       // RESET
         // INIT for the peripherals is driven by the emulator device
-        cycles += C_RESET;
+        cycles += has_console ? C_RESET_VM2 : C_RESET;
         on_bus_init();
         return true;
     case 0000006:                                       // RTT

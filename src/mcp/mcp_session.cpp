@@ -34,7 +34,9 @@ namespace {
         std::string s;
         for (size_t i = 0; i < lines.size(); i++)
         {
-            if (!s.empty()) s += "\n";
+            //By position, not by what is already there: an empty first
+            //line is a line too
+            if (i) s += "\n";
             s += lines[i];
         }
         return s;
