@@ -19,7 +19,11 @@ LOGDEFS _16,_8
 PRINT "=== Экран и карта после загрузки состояния ==="
 LOG display.resolution
 LOG mapper.map
+# Процессор стоит, пока ждём снимок экрана: иначе TYPE ниже попал бы в
+# момент, зависящий от хоста
+COMMAND cpu.stop()
 SCREEN "../results/state-bk-0010-01-restored.png"
+COMMAND cpu.run()
 
 PRINT "=== Программа, набранная до съемки состояния ==="
 LOG ram.value(_1000,_1017)

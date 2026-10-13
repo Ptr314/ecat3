@@ -184,6 +184,10 @@ private:
     VideoRecorder m_video;
     std::atomic<bool> m_video_from_screen;
     std::atomic<bool> m_video_locked;   //Frames come from the display's frame hook
+    //A script to be started by run(), before the first slice (arm_script()),
+    //and that it was: the frontend's start_script() then has nothing to do
+    std::atomic<bool> m_script_armed;
+    std::atomic<bool> m_script_started_by_run;
     //Samples of each audio output not yet mixed: the outputs may be clocked
     //by different processors and hand out their samples unevenly
     std::vector<std::vector<int16_t> > m_video_audio;
@@ -386,6 +390,16 @@ public:
     emulator::Result load_embedded_script();
     const MachineSource & machine_source() const { return m_source; }
     std::string script_machine() const;
+    //The loaded script is to start with the machine: run() starts it on the
+    //emulation thread after the reset (and the restore of a saved state),
+    //before the first instruction. Called before the machine is loaded; a
+    //script started by start_script() after run() would begin wherever the
+    //machine had got to meanwhile, which depends on the host - every WAIT,
+    //KEY and TYPE moved with it, and a test on two processors (TSSPD on the
+    //УК-НЦ) counted differently under load. false disarms it again
+    void arm_script(bool on);
+    //Starts the loaded script now, at the current emulated time; for a script
+    //that run() has already started it only reports that it did
     void start_script();
     void stop_script();
     bool script_active() const;

@@ -1301,6 +1301,9 @@ int main(int argc, char *argv[])
     }
     else
     {
+        //An explicit script starts with the machine, at its first clock (an
+        //embedded one is known only once the machine is loaded)
+        if (!o.script.empty()) emulator.arm_script(true);
         const std::string err = host.load_machine(config);
         if (!err.empty())
         {

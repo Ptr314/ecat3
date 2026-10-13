@@ -425,11 +425,17 @@ void MainWindow::showEvent(QShowEvent* event)
 
         startup_load = !cmdline_config.isEmpty();
         cmdline_starting = !script_file.isEmpty();
+        //The script starts with the machine, at its first clock: started
+        //after the load it would begin wherever the machine had got to
+        //meanwhile, which depends on the host (Emulator::arm_script())
+        e->arm_script(!script_file.isEmpty());
         load_config(first_config, false, script_file.isEmpty());
         cmdline_starting = false;
         startup_load = false;
         CreateScreenMenu();
 
+        //A machine that did not load never ran to start the script
+        if (!e->loaded) e->arm_script(false);
         if (!script_file.isEmpty()) start_script();
     }
 }

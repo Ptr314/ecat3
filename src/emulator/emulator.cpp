@@ -130,6 +130,8 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , m_calls_pending(false)
     , m_video_from_screen(false)
     , m_video_locked(false)
+    , m_script_armed(false)
+    , m_script_started_by_run(false)
     , settings(ini_file)
 {
 
@@ -922,8 +924,16 @@ std::string Emulator::script_machine() const
     return script?script->get_machine():std::string("");
 }
 
+void Emulator::arm_script(bool on)
+{
+    m_script_armed = on;
+    m_script_started_by_run = false;
+}
+
 void Emulator::start_script()
 {
+    m_script_armed = false;
+    if (m_script_started_by_run.exchange(false)) return;
     if (script) script->start(clock_counter);
 }
 
@@ -1077,6 +1087,13 @@ void Emulator::run()
                 set_machine_error(ex.what(), true);
                 m_running = false;
                 return;
+            }
+
+            //A script armed by the frontend starts at this very clock, not
+            //at whatever moment the frontend gets to call start_script()
+            if (m_script_armed.exchange(false) && script) {
+                script->start(clock_counter);
+                m_script_started_by_run = true;
             }
 
             m_ready = true;
