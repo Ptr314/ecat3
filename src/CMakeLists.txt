@@ -11,14 +11,18 @@ endif()
 # same file, so none of them can drift from the executable.
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../VERSION" ECAT_VERSION LIMIT_COUNT 1)
 string(STRIP "${ECAT_VERSION}" ECAT_VERSION)
-if(NOT ECAT_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+# A pre-release carries a suffix after the three numbers (4.3.2b1, 4.3.2-rc1).
+# project() takes numbers only, so it gets those; the whole string goes into
+# PROJECT_VERSION of globals.h through ECAT_VERSION.
+if(NOT ECAT_VERSION MATCHES "^([0-9]+\\.[0-9]+\\.[0-9]+)([-+.]?[0-9A-Za-z.]*)$")
     message(FATAL_ERROR "Cannot read the project version from ../VERSION: '${ECAT_VERSION}'")
 endif()
+set(ECAT_VERSION_NUMBER "${CMAKE_MATCH_1}")
 # Without this a version bump would not trigger a reconfigure, and the number
 # compiled into globals.h would stay behind the one the release scripts use.
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../VERSION")
 
-project(eCat3 VERSION ${ECAT_VERSION} LANGUAGES C CXX)
+project(eCat3 VERSION ${ECAT_VERSION_NUMBER} LANGUAGES C CXX)
 
 # Build variants. The windowed executable is what everyone gets by default;
 # the console one is a second target built from the same emulator sources and

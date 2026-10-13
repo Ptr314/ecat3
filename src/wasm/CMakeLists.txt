@@ -4,12 +4,14 @@ cmake_minimum_required(VERSION 3.21)
 # two never drift apart -- it ends up in globals.h through configure_file().
 file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION ECAT_VERSION LIMIT_COUNT 1)
 string(STRIP "${ECAT_VERSION}" ECAT_VERSION)
-if(NOT ECAT_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+# A pre-release suffix (4.3.2b1) is allowed, see ../CMakeLists.txt
+if(NOT ECAT_VERSION MATCHES "^([0-9]+\\.[0-9]+\\.[0-9]+)([-+.]?[0-9A-Za-z.]*)$")
     message(FATAL_ERROR "Cannot read the project version from ../../VERSION: '${ECAT_VERSION}'")
 endif()
+set(ECAT_VERSION_NUMBER "${CMAKE_MATCH_1}")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../VERSION)
 
-project(eCat3_wasm VERSION ${ECAT_VERSION} LANGUAGES C CXX)
+project(eCat3_wasm VERSION ${ECAT_VERSION_NUMBER} LANGUAGES C CXX)
 
 
 set(CMAKE_CXX_STANDARD 17)
