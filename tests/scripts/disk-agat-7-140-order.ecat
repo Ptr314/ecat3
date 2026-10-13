@@ -1,0 +1,24 @@
+# Агат-7: посекторные образы 140 Кб в порядке DOS 3.3 (.dsk, .do) и в порядке ProDOS (.po).
+#
+# Один и тот же выдуманный диск в .dsk и в .po (tests/files/make-agat-140-order.py) должен
+# дать дисководу одни и те же дорожки (fdd0.checksum). Сохраненные в .po и в .do и
+# загруженные обратно, дорожки не меняются: раз .po читается верно, значит, и пишется.
+# @timeout 30
+
+MACHINE "agat/Agat-7.cfg"
+LOGDEFS 8,16
+PRINT "=== .dsk ==="
+COMMAND fdd0.load("../files/agat-140-order.dsk")
+LOG fdd0.checksum
+PRINT "=== .po ==="
+COMMAND fdd0.load("../files/agat-140-order.po")
+LOG fdd0.checksum
+PRINT "=== Сохранен в .po ==="
+COMMAND fdd0.save("../../tests/results/disk-agat-7-140-order.po")
+COMMAND fdd0.load("../../tests/results/disk-agat-7-140-order.po")
+LOG fdd0.checksum
+PRINT "=== Сохранен в .do ==="
+COMMAND fdd0.save("../../tests/results/disk-agat-7-140-order.do")
+COMMAND fdd0.load("../../tests/results/disk-agat-7-140-order.do")
+LOG fdd0.checksum
+EXIT

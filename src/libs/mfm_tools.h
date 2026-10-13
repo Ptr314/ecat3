@@ -83,6 +83,12 @@ inline bool aim_is_desync(int code)
 typedef std::map<int, int> AgatAIMCodes[200];
 
 uint8_t * generate_mfm_agat_140(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[]);
+// Хранит ли посекторный образ 140 Кб сектора в порядке ProDOS: .po - всегда,
+// .dsk - если в этом порядке блок 2 начинается как каталог тома ProDOS;
+// остальные, .do в том числе, - в порядке DOS 3.3
+bool agat_140_prodos_order(const std::string &file_name, const uint8_t * image);
+// Образ 140 Кб из порядка DOS 3.3 в порядок ProDOS, дорожка за дорожкой
+void agat_140_dos_to_prodos(std::vector<uint8_t> & image);
 uint8_t * generate_mfm_agat_840(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes);
 uint8_t * load_aim_image(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes);
 

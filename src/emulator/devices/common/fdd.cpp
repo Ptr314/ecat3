@@ -977,7 +977,8 @@ emulator::Result FDD::save_image(const std::string &file_name)
     {
         std::string ext = dsk_tools::get_file_ext(file_name); // returns ".ext" lowercase
 
-        bool is_raw = (ext == ".dsk" || ext == ".gmd" || ext == ".cpm" || ext == ".img" || ext == ".bkd");
+        bool is_raw = (ext == ".dsk" || ext == ".do" || ext == ".po" || ext == ".gmd"
+            || ext == ".cpm" || ext == ".img" || ext == ".bkd");
 
         if (is_raw) {
             if (fdd_mode == FDD_MODE_AGAT_840) {
@@ -1000,6 +1001,8 @@ emulator::Result FDD::save_image(const std::string &file_name)
                 dsk_tools::BYTES raw_data;
                 const dsk_tools::Result decode_res = dsk_tools::decode_agat_140_image(raw_data, encoded_data, track_indexes[0].mfmtracksize);
                 if (decode_res) {
+                    // Сектора приходят в порядке DOS 3.3, а .po хранит их в порядке ProDOS
+                    if (ext == ".po") agat_140_dos_to_prodos(raw_data);
                     dsk_tools::UTF8_ofstream file(file_name, std::ios::binary);
                     if (file.is_open()){
                         file.write(reinterpret_cast<char*>(raw_data.data()), raw_data.size());

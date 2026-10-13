@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include "libs/mfm_tools.h"
 #include "dsk_tools/core.h"
+#include "libs/dsk_tools/src/utils.h"
 
 const uint8_t gcr62_encode_table[64] =
     {
@@ -26,6 +27,12 @@ const uint8_t gcr62_encode_table[64] =
 
 static const int agat_140_raw2logic[16] = {
     0, 7, 14, 6, 13, 5, 12, 4, 11, 3, 10, 2, 9, 1, 8, 15
+};
+
+// То же в порядке ProDOS, порядке образов .po: сектор файла для каждого
+// физического сектора дорожки
+static const int agat_140_raw2prodos[16] = {
+    0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15
 };
 
 
@@ -99,6 +106,28 @@ static const uint8_t prologue_address[] = {0xD5, 0xAA, 0x96};
 static const uint8_t prologue_data[]    = {0xD5, 0xAA, 0xAD};
 static const uint8_t epilogue[]         = {0xDE, 0xAA, 0xEB};
 
+bool agat_140_prodos_order(const std::string &file_name, const uint8_t * image)
+{
+    const std::string ext = dsk_tools::get_file_ext(file_name);
+    if (ext == ".po") return true;
+    if (ext != ".dsk") return false;
+    // Блок 2 там, где его держит порядок ProDOS, - ключевой блок каталога тома:
+    // предыдущего блока нет, следующий - 3, тип хранения F
+    const uint8_t * block = image + 2 * 512;
+    return block[0] == 0 && block[1] == 0 && block[2] == 3 && block[3] == 0
+        && (block[4] & 0xF0) == 0xF0;
+}
+
+void agat_140_dos_to_prodos(std::vector<uint8_t> & image)
+{
+    const std::vector<uint8_t> dos(image);
+    const size_t track_bytes = 16 * 256;
+    for (size_t track = 0; track + track_bytes <= dos.size(); track += track_bytes)
+        for (int sector = 0; sector < 16; sector++)
+            memcpy(&image[track + agat_140_raw2prodos[sector] * 256],
+                &dos[track + agat_140_raw2logic[sector] * 256], 256);
+}
+
 uint8_t * generate_mfm_agat_140(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[])
 {
     int track_len = 6400;
@@ -109,6 +138,8 @@ uint8_t * generate_mfm_agat_140(const std::string &file_name, int & sides, int &
     disk_size = tracks * track_len;
     int image_size = tracks * sectors * sector_size;
     uint8_t * image = load_image(file_name, image_size);
+    const int * file_sector = agat_140_prodos_order(file_name, image)
+        ? agat_140_raw2prodos : agat_140_raw2logic;
 
     uint8_t * buffer = new uint8_t[disk_size];
     uint8_t * out = buffer;
@@ -127,7 +158,7 @@ uint8_t * generate_mfm_agat_140(const std::string &file_name, int & sides, int &
             memcpy(out, prologue_address, 3); out += 3;
             // Address
             uint8_t volume = 0xFE;
-            uint8_t sector_t = agat_140_raw2logic[sector];
+            uint8_t sector_t = file_sector[sector];
             uint8_t address_field[4] = {volume, track, sector, static_cast<uint8_t>(volume ^ track ^ sector)};
             code44(address_field, 4, encoded_address);
             memcpy(out, encoded_address, 8); out += 8;

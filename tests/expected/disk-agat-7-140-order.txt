@@ -1,0 +1,8 @@
+=== .dsk ===
+[fdd0.checksum] $CA2E4F7F
+=== .po ===
+[fdd0.checksum] $CA2E4F7F
+=== Сохранен в .po ===
+[fdd0.checksum] $CA2E4F7F
+=== Сохранен в .do ===
+[fdd0.checksum] $CA2E4F7F
