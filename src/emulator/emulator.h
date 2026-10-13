@@ -347,7 +347,7 @@ public:
     // down are positive) and its buttons as a mask, a negative mask keeping
     // them as they are. Reaches only a mouse that is plugged in.
     void mouse_event(int dx, int dy, int buttons);
-    bool has_mouse() const;             // A mouse is plugged in right now
+    bool has_mouse() const;             // A mouse is plugged in and a program has read it
 
     // The keyboard of the running machine, or nullptr between machines. Never
     // cache it: load_config() deletes the whole device manager.

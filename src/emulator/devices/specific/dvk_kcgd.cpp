@@ -338,17 +338,19 @@ unsigned int KCGD::get_value_word(unsigned int address)
     case 2: return (m_control & 0xFF) | (m_palette[(m_control >> 2) & 15] << 8);
     case 4:
         // Мышь - на AD08-AD11, ось выбирает разряд 2 управления
-        return (m_mouse != nullptr) ? (m_mouse->value((m_control >> 2) & 1) << 8) : 0;
+        return (m_mouse != nullptr) ? (m_mouse->read((m_control >> 2) & 1) << 8) : 0;
     default: return 0;
     }
 }
 
-// Отладчик и LOG: регистр данных - без REQA
+// Отладчик и LOG: регистр данных - без REQA, мышь - без отметки, что её читали
 unsigned KCGD::get_direct(unsigned address)
 {
     unsigned w;
     const unsigned a = address & 0177776;
     if (a >= REG_RA_BASE && a < REG_RA_END && (a & 2)) w = m_vram[m_ra] & 0xFFFF;
+    else if (a >= REG_RA_END && (a & 7) == 4)
+        w = (m_mouse != nullptr) ? (m_mouse->value((m_control >> 2) & 1) << 8) : 0;
     else w = get_value_word(a);
     return (address & 1) ? ((w >> 8) & 0xFF) : (w & 0xFF);
 }
@@ -533,6 +535,8 @@ KCGDMouse::KCGDMouse(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_dx(0)
     , m_dy(0)
     , m_buttons(0)
+    , m_on(true)
+    , m_used(false)
 {
     m_clocked = true;
     device_class = "mouse";
@@ -547,13 +551,34 @@ emulator::Result KCGDMouse::load_config(SystemData *sd)
     const unsigned us = read_confg_value(cd, "step_us", false, (unsigned int)4000);
     m_period = (unsigned)((uint64_t)m_system_clock * us / 1000000);
     if (m_period == 0) m_period = 1;
+    // Мышь включена с пуска; кнопка на панели её выключает
+    m_on = read_confg_value(cd, "plugged", false, true);
+    m_icon = str_trim(cd->get_parameter("icon", false).value);
     return emulator::Result::ok();
+}
+
+DeviceOptions KCGDMouse::get_device_options()
+{
+    return { mouse_switch_option(0, m_icon, m_on) };
+}
+
+// Поток эмуляции. Выключенная мышь ничего не держит: ни шагов, ни кнопок;
+// счётчики остаются, где были
+void KCGDMouse::set_device_option(unsigned option_id, unsigned value_id)
+{
+    if (option_id != 0) return;
+    m_on = (value_id != 0);
+    m_dx = 0;
+    m_dy = 0;
+    m_buttons = 0;
 }
 
 void KCGDMouse::reset(bool cold)
 {
     ComputerDevice::reset(cold);
     if (cold) { m_x = m_y = 0; m_ticks = 0; }
+    // Программа, которая читала мышь, кончилась: щелчок снова просто щелчок
+    m_used = false;
 }
 
 void KCGDMouse::add_pending(std::atomic<int> &axis, int delta)
@@ -569,6 +594,7 @@ void KCGDMouse::add_pending(std::atomic<int> &axis, int delta)
 
 void KCGDMouse::move(int dx, int dy, int buttons)
 {
+    if (!m_on) return;
     if (buttons >= 0) m_buttons = static_cast<unsigned>(buttons) & 3;
     if (dx != 0) add_pending(m_dx, dx);
     if (dy != 0) add_pending(m_dy, dy);
@@ -595,6 +621,12 @@ unsigned KCGDMouse::value(unsigned axis) const
     return (m_y & 7) | ((buttons & 2) ? 010 : 0);
 }
 
+unsigned KCGDMouse::read(unsigned axis)
+{
+    m_used = true;
+    return value(axis);
+}
+
 std::vector<DeviceFieldInfo> KCGDMouse::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
@@ -602,6 +634,8 @@ std::vector<DeviceFieldInfo> KCGDMouse::get_device_fields()
     r.push_back({"y",       "Счётчик Y (4 разряда, видны 3)", false});
     r.push_back({"buttons", "Кнопки: разряд 0 - левая, 1 - правая", false});
     r.push_back({"pending", "Шаги, ещё не отданные счётчикам, по обеим осям", false});
+    r.push_back({"plugged", "1 - мышь включена кнопкой на панели", false});
+    r.push_back({"used",    "1 - КЦГД читал 167774 после сброса (щелчок захватит указатель)", false});
     return r;
 }
 
@@ -616,6 +650,8 @@ bool KCGDMouse::get_field(const std::string &field, unsigned int from, unsigned 
         out.values.push_back(static_cast<unsigned>((x < 0 ? -x : x) + (y < 0 ? -y : y)));
         return true;
     }
+    if (field == "plugged") { out.values.push_back(m_on ? 1 : 0); return true; }
+    if (field == "used")    { out.values.push_back(m_used ? 1 : 0); return true; }
     out.numeric = false;
     return ComputerDevice::get_field(field, from, to, out);
 }

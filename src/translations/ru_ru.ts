@@ -226,7 +226,7 @@
         <translation>Нерректная точка останова</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+171"/>
+        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+176"/>
         <source>Unknown timing</source>
         <translation>Неизвестный способ расчета времени</translation>
     </message>
@@ -283,6 +283,7 @@
         <location line="+54"/>
         <location filename="../emulator/devices/specific/smk512.cpp" line="+71"/>
         <location filename="../emulator/devices/specific/a16m.cpp" line="+71"/>
+        <location filename="../emulator/devices/specific/uknc_mouse.cpp" line="+35"/>
         <source>Incorrect parameters for</source>
         <translation>Неправильно указаны параметры для</translation>
     </message>
@@ -424,6 +425,11 @@
         <location line="-9"/>
         <source>Volume, % (100 = 1.5 V full scale)</source>
         <translation>Громкость, % (100 = шкала 1.5 В)</translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/common/mouse.cpp" line="+284"/>
+        <source>Mouse at start-up</source>
+        <translation>Мышь при запуске</translation>
     </message>
 </context>
 <context>
@@ -780,9 +786,22 @@
         <translation>Нет</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/mouse.cpp" line="+205"/>
+        <location filename="../emulator/devices/common/mouse.cpp" line="-79"/>
+        <location line="+66"/>
         <source>Mouse</source>
         <translation>Мышь</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+14"/>
+        <source>Mouse unplugged</source>
+        <translation>Мышь выключена</translation>
+    </message>
+    <message>
+        <location line="-13"/>
+        <location line="+14"/>
+        <source>Mouse plugged</source>
+        <translation>Мышь включена</translation>
     </message>
     <message>
         <location filename="../emulator/devices/common/ay8910.cpp" line="+229"/>
@@ -1110,7 +1129,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+251"/>
+        <location filename="../emulator/emulator.cpp" line="+255"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -1940,7 +1959,7 @@
 <context>
     <name>KCGDDisplay</name>
     <message>
-        <location line="+486"/>
+        <location line="+510"/>
         <source>KCGD device is expected</source>
         <translation>Ожидается устройство КЦГД</translation>
     </message>
@@ -1976,7 +1995,7 @@
 <context>
     <name>Keyboard</name>
     <message>
-        <location filename="../emulator/devices/common/keyboard.cpp" line="+63"/>
+        <location filename="../emulator/devices/common/keyboard.cpp" line="+215"/>
         <source>Error reading remap file</source>
         <translation>Ошибка чтения файла переназначения клавиш</translation>
     </message>
@@ -1986,19 +2005,22 @@
         <translation>Неверная строка в файле переназначения клавиш</translation>
     </message>
     <message>
+        <location line="-157"/>
         <source>Error reading key group file</source>
         <translation>Ошибка чтения файла групп клавиш</translation>
     </message>
     <message>
+        <location line="+27"/>
         <source>Key group file entry is incorrect</source>
         <translation>Неверная клавиша в файле групп клавиш</translation>
     </message>
     <message>
+        <location line="+672"/>
         <source>Command &apos;host&apos; expects a key name and 0 or 1</source>
         <translation>Команде &apos;host&apos; нужны имя клавиши и 0 или 1</translation>
     </message>
     <message>
-        <location line="+357"/>
+        <location line="-163"/>
         <source>This keyboard type has no native key table support</source>
         <translation>Этот тип клавиатуры не поддерживает нативную таблицу клавиш</translation>
     </message>
@@ -2150,7 +2172,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1453"/>
+        <location filename="../mainwindow.cpp" line="+1465"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2207,14 +2229,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-713"/>
-        <location line="+1694"/>
+        <location filename="../mainwindow.cpp" line="-719"/>
+        <location line="+1700"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1423"/>
+        <location filename="../mainwindow.cpp" line="-1429"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -2260,14 +2282,14 @@
     <message>
         <location filename="../mainwindow.cpp" line="-493"/>
         <location line="+47"/>
-        <location line="+1333"/>
+        <location line="+1339"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1448"/>
+        <location line="-1454"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2294,9 +2316,9 @@
         <translation type="vanished">Все файлы (*.*)</translation>
     </message>
     <message>
-        <location line="-114"/>
-        <location line="+70"/>
-        <location line="+1065"/>
+        <location line="-120"/>
+        <location line="+76"/>
+        <location line="+1071"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+200"/>
@@ -2311,7 +2333,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2318"/>
+        <location line="-2324"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2387,7 +2409,7 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+603"/>
+        <location line="+609"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
@@ -2404,7 +2426,7 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1211"/>
+        <location line="-1217"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -2417,7 +2439,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+71"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1692"/>
+        <location filename="../mainwindow.cpp" line="+1698"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -2427,15 +2449,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1670"/>
-        <location line="+1163"/>
+        <location line="-1676"/>
+        <location line="+1169"/>
         <location line="+378"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1652"/>
+        <location line="-1658"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2471,7 +2493,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1491"/>
+        <location line="+1497"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -2502,7 +2524,7 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1670"/>
+        <location line="-1676"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
@@ -2548,7 +2570,7 @@
         <translation>Кинескоп</translation>
     </message>
     <message>
-        <location line="+761"/>
+        <location line="+767"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>
     </message>
@@ -2971,7 +2993,7 @@
 <context>
     <name>Mouse</name>
     <message>
-        <location filename="../emulator/devices/common/mouse.cpp" line="-147"/>
+        <location filename="../emulator/devices/common/mouse.cpp" line="-230"/>
         <location line="+15"/>
         <source>Incorrect value of a parameter</source>
         <translation>Неверное значение параметра</translation>
@@ -4072,7 +4094,7 @@
         <translation>Неподдерживаемый тип диска CP/M</translation>
     </message>
     <message>
-        <location line="+579"/>
+        <location line="+583"/>
         <source>user number out of range</source>
         <translation>User # выходит за допустимые пределы</translation>
     </message>

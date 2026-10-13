@@ -98,6 +98,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/a16m.h emulator/devices/specific/a16m.cpp
     emulator/devices/specific/uknc_timer.h emulator/devices/specific/uknc_timer.cpp
     emulator/devices/specific/uknc_keyboard.h emulator/devices/specific/uknc_keyboard.cpp
+    emulator/devices/specific/uknc_mouse.h emulator/devices/specific/uknc_mouse.cpp
     emulator/devices/specific/ms7004.h emulator/devices/specific/ms7004.cpp
     emulator/devices/specific/dvk_ksm_display.h emulator/devices/specific/dvk_ksm_display.cpp
     emulator/devices/specific/dvk_ie15.h emulator/devices/specific/dvk_ie15.cpp

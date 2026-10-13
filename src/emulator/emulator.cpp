@@ -87,6 +87,7 @@
 #include "emulator/devices/specific/a16m.h"
 #include "emulator/devices/specific/uknc_timer.h"
 #include "emulator/devices/specific/uknc_keyboard.h"
+#include "emulator/devices/specific/uknc_mouse.h"
 #include "emulator/devices/specific/ms7004.h"
 #include "emulator/devices/specific/dvk_ksm_display.h"
 #include "emulator/devices/specific/dvk_ie15.h"
@@ -1770,7 +1771,7 @@ void Emulator::mouse_event(int dx, int dy, int buttons)
 bool Emulator::has_mouse() const
 {
     for (size_t i = 0; i < mice.size(); i++)
-        if (mice[i]->mouse_plugged()) return true;
+        if (mice[i]->mouse_plugged() && mice[i]->mouse_used()) return true;
     return false;
 }
 
@@ -1974,6 +1975,7 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("a16m", create_a16m);
     dm->register_device("uknc-timer", create_uknc_timer);
     dm->register_device("uknc-keyboard", create_uknc_keyboard);
+    dm->register_device("uknc-mouse", create_uknc_mouse);
     dm->register_device("ms7004", create_ms7004);
     dm->register_device("ksm-display", create_ksm_display);
     dm->register_device("ie15", create_ie15_terminal);

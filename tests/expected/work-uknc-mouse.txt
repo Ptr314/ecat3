@@ -1,0 +1,25 @@
+=== Пуск: включена, не читана ===
+[mouse.plugged] &000001
+[mouse.used] &000000
+[mouse.value] &000000: &000000
+[mouse.used] &000000
+=== Выключена ===
+[mouse.plugged] &000000
+[mouse.pending] &000000
+[ppu-mapper.value16] &177400: &177777
+[mouse.reads] &000000
+=== Включена: регистр ===
+[mouse.plugged] &000001
+[mouse.pending] &000113
+[ppu-mapper.value16] &177400: &005576
+[mouse.used] &000001
+[ppu-mapper.value16] &177400: &000416
+[ppu-mapper.value16] &177400: &000400
+[mouse.last] &000400
+[mouse.pending] &000000
+[ppu-mapper.value16] &177400: &000001
+=== MOUTST ===
+[mouse.pending] &000000
+=== MOUTST читает мышь; сброс снимает отметку ===
+[mouse.used] &000001
+[mouse.used] &000000

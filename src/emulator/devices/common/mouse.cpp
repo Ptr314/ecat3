@@ -265,6 +265,30 @@ bool Mouse::get_field(const std::string &field, unsigned int from, unsigned int 
     return PluggableDevice::get_field(field, from, to, out);
 }
 
+DeviceOption mouse_switch_option(unsigned id, const std::string &icon, bool on)
+{
+    return {
+        id, DEVICE_OPTION_TOGGLE, QT_TRANSLATE_NOOP("DeviceOptions", "Mouse"), icon,
+        {
+            {0, QT_TRANSLATE_NOOP("DeviceOptions", "Mouse unplugged")},
+            {1, QT_TRANSLATE_NOOP("DeviceOptions", "Mouse plugged")}
+        },
+        static_cast<unsigned>(on ? 1 : 0)
+    };
+}
+
+ConfigField mouse_switch_field()
+{
+    ConfigField f;
+    f.name = "plugged";
+    f.title = QT_TRANSLATE_NOOP("ConfigFields", "Mouse at start-up");
+    f.type = CONFIG_FIELD_CHOICE;
+    f.def = "1";
+    f.values.push_back({"0", QT_TRANSLATE_NOOP("DeviceOptions", "Mouse unplugged")});
+    f.values.push_back({"1", QT_TRANSLATE_NOOP("DeviceOptions", "Mouse plugged")});
+    return f;
+}
+
 ComputerDevice * create_mouse(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new Mouse(im, cd);

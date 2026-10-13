@@ -1,0 +1,103 @@
+# УК-НЦ: мышь, слово 177400 ПП (github.com/Ptr314/ecat3/issues/62).
+#
+# Машина стартует с включённой мышью, но щелчок в окне захватывает указатель,
+# только когда программа прочла регистр (mouse.used; ни RT-11, ни отладочное
+# чтение value его не ставят, а сброс снимает). Выключенная кнопкой на панели
+# мышь на 177400 не отвечает: чтение через диспетчер даёт 177777, MOUSE
+# ничего не копит. Включённая отдаёт
+# смещение с прошлого чтения: X в разрядах 1-7 вправо, Y в 9-15 вверх, правая
+# кнопка - разряд 0, левая - 8. Больше 63 за чтение не отдаётся, остаток ждёт
+# следующего: MOUSE 70,-5 с левой кнопкой - 005576 (X 63, Y 5), затем 000416
+# (X 7), затем 000400. Шаги убывают только чтениями, так что WAITFOR
+# mouse.pending здесь не годится.
+#
+# Потом - тест MOUTST с диска автора протокола (tests/files/uknc-mouse,
+# make_disk.py): указатель от середины (320,144) уходит вправо и вверх, с
+# левой кнопкой оставляя зелёные точки на каждом чтении, с правой - красные;
+# пробел возвращает его в середину (виден после следующего шага мыши).
+# Перед снимками оба процессора стоят
+# @timeout 300
+
+MACHINE "uknc/UKNC.cfg"
+LOGDEFS _16,_8
+WAIT _12000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+WAIT _15000
+# Программа DAY спрашивает дату, ВК оставляет предложенную
+KEY _100,_100,ret
+WAIT _18000
+
+PRINT "=== Пуск: включена, не читана ==="
+LOG mouse.plugged
+LOG mouse.used
+LOG mouse.value
+LOG mouse.used
+
+PRINT "=== Выключена ==="
+COMMAND mouse.option(0,0)
+LOG mouse.plugged
+MOUSE _5,_5,1
+LOG mouse.pending
+LOG ppu-mapper.value16(177400)
+LOG mouse.reads
+
+PRINT "=== Включена: регистр ==="
+COMMAND mouse.option(0,1)
+LOG mouse.plugged
+MOUSE _70,-_5,1
+WAIT _10
+LOG mouse.pending
+LOG ppu-mapper.value16(177400)
+LOG mouse.used
+LOG ppu-mapper.value16(177400)
+LOG ppu-mapper.value16(177400)
+LOG mouse.last
+LOG mouse.pending
+MOUSE _0,_0,2
+WAIT _10
+LOG ppu-mapper.value16(177400)
+MOUSE _0,_0,0
+WAIT _10
+
+PRINT "=== MOUTST ==="
+COMMAND fdd1.load("../files/uknc-mouse/mouse.dsk")
+WAIT _500
+TYPE "RU MZ1:MOUTST\n"
+WAIT _5000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/work-uknc-mouse-start.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
+
+MOUSE _100,-_40,1
+WAIT _1000
+LOG mouse.pending
+MOUSE _0,_0,0
+WAIT _200
+MOUSE -_50,_80,2
+WAIT _1000
+MOUSE _0,_0,0
+WAIT _200
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/work-uknc-mouse-moved.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
+
+KEY _100,_100,space
+WAIT _500
+# Указатель перерисовывается только по движению
+MOUSE _1,_0
+WAIT _500
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/work-uknc-mouse-center.png"
+
+PRINT "=== MOUTST читает мышь; сброс снимает отметку ==="
+LOG mouse.used
+COMMAND mouse.reset()
+LOG mouse.used
+EXIT

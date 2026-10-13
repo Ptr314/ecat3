@@ -18,10 +18,21 @@ public:
     virtual ~HostMouse() = default;
     // Movement in steps, right and down; a negative mask keeps the buttons
     virtual void move(int dx, int dy, int buttons) = 0;
-    // Whether the machine has it plugged in now (the window captures the
-    // pointer only then)
+    // Whether the machine has it plugged in now
     virtual bool mouse_plugged() const = 0;
+    // Whether a program has read it since the last reset. The window captures
+    // the pointer only for a mouse plugged in and used, so a click in a system
+    // that does not know about the mouse stays a click. A mouse on a port that
+    // every program reads anyway (the БК's 177714) cannot tell and says yes
+    virtual bool mouse_used() const { return true; }
 };
+
+// The toolbar switch of a mouse that has no socket of its own (УК-НЦ, КЦГД):
+// a button, pressed while the mouse is plugged in
+DeviceOption mouse_switch_option(unsigned id, const std::string &icon, bool on);
+// The same switch in the configuration editor: its position at start-up,
+// the parameter "plugged"
+ConfigField mouse_switch_field();
 
 // A mouse of the УВК-01 «Марсианка» kind. It has no counters: every step of
 // the ball (0.5 mm) sets a flip-flop of its direction, and the flip-flops

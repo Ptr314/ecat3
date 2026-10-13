@@ -154,7 +154,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+171"/>
+        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+176"/>
         <source>Unknown timing</source>
         <translation type="unfinished"></translation>
     </message>
@@ -203,6 +203,7 @@
         <location line="+54"/>
         <location filename="../emulator/devices/specific/smk512.cpp" line="+71"/>
         <location filename="../emulator/devices/specific/a16m.cpp" line="+71"/>
+        <location filename="../emulator/devices/specific/uknc_mouse.cpp" line="+35"/>
         <source>Incorrect parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -327,6 +328,11 @@
     <message>
         <location line="+1"/>
         <source>Drum 7 in the mix, % (0-400)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/common/mouse.cpp" line="+284"/>
+        <source>Mouse at start-up</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -652,8 +658,21 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/mouse.cpp" line="+205"/>
+        <location filename="../emulator/devices/common/mouse.cpp" line="-79"/>
+        <location line="+66"/>
         <source>Mouse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+14"/>
+        <source>Mouse unplugged</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-13"/>
+        <location line="+14"/>
+        <source>Mouse plugged</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -902,7 +921,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+251"/>
+        <location filename="../emulator/emulator.cpp" line="+255"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1585,7 +1604,7 @@
 <context>
     <name>KCGDDisplay</name>
     <message>
-        <location line="+486"/>
+        <location line="+510"/>
         <source>KCGD device is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1621,7 +1640,17 @@
 <context>
     <name>Keyboard</name>
     <message>
-        <location filename="../emulator/devices/common/keyboard.cpp" line="+63"/>
+        <location filename="../emulator/devices/common/keyboard.cpp" line="+73"/>
+        <source>Error reading key group file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>Key group file entry is incorrect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+115"/>
         <source>Error reading remap file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1631,7 +1660,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+357"/>
+        <location line="+379"/>
         <source>This keyboard type has no native key table support</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1648,6 +1677,11 @@
     <message>
         <location line="+54"/>
         <source>Unknown flag of a modifier in the key table</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+90"/>
+        <source>Command &apos;host&apos; expects a key name and 0 or 1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1770,7 +1804,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1453"/>
+        <location filename="../mainwindow.cpp" line="+1465"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1834,14 +1868,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1599"/>
-        <location line="+1694"/>
+        <location filename="../mainwindow.cpp" line="-1605"/>
+        <location line="+1700"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1423"/>
+        <location filename="../mainwindow.cpp" line="-1429"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1881,9 +1915,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-595"/>
-        <location line="+70"/>
-        <location line="+1065"/>
+        <location filename="../mainwindow.cpp" line="-601"/>
+        <location line="+76"/>
+        <location line="+1071"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+200"/>
@@ -1898,7 +1932,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2318"/>
+        <location line="-2324"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -1920,14 +1954,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1333"/>
+        <location line="+1339"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1448"/>
+        <location line="-1454"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -1987,14 +2021,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1163"/>
+        <location line="+1169"/>
         <location line="+378"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1652"/>
+        <location line="-1658"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2030,12 +2064,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1491"/>
+        <location line="+1497"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1467"/>
+        <location line="-1473"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2108,7 +2142,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+564"/>
+        <location line="+570"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
@@ -2560,7 +2594,7 @@
 <context>
     <name>Mouse</name>
     <message>
-        <location filename="../emulator/devices/common/mouse.cpp" line="-147"/>
+        <location filename="../emulator/devices/common/mouse.cpp" line="-230"/>
         <location line="+15"/>
         <source>Incorrect value of a parameter</source>
         <translation type="unfinished"></translation>
@@ -3532,7 +3566,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+579"/>
+        <location line="+583"/>
         <source>user number out of range</source>
         <translation type="unfinished"></translation>
     </message>

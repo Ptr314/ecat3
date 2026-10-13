@@ -5,10 +5,29 @@
 # управления (младший байт 167772): 0 - X и левая кнопка, 1 - Y и правая.
 # MOUSE 5,-3 с левой кнопкой: X = 5, Y = -3 (видно 5), в X горит кнопка.
 # Шаги идут не чаще одного за 4 мс, их дожидается WAITFOR.
+# Машина стартует с включённой мышью, но щелчок в окне захватывает указатель,
+# только когда КЦГД прочёл 167774 (mouse.used; отладочное чтение value его не
+# ставит, сброс снимает). Выключенная кнопкой на панели мышь не берёт ни
+# шагов, ни кнопок, счётчики стоят.
 # @timeout 60
 MACHINE "../../tests/files/dvk3-kcgd.ext"
 LOGDEFS _16,_8
 WAIT _1000
+PRINT "=== Пуск: включена, не читана ==="
+LOG mouse.plugged
+LOG mouse.used
+LOG kcgd.value(167774,167775)
+LOG mouse.used
+PRINT "=== Выключена ==="
+COMMAND mouse.option(0,0)
+LOG mouse.plugged
+MOUSE _5,-_3,1
+LOG mouse.pending
+WAIT _100
+LOG mouse.x
+LOG mouse.buttons
+COMMAND mouse.option(0,1)
+LOG mouse.plugged
 MOUSE _5,-_3,1
 WAITFOR mouse.pending == 0, _1000
 PRINT "=== Счётчики ==="
@@ -18,6 +37,7 @@ LOG mouse.buttons
 PRINT "=== 167774: X и левая кнопка ==="
 COMMAND kcgd.set(167772, 0)
 LOG kcgd.value16(167774)
+LOG mouse.used
 PRINT "=== 167774: Y и правая кнопка ==="
 COMMAND kcgd.set(167772, 4)
 LOG kcgd.value16(167774)
@@ -26,4 +46,7 @@ MOUSE _0,_0,0
 WAIT _10
 COMMAND kcgd.set(167772, 0)
 LOG kcgd.value16(167774)
+PRINT "=== Сброс снимает отметку ==="
+COMMAND mouse.reset()
+LOG mouse.used
 EXIT

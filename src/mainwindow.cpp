@@ -1048,9 +1048,15 @@ void MainWindow::UpdateToolbar()
 
                 QString option_tooltip = QCoreApplication::translate("DeviceOptions", opt.title.c_str());
 
-                //The picture comes with the machine; an option that names none, or
-                //names a file that is not there, gets the generic settings icon
+                //The picture comes with the machine, or else is one of the
+                //program's own icons by the same stem (mouse.png - :/icons/mouse);
+                //an option that names none, or nothing that is there, gets the
+                //generic settings icon
                 QString icon_path = opt.icon.empty()?QString():QString::fromStdString(find_file_location(sd, opt.icon));
+                if (icon_path.isEmpty() && !opt.icon.empty()) {
+                    QString own = ":/icons/" + QFileInfo(QString::fromStdString(opt.icon)).completeBaseName();
+                    if (QFile::exists(own)) icon_path = own;
+                }
                 if (icon_path.isEmpty()) icon_path = ":/icons/kcmsystem";
                 QIcon icon(icon_path);
                 icon.addPixmap(QPixmap(icon_path), QIcon::Disabled);

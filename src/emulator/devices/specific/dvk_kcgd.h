@@ -229,6 +229,13 @@ private:
     std::atomic<int> m_dx;
     std::atomic<int> m_dy;
     std::atomic<unsigned> m_buttons;
+    // Выключатель на панели инструментов: выключенная мышь стоит, кнопки
+    // отпущены, окно не захватывает указатель
+    std::atomic<bool> m_on;
+    // КЦГД читал 167774 после сброса: только тогда щелчок в окне захватывает
+    // указатель
+    std::atomic<bool> m_used;
+    std::string m_icon;
 
     static void add_pending(std::atomic<int> &axis, int delta);
 
@@ -238,11 +245,18 @@ public:
     void reset(bool cold) override;
     void clock(unsigned int counter) override;
 
+    DeviceOptions get_device_options() override;
+    void set_device_option(unsigned option_id, unsigned value_id) override;
+    ConfigFields get_config_fields() override { return { mouse_switch_field() }; }
+
     void move(int dx, int dy, int buttons) override;
-    bool mouse_plugged() const override { return true; }
+    bool mouse_plugged() const override { return m_on; }
+    bool mouse_used() const override { return m_used; }
 
     // Что видит КЦГД: 0 - X и кнопка 1, 1 - Y и кнопка 2, 4 разряда
     unsigned value(unsigned axis) const;
+    // То же для чтения процессором КЦГД: отмечает, что программа мышь читает
+    unsigned read(unsigned axis);
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

@@ -54,6 +54,7 @@
         FE30-FE37 -> channels[0014] mode=rw
         FE38-FE3F -> channels[001C] mode=rw
         FE58-FE5B -> fdc[0000] mode=rw
+        FF00-FF01 -> mouse[0000] mode=r routed
         FFC4-FFC5 -> fdc-jumpers[0000] mode=rw
         FFC0-FFC1 -> pp-kbd-state[0000] mode=rw
         FFC2-FFC3 -> pp-kbd-code[0000] mode=rw
