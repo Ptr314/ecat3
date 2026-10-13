@@ -252,15 +252,17 @@ emulator::Result FDD::load_image(const std::string &file_name)
         if (fdd_mode == FDD_MODE_LOGICAL)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "FDD device is working in a logical mode, no physical formats are supported")) + "}");
-        int expected_size = (ext == ".nib")?232960:286720;
+        // 35-40 дорожек: у .nib по 6656 байт, у .nic по 16 блоков из 512
+        const long long track_size = (ext == ".nib") ? 6656 : 16 * 512;
         long long actual_size = dsk_tools::utf8_file_size(file_name);
+        const long long file_tracks = actual_size / track_size;
 
-        if (actual_size == expected_size) {
+        if (actual_size % track_size == 0 && file_tracks >= 35 && file_tracks <= 40) {
             dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
             if (file.is_open()) {
                 sides = 1;
-                tracks = 35;
-                disk_size = expected_size;
+                tracks = (int)file_tracks;
+                disk_size = (int)actual_size;
                 physical_track_len = disk_size / tracks;
 
                 if (buffer != nullptr) delete [] buffer;

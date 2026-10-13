@@ -1,0 +1,29 @@
+# Агат-7: диск 140 Кб из 40 дорожек.
+#
+# Выдуманный диск из 40 дорожек (tests/files/make-agat-140-forty.py) открывается целиком:
+# его сумма (fdd0.checksum) не та, что у диска из его первых 35 дорожек
+# (agat-140-order.dsk). Сохраненный в .dsk, .po и .hfe и загруженный обратно, он
+# сохраняет все дорожки.
+# @timeout 30
+
+MACHINE "agat/Agat-7.cfg"
+LOGDEFS 8,16
+PRINT "=== 35 дорожек ==="
+COMMAND fdd0.load("../files/agat-140-order.dsk")
+LOG fdd0.checksum
+PRINT "=== 40 дорожек ==="
+COMMAND fdd0.load("../files/agat-140-forty.dsk")
+LOG fdd0.checksum
+PRINT "=== Сохранен в .dsk ==="
+COMMAND fdd0.save("../../tests/results/disk-agat-7-140-forty.dsk")
+COMMAND fdd0.load("../../tests/results/disk-agat-7-140-forty.dsk")
+LOG fdd0.checksum
+PRINT "=== Сохранен в .po ==="
+COMMAND fdd0.save("../../tests/results/disk-agat-7-140-forty.po")
+COMMAND fdd0.load("../../tests/results/disk-agat-7-140-forty.po")
+LOG fdd0.checksum
+PRINT "=== Сохранен в .hfe ==="
+COMMAND fdd0.save("../../tests/results/disk-agat-7-140-forty.hfe")
+COMMAND fdd0.load("../../tests/results/disk-agat-7-140-forty.hfe")
+LOG fdd0.checksum
+EXIT

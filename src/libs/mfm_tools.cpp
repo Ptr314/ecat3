@@ -3,6 +3,7 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: MFM functions, source
 
+#include <algorithm>
 #include <cstring>
 #include <stdexcept>
 #include "libs/mfm_tools.h"
@@ -132,7 +133,9 @@ uint8_t * generate_mfm_agat_140(const std::string &file_name, int & sides, int &
 {
     int track_len = 6400;
     sides = 1;
-    tracks = 35;
+    // 35-40 дорожек, сколько их в файле; за ними может быть хвост короче сектора
+    const long long file_size = dsk_tools::utf8_file_size(file_name);
+    tracks = (int)std::min(40LL, std::max(35LL, file_size / (16 * 256)));
     int sectors = 16;
     int sector_size = 256;
     disk_size = tracks * track_len;
