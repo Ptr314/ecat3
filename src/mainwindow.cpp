@@ -632,7 +632,7 @@ void MainWindow::CreateScreenMenu()
     mouse_speed_menu->setTitle(tr("Mouse speed"));
     mouse_speed_menu->clear();
     QActionGroup * speed_group = new QActionGroup(mouse_speed_menu);
-    static const int SPEEDS[] = {100, 50, 25, 12};
+    static const int SPEEDS[] = {200, 150, 100, 50, 25, 12};
     for (size_t i = 0; i < sizeof(SPEEDS) / sizeof(SPEEDS[0]); i++) {
         const int speed = SPEEDS[i];
         QAction * sa = mouse_speed_menu->addAction(

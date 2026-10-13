@@ -1455,7 +1455,7 @@ function renderDeviceOptions() {
 // Portions of movement are sent this often, as MOUSE_FLUSH_MS of the desktop
 const MOUSE_FLUSH_MS = 10;
 // The choices of the desktop menu "Mouse speed"; a setting of the host, not of a machine
-const MOUSE_SPEEDS = [100, 50, 25, 12];
+const MOUSE_SPEEDS = [200, 150, 100, 50, 25, 12];
 
 const mouse = {
     supported: false,
