@@ -121,3 +121,13 @@ void find_marks_ibm_fm(const uint8_t * data, size_t len, std::map<int, int> & ma
 // образах AIM. Чтение берёт сетку байтов заново от каждого синхробайта
 void agat_840_to_cells(const uint8_t * data, size_t len, const std::map<int, int> & marks, std::vector<uint8_t> & cells);
 void agat_840_from_cells(const std::vector<uint8_t> & cells, std::vector<uint8_t> & data, std::map<int, int> & marks);
+
+// Дорожка Агата 140 (Apple II GCR) в ячейках HFE. Привод хранит байты такими,
+// какими их читает контроллер: каждый уходит восемью разрядами, старшим вперёд,
+// а $FF - ещё и с двумя нулями. Защёлка контроллера их пропускает, а в щелях
+// они и есть 10-разрядные синхробайты, по которым контроллер входит в
+// синхронизм. Обратно ячейки читает dsk_tools::gcr_decode() - байты оборота
+void agat_140_to_cells(const uint8_t * data, size_t len, std::vector<uint8_t> & cells);
+// Дорожка байтов, доведённая до длины len: недостающие $FF встают в самую
+// длинную серию $FF - на размеченной дорожке это щель, и поля не разрываются
+void agat_140_fit_track(std::vector<uint8_t> & nibbles, size_t len);

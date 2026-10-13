@@ -1,0 +1,5 @@
+=== Диск ИКП ===
+[fdd0.checksum] $66568D08
+=== После .hfe ===
+[fdd0.checksum] $66568D08
+[fdd0.protected] $00

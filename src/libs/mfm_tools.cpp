@@ -526,3 +526,44 @@ void agat_840_from_cells(const std::vector<uint8_t> & cells, std::vector<uint8_t
         if (i < len) marks[(int)((i + 1) % len)] = AIM_CMD_DESYNC;
     }
 }
+
+//------------------------- Агат 140 в ячейках ------------------------------//
+
+void agat_140_to_cells(const uint8_t * data, size_t len, std::vector<uint8_t> & cells)
+{
+    std::vector<uint8_t> bits;
+    size_t count = 0;
+    auto put = [&](int bit) {
+        if ((count & 7) == 0) bits.push_back(0);
+        if (bit) bits.back() |= (uint8_t)(0x80 >> (count & 7));
+        count++;
+    };
+    for (size_t i = 0; i < len; i++) {
+        for (int b = 7; b >= 0; b--) put((data[i] >> b) & 1);
+        if (data[i] == 0xFF) {
+            put(0);
+            put(0);
+        }
+    }
+    dsk_tools::gcr_encode(bits.data(), count, cells);
+}
+
+void agat_140_fit_track(std::vector<uint8_t> & nibbles, size_t len)
+{
+    const size_t n = nibbles.size();
+    if (n >= len) return;
+    // Самая длинная серия $FF; если это та, что идёт через конец оборота, - в конец
+    size_t best = 0, at = n, run = 0;
+    for (size_t i = 0; i < n; i++) {
+        run = (nibbles[i] == 0xFF) ? run + 1 : 0;
+        if (run > best) {
+            best = run;
+            at = i + 1;
+        }
+    }
+    size_t head = 0, tail = 0;
+    while (head < n && nibbles[head] == 0xFF) head++;
+    while (tail < n && nibbles[n - 1 - tail] == 0xFF) tail++;
+    if (head + tail > best) at = n;
+    nibbles.insert(nibbles.begin() + (std::ptrdiff_t)at, len - n, 0xFF);
+}

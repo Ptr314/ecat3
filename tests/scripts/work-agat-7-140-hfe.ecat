@@ -1,0 +1,26 @@
+# Агат-7: диск 140 Кб в образе HFE (HxC Floppy Emulator, Gotek).
+#
+# Поставляемый диск ИКП сохраняется в .hfe и загружается обратно: дорожки
+# должны остаться те же (fdd0.checksum), а машина - загрузиться с них. В
+# ячейках разряд диска (4 мкс) - две ячейки, единица - смена потока во второй
+# из них, а каждый $FF получает ещё два нулевых разряда - синхробайты щелей;
+# при чтении защёлка контроллера их пропускает.
+#
+# Допуск на снимок, как у boot-agat-7: в меню ИКП мигает выделенная строка.
+# @pixels 800
+# @timeout 40
+
+MACHINE "agat/Agat-7.cfg"
+LOGDEFS 8,16
+PRINT "=== Диск ИКП ==="
+LOG fdd0.checksum
+COMMAND fdd0.save("../../tests/results/work-agat-7-140-hfe.hfe")
+COMMAND fdd0.load("../../tests/results/work-agat-7-140-hfe.hfe")
+PRINT "=== После .hfe ==="
+LOG fdd0.checksum
+LOG fdd0.protected
+
+RESET cold
+WAIT 9000
+SCREEN "../results/work-agat-7-140-hfe.png"
+EXIT
