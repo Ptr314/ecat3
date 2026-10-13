@@ -190,6 +190,8 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
     //The mouse of the machine takes the host mouse from the screen widget
     screen->installEventFilter(this);
     mouse_timer = new QTimer(this);
+    //A coarse timer on Windows ticks by the system's 15.6 ms
+    mouse_timer->setTimerType(Qt::PreciseTimer);
     connect(mouse_timer, &QTimer::timeout, this, [this]() { mouse_flush(false); });
 
     add_languages();
@@ -1207,10 +1209,12 @@ void MainWindow::keyReleaseEvent( QKeyEvent *event )
 
 //----------------------------- Machine mouse --------------------------------//
 
-//Portions of movement are sent this often: the machine takes a step no faster
-//than its polling anyway, and a recording gets a MOUSE line per portion rather
-//than one per host event
-#define MOUSE_FLUSH_MS 40
+//Portions of movement are sent this often, and a recording gets a MOUSE line
+//per portion rather than one per host event. The portion must be shorter than
+//the machine's polling: a program reading the mouse every frame (20 ms, the
+//УК-НЦ MOUTST) got nothing on every other read from 40 ms portions and twice
+//as much on the next, so its pointer moved in jerks and lagged by a portion
+#define MOUSE_FLUSH_MS 10
 
 //A step count in script syntax. The machine may count in octal, a movement is
 //written in decimal, so it carries the "_" mark; a minus goes in front of it
