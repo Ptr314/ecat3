@@ -664,6 +664,14 @@ bool pdp11core::check_interrupts(unsigned int & cycles)
 {
     if (vm3) return vm3_interrupts(cycles);
 
+    // У ВМ2 запрос берётся, только если он был и на прошлом опросе: тот,
+    // что встал за время последней команды, ждёт ещё одну (m_irq_seen).
+    // Опрос запоминается до аварии сети и пульта: вход по ним - тоже опрос,
+    // и запрос, видный на нём, на следующем уже не новый
+    const uint8_t now = (uint8_t)((is_irq2 ? 1 : 0) | (is_irq3 ? 2 : 0) | (is_virq ? 4 : 0));
+    const uint8_t ready = has_console ? (uint8_t)(now & m_irq_seen) : now;
+    m_irq_seen = now;
+
     // Разряд 10 PSW, который ставит вектор пультового исключения ВМ1,
     // запрещает все прерывания, кроме исключений самого процессора
     const bool vm1_masked = vm1_console && (context.PSW & 02000) != 0;
@@ -721,14 +729,9 @@ bool pdp11core::check_interrupts(unsigned int & cycles)
         is_halt_req = false;
     }
 
-    // У ВМ2 запрос берётся, только если он был и на прошлом опросе: тот,
-    // что встал за время последней команды, ждёт ещё одну (m_irq_seen).
-    // Принятый запрос снимает свой разряд и там: новый фронт той же линии
-    // (каналы УК-НЦ поднимают его сразу после подтверждения) - новый запрос,
-    // и ждёт так же
-    const uint8_t now = (uint8_t)((is_irq2 ? 1 : 0) | (is_irq3 ? 2 : 0) | (is_virq ? 4 : 0));
-    const uint8_t ready = has_console ? (uint8_t)(now & m_irq_seen) : now;
-    m_irq_seen = now;
+    // Принятый запрос снимает свой разряд и в m_irq_seen: новый фронт той же
+    // линии (каналы УК-НЦ поднимают его сразу после подтверждения) - новый
+    // запрос, и ждёт так же
     if ((context.PSW & PDP11::F_MASK) == 0 && !vm1_masked) {
         if (ready & 1)      { is_irq2 = false; m_irq_seen &= (uint8_t)~1; do_trap(PDP11::V_IRQ2); cycles += C_TRAP; return true; }
         else if (ready & 2) { is_irq3 = false; m_irq_seen &= (uint8_t)~2; do_trap(PDP11::V_IRQ3); cycles += C_TRAP; return true; }

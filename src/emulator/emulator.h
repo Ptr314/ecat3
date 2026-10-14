@@ -89,6 +89,13 @@ private:
     //The window presses and releases on the GUI thread, a restored state
     //empties the list on the emulation thread
     compat_mutex m_host_keys_mutex;
+    //Keys a recording has seen go down, as record_key() got them: a release
+    //a key group held back (hold mode) is written with the code and scan of
+    //its press. The keyboard knows the key only as it got it - a keypad key
+    //without the Keypad bit on a machine without a keypad - and a release
+    //under another code would leave the press held in the recording.
+    //GUI thread only, like record_key()
+    std::vector<HostKey> m_recorded_down;
 
     //Raised by the display at the end of each frame, waited for by the render thread
     compat_event m_frame_event;
@@ -190,10 +197,12 @@ private:
     VideoRecorder m_video;
     std::atomic<bool> m_video_from_screen;
     std::atomic<bool> m_video_locked;   //Frames come from the display's frame hook
-    //A script to be started by run(), before the first slice (arm_script()),
-    //and that it was: the frontend's start_script() then has nothing to do
-    std::atomic<bool> m_script_armed;
-    std::atomic<bool> m_script_started_by_run;
+    //A script to be started by run(), before the first slice (arm_script()):
+    //SCRIPT_NONE, SCRIPT_ARMED, SCRIPT_RUN (run() took it, the frontend's
+    //start_script() then has nothing to do). One state, changed by
+    //compare-exchange, so exactly one of the two threads starts the script
+    enum { SCRIPT_NONE = 0, SCRIPT_ARMED = 1, SCRIPT_RUN = 2 };
+    std::atomic<int> m_script_state;
     //Samples of each audio output not yet mixed: the outputs may be clocked
     //by different processors and hand out their samples unevenly
     std::vector<std::vector<int16_t> > m_video_audio;

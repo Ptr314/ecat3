@@ -291,7 +291,10 @@ void DVKDW::clock(unsigned int counter)
 // Сектор в регистре - с единицы, последний (16-й) пишется и как 0
 bool DVKDW::sector_offset(uint64_t &offset) const
 {
-    const unsigned int sector = ((m_sector & 037) + m_sectors - 1) % m_sectors;
+    //Only 0 wraps to the last sector; a number past the geometry is an error,
+    //not another sector
+    const unsigned int s = m_sector & 037;
+    const unsigned int sector = (s == 0) ? m_sectors - 1 : s - 1;
     if (!m_image.attached() || m_cyl >= m_cylinders || m_head >= m_heads || sector >= m_sectors)
         return false;
     offset = ((uint64_t)(m_cyl * m_heads + m_head) * m_sectors + sector) * HddImage::SECTOR_SIZE;

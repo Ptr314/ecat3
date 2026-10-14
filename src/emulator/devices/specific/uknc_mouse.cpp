@@ -40,11 +40,14 @@ emulator::Result UKNCMouse::load_config(SystemData *sd)
 }
 
 // Любой сброс: программа, которая читала мышь, кончилась, и щелчок снова
-// просто щелчок, пока новая её не прочтёт
+// просто щелчок, пока новая её не прочтёт. Шаги, набранные до сброса,
+// относились к ней же: следующая программа начинает с нуля
 void UKNCMouse::reset(bool cold)
 {
     AddressableDevice::reset(cold);
     m_used = false;
+    m_dx = 0;
+    m_dy = 0;
 }
 
 void UKNCMouse::add_pending(std::atomic<int> &axis, int delta)

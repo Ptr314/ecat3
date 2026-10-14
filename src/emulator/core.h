@@ -1032,20 +1032,22 @@ protected:
     void frame_complete()
     {
         m_frames_done.fetch_add(1, std::memory_order_release);
-        if (m_frame_event) m_frame_event->set();
+        compat_event * event = m_frame_event.load(std::memory_order_acquire);
+        if (event) event->set();
         if (m_frame_hook) m_frame_hook();
     }
 
 private:
     std::function<void()> m_frame_hook;
     std::atomic<unsigned> m_frames_done{0};
-    compat_event * m_frame_event = nullptr;
+    //Set by the render thread, read by the emulation thread
+    std::atomic<compat_event *> m_frame_event{nullptr};
 
 public:
     //Frames reported whole by frame_complete(): the render thread shows a
     //frame when this moves, woken by the event it set here
     unsigned frames_done() const { return m_frames_done.load(std::memory_order_acquire); }
-    void set_frame_event(compat_event * event) { m_frame_event = event; }
+    void set_frame_event(compat_event * event) { m_frame_event.store(event, std::memory_order_release); }
     //Whether the display reports its frames through frame_complete(). For one
     //that does not (no raster in the model: the Орион, the Ириша) the
     //emulator reports a frame every 20 ms of the machine's time, so that the

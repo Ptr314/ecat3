@@ -247,11 +247,13 @@ void DumpArea::editor_return_pressed()
     } catch (std::exception &) {
         return;
     }
-    //A word goes in low byte first, both in one pass of the emulation thread
+    //A word is one word write: a register that acts on a write (the DW data
+    //register, a TBUF) must see one access, not two byte halves
     e->invoke([&]() {
-        d->set_value(editor_address, value & 0xFF, true);
-        if (m_word && editor_address + 1 < data_size)
-            d->set_value(editor_address + 1, (value >> 8) & 0xFF, true);
+        if (m_word && (editor_address & 1) == 0 && editor_address + 1 < data_size)
+            d->set_value_word(editor_address, value & 0xFFFF, true);
+        else
+            d->set_value(editor_address, value & 0xFF, true);
     });
     update();
 }

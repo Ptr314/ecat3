@@ -9,14 +9,19 @@
 
 #include "emulator/core.h"
 #include "emulator/utils.h"
+#include "emulator/devices/cpu/k1801vm1.h"
 
 //A machine written in octal (radix = 8: the БК, the ДВК, the УК-НЦ) is shown in
 //octal, every other one in hex as before - also a machine whose files are
 //decimal, since its documents give addresses in hex. The machine's own radix,
-//not get_default_radix(), which a script's RADIX may have changed
+//not get_default_radix(), which a script's RADIX may have changed. A processor
+//goes by its own family: the i8080 of the КСМ terminal sits in an octal ДВК
+//but is an 8-bit machine with hex documents, its code is bytes, not words
 inline int view_base(ComputerDevice * d)
 {
-    return (d != nullptr && d->radix() == 8) ? 8 : 16;
+    if (d == nullptr) return 16;
+    if (dynamic_cast<CPU*>(d) != nullptr) return (dynamic_cast<k1801vm1*>(d) != nullptr) ? 8 : 16;
+    return (d->radix() == 8) ? 8 : 16;
 }
 
 inline QString fmt_num(unsigned int value, int base, int digits)

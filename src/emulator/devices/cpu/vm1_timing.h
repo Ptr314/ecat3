@@ -113,6 +113,9 @@ public:
         }
     }
     void discard() { m_count = 0; }
+    // A form without a template ran instead of the one a refetch was due
+    // for: the refetch must not fall on whatever timed form comes next
+    void drop_refetch() { m_flags2 &= (uint8_t)~F2_REFETCH; }
 
     // Times an executed form: the accesses recorded since the last finish(),
     // and the memory the next opcode will be prefetched from (at

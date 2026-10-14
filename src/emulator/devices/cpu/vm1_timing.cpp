@@ -224,8 +224,9 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
         bool refetch = false;               //and then written through a register
         bool reread = false;                //or through (PC): read again at once
         //The destination is (PC): the lowest four bits of a double or single
-        //operand form are the destination kind, (PC) is mode 1 with R7
-        const bool pc_dest = form < F2_EIS && (form & 15) == 3;
+        //operand form, and of XOR, are the destination kind, (PC) is mode 1
+        //with R7
+        const bool pc_dest = (form < F2_EIS && (form & 15) == 3) || form == F2_XOR + 3;
         for (unsigned int i = 0; i < n; i++) {
             const Step & s = steps[i];
             int64_t sync = (int64_t)t + (int64_t)s.gap * TICKS_PER_CLOCK;

@@ -131,8 +131,7 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , m_calls_pending(false)
     , m_video_from_screen(false)
     , m_video_locked(false)
-    , m_script_armed(false)
-    , m_script_started_by_run(false)
+    , m_script_state(SCRIPT_NONE)
     , settings(ini_file)
 {
 
@@ -901,6 +900,29 @@ void Emulator::record_key(unsigned int code, unsigned int native, bool press)
         native = 0;
         press = false;
     }
+    //Remember the press, so a held-back release can be written as its pair
+    const unsigned int plain = code & ~(unsigned int)EmuKey::Keypad;
+    size_t i = 0;
+    for (; i < m_recorded_down.size(); i++) {
+        //By the physical key when both have one ("@" may come up as "2")
+        if (native != 0 && m_recorded_down[i].scan != 0) {
+            if (m_recorded_down[i].scan == native) break;
+        } else if (((unsigned int)m_recorded_down[i].key & ~(unsigned int)EmuKey::Keypad) == plain) break;
+    }
+    if (press) {
+        if (i == m_recorded_down.size()) {
+            HostKey h;
+            h.scan = native;
+            h.key = (int)code;
+            m_recorded_down.push_back(h);
+        }
+    } else if (i < m_recorded_down.size()) {
+        if (native == 0) {
+            code = (unsigned int)m_recorded_down[i].key;
+            native = m_recorded_down[i].scan;
+        }
+        m_recorded_down.erase(m_recorded_down.begin() + i);
+    }
     //The key the machine got, not the one typed: a replay is not remapped
     recorder->key(keyboard ? keyboard->remap_key(code) : code, native, press, clock_counter);
 }
@@ -927,14 +949,18 @@ std::string Emulator::script_machine() const
 
 void Emulator::arm_script(bool on)
 {
-    m_script_armed = on;
-    m_script_started_by_run = false;
+    m_script_state = on ? SCRIPT_ARMED : SCRIPT_NONE;
 }
 
 void Emulator::start_script()
 {
-    m_script_armed = false;
-    if (m_script_started_by_run.exchange(false)) return;
+    //run() may be taking the armed script at this very moment: whoever moves
+    //the state away from SCRIPT_ARMED first starts it, the other does not
+    int state = SCRIPT_ARMED;
+    if (!m_script_state.compare_exchange_strong(state, SCRIPT_NONE)) {
+        m_script_state = SCRIPT_NONE;
+        if (state == SCRIPT_RUN) return;
+    }
     if (script) script->start(clock_counter);
 }
 
@@ -1092,10 +1118,9 @@ void Emulator::run()
 
             //A script armed by the frontend starts at this very clock, not
             //at whatever moment the frontend gets to call start_script()
-            if (m_script_armed.exchange(false) && script) {
+            int armed = SCRIPT_ARMED;
+            if (script && m_script_state.compare_exchange_strong(armed, SCRIPT_RUN))
                 script->start(clock_counter);
-                m_script_started_by_run = true;
-            }
 
             m_machine_frame_clock = clock_counter;
             m_ready = true;

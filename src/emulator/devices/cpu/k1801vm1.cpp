@@ -719,6 +719,7 @@ unsigned int k1801vm1::timed_cycles_vm2(unsigned int legacy, uint16_t pc)
         if (c >= 0) return (unsigned int)c;
     }
     m_timing->discard();
+    m_timing->drop_refetch();
     m_timing->idle(legacy);
     return legacy;
 }

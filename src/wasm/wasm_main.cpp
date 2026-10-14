@@ -673,7 +673,11 @@ int wasm_set_device_option(const char* device_name, int option_id, int value_id)
     if (!g_emulator || !g_emulator->loaded || g_emulator->dm == nullptr || device_name == nullptr) return -1;
     ComputerDevice * dev = g_emulator->dm->get_device_by_name(std::string(device_name), false);
     if (dev == nullptr) return -2;
-    dev->set_device_option(static_cast<unsigned>(option_id), static_cast<unsigned>(value_id));
+    //On the emulation thread, as on the desktop: an option may plug a device
+    //or change what the mapper routes (the УК-НЦ mouse)
+    g_emulator->invoke([&]() {
+        dev->set_device_option(static_cast<unsigned>(option_id), static_cast<unsigned>(value_id));
+    });
     return 0;
 }
 
