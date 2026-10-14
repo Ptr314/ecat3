@@ -1097,6 +1097,7 @@ void Emulator::run()
                 m_script_started_by_run = true;
             }
 
+            m_machine_frame_clock = clock_counter;
             m_ready = true;
 
 #if USE_QT_THREADING
@@ -1177,12 +1178,40 @@ void Emulator::run()
             //power this costs is already being spent
             timeBeginPeriod(1);
 #endif
-#if !USE_QT_THREADING
-            //Frames are due at fixed moments, not 20 ms after the previous one
-            //was done: the time a frame takes and the sleep overshoot no longer
-            //add up into a slower rate
-            auto next_frame = std::chrono::steady_clock::now();
+            //A display that reports the end of its frames (frame_complete():
+            //the БК, the УК-НЦ, the Агат, the ВГ75 machines) is shown as soon
+            //as a frame is whole. A free 50 Hz tick against the machine's own
+            //50.08 Hz used to come just before the frame as often as just
+            //after it: 18% of the УК-НЦ frames were never shown, and the
+            //others waited 12 ms on average (25 ms in one case of ten) - a
+            //lag the mouse made plain. The other displays, and every display
+            //of a stopped machine, keep the tick: frames due at fixed moments,
+            //not 20 ms after the previous one was done, so the time a frame
+            //takes and the sleep overshoot do not add up into a slower rate.
+            //The page works the same way: the canvas is put when the frame is
+            //whole, and the browser shows it with its next repaint
+            const int64_t TICK_US = 20000;
+            //A machine without frames for this long is shown by the tick
+            const int64_t FRAMES_LOST_US = 40000;
+            //A machine running faster than real time is not shown faster than this
+            const int64_t MIN_GAP_US = 8000;
+#if USE_QT_THREADING
+            QElapsedTimer clock;
+            clock.start();
+            auto now_us = [&clock]() -> int64_t { return clock.nsecsElapsed() / 1000; };
+#else
+            const auto start = std::chrono::steady_clock::now();
+            auto now_us = [start]() -> int64_t {
+                return std::chrono::duration_cast<std::chrono::microseconds>(
+                    std::chrono::steady_clock::now() - start).count();
+            };
 #endif
+            int64_t next_tick = now_us();
+            int64_t last_render = next_tick - TICK_US;
+            //Until the display reports a frame, the tick shows it from the start
+            int64_t last_frame = next_tick - FRAMES_LOST_US;
+            unsigned seen_frames = 0;
+            bool seen_valid = false;
             while (m_running) {
                 if (!m_ready) {
 #if USE_QT_THREADING
@@ -1192,25 +1221,46 @@ void Emulator::run()
 #endif
                     continue;
                 }
-#if USE_QT_THREADING
-                QElapsedTimer frameTimer;
-                frameTimer.start();
+                const int64_t now = now_us();
+                bool due = false;
+                //Not before m_ready: the emulation thread finds the display
+                //only while it sets the machine up
+                if (!seen_valid) display->set_frame_event(&m_frame_event);
+                const unsigned frames = display->frames_done();
+                if (!seen_valid) { seen_frames = frames; seen_valid = true; }
+                if (frames != seen_frames) {
+                    last_frame = now;
+                    if (now - last_render >= MIN_GAP_US) {
+                        seen_frames = frames;
+                        due = true;
+                    }
+                }
+                if (!due && now - last_frame >= FRAMES_LOST_US && now >= next_tick) {
+                    due = true;
+                    //A frame that came too late is not made up for with a
+                    //burst of quick ones: the schedule starts again from now
+                    next_tick += TICK_US;
+                    if (next_tick <= now) next_tick = now + TICK_US;
+                }
+                if (due) {
+                    render_screen();
+                    last_render = now;
+                }
 
-                render_screen();
-
-                qint64 elapsedMs = frameTimer.elapsed();
-                int delay = std::max(static_cast<qint64>(0), 20 - elapsedMs);
-                if (delay > 0) QThread::msleep(delay);
-#else
-                render_screen();
-
-                //~50 FPS. A frame that came too late is not made up for with a
-                //burst of quick ones: the schedule starts again from now
-                next_frame += std::chrono::milliseconds(20);
-                const auto now = std::chrono::steady_clock::now();
-                if (next_frame < now) next_frame = now;
-                std::this_thread::sleep_until(next_frame);
-#endif
+                //Asleep until the display reports a frame, or the tick, or the
+                //end of the gap a frame already reported waits for. Woken by an
+                //event, not by polling: Windows 11 may end Sleep(1) on its
+                //15.6 ms tick despite timeBeginPeriod(1) (it does not promise a
+                //fine timer to a process whose window is covered or hidden),
+                //and a 1 ms poll then showed the frame 8 ms late on average
+                int64_t wake = next_tick;
+                if (display->frames_done() != seen_frames)
+                    wake = last_render + MIN_GAP_US;
+                else if (last_frame + FRAMES_LOST_US > wake)
+                    wake = last_frame + FRAMES_LOST_US;
+                const int64_t wait_us = wake - now_us();
+                if (wait_us <= 0) continue;
+                m_frame_event.wait_ms(static_cast<unsigned int>((wait_us + 999) / 1000));
             }
 #ifdef _WIN32
             timeEndPeriod(1);
@@ -1349,6 +1399,20 @@ void Emulator::timer_proc(uint64_t time_ticks)
         //The master stood still for the whole slice: a WAITFOR or a SCREEN
         //would wait for an emulated millisecond that is not coming
         if (script && time_ticks > 0 && clock_counter == clock_before) script->tick_frozen(clock_counter);
+
+        //A display with no raster in the model gets a frame every 20 ms of the
+        //machine's time: the render thread then shows it on that schedule,
+        //woken at once, instead of on the host's tick. Checked once a slice,
+        //not on every instruction: the Орион and the Ириша left the list of
+        //clocked devices for that cost
+        if (display != nullptr && !display->own_frames()) {
+            const uint64_t period = clock_freq / 50;
+            if (clock_counter < m_machine_frame_clock) m_machine_frame_clock = clock_counter;
+            if (period > 0 && clock_counter - m_machine_frame_clock >= period) {
+                m_machine_frame_clock += (clock_counter - m_machine_frame_clock) / period * period;
+                display->machine_frame();
+            }
+        }
 
         //What a domain overshot the slice by is owed to the next one
         for (size_t i = 0; i < domains.size(); i++) domains[i].norm -= target;

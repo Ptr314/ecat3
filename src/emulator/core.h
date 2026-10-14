@@ -1029,12 +1029,30 @@ protected:
 
     //Called by a display at the end of the picture of every frame, on the
     //emulation thread and outside the surface lock
-    void frame_complete() { if (m_frame_hook) m_frame_hook(); }
+    void frame_complete()
+    {
+        m_frames_done.fetch_add(1, std::memory_order_release);
+        if (m_frame_event) m_frame_event->set();
+        if (m_frame_hook) m_frame_hook();
+    }
 
 private:
     std::function<void()> m_frame_hook;
+    std::atomic<unsigned> m_frames_done{0};
+    compat_event * m_frame_event = nullptr;
 
 public:
+    //Frames reported whole by frame_complete(): the render thread shows a
+    //frame when this moves, woken by the event it set here
+    unsigned frames_done() const { return m_frames_done.load(std::memory_order_acquire); }
+    void set_frame_event(compat_event * event) { m_frame_event = event; }
+    //Whether the display reports its frames through frame_complete(). For one
+    //that does not (no raster in the model: the Орион, the Ириша) the
+    //emulator reports a frame every 20 ms of the machine's time, so that the
+    //render thread shows it on the machine's schedule, not the host's tick
+    virtual bool own_frames() const { return false; }
+    //Called by the emulator for a display that has no frames of its own
+    void machine_frame() { frame_complete(); }
     bool was_updated;               //Means we need to send surface to screen
 
     //The frame rate of the machine as an exact fraction, for a display that

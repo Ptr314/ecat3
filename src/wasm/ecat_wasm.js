@@ -1448,12 +1448,13 @@ function renderDeviceOptions() {
 // The desktop grabs the host pointer for the mouse of the machine (see
 // MainWindow::eventFilter), the page locks it with the Pointer Lock API. A
 // click on the screen captures it, and the click itself is not given to the
-// machine. The movement goes over in portions, as on the desktop; Ctrl-Alt or
+// machine. The movement goes over with the event, as on the desktop; Ctrl-Alt or
 // the middle button give the pointer back, and so does Esc, which the browser
 // keeps to itself, and leaving the page.
 
-// Portions of movement are sent this often, as MOUSE_FLUSH_MS of the desktop
-const MOUSE_FLUSH_MS = 10;
+// This often the page checks that the mouse is still plugged in; the steps
+// themselves go over with each event (sent in portions, they lagged)
+const MOUSE_FLUSH_MS = 40;
 // The choices of the desktop menu "Mouse speed"; a setting of the host, not of a machine
 const MOUSE_SPEEDS = [200, 150, 100, 50, 25, 12];
 
@@ -1486,18 +1487,22 @@ function setupMouse(module) {
     const send = (dx, dy, buttons) =>
         module.ccall("wasm_mouse_event", null, ["number", "number", "number"], [dx, dy, buttons]);
 
-    const flush = (buttonsChanged) => {
-        // The socket may have been switched to something else meanwhile
-        if (mouse.captured && !buttonsChanged && mouseState(module) !== 2) {
-            document.exitPointerLock();
-            return;
-        }
+    const sendSteps = (buttonsChanged) => {
         const dx = Math.trunc(mouse.accX);
         const dy = Math.trunc(mouse.accY);
         mouse.accX -= dx;
         mouse.accY -= dy;
         if (dx === 0 && dy === 0 && !buttonsChanged) return;
         send(dx, dy, buttonsChanged ? mouse.buttons : -1);
+    };
+
+    const flush = (buttonsChanged) => {
+        // The socket may have been switched to something else meanwhile
+        if (mouse.captured && !buttonsChanged && mouseState(module) !== 2) {
+            document.exitPointerLock();
+            return;
+        }
+        sendSteps(buttonsChanged);
     };
 
     const buttonBit = (e) => (e.button === 0) ? 1 : ((e.button === 2) ? 2 : 0);
@@ -1559,6 +1564,7 @@ function setupMouse(module) {
         const k = mouse.speed / 100 / line;
         mouse.accX += e.movementX * k;
         mouse.accY += e.movementY * k;
+        sendSteps(false);
     });
 
     document.addEventListener("contextmenu", (e) => {

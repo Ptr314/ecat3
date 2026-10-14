@@ -169,6 +169,7 @@ void PoiskDisplay::clock(unsigned int counter)
         } else if (line + 1 == PICTURE_LINES) {
             m_frames++;
             was_updated = true;
+            frame_complete();
             m_full = ++m_since_full >= FULL_EVERY;
             if (m_full) m_since_full = 0;
         } else if (line + 1 == FRAME_LINES) {

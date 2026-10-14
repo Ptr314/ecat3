@@ -383,6 +383,9 @@ void I8275Display::frame_complete()
     m_have_frame = true;
     screen_valid = false;       //The render thread draws the frame it has
     was_updated = true;
+    //The render thread shows it now (the frame hook of the video recorder is
+    //set only for a display with a native rate, which this one is not)
+    GenericDisplay::frame_complete();
 }
 
 //Луч прошел растровую строку - запомнить, какой на ней был бордюр. Цвет

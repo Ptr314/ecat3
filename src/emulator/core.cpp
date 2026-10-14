@@ -2841,6 +2841,10 @@ void GenericDisplay::set_renderer(VideoRenderer & vr)
     render_pixels = vr.get_buffer();
     line_bytes = vr.get_line_bytes();
     m_renderer_valid = true;
+    //A new surface is blank: a display that draws only the lines that changed
+    //(the Поиск-1 redraws the whole picture once a second) would leave it so
+    screen_valid = false;
+    was_updated = true;
 }
 
 

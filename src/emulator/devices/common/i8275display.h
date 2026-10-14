@@ -156,6 +156,8 @@ public:
     void set_renderer(VideoRenderer &vr) override;
     emulator::Result load_config(SystemData *sd) override;
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
+    //Reports the end of each frame itself, see GenericDisplay::own_frames()
+    bool own_frames() const override { return true; }
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;
     void reset(bool cold) override;

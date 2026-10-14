@@ -192,7 +192,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
     mouse_timer = new QTimer(this);
     //A coarse timer on Windows ticks by the system's 15.6 ms
     mouse_timer->setTimerType(Qt::PreciseTimer);
-    connect(mouse_timer, &QTimer::timeout, this, [this]() { mouse_flush(false); });
+    connect(mouse_timer, &QTimer::timeout, this, [this]() { mouse_flush(); });
 
     add_languages();
 
@@ -1209,11 +1209,13 @@ void MainWindow::keyReleaseEvent( QKeyEvent *event )
 
 //----------------------------- Machine mouse --------------------------------//
 
-//Portions of movement are sent this often, and a recording gets a MOUSE line
-//per portion rather than one per host event. The portion must be shorter than
-//the machine's polling: a program reading the mouse every frame (20 ms, the
-//УК-НЦ MOUTST) got nothing on every other read from 40 ms portions and twice
-//as much on the next, so its pointer moved in jerks and lagged by a portion
+//The steps go to the machine with the host event that made them; a recording
+//gets a MOUSE line per portion of this length rather than one per host event.
+//The portion stays shorter than the machine's polling, so that a replay gives
+//a program reading the mouse every frame (20 ms, the УК-НЦ MOUTST) a step on
+//every read, not nothing on one and twice as much on the next. Sent to the
+//machine in portions too, the steps lagged 7 ms on average and 16 in one case
+//of ten: the timer runs on the window's thread, behind the frame handed over
 #define MOUSE_FLUSH_MS 10
 
 //A step count in script syntax. The machine may count in octal, a movement is
@@ -1270,7 +1272,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
             const int bit = (me->button() == Qt::LeftButton)?1:((me->button() == Qt::RightButton)?2:0);
             if (bit != 0 && (mouse_buttons & bit) == 0) {
                 mouse_buttons |= bit;
-                mouse_flush(true);
+                mouse_send(true);
             }
             return true;
         }
@@ -1282,7 +1284,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
             const int bit = (me->button() == Qt::LeftButton)?1:((me->button() == Qt::RightButton)?2:0);
             if (bit != 0 && (mouse_buttons & bit) != 0) {
                 mouse_buttons &= ~bit;
-                mouse_flush(true);
+                mouse_send(true);
             }
             return true;
         }
@@ -1316,6 +1318,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
             const double k = mouse_speed / 100.0 / line;
             mouse_acc_x += d.x() * k;
             mouse_acc_y += d.y() * k;
+            mouse_send(false);
             return true;
         }
 
@@ -1348,6 +1351,8 @@ void MainWindow::mouse_capture(bool on)
         mouse_captured = true;
         mouse_acc_x = 0;
         mouse_acc_y = 0;
+        mouse_rec_x = 0;
+        mouse_rec_y = 0;
         mouse_buttons = 0;
         screen->setMouseTracking(true);
         screen->grabMouse(QCursor(Qt::BlankCursor));
@@ -1367,9 +1372,12 @@ void MainWindow::mouse_capture(bool on)
         mouse_acc_y = 0;
         if (mouse_buttons != 0) {
             mouse_buttons = 0;
-            mouse_flush(true);
-        }
+            mouse_send(true);
+        } else
+            mouse_record(false);
     }
+    mouse_rec_x = 0;
+    mouse_rec_y = 0;
     mouse_buttons = 0;
     mouse_captured = false;
     screen->releaseMouse();
@@ -1377,15 +1385,11 @@ void MainWindow::mouse_capture(bool on)
     statusBar()->clearMessage();
 }
 
-void MainWindow::mouse_flush(bool buttons_changed)
+//The whole steps gathered so far go to the machine at once; the fraction waits
+//for the next event. A button change carries the movement before it
+void MainWindow::mouse_send(bool buttons_changed)
 {
-    if (e == nullptr) return;
-    //The socket may have been switched to something else meanwhile
-    if (mouse_captured && !buttons_changed && !(e->loaded && e->has_mouse())) {
-        mouse_capture(false);
-        return;
-    }
-
+    if (e == nullptr || !e->loaded) return;
     const int dx = static_cast<int>(mouse_acc_x);
     const int dy = static_cast<int>(mouse_acc_y);
     mouse_acc_x -= dx;
@@ -1393,12 +1397,34 @@ void MainWindow::mouse_flush(bool buttons_changed)
     if (dx == 0 && dy == 0 && !buttons_changed) return;
 
     e->mouse_event(dx, dy, buttons_changed?mouse_buttons:-1);
+    mouse_rec_x += dx;
+    mouse_rec_y += dy;
+    if (buttons_changed) mouse_record(true);
+}
 
+//A MOUSE line for the steps sent since the previous one, and the buttons when
+//they have just changed: the replay hands them over in the same order
+void MainWindow::mouse_record(bool buttons_changed)
+{
+    if (mouse_rec_x == 0 && mouse_rec_y == 0 && !buttons_changed) return;
     std::vector<std::string> args;
-    args.push_back(mouse_steps_arg(dx));
-    args.push_back(mouse_steps_arg(dy));
+    args.push_back(mouse_steps_arg(mouse_rec_x));
+    args.push_back(mouse_steps_arg(mouse_rec_y));
     if (buttons_changed) args.push_back(std::to_string(mouse_buttons));
+    mouse_rec_x = 0;
+    mouse_rec_y = 0;
     e->record_verb(SCRIPT_CMD_MOUSE, args);
+}
+
+void MainWindow::mouse_flush()
+{
+    if (e == nullptr) return;
+    //The socket may have been switched to something else meanwhile
+    if (mouse_captured && !(e->loaded && e->has_mouse())) {
+        mouse_capture(false);
+        return;
+    }
+    if (e->loaded) mouse_record(false);
 }
 
 void MainWindow::resizeEvent(QResizeEvent * event)

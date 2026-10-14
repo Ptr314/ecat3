@@ -265,8 +265,10 @@ private:
     bool mouse_captured = false;
     QPoint mouse_center;                //Global position the pointer is put back to
     QPoint mouse_last;                  //Global position of the previous move
-    double mouse_acc_x = 0;             //Steps not sent yet, with the fraction
+    double mouse_acc_x = 0;             //Fraction of a step not sent yet
     double mouse_acc_y = 0;
+    int mouse_rec_x = 0;                //Steps sent but not recorded yet
+    int mouse_rec_y = 0;
     int mouse_buttons = 0;              //Bit 0 - left (button 1), bit 1 - right (button 2)
     int mouse_speed = 25;               //Percent: steps a line of the machine's screen crossed by the host pointer
     QMenu * mouse_speed_menu = nullptr; //Display > Mouse speed, made once
@@ -289,9 +291,11 @@ private:
     void video_tick();
     void video_update_action();
     void video_send_shown_frame();
-    QTimer * mouse_timer = nullptr;     //Sends the steps in portions
+    QTimer * mouse_timer = nullptr;     //Records the steps in portions
 
     void mouse_capture(bool on);
-    void mouse_flush(bool buttons_changed);
+    void mouse_send(bool buttons_changed);
+    void mouse_record(bool buttons_changed);
+    void mouse_flush();
 
 };

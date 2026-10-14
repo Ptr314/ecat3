@@ -120,6 +120,8 @@ public:
     void set_renderer(VideoRenderer &vr) override;
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
     void clock(unsigned int counter) override;
+    //Reports the end of each frame itself, see GenericDisplay::own_frames()
+    bool own_frames() const override { return true; }
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
     // Код с клавиатуры, из любого потока; dk - клавиша блока курсора

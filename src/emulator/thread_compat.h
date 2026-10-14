@@ -27,6 +27,7 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QElapsedTimer>
+#include <QWaitCondition>
 
 // QThread subclass that accepts a lambda, matching std::thread usage pattern.
 // Heap-allocated via create() because QThread is non-movable.
@@ -60,6 +61,33 @@ private:
 
 typedef QMutex compat_mutex;
 
+// A flag one thread raises and another waits for, with a timeout. Unlike a
+// sleep, the wait ends the moment the flag goes up: Windows 11 may end
+// Sleep(1) only on its 15.6 ms tick, timeBeginPeriod(1) or not
+class compat_event
+{
+public:
+    void set()
+    {
+        QMutexLocker lock(&m_mutex);
+        m_set = true;
+        m_cond.wakeOne();
+    }
+    // True when the flag was up (and is now down again), false on the timeout
+    bool wait_ms(unsigned int ms)
+    {
+        QMutexLocker lock(&m_mutex);
+        if (!m_set) m_cond.wait(&m_mutex, ms);
+        const bool was = m_set;
+        m_set = false;
+        return was;
+    }
+private:
+    QMutex m_mutex;
+    QWaitCondition m_cond;
+    bool m_set = false;
+};
+
 // Wall clock helpers. An external driver waiting for a command to complete
 // needs a real timeout: emulated time stops when the CPU does, so a wait
 // counted in emulated milliseconds would never expire on a wedged machine
@@ -92,8 +120,38 @@ inline void compat_yield()
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <condition_variable>
 
 typedef std::mutex compat_mutex;
+
+// A flag one thread raises and another waits for, with a timeout. Unlike a
+// sleep, the wait ends the moment the flag goes up: Windows 11 may end
+// Sleep(1) only on its 15.6 ms tick, timeBeginPeriod(1) or not
+class compat_event
+{
+public:
+    void set()
+    {
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_set = true;
+        }
+        m_cond.notify_one();
+    }
+    // True when the flag was up (and is now down again), false on the timeout
+    bool wait_ms(unsigned int ms)
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_cond.wait_for(lock, std::chrono::milliseconds(ms), [this]() { return m_set; });
+        const bool was = m_set;
+        m_set = false;
+        return was;
+    }
+private:
+    std::mutex m_mutex;
+    std::condition_variable m_cond;
+    bool m_set = false;
+};
 
 inline void compat_sleep_ms(unsigned int ms)
 {

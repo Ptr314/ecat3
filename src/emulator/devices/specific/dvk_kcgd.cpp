@@ -795,6 +795,7 @@ void KCGDDisplay::clock(MAYBE_UNUSED unsigned int counter)
     if (m_kcgd->fields() == m_field) return;
     m_field = m_kcgd->fields();
     screen_valid = false;
+    frame_complete();
 }
 
 // Слово видеопамяти, с которого идёт строка растра y

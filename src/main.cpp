@@ -15,6 +15,9 @@
 #include <QTranslator>
 
 #include <QMessageBox>
+#ifdef RENDERER_OPENGL
+#include <QSurfaceFormat>
+#endif
 
 #if defined(RENDERER_SDL2) || defined(USE_SDL_AUDIO)
     #include <SDL.h>
@@ -68,6 +71,17 @@ int main(int argc, char *argv[])
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
+
+#if defined(RENDERER_OPENGL) && (defined(_WIN32) || defined(__APPLE__))
+    //No wait for the monitor's retrace when the frame is handed over: there
+    //the desktop composes every window and syncs it to the screen anyway, so
+    //the wait added only lag - 12 ms on average, 23 in one case of ten, with
+    //the window's thread held all that time and the mouse portions and the
+    //next frame waiting behind it. X11 without a compositor would tear
+    QSurfaceFormat format = QSurfaceFormat::defaultFormat();
+    format.setSwapInterval(0);
+    QSurfaceFormat::setDefaultFormat(format);
 #endif
 
     EcatApplication a(argc, argv);

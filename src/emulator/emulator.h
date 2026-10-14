@@ -90,6 +90,12 @@ private:
     //empties the list on the emulation thread
     compat_mutex m_host_keys_mutex;
 
+    //Raised by the display at the end of each frame, waited for by the render thread
+    compat_event m_frame_event;
+    //clock_counter of the last frame reported for a display without frames
+    //of its own (GenericDisplay::own_frames())
+    uint64_t m_machine_frame_clock = 0;
+
     unsigned int clock_freq;
 
     unsigned int screen_sx;

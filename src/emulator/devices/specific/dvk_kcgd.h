@@ -197,6 +197,8 @@ public:
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
     //240 lines a field in either mode
     unsigned int get_scan_lines() override { return 240; }
+    //Reports the end of each frame itself, see GenericDisplay::own_frames()
+    bool own_frames() const override { return true; }
     void clock(unsigned int counter) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;

@@ -78,6 +78,8 @@ public:
     void reset(bool cold) override;
     void set_renderer(VideoRenderer &vr) override;
     void clock(unsigned int counter) override;
+    //Reports the end of each frame itself, see GenericDisplay::own_frames()
+    bool own_frames() const override { return true; }
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
 
     unsigned int wait_states(unsigned int address, bool write, unsigned int offset) override;

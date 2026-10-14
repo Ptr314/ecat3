@@ -211,6 +211,7 @@ void IE15Terminal::clock(unsigned int counter)
         m_ticks -= m_frame_ticks;
         m_frame++;
         screen_valid = false;
+        frame_complete();
     }
 
     if (m_tx_left > 0) {
