@@ -751,6 +751,14 @@ function setupKeyboard(module) {
     function onKey(event, press) {
         const id = event.code || event.key;
 
+        // The browser's autorepeat is dropped, as the window drops Qt's
+        // (isAutoRepeat): a machine repeats a held key by itself if it ever does,
+        // and the УК-НЦ, which does not, got a stream of presses
+        if (press && event.repeat) {
+            if (held.has(id) && INTERCEPT_KEYS.has(event.code)) event.preventDefault();
+            return;
+        }
+
         let emuKey;
         if (press) {
             // Don't intercept when focused on UI controls
