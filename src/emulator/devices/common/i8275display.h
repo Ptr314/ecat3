@@ -148,6 +148,7 @@ private:
     void reset_attr();
     void clear_rows();
     bool follow_resolution();
+    bool frame_size(unsigned int & w, unsigned int & h) const;
     void clear_surface();
 
 public:

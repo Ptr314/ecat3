@@ -209,6 +209,22 @@ void UKNCDisplay::reset_walk()
     // состоянии, красил бы своим цветом весь столбец до низа экрана
     m_cursor_on = false;
     m_entries = 0;
+
+    // The frame pulse also loads the registers a four-word descriptor sets
+    // (reverse engineered ХМ1-136, «Циклы памяти видеоконтроллера»): the
+    // palette 0x10, 0x32, 0x54, 0x76 - colour n is YRGB n, black to dim
+    // white -, the cursor word 0x0008 (octet 0, symbolic, colour 8) and the
+    // scale bits 4-5 of the second control word cleared, i.e. 640 dots. The
+    // brightness bits 0-2 are left as they are. A table that sets its colours
+    // or its mode lower down shows these above that line, not what the
+    // previous frame ended with
+    m_palette = 0x76543210;
+    m_cursor_color = 8;
+    m_cursor_graphic = false;
+    m_cursor_pos = 0;
+    m_cursor_bit = 0;
+    m_scale = 1;
+    rebuild_line_colors();
 }
 
 void UKNCDisplay::apply_four_word(unsigned int tag1, unsigned int tag2)
@@ -510,7 +526,10 @@ bool UKNCDisplay::get_field(const std::string &field, unsigned int from, unsigne
         out.numeric = false;
         unsigned address = UKNC_TAGS_START;
         bool four = false, pal = false;
-        const unsigned count = (to > from)? (to - from + 1) : ((from > 0)? from : 8);
+        // (from, to) - descriptors from..to, walked from the start of the
+        // table; a single argument is a count from the start
+        const unsigned first = (to > from)? from : 0;
+        const unsigned count = (to > from)? (to + 1) : ((from > 0)? from : 8);
 
         for (unsigned i = 0; i < count && i < UKNC_TAGS_TOTAL; i++) {
             std::string extra;
@@ -529,9 +548,11 @@ bool UKNCDisplay::get_field(const std::string &field, unsigned int from, unsigne
             const unsigned bits = plane_word(address);
             const unsigned tagB = plane_word(address + 2);
 
-            if (!out.text.empty()) out.text += "\n";
-            out.text += "        " + std::to_string(i) + ": точки=" + oct_str(bits, 6)
-                      + " связь=" + oct_str(tagB, 6) + extra;
+            if (i >= first) {
+                if (!out.text.empty()) out.text += "\n";
+                out.text += "        " + std::to_string(i) + ": точки=" + oct_str(bits, 6)
+                          + " связь=" + oct_str(tagB, 6) + extra;
+            }
 
             four = (tagB & 2) != 0;
             if (four) { address = tagB & ~7u; pal = (tagB & 4) != 0; }

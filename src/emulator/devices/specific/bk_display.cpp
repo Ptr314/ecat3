@@ -113,23 +113,32 @@ emulator::Result BKDisplay::load_config(SystemData *sd)
     return emulator::Result::ok();
 }
 
+// A colour/mono switch changes the width, so it waits for the end of the
+// picture rather than landing in the middle of a frame. The emulation thread
+// applies it there (HSYNC), and the render thread here, when it asks for the
+// size: a stopped machine draws no frames, and a switch from the toolbar must
+// still show. Applied by the render thread only, it left the width unchanged
+// for as long as that thread had not come round - at the maximum speed longer
+// than the WAIT of a script, which read the old resolution.
+// Both under the surface lock, so the switch cannot land inside a line.
+void BKDisplay::apply_mode_switch()
+{
+    if (!m_mode_pending) return;
+    m_mode_pending = false;
+    if (m_pending_color == m_color) return;
+    m_color = m_pending_color;
+    // The surface is replaced by the render thread; until then nothing is
+    // drawn into the old one
+    change_resolution(m_color? (m_line_bytes * 4) : (m_line_bytes * 8), sy);
+    screen_valid = false;
+    was_updated = true;
+}
+
 void BKDisplay::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 {
-    // The switch is applied here because the render thread asks for the size
-    // before every frame. Changing the mode straight from the interface thread
-    // could land in the middle of a frame, leaving the width and the buffer
-    // describing different resolutions.
     if (m_mode_pending) {
-        // Under the surface lock, so the switch cannot land inside a line
-        // that the emulation thread is drawing
         lock_surface();
-        m_mode_pending = false;
-        if (m_pending_color != m_color) {
-            m_color = m_pending_color;
-            this->sx = m_color? (m_line_bytes * 4) : (m_line_bytes * 8);
-            screen_valid = false;
-            was_updated = true;
-        }
+        apply_mode_switch();
         unlock_surface();
     }
 
@@ -157,8 +166,8 @@ void BKDisplay::set_device_option(unsigned option_id, unsigned value_id)
 {
     if (option_id != BK_OPTION_COLORS) return;
 
-    // Called from the interface thread, so only the request is recorded here;
-    // get_screen_constraints() applies it on the render thread.
+    // May come from the interface thread (the page calls it directly), so only
+    // the request is recorded here; apply_mode_switch() makes it
     m_pending_color = (value_id == BK_COLOR_ON);
     m_mode_pending = true;
 }
@@ -211,6 +220,11 @@ void BKDisplay::HSYNC(const unsigned line, const unsigned sync_val)
                 m_frame_palette[i] = m_line_palette[i];
             // The last picture line is on the surface: the frame is whole
             frame_complete();
+            if (m_mode_pending) {
+                lock_surface();
+                apply_mode_switch();
+                unlock_surface();
+            }
         }
         if (line == m_video_lines + BK_FRAME_PULSE_LINE) {
             // Vertical sync: the frame interrupt, gated by bit 14 of 0177662

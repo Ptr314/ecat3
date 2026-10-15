@@ -38,9 +38,12 @@ private:
     uint8_t m_frame_palette[256]{};
     unsigned m_frames = 0;          // frame pulses given since the start
 
-    // A mode change requested from the interface thread, applied by the render one
+    // A mode change requested from the interface thread, applied at the end of
+    // the picture by the emulation thread, or by the render one if that comes
+    // first (a stopped machine draws no frames)
     volatile bool m_mode_pending = false;
     bool m_pending_color = true;
+    void apply_mode_switch();                   // under the surface lock
 
     unsigned control() const;
     bool quarter() const;

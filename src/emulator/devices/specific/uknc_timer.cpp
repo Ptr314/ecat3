@@ -15,6 +15,7 @@
 #define F_OVERFLOW      0010    // разряд 3 - ошибка переполнения
 #define F_EVENT_IRQ     0020    // разряд 4 - разрешение прерывания по событию
 #define F_EVENT         0040    // разряд 5 - готовность внешнего события
+#define F_READY         (F_ZERO | F_EVENT)
 #define F_ZERO_IRQ      0100    // разряд 6 - разрешение прерывания по нулю
 #define F_ZERO          0200    // разряд 7 - готовность при обнулении
 
@@ -68,6 +69,8 @@ void UKNCTimer::reset(MAYBE_UNUSED bool cold)
     m_flags = 0;
     m_reload = 0;
     m_counter = 0;
+    m_latch = 0;
+    m_event_load = false;
     m_divider = 0;
     m_acc = 0;
     m_zeroes = 0;
@@ -81,15 +84,19 @@ void UKNCTimer::reset(MAYBE_UNUSED bool cold)
 void UKNCTimer::base_tick()
 {
     if ((m_flags & F_RUN) == 0) return;         // останов
-    if ((m_flags & F_EVENT) != 0) return;       // пока событие не прочитано, счёт стоит
 
     m_divider++;
     if (m_divider < TIMER_DIVIDERS[(m_flags & F_DIV_MASK) >> 1]) return;
     m_divider = 0;
 
     // Ноль держится целый шаг, и с него счётчик переходит сразу в N - 1:
-    // счёт цикличный, однократного режима у этого таймера нет
-    if (m_counter == 0) {
+    // счёт цикличный, однократного режима у этого таймера нет. Так же и после
+    // внешнего события. У ХМ2-001 по реверсу БМК (docs-external/UKNC/BMK_texts,
+    // «таймер») шаг - восемь тактов: в такте 0 загрузка из буфера, если
+    // счётчик обнулился или было событие, в такте 4 вычитание, в такте 7
+    // обнуление и событие - отсюда N - 1 на следующем шаге
+    if (m_counter == 0 || m_event_load) {
+        m_event_load = false;
         m_counter = (m_reload - 1) & COUNTER_MASK;
         log_step();
         return;
@@ -98,8 +105,11 @@ void UKNCTimer::base_tick()
     log_step();
     if (m_counter != 0) return;
 
-    // Обнуление: если прежняя готовность ещё не снята, это переполнение
+    // Обнуление: если прежняя готовность ещё не снята, это переполнение.
+    // Регистр текущего значения замирает на нуле, если его не заморозило
+    // событие раньше
     if (m_flags & F_ZERO) m_flags |= F_OVERFLOW;
+    if ((m_flags & F_READY) == 0) m_latch = 0;
     m_flags |= F_ZERO;
     m_zeroes++;
     update_irq();
@@ -129,14 +139,18 @@ void UKNCTimer::clock(unsigned int counter)
 void UKNCTimer::interface_callback(unsigned int callback_id, MAYBE_UNUSED unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
 {
     if (callback_id == CALLBACK_EVENT) {
-        // Перепад на линии внешнего события взводит готовность и
-        // останавливает счёт до чтения регистра текущего значения. Счётчик
-        // не перезагружается: ПЗУ снимает с него время между перепадами
-        // (130600 `MOV @#177714,R5`), а перезагрузит его это чтение.
+        // Перепад на линии внешнего события взводит готовность и замораживает
+        // регистр текущего значения на том, что насчитал счётчик, а сам
+        // счётчик на следующем шаге грузится из буфера и считает дальше
+        // (ХМ2-001 по реверсу БМК). ПЗУ читает из 177714 время между
+        // перепадами (130600 `MOV @#177714,R5`), и отсчёт его идёт от
+        // перепада, а не от чтения: задержка обработчика в замер не попадает.
         // Обратный вызов приходит и без смены уровня - от мультиплексора,
         // у которого сменился невыбранный вход, - поэтому смотрится разряд
         if (((new_value ^ old_value) & 1) == 0) return;
         if ((i_event_enable.value & 1) == 0) return;
+        if ((m_flags & F_READY) == 0) m_latch = m_counter & COUNTER_MASK;
+        m_event_load = true;
         m_flags |= F_EVENT;
         m_events++;
         update_irq();
@@ -150,10 +164,12 @@ void UKNCTimer::interface_callback(unsigned int callback_id, MAYBE_UNUSED unsign
 
 void UKNCTimer::update_irq()
 {
-    // Свой запрос вперёд чужого: таймер стоит на магистрали ближе к процессору
+    // Свой запрос вперёд чужого: таймер стоит на магистрали ближе к процессору.
+    // Внутри - внешнее событие (310) старше обнуления (304): так у ХМ2-001 по
+    // реверсу БМК (docs-external/UKNC/BMK_texts, «векторные прерывания VIRQ»)
     unsigned int own = 0;
-    if ((m_flags & F_ZERO) && (m_flags & F_ZERO_IRQ))        own = m_vector_zero;
-    else if ((m_flags & F_EVENT) && (m_flags & F_EVENT_IRQ)) own = m_vector_event;
+    if ((m_flags & F_EVENT) && (m_flags & F_EVENT_IRQ))      own = m_vector_event;
+    else if ((m_flags & F_ZERO) && (m_flags & F_ZERO_IRQ))   own = m_vector_zero;
     m_irq.offer(VirqLine::chain(own, i_virq_in, i_vector_in));
 }
 
@@ -187,16 +203,14 @@ unsigned int UKNCTimer::read_register(unsigned int address, bool peek)
         // и не снимут готовность. Так программа узнаёт, что отмеренное время
         // вышло: тесты скорости команд ПП Titus читают после очереди команд
         // ноль, когда таймер переполнился, и время команды, когда нет
-        const unsigned int v = (m_flags & F_ZERO)? 0 : (m_counter & COUNTER_MASK);
+        // После внешнего события регистр держит то, что было на перепаде
+        const unsigned int v = (m_flags & F_READY)? m_latch : (m_counter & COUNTER_MASK);
         if (peek) return v;
-        // Чтение текущего значения снимает обе готовности. Счётчик после
-        // внешнего события перезагружается: он стоял и хранил время, а ПЗУ
-        // мерит следующий полупериод с начала. Готовность обнуления его не
-        // трогает - счёт идёт дальше, и тест таймера Titus видит на машине
-        // после нуля N - 1
-        if (m_flags & (F_ZERO | F_EVENT)) {
-            if (m_flags & F_EVENT) m_counter = m_reload & COUNTER_MASK;
-            m_flags &= ~(F_ZERO | F_EVENT);
+        // Чтение снимает обе готовности, и регистр снова идёт за счётчиком.
+        // Счётчик не трогается: после нуля тест таймера Titus видит на машине
+        // N - 1, после события он уже перезагружен
+        if (m_flags & F_READY) {
+            m_flags &= ~F_READY;
             update_irq();
         }
         return v;
@@ -214,8 +228,10 @@ void UKNCTimer::set_value_word(unsigned int address, unsigned int value, MAYBE_U
     switch (address >> 1) {
     case REG_STATE: {
         // Переход останов -> пуск загружает счётчик из буферного регистра
-        if ((value & F_RUN) && (m_flags & F_RUN) == 0)
+        if ((value & F_RUN) && (m_flags & F_RUN) == 0) {
             m_counter = m_reload & COUNTER_MASK;
+            m_event_load = false;
+        }
 
         // Разряды готовностей и переполнения принадлежат аппаратуре
         m_flags = (m_flags & F_READ_ONLY) | (value & ~F_READ_ONLY & 0377);
@@ -263,6 +279,8 @@ void UKNCTimer::save_state(StateWriter &w)
     w.u("flags", m_flags);
     w.u("reload", m_reload);
     w.u("counter", m_counter);
+    w.u("latch", m_latch);
+    w.b("event_load", m_event_load);
     w.n("divider", m_divider);
     // Такты внутри шага. Прежний ключ acc считал их в миллионных долях
     // такта и при чтении пропускается: там другой масштаб
@@ -281,6 +299,10 @@ emulator::Result UKNCTimer::load_state(const StateReader &r)
     r.u("flags", m_flags);
     r.u("reload", m_reload);
     r.u("counter", m_counter);
+    // Снимок, где счётчик ещё стоял на событии: регистр - это он сам
+    if (!r.u("latch", m_latch)) m_latch = (m_flags & F_ZERO)? 0 : m_counter;
+    m_event_load = false;
+    r.b("event_load", m_event_load);
     r.u("divider", m_divider);
     r.u("phase", m_acc);
     if (m_acc >= m_base_cycles) m_acc = 0;

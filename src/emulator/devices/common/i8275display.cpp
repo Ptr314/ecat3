@@ -118,28 +118,35 @@ void I8275Display::clear_rows()
 //Follows the geometry of the controller. Returns false while the renderer
 //still holds a surface of the previous size - the resize happens on the
 //render thread, one frame later
-bool I8275Display::follow_resolution()
+//Размер последнего целого кадра, или false, если геометрия ещё не годится.
+//В режиме ZX знакоместо не 6 точек, а 8, и берёт оно из потока два байта:
+//80 знакомест кадра дают 40 видимых по 8 точек - те самые 320 на 256, в
+//которых 256 на 192 занимает экран Спектрума
+bool I8275Display::frame_size(unsigned int & w, unsigned int & h) const
 {
     const unsigned int cpl = m_frame_cpl;
     const unsigned int lps = m_frame_lps;
-    const unsigned int h = m_frame_h;
-
     if ((cpl < 10) || (lps < 10) || (lps > I8275D_MAX_ROWS)) return false;
+    w = m_frame_zx?((cpl/2)*8):(cpl*6);
+    h = lps*m_frame_h;
+    return true;
+}
+
+bool I8275Display::follow_resolution()
+{
+    unsigned int w, h;
+    if (!frame_size(w, h)) return false;
 
     //Размер объявляется до проверки поверхности, а не после: поверхность
     //меняет размер по этим самым sx/sy (Emulator::render_screen), и машина
     //шире стартовых 78 знакомест - Юниор с его 80 - иначе не получила бы её
     //никогда: рисовать нельзя, потому что поверхность мала, а вырасти она не
-    //может, потому что мы не сказали, до чего
-    //В режиме ZX знакоместо не 6 точек, а 8, и берёт оно из потока два байта:
-    //80 знакомест кадра дают 40 видимых по 8 точек - те самые 320 на 256, в
-    //которых 256 на 192 занимает экран Спектрума
-    const unsigned int w = m_frame_zx?((cpl/2)*8):(cpl*6);
-
-    if ((w != sx) || (lps*h != sy))
+    //может, потому что мы не сказали, до чего. Обычно это уже сделал
+    //frame_complete(), здесь - на случай кадра, восстановленного из снимка
+    if ((w != sx) || (h != sy))
     {
         sx = w;
-        sy = lps*h;
+        sy = h;
         screen_valid = false;
         was_updated = true;
         return false;
@@ -375,14 +382,28 @@ void I8275Display::row_complete(unsigned int row, const uint8_t * data, unsigned
 void I8275Display::frame_complete()
 {
     //Taken here, not while drawing: from now on the frame is described by these
-    //three numbers and the row snapshots, and nothing else
+    //three numbers and the row snapshots, and nothing else. Under the surface
+    //lock, since the render thread draws from them
+    lock_surface();
     m_frame_cpl = VG75->chars_per_row();
     m_frame_lps = VG75->rows_per_screen();
     m_frame_h   = VG75->char_height();
     m_frame_zx  = (i_zx.linked > 0) && ((i_zx.value & 1) != 0) && (m_zx_bitmap != m_zx_attr);
     m_have_frame = true;
+    //The size is declared here too, so that the render thread resizes the
+    //surface and draws the frame on one pass. Left to follow_resolution(), the
+    //first pass only declared it and the second resized: a SCREEN after a mode
+    //change that came on the first pass saved the picture of the old size
+    //(work-argo-zx at the maximum speed, 480x250 for 320x256)
+    unsigned int w, h;
+    if (frame_size(w, h) && ((w != sx) || (h != sy)))
+    {
+        sx = w;
+        sy = h;
+    }
     screen_valid = false;       //The render thread draws the frame it has
     was_updated = true;
+    unlock_surface();
     //The render thread shows it now (the frame hook of the video recorder is
     //set only for a display with a native rate, which this one is not)
     GenericDisplay::frame_complete();
@@ -657,12 +678,10 @@ bool I8275Display::get_field(const std::string &field, unsigned int from, unsign
     //read them before that whenever the machine ran faster than real time
     if (field == "resolution")
     {
-        const unsigned int cpl = m_frame_cpl;
-        const unsigned int lps = m_frame_lps;
-        if (m_have_frame && cpl >= 10 && lps >= 10 && lps <= I8275D_MAX_ROWS)
+        unsigned int w, h;
+        if (m_have_frame && frame_size(w, h))
         {
-            const unsigned int w = m_frame_zx?((cpl/2)*8):(cpl*6);
-            out.text = std::to_string(w) + "x" + std::to_string(lps * m_frame_h);
+            out.text = std::to_string(w) + "x" + std::to_string(h);
             return true;
         }
     }
