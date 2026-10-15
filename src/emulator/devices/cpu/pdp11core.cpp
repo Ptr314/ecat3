@@ -1065,7 +1065,9 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
         uint16_t res = (uint16_t)((dst - c) & mask);
         write_operand(op, is_byte, res);
         set_nz(res, is_byte);
-        set_flag(PDP11::F_V, (dst & mask) == (uint32_t)sign);
+        //Overflow only when the carry was subtracted from 100000 (200):
+        //with C clear the operand stays as it was (checked on the ВМ2 model)
+        set_flag(PDP11::F_V, c != 0 && (dst & mask) == (uint32_t)sign);
         set_flag(PDP11::F_C, c != 0 && (dst & mask) == 0);
         break;
     }
@@ -1239,28 +1241,38 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
         case 1: {                                       // DIV
             cycles += C_DIV;
             m_last_div_v = true;            // cleared below when it divides
-            if ((r & 1) != 0 || src == 0) {
+            //A division the ВМ2 refuses (by zero, or a quotient that does
+            //not fit) leaves the registers and clears N and Z: Titus' test
+            //sums the PSW over 262144 divisions with every N, Z, V, C in,
+            //and only that gives its checksums. The ВМ3 keeps them as before
+            if (src == 0) {
+                if (!vm3) { set_flag(PDP11::F_N, false); set_flag(PDP11::F_Z, false); }
                 set_flag(PDP11::F_V, true);
-                set_flag(PDP11::F_C, src == 0);
+                set_flag(PDP11::F_C, true);
                 break;
             }
+            //An odd register is both halves of the dividend (R1: R1:R1), and
+            //the quotient is what stays in it: the remainder goes first
+            //(ВМ2 model: R1 = 3, DIV #7,R1 gives 066667, Titus' test)
             int32_t dividend = (int32_t)(((uint32_t)context.R[r] << 16) | context.R[r | 1]);
             int32_t divisor = (int32_t)(int16_t)src;
             //The one quotient that does not fit into 32 bits either: dividing
             //it is undefined, and on x86 a trap that ends the process
             if (dividend == INT32_MIN && divisor == -1) {
+                if (!vm3) { set_flag(PDP11::F_N, false); set_flag(PDP11::F_Z, false); }
                 set_flag(PDP11::F_V, true);
                 set_flag(PDP11::F_C, false);
                 break;
             }
             int32_t quotient = dividend / divisor;
             if (quotient > 32767 || quotient < -32768) {
+                if (!vm3) { set_flag(PDP11::F_N, false); set_flag(PDP11::F_Z, false); }
                 set_flag(PDP11::F_V, true);
                 set_flag(PDP11::F_C, false);
                 break;
             }
-            context.R[r] = (uint16_t)quotient;
             context.R[r | 1] = (uint16_t)(dividend % divisor);
+            context.R[r] = (uint16_t)quotient;
             m_last_div_v = false;
             set_flag(PDP11::F_N, quotient < 0);
             set_flag(PDP11::F_Z, quotient == 0);

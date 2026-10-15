@@ -1,0 +1,70 @@
+# УК-НЦ: тест процессора КР1801ВМ2 v0.3a (Titus, 2012) - правильность
+# результата и флагов всех команд ЦП. Каждая проверка перебирает операнды и
+# все 16 сочетаний NZVC на входе и сравнивает контрольную сумму с суммой
+# настоящей машины. Нашёл V у SBC/SBCB при C = 0 и DIV: нечетный регистр
+# (делимое R:R, в нем остается частное) и сброс N, Z, когда деление
+# отказано. Исходник и диск - docs-external/UKNC/cputst, здесь только
+# TSTVM2.SAV на диске из make_disk.py (../files/uknc-cputest).
+#
+# Сценарий ждет не время, а программу. Страница кончается вопросом «Next
+# page?», который программа задает на следующем символе после 23-й строки:
+# ее счетчик строк LineCtr лежит в 003766 и обнуляется нажатием клавиши.
+# Конец - вектор 4: на вопросах и при выходе программа возвращает его
+# монитору (147606), а после вопроса ставит свой. Точки останова здесь не
+# годятся: пока ЦП стоит, ПП идет дальше на сколько успеет хост, и снимок
+# зависел от загрузки машины. Три страницы и конец, около 12 минут.
+# @timeout 1500
+
+MACHINE "uknc/UKNC.cfg"
+WAIT _12000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+WAIT _15000
+
+# Программа DAY спрашивает дату, ВК оставляет предложенную
+KEY _100,_100,ret
+WAIT _18000
+
+COMMAND fdd1.load("../files/uknc-cputest/tstvm2.dsk")
+WAIT _500
+TYPE "RU MZ1:TSTVM2\n"
+# До загрузки в 003766 лежит что угодно
+WAITFOR cpu-ram.value16(3766) < _23, _30000
+
+WAITFOR cpu-ram.value16(3766) >= _23, _1200000
+WAIT _1000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-cputest-1.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
+KEY _100,_100,ret
+WAIT _2000
+
+WAITFOR cpu-ram.value16(3766) >= _23, _1200000
+WAIT _1000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-cputest-2.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
+KEY _100,_100,ret
+WAIT _2000
+
+WAITFOR cpu-ram.value16(3766) >= _23, _1200000
+WAIT _1000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-cputest-3.png"
+COMMAND ppu.run()
+COMMAND cpu.run()
+KEY _100,_100,ret
+WAIT _2000
+
+WAITFOR cpu-ram.value16(4) == 147606, _1200000
+WAIT _1000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-cputest-4.png"
+EXIT

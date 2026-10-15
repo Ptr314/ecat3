@@ -49,8 +49,11 @@ emulator::Result UKNCTimer::load_config(SystemData *sd)
     emulator::Result res = AddressableDevice::load_config(sd);
     if (!res) return res;
 
-    // Базовый период счёта. У машины он равен двум микросекундам, а разряды
-    // 1-2 регистра состояния делят его дальше
+    // Базовый шаг счёта в тактах своего домена: 12 тактов ПП, 1,92 мкс, а
+    // разряды 1-2 регистра состояния делят его дальше. period - тот же шаг
+    // номинально, в микросекундах, как его называет документация
+    m_base_cycles = read_confg_value(cd, "base_cycles", false, (unsigned int)12);
+    if (m_base_cycles == 0) m_base_cycles = 12;
     m_period_us = read_confg_value(cd, "period", false, (unsigned int)2);
     if (m_period_us == 0) m_period_us = 2;
 
@@ -84,51 +87,41 @@ void UKNCTimer::base_tick()
     if (m_divider < TIMER_DIVIDERS[(m_flags & F_DIV_MASK) >> 1]) return;
     m_divider = 0;
 
-    m_counter = (m_counter - 1) & COUNTER_MASK;
-    if (m_counter != 0) {
+    // Ноль держится целый шаг, и с него счётчик переходит сразу в N - 1:
+    // счёт цикличный, однократного режима у этого таймера нет
+    if (m_counter == 0) {
+        m_counter = (m_reload - 1) & COUNTER_MASK;
         log_step();
         return;
     }
+    m_counter = (m_counter - 1) & COUNTER_MASK;
+    log_step();
+    if (m_counter != 0) return;
 
     // Обнуление: если прежняя готовность ещё не снята, это переполнение
     if (m_flags & F_ZERO) m_flags |= F_OVERFLOW;
     m_flags |= F_ZERO;
     m_zeroes++;
-
-    // Счёт цикличный: однократного режима у этого таймера нет
-    m_counter = m_reload & COUNTER_MASK;
-
-    log_step();
     update_irq();
 }
 
 double UKNCTimer::counter_step_cycles() const
 {
-    if (m_system_clock == 0) return 0.0;
-    return (double)m_system_clock * m_period_us
-         * TIMER_DIVIDERS[(m_flags & F_DIV_MASK) >> 1] / 1000000.0;
+    return (double)m_base_cycles * TIMER_DIVIDERS[(m_flags & F_DIV_MASK) >> 1];
 }
 
 double UKNCTimer::counter_phase_cycles() const
 {
-    if (m_system_clock == 0) return 0.0;
-    //Предделитель уже отсчитал m_divider базовых периодов, а внутри текущего
-    //накопилось m_acc в тех же долях, в каких его считает clock()
-    return (double)m_divider * m_system_clock * m_period_us / 1000000.0
-         + (double)m_acc / 1000000.0;
+    //Предделитель уже отсчитал m_divider базовых шагов, а внутри текущего
+    //накопилось m_acc тактов
+    return (double)m_divider * m_base_cycles + m_acc;
 }
 
 void UKNCTimer::clock(unsigned int counter)
 {
-    // Базовый период задан в микросекундах, а такты приходят на частоте
-    // своего домена: на 6,25 МГц две микросекунды - это 12,5 такта, поэтому
-    // накапливается дробь, а не целое число тактов
-    if (m_system_clock == 0) return;
-
-    m_acc += (uint64_t)counter * 1000000ull;
-    const uint64_t step = (uint64_t)m_system_clock * m_period_us;
-    while (m_acc >= step) {
-        m_acc -= step;
+    m_acc += counter;
+    while (m_acc >= m_base_cycles) {
+        m_acc -= m_base_cycles;
         base_tick();
     }
 }
@@ -190,11 +183,14 @@ unsigned int UKNCTimer::read_register(unsigned int address, bool peek)
     case REG_COUNTER: {
         const unsigned int v = m_counter & COUNTER_MASK;
         if (peek) return v;
-        // Чтение текущего значения снимает обе готовности и перезагружает
-        // счётчик - так делает и сама машина
+        // Чтение текущего значения снимает обе готовности. Счётчик после
+        // внешнего события перезагружается: он стоял и хранил время, а ПЗУ
+        // мерит следующий полупериод с начала. Готовность обнуления его не
+        // трогает - счёт идёт дальше, и тест таймера Titus видит на машине
+        // после нуля N - 1, хотя читает 177714 при взведённом разряде 7
         if (m_flags & (F_ZERO | F_EVENT)) {
+            if (m_flags & F_EVENT) m_counter = m_reload & COUNTER_MASK;
             m_flags &= ~(F_ZERO | F_EVENT);
-            m_counter = m_reload & COUNTER_MASK;
             update_irq();
         }
         return v;
@@ -262,7 +258,9 @@ void UKNCTimer::save_state(StateWriter &w)
     w.u("reload", m_reload);
     w.u("counter", m_counter);
     w.n("divider", m_divider);
-    w.n64("acc", m_acc);
+    // Такты внутри шага. Прежний ключ acc считал их в миллионных долях
+    // такта и при чтении пропускается: там другой масштаб
+    w.n("phase", m_acc);
     w.n("zeroes", m_zeroes);
     w.n("events", m_events);
     //What is being offered on the shared request line, so that a request
@@ -278,7 +276,8 @@ emulator::Result UKNCTimer::load_state(const StateReader &r)
     r.u("reload", m_reload);
     r.u("counter", m_counter);
     r.u("divider", m_divider);
-    r.n64("acc", m_acc);
+    r.u("phase", m_acc);
+    if (m_acc >= m_base_cycles) m_acc = 0;
     r.u("zeroes", m_zeroes);
     r.u("events", m_events);
     uint32_t offered = 0;

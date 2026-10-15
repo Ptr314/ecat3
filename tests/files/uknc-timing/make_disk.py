@@ -4,10 +4,16 @@
 # размера дискеты.
 #
 #   py make_disk.py      -> timing.dsk рядом
-import os, struct
+#   py make_disk.py OUT.dsk FILE... -> такой же диск с другими файлами
+#                        (тест процессора: ../uknc-cputest)
+import os, struct, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(HERE, 'timing.dsk')
 FILES = ['TSSPD.SAV', 'MOV.SAV', 'MOVB.SAV', 'CMP.SAV', 'ADD.SAV', 'OP1.SAV', 'JSR.SAV', 'IRQ.SAV']
+if len(sys.argv) > 2:
+    OUT = os.path.abspath(sys.argv[1])
+    FILES = [os.path.abspath(f) for f in sys.argv[2:]]
 TOTAL = 1600                    # блоков на дискете МХ: 80 дорожек, 2 стороны
 R50 = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ$.%0123456789'
 
@@ -39,7 +45,7 @@ blk = first
 for fn in FILES:
     data = open(os.path.join(HERE, fn), 'rb').read()
     n = (len(data) + 511) // 512
-    name, ext = fn.split('.')
+    name, ext = os.path.basename(fn).split('.')
     struct.pack_into('<7H', seg, p, 0o2000, rad50(name[:3]), rad50(name[3:6]), rad50(ext), n, 0, 0)
     p += 14
     img[blk * 512:blk * 512 + len(data)] = data
@@ -49,5 +55,5 @@ p += 14
 struct.pack_into('<H', seg, p, 0o4000)                  # конец сегмента
 img[6 * 512:8 * 512] = seg
 
-open(os.path.join(HERE, 'timing.dsk'), 'wb').write(img[:blk * 512])
-print('timing.dsk:', blk, 'blocks')
+open(OUT, 'wb').write(img[:blk * 512])
+print(os.path.basename(OUT) + ':', blk, 'blocks')
