@@ -51,6 +51,7 @@
         FEF4-FEF5 -> asm-ay3[0000] mode=rw
         FEFA-FEFB -> asm-dac-reg[0000] mode=rw
         FE2C-FE2D -> pp-win[0000] mode=rw
+        FE18-FE2B -> pp-proto[0000] mode=w
         FE30-FE37 -> channels[0014] mode=rw
         FE38-FE3F -> channels[001C] mode=rw
         FE58-FE5B -> fdc[0000] mode=rw
