@@ -250,7 +250,8 @@ DIN/DOUT был выставлен достаточно заранее. Опоз
 * `gen_table.py` &mdash; собственные шаблоны и хвосты (`table.pkl`).
 * `emit_inc.py` &mdash; `vm1_timing_table.inc`; недостающие формы (`#n`
   приемником, `(PC)`, `-(PC)`) берутся от ближайших, OP1 PC кроме TST/TSTB
-  &mdash; от TST PC / TSTB PC (на стенде они не идут подряд).
+  &mdash; от TST PC / TSTB PC (на стенде они не идут подряд), MOVB x,PC
+  &mdash; от MOV x,PC.
 * `gen.py`, `measured.tsv`, `bk0011.json` &mdash; измеренные случаи: таблица
   BK0010-11-instructions-speed, фото БК0010 и БК0011М.
 * `model.py` &mdash; тот же расчет, что в `vm1_timing.cpp`, по измеренным

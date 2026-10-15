@@ -59,9 +59,29 @@ def fill(base, n_ops, fmt):
                         forms[idx] = forms[j]; origin[idx] = 'like ' + origin[j]
                         approx.append((idx, origin[idx])); break
 
+def fill_pc():
+    # Запись в PC как в регистр - лишняя выборка кода следующей команды; эти
+    # формы гоняются (gen_all.py), кроме байтовых (MOVB, BICB, BISB уводят
+    # модель не туда) - у них шаблон словной операции, - и однооперандных,
+    # кроме TST/TSTB (не идут подряд) - у них шаблон TST PC / TSTB PC. MTPS
+    # PC в PC не пишет
+    for byte, word in ((6, 0), (9, 3), (10, 4)):
+        for s in range(16):
+            idx = F_DOUBLE + byte * 256 + s * 16 + spec(0, 1)
+            like = F_DOUBLE + word * 256 + s * 16 + spec(0, 1)
+            if forms[idx] is None and forms[like] is not None:
+                forms[idx] = forms[like]; origin[idx] = 'like ' + origin[like]
+                approx.append((idx, origin[idx]))
+    for op in range(28):
+        idx = F_SINGLE + op * 16 + spec(0, 1)
+        like = F_SINGLE + (21 if op >= 14 else 7) * 16 + spec(0, 1)
+        if forms[idx] is None and op != 26 and forms[like] is not None:
+            forms[idx] = forms[like]; origin[idx] = 'like ' + origin[like]
+            approx.append((idx, origin[idx]))
+
 def fill_double():
-    # PC как обычный регистр (режимы 0, 1, 4, 5 с R7) идёт по микропрограмме
-    # любого регистра: та же форма без признака PC
+    # (PC), -(PC), @-(PC): та же форма без признака PC. PC в режиме 0
+    # гоняется на модели (fill_pc() - что не гоняется)
     for op in range(12):
         for s in range(16):
             for d in range(16):
@@ -72,6 +92,7 @@ def fill_double():
                     if forms[j] is not None:
                         forms[idx] = forms[j]; origin[idx] = 'like ' + origin[j]; break
 
+fill_pc()
 fill_double()
 fill(F_SINGLE, 28, lambda op, s: op * 16 + s)
 fill(F_EIS, 5, lambda op, s: op * 16 + s)

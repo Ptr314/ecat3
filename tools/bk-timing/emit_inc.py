@@ -99,6 +99,17 @@ def fill_single_pc():
             forms[idx] = forms[like]; origin[idx] = 'like ' + origin[like]
             approx.append((idx, origin[idx]))
 
+def fill_byte_pc():
+    # MOVB x,PC: the bench cannot run it (the sign extension is no code
+    # address), the word operation writes PC the same way
+    for s in range(16):
+        idx = F_DOUBLE + 6 * 256 + s * 16 + spec(0, 1)
+        like = F_DOUBLE + 0 * 256 + s * 16 + spec(0, 1)
+        if forms[idx] is None and forms[like] is not None:
+            forms[idx] = forms[like]; origin[idx] = 'like ' + origin[like]
+            approx.append((idx, origin[idx]))
+
+fill_byte_pc()
 fill_double()
 fill_single_pc()
 fill(F_SINGLE, 28, lambda op, s: op * 16 + s)

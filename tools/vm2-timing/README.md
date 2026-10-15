@@ -84,6 +84,15 @@ RPLY через D30/D19 на 2 нс позже фронта, который ег
 слово команды, а эмулятор его только пишет: шаг слова команды без обращения
 идёт к памяти следующего кода.
 
+PC в режиме 0 тоже снимается: каждая копия пишет в PC адрес следующей (MOV)
+или ноль (остальные операции), так копии идут подряд. Запись в PC как в
+регистр стоит на ВМ2 лишней выборки кода следующей команды: MOV (R)+,PC
+выходит ровно RTS PC, MOV R0,PC на одно чтение длиннее MOV R0,R1. Чтение PC
+(MOV PC,R0, MOV PC,(R0)) лишнего не стоит - в отличие от ВМ1, где лишнее
+чтение и там. Байтовые операции в PC (MOVB, BICB, BISB) модель уводит не туда
+(с 032376 на 032776: при младшем байте от 0200 меняется и старший), у них
+шаблон словной операции; однооперандные, кроме TST/TSTB, берут TST PC / TSTB PC.
+
 ## Проверка
 
 Главная проверка - на программах, которых при подборе не было:
@@ -175,7 +184,7 @@ MOV R4,(R2); SOB - 44/96. На машине - `work-dvk4-kcgd-factory`.
 T=tools/vm2-timing
 py $T/gen_all.py && PAIR=1 py $T/gen_all.py && py $T/gen_x.py
 py $T/run_all.py                       # статическая память, log_*.txt
-py $T/extract.py all:0 all:1 all:2 all:3 all:4 all:5 pair:0 pair:1 pair:2 pair:3 pair:4 pair:5 pair:6 pair:7 x:0
+py $T/extract.py all:0 all:1 all:2 all:3 all:4 all:5 all:6 pair:0 pair:1 pair:2 pair:3 pair:4 pair:5 pair:6 pair:7 pair:8 x:0
 py $T/gen_table.py
 py $T/emit_inc.py <репозиторий>/src/emulator/devices/cpu/vm2_timing_table.inc
 WINDOW=1 py $T/run_all.py              # проверка: wlog_*.txt

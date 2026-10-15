@@ -9,8 +9,8 @@
 [pp-timer.counter] &000677
 [pp-timer.counter] &000576
 === регистр держит значение на перепаде, чтение снимает готовность ===
-[pp-timer.value16] &000004: &000576
+[pp-timer.value16] &000004: &000575
 [pp-timer.state] &000007
 === дальше регистр идёт за счётчиком ===
-[pp-timer.counter] &000474
-[pp-timer.value16] &000004: &000474
+[pp-timer.counter] &000475
+[pp-timer.value16] &000004: &000475

@@ -23,7 +23,10 @@ REGS = {0: 0o062000, 1: 0o064000, 2: 0o066000, 3: 0o0, 4: 0o072000, 5: 0o073000}
 MODES = [('R', 0, None, None), ('(R)', 1, None, None), ('(R)+', 2, None, None),
          ('@(R)+', 3, None, None), ('-(R)', 4, None, None), ('@-(R)', 5, None, None),
          ('X(R)', 6, None, 'x0'), ('@X(R)', 7, None, 'x0'),
-         ('#n', 2, 7, 'imm'), ('@#a', 3, 7, 'abs'), ('a', 6, 7, 'rel'), ('@a', 7, 7, 'rel')]
+         ('#n', 2, 7, 'imm'), ('@#a', 3, 7, 'abs'), ('a', 6, 7, 'rel'), ('@a', 7, 7, 'rel'),
+         ('PC', 0, 7, None)]
+PC = 12                    # PC как обычный регистр, режим 0
+PC_DATA = 0o060000         # слова, которые читает случай с приёмником PC; пишет преамбула
 
 DOUBLE = {'MOV': 0o01, 'CMP': 0o02, 'BIT': 0o03, 'BIC': 0o04, 'BIS': 0o05, 'ADD': 0o06,
           'MOVB': 0o11, 'CMPB': 0o12, 'BITB': 0o13, 'BICB': 0o14, 'BISB': 0o15, 'SUB': 0o16}
@@ -61,6 +64,23 @@ def forms():
             out.append(dict(name='%s %s,R4' % (op, MODES[si][0]), kind='eis', eis=op, op=code, src=si))
     for di in range(12):
         out.append(dict(name='XOR R,%s' % MODES[di][0], kind='xor', dst=di))
+    # PC как обычный регистр. Запись в PC кристалл делает другой микропрограммой,
+    # чем в R0-R5 (на БК MOV (SP)+,PC идёт как RTS PC, а не как MOV (SP)+,R0):
+    # каждая копия пишет в PC адрес следующей команды, и копии по-прежнему идут
+    # подряд (MOV - адрес следующей, остальные операции - нулевой источник)
+    for op, code in DOUBLE.items():
+        for di in range(12):
+            out.append(dict(name='%s PC,%s' % (op, MODES[di][0]), kind='double', op=code, src=PC, dst=di))
+        # MOVB: расширение знака, не адрес кода. BICB и BISB с нулевым
+        # источником уводят модель с 032376 на 032776: байт в PC с младшим
+        # байтом от 0200 меняет и старший. Берутся от BIC и BIS (emit_inc.py)
+        if op in ('MOVB', 'BICB', 'BISB'): continue
+        for si in range(13):
+            if si == PC and op in ('ADD', 'SUB', 'BIC', 'BICB'): continue
+            out.append(dict(name='%s %s,PC' % (op, MODES[si][0]), kind='pcdst', op=code, src=si))
+    out.append(dict(name='XOR R,PC', kind='pcdst', op=None, src=0))
+    out.append(dict(name='TST PC', kind='single', op=SINGLE['TST'], dst=PC))
+    out.append(dict(name='TSTB PC', kind='single', op=SINGLE['TSTB'], dst=PC))
     for cond, code, taken in (('BR', 0o000400, 1), ('BNE', 0o001000, 1), ('BEQ', 0o001400, 0),
                               ('BCS', 0o103400, 1), ('BCC', 0o103000, 0), ('BPL', 0o100000, 1)):
         out.append(dict(name='%s %s' % (cond, 'taken' if taken else 'not'), kind='branch', op=code))
@@ -136,7 +156,67 @@ def build_one(p, f):
     else:
         raise ValueError(kind)
 
+def build_pc_case(p, f):
+    """запись в PC как в обычный регистр: каждая копия кладёт туда адрес
+    команды за собой. Слова источника лежат с PC_DATA (указатели на них - с
+    PC_DATA + 040), их пишет преамбула после восстановления данных; источнику
+    R и (R) у каждой копии свой регистр"""
+    start = p.a
+    p.flow = []
+    si = f['src']
+    name, ms, rs, ks = MODES[si]
+    per_reg = ms in (0, 1) and rs is None
+    n = 6 if per_reg else COPIES
+    mov = f['op'] == 0o01
+    xor = f['op'] is None
+    p.ins(0o005037, 0o177702)
+    regfix = {}
+    for r in range(6):
+        p.ins(0o012700 | r, 0); regfix[r] = p.a - 2
+    p.ins(0o012706, 0o077000)
+    direct = lambda k: PC_DATA + 2 * k
+    indirect = lambda k: PC_DATA + 0o40 + 2 * k
+    if ms in (3, 5, 7) or si == 11:
+        vals = [indirect(k) for k in range(n)]
+        ptrs = [direct(n - 1 - k) if ms == 5 else direct(k) for k in range(n)]
+    elif ms == 4:
+        vals = [direct(n - 1 - k) for k in range(n)]; ptrs = None
+    else:
+        vals = [direct(k) for k in range(n)]; ptrs = None
+    valfix = []
+    for k in range(n):
+        if per_reg and ms == 0: break
+        p.ins(0o012737, 0, vals[k]); valfix.append(p.a - 4)
+        if ptrs: p.ins(0o012737, vals[k], ptrs[k])
+    if not per_reg:
+        r1 = {2: PC_DATA, 3: PC_DATA, 4: PC_DATA + 2 * n, 5: PC_DATA + 2 * n}.get(ms, 0)
+        p.mem[regfix[1] >> 1] = r1
+    p.ins(0o000261)                        # SEC
+    copies = []
+    for k in range(n):
+        copies.append(p.a)
+        r = k if per_reg else (rs if rs is not None else 1)
+        nxt = p.a + (4 if ks else 2)
+        v = nxt if mov else 0
+        words = [0o074007 | (r << 6)] if xor else [(f['op'] << 12) | (ms << 9) | (r << 6) | 0o07]
+        if ks == 'imm': words.append(v)
+        elif ks == 'abs': words.append(vals[k])
+        elif ks == 'x0': words.append(ptrs[k] if ptrs else vals[k])
+        elif ks == 'rel': words.append(((ptrs[k] if ptrs else vals[k]) - (p.a + 4)) & 0xFFFF)
+        p.ins(*words)
+        if per_reg and ms == 0: p.mem[regfix[r] >> 1] = v
+        elif per_reg: p.mem[regfix[r] >> 1] = vals[k]
+        if valfix: p.mem[valfix[k] >> 1] = v
+        if PAIR:
+            p.ins(0o000261)               # SEC
+    f['copies'] = copies
+    f['start'] = start
+    f['end'] = p.a
+    f['flow'] = list(p.flow)
+
 def build_case(p, f):
+    if f['kind'] == 'pcdst':
+        return build_pc_case(p, f)
     start = p.a
     p.flow = []
     table_needed = f['kind'] in ('rts', 'rti', 'rtt') or \
@@ -252,7 +332,10 @@ def main():
     parts = []
     p = Prog()
     part_forms = []
-    for f in forms():
+    fs = forms()
+    if os.environ.get('ONLY_PC') == '1':             # только формы с PC, посмотреть
+        fs = [f for f in fs if f.get('src') == PC or f.get('dst') == PC or f['kind'] == 'pcdst']
+    for f in fs:
         save = (p.a, p.tab, list(p.mem))
         build_case(p, f)
         if p.a > CODE_LIMIT - 256 or p.tab > 0o077000 - 64:
