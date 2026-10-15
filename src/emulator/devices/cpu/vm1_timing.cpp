@@ -320,11 +320,18 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
         m_now += clocks * TICKS_PER_CLOCK;
         return (int)clocks;
     }
+    //PC as a register operand: the chip reads the word after the instruction
+    //(R_PREFETCH) and throws it away, then fetches the next opcode. That word
+    //lies where the instruction does
+    const BusReply * own_reply = nullptr;
+    for (unsigned int j = 0; j < m_count; j++)
+        if (m_acc[j].role == R_STREAM) own_reply = m_acc[j].reply;
     for (unsigned int i = 0; i < n; i++) {
         const Step & s = steps[i];
         const bool prefetch = (i == n - 1);
         const Access * a = prefetch ? nullptr : take(s.role, s.kind);
-        const BusReply * reply = prefetch ? prefetch_reply : (a ? a->reply : nullptr);
+        const BusReply * reply = prefetch ? prefetch_reply
+                               : (s.role == R_PREFETCH ? own_reply : (a ? a->reply : nullptr));
         const uint32_t strobe = t + ((uint32_t)s.gap + s.strobe) * TICKS_PER_HALF;
         if (s.kind == K_RMW) {
             const uint32_t rel = reply_time(strobe, K_READ, false, reply) + RELEASE_HALVES * TICKS_PER_HALF;

@@ -16,7 +16,10 @@ REGS = {0: 0o062000, 1: 0o064000, 2: 0o066000, 3: 0o0, 4: 0o072000, 5: 0o073000}
 MODES = [('R', 0, None, None), ('(R)', 1, None, None), ('(R)+', 2, None, None),
          ('@(R)+', 3, None, None), ('-(R)', 4, None, None), ('@-(R)', 5, None, None),
          ('X(R)', 6, None, 'x0'), ('@X(R)', 7, None, 'x0'),
-         ('#n', 2, 7, 'imm'), ('@#a', 3, 7, 'abs'), ('a', 6, 7, 'rel'), ('@a', 7, 7, 'rel')]
+         ('#n', 2, 7, 'imm'), ('@#a', 3, 7, 'abs'), ('a', 6, 7, 'rel'), ('@a', 7, 7, 'rel'),
+         ('PC', 0, 7, None)]
+PC = 12                    # PC as a plain register, mode 0
+PC_DATA = 0o060000         # words a PC destination case reads, written by its preamble
 
 DOUBLE = {'MOV': 0o01, 'CMP': 0o02, 'BIT': 0o03, 'BIC': 0o04, 'BIS': 0o05, 'ADD': 0o06,
           'MOVB': 0o11, 'CMPB': 0o12, 'BITB': 0o13, 'BICB': 0o14, 'BISB': 0o15, 'SUB': 0o16}
@@ -46,6 +49,25 @@ def forms():
     for di in range(12):
         if di == 8: continue
         out.append(dict(name='XOR R,%s' % MODES[di][0], kind='xor', dst=di))
+    # PC as a plain register. The chip runs another microprogram when it writes
+    # PC (MOV (SP)+,PC takes as long as RTS PC on a real БК, not as MOV
+    # (SP)+,R0): every copy writes the address of the next instruction into it,
+    # so the copies still follow each other (MOV the next address, the other
+    # operations a zero source)
+    for op, code in DOUBLE.items():
+        for di in range(12):
+            if di == 8: continue
+            # MOVB PC,R2 right after MOVB PC,R2 makes the model read the
+            # second opcode for ever; after SEC it runs (pairs only)
+            if op == 'MOVB' and not PAIR: continue
+            out.append(dict(name='%s PC,%s' % (op, MODES[di][0]), kind='double', op=code, src=PC, dst=di))
+        if op == 'MOVB': continue                       # sign extended: no code address
+        for si in range(13):
+            if si == PC and op in ('ADD', 'SUB', 'BIC', 'BICB'): continue
+            out.append(dict(name='%s %s,PC' % (op, MODES[si][0]), kind='pcdst', op=code, src=si))
+    out.append(dict(name='XOR R,PC', kind='pcdst', op=None, src=0))
+    out.append(dict(name='TST PC', kind='single', op=SINGLE['TST'], dst=PC))
+    out.append(dict(name='TSTB PC', kind='single', op=SINGLE['TSTB'], dst=PC))
     for cond, code, taken in (('BR', 0o000400, 1), ('BNE', 0o001000, 1), ('BEQ', 0o001400, 0),
                               ('BCS', 0o103400, 1), ('BCC', 0o103000, 0), ('BPL', 0o100000, 1)):
         out.append(dict(name='%s %s' % (cond, 'taken' if taken else 'not'), kind='branch', op=code))
@@ -85,7 +107,68 @@ class Prog:
         self.mem[self.tab >> 1] = v & 0xFFFF; self.tab += 2
         return self.tab - 2
 
+def build_pc_case(p, f):
+    """a write to PC as a plain register: every copy puts the address of the
+    instruction after it there. The source words lie at PC_DATA (pointers to
+    them at PC_DATA + 040 + ...), written by the preamble after the data area
+    is restored; a register or (R) source takes a register of its own per copy"""
+    start = p.a
+    si = f['src']
+    name, ms, rs, ks = MODES[si]
+    per_reg = ms in (0, 1) and rs is None              # R, (R): one register a copy
+    n = 6 if per_reg else COPIES
+    mov = f['op'] == 0o01
+    xor = f['op'] is None
+    p.w(0o005037); p.w(0o177702)
+    regfix = {}
+    for r in range(6):
+        p.w(0o012700 | r); regfix[r] = p.a; p.w(0)
+    p.w(0o012706); p.w(0o077000)
+    direct = lambda k: PC_DATA + 2 * k                 # the value read by copy k
+    indirect = lambda k: PC_DATA + 0o40 + 2 * k        # its value behind a pointer
+    # where each copy's value lies, and the pointer to it if any
+    if ms in (3, 5, 7) or si == 11:
+        vals = [indirect(k) for k in range(n)]
+        ptrs = [direct(n - 1 - k) if ms == 5 else direct(k) for k in range(n)]
+    elif ms == 4:
+        vals = [direct(n - 1 - k) for k in range(n)]; ptrs = None
+    else:
+        vals = [direct(k) for k in range(n)]; ptrs = None
+    valfix = []
+    for k in range(n):
+        if per_reg and ms == 0: break                   # the value is in the register
+        p.w(0o012737); valfix.append(p.a); p.w(0); p.w(vals[k])
+        if ptrs: p.w(0o012737); p.w(vals[k]); p.w(ptrs[k])
+    if not per_reg:
+        r1 = {2: PC_DATA, 3: PC_DATA, 4: PC_DATA + 2 * n, 5: PC_DATA + 2 * n}.get(ms, 0)
+        p.mem[regfix[1] >> 1] = r1
+    p.w(0o000261)                                       # SEC
+    copies = []
+    for k in range(n):
+        copies.append(p.a)
+        r = k if per_reg else (rs if rs is not None else 1)
+        nxt = p.a + (4 if ks else 2)
+        v = nxt if mov else 0
+        if xor:
+            p.w(0o074007 | (r << 6))
+        else:
+            p.w((f['op'] << 12) | (ms << 9) | (r << 6) | 0o07)
+        if ks == 'imm': p.w(v)
+        elif ks == 'abs': p.w(vals[k])
+        elif ks == 'x0': p.w(ptrs[k] if ptrs else vals[k])
+        elif ks == 'rel': p.w(((ptrs[k] if ptrs else vals[k]) - (p.a + 2)) & 0xFFFF)
+        if per_reg and ms == 0: p.mem[regfix[r] >> 1] = v
+        elif per_reg: p.mem[regfix[r] >> 1] = vals[k]
+        if valfix: p.mem[valfix[k] >> 1] = v
+        if PAIR:
+            p.w(0o000261)                 # SEC
+    f['copies'] = copies
+    f['start'] = start
+    f['end'] = p.a
+
 def build_case(p, f):
+    if f['kind'] == 'pcdst':
+        return build_pc_case(p, f)
     start = p.a
     regs = dict(REGS)
     table_needed = f['kind'] in ('rts', 'rti', 'rtt') or \
@@ -175,6 +258,8 @@ def build_case(p, f):
 
 def main():
     fs = forms()
+    if os.environ.get('ONLY_PC') == '1':             # a quick look at the PC forms alone
+        fs = [f for f in fs if f.get('src') == PC or f.get('dst') == PC or f['kind'] == 'pcdst']
     parts = []
     cur = []
     p = Prog()

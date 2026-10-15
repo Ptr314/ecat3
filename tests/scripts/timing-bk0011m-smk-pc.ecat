@@ -1,0 +1,22 @@
+# БК0011М + СМК-512: запись в PC как в обычный регистр.
+#
+# POP_vs_RET_plus_SMK считает за кадр (между двумя кадровыми прерываниями)
+# переходы MOV (SP)+,PC и RTS PC на себя же, в памяти платы и в ОЗУ машины,
+# и печатает число в восьмеричной системе. На настоящей БК0011М + СМК обе
+# команды в памяти платы дают 6742 (около 23 тактов): запись в PC идет другой
+# микропрограммой, чем в R0-R5. Таблица форм раньше брала для MOV (SP)+,PC
+# шаблон MOV (SP)+,R0 и давала 10676 (18 тактов).
+# @timeout 60
+
+MACHINE "bk/BK-0011M-smk512.ext"
+WAIT _3000
+
+COMMAND cpu.stop()
+COMMAND ram0.load("../files/bk-timing/pop-vs-ret-smk.bin", 1774)
+COMMAND cpu.setreg(SP, 1000)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 2000)
+COMMAND cpu.run()
+WAIT _5000
+SCREEN "../results/timing-bk0011m-smk-pc.png"
+EXIT

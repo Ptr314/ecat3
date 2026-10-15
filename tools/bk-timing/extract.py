@@ -56,6 +56,12 @@ def form_key(w, taken=None):
     if (w & 0o177740) == 0o000240: return ('CC', 1 if w & 0o20 else 0)
     return ('?', w)
 
+def pc_operand(key):
+    """PC in mode 0 as an operand: OP1 PC, OP2 PC,x / x,PC, XOR R,PC"""
+    if key[0] == 'D': return key[2] == 1 or key[3] == 1
+    if key[0] in ('S', 'XOR'): return key[-1] == 1
+    return False
+
 def load_events(name):
     ev = []
     for l in open('log_%s.txt' % name):
@@ -104,15 +110,27 @@ def occurrences(prefix, part):
         if not i1: print('missing end', c['name']); continue
         seg = trs[i0:i1[0] + 1]
         fetch_pos = [k for k, t in enumerate(seg) if t['addr'] in starts and t['O'] is None and t['I'] is not None]
+        # PC as a register operand: the chip reads the word after the
+        # instruction ahead and throws it away, then fetches the next opcode
+        # (here the same word) again. The first read is a step of role P
+        thrown = set()
+        k = 0
+        while k + 2 < len(fetch_pos):
+            a_, b_ = fetch_pos[k], fetch_pos[k + 1]
+            if pc_operand(form_key(mem[seg[a_]['addr'] >> 1])) and \
+               fetch_pos[k + 2] == b_ + 1 and seg[b_ + 1]['addr'] == seg[b_]['addr']:
+                thrown.add(b_); del fetch_pos[k + 1]
+            k += 1
         prev_key = None
         for a_, b_ in zip(fetch_pos, fetch_pos[1:]):
             opaddr = seg[a_]['addr']
             w = mem[opaddr >> 1]
             steps = []
             prev_rel = seg[a_]['rel'][-1]
-            for t in seg[a_ + 1:b_ + 1]:
+            for j, t in enumerate(seg[a_ + 1:b_ + 1], a_ + 1):
                 role = 'I' if (lo <= t['addr'] < hi and t['addr'] >= 0o100 and t['O'] is None
                                and t['I'] is not None and t['addr'] < DATA_START) else 'D'
+                if j in thrown: role = 'P'
                 if t['I'] is not None and t['O'] is not None:
                     st = ('M', role, round(t['S'] - prev_rel), round(t['I'] - t['S']), round(t['O'] - t['rel'][0]))
                 elif t['I'] is not None:

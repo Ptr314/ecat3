@@ -73,8 +73,9 @@ def fill(base, n_ops, fmt):
                         approx.append((idx, origin[idx])); break
 
 def fill_double():
-    # PC used as a plain register (mode 0, 1, 4, 5 with R7) runs the microcode
-    # of any other register: the same form without the PC bit
+    # (PC), -(PC), @-(PC): the same form without the PC bit. PC in mode 0 is
+    # simulated (gen_all.py): writing or reading it as a register throws the
+    # prefetch away, so the R form would be several clocks fast
     for op in range(12):
         for s in range(16):
             for d in range(16):
@@ -85,7 +86,21 @@ def fill_double():
                     if forms[j] is not None:
                         forms[idx] = forms[j]; origin[idx] = 'like ' + origin[j]; break
 
+def fill_single_pc():
+    # OP1 PC: the prefetch the chip starts with is thrown away and the next
+    # opcode is read again (the microprogram's description), whatever the
+    # operation does to PC - only TST PC and TSTB PC keep the copies in a row
+    # on the bench, the others take their time. MTPS ends the same way for
+    # every operand, its R form already has it
+    for op in range(28):
+        idx = F_SINGLE + op * 16 + spec(0, 1)
+        like = F_SINGLE + (21 if op >= 14 else 7) * 16 + spec(0, 1)
+        if forms[idx] is None and op != 26 and forms[like] is not None:
+            forms[idx] = forms[like]; origin[idx] = 'like ' + origin[like]
+            approx.append((idx, origin[idx]))
+
 fill_double()
+fill_single_pc()
 fill(F_SINGLE, 28, lambda op, s: op * 16 + s)
 fill(F_XOR, 1, lambda op, s: s)
 fill(F_JMP, 1, lambda op, s: s)
@@ -97,7 +112,7 @@ for base in (F_JMP, F_JSR):
             forms[base + s] = forms[base + like]; origin[base + s] = 'like ' + origin[base + like]
 
 KIND = {'R': 'K_READ', 'W': 'K_WRITE', 'M': 'K_RMW'}
-ROLE = {'D': 'R_DATA', 'I': 'R_STREAM', 'N': 'R_NONE'}
+ROLE = {'D': 'R_DATA', 'I': 'R_STREAM', 'N': 'R_NONE', 'P': 'R_PREFETCH'}
 PREFETCH_RELEASE = 5
 
 steps_out = []; first = []; count = []; end = []

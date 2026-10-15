@@ -232,13 +232,25 @@ DIN/DOUT был выставлен достаточно заранее. Опоз
   чередования: 8 копий на 3 и 6 МГц, 6 на 4 МГц).
 * `build_xlsx.py` &mdash; сводная книга по всем измеренным командам.
 * `gen_all.py` &mdash; программы со всеми формами (по 8 копий подряд);
-  с `PAIR=1` &mdash; каждая копия с `SEC` после нее.
+  с `PAIR=1` &mdash; каждая копия с `SEC` после нее. PC как обычный регистр
+  (режим 0) тоже гоняется: приемником &mdash; каждая копия пишет в PC адрес
+  следующей (MOV) или ноль (остальные операции), так копии идут подряд.
+  `MOVB PC,R` подряд модель зацикливает (читает код второй копии без конца),
+  поэтому она есть только в парах.
 * `gen_x.py` &mdash; то, что не раскладывается подряд: JMP/JSR (R)+, вход в
   прерывание по IRQ2 и по VIRQ.
 * `extract.py` &mdash; трассы -> экземпляры команд с предшественником (`occ.pkl`).
+  У команды с PC-операндом в режиме 0 (OP1 PC, OP2 Rs,Rd и ss,PC, где один
+  из регистров PC) кристалл читает слово после команды и выбрасывает его, а
+  потом читает код следующей команды заново; на стенде это два чтения одного
+  адреса подряд, первое становится шагом роли `P` (`R_PREFETCH`). Формы
+  `PC,память` так не делают. Без этого MOV (SP)+,PC терял цикл и шел
+  на четверть быстрее RTS PC, а на машине они равны (тест POP_vs_RET,
+  `timing-bk0011m-smk-pc`).
 * `gen_table.py` &mdash; собственные шаблоны и хвосты (`table.pkl`).
-* `emit_inc.py` &mdash; `vm1_timing_table.inc`; недостающие формы (PC как
-  обычный регистр, `#n` приемником) берутся от ближайших.
+* `emit_inc.py` &mdash; `vm1_timing_table.inc`; недостающие формы (`#n`
+  приемником, `(PC)`, `-(PC)`) берутся от ближайших, OP1 PC кроме TST/TSTB
+  &mdash; от TST PC / TSTB PC (на стенде они не идут подряд).
 * `gen.py`, `measured.tsv`, `bk0011.json` &mdash; измеренные случаи: таблица
   BK0010-11-instructions-speed, фото БК0010 и БК0011М.
 * `model.py` &mdash; тот же расчет, что в `vm1_timing.cpp`, по измеренным
@@ -252,10 +264,10 @@ DIN/DOUT был выставлен достаточно заранее. Опоз
 ```
 py $T/gen_all.py && PAIR=1 py $T/gen_all.py && py $T/gen_x.py
 export TRACE=1
-for n in 0 1 2 3 4 5;   do $T/run_sim.sh A$n 166.667 83.333 1 1 0 all$n.mem  & done
-for n in 0 1 2 3 4 5 6; do $T/run_sim.sh P$n 166.667 83.333 1 1 0 pair$n.mem & done
+for n in 0 1 2 3 4 5 6;   do $T/run_sim.sh A$n 166.667 83.333 1 1 0 all$n.mem  & done
+for n in 0 1 2 3 4 5 6 7; do $T/run_sim.sh P$n 166.667 83.333 1 1 0 pair$n.mem & done
 $T/run_sim.sh X0 166.667 83.333 1 1 0 x0.mem; wait
-py $T/extract.py all:0 all:1 all:2 all:3 all:4 all:5 pair:0 pair:1 pair:2 pair:3 pair:4 pair:5 pair:6 x:0
+py $T/extract.py all:0 all:1 all:2 all:3 all:4 all:5 all:6 pair:0 pair:1 pair:2 pair:3 pair:4 pair:5 pair:6 pair:7 x:0
 py $T/gen_table.py 4
 py $T/emit_inc.py <репозиторий>/src/emulator/devices/cpu/vm1_timing_table.inc
 py $T/gen.py && py $T/model.py B,E,H '{"sr":250,"sw":400,"sm":700,"lat":550,"fm":2}'

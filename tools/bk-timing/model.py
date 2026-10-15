@@ -63,7 +63,7 @@ def steady(key, slow_code, slow_data, reply, n=48, fast=None):
     steps = table[key]['steps']
     reps = []
     for i, s in enumerate(steps):
-        stream = s[1] == 'I'
+        stream = s[1] in ('I', 'P')         # P: the word after the instruction, thrown away
         slow = slow_code if stream else slow_data
         reps.append(reply if slow else fast)
     total = []
