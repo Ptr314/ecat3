@@ -26,6 +26,7 @@
         <file alias="savestate">resources/icons/camera.png</file>
         <file alias="play_fwd">resources/icons/player_fwd.png</file>
         <file alias="pause">resources/icons/player_pause.png</file>
+        <file alias="turbo">resources/icons/turbo.png</file>
         <file alias="ondebug">resources/icons/debug.png</file>
         <file alias="wrench">resources/icons/configure.png</file>
         <file alias="terminal">resources/icons/terminal.png</file>

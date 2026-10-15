@@ -481,6 +481,14 @@ def main():
                         help="показать список тестов и выйти")
     parser.add_argument("--exe", metavar="ПУТЬ",
                         help="исполняемый файл эмулятора (иначе берется самая свежая сборка)")
+    # По умолчанию max: результаты от скорости не зависят (время сценария
+    # эмулируемое), а прогон идет в десять раз быстрее. --speed 1 - в
+    # настоящем времени, как до появления ключа; тогда эмулятору ключ не
+    # передается вовсе, и годится и сборка, которая его не знает
+    parser.add_argument("--speed", metavar="X", default="max",
+                        help="скорость эмуляции (--speed эмулятора: 0.25..1000 или max, "
+                             "по умолчанию max); результаты от нее не зависят, меняется "
+                             "только время прогона; 1 - в настоящем времени")
     args = parser.parse_args()
 
     if hasattr(sys.stdout, "reconfigure"):
@@ -513,6 +521,8 @@ def main():
     exe_args = []
     if "headless" in os.path.basename(exe).lower():
         exe_args.append("--no-sound")
+    speed_args = ["--speed", args.speed] if args.speed not in ("", "1") else []
+    exe_args += speed_args
 
     # Расширения с ошибкой гоняет только консольная сборка: оконная на ошибке
     # загрузки показывает окно с сообщением и ждет. Если выбрана оконная, ищется
@@ -520,7 +530,7 @@ def main():
     error_tests = [t for t in tests if t.kind == "error"]
     error_exe = None
     if error_tests:
-        if exe_args:
+        if "--no-sound" in exe_args:
             error_exe = (exe, env)
         else:
             for candidate in find_emulators(None):
@@ -539,11 +549,12 @@ def main():
 
     def run_one(t):
         if t.kind == "error":
-            return run_test(t, error_exe[0], error_exe[1], args.update, ["--no-sound"])
+            return run_test(t, error_exe[0], error_exe[1], args.update, ["--no-sound"] + speed_args)
         return run_test(t, exe, env, args.update, exe_args)
 
-    print("Эмулятор: %s%s%s" % (where, " (%s)" % version if version else "",
-                                ", без звука" if exe_args else ""))
+    print("Эмулятор: %s%s%s%s" % (where, " (%s)" % version if version else "",
+                                  ", без звука" if "--no-sound" in exe_args else "",
+                                  ", скорость " + args.speed if speed_args else ""))
     print("Тестов:   %d%s\n" % (len(tests), ", режим обновления эталонов" if args.update else ""))
 
     # Без Pillow compare_png() не может сосчитать точки и объявляет расхождением

@@ -283,7 +283,7 @@
         <location line="+54"/>
         <location filename="../emulator/devices/specific/smk512.cpp" line="+71"/>
         <location filename="../emulator/devices/specific/a16m.cpp" line="+71"/>
-        <location filename="../emulator/devices/specific/uknc_mouse.cpp" line="+35"/>
+        <location filename="../emulator/devices/specific/uknc_mouse.cpp" line="+36"/>
         <source>Incorrect parameters for</source>
         <translation>Неправильно указаны параметры для</translation>
     </message>
@@ -348,7 +348,7 @@
     </message>
     <message>
         <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+634"/>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+560"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+563"/>
         <source>Hard disk image</source>
         <translation>Образ жёсткого диска</translation>
     </message>
@@ -402,7 +402,7 @@
         <translation>Образ ПЗУ</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+556"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+589"/>
         <source>Low-pass filter cutoff, Hz (0 - off)</source>
         <translation>Срез фильтра нижних частот, Гц (0 - выключен)</translation>
     </message>
@@ -491,7 +491,7 @@
 <context>
     <name>DVKDW</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-482"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-485"/>
         <source>Hard disk image file not found</source>
         <translation>Файл образа жёсткого диска не найден</translation>
     </message>
@@ -506,7 +506,7 @@
         <translation>Неподдерживаемая геометрия жёсткого диска</translation>
     </message>
     <message>
-        <location line="+534"/>
+        <location line="+537"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; ожидает имя файла</translation>
     </message>
@@ -1129,7 +1129,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+255"/>
+        <location filename="../emulator/emulator.cpp" line="+254"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -1714,7 +1714,7 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-484"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-515"/>
         <source>Incorrect sample rate</source>
         <translation>Неверная частота дискретизации</translation>
     </message>
@@ -1729,7 +1729,7 @@
         <translation>Ошибка записи</translation>
     </message>
     <message>
-        <location line="+458"/>
+        <location line="+489"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation>Команда &apos;volume&apos; требует значение</translation>
     </message>
@@ -1959,7 +1959,7 @@
 <context>
     <name>KCGDDisplay</name>
     <message>
-        <location line="+510"/>
+        <location line="+522"/>
         <source>KCGD device is expected</source>
         <translation>Ожидается устройство КЦГД</translation>
     </message>
@@ -2172,7 +2172,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1465"/>
+        <location filename="../mainwindow.cpp" line="+1568"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2229,14 +2229,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-719"/>
-        <location line="+1700"/>
+        <location filename="../mainwindow.cpp" line="-780"/>
+        <location line="+1780"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1429"/>
+        <location filename="../mainwindow.cpp" line="-1476"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -2280,16 +2280,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-493"/>
+        <location filename="../mainwindow.cpp" line="-526"/>
         <location line="+47"/>
-        <location line="+1339"/>
+        <location line="+1419"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1454"/>
+        <location line="-1534"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2318,7 +2318,7 @@
     <message>
         <location line="-120"/>
         <location line="+76"/>
-        <location line="+1071"/>
+        <location line="+1151"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+200"/>
@@ -2333,7 +2333,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2324"/>
+        <location line="-2404"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2358,7 +2358,7 @@
         <translation>Скорость мыши</translation>
     </message>
     <message>
-        <location line="+139"/>
+        <location line="+172"/>
         <source>Auto scale</source>
         <translation>Автоматически</translation>
     </message>
@@ -2409,13 +2409,13 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+609"/>
+        <location line="+637"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
     </message>
     <message>
-        <location line="+214"/>
+        <location line="+233"/>
         <source>All supported files</source>
         <translation>Все поддерживаемые файлы</translation>
     </message>
@@ -2426,7 +2426,7 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1217"/>
+        <location line="-1297"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -2439,7 +2439,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+71"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1698"/>
+        <location filename="../mainwindow.cpp" line="+1778"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -2449,15 +2449,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1676"/>
-        <location line="+1169"/>
+        <location line="-1756"/>
+        <location line="+1249"/>
         <location line="+378"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1658"/>
+        <location line="-1738"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2493,7 +2493,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1497"/>
+        <location line="+1577"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -2524,12 +2524,20 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1676"/>
+        <location line="-1756"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
     <message>
-        <location line="-100"/>
+        <location line="-480"/>
+        <location line="+587"/>
+        <location line="+1"/>
+        <location line="+789"/>
+        <source>Turbo</source>
+        <translation>Турбо</translation>
+    </message>
+    <message>
+        <location line="-997"/>
         <source>Floppy drive %1</source>
         <translation>Дисковод %1</translation>
     </message>
@@ -2559,7 +2567,12 @@
         <translation>Цифровой блок буквами</translation>
     </message>
     <message>
-        <location line="+86"/>
+        <location line="+23"/>
+        <source>Speed</source>
+        <translation>Скорость</translation>
+    </message>
+    <message>
+        <location line="+96"/>
         <location line="+49"/>
         <source>Sharp</source>
         <translation>Резкое</translation>
@@ -2570,7 +2583,18 @@
         <translation>Кинескоп</translation>
     </message>
     <message>
-        <location line="+767"/>
+        <location line="+635"/>
+        <source>As fast as possible</source>
+        <translation>Как можно быстрее</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>.</source>
+        <comment>decimal point of the speed</comment>
+        <translation>,</translation>
+    </message>
+    <message>
+        <location line="+178"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>
     </message>
@@ -2768,12 +2792,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1336"/>
+        <location line="-1376"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1379"/>
+        <location line="+1419"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -3111,7 +3135,7 @@
 <context>
     <name>PoiskFdcControl</name>
     <message>
-        <location line="+404"/>
+        <location line="+405"/>
         <source>Not a wd1793 device</source>
         <translation>Устройство - не wd1793</translation>
     </message>
@@ -3314,7 +3338,7 @@
 <context>
     <name>Script</name>
     <message>
-        <location filename="../emulator/script/script_parser.cpp" line="+57"/>
+        <location filename="../emulator/script/script_parser.cpp" line="+58"/>
         <source>Line</source>
         <translation>Строка</translation>
     </message>
@@ -4194,12 +4218,12 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../main.cpp" line="+57"/>
+        <location filename="../main.cpp" line="+60"/>
         <source>Internal error, the program may be unstable:</source>
         <translation>Внутренняя ошибка, программа может работать неустойчиво:</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+33"/>
         <source>eCat3, a universal emulator of retro computers</source>
         <translation>eCat3, универсальный эмулятор ретрокомпьютеров</translation>
     </message>
@@ -4252,6 +4276,16 @@
         <location line="+1"/>
         <source>directory</source>
         <translation>каталог</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Speed of emulation for this run: 0.25 to 1000, or max, see Emulation &gt; Speed.</source>
+        <translation>Скорость эмуляции на этот запуск: от 0.25 до 1000 или max, см. Эмуляция &gt; Скорость.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>factor</source>
+        <translation>множитель</translation>
     </message>
 </context>
 <context>

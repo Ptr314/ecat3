@@ -652,6 +652,20 @@ std::vector<DeviceFieldInfo> I8275Display::get_device_fields()
 
 bool I8275Display::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
+    //The size of the last whole frame, as follow_resolution() will make it:
+    //sx/sy follow on the render thread, a wall clock frame later, and a script
+    //read them before that whenever the machine ran faster than real time
+    if (field == "resolution")
+    {
+        const unsigned int cpl = m_frame_cpl;
+        const unsigned int lps = m_frame_lps;
+        if (m_have_frame && cpl >= 10 && lps >= 10 && lps <= I8275D_MAX_ROWS)
+        {
+            const unsigned int w = m_frame_zx?((cpl/2)*8):(cpl*6);
+            out.text = std::to_string(w) + "x" + std::to_string(lps * m_frame_h);
+            return true;
+        }
+    }
     if (field == "border")         { out.numeric = true; out.width = 8;  out.values.push_back(m_border); return true; }
     if (field == "border_changes") { out.numeric = true; out.width = 32; out.values.push_back((unsigned int)m_border_changes); return true; }
     //Какие цвета встретились в кадре, по разряду на цвет. Полосы иначе не

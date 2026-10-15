@@ -248,6 +248,7 @@ private:
     emulator::Result do_type(const ScriptCommand &c);
     emulator::Result do_logdefs(const ScriptCommand &c);
     emulator::Result do_radix(const ScriptCommand &c);
+    emulator::Result do_speed(const ScriptCommand &c);
     emulator::Result do_log(const ScriptCommand &c);
     emulator::Result do_command(const ScriptCommand &c);
     emulator::Result do_screen(const ScriptCommand &c);

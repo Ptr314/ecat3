@@ -44,6 +44,7 @@ struct ScriptCommand {
 #define SCRIPT_CMD_RADIX    17
 #define SCRIPT_CMD_MOUSE    18
 #define SCRIPT_CMD_SAVESTATE 19
+#define SCRIPT_CMD_SPEED    20
 
 //Comparison operators of WAITFOR
 #define SCRIPT_OP_EQ        0

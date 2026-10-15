@@ -77,7 +77,7 @@
     #include "renderers/renderer_opengl.h"
 #endif
 
-MainWindow::MainWindow(const QString &config_file, const QString &script_file, QWidget *parent)
+MainWindow::MainWindow(const QString &config_file, const QString &script_file, int speed_q, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , fdd_timer(nullptr)
@@ -216,6 +216,28 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
     cpu_button->setAutoRaise(true);
     cpu_button->setFocusPolicy(Qt::NoFocus);
     cpu_layout->addWidget(cpu_button);
+
+    //Turbo, right of the processor button: the speed chosen in the menu while
+    //pressed, 1x while released
+    turbo_action = new QAction(QIcon(":/icons/turbo"), tr("Turbo"), this);
+    turbo_action->setCheckable(true);
+    connect(turbo_action, &QAction::toggled, this, [this](bool checked) {
+        //Turbo at 1x is no turbo: the button does not stay pressed
+        if (checked && turbo_speed == 4) {
+            QSignalBlocker block(turbo_action);
+            turbo_action->setChecked(false);
+            return;
+        }
+        e->write_setup("Core", "turbo", checked?"1":"0");
+        apply_speed();
+    });
+    QToolButton * turbo_button = new QToolButton(cpu_holder);
+    turbo_button->setDefaultAction(turbo_action);
+    //Full size, like the rest of the bar: only the processor button is smaller
+    turbo_button->setIconSize(ui->toolBar->iconSize());
+    turbo_button->setAutoRaise(true);
+    turbo_button->setFocusPolicy(Qt::NoFocus);
+    cpu_layout->addWidget(turbo_button);
 
     ui->toolBar->insertWidget(ui->actionCPUState, cpu_holder);
     ui->toolBar->removeAction(ui->actionCPUState);
@@ -361,6 +383,25 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, Q
     //The recording block of the tool bar can be hidden from the Display menu
     ui->actionRecPanel->setChecked(e->read_setup("Video", "recording_panel", "1") != "0");
     ui->actionRememberDisks->setChecked(e->read_setup("Core", "remember_disks", "0") == "1");
+
+    //Emulation > Speed and Turbo, before the first machine: its title shows
+    //the speed
+    try {
+        const int s = std::stoi(e->read_setup("Core", "speed", "4"));
+        for (int v : SPEEDS_Q) if (v == s) turbo_speed = s;
+    } catch (...) {}
+    {
+        QSignalBlocker block(turbo_action);
+        turbo_action->setChecked(turbo_speed != 4 && e->read_setup("Core", "turbo", "0") == "1");
+    }
+    apply_speed();
+    //--speed holds for this run only: the ini keeps what the menu chose, and
+    //the button shows whether the machine runs at another speed than 1x
+    if (speed_q >= 0) {
+        QSignalBlocker block(turbo_action);
+        turbo_action->setChecked(speed_q != 4);
+        e->set_speed(speed_q);
+    }
 
     //Size, position and the maximized state of the previous run. Qt moves a
     //window saved on a monitor that is gone back onto an existing one
@@ -760,6 +801,40 @@ void MainWindow::CreateScreenMenu()
             ra->setActionGroup(remap_group);
             ra->setCheckable(true);
             ra->setChecked(remap == i);
+        }
+    }
+
+    //How fast emulated time runs against the wall clock: the whole machine,
+    //not its processor (see Emulator::set_speed()). Kept in quarters
+    const int emu_speed = turbo_speed;
+    turbo_action->setText(tr("Turbo"));
+    turbo_action->setToolTip(tr("Turbo") + ": " + speed_text(turbo_speed));
+    if (speed_menu == nullptr) {
+        speed_menu = new QMenu(this);
+        speed_menu->setIcon(QIcon(":/icons/turbo"));
+        const QList<QAction*> acts = ui->menuEmulation->actions();
+        const int at = acts.indexOf(ui->menuRecording->menuAction());
+        ui->menuEmulation->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, speed_menu);
+    }
+    speed_menu->setTitle(tr("Speed"));
+    speed_menu->clear();
+    {
+        QActionGroup * speed_group = new QActionGroup(speed_menu);
+        for (int v : SPEEDS_Q) {
+            QAction * sa = speed_menu->addAction(speed_text(v), [this, v]{
+                //Applied at once: Turbo is pressed for any speed but 1x
+                turbo_speed = v;
+                e->write_setup("Core", "speed", std::to_string(v));
+                e->write_setup("Core", "turbo", (v != 4)?"1":"0");
+                {
+                    QSignalBlocker block(turbo_action);
+                    turbo_action->setChecked(v != 4);
+                }
+                apply_speed();
+            });
+            sa->setActionGroup(speed_group);
+            sa->setCheckable(true);
+            sa->setChecked(emu_speed == v);
         }
     }
 
@@ -1518,10 +1593,29 @@ void MainWindow::on_action_Select_a_machine_triggered()
 }
 
 
+const int MainWindow::SPEEDS_Q[7] = {1, 2, 4, 8, 20, 40, 0};
+
+void MainWindow::apply_speed()
+{
+    e->set_speed(turbo_action->isChecked()?turbo_speed:4);
+    turbo_action->setToolTip(tr("Turbo") + ": " + speed_text(turbo_speed));
+    if (e->loaded) set_title();
+}
+
+QString MainWindow::speed_text(int quarters)
+{
+    if (quarters == 0) return tr("As fast as possible");
+    return QString::number(quarters / 4.0).replace('.', tr(".", "decimal point of the speed")) + "x";
+}
+
 void MainWindow::set_title()
 {
     SystemData * sd = e->get_system_data();
-    setWindowTitle("[eCat " + QString(PROJECT_VERSION) + "] " + QString::fromStdString(sd->system_name) + " : " + QString::fromStdString(sd->system_version));
+    QString title = "[eCat " + QString(PROJECT_VERSION) + "] " + QString::fromStdString(sd->system_name) + " : " + QString::fromStdString(sd->system_version);
+    //Emulation > Speed, shown when it is not 1x
+    const int q = e->speed();
+    if (q != 4) title += " [" + speed_text(q) + "]";
+    setWindowTitle(title);
 }
 
 void MainWindow::load_config(QString file_name, bool set_default, bool run_embedded)

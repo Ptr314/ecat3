@@ -20,6 +20,8 @@
     #include "emulator/audio/audio_driver_miniaudio.h"
 #endif
 
+std::atomic<int> GenericSound::s_speed_q(4);
+
 void SoundSource::sound_changed()
 {
     if (m_mixer != nullptr) m_mixer->source_changed();
@@ -359,18 +361,6 @@ void GenericSound::clock(unsigned int counter)
     while (m_counter >= m_counts_per_sample) {
         m_counter -= m_counts_per_sample;
 
-        // Checking buffer overflow and discarding a part of it if expected
-        if (m_initialized && m_buffer_pos >= m_buffer.size()) {
-            size_t overflow_delta = m_samples_per_buffer / 8 * m_channels;
-            std::copy(
-                m_buffer.begin() + overflow_delta,
-                m_buffer.begin() + m_buffer_pos,
-                m_buffer.begin()
-            );
-            m_buffer_pos -= overflow_delta;
-            m_overflows++;
-        };
-
         // Using average value between counts
         float v = (m_acc_counter > 0) ? static_cast<float>(m_accumulator) / (float)(m_acc_counter * m_shares) : m_last_input;
         m_last_input = v;
@@ -404,16 +394,59 @@ void GenericSound::clock(unsigned int counter)
 
         if (m_muted) out = out_left = 0;
 
-        if (m_channels == 2) {
-            if (m_capture) m_capture_data.push_back(static_cast<int16_t>(out_left));
-            if (m_initialized) m_buffer[m_buffer_pos++] = static_cast<int16_t>(out_left);
+        if (m_capture) {
+            if (m_channels == 2) m_capture_data.push_back(static_cast<int16_t>(out_left));
+            m_capture_data.push_back(static_cast<int16_t>(out));
         }
-        if (m_capture) m_capture_data.push_back(static_cast<int16_t>(out));
-        if (m_initialized) m_buffer[m_buffer_pos++] = static_cast<int16_t>(out);
+        if (!m_initialized) continue;
+
+        // Not 1x: the samples of emulated time are averaged (faster) or
+        // repeated (slower) into as many as the device takes a wall second
+        const int q = s_speed_q;
+        //As fast as possible: no pitch to keep, the device gets silence
+        if (q == 0) continue;
+        if (q == 4) {
+            //Nothing of another speed left for the next one
+            m_speed_phase = m_speed_n = 0;
+            m_speed_sum = m_speed_sum_left = 0;
+            push_frame(static_cast<int16_t>(out), static_cast<int16_t>(out_left));
+            continue;
+        }
+        m_speed_sum += out;
+        m_speed_sum_left += out_left;
+        m_speed_n++;
+        m_speed_phase += 4;
+        if (m_speed_phase < q) continue;
+        const int16_t avg = static_cast<int16_t>(m_speed_sum / m_speed_n);
+        const int16_t avg_left = static_cast<int16_t>(m_speed_sum_left / m_speed_n);
+        while (m_speed_phase >= q) {
+            m_speed_phase -= q;
+            push_frame(avg, avg_left);
+        }
+        m_speed_sum = m_speed_sum_left = 0;
+        m_speed_n = 0;
     }
     //The mix used to be rebuilt here, for every sample: who is in it changes
     //only when a source is written for the first time, plugged, unplugged or
     //reset, and each of those says so through sound_mode_changed()
+}
+
+// A frame into the buffer of the audio device, under m_buffer_mutex
+void GenericSound::push_frame(int16_t out, int16_t out_left)
+{
+    // Checking buffer overflow and discarding a part of it if expected
+    if (m_buffer_pos >= m_buffer.size()) {
+        size_t overflow_delta = m_samples_per_buffer / 8 * m_channels;
+        std::copy(
+            m_buffer.begin() + overflow_delta,
+            m_buffer.begin() + m_buffer_pos,
+            m_buffer.begin()
+        );
+        m_buffer_pos -= overflow_delta;
+        m_overflows++;
+    }
+    if (m_channels == 2) m_buffer[m_buffer_pos++] = out_left;
+    m_buffer[m_buffer_pos++] = out;
 }
 
 void GenericSound::audio_callback(void* userdata, uint8_t* stream, int len)

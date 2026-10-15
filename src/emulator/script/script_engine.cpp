@@ -636,6 +636,9 @@ emulator::Result ScriptEngine::execute(const ScriptCommand &c)
             case SCRIPT_CMD_RADIX:
                 return do_radix(c);
 
+            case SCRIPT_CMD_SPEED:
+                return do_speed(c);
+
             case SCRIPT_CMD_LOG:
                 return do_log(c);
 
@@ -939,6 +942,19 @@ emulator::Result ScriptEngine::do_radix(const ScriptCommand &c)
     SystemData * sd = e->get_system_data();
     if (sd != nullptr) sd->radix = base;
     set_default_radix(base);
+    return emulator::Result::ok();
+}
+
+//How fast emulated time runs against the wall clock (Emulator::set_speed()).
+//Nothing the script measures changes, only how long it takes; in decimal
+//whatever the radix, since 0.25 is no octal number
+emulator::Result ScriptEngine::do_speed(const ScriptCommand &c)
+{
+    const int q = c.args.empty() ? -1 : Emulator::parse_speed(c.args[0]);
+    if (q < 0)
+        return emulator::Result::error(emulator::ErrorCode::BadParameters,
+            "SPEED expects a factor from 0.25 to 1000 in steps of 0.25, or MAX");
+    e->set_speed(q);
     return emulator::Result::ok();
 }
 

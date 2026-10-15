@@ -450,6 +450,15 @@ const I18N = {
         keyRemapNone:       "No remapping",
         keyRemapArrows:     "Numeric keypad on arrows",
         keyRemapLetters:    "Numeric keypad on letters",
+        speed:              "Speed",
+        speedTitle:         "How fast the whole machine runs, devices included; the sound changes pitch",
+        speed1:             "0.25x",
+        speed2:             "0.5x",
+        speed4:             "1x",
+        speed8:             "2x",
+        speed20:            "5x",
+        speed40:            "10x",
+        speed0:             "As fast as possible",
         rememberDisks:      "Remember disks",
         rememberDisksTitle: "Put the disks chosen last back into the drives when the machine is started again; the images are kept in this browser",
         forgetDisks:        "Forget all",
@@ -565,6 +574,15 @@ const I18N = {
         keyRemapNone:       "Не переназначать",
         keyRemapArrows:     "Цифровой блок стрелками",
         keyRemapLetters:    "Цифровой блок буквами",
+        speed:              "Скорость",
+        speedTitle:         "Насколько быстрее или медленнее идёт вся машина, вместе с устройствами; звук меняет высоту",
+        speed1:             "0,25x",
+        speed2:             "0,5x",
+        speed4:             "1x",
+        speed8:             "2x",
+        speed20:            "5x",
+        speed40:            "10x",
+        speed0:             "Как можно быстрее",
         rememberDisks:      "Запоминать диски",
         rememberDisksTitle: "Вставлять последние выбранные диски при следующем запуске машины; образы хранятся в этом браузере",
         forgetDisks:        "Забыть все",
@@ -2065,6 +2083,22 @@ function setupKeyRemap(module) {
     send();
     select.addEventListener("change", () => {
         settings.set("keyRemap", select.value);
+        send();
+    });
+    releaseFocus(select);
+}
+
+// Settings > Speed: emulated time against the wall clock, in quarters (4 =
+// 1x, 0 = as fast as possible, silent). The whole machine, not its processor;
+// the emulator keeps it across loads
+function setupSpeed(module) {
+    const select = document.getElementById("speed");
+    const send = () => module.ccall("wasm_set_speed", null, ["number"], [parseInt(select.value, 10)]);
+    select.value = settings.get("speed", "4");
+    if (select.selectedIndex < 0) select.value = "4";
+    send();
+    select.addEventListener("change", () => {
+        settings.set("speed", select.value);
         send();
     });
     releaseFocus(select);
@@ -3628,6 +3662,7 @@ async function initEcat() {
     releaseFocus(volume);
 
     setupKeyRemap(module);
+    setupSpeed(module);
 
     // The machine named in the address, otherwise the one of the previous
     // visit, starts by itself - after the first click or key press, so that

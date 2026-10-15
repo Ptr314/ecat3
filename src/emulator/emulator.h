@@ -105,6 +105,16 @@ private:
 
     unsigned int clock_freq;
 
+    //The speed of emulated time against the wall clock, in quarters (4 = 1x),
+    //see set_speed(); the part of a tick a slice left over at another speed
+    std::atomic<int> m_speed_q{4};
+    uint64_t m_speed_rem = 0;
+    //Not 1x, and a SCREEN waits for the render thread: emulated time stands
+    //still until the picture is taken, see run()
+    std::atomic<bool> m_shot_hold{false};
+    //Master ticks of a wall time slice, see run()
+    uint64_t slice_ticks(uint64_t elapsed_us);
+
     unsigned int screen_sx;
     unsigned int screen_sy;
     double screen_scale = 1;
@@ -380,6 +390,22 @@ public:
 
     void set_volume(int value);
     void set_muted(bool muted);
+
+    // Emulation > Speed: how fast emulated time runs against the wall clock,
+    // in quarters (1 = 0.25x, 4 = 1x, 40 = 10x, up to SPEED_MAX_Q), 0 - as
+    // fast as the host can, with no wall clock at all. The whole machine speeds
+    // up, processors and devices alike, since nothing inside it changes -
+    // raising a processor's clock instead leaves the devices behind (the БК
+    // floppy stops working). The sound to the device changes pitch, see
+    // GenericSound, and is silent at 0. Kept across machine loads; set by the
+    // menu, the page, --speed and the script verb SPEED
+    static const int SPEED_MAX_Q = 4000;
+    void set_speed(int quarters);
+    int speed() const { return m_speed_q; }
+    // "2", "0.25", "0,5", "max" (also "_2", a decimal mark of a БК script)
+    // into quarters; -1 for anything else, including a speed that is not a
+    // multiple of 0.25
+    static int parse_speed(const std::string &text);
     //From any thread, see invoke()
     void reset(bool cold);
 

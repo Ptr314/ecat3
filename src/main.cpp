@@ -123,7 +123,24 @@ int main(int argc, char *argv[])
         QCoreApplication::translate("main", "directory"));
     parser.addOption(workdirOption);
 
+    QCommandLineOption speedOption(QStringList() << "speed",
+        QCoreApplication::translate("main", "Speed of emulation for this run: 0.25 to 1000, or max, see Emulation > Speed."),
+        QCoreApplication::translate("main", "factor"));
+    parser.addOption(speedOption);
+
     parser.process(a);
+
+    int speed_q = -1;
+    if (parser.isSet(speedOption))
+    {
+        speed_q = Emulator::parse_speed(parser.value(speedOption).toStdString());
+        if (speed_q < 0)
+        {
+            std::cerr << "Invalid speed: " << parser.value(speedOption).toStdString()
+                      << " (0.25 to 1000 in steps of 0.25, or max)" << std::endl;
+            return 2;
+        }
+    }
 
     const bool mcp_mode  = parser.isSet(mcpOption);
     const bool mcp_trace = parser.isSet(mcpTraceOption);
@@ -170,7 +187,7 @@ int main(int argc, char *argv[])
     SDL_Init(SDL_INIT_AUDIO);
 #endif
 
-    MainWindow w(config_file, script_file);
+    MainWindow w(config_file, script_file, speed_q);
     w.setWindowIcon(QIcon(":/icons/tv"));
 
 #ifdef ENABLE_MCP

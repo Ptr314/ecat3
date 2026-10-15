@@ -27,7 +27,11 @@ ecat_machine, отдает остальные строки одним вызов
   а EXIT завершил бы сервер посреди набора;
 * относительные имена файлов (__../files/__, __../results/__) заменяются на
   абсолютные. В сессии MCP нет файла сценария, а значит и каталога, от которого
-  такое имя считается.
+  такое имя считается;
+* на месте первой пустой строки идет SPEED со скоростью из --speed (по умолчанию MAX), как
+  run_tests.py гоняет весь набор. Именно строкой ecat_run, а не ключом сервера:
+  между ecat_machine и ecat_run машина идет сама по себе, и на MAX за это время
+  она ушла бы далеко вперед. --speed 1 строку не добавляет.
 
 Все остальное &ndash; те же строки, тот же порядок, тот же движок.
 """
@@ -313,7 +317,7 @@ def prepare(test):
 # Прогон
 # --------------------------------------------------------------------------
 
-def run_test(test, exe, env, extra_args):
+def run_test(test, exe, env, extra_args, speed):
     result = {"test": test, "problems": [], "skipped": None, "seconds": 0.0}
 
     expected = os.path.join(rt.EXPECTED_DIR, test.name + ".txt")
@@ -327,6 +331,13 @@ def run_test(test, exe, env, extra_args):
         return result
 
     machine, commands = prepare(test)
+    if speed not in ("", "1"):
+        # На место первой пустой строки (комментарий в начале, MACHINE), чтобы
+        # номера строк в сообщениях движка не сдвинулись
+        if commands and commands[0] == "":
+            commands[0] = "SPEED " + speed
+        else:
+            commands = ["SPEED " + speed] + commands
     if not machine:
         result["skipped"] = "в сценарии нет команды MACHINE"
         return result
@@ -412,6 +423,9 @@ def main():
                         help="запускать N серверов одновременно (по умолчанию 1)")
     parser.add_argument("--exe", metavar="ПУТЬ",
                         help="эмулятор, собранный с ключом ENABLE_MCP")
+    parser.add_argument("--speed", metavar="X", default="max",
+                        help="скорость эмуляции сценария (SPEED: 0.25..1000 или max, "
+                             "по умолчанию max); 1 - в настоящем времени")
     args = parser.parse_args()
 
     tests = rt.collect_tests(args.filter, args.all)
@@ -432,7 +446,8 @@ def main():
     else:
         print("Оконная сборка: при загрузке машины будет появляться окно.")
 
-    print("Сервер:   %s%s" % (where, " (%s)" % version if version else ""))
+    print("Сервер:   %s%s%s" % (where, " (%s)" % version if version else "",
+                                  ", скорость " + args.speed if args.speed not in ("", "1") else ""))
     print("Тестов:   %d\n" % len(tests))
 
     results = []
@@ -440,14 +455,14 @@ def main():
     with rt.KeepIni():
         if args.jobs > 1:
             with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
-                futures = {pool.submit(run_test, t, exe, env, extra_args): t
+                futures = {pool.submit(run_test, t, exe, env, extra_args, args.speed): t
                            for t in tests}
                 for future in concurrent.futures.as_completed(futures):
                     results.append(future.result())
                     report_one(results[-1], len(results), len(tests))
         else:
             for i, test in enumerate(tests, 1):
-                results.append(run_test(test, exe, env, extra_args))
+                results.append(run_test(test, exe, env, extra_args, args.speed))
                 report_one(results[-1], i, len(tests))
 
     results.sort(key=lambda r: r["test"].name)

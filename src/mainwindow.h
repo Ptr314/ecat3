@@ -27,7 +27,8 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(const QString &config_file = QString(), const QString &script_file = QString(), QWidget *parent = nullptr);
+    //speed_q: --speed in quarters, -1 for the one of the ini (Emulator::set_speed())
+    MainWindow(const QString &config_file = QString(), const QString &script_file = QString(), int speed_q = -1, QWidget *parent = nullptr);
     ~MainWindow();
 
     //A script given on the command line may end with EXIT <code>. The code
@@ -282,6 +283,14 @@ private:
     //render thread of the core, the window's picture from here
     QMenu * video_menu = nullptr;       //Settings > Video, made once
     QMenu * key_remap_menu = nullptr;   //Settings > Keyboard, made once
+    QMenu * speed_menu = nullptr;       //Emulation > Speed, made once
+    //The Turbo button: released - 1x, pressed - turbo_speed, the speed of the
+    //menu. A choice in the menu presses it unless it is 1x
+    QAction * turbo_action = nullptr;
+    int turbo_speed = 4;                //Quarters, [Core] speed
+    void apply_speed();                 //Turbo and turbo_speed into the emulator
+    QString speed_text(int quarters);   //"0,25x" by the language of the window
+    static const int SPEEDS_Q[7];       //The choices, in quarters (Emulator::set_speed()), 0 - as fast as possible
     QTimer * video_timer = nullptr;     //Follows the recording and its finishing
     QTimer * video_frame_timer = nullptr;   //The window's picture, for the renderers that do not hand it over
     bool video_active = false;          //A recording or its finishing is under way

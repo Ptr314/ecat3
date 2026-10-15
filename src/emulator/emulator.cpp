@@ -1135,7 +1135,7 @@ void Emulator::run()
                 qint64 nowUsecs = timer.nsecsElapsed() / 1000;
                 qint64 elapsed = nowUsecs - lastUsecs;
 
-                if (elapsed < 1000) {
+                if (elapsed < 1000 && m_speed_q != 0) {
                     QThread::yieldCurrentThread();
                     continue;
                 }
@@ -1154,7 +1154,7 @@ void Emulator::run()
                 auto now = std::chrono::steady_clock::now();
                 auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime).count();
 
-                if (elapsed < 1000) {
+                if (elapsed < 1000 && m_speed_q != 0) {
                     std::this_thread::yield();
                     continue;
                 }
@@ -1163,11 +1163,25 @@ void Emulator::run()
 #endif
 
                 //Everything the machine missed while the host was busy
-                //elsewhere is caught up with, without a ceiling: emulated time
+                //elsewhere is caught up with, without a ceiling at 1x (another
+                //speed has one, see slice_ticks()): emulated time
                 //has to track the wall clock, and a slice capped here would
                 //lose the difference for good - a machine under load would run
                 //slow, which is exactly what the test suite measures against
-                uint64_t time_ticks = (uint64_t)elapsed * clock_freq / 1000000;
+                uint64_t time_ticks = slice_ticks((uint64_t)elapsed);
+
+                //A SCREEN of a script is taken by the render thread, a frame or
+                //so of wall time later, while the machine runs on: at 1x that
+                //is a few emulated milliseconds, at MAX a second. At any speed
+                //but 1x the machine waits for the picture instead, which also
+                //makes SCREEN show the moment it was asked for. 1x is left as
+                //it always was: its references were taken that way
+                const bool hold = m_speed_q != 4 && is_screenshot_pending();
+                if (hold != m_shot_hold) {
+                    m_shot_hold = hold;
+                    if (hold) m_frame_event.set();
+                }
+                if (hold) time_ticks = 0;
 
                 //Last resort: an exception leaving this thread ends the whole
                 //process without a word. Devices report through
@@ -1248,6 +1262,11 @@ void Emulator::run()
                 }
                 const int64_t now = now_us();
                 bool due = false;
+                //Slowed down (Emulation > Speed), a machine reports its
+                //frames as much less often: not a lost frame, and the tick
+                //would show it half drawn
+                const int q = m_speed_q;
+                const int64_t lost_us = (q > 0 && q < 4) ? FRAMES_LOST_US * 4 / q : FRAMES_LOST_US;
                 //Not before m_ready: the emulation thread finds the display
                 //only while it sets the machine up
                 if (!seen_valid) display->set_frame_event(&m_frame_event);
@@ -1260,7 +1279,10 @@ void Emulator::run()
                         due = true;
                     }
                 }
-                if (!due && now - last_frame >= FRAMES_LOST_US && now >= next_tick) {
+                //Time stands still for a SCREEN (see the emulation loop):
+                //the picture is shown, and taken, at once
+                if (!due && m_shot_hold && now - last_render >= MIN_GAP_US) due = true;
+                if (!due && now - last_frame >= lost_us && now >= next_tick) {
                     due = true;
                     //A frame that came too late is not made up for with a
                     //burst of quick ones: the schedule starts again from now
@@ -1279,10 +1301,10 @@ void Emulator::run()
                 //fine timer to a process whose window is covered or hidden),
                 //and a 1 ms poll then showed the frame 8 ms late on average
                 int64_t wake = next_tick;
-                if (display->frames_done() != seen_frames)
+                if (display->frames_done() != seen_frames || m_shot_hold)
                     wake = last_render + MIN_GAP_US;
-                else if (last_frame + FRAMES_LOST_US > wake)
-                    wake = last_frame + FRAMES_LOST_US;
+                else if (last_frame + lost_us > wake)
+                    wake = last_frame + lost_us;
                 const int64_t wait_us = wake - now_us();
                 if (wait_us <= 0) continue;
                 m_frame_event.wait_ms(static_cast<unsigned int>((wait_us + 999) / 1000));
@@ -1874,6 +1896,74 @@ void Emulator::set_volume(int value)
             GenericSound * sound = dynamic_cast<GenericSound*>(d);
             if (sound != nullptr) sound->set_volume(value);
         }
+}
+
+void Emulator::set_speed(int quarters)
+{
+    if (quarters < 0) quarters = 4;
+    if (quarters > SPEED_MAX_Q) quarters = SPEED_MAX_Q;
+    m_speed_q = quarters;
+    GenericSound::set_speed(quarters);
+}
+
+int Emulator::parse_speed(const std::string &text)
+{
+    std::string s;
+    for (char c : text)
+        if (c != ' ' && c != '\t') s += static_cast<char>(tolower(static_cast<unsigned char>(c)));
+    if (!s.empty() && s[0] == '_') s.erase(0, 1);
+    if (s == "max") return 0;
+    if (!s.empty() && s.back() == 'x') s.pop_back();
+    if (s.empty()) return -1;
+    //Fixed point by hand: a double would take "0.1" as well
+    uint64_t whole = 0, frac = 0, frac_div = 1;
+    bool point = false;
+    for (char c : s) {
+        if (c == '.' || c == ',') {
+            if (point) return -1;
+            point = true;
+        } else if (c >= '0' && c <= '9') {
+            if (whole > 100000 || frac_div > 100000) return -1;
+            if (point) { frac = frac * 10 + (c - '0'); frac_div *= 10; }
+            else whole = whole * 10 + (c - '0');
+        } else return -1;
+    }
+    if ((frac * 4) % frac_div != 0) return -1;
+    const uint64_t q = whole * 4 + frac * 4 / frac_div;
+    if (q < 1 || q > (uint64_t)SPEED_MAX_Q) return -1;
+    return static_cast<int>(q);
+}
+
+uint64_t Emulator::slice_ticks(uint64_t elapsed_us)
+{
+    const int q = m_speed_q;
+    //As fast as possible: the wall clock does not matter, the slice is
+    //20 ms of emulated time, short enough for invoke() to stay prompt
+    if (q == 0) {
+        m_speed_rem = 0;
+        return clock_freq / 50;
+    }
+    //1x exactly as it always was
+    if (q == 4) {
+        m_speed_rem = 0;
+        return elapsed_us * clock_freq / 1000000;
+    }
+    //The remainder is carried: at 0.25x a 1 ms slice is a quarter of
+    //a millisecond, and truncating it every time would lose a share of it
+    if (elapsed_us > 1000000) elapsed_us = 1000000;     //capped below anyway; no overflow
+    const uint64_t num = elapsed_us * clock_freq * (uint64_t)q + m_speed_rem;
+    uint64_t ticks = num / 4000000;
+    m_speed_rem = num % 4000000;
+    //Not 1x: a host that cannot keep up gives a slice longer each time, and
+    //invoke() (the menus, the debugger, a disk change) waits for the slice to
+    //end. 50 ms of emulated time at most, the rest is dropped: such a machine
+    //runs as fast as the host allows. 1x keeps the catch-up uncapped, see run()
+    const uint64_t cap = clock_freq / 20;
+    if (ticks > cap) {
+        ticks = cap;
+        m_speed_rem = 0;
+    }
+    return ticks;
 }
 
 void Emulator::set_muted(bool muted)

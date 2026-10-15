@@ -203,7 +203,7 @@
         <location line="+54"/>
         <location filename="../emulator/devices/specific/smk512.cpp" line="+71"/>
         <location filename="../emulator/devices/specific/a16m.cpp" line="+71"/>
-        <location filename="../emulator/devices/specific/uknc_mouse.cpp" line="+35"/>
+        <location filename="../emulator/devices/specific/uknc_mouse.cpp" line="+36"/>
         <source>Incorrect parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -252,7 +252,7 @@
     </message>
     <message>
         <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+634"/>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+560"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+563"/>
         <source>Hard disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -306,7 +306,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+556"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+589"/>
         <source>Low-pass filter cutoff, Hz (0 - off)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -395,7 +395,7 @@
 <context>
     <name>DVKDW</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-482"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-485"/>
         <source>Hard disk image file not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -410,7 +410,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+534"/>
+        <location line="+537"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -921,7 +921,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+255"/>
+        <location filename="../emulator/emulator.cpp" line="+254"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1403,7 +1403,7 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-484"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-515"/>
         <source>Incorrect sample rate</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1418,7 +1418,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+458"/>
+        <location line="+489"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1604,7 +1604,7 @@
 <context>
     <name>KCGDDisplay</name>
     <message>
-        <location line="+510"/>
+        <location line="+522"/>
         <source>KCGD device is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1804,7 +1804,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1465"/>
+        <location filename="../mainwindow.cpp" line="+1568"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1847,7 +1847,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+886"/>
+        <location filename="../mainwindow.cpp" line="+905"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1868,14 +1868,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1605"/>
-        <location line="+1700"/>
+        <location filename="../mainwindow.cpp" line="-1685"/>
+        <location line="+1780"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1429"/>
+        <location filename="../mainwindow.cpp" line="-1476"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1915,9 +1915,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-601"/>
+        <location filename="../mainwindow.cpp" line="-634"/>
         <location line="+76"/>
-        <location line="+1071"/>
+        <location line="+1151"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+200"/>
@@ -1932,7 +1932,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2324"/>
+        <location line="-2404"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -1954,14 +1954,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1339"/>
+        <location line="+1419"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1454"/>
+        <location line="-1534"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2021,14 +2021,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1169"/>
+        <location line="+1249"/>
         <location line="+378"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1658"/>
+        <location line="-1738"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2064,12 +2064,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1497"/>
+        <location line="+1577"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1473"/>
+        <location line="-1553"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2084,7 +2084,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+23"/>
+        <source>Speed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+27"/>
         <source>Auto scale</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2137,18 +2142,37 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="-740"/>
+        <location line="+587"/>
+        <location line="+1"/>
+        <location line="+789"/>
+        <source>Turbo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-629"/>
         <source>Picture tube</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+570"/>
+        <location line="+598"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+196"/>
+        <location line="+36"/>
+        <source>As fast as possible</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>.</source>
+        <comment>decimal point of the speed</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+178"/>
         <source>Configurations</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2393,12 +2417,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1336"/>
+        <location line="-1376"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1379"/>
+        <location line="+1419"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2711,7 +2735,7 @@
 <context>
     <name>PoiskFdcControl</name>
     <message>
-        <location line="+404"/>
+        <location line="+405"/>
         <source>Not a wd1793 device</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2829,7 +2853,7 @@
 <context>
     <name>Script</name>
     <message>
-        <location filename="../emulator/script/script_parser.cpp" line="+57"/>
+        <location filename="../emulator/script/script_parser.cpp" line="+58"/>
         <source>Line</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3666,12 +3690,12 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../main.cpp" line="+57"/>
+        <location filename="../main.cpp" line="+60"/>
         <source>Internal error, the program may be unstable:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+33"/>
         <source>eCat3, a universal emulator of retro computers</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3723,6 +3747,16 @@
     <message>
         <location line="+1"/>
         <source>directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Speed of emulation for this run: 0.25 to 1000, or max, see Emulation &gt; Speed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>factor</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

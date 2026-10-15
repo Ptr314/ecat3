@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <vector>
 
 #include "emulator/thread_compat.h"
@@ -148,6 +149,18 @@ private:
     bool m_video_capture = false;
     std::vector<int16_t> m_video_data;
 
+    // The speed of emulation (Emulator::set_speed), in quarters: what goes to
+    // the audio device is resampled by it, so the device gets as many samples
+    // a wall second as at 1x and the pitch follows the speed, like a tape
+    // played fast. A WAV and a video take every sample: they are emulated time.
+    // Static, since every machine loaded makes its outputs anew
+    static std::atomic<int> s_speed_q;
+    int m_speed_phase = 0;
+    float m_speed_sum = 0;
+    float m_speed_sum_left = 0;
+    int m_speed_n = 0;
+    void push_frame(int16_t out, int16_t out_left);
+
     static void audio_callback(void* userdata, uint8_t* stream, int len);
     void handle_audio_callback(uint8_t* stream, int len);
 
@@ -174,6 +187,8 @@ public:
     virtual void clock(unsigned int counter) override;
     virtual void set_volume(unsigned int volume);
     virtual void set_muted(bool muted);
+    // 4 = 1x, see s_speed_q
+    static void set_speed(int quarters) { s_speed_q = quarters; }
 
     // The sound of a video, see VideoRecorder. begin and end on the emulation
     // thread, take from any; samples at sample_rate(), counted in emulated time

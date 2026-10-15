@@ -64,6 +64,7 @@ struct Options
     bool mcp_trace = false;
     bool no_sound = false;
     bool selftest = false;
+    std::string speed;
     std::string print_config;
     bool help = false;
     bool version = false;
@@ -107,6 +108,7 @@ Options parse_options(int argc, char *argv[])
         else if ((a == "-c" || a == "--config")  && has_next) { o.config  = argv[++i]; }
         else if ((a == "-s" || a == "--script")  && has_next) { o.script  = argv[++i]; }
         else if (a == "--workdir"                && has_next) { o.workdir = argv[++i]; }
+        else if (a == "--speed"                  && has_next) { o.speed   = argv[++i]; }
         else if (a == "--print-config"           && has_next) { o.print_config = argv[++i]; }
         else if (!a.empty() && a[0] == '-')      { o.bad = true; o.bad_argument = a; }
         else
@@ -133,6 +135,8 @@ void print_help()
         << "  -s, --script <file.ecat>  Script to run, see docs/SCRIPTING.md\n"
         << "      --workdir <dir>       Directory to work in, the one holding computers/\n"
         << "      --no-sound            Do not open an audio device at all\n"
+        << "      --speed <factor>      Speed of emulation: 0.25 to 1000, or max (as fast as\n"
+        << "                            the host can); a script runs the same at any speed\n"
         << "      --selftest            Check the internal invariants and exit\n"
         << "      --print-config <file>     Print the configuration a machine file resolves to\n"
         << "                            (an extension applied to its base) and exit\n"
@@ -1252,6 +1256,16 @@ int main(int argc, char *argv[])
     Emulator emulator(paths.work, paths.data, paths.software, paths.ini, &renderer);
     //Set before any machine is loaded, and it holds across a change of machine
     if (o.no_sound) emulator.set_audio_enabled(false);
+    if (!o.speed.empty())
+    {
+        const int q = Emulator::parse_speed(o.speed);
+        if (q < 0)
+        {
+            std::cerr << "Invalid speed: " << o.speed << " (0.25 to 1000 in steps of 0.25, or max)" << std::endl;
+            return 2;
+        }
+        emulator.set_speed(q);
+    }
     emulator.user_ext_path = paths.user_ext;
     emulator.cache_path = paths.cache;
     //Unpacked archives and inline data nobody has used for a month

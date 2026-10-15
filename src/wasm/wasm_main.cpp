@@ -430,6 +430,14 @@ void wasm_set_key_remap(int mode)
     if (g_emulator) g_emulator->set_key_remap(mode);
 }
 
+// Settings > Speed of the page, in quarters (4 = 1x), see Emulator::set_speed().
+// The emulator keeps it across machine loads
+EMSCRIPTEN_KEEPALIVE
+void wasm_set_speed(int quarters)
+{
+    if (g_emulator) g_emulator->set_speed(quarters);
+}
+
 // The on-screen keyboard speaks the machine's own key names, not host codes,
 // so this path skips the ЙЦУКЕН -> ЯВЕРТЬ remap entirely.
 EMSCRIPTEN_KEEPALIVE
