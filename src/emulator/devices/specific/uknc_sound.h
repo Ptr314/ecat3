@@ -22,24 +22,27 @@ class UKNCTimer;
 //                11 - 1 кГц, 12 - 8 кГц. Несколько включённых частот
 //                собираются «по И», и разряд 7 может эту сборку модулировать
 //
-// The grid is not a divider of its own: the five taps are разряды 10, 8, 7, 6
-// and 3 of the counter of the programmable timer (177710-177714), and the
+// The grid is not a divider of its own: the five taps are разряды 9, 7, 6, 5
+// and 2 of the counter of the programmable timer (177710-177714), and the
 // device therefore has to be told which timer it listens to ("timer" in the
-// configuration). The frequencies of table 32 are what those taps give while
-// the counter runs through all twelve of its bits, and a program that loads
+// configuration). The description names them 10, 8, 7, 6 and 3 - counting
+// from one (Alex_K, whose SETKA1 and KBSND3 on UTEST.DSK play wrong or not at
+// all with those read from zero; UKNCBTL reads them from zero). The
+// frequencies of table 32 are what the taps give while the counter runs
+// through all twelve of its bits with the 16 us step, and a program that loads
 // the buffer register 177712 with something else moves the whole grid with it
 // - which is how the machine plays music. «Замок гоблинов» keeps all five
 // bits of the grid on all the time and writes the pitch of the note into
 // 177712; a rest is an уставка of 8, a tone far above hearing. Take the grid
 // from a divider of its own instead, and the same game turns into a 60 Гц
-// rattle that never stops. UKNCBTL takes the same taps of the same counter.
+// rattle that never stops.
 //
 // The ROM itself uses the register both ways. A key press is a pulse on bit 7
 // alone (`BIS #200,@#177716`, cleared 40 ms later by `BIC #17600`), and Ctrl-G
 // sets bits 7 and 8 for 0.32 s - the slowest tap, at whatever the timer happens
 // to be counting. The ROM leaves it running through all twelve bits with the
-// 2 us step, so the bell comes out four steps of the grid above the 60 Гц of
-// table 32: 500 кГц / 2^11, 244 Гц.
+// 2 us step, so the bell comes out three steps of the grid above the 60 Гц of
+// table 32: 500 кГц / 2^10, 488 Гц.
 class UKNCSound: public GenericSound
 {
 private:
