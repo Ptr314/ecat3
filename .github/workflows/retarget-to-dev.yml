@@ -1,0 +1,24 @@
+# Pull requests from forks opened against master are switched to dev, where
+# development goes on; master stays the branch visitors see
+name: Retarget PRs to dev
+on:
+  pull_request_target:
+    types: [opened, reopened]
+    branches: [master]
+permissions:
+  pull-requests: write
+jobs:
+  retarget:
+    # Only PRs from forks: the maintainer's own dev -> master merges stay as they are
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          gh pr edit "$PR" --repo "$REPO" --base dev
+          gh pr comment "$PR" --repo "$REPO" --body "Pull requests are accepted into the \`dev\` branch, so the base has been switched to \`dev\`.
+
+          Изменения принимаются в ветку \`dev\`, поэтому базовая ветка переключена на \`dev\`."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
