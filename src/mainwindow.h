@@ -289,6 +289,11 @@ private:
     QAction * turbo_action = nullptr;
     int turbo_speed = 4;                //Quarters, [Core] speed
     void apply_speed();                 //Turbo and turbo_speed into the emulator
+    //SPEED of a script or MCP sets the emulator past the window: the button
+    //and the title follow it by polling, the ini keeps the menu's choice
+    QTimer * speed_timer = nullptr;
+    int shown_speed = -1;               //Quarters the button and the title show
+    void sync_speed();
     QString speed_text(int quarters);   //"0,25x" by the language of the window
     static const int SPEEDS_Q[7];       //The choices, in quarters (Emulator::set_speed()), 0 - as fast as possible
     QTimer * video_timer = nullptr;     //Follows the recording and its finishing

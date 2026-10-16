@@ -402,6 +402,9 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, i
         turbo_action->setChecked(speed_q != 4);
         e->set_speed(speed_q);
     }
+    speed_timer = new QTimer(this);
+    connect(speed_timer, &QTimer::timeout, this, &MainWindow::sync_speed);
+    speed_timer->start(250);
 
     //Size, position and the maximized state of the previous run. Qt moves a
     //window saved on a monitor that is gone back onto an existing one
@@ -1599,6 +1602,22 @@ void MainWindow::apply_speed()
 {
     e->set_speed(turbo_action->isChecked()?turbo_speed:4);
     turbo_action->setToolTip(tr("Turbo") + ": " + speed_text(turbo_speed));
+    shown_speed = e->speed();
+    if (e->loaded) set_title();
+}
+
+//The button is pressed for any speed but 1x, as after --speed; turbo_speed
+//and the ini stay, so releasing it gives 1x and pressing it the menu's speed
+void MainWindow::sync_speed()
+{
+    if (e == nullptr) return;
+    const int q = e->speed();
+    if (q == shown_speed) return;
+    shown_speed = q;
+    {
+        QSignalBlocker block(turbo_action);
+        turbo_action->setChecked(q != 4);
+    }
     if (e->loaded) set_title();
 }
 
@@ -1933,6 +1952,7 @@ void MainWindow::closeEvent (QCloseEvent *event)
     // The timers must not fire once the emulator is gone
     if (fdd_timer != nullptr) fdd_timer->stop();
     if (rec_timer != nullptr) rec_timer->stop();
+    if (speed_timer != nullptr) speed_timer->stop();
     mouse_capture(false);
     if (mouse_timer != nullptr) mouse_timer->stop();
 
