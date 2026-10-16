@@ -1,0 +1,46 @@
+# УК-НЦ: тесты Alex_K с UTEST.DSK (zx-pk.ru, тема 14702) - пультовый режим
+# КМ1801ВМ2. CHLT и PHLT: время пультовых команд (RSEL, RCPC, WCPC, MFUS,
+# MTUS, START, STEP) в цепочке копий в пульте со словом состояния 0400 - там
+# КРСК и КРСП повторяют PC и PSW, и START идёт на следующую команду; CHINT -
+# вход в пульт командой HALT и командой FIS и выход START/STEP. Раньше CHLT
+# зависал, PHLT падал, а CHINT шёл на 75 тактов дольше машины.
+# Протоколы двух настоящих машин - tools/uknc-timing/alexk/, сравнение -
+# run_utest.py и alexk.py там же; эталоны - снимки эмулятора.
+#
+# Диск - tests/files/uknc-timing/alexk.dsk (make_disk.py). Перед снимком оба
+# процессора останавливаются: SCREEN ждёт поток отрисовки
+# @timeout 900
+
+MACHINE "uknc/UKNC.cfg"
+WAIT _12000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+WAIT _15000
+
+# Программа DAY спрашивает дату, ВК оставляет предложенную
+KEY _100,_100,ret
+WAIT _18000
+
+COMMAND fdd1.load("../files/uknc-timing/alexk.dsk")
+WAIT _500
+TYPE "RU MZ1:PHLT\n"
+WAIT _120000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-alexk-hlt-1.png"
+COMMAND cpu.run()
+COMMAND ppu.run()
+TYPE "RU MZ1:CHLT\n"
+WAIT _60000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-alexk-hlt-2.png"
+COMMAND cpu.run()
+COMMAND ppu.run()
+TYPE "RU MZ1:CHINT\n"
+WAIT _60000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-alexk-hlt-3.png"
+EXIT

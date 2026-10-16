@@ -1409,6 +1409,19 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
     //   $RUN$ 12  $STEP$ 16  $MFPM$ 21  $MFPC$ 22  $MFPS$ 24
     //   $MTPM$ 31  $MTPC$ 32  $MTPS$ 34
     if (has_console && context.halt_mode) {
+        // У ВМ2 КРСК и КРСП - не отдельная пара: кристалл пишет их вместе с
+        // PC и словом состояния всякий раз, кроме случая, когда в слове
+        // стоят оба разряда, 7 и 8 (модель cpu11, vm2_wb.v: pc_wr и
+        // cpsw_stb). Вход в пульт по вектору со словом 0600 или 0740 их
+        // замораживает - так они и хранят прерванную программу. А в пульте с
+        // приоритетом 0 они повторяют PC и PSW: RCPC читает адрес следующей
+        // команды, START и STEP никуда не переходят, WCPC и WCPS ничего не
+        // оставляют. На этом стоит тест HALT Alex_K (CHLT, PHLT): копии
+        // START подряд в пульте со словом 0400
+        if (vm2_sel() && (context.PSW & 0200) == 0) {
+            context.console_pc = context.R[PDP11::REG_PC];
+            context.console_psw = (uint16_t)(context.PSW | 0400);
+        }
         switch (command) {
         case 0000010:                                   // RUN (дешифратор: 10-13)
         case 0000011:
@@ -1452,6 +1465,34 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
             context.R[0] = read_word_checked(context.R[5]);
             on_halt_mode(true);
             context.R[5] += 2;
+            return true;
+        }
+        case 0000030: {
+            // Нормализация (в мониторе УК-НЦ не объявлена, у cpu11 -
+            // «unknown»). По модели кристалла: R0 - счётчик с нуля; пока
+            // разряд 7 младшего байта R2 ноль и счётчик меньше 0200, младший
+            // байт R2 и R3 сдвигаются влево с C в разряд 0, R1 - с нулём.
+            // После хотя бы одного шага R2 - этот байт с расширением знака.
+            // Признаки: Z - сдвигов не было, N, V, C сброшены. Шаг стоит 24
+            // такта (тест C030 Alex_K на машине и модель); постоянная
+            // часть подобрана по C030 и P030 там же
+            if (vm3) break;
+            const unsigned int c = get_flag(PDP11::F_C) ? 1 : 0;
+            unsigned int lo = context.R[2] & 0377;
+            unsigned int n = 0;
+            while (!(lo & 0200) && n < 0200) {
+                lo = ((lo << 1) | c) & 0377;
+                context.R[3] = (uint16_t)((context.R[3] << 1) | c);
+                context.R[1] = (uint16_t)(context.R[1] << 1);
+                n++;
+            }
+            if (n != 0) context.R[2] = (uint16_t)((lo & 0200) ? (0177400 | lo) : lo);
+            context.R[0] = (uint16_t)n;
+            set_flag(PDP11::F_N, false);
+            set_flag(PDP11::F_Z, n == 0);
+            set_flag(PDP11::F_V, false);
+            set_flag(PDP11::F_C, false);
+            cycles += 8 + 24 * n;
             return true;
         }
         case 0000031: {                                 // MTPM: R0 -> -(R5)
@@ -1581,8 +1622,13 @@ unsigned int pdp11core::execute()
     // этого дисковый Бейсик УК-НЦ отвечает «Ошибка» на любое действие
     if (has_console && halt_sel != 0 && (command & 0177740) == 0075000 && !m_abort) {
         cycles += C_TRAP;
-        if (halt_sel & 0200) do_trap(PDP11::V_RESERVED);
-        else                 enter_halt_mode(010);
+        if (halt_sel & 0200) {
+            // Резервный код, как любой другой: шаблон ловушки (timing = vm2)
+            do_trap(PDP11::V_RESERVED);
+            m_last_trapped = true;
+        } else {
+            enter_halt_mode(010);
+        }
         return cycles;
     }
 

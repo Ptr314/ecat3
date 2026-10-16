@@ -89,6 +89,10 @@ public:
     };
     // ВМ2: CLC clocks each step of an ASH or ASHC shift adds to the tail
     static const int VM2_SHIFT_CLOCKS = 4;
+    // ВМ2: CLC clocks a bus timeout waits for RPLY before the trap through 004
+    // (Alex_K's BR tests: TR4+RTI against BPT+RTI, 116-125 on both УК-НЦ
+    // processors and both machines, in the clocks of each processor)
+    static const int VM2_BUS_TIMEOUT = 118;
 
     static const int TICKS_PER_CLOCK = 12;
     static const int TICKS_PER_HALF = 6;
@@ -113,6 +117,22 @@ public:
         }
     }
     void discard() { m_count = 0; }
+    // An instruction that ended in a trap is timed by the trap template: its
+    // own data cycles are dropped and only the last n, the trap's pushes and
+    // vector reads, are kept (the opcode stays, finish() skips it)
+    void keep_last_data(unsigned int n)
+    {
+        unsigned int data = 0;
+        for (unsigned int i = 0; i < m_count; i++)
+            if (m_acc[i].role == R_DATA) data++;
+        unsigned int skip = (data > n) ? data - n : 0;
+        unsigned int out = 0;
+        for (unsigned int i = 0; i < m_count; i++) {
+            if (m_acc[i].role == R_DATA && skip != 0) { skip--; continue; }
+            m_acc[out++] = m_acc[i];
+        }
+        m_count = out;
+    }
     // A form without a template ran instead of the one a refetch was due
     // for: the refetch must not fall on whatever timed form comes next
     void drop_refetch() { m_flags2 &= (uint8_t)~F2_REFETCH; }

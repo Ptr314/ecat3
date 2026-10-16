@@ -1,0 +1,38 @@
+# УК-НЦ: тесты Alex_K с UTEST.DSK (zx-pk.ru, тема 14702).
+# ПП: PMOV - время MOV по всем сочетаниям режимов (ряды ...R - источник в
+# ПЗУ, оно отвечает через видеоконтроллер, ppu-io), PBR - переходы, возвраты и
+# ловушки. Время в тактах ПП по его таймеру.
+# Протоколы двух настоящих машин - tools/uknc-timing/alexk/, сравнение
+# эмулятора с ними - tools/uknc-timing/run_utest.py и alexk.py: эталоны тут -
+# снимки того, что даёт эмулятор, они ловят тихое изменение чисел.
+#
+# Диск - tests/files/uknc-timing/alexk.dsk (make_disk.py). Перед снимком оба
+# процессора останавливаются: SCREEN ждёт поток отрисовки
+# @timeout 900
+
+MACHINE "uknc/UKNC.cfg"
+WAIT _12000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+WAIT _15000
+
+# Программа DAY спрашивает дату, ВК оставляет предложенную
+KEY _100,_100,ret
+WAIT _18000
+
+COMMAND fdd1.load("../files/uknc-timing/alexk.dsk")
+WAIT _500
+TYPE "RU MZ1:PMOV\n"
+WAIT _700000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-alexk-ppu-1.png"
+COMMAND cpu.run()
+COMMAND ppu.run()
+TYPE "RU MZ1:PBR\n"
+WAIT _60000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-alexk-ppu-2.png"
+EXIT

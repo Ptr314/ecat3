@@ -145,7 +145,20 @@ public:
     // What answered the last access, for the timing model
     Vm1BusTiming * timing() { return m_timing; }
     const BusReply * last_reply() { return (mm->last_device != nullptr) ? mm->last_device->bus_reply : nullptr; }
-    WaitSource * last_wait() { return (mm->last_device != nullptr) ? mm->last_device->wait_source : nullptr; }
+    // A device without a wait of its own answers with the mapper's: on the
+    // УК-НЦ every register and the ROM of the peripheral processor reply
+    // through the video controller, while the channels it shares with the
+    // central processor answer that one at once
+    WaitSource * wait_of(AddressableDevice * d)
+    {
+        if (d == nullptr || d->wait_source != nullptr) return (d != nullptr) ? d->wait_source : nullptr;
+        //A bus-timing device keeps its own reply
+        return (d->bus_reply != nullptr) ? nullptr : mm->wait_source;
+    }
+    WaitSource * last_wait() { return wait_of(mm->last_device); }
+    // The console mode before the last instruction: a bus timeout in it goes
+    // to SEL+004 without a trap frame, whatever mode the vector then sets
+    bool m_halt_before = false;
     void note_timeout(unsigned int address);
     void set_halt_mode(bool state);
     void virq_acknowledged(unsigned int vector);

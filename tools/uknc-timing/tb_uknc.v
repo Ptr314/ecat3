@@ -15,6 +15,8 @@
 //   post           - 1: запись отложенная, RPLY через wr от строба
 //   latch, rdl     - 1: повторное чтение того же слова без окон, RPLY через rdl
 //   setup          - строб не позже, чем за столько нс до окна
+//   fast, fd       - адреса от fast (восьмеричный) отвечают без окон, через
+//                    fd тактов контроллера: регистр
 `timescale 1ns / 10ps
 
 module tb_uknc();
@@ -23,7 +25,7 @@ parameter TRACE = 0;
 parameter LIMIT = 5000000;
 
 real clc_half, mclk_half, mph, setup;
-integer slots, mask, rd, wr, nr, nw, nwb, post, latch, rdl, cr, cw, cwb, cm, cmb;
+integer slots, mask, rd, wr, nr, nw, nwb, post, latch, rdl, cr, cw, cwb, cm, cmb, fast, fd;
 initial begin
    if (!$value$plusargs("clc=%f", clc_half)) clc_half = 160;
    clc_half = clc_half / 2;
@@ -44,6 +46,8 @@ initial begin
    if (!$value$plusargs("cr=%d", cr)) cr = 0;
    if (!$value$plusargs("cw=%d", cw)) cw = 0;
    if (!$value$plusargs("cwb=%d", cwb)) cwb = 0;
+   if (!$value$plusargs("fast=%o", fast)) fast = 0;
+   if (!$value$plusargs("fd=%d", fd)) fd = 0;
    if (!$value$plusargs("cm=%d", cm)) cm = cw;
    if (!$value$plusargs("cmb=%d", cmb)) cmb = cwb;
 end
@@ -123,7 +127,10 @@ always @(posedge mclk) begin
    if (pend && !served && strobe && ($realtime - t_req >= setup)) begin
       served = 1;
       isw = ~dout;
-      if (!isw && latch && addr[15:1] == last_rd[15:1]) begin
+      if (fast != 0 && addr >= fast) begin
+         left = fd;
+         if (left == 0) begin rply <= #2 1; left = -1; end
+      end else if (!isw && latch && addr[15:1] == last_rd[15:1]) begin
          left = rdl;
          if (left == 0) begin rply <= #2 1; left = -1; end
       end else begin

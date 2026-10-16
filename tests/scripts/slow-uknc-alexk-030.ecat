@@ -1,0 +1,40 @@
+# УК-НЦ: тесты Alex_K с UTEST.DSK (zx-pk.ru, тема 14702) - команда 000030,
+# пультовая нормализация КМ1801ВМ2 (CLC|SEC; MOV R4,R2; 000030): P030 в ПП,
+# C030 в ЦП. Время растёт на 24 такта за каждый шаг сдвига. Без команды C030
+# давал одни нули, а P030 кончался «ЗАВИСАНИЕ». Тест кладёт свой код на всю
+# пультовую область 160000-177777: пока в пульте 176560-177567 оставались
+# регистрами, выборка оттуда уводила ЦП в мусор - первые строки C030 были
+# нулями, и FODOS после теста не возвращалась в командную строку.
+# Протоколы двух настоящих машин - tools/uknc-timing/alexk/, сравнение -
+# run_utest.py и alexk.py там же; эталоны - снимки эмулятора.
+#
+# Диск - tests/files/uknc-timing/alexk.dsk (make_disk.py). Перед снимком оба
+# процессора останавливаются: SCREEN ждёт поток отрисовки
+# @timeout 500
+
+MACHINE "uknc/UKNC.cfg"
+WAIT _12000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+WAIT _15000
+
+# Программа DAY спрашивает дату, ВК оставляет предложенную
+KEY _100,_100,ret
+WAIT _18000
+
+COMMAND fdd1.load("../files/uknc-timing/alexk.dsk")
+WAIT _500
+TYPE "RU MZ1:P030\n"
+WAIT _45000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-alexk-030-1.png"
+COMMAND cpu.run()
+COMMAND ppu.run()
+TYPE "RU MZ1:C030\n"
+WAIT _180000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-alexk-030-2.png"
+EXIT

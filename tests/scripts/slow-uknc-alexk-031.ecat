@@ -1,0 +1,29 @@
+# УК-НЦ с ранним видеоконтроллером К1515ХМ1-031 (UKNC-031.ext): тест Alex_K
+# PBR (переходы, возвраты, ловушки) в ПП. С ним ПП медленнее, чем с
+# К1515ХМ2-001 основной конфигурации: NOP 20 тактов, а не 16, RTS 60, а не
+# 52 - как на машине литеры 7 с этим кристаллом
+# (tools/uknc-timing/alexk/ppu-031.log; ловушки у нас 228 против 236). Эталон
+# - снимок эмулятора.
+#
+# Диск - tests/files/uknc-timing/alexk.dsk (make_disk.py)
+# @timeout 500
+
+MACHINE "uknc/UKNC-031.ext"
+WAIT _12000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+WAIT _15000
+
+# Программа DAY спрашивает дату, ВК оставляет предложенную
+KEY _100,_100,ret
+WAIT _18000
+
+COMMAND fdd1.load("../files/uknc-timing/alexk.dsk")
+WAIT _500
+TYPE "RU MZ1:PBR\n"
+WAIT _60000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-alexk-031.png"
+EXIT

@@ -30,6 +30,12 @@
 //            target. The УК-НЦ register holds a byte index in the planes, and a
 //            plane-pair over planes 1 and 2 has a word per two addresses
 //   width  - 8 for a byte-wide target (plane 0): the latch keeps one byte
+//   wait   - the WaitSource a data register answers through: an access to it
+//            is a memory cycle on the machine (the УК-НЦ 176642 takes as long
+//            as the CPU's own RAM). The address register, and a target
+//            without one, answer through the device's own "wait". The
+//            processor asks right after the access, so the device points
+//            wait_source at the register that was accessed last
 //
 // A byte written to a register behaves as on the machine (and in UKNCBTL): to
 // the address register or a byte-wide target it is a word with the byte on its
@@ -46,6 +52,7 @@ private:
         unsigned int        value;      // latched on a write to the address register
         unsigned int        scale;
         bool                byte_wide;
+        WaitSource *        wait;       // null: the device's own
     };
 
     Target m_targets[INDIRECT_MAX_TARGETS];
@@ -56,6 +63,13 @@ private:
     bool m_auto_increment = false;
 
     Interface i_address;
+    WaitSource * m_own_wait = nullptr;  // the "wait" parameter
+
+    void note_wait(unsigned int reg)
+    {
+        const unsigned int id = reg - 1;
+        wait_source = (reg != 0 && id < m_count && m_targets[id].wait != nullptr) ? m_targets[id].wait : m_own_wait;
+    }
 
     void set_address(unsigned int value);
     void latch();                       // samples every target at the current address

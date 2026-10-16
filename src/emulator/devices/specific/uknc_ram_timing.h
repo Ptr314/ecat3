@@ -8,16 +8,20 @@
 #include "emulator/core.h"
 
 // When the УК-НЦ memory answers a processor (timing = vm2). The planes are
-// dynamic RAM behind the video controller 1515ХМ1-031, which serves the
-// raster, both processors and the refresh; there is no netlist of it, so this
-// is a model fitted on the chip model of the КМ1801ВМ2 (cpu11) against the
-// times measured on a real machine (литера 7, 1515ХМ1-031: TSSPD by Titus,
-// the tables of Patron's tests; tools/uknc-timing has the bench and the fit):
+// dynamic RAM behind the video controller (the early К1515ХМ1-031 or the
+// revised К1515ХМ2-001, two gate arrays), which serves the raster, both
+// processors and the refresh; there is no netlist of it, so this is a model
+// fitted on the chip model of the КМ1801ВМ2 (cpu11) against the times
+// measured on real machines with both (литера 7: Alex_K's UTEST.DSK tests,
+// TSSPD by Titus, Patron's tables; tools/uknc-timing has the bench and the fit):
 //
 // - a cycle starts on a point of the controller's grid (`grid`, 640 ns: eight
 //   points of the 12.5 MHz scan), the first one at least `setup` after the
 //   strobe and after the previous cycle of the same processor is over;
-// - RPLY comes `reply` after that point (`reply_write` for a write);
+// - RPLY comes `reply` after that point (`reply_write` for a write,
+//   `reply_write_byte` for a byte write: plane 0 is eight bits wide, a byte
+//   is one access of the two a word takes - the ПП's BISB and MOVB to
+//   memory are 4 clocks shorter than BIS and MOV on the machine);
 // - the cycle keeps the memory for `read`, `write` or `write_byte`, and for
 //   `rmw_write` / `rmw_write_byte` when the write is the second half of a
 //   read-modify-write (DATIO, which every byte write of the ВМ2 is). Plane 0
@@ -50,6 +54,7 @@ private:
     unsigned int m_phase = 0;
     unsigned int m_reply = 320;
     unsigned int m_reply_write = 320;
+    unsigned int m_reply_write_byte = 320;
     unsigned int m_read = 0;
     unsigned int m_write = 0;
     unsigned int m_write_byte = 0;

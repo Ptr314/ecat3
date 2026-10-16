@@ -5,7 +5,12 @@
 #
 #   py make_disk.py      -> timing.dsk рядом
 #   py make_disk.py OUT.dsk FILE... -> такой же диск с другими файлами
-#                        (тест процессора: ../uknc-cputest)
+#                        (тест процессора: ../uknc-cputest; тесты Alex_K
+#                        с UTEST.DSK: py make_disk.py alexk.dsk alexk/CMOV.SAV
+#                        alexk/PMOV.SAV alexk/CBR.SAV alexk/PBR.SAV
+#                        alexk/CRDWR.SAV alexk/PRDWR.SAV alexk/C030.SAV
+#                        alexk/P030.SAV alexk/CHLT.SAV alexk/PHLT.SAV
+#                        alexk/CHINT.SAV)
 import os, struct, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))

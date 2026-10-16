@@ -63,8 +63,28 @@ static const int VM2_REFETCH_GAP2 = 3;
 // the register and works out the target while the prefetch waits for the
 // memory. Static memory cannot tell the two apart (11 after the release is 15
 // after DIN); the УК-НЦ ЦП memory can - the chip model runs SOB R3,. in 28.5
-// clocks there, the gap after the release made it 34 (the machines: 30-31.5)
+// clocks there, the gap after the release made it 34 (the machines: 30-31.5).
+// MARK reads its stack the same way, with SP = PC + 2n worked out meanwhile:
+// 8 clocks slower than RTS R5 with a static memory, as fast on the УК-НЦ
+// (the chip model and Alex_K's CBR/PBR on the machines). The table has that
+// read as a prefetch, since MARK 0 reads the word after it: it is data
 static const int VM2_SOB_TARGET = 15;
+// A double operand form with the source (PC) reads the word after its opcode
+// and then fetches it again, VM2_GAP_AFTER_DATA after that read: three reads
+// where (R) has two (MOV (PC),R1 28 clocks against 20 on static memory, 46.9
+// against 32.9 on the УК-НЦ ЦП, Alex_K's OP2P1). The microprogram goes on
+// meanwhile: its next step starts a bus gap after the fetch, or its own gap
+// less VM2_PC_SRC_SAVED when it has work of its own to wait for - the
+// destination address from a word of the code (X(R), @X(R), a, @a, @#a: 5)
+// or the fetch of the next opcode (CMP (PC),#n: 11, 44 clocks); a write
+// strobes DOUT VM2_PC_SRC_STROBE after its SYNC at most; when the fetch ends the form,
+// the tail has run out during it. A destination (PC) that is only read (CMP
+// R0,(PC), TST (PC): 28 against 20) is fetched again the same way, and CMP
+// (PC),(PC) twice (48). The table has these forms from (R), which
+// tools/vm2-timing does not run; the rule matches the chip model on every
+// destination, static and slow memory (tools/uknc-timing/README.md)
+static const int VM2_PC_SRC_SAVED = 4;
+static const int VM2_PC_SRC_STROBE = 5;
 
 // The ВМ2 has two things to wait for, the bus and its microprogram, and runs
 // a cycle when both are ready. The tables are measured where the bus waits
@@ -223,14 +243,29 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
         bool prefetched = false;            //the next opcode is fetched already
         bool refetch = false;               //and then written through a register
         bool reread = false;                //or through (PC): read again at once
+        uint32_t reread_from = 0;           //the release of the write before that read
         //The destination is (PC): the lowest four bits of a double or single
         //operand form, and of XOR, are the destination kind, (PC) is mode 1
         //with R7
         const bool pc_dest = (form < F2_EIS && (form & 15) == 3) || form == F2_XOR + 3;
+        //The source is (PC): the next opcode is read as data, then fetched
+        //again. So is a destination (PC) that is only read (CMP, BIT, TST):
+        //after the last data read of the form
+        const bool pc_src = form < F2_SINGLE && ((form >> 4) & 15) == 3;
+        bool pc_dread = form < F2_EIS && (form & 15) == 3;
+        unsigned int last_read = n;
         for (unsigned int i = 0; i < n; i++) {
-            const Step & s = steps[i];
+            if (steps[i].kind != K_READ) pc_dread = false;
+            else if (steps[i].role == R_DATA) last_read = i;
+        }
+        bool first_read = true;
+        bool after_src = false;             //the fetch again was the last cycle so far
+        uint32_t src_release = 0;           //the release of the read before it
+        for (unsigned int i = 0; i < n; i++) {
+            Step s = steps[i];
             int64_t sync = (int64_t)t + (int64_t)s.gap * TICKS_PER_CLOCK;
-            if (form == F2_SOB_TAKEN && i == 1) {
+            if (form == F2_MARK && i == 1) s.role = R_DATA;
+            if ((form == F2_SOB_TAKEN || form == F2_MARK) && i == 1) {
                 sync = (int64_t)t + (int64_t)VM2_BUS_GAP[K_READ] * TICKS_PER_CLOCK;
                 const int64_t target = (int64_t)last_strobe + (int64_t)VM2_SOB_TARGET * TICKS_PER_CLOCK;
                 if (sync < target) sync = target;
@@ -257,6 +292,16 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
                 reply = prefetch_reply; wait = prefetch_wait; address = prefetch_address;
             }
             int64_t strobe = sync + (int64_t)s.strobe * TICKS_PER_CLOCK;
+            if (after_src) {
+                const unsigned int d = form & 15;
+                const bool index = (d >> 1) == 6 || (d >> 1) == 7 || d == 7;
+                int gap = VM2_BUS_GAP[K_READ];
+                if ((index || s.role == R_PREFETCH) && s.gap - VM2_PC_SRC_SAVED > gap) gap = s.gap - VM2_PC_SRC_SAVED;
+                sync = (int64_t)t + (int64_t)gap * TICKS_PER_CLOCK;
+                const int so = (s.kind == K_WRITE && s.strobe > VM2_PC_SRC_STROBE) ? VM2_PC_SRC_STROBE : s.strobe;
+                strobe = sync + (int64_t)so * TICKS_PER_CLOCK;
+                after_src = false;
+            }
             if (s.kind == K_WRITE && s.r2w != 0 && !data_read) {
                 const int64_t ready = s0 + (int64_t)s.r2w * TICKS_PER_CLOCK;
                 if (strobe < ready) strobe = ready;
@@ -271,10 +316,17 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
             } else {
                 t = release_vm2((uint32_t)strobe, s.kind, reply, wait, address, byte ? WaitSource::WAIT_BYTE : 0);
             }
+            if (s.role == R_DATA && s.kind == K_READ && ((pc_src && first_read) || (pc_dread && i == last_read))) {
+                src_release = t;
+                t = release_vm2(t + (uint32_t)(VM2_GAP_AFTER_DATA + 1) * TICKS_PER_CLOCK, K_READ, reply, wait, address);
+                after_src = true;
+            }
+            if (s.role == R_DATA && s.kind == K_READ) first_read = false;
             if (s.role == R_PREFETCH) prefetched = true;
             else if (s.role == R_DATA && s.kind != K_READ && prefetched
                      && (address & 0xFFFE) == (prefetch_address & 0xFFFE)) {
                 if (pc_dest) {
+                    reread_from = t;
                     t = release_vm2(t + (uint32_t)(VM2_BUS_GAP[K_WRITE] + 1) * TICKS_PER_CLOCK, K_READ,
                                     prefetch_reply, prefetch_wait, prefetch_address);
                     reread = true;
@@ -303,14 +355,16 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
         }
         m_count = 0;
         const uint64_t tail = ((uint64_t)tail2_of(form) + extra_tail) * TICKS_PER_CLOCK;
-        const uint64_t from = m_start + (data_free ? (uint64_t)last_strobe + VM2_RELEASE_READ * TICKS_PER_CLOCK : t);
+        //After the opcode read again the last cycle was that read, and the
+        //tail ran out meanwhile: it runs from the cycle before
+        const bool reread_last = reread && steps[n - 1].kind != K_READ;
+        const uint64_t from = m_start + (data_free ? (uint64_t)last_strobe + VM2_RELEASE_READ * TICKS_PER_CLOCK
+                                                   : after_src ? src_release : reread_last ? reread_from : t);
         m_start += t;
         m_s0 = from + tail;
-        //After the opcode read again the last cycle was that read
-        const bool reread_last = reread && steps[n - 1].kind != K_READ;
         m_kind2 = reread_last ? (uint8_t)K_READ : steps[n - 1].kind;
         m_flags2 = (uint8_t)((data_free ? F2_PREV_DATA_FREE : 0) |
-                             ((!reread_last && steps[n - 1].role == R_DATA && steps[n - 1].kind == K_READ)
+                             ((!reread_last && !after_src && steps[n - 1].role == R_DATA && steps[n - 1].kind == K_READ)
                               ? F2_LAST_DATA_READ : 0) |
                              (refetch ? F2_REFETCH : 0));
         m_phase_window = 0;

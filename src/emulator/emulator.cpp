@@ -59,6 +59,7 @@
 #include "emulator/devices/common/page_mapper.h"
 #include "emulator/devices/common/plane_pair.h"
 #include "emulator/devices/common/indirect_memory.h"
+#include "emulator/devices/common/wait_map.h"
 #include "emulator/devices/common/generator.h"
 #include "emulator/devices/cpu/6502.h"
 #include "emulator/devices/cpu/k1801vm1.h"
@@ -2118,6 +2119,7 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("page-mapper", create_page_mapper);
     dm->register_device("plane-pair", create_plane_pair);
     dm->register_device("indirect-memory", create_indirect_memory);
+    dm->register_device("wait-map", create_wait_map);
     dm->register_device("generator", create_generator);
     dm->register_device("6502", create_mos6502);
     dm->register_device("65c02", create_wdc65c02);

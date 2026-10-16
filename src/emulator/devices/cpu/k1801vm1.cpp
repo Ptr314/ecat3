@@ -604,6 +604,7 @@ unsigned int k1801vm1::execute()
 
     core->bus_offset = 0;
     core->bus_extra = 0;
+    if (m_timing_vm2) m_halt_before = core->get_context()->halt_mode;
     unsigned int cycles = core->execute();
     if (m_timing) cycles = timed_cycles(cycles);
     else if (m_timing_vm3) cycles = vm3_cycles(cycles);
@@ -686,6 +687,27 @@ unsigned int k1801vm1::timed_cycles(unsigned int legacy)
     return legacy;
 }
 
+// Пультовые команды ВМ2 (их шаблонов модель не снимала) - формы с тем же
+// ходом шины. Числа - тест HALT Alex_K (CHLT, PHLT) на двух машинах: чтение
+// и запись КРСК/КРСП стоят как MOV R0,R0, RSEL - как чтение без ожидания
+// (безадресное, отвечает плата), MFUS и MTUS - как MOV (R5)+,R0 и MOV
+// R0,(R5) (их цикл памяти записан), START и STEP - как MOV #n,R0: лишнее
+// чтение из памяти кода. 000030 идёт своим счётом (pdp11core)
+// ВМ2: такты входа в пульт командой HALT и командой FIS (тест CHINT)
+static const unsigned int VM2_HALT_ENTRY = 90;
+static const unsigned int VM2_FIS_ENTRY = 110;
+
+static uint16_t vm2_console_form(uint16_t w)
+{
+    if (w < 0000010 || w > 0000037) return w;
+    if (w <= 0000017) return 0012700;               // START, STEP
+    if (w == 0000020) return 0011000;               // RSEL
+    if (w == 0000021) return 0012500;               // MFUS
+    if (w == 0000030) return w;
+    if (w == 0000031) return 0010015;               // MTUS
+    return 0010000;                                 // RCPC, RCPS, WCPC, WCPS
+}
+
 // The same under timing = vm2: the forms of the ВМ2, the steps of an ASH or
 // ASHC shift on top of its template, and the memory of the next opcode with
 // its WaitSource
@@ -697,11 +719,24 @@ unsigned int k1801vm1::timed_cycles_vm2(unsigned int legacy, uint16_t pc)
     if (!core->m_last_console) {
         switch (core->m_last_kind) {
         case pdp11core::LAST_INSN:
-            if (!core->m_last_trapped) {
-                const uint16_t w = core->m_last_command;
+            // HALT, уводящий в пульт, стека не трогает: не шаблон BPT, а
+            // VM2_HALT_ENTRY ниже
+            if (core->m_last_command == 0 && !m_halt_before && i_halt_mode.value != 0) {
+            } else if (!core->m_last_trapped) {
+                const uint16_t w = vm2_console_form(core->m_last_command);
                 form = Vm1BusTiming::form2_of(w, core->m_last_taken,
                                               (w & 0177000) == 0071000 && core->m_last_div_v);
                 if ((w & 0176000) == 0072000) extra = core->m_last_shift * Vm1BusTiming::VM2_SHIFT_CLOCKS;
+                skip_opcode = true;
+            } else if (!m_halt_before &&
+                       (core->m_trap_vector == PDP11::V_BUS_ERROR || core->m_trap_vector == PDP11::V_RESERVED)) {
+                // A reserved code takes as long as BPT, a bus timeout as
+                // long plus the wait for RPLY (Alex_K's BR tests on both
+                // processors of the УК-НЦ). What the instruction did before
+                // the trap is lost in the template
+                m_timing->keep_last_data(4);
+                form = Vm1BusTiming::F2_TRAP;
+                if (core->m_trap_vector == PDP11::V_BUS_ERROR) extra = Vm1BusTiming::VM2_BUS_TIMEOUT;
                 skip_opcode = true;
             }
             break;
@@ -715,8 +750,16 @@ unsigned int k1801vm1::timed_cycles_vm2(unsigned int legacy, uint16_t pc)
     if (form < Vm1BusTiming::F2_COUNT) {
         AddressableDevice * d = mm->peek_read_device(pc);
         const int c = m_timing->finish(form, (d != nullptr) ? d->bus_reply : nullptr, skip_opcode,
-                                       (d != nullptr) ? d->wait_source : nullptr, pc, extra);
+                                       wait_of(d), pc, extra);
         if (c >= 0) return (unsigned int)c;
+    }
+    // Вход в пульт командой HALT и командой FIS (FADD..FDIV через вектор
+    // 010) шаблона не имеет: тест HALT Alex_K (CHINT) на обеих машинах даёт
+    // с последующим START 122 и 143 такта, START - 35
+    if (core->m_last_kind == pdp11core::LAST_INSN && !m_halt_before && i_halt_mode.value != 0) {
+        const uint16_t w = core->m_last_command;
+        if (w == 0) legacy = VM2_HALT_ENTRY;
+        else if ((w & 0177740) == 0075000) legacy = VM2_FIS_ENTRY;
     }
     m_timing->discard();
     m_timing->drop_refetch();

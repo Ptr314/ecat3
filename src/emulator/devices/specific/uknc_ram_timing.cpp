@@ -25,6 +25,7 @@ emulator::Result UKNCRamTiming::load_config(SystemData *sd)
     m_phase = read_confg_value(cd, "phase", false, (unsigned int)0);
     m_reply = read_confg_value(cd, "reply", false, (unsigned int)320);
     m_reply_write = read_confg_value(cd, "reply_write", false, m_reply);
+    m_reply_write_byte = read_confg_value(cd, "reply_write_byte", false, m_reply_write);
     m_read = read_confg_value(cd, "read", true, (unsigned int)0);
     m_write = read_confg_value(cd, "write", true, (unsigned int)0);
     // Байт пишется так же, как слово, если не сказано иное; в RMW - как
@@ -104,7 +105,8 @@ unsigned int UKNCRamTiming::answer(unsigned int flags, unsigned int offset)
     }
     m_busy = start + (uint64_t)keep * PS;
     m_cycles++;
-    const uint64_t rply = start + (uint64_t)((flags & WAIT_WRITE) ? m_reply_write : m_reply) * PS;
+    const unsigned int reply = !(flags & WAIT_WRITE) ? m_reply : (flags & WAIT_BYTE) ? m_reply_write_byte : m_reply_write;
+    const uint64_t rply = start + (uint64_t)reply * PS;
     const uint64_t wait = rply - strobe;
     return (unsigned int)(wait < 0x100000000ull ? (uint32_t)wait / m_period : wait / m_period) + m_late;
 }

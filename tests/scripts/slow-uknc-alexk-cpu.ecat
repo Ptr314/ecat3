@@ -1,0 +1,39 @@
+# УК-НЦ: тесты Alex_K с UTEST.DSK (zx-pk.ru, тема 14702).
+# ЦП: CMOV - время MOV по всем сочетаниям режимов (строки - источник, столбцы -
+# приёмник), CBR - переходы, возвраты, ловушки (BPT, TRAP4 по тайм-ауту шины,
+# TRAP10 по резервному коду), MARK, RESET. Время в тактах ЦП: копии команды за
+# кадр, 159744 такта на кадр (8 МГц x 19.968 мс).
+# Протоколы двух настоящих машин - tools/uknc-timing/alexk/, сравнение
+# эмулятора с ними - tools/uknc-timing/run_utest.py и alexk.py: эталоны тут -
+# снимки того, что даёт эмулятор, они ловят тихое изменение чисел.
+#
+# Диск - tests/files/uknc-timing/alexk.dsk (make_disk.py). Перед снимком оба
+# процессора останавливаются: SCREEN ждёт поток отрисовки
+# @timeout 500
+
+MACHINE "uknc/UKNC.cfg"
+WAIT _12000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+WAIT _15000
+
+# Программа DAY спрашивает дату, ВК оставляет предложенную
+KEY _100,_100,ret
+WAIT _18000
+
+COMMAND fdd1.load("../files/uknc-timing/alexk.dsk")
+WAIT _500
+TYPE "RU MZ1:CMOV\n"
+WAIT _90000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-alexk-cpu-1.png"
+COMMAND cpu.run()
+COMMAND ppu.run()
+TYPE "RU MZ1:CBR\n"
+WAIT _45000
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/slow-uknc-alexk-cpu-2.png"
+EXIT

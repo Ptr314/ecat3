@@ -77,6 +77,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/common/page_mapper.h emulator/devices/common/page_mapper.cpp
     emulator/devices/common/plane_pair.h emulator/devices/common/plane_pair.cpp
     emulator/devices/common/indirect_memory.h emulator/devices/common/indirect_memory.cpp
+    emulator/devices/common/wait_map.h emulator/devices/common/wait_map.cpp
     emulator/devices/common/generator.h emulator/devices/common/generator.cpp
     emulator/devices/common/raster_display.h emulator/devices/common/raster_display.cpp
     emulator/devices/common/ram_address.h emulator/devices/common/ram_address.cpp

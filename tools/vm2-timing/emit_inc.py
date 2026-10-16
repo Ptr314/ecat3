@@ -87,7 +87,14 @@ def fill_double():
             for d in range(16):
                 idx = F_DOUBLE + op * 256 + s * 16 + d
                 if forms[idx] is not None: continue
-                for s2, d2 in ((s, d & ~1), (s & ~1, d), (s & ~1, d & ~1), (s, spec(2, 0)), (s & ~1, spec(2, 0))):
+                # Источник (PC), -(PC), @-(PC) на модели не гоняется (лишнюю
+                # выборку добавляет Vm1BusTiming): форма - от источника (R) с
+                # тем же приёмником, если он снят (PC, #n, @#a, a, @a), а не от
+                # приёмника без признака PC (CMP (PC),PC на кристалле 36
+                # тактов, как CMP (R),PC и выборка заново, MOV (PC),#n 48)
+                cands = ((s, d & ~1), (s & ~1, d), (s & ~1, d & ~1), (s, spec(2, 0)), (s & ~1, spec(2, 0)))
+                if s in (spec(1, 1), spec(4, 1), spec(5, 1)): cands = ((s & ~1, d),) + cands
+                for s2, d2 in cands:
                     j = F_DOUBLE + op * 256 + s2 * 16 + d2
                     if forms[j] is not None:
                         forms[idx] = forms[j]; origin[idx] = 'like ' + origin[j]; break

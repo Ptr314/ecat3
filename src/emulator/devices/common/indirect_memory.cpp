@@ -18,6 +18,7 @@ IndirectMemory::IndirectMemory(InterfaceManager *im, EmulatorConfigDevice *cd):
         m_targets[i].value = 0;
         m_targets[i].scale = 1;
         m_targets[i].byte_wide = false;
+        m_targets[i].wait = nullptr;
     }
 }
 
@@ -25,6 +26,7 @@ emulator::Result IndirectMemory::load_config(SystemData *sd)
 {
     emulator::Result res = ComputerDevice::load_config(sd);
     if (!res) return res;
+    m_own_wait = wait_source;
 
     // @data[n] = device, in register order: the address register is at offset 0
     // and data register n at offset (n+1)*2
@@ -52,6 +54,13 @@ emulator::Result IndirectMemory::load_config(SystemData *sd)
         const std::string scale = cd->extended_parameter((unsigned int)i, "scale");
         m_targets[id].scale = scale.empty() ? 1 : parse_numeric_value(scale, 10);
         m_targets[id].byte_wide = cd->extended_parameter((unsigned int)i, "width") == "8";
+        const std::string wait = cd->extended_parameter((unsigned int)i, "wait");
+        if (!wait.empty()) {
+            m_targets[id].wait = dynamic_cast<WaitSource*>(im->dm->get_device_by_name(wait, false));
+            if (m_targets[id].wait == nullptr)
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                    "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Not a device that adds wait states")) + "} " + name + ": " + wait);
+        }
         if (m_targets[id].scale == 0)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{IndirectMemory|" + std::string(QT_TRANSLATE_NOOP("IndirectMemory", "Incorrect range for")) + "} " + name);
@@ -104,6 +113,7 @@ void IndirectMemory::step()
 unsigned int IndirectMemory::get_value_word(unsigned int address)
 {
     const unsigned int reg = address >> 1;   // 0 is the address register
+    note_wait(reg);
 
     if (reg == 0) return m_address & 0xFFFF;
 
@@ -118,6 +128,7 @@ unsigned int IndirectMemory::get_value_word(unsigned int address)
 void IndirectMemory::set_value_word(unsigned int address, unsigned int value, MAYBE_UNUSED bool force)
 {
     const unsigned int reg = address >> 1;   // 0 is the address register
+    note_wait(reg);
 
     if (reg == 0) {
         set_address(value);
@@ -153,6 +164,7 @@ void IndirectMemory::set_value(unsigned int address, unsigned int value, bool fo
 
     // A word-wide target takes the byte into its own lane only
     if (reg != 0 && id < m_count && !m_targets[id].byte_wide) {
+        note_wait(reg);
         Target &t = m_targets[id];
         if (address & 1) t.value = (t.value & 0x00FF) | (b << 8);
         else             t.value = (t.value & 0xFF00) | b;

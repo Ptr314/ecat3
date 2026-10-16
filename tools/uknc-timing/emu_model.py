@@ -36,6 +36,9 @@ SINGLE_OPS = [0o0050, 0o0051, 0o0052, 0o0053, 0o0054, 0o0055, 0o0056, 0o0057, 0o
 def spec(sp): return ((sp >> 3) & 7) * 2 + (1 if (sp & 7) == 7 else 0)
 
 def form2(w, taken=True):
+    if w in (0o000003, 0o000004) or (w & 0o177000) in (0o104000, 0o104400): return F2_TRAP
+    if w == 0o000002: return F2_RTI
+    if w == 0o000006: return F2_RTT
     if (w & 0o177000) == 0o077000: return F2_SOB_TAKEN if taken else F2_SOB_NOT
     b = w & 0o177400
     if (0o000400 <= b <= 0o003400) or (0o100000 <= b <= 0o103400): return F2_BR_TAKEN if taken else F2_BR_NOT
@@ -48,6 +51,8 @@ def form2(w, taken=True):
     if (w & 0o177700) == 0o000100: return F2_JMP + spec(w & 0o77)
     if (w & 0o177000) == 0o004000: return F2_JSR + spec(w & 0o77)
     if (w & 0o177740) == 0o000240: return F2_CC_SET if (w & 0o20) else F2_CC_CLEAR
+    if (w & 0o177770) == 0o000200: return F2_RTS
+    if (w & 0o177700) == 0o006400: return F2_MARK
     raise ValueError(oct(w))
 
 def is_byte(w):
@@ -60,14 +65,18 @@ GAP_AFTER_DATA = 7
 EARLY = 3
 REFETCH_GAP, REFETCH_GAP2 = 17, 3
 SOB_TARGET = 15
+PC_SRC_STROBE = 5
+PC_SRC_SAVED = 4
 
 class Mem:
     """UKNCRamTiming, времена в пс"""
     def __init__(self, period_ps, grid=640, phase=0, reply=320, reply_write=None, read=0, write=0,
-                 write_byte=None, rmw_write=None, rmw_write_byte=None, late=0, setup=0, drift=0):
+                 write_byte=None, rmw_write=None, rmw_write_byte=None, late=0, setup=0, drift=0,
+                 reply_write_byte=None):
         self.p = period_ps; self.grid = grid * 1000 * (1000000 + drift) // 1000000; self.phase = phase * 1000
         self.setup = setup * 1000
         self.reply = reply * 1000; self.reply_write = (reply if reply_write is None else reply_write) * 1000
+        self.reply_write_byte = self.reply_write if reply_write_byte is None else reply_write_byte * 1000
         self.read = read * 1000; self.write = write * 1000
         self.write_byte = (write if write_byte is None else write_byte) * 1000
         self.rmw_write = (write if rmw_write is None else rmw_write) * 1000
@@ -82,12 +91,14 @@ class Mem:
         keep = self.read
         if write: keep = (self.rmw_write_byte if byte else self.rmw_write) if rmw else (self.write_byte if byte else self.write)
         self.busy = st + keep
-        rply = st + (self.reply_write if write else self.reply)
+        rply = st + ((self.reply_write_byte if byte else self.reply_write) if write else self.reply)
         return int((rply - strobe) // self.p) + self.late
 
 class Chain:
-    def __init__(self, mem):
-        self.mem = mem
+    def __init__(self, mem, dmem=None):
+        """dmem - память данных, если она не та, где лежит код (ПЗУ или
+        регистр ПП, медленные регистры ЦП)"""
+        self.mem = mem; self.code = mem; self.dmem = dmem or mem
         self.start = TPC          # нечётный такт
         self.s0 = self.start; self.kind2 = K_READ; self.flags_free = True; self.last_data_read = False
         self.refetch = False
@@ -113,19 +124,35 @@ class Chain:
         data_read = False; data_free = True; last_strobe = 0
         prefetched = False; refetch = False; reread = False
         pc_dest = form < F2_EIS and (form & 15) == 3
+        # источник (PC): прочитав слово за кодом, кристалл выбирает его заново
+        pc_src = form < F2_SINGLE and ((form >> 4) & 15) == 3
+        # приёмник (PC), который только читается (CMP, BIT, TST): то же самое
+        pc_dread = form < F2_EIS and (form & 15) == 3 and all(st[0] == K_READ for st in steps)
+        last_read = max([j for j, st in enumerate(steps) if st[1] == R_DATA and st[0] == K_READ], default=-1)
+        after_src = False; src_rel = None; first_read = True
         for i, (kind, role, gap, so, r2w) in enumerate(steps):
             sync = t + gap * TPC
-            if form == F2_SOB_TAKEN and i == 1:
-                # выборка цели - от строба выборки наперёд, не от её отпускания
+            if form == F2_MARK and i == 1: role = R_DATA      # стек MARK 0 - слово после неё
+            if form in (F2_SOB_TAKEN, F2_MARK) and i == 1:
+                # выборка цели (стека у MARK) - от строба выборки наперёд, не от её отпускания
                 sync = max(t + BUS_GAP[K_READ] * TPC, last_strobe + SOB_TARGET * TPC)
             if i == 0:
                 sync = s0 + gap * TPC
                 bus = self.start + (GAP_AFTER_DATA if self.last_data_read else BUS_GAP[self.kind2]) * TPC
                 sync = max(sync, bus)
             strobe = sync + so * TPC
+            if after_src:
+                # шаг за повторной выборкой ждёт только шину, запись - с готовыми данными
+                # адрес приёмника - из слова в коде: X(R), @X(R), a, @a, @#a
+                index = ((form & 15) >> 1) in (6, 7) or (form & 15) == 7
+                # адрес из слова кода и выборка кода (CMP (PC),#n) ждут свою работу: зазор - 4
+                sync = t + (max(gap - PC_SRC_SAVED, BUS_GAP[K_READ]) if index or role == R_PREFETCH else BUS_GAP[K_READ]) * TPC
+                strobe = sync + (min(so, PC_SRC_STROBE) if kind == K_WRITE else so) * TPC
+                after_src = False
             if kind == K_WRITE and r2w and not data_read:
                 strobe = max(strobe, s0 + r2w * TPC)
             last_strobe = strobe
+            self.mem = self.dmem if role == R_DATA else self.code
             if role == R_NONE:
                 t = strobe + r2w * TPC
             elif kind == K_RMW:
@@ -133,9 +160,16 @@ class Chain:
                 t = self.release(rel + r2w * TPC, K_WRITE, byte, True)
             else:
                 t = self.release(strobe, kind)
+            if role == R_DATA and kind == K_READ and ((pc_src and first_read) or (pc_dread and i == last_read)):
+                src_rel = t
+                t = self.release(t + (GAP_AFTER_DATA + 1) * TPC, K_READ)
+                after_src = True
+            if role == R_DATA and kind == K_READ: first_read = False
+            self.mem = self.code
             if role == R_PREFETCH: prefetched = True
             elif role == R_DATA and kind != K_READ and prefetched and writes_next:
                 if pc_dest:
+                    reread_from = t
                     t = self.release(t + (BUS_GAP[K_WRITE] + 1) * TPC, K_READ); reread = True
                 else:
                     refetch = True
@@ -147,21 +181,25 @@ class Chain:
                 data_free = False
                 if kind != K_WRITE: data_read = True
         tail = TAIL[form] * TPC
-        frm = (last_strobe + RELEASE[K_READ] * TPC) if data_free else t
+        frm = (last_strobe + RELEASE[K_READ] * TPC) if data_free else (src_rel if after_src else t)
+        if reread and steps[-1][0] != K_READ: frm = reread_from     # хвост шёл, пока выбирался код
         self.start = t
         self.s0 = frm + tail
         reread_last = reread and steps[-1][0] != K_READ
         self.kind2 = K_READ if reread_last else steps[-1][0]
         self.flags_free = data_free
-        self.last_data_read = not reread_last and steps[-1][1] == R_DATA and steps[-1][0] == K_READ
+        self.last_data_read = (not reread_last and not after_src
+                               and steps[-1][1] == R_DATA and steps[-1][0] == K_READ)
         self.refetch = refetch
         return max(self.s0, self.start)
 
-def period(w, mem, n1=50, n2=250, writes_next=False, taken=True):
-    c = Chain(mem)
+def period(w, mem, n1=50, n2=250, writes_next=False, taken=True, dmem=None):
+    """w - код или кортеж кодов, идущих по кругу (BPT и RTI обработчика)"""
+    c = Chain(mem, dmem)
+    ws = w if isinstance(w, tuple) else (w,)
     ends = []
     for i in range(n2):
-        e = c.finish(w, writes_next, taken)
+        for x in ws: e = c.finish(x, writes_next, taken)
         if e is None: return None
         ends.append(e)
     return (ends[n2 - 1] - ends[n1 - 1]) / (n2 - n1) / TPC

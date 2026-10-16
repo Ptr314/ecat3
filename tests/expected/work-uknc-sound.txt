@@ -14,8 +14,8 @@
 [sound.level] &000000
 === уставка двигает тон: до отвода 9 счётчик не доходит ===
 [pp-timer.reload] &000777
-[sound.level] &000001
-[sound.level] &000001
+[sound.level] &000000
+[sound.level] &000000
 [sound.level] &000001
 === полная уставка возвращает тон ===
 [sound.level] &000001

@@ -67,8 +67,11 @@ void I8086Core::io_write16(uint16_t port, uint16_t value)
 unsigned I8086Core::mem_wait(uint32_t address, bool write, unsigned offset)
 {
     AddressableDevice * d = emulator_device->mm->last_device;
-    if (d == nullptr || d->wait_source == nullptr) return 0;
-    return d->wait_source->wait_states(address, write, offset);
+    if (d == nullptr) return 0;
+    //A device without a wait of its own answers with the mapper's
+    WaitSource * w = (d->wait_source != nullptr) ? d->wait_source : emulator_device->mm->wait_source;
+    if (w == nullptr) return 0;
+    return w->wait_states(address, write, offset);
 }
 
 uint8_t I8086Core::int_ack()

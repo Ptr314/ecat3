@@ -16,16 +16,18 @@
 === Карта памяти центрального процессора ===
 [mapper.map] 
         0000-DFFF -> cpu-ram[0000] mode=rw
+        E000-FFFF -> cpu-ram[E000] mode=rw cfg=01:01
         FD70-FD77 -> sa[0000] mode=rw
         FD78-FD7F -> c2[0000] mode=rw
         FDA0-FDA3 -> cpu-indirect[0000] mode=rw
+        FDA4-FDA5 -> cpu-17664x[0000] mode=rw
+        FDA6-FDA7 -> cpu-17664x[0000] mode=rw
         FDB0-FDB3 -> channels[0008] mode=rw
         FDB4-FDB7 -> channels[000C] mode=rw
         FDB8-FDBB -> cpu-chan2-rx[0000] mode=rw
         FDBC-FDBF -> channels[0010] mode=rw
         FF70-FF73 -> channels[0000] mode=rw
         FF74-FF77 -> channels[0004] mode=rw
-        E000-FFFF -> cpu-ram[E000] mode=rw cfg=01:01
 === Карта памяти периферийного процессора ===
 [ppu-mapper.map] 
         0000-7FFF -> plane0[0000] mode=rw
