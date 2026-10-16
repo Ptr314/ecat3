@@ -63,6 +63,14 @@ copy_deploy() {
     cp "${REPO_DIR}/deploy/.ecat.ini" "$1/ecat.ini"
 }
 
+# Copies the user documentation into $1
+copy_docs() {
+    mkdir -p "$1"
+    cp "${REPO_DIR}/docs/MANUAL.md" "${REPO_DIR}/docs/MCP.md" "${REPO_DIR}/docs/SCRIPTING.md" \
+        "${REPO_DIR}/docs/CONFIG.md" \
+        "$1/"
+}
+
 echo "Building ${APP_NAME} ${APP_VERSION} for ${PLATFORM} ${ARCHITECTURE}"
 mkdir -p "${RELEASE_DIR}"
 
@@ -101,6 +109,7 @@ for VARIANT in "${VARIANTS[@]}"; do
       mkdir -p "${STAGING}/bin" "${STAGING}/share/ecat"
       cp "${BUILD_DIR}/${APP_NAME}-headless" "${STAGING}/bin/"
       copy_deploy "${STAGING}/share/ecat"
+      copy_docs "${STAGING}/docs"
       rm -f "${RELEASE_DIR}/${RELEASE_NAME}.tar.gz"
       tar -czf "${RELEASE_DIR}/${RELEASE_NAME}.tar.gz" -C "${BUILD_DIR}/pkg" "${RELEASE_NAME}"
       continue
@@ -144,10 +153,7 @@ for VARIANT in "${VARIANTS[@]}"; do
   ln -s /Applications "${STAGING}/Applications"
   ditto "${REPO_DIR}/deploy/software" "${STAGING}/software"
   # The user documentation goes beside it, also in plain sight
-  mkdir -p "${STAGING}/docs"
-  cp "${REPO_DIR}/docs/MANUAL.md" "${REPO_DIR}/docs/MCP.md" "${REPO_DIR}/docs/SCRIPTING.md" \
-      "${REPO_DIR}/docs/CONFIG.md" \
-      "${STAGING}/docs/"
+  copy_docs "${STAGING}/docs"
 
   # hdiutil refuses to overwrite an existing image, and a stale .dmg here would
   # silently be shipped as the new release.

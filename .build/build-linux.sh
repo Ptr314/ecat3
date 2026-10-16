@@ -65,6 +65,12 @@ copy_deploy() {
     cp ../deploy/.ecat.ini "$1/ecat.ini"
 }
 
+# Copies the user documentation into $1, the same files as in the macOS image
+copy_docs() {
+    mkdir -p "$1"
+    cp ../docs/MANUAL.md ../docs/MCP.md ../docs/SCRIPTING.md ../docs/CONFIG.md "$1/"
+}
+
 echo "Building eCat3 ${APP_VERSION} for ${PLATFORM} ${ARCHITECTURE}"
 mkdir -p release
 
@@ -102,6 +108,7 @@ for VARIANT in "${VARIANTS[@]}"; do
         mkdir -p "${STAGING}/bin" "${STAGING}/share/ecat"
         cp "${BUILD_DIR}/eCat3-headless" "${STAGING}/bin/"
         copy_deploy "${STAGING}/share/ecat"
+        copy_docs "${STAGING}/docs"
         rm -f "release/${RELEASE_NAME}.tar.gz"
         tar -czf "release/${RELEASE_NAME}.tar.gz" -C "${BUILD_DIR}/pkg" "${RELEASE_NAME}"
         continue
@@ -123,6 +130,9 @@ for VARIANT in "${VARIANTS[@]}"; do
     cp -r ./.linux/ecat3.AppDir/* "${RELEASE_DIR}"
     cp "${BUILD_DIR}/eCat3" "${RELEASE_DIR}/usr/bin/"
     copy_deploy "${RESOURCES}"
+    # An AppImage is a single file, so the documentation is only inside it, at
+    # the standard place (--appimage-extract gets it out)
+    copy_docs "${RELEASE_DIR}/usr/share/doc/ecat3"
 
     (
         cd release
