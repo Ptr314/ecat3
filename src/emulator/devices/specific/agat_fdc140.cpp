@@ -86,8 +86,9 @@ void Agat_FDC140::phase_on(int n)
             }
         } else
         if ( ((prev_phase+1) & 0x03) == n ) {
-            //Step up
-            if (current_track[selected_drive] < 68) {
+            //Step up, as far as track 39: the head reaches 40 tracks, and some
+            //disks use them all
+            if (current_track[selected_drive] < 78) {
                 current_track[selected_drive]++;
                 if (drive != nullptr) drive->SeekSector(current_track[selected_drive] / 2, 0);
             }

@@ -83,6 +83,12 @@ inline bool aim_is_desync(int code)
 typedef std::map<int, int> AgatAIMCodes[200];
 
 uint8_t * generate_mfm_agat_140(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[]);
+// Хранит ли посекторный образ 140 Кб сектора в порядке ProDOS: .po - всегда,
+// .dsk - если в этом порядке блок 2 начинается как каталог тома ProDOS;
+// остальные, .do в том числе, - в порядке DOS 3.3
+bool agat_140_prodos_order(const std::string &file_name, const uint8_t * image);
+// Образ 140 Кб из порядка DOS 3.3 в порядок ProDOS, дорожка за дорожкой
+void agat_140_dos_to_prodos(std::vector<uint8_t> & image);
 uint8_t * generate_mfm_agat_840(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes);
 uint8_t * load_aim_image(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes);
 
@@ -121,3 +127,13 @@ void find_marks_ibm_fm(const uint8_t * data, size_t len, std::map<int, int> & ma
 // образах AIM. Чтение берёт сетку байтов заново от каждого синхробайта
 void agat_840_to_cells(const uint8_t * data, size_t len, const std::map<int, int> & marks, std::vector<uint8_t> & cells);
 void agat_840_from_cells(const std::vector<uint8_t> & cells, std::vector<uint8_t> & data, std::map<int, int> & marks);
+
+// Дорожка Агата 140 (Apple II GCR) в ячейках HFE. Привод хранит байты такими,
+// какими их читает контроллер: каждый уходит восемью разрядами, старшим вперёд,
+// а $FF - ещё и с двумя нулями. Защёлка контроллера их пропускает, а в щелях
+// они и есть 10-разрядные синхробайты, по которым контроллер входит в
+// синхронизм. Обратно ячейки читает dsk_tools::gcr_decode() - байты оборота
+void agat_140_to_cells(const uint8_t * data, size_t len, std::vector<uint8_t> & cells);
+// Дорожка байтов, доведённая до длины len: недостающие $FF встают в самую
+// длинную серию $FF - на размеченной дорожке это щель, и поля не разрываются
+void agat_140_fit_track(std::vector<uint8_t> & nibbles, size_t len);

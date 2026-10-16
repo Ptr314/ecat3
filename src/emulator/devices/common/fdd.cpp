@@ -154,7 +154,7 @@ emulator::Result FDD::load_image(const std::string &file_name)
 
     if (ext == ".hfe") {
         if (fdd_mode != FDD_MODE_IBM_MFM && fdd_mode != FDD_MODE_IBM_FM && fdd_mode != FDD_MODE_DVK_MX
-            && fdd_mode != FDD_MODE_AGAT_840)
+            && fdd_mode != FDD_MODE_AGAT_840 && fdd_mode != FDD_MODE_AGAT_140)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "HFE images are not supported for this drive")) + "}");
         emulator::Result r = load_hfe(file_name);
@@ -252,15 +252,17 @@ emulator::Result FDD::load_image(const std::string &file_name)
         if (fdd_mode == FDD_MODE_LOGICAL)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "FDD device is working in a logical mode, no physical formats are supported")) + "}");
-        int expected_size = (ext == ".nib")?232960:286720;
+        // 35-40 дорожек: у .nib по 6656 байт, у .nic по 16 блоков из 512
+        const long long track_size = (ext == ".nib") ? 6656 : 16 * 512;
         long long actual_size = dsk_tools::utf8_file_size(file_name);
+        const long long file_tracks = actual_size / track_size;
 
-        if (actual_size == expected_size) {
+        if (actual_size % track_size == 0 && file_tracks >= 35 && file_tracks <= 40) {
             dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
             if (file.is_open()) {
                 sides = 1;
-                tracks = 35;
-                disk_size = expected_size;
+                tracks = (int)file_tracks;
+                disk_size = (int)actual_size;
                 physical_track_len = disk_size / tracks;
 
                 if (buffer != nullptr) delete [] buffer;
@@ -600,7 +602,8 @@ emulator::Result FDD::save_hfe(const std::string &file_name)
     dsk_tools::DiskFormatParams format;
     format.layout = hfe_layout(fdd_mode);
     const bool agat = (fdd_mode == FDD_MODE_AGAT_840);
-    if (!whole_track() || (format.layout == dsk_tools::TrackLayout::None && !agat))
+    const bool gcr = (fdd_mode == FDD_MODE_AGAT_140);
+    if (!whole_track() || (format.layout == dsk_tools::TrackLayout::None && !agat && !gcr))
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "HFE images are not supported for this drive")) + "}");
     format.tracks = tracks;
@@ -617,6 +620,19 @@ emulator::Result FDD::save_hfe(const std::string &file_name)
         img.interface_mode = GENERIC_SHUGGART_DD_FLOPPYMODE;
         img.cells.resize((size_t)tracks * sides);
     } else
+    if (gcr) {
+        // Заголовок - как у dsk_tools для дисков 140 Кб: одна сторона, 250
+        // кбит/с, кодирование не указано (его видно по ячейкам), шаг через
+        // дорожку - дорожка файла на каждые два шага головки
+        img.tracks = tracks;
+        img.sides = 1;
+        img.bitrate = 250;
+        img.rpm = 300;
+        img.encoding = UNKNOWN_ENCODING;
+        img.interface_mode = GENERIC_SHUGGART_DD_FLOPPYMODE;
+        img.double_step = true;
+        img.cells.resize((size_t)tracks);
+    } else
         dsk_tools::track_hfe_params(format, img);
     img.write_allowed = !write_protect;
     const size_t turn = agat ? 0 : (size_t)dsk_tools::track_bytes(format);
@@ -627,6 +643,10 @@ emulator::Result FDD::save_hfe(const std::string &file_name)
                                       buffer + track_indexes[i].mfmtrackoffset + track_indexes[i].mfmtracksize);
             if (agat) {
                 agat_840_to_cells(data.data(), data.size(), aim_codes[i], img.cells[(size_t)t * sides + s]);
+                continue;
+            }
+            if (gcr) {
+                agat_140_to_cells(data.data(), data.size(), img.cells[(size_t)t * sides + s]);
                 continue;
             }
             std::vector<uint8_t> special(data.size(), 0);
@@ -683,17 +703,49 @@ emulator::Result FDD::load_hfe(const std::string &file_name)
     if (agat)
         for (size_t i = 0; i < img.cells.size(); i++)
             if (img.cells[i].size() / 2 > agat_len) agat_len = img.cells[i].size() / 2;
-    const size_t turn = agat ? agat_len : (size_t)dsk_tools::track_bytes(format);
-    const int track_bytes = agat ? (int)agat_len : hfe_buffer_bytes(fdd_mode, format);
+    // Диск 140 Кб - одна сторона из 35-40 дорожек в Apple II GCR или в
+    // кодировании, которого заголовок не называет; вторая сторона, если есть,
+    // не берётся. Дорожка - байты одного оборота, у всех одна длина, по самой
+    // длинной, как у Агата 840
+    const bool gcr = (fdd_mode == FDD_MODE_AGAT_140);
+    std::vector<dsk_tools::BYTES> gcr_tracks;
+    size_t gcr_len = 0;
+    if (gcr) {
+        if (img.tracks < 35 || img.tracks > 40
+            || (img.encoding != APPLEII_GCR1_ENCODING && img.encoding != APPLEII_GCR2_ENCODING
+                && img.encoding != UNKNOWN_ENCODING))
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unrecognized MFM format")) + "} "
+                + file_name);
+        gcr_tracks.resize((size_t)img.tracks);
+        for (int t = 0; t < img.tracks; t++) {
+            dsk_tools::gcr_decode(img.cells[(size_t)t * img.sides], gcr_tracks[(size_t)t]);
+            if (gcr_tracks[(size_t)t].size() > gcr_len) gcr_len = gcr_tracks[(size_t)t].size();
+        }
+    }
+    const int new_sides = gcr ? 1 : img.sides;
+    const size_t turn = agat ? agat_len : gcr ? gcr_len : (size_t)dsk_tools::track_bytes(format);
+    const int track_bytes = agat ? (int)agat_len
+        : gcr ? (int)gcr_len : hfe_buffer_bytes(fdd_mode, format);
     if (track_bytes <= 0)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unrecognized MFM format")) + "} " + file_name);
-    const int new_size = img.tracks * img.sides * track_bytes;
+    const int new_size = img.tracks * new_sides * track_bytes;
     uint8_t * new_buffer = new uint8_t[new_size];
     for (size_t i = 0; i < table; i++) aim_codes[i].clear();
     for (int t = 0; t < img.tracks; t++)
-        for (int s = 0; s < img.sides; s++) {
-            const int i = t * img.sides + s;
+        for (int s = 0; s < new_sides; s++) {
+            const int i = t * new_sides + s;
+            if (gcr) {
+                dsk_tools::BYTES &track = gcr_tracks[(size_t)t];
+                agat_140_fit_track(track, turn);
+                memcpy(new_buffer + (size_t)i * track_bytes, track.data(), track_bytes);
+                track_indexes[i].track_number = (uint16_t)t;
+                track_indexes[i].side_number = 0;
+                track_indexes[i].mfmtracksize = track_bytes;
+                track_indexes[i].mfmtrackoffset = (uint32_t)(i * track_bytes);
+                continue;
+            }
             dsk_tools::BYTES data, special;
             const dsk_tools::BYTES &cells = img.cells[(size_t)i];
             if (agat) {
@@ -725,7 +777,7 @@ emulator::Result FDD::load_hfe(const std::string &file_name)
     if (buffer != nullptr) delete [] buffer;
     buffer = new_buffer;
     disk_size = new_size;
-    sides = img.sides;
+    sides = new_sides;
     tracks = img.tracks;
     track_mode = FDD_MODE_WHOLE_TRACK;
     position = 0;
@@ -928,7 +980,8 @@ emulator::Result FDD::save_image(const std::string &file_name)
     {
         std::string ext = dsk_tools::get_file_ext(file_name); // returns ".ext" lowercase
 
-        bool is_raw = (ext == ".dsk" || ext == ".gmd" || ext == ".cpm" || ext == ".img" || ext == ".bkd");
+        bool is_raw = (ext == ".dsk" || ext == ".do" || ext == ".po" || ext == ".gmd"
+            || ext == ".cpm" || ext == ".img" || ext == ".bkd");
 
         if (is_raw) {
             if (fdd_mode == FDD_MODE_AGAT_840) {
@@ -951,6 +1004,8 @@ emulator::Result FDD::save_image(const std::string &file_name)
                 dsk_tools::BYTES raw_data;
                 const dsk_tools::Result decode_res = dsk_tools::decode_agat_140_image(raw_data, encoded_data, track_indexes[0].mfmtracksize);
                 if (decode_res) {
+                    // Сектора приходят в порядке DOS 3.3, а .po хранит их в порядке ProDOS
+                    if (ext == ".po") agat_140_dos_to_prodos(raw_data);
                     dsk_tools::UTF8_ofstream file(file_name, std::ios::binary);
                     if (file.is_open()){
                         file.write(reinterpret_cast<char*>(raw_data.data()), raw_data.size());
