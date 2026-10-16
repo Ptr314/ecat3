@@ -54,6 +54,19 @@
 // русском регистре получается ЙЦУКЕН самой МС7004 (use_remap = 0). Пометка
 // `+shift` - знак набирается с ВР, `-shift` - без него, хотя хост держит
 // Shift: на время нажатия ВР ставится как надо, потом возвращается.
+// Пометка `letter` - знак из группы букв (клавиши Ш Щ Э Ч Ю Ъ в латинском
+// регистре: [ \ ] ^ _ @ и они же с ВР).
+//
+// ФКС терминал помнит сам, и помеченный знак с ним выходит другим. Чтобы
+// знак от ФКС не зависел, клавиатура обращает для него ВР, если ФКС у
+// терминала включён. Откуда это известно, задаёт параметр fks:
+//   - lamp (КЦГД): по лампе ФКС, которую зажигает сам терминал. ФКС КЦГД
+//     меняет регистр только группы букв, и обращается ВР только в латинском
+//     регистре (лампа ЛАТ): в русском эти клавиши - буквы, им ФКС положен;
+//   - toggle (КСМ): лампами КСМ не управляет, но его ФКС меняется каждым
+//     нажатием (05CD), и клавиатура считает отданные коды $B0 сама. ФКС КСМ
+//     меняет и буквы, и цифры со знаками - всё помеченное;
+//   - без параметра ФКС не учитывается.
 //
 // Код уходит на линию (~data, байт целиком) не чаще, чем раз в interval
 // тактов - столько идёт символ на 4800 бод. Очередь пополняет поток окна,
@@ -62,11 +75,13 @@ class MS7004: public Keyboard
 {
 private:
     enum ShiftMode { SHIFT_ANY, SHIFT_ON, SHIFT_OFF };
+    enum FksMode { FKS_NONE, FKS_LAMP, FKS_TOGGLE };
 
     struct KeyEntry {
         unsigned int host;
         unsigned int code;
         ShiftMode    shift;
+        bool         letter;
     };
     std::vector<KeyEntry> m_keys;
 
@@ -83,6 +98,8 @@ private:
     bool m_shift_machine = false;
     bool m_ctrl_machine = false;
     unsigned int m_forced = 0;          // сколько знаков с пометкой нажато
+    FksMode m_fks_mode = FKS_NONE;
+    bool m_fks = false;                 // ФКС терминала по счёту кодов $B0 (toggle)
 
     // Обычные клавиши, которые держат: клавиша хоста и её код (не больше
     // трёх, последняя нажатая - в конце)
@@ -121,6 +138,7 @@ private:
     const KeyEntry * entry_of(unsigned int host) const;
     void press(const KeyEntry &e, bool down);
     void set_shift(bool down, bool forced);
+    bool fks_inverts(const KeyEntry &e) const;
     void arm_repeat_locked();
     void send_locked(unsigned int code);
     void enqueue_locked(unsigned int code);

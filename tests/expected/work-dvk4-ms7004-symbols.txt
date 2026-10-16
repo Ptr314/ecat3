@@ -1,0 +1,5 @@
+[kcgd-host.output] &100 &136 &137 &176 &173 &140 &133
+[keyboard.leds] led_caps,led_lat
+[keyboard.fks] &001
+[kcgd-host.output] &133 &141 &061 &100 &173 &137 &101 &041
+[keyboard.dropped] &000

@@ -1,0 +1,53 @@
+# ДВК-3 (КСМ): ФКС и знаки с хоста.
+#
+# ФКС КСМ - настоящая фиксация регистра: каждое нажатие меняет её (05CD), и
+# она переворачивает и буквы, и цифры со знаками. Ламп КСМ не зажигает,
+# поэтому клавиатура считает нажатия сама (fks = toggle) и обращает ВР для
+# помеченных знаков. Символ читается с передатчика КСМ к ДВК (ksm-line.tx).
+# С ФКС ожидается [ a 1 = @ ! A, после второго нажатия ФКС - снова 1
+MACHINE "dvk/DVK-3.cfg"
+WAIT _3000
+LOGDEFS _8,_8
+
+KEY _30,_30,caps
+WAIT _50
+LOG keyboard.fks
+KEY _30,_30,[
+WAIT _30
+LOG ksm-line.tx
+KEY _30,_30,a
+WAIT _30
+LOG ksm-line.tx
+KEY _30,_30,1
+WAIT _30
+LOG ksm-line.tx
+KEY _30,_30,=
+WAIT _30
+LOG ksm-line.tx
+KEYDOWN shift
+WAIT _30
+KEYDOWN @
+WAIT _30
+KEYUP @
+WAIT _30
+LOG ksm-line.tx
+KEYDOWN !
+WAIT _30
+KEYUP !
+WAIT _30
+LOG ksm-line.tx
+KEYDOWN a
+WAIT _30
+KEYUP a
+WAIT _30
+LOG ksm-line.tx
+KEYUP shift
+WAIT _30
+KEY _30,_30,caps
+WAIT _50
+LOG keyboard.fks
+KEY _30,_30,1
+WAIT _30
+LOG ksm-line.tx
+LOG keyboard.dropped
+EXIT

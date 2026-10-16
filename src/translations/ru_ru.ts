@@ -332,7 +332,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+1104"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1159"/>
         <source>Disk image</source>
         <translation>Образ диска</translation>
     </message>
@@ -696,9 +696,9 @@
         <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+79"/>
         <location line="+11"/>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
-        <location line="+222"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="+144"/>
-        <location line="+194"/>
+        <location line="+238"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="+153"/>
+        <location line="+199"/>
         <source>Video output</source>
         <translation>Видеовыход</translation>
     </message>
@@ -740,24 +740,24 @@
         <translation>Прототип</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-220"/>
-        <location line="+223"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-192"/>
-        <location line="+195"/>
+        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-236"/>
+        <location line="+239"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-197"/>
+        <location line="+200"/>
         <source>RGB</source>
         <translation>RGB</translation>
     </message>
     <message>
-        <location line="-222"/>
-        <location line="+223"/>
+        <location line="-238"/>
+        <location line="+239"/>
         <source>GRB</source>
         <translation>GRB</translation>
     </message>
     <message>
-        <location line="-222"/>
-        <location line="+223"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-194"/>
-        <location line="+195"/>
+        <location line="-238"/>
+        <location line="+239"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-199"/>
+        <location line="+200"/>
         <source>Mono</source>
         <translation>Моно</translation>
     </message>
@@ -1536,7 +1536,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-1070"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1125"/>
         <source>Incorrect fdd list for</source>
         <translation>Некорректный список дисководов для</translation>
     </message>
@@ -1592,24 +1592,25 @@
     </message>
     <message>
         <location line="-82"/>
-        <location line="+502"/>
-        <location line="+16"/>
+        <location line="+522"/>
+        <location line="+24"/>
+        <location line="+14"/>
         <source>Unrecognized MFM format</source>
         <translation>Файл формата MFM не распознан</translation>
     </message>
     <message>
-        <location line="-442"/>
-        <location line="+37"/>
+        <location line="-484"/>
+        <location line="+39"/>
         <location line="+44"/>
         <location line="+29"/>
         <location line="+18"/>
-        <location line="+274"/>
+        <location line="+292"/>
         <location line="+16"/>
         <source>Error opening file</source>
         <translation>Ошибка открытия файла</translation>
     </message>
     <message>
-        <location line="-376"/>
+        <location line="-394"/>
         <source>File is in unknown format</source>
         <translation>Формат файла не распознан</translation>
     </message>
@@ -1617,13 +1618,13 @@
         <location line="+44"/>
         <location line="+19"/>
         <location line="+18"/>
-        <location line="+289"/>
+        <location line="+307"/>
         <source>Incorrect disk image size for</source>
         <translation>Некорректный размер файла образа</translation>
     </message>
     <message>
-        <location line="+286"/>
-        <location line="+15"/>
+        <location line="+319"/>
+        <location line="+17"/>
         <source>Error exporting disk.</source>
         <translation>Ошибка экспорта диска.</translation>
     </message>
@@ -1646,7 +1647,7 @@
         <translation type="vanished">Формат файла &apos;%1&apos; не распознан</translation>
     </message>
     <message>
-        <location line="-1183"/>
+        <location line="-1236"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation>Файлы AIM поддерживаются только на дисководах 840 Кб Агат!</translation>
     </message>
@@ -1664,7 +1665,7 @@
         <translation type="vanished">Ошибка экспорта диска. %1 : %2</translation>
     </message>
     <message>
-        <location line="+619"/>
+        <location line="+672"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation>Дисковод работает в MFM-режиме. Сохранение в посекторные образы еще не поддерживается.</translation>
     </message>
@@ -1674,8 +1675,8 @@
         <translation>Сохранение образов для данного типа устройств еще не поддерживается.</translation>
     </message>
     <message>
-        <location line="-866"/>
-        <location line="+446"/>
+        <location line="-921"/>
+        <location line="+449"/>
         <source>HFE images are not supported for this drive</source>
         <translation>Образы HFE для этого дисковода не поддерживаются</translation>
     </message>
@@ -1824,7 +1825,7 @@
 <context>
     <name>I8275Display</name>
     <message>
-        <location filename="../emulator/devices/common/i8275display.cpp" line="+199"/>
+        <location filename="../emulator/devices/common/i8275display.cpp" line="+206"/>
         <source>font_address must be 11 characters long</source>
         <translation>Длина font_address должна быть 11 символов</translation>
     </message>
@@ -2051,7 +2052,12 @@
 <context>
     <name>MS7004</name>
     <message>
-        <location filename="../emulator/devices/specific/ms7004.cpp" line="+78"/>
+        <location filename="../emulator/devices/specific/ms7004.cpp" line="+83"/>
+        <source>Unknown fks mode</source>
+        <translation>Неизвестный режим fks (lamp или toggle)</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Keyboard map file is expected</source>
         <translation>Ожидается файл раскладки клавиатуры</translation>
     </message>
@@ -2062,12 +2068,12 @@
     </message>
     <message>
         <location line="+15"/>
-        <location line="+14"/>
+        <location line="+20"/>
         <source>Map file entry is incorrect</source>
         <translation>Элемент файла мэппинга некорректен</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Unknown key in the map file</source>
         <translation>Неизвестная клавиша в файле мэппинга</translation>
     </message>
@@ -2077,7 +2083,7 @@
         <translation>Некорректное значение в файле мэппинга</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+43"/>
         <source>Key table entry is incorrect</source>
         <translation>Элемент таблицы клавиш некорректен</translation>
     </message>
@@ -2092,7 +2098,7 @@
         <translation>Повторяющийся элемент в таблице клавиш</translation>
     </message>
     <message>
-        <location line="+349"/>
+        <location line="+371"/>
         <source>Invalid key code</source>
         <translation>Некорректный код клавиши</translation>
     </message>
@@ -2172,7 +2178,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1568"/>
+        <location filename="../mainwindow.cpp" line="+1570"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2229,8 +2235,8 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-780"/>
-        <location line="+1780"/>
+        <location filename="../mainwindow.cpp" line="-781"/>
+        <location line="+1781"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
@@ -2280,16 +2286,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-526"/>
+        <location filename="../mainwindow.cpp" line="-527"/>
         <location line="+47"/>
-        <location line="+1419"/>
+        <location line="+1420"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1534"/>
+        <location line="-1535"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2318,7 +2324,7 @@
     <message>
         <location line="-120"/>
         <location line="+76"/>
-        <location line="+1151"/>
+        <location line="+1152"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+200"/>
@@ -2333,7 +2339,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2404"/>
+        <location line="-2405"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2358,7 +2364,7 @@
         <translation>Скорость мыши</translation>
     </message>
     <message>
-        <location line="+172"/>
+        <location line="+173"/>
         <source>Auto scale</source>
         <translation>Автоматически</translation>
     </message>
@@ -2426,7 +2432,7 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1297"/>
+        <location line="-1298"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -2439,7 +2445,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+71"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1778"/>
+        <location filename="../mainwindow.cpp" line="+1779"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -2449,15 +2455,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1756"/>
-        <location line="+1249"/>
+        <location line="-1757"/>
+        <location line="+1250"/>
         <location line="+378"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1738"/>
+        <location line="-1739"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2493,7 +2499,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1577"/>
+        <location line="+1578"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -2524,20 +2530,20 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1756"/>
+        <location line="-1757"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
     <message>
-        <location line="-480"/>
-        <location line="+587"/>
+        <location line="-481"/>
+        <location line="+588"/>
         <location line="+1"/>
-        <location line="+789"/>
+        <location line="+790"/>
         <source>Turbo</source>
         <translation>Турбо</translation>
     </message>
     <message>
-        <location line="-997"/>
+        <location line="-998"/>
         <source>Floppy drive %1</source>
         <translation>Дисковод %1</translation>
     </message>
@@ -2567,7 +2573,7 @@
         <translation>Цифровой блок буквами</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+24"/>
         <source>Speed</source>
         <translation>Скорость</translation>
     </message>
@@ -3581,7 +3587,7 @@
 <context>
     <name>UKNCDisplay</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-306"/>
+        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-322"/>
         <source>Plane must be a RAM device</source>
         <translation>План должен быть устройством ОЗУ</translation>
     </message>
@@ -3665,7 +3671,7 @@
 <context>
     <name>UKNCSound</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_sound.cpp" line="+53"/>
+        <location filename="../emulator/devices/specific/uknc_sound.cpp" line="+54"/>
         <source>The tone grid needs a timer device</source>
         <translation>Тональной сетке нужно устройство таймера</translation>
     </message>
@@ -3724,12 +3730,12 @@
 <context>
     <name>errors</name>
     <message>
-        <location filename="../libs/dsk_tools/src/dsk_tools.cpp" line="+376"/>
+        <location filename="../libs/dsk_tools/src/dsk_tools.cpp" line="+475"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_raw.cpp" line="+28"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_aim.cpp" line="+102"/>
-        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+28"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+29"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_fil.cpp" line="+23"/>
-        <location filename="../libs/dsk_tools/src/loaders/loader_mfm.cpp" line="+236"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_mfm.cpp" line="+255"/>
         <location filename="../libs/dsk_tools/src/loaders/loader_imd.cpp" line="+30"/>
         <location line="+293"/>
         <location filename="../libs/dsk_tools/src/converters/converter.cpp" line="+20"/>
@@ -3739,25 +3745,25 @@
     <message>
         <location line="+52"/>
         <location line="+27"/>
-        <location line="+50"/>
+        <location line="+51"/>
         <source>Invalid file size for DSK format</source>
         <translation>Некорректный размер файла. Попробуйте отключить автоопределение и указать тип файла вручную</translation>
     </message>
     <message>
-        <location line="+70"/>
+        <location line="+81"/>
         <location line="+21"/>
         <source>Failed to load AIM file</source>
         <translation>Ошибка загрузки файла AIM</translation>
     </message>
     <message>
         <location line="-13"/>
-        <location line="+125"/>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_prodos.cpp" line="+157"/>
+        <location line="+130"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_prodos.cpp" line="+164"/>
         <source>ProDOS volume header not found</source>
         <translation>Не найден заголовок тома ProDOS</translation>
     </message>
     <message>
-        <location line="-102"/>
+        <location line="-105"/>
         <source>Invalid file size for NIB format</source>
         <translation>Некорректный размер файла для формата NIB</translation>
     </message>
@@ -3772,7 +3778,7 @@
         <translation>Не удалось загрузить MFM-файл</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+26"/>
         <source>Invalid filesystem signature</source>
         <translation>Некорректная сигнатура файловой системы</translation>
     </message>
@@ -3784,6 +3790,7 @@
     <message>
         <location line="+26"/>
         <location line="+17"/>
+        <location line="+29"/>
         <source>Invalid HFE file format</source>
         <translation>Некорректный формат файла HFE</translation>
     </message>
@@ -3813,19 +3820,20 @@
         <translation>Ошибка декодирования дорожки в формате диска Агат 140 Кб</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+9"/>
+        <location line="+5"/>
         <source>Failed to decode Agat 140 track</source>
         <translation>Ошибка декодирования дорожки в формате диска Агат 140 Кб</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/loaders/loader.h" line="+33"/>
-        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+93"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader.h" line="+36"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+129"/>
         <source>Not implemented</source>
         <translation>Поддержка данного типа дисков ещё не реализована</translation>
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/loaders/loader_raw.cpp" line="+9"/>
-        <location line="+31"/>
+        <location line="+41"/>
         <source>Unknown disk type</source>
         <translation>Неизвестный тип диска</translation>
     </message>
@@ -3862,19 +3870,20 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+13"/>
+        <location line="+14"/>
         <location line="+11"/>
-        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="-50"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="-69"/>
+        <location line="+34"/>
         <source>Invalid HFE parameters</source>
         <translation>Некорректные параметры HFE</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+37"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_hfe.cpp" line="+22"/>
         <source>Unsupported disk type</source>
         <translation>Данный тип диска не поддерживается</translation>
     </message>
     <message>
-        <location line="-14"/>
+        <location line="-33"/>
         <source>Failed to decode track data</source>
         <translation>Ошибка декодирования данных дорожки</translation>
     </message>
@@ -3885,7 +3894,11 @@
         <translation>Некорректный формат файла</translation>
     </message>
     <message>
-        <location line="-286"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_mfm.cpp" line="-208"/>
+        <location line="+5"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_hxc_mfm.cpp" line="+28"/>
+        <location line="+6"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_imd.cpp" line="-286"/>
         <location line="+19"/>
         <location line="+8"/>
         <location line="+9"/>
@@ -3899,7 +3912,7 @@
         <translation>Файл выглядит повреждённым</translation>
     </message>
     <message>
-        <location line="-346"/>
+        <location filename="../libs/dsk_tools/src/loaders/loader_imd.cpp" line="-346"/>
         <source>Incorrect head index</source>
         <translation>Некорректный индекс головки</translation>
     </message>
@@ -3930,6 +3943,7 @@
     </message>
     <message>
         <location filename="../libs/dsk_tools/src/images/disk_image.cpp" line="+10"/>
+        <location filename="../libs/dsk_tools/src/images/image_agat140.cpp" line="+35"/>
         <source>Buffer size mismatch</source>
         <translation>Несоответствие размера буфера</translation>
     </message>
@@ -3944,8 +3958,8 @@
         <translation>Ошибка записи в файл</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/writers/writer_hxc_hfe.cpp" line="+68"/>
-        <location line="+16"/>
+        <location filename="../libs/dsk_tools/src/writers/writer_hxc_hfe.cpp" line="+92"/>
+        <location line="+19"/>
         <source>Format not supported for HFE format</source>
         <translation>Для файлов HFE данный формат не поддерживается</translation>
     </message>
@@ -3980,7 +3994,7 @@
         <translation>Замена дорожек для файлов MFM не поддерживается</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/writers/writer_raw.cpp" line="+29"/>
+        <location filename="../libs/dsk_tools/src/writers/writer_raw.cpp" line="+34"/>
         <source>Template file size mismatch</source>
         <translation>Несоответствие размера файла образца</translation>
     </message>
@@ -4015,7 +4029,7 @@
         <translation>Некорректный номер дорожки для мэппинга</translation>
     </message>
     <message>
-        <location line="+499"/>
+        <location line="+491"/>
         <location line="+304"/>
         <source>Incorrect track/sector data</source>
         <translation>Некорректные данные дорожки/сектора</translation>
@@ -4118,7 +4132,7 @@
         <translation>Неподдерживаемый тип диска CP/M</translation>
     </message>
     <message>
-        <location line="+583"/>
+        <location line="+584"/>
         <source>user number out of range</source>
         <translation>User # выходит за допустимые пределы</translation>
     </message>

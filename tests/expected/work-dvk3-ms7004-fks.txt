@@ -1,0 +1,11 @@
+[keyboard.fks] &001
+[ksm-line.tx] &133
+[ksm-line.tx] &141
+[ksm-line.tx] &061
+[ksm-line.tx] &075
+[ksm-line.tx] &100
+[ksm-line.tx] &041
+[ksm-line.tx] &101
+[keyboard.fks] &000
+[ksm-line.tx] &061
+[keyboard.dropped] &000

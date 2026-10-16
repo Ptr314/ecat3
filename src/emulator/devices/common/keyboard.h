@@ -257,6 +257,7 @@ static const KeyDescription KEYS[] ={
     {EmuKey::AsciiCircum, "^"},
     {EmuKey::AsciiCircum, "circum"},
     {EmuKey::Bar, "bar"},
+    {EmuKey::AsciiTilde, "tilde"},  // "~" - клавиша `, без Shift (QuoteLeft)
     {EmuKey::Key_0 | EmuKey::Keypad, "kp0"},
     {EmuKey::Key_1 | EmuKey::Keypad, "kp1"},
     {EmuKey::Key_2 | EmuKey::Keypad, "kp2"},

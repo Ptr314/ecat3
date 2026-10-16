@@ -12,6 +12,7 @@
 #define CODE_UP         0xB3        // отпущена ВР или СУ
 #define CODE_REPEAT     0xB4        // автоповтор: терминал повторяет последний символ
 #define CODE_RETURN     0xBD        // ВК: без автоповтора
+#define CODE_FKS        0xB0        // ФКС
 #define CODE_INHIBITED  0xB7        // ответ на $89
 #define CODE_TEST       0xBA        // ответ на $D3
 
@@ -33,6 +34,7 @@
 #define CMD_LEDS_OFF    0x11
 #define CMD_LEDS_ON     0x13
 #define LED_WAIT        0x01        // ОЖИД, P2.4
+#define LED_FKS         0x04        // ФКС, P2.6
 #define LED_LAT         0x10        // P1.5
 
 // «Код хоста» клавиши, нажатой на рисунке: старше любого EmuKey
@@ -72,6 +74,14 @@ emulator::Result MS7004::load_config(SystemData *sd)
     m_repeat_period = (unsigned int)(clock * period_ms / 1000);
     if (m_repeat_period == 0) m_repeat_period = 1;
 
+    const std::string fks = cd->get_parameter("fks", false).value;
+    if      (fks.empty())      m_fks_mode = FKS_NONE;
+    else if (fks == "lamp")    m_fks_mode = FKS_LAMP;
+    else if (fks == "toggle")  m_fks_mode = FKS_TOGGLE;
+    else
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{MS7004|" + std::string(QT_TRANSLATE_NOOP("MS7004", "Unknown fks mode")) + "} " + fks);
+
     const std::string map_file = find_file_location(sd, cd->get_parameter("map", false).value);
     if (map_file.empty())
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
@@ -101,15 +111,22 @@ emulator::Result MS7004::load_config(SystemData *sd)
         std::string value = str_trim(line.substr(colon + 1));
 
         ShiftMode shift = SHIFT_ANY;
-        const size_t space = value.find_first_of(" \t");
+        bool letter = false;
+        size_t space = value.find_first_of(" \t");
         if (space != std::string::npos) {
-            const std::string mark = str_trim(value.substr(space));
+            std::string marks = str_trim(value.substr(space));
             value = str_trim(value.substr(0, space));
-            if      (mark == "+shift") shift = SHIFT_ON;
-            else if (mark == "-shift") shift = SHIFT_OFF;
-            else
-                return emulator::Result::error(emulator::ErrorCode::ConfigError,
-                    "{MS7004|" + std::string(QT_TRANSLATE_NOOP("MS7004", "Map file entry is incorrect")) + "} " + line);
+            while (!marks.empty()) {
+                space = marks.find_first_of(" \t");
+                const std::string mark = marks.substr(0, space);
+                marks = (space == std::string::npos) ? std::string() : str_trim(marks.substr(space));
+                if      (mark == "+shift") shift = SHIFT_ON;
+                else if (mark == "-shift") shift = SHIFT_OFF;
+                else if (mark == "letter") letter = true;
+                else
+                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                        "{MS7004|" + std::string(QT_TRANSLATE_NOOP("MS7004", "Map file entry is incorrect")) + "} " + line);
+            }
         }
 
         const unsigned int host = translate_key(key_name);
@@ -129,6 +146,7 @@ emulator::Result MS7004::load_config(SystemData *sd)
         e.host = host;
         e.code = code & 0xFF;
         e.shift = shift;
+        e.letter = letter;
         m_keys.push_back(e);
     }
 
@@ -143,6 +161,7 @@ void MS7004::reset(const bool cold)
     m_queued = false;
     m_shift_host = m_ctrl_host = m_shift_machine = m_ctrl_machine = false;
     m_forced = 0;
+    m_fks = false;
     m_wait = 0;
     m_held.clear();
     m_repeat_armed = false;
@@ -191,6 +210,7 @@ void MS7004::send_key_id(const std::string &id, bool down)
             e.host = KEY_ID_BASE + (unsigned int)i;
             e.code = m_id_codes[i].second;
             e.shift = SHIFT_ANY;
+            e.letter = false;
             press(e, down);
             return;
         }
@@ -254,6 +274,21 @@ void MS7004::enqueue_locked(unsigned int code)
     }
     m_queue.push_back(code);
     m_queued = true;
+    // ФКС КСМ меняется каждым нажатием; повтор ($B4) после него у КСМ пуст
+    if (code == CODE_FKS) m_fks = !m_fks;
+}
+
+// Обратить ли ВР для помеченного знака: ФКС терминала его бы перевернул
+bool MS7004::fks_inverts(const KeyEntry &e) const
+{
+    switch (m_fks_mode) {
+    case FKS_LAMP:
+        return e.letter && (m_leds & LED_FKS) != 0 && (m_leds & LED_LAT) != 0;
+    case FKS_TOGGLE:
+        return m_fks;
+    default:
+        return false;
+    }
 }
 
 // Код терминалу; после $89 прошивка его не выдаёт (006F), он пропадает
@@ -322,7 +357,7 @@ void MS7004::press(const KeyEntry &e, bool down)
         // её не замечает
         if (held < m_held.size() || m_held.size() >= MAX_HELD) return;
         if (e.shift != SHIFT_ANY) {
-            set_shift(e.shift == SHIFT_ON, true);
+            set_shift((e.shift == SHIFT_ON) != fks_inverts(e), true);
             m_forced++;
         }
         send_locked(e.code);
@@ -477,6 +512,7 @@ std::vector<DeviceFieldInfo> MS7004::get_device_fields()
     r.push_back({"repeats", "Сколько кодов автоповтора ($B4) отдано",     false});
     r.push_back({"repeat",  "Автоповтор включён (команды $E1/$D9/$E3)",   false});
     r.push_back({"inhibit", "Выдача кодов запрещена командой $89",        false});
+    r.push_back({"fks",     "ФКС терминала, как его видит клавиатура (параметр fks)", false});
     return r;
 }
 
@@ -491,6 +527,11 @@ bool MS7004::get_field(const std::string &field, unsigned int from, unsigned int
     if (field == "repeats") { out.values.push_back(m_repeats); return true; }
     if (field == "repeat")  { out.values.push_back(m_repeat_on ? 1 : 0); return true; }
     if (field == "inhibit") { out.values.push_back(m_inhibit ? 1 : 0); return true; }
+    if (field == "fks") {
+        const bool on = (m_fks_mode == FKS_LAMP) ? (m_leds & LED_FKS) != 0 : m_fks;
+        out.values.push_back(on ? 1 : 0);
+        return true;
+    }
     if (field == "command_log") {
         compat_lock_guard lock(m_queue_mutex);
         for (size_t i = 0; i < m_command_log.size(); i++) out.values.push_back(m_command_log[i]);
@@ -541,6 +582,7 @@ void MS7004::save_state(StateWriter &w)
     w.b("inhibit", m_inhibit);
     w.u("wait", m_wait);
     w.n("leds", m_leds);
+    w.b("fks", m_fks);
 }
 
 emulator::Result MS7004::load_state(const StateReader &r)
@@ -555,6 +597,9 @@ emulator::Result MS7004::load_state(const StateReader &r)
     r.u("wait", m_wait);
     unsigned int leds = 0;
     if (r.u("leds", leds)) m_leds = leds;
+    // Старый снимок поля не несёт: ФКС выключен, как при пуске
+    m_fks = false;
+    r.b("fks", m_fks);
     m_led_command = 0;
     m_queue.clear();
     m_queued = false;

@@ -1,0 +1,81 @@
+# ДВК-4 (КЦГД 181): знаки клавиш Ш Щ Э Ч Ю Ъ с хоста.
+#
+# В латинском регистре эти клавиши дают 133-137 и 100, и терминал меняет им
+# регистр, как буквам: с ВР Ю - `, Ч - ~, а Ъ у КЦГД 181 - ЗБ (177). Хост
+# набирает @ ^ _ с Shift, поэтому раскладка снимает ВР на время нажатия
+# (-shift), а ` и ~ ставит его (+shift). Символы читаются с линии терминала
+# к ДВК (kcgd-host.output): ожидается @ ^ _ ~ { ` [
+# Монитор берёт символы с линии только после теста памяти (~12 с).
+#
+# Потом ВР+ФКС включает ФКС КЦГД (лампа ФКС): буквы и группа букв меняют
+# регистр, а знаки с пометками - нет, клавиатура обращает для них ВР
+# (fks = lamp). Ожидается [ a 1 @ { _ A !
+MACHINE "dvk/DVK-4.cfg"
+WAIT _12000
+LOGDEFS _8,_8
+
+KEYDOWN shift
+WAIT _30
+KEYDOWN @
+WAIT _30
+KEYUP @
+KEYDOWN ^
+WAIT _30
+KEYUP ^
+KEYDOWN _
+WAIT _30
+KEYUP _
+KEYDOWN tilde
+WAIT _30
+KEYUP tilde
+KEYDOWN {
+WAIT _30
+KEYUP {
+WAIT _30
+KEYUP shift
+WAIT _30
+KEYDOWN ~
+WAIT _30
+KEYUP ~
+KEYDOWN [
+WAIT _30
+KEYUP [
+WAIT _100
+LOG kcgd-host.output
+
+KEYDOWN shift
+WAIT _30
+KEYDOWN caps
+WAIT _30
+KEYUP caps
+WAIT _30
+KEYUP shift
+WAIT _100
+LOG keyboard.leds
+LOG keyboard.fks
+KEY _30,_30,[
+KEY _30,_30,a
+KEY _30,_30,1
+KEYDOWN shift
+WAIT _30
+KEYDOWN @
+WAIT _30
+KEYUP @
+KEYDOWN {
+WAIT _30
+KEYUP {
+KEYDOWN _
+WAIT _30
+KEYUP _
+KEYDOWN a
+WAIT _30
+KEYUP a
+KEYDOWN !
+WAIT _30
+KEYUP !
+WAIT _30
+KEYUP shift
+WAIT _100
+LOG kcgd-host.output(_8)
+LOG keyboard.dropped
+EXIT

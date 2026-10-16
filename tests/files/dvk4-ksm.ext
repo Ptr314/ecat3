@@ -95,6 +95,7 @@ keyboard : ms7004 {
 	use_remap = 0
 	// Символ на 4800 бод - 2,3 мс, 3500 тактов процессора КСМ
 	interval = _3500
+	fks = toggle
 }
 
 ksm-mapper : memory-mapper {
