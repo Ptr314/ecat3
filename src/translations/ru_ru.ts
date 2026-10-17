@@ -236,7 +236,7 @@
         <translation>int_opcode = $CD требует подключённого ~int_address</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/i8086.cpp" line="+113"/>
+        <location filename="../emulator/devices/cpu/i8086.cpp" line="+116"/>
         <source>Incorrect parameters for</source>
         <translation>Неправильно указаны параметры для</translation>
     </message>
@@ -289,6 +289,8 @@
     </message>
     <message>
         <location line="-35"/>
+        <location filename="../emulator/devices/common/indirect_memory.cpp" line="+62"/>
+        <location filename="../emulator/devices/common/wait_map.cpp" line="+23"/>
         <source>Not a device that adds wait states</source>
         <translation>Устройство не добавляет тактов ожидания</translation>
     </message>
@@ -697,8 +699,8 @@
         <location line="+11"/>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
         <location line="+238"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="+153"/>
-        <location line="+199"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="+156"/>
+        <location line="+247"/>
         <source>Video output</source>
         <translation>Видеовыход</translation>
     </message>
@@ -742,8 +744,8 @@
     <message>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="-236"/>
         <location line="+239"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-197"/>
-        <location line="+200"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-245"/>
+        <location line="+248"/>
         <source>RGB</source>
         <translation>RGB</translation>
     </message>
@@ -756,8 +758,8 @@
     <message>
         <location line="-238"/>
         <location line="+239"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-199"/>
-        <location line="+200"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-247"/>
+        <location line="+248"/>
         <source>Mono</source>
         <translation>Моно</translation>
     </message>
@@ -1129,7 +1131,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+254"/>
+        <location filename="../emulator/emulator.cpp" line="+255"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -1851,13 +1853,13 @@
 <context>
     <name>IndirectMemory</name>
     <message>
-        <location filename="../emulator/devices/common/indirect_memory.cpp" line="+38"/>
-        <location line="+19"/>
+        <location filename="../emulator/devices/common/indirect_memory.cpp" line="-22"/>
+        <location line="+26"/>
         <source>Incorrect range for</source>
         <translation>Некорректный диапазон для</translation>
     </message>
     <message>
-        <location line="-14"/>
+        <location line="-21"/>
         <source>Too many data registers</source>
         <translation>Слишком много регистров данных</translation>
     </message>
@@ -1867,7 +1869,7 @@
         <translation>Устройство не адресуемое</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+21"/>
         <source>No data registers defined</source>
         <translation>Не заданы регистры данных</translation>
     </message>
@@ -2178,7 +2180,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1570"/>
+        <location filename="../mainwindow.cpp" line="+1608"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2235,14 +2237,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-781"/>
-        <location line="+1781"/>
+        <location filename="../mainwindow.cpp" line="-813"/>
+        <location line="+1830"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1476"/>
+        <location filename="../mainwindow.cpp" line="-1523"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -2286,16 +2288,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-527"/>
+        <location filename="../mainwindow.cpp" line="-529"/>
         <location line="+47"/>
-        <location line="+1420"/>
+        <location line="+1469"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1535"/>
+        <location line="-1584"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2324,10 +2326,10 @@
     <message>
         <location line="-120"/>
         <location line="+76"/>
-        <location line="+1152"/>
+        <location line="+1200"/>
         <location line="+55"/>
         <location line="+79"/>
-        <location line="+200"/>
+        <location line="+201"/>
         <location line="+107"/>
         <location line="+62"/>
         <location line="+166"/>
@@ -2339,7 +2341,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2405"/>
+        <location line="-2454"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2364,7 +2366,7 @@
         <translation>Скорость мыши</translation>
     </message>
     <message>
-        <location line="+173"/>
+        <location line="+175"/>
         <source>Auto scale</source>
         <translation>Автоматически</translation>
     </message>
@@ -2415,13 +2417,13 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+637"/>
+        <location line="+667"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
     </message>
     <message>
-        <location line="+233"/>
+        <location line="+249"/>
         <source>All supported files</source>
         <translation>Все поддерживаемые файлы</translation>
     </message>
@@ -2432,7 +2434,7 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1298"/>
+        <location line="-1346"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -2445,7 +2447,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+71"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1779"/>
+        <location filename="../mainwindow.cpp" line="+1828"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -2455,15 +2457,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1757"/>
-        <location line="+1250"/>
+        <location line="-1806"/>
+        <location line="+1299"/>
         <location line="+378"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1739"/>
+        <location line="-1788"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2499,7 +2501,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1578"/>
+        <location line="+1627"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -2530,20 +2532,20 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1757"/>
+        <location line="-1806"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
     <message>
-        <location line="-481"/>
-        <location line="+588"/>
+        <location line="-484"/>
+        <location line="+591"/>
         <location line="+1"/>
-        <location line="+790"/>
+        <location line="+822"/>
         <source>Turbo</source>
         <translation>Турбо</translation>
     </message>
     <message>
-        <location line="-998"/>
+        <location line="-1030"/>
         <source>Floppy drive %1</source>
         <translation>Дисковод %1</translation>
     </message>
@@ -2578,7 +2580,7 @@
         <translation>Скорость</translation>
     </message>
     <message>
-        <location line="+96"/>
+        <location line="+98"/>
         <location line="+49"/>
         <source>Sharp</source>
         <translation>Резкое</translation>
@@ -2589,7 +2591,17 @@
         <translation>Кинескоп</translation>
     </message>
     <message>
-        <location line="+635"/>
+        <location line="+271"/>
+        <source>High precision</source>
+        <translation>Высокая точность</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The picture follows the beam within a line, for programs that change the palette as it goes</source>
+        <translation>Картинка строится по ходу луча внутри строки - для программ, которые меняют палитру на ходу</translation>
+    </message>
+    <message>
+        <location line="+409"/>
         <source>As fast as possible</source>
         <translation>Как можно быстрее</translation>
     </message>
@@ -2627,7 +2639,7 @@
         <translation>Машина не запущена, сохранить ее состояние нельзя.</translation>
     </message>
     <message>
-        <location line="+110"/>
+        <location line="+111"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>
@@ -2798,12 +2810,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1376"/>
+        <location line="-1393"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1419"/>
+        <location line="+1436"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -2968,6 +2980,7 @@
     <message>
         <location line="+77"/>
         <location filename="../emulator/devices/common/page_mapper.cpp" line="+47"/>
+        <location filename="../emulator/devices/common/wait_map.cpp" line="+18"/>
         <source>Incorrect range for</source>
         <translation>Некорректный диапазон для</translation>
     </message>

@@ -284,6 +284,10 @@ private:
     QMenu * video_menu = nullptr;       //Settings > Video, made once
     QMenu * key_remap_menu = nullptr;   //Settings > Keyboard, made once
     QMenu * speed_menu = nullptr;       //Emulation > Speed, made once
+    //Display > High precision, made once and shown for a display that has the
+    //mode; per machine in [Display] of the ini
+    QAction * precise_action = nullptr;
+    void update_precise_action();       //Made if need be, follows the machine's display
     //The Turbo button: released - 1x, pressed - turbo_speed, the speed of the
     //menu. A choice in the menu presses it unless it is 1x
     QAction * turbo_action = nullptr;

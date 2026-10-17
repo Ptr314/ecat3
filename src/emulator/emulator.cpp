@@ -517,6 +517,11 @@ void Emulator::apply_saved_device_options()
             }
         }
     }
+
+    //The high precision mode of the display, also chosen per machine
+    GenericDisplay * d = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display", false));
+    if (d != nullptr && d->precise_available())
+        d->set_precise(read_setup("Display", "precise_" + config_key, "0") == "1");
 }
 
 //----------------------------- Remembered disks -----------------------------//

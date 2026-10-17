@@ -1,0 +1,3 @@
+[display.precise_available] &000001
+[display.precise] &000001
+[display.palettes] &000252: &000000 &000000 &000001

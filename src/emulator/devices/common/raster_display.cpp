@@ -45,11 +45,16 @@ emulator::Result RasterDisplay::load_config(SystemData *sd)
         m_interlaced = false;
         m_top_blank = 0;
         m_bottom_blank = 0;
-        // The "sync" event comes in the middle of the 32 picture words (42.7 us),
+        // A line starts where the picture of the one before ends (va_037.v:
+        // TV51 steps the line counter), then come 16 words of blanking and the
+        // 32 picture words. The "sync" event at 21 us is the picture's start,
         // which is where a line is sampled
         m_hsync_length_ms = 21;
         m_counts_per_line = m_system_clock / 1000 * 64 / 1000;
         m_frame_clocks = m_counts_per_line * m_lines;
+        // The horizontal sync pulse (VTSYN) ends 8 3/8 words into the line,
+        // where VA[3:1] = 0 at the 4th pixel clock of word 8
+        m_counts_sync_end = m_counts_per_line * 67 / 384;
     } else if (m_standart == "uknc") {
         // Видеоконтроллер УК-НЦ: 312 строк по 64 мкс без чересстрочности,
         // 288 из них видимые (строки 19..306), по 640 точек в строке.
@@ -106,6 +111,9 @@ void RasterDisplay::clock(unsigned int counter)
         if (m_current_line == m_top_blank || m_current_line == m_half_frame_lines + m_top_blank)
             VSYNC(1);
 
+        // A switch of the mode waits for a line to start: none is drawn half
+        // one way and half the other
+        m_beam = m_precise;
         HSYNC(m_screen_line, 0);
         m_hsync_counter = 0;
         m_hsync_active = true;
@@ -120,7 +128,14 @@ void RasterDisplay::clock(unsigned int counter)
         HSYNC(m_screen_line, 1);
         m_hsync_active = false;
     }
+    // Passed in this step: the line has run past the point by less than the
+    // step, also when the step began on the line before
+    if (m_counts_sync_end != 0 && m_line_counter >= m_counts_sync_end
+        && m_line_counter < m_counts_sync_end + counter)
+        HSYNC(m_screen_line, 2);
 
+    // Off, this is all the mode costs: one flag a processor instruction
+    if (m_beam) BEAM(m_screen_line, m_line_counter);
 }
 
 bool RasterDisplay::raster_frame_rate(uint64_t &num, uint64_t &den, const unsigned pictures) const

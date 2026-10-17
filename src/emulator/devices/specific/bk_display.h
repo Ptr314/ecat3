@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "emulator/core.h"
 #include "emulator/devices/common/raster_display.h"
 
@@ -15,7 +17,9 @@
 // К1801ВП1-037 draws the picture along the raster: every line is laid out when
 // the beam passes it, with the palette, the video page and the quarter screen
 // bit as they are at that moment, the way Agat displays do it. The scroll
-// register is taken once a frame, in the service lines.
+// register is taken once a frame, in the service lines. In the high precision
+// mode a line is laid out a byte (4 colour dots) at a time as the beam passes
+// it, for the demos that change the palette within a line.
 class BKDisplay: public RasterDisplay
 {
 private:
@@ -23,7 +27,7 @@ private:
     Port * port_scroll{};
     Port * port_control{};
 
-    Interface i_frame;              // frame pulse at the vertical sync, the 21st service line
+    Interface i_frame;              // frame interrupt pulse, the 1st service line
 
     unsigned m_scroll_base;         // scroll register value that means "not scrolled"
     unsigned m_scroll;              // scroll register as taken for the current frame
@@ -51,13 +55,30 @@ private:
 
     void render_line(unsigned line);            // takes the surface lock
     void render_line_unlocked(unsigned line);   // for callers already holding it
-    void render_line_blank(uint8_t * base, unsigned width) const;
-    void render_line_mono(uint8_t * base, unsigned src, RAM * vmem) const;
-    void render_line_color(uint8_t * base, unsigned src, RAM * vmem, unsigned palette) const;
+    // Bytes [from, to) of a line of video memory, from the line's start in
+    // video and to out, the first dot of the line
+    void render_bytes(uint32_t * out, const uint8_t * video, unsigned from, unsigned to,
+                      bool color, bool blank, unsigned palette) const;
+
+    // The high precision mode: the line the beam is on is laid out into a
+    // buffer byte by byte as the beam passes, and goes onto the surface whole
+    // when the next one starts
+    static const unsigned NO_LINE = ~0u;
+    std::vector<uint32_t> m_beam_buf;
+    unsigned m_beam_line = NO_LINE;             // line in the buffer
+    unsigned m_beam_byte = 0;                   // its bytes already laid out
+    bool m_beam_color = true;                   // its mode, as at its first byte
+    unsigned m_beam_ctl = 0;                    // the control register at the last BEAM()
+    unsigned m_beam_at_line = NO_LINE;          // the raster line and clock of that call
+    unsigned m_beam_at = 0;
+    unsigned beam_byte(unsigned clocks) const;
+    void beam_draw(unsigned to, unsigned ctl);  // with the control register ctl
+    void beam_commit();
 
 protected:
     void render_all(bool force_render) override;
     void HSYNC(unsigned line, unsigned sync_val) override;
+    void BEAM(unsigned line, unsigned clocks) override;
 
 public:
     BKDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);

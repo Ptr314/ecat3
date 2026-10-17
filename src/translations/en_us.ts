@@ -164,7 +164,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/i8086.cpp" line="+113"/>
+        <location filename="../emulator/devices/cpu/i8086.cpp" line="+116"/>
         <source>Incorrect parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -209,6 +209,8 @@
     </message>
     <message>
         <location line="-35"/>
+        <location filename="../emulator/devices/common/indirect_memory.cpp" line="+62"/>
+        <location filename="../emulator/devices/common/wait_map.cpp" line="+23"/>
         <source>Not a device that adds wait states</source>
         <translation type="unfinished"></translation>
     </message>
@@ -569,8 +571,8 @@
         <location line="+11"/>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
         <location line="+238"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="+153"/>
-        <location line="+199"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="+156"/>
+        <location line="+247"/>
         <source>Video output</source>
         <translation type="unfinished"></translation>
     </message>
@@ -614,8 +616,8 @@
     <message>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="-236"/>
         <location line="+239"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-197"/>
-        <location line="+200"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-245"/>
+        <location line="+248"/>
         <source>RGB</source>
         <translation type="unfinished"></translation>
     </message>
@@ -628,8 +630,8 @@
     <message>
         <location line="-238"/>
         <location line="+239"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-199"/>
-        <location line="+200"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-247"/>
+        <location line="+248"/>
         <source>Mono</source>
         <translation type="unfinished"></translation>
     </message>
@@ -921,7 +923,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+254"/>
+        <location filename="../emulator/emulator.cpp" line="+255"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1514,13 +1516,13 @@
 <context>
     <name>IndirectMemory</name>
     <message>
-        <location filename="../emulator/devices/common/indirect_memory.cpp" line="+38"/>
-        <location line="+19"/>
+        <location filename="../emulator/devices/common/indirect_memory.cpp" line="-22"/>
+        <location line="+26"/>
         <source>Incorrect range for</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-14"/>
+        <location line="-21"/>
         <source>Too many data registers</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1530,7 +1532,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+21"/>
         <source>No data registers defined</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1810,7 +1812,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1570"/>
+        <location filename="../mainwindow.cpp" line="+1608"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1853,7 +1855,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+905"/>
+        <location filename="../mainwindow.cpp" line="+922"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1874,14 +1876,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1686"/>
-        <location line="+1781"/>
+        <location filename="../mainwindow.cpp" line="-1735"/>
+        <location line="+1830"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1476"/>
+        <location filename="../mainwindow.cpp" line="-1523"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1921,12 +1923,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-635"/>
+        <location filename="../mainwindow.cpp" line="-637"/>
         <location line="+76"/>
-        <location line="+1152"/>
+        <location line="+1200"/>
         <location line="+55"/>
         <location line="+79"/>
-        <location line="+200"/>
+        <location line="+201"/>
         <location line="+107"/>
         <location line="+62"/>
         <location line="+166"/>
@@ -1938,7 +1940,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2405"/>
+        <location line="-2454"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -1960,14 +1962,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1420"/>
+        <location line="+1469"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1535"/>
+        <location line="-1584"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2027,14 +2029,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1250"/>
+        <location line="+1299"/>
         <location line="+378"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1739"/>
+        <location line="-1788"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2070,12 +2072,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1578"/>
+        <location line="+1627"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1554"/>
+        <location line="-1603"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2095,7 +2097,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+29"/>
         <source>Auto scale</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2148,26 +2150,36 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-742"/>
-        <location line="+588"/>
+        <location line="-747"/>
+        <location line="+591"/>
         <location line="+1"/>
-        <location line="+790"/>
+        <location line="+822"/>
         <source>Turbo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-629"/>
+        <location line="-659"/>
         <source>Picture tube</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+598"/>
+        <location line="+271"/>
+        <source>High precision</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The picture follows the beam within a line, for programs that change the palette as it goes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+356"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+52"/>
         <source>As fast as possible</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2216,7 +2228,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+66"/>
+        <location line="+67"/>
         <location line="+470"/>
         <source>Finishing the video...</source>
         <translation type="unfinished"></translation>
@@ -2423,12 +2435,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1376"/>
+        <location line="-1393"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1419"/>
+        <location line="+1436"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2569,6 +2581,7 @@
     <message>
         <location line="+77"/>
         <location filename="../emulator/devices/common/page_mapper.cpp" line="+47"/>
+        <location filename="../emulator/devices/common/wait_map.cpp" line="+18"/>
         <source>Incorrect range for</source>
         <translation type="unfinished"></translation>
     </message>

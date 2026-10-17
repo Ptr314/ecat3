@@ -68,6 +68,7 @@ BKDisplay::BKDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     // is 512 dots across, read as two bits per pixel it is 256.
     sy = m_video_lines;
     sx = m_color? 256 : 512;
+    m_precise_available = true;
 }
 
 emulator::Result BKDisplay::load_config(SystemData *sd)
@@ -103,6 +104,8 @@ emulator::Result BKDisplay::load_config(SystemData *sd)
 
     sy = m_video_lines;
     sx = m_color? (m_line_bytes * 4) : (m_line_bytes * 8);
+    // Wide enough for either mode: a colour/mono switch may land mid line
+    m_beam_buf.assign(m_line_bytes * 8, 0);
 
     latch_scroll();
 
@@ -205,16 +208,21 @@ void BKDisplay::latch_scroll()
     m_offset = (m_scroll - m_scroll_base) % m_video_lines;
 }
 
-// The chip has no frame output of its own: the board takes the frame interrupt
-// from the vertical sync pulse inside its composite sync (pin 28), SYNC2 of the
-// reconstruction, active while the service line counter is 052..050 - the
-// 21st to 23rd service lines. Its start is the interrupt, 43 lines before the
-// first picture line.
-static const unsigned BK_FRAME_PULSE_LINE = 21;
+// The frame interrupt comes where the horizontal sync pulse of the first
+// service line ends: the line after the last picture line, 8 3/8 words in
+// (HSYNC(line, 2)). Not at the vertical sync pulse (SYNC2 of the
+// reconstruction, the 21st to 23rd service lines), as it was taken before: the
+// demo Babylona, timed on a real БК0011М, then had its palette program 20
+// lines too low and 23 bytes off, and its own reference picture fits this
+// point to the byte, as does the MiSTer core (irq at vc 256, hc 649)
+static const unsigned BK_FRAME_PULSE_LINE = 1;
 
 void BKDisplay::HSYNC(const unsigned line, const unsigned sync_val)
 {
     if (sync_val == 0) {
+        // The line before, if the beam laid it out: before the frame is
+        // reported whole below
+        beam_commit();
         if (line == m_video_lines) {
             for (unsigned i = 0; i < m_video_lines && i < 256; i++)
                 m_frame_palette[i] = m_line_palette[i];
@@ -226,19 +234,99 @@ void BKDisplay::HSYNC(const unsigned line, const unsigned sync_val)
                 unlock_surface();
             }
         }
+        if (line == m_video_lines + BK_SCROLL_LATCH_LINE) {
+            latch_scroll();
+        }
+    } else if (sync_val == 2) {
         if (line == m_video_lines + BK_FRAME_PULSE_LINE) {
-            // Vertical sync: the frame interrupt, gated by bit 14 of 0177662
-            // outside the device
+            // The frame interrupt, gated by bit 14 of 0177662 outside the
+            // device
             m_frames++;
             i_frame.change(1);
             i_frame.change(0);
         }
-        if (line == m_video_lines + BK_SCROLL_LATCH_LINE) {
-            latch_scroll();
-        }
-    } else if (line < m_video_lines) {
+    } else if (line < m_video_lines && !beam_active()) {
         render_line(line);
     }
+}
+
+// The high precision mode. A line is 48 words of the video clock (see
+// RasterDisplay, "vp1-037"). By va_037.v of the reconstruction it starts where
+// the picture of the line before ends: TV51 at the last picture word steps the
+// line counter. 16 words of blanking follow (HGATE, the horizontal sync in
+// words 5-8 of them), then the 32 words
+// of the picture, so the beam is past clocks * 48 * 2 / line_length() - 32
+// bytes of it. A call comes after each processor instruction, and the devices
+// do not see when inside it a write happened (the vm1 timing knows it only in
+// finish()): a register that changed takes effect from the middle of the
+// instruction, where MOV R,(R) of the palette demos strobes it (15.5 clocks of
+// 32 on the chip model). That is the precision of the mode
+void BKDisplay::BEAM(const unsigned line, const unsigned clocks)
+{
+    // The register before the instruction just run, and where it began
+    const unsigned before = (m_beam_at_line != NO_LINE) ? m_beam_ctl : control();
+    const unsigned start = (line == m_beam_at_line && clocks >= m_beam_at) ? m_beam_at : 0;
+    m_beam_ctl = control();
+    m_beam_at_line = line;
+    m_beam_at = clocks;
+
+    if (line >= m_video_lines) return;
+    if (line != m_beam_line) {
+        m_beam_line = line;
+        m_beam_byte = 0;
+    }
+    if (m_beam_byte >= m_line_bytes) return;
+    if (before != m_beam_ctl) beam_draw(beam_byte((start + clocks) / 2), before);
+    beam_draw(beam_byte(clocks), m_beam_ctl);
+}
+
+// Bytes of the picture the beam has passed: the first third of the line is
+// blank, the picture begins 16 words after the line does
+unsigned BKDisplay::beam_byte(const unsigned clocks) const
+{
+    const unsigned passed = clocks * m_line_bytes * 3 / (2 * line_length());
+    if (passed <= m_line_bytes / 2) return 0;
+    const unsigned to = passed - m_line_bytes / 2;
+    return (to > m_line_bytes) ? m_line_bytes : to;
+}
+
+void BKDisplay::beam_draw(const unsigned to, const unsigned ctl)
+{
+    if (to <= m_beam_byte) return;
+
+    RAM * vmem = vram[(vram[1] != nullptr) ? ((ctl >> 15) & 1) : 0];
+    const unsigned line = m_beam_line;
+    const bool blank = vmem == nullptr || (quarter() && line >= m_video_lines / 4);
+    const unsigned palette = (ctl >> 8) & 0x0F;
+    // For scripts, the palette the line starts with
+    if (m_beam_byte == 0) {
+        if (line < 256) m_line_palette[line] = blank ? 16 : static_cast<uint8_t>(palette);
+        // A colour/mono switch comes from the render thread at any moment:
+        // the line keeps the mode it started in
+        m_beam_color = m_color;
+    }
+
+    const uint8_t * video = blank ? nullptr
+        : vmem->get_buffer() + ((line + m_offset) % m_video_lines) * m_line_bytes;
+    render_bytes(m_beam_buf.data(), video, m_beam_byte, to, m_beam_color, blank, palette);
+    m_beam_byte = to;
+}
+
+// The surface lock is taken once a line, as without the mode
+void BKDisplay::beam_commit()
+{
+    if (m_beam_line >= m_video_lines) return;
+    beam_draw(m_line_bytes, control());
+    {
+        compat_lock_guard guard(m_surface_mutex);
+        // A line laid out in the mode left behind is not copied: the switch
+        // has the whole screen drawn again anyway (screen_valid)
+        const unsigned width = m_color ? (m_line_bytes * 4) : (m_line_bytes * 8);
+        if (m_beam_color == m_color && has_valid_renderer() && render_pixels != nullptr && (int)(width * 4) <= line_bytes)
+            memcpy(static_cast<uint8_t*>(render_pixels) + m_beam_line * line_bytes, m_beam_buf.data(), width * 4);
+    }
+    if (m_beam_line + 1 == m_video_lines) was_updated = true;
+    m_beam_line = NO_LINE;
 }
 
 // 320 lines of 64 us: 20.48 ms, 3125/64 = 48.828125 frames a second at both
@@ -295,53 +383,46 @@ void BKDisplay::render_line_unlocked(const unsigned line)
     RAM * vmem = vram[(vram[1] != nullptr) ? ((ctl >> 15) & 1) : 0];
 
     const bool blank = vmem == nullptr || (quarter() && line >= m_video_lines / 4);
-    if (line < 256) m_line_palette[line] = blank ? 16 : static_cast<uint8_t>((ctl >> 8) & 0x0F);
+    const unsigned palette = (ctl >> 8) & 0x0F;
+    if (line < 256) m_line_palette[line] = blank ? 16 : static_cast<uint8_t>(palette);
 
-    if (blank) {
-        render_line_blank(base, width);
-    } else {
-        // The quarter mode does not change the addressing: the firmware itself
-        // points the scroll register at the last quarter of the video memory
-        // (0070000-0077777), which is what the manuals describe as the extended
-        // memory mode
-        const unsigned src = ((line + m_offset) % m_video_lines) * m_line_bytes;
-        if (color) render_line_color(base, src, vmem, (ctl >> 8) & 0x0F);
-        else render_line_mono(base, src, vmem);
-    }
+    // The quarter mode does not change the addressing: the firmware itself
+    // points the scroll register at the last quarter of the video memory
+    // (0070000-0077777), which is what the manuals describe as the extended
+    // memory mode
+    const uint8_t * video = blank ? nullptr
+        : vmem->get_buffer() + ((line + m_offset) % m_video_lines) * m_line_bytes;
+    render_bytes(reinterpret_cast<uint32_t*>(base), video, 0, m_line_bytes, color, blank, palette);
 
     if (line + 1 == m_video_lines) was_updated = true;
 }
 
-// Below the quarter screen the beam draws nothing
-void BKDisplay::render_line_blank(uint8_t * base, const unsigned width) const
-{
-    for (unsigned i = 0; i < width; i++)
-        *reinterpret_cast<uint32_t*>(base + i * 4) = BK_RGBA2[0];
-}
-
 // The video memory is read straight from its buffer: a virtual get_direct() on
-// every byte of every line, 50 times a second, costs more than the drawing
-void BKDisplay::render_line_mono(uint8_t * base, const unsigned src, RAM * vmem) const
+// every byte of every line, 50 times a second, costs more than the drawing.
+// A byte is 4 dots in colour and 8 in the monochrome mode
+void BKDisplay::render_bytes(uint32_t * out, const uint8_t * video, const unsigned from, const unsigned to,
+                             const bool color, const bool blank, const unsigned palette) const
 {
-    const uint8_t * video = vmem->get_buffer() + src;
-    for (unsigned i = 0; i < m_line_bytes; i++) {
-        const uint8_t b = video[i];
-        // Bit 0 is the leftmost dot
-        for (unsigned k = 0; k < 8; k++)
-            *reinterpret_cast<uint32_t*>(base + (i * 8 + k) * 4) = BK_RGBA2[(b >> k) & 1];
-    }
-}
-
-void BKDisplay::render_line_color(uint8_t * base, const unsigned src, RAM * vmem, const unsigned palette) const
-{
-    const uint32_t * colors = BK_RGBA4[palette];
-    const uint8_t * video = vmem->get_buffer() + src;
-
-    for (unsigned i = 0; i < m_line_bytes; i++) {
-        const uint8_t b = video[i];
-        // The lowest pair of bits is the leftmost dot
-        for (unsigned k = 0; k < 4; k++)
-            *reinterpret_cast<uint32_t*>(base + (i * 4 + k) * 4) = colors[(b >> (k * 2)) & 3];
+    if (blank) {
+        // Below the quarter screen the beam draws nothing
+        const unsigned dots = color ? 4 : 8;
+        for (unsigned i = from * dots; i < to * dots; i++)
+            out[i] = BK_RGBA2[0];
+    } else if (color) {
+        const uint32_t * colors = BK_RGBA4[palette];
+        for (unsigned i = from; i < to; i++) {
+            const uint8_t b = video[i];
+            // The lowest pair of bits is the leftmost dot
+            for (unsigned k = 0; k < 4; k++)
+                out[i * 4 + k] = colors[(b >> (k * 2)) & 3];
+        }
+    } else {
+        for (unsigned i = from; i < to; i++) {
+            const uint8_t b = video[i];
+            // Bit 0 is the leftmost dot
+            for (unsigned k = 0; k < 8; k++)
+                out[i * 8 + k] = BK_RGBA2[(b >> k) & 1];
+        }
     }
 }
 
@@ -383,6 +464,10 @@ emulator::Result BKDisplay::load_state(const StateReader &r)
     r.b("pending_color", m_pending_color);
     r.hex("line_palette", m_line_palette, sizeof(m_line_palette));
     r.hex("frame_palette", m_frame_palette, sizeof(m_frame_palette));
+    // A line the beam had half laid out is not in the snapshot: the next
+    // BEAM() lays out what the beam has passed from the state as it is
+    m_beam_line = NO_LINE;
+    m_beam_at_line = NO_LINE;
     return emulator::Result::ok();
 }
 
@@ -397,7 +482,7 @@ std::vector<DeviceFieldInfo> BKDisplay::get_device_fields()
     r.push_back({"page",    "Video RAM shown, 0 on a machine with only one",   false});
     r.push_back({"vram",    "Name of the video RAM device being shown",        false});
     r.push_back({"color",   "1 for colour, 0 for the monochrome mode",         false});
-    r.push_back({"palettes", "Palette each line of the last completed frame was drawn with, 16 for a blank line", true});
+    r.push_back({"palettes", "Palette each line of the last completed frame was drawn with (in the high precision mode, the one at its first byte), 16 for a blank line", true});
     r.push_back({"frames",   "Frame pulses given since the start",             false});
     return r;
 }

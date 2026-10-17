@@ -2883,6 +2883,8 @@ std::vector<DeviceFieldInfo> GenericDisplay::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
     r.push_back({"resolution", "Current screen resolution", false});
+    r.push_back({"precise_available", "1 when the display has the high precision mode", false});
+    r.push_back({"precise", "1 when the high precision mode is on", false});
     return r;
 }
 
@@ -2892,7 +2894,30 @@ bool GenericDisplay::get_field(const std::string &field, unsigned int from, unsi
         out.text = std::to_string(sx) + "x" + std::to_string(sy);
         return true;
     }
+    if (field == "precise_available" || field == "precise") {
+        out.numeric = true;
+        out.values.push_back(((field == "precise") ? m_precise : m_precise_available) ? 1 : 0);
+        return true;
+    }
     return ComputerDevice::get_field(field, from, to, out);
+}
+
+std::vector<DeviceCommandInfo> GenericDisplay::get_device_commands()
+{
+    std::vector<DeviceCommandInfo> r = ComputerDevice::get_device_commands();
+    r.push_back({"precise", "[0|1]", "Turns the high precision mode on (without a value too) or off"});
+    return r;
+}
+
+emulator::Result GenericDisplay::send_command(const std::string &command, const std::string &parameters)
+{
+    if (command == "precise") {
+        std::vector<std::string> p = split_params(parameters);
+        //Ignored by a display without the mode, as the menu has no item there
+        set_precise(p.empty() || parse_numeric_value(p[0]) != 0);
+        return emulator::Result::ok();
+    }
+    return ComputerDevice::send_command(command, parameters);
 }
 
 void GenericDisplay::change_resolution(unsigned new_x, unsigned new_y)

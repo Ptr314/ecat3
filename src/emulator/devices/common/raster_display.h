@@ -24,7 +24,9 @@ private:
     unsigned m_hsync_counter;
     unsigned m_hsync_length_ms;
     unsigned m_counts_hsync;
+    unsigned m_counts_sync_end = 0; // Clocks into a line where its horizontal sync pulse ends, 0: no event
     bool m_hsync_active;
+    bool m_beam = false;            // The high precision mode as taken at the start of this line
 
 protected:
     // Chosen by the subclass before load_config(): "625/50" (the default),
@@ -37,7 +39,15 @@ protected:
 
     virtual void FRAME_SYNC() {};
     virtual void VSYNC(const unsigned sync_val) {};
+    //sync_val 0 at the line's start, 1 where it is sampled, 2 where its
+    //horizontal sync pulse ends (only for a standard that knows the point)
     virtual void HSYNC(const unsigned line, const unsigned sync_val) {};
+    //The high precision mode: after every clock() of a line that started with
+    //the mode on, where the beam is - the visible line and the clocks of the
+    //line already passed, out of line_length(). Never called with the mode off
+    virtual void BEAM(const unsigned line, const unsigned clocks) {};
+    bool beam_active() const { return m_beam; }
+    unsigned line_length() const { return m_line_length; }
     //Clocks of the display's own domain per frame, both fields of an
     //interlaced one
     unsigned frame_clocks() const { return m_frame_clocks; }

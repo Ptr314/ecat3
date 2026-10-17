@@ -1025,6 +1025,12 @@ protected:
     bool m_renderer_valid;
     compat_mutex m_surface_mutex;   // Guards render_pixels against concurrent resize
 
+    //The high precision mode: the picture follows the beam within a line
+    //rather than being laid out a line at a time. Set by a subclass that has
+    //it, in its constructor
+    bool m_precise_available = false;
+    bool m_precise = false;         //Asked for; a raster display takes it up at the next line
+
     virtual void render_all(bool force_render = false) = 0;
 
     //Called by a display at the end of the picture of every frame, on the
@@ -1083,8 +1089,16 @@ public:
     void lock_surface();
     void unlock_surface();
 
+    bool precise_available() const { return m_precise_available; }
+    bool precise() const { return m_precise; }
+    //On the emulation thread (a window goes through Emulator::invoke). Not
+    //saved state: a setting of the frontend, like the speed
+    void set_precise(bool on) { m_precise = on && m_precise_available; }
+
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+    std::vector<DeviceCommandInfo> get_device_commands() override;
+    emulator::Result send_command(const std::string &command, const std::string &parameters) override;
 };
 
 class FDC: public AddressableDevice

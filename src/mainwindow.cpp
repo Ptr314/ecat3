@@ -823,6 +823,7 @@ void MainWindow::CreateScreenMenu()
         ui->menuEmulation->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, speed_menu);
     }
     speed_menu->setTitle(tr("Speed"));
+    update_precise_action();
     speed_menu->clear();
     {
         QActionGroup * speed_group = new QActionGroup(speed_menu);
@@ -1226,6 +1227,36 @@ void MainWindow::UpdateToolbar()
     if (buttons_added > 0) {
         buttons_separator = ui->toolBar->insertSeparator(ui->actionDebugger);
     }
+
+    update_precise_action();
+}
+
+void MainWindow::update_precise_action()
+{
+    if (precise_action == nullptr) {
+        //Display, after Video and before Scale
+        precise_action = new QAction(this);
+        precise_action->setCheckable(true);
+        ui->menuDisplay->insertAction(ui->menuScale->menuAction(), precise_action);
+        connect(precise_action, &QAction::toggled, this, [this](bool on) {
+            if (e == nullptr) return;
+            GenericDisplay * d = dynamic_cast<GenericDisplay*>(e->dm->get_device_by_name("display", false));
+            if (d == nullptr) return;
+            e->invoke([&]() { d->set_precise(on); });
+            QFileInfo fi(QString::fromStdString(e->get_system_data()->system_file));
+            e->write_setup("Display", "precise_" + fi.baseName().toStdString(), on ? "1" : "0");
+            e->record_command("display", "precise", on ? "1" : "0");
+        });
+    }
+    precise_action->setText(tr("High precision"));
+    precise_action->setToolTip(tr("The picture follows the beam within a line, for programs that change the palette as it goes"));
+
+    //What the emulator took from the ini when it loaded the machine
+    GenericDisplay * d = dynamic_cast<GenericDisplay*>(e->dm->get_device_by_name("display", false));
+    const bool available = d != nullptr && d->precise_available();
+    precise_action->setVisible(available);
+    QSignalBlocker block(precise_action);
+    precise_action->setChecked(available && d->precise());
 }
 
 void MainWindow::onDeviceMenuCalled(unsigned int i)
