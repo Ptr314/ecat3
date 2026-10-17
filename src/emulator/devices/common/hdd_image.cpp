@@ -47,7 +47,7 @@ bool HddImage::open(const std::string &file_name, std::string &error)
         std::unique_ptr<HddSource> source = source_factory(file_name);
         if (source) {
             const uint64_t size = source->size();
-            if (size == 0 || (size % SECTOR_SIZE) != 0) {
+            if (size == 0) {
                 error = "size";
                 return false;
             }
@@ -55,7 +55,8 @@ bool HddImage::open(const std::string &file_name, std::string &error)
             close_locked();
             m_source = std::move(source);
             m_file_name = file_name;
-            m_size = size;
+            m_file_size = size;
+            m_size = (size + SECTOR_SIZE - 1) / SECTOR_SIZE * SECTOR_SIZE;
             m_read_only = true;
             return true;
         }
@@ -75,7 +76,9 @@ bool HddImage::open(const std::string &file_name, std::string &error)
     std::fseek(f, 0, SEEK_END);
     const long size = std::ftell(f);
     std::fseek(f, 0, SEEK_SET);
-    if (size <= 0 || (size % SECTOR_SIZE) != 0) {
+    // Длина может быть и не кратной сектору: недостающее в последнем
+    // секторе читается как пустой диск
+    if (size <= 0) {
         std::fclose(f);
         error = "size";
         return false;
@@ -85,7 +88,8 @@ bool HddImage::open(const std::string &file_name, std::string &error)
     close_locked();
     m_file = f;
     m_file_name = file_name;
-    m_size = (uint64_t)size;
+    m_file_size = (uint64_t)size;
+    m_size = (m_file_size + SECTOR_SIZE - 1) / SECTOR_SIZE * SECTOR_SIZE;
     m_read_only = read_only;
     return true;
 }
@@ -99,6 +103,8 @@ void HddImage::close_locked()
     m_source.reset();
     m_file_name.clear();
     m_size = 0;
+    m_file_size = 0;
+    m_fill = 0;
     m_overlay.clear();
 }
 
@@ -129,6 +135,33 @@ bool HddImage::is_led_on()
     return m_led_active;
 }
 
+void HddImage::extend(uint64_t size, uint8_t fill)
+{
+    compat_lock_guard lock(m_mutex);
+    if (!attached()) return;
+    m_fill = fill;
+    if (size > m_size) m_size = size;
+}
+
+// Байты образа, сколько их есть в файле, а дальше - пустой диск
+bool HddImage::read_file(uint64_t offset, uint8_t * buffer, size_t length)
+{
+    size_t have = 0;
+    if (offset < m_file_size)
+        have = (m_file_size - offset < length) ? (size_t)(m_file_size - offset) : length;
+    if (have > 0) {
+        if (m_source) {
+            if (!m_source->read(offset, buffer, have)) return false;
+        } else {
+            if (offset > 0x7FFFFFFFull) return false;
+            if (std::fseek(m_file, (long)offset, SEEK_SET) != 0) return false;
+            if (std::fread(buffer, 1, have, m_file) != have) return false;
+        }
+    }
+    memset(buffer + have, m_fill, length - have);
+    return true;
+}
+
 bool HddImage::read(uint64_t offset, uint8_t * buffer)
 {
     compat_lock_guard lock(m_mutex);
@@ -139,10 +172,7 @@ bool HddImage::read(uint64_t offset, uint8_t * buffer)
         memcpy(buffer, kept->second.data(), SECTOR_SIZE);
         return true;
     }
-    if (m_source) return m_source->read(offset, buffer, SECTOR_SIZE);
-    if (offset > 0x7FFFFFFFull) return false;
-    if (std::fseek(m_file, (long)offset, SEEK_SET) != 0) return false;
-    return std::fread(buffer, 1, SECTOR_SIZE, m_file) == SECTOR_SIZE;
+    return read_file(offset, buffer, SECTOR_SIZE);
 }
 
 bool HddImage::write(uint64_t offset, const uint8_t * buffer)
@@ -157,9 +187,22 @@ bool HddImage::write(uint64_t offset, const uint8_t * buffer)
         return true;
     }
     if (m_read_only || offset > 0x7FFFFFFFull) return false;
+    if (offset > m_file_size) {
+        // Запись за концом обрезанного образа: промежуток - пустой диск
+        uint8_t blank[SECTOR_SIZE];
+        memset(blank, m_fill, SECTOR_SIZE);
+        if (std::fseek(m_file, (long)m_file_size, SEEK_SET) != 0) return false;
+        for (uint64_t p = m_file_size; p < offset; ) {
+            const size_t n = (offset - p < SECTOR_SIZE) ? (size_t)(offset - p) : SECTOR_SIZE;
+            if (std::fwrite(blank, 1, n, m_file) != n) return false;
+            p += n;
+        }
+        m_file_size = offset;
+    }
     if (std::fseek(m_file, (long)offset, SEEK_SET) != 0) return false;
     if (std::fwrite(buffer, 1, SECTOR_SIZE, m_file) != SECTOR_SIZE) return false;
     std::fflush(m_file);
+    if (offset + SECTOR_SIZE > m_file_size) m_file_size = offset + SECTOR_SIZE;
     return true;
 }
 
@@ -169,16 +212,11 @@ bool HddImage::contents_locked(std::vector<uint8_t> &image)
 {
     if (!attached() || m_size == 0) return false;
     image.assign(static_cast<size_t>(m_size), 0);
-    if (m_source) {
-        //In pieces, so that one request does not hold the source for long
-        const size_t piece = 1024 * 1024;
-        for (size_t p = 0; p < image.size(); p += piece) {
-            const size_t n = (image.size() - p < piece) ? image.size() - p : piece;
-            if (!m_source->read(p, image.data() + p, n)) return false;
-        }
-    } else {
-        std::fseek(m_file, 0, SEEK_SET);
-        if (std::fread(image.data(), 1, image.size(), m_file) != image.size()) return false;
+    //In pieces, so that one request does not hold the source for long
+    const size_t piece = 1024 * 1024;
+    for (size_t p = 0; p < image.size(); p += piece) {
+        const size_t n = (image.size() - p < piece) ? image.size() - p : piece;
+        if (!read_file(p, image.data() + p, n)) return false;
     }
     for (std::map<uint64_t, std::array<uint8_t, SECTOR_SIZE>>::const_iterator it = m_overlay.begin();
          it != m_overlay.end(); ++it)

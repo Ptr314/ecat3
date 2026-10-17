@@ -57,7 +57,13 @@ public:
 
     bool attached() const { return m_file != nullptr || m_source; }
     const std::string & file_name() const { return m_file_name; }
+    // Размер, округленный вверх до сектора, или больше - после extend()
     uint64_t size() const { return m_size; }
+
+    // Накопитель больше файла: образ обрезан по последнему занятому сектору.
+    // Сектора за концом файла читаются байтами fill (пустой диск), запись
+    // туда дописывает файл, заполняя промежуток тем же
+    void extend(uint64_t size, uint8_t fill);
     bool is_protected() const { return m_read_only || m_write_protect; }
 
     void set_write_protect(bool on) { m_write_protect = on; }
@@ -87,6 +93,8 @@ private:
     std::unique_ptr<HddSource> m_source;
     std::string m_file_name;
     uint64_t m_size = 0;
+    uint64_t m_file_size = 0;           // сколько байт на самом деле в файле
+    uint8_t m_fill = 0;
     bool m_read_only = true;
     bool m_write_protect = false;
     bool m_volatile = false;
@@ -99,6 +107,7 @@ private:
 
     void close_locked();
     bool contents_locked(std::vector<uint8_t> &image);
+    bool read_file(uint64_t offset, uint8_t * buffer, size_t length);
 };
 
 // Контроллер с образом винчестера: через это веб-страница показывает образ

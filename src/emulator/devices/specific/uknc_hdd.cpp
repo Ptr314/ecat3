@@ -172,6 +172,12 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
     m_heads = heads;
     m_cylinders = cylinders;
 
+    // Образ бывает обрезан по последнему занятому сектору (так раздают
+    // образы для bkemu): накопитель такой, как говорит геометрия, а сектора
+    // за концом файла - пустые, в обратном коде это единицы
+    m_image.extend(base + (uint64_t)cylinders * heads * sectors * SECTOR_SIZE,
+                   inverted ? 0xFF : 0x00);
+
     reset(true);
 
     return emulator::Result::ok();
