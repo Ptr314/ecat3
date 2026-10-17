@@ -219,13 +219,16 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, i
 
     //Turbo, right of the processor button: the speed chosen in the menu while
     //pressed, 1x while released
-    turbo_action = new QAction(QIcon(":/icons/turbo"), tr("Turbo"), this);
+    QIcon turbo_icon;
+    turbo_icon.addFile(":/icons/turbo_off", QSize(), QIcon::Normal, QIcon::Off);
+    turbo_icon.addFile(":/icons/turbo_on", QSize(), QIcon::Normal, QIcon::On);
+    turbo_action = new QAction(turbo_icon, tr("Turbo"), this);
     turbo_action->setCheckable(true);
     connect(turbo_action, &QAction::toggled, this, [this](bool checked) {
-        //Turbo at 1x is no turbo: the button does not stay pressed
+        //Turbo at 1x is no turbo: pressing it chooses 2x in the menu
         if (checked && turbo_speed == 4) {
-            QSignalBlocker block(turbo_action);
-            turbo_action->setChecked(false);
+            for (QAction * sa : speed_menu->actions())
+                if (sa->data().toInt() == 8) sa->trigger();
             return;
         }
         e->write_setup("Core", "turbo", checked?"1":"0");
@@ -814,7 +817,7 @@ void MainWindow::CreateScreenMenu()
     turbo_action->setToolTip(tr("Turbo") + ": " + speed_text(turbo_speed));
     if (speed_menu == nullptr) {
         speed_menu = new QMenu(this);
-        speed_menu->setIcon(QIcon(":/icons/turbo"));
+        speed_menu->setIcon(QIcon(":/icons/turbo_on"));
         const QList<QAction*> acts = ui->menuEmulation->actions();
         const int at = acts.indexOf(ui->menuRecording->menuAction());
         ui->menuEmulation->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, speed_menu);
@@ -835,6 +838,7 @@ void MainWindow::CreateScreenMenu()
                 }
                 apply_speed();
             });
+            sa->setData(v);
             sa->setActionGroup(speed_group);
             sa->setCheckable(true);
             sa->setChecked(emu_speed == v);
