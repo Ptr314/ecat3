@@ -451,8 +451,20 @@ emulator::Result UKNCDisplay::load_state(const StateReader &r)
     r.u("entries", m_entries);
     r.u("entries_done", m_entries_done);
     r.u("frames", m_frames);
-    r.u("colors", m_colors);
-    r.u("pending_colors", m_pending_colors);
+    // The colour set of the snapshot is not taken as it is: the window filled
+    // the colour table from the configuration before the restore, and a set
+    // written straight into m_colors left the switch nothing to do - the
+    // option said Mono, the screen stayed in colour. It goes through the
+    // switch instead. The option restored before has already asked for it;
+    // without one, the set saved is the switch
+    unsigned colors = m_colors;
+    unsigned pending_colors = m_pending_colors;
+    r.u("colors", colors);
+    r.u("pending_colors", pending_colors);
+    if (!m_mode_pending) {
+        m_pending_colors = colors;
+        m_mode_pending = (colors != m_colors);
+    }
     r.hex("line_scale", m_line_scale, sizeof(m_line_scale));
     //The eight colours of the line follow the palette and the colour set
     rebuild_line_colors();

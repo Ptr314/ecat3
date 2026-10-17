@@ -1,0 +1,22 @@
+# Сборка эталонного снимка состояния для state-bk-mono.ecat.
+#
+# Запускается руками, а не набором тестов: снимок - это двоичный эталон,
+# который обновляют осознанно. Из каталога deploy/:
+#
+#   eCat3-headless --no-sound --script ../tests/files/make-state-bk-mono.ecat
+#
+# Цветная по конфигурации машина переключается в монохромный режим (опция 1
+# экрана, значение 1), на экран выводится текст, и состояние кладется в
+# ../files/state-bk-mono.ecats.zip рядом с этим файлом.
+
+MACHINE "bk/BK-0010-01.cfg"
+WAIT _4000
+
+COMMAND display.option(1,1)
+TYPE "PRINT \"MONO SNAPSHOT\"\n"
+WAIT _2000
+
+SAVESTATE "state-bk-mono.ecats.zip"
+# Снимок экрана рядом с архивом - чтобы глазами сверить, что снималось
+SCREEN "state-bk-mono-made.png"
+EXIT

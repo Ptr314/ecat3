@@ -289,6 +289,15 @@ emulator::Result Emulator::build_machine(const std::string &file_name)
     if (!res) return res;
     apply_saved_device_options();
 
+    //A snapshot's options, so that the tool bar is built showing them rather
+    //than the configuration and the ini. apply_state() applies them once more
+    //after the reset, where the rest of the snapshot is restored
+    if (m_source.is_state && !m_source.state.empty()) {
+        EmulatorConfig state;
+        std::string problems;
+        if (state.load_from_text(m_source.state)) apply_state_options(state, problems);
+    }
+
     //What the configuration put into the drives, before the ini changes it:
     //"Default image" goes back to it, and an entry equal to it is not kept
     m_disk_defaults.clear();
@@ -381,22 +390,8 @@ void Emulator::store_state()
     }
 }
 
-emulator::Result Emulator::apply_state()
+void Emulator::apply_state_options(EmulatorConfig &state, std::string &problems)
 {
-    m_state_report.clear();
-    if (!m_source.is_state || m_source.state.empty()) return emulator::Result::ok();
-
-    EmulatorConfig state;
-    emulator::Result res = state.load_from_text(m_source.state);
-    if (!res) return res;
-
-    std::string problems;
-
-    //Pass 1: the options first. Connector::set_device_option() plugs and
-    //unplugs whole devices, which decides who drives which line, and a
-    //display option changes the surface. Everything below assumes the machine
-    //is already wired the way the snapshot found it. This also overrides what
-    //apply_saved_device_options() took from the ini: the snapshot wins
     for (unsigned int i = 0; i < state.get_devices_count(); i++)
     {
         EmulatorConfigDevice * sd_dev = state.get_device(static_cast<int>(i));
@@ -416,6 +411,25 @@ emulator::Result Emulator::apply_state()
             }
         }
     }
+}
+
+emulator::Result Emulator::apply_state()
+{
+    m_state_report.clear();
+    if (!m_source.is_state || m_source.state.empty()) return emulator::Result::ok();
+
+    EmulatorConfig state;
+    emulator::Result res = state.load_from_text(m_source.state);
+    if (!res) return res;
+
+    std::string problems;
+
+    //Pass 1: the options first. Connector::set_device_option() plugs and
+    //unplugs whole devices, which decides who drives which line, and a
+    //display option changes the surface. Everything below assumes the machine
+    //is already wired the way the snapshot found it. This also overrides what
+    //apply_saved_device_options() took from the ini: the snapshot wins
+    apply_state_options(state, problems);
 
     //Pass 2: the devices themselves, in the order they were declared. Each
     //one restores its own lines through ComputerDevice::load_state()

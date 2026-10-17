@@ -225,6 +225,10 @@ private:
     //thread, after reset(true) and before the loop starts, so that no device
     //is clocked between the reset and the restore
     emulator::Result apply_state();
+    //Its first pass, the device options. Also run by load_config(), before
+    //any frontend builds its option controls from the devices: those are
+    //built once, and apply_state() comes only when the machine starts
+    void apply_state_options(EmulatorConfig &state, std::string &problems);
     //What the state file said that this build could not use: unknown devices,
     //unknown keys, sections with no device. Never printed - any output on
     //stderr fails every regression test - but kept for whoever asks

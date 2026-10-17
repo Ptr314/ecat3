@@ -460,8 +460,19 @@ emulator::Result BKDisplay::load_state(const StateReader &r)
     r.u("scroll", m_scroll);
     r.u("offset", m_offset);
     r.u("frames", m_frames);
-    r.b("color", m_color);
-    r.b("pending_color", m_pending_color);
+    // The mode of the snapshot is not taken as it is: the surface still has the
+    // width of the configuration, and a mono snapshot of a colour machine drew
+    // nothing into it (a black screen). It goes through the switch instead. The
+    // option restored before has already asked for it; without one, the mode
+    // saved is the switch
+    bool color = m_color;
+    bool pending_color = m_pending_color;
+    r.b("color", color);
+    r.b("pending_color", pending_color);
+    if (!m_mode_pending) {
+        m_pending_color = color;
+        m_mode_pending = (color != m_color);
+    }
     r.hex("line_palette", m_line_palette, sizeof(m_line_palette));
     r.hex("frame_palette", m_frame_palette, sizeof(m_frame_palette));
     // A line the beam had half laid out is not in the snapshot: the next

@@ -1,0 +1,6 @@
+=== Режим и размер экрана после загрузки состояния ===
+[display.color] 0
+[display.resolution] 512x256
+=== После переключения в цвет ===
+[display.color] 1
+[display.resolution] 256x256
