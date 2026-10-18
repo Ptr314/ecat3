@@ -1,9 +1,9 @@
 # УК-НЦ: группы клавиш МС7007 (ms7007.grp, параметр groups клавиатуры).
 #
 # Группа - столбец матрицы. Пока на хосте держится клавиша столбца, остальные
-# клавиши того же столбца машине не уходят: ни нажатие, ни отпускание, пока не
-# отпущена первая. Клавиша, проглоченная так, остается ненажатой до своего
-# собственного отпускания. Касается только клавиш хоста, поэтому здесь не KEY,
+# клавиши того же столбца кода не дают, а отпускание (код - номер столбца)
+# уходит, только когда отпущены все клавиши столбца (@hold). Клавиша,
+# проглоченная так, остается ненажатой до своего собственного отпускания. Касается только клавиш хоста, поэтому здесь не KEY,
 # а COMMAND keyboard.host(...) - нажатие так, будто оно пришло с хоста.
 #
 # Й (27), Ф (47) и Я (67) - столбец 2, Ц (50) - столбец 3. keyboard.last -
@@ -26,17 +26,34 @@ LOG keyboard.last
 LOG keyboard.codes
 LOG keyboard.blocked
 
-PRINT "=== Й отпущена, Ф все еще держится, но машина ее не видит ==="
+PRINT "=== Й отпущена, но Ф держит столбец: отпускания нет ==="
 COMMAND keyboard.host("j",0)
 WAIT _10
 LOG keyboard.last
+LOG keyboard.codes
 COMMAND keyboard.host("q",1)
 WAIT _10
-LOG keyboard.last
 COMMAND keyboard.host("q",0)
 WAIT _10
 LOG keyboard.last
+LOG keyboard.codes
+PRINT "=== Ф отпущена, столбец свободен: 207 ==="
 COMMAND keyboard.host("f",0)
+WAIT _10
+LOG keyboard.last
+LOG keyboard.codes
+
+PRINT "=== ВВЕРХ 154, ВНИЗ 134 - один столбец: 214 только после обеих ==="
+COMMAND keyboard.host("up",1)
+WAIT _10
+LOG keyboard.last
+COMMAND keyboard.host("down",1)
+WAIT _10
+COMMAND keyboard.host("up",0)
+WAIT _10
+LOG keyboard.last
+LOG keyboard.codes
+COMMAND keyboard.host("down",0)
 WAIT _10
 LOG keyboard.last
 LOG keyboard.codes

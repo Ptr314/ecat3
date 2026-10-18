@@ -4,19 +4,27 @@
 [keyboard.last] &027
 [keyboard.codes] &001
 [keyboard.blocked] &000001
-=== Й отпущена, Ф все еще держится, но машина ее не видит ===
+=== Й отпущена, но Ф держит столбец: отпускания нет ===
+[keyboard.last] &027
+[keyboard.codes] &001
+[keyboard.last] &027
+[keyboard.codes] &001
+=== Ф отпущена, столбец свободен: 207 ===
 [keyboard.last] &207
-[keyboard.last] &067
-[keyboard.last] &207
-[keyboard.last] &207
+[keyboard.codes] &002
+=== ВВЕРХ 154, ВНИЗ 134 - один столбец: 214 только после обеих ===
+[keyboard.last] &154
+[keyboard.last] &154
+[keyboard.codes] &003
+[keyboard.last] &214
 [keyboard.codes] &004
 === Й и Ц - разные столбцы, уходят обе ===
 [keyboard.last] &050
 [keyboard.last] &207
 [keyboard.codes] &010
-[keyboard.blocked] &000001
+[keyboard.blocked] &000003
 === не с хоста группы не действуют ===
 [keyboard.last] &047
 [keyboard.last] &207
 [keyboard.codes] &014
-[keyboard.blocked] &000001
+[keyboard.blocked] &000003

@@ -1,0 +1,60 @@
+# УК-НЦ: тест SCAN Alex_K с UTEST.DSK (zx-pk.ru, тема 14702) - печатает коды,
+# которые отдает клавиатура МС7007, по опросу регистра 177702.
+#
+# Клавиши одного столбца матрицы (ms7007.grp, @hold): вторая кода не дает, а
+# код отпускания - разряд 7 и номер столбца - уходит, только когда освободился
+# весь столбец. ВВЕРХ (154) и ВНИЗ (134) - столбец 7: на экране только 154 214,
+# хотя ВВЕРХ отпущена раньше ВНИЗ. ВВЕРХ и ВЛЕВО (116, столбец 9) - разные
+# столбцы: 154 116 214 216. Группы действуют на клавиши хоста, поэтому здесь
+# COMMAND keyboard.host(...), а не KEY.
+#
+# Диск - tests/files/uknc-timing/alexk-scan.dsk (make_disk.py). Перед снимком
+# оба процессора останавливаются: SCREEN ждет поток отрисовки
+# @timeout 300
+
+MACHINE "uknc/UKNC.cfg"
+LOGDEFS _16,_8
+WAIT _12000
+KEY _100,_100,1
+WAIT _200
+KEY _100,_100,ret
+WAIT _15000
+
+# Программа DAY спрашивает дату, ВК оставляет предложенную
+KEY _100,_100,ret
+WAIT _18000
+
+COMMAND fdd1.load("../files/uknc-timing/alexk-scan.dsk")
+WAIT _500
+TYPE "RU MZ1:SCAN\n"
+WAIT _3000
+
+PRINT "=== ВВЕРХ и ВНИЗ - один столбец ==="
+COMMAND keyboard.host("up",1)
+WAIT _300
+COMMAND keyboard.host("down",1)
+WAIT _300
+COMMAND keyboard.host("up",0)
+WAIT _300
+LOG keyboard.last
+COMMAND keyboard.host("down",0)
+WAIT _300
+LOG keyboard.last
+
+PRINT "=== ВВЕРХ и ВЛЕВО - разные столбцы ==="
+COMMAND keyboard.host("up",1)
+WAIT _300
+COMMAND keyboard.host("left",1)
+WAIT _300
+COMMAND keyboard.host("up",0)
+WAIT _300
+LOG keyboard.last
+COMMAND keyboard.host("left",0)
+WAIT _300
+LOG keyboard.last
+LOG keyboard.blocked
+
+COMMAND cpu.stop()
+COMMAND ppu.stop()
+SCREEN "../results/work-uknc-alexk-scan.png"
+EXIT

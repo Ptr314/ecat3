@@ -1,0 +1,7 @@
+=== ВВЕРХ и ВНИЗ - один столбец ===
+[keyboard.last] &154
+[keyboard.last] &214
+=== ВВЕРХ и ВЛЕВО - разные столбцы ===
+[keyboard.last] &214
+[keyboard.last] &216
+[keyboard.blocked] &000001
