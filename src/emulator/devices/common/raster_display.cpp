@@ -188,6 +188,7 @@ std::vector<DeviceFieldInfo> RasterDisplay::get_device_fields()
     r.push_back({"lines",       "Lines in a frame, blanking included",          false});
     r.push_back({"frame_clocks", "Clocks of the display's domain per frame",    false});
     r.push_back({"line",        "Raster line the beam is on right now",         false});
+    r.push_back({"line_clock",  "Clocks of the display's domain into that line", false});
     r.push_back({"screen_line", "Visible line it corresponds to",               false});
     r.push_back({"hsync",       "1 while the horizontal sync pulse is active",  false});
     r.push_back({"interlaced",  "1 for an interlaced standard",                 false});
@@ -206,7 +207,7 @@ bool RasterDisplay::get_field(const std::string &field, unsigned int from, unsig
 
     if (field == "frame_rate" || field == "lines" || field == "line" ||
         field == "screen_line" || field == "hsync" || field == "interlaced" ||
-        field == "frame_clocks")
+        field == "frame_clocks" || field == "line_clock")
     {
         out.numeric = true;
         if (field == "frame_rate")       out.values.push_back(m_frame_rate);
@@ -215,6 +216,7 @@ bool RasterDisplay::get_field(const std::string &field, unsigned int from, unsig
         else if (field == "screen_line") out.values.push_back(m_screen_line);
         else if (field == "hsync")       out.values.push_back(m_hsync_active ? 1 : 0);
         else if (field == "frame_clocks") out.values.push_back(frame_clocks());
+        else if (field == "line_clock")  out.values.push_back(m_line_counter);
         else                             out.values.push_back(m_interlaced ? 1 : 0);
         return true;
     }

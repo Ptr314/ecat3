@@ -387,12 +387,15 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
         const BusReply * reply = prefetch ? prefetch_reply
                                : (s.role == R_PREFETCH ? own_reply : (a ? a->reply : nullptr));
         const uint32_t strobe = t + ((uint32_t)s.gap + s.strobe) * TICKS_PER_HALF;
+        //The processor's own registers answer a write with RPLY at DOUT itself
+        const bool own = a != nullptr && (a->address & 0177760) == 0177700;
         if (s.kind == K_RMW) {
             const uint32_t rel = reply_time(strobe, K_READ, false, reply) + RELEASE_HALVES * TICKS_PER_HALF;
             const uint32_t strobe_w = rel + (uint32_t)s.r2w * TICKS_PER_HALF;
-            t = reply_time(strobe_w, K_WRITE, true, reply) + RELEASE_HALVES * TICKS_PER_HALF;
+            t = (own ? strobe_w : reply_time(strobe_w, K_WRITE, true, reply)) + RELEASE_HALVES * TICKS_PER_HALF;
         } else {
-            t = reply_time(strobe, s.kind, false, reply) + RELEASE_HALVES * TICKS_PER_HALF;
+            t = ((own && s.kind == K_WRITE) ? strobe : reply_time(strobe, s.kind, false, reply))
+                + RELEASE_HALVES * TICKS_PER_HALF;
         }
     }
     m_count = 0;
