@@ -105,7 +105,7 @@ bool write_cached(const std::string &path, const uint8_t * data, size_t size)
 
 //What one archive may unpack into, and how many files it may hold. A browser
 //unpacks into the memory of its tab, hence less there. Far above anything a
-//machine carries: the largest real member is a hard disk image of tens of MB
+//machine carries: the largest real member is a hard disk image of 128 MB
 #ifdef WASM_BUILD
 const uint64_t ARCHIVE_UNPACKED_LIMIT = 256ULL << 20;
 #else

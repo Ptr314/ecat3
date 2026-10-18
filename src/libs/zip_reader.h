@@ -45,8 +45,10 @@ public:
     const std::string & error() const { return m_error; }
 
     //Upper bound of one unpacked entry, against archives that inflate into
-    //gigabytes
-    static const size_t max_entry_size = 64u * 1024u * 1024u;
+    //gigabytes. A saved state carries its hard disk image as one entry, and
+    //real images reach 128 MB, so the bound is that of a whole archive
+    //(ARCHIVE_UNPACKED_LIMIT in config_ext.cpp, which also checks the sum)
+    static const size_t max_entry_size = 1024u * 1024u * 1024u;
 
 private:
     std::string         m_data;
