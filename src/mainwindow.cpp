@@ -1115,8 +1115,7 @@ void MainWindow::UpdateToolbar()
     bool options_separator_added = false;
 
     SystemData * sd = e->get_system_data();
-    QFileInfo opt_fi(QString::fromStdString(sd->system_file));
-    QString config_key = opt_fi.baseName();
+    QString config_key = QString::fromStdString(e->settings_key());
 
     for (unsigned int i = 0; i < e->dm->device_count; i++) {
         ComputerDevice * dev = e->dm->get_device(i)->device.get();
@@ -1243,8 +1242,7 @@ void MainWindow::update_precise_action()
             GenericDisplay * d = dynamic_cast<GenericDisplay*>(e->dm->get_device_by_name("display", false));
             if (d == nullptr) return;
             e->invoke([&]() { d->set_precise(on); });
-            QFileInfo fi(QString::fromStdString(e->get_system_data()->system_file));
-            e->write_setup("Display", "precise_" + fi.baseName().toStdString(), on ? "1" : "0");
+            e->write_setup("Display", "precise_" + e->settings_key(), on ? "1" : "0");
             e->record_command("display", "precise", on ? "1" : "0");
         });
     }

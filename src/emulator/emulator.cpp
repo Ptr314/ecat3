@@ -508,9 +508,15 @@ emulator::Result Emulator::apply_state()
     return emulator::Result::ok();
 }
 
+std::string Emulator::settings_key()
+{
+    const std::string name = dsk_tools::get_filename(sd.system_file);
+    return name.substr(0, name.find('.'));
+}
+
 void Emulator::apply_saved_device_options()
 {
-    std::string config_key = dsk_tools::get_file_basename(sd.system_file);
+    std::string config_key = settings_key();
 
     for (unsigned int i = 0; i < dm->device_count; i++) {
         ComputerDevice * dev = dm->get_device(i)->device.get();
@@ -532,10 +538,11 @@ void Emulator::apply_saved_device_options()
         }
     }
 
-    //The high precision mode of the display, also chosen per machine
+    //The high precision mode of the display, also chosen per machine; on unless
+    //the user turned it off
     GenericDisplay * d = dynamic_cast<GenericDisplay*>(dm->get_device_by_name("display", false));
     if (d != nullptr && d->precise_available())
-        d->set_precise(read_setup("Display", "precise_" + config_key, "0") == "1");
+        d->set_precise(read_setup("Display", "precise_" + config_key, "1") == "1");
 }
 
 //----------------------------- Remembered disks -----------------------------//

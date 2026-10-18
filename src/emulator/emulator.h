@@ -332,6 +332,10 @@ public:
     void get_screen_constraints(unsigned int * sx, unsigned int * sy);
 
     SystemData * get_system_data();
+    //The name the ini keeps per-machine choices under (device options, high
+    //precision): the machine file's name up to its first dot, so that X.ext.zip
+    //and X.ecats.zip are X like X.cfg. The window and the core must agree on it
+    std::string settings_key();
 
     void set_scale(int scale);
     void set_ratio(int ratio);
