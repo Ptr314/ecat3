@@ -760,7 +760,12 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
         // For the БК the rate is given directly in units, one unit being the
         // half period of a synchronisation pulse
         set_baud_rate(baud);
-        const std::string tape_name = dsk_tools::get_file_basename(file_name);
+        // The name is typed on the БК in capitals, as its keyboard starts, and
+        // the monitor and БЕЙСИК compare it byte for byte, so a file named in
+        // small letters on the host could never be found
+        std::string tape_name = dsk_tools::get_file_basename(file_name);
+        for (size_t i = 0; i < tape_name.size(); i++)
+            if (tape_name[i] >= 'a' && tape_name[i] <= 'z') tape_name[i] = (char)(tape_name[i] - 'a' + 'A');
         if (tape_format == "bk-ascii")
             // A БЕЙСИК program in text form goes to the tape as a series of
             // numbered files, not as a single one

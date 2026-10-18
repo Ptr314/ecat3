@@ -1,0 +1,23 @@
+# БК0011М: файл .bin со строчными буквами в имени читается монитором по имени,
+# набранному заглавными. Имени у .bin нет, на ленту идет имя файла, а монитор
+# сравнивает его побайтно: с именем "bkname" файл находился как чужой и
+# пропускался, и в 002000 оставались нули.
+
+MACHINE "bk/BK-0011M.cfg"
+WAIT _4000
+
+TYPE "MO\n"
+WAIT _1000
+TYPE "L"
+WAIT _500
+TYPE "BKNAME\n"
+WAIT _500
+COMMAND tape.load("../files/bkname.bin")
+COMMAND tape.play
+WAIT _10000
+
+LOGDEFS _8,_16
+LOG tape.mode
+LOG ram0.value16(2000, 2003)
+SCREEN "../results/work-bk-0011m-tape-name.png"
+EXIT

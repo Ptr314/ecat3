@@ -1,0 +1,2 @@
+[tape.mode] $00
+[ram0.value16] $0400: $14E5 $58D1
