@@ -202,9 +202,10 @@ void BKDisplay::latch_scroll()
     m_scroll = port_scroll->get_direct(0);
     // Only the low byte of the register matters: it names the video line
     // shown at the top of the screen, counted from the base value. The
-    // firmware keeps adding to the register without masking it, so the
-    // upper bits are just an unused carry and the subtraction below has
-    // to come before the wrap.
+    // register holds bits 0-7 and 9 (the port's mask in the config), so a
+    // carry out of the low byte is lost, as in ВП1-037. Bit 9, the full
+    // screen, still rides along, so the subtraction below has to come
+    // before the wrap.
     m_offset = (m_scroll - m_scroll_base) % m_video_lines;
 }
 
