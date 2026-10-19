@@ -116,7 +116,7 @@ public:
             a.wait = wait;
         }
     }
-    void discard() { m_count = 0; }
+    void discard() { m_count = 0; m_write_at = -1; }
     // An instruction that ended in a trap is timed by the trap template: its
     // own data cycles are dropped and only the last n, the trap's pushes and
     // vector reads, are kept (the opcode stays, finish() skips it)
@@ -166,6 +166,12 @@ public:
     static unsigned int steps2_of(unsigned int form, const Step ** steps);
     static unsigned int tail2_of(unsigned int form);
 
+    // Clocks from the start of the instruction finish() timed last (the point
+    // the devices were clocked to) to the DOUT of its last data write, -1 when
+    // it wrote nothing or went by the legacy count: when a register it wrote,
+    // such as the palette of the БК0011М, changed on the bus
+    int m_write_at = -1;
+
     // After m_start was set from outside (a restored snapshot)
     void state_restored() { m_phase_window = 0; m_count = 0; }
 
@@ -198,10 +204,12 @@ private:
     struct ReplyTicks {
         const BusReply * reply = nullptr;
         uint32_t window, setup_read, setup_write, setup_rmw, delay, rmw_extra;
+        uint32_t shift;     // window less the phase of the points, mod window
+        unsigned int phase_ns;  // the BusReply::phase_ns shift was worked out for
     };
     ReplyTicks m_conv[4];
     unsigned int m_clock_hz;
-    const ReplyTicks * ticks_of(const BusReply * reply);
+    ReplyTicks * ticks_of(const BusReply * reply);
 
     // Moment the processor sees RPLY for a strobe at t, both counted from
     // m_start: a whole instruction fits 32 bits easily

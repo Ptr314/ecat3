@@ -3,6 +3,7 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Emulator core classes, source
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -655,6 +656,18 @@ emulator::Result BusTiming::load_config(SystemData *sd)
         reply.setup_rmw_ns   = read_confg_value(cd, "setup_rmw", false, (unsigned int)0);
         reply.reply_ns       = read_confg_value(cd, "reply", false, (unsigned int)0);
         reply.rmw_extra      = read_confg_value(cd, "rmw_extra", false, (unsigned int)0);
+        //The power-on variant: phase steps of phase_step ns each, or a variant
+        //of the list phases drawn at every power-on
+        m_phase_step = read_confg_value(cd, "phase_step", false, (unsigned int)0);
+        m_phase_offset = read_confg_value(cd, "phase_offset", false, (unsigned int)0);
+        m_phases.clear();
+        for (const std::string &v : split_string(cd->get_parameter("phases", false).value, ',', true))
+            m_phases.push_back(parse_numeric_value(str_trim(v)));
+        m_phase_random = (str_tolower(cd->get_parameter("phase", false).value) == "random");
+        if (m_phase_random && m_phases.empty())
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect parameters for")) + "} " + name);
+        if (!m_phase_random) set_phase(read_confg_value(cd, "phase", false, (unsigned int)0));
     } catch (std::exception &) {
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect parameters for")) + "} " + name);
@@ -665,6 +678,78 @@ emulator::Result BusTiming::load_config(SystemData *sd)
 std::string ComputerDevice::config_parameter(const std::string &parameter) const
 {
     return (cd != nullptr) ? cd->get_parameter(parameter, false).value : std::string();
+}
+
+void BusTiming::set_phase(unsigned int phase)
+{
+    m_phase = phase;
+    reply.phase_ns = m_phase_offset + phase * m_phase_step;
+}
+
+void BusTiming::reset(bool cold)
+{
+    if (cold && m_phase_random)
+        set_phase(m_phases[getRandomNumber(0, (int)m_phases.size() - 1)]);
+}
+
+//The variant drawn at power-on is not in the configuration
+void BusTiming::save_state(StateWriter &w)
+{
+    ComputerDevice::save_state(w);
+    w.n("phase", m_phase);
+}
+
+emulator::Result BusTiming::load_state(const StateReader &r)
+{
+    emulator::Result res = ComputerDevice::load_state(r);
+    if (!res) return res;
+    unsigned int phase = m_phase;
+    if (r.u("phase", phase)) set_phase(phase);
+    return emulator::Result::ok();
+}
+
+std::vector<DeviceFieldInfo> BusTiming::get_device_fields()
+{
+    std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
+    r.push_back({"phase", "Power-on variant of the phase of the points", false});
+    return r;
+}
+
+bool BusTiming::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
+{
+    if (field == "phase") {
+        out.numeric = true;
+        out.width = 16;
+        out.values.push_back(m_phase);
+        return true;
+    }
+    return ComputerDevice::get_field(field, from, to, out);
+}
+
+// The power-on variant, for a controller whose config lists them in phases:
+// those, the variant the config sets when it is not among them, and random.
+// A variant is titled by phase_title_<variant> when the config has one
+ConfigFields BusTiming::get_config_fields()
+{
+    std::vector<std::string> variants;
+    for (const std::string &v : split_string(cd->get_parameter("phases", false).value, ',', true))
+        if (!str_trim(v).empty()) variants.push_back(str_trim(v));
+    if (variants.empty()) return {};
+    ConfigField f;
+    f.name = "phase";
+    f.title = QT_TRANSLATE_NOOP("ConfigFields", "Power-on phase");
+    f.type = CONFIG_FIELD_CHOICE;
+    f.def = "0";
+    const std::string set = str_trim(cd->get_parameter("phase", false).value);
+    if (!set.empty() && str_tolower(set) != "random"
+        && std::find(variants.begin(), variants.end(), set) == variants.end())
+        variants.insert(variants.begin(), set);
+    for (const std::string &v : variants) {
+        const std::string title = str_trim(cd->get_parameter("phase_title_" + v, false).value);
+        f.values.push_back({v, title.empty() ? v : title});
+    }
+    f.values.push_back({"random", QT_TRANSLATE_NOOP("ConfigFields", "Random at power-on")});
+    return {f};
 }
 
 ComputerDevice * create_bus_timing(InterfaceManager *im, EmulatorConfigDevice *cd)

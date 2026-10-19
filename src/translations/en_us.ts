@@ -40,7 +40,7 @@
 <context>
     <name>AddressableDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+983"/>
+        <location filename="../emulator/core.cpp" line="+1067"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -172,7 +172,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1302"/>
+        <location filename="../emulator/core.cpp" line="-1385"/>
         <source>Incorrect interface definition for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -200,7 +200,8 @@
     </message>
     <message>
         <location line="+9"/>
-        <location line="+54"/>
+        <location line="+61"/>
+        <location line="+4"/>
         <location filename="../emulator/devices/specific/smk512.cpp" line="+71"/>
         <location filename="../emulator/devices/specific/a16m.cpp" line="+71"/>
         <location filename="../emulator/devices/specific/uknc_mouse.cpp" line="+36"/>
@@ -208,7 +209,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-35"/>
+        <location line="-46"/>
         <location filename="../emulator/devices/common/indirect_memory.cpp" line="+62"/>
         <location filename="../emulator/devices/common/wait_map.cpp" line="+23"/>
         <source>Not a device that adds wait states</source>
@@ -220,7 +221,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+232"/>
+        <location line="+315"/>
         <source>Command &apos;option&apos; expects an option id and a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -253,7 +254,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+634"/>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+640"/>
         <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+563"/>
         <source>Hard disk image</source>
         <translation type="unfinished"></translation>
@@ -277,7 +278,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+566"/>
+        <location filename="../emulator/core.cpp" line="-217"/>
+        <source>Power-on phase</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Random at power-on</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+772"/>
         <location line="+15"/>
         <source>ROM image</source>
         <translation type="unfinished"></translation>
@@ -548,7 +559,7 @@
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1226"/>
+        <location filename="../emulator/core.cpp" line="-1309"/>
         <source>Too many devices</source>
         <translation type="unfinished"></translation>
     </message>
@@ -572,7 +583,7 @@
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
         <location line="+238"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+156"/>
-        <location line="+247"/>
+        <location line="+278"/>
         <source>Video output</source>
         <translation type="unfinished"></translation>
     </message>
@@ -616,8 +627,8 @@
     <message>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="-236"/>
         <location line="+239"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-245"/>
-        <location line="+248"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-276"/>
+        <location line="+279"/>
         <source>RGB</source>
         <translation type="unfinished"></translation>
     </message>
@@ -630,8 +641,8 @@
     <message>
         <location line="-238"/>
         <location line="+239"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-247"/>
-        <location line="+248"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-278"/>
+        <location line="+279"/>
         <source>Mono</source>
         <translation type="unfinished"></translation>
     </message>
@@ -928,7 +939,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+63"/>
         <source>No machine is loaded</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1812,7 +1823,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1608"/>
+        <location filename="../mainwindow.cpp" line="+1606"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1876,14 +1887,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1735"/>
-        <location line="+1830"/>
+        <location filename="../mainwindow.cpp" line="-1733"/>
+        <location line="+1828"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1523"/>
+        <location filename="../mainwindow.cpp" line="-1521"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1925,7 +1936,7 @@
     <message>
         <location filename="../mainwindow.cpp" line="-637"/>
         <location line="+76"/>
-        <location line="+1200"/>
+        <location line="+1198"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+201"/>
@@ -1940,7 +1951,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2454"/>
+        <location line="-2452"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -1962,14 +1973,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1469"/>
+        <location line="+1467"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1584"/>
+        <location line="-1582"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2029,14 +2040,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1299"/>
+        <location line="+1297"/>
         <location line="+378"/>
         <location line="+116"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1788"/>
+        <location line="-1786"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2072,12 +2083,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1627"/>
+        <location line="+1625"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1603"/>
+        <location line="-1601"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2153,17 +2164,17 @@
         <location line="-747"/>
         <location line="+591"/>
         <location line="+1"/>
-        <location line="+822"/>
+        <location line="+820"/>
         <source>Turbo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-659"/>
+        <location line="-657"/>
         <source>Picture tube</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+271"/>
+        <location line="+269"/>
         <source>High precision</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2536,7 +2547,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+889"/>
+        <location filename="../emulator/core.cpp" line="+972"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2826,7 +2837,7 @@
 <context>
     <name>RasterDisplay</name>
     <message>
-        <location filename="../emulator/devices/common/raster_display.cpp" line="+68"/>
+        <location filename="../emulator/devices/common/raster_display.cpp" line="+73"/>
         <source>Unknown video standard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2958,7 +2969,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+28"/>
         <source>Unknown tape format!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3115,7 +3126,7 @@
 <context>
     <name>UKNCHDD</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-551"/>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-557"/>
         <source>Hard disk image file not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3131,7 +3142,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+651"/>
+        <location line="+657"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>

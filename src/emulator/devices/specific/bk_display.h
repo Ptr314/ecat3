@@ -26,6 +26,7 @@ private:
     RAM * vram[2]{};
     Port * port_scroll{};
     Port * port_control{};
+    CPU * m_cpu{};                  // tells when inside an instruction a register was written
 
     Interface i_frame;              // frame interrupt pulse, the 1st service line
 

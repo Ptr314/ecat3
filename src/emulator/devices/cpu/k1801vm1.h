@@ -170,6 +170,7 @@ public:
     virtual std::vector<std::pair<std::string, std::string>> get_registers() override;
     virtual std::vector<std::pair<std::string, std::string>> get_flags() override;
     virtual unsigned int get_pc() override;
+    int last_write_clocks() const override { return (m_timing != nullptr) ? m_timing->m_write_at : -1; }
     virtual unsigned int get_command() override;
     unsigned int peek_mem(unsigned int address) override;
     virtual DisAsm * create_disasm(const std::string &data_path, emulator::Result &res) override;

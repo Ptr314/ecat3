@@ -92,6 +92,7 @@ emulator::Result BKDisplay::load_config(SystemData *sd)
     std::string control_name = read_confg_value(cd, "control", false, std::string(""));
     if (!control_name.empty())
         port_control = dynamic_cast<Port*>(im->dm->get_device_by_name(control_name));
+    m_cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu", false));
 
     m_scroll_base = read_confg_value(cd, "scroll_base", false, (unsigned int)0330);
     m_line_bytes = read_confg_value(cd, "line_bytes", false, (unsigned int)64);
@@ -258,10 +259,13 @@ void BKDisplay::HSYNC(const unsigned line, const unsigned sync_val)
 // words 5-8 of them), then the 32 words
 // of the picture, so the beam is past clocks * 48 * 2 / line_length() - 32
 // bytes of it. A call comes after each processor instruction, and the devices
-// do not see when inside it a write happened (the vm1 timing knows it only in
-// finish()): a register that changed takes effect from the middle of the
-// instruction, where MOV R,(R) of the palette demos strobes it (15.5 clocks of
-// 32 on the chip model). That is the precision of the mode
+// do not see when inside it a write happened. The vm1 timing knows it in
+// finish(): a register that changed takes effect from the DOUT of the last
+// write of the instruction (CPU::last_write_clocks()). Without it, from the
+// middle of the instruction, where MOV R,(R) strobes it when it runs 32 clocks
+// (15.5 on the chip model). The middle is late when the next fetch waits for a
+// window: MOV R,(R0) after MOV #n,R runs 37 clocks with DOUT where it was, and
+// the palette columns of Babylona came a byte off the calibration screen
 void BKDisplay::BEAM(const unsigned line, const unsigned clocks)
 {
     // The register before the instruction just run, and where it began
@@ -277,7 +281,11 @@ void BKDisplay::BEAM(const unsigned line, const unsigned clocks)
         m_beam_byte = 0;
     }
     if (m_beam_byte >= m_line_bytes) return;
-    if (before != m_beam_ctl) beam_draw(beam_byte((start + clocks) / 2), before);
+    if (before != m_beam_ctl) {
+        const int w = (m_cpu != nullptr) ? m_cpu->last_write_clocks() : -1;
+        const unsigned at = (w >= 0 && start + (unsigned)w <= clocks) ? start + (unsigned)w : (start + clocks) / 2;
+        beam_draw(beam_byte(at), before);
+    }
     beam_draw(beam_byte(clocks), m_beam_ctl);
 }
 

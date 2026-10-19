@@ -646,6 +646,49 @@ bool check_ext_editor_keeps_blocks(const std::string &computers_path, std::strin
     return true;
 }
 
+// The power-on phase of the ВП1-037 is a field of the editor: the variants of
+// phases, the one the config sets when it is not among them, and random; the
+// choice is written as a vp037:phase line the machine loads
+bool check_ext_editor_phase(const std::string &computers_path, std::string &message)
+{
+    struct Case { const char * cfg; const char * base; const char * values; };
+    const Case cases[] = {
+        { "bk/BK-0011M.cfg",   "0", "0,1,2,random" },
+        { "bk/BK-0010-01.cfg", "0", "0,2,3,random" },
+    };
+    for (const Case &c : cases)
+    {
+        if (!dsk_tools::file_exists(computers_path + c.cfg)) continue;
+        MachinePaths paths;
+        paths.computers_path = computers_path;
+        ExtEditModel model;
+        emulator::Result res = model.open(computers_path + c.cfg, paths);
+        if (!res) { message = std::string(c.cfg) + ": " + res.message; return false; }
+        DeviceConfigField * f = nullptr;
+        for (DeviceConfigField &d : model.fields)
+            if (d.device == "vp037" && d.field.name == "phase") f = &d;
+        if (f == nullptr) { message = std::string(c.cfg) + ": no phase field"; return false; }
+        std::string values;
+        for (const ConfigFieldValue &v : f->field.values) values += (values.empty() ? "" : ",") + v.value;
+        if (values != c.values || f->base_value != c.base) {
+            message = std::string(c.cfg) + ": phase " + f->base_value + " of " + values;
+            return false;
+        }
+        f->present = true;
+        f->value = "random";
+        const std::string text = model.build();
+        EmulatorConfig config;
+        res = config.load_from_file(computers_path + c.cfg);
+        ConfigExtension e;
+        if (res) res = e.parse(text, "phase.ext");
+        if (res) res = e.apply(config);
+        if (!res) { message = std::string(c.cfg) + ": " + res.message + "\n" + text; return false; }
+        const std::string written = config.get_device("vp037")->get_parameter("phase", false).value;
+        if (written != "random") { message = std::string(c.cfg) + ": phase = " + written + "\n" + text; return false; }
+    }
+    return true;
+}
+
 // The editor saves a new extension as an .ext.zip and edits one in place: the
 // text goes back under its own name and the files beside it stay. A copy of a
 // user's archive that only sets fields takes its base; one that carries files
@@ -998,6 +1041,7 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     if (ext_ok) ext_ok = check_ext_editor_keeps_blocks(work_path, message);
     if (ext_ok) ext_ok = check_ext_editor_copy(work_path, message);
     if (ext_ok) ext_ok = check_ext_editor_zip(work_path, message);
+    if (ext_ok) ext_ok = check_ext_editor_phase(work_path, message);
     if (!ext_ok) { std::cout << "FAIL ext devices: " << message << std::endl; failed++; }
     std::cout << "extension device blocks: " << (ext_ok ? "ok" : "FAILED") << std::endl;
 

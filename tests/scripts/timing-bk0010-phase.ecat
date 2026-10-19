@@ -1,0 +1,20 @@
+# БК0010-01: время команд в другой фазе включения питания (phase у vp037).
+#
+# Делитель такта ЦП и счетчик окна ВП1-037 ничем не сбрасываются, и одна и та
+# же машина после разных включений дает разные таблицы. Снимок 45com-lo должен
+# совпадать с фото с БК0010-01 из prcoder-1/bk0010-emulator в его фазе 1, все
+# 45 значений: 12, 28, 12, 24, ... (tests/cpu_tests.cpp там, «45com-lo»).
+# Та же фаза дает его вторую таблицу XOP2 (64 формы MOV), phase = 2 - первую.
+# @timeout 60
+
+MACHINE "../../tests/files/bk0010-01-phase3.ext"
+WAIT _4000
+
+COMMAND cpu.stop()
+COMMAND ram.load("../files/bk-timing/45com-lo.bin", 774)
+COMMAND cpu.setreg(SP, 1000)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+WAIT _6000
+SCREEN "../results/timing-bk0010-phase-45com.png"
+EXIT

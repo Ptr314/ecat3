@@ -138,7 +138,7 @@ static const int FAST_WRITE_HALVES = 2;
 // From RPLY to the release of the strobe
 static const int RELEASE_HALVES = 3;
 
-const Vm1BusTiming::ReplyTicks * Vm1BusTiming::ticks_of(const BusReply * reply)
+Vm1BusTiming::ReplyTicks * Vm1BusTiming::ticks_of(const BusReply * reply)
 {
     for (ReplyTicks & c : m_conv)
         if (c.reply == reply) return &c;
@@ -156,6 +156,7 @@ const Vm1BusTiming::ReplyTicks * Vm1BusTiming::ticks_of(const BusReply * reply)
             c.setup_rmw = conv(reply->setup_rmw_ns);
             c.delay = conv(reply->reply_ns);
             c.rmw_extra = reply->rmw_extra * TICKS_PER_HALF;
+            c.phase_ns = reply->phase_ns + 1;   // shift on the first call
             return &c;
         }
     return nullptr;     // more reply kinds than a machine has ever had
@@ -172,16 +173,23 @@ uint32_t Vm1BusTiming::phase_of_start(uint32_t window)
 
 uint32_t Vm1BusTiming::reply_time(uint32_t strobe, uint8_t kind, bool rmw_write, const BusReply * reply)
 {
-    const ReplyTicks * r = (reply != nullptr) ? ticks_of(reply) : nullptr;
+    ReplyTicks * r = (reply != nullptr) ? ticks_of(reply) : nullptr;
     if (r == nullptr || r->window == 0) {
         if (kind == K_READ) return strobe + FAST_READ_HALVES * TICKS_PER_HALF;
         return strobe + FAST_WRITE_HALVES * TICKS_PER_HALF + (rmw_write && r ? r->rmw_extra : 0);
     }
+    //The phase is drawn anew at every power-on (phase = random)
+    if (r->phase_ns != reply->phase_ns) {
+        r->phase_ns = reply->phase_ns;
+        const uint64_t ticks = ((uint64_t)r->phase_ns * m_clock_hz * TICKS_PER_CLOCK + 500000000ull) / 1000000000ull;
+        r->shift = (uint32_t)((r->window - ticks % r->window) % r->window);
+    }
     const uint32_t setup = (kind == K_READ) ? r->setup_read : (rmw_write ? r->setup_rmw : r->setup_write);
     //The first point of the controller's cycle at or after the strobe plus its
-    //setup; m_start sits at phase_of_start() within that cycle
+    //setup; m_start sits at phase_of_start() within that cycle, whose points
+    //come phase_ns after the processor's time 0
     const uint32_t x = strobe + setup;
-    const uint32_t into = (phase_of_start(r->window) + x) % r->window;
+    const uint32_t into = (phase_of_start(r->window) + x + r->shift) % r->window;
     const uint32_t point = x + (into ? r->window - into : 0);
     //The processor takes RPLY on its own clock edges; m_start is on one
     const uint32_t seen = point + r->delay;
@@ -194,6 +202,7 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
     const bool vm2 = (m_chip == CHIP_VM2);
     const Step * steps = nullptr;
     const unsigned int n = vm2 ? steps2_of(form, &steps) : steps_of(form, &steps);
+    m_write_at = -1;
     if (n == 0) {
         m_count = 0;
         return -1;
@@ -380,6 +389,8 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
     const BusReply * own_reply = nullptr;
     for (unsigned int j = 0; j < m_count; j++)
         if (m_acc[j].role == R_STREAM) own_reply = m_acc[j].reply;
+    bool wrote = false;
+    uint32_t write_strobe = 0;
     for (unsigned int i = 0; i < n; i++) {
         const Step & s = steps[i];
         const bool prefetch = (i == n - 1);
@@ -393,12 +404,17 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
             const uint32_t rel = reply_time(strobe, K_READ, false, reply) + RELEASE_HALVES * TICKS_PER_HALF;
             const uint32_t strobe_w = rel + (uint32_t)s.r2w * TICKS_PER_HALF;
             t = (own ? strobe_w : reply_time(strobe_w, K_WRITE, true, reply)) + RELEASE_HALVES * TICKS_PER_HALF;
+            if (a != nullptr) { wrote = true; write_strobe = strobe_w; }
         } else {
             t = ((own && s.kind == K_WRITE) ? strobe : reply_time(strobe, s.kind, false, reply))
                 + RELEASE_HALVES * TICKS_PER_HALF;
+            if (a != nullptr && s.kind == K_WRITE) { wrote = true; write_strobe = strobe; }
         }
     }
     m_count = 0;
+    //m_start is not behind m_now: the clocks returned never run past it
+    if (wrote)
+        m_write_at = (int)((m_start + write_strobe - m_now + TICKS_PER_HALF) / TICKS_PER_CLOCK);
 
     const uint32_t advance = t + (uint32_t)VM1_TAIL[form] * TICKS_PER_HALF;
     m_start += advance;
@@ -411,6 +427,7 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
 
 void Vm1BusTiming::idle(unsigned int clocks)
 {
+    m_write_at = -1;
     m_now += (uint64_t)clocks * TICKS_PER_CLOCK;
     if (m_chip == CHIP_VM2) {
         //The chain is idle from the end of the last tail on

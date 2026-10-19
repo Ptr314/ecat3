@@ -432,6 +432,9 @@ struct BusReply {
     unsigned int setup_rmw_ns = 0;  //the same for DOUT of the write half of a read-modify-write
     unsigned int reply_ns = 0;      //from the point to RPLY
     unsigned int rmw_extra = 0;     //half clocks a fast memory adds to the write half of a read-modify-write
+    //How much later than the processor's time 0 the points come: the phase the
+    //dividers of the processor clock and of the controller took at power-on
+    unsigned int phase_ns = 0;
 };
 
 //A device that holds the processor up on the memory it shares with it: the
@@ -825,6 +828,11 @@ public:
     virtual unsigned int get_pc() = 0;
     virtual unsigned int get_command() = 0;
 
+    //Clocks from the start of the instruction just run to the moment its last
+    //write reached the bus, -1 when the processor does not know it. A display
+    //that follows the beam takes a register change from there
+    virtual int last_write_clocks() const { return -1; }
+
     virtual unsigned int read_mem(unsigned int address) = 0;
     virtual void write_mem(unsigned int address, unsigned int data) = 0;
 
@@ -1134,6 +1142,22 @@ public:
     BusReply reply;
     BusTiming(InterfaceManager *im, EmulatorConfigDevice *cd);
     emulator::Result load_config(SystemData *sd) override;
+    void reset(bool cold) override;
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
+    std::vector<DeviceFieldInfo> get_device_fields() override;
+    bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
+    ConfigFields get_config_fields() override;
+private:
+    //The power-on variant and the ns between two of them, counted from the
+    //points at m_phase_offset ns of variant 0. With phase = random
+    //every cold reset (power-on) draws one of m_phases, as the dividers do
+    unsigned int m_phase = 0;
+    unsigned int m_phase_step = 0;
+    unsigned int m_phase_offset = 0;
+    bool m_phase_random = false;
+    std::vector<unsigned int> m_phases;
+    void set_phase(unsigned int phase);
 };
 ComputerDevice * create_bus_timing(InterfaceManager *im, EmulatorConfigDevice *cd);
 ComputerDevice * create_rom(InterfaceManager *im, EmulatorConfigDevice *cd);
