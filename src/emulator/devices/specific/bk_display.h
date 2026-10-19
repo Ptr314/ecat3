@@ -11,8 +11,10 @@
 #include "emulator/devices/common/raster_display.h"
 
 #define BK_OPTION_COLORS    1
-#define BK_COLOR_ON         0
-#define BK_COLOR_OFF        1
+// Video output modes, also the values of the option
+#define BK_MODE_RGB         0   // colour monitor: 2 bits a dot through the palette
+#define BK_MODE_BW          1   // black and white: 1 bit a dot
+#define BK_MODE_MONO        2   // colour picture on a monochrome monitor
 
 // К1801ВП1-037 draws the picture along the raster: every line is laid out when
 // the beam passes it, with the palette, the video page and the quarter screen
@@ -35,7 +37,10 @@ private:
     unsigned m_offset;              // first video line shown at the top
     unsigned m_line_bytes;          // bytes of video memory per screen line
     unsigned m_video_lines;         // picture lines
-    bool m_color;
+    unsigned m_mode;                // BK_MODE_*
+
+    static bool wide(unsigned mode) { return mode == BK_MODE_BW; }   // 8 dots a byte
+    unsigned mode_width(unsigned mode) const { return m_line_bytes * (wide(mode) ? 8 : 4); }
 
     // Palette each screen line was drawn with, for scripts: 16 marks a blank line.
     // The second array is the last frame completed, taken when the picture ends.
@@ -47,7 +52,7 @@ private:
     // the picture by the emulation thread, or by the render one if that comes
     // first (a stopped machine draws no frames)
     volatile bool m_mode_pending = false;
-    bool m_pending_color = true;
+    unsigned m_pending_mode = BK_MODE_RGB;
     void apply_mode_switch();                   // under the surface lock
 
     unsigned control() const;
@@ -59,7 +64,7 @@ private:
     // Bytes [from, to) of a line of video memory, from the line's start in
     // video and to out, the first dot of the line
     void render_bytes(uint32_t * out, const uint8_t * video, unsigned from, unsigned to,
-                      bool color, bool blank, unsigned palette) const;
+                      unsigned mode, bool blank, unsigned palette) const;
 
     // The high precision mode: the line the beam is on is laid out into a
     // buffer byte by byte as the beam passes, and goes onto the surface whole
@@ -68,7 +73,7 @@ private:
     std::vector<uint32_t> m_beam_buf;
     unsigned m_beam_line = NO_LINE;             // line in the buffer
     unsigned m_beam_byte = 0;                   // its bytes already laid out
-    bool m_beam_color = true;                   // its mode, as at its first byte
+    unsigned m_beam_mode = BK_MODE_RGB;         // its mode, as at its first byte
     unsigned m_beam_ctl = 0;                    // the control register at the last BEAM()
     unsigned m_beam_at_line = NO_LINE;          // the raster line and clock of that call
     unsigned m_beam_at = 0;

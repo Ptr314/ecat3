@@ -36,13 +36,26 @@ uint8_t BK_Palettes[16][4][3] = {
 
 uint32_t BK_RGBA4[16][4];
 
-// Monochrome output is the same memory read as one bit per pixel
+// The black and white output is the same memory read as one bit per pixel
 uint8_t BK_Mono_2[2][3] = {
     {  0,   0,   0},    // Black
     {255, 255, 255}     // White
 };
 
 uint32_t BK_RGBA2[2];
+
+// The colour picture on a monochrome monitor. The TV output of the БК0011М
+// (XT9) carries the one bit a dot stream, so such a monitor is wired to the
+// RGB lines of the colour output (XT11), and the brightness is their weighted
+// sum. The weights are in the proportion of a specialist's figures for pure
+// green, red and blue, FF : A8 : 80 (given as red, green, blue, but only this
+// order agrees with a picture of the Mona Lisa intro in palette 4, where cyan
+// is the brighter of magenta and cyan), scaled so that only white is full:
+// Y = (R * A8 + G * FF + B * 80) / (FF + A8 + 80)
+static const unsigned BK_GREY_R = 0xA8, BK_GREY_G = 0xFF, BK_GREY_B = 0x80;
+static const unsigned BK_GREY_SUM = BK_GREY_R + BK_GREY_G + BK_GREY_B;
+
+uint32_t BK_GREY4[16][4];
 
 // Raster of К1801ВП1-037, as reconstructed from the chip (github.com/1801BM1/k1801,
 // 037/rtl/va_037.v; the БК emulator by gid follows the same counters): 256
@@ -59,9 +72,9 @@ BKDisplay::BKDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_offset(0)
     , m_line_bytes(64)
     , m_video_lines(256)
-    , m_color(true)
+    , m_mode(BK_MODE_RGB)
     , m_mode_pending(false)
-    , m_pending_color(true)
+    , m_pending_mode(BK_MODE_RGB)
 {
     m_standart = "vp1-037";
     // The frame interrupt passes the register D11 the processor's clock latches
@@ -70,7 +83,7 @@ BKDisplay::BKDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     // Video memory holds 256 lines of 64 bytes. Read as one bit per pixel that
     // is 512 dots across, read as two bits per pixel it is 256.
     sy = m_video_lines;
-    sx = m_color? 256 : 512;
+    sx = 256;
     m_precise_available = true;
 }
 
@@ -101,14 +114,18 @@ emulator::Result BKDisplay::load_config(SystemData *sd)
     m_line_bytes = read_confg_value(cd, "line_bytes", false, (unsigned int)64);
     m_video_lines = read_confg_value(cd, "lines", false, (unsigned int)256);
 
-    // Colour or monochrome is a switch on the case of a real БК rather than a
-    // register, so it starts from the configuration and is changed from the
-    // toolbar afterwards.
-    m_color = str_tolower(read_confg_value(cd, "mode", false, std::string("color"))) != "mono";
+    // Colour or black and white is a switch on the case of a real БК rather
+    // than a register, and the monitor is what the user has, so the mode
+    // starts from the configuration and is changed from the toolbar
+    // afterwards. "mono" is the old name of the black and white mode.
+    const std::string mode = str_tolower(read_confg_value(cd, "mode", false, std::string("color")));
+    if (mode == "bw" || mode == "mono") m_mode = BK_MODE_BW;
+    else if (mode == "gray") m_mode = BK_MODE_MONO;
+    else m_mode = BK_MODE_RGB;
 
     sy = m_video_lines;
-    sx = m_color? (m_line_bytes * 4) : (m_line_bytes * 8);
-    // Wide enough for either mode: a colour/mono switch may land mid line
+    sx = mode_width(m_mode);
+    // Wide enough for either mode: a mode switch may land mid line
     m_beam_buf.assign(m_line_bytes * 8, 0);
 
     latch_scroll();
@@ -120,7 +137,7 @@ emulator::Result BKDisplay::load_config(SystemData *sd)
     return emulator::Result::ok();
 }
 
-// A colour/mono switch changes the width, so it waits for the end of the
+// A mode switch may change the width, so it waits for the end of the
 // picture rather than landing in the middle of a frame. The emulation thread
 // applies it there (HSYNC), and the render thread here, when it asks for the
 // size: a stopped machine draws no frames, and a switch from the toolbar must
@@ -132,11 +149,12 @@ void BKDisplay::apply_mode_switch()
 {
     if (!m_mode_pending) return;
     m_mode_pending = false;
-    if (m_pending_color == m_color) return;
-    m_color = m_pending_color;
+    if (m_pending_mode == m_mode) return;
+    m_mode = m_pending_mode;
     // The surface is replaced by the render thread; until then nothing is
-    // drawn into the old one
-    change_resolution(m_color? (m_line_bytes * 4) : (m_line_bytes * 8), sy);
+    // drawn into the old one. Between RGB and Mono the size stays, and the
+    // whole screen is only drawn again
+    change_resolution(mode_width(m_mode), sy);
     screen_valid = false;
     was_updated = true;
 }
@@ -159,31 +177,40 @@ DeviceOptions BKDisplay::get_device_options()
         {
             BK_OPTION_COLORS, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Video output"), "kscreensaver.png",
             {
-                {BK_COLOR_ON,  QT_TRANSLATE_NOOP("DeviceOptions", "RGB")},
-                {BK_COLOR_OFF, QT_TRANSLATE_NOOP("DeviceOptions", "Mono")}
+                {BK_MODE_RGB,  QT_TRANSLATE_NOOP("DeviceOptions", "RGB")},
+                {BK_MODE_BW,   QT_TRANSLATE_NOOP("DeviceOptions", "B/W")},
+                {BK_MODE_MONO, QT_TRANSLATE_NOOP("DeviceOptions", "Mono")}
             },
-            // "mode = mono" of the config starts on the second entry; a switch
-            // not yet taken over by the render thread already counts
-            static_cast<unsigned>((m_mode_pending ? m_pending_color : m_color) ? BK_COLOR_ON : BK_COLOR_OFF)
+            // The mode of the config; a switch not yet taken over by the
+            // render thread already counts
+            m_mode_pending ? m_pending_mode : m_mode
         }
     };
 }
 
 void BKDisplay::set_device_option(unsigned option_id, unsigned value_id)
 {
-    if (option_id != BK_OPTION_COLORS) return;
+    if (option_id != BK_OPTION_COLORS || value_id > BK_MODE_MONO) return;
 
     // May come from the interface thread (the page calls it directly), so only
     // the request is recorded here; apply_mode_switch() makes it
-    m_pending_color = (value_id == BK_COLOR_ON);
+    m_pending_mode = value_id;
     m_mode_pending = true;
 }
 
 void BKDisplay::set_renderer(VideoRenderer &vr)
 {
     GenericDisplay::set_renderer(vr);
-    for (unsigned i = 0; i < 16; i++)
+    uint8_t grey[4][3];
+    for (unsigned i = 0; i < 16; i++) {
         vr.FillRGB(BK_Palettes[i], BK_RGBA4[i], 4);
+        for (unsigned c = 0; c < 4; c++) {
+            const uint8_t * rgb = BK_Palettes[i][c];
+            const unsigned y = (rgb[0] * BK_GREY_R + rgb[1] * BK_GREY_G + rgb[2] * BK_GREY_B + BK_GREY_SUM / 2) / BK_GREY_SUM;
+            grey[c][0] = grey[c][1] = grey[c][2] = static_cast<uint8_t>(y);
+        }
+        vr.FillRGB(grey, BK_GREY4[i], 4);
+    }
     vr.FillRGB(BK_Mono_2, BK_RGBA2, 2);
 }
 
@@ -325,14 +352,14 @@ void BKDisplay::beam_draw(const unsigned to, const unsigned ctl)
     // For scripts, the palette the line starts with
     if (m_beam_byte == 0) {
         if (line < 256) m_line_palette[line] = blank ? 16 : static_cast<uint8_t>(palette);
-        // A colour/mono switch comes from the render thread at any moment:
-        // the line keeps the mode it started in
-        m_beam_color = m_color;
+        // A mode switch comes from the render thread at any moment: the line
+        // keeps the mode it started in
+        m_beam_mode = m_mode;
     }
 
     const uint8_t * video = blank ? nullptr
         : vmem->get_buffer() + ((line + m_offset) % m_video_lines) * m_line_bytes;
-    render_bytes(m_beam_buf.data(), video, m_beam_byte, to, m_beam_color, blank, palette);
+    render_bytes(m_beam_buf.data(), video, m_beam_byte, to, m_beam_mode, blank, palette);
     m_beam_byte = to;
 }
 
@@ -354,8 +381,8 @@ void BKDisplay::beam_commit()
         compat_lock_guard guard(m_surface_mutex);
         // A line laid out in the mode left behind is not copied: the switch
         // has the whole screen drawn again anyway (screen_valid)
-        const unsigned width = m_color ? (m_line_bytes * 4) : (m_line_bytes * 8);
-        if (m_beam_color == m_color && has_valid_renderer() && render_pixels != nullptr && (int)(width * 4) <= line_bytes)
+        const unsigned width = mode_width(m_mode);
+        if (m_beam_mode == m_mode && has_valid_renderer() && render_pixels != nullptr && (int)(width * 4) <= line_bytes)
             memcpy(static_cast<uint8_t*>(render_pixels) + m_beam_line * line_bytes, m_beam_buf.data(), width * 4);
     }
     if (m_beam_line + 1 == m_video_lines) was_updated = true;
@@ -379,7 +406,7 @@ void BKDisplay::reset(const bool cold)
 }
 
 // The picture is laid out line by line from the emulation thread. Only a
-// surface that has never been drawn - the first frame, a colour/mono switch -
+// surface that has never been drawn - the first frame, a mode switch -
 // is filled here at once, so that it shows even while the processor stands.
 // A forced repaint is ignored: the main window asks for one on every paint
 // event, and a whole frame drawn from the palette of that moment replaced a
@@ -406,8 +433,8 @@ void BKDisplay::render_line_unlocked(const unsigned line)
 
     // The width is checked against the surface that is actually there: a mode
     // switch reaches the surface only on the next frame of the render thread
-    const bool color = m_color;
-    const unsigned width = color? (m_line_bytes * 4) : (m_line_bytes * 8);
+    const unsigned mode = m_mode;
+    const unsigned width = mode_width(mode);
     if ((int)(width * 4) > line_bytes) return;
 
     uint8_t * base = static_cast<uint8_t*>(render_pixels) + line * line_bytes;
@@ -425,24 +452,24 @@ void BKDisplay::render_line_unlocked(const unsigned line)
     // memory mode
     const uint8_t * video = blank ? nullptr
         : vmem->get_buffer() + ((line + m_offset) % m_video_lines) * m_line_bytes;
-    render_bytes(reinterpret_cast<uint32_t*>(base), video, 0, m_line_bytes, color, blank, palette);
+    render_bytes(reinterpret_cast<uint32_t*>(base), video, 0, m_line_bytes, mode, blank, palette);
 
     if (line + 1 == m_video_lines) was_updated = true;
 }
 
 // The video memory is read straight from its buffer: a virtual get_direct() on
 // every byte of every line, 50 times a second, costs more than the drawing.
-// A byte is 4 dots in colour and 8 in the monochrome mode
+// A byte is 4 dots in colour (RGB and Mono) and 8 in the black and white mode
 void BKDisplay::render_bytes(uint32_t * out, const uint8_t * video, const unsigned from, const unsigned to,
-                             const bool color, const bool blank, const unsigned palette) const
+                             const unsigned mode, const bool blank, const unsigned palette) const
 {
     if (blank) {
         // Below the quarter screen the beam draws nothing
-        const unsigned dots = color ? 4 : 8;
+        const unsigned dots = wide(mode) ? 8 : 4;
         for (unsigned i = from * dots; i < to * dots; i++)
             out[i] = BK_RGBA2[0];
-    } else if (color) {
-        const uint32_t * colors = BK_RGBA4[palette];
+    } else if (!wide(mode)) {
+        const uint32_t * colors = (mode == BK_MODE_MONO) ? BK_GREY4[palette] : BK_RGBA4[palette];
         for (unsigned i = from; i < to; i++) {
             const uint8_t b = video[i];
             // The lowest pair of bits is the leftmost dot
@@ -467,7 +494,8 @@ ConfigFields BKDisplay::get_config_fields()
     f.type = CONFIG_FIELD_CHOICE;
     f.def = "color";
     f.values.push_back({"color", QT_TRANSLATE_NOOP("DeviceOptions", "RGB")});
-    f.values.push_back({"mono",  QT_TRANSLATE_NOOP("DeviceOptions", "Mono")});
+    f.values.push_back({"bw",    QT_TRANSLATE_NOOP("DeviceOptions", "B/W")});
+    f.values.push_back({"gray",  QT_TRANSLATE_NOOP("DeviceOptions", "Mono")});
     return {f};
 }
 
@@ -477,8 +505,9 @@ void BKDisplay::save_state(StateWriter &w)
     w.u("scroll", m_scroll);
     w.n("offset", m_offset);
     w.n("frames", m_frames);
-    w.b("color", m_color);
-    w.b("pending_color", m_pending_color);
+    // "color" is what snapshots without Mono had: 0 was the black and white mode
+    w.b("color", !wide(m_mode));
+    w.n("mode", m_mode);
     //The palette each line of the picture was drawn with. A snapshot taken
     //mid frame is finished from the line it stopped on, and a program that
     //changes the palette per line (every БК demo) keeps the lines above it
@@ -498,13 +527,14 @@ emulator::Result BKDisplay::load_state(const StateReader &r)
     // nothing into it (a black screen). It goes through the switch instead. The
     // option restored before has already asked for it; without one, the mode
     // saved is the switch
-    bool color = m_color;
-    bool pending_color = m_pending_color;
+    bool color = !wide(m_mode);
     r.b("color", color);
-    r.b("pending_color", pending_color);
+    unsigned mode = color ? BK_MODE_RGB : BK_MODE_BW;
+    r.u("mode", mode);
+    if (mode > BK_MODE_MONO) mode = BK_MODE_RGB;
     if (!m_mode_pending) {
-        m_pending_color = color;
-        m_mode_pending = (color != m_color);
+        m_pending_mode = mode;
+        m_mode_pending = (mode != m_mode);
     }
     r.hex("line_palette", m_line_palette, sizeof(m_line_palette));
     r.hex("frame_palette", m_frame_palette, sizeof(m_frame_palette));
@@ -525,7 +555,8 @@ std::vector<DeviceFieldInfo> BKDisplay::get_device_fields()
     r.push_back({"palette", "Palette number, 0 without the register",          false});
     r.push_back({"page",    "Video RAM shown, 0 on a machine with only one",   false});
     r.push_back({"vram",    "Name of the video RAM device being shown",        false});
-    r.push_back({"color",   "1 for colour, 0 for the monochrome mode",         false});
+    r.push_back({"color",   "1 for colour (RGB or Mono), 0 for black and white", false});
+    r.push_back({"mode",    "Video output: 0 RGB, 1 black and white, 2 Mono",  false});
     r.push_back({"palettes", "Palette each line of the last completed frame was drawn with (in the high precision mode, the one at its first byte), 16 for a blank line", true});
     r.push_back({"frames",   "Frame pulses given since the start",             false});
     return r;
@@ -580,7 +611,14 @@ bool BKDisplay::get_field(const std::string &field, unsigned int from, unsigned 
     if (field == "quarter" || field == "color")
     {
         out.numeric = true;
-        out.values.push_back(((field == "quarter") ? quarter() : m_color) ? 1 : 0);
+        out.values.push_back(((field == "quarter") ? quarter() : !wide(m_mode)) ? 1 : 0);
+        return true;
+    }
+
+    if (field == "mode")
+    {
+        out.numeric = true;
+        out.values.push_back(m_mode);
         return true;
     }
 

@@ -1,4 +1,5 @@
-# БК0011М: переключение экрана из цветного режима в черно-белый.
+# БК0011М: переключение экрана из цветного режима в черно-белый и в цветной
+# на монохромном мониторе («Моно»: та же ширина 256, оттенки серого).
 # Это то же самое, что тумблер на корпусе и список на панели инструментов.
 # Заодно проверяется, что смена режима меняет разрешение и не ломает уже
 # нарисованное.
@@ -13,7 +14,7 @@ LOGDEFS _16,_8
 LOG display.resolution
 SCREEN "../results/work-bk-0011m-screen-color.png"
 
-# 1 - идентификатор списка «Тип вывода», 1 - «Черно-белый»
+# 1 - идентификатор списка «Тип вывода», 1 - «Ч/Б»
 COMMAND display.option(1,1)
 WAIT _500
 LOG display.resolution
@@ -23,4 +24,11 @@ COMMAND display.option(1,0)
 WAIT _500
 LOG display.resolution
 SCREEN "../results/work-bk-0011m-screen-back.png"
+
+# 2 - «Моно»
+COMMAND display.option(1,2)
+WAIT _500
+LOG display.mode
+LOG display.resolution
+SCREEN "../results/work-bk-0011m-screen-gray.png"
 EXIT

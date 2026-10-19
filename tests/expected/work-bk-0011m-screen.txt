@@ -1,3 +1,5 @@
 [display.resolution] 256x256
 [display.resolution] 512x256
 [display.resolution] 256x256
+[display.mode] &000002
+[display.resolution] 256x256

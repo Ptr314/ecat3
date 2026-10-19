@@ -775,6 +775,11 @@
         <translation>Моно</translation>
     </message>
     <message>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="+1"/>
+        <source>B/W</source>
+        <translation>Ч/Б</translation>
+    </message>
+    <message>
         <location filename="../emulator/devices/common/joystick.cpp" line="+88"/>
         <source>Joystick</source>
         <translation>Джойстик</translation>
