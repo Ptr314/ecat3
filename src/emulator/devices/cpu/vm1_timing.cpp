@@ -137,6 +137,14 @@ static const int FAST_READ_HALVES = 1;
 static const int FAST_WRITE_HALVES = 2;
 // From RPLY to the release of the strobe
 static const int RELEASE_HALVES = 3;
+// WAIT (see wait_begun()): half clocks from the release of its fetch to the
+// first poll of the interrupt inputs, with and without a tail of the
+// instruction before; between the polls; from the poll that saw a request to
+// where the entry template starts (its first DOUT is 13 half clocks in)
+static const int WAIT_FIRST_HALVES = 3;
+static const int WAIT_FIRST_AFTER_TAIL = 5;
+static const int WAIT_POLL_HALVES = 6;
+static const int WAIT_ENTRY_HALVES = 1;
 
 Vm1BusTiming::ReplyTicks * Vm1BusTiming::ticks_of(const BusReply * reply)
 {
@@ -416,6 +424,8 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
     if (wrote)
         m_write_at = (int)((m_start + write_strobe - m_now + TICKS_PER_HALF) / TICKS_PER_CLOCK);
 
+    m_release = m_start + t;
+    m_release_tail = VM1_TAIL[form];
     const uint32_t advance = t + (uint32_t)VM1_TAIL[form] * TICKS_PER_HALF;
     m_start += advance;
     if (m_phase_window) m_phase = (m_phase + advance) % m_phase_window;
@@ -423,6 +433,29 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
     const uint64_t clocks = (m_start - m_now) / TICKS_PER_CLOCK;
     m_now += clocks * TICKS_PER_CLOCK;
     return (int)clocks;
+}
+
+void Vm1BusTiming::wait_begun()
+{
+    m_wait_poll = m_release + (uint64_t)(m_release_tail ? WAIT_FIRST_AFTER_TAIL : WAIT_FIRST_HALVES) * TICKS_PER_HALF;
+    if (m_wait_poll == 0) m_wait_poll = 1;
+}
+
+// m_now is where the request came: the processor idles up to the device event
+// that raises it (k1801vm1::execute())
+void Vm1BusTiming::wait_interrupted()
+{
+    if (m_wait_poll == 0) return;
+    const uint64_t period = (uint64_t)WAIT_POLL_HALVES * TICKS_PER_HALF;
+    const uint64_t seen = m_now + TICKS_PER_HALF;
+    uint64_t poll = m_wait_poll;
+    if (poll < seen) poll += (seen - poll + period - 1) / period * period;
+    m_wait_poll = 0;
+    const uint64_t start = poll + (uint64_t)WAIT_ENTRY_HALVES * TICKS_PER_HALF;
+    if (start > m_start) {
+        m_start = start;
+        m_phase_window = 0;
+    }
 }
 
 void Vm1BusTiming::idle(unsigned int clocks)

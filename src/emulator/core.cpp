@@ -361,6 +361,22 @@ void DeviceManager::clock(unsigned int domain, unsigned int counter)
     }
 }
 
+unsigned int DeviceManager::clocks_to_event(const CPU * cpu) const
+{
+    unsigned int r = UINT_MAX;
+    for (size_t j = 0; j < cpus.size() && j < clocked_devices.size(); j++) {
+        if (cpus[j] != cpu) continue;
+        const std::vector<ClockedDevice> &list = clocked_devices[j];
+        for (size_t i = 0; i < list.size(); i++)
+            if (list[i].direct) {
+                const unsigned int e = list[i].device->clocks_to_event();
+                if (e < r) r = e;
+            }
+        break;
+    }
+    return r;
+}
+
 void DeviceManager::error(ComputerDevice *d, const std::string &message)
 {
     //A fault of the emulator itself, reached from the emulation thread: a

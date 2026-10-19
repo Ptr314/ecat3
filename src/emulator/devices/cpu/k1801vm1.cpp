@@ -261,6 +261,7 @@ void k1801vm1::save_state(StateWriter &w)
     if (m_timing) {
         w.n64("timing_now", m_timing->m_now);
         w.n64("timing_start", m_timing->m_start);
+        if (m_timing->m_wait_poll != 0) w.n64("timing_wait_poll", m_timing->m_wait_poll);
         if (m_timing_vm2) {
             w.n64("timing_s0", m_timing->m_s0);
             w.u("timing_kind", m_timing->m_kind2);
@@ -314,6 +315,8 @@ emulator::Result k1801vm1::load_state(const StateReader &r)
     if (m_timing) {
         r.n64("timing_now", m_timing->m_now);
         r.n64("timing_start", m_timing->m_start);
+        m_timing->m_wait_poll = 0;
+        r.n64("timing_wait_poll", m_timing->m_wait_poll);
         if (m_timing_vm2) {
             unsigned int kind = 0;
             r.n64("timing_s0", m_timing->m_s0);
@@ -589,7 +592,10 @@ unsigned int k1801vm1::execute()
     {
         core->reset();
         reset_mode = false;
-        if (m_timing) m_timing->discard();
+        if (m_timing) {
+            m_timing->discard();
+            m_timing->m_wait_poll = 0;
+        }
     }
 
     if (m_debug == DEBUG_STOPPED)
@@ -605,7 +611,27 @@ unsigned int k1801vm1::execute()
     core->bus_offset = 0;
     core->bus_extra = 0;
     if (m_timing_vm2) m_halt_before = core->get_context()->halt_mode;
+    const bool vm1_timed = m_timing && !m_timing_vm2;
+    const bool waiting = vm1_timed && core->get_context()->halted;
     unsigned int cycles = core->execute();
+    if (vm1_timed) {
+        // WAIT idles in steps of 8 clocks, and an interrupt that came inside a
+        // step was seen at its end: the БК frame interrupt reached the handler
+        // 0-7 clocks late, by where the program had entered WAIT. The palette
+        // demos time the beam from it (Babylona's calibration and picture are
+        // the same code, and they drew a word apart). The step ends on the next
+        // event of the devices instead, and the entry starts at the poll of the
+        // chip that sees the request (Vm1BusTiming::wait_begun())
+        if (core->m_last_kind == pdp11core::LAST_IDLE && cycles > 1) {
+            const unsigned int e = im->dm->clocks_to_event(this);
+            if (e < cycles) cycles = (e > 0) ? e : 1;
+        } else if (core->m_last_kind == pdp11core::LAST_INTERRUPT) {
+            if (waiting) m_timing->wait_interrupted();
+        } else if (core->m_last_kind == pdp11core::LAST_INSN && core->m_last_command == 0000001
+                   && !core->m_last_trapped && core->get_context()->halted) {
+            m_timing->wait_begun();
+        }
+    }
     if (m_timing) cycles = timed_cycles(cycles);
     else if (m_timing_vm3) cycles = vm3_cycles(cycles);
     else if (core->bus_extra != 0) {

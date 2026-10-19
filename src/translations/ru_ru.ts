@@ -406,7 +406,7 @@
     <message>
         <location line="+11"/>
         <source>Random at power-on</source>
-        <translation>Случайная при включении</translation>
+        <translation>Случайно</translation>
     </message>
     <message>
         <location line="+772"/>

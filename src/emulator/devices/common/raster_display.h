@@ -36,6 +36,9 @@ protected:
     unsigned m_lines;
     unsigned m_top_blank;
     unsigned m_bottom_blank;
+    // Clocks HSYNC(line, 2) comes after the pulse ends, for a subclass whose
+    // event passes a latch on the way. Set before load_config()
+    unsigned m_sync_end_delay = 0;
 
     virtual void FRAME_SYNC() {};
     virtual void VSYNC(const unsigned sync_val) {};
@@ -59,6 +62,8 @@ public:
     RasterDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
     emulator::Result load_config(SystemData *sd) override;
     void clock(unsigned int counter) override;
+    //To the next line start, sampling point or end of the horizontal sync
+    unsigned int clocks_to_event() const override;
     //Reports the end of each frame itself, see GenericDisplay::own_frames()
     bool own_frames() const override { return true; }
 

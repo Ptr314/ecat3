@@ -64,6 +64,9 @@ BKDisplay::BKDisplay(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_pending_color(true)
 {
     m_standart = "vp1-037";
+    // The frame interrupt passes the register D11 the processor's clock latches
+    // (see BK_FRAME_PULSE_LINE)
+    m_sync_end_delay = 1;
     // Video memory holds 256 lines of 64 bytes. Read as one bit per pixel that
     // is 512 dots across, read as two bits per pixel it is 256.
     sy = m_video_lines;
@@ -210,13 +213,20 @@ void BKDisplay::latch_scroll()
     m_offset = (m_scroll - m_scroll_base) % m_video_lines;
 }
 
-// The frame interrupt comes where the horizontal sync pulse of the first
-// service line ends: the line after the last picture line, 8 3/8 words in
-// (HSYNC(line, 2)). Not at the vertical sync pulse (SYNC2 of the
-// reconstruction, the 21st to 23rd service lines), as it was taken before: the
-// demo Babylona, timed on a real БК0011М, then had its palette program 20
-// lines too low and 23 bytes off, and its own reference picture fits this
-// point to the byte, as does the MiSTer core (irq at vc 256, hc 649)
+// The frame interrupt of the БК0011М (sheet 1 of its schematic) is a detector
+// of missing WTI strobes: WTI with CLC clears the counter D28 (К555ИЕ5), the
+// rising edge of SYNCO (the 037's composite sync) sets its first stage and
+// clocks it into D3:B (К555ТМ2). So the request rises at the end of the
+// horizontal sync pulse of the second line without picture, the first service
+// line (HSYNC(line, 2), 68 CLKIN in). Through a buffer it goes to the
+// register D11 (К555ТМ9), latched by the processor's clock like every other
+// interrupt input, and the ВМ1 samples it on the next edge: m_sync_end_delay.
+// Not at the vertical sync pulse (SYNC2 of the reconstruction, the 21st to
+// 23rd service lines), as it was taken before: the demo Babylona, timed on a
+// real БК0011М, then had its palette program 20 lines too low. With the
+// latch, its calibration screen and picture come right together on two of the
+// three power-on phases, as its text says they should
+
 static const unsigned BK_FRAME_PULSE_LINE = 1;
 
 void BKDisplay::HSYNC(const unsigned line, const unsigned sync_val)
@@ -270,10 +280,15 @@ void BKDisplay::BEAM(const unsigned line, const unsigned clocks)
 {
     // The register before the instruction just run, and where it began
     const unsigned before = (m_beam_at_line != NO_LINE) ? m_beam_ctl : control();
-    const unsigned start = (line == m_beam_at_line && clocks >= m_beam_at) ? m_beam_at : 0;
+    // An instruction begun on the line before starts at a negative clock of
+    // this one (beam_commit() has laid out its part there)
+    int start = 0;
+    if (line == m_beam_at_line && clocks >= m_beam_at) start = (int)m_beam_at;
+    else if (m_beam_at_line != NO_LINE) start = (int)m_beam_at - (int)m_beam_len;
     m_beam_ctl = control();
     m_beam_at_line = line;
     m_beam_at = clocks;
+    m_beam_len = line_length();
 
     if (line >= m_video_lines) return;
     if (line != m_beam_line) {
@@ -283,8 +298,8 @@ void BKDisplay::BEAM(const unsigned line, const unsigned clocks)
     if (m_beam_byte >= m_line_bytes) return;
     if (before != m_beam_ctl) {
         const int w = (m_cpu != nullptr) ? m_cpu->last_write_clocks() : -1;
-        const unsigned at = (w >= 0 && start + (unsigned)w <= clocks) ? start + (unsigned)w : (start + clocks) / 2;
-        beam_draw(beam_byte(at), before);
+        const int at = (w >= 0 && start + w <= (int)clocks) ? start + w : (start + (int)clocks) / 2;
+        if (at > 0) beam_draw(beam_byte((unsigned)at), before);
     }
     beam_draw(beam_byte(clocks), m_beam_ctl);
 }
@@ -325,6 +340,15 @@ void BKDisplay::beam_draw(const unsigned to, const unsigned ctl)
 void BKDisplay::beam_commit()
 {
     if (m_beam_line >= m_video_lines) return;
+    // The instruction that ran over the end of the line began at m_beam_at of
+    // it: a register it changed counts from its write, and a write past the
+    // end leaves the rest of the line as it was. Taking control() for all of
+    // it put a byte or more of the next colour at the end of the line above a
+    // palette stripe
+    if (control() != m_beam_ctl && m_beam_at_line == m_beam_line && m_cpu != nullptr) {
+        const int w = m_cpu->last_write_clocks();
+        if (w >= 0) beam_draw(beam_byte(m_beam_at + (unsigned)w), m_beam_ctl);
+    }
     beam_draw(m_line_bytes, control());
     {
         compat_lock_guard guard(m_surface_mutex);

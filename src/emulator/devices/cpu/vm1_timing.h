@@ -172,6 +172,18 @@ public:
     // such as the palette of the БК0011М, changed on the bus
     int m_write_at = -1;
 
+    // WAIT as the chip runs it (tb_bab.v of tools/bk-timing, interrupt swept
+    // over 12 clocks after JMP, BR, MTPS, CLR, INC, SWAB, SEC and NOP): it
+    // polls its interrupt inputs every 3 clocks, the first poll 3 half clocks
+    // after the release of the WAIT fetch, 5 when the instruction before had a
+    // tail. A request is seen by a poll at least half a clock after it, and
+    // the first DOUT of the entry comes 7 clocks after that poll.
+    // wait_begun() anchors the polls when WAIT runs, wait_interrupted() starts
+    // the interrupt entry that ends it there
+    void wait_begun();
+    void wait_interrupted();
+    uint64_t m_wait_poll = 0;   // saved: the first poll of the WAIT idling now, 0 none
+
     // After m_start was set from outside (a restored snapshot)
     void state_restored() { m_phase_window = 0; m_count = 0; }
 
@@ -225,4 +237,9 @@ private:
     uint32_t m_phase_window = 0;    // 0: not known, work it out
     uint32_t m_phase = 0;
     uint32_t phase_of_start(uint32_t window);
+
+    // The release of the last prefetch finish() placed, and the tail of its
+    // form: where a WAIT fetched by it begins to poll
+    uint64_t m_release = 0;
+    uint8_t m_release_tail = 0;
 };

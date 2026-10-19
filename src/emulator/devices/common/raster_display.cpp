@@ -52,9 +52,11 @@ emulator::Result RasterDisplay::load_config(SystemData *sd)
         m_hsync_length_ms = 21;
         m_counts_per_line = m_system_clock / 1000 * 64 / 1000;
         m_frame_clocks = m_counts_per_line * m_lines;
-        // The horizontal sync pulse (VTSYN) ends 8 3/8 words into the line,
-        // where VA[3:1] = 0 at the 4th pixel clock of word 8
-        m_counts_sync_end = m_counts_per_line * 67 / 384;
+        // The horizontal sync pulse (VTSYN) ends 68 CLKIN into the line: the
+        // clock edge that ends PC = 3 of word 8 sets it (VA[3:1] = 0). The
+        // event is on the first processor clock at or after it, and
+        // m_sync_end_delay clocks later
+        m_counts_sync_end = (m_counts_per_line * 68 + 383) / 384 + m_sync_end_delay;
     } else if (m_standart == "uknc") {
         // Видеоконтроллер УК-НЦ: 312 строк по 64 мкс без чересстрочности,
         // 288 из них видимые (строки 19..306), по 640 точек в строке.
@@ -136,6 +138,18 @@ void RasterDisplay::clock(unsigned int counter)
 
     // Off, this is all the mode costs: one flag a processor instruction
     if (m_beam) BEAM(m_screen_line, m_line_counter);
+}
+
+// The events of clock() above: the frame interrupt of the БК comes from one of
+// them, so a processor waiting for it steps exactly onto it
+unsigned int RasterDisplay::clocks_to_event() const
+{
+    unsigned int r = (m_line_length > m_line_counter) ? m_line_length - m_line_counter : 1;
+    if (m_hsync_active && m_counts_hsync > m_hsync_counter && m_counts_hsync - m_hsync_counter < r)
+        r = m_counts_hsync - m_hsync_counter;
+    if (m_counts_sync_end > m_line_counter && m_counts_sync_end - m_line_counter < r)
+        r = m_counts_sync_end - m_line_counter;
+    return r;
 }
 
 bool RasterDisplay::raster_frame_rate(uint64_t &num, uint64_t &den, const unsigned pictures) const

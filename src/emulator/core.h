@@ -7,6 +7,7 @@
 
 #include "emulator/renderer.h"
 #include <atomic>
+#include <climits>
 #include <functional>
 #include <list>
 #include <memory>
@@ -307,6 +308,12 @@ public:
     virtual emulator::Result load_config(SystemData *sd);
     virtual void clock(unsigned int counter);
     virtual void system_clock(unsigned int counter);
+    //Clocks of its domain until this device may next change a line by itself
+    //(a frame interrupt), counted from where clock() left it; UINT_MAX when it
+    //does not know. A processor idling in WAIT steps no further than that, so
+    //it sees the interrupt on the clock it came, not up to a step later. Only
+    //asked of a device clocked 1:1 (DeviceManager::clocks_to_event())
+    virtual unsigned int clocks_to_event() const { return UINT_MAX; }
     //Whether clocking this device does anything at all - see m_clocked
     bool is_clocked() const { return m_clocked; }
     //True for a class with a system_clock() of its own. The others count in
@@ -727,6 +734,9 @@ public:
     //Clocks the devices of one clock domain. A machine with a single processor
     //has exactly one domain, number 0, and this is the old clock(counter)
     void clock(unsigned int domain, unsigned int counter);
+    //The nearest ComputerDevice::clocks_to_event() among the devices clocked by
+    //this processor, UINT_MAX when none knows one
+    unsigned int clocks_to_event(const CPU * cpu) const;
     void error(ComputerDevice *d, const std::string &message);
     void error_clear();
     DeviceDescription * get_device(unsigned int i); //
