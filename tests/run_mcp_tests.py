@@ -21,8 +21,11 @@ ecat_machine, отдает остальные строки одним вызов
 
 Сценарий отдается не совсем дословно:
 
-* строка MACHINE выполняется отдельным вызовом ecat_machine, иначе к выводу
-  добавится список устройств загруженной машины;
+* машина сначала загружается вызовом ecat_machine, а строка MACHINE остается
+  в ecat_run и загружает ее еще раз: так сценарий начинается с первого такта
+  машины, как в run_tests.py, а не с того места, куда машина ушла сама, пока
+  шел следующий вызов. Отчет MACHINE о загрузке (список устройств) из ответа
+  вырезается;
 * SCREEN и EXIT пропускаются: снимки экрана в эталонном логе не отражаются,
   а EXIT завершил бы сервер посреди набора;
 * относительные имена файлов (__../files/__, __../results/__) заменяются на
@@ -292,11 +295,16 @@ def prepare(test):
             continue
 
         verb = s.split(None, 1)[0].upper()
-        if verb == "MACHINE":
-            if machine is None:
-                quoted = s.split('"')
-                machine = quoted[1] if len(quoted) > 2 else ""
-            commands.append("")
+        if verb == "MACHINE" and machine is None:
+            quoted = s.split('"')
+            machine = quoted[1] if len(quoted) > 2 else ""
+            # Остается в ecat_run: движок загружает машину заново, и строки за
+            # ней идут с ее первого такта, как в run_tests.py. Машина из
+            # ecat_machine до прихода ecat_run работает сама по себе столько,
+            # сколько хосту угодно, и все, что сценарий читал в первые
+            # мгновения, плавало от прогона к прогону (work-bk-a16m-halt,
+            # work-agat-9-yazs-regs, boot-bk0011m-a16m)
+            commands.append(s)
             continue
         if verb in SKIP_VERBS:
             commands.append("")
@@ -316,6 +324,27 @@ def prepare(test):
 # --------------------------------------------------------------------------
 # Прогон
 # --------------------------------------------------------------------------
+
+def strip_load_report(output):
+    """
+    Без отчета MACHINE о загрузке: "Loaded <файл>", пустая строка, таблица
+    устройств (name, type, class через табуляцию) и пустая строка за ней. В
+    эталонном логе обычного прогона его нет.
+    """
+    lines = output.split("\n")
+    if not lines or not lines[0].startswith("Loaded "):
+        return output
+    i = 1
+    if i < len(lines) and lines[i] == "":
+        i += 1
+    if i < len(lines) and lines[i] == "name\ttype\tclass":
+        i += 1
+        while i < len(lines) and lines[i].count("\t") == 2:
+            i += 1
+    if i < len(lines) and lines[i] == "":
+        i += 1
+    return "\n".join(lines[i:])
+
 
 def run_test(test, exe, env, extra_args, speed):
     result = {"test": test, "problems": [], "skipped": None, "seconds": 0.0}
@@ -383,6 +412,7 @@ def run_test(test, exe, env, extra_args, speed):
     if output is None:
         return result
 
+    output = strip_load_report(output)
     # "ok" сервер отвечает, когда команды ничего не напечатали
     if output.strip() == "ok":
         output = ""

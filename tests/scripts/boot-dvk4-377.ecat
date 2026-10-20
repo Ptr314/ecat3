@@ -4,7 +4,6 @@
 # монитор остаётся в пульте, поэтому образ DW вставлен; грузится RT-11 с MY0, и
 # уже она ставит драйвер DW. Потом - B и имя устройства (Boot: MY0)
 # @timeout 200
-# @nomcp в живой сессии машина успевает поработать до первой команды
 MACHINE "../../tests/files/dvk4-ksm-377.ext"
 COMMAND dw.load("rt11-dw.dsk")
 COMMAND dw.volatile(1)

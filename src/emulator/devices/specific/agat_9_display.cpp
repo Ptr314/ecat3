@@ -132,7 +132,8 @@ void Agat9Display::set_mode(unsigned int new_mode)
             _memory_bank = ((new_mode & 0x70) >> 4) + (new_mode & 0x08);
             break;
     }
-    screen_valid = false;
+    //Not screen_valid: the beam draws the new mode from the next line on, and
+    //render_all() would paint the whole frame in it over the lines above
     was_updated = true;
 }
 
@@ -252,6 +253,14 @@ uint8_t Agat9Display::convert_font(unsigned chr, unsigned line) const
 void Agat9Display::render_line(unsigned int screen_line)
 {
     compat_lock_guard guard(m_surface_mutex);
+    render_line_unlocked(screen_line, true);
+}
+
+void Agat9Display::render_line_unlocked(unsigned int screen_line, const bool beam)
+{
+    //A copy: the graphics modes compute the address per line, and only the
+    //beam keeps it (render_all() must not move what the beam reads)
+    unsigned base_address = this->base_address;
     if (m_pal_card) {
         m_line_pal = m_pal_card_out ? m_pal_switch->get_direct(0) : 0;
         m_line_pal_font = (m_pal_mode->get_direct(0) & 0x02) != 0;
@@ -276,7 +285,7 @@ void Agat9Display::render_line(unsigned int screen_line)
         if (PA == 1) {
             // Agat mode
             if (sx != 512) {
-                change_resolution(512, sy);
+                if (beam) change_resolution(512, sy);
                 return;
             }
 
@@ -434,7 +443,7 @@ void Agat9Display::render_line(unsigned int screen_line)
         } else {
             // Apple modes
             if (sx != 280) {
-                change_resolution(280, sy);
+                if (beam) change_resolution(280, sy);
                 return;
             }
             if (line < 32 || line >=224) {
@@ -526,12 +535,29 @@ void Agat9Display::render_line(unsigned int screen_line)
                 }
             }
         }
+        if (beam) {
+            this->base_address = base_address;
+            //The beam has drawn on this surface, so render_all() leaves it
+            screen_valid = true;
+        }
     }
 }
 
 
-void Agat9Display::render_all(bool force_render)
+//Only a surface no line of the beam has reached is painted here, from memory:
+//a new one - the width switched to an Apple mode, or a machine just loaded.
+//The beam stops drawing while the surface has the old width, and the render
+//thread makes the new one in the very pass that may take a screenshot, while
+//the machine stands for it: the picture came out blank. A frame the beam has
+//drawn is left alone, with whatever the program changed in the middle of it.
+//validate() already holds the surface lock
+void Agat9Display::render_all(MAYBE_UNUSED bool force_render)
 {
+    if (!screen_valid && has_valid_renderer() && render_pixels != nullptr) {
+        const unsigned lines = (m_512_mode == M_512_ON) ? 512 : 256;
+        for (unsigned line = 0; line < lines && line < sy; line++)
+            render_line_unlocked(line, false);
+    }
     screen_valid = true;
     was_updated = true;
 }

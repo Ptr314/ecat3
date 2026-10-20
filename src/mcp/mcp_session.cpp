@@ -146,6 +146,22 @@ McpSession::WaitResult McpSession::wait_done(size_t index, unsigned int timeout_
 
     for (;;)
     {
+        //A machine just loaded is not clocked yet: run() resets it, applies a
+        //saved state and only then starts the engine on the commands queued
+        //for its first clock. Until then the engine still reads as stopped
+        //and the clock stands, and neither means anything; a loaded host
+        //took more than STALL_MS over a .ecats (state-poisk-disk)
+        if (!e->started())
+        {
+            const uint64_t now = compat_now_ms();
+            if (!e->machine_error(nullptr).empty()) return WaitStalled;
+            if (now >= deadline) return WaitTimeout;
+            last_change = now;
+            last_clock  = e->clock_now();
+            compat_sleep_ms(1);
+            continue;
+        }
+
         if (s->get_done_pc() > index) return WaitDone;
         if (s->is_finished() || s->is_paused()) return WaitAborted;
 
@@ -207,40 +223,43 @@ McpResult McpSession::run_locked(const std::string &commands, unsigned int timeo
     }
 
     if (parsed.empty()) return McpResult::good("ok");
+    return run_parsed_locked(lines, parsed, timeout_ms);
+}
 
+McpResult McpSession::run_parsed_locked(const std::vector<std::string> &lines,
+                                        const std::vector<ScriptCommand> &parsed, unsigned int timeout_ms)
+{
     //MACHINE throws away the device manager, the engine state and the queue,
-    //so a batch that contains one is run in pieces around it
+    //so a batch that contains one is run in pieces around it. What follows it
+    //is queued before the new machine starts and begins at its first clock,
+    //as the lines after MACHINE do in a script: sent after the load, they
+    //found the machine already running for as long as the host took, and a
+    //register or a count read early differed from run to run (the MCP replay
+    //of the test suite). The pieces keep the line numbers of the batch
     for (size_t i = 0; i < parsed.size(); i++)
     {
         if (parsed[i].verb != SCRIPT_CMD_MACHINE) continue;
 
-        std::string head;
-        for (size_t j = 0; j < i; j++) head += lines[j] + "\n";
-        std::string tail;
-        for (size_t j = i + 1; j < parsed.size(); j++) tail += lines[j] + "\n";
-
         std::vector<std::string> output;
-        if (!head.empty())
+        if (i > 0)
         {
-            McpResult r = run_locked(head, timeout_ms);
+            const std::vector<std::string> head_lines(lines.begin(), lines.begin() + i);
+            const std::vector<ScriptCommand> head(parsed.begin(), parsed.begin() + i);
+            McpResult r = run_parsed_locked(head_lines, head, timeout_ms);
             if (!r.ok) return r;
             if (r.text != "ok") output.push_back(r.text);
         }
 
-        McpResult r = machine_locked(parsed[i].args.empty() ? std::string() : parsed[i].args[0]);
-        if (!r.ok) return r;
-        output.push_back(r.text);
-
-        if (!tail.empty())
+        const std::vector<std::string> tail_lines(lines.begin() + i + 1, lines.end());
+        const std::vector<ScriptCommand> tail(parsed.begin() + i + 1, parsed.end());
+        McpResult r = machine_locked(parsed[i].args.empty() ? std::string() : parsed[i].args[0],
+                                     &tail_lines, &tail, timeout_ms);
+        if (!r.ok)
         {
-            McpResult t = run_locked(tail, timeout_ms);
-            if (!t.ok)
-            {
-                output.push_back(t.text);
-                return McpResult::bad(join(output));
-            }
-            if (t.text != "ok") output.push_back(t.text);
+            if (!output.empty()) output.push_back(r.text);
+            return output.empty() ? r : McpResult::bad(join(output));
         }
+        if (r.text != "ok") output.push_back(r.text);
         return McpResult::good(join(output));
     }
 
@@ -252,14 +271,19 @@ McpResult McpSession::run_locked(const std::string &commands, unsigned int timeo
     //clock. Waiting on each command in turn would let the machine run on
     //between them, and two consecutive LOGs would not be one snapshot
     const size_t first = s->submit(parsed[0]);
-    size_t last = first;
-    for (size_t i = 1; i < parsed.size(); i++) last = s->submit(parsed[i]);
+    for (size_t i = 1; i < parsed.size(); i++) s->submit(parsed[i]);
 
-    const WaitResult w = wait_done(last, timeout_ms);
+    return await_locked(lines, first, timeout_ms);
+}
+
+McpResult McpSession::await_locked(const std::vector<std::string> &lines, size_t first, unsigned int timeout_ms)
+{
+    ScriptEngine * s = e->script_engine();
+    const WaitResult w = wait_done(first + lines.size() - 1, timeout_ms);
 
     //Output is collected per command, in order, whatever the outcome was
     std::vector<std::string> output;
-    for (size_t i = 0; i < parsed.size(); i++)
+    for (size_t i = 0; i < lines.size(); i++)
     {
         std::vector<std::string> got = m_sink.drain(first + i + 1);
         for (size_t j = 0; j < got.size(); j++) output.push_back(got[j]);
@@ -269,7 +293,7 @@ McpResult McpSession::run_locked(const std::string &commands, unsigned int timeo
     {
         //Name the command the batch is actually stuck on, not the last one
         const size_t done = s->get_done_pc();
-        const size_t stuck = (done > first && (done - first) < parsed.size()) ? (done - first) : 0;
+        const size_t stuck = (done > first && (done - first) < lines.size()) ? (done - first) : 0;
         const std::string &line = lines[stuck];
         const std::string state = ScriptEngine::state_name(s->get_state());
 
@@ -415,34 +439,69 @@ McpResult McpSession::machine(const std::string &config)
     return machine_locked(config);
 }
 
-McpResult McpSession::machine_locked(const std::string &config)
+McpResult McpSession::machine_locked(const std::string &config,
+                                     const std::vector<std::string> * tail_lines,
+                                     const std::vector<ScriptCommand> * tail,
+                                     unsigned int timeout_ms)
 {
     if (m_host == nullptr) return McpResult::bad("This build cannot switch machines.");
     if (config.empty())    return McpResult::bad("A configuration file name is required.");
 
+    const bool queued = tail != nullptr && !tail->empty() && e != nullptr;
+    ScriptEngine * s = (e != nullptr) ? e->script_engine() : nullptr;
+
     //Detach first: load_config() deletes the device manager and stops the
     //engine, and the sink must not be written to while that happens
-    if (e != nullptr && e->loaded)
+    if (e != nullptr && e->loaded && s != nullptr)
     {
-        ScriptEngine * s = e->script_engine();
         s->set_interactive(false);
         s->set_sink(nullptr);
     }
     m_armed = false;
 
+    //The commands after MACHINE wait in the queue, and run() starts the
+    //engine at the new machine's first clock (Emulator::arm_script(), as for
+    //a command line script). load_machine() stops the engine but keeps the
+    //queue, and nothing is written to the sink until that first clock
+    if (queued && s != nullptr)
+    {
+        s->stop();
+        s->clear();
+        s->set_sink(&m_sink);
+        s->set_interactive(true);
+        m_sink.drain_all();
+        for (size_t i = 0; i < tail->size(); i++) s->submit((*tail)[i]);
+        e->arm_script(true);
+    }
+
     const std::string err = m_host->load_machine(config);
-    if (!err.empty()) return McpResult::bad(strip_message_context(err));
+    if (!err.empty())
+    {
+        if (queued) e->arm_script(false);
+        return McpResult::bad(strip_message_context(err));
+    }
 
     m_host->show_window();
-    arm_locked();
+    if (queued)
+        m_armed = e->loaded;
+    else
+        arm_locked();
     if (!m_armed) return McpResult::bad("The configuration loaded, but the emulator is not running.");
 
     m_last_status_clock = 0;
     m_last_status_ms    = 0;
 
     McpResult list = devices_locked();
-    return McpResult::good("Loaded " + m_host->current_machine() + "\n\n"
-                           + (list.ok ? list.text : std::string()));
+    const std::string loaded = "Loaded " + m_host->current_machine() + "\n\n"
+                               + (list.ok ? list.text : std::string());
+    if (!queued) return McpResult::good(loaded);
+
+    //The queue starts at index 0 when run() starts the engine
+    McpResult r = await_locked(*tail_lines, 0, timeout_ms);
+    std::vector<std::string> output;
+    output.push_back(loaded);
+    if (r.text != "ok") output.push_back(r.text);
+    return r.ok ? McpResult::good(join(output)) : McpResult::bad(join(output));
 }
 
 McpResult McpSession::cancel()

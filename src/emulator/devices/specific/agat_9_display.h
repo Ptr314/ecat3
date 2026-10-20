@@ -140,6 +140,10 @@ protected:
 
 
     void render_line(unsigned screen_line);
+    //The line itself, under the surface lock already. beam: drawn by the beam
+    //on the emulation thread, which alone switches the width and keeps the
+    //address it used; otherwise render_all() on the render thread
+    void render_line_unlocked(unsigned screen_line, bool beam);
     void render_all(bool force_render) override;
 
     void set_mode(unsigned int new_mode);

@@ -1,0 +1,4 @@
+=== Режим Агат ===
+[display.resolution] 512x256
+=== Переход в режим Apple ===
+[display.resolution] 280x256

@@ -102,7 +102,17 @@ private:
     //Waits for a submitted command to complete, on the wall clock
     WaitResult wait_done(size_t index, unsigned int timeout_ms);
     McpResult  run_locked(const std::string &commands, unsigned int timeout_ms);
-    McpResult  machine_locked(const std::string &config);
+    //The commands of a batch, parsed, with the line numbers of the batch
+    McpResult  run_parsed_locked(const std::vector<std::string> &lines,
+                                 const std::vector<ScriptCommand> &parsed, unsigned int timeout_ms);
+    //Waits for the commands submitted from first on and collects their output
+    McpResult  await_locked(const std::vector<std::string> &lines, size_t first, unsigned int timeout_ms);
+    //tail: commands queued before the machine starts, so that they begin at
+    //its first clock (MACHINE inside a batch), with tail_lines their text
+    McpResult  machine_locked(const std::string &config,
+                              const std::vector<std::string> * tail_lines = nullptr,
+                              const std::vector<ScriptCommand> * tail = nullptr,
+                              unsigned int timeout_ms = 0);
     McpResult  devices_locked();
 };
 

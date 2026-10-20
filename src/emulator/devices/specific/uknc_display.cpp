@@ -312,6 +312,14 @@ void UKNCDisplay::render_line(unsigned int y, unsigned int bits_address)
     if (!has_valid_renderer() || render_pixels == nullptr) return;
     if ((int)(UKNC_WIDTH * 4) > line_bytes) return;
 
+    // The beam has drawn on this surface, so render_all() must not blank it.
+    // Its first pass came after the picture under a loaded host, and in the
+    // same pass the render thread took the screenshot a script had asked
+    // for: the frame came out black (boot-uknc-display, state-uknc-sound
+    // under -j 8). The lines the beam has not reached yet are blank anyway on
+    // a new surface, and drawn within a frame
+    screen_valid = true;
+
     uint8_t * base = static_cast<uint8_t*>(render_pixels) + y * line_bytes;
 
     // Read straight from the buffers: three bytes per octet, 288 lines, 50

@@ -1535,7 +1535,11 @@ void Emulator::init_video(void *p)
     renderer->init_screen(p, screen_sx, screen_sy, screen_scale, pixel_scale);
     d->set_renderer(*renderer);
     d->unlock_surface();
-    set_filtering(screen_filtering);
+    //Straight to the renderer: set_filtering() also clears screen_sx, and the
+    //render thread's first pass then replaced the surface just made with a
+    //blank one - the frames drawn into it meanwhile were lost, and a SCREEN
+    //taken in that pass came out black on the УК-НЦ under -j 8
+    renderer->set_filtering(screen_filtering);
     renderer->set_frame_blending(screen_blending);
 }
 
@@ -1551,6 +1555,17 @@ void Emulator::stop_video()
 void Emulator::render_screen()
 {
     if (m_running && m_ready) {
+        //A screenshot asked for before this pass is drawn by it: validate()
+        //below paints from the machine as it stands. One asked for while the
+        //pass is under way waits for the next - the picture validate() made
+        //is older than the request: a render thread held up between the two
+        //(a loaded host) let a script at MAX run on for seconds, and the
+        //ДВК-3, whose КСМ screen is painted here from its video memory, came
+        //out without its last output while LOG display.text had it. At any
+        //speed but 1x the machine must also be standing for the picture
+        //(m_shot_hold), or the slice it is in moves on after validate()
+        const bool shot_due = is_screenshot_pending() && (m_shot_hold || m_speed_q == 4);
+
         unsigned int current_sx, current_sy;
         display->get_screen_constraints(&current_sx, &current_sy);
         if ((current_sx != screen_sx) || (current_sy != screen_sy))
@@ -1607,7 +1622,7 @@ void Emulator::render_screen()
 
         //A screenshot requested by a script is taken here, on the render thread,
         //at the end of a pass of the render loop
-        store_screenshot();
+        if (shot_due) store_screenshot();
     }
 }
 

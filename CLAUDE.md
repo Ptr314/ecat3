@@ -78,8 +78,9 @@ from a regression.
   it back on the machine plus a counter field, not by saving the image.
 - A failure only under `-j 8` is a test or device reading host timing (a `SCREEN` at the wrong moment, a size
   applied by the render thread). Fix the cause; see `docs/dev/testing-and-debugging.md`.
-- `py tests/run_mcp_tests.py --exe <MCP build>` replays the suite through MCP; scripts sampling absolute
-  emulated time declare `# @nomcp <reason>`.
+- `py tests/run_mcp_tests.py --exe <MCP build>` replays the suite through MCP. The lines after `MACHINE` in
+  one `ecat_run` start at the machine's first clock, so a replay matches the plain run; `# @nomcp <reason>`
+  only for a script that still cannot repeat there.
 - `eCat3-headless --selftest` checks extension, state, zip and timing invariants.
 
 ## Scripts (`.ecat`, `docs/SCRIPTING.md`)
@@ -138,6 +139,9 @@ from a regression.
 - Speed scales only the wall time of a slice; never raise a processor's `clock` to speed a machine up.
 - A display either calls `frame_complete()` and answers `own_frames()` true, or the emulator ticks it at
   50 Hz. A field read by a script must not come from the render thread.
+- A display whose beam draws lines on the emulation thread sets `screen_valid` when a line lands on the
+  surface; otherwise `render_all()` on the render thread wipes the frame (a black or one-palette `SCREEN`
+  under `-j 8`). A screenshot is stored only by a pass that began with the request pending.
 - Clock domains: one per processor, positions are 64-bit LCM-scaled. With one processor the arithmetic is
   the old loop, so the whole suite must pass unchanged after touching it.
 

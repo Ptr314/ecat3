@@ -6,7 +6,6 @@
 # векторов при разрешённых прерываниях, и тик по уже затёртому вектору 100
 # останавливает машину.
 # @timeout 900
-# @nomcp часы RT-11 и время прогона
 MACHINE "../../tests/files/dvk4-ksm.ext"
 COMMAND my0.load("FODOSTMO.DSK")
 WAIT _12000

@@ -468,6 +468,9 @@ public:
     void set_script_file(const std::string &file_name);     //Names a recorded buffer after a saved file
 
     uint64_t clock_now() const { return clock_counter; }
+    //The machine is reset (a saved state applied) and being clocked: before
+    //that the clock stands still without anything being wrong
+    bool started() const { return m_ready; }
     uint64_t ticks_per_ms() const;                          //CPU cycles per emulated millisecond
 
     //Recording hooks for the GUI, no-ops unless a recording is in progress

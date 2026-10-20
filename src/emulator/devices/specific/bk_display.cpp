@@ -376,8 +376,11 @@ void BKDisplay::beam_commit()
         // A line laid out in the mode left behind is not copied: the switch
         // has the whole screen drawn again anyway (screen_valid)
         const unsigned width = mode_width(m_mode);
-        if (m_beam_mode == m_mode && has_valid_renderer() && render_pixels != nullptr && (int)(width * 4) <= line_bytes)
+        if (m_beam_mode == m_mode && has_valid_renderer() && render_pixels != nullptr && (int)(width * 4) <= line_bytes) {
             memcpy(static_cast<uint8_t*>(render_pixels) + m_beam_line * line_bytes, m_beam_buf.data(), width * 4);
+            // Drawn by the beam: see render_line()
+            screen_valid = true;
+        }
     }
     if (m_beam_line + 1 == m_video_lines) was_updated = true;
     m_beam_line = NO_LINE;
@@ -419,6 +422,12 @@ void BKDisplay::render_line(const unsigned line)
 {
     compat_lock_guard guard(m_surface_mutex);
     render_line_unlocked(line);
+    // The beam has drawn on this surface, so render_all() must not paint the
+    // whole of it again from one palette: a render thread whose first pass
+    // after a load came only with the screenshot of a script wiped the
+    // stripes a program had changed the palette for (work-bk-0011m-raster)
+    if (has_valid_renderer() && render_pixels != nullptr && (int)(mode_width(m_mode) * 4) <= line_bytes)
+        screen_valid = true;
 }
 
 void BKDisplay::render_line_unlocked(const unsigned line)
