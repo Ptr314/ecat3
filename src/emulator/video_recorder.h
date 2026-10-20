@@ -52,7 +52,11 @@ struct VideoSettings {
     bool frame_locked = false;  // One frame per push_frame(), none from the clock
     bool native = false;        // Asked for the rate of the machine; Emulator resolves it
     bool upscale = false;       // Small pictures are enlarged for codecs with 4:2:0 colour
+    unsigned int scale_x = 0;   // Whole enlargement of each axis, without smoothing,
+    unsigned int scale_y = 0;   // instead of upscale; 0: none
     double sar = 1.0;           // Pixel aspect of the picture, 1 for square pixels
+    unsigned int width = 0;     // The size of the video when it is known beforehand:
+    unsigned int height = 0;    // ffmpeg starts in start(), not with the first picture
 };
 
 class VideoRecorder

@@ -2438,7 +2438,9 @@ void MainWindow::video_start()
     }
     video_active = true;
 
-    if (screenshot_as_shown) {
+    //At the rate of the machine with the frames blended the emulator takes
+    //the picture itself (Emulator::start_video_recording())
+    if (screenshot_as_shown && e->video_from_window()) {
 #if defined(RENDERER_OPENGL)
         //Every frame the window draws, read back from what it has just drawn
         static_cast<GLWidget*>(screen)->setFrameHook([this](const uint8_t * rgba, int w, int h) {

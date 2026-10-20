@@ -25,7 +25,7 @@ set(ECAT_CORE_SOURCES
     emulator/thread_compat.h
     emulator/utils.cpp emulator/utils.h
     emulator/files.h emulator/files.cpp
-    emulator/renderer.h
+    emulator/renderer.h emulator/frame_blender.h
     emulator/disasm.h emulator/disasm.cpp
     emulator/disasm_pdp11.h emulator/disasm_pdp11.cpp
     emulator/disasm_x86.h emulator/disasm_x86.cpp

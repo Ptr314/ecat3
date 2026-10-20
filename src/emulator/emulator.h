@@ -208,6 +208,10 @@ private:
     VideoRecorder m_video;
     std::atomic<bool> m_video_from_screen;
     std::atomic<bool> m_video_locked;   //Frames come from the display's frame hook
+    //Those frames blended as the window blends them ("as on screen" at the
+    //rate of the machine); the blender is the emulation thread's
+    bool m_video_blended = false;
+    FrameBlender m_video_blender;
     //A script to be started by run(), before the first slice (arm_script()):
     //SCRIPT_NONE, SCRIPT_ARMED, SCRIPT_RUN (run() took it, the frontend's
     //start_script() then has nothing to do). One state, changed by
@@ -490,9 +494,12 @@ public:
 
     //------------------------- Video recording ----------------------------//
     //Starts a video of the running machine. from_screen: the frontend sends
-    //the picture as the window shows it with video_frame(), otherwise the
-    //render thread takes the machine's own pixels. GUI thread
+    //the picture as the window shows it with video_frame() (if
+    //video_from_window() says so after the start), otherwise the render
+    //thread takes the machine's own pixels. GUI thread
     bool start_video_recording(VideoSettings s, bool from_screen, std::string &error);
+    //The recording wants the window's picture from the frontend
+    bool video_from_window() const { return m_video_from_screen; }
     //Ends it; the file is finished in the background, see video_state()
     void stop_video_recording();
     //RGBA, any thread

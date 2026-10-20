@@ -6,58 +6,20 @@
 #pragma once
 
 #include <atomic>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
 
+#include "frame_blender.h"
+
 class VideoRenderer
 {
 private:
-    //Frame blending: a program that alternates two pictures to mix their
-    //colours (the 4k intro of the БК) is shown as the mix, steady instead of
-    //flickering: the host's screen holds each frame whole, and 50 frames on a
-    //60 Hz one break the alternation. Every point is shown as the mean of its
-    //value and the last different value it had, while that one is no older
-    //than BLEND_AGE frames: so a picture changed every frame (A B A B) and
-    //one changed every second frame (A A B B: Lion on the БК0010, whose copy
-    //of the picture takes longer than a frame) both come out steady, and a
-    //picture that changed once keeps the old one for two frames only. The
-    //mean is one of light, not of the values: half a frame of a full colour
-    //is half its light, which is 186 of 255 at the gamma of 2.2, not 128
-    //(the 10-colour palette of Lion by its author: 149..198 for such mixes;
-    //the plain mean of values came out about 40% darker). The mean is not a
-    //full one: the other value weighs BLEND_WEIGHT / 256, 95% of a half, so
-    //a little of the alternation stays, as on a real monitor, and the light
-    //of both frames together is the same as of the full mean.
-    //Set from the GUI thread, taken up by the render thread
-    static const uint8_t BLEND_AGE = 2;
-    static const uint32_t BLEND_WEIGHT = 122;  //0.5 * 0.95 * 256
-
-    //Light of a byte value at the gamma of 2.2, 0..65535, and back
-    struct BlendGamma {
-        uint16_t light[256];
-        uint8_t value[65536];
-        BlendGamma()
-        {
-            for (int i = 0; i < 256; i++)
-                light[i] = static_cast<uint16_t>(std::pow(i / 255.0, 2.2) * 65535 + 0.5);
-            for (int i = 0; i < 65536; i++)
-                value[i] = static_cast<uint8_t>(std::pow(i / 65535.0, 1 / 2.2) * 255 + 0.5);
-        }
-    };
-    static const BlendGamma & blend_gamma()
-    {
-        static const BlendGamma g;
-        return g;
-    }
+    //Frame blending (FrameBlender). Set from the GUI thread, taken up by the
+    //render thread
     std::atomic<bool> m_blend_wanted{false};
-    bool m_blending = false;
-    bool m_blend_settling = false;
-    std::vector<uint32_t> m_blend_last;     //The value of the frame before
-    std::vector<uint32_t> m_blend_other;    //The last value that differed from it
-    std::vector<uint8_t> m_blend_age;       //Frames since the point had that one
+    FrameBlender m_blender;
 
 protected:
     int screen_x = 0;
@@ -67,53 +29,14 @@ protected:
 
     //Called by render() on the render thread with the surface, screen_x *
     //screen_y pixels of 4 bytes. True: dst has the picture to show; false:
-    //blending is off, the surface is shown as it is. The mix is taken per
-    //byte, so it does not depend on the byte order of the surface
+    //blending is off, the surface is shown as it is
     bool blend_frame(const uint8_t * src, uint8_t * dst)
     {
         if (!m_blend_wanted.load(std::memory_order_relaxed)) {
             blend_off();
             return false;
         }
-        const size_t n = static_cast<size_t>(screen_x) * screen_y;
-        const uint32_t * cur = reinterpret_cast<const uint32_t *>(src);
-        uint32_t * out = reinterpret_cast<uint32_t *>(dst);
-        //The first frame, or one of another size, has nothing to mix with
-        if (!m_blending || m_blend_last.size() != n) {
-            m_blend_last.assign(cur, cur + n);
-            m_blend_other.assign(cur, cur + n);
-            m_blend_age.assign(n, BLEND_AGE + 1);
-            m_blending = true;
-        }
-        uint32_t * last = m_blend_last.data();
-        uint32_t * other = m_blend_other.data();
-        uint8_t * age = m_blend_age.data();
-        const BlendGamma & g = blend_gamma();
-        bool mixing = false;
-        for (size_t i = 0; i < n; i++) {
-            const uint32_t b = cur[i];
-            if (b != last[i]) {
-                other[i] = last[i];
-                age[i] = 1;
-                last[i] = b;
-            } else if (age[i] <= BLEND_AGE) {
-                age[i]++;
-            }
-            if (age[i] <= BLEND_AGE) {
-                const uint32_t a = other[i];
-                uint32_t mix = 0;
-                for (int k = 0; k < 32; k += 8) {
-                    const uint32_t l = (g.light[(b >> k) & 0xFF] * (256 - BLEND_WEIGHT)
-                                        + g.light[(a >> k) & 0xFF] * BLEND_WEIGHT) >> 8;
-                    mix |= static_cast<uint32_t>(g.value[l]) << k;
-                }
-                out[i] = mix;
-                mixing = true;
-            } else {
-                out[i] = b;
-            }
-        }
-        m_blend_settling = mixing;
+        m_blender.blend(src, dst, static_cast<size_t>(screen_x) * screen_y);
         return true;
     }
 
@@ -121,11 +44,7 @@ protected:
     //before are forgotten, so turning it on again does not mix in stale ones
     void blend_off()
     {
-        m_blending = false;
-        m_blend_settling = false;
-        std::vector<uint32_t>().swap(m_blend_last);
-        std::vector<uint32_t>().swap(m_blend_other);
-        std::vector<uint8_t>().swap(m_blend_age);
+        if (m_blender.started()) m_blender.reset();
     }
 
 public:
@@ -133,7 +52,7 @@ public:
     bool frame_blending() const { return m_blend_wanted.load(std::memory_order_relaxed); }
     //The mix last shown is not the frame itself: a display that is not
     //changing any more still needs one more render() to show it clean
-    bool blend_settling() const { return m_blend_settling; }
+    bool blend_settling() const { return m_blender.settling(); }
 
     VideoRenderer() {};
     virtual ~VideoRenderer() {};

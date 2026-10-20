@@ -212,6 +212,15 @@ bool VideoRecorder::start(const VideoSettings &s, uint64_t clock_freq, std::stri
     m_process_started = false;
     m_frames_written = 0;
     if (!s.log_file.empty()) delete_file(s.log_file);
+    //The size known beforehand: ffmpeg starts here, on the caller's thread.
+    //With the first picture it started on the thread of the frame hook, the
+    //emulation thread, which the tens of milliseconds of a process start
+    //held up: the machine caught up in a burst and the window jerked
+    if (s.width != 0 && s.height != 0) {
+        m_width = s.width;
+        m_height = s.height;
+        if (!launch(error)) return false;
+    }
     m_state = RECORDING;
 
 #if USE_QT_THREADING
@@ -251,7 +260,11 @@ bool VideoRecorder::launch(std::string &error)
     //without smoothing it keeps its pixels
     const bool yuv420 = s.codec == VIDEO_CODEC_H264 || s.codec == VIDEO_CODEC_H265;
     std::vector<std::string> filters;
-    if (yuv420 && s.upscale && m_height > 0 && m_height < 480) {
+    if (s.scale_x > 0 && s.scale_y > 0) {
+        if (s.scale_x > 1 || s.scale_y > 1)
+            filters.push_back("scale=iw*" + std::to_string(s.scale_x) + ":ih*" + std::to_string(s.scale_y)
+                              + ":flags=neighbor");
+    } else if (yuv420 && s.upscale && m_height > 0 && m_height < 480) {
         const unsigned int k = (480 + m_height - 1) / m_height;
         filters.push_back("scale=iw*" + std::to_string(k) + ":ih*" + std::to_string(k) + ":flags=neighbor");
     }

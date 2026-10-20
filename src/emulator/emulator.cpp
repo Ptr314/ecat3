@@ -1677,6 +1677,17 @@ bool Emulator::start_video_recording(VideoSettings s, bool from_screen, std::str
         error = "No machine is running";
         return false;
     }
+    uint64_t num = 0, den = 0;
+    const bool rate = s.native && display->native_frame_rate(num, den);
+    //"As on screen" at the rate of the machine with the frames blended: the
+    //machine's frames, blended here as the window blends them. The window's
+    //own picture cannot be had frame by frame: it is read back when the GUI
+    //thread paints, later than the frame and not for every one, so frames
+    //came out twice or not at all and the residual flicker of the mix jerked;
+    //the read-back held the GUI thread up, and the window lost frames too.
+    //What only the window adds (its size, the CRT shader) is not in the video
+    const bool blended = from_screen && rate && renderer->frame_blending();
+    if (blended) from_screen = false;
     //The pixel aspect of the picture as the window would show it; a picture
     //taken from the window has it already
     s.sar = from_screen ? 1.0 : pixel_scale;
@@ -1684,19 +1695,53 @@ bool Emulator::start_video_recording(VideoSettings s, bool from_screen, std::str
     //The rate of the machine: frame by frame from the display when the picture
     //is the machine's own, only the exact rate when it is the window's
     s.frame_locked = false;
-    if (s.native) {
-        uint64_t num = 0, den = 0;
-        if (display->native_frame_rate(num, den)) {
-            s.fps_num = num;
-            s.fps_den = den;
-            s.frame_locked = !from_screen;
-        } else {
-            s.fps_num = 50;
-            s.fps_den = 1;
-        }
+    if (rate) {
+        s.fps_num = num;
+        s.fps_den = den;
+        s.frame_locked = !from_screen;
+    } else if (s.native) {
+        s.fps_num = 50;
+        s.fps_den = 1;
     }
     m_video_from_screen = from_screen;
     m_video_locked = s.frame_locked;
+    //Frames from the frame hook: ffmpeg is started here, on the GUI thread,
+    //with the size of the surface, not by the first frame on the emulation
+    //thread (see VideoRecorder::start())
+    if (s.frame_locked) {
+        display->lock_surface();
+        s.width = (unsigned int)std::max(0, renderer->width());
+        s.height = (unsigned int)std::max(0, renderer->height());
+        display->unlock_surface();
+    }
+    //"As on screen": the pixel aspect of the window goes into the pixels, each
+    //axis enlarged a whole number of times without smoothing, so a point of
+    //the machine is an even block in any player, which may ignore setsar or
+    //smooth it. The height at least the window's scale (auto: 480 lines,
+    //as a codec with 4:2:0 colour needs anyway); an aspect that is a fraction
+    //p/q with q up to 4 (4/3 of the БК, 2/3 of its 512 points) is exact, any
+    //other is the nearest whole width with the rest left to setsar
+    if (blended && s.height > 0) {
+        const bool yuv420 = s.codec == VIDEO_CODEC_H264 || s.codec == VIDEO_CODEC_H265;
+        const unsigned int k480 = (480 + s.height - 1) / s.height;
+        unsigned int ky = screen_scale >= 1 ? (unsigned int)std::lround(screen_scale) : k480;
+        if (yuv420) ky = std::max(ky, k480);
+        const double ps = pixel_scale > 0 ? pixel_scale : 1.0;
+        unsigned int kx = 0;
+        for (unsigned int q = 1; q <= 4 && kx == 0; q++) {
+            const long p = std::lround(ps * q);
+            if (p >= 1 && std::fabs((double)p / q - ps) <= ps * 0.001) {
+                const unsigned int m = (ky + q - 1) / q;
+                kx = (unsigned int)p * m;
+                ky = q * m;
+            }
+        }
+        if (kx == 0) kx = (unsigned int)std::max(1L, std::lround(ky * ps));
+        s.scale_x = kx;
+        s.scale_y = ky;
+        s.sar = ky * ps / kx;
+        s.upscale = false;
+    }
     if (!m_video.start(s, clock_freq, error)) return false;
 
     //Frame 0 and the first sample belong to one moment of the machine
@@ -1706,10 +1751,12 @@ bool Emulator::start_video_recording(VideoSettings s, bool from_screen, std::str
     }
     try {
         const bool locked = s.frame_locked;
-        invoke([this, locked]() {
+        invoke([this, locked, blended]() {
             std::vector<GenericSound*> outputs = sound_outputs();
             for (size_t i = 0; i < outputs.size(); i++) outputs[i]->begin_video_capture();
             m_video.set_start(clock_counter);
+            m_video_blended = blended;
+            m_video_blender.reset();
             if (locked)
                 display->set_frame_hook([this]() {
                     //The surface lock keeps the render thread from resizing
@@ -1719,8 +1766,14 @@ bool Emulator::start_video_recording(VideoSettings s, bool from_screen, std::str
                     std::vector<uint8_t> image = renderer->get_screenshot();
                     const int w = renderer->width(), h = renderer->height();
                     display->unlock_surface();
-                    if (w > 0 && h > 0 && image.size() >= (size_t)w * h * 4)
-                        m_video.push_frame(image.data(), (unsigned int)w, (unsigned int)h);
+                    if (w <= 0 || h <= 0 || image.size() < (size_t)w * h * 4) return;
+                    //Blending turned off in the window during the recording
+                    //is off in the video from that frame on
+                    if (m_video_blended && renderer->frame_blending())
+                        m_video_blender.blend(image.data(), image.data(), (size_t)w * h);
+                    else if (m_video_blender.started())
+                        m_video_blender.reset();
+                    m_video.push_frame(image.data(), (unsigned int)w, (unsigned int)h);
                 });
         });
         m_video_capturing = true;
