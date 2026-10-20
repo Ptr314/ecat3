@@ -44,18 +44,19 @@ uint8_t BK_Mono_2[2][3] = {
 
 uint32_t BK_RGBA2[2];
 
-// The colour picture on a monochrome monitor. The TV output of the БК0011М
-// (XT9) carries the one bit a dot stream, so such a monitor is wired to the
-// RGB lines of the colour output (XT11), and the brightness is their weighted
-// sum. The weights are in the proportion of a specialist's figures for pure
-// green, red and blue, FF : A8 : 80 (given as red, green, blue, but only this
-// order agrees with a picture of the Mona Lisa intro in palette 4, where cyan
-// is the brighter of magenta and cyan), scaled so that only white is full:
-// Y = (R * A8 + G * FF + B * 80) / (FF + A8 + 80)
-static const unsigned BK_GREY_R = 0xA8, BK_GREY_G = 0xFF, BK_GREY_B = 0x80;
-static const unsigned BK_GREY_SUM = BK_GREY_R + BK_GREY_G + BK_GREY_B;
+// The colour picture on a monochrome monitor: the brightness is the code of
+// the dot, 0-3, in even steps, whatever the palette. This is the picture of
+// the Mona Lisa intro in palette 4 (magenta 55, cyan AA, white FF). A sum of
+// the palette's components fits it too, but the weights of a specialist's
+// figures for pure colours made a picture too far from it.
+uint8_t BK_Grey_4[4][3] = {
+    {0x00, 0x00, 0x00},
+    {0x55, 0x55, 0x55},
+    {0xAA, 0xAA, 0xAA},
+    {0xFF, 0xFF, 0xFF}
+};
 
-uint32_t BK_GREY4[16][4];
+uint32_t BK_GREY4[4];
 
 // Raster of К1801ВП1-037, as reconstructed from the chip (github.com/1801BM1/k1801,
 // 037/rtl/va_037.v; the БК emulator by gid follows the same counters): 256
@@ -201,16 +202,9 @@ void BKDisplay::set_device_option(unsigned option_id, unsigned value_id)
 void BKDisplay::set_renderer(VideoRenderer &vr)
 {
     GenericDisplay::set_renderer(vr);
-    uint8_t grey[4][3];
-    for (unsigned i = 0; i < 16; i++) {
+    for (unsigned i = 0; i < 16; i++)
         vr.FillRGB(BK_Palettes[i], BK_RGBA4[i], 4);
-        for (unsigned c = 0; c < 4; c++) {
-            const uint8_t * rgb = BK_Palettes[i][c];
-            const unsigned y = (rgb[0] * BK_GREY_R + rgb[1] * BK_GREY_G + rgb[2] * BK_GREY_B + BK_GREY_SUM / 2) / BK_GREY_SUM;
-            grey[c][0] = grey[c][1] = grey[c][2] = static_cast<uint8_t>(y);
-        }
-        vr.FillRGB(grey, BK_GREY4[i], 4);
-    }
+    vr.FillRGB(BK_Grey_4, BK_GREY4, 4);
     vr.FillRGB(BK_Mono_2, BK_RGBA2, 2);
 }
 
@@ -469,7 +463,7 @@ void BKDisplay::render_bytes(uint32_t * out, const uint8_t * video, const unsign
         for (unsigned i = from * dots; i < to * dots; i++)
             out[i] = BK_RGBA2[0];
     } else if (!wide(mode)) {
-        const uint32_t * colors = (mode == BK_MODE_MONO) ? BK_GREY4[palette] : BK_RGBA4[palette];
+        const uint32_t * colors = (mode == BK_MODE_MONO) ? BK_GREY4 : BK_RGBA4[palette];
         for (unsigned i = from; i < to; i++) {
             const uint8_t b = video[i];
             // The lowest pair of bits is the leftmost dot
