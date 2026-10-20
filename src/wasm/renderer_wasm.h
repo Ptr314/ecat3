@@ -18,6 +18,7 @@ private:
     uint8_t* buffer;
     int line_bytes;
     int scan_lines = 0;
+    std::vector<uint8_t> blended;   //The picture put when frames are blended
     std::mutex render_mutex;
 
 public:

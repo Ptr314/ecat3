@@ -206,7 +206,8 @@ function clamp(value, lo, hi) {
 // ============================================================================
 //
 // index.html?machine=Agat-7&kbd=1&scale=250&kbdscale=120 opens the page in that
-// state, and blocks=machine,-screen says which of the folding blocks are open.
+// state, aspect=, filter= and blend=1 (or 0) set the screen the way the Screen
+// block does, and blocks=machine,-screen says which of the folding blocks are open.
 // index.html?load=https://host/game.ext.zip starts a machine that is not in
 // this build at all: the page downloads that configuration extension and runs
 // it, see startUrlMachine().
@@ -225,6 +226,12 @@ function readUrlParams() {
         return isNaN(value) ? null : value;
     };
     const kbd = q.get("kbd");
+    const flag = (name) => {
+        const value = (q.get(name) || "").trim();
+        if (/^(1|true|yes|on)$/i.test(value)) return true;
+        if (/^(0|false|no|off)$/i.test(value)) return false;
+        return null;
+    };
     return {
         machine:  q.get("machine") || null,
         // A configuration extension to download and start, by its own address
@@ -235,6 +242,8 @@ function readUrlParams() {
         kbdScale: /^auto$/i.test(q.get("kbdscale") || "") ? "auto" : number("kbdscale"),
         aspect:   aspectId(q.get("aspect") || ""),
         filter:   filterId(q.get("filter") || ""),
+        // Screen > Blend frames: null when the address says nothing
+        blend:    flag("blend"),
         blocks:   blockStates(q.get("blocks") || ""),
     };
 }
@@ -320,6 +329,7 @@ function currentPageUrl() {
     q.set("scale", screenScale);
     q.set("aspect", aspectMode());
     q.set("filter", filterMode());
+    q.set("blend", blendOn() ? "1" : "0");
     // Only a machine with a drawing has a keyboard to speak of
     if (kbdBaseWidth > 0) {
         if (!document.getElementById("kbd-panel").hidden) q.set("kbd", "1");
@@ -533,6 +543,8 @@ const I18N = {
         filterLinear:       "Linear",
         filterSharp:        "Sharp",
         filterCrt:          "Picture tube",
+        blendFrames:        "Blend frames",
+        blendFramesTitle:   "Pictures a program alternates from frame to frame are shown as a steady mix instead of a flicker: every point is the mean of its colour and the previous different one",
         mouseSpeed:         "Mouse speed",
         blockMachine:       "Machine",
         blockScreen:        "Screen",
@@ -657,6 +669,8 @@ const I18N = {
         filterLinear:       "Линейная",
         filterSharp:        "Резкая",
         filterCrt:          "Кинескоп",
+        blendFrames:        "Смешивать кадры",
+        blendFramesTitle:   "Картинки, которые программа чередует от кадра к кадру, видны ровной смесью, а не мерцанием: каждая точка показывается средним своего цвета и предыдущего, отличного от него",
         mouseSpeed:         "Скорость мыши",
         blockMachine:       "Машина",
         blockScreen:        "Экран",
@@ -2102,6 +2116,30 @@ function setupSpeed(module) {
         send();
     });
     releaseFocus(select);
+}
+
+// Screen > Blend frames: the core puts the mean of a frame and the one before
+// it, so colours a program mixes by alternating frames do not flicker. The
+// core keeps it across loads (its ini in memory). blend= of the address holds
+// until the box is changed by hand, like aspect= and filter=
+let blendFromUrl = urlParams.blend;
+
+function blendOn() {
+    if (blendFromUrl !== null) return blendFromUrl;
+    return settings.get("blendFrames", "0") === "1";
+}
+
+function setupFrameBlending(module) {
+    const box = document.getElementById("blend-frames");
+    const send = () => module.ccall("wasm_set_frame_blending", null, ["number"], [box.checked ? 1 : 0]);
+    box.checked = blendOn();
+    send();
+    box.addEventListener("change", () => {
+        blendFromUrl = null;
+        settings.set("blendFrames", box.checked ? "1" : "0");
+        send();
+    });
+    releaseFocus(box);
 }
 
 function setupDiskSettings() {
@@ -3663,6 +3701,7 @@ async function initEcat() {
 
     setupKeyRemap(module);
     setupSpeed(module);
+    setupFrameBlending(module);
 
     // The machine named in the address, otherwise the one of the previous
     // visit, starts by itself - after the first click or key press, so that

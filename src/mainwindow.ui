@@ -152,6 +152,7 @@
     <addaction name="menuScale"/>
     <addaction name="menuScreen_ratio"/>
     <addaction name="menuFiltering"/>
+    <addaction name="actionBlendFrames"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEmulation"/>
@@ -466,6 +467,17 @@
    </property>
    <property name="toolTip">
     <string>Show the recording buttons on the tool bar</string>
+   </property>
+  </action>
+  <action name="actionBlendFrames">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Blend frames</string>
+   </property>
+   <property name="toolTip">
+    <string>Pictures a program alternates from frame to frame are shown as a steady mix instead of a flicker: every point is the mean of its colour and the previous different one</string>
    </property>
   </action>
   <action name="actionRememberDisks">

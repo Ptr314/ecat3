@@ -122,6 +122,15 @@ void WasmRenderer::render()
     std::lock_guard<std::mutex> lock(render_mutex);
     if (!buffer || screen_x <= 0 || screen_y <= 0) return;
 
+    const uint8_t * picture = buffer;
+    if (frame_blending()) {
+        blended.resize(static_cast<size_t>(screen_x) * screen_y * 4);
+        if (blend_frame(buffer, blended.data())) picture = blended.data();
+    } else {
+        blend_off();
+        std::vector<uint8_t>().swap(blended);
+    }
+
     // Proxy canvas update to main thread
     // The buffer is RGBA (R at lowest byte on little-endian), matching Canvas ImageData
     MAIN_THREAD_EM_ASM({
@@ -138,7 +147,7 @@ void WasmRenderer::render()
         // is put: putImageData is what tells it a new frame has come
         canvas.ecatScanLines = $3;
         ctx.putImageData(imgData, 0, 0);
-    }, screen_x, screen_y, buffer, scan_lines);
+    }, screen_x, screen_y, picture, scan_lines);
 }
 
 // On little-endian WASM: uint32 bytes in memory are [byte0, byte1, byte2, byte3]

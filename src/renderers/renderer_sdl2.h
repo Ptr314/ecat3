@@ -33,6 +33,14 @@ private:
     SDL_Texture * sharp_target = nullptr;
     int sharp_w = 0;
     int sharp_h = 0;
+    //The picture shown when frames are blended, made with the first such frame
+    SDL_Surface * blend_surface = nullptr;
+
+    void destroy_blend_surface()
+    {
+        if (blend_surface != nullptr) SDL_FreeSurface(blend_surface);
+        blend_surface = nullptr;
+    }
 
     void destroy_sharp_target()
     {
@@ -79,6 +87,7 @@ public:
     virtual ~SDL2Renderer() override
     {
         destroy_sharp_target();
+        destroy_blend_surface();
         if (black_box != nullptr) SDL_DestroyTexture(black_box);
         if (device_surface != nullptr) SDL_FreeSurface(device_surface);
         if (SDLRendererRef != nullptr) SDL_DestroyRenderer(SDLRendererRef);
@@ -111,6 +120,7 @@ public:
     void stop() override
     {
         destroy_sharp_target();
+        destroy_blend_surface();
         if (black_box != nullptr) SDL_DestroyTexture(black_box);
         if (device_surface != nullptr) SDL_FreeSurface(device_surface);
         if (SDLRendererRef != nullptr) SDL_DestroyRenderer(SDLRendererRef);
@@ -202,12 +212,24 @@ public:
         const std::string quality = sharp ? std::string("0") : std::to_string(filtering);
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, quality.c_str());
 
-        SDLTexture = SDL_CreateTextureFromSurface(SDLRendererRef, device_surface);
+        SDL_Surface * frame = device_surface;
+        if (blend_surface != nullptr && (!frame_blending()
+                                         || blend_surface->w != screen_x || blend_surface->h != screen_y))
+            destroy_blend_surface();
+        if (blend_surface == nullptr && frame_blending())
+            blend_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_x, screen_y, 32, SDL_PIXELFORMAT_RGBA8888);
+        if (blend_surface != nullptr
+            && blend_frame(static_cast<const uint8_t *>(device_surface->pixels),
+                           static_cast<uint8_t *>(blend_surface->pixels)))
+            frame = blend_surface;
+        if (blend_surface == nullptr) blend_off();
+
+        SDLTexture = SDL_CreateTextureFromSurface(SDLRendererRef, frame);
         if (SDLTexture == nullptr) {
             // Renderer may be in a bad state (e.g. D3D device lost), try recovery
             recreate_renderer();
             if (SDLRendererRef == nullptr) return;
-            SDLTexture = SDL_CreateTextureFromSurface(SDLRendererRef, device_surface);
+            SDLTexture = SDL_CreateTextureFromSurface(SDLRendererRef, frame);
             if (SDLTexture == nullptr) return;
         }
 

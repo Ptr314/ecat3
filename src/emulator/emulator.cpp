@@ -1517,6 +1517,7 @@ void Emulator::init_video(void *p)
     screen_scale = video_setting("scale", 2);
     screen_ratio = static_cast<int>(video_setting("ratio", SCREEN_RATIO_43));
     screen_filtering = static_cast<int>(video_setting("filtering", SCREEN_FILTERING_NONE));
+    screen_blending = video_setting("blend_frames", 0) != 0;
 
     if (screen_ratio == SCREEN_RATIO_SQ)
         pixel_scale = 1;
@@ -1535,6 +1536,7 @@ void Emulator::init_video(void *p)
     d->set_renderer(*renderer);
     d->unlock_surface();
     set_filtering(screen_filtering);
+    renderer->set_frame_blending(screen_blending);
 }
 
 void Emulator::stop_video()
@@ -1578,7 +1580,9 @@ void Emulator::render_screen()
         display->was_updated = false;
 #else
         bool rendered = false;
-        if (display->was_updated)
+        //A blended picture that still shows the frame before is drawn once
+        //more, or a display that stopped changing would keep it half there
+        if (display->was_updated || renderer->blend_settling())
         {
             //Cleared before the frame goes out, not after: the emulation thread
             //sets it whenever it changes the picture, and clearing afterwards
@@ -2065,6 +2069,13 @@ void Emulator::set_filtering(int filtering)
 
 //     write_setup("Video", "filtering", std::to_string(filtering));
 // #endif
+}
+
+void Emulator::set_frame_blending(bool on)
+{
+    screen_blending = on;
+    renderer->set_frame_blending(on);
+    write_setup("Video", "blend_frames", on ? "1" : "0");
 }
 
 int Emulator::get_scale()

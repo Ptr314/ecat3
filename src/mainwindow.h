@@ -118,6 +118,7 @@ private slots:
     void on_actionRecStop_triggered();
     void on_actionRecPanel_toggled(bool checked);
     void on_actionRememberDisks_toggled(bool checked);
+    void on_actionBlendFrames_toggled(bool checked);
     void on_actionForgetDisks_triggered();
 
     void rec_tick();

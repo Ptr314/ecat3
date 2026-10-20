@@ -40,7 +40,7 @@
 <context>
     <name>AddressableDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+1067"/>
+        <location filename="../emulator/core.cpp" line="+1084"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -172,7 +172,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1385"/>
+        <location filename="../emulator/core.cpp" line="-1386"/>
         <source>Incorrect interface definition for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -200,7 +200,7 @@
     </message>
     <message>
         <location line="+9"/>
-        <location line="+61"/>
+        <location line="+62"/>
         <location line="+4"/>
         <location filename="../emulator/devices/specific/smk512.cpp" line="+71"/>
         <location filename="../emulator/devices/specific/a16m.cpp" line="+71"/>
@@ -209,7 +209,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-46"/>
+        <location line="-47"/>
         <location filename="../emulator/devices/common/indirect_memory.cpp" line="+62"/>
         <location filename="../emulator/devices/common/wait_map.cpp" line="+23"/>
         <source>Not a device that adds wait states</source>
@@ -221,7 +221,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+315"/>
+        <location line="+316"/>
         <source>Command &apos;option&apos; expects an option id and a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -559,7 +559,7 @@
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1309"/>
+        <location filename="../emulator/core.cpp" line="-1326"/>
         <source>Too many devices</source>
         <translation type="unfinished"></translation>
     </message>
@@ -582,8 +582,8 @@
         <location line="+11"/>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
         <location line="+238"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="+156"/>
-        <location line="+278"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="+179"/>
+        <location line="+308"/>
         <source>Video output</source>
         <translation type="unfinished"></translation>
     </message>
@@ -627,8 +627,8 @@
     <message>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="-236"/>
         <location line="+239"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-276"/>
-        <location line="+279"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-306"/>
+        <location line="+309"/>
         <source>RGB</source>
         <translation type="unfinished"></translation>
     </message>
@@ -641,8 +641,8 @@
     <message>
         <location line="-238"/>
         <location line="+239"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-278"/>
-        <location line="+279"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-307"/>
+        <location line="+309"/>
         <source>Mono</source>
         <translation type="unfinished"></translation>
     </message>
@@ -741,6 +741,12 @@
     <message>
         <location line="-1"/>
         <source>Mono (RIGHT output)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-310"/>
+        <location line="+309"/>
+        <source>B/W</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1816,14 +1822,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+64"/>
         <source>Select a machine...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1606"/>
+        <location filename="../mainwindow.cpp" line="+1607"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1900,6 +1906,16 @@
     </message>
     <message>
         <location line="+112"/>
+        <source>Blend frames</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Pictures a program alternates from frame to frame are shown as a steady mix instead of a flicker: every point is the mean of its colour and the previous different one</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Remember disk choice</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1919,7 +1935,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-275"/>
+        <location line="-286"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2161,8 +2177,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-747"/>
-        <location line="+591"/>
+        <location line="-748"/>
+        <location line="+592"/>
         <location line="+1"/>
         <location line="+820"/>
         <source>Turbo</source>
@@ -2325,7 +2341,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+261"/>
+        <location line="+266"/>
         <source>Remembered disks</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2340,7 +2356,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-142"/>
+        <location filename="../mainwindow.ui" line="-143"/>
         <source>Action recording</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2350,7 +2366,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+261"/>
+        <location line="+262"/>
         <source>Open recording...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2372,7 +2388,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-386"/>
+        <location filename="../mainwindow.cpp" line="-391"/>
         <location line="+243"/>
         <source>Start recording</source>
         <translation type="unfinished"></translation>
@@ -2547,7 +2563,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+972"/>
+        <location filename="../emulator/core.cpp" line="+989"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2837,7 +2853,7 @@
 <context>
     <name>RasterDisplay</name>
     <message>
-        <location filename="../emulator/devices/common/raster_display.cpp" line="+73"/>
+        <location filename="../emulator/devices/common/raster_display.cpp" line="+75"/>
         <source>Unknown video standard</source>
         <translation type="unfinished"></translation>
     </message>

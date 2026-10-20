@@ -5,18 +5,110 @@
 
 #pragma once
 
+#include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
 
 class VideoRenderer
 {
+private:
+    //Frame blending: a program that alternates two pictures to mix their
+    //colours (the 4k intro of the БК) is shown as the mix, steady instead of
+    //flickering: the host's screen holds each frame whole, and 50 frames on a
+    //60 Hz one break the alternation. Every point is shown as the mean of its
+    //value and the last different value it had, while that one is no older
+    //than BLEND_AGE frames: so a picture changed every frame (A B A B) and
+    //one changed every second frame (A A B B: Lion on the БК0010, whose copy
+    //of the picture takes longer than a frame) both come out steady, and a
+    //picture that changed once keeps the old one for two frames only. The
+    //mean is not a full one: the other value weighs BLEND_WEIGHT / 256, 90%
+    //of a half, so a little of the alternation stays, as on a real monitor.
+    //Set from the GUI thread, taken up by the render thread
+    static const uint8_t BLEND_AGE = 2;
+    static const uint32_t BLEND_WEIGHT = 121;  //0.5 * 0.9 * 256
+    std::atomic<bool> m_blend_wanted{false};
+    bool m_blending = false;
+    bool m_blend_settling = false;
+    std::vector<uint32_t> m_blend_last;     //The value of the frame before
+    std::vector<uint32_t> m_blend_other;    //The last value that differed from it
+    std::vector<uint8_t> m_blend_age;       //Frames since the point had that one
+
 protected:
     int screen_x = 0;
     int screen_y = 0;
     double screen_ss = 1;
     double screen_ps = 1;
+
+    //Called by render() on the render thread with the surface, screen_x *
+    //screen_y pixels of 4 bytes. True: dst has the picture to show; false:
+    //blending is off, the surface is shown as it is. The mix is taken per
+    //byte, so it does not depend on the byte order of the surface
+    bool blend_frame(const uint8_t * src, uint8_t * dst)
+    {
+        if (!m_blend_wanted.load(std::memory_order_relaxed)) {
+            blend_off();
+            return false;
+        }
+        const size_t n = static_cast<size_t>(screen_x) * screen_y;
+        const uint32_t * cur = reinterpret_cast<const uint32_t *>(src);
+        uint32_t * out = reinterpret_cast<uint32_t *>(dst);
+        //The first frame, or one of another size, has nothing to mix with
+        if (!m_blending || m_blend_last.size() != n) {
+            m_blend_last.assign(cur, cur + n);
+            m_blend_other.assign(cur, cur + n);
+            m_blend_age.assign(n, BLEND_AGE + 1);
+            m_blending = true;
+        }
+        uint32_t * last = m_blend_last.data();
+        uint32_t * other = m_blend_other.data();
+        uint8_t * age = m_blend_age.data();
+        bool mixing = false;
+        for (size_t i = 0; i < n; i++) {
+            const uint32_t b = cur[i];
+            if (b != last[i]) {
+                other[i] = last[i];
+                age[i] = 1;
+                last[i] = b;
+            } else if (age[i] <= BLEND_AGE) {
+                age[i]++;
+            }
+            if (age[i] <= BLEND_AGE) {
+                //Two bytes at a time, in 16-bit lanes: 255 * 256 still fits
+                const uint32_t a = other[i];
+                const uint32_t rb = ((b & 0x00FF00FFu) * (256 - BLEND_WEIGHT)
+                                     + (a & 0x00FF00FFu) * BLEND_WEIGHT) >> 8;
+                const uint32_t ga = (((b >> 8) & 0x00FF00FFu) * (256 - BLEND_WEIGHT)
+                                     + ((a >> 8) & 0x00FF00FFu) * BLEND_WEIGHT) >> 8;
+                out[i] = (rb & 0x00FF00FFu) | ((ga & 0x00FF00FFu) << 8);
+                mixing = true;
+            } else {
+                out[i] = b;
+            }
+        }
+        m_blend_settling = mixing;
+        return true;
+    }
+
+    //For a render() that skips blend_frame() while blending is off: the frames
+    //before are forgotten, so turning it on again does not mix in stale ones
+    void blend_off()
+    {
+        m_blending = false;
+        m_blend_settling = false;
+        std::vector<uint32_t>().swap(m_blend_last);
+        std::vector<uint32_t>().swap(m_blend_other);
+        std::vector<uint8_t>().swap(m_blend_age);
+    }
+
 public:
+    void set_frame_blending(bool on) { m_blend_wanted.store(on, std::memory_order_relaxed); }
+    bool frame_blending() const { return m_blend_wanted.load(std::memory_order_relaxed); }
+    //The mix last shown is not the frame itself: a display that is not
+    //changing any more still needs one more render() to show it clean
+    bool blend_settling() const { return m_blend_settling; }
+
     VideoRenderer() {};
     virtual ~VideoRenderer() {};
     virtual std::string get_name() = 0;

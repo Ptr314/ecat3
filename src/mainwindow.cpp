@@ -386,6 +386,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, i
     //The recording block of the tool bar can be hidden from the Display menu
     ui->actionRecPanel->setChecked(e->read_setup("Video", "recording_panel", "1") != "0");
     ui->actionRememberDisks->setChecked(e->read_setup("Core", "remember_disks", "0") == "1");
+    ui->actionBlendFrames->setChecked(e->read_setup("Video", "blend_frames", "0") == "1");
 
     //Emulation > Speed and Turbo, before the first machine: its title shows
     //the speed
@@ -3037,6 +3038,11 @@ void MainWindow::on_actionRecPanel_toggled(bool checked)
 void MainWindow::on_actionRememberDisks_toggled(bool checked)
 {
     if (e != nullptr) e->write_setup("Core", "remember_disks", checked?"1":"0");
+}
+
+void MainWindow::on_actionBlendFrames_toggled(bool checked)
+{
+    if (e != nullptr) e->set_frame_blending(checked);
 }
 
 void MainWindow::on_actionForgetDisks_triggered()

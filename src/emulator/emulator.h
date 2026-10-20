@@ -121,6 +121,7 @@ private:
     double pixel_scale;
     int screen_ratio = SCREEN_RATIO_43;
     int screen_filtering = 0;
+    bool screen_blending = false;
 
     void register_devices();
     //The two halves of load_config(): what is there goes, the new one is built
@@ -340,10 +341,14 @@ public:
     void set_scale(int scale);
     void set_ratio(int ratio);
     void set_filtering(int filtering);
+    //The window shows the mean of each frame and the one before it
+    //(VideoRenderer::blend_frame()); screenshots and video keep the frames
+    void set_frame_blending(bool on);
 
     int get_scale();
     int get_ratio();
     int get_filtering();
+    bool get_frame_blending() const { return screen_blending; }
 
     //Resolution of the machine's screen, 0 until the first frame. Written by
     //the render thread; a stale value only makes one mouse movement off

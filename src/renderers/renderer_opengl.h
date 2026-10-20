@@ -88,7 +88,12 @@ public:
 
     void render() override
     {
-        widget->updateTexture(*surface);
+        //A new image every frame: the widget keeps the one it is given, shared
+        QImage blended(screen_x, screen_y, QImage::Format_RGB32);
+        if (blend_frame(surface->constBits(), blended.bits()))
+            widget->updateTexture(blended);
+        else
+            widget->updateTexture(*surface);
     }
 
     uint32_t MapRGB(uint8_t R, uint8_t G, uint8_t B) override

@@ -67,6 +67,7 @@ private:
     QImage * surface = nullptr;
     QtRenderWidget * widget = nullptr;
     QImage current_display;
+    QImage blended;             //The picture shown when frames are blended
     int render_w;
     int render_h;
     int filtering;
@@ -130,6 +131,7 @@ public:
         screen_ps = ps;
         surface = new QImage(sx, sy, QImage::Format_RGB32);
         surface->fill(Qt::black);
+        blended = QImage(sx, sy, QImage::Format_RGB32);
     }
 
     void render() override
@@ -166,7 +168,9 @@ public:
         }
 
         // QImage copy = surface->copy();
-        current_display = surface->scaled(
+        const QImage * picture = surface;
+        if (blend_frame(surface->constBits(), blended.bits())) picture = &blended;
+        current_display = picture->scaled(
             render_w, render_h,
             Qt::IgnoreAspectRatio,
             (filtering==0)?Qt::FastTransformation:Qt::SmoothTransformation
