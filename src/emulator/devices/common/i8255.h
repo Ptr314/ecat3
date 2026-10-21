@@ -34,6 +34,15 @@ public:
     virtual unsigned int get_value(unsigned int address) override;
     virtual void set_value(unsigned int address, unsigned int value, bool force=false) override;
     virtual void reset(bool cold) override;
+    //Word cycles come only from a 16-bit processor, and on its bus (the УК-НЦ
+    //ПП) the chip sits on the low byte and decodes A0 itself: a word touches
+    //the one register its address selects, even or odd, the high byte is not
+    //driven (reads 0) and not taken. RBTRON.SAV tests the printer with
+    //BIT #2,@#177101 and drops the strobe with BIC #200,@#177102; as two
+    //bytes, the second would write the control word back and clear the ports
+    bool byte_wide() const override { return true; }
+    unsigned int get_value_word(unsigned int address) override { return get_value(address) & 0xFF; }
+    void set_value_word(unsigned int address, unsigned int value, bool force=false) override { set_value(address, value & 0xFF, force); }
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

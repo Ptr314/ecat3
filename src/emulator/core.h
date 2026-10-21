@@ -502,6 +502,11 @@ public:
     virtual unsigned int get_value_word(unsigned int address);
     virtual void set_value_word(unsigned int address, unsigned int value, bool force=false);
 
+    //A device on the low byte of a 1801 bus that decodes A0 itself (an 8-bit
+    //Intel peripheral): a word cycle at its odd address reaches the register
+    //at that address, see MemoryMapper::read_word_odd()
+    virtual bool byte_wide() const { return false; }
+
     //Asked by the mapper for a range marked "routed = 1", before the access and
     //with the same address the device would get: does this device answer here
     //(ROUTE_ANSWER), leave the address to the ranges after it (ROUTE_PASS),
@@ -999,6 +1004,10 @@ public:
     // whole word is handed to the mapped device, so 16-bit registers stay atomic.
     unsigned int read_word(unsigned int address);
     void write_word(unsigned int address, unsigned int value);
+    // A word cycle of a 1801 processor at an odd address: the word at the even
+    // address, unless a byte-wide device answers there (see the definition)
+    unsigned int read_word_odd(unsigned int address);
+    void write_word_odd(unsigned int address, unsigned int value);
 
     AddressableDevice * map_memory(
         unsigned int config,

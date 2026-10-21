@@ -1,0 +1,52 @@
+# БК0011М: принтер на разъёме УП (порт 0177714) и драйвер принтера ПЗУ БОС
+# (подпрограмма 156752, байт в R0): ждёт готовности в разряде 14 входа,
+# кладёт байт в разряды 0-7 выхода, поднимает разряд 14 выхода (строб) и ждёт,
+# пока принтер снимет готовность. Без принтера разряд 14 входа - 0, и драйвер
+# до вывода не доходит.
+# @timeout 60
+MACHINE "bk/BK-0011M.cfg"
+LOGDEFS _16,_8
+WAIT _300
+PRINT "=== Разъём пуст: принтер отключён, готовности нет ==="
+LOG up.device
+LOG printer.plugged
+LOG port-ppi.value
+COMMAND up.plug(printer)
+PRINT "=== Принтер на разъёме: разряд 14 входа - готовность ==="
+LOG up.device
+LOG port-ppi.value
+# R4 - сколько раз драйвер ждёт готовности по 65536 витков SOB, 0 - без
+# предела. Программа: MOV #101,R0; JSR PC,@#156752; MOV #102,R0; JSR PC,@#156752;
+# MOV #15,R0; JSR PC,@#156752; BR .
+COMMAND cpu.stop()
+COMMAND ram0.set16(1000, 012700, 000101, 004737, 156752)
+COMMAND ram0.set16(1010, 012700, 000102, 004737, 156752)
+COMMAND ram0.set16(1020, 012700, 000015, 004737, 156752)
+COMMAND ram0.set16(1030, 000777)
+COMMAND cpu.setreg(SP, 1000)
+COMMAND cpu.setreg(R4, 0)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+WAIT _50
+PRINT "=== Принято три байта, программа дошла до конца ==="
+LOG printer.printed
+LOG printer.output
+LOG printer.text
+LOG port-ppi-out.value
+LOG cpu.pc
+PRINT "=== Без принтера: одна попытка (R4 = 1) - выход по таймауту, C = 1 ==="
+COMMAND up.plug(none)
+COMMAND cpu.stop()
+COMMAND ram0.set16(1100, 012700, 000103, 004737, 156752)
+COMMAND ram0.set16(1110, 000777)
+COMMAND cpu.setreg(SP, 1000)
+COMMAND cpu.setreg(R4, 1)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 1100)
+COMMAND cpu.run()
+WAIT _1000
+LOG cpu.pc
+LOG cpu.registers
+LOG printer.printed
+EXIT

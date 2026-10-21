@@ -1000,7 +1000,7 @@ void MainWindow::CreateDevicesMenu()
                             [this, i]{onDeviceMenuCalled(i);}
                       );
         a->setEnabled( DWM->get_create_func(e->dm->get_device(i)->device_type) != nullptr
-                       || dynamic_cast<DL11*>(e->dm->get_device(i)->device.get()) != nullptr );
+                       || dynamic_cast<ByteTap*>(e->dm->get_device(i)->device.get()) != nullptr );
     };
 
     ui->actionSerial->setVisible(SerialWindow::machine_has_ports(e));
@@ -1264,9 +1264,9 @@ void MainWindow::update_precise_action()
 
 void MainWindow::onDeviceMenuCalled(unsigned int i)
 {
-    //Порты DL11 живут в одном окне, вкладкой на порт
+    //Порты с отводом байтов (DL11, принтеры) живут в одном окне, вкладкой на порт
     ComputerDevice * dev = e->dm->get_device(i)->device.get();
-    if (dynamic_cast<DL11*>(dev) != nullptr) {
+    if (dynamic_cast<ByteTap*>(dev) != nullptr) {
         SerialWindow * w = open_serial_window();
         if (w != nullptr) w->select_device(dev);
         return;

@@ -340,7 +340,7 @@
         <translation>Образ диска</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="+365"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="+348"/>
         <source>Serial port of the computer</source>
         <translation>Последовательный порт компьютера</translation>
     </message>
@@ -476,12 +476,12 @@
 <context>
     <name>DL11</name>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="-307"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="-290"/>
         <source>Incorrect baud rate</source>
         <translation>Некорректная скорость обмена</translation>
     </message>
     <message>
-        <location line="+464"/>
+        <location line="+426"/>
         <source>Command &apos;connect&apos; expects a port name</source>
         <translation>Команда &apos;connect&apos; ожидает имя порта</translation>
     </message>
@@ -877,6 +877,11 @@
         <source>Mono (RIGHT output)</source>
         <translation>Моно (выход RIGHT)</translation>
     </message>
+    <message>
+        <location filename="../emulator/devices/common/printer.cpp" line="+68"/>
+        <source>Printer</source>
+        <translation>Принтер</translation>
+    </message>
 </context>
 <context>
     <name>DisAsm</name>
@@ -1148,7 +1153,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+255"/>
+        <location filename="../emulator/emulator.cpp" line="+257"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -2266,12 +2271,11 @@
         <translation>Экранная клавиатура</translation>
     </message>
     <message>
-        <location line="+15"/>
         <source>Serial ports...</source>
-        <translation>Последовательные порты...</translation>
+        <translation type="vanished">Последовательные порты...</translation>
     </message>
     <message>
-        <location line="+112"/>
+        <location line="+127"/>
         <source>Blend frames</source>
         <translation>Смешивать кадры</translation>
     </message>
@@ -2751,7 +2755,12 @@
         <translation>Запись действий</translation>
     </message>
     <message>
-        <location line="+302"/>
+        <location line="+287"/>
+        <source>I/O ports...</source>
+        <translation>Порты ввода-вывода...</translation>
+    </message>
+    <message>
+        <location line="+15"/>
         <source>Open recording...</source>
         <translation>Открыть запись...</translation>
     </message>
@@ -3243,6 +3252,14 @@
     </message>
 </context>
 <context>
+    <name>Printer</name>
+    <message>
+        <location filename="../emulator/devices/common/printer.cpp" line="-30"/>
+        <source>Incorrect value of a parameter</source>
+        <translation>Неверное значение параметра</translation>
+    </message>
+</context>
+<context>
     <name>QMessageBox</name>
     <message>
         <source>Error</source>
@@ -3447,7 +3464,7 @@
 <context>
     <name>SerialWindow</name>
     <message>
-        <location filename="../dialogs/serialwindow.cpp" line="+37"/>
+        <location filename="../dialogs/serialwindow.cpp" line="+39"/>
         <source>KOI-7 N0/N1 (SO/SI)</source>
         <translation>КОИ-7 Н0/Н1 (SO/SI)</translation>
     </message>
@@ -3502,14 +3519,18 @@
         <translation>Apple IIc</translation>
     </message>
     <message>
-        <location line="+26"/>
-        <location line="+187"/>
-        <location line="+52"/>
         <source>Serial ports</source>
-        <translation>Последовательные порты</translation>
+        <translation type="vanished">Последовательные порты</translation>
     </message>
     <message>
-        <location line="-230"/>
+        <location line="+27"/>
+        <location line="+208"/>
+        <location line="+54"/>
+        <source>I/O ports</source>
+        <translation>Порты ввода-вывода</translation>
+    </message>
+    <message>
+        <location line="-253"/>
         <source>Choose folder...</source>
         <translation>Выбрать папку...</translation>
     </message>
@@ -3529,7 +3550,7 @@
         <translation>Байты</translation>
     </message>
     <message>
-        <location line="+48"/>
+        <location line="+49"/>
         <source>Logging</source>
         <translation>Логирование</translation>
     </message>
@@ -3569,22 +3590,22 @@
         <translation>Машины (%1)</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+12"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location line="+99"/>
+        <location line="+115"/>
         <source>Cannot create file %1</source>
         <translation>Не удалось создать файл %1</translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+54"/>
         <source>Logging to a file is in progress (%1). Close the window and stop it?</source>
         <translation>Идет запись в файл (%1). Закрыть окно и остановить запись?</translation>
     </message>
     <message>
-        <location line="+90"/>
+        <location line="+85"/>
         <source>Folder for logs</source>
         <translation>Папка для логов</translation>
     </message>

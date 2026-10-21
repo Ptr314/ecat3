@@ -378,7 +378,7 @@
      <normaloff>:/icons/log</normaloff>:/icons/log</iconset>
    </property>
    <property name="text">
-    <string>Serial ports...</string>
+    <string>I/O ports...</string>
    </property>
    <property name="visible">
     <bool>false</bool>

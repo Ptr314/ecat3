@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: Serial ports window (output of the DL11 lines), header
+// Description: I/O ports window (output of serial lines and printers), header
 
 #pragma once
 
@@ -19,11 +19,13 @@
 
 #include "dialogs/genericdbgwnd.h"
 #include "emulator/emulator.h"
-#include "emulator/devices/common/dl11.h"
+#include "emulator/devices/common/byte_tap.h"
 
-//Вывод программы в порты DL11: вкладка на порт, в ней поле с выводом и запись
-//потока в файл как есть. Байты снимает сам DL11 (set_tap/take_tap), окно
-//забирает их по таймеру. Логирование живет, пока открыто окно
+//Вывод программы в порты: вкладка на каждое устройство с отводом байтов
+//(ByteTap - последовательные линии DL11 и принтеры), в ней поле с выводом и
+//запись потока в файл как есть. Байты снимает само устройство
+//(set_tap/take_tap), окно забирает их по таймеру. Логирование живет, пока
+//открыто окно
 class SerialWindow : public GenericDbgWnd
 {
     Q_OBJECT
@@ -32,7 +34,7 @@ public:
     SerialWindow(QWidget *parent, Emulator * e);
     ~SerialWindow();
 
-    //Есть ли у машины порты DL11 - для пункта меню
+    //Есть ли у машины такие порты - для пункта меню
     static bool machine_has_ports(Emulator * e);
 
     void select_device(ComputerDevice * d);
@@ -50,7 +52,8 @@ private:
     enum Mode { MODE_ORIGINAL, MODE_RECODED, MODE_BYTES, MODE_COUNT };
 
     struct Port {
-        DL11 * dev = nullptr;
+        ComputerDevice * dev = nullptr;
+        ByteTap * tap = nullptr;
         QString name;
         QAction * log_action = nullptr;
         QAction * file_action = nullptr;

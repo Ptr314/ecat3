@@ -141,11 +141,8 @@ void DL11::transmit_done()
 {
     const uint8_t b = (uint8_t)(m_xbuf & 0xFF);
     m_tx_busy = false;
-    m_output[m_sent++ & (OUTPUT_SIZE - 1)] = b;
-    if (m_tap_on) {
-        compat_lock_guard g(m_tap_mutex);
-        if (m_tap.size() < TAP_LIMIT) m_tap.push_back(b);
-    }
+    m_sent++;
+    put(b);
 
     // Петля (разряд 2) и заглушка на разъёме возвращают байт в свой приёмник
     if ((m_xcsr & XCSR_MAINT) || m_plug)
@@ -158,20 +155,6 @@ void DL11::transmit_done()
     m_xcsr |= CSR_DONE;
     if (m_xcsr & CSR_IE) m_tx_pending = true;
     update_irq();
-}
-
-void DL11::set_tap(bool on)
-{
-    compat_lock_guard g(m_tap_mutex);
-    m_tap_on = on;
-    if (!on) m_tap.clear();
-}
-
-void DL11::take_tap(std::vector<uint8_t> &out)
-{
-    out.clear();
-    compat_lock_guard g(m_tap_mutex);
-    out.swap(m_tap);
 }
 
 void DL11::clock(unsigned int counter)
@@ -400,6 +383,9 @@ void DL11::save_state(StateWriter &w)
     //it on, what it sends comes back - so a snapshot taken with it plugged
     //has to open with it plugged
     w.b("plug", m_plug);
+    //What is offered on the line, which the restored line itself does not
+    //say: without it the acknowledge would never withdraw a pending request
+    w.u("offered", m_irq.offered());
     //What a script has pushed in and the line has not handed over yet
     if (!m_rx_queue.empty())
     {
@@ -428,6 +414,9 @@ emulator::Result DL11::load_state(const StateReader &r)
     r.u("sent", m_sent);
     r.u("received", m_received);
     r.b("plug", m_plug);
+    unsigned offered = 0;
+    r.u("offered", offered);
+    m_irq.set_offered(offered);
     //The queue is as long as the script made it - a sendfile can be any
     //length - so its length is stated beside it, and only that much is read
     m_rx_queue.clear();
@@ -457,8 +446,7 @@ std::vector<DeviceFieldInfo> DL11::get_device_fields()
     r.push_back({"vector",    "Вектор, предложенный процессору, или 0",                false});
     r.push_back({"station",   "Номер станции СА, -1 - его нет",                        false});
     r.push_back({"plug",      "1, когда на разъёме заглушка: выход замкнут на вход",   false});
-    r.push_back({"output",    "Последние переданные байты, старые первыми; output(n) - последние n", true});
-    r.push_back({"text",      "Те же байты текстом: ВК пропускается, прочие управляющие - точкой", true});
+    add_output_fields(r);
     return r;
 }
 
@@ -468,27 +456,7 @@ bool DL11::get_field(const std::string &field, unsigned int from, unsigned int t
         out.text = m_port_name;
         return true;
     }
-    if (field == "text") {
-        unsigned int n = (from == 0 && to == 0)? OUTPUT_SIZE : ((from > OUTPUT_SIZE)? OUTPUT_SIZE : from);
-        if (n > m_sent) n = m_sent;
-        out.numeric = false;
-        out.text.clear();
-        for (unsigned int i = n; i > 0; i--) {
-            const uint8_t c = m_output[(m_sent - i) & (OUTPUT_SIZE - 1)] & 0177;
-            if (c == 015) continue;
-            out.text += (c == 012 || (c >= 040 && c < 0177)) ? (char)c : '.';
-        }
-        return true;
-    }
-    if (field == "output") {
-        unsigned int n = (from == 0 && to == 0)? OUTPUT_SIZE : ((from > OUTPUT_SIZE)? OUTPUT_SIZE : from);
-        if (n > m_sent) n = m_sent;
-        out.numeric = true;
-        out.width = 8;
-        for (unsigned int i = n; i > 0; i--)
-            out.values.push_back(m_output[(m_sent - i) & (OUTPUT_SIZE - 1)]);
-        return true;
-    }
+    if (get_output_field(field, from, to, out)) return true;
 
     out.numeric = true;
     out.width = 16;

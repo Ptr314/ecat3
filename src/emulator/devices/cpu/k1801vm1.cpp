@@ -29,12 +29,15 @@ K1801VM1Core::K1801VM1Core(k1801vm1 * emulator_device, int family_type):
 // An address nobody answers ends the cycle with a timeout on the bus, which
 // aborts the current instruction and traps through vector 4. The firmware of
 // the БК relies on it to find out which ROM blocks are actually installed.
+// A word at an odd address reaches the bus as it is (see
+// pdp11core::read_word_checked()); the cycle is timed as the one at the even
+// address
 uint16_t K1801VM1Core::read_word(uint32_t address)
 {
     uint16_t v = (uint16_t)emulator_device->read_mem_word(address);
     if (emulator_device->bus_timeout()) m_abort = true;
     if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, false, m_stream, emulator_device->last_reply(), emulator_device->last_wait());
-    else bus_cycle(address, false);
+    else bus_cycle(address & ~1u, false);
     return v;
 }
 
@@ -43,7 +46,7 @@ void K1801VM1Core::write_word(uint32_t address, uint16_t value)
     emulator_device->write_mem_word(address, value);
     if (emulator_device->bus_timeout()) m_abort = true;
     if (Vm1BusTiming * t = emulator_device->timing()) t->record(address & 0xFFFE, true, false, emulator_device->last_reply(), emulator_device->last_wait());
-    else bus_cycle(address, true);
+    else bus_cycle(address & ~1u, true);
 }
 
 uint8_t K1801VM1Core::read_byte(uint32_t address)
@@ -346,15 +349,16 @@ void k1801vm1::write_mem(unsigned int address, unsigned int data)
 
 unsigned int k1801vm1::read_mem_word(unsigned int address)
 {
-    unsigned int v = mm->read_word(address) & 0xFFFF;
-    note_timeout(address);
+    unsigned int v = ((address & 1) ? mm->read_word_odd(address) : mm->read_word(address)) & 0xFFFF;
+    note_timeout(address & ~1u);
     return v;
 }
 
 void k1801vm1::write_mem_word(unsigned int address, unsigned int data)
 {
-    mm->write_word(address, data & 0xFFFF);
-    note_timeout(address);
+    if (address & 1) mm->write_word_odd(address, data & 0xFFFF);
+    else mm->write_word(address, data & 0xFFFF);
+    note_timeout(address & ~1u);
 }
 
 bool k1801vm1::bus_timeout()

@@ -1,0 +1,58 @@
+# ДВК-4: параллельный порт платы МС1201.04 (КР1801ВП1-033, D44) как LP11 -
+# 177514/177516, вектор 200 - и принтер на нём. Запись байта выдаёт строб,
+# принтер его берёт и занят 1 мс: TR (разряд 7 РСП) пропадает и возвращается,
+# возврат при разрешённом прерывании - прерывание по вектору 200. Без принтера
+# TR не возвращается, а байт, записанный без принтера, принтер берёт, когда
+# его подключат.
+# @timeout 60
+MACHINE "../../tests/files/dvk4-ksm.ext"
+LOGDEFS _16,_8
+WAIT _12000
+# Программа: на 1000 - MTPS #0 и ожидание на месте; обработчик вектора 200
+# на 2000 - INC @#3000, RTI
+COMMAND ram.set16(1000, 106427, 0, 000777)
+COMMAND ram.set16(2000, 005237, 3000, 000002)
+COMMAND ram.set16(3000, 0)
+COMMAND ram.set16(200, 2000, 340)
+TYPE "1000G"
+WAIT _100
+PRINT "=== После сброса: принтер готов, TR = 1 ==="
+LOG lp.csr
+LOG lpt.ready
+PRINT "=== IET при готовности - прерывание сразу ==="
+COMMAND lp.set16(0, 100)
+WAIT _1
+LOG cpu.trap_vector
+LOG ram.value16(3000,3000)
+PRINT "=== Байт 101: строб взят, принтер занят, TR = 0 ==="
+COMMAND lp.set16(2, 101)
+LOG lp.csr
+LOG lp.strobe
+LOG lpt.busy
+PRINT "=== Через 1 мс принтер готов: TR = 1 и второе прерывание ==="
+WAIT _2
+LOG lp.csr
+LOG ram.value16(3000,3000)
+COMMAND lp.set16(2, 102)
+WAIT _2
+LOG lpt.printed
+LOG lpt.output
+LOG lpt.text
+LOG ram.value16(3000,3000)
+PRINT "=== Без принтера: байт не взят, TR = 0, прерываний больше нет ==="
+COMMAND lpt.plug(0)
+LOG lp.csr
+COMMAND lp.set16(2, 103)
+WAIT _2
+LOG lp.csr
+LOG lpt.printed
+LOG ram.value16(3000,3000)
+PRINT "=== Принтер подключили: строб выдан заново, байт 103 взят, прерывание ==="
+COMMAND lpt.plug(1)
+WAIT _2
+LOG lp.csr
+LOG lpt.printed
+LOG lpt.text
+LOG ram.value16(3000,3000)
+LOG cpu.pc
+EXIT

@@ -244,7 +244,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="+365"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="+348"/>
         <source>Serial port of the computer</source>
         <translation type="unfinished"></translation>
     </message>
@@ -380,12 +380,12 @@
 <context>
     <name>DL11</name>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="-307"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="-290"/>
         <source>Incorrect baud rate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+464"/>
+        <location line="+426"/>
         <source>Command &apos;connect&apos; expects a port name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -749,6 +749,11 @@
         <source>B/W</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../emulator/devices/common/printer.cpp" line="+68"/>
+        <source>Printer</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DisAsm</name>
@@ -940,7 +945,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+255"/>
+        <location filename="../emulator/emulator.cpp" line="+257"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1905,12 +1910,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+15"/>
-        <source>Serial ports...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+112"/>
+        <location line="+127"/>
         <source>Blend frames</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2376,7 +2376,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+277"/>
+        <location line="+262"/>
+        <source>I/O ports...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
         <source>Open recording...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2832,6 +2837,14 @@
     </message>
 </context>
 <context>
+    <name>Printer</name>
+    <message>
+        <location filename="../emulator/devices/common/printer.cpp" line="-30"/>
+        <source>Incorrect value of a parameter</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ROM</name>
     <message>
         <location filename="../emulator/core.cpp" line="-223"/>
@@ -2962,7 +2975,7 @@
 <context>
     <name>SerialWindow</name>
     <message>
-        <location filename="../dialogs/serialwindow.cpp" line="+37"/>
+        <location filename="../dialogs/serialwindow.cpp" line="+39"/>
         <source>KOI-7 N0/N1 (SO/SI)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3017,14 +3030,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+26"/>
-        <location line="+187"/>
-        <location line="+52"/>
-        <source>Serial ports</source>
+        <location line="+27"/>
+        <location line="+208"/>
+        <location line="+54"/>
+        <source>I/O ports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-230"/>
+        <location line="-253"/>
         <source>Choose folder...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3044,7 +3057,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+48"/>
+        <location line="+49"/>
         <source>Logging</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3084,22 +3097,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+12"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+99"/>
+        <location line="+115"/>
         <source>Cannot create file %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+54"/>
         <source>Logging to a file is in progress (%1). Close the window and stop it?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+90"/>
+        <location line="+85"/>
         <source>Folder for logs</source>
         <translation type="unfinished"></translation>
     </message>

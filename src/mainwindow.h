@@ -145,7 +145,7 @@ private:
     //with its own address space and breakpoints
     void open_debugger_for(CPU * cpu);
 
-    //The one window of the DL11 serial ports, opened or raised
+    //The one window of the I/O ports (DL11 lines, printers), opened or raised
     class SerialWindow * open_serial_window();
     //Logging to a file in it may be cut only with the user's consent: asked
     //before the machine is switched or the program closes

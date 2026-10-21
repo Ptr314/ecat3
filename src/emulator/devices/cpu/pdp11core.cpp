@@ -251,20 +251,22 @@ void pdp11core::set_halt(bool state) { halt_pin = state; if (state) is_halt_req 
 //----------------------- Bus access -------------------------------//
 
 // Unlike the big PDP-11s, the 1801 series does not trap on an odd word
-// address: the low address bit is simply ignored and the whole word at the
+// address: the memory ignores the low address bit and the whole word at the
 // even address is transferred. The ROMs rely on it, e.g. the БК0011М БЕЙСИК
 // tests a byte variable with a word TST of its odd address, so a trap here
-// makes every FOR loop end with "СТОП".
+// makes every FOR loop end with "СТОП". The address goes to the bus as it
+// is, though: a byte-wide device decoding A0 answers with its odd register
+// (MemoryMapper::read_word_odd()), so read_word() gets it whole
 uint16_t pdp11core::read_word_checked(uint16_t address)
 {
     if (vm3) return vm3_read(address, false);
-    return read_word(address & 0xFFFE);
+    return read_word(address);
 }
 
 void pdp11core::write_word_checked(uint16_t address, uint16_t value)
 {
     if (vm3) { vm3_write(address, value, false); return; }
-    write_word(address & 0xFFFE, value);
+    write_word(address, value);
 }
 
 uint16_t pdp11core::fetch()

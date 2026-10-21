@@ -69,6 +69,9 @@ set(ECAT_CORE_SOURCES
     emulator/devices/common/i8275display.h emulator/devices/common/i8275display.cpp
     emulator/devices/common/i8251.h emulator/devices/common/i8251.cpp
     emulator/devices/common/dl11.h emulator/devices/common/dl11.cpp
+    emulator/devices/common/byte_tap.h emulator/devices/common/byte_tap.cpp
+    emulator/devices/common/k1801vp1_033.h emulator/devices/common/k1801vp1_033.cpp
+    emulator/devices/common/printer.h emulator/devices/common/printer.cpp
     emulator/devices/common/virq_line.h
     emulator/host_serial.h emulator/host_serial.cpp
     emulator/devices/common/i8253.h emulator/devices/common/i8253.cpp

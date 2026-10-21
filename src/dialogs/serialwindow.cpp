@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: Serial ports window (output of the DL11 lines), source
+// Description: I/O ports window (output of serial lines and printers), source
 
 #include <QCloseEvent>
 #include <QDateTime>
@@ -52,12 +52,13 @@ static const int CHARSET_COUNT = sizeof(CHARSETS) / sizeof(CHARSETS[0]);
 //Данные пункта списка для charmap машины
 #define CHARSET_MACHINE -1
 
-static std::vector<DL11*> find_ports(Emulator * e)
+//Устройства с отводом байтов, в порядке конфигурации
+static std::vector<ComputerDevice*> find_ports(Emulator * e)
 {
-    std::vector<DL11*> result;
+    std::vector<ComputerDevice*> result;
     for (unsigned int i = 0; i < e->dm->device_count; i++) {
-        DL11 * d = dynamic_cast<DL11*>(e->dm->get_device(i)->device.get());
-        if (d != nullptr) result.push_back(d);
+        ComputerDevice * d = e->dm->get_device(i)->device.get();
+        if (dynamic_cast<ByteTap*>(d) != nullptr) result.push_back(d);
     }
     return result;
 }
@@ -72,7 +73,7 @@ SerialWindow::SerialWindow(QWidget *parent, Emulator * e)
     , e(e)
     , poll_timer(this)
 {
-    setWindowTitle(tr("Serial ports"));
+    setWindowTitle(tr("I/O ports"));
     resize(720, 420);
 
     const std::string mode_setting = e->read_setup("Serial", "mode", "recoded");
@@ -98,12 +99,13 @@ SerialWindow::SerialWindow(QWidget *parent, Emulator * e)
     layout->setContentsMargins(4, 4, 4, 4);
     layout->addWidget(tabs);
 
-    const std::vector<DL11*> devs = find_ports(e);
+    const std::vector<ComputerDevice*> devs = find_ports(e);
     if (!devs.empty()) base = view_base(devs[0]);
     ports.resize(devs.size());
     for (size_t i = 0; i < devs.size(); i++) {
         Port & p = ports[i];
         p.dev = devs[i];
+        p.tap = dynamic_cast<ByteTap*>(devs[i]);
         const std::string title = devs[i]->config_parameter("title");
         p.name = QString::fromStdString(title.empty() ? devs[i]->name : title);
         tabs->addTab(create_page(i), p.name);
@@ -241,11 +243,11 @@ void SerialWindow::set_logging(size_t i, bool on)
 {
     Port & p = ports[i];
     if (on) {
-        p.dev->set_tap(true);
+        p.tap->set_tap(true);
         if (p.file_action->isChecked()) open_file(p);
     } else {
         drain(p);
-        p.dev->set_tap(false);
+        p.tap->set_tap(false);
         close_file(p);
     }
 }
@@ -279,7 +281,7 @@ bool SerialWindow::open_file(Port & p)
         delete f;
         QSignalBlocker block(p.file_action);
         p.file_action->setChecked(false);
-        QMessageBox::warning(this, tr("Serial ports"),
+        QMessageBox::warning(this, tr("I/O ports"),
                              tr("Cannot create file %1").arg(QDir::toNativeSeparators(path)));
         return false;
     }
@@ -298,7 +300,7 @@ void SerialWindow::close_file(Port & p)
 //Забрать снятое портом: в файл как есть, в поле - в выбранном виде
 void SerialWindow::drain(Port & p)
 {
-    p.dev->take_tap(chunk);
+    p.tap->take_tap(chunk);
     if (chunk.empty()) return;
 
     if (p.file != nullptr) {
@@ -322,7 +324,7 @@ void SerialWindow::stop_all()
     for (auto & p : ports) {
         if (!p.log_action->isChecked()) continue;
         drain(p);
-        p.dev->set_tap(false);
+        p.tap->set_tap(false);
         close_file(p);
     }
 }
@@ -333,7 +335,7 @@ bool SerialWindow::confirm_close()
     for (const auto & p : ports)
         if (p.file != nullptr) writing << p.name;
     if (writing.isEmpty()) return true;
-    return QMessageBox::question(this, tr("Serial ports"),
+    return QMessageBox::question(this, tr("I/O ports"),
                                  tr("Logging to a file is in progress (%1). Close the window and stop it?")
                                     .arg(writing.join(", ")),
                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;

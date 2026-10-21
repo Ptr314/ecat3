@@ -51,6 +51,8 @@
 #include "emulator/devices/common/i8275display.h"
 #include "emulator/devices/common/i8251.h"
 #include "emulator/devices/common/dl11.h"
+#include "emulator/devices/common/k1801vp1_033.h"
+#include "emulator/devices/common/printer.h"
 #include "emulator/devices/common/i8253.h"
 #include "emulator/devices/common/i8259.h"
 #include "emulator/devices/common/register.h"
@@ -2216,6 +2218,8 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("i8275-display", create_i8275display);
     dm->register_device("i8251", create_i8251);
     dm->register_device("dl11", create_dl11);
+    dm->register_device("1801vp1-033", create_k1801vp1_033);
+    dm->register_device("printer", create_printer);
     dm->register_device("i8253", create_i8253);
     dm->register_device("i8259", create_i8259);
     dm->register_device("register", create_register);

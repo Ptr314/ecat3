@@ -1,0 +1,54 @@
+# УК-НЦ: принтер на разъёме принтера (ВВ55 ПП, 177100-177103) вместо Covox.
+# Программа ПП выводит байт так, как это делает драйвер RBTRON.SAV: словные
+# команды на ВВ55 - BIT #2,@#177101 (принтер на линии, PB1), BIC #200,@#177102
+# (строб, PC7 в 0), ждёт подтверждения PB7 = 1, BIS #200,@#177102, ждёт
+# PB7 = 0. ВВ55 сидит на младшем байте магистрали и сама разбирает A0: слово
+# по нечётному адресу читает порт B, а словная запись в 177102 не трогает
+# управляющее слово 177103.
+# @timeout 60
+MACHINE "uknc/UKNC.cfg"
+LOGDEFS _16,_8
+WAIT _2000
+PRINT "=== По умолчанию на разъёме Covox: PB1 и PB7 нулевые ==="
+LOG lpt.device
+LOG pp-printer.b
+# Программа ПП на 076000: MOV #101,R0; JSR PC,@#076100; MOV #102,R0;
+# JSR PC,@#076100; BR . Подпрограмма на 076100: BIT #2,@#177101; BEQ 3$;
+# MOVB R0,@#177100; BIC #200,@#177102; 1$: BIT #200,@#177101; BEQ 1$;
+# BIS #200,@#177102; 2$: BIT #200,@#177101; BNE 2$; 3$: RTS PC
+COMMAND ppu.stop()
+COMMAND plane0.set16(076000, 012700, 000101, 004737, 076100)
+COMMAND plane0.set16(076010, 012700, 000102, 004737, 076100)
+COMMAND plane0.set16(076020, 000777)
+COMMAND plane0.set16(076100, 032737, 000002, 177101, 001420)
+COMMAND plane0.set16(076110, 110037, 177100)
+COMMAND plane0.set16(076114, 042737, 000200, 177102)
+COMMAND plane0.set16(076122, 032737, 000200, 177101, 001774)
+COMMAND plane0.set16(076132, 052737, 000200, 177102)
+COMMAND plane0.set16(076140, 032737, 000200, 177101, 001374, 000207)
+COMMAND ppu.setreg(SP, 076000)
+COMMAND ppu.setreg(PSW, 340)
+COMMAND ppu.setreg(PC, 076000)
+COMMAND ppu.run()
+WAIT _20
+PRINT "=== Принтера нет (PB1 = 0): программа прошла, ничего не выведя ==="
+LOG printer.printed
+LOG ppu.pc
+LOG pp-printer.ports
+COMMAND lpt.plug(printer)
+PRINT "=== Принтер на разъёме: PB1 = 1 ==="
+LOG lpt.device
+LOG pp-printer.b
+COMMAND ppu.stop()
+COMMAND ppu.setreg(SP, 076000)
+COMMAND ppu.setreg(PC, 076000)
+COMMAND ppu.run()
+WAIT _20
+PRINT "=== Принято два байта, программа дошла до конца, управляющее слово цело ==="
+LOG printer.printed
+LOG printer.output
+LOG printer.text
+LOG ppu.pc
+LOG pp-printer.ports
+LOG pp-printer.control
+EXIT

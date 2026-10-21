@@ -2766,6 +2766,45 @@ unsigned int MemoryMapper::read_word(unsigned int address)
     }
 }
 
+// A word cycle of a 1801 processor at an odd address. The processor puts the
+// address on the bus as it is: a memory ignores A0 and moves the word at the
+// even address, but a device on the low byte that decodes A0 itself (a ВВ55)
+// answers with the register at the odd address, and nobody drives the high
+// byte, which reads 0. The УК-НЦ printer driver of RBTRON.SAV tests the
+// printer status port of the ВВ55 with BIT #2,@#177101 and BIT #200,@#177101.
+// MemoryMapper::read_word() itself is left as it is: an x86 reads a word at an
+// odd address as two bytes, and it calls read_word() with it
+unsigned int MemoryMapper::read_word_odd(unsigned int address)
+{
+    if ((this->first_range == 0) && ((address & this->cancel_init_mask) != 0)) {
+        this->first_range = 1;
+        invalidate_pages();
+    }
+    unsigned int address_on_device, range_index;
+    unsigned int route = ROUTE_ANSWER;
+    AddressableDevice * d = map_read(address, &address_on_device, &range_index, &route);
+    if (d != nullptr && d->byte_wide()) {
+        this->last_device = d;
+        this->no_device = false;
+        return d->get_value(address_on_device) & 0xFF;
+    }
+    return read_word(address & ~1u);
+}
+
+void MemoryMapper::write_word_odd(unsigned int address, unsigned int value)
+{
+    unsigned int address_on_device, range_index;
+    unsigned int route = ROUTE_ANSWER;
+    AddressableDevice * d = map_write(address, &address_on_device, &range_index, &route);
+    if (d != nullptr && d->byte_wide()) {
+        this->last_device = d;
+        this->no_device = false;
+        d->set_value(address_on_device, value & 0xFF);
+        return;
+    }
+    write_word(address & ~1u, value);
+}
+
 void MemoryMapper::write_word(unsigned int address, unsigned int value)
 {
     MapperPage * e = find_page(address, page_tag());

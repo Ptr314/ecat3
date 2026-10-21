@@ -1,0 +1,17 @@
+=== По умолчанию на разъёме Covox: PB1 и PB7 нулевые ===
+[lpt.device] covox
+[pp-printer.b] &000000
+=== Принтера нет (PB1 = 0): программа прошла, ничего не выведя ===
+[printer.printed] &00000000000
+[ppu.pc] &076020
+[pp-printer.ports] &000000 &000000 &000200
+=== Принтер на разъёме: PB1 = 1 ===
+[lpt.device] printer
+[pp-printer.b] &000002
+=== Принято два байта, программа дошла до конца, управляющее слово цело ===
+[printer.printed] &00000000002
+[printer.output] &101 &102
+[printer.text] AB
+[ppu.pc] &076020
+[pp-printer.ports] &000102 &000002 &000200
+[pp-printer.control] &000203
