@@ -88,6 +88,7 @@ kcgd : kcgd {
 
 // Клавиатура, 177560-177566, векторы 60 и 64, 4800 бод
 kcgd-kbd : dl11 {
+	title = Клавиатура КЦГД
 	clock_source = kcgd-cpu
 	baud = _4800
 	~virq_in = kcgd-host.virq
@@ -99,6 +100,7 @@ kcgd-kbd : dl11 {
 
 // Линия к ДВК, 176560-176566, векторы 360 и 364 (прошивка 181 её опрашивает)
 kcgd-host : dl11 {
+	title = КЦГД - ЭВМ
 	clock_source = kcgd-cpu
 	baud = _57600
 	rx_vector = 360

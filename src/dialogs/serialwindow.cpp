@@ -18,6 +18,7 @@
 
 #include "serialwindow.h"
 #include "dialogs/numfmt.h"
+#include "emulator/utils.h"
 #include "charmaps.h"
 
 //Окно опрашивает порты так часто, чтобы вывод шел за программой без рывков
@@ -106,9 +107,12 @@ SerialWindow::SerialWindow(QWidget *parent, Emulator * e)
         Port & p = ports[i];
         p.dev = devs[i];
         p.tap = dynamic_cast<ByteTap*>(devs[i]);
-        const std::string title = devs[i]->config_parameter("title");
+        //На вкладке - название порта из конфигурации (title), в подсказке -
+        //имя устройства, по которому к нему обращаются сценарии и MCP
+        const std::string title = str_trim(devs[i]->config_parameter("title"));
         p.name = QString::fromStdString(title.empty() ? devs[i]->name : title);
-        tabs->addTab(create_page(i), p.name);
+        const int tab = tabs->addTab(create_page(i), p.name);
+        tabs->setTabToolTip(tab, QString::fromStdString(devs[i]->name + " : " + devs[i]->type));
     }
 
     connect(&poll_timer, &QTimer::timeout, this, &SerialWindow::poll);
