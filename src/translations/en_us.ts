@@ -244,7 +244,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="+347"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="+365"/>
         <source>Serial port of the computer</source>
         <translation type="unfinished"></translation>
     </message>
@@ -380,12 +380,12 @@
 <context>
     <name>DL11</name>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="-289"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="-307"/>
         <source>Incorrect baud rate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+446"/>
+        <location line="+464"/>
         <source>Command &apos;connect&apos; expects a port name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -578,12 +578,12 @@
     <name>DeviceOptions</name>
     <message>
         <location filename="../emulator/devices/specific/agat_7_display.cpp" line="+86"/>
-        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+79"/>
+        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+80"/>
         <location line="+11"/>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
-        <location line="+238"/>
+        <location line="+246"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+179"/>
-        <location line="+308"/>
+        <location line="+317"/>
         <source>Video output</source>
         <translation type="unfinished"></translation>
     </message>
@@ -625,24 +625,24 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-236"/>
-        <location line="+239"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-306"/>
-        <location line="+309"/>
+        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-244"/>
+        <location line="+247"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-315"/>
+        <location line="+318"/>
         <source>RGB</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-238"/>
-        <location line="+239"/>
+        <location line="-246"/>
+        <location line="+247"/>
         <source>GRB</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-238"/>
-        <location line="+239"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-307"/>
-        <location line="+309"/>
+        <location line="-246"/>
+        <location line="+247"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-316"/>
+        <location line="+318"/>
         <source>Mono</source>
         <translation type="unfinished"></translation>
     </message>
@@ -744,8 +744,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-310"/>
-        <location line="+309"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-319"/>
+        <location line="+318"/>
         <source>B/W</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1802,7 +1802,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+46"/>
+        <location line="+47"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1829,7 +1829,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1607"/>
+        <location filename="../mainwindow.cpp" line="+1619"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1872,7 +1872,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+922"/>
+        <location filename="../mainwindow.cpp" line="+938"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1893,15 +1893,20 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1733"/>
-        <location line="+1828"/>
+        <location filename="../mainwindow.cpp" line="-1760"/>
+        <location line="+1886"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1521"/>
+        <location filename="../mainwindow.cpp" line="-1576"/>
         <source>On-screen keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Serial ports...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1935,7 +1940,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-286"/>
+        <location line="-301"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1950,24 +1955,24 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-637"/>
+        <location filename="../mainwindow.cpp" line="-640"/>
         <location line="+76"/>
-        <location line="+1198"/>
+        <location line="+1218"/>
         <location line="+55"/>
         <location line="+79"/>
-        <location line="+201"/>
+        <location line="+206"/>
         <location line="+107"/>
         <location line="+62"/>
         <location line="+166"/>
         <location line="+25"/>
-        <location line="+438"/>
+        <location line="+471"/>
         <location line="+29"/>
         <location line="+92"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2452"/>
+        <location line="-2510"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -1989,14 +1994,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1467"/>
+        <location line="+1492"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1582"/>
+        <location line="-1607"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2056,14 +2061,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1297"/>
+        <location line="+1322"/>
         <location line="+378"/>
-        <location line="+116"/>
+        <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1786"/>
+        <location line="-1813"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2099,12 +2104,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1625"/>
+        <location line="+1650"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1601"/>
+        <location line="-1626"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2180,17 +2185,17 @@
         <location line="-748"/>
         <location line="+592"/>
         <location line="+1"/>
-        <location line="+820"/>
+        <location line="+831"/>
         <source>Turbo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-657"/>
+        <location line="-668"/>
         <source>Picture tube</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+269"/>
+        <location line="+272"/>
         <source>High precision</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2200,7 +2205,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+356"/>
+        <location line="+364"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
@@ -2217,7 +2222,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+178"/>
+        <location line="+21"/>
+        <source>The user kept logging of a serial port to a file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+166"/>
         <source>Configurations</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2255,13 +2265,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+67"/>
-        <location line="+470"/>
+        <location line="+72"/>
+        <location line="+472"/>
         <source>Finishing the video...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-426"/>
+        <location line="-428"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2311,7 +2321,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+54"/>
         <source>Recording video to </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2326,7 +2336,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+95"/>
+        <location line="+126"/>
         <source>This machine has no usable keyboard picture</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2356,17 +2366,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-143"/>
+        <location filename="../mainwindow.ui" line="-144"/>
         <source>Action recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+25"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+262"/>
+        <location line="+277"/>
         <source>Open recording...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2462,12 +2472,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1393"/>
+        <location line="-1440"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1436"/>
+        <location line="+1483"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2950,6 +2960,151 @@
     </message>
 </context>
 <context>
+    <name>SerialWindow</name>
+    <message>
+        <location filename="../dialogs/serialwindow.cpp" line="+37"/>
+        <source>KOI-7 N0/N1 (SO/SI)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>KOI-7 N2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>KOI-8-R</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>KOI-8-M</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>CP866</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Windows-1251</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>ISO 8859-5</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>ASCII</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Agat</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Apple II</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Apple IIc</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <location line="+187"/>
+        <location line="+52"/>
+        <source>Serial ports</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-230"/>
+        <source>Choose folder...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Original text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Recoded text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+48"/>
+        <source>Logging</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Show the output of the port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>To file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Write the output of the port to a file while logging</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Clear the window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Encoding of the recoded text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Machine (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+99"/>
+        <source>Cannot create file %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+52"/>
+        <source>Logging to a file is in progress (%1). Close the window and stop it?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+90"/>
+        <source>Folder for logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Speaker</name>
     <message>
         <location filename="../emulator/devices/common/speaker.cpp" line="+75"/>
@@ -3126,7 +3281,7 @@
 <context>
     <name>UKNCDisplay</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-322"/>
+        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-330"/>
         <source>Plane must be a RAM device</source>
         <translation type="unfinished"></translation>
     </message>

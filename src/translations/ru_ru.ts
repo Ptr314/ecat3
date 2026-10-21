@@ -340,7 +340,7 @@
         <translation>Образ диска</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="+347"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="+365"/>
         <source>Serial port of the computer</source>
         <translation>Последовательный порт компьютера</translation>
     </message>
@@ -476,12 +476,12 @@
 <context>
     <name>DL11</name>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="-289"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="-307"/>
         <source>Incorrect baud rate</source>
         <translation>Некорректная скорость обмена</translation>
     </message>
     <message>
-        <location line="+446"/>
+        <location line="+464"/>
         <source>Command &apos;connect&apos; expects a port name</source>
         <translation>Команда &apos;connect&apos; ожидает имя порта</translation>
     </message>
@@ -706,12 +706,12 @@
     <name>DeviceOptions</name>
     <message>
         <location filename="../emulator/devices/specific/agat_7_display.cpp" line="+86"/>
-        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+79"/>
+        <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+80"/>
         <location line="+11"/>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
-        <location line="+238"/>
+        <location line="+246"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+179"/>
-        <location line="+308"/>
+        <location line="+317"/>
         <source>Video output</source>
         <translation>Видеовыход</translation>
     </message>
@@ -753,30 +753,30 @@
         <translation>Прототип</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-236"/>
-        <location line="+239"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-306"/>
-        <location line="+309"/>
+        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-244"/>
+        <location line="+247"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-315"/>
+        <location line="+318"/>
         <source>RGB</source>
         <translation>RGB</translation>
     </message>
     <message>
-        <location line="-238"/>
-        <location line="+239"/>
+        <location line="-246"/>
+        <location line="+247"/>
         <source>GRB</source>
         <translation>GRB</translation>
     </message>
     <message>
-        <location line="-238"/>
-        <location line="+239"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-307"/>
-        <location line="+309"/>
+        <location line="-246"/>
+        <location line="+247"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-316"/>
+        <location line="+318"/>
         <source>Mono</source>
         <translation>Моно</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-310"/>
-        <location line="+309"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-319"/>
+        <location line="+318"/>
         <source>B/W</source>
         <translation>Ч/Б</translation>
     </message>
@@ -2165,7 +2165,7 @@
         <translation type="vanished">Помощь</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+35"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
@@ -2197,7 +2197,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1607"/>
+        <location filename="../mainwindow.cpp" line="+1619"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2254,16 +2254,21 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-811"/>
-        <location line="+1828"/>
+        <location filename="../mainwindow.cpp" line="-822"/>
+        <location line="+1886"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1521"/>
+        <location filename="../mainwindow.cpp" line="-1576"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Serial ports...</source>
+        <translation>Последовательные порты...</translation>
     </message>
     <message>
         <location line="+112"/>
@@ -2300,7 +2305,7 @@
         <translation type="vanished">Выбрать компьютер...</translation>
     </message>
     <message>
-        <location line="-286"/>
+        <location line="-301"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
@@ -2315,16 +2320,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-529"/>
+        <location filename="../mainwindow.cpp" line="-532"/>
         <location line="+47"/>
-        <location line="+1467"/>
+        <location line="+1492"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1582"/>
+        <location line="-1607"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2353,22 +2358,22 @@
     <message>
         <location line="-120"/>
         <location line="+76"/>
-        <location line="+1198"/>
+        <location line="+1218"/>
         <location line="+55"/>
         <location line="+79"/>
-        <location line="+201"/>
+        <location line="+206"/>
         <location line="+107"/>
         <location line="+62"/>
         <location line="+166"/>
         <location line="+25"/>
-        <location line="+438"/>
+        <location line="+471"/>
         <location line="+29"/>
         <location line="+92"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2452"/>
+        <location line="-2510"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2444,13 +2449,13 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+665"/>
+        <location line="+676"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
     </message>
     <message>
-        <location line="+249"/>
+        <location line="+258"/>
         <source>All supported files</source>
         <translation>Все поддерживаемые файлы</translation>
     </message>
@@ -2461,7 +2466,7 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1344"/>
+        <location line="-1364"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -2474,7 +2479,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+71"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1826"/>
+        <location filename="../mainwindow.cpp" line="+1853"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -2484,15 +2489,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1804"/>
-        <location line="+1297"/>
+        <location line="-1831"/>
+        <location line="+1322"/>
         <location line="+378"/>
-        <location line="+116"/>
+        <location line="+118"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1786"/>
+        <location line="-1813"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2528,7 +2533,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1625"/>
+        <location line="+1650"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -2543,13 +2548,13 @@
         <translation>Не удалось создать папку </translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+54"/>
         <source>Recording video to </source>
         <translation>Идет запись видео в </translation>
     </message>
     <message>
-        <location line="-441"/>
-        <location line="+470"/>
+        <location line="-443"/>
+        <location line="+472"/>
         <source>Finishing the video...</source>
         <translation>Видео дописывается...</translation>
     </message>
@@ -2559,7 +2564,7 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1804"/>
+        <location line="-1831"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
@@ -2567,12 +2572,12 @@
         <location line="-485"/>
         <location line="+592"/>
         <location line="+1"/>
-        <location line="+820"/>
+        <location line="+831"/>
         <source>Turbo</source>
         <translation>Турбо</translation>
     </message>
     <message>
-        <location line="-1028"/>
+        <location line="-1039"/>
         <source>Floppy drive %1</source>
         <translation>Дисковод %1</translation>
     </message>
@@ -2618,7 +2623,7 @@
         <translation>Кинескоп</translation>
     </message>
     <message>
-        <location line="+269"/>
+        <location line="+272"/>
         <source>High precision</source>
         <translation>Высокая точность</translation>
     </message>
@@ -2628,7 +2633,7 @@
         <translation>Картинка строится по ходу луча внутри строки - для программ, которые меняют палитру на ходу</translation>
     </message>
     <message>
-        <location line="+409"/>
+        <location line="+417"/>
         <source>As fast as possible</source>
         <translation>Как можно быстрее</translation>
     </message>
@@ -2639,7 +2644,12 @@
         <translation>,</translation>
     </message>
     <message>
-        <location line="+178"/>
+        <location line="+21"/>
+        <source>The user kept logging of a serial port to a file.</source>
+        <translation>Пользователь оставил запись последовательного порта в файл.</translation>
+    </message>
+    <message>
+        <location line="+166"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>
     </message>
@@ -2666,7 +2676,7 @@
         <translation>Машина не запущена, сохранить ее состояние нельзя.</translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+116"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>
@@ -2706,7 +2716,7 @@
         <translation>Сохранение скриншота</translation>
     </message>
     <message>
-        <location line="+279"/>
+        <location line="+312"/>
         <source>This machine has no usable keyboard picture</source>
         <translation>У этой машины нет пригодного рисунка клавиатуры</translation>
     </message>
@@ -2736,12 +2746,12 @@
         <translation>Конфигурация не загружена.</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-217"/>
+        <location filename="../mainwindow.ui" line="-218"/>
         <source>Action recording</source>
         <translation>Запись действий</translation>
     </message>
     <message>
-        <location line="+286"/>
+        <location line="+302"/>
         <source>Open recording...</source>
         <translation>Открыть запись...</translation>
     </message>
@@ -2837,12 +2847,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1393"/>
+        <location line="-1440"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1436"/>
+        <location line="+1483"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -3435,6 +3445,151 @@
     </message>
 </context>
 <context>
+    <name>SerialWindow</name>
+    <message>
+        <location filename="../dialogs/serialwindow.cpp" line="+37"/>
+        <source>KOI-7 N0/N1 (SO/SI)</source>
+        <translation>КОИ-7 Н0/Н1 (SO/SI)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>KOI-7 N2</source>
+        <translation>КОИ-7 Н2</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>KOI-8-R</source>
+        <translation>КОИ-8-R</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>KOI-8-M</source>
+        <translation>КОИ-8-M</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>CP866</source>
+        <translation>CP866</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Windows-1251</source>
+        <translation>Windows-1251</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>ISO 8859-5</source>
+        <translation>ISO 8859-5</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>ASCII</source>
+        <translation>ASCII</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Agat</source>
+        <translation>Агат</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Apple II</source>
+        <translation>Apple II</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Apple IIc</source>
+        <translation>Apple IIc</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <location line="+187"/>
+        <location line="+52"/>
+        <source>Serial ports</source>
+        <translation>Последовательные порты</translation>
+    </message>
+    <message>
+        <location line="-230"/>
+        <source>Choose folder...</source>
+        <translation>Выбрать папку...</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Original text</source>
+        <translation>Оригинальный текст</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Recoded text</source>
+        <translation>Текст перекодированный</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Bytes</source>
+        <translation>Байты</translation>
+    </message>
+    <message>
+        <location line="+48"/>
+        <source>Logging</source>
+        <translation>Логирование</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Show the output of the port</source>
+        <translation>Показывать вывод в порт</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>To file</source>
+        <translation>В файл</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Write the output of the port to a file while logging</source>
+        <translation>Писать вывод в порт в файл, пока идет логирование</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Clear</source>
+        <translation>Очистить</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Clear the window</source>
+        <translation>Очистить окно</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Encoding of the recoded text</source>
+        <translation>Кодировка перекодированного текста</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Machine (%1)</source>
+        <translation>Машины (%1)</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Settings</source>
+        <translation>Настройки</translation>
+    </message>
+    <message>
+        <location line="+99"/>
+        <source>Cannot create file %1</source>
+        <translation>Не удалось создать файл %1</translation>
+    </message>
+    <message>
+        <location line="+52"/>
+        <source>Logging to a file is in progress (%1). Close the window and stop it?</source>
+        <translation>Идет запись в файл (%1). Закрыть окно и остановить запись?</translation>
+    </message>
+    <message>
+        <location line="+90"/>
+        <source>Folder for logs</source>
+        <translation>Папка для логов</translation>
+    </message>
+</context>
+<context>
     <name>Speaker</name>
     <message>
         <source>Error</source>
@@ -3627,7 +3782,7 @@
 <context>
     <name>UKNCDisplay</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-322"/>
+        <location filename="../emulator/devices/specific/uknc_display.cpp" line="-330"/>
         <source>Plane must be a RAM device</source>
         <translation>План должен быть устройством ОЗУ</translation>
     </message>

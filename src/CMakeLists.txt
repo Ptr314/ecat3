@@ -236,6 +236,7 @@ set(GUI_SOURCES
     dialogs/genericdbgwnd.h dialogs/genericdbgwnd.cpp
     dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
     dialogs/keyboardwindow.h dialogs/keyboardwindow.cpp
+    dialogs/serialwindow.h dialogs/serialwindow.cpp
 
     renderers/renderer_sdl2.h
     renderers/renderer_qt.h

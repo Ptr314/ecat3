@@ -61,6 +61,7 @@
 #include "emulator/script/script_parser.h"
 #include "dialogs/taperecorder.h"
 #include "dialogs/keyboardwindow.h"
+#include "dialogs/serialwindow.h"
 
 #include "libs/lodepng/lodepng.h"
 
@@ -998,8 +999,11 @@ void MainWindow::CreateDevicesMenu()
                             QString::fromStdString(e->dm->get_device(i)->device_name + " : " + e->dm->get_device(i)->device_type),
                             [this, i]{onDeviceMenuCalled(i);}
                       );
-        a->setEnabled( DWM->get_create_func(e->dm->get_device(i)->device_type) != nullptr );
+        a->setEnabled( DWM->get_create_func(e->dm->get_device(i)->device_type) != nullptr
+                       || dynamic_cast<DL11*>(e->dm->get_device(i)->device.get()) != nullptr );
     };
+
+    ui->actionSerial->setVisible(SerialWindow::machine_has_ports(e));
 }
 
 void MainWindow::UpdateToolbar()
@@ -1260,6 +1264,14 @@ void MainWindow::update_precise_action()
 
 void MainWindow::onDeviceMenuCalled(unsigned int i)
 {
+    //Порты DL11 живут в одном окне, вкладкой на порт
+    ComputerDevice * dev = e->dm->get_device(i)->device.get();
+    if (dynamic_cast<DL11*>(dev) != nullptr) {
+        SerialWindow * w = open_serial_window();
+        if (w != nullptr) w->select_device(dev);
+        return;
+    }
+
     DebugWndCreateFunc * f = DWM->get_create_func(e->dm->get_device(i)->device_type);
     if (f != nullptr)
     {
@@ -1675,6 +1687,15 @@ void MainWindow::load_config(QString file_name, bool set_default, bool run_embed
 {
     if (e->loaded)
     {
+        //Запись порта в файл прерывается только с согласия: отказ оставляет
+        //прежнюю машину работать
+        if (!serial_close_allowed()) {
+#ifdef ENABLE_MCP
+            mcp_load_error = tr("The user kept logging of a serial port to a file.");
+#endif
+            return;
+        }
+
         if (fdd_timer != nullptr) fdd_timer->stop();
 
         //The mouse the pointer was captured for is about to be deleted
@@ -1980,6 +2001,11 @@ void MainWindow::on_actionDebugger_triggered()
 
 void MainWindow::closeEvent (QCloseEvent *event)
 {
+    if (e != nullptr && !serial_close_allowed()) {
+        event->ignore();
+        return;
+    }
+
     fdds_found = 0; // to prevent crashing on buttons update
     hdds_found = 0;
 
@@ -2607,6 +2633,37 @@ void MainWindow::on_actionTape_triggered()
     w->setAttribute(Qt::WA_DeleteOnClose);
     remember_geometry(w, "");
     w->show();
+}
+
+void MainWindow::on_actionSerial_triggered()
+{
+    open_serial_window();
+}
+
+SerialWindow * MainWindow::open_serial_window()
+{
+    SerialWindow * w = findChild<SerialWindow*>();
+    if (w != nullptr) {
+        w->raise();
+        w->activateWindow();
+        return w;
+    }
+    if (!SerialWindow::machine_has_ports(e)) return nullptr;
+
+    w = new SerialWindow(this, e);
+    w->setAttribute(Qt::WA_DeleteOnClose);
+    remember_geometry(w, "");
+    w->show();
+    return w;
+}
+
+bool MainWindow::serial_close_allowed()
+{
+    SerialWindow * w = findChild<SerialWindow*>();
+    if (w == nullptr) return true;
+    if (!w->confirm_close()) return false;
+    w->set_confirmed();
+    return true;
 }
 
 void MainWindow::on_actionKeyboard_triggered()

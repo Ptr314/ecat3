@@ -5,7 +5,9 @@
 
 #pragma once
 
+#include <atomic>
 #include <deque>
+#include <vector>
 
 #include "emulator/core.h"
 #include "emulator/host_serial.h"
@@ -96,6 +98,13 @@ private:
     static const unsigned int OUTPUT_SIZE = 1024;
     uint8_t m_output[OUTPUT_SIZE] = {};
 
+    // Отвод переданных байтов для окна портов: пишет поток эмуляции, забирает
+    // окно. Не состояние машины. Предел - на случай, если окно не забирает
+    static const size_t TAP_LIMIT = 1 << 20;
+    std::atomic<bool> m_tap_on{false};
+    compat_mutex m_tap_mutex;
+    std::vector<uint8_t> m_tap;
+
     void receive(uint8_t value);
     void update_rx_free();
     bool tx_blocked();
@@ -127,6 +136,10 @@ public:
     emulator::Result load_state(const StateReader &r) override;
     std::vector<DeviceCommandInfo> get_device_commands() override;
     emulator::Result send_command(const std::string &command, const std::string &parameters) override;
+
+    // Для окна портов, из потока GUI: включить отвод и забрать накопленное
+    void set_tap(bool on);
+    void take_tap(std::vector<uint8_t> &out);
 };
 
 ComputerDevice * create_dl11(InterfaceManager *im, EmulatorConfigDevice *cd);

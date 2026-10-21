@@ -142,6 +142,10 @@ void DL11::transmit_done()
     const uint8_t b = (uint8_t)(m_xbuf & 0xFF);
     m_tx_busy = false;
     m_output[m_sent++ & (OUTPUT_SIZE - 1)] = b;
+    if (m_tap_on) {
+        compat_lock_guard g(m_tap_mutex);
+        if (m_tap.size() < TAP_LIMIT) m_tap.push_back(b);
+    }
 
     // Петля (разряд 2) и заглушка на разъёме возвращают байт в свой приёмник
     if ((m_xcsr & XCSR_MAINT) || m_plug)
@@ -154,6 +158,20 @@ void DL11::transmit_done()
     m_xcsr |= CSR_DONE;
     if (m_xcsr & CSR_IE) m_tx_pending = true;
     update_irq();
+}
+
+void DL11::set_tap(bool on)
+{
+    compat_lock_guard g(m_tap_mutex);
+    m_tap_on = on;
+    if (!on) m_tap.clear();
+}
+
+void DL11::take_tap(std::vector<uint8_t> &out)
+{
+    out.clear();
+    compat_lock_guard g(m_tap_mutex);
+    out.swap(m_tap);
 }
 
 void DL11::clock(unsigned int counter)

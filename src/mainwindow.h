@@ -109,6 +109,7 @@ private slots:
 
     void on_actionTape_triggered();
     void on_actionKeyboard_triggered();
+    void on_actionSerial_triggered();
 
     void on_actionRecOpen_triggered();
     void on_actionRecSave_triggered();
@@ -143,6 +144,12 @@ private:
     //Opens a debug window on one processor. A machine may have several, each
     //with its own address space and breakpoints
     void open_debugger_for(CPU * cpu);
+
+    //The one window of the DL11 serial ports, opened or raised
+    class SerialWindow * open_serial_window();
+    //Logging to a file in it may be cut only with the user's consent: asked
+    //before the machine is switched or the program closes
+    bool serial_close_allowed();
 
     //Puts a window where it was the last time a window of the same key was
     //closed, and remembers where it is when it closes

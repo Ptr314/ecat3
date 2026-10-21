@@ -109,6 +109,7 @@
     <addaction name="action_Soft_restart"/>
     <addaction name="actionDebugger"/>
     <addaction name="actionKeyboard"/>
+    <addaction name="actionSerial"/>
     <addaction name="menuRecording"/>
     <addaction name="separator"/>
     <addaction name="menuDevices"/>
@@ -363,6 +364,21 @@
    </property>
    <property name="toolTip">
     <string>On-screen keyboard</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
+  <action name="actionSerial">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/log</normaloff>:/icons/log</iconset>
+   </property>
+   <property name="text">
+    <string>Serial ports...</string>
    </property>
    <property name="visible">
     <bool>false</bool>
