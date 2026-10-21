@@ -1,0 +1,34 @@
+# ДВК-4: ИРПС платы МС1201.04 (КР1801ВП1-065, D45) на 176570, векторы
+# 370/374, 9600 бод. С заглушкой на разъёме байт, записанный в XBUF,
+# возвращается в собственный приёмник; при разрешённом прерывании приёмника
+# процессор уходит по вектору 370.
+# @timeout 60
+MACHINE "../../tests/files/dvk4-ksm.ext"
+LOGDEFS _16,_8
+COMMAND tl.plug(1)
+WAIT _12000
+# Программа: на 1000 - MTPS #0 и ожидание на месте; обработчик вектора 370
+# на 2000 - INC @#3000, RTI. Вектор 374 (передатчик) - на HALT по 2200
+COMMAND ram.set16(1000, 106427, 0, 000777)
+COMMAND ram.set16(2000, 005237, 3000, 000002)
+COMMAND ram.set16(2200, 0)
+COMMAND ram.set16(3000, 0)
+COMMAND ram.set16(370, 2000, 340)
+COMMAND ram.set16(374, 2200, 340)
+TYPE "1000G"
+WAIT _100
+PRINT "=== После сброса: RCSR, XCSR ==="
+LOG tl.rcsr
+LOG tl.xcsr
+PRINT "=== Байт 101 в петле, прерывание приёмника разрешено ==="
+COMMAND tl.set16(0, 100)
+COMMAND tl.set16(6, 101)
+WAIT _5
+LOG tl.sent
+LOG tl.received
+LOG tl.rcsr
+LOG cpu.trap_vector
+LOG ram.value16(3000,3000)
+PRINT "=== Обработчик вызван один раз, программа в цикле на 1004 ==="
+LOG cpu.pc
+EXIT
