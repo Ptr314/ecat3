@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: УК-НЦ memory timing, one processor's side of the 1515ХМ1-031
+// Description: УК-НЦ memory timing, one processor's side
 
 #include "uknc_ram_timing.h"
 #include "emulator/utils.h"

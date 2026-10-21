@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: УК-НЦ memory timing, one processor's side of the 1515ХМ1-031
+// Description: УК-НЦ memory timing, one processor's side
 
 #pragma once
 
 #include "emulator/core.h"
 
 // When the УК-НЦ memory answers a processor (timing = vm2). The planes are
-// dynamic RAM behind the video controller (the early К1515ХМ1-031 or the
-// revised К1515ХМ2-001, two gate arrays), which serves the raster, both
-// processors and the refresh; there is no netlist of it, so this is a model
-// fitted on the chip model of the КМ1801ВМ2 (cpu11) against the times
-// measured on real machines with both (литера 7: Alex_K's UTEST.DSK tests,
+// dynamic RAM shared by the raster, both processors and the refresh; there
+// is no netlist of its controller, so this is a model fitted on the chip
+// model of the КМ1801ВМ2 (cpu11) against the times measured on real
+// machines with either version of the gate array (the early К1515ХМ1-031
+// or the revised К1515ХМ2-001; timer, keyboard and the like) (литера 7: Alex_K's UTEST.DSK tests,
 // TSSPD by Titus, Patron's tables; tools/uknc-timing has the bench and the fit):
 //
 // - a cycle starts on a point of the controller's grid (`grid`, 640 ns: eight
