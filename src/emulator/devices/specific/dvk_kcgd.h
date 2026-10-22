@@ -62,6 +62,8 @@ class KCGD: public AddressableDevice, public WaitSource
 {
 public:
     static const unsigned VRAM_WORDS = 65536;
+    // Видимых строк в поле (гашение V7 по D62 и D63)
+    static const unsigned LINES = 240;
 
 private:
     Interface i_virq;
@@ -100,6 +102,7 @@ private:
     unsigned m_line_clocks = 1;                 // строка
     std::vector<uint16_t> m_reply;              // по такту строки: от строба до RPLY
     std::vector<ScanStep> m_field[2];           // смены по полю, по Q17
+    std::vector<uint32_t> m_lines[2];           // начала видимых строк поля, по Q17
     uint32_t m_field_clocks[2] = {1, 1};
     unsigned m_field_hpos = 0;                  // место в строке, где поле начинается
     unsigned m_evnt_bit = 1;                    // выход D63, взятый на EVNT
@@ -108,6 +111,7 @@ private:
     uint32_t m_fpos = 0;                        // такт поля
     unsigned m_q17 = 0;                         // полукадр
     unsigned m_step = 0;                        // следующая смена в m_field[m_q17]
+    unsigned m_line = 0;                        // видимых строк поля, начало которых пройдено
     unsigned m_fields = 0;                      // полей с пуска
 
     emulator::Result build_scan(const std::vector<uint8_t> &d61, const std::vector<uint8_t> &d62,
@@ -128,8 +132,14 @@ public:
     void clock(unsigned int counter) override;
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     unsigned int wait_states(unsigned int address, bool write, unsigned int offset) override;
-    // Полей с пуска: изображение перерисовывается по смене поля
+    // Полей с пуска
     unsigned fields() const { return m_fields; }
+    // Видимых строк текущего поля, до начала изображения которых дошёл луч
+    // (0..LINES): изображение кладёт их на поверхность
+    unsigned lines_passed() const { return m_line; }
+    // Полукадр текущего поля (Q17): с чересстрочной развёрткой поле 0
+    // показывает чётные строки растра, поле 1 - нечётные
+    unsigned half_frame() const { return m_q17; }
 
     unsigned int get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
@@ -160,7 +170,10 @@ public:
 // ЦАП на резисторах): U55 - красный, U56 - зелёный, U57 - синий (по словам
 // автора реплики). Параметр rgb оставлен для другой разводки кабеля.
 //
-// Своей развёртки у изображения нет: поле меняется по счётчику KCGD.
+// Своей развёртки у изображения нет: строки и поля идут по счётчику KCGD.
+// Строка ложится на поверхность с потока эмуляции, когда луч доходит до
+// начала её изображения (KCGD::lines_passed()), с видеопамятью, таблицей
+// строк и палитрой этого момента: смена палитры посреди поля видна полосами.
 class KCGDDisplay: public GenericDisplay
 {
 private:
@@ -179,9 +192,14 @@ private:
     uint32_t m_colors[64] = {};             // все 64 значения регистра палитры
     unsigned m_channel[3] = {0, 1, 2};      // выход U55/U56/U57 -> R, G, B
 
-    unsigned int m_field = 0;           // поле KCGD, которое уже нарисовано
+    unsigned int m_field = 0;           // поле KCGD, которое сейчас рисуется
+    unsigned int m_half = 0;            // его полукадр
+    unsigned int m_drawn = 0;           // его строк уже на поверхности
     unsigned int m_surface_lines = 0;   // строк в поверхности отрисовщика
 
+    void follow_scan();
+    void render_line(unsigned v, unsigned half);
+    void draw_row(uint32_t * p, unsigned row, const uint32_t * pal) const;
     unsigned line_address(unsigned y) const;
     unsigned pixel(unsigned a, unsigned x) const;
     std::string screen_text() const;
@@ -203,8 +221,7 @@ public:
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
-    void save_state(StateWriter &w) override;
-    emulator::Result load_state(const StateReader &r) override;
+    void state_restored() override;
 };
 
 // Мышь КЦГД (разъём XP5). У каждой оси - реверсивный счётчик К555ИЕ7 (X -

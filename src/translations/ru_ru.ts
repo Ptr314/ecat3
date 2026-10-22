@@ -2004,6 +2004,11 @@
         <source>The scan PROM gives no interlaced fields</source>
         <translation>ПЗУ развертки не дает чересстрочных полукадров</translation>
     </message>
+    <message>
+        <location line="+2"/>
+        <source>The scan PROMs do not give 240 visible lines a field</source>
+        <translation>ПЗУ развертки не дают 240 видимых строк в поле</translation>
+    </message>
 </context>
 <context>
     <name>KCGDDisplay</name>

@@ -1638,6 +1638,11 @@
         <source>The scan PROM gives no interlaced fields</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location line="+2"/>
+        <source>The scan PROMs do not give 240 visible lines a field</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>KCGDDisplay</name>

@@ -139,15 +139,20 @@ emulator::Result KCGD::build_scan(const std::vector<uint8_t> &d61, const std::ve
     // D70 берёт его V10 (U45, загрузка) и выход на EVNT. Прогон - с
     // чересстрочной развёрткой, чтобы получить поля обоих полукадров
     const unsigned max_steps = line * 2 * 2048;
-    std::vector<uint8_t> ev(max_steps), rb(max_steps), qq(max_steps);
+    std::vector<uint8_t> ev(max_steps), rb(max_steps), qq(max_steps), vis(max_steps);
     std::vector<uint16_t> hp(max_steps);
     std::vector<unsigned> loads;
     unsigned q = 0, half = 0, c = 0, ff1 = 1, q17 = 0, evnt = 1;
     for (unsigned k = 0; k < max_steps && loads.size() < 3; k++) {
         hp[k] = (uint16_t)((q * 2 + half) * 2);
+        const unsigned v63 = ff1 ? 0xF : (d63[((q >> 6) & 1) | ((c & 63) << 1) | (q17 << 7)] & 0xF);
+        // Гашение - V7: выходы D62 (вывод 11) и D63 (вывод 9) на открытом
+        // коллекторе соединены, D69 берёт их в U48 к сдвиговым регистрам
+        // изображения. 1 - изображение
+        vis[k] = (uint8_t)((d62[q * 2 + half] >> 1) & (v63 >> 3) & 1);
         bool load = false;
         if (half) {
-            const unsigned v = ff1 ? 0xF : (d63[((q >> 6) & 1) | ((c & 63) << 1) | (q17 << 7)] & 0xF);
+            const unsigned v = v63;
             evnt = (v >> m_evnt_bit) & 1;
             const bool line_end = (q + 1 == line);
             q = line_end ? 0 : q + 1;
@@ -184,9 +189,17 @@ emulator::Result KCGD::build_scan(const std::vector<uint8_t> &d61, const std::ve
                 steps.push_back({2 * (k - a), ev[k], rb[k]});
         m_field_clocks[qq[a]] = 2 * (b - a);
         if (qq[a] == 0) m_field_hpos = hp[a + 1];
+        // Видимые строки: с начала изображения в строке (полузнакоместо 31
+        // из 246, дальше 100 знакомест - 100 слов) после защёлки D69
+        std::vector<uint32_t> &lines = m_lines[qq[a]];
+        lines.clear();
+        for (unsigned k = a + 1; k <= b; k++)
+            if (vis[k] && !vis[k - 1]) lines.push_back(2 * (k - a));
     }
     if (m_field[0].empty() || m_field[1].empty())
         return fail(QT_TRANSLATE_NOOP("KCGD", "The scan PROM gives no interlaced fields"));
+    if (m_lines[0].size() != LINES || m_lines[1].size() != LINES)
+        return fail(QT_TRANSLATE_NOOP("KCGD", "The scan PROMs do not give 240 visible lines a field"));
     return emulator::Result::ok();
 }
 
@@ -206,6 +219,9 @@ void KCGD::scan_seek(bool apply)
     unsigned i = 0;
     while (i + 1 < f.size() && f[i + 1].t <= m_fpos) i++;
     m_step = i + 1;
+    const std::vector<uint32_t> &l = m_lines[m_q17];
+    m_line = 0;
+    while (m_line < l.size() && l[m_line] <= m_fpos) m_line++;
     if (apply) scan_apply(f[i].evnt, f[i].reqb);
 }
 
@@ -260,12 +276,15 @@ void KCGD::clock(unsigned int counter)
             scan_apply(f[m_step].evnt, f[m_step].reqb);
             m_step++;
         }
+        const std::vector<uint32_t> &l = m_lines[m_q17];
+        while (m_line < l.size() && l[m_line] <= m_fpos) m_line++;
         if (m_fpos < m_field_clocks[m_q17]) break;
         m_fpos -= m_field_clocks[m_q17];
         m_fields++;
         // Без чересстрочной развёртки D85.2 держится установленным (Q17 = 0)
         m_q17 = interlace() ? (m_q17 ^ 1) : 0;
         m_step = 0;
+        m_line = 0;
     }
 }
 
@@ -741,6 +760,10 @@ emulator::Result KCGDDisplay::load_config(SystemData *sd)
 void KCGDDisplay::reset(bool cold)
 {
     GenericDisplay::reset(cold);
+    // KCGD объявлен раньше и уже сброшен: рисовать с того места, где луч
+    m_field = m_kcgd->fields();
+    m_half = m_kcgd->half_frame();
+    m_drawn = m_kcgd->lines_passed();
 }
 
 // Шрифт копируется при чтении текста, а не в load_config: ПЗУ, объявленное
@@ -792,10 +815,56 @@ void KCGDDisplay::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 
 void KCGDDisplay::clock(MAYBE_UNUSED unsigned int counter)
 {
-    if (m_kcgd->fields() == m_field) return;
-    m_field = m_kcgd->fields();
-    screen_valid = false;
-    frame_complete();
+    if (m_kcgd->lines_passed() != m_drawn || m_kcgd->fields() != m_field) follow_scan();
+}
+
+// Строки, до которых дошёл луч. Поле, кончившееся внутри одного clock()
+// (строк гашения 26, так что только при долгом шаге процессора),
+// дорисовывается теми же данными
+void KCGDDisplay::follow_scan()
+{
+    if (m_kcgd->fields() != m_field) {
+        if (m_drawn < KCGD::LINES) {
+            while (m_drawn < KCGD::LINES) render_line(m_drawn++, m_half);
+            was_updated = true;
+            frame_complete();
+        }
+        m_field = m_kcgd->fields();
+        m_half = m_kcgd->half_frame();
+        m_drawn = 0;
+    }
+    const unsigned to = m_kcgd->lines_passed();
+    if (to <= m_drawn) return;
+    // Выключенная посреди поля 1 чересстрочная развёртка переводит KCGD на поле 0
+    m_half = m_kcgd->half_frame();
+    while (m_drawn < to) render_line(m_drawn++, m_half);
+    // Последняя видимая строка на поверхности: кадр цел
+    if (m_drawn == KCGD::LINES) {
+        was_updated = true;
+        frame_complete();
+    }
+}
+
+// Видимая строка v поля с полукадром half. С чересстрочной развёрткой
+// поверхность - 480 строк, и поле кладёт свои через одну; без неё - 240,
+// по чётным строкам таблицы. Пока окно не догнало смену режима (высота
+// поверхности меняется на потоке отрисовки), строка не кладётся: новую
+// поверхность целиком нарисует render_all()
+void KCGDDisplay::render_line(unsigned v, unsigned half)
+{
+    compat_lock_guard guard(m_surface_mutex);
+    if (!has_valid_renderer() || render_pixels == nullptr) return;
+    if ((int)(KCGD_WIDTH * 4) > line_bytes) return;
+    const bool interlace = m_kcgd->interlace();
+    if (m_surface_lines != (interlace ? KCGD_HEIGHT : KCGD_HEIGHT / 2)) return;
+    const unsigned y = interlace ? 2 * v + (half & 1) : v;
+    uint32_t pal[16];
+    for (unsigned i = 0; i < 16; i++) pal[i] = m_colors[m_kcgd->palette(i)];
+    draw_row(reinterpret_cast<uint32_t*>(static_cast<uint8_t*>(render_pixels) + y * line_bytes),
+             interlace ? y : 2 * v, pal);
+    // Луч рисовал на этой поверхности: render_all() не должен рисовать её
+    // заново одной палитрой (см. BKDisplay::render_line())
+    screen_valid = true;
 }
 
 // Слово видеопамяти, с которого идёт строка растра y
@@ -806,34 +875,44 @@ unsigned KCGDDisplay::line_address(unsigned y) const
     return m_kcgd->vram(table + (KCGD_HEIGHT - 1) - row) & 0xFFFF;
 }
 
+// Строку кладёт луч (render_line()). Здесь рисуется целиком только
+// поверхность, которой луч ещё не касался: первый кадр, смена высоты,
+// загруженный снимок - чтобы картинка была и при стоящем процессоре.
+// Принудительная перерисовка пропускается, как у БК: кадр, нарисованный
+// палитрой одного момента, заменил бы полосы. validate() держит замок
 void KCGDDisplay::render_all(MAYBE_UNUSED bool force_render)
 {
-    if (m_kcgd != nullptr && render_pixels != nullptr) {
+    if (!screen_valid && m_kcgd != nullptr && render_pixels != nullptr) {
         uint32_t pal[16];
         for (unsigned i = 0; i < 16; i++) pal[i] = m_colors[m_kcgd->palette(i)];
         // По поверхности, а не по sy: пока окно не догнало смену режима,
         // поверхность ещё прежней высоты
         const unsigned lines = (m_surface_lines < KCGD_HEIGHT) ? m_surface_lines : KCGD_HEIGHT;
         const unsigned step = (lines == KCGD_HEIGHT) ? 1 : 2;
-        for (unsigned y = 0; y < lines; y++) {
-            uint32_t * p = reinterpret_cast<uint32_t*>(static_cast<uint8_t*>(render_pixels) + y * line_bytes);
-            unsigned a = line_address(y * step);
-            for (unsigned i = 0; i < KCGD_LINE_WORDS; i++) {
-                const uint32_t w = m_kcgd->vram(a++);
-                if (w & HIRES_BIT) {
-                    for (int s = 12; s >= 0; s -= 4) {
-                        const uint32_t c = pal[(w >> s) & 15];
-                        *p++ = c;
-                        *p++ = c;
-                    }
-                } else {
-                    for (int s = 14; s >= 0; s -= 2) *p++ = pal[5 * ((w >> s) & 3)];
-                }
-            }
-        }
+        for (unsigned y = 0; y < lines; y++)
+            draw_row(reinterpret_cast<uint32_t*>(static_cast<uint8_t*>(render_pixels) + y * line_bytes),
+                     y * step, pal);
     }
     screen_valid = true;
     was_updated = true;
+}
+
+// Строка растра row (0-479) в p: 100 слов по 8 точек
+void KCGDDisplay::draw_row(uint32_t * p, unsigned row, const uint32_t * pal) const
+{
+    unsigned a = line_address(row);
+    for (unsigned i = 0; i < KCGD_LINE_WORDS; i++) {
+        const uint32_t w = m_kcgd->vram(a++);
+        if (w & HIRES_BIT) {
+            for (int s = 12; s >= 0; s -= 4) {
+                const uint32_t c = pal[(w >> s) & 15];
+                *p++ = c;
+                *p++ = c;
+            }
+        } else {
+            for (int s = 14; s >= 0; s -= 2) *p++ = pal[5 * ((w >> s) & 3)];
+        }
+    }
 }
 
 // Точка x строки растра, начинающейся со слова a: номер регистра палитры
@@ -909,18 +988,14 @@ bool KCGDDisplay::get_field(const std::string &field, unsigned int from, unsigne
     return GenericDisplay::get_field(field, from, to, out);
 }
 
-void KCGDDisplay::save_state(StateWriter &w)
+// Где рисовать - по развёртке KCGD; поверхность целиком перерисует поток
+// отрисовки
+void KCGDDisplay::state_restored()
 {
-    GenericDisplay::save_state(w);
-    w.n("field", m_field);
-}
-
-emulator::Result KCGDDisplay::load_state(const StateReader &r)
-{
-    emulator::Result res = GenericDisplay::load_state(r);
-    if (!res) return res;
-    r.u("field", m_field);
-    return emulator::Result::ok();
+    GenericDisplay::state_restored();
+    m_field = m_kcgd->fields();
+    m_half = m_kcgd->half_frame();
+    m_drawn = m_kcgd->lines_passed();
 }
 
 ComputerDevice * create_kcgd_display(InterfaceManager *im, EmulatorConfigDevice *cd)
