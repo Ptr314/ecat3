@@ -43,7 +43,11 @@ public:
     //спрашивает сам до смены машины и выхода и ставит set_confirmed(), чтобы
     //закрытие окна не спросило второй раз
     bool confirm_close();
+    bool writing_to_file() const;
     void set_confirmed() { confirmed = true; }
+
+public slots:
+    void reject() override;
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -67,6 +71,8 @@ private:
         bool koi7 = false;
         unsigned koi7_high = 0;
         bool line_start = true;     //Поле кончается переводом строки или пустое
+        unsigned line_len = 0;      //Знаков или байтов в последней строке поля
+        QString glyphs[256];        //Знаки выбранной кодировки, см. build_glyphs()
     };
 
     Emulator * e;
@@ -89,10 +95,12 @@ private:
     void close_file(Port & p);
     void drain(Port & p);
     void stop_all();
+    bool finish_close();
     void poll();
 
     void append_text(Port & p, const QString & s);
     QString render(Port & p, const uint8_t * bytes, size_t count);
+    void build_glyphs(Port & p);
     void set_mode(int new_mode);
     QString folder();
     void choose_folder();

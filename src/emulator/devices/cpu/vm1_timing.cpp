@@ -437,7 +437,9 @@ int Vm1BusTiming::finish(unsigned int form, const BusReply * prefetch_reply, boo
 
 void Vm1BusTiming::wait_begun()
 {
-    m_wait_poll = m_release + (uint64_t)(m_release_tail ? WAIT_FIRST_AFTER_TAIL : WAIT_FIRST_HALVES) * TICKS_PER_HALF;
+    // After an untimed instruction the chain stands where it ended
+    const uint64_t release = (m_release != 0) ? m_release : m_start;
+    m_wait_poll = release + (uint64_t)(m_release_tail ? WAIT_FIRST_AFTER_TAIL : WAIT_FIRST_HALVES) * TICKS_PER_HALF;
     if (m_wait_poll == 0) m_wait_poll = 1;
 }
 

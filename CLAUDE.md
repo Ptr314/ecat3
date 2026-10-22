@@ -90,7 +90,9 @@ from a regression.
 - `SCREEN` waits for the render thread: take screenshots after timing-sensitive steps, or stop every
   processor around it.
 - Load test machines with `MACHINE` from an `.ecat`, not through an `.ext`'s `@script` (it starts late).
-- `COMMAND dev.set` writes with `force`: latched, not driven onto lines.
+- `COMMAND dev.set` writes with `force`, and the device decides what that means: an i8255 port and the
+  Поиск FDC control only latch (no line moves), but DL11, 1801ВП1-033 and the УК-НЦ channels ignore it and
+  act as on a guest write (`work-dvk4-printer`, `boot-uknc-channels` rely on that). Read the device first.
 - On the БК hold `KEY` for `_50`: 200 ms already autorepeats in MK-DOS/ANDOS.
 - Debug through scripts and MCP: `LOG mapper.map`, `LOG cpu.registers`, `LOG cpu.history(_40)` (1801
   processors, last 256 addresses), device fields. There is no compile-time logging, and none should be added.
@@ -116,8 +118,9 @@ from a regression.
 - An interface line has **no wired-AND**: a second driver overwrites the first. Combine sources in a device.
   Propagation is synchronous, with no event queue. An unplugged `connector` device must drive 0 when it
   leaves.
-- The bits of an i8255 port half are numbered by their place in the whole port: `~CH[4]` is PC4, and
-  `~CH[0]` silently drives nothing.
+- The bits of an i8255 upper half `CH` are numbered differently by direction. Driven into the port (input),
+  by their place in the whole port: `~CH[4]` is PC4, and `~CH[0]` silently drives nothing. Taken from it
+  (output), within the half: `dev.CH[3]` is PC7 (`~strobe = !pp-printer.CH[3]` of the УК-НЦ is right).
 - A one-shot interrupt request (a 1801 vectored interrupt) is cleared by the acknowledge (`~iako`), not
   recomputed from the level.
 - Devices are clocked in declaration order; a device that integrates another's fast state must follow it in

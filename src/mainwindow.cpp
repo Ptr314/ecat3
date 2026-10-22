@@ -1696,6 +1696,15 @@ void MainWindow::load_config(QString file_name, bool set_default, bool run_embed
     {
         //Запись порта в файл прерывается только с согласия: отказ оставляет
         //прежнюю машину работать
+#ifdef ENABLE_MCP
+        //The MCP client waits for the load, and a question would hang it
+        //until someone answers: under MCP a running file log is a refusal
+        SerialWindow * sw = findChild<SerialWindow*>();
+        if (mcp_mode && sw != nullptr && sw->writing_to_file()) {
+            mcp_load_error = tr("A serial port is being logged to a file in the I/O ports window. Stop the logging or close the window first.");
+            return;
+        }
+#endif
         if (!serial_close_allowed()) {
 #ifdef ENABLE_MCP
             mcp_load_error = tr("The user kept logging of a serial port to a file.");
@@ -2342,12 +2351,20 @@ QImage MainWindow::picture_as_shown(const std::vector<uint8_t> &raw, unsigned in
     return static_cast<QtRenderWidget*>(screen)->displayed_image();
 #elif defined(RENDERER_SDL2)
     //The window belongs to SDL and cannot be read back from here; the picture
-    //is scaled again to the size it is drawn at, with the filter chosen
-    if (raw.size() != (size_t)sx * sy * 4) return QImage();
+    //is scaled again to the size it is drawn at, with the filter chosen. With
+    //frames blended it is the blend the window showed, as OpenGL and Qt read
+    //it back, not the surface
+    SDL2Renderer * sdl = static_cast<SDL2Renderer*>(renderer);
+    std::vector<uint8_t> blended;
+    unsigned int bx = 0, by = 0;
+    const bool use_blend = sdl->get_blended(blended, bx, by);
+    const std::vector<uint8_t> &pixels = use_blend ? blended : raw;
+    if (use_blend) { sx = bx; sy = by; }
+    if (pixels.size() != (size_t)sx * sy * 4) return QImage();
     int w, h;
-    static_cast<SDL2Renderer*>(renderer)->get_render_size(&w, &h);
+    sdl->get_render_size(&w, &h);
     if (w <= 0 || h <= 0) return QImage();
-    const QImage original(raw.data(), sx, sy, sx * 4, QImage::Format_RGBA8888);
+    const QImage original(pixels.data(), sx, sy, sx * 4, QImage::Format_RGBA8888);
     return original.scaled(w, h, Qt::IgnoreAspectRatio,
         (e->get_filtering() == SCREEN_FILTERING_NONE)?Qt::FastTransformation:Qt::SmoothTransformation);
 #else
@@ -3063,7 +3080,9 @@ void MainWindow::on_actionRecPlay_triggered()
         }
         no_disk_restore = true;
         load_config(path, false, false);
-        if (!e->loaded) return;
+        //A refusal to stop a port's file logging keeps the old machine
+        //loaded, and the recording must not run on it
+        if (!e->loaded || !rec_machine_matches(machine)) return;
     }
 
     s->resume(e->clock_now());
@@ -3117,13 +3136,15 @@ void MainWindow::on_actionFastPaste_toggled(bool checked)
 }
 
 //The clipboard typed on the machine's keyboard the way TYPE types it. Only a
-//plain text: files and pictures copied elsewhere carry a text too (their
-//names), which is not what anyone means to type
+//plain text: files copied elsewhere carry a text too (their names), which is
+//not what anyone means to type. A picture next to the text is no reason to
+//refuse: cells of a spreadsheet and a selection in a word processor come
+//with one
 void MainWindow::on_actionPasteText_triggered()
 {
     if (e == nullptr || !e->loaded || e->script_active()) return;
     const QMimeData * m = QGuiApplication::clipboard()->mimeData();
-    if (m == nullptr || !m->hasText() || m->hasUrls() || m->hasImage()) return;
+    if (m == nullptr || !m->hasText() || m->hasUrls()) return;
     const QString text = m->text();
     if (text.isEmpty()) return;
 

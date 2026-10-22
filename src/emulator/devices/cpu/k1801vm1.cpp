@@ -265,6 +265,10 @@ void k1801vm1::save_state(StateWriter &w)
         w.n64("timing_now", m_timing->m_now);
         w.n64("timing_start", m_timing->m_start);
         if (m_timing->m_wait_poll != 0) w.n64("timing_wait_poll", m_timing->m_wait_poll);
+        if (m_timing->m_release != 0) {
+            w.n64("timing_release", m_timing->m_release);
+            w.u("timing_release_tail", m_timing->m_release_tail);
+        }
         if (m_timing_vm2) {
             w.n64("timing_s0", m_timing->m_s0);
             w.u("timing_kind", m_timing->m_kind2);
@@ -320,6 +324,12 @@ emulator::Result k1801vm1::load_state(const StateReader &r)
         r.n64("timing_start", m_timing->m_start);
         m_timing->m_wait_poll = 0;
         r.n64("timing_wait_poll", m_timing->m_wait_poll);
+        //A WAIT first after the load polls from the instruction before it
+        m_timing->m_release = 0;
+        r.n64("timing_release", m_timing->m_release);
+        unsigned int release_tail = 0;
+        r.u("timing_release_tail", release_tail);
+        m_timing->m_release_tail = (uint8_t)release_tail;
         if (m_timing_vm2) {
             unsigned int kind = 0;
             r.n64("timing_s0", m_timing->m_s0);

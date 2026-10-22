@@ -57,6 +57,11 @@ private:
 
     unsigned control() const;
     bool quarter() const;
+    // control() with the quarter screen in bit 16: what the beam draws by.
+    // Both registers change on the bus inside an instruction, and both are
+    // split at the moment of the write
+    static const unsigned BEAM_QUARTER = 1u << 16;
+    unsigned beam_state() const { return control() | (quarter() ? BEAM_QUARTER : 0); }
     void latch_scroll();
 
     void render_line(unsigned line);            // takes the surface lock
@@ -74,12 +79,13 @@ private:
     unsigned m_beam_line = NO_LINE;             // line in the buffer
     unsigned m_beam_byte = 0;                   // its bytes already laid out
     unsigned m_beam_mode = BK_MODE_RGB;         // its mode, as at its first byte
-    unsigned m_beam_ctl = 0;                    // the control register at the last BEAM()
+    unsigned m_beam_ctl = 0;                    // beam_state() at the last BEAM()
     unsigned m_beam_at_line = NO_LINE;          // the raster line and clock of that call
     unsigned m_beam_at = 0;
     unsigned m_beam_len = 0;                    // the length of that line, clocks
+    unsigned m_beam_from = 0;                   // clock of m_beam_line its picture starts at
     unsigned beam_byte(unsigned clocks) const;
-    void beam_draw(unsigned to, unsigned ctl);  // with the control register ctl
+    void beam_draw(unsigned to, unsigned ctl);  // with the beam_state() ctl
     void beam_commit();
 
 protected:

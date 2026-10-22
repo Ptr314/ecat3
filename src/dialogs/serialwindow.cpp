@@ -27,6 +27,11 @@
 #define MAX_LINES       10000
 //Сколько принятого держит вкладка для перерисовки
 #define DATA_LIMIT      (256 * 1024)
+//Сколько принятого идет в поле за раз: остальное только в файл и в буфер
+#define RENDER_LIMIT    (64 * 1024)
+//Длина строки поля без перевода строки в потоке: байтов и знаков
+#define BYTES_PER_LINE  16
+#define TEXT_LINE_MAX   1024
 
 static const char * const MODE_NAMES[] = {"original", "recoded", "bytes"};
 
@@ -229,6 +234,7 @@ void SerialWindow::set_charset(size_t i, int index)
         p.koi7 = info.is_koi7;
     }
     e->write_setup("Serial", charset_key(p), known ? CHARSETS[c].id : "machine");
+    build_glyphs(p);
     refill(p);
 }
 
@@ -238,6 +244,7 @@ void SerialWindow::refill(Port & p)
     p.text->clear();
     p.koi7_high = 0;
     p.line_start = true;
+    p.line_len = 0;
     append_text(p, render(p, reinterpret_cast<const uint8_t*>(p.data.constData()), (size_t)p.data.size()));
 }
 
@@ -333,6 +340,13 @@ void SerialWindow::stop_all()
     }
 }
 
+bool SerialWindow::writing_to_file() const
+{
+    for (const auto & p : ports)
+        if (p.file != nullptr) return true;
+    return false;
+}
+
 bool SerialWindow::confirm_close()
 {
     QStringList writing;
@@ -345,24 +359,63 @@ bool SerialWindow::confirm_close()
                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
 }
 
+//Крестик и Esc закрывают разными путями: Esc идет через reject(), и
+//closeEvent() на нем не приходит (Qt 5 и 6), поэтому отвод снимают оба.
+//Спрашивают один раз, повторный stop_all() ничего не делает
+bool SerialWindow::finish_close()
+{
+    if (!confirmed && !confirm_close()) return false;
+    confirmed = true;
+    stop_all();
+    return true;
+}
+
 void SerialWindow::closeEvent(QCloseEvent *event)
 {
-    if (!confirmed && !confirm_close()) {
+    if (!finish_close()) {
         event->ignore();
         return;
     }
-    stop_all();
     GenericDbgWnd::closeEvent(event);
+}
+
+void SerialWindow::reject()
+{
+    if (!finish_close()) return;
+    GenericDbgWnd::reject();
 }
 
 //------------------------------ Отображение --------------------------------//
 
 //Текст: перевод строки - LF, CR пропускается (CR LF), прочие управляющие
 //коды не видны. Байты - числа в системе машины через пробел, строка
-//кончается на байте LF, чтобы вывод не сливался в один абзац
+//кончается на байте LF, чтобы вывод не сливался в один абзац.
+//
+//Вывод без LF (графика принтера, двоичный поток, строки по CR) рос одним
+//абзацем, и каждая вставка раскладывала его заново в потоке GUI: строка
+//переносится сама через BYTES_PER_LINE байтов или TEXT_LINE_MAX знаков. И
+//за раз в поле идет не больше RENDER_LIMIT байтов, последних: пропущенные
+//только переключают SO/SI
 QString SerialWindow::render(Port & p, const uint8_t * bytes, size_t count)
 {
     QString s;
+    if (count > RENDER_LIMIT) {
+        const size_t skip = count - RENDER_LIMIT;
+        if (p.koi7)
+            for (size_t i = 0; i < skip; i++) {
+                if ((bytes[i] & 0x7F) == 0x0E) p.koi7_high = 0x80;
+                if ((bytes[i] & 0x7F) == 0x0F) p.koi7_high = 0;
+            }
+        bytes += skip;
+        count = RENDER_LIMIT;
+        if (!p.line_start) s += '\n';
+        s += QStringLiteral("...\n");
+        p.line_start = true;
+        p.line_len = 0;
+    }
+    s.reserve((int)(count * ((mode == MODE_BYTES) ? 4 : 1)) + 16);
+    const int digits = cell_digits(base, false);
+
     for (size_t i = 0; i < count; i++) {
         const uint8_t b = bytes[i];
         if (p.koi7 && (b & 0x7F) == 0x0E) p.koi7_high = 0x80;
@@ -370,26 +423,42 @@ QString SerialWindow::render(Port & p, const uint8_t * bytes, size_t count)
 
         if (mode == MODE_BYTES) {
             if (!p.line_start) s += ' ';
-            s += fmt_num(b, base, cell_digits(base, false));
-            p.line_start = (b == 0x0A);
-            if (p.line_start) s += '\n';
+            s += fmt_num(b, base, digits);
+            p.line_start = (b == 0x0A || ++p.line_len >= BYTES_PER_LINE);
+            if (p.line_start) {
+                s += '\n';
+                p.line_len = 0;
+            }
             continue;
         }
         if (b == 0x0A) {
             s += '\n';
             p.line_start = true;
+            p.line_len = 0;
             continue;
         }
         if (p.koi7 && ((b & 0x7F) == 0x0E || (b & 0x7F) == 0x0F)) continue;
         if (b == 0x09) s += '\t';
         else if (b < 0x20 || b == 0x7F) continue;
         else if (mode == MODE_ORIGINAL) s += QChar((ushort)b);
-        else if (p.koi7) s += QString::fromStdString((*p.table)[(b & 0x7F) | p.koi7_high]);
-        else if (p.table != nullptr) s += QString::fromStdString((*p.table)[b]);
-        else s += QString::fromStdString(e->translate_char(b));
+        else s += p.glyphs[p.koi7 ? ((b & 0x7F) | p.koi7_high) : b];
         p.line_start = false;
+        if (++p.line_len >= TEXT_LINE_MAX) {
+            s += '\n';
+            p.line_start = true;
+            p.line_len = 0;
+        }
     }
     return s;
+}
+
+//Знаки кодировки готовыми строками: по строке std::string на каждый
+//принятый байт выходило по выделению памяти
+void SerialWindow::build_glyphs(Port & p)
+{
+    for (unsigned i = 0; i < 256; i++)
+        p.glyphs[i] = QString::fromStdString((p.table != nullptr) ? (*p.table)[i]
+                                                                 : e->translate_char(i));
 }
 
 void SerialWindow::append_text(Port & p, const QString & s)

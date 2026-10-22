@@ -187,14 +187,17 @@ bool HddImage::write(uint64_t offset, const uint8_t * buffer)
         return true;
     }
     if (m_read_only || offset > 0x7FFFFFFFull) return false;
-    if (offset > m_file_size) {
-        // Запись за концом обрезанного образа: промежуток - пустой диск
-        uint8_t blank[SECTOR_SIZE];
-        memset(blank, m_fill, SECTOR_SIZE);
+    if (offset > m_file_size && m_fill != 0) {
+        // Запись за концом обрезанного образа: промежуток - пустой диск. Он
+        // может быть в сотню мегабайт (каталог в конце тома), и пишется
+        // крупными кусками. Нулями его заполняет сама ОС: запись за концом
+        // файла удлиняет его нулями
+        const size_t chunk = 64 * 1024;
+        const std::vector<uint8_t> blank(chunk, m_fill);
         if (std::fseek(m_file, (long)m_file_size, SEEK_SET) != 0) return false;
         for (uint64_t p = m_file_size; p < offset; ) {
-            const size_t n = (offset - p < SECTOR_SIZE) ? (size_t)(offset - p) : SECTOR_SIZE;
-            if (std::fwrite(blank, 1, n, m_file) != n) return false;
+            const size_t n = (offset - p < chunk) ? (size_t)(offset - p) : chunk;
+            if (std::fwrite(blank.data(), 1, n, m_file) != n) return false;
             p += n;
         }
         m_file_size = offset;

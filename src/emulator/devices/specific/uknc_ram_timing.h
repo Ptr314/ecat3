@@ -47,6 +47,13 @@
 // `late` adds clocks to the answer: the ВМ2 sees RPLY on its own edges, and a
 // reply exactly on one of them is seen there (0) or on the next (1). The
 // bench gives 0.
+//
+// `time_from` names another uknc-ram-timing of the same processor whose
+// count of clocks this one reads, and the device is then not clocked at all:
+// the peripheral processor has nine of them (classes of registers apart), and
+// eight virtual calls per instruction only to add the same number were a
+// visible share of the УК-НЦ's cost. The cycles, the grid and the busy time
+// stay its own.
 class UKNCRamTiming: public ComputerDevice, public WaitSource
 {
 private:
@@ -67,6 +74,7 @@ private:
     unsigned int m_period = 0;      // processor clock, ps
     uint32_t m_grid_ps = 1;         // the grid with its drift, ps
     uint64_t m_pos = 0;             // clocks counted
+    const UKNCRamTiming * m_time_from = nullptr;    // counts the clocks instead
     uint64_t m_busy = 0;            // the memory is free from this moment, ps
     uint64_t m_last = 0;            // a point of the grid not after m_busy, ps
     uint64_t m_cycles = 0;          // cycles timed, for scripts

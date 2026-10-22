@@ -199,6 +199,7 @@ DeviceManager::~DeviceManager()
 void DeviceManager::clear()
 {
     clocked_devices.clear();
+    event_devices.clear();
     cpus.clear();
 
     for (unsigned int i=0; i < device_count; i++)
@@ -284,6 +285,7 @@ emulator::Result DeviceManager::load_devices_config(SystemData *sd)
     //from (clock_source, "cpu" by default). The processors are not in any of
     //these lists: Emulator drives them itself
     clocked_devices.assign(cpus.size(), std::vector<ClockedDevice>());
+    event_devices.assign(cpus.size(), std::vector<ComputerDevice*>());
     for (unsigned int i=0; i < device_count; i++)
     {
         ComputerDevice * d = devices[i].device.get();
@@ -298,6 +300,7 @@ emulator::Result DeviceManager::load_devices_config(SystemData *sd)
         c.device = d;
         c.direct = !d->own_system_clock() && d->clock_ratio_one();
         clocked_devices[domain].push_back(c);
+        if (c.direct && d->has_clock_events()) event_devices[domain].push_back(d);
     }
 
     return emulator::Result::ok();
@@ -364,14 +367,13 @@ void DeviceManager::clock(unsigned int domain, unsigned int counter)
 unsigned int DeviceManager::clocks_to_event(const CPU * cpu) const
 {
     unsigned int r = UINT_MAX;
-    for (size_t j = 0; j < cpus.size() && j < clocked_devices.size(); j++) {
+    for (size_t j = 0; j < cpus.size() && j < event_devices.size(); j++) {
         if (cpus[j] != cpu) continue;
-        const std::vector<ClockedDevice> &list = clocked_devices[j];
-        for (size_t i = 0; i < list.size(); i++)
-            if (list[i].direct) {
-                const unsigned int e = list[i].device->clocks_to_event();
-                if (e < r) r = e;
-            }
+        const std::vector<ComputerDevice*> &list = event_devices[j];
+        for (size_t i = 0; i < list.size(); i++) {
+            const unsigned int e = list[i]->clocks_to_event();
+            if (e < r) r = e;
+        }
         break;
     }
     return r;

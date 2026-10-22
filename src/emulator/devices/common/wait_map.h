@@ -29,12 +29,31 @@ private:
     std::vector<Range> m_ranges;
     WaitSource * m_default = nullptr;
 
-    WaitSource * source(unsigned int address) const
+    // The answer for each 64 bytes of the first 64 KB, worked out in
+    // load_config(): it is asked on every bus cycle of the processor (the
+    // ROM of the УК-НЦ's ПП was past all ten ranges). A block the ranges
+    // split holds this map itself, and goes through the list
+    enum { PAGE_SHIFT = 6, PAGES = 0x10000 >> PAGE_SHIFT };
+    std::vector<WaitSource*> m_pages;
+
+    WaitSource * find_source(unsigned int address) const
     {
         for (const Range & r : m_ranges)
             if (address >= r.lo && address <= r.hi) return r.wait;
         return m_default;
     }
+
+    WaitSource * source(unsigned int address) const
+    {
+        const unsigned int page = address >> PAGE_SHIFT;
+        if (page < m_pages.size()) {
+            WaitSource * w = m_pages[page];
+            if (w != static_cast<const WaitSource*>(this)) return w;
+        }
+        return find_source(address);
+    }
+
+    void build_pages();
 
 public:
     WaitMap(InterfaceManager *im, EmulatorConfigDevice *cd);

@@ -235,6 +235,11 @@
         <source>Incorrect polarity for</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../emulator/devices/specific/uknc_ram_timing.cpp" line="+50"/>
+        <source>Incorrect clock counter</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ConfigFields</name>
@@ -583,7 +588,7 @@
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
         <location line="+246"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+179"/>
-        <location line="+317"/>
+        <location line="+321"/>
         <source>Video output</source>
         <translation type="unfinished"></translation>
     </message>
@@ -627,8 +632,8 @@
     <message>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="-244"/>
         <location line="+247"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-315"/>
-        <location line="+318"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-319"/>
+        <location line="+322"/>
         <source>RGB</source>
         <translation type="unfinished"></translation>
     </message>
@@ -641,8 +646,8 @@
     <message>
         <location line="-246"/>
         <location line="+247"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-316"/>
-        <location line="+318"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-320"/>
+        <location line="+322"/>
         <source>Mono</source>
         <translation type="unfinished"></translation>
     </message>
@@ -744,8 +749,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-319"/>
-        <location line="+318"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-323"/>
+        <location line="+322"/>
         <source>B/W</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1525,7 +1530,7 @@
 <context>
     <name>IE15Display</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+137"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+161"/>
         <source>Character generator device is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1533,7 +1538,7 @@
 <context>
     <name>IE15IO</name>
     <message>
-        <location line="+153"/>
+        <location line="+168"/>
         <source>Display of type ie15-display is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1629,12 +1634,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+48"/>
+        <location line="+53"/>
         <source>The scan PROM never ends a field</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+22"/>
         <source>The scan PROM gives no interlaced fields</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1647,7 +1652,7 @@
 <context>
     <name>KCGDDisplay</name>
     <message>
-        <location line="+522"/>
+        <location line="+528"/>
         <source>KCGD device is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1703,7 +1708,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+422"/>
+        <location line="+428"/>
         <source>This keyboard type has no native key table support</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1723,7 +1728,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+90"/>
+        <location line="+94"/>
         <source>Command &apos;host&apos; expects a key name and 0 or 1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1895,7 +1900,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+938"/>
+        <location filename="../mainwindow.cpp" line="+947"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1916,14 +1921,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1763"/>
-        <location line="+1889"/>
+        <location filename="../mainwindow.cpp" line="-1772"/>
+        <location line="+1898"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1576"/>
+        <location filename="../mainwindow.cpp" line="-1585"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1995,7 +2000,7 @@
     <message>
         <location filename="../mainwindow.cpp" line="-643"/>
         <location line="+76"/>
-        <location line="+1221"/>
+        <location line="+1230"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+206"/>
@@ -2010,7 +2015,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2513"/>
+        <location line="-2522"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2032,14 +2037,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1495"/>
+        <location line="+1504"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1610"/>
+        <location line="-1619"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2099,14 +2104,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1325"/>
+        <location line="+1334"/>
         <location line="+378"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1816"/>
+        <location line="-1825"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2142,12 +2147,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1653"/>
+        <location line="+1662"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1629"/>
+        <location line="-1638"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2260,7 +2265,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+24"/>
+        <source>A serial port is being logged to a file in the I/O ports window. Stop the logging or close the window first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>The user kept logging of a serial port to a file.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2389,7 +2399,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+303"/>
+        <location line="+305"/>
         <source>Remembered disks</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2441,7 +2451,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-428"/>
+        <location filename="../mainwindow.cpp" line="-430"/>
         <location line="+243"/>
         <source>Start recording</source>
         <translation type="unfinished"></translation>
@@ -2515,12 +2525,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1440"/>
+        <location line="-1449"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1483"/>
+        <location line="+1492"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3070,12 +3080,12 @@
     <message>
         <location line="+27"/>
         <location line="+211"/>
-        <location line="+54"/>
+        <location line="+61"/>
         <source>I/O ports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-256"/>
+        <location line="-263"/>
         <source>Choose folder...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3145,12 +3155,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+61"/>
         <source>Logging to a file is in progress (%1). Close the window and stop it?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+85"/>
+        <location line="+101"/>
         <source>Folder for logs</source>
         <translation type="unfinished"></translation>
     </message>

@@ -88,7 +88,13 @@ public:
 
     void render() override
     {
-        //A new image every frame: the widget keeps the one it is given, shared
+        if (!frame_blending()) {
+            blend_off();
+            widget->updateTexture(*surface);
+            return;
+        }
+        //A new image every blended frame: the widget keeps the one it is
+        //given, shared
         QImage blended(screen_x, screen_y, QImage::Format_RGB32);
         if (blend_frame(surface->constBits(), blended.bits()))
             widget->updateTexture(blended);

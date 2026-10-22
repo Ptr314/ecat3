@@ -64,6 +64,7 @@ public:
     void clock(unsigned int counter) override;
     //To the next line start, sampling point or end of the horizontal sync
     unsigned int clocks_to_event() const override;
+    bool has_clock_events() const override { return true; }
     //Reports the end of each frame itself, see GenericDisplay::own_frames()
     bool own_frames() const override { return true; }
 

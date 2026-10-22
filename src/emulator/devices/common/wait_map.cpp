@@ -46,7 +46,26 @@ emulator::Result WaitMap::load_config(SystemData *sd)
         if (!res) return res;
         m_ranges.push_back(r);
     }
+    build_pages();
     return emulator::Result::ok();
+}
+
+void WaitMap::build_pages()
+{
+    m_pages.assign(PAGES, nullptr);
+    for (unsigned int page = 0; page < PAGES; page++) {
+        const unsigned int lo = page << PAGE_SHIFT;
+        const unsigned int hi = lo + (1u << PAGE_SHIFT) - 1;
+        // The first range that touches the block decides it, if it holds all
+        // of it; one that holds a part leaves the block to the list
+        WaitSource * w = m_default;
+        for (const Range & r : m_ranges) {
+            if (r.hi < lo || r.lo > hi) continue;
+            w = (r.lo <= lo && r.hi >= hi) ? r.wait : static_cast<WaitSource*>(this);
+            break;
+        }
+        m_pages[page] = w;
+    }
 }
 
 unsigned int WaitMap::wait_states(unsigned int address, bool write, unsigned int offset)

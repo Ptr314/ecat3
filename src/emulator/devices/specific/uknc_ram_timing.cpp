@@ -37,6 +37,21 @@ emulator::Result UKNCRamTiming::load_config(SystemData *sd)
     m_late = read_confg_value(cd, "late", false, (unsigned int)0);
     m_drift = read_confg_value(cd, "drift", false, (unsigned int)0);
     m_setup = read_confg_value(cd, "setup", false, (unsigned int)0);
+
+    m_time_from = nullptr;
+    const std::string from = cd->get_parameter("time_from", false).value;
+    if (!from.empty()) {
+        const UKNCRamTiming * t = dynamic_cast<const UKNCRamTiming*>(im->dm->get_device_by_name(from, false));
+        // The same processor and clock, and one that counts by itself
+        if (t == nullptr || t == this || t->m_time_from != nullptr || !t->is_clocked()
+            || t->get_clock_source() != get_clock_source() || t->m_system_clock != m_system_clock
+            || !t->clock_ratio_one() || !clock_ratio_one())
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect clock counter")) + "} " + name + ": " + from);
+        m_time_from = t;
+        m_clocked = false;
+    }
+
     if (m_grid == 0) m_grid = 1;
     m_phase %= m_grid;
     m_period = m_system_clock ? (unsigned int)((1000000000000ull + m_system_clock / 2) / m_system_clock) : 0;
@@ -82,7 +97,8 @@ void UKNCRamTiming::clock(unsigned int counter)
 unsigned int UKNCRamTiming::answer(unsigned int flags, unsigned int offset)
 {
     if (m_period == 0) return 0;
-    const uint64_t strobe = (m_pos + offset) * m_period;
+    const uint64_t pos = (m_time_from != nullptr) ? m_time_from->m_pos : m_pos;
+    const uint64_t strobe = (pos + offset) * m_period;
     // Строб берётся в точке сетки, которая не меньше чем на setup позже него
     const uint64_t asked = strobe + (uint64_t)m_setup * PS;
     const uint64_t from = (asked > m_busy) ? asked : m_busy;

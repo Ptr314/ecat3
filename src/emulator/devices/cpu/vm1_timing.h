@@ -116,7 +116,9 @@ public:
             a.wait = wait;
         }
     }
-    void discard() { m_count = 0; m_write_at = -1; }
+    // The release finish() left belongs to an instruction before this one:
+    // a WAIT after an untimed instruction must not poll from it
+    void discard() { m_count = 0; m_write_at = -1; m_release = 0; m_release_tail = 0; }
     // An instruction that ended in a trap is timed by the trap template: its
     // own data cycles are dropped and only the last n, the trap's pushes and
     // vector reads, are kept (the opcode stays, finish() skips it)
@@ -238,8 +240,10 @@ private:
     uint32_t m_phase = 0;
     uint32_t phase_of_start(uint32_t window);
 
-    // The release of the last prefetch finish() placed, and the tail of its
-    // form: where a WAIT fetched by it begins to poll
+public:
+    // Saved state: the release of the last prefetch finish() placed, and the
+    // tail of its form: where a WAIT fetched by it begins to poll. 0 when the
+    // last instruction went by the legacy count (discard())
     uint64_t m_release = 0;
     uint8_t m_release_tail = 0;
 };

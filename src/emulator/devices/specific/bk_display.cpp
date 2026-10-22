@@ -211,14 +211,14 @@ void BKDisplay::set_renderer(VideoRenderer &vr)
 // Bits 8-11 hold the palette number, bit 15 picks the video page
 unsigned BKDisplay::control() const
 {
-    return (port_control != nullptr) ? port_control->get_direct(0) : 0;
+    return (port_control != nullptr) ? port_control->stored_value() : 0;
 }
 
 // Bit 9 cleared leaves only the top quarter of the screen (64 lines) on the air.
 // The controller looks at it on every word, not once a frame.
 bool BKDisplay::quarter() const
 {
-    return (port_scroll != nullptr) && (port_scroll->get_direct(0) & 0x200) == 0;
+    return (port_scroll != nullptr) && (port_scroll->stored_value() & 0x200) == 0;
 }
 
 void BKDisplay::latch_scroll()
@@ -256,6 +256,10 @@ void BKDisplay::HSYNC(const unsigned line, const unsigned sync_val)
         // The line before, if the beam laid it out: before the frame is
         // reported whole below
         beam_commit();
+        // Without the mode BEAM() is not called, and the register and clock
+        // it left would be taken as the state before the first instruction
+        // once the mode is back
+        if (!beam_active()) m_beam_at_line = NO_LINE;
         if (line == m_video_lines) {
             for (unsigned i = 0; i < m_video_lines && i < 256; i++)
                 m_frame_palette[i] = m_line_palette[i];
@@ -300,13 +304,13 @@ void BKDisplay::HSYNC(const unsigned line, const unsigned sync_val)
 void BKDisplay::BEAM(const unsigned line, const unsigned clocks)
 {
     // The register before the instruction just run, and where it began
-    const unsigned before = (m_beam_at_line != NO_LINE) ? m_beam_ctl : control();
+    const unsigned before = (m_beam_at_line != NO_LINE) ? m_beam_ctl : beam_state();
     // An instruction begun on the line before starts at a negative clock of
     // this one (beam_commit() has laid out its part there)
     int start = 0;
     if (line == m_beam_at_line && clocks >= m_beam_at) start = (int)m_beam_at;
     else if (m_beam_at_line != NO_LINE) start = (int)m_beam_at - (int)m_beam_len;
-    m_beam_ctl = control();
+    m_beam_ctl = beam_state();
     m_beam_at_line = line;
     m_beam_at = clocks;
     m_beam_len = line_length();
@@ -315,8 +319,13 @@ void BKDisplay::BEAM(const unsigned line, const unsigned clocks)
     if (line != m_beam_line) {
         m_beam_line = line;
         m_beam_byte = 0;
+        // The first clock beam_byte() is past 0 at: before it the line is
+        // blank, and an instruction there, whatever it wrote, draws nothing.
+        // A third of the line went through a division each for that
+        const uint64_t lb = m_line_bytes, len = m_beam_len;
+        m_beam_from = (lb == 0) ? 0 : (unsigned)(((lb / 2 + 1) * 2 * len + 3 * lb - 1) / (3 * lb));
     }
-    if (m_beam_byte >= m_line_bytes) return;
+    if (clocks < m_beam_from || m_beam_byte >= m_line_bytes) return;
     if (before != m_beam_ctl) {
         const int w = (m_cpu != nullptr) ? m_cpu->last_write_clocks() : -1;
         const int at = (w >= 0 && start + w <= (int)clocks) ? start + w : (start + (int)clocks) / 2;
@@ -341,7 +350,7 @@ void BKDisplay::beam_draw(const unsigned to, const unsigned ctl)
 
     RAM * vmem = vram[(vram[1] != nullptr) ? ((ctl >> 15) & 1) : 0];
     const unsigned line = m_beam_line;
-    const bool blank = vmem == nullptr || (quarter() && line >= m_video_lines / 4);
+    const bool blank = vmem == nullptr || ((ctl & BEAM_QUARTER) != 0 && line >= m_video_lines / 4);
     const unsigned palette = (ctl >> 8) & 0x0F;
     // For scripts, the palette the line starts with
     if (m_beam_byte == 0) {
@@ -366,11 +375,12 @@ void BKDisplay::beam_commit()
     // end leaves the rest of the line as it was. Taking control() for all of
     // it put a byte or more of the next colour at the end of the line above a
     // palette stripe
-    if (control() != m_beam_ctl && m_beam_at_line == m_beam_line && m_cpu != nullptr) {
+    const unsigned now = beam_state();
+    if (now != m_beam_ctl && m_beam_at_line == m_beam_line && m_cpu != nullptr) {
         const int w = m_cpu->last_write_clocks();
         if (w >= 0) beam_draw(beam_byte(m_beam_at + (unsigned)w), m_beam_ctl);
     }
-    beam_draw(m_line_bytes, control());
+    beam_draw(m_line_bytes, now);
     {
         compat_lock_guard guard(m_surface_mutex);
         // A line laid out in the mode left behind is not copied: the switch

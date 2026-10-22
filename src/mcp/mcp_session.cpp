@@ -250,8 +250,14 @@ McpResult McpSession::run_parsed_locked(const std::vector<std::string> &lines,
             if (r.text != "ok") output.push_back(r.text);
         }
 
-        const std::vector<std::string> tail_lines(lines.begin() + i + 1, lines.end());
-        const std::vector<ScriptCommand> tail(parsed.begin() + i + 1, parsed.end());
+        //The queue gets only the lines up to the next MACHINE: the engine
+        //ignores MACHINE, so a second one queued with them would leave the
+        //rest of the batch on the first machine
+        size_t next = i + 1;
+        while (next < parsed.size() && parsed[next].verb != SCRIPT_CMD_MACHINE) next++;
+
+        const std::vector<std::string> tail_lines(lines.begin() + i + 1, lines.begin() + next);
+        const std::vector<ScriptCommand> tail(parsed.begin() + i + 1, parsed.begin() + next);
         McpResult r = machine_locked(parsed[i].args.empty() ? std::string() : parsed[i].args[0],
                                      &tail_lines, &tail, timeout_ms);
         if (!r.ok)
@@ -260,6 +266,15 @@ McpResult McpSession::run_parsed_locked(const std::vector<std::string> &lines,
             return output.empty() ? r : McpResult::bad(join(output));
         }
         if (r.text != "ok") output.push_back(r.text);
+
+        if (next < parsed.size())
+        {
+            const std::vector<std::string> rest_lines(lines.begin() + next, lines.end());
+            const std::vector<ScriptCommand> rest(parsed.begin() + next, parsed.end());
+            r = run_parsed_locked(rest_lines, rest, timeout_ms);
+            if (r.text != "ok") output.push_back(r.text);
+            if (!r.ok) return McpResult::bad(join(output));
+        }
         return McpResult::good(join(output));
     }
 

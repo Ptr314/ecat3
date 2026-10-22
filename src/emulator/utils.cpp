@@ -426,9 +426,20 @@ bool checkCapsLock()
 #endif
 }
 
+// random_device в libstdc++ на MinGW до GCC 9.2 (сборка для XP) выдает одно
+// и то же при каждом запуске (GCC bug 85494): к нему подмешивается время
+static std::mt19937 & random_generator()
+{
+    std::random_device rd;
+    const uint64_t t = static_cast<uint64_t>(std::chrono::steady_clock::now().time_since_epoch().count())
+                     ^ static_cast<uint64_t>(std::time(nullptr));
+    std::seed_seq seq{rd(), rd(), static_cast<unsigned>(t), static_cast<unsigned>(t >> 32)};
+    static std::mt19937 gen(seq);
+    return gen;
+}
+
 int getRandomNumber(int min, int max) {
-    static std::random_device rd;  // Источник случайности
-    static std::mt19937 gen(rd()); // Генератор
+    static std::mt19937 & gen = random_generator();
     std::uniform_int_distribution<> dis(min, max);
     return dis(gen);
 }

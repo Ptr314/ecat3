@@ -14,6 +14,7 @@
 
 #include "emulator/core.h"
 #include "emulator/renderer.h"
+#include "emulator/thread_compat.h"
 #include "qt_utils.h"
 
 class SDL2Renderer: public VideoRenderer
@@ -33,13 +34,19 @@ private:
     SDL_Texture * sharp_target = nullptr;
     int sharp_w = 0;
     int sharp_h = 0;
-    //The picture shown when frames are blended, made with the first such frame
+    //The picture shown when frames are blended, made with the first such frame.
+    //The render thread writes it, and the GUI reads it for a screenshot or a
+    //video "as on screen" (get_blended()): both under blend_mutex
     SDL_Surface * blend_surface = nullptr;
+    bool blend_shown = false;           //the last frame shown was blend_surface
+    compat_mutex blend_mutex;
 
     void destroy_blend_surface()
     {
+        compat_lock_guard lock(blend_mutex);
         if (blend_surface != nullptr) SDL_FreeSurface(blend_surface);
         blend_surface = nullptr;
+        blend_shown = false;
     }
 
     void destroy_sharp_target()
@@ -216,13 +223,16 @@ public:
         if (blend_surface != nullptr && (!frame_blending()
                                          || blend_surface->w != screen_x || blend_surface->h != screen_y))
             destroy_blend_surface();
-        if (blend_surface == nullptr && frame_blending())
-            blend_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_x, screen_y, 32, SDL_PIXELFORMAT_RGBA8888);
-        if (blend_surface != nullptr
-            && blend_frame(static_cast<const uint8_t *>(device_surface->pixels),
-                           static_cast<uint8_t *>(blend_surface->pixels)))
-            frame = blend_surface;
-        if (blend_surface == nullptr) blend_off();
+        {
+            compat_lock_guard lock(blend_mutex);
+            if (blend_surface == nullptr && frame_blending())
+                blend_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_x, screen_y, 32, SDL_PIXELFORMAT_RGBA8888);
+            blend_shown = blend_surface != nullptr
+                && blend_frame(static_cast<const uint8_t *>(device_surface->pixels),
+                               static_cast<uint8_t *>(blend_surface->pixels));
+            if (blend_shown) frame = blend_surface;
+            if (blend_surface == nullptr) blend_off();
+        }
 
         SDLTexture = SDL_CreateTextureFromSurface(SDLRendererRef, frame);
         if (SDLTexture == nullptr) {
@@ -274,6 +284,33 @@ public:
     uint32_t MapRGB(uint8_t R, uint8_t G, uint8_t B) override
     {
         return SDL_MapRGB(device_surface->format, R, G, B);
+    }
+
+    //The blended picture the window showed last, as RGBA bytes, for a
+    //screenshot or a video "as on screen" from the GUI thread: the window
+    //itself cannot be read back from there. False when the frame shown was
+    //the surface itself (blending off), which get_screenshot() gives
+    bool get_blended(std::vector<uint8_t> &image, unsigned int &sx, unsigned int &sy)
+    {
+        compat_lock_guard lock(blend_mutex);
+        if (!blend_shown || blend_surface == nullptr) return false;
+        sx = (unsigned int)blend_surface->w;
+        sy = (unsigned int)blend_surface->h;
+        image.resize((size_t)sx * sy * 4);
+        //RGBA8888 is a packed format: R is the high byte of the pixel
+        uint8_t * out = image.data();
+        for (unsigned int y = 0; y < sy; y++) {
+            const uint32_t * row = reinterpret_cast<const uint32_t *>(
+                static_cast<const uint8_t *>(blend_surface->pixels) + (size_t)y * blend_surface->pitch);
+            for (unsigned int x = 0; x < sx; x++) {
+                const uint32_t p = row[x];
+                *out++ = (uint8_t)(p >> 24);
+                *out++ = (uint8_t)(p >> 16);
+                *out++ = (uint8_t)(p >> 8);
+                *out++ = (uint8_t)p;
+            }
+        }
+        return true;
     }
 
     std::vector<uint8_t> get_screenshot() override

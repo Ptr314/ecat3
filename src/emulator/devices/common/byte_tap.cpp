@@ -19,8 +19,10 @@ void ByteTap::put(uint8_t b)
 void ByteTap::set_tap(bool on)
 {
     compat_lock_guard g(m_tap_mutex);
+    // Новый сеанс начинается с пустого отвода и при включении: окно,
+    // закрытое без set_tap(false), не должно отдать старые байты
     m_tap_on = on;
-    if (!on) m_tap.clear();
+    m_tap.clear();
 }
 
 void ByteTap::take_tap(std::vector<uint8_t> &out)

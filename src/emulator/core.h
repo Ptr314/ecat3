@@ -314,6 +314,9 @@ public:
     //it sees the interrupt on the clock it came, not up to a step later. Only
     //asked of a device clocked 1:1 (DeviceManager::clocks_to_event())
     virtual unsigned int clocks_to_event() const { return UINT_MAX; }
+    //True for a class whose clocks_to_event() ever answers: only those are
+    //asked, on every idle step of a WAIT
+    virtual bool has_clock_events() const { return false; }
     //Whether clocking this device does anything at all - see m_clocked
     bool is_clocked() const { return m_clocked; }
     //True for a class with a system_clock() of its own. The others count in
@@ -685,6 +688,9 @@ protected:
 
 public:
     unsigned get_direct(unsigned address) override;
+    // What get_direct() returns, without the virtual call: for a device that
+    // looks at the register after every instruction (the БК raster)
+    unsigned int stored_value() const { return value; }
     unsigned int get_value(unsigned address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
     unsigned int get_value_word(unsigned int address) override;
@@ -762,6 +768,8 @@ private:
         bool direct;        //clock() itself: no divider, no system_clock() of its own
     };
     std::vector<std::vector<ClockedDevice>> clocked_devices;
+    //Per domain, the direct devices with has_clock_events()
+    std::vector<std::vector<ComputerDevice*>> event_devices;
     std::vector<CPU*> cpus;
     unsigned int registered_devices_count;
     RegisteredDevice registered_devices[MAX_REGISTERED_DEVICES];
