@@ -226,7 +226,7 @@
         <translation>Нерректная точка останова</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+176"/>
+        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+179"/>
         <source>Unknown timing</source>
         <translation>Неизвестный способ расчета времени</translation>
     </message>
@@ -481,7 +481,7 @@
         <translation>Некорректная скорость обмена</translation>
     </message>
     <message>
-        <location line="+426"/>
+        <location line="+432"/>
         <source>Command &apos;connect&apos; expects a port name</source>
         <translation>Команда &apos;connect&apos; ожидает имя порта</translation>
     </message>
@@ -1153,7 +1153,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+257"/>
+        <location filename="../emulator/emulator.cpp" line="+258"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -2040,7 +2040,7 @@
         <translation>Неверная клавиша в файле групп клавиш</translation>
     </message>
     <message>
-        <location line="+672"/>
+        <location line="+715"/>
         <source>Command &apos;host&apos; expects a key name and 0 or 1</source>
         <translation>Команде &apos;host&apos; нужны имя клавиши и 0 или 1</translation>
     </message>
@@ -2170,12 +2170,12 @@
         <translation type="vanished">Помощь</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+36"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+14"/>
         <source>Display</source>
         <translation>Экран</translation>
     </message>
@@ -2202,7 +2202,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1619"/>
+        <location filename="../mainwindow.cpp" line="+1623"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2295,6 +2295,26 @@
         <translation>Вставлять в дисководы последние выбранные образы при загрузке машины</translation>
     </message>
     <message>
+        <location line="+11"/>
+        <source>Fast paste</source>
+        <translation>Быстрая вставка</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Paste text typing a key every 100 ms instead of every 200 ms</source>
+        <translation>Вставлять текст, нажимая клавишу каждые 100 мс вместо 200 мс</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Paste text</source>
+        <translation>Вставка текста</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Type the text from the clipboard on the machine&apos;s keyboard</source>
+        <translation>Набрать текст из буфера обмена на клавиатуре машины</translation>
+    </message>
+    <message>
         <location line="+5"/>
         <source>Forget the disks of all machines</source>
         <translation>Забыть диски всех машин</translation>
@@ -2309,7 +2329,7 @@
         <translation type="vanished">Выбрать компьютер...</translation>
     </message>
     <message>
-        <location line="-301"/>
+        <location line="-323"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
@@ -2573,8 +2593,8 @@
         <translation>Как на экране</translation>
     </message>
     <message>
-        <location line="-485"/>
-        <location line="+592"/>
+        <location line="-486"/>
+        <location line="+593"/>
         <location line="+1"/>
         <location line="+831"/>
         <source>Turbo</source>
@@ -2735,7 +2755,7 @@
         <translation>Машина остановилась</translation>
     </message>
     <message>
-        <location line="+266"/>
+        <location line="+303"/>
         <source>Remembered disks</source>
         <translation>Запомненные диски</translation>
     </message>
@@ -2750,12 +2770,12 @@
         <translation>Конфигурация не загружена.</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-218"/>
+        <location filename="../mainwindow.ui" line="-221"/>
         <source>Action recording</source>
         <translation>Запись действий</translation>
     </message>
     <message>
-        <location line="+287"/>
+        <location line="+290"/>
         <source>I/O ports...</source>
         <translation>Порты ввода-вывода...</translation>
     </message>
@@ -2782,7 +2802,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-391"/>
+        <location filename="../mainwindow.cpp" line="-428"/>
         <location line="+243"/>
         <source>Start recording</source>
         <translation>Начать запись</translation>
@@ -3464,7 +3484,7 @@
 <context>
     <name>SerialWindow</name>
     <message>
-        <location filename="../dialogs/serialwindow.cpp" line="+39"/>
+        <location filename="../dialogs/serialwindow.cpp" line="+40"/>
         <source>KOI-7 N0/N1 (SO/SI)</source>
         <translation>КОИ-7 Н0/Н1 (SO/SI)</translation>
     </message>
@@ -3524,13 +3544,13 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+208"/>
+        <location line="+211"/>
         <location line="+54"/>
         <source>I/O ports</source>
         <translation>Порты ввода-вывода</translation>
     </message>
     <message>
-        <location line="-253"/>
+        <location line="-256"/>
         <source>Choose folder...</source>
         <translation>Выбрать папку...</translation>
     </message>
@@ -3550,7 +3570,7 @@
         <translation>Байты</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+52"/>
         <source>Logging</source>
         <translation>Логирование</translation>
     </message>

@@ -154,7 +154,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+176"/>
+        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+179"/>
         <source>Unknown timing</source>
         <translation type="unfinished"></translation>
     </message>
@@ -385,7 +385,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+426"/>
+        <location line="+432"/>
         <source>Command &apos;connect&apos; expects a port name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -945,7 +945,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+257"/>
+        <location filename="../emulator/emulator.cpp" line="+258"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1685,7 +1685,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+379"/>
+        <location line="+422"/>
         <source>This keyboard type has no native key table support</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1807,7 +1807,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+47"/>
+        <location line="+50"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1834,7 +1834,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1619"/>
+        <location filename="../mainwindow.cpp" line="+1623"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1930,6 +1930,26 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location line="+11"/>
+        <source>Fast paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Paste text typing a key every 100 ms instead of every 200 ms</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Paste text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Type the text from the clipboard on the machine&apos;s keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+5"/>
         <source>Forget the disks of all machines</source>
         <translation type="unfinished"></translation>
@@ -1940,7 +1960,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-301"/>
+        <location line="-323"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2182,8 +2202,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-748"/>
-        <location line="+592"/>
+        <location line="-749"/>
+        <location line="+593"/>
         <location line="+1"/>
         <location line="+831"/>
         <source>Turbo</source>
@@ -2351,7 +2371,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+266"/>
+        <location line="+303"/>
         <source>Remembered disks</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2366,17 +2386,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-144"/>
+        <location filename="../mainwindow.ui" line="-147"/>
         <source>Action recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+26"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+262"/>
+        <location line="+264"/>
         <source>I/O ports...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2403,7 +2423,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-391"/>
+        <location filename="../mainwindow.cpp" line="-428"/>
         <location line="+243"/>
         <source>Start recording</source>
         <translation type="unfinished"></translation>
@@ -2975,7 +2995,7 @@
 <context>
     <name>SerialWindow</name>
     <message>
-        <location filename="../dialogs/serialwindow.cpp" line="+39"/>
+        <location filename="../dialogs/serialwindow.cpp" line="+40"/>
         <source>KOI-7 N0/N1 (SO/SI)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3031,13 +3051,13 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+208"/>
+        <location line="+211"/>
         <location line="+54"/>
         <source>I/O ports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-253"/>
+        <location line="-256"/>
         <source>Choose folder...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3057,7 +3077,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+52"/>
         <source>Logging</source>
         <translation type="unfinished"></translation>
     </message>

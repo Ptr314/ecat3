@@ -131,6 +131,7 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , renderer(renderer)
     , m_running(false)
     , m_ready(false)
+    , m_paste_active(false)
     , m_calls_pending(false)
     , m_video_from_screen(false)
     , m_video_locked(false)
@@ -1104,6 +1105,8 @@ void Emulator::run()
                 return;
             }
             keyboard->set_remap_mode(m_key_remap);
+            //What was pasted into the machine before is not this one's
+            paste_clear();
 
             joysticks.clear();
             std::vector<ComputerDevice*> joystick_devices = dm->find_devices_by_class("joystick");
@@ -1475,6 +1478,9 @@ void Emulator::timer_proc(uint64_t time_ticks)
         //The master stood still for the whole slice: a WAITFOR or a SCREEN
         //would wait for an emulated millisecond that is not coming
         if (script && time_ticks > 0 && clock_counter == clock_before) script->tick_frozen(clock_counter);
+
+        //Pasted text needs no step finer than a slice: nothing measures it
+        if (m_paste_active) paste_step();
 
         //A display with no raster in the model gets a frame every 20 ms of the
         //machine's time: the render thread then shows it on that schedule,
@@ -1963,6 +1969,58 @@ void Emulator::release_host_keys()
         //A recording would otherwise keep the key down for the rest of it
         record_key(static_cast<unsigned int>(held[i].key), held[i].scan, false);
     }
+}
+
+void Emulator::paste_text(const std::string &text, unsigned int delay_ms, unsigned int hold_ms)
+{
+    invoke([this, text, delay_ms, hold_ms]{
+        if (!keyboard) return;
+        paste_clear();
+        text_to_keys(text, keyboard, false, m_paste_keys, m_paste_shift);
+        if (m_paste_keys.empty()) return;
+        m_paste_delay = (uint64_t)delay_ms * ticks_per_ms();
+        m_paste_hold = (uint64_t)hold_ms * ticks_per_ms();
+        m_paste_at = clock_counter + m_paste_delay;
+        m_paste_active = true;
+    });
+}
+
+//Lets go of the key being typed and forgets the rest. Emulation thread
+void Emulator::paste_clear()
+{
+    if (m_paste_pressed && m_paste_index < m_paste_keys.size()) {
+        key_event(static_cast<int>(m_paste_keys[m_paste_index]), 0, false);
+        if (m_paste_shift[m_paste_index]) key_event(static_cast<int>(EmuKey::Shift), 0, false);
+    }
+    m_paste_keys.clear();
+    m_paste_shift.clear();
+    m_paste_index = 0;
+    m_paste_pressed = false;
+    m_paste_active = false;
+}
+
+//ScriptEngine::key_step(): Shift goes down and up around the character that
+//needs it, since the keyboards watch the Shift key, not a modifier flag
+void Emulator::paste_step()
+{
+    if (clock_counter < m_paste_at) return;
+
+    if (!m_paste_pressed) {
+        if (m_paste_shift[m_paste_index]) key_event(static_cast<int>(EmuKey::Shift), 0, true);
+        key_event(static_cast<int>(m_paste_keys[m_paste_index]), 0, true);
+        m_paste_pressed = true;
+        m_paste_at = clock_counter + m_paste_hold;
+        return;
+    }
+
+    key_event(static_cast<int>(m_paste_keys[m_paste_index]), 0, false);
+    if (m_paste_shift[m_paste_index]) key_event(static_cast<int>(EmuKey::Shift), 0, false);
+    m_paste_pressed = false;
+    if (++m_paste_index >= m_paste_keys.size()) {
+        paste_clear();
+        return;
+    }
+    m_paste_at = clock_counter + m_paste_delay;
 }
 
 // A key of the machine's own keyboard, pressed on the drawing of it. It carries

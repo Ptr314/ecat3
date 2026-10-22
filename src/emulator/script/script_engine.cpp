@@ -845,30 +845,10 @@ emulator::Result ScriptEngine::do_type(const ScriptCommand &c)
     //by the host layout.
     Keyboard * kbd = dynamic_cast<Keyboard*>(e->dm->get_device_by_name("keyboard", false));
 
-    for (size_t i = 0; i < text.length(); i++)
-    {
-        char ch = text[i];
-        std::string name;
-
-        if (ch == '\\' && i + 1 < text.length())
-        {
-            //Escapes, so that a line feed can be typed from a single line script
-            char n = text[++i];
-            if      (n == 'n') name = "ret";
-            else if (n == 't') name = "tab";
-            else name = std::string(1, n);
-        }
-        else if (ch == ' ') name = "space";
-        else name = std::string(1, ch);
-
-        unsigned int code = translate_key_name(name);
-        if (code == _FFFF) {
-            log_error(c, "unknown character '" + name + "'");
-            continue;
-        }
-        keys.push_back(code);
-        shift.push_back(kbd != nullptr && kbd->needs_shift(code));
-    }
+    std::vector<std::string> unknown;
+    text_to_keys(text, kbd, true, keys, shift, &unknown);
+    for (size_t i = 0; i < unknown.size(); i++)
+        log_error(c, "unknown character '" + unknown[i] + "'");
 
     start_keys(keys, shift, delay, hold);
     return emulator::Result::ok();

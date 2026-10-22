@@ -109,6 +109,7 @@
     <addaction name="action_Soft_restart"/>
     <addaction name="actionDebugger"/>
     <addaction name="actionKeyboard"/>
+    <addaction name="actionPasteText"/>
     <addaction name="actionSerial"/>
     <addaction name="menuRecording"/>
     <addaction name="separator"/>
@@ -505,6 +506,32 @@
    </property>
    <property name="toolTip">
     <string>Put the disks chosen last into the drives when a machine is loaded</string>
+   </property>
+  </action>
+  <action name="actionFastPaste">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Fast paste</string>
+   </property>
+   <property name="toolTip">
+    <string>Paste text typing a key every 100 ms instead of every 200 ms</string>
+   </property>
+  </action>
+  <action name="actionPasteText">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/paste</normaloff>:/icons/paste</iconset>
+   </property>
+   <property name="text">
+    <string>Paste text</string>
+   </property>
+   <property name="toolTip">
+    <string>Type the text from the clipboard on the machine's keyboard</string>
    </property>
   </action>
   <action name="actionForgetDisks">

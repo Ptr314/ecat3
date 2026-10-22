@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/icons">
         <file alias="tv">resources/icons/tv.png</file>
+        <file alias="paste">resources/icons/editpaste.png</file>
         <file alias="exit">resources/icons/exit.png</file>
         <file alias="devices">resources/icons/ksim_cpu.png</file>
         <file alias="power">resources/icons/power.png</file>

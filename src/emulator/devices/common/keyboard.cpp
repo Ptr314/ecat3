@@ -346,6 +346,49 @@ std::string key_name(unsigned int code)
     return "";
 }
 
+void text_to_keys(const std::string &text, Keyboard * kbd, bool escapes,
+                  std::vector<unsigned int> &keys, std::vector<bool> &shift,
+                  std::vector<std::string> * unknown)
+{
+    for (size_t i = 0; i < text.length(); i++)
+    {
+        const char ch = text[i];
+        std::string name;
+
+        if (static_cast<unsigned char>(ch) >= 0x80)
+        {
+            //A UTF-8 sequence: no key has a name outside ASCII
+            size_t j = i + 1;
+            while (j < text.length() && (static_cast<unsigned char>(text[j]) & 0xC0) == 0x80) j++;
+            if (unknown != nullptr) unknown->push_back(text.substr(i, j - i));
+            i = j - 1;
+            continue;
+        }
+
+        if (escapes && ch == '\\' && i + 1 < text.length())
+        {
+            //Escapes, so that a line feed can be typed from a single line script
+            const char n = text[++i];
+            if      (n == 'n') name = "ret";
+            else if (n == 't') name = "tab";
+            else name = std::string(1, n);
+        }
+        else if (ch == ' ') name = "space";
+        else if (!escapes && ch == '\r') continue;
+        else if (!escapes && ch == '\n') name = "ret";
+        else if (!escapes && ch == '\t') name = "tab";
+        else name = std::string(1, ch);
+
+        const unsigned int code = translate_key_name(name);
+        if (code == _FFFF) {
+            if (unknown != nullptr) unknown->push_back(name);
+            continue;
+        }
+        keys.push_back(code);
+        shift.push_back(kbd != nullptr && kbd->needs_shift(code));
+    }
+}
+
 unsigned int Keyboard::translate_key(const std::string &key)
 {
     return translate_key_name(key);

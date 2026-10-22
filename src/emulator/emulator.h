@@ -141,6 +141,19 @@ private:
 
     std::unique_ptr<ScriptEngine> script;
     std::unique_ptr<ScriptRecorder> recorder;
+
+    //Text pasted from the host, typed the way TYPE types it (paste_text()).
+    //Emulation thread only, but for the flag the loop looks at
+    std::vector<unsigned int> m_paste_keys;
+    std::vector<bool> m_paste_shift;
+    size_t m_paste_index = 0;
+    bool m_paste_pressed = false;
+    uint64_t m_paste_delay = 0;                 //In CPU cycles
+    uint64_t m_paste_hold = 0;
+    uint64_t m_paste_at = 0;                    //clock_counter of the next step
+    std::atomic<bool> m_paste_active;
+    void paste_step();
+    void paste_clear();
     //An empty file name no longer means "nothing was asked for": an external
     //driver wants the bytes without a file, so the request is a flag of its own
     std::string m_screenshot_file;              //Guarded by m_screenshot_mutex
@@ -365,6 +378,13 @@ public:
     // applies (see set_key_remap); scripts and MCP leave it false
     void key_event(int key, int modifiers, bool press, bool host = false);
     void key_event_id(const std::string &id, bool press);
+
+    // Emulation > Paste text: types a text (UTF-8, literal, line breaks are
+    // Return) on the machine's keyboard as TYPE does, the keys pressed for
+    // hold and spaced by delay ms of emulated time. Characters the machine has
+    // no key for are skipped. A new text replaces one not yet typed. Any thread
+    void paste_text(const std::string &text, unsigned int delay_ms, unsigned int hold_ms);
+    bool paste_active() const { return m_paste_active; }
 
     // Settings > Keyboard, a KeyRemapMode: which remap table of the machine's
     // keyboard host keys go through. Kept across machine loads; the console

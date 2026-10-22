@@ -33,6 +33,9 @@
 #include <QProgressDialog>
 //Qt 5.6 не тянет QDateTime за собой: там, где он нужен, его надо позвать
 #include <QDateTime>
+#include <QClipboard>
+#include <QGuiApplication>
+#include <QMimeData>
 
 #include "dialogs/genericdbgwnd.h"
 #include "dialogs/i8255window.h"
@@ -388,6 +391,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, i
     ui->actionRecPanel->setChecked(e->read_setup("Video", "recording_panel", "1") != "0");
     ui->actionRememberDisks->setChecked(e->read_setup("Core", "remember_disks", "0") == "1");
     ui->actionBlendFrames->setChecked(e->read_setup("Video", "blend_frames", "0") == "1");
+    ui->actionFastPaste->setChecked(e->read_setup("Keyboard", "fast_paste", "1") == "1");
 
     //Emulation > Speed and Turbo, before the first machine: its title shows
     //the speed
@@ -810,6 +814,9 @@ void MainWindow::CreateScreenMenu()
             ra->setCheckable(true);
             ra->setChecked(remap == i);
         }
+        //Not a remap: the speed of Emulation > Paste text
+        key_remap_menu->addSeparator();
+        key_remap_menu->addAction(ui->actionFastPaste);
     }
 
     //How fast emulated time runs against the wall clock: the whole machine,
@@ -3102,6 +3109,43 @@ void MainWindow::on_actionRememberDisks_toggled(bool checked)
 void MainWindow::on_actionBlendFrames_toggled(bool checked)
 {
     if (e != nullptr) e->set_frame_blending(checked);
+}
+
+void MainWindow::on_actionFastPaste_toggled(bool checked)
+{
+    if (e != nullptr) e->write_setup("Keyboard", "fast_paste", checked?"1":"0");
+}
+
+//The clipboard typed on the machine's keyboard the way TYPE types it. Only a
+//plain text: files and pictures copied elsewhere carry a text too (their
+//names), which is not what anyone means to type
+void MainWindow::on_actionPasteText_triggered()
+{
+    if (e == nullptr || !e->loaded || e->script_active()) return;
+    const QMimeData * m = QGuiApplication::clipboard()->mimeData();
+    if (m == nullptr || !m->hasText() || m->hasUrls() || m->hasImage()) return;
+    const QString text = m->text();
+    if (text.isEmpty()) return;
+
+    const unsigned int ms = ui->actionFastPaste->isChecked() ? 50 : 100;
+    const std::string utf8 = text.toStdString();
+    e->paste_text(utf8, ms, ms);
+
+    //A recording gets it as TYPE, in the script syntax of the text
+    std::string typed;
+    const std::string escaped = escape_script_text(utf8);
+    for (size_t i = 0; i < escaped.length(); i++) {
+        const char ch = escaped[i];
+        if      (ch == '\r') continue;
+        else if (ch == '\n') typed += "\\n";
+        else if (ch == '\t') typed += "\\t";
+        else typed += ch;
+    }
+    std::vector<std::string> args;
+    args.push_back(typed);
+    args.push_back("_" + std::to_string(ms));
+    args.push_back("_" + std::to_string(ms));
+    e->record_verb(SCRIPT_CMD_TYPE, args);
 }
 
 void MainWindow::on_actionForgetDisks_triggered()

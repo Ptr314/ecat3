@@ -586,3 +586,14 @@ public:
     std::vector<DeviceCommandInfo> get_device_commands() override;
     emulator::Result send_command(const std::string &command, const std::string &parameters) override;
 };
+
+// A text as the keys that type it, one code per character, and whether Shift
+// is held for it (the keyboard knows which characters need it; kbd may be
+// nullptr). escapes: the script syntax of TYPE, "\n" is Return, "\t" Tab and
+// "\x" the character x; otherwise the text is literal, a line break is Return
+// and a CR is dropped (the clipboard). A character with no key - a letter of
+// another alphabet, a multibyte UTF-8 one as a whole - is skipped and, when
+// unknown is given, its name appended there.
+void text_to_keys(const std::string &text, Keyboard * kbd, bool escapes,
+                  std::vector<unsigned int> &keys, std::vector<bool> &shift,
+                  std::vector<std::string> * unknown = nullptr);
