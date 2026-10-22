@@ -16,12 +16,17 @@
     пилот-тон (2000 битов 1)
     данные и контрольная сумма (сумма слов с переносом по кругу)
 
+Блок без заголовка - только вторая половина: пилот-тон 2000 битов, 128 слов
+данных и сумма. Кассетный Бейсик пишет программу файлом с первыми 128 словами
+и блоками с остальным. Заголовок от блока отличается длиной пилот-тона.
+
 Программа, записанная из RT-11 (например, sav2wav из ukncbtl-utils), лежит на
 ленте двумя такими файлами: загрузчиком в 256 слов по адресу 0 и остальной
 частью по адресу 1000.
 
 Образ .uknc.tap - те же файлы подряд, без сигнала и без контрольной суммы:
-16 байтов имени, длина, адрес, данные. Его читает магнитофон eCat3.
+16 байтов имени, длина, адрес, данные. Блок записан так же, с нулевым именем,
+нулевым адресом и поднятым разрядом 15 длины. Образ читает магнитофон eCat3.
 
 Скорость ленты не обязана быть точной: короткий полупериод оценивается
 заново по ходу чтения, как это делает и ПЗУ по пилот-тону.
@@ -38,6 +43,16 @@ NAME_SIZE = 16
 # Столько битов 1 подряд между байтами - начало новой записи (пилот-тон).
 # Внутри записи байты идут вплотную, между ними только два стоповых бита
 RECORD_GAP = 256
+
+# Запись за пилот-тоном такой длины - заголовок, за более коротким - данные:
+# тоны 8000 и 2000 битов
+HEADER_GAP = 5000
+
+# Длина блока без заголовка в образе: разряд 15 и число слов
+BLOCK_FLAG = 0x8000
+
+# Пауза между вызовами драйвера: линия стоит, и интервал через неё - не бит
+PAUSE = 2
 
 
 def read_wav(path):
@@ -133,7 +148,10 @@ def to_bits(halves):
     n = len(halves)
     while i < n:
         h = halves[i]
-        if h > unit * 1.5:
+        if h > unit * 4:
+            bits.append(PAUSE)
+            i += 1
+        elif h > unit * 1.5:
             bits.append(0)
             i += 2
         else:
@@ -148,12 +166,18 @@ def to_bits(halves):
 
 def to_records(bits):
     """Биты в записи: байт начинается с бита 0, длинный ряд единиц перед ним
-    означает новую запись."""
+    означает новую запись. Вместе с записью возвращается длина этого ряда."""
     records = []
     ones = RECORD_GAP
+    paused = True
     i = 0
     n = len(bits)
     while i < n:
+        if bits[i] == PAUSE:
+            ones = 0
+            paused = True
+            i += 1
+            continue
         if bits[i]:
             ones += 1
             i += 1
@@ -162,11 +186,12 @@ def to_records(bits):
             break
         b = 0
         for k in range(8):
-            b |= bits[i + 1 + k] << k
-        if ones >= RECORD_GAP or not records:
-            records.append(bytearray())
-        records[-1].append(b)
+            b |= (bits[i + 1 + k] & 1) << k
+        if ones >= RECORD_GAP or paused:
+            records.append((ones, bytearray()))
+        records[-1][1].append(b)
         ones = 0
+        paused = False
         i += 9
     return records
 
@@ -196,15 +221,44 @@ def show_name(raw):
     return ' '.join('%03o' % b for b in raw)
 
 
+def check_sum(data, length):
+    """Данные без суммы, дополненные нулями до length слов, и что с суммой."""
+    got = len(data) // 2
+    body = bytearray(data[:2 * length])
+    body += bytes(2 * length - len(body))
+    if got < length + 1:
+        return body, 'ОБРЫВ: прочитано %d слов из %d' % (max(0, got - 1), length), False
+    expected = word(data, 2 * length)
+    actual = checksum(body, length)
+    if expected == actual:
+        return body, 'сумма %06o верна' % actual, True
+    return body, 'СУММА НЕ СОШЛАСЬ: на ленте %06o, посчитано %06o' % (expected, actual), False
+
+
 def to_image(records, log):
-    """Записи в образ: заголовок, затем его данные без контрольной суммы."""
+    """Записи в образ: заголовок, затем его данные без контрольной суммы;
+    данные без заголовка - блок. У первой записи пилот-тон может быть обрезан
+    поздно начатой оцифровкой."""
     image = bytearray()
     errors = 0
     r = 0
     files = 0
     while r < len(records):
-        header = records[r]
+        pilot, header = records[r]
         r += 1
+        if pilot < HEADER_GAP and not (r == 1 and len(header) <= NAME_SIZE + 5):
+            if len(header) < 4:
+                continue
+            files += 1
+            length = min(len(header) // 2 - 1, BLOCK_FLAG - 1)
+            body, status, ok = check_sum(header, length)
+            errors += 0 if ok else 1
+            flagged = BLOCK_FLAG | length
+            image += bytes(NAME_SIZE)
+            image += bytes((flagged & 0xFF, flagged >> 8, 0, 0))
+            image += body
+            log('  блок %d: %d слов (%o), %s' % (files, length, length, status))
+            continue
         if len(header) < NAME_SIZE:
             # Щелчок включения магнитофона перед пилот-тоном даёт байт-другой:
             # заголовком это быть не может
@@ -218,22 +272,12 @@ def to_image(records, log):
 
         status = ''
         if length:
-            data = records[r] if r < len(records) else bytearray()
-            r += 1
-            got = len(data) // 2
-            body = bytearray(data[:2 * length])
-            body += bytes(2 * length - len(body))
-            if got < length + 1:
-                status = 'ОБРЫВ: прочитано %d слов из %d' % (max(0, got - 1), length)
-                errors += 1
-            else:
-                expected = word(data, 2 * length)
-                actual = checksum(body, length)
-                if expected == actual:
-                    status = 'сумма %06o верна' % actual
-                else:
-                    status = 'СУММА НЕ СОШЛАСЬ: на ленте %06o, посчитано %06o' % (expected, actual)
-                    errors += 1
+            data = bytearray()
+            if r < len(records) and records[r][0] < HEADER_GAP:
+                data = records[r][1]
+                r += 1
+            body, status, ok = check_sum(data, length)
+            errors += 0 if ok else 1
             image += body
         log('  файл %d: имя %s, длина %d слов (%o), адрес %06o%s' %
             (files, show_name(name), length, length, address,

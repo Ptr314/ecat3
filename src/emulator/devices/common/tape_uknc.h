@@ -19,7 +19,7 @@
 // calibrates on the pilot tone, measures only the first half period of every
 // bit and skips the rest, so the absolute rate is not critical.
 //
-// A file with a header (function 016 of the driver) goes out as
+// A file with a header (function 020 of the driver, 126714) goes out as
 //
 //   pilot tone of 8000 bits
 //   name block, 8 words: whatever the program put there
@@ -29,10 +29,17 @@
 //   checksum: the sum of the data words with end-around carry
 //   one more bit 1
 //
+// and a block without a header (function 021, 126662) as the second half of
+// that only: pilot tone of 2000 bits, 128 data words, checksum, bit 1. The
+// cassette БЕЙСИК writes a program as a file of its first 128 words followed
+// by blocks with the rest, and reads the blocks back with function 016.
+//
 // A tape image here is the sequence of such files without the signal and
 // without the checksum: 16 bytes of the name block, the length, the address
 // and the data. A file of zero length keeps the two zero words, so every file
-// in an image starts with the same twenty bytes.
+// in an image starts with the same twenty bytes. A block has the same twenty
+// bytes with a zero name, bit 15 of the length set (no file is 32K words
+// long: that is the whole address space) and a zero address.
 
 #pragma once
 
@@ -54,6 +61,13 @@ namespace uknc_tape
     // A run of bits 1 this long between two bytes starts a new record: inside
     // a record the bytes follow each other with only their two stop bits
     const unsigned RECORD_GAP = 256;
+
+    // A record behind a pilot tone this long is a header, behind a shorter
+    // one data: the two tones are 8000 and 2000 bits
+    const unsigned HEADER_GAP = 5000;
+
+    // The length of a block in an image: bit 15 and the number of words
+    const uint16_t BLOCK_FLAG = 0x8000;
 
     // One bit is four half periods of the short length, so a bit stream at
     // four times the baud rate carries the waveform exactly
@@ -121,6 +135,22 @@ namespace uknc_tape
         std::vector<uint8_t> bits;
         size_t pos = 0;
         while (pos < image.size()) {
+            const uint16_t flagged = get_word(image, pos + NAME_SIZE);
+            if (flagged & BLOCK_FLAG) {
+                const unsigned length = flagged & ~BLOCK_FLAG;
+                pos += HEADER_SIZE;
+                put_pilot(bits, DATA_PILOT);
+                uint16_t sum = 0;
+                for (unsigned i = 0; i < length; i++) {
+                    const uint16_t w = get_word(image, pos);
+                    pos += 2;
+                    put_word(bits, w);
+                    sum = add_checksum(sum, w);
+                }
+                put_word(bits, sum);
+                put_bit(bits, 1);
+                continue;
+            }
             put_pilot(bits, HEADER_PILOT);
             for (unsigned i = 0; i < NAME_SIZE; i++)
                 put_byte(bits, (pos + i < image.size())? image[pos + i] : 0);
@@ -173,32 +203,60 @@ namespace uknc_tape
             const uint32_t threshold = unit + unit / 2;
 
             // Half periods to bits, the way the ROM does it (130530): only the
-            // first half of a bit is measured, the rest of it is skipped
+            // first half of a bit is measured, the rest of it is skipped. The
+            // line stands still between two calls of the driver, and the
+            // interval across such a pause is no bit at all
+            const uint8_t PAUSE = 2;
+            const uint32_t pause = unit * 4;
             std::vector<uint8_t> bits;
             bits.reserve(halves.size() / 2);
             for (size_t i = 0; i < halves.size(); ) {
-                if (halves[i] > threshold) { bits.push_back(0); i += 2; }
-                else                       { bits.push_back(1); i += 4; }
+                if (halves[i] > pause)          { bits.push_back(PAUSE); i += 1; }
+                else if (halves[i] > threshold) { bits.push_back(0); i += 2; }
+                else                            { bits.push_back(1); i += 4; }
             }
 
             // Bits to records: a byte starts with a bit 0, and a long run of
-            // ones in front of it means a new record
+            // ones in front of it means a new record. The length of that run
+            // tells a header from data
             std::vector<std::vector<uint8_t>> records;
+            std::vector<unsigned> pilots;
             unsigned ones = RECORD_GAP;
+            bool paused = true;
             for (size_t i = 0; i < bits.size(); ) {
-                if (bits[i]) { ones++; i++; continue; }
+                if (bits[i] == PAUSE) { ones = 0; paused = true; i++; continue; }
+                if (bits[i])          { ones++; i++; continue; }
                 if (i + 9 > bits.size()) break;         // an unfinished byte
                 uint8_t b = 0;
-                for (int k = 0; k < 8; k++) b |= (uint8_t)(bits[i + 1 + k] << k);
-                if (ones >= RECORD_GAP || records.empty()) records.push_back(std::vector<uint8_t>());
+                for (int k = 0; k < 8; k++) b |= (uint8_t)((bits[i + 1 + k] & 1) << k);
+                if (ones >= RECORD_GAP || paused) {
+                    records.push_back(std::vector<uint8_t>());
+                    pilots.push_back(ones);
+                }
                 records.back().push_back(b);
                 ones = 0;
+                paused = false;
                 i += 9;
             }
 
-            // Records to files: a header, then its data without the checksum
+            // Records to files: a header, then its data without the checksum;
+            // data behind no header is a block. The first record may have
+            // lost its pilot tone when the recording began late
             for (size_t r = 0; r < records.size(); r++) {
                 const std::vector<uint8_t> &h = records[r];
+                const bool header = pilots[r] >= HEADER_GAP || (r == 0 && h.size() <= HEADER_SIZE + 1);
+                if (!header) {
+                    if (h.size() < 4) continue;         // noise: not a word and its sum
+                    const size_t words = std::min<size_t>(h.size() / 2 - 1, BLOCK_FLAG - 1);
+                    const uint16_t length = (uint16_t)(BLOCK_FLAG | words);
+                    result.insert(result.end(), NAME_SIZE, 0);
+                    result.push_back((uint8_t)(length & 0xFF));
+                    result.push_back((uint8_t)(length >> 8));
+                    result.push_back(0);
+                    result.push_back(0);
+                    result.insert(result.end(), h.begin(), h.begin() + words * 2);
+                    continue;
+                }
                 if (h.size() < NAME_SIZE) continue;     // noise, not a header
                 result.insert(result.end(), h.begin(), h.begin() + NAME_SIZE);
                 const uint16_t length = (h.size() >= HEADER_SIZE)? get_word(h, NAME_SIZE) : 0;
@@ -209,7 +267,7 @@ namespace uknc_tape
                 result.push_back((uint8_t)(address >> 8));
                 if (length == 0) continue;
                 std::vector<uint8_t> data;
-                if (r + 1 < records.size()) data = records[++r];
+                if (r + 1 < records.size() && pilots[r + 1] < HEADER_GAP) data = records[++r];
                 data.resize((size_t)length * 2, 0);
                 result.insert(result.end(), data.begin(), data.end());
             }
