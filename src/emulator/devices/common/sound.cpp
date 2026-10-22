@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
 
 #include "sound.h"
@@ -66,14 +67,37 @@ emulator::Result GenericSound::load_config(SystemData *sd)
 
     // The rate the audio device is opened at. 22050 Hz cuts everything above
     // 11 kHz, which a one-bit beeper does not miss and the Агат ЯЗС does: its
-    // drum 7 hisses at 6-13 kHz. The buffer keeps its length in time, and so
-    // the latency
+    // drum 7 hisses at 6-13 kHz
     const unsigned int rate = read_confg_value(cd, "sample_rate", false, (unsigned int)22050);
     if (rate < 8000 || rate > 192000)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{GenericSound|" + std::string(QT_TRANSLATE_NOOP("GenericSound", "Incorrect sample rate")) + "} " + name);
-    m_samples_per_buffer = (unsigned int)((uint64_t)2048 * rate / 22050);
     m_sample_rate = rate;
+
+    // The period of the audio device, [Sound] period in ms of the ini: the
+    // latency is about four of them (the device holds three, the buffer here
+    // one). It was 2048 samples at 22050 Hz, 93 ms, and the sound came a third
+    // of a second after the picture. The waveOut of the XP build and the
+    // ScriptProcessorNode of a web page, which runs on the busy main thread,
+    // need longer ones
+#if defined(__EMSCRIPTEN__)
+    const char * period_default = "40";
+#elif defined(_WIN32) && defined(__GNUC__) && (__GNUC__ < 5)
+    const char * period_default = "40";
+#else
+    const char * period_default = "10";
+#endif
+    int period_ms = atoi(sd->read_setup ? sd->read_setup("Sound", "period", period_default).c_str() : period_default);
+    if (period_ms < 2 || period_ms > 200) period_ms = atoi(period_default);
+    unsigned int period = (unsigned int)((uint64_t)rate * period_ms / 1000);
+#if defined(__EMSCRIPTEN__) || defined(USE_SDL_AUDIO)
+    // A power of two: a ScriptProcessorNode takes nothing else, nor do some
+    // SDL backends
+    unsigned int p2 = 64;
+    while (p2 < period) p2 <<= 1;
+    period = p2;
+#endif
+    m_samples_per_buffer = std::max(period, 32u);
 
     m_lpf_coutoff = read_confg_value(cd, "lpf", false, (unsigned int)m_lpf_coutoff);
     m_use_lpf = (m_lpf_coutoff > 0);
@@ -137,8 +161,15 @@ void GenericSound::init_sound(unsigned int clock_freq)
     m_sample_rate = m_audio_driver->getObtainedSampleRate();
     m_samples_per_buffer = m_audio_driver->getObtainedBufferSamples();
 
-    m_buffer.resize(m_samples_per_buffer * 2 * m_channels);
+    // The reserve is against a late slice of the emulation, which runs in 1 ms
+    // slices whatever the period: one period, but no more than 15 ms. A late
+    // device only lets the buffer grow. It was one period on the web page too,
+    // 46 ms of the 1024 samples a ScriptProcessorNode takes. Room for five
+    // periods and 50 ms before a burst is cut
+    m_target = std::min(m_samples_per_buffer, m_sample_rate * 15 / 1000);
+    m_buffer.resize((m_samples_per_buffer * 5 + m_sample_rate / 20) * m_channels);
     m_buffer_pos = 0;
+    m_adjust = 0;
 
     setup_pipeline();
 
@@ -434,15 +465,26 @@ void GenericSound::clock(unsigned int counter)
 // A frame into the buffer of the audio device, under m_buffer_mutex
 void GenericSound::push_frame(int16_t out, int16_t out_left)
 {
-    // Checking buffer overflow and discarding a part of it if expected
+    // Out of the band around m_target: a frame in 64 dropped or doubled
+    if (m_adjust != 0 && (++m_adjust_phase & 63) == 0) {
+        if (m_adjust < 0) return;
+        store_frame(out, out_left);
+    }
+    store_frame(out, out_left);
+}
+
+void GenericSound::store_frame(int16_t out, int16_t out_left)
+{
+    // A burst the buffer has no room for: everything but the target is old,
+    // and is thrown away at once rather than heard late
     if (m_buffer_pos >= m_buffer.size()) {
-        size_t overflow_delta = m_samples_per_buffer / 8 * m_channels;
+        const size_t keep = m_target * m_channels;
         std::copy(
-            m_buffer.begin() + overflow_delta,
+            m_buffer.begin() + (m_buffer_pos - keep),
             m_buffer.begin() + m_buffer_pos,
             m_buffer.begin()
         );
-        m_buffer_pos -= overflow_delta;
+        m_buffer_pos = keep;
         m_overflows++;
     }
     if (m_channels == 2) m_buffer[m_buffer_pos++] = out_left;
@@ -465,43 +507,38 @@ void GenericSound::handle_audio_callback(uint8_t* stream, int len)
     std::lock_guard<std::mutex> lock(m_buffer_mutex);
 #endif
 
-    const int samples_requested = len / sizeof(int16_t);
-    const int samples_available = static_cast<int>(m_buffer_pos);
-    const int samples_to_copy = std::min(samples_requested, samples_available);
+    const size_t samples_requested = len / sizeof(int16_t);
+    int16_t *dst = reinterpret_cast<int16_t*>(stream);
 
-    // We use 'fill_value' later to fill missed samples.
-    // The default value is 0 - "silence" in case the buffer is totally empty.
-    // And the first buffer value, if we have less values than expected
-    // A frame of two in stereo: the pad repeats the first one whole, or the
-    // channels would trade places
-    int16_t fill_value[2] = {0, 0};
-
-    if (samples_to_copy > 0) {
-        fill_value[0] = m_buffer[0];
-        fill_value[1] = m_buffer[m_channels - 1];
-        // We have some data, putting it to the end of the output
-        std::copy_n(
-            m_buffer.data(),
-            samples_to_copy,
-            reinterpret_cast<int16_t*>(stream) + (samples_requested - samples_to_copy)
-        );
-
-        // And if we have more data than expected, we move the extra data to the beginning
+    if (m_buffer_pos >= samples_requested) {
+        std::copy_n(m_buffer.data(), samples_requested, dst);
         std::copy(
-            m_buffer.begin() + samples_to_copy,
+            m_buffer.begin() + samples_requested,
             m_buffer.begin() + m_buffer_pos,
             m_buffer.begin()
         );
-        m_buffer_pos -= samples_to_copy;
+        m_buffer_pos -= samples_requested;
+        for (unsigned int c = 0; c < m_channels; c++)
+            m_last_played[c] = dst[samples_requested - m_channels + c];
+    } else {
+        // Short of a period: none of it is taken, and the device gets the last
+        // frame fading to silence. What has arrived waits for the next period
+        // and becomes the reserve, or the device would run dry again on the
+        // next one. A stopped machine is a run of these
+        m_underruns++;
+        for (size_t i = 0; i < samples_requested; i += m_channels)
+            for (unsigned int c = 0; c < m_channels; c++) {
+                m_last_played[c] -= m_last_played[c] / 32;
+                dst[i + c] = m_last_played[c];
+            }
     }
 
-    if (samples_to_copy < samples_requested) {
-        m_underruns++;
-        // We need to fill in the missing data, so we do it at the beginning of the output.
-        int16_t *pad = reinterpret_cast<int16_t*>(stream);
-        for (int i = 0; i < samples_requested - samples_to_copy; i++)
-            pad[i] = fill_value[(m_channels == 2) ? (i & 1) : 0];
-    }
+    // The level the buffer is left at is the latency: back to the target when
+    // it leaves the band
+    const size_t frames = m_buffer_pos / m_channels;
+    if (frames > m_target * 2) m_adjust = -1;
+    else if (frames < m_target / 2) m_adjust = 1;
+    else if ((m_adjust < 0 && frames <= m_target) || (m_adjust > 0 && frames >= m_target)) m_adjust = 0;
 }
 
 //------------------- Introspection and control ----------------------------//

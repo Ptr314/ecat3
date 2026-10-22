@@ -66,6 +66,10 @@ bool MiniaudioDriver::open(int sampleRate, int channels, int bufferSamples,
     config.playback.channels = static_cast<ma_uint32>(channels);
     config.sampleRate        = static_cast<ma_uint32>(sampleRate);
     config.periodSizeInFrames = static_cast<ma_uint32>(bufferSamples);
+    // The device holds three periods, and the data callback always gets one
+    // whole period: GenericSound keeps its buffer level by that
+    config.periods            = 3;
+    config.performanceProfile = ma_performance_profile_low_latency;
     config.dataCallback      = ma_data_callback_bridge;
     config.pUserData         = cbd;
 
