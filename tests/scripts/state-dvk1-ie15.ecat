@@ -1,0 +1,26 @@
+# ДВК-1: снимок терминала 15ИЭ посреди приёма команды VT52.
+#
+# ../tests/files/state-dvk1-ie15.ecats.zip (от deploy/) снят скриптом
+# ../files/make-state-dvk1-ie15.ecat: терминал в VT52 (бит установки), на
+# экране BEFORE SNAPSHOT, ESC Y уже принят прошивкой, а строка, столбец и
+# AFTER ещё идут по линии.
+#
+# * ЗУ экрана, бит установки и разбор ESC Y живут в ie15-vram и регистрах
+#   МПУ: после загрузки AFTER встаёт в строку 5, столбец 5, а не за курсором;
+# * байты, ещё не дошедшие до приёмника, едут в снимке и приходят по одному;
+# * изображение строит луч (ie15-io), он продолжает с того же места кадра.
+# @timeout 40
+
+MACHINE "../tests/files/state-dvk1-ie15.ecats.zip"
+LOGDEFS _16,_8
+
+WAIT _300
+PRINT "=== Экран после загрузки состояния ==="
+LOG display.text
+LOG display.status
+LOG ie15-io.received
+LOG ie15-io.overruns
+COMMAND ie15-cpu.stop()
+SCREEN "../results/state-dvk1-ie15.png"
+COMMAND ie15-cpu.run()
+EXIT

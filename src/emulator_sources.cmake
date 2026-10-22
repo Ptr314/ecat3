@@ -47,6 +47,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/cpu/i8086.h emulator/devices/cpu/i8086.cpp
     emulator/devices/cpu/vm1_timing.h emulator/devices/cpu/vm1_timing.cpp emulator/devices/cpu/vm1_timing_table.inc
     emulator/devices/cpu/z80.h emulator/devices/cpu/z80.cpp
+    emulator/devices/cpu/ie15.h emulator/devices/cpu/ie15.cpp
     emulator/devices/cpu/cpu_utils.h
 
     emulator/devices/common/i8255.cpp emulator/devices/common/i8255.h

@@ -1153,7 +1153,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+258"/>
+        <location filename="../emulator/emulator.cpp" line="+259"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -1860,16 +1860,40 @@
     </message>
 </context>
 <context>
-    <name>IE15Terminal</name>
+    <name>IE15Display</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+136"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+137"/>
         <source>Character generator device is expected</source>
         <translation>Ожидается знакогенератор</translation>
     </message>
+</context>
+<context>
+    <name>IE15IO</name>
     <message>
-        <location line="+8"/>
+        <location line="+153"/>
+        <source>Display of type ie15-display is expected</source>
+        <translation>Ожидается экран типа ie15-display</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Video memory of 4 KB is expected</source>
+        <translation>Ожидается видеопамять на 4 Кбайт</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Keyboard of type ie15-keyboard is expected</source>
         <translation>Ожидается клавиатура типа ie15-keyboard</translation>
+    </message>
+</context>
+<context>
+    <name>IE15Terminal</name>
+    <message>
+        <source>Character generator device is expected</source>
+        <translation type="vanished">Ожидается знакогенератор</translation>
+    </message>
+    <message>
+        <source>Keyboard of type ie15-keyboard is expected</source>
+        <translation type="vanished">Ожидается клавиатура типа ie15-keyboard</translation>
     </message>
 </context>
 <context>
@@ -2175,7 +2199,7 @@
         <translation>Настройки</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+12"/>
         <source>Display</source>
         <translation>Экран</translation>
     </message>
@@ -2202,7 +2226,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1623"/>
+        <location filename="../mainwindow.cpp" line="+1626"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2259,8 +2283,8 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-822"/>
-        <location line="+1886"/>
+        <location filename="../mainwindow.cpp" line="-825"/>
+        <location line="+1889"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
@@ -2305,7 +2329,7 @@
         <translation>Вставлять текст, нажимая клавишу каждые 100 мс вместо 200 мс</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+9"/>
         <source>Paste text</source>
         <translation>Вставка текста</translation>
     </message>
@@ -2329,7 +2353,7 @@
         <translation type="vanished">Выбрать компьютер...</translation>
     </message>
     <message>
-        <location line="-323"/>
+        <location line="-327"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
@@ -2344,16 +2368,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-532"/>
+        <location filename="../mainwindow.cpp" line="-535"/>
         <location line="+47"/>
-        <location line="+1492"/>
+        <location line="+1495"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1607"/>
+        <location line="-1610"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2382,7 +2406,7 @@
     <message>
         <location line="-120"/>
         <location line="+76"/>
-        <location line="+1218"/>
+        <location line="+1221"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+206"/>
@@ -2397,7 +2421,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2510"/>
+        <location line="-2513"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2422,7 +2446,7 @@
         <translation>Скорость мыши</translation>
     </message>
     <message>
-        <location line="+175"/>
+        <location line="+178"/>
         <source>Auto scale</source>
         <translation>Автоматически</translation>
     </message>
@@ -2490,7 +2514,7 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1364"/>
+        <location line="-1367"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -2503,7 +2527,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+71"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1853"/>
+        <location filename="../mainwindow.cpp" line="+1856"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -2513,15 +2537,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1831"/>
-        <location line="+1322"/>
+        <location line="-1834"/>
+        <location line="+1325"/>
         <location line="+378"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1813"/>
+        <location line="-1816"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2557,7 +2581,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1650"/>
+        <location line="+1653"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -2588,20 +2612,20 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1831"/>
+        <location line="-1834"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
     <message>
         <location line="-486"/>
-        <location line="+593"/>
+        <location line="+596"/>
         <location line="+1"/>
         <location line="+831"/>
         <source>Turbo</source>
         <translation>Турбо</translation>
     </message>
     <message>
-        <location line="-1039"/>
+        <location line="-1042"/>
         <source>Floppy drive %1</source>
         <translation>Дисковод %1</translation>
     </message>
@@ -2631,7 +2655,7 @@
         <translation>Цифровой блок буквами</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+27"/>
         <source>Speed</source>
         <translation>Скорость</translation>
     </message>
@@ -2770,12 +2794,12 @@
         <translation>Конфигурация не загружена.</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-221"/>
+        <location filename="../mainwindow.ui" line="-219"/>
         <source>Action recording</source>
         <translation>Запись действий</translation>
     </message>
     <message>
-        <location line="+290"/>
+        <location line="+288"/>
         <source>I/O ports...</source>
         <translation>Порты ввода-вывода...</translation>
     </message>

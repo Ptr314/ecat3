@@ -5,9 +5,26 @@
 # дорожки 1, выдача буфера с адреса 0 и проверка, что там NOP. Готовности он
 # ждёт по маске 100247, куда входят и разряды функции, - у RX11 они только
 # пишутся и читаются нулями. Файл копируется и выводится обратно.
+#
+# Загрузочный файл дискеты включает SL, а он правит строку командами VT52:
+# до загрузки терминал 15ИЭ переводится в VT52 битом установки (СДВ, семь
+# раз вправо, «Уст. след.», СДВ) - после включения он в своём режиме.
 # @timeout 150
 MACHINE "dvk/DVK-2.cfg"
 WAIT _2000
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _100
+KEY _60,_40,right,right,right,right,right,right,right
+KEYDOWN key_setup_next
+WAIT _40
+KEYUP key_setup_next
+WAIT _100
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _100
 KEY _100,_50,ret
 WAIT _500
 TYPE "173000G"

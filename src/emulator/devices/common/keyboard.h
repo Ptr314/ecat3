@@ -455,6 +455,9 @@ protected:
     std::vector<std::string> m_toggled;
     bool toggled(const std::string &id) const;
     void set_toggled(const std::string &id, bool on);
+    // Called after the switches change (outside m_held_mutex), for a keyboard
+    // that keeps its own copy of them for a reader on the emulation thread
+    virtual void toggles_changed() {}
 
     // Lamps of the drawing nothing in this machine drives (led_off), reported
     // dark: a lamp nobody answers for is drawn as drawn, that is lit. And the

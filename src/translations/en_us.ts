@@ -945,7 +945,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+258"/>
+        <location filename="../emulator/emulator.cpp" line="+259"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1523,14 +1523,27 @@
     </message>
 </context>
 <context>
-    <name>IE15Terminal</name>
+    <name>IE15Display</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+136"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+137"/>
         <source>Character generator device is expected</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>IE15IO</name>
     <message>
-        <location line="+8"/>
+        <location line="+153"/>
+        <source>Display of type ie15-display is expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Video memory of 4 KB is expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Keyboard of type ie15-keyboard is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1807,7 +1820,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+48"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1834,7 +1847,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1623"/>
+        <location filename="../mainwindow.cpp" line="+1626"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1898,8 +1911,8 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1760"/>
-        <location line="+1886"/>
+        <location filename="../mainwindow.cpp" line="-1763"/>
+        <location line="+1889"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1940,7 +1953,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+9"/>
         <source>Paste text</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1960,7 +1973,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-323"/>
+        <location line="-327"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1975,9 +1988,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-640"/>
+        <location filename="../mainwindow.cpp" line="-643"/>
         <location line="+76"/>
-        <location line="+1218"/>
+        <location line="+1221"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+206"/>
@@ -1992,7 +2005,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2510"/>
+        <location line="-2513"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2014,14 +2027,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1492"/>
+        <location line="+1495"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1607"/>
+        <location line="-1610"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2081,14 +2094,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1322"/>
+        <location line="+1325"/>
         <location line="+378"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1813"/>
+        <location line="-1816"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2124,12 +2137,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1650"/>
+        <location line="+1653"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1626"/>
+        <location line="-1629"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2144,7 +2157,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+27"/>
         <source>Speed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2202,8 +2215,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-749"/>
-        <location line="+593"/>
+        <location line="-752"/>
+        <location line="+596"/>
         <location line="+1"/>
         <location line="+831"/>
         <source>Turbo</source>
@@ -2386,7 +2399,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-147"/>
+        <location filename="../mainwindow.ui" line="-145"/>
         <source>Action recording</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2396,7 +2409,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+264"/>
+        <location line="+262"/>
         <source>I/O ports...</source>
         <translation type="unfinished"></translation>
     </message>

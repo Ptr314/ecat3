@@ -66,6 +66,7 @@
 #include "emulator/devices/cpu/6502.h"
 #include "emulator/devices/cpu/k1801vm1.h"
 #include "emulator/devices/cpu/i8086.h"
+#include "emulator/devices/cpu/ie15.h"
 #include "emulator/devices/specific/agat_fdc140.h"
 #include "emulator/devices/specific/agat_fdc840.h"
 #include "emulator/devices/specific/agat_7_display.h"
@@ -2326,7 +2327,9 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("uknc-mouse", create_uknc_mouse);
     dm->register_device("ms7004", create_ms7004);
     dm->register_device("ksm-display", create_ksm_display);
-    dm->register_device("ie15", create_ie15_terminal);
+    dm->register_device("ie15-cpu", create_ie15_cpu);
+    dm->register_device("ie15-io", create_ie15_io);
+    dm->register_device("ie15-display", create_ie15_display);
     dm->register_device("ie15-keyboard", create_ie15_keyboard);
     dm->register_device("dvk-mx", create_dvk_mx);
     dm->register_device("dvk-kgd", create_dvk_kgd);

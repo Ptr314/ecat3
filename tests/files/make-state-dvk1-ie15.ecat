@@ -1,0 +1,37 @@
+# Сборка эталонного снимка состояния для state-dvk1-ie15.ecat.
+#
+# Запускается руками, а не набором тестов: снимок - это двоичный эталон,
+# который обновляют осознанно. Из каталога deploy/:
+#
+#   eCat3-headless --no-sound --script ../tests/files/make-state-dvk1-ie15.ecat
+#
+# Терминал 15ИЭ переводится в VT52 битом установки, на экран выводится
+# строка, и посреди приёма команды ESC Y строка столбец (через 2 мс: два байта
+# приняты, остальные ещё в линии) состояние кладётся в
+# ../files/state-dvk1-ie15.ecats.zip рядом с этим файлом.
+
+MACHINE "dvk/DVK-1.cfg"
+WAIT _2000
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _100
+KEY _60,_40,right,right,right,right,right,right,right
+KEYDOWN key_setup_next
+WAIT _40
+KEYUP key_setup_next
+WAIT _100
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _100
+
+COMMAND ie15-io.receive("\033H\033JBEFORE SNAPSHOT")
+WAIT _200
+COMMAND ie15-io.receive("\033Y%%AFTER")
+WAIT _2
+
+SAVESTATE "state-dvk1-ie15.ecats.zip"
+# Снимок экрана рядом с архивом - чтобы глазами сверить, что снималось
+SCREEN "state-dvk1-ie15-made.png"
+EXIT

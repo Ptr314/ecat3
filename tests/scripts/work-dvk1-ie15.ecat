@@ -1,11 +1,19 @@
-# ДВК-1 с терминалом 15ИЭ-00-013 и клавиатурой 15ВВВ.
+# ДВК-1 с терминалом 15ИЭ-00-013 на его прошивке и клавиатурой 15ВВВ.
 #
-# Команды VT52 (ESC Y строка столбец, ESC H/J/K, ESC A/B/C/D), кириллица по
-# SO/SI и прокрутка - байтами «как от ЭВМ» (display.receive), монитору 000
+# После включения терминал в своём режиме: ESC не исполняет, курсором
+# управляют одиночные коды (014 - очистка, 034/035 - вверх/вниз, 031/032 -
+# вправо/влево, 010 - в начало экрана, ГТ пропускается). VT52 включает бит
+# установки: СДВ, курсор служебной строки вправо до третьего разряда второй
+# группы (семь нажатий), клавиша с кодом 002 («Уст. след.», она же СУ+B), СДВ.
+# Энергонезависимой памяти нет: после включения все биты снова 0.
+#
+# Дальше то же, что проверялось у прежнего, написанного в коде терминала:
+# команды VT52 (ESC Y строка столбец, ESC H/J/K, ESC A/B/C/D), кириллица по
+# SO/SI и прокрутка - байтами «как от ЭВМ» (ie15-io.receive), монитору 000
 # они не по пути. ESC Z терминал сам отвечает ESC / K - в ЭВМ уходят три
-# байта (display.sent). Лампы над клавиатурой (keyboard.leds): при включении
+# байта (ie15-io.sent). Лампы над клавиатурой (keyboard.leds): при включении
 # горят ЛАТ, ПРД, ДУП и ЛИН. ЛИН выключен - терминал «местный»: набор идёт
-# на экран, а не в линию. ДУП выключен - полудуплекс: знак показывает и сам
+# на экран, а не в линию, и принятое с линии он не читает (переполнения). ДУП выключен - полудуплекс: знак показывает и сам
 # терминал, и эхо монитора. НР зажигает свою лампу.
 MACHINE "dvk/DVK-1.cfg"
 WAIT _2000
@@ -13,27 +21,53 @@ LOGDEFS _16,_8
 
 PRINT "=== Лампы при включении ==="
 LOG keyboard.leds
+PRINT "=== Служебная строка: скорость, 16 битов установки, часы ==="
+LOG display.status
 
-COMMAND display.receive("\033H\033J\033Y%%ABC\033Y&&\016abc\017abc\r\n\033Y**12345\033D\033D\033K\033A\033CX")
-COMMAND display.receive("\033Y\067\040LAST\n\nSCROLLED")
+PRINT "=== Свой режим: ESC не исполняется ==="
+COMMAND ie15-io.receive("\014ONE\r\nTWO\034\031X\033HY")
+WAIT _200
+LOG display.text
+
+PRINT "=== Установка: бит VT52 ==="
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _100
+KEY _60,_40,right,right,right,right,right,right,right
+KEYDOWN key_setup_next
+WAIT _40
+KEYUP key_setup_next
+WAIT _100
+LOG display.status
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _100
+
+COMMAND ie15-io.receive("\033H\033J\033Y%%ABC\033Y&&\016abc\017abc\r\n\033Y**12345\033D\033D\033K\033A\033CX")
+COMMAND ie15-io.receive("\033Y\067\040LAST\n\nSCROLLED")
+WAIT _200
 PRINT "=== Экран после команд VT52 ==="
 LOG display.text
-LOG display.cursor
 
-COMMAND display.receive("\033Z")
-WAIT _100
+COMMAND ie15-io.receive("\033Z")
+# Ответ уходит монитору, и тот отвечает на «/» - дождаться, пока линия стихнет
+WAIT _1000
 PRINT "=== Ответ на ESC Z ==="
-LOG display.sent
+LOG ie15-io.sent
 
+# Местный терминал линию не читает вовсе: экран чистится заранее
+COMMAND ie15-io.receive("\033H\033J")
+WAIT _100
 PRINT "=== ЛИН выключен: набор только на экран ==="
 KEYDOWN key_lin
 WAIT _50
 KEYUP key_lin
 LOG keyboard.leds
-COMMAND display.receive("\033H\033J")
 TYPE "LOCAL"
 WAIT _500
-LOG display.sent
+LOG ie15-io.sent
 LOG display.text
 
 PRINT "=== ЛИН включён, ДУП выключен: эхо и терминала, и монитора ==="
@@ -44,10 +78,11 @@ KEYDOWN key_dup
 WAIT _50
 KEYUP key_dup
 LOG keyboard.leds
-COMMAND display.receive("\033H\033J")
+COMMAND ie15-io.receive("\033H\033J")
+WAIT _100
 TYPE "Q"
 WAIT _500
-LOG display.sent
+LOG ie15-io.sent
 LOG display.text
 
 PRINT "=== НР ==="
@@ -55,5 +90,6 @@ KEYDOWN key_lowcase
 WAIT _50
 KEYUP key_lowcase
 LOG keyboard.leds
+LOG ie15-io.overruns
 SCREEN "../results/work-dvk1-ie15.png"
 EXIT

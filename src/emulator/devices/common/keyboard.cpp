@@ -452,13 +452,19 @@ bool Keyboard::toggled(const std::string &id) const
 
 void Keyboard::set_toggled(const std::string &id, bool on)
 {
-    compat_lock_guard lock(m_held_mutex);
-    for (size_t i = 0; i < m_toggled.size(); i++)
-        if (m_toggled[i] == id) {
-            if (!on) m_toggled.erase(m_toggled.begin() + i);
-            return;
+    {
+        compat_lock_guard lock(m_held_mutex);
+        size_t i = 0;
+        while (i < m_toggled.size() && m_toggled[i] != id) i++;
+        if (i < m_toggled.size()) {
+            if (on) return;
+            m_toggled.erase(m_toggled.begin() + i);
+        } else {
+            if (!on) return;
+            m_toggled.push_back(id);
         }
-    if (on) m_toggled.push_back(id);
+    }
+    toggles_changed();
 }
 
 Keyboard::ClickMode Keyboard::click_mode(const std::string &id) const
@@ -780,11 +786,15 @@ emulator::Result Keyboard::load_state(const StateReader &r)
     r.b("rus", rus_mode);
     r.b("case_lower", m_case_lower);
     r.u("reset_count", m_reset_count);
+    //No key means no switch was on (save_state() leaves an empty string out):
+    //keeping what reset() turned on would bring ЛИН and ДУП of the 15ИЭ back
     std::string t;
-    if (r.s("toggled", t)) {
+    r.s("toggled", t);
+    {
         compat_lock_guard lock(m_held_mutex);
         m_toggled = split_string(t, '|', true);
     }
+    toggles_changed();
     return emulator::Result::ok();
 }
 
