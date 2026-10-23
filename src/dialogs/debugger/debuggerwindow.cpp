@@ -121,6 +121,9 @@ DebuggerWindow::DebuggerWindow(QWidget *parent, Emulator * e):
     connect(m_breakpoints, &BreakpointsView::remove, this, [this](unsigned int address) {
         if (CpuPane * p = pane()) p->code->toggle_breakpoint(address);
     });
+    connect(m_history, &HistoryView::toggle_breakpoint, this, [this](unsigned int address) {
+        if (CpuPane * p = pane()) p->code->toggle_breakpoint(address);
+    });
     connect(m_cpu_tabs, &QTabWidget::currentChanged, this, [this](int) {
         m_stack->set_cpu(current_cpu());
         refresh_side();
@@ -217,35 +220,35 @@ void DebuggerWindow::build_toolbar(QWidget * host)
     };
 
     //The machine: run, pause, run on its own
-    add(":/icons/play", tr("Run, stopping at the breakpoints"), QKeySequence(Qt::Key_F9),
+    m_run = add(":/icons/play", tr("Run, stopping at the breakpoints"), QKeySequence(Qt::Key_F9),
         [](Emulator * e, CPU *) { e->debug_run(true); });
-    add(":/icons/pause", tr("Pause"), QKeySequence(Qt::Key_F12),
+    m_pause = add(":/icons/pause", tr("Pause"), QKeySequence(Qt::Key_F12),
         [](Emulator * e, CPU *) { e->debug_pause(); });
-    add(":/icons/play_fwd", tr("Run without debugging"), QKeySequence(),
+    m_run_free = add(":/icons/play_fwd", tr("Run without debugging"), QKeySequence(),
         [](Emulator * e, CPU *) { e->debug_run(false); });
     tb->addSeparator();
 
 
     //The processor in front: steps
-    QAction * to_pc = tb->addAction(QIcon(":/icons/undo"), tr("Show PC"));
-    to_pc->setShortcut(QKeySequence(Qt::Key_Asterisk));
-    connect(to_pc, &QAction::triggered, this, [this]() { if (CpuPane * p = pane()) p->code->show_pc(); });
-    addAction(to_pc);
+    m_to_pc = tb->addAction(QIcon(":/icons/undo"), tr("Show PC"));
+    m_to_pc->setShortcut(QKeySequence(Qt::Key_Asterisk));
+    connect(m_to_pc, &QAction::triggered, this, [this]() { if (CpuPane * p = pane()) p->code->show_pc(); });
+    addAction(m_to_pc);
 
     m_step_action = add(":/icons/forward", tr("Step"), QKeySequence(Qt::Key_F7),
         [](Emulator * e, CPU * c) { e->debug_step(c); });
-    add(":/icons/step_over", tr("Step over"), QKeySequence(Qt::Key_F8),
+    m_step_over = add(":/icons/step_over", tr("Step over"), QKeySequence(Qt::Key_F8),
         [](Emulator * e, CPU * c) { e->debug_step_over(c); });
-    add(":/icons/top", tr("Step out of the routine"), QKeySequence(Qt::CTRL | Qt::Key_F8),
+    m_step_out = add(":/icons/top", tr("Step out of the routine"), QKeySequence(Qt::CTRL | Qt::Key_F8),
         [](Emulator * e, CPU * c) { e->debug_step_out(c); });
 
-    QAction * to_cursor = tb->addAction(QIcon(":/icons/finish"), tr("Run to the cursor"));
-    to_cursor->setShortcut(QKeySequence(Qt::Key_F4));
-    to_cursor->setToolTip(tr("Run to the cursor") + " (F4)");
-    addAction(to_cursor);
-    connect(to_cursor, &QAction::triggered, this, [this]() {
+    m_to_cursor = tb->addAction(QIcon(":/icons/finish"), tr("Run to the cursor"));
+    m_to_cursor->setShortcut(QKeySequence(Qt::Key_F4));
+    m_to_cursor->setToolTip(tr("Run to the cursor") + " (F4)");
+    addAction(m_to_cursor);
+    connect(m_to_cursor, &QAction::triggered, this, [this]() {
         CpuPane * p = pane();
-        if (p == nullptr) return;
+        if (p == nullptr || !e->loaded) return;
         mark_all();
         const unsigned int address = p->code->cursor_address();
         CPU * c = p->cpu;
@@ -261,7 +264,7 @@ void DebuggerWindow::build_toolbar(QWidget * host)
     m_goto->setMaximumWidth(dbg::text_width(QFontMetrics(dbg::font()), "0000000000000"));
     m_goto->setToolTip(tr("An address to show in the listing"));
     tb->addWidget(m_goto);
-    QAction * go = tb->addAction(QIcon(":/icons/next"), tr("Go to the address"));
+    m_go = tb->addAction(QIcon(":/icons/next"), tr("Go to the address"));
     auto go_to = [this]() {
         CpuPane * p = pane();
         if (p == nullptr) return;
@@ -272,7 +275,7 @@ void DebuggerWindow::build_toolbar(QWidget * host)
             QMessageBox::critical(this, tr("Error"), tr("Incorrect address value"));
         }
     };
-    connect(go, &QAction::triggered, this, go_to);
+    connect(m_go, &QAction::triggered, this, go_to);
     connect(m_goto, &QLineEdit::returnPressed, this, go_to);
     tb->addSeparator();
 
@@ -290,16 +293,16 @@ void DebuggerWindow::build_toolbar(QWidget * host)
         if (p != nullptr && p->cpu->has_breakpoint(p->code->cursor_address()))
             p->code->toggle_breakpoint(p->code->cursor_address());
     });
-    QAction * toggle = new QAction(this);
-    toggle->setShortcut(QKeySequence(Qt::Key_F2));
-    toggle->setShortcutContext(Qt::WindowShortcut);
-    addAction(toggle);
-    connect(toggle, &QAction::triggered, this, [this]() {
+    m_bp_toggle = new QAction(this);
+    m_bp_toggle->setShortcut(QKeySequence(Qt::Key_F2));
+    m_bp_toggle->setShortcutContext(Qt::WindowShortcut);
+    addAction(m_bp_toggle);
+    connect(m_bp_toggle, &QAction::triggered, this, [this]() {
         if (CpuPane * p = pane()) p->code->toggle_breakpoint(p->code->cursor_address());
     });
 
-    QAction * clear = tb->addAction(QIcon(":/icons/cancel"), tr("Remove all breakpoints"));
-    connect(clear, &QAction::triggered, this, [this]() {
+    m_bp_clear = tb->addAction(QIcon(":/icons/cancel"), tr("Remove all breakpoints"));
+    connect(m_bp_clear, &QAction::triggered, this, [this]() {
         CPU * c = current_cpu();
         if (c == nullptr || c->get_breakpoints().empty()) return;
         if (QMessageBox::question(this, tr("Breakpoints"),
@@ -334,13 +337,50 @@ void DebuggerWindow::build_toolbar(QWidget * host)
 void DebuggerWindow::update_cursor()
 {
     CpuPane * p = pane();
-    const bool on = p != nullptr && p->cpu->has_breakpoint(p->code->cursor_address());
-    m_bp_add->setEnabled(p != nullptr && !on);
-    m_bp_remove->setEnabled(on);
     if (p != nullptr && !m_goto->hasFocus()) {
         const unsigned int a = p->code->cursor_address();
         m_goto->setText(fmt_num(a, p->code->base(), addr_digits(p->code->space() - 1, p->code->base())));
     }
+    update_actions();
+}
+
+//The machine is in one of four states: held (paused, a step made), stepping
+//(a step that takes long), running with the breakpoints looked at, running
+//without them. A stop by itself (every processor stopped by a script) counts
+//as held
+void DebuggerWindow::update_actions()
+{
+    CpuPane * p = pane();
+    const bool loaded = e->loaded && p != nullptr;
+    const bool stepping = loaded && e->debug_stepping();
+    const bool held = loaded && !stepping && e->debug_paused();
+    const bool running = loaded && !held;
+
+    //A free run stops at nothing: F9 then makes the breakpoints count again
+    bool watching = stepping, any_breakpoints = false;
+    if (running)
+        for (CPU * c : e->dm->get_cpus()) {
+            if (c->m_debug == DEBUG_BRAKES) watching = true;
+            if (!c->get_breakpoints().empty()) any_breakpoints = true;
+        }
+
+    m_run->setEnabled(held || (running && !watching && any_breakpoints));
+    m_pause->setEnabled(running);
+    m_run_free->setEnabled(held || (running && watching));
+
+    m_step_action->setEnabled(held);
+    m_step_over->setEnabled(held);
+    m_step_out->setEnabled(held);
+    m_to_cursor->setEnabled(held);
+    m_to_pc->setEnabled(loaded);
+    m_go->setEnabled(loaded);
+    m_goto->setEnabled(loaded);
+
+    const bool on = loaded && p->cpu->has_breakpoint(p->code->cursor_address());
+    m_bp_add->setEnabled(loaded && !on);
+    m_bp_remove->setEnabled(on);
+    m_bp_toggle->setEnabled(loaded);
+    m_bp_clear->setEnabled(loaded && !p->cpu->get_breakpoints().empty());
 }
 
 void DebuggerWindow::run_command(void (*command)(Emulator *, CPU *))
@@ -414,6 +454,7 @@ void DebuggerWindow::show_state()
         text = tr("Running");
     }
     m_state->setText(text);
+    update_actions();
 }
 
 void DebuggerWindow::on_debug_event()
@@ -423,13 +464,14 @@ void DebuggerWindow::on_debug_event()
     if (serial == m_serial) return;
     m_serial = serial;
     const bool paused = e->debug_paused() && !e->debug_stepping();
+    //Set before the views are read: the history is filled only while paused
+    m_paused = paused;
     if (paused) {
         CPU * c = e->debug_stop_cpu();
         if (c != nullptr) select_cpu(c);
         refresh_all(true);
         if (CpuPane * p = pane()) p->code->setFocus();
     }
-    m_paused = paused;
     show_state();
 }
 
@@ -437,7 +479,10 @@ void DebuggerWindow::on_debug_event()
 //event (the main window's button, a script) is taken as one
 void DebuggerWindow::on_timer()
 {
-    if (!e->loaded) return;
+    if (!e->loaded) {
+        update_actions();
+        return;
+    }
     const bool paused = e->debug_paused() && !e->debug_stepping();
     if (paused != m_paused) {
         m_paused = paused;

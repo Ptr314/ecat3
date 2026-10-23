@@ -132,6 +132,19 @@
     </message>
 </context>
 <context>
+    <name>BreakpointsView</name>
+    <message>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="+209"/>
+        <source>Go to</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CPU</name>
     <message>
         <location filename="../emulator/core.cpp" line="+778"/>
@@ -463,12 +476,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+201"/>
+        <location line="+204"/>
         <source>Breakpoints</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-200"/>
+        <location line="-203"/>
         <source>History</source>
         <translation type="unfinished"></translation>
     </message>
@@ -478,7 +491,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+124"/>
+        <location line="+127"/>
         <source>Show PC</source>
         <translation type="unfinished"></translation>
     </message>
@@ -565,7 +578,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+74"/>
+        <location line="+111"/>
         <source>Stepping...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -807,13 +820,18 @@
 <context>
     <name>DevicesView</name>
     <message>
-        <location filename="../dialogs/debugger/sideviews.cpp" line="+217"/>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="+59"/>
         <source>Field</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Refresh</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -945,19 +963,19 @@
 <context>
     <name>EmulatorConfig</name>
     <message>
-        <location filename="../emulator/config.cpp" line="+273"/>
-        <location filename="../emulator/config_ext.cpp" line="+141"/>
+        <location filename="../emulator/config.cpp" line="+276"/>
+        <location filename="../emulator/config_ext.cpp" line="+143"/>
         <location line="+8"/>
         <location line="+5"/>
-        <location line="+667"/>
-        <location filename="../emulator/config_fields.cpp" line="+275"/>
+        <location line="+827"/>
+        <location filename="../emulator/config_fields.cpp" line="+274"/>
         <source>Error reading config file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+19"/>
         <location line="+3"/>
-        <location filename="../emulator/config_ext.cpp" line="-431"/>
+        <location filename="../emulator/config_ext.cpp" line="-589"/>
         <source>Configuration error for device - no type found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -977,7 +995,7 @@
         <location line="-41"/>
         <location line="+5"/>
         <location line="+13"/>
-        <location filename="../emulator/config_ext.cpp" line="+78"/>
+        <location filename="../emulator/config_ext.cpp" line="+82"/>
         <location line="+8"/>
         <source>Configuration error for device parameter</source>
         <translation type="unfinished"></translation>
@@ -988,13 +1006,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/config_ext.cpp" line="-304"/>
+        <location filename="../emulator/config_ext.cpp" line="-310"/>
         <location line="+5"/>
         <source>The archive must hold exactly one file of its own type at its top level</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+179"/>
+        <location line="+180"/>
         <source>Unknown directive</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1013,27 +1031,27 @@
     <message>
         <location line="-33"/>
         <location line="+8"/>
-        <location line="+84"/>
+        <location line="+85"/>
         <location line="+7"/>
         <location line="+3"/>
-        <location line="+28"/>
+        <location line="+32"/>
         <source>Expected device:property</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-15"/>
+        <location line="-19"/>
         <source>Unterminated {</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-98"/>
-        <location line="+49"/>
-        <location line="+81"/>
+        <location line="-99"/>
+        <location line="+50"/>
+        <location line="+85"/>
         <source>Unexpected text after the property</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-338"/>
+        <location line="-344"/>
         <location line="+18"/>
         <source>The archive is too large</source>
         <translation type="unfinished"></translation>
@@ -1045,15 +1063,15 @@
     </message>
     <message>
         <location line="+94"/>
-        <location line="+55"/>
+        <location line="+56"/>
         <location line="+18"/>
-        <location line="+165"/>
+        <location line="+171"/>
         <source>@before must be followed by a device block or a mapper range</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-101"/>
-        <location line="+167"/>
+        <location line="-106"/>
+        <location line="+172"/>
         <source>The device already exists in the base configuration</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1107,7 +1125,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+130"/>
+        <location line="+283"/>
         <source>An extension can only be based on a .cfg or an .ext file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1117,22 +1135,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-661"/>
+        <location line="-821"/>
         <location line="+34"/>
         <location line="+20"/>
         <location line="+11"/>
-        <location line="+520"/>
+        <location line="+584"/>
+        <location line="+66"/>
         <source>Error reading the archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-536"/>
+        <location line="-666"/>
         <source>No cache directory to unpack into</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+20"/>
-        <location line="+524"/>
+        <location line="+684"/>
         <location line="+3"/>
         <location line="+4"/>
         <location line="+250"/>
@@ -1438,8 +1457,23 @@
 <context>
     <name>HistoryView</name>
     <message>
-        <location filename="../dialogs/debugger/sideviews.cpp" line="-17"/>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="-41"/>
         <source>The processor does not keep its history</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Go to</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Remove the breakpoint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Set a breakpoint</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2883,7 +2917,7 @@
     </message>
     <message>
         <location line="+26"/>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+414"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+474"/>
         <source>Delete the configuration</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2913,23 +2947,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/openconfigwindow.cpp" line="-316"/>
-        <location line="+320"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="-309"/>
+        <location line="+313"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-320"/>
+        <location line="-313"/>
         <source>Error opening CSS file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+94"/>
+        <location line="+91"/>
         <source>Configurations with errors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+223"/>
+        <location line="+219"/>
         <source>Delete the configuration &quot;%1&quot;?
 %2</source>
         <translation type="unfinished"></translation>
@@ -3307,8 +3341,13 @@
 <context>
     <name>StackView</name>
     <message>
-        <location filename="../dialogs/debugger/sideviews.cpp" line="-127"/>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="-181"/>
         <source>The processor has no stack</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+44"/>
+        <source>Go to</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4104,7 +4143,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+52"/>
         <source>eCat3, a universal emulator of retro computers</source>
         <translation type="unfinished"></translation>
     </message>

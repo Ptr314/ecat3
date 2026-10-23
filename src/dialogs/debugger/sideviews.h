@@ -34,6 +34,7 @@ signals:
 protected:
     void paintEvent(QPaintEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
+    void contextMenuEvent(QContextMenuEvent *event) override;
 
 private:
     CPU * cpu;
@@ -42,6 +43,8 @@ private:
     std::map<unsigned int, unsigned int> m_prev;
 
     unsigned int entry(unsigned int address) const;
+    //The value of the row under the point, if the stack has one there
+    bool value_at(const QPoint &pos, unsigned int &value) const;
     int center() const { return (height() / m_rh) / 2; }
 };
 
@@ -60,9 +63,10 @@ signals:
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
+    void contextMenuEvent(QContextMenuEvent *event) override;
 };
 
-//Where PC has been, the newest first, for a processor that keeps it
+//Where PC has been, the newest last and in view, for a processor that keeps it
 class HistoryView : public QListWidget
 {
     Q_OBJECT
@@ -72,6 +76,13 @@ public:
 
 signals:
     void activated(unsigned int address);
+    void toggle_breakpoint(unsigned int address);
+
+protected:
+    void contextMenuEvent(QContextMenuEvent *event) override;
+
+private:
+    CPU * m_cpu;
 };
 
 //The fields of every device as a script reads them (LOG dev.field): the
@@ -82,6 +93,9 @@ class DevicesView : public QTreeWidget
 public:
     DevicesView(Emulator * e, QWidget *parent);
     void refresh();
+
+protected:
+    void contextMenuEvent(QContextMenuEvent *event) override;
 
 private:
     Emulator * e;

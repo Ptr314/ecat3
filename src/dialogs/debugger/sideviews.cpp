@@ -7,6 +7,7 @@
 
 #include <QHeaderView>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QStyledItemDelegate>
@@ -95,11 +96,27 @@ void StackView::paintEvent(QPaintEvent *)
 }
 
 //The value as an address: a return address shows its call in the listing
+bool StackView::value_at(const QPoint &pos, unsigned int &value) const
+{
+    unsigned int a;
+    if (cpu == nullptr || !cpu->stack_address(pos.y() / m_rh - center(), a)) return false;
+    value = entry(a);
+    return true;
+}
+
 void StackView::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    if (cpu == nullptr) return;
-    unsigned int a;
-    if (cpu->stack_address(event->pos().y() / m_rh - center(), a)) emit activated(entry(a));
+    unsigned int v;
+    if (value_at(event->pos(), v)) emit activated(v);
+}
+
+void StackView::contextMenuEvent(QContextMenuEvent *event)
+{
+    unsigned int v;
+    if (!value_at(event->pos(), v)) return;
+    QMenu menu(this);
+    QAction * go = menu.addAction(QIcon(":/icons/next"), tr("Go to"));
+    if (menu.exec(event->globalPos()) == go) emit activated(v);
 }
 
 //------------------------------ CodeDelegate ------------------------------//
@@ -180,30 +197,66 @@ void BreakpointsView::keyPressEvent(QKeyEvent *event)
     QListWidget::keyPressEvent(event);
 }
 
+//The address is taken before the menu: removing the breakpoint fills the
+//list again
+void BreakpointsView::contextMenuEvent(QContextMenuEvent *event)
+{
+    QListWidgetItem * item = itemAt(event->pos());
+    if (item == nullptr) return;
+    setCurrentItem(item);
+    const unsigned int address = item->data(Qt::UserRole).toUInt();
+    QMenu menu(this);
+    QAction * go = menu.addAction(QIcon(":/icons/next"), tr("Go to"));
+    QAction * del = menu.addAction(QIcon(":/icons/remove"), tr("Remove"));
+    QAction * chosen = menu.exec(event->globalPos());
+    if (chosen == go) emit activated(address);
+    else if (chosen == del) emit remove(address);
+}
+
 //------------------------------ HistoryView -------------------------------//
 
 HistoryView::HistoryView(QWidget *parent):
-    QListWidget(parent)
+    QListWidget(parent),
+    m_cpu(nullptr)
 {
     tight_list(this);
+    //The line saying there is no history has no address
     connect(this, &QListWidget::itemActivated, this, [this](QListWidgetItem * item) {
-        emit activated(item->data(Qt::UserRole).toUInt());
+        if (item->data(Qt::UserRole).isValid()) emit activated(item->data(Qt::UserRole).toUInt());
     });
 }
 
 void HistoryView::refresh(CPU * cpu, const CodeFormatter &fmt)
 {
     clear();
+    m_cpu = cpu;
     if (cpu == nullptr) return;
     const std::vector<unsigned int> h = cpu->get_history();
     if (h.empty()) {
         addItem(tr("The processor does not keep its history"));
         return;
     }
-    for (size_t i = h.size(); i > 0; i--) {
-        QListWidgetItem * item = new QListWidgetItem(fmt(h[i - 1]), this);
-        item->setData(Qt::UserRole, h[i - 1]);
+    for (size_t i = 0; i < h.size(); i++) {
+        QListWidgetItem * item = new QListWidgetItem(fmt(h[i]), this);
+        item->setData(Qt::UserRole, h[i]);
     }
+    scrollToBottom();
+}
+
+void HistoryView::contextMenuEvent(QContextMenuEvent *event)
+{
+    QListWidgetItem * item = itemAt(event->pos());
+    if (item == nullptr || m_cpu == nullptr || !item->data(Qt::UserRole).isValid()) return;
+    setCurrentItem(item);
+    const unsigned int address = item->data(Qt::UserRole).toUInt();
+    QMenu menu(this);
+    QAction * go = menu.addAction(QIcon(":/icons/next"), tr("Go to"));
+    QAction * bp = m_cpu->has_breakpoint(address)
+                 ? menu.addAction(QIcon(":/icons/remove"), tr("Remove the breakpoint"))
+                 : menu.addAction(QIcon(":/icons/add"), tr("Set a breakpoint"));
+    QAction * chosen = menu.exec(event->globalPos());
+    if (chosen == go) emit activated(address);
+    else if (chosen == bp) emit toggle_breakpoint(address);
 }
 
 //------------------------------ DevicesView -------------------------------//
@@ -217,6 +270,13 @@ DevicesView::DevicesView(Emulator * e, QWidget *parent):
     setHeaderLabels(QStringList() << tr("Field") << tr("Value"));
     setRootIsDecorated(true);
     header()->setStretchLastSection(true);
+}
+
+void DevicesView::contextMenuEvent(QContextMenuEvent *event)
+{
+    QMenu menu(this);
+    QAction * update = menu.addAction(QIcon(":/icons/reload"), tr("Refresh"));
+    if (menu.exec(event->globalPos()) == update) refresh();
 }
 
 namespace {

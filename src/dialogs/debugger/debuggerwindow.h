@@ -74,9 +74,19 @@ private:
     QLabel * m_state;
     QLineEdit * m_goto;
     QTimer * m_timer;
+    QAction * m_run;
+    QAction * m_pause;
+    QAction * m_run_free;
+    QAction * m_to_pc;
     QAction * m_step_action;
+    QAction * m_step_over;
+    QAction * m_step_out;
+    QAction * m_to_cursor;
+    QAction * m_go;
     QAction * m_bp_add;
     QAction * m_bp_remove;
+    QAction * m_bp_toggle;
+    QAction * m_bp_clear;
     unsigned int m_serial;
     bool m_paused;
     int m_device_tick;
@@ -92,6 +102,9 @@ private:
     void mark_all();
     void show_state();
     void update_cursor();
+    //What can be done now: the steps only while the machine is held, the
+    //run while it is not running already
+    void update_actions();
     void run_command(void (*command)(Emulator *, CPU *));
     void save_layout();
     void restore_layout();

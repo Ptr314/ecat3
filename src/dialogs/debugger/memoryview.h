@@ -139,7 +139,7 @@ private:
 
 //The dumps of a machine as tabs: each processor's address space, the
 //mappers and the memories; any other device with an address space from the
-//"+" button
+//button at the corner
 class MemoryTabs : public QTabWidget
 {
     Q_OBJECT

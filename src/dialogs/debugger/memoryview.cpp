@@ -678,7 +678,7 @@ MemoryTabs::MemoryTabs(Emulator * e, QWidget *parent):
         }
     }
     QToolButton * plus = new QToolButton(this);
-    plus->setText("+");
+    plus->setIcon(QIcon(":/icons/cfg_copy"));
     plus->setToolTip(tr("Another device"));
     plus->setPopupMode(QToolButton::InstantPopup);
     plus->setMenu(more);
