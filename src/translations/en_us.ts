@@ -452,7 +452,7 @@
 <context>
     <name>DebuggerWindow</name>
     <message>
-        <location filename="../dialogs/debugger/debuggerwindow.cpp" line="+34"/>
+        <location filename="../dialogs/debugger/debuggerwindow.cpp" line="+35"/>
         <source>Debugger</source>
         <translation type="unfinished"></translation>
     </message>
@@ -463,12 +463,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+206"/>
+        <location line="+201"/>
         <source>Breakpoints</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-205"/>
+        <location line="-200"/>
         <source>History</source>
         <translation type="unfinished"></translation>
     </message>
@@ -478,7 +478,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+129"/>
+        <location line="+124"/>
         <source>Show PC</source>
         <translation type="unfinished"></translation>
     </message>
@@ -504,7 +504,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-29"/>
+        <location line="-24"/>
         <source>Run, stopping at the breakpoints</source>
         <translation type="unfinished"></translation>
     </message>
@@ -519,7 +519,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+38"/>
         <source>An address to show in the listing</source>
         <translation type="unfinished"></translation>
     </message>
@@ -560,12 +560,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+21"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+72"/>
+        <location line="+74"/>
         <source>Stepping...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1815,7 +1815,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <source>Debug</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1845,14 +1845,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+63"/>
         <source>Select a machine...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1642"/>
+        <location filename="../mainwindow.cpp" line="+1695"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1905,7 +1905,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+970"/>
+        <location filename="../mainwindow.cpp" line="+963"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1926,14 +1926,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1819"/>
-        <location line="+1945"/>
+        <location filename="../mainwindow.cpp" line="-1813"/>
+        <location line="+1939"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1628"/>
+        <location filename="../mainwindow.cpp" line="-1621"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2003,15 +2003,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-647"/>
+        <location filename="../mainwindow.cpp" line="-682"/>
         <location line="+76"/>
-        <location line="+1254"/>
+        <location line="+1289"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+221"/>
         <location line="+107"/>
         <location line="+62"/>
-        <location line="+174"/>
+        <location line="+167"/>
         <location line="+25"/>
         <location line="+471"/>
         <location line="+29"/>
@@ -2020,7 +2020,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2569"/>
+        <location line="-2597"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2042,14 +2042,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1543"/>
+        <location line="+1578"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1658"/>
+        <location line="-1693"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2088,7 +2088,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+23"/>
+        <source>Interface style</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+29"/>
         <source>Mouse speed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2109,14 +2119,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1373"/>
-        <location line="+386"/>
+        <location line="+1374"/>
+        <location line="+379"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1872"/>
+        <location line="-1866"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2152,12 +2162,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1709"/>
+        <location line="+1703"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1685"/>
+        <location line="-1679"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2230,20 +2240,20 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-744"/>
-        <location line="+588"/>
+        <location line="-778"/>
+        <location line="+622"/>
         <location line="+1"/>
-        <location line="+855"/>
+        <location line="+856"/>
         <source>Turbo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-692"/>
+        <location line="-693"/>
         <source>Picture tube</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+276"/>
+        <location line="+277"/>
         <source>High precision</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2319,12 +2329,12 @@
     </message>
     <message>
         <location line="+82"/>
-        <location line="+480"/>
+        <location line="+473"/>
         <source>Finishing the video...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-436"/>
+        <location line="-429"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2359,7 +2369,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+112"/>
+        <location line="+105"/>
         <source>Save screenshot</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2419,17 +2429,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-162"/>
+        <location filename="../mainwindow.ui" line="-161"/>
         <source>Action recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="+43"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+275"/>
+        <location line="+273"/>
         <source>I/O ports...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2530,12 +2540,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1486"/>
+        <location line="-1479"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1529"/>
+        <location line="+1522"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4094,7 +4104,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+43"/>
         <source>eCat3, a universal emulator of retro computers</source>
         <translation type="unfinished"></translation>
     </message>

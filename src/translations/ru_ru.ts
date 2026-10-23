@@ -655,7 +655,7 @@
 <context>
     <name>DebuggerWindow</name>
     <message>
-        <location filename="../dialogs/debugger/debuggerwindow.cpp" line="+34"/>
+        <location filename="../dialogs/debugger/debuggerwindow.cpp" line="+35"/>
         <source>Debugger</source>
         <translation>Отладчик</translation>
     </message>
@@ -666,12 +666,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+206"/>
+        <location line="+201"/>
         <source>Breakpoints</source>
         <translation>Точки останова</translation>
     </message>
     <message>
-        <location line="-205"/>
+        <location line="-200"/>
         <source>History</source>
         <translation>История</translation>
     </message>
@@ -681,7 +681,7 @@
         <translation>Устройства</translation>
     </message>
     <message>
-        <location line="+129"/>
+        <location line="+124"/>
         <source>Show PC</source>
         <translation>Показать PC</translation>
     </message>
@@ -707,7 +707,7 @@
         <translation>Выполнить до курсора</translation>
     </message>
     <message>
-        <location line="-29"/>
+        <location line="-24"/>
         <source>Run, stopping at the breakpoints</source>
         <translation>Пуск с остановкой на точках останова</translation>
     </message>
@@ -722,7 +722,7 @@
         <translation>Запустить без отладки</translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+38"/>
         <source>An address to show in the listing</source>
         <translation>Адрес, который показать в листинге</translation>
     </message>
@@ -763,7 +763,7 @@
         <translation>Снять все точки останова %1?</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+21"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -772,7 +772,7 @@
         <translation type="vanished">Другое устройство</translation>
     </message>
     <message>
-        <location line="+72"/>
+        <location line="+74"/>
         <source>Stepping...</source>
         <translation>Шаг...</translation>
     </message>
@@ -2343,7 +2343,7 @@
         <translation>Эмуляция</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+32"/>
         <source>Devices</source>
         <translation>Устройства</translation>
     </message>
@@ -2377,14 +2377,14 @@
         <translation>Сглаживание</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+63"/>
         <source>Select a machine...</source>
         <translation>Выбор компьютера...</translation>
     </message>
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1642"/>
+        <location filename="../mainwindow.cpp" line="+1695"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2451,14 +2451,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-849"/>
-        <location line="+1945"/>
+        <location filename="../mainwindow.cpp" line="-850"/>
+        <location line="+1939"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1628"/>
+        <location filename="../mainwindow.cpp" line="-1621"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -2536,16 +2536,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-539"/>
+        <location filename="../mainwindow.cpp" line="-574"/>
         <location line="+47"/>
-        <location line="+1543"/>
+        <location line="+1578"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1658"/>
+        <location line="-1693"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2574,13 +2574,13 @@
     <message>
         <location line="-120"/>
         <location line="+76"/>
-        <location line="+1254"/>
+        <location line="+1289"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+221"/>
         <location line="+107"/>
         <location line="+62"/>
-        <location line="+174"/>
+        <location line="+167"/>
         <location line="+25"/>
         <location line="+471"/>
         <location line="+29"/>
@@ -2589,7 +2589,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2569"/>
+        <location line="-2597"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2609,7 +2609,7 @@
         <translation>English</translation>
     </message>
     <message>
-        <location line="+122"/>
+        <location line="+156"/>
         <source>Mouse speed</source>
         <translation>Скорость мыши</translation>
     </message>
@@ -2665,7 +2665,7 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+700"/>
+        <location line="+701"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
@@ -2682,20 +2682,20 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1405"/>
+        <location line="-1440"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
     </message>
     <message>
-        <location line="+69"/>
+        <location line="+103"/>
         <source>Screenshot type</source>
         <translation>Тип скриншота</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="+83"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1912"/>
+        <location filename="../mainwindow.cpp" line="+1906"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -2705,15 +2705,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1890"/>
-        <location line="+1373"/>
-        <location line="+386"/>
+        <location line="-1884"/>
+        <location line="+1374"/>
+        <location line="+379"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1872"/>
+        <location line="-1866"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2749,7 +2749,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1709"/>
+        <location line="+1703"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -2769,8 +2769,8 @@
         <translation>Идет запись видео в </translation>
     </message>
     <message>
-        <location line="-451"/>
-        <location line="+480"/>
+        <location line="-444"/>
+        <location line="+473"/>
         <source>Finishing the video...</source>
         <translation>Видео дописывается...</translation>
     </message>
@@ -2780,20 +2780,20 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1890"/>
+        <location line="-1884"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
     <message>
-        <location line="-478"/>
-        <location line="+588"/>
+        <location line="-512"/>
+        <location line="+622"/>
         <location line="+1"/>
-        <location line="+855"/>
+        <location line="+856"/>
         <source>Turbo</source>
         <translation>Турбо</translation>
     </message>
     <message>
-        <location line="-1066"/>
+        <location line="-1101"/>
         <source>Floppy drive %1</source>
         <translation>Дисковод %1</translation>
     </message>
@@ -2803,7 +2803,17 @@
         <translation>Винчестер %1</translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location line="+23"/>
+        <source>Interface style</source>
+        <translation>Стиль интерфейса</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Default</source>
+        <translation>По умолчанию</translation>
+    </message>
+    <message>
+        <location line="+59"/>
         <source>Original</source>
         <translation>Оригинал</translation>
     </message>
@@ -2839,7 +2849,7 @@
         <translation>Кинескоп</translation>
     </message>
     <message>
-        <location line="+276"/>
+        <location line="+277"/>
         <source>High precision</source>
         <translation>Высокая точность</translation>
     </message>
@@ -2932,7 +2942,7 @@
         <translation>Ошибка создания резервной копии. Возможно, файл с расширением *.bak уже существует.</translation>
     </message>
     <message>
-        <location line="+112"/>
+        <location line="+105"/>
         <source>Save screenshot</source>
         <translation>Сохранение скриншота</translation>
     </message>
@@ -2967,17 +2977,17 @@
         <translation>Конфигурация не загружена.</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-248"/>
+        <location filename="../mainwindow.ui" line="-247"/>
         <source>Action recording</source>
         <translation>Запись действий</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+24"/>
         <source>Debug</source>
         <translation>Отладка</translation>
     </message>
     <message>
-        <location line="+294"/>
+        <location line="+292"/>
         <source>I/O ports...</source>
         <translation>Порты ввода-вывода...</translation>
     </message>
@@ -3078,12 +3088,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1486"/>
+        <location line="-1479"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1529"/>
+        <location line="+1522"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -4807,7 +4817,7 @@
         <translation>Внутренняя ошибка, программа может работать неустойчиво:</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+43"/>
         <source>eCat3, a universal emulator of retro computers</source>
         <translation>eCat3, универсальный эмулятор ретрокомпьютеров</translation>
     </message>

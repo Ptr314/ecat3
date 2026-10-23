@@ -286,6 +286,8 @@ private:
     QMenu * mouse_speed_menu = nullptr; //Display > Mouse speed, made once
     bool screenshot_as_shown = false;   //Settings > Screenshot type: the picture of the window, not the machine's pixels
     QMenu * screenshot_menu = nullptr;  //Settings > Screenshot type, made once
+    QMenu * style_menu = nullptr;       //Settings > Interface style, made once
+    QString default_style;              //The style Qt chose itself, for "Default"
     QImage picture_as_shown(const std::vector<uint8_t> &raw, unsigned int sx, unsigned int sy);
 
     //------------------------- Video recording ----------------------------//

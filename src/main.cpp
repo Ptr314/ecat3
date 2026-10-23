@@ -84,7 +84,17 @@ int main(int argc, char *argv[])
     QSurfaceFormat::setDefaultFormat(format);
 #endif
 
+    //A -style of the command line wins over the one saved in the ini. Qt takes
+    //it out of the arguments, so it is looked for before Qt sees them
+    bool style_given = qEnvironmentVariableIsSet("QT_STYLE_OVERRIDE");
+    for (int i = 1; i < argc; i++) {
+        const QByteArray arg(argv[i]);
+        if (arg == "-style" || arg == "--style" || arg.startsWith("-style=") || arg.startsWith("--style="))
+            style_given = true;
+    }
+
     EcatApplication a(argc, argv);
+    a.setProperty("ecat_style_given", style_given);
 
     QCoreApplication::setApplicationName("eCat3");
     QCoreApplication::setApplicationVersion(PROJECT_VERSION);

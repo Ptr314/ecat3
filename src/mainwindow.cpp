@@ -16,6 +16,9 @@
 #include <QWidgetAction>
 #include <QPushButton>
 #include <QActionGroup>
+#include <QApplication>
+#include <QStyle>
+#include <QStyleFactory>
 #include <QSignalBlocker>
 #include <QBoxLayout>
 // #include <QOverload>
@@ -174,6 +177,13 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, i
     } else {
         switch_language(ini_lang, true);
     }
+
+    //Settings > Interface style. Before the widgets are made, so that they are
+    //made with it. An unknown name leaves the style Qt chose
+    default_style = QApplication::style()->objectName();
+    const QString ini_style = QString::fromStdString(m_settings->get("interface", "style"));
+    if (!ini_style.isEmpty() && !qApp->property("ecat_style_given").toBool())
+        QApplication::setStyle(ini_style);
 
     ui->setupUi(this);
 
@@ -668,6 +678,40 @@ MainWindow::~MainWindow()
 
 void MainWindow::CreateScreenMenu()
 {
+    //The look of the window: the styles of this Qt. The default one of Qt 6 on
+    //Windows 11 (windows11) draws menus noticeably slower than windowsvista
+    if (style_menu == nullptr) {
+        //Settings, after the language
+        style_menu = new QMenu(this);
+        const QList<QAction*> acts = ui->menuHelp->actions();
+        const int at = acts.indexOf(ui->actionLanguage);
+        ui->menuHelp->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, style_menu);
+    }
+    style_menu->setTitle(tr("Interface style"));
+    style_menu->clear();
+    {
+        const QString current = QString::fromStdString(e->read_setup("interface", "style", ""));
+        QActionGroup * style_group = new QActionGroup(style_menu);
+        QStringList names = QStyleFactory::keys();
+        names.prepend(QString());
+        bool found = false;
+        for (const QString &name : names) {
+            QAction * sa = style_menu->addAction(
+                name.isEmpty() ? tr("Default") + " (" + default_style + ")" : name,
+                [this, name]{
+                    QApplication::setStyle(name.isEmpty() ? default_style : name);
+                    e->write_setup("interface", "style", name.toStdString());
+                });
+            sa->setActionGroup(style_group);
+            sa->setCheckable(true);
+            const bool on = !name.isEmpty() && name.compare(current, Qt::CaseInsensitive) == 0;
+            sa->setChecked(on);
+            found = found || on;
+        }
+        //Nothing saved, or a name this Qt does not have
+        if (!found) style_menu->actions().first()->setChecked(true);
+    }
+
     //Speed of the machine's mouse, a setting of the host rather than of a machine
     try {
         mouse_speed = std::stoi(e->read_setup("Mouse", "speed", "25"));
@@ -2345,22 +2389,15 @@ void MainWindow::update_fdds()
     fdd_blinker = !fdd_blinker;
     for (unsigned int i=0; i<fdds_found; i++)
     {
-        if (fdds[i]->is_led_on()) {
-            if (fdd_blinker) {
-                fdd_button[i]->setIcon(QIcon(":/icons/floppy_access"));
-            } else {
-                fdd_button[i]->setIcon(QIcon(":/icons/floppy_mount"));
-            }
-        } else {
-            if (fdds[i]->get_loaded()) {
-                if (fdds[i]->is_protected()) {
-                    fdd_button[i]->setIcon(QIcon(":/icons/floppy_locked"));
-                } else {
-                    fdd_button[i]->setIcon(QIcon(":/icons/floppy_mount"));
-                }
-            } else {
-                fdd_button[i]->setIcon(QIcon(":/icons/floppy_unmount"));
-            }
+        const char * icon = fdds[i]->is_led_on() ? (fdd_blinker ? ":/icons/floppy_access" : ":/icons/floppy_mount")
+                          : !fdds[i]->get_loaded() ? ":/icons/floppy_unmount"
+                          : fdds[i]->is_protected() ? ":/icons/floppy_locked"
+                          : ":/icons/floppy_mount";
+        //Set only on a change, as for the hard disks below. The other places
+        //that set the icon show the same state, so the next tick agrees with them
+        if (fdd_button[i]->property("led_icon").toString() != icon) {
+            fdd_button[i]->setIcon(QIcon(icon));
+            fdd_button[i]->setProperty("led_icon", QString(icon));
         }
     }
     for (unsigned int i = 0; i < hdds_found; i++)
