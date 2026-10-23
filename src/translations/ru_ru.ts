@@ -215,7 +215,7 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+778"/>
+        <location filename="../emulator/core.cpp" line="+779"/>
         <source>No CPU clock value found</source>
         <translation>Не задана тактовая частота процессора</translation>
     </message>
@@ -229,12 +229,12 @@
         <translation type="vanished">Команда &apos;breakpoint&apos; требует адрес</translation>
     </message>
     <message>
-        <location line="+338"/>
+        <location line="+351"/>
         <source>Command &apos;setreg&apos; expects a name and a value</source>
         <translation>Команда &apos;setreg&apos; требует имя и значение</translation>
     </message>
     <message>
-        <location line="-354"/>
+        <location line="-367"/>
         <source>Invalid breakpoint address</source>
         <translation>Нерректная точка останова</translation>
     </message>
@@ -265,7 +265,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1393"/>
+        <location filename="../emulator/core.cpp" line="-1394"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -1039,7 +1039,7 @@
 <context>
     <name>DevicesView</name>
     <message>
-        <location filename="../dialogs/debugger/sideviews.cpp" line="+59"/>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="+60"/>
         <source>Field</source>
         <translation>Поле</translation>
     </message>
@@ -1361,7 +1361,7 @@
         <location filename="../emulator/config_ext.cpp" line="+143"/>
         <location line="+8"/>
         <location line="+5"/>
-        <location line="+827"/>
+        <location line="+834"/>
         <location filename="../emulator/config_fields.cpp" line="+274"/>
         <source>Error reading config file</source>
         <translation>Ошибка чтения файла конфигурации компьютера</translation>
@@ -1369,7 +1369,7 @@
     <message>
         <location line="+19"/>
         <location line="+3"/>
-        <location filename="../emulator/config_ext.cpp" line="-589"/>
+        <location filename="../emulator/config_ext.cpp" line="-596"/>
         <source>Configuration error for device - no type found</source>
         <translation>Ошибка конфигурации устройства - не найден тип</translation>
     </message>
@@ -1519,7 +1519,7 @@
         <translation>В базовой конфигурации это свойство записано с другими модификаторами, сначала удалите его</translation>
     </message>
     <message>
-        <location line="+283"/>
+        <location line="+290"/>
         <source>An extension can only be based on a .cfg or an .ext file</source>
         <translation>Базой расширения может быть только файл .cfg или .ext</translation>
     </message>
@@ -1529,11 +1529,11 @@
         <translation>Расширения ссылаются друг на друга по кругу</translation>
     </message>
     <message>
-        <location line="-821"/>
+        <location line="-828"/>
         <location line="+34"/>
         <location line="+20"/>
         <location line="+11"/>
-        <location line="+584"/>
+        <location line="+591"/>
         <location line="+66"/>
         <source>Error reading the archive</source>
         <translation>Ошибка чтения архива</translation>
@@ -1543,13 +1543,13 @@
         <translation type="vanished">В корне архива должен быть ровно один файл .ext</translation>
     </message>
     <message>
-        <location line="-666"/>
+        <location line="-673"/>
         <source>No cache directory to unpack into</source>
         <translation>Нет временного каталога для распаковки</translation>
     </message>
     <message>
         <location line="+20"/>
-        <location line="+684"/>
+        <location line="+691"/>
         <location line="+3"/>
         <location line="+4"/>
         <location line="+250"/>
@@ -1926,12 +1926,12 @@
 <context>
     <name>HistoryView</name>
     <message>
-        <location filename="../dialogs/debugger/sideviews.cpp" line="-41"/>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="-42"/>
         <source>The processor does not keep its history</source>
         <translation>Процессор не хранит историю</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+17"/>
         <source>Go to</source>
         <translation>Перейти</translation>
     </message>
@@ -2200,7 +2200,7 @@
 <context>
     <name>KCGDDisplay</name>
     <message>
-        <location line="+528"/>
+        <location line="+534"/>
         <source>KCGD device is expected</source>
         <translation>Ожидается устройство КЦГД</translation>
     </message>
@@ -2418,7 +2418,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1695"/>
+        <location filename="../mainwindow.cpp" line="+1696"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2485,14 +2485,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-850"/>
-        <location line="+1939"/>
+        <location filename="../mainwindow.cpp" line="-840"/>
+        <location line="+1946"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1621"/>
+        <location filename="../mainwindow.cpp" line="-1638"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -2570,16 +2570,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-574"/>
+        <location filename="../mainwindow.cpp" line="-576"/>
         <location line="+47"/>
-        <location line="+1578"/>
+        <location line="+1597"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1693"/>
+        <location line="-1712"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2608,7 +2608,7 @@
     <message>
         <location line="-120"/>
         <location line="+76"/>
-        <location line="+1289"/>
+        <location line="+1308"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+221"/>
@@ -2623,7 +2623,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2597"/>
+        <location line="-2616"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2643,12 +2643,12 @@
         <translation>English</translation>
     </message>
     <message>
-        <location line="+156"/>
+        <location line="+168"/>
         <source>Mouse speed</source>
         <translation>Скорость мыши</translation>
     </message>
     <message>
-        <location line="+178"/>
+        <location line="+168"/>
         <source>Auto scale</source>
         <translation>Автоматически</translation>
     </message>
@@ -2705,7 +2705,7 @@
         <translation>Запустить без отладки</translation>
     </message>
     <message>
-        <location line="+267"/>
+        <location line="+284"/>
         <source>All supported files</source>
         <translation>Все поддерживаемые файлы</translation>
     </message>
@@ -2716,20 +2716,20 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1440"/>
+        <location line="-1459"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
     </message>
     <message>
-        <location line="+103"/>
+        <location line="+115"/>
         <source>Screenshot type</source>
         <translation>Тип скриншота</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="+83"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1906"/>
+        <location filename="../mainwindow.cpp" line="+1913"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -2739,15 +2739,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1884"/>
-        <location line="+1374"/>
+        <location line="-1891"/>
+        <location line="+1381"/>
         <location line="+379"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1866"/>
+        <location line="-1873"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2783,7 +2783,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1703"/>
+        <location line="+1710"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -2814,20 +2814,20 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1884"/>
+        <location line="-1891"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
     <message>
-        <location line="-512"/>
-        <location line="+622"/>
+        <location line="-523"/>
+        <location line="+633"/>
         <location line="+1"/>
-        <location line="+856"/>
+        <location line="+846"/>
         <source>Turbo</source>
         <translation>Турбо</translation>
     </message>
     <message>
-        <location line="-1101"/>
+        <location line="-1103"/>
         <source>Floppy drive %1</source>
         <translation>Дисковод %1</translation>
     </message>
@@ -2837,12 +2837,12 @@
         <translation>Винчестер %1</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+31"/>
         <source>Interface style</source>
         <translation>Стиль интерфейса</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+14"/>
         <source>Default</source>
         <translation>По умолчанию</translation>
     </message>
@@ -2872,7 +2872,7 @@
         <translation>Скорость</translation>
     </message>
     <message>
-        <location line="+98"/>
+        <location line="+88"/>
         <location line="+49"/>
         <source>Sharp</source>
         <translation>Резкое</translation>
@@ -2893,7 +2893,7 @@
         <translation>Картинка строится по ходу луча внутри строки - для программ, которые меняют палитру на ходу</translation>
     </message>
     <message>
-        <location line="+437"/>
+        <location line="+454"/>
         <source>As fast as possible</source>
         <translation>Как можно быстрее</translation>
     </message>
@@ -3122,12 +3122,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1479"/>
+        <location line="-1496"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1522"/>
+        <location line="+1539"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -3280,7 +3280,7 @@
         <translation type="vanished">Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+1112"/>
+        <location line="+1126"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
@@ -3338,7 +3338,7 @@
         <translation>Адрес введен некорректно</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+19"/>
         <source>No device</source>
         <translation>Нет устройства</translation>
     </message>
@@ -3346,12 +3346,12 @@
 <context>
     <name>MemoryPanel</name>
     <message>
-        <location filename="../dialogs/debugger/memoryview.cpp" line="+36"/>
+        <location filename="../dialogs/debugger/memoryview.cpp" line="+37"/>
         <source>nothing</source>
         <translation>ничего</translation>
     </message>
     <message>
-        <location line="+455"/>
+        <location line="+473"/>
         <source>Address</source>
         <translation>Адрес</translation>
     </message>
@@ -3497,7 +3497,7 @@
     </message>
     <message>
         <location line="+26"/>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+474"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+485"/>
         <source>Delete the configuration</source>
         <translation>Удалить конфигурацию</translation>
     </message>
@@ -3617,7 +3617,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-875"/>
+        <location filename="../emulator/core.cpp" line="-889"/>
         <source>Incorrect access mode</source>
         <translation>Некорректный режим доступа</translation>
     </message>
@@ -3914,13 +3914,13 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+213"/>
+        <location line="+214"/>
         <location line="+61"/>
         <source>I/O ports</source>
         <translation>Порты ввода-вывода</translation>
     </message>
     <message>
-        <location line="-265"/>
+        <location line="-266"/>
         <source>Choose folder...</source>
         <translation>Выбрать папку...</translation>
     </message>
@@ -3985,7 +3985,7 @@
         <translation>Настройки</translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+118"/>
         <source>Cannot create file %1</source>
         <translation>Не удалось создать файл %1</translation>
     </message>
@@ -4019,7 +4019,7 @@
 <context>
     <name>StackView</name>
     <message>
-        <location filename="../dialogs/debugger/sideviews.cpp" line="-181"/>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="-182"/>
         <source>The processor has no stack</source>
         <translation>У процессора нет стека</translation>
     </message>
@@ -4657,7 +4657,7 @@
         <location line="-7"/>
         <location line="+3"/>
         <location line="+38"/>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_fat.cpp" line="+1196"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_fat.cpp" line="+1209"/>
         <source>Sector is not free</source>
         <translation>Сектор уже занят</translation>
     </message>
@@ -4756,7 +4756,7 @@
         <translation>User # выходит за допустимые пределы</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_fat.cpp" line="-979"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_fat.cpp" line="-992"/>
         <source>Cannot read FAT boot sector</source>
         <translation>Не удалось прочитать загрузочный сектор FAT</translation>
     </message>
@@ -4802,7 +4802,7 @@
         <translation>FAT: область данных за пределами диска</translation>
     </message>
     <message>
-        <location line="+934"/>
+        <location line="+947"/>
         <source>Cannot find a free name</source>
         <translation>Не удаётся подобрать свободное имя</translation>
     </message>
@@ -4837,13 +4837,13 @@
         <translation>Файл слишком мал</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_rt11.cpp" line="+592"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_rt11.cpp" line="+600"/>
         <location line="+7"/>
         <source>RT-11: invalid directory</source>
         <translation>RT-11: некорректный каталог</translation>
     </message>
     <message>
-        <location line="+436"/>
+        <location line="+438"/>
         <source>Invalid date</source>
         <translation>Некорректная дата</translation>
     </message>

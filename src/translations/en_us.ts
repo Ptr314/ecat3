@@ -147,7 +147,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+778"/>
+        <location filename="../emulator/core.cpp" line="+779"/>
         <source>No CPU clock value found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -157,12 +157,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+338"/>
+        <location line="+351"/>
         <source>Command &apos;setreg&apos; expects a name and a value</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-354"/>
+        <location line="-367"/>
         <source>Invalid breakpoint address</source>
         <translation type="unfinished"></translation>
     </message>
@@ -185,7 +185,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1393"/>
+        <location filename="../emulator/core.cpp" line="-1394"/>
         <source>Incorrect interface definition for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -820,7 +820,7 @@
 <context>
     <name>DevicesView</name>
     <message>
-        <location filename="../dialogs/debugger/sideviews.cpp" line="+59"/>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="+60"/>
         <source>Field</source>
         <translation type="unfinished"></translation>
     </message>
@@ -967,7 +967,7 @@
         <location filename="../emulator/config_ext.cpp" line="+143"/>
         <location line="+8"/>
         <location line="+5"/>
-        <location line="+827"/>
+        <location line="+834"/>
         <location filename="../emulator/config_fields.cpp" line="+274"/>
         <source>Error reading config file</source>
         <translation type="unfinished"></translation>
@@ -975,7 +975,7 @@
     <message>
         <location line="+19"/>
         <location line="+3"/>
-        <location filename="../emulator/config_ext.cpp" line="-589"/>
+        <location filename="../emulator/config_ext.cpp" line="-596"/>
         <source>Configuration error for device - no type found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1125,7 +1125,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+283"/>
+        <location line="+290"/>
         <source>An extension can only be based on a .cfg or an .ext file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1135,23 +1135,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-821"/>
+        <location line="-828"/>
         <location line="+34"/>
         <location line="+20"/>
         <location line="+11"/>
-        <location line="+584"/>
+        <location line="+591"/>
         <location line="+66"/>
         <source>Error reading the archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-666"/>
+        <location line="-673"/>
         <source>No cache directory to unpack into</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+20"/>
-        <location line="+684"/>
+        <location line="+691"/>
         <location line="+3"/>
         <location line="+4"/>
         <location line="+250"/>
@@ -1457,12 +1457,12 @@
 <context>
     <name>HistoryView</name>
     <message>
-        <location filename="../dialogs/debugger/sideviews.cpp" line="-41"/>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="-42"/>
         <source>The processor does not keep its history</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+17"/>
         <source>Go to</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1676,7 +1676,7 @@
 <context>
     <name>KCGDDisplay</name>
     <message>
-        <location line="+528"/>
+        <location line="+534"/>
         <source>KCGD device is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1886,7 +1886,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1695"/>
+        <location filename="../mainwindow.cpp" line="+1696"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1939,7 +1939,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+963"/>
+        <location filename="../mainwindow.cpp" line="+980"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1960,14 +1960,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1813"/>
-        <location line="+1939"/>
+        <location filename="../mainwindow.cpp" line="-1820"/>
+        <location line="+1946"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1621"/>
+        <location filename="../mainwindow.cpp" line="-1638"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2037,9 +2037,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-682"/>
+        <location filename="../mainwindow.cpp" line="-684"/>
         <location line="+76"/>
-        <location line="+1289"/>
+        <location line="+1308"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+221"/>
@@ -2054,7 +2054,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2597"/>
+        <location line="-2616"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2076,14 +2076,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1578"/>
+        <location line="+1597"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1693"/>
+        <location line="-1712"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2122,12 +2122,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+31"/>
         <source>Interface style</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+14"/>
         <source>Default</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2153,14 +2153,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1374"/>
+        <location line="+1381"/>
         <location line="+379"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1866"/>
+        <location line="-1873"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2196,12 +2196,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1703"/>
+        <location line="+1710"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1679"/>
+        <location line="-1686"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2221,7 +2221,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+19"/>
         <source>Auto scale</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2274,10 +2274,10 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-778"/>
-        <location line="+622"/>
+        <location line="-779"/>
+        <location line="+633"/>
         <location line="+1"/>
-        <location line="+856"/>
+        <location line="+846"/>
         <source>Turbo</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2303,7 +2303,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+69"/>
         <source>As fast as possible</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2574,12 +2574,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1479"/>
+        <location line="-1496"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1522"/>
+        <location line="+1539"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2708,7 +2708,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location line="+1112"/>
+        <location line="+1126"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2758,7 +2758,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+19"/>
         <source>No device</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2766,12 +2766,12 @@
 <context>
     <name>MemoryPanel</name>
     <message>
-        <location filename="../dialogs/debugger/memoryview.cpp" line="+36"/>
+        <location filename="../dialogs/debugger/memoryview.cpp" line="+37"/>
         <source>nothing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+455"/>
+        <location line="+473"/>
         <source>Address</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2917,7 +2917,7 @@
     </message>
     <message>
         <location line="+26"/>
-        <location filename="../dialogs/openconfigwindow.cpp" line="+474"/>
+        <location filename="../dialogs/openconfigwindow.cpp" line="+485"/>
         <source>Delete the configuration</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3036,7 +3036,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-875"/>
+        <location filename="../emulator/core.cpp" line="-889"/>
         <source>Incorrect access mode</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3244,13 +3244,13 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+213"/>
+        <location line="+214"/>
         <location line="+61"/>
         <source>I/O ports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-265"/>
+        <location line="-266"/>
         <source>Choose folder...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3315,7 +3315,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+118"/>
         <source>Cannot create file %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3341,7 +3341,7 @@
 <context>
     <name>StackView</name>
     <message>
-        <location filename="../dialogs/debugger/sideviews.cpp" line="-181"/>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="-182"/>
         <source>The processor has no stack</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3944,7 +3944,7 @@
         <location line="-7"/>
         <location line="+3"/>
         <location line="+38"/>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_fat.cpp" line="+1196"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_fat.cpp" line="+1209"/>
         <source>Sector is not free</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4043,7 +4043,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_fat.cpp" line="-979"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_fat.cpp" line="-992"/>
         <source>Cannot read FAT boot sector</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4089,7 +4089,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+934"/>
+        <location line="+947"/>
         <source>Cannot find a free name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4124,13 +4124,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_rt11.cpp" line="+592"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_rt11.cpp" line="+600"/>
         <location line="+7"/>
         <source>RT-11: invalid directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+436"/>
+        <location line="+438"/>
         <source>Invalid date</source>
         <translation type="unfinished"></translation>
     </message>

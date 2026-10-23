@@ -73,8 +73,6 @@ cp "${BUILD_DIR}/ecat3.wasm" "${RELEASE_DIR}/"
 # The page.
 cp ../src/wasm/shell.html   "${RELEASE_DIR}/index.html"
 cp ../src/wasm/ecat_wasm.js "${RELEASE_DIR}/"
-# The version the page shows in its footer.
-printf '%s\n' "${VERSION}" > "${RELEASE_DIR}/version.txt"
 # The icon of the page is the one of the desktop window.
 cp ../src/resources/icons/tv.png "${RELEASE_DIR}/favicon.png"
 
@@ -87,6 +85,11 @@ cp web/README.md          "${RELEASE_DIR}/"
 cp web/nginx.conf.example "${RELEASE_DIR}/"
 cp ../deploy/LICENSE.TXT   "${RELEASE_DIR}/"
 cp ../deploy/COPYRIGHT.TXT "${RELEASE_DIR}/"
+
+# The last step: manifest.json with the version, the build and the hash of
+# every file, and those hashes in the addresses of index.html, so that a
+# browser never mixes files of two builds out of its cache.
+"${PYTHON}" ../src/wasm/stamp_release.py "${RELEASE_DIR}"
 
 rm -f "./release/${RELEASE_NAME}.zip"
 if command -v zip >/dev/null 2>&1; then

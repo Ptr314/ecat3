@@ -128,7 +128,7 @@ CMake и Ninja во всех случаях берутся из поставки
     index.html  ecat_wasm.js        страница
     ecat3.js  ecat3.wasm            сам эмулятор
     machines.json                   список машин для меню
-    version.txt                     версия из файла VERSION для подвала страницы
+    manifest.json                   версия, метка сборки и хэши всех файлов (stamp_release.py)
     favicon.png                     значок вкладки, копия src/resources/icons/tv.png
     bundles/<машина>.bundle         ПЗУ, конфиг и образы дисков одной машины
     bundles/data.bundle             знакогенераторы и раскладки
@@ -139,6 +139,11 @@ CMake и Ninja во всех случаях берутся из поставки
 по файлу на машину в подкаталоге `bundles/`, и страница тянет только тот,
 который выбрали. Добавить машину можно, не трогая ни страницу, ни скрипт
 сборки — достаточно положить `.cfg` с ПЗУ в `deploy/computers/`.
+
+Последний шаг — `src/wasm/stamp_release.py`: пишет `manifest.json` и ставит
+хэши в адреса скриптов `index.html`, чтобы браузер не смешивал файлы двух
+сборок из кэша (см. «Версии файлов» в `docs/dev/frontends.md`). Страницу или
+`ecat_wasm.js`, скопированные в пакет руками, штампуют им же повторно.
 
 Нужен Emscripten; пути к нему — в `vars-emsdk.cmd`, а под Unix достаточно
 `source emsdk_env.sh` перед запуском. Python и node берутся из самого emsdk.

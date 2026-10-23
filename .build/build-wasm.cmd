@@ -64,9 +64,6 @@ if exist "%_BUILD_DIR%\ecat3.worker.js" copy /y "%_BUILD_DIR%\ecat3.worker.js" "
 REM The page.
 copy /y "..\src\wasm\shell.html"   "%_RELEASE_DIR%\index.html" >nul || exit /b 1
 copy /y "..\src\wasm\ecat_wasm.js" "%_RELEASE_DIR%" >nul || exit /b 1
-REM The version the page shows in its footer. The redirection goes first, so
-REM that no space is written after the number.
-> "%_RELEASE_DIR%\version.txt" echo %_VERSION%
 REM The icon of the page is the one of the desktop window.
 copy /y "..\src\resources\icons\tv.png" "%_RELEASE_DIR%\favicon.png" >nul || exit /b 1
 
@@ -79,6 +76,11 @@ copy /y ".\web\README.md"          "%_RELEASE_DIR%" >nul || exit /b 1
 copy /y ".\web\nginx.conf.example" "%_RELEASE_DIR%" >nul || exit /b 1
 copy /y "..\deploy\LICENSE.TXT"    "%_RELEASE_DIR%" >nul || exit /b 1
 copy /y "..\deploy\COPYRIGHT.TXT"  "%_RELEASE_DIR%" >nul || exit /b 1
+
+REM The last step: manifest.json with the version, the build and the hash of
+REM every file, and those hashes in the addresses of index.html, so that a
+REM browser never mixes files of two builds out of its cache.
+"%_PYTHON%" "..\src\wasm\stamp_release.py" "%_RELEASE_DIR%" || exit /b 1
 
 call "%~dp0win-common.cmd" report "%_RELEASE_DIR%"
 call "%~dp0win-common.cmd" zip "%_RELEASE_DIR%" "%_RELEASE_NAME%" || exit /b 1

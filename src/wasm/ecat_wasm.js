@@ -1182,7 +1182,7 @@ let loadedBundles = new Set();
 async function fetchAndMount(module, url, mountPath) {
     if (loadedBundles.has(url)) return;
 
-    let response = await fetch(url);
+    let response = await fetch(versioned(url));
     if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`);
 
     let buffer = await response.arrayBuffer();
@@ -3417,8 +3417,67 @@ function watchStartup() {
     };
 }
 
+// ============================================================================
+// Versions of the files
+// ============================================================================
+
+// Every file of the package keeps its name from build to build, so the page
+// asks for it with the hash of its content: build-wasm ends with
+// stamp_release.py, which writes manifest.json ({version, build, files: {path:
+// hash}}), puts the hashes into the addresses of the two scripts of index.html
+// and the build into its <meta name="ecat-build">. An address changes exactly
+// when the content does, and a browser cannot mix an old ecat3.wasm with a new
+// ecat3.js, or an old .bundle with a new machines.json, out of its cache.
+// A page that was not stamped (shell.html copied by hand) asks for the plain
+// names, as before
+let packageFiles = {};
+
+function versioned(path) {
+    const hash = packageFiles[path];
+    return hash ? path + "?h=" + hash : path;
+}
+
+// Reads the manifest past every cache and compares its build with that of the
+// page. A different one means the page itself came out of the cache: it is
+// loaded again by an address with b=<build> in it, which no cache has seen,
+// and the rest of the address (the machine, the scale) goes along. Only once:
+// a page that comes back old even then (a proxy that ignores the query) runs
+// with the files of the manifest, the newest ones there are. Answers whether
+// the page is leaving, and the version of the package for the footer
+async function checkBuild() {
+    const meta = document.querySelector('meta[name="ecat-build"]');
+    const pageBuild = meta ? meta.content : "";
+    if (!pageBuild) return { reload: false, version: "" };
+
+    let manifest;
+    try {
+        const resp = await fetch("manifest.json?t=" + Date.now(), { cache: "no-store" });
+        if (!resp.ok) throw new Error(resp.status + " " + resp.statusText);
+        manifest = await resp.json();
+    } catch (err) {
+        // The scripts are stamped already, the rest goes by the plain names
+        console.warn("eCat3: no manifest.json:", (err && err.message) || err);
+        return { reload: false, version: "" };
+    }
+
+    if (manifest.build !== pageBuild) {
+        const q = new URLSearchParams(location.search);
+        if (q.get("b") !== manifest.build) {
+            q.set("b", manifest.build);
+            location.replace(location.pathname + "?" + q.toString().replace(/%2C/g, ",") + location.hash);
+            return { reload: true, version: "" };
+        }
+        console.warn("eCat3: the page is of build " + pageBuild + ", the server has " + manifest.build);
+    }
+    packageFiles = manifest.files || {};
+    return { reload: false, version: String(manifest.version || "") };
+}
+
 async function initEcat() {
     let selectEl = document.getElementById("machine-select");
+
+    const build = await checkBuild();
+    if (build.reload) return;
 
     // Before the language: it renders the hints of the blocks
     setupPageBlocks();
@@ -3431,33 +3490,27 @@ async function initEcat() {
     setupKeyboardSize();
     setupLinkButton();
 
-    // The version of the package, which build-wasm writes next to the page from
-    // the VERSION file. A page without it shows none; a server that answers
-    // every path with its own page is not taken for a version either
-    fetch("version.txt")
-        .then((resp) => (resp.ok ? resp.text() : ""))
-        .then((text) => {
-            const version = text.trim();
-            if (!/^[0-9A-Za-z.+-]{1,32}$/.test(version)) return;
-            const el = document.getElementById("version");
-            el.textContent = "eCat3 v" + version;
-            el.hidden = false;
-        })
-        .catch(() => { /* no version shown, nothing else lost */ });
+    // The version of the package, from the VERSION file through the manifest.
+    // A page without it shows none
+    if (/^[0-9A-Za-z.+-]{1,32}$/.test(build.version)) {
+        const el = document.getElementById("version");
+        el.textContent = "eCat3 v" + build.version;
+        el.hidden = false;
+    }
 
     // Load machines manifest
     setStatus("stListLoading", "loading");
 
     // The translations of the device options come along; a page without them
     // still works, in English
-    const optionTexts = fetch("device_options.json")
+    const optionTexts = fetch(versioned("device_options.json"))
         .then(resp => resp.ok ? resp.json() : {})
         .then(table => { DEVICE_OPTION_TEXT = table || {}; })
         .catch(() => {});
 
     let machines;
     try {
-        let resp = await fetch("machines.json");
+        let resp = await fetch(versioned("machines.json"));
         machines = await resp.json();
     } catch (err) {
         setStatus("stListFailed", "error", err.message);
@@ -3489,7 +3542,7 @@ async function initEcat() {
     // package_machines.py copies it out of deploy/.ecat.ini, the desktop defaults
     let tapeFiles = "";
     try {
-        const resp = await fetch("tapefiles.ini");
+        const resp = await fetch(versioned("tapefiles.ini"));
         if (resp.ok) tapeFiles = await resp.text();
     } catch (e) {
         // No tape will load then; everything else works
@@ -3538,7 +3591,7 @@ async function initEcat() {
             // The runtime waits for receiveInstance and has no failure path of
             // its own here, so a failure ends the wait through the watcher
             instantiateWasm: (imports, receiveInstance) => {
-                instantiateWasmBytes("ecat3.wasm", imports, startup)
+                instantiateWasmBytes(versioned("ecat3.wasm"), imports, startup)
                     .then((r) => receiveInstance(r.instance, r.module))
                     .catch((e) => startup.fail(e));
                 return {};
