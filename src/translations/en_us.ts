@@ -40,7 +40,7 @@
 <context>
     <name>AddressableDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+1084"/>
+        <location filename="../emulator/core.cpp" line="+1087"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -134,7 +134,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+771"/>
+        <location filename="../emulator/core.cpp" line="+778"/>
         <source>No CPU clock value found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -144,27 +144,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+203"/>
+        <location line="+338"/>
         <source>Command &apos;setreg&apos; expects a name and a value</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-219"/>
+        <location line="-354"/>
         <source>Invalid breakpoint address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+179"/>
+        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+174"/>
         <source>Unknown timing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/i8080.cpp" line="+138"/>
+        <location filename="../emulator/devices/cpu/i8080.cpp" line="+134"/>
         <source>int_opcode = $CD needs ~int_address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/i8086.cpp" line="+116"/>
+        <location filename="../emulator/devices/cpu/i8086.cpp" line="+113"/>
         <source>Incorrect parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -172,7 +172,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1386"/>
+        <location filename="../emulator/core.cpp" line="-1393"/>
         <source>Incorrect interface definition for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -324,7 +324,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+589"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+626"/>
         <source>Low-pass filter cutoff, Hz (0 - off)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -450,121 +450,165 @@
     </message>
 </context>
 <context>
-    <name>DebugWindow</name>
+    <name>DebuggerWindow</name>
     <message>
-        <location filename="../dialogs/debugwindow.ui" line="+26"/>
-        <source>Dialog</source>
+        <location filename="../dialogs/debugger/debuggerwindow.cpp" line="+34"/>
+        <source>Debugger</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+103"/>
-        <source>Return to PC</source>
+        <location line="+68"/>
+        <source>Stack</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+29"/>
-        <source>Trace into [F7]</source>
+        <location line="+1"/>
+        <location line="+206"/>
+        <source>Breakpoints</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+29"/>
-        <source>Step over [F8]</source>
+        <location line="-205"/>
+        <source>History</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+29"/>
-        <source>Go to cursor [F4]</source>
+        <location line="+1"/>
+        <source>Devices</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+29"/>
-        <source>Run under debugger [F9]</source>
+        <location line="+129"/>
+        <source>Show PC</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+29"/>
-        <source>Stop</source>
+        <location line="+5"/>
+        <source>Step</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+2"/>
+        <source>Step over</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Step out of the routine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+2"/>
+        <source>Run to the cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-29"/>
+        <source>Run, stopping at the breakpoints</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Pause</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+79"/>
-        <source>Address for the debugger</source>
+        <location line="+43"/>
+        <source>An address to show in the listing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+22"/>
-        <source>Go to</source>
+        <location line="+2"/>
+        <source>Go to the address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+29"/>
-        <source>Add a breakpoint</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+29"/>
-        <source>Delete a breakpoint</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+23"/>
-        <source>Register to set</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+86"/>
-        <source>Address for the dump</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+25"/>
-        <source>Go to for the dump</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>Page down</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>Page up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-147"/>
-        <source>Set value</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../dialogs/debugwindow.cpp" line="+49"/>
-        <location line="+180"/>
-        <location line="+66"/>
-        <location line="+77"/>
+        <location line="+8"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-143"/>
-        <source>Incorrect value</source>
+        <location line="+0"/>
+        <source>Incorrect address value</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+66"/>
-        <location line="+77"/>
-        <source>Incorrect address value</source>
+        <location line="+8"/>
+        <location line="+1"/>
+        <source>Breakpoint at the cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Remove the breakpoint at the cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Remove all breakpoints</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Remove all breakpoints of %1?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+72"/>
+        <source>Stepping...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Step: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Breakpoint: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Stopped: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Stopped by a device error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 executes nothing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Paused</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Running</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1326"/>
+        <location filename="../emulator/core.cpp" line="-1327"/>
         <source>Too many devices</source>
         <translation type="unfinished"></translation>
     </message>
@@ -588,7 +632,7 @@
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
         <location line="+246"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+179"/>
-        <location line="+321"/>
+        <location line="+327"/>
         <source>Video output</source>
         <translation type="unfinished"></translation>
     </message>
@@ -632,8 +676,8 @@
     <message>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="-244"/>
         <location line="+247"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-319"/>
-        <location line="+322"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-325"/>
+        <location line="+328"/>
         <source>RGB</source>
         <translation type="unfinished"></translation>
     </message>
@@ -646,8 +690,8 @@
     <message>
         <location line="-246"/>
         <location line="+247"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-320"/>
-        <location line="+322"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-326"/>
+        <location line="+328"/>
         <source>Mono</source>
         <translation type="unfinished"></translation>
     </message>
@@ -749,8 +793,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-323"/>
-        <location line="+322"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-329"/>
+        <location line="+328"/>
         <source>B/W</source>
         <translation type="unfinished"></translation>
     </message>
@@ -761,98 +805,36 @@
     </message>
 </context>
 <context>
+    <name>DevicesView</name>
+    <message>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="+217"/>
+        <source>Field</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Value</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DisAsm</name>
     <message>
-        <location filename="../emulator/disasm.cpp" line="+36"/>
+        <location filename="../emulator/disasm.cpp" line="+73"/>
         <source>Error reading CPU instructions file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+42"/>
         <source>CPU instruction length is incorrect</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>DumpWindow</name>
+    <name>DumpsWindow</name>
     <message>
-        <location filename="../dialogs/dumpwindow.ui" line="+14"/>
-        <source>Dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+51"/>
-        <source>Base</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <source>Offset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+24"/>
-        <source>Page Down</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>To end</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>Page Up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>To begin</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>Save to file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Number base: hex or octal</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <source>Show bytes (8) or words (16)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>Close</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../dialogs/dumpwindow.cpp" line="+82"/>
-        <source>Error</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Incorrect address value</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+55"/>
-        <source>Save contents to a file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Dump (*.bin)</source>
+        <location filename="../dialogs/debugger/memorywindow.cpp" line="+39"/>
+        <source>Dumps</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -950,7 +932,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+259"/>
+        <location filename="../emulator/emulator.cpp" line="+272"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1433,23 +1415,31 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-515"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-552"/>
         <source>Incorrect sample rate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+41"/>
         <source>Not a sound source</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+87"/>
+        <location line="+94"/>
         <source>Error writing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+489"/>
+        <location line="+495"/>
         <source>Command &apos;volume&apos; expects a value</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HistoryView</name>
+    <message>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="-17"/>
+        <source>The processor does not keep its history</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1825,12 +1815,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location line="+27"/>
+        <source>Debug</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+4"/>
         <source>Devices</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+48"/>
+        <location line="+27"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1850,14 +1845,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+64"/>
+        <location line="+65"/>
         <source>Select a machine...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1626"/>
+        <location filename="../mainwindow.cpp" line="+1642"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -1889,6 +1884,16 @@
     </message>
     <message>
         <location line="+9"/>
+        <source>Dumps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Memory dumps of the machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>Screenshot</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1900,7 +1905,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+947"/>
+        <location filename="../mainwindow.cpp" line="+970"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1921,14 +1926,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1772"/>
-        <location line="+1898"/>
+        <location filename="../mainwindow.cpp" line="-1819"/>
+        <location line="+1945"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1585"/>
+        <location filename="../mainwindow.cpp" line="-1628"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1983,7 +1988,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-327"/>
+        <location line="-339"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1998,15 +2003,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-643"/>
+        <location filename="../mainwindow.cpp" line="-647"/>
         <location line="+76"/>
-        <location line="+1230"/>
+        <location line="+1254"/>
         <location line="+55"/>
         <location line="+79"/>
-        <location line="+206"/>
+        <location line="+221"/>
         <location line="+107"/>
         <location line="+62"/>
-        <location line="+166"/>
+        <location line="+174"/>
         <location line="+25"/>
         <location line="+471"/>
         <location line="+29"/>
@@ -2015,7 +2020,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2522"/>
+        <location line="-2569"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2037,14 +2042,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1504"/>
+        <location line="+1543"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1619"/>
+        <location line="-1658"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2104,14 +2109,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1334"/>
-        <location line="+378"/>
+        <location line="+1373"/>
+        <location line="+386"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1825"/>
+        <location line="-1872"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2147,12 +2152,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1662"/>
+        <location line="+1709"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1638"/>
+        <location line="-1685"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2225,20 +2230,20 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-752"/>
-        <location line="+596"/>
+        <location line="-744"/>
+        <location line="+588"/>
         <location line="+1"/>
-        <location line="+831"/>
+        <location line="+855"/>
         <source>Turbo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-668"/>
+        <location line="-692"/>
         <source>Picture tube</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+272"/>
+        <location line="+276"/>
         <source>High precision</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2248,7 +2253,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+364"/>
+        <location line="+384"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
@@ -2281,12 +2286,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+94"/>
+        <location line="+99"/>
         <source>Saved states</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-77"/>
+        <location line="-82"/>
         <source>All supported files</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2296,7 +2301,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+73"/>
+        <location line="+78"/>
         <location line="+19"/>
         <location line="+2"/>
         <source>Save state</source>
@@ -2313,13 +2318,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+72"/>
-        <location line="+472"/>
+        <location line="+82"/>
+        <location line="+480"/>
         <source>Finishing the video...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-428"/>
+        <location line="-436"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2354,7 +2359,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+104"/>
+        <location line="+112"/>
         <source>Save screenshot</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2399,7 +2404,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+305"/>
+        <location line="+307"/>
         <source>Remembered disks</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2414,17 +2419,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-145"/>
+        <location filename="../mainwindow.ui" line="-162"/>
         <source>Action recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+42"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+262"/>
+        <location line="+275"/>
         <source>I/O ports...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2451,7 +2456,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-430"/>
+        <location filename="../mainwindow.cpp" line="-432"/>
         <location line="+243"/>
         <source>Start recording</source>
         <translation type="unfinished"></translation>
@@ -2525,12 +2530,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1449"/>
+        <location line="-1486"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1492"/>
+        <location line="+1529"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2626,7 +2631,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+989"/>
+        <location filename="../emulator/core.cpp" line="+990"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2659,7 +2664,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location line="+965"/>
+        <location line="+1112"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2689,27 +2694,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+248"/>
-        <source>Number base: hex or octal</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <source>Show bytes (8) or words (16)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+26"/>
+        <location line="+255"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-61"/>
+        <location line="-23"/>
         <source>Choose an address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/mmwindow.cpp" line="+81"/>
+        <location filename="../dialogs/mmwindow.cpp" line="+57"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2721,6 +2716,132 @@
     <message>
         <location line="+17"/>
         <source>No device</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>MemoryPanel</name>
+    <message>
+        <location filename="../dialogs/debugger/memoryview.cpp" line="+36"/>
+        <source>nothing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+455"/>
+        <source>Address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Go to the address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Octal or hexadecimal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Bytes or words</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Find: values in the notation of the dump, or &quot;text&quot; in the machine&apos;s encoding</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+76"/>
+        <location line="+10"/>
+        <location line="+8"/>
+        <source>Find</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-88"/>
+        <source>Find next</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Load a file at the cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Save to a file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Word</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Byte</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <location line="+44"/>
+        <location line="+26"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-70"/>
+        <source>Incorrect address value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>The machine has no character &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Incorrect value: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Load into memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Cannot read the file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Save memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Binary files (*.bin);;All files (*.*)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Cannot write the file</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>MemoryTabs</name>
+    <message>
+        <location line="+33"/>
+        <source>Another device</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2871,7 +2992,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-728"/>
+        <location filename="../emulator/core.cpp" line="-875"/>
         <source>Incorrect access mode</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3023,7 +3144,7 @@
 <context>
     <name>SerialWindow</name>
     <message>
-        <location filename="../dialogs/serialwindow.cpp" line="+40"/>
+        <location filename="../dialogs/serialwindow.cpp" line="+45"/>
         <source>KOI-7 N0/N1 (SO/SI)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3079,13 +3200,13 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+211"/>
+        <location line="+213"/>
         <location line="+61"/>
         <source>I/O ports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-263"/>
+        <location line="-265"/>
         <source>Choose folder...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3150,7 +3271,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+115"/>
+        <location line="+117"/>
         <source>Cannot create file %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3160,7 +3281,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+101"/>
+        <location line="+140"/>
         <source>Folder for logs</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3170,6 +3291,14 @@
     <message>
         <location filename="../emulator/devices/common/speaker.cpp" line="+75"/>
         <source>Unknown speaker type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>StackView</name>
+    <message>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="-127"/>
+        <source>The processor has no stack</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

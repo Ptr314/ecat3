@@ -25,6 +25,9 @@
 #include "emulator/state.h"
 #include "emulator/devices/common/tape_zx.h"
 #include "emulator/devices/cpu/vm1_timing.h"
+#include "emulator/disasm.h"
+#include "emulator/disasm_pdp11.h"
+#include "emulator/disasm_buffer.h"
 //Часть помощников dsk_tools объявлена в его внутреннем заголовке, и звать
 //его надо по полному пути: короткий "utils.h" из dsk_tools.h у MSVC попадает
 //в emulator/utils.h - он ищет кавычечный include и по цепочке включающих
@@ -978,6 +981,92 @@ bool check_vm2_timing(std::string &message)
     return true;
 }
 
+//The debugger's listing: the decoders report where a jump goes, the backward
+//disassembly reads an instruction with an operand as one (not the operand as
+//an instruction of its own), and the arrows of nested jumps get lanes
+bool check_disassembly(const std::string &data_path, std::string &message)
+{
+    std::vector<uint8_t> mem(0x10000, 0);
+    auto peek = [&mem](unsigned int a) -> uint8_t { return mem[a & 0xFFFF]; };
+
+    //PDP-11: MOV #0,R0 / JSR PC,+10 / BR . at 001000; zeros (HALT) below
+    const uint16_t pdp[] = {0012700, 0000000, 0004767, 0000010, 0000777};
+    for (unsigned int i = 0; i < 5; i++) {
+        mem[01000 + i * 2] = pdp[i] & 0xFF;
+        mem[01000 + i * 2 + 1] = pdp[i] >> 8;
+    }
+    DisAsmPDP11 dp;
+    DisasmBuffer bp(&dp, peek, 0x10000);
+    bp.reset(01010, 1);
+    if (bp.extend_up(2) != 2 || bp.at(0).address != 01000 || bp.at(1).address != 01004) {
+        message = "PDP-11 backward disassembly: " + oct_str(bp.at(0).address, 6);
+        return false;
+    }
+    const DisasmLine &jsr = bp.at(1).d;
+    if (jsr.flow != FLOW_CALL || !jsr.has_target || jsr.target != 01020) {
+        message = "PDP-11 JSR target";
+        return false;
+    }
+    const DisasmLine &br = bp.at(2).d;
+    if (br.flow != FLOW_JUMP || br.conditional || br.target != 01010) {
+        message = "PDP-11 BR target";
+        return false;
+    }
+
+    //8080: MVI A,0 / CALL 1234 / JMP 0100 at 0100, NOPs below
+    std::fill(mem.begin(), mem.end(), 0);
+    const uint8_t i80[] = {0x3E, 0x00, 0xCD, 0x34, 0x12, 0xC3, 0x00, 0x01};
+    for (unsigned int i = 0; i < sizeof(i80); i++) mem[0x100 + i] = i80[i];
+    DisAsm d80;
+    if (!d80.load_file(data_path + "i8080.dis")) {
+        message = "i8080.dis";
+        return false;
+    }
+    DisasmBuffer b80(&d80, peek, 0x10000);
+    b80.reset(0x102, 2);
+    if (b80.extend_up(1) != 1 || b80.at(0).address != 0x100) {
+        message = "8080 backward disassembly: " + hex_str(b80.at(0).address, 4);
+        return false;
+    }
+    if (b80.at(1).d.flow != FLOW_CALL || b80.at(1).d.target != 0x1234
+        || b80.at(2).d.flow != FLOW_JUMP || b80.at(2).d.target != 0x100) {
+        message = "8080 jump targets";
+        return false;
+    }
+
+    //65C02: BBR0 $12 jumps from the end of its three bytes
+    DisAsm d65;
+    if (!d65.load_file(data_path + "65c02.dis")) {
+        message = "65c02.dis";
+        return false;
+    }
+    uint8_t bbr[15] = {0x0F, 0x12, 0x05};
+    DisasmLine l65;
+    d65.decode(&bbr, 0x200, 3, &l65);
+    if (l65.flow != FLOW_JUMP || !l65.conditional || l65.target != 0x208
+        || l65.text.find("0208") == std::string::npos) {
+        message = "65C02 BBR: " + l65.text;
+        return false;
+    }
+
+    //Arrows: 0000 JMP 0009, 0003 JNZ 0006, 0006 JMP 0000 - spans of 1, 2 and
+    //3 rows, one inside the other
+    std::fill(mem.begin(), mem.end(), 0);
+    const uint8_t jumps[] = {0xC3, 0x09, 0x00, 0xC2, 0x06, 0x00, 0xC3, 0x00, 0x00};
+    for (unsigned int i = 0; i < sizeof(jumps); i++) mem[i] = jumps[i];
+    DisasmBuffer bj(&d80, peek, 0x10000);
+    bj.reset(0, 6);
+    const std::vector<DisasmBuffer::Arrow> arrows = bj.layout_jumps(0, 5, 8);
+    int lanes[3] = {-1, -1, -1};
+    for (const DisasmBuffer::Arrow &a : arrows)
+        if (a.from >= 0 && a.from < 3) lanes[a.from] = a.lane;
+    if (arrows.size() != 3 || lanes[1] != 0 || lanes[2] != 1 || lanes[0] != 2) {
+        message = "jump arrow lanes";
+        return false;
+    }
+    return true;
+}
+
 int run_selftest(const std::string &work_path, const std::string &data_path,
                  const std::string &software_path)
 {
@@ -1064,6 +1153,11 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     const bool vm2_ok = check_vm2_timing(message);
     if (!vm2_ok) { std::cout << "FAIL vm2 timing: " << message << std::endl; failed++; }
     std::cout << "КМ1801ВМ2 timing table: " << (vm2_ok ? "ok" : "FAILED") << std::endl;
+
+    message.clear();
+    const bool disasm_ok = check_disassembly(data_path, message);
+    if (!disasm_ok) { std::cout << "FAIL disassembly: " << message << std::endl; failed++; }
+    std::cout << "debugger listing: " << (disasm_ok ? "ok" : "FAILED") << std::endl;
 
     return failed ? 1 : 0;
 }

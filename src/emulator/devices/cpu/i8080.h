@@ -73,6 +73,10 @@ public:
     virtual std::string disasm_table() const override { return "i8080.dis"; }
 
     virtual void set_context_value(const std::string &name, unsigned int value) override;
+    bool set_flag(const std::string &name, bool value) override;
+    bool get_sp(unsigned int &sp) override;
+    bool stack_address(int i, unsigned int &address) override;
+    bool waiting() override;
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;
 

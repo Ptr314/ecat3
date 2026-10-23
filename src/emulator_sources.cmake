@@ -29,6 +29,7 @@ set(ECAT_CORE_SOURCES
     emulator/disasm.h emulator/disasm.cpp
     emulator/disasm_pdp11.h emulator/disasm_pdp11.cpp
     emulator/disasm_x86.h emulator/disasm_x86.cpp
+    emulator/disasm_buffer.h emulator/disasm_buffer.cpp
 
     emulator/script/script_types.h
     emulator/script/script_parser.cpp emulator/script/script_parser.h

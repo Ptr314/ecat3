@@ -22,7 +22,7 @@ public:
     explicit DisAsmX86(const uint16_t * cs = nullptr);
 
     virtual emulator::Result load_file(const std::string &file_name) override;
-    virtual unsigned int disassemle(CommandBytes bytes, unsigned int PC, unsigned int max_len, std::string * output) override;
+    virtual unsigned int decode(CommandBytes bytes, unsigned int PC, unsigned int max_len, DisasmLine * out) override;
 
 private:
     const uint16_t * m_cs;

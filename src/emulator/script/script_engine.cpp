@@ -87,7 +87,8 @@ bool ScriptEngine::active_state(int s) const
     //returns at once, the buffer editors keep their guards and is_active()
     //reports what the transport controls expect. A parked interactive session
     //therefore costs exactly what a finished script costs
-    return s == StateRunning || s == StateDelay || s == StateKeys || s == StateWaitFor || s == StateScreenshot;
+    return s == StateRunning || s == StateDelay || s == StateKeys || s == StateWaitFor || s == StateScreenshot
+        || s == StateDebug;
 }
 
 bool ScriptEngine::is_interactive() const                      { return m_interactive; }
@@ -104,6 +105,7 @@ const char * ScriptEngine::state_name(int state)
         case StateKeys:       return "keys";
         case StateWaitFor:    return "waitfor";
         case StateScreenshot: return "screenshot";
+        case StateDebug:      return "debug";
         case StatePaused:     return "paused";
         case StateFinished:   return "finished";
         case StateWaiting:    return "waiting";
@@ -502,6 +504,7 @@ void ScriptEngine::tick(uint64_t clock_counter)
     if (!active_state(s)) return;
     if ((s == StateDelay || s == StateKeys) && clock_counter < m_resume_at.load(std::memory_order_relaxed)) return;
     if ((s == StateWaitFor || s == StateScreenshot) && clock_counter < m_poll_at.load(std::memory_order_relaxed)) return;
+    if (s == StateDebug && !e->debug_held()) return;
 
     compat_lock_guard lock(m_mutex);
     if (!active_state(m_state)) return;       //Paused or stopped meanwhile
@@ -546,6 +549,11 @@ void ScriptEngine::tick(uint64_t clock_counter)
                 if (m_now < m_poll_at) return;
                 m_poll_at = m_now + m_ticks_per_ms;
                 if (!waitfor_step()) return;
+                m_state = StateRunning;
+                break;
+
+            case StateDebug:
+                if (!e->debug_held()) return;
                 m_state = StateRunning;
                 break;
 
@@ -958,6 +966,42 @@ emulator::Result ScriptEngine::do_command(const ScriptCommand &c)
     if (d == nullptr)
         return emulator::Result::error(emulator::ErrorCode::DeviceNotFound,
             "device '" + c.device + "' is not found");
+
+    //The debugger's commands move the whole machine, which a device cannot
+    //reach. The script then waits until the machine is paused again
+    if (CPU * cpu = dynamic_cast<CPU*>(d)) {
+        const std::string &m = c.member;
+        //With the debugger attached the machine is paused as a whole: the old
+        //per-processor run and step resume and step it
+        if (e->debug_attached() && (m == "run" || m == "step")) {
+            if (m == "run") {
+                e->debug_run(true);
+                return emulator::Result::ok();
+            }
+            e->debug_step(cpu);
+            m_state = StateDebug;
+            return emulator::Result::ok();
+        }
+        if (m == "pause" || m == "go" || m == "tstep" || m == "over" || m == "out" || m == "until") {
+            std::vector<std::string> p = split_params(c.params);
+            if (m == "go") {
+                e->debug_run(true);
+                return emulator::Result::ok();
+            }
+            e->debug_attach(true);
+            if (m == "pause") e->debug_pause();
+            else if (m == "tstep") e->debug_step(cpu, (p.empty() || p[0].empty()) ? 1 : parse_numeric_value(p[0]));
+            else if (m == "over") e->debug_step_over(cpu);
+            else if (m == "out") e->debug_step_out(cpu);
+            else {
+                if (p.empty() || p[0].empty())
+                    return emulator::Result::error(emulator::ErrorCode::BadParameters, "until expects an address");
+                e->debug_run_to(cpu, parse_numeric_value(p[0]));
+            }
+            m_state = StateDebug;
+            return emulator::Result::ok();
+        }
+    }
 
     return d->send_command(c.member, c.params);
 }

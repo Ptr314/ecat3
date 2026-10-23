@@ -20,21 +20,29 @@ class DisAsmIE15: public DisAsm
 public:
     DisAsmIE15() { max_command_length = 2; }
     emulator::Result load_file(MAYBE_UNUSED const std::string &file_name) override { return emulator::Result::ok(); }
-    unsigned int disassemle(CommandBytes bytes, unsigned int PC, unsigned int max_len, std::string * output) override;
+    unsigned int decode(CommandBytes bytes, unsigned int PC, unsigned int max_len, DisasmLine * out) override;
 };
 
-unsigned int DisAsmIE15::disassemle(CommandBytes bytes, MAYBE_UNUSED unsigned int PC, unsigned int max_len, std::string * output)
+unsigned int DisAsmIE15::decode(CommandBytes bytes, MAYBE_UNUSED unsigned int PC, unsigned int max_len, DisasmLine * out)
 {
+    *out = DisasmLine();
+    std::string * output = &out->text;
     if (max_len < 1) { *output = "?"; return 0; }
     const uint8_t op = (*bytes)[0];
     const unsigned lo = op & 0x0F;
     const std::string r = "r" + std::to_string(lo);
     const bool two = (op & 0xF0) == 0x10 || (op & 0xF0) == 0x20 || op == 0x30;
     if (two && max_len < 2) { *output = "?"; return 0; }
+    out->valid = true;
     const uint8_t a = two ? (*bytes)[1] : 0;
     switch (op & 0xF0) {
         case 0x00: *output = "add  " + r; break;
-        case 0x10: *output = "jmp  " + oct_str((((lo << 8) | a) + 1) & 0xFFF, 4); break;
+        case 0x10:
+            *output = "jmp  " + oct_str((((lo << 8) | a) + 1) & 0xFFF, 4);
+            out->flow = FLOW_JUMP;
+            out->has_target = true;
+            out->target = (((lo << 8) | a) + 1) & 0xFFF;
+            break;
         case 0x20: *output = "ldc  " + r + ", " + oct_str(a, 3); break;
         case 0x30:
             if (op == 0x30) *output = "lca  " + oct_str(a, 3);
@@ -57,7 +65,7 @@ unsigned int DisAsmIE15::disassemle(CommandBytes bytes, MAYBE_UNUSED unsigned in
             }
             break;
         case 0x60: *output = "lla  " + oct_str(lo, 2); break;
-        case 0x70: *output = "jmi  " + r; break;
+        case 0x70: *output = "jmi  " + r; out->flow = FLOW_JUMP; break;
         case 0x80:
             if (op == 0x87) *output = "skp";
             else if (op == 0x8F) *output = "nop";
@@ -71,7 +79,9 @@ unsigned int DisAsmIE15::disassemle(CommandBytes bytes, MAYBE_UNUSED unsigned in
         case 0xE0: *output = "sta  " + r; break;
         default:   *output = "ota  " + oct_str(lo, 2); break;
     }
-    return two ? 2 : 1;
+    if (*output == "?") out->valid = false;
+    out->length = two ? 2 : 1;
+    return out->length;
 }
 
 //--------------------------- Процессор -------------------------------------//
@@ -234,18 +244,9 @@ unsigned int IE15CPU::execute()
         return n;
     }
 
+    debug_before();
     execute_one(fetch());
-
-    switch (m_debug) {
-        case DEBUG_STEP:
-            m_debug = DEBUG_STOPPED;
-            break;
-        case DEBUG_BRAKES:
-            if (check_breakpoint(m_pc)) m_debug = DEBUG_STOPPED;
-            break;
-        default:
-            break;
-    }
+    debug_after();
     return 1;
 }
 
@@ -331,4 +332,13 @@ emulator::Result IE15CPU::load_state(const StateReader &r)
 ComputerDevice * create_ie15_cpu(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new IE15CPU(im, cd);
+}
+
+bool IE15CPU::set_flag(const std::string &name, bool value)
+{
+    if (name == "C") m_cf = value;
+    else if (name == "Z") m_zf = value;
+    else if (name == "R") m_rf = value;
+    else return false;
+    return true;
 }

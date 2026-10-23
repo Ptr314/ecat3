@@ -1,4 +1,4 @@
-00 	BRK	1	Impl/immed
+00 	BRK	1	Impl/immed	CI
 01 n	ORA ($n, X)	2	(indir,x)
 02 	*HALT	1	? /immed
 03 n	*SLO ($n, X)	2	(indir,x)
@@ -14,7 +14,7 @@
 0D n n	ORA $nn	3	Absolute
 0E n n	ASL $nn	3	Absolute
 0F n n	*SLO $nn	3	Absolute
-10 e	BPL $PC+$e	2	Relative
+10 e	BPL $PC+$e	2	Relative	JC
 11 n	ORA ($n), Y	2	(indir),y
 12 	*HALT	1	?
 13 n	*SLO ($n), Y	2	(indir),y
@@ -30,7 +30,7 @@
 1D n n	ORA $nn, X	3	Absolute,x
 1E n n	ASL $nn, X	3	Absolute,x
 1F n n	*SLO $nn, X	3	Absolute,x
-20 n n	JSR $nn	3	Impl/immed
+20 n n	JSR $nn	3	Impl/immed	C
 21 n	AND ($n, X) 	2	(indir,x)
 22 	*HALT	1	? /immed
 23 n	*RLA ($n, X)	2	(indir,x)
@@ -46,7 +46,7 @@
 2D n n	AND $nn	3	Absolute
 2E n n	ROL $nn	3	Absolute
 2F n n	*RLA $nn	3	Absolute
-30 e	BMI $PC+$e	2	Relative
+30 e	BMI $PC+$e	2	Relative	JC
 31 n	AND ($n), Y 	2	(indir),y
 32 	*HALT	1	?
 33 n	*RLA ($n), Y	2	(indir),y
@@ -62,7 +62,7 @@
 3D n n	AND $nn, X	3	Absolute,x
 3E n n	ROL $nn, X	3	Absolute,x
 3F n n	*RLA $nn, X	3	Absolute,x
-40 	RTI	1	Impl/immed
+40 	RTI	1	Impl/immed	R
 41 n	EOR ($n, X)	2	(indir,x)
 42 	*HALT	1	? /immed
 43 n	*SRE ($n, X)	2	(indir,x)
@@ -74,11 +74,11 @@
 49 n	EOR #$n	2	Immediate
 4A 	LSR A	1	Accu/impl
 4B n	*ASR #$n	2	Immediate
-4C n n	JMP $nn	3	Absolute
+4C n n	JMP $nn	3	Absolute	J
 4D n n	EOR $nn	3	Absolute
 4E n n	LSR $nn	3	Absolute
 4F n n	*SRE $nn	3	Absolute
-50 e	BVC $PC+$e	2	Relative
+50 e	BVC $PC+$e	2	Relative	JC
 51 n	EOR ($n), Y	2	(indir),y
 52 	*HALT	1	?
 53 n	*SRE ($n), Y	2	(indir),y
@@ -94,7 +94,7 @@
 5D n n	EOR $nn, X	3	Absolute,x
 5E n n	LSR $nn, X	3	Absolute,x
 5F n n	*SRE $nn, X	3	Absolute,x
-60 	RTS	1	Impl/immed
+60 	RTS	1	Impl/immed	R
 61 n	ADC ($n, X) 	2	(indir,x)
 62 	*HALT	1	? /immed
 63 n	*RRA ($n, X)	2	(indir,x)
@@ -106,11 +106,11 @@
 69 n	ADC #$n	2	Immediate
 6A 	ROR A	1	Accu/impl
 6B n	*ARR #$n	2	Immediate
-6C n n	JMP ($nn)	3	Absolute
+6C n n	JMP ($nn)	3	Absolute	JI
 6D n n	ADC $nn	3	Absolute
 6E n n	ROR $nn	3	Absolute
 6F n n	*RRA $nn	3	Absolute
-70 e	BVS $PC+$e	2	Relative
+70 e	BVS $PC+$e	2	Relative	JC
 71 n	ADC ($n), Y 	2	(indir),y
 72 	*HALT	1	?
 73 n	*RRA ($n), Y	2	(indir),y
@@ -142,7 +142,7 @@
 8D n n	STA $nn	3	Absolute
 8E n n	STX $nn	3	Absolute
 8F n n	*SAX $nn	3	Absolute
-90 e	BCC $PC+$e	2	Relative
+90 e	BCC $PC+$e	2	Relative	JC
 91 n	STA ($n), Y	2	(indir),y
 92 	*HALT	1	?
 93 n	*SHA ($n, X)	2	(indir),y
@@ -174,7 +174,7 @@ AC n n	LDY $nn	3	Absolute
 AD n n	LDA $nn	3	Absolute
 AE n n	LDX $nn	3	Absolute
 AF n n	*LAX $nn	3	Absolute
-B0 e	BCS $PC+$e	2	Relative
+B0 e	BCS $PC+$e	2	Relative	JC
 B1 n	LDA ($n), Y	2	(indir),y
 B2 	*HALT	1	?
 B3 n	*LAX ($n), Y	2	(indir),y
@@ -206,7 +206,7 @@ CC n n	CPY $nn	3	Absolute
 CD n n	CMP $nn	3	Absolute
 CE n n	DEC $nn	3	Absolute
 CF n n	*DCP $nn	3	Absolute
-D0 e	BNE $PC+$e	2	Relative
+D0 e	BNE $PC+$e	2	Relative	JC
 D1 n	CMP ($n), Y	2	(indir),y
 D2 	*HALT	1	?
 D3 n	*DCP ($n), Y	2	(indir),y
@@ -238,7 +238,7 @@ EC n n	CPX $nn	3	Absolute
 ED n n	SBC $nn	3	Absolute
 EE n n	INC $nn	3	Absolute
 EF n n	*ISB $nn	3	Absolute
-F0 e	BEQ $PC+$e	2	Relative
+F0 e	BEQ $PC+$e	2	Relative	JC
 F1 n	SBC ($n), Y	2	(indir),y
 F2 	*HALT	1	?
 F3 n	*ISB ($n), Y	2	(indir),y

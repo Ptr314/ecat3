@@ -81,6 +81,7 @@ private slots:
     void on_actionOpen_triggered();
 
     void on_actionDebugger_triggered();
+    void on_actionDumps_triggered();
 
     //void show_screen();
 

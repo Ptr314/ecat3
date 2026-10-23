@@ -25,7 +25,7 @@ any machine file. Syntax: `docs/CONFIG.md`.
 | Configuration extensions, the editor, saved state | `docs/dev/extensions-and-state.md` |
 | К1801ВМ1/ВМ2/ВМ3, УК-НЦ memory and 8088 bus timing | `docs/dev/cpu-timing.md` (and `tools/*-timing/README.md`) |
 | Per-machine notes: ДВК, Поиск-1, БК, Агат, УК-НЦ, Орион/РК, ВГ75, Ириша; HFE and Агат 140 KB | `docs/dev/machines.md` |
-| Window, web page, video recording, GUI record/replay, MCP server | `docs/dev/frontends.md` |
+| Window, debugger, web page, video recording, GUI record/replay, MCP server | `docs/dev/frontends.md` |
 | Scripting gotchas, regression suite, debugging techniques | `docs/dev/testing-and-debugging.md` |
 | Config syntax / script language / MCP / build / tests | `docs/CONFIG.md`, `docs/SCRIPTING.md`, `docs/MCP.md`, `docs/BUILD.md`, `tests/README.md` |
 
@@ -95,7 +95,8 @@ from a regression.
   act as on a guest write (`work-dvk4-printer`, `boot-uknc-channels` rely on that). Read the device first.
 - On the БК hold `KEY` for `_50`: 200 ms already autorepeats in MK-DOS/ANDOS.
 - Debug through scripts and MCP: `LOG mapper.map`, `LOG cpu.registers`, `LOG cpu.history(_40)` (1801
-  processors, last 256 addresses), device fields. There is no compile-time logging, and none should be added.
+  processors, last 256 addresses), `LOG cpu.disasm(from,to)`, `COMMAND cpu.pause()` / `cpu.tstep(n)` /
+  `cpu.over()` / `cpu.until(addr)` (the whole machine steps in time), device fields. There is no compile-time logging, and none should be added.
 
 ## Core rules
 
@@ -106,7 +107,9 @@ from a regression.
 - New device: factory `create_xxx()`, register in `Emulator::register_devices()`, add to
   `emulator_sources.cmake`. Expose state with `get_device_fields()`/`get_field()` and actions with
   `get_device_commands()`/`send_command()`. Add `save_state()`/`load_state()` for anything a cold start does
-  not reproduce. A new CPU also names its disassembler (`disasm_table()` or `create_disasm()`).
+  not reproduce. A new CPU also names its disassembler (`disasm_table()` or `create_disasm()`, with the flow of
+  jumps and calls in `decode()`), calls `debug_before()`/`debug_after()` around an instruction when
+  `m_debug != DEBUG_OFF`, and gives the debugger its stack, flags and wait state (`docs/dev/core.md`).
 - New machine: a `.cfg` (or an `.ext` on a base) plus a matching `.md` description, no code.
   `package_machines.py` skips an extension standing on another extension, so it silently drops out of the
   web build.

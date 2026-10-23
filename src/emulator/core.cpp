@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <sstream>
@@ -1862,6 +1863,12 @@ void PortAddress::reset(MAYBE_UNUSED bool cold)
 
 CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
       ComputerDevice(im, cd)
+    , m_temp_mode(TEMP_NONE)
+    , m_temp_pc(0)
+    , m_temp_sp(0)
+    , m_temp_from(0)
+    , m_last_pc(0)
+    , m_disasm(nullptr)
     , reset_mode(true)
     , m_hold_cycles(0)
     , m_hold_total(0)
@@ -1872,9 +1879,10 @@ CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
 #else
     , m_debug(DEBUG_OFF)
 #endif
-    , break_count(0)
+    , break_hit(BREAK_NONE)
 {
     device_class = "cpu";
+    m_breakpoints.reserve(MAX_BREAKPOINTS);
 
     try {
         clock = parse_numeric_value(this->cd->get_parameter("clock").value);
@@ -1936,9 +1944,42 @@ emulator::Result CPU::load_config(SystemData *sd)
     return emulator::Result::ok();
 }
 
+CPU::~CPU()
+{
+    delete m_disasm;
+}
+
+DisAsm * CPU::disasm()
+{
+    if (m_disasm == nullptr && sd != nullptr) {
+        emulator::Result res = emulator::Result::ok();
+        DisAsm * d = create_disasm(sd->data_path, res);
+        if (!res) delete d;
+        else m_disasm = d;
+    }
+    return m_disasm;
+}
+
+bool CPU::decode_at(unsigned int address, DisasmLine &line)
+{
+    DisAsm * d = disasm();
+    if (d == nullptr) return false;
+    uint8_t bytes[15];
+    const unsigned int n = (d->max_command_length < sizeof(bytes)) ? d->max_command_length : (unsigned int)sizeof(bytes);
+    for (unsigned int i = 0; i < sizeof(bytes); i++)
+        bytes[i] = (i < n) ? (uint8_t)peek_mem(address + i) : 0;
+    d->decode(&bytes, address, n, &line);
+    return line.length > 0;
+}
+
 unsigned int CPU::peek_mem(unsigned int address)
 {
     return mm->get_direct(address) & 0xFF;
+}
+
+bool CPU::poke_mem(unsigned int address, unsigned int value)
+{
+    return mm->poke(address, value);
 }
 
 DisAsm * CPU::create_disasm(const std::string &data_path, emulator::Result &res)
@@ -1956,36 +1997,113 @@ std::vector<std::string> CPU::get_context_names()
     return names;
 }
 
-bool CPU::check_breakpoint(unsigned int address)
+std::vector<CpuRegister> CPU::get_register_values()
 {
-    for (unsigned int i=0; i<break_count; i++)
-        if (breakpoints[i] == address) return true;
+    const unsigned int radix = register_radix();
+    std::vector<CpuRegister> r;
+    for (const auto &p : get_registers()) {
+        CpuRegister reg;
+        reg.value = 0;
+        reg.bits = 0;
+        if (!p.first.empty() && p.first[0] != '-') {
+            reg.name = p.first;
+            const unsigned int digits = (unsigned int)p.second.size();
+            reg.value = (unsigned int)std::strtoul(p.second.c_str(), nullptr, (int)radix);
+            //Octal words take 6 digits for 16 bits, bytes 3 for 8
+            if (radix == 8) reg.bits = (digits == 6)? 16 : (digits == 3)? 8 : digits * 3;
+            else reg.bits = digits * 4;
+        }
+        r.push_back(reg);
+    }
+    return r;
+}
 
+bool CPU::has_breakpoint(unsigned int address) const
+{
+    for (size_t i = 0; i < m_breakpoints.size(); i++)
+        if (m_breakpoints[i] == address) return true;
     return false;
 }
 
 void CPU::add_breakpoint(unsigned int address)
 {
-    if (!check_breakpoint(address))
-        if (break_count < sizeof(breakpoints) / sizeof(breakpoints[0]))
-            breakpoints[break_count++] = address;
+    if (!has_breakpoint(address) && m_breakpoints.size() < MAX_BREAKPOINTS) m_breakpoints.push_back(address);
 }
 
 void CPU::remove_breakpoint(unsigned int address)
 {
-    for (unsigned int i=0; i<break_count; i++)
-        if (breakpoints[i] == address)
-        {
-            for (unsigned int j=i; j<break_count-1; j++)
-                breakpoints[j] = breakpoints[j+1];
-            break_count--;
+    for (size_t i = 0; i < m_breakpoints.size(); i++)
+        if (m_breakpoints[i] == address) {
+            m_breakpoints.erase(m_breakpoints.begin() + i);
             return;
         }
 }
 
 void CPU::clear_breakpoints()
 {
-    break_count = 0;
+    m_breakpoints.clear();
+}
+
+void CPU::set_temp_break(unsigned int mode, unsigned int pc, unsigned int sp)
+{
+    m_temp_mode = mode;
+    m_temp_pc = pc;
+    m_temp_sp = sp;
+    m_temp_from = get_pc();
+    m_last_pc = m_temp_from;
+}
+
+int CPU::sp_above(unsigned int sp) const
+{
+    const unsigned int bits = sp_bits();
+    const unsigned int mask = (bits >= 32) ? 0xFFFFFFFFu : ((1u << bits) - 1);
+    const unsigned int d = (sp - m_temp_sp) & mask;
+    //More than half the range up is the other way round: below
+    return (d & ~(mask >> 1)) ? -(int)((mask - d) + 1) : (int)d;
+}
+
+//The instruction just executed was a return. Decoded only once the stack is
+//back at the level asked for, so a run with a stop set costs nothing more
+bool CPU::returned()
+{
+    DisasmLine l;
+    return decode_at(m_last_pc, l) && l.flow == FLOW_RET;
+}
+
+bool CPU::break_test()
+{
+    const unsigned int pc = get_pc();
+    if (m_temp_mode != TEMP_NONE) {
+        unsigned int sp = 0;
+        bool hit = false;
+        switch (m_temp_mode) {
+        case TEMP_PC:
+            hit = (pc == m_temp_pc);
+            break;
+        case TEMP_RETURN:
+            //Back where the call leads, or the stack back at its level by a
+            //return - not by an interrupt that came before the call, which
+            //returns to the call itself
+            if (pc == m_temp_pc) hit = true;
+            else if (get_sp(sp)) hit = sp_above(sp) >= 0 && pc != m_temp_from && returned();
+            break;
+        case TEMP_OUT:
+            hit = get_sp(sp) && sp_above(sp) > 0 && returned();
+            break;
+        default:
+            break;
+        }
+        if (hit) {
+            m_temp_mode = TEMP_NONE;
+            break_hit = BREAK_TEMP;
+            return true;
+        }
+    }
+    if (!m_breakpoints.empty() && has_breakpoint(pc)) {
+        break_hit = BREAK_POINT;
+        return true;
+    }
+    return false;
 }
 
 void CPU::reset(bool cold)
@@ -2030,6 +2148,7 @@ std::vector<DeviceFieldInfo> CPU::get_device_fields()
     r.push_back({"clock",       "CPU frequency, Hz",            false});
     r.push_back({"debug",       "Debug mode of a CPU",          false});
     r.push_back({"hold",        "Cycles taken by bus masters since reset", false});
+    r.push_back({"disasm",      "Instructions starting in an address range: disasm(from, to)", true});
     return r;
 }
 
@@ -2041,6 +2160,14 @@ std::vector<DeviceCommandInfo> CPU::get_device_commands()
     r.push_back({"step",        "",                 "Executes one command"});
     r.push_back({"breakpoint",  "[address]",        "Adds a breakpoint, without an address removes them all"});
     r.push_back({"setreg",      "name, value",      "Sets a register or a flag"});
+    //Carried out by the script engine, which reaches the emulator: they move
+    //the whole machine, see Emulator::debug_step()
+    r.push_back({"pause",       "",                 "Pauses the whole machine, as the debugger does; a breakpoint of any processor then pauses it too"});
+    r.push_back({"go",          "",                 "Resumes the paused machine, stopping at the breakpoints"});
+    r.push_back({"tstep",       "[count]",          "Executes commands of this processor, the others running for the same time"});
+    r.push_back({"over",        "",                 "Steps over a call: runs until it returns"});
+    r.push_back({"out",         "",                 "Runs until the current routine returns"});
+    r.push_back({"until",       "address",          "Runs until this processor reaches the address"});
     return r;
 }
 
@@ -2099,6 +2226,22 @@ bool CPU::get_field(const std::string &field, unsigned int from, unsigned int to
         out.values.push_back(m_debug);
         return true;
     }
+    if (field == "disasm") {
+        DisAsm * d = disasm();
+        if (d == nullptr) return false;
+        const bool octal = register_radix() == 8;
+        //The instructions that start from the first address up to the last,
+        //one when there is only one address
+        unsigned int address = from;
+        for (unsigned int i = 0; i < 1000 && (i == 0 || address <= to); i++) {
+            DisasmLine l;
+            if (!decode_at(address, l)) l.length = d->unit_bytes();
+            if (!out.text.empty()) out.text += "; ";
+            out.text += (octal ? oct_str(address, 6) : hex_str(address, 4)) + ": " + l.text;
+            address += l.length;
+        }
+        return true;
+    }
     return ComputerDevice::get_field(field, from, to, out);
 }
 
@@ -2113,7 +2256,7 @@ emulator::Result CPU::send_command(const std::string &command, const std::string
     if (command == "run") {
         // Breakpoints are only tested in DEBUG_BRAKES, so resuming has to keep
         // that mode as long as at least one breakpoint is set
-        m_debug = (break_count > 0)? DEBUG_BRAKES : DEBUG_OFF;
+        m_debug = (!m_breakpoints.empty())? DEBUG_BRAKES : DEBUG_OFF;
         return emulator::Result::ok();
     }
     if (command == "step") {
@@ -2135,7 +2278,12 @@ emulator::Result CPU::send_command(const std::string &command, const std::string
         if (p.size() < 2)
             return emulator::Result::error(emulator::ErrorCode::BadParameters,
                 "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "Command 'setreg' expects a name and a value")) + "}");
-        set_context_value(p[0], parse_numeric_value(p[1]));
+        //A register by that name first, then a flag (the 8086 takes both)
+        const std::vector<std::string> names = get_context_names();
+        const unsigned int v = parse_numeric_value(p[1]);
+        if (std::find(names.begin(), names.end(), p[0]) == names.end() && set_flag(p[0], v != 0))
+            return emulator::Result::ok();
+        set_context_value(p[0], v);
         return emulator::Result::ok();
     }
 
@@ -2651,6 +2799,34 @@ AddressableDevice * MemoryMapper::peek_read_device(unsigned int address)
     unsigned int address_on_device, range_index;
     return this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value,
                      address, MODE_R, &address_on_device, &range_index);
+}
+
+AddressableDevice * MemoryMapper::peek_owner(unsigned int address, unsigned int &offset)
+{
+    unsigned int range_index;
+    unsigned int route = ROUTE_ANSWER;
+    return this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value,
+                     address, MODE_R, &offset, &range_index, &route);
+}
+
+//Where a ROM is read over a RAM (Орион F800, the shadow areas), the byte goes
+//to both: the ROM shows it, and the RAM below gets what a program writing
+//there would have put. A device a write reaches that is not a memory (a
+//register) is left alone: its set_value() may act on the value
+bool MemoryMapper::poke(unsigned int address, unsigned int value)
+{
+    unsigned int offset;
+    AddressableDevice * r = peek_owner(address, offset);
+
+    unsigned int w_offset, range_index;
+    unsigned int route = ROUTE_ANSWER;
+    AddressableDevice * w = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value,
+                                      address, MODE_W, &w_offset, &range_index, &route);
+    if (w != nullptr && w != r && dynamic_cast<Memory*>(w) != nullptr)
+        w->set_value(w_offset, value & 0xFF, true);
+
+    if (r != nullptr) r->set_value(offset, value & 0xFF, true);
+    return r != nullptr || w != nullptr;
 }
 
 //A read goes on past this range, the answers OR-ed: always for an "or_read"

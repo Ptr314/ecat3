@@ -81,10 +81,6 @@ z80::z80(InterfaceManager *im, EmulatorConfigDevice *cd):
     core_ext->reg.SP = 0;
 #endif
     //TODO: add new codes if expected
-    over_commands.push_back(0xCD);
-    over_commands.push_back(0xDD);
-    over_commands.push_back(0xED);
-    over_commands.push_back(0xFD);
 
 }
 
@@ -275,6 +271,7 @@ unsigned int z80::execute()
     unsigned int held = take_hold();
     if (held > 0) return held;
 
+    if (m_debug != DEBUG_OFF) debug_before();
 #ifndef EXTERNAL_Z80
     unsigned int cycles = core->execute();
 #else
@@ -282,16 +279,7 @@ unsigned int z80::execute()
 #endif
 
 
-    switch (m_debug) {
-    case DEBUG_STEP:
-        m_debug = DEBUG_STOPPED;
-        break;
-    case DEBUG_BRAKES:
-        if (check_breakpoint(get_pc())) m_debug = DEBUG_STOPPED;
-        break;
-    default:
-        break;
-    }
+    if (m_debug != DEBUG_OFF) debug_after();
 
     return cycles;
 }
@@ -353,4 +341,50 @@ void z80::interface_callback(unsigned int callback_id, unsigned int new_value, u
 
 ComputerDevice * create_z80(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new z80(im, cd);
+}
+
+bool z80::set_flag(const std::string &name, bool value)
+{
+#ifndef EXTERNAL_Z80
+    static const char * names[] = {"S", "Z", "5", "H", "3", "PV", "N", "C"};
+    static const uint8_t bits[] = {F_SIGN, F_ZERO, F_B5, F_HALF_CARRY, F_B3, F_PARITY, F_SUB, F_CARRY};
+    z80context * c = core->get_context();
+    for (unsigned int i = 0; i < 8; i++)
+        if (name == names[i]) {
+            c->registers.regs.F = value ? (uint8_t)(c->registers.regs.F | bits[i]) : (uint8_t)(c->registers.regs.F & ~bits[i]);
+            return true;
+        }
+#else
+    (void)name;
+    (void)value;
+#endif
+    return false;
+}
+
+bool z80::get_sp(unsigned int &sp)
+{
+#ifndef EXTERNAL_Z80
+    sp = core->get_context()->registers.regs.SP;
+    return true;
+#else
+    (void)sp;
+    return false;
+#endif
+}
+
+bool z80::stack_address(int i, unsigned int &address)
+{
+    unsigned int sp;
+    if (!get_sp(sp)) return false;
+    address = (sp + 2 * i) & 0xFFFF;
+    return true;
+}
+
+bool z80::waiting()
+{
+#ifndef EXTERNAL_Z80
+    return core->get_context()->halted;
+#else
+    return false;
+#endif
 }

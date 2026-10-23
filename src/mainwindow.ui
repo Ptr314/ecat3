@@ -79,16 +79,6 @@
     <property name="title">
      <string>Emulation</string>
     </property>
-    <widget class="QMenu" name="menuDevices">
-     <property name="title">
-      <string>Devices</string>
-     </property>
-     <property name="icon">
-      <iconset resource="resources.qrc">
-       <normaloff>:/icons/devices</normaloff>:/icons/devices</iconset>
-     </property>
-     <addaction name="actionDevice_one"/>
-    </widget>
     <widget class="QMenu" name="menuRecording">
      <property name="title">
       <string>Action recording</string>
@@ -107,11 +97,28 @@
     </widget>
     <addaction name="action_Cold_restart"/>
     <addaction name="action_Soft_restart"/>
-    <addaction name="actionDebugger"/>
+    <addaction name="actionTape"/>
     <addaction name="actionKeyboard"/>
     <addaction name="actionPasteText"/>
     <addaction name="actionSerial"/>
     <addaction name="menuRecording"/>
+   </widget>
+   <widget class="QMenu" name="menuDebug">
+    <property name="title">
+     <string>Debug</string>
+    </property>
+    <widget class="QMenu" name="menuDevices">
+     <property name="title">
+      <string>Devices</string>
+     </property>
+     <property name="icon">
+      <iconset resource="resources.qrc">
+       <normaloff>:/icons/devices</normaloff>:/icons/devices</iconset>
+     </property>
+     <addaction name="actionDevice_one"/>
+    </widget>
+    <addaction name="actionDebugger"/>
+    <addaction name="actionDumps"/>
     <addaction name="separator"/>
     <addaction name="menuDevices"/>
    </widget>
@@ -158,6 +165,7 @@
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEmulation"/>
+   <addaction name="menuDebug"/>
    <addaction name="menuDisplay"/>
    <addaction name="menuHelp"/>
   </widget>
@@ -194,11 +202,9 @@
    <addaction name="action_Soft_restart"/>
    <addaction name="actionCPUState"/>
    <addaction name="separator"/>
-   <addaction name="actionDebugger"/>
    <addaction name="actionSaveState"/>
    <addaction name="actionScreenshot"/>
    <addaction name="actionVideo"/>
-   <addaction name="actionTape"/>
   </widget>
   <action name="action_Select_a_machine">
    <property name="enabled">
@@ -287,6 +293,18 @@
    </property>
    <property name="toolTip">
     <string>Open debugger</string>
+   </property>
+  </action>
+  <action name="actionDumps">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/binary</normaloff>:/icons/binary</iconset>
+   </property>
+   <property name="text">
+    <string>Dumps</string>
+   </property>
+   <property name="toolTip">
+    <string>Memory dumps of the machine</string>
    </property>
   </action>
   <action name="actionScreenshot">

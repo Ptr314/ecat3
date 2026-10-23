@@ -203,6 +203,26 @@ private:
 
     bool m_settings_readonly = false;
 
+    //The debugger's pause and steps, see debug_pause(). The fields belong to
+    //the emulation thread but for the atomics, which the window reads
+    std::atomic<bool> m_debug_paused{false};
+    std::atomic<bool> m_debug_attached{false};
+    std::atomic<bool> m_stepping{false};
+    CPU * m_step_cpu = nullptr;         //The processor a time step is made for
+    unsigned int m_step_count = 0;      //Steps still to make
+    bool m_step_done = false;           //It has executed its instruction
+    CPU * m_step_hit = nullptr;         //Another one stopped on its breakpoint meanwhile
+    uint64_t m_step_spent = 0;          //Its normalised time since the step began
+    std::atomic<unsigned int> m_debug_serial{0};
+    CPU * m_debug_cpu = nullptr;        //Guarded by m_debug_mutex
+    int m_debug_reason = 0;             //Guarded
+    std::function<void()> m_debug_listener; //Guarded
+    mutable compat_mutex m_debug_mutex;
+    void debug_notify(CPU * c, int reason);
+    void debug_break(CPU * c);
+    void debug_step_slice();
+    void debug_hold_domains(uint64_t target);
+
     //Remembered disks, see DiskChoice
     bool m_restore_disks = false;
     std::map<std::string, DiskChoice> m_disk_defaults;
@@ -340,6 +360,9 @@ public:
     void set_audio_enabled(bool on) { sd.audio_enabled = on; }
     void load_charmap();
     const std::string & translate_char(unsigned int system_code);
+    //The other way: the code the machine shows a character (UTF-8) with, -1
+    //when it has none
+    int char_code(const std::string &utf8) const;
 
     void init_video(void *p);
     void stop_video();
@@ -445,6 +468,56 @@ public:
     static int parse_speed(const std::string &text);
     //From any thread, see invoke()
     void reset(bool cold);
+
+    //---------------------------- Debugger ---------------------------------//
+    //The debugger pauses the whole machine, not a processor: every domain
+    //stands still, a К1801ВМ1 held by ~dclo included, and the modes of the
+    //processors (m_debug) stay what they were. A step is made in time: the
+    //machine runs, in the order a free run would, until the processor has
+    //executed one instruction and the others have caught up with it. While a
+    //debugger is attached a breakpoint of any processor pauses the machine
+    //when the others reach the same moment. A script that stops and starts
+    //the processors itself (cpu.stop, cpu.run) works as it always has.
+    //The calls that change something belong to the emulation thread: a
+    //window makes them through invoke(), a script is already there
+    enum DebugStop {
+        DSTOP_NONE = 0,         // running again
+        DSTOP_PAUSE,            // asked for
+        DSTOP_STEP,             // the step has been made
+        DSTOP_BREAKPOINT,       // a breakpoint of the processor's list
+        DSTOP_TEMP,             // step over, step out, run to an address
+        DSTOP_ERROR,            // a device refused what the guest asked
+        DSTOP_NO_PROGRESS       // a step found the processor executing nothing (held, waiting)
+    };
+    void debug_attach(bool on);
+    //The debugger goes: a paused machine runs on, the breakpoints are no
+    //longer looked at
+    void debug_detach();
+    bool debug_attached() const { return m_debug_attached; }
+    //Paused by the debugger, or every processor stopped. Any thread
+    bool debug_paused() const;
+    //A step is under way. Any thread
+    bool debug_stepping() const { return m_stepping; }
+    //Paused by the debugger and not stepping: what a script waits for after
+    //its own step. Any thread
+    bool debug_held() const { return m_debug_paused && !m_stepping; }
+    void debug_pause();
+    //Resumes: stopping at the breakpoints and the debugger's own stop, or
+    //with all of that left aside
+    void debug_run(bool breakpoints);
+    void debug_step(CPU * c, unsigned int count = 1);
+    //A call is stepped over, anything else is stepped
+    void debug_step_over(CPU * c);
+    void debug_step_out(CPU * c);
+    void debug_run_to(CPU * c, unsigned int address);
+    //What stopped the machine last: a serial that changes with every stop and
+    //every start, the processor (null for a pause) and a DebugStop. Any thread
+    unsigned int debug_serial() const { return m_debug_serial; }
+    CPU * debug_stop_cpu() const;
+    int debug_stop_reason() const;
+    //Called on the emulation thread whenever the serial changes; it must not
+    //wait for anything (a window posts itself an event). Any thread
+    void set_debug_listener(const std::function<void()> &fn);
 
     //Why the machine stopped by itself: a device refused what the guest asked
     //of it, the saved state could not be applied, or - fatal - the emulation

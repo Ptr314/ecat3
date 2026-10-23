@@ -164,6 +164,7 @@ private:
         StateKeys,          //Playing a key sequence
         StateWaitFor,       //Polling a device field
         StateScreenshot,    //Waiting for the render thread to store an image
+        StateDebug,         //Waiting for a step of the debugger to end
         StatePaused,        //Stopped by the user, can be resumed
         StateFinished,
         StateWaiting        //Interactive: armed, but out of commands

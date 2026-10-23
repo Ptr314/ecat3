@@ -49,6 +49,25 @@
 #define DEBUG_STEP              2
 #define DEBUG_BRAKES            3
 
+//What stopped a processor in DEBUG_BRAKES, see CPU::break_hit
+#define BREAK_NONE              0
+#define BREAK_POINT             1       // a breakpoint of its list
+#define BREAK_TEMP              2       // the debugger's own stop, CPU::set_temp_break()
+
+//The debugger's own stop, see CPU::set_temp_break()
+#define TEMP_NONE               0
+#define TEMP_PC                 1       // at an address
+#define TEMP_RETURN             2       // the stack back at a level: the call has returned (step over)
+#define TEMP_OUT                3       // the stack above a level, by a jump: the routine has returned (step out)
+
+//A register as the debugger shows and edits it. An empty name is the gap
+//between two groups
+struct CpuRegister {
+    std::string name;
+    unsigned int value;
+    unsigned int bits;
+};
+
 #define MM_CONFIG               1
 
 #define SCREEN_RATIO_43         0
@@ -88,6 +107,7 @@ class AddressableDevice;
 class MemoryMapper;
 class CPU;
 class DisAsm;
+struct DisasmLine;
 class FDD;
 
 typedef uint8_t ScreenColor[3];
@@ -799,7 +819,13 @@ private:
 class CPU: public ComputerDevice
 {
 private:
-    unsigned int breakpoints[100];
+    std::vector<unsigned int> m_breakpoints;
+    unsigned int m_temp_mode;
+    unsigned int m_temp_pc;
+    unsigned int m_temp_sp;
+    unsigned int m_temp_from;       //PC when the debugger's stop was set
+    unsigned int m_last_pc;         //PC of the instruction just executed, while one is set
+    DisAsm * m_disasm;          //Made on first use, see disasm()
 
 protected:
     Interface i_address;
@@ -815,10 +841,12 @@ public:
     unsigned int clock;
     MemoryMapper * mm;
     unsigned int m_debug;
-    unsigned int break_count;
-    std::list<unsigned int> over_commands;
+    //Why the processor stopped itself in DEBUG_BRAKES, BREAK_*. Set by
+    //break_test(), cleared by whoever acts on it (Emulator::timer_proc())
+    unsigned int break_hit;
 
     CPU(InterfaceManager *im, EmulatorConfigDevice *cd);
+    ~CPU() override;
 
     emulator::Result load_config(SystemData *sd) override;
     virtual unsigned int execute() = 0;
@@ -843,10 +871,41 @@ public:
         return r;
     }
     uint64_t hold_total() const { return m_hold_total; }
-    bool check_breakpoint(unsigned int address);
+    //The window reads the list from its own thread while a script may add to
+    //it: the vector has its room reserved and never grows past it, so a read
+    //sees an old or a new list, never freed memory
+    static const size_t MAX_BREAKPOINTS = 256;
+    bool has_breakpoint(unsigned int address) const;
     void add_breakpoint(unsigned int address);
     void remove_breakpoint(unsigned int address);
     void clear_breakpoints();
+    const std::vector<unsigned int> & get_breakpoints() const { return m_breakpoints; }
+
+    //The debugger's own stop, checked with the breakpoints in DEBUG_BRAKES and
+    //forgotten when it is reached: at pc (TEMP_PC); when the stack pointer is
+    //back at sp or higher after a return instruction, or at pc (TEMP_RETURN:
+    //a call stepped over has returned, wherever to - JSR R5 returns past its
+    //arguments; an interrupt taken before the call returns to it, and a POP
+    //of the routine's own data is not a return); above sp after a return
+    //instruction (TEMP_OUT: the routine has returned). A processor without a
+    //stack pointer stops at pc for TEMP_RETURN
+    void set_temp_break(unsigned int mode, unsigned int pc, unsigned int sp);
+    void clear_temp_break() { m_temp_mode = TEMP_NONE; }
+    bool has_temp_break() const { return m_temp_mode != TEMP_NONE; }
+
+    //Called by execute() around each instruction while m_debug is not
+    //DEBUG_OFF: the step ends, a breakpoint stops the processor
+    void debug_before() { if (m_temp_mode >= TEMP_RETURN) m_last_pc = get_pc(); }
+    void debug_after()
+    {
+        if (m_debug == DEBUG_STEP) m_debug = DEBUG_STOPPED;
+        else if (m_debug == DEBUG_BRAKES && break_test()) m_debug = DEBUG_STOPPED;
+    }
+    bool break_test();
+    bool returned();
+    //How far the stack pointer is above the debugger's level, counted in its
+    //own width: negative below it, whichever way the register wrapped
+    int sp_above(unsigned int sp) const;
     void reset(bool cold) override;
     virtual unsigned int get_pc() = 0;
     virtual unsigned int get_command() = 0;
@@ -865,12 +924,20 @@ public:
     //processor's own access and belongs to the emulation thread only
     //A processor with its own address translation (the КМ1801ВМ3) overrides it
     virtual unsigned int peek_mem(unsigned int address);
+    //The debugger's write to the same place: MemoryMapper::poke(), with the
+    //processor's own translation. Emulation thread
+    virtual bool poke_mem(unsigned int address, unsigned int value);
 
     //The disassembler of this instruction set, for the debugger, which owns it.
     //By default the table-driven one loaded from data_path + disasm_table(); a
     //processor whose instructions are bit fields returns its own decoder. A
     //table that fails to load comes back in res, with the (empty) decoder
     virtual DisAsm * create_disasm(const std::string &data_path, emulator::Result &res);
+    //The processor's own decoder, for the core's debugging (step over, LOG
+    //cpu.disasm): null when it cannot be made. A window makes its own
+    DisAsm * disasm();
+    //The instruction at an address, read with peek_mem()
+    bool decode_at(unsigned int address, DisasmLine &line);
     virtual std::string disasm_table() const { return ""; }
 
     virtual std::vector<std::pair<std::string, std::string>> get_registers() = 0;
@@ -881,6 +948,30 @@ public:
     //default the registers get_registers() shows, without the separators, so
     //every processor must accept each of those names
     virtual std::vector<std::string> get_context_names();
+
+    //The registers of get_registers() as numbers, read back in the notation
+    //they are written in (register_radix()), as wide as their digits
+    virtual std::vector<CpuRegister> get_register_values();
+    virtual unsigned int register_radix() const { return 16; }
+    //One flag of get_flags(), false when the processor cannot set it
+    virtual bool set_flag(MAYBE_UNUSED const std::string &name, MAYBE_UNUSED bool value) { return false; }
+
+    //The stack for the debugger. The stack pointer register; the address of
+    //entry i, 0 the last one pushed, negative i the free space below it;
+    //the size of an entry. False when the processor has no stack
+    virtual bool get_sp(MAYBE_UNUSED unsigned int &sp) { return false; }
+    virtual bool stack_address(MAYBE_UNUSED int i, MAYBE_UNUSED unsigned int &address) { return false; }
+    virtual unsigned int stack_entry_bytes() const { return 2; }
+    //Width of the stack pointer: the 6502's S is a byte, and a stack that
+    //wraps past $00 is still above its level
+    virtual unsigned int sp_bits() const { return 16; }
+
+    //Waits for an interrupt (WAIT, HLT): a step goes on until it comes
+    virtual bool waiting() { return false; }
+
+    //Addresses of the last instructions executed, oldest first, for a
+    //processor that keeps them
+    virtual std::vector<unsigned int> get_history() { return std::vector<unsigned int>(); }
 
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;
@@ -983,6 +1074,15 @@ public:
     // anything else (no cancelinit flip): the timing of a prefetch the
     // emulator does not perform
     AddressableDevice * peek_read_device(unsigned int address);
+    // The device that answers a read of the address and the address on it,
+    // for the debugger: whoever is seen there. Null when nothing is mapped
+    AddressableDevice * peek_owner(unsigned int address, unsigned int &offset);
+    // What the debugger writes: the byte goes to the device peek_owner()
+    // finds, with force (a ROM takes it), and no bus cycle - set_value() is
+    // the processor's write, which a register acts on and a ROM ignores. A
+    // memory a write would reach under it (RAM below a ROM) gets it too.
+    // False when nothing answers there
+    bool poke(unsigned int address, unsigned int value);
 
     MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual emulator::Result load_config(SystemData *sd) override;

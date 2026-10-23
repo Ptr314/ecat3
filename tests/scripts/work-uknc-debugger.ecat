@@ -1,0 +1,55 @@
+# УК-НЦ: отладчик ставит на паузу всю машину и шагает по времени.
+#
+# Машина в меню ЗАГРУЗКА: ЦП крутится в опросе канала (172614-172624), ПП - в
+# диспетчере своих процессов (174164-174220). cpu.pause() останавливает оба
+# процессора на той команде, где его выполнил сценарий. Шаг одного процессора
+# (tstep) двигает и второй: тот выполняет свои команды из того же отрезка
+# времени, в том порядке, что и при свободном ходе.
+#
+# until - до адреса, out - до возврата из подпрограммы (стек выше, чем был, и
+# переход), over - через вызов (стек вернулся). Точка останова одного
+# процессора, пока отладчик подключен, ставит на паузу всю машину.
+#
+# Числа - эталон: шаг по времени повторяется побайтно, иначе расходились бы
+# и они.
+# @timeout 60
+
+MACHINE "uknc/UKNC.cfg"
+WAIT _3000
+COMMAND cpu.pause()
+
+LOGDEFS _16,_8
+PRINT "=== пауза: ЦП в опросе канала ==="
+LOG cpu.disasm(172614,172624)
+LOG cpu.registers
+LOG ppu.registers
+
+PRINT "=== три шага ЦП: ПП идет с ним ==="
+COMMAND cpu.tstep(_3)
+LOG cpu.registers
+LOG ppu.registers
+
+PRINT "=== ПП до выбранного процесса и в подпрограмму ==="
+COMMAND ppu.until(174174)
+LOG ppu.registers
+COMMAND ppu.tstep(_11)
+LOG ppu.registers
+LOG cpu.registers
+
+PRINT "=== до возврата: стек 001750, команда за вызовом ==="
+COMMAND ppu.out()
+LOG ppu.registers
+
+PRINT "=== через вызов ==="
+COMMAND ppu.tstep(_2)
+LOG ppu.disasm(104146,104146)
+COMMAND ppu.over()
+LOG ppu.registers
+
+PRINT "=== точка ЦП останавливает и ПП ==="
+COMMAND cpu.breakpoint(172620)
+COMMAND ppu.until(1)
+LOG cpu.pc
+LOG ppu.registers
+COMMAND cpu.breakpoint()
+EXIT

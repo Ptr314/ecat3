@@ -44,7 +44,7 @@
         <translation type="vanished">Команда &apos;set&apos; требует адрес и значение</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+1084"/>
+        <location filename="../emulator/core.cpp" line="+1087"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation>Команда &apos;set&apos; требует адрес и хотя бы одно значение</translation>
     </message>
@@ -202,7 +202,7 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+771"/>
+        <location filename="../emulator/core.cpp" line="+778"/>
         <source>No CPU clock value found</source>
         <translation>Не задана тактовая частота процессора</translation>
     </message>
@@ -216,27 +216,27 @@
         <translation type="vanished">Команда &apos;breakpoint&apos; требует адрес</translation>
     </message>
     <message>
-        <location line="+203"/>
+        <location line="+338"/>
         <source>Command &apos;setreg&apos; expects a name and a value</source>
         <translation>Команда &apos;setreg&apos; требует имя и значение</translation>
     </message>
     <message>
-        <location line="-219"/>
+        <location line="-354"/>
         <source>Invalid breakpoint address</source>
         <translation>Нерректная точка останова</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+179"/>
+        <location filename="../emulator/devices/cpu/k1801vm1.cpp" line="+174"/>
         <source>Unknown timing</source>
         <translation>Неизвестный способ расчета времени</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/i8080.cpp" line="+138"/>
+        <location filename="../emulator/devices/cpu/i8080.cpp" line="+134"/>
         <source>int_opcode = $CD needs ~int_address</source>
         <translation>int_opcode = $CD требует подключённого ~int_address</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/i8086.cpp" line="+116"/>
+        <location filename="../emulator/devices/cpu/i8086.cpp" line="+113"/>
         <source>Incorrect parameters for</source>
         <translation>Неправильно указаны параметры для</translation>
     </message>
@@ -252,7 +252,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1386"/>
+        <location filename="../emulator/core.cpp" line="-1393"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -420,7 +420,7 @@
         <translation>Образ ПЗУ</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+589"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+626"/>
         <source>Low-pass filter cutoff, Hz (0 - off)</source>
         <translation>Срез фильтра нижних частот, Гц (0 - выключен)</translation>
     </message>
@@ -548,14 +548,12 @@
 <context>
     <name>DebugWindow</name>
     <message>
-        <location filename="../dialogs/debugwindow.ui" line="+26"/>
         <source>Dialog</source>
-        <translation>Отладчик</translation>
+        <translation type="vanished">Отладчик</translation>
     </message>
     <message>
-        <location line="+103"/>
         <source>Return to PC</source>
-        <translation>Вернуться к PC</translation>
+        <translation type="vanished">Вернуться к PC</translation>
     </message>
     <message>
         <source>Step into</source>
@@ -574,107 +572,244 @@
         <translation type="vanished">Запустить под отладчиком</translation>
     </message>
     <message>
-        <location line="+29"/>
         <source>Trace into [F7]</source>
-        <translation>Шаг внутрь (Trace into) [F7]</translation>
+        <translation type="vanished">Шаг внутрь (Trace into) [F7]</translation>
     </message>
     <message>
-        <location line="+29"/>
         <source>Step over [F8]</source>
-        <translation>Шаг поверх (Step over) [F8]</translation>
+        <translation type="vanished">Шаг поверх (Step over) [F8]</translation>
     </message>
     <message>
-        <location line="+29"/>
         <source>Go to cursor [F4]</source>
-        <translation>Выполнить до курсора [F4]</translation>
+        <translation type="vanished">Выполнить до курсора [F4]</translation>
     </message>
     <message>
-        <location line="+29"/>
         <source>Run under debugger [F9]</source>
-        <translation>Запустить под отладчиком [F9]</translation>
+        <translation type="vanished">Запустить под отладчиком [F9]</translation>
     </message>
     <message>
-        <location line="+29"/>
         <source>Stop</source>
-        <translation>Останов</translation>
+        <translation type="vanished">Останов</translation>
     </message>
     <message>
-        <location line="+29"/>
         <source>Run without debugging</source>
-        <translation>Запустить без отладки</translation>
+        <translation type="vanished">Запустить без отладки</translation>
     </message>
     <message>
-        <location line="+79"/>
         <source>Address for the debugger</source>
-        <translation>Адрес перехода для отладчика</translation>
+        <translation type="vanished">Адрес перехода для отладчика</translation>
     </message>
     <message>
-        <location line="+22"/>
         <source>Go to</source>
-        <translation>Перейти</translation>
+        <translation type="vanished">Перейти</translation>
     </message>
     <message>
-        <location line="+29"/>
         <source>Add a breakpoint</source>
-        <translation>Добавить точку останова</translation>
+        <translation type="vanished">Добавить точку останова</translation>
     </message>
     <message>
-        <location line="+29"/>
         <source>Delete a breakpoint</source>
-        <translation>Удалить точку останова</translation>
+        <translation type="vanished">Удалить точку останова</translation>
     </message>
     <message>
-        <location line="+23"/>
         <source>Register to set</source>
-        <translation>Регистр для установки</translation>
+        <translation type="vanished">Регистр для установки</translation>
     </message>
     <message>
-        <location line="+86"/>
         <source>Address for the dump</source>
-        <translation>Адрес для дампа</translation>
+        <translation type="vanished">Адрес для дампа</translation>
     </message>
     <message>
-        <location line="+25"/>
         <source>Go to for the dump</source>
-        <translation>Показать данные с адреса</translation>
+        <translation type="vanished">Показать данные с адреса</translation>
     </message>
     <message>
-        <location line="+26"/>
         <source>Page down</source>
-        <translation>Страница вниз</translation>
+        <translation type="vanished">Страница вниз</translation>
     </message>
     <message>
-        <location line="+26"/>
         <source>Page up</source>
-        <translation>Страница вверх</translation>
+        <translation type="vanished">Страница вверх</translation>
     </message>
     <message>
         <source>Delete breakpoint</source>
         <translation type="vanished">Удалить точку останова</translation>
     </message>
     <message>
-        <location line="-147"/>
         <source>Set value</source>
-        <translation>Установить значение</translation>
+        <translation type="vanished">Установить значение</translation>
     </message>
     <message>
-        <location filename="../dialogs/debugwindow.cpp" line="+49"/>
-        <location line="+180"/>
-        <location line="+66"/>
-        <location line="+77"/>
+        <source>Error</source>
+        <translation type="vanished">Ошибка</translation>
+    </message>
+    <message>
+        <source>Incorrect value</source>
+        <translation type="vanished">Значение введено некорректно</translation>
+    </message>
+    <message>
+        <source>Incorrect address value</source>
+        <translation type="vanished">Адрес введен некорректно</translation>
+    </message>
+</context>
+<context>
+    <name>DebuggerWindow</name>
+    <message>
+        <location filename="../dialogs/debugger/debuggerwindow.cpp" line="+34"/>
+        <source>Debugger</source>
+        <translation>Отладчик</translation>
+    </message>
+    <message>
+        <location line="+68"/>
+        <source>Stack</source>
+        <translation>Стек</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+206"/>
+        <source>Breakpoints</source>
+        <translation>Точки останова</translation>
+    </message>
+    <message>
+        <location line="-205"/>
+        <source>History</source>
+        <translation>История</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Devices</source>
+        <translation>Устройства</translation>
+    </message>
+    <message>
+        <location line="+129"/>
+        <source>Show PC</source>
+        <translation>Показать PC</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Step</source>
+        <translation>Шаг</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Step over</source>
+        <translation>Шаг через вызов</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Step out of the routine</source>
+        <translation>До возврата из подпрограммы</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+2"/>
+        <source>Run to the cursor</source>
+        <translation>Выполнить до курсора</translation>
+    </message>
+    <message>
+        <location line="-29"/>
+        <source>Run, stopping at the breakpoints</source>
+        <translation>Пуск с остановкой на точках останова</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Pause</source>
+        <translation>Пауза</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Run without debugging</source>
+        <translation>Запустить без отладки</translation>
+    </message>
+    <message>
+        <location line="+43"/>
+        <source>An address to show in the listing</source>
+        <translation>Адрес, который показать в листинге</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Go to the address</source>
+        <translation>Перейти к адресу</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-143"/>
-        <source>Incorrect value</source>
-        <translation>Значение введено некорректно</translation>
-    </message>
-    <message>
-        <location line="+66"/>
-        <location line="+77"/>
+        <location line="+0"/>
         <source>Incorrect address value</source>
         <translation>Адрес введен некорректно</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <location line="+1"/>
+        <source>Breakpoint at the cursor</source>
+        <translation>Точка останова на курсоре</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Remove the breakpoint at the cursor</source>
+        <translation>Снять точку останова на курсоре</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Remove all breakpoints</source>
+        <translation>Снять все точки останова</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Remove all breakpoints of %1?</source>
+        <translation>Снять все точки останова %1?</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Close</source>
+        <translation>Закрыть</translation>
+    </message>
+    <message>
+        <source>Another device</source>
+        <translation type="vanished">Другое устройство</translation>
+    </message>
+    <message>
+        <location line="+72"/>
+        <source>Stepping...</source>
+        <translation>Шаг...</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Step: %1</source>
+        <translation>Шаг: %1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Breakpoint: %1</source>
+        <translation>Точка останова: %1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Stopped: %1</source>
+        <translation>Остановлен: %1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Stopped by a device error</source>
+        <translation>Остановлен ошибкой устройства</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 executes nothing</source>
+        <translation>%1 не выполняет команд</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Paused</source>
+        <translation>Пауза</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Running</source>
+        <translation>Работает</translation>
     </message>
 </context>
 <context>
@@ -692,7 +827,7 @@
         <translation type="vanished">Устройство %1 не найдено</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1326"/>
+        <location filename="../emulator/core.cpp" line="-1327"/>
         <source>Too many devices</source>
         <translation>Слишком много устройств</translation>
     </message>
@@ -716,7 +851,7 @@
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
         <location line="+246"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+179"/>
-        <location line="+321"/>
+        <location line="+327"/>
         <source>Video output</source>
         <translation>Видеовыход</translation>
     </message>
@@ -760,8 +895,8 @@
     <message>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="-244"/>
         <location line="+247"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-319"/>
-        <location line="+322"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-325"/>
+        <location line="+328"/>
         <source>RGB</source>
         <translation>RGB</translation>
     </message>
@@ -774,14 +909,14 @@
     <message>
         <location line="-246"/>
         <location line="+247"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-320"/>
-        <location line="+322"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-326"/>
+        <location line="+328"/>
         <source>Mono</source>
         <translation>Моно</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-323"/>
-        <location line="+322"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-329"/>
+        <location line="+328"/>
         <source>B/W</source>
         <translation>Ч/Б</translation>
     </message>
@@ -889,6 +1024,19 @@
     </message>
 </context>
 <context>
+    <name>DevicesView</name>
+    <message>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="+217"/>
+        <source>Field</source>
+        <translation>Поле</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Value</source>
+        <translation>Значение</translation>
+    </message>
+</context>
+<context>
     <name>DisAsm</name>
     <message>
         <source>Error</source>
@@ -903,12 +1051,12 @@
         <translation type="vanished">Длина инструкции %1 указана некорректно</translation>
     </message>
     <message>
-        <location filename="../emulator/disasm.cpp" line="+36"/>
+        <location filename="../emulator/disasm.cpp" line="+73"/>
         <source>Error reading CPU instructions file</source>
         <translation>Ошибка чтения файла инструкций</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+42"/>
         <source>CPU instruction length is incorrect</source>
         <translation>Длина инструкции некорректна</translation>
     </message>
@@ -916,9 +1064,8 @@
 <context>
     <name>DumpWindow</name>
     <message>
-        <location filename="../dialogs/dumpwindow.ui" line="+14"/>
         <source>Dialog</source>
-        <translation>Дамп</translation>
+        <translation type="vanished">Дамп</translation>
     </message>
     <message>
         <source>Global offset</source>
@@ -929,79 +1076,72 @@
         <translation type="vanished">Смещение внутри блока</translation>
     </message>
     <message>
-        <location line="+51"/>
         <source>Base</source>
-        <translation>Базовый адрес</translation>
+        <translation type="vanished">Базовый адрес</translation>
     </message>
     <message>
-        <location line="+22"/>
         <source>Offset</source>
-        <translation>Смещение</translation>
+        <translation type="vanished">Смещение</translation>
     </message>
     <message>
-        <location line="+24"/>
         <source>Page Down</source>
-        <translation>Страница вниз</translation>
+        <translation type="vanished">Страница вниз</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>To end</source>
-        <translation>В конец</translation>
+        <translation type="vanished">В конец</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>Page Up</source>
-        <translation>Страница вверх</translation>
+        <translation type="vanished">Страница вверх</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>To begin</source>
-        <translation>В начало</translation>
+        <translation type="vanished">В начало</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>Save to file</source>
-        <translation>Сохранить в файл</translation>
+        <translation type="vanished">Сохранить в файл</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>...</source>
-        <translation>...</translation>
+        <translation type="vanished">...</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>Number base: hex or octal</source>
-        <translation>Система счисления: шестнадцатеричная или восьмеричная</translation>
+        <translation type="vanished">Система счисления: шестнадцатеричная или восьмеричная</translation>
     </message>
     <message>
-        <location line="+19"/>
         <source>Show bytes (8) or words (16)</source>
-        <translation>Показывать байты (8) или слова (16)</translation>
+        <translation type="vanished">Показывать байты (8) или слова (16)</translation>
     </message>
     <message>
-        <location line="+26"/>
         <source>Close</source>
-        <translation>Закрыть</translation>
+        <translation type="vanished">Закрыть</translation>
     </message>
     <message>
-        <location filename="../dialogs/dumpwindow.cpp" line="+82"/>
         <source>Error</source>
-        <translation>Ошибка</translation>
+        <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Incorrect address value</source>
-        <translation>Адрес введен некорректно</translation>
+        <translation type="vanished">Адрес введен некорректно</translation>
     </message>
     <message>
-        <location line="+55"/>
         <source>Save contents to a file</source>
-        <translation>Сохранить содержимое в файл</translation>
+        <translation type="vanished">Сохранить содержимое в файл</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Dump (*.bin)</source>
-        <translation>Двоичный образ (*.bin)</translation>
+        <translation type="vanished">Двоичный образ (*.bin)</translation>
+    </message>
+</context>
+<context>
+    <name>DumpsWindow</name>
+    <message>
+        <location filename="../dialogs/debugger/memorywindow.cpp" line="+39"/>
+        <source>Dumps</source>
+        <translation>Дампы</translation>
     </message>
 </context>
 <context>
@@ -1158,7 +1298,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+259"/>
+        <location filename="../emulator/emulator.cpp" line="+272"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -1744,24 +1884,32 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-515"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-552"/>
         <source>Incorrect sample rate</source>
         <translation>Неверная частота дискретизации</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+41"/>
         <source>Not a sound source</source>
         <translation>Устройство не является источником звука</translation>
     </message>
     <message>
-        <location line="+87"/>
+        <location line="+94"/>
         <source>Error writing</source>
         <translation>Ошибка записи</translation>
     </message>
     <message>
-        <location line="+489"/>
+        <location line="+495"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation>Команда &apos;volume&apos; требует значение</translation>
+    </message>
+</context>
+<context>
+    <name>HistoryView</name>
+    <message>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="-17"/>
+        <source>The processor does not keep its history</source>
+        <translation>Процессор не хранит историю</translation>
     </message>
 </context>
 <context>
@@ -2195,7 +2343,7 @@
         <translation>Эмуляция</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+31"/>
         <source>Devices</source>
         <translation>Устройства</translation>
     </message>
@@ -2204,7 +2352,7 @@
         <translation type="vanished">Помощь</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+15"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
@@ -2229,14 +2377,14 @@
         <translation>Сглаживание</translation>
     </message>
     <message>
-        <location line="+64"/>
+        <location line="+65"/>
         <source>Select a machine...</source>
         <translation>Выбор компьютера...</translation>
     </message>
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1626"/>
+        <location filename="../mainwindow.cpp" line="+1642"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2268,6 +2416,16 @@
     </message>
     <message>
         <location line="+9"/>
+        <source>Dumps</source>
+        <translation>Дампы</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Memory dumps of the machine</source>
+        <translation>Дампы памяти машины</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>Screenshot</source>
         <translation>Снимок экрана</translation>
     </message>
@@ -2293,14 +2451,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-825"/>
-        <location line="+1898"/>
+        <location filename="../mainwindow.cpp" line="-849"/>
+        <location line="+1945"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1585"/>
+        <location filename="../mainwindow.cpp" line="-1628"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -2363,7 +2521,7 @@
         <translation type="vanished">Выбрать компьютер...</translation>
     </message>
     <message>
-        <location line="-327"/>
+        <location line="-339"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
@@ -2378,16 +2536,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-535"/>
+        <location filename="../mainwindow.cpp" line="-539"/>
         <location line="+47"/>
-        <location line="+1504"/>
+        <location line="+1543"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1619"/>
+        <location line="-1658"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2416,13 +2574,13 @@
     <message>
         <location line="-120"/>
         <location line="+76"/>
-        <location line="+1230"/>
+        <location line="+1254"/>
         <location line="+55"/>
         <location line="+79"/>
-        <location line="+206"/>
+        <location line="+221"/>
         <location line="+107"/>
         <location line="+62"/>
-        <location line="+166"/>
+        <location line="+174"/>
         <location line="+25"/>
         <location line="+471"/>
         <location line="+29"/>
@@ -2431,7 +2589,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2522"/>
+        <location line="-2569"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2507,7 +2665,7 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+676"/>
+        <location line="+700"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
@@ -2519,12 +2677,12 @@
     </message>
     <message>
         <location line="-17"/>
-        <location line="+94"/>
+        <location line="+99"/>
         <source>Saved states</source>
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1376"/>
+        <location line="-1405"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -2535,9 +2693,9 @@
         <translation>Тип скриншота</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="+71"/>
+        <location filename="../mainwindow.ui" line="+83"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1865"/>
+        <location filename="../mainwindow.cpp" line="+1912"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -2547,15 +2705,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1843"/>
-        <location line="+1334"/>
-        <location line="+378"/>
+        <location line="-1890"/>
+        <location line="+1373"/>
+        <location line="+386"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1825"/>
+        <location line="-1872"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2591,7 +2749,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1662"/>
+        <location line="+1709"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -2611,8 +2769,8 @@
         <translation>Идет запись видео в </translation>
     </message>
     <message>
-        <location line="-443"/>
-        <location line="+472"/>
+        <location line="-451"/>
+        <location line="+480"/>
         <source>Finishing the video...</source>
         <translation>Видео дописывается...</translation>
     </message>
@@ -2622,20 +2780,20 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1843"/>
+        <location line="-1890"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
     <message>
-        <location line="-486"/>
-        <location line="+596"/>
+        <location line="-478"/>
+        <location line="+588"/>
         <location line="+1"/>
-        <location line="+831"/>
+        <location line="+855"/>
         <source>Turbo</source>
         <translation>Турбо</translation>
     </message>
     <message>
-        <location line="-1042"/>
+        <location line="-1066"/>
         <source>Floppy drive %1</source>
         <translation>Дисковод %1</translation>
     </message>
@@ -2681,7 +2839,7 @@
         <translation>Кинескоп</translation>
     </message>
     <message>
-        <location line="+272"/>
+        <location line="+276"/>
         <source>High precision</source>
         <translation>Высокая точность</translation>
     </message>
@@ -2691,7 +2849,7 @@
         <translation>Картинка строится по ходу луча внутри строки - для программ, которые меняют палитру на ходу</translation>
     </message>
     <message>
-        <location line="+417"/>
+        <location line="+437"/>
         <source>As fast as possible</source>
         <translation>Как можно быстрее</translation>
     </message>
@@ -2722,7 +2880,7 @@
         <translation>Загрузить файл</translation>
     </message>
     <message>
-        <location line="+73"/>
+        <location line="+78"/>
         <location line="+19"/>
         <location line="+2"/>
         <source>Save state</source>
@@ -2739,7 +2897,7 @@
         <translation>Машина не запущена, сохранить ее состояние нельзя.</translation>
     </message>
     <message>
-        <location line="+116"/>
+        <location line="+126"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>
@@ -2774,7 +2932,7 @@
         <translation>Ошибка создания резервной копии. Возможно, файл с расширением *.bak уже существует.</translation>
     </message>
     <message>
-        <location line="+104"/>
+        <location line="+112"/>
         <source>Save screenshot</source>
         <translation>Сохранение скриншота</translation>
     </message>
@@ -2794,7 +2952,7 @@
         <translation>Машина остановилась</translation>
     </message>
     <message>
-        <location line="+305"/>
+        <location line="+307"/>
         <source>Remembered disks</source>
         <translation>Запомненные диски</translation>
     </message>
@@ -2809,12 +2967,17 @@
         <translation>Конфигурация не загружена.</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-219"/>
+        <location filename="../mainwindow.ui" line="-248"/>
         <source>Action recording</source>
         <translation>Запись действий</translation>
     </message>
     <message>
-        <location line="+288"/>
+        <location line="+23"/>
+        <source>Debug</source>
+        <translation>Отладка</translation>
+    </message>
+    <message>
+        <location line="+294"/>
         <source>I/O ports...</source>
         <translation>Порты ввода-вывода...</translation>
     </message>
@@ -2841,7 +3004,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-430"/>
+        <location filename="../mainwindow.cpp" line="-432"/>
         <location line="+243"/>
         <source>Start recording</source>
         <translation>Начать запись</translation>
@@ -2915,12 +3078,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1449"/>
+        <location line="-1486"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1492"/>
+        <location line="+1529"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -3032,7 +3195,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+989"/>
+        <location filename="../emulator/core.cpp" line="+990"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; требует имя файла</translation>
     </message>
@@ -3073,7 +3236,7 @@
         <translation type="vanished">Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+965"/>
+        <location line="+1112"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
@@ -3103,27 +3266,25 @@
         <translation>Диспетчер адресов</translation>
     </message>
     <message>
-        <location line="+248"/>
         <source>Number base: hex or octal</source>
-        <translation>Система счисления: шестнадцатеричная или восьмеричная</translation>
+        <translation type="vanished">Система счисления: шестнадцатеричная или восьмеричная</translation>
     </message>
     <message>
-        <location line="+19"/>
         <source>Show bytes (8) or words (16)</source>
-        <translation>Показывать байты (8) или слова (16)</translation>
+        <translation type="vanished">Показывать байты (8) или слова (16)</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+255"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location line="-61"/>
+        <location line="-23"/>
         <source>Choose an address</source>
         <translation>Выберите адрес</translation>
     </message>
     <message>
-        <location filename="../dialogs/mmwindow.cpp" line="+81"/>
+        <location filename="../dialogs/mmwindow.cpp" line="+57"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -3136,6 +3297,132 @@
         <location line="+17"/>
         <source>No device</source>
         <translation>Нет устройства</translation>
+    </message>
+</context>
+<context>
+    <name>MemoryPanel</name>
+    <message>
+        <location filename="../dialogs/debugger/memoryview.cpp" line="+36"/>
+        <source>nothing</source>
+        <translation>ничего</translation>
+    </message>
+    <message>
+        <location line="+455"/>
+        <source>Address</source>
+        <translation>Адрес</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Go to the address</source>
+        <translation>Перейти к адресу</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Octal or hexadecimal</source>
+        <translation>Восьмеричная или шестнадцатеричная</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Bytes or words</source>
+        <translation>Байты или слова</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Find: values in the notation of the dump, or &quot;text&quot; in the machine&apos;s encoding</source>
+        <translation>Поиск: значения в системе счисления дампа или &quot;текст&quot; в кодировке машины</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+76"/>
+        <location line="+10"/>
+        <location line="+8"/>
+        <source>Find</source>
+        <translation>Поиск</translation>
+    </message>
+    <message>
+        <location line="-88"/>
+        <source>Find next</source>
+        <translation>Найти далее</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Load a file at the cursor</source>
+        <translation>Загрузить файл с адреса курсора</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Save to a file</source>
+        <translation>Сохранить в файл</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Word</source>
+        <translation>Слово</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Byte</source>
+        <translation>Байт</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <location line="+44"/>
+        <location line="+26"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location line="-70"/>
+        <source>Incorrect address value</source>
+        <translation>Адрес введен некорректно</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>The machine has no character &apos;%1&apos;</source>
+        <translation>У машины нет символа &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Incorrect value: %1</source>
+        <translation>Неверное значение: %1</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Not found</source>
+        <translation>Не найдено</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Load into memory</source>
+        <translation>Загрузить в память</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Cannot read the file</source>
+        <translation>Не удалось прочитать файл</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Save memory</source>
+        <translation>Сохранить память</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Binary files (*.bin);;All files (*.*)</source>
+        <translation>Двоичные файлы (*.bin);;Все файлы (*.*)</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Cannot write the file</source>
+        <translation>Не удалось записать файл</translation>
+    </message>
+</context>
+<context>
+    <name>MemoryTabs</name>
+    <message>
+        <location line="+33"/>
+        <source>Another device</source>
+        <translation>Другое устройство</translation>
     </message>
 </context>
 <context>
@@ -3286,7 +3573,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-728"/>
+        <location filename="../emulator/core.cpp" line="-875"/>
         <source>Incorrect access mode</source>
         <translation>Некорректный режим доступа</translation>
     </message>
@@ -3523,7 +3810,7 @@
 <context>
     <name>SerialWindow</name>
     <message>
-        <location filename="../dialogs/serialwindow.cpp" line="+40"/>
+        <location filename="../dialogs/serialwindow.cpp" line="+45"/>
         <source>KOI-7 N0/N1 (SO/SI)</source>
         <translation>КОИ-7 Н0/Н1 (SO/SI)</translation>
     </message>
@@ -3583,13 +3870,13 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+211"/>
+        <location line="+213"/>
         <location line="+61"/>
         <source>I/O ports</source>
         <translation>Порты ввода-вывода</translation>
     </message>
     <message>
-        <location line="-263"/>
+        <location line="-265"/>
         <source>Choose folder...</source>
         <translation>Выбрать папку...</translation>
     </message>
@@ -3654,7 +3941,7 @@
         <translation>Настройки</translation>
     </message>
     <message>
-        <location line="+115"/>
+        <location line="+117"/>
         <source>Cannot create file %1</source>
         <translation>Не удалось создать файл %1</translation>
     </message>
@@ -3664,7 +3951,7 @@
         <translation>Идет запись в файл (%1). Закрыть окно и остановить запись?</translation>
     </message>
     <message>
-        <location line="+101"/>
+        <location line="+140"/>
         <source>Folder for logs</source>
         <translation>Папка для логов</translation>
     </message>
@@ -3683,6 +3970,14 @@
         <location filename="../emulator/devices/common/speaker.cpp" line="+75"/>
         <source>Unknown speaker type</source>
         <translation>Неизвестный тип устройства Speaker</translation>
+    </message>
+</context>
+<context>
+    <name>StackView</name>
+    <message>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="-127"/>
+        <source>The processor has no stack</source>
+        <translation>У процессора нет стека</translation>
     </message>
 </context>
 <context>

@@ -69,6 +69,8 @@ public:
     std::vector<std::pair<std::string, std::string>> get_registers() override;
     std::vector<std::pair<std::string, std::string>> get_flags() override;
     void set_context_value(const std::string &name, unsigned int value) override;
+    bool set_flag(const std::string &name, bool value) override;
+    unsigned int register_radix() const override { return 8; }
     DisAsm * create_disasm(const std::string &data_path, emulator::Result &res) override;
 
     void save_state(StateWriter &w) override;

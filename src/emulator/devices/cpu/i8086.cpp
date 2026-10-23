@@ -94,9 +94,6 @@ i8086::i8086(InterfaceManager *im, EmulatorConfigDevice *cd, int family):
 {
     core = new I8086Core(this, family);
 
-    over_commands.push_back(0xE8);  //CALL
-    over_commands.push_back(0x9A);  //CALL far
-    over_commands.push_back(0xCD);  //INT
 }
 
 i8086::~i8086()
@@ -183,19 +180,11 @@ unsigned int i8086::execute()
         return held;
     }
 
+    if (m_debug != DEBUG_OFF) debug_before();
     m_history[m_history_pos++ & (HISTORY_SIZE - 1)] = core->get_pc();
     unsigned int cycles = core->execute();
 
-    switch (m_debug) {
-    case DEBUG_STEP:
-        m_debug = DEBUG_STOPPED;
-        break;
-    case DEBUG_BRAKES:
-        if (check_breakpoint(get_pc())) m_debug = DEBUG_STOPPED;
-        break;
-    default:
-        break;
-    }
+    if (m_debug != DEBUG_OFF) debug_after();
 
     return cycles;
 }
@@ -436,4 +425,42 @@ ComputerDevice * create_i8086(InterfaceManager *im, EmulatorConfigDevice *cd)
 ComputerDevice * create_i8088(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new i8086(im, cd, I8086_FAMILY_8088);
+}
+
+bool i8086::set_flag(const std::string &name, bool value)
+{
+    static const char * flags[] = {"C", "P", "A", "Z", "S", "T", "I", "D", "O"};
+    for (unsigned int i = 0; i < 9; i++)
+        if (name == flags[i]) {
+            set_context_value(name, value ? 1 : 0);
+            return true;
+        }
+    return false;
+}
+
+bool i8086::get_sp(unsigned int &sp)
+{
+    sp = core->get_context()->r[SP];
+    return true;
+}
+
+//SS:SP, the offset wrapping inside the segment
+bool i8086::stack_address(int i, unsigned int &address)
+{
+    i8086context * c = core->get_context();
+    address = (((unsigned int)c->s[SS] << 4) + ((c->r[SP] + 2 * i) & 0xFFFF)) & 0xFFFFF;
+    return true;
+}
+
+bool i8086::waiting()
+{
+    return core->get_context()->halted;
+}
+
+std::vector<unsigned int> i8086::get_history()
+{
+    std::vector<unsigned int> r;
+    for (unsigned int i = HISTORY_SIZE; i > 0; i--)
+        r.push_back(m_history[(m_history_pos - i) & (HISTORY_SIZE - 1)]);
+    return r;
 }

@@ -95,9 +95,26 @@ std::string DisAsmPDP11::format_operand(unsigned int spec, CommandBytes bytes,
     }
 }
 
-unsigned int DisAsmPDP11::disassemle(CommandBytes bytes, unsigned int PC, unsigned int max_len, std::string * output)
+// The address a JMP or a JSR goes to, when the operand names it: relative to
+// PC (mode 67) or absolute (37). The others go through a register or a cell
+static bool operand_target(unsigned int spec, CommandBytes bytes, unsigned int PC,
+                           unsigned int first, unsigned int index, unsigned int &target)
 {
-    if (max_len < 2) { *output = "?"; return 2; }
+    if ((spec & 7) != 7 || index == first) return false;
+    const uint16_t x = word_at(bytes, first);
+    switch ((spec >> 3) & 7) {
+    case 3: target = x; return true;
+    case 6: target = (PC + 2 * index + x) & 0xFFFF; return true;
+    default: return false;
+    }
+}
+
+unsigned int DisAsmPDP11::decode(CommandBytes bytes, unsigned int PC, unsigned int max_len, DisasmLine * out)
+{
+    *out = DisasmLine();
+    if (max_len < 2) { out->text = "?"; out->length = 2; return 2; }
+    std::string * output = &out->text;
+    bool valid = true;
 
     uint16_t cmd = word_at(bytes, 0);
     unsigned int index = 1;                             // next unread word
@@ -119,24 +136,37 @@ unsigned int DisAsmPDP11::disassemle(CommandBytes bytes, unsigned int PC, unsign
         mnemonic = BRANCH_LO[(cmd >> 8) & 7];
         int8_t offset = (int8_t)(cmd & 0xFF);
         operands = oct6(PC + 2 + offset * 2);
+        out->flow = FLOW_JUMP;
+        out->conditional = (cmd & 0177400) != 0000400;
+        out->has_target = true;
+        out->target = (PC + 2 + offset * 2) & 0xFFFF;
     }
     else if ((cmd & 0177400) >= 0100000 && (cmd & 0177400) <= 0103400) {
         mnemonic = BRANCH_HI[(cmd >> 8) & 7];
         int8_t offset = (int8_t)(cmd & 0xFF);
         operands = oct6(PC + 2 + offset * 2);
+        out->flow = FLOW_JUMP;
+        out->conditional = true;
+        out->has_target = true;
+        out->target = (PC + 2 + offset * 2) & 0xFFFF;
     }
     else if ((cmd & 0177400) == 0104000) {
         mnemonic = "EMT";
         operands = oct_str(cmd & 0377, 3);
+        out->flow = FLOW_CALL;
     }
     else if ((cmd & 0177400) == 0104400) {
         mnemonic = "TRAP";
         operands = oct_str(cmd & 0377, 3);
+        out->flow = FLOW_CALL;
     }
     else if ((cmd & 0177000) == 0004000) {
         mnemonic = "JSR";
+        const unsigned int first = index;
         operands = std::string(REG_NAMES[(cmd >> 6) & 7]) + ", "
                  + format_operand(cmd & 077, bytes, PC, index);
+        out->flow = FLOW_CALL;
+        out->has_target = operand_target(cmd & 077, bytes, PC, first, index, out->target);
     }
     else if ((cmd & 0177000) == 0074000) {
         mnemonic = "XOR";
@@ -147,12 +177,17 @@ unsigned int DisAsmPDP11::disassemle(CommandBytes bytes, unsigned int PC, unsign
         mnemonic = "SOB";
         operands = std::string(REG_NAMES[(cmd >> 6) & 7]) + ", "
                  + oct6(PC + 2 - (cmd & 077) * 2);
+        out->flow = FLOW_JUMP;
+        out->conditional = true;
+        out->has_target = true;
+        out->target = (PC + 2 - (cmd & 077) * 2) & 0xFFFF;
     }
     else if ((cmd & 0174000) == 0070000) {
         static const char * EIS[4] = {"MUL", "DIV", "ASH", "ASHC"};
         if (!has_eis) {
             mnemonic = ".WORD";
             operands = oct6(cmd);
+            valid = false;
         } else {
             mnemonic = EIS[(cmd >> 9) & 3];
             operands = format_operand(cmd & 077, bytes, PC, index) + ", "
@@ -161,7 +196,12 @@ unsigned int DisAsmPDP11::disassemle(CommandBytes bytes, unsigned int PC, unsign
     }
     else if ((cmd & 0177700) == 0000100) {
         mnemonic = "JMP";
+        const unsigned int first = index;
         operands = format_operand(cmd & 077, bytes, PC, index);
+        out->flow = FLOW_JUMP;
+        out->has_target = operand_target(cmd & 077, bytes, PC, first, index, out->target);
+        // JMP to a register is an illegal instruction
+        valid = ((cmd >> 3) & 7) != 0;
     }
     else if ((cmd & 0177700) == 0000300) {
         mnemonic = "SWAB";
@@ -170,6 +210,7 @@ unsigned int DisAsmPDP11::disassemle(CommandBytes bytes, unsigned int PC, unsign
     else if ((cmd & 0177770) == 0000200) {
         mnemonic = "RTS";
         operands = REG_NAMES[cmd & 7];
+        out->flow = FLOW_RET;
     }
     else if ((cmd & 0177740) == 0000240) {
         if ((cmd & 037) == 0) mnemonic = "NOP";
@@ -215,13 +256,17 @@ unsigned int DisAsmPDP11::disassemle(CommandBytes bytes, unsigned int PC, unsign
                 console_name = (cmd < 014) ? "START" : "STEP";  // the ВМ1 description's names
         }
 
-        if (cmd <= 6)
+        if (cmd <= 6) {
             mnemonic = NO_OPERAND[cmd];
+            if (cmd == 2 || cmd == 6) out->flow = FLOW_RET;           // RTI, RTT
+            else if (cmd == 3 || cmd == 4) out->flow = FLOW_CALL;     // BPT, IOT
+        }
         else if (console_name != nullptr)
             mnemonic = console_name;
         else {
             mnemonic = ".WORD";
             operands = oct6(cmd);
+            valid = false;
         }
     }
 
@@ -229,6 +274,8 @@ unsigned int DisAsmPDP11::disassemle(CommandBytes bytes, unsigned int PC, unsign
     else *output = mnemonic + " " + operands;
 
     unsigned int length = index * 2;
-    if (length > max_len) length = max_len;
+    if (length > max_len) { length = max_len; valid = false; }
+    out->length = length;
+    out->valid = valid;
     return length;
 }

@@ -53,9 +53,9 @@
 #include "dialogs/ui_aboutdlg.h"
 #include "emulator/debug.h"
 #include "emulator/files.h"
-#include "dialogs/dumpwindow.h"
 #include "dialogs/mmwindow.h"
-#include "dialogs/debugwindow.h"
+#include "dialogs/debugger/debuggerwindow.h"
+#include "dialogs/debugger/memorywindow.h"
 #include "dialogs/portwindow.h"
 #include "dialogs/openconfigwindow.h"
 #include "emulator/devices/common/fdd.h"
@@ -221,7 +221,15 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, i
     cpu_button->setFocusPolicy(Qt::NoFocus);
     cpu_layout->addWidget(cpu_button);
 
-    //Turbo, right of the processor button: the speed chosen in the menu while
+    //The debugger, between the processor button and turbo
+    QToolButton * debugger_button = new QToolButton(cpu_holder);
+    debugger_button->setDefaultAction(ui->actionDebugger);
+    debugger_button->setIconSize(ui->toolBar->iconSize());
+    debugger_button->setAutoRaise(true);
+    debugger_button->setFocusPolicy(Qt::NoFocus);
+    cpu_layout->addWidget(debugger_button);
+
+    //Turbo, right of the debugger button: the speed chosen in the menu while
     //pressed, 1x while released
     QIcon turbo_icon;
     turbo_icon.addFile(":/icons/turbo_off", QSize(), QIcon::Normal, QIcon::Off);
@@ -250,7 +258,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, i
     ui->toolBar->removeAction(ui->actionCPUState);
 
     //The recording controls sit at the far end of the tool bar, after a
-    //stretch. UpdateToolbar() inserts everything before actionDebugger, so a
+    //stretch. UpdateToolbar() inserts everything before actionSaveState, so a
     //machine change never touches them. They are tool buttons of their own
     //rather than plain actions, so that they can be drawn smaller than the
     //rest of the bar; each follows its action (icon, text, enabled state)
@@ -345,21 +353,13 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, i
 
     DWM = new DebugWindowsManager();
 
-    DWM->register_debug_window("rom", &CreateDumpWindow);
-    DWM->register_debug_window("ram", &CreateDumpWindow);
+    //A processor of any type opens the debugger (open_debugger_for()), any
+    //other device with an address space the dump (CreateMemoryWindow())
     DWM->register_debug_window("memory-mapper", &CreateMMWindow);
-    DWM->register_debug_window("i8080", &CreateDebugWindow);
     DWM->register_debug_window("port", &CreatePortWindow);
     DWM->register_debug_window("port-address", &CreatePortWindow);
     DWM->register_debug_window("i8255", &CreateI8255Window);
-    DWM->register_debug_window("z80", &CreateDebugWindow);
-    DWM->register_debug_window("6502", &CreateDebugWindow);
-    DWM->register_debug_window("65c02", &CreateDebugWindow);
-    DWM->register_debug_window("1801vm1", &CreateDebugWindow);
-    DWM->register_debug_window("1801vm2", &CreateDebugWindow);
-    DWM->register_debug_window("1801vm3", &CreateDebugWindow);
     DWM->register_debug_window("taperecorder", &CreateTapeWindow);
-    DWM->register_debug_window("ram-address", &CreateDumpWindow);
     DWM->register_debug_window("register", &CreatePortWindow);
 
     #ifdef RENDERER_SDL2
@@ -616,7 +616,7 @@ void MainWindow::CreateFDDMenu(unsigned int n)
 
     connect(fdd_button[n], &QToolButton::clicked, this, [this, n](){fdd_open(n);});
 
-    ui->toolBar->insertWidget(ui->actionDebugger, fdd_button[n] );
+    ui->toolBar->insertWidget(ui->actionSaveState, fdd_button[n] );
 }
 
 //Кнопка винчестера. В отличие от дисковода образ никуда не сохраняют: машина
@@ -658,7 +658,7 @@ void MainWindow::CreateHDDMenu(unsigned int n)
 
     connect(hdd_button[n], &QToolButton::clicked, this, [this, n](){hdd_open(n);});
 
-    ui->toolBar->insertWidget(ui->actionDebugger, hdd_button[n]);
+    ui->toolBar->insertWidget(ui->actionSaveState, hdd_button[n]);
 }
 
 MainWindow::~MainWindow()
@@ -1006,8 +1006,12 @@ void MainWindow::CreateDevicesMenu()
                             QString::fromStdString(e->dm->get_device(i)->device_name + " : " + e->dm->get_device(i)->device_type),
                             [this, i]{onDeviceMenuCalled(i);}
                       );
+        ComputerDevice * dev = e->dm->get_device(i)->device.get();
+        AddressableDevice * ad = dynamic_cast<AddressableDevice*>(dev);
         a->setEnabled( DWM->get_create_func(e->dm->get_device(i)->device_type) != nullptr
-                       || dynamic_cast<ByteTap*>(e->dm->get_device(i)->device.get()) != nullptr );
+                       || dynamic_cast<ByteTap*>(dev) != nullptr
+                       || dynamic_cast<CPU*>(dev) != nullptr
+                       || (ad != nullptr && ad->get_size() > 0) );
     };
 
     ui->actionSerial->setVisible(SerialWindow::machine_has_ports(e));
@@ -1093,6 +1097,7 @@ void MainWindow::UpdateToolbar()
     }
 
     std::vector<ComputerDevice*>tape_devices = e->dm->find_devices_by_class("tape");
+    ui->actionTape->setVisible(!tape_devices.empty());
     if (tape_devices.size() != 0) {
         buttons_added++;
         QToolButton * tape_button = new QToolButton();
@@ -1100,7 +1105,7 @@ void MainWindow::UpdateToolbar()
         tape_button->setFocusPolicy(Qt::NoFocus);
 
         connect(tape_button, &QToolButton::clicked, this, &MainWindow::on_actionTape_triggered);
-        tape_action = ui->toolBar->insertWidget(ui->actionDebugger, tape_button);
+        tape_action = ui->toolBar->insertWidget(ui->actionSaveState, tape_button);
     }
 
 #ifdef HAVE_QT_SVG
@@ -1116,7 +1121,7 @@ void MainWindow::UpdateToolbar()
         keyboard_button->setFocusPolicy(Qt::NoFocus);
 
         connect(keyboard_button, &QToolButton::clicked, this, &MainWindow::on_actionKeyboard_triggered);
-        keyboard_action = ui->toolBar->insertWidget(ui->actionDebugger, keyboard_button);
+        keyboard_action = ui->toolBar->insertWidget(ui->actionSaveState, keyboard_button);
     }
 #else
     ui->actionKeyboard->setVisible(false);
@@ -1136,7 +1141,7 @@ void MainWindow::UpdateToolbar()
             const DeviceOption & opt = options[j];
             if ((opt.type == DEVICE_OPTION_DROPDOWN || opt.type == DEVICE_OPTION_TOGGLE) && !opt.values.empty()) {
                 if (has_hw_buttons && !options_separator_added) {
-                    QAction * sep = ui->toolBar->insertSeparator(ui->actionDebugger);
+                    QAction * sep = ui->toolBar->insertSeparator(ui->actionSaveState);
                     option_toolbar_actions.append(sep);
                     options_separator_added = true;
                 }
@@ -1158,7 +1163,7 @@ void MainWindow::UpdateToolbar()
                 icon.addPixmap(QPixmap(icon_path), QIcon::Disabled);
                 QAction * icon_action = new QAction(icon, "", this);
                 icon_action->setToolTip(option_tooltip);
-                ui->toolBar->insertAction(ui->actionDebugger, icon_action);
+                ui->toolBar->insertAction(ui->actionSaveState, icon_action);
                 option_toolbar_actions.append(icon_action);
 
                 unsigned option_id = opt.id;
@@ -1222,7 +1227,7 @@ void MainWindow::UpdateToolbar()
                     });
                 }
 
-                QAction * action = ui->toolBar->insertWidget(ui->actionDebugger, combo);
+                QAction * action = ui->toolBar->insertWidget(ui->actionSaveState, combo);
                 option_toolbar_actions.append(action);
 
                 OptionCombo oc;
@@ -1236,7 +1241,7 @@ void MainWindow::UpdateToolbar()
     }
 
     if (buttons_added > 0) {
-        buttons_separator = ui->toolBar->insertSeparator(ui->actionDebugger);
+        buttons_separator = ui->toolBar->insertSeparator(ui->actionSaveState);
     }
 
     update_precise_action();
@@ -1279,7 +1284,13 @@ void MainWindow::onDeviceMenuCalled(unsigned int i)
         return;
     }
 
+    if (CPU * cpu = dynamic_cast<CPU*>(dev)) {
+        open_debugger_for(cpu);
+        return;
+    }
+
     DebugWndCreateFunc * f = DWM->get_create_func(e->dm->get_device(i)->device_type);
+    if (f == nullptr && dynamic_cast<AddressableDevice*>(dev) != nullptr) f = &CreateMemoryWindow;
     if (f != nullptr)
     {
         GenericDbgWnd * w = f(this, e, e->dm->get_device(i)->device.get());
@@ -1597,6 +1608,19 @@ void MainWindow::on_actionCPUState_triggered()
     //two-processor machine leaving one of them running would freeze the other
     //at the first channel handshake anyway. The master decides which way the
     //button goes, and all of them follow it
+    //With the debugger open the button is its pause: the processors keep
+    //their modes and their breakpoints
+    if (e->debug_attached()) {
+        const bool paused = e->debug_paused();
+        Emulator * em = e;
+        e->invoke([em, paused]() {
+            if (paused) em->debug_run(true);
+            else em->debug_pause();
+        });
+        update_cpu_state_action();
+        return;
+    }
+
     const bool run = (cpus[0]->m_debug == DEBUG_STOPPED);
     e->invoke([&]() {
         for (size_t i = 0; i < cpus.size(); i++)
@@ -1617,7 +1641,8 @@ void MainWindow::update_cpu_state_action()
 
     //Anything but DEBUG_STOPPED is a running processor, DEBUG_BRAKES and
     //DEBUG_STEP included, so the button offers to stop it
-    const int state = ((cpu != nullptr) && (cpu->m_debug == DEBUG_STOPPED))? DEBUG_STOPPED : DEBUG_OFF;
+    const bool paused = (cpu != nullptr) && (cpu->m_debug == DEBUG_STOPPED || e->debug_paused());
+    const int state = paused ? DEBUG_STOPPED : DEBUG_OFF;
     if (state == cpu_state_shown) return;
     cpu_state_shown = state;
 
@@ -1914,24 +1939,29 @@ void MainWindow::on_actionOpen_triggered()
     }
 }
 
+//One debugger for the whole machine: a second request brings it up with the
+//processor's tab in front
 void MainWindow::open_debugger_for(CPU * cpu)
 {
     if (cpu == nullptr) return;
-    DebugWndCreateFunc * f = DWM->get_create_func(cpu->type);
-    if (f != nullptr)
-    {
-            GenericDbgWnd * w = f(this, e, cpu);
-            w->setAttribute(Qt::WA_DeleteOnClose);
-            remember_geometry(w, QString::fromStdString(cpu->name));
-            DWM->add_window(w);
-            connect(w, &GenericDbgWnd::data_changed, [this](GenericDbgWnd * src) {
-                DWM->data_changed(src);
-            });
-            connect(w, &QObject::destroyed, [this, w]() {
-                DWM->remove_window(w);
-            });
-            w->show();
-    }
+    for (DebuggerWindow * d : findChildren<DebuggerWindow*>())
+        if (d->isVisible()) {
+            d->select_cpu(cpu);
+            d->raise();
+            d->activateWindow();
+            return;
+        }
+    GenericDbgWnd * w = CreateDebuggerWindow(this, e, cpu);
+    w->setAttribute(Qt::WA_DeleteOnClose);
+    remember_geometry(w, "");
+    DWM->add_window(w);
+    connect(w, &GenericDbgWnd::data_changed, [this](GenericDbgWnd * src) {
+        DWM->data_changed(src);
+    });
+    connect(w, &QObject::destroyed, [this, w]() {
+        DWM->remove_window(w);
+    });
+    w->show();
 }
 
 void MainWindow::remember_geometry(QDialog * w, const QString & key)
@@ -1998,21 +2028,31 @@ void MainWindow::on_actionDebugger_triggered()
     const std::vector<CPU*> &cpus = e->dm->get_cpus();
     if (cpus.empty()) return;
 
-    //One processor: straight to its window, as it always was. Several: a menu
-    //to pick one, since each has its own address space and its own breakpoints.
-    //The window titles itself after the device, so the two are told apart
-    if (cpus.size() == 1) {
-        open_debugger_for(cpus[0]);
-        return;
-    }
+    //Every processor has its tab in the one window; the master's comes first
+    open_debugger_for(cpus[0]);
+}
 
-    QMenu menu(this);
-    for (size_t i = 0; i < cpus.size(); i++) {
-        QAction * a = menu.addAction(QString::fromStdString(cpus[i]->name + " : " + cpus[i]->type));
-        CPU * c = cpus[i];
-        connect(a, &QAction::triggered, [this, c]() { open_debugger_for(c); });
-    }
-    menu.exec(QCursor::pos());
+//One window of dumps for the machine, brought up again when it is open
+void MainWindow::on_actionDumps_triggered()
+{
+    if (!e->loaded) return;
+    for (DumpsWindow * d : findChildren<DumpsWindow*>())
+        if (d->isVisible()) {
+            d->raise();
+            d->activateWindow();
+            return;
+        }
+    GenericDbgWnd * w = new DumpsWindow(this, e);
+    w->setAttribute(Qt::WA_DeleteOnClose);
+    remember_geometry(w, "");
+    DWM->add_window(w);
+    connect(w, &GenericDbgWnd::data_changed, [this](GenericDbgWnd * src) {
+        DWM->data_changed(src);
+    });
+    connect(w, &QObject::destroyed, [this, w]() {
+        DWM->remove_window(w);
+    });
+    w->show();
 }
 
 void MainWindow::closeEvent (QCloseEvent *event)

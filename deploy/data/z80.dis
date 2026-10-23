@@ -14,7 +14,7 @@
 0D	DEC C	1		
 0E n	LD C,$n	2		
 0F	RRCA	1		
-10 e	DJNZ (PC+$e)	2		
+10 e	DJNZ (PC+$e)	2	JC	
 11 n n	LD DE,$nn	3		
 12	LD (DE),A	1		
 13	INC DE	1		
@@ -22,7 +22,7 @@
 15	DEC D	1		
 16 n	LD D,$n	2		
 17	RLA	1		
-18 e	JR (PC+$e)	2		
+18 e	JR (PC+$e)	2	J	
 19	ADD HL,DE	1		
 1A	LD A,(DE)	1		
 1B	DEC DE	1		
@@ -30,7 +30,7 @@
 1D	DEC E	1		
 1E n	LD E,$n	2		
 1F	RRA	1		
-20 e	JR NZ,(PC+$e)	2		
+20 e	JR NZ,(PC+$e)	2	JC	
 21 n n	LD HL,$nn	3		
 22 n n	LD ($nn),HL	3		
 23	INC HL	1		
@@ -38,7 +38,7 @@
 25	DEC H	1		
 26 n	LD H,$n	2		
 27	DAA	1		
-28 e	JR Z,(PC+$e)	2		
+28 e	JR Z,(PC+$e)	2	JC	
 29	ADD HL,HL	1		
 2A n n	LD HL,($nn)	3		
 2B	DEC HL	1		
@@ -46,7 +46,7 @@
 2D	DEC L	1		
 2E n	LD L,$n	2		
 2F	CPL	1		
-30 e	JR NC,(PC+$e)	2		
+30 e	JR NC,(PC+$e)	2	JC	
 31 n n	LD SP,$nn	3		
 32 n n	LD ($nn),A	3		
 33	INC SP	1		
@@ -54,7 +54,7 @@
 35	DEC (HL)	1		
 36 n	LD (HL),$n	2		
 37	SCF	1		
-38 e	JR C,(PC+$e)	2		
+38 e	JR C,(PC+$e)	2	JC	
 39	ADD HL,SP	1		
 3A n n	LD A,($nn)	3		
 3B	DEC SP	1		
@@ -190,17 +190,17 @@ BC	CP H	1
 BD	CP L	1		
 BE	CP (HL)	1		
 BF	CP A	1		
-C0	RET NZ	1		
+C0	RET NZ	1	RC	
 C1	POP BC	1		
-C2 n n	JP NZ,($nn)	3		
-C3 n n	JP ($nn)	3		
-C4 n n	CALL NZ,($nn)	3		
+C2 n n	JP NZ,($nn)	3	JC	
+C3 n n	JP ($nn)	3	J	
+C4 n n	CALL NZ,($nn)	3	CC	
 C5	PUSH BC	1		
 C6 n	ADD A,$n	2		
-C7	RST 0H	1		
-C8	RET Z	1		
-C9	RET	1		
-CA n n	JP Z,($nn)	3		
+C7	RST 0H	1	C@0000	
+C8	RET Z	1	RC	
+C9	RET	1	R	
+CA n n	JP Z,($nn)	3	JC	
 CB 00	RLC B	2		
 CB 01	RLC C	2		
 CB 02	RLC D	2		
@@ -457,23 +457,23 @@ CB FC	SET 7,H	2
 CB FD	SET 7,L	2		
 CB FE	SET 7,(HL)	2		
 CB FF	SET 7,A	2		
-CC n n	CALL Z,($nn)	3		
-CD n n	CALL ($nn)	3		
+CC n n	CALL Z,($nn)	3	CC	
+CD n n	CALL ($nn)	3	C	
 CE n	ADC A,$n	2		
-CF	RST 8H	1		
-D0	RET NC	1		
+CF	RST 8H	1	C@0008	
+D0	RET NC	1	RC	
 D1	POP DE	1		
-D2 n n	JP NC,($nn)	3		
+D2 n n	JP NC,($nn)	3	JC	
 D3 n	OUT ($n),A	2		
-D4 n n	CALL NC,($nn)	3		
+D4 n n	CALL NC,($nn)	3	CC	
 D5	PUSH DE	1		
 D6 n	SUB $n	2		
-D7	RST 10H	1		
-D8	RET C	1		
+D7	RST 10H	1	C@0010	
+D8	RET C	1	RC	
 D9	EXX	1		
-DA n n	JP C,($nn)	3		
+DA n n	JP C,($nn)	3	JC	
 DB n	IN A,($n)	2		
-DC n n	CALL C,($nn)	3		
+DC n n	CALL C,($nn)	3	CC	
 DD 09	ADD IX,BC	2		
 DD 19	ADD IX,DE	2		
 DD 21 n n	LD IX,$nn	4		
@@ -813,30 +813,30 @@ DD CB d FF	LD A,SET 7,(IX+$d)*	4
 DD E1	POP IX	2		
 DD E3	EX (SP),IX	2		
 DD E5	PUSH IX	2		
-DD E9	JP (IX)	2		
+DD E9	JP (IX)	2	JI	
 DD F9	LD SP,IX	2		
 DD	DD*	1		";пустой префикс"
 DE n	SBC A,$n	2		
-DF	RST 18H	1		
-E0	RET PO	1		
+DF	RST 18H	1	C@0018	
+E0	RET PO	1	RC	
 E1	POP HL	1		
-E2 n n	JP PO,($nn)	3		
+E2 n n	JP PO,($nn)	3	JC	
 E3	EX (SP),HL	1		
-E4 n n	CALL PO,($nn)	3		
+E4 n n	CALL PO,($nn)	3	CC	
 E5	PUSH HL	1		
 E6 n	AND $n	2		
-E7	RST 20H	1		
-E8	RET PE	1		
-E9	JP (HL)	1		
-EA n n	JP PE,($nn)	3		
+E7	RST 20H	1	C@0020	
+E8	RET PE	1	RC	
+E9	JP (HL)	1	JI	
+EA n n	JP PE,($nn)	3	JC	
 EB	EX DE,HL	1		
-EC n n	CALL PE,($nn)	3		
+EC n n	CALL PE,($nn)	3	CC	
 ED 40	IN B,(C)	2		
 ED 41	OUT (C),B	2		
 ED 42	SBC HL,BC	2		
 ED 43 n n	LD ($nn),BC	4		
 ED 44	NEG	2		
-ED 45	RETN	2		
+ED 45	RETN	2	R	
 ED 46	IM 0	2		
 ED 47	LD I,A	2		
 ED 48	IN C,(C)	2		
@@ -844,7 +844,7 @@ ED 49	OUT (C),C	2
 ED 4A	ADC HL,BC	2		
 ED 4B n n	LD BC,($nn)	4		
 ED 4C	NEG*	2		
-ED 4D	RETI	2		
+ED 4D	RETI	2	R	
 ED 4E	IM 0/1*	2		
 ED 4F	LD R,A	2		
 ED 50	IN D,(C)	2		
@@ -852,7 +852,7 @@ ED 51	OUT (C),D	2
 ED 52	SBC HL,DE	2		
 ED 53 n n	LD ($nn),DE	4		
 ED 54	NEG*	2		
-ED 55	RETN*	2		
+ED 55	RETN*	2	R	
 ED 56	IM 1	2		
 ED 57	LD A,I	2		
 ED 58	IN E,(C)	2		
@@ -860,7 +860,7 @@ ED 59	OUT (C),E	2
 ED 5A	ADC HL,DE	2		
 ED 5B n n	LD DE,($nn)	4		
 ED 5C	NEG*	2		
-ED 5D	RETN*	2		
+ED 5D	RETN*	2	R	
 ED 5E	IM 2	2		
 ED 5F	LD A,R	2		
 ED 60	IN H,(C)	2		
@@ -868,7 +868,7 @@ ED 61	OUT (C),H	2
 ED 62	SBC HL,HL	2		
 ED 63 n n	LD ($nn),HL	4		
 ED 64	NEG*	2		
-ED 65	RETN*	2		
+ED 65	RETN*	2	R	
 ED 66	IM 0*	2		
 ED 67	RRD	2		
 ED 68	IN L,(C)	2		
@@ -876,7 +876,7 @@ ED 69	OUT (C),L	2
 ED 6A	ADC HL,HL	2		
 ED 6B n n	LD HL,($nn)	4		
 ED 6C	NEG*	2		
-ED 6D	RETN*	2		
+ED 6D	RETN*	2	R	
 ED 6E	IM 0/1*	2		
 ED 6F	RLD	2		
 ED 70	IN F,(C)* / IN (C)*	2		
@@ -884,14 +884,14 @@ ED 71	OUT (C),0*	2
 ED 72	SBC HL,SP	2		
 ED 73 n n	LD ($nn),SP	4		
 ED 74	NEG*	2		
-ED 75	RETN*	2		
+ED 75	RETN*	2	R	
 ED 76	IM 1*	2		
 ED 78	IN A,(C)	2		
 ED 79	OUT (C),A	2		
 ED 7A	ADC HL,SP	2		
 ED 7B n n	LD SP,($nn)	4		
 ED 7C	NEG*	2		
-ED 7D	RETN*	2		
+ED 7D	RETN*	2	R	
 ED 7E	IM 2*	2		
 ED A0	LDI	2		
 ED A1	CPI	2		
@@ -911,20 +911,20 @@ ED BA	INDR	2
 ED BB	OTDR	2		
 ED n	NONI*	2		";NOP/NONI"
 EE n	XOR $n	2		
-EF	RST 28H	1		
-F0	RET P	1		
+EF	RST 28H	1	C@0028	
+F0	RET P	1	RC	
 F1	POP AF	1		
-F2 n n	JP P,($nn)	3		
+F2 n n	JP P,($nn)	3	JC	
 F3	DI	1		
-F4 n n	CALL P,($nn)	3		
+F4 n n	CALL P,($nn)	3	CC	
 F5	PUSH AF	1		
 F6 n	OR $n	2		
-F7	RST 30H	1		
-F8	RET M	1		
+F7	RST 30H	1	C@0030	
+F8	RET M	1	RC	
 F9	LD SP,HL	1		
-FA n n	JP M,($nn)	3		
+FA n n	JP M,($nn)	3	JC	
 FB	EI	1		
-FC n n	CALL M,($nn)	3		
+FC n n	CALL M,($nn)	3	CC	
 FD 09	ADD IY,BC	2		
 FD 19	ADD IY,DE	2		
 FD 21 n n	LD IY,$nn	4		
@@ -1264,8 +1264,8 @@ FD CB d FF	LD A,SET 7,(IY+$d)*	4
 FD E1	POP IY	2		
 FD E3	EX (SP),IY	2		
 FD E5	PUSH IY	2		
-FD E9	JP (IY)	2		
+FD E9	JP (IY)	2	JI	
 FD F9	LD SP,IY	2		
 FD	FD*	1		";пустой префикс"
 FE n	CP $n	2		
-FF	RST 38H	1		
+FF	RST 38H	1	C@0038	

@@ -76,6 +76,11 @@ public:
     DisAsm * create_disasm(const std::string &data_path, emulator::Result &res) override;
 
     void set_context_value(const std::string &name, unsigned int value) override;
+    bool set_flag(const std::string &name, bool value) override;
+    bool get_sp(unsigned int &sp) override;
+    bool stack_address(int i, unsigned int &address) override;
+    bool waiting() override;
+    std::vector<unsigned int> get_history() override;
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;
     void state_restored() override;

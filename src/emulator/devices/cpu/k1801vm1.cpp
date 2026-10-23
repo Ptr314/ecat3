@@ -116,11 +116,6 @@ k1801vm1::k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd, int family_ty
 {
     core = new K1801VM1Core(this, family_type);
     m_family = family_type;
-
-    // JSR, EMT and TRAP are the instructions worth stepping over. They occupy
-    // whole opcode ranges rather than single codes, so the list is filled in.
-    for (unsigned int c = 0004000; c <= 0004777; c++) over_commands.push_back(c);
-    for (unsigned int c = 0104000; c <= 0104777; c++) over_commands.push_back(c);
 }
 
 k1801vm1::~k1801vm1()
@@ -502,6 +497,13 @@ unsigned int k1801vm1::peek_mem(unsigned int address)
     return CPU::peek_mem(address);
 }
 
+bool k1801vm1::poke_mem(unsigned int address, unsigned int value)
+{
+    if (core->is_vm3() && address <= 0xFFFF)
+        return mm->poke(core->vm3_peek_address((uint16_t)address), value);
+    return CPU::poke_mem(address, value);
+}
+
 unsigned int k1801vm1::get_command()
 {
     //Asked by the debugger and by LOG cpu.command, not by the processor. A
@@ -622,6 +624,7 @@ unsigned int k1801vm1::execute()
         return held;
     }
 
+    if (m_debug != DEBUG_OFF) debug_before();
     core->bus_offset = 0;
     core->bus_extra = 0;
     if (m_timing_vm2) m_halt_before = core->get_context()->halt_mode;
@@ -653,16 +656,7 @@ unsigned int k1801vm1::execute()
         cycles = (c > 0) ? (unsigned int)c : 1;
     }
 
-    switch (m_debug) {
-    case DEBUG_STEP:
-        m_debug = DEBUG_STOPPED;
-        break;
-    case DEBUG_BRAKES:
-        if (check_breakpoint(get_pc())) m_debug = DEBUG_STOPPED;
-        break;
-    default:
-        break;
-    }
+    if (m_debug != DEBUG_OFF) debug_after();
 
     return cycles;
 }
@@ -820,4 +814,44 @@ ComputerDevice * create_k1801vm2(InterfaceManager *im, EmulatorConfigDevice *cd)
 ComputerDevice * create_k1801vm3(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new k1801vm1(im, cd, PDP11_FAMILY_1801VM3);
+}
+
+bool k1801vm1::set_flag(const std::string &name, bool value)
+{
+    //I is the priority of the processor
+    static const char * names[] = {"C", "V", "Z", "N", "T", "I"};
+    static const uint16_t bits[] = {PDP11::F_C, PDP11::F_V, PDP11::F_Z, PDP11::F_N, PDP11::F_T, PDP11::F_MASK};
+    pdp11context * c = core->get_context();
+    for (unsigned int i = 0; i < 6; i++)
+        if (name == names[i]) {
+            c->PSW = value ? (uint16_t)(c->PSW | bits[i]) : (uint16_t)(c->PSW & ~bits[i]);
+            return true;
+        }
+    return false;
+}
+
+bool k1801vm1::get_sp(unsigned int &sp)
+{
+    sp = core->get_context()->R[PDP11::REG_SP];
+    return true;
+}
+
+bool k1801vm1::stack_address(int i, unsigned int &address)
+{
+    address = (core->get_context()->R[PDP11::REG_SP] + 2 * i) & 0xFFFF;
+    return true;
+}
+
+bool k1801vm1::waiting()
+{
+    return core->get_context()->halted;
+}
+
+std::vector<unsigned int> k1801vm1::get_history()
+{
+    std::vector<unsigned int> r;
+    const unsigned int size = pdp11core::HISTORY_SIZE;
+    for (unsigned int i = size; i > 0; i--)
+        r.push_back(core->m_history[(core->m_history_pos - i) & (size - 1)]);
+    return r;
 }

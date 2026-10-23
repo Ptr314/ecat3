@@ -39,7 +39,6 @@ mos6502::mos6502(InterfaceManager *im, EmulatorConfigDevice *cd, int family_type
 {
     core = new mos6502Core(this, family_type);
 
-    over_commands.push_back(0x20);
 }
 
 std::string mos6502::disasm_table() const
@@ -199,19 +198,11 @@ unsigned int mos6502::execute()
     unsigned int held = take_hold();
     if (held > 0) return held;
 
+    if (m_debug != DEBUG_OFF) debug_before();
     unsigned int cycles = core->execute();
 
 
-    switch (m_debug) {
-    case DEBUG_STEP:
-        m_debug = DEBUG_STOPPED;
-        break;
-    case DEBUG_BRAKES:
-        if (check_breakpoint(get_pc())) m_debug = DEBUG_STOPPED;
-        break;
-    default:
-        break;
-    }
+    if (m_debug != DEBUG_OFF) debug_after();
 
     return cycles;
 }
@@ -224,4 +215,36 @@ ComputerDevice * create_mos6502(InterfaceManager *im, EmulatorConfigDevice *cd)
 ComputerDevice * create_wdc65c02(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new mos6502(im, cd, MOS_6502_FAMILY_65C02);
+}
+
+bool mos6502::set_flag(const std::string &name, bool value)
+{
+    static const char * names[] = {"C", "Z", "I", "D", "B", "5", "V", "N"};
+    static const uint8_t bits[] = {MOS6502::F_C, MOS6502::F_Z, MOS6502::F_I, MOS6502::F_D,
+                                   MOS6502::F_B, MOS6502::F_P5, MOS6502::F_V, MOS6502::F_N};
+    mos6502context * c = core->get_context();
+    for (unsigned int i = 0; i < 8; i++)
+        if (name == names[i]) {
+            c->P = value ? (uint8_t)(c->P | bits[i]) : (uint8_t)(c->P & ~bits[i]);
+            return true;
+        }
+    return false;
+}
+
+bool mos6502::get_sp(unsigned int &sp)
+{
+    sp = core->get_context()->S;
+    return true;
+}
+
+//S points at the free byte below the top, in page 1
+bool mos6502::stack_address(int i, unsigned int &address)
+{
+    address = 0x100 + ((core->get_context()->S + 1 + i) & 0xFF);
+    return true;
+}
+
+bool mos6502::waiting()
+{
+    return core->get_context()->wait;
 }

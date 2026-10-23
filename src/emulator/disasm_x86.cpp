@@ -91,8 +91,9 @@ emulator::Result DisAsmX86::load_file(MAYBE_UNUSED const std::string &file_name)
     return emulator::Result::ok();
 }
 
-unsigned int DisAsmX86::disassemle(CommandBytes bytes, unsigned int PC, unsigned int max_len, std::string * output)
+unsigned int DisAsmX86::decode(CommandBytes bytes, unsigned int PC, unsigned int max_len, DisasmLine * out)
 {
+    *out = DisasmLine();
     Reader r;
     r.bytes = bytes;
     r.pos = 0;
@@ -120,8 +121,27 @@ unsigned int DisAsmX86::disassemle(CommandBytes bytes, unsigned int PC, unsigned
         if (!in_cs) return (unsigned)(PC + r.pos + d) & 0xFFFFF;
         return (base + ((PC - base + r.pos + d) & 0xFFFF)) & 0xFFFFF;
     };
-    auto rel8 = [&]() -> std::string { const int8_t d = (int8_t)r.b(); return h5(target(d)); };
-    auto rel16 = [&]() -> std::string { const int16_t d = (int16_t)r.w(); return h5(target(d)); };
+    //The flow of the instruction, set by the cases that change it
+    auto flow = [&](DisasmFlow f, bool conditional) { out->flow = f; out->conditional = conditional; };
+    auto rel8 = [&]() -> std::string {
+        const int8_t d = (int8_t)r.b();
+        out->has_target = true;
+        out->target = target(d);
+        return h5(out->target);
+    };
+    auto rel16 = [&]() -> std::string {
+        const int16_t d = (int16_t)r.w();
+        out->has_target = true;
+        out->target = target(d);
+        return h5(out->target);
+    };
+    auto far_ptr = [&]() -> std::string {
+        const uint16_t ip = r.w();
+        const uint16_t cs = r.w();
+        out->has_target = true;
+        out->target = (((unsigned)cs << 4) + ip) & 0xFFFFF;
+        return h4(cs) + ":" + h4(ip);
+    };
 
     if (op < 0x40 && (op & 7) < 6) {
         const char * name = ALU[op >> 3];
@@ -147,7 +167,7 @@ unsigned int DisAsmX86::disassemle(CommandBytes bytes, unsigned int PC, unsigned
     else if (op < 0x50) s = std::string("dec ") + REG16[op & 7];
     else if (op < 0x58) s = std::string("push ") + REG16[op & 7];
     else if (op < 0x60) s = std::string("pop ") + REG16[op & 7];
-    else if (op < 0x80) s = std::string(JCC[op & 0x0F]) + " " + rel8();
+    else if (op < 0x80) { flow(FLOW_JUMP, true); s = std::string(JCC[op & 0x0F]) + " " + rel8(); }
     else if (op >= 0x90 && op < 0x98) s = (op == 0x90) ? "nop" : std::string("xchg ax, ") + REG16[op & 7];
     else if (op >= 0xB0 && op < 0xB8) s = std::string("mov ") + REG8[op & 7] + ", " + h2(r.b());
     else if (op >= 0xB8 && op < 0xC0) s = std::string("mov ") + REG16[op & 7] + ", " + h4(r.w());
@@ -172,7 +192,7 @@ unsigned int DisAsmX86::disassemle(CommandBytes bytes, unsigned int PC, unsigned
         case 0x8F: { ModRM m = modrm(r, seg); s = "pop " + rm16(m); break; }
         case 0x98: s = "cbw"; break;
         case 0x99: s = "cwd"; break;
-        case 0x9A: { const uint16_t ip = r.w(); s = "call " + h4(r.w()) + ":" + h4(ip); break; }
+        case 0x9A: flow(FLOW_CALL, false); s = "call " + far_ptr(); break;
         case 0x9B: s = "wait"; break;
         case 0x9C: s = "pushf"; break;
         case 0x9D: s = "popf"; break;
@@ -194,18 +214,18 @@ unsigned int DisAsmX86::disassemle(CommandBytes bytes, unsigned int PC, unsigned
         case 0xAD: s = "lodsw"; break;
         case 0xAE: s = "scasb"; break;
         case 0xAF: s = "scasw"; break;
-        case 0xC0: case 0xC2: s = "ret " + h4(r.w()); break;
-        case 0xC1: case 0xC3: s = "ret"; break;
+        case 0xC0: case 0xC2: flow(FLOW_RET, false); s = "ret " + h4(r.w()); break;
+        case 0xC1: case 0xC3: flow(FLOW_RET, false); s = "ret"; break;
         case 0xC4: { ModRM m = modrm(r, seg); s = std::string("les ") + REG16[m.reg] + ", " + rm16s(m); break; }
         case 0xC5: { ModRM m = modrm(r, seg); s = std::string("lds ") + REG16[m.reg] + ", " + rm16s(m); break; }
         case 0xC6: { ModRM m = modrm(r, seg); s = "mov " + rm8(m) + ", " + h2(r.b()); break; }
         case 0xC7: { ModRM m = modrm(r, seg); s = "mov " + rm16(m) + ", " + h4(r.w()); break; }
-        case 0xC8: case 0xCA: s = "retf " + h4(r.w()); break;
-        case 0xC9: case 0xCB: s = "retf"; break;
-        case 0xCC: s = "int3"; break;
-        case 0xCD: s = "int " + h2(r.b()); break;
-        case 0xCE: s = "into"; break;
-        case 0xCF: s = "iret"; break;
+        case 0xC8: case 0xCA: flow(FLOW_RET, false); s = "retf " + h4(r.w()); break;
+        case 0xC9: case 0xCB: flow(FLOW_RET, false); s = "retf"; break;
+        case 0xCC: flow(FLOW_CALL, false); s = "int3"; break;
+        case 0xCD: flow(FLOW_CALL, false); s = "int " + h2(r.b()); break;
+        case 0xCE: flow(FLOW_CALL, true); s = "into"; break;
+        case 0xCF: flow(FLOW_RET, false); s = "iret"; break;
         case 0xD0: { ModRM m = modrm(r, seg); s = std::string(SHIFT[m.reg]) + " " + rm8(m) + ", 1"; break; }
         case 0xD1: { ModRM m = modrm(r, seg); s = std::string(SHIFT[m.reg]) + " " + rm16(m) + ", 1"; break; }
         case 0xD2: { ModRM m = modrm(r, seg); s = std::string(SHIFT[m.reg]) + " " + rm8(m) + ", cl"; break; }
@@ -214,18 +234,18 @@ unsigned int DisAsmX86::disassemle(CommandBytes bytes, unsigned int PC, unsigned
         case 0xD5: { const uint8_t b = r.b(); s = (b == 10) ? "aad" : "aad " + h2(b); break; }
         case 0xD6: s = "salc"; break;
         case 0xD7: s = "xlat"; break;
-        case 0xE0: s = "loopne " + rel8(); break;
-        case 0xE1: s = "loope " + rel8(); break;
-        case 0xE2: s = "loop " + rel8(); break;
-        case 0xE3: s = "jcxz " + rel8(); break;
+        case 0xE0: flow(FLOW_JUMP, true); s = "loopne " + rel8(); break;
+        case 0xE1: flow(FLOW_JUMP, true); s = "loope " + rel8(); break;
+        case 0xE2: flow(FLOW_JUMP, true); s = "loop " + rel8(); break;
+        case 0xE3: flow(FLOW_JUMP, true); s = "jcxz " + rel8(); break;
         case 0xE4: s = "in al, " + h2(r.b()); break;
         case 0xE5: s = "in ax, " + h2(r.b()); break;
         case 0xE6: s = "out " + h2(r.b()) + ", al"; break;
         case 0xE7: s = "out " + h2(r.b()) + ", ax"; break;
-        case 0xE8: s = "call " + rel16(); break;
-        case 0xE9: s = "jmp " + rel16(); break;
-        case 0xEA: { const uint16_t ip = r.w(); s = "jmp " + h4(r.w()) + ":" + h4(ip); break; }
-        case 0xEB: s = "jmp short " + rel8(); break;
+        case 0xE8: flow(FLOW_CALL, false); s = "call " + rel16(); break;
+        case 0xE9: flow(FLOW_JUMP, false); s = "jmp " + rel16(); break;
+        case 0xEA: flow(FLOW_JUMP, false); s = "jmp " + far_ptr(); break;
+        case 0xEB: flow(FLOW_JUMP, false); s = "jmp short " + rel8(); break;
         case 0xEC: s = "in al, dx"; break;
         case 0xED: s = "in ax, dx"; break;
         case 0xEE: s = "out dx, al"; break;
@@ -245,15 +265,22 @@ unsigned int DisAsmX86::disassemle(CommandBytes bytes, unsigned int PC, unsigned
         case 0xFC: s = "cld"; break;
         case 0xFD: s = "std"; break;
         case 0xFE: { ModRM m = modrm(r, seg); s = std::string(GRP5[m.reg]) + " " + rm8(m); break; }
-        case 0xFF: { ModRM m = modrm(r, seg); s = std::string(GRP5[m.reg]) + " " + rm16(m); break; }
+        case 0xFF: { ModRM m = modrm(r, seg); s = std::string(GRP5[m.reg]) + " " + rm16(m);
+                     if (m.reg == 2 || m.reg == 3) flow(FLOW_CALL, false);
+                     else if (m.reg == 4 || m.reg == 5) flow(FLOW_JUMP, false);
+                     break; }
         default: s = "db " + h2(op); break;
         }
     }
 
     if (r.short_of) {
-        *output = "?";
+        *out = DisasmLine();
+        out->text = "?";
+        out->length = 1;
         return 1;
     }
-    *output = prefix + s;
+    out->text = prefix + s;
+    out->length = r.pos;
+    out->valid = s.compare(0, 3, "db ") != 0;
     return r.pos;
 }

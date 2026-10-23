@@ -173,9 +173,16 @@ public:
     int last_write_clocks() const override { return (m_timing != nullptr) ? m_timing->m_write_at : -1; }
     virtual unsigned int get_command() override;
     unsigned int peek_mem(unsigned int address) override;
+    bool poke_mem(unsigned int address, unsigned int value) override;
     virtual DisAsm * create_disasm(const std::string &data_path, emulator::Result &res) override;
 
     virtual void set_context_value(const std::string &name, unsigned int value) override;
+    bool set_flag(const std::string &name, bool value) override;
+    bool get_sp(unsigned int &sp) override;
+    bool stack_address(int i, unsigned int &address) override;
+    bool waiting() override;
+    unsigned int register_radix() const override { return 8; }
+    std::vector<unsigned int> get_history() override;
 };
 
 ComputerDevice * create_k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd);

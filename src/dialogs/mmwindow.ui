@@ -251,44 +251,6 @@
        </widget>
       </item>
       <item>
-       <widget class="QToolButton" name="baseButton">
-        <property name="minimumSize">
-         <size>
-          <width>40</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="toolTip">
-         <string>Number base: hex or octal</string>
-        </property>
-        <property name="text">
-         <string notr="true">HEX</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QToolButton" name="wordButton">
-        <property name="minimumSize">
-         <size>
-          <width>40</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="toolTip">
-         <string>Show bytes (8) or words (16)</string>
-        </property>
-        <property name="text">
-         <string notr="true">8</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -332,22 +294,11 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
-      <item>
-       <widget class="DumpArea" name="dump_area" native="true"/>
-      </item>
      </layout>
     </widget>
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>DumpArea</class>
-   <extends>QWidget</extends>
-   <header location="global">dialogs/dumparea.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources>
   <include location="../resources.qrc"/>
  </resources>

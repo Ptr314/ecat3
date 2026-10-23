@@ -6,15 +6,18 @@
 #include "mmwindow.h"
 #include "ui_mmwindow.h"
 
+#include <QLayout>
 #include <QMessageBox>
 
 #include "emulator/utils.h"
 #include "emulator/emulator.h"
 #include "dialogs/numfmt.h"
+#include "dialogs/debugger/memoryview.h"
 
 MemoryMapperWindow::MemoryMapperWindow(QWidget *parent) :
     GenericDbgWnd(parent),
-    ui(new Ui::MemoryMapperWindow)
+    ui(new Ui::MemoryMapperWindow),
+    panel(nullptr)
 {
     ui->setupUi(this);
 }
@@ -24,40 +27,14 @@ MemoryMapperWindow::MemoryMapperWindow(QWidget *parent, Emulator * e, ComputerDe
 {
     this->e = e;
     this->d = d;
-    has_device = false;
+    base = view_base(d);
     setWindowTitle(QString::fromStdString(d->name + " : " + d->type));
-    ui->dump_area->set_frame(true, true, true, true);
-    // As the dump window: an octal machine starts in octal words, any other
-    // in hex bytes
-    const bool octal = view_base(d) == 8;
-    ui->address_edit->setText(fmt_num(0, octal ? 8 : 16, addr_digits(0, octal ? 8 : 16)));
-    ui->baseButton->setChecked(octal);
-    ui->wordButton->setChecked(octal);
-    apply_view();
-}
-
-void MemoryMapperWindow::apply_view()
-{
-    const int base = ui->baseButton->isChecked() ? 8 : 16;
-    const bool word = ui->wordButton->isChecked();
-    ui->baseButton->setText(base == 8 ? "OCT" : "HEX");
-    ui->wordButton->setText(word ? "16" : "8");
-    ui->dump_area->set_view(base, word);
-}
-
-void MemoryMapperWindow::on_baseButton_toggled(bool)
-{
-    apply_view();
-}
-
-void MemoryMapperWindow::on_wordButton_toggled(bool)
-{
-    apply_view();
+    ui->address_edit->setText(fmt_num(0, base, addr_digits(0, base)));
 }
 
 void MemoryMapperWindow::update_view()
 {
-    if (has_device) ui->dump_area->update_view();
+    if (panel != nullptr) panel->refresh();
 }
 
 MemoryMapperWindow::~MemoryMapperWindow()
@@ -74,7 +51,6 @@ void MemoryMapperWindow::on_process_button_clicked()
 {
     unsigned int cfg, address;
     try {
-        const int base = ui->dump_area->get_base();
         cfg = parse_input(ui->config_edit->text(), base);
         address = parse_input(ui->address_edit->text(), base);
     } catch (const std::exception &) {
@@ -101,9 +77,10 @@ void MemoryMapperWindow::on_process_button_clicked()
     QString s = QString::fromStdString(d->name + " " + d->type);
     ui->device_name->setText(s);
 
-    ui->dump_area->set_data(e, dynamic_cast<AddressableDevice*>(d), address_on_device);
-    has_device = true;
-    ui->dump_area->update();
+    delete panel;
+    panel = new MemoryPanel(e, memory_of_device(d), ui->frame_2);
+    ui->frame_2->layout()->addWidget(panel);
+    panel->view()->go_to(address_on_device);
 }
 
 GenericDbgWnd * CreateMMWindow(QWidget *parent, Emulator * e, ComputerDevice * d)

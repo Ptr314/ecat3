@@ -190,67 +190,67 @@ BC	CMP H	1
 BD	CMP L	1
 BE	CMP M	1
 BF	CMP A	1
-C0	RNZ	1
+C0	RNZ	1	RC
 C1	POP B	1
-C2 n n	JNZ $nn	3
-C3 n n	JMP $nn	3
-C4 n n	CNZ $nn	3
+C2 n n	JNZ $nn	3	JC
+C3 n n	JMP $nn	3	J
+C4 n n	CNZ $nn	3	CC
 C5	PUSH B	1
 C6 d	ADI $d	2
-C7	RST 0	1
-C8	RZ	1
-C9	RET	1
-CA n n	JZ $nn	3
-CB n n	*JMP $nn	3
-CC n n	CZ $nn	3
-CD n n	CALL $nn	3
+C7	RST 0	1	C@0000
+C8	RZ	1	RC
+C9	RET	1	R
+CA n n	JZ $nn	3	JC
+CB n n	*JMP $nn	3	J
+CC n n	CZ $nn	3	CC
+CD n n	CALL $nn	3	C
 CE d	ACI $d	2
-CF	RST 1	1
-D0	RNC	1
+CF	RST 1	1	C@0008
+D0	RNC	1	RC
 D1	POP D	1
-D2 n n	JNC $nn	3
+D2 n n	JNC $nn	3	JC
 D3 n	OUT $n	2
-D4 n n	CNC $nn	3
+D4 n n	CNC $nn	3	CC
 D5	PUSH D	1
 D6 d	SUI $d	2
-D7	RST 2	1
-D8	RC	1
-D9	*RET	1
-DA n n	JC $nn	3
+D7	RST 2	1	C@0010
+D8	RC	1	RC
+D9	*RET	1	R
+DA n n	JC $nn	3	JC
 DB n	IN $n	2
-DC n n	CC $nn	3
-DD n n	*CALL $nn	3
+DC n n	CC $nn	3	CC
+DD n n	*CALL $nn	3	C
 DE d	SBI $d	2
-DF	RST 3	1
-E0	RPO	1
+DF	RST 3	1	C@0018
+E0	RPO	1	RC
 E1	POP H	1
-E2 n n	JPO $nn	3
+E2 n n	JPO $nn	3	JC
 E3	XTHL	1
-E4 n n	CPO $nn	3
+E4 n n	CPO $nn	3	CC
 E5	PUSH H	1
 E6 d	ANI $d	2
-E7	RST 4	1
-E8	RPE	1
-E9	PCHL	1
-EA n n	JPE $nn	3
+E7	RST 4	1	C@0020
+E8	RPE	1	RC
+E9	PCHL	1	JI
+EA n n	JPE $nn	3	JC
 EB	XCHG	1
-EC n n	CPE $nn	3
-ED n n	*CALL $nn	3
+EC n n	CPE $nn	3	CC
+ED n n	*CALL $nn	3	C
 EE d	XRI $d	2
-EF	RST 5	1
-F0	RP	1
+EF	RST 5	1	C@0028
+F0	RP	1	RC
 F1	POP PSW	1
-F2 n n	JP $nn	3
+F2 n n	JP $nn	3	JC
 F3	DI	1
-F4 n n	CP $nn	3
+F4 n n	CP $nn	3	CC
 F5	PUSH PSW	1
 F6 d	ORI $d	2
-F7	RST 6	1
-F8	RM	1
+F7	RST 6	1	C@0030
+F8	RM	1	RC
 F9	SPHL	1
-FA n n	JM $nn	3
+FA n n	JM $nn	3	JC
 FB	EI	1
-FC n n	CM $nn	3
-FD n n	*CALL $nn	3
+FC n n	CM $nn	3	CC
+FD n n	*CALL $nn	3	C
 FE d	CPI $d	2
-FF	RST 7	1
+FF	RST 7	1	C@0038

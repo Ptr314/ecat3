@@ -74,10 +74,6 @@ i8080::i8080(InterfaceManager *im, EmulatorConfigDevice *cd):
     //the address from ~int_address
     m_int_opcode = read_confg_value(cd, "int_opcode", false, (unsigned int)0x100);
 
-    over_commands.push_back(0xCD);
-    over_commands.push_back(0xDD);
-    over_commands.push_back(0xED);
-    over_commands.push_back(0xFD);
 }
 
 i8080::~i8080()
@@ -228,19 +224,11 @@ unsigned int i8080::execute()
     unsigned int held = take_hold();
     if (held > 0) return held;
 
+    if (m_debug != DEBUG_OFF) debug_before();
     unsigned int cycles = core->execute();
 
 
-    switch (m_debug) {
-    case DEBUG_STEP:
-        m_debug = DEBUG_STOPPED;
-        break;
-    case DEBUG_BRAKES:
-        if (check_breakpoint(get_pc())) m_debug = DEBUG_STOPPED;
-        break;
-    default:
-        break;
-    }
+    if (m_debug != DEBUG_OFF) debug_after();
 
     return cycles;
 }
@@ -267,4 +255,34 @@ unsigned int i8080::get_command()
 
 ComputerDevice * create_i8080(InterfaceManager *im, EmulatorConfigDevice *cd){
     return new i8080(im, cd);
+}
+
+bool i8080::set_flag(const std::string &name, bool value)
+{
+    static const char * names[] = {"C", "P", "H", "Z", "S"};
+    static const uint8_t bits[] = {F_CARRY, F_PARITY, F_HALF_CARRY, F_ZERO, F_SIGN};
+    i8080context * c = core->get_context();
+    for (unsigned int i = 0; i < 5; i++)
+        if (name == names[i]) {
+            c->registers.regs.F = value ? (uint8_t)(c->registers.regs.F | bits[i]) : (uint8_t)(c->registers.regs.F & ~bits[i]);
+            return true;
+        }
+    return false;
+}
+
+bool i8080::get_sp(unsigned int &sp)
+{
+    sp = core->get_context()->registers.regs.SP;
+    return true;
+}
+
+bool i8080::stack_address(int i, unsigned int &address)
+{
+    address = (core->get_context()->registers.regs.SP + 2 * i) & 0xFFFF;
+    return true;
+}
+
+bool i8080::waiting()
+{
+    return core->get_context()->halted;
 }

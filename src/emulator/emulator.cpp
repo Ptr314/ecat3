@@ -10,6 +10,7 @@
 #include "host_helpers.h"
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <iostream>
 
 #ifdef _WIN32
@@ -28,6 +29,7 @@
 #include "emulator.h"
 #include "emulator/config.h"
 #include "emulator/utils.h"
+#include "emulator/disasm.h"
 #include "emulator/state_save.h"
 #include "emulator/script/script_parser.h"
 #include "libs/lodepng/lodepng.h"
@@ -198,6 +200,17 @@ void Emulator::drop_machine()
     domains.clear();
     joysticks.clear();
     mice.clear();
+    //The debugger's state was about that machine
+    m_debug_paused = false;
+    m_debug_attached = false;
+    m_stepping = false;
+    m_step_cpu = nullptr;
+    {
+        compat_lock_guard lock(m_debug_mutex);
+        m_debug_cpu = nullptr;
+        m_debug_reason = DSTOP_NONE;
+        m_debug_listener = nullptr;
+    }
 }
 
 emulator::Result Emulator::load_config(std::string file_name)
@@ -758,6 +771,18 @@ const std::string & Emulator::translate_char(unsigned int char_code)
         return charmap[0];  // Return default character
     }
     return charmap[char_code];
+}
+
+int Emulator::char_code(const std::string &utf8) const
+{
+    if (utf8.empty()) return -1;
+    //The control codes last: an unmapped code is shown as the default
+    //character, and the printable one of that look is the one meant
+    for (unsigned int n = 0; n < charmap.size(); n++) {
+        const unsigned int i = (n + 32) % charmap.size();
+        if (charmap[i] == utf8) return (int)i;
+    }
+    return -1;
 }
 
 //----------------------- Why the machine stopped ----------------------------//
@@ -1382,6 +1407,290 @@ void Emulator::stop_emulation()
     }
 }
 
+//------------------------------ Debugger ----------------------------------//
+
+//The listener is called under the lock: a window that removes it on its way
+//out is then sure no call is still on its way to it
+void Emulator::debug_notify(CPU * c, int reason)
+{
+    compat_lock_guard lock(m_debug_mutex);
+    m_debug_cpu = c;
+    m_debug_reason = reason;
+    m_debug_serial++;
+    if (m_debug_listener) m_debug_listener();
+}
+
+CPU * Emulator::debug_stop_cpu() const
+{
+    compat_lock_guard lock(m_debug_mutex);
+    return m_debug_cpu;
+}
+
+int Emulator::debug_stop_reason() const
+{
+    compat_lock_guard lock(m_debug_mutex);
+    return m_debug_reason;
+}
+
+void Emulator::set_debug_listener(const std::function<void()> &fn)
+{
+    compat_lock_guard lock(m_debug_mutex);
+    m_debug_listener = fn;
+}
+
+void Emulator::debug_attach(bool on)
+{
+    //A breakpoint met before the debugger came is old news
+    if (on && dm != nullptr)
+        for (CPU * c : dm->get_cpus()) c->break_hit = BREAK_NONE;
+    m_debug_attached = on;
+}
+
+void Emulator::debug_detach()
+{
+    m_debug_attached = false;
+    if (dm == nullptr) return;
+    //A machine the debugger paused goes on; the breakpoints stay in the
+    //processors' lists, but nothing stops at them any more
+    if (m_debug_paused) {
+        debug_run(false);
+    } else {
+        m_step_cpu = nullptr;
+        m_stepping = false;
+        for (CPU * c : dm->get_cpus()) {
+            c->clear_temp_break();
+            c->break_hit = BREAK_NONE;
+            if (c->m_debug == DEBUG_BRAKES) c->m_debug = DEBUG_OFF;
+        }
+    }
+}
+
+bool Emulator::debug_paused() const
+{
+    if (m_debug_paused) return true;
+    if (!loaded || dm == nullptr) return false;
+    const std::vector<CPU*> &cpus = dm->get_cpus();
+    if (cpus.empty()) return false;
+    for (CPU * c : cpus)
+        if (c->m_debug != DEBUG_STOPPED) return false;
+    return true;
+}
+
+void Emulator::debug_pause()
+{
+    m_step_cpu = nullptr;
+    m_stepping = false;
+    if (dm != nullptr)
+        for (CPU * c : dm->get_cpus()) c->clear_temp_break();
+    m_debug_paused = true;
+    debug_notify(nullptr, DSTOP_PAUSE);
+}
+
+void Emulator::debug_run(bool breakpoints)
+{
+    if (dm == nullptr) return;
+    m_step_cpu = nullptr;
+    m_stepping = false;
+    for (CPU * c : dm->get_cpus()) {
+        c->break_hit = BREAK_NONE;
+        if (!breakpoints) c->clear_temp_break();
+        c->m_debug = (breakpoints && (!c->get_breakpoints().empty() || c->has_temp_break()))
+                     ? DEBUG_BRAKES : DEBUG_OFF;
+    }
+    m_debug_paused = false;
+    debug_notify(nullptr, DSTOP_NONE);
+}
+
+void Emulator::debug_step(CPU * c, unsigned int count)
+{
+    if (c == nullptr || count == 0 || dm == nullptr) return;
+    for (CPU * o : dm->get_cpus()) {
+        o->break_hit = BREAK_NONE;
+        o->clear_temp_break();
+    }
+    m_debug_paused = true;
+    m_step_cpu = c;
+    m_step_count = count;
+    m_step_done = false;
+    m_step_spent = 0;
+    m_step_hit = nullptr;
+    m_stepping = true;
+}
+
+void Emulator::debug_step_over(CPU * c)
+{
+    if (c == nullptr) return;
+    const unsigned int pc = c->get_pc();
+    DisasmLine l;
+    if (c->decode_at(pc, l)) {
+        unsigned int sp;
+        //A repeated string instruction of the 8086 and a block instruction of
+        //the Z80 stay at their address until the count runs out
+        static const char * const REPEATED[] = {"rep", "LDIR", "LDDR", "CPIR", "CPDR", "INIR", "INDR", "OTIR", "OTDR"};
+        bool repeated = false;
+        for (const char * r : REPEATED)
+            if (l.text.compare(0, strlen(r), r) == 0) repeated = true;
+        if (l.flow == FLOW_CALL || repeated) {
+            if (!repeated && c->get_sp(sp)) c->set_temp_break(TEMP_RETURN, pc + l.length, sp);
+            else c->set_temp_break(TEMP_PC, pc + l.length, 0);
+            debug_run(true);
+            return;
+        }
+    }
+    debug_step(c);
+}
+
+void Emulator::debug_step_out(CPU * c)
+{
+    if (c == nullptr) return;
+    unsigned int sp;
+    if (!c->get_sp(sp)) {
+        debug_step(c);
+        return;
+    }
+    c->set_temp_break(TEMP_OUT, 0, sp);
+    debug_run(true);
+}
+
+void Emulator::debug_run_to(CPU * c, unsigned int address)
+{
+    if (c == nullptr) return;
+    c->set_temp_break(TEMP_PC, address, 0);
+    debug_run(true);
+}
+
+//A processor stopped on a breakpoint or the debugger's stop, and the others
+//have caught up with it: the machine pauses there, the processors keep the
+//mode they ran in
+void Emulator::debug_break(CPU * c)
+{
+    const int reason = (c->break_hit == BREAK_TEMP) ? DSTOP_TEMP : DSTOP_BREAKPOINT;
+    for (CPU * o : dm->get_cpus()) {
+        if (o->m_debug == DEBUG_STOPPED && o->break_hit != BREAK_NONE) o->m_debug = DEBUG_BRAKES;
+        o->break_hit = BREAK_NONE;
+        o->clear_temp_break();
+    }
+    m_step_cpu = nullptr;
+    m_stepping = false;
+    m_debug_paused = true;
+    debug_notify(c, reason);
+}
+
+//Every domain to the end of the slice at once, none of them clocked: the
+//machine's time stands still and the domains keep their distances. Domains a
+//long step took far ahead come back too, or the machine would stand still
+//after the pause until the wall clock caught up with them
+void Emulator::debug_hold_domains(uint64_t target)
+{
+    if (domains.empty()) return;
+    uint64_t low = domains[0].norm;
+    for (size_t i = 1; i < domains.size(); i++)
+        if (domains[i].norm < low) low = domains[i].norm;
+    if (low < target) {
+        for (size_t i = 0; i < domains.size(); i++) domains[i].norm += target - low;
+    } else if (low > target) {
+        for (size_t i = 0; i < domains.size(); i++) domains[i].norm -= low - target;
+    }
+}
+
+//The time step, made inside a slice: the domains run in the order of
+//timer_proc(), the one furthest behind first, until the processor has
+//executed an instruction and is the one furthest behind again - the others
+//then stand where a free run would have them. A step that takes long (WAIT
+//until the interrupt) goes on in the next slice, so that the window is
+//answered meanwhile
+void Emulator::debug_step_slice()
+{
+    size_t t = domains.size();
+    for (size_t i = 0; i < domains.size(); i++)
+        if (domains[i].cpu == m_step_cpu) t = i;
+    if (t == domains.size()) {
+        m_step_cpu = nullptr;
+        m_stepping = false;
+        return;
+    }
+
+    //20 ms of the machine a slice, and a second for the whole step: a
+    //processor that executes nothing for that long (held in reset, waiting
+    //with the interrupts off) is not going to
+    const uint64_t budget = (uint64_t)clock_freq / 50 * domains[0].scale + 1;
+    const uint64_t limit = (uint64_t)clock_freq * domains[0].scale;
+    uint64_t spent = 0;
+
+    while (true) {
+        size_t k = 0;
+        for (size_t i = 1; i < domains.size(); i++)
+            if (domains[i].norm < domains[k].norm) k = i;
+
+        //Another processor stopped on its breakpoint during the step, and
+        //the others have caught up with it, as they do in a free run
+        if (m_step_hit != nullptr && domains[k].cpu == m_step_hit) {
+            debug_break(m_step_hit);
+            return;
+        }
+        if (m_step_done && k == t) {
+            if (m_step_hit != nullptr) {
+                debug_break(m_step_hit);
+                return;
+            }
+            if (--m_step_count > 0) {
+                m_step_done = false;
+                m_step_spent = 0;
+                continue;
+            }
+            CPU * c = m_step_cpu;
+            m_step_cpu = nullptr;
+            m_stepping = false;
+            debug_notify(c, DSTOP_STEP);
+            return;
+        }
+        if (spent >= budget) return;
+        if (m_step_spent >= limit) {
+            CPU * c = m_step_cpu;
+            m_step_cpu = nullptr;
+            m_stepping = false;
+            debug_notify(c, DSTOP_NO_PROGRESS);
+            return;
+        }
+
+        ClockDomain &d = domains[k];
+        CPU * c = d.cpu;
+        const unsigned int saved = c->m_debug;
+        const bool mine = (k == t);
+        //A processor stopped on its own moves with the machine all the same:
+        //the step is the machine's
+        if (mine || saved == DEBUG_STOPPED) c->m_debug = DEBUG_STEP;
+        const unsigned int counter = c->execute();
+
+        if (mine) {
+            if (c->m_debug == DEBUG_STOPPED && !c->waiting()) m_step_done = true;
+            c->m_debug = saved;
+        } else if (saved == DEBUG_STOPPED) {
+            c->m_debug = DEBUG_STOPPED;
+        } else if (c->m_debug == DEBUG_STOPPED && c->break_hit != BREAK_NONE && m_step_hit == nullptr) {
+            m_step_hit = c;
+        }
+
+        const uint64_t moved = (counter > 0) ? (uint64_t)counter * d.scale : 10ull * d.scale;
+        d.norm += moved;
+        spent += moved;
+        if (mine) m_step_spent += moved;
+        if (counter > 0) {
+            if (k == 0) clock_counter += counter;
+            dm->clock((unsigned int)k, counter);
+            if (script) script->tick(clock_counter);
+        }
+        //The script has paused or resumed the machine meanwhile
+        if (m_step_cpu == nullptr) return;
+        //Reported by timer_proc(), which pauses the machine
+        if (dm->error_pending) {
+            m_step_cpu = nullptr;
+            m_stepping = false;
+            return;
+        }
+    }
+}
+
 void Emulator::timer_proc(uint64_t time_ticks)
 {
     //TODO: Other timer stuff?
@@ -1409,6 +1718,13 @@ void Emulator::timer_proc(uint64_t time_ticks)
         const uint64_t target = time_ticks * domains[0].scale;
         const uint64_t clock_before = clock_counter;
 
+        //The debugger's pause: nothing runs but a step
+        if (m_step_cpu != nullptr) debug_step_slice();
+        if (m_debug_paused) {
+            debug_hold_domains(target);
+            if (script) script->tick(clock_counter);
+        }
+
         while (true) {
             //Whichever processor is furthest behind goes next. With one domain
             //this is simply "has the slice been used up yet"
@@ -1433,8 +1749,23 @@ void Emulator::timer_proc(uint64_t time_ticks)
                 //loop rather than once per time slice makes a script resume at
                 //the very same instruction on every run: the size of a slice
                 //depends on the host clock, the cycle counter does not.
-                if (script) script->tick(clock_counter);
+                //A script that pauses the machine (cpu.pause) pauses it here,
+                //at this instruction, not at the end of the slice
+                if (script) {
+                    script->tick(clock_counter);
+                    if (m_debug_paused.load(std::memory_order_relaxed)) debug_hold_domains(target);
+                }
             } else {
+                //A processor stopped on a breakpoint while the debugger is
+                //attached, and every other one has caught up with it: the
+                //whole machine pauses at this moment
+                if (m_debug_attached && d.cpu->break_hit != BREAK_NONE) {
+                    debug_break(d.cpu);
+                    debug_hold_domains(target);
+                    if (script) script->tick(clock_counter);
+                    continue;
+                }
+
                 //A stopped CPU produces no cycles, but its domain still has to
                 //move or the loop would never end. The script engine still runs:
                 //the commands that need no emulated time are how a debugging
@@ -1461,7 +1792,10 @@ void Emulator::timer_proc(uint64_t time_ticks)
                     d.norm += 10ull * d.scale;
                 }
 
-                if (script) script->tick(clock_counter);
+                if (script) {
+                    script->tick(clock_counter);
+                    if (m_debug_paused.load(std::memory_order_relaxed)) debug_hold_domains(target);
+                }
             }
         }
         //A device refused what the guest asked of it (an unsupported mode, a
@@ -1474,6 +1808,12 @@ void Emulator::timer_proc(uint64_t time_ticks)
                               + dm->error_message, false);
             for (size_t i = 0; i < domains.size(); i++)
                 domains[i].cpu->m_debug = DEBUG_STOPPED;
+            if (m_debug_attached) {
+                m_step_cpu = nullptr;
+                m_stepping = false;
+                m_debug_paused = true;
+                debug_notify(nullptr, DSTOP_ERROR);
+            }
         }
 
         //The master stood still for the whole slice: a WAITFOR or a SCREEN

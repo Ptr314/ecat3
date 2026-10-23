@@ -218,22 +218,22 @@ set(GUI_SOURCES
     mainwindow.cpp mainwindow.h mainwindow.ui
     qt_utils.cpp qt_utils.h
 
-    dialogs/dialogs.h
     dialogs/numfmt.h
     dialogs/aboutdlg.ui
-    dialogs/dumparea.cpp dialogs/dumparea.h
-    dialogs/dumpwindow.cpp dialogs/dumpwindow.h dialogs/dumpwindow.ui
     dialogs/mmwindow.cpp dialogs/mmwindow.h dialogs/mmwindow.ui
-    dialogs/debugwindow.h dialogs/debugwindow.cpp dialogs/debugwindow.ui
-    dialogs/disasmarea.h dialogs/disasmarea.cpp
-    dialogs/keyvaluearea.h dialogs/keyvaluearea.cpp
     dialogs/portwindow.h dialogs/portwindow.cpp dialogs/portwindow.ui
     dialogs/i8255window.h dialogs/i8255window.cpp dialogs/i8255window.ui
     dialogs/openconfigwindow.h dialogs/openconfigwindow.cpp dialogs/openconfigwindow.ui
     dialogs/exteditorwindow.h dialogs/exteditorwindow.cpp dialogs/exteditorwindow.ui
-    dialogs/hexeditorline.h dialogs/hexeditorline.cpp
-    dialogs/dosframe.h dialogs/dosframe.cpp
     dialogs/genericdbgwnd.h dialogs/genericdbgwnd.cpp
+    dialogs/debugger/debugstyle.h dialogs/debugger/debugutil.h
+    dialogs/debugger/celleditor.h dialogs/debugger/celleditor.cpp
+    dialogs/debugger/disasmview.h dialogs/debugger/disasmview.cpp
+    dialogs/debugger/registersview.h dialogs/debugger/registersview.cpp
+    dialogs/debugger/memoryview.h dialogs/debugger/memoryview.cpp
+    dialogs/debugger/sideviews.h dialogs/debugger/sideviews.cpp
+    dialogs/debugger/debuggerwindow.h dialogs/debugger/debuggerwindow.cpp
+    dialogs/debugger/memorywindow.h dialogs/debugger/memorywindow.cpp
     dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
     dialogs/keyboardwindow.h dialogs/keyboardwindow.cpp
     dialogs/serialwindow.h dialogs/serialwindow.cpp

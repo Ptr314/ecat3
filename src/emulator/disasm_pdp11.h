@@ -33,5 +33,6 @@ public:
 
     // No table is needed, the file name is accepted and ignored
     virtual emulator::Result load_file(const std::string &file_name) override;
-    virtual unsigned int disassemle(CommandBytes bytes, unsigned int PC, unsigned int max_len, std::string * output) override;
+    virtual unsigned int decode(CommandBytes bytes, unsigned int PC, unsigned int max_len, DisasmLine * out) override;
+    virtual unsigned int unit_bytes() const override { return 2; }
 };
