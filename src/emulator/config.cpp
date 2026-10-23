@@ -145,17 +145,20 @@ std::string ConfigReader::next(const std::string &stop)
 
 std::string ConfigReader::raw(const std::string &stop)
 {
-    std::string s;
-    if (!at_end())
+    //In one piece, not a character at a time: inline data runs to megabytes.
+    //As the character loop did, a text with no stop character loses its last
+    //character
+    if (at_end()) return std::string();
+    const size_t start = pos;
+    //find() of one character is memchr; find_first_of() looks at every one
+    const size_t found = stop.size() == 1 ? text.find(stop[0], start) : text.find_first_of(stop, start);
+    if (found == std::string::npos)
     {
-        char c = get();
-        while (!at_end() && stop.find(c) == std::string::npos)
-        {
-            s += c;
-            c = get();
-        }
+        pos = text.size();
+        return text.substr(start, text.size() - start - 1);
     }
-    return s;
+    pos = found + 1;
+    return text.substr(start, found - start);
 }
 
 //----------------------------------------------------------------------------

@@ -4,7 +4,6 @@
 // Description: Model of the configuration extension editor, source
 
 #include "config_fields.h"
-#include "base64.h"
 #include "emulator.h"
 #include "utils.h"
 
@@ -274,17 +273,10 @@ emulator::Result ExtEditModel::embed_file(DeviceConfigField &f, const std::strin
     if (!dsk_tools::file_exists(path))
         return model_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading config file"), path);
     const std::string data = dsk_tools::utf8_read_file(path);
-    const std::vector<unsigned char> bytes(data.begin(), data.end());
-
-    //76 characters to a line, indented under the property
-    const std::string encoded = base64_encode(bytes);
-    std::string block = "base64:\n";
-    for (size_t start = 0; start < encoded.size(); start += 76)
-        block += "    " + encoded.substr(start, 76) + "\n";
 
     f.present = true;
     f.value = dsk_tools::get_filename(path);
-    f.extended = block;
+    f.extended = inline_block(std::vector<uint8_t>(data.begin(), data.end()));
     return emulator::Result::ok();
 }
 

@@ -115,8 +115,15 @@ std::string machine_file_stem(const std::string &path);
 emulator::Result read_extension_file(const std::string &file, std::string &text, std::string &ext_name,
                                      size_t * other_files = nullptr);
 //Writes it back the same way. An existing archive keeps the files beside the
-//text and the text's own name; a new one holds <stem>.ext alone
+//text and the text's own name; a new one holds <stem>.ext alone.
+//In an archive a file given inline is not kept in the text: it is a file of
+//the archive, and the text names it. read_extension_file() puts the files the
+//edits name back inline, so the editor sees them as in a plain .ext and the
+//chooser reads a short text
 emulator::Result write_extension_file(const std::string &file, const std::string &text);
+
+//The {base64: ...} block of a file given inline, without the braces
+std::string inline_block(const std::vector<uint8_t> &data);
 
 //The file a machine file is built on, without loading anything: a .cfg is its
 //own base, an extension names one in @extends - a .cfg or another extension.

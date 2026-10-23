@@ -96,6 +96,15 @@ int main(int argc, char *argv[])
     EcatApplication a(argc, argv);
     a.setProperty("ecat_style_given", style_given);
 
+    //Qt plays the "fade or slide menus into view" of Windows itself, on the
+    //window's thread: every menu and submenu took 150 ms of changing
+    //opacity, side by side with the frames of the machine. Shown at once
+    QApplication::setEffectEnabled(Qt::UI_AnimateMenu, false);
+    QApplication::setEffectEnabled(Qt::UI_FadeMenu, false);
+    QApplication::setEffectEnabled(Qt::UI_AnimateCombo, false);
+    QApplication::setEffectEnabled(Qt::UI_AnimateTooltip, false);
+    QApplication::setEffectEnabled(Qt::UI_FadeTooltip, false);
+
     QCoreApplication::setApplicationName("eCat3");
     QCoreApplication::setApplicationVersion(PROJECT_VERSION);
 

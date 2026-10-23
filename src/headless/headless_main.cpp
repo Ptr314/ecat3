@@ -767,6 +767,108 @@ bool check_ext_editor_zip(const std::string &computers_path, std::string &messag
     return true;
 }
 
+// A file embedded into an archive is a file of the archive, and the text names
+// it: the chooser reads a short text. The editor sees it inline, as in a plain
+// .ext; a rewrite keeps it, a file no longer embedded leaves the archive, and
+// the machine finds it where the archive is unpacked
+bool check_ext_editor_inline_zip(const std::string &computers_path, std::string &message)
+{
+    const std::string base = "agat/Agat-9-yazs.ext";
+    if (!dsk_tools::file_exists(computers_path + base)) return true;
+    const std::string dir = fs::temp_directory_path().generic_string() + "/";
+    MachinePaths paths;
+    paths.computers_path = computers_path;
+    paths.cache_path = dir + "ecat3-selftest-cache/";
+
+    const std::string path = unique_ext_file(dir, "ecat3-selftest-inline");
+    const std::string image = dir + "ecat3-selftest-image.dsk";
+    const std::string bytes("\x00\x01\x02\xff selftest", 13);
+    {
+        dsk_tools::UTF8_ofstream f(image, std::ios::binary);
+        f.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+    }
+    std::error_code ec;
+    auto fail = [&](const std::string &m) {
+        fs::remove(path, ec); fs::remove(image, ec); fs::remove_all(paths.cache_path, ec);
+        message = m; return false;
+    };
+    auto file_field = [](ExtEditModel &m) -> DeviceConfigField * {
+        for (size_t i = 0; i < m.fields.size(); i++)
+            if (m.fields[i].field.type == CONFIG_FIELD_FILE && m.fields[i].field.embeddable) return &m.fields[i];
+        return nullptr;
+    };
+    auto members = [&](std::vector<std::string> &names, std::string &text) {
+        names.clear();
+        ZipReader r;
+        if (!r.open(dsk_tools::utf8_read_file(path))) return false;
+        for (size_t i = 0; i < r.entries().size(); i++) {
+            names.push_back(r.entries()[i].name);
+            if (r.entries()[i].name.size() > 4 && r.entries()[i].name.compare(r.entries()[i].name.size() - 4, 4, ".ext") == 0) {
+                std::vector<uint8_t> t;
+                if (!r.read(i, t)) return false;
+                text.assign(t.begin(), t.end());
+            }
+        }
+        return true;
+    };
+
+    ExtEditModel model;
+    emulator::Result res = model.open(computers_path + base, paths, true);
+    if (!res) return fail("open: " + res.message);
+    DeviceConfigField * f = file_field(model);
+    if (f == nullptr) return fail(base + " has no file field to embed into");
+    const std::string field = f->device + ":" + f->field.name;
+    res = ExtEditModel::embed_file(*f, image);
+    if (!res) return fail("embed: " + res.message);
+    model.version = "Inline";
+    res = write_extension_file(path, model.build());
+    if (!res) return fail("write: " + res.message);
+
+    std::vector<std::string> names;
+    std::string text;
+    if (!members(names, text) || names.size() != 2) return fail("the embedded file is not a file of the archive");
+    if (text.find("base64:") != std::string::npos || text.find("ecat3-selftest-image.dsk") == std::string::npos)
+        return fail("the text still holds the data, or does not name the file:\n" + text);
+
+    // Inline again to the editor, and not a file it would refuse to copy
+    ExtEditModel edit;
+    res = edit.open(path, paths);
+    if (!res) return fail("open of the archive: " + res.message);
+    f = file_field(edit);
+    if (f == nullptr || f->device + ":" + f->field.name != field || !f->is_inline() || edit.other_files != 0)
+        return fail("the editor does not see " + field + " embedded");
+    if (f->extended != inline_block(std::vector<uint8_t>(bytes.begin(), bytes.end())))
+        return fail("the embedded data came back changed");
+    edit.version = "Inline 2";
+    res = write_extension_file(path, edit.build());
+    if (!res) return fail("rewrite: " + res.message);
+    if (!members(names, text) || names.size() != 2) return fail("a rewrite changed the files of the archive");
+
+    // The machine finds the file
+    {
+        EmulatorConfig c;
+        MachineSource source;
+        res = load_machine_description(path, paths, c, source, false);
+        if (!res) return fail("the archive does not load: " + res.message);
+        if (dsk_tools::utf8_read_file(source.ext_path + "ecat3-selftest-image.dsk") != bytes)
+            return fail("the unpacked archive has no " + source.ext_path + "ecat3-selftest-image.dsk");
+    }
+
+    // Embedded no more: the file leaves the archive
+    ExtEditModel plain;
+    res = plain.open(path, paths);
+    if (!res) return fail("open of the rewritten archive: " + res.message);
+    f = file_field(plain);
+    f->value = "other.dsk";
+    f->extended.clear();
+    res = write_extension_file(path, plain.build());
+    if (!res) return fail("write without the file: " + res.message);
+    if (!members(names, text) || names.size() != 1) return fail("a file no longer embedded stayed in the archive");
+
+    fs::remove(path, ec); fs::remove(image, ec); fs::remove_all(paths.cache_path, ec);
+    return true;
+}
+
 // The chooser's Copy of an extension stands on it: the editor writes an @extends
 // of the copied file and none of its edits, and saving that unchanged builds
 // the very machine copied. A copy repeating the edits on the bottom .cfg would
@@ -1130,6 +1232,7 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     if (ext_ok) ext_ok = check_ext_editor_keeps_blocks(work_path, message);
     if (ext_ok) ext_ok = check_ext_editor_copy(work_path, message);
     if (ext_ok) ext_ok = check_ext_editor_zip(work_path, message);
+    if (ext_ok) ext_ok = check_ext_editor_inline_zip(work_path, message);
     if (ext_ok) ext_ok = check_ext_editor_phase(work_path, message);
     if (!ext_ok) { std::cout << "FAIL ext devices: " << message << std::endl; failed++; }
     std::cout << "extension device blocks: " << (ext_ok ? "ok" : "FAILED") << std::endl;

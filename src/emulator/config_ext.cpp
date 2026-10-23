@@ -4,9 +4,11 @@
 // Description: Configuration extensions (.ext, .ext.zip), source
 
 #include "config_ext.h"
+#include "base64.h"
 #include "cache.h"
 #include "utils.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 
@@ -283,8 +285,9 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
 
     //A device block is read by the tokenizer of the .cfg straight from the
     //text. It loses the last character of a text without a final line break,
-    //which would be the closing brace of a block at the very end
-    const std::string padded = text + "\n";
+    //which would be the closing brace of a block at the very end. Made at the
+    //first block: a text with a disk image inline is megabytes
+    std::string padded;
 
     //An @before and the run of edits it places
     ExtEdit pending_before;
@@ -384,6 +387,7 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
             ExtEdit e;
             e.op = ExtEdit::AddDevice;
             e.line = line_no;
+            if (padded.empty()) padded = text + "\n";
             ConfigReader r(padded, line_begin);
             e.device = r.next(":");
             if (r.next(":") != ":")
@@ -457,8 +461,12 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
                 return error_at(line_no, QT_TRANSLATE_NOOP("EmulatorConfig", "Unterminated {"), e.device);
             size_t end = text.find('\n', close);
             if (end == std::string::npos) end = text.size();
-            body += "\n" + text.substr(p, end - p);
-            for (size_t i = p; i < end; i++) if (text[i] == '\n') line_no++;
+            //Appended in place: inline data is megabytes, and each temporary
+            //string a copy of it
+            body.reserve(body.size() + 2 + (end - p));
+            body += '\n';
+            body.append(text, p, end - p);
+            line_no += static_cast<int>(std::count(text.begin() + p, text.begin() + end, '\n'));
             line_no++;
             p = end < text.size() ? end + 1 : text.size();
         }
@@ -489,7 +497,8 @@ emulator::Result ConfigExtension::parse(const std::string &text, const std::stri
             return error_at(e.line, QT_TRANSLATE_NOOP("EmulatorConfig", "Unexpected text after the property"), next);
         res = attach_before(e, pending_before, has_before, before_placed);
         if (!res) return res;
-        edits.push_back(e);
+        //Moved: inline data is megabytes
+        edits.push_back(std::move(e));
     }
 
     if (has_before && before_placed == 0)
@@ -696,19 +705,121 @@ bool is_machine_file(const std::string &path)
     return ends_with_ci(path, ".cfg") || is_extension_file(path) || is_state_file(path);
 }
 
+std::string inline_block(const std::vector<uint8_t> &data)
+{
+    //76 characters to a line, indented under the property
+    const std::string encoded = base64_encode(std::vector<unsigned char>(data.begin(), data.end()));
+    std::string block = "base64:\n";
+    for (size_t start = 0; start < encoded.size(); start += 76)
+        block += "    " + encoded.substr(start, 76) + "\n";
+    return block;
+}
+
+namespace {
+
+//A file given inline in an archive is kept as a file of the archive beside
+//the text, and the text names it: the text stays a few kilobytes, so the
+//machine chooser reads it without unpacking a disk image coded in base64
+//(2.3 MB of text in a 650 KB archive took 26 ms a file). The editor works
+//with inline data, as for a plain .ext: read_extension_file() puts the files
+//the edits name back inline, write_extension_file() takes them out again
+
+bool is_archive_text(const std::string &name)
+{
+    return name.find('/') == std::string::npos && ends_with_ci(name, ".ext");
+}
+
+//The file of the archive a Set edit names by its value, -1 if none. Only one
+//that is not inline: that one is the edit's own data
+int named_member(const ExtEdit &e, const ZipReader &zip)
+{
+    if (e.op != ExtEdit::Set || !str_trim(e.param.right_extended).empty()) return -1;
+    const std::string name = str_trim(e.param.value);
+    if (name.empty() || is_archive_text(name)) return -1;
+    const int i = zip.find(name);
+    return (i >= 0 && !zip.entries()[i].is_dir()) ? i : -1;
+}
+
+//The bytes of an inline {base64: ...} block; false if it is not one
+bool decode_inline(const std::string &extended, std::vector<uint8_t> &data)
+{
+    const std::string ext = str_trim(extended);
+    if (str_tolower(ext.substr(0, 7)) != "base64:") return false;
+    std::string encoded;
+    encoded.reserve(ext.size());
+    for (size_t k = 7; k < ext.size(); k++)
+    {
+        const char c = ext[k];
+        if (c != ' ' && c != '\t' && c != '\r' && c != '\n') encoded += c;
+    }
+    try {
+        data = dsk_tools::base64_decode(encoded);
+    } catch (std::exception &) {
+        return false;
+    }
+    return true;
+}
+
+//A name for a file taken out of the text: the one it had, made unique in the
+//archive. A name that would read as the archive's text gets a suffix
+std::string member_name(const std::string &value, const std::vector<std::string> &taken)
+{
+    std::string name = dsk_tools::get_filename(str_trim(value));
+    if (name.empty() || !ZipReader::is_safe_name(name)) name = "data.bin";
+    if (is_archive_text(name)) name += ".bin";
+    std::string stem = name, suffix;
+    const size_t dot = name.rfind('.');
+    if (dot != std::string::npos && dot > 0) { stem = name.substr(0, dot); suffix = name.substr(dot); }
+    for (unsigned n = 2; ; n++)
+    {
+        bool used = false;
+        for (size_t i = 0; i < taken.size() && !used; i++) used = str_tolower(taken[i]) == str_tolower(name);
+        if (!used) return name;
+        name = stem + "-" + std::to_string(n) + suffix;
+    }
+}
+
+} // namespace
+
 emulator::Result read_extension_file(const std::string &file, std::string &text, std::string &ext_name,
                                      size_t * other_files)
 {
     std::string archive;
     ZipReader zip;
     emulator::Result res = read_extension_text(file, zip, archive, text, ext_name);
-    if (res && other_files != nullptr)
+    if (!res) return res;
+
+    //The files the edits name go back inline. A text that does not parse is
+    //left as it is: the editor reports the error itself
+    std::vector<bool> inlined(zip.entries().size(), false);
+    if (!archive.empty())
+    {
+        ConfigExtension ext;
+        if (ext.parse(text, ext_name))
+        {
+            bool changed = false;
+            for (size_t i = 0; i < ext.edits.size(); i++)
+            {
+                const int m = named_member(ext.edits[i], zip);
+                if (m < 0) continue;
+                std::vector<uint8_t> bytes;
+                if (!zip.read(static_cast<size_t>(m), bytes))
+                    return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.error());
+                ext.edits[i].param.right_extended = inline_block(bytes);
+                inlined[m] = true;
+                changed = true;
+            }
+            if (changed) text = ext.serialize();
+        }
+    }
+
+    if (other_files != nullptr)
     {
         *other_files = 0;
         for (size_t i = 0; i < zip.entries().size(); i++)
         {
             const std::string &n = zip.entries()[i].name;
-            if (!zip.entries()[i].is_dir() && !(n.find('/') == std::string::npos && ends_with_ci(n, ".ext")))
+            if (!zip.entries()[i].is_dir() && !is_archive_text(n) && !inlined[i])
                 (*other_files)++;
         }
     }
@@ -725,24 +836,75 @@ emulator::Result write_extension_file(const std::string &file, const std::string
         ZipWriter zw;
         std::string member = dsk_tools::get_filename(machine_file_stem(file)) + ".ext";
         std::vector<std::pair<std::string, std::vector<uint8_t>>> rest;
+        std::string new_text = text;
+        ConfigExtension ext;
+        const bool parsed = static_cast<bool>(ext.parse(text, file));
         if (dsk_tools::file_exists(file))
         {
             std::string old_text, archive, ext_name;
             ZipReader zip;
             emulator::Result res = read_extension_text(file, zip, archive, old_text, ext_name);
             if (!res) return res;
+            //The files the old text named were inline to the editor: they go
+            //out with it, and the new text brings its own. A file the new
+            //text still names stays
+            std::vector<bool> drop(zip.entries().size(), false);
+            ConfigExtension old_ext;
+            if (parsed && old_ext.parse(old_text, ext_name))
+            {
+                for (size_t i = 0; i < old_ext.edits.size(); i++)
+                {
+                    const int m = named_member(old_ext.edits[i], zip);
+                    if (m >= 0) drop[m] = true;
+                }
+                for (size_t i = 0; i < ext.edits.size(); i++)
+                {
+                    const int m = named_member(ext.edits[i], zip);
+                    if (m >= 0) drop[m] = false;
+                }
+            }
             for (size_t i = 0; i < zip.entries().size(); i++)
             {
                 const std::string &n = zip.entries()[i].name;
-                if (n.find('/') == std::string::npos && ends_with_ci(n, ".ext")) { member = n; continue; }
-                if (zip.entries()[i].is_dir()) continue;
+                if (is_archive_text(n)) { member = n; continue; }
+                if (zip.entries()[i].is_dir() || drop[i]) continue;
                 std::vector<uint8_t> bytes;
                 if (!zip.read(i, bytes))
                     return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.error());
                 rest.push_back(std::make_pair(n, bytes));
             }
         }
-        zw.add(member, text);
+
+        //Inline data out of the text, into files of its own
+        if (parsed)
+        {
+            std::vector<std::string> taken(1, member);
+            for (size_t i = 0; i < rest.size(); i++) taken.push_back(rest[i].first);
+            const size_t kept = rest.size();
+            bool changed = false;
+            for (size_t i = 0; i < ext.edits.size(); i++)
+            {
+                ExtEdit &e = ext.edits[i];
+                std::vector<uint8_t> data;
+                if (e.op != ExtEdit::Set || !decode_inline(e.param.right_extended, data)) continue;
+                //Two drives given the same image share one file
+                std::string name;
+                for (size_t k = kept; k < rest.size() && name.empty(); k++)
+                    if (rest[k].second == data) name = rest[k].first;
+                if (name.empty())
+                {
+                    name = member_name(e.param.value, taken);
+                    taken.push_back(name);
+                    rest.push_back(std::make_pair(name, data));
+                }
+                e.param.value = name;
+                e.param.right_extended.clear();
+                changed = true;
+            }
+            if (changed) new_text = ext.serialize();
+        }
+
+        zw.add(member, new_text);
         for (size_t i = 0; i < rest.size(); i++)
             zw.add(rest[i].first, rest[i].second.data(), rest[i].second.size());
         if (!zw.build(out))

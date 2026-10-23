@@ -3,8 +3,10 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: Computer selection window, source
 
+#include <QDateTime>
 #include <QDirIterator>
 #include <QFile>
+#include <QHash>
 #include <QScrollBar>
 #include <QTimer>
 #include <QTreeView>
@@ -45,6 +47,71 @@ bool ComputerModel::operator<(const QStandardItem &other) const
     if (m != nullptr && order != m->order) return order < m->order;
     return QStandardItem::operator<(other);
 }
+
+namespace {
+
+//What the list needs of a machine file. An extension may carry a disk image
+//inline, megabytes of base64 (DVK-3-2.ext.zip: 2.3 MB of text in a 650 KB
+//archive), and reading the system section takes it all: 26 ms a file, half
+//a second for a folder of user variants, on every opening and every switch.
+//The answer is kept for the run, for as long as the file and its base keep
+//their size and time
+struct MachineEntry
+{
+    qint64 size = -1;
+    QDateTime modified;
+    QString base_cfg;           //Its time is checked too: the base gives the name
+    QDateTime base_modified;
+    emulator::Result result = emulator::Result::ok();
+    bool has_system = false;
+    bool is_debug = false;
+    std::string type, name, version, order;
+    std::string source_file, base_file;
+    bool is_protected = false;
+};
+
+QHash<QString, MachineEntry> machine_cache;
+
+const MachineEntry & describe_machine(const QFileInfo &fi, const MachinePaths &paths)
+{
+    const QString key = fi.absoluteFilePath();
+    QHash<QString, MachineEntry>::iterator it = machine_cache.find(key);
+    if (it != machine_cache.end() && it->size == fi.size() && it->modified == fi.lastModified()) {
+        if (it->base_cfg.isEmpty()) return *it;
+        const QFileInfo base(it->base_cfg);
+        if (base.lastModified() == it->base_modified) return *it;
+    }
+
+    MachineEntry m;
+    m.size = fi.size();
+    m.modified = fi.lastModified();
+    //Only the system section is read, of the base for an extension, with
+    //the extension's own changes to it applied
+    EmulatorConfig config;
+    MachineSource source;
+    m.result = load_machine_description(key.toStdString(), paths, config, source, true);
+    if (m.result) {
+        m.source_file = source.file;
+        m.base_file = source.base_cfg;
+        m.is_protected = source.is_protected;
+        if (!source.base_cfg.empty() && source.base_cfg != source.file) {
+            m.base_cfg = QString::fromStdString(source.base_cfg);
+            m.base_modified = QFileInfo(m.base_cfg).lastModified();
+        }
+        EmulatorConfigDevice * system = config.get_device("system");
+        if (system != nullptr) {
+            m.has_system = true;
+            m.is_debug = system->get_parameter("debug", false).value == "1";
+            m.type = system->get_parameter("type", false).value;
+            m.name = system->get_parameter("name", false).value;
+            m.version = system->get_parameter("version", false).value;
+            m.order = system->get_parameter("order", false).value;
+        }
+    }
+    return *machine_cache.insert(key, m);
+}
+
+} // namespace
 
 
 OpenConfigWindow::OpenConfigWindow(QWidget *parent) :
@@ -181,11 +248,8 @@ void OpenConfigWindow::list_machines(QString work_path)
     QStandardItem * broken = nullptr;
 
     auto add_machine = [&](const QFileInfo &fi, bool users) {
-        //Only the system section is read, of the base for an extension, with
-        //the extension's own changes to it applied
-        EmulatorConfig config;
-        MachineSource source;
-        emulator::Result res = load_machine_description(fi.absoluteFilePath().toStdString(), paths, config, source, true);
+        const MachineEntry &m = describe_machine(fi, paths);
+        const emulator::Result &res = m.result;
         if (!res) {
             if (!users) return;
             if (broken == nullptr) {
@@ -201,21 +265,20 @@ void OpenConfigWindow::list_machines(QString work_path)
             broken->appendRow(item);
             return;
         }
-        EmulatorConfigDevice * system = config.get_device("system");
-        if (system == nullptr) return;
+        if (!m.has_system) return;
 
-        bool is_debug = system->get_parameter("debug", false).value == "1";
+        const bool is_debug = m.is_debug;
         if (is_debug && !load_debugs) return;
 
-        QString type = QString::fromStdString(system->get_parameter("type", false).value);
-        QString name = QString::fromStdString(system->get_parameter("name", false).value);
+        QString type = QString::fromStdString(m.type);
+        QString name = QString::fromStdString(m.name);
         if (type.isEmpty() || name.isEmpty()) return;
-        QString version = QString::fromStdString((is_debug?"* ":"") + system->get_parameter("version", false).value);
+        QString version = QString::fromStdString((is_debug?"* ":"") + m.version);
 
         // Position inside the family, 0 when not set. Always decimal:
         // the chooser reads the file without the machine's own radix
         int order = 0;
-        std::string order_str = system->get_parameter("order", false).value;
+        const std::string &order_str = m.order;
         if (!order_str.empty())
             try {
                 order = static_cast<int>(parse_numeric_value(order_str, 10));
@@ -238,9 +301,9 @@ void OpenConfigWindow::list_machines(QString work_path)
 
         //An extension may have a description of its own, otherwise it shows
         //that of its base
-        QString description = QString::fromStdString(machine_file_stem(source.file)) + ".md";
+        QString description = QString::fromStdString(machine_file_stem(m.source_file)) + ".md";
         if (!QFileInfo::exists(description))
-            description = QString::fromStdString(machine_file_stem(source.base_cfg)) + ".md";
+            description = QString::fromStdString(machine_file_stem(m.base_file)) + ".md";
 
         //An archive packed from an extension that lies beside it carries the
         //same version: without a mark the two lines look the same. Alone - as
@@ -252,7 +315,7 @@ void OpenConfigWindow::list_machines(QString work_path)
 
         ComputerModel * computer = new ComputerModel(type, name, title, fi.absoluteFilePath(), order);
         computer->setData(description, Qt::UserRole + 2);
-        computer->setData(source.is_protected, Qt::UserRole + 3);
+        computer->setData(m.is_protected, Qt::UserRole + 3);
         family->appendRow(computer);
     };
 
@@ -376,11 +439,8 @@ QStringList OpenConfigWindow::all_versions() const
             const QFileInfo fi(it.next());
             const std::string n = fi.fileName().toStdString();
             if (!is_machine_file(n) || is_state_file(n)) continue;
-            EmulatorConfig config;
-            MachineSource source;
-            if (!load_machine_description(fi.absoluteFilePath().toStdString(), paths, config, source, true)) continue;
-            EmulatorConfigDevice * system = config.get_device("system");
-            if (system != nullptr) r << QString::fromStdString(system->get_parameter("version", false).value);
+            const MachineEntry &m = describe_machine(fi, paths);
+            if (m.result && m.has_system) r << QString::fromStdString(m.version);
         }
     }
     return r;
