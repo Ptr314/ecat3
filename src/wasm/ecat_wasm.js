@@ -250,8 +250,8 @@ function readUrlParams() {
 
 // blocks=machine,-screen,fdd0: a name on its own is an open block, a name with
 // a minus in front a folded one. The names are those of data-block in
-// shell.html plus the device name of a drive or a tape block - the seven of
-// the page (machine, screen, volume, settings, file, keyboard, options) are
+// shell.html plus the device name of a drive or a tape block - the six of
+// the page (machine, screen, settings, file, keyboard, options) are
 // therefore reserved. A block the address says nothing about is left to the
 // choice saved in this browser
 function blockStates(text) {
@@ -434,7 +434,8 @@ const I18N = {
         powerTitle:         "Cold reset (power cycle)",
         reset:              "Reset",
         resetTitle:         "Warm reset",
-        scale:              "Screen scale",
+        scale:              "Scale",
+        screenFormat:       "Format",
         volume:             "Volume",
         language:           "Language",
         keyboard:           "Keyboard",
@@ -547,7 +548,7 @@ const I18N = {
         blendFramesTitle:   "Pictures a program alternates from frame to frame are shown as a steady mix instead of a flicker: every point is the mean of its colour and the previous different one",
         mouseSpeed:         "Mouse speed",
         blockMachine:       "Machine",
-        blockScreen:        "Screen",
+        blockScreen:        "Screen and sound",
         blockFile:          "File",
         blockDevices:       "Devices",
         stMouseCaptured:    "The mouse is captured by the machine. Press Esc, Ctrl-Alt or the middle button to release it",
@@ -560,7 +561,8 @@ const I18N = {
         powerTitle:         "Холодный сброс (выключить и включить)",
         reset:              "Сброс",
         resetTitle:         "Тёплый сброс",
-        scale:              "Масштаб экрана",
+        scale:              "Масштаб",
+        screenFormat:       "Формат",
         volume:             "Громкость",
         language:           "Язык",
         keyboard:           "Клавиатура",
@@ -673,7 +675,7 @@ const I18N = {
         blendFramesTitle:   "Картинки, которые программа чередует от кадра к кадру, видны ровной смесью, а не мерцанием: каждая точка показывается средним своего цвета и предыдущего, отличного от него",
         mouseSpeed:         "Скорость мыши",
         blockMachine:       "Машина",
-        blockScreen:        "Экран",
+        blockScreen:        "Экран и звук",
         blockFile:          "Файл",
         blockDevices:       "Устройства",
         stMouseCaptured:    "Мышь захвачена машиной. Esc, Ctrl-Alt или средняя кнопка отпускает ее",
@@ -1290,6 +1292,7 @@ async function loadMachine(module, machinePath, bundleUrl, dataBundleUrl, before
         }
 
         setStatus("stRunning", "success");
+        sendVolume(module);
 
         // Resume audio context (miniaudio creates it but browsers suspend it without user gesture)
         if (window.miniaudio && window.miniaudio.unlock) {
@@ -2105,6 +2108,41 @@ function setupKeyRemap(module) {
 // Settings > Speed: emulated time against the wall clock, in quarters (4 =
 // 1x, 0 = as fast as possible, silent). The whole machine, not its processor;
 // the emulator keeps it across loads
+// Screen and sound > Volume, in percent. The core sets it on the sound devices
+// of the machine loaded, so every new machine gets it again (sendVolume after
+// wasm_load_machine)
+const VOLUME_STEP = 5;
+
+function sendVolume(module) {
+    module.ccall("wasm_set_volume", null, ["number"],
+        [parseInt(document.getElementById("volume").value, 10)]);
+}
+
+function setVolume(module, value) {
+    const range = document.getElementById("volume");
+    range.value = clamp(Math.round(value / VOLUME_STEP) * VOLUME_STEP, 0, 100);
+    settings.set("volume", range.value);
+    paintRange(range);
+    unlockAudio();
+    sendVolume(module);
+}
+
+function setupVolume(module) {
+    const range = document.getElementById("volume");
+    const saved = parseInt(settings.get("volume", ""), 10);
+    if (!isNaN(saved)) range.value = clamp(saved, 0, 100);
+    paintRange(range);
+    sendVolume(module);
+    range.addEventListener("input", () => setVolume(module, parseInt(range.value, 10)));
+    releaseFocus(range);
+    for (const [id, dir] of [["volume-minus", -1], ["volume-plus", +1]]) {
+        const button = document.getElementById(id);
+        button.addEventListener("click",
+            () => setVolume(module, parseInt(range.value, 10) + dir * VOLUME_STEP));
+        releaseFocus(button);
+    }
+}
+
 function setupSpeed(module) {
     const select = document.getElementById("speed");
     const send = () => module.ccall("wasm_set_speed", null, ["number"], [parseInt(select.value, 10)]);
@@ -3692,13 +3730,7 @@ async function initEcat() {
         module.ccall("wasm_reset", null, ["number"], [1]);
     });
 
-    const volume = document.getElementById("volume");
-    volume.addEventListener("input", (e) => {
-        unlockAudio();
-        module.ccall("wasm_set_volume", null, ["number"], [parseInt(e.target.value)]);
-    });
-    releaseFocus(volume);
-
+    setupVolume(module);
     setupKeyRemap(module);
     setupSpeed(module);
     setupFrameBlending(module);
