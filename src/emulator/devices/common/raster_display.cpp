@@ -191,6 +191,10 @@ emulator::Result RasterDisplay::load_state(const StateReader &r)
     if (m_rem_acc >= m_lines) m_rem_acc = 0;
     if (m_line_length != m_counts_per_line && m_line_length != m_counts_per_line + 1)
         m_line_length = m_counts_per_line;
+    // The mode of the line the snapshot stopped in is not saved: it is the
+    // one asked for now (set before the state is applied). Left off, a line
+    // past its sampling point was drawn neither by the beam nor by HSYNC(1)
+    m_beam = m_precise;
     return emulator::Result::ok();
 }
 

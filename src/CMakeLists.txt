@@ -209,6 +209,7 @@ set(GUI_SOURCES
     ../README.md
     ../docs/BUILD.md
     ../docs/MANUAL.md
+    ../docs/DEBUGGER.md
     ../docs/CONFIG.md
     ../docs/SCRIPTING.md
     ../docs/HISTORY.md

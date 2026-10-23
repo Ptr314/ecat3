@@ -66,7 +66,7 @@ copy_deploy() {
 # Copies the user documentation into $1
 copy_docs() {
     mkdir -p "$1"
-    cp "${REPO_DIR}/docs/MANUAL.md" "${REPO_DIR}/docs/MCP.md" "${REPO_DIR}/docs/SCRIPTING.md" \
+    cp "${REPO_DIR}/docs/MANUAL.md" "${REPO_DIR}/docs/DEBUGGER.md" "${REPO_DIR}/docs/MCP.md" "${REPO_DIR}/docs/SCRIPTING.md" \
         "${REPO_DIR}/docs/CONFIG.md" \
         "$1/"
 }

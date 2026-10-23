@@ -13,6 +13,11 @@ class OpenGLRenderer: public VideoRenderer
 {
 private:
     QImage * surface = nullptr;
+    //The blended frames, taken in turns: the widget keeps the one it was
+    //given last, shared, and the other is free to be written again. If the
+    //widget still holds it too, bits() detaches it, as a new image would
+    QImage blended[2];
+    int blended_next = 0;
     GLWidget * widget = nullptr;
     int scan_lines = 0;
 
@@ -93,13 +98,15 @@ public:
             widget->updateTexture(*surface);
             return;
         }
-        //A new image every blended frame: the widget keeps the one it is
-        //given, shared
-        QImage blended(screen_x, screen_y, QImage::Format_RGB32);
-        if (blend_frame(surface->constBits(), blended.bits()))
-            widget->updateTexture(blended);
-        else
+        QImage &out = blended[blended_next];
+        if (out.width() != screen_x || out.height() != screen_y)
+            out = QImage(screen_x, screen_y, QImage::Format_RGB32);
+        if (blend_frame(surface->constBits(), out.bits())) {
+            widget->updateTexture(out);
+            blended_next ^= 1;
+        } else {
             widget->updateTexture(*surface);
+        }
     }
 
     uint32_t MapRGB(uint8_t R, uint8_t G, uint8_t B) override

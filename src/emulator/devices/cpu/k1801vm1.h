@@ -174,6 +174,7 @@ public:
     virtual unsigned int get_command() override;
     unsigned int peek_mem(unsigned int address) override;
     bool poke_mem(unsigned int address, unsigned int value) override;
+    bool mem_writable(unsigned int address) override;
     virtual DisAsm * create_disasm(const std::string &data_path, emulator::Result &res) override;
 
     virtual void set_context_value(const std::string &name, unsigned int value) override;

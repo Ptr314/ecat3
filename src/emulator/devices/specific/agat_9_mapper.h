@@ -33,6 +33,8 @@ public:
     emulator::Result load_config(SystemData *sd) override;
     unsigned get_value(unsigned address) override;
     void set_value(unsigned address, unsigned value, bool force=false) override;
+    //The memory, not the C08X switches
+    bool debug_writable(unsigned int address) const override { return address < 0xC000 || address >= 0xD000; }
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

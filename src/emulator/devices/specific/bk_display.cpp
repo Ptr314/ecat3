@@ -184,7 +184,7 @@ DeviceOptions BKDisplay::get_device_options()
             },
             // The mode of the config; a switch not yet taken over by the
             // render thread already counts
-            m_mode_pending ? m_pending_mode : m_mode
+            m_mode_pending ? m_pending_mode : m_mode.load()
         }
     };
 }
@@ -520,7 +520,7 @@ void BKDisplay::save_state(StateWriter &w)
     w.n("frames", m_frames);
     // "color" is what snapshots without Mono had: 0 was the black and white mode
     w.b("color", !wide(m_mode));
-    w.n("mode", m_mode);
+    w.n("mode", m_mode.load());
     //The palette each line of the picture was drawn with. A snapshot taken
     //mid frame is finished from the line it stopped on, and a program that
     //changes the palette per line (every БК demo) keeps the lines above it

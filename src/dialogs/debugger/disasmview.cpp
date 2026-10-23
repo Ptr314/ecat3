@@ -323,9 +323,12 @@ void DisasmView::toggle_breakpoint(unsigned int address)
     e->invoke([c, em, address]() {
         if (c->has_breakpoint(address)) c->remove_breakpoint(address);
         else c->add_breakpoint(address);
-        //A processor running without them has to look from now on
+        //A processor running without them has to look from now on, and one
+        //left with nothing to look for need not
         if (!em->debug_paused() && c->m_debug == DEBUG_OFF && !c->get_breakpoints().empty())
             c->m_debug = DEBUG_BRAKES;
+        else if (c->m_debug == DEBUG_BRAKES && c->get_breakpoints().empty() && !c->has_temp_break())
+            c->m_debug = DEBUG_OFF;
     });
     viewport()->update();
     emit breakpoints_changed();

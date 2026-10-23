@@ -37,7 +37,10 @@ private:
     unsigned m_offset;              // first video line shown at the top
     unsigned m_line_bytes;          // bytes of video memory per screen line
     unsigned m_video_lines;         // picture lines
-    unsigned m_mode;                // BK_MODE_*
+    // BK_MODE_*. Switched under the surface lock by whichever thread comes
+    // first (apply_mode_switch()), read by the beam on the emulation thread
+    // without it: atomic, so that read is not a data race
+    std::atomic<unsigned> m_mode;
 
     static bool wide(unsigned mode) { return mode == BK_MODE_BW; }   // 8 dots a byte
     unsigned mode_width(unsigned mode) const { return m_line_bytes * (wide(mode) ? 8 : 4); }
@@ -51,7 +54,7 @@ private:
     // A mode change requested from the interface thread, applied at the end of
     // the picture by the emulation thread, or by the render one if that comes
     // first (a stopped machine draws no frames)
-    volatile bool m_mode_pending = false;
+    std::atomic<bool> m_mode_pending{false};
     unsigned m_pending_mode = BK_MODE_RGB;
     void apply_mode_switch();                   // under the surface lock
 

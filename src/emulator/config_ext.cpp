@@ -781,8 +781,15 @@ std::string member_name(const std::string &value, const std::vector<std::string>
 
 } // namespace
 
+//The largest file read_extension_file() puts back inline. Disk images of
+//floppies are well under it; a hard disk image of tens of megabytes would
+//become a text a third larger again, built, parsed and written back on every
+//open in the editor. It stays a file of the archive the text names, which
+//write_extension_file() keeps, and counts in other_files
+static const uint32_t MAX_INLINE_BYTES = 4u * 1024u * 1024u;
+
 emulator::Result read_extension_file(const std::string &file, std::string &text, std::string &ext_name,
-                                     size_t * other_files)
+                                     size_t * other_files, bool inline_files)
 {
     std::string archive;
     ZipReader zip;
@@ -792,7 +799,7 @@ emulator::Result read_extension_file(const std::string &file, std::string &text,
     //The files the edits name go back inline. A text that does not parse is
     //left as it is: the editor reports the error itself
     std::vector<bool> inlined(zip.entries().size(), false);
-    if (!archive.empty())
+    if (!archive.empty() && inline_files)
     {
         ConfigExtension ext;
         if (ext.parse(text, ext_name))
@@ -801,7 +808,7 @@ emulator::Result read_extension_file(const std::string &file, std::string &text,
             for (size_t i = 0; i < ext.edits.size(); i++)
             {
                 const int m = named_member(ext.edits[i], zip);
-                if (m < 0) continue;
+                if (m < 0 || zip.entries()[m].size > MAX_INLINE_BYTES) continue;
                 std::vector<uint8_t> bytes;
                 if (!zip.read(static_cast<size_t>(m), bytes))
                     return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.error());

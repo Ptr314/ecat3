@@ -5,6 +5,7 @@
 
 #include "memoryview.h"
 
+#include <QApplication>
 #include <QCoreApplication>
 #include <QFile>
 #include <QFileDialog>
@@ -45,6 +46,7 @@ MemorySource memory_of_cpu(CPU * cpu)
     s.base = view_base(cpu);
     s.read = [cpu](unsigned int a) { return cpu->peek_mem(a) & 0xFF; };
     s.write = [cpu](unsigned int a, unsigned int v) { cpu->poke_mem(a, v); };
+    s.writable = [cpu](unsigned int a) { return cpu->mem_writable(a); };
     //The ВМ3 sees its memory through the MMU, the mapper is physical
     MemoryMapper * mm = cpu->mm;
     const int base = s.base;
@@ -63,9 +65,12 @@ MemorySource memory_of_device(AddressableDevice * d)
     if (MemoryMapper * mm = dynamic_cast<MemoryMapper*>(d)) {
         const int base = s.base;
         s.write = [mm](unsigned int a, unsigned int v) { mm->poke(a, v); };
+        s.writable = [mm](unsigned int a) { return mm->writable(a); };
         s.owner = [mm, base](unsigned int a) { return owner_text(mm, a, base); };
     } else {
-        s.write = [d](unsigned int a, unsigned int v) { d->set_value(a, v & 0xFF, true); };
+        //A register is shown, not written: see AddressableDevice::debug_writable()
+        s.write = [d](unsigned int a, unsigned int v) { if (d->debug_writable(a)) d->set_value(a, v & 0xFF, true); };
+        s.writable = [d](unsigned int a) { return d->debug_writable(a); };
     }
     return s;
 }
@@ -398,8 +403,22 @@ void MemoryView::keyPressEvent(QKeyEvent *event)
     }
 }
 
+//Every byte of the cell is memory: a register is shown, not edited
+bool MemoryView::can_write(unsigned int address, unsigned int count) const
+{
+    if (!m_src.write) return false;
+    if (!m_src.writable) return true;
+    for (unsigned int i = 0; i < count; i++)
+        if (address + i < m_src.size && !m_src.writable(address + i)) return false;
+    return true;
+}
+
 void MemoryView::start_edit(unsigned int address, bool chars)
 {
+    if (!can_write(address, chars ? 1 : (unsigned int)cell_bytes())) {
+        QApplication::beep();
+        return;
+    }
     make_visible();
     const int dx = -horizontalScrollBar()->value();
     const int row = (int)((address - m_top) / LINE_BYTES);

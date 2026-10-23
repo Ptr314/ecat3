@@ -89,7 +89,7 @@ private:
     QWidget * create_page(size_t i);
     void set_logging(size_t i, bool on);
     void set_to_file(size_t i, bool on);
-    void set_charset(size_t i, int index);
+    void set_charset(size_t i, int index, bool save = true);
     void refill(Port & p);
     bool open_file(Port & p);
     void close_file(Port & p);

@@ -145,7 +145,7 @@ emulator::Result ExtEditModel::open(const std::string &path, const MachinePaths 
         if (derive && is_extension_file(path))
         {
             std::string text, ext_name;
-            emulator::Result res = read_extension_file(path, text, ext_name);
+            emulator::Result res = read_extension_file(path, text, ext_name, nullptr, false);
             if (!res) return res;
             ConfigExtension source;
             res = source.parse(text, ext_name);

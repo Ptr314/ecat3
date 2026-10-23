@@ -54,14 +54,17 @@ namespace {
 //inline, megabytes of base64 (DVK-3-2.ext.zip: 2.3 MB of text in a 650 KB
 //archive), and reading the system section takes it all: 26 ms a file, half
 //a second for a folder of user variants, on every opening and every switch.
-//The answer is kept for the run, for as long as the file and its base keep
-//their size and time
+//The answer is kept for the run, for as long as the file and every file under
+//it keep their size and time. A file that failed to load is read again each
+//time: the error may be in a base the user is fixing, or in a base that is
+//not there yet
 struct MachineEntry
 {
     qint64 size = -1;
     QDateTime modified;
-    QString base_cfg;           //Its time is checked too: the base gives the name
-    QDateTime base_modified;
+    //The chain under an extension, down to its .cfg: any of them may give the
+    //name, the version or the order
+    std::vector<std::pair<QString, QDateTime>> bases;
     emulator::Result result = emulator::Result::ok();
     bool has_system = false;
     bool is_debug = false;
@@ -76,10 +79,11 @@ const MachineEntry & describe_machine(const QFileInfo &fi, const MachinePaths &p
 {
     const QString key = fi.absoluteFilePath();
     QHash<QString, MachineEntry>::iterator it = machine_cache.find(key);
-    if (it != machine_cache.end() && it->size == fi.size() && it->modified == fi.lastModified()) {
-        if (it->base_cfg.isEmpty()) return *it;
-        const QFileInfo base(it->base_cfg);
-        if (base.lastModified() == it->base_modified) return *it;
+    if (it != machine_cache.end() && it->result && it->size == fi.size() && it->modified == fi.lastModified()) {
+        bool same = true;
+        for (size_t i = 0; i < it->bases.size() && same; i++)
+            same = QFileInfo(it->bases[i].first).lastModified() == it->bases[i].second;
+        if (same) return *it;
     }
 
     MachineEntry m;
@@ -94,9 +98,16 @@ const MachineEntry & describe_machine(const QFileInfo &fi, const MachinePaths &p
         m.source_file = source.file;
         m.base_file = source.base_cfg;
         m.is_protected = source.is_protected;
-        if (!source.base_cfg.empty() && source.base_cfg != source.file) {
-            m.base_cfg = QString::fromStdString(source.base_cfg);
-            m.base_modified = QFileInfo(m.base_cfg).lastModified();
+        //Every @extends down to the .cfg; the loader has just read them, so
+        //machine_base_file() finds the same ones
+        std::string file = key.toStdString();
+        //A saved state is its own base
+        for (int depth = 0; depth < 16 && !is_state_file(file); depth++) {
+            std::string base;
+            if (!machine_base_file(file, paths, base) || base.empty() || base == file) break;
+            const QString b = QString::fromStdString(base);
+            m.bases.push_back(std::make_pair(b, QFileInfo(b).lastModified()));
+            file = base;
         }
         EmulatorConfigDevice * system = config.get_device("system");
         if (system != nullptr) {

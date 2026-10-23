@@ -71,6 +71,7 @@ public:
     unsigned int get_direct(unsigned int address) override;
     unsigned int get_value_word(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
+    bool debug_writable(unsigned int address) const override;
     void set_value_word(unsigned int address, unsigned int value, bool force=false) override;
 
     void save_state(StateWriter &w) override;

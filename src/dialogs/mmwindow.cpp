@@ -70,8 +70,12 @@ void MemoryMapperWindow::on_process_button_clicked()
 
     //Nothing answers there. And no get_value(): the window looks, it does not
     //read - a read strobes a port or clears a register
+    //The dump of the device found before goes too: it would be taken for this
+    //address and edited there
     if (d == nullptr) {
         ui->device_name->setText(MemoryMapperWindow::tr("No device"));
+        delete panel;
+        panel = nullptr;
         return;
     }
     QString s = QString::fromStdString(d->name + " " + d->type);

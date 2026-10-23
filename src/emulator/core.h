@@ -530,6 +530,12 @@ public:
     //at that address, see MemoryMapper::read_word_odd()
     virtual bool byte_wide() const { return false; }
 
+    //A cell of memory at this address, which the debugger's dump may change
+    //with set_value(force): the byte is stored and nothing else happens. A
+    //register is not: its write acts (a DL11 sends the byte, a channel starts),
+    //and the dump only shows it. Memories and the windows into them say true
+    virtual bool debug_writable(MAYBE_UNUSED unsigned int address) const { return false; }
+
     //Asked by the mapper for a range marked "routed = 1", before the access and
     //with the same address the device would get: does this device answer here
     //(ROUTE_ANSWER), leave the address to the ranges after it (ROUTE_PASS),
@@ -626,6 +632,7 @@ public:
     void set_memory_callback(ComputerDevice * d, unsigned int callback_id, unsigned int mode);
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
+    bool debug_writable(MAYBE_UNUSED unsigned int address) const override { return true; }
     virtual uint8_t * get_buffer();
     //No access hook and both directions allowed: the buffer may be read and
     //written directly, as PlanePair does for the УК-НЦ processor
@@ -826,6 +833,7 @@ private:
     unsigned int m_temp_from;       //PC when the debugger's stop was set
     unsigned int m_last_pc;         //PC of the instruction just executed, while one is set
     DisAsm * m_disasm;          //Made on first use, see disasm()
+    bool m_disasm_tried;        //A table that failed to load is not read again
 
 protected:
     Interface i_address;
@@ -883,12 +891,13 @@ public:
 
     //The debugger's own stop, checked with the breakpoints in DEBUG_BRAKES and
     //forgotten when it is reached: at pc (TEMP_PC); when the stack pointer is
-    //back at sp or higher after a return instruction, or at pc (TEMP_RETURN:
+    //back at sp or higher, after a return instruction or at pc (TEMP_RETURN:
     //a call stepped over has returned, wherever to - JSR R5 returns past its
     //arguments; an interrupt taken before the call returns to it, and a POP
     //of the routine's own data is not a return); above sp after a return
     //instruction (TEMP_OUT: the routine has returned). A processor without a
-    //stack pointer stops at pc for TEMP_RETURN
+    //stack pointer stops at pc for TEMP_RETURN. Nothing stops a processor
+    //waiting for an interrupt: its PC is not where it runs yet
     void set_temp_break(unsigned int mode, unsigned int pc, unsigned int sp);
     void clear_temp_break() { m_temp_mode = TEMP_NONE; }
     bool has_temp_break() const { return m_temp_mode != TEMP_NONE; }
@@ -927,6 +936,8 @@ public:
     //The debugger's write to the same place: MemoryMapper::poke(), with the
     //processor's own translation. Emulation thread
     virtual bool poke_mem(unsigned int address, unsigned int value);
+    //Whether poke_mem() stores anything there: memory, not a register
+    virtual bool mem_writable(unsigned int address);
 
     //The disassembler of this instruction set, for the debugger, which owns it.
     //By default the table-driven one loaded from data_path + disasm_table(); a
@@ -1078,11 +1089,13 @@ public:
     // for the debugger: whoever is seen there. Null when nothing is mapped
     AddressableDevice * peek_owner(unsigned int address, unsigned int &offset);
     // What the debugger writes: the byte goes to the device peek_owner()
-    // finds, with force (a ROM takes it), and no bus cycle - set_value() is
-    // the processor's write, which a register acts on and a ROM ignores. A
-    // memory a write would reach under it (RAM below a ROM) gets it too.
-    // False when nothing answers there
+    // finds, with force (a ROM takes it), and no bus cycle. Only to memory
+    // (AddressableDevice::debug_writable()): a register would act on it as on
+    // the processor's write. A memory a write would reach under it (RAM below
+    // a ROM) gets it too. False when no memory takes it
     bool poke(unsigned int address, unsigned int value);
+    // Whether poke() stores anything at the address
+    bool writable(unsigned int address);
 
     MemoryMapper(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual emulator::Result load_config(SystemData *sd) override;

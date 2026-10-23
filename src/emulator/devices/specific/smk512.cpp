@@ -245,6 +245,12 @@ unsigned int SMK512::get_value_word(unsigned int address)
     return p[0] | (p[1] << 8);
 }
 
+// Память окна, кроме регистров 177130 и 177132: запись туда переключает режим
+bool SMK512::debug_writable(unsigned int address) const
+{
+    return (address & ~3u) != OFF_REG;
+}
+
 void SMK512::set_value(unsigned int address, unsigned int value, bool force)
 {
     (void)force;

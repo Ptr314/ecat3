@@ -87,7 +87,7 @@ if exist "%~2\.ecat.ini" del /q "%~2\.ecat.ini"
 copy /y "%~dp0..\deploy\.ecat.ini" "%~2\ecat.ini" >nul || exit /b 1
 REM The user documentation, the same files as in the macOS image
 if not exist "%~2\docs" mkdir "%~2\docs" || exit /b 1
-for %%D in (MANUAL MCP SCRIPTING CONFIG) do (
+for %%D in (MANUAL DEBUGGER MCP SCRIPTING CONFIG) do (
     copy /y "%~dp0..\docs\%%D.md" "%~2\docs\" >nul || exit /b 1
 )
 exit /b 0

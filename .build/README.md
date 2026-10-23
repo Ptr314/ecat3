@@ -72,7 +72,7 @@ cmake -S src -B build-headless -G Ninja -DCMAKE_BUILD_TYPE=Release       -DENABL
 него же эмулятор и раннер тестов заводят `ecat.ini`, когда того нет.
 
 Во все выпуски, кроме пакета для браузера, кладётся и документация для
-пользователя: `MANUAL.md`, `MCP.md`, `SCRIPTING.md` и `CONFIG.md` из `docs/`,
+пользователя: `MANUAL.md`, `DEBUGGER.md`, `MCP.md`, `SCRIPTING.md` и `CONFIG.md` из `docs/`,
 в каталог `docs/`. В zip для Windows он лежит рядом с exe, в `.dmg` — рядом с
 бандлом, в `.tar.gz` консольной сборки — рядом с `bin/` и `share/`. AppImage —
 один файл, поэтому там документация лежит внутри, в `usr/share/doc/ecat3/`

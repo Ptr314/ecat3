@@ -21,14 +21,16 @@ class QToolButton;
 
 //What a dump shows: the address space of a processor or one device. Reads
 //have no side effects (peek_mem, get_direct); writes are the debugger's own
-//(poke: a ROM takes them, a register does not act on them) and run on the
-//emulation thread
+//(poke: a ROM takes them, a register is not written) and run on the
+//emulation thread. writable says which cells take them, so that a register
+//is not offered for editing
 struct MemorySource {
     QString title;
     unsigned int size = 0;
     int base = 16;
     std::function<unsigned int(unsigned int)> read;
     std::function<void(unsigned int, unsigned int)> write;
+    std::function<bool(unsigned int)> writable;
     //The device that answers an address, for a mapper or a processor
     std::function<QString(unsigned int)> owner;
 };
@@ -103,6 +105,7 @@ private:
     void make_visible();
     void update_scrollbar();
     void start_edit(unsigned int address, bool chars);
+    bool can_write(unsigned int address, unsigned int count) const;
     void commit_edit();
     void close_edit();
     void on_char_typed(const QString &text);

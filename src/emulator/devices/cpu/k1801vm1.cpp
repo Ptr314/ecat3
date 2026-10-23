@@ -504,6 +504,13 @@ bool k1801vm1::poke_mem(unsigned int address, unsigned int value)
     return CPU::poke_mem(address, value);
 }
 
+bool k1801vm1::mem_writable(unsigned int address)
+{
+    if (core->is_vm3() && address <= 0xFFFF)
+        return mm->writable(core->vm3_peek_address((uint16_t)address));
+    return CPU::mem_writable(address);
+}
+
 unsigned int k1801vm1::get_command()
 {
     //Asked by the debugger and by LOG cpu.command, not by the processor. A

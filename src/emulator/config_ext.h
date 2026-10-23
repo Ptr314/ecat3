@@ -111,9 +111,11 @@ std::string machine_file_stem(const std::string &path);
 
 //The text of an extension, an .ext or the one .ext inside an .ext.zip.
 //ext_name labels the parser's messages; other_files, if asked, counts the
-//files an archive holds beside the text (0 for a plain .ext)
+//files an archive holds beside the text and not put inline (0 for a plain
+//.ext). inline_files false leaves every file of the archive out of the text:
+//for a reader that wants only the script or the header
 emulator::Result read_extension_file(const std::string &file, std::string &text, std::string &ext_name,
-                                     size_t * other_files = nullptr);
+                                     size_t * other_files = nullptr, bool inline_files = true);
 //Writes it back the same way. An existing archive keeps the files beside the
 //text and the text's own name; a new one holds <stem>.ext alone.
 //In an archive a file given inline is not kept in the text: it is a file of

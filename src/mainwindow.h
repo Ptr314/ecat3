@@ -306,6 +306,7 @@ private:
     QAction * turbo_action = nullptr;
     int turbo_speed = 4;                //Quarters, [Core] speed
     void apply_speed();                 //Turbo and turbo_speed into the emulator
+    void choose_speed(int v);           //A speed of the menu, the menu made or not
     //SPEED of a script or MCP sets the emulator past the window: the button
     //and the title follow it by polling, the ini keeps the menu's choice
     QTimer * speed_timer = nullptr;

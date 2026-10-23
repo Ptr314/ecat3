@@ -247,6 +247,12 @@ unsigned int A16M::get_value_word(unsigned int address)
     return p[0] | (p[1] << 8);
 }
 
+// Память окна, кроме регистров 177130 и 177132: запись туда переключает режим
+bool A16M::debug_writable(unsigned int address) const
+{
+    return (address & ~3u) != OFF_REG;
+}
+
 void A16M::set_value(unsigned int address, unsigned int value, bool force)
 {
     (void)force;

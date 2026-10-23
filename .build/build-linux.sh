@@ -68,7 +68,7 @@ copy_deploy() {
 # Copies the user documentation into $1, the same files as in the macOS image
 copy_docs() {
     mkdir -p "$1"
-    cp ../docs/MANUAL.md ../docs/MCP.md ../docs/SCRIPTING.md ../docs/CONFIG.md "$1/"
+    cp ../docs/MANUAL.md ../docs/DEBUGGER.md ../docs/MCP.md ../docs/SCRIPTING.md ../docs/CONFIG.md "$1/"
 }
 
 echo "Building eCat3 ${APP_VERSION} for ${PLATFORM} ${ARCHITECTURE}"

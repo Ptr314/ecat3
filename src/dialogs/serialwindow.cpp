@@ -191,7 +191,8 @@ QWidget * SerialWindow::create_page(size_t i)
     layout->addWidget(bar);
     layout->addWidget(p.text);
 
-    set_charset(i, p.charset->currentIndex());
+    //Только применить: сохраненное и так в ini, а каждая запись переписывает файл целиком
+    set_charset(i, p.charset->currentIndex(), false);
 
     connect(p.log_action, &QAction::toggled, this, [this, i](bool on){ set_logging(i, on); });
     connect(p.file_action, &QAction::toggled, this, [this, i](bool on){ set_to_file(i, on); });
@@ -221,7 +222,7 @@ std::string SerialWindow::charset_key(const Port & p)
 }
 
 //Новая кодировка перерисовывает все поле из принятого
-void SerialWindow::set_charset(size_t i, int index)
+void SerialWindow::set_charset(size_t i, int index, bool save)
 {
     Port & p = ports[i];
     const int c = p.charset->itemData(index).toInt();
@@ -233,7 +234,7 @@ void SerialWindow::set_charset(size_t i, int index)
         p.table = info.charmap;
         p.koi7 = info.is_koi7;
     }
-    e->write_setup("Serial", charset_key(p), known ? CHARSETS[c].id : "machine");
+    if (save) e->write_setup("Serial", charset_key(p), known ? CHARSETS[c].id : "machine");
     build_glyphs(p);
     refill(p);
 }

@@ -249,8 +249,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, i
     connect(turbo_action, &QAction::toggled, this, [this](bool checked) {
         //Turbo at 1x is no turbo: pressing it chooses 2x in the menu
         if (checked && turbo_speed == 4) {
-            for (QAction * sa : speed_menu->actions())
-                if (sa->data().toInt() == 8) sa->trigger();
+            choose_speed(8);
             return;
         }
         e->write_setup("Core", "turbo", checked?"1":"0");
@@ -676,6 +675,14 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+//QMenu::clear() leaves the action groups of its items: the menus below are
+//made again at every switch of language, and each left one behind
+static void clear_menu(QMenu * m)
+{
+    qDeleteAll(m->findChildren<QActionGroup*>(QString(), Qt::FindDirectChildrenOnly));
+    m->clear();
+}
+
 void MainWindow::CreateScreenMenu()
 {
     //The look of the window: the styles of this Qt. The default one of Qt 6 on
@@ -688,9 +695,13 @@ void MainWindow::CreateScreenMenu()
         ui->menuHelp->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, style_menu);
     }
     style_menu->setTitle(tr("Interface style"));
-    style_menu->clear();
+    clear_menu(style_menu);
     {
-        const QString current = QString::fromStdString(e->read_setup("interface", "style", ""));
+        //A style given at start (-style, QT_STYLE_OVERRIDE) is the one in use,
+        //whatever the ini says
+        const QString current = qApp->property("ecat_style_given").toBool()
+            ? QApplication::style()->objectName()
+            : QString::fromStdString(e->read_setup("interface", "style", ""));
         QActionGroup * style_group = new QActionGroup(style_menu);
         QStringList names = QStyleFactory::keys();
         names.prepend(QString());
@@ -727,7 +738,7 @@ void MainWindow::CreateScreenMenu()
         ui->menuHelp->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, mouse_speed_menu);
     }
     mouse_speed_menu->setTitle(tr("Mouse speed"));
-    mouse_speed_menu->clear();
+    clear_menu(mouse_speed_menu);
     QActionGroup * speed_group = new QActionGroup(mouse_speed_menu);
     static const int SPEEDS[] = {200, 150, 100, 50, 25, 12};
     for (size_t i = 0; i < sizeof(SPEEDS) / sizeof(SPEEDS[0]); i++) {
@@ -751,7 +762,7 @@ void MainWindow::CreateScreenMenu()
         ui->menuHelp->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, screenshot_menu);
     }
     screenshot_menu->setTitle(tr("Screenshot type"));
-    screenshot_menu->clear();
+    clear_menu(screenshot_menu);
     QActionGroup * shot_group = new QActionGroup(screenshot_menu);
     for (int i = 0; i < 2; i++) {
         const bool shown = i == 1;
@@ -844,7 +855,7 @@ void MainWindow::CreateScreenMenu()
         ui->menuHelp->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, key_remap_menu);
     }
     key_remap_menu->setTitle(tr("Keyboard"));
-    key_remap_menu->clear();
+    clear_menu(key_remap_menu);
     {
         QActionGroup * remap_group = new QActionGroup(key_remap_menu);
         const QString titles[KEY_REMAP_COUNT] = {
@@ -877,21 +888,11 @@ void MainWindow::CreateScreenMenu()
     }
     speed_menu->setTitle(tr("Speed"));
     update_precise_action();
-    speed_menu->clear();
+    clear_menu(speed_menu);
     {
         QActionGroup * speed_group = new QActionGroup(speed_menu);
         for (int v : SPEEDS_Q) {
-            QAction * sa = speed_menu->addAction(speed_text(v), [this, v]{
-                //Applied at once: Turbo is pressed for any speed but 1x
-                turbo_speed = v;
-                e->write_setup("Core", "speed", std::to_string(v));
-                e->write_setup("Core", "turbo", (v != 4)?"1":"0");
-                {
-                    QSignalBlocker block(turbo_action);
-                    turbo_action->setChecked(v != 4);
-                }
-                apply_speed();
-            });
+            QAction * sa = speed_menu->addAction(speed_text(v), [this, v]{ choose_speed(v); });
             sa->setData(v);
             sa->setActionGroup(speed_group);
             sa->setCheckable(true);
@@ -899,7 +900,7 @@ void MainWindow::CreateScreenMenu()
         }
     }
 
-    ui->menuScale->clear();
+    clear_menu(ui->menuScale);
     QActionGroup * scale_group = new QActionGroup(ui->menuScale);
 
     int i0 = 0;
@@ -921,7 +922,7 @@ void MainWindow::CreateScreenMenu()
         a->setChecked(e->get_scale() == (int)i);
     };
 
-    ui->menuScreen_ratio->clear();
+    clear_menu(ui->menuScreen_ratio);
     QActionGroup * ratio_group = new QActionGroup(ui->menuScreen_ratio);
     QAction * a1 = ui->menuScreen_ratio->addAction(
         tr("Screen 4:3"),
@@ -946,7 +947,7 @@ void MainWindow::CreateScreenMenu()
     a3->setChecked(e->get_ratio() == SCREEN_RATIO_11);
 
     #ifdef RENDERER_SDL2
-        ui->menuFiltering->clear();
+        clear_menu(ui->menuFiltering);
         QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);
         QAction * af1 = ui->menuFiltering->addAction(
             tr("Nearest pixel"),
@@ -980,7 +981,7 @@ void MainWindow::CreateScreenMenu()
         af4->setCheckable(true);
         af4->setChecked(e->get_filtering() == SCREEN_FILTERING_SHARP);
     #elif defined(RENDERER_QT)
-        ui->menuFiltering->clear();
+        clear_menu(ui->menuFiltering);
         QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);
         QAction * af1 = ui->menuFiltering->addAction(
             tr("Fast, no smoothing"),
@@ -1001,7 +1002,7 @@ void MainWindow::CreateScreenMenu()
         //The texture filter of GLWidget: NONE is nearest, the tube and the
         //sharp mode are shaders of their own, anything else is linear - an
         //anisotropic filter does nothing for a picture that is never minified
-        ui->menuFiltering->clear();
+        clear_menu(ui->menuFiltering);
         QActionGroup * filtering_group = new QActionGroup(ui->menuFiltering);
         QAction * af1 = ui->menuFiltering->addAction(
             tr("Nearest pixel"),
@@ -1726,6 +1727,23 @@ void MainWindow::apply_speed()
     turbo_action->setToolTip(tr("Turbo") + ": " + speed_text(turbo_speed));
     shown_speed = e->speed();
     if (e->loaded) set_title();
+}
+
+//Applied at once: Turbo is pressed for any speed but 1x. The menu is made with
+//the first machine, and under MCP a window can be up before any has loaded
+void MainWindow::choose_speed(int v)
+{
+    turbo_speed = v;
+    e->write_setup("Core", "speed", std::to_string(v));
+    e->write_setup("Core", "turbo", (v != 4)?"1":"0");
+    {
+        QSignalBlocker block(turbo_action);
+        turbo_action->setChecked(v != 4);
+    }
+    apply_speed();
+    if (speed_menu != nullptr)
+        for (QAction * sa : speed_menu->actions())
+            if (sa->data().toInt() == v) sa->setChecked(true);
 }
 
 //The button is pressed for any speed but 1x, as after --speed; turbo_speed

@@ -23,6 +23,8 @@ public:
     emulator::Result load_config(SystemData *sd) override;
     unsigned get_value(unsigned address) override;
     void set_value(unsigned address, unsigned value, bool force=false) override;
+    //A write stores bits of its address, not the byte
+    bool debug_writable(MAYBE_UNUSED unsigned int address) const override { return false; }
     unsigned get_direct(unsigned address) override;
 };
 

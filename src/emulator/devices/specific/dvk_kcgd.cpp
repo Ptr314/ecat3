@@ -413,6 +413,12 @@ void KCGD::set_value_word(unsigned int address, unsigned int value, MAYBE_UNUSED
 // Байтовая запись: в видеопамять - половина слова; в 167772 - только своя
 // половина (младший байт - управление, старший - регистр палитры по номеру
 // из управления), так её и пишет прошивка
+// Окно видеопамяти; регистры - нет
+bool KCGD::debug_writable(unsigned int address) const
+{
+    return address < WINDOW_END;
+}
+
 void KCGD::set_value(unsigned int address, unsigned int value, bool force)
 {
     const unsigned a = address & 0177776;

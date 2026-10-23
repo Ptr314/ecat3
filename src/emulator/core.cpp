@@ -1869,6 +1869,7 @@ CPU::CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_temp_from(0)
     , m_last_pc(0)
     , m_disasm(nullptr)
+    , m_disasm_tried(false)
     , reset_mode(true)
     , m_hold_cycles(0)
     , m_hold_total(0)
@@ -1951,7 +1952,10 @@ CPU::~CPU()
 
 DisAsm * CPU::disasm()
 {
-    if (m_disasm == nullptr && sd != nullptr) {
+    //Asked on every return instruction of a step over: a missing table is
+    //tried once, not read from the disk again each time
+    if (m_disasm == nullptr && !m_disasm_tried && sd != nullptr) {
+        m_disasm_tried = true;
         emulator::Result res = emulator::Result::ok();
         DisAsm * d = create_disasm(sd->data_path, res);
         if (!res) delete d;
@@ -1980,6 +1984,11 @@ unsigned int CPU::peek_mem(unsigned int address)
 bool CPU::poke_mem(unsigned int address, unsigned int value)
 {
     return mm->poke(address, value);
+}
+
+bool CPU::mem_writable(unsigned int address)
+{
+    return mm != nullptr && mm->writable(address);
 }
 
 DisAsm * CPU::create_disasm(const std::string &data_path, emulator::Result &res)
@@ -2070,6 +2079,9 @@ bool CPU::returned()
     return decode_at(m_last_pc, l) && l.flow == FLOW_RET;
 }
 
+//A processor waiting for an interrupt (WAIT, HLT) already has PC at the next
+//instruction, which runs only after the interrupt: it stops there when it
+//gets there, not on every idle step before. waiting() is asked only on a hit
 bool CPU::break_test()
 {
     const unsigned int pc = get_pc();
@@ -2083,9 +2095,11 @@ bool CPU::break_test()
         case TEMP_RETURN:
             //Back where the call leads, or the stack back at its level by a
             //return - not by an interrupt that came before the call, which
-            //returns to the call itself
-            if (pc == m_temp_pc) hit = true;
-            else if (get_sp(sp)) hit = sp_above(sp) >= 0 && pc != m_temp_from && returned();
+            //returns to the call itself. Either at the level of the call: a
+            //recursive call of the same routine comes back to the same
+            //address deeper in the stack
+            if (!get_sp(sp)) hit = (pc == m_temp_pc);
+            else if (sp_above(sp) >= 0) hit = (pc == m_temp_pc) || (pc != m_temp_from && returned());
             break;
         case TEMP_OUT:
             hit = get_sp(sp) && sp_above(sp) > 0 && returned();
@@ -2093,13 +2107,13 @@ bool CPU::break_test()
         default:
             break;
         }
-        if (hit) {
+        if (hit && !waiting()) {
             m_temp_mode = TEMP_NONE;
             break_hit = BREAK_TEMP;
             return true;
         }
     }
-    if (!m_breakpoints.empty() && has_breakpoint(pc)) {
+    if (!m_breakpoints.empty() && has_breakpoint(pc) && !waiting()) {
         break_hit = BREAK_POINT;
         return true;
     }
@@ -2809,22 +2823,35 @@ AddressableDevice * MemoryMapper::peek_owner(unsigned int address, unsigned int 
                      address, MODE_R, &offset, &range_index, &route);
 }
 
+bool MemoryMapper::writable(unsigned int address)
+{
+    unsigned int offset;
+    AddressableDevice * r = peek_owner(address, offset);
+    if (r != nullptr && r->debug_writable(offset)) return true;
+    unsigned int w_offset, range_index;
+    unsigned int route = ROUTE_ANSWER;
+    AddressableDevice * w = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value,
+                                      address, MODE_W, &w_offset, &range_index, &route);
+    return w != nullptr && w->debug_writable(w_offset);
+}
+
 //Where a ROM is read over a RAM (Орион F800, the shadow areas), the byte goes
 //to both: the ROM shows it, and the RAM below gets what a program writing
-//there would have put. A device a write reaches that is not a memory (a
-//register) is left alone: its set_value() may act on the value
+//there would have put. A device that is not memory there (a register) is
+//left alone: its set_value() would act on the value
 bool MemoryMapper::poke(unsigned int address, unsigned int value)
 {
     unsigned int offset;
     AddressableDevice * r = peek_owner(address, offset);
+    if (r != nullptr && !r->debug_writable(offset)) r = nullptr;
 
     unsigned int w_offset, range_index;
     unsigned int route = ROUTE_ANSWER;
     AddressableDevice * w = this->map(&(this->ranges), this->first_range, this->ranges_count, this->i_config.value,
                                       address, MODE_W, &w_offset, &range_index, &route);
-    if (w != nullptr && w != r && dynamic_cast<Memory*>(w) != nullptr)
-        w->set_value(w_offset, value & 0xFF, true);
+    if (w != nullptr && (w == r || !w->debug_writable(w_offset))) w = nullptr;
 
+    if (w != nullptr) w->set_value(w_offset, value & 0xFF, true);
     if (r != nullptr) r->set_value(offset, value & 0xFF, true);
     return r != nullptr || w != nullptr;
 }
@@ -2958,26 +2985,36 @@ unsigned int MemoryMapper::read_word_odd(unsigned int address)
         this->first_range = 1;
         invalidate_pages();
     }
-    unsigned int address_on_device, range_index;
-    unsigned int route = ROUTE_ANSWER;
-    AddressableDevice * d = map_read(address, &address_on_device, &range_index, &route);
-    if (d != nullptr && d->byte_wide()) {
-        this->last_device = d;
-        this->no_device = false;
-        return d->get_value(address_on_device) & 0xFF;
+    //Who answers, from the page cache like any access (a page is uniform, so
+    //the odd address finds the same device the even one does). A byte-wide
+    //device gets the byte cycle read() makes, with the ranges OR-ed to it
+    AddressableDevice * d;
+    MapperPage * e = find_page(address, page_tag());
+    if (e != nullptr) {
+        d = e->device_r;
+    } else {
+        unsigned int address_on_device, range_index;
+        unsigned int route = ROUTE_ANSWER;
+        d = map_read(address, &address_on_device, &range_index, &route);
     }
+    if (d != nullptr && d->byte_wide()) return read(address) & 0xFF;
     return read_word(address & ~1u);
 }
 
+//As read_word_odd(); write() also passes the byte on through a "through" range
 void MemoryMapper::write_word_odd(unsigned int address, unsigned int value)
 {
-    unsigned int address_on_device, range_index;
-    unsigned int route = ROUTE_ANSWER;
-    AddressableDevice * d = map_write(address, &address_on_device, &range_index, &route);
+    AddressableDevice * d;
+    MapperPage * e = find_page(address, page_tag());
+    if (e != nullptr) {
+        d = e->device_w;
+    } else {
+        unsigned int address_on_device, range_index;
+        unsigned int route = ROUTE_ANSWER;
+        d = map_write(address, &address_on_device, &range_index, &route);
+    }
     if (d != nullptr && d->byte_wide()) {
-        this->last_device = d;
-        this->no_device = false;
-        d->set_value(address_on_device, value & 0xFF);
+        write(address, value & 0xFF);
         return;
     }
     write_word(address & ~1u, value);

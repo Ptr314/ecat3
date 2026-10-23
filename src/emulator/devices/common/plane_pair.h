@@ -45,6 +45,7 @@ public:
 
     unsigned int get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
+    bool debug_writable(MAYBE_UNUSED unsigned int address) const override { return true; }
     unsigned int get_value_word(unsigned int address) override;
     void set_value_word(unsigned int address, unsigned int value, bool force=false) override;
     unsigned int get_direct(unsigned int address) override;
