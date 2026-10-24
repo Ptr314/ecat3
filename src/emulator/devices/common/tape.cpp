@@ -191,6 +191,8 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
             return;
         }
         if (is_recording) {
+            //Пишущую ленту слышно так же, как читающую
+            tape_sound((unsigned int)(new_value & 1));
             if (m_tape_enc == TapeEnc::BK) {
                 // The БК decoder measures whole periods between rising edges,
                 // the same reference point the monitor uses
@@ -355,6 +357,7 @@ void TapeRecorder::set_recording(bool recording)
     }
     if (!recording && is_recording && m_tape_enc == TapeEnc::IBMPC)
         ibmpc_decoder.finish();
+    if (!recording && is_recording) tape_sound(0);
     is_recording = recording;
     if (is_recording && m_tape_enc == TapeEnc::IBMPC) {
         has_last_edge = false;
@@ -503,7 +506,11 @@ std::string TapeRecorder::get_record_name()
         // extension still decides how the file goes back on the tape, and the
         // one the machine loads from is the one it has just written
         const std::string ext = first_file_extension(files);
-        return ext.empty()? std::string("") : "tape" + ext;
+        if (ext.empty()) return "";
+        // An УК-НЦ file carries the name the program gave it
+        std::string name;
+        if (m_tape_enc == TapeEnc::UKNC) name = uknc_tape::file_name(*uknc_decoder.file());
+        return (name.empty()? std::string("tape") : name) + ext;
     }
     return "";
 }

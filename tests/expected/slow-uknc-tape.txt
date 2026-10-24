@@ -1,5 +1,5 @@
 === Запись на ленту ===
 [tape.recorded] &00000001474
 === Чтение обратно ===
-[tape.size] &00000026211
-[pp-timer.events] &031626
+[tape.size] &00000026611
+[pp-timer.events] &035625

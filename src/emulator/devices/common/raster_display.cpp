@@ -85,8 +85,22 @@ emulator::Result RasterDisplay::load_config(SystemData *sd)
 
 void RasterDisplay::clock(unsigned int counter)
 {
+    const unsigned int start = m_line_counter;
     m_line_counter += counter;
-    if (m_line_counter >= m_line_length) {
+    // One step may cover several lines: the pultovaya normalization 000030 of
+    // the ВМ2 takes 3110 clocks, eight lines of the УК-НЦ. Every one of them is
+    // started, and the ones the step runs past get their events at once. Taking
+    // a single line a step left the beam behind the time, and a loop of such
+    // commands put together a frame of lines from different passes
+    bool several = false;
+    while (m_line_counter >= m_line_length) {
+        // The line ending here still gets the events the step ran past. A lost
+        // sync pulse is a descriptor the УК-НЦ controller never takes: the rest
+        // of the frame came one line late, its top line from address 0
+        if (m_hsync_active) HSYNC(m_screen_line, 1);
+        m_hsync_active = false;
+        if (m_counts_sync_end != 0 && (several || start < m_counts_sync_end))
+            HSYNC(m_screen_line, 2);
         m_line_counter -= m_line_length;
         // The next line is one clock longer whenever the remainder has built
         // up to a whole clock: a frame of exactly m_frame_clocks
@@ -123,6 +137,11 @@ void RasterDisplay::clock(unsigned int counter)
         // 625 lines of an interlaced frame: 313 in the first field, 312 in the
         // second. It used to count 626, which made a frame 64 us too long
         if (++m_current_line >= m_lines) m_current_line = 0;
+        if (several) {
+            // The time into the last line, which the sum below makes whole
+            m_hsync_counter = m_line_counter - counter;
+        }
+        several = true;
     }
 
     m_hsync_counter += counter;

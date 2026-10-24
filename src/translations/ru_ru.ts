@@ -4042,7 +4042,7 @@
         <translation>Файл образа ленты не найден</translation>
     </message>
     <message>
-        <location line="+531"/>
+        <location line="+535"/>
         <source>Tape file format is not defined</source>
         <translation>Не задан формат файла записи</translation>
     </message>
@@ -4183,22 +4183,30 @@
     <message>
         <location line="+24"/>
         <location line="+12"/>
-        <location line="+130"/>
+        <location line="+165"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-130"/>
+        <location line="-165"/>
         <source>Unknown tape file format!</source>
         <translation>Неизвестный формат файла записи!</translation>
     </message>
     <message>
-        <location line="+118"/>
+        <location line="+136"/>
+        <location line="+11"/>
         <source>Save recorded data</source>
         <translation>Сохранить записанные данные</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+1"/>
+        <source>%1 already exists.
+Do you want to replace it?</source>
+        <translation>%1 уже существует.
+Заменить его?</translation>
+    </message>
+    <message>
+        <location line="+17"/>
         <source>Unable to save file!</source>
         <translation>Невозможно сохранить файл!</translation>
     </message>

@@ -420,7 +420,42 @@ void TapeRecorderWindow::save_recording()
         QString filter = QString::fromStdString(d->files);
         if (filter.isEmpty()) filter = "Binary files (*.bin);;Text programs (*.asc)";
         if (!filter.contains("*.*")) filter += ";;All files (*.*)";
-        const QString file_name = QFileDialog::getSaveFileName(this, tr("Save recorded data"), path, filter);
+        // A compound extension like ".uknc.tap" is beyond the Windows dialog:
+        // it takes only ".tap" for the extension of a name, finds it unlike
+        // the mask's and appends the mask's once more, both to the suggested
+        // name and on OK. So the dialog is given the last part alone, and the
+        // whole one is put back on the name it returns
+        QString compound;
+        const int star = filter.indexOf("*.");
+        if (star >= 0) {
+            int end = star + 2;
+            while (end < filter.size() && (filter[end].isLetterOrNumber() || filter[end] == '.')) end++;
+            const QString ext = filter.mid(star + 1, end - star - 1);
+            if (ext.lastIndexOf('.') > 0) {
+                compound = ext;
+                filter.replace(star + 1, ext.size(), ext.mid(ext.lastIndexOf('.')));
+            }
+        }
+        const QString first_filter = filter.section(";;", 0, 0);
+        QString selected_filter;
+        QString file_name = QFileDialog::getSaveFileName(this, tr("Save recorded data"), path, filter, &selected_filter,
+                                                         compound.isEmpty()? QFileDialog::Options()
+                                                                           : QFileDialog::Options(QFileDialog::HideNameFilterDetails));
+        if (!file_name.isEmpty() && !compound.isEmpty()) {
+            while (file_name.endsWith(compound + compound, Qt::CaseInsensitive)) file_name.chop(compound.size());
+            if (selected_filter == first_filter && !file_name.endsWith(compound, Qt::CaseInsensitive)) {
+                const QString last = compound.mid(compound.lastIndexOf('.'));
+                if (file_name.endsWith(last, Qt::CaseInsensitive)) file_name.chop(last.size());
+                file_name += compound;
+                // The dialog asked about the name it saw, not this one
+                if (QFileInfo::exists(file_name)
+                    && QMessageBox::question(this, tr("Save recorded data"),
+                                             tr("%1 already exists.\nDo you want to replace it?")
+                                                 .arg(QFileInfo(file_name).fileName()))
+                           != QMessageBox::Yes)
+                    file_name.clear();
+            }
+        }
         if (!file_name.isEmpty()) {
             const QFileInfo fi(file_name);
             e->set_last_path(fi.absolutePath().toStdString());

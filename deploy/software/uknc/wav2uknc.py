@@ -17,8 +17,9 @@
     данные и контрольная сумма (сумма слов с переносом по кругу)
 
 Блок без заголовка - только вторая половина: пилот-тон 2000 битов, 128 слов
-данных и сумма. Кассетный Бейсик пишет программу файлом с первыми 128 словами
-и блоками с остальным. Заголовок от блока отличается длиной пилот-тона.
+данных и сумма. Перед блоком может стоять пауза: линия стоит, пока программа
+готовит следующий блок, и читающей программе нужно то же время. Кассетный
+Бейсик пишет программу файлом с первыми 128 словами и блоками с остальным. Заголовок от блока отличается длиной пилот-тона.
 
 Программа, записанная из RT-11 (например, sav2wav из ukncbtl-utils), лежит на
 ленте двумя такими файлами: загрузчиком в 256 слов по адресу 0 и остальной
@@ -26,7 +27,8 @@
 
 Образ .uknc.tap - те же файлы подряд, без сигнала и без контрольной суммы:
 16 байтов имени, длина, адрес, данные. Блок записан так же, с нулевым именем,
-нулевым адресом и поднятым разрядом 15 длины. Образ читает магнитофон eCat3.
+поднятым разрядом 15 длины и паузой перед ним на месте адреса - в единицах по
+256 коротких полупериодов (53 мс). Образ читает магнитофон eCat3.
 
 Скорость ленты не обязана быть точной: короткий полупериод оценивается
 заново по ходу чтения, как это делает и ПЗУ по пилот-тону.
@@ -53,6 +55,9 @@ BLOCK_FLAG = 0x8000
 
 # Пауза между вызовами драйвера: линия стоит, и интервал через неё - не бит
 PAUSE = 2
+
+# Единица паузы перед блоком в образе - столько коротких полупериодов
+PAUSE_UNIT = 256
 
 
 def read_wav(path):
@@ -137,19 +142,22 @@ def crossing(i, prev, x):
 def to_bits(halves):
     """Полупериоды в биты. Как и ПЗУ (130530), бит опознаётся по первому
     полупериоду, остальные пропускаются. Длина короткого полупериода следится
-    по ходу: её начальное значение - медиана начала записи, где идёт пилот-тон."""
+    по ходу: её начальное значение - медиана начала записи, где идёт пилот-тон.
+    Вместе с битами возвращается длина каждой паузы в единицах PAUSE_UNIT."""
     if not halves:
-        return []
+        return [], []
     head = sorted(halves[:2048])
     unit = head[len(head) // 2]
 
     bits = []
+    pauses = []
     i = 0
     n = len(halves)
     while i < n:
         h = halves[i]
         if h > unit * 4:
             bits.append(PAUSE)
+            pauses.append(int(-(-h // (unit * PAUSE_UNIT))))
             i += 1
         elif h > unit * 1.5:
             bits.append(0)
@@ -161,19 +169,24 @@ def to_bits(halves):
             if h > unit * 0.5:
                 unit += (h - unit) * 0.02
             i += 4
-    return bits
+    return bits, pauses
 
 
-def to_records(bits):
+def to_records(bits, pauses):
     """Биты в записи: байт начинается с бита 0, длинный ряд единиц перед ним
-    означает новую запись. Вместе с записью возвращается длина этого ряда."""
+    означает новую запись. Вместе с записью возвращаются длина этого ряда и
+    сумма пауз перед ней."""
     records = []
     ones = RECORD_GAP
     paused = True
+    gap = 0
+    next_pause = 0
     i = 0
     n = len(bits)
     while i < n:
         if bits[i] == PAUSE:
+            gap = min(gap + pauses[next_pause], 0xFFFF)
+            next_pause += 1
             ones = 0
             paused = True
             i += 1
@@ -188,7 +201,8 @@ def to_records(bits):
         for k in range(8):
             b |= (bits[i + 1 + k] & 1) << k
         if ones >= RECORD_GAP or paused:
-            records.append((ones, bytearray()))
+            records.append((ones, bytearray(), gap))
+            gap = 0
         records[-1][1].append(b)
         ones = 0
         paused = False
@@ -244,7 +258,7 @@ def to_image(records, log):
     r = 0
     files = 0
     while r < len(records):
-        pilot, header = records[r]
+        pilot, header, gap = records[r]
         r += 1
         if pilot < HEADER_GAP and not (r == 1 and len(header) <= NAME_SIZE + 5):
             if len(header) < 4:
@@ -255,9 +269,10 @@ def to_image(records, log):
             errors += 0 if ok else 1
             flagged = BLOCK_FLAG | length
             image += bytes(NAME_SIZE)
-            image += bytes((flagged & 0xFF, flagged >> 8, 0, 0))
+            image += bytes((flagged & 0xFF, flagged >> 8, gap & 0xFF, gap >> 8))
             image += body
-            log('  блок %d: %d слов (%o), %s' % (files, length, length, status))
+            log('  блок %d: %d слов (%o), пауза перед ним %d мс, %s' %
+                (files, length, length, gap * PAUSE_UNIT * 208 // 1000, status))
             continue
         if len(header) < NAME_SIZE:
             # Щелчок включения магнитофона перед пилот-тоном даёт байт-другой:
@@ -301,8 +316,8 @@ def main():
         print('  частота дискретизации мала: короткий полупериод занимает меньше трёх отсчётов')
 
     halves = half_periods(samples, rate)
-    bits = to_bits(halves)
-    records = to_records(bits)
+    bits, pauses = to_bits(halves)
+    records = to_records(bits, pauses)
     image, files, errors = to_image(records, print)
 
     if files == 0:

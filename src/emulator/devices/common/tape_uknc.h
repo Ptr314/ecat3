@@ -39,13 +39,22 @@
 // and the data. A file of zero length keeps the two zero words, so every file
 // in an image starts with the same twenty bytes. A block has the same twenty
 // bytes with a zero name, bit 15 of the length set (no file is 32K words
-// long: that is the whole address space) and a zero address.
+// long: that is the whole address space) and the pause in front of it in place
+// of the address.
+//
+// That pause is part of the recording. Between two blocks the line stands
+// still for as long as the program took to fill the next one (БЕЙСИК printing
+// what it writes to a data file), and the program reading them back spends the
+// same time on every block. Joined by the pilot tone alone, the blocks pass the
+// reader by, and it picks up the next block in place of the one it wanted. The
+// pause is kept in units of PAUSE_UNIT short half periods, 0 being none.
 
 #pragma once
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace uknc_tape
@@ -69,6 +78,10 @@ namespace uknc_tape
     // The length of a block in an image: bit 15 and the number of words
     const uint16_t BLOCK_FLAG = 0x8000;
 
+    // The pause in front of a block, in short half periods per unit: 53 ms at
+    // the normal density, so that a word holds most of an hour
+    const unsigned PAUSE_UNIT = 256;
+
     // One bit is four half periods of the short length, so a bit stream at
     // four times the baud rate carries the waveform exactly
     inline void put_bit(std::vector<uint8_t> &bits, unsigned bit)
@@ -82,6 +95,13 @@ namespace uknc_tape
     inline void put_pilot(std::vector<uint8_t> &bits, unsigned count)
     {
         for (unsigned i = 0; i < count; i++) put_bit(bits, 1);
+    }
+
+    // A line standing still: a bit ends low, and the pilot tone after the
+    // pause starts with an edge
+    inline void put_pause(std::vector<uint8_t> &bits, uint16_t units)
+    {
+        bits.insert(bits.end(), (size_t)units * PAUSE_UNIT, 0);
     }
 
     inline void put_byte(std::vector<uint8_t> &bits, uint8_t b)
@@ -138,6 +158,7 @@ namespace uknc_tape
             const uint16_t flagged = get_word(image, pos + NAME_SIZE);
             if (flagged & BLOCK_FLAG) {
                 const unsigned length = flagged & ~BLOCK_FLAG;
+                put_pause(bits, get_word(image, pos + NAME_SIZE + 2));
                 pos += HEADER_SIZE;
                 put_pilot(bits, DATA_PILOT);
                 uint16_t sum = 0;
@@ -177,6 +198,30 @@ namespace uknc_tape
         pack(bits, out);
     }
 
+    // The name of the first file of an image, to offer it under. БЕЙСИК fills
+    // the name block with $EA and puts the name of SAVE at its end, a program
+    // may put anything there: only letters and digits are taken. Empty when
+    // the image has no file with a name
+    inline std::string file_name(const std::vector<uint8_t> &image)
+    {
+        size_t pos = 0;
+        while (pos + HEADER_SIZE <= image.size()) {
+            const uint16_t flagged = get_word(image, pos + NAME_SIZE);
+            if (!(flagged & BLOCK_FLAG)) {
+                std::string s;
+                for (unsigned i = 0; i < NAME_SIZE; i++) {
+                    const char c = (char)image[pos + i];
+                    if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')
+                        || (c >= 'a' && c <= 'z') || c == '-' || c == '_')
+                        s += c;
+                }
+                if (!s.empty()) return s;
+            }
+            pos += HEADER_SIZE + (size_t)(flagged & ~BLOCK_FLAG) * 2;
+        }
+        return "";
+    }
+
     // The signal back to a tape image. It is fed with the time between every
     // two edges of the recorder's input, whichever way the level goes
     class Decoder
@@ -209,22 +254,36 @@ namespace uknc_tape
             const uint8_t PAUSE = 2;
             const uint32_t pause = unit * 4;
             std::vector<uint8_t> bits;
+            std::vector<uint32_t> pauses;               // the length of every PAUSE, in units
             bits.reserve(halves.size() / 2);
             for (size_t i = 0; i < halves.size(); ) {
-                if (halves[i] > pause)          { bits.push_back(PAUSE); i += 1; }
+                if (halves[i] > pause) {
+                    // Rounded up: a reader may need all of it
+                    const uint64_t step = (uint64_t)unit * PAUSE_UNIT;
+                    pauses.push_back((uint32_t)((halves[i] + step - 1) / step));
+                    bits.push_back(PAUSE);
+                    i += 1;
+                }
                 else if (halves[i] > threshold) { bits.push_back(0); i += 2; }
                 else                            { bits.push_back(1); i += 4; }
             }
 
             // Bits to records: a byte starts with a bit 0, and a long run of
             // ones in front of it means a new record. The length of that run
-            // tells a header from data
+            // tells a header from data. The pauses in front of a record add up
             std::vector<std::vector<uint8_t>> records;
             std::vector<unsigned> pilots;
+            std::vector<uint16_t> gaps;
             unsigned ones = RECORD_GAP;
             bool paused = true;
+            uint32_t gap = 0;
+            size_t next_pause = 0;
             for (size_t i = 0; i < bits.size(); ) {
-                if (bits[i] == PAUSE) { ones = 0; paused = true; i++; continue; }
+                if (bits[i] == PAUSE) {
+                    gap = std::min<uint32_t>(gap + pauses[next_pause++], 0xFFFF);
+                    ones = 0; paused = true; i++;
+                    continue;
+                }
                 if (bits[i])          { ones++; i++; continue; }
                 if (i + 9 > bits.size()) break;         // an unfinished byte
                 uint8_t b = 0;
@@ -232,6 +291,8 @@ namespace uknc_tape
                 if (ones >= RECORD_GAP || paused) {
                     records.push_back(std::vector<uint8_t>());
                     pilots.push_back(ones);
+                    gaps.push_back((uint16_t)gap);
+                    gap = 0;
                 }
                 records.back().push_back(b);
                 ones = 0;
@@ -252,8 +313,8 @@ namespace uknc_tape
                     result.insert(result.end(), NAME_SIZE, 0);
                     result.push_back((uint8_t)(length & 0xFF));
                     result.push_back((uint8_t)(length >> 8));
-                    result.push_back(0);
-                    result.push_back(0);
+                    result.push_back((uint8_t)(gaps[r] & 0xFF));
+                    result.push_back((uint8_t)(gaps[r] >> 8));
                     result.insert(result.end(), h.begin(), h.begin() + words * 2);
                     continue;
                 }
