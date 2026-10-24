@@ -231,32 +231,82 @@ namespace uknc_tape
         std::vector<uint8_t> result;
         size_t decoded_halves = 0;
 
-        // Intervals to take the short half period from. The pilot tone in
-        // front of the first header is nothing but those
+        // Intervals to take the short half period from when no pilot tone has
+        // been found. The pilot tone in front of a header is nothing but those
         enum { SAMPLE = 1024 };
+
+        // A run of half periods this long, none of them more than half as long
+        // again as another, is a pilot tone. Inside a record the short ones run
+        // to 40 at most (a byte $FF, its stop bits and the next start bit)
+        enum { PILOT_RUN = 512 };
+
+        // Where a pilot tone begins and its short half period
+        struct Pilot { size_t pos; uint32_t unit; };
+
+        // The ROM measures the short half period on the pilot tone of every
+        // record it reads (130254), and so does the decoder: the line may have
+        // carried anything before the first one - another program switching
+        // the output while the recording was already on - and a measure taken
+        // from that read nothing after it
+        static std::vector<Pilot> find_pilots(const std::vector<uint32_t> &h)
+        {
+            std::vector<Pilot> r;
+            size_t start = 0;
+            uint32_t lo = 0, hi = 0;
+            uint64_t sum = 0;
+            for (size_t i = 0; i <= h.size(); i++) {
+                const bool more = i < h.size();
+                if (more && i > start) {
+                    const uint32_t nlo = std::min(lo, h[i]), nhi = std::max(hi, h[i]);
+                    if ((uint64_t)nhi * 2 <= (uint64_t)nlo * 3) {
+                        lo = nlo; hi = nhi; sum += h[i];
+                        continue;
+                    }
+                }
+                if (i - start >= PILOT_RUN && sum != 0)
+                    r.push_back(Pilot{start, (uint32_t)(sum / (i - start))});
+                if (!more) break;
+                start = i;
+                lo = hi = h[i];
+                sum = h[i];
+            }
+            return r;
+        }
 
         void decode()
         {
             result.clear();
             decoded_halves = halves.size();
-            if (halves.size() < SAMPLE) return;
 
-            std::vector<uint32_t> head(halves.begin(), halves.begin() + SAMPLE);
-            std::sort(head.begin(), head.end());
-            const uint32_t unit = head[SAMPLE / 2];
+            const std::vector<Pilot> pilot_tones = find_pilots(halves);
+            // Before the first pilot tone: its measure, or the middle of the
+            // first intervals of a recording that has none
+            uint32_t unit;
+            if (!pilot_tones.empty()) unit = pilot_tones[0].unit;
+            else {
+                if (halves.size() < SAMPLE) return;
+                std::vector<uint32_t> head(halves.begin(), halves.begin() + SAMPLE);
+                std::sort(head.begin(), head.end());
+                unit = head[SAMPLE / 2];
+            }
             if (unit == 0) return;
-            const uint32_t threshold = unit + unit / 2;
+            size_t next_tone = 0;
 
             // Half periods to bits, the way the ROM does it (130530): only the
             // first half of a bit is measured, the rest of it is skipped. The
             // line stands still between two calls of the driver, and the
             // interval across such a pause is no bit at all
             const uint8_t PAUSE = 2;
-            const uint32_t pause = unit * 4;
             std::vector<uint8_t> bits;
             std::vector<uint32_t> pauses;               // the length of every PAUSE, in units
             bits.reserve(halves.size() / 2);
             for (size_t i = 0; i < halves.size(); ) {
+                while (next_tone < pilot_tones.size() && pilot_tones[next_tone].pos <= i) {
+                    if (pilot_tones[next_tone].unit != 0) unit = pilot_tones[next_tone].unit;
+                    next_tone++;
+                }
+                const uint32_t threshold = unit + unit / 2;
+                const uint32_t pause = unit * 4;
                 if (halves[i] > pause) {
                     // Rounded up: a reader may need all of it
                     const uint64_t step = (uint64_t)unit * PAUSE_UNIT;
