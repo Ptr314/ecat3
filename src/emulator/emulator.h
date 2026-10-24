@@ -595,6 +595,8 @@ public:
     bool video_from_window() const { return m_video_from_screen; }
     //Ends it; the file is finished in the background, see video_state()
     void stop_video_recording();
+    //Gives up finishing the file: ffmpeg is killed (VideoRecorder::abort())
+    void abort_video_recording();
     //RGBA, any thread
     void video_frame(const uint8_t * rgba, unsigned int w, unsigned int h, bool bottom_up = false);
     //The machine's picture, RGBA, taken under the surface lock: the render

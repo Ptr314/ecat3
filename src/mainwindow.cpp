@@ -2163,13 +2163,22 @@ void MainWindow::closeEvent (QCloseEvent *event)
     static_cast<GLWidget*>(screen)->setFrameHook(nullptr);
 #endif
     if (e->video_state() == VideoRecorder::FINISHING) {
-        QProgressDialog wait(tr("Finishing the video..."), QString(), 0, 0, this);
+        //An ffmpeg that does not finish would hold the window forever; the
+        //button kills it and leaves the unfinished files where they are
+        QProgressDialog wait(tr("Finishing the video..."), tr("Abort"), 0, 0, this);
         wait.setWindowTitle(tr("Video recording"));
-        wait.setCancelButton(nullptr);
         wait.setMinimumDuration(0);
         wait.setWindowModality(Qt::WindowModal);
+        wait.setAutoClose(false);
+        wait.setAutoReset(false);
         wait.show();
+        bool aborted = false;
         while (e->video_state() == VideoRecorder::FINISHING) {
+            if (wait.wasCanceled() && !aborted) {
+                aborted = true;
+                wait.setLabelText(tr("Stopping ffmpeg..."));
+                e->abort_video_recording();
+            }
             QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
             QThread::msleep(20);
         }

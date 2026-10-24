@@ -1554,7 +1554,7 @@
 <context>
     <name>IE15Display</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+161"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+180"/>
         <source>Character generator device is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1939,7 +1939,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+980"/>
+        <location filename="../mainwindow.cpp" line="+989"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1960,14 +1960,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1820"/>
-        <location line="+1946"/>
+        <location filename="../mainwindow.cpp" line="-1829"/>
+        <location line="+1955"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1638"/>
+        <location filename="../mainwindow.cpp" line="-1647"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2042,7 +2042,7 @@
         <location line="+1308"/>
         <location line="+55"/>
         <location line="+79"/>
-        <location line="+221"/>
+        <location line="+230"/>
         <location line="+107"/>
         <location line="+62"/>
         <location line="+167"/>
@@ -2054,7 +2054,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2616"/>
+        <location line="-2625"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2076,14 +2076,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1597"/>
+        <location line="+1606"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1712"/>
+        <location line="-1721"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2153,14 +2153,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1381"/>
-        <location line="+379"/>
+        <location line="+1383"/>
+        <location line="+386"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1873"/>
+        <location line="-1882"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2196,12 +2196,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1710"/>
+        <location line="+1719"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1686"/>
+        <location line="-1695"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2362,13 +2362,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+82"/>
-        <location line="+473"/>
+        <location line="+84"/>
+        <location line="+480"/>
         <source>Finishing the video...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-429"/>
+        <location line="-480"/>
+        <source>Abort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Stopping ffmpeg...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+40"/>
         <source>Open disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2574,12 +2584,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1496"/>
+        <location line="-1505"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1539"/>
+        <location line="+1548"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3364,7 +3374,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+535"/>
+        <location line="+538"/>
         <source>Tape file format is not defined</source>
         <translation type="unfinished"></translation>
     </message>

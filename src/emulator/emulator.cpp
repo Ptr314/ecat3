@@ -2158,6 +2158,12 @@ void Emulator::stop_video_recording()
     m_video.stop(end);
 }
 
+void Emulator::abort_video_recording()
+{
+    stop_video_recording();
+    m_video.abort();
+}
+
 void Emulator::video_frame(const uint8_t * rgba, unsigned int w, unsigned int h, bool bottom_up)
 {
     if (m_video_from_screen) m_video.set_frame(rgba, w, h, bottom_up);

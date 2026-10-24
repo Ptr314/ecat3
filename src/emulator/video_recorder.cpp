@@ -209,7 +209,9 @@ bool VideoRecorder::start(const VideoSettings &s, uint64_t clock_freq, std::stri
     m_audio_rate = 0;
     m_audio_samples = 0;
     m_process = Process();
+    m_mux = Process();
     m_process_started = false;
+    m_aborted = false;
     m_frames_written = 0;
     if (!s.log_file.empty()) delete_file(s.log_file);
     //The size known beforehand: ffmpeg starts here, on the caller's thread.
@@ -446,6 +448,19 @@ void VideoRecorder::stop(uint64_t clock)
     m_state = FINISHING;
 }
 
+void VideoRecorder::abort()
+{
+    compat_lock_guard lock(m_mutex);
+    if (m_state.load() != RECORDING && m_state.load() != FINISHING) return;
+    m_aborted = true;
+    m_stopping = true;
+    m_queue.clear();
+    m_queued_bytes = 0;
+    //The worker sees a broken pipe or the exit code and stops there
+    kill_process(m_process);
+    kill_process(m_mux);
+}
+
 std::string VideoRecorder::message()
 {
     compat_lock_guard lock(m_mutex);
@@ -503,6 +518,7 @@ void VideoRecorder::worker()
         }
         {
             compat_lock_guard lock(m_mutex);
+            if (m_aborted) break;   //The queue is already emptied
             m_queued_bytes -= f.pixels->size();
             if (broken) {
                 m_queue.clear();
@@ -532,8 +548,20 @@ void VideoRecorder::finish()
         return;
     }
 
+    //abort(): the files are left as they are, unfinished
+    auto aborted = [this]() {
+        compat_lock_guard lock(m_mutex);
+        return m_aborted;
+    };
+    const std::string left = "The video was not finished. Left on disk: " + m_video_file
+                             + (with_audio ? ", " + m_audio_file : std::string());
+
     close_input(m_process);
     const int code = wait_exit(m_process);
+    if (aborted()) {
+        fail(left);
+        return;
+    }
     if (code != 0) {
         if (with_audio) delete_file(m_audio_file);
         delete_file(m_video_file);
@@ -575,7 +603,18 @@ void VideoRecorder::finish()
         Process mux;
         std::string error;
         int mux_code = -1;
-        if (spawn(a, m_settings.log_file, false, mux, error)) mux_code = wait_exit(mux);
+        if (spawn(a, m_settings.log_file, false, mux, error)) {
+            {
+                compat_lock_guard lock(m_mutex);
+                m_mux = mux;
+                if (m_aborted) kill_process(m_mux);
+            }
+            mux_code = wait_exit(m_mux);
+        }
+        if (aborted()) {
+            fail(left);
+            return;
+        }
         delete_file(m_audio_file);
         if (mux_code != 0) {
             //The picture is there: better a video without sound than nothing
@@ -604,6 +643,7 @@ bool VideoRecorder::spawn(const std::vector<std::string> &, const std::string &,
 bool VideoRecorder::write_input(Process &, const uint8_t *, size_t) { return false; }
 void VideoRecorder::close_input(Process &) {}
 int VideoRecorder::wait_exit(Process &) { return -1; }
+void VideoRecorder::kill_process(Process &) {}
 
 #elif defined(_WIN32)
 
@@ -693,9 +733,16 @@ int VideoRecorder::wait_exit(Process &p)
     WaitForSingleObject((HANDLE)p.process, INFINITE);
     DWORD code = (DWORD)-1;
     GetExitCodeProcess((HANDLE)p.process, &code);
+    compat_lock_guard lock(m_mutex);
     CloseHandle((HANDLE)p.process);
     p.process = nullptr;
     return (int)code;
+}
+
+//Under the lock
+void VideoRecorder::kill_process(Process &p)
+{
+    if (p.process != nullptr) TerminateProcess((HANDLE)p.process, 1);
 }
 
 #else
@@ -765,10 +812,22 @@ int VideoRecorder::wait_exit(Process &p)
 {
     close_input(p);
     if (p.pid <= 0) return -1;
+    //Waited for without reaping: until the pid is let go under the lock it
+    //cannot be reused, and abort() kills nothing else
+    siginfo_t info;
+    memset(&info, 0, sizeof(info));
+    while (waitid(P_PID, (id_t)p.pid, &info, WEXITED | WNOWAIT) < 0 && errno == EINTR) {}
+    compat_lock_guard lock(m_mutex);
     int status = 0;
     while (waitpid(p.pid, &status, 0) < 0 && errno == EINTR) {}
     p.pid = -1;
     return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+}
+
+//Under the lock
+void VideoRecorder::kill_process(Process &p)
+{
+    if (p.pid > 0) kill(p.pid, SIGKILL);
 }
 
 #endif

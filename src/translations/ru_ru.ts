@@ -2049,7 +2049,7 @@
 <context>
     <name>IE15Display</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+161"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+180"/>
         <source>Character generator device is expected</source>
         <translation>Ожидается знакогенератор</translation>
     </message>
@@ -2486,13 +2486,13 @@
     <message>
         <location line="+15"/>
         <location filename="../mainwindow.cpp" line="-840"/>
-        <location line="+1946"/>
+        <location line="+1955"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1638"/>
+        <location filename="../mainwindow.cpp" line="-1647"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -2572,14 +2572,14 @@
     <message>
         <location filename="../mainwindow.cpp" line="-576"/>
         <location line="+47"/>
-        <location line="+1597"/>
+        <location line="+1606"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1712"/>
+        <location line="-1721"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2611,7 +2611,7 @@
         <location line="+1308"/>
         <location line="+55"/>
         <location line="+79"/>
-        <location line="+221"/>
+        <location line="+230"/>
         <location line="+107"/>
         <location line="+62"/>
         <location line="+167"/>
@@ -2623,7 +2623,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2616"/>
+        <location line="-2625"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -2729,7 +2729,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+83"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1913"/>
+        <location filename="../mainwindow.cpp" line="+1922"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -2739,15 +2739,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1891"/>
-        <location line="+1381"/>
-        <location line="+379"/>
+        <location line="-1900"/>
+        <location line="+1383"/>
+        <location line="+386"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1873"/>
+        <location line="-1882"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2783,7 +2783,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1710"/>
+        <location line="+1719"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -2803,8 +2803,8 @@
         <translation>Идет запись видео в </translation>
     </message>
     <message>
-        <location line="-444"/>
-        <location line="+473"/>
+        <location line="-451"/>
+        <location line="+480"/>
         <source>Finishing the video...</source>
         <translation>Видео дописывается...</translation>
     </message>
@@ -2814,7 +2814,7 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1891"/>
+        <location line="-1900"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
@@ -2941,7 +2941,17 @@
         <translation>Машина не запущена, сохранить ее состояние нельзя.</translation>
     </message>
     <message>
-        <location line="+126"/>
+        <location line="+84"/>
+        <source>Abort</source>
+        <translation>Прервать</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Stopping ffmpeg...</source>
+        <translation>Останавливаю ffmpeg...</translation>
+    </message>
+    <message>
+        <location line="+40"/>
         <source>Open disk image</source>
         <translation>Открыть образ диска</translation>
     </message>
@@ -3122,12 +3132,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1496"/>
+        <location line="-1505"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1539"/>
+        <location line="+1548"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -4042,7 +4052,7 @@
         <translation>Файл образа ленты не найден</translation>
     </message>
     <message>
-        <location line="+535"/>
+        <location line="+538"/>
         <source>Tape file format is not defined</source>
         <translation>Не задан формат файла записи</translation>
     </message>

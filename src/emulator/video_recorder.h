@@ -94,6 +94,9 @@ public:
     //Writes the frames up to this moment and finishes the file in the
     //background; state() tells when it is ready
     void stop(uint64_t clock);
+    //Gives up the finishing: kills ffmpeg and drops the frames still queued.
+    //The temporary files stay as they are; the state becomes FAILED
+    void abort();
 
     State state() const { return static_cast<State>(m_state.load()); }
     bool recording() const { return m_state.load() == RECORDING; }
@@ -137,7 +140,9 @@ private:
     unsigned int m_audio_rate = 0;
     uint64_t m_audio_samples = 0;
     Process m_process;
+    Process m_mux;                              // The run that adds the sound
     bool m_process_started = false;
+    bool m_aborted = false;
 
     std::atomic<uint64_t> m_frames_written;
 
@@ -159,5 +164,8 @@ private:
     static bool spawn(const std::vector<std::string> &args, const std::string &log, bool with_input, Process &p, std::string &error);
     static bool write_input(Process &p, const uint8_t * data, size_t size);
     static void close_input(Process &p);
-    static int wait_exit(Process &p);
+    //Waits for the process; the handle is let go under the lock, abort() may
+    //be killing it from another thread
+    int wait_exit(Process &p);
+    static void kill_process(Process &p);
 };
