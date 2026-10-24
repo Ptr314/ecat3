@@ -1,5 +1,5 @@
 === Лампы при включении ===
-[keyboard.leds] led_lat,led_prd,led_dup,led_lin
+[keyboard.leds] led_lat,led_prd,led_dup,led_lin,led_red
 === Служебная строка: скорость, 16 битов установки, часы ===
 [display.status]                           .9 6 0 0 .0.0.0.0 .0.0.0.0 .0.0.0.0 .0.0.0.0 .00.00.01
 === Свой режим: ESC не исполняется ===
@@ -59,7 +59,7 @@ LAST
 === Ответ на ESC Z ===
 [ie15-io.sent] &000003
 === ЛИН выключен: набор только на экран ===
-[keyboard.leds] led_lat,led_prd,led_dup
+[keyboard.leds] led_lat,led_prd,led_dup,led_red
 [ie15-io.sent] &000003
 [display.text] 
 LOCAL
@@ -87,7 +87,7 @@ LOCAL
 
 
 === ЛИН включён, ДУП выключен: эхо и терминала, и монитора ===
-[keyboard.leds] led_lat,led_prd,led_lin
+[keyboard.leds] led_lat,led_prd,led_lin,led_red
 [ie15-io.sent] &000004
 [display.text] 
 QQ?
@@ -115,5 +115,32 @@ QQ?
 
 
 === НР ===
-[keyboard.leds] led_lat,led_nr,led_prd,led_lin
+[keyboard.leds] led_lat,led_nr,led_prd,led_lin,led_red
 [ie15-io.overruns] &000000
+=== РЕД отжат: управляющие коды записываются ===
+[keyboard.leds] led_lat,led_nr,led_prd,led_lin
+[display.text] 
+AB..CD.H
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

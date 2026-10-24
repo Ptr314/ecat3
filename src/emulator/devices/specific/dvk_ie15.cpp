@@ -39,7 +39,8 @@ emulator::Result IE15Keyboard::load_config(SystemData *sd)
 
 // Переключатели и регистры - на терминале, не в ДВК: тёплый сброс машины их не
 // трогает (регистр РУС/ЛАТ знает и прошивка). При включении питания терминал
-// на линии и в дуплексе
+// на линии, в дуплексе и с нажатым РЕД (без него управляющие коды не
+// исполняются, а пишутся на экран)
 void IE15Keyboard::reset(bool cool)
 {
     const bool rus = rus_mode;
@@ -53,6 +54,7 @@ void IE15Keyboard::reset(bool cool)
             set_toggled(IE15_SWITCHES[i], false);
         set_toggled("key_lin", true);
         set_toggled("key_dup", true);
+        set_toggled("key_red", true);
     }
 }
 
@@ -133,6 +135,23 @@ std::vector<Keyboard::Indicator> IE15Keyboard::indicators() const
         r.push_back(s);
     }
     return r;
+}
+
+// В 4.4.0 РЕД был наоборот: выключенный значил нормальную работу. Снимок без
+// red_on оттуда, его РЕД переворачивается
+void IE15Keyboard::save_state(StateWriter &w)
+{
+    MapKeyboard::save_state(w);
+    w.b("red_on", true);
+}
+
+emulator::Result IE15Keyboard::load_state(const StateReader &r)
+{
+    emulator::Result res = MapKeyboard::load_state(r);
+    if (!res) return res;
+    bool red_on = false;
+    if (!r.b("red_on", red_on)) set_toggled("key_red", !toggled("key_red"));
+    return emulator::Result::ok();
 }
 
 ComputerDevice * create_ie15_keyboard(InterfaceManager *im, EmulatorConfigDevice *cd)
@@ -407,13 +426,14 @@ void IE15IO::scanline()
 
     const unsigned y = L - IE15_FIRST_LINE;
     const bool blink = (m_frame % 10) > 4;
-    // РЕД выключен - управляющие коды не исполнены, а записаны в ЗУ: они
-    // мигают (MAME - только при погашенной служебной строке)
-    const bool red = (m_keyboard == nullptr) || !m_keyboard->switch_on(IE15Keyboard::SW_RED);
+    // РЕД отжат - управляющие коды не исполнены, а записаны в ЗУ: они мигают.
+    // При нажатом не видны, в том числе метки служебной строки (MAME
+    // показывает их при включённом RED и погашенной служебной строке)
+    const bool ctrl = (m_keyboard != nullptr) && !m_keyboard->switch_on(IE15Keyboard::SW_RED);
     m_display->draw_line(y, m_line_ptr, y % 11,
                          !m_video || (y < 11 && m_status_off),
                          m_cursor && !blink,
-                         blink && red && m_status_off);
+                         blink && ctrl);
     if (y + 1 == IE15Display::HEIGHT) {
         m_frame++;
         m_display->end_frame();
@@ -522,7 +542,7 @@ unsigned int IE15IO::get_direct(unsigned int address)
     switch (address) {
         case 000: return m_vram != nullptr ? m_vram[m_ptr] : _FFFF;
         case 006: return m_rx_char;
-        case 012: return (kbd && m_keyboard->switch_on(IE15Keyboard::SW_RED)) ? 0 : IE15_TRUE;
+        case 012: return (!kbd || m_keyboard->switch_on(IE15Keyboard::SW_RED)) ? IE15_TRUE : 0;
         case 014: return (kbd && m_keyboard->switch_on(IE15Keyboard::SW_SDV)) ? IE15_TRUE : 0;
         case 015: return m_kb_dk ? IE15_TRUE : 0;
         case 016: return (!kbd || m_keyboard->switch_on(IE15Keyboard::SW_DUP)) ? IE15_TRUE : 0;

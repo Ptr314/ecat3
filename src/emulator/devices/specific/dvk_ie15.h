@@ -46,6 +46,8 @@ public:
     void key_down(unsigned int key) override;
     void key_up(unsigned int key) override;
     std::vector<Indicator> indicators() const override;
+    void save_state(StateWriter &w) override;
+    emulator::Result load_state(const StateReader &r) override;
 
     void set_terminal(IE15IO * t) { m_terminal = t; }
     enum { SW_DUP = 1, SW_LIN = 2, SW_RED = 4, SW_PCH = 8, SW_SDV = 16 };
