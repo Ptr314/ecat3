@@ -1,0 +1,4 @@
+[mapper.value] $05FD: $81
+[liberty.latch] $42
+[liberty-wd.reads] $00000006
+[liberty-wd.unsupported] $00000000

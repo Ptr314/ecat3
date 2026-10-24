@@ -143,6 +143,10 @@ emulator::Result ScriptEngine::load_text(const std::string &text, const std::str
 emulator::Result ScriptEngine::load_commands(const std::string &file_name, std::vector<ScriptCommand> &commands, std::vector<std::string> &errors)
 {
     compat_lock_guard lock(m_mutex);
+    //From now on the process is scripted: no state of the host keyboard
+    //(Caps Lock) gets into a machine, or runs would depend on it
+    use_host_lock_keys(false);
+
     if (active_state(m_state)) return emulator::Result::error(emulator::ErrorCode::ScriptError, "Script is running");
 
     clear_locked();

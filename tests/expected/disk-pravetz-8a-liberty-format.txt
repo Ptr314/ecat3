@@ -1,0 +1,9 @@
+[liberty-wd.formats] $00000002
+[liberty-wd.writes] $00000014
+[liberty-wd.reads] $00000002
+[liberty-wd.unsupported] $00000000
+[ram.value] $6000: $BA $BA $BA $BA
+[ram.value] $61FE: $BA $5A
+[ram.value] $6200: $A1 $A1 $A1 $A1
+[ram.value] $63FE: $A1 $5A
+[ram.value] $6400: $00

@@ -1,0 +1,39 @@
+# Правец-8А: снимок состояния поднимается с тем, чего нет после включения.
+#
+# ../tests/files/state-pravetz-8a.ecats.zip (от deploy/) снят скриптом
+# ../files/make-state-pravetz-8a.ecat:
+#
+# * 80 колонок: текст в основной и дополнительной памяти, ключи 80COL и
+#   80STORE (mmu.switches, iou.video);
+# * языковая карта: чтение из ПЗУ, запись в ОЗУ, банк 1, и метка $A5 $5A в
+#   этом банке ($D000 банка 1 лежит в ram с $C000). Таблицы страниц MMU после
+#   загрузки строятся заново из ключей;
+# * 8-битная кодовая таблица (SETMOD 1): SOFTSW в $C060 и ALTCHAR, строчные
+#   буквы на экране.
+#
+# После подъема машина живая: БЕЙСИК принимает строку в 8-битном режиме, и
+# запись в ОЗУ языковой карты по-прежнему разрешена.
+# @timeout 60
+
+MACHINE "../tests/files/state-pravetz-8a.ecats.zip"
+LOGDEFS 8,16
+
+PRINT "=== ключи после подъема ==="
+LOG mmu.switches
+LOG iou.video
+LOG iou.softsw
+LOG ram.value($C000,$C001)
+
+WAIT 100
+COMMAND cpu.stop()
+SCREEN "../results/state-pravetz-8a-restored.png"
+COMMAND cpu.run()
+
+PRINT "=== машина живая ==="
+TYPE "POKE 53250,195:PRINT 6*7"
+KEY 50,50,ret
+WAIT 500
+LOG ram.value($C000,$C002)
+LOG mmu.switches
+SCREEN "../results/state-pravetz-8a.png"
+EXIT

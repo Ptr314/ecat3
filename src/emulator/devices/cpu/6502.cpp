@@ -51,7 +51,18 @@ mos6502::~mos6502()
     delete core;
 }
 
+//dummy_reads = 1: the bus cycles of the NMOS part that carry no data (see
+//mos6502core::dummy_access). The 65C02 has its own and is left without them
+emulator::Result mos6502::load_config(SystemData *sd)
+{
+    emulator::Result res = CPU::load_config(sd);
+    if (!res) return res;
+    core->set_dummy_access(read_confg_value(cd, "dummy_reads", false, false));
+    return emulator::Result::ok();
+}
+
 void mos6502::reset(bool cold)
+
 {
     CPU::reset(cold);
 }
@@ -72,13 +83,16 @@ inline void mos6502::drive_address(unsigned int address)
 
 unsigned int mos6502::read_mem(unsigned int address)
 {
+    m_bus_cycles++;
     drive_address(address);
     return mm->read(address);
 }
 
 void mos6502::write_mem(unsigned int address, unsigned int data)
 {
+    m_bus_cycles++;
     drive_address(address);
+
     mm->write(address, data);
 }
 
@@ -196,10 +210,13 @@ unsigned int mos6502::execute()
 
     //Cycles a DMA controller has taken off the bus, see CPU::hold()
     unsigned int held = take_hold();
-    if (held > 0) return held;
+    if (held > 0) { m_total += held; return held; }
 
     if (m_debug != DEBUG_OFF) debug_before();
+    m_bus_cycles = 0;
     unsigned int cycles = core->execute();
+    m_total += cycles;
+    m_bus_cycles = 0;
 
 
     if (m_debug != DEBUG_OFF) debug_after();

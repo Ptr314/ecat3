@@ -94,6 +94,15 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/agat_7_display.h emulator/devices/specific/agat_7_display.cpp
     emulator/devices/specific/agat_9_display.h emulator/devices/specific/agat_9_display.cpp
     emulator/devices/specific/agat_9_mapper.h emulator/devices/specific/agat_9_mapper.cpp
+    emulator/devices/specific/apple2_mmu.h emulator/devices/specific/apple2_mmu.cpp
+    emulator/devices/specific/apple2_iou.h emulator/devices/specific/apple2_iou.cpp
+    emulator/devices/specific/apple2_video.h emulator/devices/specific/apple2_video.cpp
+    emulator/devices/specific/pravetz_keyboard.h emulator/devices/specific/pravetz_keyboard.cpp
+    emulator/devices/specific/liberty_fdc.h emulator/devices/specific/liberty_fdc.cpp
+    emulator/devices/specific/apple2_cards.h emulator/devices/specific/apple2_cards.cpp
+    emulator/devices/specific/apple2_disk2.h emulator/devices/specific/apple2_disk2.cpp
+
+    emulator/devices/common/ins8250.h emulator/devices/common/ins8250.cpp
     emulator/devices/specific/agat_yazs.h emulator/devices/specific/agat_yazs.cpp
     emulator/devices/specific/uknc_channels.h emulator/devices/specific/uknc_channels.cpp
     emulator/devices/specific/uknc_display.h emulator/devices/specific/uknc_display.cpp

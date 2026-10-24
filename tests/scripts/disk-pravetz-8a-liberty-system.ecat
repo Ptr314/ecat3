@@ -1,0 +1,42 @@
+# Правец-8А, Liberty Drive: диск из комплекта контроллера (software/pravetz/
+# liberty-system.img, ProDOS). PR#5 грузит оболочку XONEX SHELL; из нее
+# менеджер /LIBERTY/LIBERTY.SYSTEM; F1+F, ProDOS, имя FORMTEST - он размечает
+# диск в дисководе 1 (копию в памяти) через точку входа ПЗУ платы $CEFD:
+# 80 дорожек командой ВГ93 Write Track, затем пишет каталог. Проверка на
+# машине: левая панель - пустой том /FORMTEST, 793 свободных блока.
+# @timeout 300
+
+MACHINE "pravetz/Pravetz-8A-liberty.ext"
+LOGDEFS 8,16
+# Без штатного диска в дисководе 140 Кб: ПЗУ не грузит с него DOS
+COMMAND fdd0.eject()
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+TYPE "PR#5"
+KEY 50,50,ret
+WAIT 15000
+TYPE "24-OCT-90"
+KEY 50,50,ret
+WAIT 2000
+KEY 50,50,down
+KEY 50,50,ret
+WAIT 2000
+KEY 50,50,ret
+WAIT 10000
+SCREEN "../results/disk-pravetz-8a-liberty-system.png"
+KEYDOWN f1
+TYPE "F"
+KEYUP f1
+WAIT 1500
+KEY 50,50,ret
+WAIT 1000
+TYPE "FORMTEST"
+KEY 50,50,ret
+WAIT 30000
+LOG liberty-wd.formats
+LOG liberty-wd.unsupported
+SCREEN "../results/disk-pravetz-8a-liberty-system-format.png"
+EXIT

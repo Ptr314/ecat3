@@ -1,0 +1,11 @@
+=== Экран ===
+[display.resolution] 560x192
+[display.standard] apple-pal
+[display.frame_rate] $32
+=== Память ===
+[mmu.map] 00:M0000 10:M1000 20:M2000 30:M3000 40:M4000 50:M5000 60:M6000 70:M7000 80:M8000 90:M9000 A0:MA000 B0:MB000 C0:-/ro D0:R1000 E0:R2000 F0:R3000
+[mmu.switches] lcbank2 lcwrite
+=== CTRL+RESET ===
+[mmu.switches] intcxrom lcbank2 lcwrite
+[iou.video] text an3
+[iou.softsw] $00

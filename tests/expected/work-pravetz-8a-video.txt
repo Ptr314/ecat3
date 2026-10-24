@@ -1,0 +1,2 @@
+[iou.video] text 80col altchar an3 80store
+[iou.video] mixed 80col altchar an3 80store

@@ -1,0 +1,26 @@
+# Сборка эталонного снимка для state-pravetz-8a-liberty.ecat.
+#
+# Запускается руками, из каталога deploy/:
+#
+#   eCat3-headless --no-sound --script ../tests/files/make-state-pravetz-8a-liberty.ecat
+#
+# Правец-8А с Liberty Drive после загрузки с диска liberty-400.img: ПЗУ
+# определило дисководы (типы в памяти драйвера), головка ВГ93 стоит на
+# последнем прочитанном цилиндре (physical_head), защелка платы с разрядом
+# 6. Загрузчик диска остался в $0800.
+
+MACHINE "pravetz/Pravetz-8A-liberty.ext"
+COMMAND fdd0.eject()
+COMMAND lfdd0.load("liberty-400.img")
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "PR#5"
+KEY 50,50,ret
+WAIT 6000
+
+SAVESTATE "state-pravetz-8a-liberty.ecats.zip"
+SCREEN "state-pravetz-8a-liberty-made.png"
+EXIT

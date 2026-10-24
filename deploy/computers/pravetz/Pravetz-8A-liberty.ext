@@ -1,0 +1,74 @@
+// Правец-8А с контроллером Liberty Drive в слоте 5: КР1818ВГ93, дисководы
+// 5,25" по 400 Кб (40 дорожек, 2 стороны, 10 секторов по 512 байт), ProDOS.
+// Разобран по коду ПЗУ («Slim3.05», Москва; «Slim3.06», Ташкент): ВГ93 в
+// $C0D0-$C0D3, DRQ в разряде 7 $C0D4, защелка $C0D8 (дисковод, сторона,
+// разряд 6 держит драйвер, двойной шаг). Загрузка - PR#5.
+@extends pravetz/Pravetz-8A.cfg
+@version Правец-8А (Liberty Drive)
+@protected
+
+@before mmu
+liberty-rom : rom {
+	size = 2k
+	label = ПЗУ Liberty Drive
+	image_1 = files/liberty-305.bin
+	title_1 = Slim3.05 (Москва)
+	image_2 = files/liberty-306.bin
+	title_2 = Slim3.06 (Ташкент)
+	image = files/liberty-305.bin
+}
+
+mmu:slot5 = liberty-rom[$700]
+mmu:slot5_exp = liberty-rom[$000]
+
+// Головки дисководов - как у настоящих: TR00 по головке на нулевом
+// цилиндре, 40-дорожечный дисковод упирается на 41-м (по этому ПЗУ
+// отличает его от 80-дорожечного), индексный импульс раз в 200 мс
+liberty-wd : wd1793 {
+	drives = lfdd0|lfdd1
+	register_delay = 0
+	physical_head = 1
+	max_cylinder = 41
+	index_period = 200
+	index_width = 4000
+}
+
+liberty : liberty-fdc {
+	fdc = liberty-wd
+}
+
+lfdd0 : fdd {
+	title = Liberty 1
+	// Диск из комплекта контроллера (Москва): ProDOS, оболочка XONEX SHELL,
+	// менеджер файлов LIBERTY (с форматированием), издательская система ПАРИС
+	image = liberty-system.img
+	sides = 2
+	tracks = 40
+	sectors = 10
+	sector_size = 512
+	layout = cylinders
+	files = "Liberty Drive 400K (*.img *.dsk);;All files (*.*)"
+	files_save = "Liberty Drive 400K (*.img *.dsk)"
+	selector_value = 0
+	soft_reset = 0
+	~select = liberty.drive
+	~side = !liberty.side
+}
+
+lfdd1 : fdd {
+	title = Liberty 2
+	sides = 2
+	tracks = 40
+	sectors = 10
+	sector_size = 512
+	layout = cylinders
+	files = "Liberty Drive 400K (*.img *.dsk);;All files (*.*)"
+	files_save = "Liberty Drive 400K (*.img *.dsk)"
+	selector_value = 1
+	soft_reset = 0
+	~select = liberty.drive
+	~side = !liberty.side
+}
+
+@before mapper:@memory[$C100-$FFFF]
+mapper:@memory[$C0D0-$C0DF] = liberty

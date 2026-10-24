@@ -183,7 +183,7 @@ void Interface::pull(unsigned int new_value)
 
 DeviceManager::DeviceManager()
 {
-    registered_devices_count = 0;
+    registered_devices.clear();
 
     device_count = 0;
     error_message = "";
@@ -213,10 +213,10 @@ void DeviceManager::clear()
 
 void DeviceManager::register_device(const std::string &device_type, CreateDeviceFunc func)
 {
-    registered_devices[registered_devices_count].type = device_type;
-    registered_devices[registered_devices_count].create_func = func;
-
-    registered_devices_count++;
+    RegisteredDevice r;
+    r.type = device_type;
+    r.create_func = func;
+    registered_devices.push_back(r);
 }
 
 emulator::Result DeviceManager::add_device(InterfaceManager *im, EmulatorConfigDevice *d)
@@ -230,7 +230,8 @@ emulator::Result DeviceManager::add_device(InterfaceManager *im, EmulatorConfigD
             "{DeviceManager|" + std::string(QT_TRANSLATE_NOOP("DeviceManager", "Too many devices")) + "} " + d->name);
 
     CreateDeviceFunc create_func = nullptr;
-    for (unsigned int i=0; i < registered_devices_count; i++)
+    for (size_t i=0; i < registered_devices.size(); i++)
+
     {
         if (registered_devices[i].type == d->type) create_func = registered_devices[i].create_func;
     }

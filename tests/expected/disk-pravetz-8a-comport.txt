@@ -1,0 +1,4 @@
+[comport-pc.reads] $0000002B
+[comport-pc.disks] 1=comport-disk1.dsk, 2=pravetz-dos33.dsk, 3=p8ru02.dsk
+[comport-pc.writes] $00000007
+[comport-pc.errors] $00000001

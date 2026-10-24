@@ -30,23 +30,27 @@ using namespace MOS6502;
 #define FLAG_I (REG_P & F_I)
 
 
+//abs,X reads (ORA/AND/EOR/ADC/CMP/SBC and the undocumented NOP, $x1C/$x1D)
+//take 4 clocks, the page crossing adds the fifth in read_address(); they
+//were 5 here and so one more on top of it, which the Disk II sequencer of
+//the Правец found: DOS 3.3 writes a nibble in exactly 32 clocks
 static const uint8_t MOS6502_TIMES[256] = {
                        7,6,2,8,3,3,5,5,3,2,2,2,4,4,6,6,
-                       2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
+                       2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7,
                        6,6,2,8,3,3,5,5,4,2,2,2,4,4,6,6,
-                       2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
+                       2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7,
                        6,6,2,8,3,3,5,5,3,2,2,2,3,4,6,6,
-                       2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
+                       2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7,
                        6,6,2,8,3,3,5,5,4,2,2,2,5,4,6,6,
-                       2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
+                       2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7,
                        2,6,2,6,3,3,3,3,2,2,2,2,4,4,4,4,
                        2,6,2,6,4,4,4,4,2,5,2,5,5,5,5,5,
                        2,6,2,6,3,3,3,3,2,2,2,2,4,4,4,4,
                        2,5,2,5,4,4,4,4,2,4,2,5,4,4,4,4,
                        2,6,2,8,3,3,5,5,2,2,2,2,4,4,6,6,
-                       2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
+                       2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7,
                        2,6,2,8,3,3,5,5,2,2,2,2,4,4,6,6,
-                       2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7
+                       2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7
                     };
 
 //The 65C02 (WDC 65C02S datasheet): no 8-cycle undocumented opcodes - the
@@ -761,7 +765,7 @@ inline uint8_t mos6502core::get_operand(uint8_t command, unsigned int & cycles)
         else
             D.b.H = read_mem(T.w+1);
         // D.w += REG_Y;
-        D.w = calc_address(D.w, REG_Y, cycles);
+        D.w = read_address(D.w, REG_Y, cycles);
         result = read_mem(D.w);
         break;
     case 5:
@@ -774,7 +778,7 @@ inline uint8_t mos6502core::get_operand(uint8_t command, unsigned int & cycles)
         T.b.L = next_byte();
         T.b.H = next_byte();
         // T.w += REG_Y;
-        T.w = calc_address(T.w, REG_Y, cycles);
+        T.w = read_address(T.w, REG_Y, cycles);
         result = read_mem(T.w);
         break;
     default:
@@ -782,7 +786,7 @@ inline uint8_t mos6502core::get_operand(uint8_t command, unsigned int & cycles)
         T.b.L = next_byte();
         T.b.H = next_byte();
         // T.w += REG_X;
-        T.w = calc_address(T.w, REG_X, cycles);
+        T.w = read_address(T.w, REG_X, cycles);
         result = read_mem(T.w);
         break;
     }
@@ -826,6 +830,7 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int & cycles)
         //No page crossing penalty here: every instruction that asks for an
         //address rather than a value (STA, STX, STY, the RMW group and the
         //undocumented ones) has a fixed time, already in MOS6502_TIMES
+        if (dummy_access) dummy_read(D.w, REG_Y);
         D.w += REG_Y;
         result = D.w;
         break;
@@ -838,6 +843,7 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int & cycles)
         //abs, y
         T.b.L = next_byte();
         T.b.H = next_byte();
+        if (dummy_access) dummy_read(T.w, REG_Y);
         T.w += REG_Y;
         result = T.w;
         break;
@@ -851,6 +857,7 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int & cycles)
         if (context.type == MOS_6502_FAMILY_65C02 && (command & 0x9F) == 0x1E
             && ((T.w ^ static_cast<uint16_t>(T.w + REG_X)) & 0xFF00) != 0)
             cycles++;
+        if (dummy_access) dummy_read(T.w, REG_X);
         T.w += REG_X;
         result = T.w;
         break;
@@ -860,6 +867,34 @@ inline uint16_t mos6502core::get_address(uint8_t command, unsigned int & cycles)
         break;
     }
     return result;
+}
+
+//A read through abs,X, abs,Y or (zp),Y that crosses a page: the NMOS part
+//first reads the address with the low byte added and the high one not yet
+//carried, and takes the cycle for that
+inline uint16_t mos6502core::read_address(const uint16_t base, const uint16_t increment, unsigned int & cycles)
+{
+    const uint16_t res = base + increment;
+    if (((base ^ res) & 0xFF00) != 0) {
+        cycles++;
+        if (dummy_access) read_mem((base & 0xFF00) | (res & 0x00FF));
+    }
+    return res;
+}
+
+//A write or a read-modify-write through an index reads that address always
+inline void mos6502core::dummy_read(const uint16_t base, const uint16_t increment)
+{
+    read_mem((base & 0xFF00) | ((base + increment) & 0x00FF));
+}
+
+//The read of a read-modify-write instruction; the NMOS part writes the value
+//back unchanged before the result (INC $C083 is two writes there)
+inline uint8_t mos6502core::rmw_read(const uint16_t address)
+{
+    const uint8_t v = read_mem(address);
+    if (dummy_access) write_mem(address, v);
+    return v;
 }
 
 inline void mos6502core::calc_flags(uint32_t value, uint32_t mask)
@@ -941,7 +976,7 @@ void mos6502core::_ASL(uint8_t command, unsigned int & cycles)
     } else {
         //ASL mem
         T.w = get_address(command, cycles);
-        D.w = read_mem(T.w) << 1;
+        D.w = rmw_read(T.w) << 1;
         calc_flags(D.w, F_NZC);
         write_mem(T.w, D.b.L);
     };
@@ -1060,7 +1095,7 @@ void mos6502core::_DEC(uint8_t command, unsigned int & cycles)
 {
     PartsRecLE T, D;
     T.w = get_address(command, cycles);
-    D.w = read_mem(T.w) - 1;
+    D.w = rmw_read(T.w) - 1;
     calc_flags(D.w, F_NZ);
     write_mem(T.w, D.b.L);
 }
@@ -1096,7 +1131,7 @@ void mos6502core::_INC(uint8_t command, unsigned int & cycles)
 {
     PartsRecLE T, D;
     T.w = get_address(command, cycles);
-    D.w = read_mem(T.w) + 1;
+    D.w = rmw_read(T.w) + 1;
     calc_flags(D.w, F_NZ);
     write_mem(T.w, D.b.L);
 }
@@ -1193,7 +1228,7 @@ void mos6502core::_LDX(uint8_t command, unsigned int & cycles)
         //LDX ABS,Y
         T.b.L = next_byte();
         T.b.H = next_byte();
-        T.w = calc_address(T.w, REG_Y, cycles);
+        T.w = read_address(T.w, REG_Y, cycles);
         REG_X = read_mem(T.w);
         break;
     default:
@@ -1229,7 +1264,7 @@ void mos6502core::_LSR(uint8_t command, unsigned int & cycles)
     } else {
         //LSR mem
         T.w = get_address(command, cycles);
-        D.b.L = read_mem(T.w);
+        D.b.L = rmw_read(T.w);
         set_flag(F_C, D.b.L);
         D.b.L >>= 1;
         calc_flags(D.b.L, F_NZ);
@@ -1290,7 +1325,7 @@ void mos6502core::_ROL(uint8_t command, unsigned int & cycles)
     } else {
         //ROL mem
         T.w = get_address(command, cycles);
-        D.w = (static_cast<uint16_t>(read_mem(T.w)) << 1) | FLAG_C;
+        D.w = (static_cast<uint16_t>(rmw_read(T.w)) << 1) | FLAG_C;
         set_flag(F_C, D.b.H);
         calc_flags(D.b.L, F_NZ);
         write_mem(T.w, D.b.L);
@@ -1311,7 +1346,7 @@ void mos6502core::_ROR(uint8_t command, unsigned int & cycles)
         //ROR mem
         T.w = get_address(command, cycles);
         D.b.H = FLAG_C;
-        D.b.L = read_mem(T.w);
+        D.b.L = rmw_read(T.w);
         set_flag(F_C, D.b.L);
         D.b.L = (D.w >> 1) & 0xFF;
         calc_flags(D.b.L, F_NZ);
@@ -1515,7 +1550,7 @@ void mos6502core::__ASR(uint8_t command, unsigned int & cycles)
 void mos6502core::__DCP(uint8_t command, unsigned int & cycles)
 {
     const uint16_t address = get_address(command, cycles);
-    const uint8_t v = static_cast<uint8_t>(read_mem(address) - 1);
+    const uint8_t v = static_cast<uint8_t>(rmw_read(address) - 1);
     write_mem(address, v);
     doCMP(v);
 }
@@ -1525,7 +1560,7 @@ void mos6502core::__DCP(uint8_t command, unsigned int & cycles)
 void mos6502core::__ISB(uint8_t command, unsigned int & cycles)
 {
     const uint16_t address = get_address(command, cycles);
-    const uint8_t v = static_cast<uint8_t>(read_mem(address) + 1);
+    const uint8_t v = static_cast<uint8_t>(rmw_read(address) + 1);
     write_mem(address, v);
     doSBC(v);
 }
@@ -1554,8 +1589,9 @@ void mos6502core::__LAX(uint8_t command, unsigned int & cycles)
             //abs, Y !!!!!!!!!
             T.b.L = next_byte();
             T.b.H = next_byte();
-            T.w = calc_address(T.w, REG_Y, cycles);
+            T.w = read_address(T.w, REG_Y, cycles);
             D.b.L = read_mem(T.w);
+
             break;
         default:
             D.b.L = get_operand(command, cycles);
@@ -1576,7 +1612,7 @@ void mos6502core::__LXA(uint8_t command, unsigned int & cycles)
 void mos6502core::__RLA(uint8_t command, unsigned int & cycles)
 {
     const uint16_t address = get_address(command, cycles);
-    const uint8_t v = read_mem(address);
+    const uint8_t v = rmw_read(address);
     const uint8_t r = static_cast<uint8_t>((v << 1) | (FLAG_C ? 1 : 0));
     set_flag(F_C, (v & 0x80) ? F_C : 0);
     write_mem(address, r);
@@ -1588,7 +1624,7 @@ void mos6502core::__RLA(uint8_t command, unsigned int & cycles)
 void mos6502core::__RRA(uint8_t command, unsigned int & cycles)
 {
     const uint16_t address = get_address(command, cycles);
-    const uint8_t v = read_mem(address);
+    const uint8_t v = rmw_read(address);
     const uint8_t r = static_cast<uint8_t>((v >> 1) | (FLAG_C ? 0x80 : 0));
     set_flag(F_C, (v & 0x01) ? F_C : 0);
     write_mem(address, r);
@@ -1673,7 +1709,7 @@ void mos6502core::__SHY(uint8_t command, unsigned int & cycles)
 void mos6502core::__SLO(uint8_t command, unsigned int & cycles)
 {
     const uint16_t address = get_address(command, cycles);
-    const uint8_t v = read_mem(address);
+    const uint8_t v = rmw_read(address);
     const uint8_t r = static_cast<uint8_t>(v << 1);
     set_flag(F_C, (v & 0x80) ? F_C : 0);
     write_mem(address, r);
@@ -1685,7 +1721,7 @@ void mos6502core::__SLO(uint8_t command, unsigned int & cycles)
 void mos6502core::__SRE(uint8_t command, unsigned int & cycles)
 {
     const uint16_t address = get_address(command, cycles);
-    const uint8_t v = read_mem(address);
+    const uint8_t v = rmw_read(address);
     const uint8_t r = static_cast<uint8_t>(v >> 1);
     set_flag(F_C, (v & 0x01) ? F_C : 0);
     write_mem(address, r);

@@ -1,0 +1,49 @@
+# Правец-8А: 80 колонок (PR#3, нужна память в разъеме X0) и цвет. Штатный
+# монитор монохромный (зеленый ВММ 3107); цвет давала плата RGB в слоте 7.
+# Полосы 16 цветов ГР40 сняты на монохромном мониторе, через RGB-плату с
+# цветами Apple и через штатную болгарскую RGB-плату, которая брала четыре
+# точки сдвигового регистра прямо как R, G, B и яркость - отсюда «не те»
+# цвета (Правец-8С, рис. 5.8).
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+# Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
+COMMAND fdd0.eject()
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "PR#3"
+KEY 50,50,ret
+WAIT 300
+TYPE "PRINT \"80 COLUMNS\""
+KEY 50,50,ret
+WAIT 300
+LOG iou.video
+SCREEN "../results/work-pravetz-8a-video-80.png"
+TYPE "GR:FOR I=0 TO 15:COLOR=I:VLIN 0,39 AT I*2:VLIN 0,39 AT I*2+1:NEXT"
+KEY 50,50,ret
+WAIT 1500
+LOG iou.video
+SCREEN "../results/work-pravetz-8a-video-mono.png"
+COMMAND display.option(0,3)
+WAIT 60
+SCREEN "../results/work-pravetz-8a-video-rgb.png"
+COMMAND display.option(0,4)
+WAIT 60
+SCREEN "../results/work-pravetz-8a-video-stock.png"
+COMMAND display.option(0,5)
+WAIT 60
+SCREEN "../results/work-pravetz-8a-video-variant.png"
+# ГР280 через плату «Варианта»: полосы HCOLOR 1-7, у 5-7 байты сдвинуты на
+# полточки (разряд 7) - вторая таблица ПЗУ платы
+TYPE "HGR:FOR I=1 TO 7:HCOLOR=I:FOR X=0 TO 27:HPLOT I*35+X,0 TO I*35+X,100:NEXT:NEXT"
+KEY 50,50,ret
+WAIT 8000
+SCREEN "../results/work-pravetz-8a-video-hgr-variant.png"
+COMMAND display.option(0,3)
+WAIT 60
+SCREEN "../results/work-pravetz-8a-video-hgr-rgb.png"
+COMMAND display.option(0,0)
+EXIT

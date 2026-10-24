@@ -1,0 +1,47 @@
+// Правец-8А с платой COMport в слоте 5 (СП «Вариант», 1996): 8250 на
+// $C0D8-$C0DF (CS0 = CS1 = A3), 115200 бод, ПЗУ 2 Кб - $C500 и $C800. Плата
+// связывала Правец с IBM PC, на котором программа COMPORT.EXE хранила образы
+// дисков 140 Кб: для DOS 3.3 это обычный дисковод, D1 - образ 1, D2 - образ
+// 2 и т. д. до 254. PC здесь играет сам эмулятор (comport-server). Загрузка -
+// PR#5; образ 1 должен нести DOS, подготовленный для платы (диск 1 из
+// поставки COMPORT), остальные - любые образы 140 Кб в порядке DOS.
+@extends pravetz/Pravetz-8A.cfg
+@version Правец-8А (COMport)
+@protected
+
+@before mmu
+comport-rom : rom {
+	size = 2k
+	image = files/comport.bin
+}
+
+comport-uart : ins8250 {
+	title = COMport
+	peer = comport-pc
+}
+
+// Образы дисков на «PC»: D1 - DOS для платы из поставки COMPORT, D2 и D3 -
+// школьные диски из software/pravetz. В редакторе расширений выбираются
+// образы D1-D9 (disk_title_N)
+comport-pc : comport-server {
+	uart = comport-uart
+	files = "Образы 140 Кб в порядке DOS (*.dsk *.do *.pds);;Все файлы (*.*)"
+	disk_1 = files/comport-disk1.dsk
+	disk_2 = p8ru01.dsk
+	disk_3 = p8ru02.dsk
+	disk_title_1 = Диск D1 (с DOS для платы)
+	disk_title_2 = Диск D2
+	disk_title_3 = Диск D3
+	disk_title_4 = Диск D4
+	disk_title_5 = Диск D5
+	disk_title_6 = Диск D6
+	disk_title_7 = Диск D7
+	disk_title_8 = Диск D8
+	disk_title_9 = Диск D9
+}
+
+mmu:slot5 = comport-rom
+mmu:slot5_exp = comport-rom
+
+@before mapper:@memory[$C100-$FFFF]
+mapper:@memory[$C0D8-$C0DF] = comport-uart

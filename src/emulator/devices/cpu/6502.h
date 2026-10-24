@@ -32,6 +32,9 @@ private:
 
     mos6502Core * core;
     int m_family;
+    int m_bus_cycles = 0;       // accesses of the current instruction (see bus_time())
+    uint64_t m_total = 0;       // clocks done before the current instruction
+
     virtual void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
 protected:
@@ -41,8 +44,11 @@ public:
     mos6502(InterfaceManager *im, EmulatorConfigDevice *cd, int family_type);
     ~mos6502();
 
+    emulator::Result load_config(SystemData *sd) override;
     virtual void reset(bool cold) override;
     void drive_address(unsigned int address);
+    bool bus_time(uint64_t &t) const override { t = m_total + (uint64_t)m_bus_cycles; return true; }
+
     virtual unsigned int execute() override;
     virtual unsigned int read_mem(unsigned int address) override;
     virtual void write_mem(unsigned int address, unsigned int data) override;

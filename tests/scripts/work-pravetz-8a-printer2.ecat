@@ -1,0 +1,21 @@
+# Правец-8А, плата принтера неизвестного происхождения в слоте 1: устроена
+# как Epson APL, но байт на разъем идет инверсным (прошивка пишет его с
+# EOR #$FF), а после строба прошивка ждет, пока принтер станет занят. Она же
+# повторяет на принтер ввод с клавиатуры.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8A-printer2.ext"
+# Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
+COMMAND fdd0.eject()
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "PR#1:PRINT \"PRAVETZ 8A\":PR#0"
+KEY 50,50,ret
+WAIT 1500
+LOG printer.text
+LOG printer-card.written
+LOG printer.output
+EXIT

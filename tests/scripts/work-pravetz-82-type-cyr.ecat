@@ -1,0 +1,19 @@
+# Правец-82: TYPE набирает кириллицу и здесь - раскладка ЯВЕРТЪ, таблица
+# одна 7-битная, Ю, Ш, Щ и Ч на кодах @ [ ] ^ ($C0, $DB, $DD, $DE), как их
+# ставит знакогенератор 82. Переключатель ЛАТ (F10) TYPE нажимает сам.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-82.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "PRINT \"ПРАВЕЦ-82, ЮЖЕН ВЯТЪР, ЩИ, ЧАЙ, ШУМ\""
+KEY 50,50,ret
+WAIT 500
+LOG keyboard.cl
+SCREEN "../results/work-pravetz-82-type-cyr.png"
+EXIT

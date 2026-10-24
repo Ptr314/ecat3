@@ -1,0 +1,32 @@
+// Для тестов: Правец-8А с Liberty Drive и платой принтера Epson APL в слоте 2,
+// куда печатает ПАРИС (расширение на расширении: в веб-сборку не попадает)
+@extends pravetz/Pravetz-8A-liberty.ext
+@version Правец-8А (Liberty Drive и принтер в слоте 2)
+
+@before mmu
+printer-rom : rom {
+	size = 2k
+	label = ПЗУ платы принтера
+	image_1 = files/printer-epson-apl.bin
+	title_1 = Epson APL Printer Interface
+	image_2 = files/printer-intplat.bin
+	title_2 = Копия (другая прошивка)
+	image = files/printer-epson-apl.bin
+}
+
+printer-card : apple2-parallel {
+	rom = printer-rom
+	~busy = printer.busy
+}
+
+printer : printer {
+	title = Принтер
+	~data = printer-card.data
+	~strobe = printer-card.strobe
+}
+
+mmu:slot2 = printer-card
+mmu:slot2_exp = printer-card
+
+@before mapper:@memory[$C100-$FFFF]
+mapper:@memory[$C0A0-$C0AF] = printer-card

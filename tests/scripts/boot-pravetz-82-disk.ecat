@@ -1,0 +1,13 @@
+# Правец-82 с диском по умолчанию (software/pravetz/sptu20.dsk): DOS 3.3 на
+# 48 Кб и плате ДОЗУ, меню HELLO со знакогенератором 82 (только заглавные,
+# кириллица вместо строчных); F запускает REVERSAL.
+# @timeout 60
+
+MACHINE "pravetz/Pravetz-82.cfg"
+LOG fdd0.file
+WAIT 8000
+SCREEN "../results/boot-pravetz-82-disk-menu.png"
+TYPE "F"
+WAIT 6000
+SCREEN "../results/boot-pravetz-82-disk.png"
+EXIT

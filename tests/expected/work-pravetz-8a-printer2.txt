@@ -1,0 +1,4 @@
+[printer.text] PRAVETZ 8A
+
+[printer-card.written] $0C
+[printer.output] $50 $52 $41 $56 $45 $54 $5A $20 $38 $41 $0D $0A

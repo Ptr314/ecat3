@@ -1,0 +1,29 @@
+# Правец-8А: TYPE набирает кириллицу. Клавиатура говорит, какая клавиша дает
+# букву (код по таблице, порядок КОИ-8, у Правеца Ъ на $F9, Ы - только в
+# 8-битной таблице), TYPE сам нажимает C/L Lock (F10) перед русской буквой,
+# перед латинской и в конце строки - переключатель остается, как был.
+# В 7-битной таблице только заглавные; после SETMOD 1 строчные и заглавные
+# различаются и для латиницы (заглавная требует Shift).
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "PRINT \"ПРАВЕЦ 8А - ЪЕЖ, ЮЛА\""
+KEY 50,50,ret
+WAIT 500
+LOG keyboard.cl
+TYPE "SETMOD 1"
+KEY 50,50,ret
+WAIT 300
+TYPE "PRINT \"Правец ы Ы Pravetz\""
+KEY 50,50,ret
+WAIT 500
+LOG keyboard.cl
+SCREEN "../results/work-pravetz-8a-type-cyr.png"
+EXIT

@@ -31,7 +31,8 @@ private:
 protected:
     // Chosen by the subclass before load_config(): "625/50" (the default),
     // "vp1-037", the 320 line progressive raster of the БК video controller,
-    // or "uknc", the 312 line progressive raster of the УК-НЦ
+    // "uknc", the 312 line progressive raster of the УК-НЦ, or "apple-pal" /
+    // "apple-ntsc", the 65 clock lines of the Apple //e (312 / 262 of them)
     std::string m_standart;
     unsigned m_lines;
     unsigned m_top_blank;

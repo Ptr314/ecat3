@@ -1,0 +1,13 @@
+=== Centronics ===
+[printer.printed] $00000036
+[printer.text] ..
+]PRINT "HELLO, PRAVETZ"
+HELLO, PRAVETZ
+
+]PR#0
+
+=== RS-232 ===
+[rs232.baud] 1200
+[rs232.lcr] 3
+[rs232.text] AB
+[rs232.received] 7

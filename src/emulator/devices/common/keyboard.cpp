@@ -350,6 +350,17 @@ void text_to_keys(const std::string &text, Keyboard * kbd, bool escapes,
                   std::vector<unsigned int> &keys, std::vector<bool> &shift,
                   std::vector<std::string> * unknown)
 {
+    //Cyrillic goes through the keyboard's РУС/ЛАТ switch: pressed before the
+    //first Russian letter, again before the next character that is not one
+    //(nor a space), and at the end the switch is left as it was found
+    //A text of ASCII alone leaves the switch alone: a script may have turned
+    //РУС on itself and type Russian with the Latin keys
+    bool has_cyrillic = false;
+    for (size_t i = 0; i < text.length(); i++)
+        if (static_cast<unsigned char>(text[i]) >= 0x80) has_cyrillic = true;
+    const unsigned int rus_key = (kbd != nullptr && has_cyrillic) ? kbd->rus_switch_key() : _FFFF;
+    const bool rus_start = kbd != nullptr && kbd->rus_now();
+    bool rus = rus_start;
     for (size_t i = 0; i < text.length(); i++)
     {
         const char ch = text[i];
@@ -357,12 +368,28 @@ void text_to_keys(const std::string &text, Keyboard * kbd, bool escapes,
 
         if (static_cast<unsigned char>(ch) >= 0x80)
         {
-            //A UTF-8 sequence: no key has a name outside ASCII
+            //A UTF-8 sequence: no key has a name outside ASCII, the keyboard
+            //may know a key that types the letter
             size_t j = i + 1;
             while (j < text.length() && (static_cast<unsigned char>(text[j]) & 0xC0) == 0x80) j++;
-            if (unknown != nullptr) unknown->push_back(text.substr(i, j - i));
+            const unsigned char lead = static_cast<unsigned char>(ch);
+            unsigned int cp = (lead >= 0xF0) ? (lead & 0x07) : (lead >= 0xE0) ? (lead & 0x0F) : (lead & 0x1F);
+            for (size_t k = i + 1; k < j; k++) cp = (cp << 6) | (static_cast<unsigned char>(text[k]) & 0x3F);
+            unsigned int key = 0;
+            bool sh = false;
+            if (kbd != nullptr && rus_key != _FFFF && kbd->key_for_char(cp, key, sh)) {
+                if (!rus) { keys.push_back(rus_key); shift.push_back(false); rus = true; }
+                keys.push_back(key);
+                shift.push_back(sh);
+            } else if (unknown != nullptr)
+                unknown->push_back(text.substr(i, j - i));
             i = j - 1;
             continue;
+        }
+        //Back to Latin for anything but a space: in РУС the punctuation keys
+        //of a ЙЦУКЕН layout are letters
+        if (rus && rus_key != _FFFF && ch != ' ') {
+            keys.push_back(rus_key); shift.push_back(false); rus = false;
         }
 
         if (escapes && ch == '\\' && i + 1 < text.length())
@@ -385,8 +412,9 @@ void text_to_keys(const std::string &text, Keyboard * kbd, bool escapes,
             continue;
         }
         keys.push_back(code);
-        shift.push_back(kbd != nullptr && kbd->needs_shift(code));
+        shift.push_back(kbd != nullptr && (name.size() == 1 ? kbd->needs_shift_char(name[0], code) : kbd->needs_shift(code)));
     }
+    if (rus != rus_start) { keys.push_back(rus_key); shift.push_back(false); }
 }
 
 unsigned int Keyboard::translate_key(const std::string &key)

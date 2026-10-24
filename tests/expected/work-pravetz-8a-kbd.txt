@@ -1,0 +1,4 @@
+[keyboard.latch] $8D
+[keyboard.latch] $8D
+[iou.softsw] $01
+[iou.video] text altchar an3

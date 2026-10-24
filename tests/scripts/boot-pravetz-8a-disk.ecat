@@ -1,0 +1,39 @@
+# Правец-8А с диском по умолчанию (software/pravetz/sptu20.dsk, школьный
+# диск СПТУ-20 с agatcomp.ru): ПЗУ при включении грузит с него DOS 3.3, HELLO
+# показывает меню, программа выбирается буквой - F запускает REVERSAL.
+#
+# Пункт E меню (TETA.OBJ) уходит в монитор и на настоящей машине: это
+# скомпилированная программа, которая начинается с JSR $0803 - вызова
+# библиотеки RUNTIME, а меню делает BRUN без нее. С BLOAD RUNTIME она идет:
+# это Тетрис.
+# @timeout 60
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+LOGDEFS 8,16
+LOG fdd0.file
+WAIT 8000
+SCREEN "../results/boot-pravetz-8a-disk-menu.png"
+TYPE "F"
+WAIT 6000
+SCREEN "../results/boot-pravetz-8a-disk.png"
+# CTRL+RESET посреди игры может застать DOS испорченной (смотря по моменту):
+# PR#6 грузит ее заново, меню прерывается вторым CTRL+RESET
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+TYPE "PR#6"
+KEY 50,50,ret
+WAIT 6000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "BLOAD RUNTIME"
+KEY 50,50,ret
+WAIT 5000
+TYPE "BRUN TETA.OBJ"
+KEY 50,50,ret
+WAIT 8000
+SCREEN "../results/boot-pravetz-8a-disk-teta.png"
+EXIT

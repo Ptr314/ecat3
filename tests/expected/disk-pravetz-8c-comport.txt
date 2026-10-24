@@ -1,0 +1,2 @@
+[comport-pc.reads] $0000002F
+[comport-pc.errors] $00000000

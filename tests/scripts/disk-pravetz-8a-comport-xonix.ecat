@@ -1,0 +1,26 @@
+# Правец-8А, плата COMport: XONIX (Eagle Software, 1986) с диска 1 - 91
+# сектор по линии 8250. Остальное на этом диске: FILES и COPY работают;
+# SPY HUNTER и RASTER в образе неполны (в списке секторов 13 из 136 и 21 из
+# 144, DOS перечитывает его без конца - на штатном дисководе так же);
+# STARTCOLOR - кусок пункта CHANGE BOOT PROGRAMM копировщика COPY, сам по
+# себе падает в монитор.
+# @timeout 60
+
+MACHINE "pravetz/Pravetz-8A-comport.ext"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+TYPE "PR#5"
+KEY 50,50,ret
+WAIT 5000
+TYPE "BRUN XONIX"
+KEY 50,50,ret
+WAIT 15000
+LOG comport-pc.reads
+LOG comport-pc.errors
+SCREEN "../results/disk-pravetz-8a-comport-xonix.png"
+EXIT

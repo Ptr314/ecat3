@@ -1,0 +1,38 @@
+# Сборка эталонного снимка состояния для state-pravetz-8a.ecat.
+#
+# Запускается руками, а не набором тестов: снимок - это двоичный эталон,
+# который обновляют осознанно. Из каталога deploy/:
+#
+#   eCat3-headless --no-sound --script ../tests/files/make-state-pravetz-8a.ecat
+#
+# В снимок попадает то, чего холодный пуск не воспроизводит: 80 колонок
+# (текст в основной и дополнительной памяти, ключи 80COL/80STORE), языковая
+# карта в режиме «чтение ПЗУ, запись в ОЗУ, банк 1» с меткой в этом банке и
+# 8-битная кодовая таблица Правеца (SETMOD 1: SOFTSW и ALTCHAR).
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+# Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
+COMMAND fdd0.eject()
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "PR#3"
+KEY 50,50,ret
+WAIT 300
+# Два чтения $C089: запись в ОЗУ языковой карты, банк 1, чтение из ПЗУ
+TYPE "X=PEEK(49289):X=PEEK(49289):POKE 53248,165:POKE 53249,90"
+KEY 50,50,ret
+WAIT 300
+TYPE "SETMOD 1"
+KEY 50,50,ret
+WAIT 300
+TYPE "PRINT \"SNAPSHOT\""
+KEY 50,50,ret
+WAIT 300
+
+SAVESTATE "state-pravetz-8a.ecats.zip"
+# Снимок экрана рядом с архивом - чтобы глазами сверить, что снималось
+SCREEN "state-pravetz-8a-made.png"
+EXIT

@@ -71,11 +71,30 @@ emulator::Result RasterDisplay::load_config(SystemData *sd)
         // 400 clocks of 6.25 MHz, 64 us: the frame is 19.968 ms, 50.08 Hz
         m_counts_per_line = m_system_clock / m_lines / m_frame_rate;
         m_frame_clocks = m_counts_per_line * m_lines;
+    } else if (m_standart == "apple-pal" || m_standart == "apple-ntsc") {
+        // Apple //e and its clones (Правец-8А/8С): a line is 65 processor
+        // clocks, 40 of them the picture, whatever the clock exactly is (the
+        // long cycle stretches one of them, not the count). 312 lines of the
+        // PAL //e (the 14.25045 MHz crystal of the Правец-8А) or 262 of the NTSC
+        // one, without interlace; the 192 picture lines come first
+        const bool pal = m_standart == "apple-pal";
+        m_lines = pal ? 312 : 262;
+        m_half_frame_lines = m_lines;
+        m_frame_rate = pal ? 50 : 60;
+        m_interlaced = false;
+        m_top_blank = 0;
+        m_bottom_blank = m_lines - 192;
+        m_hsync_length_ms = 0;
+        m_counts_per_line = 65;
+        m_frame_clocks = m_counts_per_line * m_lines;
     } else {
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{RasterDisplay|" + std::string(QT_TRANSLATE_NOOP("RasterDisplay", "Unknown video standard")) + "}");
     }
 
     m_counts_hsync = m_system_clock * m_hsync_length_ms / 1000000;
+    // The Apple line is sampled at its end, after the 40 picture clocks
+    if (m_standart == "apple-pal" || m_standart == "apple-ntsc")
+        m_counts_hsync = m_counts_per_line - 1;
     m_line_rem = m_frame_clocks % m_lines;
     m_rem_acc = 0;
     m_line_length = m_counts_per_line;

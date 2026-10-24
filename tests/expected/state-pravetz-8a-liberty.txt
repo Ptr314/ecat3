@@ -1,0 +1,4 @@
+[liberty.latch] $42
+[liberty-wd.track] $27
+[liberty-wd.reads] $00000006
+[liberty-wd.reads] $0000000A

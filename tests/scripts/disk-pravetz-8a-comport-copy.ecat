@@ -1,0 +1,62 @@
+# Правец-8А, плата COMport: копировщик COPY с диска 1 переносит диск со
+# штатного дисковода (слот 6, «Сокобан» из software/pravetz) на образ D3 на
+# «компьютере PC». SET SLOTS - четыре цифры: слот и дисковод A, слот и
+# дисковод B (6, 1, 5, 3); COPY / DISK / A TO B копирует все 560 секторов.
+# Проверка на машине: выход в DOS и CATALOG,D3 показывают файлы «Сокобана»,
+# comport-pc.writes - число записанных секторов.
+# @timeout 180
+
+MACHINE "pravetz/Pravetz-8A-comport.ext"
+LOGDEFS 8,16
+COMMAND fdd0.load("sokoban.dsk")
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+TYPE "PR#5"
+KEY 50,50,ret
+WAIT 5000
+TYPE "BRUN COPY"
+KEY 50,50,ret
+WAIT 5000
+KEY 50,50,down
+KEY 50,50,down
+KEY 50,50,down
+KEY 50,50,down
+KEY 50,50,down
+KEY 50,50,down
+KEY 50,50,ret
+WAIT 1000
+TYPE "6153"
+WAIT 1000
+SCREEN "../results/disk-pravetz-8a-comport-copy-slots.png"
+KEY 50,50,up
+KEY 50,50,up
+KEY 50,50,up
+KEY 50,50,up
+KEY 50,50,up
+KEY 50,50,up
+KEY 50,50,ret
+WAIT 500
+KEY 50,50,down
+KEY 50,50,ret
+WAIT 2000
+KEY 50,50,ret
+WAIT 60000
+LOG comport-pc.writes
+KEY 50,50,down
+KEY 50,50,down
+KEY 50,50,down
+KEY 50,50,down
+KEY 50,50,down
+KEY 50,50,down
+KEY 50,50,down
+KEY 50,50,down
+KEY 50,50,ret
+WAIT 2000
+TYPE "CATALOG,D3"
+KEY 50,50,ret
+WAIT 3000
+SCREEN "../results/disk-pravetz-8a-comport-copy.png"
+EXIT

@@ -1,0 +1,15 @@
+// Правец-8М: развитие 82. 64 Кб на плате (ДОЗУ 16 Кб в $D000-$FFFF встроено),
+// свое ПЗУ 12 Кб (27128 в панелях DF1/DF3, младшая четверть - копия $D000),
+// знакогенератор 2764 с четырьмя наборами по 2 Кб: два с кириллицей во всех
+// строках, латинский со строчными и латинский с кириллицей на $E0-$FF, как у
+// 82 (font_half 0-3). Встроенная плата CP/M на Z80 пока не эмулируется.
+@extends pravetz/Pravetz-82.cfg
+@version Правец-8М
+@protected
+
+rom:image = files/pravetz-8m-rom.bin
+font:size = 8k
+font:image = files/pravetz-8m-chr.bin
+display:font_half = 3
+// Ш, Щ, Ч и Ю у 8М - на своих кодах кириллицы ($FB, $FD, $FE, $E0), как у 8А
+keyboard:map = pravetz-8a-yavert.map

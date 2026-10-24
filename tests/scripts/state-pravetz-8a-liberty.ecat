@@ -1,0 +1,25 @@
+# Правец-8А с Liberty Drive: снимок поднимается посреди работы с диском.
+#
+# ../tests/files/state-pravetz-8a-liberty.ecats.zip снят скриптом
+# ../files/make-state-pravetz-8a-liberty.ecat после загрузки с liberty-400.img
+# (загрузчик напечатал ABCD). В снимке: образ 400 Кб (media/), защелка
+# платы, регистры ВГ93 и положение головки (physical_head), типы дисководов
+# в памяти драйвера ПЗУ.
+#
+# После подъема загрузчик в $0800 запускается еще раз (он кончается JMP *,
+# поэтому PC ставится на $0801 командой setreg): драйвер
+# ПЗУ снова читает блоки 2, 15, 25 и 799 и печатает ABCD - без нового
+# определения дисководов, раз разряд 6 защелки сохранился.
+# @timeout 60
+
+MACHINE "../tests/files/state-pravetz-8a-liberty.ecats.zip"
+LOGDEFS 8,16
+LOG liberty.latch
+LOG liberty-wd.track
+LOG liberty-wd.reads
+WAIT 100
+COMMAND cpu.setreg(PC, $0801)
+WAIT 3000
+LOG liberty-wd.reads
+SCREEN "../results/state-pravetz-8a-liberty.png"
+EXIT

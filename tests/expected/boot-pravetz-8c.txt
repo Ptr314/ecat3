@@ -1,0 +1,6 @@
+[display.standard] apple-ntsc
+[display.frame_rate] 60
+[display.lines] 262
+[mapper.value] $C100: $A9 $3C $85 $36 $A9 $00 $8D $F9
+[mapper.value] $C200: $A9 $80 $8D $9B $C0 $A9 $60 $8D
+[mapper.value] $C600: $A2 $20 $A0 $00 $A2 $03 $86 $3C

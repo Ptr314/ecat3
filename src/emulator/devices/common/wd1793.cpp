@@ -51,6 +51,16 @@ emulator::Result WD1793::load_config(SystemData *sd)
     // for DRQ/INTRQ (the Irisha KNGMD holds READY low on port 37 this way)
     sync_mask = read_confg_value(cd, "sync", false, (unsigned int)0);
 
+    m_register_delay = read_confg_value(cd, "register_delay", false, (unsigned int)wd1793_DELAY_REGISTER);
+    m_physical = read_confg_value(cd, "physical_head", false, false);
+    m_max_cylinder = read_confg_value(cd, "max_cylinder", false, (unsigned int)83);
+    // index_period in ms of the controller's clock, index_width in us
+    const unsigned period_ms = read_confg_value(cd, "index_period", false, (unsigned int)0);
+    const unsigned width_us = read_confg_value(cd, "index_width", false, (unsigned int)4000);
+    m_index_period = (unsigned)((uint64_t)m_system_clock * period_ms / 1000);
+    m_index_width = (unsigned)((uint64_t)m_system_clock * width_us / 1000000);
+    m_track_length = read_confg_value(cd, "track_length", false, (unsigned int)wd1793_TRACK_LENGTH);
+
     return emulator::Result::ok();
 }
 
@@ -123,6 +133,7 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
         if (!intrq_forced) ClearINTRQ();
         FindSelectedDrive();
         unsigned int c = (value & 0xF0) >> 4;
+        m_type1 = c < 0x08 || c == 0x0D;
         //Execute commands
         switch (c) {
         case 0x00: //Restore
@@ -133,6 +144,9 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
 
         case 0x01: //Seek
             delay = wd1793_DELAY_STEP * abs((int)registers[wd1793_REG_TRACK] - (int)registers[wd1793_REG_DATA]);
+            //A seek to the track the head is on still keeps the chip busy for
+            //the settling time: the Liberty Drive ROM waits for BUSY to rise
+            if (m_physical && delay < wd1793_DELAY_STEP) delay = wd1793_DELAY_STEP;
             command = wd1793_COMMAND_SEEK;
             SetFlag(wd1793_FLAG_BUSY);
             break;
@@ -180,10 +194,10 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
             break;
 
         case 0x0C: //Read address
-            note_unsupported("wd1793: Read Address");
+            delay = wd1793_DELAY_SECTOR;
+            command = wd1793_COMMAND_READ_ADDRESS;
+            SetFlag(wd1793_FLAG_BUSY);
             SetHLD(true);
-            SetFlag(wd1793_FLAG_NOT_READY);
-            SetINTRQ();
             break;
 
         case 0x0E: //Read track
@@ -194,10 +208,10 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
             break;
 
         case 0x0F: //Write track
-            note_unsupported("wd1793: Write Track");
+            delay = wd1793_DELAY_SECTOR;
+            command = wd1793_COMMAND_WRITE_TRACK;
+            SetFlag(wd1793_FLAG_BUSY);
             SetHLD(true);
-            SetFlag(wd1793_FLAG_NOT_READY);
-            SetINTRQ();
             break;
 
         case 0x0D: //Force interrupt
@@ -261,7 +275,29 @@ unsigned int WD1793::get_value(unsigned int address)
     if (a==wd1793_REG_DATA && (address & sync_mask) != 0) SyncAccess();
     if (a==wd1793_REG_DATA) ClearDRQ();
     if (a==wd1793_REG_STATUS && !intrq_forced) ClearINTRQ();
+    if (a==wd1793_REG_STATUS && m_index_period > 0 && m_type1) {
+        const bool disk = selected_drive >= 0 && drives[selected_drive]->get_loaded();
+        const bool index = disk && m_index_clock < m_index_width;
+        return index ? (registers[a] | wd1793_FLAG_INDEX) : (registers[a] & ~wd1793_FLAG_INDEX);
+    }
     return registers[a];
+}
+
+// The cylinder the disk is read at: the head of the selected drive, or the
+// track register when the heads are not modelled
+int WD1793::head_cylinder()
+{
+    if (!m_physical) return registers[wd1793_REG_TRACK];
+    return (selected_drive >= 0) ? (int)m_head[selected_drive] : 0;
+}
+
+void WD1793::move_head(int steps)
+{
+    if (!m_physical || selected_drive < 0) return;
+    int h = (int)m_head[selected_drive] + steps;
+    if (h < 0) h = 0;
+    if (h > m_max_cylinder) h = m_max_cylinder;
+    m_head[selected_drive] = (uint32_t)h;
 }
 
 unsigned WD1793::get_direct(unsigned address)
@@ -282,7 +318,7 @@ void WD1793::set_value(unsigned int address, unsigned int value, bool force)
         WriteRegister(address, value);
         return;
     }
-    if (wd1793_DELAY_REGISTER > 0){
+    if (m_register_delay > 0){
         //There is room for one delayed write only. A 16-bit OUT of the 8088
         //writes two registers within one instruction, before the devices are
         //clocked: the first one is applied now rather than overwritten
@@ -290,7 +326,7 @@ void WD1793::set_value(unsigned int address, unsigned int value, bool force)
             register_delay = 0;
             WriteRegister(register_to_write, value_to_write);
         }
-        register_delay = wd1793_DELAY_REGISTER;
+        register_delay = m_register_delay;
         register_to_write = address;
         value_to_write = value;
     } else
@@ -307,7 +343,9 @@ void WD1793::SetTypeIFlags(uint8_t T, uint8_t S)
     else
         ClearFlag(wd1793_FLAG_HLD);
 
-    if (registers[wd1793_REG_TRACK]==0)
+    const bool tr00 = m_physical ? (selected_drive >= 0 && m_head[selected_drive] == 0)
+                                 : registers[wd1793_REG_TRACK] == 0;
+    if (tr00)
         SetFlag(wd1793_FLAG_TR00);
     else
         ClearFlag(wd1793_FLAG_TR00);
@@ -316,7 +354,7 @@ void WD1793::SetTypeIFlags(uint8_t T, uint8_t S)
     {
         //A type I command only positions the head, so an address the disk does
         //not have is not an error here - only a missing disk is
-        seek_res = drives[selected_drive]->SeekSector(T, S);
+        seek_res = drives[selected_drive]->SeekSector(m_physical ? head_cylinder() : T, S);
         if (seek_res == FDD_SEEK_NO_DISK)
             SetFlag(wd1793_FLAG_NOT_READY);
         else
@@ -326,6 +364,11 @@ void WD1793::SetTypeIFlags(uint8_t T, uint8_t S)
             SetFlag(wd1793_FLAG_PROTECTED);
         else
             ClearFlag(wd1793_FLAG_PROTECTED);
+        //Verify: the ID under the head must carry the track register
+        ClearFlag(wd1793_FLAG_ERR_SEEK);
+        if (m_physical && (registers[4] & wd1793_PARAM_V) != 0
+            && (seek_res < 0 || head_cylinder() != registers[wd1793_REG_TRACK]))
+            SetFlag(wd1793_FLAG_ERR_SEEK);
     } else {
         SetFlag(wd1793_FLAG_NOT_READY);
         SetFlag(wd1793_FLAG_PROTECTED);
@@ -337,6 +380,9 @@ void WD1793::SetTypeIIFlags()
     ClearFlag(wd1793_FLAG_BUSY);
     ClearFlag(wd1793_FLAG_LOST_DATA);
     ClearFlag(wd1793_FLAG_BAD_CRC);
+    //Record Not Found of an earlier command (a Read Address or a verify)
+    //does not outlive the one that found its sector
+    ClearFlag(wd1793_FLAG_ERR_SEEK);
 }
 
 // One step of the command state machine, called when the current delay has expired
@@ -344,13 +390,18 @@ void WD1793::ExecuteCommand()
 {
     switch (command) {
     case wd1793_COMMAND_RESTORE:
-        registers[wd1793_REG_TRACK] = 0;
+        //The head steps out until TR00; with no drive there is no TR00, and
+        //after 255 steps the chip gives up with the track register as it was
+        move_head(-255);
+        if (!m_physical || selected_drive >= 0) registers[wd1793_REG_TRACK] = 0;
         SetTypeIFlags(0, 1);
+        if (m_physical && selected_drive < 0) SetFlag(wd1793_FLAG_ERR_SEEK);
         SetINTRQ();
         command = 0;
         break;
 
     case wd1793_COMMAND_SEEK:
+        move_head((int)registers[wd1793_REG_DATA] - (int)registers[wd1793_REG_TRACK]);
         registers[wd1793_REG_TRACK] = registers[wd1793_REG_DATA];
         SetTypeIFlags(registers[wd1793_REG_TRACK], 1);
         SetINTRQ();
@@ -358,6 +409,7 @@ void WD1793::ExecuteCommand()
         break;
 
     case wd1793_COMMAND_STEP:
+        move_head(step_dir);
         if ((registers[4] & wd1793_PARAM_T) > 0)
             registers[wd1793_REG_TRACK] += step_dir;
         SetTypeIFlags(registers[wd1793_REG_TRACK], 1);
@@ -366,7 +418,8 @@ void WD1793::ExecuteCommand()
         break;
 
     case wd1793_COMMAND_READ_SECTOR:
-        sector_size = (selected_drive >= 0) ? drives[selected_drive]->SeekSector(registers[wd1793_REG_TRACK], registers[wd1793_REG_SECTOR]) : -1;
+        sector_size = (selected_drive >= 0) ? drives[selected_drive]->SeekSector(head_cylinder(), registers[wd1793_REG_SECTOR]) : -1;
+        if (sector_size > 0 && head_cylinder() != registers[wd1793_REG_TRACK]) sector_size = FDD_SEEK_NO_SECTOR;
         if (sector_size > 0)
         {
             delay = wd1793_DELAY_NEXT_BYTE;
@@ -386,7 +439,8 @@ void WD1793::ExecuteCommand()
         break;
 
     case wd1793_COMMAND_WRITE_SECTOR:
-        sector_size = (selected_drive >= 0) ? drives[selected_drive]->SeekSector(registers[wd1793_REG_TRACK], registers[wd1793_REG_SECTOR]) : -1;
+        sector_size = (selected_drive >= 0) ? drives[selected_drive]->SeekSector(head_cylinder(), registers[wd1793_REG_SECTOR]) : -1;
+        if (sector_size > 0 && head_cylinder() != registers[wd1793_REG_TRACK]) sector_size = FDD_SEEK_NO_SECTOR;
         if ((sector_size > 0) && !drives[selected_drive]->is_protected())
         {
             delay = wd1793_DELAY_NEXT_BYTE;
@@ -406,14 +460,82 @@ void WD1793::ExecuteCommand()
         }
         break;
 
+    case wd1793_COMMAND_READ_ADDRESS: {
+        //The six bytes of the ID field that comes under the head: cylinder,
+        //side, sector, size code and the CRC. The chip puts the cylinder into
+        //the sector register
+        const int cyl = head_cylinder();
+        const int size = (selected_drive >= 0) ? drives[selected_drive]->SeekSector(cyl, 1) : FDD_SEEK_NO_DISK;
+        if (size > 0) {
+            const int ss = drives[selected_drive]->get_sector_size();
+            m_id[0] = (uint8_t)cyl;
+            m_id[1] = 0;
+            m_id[2] = 1;
+            m_id[3] = (uint8_t)((ss >= 1024) ? 3 : (ss >= 512) ? 2 : (ss >= 256) ? 1 : 0);
+            m_id[4] = m_id[5] = 0;
+            m_reading_id = true;
+            sector_size = 6;
+            bytes = 0;
+            delay = wd1793_DELAY_NEXT_BYTE;
+            command = wd1793_COMMAND_READ_BYTE;
+        } else {
+            SetTypeIIFlags();
+            SetFlag((size == FDD_SEEK_NO_DISK) ? wd1793_FLAG_NOT_READY : wd1793_FLAG_ERR_SEEK);
+            SetINTRQ();
+            command = 0;
+        }
+        break;
+    }
+
+    case wd1793_COMMAND_WRITE_TRACK: {
+        //From the index pulse on, a byte at each DRQ until the next one
+        const int size = (selected_drive >= 0) ? drives[selected_drive]->SeekSector(head_cylinder(), 1) : FDD_SEEK_NO_DISK;
+        if (size == FDD_SEEK_NO_DISK || drives[selected_drive]->is_protected()) {
+            SetTypeIIFlags();
+            SetFlag((size == FDD_SEEK_NO_DISK) ? wd1793_FLAG_NOT_READY : wd1793_FLAG_PROTECTED);
+            SetINTRQ();
+            command = 0;
+            break;
+        }
+        ClearFlag(wd1793_FLAG_PROTECTED);
+        m_wt_state = 0;
+        m_wt_write = m_wt_have_id = false;
+        bytes = 0;
+        delay = wd1793_DELAY_NEXT_BYTE;
+        command = wd1793_COMMAND_TRACK_BYTE;
+        SetDRQ();
+        break;
+    }
+
+    case wd1793_COMMAND_TRACK_BYTE:
+        if (!GetDRQ()) {
+            track_byte(registers[wd1793_REG_DATA]);
+            if (++bytes < (int)m_track_length) {
+                SetDRQ();
+            } else {
+                m_tracks_written++;
+                SetTypeIIFlags();
+                ClearFlag(wd1793_FLAG_ERR_WRITE);
+                SetINTRQ();
+                command = 0;
+            }
+        }
+        break;
+
     case wd1793_COMMAND_READ_BYTE:
         if (!GetDRQ()) {
             if (bytes < sector_size)
             {
                 //Reading bytes
-                registers[wd1793_REG_DATA] = drives[selected_drive]->ReadNextByte();
+                registers[wd1793_REG_DATA] = m_reading_id ? m_id[bytes] : drives[selected_drive]->ReadNextByte();
                 bytes++;
                 SetDRQ();
+            } else if (m_reading_id) {
+                m_reading_id = false;
+                registers[wd1793_REG_SECTOR] = m_id[0];
+                SetTypeIIFlags();
+                SetINTRQ();
+                command = 0;
             } else {
                 //Reached sector's end
                 sectors_read++;
@@ -462,8 +584,53 @@ void WD1793::ExecuteCommand()
     }
 }
 
+// A byte of Write Track. $F5-$F7 are the chip's own (the MFM sync $A1, $C2
+// and the two CRC bytes), so they never start a field; the first byte of
+// value $FE in the gaps opens an ID field, $FB or $F8 the data of the last ID.
+// A sector the image has, at the cylinder of the head and of its size,
+// receives the data; any other is counted as unsupported
+void WD1793::track_byte(uint8_t value)
+{
+    switch (m_wt_state) {
+    case 0:
+        if (value == 0xFE) {
+            m_wt_state = 1;
+            m_wt_left = 4;
+        } else if ((value == 0xFB || value == 0xF8) && m_wt_have_id) {
+            m_wt_have_id = false;
+            const unsigned size = 128u << (m_wt_id[3] & 3);
+            const int image = drives[selected_drive]->SeekSector(head_cylinder(), m_wt_id[2]);
+            m_wt_write = image == (int)size;
+            if (!m_wt_write) note_unsupported("wd1793: Write Track, a sector the image has not");
+            m_wt_state = 2;
+            m_wt_left = size;
+        }
+        break;
+    case 1:
+        m_wt_id[4 - m_wt_left] = value;
+        if (--m_wt_left == 0) {
+            m_wt_state = 0;
+            m_wt_have_id = true;
+        }
+        break;
+    default:
+        if (m_wt_write) drives[selected_drive]->WriteNextByte(value);
+        if (--m_wt_left == 0) {
+            if (m_wt_write) sectors_written++;
+            m_wt_write = false;
+            m_wt_state = 0;
+        }
+        break;
+    }
+}
+
 void WD1793::clock(unsigned int counter)
 {
+    if (m_index_period > 0) {
+        m_index_clock += counter;
+        while (m_index_clock >= m_index_period) m_index_clock -= m_index_period;
+    }
+
     //Delay before writing to a register
     if (register_delay > 0)
     {
@@ -505,6 +672,17 @@ void WD1793::save_state(StateWriter &w)
     w.n("sectors_read", sectors_read);
     w.n("sectors_written", sectors_written);
     w.b("intrq_forced", intrq_forced);
+    if (m_physical) w.array("head", m_head, 4);
+    w.n("index_clock", m_index_clock);
+    w.b("type1", m_type1);
+    w.b("reading_id", m_reading_id);
+    w.array("id", m_id, 6);
+    w.n("wt_state", m_wt_state);
+    w.n("wt_left", m_wt_left);
+    w.b("wt_write", m_wt_write);
+    w.b("wt_have_id", m_wt_have_id);
+    w.array("wt_id", m_wt_id, 4);
+    w.n("tracks_written", m_tracks_written);
 }
 
 emulator::Result WD1793::load_state(const StateReader &r)
@@ -525,6 +703,18 @@ emulator::Result WD1793::load_state(const StateReader &r)
     r.u("sectors_read", sectors_read);
     r.u("sectors_written", sectors_written);
     r.b("intrq_forced", intrq_forced);
+    if (m_physical) r.array("head", m_head, 4);
+    r.u("index_clock", m_index_clock);
+    r.b("type1", m_type1);
+    r.b("reading_id", m_reading_id);
+    r.array("id", m_id, 6);
+    r.u("wt_state", m_wt_state);
+    r.u("wt_left", m_wt_left);
+    r.b("wt_write", m_wt_write);
+    r.b("wt_have_id", m_wt_have_id);
+
+    r.array("wt_id", m_wt_id, 4);
+    r.u("tracks_written", m_tracks_written);
     return emulator::Result::ok();
 }
 
@@ -541,6 +731,7 @@ std::vector<DeviceFieldInfo> WD1793::get_device_fields()
     r.push_back({"command", "Last command byte",            false});
     r.push_back({"reads",   "Sectors read since start",     false});
     r.push_back({"writes",  "Sectors written since start",  false});
+    r.push_back({"formats", "Tracks written (Write Track) since start", false});
     return r;
 }
 
@@ -558,6 +749,8 @@ bool WD1793::get_field(const std::string &field, unsigned int from, unsigned int
     out.width = 32;
     if (field == "reads")   { out.values.push_back(sectors_read);                   return true; }
     if (field == "writes")  { out.values.push_back(sectors_written);                return true; }
+    if (field == "formats") { out.values.push_back(m_tracks_written);               return true; }
+
     out.width = 0;
 
     out.numeric = false;

@@ -581,6 +581,20 @@ public:
     // machine. The scripting engine uses it so that TYPE can produce quotes
     // and other symbols of the upper register.
     virtual bool needs_shift(unsigned int key) { (void)key; return false; }
+    // The same for a character, whose case the key code has lost: a machine
+    // that has small letters (the Правец-8А in its 8-bit table) asks for
+    // Shift on a capital. By default the key decides
+    virtual bool needs_shift_char(char ch, unsigned int key) { (void)ch; return needs_shift(key); }
+    // TYPE (and paste) of a letter outside ASCII - Cyrillic: the host key and
+    // Shift that give it with РУС/ЛАТ on the Cyrillic side. false: this
+    // keyboard does not say, and the character is reported as unknown
+    virtual bool key_for_char(unsigned int codepoint, unsigned int &key, bool &shift)
+        { (void)codepoint; (void)key; (void)shift; return false; }
+    // The host key that switches РУС/ЛАТ, _FFFF if there is none
+    virtual unsigned int rus_switch_key() const { return _FFFF; }
+    bool rus_now() const { return rus_mode; }
+
+
 
     void reset(bool cool) override;
 
