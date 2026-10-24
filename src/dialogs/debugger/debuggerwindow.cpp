@@ -421,7 +421,7 @@ void DebuggerWindow::refresh_all(bool stopped)
         p.regs->refresh();
         p.flags->refresh();
         if (stopped) p.code->show_pc();
-        else p.code->viewport()->update();
+        else p.code->follow_memory();
     }
     m_memory_tabs->refresh();
     if (stopped) refresh_side();

@@ -130,8 +130,14 @@ template <typename F> void DisasmView::keep_place(F op)
     const unsigned int cur = had ? m_buf->at(line(m_cursor)).address : 0;
     op();
     if (m_buf->size() == 0) { m_top = m_cursor = 0; return; }
-    int t = had ? m_buf->find(top) : -1;
-    int c = had ? m_buf->find(cur) : -1;
+    //An address that no longer starts a line (new bytes decoded differently)
+    //keeps the line it now lies in
+    auto place = [this](unsigned int a) {
+        const int i = m_buf->find(a);
+        return (i >= 0) ? i : m_buf->find_containing(a);
+    };
+    int t = had ? place(top) : -1;
+    int c = had ? place(cur) : -1;
     m_top = (t >= 0) ? t : 0;
     m_cursor = (c >= 0) ? c : m_top;
 }
@@ -313,6 +319,15 @@ void DisasmView::refresh_memory()
 {
     keep_place([&]() { m_buf->refresh(); });
     fill();
+    viewport()->update();
+}
+
+void DisasmView::follow_memory()
+{
+    if (m_edit_line >= 0) return;
+    bool changed = false;
+    keep_place([&]() { changed = m_buf->refresh(); });
+    if (changed) fill();
     viewport()->update();
 }
 

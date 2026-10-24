@@ -34,6 +34,9 @@ public:
     unsigned int cursor_address() const;
     //Memory may have changed: the bytes are read again
     void refresh_memory();
+    //The same while the machine runs: repainted only when the bytes have
+    //changed, and not under the line being edited
+    void follow_memory();
     //The addresses the backward disassembly trusts: where PC has been
     void update_anchors();
     void toggle_breakpoint(unsigned int address);
