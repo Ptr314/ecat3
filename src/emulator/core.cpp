@@ -1405,6 +1405,7 @@ emulator::Result ROM::load_config(SystemData *sd)
     // выбирают в редакторе конфигурации; выбранная пишется в image. Без него
     // стоит первая
     if (image.empty()) image = str_trim(cd->get_parameter("image_1", false).value);
+    m_image = str_trim(image);
 
     if (!image.empty()) {
         set_size(parse_numeric_value(cd->get_parameter("size").value));

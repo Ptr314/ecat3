@@ -4,7 +4,7 @@
 # $D000 метку $A0+банк; второй проход читает метки обратно в $0380-$0387.
 # @timeout 30
 
-MACHINE "pravetz/Pravetz-82-ram128.ext"
+MACHINE "pravetz/Pravetz-82.cfg"
 LOGDEFS 8,16
 COMMAND fdd0.eject()
 WAIT 500

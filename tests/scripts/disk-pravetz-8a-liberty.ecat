@@ -6,7 +6,7 @@
 # 40-дорожечный (тип 1, 800 блоков, $05FD), второй - без дискеты (тип 8).
 # @timeout 30
 
-MACHINE "pravetz/Pravetz-8A-liberty.ext"
+MACHINE "pravetz/Pravetz-8A-full.ext"
 # Без штатного диска в дисководе 140 Кб: ПЗУ не грузит с него DOS
 COMMAND fdd0.eject()
 COMMAND lfdd0.load("../../tests/files/liberty-400.img")

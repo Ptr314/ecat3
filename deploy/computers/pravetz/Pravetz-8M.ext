@@ -9,6 +9,9 @@
 
 rom:image = files/pravetz-8m-rom.bin
 font:size = 8k
+// Языковая карта у 8М на плате: платы 128 Кб в слоте 0 нет
+-mmu:lc_ram
+-ram128
 font:image = files/pravetz-8m-chr.bin
 display:font_half = 3
 // Ш, Щ, Ч и Ю у 8М - на своих кодах кириллицы ($FB, $FD, $FE, $E0), как у 8А

@@ -9,7 +9,7 @@
 # liberty-wd.writes - записанные секторы, $6400 - состояние ВГ93 в конце.
 # @timeout 30
 
-MACHINE "pravetz/Pravetz-8A-liberty.ext"
+MACHINE "pravetz/Pravetz-8A-full.ext"
 # Без штатного диска в дисководе 140 Кб: ПЗУ не грузит с него DOS
 COMMAND fdd0.eject()
 LOGDEFS 8,16

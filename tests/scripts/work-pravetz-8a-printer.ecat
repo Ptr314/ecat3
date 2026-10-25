@@ -3,7 +3,7 @@
 # туда BUSY принтера), байт - записью в $C090.
 # @timeout 30
 
-MACHINE "pravetz/Pravetz-8A-printer.ext"
+MACHINE "pravetz/Pravetz-8A-full.ext"
 # Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
 COMMAND fdd0.eject()
 WAIT 1000

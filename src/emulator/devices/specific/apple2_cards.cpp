@@ -27,6 +27,10 @@ emulator::Result Apple2ParallelCard::load_config(SystemData *sd)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Apple2Cards|" + std::string(QT_TRANSLATE_NOOP("Apple2Cards", "A ROM of 2K is expected")) + "} " + name);
     m_invert = read_confg_value(cd, "invert", false, false);
+    //A socket of several firmwares, one of them for a card that puts the
+    //byte out inverted: the inversion comes with that chip
+    const std::string inv = str_trim(cd->get_parameter("invert_with", false).value);
+    if (!inv.empty() && m_rom->image_name() == inv) m_invert = true;
     return emulator::Result::ok();
 
 }

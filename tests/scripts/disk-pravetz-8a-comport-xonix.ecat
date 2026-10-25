@@ -6,7 +6,7 @@
 # себе падает в монитор.
 # @timeout 60
 
-MACHINE "pravetz/Pravetz-8A-comport.ext"
+MACHINE "pravetz/Pravetz-8A-full.ext"
 LOGDEFS 8,16
 COMMAND fdd0.eject()
 WAIT 1000
@@ -14,7 +14,7 @@ KEYDOWN ctrl
 KEY 50,100,f12
 KEYUP ctrl
 WAIT 300
-TYPE "PR#5"
+TYPE "PR#7"
 KEY 50,50,ret
 WAIT 5000
 TYPE "BRUN XONIX"

@@ -3,7 +3,7 @@
 # NTSC и свой такт процессора - обмен по линии 8250 от этого не зависит.
 # @timeout 60
 
-MACHINE "pravetz/Pravetz-8C-comport.ext"
+MACHINE "pravetz/Pravetz-8C.cfg"
 LOGDEFS 8,16
 COMMAND fdd0.eject()
 WAIT 1000

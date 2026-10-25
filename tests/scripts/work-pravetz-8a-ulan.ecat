@@ -8,7 +8,7 @@
 # самопроверка кончается сообщением «ДЕФЕКТ #1» и выходом в БЕЙСИК.
 # @timeout 30
 
-MACHINE "pravetz/Pravetz-8A-ulan.ext"
+MACHINE "pravetz/Pravetz-8A-full.ext"
 # Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
 COMMAND fdd0.eject()
 LOGDEFS 8,16

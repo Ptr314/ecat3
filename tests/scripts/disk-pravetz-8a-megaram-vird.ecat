@@ -9,7 +9,7 @@
 # программа, каталоги D1 и D6 читаются, программа грузится с D6.
 # @timeout 180
 
-MACHINE "pravetz/Pravetz-8A-megaram.ext"
+MACHINE "pravetz/Pravetz-8A-full.ext"
 LOGDEFS 8,16
 COMMAND fdd0.load("p8ru02.dsk")
 WAIT 8000

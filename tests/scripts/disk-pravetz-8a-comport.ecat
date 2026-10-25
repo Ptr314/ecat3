@@ -1,11 +1,11 @@
-# Правец-8А, плата COMport в слоте 5: PR#5 грузит DOS 3.3 с образа 1 на
+# Правец-8А, плата COMport в слоте 7: PR#7 грузит DOS 3.3 с образа 1 на
 # «компьютере PC» (comport-server) по линии 8250 на 115200 бод. Протокол из
 # ПЗУ платы: запрос BF 01 D T S CS, ответ BF 00 <256 байт> сумма. Потом
 # CATALOG с образа 1, запись программы на образ 2 (диск DOS 3.3 из
 # tests/files) и чтение ее обратно; несуществующий D9 дает I/O ERROR.
 # @timeout 60
 
-MACHINE "pravetz/Pravetz-8A-comport.ext"
+MACHINE "pravetz/Pravetz-8A-full.ext"
 # Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
 COMMAND fdd0.eject()
 LOGDEFS 8,16
@@ -15,7 +15,7 @@ KEYDOWN ctrl
 KEY 50,100,f12
 KEYUP ctrl
 WAIT 500
-TYPE "PR#5"
+TYPE "PR#7"
 KEY 50,50,ret
 WAIT 5000
 LOG comport-pc.reads

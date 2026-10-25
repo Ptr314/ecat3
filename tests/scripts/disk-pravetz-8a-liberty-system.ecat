@@ -6,7 +6,7 @@
 # машине: левая панель - пустой том /FORMTEST, 793 свободных блока.
 # @timeout 300
 
-MACHINE "pravetz/Pravetz-8A-liberty.ext"
+MACHINE "pravetz/Pravetz-8A-full.ext"
 LOGDEFS 8,16
 # Без штатного диска в дисководе 140 Кб: ПЗУ не грузит с него DOS
 COMMAND fdd0.eject()

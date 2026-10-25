@@ -10,7 +10,7 @@
 # «компьютера PC» - его диски, и в снимок они идут целиком; чтобы снимок был
 # маленьким, после загрузки D1 и D3 убраны, а D2 - маленький диск из tests/files.
 
-MACHINE "pravetz/Pravetz-8A-comport.ext"
+MACHINE "pravetz/Pravetz-8A-full.ext"
 COMMAND fdd0.eject()
 COMMAND comport-pc.eject(3)
 COMMAND comport-pc.load(2, "pravetz-dos33.dsk")
@@ -19,7 +19,7 @@ KEYDOWN ctrl
 KEY 50,100,f12
 KEYUP ctrl
 WAIT 300
-TYPE "PR#5"
+TYPE "PR#7"
 KEY 50,50,ret
 WAIT 5000
 COMMAND comport-pc.eject(1)

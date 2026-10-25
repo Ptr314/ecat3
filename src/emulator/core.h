@@ -663,9 +663,13 @@ private:
     // отвечает (диапазон в карте помечается routed = 1)
     bool m_partial = false;
     unsigned m_image_length = 0;
+    std::string m_image;            // the image as the configuration names it
     emulator::Result load_image(const std::string &image);
 public:
     ROM(InterfaceManager *im, EmulatorConfigDevice *cd);
+    //The image in the socket, as named in the configuration (image, or
+    //image_1 for a socket of several): a card may act on which chip it has
+    const std::string & image_name() const { return m_image; }
     emulator::Result load_config(SystemData *sd) override;
     ConfigFields get_config_fields() override;
     unsigned int route(unsigned int address, unsigned int mode) override;

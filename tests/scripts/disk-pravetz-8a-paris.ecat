@@ -10,7 +10,7 @@
 # версия, эмулятор тут ни при чем: в БЕЙСИКе те же клавиши дают латиницу.
 # @timeout 300
 
-MACHINE "pravetz/Pravetz-8A-liberty.ext"
+MACHINE "pravetz/Pravetz-8A-full.ext"
 # Без штатного диска в дисководе 140 Кб: ПЗУ не грузит с него DOS
 COMMAND fdd0.eject()
 WAIT 1000

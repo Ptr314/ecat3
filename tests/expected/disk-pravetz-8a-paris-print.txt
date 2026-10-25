@@ -1,3 +1,3 @@
 [keyboard.cl] $00
-[printer-card.written] $1B
-[printer.output] $09 $38 $30 $4E $20 $20 $20 $20 $20 $20 $20 $20 $20 $20 $70 $72 $61 $77 $65 $63 $0D $0A $0A $0D $0A $0A $0C
+[printer-card2.written] $1B
+[printer2.output] $09 $38 $30 $4E $20 $20 $20 $20 $20 $20 $20 $20 $20 $20 $70 $72 $61 $77 $65 $63 $0D $0A $0A $0D $0A $0A $0C
