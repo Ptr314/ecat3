@@ -148,6 +148,8 @@ from a regression.
 - A display whose beam draws lines on the emulation thread sets `screen_valid` when a line lands on the
   surface; otherwise `render_all()` on the render thread wipes the frame (a black or one-palette `SCREEN`
   under `-j 8`). A screenshot is stored only by a pass that began with the request pending.
+  It also sets `was_updated` when it finishes a frame: the window draws only such passes, and without it
+  the picture lags by seconds while every test passes (`SCREEN` reads the surface).
 - Clock domains: one per processor, positions are 64-bit LCM-scaled. With one processor the arithmetic is
   the old loop, so the whole suite must pass unchanged after touching it.
 

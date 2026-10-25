@@ -135,7 +135,8 @@ void OricULA::HSYNC(const unsigned line, const unsigned sync_val)
     }
     if (sync_val == 1 && line < 224) {
         render_line(line);
-        if (line == 223) frame_complete();
+        //The window shows a frame only when this is set
+        if (line == 223) { was_updated = true; frame_complete(); }
     }
 }
 

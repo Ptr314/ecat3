@@ -311,7 +311,9 @@ void Apple2Video::HSYNC(const unsigned line, const unsigned sync_val)
     }
     if (sync_val == 1 && line < 192) {
         render_line(line);
-        if (line == 191) frame_complete();
+        //The window shows a frame only when this is set: without it the
+        //picture lagged by seconds, refreshed only by a full redraw
+        if (line == 191) { was_updated = true; frame_complete(); }
     }
 }
 
