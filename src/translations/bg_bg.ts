@@ -2592,6 +2592,76 @@
     </message>
 </context>
 <context>
+    <name>DebugMenu</name>
+    <message>
+        <source>SMK-512...</source>
+        <translation>СМК-512...</translation>
+    </message>
+</context>
+<context>
+    <name>SMKWindow</name>
+    <message>
+        <source>Window now</source>
+        <translation>Прозорец сега</translation>
+    </message>
+    <message>
+        <source>Window in a mode</source>
+        <translation>Прозорец в режим</translation>
+    </message>
+    <message>
+        <source>Page of the board</source>
+        <translation>Страница на платката</translation>
+    </message>
+    <message>
+        <source>View:</source>
+        <translation>Изглед:</translation>
+    </message>
+    <message>
+        <source>Mode:</source>
+        <translation>Режим:</translation>
+    </message>
+    <message>
+        <source>Page:</source>
+        <translation>Страница:</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation>Адрес</translation>
+    </message>
+    <message>
+        <source>Contents</source>
+        <translation>Съдържание</translation>
+    </message>
+    <message>
+        <source>ROM of the board</source>
+        <translation>ПЗУ на платката</translation>
+    </message>
+    <message>
+        <source>no answer</source>
+        <translation>няма отговор</translation>
+    </message>
+    <message>
+        <source>memory of the machine</source>
+        <translation>памет на машината</translation>
+    </message>
+    <message>
+        <source>page %1, segment %2</source>
+        <translation>страница %1, сегмент %2</translation>
+    </message>
+    <message>
+        <source>nothing</source>
+        <translation>нищо</translation>
+    </message>
+    <message>
+        <source>0177130: %1</source>
+        <translation>0177130: %1</translation>
+    </message>
+    <message>
+        <source>reading off</source>
+        <translation>четенето е забранено</translation>
+    </message>
+</context>
+<context>
     <name>ScanKeyboard</name>
     <message>
         <source>Keyboard map file is expected</source>

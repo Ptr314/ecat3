@@ -59,6 +59,7 @@
 #include "dialogs/mmwindow.h"
 #include "dialogs/debugger/debuggerwindow.h"
 #include "dialogs/debugger/memorywindow.h"
+#include "dialogs/smkwindow.h"
 #include "dialogs/portwindow.h"
 #include "dialogs/openconfigwindow.h"
 #include "emulator/devices/common/fdd.h"
@@ -370,6 +371,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, i
     DWM->register_debug_window("i8255", &CreateI8255Window);
     DWM->register_debug_window("taperecorder", &CreateTapeWindow);
     DWM->register_debug_window("register", &CreatePortWindow);
+    DWM->register_debug_window("smk512", &CreateSMKWindow, QT_TRANSLATE_NOOP("DebugMenu", "SMK-512..."));
 
     #ifdef RENDERER_SDL2
         renderer = new SDL2Renderer();
@@ -538,6 +540,7 @@ bool MainWindow::switch_language(const QString & lang, bool init)
         if (!init) {
             ui->retranslateUi(this);
             CreateScreenMenu();
+            CreateDebugMenuItems();
             rec_update_ui();
             //Through the emulator's copy of the ini: each copy writes out the
             //whole file as it holds it, and this one was read before the
@@ -1079,6 +1082,39 @@ void MainWindow::CreateDevicesMenu()
     };
 
     ui->actionSerial->setVisible(SerialWindow::machine_has_ports(e));
+    CreateDebugMenuItems();
+}
+
+//A window registered with a menu text gets an item in the Debug menu, before
+//the separator above Devices, for each device of its type in the machine
+void MainWindow::CreateDebugMenuItems()
+{
+    for (QAction * a : m_debug_items) delete a;
+    m_debug_items.clear();
+    if (e == nullptr || e->dm == nullptr) return;
+
+    QAction * before = nullptr;
+    const QList<QAction*> actions = ui->menuDebug->actions();
+    const int devices = actions.indexOf(ui->menuDevices->menuAction());
+    if (devices > 0) before = actions[devices - 1];
+
+    for (unsigned int i=0; i < e->dm->device_count; i++)
+    {
+        const std::string type = e->dm->get_device(i)->device_type;
+        const char * text = DWM->get_menu_text(type);
+        if (text == nullptr) continue;
+        QString title = QCoreApplication::translate("DebugMenu", text);
+        //Two devices of a type: the items are told apart by the device
+        for (unsigned int k=0; k < e->dm->device_count; k++)
+            if (k != i && e->dm->get_device(k)->device_type == type) {
+                title += " (" + QString::fromStdString(e->dm->get_device(i)->device_name) + ")";
+                break;
+            }
+        QAction * a = new QAction(title, ui->menuDebug);
+        connect(a, &QAction::triggered, this, [this, i]{onDeviceMenuCalled(i);});
+        ui->menuDebug->insertAction(before, a);
+        m_debug_items.push_back(a);
+    }
 }
 
 void MainWindow::UpdateToolbar()
@@ -1353,12 +1389,22 @@ void MainWindow::onDeviceMenuCalled(unsigned int i)
         return;
     }
 
+    //A device has one window: asked again, it comes up
+    const QString device_name = QString::fromStdString(e->dm->get_device(i)->device_name);
+    for (GenericDbgWnd * w : findChildren<GenericDbgWnd*>())
+        if (w->isVisible() && w->property("ecat_device").toString() == device_name) {
+            w->raise();
+            w->activateWindow();
+            return;
+        }
+
     DebugWndCreateFunc * f = DWM->get_create_func(e->dm->get_device(i)->device_type);
     if (f == nullptr && dynamic_cast<AddressableDevice*>(dev) != nullptr) f = &CreateMemoryWindow;
     if (f != nullptr)
     {
         GenericDbgWnd * w = f(this, e, e->dm->get_device(i)->device.get());
         w->setAttribute(Qt::WA_DeleteOnClose);
+        w->setProperty("ecat_device", device_name);
         remember_geometry(w, QString::fromStdString(e->dm->get_device(i)->device_name));
         DWM->add_window(w);
         connect(w, &GenericDbgWnd::data_changed, [this](GenericDbgWnd * src) {

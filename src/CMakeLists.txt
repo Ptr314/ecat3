@@ -236,6 +236,7 @@ set(GUI_SOURCES
     dialogs/debugger/sideviews.h dialogs/debugger/sideviews.cpp
     dialogs/debugger/debuggerwindow.h dialogs/debugger/debuggerwindow.cpp
     dialogs/debugger/memorywindow.h dialogs/debugger/memorywindow.cpp
+    dialogs/smkwindow.h dialogs/smkwindow.cpp
     dialogs/taperecorder.h dialogs/taperecorder.cpp dialogs/taperecorder.ui
     dialogs/keyboardwindow.h dialogs/keyboardwindow.cpp
     dialogs/serialwindow.h dialogs/serialwindow.cpp

@@ -28,6 +28,8 @@ struct MemorySource {
     QString title;
     unsigned int size = 0;
     int base = 16;
+    //The address the first byte is shown at: a window into a larger space
+    unsigned int origin = 0;
     std::function<unsigned int(unsigned int)> read;
     std::function<void(unsigned int, unsigned int)> write;
     std::function<bool(unsigned int)> writable;

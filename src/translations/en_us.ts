@@ -624,6 +624,14 @@
     </message>
 </context>
 <context>
+    <name>DebugMenu</name>
+    <message>
+        <location filename="../mainwindow.cpp" line="+374"/>
+        <source>SMK-512...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DebuggerWindow</name>
     <message>
         <location filename="../dialogs/debugger/debuggerwindow.cpp" line="+35"/>
@@ -2127,7 +2135,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1715"/>
+        <location filename="../mainwindow.cpp" line="+1387"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -2201,14 +2209,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1845"/>
-        <location line="+1971"/>
+        <location filename="../mainwindow.cpp" line="-1888"/>
+        <location line="+2014"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1647"/>
+        <location filename="../mainwindow.cpp" line="-1657"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2278,9 +2286,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-703"/>
-        <location line="+76"/>
-        <location line="+1327"/>
+        <location filename="../mainwindow.cpp" line="-737"/>
+        <location line="+77"/>
+        <location line="+1370"/>
         <location line="+55"/>
         <location line="+79"/>
         <location line="+230"/>
@@ -2295,7 +2303,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2644"/>
+        <location line="-2687"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2322,14 +2330,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1622"/>
+        <location line="+1665"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1737"/>
+        <location line="-1780"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2399,14 +2407,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1399"/>
+        <location line="+1442"/>
         <location line="+386"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1898"/>
+        <location line="-1941"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2442,12 +2450,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1735"/>
+        <location line="+1778"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1711"/>
+        <location line="-1754"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2520,15 +2528,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-782"/>
-        <location line="+636"/>
+        <location line="-784"/>
+        <location line="+638"/>
         <location line="+1"/>
-        <location line="+862"/>
+        <location line="+905"/>
         <source>Turbo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-709"/>
+        <location line="-752"/>
         <source>Picture tube</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2548,7 +2556,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+279"/>
+        <location line="+312"/>
         <source>High precision</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2558,7 +2566,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+384"/>
+        <location line="+394"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
@@ -3068,14 +3076,14 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+76"/>
+        <location line="+79"/>
         <location line="+10"/>
         <location line="+8"/>
         <source>Find</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-88"/>
+        <location line="-91"/>
         <source>Find next</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3100,7 +3108,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+25"/>
         <location line="+44"/>
         <location line="+26"/>
         <source>Error</source>
@@ -3408,6 +3416,85 @@
     <message>
         <location filename="../emulator/devices/common/register.cpp" line="+67"/>
         <source>Unknown register type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SMKWindow</name>
+    <message>
+        <location filename="../dialogs/smkwindow.cpp" line="+74"/>
+        <source>Window now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Window in a mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Page of the board</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>View:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Mode:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Page:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+52"/>
+        <source>ROM of the board</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>no answer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>memory of the machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+94"/>
+        <source>page %1, segment %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-54"/>
+        <source>nothing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+75"/>
+        <source>0177130: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>reading off</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3923,7 +4010,7 @@ Do you want to replace it?</source>
 <context>
     <name>UKNCSound</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_sound.cpp" line="+54"/>
+        <location filename="../emulator/devices/specific/uknc_sound.cpp" line="+55"/>
         <source>The tone grid needs a timer device</source>
         <translation type="unfinished"></translation>
     </message>

@@ -262,6 +262,9 @@ private:
     void add_languages();
 
     void CreateDevicesMenu();
+    void CreateDebugMenuItems();
+    //The Debug menu items of the windows that ask for one (register_debug_window())
+    std::vector<QAction*> m_debug_items;
     void UpdateToolbar();
     void CreateScreenMenu();
     void CreateFDDMenu(unsigned int n);

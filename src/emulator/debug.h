@@ -13,9 +13,13 @@
 
 using DebugWndCreateFunc = GenericDbgWnd * (QWidget * parent, Emulator * e, ComputerDevice * d);
 
+//menu_text: the item the window adds to the Debug menu when the machine has
+//such a device, a source text of the "DebugMenu" context (QT_TRANSLATE_NOOP);
+//nullptr - only the Devices menu opens it
 struct DebugWndFuncData {
     std::string device_type;
     DebugWndCreateFunc * f;
+    const char * menu_text;
 };
 
 class DebugWindowsManager
@@ -28,9 +32,9 @@ private:
 public:
     DebugWindowsManager():count(0){};
 
-    void register_debug_window(const std::string &device_type, DebugWndCreateFunc * f)
+    void register_debug_window(const std::string &device_type, DebugWndCreateFunc * f, const char * menu_text = nullptr)
     {
-        WndFuncData[this->count++] = {device_type, f};
+        WndFuncData[this->count++] = {device_type, f, menu_text};
     };
 
     DebugWndCreateFunc * get_create_func(const std::string &device_type)
@@ -38,6 +42,14 @@ public:
         for (unsigned int i=0; i < this->count; i++)
             if (WndFuncData[i].device_type == device_type)
                 return (WndFuncData[i].f);
+        return nullptr;
+    }
+
+    const char * get_menu_text(const std::string &device_type)
+    {
+        for (unsigned int i=0; i < this->count; i++)
+            if (WndFuncData[i].device_type == device_type)
+                return (WndFuncData[i].menu_text);
         return nullptr;
     }
 

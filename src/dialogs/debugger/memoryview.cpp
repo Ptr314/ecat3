@@ -145,7 +145,7 @@ unsigned int MemoryView::lines() const
 
 int MemoryView::addr_chars() const
 {
-    return addr_digits(m_src.size - 1, m_base);
+    return addr_digits(m_src.origin + m_src.size - 1, m_base);
 }
 
 int MemoryView::cell_chars() const
@@ -284,7 +284,7 @@ void MemoryView::paintEvent(QPaintEvent *)
         if (line >= m_src.size) break;
         const int y = r * m_rh;
         p.setPen(c.address);
-        p.drawText(dx + m_cw, y + base_y, fmt_num(line, m_base, addr_chars()));
+        p.drawText(dx + m_cw, y + base_y, fmt_num(m_src.origin + line, m_base, addr_chars()));
 
         for (int i = 0; i < cells; i++) {
             const unsigned int a = line + (unsigned int)(i * cell_bytes());
@@ -583,16 +583,19 @@ void MemoryPanel::show_cursor(unsigned int address)
 {
     const int base = m_view->base();
     const MemorySource &s = m_view->source();
-    QString text = fmt_num(address, base, addr_digits(s.size - 1, base));
+    const int digits = addr_digits(s.origin + s.size - 1, base);
+    QString text = fmt_num(s.origin + address, base, digits);
     if (s.owner) text += "  " + s.owner(address);
     m_status->setText(text);
-    if (!m_address->hasFocus()) m_address->setText(fmt_num(address, base, addr_digits(s.size - 1, base)));
+    if (!m_address->hasFocus()) m_address->setText(fmt_num(s.origin + address, base, digits));
 }
 
 void MemoryPanel::go()
 {
     try {
-        m_view->go_to(parse_input(m_address->text(), m_view->base()));
+        const unsigned int a = parse_input(m_address->text(), m_view->base());
+        const unsigned int origin = m_view->source().origin;
+        m_view->go_to((a > origin) ? a - origin : 0);
         m_view->setFocus();
     } catch (const std::exception &) {
         QMessageBox::critical(this, tr("Error"), tr("Incorrect address value"));

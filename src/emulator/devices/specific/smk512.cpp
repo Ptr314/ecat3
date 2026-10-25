@@ -25,8 +25,8 @@ enum {
     M_SYS   = 7     // 160
 };
 
-static const int N = -1;    // сегмент платой не занят
-static const int R = 8;     // ПЗУ платы
+static const int N = SMK512::SRC_NONE;     // сегмент платой не занят
+static const int R = SMK512::SRC_ROM;      // ПЗУ платы
 
 // Что стоит в сегментах 100000..170000 (до 176777) в каждом режиме: номер
 // сегмента текущей страницы, ПЗУ или ничего. Таблица режимов АльтПро (сводка
@@ -112,9 +112,9 @@ void SMK512::set_register(unsigned int value)
 // Источник байта по смещению в окне, для чтения: номер сегмента страницы, R или N.
 // Верхняя часть сегмента 7 (177000-177777) читается из платы только в SYS
 // (ПЗУ) и в All (ОЗУ, перекрывая регистры)
-int SMK512::source(unsigned int offset) const
+int SMK512::layout_source(unsigned int value, unsigned int offset)
 {
-    const unsigned int m = mode_index();
+    const unsigned int m = (value >> 4) & 7;
     if (offset >= OFF_HIGH) {
         if (m == M_SYS) return R;
         if (m == M_ALL) return 3;
@@ -124,9 +124,9 @@ int SMK512::source(unsigned int offset) const
 }
 
 // Отключена ли сигналом платы собственная память машины в этом сегменте
-bool SMK512::base_disabled(unsigned int segment) const
+bool SMK512::machine_disabled(unsigned int value, unsigned int segment) const
 {
-    const unsigned int m = mode_index();
+    const unsigned int m = (value >> 4) & 7;
     if (m_bk11) {
         if (segment < 4) return UP11_OFF[m];
         if (segment < 6) return MON11_OFF[m];
@@ -188,9 +188,9 @@ unsigned int SMK512::read_byte(unsigned int offset, bool direct)
 
 // Куда ложится запись: сегмент страницы или N. ПЗУ, Hlt10 ниже 110000 и
 // 177000-177777 вне режимов Hlt записи не принимают
-int SMK512::write_source(unsigned int offset) const
+int SMK512::layout_write_source(unsigned int value, unsigned int offset)
 {
-    const unsigned int m = mode_index();
+    const unsigned int m = (value >> 4) & 7;
     int src;
     if (offset >= OFF_HIGH)
         src = (m == M_HLT10 || m == M_HLT11) ? 7 : N;

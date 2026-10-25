@@ -54,14 +54,30 @@ private:
     unsigned int page_base() const { return m_base; }
     static unsigned int base_of(unsigned int value);
     void set_register(unsigned int value);
-    int write_source(unsigned int offset) const;
-    int source(unsigned int offset) const;
-    bool base_disabled(unsigned int segment) const;
+    int write_source(unsigned int offset) const { return layout_write_source(m_value, offset); }
+    int source(unsigned int offset) const { return layout_source(m_value, offset); }
+    bool base_disabled(unsigned int segment) const { return machine_disabled(m_value, segment); }
     void write_177130(unsigned int value);
     unsigned int read_byte(unsigned int offset, bool direct);
     void write_byte(unsigned int offset, unsigned int value);
 
 public:
+    // Что стоит по смещению в окне 100000-177777: номер сегмента 4 КБ
+    // страницы (0-7), ПЗУ платы или ничего
+    static const int SRC_NONE = -1;
+    static const int SRC_ROM = 8;
+
+    // Раскладка окна для любого значения регистра (режим + страница), а не
+    // только защелкнутого: по ним отладочное окно показывает другие режимы
+    unsigned int latched() const { return m_value; }
+    bool read_off() const { return m_rd_off; }
+    static unsigned int page_of(unsigned int value) { return base_of(value) >> 3; }
+    static int layout_source(unsigned int value, unsigned int offset);
+    static int layout_write_source(unsigned int value, unsigned int offset);
+    bool machine_disabled(unsigned int value, unsigned int segment) const;
+    Memory * board_ram() const { return m_ram; }
+    Memory * board_rom() const { return m_rom; }
+
     SMK512(InterfaceManager *im, EmulatorConfigDevice *cd);
     emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;
