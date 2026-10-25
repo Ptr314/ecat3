@@ -1,0 +1,18 @@
+# Правец-8Д: снимок в HIRES (../files/make-state-pravetz-8d.ecat). После
+# восстановления режим ULA, регистры VIA и AY те же, системное прерывание
+# таймера 1 идет (клавиатура отвечает): TEXT и LIST показывают программу.
+# @timeout 30
+
+MACHINE "../tests/files/state-pravetz-8d.ecats.zip"
+LOGDEFS 8,16
+LOG display.mode
+LOG via.regs
+LOG ay.regs
+SCREEN "../results/state-pravetz-8d-hires.png"
+TYPE "TEXT\n"
+# TEXT копирует знакогенератор из ПЗУ, нажатое в это время теряется
+WAIT 500
+TYPE "LIST\n"
+WAIT 500
+SCREEN "../results/state-pravetz-8d.png"
+EXIT

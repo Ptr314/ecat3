@@ -13,6 +13,7 @@
 #include "emulator/devices/common/tape_bt.h"
 #include "emulator/devices/common/tape_ibmpc.h"
 #include "emulator/devices/common/tape_apple.h"
+#include "emulator/devices/common/tape_oric.h"
 #include "emulator/devices/common/tape_record.h"
 #include "emulator/devices/common/tape_rk86.h"
 #include "emulator/devices/common/tape_uknc.h"
@@ -38,7 +39,9 @@ enum class TapeEnc {
     //Кассета IBM PC, которую повторяет BIOS Поиска-1: файлы *.cas
     IBMPC,
     //Кассета Apple ][ (Правец-82, 8М): файлы *.ptp
-    APPLE
+    APPLE,
+    //Кассета Oric (Правец-8Д): файлы *.tap
+    ORIC
 };
 
 // Чем записана лента. Само устройство одно на все машины: и лентопротяжка, и
@@ -127,6 +130,7 @@ protected:
     uknc_tape::Decoder uknc_decoder;
     ibmpc_tape::Decoder ibmpc_decoder;
     apple_tape::Decoder apple_decoder;
+    oric_tape::Decoder oric_decoder;
     //Sets the decoder's thresholds from the machine clock and empties it
     void start_ibmpc_decoder();
 

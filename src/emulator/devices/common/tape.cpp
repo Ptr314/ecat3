@@ -89,6 +89,8 @@ emulator::Result TapeRecorder::load_config(SystemData *sd)
         m_tape_enc = TapeEnc::IBMPC;
     else if (enc_str == "apple")
         m_tape_enc = TapeEnc::APPLE;
+    else if (enc_str == "oric")
+        m_tape_enc = TapeEnc::ORIC;
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect encoding")) + "} " + enc_str);
 
@@ -201,6 +203,18 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
                 if ((old_value & 1) == 0 && (new_value & 1) != 0) {
                     if (has_last_edge)
                         bk_decoder.add_period((uint32_t)(cycle_counter - last_edge_cycles));
+                    last_edge_cycles = cycle_counter;
+                    has_last_edge = true;
+                }
+                return;
+            }
+            if (m_tape_enc == TapeEnc::ORIC) {
+                // PB7 of the VIA: a bit is the period between its rising edges
+                if ((old_value & 1) == 0 && (new_value & 1) != 0) {
+                    if (has_last_edge) {
+                        const uint64_t period = cycle_counter - last_edge_cycles;
+                        oric_decoder.add_period(period > 0xFFFFFFFFu ? 0xFFFFFFFFu : (uint32_t)period);
+                    }
                     last_edge_cycles = cycle_counter;
                     has_last_edge = true;
                 }
@@ -384,6 +398,11 @@ void TapeRecorder::set_recording(bool recording)
         apple_decoder.reset(m_system_clock);
         recorded_bytes.clear();
     }
+    if (is_recording && m_tape_enc == TapeEnc::ORIC) {
+        has_last_edge = false;
+        oric_decoder.reset(m_system_clock);
+        recorded_bytes.clear();
+    }
     if (is_recording && m_tape_enc == TapeEnc::BK) {
         has_last_edge = false;
         bk_decoder.reset();
@@ -441,6 +460,7 @@ unsigned TapeRecorder::get_record_size()
     if (m_tape_enc == TapeEnc::UKNC) return uknc_decoder.file()->size();
     if (m_tape_enc == TapeEnc::IBMPC) return ibmpc_decoder.file()->size();
     if (m_tape_enc == TapeEnc::APPLE) return apple_decoder.file()->size();
+    if (m_tape_enc == TapeEnc::ORIC) return oric_decoder.file()->size();
     if (m_tape_enc == TapeEnc::RK86) {
         const size_t size = rk86_decoder.file()->size();
         const size_t skip = (size != 0 && !record_keeps_sync())? 1 : 0;
@@ -484,6 +504,8 @@ std::string TapeRecorder::format_for_extension(const std::string &ext)
     if (fmt.empty() && m_tape_enc == TapeEnc::APPLE)
         fmt = (str_tolower(ext) == "ptp") ? "apple:20000;data"
             : (str_tolower(ext) == "wav") ? "apple-wav:20000;data" : "apple-raw:20000;data";
+    if (fmt.empty() && m_tape_enc == TapeEnc::ORIC)
+        fmt = (str_tolower(ext) == "wav") ? "oric-wav:20000;data" : "oric:19231;data";
     return fmt;
 }
 
@@ -528,7 +550,7 @@ std::string TapeRecorder::get_record_name()
     }
     if (m_tape_enc == TapeEnc::BK) return bk_decoder.name();
     if (m_tape_enc == TapeEnc::RK86 || m_tape_enc == TapeEnc::UKNC || m_tape_enc == TapeEnc::IBMPC
-        || m_tape_enc == TapeEnc::APPLE) {
+        || m_tape_enc == TapeEnc::APPLE || m_tape_enc == TapeEnc::ORIC) {
         // A Радио-86РК tape carries no name, only the addresses, but the
         // extension still decides how the file goes back on the tape, and the
         // one the machine loads from is the one it has just written
@@ -559,6 +581,10 @@ std::vector<uint8_t> * TapeRecorder::get_record_data()
     }
     if (m_tape_enc == TapeEnc::APPLE) {
         recorded_bytes = *apple_decoder.file();
+        return &recorded_bytes;
+    }
+    if (m_tape_enc == TapeEnc::ORIC) {
+        recorded_bytes = *oric_decoder.file();
         return &recorded_bytes;
     }
     if (m_tape_enc == TapeEnc::RK86) {
@@ -794,7 +820,13 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
         ibmpc_tape::encode(buffer, buffer_encoded);
         set_data(buffer_encoded);
     } else
-    if (tape_format == "apple-wav") {
+    if (tape_format == "oric") {
+        // A .tap file: the bytes of the tape. The rate is the steps of 52 us
+        set_baud_rate(baud);
+        oric_tape::encode(buffer, buffer_encoded);
+        set_data(buffer_encoded);
+    } else
+    if (tape_format == "apple-wav" || tape_format == "oric-wav") {
         // A cassette as it was digitised: the levels come from the sound
         set_baud_rate(baud);
         if (!apple_tape::wav_to_steps(buffer, buffer_encoded))
@@ -1026,6 +1058,7 @@ emulator::Result TapeRecorder::load_state(const StateReader &r)
     //and the УК-НЦ, the file starts from here
     if (is_recording && m_tape_enc == TapeEnc::IBMPC) start_ibmpc_decoder();
     if (is_recording && m_tape_enc == TapeEnc::APPLE) apple_decoder.reset(m_system_clock);
+    if (is_recording && m_tape_enc == TapeEnc::ORIC) oric_decoder.reset(m_system_clock);
     loaded_name.clear();
     r.s("tape_name", loaded_name);
     r.b("motor", motor_on);

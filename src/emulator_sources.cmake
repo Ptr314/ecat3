@@ -58,6 +58,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/common/speaker.cpp emulator/devices/common/speaker.h
     emulator/devices/common/ay8910.cpp emulator/devices/common/ay8910.h
     emulator/devices/common/covox.cpp emulator/devices/common/covox.h
+    emulator/devices/common/via6522.cpp emulator/devices/common/via6522.h
     emulator/devices/common/sound.h emulator/devices/common/sound.cpp
     emulator/devices/common/tape.cpp emulator/devices/common/tape.h
     emulator/devices/common/wd1793.h emulator/devices/common/wd1793.cpp
@@ -130,6 +131,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/argo_keyboard.h emulator/devices/specific/argo_keyboard.cpp
     emulator/devices/specific/argo_memory.h emulator/devices/specific/argo_memory.cpp
     emulator/devices/specific/zx_keyboard.h emulator/devices/specific/zx_keyboard.cpp
+    emulator/devices/specific/oric_ula.h emulator/devices/specific/oric_ula.cpp
     emulator/devices/specific/unior_memory.h emulator/devices/specific/unior_memory.cpp
     emulator/devices/specific/agat_common.h
     emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp

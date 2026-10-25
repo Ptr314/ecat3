@@ -117,6 +117,8 @@
 #include "emulator/devices/specific/argo_keyboard.h"
 #include "emulator/devices/specific/argo_memory.h"
 #include "emulator/devices/specific/zx_keyboard.h"
+#include "emulator/devices/specific/oric_ula.h"
+#include "emulator/devices/common/via6522.h"
 #include "emulator/devices/specific/unior_memory.h"
 
 
@@ -2713,6 +2715,8 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("argo-keyboard", create_argo_keyboard);
     dm->register_device("argo-memory", create_argo_memory);
     dm->register_device("zx-keyboard", create_zx_keyboard);
+    dm->register_device("via6522", create_via6522);
+    dm->register_device("oric-ula", create_oric_ula);
     dm->register_device("unior-memory", create_unior_memory);
     //unior-tape - тот же самый магнитофон. Имя типа оставлено навсегда:
     //снимок состояния несет в себе разрешенную конфигурацию, и в

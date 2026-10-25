@@ -12,6 +12,7 @@
 
 #define SCAN_CALLBACK 1
 #define LED_CALLBACK 2
+#define COLMASK_CALLBACK 3
 
 //Both tables of this keyboard are laid out as the matrix: one line per output
 //line, one whitespace separated column per scan line
@@ -39,6 +40,9 @@ ScanKeyboard::ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_ctrl(this, im, 1, "ctrl", MODE_W)
     , i_ruslat(this, im, 1, "ruslat", MODE_W)
     , i_ruslat_led(this, im, 1, "ruslat_led", MODE_R, LED_CALLBACK)
+    , i_colmask(this, im, 8, "colmask", MODE_R, COLMASK_CALLBACK)
+    , i_sense(this, im, 1, "sense", MODE_W)
+    , i_nmi(this, im, 1, "nmi", MODE_W)
 
 {
     memset(&key_array, _FFFF, sizeof(key_array));
@@ -50,6 +54,7 @@ emulator::Result ScanKeyboard::load_config(SystemData *sd)
     if (!res) return res;
 
     decoded_scan = read_confg_value(cd, "decoder", false, false);
+    decoded_mask = (1u << read_confg_value(cd, "decoder_bits", false, (unsigned int)4)) - 1;
 
     std::string map_file = find_file_location(sd, cd->get_parameter("map", false).value);
     if (map_file.empty())
@@ -118,10 +123,13 @@ emulator::Result ScanKeyboard::load_config(SystemData *sd)
     code_ctrl   = s_ctrl.empty()  ?_FFFF:translate_key(s_ctrl);
     code_shift  = s_shift.empty() ?_FFFF:translate_key(s_shift);
     code_ruslat = s_ruslat.empty()?_FFFF:translate_key(s_ruslat);
+    const std::string s_nmi = cd->get_parameter("nmi_key", false).value;
+    code_nmi = s_nmi.empty()?_FFFF:translate_key(s_nmi);
     const std::string s_ruskey = cd->get_parameter("rus_key", false).value;
     m_rus_key = s_ruskey.empty() ? _FFFF : translate_key(s_ruskey);
     const std::string s_layout = str_tolower(cd->get_parameter("rus_layout", false).value);
     m_rus_jcuken = s_layout == "jcuken";
+    m_rus_koi7_shift = s_layout == "koi7-shift";
     const std::string s_yo = cd->get_parameter("rus_yo", false).value;
     if (!s_yo.empty()) m_rus_yo = translate_key(s_yo);
 
@@ -248,6 +256,7 @@ void ScanKeyboard::set_matrix_shift(bool pressed)
 void ScanKeyboard::key_down(unsigned int key)
 {
     //qDebug() << "DOWN" << Qt::hex << key;
+    if (key == code_nmi) { i_nmi.change(0); return; }
     if (key == code_ctrl) {
         i_ctrl.change(0);
         note_id(role_id(KEY_ROLE_CTRL), true);
@@ -288,6 +297,7 @@ void ScanKeyboard::key_down(unsigned int key)
 void ScanKeyboard::key_up(unsigned int key)
 {
     //qDebug() << "UP" << key;
+    if (key == code_nmi) { i_nmi.change(1); return; }
     if (key == code_ctrl) {
         i_ctrl.change(1);
         note_id(role_id(KEY_ROLE_CTRL), false);
@@ -334,6 +344,7 @@ void ScanKeyboard::reset(bool cool)
     stored_shift = 1;
     i_shift.change(1);
     i_ctrl.change(1);
+    if (i_nmi.linked > 0) i_nmi.change(1);
     i_ruslat.change(1);
     calculate_out();
 }
@@ -347,9 +358,13 @@ void ScanKeyboard::calculate_out()
     //the low nibble of port A (F9AC), so there is no mask to walk here
     if (decoded_scan)
     {
-        const unsigned int line = i_scan.value & 0x0F;
+        const unsigned int line = i_scan.value & decoded_mask;
         if (line < scan_lines) new_value = key_array[line];
         i_output.change(new_value);
+        if (i_sense.linked > 0) {
+            const unsigned int s = (((new_value | i_colmask.value) & 0xFF) != 0xFF) ? 1 : 0;
+            if (s != i_sense.value) i_sense.change(s);
+        }
         if (i_output_hi.linked > 0) i_output_hi.change(new_value >> 8);
         return;
     }
@@ -378,6 +393,9 @@ void ScanKeyboard::calculate_out()
 // polled that key must not flip it back.
 void ScanKeyboard::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
 {
+    if (callback_id == COLMASK_CALLBACK) {
+        calculate_out();
+    } else
     if (callback_id == SCAN_CALLBACK) {
         calculate_out();
         if (led_line >= 0 && led_line != led_taken) {
@@ -391,6 +409,25 @@ void ScanKeyboard::interface_callback(unsigned int callback_id, unsigned int new
 
 bool ScanKeyboard::key_for_char(unsigned int codepoint, unsigned int &key, bool &shift)
 {
+    if (m_rus_koi7_shift) {
+        // The Bulgarian alphabet: Ъ is where КОИ-7 has Ы ($79, the key Y),
+        // and there is no Ы
+        if (codepoint == 0x42B || codepoint == 0x44B) return false;
+        if (codepoint == 0x42A || codepoint == 0x44A) codepoint += 1;
+        const unsigned int code = koi7_code(codepoint);
+        if (code != _FFFF) {
+            const unsigned int n = code & 0x1F;
+            if (n == 0x1F) return false;
+            if (n == 0 || n >= 0x1B) {
+                // The ASCII of the code: ` { | } ~, which the map puts on
+                // those keys with Shift
+                key = (0x60 | n) | KEY_NO_REMAP;
+                shift = false;
+                return true;
+            }
+            return Keyboard::key_for_char(codepoint, key, shift);
+        }
+    }
     if (!m_rus_jcuken) return Keyboard::key_for_char(codepoint, key, shift);
     if (rus_switch_key() == _FFFF) return false;
     // ЙЦУКЕН of a PC: the host key whose Russian letter it is - the remap

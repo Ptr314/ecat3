@@ -325,3 +325,81 @@ build('pravetz-82-late', 'Клавиатура Правец-82 (поздняя)'
       [('led_cl', '#f0a020', 'КИР')], alias82=True)
 build('pravetz-8m', 'Клавиатура Правец-8М', p8m_keys(), 'pravetz-8a-yavert.map', '8m', 'top',
       [(None, '#f0f0f0', ''), ('led_cl', '#f0a020', 'КИР')])
+
+# Правец-8Д (Oric Atmos): клавиатура - матрица scan-keyboard, ее таблица
+# клавиш (files/pravetz-8d.keys) написана руками по матрице, отсюда только
+# рисунок. Расположение и надписи - по фотографии машины (Wikimedia Commons,
+# File:Pravetz-8D.jpg): цифровой ряд без ОСВ, ОСВ начинает ряд Q, МК - ряд A;
+# кириллица над латиницей, нуль перечеркнут, Shift - стрелка, ввод - уголок.
+# Ряды сдвинуты так, как на фото (в долях клавиши от левого края ряда ОСВ)
+CYR_8D = dict(zip('ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'АБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЪЗ'))
+
+
+def p8d_rows():
+    def L(c):
+        return ('key_' + c.lower(), 1, c, CYR_8D[c])
+
+    def S(kid, low, high='', w=1):
+        return (kid, w, low, high)
+
+    def F(kid, label, w=1):
+        return (kid, w, None, label)
+
+    def gap(w):
+        return (None, w, None, '')
+    return [
+        [gap(0.55)] + [S('key_' + d, d, s) for d, s in zip('123456789', '!"#$%&\'()')]
+        + [S('key_0', 'Ø'), S('key_colon', ':', '*'), S('key_minus', '-', '='), S('key_semi', ';', '+')],
+        [F('key_esc', 'ОСВ')] + [L(c) for c in 'QWERTYUIOP']
+        + [S('key_at', '@', 'Ю'), S('key_bksl', '\\', 'Э'), S('key_caret', '^', 'Ч')],
+        [gap(0.5), F('key_ctrl', 'МК')] + [L(c) for c in 'ASDFGHJKL']
+        + [S('key_lbr', '[', 'Ш'), S('key_rbr', ']', 'Щ'), F('key_ret', '↵', 1.5)],
+        [gap(0.5), F('key_lshift', '⇧', 1.75)] + [L(c) for c in 'ZXCVBNM']
+        + [S('key_comma', ',', '<'), S('key_dot', '.', '>'), S('key_slash', '/', '?'), F('key_rshift', '⇧', 1.75)],
+        [gap(0.5), F('key_del', 'DEL'), F('key_left', '←'), F('key_down', '↓'), ('key_space', 7.5, None, ''),
+         F('key_up', '↑'), F('key_right', '→'), F('key_cl', 'C/L')],
+    ]
+
+
+def build_8d():
+    body, well, key, top, ink = '#e6dbbf', '#2a2620', '#d6c8a6', '#efe6cf', '#1a1a1a'
+    rows = p8d_rows()
+    wide = 14.0
+    width = wide * U + 2 * PAD
+    height = len(rows) * U + 2 * PAD
+    svg = ['<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
+           '<!-- Copyright (c) 2026 Mikhail Revzin. Licensed under CC BY-SA 4.0: '
+           'https://creativecommons.org/licenses/by-sa/4.0/ -->',
+           '<!-- Made by tools/pravetz-keyboard/make_keyboards.py: edit it, not this file -->',
+           '<svg xmlns="http://www.w3.org/2000/svg" width="%.0fmm" height="%.0fmm" viewBox="0 0 %.0f %.0f" '
+           'version="1.1">' % (width, height, width, height),
+           '<title>Клавиатура Правец-8Д</title>',
+           '<rect x="0" y="0" width="%.0f" height="%.0f" rx="4" fill="%s"/>' % (width, height, body)]
+    for r, row in enumerate(rows):
+        x = PAD
+        y = PAD + r * U
+        for kid, w, low, high in row:
+            w *= U
+            if kid is None:
+                x += w
+                continue
+            g = ['<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" rx="1.6" fill="%s"/>'
+                 % (x - 0.2, y - 0.2, w + 0.4, U + 0.4, well),
+                 '<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" rx="1.6" fill="%s"/>'
+                 % (x + 0.6, y + 0.6, w - 1.2, U - 1.2, key),
+                 '<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" rx="1.4" fill="%s"/>'
+                 % (x + 2.2, y + 1.6, w - 4.4, U - 5.6, top)]
+            cx, cy = x + w / 2, y + U / 2 - 1.4
+            if low is None and high:
+                size = 7 if high in ('←', '→', '↑', '↓', '⇧', '↵') else (4.2 if len(high) > 2 else 5.2)
+                g.append(text(cx, cy + 1.6, high, size, ink, weight='bold'))
+            elif low is not None:
+                g.append(text(cx, y + 7.4, high, 4.8, ink))
+                g.append(text(cx, y + 13.0, low, 4.4, ink))
+            svg.append('<g id="%s">%s</g>' % (kid, ''.join(g)))
+            x += w
+    svg.append('</svg>')
+    open(os.path.join(PRAVETZ, 'files', 'pravetz-8d.svg'), 'w', encoding='utf-8', newline='\n').write('\n'.join(svg) + '\n')
+
+
+build_8d()

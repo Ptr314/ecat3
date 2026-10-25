@@ -35,6 +35,15 @@ private:
     Interface i_ctrl;
     Interface i_ruslat;
     Interface i_ruslat_led;
+    // The Oric: the columns are selected from outside (port A of the AY),
+    // 0 the selected ones, and the machine reads one line - 1 when a key of
+    // the scanned row is down in a selected column
+    Interface i_colmask;
+    Interface i_sense;
+    // A key outside the matrix wired to the processor's NMI, 0 while it is
+    // down: RESET of the Oric (SW1 of the Oric-1 schematic goes to NMI)
+    Interface i_nmi;
+    unsigned int code_nmi = _FFFF;
 
     unsigned int scan_lines = 0;
     unsigned int out_lines = 0;
@@ -45,6 +54,9 @@ private:
     // four bits of the port to say which one - a matrix of that width does not
     // fit a byte at all
     bool decoded_scan = false;
+    // Of the scan port, the bits that carry the line number (decoder_bits):
+    // four on the Юниор, three on the Oric (PB0-PB2 of its VIA)
+    unsigned int decoded_mask = 0x0F;
 
     std::vector<ScanData> scan_data;
     std::vector<ScanKeyId> id_data;
@@ -59,6 +71,11 @@ private:
     // ЙЦУКЕН as on a PC, capitals with Shift (Поиск)
     unsigned int m_rus_key = _FFFF;
     bool m_rus_jcuken = false;
+    // КОИ-7, but the five letters off the Latin alphabet - Ю Ш Э Щ Ч, the
+    // keys @ [ \ ] ^ with Shift in either register (Правец-8Д) - are typed
+    // as their codes in ASCII, ` { | } ~, and the map puts those there. The
+    // alphabet is the Bulgarian one: Ъ on the key Y, where КОИ-7 has Ы
+    bool m_rus_koi7_shift = false;
     unsigned int m_rus_yo = EmuKey::QuoteLeft;     // Ё of the ЙЦУКЕН: left of 1 on a PC
 
     unsigned int stored_shift = 1;

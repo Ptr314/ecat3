@@ -32,7 +32,8 @@ protected:
     // Chosen by the subclass before load_config(): "625/50" (the default),
     // "vp1-037", the 320 line progressive raster of the БК video controller,
     // "uknc", the 312 line progressive raster of the УК-НЦ, or "apple-pal" /
-    // "apple-ntsc", the 65 clock lines of the Apple //e (312 / 262 of them)
+    // "apple-ntsc", the 65 clock lines of the Apple //e (312 / 262 of them),
+    // or "oric", the 64 clock lines of the Oric ULA
     std::string m_standart;
     unsigned m_lines;
     unsigned m_top_blank;
@@ -55,6 +56,15 @@ protected:
     //Clocks of the display's own domain per frame, both fields of an
     //interlaced one
     unsigned frame_clocks() const { return m_frame_clocks; }
+    //A frame of another number of lines from here on, for a progressive
+    //standard with whole lines (the 50/60 Hz switch of the Oric ULA)
+    void set_frame_lines(unsigned lines, unsigned picture_lines)
+    {
+        m_lines = m_half_frame_lines = lines;
+        m_bottom_blank = lines - m_top_blank - picture_lines;
+        m_frame_clocks = m_counts_per_line * lines;
+        m_line_rem = 0;
+    }
     //Pictures a second, reduced: the display's clock over frame_clocks(),
     //times the pictures of a frame (2 for an interlaced one drawn in both
     //fields). For a subclass that calls frame_complete() at each picture's end

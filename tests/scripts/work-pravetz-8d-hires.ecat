@@ -1,0 +1,18 @@
+# Правец-8Д: клавиатура (матрица 8 x 8, ряд из PB0-PB2 VIA, столбцы - порт A
+# AY-3-8912, ответ - PB3), знаки с Shift (кавычка, скобки, звездочка), HIRES
+# с последователем-атрибутом текста внизу и AY: PING пишет регистры
+# генератора через VIA (CA2 = BC1, CB2 = BDIR).
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8D.cfg"
+WAIT 3000
+TYPE "PRINT 2+2*3,\"AB\";(7-1)/2\n"
+WAIT 300
+SCREEN "../results/work-pravetz-8d-hires-text.png"
+TYPE "10 HIRES:CURSET 120,100,1:CIRCLE 50,1\n20 INK 3:PAPER 4:PING\nRUN\n"
+WAIT 2000
+LOGDEFS 8,16
+LOG ay.regs
+LOG display.mode
+SCREEN "../results/work-pravetz-8d-hires.png"
+EXIT

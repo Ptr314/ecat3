@@ -1,0 +1,29 @@
+# Правец-8Д: системный диск 8D RDOS 2.31 (CALL 800 через ПЗУ 8DOS
+# контроллера). SAVE пишет программу на диск, после NEW LOAD читает ее
+# обратно, DIR показывает файл и свободные секторы. Образ остается в памяти
+# дисковода, файл не меняется.
+# @timeout 60
+
+MACHINE "pravetz/Pravetz-8D.cfg"
+COMMAND fdd0.load("../files/pravetz-8d-rdos231.dsk")
+WAIT 3000
+TYPE "CALL 800\n"
+WAIT 6000
+TYPE "10 PRINT \"DISK \";2*21\n"
+TYPE "SAVE\"TEST\"\n"
+WAIT 6000
+TYPE "NEW\n"
+WAIT 300
+TYPE "LOAD\"TEST\"\n"
+WAIT 6000
+TYPE "LIST\n"
+WAIT 300
+TYPE "RUN\n"
+WAIT 300
+TYPE "DIR\n"
+WAIT 5000
+LOGDEFS 8,16
+LOG fdc140.track
+LOG ram.value($0501,$0516)
+SCREEN "../results/disk-pravetz-8d-rdos.png"
+EXIT

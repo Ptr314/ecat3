@@ -1,0 +1,22 @@
+// Клавиши клавиатуры Правеца-8Д: матрица 8 x 8, как у Oric Atmos.
+//
+// Строка -- выходная линия матрицы (разряд маски столбцов, которую ПЗУ
+// пишет в порт A звукового AY-3-8912), столбец -- ряд, выбранный разрядами
+// PB0-PB2 VIA 6522. ПЗУ узнает о нажатии по PB3. Раскладка -- MAME, prav8d.
+//
+// Обе клавиши Shift -- ячейки матрицы, МК (Ctrl) тоже; C/L переключает
+// кириллицу и латиницу (ведет ПЗУ). Кириллица -- на латинских клавишах, по
+// КОИ-7: Ю на @, Ш на [, Щ на ], Э на \, Ч на ^.
+
+hold:  key_lshift once
+hold:  key_rshift once
+hold:  key_ctrl once
+
+key_7      key_j      key_m      key_k      key_space  key_u      key_y      key_8
+key_n      key_t      key_6      key_9      key_comma  key_i      key_h      key_l
+key_5      key_r      key_b      key_lbr    key_dot    key_o      key_g      key_0
+key_v      key_f      key_4      key_colon  key_up     key_p      key_e      key_slash
+__         __         key_ctrl   __         key_lshift __         __         key_rshift
+key_1      key_esc    key_z      key_cl     key_left   key_del    key_a      key_ret
+key_x      key_q      key_2      key_semi   key_down   key_bksl   key_s      key_caret
+key_3      key_d      key_c      key_rbr    key_right  key_at     key_w      key_minus

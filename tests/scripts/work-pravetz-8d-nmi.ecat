@@ -1,0 +1,17 @@
+# Правец-8Д: кнопка RESET заведена на NMI процессора (SW1 на схеме Oric-1,
+# docs-external/pravetz/8d/Pravetz_8D_Circuit.png), а не на сброс: теплый
+# старт прерывает программу, а она остается в памяти. На компьютере - F12.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8D.cfg"
+WAIT 3000
+TYPE "10 GOTO 10\nRUN\n"
+WAIT 1000
+KEY 50,100,f12
+WAIT 1500
+TYPE "LIST\n"
+WAIT 500
+LOGDEFS 8,16
+LOG ram.value($0501,$0508)
+SCREEN "../results/work-pravetz-8d-nmi.png"
+EXIT

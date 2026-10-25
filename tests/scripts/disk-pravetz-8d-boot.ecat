@@ -1,0 +1,19 @@
+# Правец-8Д: загрузка с диска через ПЗУ контроллера (8DOS, 512 байт). CALL 800
+# ($0320) переключает окно ПЗУ на вторую половину (запись в $0382), та читает
+# сектор 0 дорожки 0 тем же Disk II на $0310-$031F в $B800 и переходит туда.
+# Сектор (tests/files/make-pravetz-8d-boot.py) печатает строку и проверяет
+# оверлей: $0200 - байт, записанный в ОЗУ под ПЗУ ($55), $0201 - байт ПЗУ $C000.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8D.cfg"
+COMMAND fdd0.load("../files/pravetz-8d-boot.dsk")
+WAIT 3000
+TYPE "CALL 800\n"
+WAIT 2000
+LOGDEFS 8,16
+LOG cpu.registers
+LOG ram.value($0200,$0201)
+LOG rom.value($0000)
+LOG fdc140.track
+SCREEN "../results/disk-pravetz-8d-boot.png"
+EXIT

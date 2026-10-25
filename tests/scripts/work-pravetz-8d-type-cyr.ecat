@@ -1,0 +1,15 @@
+# Правец-8Д: TYPE с русскими буквами. C/L (Caps Lock хоста) переключает
+# кириллицу: буквенные клавиши дают А-Я ($61-$7A), а Ю Ш Э Щ Ч - Shift с
+# @ [ \ ] ^ в любом режиме, их TYPE набирает клавишами ` { | } ~. Алфавит
+# болгарский: Ъ - на клавише Y, на месте Ы КОИ-7, а Ы нет.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8D.cfg"
+WAIT 3000
+TYPE "10 PRINT \"ПРАВЕЦ ЮШЭЩЧ ЖЪЬЗ, ABC\"\n"
+TYPE "RUN\n"
+WAIT 500
+LOGDEFS 8,16
+LOG ram.value($0501,$0524)
+SCREEN "../results/work-pravetz-8d-type-cyr.png"
+EXIT
