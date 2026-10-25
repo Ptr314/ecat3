@@ -1935,6 +1935,22 @@
         <translation>Кинескоп</translation>
     </message>
     <message>
+        <source>Persistence</source>
+        <translation>Послесвечене</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>Изключено</translation>
+    </message>
+    <message>
+        <source>Short (common monitor)</source>
+        <translation>Кратко (обикновен монитор)</translation>
+    </message>
+    <message>
+        <source>Long</source>
+        <translation>Дълго</translation>
+    </message>
+    <message>
         <source>High precision</source>
         <translation>Висока точност</translation>
     </message>

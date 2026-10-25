@@ -156,12 +156,19 @@
      </property>
      <addaction name="actionFilter_one"/>
     </widget>
+    <widget class="QMenu" name="menuPersistence">
+     <property name="title">
+      <string>Persistence</string>
+     </property>
+     <addaction name="actionPersistence_one"/>
+    </widget>
     <addaction name="actionScreenshot"/>
     <addaction name="actionVideo"/>
     <addaction name="menuScale"/>
     <addaction name="menuScreen_ratio"/>
     <addaction name="menuFiltering"/>
     <addaction name="actionBlendFrames"/>
+    <addaction name="menuPersistence"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEmulation"/>
@@ -353,6 +360,11 @@
   <action name="actionFilter_one">
    <property name="text">
     <string notr="true">Filter one</string>
+   </property>
+  </action>
+  <action name="actionPersistence_one">
+   <property name="text">
+    <string notr="true">Persistence one</string>
    </property>
   </action>
   <action name="actionTape">

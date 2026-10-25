@@ -220,12 +220,12 @@ public:
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, quality.c_str());
 
         SDL_Surface * frame = device_surface;
-        if (blend_surface != nullptr && (!frame_blending()
+        if (blend_surface != nullptr && (!frame_processing()
                                          || blend_surface->w != screen_x || blend_surface->h != screen_y))
             destroy_blend_surface();
         {
             compat_lock_guard lock(blend_mutex);
-            if (blend_surface == nullptr && frame_blending())
+            if (blend_surface == nullptr && frame_processing())
                 blend_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_x, screen_y, 32, SDL_PIXELFORMAT_RGBA8888);
             blend_shown = blend_surface != nullptr
                 && blend_frame(static_cast<const uint8_t *>(device_surface->pixels),

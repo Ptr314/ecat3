@@ -206,8 +206,9 @@ function clamp(value, lo, hi) {
 // ============================================================================
 //
 // index.html?machine=Agat-7&kbd=1&scale=250&kbdscale=120 opens the page in that
-// state, aspect=, filter= and blend=1 (or 0) set the screen the way the Screen
-// block does, and blocks=machine,-screen says which of the folding blocks are open.
+// state, aspect=, filter=, blend=1 (or 0) and persist=0..2 (or off, short,
+// long) set the screen the way the Screen block does, lang=ru (en, bg) the
+// language of the page, and blocks=machine,-screen says which of the folding blocks are open.
 // index.html?load=https://host/game.ext.zip starts a machine that is not in
 // this build at all: the page downloads that configuration extension and runs
 // it, see startUrlMachine().
@@ -244,6 +245,10 @@ function readUrlParams() {
         filter:   filterId(q.get("filter") || ""),
         // Screen > Blend frames: null when the address says nothing
         blend:    flag("blend"),
+        // Screen > Persistence, "0".."2": null when the address says nothing
+        persist:  persistenceId(q.get("persist") || ""),
+        // Checked against I18N by detectLanguage(): that table comes later
+        lang:     (q.get("lang") || "").trim().toLowerCase() || null,
         blocks:   blockStates(q.get("blocks") || ""),
     };
 }
@@ -268,6 +273,15 @@ function blockStates(text) {
 function filterId(text) {
     const id = text.trim().toLowerCase();
     return ["none", "linear", "sharp", "crt"].includes(id) ? id : null;
+}
+
+// The persistence of the phosphor, as the list offers them: 0 off, 1 short,
+// 2 long; the address takes the numbers or the words
+function persistenceId(text) {
+    const id = text.trim().toLowerCase();
+    const i = ["off", "short", "long"].indexOf(id);
+    if (i >= 0) return String(i);
+    return ["0", "1", "2"].includes(id) ? id : null;
 }
 
 // The aspect modes of the screen, as the list offers them: 4:3, a square
@@ -330,6 +344,8 @@ function currentPageUrl() {
     q.set("aspect", aspectMode());
     q.set("filter", filterMode());
     q.set("blend", blendOn() ? "1" : "0");
+    q.set("persist", persistenceMode());
+    q.set("lang", lang);
     // Only a machine with a drawing has a keyboard to speak of
     if (kbdBaseWidth > 0) {
         if (!document.getElementById("kbd-panel").hidden) q.set("kbd", "1");
@@ -546,6 +562,10 @@ const I18N = {
         filterCrt:          "Picture tube",
         blendFrames:        "Blend frames",
         blendFramesTitle:   "Pictures a program alternates from frame to frame are shown as a steady mix instead of a flicker: every point is the mean of its colour and the previous different one",
+        persistenceOff:     "No persistence",
+        persistenceShort:   "Short persistence",
+        persistenceLong:    "Long persistence",
+        persistenceTitle:   "Persistence of the phosphor: a point of a picture tube fades away instead of going dark at once, and a moving cursor or scrolled text leaves a trail. Short - a common monitor (about 30 ms), long - a long-persistence tube (about 150 ms)",
         mouseSpeed:         "Mouse speed",
         blockMachine:       "Machine",
         blockScreen:        "Screen and sound",
@@ -673,6 +693,10 @@ const I18N = {
         filterCrt:          "Кинескоп",
         blendFrames:        "Смешивать кадры",
         blendFramesTitle:   "Картинки, которые программа чередует от кадра к кадру, видны ровной смесью, а не мерцанием: каждая точка показывается средним своего цвета и предыдущего, отличного от него",
+        persistenceOff:     "Без послесвечения",
+        persistenceShort:   "Короткое послесвечение",
+        persistenceLong:    "Длинное послесвечение",
+        persistenceTitle:   "Послесвечение люминофора: точка кинескопа гаснет не сразу, а плавно, и за движущимся курсором или прокручиваемым текстом тянется след. Короткое — обычный монитор (около 30 мс), длинное — трубка с длительным послесвечением (около 150 мс)",
         mouseSpeed:         "Скорость мыши",
         blockMachine:       "Машина",
         blockScreen:        "Экран и звук",
@@ -800,6 +824,10 @@ const I18N = {
         filterCrt:          "Кинескоп",
         blendFrames:        "Смесване на кадрите",
         blendFramesTitle:   "Картини, които програмата редува от кадър на кадър, се виждат като равномерна смес, а не като трептене: всяка точка се показва като средно на своя цвят и предишния, различен от него",
+        persistenceOff:     "Без послесвечене",
+        persistenceShort:   "Кратко послесвечене",
+        persistenceLong:    "Дълго послесвечене",
+        persistenceTitle:   "Послесвечене на луминофора: точката на кинескопа не угасва веднага, а плавно, и след движещ се курсор или превъртан текст остава следа. Кратко — обикновен монитор (около 30 ms), дълго — тръба с дълго послесвечене (около 150 ms)",
         mouseSpeed:         "Скорост на мишката",
         blockMachine:       "Машина",
         blockScreen:        "Екран и звук",
@@ -818,6 +846,8 @@ function t(key, ...args) {
 
 // The saved choice, otherwise the main language of the browser
 function detectLanguage() {
+    // lang= of the address, for this visit only, like the rest of it
+    if (urlParams.lang && I18N[urlParams.lang]) return urlParams.lang;
     const saved = settings.get("lang", null);
     if (saved && I18N[saved]) return saved;
     const list = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language];
@@ -2340,6 +2370,29 @@ function setupFrameBlending(module) {
         send();
     });
     releaseFocus(box);
+}
+
+// Screen > Persistence: the core fades every point by the time since the frame
+// before. Kept by the core like blending; persist= of the address holds until
+// the list is changed by hand
+let persistFromUrl = urlParams.persist;
+
+function persistenceMode() {
+    if (persistFromUrl !== null) return persistFromUrl;
+    return persistenceId(settings.get("persistence", "0")) || "0";
+}
+
+function setupPersistence(module) {
+    const select = document.getElementById("persistence");
+    const send = () => module.ccall("wasm_set_persistence", null, ["number"], [parseInt(select.value, 10) || 0]);
+    select.value = persistenceMode();
+    send();
+    select.addEventListener("change", () => {
+        persistFromUrl = null;
+        settings.set("persistence", select.value);
+        send();
+    });
+    releaseFocus(select);
 }
 
 function setupDiskSettings() {
@@ -3949,6 +4002,7 @@ async function initEcat() {
     setupKeyRemap(module);
     setupSpeed(module);
     setupFrameBlending(module);
+    setupPersistence(module);
 
     // The machine named in the address, otherwise the one of the previous
     // visit, starts by itself - after the first click or key press, so that

@@ -1,14 +1,34 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: Frame blending, the mix of the pictures a program alternates
+// Description: Frame blending, the mix of the pictures a program alternates,
+//              and phosphor persistence
 
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+
+//Light of a byte value at the gamma of 2.2, 0..65535, and back
+struct LightGamma {
+    uint16_t light[256];
+    uint8_t value[65536];
+    LightGamma()
+    {
+        for (int i = 0; i < 256; i++)
+            light[i] = static_cast<uint16_t>(std::pow(i / 255.0, 2.2) * 65535 + 0.5);
+        for (int i = 0; i < 65536; i++)
+            value[i] = static_cast<uint8_t>(std::pow(i / 65535.0, 1 / 2.2) * 255 + 0.5);
+    }
+    static const LightGamma & get()
+    {
+        static const LightGamma g;
+        return g;
+    }
+};
 
 //Frame blending: a program that alternates two pictures to mix their
 //colours (the 4k intro of the БК) is shown as the mix, steady instead of
@@ -35,24 +55,6 @@ private:
     static const uint8_t BLEND_AGE = 2;
     static const uint32_t BLEND_WEIGHT = 122;  //0.5 * 0.95 * 256
 
-    //Light of a byte value at the gamma of 2.2, 0..65535, and back
-    struct Gamma {
-        uint16_t light[256];
-        uint8_t value[65536];
-        Gamma()
-        {
-            for (int i = 0; i < 256; i++)
-                light[i] = static_cast<uint16_t>(std::pow(i / 255.0, 2.2) * 65535 + 0.5);
-            for (int i = 0; i < 65536; i++)
-                value[i] = static_cast<uint8_t>(std::pow(i / 65535.0, 1 / 2.2) * 255 + 0.5);
-        }
-    };
-    static const Gamma & gamma()
-    {
-        static const Gamma g;
-        return g;
-    }
-
     bool m_started = false;
     bool m_settling = false;
     std::vector<uint32_t> m_last;     //The value of the frame before
@@ -76,7 +78,7 @@ public:
         uint32_t * last = m_last.data();
         uint32_t * other = m_other.data();
         uint8_t * age = m_age.data();
-        const Gamma & g = gamma();
+        const LightGamma & g = LightGamma::get();
         bool mixing = false;
         for (size_t i = 0; i < n; i++) {
             const uint32_t b = cur[i];
@@ -116,5 +118,75 @@ public:
 
     bool started() const { return m_started; }
     //The mix last made is not the frame itself
+    bool settling() const { return m_settling; }
+};
+
+//Phosphor persistence: the screen of a picture tube does not go dark the
+//moment the beam has left a point, its light fades away exponentially
+//(tens of ms on a common green monitor, P1; long, P39, about 150 ms), and
+//a moving cursor or scrolled text leaves a trail. Every byte keeps its light,
+//at the gamma of 2.2 as FrameBlender: a point lights up at once to the
+//frame's value and, when that is darker, fades from what it had by
+//exp(-dt / tau), dt being the time since the frame before. Each byte on its
+//own, so a point fades in its own colour. A fading byte that comes out as
+//the frame's value is taken as faded out
+class PhosphorDecay
+{
+private:
+    bool m_started = false;
+    bool m_settling = false;
+    std::vector<uint16_t> m_light;    //The light every byte shows
+
+public:
+    //n pixels of 4 bytes from src, the picture into dst (it may be src);
+    //tau and dt in seconds
+    void apply(const uint8_t * src, uint8_t * dst, size_t n, double tau, double dt)
+    {
+        const size_t bytes = n * 4;
+        const LightGamma & g = LightGamma::get();
+        if (!m_started || m_light.size() != bytes) {
+            m_light.resize(bytes);
+            for (size_t i = 0; i < bytes; i++) m_light[i] = g.light[src[i]];
+            if (dst != src) std::copy(src, src + bytes, dst);
+            m_started = true;
+            m_settling = false;
+            return;
+        }
+        //What is left of the light after dt, in 1/65536
+        const double k = (tau > 0 && dt > 0) ? std::exp(-dt / tau) : 0;
+        const uint32_t keep = static_cast<uint32_t>(k * 65536);
+        uint16_t * light = m_light.data();
+        bool fading = false;
+        for (size_t i = 0; i < bytes; i++) {
+            const uint8_t b = src[i];
+            const uint32_t now = g.light[b];
+            const uint32_t left = (light[i] * keep) >> 16;
+            if (left <= now) {
+                light[i] = static_cast<uint16_t>(now);
+                dst[i] = b;
+            } else {
+                const uint8_t v = g.value[left];
+                if (v == b) {
+                    light[i] = static_cast<uint16_t>(now);
+                } else {
+                    light[i] = static_cast<uint16_t>(left);
+                    fading = true;
+                }
+                dst[i] = v;
+            }
+        }
+        m_settling = fading;
+    }
+
+    //The light before is forgotten
+    void reset()
+    {
+        m_started = false;
+        m_settling = false;
+        std::vector<uint16_t>().swap(m_light);
+    }
+
+    bool started() const { return m_started; }
+    //Some points are still fading: the picture is not the frame itself
     bool settling() const { return m_settling; }
 };

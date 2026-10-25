@@ -799,6 +799,11 @@
             flex: 3 1 0;
         }
 
+        /* After the blending box, the rest of its row */
+        #persistence {
+            flex: 1 1 0;
+        }
+
         /* A keyboard wider than the screen has a row of its own under the
            columns, so its size never pushes the side columns apart. One no
            wider than the screen, and any keyboard where the columns are
@@ -1053,11 +1058,16 @@
                             <option value="crt" data-i18n="filterCrt"></option>
                         </select>
                     </div>
-                    <div class="row">
+                    <div class="row screen-options">
                         <label class="drive-protect" data-i18n-title="blendFramesTitle">
                             <input type="checkbox" id="blend-frames">
                             <span data-i18n="blendFrames"></span>
                         </label>
+                        <select id="persistence" data-i18n-title="persistenceTitle">
+                            <option value="0" data-i18n="persistenceOff"></option>
+                            <option value="1" data-i18n="persistenceShort"></option>
+                            <option value="2" data-i18n="persistenceLong"></option>
+                        </select>
                     </div>
                     <hr class="block-rule">
                     <label class="caption" for="volume" data-i18n="volume"></label>

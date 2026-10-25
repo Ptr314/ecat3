@@ -1041,6 +1041,22 @@ void MainWindow::CreateScreenMenu()
         af3->setCheckable(true);
         af3->setChecked(e->get_filtering() == SCREEN_FILTERING_CRT);
     #endif
+
+    //Phosphor persistence, see VideoRenderer::blend_frame()
+    clear_menu(ui->menuPersistence);
+    QActionGroup * persistence_group = new QActionGroup(ui->menuPersistence);
+    const struct { int value; QString text; } persistence[] = {
+        {SCREEN_PERSISTENCE_OFF,   tr("Off")},
+        {SCREEN_PERSISTENCE_SHORT, tr("Short (common monitor)")},
+        {SCREEN_PERSISTENCE_LONG,  tr("Long")},
+    };
+    for (const auto &p : persistence) {
+        const int value = p.value;
+        QAction * ap = ui->menuPersistence->addAction(p.text, [this, value]{e->set_persistence(value);});
+        ap->setActionGroup(persistence_group);
+        ap->setCheckable(true);
+        ap->setChecked(e->get_persistence() == value);
+    }
     video_update_action();
 }
 

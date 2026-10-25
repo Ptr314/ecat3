@@ -446,6 +446,13 @@ void wasm_set_frame_blending(int on)
     if (g_emulator) g_emulator->set_frame_blending(on != 0);
 }
 
+// Screen > Persistence, SCREEN_PERSISTENCE_*, kept the same way
+EMSCRIPTEN_KEEPALIVE
+void wasm_set_persistence(int value)
+{
+    if (g_emulator) g_emulator->set_persistence(value);
+}
+
 // The on-screen keyboard speaks the machine's own key names, not host codes,
 // so this path skips the ЙЦУКЕН -> ЯВЕРТЬ remap entirely.
 EMSCRIPTEN_KEEPALIVE

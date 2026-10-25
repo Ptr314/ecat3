@@ -1877,6 +1877,7 @@ void Emulator::init_video(void *p)
     screen_ratio = static_cast<int>(video_setting("ratio", SCREEN_RATIO_43));
     screen_filtering = static_cast<int>(video_setting("filtering", SCREEN_FILTERING_NONE));
     screen_blending = video_setting("blend_frames", 0) != 0;
+    screen_persistence = static_cast<int>(video_setting("persistence", SCREEN_PERSISTENCE_OFF));
 
     if (screen_ratio == SCREEN_RATIO_SQ)
         pixel_scale = 1;
@@ -1900,6 +1901,7 @@ void Emulator::init_video(void *p)
     //taken in that pass came out black on the УК-НЦ under -j 8
     renderer->set_filtering(screen_filtering);
     renderer->set_frame_blending(screen_blending);
+    renderer->set_persistence(screen_persistence);
 }
 
 void Emulator::stop_video()
@@ -2045,7 +2047,7 @@ bool Emulator::start_video_recording(VideoSettings s, bool from_screen, std::str
     //came out twice or not at all and the residual flicker of the mix jerked;
     //the read-back held the GUI thread up, and the window lost frames too.
     //What only the window adds (its size, the CRT shader) is not in the video
-    const bool blended = from_screen && rate && renderer->frame_blending();
+    const bool blended = from_screen && rate && renderer->frame_processing();
     if (blended) from_screen = false;
     //The pixel aspect of the picture as the window would show it; a picture
     //taken from the window has it already
@@ -2110,12 +2112,15 @@ bool Emulator::start_video_recording(VideoSettings s, bool from_screen, std::str
     }
     try {
         const bool locked = s.frame_locked;
-        invoke([this, locked, blended]() {
+        const double frame_s = (rate && num > 0) ? (double)den / num : 0.02;
+        invoke([this, locked, blended, frame_s]() {
             std::vector<GenericSound*> outputs = sound_outputs();
             for (size_t i = 0; i < outputs.size(); i++) outputs[i]->begin_video_capture();
             m_video.set_start(clock_counter);
             m_video_blended = blended;
             m_video_blender.reset();
+            m_video_phosphor.reset();
+            m_video_frame_s = frame_s;
             if (locked)
                 display->set_frame_hook([this]() {
                     //The surface lock keeps the render thread from resizing
@@ -2126,12 +2131,18 @@ bool Emulator::start_video_recording(VideoSettings s, bool from_screen, std::str
                     const int w = renderer->width(), h = renderer->height();
                     display->unlock_surface();
                     if (w <= 0 || h <= 0 || image.size() < (size_t)w * h * 4) return;
-                    //Blending turned off in the window during the recording
-                    //is off in the video from that frame on
+                    //Blending or persistence turned off in the window during
+                    //the recording is off in the video from that frame on
                     if (m_video_blended && renderer->frame_blending())
                         m_video_blender.blend(image.data(), image.data(), (size_t)w * h);
                     else if (m_video_blender.started())
                         m_video_blender.reset();
+                    const int persistence = renderer->persistence();
+                    if (m_video_blended && persistence != SCREEN_PERSISTENCE_OFF)
+                        m_video_phosphor.apply(image.data(), image.data(), (size_t)w * h,
+                                               persistence_tau(persistence), m_video_frame_s);
+                    else if (m_video_phosphor.started())
+                        m_video_phosphor.reset();
                     m_video.push_frame(image.data(), (unsigned int)w, (unsigned int)h);
                 });
         });
@@ -2570,6 +2581,14 @@ void Emulator::set_frame_blending(bool on)
     screen_blending = on;
     renderer->set_frame_blending(on);
     write_setup("Video", "blend_frames", on ? "1" : "0");
+}
+
+void Emulator::set_persistence(int value)
+{
+    if (value < SCREEN_PERSISTENCE_OFF || value > SCREEN_PERSISTENCE_LONG) value = SCREEN_PERSISTENCE_OFF;
+    screen_persistence = value;
+    renderer->set_persistence(value);
+    write_setup("Video", "persistence", std::to_string(value));
 }
 
 int Emulator::get_scale()

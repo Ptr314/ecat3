@@ -93,7 +93,7 @@ public:
 
     void render() override
     {
-        if (!frame_blending()) {
+        if (!frame_processing()) {
             blend_off();
             widget->updateTexture(*surface);
             return;

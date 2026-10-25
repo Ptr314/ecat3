@@ -123,7 +123,7 @@ void WasmRenderer::render()
     if (!buffer || screen_x <= 0 || screen_y <= 0) return;
 
     const uint8_t * picture = buffer;
-    if (frame_blending()) {
+    if (frame_processing()) {
         blended.resize(static_cast<size_t>(screen_x) * screen_y * 4);
         if (blend_frame(buffer, blended.data())) picture = blended.data();
     } else {

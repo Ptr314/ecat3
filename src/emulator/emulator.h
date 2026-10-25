@@ -122,6 +122,7 @@ private:
     int screen_ratio = SCREEN_RATIO_43;
     int screen_filtering = 0;
     bool screen_blending = false;
+    int screen_persistence = SCREEN_PERSISTENCE_OFF;
 
     void register_devices();
     //The two halves of load_config(): what is there goes, the new one is built
@@ -241,10 +242,13 @@ private:
     VideoRecorder m_video;
     std::atomic<bool> m_video_from_screen;
     std::atomic<bool> m_video_locked;   //Frames come from the display's frame hook
-    //Those frames blended as the window blends them ("as on screen" at the
-    //rate of the machine); the blender is the emulation thread's
+    //Those frames blended and faded as the window does it ("as on screen"
+    //at the rate of the machine); both are the emulation thread's, and the
+    //phosphor fades by the machine's frame period, not by the host's time
     bool m_video_blended = false;
     FrameBlender m_video_blender;
+    PhosphorDecay m_video_phosphor;
+    double m_video_frame_s = 0.02;
     //A script to be started by run(), before the first slice (arm_script()):
     //SCRIPT_NONE, SCRIPT_ARMED, SCRIPT_RUN (run() took it, the frontend's
     //start_script() then has nothing to do). One state, changed by
@@ -384,11 +388,15 @@ public:
     //The window shows the mean of each frame and the one before it
     //(VideoRenderer::blend_frame()); screenshots and video keep the frames
     void set_frame_blending(bool on);
+    //Phosphor persistence in the window, SCREEN_PERSISTENCE_*
+    //(VideoRenderer::blend_frame()); screenshots and video keep the frames
+    void set_persistence(int value);
 
     int get_scale();
     int get_ratio();
     int get_filtering();
     bool get_frame_blending() const { return screen_blending; }
+    int get_persistence() const { return screen_persistence; }
 
     //Resolution of the machine's screen, 0 until the first frame. Written by
     //the render thread; a stale value only makes one mouse movement off
