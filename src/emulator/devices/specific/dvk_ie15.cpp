@@ -88,10 +88,29 @@ void IE15Keyboard::send_key_id(const std::string &id, bool press)
     m_dk = false;
 }
 
+// Переключатели режимов на клавишах хоста F6-F10. Кода у них нет, поэтому и
+// места в 15vvv.map (она переводит клавиши в коды); нажатие переключает,
+// как щелчок по рисунку, отпускание ничего не делает
+static const char * host_switch(unsigned int key)
+{
+    switch (key) {
+        case EmuKey::F6:  return "key_sdv";
+        case EmuKey::F7:  return "key_red";
+        case EmuKey::F8:  return "key_lin";
+        case EmuKey::F9:  return "key_dup";
+        case EmuKey::F10: return "key_pch";
+        default:          return nullptr;
+    }
+}
+
 // Backspace хоста - ЗБ ($177): общая с Иришей раскладка даёт ему $08, а RT-11
 // и мониторы ДВК стирают знак по DEL
 void IE15Keyboard::key_down(unsigned int key)
 {
+    if (const char * sw = host_switch(key)) {
+        set_toggled(sw, !toggled(sw));
+        return;
+    }
     if (key == EmuKey::Backspace) {
         send_key_id("key_bksp", true);
         note_id("key_bksp", true);
@@ -107,6 +126,7 @@ void IE15Keyboard::key_down(unsigned int key)
 
 void IE15Keyboard::key_up(unsigned int key)
 {
+    if (host_switch(key) != nullptr) return;
     if (key == EmuKey::Backspace) {
         send_key_id("key_bksp", false);
         note_id("key_bksp", false);

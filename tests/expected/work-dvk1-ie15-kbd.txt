@@ -111,3 +111,8 @@ abc ABC xyz
 [ie15-io.flags] &000035
 [ie15-io.overruns] &000000
 [ie15-cpu.unsupported] &00000000000
+=== F6-F10 хоста ===
+[keyboard.leds] led_lat,led_prd,led_dup,led_lin,led_red
+[keyboard.leds] led_lat,led_prd,led_dup,led_lin,led_red,led_sdv
+[keyboard.leds] led_lat,led_prd,led_pch
+[keyboard.leds] led_lat,led_prd,led_dup,led_lin,led_red

@@ -98,4 +98,18 @@ LOG display.text
 LOG ie15-io.flags
 LOG ie15-io.overruns
 LOG ie15-cpu.unsupported
+
+# Переключатели на клавишах хоста: F6 СДВ, F7 РЕД, F8 ЛИН, F9 ДУП, F10 ПЧ -
+# каждое нажатие переключает
+PRINT "=== F6-F10 хоста ==="
+LOG keyboard.leds
+KEY _50,_50,f6
+WAIT _100
+LOG keyboard.leds
+KEY _50,_50,f6,f7,f8,f9,f10
+WAIT _100
+LOG keyboard.leds
+KEY _50,_50,f7,f8,f9,f10
+WAIT _100
+LOG keyboard.leds
 EXIT
