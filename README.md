@@ -12,7 +12,7 @@ eCat &ndash; универсальный эмулятор ретрокомпью�
 * [&laquo;Юниор ФВ-6506&raquo;, &laquo;Арго ФВ-6511&raquo;](docs/computers/unior.md) (TCP/M с ленты, управление магнитофоном, режим ZX).
 * [&laquo;Поиск-1&raquo;](docs/computers/poisk.md) (Дисковод, кассеты, картридж ОЗУ).
 * [ДВК-1, ДВК-2, ДВК-3, ДВК-4](docs/computers/dvk.md) (К1801ВМ1 &mdash; КМ1801ВМ3, КСМ, КГД, КЦГД, DX, MX, MY, DW).
-* [&laquo;Правец-82&raquo;, &laquo;Правец-8М&raquo;, &laquo;Правец-8А&raquo;, &laquo;Правец-8С&raquo;](docs/computers/pravetz.md) (MEGARAM, Liberty Drive, COMport, U-LAN, WOZ) &mdash; [на български](docs/computers/pravetz.bg.md).
+* [&laquo;Правец-82 / 8М / 8А / 8С&raquo;](docs/computers/pravetz.md) (MEGARAM, Liberty Drive, COMport, U-LAN, WOZ) &mdash; [на български](docs/computers/pravetz.bg.md).
 * [&laquo;Правец-8Д&raquo;](docs/computers/pravetz-8d.md) (Oric Atmos) &mdash; [на български](docs/computers/pravetz-8d.bg.md).
 
 <p align="center">
