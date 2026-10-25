@@ -1,7 +1,7 @@
 # Правец-8А с ALTCHAR как у Apple //e (только записью, pravetz-8a-iie-altchar.ext):
 # a2audit 1.07 (MIT, tests/files/a2audit-1.07.dsk) проходит все программные
 # переключатели - SOFTSWITCH TESTS SUCCEEDED. Остается только свое ПЗУ
-# Правеца в $C400-$C7FF (см. work-pravetz-8a-a2audit).
+# Правец в $C400-$C7FF (см. work-pravetz-8a-a2audit).
 # @timeout 120
 
 MACHINE "../tests/files/pravetz-8a-iie-altchar.ext"

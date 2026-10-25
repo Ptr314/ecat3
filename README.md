@@ -3,15 +3,17 @@
 [![GitHub Release](https://img.shields.io/github/release/ptr314/ecat3.svg?style=flat)](https://github.com/Ptr314/ecat3/releases) 
 
 eCat &ndash; универсальный эмулятор ретрокомпьютеров. На данный момент поддерживаются:
-* &laquo;Орион-128&raquo; (Варианты на ВМ80 и Z80).
-* &laquo;Радио-86РК&raquo; (&laquo;Апогей БК-01Ц&raquo;, &laquo;Микроша&raquo;, &laquo;Спектр-001&raquo;).
-* &laquo;Агат-7&raquo;, &laquo;Агат-9&raquo; (Плата Палитр, Ячейка Звукового Синтеза).
-* &laquo;Ириша&raquo; (&laquo;Диалог&raquo;, &laquo;Каспий&raquo;).
-* &laquo;БК 0010&raquo;, &laquo;БК 0010-01&raquo;, &laquo;БК 0011М&raquo; (Дисководы, A16M, СМК-512, Covox, AY).
-* &laquo;УК-НЦ&raquo; (HDD: CHS, LBA; Covox; [Aberrant Sound](https://github.com/aberranthacker/aberrant_sound_module)).
-* &laquo;Юниор ФВ-6506&raquo;, &laquo;Арго ФВ-6511&raquo; (TCP/M с ленты, управление магнитофоном, режим ZX).
-* &laquo;Поиск-1&raquo; (Дисковод, кассеты, картридж ОЗУ).
-* ДВК-1, ДВК-2, ДВК-3, ДВК-4 (К1801ВМ1 &mdash; КМ1801ВМ3, КСМ, КГД, КЦГД, DX, MX, MY, DW).
+* [&laquo;Орион-128&raquo;](docs/computers/orion-128.md) (Варианты на ВМ80 и Z80).
+* [&laquo;Радио-86РК&raquo;](docs/computers/radio-86rk.md) (&laquo;Апогей БК-01Ц&raquo;, &laquo;Микроша&raquo;, &laquo;Спектр-001&raquo;).
+* [&laquo;Агат-7&raquo;, &laquo;Агат-9&raquo;](docs/computers/agat.md) (Плата Палитр, Ячейка Звукового Синтеза).
+* [&laquo;Ириша&raquo;](docs/computers/irisha.md) (&laquo;Диалог&raquo;, &laquo;Каспий&raquo;).
+* [&laquo;БК 0010&raquo;, &laquo;БК 0010-01&raquo;, &laquo;БК 0011М&raquo;](docs/computers/bk.md) (Дисководы, A16M, СМК-512, Covox, AY).
+* [&laquo;УК-НЦ&raquo;](docs/computers/uknc.md) (HDD: CHS, LBA; Covox; [Aberrant Sound](https://github.com/aberranthacker/aberrant_sound_module)).
+* [&laquo;Юниор ФВ-6506&raquo;, &laquo;Арго ФВ-6511&raquo;](docs/computers/unior.md) (TCP/M с ленты, управление магнитофоном, режим ZX).
+* [&laquo;Поиск-1&raquo;](docs/computers/poisk.md) (Дисковод, кассеты, картридж ОЗУ).
+* [ДВК-1, ДВК-2, ДВК-3, ДВК-4](docs/computers/dvk.md) (К1801ВМ1 &mdash; КМ1801ВМ3, КСМ, КГД, КЦГД, DX, MX, MY, DW).
+* [&laquo;Правец-82&raquo;, &laquo;Правец-8М&raquo;, &laquo;Правец-8А&raquo;, &laquo;Правец-8С&raquo;](docs/computers/pravetz.md) (MEGARAM, Liberty Drive, COMport, U-LAN, WOZ) &mdash; [на български](docs/computers/pravetz.bg.md).
+* [&laquo;Правец-8Д&raquo;](docs/computers/pravetz-8d.md) (Oric Atmos) &mdash; [на български](docs/computers/pravetz-8d.bg.md).
 
 <p align="center">
 <img src="docs/screenshots/main_window.png" width="600">

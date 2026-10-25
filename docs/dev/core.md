@@ -188,7 +188,7 @@ cd .build
 ./update_translations.bat  # Or update_translations.sh on Unix
 # Edit .ts files in Qt Linguist
 ```
-Without the IDE: `cmake --build <build dir> --target update_translations` (on Windows with `__COMPAT_LAYER=RunAsInvoker` in the environment) adds new strings to `src/translations/*.ts` as unfinished; the Russian text goes into `ru_ru.ts` by hand. The `.qm` files are generated on the next build and are not in git.
+Without the IDE: `cmake --build <build dir> --target update_translations` (on Windows with `__COMPAT_LAYER=RunAsInvoker` in the environment) adds new strings to `src/translations/*.ts` as unfinished; the Russian and Bulgarian texts go into `ru_ru.ts` and `bg_bg.ts` by hand. A new language is a `.ts` in `TS_FILES` and `SUPPORTED_LANGUAGES` (`src/CMakeLists.txt`), a flag in `resources.qrc` and an item in `MainWindow::add_languages()`. The `.qm` files are generated on the next build and are not in git.
 
 - **C++11 baseline** (`CMAKE_CXX_STANDARD 11`): The emulator core targets C++11 for MinGW 4.9.2 (Windows XP) compatibility. Modern compilers (MSVC, MinGW 13+) build with C++17 features enabled selectively (e.g., `USE_MINI_INI` requires `<filesystem>`).
 - **Threading**: `thread_compat.h` provides `compat_mutex` (use it instead of `std::mutex`) and, in the QThread variant only, `EmuThread`; the std variant uses `std::thread` behind `#if USE_QT_THREADING` (see `emulator.cpp`). On MinGW < 5 the Qt classes are used; `FORCE_QT_THREADING` / `FORCE_STD_THREADING` override auto-detection.

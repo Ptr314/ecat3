@@ -46,7 +46,7 @@ from a regression.
   into the core there, not linking the full library.
 - `globals.h` is generated per build directory from `globals.h.in`; never edit it or put one in `src/`.
 - Translations: `cmake --build <dir> --target update_translations` (on Windows with
-  `__COMPAT_LAYER=RunAsInvoker`); Russian goes into `ru_ru.ts` by hand.
+  `__COMPAT_LAYER=RunAsInvoker`); Russian and Bulgarian go into `ru_ru.ts` and `bg_bg.ts` by hand.
 
 ## Language constraints
 

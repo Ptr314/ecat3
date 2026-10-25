@@ -1,5 +1,5 @@
 # Диск DOS 3.3 на 140 Кб для disk-pravetz-8a-dos33: дорожки 0-2 (DOS) и
-# файл HELLO из диска Правеца с agatcomp.ru ("П8ру 01.dsk", NOSORT/RUSKI01),
+# файл HELLO из диска Правец с agatcomp.ru ("П8ру 01.dsk", NOSORT/RUSKI01),
 # остальные файлы выброшены, их секторы обнулены и освобождены в VTOC.
 #
 #   python make-pravetz-dos33.py "П8ру 01.dsk"  ->  pravetz-dos33.dsk

@@ -69,6 +69,7 @@
         <file alias="tape_volume_100">resources/icons/tape_volume_100.png</file>
         <file alias="en">resources/icons/en.png</file>
         <file alias="ru">resources/icons/ru.png</file>
+        <file alias="bg">resources/icons/bg.png</file>
         <file alias="language">resources/icons/browser.png</file>
         <file alias="about">resources/icons/help.png</file>
         <file alias="record">resources/icons/krec.png</file>

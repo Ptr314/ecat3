@@ -38,7 +38,7 @@ DEVICE_OPTIONS_NAME = "device_options.json"
 
 # Translation files of the desktop by the page language they serve. English is
 # the source text itself and needs no table
-TRANSLATIONS = {"ru": "ru_ru.ts"}
+TRANSLATIONS = {"ru": "ru_ru.ts", "bg": "bg_bg.ts"}
 
 import os
 import re

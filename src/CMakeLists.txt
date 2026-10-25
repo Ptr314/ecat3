@@ -181,10 +181,11 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Translations
 
-set(SUPPORTED_LANGUAGES ru en)
+set(SUPPORTED_LANGUAGES ru en bg)
 set(TS_FILES
     ${CMAKE_SOURCE_DIR}/translations/en_us.ts
     ${CMAKE_SOURCE_DIR}/translations/ru_ru.ts
+    ${CMAKE_SOURCE_DIR}/translations/bg_bg.ts
 )
 
 # Source files

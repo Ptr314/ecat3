@@ -1,4 +1,4 @@
-# Клавиатуры Правецев на экране: рисунки (deploy/computers/pravetz/files/*.svg)
+# Клавиатуры Правец на экране: рисунки (deploy/computers/pravetz/files/*.svg)
 # и таблицы клавиш рисунка (deploy/computers/pravetz/*.keys).
 #
 # Расположение клавиш - по фотографиям с agatcomp.ru (docs-external/pravetz/
@@ -51,7 +51,7 @@ def find(m, key, shift, rus):
     return None
 
 
-KOI7 = 'ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЪЗШЭЩЧ'   # $E0-$FE, у Правеца $F9 = Ъ
+KOI7 = 'ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЪЗШЭЩЧ'   # $E0-$FE, у Правец $F9 = Ъ
 
 
 def char(code, alias82=False):

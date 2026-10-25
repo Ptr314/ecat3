@@ -572,6 +572,9 @@ void MainWindow::add_languages()
     QAction *subAction2 = subMenu->addAction(QIcon(":/icons/en"), MainWindow::tr("English"));
     connect(subAction2, &QAction::triggered, this, [this]() { switch_language("en_us", false); });
 
+    QAction *subAction3 = subMenu->addAction(QIcon(":/icons/bg"), MainWindow::tr("Български"));
+    connect(subAction3, &QAction::triggered, this, [this]() { switch_language("bg_bg", false); });
+
     langsAction->setMenu(subMenu);
 }
 

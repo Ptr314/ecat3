@@ -1215,7 +1215,7 @@
     <message>
         <location line="+1"/>
         <source>RGB card, Pravetz stock</source>
-        <translation>Плата RGB, штатная Правеца</translation>
+        <translation>Плата RGB, штатная Правец</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -2864,6 +2864,11 @@
         <location line="+3"/>
         <source>English</source>
         <translation>English</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Български</source>
+        <translation>Български</translation>
     </message>
     <message>
         <location line="+168"/>
