@@ -99,6 +99,26 @@ LOG ie15-io.flags
 LOG ie15-io.overruns
 LOG ie15-cpu.unsupported
 
+# «Влево» в установке: прошивка сохраняет позицию маркера из буфера АЛУ
+# (DSR R9, потом STA R5) и переходит по разрядам, как «вправо». С выводом
+# аккумулятора маркер шёл по одному знаку и вставал между разрядами
+# Маркер стоит на II.3, где его оставил раздел ФЛ7: вправо 7 - IV.2, влево 2 - III.4
+PRINT "=== Установка: с II.3 вправо 7, влево 2 - бит III.4 ==="
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _100
+KEY _60,_40,right,right,right,right,right,right,right,left,left
+KEYDOWN key_setup_next
+WAIT _40
+KEYUP key_setup_next
+WAIT _100
+LOG display.status
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _100
+
 # Переключатели на клавишах хоста: F6 СДВ, F7 РЕД, F8 ЛИН, F9 ДУП, F10 ПЧ -
 # каждое нажатие переключает
 PRINT "=== F6-F10 хоста ==="
