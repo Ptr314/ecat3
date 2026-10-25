@@ -1,0 +1,101 @@
+# ДВК-1, терминал 15ИЭ: флаг готовности клавиатуры и ФЛ7.
+#
+# Флаг готовности (порт 13) ставит нажатие и, когда клавиша нажата дольше
+# секунды, автоповтор клавиатуры - 15 раз в секунду; снимают его прошивка
+# (порт 15) и отпускание клавиши. Разряд 2 группы II установки - автоповтор:
+# 0 - есть (прошивка снимает флаг сама, взяв код), 1 - нет (прошивка ждёт
+# отпускания). Без снятия флага отпусканием терминал с выключенным
+# автоповтором принимал бы одну клавишу и больше ни одной (так в MAME).
+#
+# Разряд 3 группы II - ФЛ7, КОИ-7 Н2: знакогенератор получает вместо разряда
+# 7 кода разряд 5, строчные латинские показываются заглавными русскими.
+# Прошивка ставит и снимает флаг 7, прочитав его на входе флага 3: снятие
+# работает, только если вход отвечает.
+#
+# Терминал местный (ЛИН выключен): набор идёт прямо на экран. Маркер
+# служебной строки в установке остаётся там, где его оставили.
+MACHINE "dvk/DVK-1.cfg"
+WAIT _2000
+LOGDEFS _16,_8
+
+KEYDOWN key_lin
+WAIT _50
+KEYUP key_lin
+WAIT _100
+
+PRINT "=== Автоповтор есть: A нажата 2 с ==="
+KEYDOWN A
+WAIT _2000
+KEYUP A
+WAIT _200
+LOG display.text
+LOG ie15-io.kb_ready
+
+PRINT "=== Автоповтор выключен (II.2 = 1) ==="
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _100
+KEY _60,_40,right,right
+KEYDOWN key_setup_next
+WAIT _40
+KEYUP key_setup_next
+WAIT _100
+LOG display.status
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _100
+# E нажата сразу, как отпущен пробел, и держится 2 с: одна E
+TYPE " BCD "
+KEYDOWN E
+WAIT _2000
+KEYUP E
+WAIT _100
+TYPE "FG"
+WAIT _200
+LOG display.text
+LOG ie15-io.kb_ready
+
+PRINT "=== ФЛ7 (II.3 = 1): строчные латинские - русские заглавные ==="
+KEYDOWN key_lin
+WAIT _50
+KEYUP key_lin
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _100
+KEY _60,_40,right
+KEYDOWN key_setup_next
+WAIT _40
+KEYUP key_setup_next
+WAIT _100
+LOG display.status
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _100
+COMMAND ie15-io.receive("\014abc ABC xyz")
+WAIT _300
+LOG display.text
+LOG ie15-io.flags
+
+PRINT "=== ФЛ7 снят ==="
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _100
+KEYDOWN key_setup_next
+WAIT _40
+KEYUP key_setup_next
+WAIT _100
+LOG display.status
+KEYDOWN key_sdv
+WAIT _50
+KEYUP key_sdv
+WAIT _300
+LOG display.text
+LOG ie15-io.flags
+LOG ie15-io.overruns
+LOG ie15-cpu.unsupported
+EXIT

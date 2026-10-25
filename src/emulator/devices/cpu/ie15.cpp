@@ -108,7 +108,7 @@ IE15CPU::IE15CPU(InterfaceManager *im, EmulatorConfigDevice *cd):
 void IE15CPU::core_reset()
 {
     m_pc = 0;
-    m_a = 0;
+    m_a = m_b = 0;
     m_cf = m_zf = m_rf = false;
     memset(m_regs, 0, sizeof(m_regs));
 }
@@ -150,8 +150,8 @@ void IE15CPU::execute_one(uint8_t op)
             m_pc = (m_pc + 1) & 0xFFF;
             break;
         case 0x30:
-            if (op == 0x30) {           // LCA
-                set_a(arg());
+            if (op == 0x30) {           // LCA: БАЛУ не трогает
+                m_a = arg();
                 m_pc = (m_pc + 1) & 0xFFF;
             } else if (op == 0x33) {    // RAL
                 set_a((uint8_t)((m_a << 1) | (m_a >> 7)));
@@ -159,10 +159,10 @@ void IE15CPU::execute_one(uint8_t op)
                 set_a((uint8_t)((m_a >> 1) | (m_a << 7)));
             } else note_unsupported("opcode " + oct_str(op, 3));
             break;
-        case 0x40: {    // DSR: пропуск, если стало 377
+        case 0x40: {    // DSR: регистр и БАЛУ; пропуск, если стало 377
             const uint8_t v = (uint8_t)(reg_lo(op & 15) - 1);
             set_reg(op & 15, v);
-            m_zf = (v == 0xFF);
+            set_b(v);
             if (m_zf) skip();
             break;
         }
@@ -194,7 +194,7 @@ void IE15CPU::execute_one(uint8_t op)
         case 0x80: {    // SFC/SKP: пропуск при сброшенном, SFS/NOP - при установленном
             bool f;
             switch (op & 7) {
-                case 5:  f = (m_a & 0x80) != 0; break;
+                case 5:  f = (m_b & 0x80) != 0; break;
                 case 6:  f = m_cf; break;
                 case 7:  f = false; break;
                 default: f = (mm->read_port(IE15_FLAG_PORT | (op & 7)) & 0xFF) != 0; break;
@@ -204,19 +204,20 @@ void IE15CPU::execute_one(uint8_t op)
         }
         case 0x90: set_a(m_a & reg_lo(op & 15)); break;     // AND
         case 0xA0: set_a(m_a ^ reg_lo(op & 15)); break;     // XOR
-        case 0xB0:      // CS: пропуск при равенстве
-            if (m_a == reg_lo(op & 15)) { m_zf = true; skip(); }
+        case 0xB0:      // CS: в БАЛУ A - R - 1, при равенстве это 377 - пропуск
+            set_b((uint8_t)(m_a - reg_lo(op & 15) - 1));
+            if (m_zf) skip();
             break;
         case 0xC0:      // CFL/SFL; флаг 5 - это перенос
             if ((op & 7) == 5) m_cf = false;
             else mm->write_port(IE15_FLAG_PORT | (op & 7), (op >> 3) & 1);
             break;
         case 0xD0: set_a(reg_lo(op & 15)); break;           // LDA
-        case 0xE0: set_reg(op & 15, m_a | (m_pc & 0xF00)); break;   // STA
-        default:        // OTA; 16 и 17 - страница регистров
+        case 0xE0: set_reg(op & 15, m_b | (m_pc & 0xF00)); break;   // STA - из БАЛУ
+        default:        // OTA - из БАЛУ; 16 и 17 - страница регистров
             if (op == 0xFE) m_rf = true;
             else if (op == 0xFF) m_rf = false;
-            else mm->write_port(op & 15, m_a);
+            else mm->write_port(op & 15, m_b);
             break;
     }
 }
@@ -271,6 +272,7 @@ std::vector<std::pair<std::string, std::string>> IE15CPU::get_registers()
     std::vector<std::pair<std::string, std::string>> r;
     r.push_back({"PC", oct_str(m_pc, 4)});
     r.push_back({"A", oct_str(m_a, 3)});
+    r.push_back({"B", oct_str(m_b, 3)});
     r.push_back({"-1", ""});
     for (unsigned i = 0; i < 32; i++) {
         if (i == 16) r.push_back({"-2", ""});
@@ -292,6 +294,7 @@ void IE15CPU::set_context_value(const std::string &name, unsigned int value)
 {
     if (name == "PC") m_pc = value & 0xFFF;
     else if (name == "A") m_a = (uint8_t)value;
+    else if (name == "B") m_b = (uint8_t)value;
     else if (name.size() > 1 && name[0] == 'R') {
         const unsigned i = (unsigned)atoi(name.c_str() + 1);
         if (i < 32) m_regs[i] = value & 0xFFF;
@@ -309,6 +312,7 @@ void IE15CPU::save_state(StateWriter &w)
     CPU::save_state(w);
     w.u("PC", m_pc);
     w.u("A", m_a, 8);
+    w.u("B", m_b, 8);
     w.b("C", m_cf);
     w.b("Z", m_zf);
     w.b("R", m_rf);
@@ -321,6 +325,9 @@ emulator::Result IE15CPU::load_state(const StateReader &r)
     if (!res) return res;
     r.u("PC", m_pc);
     r.u("A", m_a);
+    // В снимке без БАЛУ STA и OTA брали аккумулятор: пусть БАЛУ равен ему
+    m_b = m_a;
+    r.u("B", m_b);
     r.b("C", m_cf);
     r.b("Z", m_zf);
     r.b("R", m_rf);
