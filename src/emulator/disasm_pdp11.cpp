@@ -27,9 +27,10 @@ const char * SINGLE_B[16] = {
 const char * BRANCH_LO[8] = {"", "BR", "BNE", "BEQ", "BGE", "BLT", "BGT", "BLE"};
 const char * BRANCH_HI[8] = {"BPL", "BMI", "BHI", "BLOS", "BVC", "BVS", "BCC", "BCS"};
 
-std::string oct6(unsigned int value)
+// Numbers without leading zeros: MOV #1, R0, not MOV #000001, R0
+std::string oct(unsigned int value)
 {
-    return oct_str(value & 0xFFFF, 6);
+    return oct_str(value & 0xFFFF, 1);
 }
 
 uint16_t word_at(CommandBytes bytes, unsigned int index)
@@ -67,13 +68,13 @@ std::string DisAsmPDP11::format_operand(unsigned int spec, CommandBytes bytes,
     case 2:
         if (is_pc) {                                    // immediate
             uint16_t x = word_at(bytes, index++);
-            return "#" + oct6(x);
+            return "#" + oct(x);
         }
         return std::string("(") + REG_NAMES[reg] + ")+";
     case 3:
         if (is_pc) {                                    // absolute
             uint16_t x = word_at(bytes, index++);
-            return "@#" + oct6(x);
+            return "@#" + oct(x);
         }
         return std::string("@(") + REG_NAMES[reg] + ")+";
     case 4:
@@ -83,14 +84,14 @@ std::string DisAsmPDP11::format_operand(unsigned int spec, CommandBytes bytes,
     case 6: {
         uint16_t x = word_at(bytes, index++);
         if (is_pc)                                      // PC relative, show the target
-            return oct6(PC + 2 * index + x);
-        return oct6(x) + "(" + REG_NAMES[reg] + ")";
+            return oct(PC + 2 * index + x);
+        return oct(x) + "(" + REG_NAMES[reg] + ")";
     }
     default: {
         uint16_t x = word_at(bytes, index++);
         if (is_pc)
-            return "@" + oct6(PC + 2 * index + x);
-        return "@" + oct6(x) + "(" + REG_NAMES[reg] + ")";
+            return "@" + oct(PC + 2 * index + x);
+        return "@" + oct(x) + "(" + REG_NAMES[reg] + ")";
     }
     }
 }
@@ -135,7 +136,7 @@ unsigned int DisAsmPDP11::decode(CommandBytes bytes, unsigned int PC, unsigned i
     else if ((cmd & 0177400) >= 0000400 && (cmd & 0177400) <= 0003400) {
         mnemonic = BRANCH_LO[(cmd >> 8) & 7];
         int8_t offset = (int8_t)(cmd & 0xFF);
-        operands = oct6(PC + 2 + offset * 2);
+        operands = oct(PC + 2 + offset * 2);
         out->flow = FLOW_JUMP;
         out->conditional = (cmd & 0177400) != 0000400;
         out->has_target = true;
@@ -144,7 +145,7 @@ unsigned int DisAsmPDP11::decode(CommandBytes bytes, unsigned int PC, unsigned i
     else if ((cmd & 0177400) >= 0100000 && (cmd & 0177400) <= 0103400) {
         mnemonic = BRANCH_HI[(cmd >> 8) & 7];
         int8_t offset = (int8_t)(cmd & 0xFF);
-        operands = oct6(PC + 2 + offset * 2);
+        operands = oct(PC + 2 + offset * 2);
         out->flow = FLOW_JUMP;
         out->conditional = true;
         out->has_target = true;
@@ -152,12 +153,12 @@ unsigned int DisAsmPDP11::decode(CommandBytes bytes, unsigned int PC, unsigned i
     }
     else if ((cmd & 0177400) == 0104000) {
         mnemonic = "EMT";
-        operands = oct_str(cmd & 0377, 3);
+        operands = oct(cmd & 0377);
         out->flow = FLOW_CALL;
     }
     else if ((cmd & 0177400) == 0104400) {
         mnemonic = "TRAP";
-        operands = oct_str(cmd & 0377, 3);
+        operands = oct(cmd & 0377);
         out->flow = FLOW_CALL;
     }
     else if ((cmd & 0177000) == 0004000) {
@@ -176,7 +177,7 @@ unsigned int DisAsmPDP11::decode(CommandBytes bytes, unsigned int PC, unsigned i
     else if ((cmd & 0177000) == 0077000) {
         mnemonic = "SOB";
         operands = std::string(REG_NAMES[(cmd >> 6) & 7]) + ", "
-                 + oct6(PC + 2 - (cmd & 077) * 2);
+                 + oct(PC + 2 - (cmd & 077) * 2);
         out->flow = FLOW_JUMP;
         out->conditional = true;
         out->has_target = true;
@@ -186,7 +187,7 @@ unsigned int DisAsmPDP11::decode(CommandBytes bytes, unsigned int PC, unsigned i
         static const char * EIS[4] = {"MUL", "DIV", "ASH", "ASHC"};
         if (!has_eis) {
             mnemonic = ".WORD";
-            operands = oct6(cmd);
+            operands = oct(cmd);
             valid = false;
         } else {
             mnemonic = EIS[(cmd >> 9) & 3];
@@ -228,7 +229,7 @@ unsigned int DisAsmPDP11::decode(CommandBytes bytes, unsigned int PC, unsigned i
         bool is_byte = (cmd & 0100000) != 0;
         mnemonic = is_byte? SINGLE_B[sop] : SINGLE_W[sop];
         if (!is_byte && sop == 014)                     // MARK takes a count
-            operands = oct_str(cmd & 077, 2);
+            operands = oct(cmd & 077);
         else
             operands = format_operand(cmd & 077, bytes, PC, index);
     }
@@ -265,7 +266,7 @@ unsigned int DisAsmPDP11::decode(CommandBytes bytes, unsigned int PC, unsigned i
             mnemonic = console_name;
         else {
             mnemonic = ".WORD";
-            operands = oct6(cmd);
+            operands = oct(cmd);
             valid = false;
         }
     }
