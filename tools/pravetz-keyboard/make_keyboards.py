@@ -139,7 +139,7 @@ def p82_keys(late=False):
            ] + ([] if late else [K('key_ret', 1.75, 'ret', label='RETURN')]),
         [K('key_ctrl', 1.5, role='ctrl', label='МК', color='grey')] + letters('ASDFGHJKL')
         + [K('key_semicolon', 1, ';', '+', rshift='$AB'), K('key_lbracket', 1, '['), K('key_rbracket', 1, ']'),
-           K('key_cl', 1.5, fn='cl', label=lat, color='yellow') if late else K(None, 1.5, label='')],
+           K('key_cl', 1.5, fn='cl', label=lat, color='yellow') if late else K('key_down', 1.5, 'down', label='↓')],
         [K('key_shift_l', 1.75, role='shift', label=lat, color='white')] + letters('ZXCVBNM')
         + [K('key_comma', 1, ',', '<'), K('key_period', 1, '.', '>'), K('key_slash', 1, '/', '?'),
            K('key_shift_r', 1, role='shift', label=lat, color='white')]

@@ -12,6 +12,9 @@
 #include <QKeyEvent>
 #include <QVBoxLayout>
 #include <QFile>
+#include <QCoreApplication>
+#include <QShowEvent>
+#include <QResizeEvent>
 
 #include "emulator/script/script_types.h"
 #include "qt_utils.h"
@@ -460,7 +463,7 @@ KeyboardWindow::KeyboardWindow(QWidget *parent, Emulator *e):
 void KeyboardWindow::reload()
 {
     m_valid = m_view->load();
-    if (m_valid) resize(width(), height_for_window_width(width()));
+    if (m_valid) fit_to_drawing();
     m_view->update();
 }
 
@@ -484,6 +487,35 @@ void KeyboardWindow::resizeEvent(QResizeEvent *event)
     m_fixing_aspect = true;         // the resize below comes back here
     resize(width(), want);
     m_fixing_aspect = false;
+}
+
+// The geometry the main window restores before the first show is that of the
+// last keyboard window, maybe of another machine and another shape, and on
+// Windows the frame is only known once the window is up: the drawing was laid
+// out for a height the window no longer had and hung below its edge until the
+// window was resized by hand. So the shape is set again once it is on screen
+void KeyboardWindow::showEvent(QShowEvent *event)
+{
+    GenericDbgWnd::showEvent(event);
+    QTimer::singleShot(0, this, [this]() { fit_to_drawing(); });
+}
+
+void KeyboardWindow::fit_to_drawing()
+{
+    if (!m_valid) return;
+    const int want = height_for_window_width(width());
+    if (qAbs(height() - want) > 1) {
+        m_fixing_aspect = true;
+        resize(width(), want);
+        m_fixing_aspect = false;
+    }
+    //The view is laid out again even when the size is right: it is the
+    //picture inside that was left at the old size
+    if (layout() != nullptr) layout()->activate();
+    m_view->setGeometry(MARGIN, MARGIN, width() - 2 * MARGIN, height() - 2 * MARGIN);
+    QResizeEvent ev(m_view->size(), m_view->size());
+    QCoreApplication::sendEvent(m_view, &ev);
+    m_view->update();
 }
 
 void KeyboardWindow::closeEvent(QCloseEvent *event)

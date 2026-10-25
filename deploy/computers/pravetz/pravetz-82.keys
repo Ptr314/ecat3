@@ -62,6 +62,7 @@ key_semicolon/S: plus
 key_semicolon/SR: $AB
 key_lbracket: [
 key_rbracket: ]
+key_down: down
 shift: key_shift_l
 key_z: Z
 key_x: X

@@ -91,9 +91,11 @@ protected:
     void keyPressEvent(QKeyEvent *) override;
     void keyReleaseEvent(QKeyEvent *) override;
     void changeEvent(QEvent *) override;
+    void showEvent(QShowEvent *) override;
 
 private:
     int height_for_window_width(int w) const;
+    void fit_to_drawing();
 
     Emulator *     m_e;
     KeyboardView * m_view;
