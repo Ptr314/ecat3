@@ -147,6 +147,12 @@ const INTERCEPT_KEYS = new Set([
     "Quote", "Slash",
 ]);
 
+// With Ctrl (Cmd on a Mac) these zoom the page, and the machine never sees
+// them: the screen fits the window, so the zoom is the only way left to make
+// the side columns smaller on a small display. Minus and Equal are in
+// INTERCEPT_KEYS, which used to swallow Ctrl+- and Ctrl+= as well
+const ZOOM_KEYS = new Set(["Minus", "Equal", "Digit0", "NumpadAdd", "NumpadSubtract", "Numpad0"]);
+
 // Keys whose character depends on the layout and on Shift. The desktop hands
 // the core the character Qt reports for them - Shift+' is Key_QuoteDbl, Shift+1
 // is Key_Exclam - and the keyboard maps of the machines are written that way:
@@ -943,6 +949,10 @@ function setupKeyboard(module) {
     function onKey(event, press) {
         const id = event.code || event.key;
 
+        // The zoom of the page belongs to the browser. A key that went down
+        // in the machine before Ctrl still comes up there
+        if ((event.ctrlKey || event.metaKey) && ZOOM_KEYS.has(event.code) && !held.has(id)) return;
+
         // The browser's autorepeat is dropped, as the window drops Qt's
         // (isAutoRepeat): a machine repeats a held key by itself if it ever does,
         // and the УК-НЦ, which does not, got a stream of presses
@@ -1313,6 +1323,13 @@ function setupKeyboardSize() {
 // The query that stacks #app in shell.html: a phone, a portrait tablet
 const stackedQuery = window.matchMedia("(max-width: 720px), (orientation: portrait) and (pointer: coarse)");
 
+// The columns stand one above another on a phone, and on any window when the
+// screen was made larger than the room between the side columns
+// (updateCanvasSize sets the class)
+function layoutStacked() {
+    return stackedQuery.matches || document.getElementById("app").classList.contains("stacked");
+}
+
 // A keyboard no wider than the screen goes right under it, in the middle
 // column, where it belongs with the picture. A wider one would push the side
 // columns apart there, so it takes the row of its own under all the columns.
@@ -1322,7 +1339,7 @@ const stackedQuery = window.matchMedia("(max-width: 720px), (orientation: portra
 function placeKeyboard(width) {
     const panel = document.getElementById("kbd-panel");
     // Half a pixel for the rounding of a width that follows the screen
-    const under = stackedQuery.matches || width <= screenCssWidth() + 0.5;
+    const under = layoutStacked() || width <= screenCssWidth() + 0.5;
     const parent = document.getElementById(under ? "col-center" : "kbd-row");
     if (panel.parentElement !== parent) parent.appendChild(panel);
 }
@@ -2983,6 +3000,12 @@ const SCREEN_STEP = 25;
 
 let screenScale = 200;  // percent
 let screenShown = 200;  // the scale the screen is drawn with: screenScale or less, to fit the window
+// The scale was picked by the user (the slider, the buttons, the address) and
+// is kept: a screen with no room for it between the side columns takes the
+// width of the window, and the columns go under it, as on a phone. The
+// default scale is not kept - the screen is made smaller to fit between the
+// columns, or a machine of 480 lines would stack them on a full HD display
+let screenChosen = false;
 
 // An aspect mode given in the address stands in for the saved one until the
 // user picks one from the list
@@ -3282,19 +3305,21 @@ function updateScreenScaleUi(shown = screenScale) {
 }
 
 // The room the screen column has: the window less the side columns, the gaps
-// and the padding of the page. Stacked one above another (a phone) the screen
-// has the width of the window and no limit in height - the page scrolls
-function screenRoom() {
+// and the padding of the page. Stacked one above another the screen has the
+// width of the window and no limit in height - the page scrolls. Either one
+// can be asked for whatever the layout is now: side by side both side columns
+// take the width of the wider one, and stacked each keeps its own, so the
+// wider of the two is the width of a side track in both
+function screenRoom(stacked) {
     const app = document.getElementById("app");
     const style = getComputedStyle(app);
     const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
     const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-    const stacked = style.gridTemplateColumns.trim().split(/\s+/).length < 3;
     let width = document.documentElement.clientWidth - padX;
     if (!stacked) {
         const gap = parseFloat(style.columnGap) || 0;
-        width -= document.getElementById("col-left").offsetWidth
-               + document.getElementById("col-right").offsetWidth + 2 * gap;
+        width -= 2 * Math.max(document.getElementById("col-left").offsetWidth,
+                              document.getElementById("col-right").offsetWidth) + 2 * gap;
     }
     let height = stacked ? Infinity : window.innerHeight - padY;
     // The margins and the border of the wrap round the screen
@@ -3348,23 +3373,25 @@ function screenSize(canvasW, canvasH, scale) {
 // wider than the window and pushed the drives column out of sight; a screen
 // of 200 lines keeps its 200%. Never below the smallest step - a window too
 // narrow even for that scrolls
-function fittedScale(canvasW, canvasH) {
-    const room = screenRoom();
+function fittedScale(canvasW, canvasH, room) {
     let scale = screenScale;
-    while (scale > SCREEN_MIN) {
-        const size = screenSize(canvasW, canvasH, scale / 100);
-        if (size.width <= room.width && size.height <= room.height) break;
-        scale -= SCREEN_STEP;
-    }
+    while (scale > SCREEN_MIN && !screenFits(canvasW, canvasH, scale, room)) scale -= SCREEN_STEP;
     return scale;
+}
+
+function screenFits(canvasW, canvasH, scale, room) {
+    const size = screenSize(canvasW, canvasH, scale / 100);
+    return size.width <= room.width && size.height <= room.height;
 }
 
 // The scale the buttons go to from the one shown (dir = -1 or +1): the nearest
 // step that really changes the size of the screen and, going up, still fits
-// the window; null when there is none. A step past what fits only raised the
-// chosen scale out of sight - the screen stood still, and the minus then had
-// to walk all those steps back before anything moved. Square pixels round the
-// scale to whole device pixels, so neighbouring steps can give one size
+// the width of the window; null when there is none. Past the room between the
+// side columns the columns go under the screen (setScreenScale), so only the
+// window itself stops the plus. A step past what fits only raised the chosen
+// scale out of sight - the screen stood still, and the minus then had to walk
+// all those steps back before anything moved. Square pixels round the scale
+// to whole device pixels, so neighbouring steps can give one size
 function screenStep(shown, dir) {
     const canvas = document.getElementById("canvas");
     const canvasW = canvas.width, canvasH = canvas.height;
@@ -3372,11 +3399,11 @@ function screenStep(shown, dir) {
     if (next < SCREEN_MIN || next > SCREEN_MAX) return null;
     if (canvasW === 0 || canvasH === 0) return next;
 
-    const room = screenRoom();
+    const room = screenRoom(true);
     const now = screenSize(canvasW, canvasH, shown / 100);
     for (let scale = next; scale >= SCREEN_MIN && scale <= SCREEN_MAX; scale += dir * SCREEN_STEP) {
         const size = screenSize(canvasW, canvasH, scale / 100);
-        if (dir > 0 && (size.width > room.width || size.height > room.height)) return null;
+        if (dir > 0 && size.width > room.width) return null;
         if (size.width !== now.width || size.height !== now.height) return scale;
     }
     return null;
@@ -3397,7 +3424,15 @@ function updateCanvasSize() {
         return;
     }
 
-    const shown = fittedScale(canvasW, canvasH);
+    // A chosen scale with no room between the side columns stacks the columns
+    // while it does not fit there: a narrower window keeps the size of the
+    // screen and changes the layout instead. A larger window, or a smaller
+    // screen of another machine, puts them back side by side. A phone stacks
+    // them by itself, in its own order
+    document.getElementById("app").classList.toggle("stacked", screenChosen && !stackedQuery.matches
+        && !screenFits(canvasW, canvasH, screenScale, screenRoom(false)));
+
+    const shown = fittedScale(canvasW, canvasH, screenRoom(layoutStacked()));
     screenShown = shown;
     updateScreenScaleUi(shown);
     const size = screenSize(canvasW, canvasH, shown / 100);
@@ -3427,6 +3462,7 @@ function watchPixelRatio() {
 function setScreenScale(value) {
     screenScale = clamp(Math.round(value / SCREEN_STEP) * SCREEN_STEP, SCREEN_MIN, SCREEN_MAX);
     settings.set("screenScale", screenScale);
+    screenChosen = true;
     updateCanvasSize();
 }
 
@@ -3441,6 +3477,7 @@ function setupCanvasScaling() {
     const value = urlParams.scale !== null ? urlParams.scale
         : !isNaN(saved) ? saved : (!isNaN(multiple) ? multiple * 100 : 200);
     screenScale = clamp(Math.round(value / SCREEN_STEP) * SCREEN_STEP, SCREEN_MIN, SCREEN_MAX);
+    screenChosen = urlParams.scale !== null || !isNaN(saved) || !isNaN(multiple);
 
     range.addEventListener("input", () => setScreenScale(parseInt(range.value, 10)));
     releaseFocus(range);
