@@ -53,6 +53,13 @@ private:
     unsigned int code_ctrl;
     unsigned int code_shift;
     unsigned int code_ruslat;
+    // For TYPE only: the host key the firmware switches РУС/ЛАТ with when the
+    // key is a contact of the matrix (Юниор, Арго: Caps Lock; Поиск: F12, its
+    // right Ctrl), and where the Russian letters are - КОИ-7 Latin keys, or
+    // ЙЦУКЕН as on a PC, capitals with Shift (Поиск)
+    unsigned int m_rus_key = _FFFF;
+    bool m_rus_jcuken = false;
+    unsigned int m_rus_yo = EmuKey::QuoteLeft;     // Ё of the ЙЦУКЕН: left of 1 on a PC
 
     unsigned int stored_shift = 1;
 
@@ -85,6 +92,9 @@ protected:
     void set_ctrl_state(bool pressed) override;
 
 public:
+    unsigned int rus_switch_key() const override
+        { return (code_ruslat != 0 && code_ruslat != _FFFF) ? code_ruslat : m_rus_key; }
+    bool key_for_char(unsigned int codepoint, unsigned int &key, bool &shift) override;
     ScanKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;

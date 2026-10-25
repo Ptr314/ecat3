@@ -118,6 +118,12 @@ emulator::Result ScanKeyboard::load_config(SystemData *sd)
     code_ctrl   = s_ctrl.empty()  ?_FFFF:translate_key(s_ctrl);
     code_shift  = s_shift.empty() ?_FFFF:translate_key(s_shift);
     code_ruslat = s_ruslat.empty()?_FFFF:translate_key(s_ruslat);
+    const std::string s_ruskey = cd->get_parameter("rus_key", false).value;
+    m_rus_key = s_ruskey.empty() ? _FFFF : translate_key(s_ruskey);
+    const std::string s_layout = str_tolower(cd->get_parameter("rus_layout", false).value);
+    m_rus_jcuken = s_layout == "jcuken";
+    const std::string s_yo = cd->get_parameter("rus_yo", false).value;
+    if (!s_yo.empty()) m_rus_yo = translate_key(s_yo);
 
     //The Юниор gives '>' for the key marked '.' and '.' only with НР, so a
     //host '.' has to close НР along with it - and НР there is a contact of the
@@ -381,6 +387,39 @@ void ScanKeyboard::interface_callback(unsigned int callback_id, unsigned int new
     } else
         // LED_CALLBACK
         led_line = (int)(i_ruslat_led.value & 1);
+}
+
+bool ScanKeyboard::key_for_char(unsigned int codepoint, unsigned int &key, bool &shift)
+{
+    if (!m_rus_jcuken) return Keyboard::key_for_char(codepoint, key, shift);
+    if (rus_switch_key() == _FFFF) return false;
+    // ЙЦУКЕН of a PC: the host key whose Russian letter it is - the remap
+    // table pairs it with the Latin key of the letter in КОИ-7 - and Shift
+    // for a capital. Ё is the key left of 1, unless the machine has it
+    // elsewhere (rus_yo: the Поиск, grey +)
+    const unsigned int code = koi7_code(codepoint);
+    const bool capital = (codepoint >= 0x410 && codepoint <= 0x42F) || codepoint == 0x401;
+    if (codepoint == 0x401 || codepoint == 0x451) {
+        if (m_rus_yo == _FFFF) return false;
+        key = m_rus_yo | KEY_NO_REMAP;
+        shift = capital;
+        return true;
+    }
+    if (code == _FFFF) return false;
+    unsigned int latin = _FFFF;
+    {
+        // The Latin key of the code, as in Keyboard::key_for_char()
+        bool sh = false;
+        if (!Keyboard::key_for_char(codepoint, latin, sh)) return false;
+        latin &= ~KEY_NO_REMAP;
+    }
+    for (size_t i = 0; i < RUS_REMAP_SIZE; i++)
+        if (RUS_REMAP[i][1] == latin) {
+            key = RUS_REMAP[i][0] | KEY_NO_REMAP;
+            shift = capital;
+            return true;
+        }
+    return false;
 }
 
 void ScanKeyboard::set_rus(bool new_rus)

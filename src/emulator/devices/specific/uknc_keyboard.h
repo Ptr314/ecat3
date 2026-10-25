@@ -120,6 +120,11 @@ private:
     std::string host_key_id(unsigned int code) const override;
 
 public:
+    // РУС and ЛАТ for good are УПР+N and УПР+O (АЛФ only while it is held);
+    // the letters are the КОИ-7 Latin keys of the general rule
+    unsigned int rus_switch_key() const override { return EmuKey::Key_N | KEY_WITH_CTRL; }
+    unsigned int rus_on_key() const override { return EmuKey::Key_N | KEY_WITH_CTRL; }
+    unsigned int rus_off_key() const override { return EmuKey::Key_O | KEY_WITH_CTRL; }
     UKNCKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
     emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;

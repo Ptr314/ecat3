@@ -1,0 +1,16 @@
+# Агат-7: TYPE набирает русские буквы в Бейсике (ИКП: «Бейсик»). У Агата
+# РУС/ЛАТ (Caps Lock) переключает знакогенератор, а буква - латинская клавиша
+# ее кода КОИ-7, как у РК.
+# @timeout 60
+
+MACHINE "agat/Agat-7.cfg"
+WAIT 8000
+KEY 500,120,up
+WAIT 1500
+KEY 500,120,ret
+WAIT 12000
+TYPE "ПРИВЕТ, МИР 123 ЭЮЯЖЧШЩ"
+WAIT 6000
+LOG keyboard.rus
+SCREEN "../results/work-agat-7-type-cyr.png"
+EXIT

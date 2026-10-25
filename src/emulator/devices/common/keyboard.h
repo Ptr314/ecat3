@@ -316,6 +316,19 @@ static const unsigned int RUS_REMAP[][2] = {
 
 #define RUS_REMAP_SIZE (sizeof(RUS_REMAP) / sizeof(unsigned int) / 2)
 
+// A key that goes to the machine as it is, past the host ЙЦУКЕН remap: TYPE
+// knows which key of the machine gives a Russian letter, whether the device
+// tracks РУС (the remap works only then) or not (the Орион takes it from a
+// lamp its firmware does not light). Set in the key code, never a key itself
+static const unsigned int KEY_NO_REMAP = 0x40000000;
+// A key pressed together with Ctrl (the УК-НЦ switches РУС with УПР+N): the
+// emulator holds Ctrl around it, so TYPE and paste can send it as one key
+static const unsigned int KEY_WITH_CTRL = 0x08000000;
+
+// The КОИ-7 code of a Russian letter: $60-$7F the capitals (Ю А Б Ц ... Ч Ъ),
+// $40-$5F the small ones; _FFFF for anything else
+unsigned int koi7_code(unsigned int codepoint);
+
 // Resolves a key name from the KEYS[] table above into an EmuKey code.
 // Case insensitive, returns _FFFF when the name is unknown.
 // Used by keyboard layouts and by the scripting engine (KEY and TYPE).
@@ -587,11 +600,17 @@ public:
     virtual bool needs_shift_char(char ch, unsigned int key) { (void)ch; return needs_shift(key); }
     // TYPE (and paste) of a letter outside ASCII - Cyrillic: the host key and
     // Shift that give it with РУС/ЛАТ on the Cyrillic side. false: this
-    // keyboard does not say, and the character is reported as unknown
-    virtual bool key_for_char(unsigned int codepoint, unsigned int &key, bool &shift)
-        { (void)codepoint; (void)key; (void)shift; return false; }
+    // keyboard does not say, and the character is reported as unknown. By
+    // default the КОИ-7 rule of the Soviet machines: in РУС a Russian letter is
+    // the Latin key of its code (Й - J, Ю - @, Ш - [), sent past the host
+    // ЙЦУКЕН remap (KEY_NO_REMAP). Only for a keyboard with a РУС/ЛАТ key
+    virtual bool key_for_char(unsigned int codepoint, unsigned int &key, bool &shift);
     // The host key that switches РУС/ЛАТ, _FFFF if there is none
     virtual unsigned int rus_switch_key() const { return _FFFF; }
+    // The keys TYPE turns РУС on and off with: the switch itself, unless the
+    // machine has a key for each (the УК-НЦ: УПР+N and УПР+O)
+    virtual unsigned int rus_on_key() const { return rus_switch_key(); }
+    virtual unsigned int rus_off_key() const { return rus_switch_key(); }
     bool rus_now() const { return rus_mode; }
 
 

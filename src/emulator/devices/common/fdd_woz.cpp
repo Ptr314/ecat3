@@ -15,7 +15,8 @@
 // A WOZ file is a header and chunks: INFO, TMAP - the track for each of 160
 // quarter-track positions ($FF: none), TRKS - the bits. WOZ1 keeps a track in
 // a fixed record of 6656 bytes, WOZ2 in 512-byte blocks listed at the start of
-// TRKS. Bits go most significant first; a '1' is a flux change
+// TRKS. Bits go most significant first; a '1' is a flux change. WOZ 2.1 adds
+// FLUX: a map like TMAP to tracks kept as the time between flux changes
 
 static const size_t WOZ_QUARTERS = 160;
 static const size_t WOZ1_TRACK = 6656;
@@ -77,6 +78,26 @@ void FDD::nibbles_to_bits(const std::vector<uint8_t> &bytes, std::vector<uint8_t
     }
 }
 
+// A flux track to bit cells the way the data separator of a drive does it:
+// each interval between two changes is so many cells of 4 us (32 ticks),
+// rounded on its own - a disk written a little fast or slow keeps its bits,
+// where counting cells from the start of the track would drift off them
+static void flux_to_bits(const uint8_t * p, size_t count, std::vector<uint8_t> &bits)
+{
+    const unsigned CELL = 32;
+    bits.clear();
+    unsigned acc = 0;
+    for (size_t i = 0; i < count; i++) {
+        acc += p[i];
+        if (p[i] == 255) continue;
+        unsigned cells = (acc + CELL / 2) / CELL;
+        if (cells < 1) cells = 1;
+        bits.insert(bits.end(), cells - 1, 0);
+        bits.push_back(1);
+        acc = 0;
+    }
+}
+
 bool FDD::parse_woz(const std::vector<uint8_t> &f)
 {
     if (f.size() < 12 || memcmp(f.data() + 4, "\xFF\x0A\x0D\x0A", 4) != 0) return false;
@@ -88,6 +109,7 @@ bool FDD::parse_woz(const std::vector<uint8_t> &f)
     const uint8_t * info = nullptr;
     size_t info_size = 0;
     const uint8_t * tmap = nullptr;
+    const uint8_t * flux = nullptr;
     const uint8_t * trks = nullptr;
     size_t trks_size = 0;
     for (size_t at = 12; at + 8 <= f.size(); ) {
@@ -96,6 +118,7 @@ bool FDD::parse_woz(const std::vector<uint8_t> &f)
         const uint8_t * data = &f[at + 8];
         if (memcmp(&f[at], "INFO", 4) == 0 && size >= 3) { info = data; info_size = size; }
         else if (memcmp(&f[at], "TMAP", 4) == 0 && size >= WOZ_QUARTERS) tmap = data;
+        else if (memcmp(&f[at], "FLUX", 4) == 0 && size >= WOZ_QUARTERS) flux = data;
         else if (memcmp(&f[at], "TRKS", 4) == 0) { trks = data; trks_size = size; }
         at += 8 + size;
     }
@@ -124,15 +147,24 @@ bool FDD::parse_woz(const std::vector<uint8_t> &f)
             const uint64_t blocks = rd16(e + 2);
             const uint32_t bit_count = rd32(e + 4);
             std::vector<uint8_t> bits;
-            if (start > 0 && bit_count > 0 && bit_count <= blocks * 512 * 8 && start + blocks * 512 <= f.size())
+            bool is_flux = false;
+            if (flux != nullptr)
+                for (size_t q = 0; q < WOZ_QUARTERS && !is_flux; q++) is_flux = flux[q] == i;
+            if (is_flux) {
+                // WOZ 2.1: the count is of bytes, each the time to the next
+                // flux change in ticks of 125 ns, 255 adding on
+                if (start > 0 && bit_count > 0 && bit_count <= blocks * 512 && start + blocks * 512 <= f.size())
+                    flux_to_bits(&f[(size_t)start], bit_count, bits);
+            } else if (start > 0 && bit_count > 0 && bit_count <= blocks * 512 * 8 && start + blocks * 512 <= f.size())
                 unpack_bits(&f[(size_t)start], bit_count, bits);
             tracks_bits.push_back(bits);
         }
     }
 
-    // A quarter that names no track with bits is blank
+    // A quarter that names no track with bits is blank; a flux track wins
+    // over a bit one at the same quarter
     for (size_t q = 0; q < WOZ_QUARTERS; q++) {
-        const uint8_t t = tmap[q];
+        const uint8_t t = (flux != nullptr && flux[q] != 0xFF) ? flux[q] : tmap[q];
         m_woz_map[q] = (t < tracks_bits.size() && !tracks_bits[t].empty()) ? t : 0xFF;
     }
     m_woz_tracks.swap(tracks_bits);

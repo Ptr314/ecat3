@@ -2263,6 +2263,15 @@ void Emulator::key_event(int key, int modifiers, bool press, bool host)
     //failed to load or has not started yet
     if (!keyboard || !display) return;
 
+    //A key sent with Ctrl (TYPE switching РУС on the УК-НЦ): Ctrl goes down
+    //before it and up after it
+    if (key & (int)KEY_WITH_CTRL) {
+        const int k = key & ~(int)KEY_WITH_CTRL;
+        if (press) { key_event((int)EmuKey::Control, modifiers, true, host); key_event(k, modifiers, true, host); }
+        else       { key_event(k, modifiers, false, host); key_event((int)EmuKey::Control, modifiers, false, host); }
+        return;
+    }
+
     //A keypad key is the plain one to everything but a keyboard that has a
     //keypad of its own
     const int plain = key & ~(int)EmuKey::Keypad;

@@ -1,0 +1,16 @@
+# УК-НЦ: TYPE набирает русские буквы в Бейсике. Алфавит насовсем
+# переключают УПР+N и УПР+O (TYPE держит УПР сам), буква - латинская клавиша
+# ее кода КОИ-7 (ЯВЕРТЫ МС7007).
+# @timeout 90
+
+MACHINE "uknc/UKNC-basic.ext"
+WAIT _12000
+KEY _100,_100,2
+WAIT _200
+KEY _100,_100,ret
+WAIT _15000
+TYPE "ПРИВЕТ, МИР 123 ЭЮЯЖЧШЩ"
+WAIT _8000
+LOG keyboard.rus
+SCREEN "../results/work-uknc-type-cyr.png"
+EXIT
