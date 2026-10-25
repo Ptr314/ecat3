@@ -1,0 +1,9 @@
+[keyboard.latch] $D1
+[keyboard.latch] $C0
+[keyboard.cl] $01
+[keyboard.leds] led_cl
+[keyboard.latch] $EA
+[keyboard.latch] $FC
+[keyboard.caps] $01
+[keyboard.leds] led_caps,led_cl
+[keyboard.pressed] 

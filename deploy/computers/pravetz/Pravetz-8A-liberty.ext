@@ -3,8 +3,11 @@
 // Разобран по коду ПЗУ («Slim3.05», Москва; «Slim3.06», Ташкент): ВГ93 в
 // $C0D0-$C0D3, DRQ в разряде 7 $C0D4, защелка $C0D8 (дисковод, сторона,
 // разряд 6 держит драйвер, двойной шаг). Загрузка - PR#5.
+//
+// В слоте 2 - плата принтера Epson APL: ПАРИС с диска Liberty печатает туда
+// (его принтер MULTIPRO T ищется по CSW = $C200; в слоте 1 ПАРИС виснет).
 @extends pravetz/Pravetz-8A.cfg
-@version Правец-8А (Liberty Drive)
+@version Правец-8А (Liberty Drive и принтер)
 @protected
 
 @before mmu
@@ -20,6 +23,30 @@ liberty-rom : rom {
 
 mmu:slot5 = liberty-rom[$700]
 mmu:slot5_exp = liberty-rom[$000]
+
+printer-rom : rom {
+	size = 2k
+	label = ПЗУ платы принтера
+	image_1 = files/printer-epson-apl.bin
+	title_1 = Epson APL Printer Interface
+	image_2 = files/printer-intplat.bin
+	title_2 = Копия (другая прошивка)
+	image = files/printer-epson-apl.bin
+}
+
+printer-card : apple2-parallel {
+	rom = printer-rom
+	~busy = printer.busy
+}
+
+printer : printer {
+	title = Принтер
+	~data = printer-card.data
+	~strobe = printer-card.strobe
+}
+
+mmu:slot2 = printer-card
+mmu:slot2_exp = printer-card
 
 // Головки дисководов - как у настоящих: TR00 по головке на нулевом
 // цилиндре, 40-дорожечный дисковод упирается на 41-м (по этому ПЗУ
@@ -71,4 +98,5 @@ lfdd1 : fdd {
 }
 
 @before mapper:@memory[$C100-$FFFF]
+mapper:@memory[$C0A0-$C0AF] = printer-card
 mapper:@memory[$C0D0-$C0DF] = liberty

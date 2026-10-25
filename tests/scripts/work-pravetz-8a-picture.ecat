@@ -1,0 +1,49 @@
+# Правец-8А: экранная клавиатура (раскладка ГОСТ, рисунок pravetz-8a-gost.svg
+# из tools/pravetz-keyboard/make_keyboards.py). Клавиши рисунка нажимаются по
+# id: Q в латинице и в кириллице (Й), Shift рисунка с 2 (@) и с ' в кириллице
+# (Э), C/L Lock и Caps Lock с их лампами (поле leds), RESET с CTRL рисунка.
+# В защелке - код со стробом (разряд 7), как его читает $C000.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 500
+KEYDOWN key_q
+WAIT 20
+KEYUP key_q
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_shift_l
+KEYDOWN key_2
+WAIT 20
+KEYUP key_2
+KEYUP key_shift_l
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_cl
+WAIT 20
+KEYUP key_cl
+WAIT 20
+LOG keyboard.cl
+LOG keyboard.leds
+KEYDOWN key_q
+WAIT 20
+KEYUP key_q
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_shift_r
+KEYDOWN key_quote
+WAIT 20
+KEYUP key_quote
+KEYUP key_shift_r
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_caps
+WAIT 20
+KEYUP key_caps
+WAIT 20
+LOG keyboard.caps
+LOG keyboard.leds
+LOG keyboard.pressed
+EXIT

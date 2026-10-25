@@ -1,0 +1,19 @@
+# Правец-8А: a2audit 1.07 (Zellyn Hunter, https://github.com/zellyn/a2audit,
+# лицензия MIT; tests/files/a2audit-1.07.dsk) - тест Apple //e на память,
+# языковую карту, $Cxxx и программные переключатели.
+#
+# Языковая карта и дополнительная память проходят. Дальше a2audit
+# останавливается на двух отличиях Правеца от //e, и это не ошибки:
+# - $C400-$C7FF при INTCXROM - свое ПЗУ Правеца, a2audit его не знает (?);
+# - чтение $C00F включает ALTCHAR (у 8А знакогенератор переключается и
+#   чтением, книга П. Петрова).
+# С ALTCHAR как у //e все переключатели проходят: work-pravetz-8a-a2audit-iie.
+# @timeout 120
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.load("../files/a2audit-1.07.dsk")
+WAIT 30000
+LOG mmu.switches
+SCREEN "../results/work-pravetz-8a-a2audit.png"
+EXIT

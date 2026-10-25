@@ -46,7 +46,16 @@ emulator::Result Apple2MMU::load_config(SystemData *sd)
     // kept at $C000-$CFFF of it, where the processor never sees RAM. A //e has
     // it always
     m_lc = m_iie || read_confg_value(cd, "lc", false, true);
-    if (m_lc && m_ram->get_size() < 0x10000)
+    const std::string lc_ram = cd->get_parameter("lc_ram", false).value;
+    if (!lc_ram.empty()) {
+        m_lc_ram = dynamic_cast<RAM*>(im->dm->get_device_by_name(lc_ram));
+        m_lc_banks = (m_lc_ram != nullptr) ? m_lc_ram->get_size() / 0x4000 : 0;
+        if (m_lc_banks == 0 || m_iie)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{Apple2MMU|" + std::string(QT_TRANSLATE_NOOP("Apple2MMU", "The language card RAM is 16K banks of a ][")) + "} " + lc_ram);
+        m_lc = true;
+    }
+    if (m_lc && m_lc_ram == nullptr && m_ram->get_size() < 0x10000)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Apple2MMU|" + std::string(QT_TRANSLATE_NOOP("Apple2MMU", "The language card needs 64K of RAM")) + "} " + name);
     if (m_ram->get_size() < 0xC000)
@@ -111,6 +120,7 @@ void Apple2MMU::reset(bool cold)
     m_prewrite = false;
     m_exp_owner = 0;
     m_aux_bank = 0;
+    m_lc_bank = 0;
     if (m_ram != nullptr) rebuild();
 }
 
@@ -190,7 +200,12 @@ void Apple2MMU::rebuild(unsigned lo, unsigned hi)
     uint8_t * const lc = (has_aux && m_sw[SW_ALTZP]) ? aux : main;
     for (unsigned p = std::max(lo, 0xD0u); p < 0x100 && p <= hi; p++) {
         uint8_t * ram = nullptr;
-        if (m_lc) {
+        if (m_lc_ram != nullptr) {
+            // A bank of the card: $D000 bank 1, bank 2, then $E000-$FFFF
+            uint8_t * const bank = m_lc_ram->get_buffer() + m_lc_bank * 0x4000;
+            ram = (p < 0xE0) ? bank + ((p - 0xD0) << 8) + (m_sw[SW_LCBANK2] ? 0x1000 : 0)
+                             : bank + 0x2000 + ((p - 0xE0) << 8);
+        } else if (m_lc) {
             unsigned a = p << 8;
             if (p < 0xE0 && !m_sw[SW_LCBANK2]) a -= 0x1000;
             ram = lc + a;
@@ -205,6 +220,18 @@ void Apple2MMU::rebuild(unsigned lo, unsigned hi)
 // odd address; an even one disables it, a write breaks the pair
 void Apple2MMU::lc_access(unsigned address, bool read)
 {
+    // A card of several banks takes A2 for its bank register: $C0n4-$C0n7
+    // pick banks 0-3, $C0nC-$C0nF 4-7, and the card switches stay as they are
+    // (the Saturn 128K card does so; the 128K card of the 82 is said to be
+    // its copy, the Legend one)
+    if (m_lc_ram != nullptr && (address & 4) != 0) {
+        const unsigned bank = ((address & 3) | ((address & 8) >> 1)) % m_lc_banks;
+        if (bank != m_lc_bank) {
+            m_lc_bank = bank;
+            rebuild(0xD0, 0xFF);
+        }
+        return;
+    }
     const bool odd = (address & 1) != 0;
     const bool was_write = m_sw[SW_LCWRITE];
     if (odd) {
@@ -345,6 +372,7 @@ std::vector<DeviceFieldInfo> Apple2MMU::get_device_fields()
     r.push_back({"map",      "Where each 4K of the address space reads from",  false});
     r.push_back({"aux_bank", "64K page of the auxiliary memory",                false});
     r.push_back({"exp_owner", "Slot whose $C800 ROM answers, 0: none",          false});
+    r.push_back({"lc_bank",  "16K bank of a language card of several banks",    false});
     return r;
 }
 
@@ -368,6 +396,8 @@ bool Apple2MMU::get_field(const std::string &field, unsigned int from, unsigned 
             else if (b == m_float) where = "-";
 
             else if (b >= main_buf() && b < main_buf() + m_ram->get_size()) where = "M" + hex_str((unsigned)(b - main_buf()), 4);
+            else if (m_lc_ram != nullptr && b >= m_lc_ram->get_buffer() && b < m_lc_ram->get_buffer() + m_lc_ram->get_size())
+                where = "L" + hex_str((unsigned)(b - m_lc_ram->get_buffer()), 5);
             else if (m_aux != nullptr && b >= m_aux->get_buffer() && b < m_aux->get_buffer() + m_aux->get_size())
                 where = "X" + hex_str((unsigned)(b - m_aux->get_buffer()), 5);
             else if (b >= m_rom->get_buffer() && b < m_rom->get_buffer() + m_rom->get_size())
@@ -378,9 +408,9 @@ bool Apple2MMU::get_field(const std::string &field, unsigned int from, unsigned 
         }
         return true;
     }
-    if (field == "aux_bank" || field == "exp_owner") {
+    if (field == "aux_bank" || field == "exp_owner" || field == "lc_bank") {
         out.numeric = true;
-        out.values.push_back(field == "aux_bank" ? m_aux_bank : m_exp_owner);
+        out.values.push_back(field == "aux_bank" ? m_aux_bank : field == "lc_bank" ? m_lc_bank : m_exp_owner);
         return true;
     }
     return AddressableDevice::get_field(field, from, to, out);
@@ -393,6 +423,7 @@ void Apple2MMU::save_state(StateWriter &w)
     w.b("prewrite", m_prewrite);
     w.n("exp_owner", m_exp_owner);
     w.n("aux_bank", m_aux_bank);
+    if (m_lc_ram != nullptr) w.n("lc_bank", m_lc_bank);
 }
 
 emulator::Result Apple2MMU::load_state(const StateReader &r)
@@ -403,7 +434,9 @@ emulator::Result Apple2MMU::load_state(const StateReader &r)
     r.b("prewrite", m_prewrite);
     r.u("exp_owner", m_exp_owner);
     r.u("aux_bank", m_aux_bank);
+    r.u("lc_bank", m_lc_bank);
     if (m_exp_owner > 7) m_exp_owner = 0;
+    if (m_lc_banks == 0 || m_lc_bank >= m_lc_banks) m_lc_bank = 0;
     return emulator::Result::ok();
 }
 

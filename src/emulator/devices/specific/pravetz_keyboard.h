@@ -32,12 +32,25 @@ private:
     };
     std::vector<Entry> m_map;
 
+    // The drawing of the keyboard: a key of it acts as a host key of the
+    // map, chosen by the Shift of the drawing and the alphabet (a key of an
+    // Apple-like keyboard sends what different host keys give: Ч and ^)
+    struct PictureKey {
+        std::string id;
+        unsigned int host[4];           // plain, /S, /R, /SR; _FFFF: as plain
+    };
+    std::vector<PictureKey> m_picture_keys;
+    std::vector<std::pair<std::string, unsigned int> > m_picture_down;  // GUI thread
+    bool m_picture_shift = false;       // GUI thread
+    emulator::Result load_picture_keys(const std::string &file);
+
     Apple2IOU * m_iou = nullptr;
     unsigned int m_key_ruslat = _FFFF;  // C/L Lock (82: ЛАТ)
     unsigned int m_key_caps = _FFFF;    // Caps Lock
     unsigned int m_key_reset = _FFFF;   // RESET, only with CTRL
     unsigned int m_key_f1 = _FFFF;      // F1, F2: the buttons PB0, PB1
     unsigned int m_key_f2 = _FFFF;
+    unsigned int m_key_rpt = _FFFF;     // RPT of the 82: repeats the held key
     bool m_has_kd7 = true;              // 8А/8С: the eighth bit and the 8-bit table
 
     Interface i_pb;                     // to the IOU
@@ -59,6 +72,10 @@ private:
     uint64_t m_repeat_clock = 0;
     uint64_t m_repeat_delay = 0;
     uint64_t m_repeat_period = 0;
+    // The 82 has no auto repeat: RPT held with a key repeats it
+    bool m_autorepeat = true;
+    bool m_rpt = false;
+    uint64_t m_rpt_period = 0;
 
     // Host keys arrive on the GUI thread, the latch lives on the emulation one
     std::deque<std::pair<unsigned int, bool> > m_queue;
@@ -70,6 +87,11 @@ private:
 
 protected:
     void set_rus(bool new_rus) override;
+    void send_key_id(const std::string &id, bool press) override;
+    // The table of the drawing is read in load_config(), named by the map
+    emulator::Result parse_key_table(const std::vector<std::string> &, const std::string &) override
+        { return emulator::Result::ok(); }
+    void set_shift_state(bool pressed) override { m_picture_shift = pressed; }
 
 public:
     PravetzKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
@@ -80,8 +102,7 @@ public:
     bool needs_shift_char(char ch, unsigned int key) override;
     bool key_for_char(unsigned int codepoint, unsigned int &key, bool &shift) override;
     unsigned int rus_switch_key() const override { return m_key_ruslat; }
-
-
+    std::vector<Indicator> indicators() const override;
 
     void key_down(unsigned int key) override;
     void key_up(unsigned int key) override;

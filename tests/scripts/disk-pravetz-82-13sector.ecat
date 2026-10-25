@@ -1,0 +1,13 @@
+# Правец-82 с загрузчиком КНГМД на 13 секторов (DOS 3.2, Apple 341-0009;
+# в редакторе - выбор ПЗУ загрузчика): диск .d13 кодируется 5&3 (метка адреса
+# D5 AA B5, порядок секторов DOS 3.2) и читается тем же секвенсором P6.
+# Загрузочный сектор (tests/files/make-pravetz-d13.py) печатает строку.
+# @timeout 30
+
+MACHINE "../tests/files/pravetz-82-13sector.ext"
+COMMAND fdd0.load("../files/pravetz-13sector.d13")
+WAIT 3000
+LOGDEFS 8,16
+LOG ram.value($0300,$030F)
+SCREEN "../results/disk-pravetz-82-13sector.png"
+EXIT

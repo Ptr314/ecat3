@@ -8,6 +8,8 @@
 #include "dsk_tools/core.h"
 
 static const size_t QUEUE_LIMIT = 64;
+// Codes a key of the drawing sends as they are, above every host key (EmuKey)
+static const unsigned int PICTURE_CODE_KEYS = 0x7E000000;
 
 PravetzKeyboard::PravetzKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     Keyboard(im, cd)
@@ -24,6 +26,7 @@ emulator::Result PravetzKeyboard::load_config(SystemData *sd)
     if (!res) return res;
 
     m_has_kd7 = read_confg_value(cd, "kd7", false, true);
+    m_autorepeat = read_confg_value(cd, "autorepeat", false, true);
 
     const std::string iou = cd->get_parameter("iou", false).value;
     if (!iou.empty()) m_iou = dynamic_cast<Apple2IOU*>(im->dm->get_device_by_name(iou));
@@ -34,6 +37,7 @@ emulator::Result PravetzKeyboard::load_config(SystemData *sd)
         {"reset",  "f12", &m_key_reset},
         {"f1",     "f1",  &m_key_f1},
         {"f2",     "f2",  &m_key_f2},
+        {"rpt",    "none", &m_key_rpt},
     };
     for (auto &k : keys) {
         const std::string n = read_confg_value(cd, k.param, false, std::string(k.def));
@@ -49,13 +53,33 @@ emulator::Result PravetzKeyboard::load_config(SystemData *sd)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{PravetzKeyboard|" + std::string(QT_TRANSLATE_NOOP("PravetzKeyboard", "Error reading map file")) + "} " + map_file);
 
-    // "host[/mods]: code", mods of S, R and 8. The slash key is "slash"
-    const std::vector<std::string> lines = split_string(content, '\n', true);
+    // "host[/mods]: code", mods of S, R and 8. The slash key is "slash".
+    // "@include file" takes the lines of another map in its place (a keyboard
+    // that differs in its behaviour only); "@autorepeat 0|1" says whether a
+    // held key repeats by itself (the early 82 has RPT for it)
+    std::vector<std::string> lines = split_string(content, '\n', true);
+    for (size_t i = 0; i < lines.size(); i++) {
+        const std::string l = str_trim(lines[i]);
+        if (l.compare(0, 9, "@include ") != 0) continue;
+        const std::string inc = find_file_location(sd, str_trim(l.substr(9)));
+        const std::string text = inc.empty() ? std::string() : dsk_tools::utf8_read_file(inc);
+        if (text.empty())
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{PravetzKeyboard|" + std::string(QT_TRANSLATE_NOOP("PravetzKeyboard", "Error reading map file")) + "} " + l);
+        const std::vector<std::string> more = split_string(text, '\n', true);
+        lines.erase(lines.begin() + i);
+        lines.insert(lines.begin() + i, more.begin(), more.end());
+        i += more.size() - 1;
+    }
     for (size_t i = 0; i < lines.size(); i++) {
         std::string line = str_trim(lines[i]);
         const size_t comment = line.find("//");
         if (comment != std::string::npos) line = str_trim(line.substr(0, comment));
         if (line.empty()) continue;
+        if (line.compare(0, 12, "@autorepeat ") == 0) {
+            m_autorepeat = str_trim(line.substr(12)) != "0";
+            continue;
+        }
         const size_t colon = line.find(':', 1);
         bool ok = colon != std::string::npos;
         std::string left, mods, value;
@@ -91,11 +115,127 @@ emulator::Result PravetzKeyboard::load_config(SystemData *sd)
         m_map.push_back(e);
     }
 
+    // The drawing and its table: given, or named as the map is (a layout
+    // chosen in the editor brings its own keyboard). Neither is required
+    std::string stem = cd->get_parameter("map", false).value;
+    const size_t dot = stem.rfind('.');
+    if (dot != std::string::npos) stem = stem.substr(0, dot);
+    std::string keys_name = cd->get_parameter("keys", false).value;
+    if (keys_name.empty()) keys_name = stem + ".keys";
+    const std::string keys_file = find_file_location(sd, keys_name);
+    if (!keys_file.empty()) {
+        res = load_picture_keys(keys_file);
+        if (!res) return res;
+        if (cd->get_parameter("picture", false).value.empty())
+            m_picture_file = find_file_location(sd, "files/" + stem + ".svg");
+    }
+
     m_repeat_delay = m_system_clock / 2;
     m_repeat_period = m_system_clock / 15;
+    m_rpt_period = m_system_clock / 10;
     i_pb.change(0);
     update_leds();
     return emulator::Result::ok();
+}
+
+// "id[/S][R]: host key" - the key of the drawing acts as that host key; with
+// /S when the Shift of the drawing is down, /R in the Cyrillic alphabet.
+// "id: caps" (cl, reset, f1, f2) - the key of that function. "shift: id" and
+// "ctrl: id" name the modifiers, which act as Shift and Ctrl of the host
+emulator::Result PravetzKeyboard::load_picture_keys(const std::string &file)
+{
+    const std::string content = dsk_tools::utf8_read_file(file);
+    const std::vector<std::string> lines = split_string(content, '\n', true);
+    for (size_t i = 0; i < lines.size(); i++) {
+        std::string line = str_trim(lines[i]);
+        const size_t comment = line.find("//");
+        if (comment != std::string::npos) line = str_trim(line.substr(0, comment));
+        if (line.empty()) continue;
+        const size_t colon = line.find(':');
+        const emulator::Result bad = emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{PravetzKeyboard|" + std::string(QT_TRANSLATE_NOOP("PravetzKeyboard", "Map file entry is incorrect")) + "} " + line + " (" + file + ")");
+        if (colon == std::string::npos) return bad;
+        std::string left = str_trim(line.substr(0, colon));
+        const std::string value = str_trim(line.substr(colon + 1));
+        if (left == "shift" || left == "ctrl") {
+            register_key_id(value, left == "shift" ? KEY_ROLE_SHIFT : KEY_ROLE_CTRL);
+            PictureKey k = {value, {left == "shift" ? (unsigned)EmuKey::Shift : (unsigned)EmuKey::Control, _FFFF, _FFFF, _FFFF}};
+            m_picture_keys.push_back(k);
+            continue;
+        }
+        unsigned slot = 0;
+        const size_t slash = left.find('/');
+        if (slash != std::string::npos) {
+            const std::string mods = str_toupper(left.substr(slash + 1));
+            left = str_trim(left.substr(0, slash));
+            for (size_t j = 0; j < mods.size(); j++)
+                if (mods[j] == 'S') slot |= 1;
+                else if (mods[j] == 'R') slot |= 2;
+                else return bad;
+        }
+        const std::string fn = str_tolower(value);
+        unsigned host = fn == "caps" ? m_key_caps : fn == "cl" ? m_key_ruslat : fn == "reset" ? m_key_reset
+                      : fn == "f1" ? m_key_f1 : fn == "f2" ? m_key_f2 : fn == "rpt" ? m_key_rpt
+                      : translate_key(value);
+        if (host == _FFFF && value.size() > 1 && value[0] == '$') {
+            // A code no host key gives in that alphabet (= of ЯВЕРТЪ in the
+            // Cyrillic one): a key of its own, out of the range of host keys
+            Entry e;
+            e.host = PICTURE_CODE_KEYS + (unsigned)m_map.size();
+            e.code = parse_numeric_value(value, 10);
+            e.shift = e.rus = e.mode8 = false;
+            m_map.push_back(e);
+            host = e.host;
+        }
+        if (left.empty() || host == _FFFF) return bad;
+        size_t n = 0;
+        while (n < m_picture_keys.size() && m_picture_keys[n].id != left) n++;
+        if (n == m_picture_keys.size()) {
+            PictureKey k = {left, {_FFFF, _FFFF, _FFFF, _FFFF}};
+            m_picture_keys.push_back(k);
+            register_key_id(left);
+        }
+        m_picture_keys[n].host[slot] = host;
+    }
+    return emulator::Result::ok();
+}
+
+void PravetzKeyboard::send_key_id(const std::string &id, bool press)
+{
+    if (!press) {
+        // The host key that went down for it, whatever the modifiers are now
+        for (size_t i = 0; i < m_picture_down.size(); i++)
+            if (m_picture_down[i].first == id) {
+                key_up(m_picture_down[i].second);
+                m_picture_down.erase(m_picture_down.begin() + i);
+                return;
+            }
+        return;
+    }
+    for (size_t i = 0; i < m_picture_keys.size(); i++) {
+        const PictureKey &k = m_picture_keys[i];
+        if (k.id != id) continue;
+        const unsigned slot = (m_picture_shift ? 1 : 0) | (rus_mode ? 2 : 0);
+        unsigned host = k.host[slot];
+        if (host == _FFFF) host = k.host[slot & 2];
+        if (host == _FFFF) host = k.host[slot & 1];
+        if (host == _FFFF) host = k.host[0];
+        if (host == _FFFF) return;
+        key_down(host);
+        m_picture_down.push_back(std::make_pair(id, host));
+        return;
+    }
+}
+
+// The lamps of the 8А/8С: Caps Lock and C/L Lock
+std::vector<Keyboard::Indicator> PravetzKeyboard::indicators() const
+{
+    std::vector<Indicator> r;
+    Indicator caps = {"led_caps", m_caps, ""};
+    Indicator cl = {"led_cl", rus_mode, ""};
+    r.push_back(caps);
+    r.push_back(cl);
+    return r;
 }
 
 // The layout, when the config lists the maps it offers (map_1, map_2, ...
@@ -131,6 +271,7 @@ void PravetzKeyboard::reset(bool cold)
     m_held = 0;
     m_down.clear();
     m_shift = m_ctrl = false;
+    m_rpt = false;
     m_pb = 0;
     i_pb.change(0);
     Keyboard::set_rus(false);
@@ -166,10 +307,18 @@ void PravetzKeyboard::key_up(unsigned int key)
 
 void PravetzKeyboard::clock(unsigned int counter)
 {
-    if (m_held > 0 && m_repeat_delay > 0) {
+    if (m_held > 0 && m_autorepeat && m_repeat_delay > 0) {
         m_repeat_clock += counter;
         if (m_repeat_clock >= m_repeat_delay) {
             m_repeat_clock -= m_repeat_period;
+            m_strobe = true;
+        }
+    } else if (m_held > 0 && m_rpt && m_rpt_period > 0) {
+        // The 82 (Apple ][+): a key repeats only while RPT is held with it,
+        // some ten times a second, from the first press of RPT
+        m_repeat_clock += counter;
+        if (m_repeat_clock >= m_rpt_period) {
+            m_repeat_clock -= m_rpt_period;
             m_strobe = true;
         }
     }
@@ -212,6 +361,7 @@ void PravetzKeyboard::process(unsigned int key, bool press)
     }
     if (key == m_key_ruslat) { if (press) set_rus(!rus_mode); return; }
     if (key == m_key_caps)   { if (press) { m_caps = !m_caps; update_leds(); } return; }
+    if (key == m_key_rpt)    { m_rpt = press; m_repeat_clock = 0; return; }
     if (key == m_key_reset) {
         // RESET works only together with CTRL
         if (press && m_ctrl) im->dm->reset_devices(false);
@@ -354,6 +504,7 @@ void PravetzKeyboard::save_state(StateWriter &w)
     w.u("latch", m_latch, 8);
     w.b("strobe", m_strobe);
     w.b("caps", m_caps);
+    w.b("rpt", m_rpt);
     w.b("rus", rus_mode);
     w.n("codes", m_codes);
 }
@@ -365,6 +516,7 @@ emulator::Result PravetzKeyboard::load_state(const StateReader &r)
     r.u("latch", m_latch);
     r.b("strobe", m_strobe);
     r.b("caps", m_caps);
+    r.b("rpt", m_rpt);
     r.b("rus", rus_mode);
     r.u("codes", m_codes);
     m_held = 0;

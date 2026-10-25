@@ -265,7 +265,6 @@ void TapeRecorderWindow::on_buttonEject_pressed()
             save_recording();
 
         QString path = QString::fromStdString(e->get_last_path());
-        SystemData * sd = e->get_system_data();
         QString file_name = QFileDialog::getOpenFileName(this, tr("Load a file"), path, QString::fromStdString(d->files));
 
 
@@ -274,9 +273,7 @@ void TapeRecorderWindow::on_buttonEject_pressed()
             QString ext = fi.suffix().toLower();
             // A machine specific entry wins over the generic one, so the same
             // extension can mean different things on different computers
-            QString fmt = QString::fromStdString(e->read_setup("TapeFiles", sd->system_type + "." + ext.toStdString(), ""));
-            if (fmt.isEmpty())
-                fmt = QString::fromStdString(e->read_setup("TapeFiles", ext.toStdString(), ""));
+            QString fmt = QString::fromStdString(d->format_for_extension(ext.toStdString()));
 
             if (fmt.length() > 0) {
                 e->set_last_path(fi.absolutePath().toStdString());
@@ -462,7 +459,8 @@ void TapeRecorderWindow::save_recording()
             QFile file(file_name);
             if (file.open(QIODevice::WriteOnly)) {
                 std::vector<uint8_t> data;
-                e->invoke([&]() { d->get_save_data(data); });
+                const std::string target = file_name.toStdString();
+                e->invoke([&]() { d->get_save_data_for(target, data); });
                 file.write(reinterpret_cast<const char*>(data.data()), static_cast<qint64>(data.size()));
                 file.close();
                 e->record_command(d->name, "save", format_script_arg(fi.absoluteFilePath().toStdString()));

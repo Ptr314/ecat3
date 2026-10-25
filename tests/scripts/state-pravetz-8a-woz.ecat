@@ -1,0 +1,19 @@
+# Правец-8А с диском WOZ: снимок поднимается с битами дорожек, в которые
+# записан файл (../files/make-state-pravetz-8a-woz.ecat: SAVE TEST на
+# pravetz-dos33.woz). CATALOG видит TEST, LOAD и RUN читают его с битов.
+# @timeout 60
+
+MACHINE "../tests/files/state-pravetz-8a-woz.ecats.zip"
+WAIT 100
+TYPE "CATALOG"
+KEY 50,50,ret
+WAIT 2000
+TYPE "LOAD TEST"
+KEY 50,50,ret
+WAIT 3000
+TYPE "RUN"
+KEY 50,50,ret
+WAIT 500
+LOG fdc140.track
+SCREEN "../results/state-pravetz-8a-woz.png"
+EXIT

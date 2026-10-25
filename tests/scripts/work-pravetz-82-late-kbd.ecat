@@ -1,0 +1,20 @@
+# Правец-82 с поздней клавиатурой (pravetz-82-late.map: @include ранней и
+# @autorepeat 1): RPT нет, клавиша A, удержанная 1,5 с, повторяется сама -
+# через 0,5 с, 15 раз в секунду.
+# @timeout 30
+
+MACHINE "../tests/files/pravetz-82-late.ext"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 500
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+KEYDOWN A
+WAIT 1500
+KEYUP A
+WAIT 100
+LOG keyboard.codes
+SCREEN "../results/work-pravetz-82-late-kbd.png"
+EXIT

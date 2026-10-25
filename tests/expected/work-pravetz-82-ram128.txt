@@ -1,0 +1,4 @@
+[ram.value] $0380: $A0 $A1 $A2 $A3 $A4 $A5 $A6 $A7
+[ram128.value] $1000: $A0
+[ram128.value] $1D000: $A7
+[mmu.lc_bank] $07

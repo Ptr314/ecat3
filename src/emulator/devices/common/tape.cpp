@@ -87,6 +87,8 @@ emulator::Result TapeRecorder::load_config(SystemData *sd)
         m_tape_enc = TapeEnc::UNIOR;
     else if (enc_str == "ibmpc")
         m_tape_enc = TapeEnc::IBMPC;
+    else if (enc_str == "apple")
+        m_tape_enc = TapeEnc::APPLE;
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect encoding")) + "} " + enc_str);
 
@@ -202,6 +204,17 @@ void TapeRecorder::interface_callback(unsigned callback_id, unsigned new_value, 
                     last_edge_cycles = cycle_counter;
                     has_last_edge = true;
                 }
+                return;
+            }
+            if (m_tape_enc == TapeEnc::APPLE) {
+                // Every toggle of $C020 closes a half period
+                if (((old_value ^ new_value) & 1) == 0) return;
+                if (has_last_edge) {
+                    const uint64_t half = cycle_counter - last_edge_cycles;
+                    apple_decoder.add_half(half > 0xFFFFFFFFu ? 0xFFFFFFFFu : (uint32_t)half);
+                }
+                last_edge_cycles = cycle_counter;
+                has_last_edge = true;
                 return;
             }
             if (m_tape_enc == TapeEnc::IBMPC) {
@@ -357,11 +370,18 @@ void TapeRecorder::set_recording(bool recording)
     }
     if (!recording && is_recording && m_tape_enc == TapeEnc::IBMPC)
         ibmpc_decoder.finish();
+    if (!recording && is_recording && m_tape_enc == TapeEnc::APPLE)
+        apple_decoder.finish();
     if (!recording && is_recording) tape_sound(0);
     is_recording = recording;
     if (is_recording && m_tape_enc == TapeEnc::IBMPC) {
         has_last_edge = false;
         start_ibmpc_decoder();
+        recorded_bytes.clear();
+    }
+    if (is_recording && m_tape_enc == TapeEnc::APPLE) {
+        has_last_edge = false;
+        apple_decoder.reset(m_system_clock);
         recorded_bytes.clear();
     }
     if (is_recording && m_tape_enc == TapeEnc::BK) {
@@ -420,6 +440,7 @@ unsigned TapeRecorder::get_record_size()
     if (m_tape_enc == TapeEnc::BK) return bk_decoder.file()->size();
     if (m_tape_enc == TapeEnc::UKNC) return uknc_decoder.file()->size();
     if (m_tape_enc == TapeEnc::IBMPC) return ibmpc_decoder.file()->size();
+    if (m_tape_enc == TapeEnc::APPLE) return apple_decoder.file()->size();
     if (m_tape_enc == TapeEnc::RK86) {
         const size_t size = rk86_decoder.file()->size();
         const size_t skip = (size != 0 && !record_keeps_sync())? 1 : 0;
@@ -458,6 +479,11 @@ std::string TapeRecorder::format_for_extension(const std::string &ext)
     if (ext.empty() || sd == nullptr || !sd->read_setup) return "";
     std::string fmt = sd->read_setup("TapeFiles", sd->system_type + "." + ext, "");
     if (fmt.empty()) fmt = sd->read_setup("TapeFiles", ext, "");
+    //An ini written before the Apple ][ tape was there does not know its
+    //files: the encoding of the machine names them itself
+    if (fmt.empty() && m_tape_enc == TapeEnc::APPLE)
+        fmt = (str_tolower(ext) == "ptp") ? "apple:20000;data"
+            : (str_tolower(ext) == "wav") ? "apple-wav:20000;data" : "apple-raw:20000;data";
     return fmt;
 }
 
@@ -501,7 +527,8 @@ std::string TapeRecorder::get_record_name()
                                          :(loaded_name.substr(0, dot) + ".tap");
     }
     if (m_tape_enc == TapeEnc::BK) return bk_decoder.name();
-    if (m_tape_enc == TapeEnc::RK86 || m_tape_enc == TapeEnc::UKNC || m_tape_enc == TapeEnc::IBMPC) {
+    if (m_tape_enc == TapeEnc::RK86 || m_tape_enc == TapeEnc::UKNC || m_tape_enc == TapeEnc::IBMPC
+        || m_tape_enc == TapeEnc::APPLE) {
         // A Радио-86РК tape carries no name, only the addresses, but the
         // extension still decides how the file goes back on the tape, and the
         // one the machine loads from is the one it has just written
@@ -528,6 +555,10 @@ std::vector<uint8_t> * TapeRecorder::get_record_data()
     }
     if (m_tape_enc == TapeEnc::IBMPC) {
         recorded_bytes = *ibmpc_decoder.file();
+        return &recorded_bytes;
+    }
+    if (m_tape_enc == TapeEnc::APPLE) {
+        recorded_bytes = *apple_decoder.file();
         return &recorded_bytes;
     }
     if (m_tape_enc == TapeEnc::RK86) {
@@ -763,6 +794,27 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
         ibmpc_tape::encode(buffer, buffer_encoded);
         set_data(buffer_encoded);
     } else
+    if (tape_format == "apple-wav") {
+        // A cassette as it was digitised: the levels come from the sound
+        set_baud_rate(baud);
+        if (!apple_tape::wav_to_steps(buffer, buffer_encoded))
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect tape file format")) + "} " + file_name);
+        set_data(buffer_encoded);
+    } else
+    if (tape_format == "apple" || tape_format == "apple-raw") {
+        // A PTP file holds its records; a bare file is one record, the one
+        // the Monitor reads with "start.endR". The rate is the steps of 50 us
+        set_baud_rate(baud);
+        if (tape_format == "apple" && !apple_tape::is_ptp(buffer))
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect tape file format")) + "} " + file_name);
+        if (buffer.size() > 0xFFFF)
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "The file is too large for a cassette record")) + "} " + file_name);
+        apple_tape::encode(buffer, tape_format == "apple", buffer_encoded);
+        set_data(buffer_encoded);
+    } else
     if (tape_format == "bk" || tape_format == "bk-ascii") {
         // For the БК the rate is given directly in units, one unit being the
         // half period of a synchronisation pulse
@@ -973,6 +1025,7 @@ emulator::Result TapeRecorder::load_state(const StateReader &r)
     //What it had decoded before the snapshot is not in it - as with the БК
     //and the УК-НЦ, the file starts from here
     if (is_recording && m_tape_enc == TapeEnc::IBMPC) start_ibmpc_decoder();
+    if (is_recording && m_tape_enc == TapeEnc::APPLE) apple_decoder.reset(m_system_clock);
     loaded_name.clear();
     r.s("tape_name", loaded_name);
     r.b("motor", motor_on);
@@ -1148,6 +1201,17 @@ void TapeRecorder::get_save_data(std::vector<uint8_t> &out)
     out = (data != nullptr)?*data:std::vector<uint8_t>();
 }
 
+void TapeRecorder::get_save_data_for(const std::string &file_name, std::vector<uint8_t> &out)
+{
+    get_save_data(out);
+    if (m_tape_enc == TapeEnc::APPLE && !out.empty()
+        && str_tolower(dsk_tools::get_file_ext(file_name)) == ".wav") {
+        std::vector<uint8_t> wav;
+        apple_tape::ptp_to_wav(out, wav);
+        out.swap(wav);
+    }
+}
+
 std::vector<DeviceCommandInfo> TapeRecorder::get_device_commands()
 {
     std::vector<DeviceCommandInfo> r = ComputerDevice::get_device_commands();
@@ -1273,16 +1337,16 @@ emulator::Result TapeRecorder::send_command(const std::string &command, const st
     if (command == "save") {
         //Writes out what has been recorded, so that a script can check that a
         //tape written by the machine reads back into it
+        std::string file = (p.empty() || p[0].empty())?get_record_name():p[0];
+        if (file.empty()) file = "tape.bin";
+        file = resolve_output_path(sd, file);
+
         std::vector<uint8_t> image;
-        get_save_data(image);
+        get_save_data_for(file, image);
         const std::vector<uint8_t> * out = &image;
         if (out->empty())
             return emulator::Result::error(emulator::ErrorCode::BadParameters,
                 "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Nothing has been recorded")) + "}");
-
-        std::string file = (p.empty() || p[0].empty())?get_record_name():p[0];
-        if (file.empty()) file = "tape.bin";
-        file = resolve_output_path(sd, file);
 
         dsk_tools::UTF8_ofstream f(file, std::ios::binary);
         if (!f.is_open())

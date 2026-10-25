@@ -13,3 +13,14 @@ font:image = files/pravetz-8m-chr.bin
 display:font_half = 3
 // Ш, Щ, Ч и Ю у 8М - на своих кодах кириллицы ($FB, $FD, $FE, $E0), как у 8А
 keyboard:map = pravetz-8a-yavert.map
+// Клавиатура 8М - поздняя 82 с DEL (agatcomp.ru): RPT нет, клавиши
+// повторяются сами. Выбора клавиатуры 82 здесь нет
+keyboard:rpt = none
+-keyboard:map_label
+-keyboard:map_1
+-keyboard:map_title_1
+-keyboard:map_2
+-keyboard:map_title_2
+// Клавиатура своя: DEL, стрелки, три КИР (рисунок не по раскладке, а свой)
+keyboard:keys = pravetz-8m.keys
+keyboard:picture = files/pravetz-8m.svg

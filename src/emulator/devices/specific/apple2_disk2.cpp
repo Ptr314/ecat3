@@ -7,9 +7,20 @@
 #include "emulator/utils.h"
 
 // Sequencer steps in a bit cell: the PROM runs at 2 MHz, a bit takes 4 us
-#define STEPS_PER_BIT   8
+// The sequencer steps at twice the processor clock, the disk turns at its own
+// speed: a bit cell is 4 us, 8.1 steps at the 1.018 MHz of the Правец-8А.
+// Time inside a cell goes in units of 1/(16 MHz x clock): a step is 8M of
+// them, a cell of t eighths of a microsecond t x 2 x clock. Writing, the
+// cell is what the sequencer makes it: 8 steps.
+// A WOZ 2 disk names the bit cell it was written with, and a few say 3.5 us
+// (Border Zone). The sequencer does not read that: a byte stays in the
+// register some 14 steps, a LDA/BPL loop looks every 14, and the boot ROM
+// loses bytes (a model of P6 and the loop shows the same). Such a disk turns
+// as a drive turns any disk, at 4 us a bit
+#define STEP_UNITS      8000000ull
+#define WRITE_CELL      (8 * STEP_UNITS)
+#define CELL_TIME       32
 // A run of at least so many $FF in a track is a gap of self-sync bytes
-#define SYNC_RUN        4
 
 Apple2Disk2::Apple2Disk2(InterfaceManager *im, EmulatorConfigDevice *cd):
       FDC(im, cd)
@@ -33,6 +44,7 @@ emulator::Result Apple2Disk2::load_config(SystemData *sd)
     m_drives_count = (int)list.size();
     for (int i = 0; i < m_drives_count; i++) m_drives[i] = list[i];
     m_cpu = dynamic_cast<CPU*>(im->dm->get_device_by_name("cpu", false));
+    set_cell(CELL_TIME);
     m_time_valid = false;
     Apple2Disk2::reset(true);
     return emulator::Result::ok();
@@ -60,17 +72,38 @@ void Apple2Disk2::load_track()
     FDD * d = m_drives[m_selected];
     const int track = m_half_track[m_selected] / 2;
     const unsigned gen = (d != nullptr) ? d->get_generation() : 0;
-    if (m_bits_drive == m_selected && m_bits_track == track && m_generation == gen) return;
+    if (d != nullptr && d->is_woz()) {
+        // The bits themselves, of the quarter track under the head: a half
+        // track between two may hold a track of its own, or the one beside
+        const int quarter = m_half_track[m_selected] * 2;
+        const int index = d->woz_track(quarter);
+        const int key = index >= 0 ? index : -2 - quarter;
+        if (m_bits_woz && m_bits_drive == m_selected && m_bits_track == key && m_generation == gen) return;
+        flush_track();
+        const size_t old_len = m_bits.size();
+        const unsigned old_pos = m_bit_pos;
+        m_bits_woz = true;
+        m_bits_drive = m_selected;
+        m_bits_track = key;
+        m_bits_quarter = quarter;
+        m_generation = gen;
+        d->read_bits(index, m_bits);
+        m_bit_pos = old_len ? (unsigned)((uint64_t)old_pos * m_bits.size() / old_len) : old_pos;
+        if (m_bit_pos >= m_bits.size()) m_bit_pos = 0;
+        return;
+    }
+    if (!m_bits_woz && m_bits_drive == m_selected && m_bits_track == track && m_generation == gen) return;
     flush_track();
     const size_t old_len = m_bits.size();
     const unsigned old_pos = m_bit_pos;
     // The track being left goes to the cache, unless the disk was changed
-    if (m_bits_drive >= 0 && m_bits_track >= 0 && m_bits_track < 40 && m_generation == m_cache_gen[m_bits_drive]) {
+    if (!m_bits_woz && m_bits_drive >= 0 && m_bits_track >= 0 && m_bits_track < 40 && m_generation == m_cache_gen[m_bits_drive]) {
         std::vector<std::vector<uint8_t>> &c = m_cache[m_bits_drive];
         if (c.size() < 40) c.resize(40);
         c[m_bits_track].swap(m_bits);
     }
     m_bits.clear();
+    m_bits_woz = false;
     m_bits_drive = m_selected;
     m_bits_track = track;
     m_generation = gen;
@@ -93,17 +126,7 @@ void Apple2Disk2::load_track()
     // A run of $FF of a gap is self-sync: ten bits a byte. The track keeps the
     // length the image gives it (a .nib track is longer than a revolution, and
     // shortening it broke disks that are not DOS ones)
-    const size_t n = bytes.size();
-    for (size_t i = 0; i < n; i++) {
-        const uint8_t b = bytes[i];
-        for (int k = 7; k >= 0; k--) m_bits.push_back((b >> k) & 1);
-        if (b == 0xFF) {
-            size_t run = 1;
-            for (size_t j = 1; j < SYNC_RUN && bytes[(i + j) % n] == 0xFF; j++) run++;
-            for (size_t j = 1; j < SYNC_RUN && bytes[(i + n - j) % n] == 0xFF; j++) run++;
-            if (run >= SYNC_RUN) { m_bits.push_back(0); m_bits.push_back(0); }
-        }
-    }
+    FDD::nibbles_to_bits(bytes, m_bits);
     // The disk keeps turning: the head comes down where it was on the other track
     m_bit_pos = old_len ? (unsigned)((uint64_t)old_pos * m_bits.size() / old_len) : old_pos;
     if (m_bit_pos >= m_bits.size()) m_bit_pos = 0;
@@ -118,6 +141,14 @@ void Apple2Disk2::flush_track()
     if (m_bits_drive < 0 || m_bits.empty()) return;
     FDD * d = m_drives[m_bits_drive];
     if (d == nullptr) return;
+    if (m_bits_woz) {
+        // As it is: a WOZ disk keeps bits. A new track takes the place it was
+        // written at (blank till now)
+        if (!d->is_woz() || d->get_generation() != m_generation) return;
+        const int index = d->write_bits(m_bits_quarter, m_bits_track, m_bits);
+        if (index >= 0) m_bits_track = index;
+        return;
+    }
     std::vector<uint8_t> old;
     if (!d->read_track(m_bits_track, 0, old) || old.empty()) return;
     // Cut from a place where a byte surely begins: after the longest run of zeros
@@ -144,10 +175,18 @@ void Apple2Disk2::flush_track()
     m_cache_gen[m_bits_drive] = m_generation;
 }
 
+void Apple2Disk2::set_cell(unsigned timing)
+{
+    const uint64_t hz = (m_cpu != nullptr && m_cpu->clock > 0) ? m_cpu->clock : 1020484;
+    m_cell_units = (uint64_t)timing * 2 * hz;
+    if (m_step >= m_cell_units) m_step %= m_cell_units;
+}
+
 // The stepper: a half track of the head sits at phase (half track & 3), and
 // the phase next to it, switched on, pulls the head half a track its way.
 // Taken from the head, not from the last phase, so a reset or a seek that
 // leaves phases on keeps the head and the program in step
+
 void Apple2Disk2::phase_on(int n)
 {
     int &ht = m_half_track[m_selected];
@@ -177,10 +216,10 @@ void Apple2Disk2::access(unsigned address)
             break;
         case 0x9: m_motor = true; m_spin_left = 0; i_motor_on.change(1); break;
         case 0xA: case 0xB: select_drive(a & 1); break;
-        case 0xC: m_q6 = false; break;
-        case 0xD: m_q6 = true; break;
-        case 0xE: if (m_q7) flush_track(); m_q7 = false; break;
-        default:  m_q7 = true; break;
+        case 0xC: m_q6 = false; m_idle_steps = 0; break;
+        case 0xD: m_q6 = true; m_idle_steps = 0; break;
+        case 0xE: if (m_q7) flush_track(); m_q7 = false; m_idle_steps = 0; break;
+        default:  m_q7 = true; m_idle_steps = 0; break;
     }
 }
 
@@ -270,19 +309,34 @@ void Apple2Disk2::run(unsigned int counter)
         }
     }
     if (!m_motor && m_spin_left == 0) {
-        // The sequencer still runs; with no pulses it only shifts and clears
-        for (unsigned s = 0; s < counter * 2 && s < 64; s++) step_sequencer(false);
+        // The disk stands: no pulses, and a few steps settle the sequencer;
+        // after that it is left alone (the register keeps what it has)
+        if (m_idle_steps < 64) {
+            for (unsigned s = 0; s < counter * 2 && m_idle_steps < 64; s++, m_idle_steps++) step_sequencer(false);
+        }
         return;
     }
+    m_idle_steps = 0;
     load_track();
     const bool have = !m_bits.empty();
     for (unsigned s = 0; s < counter * 2; s++) {
         // A '1' under the head gives the sequencer one step of read pulse at
-        // the start of its cell
-        const bool pulse = !m_q7 && m_step == 0 && have && m_bits[m_bit_pos] != 0;
+        // the start of its cell. Long without one, the read amplifier
+        // (MC3470) turns up its gain and makes ones of the noise: past three
+        // zeros a cell gives a pulse now and then
+        bool pulse = false;
+        if (!m_q7 && m_step < STEP_UNITS && have) {
+            if (m_bits[m_bit_pos] != 0) { pulse = true; m_zeros = 0; }
+            else if (++m_zeros > 3) {
+                m_noise ^= m_noise << 13; m_noise ^= m_noise >> 17; m_noise ^= m_noise << 5;
+                pulse = (m_noise % 10) < 3;
+            }
+        }
         step_sequencer(pulse);
-        if (++m_step >= STEPS_PER_BIT) {
-            m_step = 0;
+        m_step += STEP_UNITS;
+        const uint64_t cell = m_q7 ? WRITE_CELL : m_cell_units;
+        if (m_step >= cell) {
+            m_step -= cell;
             if (have) {
                 if (m_q7) {
                     m_bits[m_bit_pos] = m_cell_flux ? 1 : 0;
@@ -370,7 +424,9 @@ void Apple2Disk2::save_state(StateWriter &w)
     w.u("addr", m_addr, 8);
     w.b("write_line", m_write_line);
     w.b("cell_flux", m_cell_flux);
-    w.n("step", m_step);
+    w.n64("cell_pos", m_step);
+    w.n("zeros", m_zeros);
+    w.n("noise", m_noise);
     w.n("bit_pos", m_bit_pos);
     w.n("writes", m_writes);
 }
@@ -393,8 +449,10 @@ emulator::Result Apple2Disk2::load_state(const StateReader &r)
     if (r.u("addr", v)) m_addr = (uint8_t)v;
     r.b("write_line", m_write_line);
     r.b("cell_flux", m_cell_flux);
-    r.u("step", m_step);
-    m_step %= STEPS_PER_BIT;
+    if (!r.n64("cell_pos", m_step) && r.u("step", v)) m_step = (v % 8) * STEP_UNITS;   // a snapshot of steps
+    if (m_step >= WRITE_CELL * 2) m_step = 0;
+    r.u("zeros", m_zeros);
+    if (r.u("noise", v) && v != 0) m_noise = v;
     unsigned pos = 0;
     r.u("bit_pos", pos);
     r.u("writes", m_writes);
@@ -404,6 +462,7 @@ emulator::Result Apple2Disk2::load_state(const StateReader &r)
     m_cache[1].clear();
     m_bits.clear();
     m_bits_drive = m_bits_track = -1;
+    m_bits_woz = false;
     m_dirty = false;
     m_bit_pos = pos;
     return emulator::Result::ok();

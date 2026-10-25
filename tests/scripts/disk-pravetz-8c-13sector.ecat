@@ -1,0 +1,12 @@
+# Правец-8С: страница $600 ПЗУ D38 заменена загрузчиком на 13 секторов
+# (Apple 341-0009, выбор в редакторе); диск .d13 грузится тем же P6 платы
+# (tests/files/make-pravetz-d13.py: загрузочный сектор печатает строку).
+# @timeout 30
+
+MACHINE "../tests/files/pravetz-8c-13sector.ext"
+LOGDEFS 8,16
+COMMAND fdd0.load("../files/pravetz-13sector.d13")
+WAIT 3000
+LOG ram.value($0300,$030F)
+SCREEN "../results/disk-pravetz-8c-13sector.png"
+EXIT

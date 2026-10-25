@@ -31,6 +31,9 @@ emulator::Result Apple2IOU::load_config(SystemData *sd)
             "{Apple2IOU|" + std::string(QT_TRANSLATE_NOOP("Apple2IOU", "Unknown model, ii or iie expected")) + "} " + model);
 
     m_pravetz = read_confg_value(cd, "pravetz", false, false);
+    // The tape output starts low: a line starts at _FFFF, and the first
+    // toggle would make no edge
+    i_tape_out.change(0);
     m_altchar_on_read = read_confg_value(cd, "altchar_on_read", false, false);
     m_pb_fixed = read_confg_value(cd, "pb_fixed", false, (unsigned)0) & 7;
     for (unsigned n = 0; n < 4; n++)

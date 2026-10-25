@@ -12,6 +12,7 @@
 #include "emulator/devices/common/tape_bk.h"
 #include "emulator/devices/common/tape_bt.h"
 #include "emulator/devices/common/tape_ibmpc.h"
+#include "emulator/devices/common/tape_apple.h"
 #include "emulator/devices/common/tape_record.h"
 #include "emulator/devices/common/tape_rk86.h"
 #include "emulator/devices/common/tape_uknc.h"
@@ -35,7 +36,9 @@ enum class TapeEnc {
     UNIOR,
     ZX,
     //Кассета IBM PC, которую повторяет BIOS Поиска-1: файлы *.cas
-    IBMPC
+    IBMPC,
+    //Кассета Apple ][ (Правец-82, 8М): файлы *.ptp
+    APPLE
 };
 
 // Чем записана лента. Само устройство одно на все машины: и лентопротяжка, и
@@ -123,6 +126,7 @@ protected:
     rk86_tape::Decoder rk86_decoder;
     uknc_tape::Decoder uknc_decoder;
     ibmpc_tape::Decoder ibmpc_decoder;
+    apple_tape::Decoder apple_decoder;
     //Sets the decoder's thresholds from the machine clock and empties it
     void start_ibmpc_decoder();
 
@@ -264,6 +268,9 @@ public:
     //лента-накопитель отдает здесь весь образ кассеты, потому что записанный
     //сектор сам по себе не кассета
     virtual void get_save_data(std::vector<uint8_t> &out);
+    //The same in the form the name asks for: the Apple ][ tape goes to a
+    //.wav as sound, to anything else as its records
+    void get_save_data_for(const std::string &file_name, std::vector<uint8_t> &out);
     virtual std::string get_record_name();
     virtual std::vector<uint8_t> * get_record_data();
 

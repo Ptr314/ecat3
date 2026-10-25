@@ -1,0 +1,34 @@
+# Правец-82: записанное машиной сохраняется звуком (tape.save в .wav: меандр
+# 22050 Гц, 8 бит) и читается из этого WAV обратно - так запись можно
+# проиграть в настоящую машину. Монитор пишет 800.80FW, лента уходит в WAV,
+# память стирается, 800.80FR читает WAV через компаратор.
+# @timeout 120
+
+MACHINE "pravetz/Pravetz-82.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 500
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+TYPE "CALL -151"
+KEY 50,50,ret
+WAIT 300
+COMMAND ram.set($0800,$57,$41,$56,$45,$00,$01,$02,$03,$FC,$FD,$FE,$FF,$80,$7F,$55,$AA)
+COMMAND tape.record(1)
+TYPE "800.80FW"
+KEY 50,50,ret
+WAIT 13000
+COMMAND tape.record(0)
+COMMAND tape.save("../results/tape-pravetz-82-wav-save.wav")
+COMMAND ram.set($0800,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+COMMAND tape.load("../results/tape-pravetz-82-wav-save.wav")
+TYPE "800.80FR"
+KEY 50,50,ret
+WAIT 200
+COMMAND tape.play()
+WAIT 7000
+LOG ram.value($0800,$080F)
+SCREEN "../results/tape-pravetz-82-wav-save.png"
+EXIT

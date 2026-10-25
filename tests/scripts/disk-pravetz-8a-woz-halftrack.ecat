@@ -1,0 +1,23 @@
+# Правец-8А, Disk II на секвенсоре P6: чтение полудорожки диска WOZ. На
+# полудорожке 0.5 (четверть 2) у диска своя дорожка с меткой D5 AA B7 и
+# байтом A5 за ней (tests/files/make-pravetz-woz.py). Программа в $0300
+# ставит головку на дорожку 0 (84 шага вниз), делает полшага вверх фазой 1,
+# ищет метку и кладет следующий байт в $0380.
+# @timeout 60
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.load("../files/pravetz-dos33.woz")
+WAIT 6000
+COMMAND ram.set($0300,$A2,$60,$BD,$89,$C0,$BD,$8A,$C0,$BD,$8E,$C0,$BD,$8C,$C0,$A0,$54)
+COMMAND ram.set($0310,$98,$29,$03,$0A,$09,$60,$AA,$BD,$81,$C0,$BD,$80,$C0,$88,$10,$F0)
+COMMAND ram.set($0320,$A2,$60,$BD,$83,$C0,$BD,$82,$C0,$BD,$8C,$C0,$10,$FB,$C9,$D5,$D0)
+COMMAND ram.set($0330,$F7,$BD,$8C,$C0,$10,$FB,$C9,$AA,$D0,$EE,$BD,$8C,$C0,$10,$FB,$C9)
+COMMAND ram.set($0340,$B7,$D0,$E5,$BD,$8C,$C0,$10,$FB,$8D,$80,$03,$BD,$88,$C0,$60)
+TYPE "CALL 768"
+KEY 50,50,ret
+WAIT 1000
+LOG fdc140.track(0,0)
+LOG fdc140.bits
+LOG ram.value($0380)
+EXIT

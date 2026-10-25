@@ -62,7 +62,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/common/tape.cpp emulator/devices/common/tape.h
     emulator/devices/common/wd1793.h emulator/devices/common/wd1793.cpp
     emulator/devices/common/gmd70.h emulator/devices/common/gmd70.cpp
-    emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp
+    emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp emulator/devices/common/fdd_woz.cpp emulator/devices/common/fdd_apple13.cpp
     emulator/devices/common/joystick.h emulator/devices/common/joystick.cpp
     emulator/devices/common/connector.h emulator/devices/common/connector.cpp
     emulator/devices/common/mouse.h emulator/devices/common/mouse.cpp

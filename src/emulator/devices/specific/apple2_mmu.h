@@ -49,6 +49,12 @@ private:
     bool m_prewrite = false;    // the first of the two reads that enable writing
     unsigned m_exp_owner = 0;   // slot whose $C800 ROM answers, 0: none
     unsigned m_aux_bank = 0;    // 64K page of the auxiliary memory
+    // A language card of several banks in slot 0 instead of the one of 16K
+    // (the 128K card of the 82, КР3.088.184): 16K a bank - the first $D000
+    // bank, the second, $E000-$FFFF - picked by $C0n4-$C0n7, $C0nC-$C0nF
+    RAM * m_lc_ram = nullptr;
+    unsigned m_lc_bank = 0;
+    unsigned m_lc_banks = 0;
     unsigned m_aux_banks = 0;
 
     uint8_t * m_rd[256];

@@ -1,0 +1,5 @@
+[keyboard.latch] $DE
+[keyboard.leds] led_cl
+[keyboard.latch] $FE
+[keyboard.latch] $BD
+[keyboard.latch] $E0

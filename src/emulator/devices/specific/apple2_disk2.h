@@ -29,6 +29,8 @@
 // a track becomes bits when the head comes to it - a run of $FF of a gap is
 // the 10-bit self-sync - and what was written is cut back into bytes, each
 // starting with a '1', when the writing ends or the head leaves the track.
+// A WOZ disk is bits already, and on quarter tracks: the head reads it where
+// it stands (a half track is quarter 2 x half track), and writes it back as is.
 class Apple2Disk2 : public FDC
 {
 private:
@@ -51,12 +53,18 @@ private:
     uint8_t m_addr = 0;             // the P6 address: the state and the inputs
     bool m_write_line = false;      // the write current, toggled by address bit 7
     bool m_cell_flux = false;       // a flux change written in this bit cell
-    unsigned m_step = 0;            // sequencer steps into the current bit cell
+    uint64_t m_step = 0;            // time into the current bit cell (units: see the .cpp)
+    uint64_t m_cell_units = 32ull * 2 * 1020484;  // the bit cell of the track under the head
+    unsigned m_zeros = 0;           // cells read without a flux change
+    uint32_t m_noise = 0x2545F491;  // what the amplifier makes of the noise
+    unsigned m_idle_steps = 0;      // steps run since the disk stopped
 
     // The track under the head of the selected drive
     std::vector<uint8_t> m_bits;
     int m_bits_drive = -1;
-    int m_bits_track = -1;
+    int m_bits_track = -1;          // a track of the image; of a WOZ disk, its track index (-2 - quarter: blank)
+    int m_bits_quarter = 0;         // the quarter track the head reads them at (WOZ)
+    bool m_bits_woz = false;        // the bits are a WOZ track, not made from bytes
     unsigned m_bit_pos = 0;
     bool m_dirty = false;
     unsigned m_generation = 0;      // of the image the bits came from
@@ -74,6 +82,7 @@ private:
     void load_track();
     void flush_track();
     void step_sequencer(bool pulse);
+    void set_cell(unsigned timing);
     void run(unsigned cycles);
     void catch_up(bool write);
     CPU * m_cpu = nullptr;
