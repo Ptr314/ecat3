@@ -99,6 +99,11 @@ protected:
 public:
     BKDisplay(InterfaceManager *im, EmulatorConfigDevice *cd);
 
+    // The colour of a dot of the code in a mode (BK_MODE_*) and palette, as
+    // 0xRRGGBB, whatever the renderer: for the screen debug window
+    static uint32_t dot_rgb(unsigned mode, unsigned palette, unsigned code);
+    static bool wide_mode(unsigned mode) { return wide(mode); }
+
     void set_renderer(VideoRenderer &vr) override;
     emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;

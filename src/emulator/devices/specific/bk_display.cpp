@@ -208,6 +208,15 @@ void BKDisplay::set_renderer(VideoRenderer &vr)
     vr.FillRGB(BK_Mono_2, BK_RGBA2, 2);
 }
 
+uint32_t BKDisplay::dot_rgb(const unsigned mode, const unsigned palette, const unsigned code)
+{
+    const uint8_t * c;
+    if (wide(mode)) c = BK_Mono_2[code & 1];
+    else if (mode == BK_MODE_MONO) c = BK_Grey_4[code & 3];
+    else c = BK_Palettes[palette & 0x0F][code & 3];
+    return (uint32_t(c[0]) << 16) | (uint32_t(c[1]) << 8) | c[2];
+}
+
 // Bits 8-11 hold the palette number, bit 15 picks the video page
 unsigned BKDisplay::control() const
 {

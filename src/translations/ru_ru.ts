@@ -346,6 +346,66 @@
     </message>
 </context>
 <context>
+    <name>BKScreenWindow</name>
+    <message>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="+112"/>
+        <source>Source:</source>
+        <translation>Источник:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+30"/>
+        <location line="+8"/>
+        <source>As the display</source>
+        <translation>Как у дисплея</translation>
+    </message>
+    <message>
+        <location line="-37"/>
+        <source>Processor</source>
+        <translation>Процессор</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Address:</source>
+        <translation>Адрес:</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Mode:</source>
+        <translation>Режим:</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Colour</source>
+        <translation>Цвет</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Black and white</source>
+        <translation>Ч/б</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Grey</source>
+        <translation>Серый</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Palette:</source>
+        <translation>Палитра:</translation>
+    </message>
+    <message>
+        <location line="+120"/>
+        <source>%1: %2   line %3, byte %4</source>
+        <translation>%1: %2   строка %3, байт %4</translation>
+    </message>
+    <message>
+        <location line="+77"/>
+        <source>display: %1, palette %2</source>
+        <translation>дисплей: %1, палитра %2</translation>
+    </message>
+</context>
+<context>
     <name>BreakpointsView</name>
     <message>
         <location filename="../dialogs/debugger/sideviews.cpp" line="+209"/>
@@ -722,9 +782,14 @@
 <context>
     <name>DebugMenu</name>
     <message>
-        <location filename="../mainwindow.cpp" line="+374"/>
+        <location filename="../mainwindow.cpp" line="+375"/>
         <source>SMK-512...</source>
         <translation>СМК-512...</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>BK screen...</source>
+        <translation>Экран БК...</translation>
     </message>
 </context>
 <context>
@@ -1034,7 +1099,7 @@
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
         <location line="+246"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+179"/>
-        <location line="+327"/>
+        <location line="+336"/>
         <source>Video output</source>
         <translation>Видеовыход</translation>
     </message>
@@ -1078,8 +1143,8 @@
     <message>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="-244"/>
         <location line="+247"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-325"/>
-        <location line="+328"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-334"/>
+        <location line="+337"/>
         <source>RGB</source>
         <translation>RGB</translation>
     </message>
@@ -1092,14 +1157,14 @@
     <message>
         <location line="-246"/>
         <location line="+247"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-326"/>
-        <location line="+328"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-335"/>
+        <location line="+337"/>
         <source>Mono</source>
         <translation>Моно</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="-329"/>
-        <location line="+328"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="-338"/>
+        <location line="+337"/>
         <source>B/W</source>
         <translation>Ч/Б</translation>
     </message>
@@ -3073,8 +3138,8 @@
         <translation>Как на экране</translation>
     </message>
     <message>
-        <location line="-528"/>
-        <location line="+638"/>
+        <location line="-529"/>
+        <location line="+639"/>
         <location line="+1"/>
         <location line="+905"/>
         <source>Turbo</source>
