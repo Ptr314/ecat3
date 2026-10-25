@@ -273,11 +273,16 @@ else()
     set(QT_TRANSLATIONS_DIR "${Qt5Core_DIR}/../../../translations")
 endif()
 
+# An older Qt lacks some of them (Qt 5.6 has no qtbase_bg.qm): then the copy
+# from a newer Qt kept in translations/qt is taken
 set(QT_TRANSLATION_FILES "")
 foreach(LANG ${SUPPORTED_LANGUAGES})
     set(QT_TRANSLATION_FILE "${QT_TRANSLATIONS_DIR}/qtbase_${LANG}.qm")
+    set(QT_TRANSLATION_FALLBACK "${CMAKE_CURRENT_SOURCE_DIR}/translations/qt/qtbase_${LANG}.qm")
     if(EXISTS ${QT_TRANSLATION_FILE})
         list(APPEND QT_TRANSLATION_FILES ${QT_TRANSLATION_FILE})
+    elseif(EXISTS ${QT_TRANSLATION_FALLBACK})
+        list(APPEND QT_TRANSLATION_FILES ${QT_TRANSLATION_FALLBACK})
     else()
         message(WARNING "Qt translation (qtbase_${LANG}.qm) not found: ${QT_TRANSLATION_FILE}")
     endif()
