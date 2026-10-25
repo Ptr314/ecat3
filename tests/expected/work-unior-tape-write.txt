@@ -7,7 +7,7 @@
 [tape.transport] $00
 [tape.records] $0002
 [tape.writes] $00000001
-[tape.sound] $0000011A
+[tape.sound] $00000118
 === Прочитано обратно и запущено ===
 [ram.value] $0200: $3E $5A $32 $00 $03 $76 $C3 $00 $02
 [ram.value] $0300: $5A

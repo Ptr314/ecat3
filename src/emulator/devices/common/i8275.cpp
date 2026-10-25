@@ -359,14 +359,23 @@ void I8275::row_start()
         m_show_len = m_fill_len;
         if (m_sink != nullptr)
             m_sink->row_complete(m_row, m_row_buf[m_fill_buf], m_show_len);
+
+        //Прерывание встает в начале ПОСЛЕДНЕЙ строки изображения, как в
+        //описании кристалла, а не с обратным ходом: эта строка уже в буфере,
+        //и программе, ждущей IR, до выборки нулевой строки остается целая
+        //строка, чтобы переставить ПДП. CATA86 на РК делает это сразу после
+        //IR, а при обратном ходе в одну строку выборка начинается вместе с
+        //ним - отключенный канал гасил каждый второй кадр
+        if (m_row + 1 == m_lps)
+        {
+            Status |= I8275_ST_IR;
+            if ((Status & I8275_ST_IE) != 0) i_irq.change(1);
+        }
     } else
     if (m_row == m_lps)
     {
-        //Start of the vertical retrace: the frame is whole and the interrupt,
-        //which is what the monitors poll, goes up
-        Status |= I8275_ST_IR;
+        //Start of the vertical retrace: the frame is whole
         if (!m_vrtc) { m_vrtc = true; i_vrtc.change(1); }
-        if ((Status & I8275_ST_IE) != 0) i_irq.change(1);
         if (m_sink != nullptr) m_sink->frame_complete();
 
         m_frames++;
