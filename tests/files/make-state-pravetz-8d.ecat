@@ -1,0 +1,17 @@
+# Сборка эталонного снимка для state-pravetz-8d.ecat.
+#
+# Запускается руками, из каталога deploy/:
+#
+#   eCat3-headless --no-sound --script ../tests/files/make-state-pravetz-8d.ecat
+#
+# Правец-8Д в HIRES с окружностью, цветом и звуком AY (PING), программа в
+# памяти. Снимок уносит VIA (таймер 1 идет), выбранный регистр AY и режим ULA.
+
+MACHINE "pravetz/Pravetz-8D.cfg"
+WAIT 3000
+TYPE "10 HIRES:INK 6:CURSET 120,100,1:CIRCLE 60,1\n20 PING\nRUN\n"
+WAIT 1500
+
+SAVESTATE "state-pravetz-8d.ecats.zip"
+SCREEN "state-pravetz-8d-made.png"
+EXIT

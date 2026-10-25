@@ -1,0 +1,21 @@
+=== Метки страниц ===
+[aux.value] $0000: $A0
+[aux.value] $10000: $A1
+[aux.value] $20000: $A2
+[aux.value] $30000: $A3
+[aux.value] $40000: $A4
+[aux.value] $50000: $A5
+[aux.value] $60000: $A6
+[aux.value] $70000: $A7
+[aux.value] $80000: $A8
+[aux.value] $90000: $A9
+[aux.value] $A0000: $AA
+[aux.value] $B0000: $AB
+[aux.value] $C0000: $AC
+[aux.value] $D0000: $AD
+[aux.value] $E0000: $AE
+[aux.value] $F0000: $AF
+=== $1F ===
+[mmu.aux_bank] $0F
+[mmu.map] 00:XF0000 10:M1000 20:M2000 30:M3000 40:M4000 50:M5000 60:M6000 70:M7000 80:M8000 90:M9000 A0:MA000 B0:MB000 C0:-/ro D0:R1000 E0:R2000 F0:R3000
+[mmu.map] 00:M0000 10:M1000 20:M2000 30:M3000 40:M4000 50:M5000 60:M6000 70:M7000 80:M8000 90:M9000 A0:MA000 B0:MB000 C0:-/ro D0:R1000 E0:R2000 F0:R3000

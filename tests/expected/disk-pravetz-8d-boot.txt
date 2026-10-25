@@ -1,0 +1,4 @@
+[cpu.registers] A=4C X=07 Y=00 S=FC P=64 PC=B824
+[ram.value] $0200: $55 $4C
+[rom.value] $0000: $4C
+[fdc140.track] $0000: $00

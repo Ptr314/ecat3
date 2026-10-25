@@ -1,0 +1,24 @@
+# Правец-8Д: CSAVE и CLOAD на магнитофон. Запись - PB7 VIA (таймер 1), чтение
+# - CB1, мотор - PB6. Записанное сохраняется файлом .tap (байты ленты: заголовок
+# $16 $24, имя, данные) и читается обратно после NEW.
+# @timeout 120
+
+MACHINE "pravetz/Pravetz-8D.cfg"
+LOGDEFS 8,16
+WAIT 3000
+TYPE "10 PRINT \"TAPE \";2*41\n"
+COMMAND tape.record(1)
+TYPE "CSAVE\"PROG\"\n"
+WAIT 8000
+COMMAND tape.record(0)
+LOG tape.recorded
+COMMAND tape.save("../results/tape-pravetz-8d.tap")
+TYPE "NEW\n"
+COMMAND tape.load("../results/tape-pravetz-8d.tap")
+TYPE "CLOAD\"\"\n"
+WAIT 12000
+TYPE "LIST\nRUN\n"
+WAIT 500
+LOG ram.value($0501,$0516)
+SCREEN "../results/tape-pravetz-8d.png"
+EXIT

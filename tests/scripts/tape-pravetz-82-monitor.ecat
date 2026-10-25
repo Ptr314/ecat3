@@ -1,0 +1,36 @@
+# Правец-82: магнитофон Apple ][ (кодирование apple, файл *.ptp). Монитор
+# пишет 16 байт ($0800-$080F) командой 800.80FW - запись уходит переключениями
+# $C020; лента сохраняется (одна запись: длина и байты, без контрольной
+# суммы), память стирается, лента заряжается обратно, и 800.80FR читает ее
+# разрядом 7 $C060: контрольная сумма сходится (иначе Монитор пишет ERR).
+# @timeout 120
+
+MACHINE "pravetz/Pravetz-82.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 500
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+TYPE "CALL -151"
+KEY 50,50,ret
+WAIT 300
+COMMAND ram.set($0800,$50,$52,$41,$56,$45,$54,$5A,$2D,$38,$32,$00,$FF,$11,$22,$33,$44)
+COMMAND tape.record(1)
+TYPE "800.80FW"
+KEY 50,50,ret
+WAIT 13000
+COMMAND tape.record(0)
+LOG tape.recorded
+COMMAND tape.save("../results/tape-pravetz-82-monitor.ptp")
+COMMAND ram.set($0800,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+COMMAND tape.load("../results/tape-pravetz-82-monitor.ptp")
+TYPE "800.80FR"
+KEY 50,50,ret
+WAIT 200
+COMMAND tape.play()
+WAIT 7000
+LOG ram.value($0800,$080F)
+SCREEN "../results/tape-pravetz-82-monitor.png"
+EXIT

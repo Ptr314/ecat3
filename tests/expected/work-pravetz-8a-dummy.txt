@@ -1,0 +1,7 @@
+=== INC $C030 ===
+[sound.input] $00
+[sound.input] $01
+=== LDA $C0F3,Y через страницу ===
+[ram.value] $D000: $00
+[ram.value] $D000: $5A
+[mmu.switches] intcxrom lcbank2

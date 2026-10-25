@@ -1,0 +1,27 @@
+# Правец-82: автоповтора, как у Apple ][+, нет. Клавиша A, удержанная 1,5 с,
+# дает одну букву; та же клавиша вместе с RPT (F11) повторяется около 10 раз
+# в секунду: за 1 с - еще десяток букв. На экране - строка ввода БЕЙСИКа.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-82.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 500
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+KEYDOWN A
+WAIT 1500
+KEYUP A
+WAIT 100
+KEY 50,50,space
+KEYDOWN f11
+KEYDOWN B
+WAIT 1000
+KEYUP B
+KEYUP f11
+WAIT 100
+LOG keyboard.codes
+SCREEN "../results/work-pravetz-82-rpt.png"
+EXIT

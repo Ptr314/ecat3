@@ -1,0 +1,3 @@
+[via.regs] $0000: $B0 $FE $F7 $FF $88 $0C $10 $27 $3A $39 $00 $40 $DD $00 $C0 $FE
+[via.t1_latch] $2710
+[display.mode] $02

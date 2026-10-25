@@ -1,0 +1,27 @@
+# Правец-82 с платой ОЗУ 128 Кб (Pravetz-82-ram128.ext): восемь банков
+# языковой карты по 16 Кб. Программа в $0300 выбирает каждый банк чтением
+# $C084-$C087, $C08C-$C08F, включает запись в ОЗУ ($C083 дважды) и пишет в
+# $D000 метку $A0+банк; второй проход читает метки обратно в $0380-$0387.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-82.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 500
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+COMMAND ram.set($0300,$A2,$00,$BD,$40,$03,$85,$06,$A9,$C0,$85,$07,$A0,$00,$B1,$06,$AD)
+COMMAND ram.set($0310,$83,$C0,$AD,$83,$C0,$8A,$09,$A0,$8D,$00,$D0,$E8,$E0,$08,$D0,$E2)
+COMMAND ram.set($0320,$A2,$00,$BD,$40,$03,$85,$06,$A0,$00,$B1,$06,$AD,$80,$C0,$AD,$00)
+COMMAND ram.set($0330,$D0,$9D,$80,$03,$E8,$E0,$08,$D0,$E9,$AD,$82,$C0,$60)
+COMMAND ram.set($0340,$84,$85,$86,$87,$8C,$8D,$8E,$8F)
+TYPE "CALL 768"
+KEY 50,50,ret
+WAIT 500
+LOG ram.value($0380,$0387)
+LOG ram128.value($1000)
+LOG ram128.value($1D000)
+LOG mmu.lc_bank
+EXIT

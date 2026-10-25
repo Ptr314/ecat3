@@ -182,6 +182,15 @@ protected:
     void calc_flags(uint32_t value, uint32_t mask);
     void set_flag(uint8_t flag, uint8_t value);
     uint16_t calc_address(const uint16_t base, const uint16_t increment, unsigned int & cycles);
+    uint16_t read_address(const uint16_t base, const uint16_t increment, unsigned int & cycles);
+    void dummy_read(const uint16_t base, const uint16_t increment);
+    uint8_t rmw_read(const uint16_t address);
+
+    //The NMOS bus cycles that carry no data: an indexed address read once
+    //before its carry reaches the high byte, and the old value written back
+    //by a read-modify-write instruction. Off by default; the Apple //e soft
+    //switches see them
+    bool dummy_access = false;
 
     uint16_t get_address_zp(unsigned int & cycles);
 
@@ -197,6 +206,8 @@ public:
     uint8_t get_command();
     virtual void set_nmi(bool nmi_val);
     virtual void set_irq(bool irq_val);
+    void set_dummy_access(bool on) { dummy_access = on && context.type == MOS_6502_FAMILY_BASIC; }
+
 
     unsigned int execute();
 };

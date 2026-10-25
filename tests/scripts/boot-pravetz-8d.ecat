@@ -1,0 +1,13 @@
+# Правец-8Д (аналог Oric Atmos): БЕЙСИК с кириллицей из ПЗУ. VIA 6522 дает
+# системное прерывание таймером 1 (100 Гц: защелка $2710), экран - ULA, текст
+# 40 x 28 по $BB80 со знакогенератором в ОЗУ.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8D.cfg"
+WAIT 3000
+LOGDEFS 8,16
+LOG via.regs
+LOG via.t1_latch
+LOG display.mode
+SCREEN "../results/boot-pravetz-8d.png"
+EXIT

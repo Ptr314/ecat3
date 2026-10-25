@@ -1,0 +1,5 @@
+// Для тестов: Правец-82 с загрузчиком КНГМД на 13 секторов (DOS 3.2)
+@extends pravetz/Pravetz-82.cfg
+@version Правец-82 (13 секторов)
+
+boot140:image = files/fdc140-p5-13.bin

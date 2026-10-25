@@ -417,14 +417,27 @@ bool read_confg_value(EmulatorConfigDevice * cd, const std::string &name, bool r
     throw std::runtime_error("Invalid boolean value");
 }
 
+// A machine started by a script (a test, MCP, --script) takes its input from
+// the script only. The Caps Lock of the host used to set the РУС/ЛАТ of the
+// БК at the reset, and a test typed Cyrillic whenever the developer's Caps
+// Lock happened to be on
+static bool g_host_lock_keys = true;
+
+void use_host_lock_keys(bool on)
+{
+    g_host_lock_keys = on;
+}
+
 bool checkCapsLock()
 {
+    if (!g_host_lock_keys) return false;
 #ifdef _WIN32
     return GetKeyState(VK_CAPITAL) == 1;
 #else
     return false;
 #endif
 }
+
 
 // random_device в libstdc++ на MinGW до GCC 9.2 (сборка для XP) выдает одно
 // и то же при каждом запуске (GCC bug 85494): к нему подмешивается время

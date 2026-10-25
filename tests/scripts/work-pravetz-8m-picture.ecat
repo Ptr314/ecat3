@@ -1,0 +1,38 @@
+# Правец-8М: экранная клавиатура (pravetz-8m.svg, своя таблица pravetz-8m.keys
+# при раскладке ЯВЕРТЪ). Клавиша Ч/^ шлет ^ в латинице и Ч в кириллице - это
+# разные клавиши хоста; Shift рисунка с -/= в кириллице дает = кодом из
+# таблицы рисунка ($BD), Ю/@ в кириллице - Ю. КИР справа - C/L с лампой.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8M.ext"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 500
+KEYDOWN key_ch
+WAIT 20
+KEYUP key_ch
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_cl
+WAIT 20
+KEYUP key_cl
+WAIT 20
+LOG keyboard.leds
+KEYDOWN key_ch
+WAIT 20
+KEYUP key_ch
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_shift_l
+KEYDOWN key_minus
+WAIT 20
+KEYUP key_minus
+KEYUP key_shift_l
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_at
+WAIT 20
+KEYUP key_at
+WAIT 20
+LOG keyboard.latch
+EXIT

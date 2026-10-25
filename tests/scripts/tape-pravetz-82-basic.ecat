@@ -1,0 +1,37 @@
+# Правец-82: SAVE и LOAD БЕЙСИКа на магнитофон. SAVE пишет две записи -
+# длину программы и саму программу (файл *.ptp, по записи на каждую); после
+# NEW программа читается с ленты обратно и запускается.
+# @timeout 180
+
+MACHINE "pravetz/Pravetz-82.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 500
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+TYPE "10 PRINT \"TAPE \";2*41"
+KEY 50,50,ret
+COMMAND tape.record(1)
+TYPE "SAVE"
+KEY 50,50,ret
+WAIT 25000
+COMMAND tape.record(0)
+LOG tape.recorded
+COMMAND tape.save("../results/tape-pravetz-82-basic.ptp")
+TYPE "NEW"
+KEY 50,50,ret
+COMMAND tape.load("../results/tape-pravetz-82-basic.ptp")
+TYPE "LOAD"
+KEY 50,50,ret
+WAIT 200
+COMMAND tape.play()
+WAIT 14000
+TYPE "LIST"
+KEY 50,50,ret
+TYPE "RUN"
+KEY 50,50,ret
+WAIT 500
+SCREEN "../results/tape-pravetz-82-basic.png"
+EXIT

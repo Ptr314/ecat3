@@ -1,0 +1,17 @@
+# Ириша: TYPE набирает русские буквы в CP/M. Таблица клавиатуры 15ВВВ сама
+# говорит, что клавиша дает в РУС (строки /R, раскладка ЙЦУКЕН), и TYPE ищет
+# в ней клавишу с кодом буквы КОИ-7. РУС и ЛАТ клавиатура шлет кодами $0E и
+# $0F, и CP/M их печатает (^N, ^O) - так и на машине.
+# @timeout 60
+
+MACHINE "irisha/Irisha-kngmd.cfg"
+WAIT 5000
+KEY 300,100,down,down,ret
+WAIT 3000
+KEY 300,100,Y,ret
+WAIT 3000
+TYPE "ПРИВЕТ, МИР 123 ЭЮЯЖЧШЩ"
+WAIT 6000
+LOG keyboard.rus
+SCREEN "../results/work-irisha-type-cyr.png"
+EXIT

@@ -1,0 +1,35 @@
+# Правец-8А, Liberty Drive: разметка дорожки командой ВГ93 Write Track.
+#
+# Программа tests/files/make-liberty-format.py размечает цилиндр 3 с обеих
+# сторон (10 секторов по 512 байт, сектор s стороны h заполнен байтом
+# $A0 + h*$10 + s, последний байт - $5A) и читает обратно сектор 10 стороны 1
+# ($6000) и сектор 1 стороны 0 ($6200). Образ хранит секторы, а не дорожку:
+# ВГ93 разбирает поток - заголовок после $FE, данные после $FB - и пишет
+# данные в сектор образа. liberty-wd.formats - размеченные дорожки,
+# liberty-wd.writes - записанные секторы, $6400 - состояние ВГ93 в конце.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8A-full.ext"
+# Без штатного диска в дисководе 140 Кб: ПЗУ не грузит с него DOS
+COMMAND fdd0.eject()
+LOGDEFS 8,16
+COMMAND lfdd0.load("../files/liberty-400.img")
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+COMMAND ram.load("../files/liberty-format.bin", $1000)
+TYPE "CALL 4096"
+KEY 50,50,ret
+WAIT 2000
+LOG liberty-wd.formats
+LOG liberty-wd.writes
+LOG liberty-wd.reads
+LOG liberty-wd.unsupported
+LOG ram.value($6000,$6003)
+LOG ram.value($61FE,$61FF)
+LOG ram.value($6200,$6203)
+LOG ram.value($63FE,$63FF)
+LOG ram.value($6400)
+EXIT

@@ -1,0 +1,53 @@
+# Правец-8А, Liberty Drive: издательская система ПАРИС (русская версия 1.0,
+# 1990) с диска из комплекта контроллера. Из XONEX SHELL - /PARIS/
+# PARIS.SYSTEM; заставка, дата (часов нет - ПАРИС спрашивает ее сам, так что
+# платы Time RAM этой версии не нужно), меню: 1 - добавить документ, 3 -
+# текстовый редактор, имя TEST, затем по-русски «правец» (TYPE сам
+# включает C/L Lock и выключает его в конце строки).
+# ПАРИС держит клавиатуру в 7-битной таблице (SOFTSW = 0) и коды толкует
+# сам: регистр ЛАТ дает русские заглавные, регистр C/L - русские строчные;
+# переключателя латиницы в справке редактора нет. Так устроена русская
+# версия, эмулятор тут ни при чем: в БЕЙСИКе те же клавиши дают латиницу.
+# @timeout 300
+
+MACHINE "pravetz/Pravetz-8A-full.ext"
+# Без штатного диска в дисководе 140 Кб: ПЗУ не грузит с него DOS
+COMMAND fdd0.eject()
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+TYPE "PR#5"
+KEY 50,50,ret
+WAIT 15000
+TYPE "24-OCT-90"
+KEY 50,50,ret
+WAIT 2000
+KEY 50,50,ret
+WAIT 2000
+KEY 50,50,ret
+WAIT 20000
+SCREEN "../results/disk-pravetz-8a-paris-title.png"
+KEY 50,50,space
+WAIT 5000
+TYPE "24/10/90"
+KEY 50,50,ret
+WAIT 3000
+TYPE "1"
+KEY 50,50,ret
+WAIT 3000
+TYPE "3"
+KEY 50,50,ret
+WAIT 5000
+KEY 50,50,ret
+WAIT 1000
+TYPE "TEST",100,150
+KEY 100,150,ret
+WAIT 3000
+TYPE "правец",100,150
+KEY 100,150,ret
+LOG keyboard.cl
+WAIT 2000
+SCREEN "../results/disk-pravetz-8a-paris.png"
+EXIT

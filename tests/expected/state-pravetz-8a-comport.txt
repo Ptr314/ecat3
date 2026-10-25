@@ -1,0 +1,3 @@
+[comport-pc.disks] 2=pravetz-dos33.dsk
+[comport-pc.writes] $00000007
+[comport-pc.reads] $0000003D

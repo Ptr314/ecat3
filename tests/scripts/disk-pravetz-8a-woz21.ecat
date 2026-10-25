@@ -1,0 +1,32 @@
+# Правец-8А, Disk II на секвенсоре P6: диск WOZ 2.1 - дорожки 0 (загрузчик
+# DOS) и 17 (каталог) записаны потоком смен (чанк FLUX, тики по 125 нс), как
+# с настоящего привода: на 1,5% медленнее и с дрожанием (tests/files/
+# make-pravetz-woz21.py). Каждый промежуток округляется до ячеек по 4 мкс сам
+# по себе, как у сепаратора данных. Загрузка DOS, CATALOG, SAVE и LOAD.
+# @timeout 60
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+COMMAND fdd0.load("../files/pravetz-dos33-flux.woz")
+WAIT 6000
+TYPE "CATALOG"
+KEY 50,50,ret
+WAIT 2000
+TYPE "10 PRINT \"WOZ \";2*4;\"A\""
+KEY 50,50,ret
+TYPE "SAVE TEST"
+KEY 50,50,ret
+WAIT 3000
+TYPE "NEW"
+KEY 50,50,ret
+TYPE "LOAD TEST"
+KEY 50,50,ret
+WAIT 3000
+TYPE "HOME:LIST:RUN"
+KEY 50,50,ret
+WAIT 500
+TYPE "CATALOG"
+KEY 50,50,ret
+WAIT 2000
+LOG fdc140.track
+SCREEN "../results/disk-pravetz-8a-woz21.png"
+EXIT

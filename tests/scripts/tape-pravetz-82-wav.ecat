@@ -1,0 +1,26 @@
+# Правец-82: лента из записи кассеты (WAV, tests/files/make-pravetz-wav.py:
+# синусоиды, постоянная составляющая, шум, лента на 2% медленнее). Уровни для
+# разряда 7 $C060 дает компаратор с гистерезисом; 800.80FR Монитора читает 16
+# байт, и контрольная сумма сходится (иначе ERR).
+# @timeout 60
+
+MACHINE "pravetz/Pravetz-82.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 500
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+TYPE "CALL -151"
+KEY 50,50,ret
+WAIT 300
+COMMAND tape.load("../files/pravetz-82-record.wav")
+TYPE "800.80FR"
+KEY 50,50,ret
+WAIT 200
+COMMAND tape.play()
+WAIT 6000
+LOG ram.value($0800,$080F)
+SCREEN "../results/tape-pravetz-82-wav.png"
+EXIT

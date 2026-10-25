@@ -1,0 +1,23 @@
+# Правец-8С с платой COMport в слоте 5: PR#5 грузит DOS 3.3 с образа 1 на
+# «компьютере PC», CATALOG,D2 читает школьный диск p8ru01.dsk. У 8С развертка
+# NTSC и свой такт процессора - обмен по линии 8250 от этого не зависит.
+# @timeout 60
+
+MACHINE "pravetz/Pravetz-8C.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "PR#5"
+KEY 50,50,ret
+WAIT 5000
+TYPE "CATALOG,D2"
+KEY 50,50,ret
+WAIT 3000
+LOG comport-pc.reads
+LOG comport-pc.errors
+SCREEN "../results/disk-pravetz-8c-comport.png"
+EXIT

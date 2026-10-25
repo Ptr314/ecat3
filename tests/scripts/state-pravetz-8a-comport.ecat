@@ -1,0 +1,28 @@
+# Правец-8А с платой COMport: снимок поднимается вместе с «компьютером PC».
+#
+# ../tests/files/state-pravetz-8a-comport.ecats.zip снят скриптом
+# ../files/make-state-pravetz-8a-comport.ecat: DOS загружен через плату, на
+# образ D2 записана программа SNAP. Образы сервера - его носители: в снимок
+# идет их содержимое, а не файлы конфигурации (comport-server
+# state_owns_file), поэтому в архиве нет трех образов по 140 Кб.
+#
+# После подъема драйвер платы в памяти DOS работает дальше: LOAD с D2 читает
+# записанную до снимка программу, CATALOG,D2 ее показывает.
+# @timeout 60
+
+MACHINE "../tests/files/state-pravetz-8a-comport.ecats.zip"
+LOGDEFS 8,16
+LOG comport-pc.disks
+LOG comport-pc.writes
+TYPE "LOAD SNAP,D2"
+KEY 50,50,ret
+WAIT 3000
+TYPE "RUN"
+KEY 50,50,ret
+WAIT 500
+TYPE "CATALOG,D2"
+KEY 50,50,ret
+WAIT 2000
+LOG comport-pc.reads
+SCREEN "../results/state-pravetz-8a-comport.png"
+EXIT

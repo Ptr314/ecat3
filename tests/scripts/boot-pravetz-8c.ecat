@@ -1,0 +1,19 @@
+# Правец-8С: включение без дискеты. Кварц NTSC (60 кадров, 262 строки),
+# программы встроенных устройств из ПЗУ D38 в слотах 1, 2 и 6: ПЗУ находит
+# встроенный контроллер дисковода в слоте 6 и ждет дискету.
+# @timeout 20
+
+MACHINE "pravetz/Pravetz-8C.cfg"
+# Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
+COMMAND fdd0.eject()
+WAIT 2000
+LOGDEFS 16,10
+LOG display.standard
+LOG display.frame_rate
+LOG display.lines
+LOGDEFS 8,16
+LOG mapper.value($C100,$C107)
+LOG mapper.value($C200,$C207)
+LOG mapper.value($C600,$C607)
+SCREEN "../results/boot-pravetz-8c.png"
+EXIT

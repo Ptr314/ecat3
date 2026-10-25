@@ -69,6 +69,18 @@ private:
 
     AgatAIMCodes aim_codes;
 
+    // A WOZ image: the disk as the bits under the head, with a track for
+    // every quarter-track position the head can stand on (the map). The
+    // tracks are a byte per bit; buffer keeps them as nibbles as well, for
+    // the controllers that read bytes
+    bool m_woz = false;
+    uint8_t m_woz_map[160];
+    unsigned m_woz_timing = 32;         // the bit cell, 1/8 us: kept for the file, read at 4 us
+    std::vector<std::vector<uint8_t> > m_woz_tracks;
+    bool parse_woz(const std::vector<uint8_t> &file);
+    void serialize_woz(std::vector<uint8_t> &out);
+    void woz_bytes();
+
     unsigned int translate_address();
     bool sector_in_range();
     unsigned int image_track(int track, int side, bool sides_order);
@@ -112,6 +124,19 @@ public:
     void rebuild_ibm_fm();
     emulator::Result load_hfe(const std::string &file_name);
     emulator::Result save_hfe(const std::string &file_name);
+    emulator::Result load_woz(const std::string &file_name);
+    emulator::Result load_d13(const std::string &file_name);
+    emulator::Result save_d13(const std::string &file_name);
+    emulator::Result save_woz(const std::string &file_name);
+    // The bits of a WOZ disk: which track the head finds at a quarter-track
+    // position (-1: none, the surface is blank), its bits, and what was
+    // written there, given back as a whole track (a blank position gets a
+    // new track; the index of it is returned)
+    bool is_woz() const { return m_woz && loaded; }
+    static void nibbles_to_bits(const std::vector<uint8_t> &bytes, std::vector<uint8_t> &bits);
+    int woz_track(int quarter) const;
+    bool read_bits(int index, std::vector<uint8_t> &bits) const;
+    int write_bits(int quarter, int index, const std::vector<uint8_t> &bits);
     void NextPosition();
     uint8_t  ReadNextByte();
     void WriteNextByte(uint8_t value);

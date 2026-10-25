@@ -30,7 +30,6 @@
 
 #define MAX_LINKS               100
 #define MAX_INTERFACES          200
-#define MAX_REGISTERED_DEVICES  100
 
 #define MODE_OFF                0
 #define MODE_R                  1
@@ -664,9 +663,13 @@ private:
     // отвечает (диапазон в карте помечается routed = 1)
     bool m_partial = false;
     unsigned m_image_length = 0;
+    std::string m_image;            // the image as the configuration names it
     emulator::Result load_image(const std::string &image);
 public:
     ROM(InterfaceManager *im, EmulatorConfigDevice *cd);
+    //The image in the socket, as named in the configuration (image, or
+    //image_1 for a socket of several): a card may act on which chip it has
+    const std::string & image_name() const { return m_image; }
     emulator::Result load_config(SystemData *sd) override;
     ConfigFields get_config_fields() override;
     unsigned int route(unsigned int address, unsigned int mode) override;
@@ -798,8 +801,9 @@ private:
     //Per domain, the direct devices with has_clock_events()
     std::vector<std::vector<ComputerDevice*>> event_devices;
     std::vector<CPU*> cpus;
-    unsigned int registered_devices_count;
-    RegisteredDevice registered_devices[MAX_REGISTERED_DEVICES];
+    //Every device type the emulator knows. It was an array of 100 once, and
+    //the 101st type wrote past its end
+    std::vector<RegisteredDevice> registered_devices;
 
 };
 
@@ -923,6 +927,15 @@ public:
     //write reached the bus, -1 when the processor does not know it. A display
     //that follows the beam takes a register change from there
     virtual int last_write_clocks() const { return -1; }
+
+    //The moment of the bus access in progress, in clocks of this processor
+    //since it started: the instructions done plus the bus cycles of the one
+    //being executed, the access included. false when the processor does not
+    //count them. Devices are clocked in batches; one that must see an access
+    //at its own clock (the Disk II sequencer of the Правец, apple2-disk2)
+    //runs itself up to this moment
+    virtual bool bus_time(uint64_t &t) const { (void)t; return false; }
+
 
     virtual unsigned int read_mem(unsigned int address) = 0;
     virtual void write_mem(unsigned int address, unsigned int data) = 0;

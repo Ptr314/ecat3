@@ -1,0 +1,2 @@
+[mmu.switches] lcbank2 lcwrite
+[iou.video] text an3

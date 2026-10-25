@@ -210,6 +210,30 @@ emulator::Result MapKeyboard::load_config(SystemData *sd)
     return emulator::Result::ok();
 }
 
+// A table that says what each key gives in РУС (lines with R, the 15ВВВ of
+// the Ириша) is asked for the key whose code, without bit 7, is the letter in
+// КОИ-7 - the capital, or the small one if only that is there. A table without
+// such lines leaves it to the general КОИ-7 rule
+bool MapKeyboard::key_for_char(unsigned int codepoint, unsigned int &key, bool &shift)
+{
+    if (rus_switch_key() == _FFFF) return false;
+    bool has_rus = false;
+    for (size_t i = 0; i < key_map.size() && !has_rus; i++) has_rus = key_map[i].rus;
+    if (!has_rus) return Keyboard::key_for_char(codepoint, key, shift);
+    const unsigned int code = koi7_code(codepoint);
+    if (code == _FFFF) return false;
+    for (int pass = 0; pass < 2; pass++) {
+        const unsigned int want = (pass == 0) ? code : (code ^ 0x20);
+        for (size_t i = 0; i < key_map.size(); i++)
+            if (key_map[i].rus && !key_map[i].ctrl && (key_map[i].value & 0x7F) == want) {
+                key = key_map[i].key_code | KEY_NO_REMAP;
+                shift = key_map[i].shift;
+                return true;
+            }
+    }
+    return false;
+}
+
 void MapKeyboard::set_rus(bool new_rus)
 {
     Keyboard::set_rus(new_rus);

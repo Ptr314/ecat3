@@ -1,0 +1,189 @@
+// Правец-8А со всеми платами, что у нас есть (у базового Pravetz-8A.cfg -
+// только дисковод, как с завода):
+//   X0      MEGARAM 1 Мб: 16 страниц по 64 Кб, страница - запись в $C073
+//   слот 1  плата принтера (PR#1); прошивка выбирается в редакторе
+//   слот 2  вторая плата принтера: ПАРИС с диска Liberty печатает туда
+//   слот 4  сетевая плата U-LAN (PR#4)
+//   слот 5  контроллер Liberty Drive, 400 Кб, ProDOS (PR#5)
+//   слот 6  КНГМД 140 Кб (загрузка при включении)
+//   слот 7  COMport: диски на IBM PC (PR#7). У настоящей машины слот 7 - это
+//           плата RGB, но здесь RGB - только выбор монитора, а ПЗУ COMport
+//           обращается к своим регистрам через номер слота ($C088,X)
+// Автозагрузка ищет контроллер с 7-го слота вниз: подписи Disk II у COMport
+// нет, так что машина, как и прежде, грузится с дисковода в слоте 6.
+@extends pravetz/Pravetz-8A.cfg
+@version Правец-8А (все платы)
+@protected
+
+aux:size = 1024k
+
+@before mmu
+printer-rom : rom {
+	size = 2k
+	label = ПЗУ платы принтера
+	image_1 = files/printer-epson-apl.bin
+	title_1 = Epson APL Printer Interface
+	image_2 = files/printer-intplat.bin
+	title_2 = Копия (другая прошивка)
+	image_3 = files/printer-8a-unknown.bin
+	title_3 = Неизвестная плата (байт инверсный)
+	image = files/printer-epson-apl.bin
+}
+
+// Копия Epson APL: ПЗУ 2 Кб видно целиком в $C800 и страницей $Cn00, запись
+// в $C0n0-$C0nF защелкивает байт и дает строб, занятость - разряд 7 по
+// $CnC0-$CnFF. Плата неизвестного происхождения (agatcomp.ru, «THIS ROM IS
+// JUNK») устроена так же, но выводит байт инверсным: инверсия включается
+// вместе с ее прошивкой
+printer-card : apple2-parallel {
+	rom = printer-rom
+	invert_with = files/printer-8a-unknown.bin
+	~busy = printer.busy
+}
+
+printer : printer {
+	title = Принтер (слот 1)
+	~data = printer-card.data
+	~strobe = printer-card.strobe
+}
+
+printer-card2 : apple2-parallel {
+	rom = printer-rom
+	invert_with = files/printer-8a-unknown.bin
+	~busy = printer2.busy
+}
+
+printer2 : printer {
+	title = Принтер (слот 2)
+	~data = printer-card2.data
+	~strobe = printer-card2.strobe
+}
+
+mmu:slot1 = printer-card
+mmu:slot1_exp = printer-card
+mmu:slot2 = printer-card2
+mmu:slot2_exp = printer-card2
+
+@before mmu
+liberty-rom : rom {
+	size = 2k
+	label = ПЗУ Liberty Drive
+	image_1 = files/liberty-305.bin
+	title_1 = Slim3.05 (Москва)
+	image_2 = files/liberty-306.bin
+	title_2 = Slim3.06 (Ташкент)
+	image = files/liberty-305.bin
+}
+
+mmu:slot5 = liberty-rom[$700]
+mmu:slot5_exp = liberty-rom[$000]
+
+liberty-wd : wd1793 {
+	drives = lfdd0|lfdd1
+	register_delay = 0
+	physical_head = 1
+	max_cylinder = 41
+	index_period = 200
+	index_width = 4000
+}
+
+liberty : liberty-fdc {
+	fdc = liberty-wd
+}
+
+lfdd0 : fdd {
+	title = Liberty 1
+	// Диск из комплекта контроллера (Москва): ProDOS, оболочка XONEX SHELL,
+	// менеджер файлов LIBERTY (с форматированием), издательская система ПАРИС
+	image = liberty-system.img
+	sides = 2
+	tracks = 40
+	sectors = 10
+	sector_size = 512
+	layout = cylinders
+	files = "Liberty Drive 400K (*.img *.dsk);;All files (*.*)"
+	files_save = "Liberty Drive 400K (*.img *.dsk)"
+	selector_value = 0
+	soft_reset = 0
+	~select = liberty.drive
+	~side = !liberty.side
+}
+
+lfdd1 : fdd {
+	title = Liberty 2
+	sides = 2
+	tracks = 40
+	sectors = 10
+	sector_size = 512
+	layout = cylinders
+	files = "Liberty Drive 400K (*.img *.dsk);;All files (*.*)"
+	files_save = "Liberty Drive 400K (*.img *.dsk)"
+	selector_value = 1
+	soft_reset = 0
+	~select = liberty.drive
+	~side = !liberty.side
+}
+
+@before mmu
+ulan-rom : rom {
+	size = 4k
+	label = ПЗУ U-LAN
+	image_1 = files/ulan-7732.bin
+	title_1 = U-LAN 2.1 (СМ7732)
+	image_2 = files/ulan-23e0.bin
+	title_2 = U-LAN 2.0
+	image = files/ulan-7732.bin
+}
+
+ulan : pravetz-ulan {
+	rom = ulan-rom
+	station = 1
+}
+
+mmu:slot4 = ulan
+mmu:slot4_exp = ulan
+
+@before mmu
+comport-rom : rom {
+	size = 2k
+	image = files/comport.bin
+}
+
+comport-uart : ins8250 {
+	title = COMport
+	peer = comport-pc
+}
+
+// Образы дисков на «PC»: D1 - DOS для платы из поставки COMPORT, D2 и D3 -
+// школьные диски из software/pravetz. В редакторе расширений выбираются
+// образы D1-D9 (disk_title_N)
+comport-pc : comport-server {
+	uart = comport-uart
+	files = "Образы 140 Кб в порядке DOS (*.dsk *.do *.pds);;Все файлы (*.*)"
+	disk_1 = files/comport-disk1.dsk
+	disk_2 = p8ru01.dsk
+	disk_3 = p8ru02.dsk
+	disk_title_1 = Диск D1 (с DOS для платы)
+	disk_title_2 = Диск D2
+	disk_title_3 = Диск D3
+	disk_title_4 = Диск D4
+	disk_title_5 = Диск D5
+	disk_title_6 = Диск D6
+	disk_title_7 = Диск D7
+	disk_title_8 = Диск D8
+	disk_title_9 = Диск D9
+}
+
+mmu:slot7 = comport-rom
+mmu:slot7_exp = comport-rom
+
+@before mapper:@memory[$C100-$FFFF]
+mapper:@memory[$C090-$C09F] = printer-card
+@before mapper:@memory[$C100-$FFFF]
+mapper:@memory[$C0A0-$C0AF] = printer-card2
+@before mapper:@memory[$C100-$FFFF]
+mapper:@memory[$C0C0-$C0CF] = ulan
+@before mapper:@memory[$C100-$FFFF]
+mapper:@memory[$C0D0-$C0DF] = liberty
+@before mapper:@memory[$C100-$FFFF]
+mapper:@memory[$C0F8-$C0FF] = comport-uart

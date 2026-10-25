@@ -1,0 +1,37 @@
+# Сборка эталонного снимка для state-pravetz-8a-comport.ecat.
+#
+# Запускается руками, а не набором тестов: снимок - это двоичный эталон,
+# который обновляют осознанно. Из каталога deploy/:
+#
+#   eCat3-headless --no-sound --script ../tests/files/make-state-pravetz-8a-comport.ecat
+#
+# Правец-8А с платой COMport: DOS загружен с образа 1 через плату (ее драйвер
+# в памяти DOS, RWTS перехвачен), на образ 2 записана программа SNAP. Образы
+# «компьютера PC» - его диски, и в снимок они идут целиком; чтобы снимок был
+# маленьким, после загрузки D1 и D3 убраны, а D2 - маленький диск из tests/files.
+
+MACHINE "pravetz/Pravetz-8A-full.ext"
+COMMAND fdd0.eject()
+COMMAND comport-pc.eject(3)
+COMMAND comport-pc.load(2, "pravetz-dos33.dsk")
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+TYPE "PR#7"
+KEY 50,50,ret
+WAIT 5000
+COMMAND comport-pc.eject(1)
+TYPE "10 PRINT \"SNAPSHOT \";6*7"
+KEY 50,50,ret
+TYPE "SAVE SNAP,D2"
+KEY 50,50,ret
+WAIT 3000
+TYPE "NEW"
+KEY 50,50,ret
+WAIT 300
+
+SAVESTATE "state-pravetz-8a-comport.ecats.zip"
+SCREEN "state-pravetz-8a-comport-made.png"
+EXIT

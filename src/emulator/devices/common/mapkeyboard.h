@@ -116,11 +116,13 @@ protected:
     void set_alt_state(bool pressed) override { alt_pressed = pressed; }
 
 public:
+    unsigned int rus_switch_key() const override { return (code_ruslat == 0) ? _FFFF : code_ruslat; }
     MapKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     void key_down(unsigned int key) override;
     void key_up(unsigned int key) override;
     bool needs_shift(unsigned int key) override;
+    bool key_for_char(unsigned int codepoint, unsigned int &key, bool &shift) override;
     bool keypad_keys() const override { return m_keypad; }
 
     emulator::Result load_config(SystemData *sd) override;

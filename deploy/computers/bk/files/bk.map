@@ -43,6 +43,7 @@ semicolon:	$3B
 >/S:	$3E
 ?/S:	$3F
 colon/S:	$3A
+@:	$40
 @/S:	$40
 circum:	$5E
 under:	$5F

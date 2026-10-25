@@ -1,0 +1,1 @@
+[mmu.switches] lcbank2 lcwrite prewrite

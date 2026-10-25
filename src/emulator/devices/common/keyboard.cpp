@@ -259,6 +259,9 @@ unsigned int Keyboard::remap_key(unsigned int key)
 
 void Keyboard::key_event(unsigned int key, unsigned int native_key, bool press, bool host)
 {
+    const bool raw = ((key | native_key) & KEY_NO_REMAP) != 0;
+    key &= ~KEY_NO_REMAP;
+    native_key &= ~KEY_NO_REMAP;
     unsigned int k;
     if (known_key(key))
         k = key;
@@ -290,7 +293,7 @@ void Keyboard::key_event(unsigned int key, unsigned int native_key, bool press, 
                     break;
                 }
             if (code == _FFFF) {
-                code = rus_translate(host ? remap_locked(k) : k);
+                code = raw ? k : rus_translate(host ? remap_locked(k) : k);
                 if (press) m_host_down.push_back(std::make_pair(k, code));
             }
         }
@@ -350,6 +353,18 @@ void text_to_keys(const std::string &text, Keyboard * kbd, bool escapes,
                   std::vector<unsigned int> &keys, std::vector<bool> &shift,
                   std::vector<std::string> * unknown)
 {
+    //Cyrillic goes through the keyboard's РУС/ЛАТ switch: pressed before the
+    //first Russian letter, again before the next character that is not one
+    //(nor a space), and at the end the switch is left as it was found
+    //A text of ASCII alone leaves the switch alone: a script may have turned
+    //РУС on itself and type Russian with the Latin keys
+    bool has_cyrillic = false;
+    for (size_t i = 0; i < text.length(); i++)
+        if (static_cast<unsigned char>(text[i]) >= 0x80) has_cyrillic = true;
+    const unsigned int rus_key = (kbd != nullptr && has_cyrillic) ? kbd->rus_on_key() : _FFFF;
+    const unsigned int lat_key = (kbd != nullptr && has_cyrillic) ? kbd->rus_off_key() : _FFFF;
+    const bool rus_start = kbd != nullptr && kbd->rus_now();
+    bool rus = rus_start;
     for (size_t i = 0; i < text.length(); i++)
     {
         const char ch = text[i];
@@ -357,12 +372,28 @@ void text_to_keys(const std::string &text, Keyboard * kbd, bool escapes,
 
         if (static_cast<unsigned char>(ch) >= 0x80)
         {
-            //A UTF-8 sequence: no key has a name outside ASCII
+            //A UTF-8 sequence: no key has a name outside ASCII, the keyboard
+            //may know a key that types the letter
             size_t j = i + 1;
             while (j < text.length() && (static_cast<unsigned char>(text[j]) & 0xC0) == 0x80) j++;
-            if (unknown != nullptr) unknown->push_back(text.substr(i, j - i));
+            const unsigned char lead = static_cast<unsigned char>(ch);
+            unsigned int cp = (lead >= 0xF0) ? (lead & 0x07) : (lead >= 0xE0) ? (lead & 0x0F) : (lead & 0x1F);
+            for (size_t k = i + 1; k < j; k++) cp = (cp << 6) | (static_cast<unsigned char>(text[k]) & 0x3F);
+            unsigned int key = 0;
+            bool sh = false;
+            if (kbd != nullptr && rus_key != _FFFF && kbd->key_for_char(cp, key, sh)) {
+                if (!rus) { keys.push_back(rus_key); shift.push_back(false); rus = true; }
+                keys.push_back(key);
+                shift.push_back(sh);
+            } else if (unknown != nullptr)
+                unknown->push_back(text.substr(i, j - i));
             i = j - 1;
             continue;
+        }
+        //Back to Latin for anything but a space: in РУС the punctuation keys
+        //of a ЙЦУКЕН layout are letters
+        if (rus && rus_key != _FFFF && ch != ' ') {
+            keys.push_back(lat_key); shift.push_back(false); rus = false;
         }
 
         if (escapes && ch == '\\' && i + 1 < text.length())
@@ -385,8 +416,9 @@ void text_to_keys(const std::string &text, Keyboard * kbd, bool escapes,
             continue;
         }
         keys.push_back(code);
-        shift.push_back(kbd != nullptr && kbd->needs_shift(code));
+        shift.push_back(kbd != nullptr && (name.size() == 1 ? kbd->needs_shift_char(name[0], code) : kbd->needs_shift(code)));
     }
+    if (rus != rus_start) { keys.push_back(rus ? lat_key : rus_key); shift.push_back(false); }
 }
 
 unsigned int Keyboard::translate_key(const std::string &key)
@@ -397,6 +429,48 @@ unsigned int Keyboard::translate_key(const std::string &key)
 void Keyboard::set_rus(bool new_rus)
 {
     rus_mode = new_rus;
+}
+
+unsigned int koi7_code(unsigned int codepoint)
+{
+    // The letters in the order of their codes: Ю А Б Ц Д Е Ф Г Х И Й К Л М Н О
+    // П Я Р С Т У Ж В Ь Ы З Ш Э Щ Ч, as their offsets from А in Unicode
+    static const unsigned char ORDER[31] = {
+        0x1E, 0x00, 0x01, 0x16, 0x04, 0x05, 0x14, 0x03, 0x15, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
+        0x0E, 0x0F, 0x1F, 0x10, 0x11, 0x12, 0x13, 0x06, 0x02, 0x1C, 0x1B, 0x07, 0x18, 0x1D, 0x19, 0x17
+    };
+    unsigned int cp = codepoint;
+    unsigned int base = 0x60;
+    if (cp == 0x401) cp = 0x415;                                // Ё as Е
+    if (cp == 0x451) cp = 0x435;
+    if (cp >= 0x430 && cp <= 0x44F) { cp -= 0x20; base = 0x40; }
+    if (cp < 0x410 || cp > 0x42F) return _FFFF;
+    for (unsigned i = 0; i < 31; i++)
+        if (0x410 + ORDER[i] == cp) return base + i;
+    // Ъ closes the table: $7F (and $5F the small one), the code of ЗБ in the
+    // Latin half - a machine that has the letter keeps it on the key of `_`
+    if (cp == 0x42A) return base + 0x1F;
+    return _FFFF;
+}
+
+bool Keyboard::key_for_char(unsigned int codepoint, unsigned int &key, bool &shift)
+{
+    // In РУС a Latin key of the Soviet machines gives the Russian letter of
+    // its КОИ-7 code ($60 + n is the letter, $40 + n its Latin key): one case
+    static const unsigned int LATIN_KEYS[32] = {
+        EmuKey::At, EmuKey::Key_A, EmuKey::Key_B, EmuKey::Key_C, EmuKey::Key_D, EmuKey::Key_E,
+        EmuKey::Key_F, EmuKey::Key_G, EmuKey::Key_H, EmuKey::Key_I, EmuKey::Key_J, EmuKey::Key_K,
+        EmuKey::Key_L, EmuKey::Key_M, EmuKey::Key_N, EmuKey::Key_O, EmuKey::Key_P, EmuKey::Key_Q,
+        EmuKey::Key_R, EmuKey::Key_S, EmuKey::Key_T, EmuKey::Key_U, EmuKey::Key_V, EmuKey::Key_W,
+        EmuKey::Key_X, EmuKey::Key_Y, EmuKey::Key_Z, EmuKey::BracketLeft, EmuKey::Backslash,
+        EmuKey::BracketRight, EmuKey::AsciiCircum, EmuKey::Underscore
+    };
+    if (rus_switch_key() == _FFFF) return false;
+    const unsigned int code = koi7_code(codepoint);
+    if (code == _FFFF) return false;
+    key = LATIN_KEYS[code & 0x1F] | KEY_NO_REMAP;
+    shift = false;
+    return true;
 }
 
 unsigned int Keyboard::rus_translate(unsigned int code)

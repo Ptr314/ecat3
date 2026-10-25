@@ -53,6 +53,12 @@
 #define wd1793_DELAY_STEP           100
 #define wd1793_COMMAND_SEEK         6
 #define wd1793_COMMAND_STEP         7
+#define wd1793_COMMAND_READ_ADDRESS 8
+#define wd1793_COMMAND_WRITE_TRACK  9
+#define wd1793_COMMAND_TRACK_BYTE   10
+
+// Bytes of a track from index to index: 6250 at 250 kbit/s in MFM
+#define wd1793_TRACK_LENGTH         6250
 
 // The head stays loaded for a while after the last command (the real chip
 // counts 15 index pulses, about 3 s), which is what keeps the drive motor and
@@ -84,6 +90,38 @@ private:
     unsigned int sectors_read;
     unsigned int sectors_written;
     bool intrq_forced;      //INTRQ held by Force Interrupt I3 until a $D0
+
+    //Delay of a register write, controller clocks (wd1793_DELAY_REGISTER)
+    int m_register_delay = wd1793_DELAY_REGISTER;
+    //The heads of the drives as the drives hold them: TR00 comes from the
+    //head standing on cylinder 0, a step past the last cylinder does not move
+    //it, a disk is read where the head is. Off: the track register is the head
+    bool m_physical = false;
+    int m_max_cylinder = 83;
+    uint32_t m_head[4] = {0, 0, 0, 0};
+    //Index pulses in the type I status, every m_index_period clocks for
+    //m_index_width of them; 0: none
+    unsigned m_index_period = 0;
+    unsigned m_index_width = 0;
+    unsigned m_index_clock = 0;
+    bool m_type1 = true;    //the status shows the type I bits
+    uint8_t m_id[6];        //Read Address: the ID field it hands out
+    bool m_reading_id = false;
+    //Write Track: the image keeps sectors, not the track, so the stream is
+    //read as the chip would write it - an ID field after $FE, the data of
+    //that sector after $FB/$F8 - and the data goes into the sector
+    unsigned m_track_length = wd1793_TRACK_LENGTH;
+    unsigned m_wt_state = 0;    //0 gaps, 1 ID field, 2 data field
+    unsigned m_wt_left = 0;     //bytes of the field still to come
+    bool m_wt_write = false;    //the data field lands in the image
+    bool m_wt_have_id = false;  //an ID field came since the last data field
+
+    uint8_t m_wt_id[4];
+    unsigned m_tracks_written = 0;
+    void track_byte(uint8_t value);
+
+    int head_cylinder();
+    void move_head(int steps);
 
     void SetDRQ();
     bool GetDRQ();

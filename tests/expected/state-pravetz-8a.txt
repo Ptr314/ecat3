@@ -1,0 +1,8 @@
+=== ключи после подъема ===
+[mmu.switches] 80store lcwrite intc8rom prewrite
+[iou.video] text 80col altchar an3 80store
+[iou.softsw] $01
+[ram.value] $C000: $A5 $5A
+=== машина живая ===
+[ram.value] $C000: $A5 $5A $C3
+[mmu.switches] 80store lcwrite intc8rom prewrite

@@ -1,0 +1,71 @@
+# Правец-8А с MEGARAM на 1 Мб: 16 страниц по 64 Кб, номер страницы пишется
+# в $C073 (как у RamWorks). Тот же прием, каким размер памяти определяет
+# виртуальный диск СП «Вариант» (школьные дискеты): нулевая страница
+# вспомогательной памяти (ALTZP, $C009) каждой из страниц $0F..$00 помечается
+# своим числом, потом метки читаются из самой памяти модуля. Запись $1F
+# выбирает страницу $0F: модуль дешифрирует четыре разряда.
+# @timeout 10
+
+MACHINE "pravetz/Pravetz-8A-full.ext"
+# Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
+COMMAND fdd0.eject()
+WAIT 500
+LOGDEFS 8,16
+COMMAND iou.set($C009,0)
+COMMAND iou.set($C073,$0F)
+COMMAND mmu.set($0000,$AF)
+COMMAND iou.set($C073,$0E)
+COMMAND mmu.set($0000,$AE)
+COMMAND iou.set($C073,$0D)
+COMMAND mmu.set($0000,$AD)
+COMMAND iou.set($C073,$0C)
+COMMAND mmu.set($0000,$AC)
+COMMAND iou.set($C073,$0B)
+COMMAND mmu.set($0000,$AB)
+COMMAND iou.set($C073,$0A)
+COMMAND mmu.set($0000,$AA)
+COMMAND iou.set($C073,$09)
+COMMAND mmu.set($0000,$A9)
+COMMAND iou.set($C073,$08)
+COMMAND mmu.set($0000,$A8)
+COMMAND iou.set($C073,$07)
+COMMAND mmu.set($0000,$A7)
+COMMAND iou.set($C073,$06)
+COMMAND mmu.set($0000,$A6)
+COMMAND iou.set($C073,$05)
+COMMAND mmu.set($0000,$A5)
+COMMAND iou.set($C073,$04)
+COMMAND mmu.set($0000,$A4)
+COMMAND iou.set($C073,$03)
+COMMAND mmu.set($0000,$A3)
+COMMAND iou.set($C073,$02)
+COMMAND mmu.set($0000,$A2)
+COMMAND iou.set($C073,$01)
+COMMAND mmu.set($0000,$A1)
+COMMAND iou.set($C073,$00)
+COMMAND mmu.set($0000,$A0)
+PRINT "=== Метки страниц ==="
+LOG aux.value($0)
+LOG aux.value($10000)
+LOG aux.value($20000)
+LOG aux.value($30000)
+LOG aux.value($40000)
+LOG aux.value($50000)
+LOG aux.value($60000)
+LOG aux.value($70000)
+LOG aux.value($80000)
+LOG aux.value($90000)
+LOG aux.value($A0000)
+LOG aux.value($B0000)
+LOG aux.value($C0000)
+LOG aux.value($D0000)
+LOG aux.value($E0000)
+LOG aux.value($F0000)
+PRINT "=== $1F ==="
+COMMAND iou.set($C073,$1F)
+LOG mmu.aux_bank
+LOG mmu.map
+COMMAND iou.set($C008,0)
+COMMAND iou.set($C073,0)
+LOG mmu.map
+EXIT

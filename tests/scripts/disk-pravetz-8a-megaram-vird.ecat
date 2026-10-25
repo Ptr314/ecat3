@@ -1,0 +1,62 @@
+# Правец-8А с MEGARAM 1 Мб: виртуальный диск СП «Вариант» VIRD (школьный
+# диск p8ru02.dsk). Установка проходит все 16 страниц модуля: выбирает каждую
+# записью в $C073, пишет метку в нулевую страницу вспомогательной памяти и
+# проверяет ее - найденные страницы в $6017 (число) и $6018-$6027. Память
+# делится на диски по 3 страницы, последний - на то, что осталось (здесь одна
+# страница): шесть дисков, дисководы D1-D6 слота 3, тома 001-006, уже
+# размеченные. Перехват RWTS ($BD00) берет диск по номеру дисковода из IOB;
+# DOS Правеца пускает D до 6 (D7 - RANGE ERROR). На каждый пишется
+# программа, каталоги D1 и D6 читаются, программа грузится с D6.
+# @timeout 180
+
+MACHINE "pravetz/Pravetz-8A-full.ext"
+LOGDEFS 8,16
+COMMAND fdd0.load("p8ru02.dsk")
+WAIT 8000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+TYPE "BRUN VIRD"
+KEY 50,50,ret
+WAIT 3000
+LOG ram.value($6017,$6027)
+TYPE "10 PRINT \"MEGARAM \";2*8;\"A\""
+KEY 50,50,ret
+TYPE "SAVE D1,S3,D1"
+KEY 50,50,ret
+WAIT 1500
+TYPE "SAVE D2,S3,D2"
+KEY 50,50,ret
+WAIT 1500
+TYPE "SAVE D3,S3,D3"
+KEY 50,50,ret
+WAIT 1500
+TYPE "SAVE D4,S3,D4"
+KEY 50,50,ret
+WAIT 1500
+TYPE "SAVE D5,S3,D5"
+KEY 50,50,ret
+WAIT 1500
+TYPE "SAVE D6,S3,D6"
+KEY 50,50,ret
+WAIT 1500
+TYPE "NEW"
+KEY 50,50,ret
+TYPE "HOME"
+KEY 50,50,ret
+TYPE "CATALOG,S3,D1"
+KEY 50,50,ret
+WAIT 2000
+TYPE "CATALOG,S3,D6"
+KEY 50,50,ret
+WAIT 2000
+TYPE "LOAD D6,S3,D6"
+KEY 50,50,ret
+WAIT 2000
+TYPE "RUN"
+KEY 50,50,ret
+WAIT 500
+LOG mmu.aux_bank
+SCREEN "../results/disk-pravetz-8a-megaram-vird.png"
+EXIT

@@ -51,6 +51,9 @@ std::string read_confg_value(EmulatorConfigDevice * cd, const std::string &name,
 bool read_confg_value(EmulatorConfigDevice * cd, const std::string &name, bool required, bool def);
 
 bool checkCapsLock();
+// false: checkCapsLock() reads the host no more (see ScriptEngine)
+void use_host_lock_keys(bool on);
+
 
 int getRandomNumber(int min, int max);
 

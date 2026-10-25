@@ -1,0 +1,49 @@
+# Правец-8А, плата COMport в слоте 7: PR#7 грузит DOS 3.3 с образа 1 на
+# «компьютере PC» (comport-server) по линии 8250 на 115200 бод. Протокол из
+# ПЗУ платы: запрос BF 01 D T S CS, ответ BF 00 <256 байт> сумма. Потом
+# CATALOG с образа 1, запись программы на образ 2 (диск DOS 3.3 из
+# tests/files) и чтение ее обратно; несуществующий D9 дает I/O ERROR.
+# @timeout 60
+
+MACHINE "pravetz/Pravetz-8A-full.ext"
+# Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
+COMMAND fdd0.eject()
+LOGDEFS 8,16
+COMMAND comport-pc.load(2, "../files/pravetz-dos33.dsk")
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "PR#7"
+KEY 50,50,ret
+WAIT 5000
+LOG comport-pc.reads
+SCREEN "../results/disk-pravetz-8a-comport-boot.png"
+TYPE "CATALOG"
+KEY 50,50,ret
+WAIT 2000
+SCREEN "../results/disk-pravetz-8a-comport-catalog.png"
+TYPE "HOME:NEW"
+KEY 50,50,ret
+TYPE "10 PRINT \"COMPORT\""
+KEY 50,50,ret
+TYPE "SAVE TEST,D2"
+KEY 50,50,ret
+WAIT 2000
+TYPE "NEW"
+KEY 50,50,ret
+TYPE "LOAD TEST,D2"
+KEY 50,50,ret
+WAIT 2000
+TYPE "LIST:RUN:CATALOG"
+KEY 50,50,ret
+WAIT 2000
+TYPE "CATALOG,D9"
+KEY 50,50,ret
+WAIT 1000
+LOG comport-pc.disks
+LOG comport-pc.writes
+LOG comport-pc.errors
+SCREEN "../results/disk-pravetz-8a-comport.png"
+EXIT

@@ -1,0 +1,27 @@
+# Правец-8А с Liberty Drive (КР1818ВГ93, 400 Кб): PR#5 загружает с диска,
+# загрузчик которого через драйвер ProDOS в ПЗУ платы читает блоки 2, 15, 25
+# и 799 и печатает их метки ABCD (tests/files/make-liberty-400.py). Перед
+# этим ПЗУ определяет дисковод: ищет дорожку 0 по головке, ждет индекс,
+# доводит головку до упора на 41-м цилиндре и решает, что дисковод
+# 40-дорожечный (тип 1, 800 блоков, $05FD), второй - без дискеты (тип 8).
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8A-full.ext"
+# Без штатного диска в дисководе 140 Кб: ПЗУ не грузит с него DOS
+COMMAND fdd0.eject()
+COMMAND lfdd0.load("../../tests/files/liberty-400.img")
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "PR#5"
+KEY 50,50,ret
+WAIT 6000
+LOGDEFS 8,16
+LOG mapper.value($5FD)
+LOG liberty.latch
+LOG liberty-wd.reads
+LOG liberty-wd.unsupported
+SCREEN "../results/disk-pravetz-8a-liberty.png"
+EXIT

@@ -1,0 +1,20 @@
+# ДВК-1 (15ИЭ): TYPE набирает русские буквы в Бейсике из ПЗУ (140000G).
+# Таблица 15ВВВ говорит, что дает клавиша в РУС (ЙЦУКЕН, строки /R), и TYPE
+# ищет клавишу с кодом буквы КОИ-7 - и заглавной, и строчной.
+# @timeout 60
+
+MACHINE "dvk/DVK-1.cfg"
+WAIT _2000
+KEY _100,_50,ret
+WAIT _500
+TYPE "140000G"
+WAIT _10000
+KEY _100,_50,ret
+WAIT _3000
+KEY _100,_50,ret
+WAIT _3000
+TYPE "ПРИВЕТ, МИР 123 привет"
+WAIT _8000
+LOG keyboard.rus
+SCREEN "../results/work-dvk1-type-cyr.png"
+EXIT

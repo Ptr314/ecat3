@@ -1,0 +1,5 @@
+// Для тестов: Правец-82 с поздней клавиатурой (стрелки, автоповтор)
+@extends pravetz/Pravetz-82.cfg
+@version Правец-82 (поздняя клавиатура)
+
+keyboard:map = pravetz-82-late.map

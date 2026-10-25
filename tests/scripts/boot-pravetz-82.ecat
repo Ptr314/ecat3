@@ -1,0 +1,24 @@
+# Правец-82: включение без дискеты, CTRL+RESET и строка в БЕЙСИКе латиницей
+# и кириллицей (ЛАТ - F10). Знакогенератор 82: кириллица на месте строчных, буквы прижаты к низу, Ш Щ Ч Ю на кодах [ ] ^ @.
+# @timeout 20
+
+MACHINE "pravetz/Pravetz-82.cfg"
+# Без штатного диска в дисководе: ПЗУ не грузит DOS
+COMMAND fdd0.eject()
+WAIT 2000
+SCREEN "../results/boot-pravetz-82.png"
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 1000
+TYPE "PRINT \"LAT "
+KEY 50,100,f10
+TYPE "KIR SHCH [ ] = ~"
+KEY 50,100,f10
+TYPE "\""
+KEY 50,50,ret
+WAIT 500
+LOG mmu.switches
+LOG iou.video
+SCREEN "../results/boot-pravetz-82-basic.png"
+EXIT

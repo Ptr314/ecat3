@@ -1,0 +1,25 @@
+# Сборка эталонного снимка для state-pravetz-8a-woz.ecat.
+#
+# Запускается руками, из каталога deploy/:
+#
+#   eCat3-headless --no-sound --script ../tests/files/make-state-pravetz-8a-woz.ecat
+#
+# Правец-8А с диском WOZ (pravetz-dos33.woz) после загрузки DOS и SAVE TEST:
+# файл есть только в битах дорожек в памяти дисковода, снимок уносит их
+# (media/*.woz) вместе с полубайтами дорожек.
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+COMMAND fdd0.load("../tests/files/pravetz-dos33.woz")
+WAIT 6000
+TYPE "10 PRINT \"STATE \";2*4;\"A\""
+KEY 50,50,ret
+TYPE "SAVE TEST"
+KEY 50,50,ret
+WAIT 3000
+TYPE "NEW"
+KEY 50,50,ret
+WAIT 500
+
+SAVESTATE "state-pravetz-8a-woz.ecats.zip"
+SCREEN "state-pravetz-8a-woz-made.png"
+EXIT

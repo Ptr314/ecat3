@@ -1,0 +1,32 @@
+# Правец-8А, Disk II на секвенсоре P6: диск WOZ - биты дорожек, какими их
+# видит головка, с картой четвертей дорожек (tests/files/make-pravetz-woz.py:
+# DOS 3.3 и HELLO, на диске только дорожки 0-2 и 16-19, остальное пусто).
+# Загрузка DOS, CATALOG, SAVE и LOAD: записанное ложится в биты дорожки и
+# читается с них же. Образ остается в памяти дисковода, файл не меняется.
+# @timeout 60
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+COMMAND fdd0.load("../files/pravetz-dos33.woz")
+WAIT 6000
+TYPE "CATALOG"
+KEY 50,50,ret
+WAIT 2000
+TYPE "10 PRINT \"WOZ \";2*4;\"A\""
+KEY 50,50,ret
+TYPE "SAVE TEST"
+KEY 50,50,ret
+WAIT 3000
+TYPE "NEW"
+KEY 50,50,ret
+TYPE "LOAD TEST"
+KEY 50,50,ret
+WAIT 3000
+TYPE "HOME:LIST:RUN"
+KEY 50,50,ret
+WAIT 500
+TYPE "CATALOG"
+KEY 50,50,ret
+WAIT 2000
+LOG fdc140.track
+SCREEN "../results/disk-pravetz-8a-woz.png"
+EXIT

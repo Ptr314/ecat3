@@ -1,0 +1,29 @@
+# Правец-8А, сетевая плата U-LAN в слоте 4: PR#4 запускает прошивку 2.1.
+# Номер станции она берет чтением $CFFF (плата ставит туда переключатели,
+# параметр station = 1): чтение $CFFF еще отдает байт платы, область $C800 плата
+# отпускает после него. Прошивка переключает банки ПЗУ выходом RTS ACIA
+# (ulan.bank), шлет на линию номер станции и его дополнение и слышит их
+# обратно (линия - общая шина). Дальше она проверяет линию посылкой break
+# и ждет прерывания от детектора на плате; его схема не известна, поэтому
+# самопроверка кончается сообщением «ДЕФЕКТ #1» и выходом в БЕЙСИК.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8A-full.ext"
+# Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
+COMMAND fdd0.eject()
+LOGDEFS 8,16
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "PR#4"
+KEY 50,50,ret
+WAIT 3000
+LOG ulan.station
+LOG ulan.control
+LOG ulan.output
+LOG ulan.sent
+LOG ulan.received
+SCREEN "../results/work-pravetz-8a-ulan.png"
+EXIT

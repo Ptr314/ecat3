@@ -1,0 +1,14 @@
+# Поиск-1: TYPE набирает русские буквы в меню BIOS (имя файла, F1).
+# Кириллицу BIOS включает правым Ctrl (F12 хоста, rus_key), раскладка - ЙЦУКЕН
+# как у PC (rus_layout = jcuken), заглавные с Shift. В поле - 8 знаков.
+# @timeout 60
+
+MACHINE "../../tests/files/poisk-nofdd.ext"
+WAIT 3000
+KEY 100,200,f1
+WAIT 500
+TYPE "ПрИвЕтЪъ"
+WAIT 8000
+LOG keyboard.rus
+SCREEN "../results/work-poisk-type-cyr.png"
+EXIT

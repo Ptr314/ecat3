@@ -44,7 +44,7 @@
         <translation type="vanished">Команда &apos;set&apos; требует адрес и значение</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+1087"/>
+        <location filename="../emulator/core.cpp" line="+1088"/>
         <source>Command &apos;set&apos; expects an address and at least one value</source>
         <translation>Команда &apos;set&apos; требует адрес и хотя бы одно значение</translation>
     </message>
@@ -164,6 +164,151 @@
         <location filename="../emulator/devices/specific/agat_fdc840.cpp" line="+63"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
+    </message>
+</context>
+<context>
+    <name>Apple2Cards</name>
+    <message>
+        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="+28"/>
+        <source>A ROM of 2K is expected</source>
+        <translation>Нужно ПЗУ на 2 Кб</translation>
+    </message>
+    <message>
+        <location line="+92"/>
+        <source>A ROM of 4K is expected</source>
+        <translation>Нужно ПЗУ на 4 Кб</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Incorrect baud rate</source>
+        <translation>Некорректная скорость обмена</translation>
+    </message>
+    <message>
+        <location line="+171"/>
+        <source>Command &apos;connect&apos; expects a port name</source>
+        <translation>Команде connect нужно имя порта</translation>
+    </message>
+    <message>
+        <location line="+83"/>
+        <source>File not found</source>
+        <translation>Файл не найден</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>A 140K disk image in DOS order is expected</source>
+        <translation>Нужен образ диска 140 Кб в порядке DOS</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>An ins8250 device is expected</source>
+        <translation>Нужно устройство ins8250</translation>
+    </message>
+    <message>
+        <location line="+137"/>
+        <source>A drive 1-254 and a file are expected</source>
+        <translation>Нужны номер диска 1-254 и файл</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The drive has no image</source>
+        <translation>В этом диске нет образа</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Cannot write the file</source>
+        <translation>Не удалось записать файл</translation>
+    </message>
+</context>
+<context>
+    <name>Apple2Disk2</name>
+    <message>
+        <location filename="../emulator/devices/specific/apple2_disk2.cpp" line="+29"/>
+        <source>The sequencer PROM p6 of 256 bytes is expected</source>
+        <translation>Нужно ПЗУ секвенсора p6 на 256 байт</translation>
+    </message>
+</context>
+<context>
+    <name>Apple2IOU</name>
+    <message>
+        <location filename="../emulator/devices/specific/apple2_iou.cpp" line="+31"/>
+        <source>Unknown model, ii or iie expected</source>
+        <translation>Неизвестная модель, ожидается ii или iie</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>An apple2-mmu device is expected</source>
+        <translation>Ожидается устройство apple2-mmu</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>The keyboard has no Apple II latch</source>
+        <translation>У клавиатуры нет регистра Apple II</translation>
+    </message>
+</context>
+<context>
+    <name>Apple2MMU</name>
+    <message>
+        <location filename="../emulator/devices/specific/apple2_mmu.cpp" line="+35"/>
+        <source>Unknown model, ii or iie expected</source>
+        <translation>Неизвестная модель, ожидается ii или iie</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>A RAM and a ROM are expected</source>
+        <translation>Ожидаются ОЗУ и ПЗУ</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The language card needs 64K of RAM</source>
+        <translation>Языковой карте нужно 64 Кб ОЗУ</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The RAM must be 48K at least</source>
+        <translation>ОЗУ должно быть не меньше 48 Кб</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The auxiliary RAM is 64K pages of a //e</source>
+        <translation>Вспомогательная память - страницы по 64 Кб, только у //e</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The ROM must start on a page and end by $FFFF</source>
+        <translation>ПЗУ должно начинаться с границы страницы и кончаться не дальше $FFFF</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>A slot ROM is not a ROM or the offset is past its end</source>
+        <translation>ПЗУ слота - не ПЗУ, или смещение выходит за его конец</translation>
+    </message>
+</context>
+<context>
+    <name>Apple2Video</name>
+    <message>
+        <location filename="../emulator/devices/specific/apple2_video.cpp" line="+60"/>
+        <source>The mmu, the iou and the font are expected</source>
+        <translation>Ожидаются mmu, iou и знакогенератор</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Unknown charset, iie or ii expected</source>
+        <translation>Неизвестный знакогенератор, ожидается iie или ii</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>The font ROM is too small for font_half</source>
+        <translation>ПЗУ знакогенератора мало для font_half</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>The rgb_rom is expected to be a ROM of 32 bytes or more</source>
+        <translation>rgb_rom должно быть ПЗУ не меньше 32 байт</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>The monitor rgb-variant needs rgb_rom</source>
+        <translation>Монитору rgb-variant нужно rgb_rom</translation>
     </message>
 </context>
 <context>
@@ -359,6 +504,7 @@
     </message>
     <message>
         <location filename="../emulator/devices/common/dl11.cpp" line="+348"/>
+        <location filename="../emulator/devices/common/ins8250.cpp" line="+245"/>
         <source>Serial port of the computer</source>
         <translation>Последовательный порт компьютера</translation>
     </message>
@@ -461,6 +607,16 @@
         <location filename="../emulator/devices/common/mouse.cpp" line="+284"/>
         <source>Mouse at start-up</source>
         <translation>Мышь при запуске</translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/specific/apple2_video.cpp" line="+224"/>
+        <source>Character set</source>
+        <translation>Набор знаков</translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/specific/pravetz_keyboard.cpp" line="+108"/>
+        <source>Keyboard layout</source>
+        <translation>Раскладка клавиатуры</translation>
     </message>
 </context>
 <context>
@@ -840,12 +996,12 @@
         <translation type="vanished">Устройство %1 не найдено</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1327"/>
+        <location filename="../emulator/core.cpp" line="-1328"/>
         <source>Too many devices</source>
         <translation>Слишком много устройств</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+20"/>
         <source>Can&apos;t create device</source>
         <translation>Невозможно создать устройство</translation>
     </message>
@@ -861,6 +1017,7 @@
         <location filename="../emulator/devices/specific/agat_7_display.cpp" line="+86"/>
         <location filename="../emulator/devices/specific/agat_9_display.cpp" line="+80"/>
         <location line="+11"/>
+        <location filename="../emulator/devices/specific/apple2_video.cpp" line="+16"/>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
         <location line="+246"/>
         <location filename="../emulator/devices/specific/bk_display.cpp" line="+179"/>
@@ -1034,6 +1191,36 @@
         <location filename="../emulator/devices/common/printer.cpp" line="+68"/>
         <source>Printer</source>
         <translation>Принтер</translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/specific/apple2_video.cpp" line="+2"/>
+        <source>Green monitor</source>
+        <translation>Зеленый монитор</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>White monitor</source>
+        <translation>Белый монитор</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Amber monitor</source>
+        <translation>Янтарный монитор</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>RGB card, Apple colours</source>
+        <translation>Плата RGB, цвета Apple</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>RGB card, Pravetz stock</source>
+        <translation>Плата RGB, штатная Правеца</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>RGB card, Variant</source>
+        <translation>Плата RGB «Варианта»</translation>
     </message>
 </context>
 <context>
@@ -1316,7 +1503,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+272"/>
+        <location filename="../emulator/emulator.cpp" line="+280"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -2084,6 +2271,34 @@
     </message>
 </context>
 <context>
+    <name>INS8250</name>
+    <message>
+        <location filename="../emulator/devices/common/ins8250.cpp" line="-205"/>
+        <source>Incorrect clock</source>
+        <translation>Неверная частота</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>The peer is not a device that takes a serial line</source>
+        <translation>Собеседник не принимает последовательную линию</translation>
+    </message>
+    <message>
+        <location line="+259"/>
+        <source>Command &apos;connect&apos; expects a port name</source>
+        <translation>Команде &apos;connect&apos; нужно имя порта</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Command &apos;sendfile&apos; expects a file name</source>
+        <translation>Команде &apos;sendfile&apos; нужно имя файла</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>File not found</source>
+        <translation>Файл не найден</translation>
+    </message>
+</context>
+<context>
     <name>IndirectMemory</name>
     <message>
         <location filename="../emulator/devices/common/indirect_memory.cpp" line="-22"/>
@@ -2256,7 +2471,7 @@
         <translation>Неверная клавиша в файле групп клавиш</translation>
     </message>
     <message>
-        <location line="+725"/>
+        <location line="+753"/>
         <source>Command &apos;host&apos; expects a key name and 0 or 1</source>
         <translation>Команде &apos;host&apos; нужны имя клавиши и 0 или 1</translation>
     </message>
@@ -2287,6 +2502,14 @@
         <location filename="../dialogs/keyboardwindow.cpp" line="+434"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
+    </message>
+</context>
+<context>
+    <name>LibertyFDC</name>
+    <message>
+        <location filename="../emulator/devices/specific/liberty_fdc.cpp" line="+25"/>
+        <source>A wd1793 device is expected</source>
+        <translation>Ожидается устройство wd1793</translation>
     </message>
 </context>
 <context>
@@ -3652,6 +3875,34 @@
     </message>
 </context>
 <context>
+    <name>PravetzKeyboard</name>
+    <message>
+        <location filename="../emulator/devices/specific/pravetz_keyboard.cpp" line="-62"/>
+        <source>Keyboard map file is expected</source>
+        <translation>Ожидается файл раскладки клавиатуры</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Error reading map file</source>
+        <translation>Ошибка чтения файла мэппинга</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>Map file entry is incorrect</source>
+        <translation>Элемент файла мэппинга некорректен</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Invalid value in the map file</source>
+        <translation>Некорректное значение в файле мэппинга</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Duplicate entry in the map file</source>
+        <translation>Повторяющийся элемент в файле мэппинга</translation>
+    </message>
+</context>
+<context>
     <name>Printer</name>
     <message>
         <location filename="../emulator/devices/common/printer.cpp" line="-30"/>
@@ -3745,7 +3996,7 @@
 <context>
     <name>RasterDisplay</name>
     <message>
-        <location filename="../emulator/devices/common/raster_display.cpp" line="+75"/>
+        <location filename="../emulator/devices/common/raster_display.cpp" line="+91"/>
         <source>Unknown video standard</source>
         <translation>Неизвестный стандарт видео</translation>
     </message>

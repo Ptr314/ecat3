@@ -1,0 +1,22 @@
+# Правец-8А, плата принтера Epson APL в слоте 1: PR#1 и PRINT уходят на
+# принтер. Прошивка ждет готовности по разряду 7 $C1C1 (плата подставляет
+# туда BUSY принтера), байт - записью в $C090.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8A-full.ext"
+# Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
+COMMAND fdd0.eject()
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "PR#1:PRINT \"PRAVETZ 8A\":PR#0"
+KEY 50,50,ret
+WAIT 1500
+LOG printer.text
+LOG printer-card.written
+LOG printer.output
+SCREEN "../results/work-pravetz-8a-printer.png"
+
+EXIT

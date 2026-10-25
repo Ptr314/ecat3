@@ -61,6 +61,7 @@ FDD::FDD(InterfaceManager *im, EmulatorConfigDevice *cd):
 
 {
     device_class = "fdd";
+    memset(m_woz_map, 0xFF, sizeof(m_woz_map));
 }
 
 FDD::~FDD()
@@ -248,6 +249,23 @@ emulator::Result FDD::load_image(const std::string &file_name)
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
         }
     } else
+    if (ext == ".woz") {
+        if (fdd_mode == FDD_MODE_LOGICAL)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "FDD device is working in a logical mode, no physical formats are supported")) + "}");
+        emulator::Result r = load_woz(file_name);
+        if (!r) return r;
+        this->file_name = base_name;
+    } else
+    if (ext == ".d13") {
+        // 13 sectors of DOS 3.2: made into tracks of nibbles, as a .nib is
+        if (fdd_mode != FDD_MODE_AGAT_140)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "FDD device is working in a logical mode, no physical formats are supported")) + "}");
+        emulator::Result r = load_d13(file_name);
+        if (!r) return r;
+        this->file_name = base_name;
+    } else
     if (ext == ".nib" || ext == ".nic") {
         if (fdd_mode == FDD_MODE_LOGICAL)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
@@ -413,7 +431,10 @@ emulator::Result FDD::load_image(const std::string &file_name)
     }
     //Every branch that took the image ends by naming it; one that did not
     //(an unknown extension) leaves the previous image and its path alone
-    if (loaded && this->file_name == base_name) image_path = file_name;
+    if (loaded && this->file_name == base_name) {
+        image_path = file_name;
+        if (ext != ".woz") m_woz = false;
+    }
     return emulator::Result::ok();
 }
 
@@ -923,6 +944,8 @@ void FDD::unload(){
     if (buffer != nullptr) delete [] buffer;
     buffer = nullptr;
     loaded = false;
+    m_woz = false;
+    m_woz_tracks.clear();
     sides_layout = default_sides_layout;
     m_generation++;
     file_name = "";
@@ -1070,6 +1093,10 @@ emulator::Result FDD::save_image(const std::string &file_name)
             }
         } else if (ext == ".hfe") {
             return save_hfe(file_name);
+        } else if (ext == ".d13") {
+            return save_d13(file_name);
+        } else if (ext == ".woz") {
+            return save_woz(file_name);
         } else if (ext == ".mfm") {
             if (fdd_mode == FDD_MODE_AGAT_140
                 || ((fdd_mode == FDD_MODE_DVK_MX || fdd_mode == FDD_MODE_IBM_MFM || fdd_mode == FDD_MODE_IBM_FM)
@@ -1198,8 +1225,16 @@ void FDD::save_state(StateWriter &w)
     //Raw, not through save_image(): that converts by extension - it reshuffles
     //tracks, rebuilds streams - and a round trip that is almost exact would
     //give a machine that cannot tell it was restarted except on one sector
-    w.blob("data", dsk_tools::get_filename(file_name.empty() ? (name + ".raw") : file_name),
-           buffer, static_cast<size_t>(disk_size));
+    //A WOZ disk is its bits, written as the file they would be saved to; the
+    //data are their nibbles then, and named so
+    const std::string media = dsk_tools::get_filename(file_name.empty() ? (name + ".raw") : file_name);
+    w.blob("data", m_woz ? media + ".nib" : media, buffer, static_cast<size_t>(disk_size));
+    if (m_woz)
+    {
+        std::vector<uint8_t> woz;
+        serialize_woz(woz);
+        w.blob("woz", media, woz.data(), woz.size());
+    }
 
     if (track_mode != FDD_MODE_SECTORS)
     {
@@ -1369,6 +1404,14 @@ emulator::Result FDD::load_state(const StateReader &r)
             position = 0;
     }
     loaded = true;
+
+    //A WOZ disk: the bits are the disk, the nibbles are made again from them
+    m_woz = false;
+    m_woz_tracks.clear();
+    std::vector<uint8_t> woz;
+    if (r.blob("woz", woz) && !parse_woz(woz))
+        return emulator::Result::error(emulator::ErrorCode::FileError,
+            "{MachineState|Saved state} " + name + ": the WOZ image is damaged");
     return emulator::Result::ok();
 }
 

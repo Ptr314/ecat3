@@ -1,0 +1,33 @@
+# Правец-8А, Disk II на секвенсоре P6: INIT HELLO размечает диск и пишет на
+# него DOS. DOS 3.3 при разметке подбирает число синхробайтов между
+# секторами, пока дорожка не сомкнется с началом, и проверяет это чтением -
+# так проверяется, что запись по битам, с настоящим временем, и чтение после
+# нее сходятся. Перед этим SAVE и LOAD на том же диске.
+# @timeout 300
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.load("../files/pravetz-dos33.dsk")
+WAIT 6000
+TYPE "10 PRINT \"INIT \";2*4;\"A\""
+KEY 50,50,ret
+TYPE "SAVE T"
+KEY 50,50,ret
+WAIT 4000
+TYPE "NEW"
+KEY 50,50,ret
+TYPE "LOAD T"
+KEY 50,50,ret
+WAIT 4000
+TYPE "INIT HELLO"
+KEY 50,50,ret
+WAIT 40000
+TYPE "CATALOG"
+KEY 50,50,ret
+WAIT 3000
+TYPE "RUN HELLO"
+KEY 50,50,ret
+WAIT 3000
+LOG fdc140.writes
+SCREEN "../results/disk-pravetz-8a-init.png"
+EXIT

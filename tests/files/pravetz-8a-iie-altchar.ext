@@ -1,0 +1,6 @@
+// Для тестов: Правец-8А, у которого ALTCHAR включается только записью, как
+// у Apple //e: так a2audit проверяет остальные переключатели
+@extends pravetz/Pravetz-8A.cfg
+@version Правец-8А (ALTCHAR как у //e)
+
+iou:altchar_on_read = 0

@@ -1,0 +1,14 @@
+# Правец-8А, Disk II на секвенсоре P6: «Игра и математика» (ДИ «Народна
+# просвета», 1986) - образ .nib с дорожками как есть, с загрузчиком в $0600,
+# который проверяет защиту диска от записи: незащищенный он не грузит (так и
+# сказано в описании образа). Защищенный - заставка.
+# @timeout 120
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+LOGDEFS 8,16
+COMMAND fdd0.load("igra-i-matematika.nib")
+COMMAND fdd0.protect(1)
+WAIT 30000
+LOG fdd0.protected
+SCREEN "../results/disk-pravetz-8a-nib.png"
+EXIT

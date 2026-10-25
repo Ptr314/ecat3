@@ -34,8 +34,19 @@
 class AY8910 : public AddressableDevice, public SoundSource, public Pluggable
 {
 private:
-    Interface i_porta;                  // I/O port A output (register 14)
-    Interface i_portb;                  // I/O port B output (register 15)
+    Interface i_porta;                  // I/O port A output (register 14), $FF as an input
+    Interface i_portb;                  // I/O port B output (register 15), $FF as an input
+    // The pins of the chip, for bus = pins (the Oric and the Правец-8Д, where
+    // a VIA drives them): BDIR, BC1, the data lines in, and the data the chip
+    // puts out in a read cycle
+    Interface i_bdir;
+    Interface i_bc1;
+    Interface i_da;
+    Interface i_da_out;
+    // The chip takes the data cycles only after an address cycle whose upper
+    // four bits were its own mask code, 0000
+    bool m_active = true;
+    void pin_cycle();
 
     unsigned int m_bus;                 // host bus protocol, AY_BUS_*
     unsigned int m_frequency;           // chip clock, Hz
@@ -76,6 +87,7 @@ private:
 
     void select(unsigned int reg);
     void write_reg(unsigned int reg, unsigned int value);
+    void output_ports();
     unsigned int read_reg(unsigned int reg);
     void restart_envelope();
     void tick();
@@ -92,6 +104,7 @@ public:
     emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;
     void clock(unsigned int counter) override;
+    void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
     unsigned int get_value(unsigned int address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;

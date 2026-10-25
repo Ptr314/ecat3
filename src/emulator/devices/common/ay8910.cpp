@@ -15,7 +15,9 @@
 #define AY_BUS_WORD     2   // УК-НЦ sound module: a word write selects a register,
                             // a byte write sends data, the board's buffers undo
                             // the inversion of the bus; reads answer 0
+#define AY_BUS_PINS     3   // no bus: BDIR, BC1 and the data lines are interfaces
 
+#define AY_CB_PINS      1
 // БК sound boards run the chip from 12 MHz / 7
 #define AY_DEFAULT_FREQUENCY    1714286
 
@@ -34,6 +36,10 @@ AY8910::AY8910(InterfaceManager *im, EmulatorConfigDevice *cd):
       AddressableDevice(im, cd)
     , i_porta(this, im, 8, "porta", MODE_W)
     , i_portb(this, im, 8, "portb", MODE_W)
+    , i_bdir(this, im, 1, "bdir", MODE_R, AY_CB_PINS)
+    , i_bc1(this, im, 1, "bc1", MODE_R, AY_CB_PINS)
+    , i_da(this, im, 8, "da", MODE_R, AY_CB_PINS)
+    , i_da_out(this, im, 8, "da_out", MODE_W)
     , m_bus(AY_BUS_DIRECT)
     , m_frequency(AY_DEFAULT_FREQUENCY)
     , m_step(0)
@@ -62,6 +68,8 @@ emulator::Result AY8910::load_config(SystemData *sd)
         m_bus = AY_BUS_BK;
     else if (bus == "word")
         m_bus = AY_BUS_WORD;
+    else if (bus == "pins")
+        m_bus = AY_BUS_PINS;
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{AY8910|" + std::string(QT_TRANSLATE_NOOP("AY8910", "Unknown bus protocol")) + "} " + bus);
@@ -96,6 +104,7 @@ void AY8910::reset(MAYBE_UNUSED bool cold)
 {
     memset(m_regs, 0, sizeof(m_regs));
     m_latch = 0;
+    m_active = true;
     m_acc = 0;
     m_used = false;
     m_idle_ticks = 0;
@@ -108,8 +117,7 @@ void AY8910::reset(MAYBE_UNUSED bool cold)
     m_rng = 1;
     m_selected = (m_board_chip != 2);
     restart_envelope();
-    i_porta.change(0);
-    i_portb.change(0);
+    output_ports();
     //Not used any more: the second chip of a 2xAY board leaves the mix, and
     //the mixer may have been reset before this device
     sound_mode_changed();
@@ -135,15 +143,25 @@ void AY8910::write_reg(unsigned int reg, unsigned int value)
     case 13:
         restart_envelope();
         break;
+    case 7:
     case 14:
-        i_porta.change(m_regs[reg]);
-        break;
     case 15:
-        i_portb.change(m_regs[reg]);
+        output_ports();
         break;
     default:
         break;
     }
+}
+
+// A port is an output while its bit of the mixer register (6 for A, 7 for B)
+// is set; an input is pulled up, $FF to whatever is wired to it. After a
+// reset both are inputs
+void AY8910::output_ports()
+{
+    const unsigned a = (m_regs[7] & 0x40) ? m_regs[14] : 0xFF;
+    const unsigned b = (m_regs[7] & 0x80) ? m_regs[15] : 0xFF;
+    if (a != i_porta.value) i_porta.change(a);
+    if (b != i_portb.value) i_portb.change(b);
 }
 
 unsigned int AY8910::read_reg(unsigned int reg)
@@ -351,6 +369,35 @@ void AY8910::set_value(unsigned int address, unsigned int value, bool force)
         select(value);
 }
 
+// bus = pins: the cycle the control lines name, taken whenever they or the
+// data lines move. BDIR BC1 = 1 1 latches the address, 1 0 writes, 0 1 reads
+// (the chip drives the data lines), 0 0 leaves the bus alone. The VIA of the
+// Oric moves BC1 (CA2) and BDIR (CB2) one after the other, so on the way
+// from the address cycle to rest the chip sees a write of the address byte
+// to the register just latched - MAME does the same; the program's data
+// write comes after it anyway
+void AY8910::pin_cycle()
+{
+    if (!plugged()) return;
+    const bool bdir = (i_bdir.value & 1) != 0, bc1 = (i_bc1.value & 1) != 0;
+    const unsigned da = i_da.value & 0xFF;
+    if (bdir && bc1) {
+        m_active = (da >> 4) == 0;
+        if (m_active) select(da);
+    } else if (bdir) {
+        if (m_active) write_reg(m_latch, da);
+    } else if (bc1) {
+        i_da_out.change(m_active ? read_reg(m_latch) : 0xFF);
+        return;
+    }
+    if (i_da_out.value != 0xFF) i_da_out.change(0xFF);
+}
+
+void AY8910::interface_callback(unsigned int callback_id, MAYBE_UNUSED unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
+{
+    if (callback_id == AY_CB_PINS && m_bus == AY_BUS_PINS) pin_cycle();
+}
+
 unsigned int AY8910::get_value_word(unsigned int address)
 {
     if (!plugged()) return _FFFF;
@@ -417,6 +464,7 @@ void AY8910::save_state(StateWriter &w)
     w.b("env_holding", m_env_holding);
     w.n("env_volume", m_env_volume);
     if (m_board_chip != 0) w.b("selected", m_selected);
+    if (m_bus == AY_BUS_PINS) w.b("active", m_active);
 }
 
 emulator::Result AY8910::load_state(const StateReader &r)
@@ -441,6 +489,7 @@ emulator::Result AY8910::load_state(const StateReader &r)
     r.b("env_holding", m_env_holding);
     r.u("env_volume", m_env_volume);
     if (m_board_chip != 0) r.b("selected", m_selected);
+    if (m_bus == AY_BUS_PINS) r.b("active", m_active);
     return emulator::Result::ok();
 }
 

@@ -58,11 +58,12 @@ set(ECAT_CORE_SOURCES
     emulator/devices/common/speaker.cpp emulator/devices/common/speaker.h
     emulator/devices/common/ay8910.cpp emulator/devices/common/ay8910.h
     emulator/devices/common/covox.cpp emulator/devices/common/covox.h
+    emulator/devices/common/via6522.cpp emulator/devices/common/via6522.h
     emulator/devices/common/sound.h emulator/devices/common/sound.cpp
     emulator/devices/common/tape.cpp emulator/devices/common/tape.h
     emulator/devices/common/wd1793.h emulator/devices/common/wd1793.cpp
     emulator/devices/common/gmd70.h emulator/devices/common/gmd70.cpp
-    emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp
+    emulator/devices/common/fdd.h emulator/devices/common/fdd.cpp emulator/devices/common/fdd_woz.cpp emulator/devices/common/fdd_apple13.cpp
     emulator/devices/common/joystick.h emulator/devices/common/joystick.cpp
     emulator/devices/common/connector.h emulator/devices/common/connector.cpp
     emulator/devices/common/mouse.h emulator/devices/common/mouse.cpp
@@ -94,6 +95,15 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/agat_7_display.h emulator/devices/specific/agat_7_display.cpp
     emulator/devices/specific/agat_9_display.h emulator/devices/specific/agat_9_display.cpp
     emulator/devices/specific/agat_9_mapper.h emulator/devices/specific/agat_9_mapper.cpp
+    emulator/devices/specific/apple2_mmu.h emulator/devices/specific/apple2_mmu.cpp
+    emulator/devices/specific/apple2_iou.h emulator/devices/specific/apple2_iou.cpp
+    emulator/devices/specific/apple2_video.h emulator/devices/specific/apple2_video.cpp
+    emulator/devices/specific/pravetz_keyboard.h emulator/devices/specific/pravetz_keyboard.cpp
+    emulator/devices/specific/liberty_fdc.h emulator/devices/specific/liberty_fdc.cpp
+    emulator/devices/specific/apple2_cards.h emulator/devices/specific/apple2_cards.cpp
+    emulator/devices/specific/apple2_disk2.h emulator/devices/specific/apple2_disk2.cpp
+
+    emulator/devices/common/ins8250.h emulator/devices/common/ins8250.cpp
     emulator/devices/specific/agat_yazs.h emulator/devices/specific/agat_yazs.cpp
     emulator/devices/specific/uknc_channels.h emulator/devices/specific/uknc_channels.cpp
     emulator/devices/specific/uknc_display.h emulator/devices/specific/uknc_display.cpp
@@ -121,6 +131,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/argo_keyboard.h emulator/devices/specific/argo_keyboard.cpp
     emulator/devices/specific/argo_memory.h emulator/devices/specific/argo_memory.cpp
     emulator/devices/specific/zx_keyboard.h emulator/devices/specific/zx_keyboard.cpp
+    emulator/devices/specific/oric_ula.h emulator/devices/specific/oric_ula.cpp
     emulator/devices/specific/unior_memory.h emulator/devices/specific/unior_memory.cpp
     emulator/devices/specific/agat_common.h
     emulator/devices/specific/irisha_display.h emulator/devices/specific/irisha_display.cpp

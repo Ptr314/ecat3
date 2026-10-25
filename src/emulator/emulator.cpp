@@ -83,6 +83,14 @@
 #include "devices/common/gmd70.h"
 #include "emulator/devices/common/ram_address.h"
 #include "emulator/devices/specific/agat_9_mapper.h"
+#include "emulator/devices/specific/apple2_mmu.h"
+#include "emulator/devices/specific/apple2_iou.h"
+#include "emulator/devices/specific/apple2_video.h"
+#include "emulator/devices/specific/pravetz_keyboard.h"
+#include "emulator/devices/specific/liberty_fdc.h"
+#include "emulator/devices/specific/apple2_cards.h"
+#include "emulator/devices/specific/apple2_disk2.h"
+#include "emulator/devices/common/ins8250.h"
 #include "emulator/devices/specific/agat_yazs.h"
 #include "emulator/devices/specific/uknc_channels.h"
 #include "emulator/devices/specific/uknc_display.h"
@@ -109,6 +117,8 @@
 #include "emulator/devices/specific/argo_keyboard.h"
 #include "emulator/devices/specific/argo_memory.h"
 #include "emulator/devices/specific/zx_keyboard.h"
+#include "emulator/devices/specific/oric_ula.h"
+#include "emulator/devices/common/via6522.h"
 #include "emulator/devices/specific/unior_memory.h"
 
 
@@ -2261,6 +2271,15 @@ void Emulator::key_event(int key, int modifiers, bool press, bool host)
     //failed to load or has not started yet
     if (!keyboard || !display) return;
 
+    //A key sent with Ctrl (TYPE switching РУС on the УК-НЦ): Ctrl goes down
+    //before it and up after it
+    if (key & (int)KEY_WITH_CTRL) {
+        const int k = key & ~(int)KEY_WITH_CTRL;
+        if (press) { key_event((int)EmuKey::Control, modifiers, true, host); key_event(k, modifiers, true, host); }
+        else       { key_event(k, modifiers, false, host); key_event((int)EmuKey::Control, modifiers, false, host); }
+        return;
+    }
+
     //A keypad key is the plain one to everything but a keyboard that has a
     //keypad of its own
     const int plain = key & ~(int)EmuKey::Keypad;
@@ -2660,6 +2679,17 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("bk-timer", create_bk_timer);
     dm->register_device("bk-fdc", create_bk_fdc);
     dm->register_device("agat-9-mapper", create_agat_9_mapper);
+    dm->register_device("apple2-mmu", create_apple2_mmu);
+    dm->register_device("apple2-iou", create_apple2_iou);
+    dm->register_device("apple2-video", create_apple2_video);
+    dm->register_device("pravetz-keyboard", create_pravetz_keyboard);
+    dm->register_device("liberty-fdc", create_liberty_fdc);
+    dm->register_device("apple2-parallel", create_apple2_parallel);
+    dm->register_device("comport-server", create_comport_server);
+    dm->register_device("apple2-disk2", create_apple2_disk2);
+    dm->register_device("pravetz-ulan", create_pravetz_ulan);
+
+    dm->register_device("ins8250", create_ins8250);
     dm->register_device("agat-yazs", create_agat_yazs);
     dm->register_device("uknc-channels", create_uknc_channels);
     dm->register_device("uknc-display", create_uknc_display);
@@ -2691,6 +2721,8 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("argo-keyboard", create_argo_keyboard);
     dm->register_device("argo-memory", create_argo_memory);
     dm->register_device("zx-keyboard", create_zx_keyboard);
+    dm->register_device("via6522", create_via6522);
+    dm->register_device("oric-ula", create_oric_ula);
     dm->register_device("unior-memory", create_unior_memory);
     //unior-tape - тот же самый магнитофон. Имя типа оставлено навсегда:
     //снимок состояния несет в себе разрешенную конфигурацию, и в

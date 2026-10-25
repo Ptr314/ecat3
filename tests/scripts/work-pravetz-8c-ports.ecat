@@ -1,0 +1,42 @@
+# Правец-8С: встроенные Centronics и RS-232 с программами из ПЗУ D38.
+# PR#1 выводит текст на принтер (программа $C100 пишет байт в $C090 и ждет,
+# пока в $C091 не погаснут BUSY и «нет ACK»). PR#2 запускает терминал $C200:
+# 8250 на 1200 бод 8N1, нажатое уходит в линию (поле text), принятое -
+# в нижнюю половину экрана.
+# @timeout 20
+
+MACHINE "pravetz/Pravetz-8C.cfg"
+# Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
+COMMAND fdd0.eject()
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "PR#1"
+KEY 50,50,ret
+WAIT 300
+TYPE "PRINT \"HELLO, PRAVETZ\""
+KEY 50,50,ret
+WAIT 500
+TYPE "PR#0"
+KEY 50,50,ret
+WAIT 300
+PRINT "=== Centronics ==="
+LOG printer.printed
+LOG printer.text
+PRINT "=== RS-232 ==="
+TYPE "PR#2"
+KEY 50,50,ret
+WAIT 500
+COMMAND rs232.send("PRIVET ")
+WAIT 300
+TYPE "AB"
+WAIT 300
+LOGDEFS 16,10
+LOG rs232.baud
+LOG rs232.lcr
+LOG rs232.text
+LOG rs232.received
+SCREEN "../results/work-pravetz-8c-ports.png"
+EXIT

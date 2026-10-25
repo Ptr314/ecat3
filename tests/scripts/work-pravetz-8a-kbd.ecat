@@ -1,0 +1,45 @@
+# Правец-8А: клавиатура и кодовые таблицы. В MODE0 (7 бит) буквы только
+# заглавные, кириллица - на кодах $E0-$FE. SETMOD 1 пишет 1 в $C060 (флаг
+# 8-битной таблицы читается в разряде 6) и включает альтернативный набор
+# знаков: буква без Shift дает строчную, 8-й разряд кода читается в
+# разряде 7 $C060. C/L Lock (F10) переключает латиницу и кириллицу.
+# Шестнадцатеричные числа в БЕЙСИКе - особенность ПЗУ Правеца.
+# @timeout 30
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+# Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
+COMMAND fdd0.eject()
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 500
+TYPE "PRINT $20+$B,PEEK(49248)"
+KEY 50,50,ret
+WAIT 300
+TYPE "PRINT \"LAT "
+KEY 50,100,f10
+TYPE "KIR"
+KEY 50,100,f10
+TYPE "\""
+KEY 50,50,ret
+WAIT 300
+LOG keyboard.latch
+TYPE "SETMOD 1"
+KEY 50,50,ret
+WAIT 300
+TYPE "print peek(49248);\" lat "
+KEY 50,100,f10
+TYPE "kir"
+KEYDOWN shift
+TYPE "KIR"
+KEYUP shift
+KEY 50,100,f10
+TYPE "\""
+KEY 50,50,ret
+WAIT 300
+LOG keyboard.latch
+LOG iou.softsw
+LOG iou.video
+SCREEN "../results/work-pravetz-8a-kbd.png"
+EXIT

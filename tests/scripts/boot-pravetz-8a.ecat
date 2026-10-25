@@ -1,0 +1,31 @@
+# Правец-8А: включение без дискеты и CTRL+RESET в БЕЙСИК.
+# ПЗУ пишет «Правец», ищет контроллер дисковода от слота 7 вниз, находит его
+# в слоте 6 и ждет дискету; CTRL+RESET (здесь F12) уводит в БЕЙСИК. Снимаются
+# карта памяти MMU, его ключи и ключи видео: так видно, что ПЗУ слотов, язык
+# и вспомогательная память на месте.
+# @timeout 20
+
+MACHINE "pravetz/Pravetz-8A.cfg"
+# Без штатного диска в дисководе: ПЗУ не грузит DOS, CTRL+RESET выводит в БЕЙСИК
+COMMAND fdd0.eject()
+WAIT 2000
+LOGDEFS 8,16
+PRINT "=== Экран ==="
+LOG display.resolution
+LOG display.standard
+LOG display.frame_rate
+PRINT "=== Память ==="
+LOG mmu.map
+LOG mmu.switches
+SCREEN "../results/boot-pravetz-8a.png"
+
+PRINT "=== CTRL+RESET ==="
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 1000
+LOG mmu.switches
+LOG iou.video
+LOG iou.softsw
+SCREEN "../results/boot-pravetz-8a-basic.png"
+EXIT

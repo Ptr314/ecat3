@@ -1,0 +1,60 @@
+# Правец-8А, Liberty Drive: ПАРИС печатает. Принтер у него - MULTIPRO T в
+# слоте 2 (CSW = $C200); в слоте 1, как велит книга, ПАРИС его не находит и
+# виснет, не выведя ни байта; поэтому расширение с Liberty ставит плату
+# Epson APL в слот 2. Текст «правец» уходит на принтер кодами КОИ-7: русские строчные - $60-$7F,
+# в поле printer2.text это латиница; перед текстом - команды принтера (ESC).
+# F1+P, «с начала», «MULTIPRO T», одна копия.
+# @timeout 300
+
+MACHINE "pravetz/Pravetz-8A-full.ext"
+# Без штатного диска в дисководе 140 Кб: ПЗУ не грузит с него DOS
+COMMAND fdd0.eject()
+WAIT 1000
+KEYDOWN ctrl
+KEY 50,100,f12
+KEYUP ctrl
+WAIT 300
+TYPE "PR#5"
+KEY 50,50,ret
+WAIT 15000
+TYPE "24-OCT-90"
+KEY 50,50,ret
+WAIT 2000
+KEY 50,50,ret
+WAIT 2000
+KEY 50,50,ret
+WAIT 20000
+KEY 50,50,space
+WAIT 5000
+TYPE "24/10/90"
+KEY 50,50,ret
+WAIT 3000
+TYPE "1"
+KEY 50,50,ret
+WAIT 3000
+TYPE "3"
+KEY 50,50,ret
+WAIT 5000
+KEY 50,50,ret
+WAIT 1000
+TYPE "TEST",100,150
+KEY 100,150,ret
+WAIT 3000
+TYPE "правец",100,150
+KEY 100,150,ret
+LOG keyboard.cl
+WAIT 2000
+KEYDOWN f1
+TYPE "P",100,150
+KEYUP f1
+WAIT 2000
+KEY 100,150,ret
+WAIT 2000
+KEY 100,150,ret
+WAIT 2000
+KEY 100,150,ret
+WAIT 20000
+LOG printer-card2.written
+LOG printer2.output
+SCREEN "../results/disk-pravetz-8a-paris-print.png"
+EXIT
