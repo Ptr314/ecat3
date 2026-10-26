@@ -34,20 +34,31 @@ emulator::Result IE15Keyboard::load_config(SystemData *sd)
     // они никуда не подключены
     for (size_t i = 0; i < sizeof(IE15_SWITCHES) / sizeof(IE15_SWITCHES[0]); i++)
         register_key_id(IE15_SWITCHES[i], KEY_ROLE_TOGGLE);
+    // РУС и ЛАТ в рабочем режиме (SA1 в 1-2) только шлют $0E и $0F, как
+    // клавиши основного поля, с автоповтором; регистр и лампу ведёт прошивка
+    // флагом 4. У Ириши те же клавиши переключают регистр сами, поэтому роли
+    // из общей таблицы здесь снимаются
+    for (size_t i = 0; i < m_key_roles.size(); )
+        if (m_key_roles[i].second == KEY_ROLE_RUS_ON || m_key_roles[i].second == KEY_ROLE_RUS_OFF
+            || m_key_roles[i].second == KEY_ROLE_RUS_TOGGLE)
+            m_key_roles.erase(m_key_roles.begin() + i);
+        else
+            i++;
     return emulator::Result::ok();
 }
 
 // Переключатели и регистры - на терминале, не в ДВК: тёплый сброс машины их не
-// трогает (регистр РУС/ЛАТ знает и прошивка). При включении питания терминал
-// на линии, в дуплексе и с нажатым РЕД (без него управляющие коды не
-// исполняются, а пишутся на экран)
+// трогает. Регистр РУС/ЛАТ не трогает и холодный: его ставит прошивка (флаг 4,
+// IE15IO::reset()). При включении питания терминал на линии, в дуплексе и с
+// нажатым РЕД (без него управляющие коды не исполняются, а пишутся на экран)
 void IE15Keyboard::reset(bool cool)
 {
     const bool rus = rus_mode;
     const bool lower = m_case_lower;
     MapKeyboard::reset(cool);
+    set_rus(rus);
+    m_caps_id.clear();
     if (!cool) {
-        set_rus(rus);
         m_case_lower = lower;
     } else {
         for (size_t i = 0; i < sizeof(IE15_SWITCHES) / sizeof(IE15_SWITCHES[0]); i++)
@@ -116,6 +127,15 @@ void IE15Keyboard::key_down(unsigned int key)
         note_id("key_bksp", true);
         return;
     }
+    // РУС/ЛАТ хоста - одна клавиша на две: та из них, что сменит регистр,
+    // каким его показывает прошивка; держится до отпускания
+    if (key == code_ruslat) {
+        if (!m_caps_id.empty()) return;
+        m_caps_id = rus_mode ? "key_lat" : "key_rus";
+        send_key_id(m_caps_id, true);
+        note_id(m_caps_id, true);
+        return;
+    }
     m_dk = (key == EmuKey::Up || key == EmuKey::Down || key == EmuKey::Left
             || key == EmuKey::Right || key == EmuKey::Home);
     m_token = "h" + std::to_string(key);
@@ -130,6 +150,13 @@ void IE15Keyboard::key_up(unsigned int key)
     if (key == EmuKey::Backspace) {
         send_key_id("key_bksp", false);
         note_id("key_bksp", false);
+        return;
+    }
+    if (key == code_ruslat) {
+        if (m_caps_id.empty()) return;
+        send_key_id(m_caps_id, false);
+        note_id(m_caps_id, false);
+        m_caps_id.clear();
         return;
     }
     MapKeyboard::key_up(key);
@@ -407,6 +434,7 @@ void IE15IO::reset(bool cold)
     m_ptr = 0;
     m_latch = false;
     m_video = m_cursor = m_short_beep = m_status_off = m_lat = m_fl7 = false;
+    if (m_keyboard != nullptr) m_keyboard->follow_ruslat(m_lat);
     m_pos = m_line = 0;
     m_line_drawn = false;
     m_marker = false;

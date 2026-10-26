@@ -1,0 +1,42 @@
+# ДВК-1, терминал 15ИЭ: РУС и ЛАТ в рабочем режиме клавиатуры (SA1 в 1-2).
+#
+# Регистр и лампу ЛАТ ведёт только прошивка флагом 4 (разряд 4 поля flags);
+# клавиши РУС и ЛАТ лишь шлют $0E и $0F и, как клавиши основного поля,
+# повторяются: РУС, нажатая 2 с, - одно нажатие и автоповтор 15 раз в секунду
+# после первой секунды (поле sent). Caps Lock хоста - та из двух клавиш, что
+# сменит регистр.
+MACHINE "dvk/DVK-1.cfg"
+WAIT _2000
+LOGDEFS _16,_8
+LOG keyboard.rus
+LOG ie15-io.flags
+LOG ie15-io.sent
+
+PRINT "=== РУС нажата 2 с ==="
+KEYDOWN key_rus
+WAIT _2000
+KEYUP key_rus
+WAIT _200
+LOG keyboard.rus
+LOG ie15-io.flags
+LOG ie15-io.sent
+
+PRINT "=== ЛАТ ==="
+KEYDOWN key_lat
+WAIT _100
+KEYUP key_lat
+WAIT _200
+LOG keyboard.rus
+LOG ie15-io.flags
+LOG ie15-io.sent
+
+PRINT "=== Caps Lock дважды ==="
+KEY _100,_50,caps
+WAIT _200
+LOG keyboard.rus
+LOG ie15-io.sent
+KEY _100,_50,caps
+WAIT _200
+LOG keyboard.rus
+LOG ie15-io.sent
+EXIT

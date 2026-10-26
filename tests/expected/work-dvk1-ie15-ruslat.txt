@@ -1,0 +1,16 @@
+[keyboard.rus] &000000
+[ie15-io.flags] &000031
+[ie15-io.sent] &000000
+=== РУС нажата 2 с ===
+[keyboard.rus] &000001
+[ie15-io.flags] &000014
+[ie15-io.sent] &000020
+=== ЛАТ ===
+[keyboard.rus] &000000
+[ie15-io.flags] &000034
+[ie15-io.sent] &000021
+=== Caps Lock дважды ===
+[keyboard.rus] &000001
+[ie15-io.sent] &000022
+[keyboard.rus] &000000
+[ie15-io.sent] &000023
