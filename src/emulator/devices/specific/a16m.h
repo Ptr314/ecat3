@@ -63,6 +63,14 @@ private:
     void write_byte(unsigned int offset, unsigned int value);
 
 public:
+    // Что плата показывает на чтение по смещению в окне 100000-177777 в
+    // текущем режиме: сегмент 4 КБ ее ОЗУ (0-3), ее ПЗУ или ничего. По ним
+    // отладочное окно экрана БК пишет, где видна память платы
+    static const int SRC_NONE = -1;
+    static const int SRC_ROM = 8;
+    int layout_source(unsigned int offset) const { return read_source(offset); }
+    Memory * board_ram() const { return m_ram; }
+
     A16M(InterfaceManager *im, EmulatorConfigDevice *cd);
     emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;

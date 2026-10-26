@@ -80,7 +80,7 @@ private:
     unsigned int source_size() const;
     void set_page_range();
     void set_page(int page);
-    void show_where(bool smk, const std::vector<std::pair<unsigned int, unsigned int>> &mapped);
+    void show_where(bool board, const std::vector<std::pair<unsigned int, unsigned int>> &mapped);
     void show_hover();
     void load_choice();
     void save_choice();

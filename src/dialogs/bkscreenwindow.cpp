@@ -18,6 +18,7 @@
 #include <QVBoxLayout>
 
 #include "dialogs/numfmt.h"
+#include "emulator/devices/specific/a16m.h"
 #include "emulator/devices/specific/bk_display.h"
 #include "emulator/devices/specific/smk512.h"
 
@@ -26,8 +27,8 @@ static const unsigned int LINES = 256;
 static const unsigned int SCREEN_BYTES = LINE_BYTES * LINES;    //040000
 static const unsigned int CPU_SPACE = 0x10000;
 static const int CPU_SCREEN_PAGE = 1;                       //040000, where the БК0010 screen is
-static const unsigned int SMK_WINDOW = 0100000;             //where the СМК-512 shows its memory
-static const unsigned int SMK_SEGMENT = 010000;             //it does that by 4 KB
+static const unsigned int BOARD_WINDOW = 0100000;           //where the СМК-512 and А16М show their memory
+static const unsigned int BOARD_SEGMENT = 010000;           //they do that by 4 KB
 
 //The picture always takes the proportions of the screen, 512 x 256
 static const int VIEW_W = 512;
@@ -235,16 +236,16 @@ void BKScreenWindow::set_page(int page)
     update_view();
 }
 
-//Where the page starts in the source; a page of the СМК-512 memory also says
-//where the processor sees it: whole at one address, by parts, or not at all
-void BKScreenWindow::show_where(bool smk, const std::vector<std::pair<unsigned int, unsigned int>> &mapped)
+//Where the page starts in the source; a page of the СМК-512 or А16М memory
+//also says where the processor sees it: whole at one address, by parts, or not at all
+void BKScreenWindow::show_where(bool board, const std::vector<std::pair<unsigned int, unsigned int>> &mapped)
 {
     const bool cpu = source_key() == SRC_CPU;
     const unsigned int size = cpu ? CPU_SPACE : source_size();
     const int digits = addr_digits((size > 0) ? size - 1 : 0, m_base);
     QString text = tr("starts at %1").arg(fmt_num(m_start, m_base, digits));
-    if (smk) {
-        const unsigned int parts = SCREEN_BYTES / SMK_SEGMENT;
+    if (board) {
+        const unsigned int parts = SCREEN_BYTES / BOARD_SEGMENT;
         bool whole = mapped.size() == parts;
         for (unsigned int i = 0; whole && i < parts; i++)
             whole = mapped[i].first == i && mapped[i].second == mapped[0].second + i;
@@ -252,12 +253,12 @@ void BKScreenWindow::show_where(bool smk, const std::vector<std::pair<unsigned i
         if (mapped.empty())
             text += ", " + tr("not mapped");
         else if (whole)
-            text += ", " + tr("mapped at %1").arg(fmt_num(SMK_WINDOW + mapped[0].second * SMK_SEGMENT, m_base, cpu_digits));
+            text += ", " + tr("mapped at %1").arg(fmt_num(BOARD_WINDOW + mapped[0].second * BOARD_SEGMENT, m_base, cpu_digits));
         else {
             QStringList list;
             for (const auto & m : mapped)
-                list << tr("%1 at %2").arg(fmt_num(m_start + m.first * SMK_SEGMENT, m_base, digits),
-                                           fmt_num(SMK_WINDOW + m.second * SMK_SEGMENT, m_base, cpu_digits));
+                list << tr("%1 at %2").arg(fmt_num(m_start + m.first * BOARD_SEGMENT, m_base, digits),
+                                           fmt_num(BOARD_WINDOW + m.second * BOARD_SEGMENT, m_base, cpu_digits));
             text += ", " + tr("partly mapped: %1").arg(list.join(", "));
         }
     }
@@ -330,7 +331,7 @@ void BKScreenWindow::update_view()
     unsigned int disp_mode = BK_MODE_RGB;
     unsigned int disp_palette = 0;
     std::string vram;
-    bool smk = false;
+    bool board = false;
     std::vector<std::pair<unsigned int, unsigned int>> mapped;    //4 KB of the page, the window segment
     e->invoke([&]() {
         DeviceFieldValue v;
@@ -349,20 +350,30 @@ void BKScreenWindow::update_view()
         RAM * ram = dynamic_cast<RAM*>(dm->get_device_by_name((key == SRC_DISPLAY) ? vram : name, false));
         const unsigned int size = (ram != nullptr) ? ram->get_size() : 0;
 
-        //The memory of a СМК-512: which of its 4 KB segments the board shows
-        //to the processor now, as it reads them
+        //The memory of a СМК-512 or an А16М: which of its 4 KB segments the
+        //board shows to the processor now, as it reads them
         for (unsigned int i = 0; ram != nullptr && i < dm->device_count; i++) {
-            SMK512 * board = dynamic_cast<SMK512*>(dm->get_device(i)->get());
-            if (board == nullptr || board->board_ram() != ram) continue;
-            smk = true;
-            const unsigned int value = board->latched();
-            const unsigned int first = start / SMK_SEGMENT;
-            for (unsigned int w = 0; w < CPU_SPACE - SMK_WINDOW; w += SMK_SEGMENT) {
-                const int src = SMK512::layout_source(value, w);
-                if (src < 0 || src == SMK512::SRC_ROM) continue;
-                const unsigned int segment = SMK512::page_of(value) * 8 + (unsigned int)src;
-                if (segment >= first && segment < first + SCREEN_BYTES / SMK_SEGMENT)
-                    mapped.push_back(std::make_pair(segment - first, w / SMK_SEGMENT));
+            ComputerDevice * dev = dm->get_device(i)->get();
+            SMK512 * smk512 = dynamic_cast<SMK512*>(dev);
+            A16M * a16m = dynamic_cast<A16M*>(dev);
+            if (!(smk512 != nullptr && smk512->board_ram() == ram) && !(a16m != nullptr && a16m->board_ram() == ram))
+                continue;
+            board = true;
+            const unsigned int value = (smk512 != nullptr) ? smk512->latched() : 0;
+            const unsigned int first = start / BOARD_SEGMENT;
+            for (unsigned int w = 0; w < CPU_SPACE - BOARD_WINDOW; w += BOARD_SEGMENT) {
+                int src;
+                unsigned int segment;
+                if (smk512 != nullptr) {
+                    src = SMK512::layout_source(value, w);
+                    segment = SMK512::page_of(value) * 8 + (unsigned int)src;
+                } else {
+                    src = a16m->layout_source(w);
+                    segment = (unsigned int)src;
+                }
+                if (src < 0 || src == SMK512::SRC_ROM || src == A16M::SRC_ROM) continue;
+                if (segment >= first && segment < first + SCREEN_BYTES / BOARD_SEGMENT)
+                    mapped.push_back(std::make_pair(segment - first, w / BOARD_SEGMENT));
             }
             std::sort(mapped.begin(), mapped.end());
             break;
@@ -376,7 +387,7 @@ void BKScreenWindow::update_view()
         }
     });
     m_have = have;
-    show_where(smk, mapped);
+    show_where(board, mapped);
 
     const int chosen_mode = m_mode->currentData().toInt();
     const int chosen_palette = m_palette->currentData().toInt();
