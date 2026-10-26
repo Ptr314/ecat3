@@ -1531,7 +1531,11 @@ function showMachineInfo(module, machine) {
 
     // An extension without a description of its own shows that of its base
     const path = machine.md_path || machine.cfg_path.replace(MACHINE_SUFFIX, ".md");
-    const html = module.ccall("wasm_md2html", "string", ["string"], [path]);
+    // In the language of the page when the machine has that translation
+    // (<stem>.<lang>.md beside it, see package_machines.py), else the Russian one
+    const translated = path.replace(/\.md$/, "." + lang + ".md");
+    const html = module.ccall("wasm_md2html", "string", ["string"], [translated])
+        || module.ccall("wasm_md2html", "string", ["string"], [path]);
     body.innerHTML = "";
     if (html) {
         // The descriptions are files of the project, still nothing in them runs

@@ -534,6 +534,7 @@ bool MainWindow::switch_language(const QString & lang, bool init)
         qApp->removeTranslator(&translator);
         qApp->removeTranslator(&qtTranslator);
         if (loaded) qApp->installTranslator(&translator);
+        set_ui_language(lang);
 
         QString t = QString(":/i18n/qtbase_%1.qm").arg(lang.split("_")[0]);
         if (qtTranslator.load(t)) {

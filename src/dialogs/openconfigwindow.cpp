@@ -188,7 +188,7 @@ OpenConfigWindow::OpenConfigWindow(QWidget *parent, Emulator * e) :
 //The text shown while no machine is selected
 void OpenConfigWindow::show_default_description()
 {
-    QFile default_md(QString::fromStdString(e->work_path + "default.md"));
+    QFile default_md(localized_description(QString::fromStdString(e->work_path + "default.md")));
     if (default_md.open(QIODevice::ReadOnly)) {
         QString html = "<body>" + QString::fromStdString(md2html(default_md.readAll().toStdString())) + "</body>";
         ui->textBrowser->document()->setHtml(html);
@@ -499,7 +499,7 @@ void OpenConfigWindow::set_description(QModelIndex index)
     update_buttons();
     if (!selected_path.isEmpty())
     {
-        QString text_path = index.data(Qt::UserRole + 2).toString();
+        QString text_path = localized_description(index.data(Qt::UserRole + 2).toString());
         //qDebug() << "DESCRIPTION:" << text_path;
         QFile file(text_path);
         if (!file.open(QIODevice::ReadOnly)) {

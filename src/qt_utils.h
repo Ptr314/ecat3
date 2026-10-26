@@ -15,6 +15,14 @@ unsigned decodeBMP(std::vector<unsigned char>& image, unsigned& w, unsigned& h, 
 
 std::string md2html(const std::string &md);
 
+// The language of the interface as two letters ("ru", "en", "bg"), set by the
+// main window whenever it loads a translation
+void set_ui_language(const QString &lang);
+QString ui_language();
+// A description in the language of the interface: <stem>.<lang>.md beside
+// <stem>.md when there is one, else <stem>.md itself (written in Russian)
+QString localized_description(const QString &md_path);
+
 class QKeyEvent;
 // The key a host key event stands for, the same under any host layout: a
 // non-Latin character (Russian layout) is replaced by the key of the US layout

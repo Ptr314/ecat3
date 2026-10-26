@@ -112,7 +112,8 @@ from a regression.
   not reproduce. A new CPU also names its disassembler (`disasm_table()` or `create_disasm()`, with the flow of
   jumps and calls in `decode()`), calls `debug_before()`/`debug_after()` around an instruction when
   `m_debug != DEBUG_OFF`, and gives the debugger its stack, flags and wait state (`docs/dev/core.md`).
-- New machine: a `.cfg` (or an `.ext` on a base) plus a matching `.md` description, no code.
+- New machine: a `.cfg` (or an `.ext` on a base) plus a matching `.md` description (Russian; translations
+  as `<stem>.en.md` / `<stem>.bg.md` beside it), no code.
   `package_machines.py` skips an extension standing on another extension, so it silently drops out of the
   web build.
 - Reserved names: `cpu` (master processor and time base), `mapper`, `display`, `keyboard`. Everything else

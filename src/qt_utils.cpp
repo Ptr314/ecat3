@@ -4,6 +4,7 @@
 // Description: Qt-dependent utility functions (not part of the emulator core)
 
 #include "qt_utils.h"
+#include <QFileInfo>
 #include <QKeyEvent>
 
 #include "emulator/devices/common/keyboard.h"
@@ -78,6 +79,25 @@ unsigned decodeBMP(std::vector<unsigned char>& image, unsigned& w, unsigned& h, 
 static void store_html_callback(const MD_CHAR* text, MD_SIZE size, void* result)
 {
     static_cast<std::string*>(result)->append(text, size);
+}
+
+static QString g_ui_language = "en";     //the sources are English
+
+void set_ui_language(const QString &lang)
+{
+    g_ui_language = lang.section('_', 0, 0).toLower();
+}
+
+QString ui_language()
+{
+    return g_ui_language;
+}
+
+QString localized_description(const QString &md_path)
+{
+    if (!md_path.endsWith(".md", Qt::CaseInsensitive)) return md_path;
+    const QString local = md_path.left(md_path.size() - 3) + "." + g_ui_language + ".md";
+    return QFileInfo::exists(local) ? local : md_path;
 }
 
 std::string md2html(const std::string &md)

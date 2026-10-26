@@ -24,7 +24,7 @@
 | Клавиатура | латиница | превключвател C/L; българска азбука (Ъ на клавиша Y, без Ы); Ю Ш Э Щ Ч &ndash; Shift с @ [ \ ] ^ |
 | Флопидисково устройство | Microdisc (3") | контролер Правец: Disk II на $0310&ndash;$031F, ПЗУ 8DOS (512 байта, прозорец $0320&ndash;$03FF), дискове 5,25" 140 КБ, система 8D RDOS |
 
-Описание (на руски): [Pravetz-8D.md](../../deploy/computers/pravetz/Pravetz-8D.md).
+Описание: [Pravetz-8D.bg.md](../../deploy/computers/pravetz/Pravetz-8D.bg.md).
 
 ## Какво е необходимо
 

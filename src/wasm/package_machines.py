@@ -52,6 +52,16 @@ def is_extension(path):
     """A configuration extension (.ext, or one packed as .ext.zip), see docs/CONFIG.md."""
     return path.lower().endswith(".ext") or path.lower().endswith(".ext.zip")
 
+def add_description(bundle_files, archive_md, local_md):
+    """A machine description and its translations: <stem>.<lang>.md beside
+    <stem>.md (Russian) for each page language, which the info button prefers
+    in that language."""
+    bundle_files[archive_md] = local_md
+    for lang in ("ru", "en", "bg"):
+        translated = f"{local_md[:-3]}.{lang}.md"
+        if os.path.isfile(translated):
+            bundle_files[f"{archive_md[:-3]}.{lang}.md"] = translated
+
 def machine_stem(path):
     """The file name without .cfg / .ext / .ext.zip."""
     name = os.path.basename(path)
@@ -351,7 +361,7 @@ def main():
         # in its chooser: the page opens it from the info button
         md_path = os.path.splitext(cfg_path)[0] + ".md"
         if os.path.isfile(md_path):
-            bundle_files[f"{machine_subdir}/{os.path.splitext(cfg_filename)[0]}.md"] = md_path
+            add_description(bundle_files, f"{machine_subdir}/{os.path.splitext(cfg_filename)[0]}.md", md_path)
 
         # Search directories for referenced files
         search_dirs = [cfg_dir, data_dir, software_dir]
@@ -392,7 +402,7 @@ def main():
             bundle_files[archive_machine_path] = ext_path
             ext_md = os.path.join(ext_dir, machine_id + ".md")
             if os.path.isfile(ext_md):
-                bundle_files[f"{ext_subdir}/{machine_id}.md"] = ext_md
+                add_description(bundle_files, f"{ext_subdir}/{machine_id}.md", ext_md)
                 md_vfs_path = f"/{ext_subdir}/{machine_id}.md"
             elif os.path.isfile(md_path):
                 md_vfs_path = f"/{machine_subdir}/{os.path.splitext(cfg_filename)[0]}.md"

@@ -6,13 +6,13 @@
 
 ## Конфигурации
 
-| Конфигурация | Аналог | Състав | Описание (на руски) |
+| Конфигурация | Аналог | Състав | Описание |
 |---|---|---|---|
-| Правец-82 | Apple ][+ | 6502, 48 КБ, ПЗУ 12 КБ, платка ОЗУ 128 КБ в слот 0, флопидисково устройство 140 КБ в слот 6, магнетофон | [Pravetz-82.md](../../deploy/computers/pravetz/Pravetz-82.md) |
-| Правец-8М | Apple ][+ | 64 КБ, собствено ПЗУ, знакогенератор с четири набора, флопидисково устройство, магнетофон | [Pravetz-8M.md](../../deploy/computers/pravetz/Pravetz-8M.md) |
-| Правец-8А | Apple //e | СМ630 (NMOS 6502), 50 Hz, 64 КБ + MEGARAM 64 КБ, флопидисково устройство 140 КБ в слот 6 | [Pravetz-8A.md](../../deploy/computers/pravetz/Pravetz-8A.md) |
-| Правец-8А (все платы) | Apple //e | MEGARAM 1 МБ, принтерни платки в слотове 1 и 2, U-LAN в слот 4, Liberty Drive в слот 5, COMport в слот 7 | [Pravetz-8A-full.md](../../deploy/computers/pravetz/Pravetz-8A-full.md) |
-| Правец-8С | Apple //e | 60 Hz, 128 КБ, вградени флопидисково устройство, Centronics, RS-232 (8250), RGB; COMport в слот 5 | [Pravetz-8C.md](../../deploy/computers/pravetz/Pravetz-8C.md) |
+| Правец-82 | Apple ][+ | 6502, 48 КБ, ПЗУ 12 КБ, платка ОЗУ 128 КБ в слот 0, флопидисково устройство 140 КБ в слот 6, магнетофон | [Pravetz-82.bg.md](../../deploy/computers/pravetz/Pravetz-82.bg.md) |
+| Правец-8М | Apple ][+ | 64 КБ, собствено ПЗУ, знакогенератор с четири набора, флопидисково устройство, магнетофон | [Pravetz-8M.bg.md](../../deploy/computers/pravetz/Pravetz-8M.bg.md) |
+| Правец-8А | Apple //e | СМ630 (NMOS 6502), 50 Hz, 64 КБ + MEGARAM 64 КБ, флопидисково устройство 140 КБ в слот 6 | [Pravetz-8A.bg.md](../../deploy/computers/pravetz/Pravetz-8A.bg.md) |
+| Правец-8А (все платы) | Apple //e | MEGARAM 1 МБ, принтерни платки в слотове 1 и 2, U-LAN в слот 4, Liberty Drive в слот 5, COMport в слот 7 | [Pravetz-8A-full.bg.md](../../deploy/computers/pravetz/Pravetz-8A-full.bg.md) |
+| Правец-8С | Apple //e | 60 Hz, 128 КБ, вградени флопидисково устройство, Centronics, RS-232 (8250), RGB; COMport в слот 5 | [Pravetz-8C.bg.md](../../deploy/computers/pravetz/Pravetz-8C.bg.md) |
 
 В редактора на разширенията се избират:
 
