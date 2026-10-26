@@ -127,7 +127,7 @@ BKScreenWindow::BKScreenWindow(QWidget *parent, Emulator * e, BKDisplay * d):
     m_page->setWrapping(true);
     top->addWidget(m_page);
 
-    //Where the page starts, and for the СМК-512 memory where the processor sees it
+    //Where the page starts, or for the СМК-512 and А16М memory where the processor sees it
     m_where = new QLabel(this);
     m_where->setTextInteractionFlags(Qt::TextSelectableByMouse);
     //A page seen by parts makes a long text: it does not widen the window
@@ -237,13 +237,11 @@ void BKScreenWindow::set_page(int page)
 }
 
 //Where the page starts in the source; a page of the СМК-512 or А16М memory
-//also says where the processor sees it: whole at one address, by parts, or not at all
+//says only where the processor sees it: whole at one address, by parts
+//(offsets within the page), or not at all
 void BKScreenWindow::show_where(bool board, const std::vector<std::pair<unsigned int, unsigned int>> &mapped)
 {
-    const bool cpu = source_key() == SRC_CPU;
-    const unsigned int size = cpu ? CPU_SPACE : source_size();
-    const int digits = addr_digits((size > 0) ? size - 1 : 0, m_base);
-    QString text = tr("starts at %1").arg(fmt_num(m_start, m_base, digits));
+    QString text;
     if (board) {
         const unsigned int parts = SCREEN_BYTES / BOARD_SEGMENT;
         bool whole = mapped.size() == parts;
@@ -251,16 +249,20 @@ void BKScreenWindow::show_where(bool board, const std::vector<std::pair<unsigned
             whole = mapped[i].first == i && mapped[i].second == mapped[0].second + i;
         const int cpu_digits = addr_digits(CPU_SPACE - 1, m_base);
         if (mapped.empty())
-            text += ", " + tr("not mapped");
+            text = tr("not mapped");
         else if (whole)
-            text += ", " + tr("mapped at %1").arg(fmt_num(BOARD_WINDOW + mapped[0].second * BOARD_SEGMENT, m_base, cpu_digits));
+            text = tr("mapped at %1").arg(fmt_num(BOARD_WINDOW + mapped[0].second * BOARD_SEGMENT, m_base, cpu_digits));
         else {
             QStringList list;
             for (const auto & m : mapped)
-                list << tr("%1 at %2").arg(fmt_num(m_start + m.first * BOARD_SEGMENT, m_base, digits),
+                list << tr("%1 at %2").arg(fmt_num(m.first * BOARD_SEGMENT, m_base, addr_digits(SCREEN_BYTES - 1, m_base)),
                                            fmt_num(BOARD_WINDOW + m.second * BOARD_SEGMENT, m_base, cpu_digits));
-            text += ", " + tr("partly mapped: %1").arg(list.join(", "));
+            text = tr("partly mapped: %1").arg(list.join(", "));
         }
+    } else {
+        const bool cpu = source_key() == SRC_CPU;
+        const unsigned int size = cpu ? CPU_SPACE : source_size();
+        text = tr("starts at %1").arg(fmt_num(m_start, m_base, addr_digits((size > 0) ? size - 1 : 0, m_base)));
     }
     m_where->setText(text);
     m_where->setToolTip(text);
