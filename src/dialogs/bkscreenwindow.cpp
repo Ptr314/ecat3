@@ -10,21 +10,24 @@
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QLineEdit>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QPushButton>
+#include <QSpinBox>
+#include <QStringList>
 #include <QTimer>
 #include <QVBoxLayout>
 
 #include "dialogs/numfmt.h"
 #include "emulator/devices/specific/bk_display.h"
+#include "emulator/devices/specific/smk512.h"
 
 static const unsigned int LINE_BYTES = 64;                  //a line of the screen
 static const unsigned int LINES = 256;
 static const unsigned int SCREEN_BYTES = LINE_BYTES * LINES;    //040000
 static const unsigned int CPU_SPACE = 0x10000;
-static const unsigned int CPU_SCREEN = 040000;              //where the БК0010 screen is
+static const int CPU_SCREEN_PAGE = 1;                       //040000, where the БК0010 screen is
+static const unsigned int SMK_WINDOW = 0100000;             //where the СМК-512 shows its memory
+static const unsigned int SMK_SEGMENT = 010000;             //it does that by 4 KB
 
 //The picture always takes the proportions of the screen, 512 x 256
 static const int VIEW_W = 512;
@@ -118,24 +121,17 @@ BKScreenWindow::BKScreenWindow(QWidget *parent, Emulator * e, BKDisplay * d):
             m_source->addItem(QString::fromStdString(ram->name), QString::fromStdString(ram->name));
     top->addWidget(m_source);
 
-    top->addWidget(new QLabel(tr("Address:"), this));
-    m_address = new QLineEdit(this);
-    m_address->setMaximumWidth(90);
-    top->addWidget(m_address);
+    top->addWidget(new QLabel(tr("Page:"), this));
+    m_page = new QSpinBox(this);
+    m_page->setWrapping(true);
+    top->addWidget(m_page);
 
-    //Steps by a line and by a whole screen
-    const struct { const char * text; int delta; } steps[] = {
-        {"<<", -(int)SCREEN_BYTES}, {"<", -(int)LINE_BYTES}, {">", (int)LINE_BYTES}, {">>", (int)SCREEN_BYTES}
-    };
-    for (const auto & s : steps) {
-        QPushButton * b = new QPushButton(s.text, this);
-        b->setMaximumWidth(32);
-        b->setAutoDefault(false);
-        const int delta = s.delta;
-        connect(b, &QPushButton::clicked, this, [this, delta]() { step(delta); });
-        top->addWidget(b);
-    }
-    top->addStretch(1);
+    //Where the page starts, and for the СМК-512 memory where the processor sees it
+    m_where = new QLabel(this);
+    m_where->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    //A page seen by parts makes a long text: it does not widen the window
+    m_where->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    top->addWidget(m_where, 1);
     layout->addLayout(top);
 
     QHBoxLayout * second = new QHBoxLayout();
@@ -166,18 +162,14 @@ BKScreenWindow::BKScreenWindow(QWidget *parent, Emulator * e, BKDisplay * d):
     layout->addWidget(m_status);
 
     load_choice();
-    show_address();
 
     connect(m_source, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this]() {
         //The processor's screen is at 040000, a RAM device's at its start
-        set_start((source_key() == SRC_CPU) ? CPU_SCREEN : 0);
+        set_page_range();
+        set_page((source_key() == SRC_CPU) ? CPU_SCREEN_PAGE : 0);
     });
-    connect(m_address, &QLineEdit::returnPressed, this, [this]() {
-        try {
-            set_start(parse_input(m_address->text(), m_base));
-        } catch (const std::exception &) {
-            show_address();
-        }
+    connect(m_page, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, [this](int page) {
+        set_page(page);
     });
     connect(m_mode, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this]() {
         save_choice();
@@ -223,33 +215,54 @@ unsigned int BKScreenWindow::source_size() const
     return (ram != nullptr) ? ram->get_size() : 0;
 }
 
-//The processor's space wraps around, a RAM device stops at its last byte
-void BKScreenWindow::set_start(unsigned int start)
+//As many pages as the source has, the last one possibly short
+void BKScreenWindow::set_page_range()
 {
     const unsigned int size = source_size();
-    if (source_key() == SRC_CPU) start %= CPU_SPACE;
-    else if (size == 0) start = 0;
-    else if (start >= size) start = size - 1;
-    m_start = start;
-    show_address();
+    const int pages = (int)((size + SCREEN_BYTES - 1) / SCREEN_BYTES);
+    const QSignalBlocker block(m_page);
+    m_page->setRange(0, std::max(pages, 1) - 1);
+}
+
+void BKScreenWindow::set_page(int page)
+{
+    if (m_page->value() != page) {
+        const QSignalBlocker block(m_page);
+        m_page->setValue(page);
+    }
+    m_start = (unsigned int)m_page->value() * SCREEN_BYTES;
     save_choice();
     update_view();
 }
 
-void BKScreenWindow::step(int delta)
+//Where the page starts in the source; a page of the СМК-512 memory also says
+//where the processor sees it: whole at one address, by parts, or not at all
+void BKScreenWindow::show_where(bool smk, const std::vector<std::pair<unsigned int, unsigned int>> &mapped)
 {
-    if (source_key() == SRC_CPU) {
-        set_start((m_start + CPU_SPACE + (unsigned int)(delta % (int)CPU_SPACE)) % CPU_SPACE);
-        return;
+    const bool cpu = source_key() == SRC_CPU;
+    const unsigned int size = cpu ? CPU_SPACE : source_size();
+    const int digits = addr_digits((size > 0) ? size - 1 : 0, m_base);
+    QString text = tr("starts at %1").arg(fmt_num(m_start, m_base, digits));
+    if (smk) {
+        const unsigned int parts = SCREEN_BYTES / SMK_SEGMENT;
+        bool whole = mapped.size() == parts;
+        for (unsigned int i = 0; whole && i < parts; i++)
+            whole = mapped[i].first == i && mapped[i].second == mapped[0].second + i;
+        const int cpu_digits = addr_digits(CPU_SPACE - 1, m_base);
+        if (mapped.empty())
+            text += ", " + tr("not mapped");
+        else if (whole)
+            text += ", " + tr("mapped at %1").arg(fmt_num(SMK_WINDOW + mapped[0].second * SMK_SEGMENT, m_base, cpu_digits));
+        else {
+            QStringList list;
+            for (const auto & m : mapped)
+                list << tr("%1 at %2").arg(fmt_num(m_start + m.first * SMK_SEGMENT, m_base, digits),
+                                           fmt_num(SMK_WINDOW + m.second * SMK_SEGMENT, m_base, cpu_digits));
+            text += ", " + tr("partly mapped: %1").arg(list.join(", "));
+        }
     }
-    if (delta < 0 && m_start < (unsigned int)(-delta)) set_start(0);
-    else set_start(m_start + (unsigned int)delta);
-}
-
-void BKScreenWindow::show_address()
-{
-    const unsigned int size = source_size();
-    m_address->setText(fmt_num(m_start, m_base, addr_digits((size > 0) ? size - 1 : 0, m_base)));
+    m_where->setText(text);
+    m_where->setToolTip(text);
 }
 
 //The byte under the mouse: its address in the source and its value
@@ -279,9 +292,12 @@ void BKScreenWindow::load_choice()
     const int s = m_source->findData(source);
     m_source->setCurrentIndex((s >= 0) ? s : 0);
 
+    set_page_range();
     bool ok = false;
-    const unsigned int start = QString::fromStdString(e->read_setup("BKScreen", "address", "")).toUInt(&ok);
-    m_start = ok ? start : ((source_key() == SRC_CPU) ? CPU_SCREEN : 0);
+    const int page = QString::fromStdString(e->read_setup("BKScreen", "page", "")).toInt(&ok);
+    const QSignalBlocker block(m_page);
+    m_page->setValue(ok ? page : ((source_key() == SRC_CPU) ? CPU_SCREEN_PAGE : 0));
+    m_start = (unsigned int)m_page->value() * SCREEN_BYTES;
 
     const int mode = m_mode->findData(QString::fromStdString(e->read_setup("BKScreen", "mode", "-1")).toInt());
     m_mode->setCurrentIndex((mode >= 0) ? mode : 0);
@@ -292,7 +308,7 @@ void BKScreenWindow::load_choice()
 void BKScreenWindow::save_choice()
 {
     e->write_setup("BKScreen", "source", source_key().toStdString());
-    e->write_setup("BKScreen", "address", std::to_string(m_start));
+    e->write_setup("BKScreen", "page", std::to_string(m_page->value()));
     e->write_setup("BKScreen", "mode", std::to_string(m_mode->currentData().toInt()));
     e->write_setup("BKScreen", "palette", std::to_string(m_palette->currentData().toInt()));
 }
@@ -314,6 +330,8 @@ void BKScreenWindow::update_view()
     unsigned int disp_mode = BK_MODE_RGB;
     unsigned int disp_palette = 0;
     std::string vram;
+    bool smk = false;
+    std::vector<std::pair<unsigned int, unsigned int>> mapped;    //4 KB of the page, the window segment
     e->invoke([&]() {
         DeviceFieldValue v;
         if (disp->get_field("vram", 0, 0, v)) vram = v.text;
@@ -330,6 +348,26 @@ void BKScreenWindow::update_view()
         }
         RAM * ram = dynamic_cast<RAM*>(dm->get_device_by_name((key == SRC_DISPLAY) ? vram : name, false));
         const unsigned int size = (ram != nullptr) ? ram->get_size() : 0;
+
+        //The memory of a СМК-512: which of its 4 KB segments the board shows
+        //to the processor now, as it reads them
+        for (unsigned int i = 0; ram != nullptr && i < dm->device_count; i++) {
+            SMK512 * board = dynamic_cast<SMK512*>(dm->get_device(i)->get());
+            if (board == nullptr || board->board_ram() != ram) continue;
+            smk = true;
+            const unsigned int value = board->latched();
+            const unsigned int first = start / SMK_SEGMENT;
+            for (unsigned int w = 0; w < CPU_SPACE - SMK_WINDOW; w += SMK_SEGMENT) {
+                const int src = SMK512::layout_source(value, w);
+                if (src < 0 || src == SMK512::SRC_ROM) continue;
+                const unsigned int segment = SMK512::page_of(value) * 8 + (unsigned int)src;
+                if (segment >= first && segment < first + SCREEN_BYTES / SMK_SEGMENT)
+                    mapped.push_back(std::make_pair(segment - first, w / SMK_SEGMENT));
+            }
+            std::sort(mapped.begin(), mapped.end());
+            break;
+        }
+
         for (unsigned int i = 0; i < SCREEN_BYTES; i++) {
             if (start + i < size) {
                 bytes[i] = ram->get_direct(start + i) & 0xFF;
@@ -338,6 +376,7 @@ void BKScreenWindow::update_view()
         }
     });
     m_have = have;
+    show_where(smk, mapped);
 
     const int chosen_mode = m_mode->currentData().toInt();
     const int chosen_palette = m_palette->currentData().toInt();

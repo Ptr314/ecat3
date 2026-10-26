@@ -348,29 +348,33 @@
 <context>
     <name>BKScreenWindow</name>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="+112"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="+115"/>
         <source>Source:</source>
         <translation>Источник:</translation>
     </message>
     <message>
         <location line="+2"/>
-        <location line="+30"/>
+        <location line="+22"/>
         <location line="+8"/>
         <source>As the display</source>
         <translation>Как у дисплея</translation>
     </message>
     <message>
-        <location line="-37"/>
+        <location line="-29"/>
         <source>Processor</source>
         <translation>Процессор</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Address:</source>
-        <translation>Адрес:</translation>
+        <translation type="vanished">Адрес:</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+6"/>
+        <source>Page:</source>
+        <translation>Страница:</translation>
+    </message>
+    <message>
+        <location line="+13"/>
         <source>Mode:</source>
         <translation>Режим:</translation>
     </message>
@@ -395,12 +399,37 @@
         <translation>Палитра:</translation>
     </message>
     <message>
-        <location line="+120"/>
+        <location line="+99"/>
+        <source>starts at %1</source>
+        <translation>с адреса %1</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>not mapped</source>
+        <translation>не подключена</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>mapped at %1</source>
+        <translation>подключена на %1</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>%1 at %2</source>
+        <translation>%1 на %2</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>partly mapped: %1</source>
+        <translation>подключена частями: %1</translation>
+    </message>
+    <message>
+        <location line="+21"/>
         <source>%1: %2   line %3, byte %4</source>
         <translation>%1: %2   строка %3, байт %4</translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+103"/>
         <source>display: %1, palette %2</source>
         <translation>дисплей: %1, палитра %2</translation>
     </message>
@@ -2800,13 +2829,13 @@
     <message>
         <location line="+15"/>
         <location filename="../mainwindow.cpp" line="-899"/>
-        <location line="+2014"/>
+        <location line="+2130"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1657"/>
+        <location filename="../mainwindow.cpp" line="-1773"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -2886,14 +2915,14 @@
     <message>
         <location filename="../mainwindow.cpp" line="-625"/>
         <location line="+47"/>
-        <location line="+1665"/>
+        <location line="+1781"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1780"/>
+        <location line="-1896"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2922,10 +2951,10 @@
     <message>
         <location line="-124"/>
         <location line="+77"/>
-        <location line="+1370"/>
-        <location line="+55"/>
+        <location line="+1380"/>
+        <location line="+60"/>
         <location line="+79"/>
-        <location line="+230"/>
+        <location line="+331"/>
         <location line="+107"/>
         <location line="+62"/>
         <location line="+167"/>
@@ -2937,7 +2966,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2687"/>
+        <location line="-2803"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -3024,18 +3053,18 @@
         <translation>Запустить без отладки</translation>
     </message>
     <message>
-        <location line="+284"/>
+        <location line="+299"/>
         <source>All supported files</source>
         <translation>Все поддерживаемые файлы</translation>
     </message>
     <message>
         <location line="-17"/>
-        <location line="+99"/>
+        <location line="+197"/>
         <source>Saved states</source>
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1518"/>
+        <location line="-1631"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -3048,7 +3077,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+83"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1981"/>
+        <location filename="../mainwindow.cpp" line="+2097"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -3058,15 +3087,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-1959"/>
-        <location line="+1442"/>
+        <location line="-2075"/>
+        <location line="+1558"/>
         <location line="+386"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-1941"/>
+        <location line="-2057"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -3102,7 +3131,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1778"/>
+        <location line="+1894"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -3133,7 +3162,7 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-1959"/>
+        <location line="-2075"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
@@ -3248,7 +3277,7 @@
         <translation>Пользователь оставил запись последовательного порта в файл.</translation>
     </message>
     <message>
-        <location line="+166"/>
+        <location line="+181"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>
     </message>
@@ -3258,7 +3287,7 @@
         <translation>Загрузить файл</translation>
     </message>
     <message>
-        <location line="+78"/>
+        <location line="+176"/>
         <location line="+19"/>
         <location line="+2"/>
         <source>Save state</source>
@@ -3275,7 +3304,7 @@
         <translation>Машина не запущена, сохранить ее состояние нельзя.</translation>
     </message>
     <message>
-        <location line="+84"/>
+        <location line="+87"/>
         <source>Abort</source>
         <translation>Прервать</translation>
     </message>
@@ -3466,12 +3495,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1505"/>
+        <location line="-1621"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1548"/>
+        <location line="+1664"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>

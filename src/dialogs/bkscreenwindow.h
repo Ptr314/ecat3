@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <utility>
 #include <vector>
 
 #include <QImage>
@@ -15,7 +16,7 @@
 
 class QComboBox;
 class QLabel;
-class QLineEdit;
+class QSpinBox;
 class BKDisplay;
 
 //The picture of a screen buffer, stretched to the window with its proportions
@@ -40,8 +41,8 @@ private:
     QRect target() const;
 };
 
-//Any 16 KB of memory drawn as the БК screen: from the processor's space as it
-//sees it now, or from any RAM device of the machine at an offset. A static
+//Any 16 KB page of memory drawn as the БК screen: from the processor's space as
+//it sees it now, or from any RAM device of the machine. A static
 //picture - no beam, scroll or quarter screen, one palette for the whole frame -
 //for programs that build the picture elsewhere and then copy it to the screen
 class BKScreenWindow : public GenericDbgWnd
@@ -60,14 +61,15 @@ private:
     int m_base;
 
     QComboBox * m_source;
-    QLineEdit * m_address;
+    QSpinBox * m_page;
+    QLabel * m_where;
     QComboBox * m_mode;
     QComboBox * m_palette;
     QLabel * m_info;
     QLabel * m_status;
     BKScreenPicture * m_picture;
 
-    unsigned int m_start;           //the first byte shown, in the source
+    unsigned int m_start;           //the first byte shown, in the source: the page start
     std::vector<uint8_t> m_bytes;   //the 16 KB taken at the last update
     unsigned int m_have;            //of them, the ones the source has
     unsigned int m_shown_mode;      //BK_MODE_* the picture was drawn in
@@ -76,9 +78,9 @@ private:
 
     QString source_key() const;
     unsigned int source_size() const;
-    void set_start(unsigned int start);
-    void step(int delta);
-    void show_address();
+    void set_page_range();
+    void set_page(int page);
+    void show_where(bool smk, const std::vector<std::pair<unsigned int, unsigned int>> &mapped);
     void show_hover();
     void load_choice();
     void save_choice();

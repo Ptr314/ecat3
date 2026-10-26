@@ -284,29 +284,29 @@
 <context>
     <name>BKScreenWindow</name>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="+112"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="+115"/>
         <source>Source:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+2"/>
-        <location line="+30"/>
+        <location line="+22"/>
         <location line="+8"/>
         <source>As the display</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-37"/>
+        <location line="-29"/>
         <source>Processor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+6"/>
-        <source>Address:</source>
+        <source>Page:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+13"/>
         <source>Mode:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -331,12 +331,37 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+120"/>
+        <location line="+99"/>
+        <source>starts at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>not mapped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>mapped at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>%1 at %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>partly mapped: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+21"/>
         <source>%1: %2   line %3, byte %4</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+103"/>
         <source>display: %1, palette %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2253,7 +2278,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+989"/>
+        <location filename="../mainwindow.cpp" line="+1105"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2274,14 +2299,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-1888"/>
-        <location line="+2014"/>
+        <location filename="../mainwindow.cpp" line="-2004"/>
+        <location line="+2130"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1657"/>
+        <location filename="../mainwindow.cpp" line="-1773"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2353,10 +2378,10 @@
     <message>
         <location filename="../mainwindow.cpp" line="-737"/>
         <location line="+77"/>
-        <location line="+1370"/>
-        <location line="+55"/>
+        <location line="+1380"/>
+        <location line="+60"/>
         <location line="+79"/>
-        <location line="+230"/>
+        <location line="+331"/>
         <location line="+107"/>
         <location line="+62"/>
         <location line="+167"/>
@@ -2368,7 +2393,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2687"/>
+        <location line="-2803"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2395,14 +2420,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1665"/>
+        <location line="+1781"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1780"/>
+        <location line="-1896"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2472,14 +2497,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1442"/>
+        <location line="+1558"/>
         <location line="+386"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1941"/>
+        <location line="-2057"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2515,12 +2540,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1778"/>
+        <location line="+1894"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1754"/>
+        <location line="-1870"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2658,18 +2683,18 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+166"/>
+        <location line="+181"/>
         <source>Configurations</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+99"/>
+        <location line="+197"/>
         <source>Saved states</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-82"/>
+        <location line="-180"/>
         <source>All supported files</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2679,7 +2704,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+78"/>
+        <location line="+176"/>
         <location line="+19"/>
         <location line="+2"/>
         <source>Save state</source>
@@ -2696,7 +2721,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+84"/>
+        <location line="+87"/>
         <location line="+480"/>
         <source>Finishing the video...</source>
         <translation type="unfinished"></translation>
@@ -2918,12 +2943,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1505"/>
+        <location line="-1621"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1548"/>
+        <location line="+1664"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
