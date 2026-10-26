@@ -5,11 +5,10 @@
 
 #pragma once
 
-#include <deque>
 #include <vector>
 
 #include "emulator/core.h"
-#include "emulator/host_serial.h"
+#include "emulator/devices/common/serial_line.h"
 #include "emulator/devices/common/byte_tap.h"
 #include "emulator/devices/common/virq_line.h"
 
@@ -86,11 +85,8 @@ private:
     bool m_tx_hold = false;             // символ ждёт разрешения на ~cts
     int64_t m_tx_left = 0;
     int64_t m_rx_left = 0;
-    unsigned int m_idle_polls = 0;  // пустых опросов порта хоста подряд
 
-    std::deque<uint8_t> m_rx_queue;     // поданное сценарием
-    HostSerialPort m_host;
-    std::string m_port_name;
+    SerialLine m_line;                  // порт хоста и поданное сценарием
 
     unsigned int m_sent = 0;
     unsigned int m_received = 0;

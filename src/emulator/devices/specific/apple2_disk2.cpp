@@ -227,15 +227,14 @@ void Apple2Disk2::access(unsigned address)
 // program touches the card (the processor tells the moment, CPU::bus_time()),
 // up to the processor's time when the device is clocked. A read takes effect
 // at the end of its cycle, a write puts its byte on the bus for the steps of
-// its own cycle
-void Apple2Disk2::catch_up(bool write)
+// its own cycle. false: the processor does not tell its time
+bool Apple2Disk2::catch_up()
 {
     uint64_t t = 0;
-    if (m_cpu == nullptr || !m_cpu->bus_time(t)) return;
-    (void)write;
+    if (m_cpu == nullptr || !m_cpu->bus_time(t)) return false;
     if (t > 0) t--;
-    if (!m_time_valid) { m_time = t; m_time_valid = true; return; }
-    if (t <= m_time) return;
+    if (!m_time_valid) { m_time = t; m_time_valid = true; return true; }
+    if (t <= m_time) return true;
     uint64_t n = t - m_time;
     m_time = t;
     while (n > 0) {
@@ -243,11 +242,12 @@ void Apple2Disk2::catch_up(bool write)
         run(k);
         n -= k;
     }
+    return true;
 }
 
 unsigned int Apple2Disk2::get_value(unsigned int address)
 {
-    catch_up(false);
+    catch_up();
     access(address);
     return (address & 1) ? 0xFF : m_latch;
 }
@@ -260,7 +260,7 @@ unsigned int Apple2Disk2::get_direct(unsigned int address)
 void Apple2Disk2::set_value(unsigned int address, unsigned int value, bool force)
 {
     (void)force;
-    catch_up(true);
+    catch_up();
     m_bus = (uint8_t)value;
     access(address);
 }
@@ -356,9 +356,7 @@ void Apple2Disk2::run(unsigned int counter)
 
 void Apple2Disk2::clock(unsigned int counter)
 {
-    uint64_t t = 0;
-    if (m_cpu != nullptr && m_cpu->bus_time(t)) catch_up(false);
-    else run(counter);
+    if (!catch_up()) run(counter);
 }
 
 std::vector<DeviceFieldInfo> Apple2Disk2::get_device_fields()

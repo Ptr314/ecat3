@@ -487,7 +487,8 @@ void DebuggerWindow::on_timer()
     if (paused != m_paused) {
         m_paused = paused;
         if (paused) refresh_all(true);
-    } else if (!paused) {
+    } else if (!paused && isVisible() && !isMinimized()) {
+        //Following a running machine is for the eyes: not while minimized
         refresh_all(false);
         //The devices cost a call into the emulation thread: once a second
         if (m_side_tabs->currentWidget() == m_devices && ++m_device_tick >= 5) {

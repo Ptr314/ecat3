@@ -5,7 +5,6 @@
 
 #include "ins8250.h"
 #include "emulator/utils.h"
-#include "dsk_tools/core.h"
 
 #define LSR_DR      0x01
 #define LSR_OE      0x02
@@ -16,9 +15,6 @@
 
 // Start, eight data bits and stop
 #define BITS_PER_CHAR   10
-// A silent host port is polled less often after so many empty polls
-#define IDLE_POLLS      4
-#define IDLE_SLOWDOWN   8
 
 INS8250::INS8250(InterfaceManager *im, EmulatorConfigDevice *cd):
     AddressableDevice(im, cd)
@@ -41,8 +37,7 @@ emulator::Result INS8250::load_config(SystemData *sd)
     set_divisor(m_divisor);
     // The host port the config names. A missing or busy one does not stop
     // the machine: the line goes nowhere, the field connected is 0
-    m_port_name = str_trim(read_confg_value(cd, "port", false, std::string("")));
-    if (!m_port_name.empty()) (void)m_host.open(m_port_name, m_clock_hz / 16 / m_divisor);
+    m_line.open_configured(read_confg_value(cd, "port", false, std::string("")), m_clock_hz / 16 / m_divisor);
     const std::string peer = str_trim(read_confg_value(cd, "peer", false, std::string("")));
     if (!peer.empty()) {
         m_peer = dynamic_cast<SerialPeer*>(im->dm->get_device_by_name(peer));
@@ -101,8 +96,11 @@ unsigned INS8250::iir() const
 
 void INS8250::update_intr()
 {
-    // OUT2 gates INTRPT on an IBM PC board, not in the chip: the chip drives it
-    i_intr.change((iir() & 1) ? 0 : 1);
+    // OUT2 gates INTRPT on an IBM PC board, not in the chip: the chip drives it.
+    // Every register access comes here, and a change() goes down the links to
+    // the processor even when the level stays: only a new level is driven
+    const unsigned v = (iir() & 1) ? 0 : 1;
+    if (i_intr.value != v) i_intr.change(v);
 }
 
 void INS8250::receive(uint8_t value)
@@ -117,20 +115,33 @@ void INS8250::receive(uint8_t value)
     update_intr();
 }
 
+// THR goes into the shift register: THR is empty again (THRE, and its
+// interrupt), and the byte is sent for a character time
+void INS8250::start_shift()
+{
+    m_tsr = m_thr;
+    m_tx_busy = true;
+    m_tx_left = (int64_t)m_char_ticks;
+    m_lsr |= LSR_THRE;
+    m_lsr &= ~LSR_TEMT;
+    m_thre_pending = true;
+}
+
 void INS8250::transmit_done()
 {
     m_tx_busy = false;
     m_sent++;
-    put(m_thr);
+    put(m_tsr);
     if ((m_mcr & MCR_LOOP) || m_plug)
-        receive(m_thr);
+        receive(m_tsr);
     else if (m_peer != nullptr)
-        m_peer->serial_in(m_thr);
+        m_peer->serial_in(m_tsr);
     else
-        (void)m_host.write(m_thr);
+        m_line.write(m_tsr);
 
-    m_lsr |= LSR_THRE | LSR_TEMT;
-    m_thre_pending = true;
+    // A byte waiting in THR follows at once; otherwise the line is idle
+    if (!(m_lsr & LSR_THRE)) start_shift();
+    else m_lsr |= LSR_TEMT;
     update_intr();
 }
 
@@ -146,20 +157,9 @@ void INS8250::clock(unsigned int counter)
     }
     if (m_lsr & LSR_DR) return;
     m_rx_left = (int64_t)m_char_ticks;
-    if (!m_rx_queue.empty()) {
-        const uint8_t b = m_rx_queue.front();
-        m_rx_queue.pop_front();
-        receive(b);
-        return;
-    }
-    if ((m_mcr & MCR_LOOP) || m_plug || !m_host.is_open()) return;
+    // In the loop and with the plug the host line is cut off
     uint8_t b;
-    if (m_host.read(b)) {
-        m_idle_polls = 0;
-        receive(b);
-        return;
-    }
-    if (++m_idle_polls >= IDLE_POLLS) m_rx_left = (int64_t)m_char_ticks * IDLE_SLOWDOWN;
+    if (m_line.next(b, !((m_mcr & MCR_LOOP) || m_plug))) receive(b);
 }
 
 unsigned INS8250::get_value(unsigned address)
@@ -215,15 +215,12 @@ void INS8250::set_value(unsigned address, unsigned value, bool force)
     switch (address & 7) {
         case 0:
             if (m_lcr & LCR_DLAB) { set_divisor((m_divisor & 0xFF00) | value); break; }
+            // Into THR; a byte written while THR is still full (THRE 0)
+            // replaces the one waiting there, as on the chip
             m_thr = (uint8_t)value;
             m_lsr &= ~(LSR_THRE | LSR_TEMT);
             m_thre_pending = false;
-            // The holding register goes into the shift register at once when
-            // that is free; a byte written while one is shifted out is lost
-            if (!m_tx_busy) {
-                m_tx_busy = true;
-                m_tx_left = (int64_t)m_char_ticks;
-            }
+            if (!m_tx_busy) start_shift();
             break;
         case 1:
             if (m_lcr & LCR_DLAB) { set_divisor((m_divisor & 0xFF) | (value << 8)); break; }
@@ -268,7 +265,7 @@ std::vector<DeviceFieldInfo> INS8250::get_device_fields()
 bool INS8250::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
     if (field == "port") {
-        out.text = m_port_name;
+        out.text = m_line.port_name();
         return true;
     }
     if (get_output_field(field, from, to, out)) return true;
@@ -277,13 +274,13 @@ bool INS8250::get_field(const std::string &field, unsigned int from, unsigned in
     if (field == "lcr")       { out.values.push_back(m_lcr); return true; }
     if (field == "mcr")       { out.values.push_back(m_mcr); return true; }
     if (field == "plug")      { out.values.push_back(m_plug ? 1 : 0); return true; }
-    if (field == "connected") { out.values.push_back(m_host.is_open() ? 1 : 0); return true; }
+    if (field == "connected") { out.values.push_back(m_line.connected() ? 1 : 0); return true; }
     out.width = 32;
     if (field == "baud")      { out.values.push_back(m_clock_hz / 16 / m_divisor); return true; }
     if (field == "sent")      { out.values.push_back(m_sent); return true; }
     if (field == "received")  { out.values.push_back(m_received); return true; }
     if (field == "overruns")  { out.values.push_back(m_overruns); return true; }
-    if (field == "queued")    { out.values.push_back((unsigned)m_rx_queue.size()); return true; }
+    if (field == "queued")    { out.values.push_back((unsigned)m_line.queued()); return true; }
     out.numeric = false;
     out.width = 0;
     return AddressableDevice::get_field(field, from, to, out);
@@ -304,36 +301,11 @@ emulator::Result INS8250::send_command(const std::string &command, const std::st
 {
     std::vector<std::string> p = split_params(parameters);
     const std::string arg = p.empty() ? std::string() : p[0];
-    if (command == "connect") {
-        if (arg.empty())
-            return emulator::Result::error(emulator::ErrorCode::BadParameters,
-                "{INS8250|" + std::string(QT_TRANSLATE_NOOP("INS8250", "Command 'connect' expects a port name")) + "}");
-        m_port_name = arg;
-        return m_host.open(arg, m_clock_hz / 16 / m_divisor);
-    }
-    if (command == "disconnect") {
-        m_host.close();
-        return emulator::Result::ok();
-    }
-    if (command == "send") {
-        for (char c : decode_send_text(arg)) m_rx_queue.push_back((uint8_t)c);
-        return emulator::Result::ok();
-    }
+    // connect, disconnect, send, sendfile
+    emulator::Result res;
+    if (m_line.command(command, arg, m_clock_hz / 16 / m_divisor, sd, res)) return res;
     if (command == "plug") {
         m_plug = arg.empty() ? !m_plug : (parse_numeric_value(arg, 10) != 0);
-        return emulator::Result::ok();
-    }
-    if (command == "sendfile") {
-        if (arg.empty())
-            return emulator::Result::error(emulator::ErrorCode::BadParameters,
-                "{INS8250|" + std::string(QT_TRANSLATE_NOOP("INS8250", "Command 'sendfile' expects a file name")) + "}");
-        std::string file = find_file_location(sd, arg);
-        if (file.empty()) file = arg;
-        if (!dsk_tools::file_exists(file))
-            return emulator::Result::error(emulator::ErrorCode::FileError,
-                "{INS8250|" + std::string(QT_TRANSLATE_NOOP("INS8250", "File not found")) + "} " + arg);
-        const std::string data = dsk_tools::utf8_read_file(file);
-        for (size_t i = 0; i < data.size(); i++) m_rx_queue.push_back((uint8_t)data[i]);
         return emulator::Result::ok();
     }
     return AddressableDevice::send_command(command, parameters);
@@ -344,6 +316,7 @@ void INS8250::save_state(StateWriter &w)
     AddressableDevice::save_state(w);
     w.u("rbr", m_rbr, 8);
     w.u("thr", m_thr, 8);
+    w.u("tsr", m_tsr, 8);
     w.u("ier", m_ier, 8);
     w.u("lcr", m_lcr, 8);
     w.u("mcr", m_mcr, 8);
@@ -357,11 +330,7 @@ void INS8250::save_state(StateWriter &w)
     w.n("sent", m_sent);
     w.n("received", m_received);
     w.b("plug", m_plug);
-    if (!m_rx_queue.empty()) {
-        std::vector<uint8_t> queue(m_rx_queue.begin(), m_rx_queue.end());
-        w.n64("rx_queued", queue.size());
-        w.array("rx_queue", queue.data(), queue.size());
-    }
+    m_line.save_queue(w);
 }
 
 emulator::Result INS8250::load_state(const StateReader &r)
@@ -371,6 +340,9 @@ emulator::Result INS8250::load_state(const StateReader &r)
     unsigned v;
     if (r.u("rbr", v)) m_rbr = (uint8_t)v;
     if (r.u("thr", v)) m_thr = (uint8_t)v;
+    //A snapshot made before the shift register sent THR itself
+    m_tsr = m_thr;
+    if (r.u("tsr", v)) m_tsr = (uint8_t)v;
     if (r.u("ier", v)) m_ier = (uint8_t)v;
     if (r.u("lcr", v)) m_lcr = (uint8_t)v;
     if (r.u("mcr", v)) m_mcr = (uint8_t)v;
@@ -385,13 +357,7 @@ emulator::Result INS8250::load_state(const StateReader &r)
     r.u("sent", m_sent);
     r.u("received", m_received);
     r.b("plug", m_plug);
-    m_rx_queue.clear();
-    uint64_t queued = 0;
-    if (r.n64("rx_queued", queued) && queued > 0 && queued <= 16u * 1024 * 1024) {
-        std::vector<uint8_t> queue(static_cast<size_t>(queued), 0);
-        if (r.array("rx_queue", queue.data(), queue.size()))
-            m_rx_queue.assign(queue.begin(), queue.end());
-    }
+    m_line.load_queue(r);
     return emulator::Result::ok();
 }
 

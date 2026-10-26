@@ -129,8 +129,7 @@ emulator::Result PravetzULan::load_config(SystemData *sd)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{Apple2Cards|" + std::string(QT_TRANSLATE_NOOP("Apple2Cards", "Incorrect baud rate")) + "} " + name);
     update_rate();
-    m_port_name = str_trim(read_confg_value(cd, "port", false, std::string("")));
-    if (!m_port_name.empty()) (void)m_host.open(m_port_name, m_baud);
+    m_line.open_configured(read_confg_value(cd, "port", false, std::string("")), m_baud);
     PravetzULan::reset(true);
     return emulator::Result::ok();
 }
@@ -143,7 +142,7 @@ void PravetzULan::reset(bool cold)
     if (cold) {
         m_control = 0;
         m_status = ACIA_TDRE;
-        m_rx_queue.clear();
+        m_line.clear_queue();
         m_echo.clear();
         m_rx_left = m_tx_left = 0;
     }
@@ -174,7 +173,7 @@ void PravetzULan::write_control(uint8_t value)
     if ((value & 3) == 3) {
         // Master reset: the receiver and the transmitter start empty
         m_status = ACIA_TDRE;
-        m_rx_queue.clear();
+        m_line.clear_queue();
         m_echo.clear();
         m_tx_left = 0;
     }
@@ -189,7 +188,7 @@ void PravetzULan::clock(unsigned int counter)
         if (m_tx_left <= 0) {
             m_status |= ACIA_TDRE;
             if (!m_echo.empty()) {
-                m_rx_queue.push_back(m_echo.front());
+                m_line.feed(m_echo.front());
                 m_echo.pop_front();
             }
             if (!m_echo.empty()) m_tx_left = (int64_t)m_char_ticks;
@@ -199,20 +198,15 @@ void PravetzULan::clock(unsigned int counter)
         m_rx_left -= counter;
         return;
     }
-    if (m_rx_queue.empty() && m_host.is_open()) {
-        uint8_t b;
-        if (m_host.read(b)) m_rx_queue.push_back(b);
-    }
-    if (m_rx_queue.empty()) {
-        m_rx_left = (int64_t)m_char_ticks;
-        return;
-    }
+    // The step of the receiver is a character time whether a byte came or
+    // not: the firmware times its own echo by it
+    m_rx_left = (int64_t)m_char_ticks;
+    uint8_t b;
+    if (!m_line.next(b, true)) return;
     if (m_status & ACIA_RDRF) m_status |= ACIA_OVRN;
-    m_rdr = m_rx_queue.front();
-    m_rx_queue.pop_front();
+    m_rdr = b;
     m_status |= ACIA_RDRF;
     m_received++;
-    m_rx_left = (int64_t)m_char_ticks;
 }
 
 unsigned PravetzULan::get_direct(unsigned address)
@@ -245,7 +239,7 @@ void PravetzULan::set_value(unsigned address, unsigned value, bool force)
     // A byte onto the line: to the other stations and back to this one
     m_status &= ~ACIA_TDRE;
     put((uint8_t)value);
-    (void)m_host.write((uint8_t)value);
+    m_line.write((uint8_t)value);
     m_echo.push_back((uint8_t)value);
     if (m_tx_left <= 0) m_tx_left = (int64_t)m_char_ticks;
     m_sent++;
@@ -273,7 +267,7 @@ bool PravetzULan::get_field(const std::string &field, unsigned int from, unsigne
     if (field == "status")    { out.values.push_back(get_direct(0)); return true; }
     if (field == "bank")      { out.values.push_back(bank_base() != m_rom_offset ? 1 : 0); return true; }
     if (field == "station")   { out.values.push_back(m_station); return true; }
-    if (field == "connected") { out.values.push_back(m_host.is_open() ? 1 : 0); return true; }
+    if (field == "connected") { out.values.push_back(m_line.connected() ? 1 : 0); return true; }
     out.width = 32;
     if (field == "sent")      { out.values.push_back(m_sent); return true; }
     if (field == "received")  { out.values.push_back(m_received); return true; }
@@ -295,21 +289,9 @@ emulator::Result PravetzULan::send_command(const std::string &command, const std
 {
     std::vector<std::string> p = split_params(parameters);
     const std::string arg = p.empty() ? std::string() : p[0];
-    if (command == "connect") {
-        if (arg.empty())
-            return emulator::Result::error(emulator::ErrorCode::BadParameters,
-                "{Apple2Cards|" + std::string(QT_TRANSLATE_NOOP("Apple2Cards", "Command 'connect' expects a port name")) + "}");
-        m_port_name = arg;
-        return m_host.open(arg, m_baud);
-    }
-    if (command == "disconnect") {
-        m_host.close();
-        return emulator::Result::ok();
-    }
-    if (command == "send") {
-        for (char c : decode_send_text(arg)) m_rx_queue.push_back((uint8_t)c);
-        return emulator::Result::ok();
-    }
+    // connect, disconnect, send (sendfile too, though not listed)
+    emulator::Result res;
+    if (m_line.command(command, arg, m_baud, sd, res)) return res;
     return AddressableDevice::send_command(command, parameters);
 }
 
@@ -323,9 +305,7 @@ void PravetzULan::save_state(StateWriter &w)
     w.n64("tx_left", (uint64_t)m_tx_left);
     w.n("sent", m_sent);
     w.n("received", m_received);
-    std::vector<uint8_t> rx(m_rx_queue.begin(), m_rx_queue.end());
-    w.n64("rx_queued", rx.size());
-    if (!rx.empty()) w.array("rx_queue", rx.data(), rx.size());
+    m_line.save_queue(w);
     std::vector<uint8_t> echo(m_echo.begin(), m_echo.end());
     w.n64("echo_queued", echo.size());
     if (!echo.empty()) w.array("echo", echo.data(), echo.size());
@@ -345,12 +325,8 @@ emulator::Result PravetzULan::load_state(const StateReader &r)
     r.u("sent", m_sent);
     r.u("received", m_received);
     update_rate();
-    m_rx_queue.clear();
+    m_line.load_queue(r);
     m_echo.clear();
-    if (r.n64("rx_queued", n) && n > 0 && n <= 1024 * 1024) {
-        std::vector<uint8_t> q(static_cast<size_t>(n), 0);
-        if (r.array("rx_queue", q.data(), q.size())) m_rx_queue.assign(q.begin(), q.end());
-    }
     if (r.n64("echo_queued", n) && n > 0 && n <= 1024 * 1024) {
         std::vector<uint8_t> q(static_cast<size_t>(n), 0);
         if (r.array("echo", q.data(), q.size())) m_echo.assign(q.begin(), q.end());
@@ -545,10 +521,12 @@ emulator::Result ComportServer::send_command(const std::string &command, const s
         if (drive > m_images.size() || m_images[drive - 1].empty())
             return emulator::Result::error(emulator::ErrorCode::BadParameters,
                 "{Apple2Cards|" + std::string(QT_TRANSLATE_NOOP("Apple2Cards", "The drive has no image")) + "}");
-        dsk_tools::UTF8_ofstream file(p[1], std::ios::binary);
+        //A relative name is the script's, as for fdd.save and tape.save
+        const std::string path = resolve_output_path(sd, p[1]);
+        dsk_tools::UTF8_ofstream file(path, std::ios::binary);
         if (!file.is_open())
             return emulator::Result::error(emulator::ErrorCode::FileError,
-                "{Apple2Cards|" + std::string(QT_TRANSLATE_NOOP("Apple2Cards", "Cannot write the file")) + "} " + p[1]);
+                "{Apple2Cards|" + std::string(QT_TRANSLATE_NOOP("Apple2Cards", "Cannot write the file")) + "} " + path);
         file.write(reinterpret_cast<const char*>(m_images[drive - 1].data()), m_images[drive - 1].size());
         return emulator::Result::ok();
     }

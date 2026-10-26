@@ -37,6 +37,11 @@ private:
     bool m_dk = false;
     std::string m_token;            // клавиша, код которой сейчас уходит в send_key()
     std::string m_caps_id;          // РУС или ЛАТ, которую держит РУС/ЛАТ хоста
+    // Клавиши хоста приходят из потока окна, TYPE и вставка - из потока
+    // эмуляции, а метка клавиши и ДК здесь одни на клавиатуру: нажатия идут по
+    // очереди. Внутри очереди - только send_id(), не send_key_id()
+    compat_mutex m_turn;
+    void send_id(const std::string &id, bool press);
     // Переключатели разрядами SW_*: прошивка опрашивает их постоянно, а
     // toggled() берёт мьютекс и ищет строку
     std::atomic<unsigned> m_switches{0};
@@ -253,6 +258,8 @@ private:
     uint64_t m_kb_time = 0;             // тактов, как он на ней остановился
     uint64_t m_kb_next = 0;             // когда следующий строб автоповтора
     uint64_t m_scan_left = 0;           // после отпускания: тактов до новой остановки
+    uint32_t m_min_hold_clock = 0;      // частота, для которой посчитан m_min_hold
+    uint64_t m_min_hold = 0;            // 40 мс в тактах: меньше клавиша не держится
     uint8_t m_kb_code = 0;
     bool m_kb_dk = false;
     bool m_kb_ready = false;            // флаг готовности (порт 13)

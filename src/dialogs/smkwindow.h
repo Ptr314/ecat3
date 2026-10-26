@@ -12,6 +12,7 @@ class QComboBox;
 class QLabel;
 class QSpinBox;
 class QTreeWidget;
+class QTimer;
 class QVBoxLayout;
 class MemoryPanel;
 class SMK512;
@@ -25,6 +26,7 @@ class SMKWindow : public GenericDbgWnd
     Q_OBJECT
 public:
     SMKWindow(QWidget *parent, Emulator * e, SMK512 * d);
+    ~SMKWindow() override;
 
 public slots:
     void update_view() override;
@@ -44,6 +46,7 @@ private:
     QTreeWidget * m_layout;
     QVBoxLayout * m_dump_box;
     MemoryPanel * m_panel;
+    QTimer * m_save_timer;      //the choice goes to the ini a second after the last change
 
     unsigned int m_latched;     //the board's register at the last read
     bool m_read_off;
@@ -64,6 +67,7 @@ private:
     void show_selection();
     void load_choice();
     void save_choice();
+    void write_choice();
     void show_layout();
     void rebuild();
 };

@@ -63,9 +63,12 @@ private:
     unsigned m_pb_fixed = 0;        // jumper X18: PB2 always 1
 
     unsigned m_pdl[4] = {255, 255, 255, 255};
-    uint64_t m_cycles = 0;
+    // The paddle timers count the processor's clocks: read off its bus time
+    // at the access, so the device needs no clocking of its own
     uint64_t m_pdl_start = 0;
     bool m_pdl_started = false;
+    unsigned m_pdl_elapsed = 0;     // from a snapshot, until state_restored()
+    uint64_t now() const;
 
     void set_flag(unsigned f, bool on);
     unsigned status(unsigned address);
@@ -75,7 +78,6 @@ public:
     Apple2IOU(InterfaceManager *im, EmulatorConfigDevice *cd);
     emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;
-    void clock(unsigned int counter) override;
 
     unsigned get_value(unsigned address) override;
     unsigned get_direct(unsigned address) override;
@@ -90,6 +92,7 @@ public:
     emulator::Result send_command(const std::string &command, const std::string &parameters) override;
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;
+    void state_restored() override;
 };
 
 ComputerDevice * create_apple2_iou(InterfaceManager *im, EmulatorConfigDevice *cd);

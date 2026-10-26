@@ -258,7 +258,9 @@ void TapeRecorderWindow::on_buttonEject_pressed()
     } else {
         //Кассета, на которую писала машина, живет только в устройстве: перед
         //тем как сменить ее, спрашиваем, не сохранить ли
-        if (d->get_record_size() != 0
+        unsigned recorded = 0;
+        e->invoke([&]() { recorded = d->get_record_size(); });
+        if (recorded != 0
             && QMessageBox::question(this, TapeRecorderWindow::tr("Tape Recorder"),
                    TapeRecorderWindow::tr("The machine has written on this tape. Save it?"),
                    QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
@@ -406,11 +408,18 @@ void TapeRecorderWindow::on_buttonRec_clicked()
 
 void TapeRecorderWindow::save_recording()
 {
-    if (d->get_record_size() != 0) {
+    // Size and name decode the recorded signal, which the emulation thread
+    // grows: asked there
+    unsigned recorded = 0;
+    std::string suggested;
+    e->invoke([&]() {
+        recorded = d->get_record_size();
+        if (recorded != 0) suggested = d->get_record_name();
+    });
+    if (recorded != 0) {
         QString path = QString::fromStdString(e->get_last_path());
         // The device knows what it has decoded, and for some formats the
         // extension decides how the file is put back on the tape
-        const std::string suggested = d->get_record_name();
         if (!suggested.empty()) path = QDir(path).filePath(QString::fromStdString(suggested));
         // The mask the machine loads tapes through is the one to save under:
         // the extension is what decides how the file goes back on the tape

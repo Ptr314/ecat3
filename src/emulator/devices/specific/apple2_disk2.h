@@ -74,7 +74,6 @@ private:
     std::vector<std::vector<uint8_t>> m_cache[2];
     unsigned m_cache_gen[2] = {0, 0};
 
-    unsigned m_reads = 0;           // nibbles completed in the read mode
     unsigned m_writes = 0;          // bits written
 
     void phase_on(int n);
@@ -84,7 +83,7 @@ private:
     void step_sequencer(bool pulse);
     void set_cell(unsigned timing);
     void run(unsigned cycles);
-    void catch_up(bool write);
+    bool catch_up();
     CPU * m_cpu = nullptr;
     uint64_t m_time = 0;            // processor clock the sequencer has been run up to
     bool m_time_valid = false;

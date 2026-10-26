@@ -128,12 +128,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+171"/>
-        <source>Command &apos;connect&apos; expects a port name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+83"/>
+        <location line="+230"/>
         <source>File not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -158,7 +153,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+6"/>
         <source>Cannot write the file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -174,7 +169,7 @@
 <context>
     <name>Apple2IOU</name>
     <message>
-        <location filename="../emulator/devices/specific/apple2_iou.cpp" line="+31"/>
+        <location filename="../emulator/devices/specific/apple2_iou.cpp" line="+30"/>
         <source>Unknown model, ii or iie expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -227,7 +222,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+29"/>
         <source>A slot ROM is not a ROM or the offset is past its end</source>
         <translation type="unfinished"></translation>
     </message>
@@ -331,12 +326,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+134"/>
         <source>starts at %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-12"/>
+        <location line="-10"/>
         <source>not mapped</source>
         <translation type="unfinished"></translation>
     </message>
@@ -351,12 +346,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+24"/>
         <source>%1: %2   line %3, byte %4</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+113"/>
+        <location line="+129"/>
         <source>display: %1, palette %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -492,8 +487,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="+348"/>
-        <location filename="../emulator/devices/common/ins8250.cpp" line="+245"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="+326"/>
+        <location filename="../emulator/devices/common/ins8250.cpp" line="+242"/>
         <source>Serial port of the computer</source>
         <translation type="unfinished"></translation>
     </message>
@@ -639,28 +634,13 @@
 <context>
     <name>DL11</name>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="-290"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="-274"/>
         <source>Incorrect baud rate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+432"/>
-        <source>Command &apos;connect&apos; expects a port name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+23"/>
+        <location line="+407"/>
         <source>Command &apos;station&apos; expects a number</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Command &apos;sendfile&apos; expects a file name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>File not found</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1847,7 +1827,7 @@
 <context>
     <name>IE15Display</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+233"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+244"/>
         <source>Character generator device is expected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1873,28 +1853,13 @@
 <context>
     <name>INS8250</name>
     <message>
-        <location filename="../emulator/devices/common/ins8250.cpp" line="-205"/>
+        <location filename="../emulator/devices/common/ins8250.cpp" line="-206"/>
         <source>Incorrect clock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+10"/>
         <source>The peer is not a device that takes a serial line</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+259"/>
-        <source>Command &apos;connect&apos; expects a port name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <source>Command &apos;sendfile&apos; expects a file name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>File not found</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2220,7 +2185,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1387"/>
+        <location filename="../mainwindow.cpp" line="+1390"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -2273,7 +2238,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1105"/>
+        <location filename="../mainwindow.cpp" line="+1108"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2294,14 +2259,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-2004"/>
-        <location line="+2130"/>
+        <location filename="../mainwindow.cpp" line="-2009"/>
+        <location line="+2135"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1773"/>
+        <location filename="../mainwindow.cpp" line="-1778"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2371,9 +2336,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-737"/>
-        <location line="+77"/>
-        <location line="+1380"/>
+        <location filename="../mainwindow.cpp" line="-738"/>
+        <location line="+78"/>
+        <location line="+1385"/>
         <location line="+60"/>
         <location line="+79"/>
         <location line="+331"/>
@@ -2388,7 +2353,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2803"/>
+        <location line="-2808"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2415,14 +2380,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1781"/>
+        <location line="+1786"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1896"/>
+        <location line="-1901"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2492,14 +2457,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1558"/>
+        <location line="+1563"/>
         <location line="+386"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2057"/>
+        <location line="-2062"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2535,12 +2500,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1894"/>
+        <location line="+1899"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1870"/>
+        <location line="-1875"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2613,15 +2578,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-785"/>
-        <location line="+639"/>
+        <location line="-786"/>
+        <location line="+640"/>
         <location line="+1"/>
-        <location line="+905"/>
+        <location line="+907"/>
         <source>Turbo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-752"/>
+        <location line="-754"/>
         <source>Picture tube</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2651,7 +2616,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+394"/>
+        <location line="+396"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation type="unfinished"></translation>
@@ -2678,7 +2643,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+181"/>
+        <location line="+184"/>
         <source>Configurations</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2938,12 +2903,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1621"/>
+        <location line="-1624"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1664"/>
+        <location line="+1667"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3547,7 +3512,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+64"/>
         <source>ROM of the board</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3563,7 +3528,7 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+94"/>
+        <location line="+96"/>
         <source>page %1, segment %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3597,18 +3562,18 @@
     </message>
     <message>
         <location line="+31"/>
-        <location line="+54"/>
+        <location line="+55"/>
         <source>Unknown key</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-40"/>
-        <location line="+64"/>
+        <location line="-41"/>
+        <location line="+65"/>
         <source>Key table does not fit the matrix</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-60"/>
+        <location line="-61"/>
         <source>Too many scan lines in the map file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3663,6 +3628,24 @@
     <message>
         <location line="+91"/>
         <source>Unable to write the script file</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SerialLine</name>
+    <message>
+        <location filename="../emulator/devices/common/serial_line.cpp" line="+69"/>
+        <source>Command &apos;connect&apos; expects a port name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Command &apos;sendfile&apos; expects a file name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>File not found</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3923,7 +3906,7 @@
     <name>TapeRecorderWindow</name>
     <message>
         <location filename="../dialogs/taperecorder.ui" line="+14"/>
-        <location filename="../dialogs/taperecorder.cpp" line="+262"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+264"/>
         <source>Tape Recorder</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3981,17 +3964,17 @@
     <message>
         <location line="+22"/>
         <location line="+12"/>
-        <location line="+166"/>
+        <location line="+173"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-166"/>
+        <location line="-173"/>
         <source>Unknown tape file format!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+136"/>
+        <location line="+143"/>
         <location line="+11"/>
         <source>Save recorded data</source>
         <translation type="unfinished"></translation>

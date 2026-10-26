@@ -8,7 +8,7 @@
 #include <deque>
 
 #include "emulator/core.h"
-#include "emulator/host_serial.h"
+#include "emulator/devices/common/serial_line.h"
 #include "emulator/devices/common/byte_tap.h"
 #include "emulator/devices/common/ins8250.h"
 
@@ -74,7 +74,6 @@ private:
     uint8_t m_control = 0;
     uint8_t m_status = 0x02;        // TDRE
     uint8_t m_rdr = 0;
-    std::deque<uint8_t> m_rx_queue;
     std::deque<uint8_t> m_echo;     // own bytes on their way back
     int64_t m_rx_left = 0;
     int64_t m_tx_left = 0;
@@ -82,8 +81,9 @@ private:
     unsigned m_baud = 115200;
     unsigned m_sent = 0, m_received = 0;
 
-    HostSerialPort m_host;
-    std::string m_port_name;
+    // The host port and the bytes of the other stations: a script's, the
+    // echo of the own ones
+    SerialLine m_line;
 
     unsigned bank_base() const;
     unsigned rom_byte(unsigned offset) const;

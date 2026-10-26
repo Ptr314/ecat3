@@ -322,8 +322,9 @@ static const unsigned int RUS_REMAP[][2] = {
 // lamp its firmware does not light). Set in the key code, never a key itself
 static const unsigned int KEY_NO_REMAP = 0x40000000;
 // A key pressed together with Ctrl (the УК-НЦ switches РУС with УПР+N): the
-// emulator holds Ctrl around it, so TYPE and paste can send it as one key
-static const unsigned int KEY_WITH_CTRL = 0x08000000;
+// emulator holds Ctrl around it, so TYPE and paste can send it as one key.
+// The top bit: Qt gives it no meaning, while 0x08000000 was AltModifier
+static const unsigned int KEY_WITH_CTRL = 0x80000000;
 
 // The КОИ-7 code of a Russian letter: $60-$7F the capitals (Ю А Б Ц ... Ч Ъ),
 // $40-$5F the small ones; _FFFF for anything else

@@ -128,37 +128,36 @@
         <translation>Неправилна скорост на обмен</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="301"/>
         <source>Command &apos;connect&apos; expects a port name</source>
-        <translation>Командата &apos;connect&apos; изисква име на порт</translation>
+        <translation type="vanished">Командата &apos;connect&apos; изисква име на порт</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="384"/>
+        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="360"/>
         <source>File not found</source>
         <translation>Файлът не е намерен</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="388"/>
+        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="364"/>
         <source>A 140K disk image in DOS order is expected</source>
         <translation>Необходим е образ на диск 140 КБ в реда на DOS</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="402"/>
+        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="378"/>
         <source>An ins8250 device is expected</source>
         <translation>Необходимо е устройство ins8250</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="539"/>
+        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="515"/>
         <source>A drive 1-254 and a file are expected</source>
         <translation>Необходими са номер на устройство 1-254 и файл</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="547"/>
+        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="523"/>
         <source>The drive has no image</source>
         <translation>В това устройство няма образ</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="551"/>
+        <location filename="../emulator/devices/specific/apple2_cards.cpp" line="529"/>
         <source>Cannot write the file</source>
         <translation>Файлът не може да бъде записан</translation>
     </message>
@@ -174,17 +173,17 @@
 <context>
     <name>Apple2IOU</name>
     <message>
-        <location filename="../emulator/devices/specific/apple2_iou.cpp" line="31"/>
+        <location filename="../emulator/devices/specific/apple2_iou.cpp" line="30"/>
         <source>Unknown model, ii or iie expected</source>
         <translation>Неизвестен модел, очаква се ii или iie</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/apple2_iou.cpp" line="45"/>
+        <location filename="../emulator/devices/specific/apple2_iou.cpp" line="44"/>
         <source>An apple2-mmu device is expected</source>
         <translation>Очаква се устройство apple2-mmu</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/apple2_iou.cpp" line="52"/>
+        <location filename="../emulator/devices/specific/apple2_iou.cpp" line="51"/>
         <source>The keyboard has no Apple II latch</source>
         <translation>Клавиатурата няма регистър Apple II</translation>
     </message>
@@ -227,7 +226,7 @@
         <translation>ПЗУ трябва да започва от граница на страница и да завършва не по-далеч от $FFFF</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/apple2_mmu.cpp" line="102"/>
+        <location filename="../emulator/devices/specific/apple2_mmu.cpp" line="103"/>
         <source>A slot ROM is not a ROM or the offset is past its end</source>
         <translation>ПЗУ на слота не е ПЗУ или отместването излиза извън края му</translation>
     </message>
@@ -335,17 +334,17 @@
         <translation>Палитра:</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="264"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="281"/>
         <source>starts at %1</source>
         <translation>от адрес %1</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="252"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="271"/>
         <source>not mapped</source>
         <translation>не е включена</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="254"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="273"/>
         <source>mapped at %1</source>
         <translation>включена на %1</translation>
     </message>
@@ -354,17 +353,17 @@
         <translation type="vanished">%1 на %2</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="259"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="278"/>
         <source>partly mapped: %1</source>
         <translation>включена частично: %1</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="285"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="302"/>
         <source>%1: %2   line %3, byte %4</source>
         <translation>%1: %2   ред %3, байт %4</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="398"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="431"/>
         <source>display: %1, palette %2</source>
         <translation>дисплей: %1, палитра %2</translation>
     </message>
@@ -500,13 +499,13 @@
         <translation>Образ на диск</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="348"/>
-        <location filename="../emulator/devices/common/ins8250.cpp" line="245"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="326"/>
+        <location filename="../emulator/devices/common/ins8250.cpp" line="242"/>
         <source>Serial port of the computer</source>
         <translation>Сериен порт на компютъра</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="358"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="336"/>
         <source>Network station number (0-63)</source>
         <translation>Номер на станцията в мрежата (0-63)</translation>
     </message>
@@ -647,29 +646,26 @@
 <context>
     <name>DL11</name>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="68"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="62"/>
         <source>Incorrect baud rate</source>
         <translation>Неправилна скорост на обмен</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="500"/>
         <source>Command &apos;connect&apos; expects a port name</source>
-        <translation>Командата &apos;connect&apos; изисква име на порт</translation>
+        <translation type="vanished">Командата &apos;connect&apos; изисква име на порт</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="523"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="469"/>
         <source>Command &apos;station&apos; expects a number</source>
         <translation>Командата &apos;station&apos; изисква число</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="531"/>
         <source>Command &apos;sendfile&apos; expects a file name</source>
-        <translation>Командата &apos;sendfile&apos; изисква име на файл</translation>
+        <translation type="vanished">Командата &apos;sendfile&apos; изисква име на файл</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="536"/>
         <source>File not found</source>
-        <translation>Файлът не е намерен</translation>
+        <translation type="vanished">Файлът не е намерен</translation>
     </message>
 </context>
 <context>
@@ -1855,7 +1851,7 @@
 <context>
     <name>IE15Display</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="233"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="244"/>
         <source>Character generator device is expected</source>
         <translation>Очаква се знакогенератор</translation>
     </message>
@@ -1863,17 +1859,17 @@
 <context>
     <name>IE15IO</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="409"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="420"/>
         <source>Display of type ie15-display is expected</source>
         <translation>Очаква се екран от типа ie15-display</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="414"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="425"/>
         <source>Video memory of 4 KB is expected</source>
         <translation>Очаква се видеопамет от 4 КБ</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="421"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="432"/>
         <source>Keyboard of type ie15-keyboard is expected</source>
         <translation>Очаква се клавиатура от типа ie15-keyboard</translation>
     </message>
@@ -1881,29 +1877,26 @@
 <context>
     <name>INS8250</name>
     <message>
-        <location filename="../emulator/devices/common/ins8250.cpp" line="40"/>
+        <location filename="../emulator/devices/common/ins8250.cpp" line="36"/>
         <source>Incorrect clock</source>
         <translation>Неправилна честота</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/ins8250.cpp" line="51"/>
+        <location filename="../emulator/devices/common/ins8250.cpp" line="46"/>
         <source>The peer is not a device that takes a serial line</source>
         <translation>Отсрещното устройство не приема серийна линия</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/ins8250.cpp" line="310"/>
         <source>Command &apos;connect&apos; expects a port name</source>
-        <translation>Командата &apos;connect&apos; изисква име на порт</translation>
+        <translation type="vanished">Командата &apos;connect&apos; изисква име на порт</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/ins8250.cpp" line="329"/>
         <source>Command &apos;sendfile&apos; expects a file name</source>
-        <translation>Командата &apos;sendfile&apos; изисква име на файл</translation>
+        <translation type="vanished">Командата &apos;sendfile&apos; изисква име на файл</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/ins8250.cpp" line="334"/>
         <source>File not found</source>
-        <translation>Файлът не е намерен</translation>
+        <translation type="vanished">Файлът не е намерен</translation>
     </message>
 </context>
 <context>
@@ -2223,8 +2216,8 @@
     <message>
         <location filename="../mainwindow.ui" line="261"/>
         <location filename="../mainwindow.ui" line="264"/>
-        <location filename="../mainwindow.cpp" line="1763"/>
-        <location filename="../mainwindow.cpp" line="1764"/>
+        <location filename="../mainwindow.cpp" line="1766"/>
+        <location filename="../mainwindow.cpp" line="1767"/>
         <source>Stop</source>
         <translation>Стоп</translation>
     </message>
@@ -2290,14 +2283,14 @@
     </message>
     <message>
         <location filename="../mainwindow.ui" line="394"/>
-        <location filename="../mainwindow.cpp" line="865"/>
-        <location filename="../mainwindow.cpp" line="2995"/>
+        <location filename="../mainwindow.cpp" line="866"/>
+        <location filename="../mainwindow.cpp" line="3001"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="397"/>
-        <location filename="../mainwindow.cpp" line="1222"/>
+        <location filename="../mainwindow.cpp" line="1223"/>
         <source>On-screen keyboard</source>
         <translation>Екранна клавиатура</translation>
     </message>
@@ -2367,312 +2360,312 @@
         <translation>Топъл рестарт (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="597"/>
-        <location filename="../mainwindow.cpp" line="644"/>
-        <location filename="../mainwindow.cpp" line="2425"/>
-        <location filename="../mainwindow.cpp" line="2454"/>
-        <location filename="../mainwindow.cpp" line="2496"/>
+        <location filename="../mainwindow.cpp" line="598"/>
+        <location filename="../mainwindow.cpp" line="645"/>
+        <location filename="../mainwindow.cpp" line="2431"/>
+        <location filename="../mainwindow.cpp" line="2460"/>
+        <location filename="../mainwindow.cpp" line="2502"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не е зареден&gt;</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="600"/>
-        <location filename="../mainwindow.cpp" line="647"/>
+        <location filename="../mainwindow.cpp" line="601"/>
+        <location filename="../mainwindow.cpp" line="648"/>
         <source>Open an image...</source>
         <translation>Отвори образ...</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="603"/>
-        <location filename="../mainwindow.cpp" line="650"/>
+        <location filename="../mainwindow.cpp" line="604"/>
+        <location filename="../mainwindow.cpp" line="651"/>
         <source>Write protect</source>
         <translation>Защита от запис</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="606"/>
-        <location filename="../mainwindow.cpp" line="654"/>
+        <location filename="../mainwindow.cpp" line="607"/>
+        <location filename="../mainwindow.cpp" line="655"/>
         <source>Eject</source>
         <translation>Извади</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="609"/>
+        <location filename="../mainwindow.cpp" line="610"/>
         <source>Write to a file...</source>
         <translation>Запиши във файл...</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="485"/>
-        <location filename="../mainwindow.cpp" line="562"/>
-        <location filename="../mainwindow.cpp" line="1942"/>
-        <location filename="../mainwindow.cpp" line="2002"/>
-        <location filename="../mainwindow.cpp" line="2081"/>
-        <location filename="../mainwindow.cpp" line="2412"/>
-        <location filename="../mainwindow.cpp" line="2519"/>
-        <location filename="../mainwindow.cpp" line="2581"/>
-        <location filename="../mainwindow.cpp" line="2748"/>
-        <location filename="../mainwindow.cpp" line="2773"/>
-        <location filename="../mainwindow.cpp" line="3244"/>
-        <location filename="../mainwindow.cpp" line="3273"/>
-        <location filename="../mainwindow.cpp" line="3365"/>
+        <location filename="../mainwindow.cpp" line="563"/>
+        <location filename="../mainwindow.cpp" line="1948"/>
+        <location filename="../mainwindow.cpp" line="2008"/>
+        <location filename="../mainwindow.cpp" line="2087"/>
+        <location filename="../mainwindow.cpp" line="2418"/>
+        <location filename="../mainwindow.cpp" line="2525"/>
+        <location filename="../mainwindow.cpp" line="2587"/>
+        <location filename="../mainwindow.cpp" line="2754"/>
+        <location filename="../mainwindow.cpp" line="2779"/>
+        <location filename="../mainwindow.cpp" line="3250"/>
+        <location filename="../mainwindow.cpp" line="3279"/>
+        <location filename="../mainwindow.cpp" line="3371"/>
         <source>Error</source>
         <translation>Грешка</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="562"/>
+        <location filename="../mainwindow.cpp" line="563"/>
         <source>Failed to load language file for: </source>
         <translation>Грешка при зареждане на езиковия файл за: </translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="572"/>
+        <location filename="../mainwindow.cpp" line="573"/>
         <source>Languages</source>
         <translation>Езици</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="574"/>
+        <location filename="../mainwindow.cpp" line="575"/>
         <source>Русский</source>
         <translation>Русский</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="577"/>
+        <location filename="../mainwindow.cpp" line="578"/>
         <source>English</source>
         <translation>English</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="580"/>
+        <location filename="../mainwindow.cpp" line="581"/>
         <source>Български</source>
         <translation>Български</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="748"/>
+        <location filename="../mainwindow.cpp" line="749"/>
         <source>Mouse speed</source>
         <translation>Скорост на мишката</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="916"/>
+        <location filename="../mainwindow.cpp" line="917"/>
         <source>Auto scale</source>
         <translation>Автоматично</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="936"/>
+        <location filename="../mainwindow.cpp" line="937"/>
         <source>Screen 4:3</source>
         <translation>Екран 4:3</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="943"/>
+        <location filename="../mainwindow.cpp" line="944"/>
         <source>Square pixels</source>
         <translation>Квадратни пиксели</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="950"/>
+        <location filename="../mainwindow.cpp" line="951"/>
         <source>Square screen</source>
         <translation>Квадратен екран</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="961"/>
-        <location filename="../mainwindow.cpp" line="1016"/>
+        <location filename="../mainwindow.cpp" line="962"/>
+        <location filename="../mainwindow.cpp" line="1017"/>
         <source>Nearest pixel</source>
         <translation>Най-близък пиксел</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="969"/>
-        <location filename="../mainwindow.cpp" line="1024"/>
+        <location filename="../mainwindow.cpp" line="970"/>
+        <location filename="../mainwindow.cpp" line="1025"/>
         <source>Linear</source>
         <translation>Линейно</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="977"/>
+        <location filename="../mainwindow.cpp" line="978"/>
         <source>Anisotropic</source>
         <translation>Анизотропно</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="995"/>
+        <location filename="../mainwindow.cpp" line="996"/>
         <source>Fast, no smoothing</source>
         <translation>Изключено</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="1003"/>
+        <location filename="../mainwindow.cpp" line="1004"/>
         <source>Bilinear filtering</source>
         <translation>Билинейно</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="1763"/>
-        <location filename="../mainwindow.cpp" line="1764"/>
+        <location filename="../mainwindow.cpp" line="1766"/>
+        <location filename="../mainwindow.cpp" line="1767"/>
         <source>Run without debugging</source>
         <translation>Стартирай без дебъгване</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2063"/>
+        <location filename="../mainwindow.cpp" line="2069"/>
         <source>All supported files</source>
         <translation>Всички поддържани файлове</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2046"/>
-        <location filename="../mainwindow.cpp" line="2243"/>
+        <location filename="../mainwindow.cpp" line="2052"/>
+        <location filename="../mainwindow.cpp" line="2249"/>
         <source>Saved states</source>
         <translation>Запазени състояния</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="612"/>
-        <location filename="../mainwindow.cpp" line="657"/>
+        <location filename="../mainwindow.cpp" line="613"/>
+        <location filename="../mainwindow.cpp" line="658"/>
         <source>Default image</source>
         <translation>Образ по подразбиране</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="772"/>
+        <location filename="../mainwindow.cpp" line="773"/>
         <source>Screenshot type</source>
         <translation>Тип на екранната снимка</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="335"/>
         <location filename="../mainwindow.ui" line="338"/>
-        <location filename="../mainwindow.cpp" line="2869"/>
+        <location filename="../mainwindow.cpp" line="2875"/>
         <source>Record video</source>
         <translation>Запиши видео</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2869"/>
+        <location filename="../mainwindow.cpp" line="2875"/>
         <source>Stop video recording</source>
         <translation>Спри записа на видео</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="794"/>
-        <location filename="../mainwindow.cpp" line="2352"/>
-        <location filename="../mainwindow.cpp" line="2738"/>
-        <location filename="../mainwindow.cpp" line="2856"/>
+        <location filename="../mainwindow.cpp" line="795"/>
+        <location filename="../mainwindow.cpp" line="2358"/>
+        <location filename="../mainwindow.cpp" line="2744"/>
+        <location filename="../mainwindow.cpp" line="2862"/>
         <source>Video recording</source>
         <translation>Запис на видео</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="799"/>
+        <location filename="../mainwindow.cpp" line="800"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="816"/>
+        <location filename="../mainwindow.cpp" line="817"/>
         <source>Frame rate</source>
         <translation>Честота на кадрите</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="820"/>
+        <location filename="../mainwindow.cpp" line="821"/>
         <source>As the machine</source>
         <translation>Като на машината</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="830"/>
+        <location filename="../mainwindow.cpp" line="831"/>
         <source>fps</source>
         <translation>кадъра/с</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="839"/>
+        <location filename="../mainwindow.cpp" line="840"/>
         <source>Folder for videos...</source>
         <translation>Папка за видео...</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="842"/>
+        <location filename="../mainwindow.cpp" line="843"/>
         <source>Folder for videos</source>
         <translation>Папка за видео</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="845"/>
+        <location filename="../mainwindow.cpp" line="846"/>
         <source>Path to ffmpeg...</source>
         <translation>Път до ffmpeg...</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="846"/>
-        <location filename="../mainwindow.cpp" line="2740"/>
+        <location filename="../mainwindow.cpp" line="847"/>
+        <location filename="../mainwindow.cpp" line="2746"/>
         <source>Path to ffmpeg</source>
         <translation>Път до ffmpeg</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2739"/>
+        <location filename="../mainwindow.cpp" line="2745"/>
         <source>Video is recorded by ffmpeg, which is not found next to the emulator or on the PATH. Please show where it is.</source>
         <translation>Видеото се записва от ffmpeg, но той не е намерен нито до емулатора, нито в PATH. Посочете къде се намира.</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2748"/>
+        <location filename="../mainwindow.cpp" line="2754"/>
         <source>Unable to create the folder </source>
         <translation>Неуспешно създаване на папката </translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2802"/>
+        <location filename="../mainwindow.cpp" line="2808"/>
         <source>Recording video to </source>
         <translation>Записва се видео в </translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2351"/>
-        <location filename="../mainwindow.cpp" line="2831"/>
+        <location filename="../mainwindow.cpp" line="2357"/>
+        <location filename="../mainwindow.cpp" line="2837"/>
         <source>Finishing the video...</source>
         <translation>Видеото се довършва...</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2853"/>
+        <location filename="../mainwindow.cpp" line="2859"/>
         <source>Video saved: </source>
         <translation>Видеото е запазено: </translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="778"/>
+        <location filename="../mainwindow.cpp" line="779"/>
         <source>As on screen</source>
         <translation>Като на екрана</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="249"/>
-        <location filename="../mainwindow.cpp" line="888"/>
         <location filename="../mainwindow.cpp" line="889"/>
-        <location filename="../mainwindow.cpp" line="1794"/>
+        <location filename="../mainwindow.cpp" line="890"/>
+        <location filename="../mainwindow.cpp" line="1797"/>
         <source>Turbo</source>
         <translation>Турбо</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="632"/>
+        <location filename="../mainwindow.cpp" line="633"/>
         <source>Floppy drive %1</source>
         <translation>Дисково устройство %1</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="674"/>
+        <location filename="../mainwindow.cpp" line="675"/>
         <source>Hard disk %1</source>
         <translation>Твърд диск %1</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="705"/>
+        <location filename="../mainwindow.cpp" line="706"/>
         <source>Interface style</source>
         <translation>Стил на интерфейса</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="719"/>
+        <location filename="../mainwindow.cpp" line="720"/>
         <source>Default</source>
         <translation>По подразбиране</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="778"/>
+        <location filename="../mainwindow.cpp" line="779"/>
         <source>Original</source>
         <translation>Оригинал</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="870"/>
+        <location filename="../mainwindow.cpp" line="871"/>
         <source>No remapping</source>
         <translation>Без пренасочване</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="870"/>
+        <location filename="../mainwindow.cpp" line="871"/>
         <source>Numeric keypad on arrows</source>
         <translation>Цифров блок на стрелките</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="870"/>
+        <location filename="../mainwindow.cpp" line="871"/>
         <source>Numeric keypad on letters</source>
         <translation>Цифров блок на буквите</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="897"/>
+        <location filename="../mainwindow.cpp" line="898"/>
         <source>Speed</source>
         <translation>Скорост</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="985"/>
-        <location filename="../mainwindow.cpp" line="1034"/>
+        <location filename="../mainwindow.cpp" line="986"/>
+        <location filename="../mainwindow.cpp" line="1035"/>
         <source>Sharp</source>
         <translation>Рязко</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="1042"/>
+        <location filename="../mainwindow.cpp" line="1043"/>
         <source>Picture tube</source>
         <translation>Кинескоп</translation>
     </message>
@@ -2682,155 +2675,155 @@
         <translation>Послесвечене</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="1054"/>
+        <location filename="../mainwindow.cpp" line="1055"/>
         <source>Off</source>
         <translation>Изключено</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="1055"/>
+        <location filename="../mainwindow.cpp" line="1056"/>
         <source>Short (common monitor)</source>
         <translation>Кратко (обикновен монитор)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="1056"/>
+        <location filename="../mainwindow.cpp" line="1057"/>
         <source>Long</source>
         <translation>Дълго</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="1368"/>
+        <location filename="../mainwindow.cpp" line="1369"/>
         <source>High precision</source>
         <translation>Висока точност</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="1369"/>
+        <location filename="../mainwindow.cpp" line="1370"/>
         <source>The picture follows the beam within a line, for programs that change the palette as it goes</source>
         <translation>Картината следва лъча в рамките на реда - за програми, които сменят палитрата в движение</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="1833"/>
+        <location filename="../mainwindow.cpp" line="1836"/>
         <source>As fast as possible</source>
         <translation>Възможно най-бързо</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="1834"/>
+        <location filename="../mainwindow.cpp" line="1837"/>
         <source>.</source>
         <comment>decimal point of the speed</comment>
         <translation>,</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="1858"/>
+        <location filename="../mainwindow.cpp" line="1861"/>
         <source>A serial port is being logged to a file in the I/O ports window. Stop the logging or close the window first.</source>
         <translation>В прозореца на входно-изходните портове се записва порт във файл. Първо спрете записа или затворете прозореца.</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="1864"/>
+        <location filename="../mainwindow.cpp" line="1867"/>
         <source>The user kept logging of a serial port to a file.</source>
         <translation>Потребителят остави записа на серийния порт във файл.</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2045"/>
+        <location filename="../mainwindow.cpp" line="2051"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2066"/>
+        <location filename="../mainwindow.cpp" line="2072"/>
         <source>Load a file</source>
         <translation>Зареди файл</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2242"/>
-        <location filename="../mainwindow.cpp" line="2261"/>
-        <location filename="../mainwindow.cpp" line="2263"/>
+        <location filename="../mainwindow.cpp" line="2248"/>
+        <location filename="../mainwindow.cpp" line="2267"/>
+        <location filename="../mainwindow.cpp" line="2269"/>
         <source>Save state</source>
         <translation>Запазване на състоянието</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2243"/>
+        <location filename="../mainwindow.cpp" line="2249"/>
         <source>Saved states, unpacked</source>
         <translation>Запазени състояния, без компресия</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2264"/>
+        <location filename="../mainwindow.cpp" line="2270"/>
         <source>The machine is not running, so its state cannot be taken.</source>
         <translation>Машината не работи, затова състоянието ѝ не може да се запази.</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2351"/>
+        <location filename="../mainwindow.cpp" line="2357"/>
         <source>Abort</source>
         <translation>Прекъсни</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2362"/>
+        <location filename="../mainwindow.cpp" line="2368"/>
         <source>Stopping ffmpeg...</source>
         <translation>Спиране на ffmpeg...</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2402"/>
+        <location filename="../mainwindow.cpp" line="2408"/>
         <source>Open disk image</source>
         <translation>Отвори образ на диск</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2512"/>
+        <location filename="../mainwindow.cpp" line="2518"/>
         <source>Open a hard disk image</source>
         <translation>Отвори образ на твърд диск</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2549"/>
+        <location filename="../mainwindow.cpp" line="2555"/>
         <source>Save disk image to a file</source>
         <translation>Запази образа на диска във файл</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2558"/>
+        <location filename="../mainwindow.cpp" line="2564"/>
         <source>File already exists</source>
         <translation>Файлът вече съществува</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2559"/>
+        <location filename="../mainwindow.cpp" line="2565"/>
         <source>File already exists. Overwrite? (Choose &quot;No&quot; to make a backup)</source>
         <translation>Файлът вече съществува. Да се презапише ли? (Изберете &quot;Не&quot;, за да се направи резервно копие)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2578"/>
+        <location filename="../mainwindow.cpp" line="2584"/>
         <source>Backup error</source>
         <translation>Грешка при създаване на резервно копие</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2578"/>
+        <location filename="../mainwindow.cpp" line="2584"/>
         <source>Error creating a backup. Probably *.bak already exists.</source>
         <translation>Грешка при създаване на резервно копие. Вероятно файл *.bak вече съществува.</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2683"/>
+        <location filename="../mainwindow.cpp" line="2689"/>
         <source>Save screenshot</source>
         <translation>Запазване на екранна снимка</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="2995"/>
+        <location filename="../mainwindow.cpp" line="3001"/>
         <source>This machine has no usable keyboard picture</source>
         <translation>Тази машина няма подходящо изображение на клавиатурата</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3155"/>
+        <location filename="../mainwindow.cpp" line="3161"/>
         <source>Emulation stopped</source>
         <translation>Емулацията е спряна</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3155"/>
+        <location filename="../mainwindow.cpp" line="3161"/>
         <source>The machine stopped</source>
         <translation>Машината спря</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3462"/>
+        <location filename="../mainwindow.cpp" line="3468"/>
         <source>Remembered disks</source>
         <translation>Запомнени дискове</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3463"/>
+        <location filename="../mainwindow.cpp" line="3469"/>
         <source>Forget the disks chosen for every machine? The disks in the drives now stay where they are.</source>
         <translation>Да се забравят ли избраните дискове за всички машини? Дисковете, поставени сега в устройствата, остават на мястото си.</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3508"/>
+        <location filename="../mainwindow.cpp" line="3514"/>
         <source>The configuration did not load.</source>
         <translation>Конфигурацията не се зареди.</translation>
     </message>
@@ -2872,19 +2865,19 @@
     <message>
         <location filename="../mainwindow.ui" line="454"/>
         <location filename="../mainwindow.ui" line="457"/>
-        <location filename="../mainwindow.cpp" line="3076"/>
-        <location filename="../mainwindow.cpp" line="3319"/>
+        <location filename="../mainwindow.cpp" line="3082"/>
+        <location filename="../mainwindow.cpp" line="3325"/>
         <source>Start recording</source>
         <translation>Започни запис</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3076"/>
+        <location filename="../mainwindow.cpp" line="3082"/>
         <source>Pause recording</source>
         <translation>Пауза на записа</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="469"/>
-        <location filename="../mainwindow.cpp" line="3080"/>
+        <location filename="../mainwindow.cpp" line="3086"/>
         <source>Play recording</source>
         <translation>Възпроизведи запис</translation>
     </message>
@@ -2894,7 +2887,7 @@
         <translation>Възпроизведи записа</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3080"/>
+        <location filename="../mainwindow.cpp" line="3086"/>
         <source>Pause playback</source>
         <translation>Пауза на възпроизвеждането</translation>
     </message>
@@ -2919,49 +2912,49 @@
         <translation>Спри записа или възпроизвеждането</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3261"/>
-        <location filename="../mainwindow.cpp" line="3268"/>
-        <location filename="../mainwindow.cpp" line="3281"/>
+        <location filename="../mainwindow.cpp" line="3267"/>
+        <location filename="../mainwindow.cpp" line="3274"/>
+        <location filename="../mainwindow.cpp" line="3287"/>
         <source>Open recording</source>
         <translation>Отваряне на запис</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3238"/>
+        <location filename="../mainwindow.cpp" line="3244"/>
         <source>Save recording</source>
         <translation>Запазване на запис</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3262"/>
+        <location filename="../mainwindow.cpp" line="3268"/>
         <source>Save the current recording?</source>
         <translation>Да се запази ли текущият запис?</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3268"/>
+        <location filename="../mainwindow.cpp" line="3274"/>
         <source>eCat scripts (*.ecat);;All files (*.*)</source>
         <translation>Скриптове eCat (*.ecat);;Всички файлове (*.*)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3238"/>
+        <location filename="../mainwindow.cpp" line="3244"/>
         <source>eCat scripts (*.ecat)</source>
         <translation>Скриптове eCat (*.ecat)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="1617"/>
+        <location filename="../mainwindow.cpp" line="1620"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мишката е прихваната от машината. Натиснете Ctrl-Alt или средния бутон, за да я освободите</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3281"/>
+        <location filename="../mainwindow.cpp" line="3287"/>
         <source>Some lines were skipped:</source>
         <translation>Някои редове са пропуснати:</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3320"/>
+        <location filename="../mainwindow.cpp" line="3326"/>
         <source>The recording was made for another machine. Discard it and start a new one?</source>
         <translation>Записът е направен за друга машина. Да се отхвърли ли и да започне нов?</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="3365"/>
+        <location filename="../mainwindow.cpp" line="3371"/>
         <source>Configuration file is not found: </source>
         <translation>Файлът с конфигурация не е намерен: </translation>
     </message>
@@ -3556,38 +3549,38 @@
         <translation>Съдържание</translation>
     </message>
     <message>
-        <location filename="../dialogs/smkwindow.cpp" line="147"/>
+        <location filename="../dialogs/smkwindow.cpp" line="159"/>
         <source>ROM of the board</source>
         <translation>ПЗУ на платката</translation>
     </message>
     <message>
-        <location filename="../dialogs/smkwindow.cpp" line="150"/>
+        <location filename="../dialogs/smkwindow.cpp" line="162"/>
         <source>no answer</source>
         <translation>няма отговор</translation>
     </message>
     <message>
-        <location filename="../dialogs/smkwindow.cpp" line="150"/>
+        <location filename="../dialogs/smkwindow.cpp" line="162"/>
         <source>memory of the machine</source>
         <translation>памет на машината</translation>
     </message>
     <message>
-        <location filename="../dialogs/smkwindow.cpp" line="152"/>
-        <location filename="../dialogs/smkwindow.cpp" line="246"/>
+        <location filename="../dialogs/smkwindow.cpp" line="164"/>
+        <location filename="../dialogs/smkwindow.cpp" line="260"/>
         <source>page %1, segment %2</source>
         <translation>страница %1, сегмент %2</translation>
     </message>
     <message>
-        <location filename="../dialogs/smkwindow.cpp" line="192"/>
+        <location filename="../dialogs/smkwindow.cpp" line="206"/>
         <source>nothing</source>
         <translation>нищо</translation>
     </message>
     <message>
-        <location filename="../dialogs/smkwindow.cpp" line="267"/>
+        <location filename="../dialogs/smkwindow.cpp" line="281"/>
         <source>0177130: %1</source>
         <translation>0177130: %1</translation>
     </message>
     <message>
-        <location filename="../dialogs/smkwindow.cpp" line="268"/>
+        <location filename="../dialogs/smkwindow.cpp" line="282"/>
         <source>reading off</source>
         <translation>четенето е забранено</translation>
     </message>
@@ -3606,13 +3599,13 @@
     </message>
     <message>
         <location filename="../emulator/devices/common/scankeyboard.cpp" line="96"/>
-        <location filename="../emulator/devices/common/scankeyboard.cpp" line="150"/>
+        <location filename="../emulator/devices/common/scankeyboard.cpp" line="151"/>
         <source>Unknown key</source>
         <translation>Неизвестен клавиш</translation>
     </message>
     <message>
         <location filename="../emulator/devices/common/scankeyboard.cpp" line="110"/>
-        <location filename="../emulator/devices/common/scankeyboard.cpp" line="174"/>
+        <location filename="../emulator/devices/common/scankeyboard.cpp" line="175"/>
         <source>Key table does not fit the matrix</source>
         <translation>Таблицата с клавиши не се побира в матрицата</translation>
     </message>
@@ -3673,6 +3666,24 @@
         <location filename="../emulator/script/script_parser.cpp" line="274"/>
         <source>Unable to write the script file</source>
         <translation>Файлът на сценария не може да бъде записан</translation>
+    </message>
+</context>
+<context>
+    <name>SerialLine</name>
+    <message>
+        <location filename="../emulator/devices/common/serial_line.cpp" line="69"/>
+        <source>Command &apos;connect&apos; expects a port name</source>
+        <translation>Командата &apos;connect&apos; изисква име на порт</translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/common/serial_line.cpp" line="85"/>
+        <source>Command &apos;sendfile&apos; expects a file name</source>
+        <translation>Командата &apos;sendfile&apos; изисква име на файл</translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/common/serial_line.cpp" line="92"/>
+        <source>File not found</source>
+        <translation>Файлът не е намерен</translation>
     </message>
 </context>
 <context>
@@ -3932,12 +3943,12 @@
     <name>TapeRecorderWindow</name>
     <message>
         <location filename="../dialogs/taperecorder.ui" line="14"/>
-        <location filename="../dialogs/taperecorder.cpp" line="262"/>
+        <location filename="../dialogs/taperecorder.cpp" line="264"/>
         <source>Tape Recorder</source>
         <translation>Магнетофон</translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="263"/>
+        <location filename="../dialogs/taperecorder.cpp" line="265"/>
         <source>The machine has written on this tape. Save it?</source>
         <translation>Машината е записвала на тази касета. Да се запази ли?</translation>
     </message>
@@ -3983,37 +3994,37 @@
         <translation>ЭЛЕКТРОНИКА-302</translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="268"/>
+        <location filename="../dialogs/taperecorder.cpp" line="270"/>
         <source>Load a file</source>
         <translation>Зареждане на файл</translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="290"/>
-        <location filename="../dialogs/taperecorder.cpp" line="302"/>
-        <location filename="../dialogs/taperecorder.cpp" line="468"/>
+        <location filename="../dialogs/taperecorder.cpp" line="292"/>
+        <location filename="../dialogs/taperecorder.cpp" line="304"/>
+        <location filename="../dialogs/taperecorder.cpp" line="477"/>
         <source>Error</source>
         <translation>Грешка</translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="302"/>
+        <location filename="../dialogs/taperecorder.cpp" line="304"/>
         <source>Unknown tape file format!</source>
         <translation>Неизвестен формат на файла със записа!</translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="438"/>
-        <location filename="../dialogs/taperecorder.cpp" line="449"/>
+        <location filename="../dialogs/taperecorder.cpp" line="447"/>
+        <location filename="../dialogs/taperecorder.cpp" line="458"/>
         <source>Save recorded data</source>
         <translation>Запазване на записаните данни</translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="450"/>
+        <location filename="../dialogs/taperecorder.cpp" line="459"/>
         <source>%1 already exists.
 Do you want to replace it?</source>
         <translation>%1 вече съществува.
 Да бъде ли заменен?</translation>
     </message>
     <message>
-        <location filename="../dialogs/taperecorder.cpp" line="468"/>
+        <location filename="../dialogs/taperecorder.cpp" line="477"/>
         <source>Unable to save file!</source>
         <translation>Файлът не може да бъде запазен!</translation>
     </message>

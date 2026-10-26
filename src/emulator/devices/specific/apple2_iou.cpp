@@ -15,7 +15,6 @@ Apple2IOU::Apple2IOU(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_softsw(this, im, 1, "softsw", MODE_W)
     , i_an(this, im, 4, "an", MODE_W)
 {
-    m_clocked = true;   //the paddle timers count the processor's clocks
 }
 
 emulator::Result Apple2IOU::load_config(SystemData *sd)
@@ -75,9 +74,11 @@ void Apple2IOU::reset(bool cold)
     i_an.change(m_an);
 }
 
-void Apple2IOU::clock(unsigned int counter)
+uint64_t Apple2IOU::now() const
 {
-    m_cycles += counter;
+    uint64_t t = 0;
+    if (cpu != nullptr) cpu->bus_time(t);
+    return t;
 }
 
 void Apple2IOU::set_flag(unsigned f, bool on)
@@ -170,7 +171,7 @@ void Apple2IOU::access(unsigned address, bool read, unsigned value)
         return;
     }
     if (a >= 0x70 && a < 0x80) {
-        m_pdl_start = m_cycles;
+        m_pdl_start = now();
         m_pdl_started = true;
         // The MEGARAM of the Правец-8А (like the RamWorks) takes the number
         // of its 64K page from a write to $C073: *PDL.RESET and the data bus
@@ -217,7 +218,7 @@ unsigned Apple2IOU::get_value(unsigned address)
             // The 558 holds its output up for 11 clocks per step of the
             // resistance after $C070; 255 is an open input
             const unsigned v = m_pdl[n - 4];
-            b = m_pdl_started && (v >= 255 || m_cycles - m_pdl_start < (uint64_t)v * 11 + 8);
+            b = m_pdl_started && (v >= 255 || now() - m_pdl_start < (uint64_t)v * 11 + 8);
         }
         return (b ? 0x80 : 0) | d6;
     }
@@ -305,7 +306,7 @@ void Apple2IOU::save_state(StateWriter &w)
     for (unsigned n = 0; n < 4; n++) w.n((std::string("pdl") + std::to_string(n)).c_str(), m_pdl[n]);
     w.b("pdl_started", m_pdl_started);
     //Only how long ago the timers started matters
-    w.u("pdl_elapsed", (unsigned)std::min<uint64_t>(m_cycles - m_pdl_start, 0xFFFFFFFFu), 32);
+    w.u("pdl_elapsed", (unsigned)std::min<uint64_t>(now() - m_pdl_start, 0xFFFFFFFFu), 32);
 }
 
 emulator::Result Apple2IOU::load_state(const StateReader &r)
@@ -317,11 +318,15 @@ emulator::Result Apple2IOU::load_state(const StateReader &r)
     r.b("softsw", m_softsw);
     for (unsigned n = 0; n < 4; n++) r.u((std::string("pdl") + std::to_string(n)).c_str(), m_pdl[n]);
     r.b("pdl_started", m_pdl_started);
-    unsigned elapsed = 0;
-    r.u("pdl_elapsed", elapsed);
-    m_cycles = 0x100000000ull;
-    m_pdl_start = m_cycles - elapsed;
+    m_pdl_elapsed = 0;
+    r.u("pdl_elapsed", m_pdl_elapsed);
     return emulator::Result::ok();
+}
+
+// The processor's clock count is back only now
+void Apple2IOU::state_restored()
+{
+    m_pdl_start = now() - m_pdl_elapsed;
 }
 
 ComputerDevice * create_apple2_iou(InterfaceManager *im, EmulatorConfigDevice *cd)

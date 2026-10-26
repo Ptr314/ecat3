@@ -4,6 +4,7 @@
 // Description: Service functions, source
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cstdlib>
 #include <ctime>
@@ -421,7 +422,9 @@ bool read_confg_value(EmulatorConfigDevice * cd, const std::string &name, bool r
 // the script only. The Caps Lock of the host used to set the РУС/ЛАТ of the
 // БК at the reset, and a test typed Cyrillic whenever the developer's Caps
 // Lock happened to be on
-static bool g_host_lock_keys = true;
+// Written by the script engine and the window, read by a keyboard's reset on
+// the emulation thread
+static std::atomic<bool> g_host_lock_keys(true);
 
 void use_host_lock_keys(bool on)
 {

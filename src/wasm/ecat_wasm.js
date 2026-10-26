@@ -351,7 +351,9 @@ function currentPageUrl() {
     q.set("filter", filterMode());
     q.set("blend", blendOn() ? "1" : "0");
     q.set("persist", persistenceMode());
-    q.set("lang", lang);
+    // The language only when the address named one: a link passed on would
+    // otherwise force the sender's language over the reader's own choice
+    if (urlParams.lang && I18N[urlParams.lang]) q.set("lang", lang);
     // Only a machine with a drawing has a keyboard to speak of
     if (kbdBaseWidth > 0) {
         if (!document.getElementById("kbd-panel").hidden) q.set("kbd", "1");

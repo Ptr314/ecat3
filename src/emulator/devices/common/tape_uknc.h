@@ -97,11 +97,17 @@ namespace uknc_tape
         for (unsigned i = 0; i < count; i++) put_bit(bits, 1);
     }
 
+    // The longest pause played: a file keeps up to most of an hour (the
+    // machine waited for input between two files), which would be 16 MB of
+    // signal and as long to wait. Ten seconds is past any wait of the ROM
+    const unsigned MAX_PAUSE_UNITS = 190;
+
     // A line standing still: a bit ends low, and the pilot tone after the
     // pause starts with an edge
     inline void put_pause(std::vector<uint8_t> &bits, uint16_t units)
     {
-        bits.insert(bits.end(), (size_t)units * PAUSE_UNIT, 0);
+        const unsigned played = units < MAX_PAUSE_UNITS ? units : MAX_PAUSE_UNITS;
+        bits.insert(bits.end(), (size_t)played * PAUSE_UNIT, 0);
     }
 
     inline void put_byte(std::vector<uint8_t> &bits, uint8_t b)

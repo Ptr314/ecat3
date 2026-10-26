@@ -113,6 +113,8 @@ public:
     int get_position();
     void set_position(int value);
     int SeekSector(int track, int sector);
+    // Сторона, выбранная последним SeekSector() (0 у односторонних)
+    int get_side() const { return side; }
     // Дорожки целиком (режим дорожек: MX, IBM FM/MFM - контроллеры MX, DX, БК)
     bool whole_track() const;
     bool read_track(int track, int side, std::vector<uint8_t> &out);

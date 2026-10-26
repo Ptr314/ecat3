@@ -107,6 +107,10 @@ SMKWindow::SMKWindow(QWidget *parent, Emulator * e, SMK512 * d):
     m_dump_box = new QVBoxLayout();
     layout->addLayout(m_dump_box, 1);
 
+    m_save_timer = new QTimer(this);
+    m_save_timer->setSingleShot(true);
+    m_save_timer->setInterval(1000);
+    connect(m_save_timer, &QTimer::timeout, this, &SMKWindow::write_choice);
     load_choice();
     read_board();
     show_selection();
@@ -128,10 +132,18 @@ SMKWindow::SMKWindow(QWidget *parent, Emulator * e, SMK512 * d):
         rebuild();
     });
 
-    //The machine runs meanwhile: what it writes and how it switches show up
+    //The machine runs meanwhile: what it writes and how it switches show up,
+    //while there is a window to show it in
     QTimer * timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &SMKWindow::update_view);
+    connect(timer, &QTimer::timeout, this, [this]() {
+        if (isVisible() && !isMinimized()) update_view();
+    });
     timer->start(500);
+}
+
+SMKWindow::~SMKWindow()
+{
+    if (m_save_timer->isActive()) write_choice();
 }
 
 //The register the selectors make: mode and page
@@ -302,7 +314,14 @@ void SMKWindow::load_choice()
     m_view->blockSignals(false);
 }
 
+//Every ini write saves the whole file: a page stepped with the wheel would
+//write it three times a step
 void SMKWindow::save_choice()
+{
+    m_save_timer->start();
+}
+
+void SMKWindow::write_choice()
 {
     e->write_setup("SMK512", "view", std::to_string(m_view->currentIndex()));
     e->write_setup("SMK512", "mode", std::to_string(m_sel_mode));

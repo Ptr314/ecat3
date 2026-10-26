@@ -5,7 +5,6 @@
 
 #include "dl11.h"
 #include "emulator/utils.h"
-#include "dsk_tools/core.h"
 
 #define REG_RCSR        0
 #define REG_RBUF        1
@@ -25,11 +24,6 @@
 
 // Посылок на символ: старт, восемь данных и стоп
 #define BITS_PER_CHAR   10
-
-// После стольких пустых опросов порт хоста опрашивается во столько раз реже:
-// у С2 на 9600 это раз в 8 мс
-#define IDLE_POLLS      4
-#define IDLE_SLOWDOWN   8
 
 DL11::DL11(InterfaceManager *im, EmulatorConfigDevice *cd):
       AddressableDevice(im, cd)
@@ -70,8 +64,7 @@ emulator::Result DL11::load_config(SystemData *sd)
 
     // Порт хоста, заданный конфигурацией. Если его нет или он занят, это не
     // мешает машине: линия просто никуда не выходит, поле connected - 0
-    m_port_name = str_trim(read_confg_value(cd, "port", false, std::string("")));
-    if (!m_port_name.empty()) (void)m_host.open(m_port_name, m_baud);
+    m_line.open_configured(read_confg_value(cd, "port", false, std::string("")), m_baud);
 
     return emulator::Result::ok();
 }
@@ -112,7 +105,7 @@ bool DL11::tx_blocked()
 
 void DL11::reset(MAYBE_UNUSED bool cold)
 {
-    m_rx_queue.clear();
+    m_line.clear_queue();
     init_registers();
 }
 
@@ -148,7 +141,7 @@ void DL11::transmit_done()
     if ((m_xcsr & XCSR_MAINT) || m_plug)
         receive(b);
     else {
-        (void)m_host.write(b);
+        m_line.write(b);
         if (i_txd.linked > 0) i_txd.change(b);
     }
 
@@ -177,24 +170,9 @@ void DL11::clock(unsigned int counter)
     if (m_rcsr & CSR_DONE) return;
 
     m_rx_left = (int64_t)m_char_ticks;
-    if (!m_rx_queue.empty()) {
-        const uint8_t b = m_rx_queue.front();
-        m_rx_queue.pop_front();
-        receive(b);
-        return;
-    }
     // В петле и с заглушкой линия хоста отключена, чужое сюда не приходит
-    if ((m_xcsr & XCSR_MAINT) || m_plug || !m_host.is_open()) return;
     uint8_t b;
-    if (m_host.read(b)) {
-        m_idle_polls = 0;
-        receive(b);
-        return;
-    }
-    // Молчащая линия опрашивается реже: системный вызов на каждое время
-    // символа - это тысячи вызовов в секунду из потока эмуляции. Пришедшее
-    // за это время ждёт в драйвере порта и берётся потом по байту за символ
-    if (++m_idle_polls >= IDLE_POLLS) m_rx_left = (int64_t)m_char_ticks * IDLE_SLOWDOWN;
+    if (m_line.next(b, !((m_xcsr & XCSR_MAINT) || m_plug))) receive(b);
 }
 
 // Номер станции СА: разряды 0-3 номера ложатся в разряды 8-11 регистров,
@@ -376,7 +354,6 @@ void DL11::save_state(StateWriter &w)
     w.b("tx_busy", m_tx_busy);
     w.b("tx_hold", m_tx_hold);
     w.n64("tx_left", (uint64_t)m_tx_left);
-    w.n("idle_polls", m_idle_polls);
     w.n("sent", m_sent);
     w.n("received", m_received);
     //The loopback plug: part of what the program on the machine sees - with
@@ -387,12 +364,7 @@ void DL11::save_state(StateWriter &w)
     //say: without it the acknowledge would never withdraw a pending request
     w.u("offered", m_irq.offered());
     //What a script has pushed in and the line has not handed over yet
-    if (!m_rx_queue.empty())
-    {
-        std::vector<uint8_t> queue(m_rx_queue.begin(), m_rx_queue.end());
-        w.n64("rx_queued", queue.size());
-        w.array("rx_queue", queue.data(), queue.size());
-    }
+    m_line.save_queue(w);
 }
 
 emulator::Result DL11::load_state(const StateReader &r)
@@ -410,25 +382,13 @@ emulator::Result DL11::load_state(const StateReader &r)
     r.b("tx_hold", m_tx_hold);
     uint64_t tx_left = 0;
     if (r.n64("tx_left", tx_left)) m_tx_left = (int64_t)tx_left;
-    r.u("idle_polls", m_idle_polls);
     r.u("sent", m_sent);
     r.u("received", m_received);
     r.b("plug", m_plug);
     unsigned offered = 0;
     r.u("offered", offered);
     m_irq.set_offered(offered);
-    //The queue is as long as the script made it - a sendfile can be any
-    //length - so its length is stated beside it, and only that much is read
-    m_rx_queue.clear();
-    uint64_t queued = 0;
-    //The length comes from the file: a queue longer than any script would
-    //push is not allocated
-    if (r.n64("rx_queued", queued) && queued > 0 && queued <= 16u * 1024 * 1024)
-    {
-        std::vector<uint8_t> queue(static_cast<size_t>(queued), 0);
-        if (r.array("rx_queue", queue.data(), queue.size()))
-            m_rx_queue.assign(queue.begin(), queue.end());
-    }
+    m_line.load_queue(r);
     return emulator::Result::ok();
 }
 
@@ -453,7 +413,7 @@ std::vector<DeviceFieldInfo> DL11::get_device_fields()
 bool DL11::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
     if (field == "port") {
-        out.text = m_port_name;
+        out.text = m_line.port_name();
         return true;
     }
     if (get_output_field(field, from, to, out)) return true;
@@ -465,12 +425,12 @@ bool DL11::get_field(const std::string &field, unsigned int from, unsigned int t
     if (field == "vector")    { out.values.push_back(m_irq.offered());                 return true; }
     if (field == "station")   { out.values.push_back((unsigned int)m_station);   return true; }
     if (field == "plug")      { out.values.push_back(m_plug? 1 : 0);             return true; }
-    if (field == "connected") { out.values.push_back(m_host.is_open()? 1 : 0);   return true; }
+    if (field == "connected") { out.values.push_back(m_line.connected()? 1 : 0); return true; }
     out.width = 32;
     if (field == "sent")      { out.values.push_back(m_sent);                    return true; }
     if (field == "received")  { out.values.push_back(m_received);                return true; }
     if (field == "overruns")  { out.values.push_back(m_overruns); return true; }
-    if (field == "queued")    { out.values.push_back((unsigned int)m_rx_queue.size()); return true; }
+    if (field == "queued")    { out.values.push_back((unsigned int)m_line.queued()); return true; }
 
     out.numeric = false;
     out.width = 0;
@@ -494,23 +454,9 @@ emulator::Result DL11::send_command(const std::string &command, const std::strin
     std::vector<std::string> p = split_params(parameters);
     const std::string arg = p.empty()? std::string() : p[0];
 
-    if (command == "connect") {
-        if (arg.empty())
-            return emulator::Result::error(emulator::ErrorCode::BadParameters,
-                "{DL11|" + std::string(QT_TRANSLATE_NOOP("DL11", "Command 'connect' expects a port name")) + "}");
-        m_port_name = arg;
-        return m_host.open(arg, m_baud);
-    }
-
-    if (command == "disconnect") {
-        m_host.close();
-        return emulator::Result::ok();
-    }
-
-    if (command == "send") {
-        for (char c : decode_send_text(arg)) m_rx_queue.push_back((uint8_t)c);
-        return emulator::Result::ok();
-    }
+    // connect, disconnect, send, sendfile
+    emulator::Result res;
+    if (m_line.command(command, arg, m_baud, sd, res)) return res;
 
     if (command == "plug") {
         m_plug = arg.empty()? !m_plug : (parse_numeric_value(arg, 10) != 0);
@@ -522,23 +468,6 @@ emulator::Result DL11::send_command(const std::string &command, const std::strin
             return emulator::Result::error(emulator::ErrorCode::BadParameters,
                 "{DL11|" + std::string(QT_TRANSLATE_NOOP("DL11", "Command 'station' expects a number")) + "}");
         set_station((int)parse_numeric_value(arg, 10));
-        return emulator::Result::ok();
-    }
-
-    if (command == "sendfile") {
-        if (arg.empty())
-            return emulator::Result::error(emulator::ErrorCode::BadParameters,
-                "{DL11|" + std::string(QT_TRANSLATE_NOOP("DL11", "Command 'sendfile' expects a file name")) + "}");
-        std::string file = find_file_location(sd, arg);
-        if (file.empty()) file = arg;
-        if (!dsk_tools::file_exists(file))
-            return emulator::Result::error(emulator::ErrorCode::FileError,
-                "{DL11|" + std::string(QT_TRANSLATE_NOOP("DL11", "File not found")) + "} " + arg);
-        // Целиком, одним вызовом: UTF8_ifstream у MinGW - обёртка над файлом
-        // Windows, чей read() возвращает число байт, а у остальных сборок это
-        // std::ifstream, чей read() возвращает сам поток
-        const std::string data = dsk_tools::utf8_read_file(file);
-        for (size_t i = 0; i < data.size(); i++) m_rx_queue.push_back((uint8_t)data[i]);
         return emulator::Result::ok();
     }
 

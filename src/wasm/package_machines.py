@@ -128,25 +128,26 @@ def parse_ext_metadata(ext_path):
         m = re.match(r'[^-/@][^:]*:\s*(?:image(?:_\w+)?|remap_\w+|map|keys|picture|groups)\s*=\s*([^\s{]+)', s)
         if m and "base64" not in s:
             meta["files"].append(m.group(1).strip('"'))
-    meta["files"] = with_drawings(meta["files"])
+    meta["files"], meta["optional"] = with_drawings(meta["files"])
     return meta
-
-OPTIONAL = set()
 
 def with_drawings(files):
     """A keyboard of a Правец finds its drawing and the table of it by the
     name of the map (pravetz-8a-gost.map: pravetz-8a-gost.keys and
-    files/pravetz-8a-gost.svg); the config does not name them. Files that do
-    not exist are not reported missing (OPTIONAL)"""
+    files/pravetz-8a-gost.svg); the config does not name them. Returns the
+    list and the files added so, which are not reported missing when they do
+    not exist. Kept per machine: a machine that names such a file itself must
+    still hear that it is missing"""
     out = list(files)
+    optional = set()
     for f in files:
         if f.endswith(".map"):
             stem = f[:-4]
             for extra in (stem + ".keys", stem + ".svg"):
                 if extra not in out:
                     out.append(extra)
-                    OPTIONAL.add(extra)
-    return out
+                    optional.add(extra)
+    return out, optional
 
 def parse_cfg_metadata(cfg_path):
     """Extract system name, type, and referenced files from a .cfg."""
@@ -189,6 +190,7 @@ def parse_cfg_metadata(cfg_path):
         if m.group(1) not in devices:
             files.append(m.group(1))
 
+    files, optional = with_drawings(files)
     return {
         "name": name,
         "version": version,
@@ -196,7 +198,8 @@ def parse_cfg_metadata(cfg_path):
         "charmap": charmap,
         "debug": debug,
         "order": order,
-        "files": with_drawings(files),
+        "files": files,
+        "optional": optional,
         "devices": devices,
     }
 
@@ -387,7 +390,7 @@ def main():
                     rel = f"{machine_subdir}/{ref_file}"
                 bundle_files[rel.replace("\\", "/")] = local_path
             else:
-                if ref_file not in OPTIONAL:
+                if ref_file not in meta["optional"]:
                     missing.append(ref_file)
 
         # The extension itself, its description and the files it names. They
@@ -420,7 +423,7 @@ def main():
                 if local_path:
                     bundle_files[f"{machine_subdir}/{os.path.basename(local_path)}"] = local_path
                 else:
-                    if ref_file not in OPTIONAL:
+                    if ref_file not in ext_meta["optional"]:
                         missing.append(ref_file)
 
         if missing:

@@ -471,7 +471,7 @@ void WD1793::ExecuteCommand()
         if (size > 0) {
             const int ss = drives[selected_drive]->get_sector_size();
             m_id[0] = (uint8_t)cyl;
-            m_id[1] = 0;
+            m_id[1] = (uint8_t)drives[selected_drive]->get_side();
             m_id[2] = 1;
             m_id[3] = (uint8_t)((ss >= 1024) ? 3 : (ss >= 512) ? 2 : (ss >= 256) ? 1 : 0);
             m_id[4] = m_id[5] = 0;

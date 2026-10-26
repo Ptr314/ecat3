@@ -766,14 +766,20 @@ const char* wasm_tape_info()
     for (ComputerDevice * dev : g_emulator->dm->find_devices_by_class("tape")) {
         TapeRecorder * tape = dynamic_cast<TapeRecorder*>(dev);
         if (tape == nullptr) continue;
-        result += tape->name + "\t"
-                + std::to_string(tape->get_mode()) + "\t"
-                + std::to_string(tape->get_position()) + "\t"
-                + std::to_string(tape->get_total()) + "\t"
-                + std::to_string(tape->get_record_size()) + "\t"
-                + tape->get_record_name() + "\t"
-                + tape->files + "\t"
-                + tape->get_loaded_name() + "\n";
+        //The size and name decode what the machine records meanwhile: on the
+        //emulation thread, which grows that signal
+        std::string line;
+        g_emulator->invoke([&]() {
+            line = tape->name + "\t"
+                 + std::to_string(tape->get_mode()) + "\t"
+                 + std::to_string(tape->get_position()) + "\t"
+                 + std::to_string(tape->get_total()) + "\t"
+                 + std::to_string(tape->get_record_size()) + "\t"
+                 + tape->get_record_name() + "\t"
+                 + tape->files + "\t"
+                 + tape->get_loaded_name() + "\n";
+        });
+        result += line;
     }
     return result.c_str();
 }

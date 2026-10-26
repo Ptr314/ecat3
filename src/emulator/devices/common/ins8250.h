@@ -5,10 +5,8 @@
 
 #pragma once
 
-#include <deque>
-
 #include "emulator/core.h"
-#include "emulator/host_serial.h"
+#include "emulator/devices/common/serial_line.h"
 #include "emulator/devices/common/byte_tap.h"
 
 // The UART of the IBM PC and of the RS-232 port of the Правец-8С: eight
@@ -53,14 +51,15 @@ private:
     bool m_thre_pending = false;    // the THR empty interrupt, until IIR is read or THR written
 
     uint64_t m_char_ticks = 0;
-    bool m_tx_busy = false;
+    // The holding register (THR) and the shift register behind it: a byte
+    // goes into the shift register at once when that is free, and a second
+    // one waits in THR until the first is out
+    uint8_t m_tsr = 0;
+    bool m_tx_busy = false;         // the shift register is sending
     int64_t m_tx_left = 0;
     int64_t m_rx_left = 0;
-    unsigned m_idle_polls = 0;
 
-    std::deque<uint8_t> m_rx_queue;
-    HostSerialPort m_host;
-    std::string m_port_name;
+    SerialLine m_line;                  // the host port and what a script or the peer feeds
     bool m_plug = false;
     SerialPeer * m_peer = nullptr;      // parameter peer: the line ends in the emulator
 
@@ -68,6 +67,7 @@ private:
 
     void set_divisor(unsigned d);
     void receive(uint8_t value);
+    void start_shift();
     void transmit_done();
     unsigned iir() const;
     void update_intr();
@@ -83,7 +83,7 @@ public:
     unsigned get_direct(unsigned address) override;
     void set_value(unsigned address, unsigned value, bool force=false) override;
     // From the peer: bytes for the receiver, taken at the line rate
-    void peer_send(uint8_t value) { m_rx_queue.push_back(value); }
+    void peer_send(uint8_t value) { m_line.feed(value); }
     unsigned char_ticks() const { return (unsigned)m_char_ticks; }
 
     ConfigFields get_config_fields() override;

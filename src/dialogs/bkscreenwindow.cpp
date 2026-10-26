@@ -162,6 +162,10 @@ BKScreenWindow::BKScreenWindow(QWidget *parent, Emulator * e, BKDisplay * d):
     m_status->setTextInteractionFlags(Qt::TextSelectableByMouse);
     layout->addWidget(m_status);
 
+    m_save_timer = new QTimer(this);
+    m_save_timer->setSingleShot(true);
+    m_save_timer->setInterval(1000);
+    connect(m_save_timer, &QTimer::timeout, this, &BKScreenWindow::write_choice);
     load_choice();
 
     connect(m_source, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this]() {
@@ -188,10 +192,18 @@ BKScreenWindow::BKScreenWindow(QWidget *parent, Emulator * e, BKDisplay * d):
 
     update_view();
 
-    //The machine runs meanwhile: what it draws shows up
+    //The machine runs meanwhile: what it draws shows up, while there is a
+    //window to show it in
     QTimer * timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &BKScreenWindow::update_view);
+    connect(timer, &QTimer::timeout, this, [this]() {
+        if (isVisible() && !isMinimized()) update_view();
+    });
     timer->start(200);
+}
+
+BKScreenWindow::~BKScreenWindow()
+{
+    if (m_save_timer->isActive()) write_choice();
 }
 
 QString BKScreenWindow::source_key() const
@@ -219,10 +231,17 @@ unsigned int BKScreenWindow::source_size() const
 //As many pages as the source has, the last one possibly short
 void BKScreenWindow::set_page_range()
 {
-    const unsigned int size = source_size();
+    m_shown_vram.clear();
+    apply_page_range(source_size());
+}
+
+//A page past the new end moves to the last one
+void BKScreenWindow::apply_page_range(unsigned int size)
+{
     const int pages = (int)((size + SCREEN_BYTES - 1) / SCREEN_BYTES);
     const QSignalBlocker block(m_page);
     m_page->setRange(0, std::max(pages, 1) - 1);
+    m_start = (unsigned int)m_page->value() * SCREEN_BYTES;
 }
 
 void BKScreenWindow::set_page(int page)
@@ -239,7 +258,7 @@ void BKScreenWindow::set_page(int page)
 //Where the page starts in the source; a page of the СМК-512 or А16М memory
 //says only where the processor sees it: whole at one address, by parts
 //(the processor addresses of the parts), or not at all
-void BKScreenWindow::show_where(bool board, const std::vector<std::pair<unsigned int, unsigned int>> &mapped)
+void BKScreenWindow::show_where(bool board, const std::vector<std::pair<unsigned int, unsigned int>> &mapped, unsigned int size)
 {
     QString text;
     if (board) {
@@ -259,8 +278,6 @@ void BKScreenWindow::show_where(bool board, const std::vector<std::pair<unsigned
             text = tr("partly mapped: %1").arg(list.join(", "));
         }
     } else {
-        const bool cpu = source_key() == SRC_CPU;
-        const unsigned int size = cpu ? CPU_SPACE : source_size();
         text = tr("starts at %1").arg(fmt_num(m_start, m_base, addr_digits((size > 0) ? size - 1 : 0, m_base)));
     }
     m_where->setText(text);
@@ -307,7 +324,14 @@ void BKScreenWindow::load_choice()
     m_palette->setCurrentIndex((palette >= 0) ? palette : 0);
 }
 
+//Every ini write saves the whole file: a page stepped with the wheel would
+//write it four times a step
 void BKScreenWindow::save_choice()
+{
+    m_save_timer->start();
+}
+
+void BKScreenWindow::write_choice()
 {
     e->write_setup("BKScreen", "source", source_key().toStdString());
     e->write_setup("BKScreen", "page", std::to_string(m_page->value()));
@@ -333,6 +357,7 @@ void BKScreenWindow::update_view()
     unsigned int disp_palette = 0;
     std::string vram;
     bool board = false;
+    unsigned int src_size = 0;
     std::vector<std::pair<unsigned int, unsigned int>> mapped;    //4 KB of the page, the window segment
     e->invoke([&]() {
         DeviceFieldValue v;
@@ -346,10 +371,12 @@ void BKScreenWindow::update_view()
             for (unsigned int i = 0; i < SCREEN_BYTES; i++)
                 bytes[i] = proc->peek_mem((start + i) % CPU_SPACE) & 0xFF;
             have = SCREEN_BYTES;
+            src_size = CPU_SPACE;
             return;
         }
         RAM * ram = dynamic_cast<RAM*>(dm->get_device_by_name((key == SRC_DISPLAY) ? vram : name, false));
         const unsigned int size = (ram != nullptr) ? ram->get_size() : 0;
+        src_size = size;
 
         //The memory of a СМК-512 or an А16М: which of its 4 KB segments the
         //board shows to the processor now, as it reads them
@@ -388,7 +415,13 @@ void BKScreenWindow::update_view()
         }
     });
     m_have = have;
-    show_where(board, mapped);
+    //The display switched its video RAM (the БК0011М pages): the pages of
+    //"As the display" are those of the new one
+    if (key == SRC_DISPLAY && vram != m_shown_vram) {
+        m_shown_vram = vram;
+        apply_page_range(src_size);
+    }
+    show_where(board, mapped, src_size);
 
     const int chosen_mode = m_mode->currentData().toInt();
     const int chosen_palette = m_palette->currentData().toInt();

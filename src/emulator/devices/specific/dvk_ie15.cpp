@@ -57,7 +57,10 @@ void IE15Keyboard::reset(bool cool)
     const bool lower = m_case_lower;
     MapKeyboard::reset(cool);
     set_rus(rus);
-    m_caps_id.clear();
+    {
+        compat_lock_guard lock(m_turn);
+        m_caps_id.clear();
+    }
     if (!cool) {
         m_case_lower = lower;
     } else {
@@ -91,6 +94,12 @@ static bool is_dk_id(const std::string &id)
 
 void IE15Keyboard::send_key_id(const std::string &id, bool press)
 {
+    compat_lock_guard lock(m_turn);
+    send_id(id, press);
+}
+
+void IE15Keyboard::send_id(const std::string &id, bool press)
+{
     m_dk = is_dk_id(id);
     m_token = "i" + id;
     MapKeyboard::send_key_id(id, press);
@@ -122,8 +131,9 @@ void IE15Keyboard::key_down(unsigned int key)
         set_toggled(sw, !toggled(sw));
         return;
     }
+    compat_lock_guard lock(m_turn);
     if (key == EmuKey::Backspace) {
-        send_key_id("key_bksp", true);
+        send_id("key_bksp", true);
         note_id("key_bksp", true);
         return;
     }
@@ -132,7 +142,7 @@ void IE15Keyboard::key_down(unsigned int key)
     if (key == code_ruslat) {
         if (!m_caps_id.empty()) return;
         m_caps_id = rus_mode ? "key_lat" : "key_rus";
-        send_key_id(m_caps_id, true);
+        send_id(m_caps_id, true);
         note_id(m_caps_id, true);
         return;
     }
@@ -147,14 +157,15 @@ void IE15Keyboard::key_down(unsigned int key)
 void IE15Keyboard::key_up(unsigned int key)
 {
     if (host_switch(key) != nullptr) return;
+    compat_lock_guard lock(m_turn);
     if (key == EmuKey::Backspace) {
-        send_key_id("key_bksp", false);
+        send_id("key_bksp", false);
         note_id("key_bksp", false);
         return;
     }
     if (key == code_ruslat) {
         if (m_caps_id.empty()) return;
-        send_key_id(m_caps_id, false);
+        send_id(m_caps_id, false);
         note_id(m_caps_id, false);
         m_caps_id.clear();
         return;
@@ -540,7 +551,12 @@ void IE15IO::strobe_first()
 
 void IE15IO::keyboard(unsigned int counter)
 {
-    const uint64_t min_hold = m_system_clock / 25;  // 40 мс
+    // 40 мс; деление - раз на частоту, а не на каждом такте с нажатой клавишей
+    if (m_min_hold_clock != m_system_clock) {
+        m_min_hold_clock = m_system_clock;
+        m_min_hold = m_system_clock / 25;
+    }
+    const uint64_t min_hold = m_min_hold;
     m_scan_left = (m_scan_left > counter) ? m_scan_left - counter : 0;
     bool first_gone = false;
     size_t i = 0;

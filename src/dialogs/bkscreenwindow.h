@@ -17,6 +17,7 @@
 class QComboBox;
 class QLabel;
 class QSpinBox;
+class QTimer;
 class BKDisplay;
 
 //The picture of a screen buffer, stretched to the window with its proportions
@@ -50,6 +51,7 @@ class BKScreenWindow : public GenericDbgWnd
     Q_OBJECT
 public:
     BKScreenWindow(QWidget *parent, Emulator * e, BKDisplay * d);
+    ~BKScreenWindow() override;
 
 public slots:
     void update_view() override;
@@ -68,22 +70,26 @@ private:
     QLabel * m_info;
     QLabel * m_status;
     BKScreenPicture * m_picture;
+    QTimer * m_save_timer;          //the choice goes to the ini a second after the last change
 
     unsigned int m_start;           //the first byte shown, in the source: the page start
     std::vector<uint8_t> m_bytes;   //the 16 KB taken at the last update
     unsigned int m_have;            //of them, the ones the source has
     unsigned int m_shown_mode;      //BK_MODE_* the picture was drawn in
+    std::string m_shown_vram;       //"As the display": the video RAM the page range is for
     int m_hover_x;
     int m_hover_y;
 
     QString source_key() const;
     unsigned int source_size() const;
     void set_page_range();
+    void apply_page_range(unsigned int size);
     void set_page(int page);
-    void show_where(bool board, const std::vector<std::pair<unsigned int, unsigned int>> &mapped);
+    void show_where(bool board, const std::vector<std::pair<unsigned int, unsigned int>> &mapped, unsigned int size);
     void show_hover();
     void load_choice();
     void save_choice();
+    void write_choice();
 };
 
 GenericDbgWnd * CreateBKScreenWindow(QWidget *parent, Emulator * e, ComputerDevice * d);

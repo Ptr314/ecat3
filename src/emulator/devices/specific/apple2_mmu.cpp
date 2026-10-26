@@ -85,7 +85,8 @@ emulator::Result Apple2MMU::load_config(SystemData *sd)
             if (range.size() >= 2 && range.front() == '[' && range.back() == ']') range = range.substr(1, range.size() - 2);
             unsigned offset = 0;
             try {
-                if (!range.empty()) offset = parse_numeric_value(range, 10);
+                //An address of the machine, read as the mapper reads its [base]
+                if (!range.empty()) offset = parse_numeric_value(range);
             } catch (const std::exception &) {
                 offset = UINT_MAX;
             }

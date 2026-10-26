@@ -184,12 +184,11 @@
         <translation>Некорректная скорость обмена</translation>
     </message>
     <message>
-        <location line="+171"/>
         <source>Command &apos;connect&apos; expects a port name</source>
-        <translation>Команде connect нужно имя порта</translation>
+        <translation type="vanished">Команде connect нужно имя порта</translation>
     </message>
     <message>
-        <location line="+83"/>
+        <location line="+230"/>
         <source>File not found</source>
         <translation>Файл не найден</translation>
     </message>
@@ -214,7 +213,7 @@
         <translation>В этом диске нет образа</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+6"/>
         <source>Cannot write the file</source>
         <translation>Не удалось записать файл</translation>
     </message>
@@ -230,7 +229,7 @@
 <context>
     <name>Apple2IOU</name>
     <message>
-        <location filename="../emulator/devices/specific/apple2_iou.cpp" line="+31"/>
+        <location filename="../emulator/devices/specific/apple2_iou.cpp" line="+30"/>
         <source>Unknown model, ii or iie expected</source>
         <translation>Неизвестная модель, ожидается ii или iie</translation>
     </message>
@@ -283,7 +282,7 @@
         <translation>ПЗУ должно начинаться с границы страницы и кончаться не дальше $FFFF</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+29"/>
         <source>A slot ROM is not a ROM or the offset is past its end</source>
         <translation>ПЗУ слота - не ПЗУ, или смещение выходит за его конец</translation>
     </message>
@@ -399,12 +398,12 @@
         <translation>Палитра:</translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+134"/>
         <source>starts at %1</source>
         <translation>с адреса %1</translation>
     </message>
     <message>
-        <location line="-12"/>
+        <location line="-10"/>
         <source>not mapped</source>
         <translation>не подключена</translation>
     </message>
@@ -423,12 +422,12 @@
         <translation>подключена частями: %1</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+24"/>
         <source>%1: %2   line %3, byte %4</source>
         <translation>%1: %2   строка %3, байт %4</translation>
     </message>
     <message>
-        <location line="+113"/>
+        <location line="+129"/>
         <source>display: %1, palette %2</source>
         <translation>дисплей: %1, палитра %2</translation>
     </message>
@@ -596,8 +595,8 @@
         <translation>Образ диска</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="+348"/>
-        <location filename="../emulator/devices/common/ins8250.cpp" line="+245"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="+326"/>
+        <location filename="../emulator/devices/common/ins8250.cpp" line="+242"/>
         <source>Serial port of the computer</source>
         <translation>Последовательный порт компьютера</translation>
     </message>
@@ -743,29 +742,26 @@
 <context>
     <name>DL11</name>
     <message>
-        <location filename="../emulator/devices/common/dl11.cpp" line="-290"/>
+        <location filename="../emulator/devices/common/dl11.cpp" line="-274"/>
         <source>Incorrect baud rate</source>
         <translation>Некорректная скорость обмена</translation>
     </message>
     <message>
-        <location line="+432"/>
         <source>Command &apos;connect&apos; expects a port name</source>
-        <translation>Команда &apos;connect&apos; ожидает имя порта</translation>
+        <translation type="vanished">Команда &apos;connect&apos; ожидает имя порта</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+407"/>
         <source>Command &apos;station&apos; expects a number</source>
         <translation>Команда &apos;station&apos; ожидает число</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Command &apos;sendfile&apos; expects a file name</source>
-        <translation>Команда &apos;sendfile&apos; ожидает имя файла</translation>
+        <translation type="vanished">Команда &apos;sendfile&apos; ожидает имя файла</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>File not found</source>
-        <translation>Файл не найден</translation>
+        <translation type="vanished">Файл не найден</translation>
     </message>
 </context>
 <context>
@@ -2350,7 +2346,7 @@
 <context>
     <name>IE15Display</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+233"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+244"/>
         <source>Character generator device is expected</source>
         <translation>Ожидается знакогенератор</translation>
     </message>
@@ -2387,29 +2383,26 @@
 <context>
     <name>INS8250</name>
     <message>
-        <location filename="../emulator/devices/common/ins8250.cpp" line="-205"/>
+        <location filename="../emulator/devices/common/ins8250.cpp" line="-206"/>
         <source>Incorrect clock</source>
         <translation>Неверная частота</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+10"/>
         <source>The peer is not a device that takes a serial line</source>
         <translation>Собеседник не принимает последовательную линию</translation>
     </message>
     <message>
-        <location line="+259"/>
         <source>Command &apos;connect&apos; expects a port name</source>
-        <translation>Команде &apos;connect&apos; нужно имя порта</translation>
+        <translation type="vanished">Команде &apos;connect&apos; нужно имя порта</translation>
     </message>
     <message>
-        <location line="+19"/>
         <source>Command &apos;sendfile&apos; expects a file name</source>
-        <translation>Команде &apos;sendfile&apos; нужно имя файла</translation>
+        <translation type="vanished">Команде &apos;sendfile&apos; нужно имя файла</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>File not found</source>
-        <translation>Файл не найден</translation>
+        <translation type="vanished">Файл не найден</translation>
     </message>
 </context>
 <context>
@@ -2760,7 +2753,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1387"/>
+        <location filename="../mainwindow.cpp" line="+1390"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2827,14 +2820,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-899"/>
-        <location line="+2130"/>
+        <location filename="../mainwindow.cpp" line="-901"/>
+        <location line="+2135"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1773"/>
+        <location filename="../mainwindow.cpp" line="-1778"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -2914,14 +2907,14 @@
     <message>
         <location filename="../mainwindow.cpp" line="-625"/>
         <location line="+47"/>
-        <location line="+1781"/>
+        <location line="+1786"/>
         <location line="+29"/>
         <location line="+42"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1896"/>
+        <location line="-1901"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2948,9 +2941,9 @@
         <translation type="vanished">Все файлы (*.*)</translation>
     </message>
     <message>
-        <location line="-124"/>
-        <location line="+77"/>
-        <location line="+1380"/>
+        <location line="-125"/>
+        <location line="+78"/>
+        <location line="+1385"/>
         <location line="+60"/>
         <location line="+79"/>
         <location line="+331"/>
@@ -2965,7 +2958,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2803"/>
+        <location line="-2808"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -3046,13 +3039,13 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+760"/>
+        <location line="+762"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
     </message>
     <message>
-        <location line="+299"/>
+        <location line="+302"/>
         <source>All supported files</source>
         <translation>Все поддерживаемые файлы</translation>
     </message>
@@ -3063,7 +3056,7 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1631"/>
+        <location line="-1636"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -3076,7 +3069,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+83"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+2097"/>
+        <location filename="../mainwindow.cpp" line="+2102"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -3086,15 +3079,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-2075"/>
-        <location line="+1558"/>
+        <location line="-2080"/>
+        <location line="+1563"/>
         <location line="+386"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-2057"/>
+        <location line="-2062"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -3130,7 +3123,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1894"/>
+        <location line="+1899"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -3161,20 +3154,20 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-2075"/>
+        <location line="-2080"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
     <message>
-        <location line="-529"/>
-        <location line="+639"/>
+        <location line="-530"/>
+        <location line="+640"/>
         <location line="+1"/>
-        <location line="+905"/>
+        <location line="+907"/>
         <source>Turbo</source>
         <translation>Турбо</translation>
     </message>
     <message>
-        <location line="-1162"/>
+        <location line="-1164"/>
         <source>Floppy drive %1</source>
         <translation>Дисковод %1</translation>
     </message>
@@ -3255,7 +3248,7 @@
         <translation>Картинка строится по ходу луча внутри строки - для программ, которые меняют палитру на ходу</translation>
     </message>
     <message>
-        <location line="+464"/>
+        <location line="+466"/>
         <source>As fast as possible</source>
         <translation>Как можно быстрее</translation>
     </message>
@@ -3276,7 +3269,7 @@
         <translation>Пользователь оставил запись последовательного порта в файл.</translation>
     </message>
     <message>
-        <location line="+181"/>
+        <location line="+184"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>
     </message>
@@ -3494,12 +3487,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1621"/>
+        <location line="-1624"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1664"/>
+        <location line="+1667"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -4209,7 +4202,7 @@
         <translation>Что стоит</translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+64"/>
         <source>ROM of the board</source>
         <translation>ПЗУ платы</translation>
     </message>
@@ -4225,7 +4218,7 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+94"/>
+        <location line="+96"/>
         <source>page %1, segment %2</source>
         <translation>страница %1, сегмент %2</translation>
     </message>
@@ -4263,18 +4256,18 @@
     </message>
     <message>
         <location line="+31"/>
-        <location line="+54"/>
+        <location line="+55"/>
         <source>Unknown key</source>
         <translation>Неизвестная клавиша</translation>
     </message>
     <message>
-        <location line="-40"/>
-        <location line="+64"/>
+        <location line="-41"/>
+        <location line="+65"/>
         <source>Key table does not fit the matrix</source>
         <translation>Таблица клавиш не помещается в матрицу</translation>
     </message>
     <message>
-        <location line="-60"/>
+        <location line="-61"/>
         <source>Too many scan lines in the map file</source>
         <translation>Слишком много линий сканирования в файле раскладки</translation>
     </message>
@@ -4338,6 +4331,24 @@
         <location line="+91"/>
         <source>Unable to write the script file</source>
         <translation>Не удалось записать файл сценария</translation>
+    </message>
+</context>
+<context>
+    <name>SerialLine</name>
+    <message>
+        <location filename="../emulator/devices/common/serial_line.cpp" line="+69"/>
+        <source>Command &apos;connect&apos; expects a port name</source>
+        <translation>Команда &apos;connect&apos; ожидает имя порта</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Command &apos;sendfile&apos; expects a file name</source>
+        <translation>Команда &apos;sendfile&apos; ожидает имя файла</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>File not found</source>
+        <translation>Файл не найден</translation>
     </message>
 </context>
 <context>
@@ -4617,7 +4628,7 @@
     <name>TapeRecorderWindow</name>
     <message>
         <location filename="../dialogs/taperecorder.ui" line="+14"/>
-        <location filename="../dialogs/taperecorder.cpp" line="+262"/>
+        <location filename="../dialogs/taperecorder.cpp" line="+264"/>
         <source>Tape Recorder</source>
         <translation>Магнитофон</translation>
     </message>
@@ -4675,17 +4686,17 @@
     <message>
         <location line="+22"/>
         <location line="+12"/>
-        <location line="+166"/>
+        <location line="+173"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-166"/>
+        <location line="-173"/>
         <source>Unknown tape file format!</source>
         <translation>Неизвестный формат файла записи!</translation>
     </message>
     <message>
-        <location line="+136"/>
+        <location line="+143"/>
         <location line="+11"/>
         <source>Save recorded data</source>
         <translation>Сохранить записанные данные</translation>

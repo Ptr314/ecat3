@@ -77,6 +77,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/common/printer.h emulator/devices/common/printer.cpp
     emulator/devices/common/virq_line.h
     emulator/host_serial.h emulator/host_serial.cpp
+    emulator/devices/common/serial_line.h emulator/devices/common/serial_line.cpp
     emulator/devices/common/i8253.h emulator/devices/common/i8253.cpp
     emulator/devices/common/i8259.h emulator/devices/common/i8259.cpp
     emulator/devices/common/register.h emulator/devices/common/register.cpp

@@ -1058,7 +1058,7 @@ void MainWindow::CreateScreenMenu()
     };
     for (const auto &p : persistence) {
         const int value = p.value;
-        QAction * ap = ui->menuPersistence->addAction(p.text, [this, value]{e->set_persistence(value);});
+        QAction * ap = ui->menuPersistence->addAction(p.text, [this, value]{ if (e != nullptr) e->set_persistence(value); });
         ap->setActionGroup(persistence_group);
         ap->setCheckable(true);
         ap->setChecked(e->get_persistence() == value);
@@ -1379,6 +1379,8 @@ void MainWindow::update_precise_action()
 
 void MainWindow::onDeviceMenuCalled(unsigned int i)
 {
+    //После closeEvent() машины уже нет
+    if (e == nullptr || e->dm == nullptr) return;
     //Порты с отводом байтов (DL11, принтеры) живут в одном окне, вкладкой на порт
     ComputerDevice * dev = e->dm->get_device(i)->device.get();
     if (dynamic_cast<ByteTap*>(dev) != nullptr) {
@@ -1918,6 +1920,9 @@ void MainWindow::load_config(QString file_name, bool set_default, bool run_embed
     no_disk_restore = false;
     e->set_restore_disks(restore_disks);
     debug_windows_kept = false;
+    //A loaded script took the host's Caps Lock away from the machines; one the
+    //user opens by hand afterwards gets it back
+    if (restore_windows && !e->script_active()) use_host_lock_keys(true);
 
     emulator::Result res = e->load_config(file_name.toStdString());
     if (!res) {

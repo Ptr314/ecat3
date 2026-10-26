@@ -28,7 +28,7 @@ const char * BRANCH_LO[8] = {"", "BR", "BNE", "BEQ", "BGE", "BLT", "BGT", "BLE"}
 const char * BRANCH_HI[8] = {"BPL", "BMI", "BHI", "BLOS", "BVC", "BVS", "BCC", "BCS"};
 
 // Numbers without leading zeros: MOV #1, R0, not MOV #000001, R0
-std::string oct(unsigned int value)
+static std::string oct(unsigned int value)
 {
     return oct_str(value & 0xFFFF, 1);
 }
