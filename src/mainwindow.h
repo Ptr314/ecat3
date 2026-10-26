@@ -155,8 +155,17 @@ private:
     bool serial_close_allowed();
 
     //Puts a window where it was the last time a window of the same key was
-    //closed, and remembers where it is when it closes
+    //closed on this configuration (on any, the first time), and remembers
+    //where it is when it closes
     void remember_geometry(QDialog * w, const QString & key);
+
+    //The debug windows open on a configuration, kept in [DebugWindows] of the
+    //ini under its settings key and opened again with it. Only for a machine
+    //the user opened: a script, a replay or an MCP client gets none of them,
+    //and its run leaves the list as it was
+    void save_debug_windows();
+    void restore_debug_windows();
+    bool debug_windows_kept = false;
 
     Ui::MainWindow *ui;
 

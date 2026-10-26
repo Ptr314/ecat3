@@ -1879,6 +1879,9 @@ void MainWindow::load_config(QString file_name, bool set_default, bool run_embed
 
         e->stop_emulation();
 
+        //Which of them were open goes to the machine that is leaving
+        save_debug_windows();
+
         //Отладочные окна держат указатели на устройства, а те сейчас исчезнут
         //вместе со старой машиной. Окно магнитофона, например, раз в секунду
         //опрашивает лентопротяжку и останавливает ее на закрытии - и то и
@@ -1905,8 +1908,15 @@ void MainWindow::load_config(QString file_name, bool set_default, bool run_embed
 #ifdef ENABLE_MCP
     if (mcp_mode) restore_disks = false;
 #endif
+    //The same goes for the debug windows: a debugger attached at the start
+    //would change the run of a script
+    bool restore_windows = !no_disk_restore && !cmdline_starting && !rec_cmdline;
+#ifdef ENABLE_MCP
+    if (mcp_mode) restore_windows = false;
+#endif
     no_disk_restore = false;
     e->set_restore_disks(restore_disks);
+    debug_windows_kept = false;
 
     emulator::Result res = e->load_config(file_name.toStdString());
     if (!res) {
@@ -1962,6 +1972,11 @@ void MainWindow::load_config(QString file_name, bool set_default, bool run_embed
     if (nativeView) {
         e->init_video(nativeView);
         e->run();
+
+        if (restore_windows) {
+            debug_windows_kept = true;
+            restore_debug_windows();
+        }
 
         if (set_default)
         {
@@ -2100,18 +2115,116 @@ void MainWindow::remember_geometry(QDialog * w, const QString & key)
     QString ident = QString::fromLatin1(w->metaObject()->className());
     if (!key.isEmpty()) ident += "." + key;
     const std::string name = "geometry." + ident.toStdString();
+    const std::string local = ident.toStdString();
 
-    std::string geometry = e->read_setup("Window", name, "");
+    //Where it stood on this configuration; a configuration it was never open
+    //on gets it where it was closed last, on any
+    std::string geometry = e->read_setup("DebugWindows", e->settings_key() + "." + local, "");
+    if (geometry.empty()) geometry = e->read_setup("Window", name, "");
     if (!geometry.empty())
         w->restoreGeometry(QByteArray::fromHex(QByteArray::fromStdString(geometry)));
 
     //finished() comes both from a close (QDialog::closeEvent rejects) and from
     //Esc, while the window still exists; the windows closed by the main
     //window on exit and on a machine change go through it before the emulator
-    //is deleted
-    connect(w, &QDialog::finished, this, [this, w, name]() {
-        if (e != nullptr) e->write_setup("Window", name, w->saveGeometry().toHex().toStdString());
+    //is deleted, and so before the next machine's settings key replaces this
+    //one (the keyboard window, which lives on, goes to the machine it is on)
+    connect(w, &QDialog::finished, this, [this, w, name, local]() {
+        if (e == nullptr) return;
+        const std::string g = w->saveGeometry().toHex().toStdString();
+        e->write_setup("Window", name, g);
+        if (e->loaded) e->write_setup("DebugWindows", e->settings_key() + "." + local, g);
     });
+}
+
+//What a window is called in the list of [DebugWindows]: the device it shows,
+//or its kind for the windows of the machine as a whole
+static QString debug_window_id(GenericDbgWnd * w, Emulator * e)
+{
+    const QString device = w->property("ecat_device").toString();
+    if (!device.isEmpty()) return "device:" + device;
+    if (DebuggerWindow * d = dynamic_cast<DebuggerWindow*>(w)) {
+        //The tab in front comes back in front
+        CPU * cpu = d->current_cpu();
+        for (unsigned int i = 0; cpu != nullptr && i < e->dm->device_count; i++)
+            if (e->dm->get_device(i)->device.get() == cpu)
+                return "debugger:" + QString::fromStdString(e->dm->get_device(i)->device_name);
+        return "debugger";
+    }
+    if (dynamic_cast<DumpsWindow*>(w) != nullptr) return "dumps";
+    if (dynamic_cast<SerialWindow*>(w) != nullptr) return "serial";
+    if (dynamic_cast<TapeRecorderWindow*>(w) != nullptr) return "tape";
+#ifdef HAVE_QT_SVG
+    if (dynamic_cast<KeyboardWindow*>(w) != nullptr) return "keyboard";
+#endif
+    return QString();
+}
+
+void MainWindow::save_debug_windows()
+{
+    if (!debug_windows_kept || e == nullptr || !e->loaded) return;
+
+    //A window closed a moment ago waits for its deferred delete hidden
+    QStringList ids;
+    for (GenericDbgWnd * w : findChildren<GenericDbgWnd*>()) {
+        if (!w->isVisible()) continue;
+        const QString id = debug_window_id(w, e);
+        if (!id.isEmpty() && !ids.contains(id)) ids << id;
+    }
+
+    const std::string key = e->settings_key();
+    const std::string value = ids.join(';').toStdString();
+    //Nothing to forget for a machine that never had a window open: the ini
+    //does not get an empty line for every configuration tried
+    if (value != e->read_setup("DebugWindows", key, ""))
+        e->write_setup("DebugWindows", key, value);
+}
+
+void MainWindow::restore_debug_windows()
+{
+    const QStringList ids = split_nonempty(
+        QString::fromStdString(e->read_setup("DebugWindows", e->settings_key(), "")), ";");
+
+#ifdef HAVE_QT_SVG
+    //The keyboard window lives on from the machine before; it stays only if
+    //this one had it open too
+    KeyboardWindow * kw = findChild<KeyboardWindow*>();
+    if (kw != nullptr && kw->isVisible() && !ids.contains("keyboard")) kw->close();
+#endif
+    if (ids.isEmpty()) return;
+
+    //A device that is gone from the configuration since is skipped
+    auto device_index = [this](const QString & name) -> int {
+        for (unsigned int i = 0; i < e->dm->device_count; i++)
+            if (QString::fromStdString(e->dm->get_device(i)->device_name) == name) return int(i);
+        return -1;
+    };
+
+    for (const QString & id : ids) {
+        if (id.startsWith("device:")) {
+            const int i = device_index(id.mid(7));
+            if (i >= 0) onDeviceMenuCalled(unsigned(i));
+        } else if (id.startsWith("debugger")) {
+            const int i = id.startsWith("debugger:") ? device_index(id.mid(9)) : -1;
+            CPU * cpu = i >= 0 ? dynamic_cast<CPU*>(e->dm->get_device(unsigned(i))->device.get()) : nullptr;
+            if (cpu != nullptr) open_debugger_for(cpu);
+            else on_actionDebugger_triggered();
+        } else if (id == "dumps") {
+            on_actionDumps_triggered();
+        } else if (id == "serial") {
+            open_serial_window();
+        } else if (id == "tape") {
+            on_actionTape_triggered();
+        } else if (id == "keyboard") {
+            //Without a usable picture the item is hidden, and the window
+            //would answer with a message box
+            if (ui->actionKeyboard->isVisible()) on_actionKeyboard_triggered();
+        }
+    }
+
+    //The keys go to the machine, not to the last window opened
+    raise();
+    activateWindow();
 }
 
 void MainWindow::on_actionSaveState_triggered()
@@ -2205,6 +2318,9 @@ void MainWindow::closeEvent (QCloseEvent *event)
     // has no geometry worth keeping
     if (e != nullptr && isVisible())
         e->write_setup("Window", "geometry", saveGeometry().toHex().toStdString());
+
+    // The windows open now come back with this machine on the next start
+    if (e != nullptr) save_debug_windows();
 
     // Close all debug windows before destroying the emulator,
     // so their closeEvent handlers can safely access devices

@@ -40,6 +40,8 @@ public:
     ~DebuggerWindow() override;
 
     void select_cpu(CPU * cpu);
+    //The processor whose tab is in front
+    CPU * current_cpu();
 
 public slots:
     void update_view() override;
@@ -92,7 +94,6 @@ private:
     int m_device_tick;
 
     CpuPane * pane();
-    CPU * current_cpu();
     QString code_text(unsigned int address);
     void build_toolbar(QWidget * host);
     //Every view read again; a stop also brings PC into view
