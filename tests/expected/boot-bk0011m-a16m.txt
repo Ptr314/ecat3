@@ -22,5 +22,5 @@
         140000: machine
         150000: machine
         160000: rom
-        170000: machine
+        170000: none
         177000: machine

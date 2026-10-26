@@ -59,6 +59,7 @@ private:
     int read_source(unsigned int offset) const;
     int write_source(unsigned int offset) const;
     bool base_disabled(unsigned int segment) const;
+    AddressableDevice * machine_device(unsigned int offset);
     unsigned int read_byte(unsigned int offset, bool direct);
     void write_byte(unsigned int offset, unsigned int value);
 

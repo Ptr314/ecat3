@@ -140,6 +140,16 @@ bool A16M::base_disabled(unsigned int segment) const
     return false;
 }
 
+// Что из памяти самой машины отвечает по смещению в окне, если плата его не
+// занимает: nullptr, когда ее отключает сигнал платы или там ничего нет
+AddressableDevice * A16M::machine_device(unsigned int offset)
+{
+    const unsigned int segment = (offset >= OFF_HIGH) ? 7 : offset >> 12;
+    if (m_mapper == nullptr || base_disabled(segment)) return nullptr;
+    unsigned int on_device;
+    return m_mapper->peek_owner_below(this, 0100000 + offset, on_device);
+}
+
 unsigned int A16M::route(unsigned int address, unsigned int mode)
 {
     const unsigned int m = mode_index();
@@ -346,7 +356,8 @@ bool A16M::get_field(const std::string &field, unsigned int from, unsigned int t
             const bool basic_area = !m_bk11 && segment >= 2 && s < 8;
             if (basic_area && m_basic) what = "machine (basic)";
             else if (src == R) what = "rom";
-            else if (src == N) what = (base_disabled(segment) || basic_area) ? "none" : "machine";
+            else if (src == N && s == 8) what = base_disabled(segment) ? "none" : "machine";
+            else if (src == N) what = (machine_device(offset) != nullptr) ? "machine" : "none";
             else what = "segment " + std::to_string(src);
             if (!out.text.empty()) out.text += "\n";
             out.text += "        " + std::string(s < 8 ? "1" + std::to_string(s) + "0000" : "177000")
