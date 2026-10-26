@@ -284,19 +284,19 @@
 <context>
     <name>BKScreenWindow</name>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="115"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="116"/>
         <source>Source:</source>
         <translation>Източник:</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="117"/>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="139"/>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="147"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="118"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="141"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="149"/>
         <source>As the display</source>
         <translation>Като на дисплея</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="118"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="119"/>
         <source>Processor</source>
         <translation>Процесор</translation>
     </message>
@@ -305,37 +305,37 @@
         <translation type="vanished">Адрес:</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="124"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="125"/>
         <source>Page:</source>
         <translation>Страница:</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="137"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="139"/>
         <source>Mode:</source>
         <translation>Режим:</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="140"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="142"/>
         <source>Colour</source>
         <translation>Цвят</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="141"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="143"/>
         <source>Black and white</source>
         <translation>Ч/б</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="142"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="144"/>
         <source>Grey</source>
         <translation>Сив</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="145"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="147"/>
         <source>Palette:</source>
         <translation>Палитра:</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="244"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="264"/>
         <source>starts at %1</source>
         <translation>от адрес %1</translation>
     </message>
@@ -350,22 +350,21 @@
         <translation>включена на %1</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="258"/>
         <source>%1 at %2</source>
-        <translation>%1 на %2</translation>
+        <translation type="vanished">%1 на %2</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="260"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="259"/>
         <source>partly mapped: %1</source>
         <translation>включена частично: %1</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="281"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="285"/>
         <source>%1: %2   line %3, byte %4</source>
         <translation>%1: %2   ред %3, байт %4</translation>
     </message>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="384"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="398"/>
         <source>display: %1, palette %2</source>
         <translation>дисплей: %1, палитра %2</translation>
     </message>
@@ -1856,7 +1855,7 @@
 <context>
     <name>IE15Display</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="206"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="233"/>
         <source>Character generator device is expected</source>
         <translation>Очаква се знакогенератор</translation>
     </message>
@@ -1864,17 +1863,17 @@
 <context>
     <name>IE15IO</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="382"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="409"/>
         <source>Display of type ie15-display is expected</source>
         <translation>Очаква се екран от типа ie15-display</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="387"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="414"/>
         <source>Video memory of 4 KB is expected</source>
         <translation>Очаква се видеопамет от 4 КБ</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="394"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="421"/>
         <source>Keyboard of type ie15-keyboard is expected</source>
         <translation>Очаква се клавиатура от типа ie15-keyboard</translation>
     </message>

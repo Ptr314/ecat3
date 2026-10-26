@@ -238,7 +238,7 @@ void BKScreenWindow::set_page(int page)
 
 //Where the page starts in the source; a page of the СМК-512 or А16М memory
 //says only where the processor sees it: whole at one address, by parts
-//(offsets within the page), or not at all
+//(the processor addresses of the parts), or not at all
 void BKScreenWindow::show_where(bool board, const std::vector<std::pair<unsigned int, unsigned int>> &mapped)
 {
     QString text;
@@ -255,8 +255,7 @@ void BKScreenWindow::show_where(bool board, const std::vector<std::pair<unsigned
         else {
             QStringList list;
             for (const auto & m : mapped)
-                list << tr("%1 at %2").arg(fmt_num(m.first * BOARD_SEGMENT, m_base, addr_digits(SCREEN_BYTES - 1, m_base)),
-                                           fmt_num(BOARD_WINDOW + m.second * BOARD_SEGMENT, m_base, cpu_digits));
+                list << fmt_num(BOARD_WINDOW + m.second * BOARD_SEGMENT, m_base, cpu_digits);
             text = tr("partly mapped: %1").arg(list.join(", "));
         }
     } else {

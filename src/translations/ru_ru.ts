@@ -348,19 +348,19 @@
 <context>
     <name>BKScreenWindow</name>
     <message>
-        <location filename="../dialogs/bkscreenwindow.cpp" line="+115"/>
+        <location filename="../dialogs/bkscreenwindow.cpp" line="+116"/>
         <source>Source:</source>
         <translation>Источник:</translation>
     </message>
     <message>
         <location line="+2"/>
-        <location line="+22"/>
+        <location line="+23"/>
         <location line="+8"/>
         <source>As the display</source>
         <translation>Как у дисплея</translation>
     </message>
     <message>
-        <location line="-29"/>
+        <location line="-30"/>
         <source>Processor</source>
         <translation>Процессор</translation>
     </message>
@@ -374,7 +374,7 @@
         <translation>Страница:</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Mode:</source>
         <translation>Режим:</translation>
     </message>
@@ -399,12 +399,12 @@
         <translation>Палитра:</translation>
     </message>
     <message>
-        <location line="+99"/>
+        <location line="+117"/>
         <source>starts at %1</source>
         <translation>с адреса %1</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="-12"/>
         <source>not mapped</source>
         <translation>не подключена</translation>
     </message>
@@ -414,22 +414,21 @@
         <translation>подключена на %1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>%1 at %2</source>
-        <translation>%1 на %2</translation>
+        <translation type="vanished">%1 на %2</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+5"/>
         <source>partly mapped: %1</source>
         <translation>подключена частями: %1</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+26"/>
         <source>%1: %2   line %3, byte %4</source>
         <translation>%1: %2   строка %3, байт %4</translation>
     </message>
     <message>
-        <location line="+103"/>
+        <location line="+113"/>
         <source>display: %1, palette %2</source>
         <translation>дисплей: %1, палитра %2</translation>
     </message>
@@ -2351,7 +2350,7 @@
 <context>
     <name>IE15Display</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+206"/>
+        <location filename="../emulator/devices/specific/dvk_ie15.cpp" line="+233"/>
         <source>Character generator device is expected</source>
         <translation>Ожидается знакогенератор</translation>
     </message>
