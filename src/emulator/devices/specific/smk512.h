@@ -75,6 +75,9 @@ public:
     static int layout_source(unsigned int value, unsigned int offset);
     static int layout_write_source(unsigned int value, unsigned int offset);
     bool machine_disabled(unsigned int value, unsigned int segment) const;
+    // Что из памяти самой машины отвечает по смещению в окне, если плата его
+    // не занимает: nullptr, когда ее отключает сигнал платы или там ничего нет
+    AddressableDevice * machine_device(unsigned int value, unsigned int offset);
     Memory * board_ram() const { return m_ram; }
     Memory * board_rom() const { return m_rom; }
 

@@ -158,8 +158,12 @@ QString SMKWindow::describe(unsigned int value, unsigned int offset) const
     const int src = SMK512::layout_source(value, offset);
     if (src == SMK512::SRC_ROM) return tr("ROM of the board");
     if (src == SMK512::SRC_NONE) {
-        const unsigned int segment = (offset >= HIGH) ? 7 : offset >> 12;
-        return d->machine_disabled(value, segment) ? tr("no answer") : tr("memory of the machine");
+        //Above 0177000 the machine answers with its registers, each at its own
+        //address; a segment is shown by the device the board leaves it to
+        if (offset >= HIGH)
+            return d->machine_disabled(value, 7) ? tr("no answer") : tr("registers of the machine");
+        AddressableDevice * owner = d->machine_device(value, offset);
+        return (owner == nullptr) ? tr("no answer") : tr("machine: %1").arg(QString::fromStdString(owner->name));
     }
     return tr("page %1, segment %2").arg(SMK512::page_of(value), 0, m_base).arg(src);
 }

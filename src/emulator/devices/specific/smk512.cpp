@@ -136,6 +136,14 @@ bool SMK512::machine_disabled(unsigned int value, unsigned int segment) const
     return false;
 }
 
+AddressableDevice * SMK512::machine_device(unsigned int value, unsigned int offset)
+{
+    const unsigned int segment = (offset >= OFF_HIGH) ? 7 : offset >> 12;
+    if (m_mapper == nullptr || machine_disabled(value, segment)) return nullptr;
+    unsigned int on_device;
+    return m_mapper->peek_owner_below(this, 0100000 + offset, on_device);
+}
+
 unsigned int SMK512::route(unsigned int address, unsigned int mode)
 {
     const unsigned int m = mode_index();
@@ -341,7 +349,8 @@ bool SMK512::get_field(const std::string &field, unsigned int from, unsigned int
             const int src = (s < 8) ? SEGMENTS[mode_index()][s] : source(OFF_HIGH);
             std::string what;
             if (src == R) what = "rom";
-            else if (src == N) what = base_disabled(s < 8 ? s : 7) ? "none" : "machine";
+            else if (src == N && s == 8) what = base_disabled(7) ? "none" : "machine";
+            else if (src == N) what = (machine_device(m_value, s << 12) != nullptr) ? "machine" : "none";
             else what = "page " + std::to_string((base + src) >> 3) + " segment " + std::to_string((base + src) & 7);
             if (!out.text.empty()) out.text += "\n";
             out.text += "        " + std::string(s < 8 ? "1" + std::to_string(s) + "0000" : "177000")

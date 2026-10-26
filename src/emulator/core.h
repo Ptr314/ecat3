@@ -1101,6 +1101,10 @@ public:
     // The device that answers a read of the address and the address on it,
     // for the debugger: whoever is seen there. Null when nothing is mapped
     AddressableDevice * peek_owner(unsigned int address, unsigned int &offset);
+    // The same in the ranges after the first range of the device covering the
+    // address, whatever that device routes it now: what a board leaves the
+    // address to when it does not answer it itself
+    AddressableDevice * peek_owner_below(AddressableDevice * above, unsigned int address, unsigned int &offset);
     // What the debugger writes: the byte goes to the device peek_owner()
     // finds, with force (a ROM takes it), and no bus cycle. Only to memory
     // (AddressableDevice::debug_writable()): a register would act on it as on

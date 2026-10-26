@@ -3560,8 +3560,13 @@
     </message>
     <message>
         <location filename="../dialogs/smkwindow.cpp" line="162"/>
-        <source>memory of the machine</source>
-        <translation>памет на машината</translation>
+        <source>registers of the machine</source>
+        <translation>регистри на машината</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>machine: %1</source>
+        <translation>машина: %1</translation>
     </message>
     <message>
         <location filename="../dialogs/smkwindow.cpp" line="164"/>

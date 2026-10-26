@@ -4213,8 +4213,13 @@
     </message>
     <message>
         <location line="+0"/>
-        <source>memory of the machine</source>
-        <translation>память машины</translation>
+        <source>registers of the machine</source>
+        <translation>регистры машины</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>machine: %1</source>
+        <translation>машина: %1</translation>
     </message>
     <message>
         <location line="+2"/>

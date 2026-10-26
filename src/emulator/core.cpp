@@ -2825,6 +2825,27 @@ AddressableDevice * MemoryMapper::peek_owner(unsigned int address, unsigned int 
                      address, MODE_R, &offset, &range_index, &route);
 }
 
+AddressableDevice * MemoryMapper::peek_owner_below(AddressableDevice * above, unsigned int address, unsigned int &offset)
+{
+    const unsigned int config = this->i_config.value;
+    for (unsigned int i = this->first_range; i <= this->ranges_count; i++)
+    {
+        const MapperRange & mr = this->ranges[i];
+        if (mr.device == above
+            && (config & mr.config_mask) == mr.config_value
+            && address >= mr.range_begin && address <= mr.range_end
+            && (address & mr.address_mask) == mr.address_value
+            && (mr.mode & MODE_R) != 0)
+        {
+            if (i == this->ranges_count) return nullptr;
+            unsigned int range_index;
+            unsigned int route = ROUTE_ANSWER;
+            return this->map(&(this->ranges), i + 1, this->ranges_count, config, address, MODE_R, &offset, &range_index, &route);
+        }
+    }
+    return peek_owner(address, offset);
+}
+
 bool MemoryMapper::writable(unsigned int address)
 {
     unsigned int offset;
