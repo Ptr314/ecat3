@@ -162,10 +162,12 @@ unsigned int DisAsmPDP11::decode(CommandBytes bytes, unsigned int PC, unsigned i
         out->flow = FLOW_CALL;
     }
     else if ((cmd & 0177000) == 0004000) {
-        mnemonic = "JSR";
+        // JSR PC is written CALL, with the link register left out
         const unsigned int first = index;
-        operands = std::string(REG_NAMES[(cmd >> 6) & 7]) + ", "
-                 + format_operand(cmd & 077, bytes, PC, index);
+        const unsigned int reg = (cmd >> 6) & 7;
+        mnemonic = reg == 7? "CALL" : "JSR";
+        operands = format_operand(cmd & 077, bytes, PC, index);
+        if (reg != 7) operands = std::string(REG_NAMES[reg]) + ", " + operands;
         out->flow = FLOW_CALL;
         out->has_target = operand_target(cmd & 077, bytes, PC, first, index, out->target);
     }
@@ -209,8 +211,12 @@ unsigned int DisAsmPDP11::decode(CommandBytes bytes, unsigned int PC, unsigned i
         operands = format_operand(cmd & 077, bytes, PC, index);
     }
     else if ((cmd & 0177770) == 0000200) {
-        mnemonic = "RTS";
-        operands = REG_NAMES[cmd & 7];
+        // RTS PC is written RET
+        if ((cmd & 7) == 7) mnemonic = "RET";
+        else {
+            mnemonic = "RTS";
+            operands = REG_NAMES[cmd & 7];
+        }
         out->flow = FLOW_RET;
     }
     else if ((cmd & 0177740) == 0000240) {
