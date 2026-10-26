@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <atomic>
+
 #include "emulator/devices/common/keyboard.h"
 
 struct ScanData {
@@ -44,6 +46,9 @@ private:
     // down: RESET of the Oric (SW1 of the Oric-1 schematic goes to NMI)
     Interface i_nmi;
     unsigned int code_nmi = _FFFF;
+    // The key comes from the window's thread, and NMI is an edge the processor
+    // takes and clears on its own: the level waits here for clock(). -1: none
+    std::atomic<int> m_nmi_pending{-1};
 
     unsigned int scan_lines = 0;
     unsigned int out_lines = 0;
@@ -122,6 +127,7 @@ public:
     emulator::Result load_config(SystemData *sd) override;
 
     void reset(bool cool) override;
+    void clock(unsigned int counter) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

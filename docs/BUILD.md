@@ -168,6 +168,8 @@ update_translations.bat
 
 Переводы самого Qt (`qtbase_xx.qm`: кнопки стандартных диалогов, меню полей ввода) встраиваются в программу из каталога `translations` комплекта Qt. Если там нужного языка нет, берется копия из `src/translations/qt`. Так в Qt 5.6 нет `qtbase_bg.qm`, и туда положен файл из Qt 5.15.2 (он же в 6.11.2). Qt 5.6 его загружает.
 
+Новый язык интерфейса &ndash; это файл `.ts` в списках `TS_FILES` и `SUPPORTED_LANGUAGES` (`src/CMakeLists.txt`), флаг в `resources.qrc` и пункт в `MainWindow::add_languages()`; если в комплекте Qt нет `qtbase_xx.qm` этого языка, его копия кладется в `src/translations/qt`. Файлы `.qm` создаются при сборке и в git не входят. Веб-версия переводится отдельно, своими таблицами в `src/wasm/ecat_wasm.js` (см. `docs/dev/frontends.md`).
+
 #### 5. Сборка release-версии для Windows
 * Обновить версию приложения в CMakeLists.txt, пересканировать проект (Rescan project), чтобы версия прописалась в заголовочные файлы.
 * Закоммитить изменения.

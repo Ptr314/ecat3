@@ -7,7 +7,7 @@ this file only if a rule changes.
 ## Project
 
 **eCat3** is a universal emulator of retro computers (Орион-128, Радио-86РК and family, Агат-7/9, Ириша,
-БК0010/0011М with СМК-512 and А16М, УК-НЦ, ДВК-1..4, Поиск-1, Юниор, Арго) in C++. The core
+БК0010/0011М with СМК-512 and А16М, УК-НЦ, ДВК-1..4, Поиск-1, Юниор, Арго, Правец-82/8М/8А/8С/8Д) in C++. The core
 (`src/emulator/`) is **Qt-free**, using only the standard library, so it also builds for the console
 (`src/headless/`) and WebAssembly (`src/wasm/`). Qt is only the windowed GUI (`src/mainwindow.*`,
 `src/dialogs/`, `src/renderers/`). Targets: Windows 7+ (XP kit too), macOS, Linux.
@@ -24,7 +24,7 @@ any machine file. Syntax: `docs/CONFIG.md`.
 | Device architecture, interfaces, emulation loop, clock domains, speed, mapper and page cache, radix, keyboards, adding a CPU/device/machine, build structure | `docs/dev/core.md` |
 | Configuration extensions, the editor, saved state | `docs/dev/extensions-and-state.md` |
 | К1801ВМ1/ВМ2/ВМ3, УК-НЦ memory and 8088 bus timing | `docs/dev/cpu-timing.md` (and `tools/*-timing/README.md`) |
-| Per-machine notes: ДВК, Поиск-1, БК, Агат, УК-НЦ, Орион/РК, ВГ75, Ириша; HFE and Агат 140 KB | `docs/dev/machines.md` |
+| Per-machine notes: ДВК, Поиск-1, БК, Агат, УК-НЦ, Орион/РК, ВГ75, Ириша, Правец (Apple II, Oric); HFE and Агат 140 KB | `docs/dev/machines.md` |
 | Window, debugger, web page, video recording, GUI record/replay, MCP server | `docs/dev/frontends.md` |
 | Scripting gotchas, regression suite, debugging techniques | `docs/dev/testing-and-debugging.md` |
 | Config syntax / script language / MCP / build / tests | `docs/CONFIG.md`, `docs/SCRIPTING.md`, `docs/MCP.md`, `docs/BUILD.md`, `tests/README.md` |
@@ -55,8 +55,10 @@ from a regression.
 - Use `compat_mutex` from `thread_compat.h`, not raw `std::mutex`. Start threads as `emulator.cpp` does
   (`EmuThread` under `USE_QT_THREADING`, `std::thread` otherwise).
 - `EmuKey` codes equal `Qt::Key`; non-Qt frontends use the same constants.
-- **Some files are committed with CRLF** (`git ls-files --eol` shows `i/crlf`: `i8255.cpp`, `i8257.*`,
-  `6502.*`, `i8080.*`, `z80.*`, `globals.h.in`). Keep their line endings, or the diff becomes the whole file.
+- **Some files are committed with CRLF** (`git ls-files --eol` shows `i/crlf`; check before editing): among
+  them `i8255.*`, `i8257.h`, `6502*.*`, `i8080*.*`, `z80*.*`, `utils.*`, `globals.h.in`, `mainwindow.h/.ui`,
+  `genericdbgwnd.*`, `resources.qrc`, `deploy/.ecat.ini`. Keep their line endings, or the diff becomes the
+  whole file.
 
 ## Testing
 

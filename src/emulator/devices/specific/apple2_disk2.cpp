@@ -319,6 +319,10 @@ void Apple2Disk2::run(unsigned int counter)
     m_idle_steps = 0;
     load_track();
     const bool have = !m_bits.empty();
+    // The write protect switch of the drive cuts the write current: the cells
+    // go by under the head, but nothing lands on the disk
+    FDD * drive = m_drives[m_selected];
+    const bool protect = drive != nullptr && drive->get_loaded() && drive->is_protected();
     for (unsigned s = 0; s < counter * 2; s++) {
         // A '1' under the head gives the sequencer one step of read pulse at
         // the start of its cell. Long without one, the read amplifier
@@ -338,7 +342,7 @@ void Apple2Disk2::run(unsigned int counter)
         if (m_step >= cell) {
             m_step -= cell;
             if (have) {
-                if (m_q7) {
+                if (m_q7 && !protect) {
                     m_bits[m_bit_pos] = m_cell_flux ? 1 : 0;
                     m_dirty = true;
                     m_writes++;

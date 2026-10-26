@@ -105,7 +105,7 @@ private:
     unsigned m_index_width = 0;
     unsigned m_index_clock = 0;
     bool m_type1 = true;    //the status shows the type I bits
-    uint8_t m_id[6];        //Read Address: the ID field it hands out
+    uint8_t m_id[6] = {};   //Read Address: the ID field it hands out
     bool m_reading_id = false;
     //Write Track: the image keeps sectors, not the track, so the stream is
     //read as the chip would write it - an ID field after $FE, the data of
@@ -116,7 +116,7 @@ private:
     bool m_wt_write = false;    //the data field lands in the image
     bool m_wt_have_id = false;  //an ID field came since the last data field
 
-    uint8_t m_wt_id[4];
+    uint8_t m_wt_id[4] = {};
     unsigned m_tracks_written = 0;
     void track_byte(uint8_t value);
 

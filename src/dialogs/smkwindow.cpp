@@ -182,10 +182,12 @@ MemorySource SMKWindow::source_now()
     s.read = [c](unsigned int a) { return c.read(WINDOW + a); };
     s.write = [c](unsigned int a, unsigned int v) { c.write(WINDOW + a, v); };
     s.writable = [c](unsigned int a) { return c.writable(WINDOW + a); };
-    const unsigned int value = m_latched;
+    //The register is taken when asked: the dump of this view stays while the
+    //board switches, only the owner of a cell changes
     MemoryMapper * mm = m_cpu->mm;
     const int base = m_base;
-    s.owner = [this, value, mm, base](unsigned int a) -> QString {
+    s.owner = [this, mm, base](unsigned int a) -> QString {
+        const unsigned int value = m_latched;
         if (SMK512::layout_source(value, a) != SMK512::SRC_NONE || mm == nullptr) return board_text(value, a);
         unsigned int offset = 0;
         AddressableDevice * owner = mm->peek_owner(WINDOW + a, offset);
@@ -307,8 +309,8 @@ void SMKWindow::save_choice()
     e->write_setup("SMK512", "page", std::to_string(m_sel_page));
 }
 
-//The layout and the dump for the selection; the cursor stays where it was
-void SMKWindow::rebuild()
+//The list of segments for the selection
+void SMKWindow::show_layout()
 {
     show_selection();
     const int view = m_view->currentIndex();
@@ -333,6 +335,15 @@ void SMKWindow::rebuild()
             item->setData(0, Qt::UserRole, offset);
         }
     }
+}
+
+//The layout and the dump for the selection; the cursor stays where it was.
+//Only a choice in the window comes here: the panel goes away under the
+//handlers of its own view otherwise (an edit in the dump updates every window)
+void SMKWindow::rebuild()
+{
+    show_layout();
+    const int view = m_view->currentIndex();
 
     unsigned int cursor = 0;
     if (m_panel != nullptr) {
@@ -341,7 +352,7 @@ void SMKWindow::rebuild()
     }
     MemorySource src;
     if (view == VIEW_NOW) src = source_now();
-    else if (view == VIEW_MODE) src = source_mode(value);
+    else if (view == VIEW_MODE) src = source_mode(selected_value());
     else src = source_page((unsigned int)m_page->value());
     m_panel = new MemoryPanel(e, src, this);
     m_dump_box->addWidget(m_panel);
@@ -354,8 +365,8 @@ void SMKWindow::update_view()
     const unsigned int was = m_latched;
     read_board();
     show_register();
-    if (m_view->currentIndex() == VIEW_NOW && m_latched != was) rebuild();
-    else if (m_panel != nullptr) m_panel->refresh();
+    if (m_view->currentIndex() == VIEW_NOW && m_latched != was) show_layout();
+    if (m_panel != nullptr) m_panel->refresh();
 }
 
 GenericDbgWnd * CreateSMKWindow(QWidget *parent, Emulator * e, ComputerDevice * d)

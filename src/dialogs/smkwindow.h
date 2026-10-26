@@ -45,7 +45,7 @@ private:
     QVBoxLayout * m_dump_box;
     MemoryPanel * m_panel;
 
-    unsigned int m_latched;     //the board's register when the view was built
+    unsigned int m_latched;     //the board's register at the last read
     bool m_read_off;
 
     //The mode and page chosen by hand: the selectors show the board's own in
@@ -64,6 +64,7 @@ private:
     void show_selection();
     void load_choice();
     void save_choice();
+    void show_layout();
     void rebuild();
 };
 

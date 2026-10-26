@@ -125,6 +125,7 @@ emulator::Result ScanKeyboard::load_config(SystemData *sd)
     code_ruslat = s_ruslat.empty()?_FFFF:translate_key(s_ruslat);
     const std::string s_nmi = cd->get_parameter("nmi_key", false).value;
     code_nmi = s_nmi.empty()?_FFFF:translate_key(s_nmi);
+    m_clocked = code_nmi != _FFFF;     //clock() hands the NMI key over
     const std::string s_ruskey = cd->get_parameter("rus_key", false).value;
     m_rus_key = s_ruskey.empty() ? _FFFF : translate_key(s_ruskey);
     const std::string s_layout = str_tolower(cd->get_parameter("rus_layout", false).value);
@@ -256,7 +257,7 @@ void ScanKeyboard::set_matrix_shift(bool pressed)
 void ScanKeyboard::key_down(unsigned int key)
 {
     //qDebug() << "DOWN" << Qt::hex << key;
-    if (key == code_nmi) { i_nmi.change(0); return; }
+    if (key == code_nmi) { m_nmi_pending = 0; return; }
     if (key == code_ctrl) {
         i_ctrl.change(0);
         note_id(role_id(KEY_ROLE_CTRL), true);
@@ -297,7 +298,7 @@ void ScanKeyboard::key_down(unsigned int key)
 void ScanKeyboard::key_up(unsigned int key)
 {
     //qDebug() << "UP" << key;
-    if (key == code_nmi) { i_nmi.change(1); return; }
+    if (key == code_nmi) { m_nmi_pending = 1; return; }
     if (key == code_ctrl) {
         i_ctrl.change(1);
         note_id(role_id(KEY_ROLE_CTRL), false);
@@ -344,9 +345,18 @@ void ScanKeyboard::reset(bool cool)
     stored_shift = 1;
     i_shift.change(1);
     i_ctrl.change(1);
+    m_nmi_pending = -1;
     if (i_nmi.linked > 0) i_nmi.change(1);
     i_ruslat.change(1);
     calculate_out();
+}
+
+void ScanKeyboard::clock(unsigned int counter)
+{
+    (void)counter;
+    if (m_nmi_pending.load(std::memory_order_relaxed) < 0) return;
+    const int level = m_nmi_pending.exchange(-1);
+    if (level >= 0) i_nmi.change((unsigned int)level);
 }
 
 void ScanKeyboard::calculate_out()

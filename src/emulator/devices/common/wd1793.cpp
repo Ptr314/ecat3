@@ -134,6 +134,8 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
         FindSelectedDrive();
         unsigned int c = (value & 0xF0) >> 4;
         m_type1 = c < 0x08 || c == 0x0D;
+        //Any command, Force Interrupt included, ends a Read Address
+        m_reading_id = false;
         //Execute commands
         switch (c) {
         case 0x00: //Restore
