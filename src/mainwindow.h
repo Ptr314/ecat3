@@ -119,6 +119,8 @@ private slots:
     void on_actionRecRewind_triggered();
     void on_actionRecStop_triggered();
     void on_actionRecPanel_toggled(bool checked);
+    void on_actionDiskAutosave_toggled(bool checked);
+    void on_actionDiskBackups_toggled(bool checked);
     void on_actionRememberDisks_toggled(bool checked);
     void on_actionBlendFrames_toggled(bool checked);
     void on_actionFastPaste_toggled(bool checked);
@@ -202,6 +204,17 @@ private:
     void fdd_show(unsigned int n);
     //Writes what a drive holds into the ini when the setting is on
     void disk_changed(ComputerDevice * dev);
+    //Puts a disk the machine changed into its image file, when the setting is
+    //on. Called once the lamp is out and before the disk leaves the drive
+    void fdd_autosave(unsigned int n);
+    void fdd_autosave_all();
+    //A machine a script or a replay drives: as with the remembered disks, what
+    //it writes stays in memory, its run must not change the images
+    bool fdd_autosave_held = false;
+    bool fdd_image_shipped(const QString &path);
+    //The generation of the disk a backup was made for, per drive: one backup
+    //for a disk from its loading on
+    std::vector<long long> fdd_backup_gen;
     //Set by those who drive the machine themselves (a replay, MCP): the next
     //load_config() leaves the configuration's disks in the drives
     bool no_disk_restore = false;

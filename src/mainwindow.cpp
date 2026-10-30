@@ -402,6 +402,8 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, i
 
     //The recording block of the tool bar can be hidden from the Display menu
     ui->actionRecPanel->setChecked(e->read_setup("Video", "recording_panel", "1") != "0");
+    ui->actionDiskAutosave->setChecked(e->read_setup("Core", "disk_autosave", "1") != "0");
+    ui->actionDiskBackups->setChecked(e->read_setup("Core", "disk_backups", "1") != "0");
     ui->actionRememberDisks->setChecked(e->read_setup("Core", "remember_disks", "0") == "1");
     ui->actionBlendFrames->setChecked(e->read_setup("Video", "blend_frames", "0") == "1");
     ui->actionFastPaste->setChecked(e->read_setup("Keyboard", "fast_paste", "1") == "1");
@@ -511,6 +513,9 @@ void MainWindow::showEvent(QShowEvent* event)
 void MainWindow::start_script(bool from_cmdline)
 {
     if (!e->loaded) return;
+
+    fdd_autosave_all();
+    fdd_autosave_held = true;
 
     //A script from the command line runs through the same controls as a
     //recording, the only difference being that its EXIT closes the window
@@ -1176,6 +1181,7 @@ void MainWindow::UpdateToolbar()
         CreateFDDMenu(i);
         fdd_show(i);
     }
+    fdd_backup_gen.assign(fdds_found, -1);
     //Винчестеры. Образ - файл на сотни мегабайт, с машиной он не поставляется,
     //поэтому гнездо обычно пустое, и вставляют образ отсюда
     std::vector<ComputerDevice*> hdd_devices = e->dm->find_devices_by_class("hdd");
@@ -1880,6 +1886,7 @@ void MainWindow::load_config(QString file_name, bool set_default, bool run_embed
         e->script_recorder()->invalidate();
         e->stop_script();
 
+        fdd_autosave_all();
         e->stop_emulation();
 
         //Which of them were open goes to the machine that is leaving
@@ -1917,6 +1924,7 @@ void MainWindow::load_config(QString file_name, bool set_default, bool run_embed
 #ifdef ENABLE_MCP
     if (mcp_mode) restore_windows = false;
 #endif
+    fdd_autosave_held = no_disk_restore || cmdline_starting;
     no_disk_restore = false;
     e->set_restore_disks(restore_disks);
     debug_windows_kept = false;
@@ -2310,6 +2318,8 @@ void MainWindow::closeEvent (QCloseEvent *event)
         return;
     }
 
+    if (e != nullptr && e->loaded) fdd_autosave_all();
+
     fdds_found = 0; // to prevent crashing on buttons update
     hdds_found = 0;
 
@@ -2411,6 +2421,7 @@ void MainWindow::fdd_open(unsigned int n)
             QFileInfo fi(file_name);
             fdd_menu[n]->actions().at(0)->setText(fi.fileName());
             fdd_button[n]->setIcon(QIcon(":/icons/floppy_mount"));
+            fdd_autosave(n);
             //The controller may be in the middle of a sector of the old disk
             emulator::Result res = emulator::Result::ok();
             e->invoke([&]() { res = fdds[n]->load_image(file_name.toStdString()); });
@@ -2430,6 +2441,7 @@ void MainWindow::fdd_eject(unsigned int n)
 {
     fdd_menu[n]->actions().at(0)->setText(MainWindow::tr("<Not loaded>"));
     fdd_button[n]->setIcon(QIcon(":/icons/floppy_unmount"));
+    fdd_autosave(n);
     e->invoke([&]() { fdds[n]->unload(); });
     e->record_command(fdds[n]->name, "eject", "");
     disk_changed(fdds[n]);
@@ -2464,6 +2476,7 @@ void MainWindow::fdd_show(unsigned int n)
 
 void MainWindow::fdd_default(unsigned int n)
 {
+    fdd_autosave(n);
     e->restore_default_disk(fdds[n]);
     fdd_show(n);
 }
@@ -2596,6 +2609,104 @@ void MainWindow::fdd_write(unsigned int n)
 
 }
 
+//The images the program comes with: a clean one is not to be had anywhere else
+bool MainWindow::fdd_image_shipped(const QString &path)
+{
+#ifdef _WIN32
+    const Qt::CaseSensitivity cs = Qt::CaseInsensitive;
+#else
+    const Qt::CaseSensitivity cs = Qt::CaseSensitive;
+#endif
+    const QString file = QDir::cleanPath(QFileInfo(path).absoluteFilePath());
+    const std::string roots[] = {e->work_path, e->software_path, e->data_path};
+    for (const std::string &root : roots) {
+        const QString dir = QDir::cleanPath(QFileInfo(QString::fromStdString(root)).absoluteFilePath()) + "/";
+        if (file.startsWith(dir, cs)) return true;
+    }
+    return false;
+}
+
+//game.dsk -> game.2026-10-30_14-25-07.dsk: the same extension, so that it opens
+//as any other image
+static QString fdd_backup_name(const QString &path)
+{
+    const QFileInfo fi(path);
+    const QString suffix = fi.suffix().isEmpty() ? QString() : "." + fi.suffix();
+    const QString stem = fi.absolutePath() + "/" + fi.completeBaseName() + "."
+        + QDateTime::currentDateTime().toString("yyyy-MM-dd_HH-mm-ss");
+    QString name = stem + suffix;
+    for (int i = 2; QFile::exists(name); i++) name = stem + "-" + QString::number(i) + suffix;
+    return name;
+}
+
+//The image goes into a file beside the original first (it keeps the extension,
+//which selects the format): a failure on the way leaves the original as it was.
+//A failure is reported in the status bar, a box would stop whoever is playing.
+//The flag is taken either way, so the next try is the next write of the machine
+void MainWindow::fdd_autosave(unsigned int n)
+{
+    FDD * fdd = fdds[n];
+    if (!ui->actionDiskAutosave->isChecked() || fdd_autosave_held ||!fdd->is_modified() || fdd->image_path.empty()) return;
+#ifdef ENABLE_MCP
+    //A session driven from outside must leave the working tree as it found it
+    if (mcp_mode) return;
+#endif
+    const QString path = QFileInfo(QString::fromStdString(fdd->image_path)).absoluteFilePath();
+    const QFileInfo fi(path);
+    const QString tmp = fi.absolutePath() + "/" + fi.completeBaseName() + ".ecat-tmp"
+        + (fi.suffix().isEmpty() ? QString() : "." + fi.suffix());
+    const bool writable = !fi.exists() || fi.isWritable();
+    const auto report = [&](const QString &reason) {
+        statusBar()->showMessage(tr("Disk image %1 was not saved: %2").arg(fi.fileName(), reason), 15000);
+    };
+
+    //Between two instructions, not while a sector is going in
+    bool taken = false;
+    emulator::Result res;
+    e->invoke([&]() {
+        taken = fdd->take_modified();
+        if (taken && writable) res = fdd->save_image(tmp.toStdString());
+    });
+    if (!taken) return;
+    if (!writable) { report(tr("the file is read-only")); return; }
+    if (!res) {
+        QFile::remove(tmp);
+        report(translateResultMessage(res.message));
+        return;
+    }
+    //save_image() says nothing about a file it could not open
+    if (QFileInfo(tmp).size() == 0) {
+        QFile::remove(tmp);
+        report(tr("could not write the file"));
+        return;
+    }
+
+    const bool had_original = QFile::exists(path);
+    const long long generation = fdd->get_generation();
+    const bool backup = had_original && fdd_backup_gen[n] != generation
+        && (ui->actionDiskBackups->isChecked() || fdd_image_shipped(path));
+    const QString backup_name = backup ? fdd_backup_name(path) : QString();
+    if (backup ? !QFile::rename(path, backup_name) : (had_original && !QFile::remove(path))) {
+        QFile::remove(tmp);
+        report(tr("could not replace the file"));
+        return;
+    }
+    if (backup) fdd_backup_gen[n] = generation;
+    if (!QFile::rename(tmp, path)) {
+        if (backup && QFile::rename(backup_name, path)) {
+            fdd_backup_gen[n] = -1;
+            QFile::remove(tmp);
+            report(tr("could not replace the file"));
+        } else
+            report(tr("the new image is left in %1").arg(QFileInfo(tmp).fileName()));
+    }
+}
+
+void MainWindow::fdd_autosave_all()
+{
+    for (unsigned int i = 0; i < fdds_found; i++) fdd_autosave(i);
+}
+
 void MainWindow::update_fdds()
 {
     // TODO: this event may happen after exiting or stopping emulator
@@ -2605,7 +2716,11 @@ void MainWindow::update_fdds()
     fdd_blinker = !fdd_blinker;
     for (unsigned int i=0; i<fdds_found; i++)
     {
-        const char * icon = fdds[i]->is_led_on() ? (fdd_blinker ? ":/icons/floppy_access" : ":/icons/floppy_mount")
+        const bool led = fdds[i]->is_led_on();
+        //By the state, not by the moment the lamp goes out: a disk changed
+        //before the setting was turned on is saved as well
+        if (!led) fdd_autosave(i);
+        const char * icon = led ? (fdd_blinker ? ":/icons/floppy_access" : ":/icons/floppy_mount")
                           : !fdds[i]->get_loaded() ? ":/icons/floppy_unmount"
                           : fdds[i]->is_protected() ? ":/icons/floppy_locked"
                           : ":/icons/floppy_mount";
@@ -3378,6 +3493,9 @@ void MainWindow::on_actionRecPlay_triggered()
         if (!e->loaded || !rec_machine_matches(machine)) return;
     }
 
+    fdd_autosave_all();
+    fdd_autosave_held = true;
+
     s->resume(e->clock_now());
     rec_seen_pc = s->get_pc();
     rec_state = RecPlaying;
@@ -3409,6 +3527,16 @@ void MainWindow::on_actionRecPanel_toggled(bool checked)
     if (rec_panel_separator != nullptr) rec_panel_separator->setVisible(checked);
     if (rec_panel_widget != nullptr) rec_panel_widget->setVisible(checked);
     if (e != nullptr) e->write_setup("Video", "recording_panel", checked?"1":"0");
+}
+
+void MainWindow::on_actionDiskAutosave_toggled(bool checked)
+{
+    if (e != nullptr) e->write_setup("Core", "disk_autosave", checked?"1":"0");
+}
+
+void MainWindow::on_actionDiskBackups_toggled(bool checked)
+{
+    if (e != nullptr) e->write_setup("Core", "disk_backups", checked?"1":"0");
 }
 
 //Turning it off keeps the entries: they are neither applied nor updated until

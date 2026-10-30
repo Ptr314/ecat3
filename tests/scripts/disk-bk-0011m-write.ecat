@@ -71,6 +71,9 @@ LOG fdc.track
 LOG fdc.side
 LOG fdd0.track
 
+PRINT "=== Диск изменен, файл остался прежним ==="
+LOG fdd0.modified
+
 PRINT "=== Прочитанный обратно блок 1500: начало и конец ==="
 LOG ram0.value(021000, 021037)
 LOG ram0.value(021740, 021777)

@@ -126,11 +126,20 @@
     <property name="title">
      <string>Settings</string>
     </property>
+    <widget class="QMenu" name="menuDisks">
+     <property name="title">
+      <string>Disks</string>
+     </property>
+     <addaction name="actionDiskAutosave"/>
+     <addaction name="actionDiskBackups"/>
+     <addaction name="separator"/>
+     <addaction name="actionRememberDisks"/>
+     <addaction name="actionForgetDisks"/>
+    </widget>
     <addaction name="actionLanguage"/>
     <addaction name="actionRecPanel"/>
     <addaction name="separator"/>
-    <addaction name="actionRememberDisks"/>
-    <addaction name="actionForgetDisks"/>
+    <addaction name="menuDisks"/>
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
@@ -527,12 +536,40 @@
     <string>Pictures a program alternates from frame to frame are shown as a steady mix instead of a flicker: every point is the mean of its colour and the previous different one</string>
    </property>
   </action>
+  <action name="actionDiskAutosave">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Autosave</string>
+   </property>
+   <property name="toolTip">
+    <string>Write a changed disk into its image file when the drive lamp goes out</string>
+   </property>
+  </action>
+  <action name="actionDiskBackups">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Backups</string>
+   </property>
+   <property name="toolTip">
+    <string>Keep the previous image file, with the time in its name, on the first autosave of a disk. The images that come with the program are always kept</string>
+   </property>
+  </action>
   <action name="actionRememberDisks">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Remember disk choice</string>
+    <string>Remember choice</string>
    </property>
    <property name="toolTip">
     <string>Put the disks chosen last into the drives when a machine is loaded</string>
@@ -566,7 +603,7 @@
   </action>
   <action name="actionForgetDisks">
    <property name="text">
-    <string>Forget the disks of all machines</string>
+    <string>Forget all chosen</string>
    </property>
   </action>
   <action name="actionLanguage">

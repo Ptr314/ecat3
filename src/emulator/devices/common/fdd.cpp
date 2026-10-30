@@ -131,15 +131,16 @@ emulator::Result FDD::load_config(SystemData *sd)
     sides_layout = default_sides_layout;
 
     try {
-        file_name = find_file_location(sd, cd->get_parameter("image").value);
-        if (!file_name.empty()) {
-            emulator::Result img_res = load_image(file_name);
+        //Not through the field: load_image() renames it while reading the name
+        const std::string image_file = find_file_location(sd, cd->get_parameter("image").value);
+        if (!image_file.empty()) {
+            emulator::Result img_res = load_image(image_file);
             if (!img_res) return img_res;
         } else {
 #ifdef WASM_BUILD
             // In WASM, missing disk images are non-fatal (drive starts empty, user can load via file picker)
 #else
-            return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Disk image file not found")) + "} " + file_name);
+            return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Disk image file not found")) + "} " + cd->get_parameter("image").value);
 #endif
         }
     } catch (std::exception &e) {
@@ -152,6 +153,7 @@ emulator::Result FDD::load_image(const std::string &file_name)
 {
     std::string ext = dsk_tools::get_file_ext(file_name);  // returns ".ext" lowercase
     std::string base_name = dsk_tools::get_filename(file_name);
+    const unsigned int old_generation = m_generation;
 
     if (ext == ".hfe") {
         if (fdd_mode != FDD_MODE_IBM_MFM && fdd_mode != FDD_MODE_IBM_FM && fdd_mode != FDD_MODE_DVK_MX
@@ -429,6 +431,7 @@ emulator::Result FDD::load_image(const std::string &file_name)
             this->file_name = base_name;
         }
     }
+    if (m_generation != old_generation) m_modified = false;
     //Every branch that took the image ends by naming it; one that did not
     //(an unknown extension) leaves the previous image and its path alone
     if (loaded && this->file_name == base_name) {
@@ -564,13 +567,13 @@ void FDD::WriteNextByte(uint8_t value)
 
         if (sector != 0)
         {
-            buffer[translate_address()] = value;
+            store_byte(translate_address(), value);
             position++;
         }
     } else {
         if (!sector_in_range()) return;
         clear_aim_desync();
-        buffer[track_indexes[track*sides + side].mfmtrackoffset + position++] = value;
+        store_byte(track_indexes[track*sides + side].mfmtrackoffset + position++, value);
         if (position >= (int)track_indexes[track*sides + side].mfmtracksize) position = 0;
     }
 }
@@ -585,12 +588,12 @@ void FDD::WriteByte(uint8_t value)
 
         if (sector != 0)
         {
-            buffer[translate_address()] = value;
+            store_byte(translate_address(), value);
         }
     } else {
         if (!sector_in_range()) return;
         clear_aim_desync();
-        buffer[track_indexes[track*sides + side].mfmtrackoffset + position] = value;
+        store_byte(track_indexes[track*sides + side].mfmtrackoffset + position, value);
     }
 }
 
@@ -842,7 +845,10 @@ bool FDD::write_track(int track, int side, const std::vector<uint8_t> &data)
     const HXC_MFM_TRACK_INFO &ti = track_indexes[i];
     if ((uint64_t)ti.mfmtrackoffset + ti.mfmtracksize > (uint64_t)disk_size) return false;
     const size_t n = data.size() < ti.mfmtracksize ? data.size() : ti.mfmtracksize;
-    if (n > 0) memcpy(buffer + ti.mfmtrackoffset, data.data(), n);
+    if (n > 0 && memcmp(buffer + ti.mfmtrackoffset, data.data(), n) != 0) {
+        memcpy(buffer + ti.mfmtrackoffset, data.data(), n);
+        m_modified = true;
+    }
     this->track = track;
     this->side = side;
     return true;
@@ -864,8 +870,11 @@ void FDD::write_track_marks(int track, int side, const std::vector<int> &positio
     if (!whole_track() || track < 0 || track >= tracks || side < 0 || side >= sides) return;
     const unsigned int i = image_track(track, side, false);
     if (i >= sizeof(aim_codes) / sizeof(aim_codes[0])) return;
-    aim_codes[i].clear();
-    for (int p : positions) aim_codes[i][p] = AIM_CMD_DESYNC;
+    std::map<int, int> marks;
+    for (int p : positions) marks[p] = AIM_CMD_DESYNC;
+    if (marks == aim_codes[i]) return;
+    aim_codes[i].swap(marks);
+    m_modified = true;
 }
 
 // Привод в режиме секторов (снимок или конфигурация до режима дорожек):
@@ -944,6 +953,7 @@ void FDD::unload(){
     if (buffer != nullptr) delete [] buffer;
     buffer = nullptr;
     loaded = false;
+    m_modified = false;
     m_woz = false;
     m_woz_tracks.clear();
     sides_layout = default_sides_layout;
@@ -1003,8 +1013,9 @@ emulator::Result FDD::save_image(const std::string &file_name)
     {
         std::string ext = dsk_tools::get_file_ext(file_name); // returns ".ext" lowercase
 
-        bool is_raw = (ext == ".dsk" || ext == ".do" || ext == ".po" || ext == ".gmd"
-            || ext == ".cpm" || ext == ".img" || ext == ".bkd");
+        //As in load_image(): whatever is not one of the formats below is sectors
+        bool is_raw = (ext != ".hfe" && ext != ".mfm" && ext != ".woz" && ext != ".d13"
+            && ext != ".nib" && ext != ".nic" && ext != ".aim");
 
         if (is_raw) {
             if (fdd_mode == FDD_MODE_AGAT_840) {
@@ -1106,6 +1117,9 @@ emulator::Result FDD::save_image(const std::string &file_name)
                 return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Saving images for this type of drive is not supported yet.")) + "}");
             }
+        } else {
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Saving images for this type of drive is not supported yet.")) + "}");
         }
     }
     return emulator::Result::ok();
@@ -1162,7 +1176,10 @@ void FDD::mark_aim_desync()
 {
     const unsigned int t = image_track(track, side, false);
     if (t >= sizeof(aim_codes)/sizeof(aim_codes[0])) return;
-    aim_codes[t][position] = AIM_CMD_DESYNC;
+    int &code = aim_codes[t][position];
+    if (code == AIM_CMD_DESYNC) return;
+    code = AIM_CMD_DESYNC;
+    m_modified = true;
 }
 
 // Writing a byte over a place that used to hold a sync mark destroys it, which
@@ -1173,8 +1190,10 @@ void FDD::clear_aim_desync()
     const unsigned int t = image_track(track, side, false);
     if (t >= sizeof(aim_codes)/sizeof(aim_codes[0])) return;
     auto code = aim_codes[t].find(position);
-    if (code != aim_codes[t].end() && aim_is_desync(code->second))
+    if (code != aim_codes[t].end() && aim_is_desync(code->second)) {
         aim_codes[t].erase(code);
+        m_modified = true;
+    }
 }
 
 //------------------- Introspection and control ----------------------------//
@@ -1284,6 +1303,7 @@ emulator::Result FDD::load_state(const StateReader &r)
     r.b("motor_on", motor_on);
     r.b("motor_was_on", m_motor_was_on);
     r.b("protected", write_protect);
+    m_modified = false;
 
     bool was_loaded = false;
     if (!r.b("loaded", was_loaded) || !was_loaded) return emulator::Result::ok();
@@ -1419,6 +1439,7 @@ std::vector<DeviceFieldInfo> FDD::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
     r.push_back({"loaded",      "1 if an image is loaded",              false});
+    r.push_back({"modified",    "1 if the machine changed the disk since it was loaded", false});
     r.push_back({"file",        "Name of the loaded image",             false});
     r.push_back({"path",        "Full path of the loaded image",        false});
     r.push_back({"layout",      "Track order of the loaded image",      false});
@@ -1465,6 +1486,7 @@ bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to
 
     out.numeric = true;
     if (field == "loaded")      { out.values.push_back(loaded?1:0);         return true; }
+    if (field == "modified")    { out.values.push_back(m_modified?1:0);     return true; }
     if (field == "protected")   { out.values.push_back(write_protect?1:0);  return true; }
     if (field == "selected")    { out.values.push_back(is_selected()?1:0);  return true; }
     if (field == "motor")       { out.values.push_back(motor_on?1:0);       return true; }

@@ -230,8 +230,12 @@ int FDD::write_bits(int quarter, int index, const std::vector<uint8_t> &bits)
         m_woz_tracks.push_back(bits);
         for (int q = quarter - 1; q <= quarter + 1; q++)
             if (q >= 0 && q < (int)WOZ_QUARTERS && (q == quarter || m_woz_map[q] == 0xFF)) m_woz_map[q] = (uint8_t)index;
-    } else
+        m_modified = true;
+    } else {
+        if (m_woz_tracks[index] == bits) return index;
         m_woz_tracks[index] = bits;
+        m_modified = true;
+    }
     // The nibbles of the whole tracks that show it
     std::vector<uint8_t> bytes;
     for (int t = 0; t < tracks; t++)

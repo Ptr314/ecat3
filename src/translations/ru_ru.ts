@@ -435,7 +435,7 @@
 <context>
     <name>BreakpointsView</name>
     <message>
-        <location filename="../dialogs/debugger/sideviews.cpp" line="+209"/>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="+234"/>
         <source>Go to</source>
         <translation>Перейти</translation>
     </message>
@@ -590,7 +590,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+1186"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1204"/>
         <source>Disk image</source>
         <translation>Образ диска</translation>
     </message>
@@ -2013,7 +2013,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-1152"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1170"/>
         <source>Incorrect fdd list for</source>
         <translation>Некорректный список дисководов для</translation>
     </message>
@@ -2062,7 +2062,7 @@
         <translation>Файл образа диска не найден</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+27"/>
         <location line="+87"/>
         <location line="+9"/>
         <location line="+8"/>
@@ -2071,27 +2071,27 @@
     </message>
     <message>
         <location line="-99"/>
-        <location line="+542"/>
+        <location line="+543"/>
         <location line="+24"/>
         <location line="+14"/>
         <source>Unrecognized MFM format</source>
         <translation>Файл формата MFM не распознан</translation>
     </message>
     <message>
-        <location line="-504"/>
+        <location line="-505"/>
         <location line="+56"/>
         <location line="+44"/>
         <location line="+29"/>
         <location line="+18"/>
-        <location line="+295"/>
+        <location line="+296"/>
         <location line="+16"/>
-        <location filename="../emulator/devices/common/fdd_woz.cpp" line="+335"/>
+        <location filename="../emulator/devices/common/fdd_woz.cpp" line="+339"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="+200"/>
         <source>Error opening file</source>
         <translation>Ошибка открытия файла</translation>
     </message>
     <message>
-        <location line="-397"/>
+        <location line="-398"/>
         <location filename="../emulator/devices/common/fdd_woz.cpp" line="-32"/>
         <source>File is in unknown format</source>
         <translation>Формат файла не распознан</translation>
@@ -2100,20 +2100,20 @@
         <location line="+44"/>
         <location line="+19"/>
         <location line="+18"/>
-        <location line="+310"/>
+        <location line="+311"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="-126"/>
         <source>Incorrect disk image size for</source>
         <translation>Некорректный размер файла образа</translation>
     </message>
     <message>
-        <location line="+321"/>
+        <location line="+329"/>
         <location line="+17"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="+93"/>
         <source>Error exporting disk.</source>
         <translation>Ошибка экспорта диска.</translation>
     </message>
     <message>
-        <location line="+529"/>
+        <location line="+540"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; требует имя файла</translation>
     </message>
@@ -2131,7 +2131,7 @@
         <translation type="vanished">Формат файла &apos;%1&apos; не распознан</translation>
     </message>
     <message>
-        <location line="-1261"/>
+        <location line="-1281"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation>Файлы AIM поддерживаются только на дисководах 840 Кб Агат!</translation>
     </message>
@@ -2149,19 +2149,20 @@
         <translation type="vanished">Ошибка экспорта диска. %1 : %2</translation>
     </message>
     <message>
-        <location line="+677"/>
+        <location line="+686"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation>Дисковод работает в MFM-режиме. Сохранение в посекторные образы еще не поддерживается.</translation>
     </message>
     <message>
         <location line="+15"/>
+        <location line="+4"/>
         <location filename="../emulator/devices/common/fdd_woz.cpp" line="+15"/>
         <source>Saving images for this type of drive is not supported yet.</source>
         <translation>Сохранение образов для данного типа устройств еще не поддерживается.</translation>
     </message>
     <message>
-        <location line="-947"/>
-        <location line="+469"/>
+        <location line="-960"/>
+        <location line="+470"/>
         <source>HFE images are not supported for this drive</source>
         <translation>Образы HFE для этого дисковода не поддерживаются</translation>
     </message>
@@ -2721,7 +2722,12 @@
         <translation>Настройки</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+4"/>
+        <source>Disks</source>
+        <translation>Диски</translation>
+    </message>
+    <message>
+        <location line="+17"/>
         <source>Display</source>
         <translation>Экран</translation>
     </message>
@@ -2753,7 +2759,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1390"/>
+        <location filename="../mainwindow.cpp" line="+1393"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2820,23 +2826,53 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-901"/>
-        <location line="+2135"/>
+        <location filename="../mainwindow.cpp" line="-902"/>
+        <location line="+2244"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1778"/>
+        <location filename="../mainwindow.cpp" line="-1886"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
+    </message>
+    <message>
+        <location line="+138"/>
+        <source>Autosave</source>
+        <translation>Автосохранение</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Write a changed disk into its image file when the drive lamp goes out</source>
+        <translation>Записывать измененный диск в файл образа, когда гаснет лампа дисковода</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Backups</source>
+        <translation>Резервные копии</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Keep the previous image file, with the time in its name, on the first autosave of a disk. The images that come with the program are always kept</source>
+        <translation>При первом автосохранении диска оставлять прежний файл образа со временем в имени. Для образов, поставляемых с программой, копия делается всегда</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Remember choice</source>
+        <translation>Запоминать выбор</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Forget all chosen</source>
+        <translation>Забыть все выбранные</translation>
     </message>
     <message>
         <source>Serial ports...</source>
         <translation type="vanished">Последовательные порты...</translation>
     </message>
     <message>
-        <location line="+127"/>
+        <location line="-70"/>
         <source>Blend frames</source>
         <translation>Смешивать кадры</translation>
     </message>
@@ -2846,12 +2882,11 @@
         <translation>Картинки, которые программа чередует от кадра к кадру, видны ровной смесью, а не мерцанием: каждая точка показывается средним своего цвета и предыдущего, отличного от него</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Remember disk choice</source>
-        <translation>Запоминать выбор дисков</translation>
+        <translation type="vanished">Запоминать выбор дисков</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+36"/>
         <source>Put the disks chosen last into the drives when a machine is loaded</source>
         <translation>Вставлять в дисководы последние выбранные образы при загрузке машины</translation>
     </message>
@@ -2876,12 +2911,11 @@
         <translation>Набрать текст из буфера обмена на клавиатуре машины</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>Forget the disks of all machines</source>
-        <translation>Забыть диски всех машин</translation>
+        <translation type="vanished">Забыть диски всех машин</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+14"/>
         <source>Language</source>
         <translation>Переключить язык</translation>
     </message>
@@ -2890,7 +2924,7 @@
         <translation type="vanished">Выбрать компьютер...</translation>
     </message>
     <message>
-        <location line="-344"/>
+        <location line="-369"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
@@ -2905,16 +2939,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-625"/>
+        <location filename="../mainwindow.cpp" line="-626"/>
         <location line="+47"/>
-        <location line="+1786"/>
-        <location line="+29"/>
-        <location line="+42"/>
+        <location line="+1791"/>
+        <location line="+30"/>
+        <location line="+43"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1901"/>
+        <location line="-1908"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2943,13 +2977,13 @@
     <message>
         <location line="-125"/>
         <location line="+78"/>
-        <location line="+1385"/>
+        <location line="+1387"/>
         <location line="+60"/>
         <location line="+79"/>
-        <location line="+331"/>
-        <location line="+107"/>
+        <location line="+334"/>
+        <location line="+109"/>
         <location line="+62"/>
-        <location line="+167"/>
+        <location line="+269"/>
         <location line="+25"/>
         <location line="+471"/>
         <location line="+29"/>
@@ -2958,7 +2992,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2808"/>
+        <location line="-2917"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -3039,13 +3073,13 @@
         <translation type="vanished">Мышь захвачена машиной. Средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+762"/>
+        <location line="+763"/>
         <location line="+1"/>
         <source>Run without debugging</source>
         <translation>Запустить без отладки</translation>
     </message>
     <message>
-        <location line="+302"/>
+        <location line="+303"/>
         <source>All supported files</source>
         <translation>Все поддерживаемые файлы</translation>
     </message>
@@ -3056,7 +3090,7 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1636"/>
+        <location line="-1638"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
@@ -3069,7 +3103,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+83"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+2102"/>
+        <location filename="../mainwindow.cpp" line="+2211"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -3079,15 +3113,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-2080"/>
-        <location line="+1563"/>
-        <location line="+386"/>
+        <location line="-2189"/>
+        <location line="+1567"/>
+        <location line="+491"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-2062"/>
+        <location line="-2171"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -3123,7 +3157,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1899"/>
+        <location line="+2008"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -3143,8 +3177,8 @@
         <translation>Идет запись видео в </translation>
     </message>
     <message>
-        <location line="-451"/>
-        <location line="+480"/>
+        <location line="-556"/>
+        <location line="+585"/>
         <source>Finishing the video...</source>
         <translation>Видео дописывается...</translation>
     </message>
@@ -3154,20 +3188,20 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-2080"/>
+        <location line="-2189"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
     <message>
-        <location line="-530"/>
-        <location line="+640"/>
+        <location line="-532"/>
+        <location line="+642"/>
         <location line="+1"/>
-        <location line="+907"/>
+        <location line="+908"/>
         <source>Turbo</source>
         <translation>Турбо</translation>
     </message>
     <message>
-        <location line="-1164"/>
+        <location line="-1165"/>
         <source>Floppy drive %1</source>
         <translation>Дисковод %1</translation>
     </message>
@@ -3238,7 +3272,7 @@
         <translation>Длинное</translation>
     </message>
     <message>
-        <location line="+312"/>
+        <location line="+313"/>
         <source>High precision</source>
         <translation>Высокая точность</translation>
     </message>
@@ -3269,7 +3303,7 @@
         <translation>Пользователь оставил запись последовательного порта в файл.</translation>
     </message>
     <message>
-        <location line="+184"/>
+        <location line="+185"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>
     </message>
@@ -3296,7 +3330,7 @@
         <translation>Машина не запущена, сохранить ее состояние нельзя.</translation>
     </message>
     <message>
-        <location line="+87"/>
+        <location line="+89"/>
         <source>Abort</source>
         <translation>Прервать</translation>
     </message>
@@ -3311,7 +3345,7 @@
         <translation>Открыть образ диска</translation>
     </message>
     <message>
-        <location line="+110"/>
+        <location line="+113"/>
         <source>Open a hard disk image</source>
         <translation>Открыть образ винчестера</translation>
     </message>
@@ -3341,7 +3375,33 @@
         <translation>Ошибка создания резервной копии. Возможно, файл с расширением *.bak уже существует.</translation>
     </message>
     <message>
-        <location line="+105"/>
+        <location line="+63"/>
+        <source>Disk image %1 was not saved: %2</source>
+        <translation>Образ диска %1 не сохранен: %2</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>the file is read-only</source>
+        <translation>файл только для чтения</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>could not write the file</source>
+        <translation>не удалось записать файл</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <location line="+8"/>
+        <source>could not replace the file</source>
+        <translation>не удалось заменить файл</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>the new image is left in %1</source>
+        <translation>новый образ остался в %1</translation>
+    </message>
+    <message>
+        <location line="+103"/>
         <source>Save screenshot</source>
         <translation>Сохранение скриншота</translation>
     </message>
@@ -3361,7 +3421,7 @@
         <translation>Машина остановилась</translation>
     </message>
     <message>
-        <location line="+307"/>
+        <location line="+317"/>
         <source>Remembered disks</source>
         <translation>Запомненные диски</translation>
     </message>
@@ -3376,7 +3436,7 @@
         <translation>Конфигурация не загружена.</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-254"/>
+        <location filename="../mainwindow.ui" line="-263"/>
         <source>Action recording</source>
         <translation>Запись действий</translation>
     </message>
@@ -3386,7 +3446,7 @@
         <translation>Отладка</translation>
     </message>
     <message>
-        <location line="+304"/>
+        <location line="+313"/>
         <source>I/O ports...</source>
         <translation>Порты ввода-вывода...</translation>
     </message>
@@ -3413,7 +3473,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-432"/>
+        <location filename="../mainwindow.cpp" line="-442"/>
         <location line="+243"/>
         <source>Start recording</source>
         <translation>Начать запись</translation>
@@ -3487,12 +3547,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1624"/>
+        <location line="-1732"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1667"/>
+        <location line="+1775"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -3716,7 +3776,7 @@
         <translation>ничего</translation>
     </message>
     <message>
-        <location line="+473"/>
+        <location line="+498"/>
         <source>Address</source>
         <translation>Адрес</translation>
     </message>
@@ -4207,12 +4267,13 @@
         <translation>ПЗУ платы</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+5"/>
+        <location line="+2"/>
         <source>no answer</source>
         <translation>нет ответа</translation>
     </message>
     <message>
-        <location line="+0"/>
+        <location line="-2"/>
         <source>registers of the machine</source>
         <translation>регистры машины</translation>
     </message>
@@ -4524,12 +4585,12 @@
 <context>
     <name>StackView</name>
     <message>
-        <location filename="../dialogs/debugger/sideviews.cpp" line="-182"/>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="-185"/>
         <source>The processor has no stack</source>
         <translation>У процессора нет стека</translation>
     </message>
     <message>
-        <location line="+44"/>
+        <location line="+47"/>
         <source>Go to</source>
         <translation>Перейти</translation>
     </message>

@@ -359,7 +359,7 @@
 <context>
     <name>BreakpointsView</name>
     <message>
-        <location filename="../dialogs/debugger/sideviews.cpp" line="+209"/>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="+234"/>
         <source>Go to</source>
         <translation type="unfinished"></translation>
     </message>
@@ -482,7 +482,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+1186"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1204"/>
         <source>Disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1583,7 +1583,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-1152"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1170"/>
         <source>Incorrect fdd list for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1596,7 +1596,7 @@
 <context>
     <name>FDD</name>
     <message>
-        <location line="+127"/>
+        <location line="+128"/>
         <location line="+87"/>
         <location line="+9"/>
         <location line="+8"/>
@@ -1605,14 +1605,14 @@
     </message>
     <message>
         <location line="-99"/>
-        <location line="+542"/>
+        <location line="+543"/>
         <location line="+24"/>
         <location line="+14"/>
         <source>Unrecognized MFM format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-437"/>
+        <location line="-438"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1622,18 +1622,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+677"/>
+        <location line="+686"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../emulator/devices/common/fdd_woz.cpp" line="+318"/>
+        <location line="+4"/>
+        <location filename="../emulator/devices/common/fdd_woz.cpp" line="+322"/>
         <source>Saving images for this type of drive is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1020"/>
+        <location line="-1034"/>
         <source>Incorrect fdd parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1653,18 +1654,18 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+18"/>
-        <location line="+469"/>
+        <location line="+19"/>
+        <location line="+470"/>
         <source>HFE images are not supported for this drive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-380"/>
+        <location line="-381"/>
         <location line="+56"/>
         <location line="+44"/>
         <location line="+29"/>
         <location line="+18"/>
-        <location line="+295"/>
+        <location line="+296"/>
         <location line="+16"/>
         <location filename="../emulator/devices/common/fdd_woz.cpp" line="+17"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="+200"/>
@@ -1672,7 +1673,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-397"/>
+        <location line="-398"/>
         <location filename="../emulator/devices/common/fdd_woz.cpp" line="-32"/>
         <source>File is in unknown format</source>
         <translation type="unfinished"></translation>
@@ -1681,20 +1682,20 @@
         <location line="+44"/>
         <location line="+19"/>
         <location line="+18"/>
-        <location line="+310"/>
+        <location line="+311"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="-126"/>
         <source>Incorrect disk image size for</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+321"/>
+        <location line="+329"/>
         <location line="+17"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="+93"/>
         <source>Error exporting disk.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+529"/>
+        <location line="+540"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2153,7 +2154,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+19"/>
+        <source>Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+17"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2185,7 +2191,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1390"/>
+        <location filename="../mainwindow.cpp" line="+1393"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -2238,7 +2244,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1108"/>
+        <location filename="../mainwindow.cpp" line="+1216"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2259,14 +2265,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-2009"/>
-        <location line="+2135"/>
+        <location filename="../mainwindow.cpp" line="-2118"/>
+        <location line="+2244"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1778"/>
+        <location filename="../mainwindow.cpp" line="-1886"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2282,11 +2288,36 @@
     </message>
     <message>
         <location line="+8"/>
-        <source>Remember disk choice</source>
+        <source>Autosave</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
+        <source>Write a changed disk into its image file when the drive lamp goes out</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Backups</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Keep the previous image file, with the time in its name, on the first autosave of a disk. The images that come with the program are always kept</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Remember choice</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Forget all chosen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-31"/>
         <source>Put the disks chosen last into the drives when a machine is loaded</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2311,17 +2342,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>Forget the disks of all machines</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
+        <location line="+14"/>
         <source>Language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-344"/>
+        <location line="-369"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2336,15 +2362,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-738"/>
+        <location filename="../mainwindow.cpp" line="-739"/>
         <location line="+78"/>
-        <location line="+1385"/>
+        <location line="+1387"/>
         <location line="+60"/>
         <location line="+79"/>
-        <location line="+331"/>
-        <location line="+107"/>
+        <location line="+334"/>
+        <location line="+109"/>
         <location line="+62"/>
-        <location line="+167"/>
+        <location line="+269"/>
         <location line="+25"/>
         <location line="+471"/>
         <location line="+29"/>
@@ -2353,7 +2379,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2808"/>
+        <location line="-2917"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2380,14 +2406,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1786"/>
-        <location line="+29"/>
-        <location line="+42"/>
+        <location line="+1791"/>
+        <location line="+30"/>
+        <location line="+43"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1901"/>
+        <location line="-1908"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2457,14 +2483,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1563"/>
-        <location line="+386"/>
+        <location line="+1567"/>
+        <location line="+491"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2062"/>
+        <location line="-2171"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2500,12 +2526,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+1899"/>
+        <location line="+2008"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1875"/>
+        <location line="-1984"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2578,15 +2604,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-786"/>
-        <location line="+640"/>
+        <location line="-788"/>
+        <location line="+642"/>
         <location line="+1"/>
-        <location line="+907"/>
+        <location line="+908"/>
         <source>Turbo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-754"/>
+        <location line="-755"/>
         <source>Picture tube</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2606,7 +2632,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+312"/>
+        <location line="+313"/>
         <source>High precision</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2643,7 +2669,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+184"/>
+        <location line="+185"/>
         <source>Configurations</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2681,13 +2707,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+87"/>
-        <location line="+480"/>
+        <location line="+89"/>
+        <location line="+585"/>
         <source>Finishing the video...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-480"/>
+        <location line="-585"/>
         <source>Abort</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2702,7 +2728,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+110"/>
+        <location line="+113"/>
         <source>Open a hard disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2732,7 +2758,33 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+105"/>
+        <location line="+63"/>
+        <source>Disk image %1 was not saved: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>the file is read-only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>could not write the file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <location line="+8"/>
+        <source>could not replace the file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>the new image is left in %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+103"/>
         <source>Save screenshot</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2777,7 +2829,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+307"/>
+        <location line="+317"/>
         <source>Remembered disks</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2792,7 +2844,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="-168"/>
+        <location filename="../mainwindow.ui" line="-177"/>
         <source>Action recording</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2802,7 +2854,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+285"/>
+        <location line="+294"/>
         <source>I/O ports...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2829,7 +2881,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-432"/>
+        <location filename="../mainwindow.cpp" line="-442"/>
         <location line="+243"/>
         <source>Start recording</source>
         <translation type="unfinished"></translation>
@@ -2903,12 +2955,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1624"/>
+        <location line="-1732"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1667"/>
+        <location line="+1775"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3100,7 +3152,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+473"/>
+        <location line="+498"/>
         <source>Address</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3517,13 +3569,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+5"/>
+        <location line="+2"/>
         <source>no answer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+0"/>
-        <source>memory of the machine</source>
+        <location line="-2"/>
+        <source>registers of the machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>machine: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3805,12 +3863,12 @@
 <context>
     <name>StackView</name>
     <message>
-        <location filename="../dialogs/debugger/sideviews.cpp" line="-182"/>
+        <location filename="../dialogs/debugger/sideviews.cpp" line="-185"/>
         <source>The processor has no stack</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+44"/>
+        <location line="+47"/>
         <source>Go to</source>
         <translation type="unfinished"></translation>
     </message>

@@ -50,6 +50,7 @@ private:
     bool write_protect;
     bool loaded;
     unsigned int m_generation = 0;      // bumped on every load/unload so controllers can drop cached tracks
+    bool m_modified = false;            // the disk differs from what was loaded or last taken for saving
     bool motor_on = false;
     bool m_motor_was_on = false;
     std::chrono::steady_clock::time_point led_start;
@@ -81,6 +82,12 @@ private:
     void serialize_woz(std::vector<uint8_t> &out);
     void woz_bytes();
 
+    void store_byte(unsigned int offset, uint8_t value)
+    {
+        if (buffer[offset] == value) return;
+        buffer[offset] = value;
+        m_modified = true;
+    }
     unsigned int translate_address();
     bool sector_in_range();
     unsigned int image_track(int track, int side, bool sides_order);
@@ -110,6 +117,9 @@ public:
     int get_sectors();
     int get_loaded();
     unsigned int get_generation();
+    // Rewriting a sector with the same bytes does not count
+    bool is_modified() const { return m_modified; }
+    bool take_modified() { const bool was = m_modified; m_modified = false; return was; }
     int get_position();
     void set_position(int value);
     int SeekSector(int track, int sector);
