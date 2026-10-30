@@ -38,6 +38,8 @@ RegistersView::RegistersView(Emulator * e, CPU * cpu, QWidget *parent):
     m_cw = dbg::text_width(fm, "0");
     setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     setFocusPolicy(Qt::ClickFocus);
+    //Paints every pixel of itself: nothing beneath it needs painting first
+    viewport()->setAttribute(Qt::WA_OpaquePaintEvent);
 
     m_editor = new CellEditor(viewport());
     connect(m_editor, &CellEditor::committed, this, &RegistersView::commit_edit);
@@ -56,7 +58,22 @@ void RegistersView::refresh()
         if ((int)r.name.size() > m_name_chars) m_name_chars = (int)r.name.size();
     verticalScrollBar()->setRange(0, std::max(0, (int)m_regs.size() - viewport()->height() / m_rh));
     verticalScrollBar()->setPageStep(viewport()->height() / m_rh);
-    viewport()->update();
+    //Only the rows that changed: the window's timer calls this while the
+    //machine runs
+    if (!isVisible()) return;
+    for (int r = 0; first_row() + r < (int)m_regs.size(); r++)
+        if (!m_painted.same(r, row_key(r))) viewport()->update(0, r * m_rh, viewport()->width(), m_rh);
+}
+
+QString RegistersView::row_key(int row) const
+{
+    const int i = first_row() + row;
+    if (i < 0 || i >= (int)m_regs.size() || m_regs[i].name.empty()) return QString();
+    const CpuRegister &reg = m_regs[i];
+    auto it = m_prev.find(reg.name);
+    const bool changed = it != m_prev.end() && it->second != reg.value;
+    return QString::fromStdString(reg.name) + ' ' + QString::number(reg.value) + (changed ? " c " : " - ")
+           + QString::number(x_value());
 }
 
 void RegistersView::mark_stop()
@@ -131,7 +148,7 @@ void RegistersView::scrollContentsBy(int, int)
     viewport()->update();
 }
 
-void RegistersView::paintEvent(QPaintEvent *)
+void RegistersView::paintEvent(QPaintEvent *event)
 {
     QPainter p(viewport());
     const dbg::Colors c = dbg::colors(palette());
@@ -142,6 +159,9 @@ void RegistersView::paintEvent(QPaintEvent *)
     const int dx = -horizontalScrollBar()->value();
 
     for (int i = first_row(), r = 0; i < (int)m_regs.size(); i++, r++) {
+        const QRect row(0, r * m_rh, viewport()->width(), m_rh);
+        if (!event->region().intersects(row)) continue;
+        m_painted.painted(event, r, row, row_key(r));
         const CpuRegister &reg = m_regs[i];
         if (reg.name.empty()) continue;
         const int y = r * m_rh + base_y;
@@ -213,15 +233,33 @@ FlagsView::FlagsView(Emulator * e, CPU * cpu, QWidget *parent):
     m_rh = dbg::row_height(fm);
     m_cw = dbg::text_width(fm, "0");
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    //Paints every pixel of itself: nothing beneath it needs painting first
+    setAttribute(Qt::WA_OpaquePaintEvent);
     refresh();
     mark_stop();
 }
 
 void FlagsView::refresh()
 {
-    m_flags = cpu->get_flags();
-    updateGeometry();
-    update();
+    const std::vector<std::pair<std::string, std::string> > flags = cpu->get_flags();
+    //A new size only with new flags: a layout request makes the tab widgets
+    //above repaint whole
+    bool same_names = flags.size() == m_flags.size();
+    for (size_t i = 0; same_names && i < flags.size(); i++) same_names = flags[i].first == m_flags[i].first;
+    m_flags = flags;
+    if (!same_names) updateGeometry();
+    if (isVisible() && !m_painted.same(0, key())) update();
+}
+
+QString FlagsView::key() const
+{
+    QString k = QString::number(x_first());
+    for (const auto &f : m_flags) {
+        auto it = m_prev.find(f.first);
+        const bool changed = it != m_prev.end() && it->second != f.second;
+        k += ' ' + QString::fromStdString(f.first) + '=' + QString::fromStdString(f.second) + (changed ? "c" : "");
+    }
+    return k;
 }
 
 void FlagsView::mark_stop()
@@ -251,8 +289,9 @@ QSize FlagsView::sizeHint() const
     return QSize(w + m_cw, m_rh * 2);
 }
 
-void FlagsView::paintEvent(QPaintEvent *)
+void FlagsView::paintEvent(QPaintEvent *event)
 {
+    m_painted.painted(event, 0, rect(), key());
     QPainter p(this);
     const dbg::Colors c = dbg::colors(palette());
     p.fillRect(rect(), c.back);

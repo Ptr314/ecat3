@@ -13,6 +13,7 @@
 #include <QWidget>
 
 #include "emulator/emulator.h"
+#include "debugutil.h"
 
 class CellEditor;
 class QLabel;
@@ -112,6 +113,10 @@ private:
     void close_edit();
     void on_char_typed(const QString &text);
     void write(unsigned int address, const std::vector<uint8_t> &bytes);
+
+    PaintedRows m_painted;
+    //What a line of the view shows, for PaintedRows
+    QString row_key(int row) const;
 };
 
 //The dump with its controls: address, notation, bytes or words, search,

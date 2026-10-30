@@ -38,6 +38,8 @@ DisasmView::DisasmView(Emulator * e, CPU * cpu, QWidget *parent):
     setFocusPolicy(Qt::StrongFocus);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     viewport()->setAutoFillBackground(false);
+    //Paints every pixel of itself: nothing beneath it needs painting first
+    viewport()->setAttribute(Qt::WA_OpaquePaintEvent);
 
     emulator::Result res = emulator::Result::ok();
     m_disasm = cpu->create_disasm(e->data_path, res);
@@ -328,7 +330,48 @@ void DisasmView::follow_memory()
     bool changed = false;
     keep_place([&]() { changed = m_buf->refresh(); });
     if (changed) fill();
-    viewport()->update();
+    repaint_changed();
+}
+
+QString DisasmView::row_key(int row, unsigned int pc) const
+{
+    const int i = m_top + row;
+    if (i >= (int)m_buf->size()) return QString();
+    const DisasmBuffer::Line &l = m_buf->at(i);
+    const int cursor = (i == m_cursor) ? (hasFocus() ? 2 : 1) : 0;
+    return QString::number(l.address) + ' ' + bytes_text(l) + ' ' + QString::fromStdString(l.d.text) + ' '
+           + QString::number(l.d.valid ? 1 : 0) + QString::number(l.d.flow) + QString::number(l.address == pc ? 1 : 0)
+           + QString::number(cpu->has_breakpoint(l.address) ? 1 : 0) + QString::number(cursor);
+}
+
+QString DisasmView::arrows_key(const std::vector<DisasmBuffer::Arrow> &arrows, int pc_row) const
+{
+    QString key;
+    for (const DisasmBuffer::Arrow &a : arrows)
+        key += QString::number(a.from - m_top) + ',' + QString::number(a.to - m_top) + ',' + QString::number(a.lane)
+               + (a.conditional ? 'c' : 'u') + (a.from == pc_row ? 'a' : ' ');
+    return key;
+}
+
+int DisasmView::pc_row(unsigned int pc) const
+{
+    int row = -1;
+    for (int r = 0; r < rows() + 1 && m_top + r < (int)m_buf->size(); r++)
+        if (m_buf->at(m_top + r).address == pc) row = m_top + r;
+    return row;
+}
+
+void DisasmView::repaint_changed()
+{
+    if (!isVisible()) return;
+    const unsigned int pc = cpu->get_pc();
+    const int n = rows() + 1;
+    const int w = viewport()->width();
+    for (int r = 0; r < n; r++)
+        if (!m_painted.same(r, row_key(r, pc))) viewport()->update(0, r * m_rh, w, m_rh);
+    const std::vector<DisasmBuffer::Arrow> arrows = m_buf->layout_jumps(m_top, m_top + n - 1, ARROW_LANES);
+    if (!m_painted_arrows.same(0, arrows_key(arrows, pc_row(pc))))
+        viewport()->update(0, 0, x_marks(), viewport()->height());
 }
 
 void DisasmView::toggle_breakpoint(unsigned int address)
@@ -356,7 +399,7 @@ void DisasmView::resizeEvent(QResizeEvent *event)
     update_scrollbar();
 }
 
-void DisasmView::paintEvent(QPaintEvent *)
+void DisasmView::paintEvent(QPaintEvent *event)
 {
     QPainter p(viewport());
     const dbg::Colors c = dbg::colors(palette());
@@ -370,15 +413,17 @@ void DisasmView::paintEvent(QPaintEvent *)
 
     const unsigned int pc = cpu->get_pc();
     const int n = rows() + 1;
-    int pc_row = -1;
+    const int active_row = pc_row(pc);
 
     for (int r = 0; r < n; r++) {
         const int i = m_top + r;
-        if (i >= (int)m_buf->size()) break;
-        const DisasmBuffer::Line &l = m_buf->at(i);
         const int y = r * m_rh;
+        const QRect row(0, y, w, m_rh);
+        if (!event->region().intersects(row)) continue;
+        m_painted.painted(event, r, row, row_key(r, pc));
+        if (i >= (int)m_buf->size()) continue;
+        const DisasmBuffer::Line &l = m_buf->at(i);
         const bool at_pc = (l.address == pc);
-        if (at_pc) pc_row = i;
 
         if (i == m_cursor)
             p.fillRect(x_marks(), y, w - x_marks(), m_rh, hasFocus() ? c.selection : c.selection.lighter(130));
@@ -433,10 +478,11 @@ void DisasmView::paintEvent(QPaintEvent *)
 
     //Jump arrows, the shortest nearest to the listing
     const std::vector<DisasmBuffer::Arrow> arrows = m_buf->layout_jumps(m_top, m_top + n - 1, ARROW_LANES);
+    m_painted_arrows.painted(event, 0, QRect(0, 0, x_marks(), h), arrows_key(arrows, active_row));
     const int edge = x_marks() - 3;
     p.setBrush(Qt::NoBrush);
     for (const DisasmBuffer::Arrow &a : arrows) {
-        const bool active = (a.from == pc_row);
+        const bool active = (a.from == active_row);
         QPen pen(active ? c.arrow_active : c.arrow);
         pen.setWidth(active ? 2 : 1);
         if (a.conditional) pen.setStyle(Qt::DashLine);

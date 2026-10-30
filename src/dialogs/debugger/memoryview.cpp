@@ -97,6 +97,8 @@ MemoryView::MemoryView(Emulator * e, const MemorySource &source, QWidget *parent
     m_cw = dbg::text_width(fm, "0");
     setFocusPolicy(Qt::StrongFocus);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    //Paints every pixel of itself: nothing beneath it needs painting first
+    viewport()->setAttribute(Qt::WA_OpaquePaintEvent);
 
     m_editor = new CellEditor(viewport());
     connect(m_editor, &CellEditor::committed, this, &MemoryView::commit_edit);
@@ -236,9 +238,29 @@ void MemoryView::go_to(unsigned int address)
     viewport()->update();
 }
 
+//Only the lines that changed: the window's timer calls this while the machine
+//runs
 void MemoryView::refresh()
 {
-    viewport()->update();
+    if (!isVisible()) return;
+    for (int r = 0; r <= rows() && m_top + (unsigned int)r * LINE_BYTES < m_src.size; r++)
+        if (!m_painted.same(r, row_key(r))) viewport()->update(0, r * m_rh, viewport()->width(), m_rh);
+}
+
+QString MemoryView::row_key(int row) const
+{
+    const unsigned int line = m_top + (unsigned int)row * LINE_BYTES;
+    QString key = QString::number(line) + ' ' + QString::number(m_base) + (m_word ? 'w' : 'b')
+                  + QString::number(horizontalScrollBar()->value()) + (m_on_chars ? 'c' : 'v') + (hasFocus() ? 'f' : ' ');
+    if (m_cursor >= line && m_cursor - line < LINE_BYTES) key += QString::number(m_cursor - line);
+    key += ' ';
+    for (unsigned int i = 0; i < LINE_BYTES && line + i < m_src.size; i++) {
+        const unsigned int a = line + i;
+        const unsigned int v = m_src.read(a) & 0xFF;
+        const bool changed = a >= m_snap_from && a - m_snap_from < m_snap.size() && m_snap[a - m_snap_from] != v;
+        key += QString::number(v, 16) + (changed ? '*' : ',');
+    }
+    return key;
 }
 
 void MemoryView::mark_stop()
@@ -268,7 +290,7 @@ bool MemoryView::find(const std::vector<uint8_t> &pattern)
     return false;
 }
 
-void MemoryView::paintEvent(QPaintEvent *)
+void MemoryView::paintEvent(QPaintEvent *event)
 {
     QPainter p(viewport());
     const dbg::Colors c = dbg::colors(palette());
@@ -283,6 +305,9 @@ void MemoryView::paintEvent(QPaintEvent *)
         const unsigned int line = m_top + (unsigned int)r * LINE_BYTES;
         if (line >= m_src.size) break;
         const int y = r * m_rh;
+        const QRect row(0, y, viewport()->width(), m_rh);
+        if (!event->region().intersects(row)) continue;
+        m_painted.painted(event, r, row, row_key(r));
         p.setPen(c.address);
         p.drawText(dx + m_cw, y + base_y, fmt_num(m_src.origin + line, m_base, addr_chars()));
 
