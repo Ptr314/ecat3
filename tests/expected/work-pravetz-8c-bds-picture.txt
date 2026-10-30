@@ -1,0 +1,2 @@
+[keyboard.latch] $E3
+[keyboard.latch] $FE

@@ -1,0 +1,58 @@
+# Правец-8А: раскладка БДС на болгарской клавиатуре (pravetz-8a-bds.keys).
+# Кириллица стоит на местах 8С, а не там, где ее дала бы клавиша хоста: @ - Ц,
+# [ - Ч; Shift+2 в кириллице - не Ч (клавиша " хоста), ] остается ]. Нижний ряд
+# кончается стрелками вправо ($95) и вниз ($8A). В защелке код со стробом.
+# @timeout 30
+
+MACHINE "../tests/files/pravetz-8a-bds.ext"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 500
+KEYDOWN key_at
+WAIT 20
+KEYUP key_at
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_right
+WAIT 20
+KEYUP key_right
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_down
+WAIT 20
+KEYUP key_down
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_cl
+WAIT 20
+KEYUP key_cl
+WAIT 20
+KEYDOWN key_at
+WAIT 20
+KEYUP key_at
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_lbracket
+WAIT 20
+KEYUP key_lbracket
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_rbracket
+WAIT 20
+KEYUP key_rbracket
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_shift_l
+KEYDOWN key_2
+WAIT 20
+KEYUP key_2
+KEYUP key_shift_l
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_shift_r
+KEYDOWN key_minus
+WAIT 20
+KEYUP key_minus
+KEYUP key_shift_r
+WAIT 20
+LOG keyboard.latch

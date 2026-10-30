@@ -1,0 +1,5 @@
+// Для тестов: Правец-8А с раскладкой БДС на болгарской клавиатуре
+@extends pravetz/Pravetz-8A.cfg
+@version Правец-8А (БДС)
+
+keyboard:map = pravetz-8a-bds.map

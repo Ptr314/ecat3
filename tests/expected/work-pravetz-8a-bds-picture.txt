@@ -1,0 +1,8 @@
+[keyboard.latch] $C0
+[keyboard.latch] $95
+[keyboard.latch] $8A
+[keyboard.latch] $E3
+[keyboard.latch] $FE
+[keyboard.latch] $DD
+[keyboard.latch] $AF
+[keyboard.latch] $D6

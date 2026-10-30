@@ -1,0 +1,23 @@
+# Правец-8С: раскладка БДС на клавиатуре вида PC: таблица pravetz-8c-bds.map
+# берет коды у 8А через @include, рисунок и клавиши у нее свои. В кириллице
+# [ - Ц, ' - Ч (клавиша key_quote есть только на этом рисунке).
+# @timeout 30
+
+MACHINE "../tests/files/pravetz-8c-bds.ext"
+LOGDEFS 8,16
+COMMAND fdd0.eject()
+WAIT 500
+KEYDOWN key_cl
+WAIT 20
+KEYUP key_cl
+WAIT 20
+KEYDOWN key_lbracket
+WAIT 20
+KEYUP key_lbracket
+WAIT 20
+LOG keyboard.latch
+KEYDOWN key_quote
+WAIT 20
+KEYUP key_quote
+WAIT 20
+LOG keyboard.latch

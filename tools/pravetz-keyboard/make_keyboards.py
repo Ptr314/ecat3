@@ -1,10 +1,11 @@
-# Клавиатуры Правец на экране: рисунки (deploy/computers/pravetz/files/*.svg)
-# и таблицы клавиш рисунка (deploy/computers/pravetz/*.keys).
+# Клавиатуры Правец на экране: рисунки с текстом (src/pics/*_font.svg, в
+# deploy/computers/pravetz/files они лежат без _font и в кривых, это делается
+# вручную) и таблицы клавиш рисунка (deploy/computers/pravetz/*.keys).
 #
 # Расположение клавиш - по фотографиям с agatcomp.ru (docs-external/pravetz/
 # keyboards): 8А для СССР (ГОСТ) и 8С (БДС) - клавиатура как у PC, 8А
-# болгарский (ЯВЕРТЪ) - как у Apple //e, 82 и 8М - свои. Надписи не
-# переписаны с фотографий, а взяты из таблиц .map: клавиша рисунка - это
+# болгарский (ЯВЕРТЪ и БДС) - своя, ступенями (KEY8A1), 82 и 8М - свои. Надписи
+# не переписаны с фотографий, а взяты из таблиц .map: клавиша рисунка - это
 # клавиша хоста (с Shift рисунка - другая, в кириллице - третья), и на ней
 # написано то, что она пошлет. Поэтому рисунок не расходится с эмуляцией.
 #
@@ -14,6 +15,7 @@ import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PRAVETZ = os.path.normpath(os.path.join(HERE, '..', '..', 'deploy', 'computers', 'pravetz'))
+PICS = os.path.normpath(os.path.join(HERE, '..', '..', 'src', 'pics'))
 
 ALIAS = {'minus': '-', 'slash': '/', 'semicolon': ';', 'colon': ':', 'plus': '+',
          'circum': '^', 'under': '_', 'mult': '*', 'enter': 'ret'}
@@ -102,26 +104,42 @@ def pc_keys(caps=True):
     ]
 
 
-def bg_keys():
-    """8А болгарский, ЯВЕРТЪ: как Apple //e"""
+def a8_keys(bds=False):
+    """8А болгарский (KEY8A1): ряды 0.53, 1.07, 0.59 и 1.09 клавиши от края, 65
+    клавиш, одна внизу слева без надписи. На фото правая нижняя стрелка несет
+    колпачок второй "вправо", это ошибка сборки: там "вниз".
+
+    БДС на этой форме не снят: латиница та же, что у ЯВЕРТЪ, а кириллица стоит на
+    тех местах, где она у 8С, поэтому знаки верхнего ряда заданы здесь явно:
+    иначе клавиша взяла бы кириллицу своего слота с Shift (" с Shift - это Ч)"""
+    def b(**kw):
+        return kw if bds else {}
     return [
         [K('key_esc', 1, 'esc', label='ESC')]
-        + [K('key_' + d, 1, d, s) for d, s in zip('123456789', '!"#$%&\'()')]
-        + [K('key_0', 1, '0', '_'), K('key_colon', 1, ':', '*'), K('key_minus', 1, '-', '=', rshift='$BD'),
-           K('key_ch', 1, '^', '^', rplain='=', rshift='+'), K('key_reset', 1, fn='reset', label='RST')],
-        [K('key_tab', 1.25, 'tab', label='TAB')] + letters('QWERTYUIOP')
-        + [K('key_at', 1, '@', '@', rplain='~', rshift='tilde'), K('key_backslash', 1, '\\', 'bar'),
-           K('key_ret', 1.75, 'ret', label='RETURN')],
-        [K('key_ctrl', 1.5, role='ctrl', label='CTRL')] + letters('ASDFGHJKL')
-        + [K('key_semicolon', 1, ';', '+', rshift='$AB'), K('key_lbracket', 1, '[', '{'),
-           K('key_rbracket', 1, ']', '}'), K('key_cl', 1.5, fn='cl', label='C/L')],
-        [K('key_caps', 1, fn='caps', label='LOCK'), K('key_shift_l', 1, role='shift', label='SHIFT')] + letters('ZXCVBNM')
+        + [K('key_' + d, 1, d, s, **b(rshift=r))
+           for d, s, r in zip('123456789', '!"#$%&\'()', (None, '@', None, None, None, '^', '&', '*', '('))]
+        + [K('key_0', 1, '0', '_', **b(rshift=')')),
+           K('key_colon', 1, ':', '*', **b(rplain='-', rshift='_')),
+           K('key_minus', 1, '-', '=', **(b(rplain='=', rshift='+') or dict(rshift='$BD'))),
+           K('key_ch', 1, '^', '^', **(b(rplain='\\', rshift='bar') or dict(rplain='=', rshift='+'))),
+           K('key_reset', 1, fn='reset', label='RST')],
+        [K(None, 0.53), K('key_tab', 1, 'tab', label='TAB')] + letters('QWERTYUIOP')
+        + [K('key_at', 1, '@', '@', **(b(rplain='[', rshift='{') or dict(rplain='~', rshift='tilde'))),
+           K('key_backslash', 1, '\\', 'bar', **b(rplain=']', rshift='}')),
+           K('key_ret', 2, 'ret', label='↵')],
+        [K(None, 1.07), K('key_ctrl', 1, role='ctrl', label='CTRL')] + letters('ASDFGHJKL')
+        + [K('key_semicolon', 1, ';', '+', **(b(rplain=';', rshift=':') or dict(rshift='$AB'))),
+           K('key_lbracket', 1, '[', '{', **b(rplain="'", rshift='"')),
+           K('key_rbracket', 1, ']', '}', **b(rplain='$DD', rshift='$DD')),
+           K('key_cl', 1, fn='cl', label='C/L')],
+        [K(None, 0.59), K('key_caps', 1, fn='caps', label='LOCK'), K('key_shift_l', 1, role='shift', label='⇧')]
+        + letters('ZXCVBNM')
         + [K('key_comma', 1, ',', '<'), K('key_period', 1, '.', '>'), K('key_slash', 1, '/', '?'),
-           K('key_shift_r', 1, role='shift', label='SHIFT'), K('key_up', 1, 'up', label='↑'),
+           K('key_shift_r', 1, role='shift', label='⇧'), K('key_up', 1, 'up', label='↑'),
            K('key_del', 1, 'del', label='DEL')],
-        [K(None, 1, gap=0.25), K('key_f1', 1, fn='f1', label='F1'), K('key_f2', 1, fn='f2', label='F2'),
-         K('key_space', 7.75, 'space'), K('key_left', 1, 'left', label='←'), K('key_down', 1, 'down', label='↓'),
-         K('key_right', 1, 'right', label='→')],
+        [K(None, 1.09), K(None, 1, label=''), K('key_f1', 1, fn='f1', label='F1'), K('key_f2', 1, fn='f2', label='F2'),
+         K('key_space', 7.9, 'space'), K('key_left', 1, 'left', label='←'), K('key_right', 1, 'right', label='→'),
+         K('key_down', 1, 'down', label='↓')],
     ]
 
 
@@ -172,7 +190,6 @@ def p8m_keys():
 STYLES = {
     # корпус, клавиша, ее верх, буквы, кириллица, лампы
     'pc':  dict(body='#e9e6dc', well='#8d8a80', key='#bdbab0', top='#ecebe6', ink='#202020', cyr='#2850c8'),
-    'bg':  dict(body='#efe6d0', well='#9c8e70', key='#c9b48a', top='#ece0c4', ink='#202020', cyr='#202020'),
     '82':  dict(body='#e3cfa4', well='#5a4c32', key='#101010', top='#2a2a2a', ink='#f0f0f0', cyr='#f0f0f0'),
     '8m':  dict(body='#ece6d8', well='#9c8e70', key='#b89466', top='#d8bc8e', ink='#202020', cyr='#202020'),
 }
@@ -190,6 +207,51 @@ def esc(s):
 def text(x, y, s, size, fill, anchor='middle', weight='normal'):
     return ('<text x="%.2f" y="%.2f" font-family="Arial" font-size="%.2f" '
             'font-weight="%s" fill="%s" text-anchor="%s">%s</text>' % (x, y, size, weight, fill, anchor, esc(s)))
+
+
+def key_labels(k, m, alias82=False):
+    """Надписи клавиши: латиница, она с Shift, кириллица, она с Shift; надпись,
+    совпавшая с другой, пуста. Последнее значение - буква ли это"""
+    pk, sk = host(k.plain), host(k.shift or k.plain)
+    rp = k.rplain if k.rplain else pk
+    rs = k.rshift if k.rshift else (k.rplain if k.rplain else sk)
+
+    def code(h, s, ru):
+        return int(h[1:], 16) if len(h) > 1 and h.startswith('$') else find(m, host(h), s, ru)
+    lat0, lat1 = char(code(pk, False, False)), char(code(sk, True, False))
+    cyr0 = char(code(rp, False, True), alias82)
+    cyr1 = char(code(rs, True, True), alias82)
+    letter = len(k.plain) == 1 and k.plain.isalpha()
+    if not cyr0 and (pk, False, True, True) in m:
+        cyr0 = 'Ы'      # только в 8-битной таблице: $5F/$7F
+    if lat1 == lat0:
+        lat1 = ''
+    if letter:
+        lat1 = ''
+        cyr1 = ''
+    if cyr0 == lat0:
+        cyr0 = ''
+    if cyr1 == lat1 or cyr1 == cyr0:
+        cyr1 = ''
+    return lat0, lat1, cyr0, cyr1, letter
+
+
+def key_table(k):
+    """Строки таблицы .keys для клавиши рисунка"""
+    lines = []
+    if k.label is None and k.plain is not None and k.plain != 'space':
+        for slot, h in (('', k.plain), ('/S', k.shift), ('/R', k.rplain), ('/SR', k.rshift)):
+            if h:
+                lines.append('%s%s: %s' % (k.id, slot, h if len(h) > 1 and h.startswith('$') else host_name(h)))
+    elif k.plain == 'space':
+        lines.append('%s: space' % k.id)
+    if k.role:
+        lines.append('%s: %s' % (k.role, k.id))
+    elif k.fn:
+        lines.append('%s: %s' % (k.id, k.fn))
+    elif k.label is not None and k.id and k.plain:
+        lines.append('%s: %s' % (k.id, host_name(k.plain)))
+    return lines
 
 
 def build(name, title, rows, mapfile, style, cyr_layout, leds, alias82=False, wide=15.0):
@@ -238,27 +300,7 @@ def build(name, title, rows, mapfile, style, cyr_layout, leds, alias82=False, wi
                 for i, p in enumerate(parts):
                     body.append(text(cx, cy + 1.3 + (i - (len(parts) - 1) / 2) * 4.4, p, size, ink))
             elif k.plain is not None and k.plain != 'space':
-                pk, sk = host(k.plain), host(k.shift or k.plain)
-                rp = k.rplain if k.rplain else pk
-                rs = k.rshift if k.rshift else (k.rplain if k.rplain else sk)
-
-                def code(h, s, ru):
-                    return int(h[1:], 16) if len(h) > 1 and h.startswith('$') else find(m, host(h), s, ru)
-                lat0, lat1 = char(code(pk, False, False)), char(code(sk, True, False))
-                cyr0 = char(code(rp, False, True), alias82)
-                cyr1 = char(code(rs, True, True), alias82)
-                letter = len(k.plain) == 1 and k.plain.isalpha()
-                if not cyr0 and (pk, False, True, True) in m:
-                    cyr0 = 'Ы'      # только в 8-битной таблице: $5F/$7F
-                if lat1 == lat0:
-                    lat1 = ''
-                if letter:
-                    lat1 = ''
-                    cyr1 = ''
-                if cyr0 == lat0:
-                    cyr0 = ''
-                if cyr1 == lat1 or cyr1 == cyr0:
-                    cyr1 = ''
+                lat0, lat1, cyr0, cyr1, letter = key_labels(k, m, alias82)
                 if cyr_layout == 'right':
                     # PC: латиница слева (верх - с Shift), кириллица справа
                     if letter:
@@ -278,17 +320,7 @@ def build(name, title, rows, mapfile, style, cyr_layout, leds, alias82=False, wi
                         top = cyr0 or lat1
                         body.append(text(cx, y + 7.6, top, 4.8, ink))
                         body.append(text(cx, y + 13.2, lat0, 4.8, ink))
-                for slot, h in (('', k.plain), ('/S', k.shift), ('/R', k.rplain), ('/SR', k.rshift)):
-                    if h:
-                        keys.append('%s%s: %s' % (k.id, slot, h if len(h) > 1 and h.startswith('$') else host_name(h)))
-            elif k.plain == 'space':
-                keys.append('%s: space' % k.id)
-            if k.role:
-                keys.append('%s: %s' % (k.role, k.id))
-            elif k.fn:
-                keys.append('%s: %s' % (k.id, k.fn))
-            elif k.label is not None and k.id and k.plain:
-                keys.append('%s: %s' % (k.id, host_name(k.plain)))
+            keys.extend(key_table(k))
             if k.id:
                 svg.append('<g id="%s">%s</g>' % (k.id, ''.join(body)))
             else:
@@ -304,7 +336,138 @@ def build(name, title, rows, mapfile, style, cyr_layout, leds, alias82=False, wi
         if label:
             svg.append(text(lx, ly + 7.5, label, 3.2, '#404040'))
     svg.append('</svg>')
-    open(os.path.join(PRAVETZ, 'files', name + '.svg'), 'w', encoding='utf-8', newline='\n').write('\n'.join(svg) + '\n')
+    write_svg(name, svg)
+    open(os.path.join(PRAVETZ, name + '.keys'), 'w', encoding='utf-8', newline='\n').write('\n'.join(keys) + '\n')
+
+
+def write_svg(name, svg):
+    open(os.path.join(PICS, name + '_font.svg'), 'w', encoding='utf-8', newline='\n').write('\n'.join(svg) + '\n')
+
+
+# Чертеж 8А по KEY8A1: в миллиметрах от левого верхнего угла клавиши. Цвета
+# сняты с фото: панель, колодец, скаты (верхний темнее), грань, ее нижний край
+A8 = dict(body='#e4dccb', well='#2a1c14', edge='#8a7660', back='#c7a67c', top='#c2a57e', side='#d6bb95',
+          face='#f0e9dd', ink='#2a2a2a')
+A8_SHOW = {'0': 'Ø', '^': 'Λ', '_': '—'}    # так написано на колпачках
+A8_LATIN_TOP = 'IHN'                        # на этих трех ЯВЕРТЪ латиница сверху
+A8_LEFT, A8_TOP = 14.0, 12.0
+
+
+def poly(pts, fill):
+    return '<polygon points="%s" fill="%s"/>' % (' '.join('%.2f,%.2f' % p for p in pts), fill)
+
+
+def arrow(cx, cy, dx, dy, ink):
+    """Тонкая стрелка с треугольным острием, вдоль (dx, dy)"""
+    def p(a, b):
+        return (cx + a * dx - b * dy, cy + a * dy + b * dx)
+    return poly([p(-3.6, -0.22), p(1.0, -0.22), p(1.0, -1.1), p(3.6, 0), p(1.0, 1.1), p(1.0, 0.22), p(-3.6, 0.22)], ink)
+
+
+def a8_key(x, y, w, k, m, bds):
+    """Клавиша 8А: широкий верхний скат, узкие боковые, грань смещена вниз"""
+    h = U
+    x0, y0, x1, y1 = x + 0.35, y + 0.35, x + w - 0.35, y + h - 0.35
+    fx0, fx1 = x0 + (5.0 if k.label == '↵' else 1.8), x1 - (0.6 if k.label == '↵' else 1.8)
+    fy0, fy1 = y0 + 4.9, y1 - 0.5
+    g = ['<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" rx="0.9" fill="%s"/>'
+         % (x0, y0, x1 - x0, y1 - y0, A8['back']),
+         poly([(x0, y0), (x1, y0), (fx1, fy0), (fx0, fy0)], A8['top']),
+         poly([(x0, y0), (fx0, fy0), (fx0, fy1), (x0, y1)], A8['side']),
+         poly([(x1, y0), (fx1, fy0), (fx1, fy1), (x1, y1)], A8['side']),
+         '<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" rx="1.6" fill="%s"/>'
+         % (fx0, fy0, fx1 - fx0, fy1 - fy0, A8['face'])]
+    ink = A8['ink']
+    cx, cy = (fx0 + fx1) / 2, (fy0 + fy1) / 2
+    a = {'←': (-1, 0), '→': (1, 0), '↑': (0, -1), '↓': (0, 1)}
+    if k.label in a:
+        g.append(arrow(cx, cy, a[k.label][0], a[k.label][1], ink))
+    elif k.label == '⇧':
+        g.append(poly([(cx, cy - 2.4), (cx + 2.5, cy + 0.2), (cx + 1.1, cy + 0.2), (cx + 1.1, cy + 2.2),
+                       (cx - 1.1, cy + 2.2), (cx - 1.1, cy + 0.2), (cx - 2.5, cy + 0.2)], ink))
+    elif k.label == '↵':
+        g.append(poly([(cx - 8, cy + 1.4), (cx - 5.4, cy + 0.3), (cx - 5.4, cy + 1.15), (cx + 5.0, cy + 1.15),
+                       (cx + 5.0, cy - 2.6), (cx + 1.0, cy - 2.6), (cx + 1.0, cy - 3.0), (cx + 5.4, cy - 3.0),
+                       (cx + 5.4, cy + 1.6), (cx - 5.4, cy + 1.6), (cx - 5.4, cy + 2.5)], ink))
+    elif k.label:
+        g.append(text(cx, cy + 1.05, k.label, 3.0, ink))
+    elif k.plain is not None and k.plain != 'space':
+        lat0, lat1, cyr0, cyr1, letter = key_labels(k, m)
+        lat0, lat1, cyr0, cyr1 = [A8_SHOW.get(s, s) for s in (lat0, lat1, cyr0, cyr1)]
+        hi, lo = y0 + 9.6, y0 + 15.8
+        if bds and not letter and (cyr1 or (lat1 and cyr0)):
+            # Четыре надписи: слева латиница, справа кириллица, Shift сверху
+            for s, tx, ty in ((lat1, cx - 3.9, hi), (lat0, cx - 3.9, lo), (cyr1, cx + 3.9, hi), (cyr0, cx + 3.9, lo)):
+                if s:
+                    g.append(text(tx, ty, s, 4.0, ink))
+        elif not bds and k.plain in A8_LATIN_TOP:
+            g.append(text(cx, hi, lat0, 4.6, ink))
+            g.append(text(cx, lo, cyr0, 4.6, ink))
+        else:
+            if cyr0 or lat1:
+                g.append(text(cx, hi, cyr0 or lat1, 4.6, ink))
+            g.append(text(cx, lo, lat0, 4.6, ink))
+    return g
+
+
+def well_path(rows):
+    """Контур колодца: ступени по правому и левому краю рядов"""
+    edge = []
+    for r, row in enumerate(rows):
+        left = next(k.w for k in row if k.id is None and k.label is None) if row[0].id is None else 0
+        edge.append((A8_LEFT + left * U, A8_LEFT + sum(k.w for k in row) * U))
+    margin = 0.9
+    y = [A8_TOP + r * U for r in range(len(rows) + 1)]
+    y[0] -= margin
+    y[-1] += margin
+    pts = [(edge[0][0] - margin, y[0]), (edge[0][1] + margin, y[0])]
+    for r in range(len(rows)):
+        pts.append((edge[r][1] + margin, y[r]))
+        pts.append((edge[r][1] + margin, y[r + 1]))
+    for r in reversed(range(len(rows))):
+        pts.append((edge[r][0] - margin, y[r + 1]))
+        pts.append((edge[r][0] - margin, y[r]))
+    return pts
+
+
+def build_8a(name, title, rows, mapfile, bds):
+    m = load_map(mapfile)
+    width, height = 358, 119
+    svg = ['<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
+           '<!-- Copyright (c) 2026 Mikhail Revzin. Licensed under CC BY-SA 4.0: '
+           'https://creativecommons.org/licenses/by-sa/4.0/ -->',
+           '<!-- Made by tools/pravetz-keyboard/make_keyboards.py: edit it, not this file -->',
+           '<svg xmlns="http://www.w3.org/2000/svg" width="%dmm" height="%dmm" viewBox="0 0 %d %d" '
+           'version="1.1">' % (width, height, width, height),
+           '<title>%s</title>' % esc(title),
+           '<rect x="0" y="0" width="%d" height="%d" rx="4" fill="%s"/>' % (width, height, A8['body']),
+           '<polygon points="%s" fill="%s" stroke="%s" stroke-width="0.4"/>'
+           % (' '.join('%.2f,%.2f' % p for p in well_path(rows)), A8['well'], A8['edge'])]
+    keys = ['// %s. Сделано tools/pravetz-keyboard/make_keyboards.py по %s' % (title, mapfile),
+            '// id: клавиша хоста; /S - с Shift рисунка, /R - в кириллице; $XX - код как есть;',
+            '// caps, cl, reset, f1, f2 - клавиши этих функций']
+    for r, row in enumerate(rows):
+        x = A8_LEFT
+        y = A8_TOP + r * U
+        for k in row:
+            w = k.w * U
+            if k.id is None and k.label is None:
+                x += w
+                continue
+            body = a8_key(x, y, w, k, m, bds)
+            keys.extend(key_table(k))
+            svg.append(('<g id="%s">%s</g>' % (k.id, ''.join(body))) if k.id else '<g>%s</g>' % ''.join(body))
+            x += w
+    # Лампы как на фото: две справа от верхнего ряда, питание у нижнего
+    for lid, color, lx, ly in (('led_caps', '#e0b020', 16.3, 0.45), ('led_cl', '#20b080', 17.14, 0.45),
+                               (None, '#d02020', 15.68, 4.5)):
+        px, py = A8_LEFT + lx * U, A8_TOP + ly * U
+        svg.append('<circle cx="%.1f" cy="%.1f" r="3.4" fill="#f4eee2"/>' % (px, py))
+        svg.append('<circle cx="%.1f" cy="%.1f" r="2.8" fill="#3a3028"/>' % (px, py))
+        svg.append('<circle%s cx="%.1f" cy="%.1f" r="2.3" fill="%s"/>'
+                   % (' id="%s"' % lid if lid else '', px, py, color))
+    svg.append('</svg>')
+    write_svg(name, svg)
     open(os.path.join(PRAVETZ, name + '.keys'), 'w', encoding='utf-8', newline='\n').write('\n'.join(keys) + '\n')
 
 
@@ -316,9 +479,9 @@ def host_name(h):
 
 LEDS_SU = [(None, '#40d040', 'Power'), ('led_caps', '#f0d020', 'Caps'), ('led_cl', '#40d040', 'C/L')]
 build('pravetz-8a-gost', 'Клавиатура Правец-8А (СССР, ГОСТ)', pc_keys(), 'pravetz-8a-gost.map', 'pc', 'right', LEDS_SU)
-build('pravetz-8a-bds', 'Клавиатура Правец-8С (БДС)', pc_keys(), 'pravetz-8a-bds.map', 'pc', 'right', LEDS_SU)
-build('pravetz-8a-yavert', 'Клавиатура Правец-8А (ЯВЕРТЪ)', bg_keys(), 'pravetz-8a-yavert.map', 'bg', 'top',
-      [('led_caps', '#e0b020', 'Caps'), ('led_cl', '#20b080', 'C/L'), (None, '#d02020', '')])
+build('pravetz-8c-bds', 'Клавиатура Правец-8С (БДС)', pc_keys(), 'pravetz-8a-bds.map', 'pc', 'right', LEDS_SU)
+build_8a('pravetz-8a-bds', 'Клавиатура Правец-8А (БДС)', a8_keys(True), 'pravetz-8a-bds.map', True)
+build_8a('pravetz-8a-yavert', 'Клавиатура Правец-8А (ЯВЕРТЪ)', a8_keys(), 'pravetz-8a-yavert.map', False)
 build('pravetz-82', 'Клавиатура Правец-82 (ранняя)', p82_keys(), 'pravetz-82.map', '82', 'top',
       [('led_cl', '#f0a020', 'ЛАТ')], alias82=True)
 build('pravetz-82-late', 'Клавиатура Правец-82 (поздняя)', p82_keys(True), 'pravetz-82.map', '82', 'top',
@@ -399,7 +562,7 @@ def build_8d():
             svg.append('<g id="%s">%s</g>' % (kid, ''.join(g)))
             x += w
     svg.append('</svg>')
-    open(os.path.join(PRAVETZ, 'files', 'pravetz-8d.svg'), 'w', encoding='utf-8', newline='\n').write('\n'.join(svg) + '\n')
+    write_svg('pravetz-8d', svg)
 
 
 build_8d()

@@ -1,0 +1,5 @@
+// Для тестов: Правец-8С с раскладкой БДС (своя таблица через @include)
+@extends pravetz/Pravetz-8C.cfg
+@version Правец-8С (БДС)
+
+keyboard:map = pravetz-8c-bds.map
