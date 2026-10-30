@@ -11,6 +11,7 @@
 
 #include "emulator/emulator.h"
 #include "emulator/disasm_buffer.h"
+#include "debugutil.h"
 
 class CellEditor;
 
@@ -34,8 +35,8 @@ public:
     unsigned int cursor_address() const;
     //Memory may have changed: the bytes are read again
     void refresh_memory();
-    //The same while the machine runs: repainted only when the bytes have
-    //changed, and not under the line being edited
+    //The same while the machine runs: only the rows that changed are
+    //repainted, and not under the line being edited
     void follow_memory();
     //The addresses the backward disassembly trusts: where PC has been
     void update_anchors();
@@ -81,6 +82,8 @@ private:
     CellEditor * m_editor;
     int m_edit_line;
     unsigned int m_shown_cursor;    //What cursor_moved() said last
+    PaintedRows m_painted;
+    PaintedRows m_painted_arrows;   //The arrows' strip as one row
 
     int rows() const;
     int bytes_chars() const;
@@ -90,6 +93,13 @@ private:
     int x_text() const;
     QString bytes_text(const DisasmBuffer::Line &l) const;
     int row_at(int y) const;
+    //What a row shows and what the arrows' strip shows, for PaintedRows
+    QString row_key(int row, unsigned int pc) const;
+    QString arrows_key(const std::vector<DisasmBuffer::Arrow> &arrows, int pc_row) const;
+    //The buffer line of PC among the rows shown, -1 when it is not there
+    int pc_row(unsigned int pc) const;
+    //Repaints the rows and the arrows that changed since they were painted
+    void repaint_changed();
 
     //Runs a change of the buffer keeping the top and the cursor on their
     //addresses: lines added above move them, lines dropped may lose them

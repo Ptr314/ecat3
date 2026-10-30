@@ -5,6 +5,10 @@
 
 #pragma once
 
+#include <vector>
+
+#include <QPaintEvent>
+#include <QRegion>
 #include <QString>
 #include <QStringList>
 
@@ -54,3 +58,31 @@ inline QStringList split_words(const QString &s)
     return s.split(' ', QString::SkipEmptyParts);
 #endif
 }
+
+//What each row of a view was last painted with. The 200 ms timer refreshes the
+//views while the machine runs; repainting them whole every time costs more
+//than everything else the window does, so a refresh repaints only the rows
+//whose key (what the row shows, as a string) differs from the painted one.
+//A row counts as painted only when the paint covered it whole
+class PaintedRows
+{
+public:
+    void painted(const QPaintEvent *event, int row, const QRect &rect, const QString &key)
+    {
+        if (row >= (int)m_rows.size()) m_rows.resize(row + 1);
+        Row &r = m_rows[row];
+        r.valid = (QRegion(rect) - event->region()).isEmpty();
+        r.key = key;
+    }
+    bool same(int row, const QString &key) const
+    {
+        return row < (int)m_rows.size() && m_rows[row].valid && m_rows[row].key == key;
+    }
+
+private:
+    struct Row {
+        bool valid = false;
+        QString key;
+    };
+    std::vector<Row> m_rows;
+};

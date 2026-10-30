@@ -26,6 +26,28 @@ StackView::StackView(CPU * cpu, QWidget *parent):
     m_rh = dbg::row_height(fm);
     m_cw = dbg::text_width(fm, "0");
     setFocusPolicy(Qt::ClickFocus);
+    //Paints every pixel of itself: nothing beneath it needs painting first
+    setAttribute(Qt::WA_OpaquePaintEvent);
+}
+
+void StackView::refresh()
+{
+    unsigned int a;
+    if (!isVisible() || cpu == nullptr || !cpu->stack_address(0, a)) return;
+    const int n = height() / m_rh + 1;
+    for (int r = 0; r < n; r++)
+        if (!m_painted.same(r, row_key(r))) update(0, r * m_rh, width(), m_rh);
+}
+
+QString StackView::row_key(int row) const
+{
+    unsigned int sp, a;
+    if (!cpu->stack_address(0, sp) || !cpu->stack_address(row - center(), a)) return QString();
+    const unsigned int v = entry(a);
+    auto it = m_prev.find(a);
+    const bool changed = it != m_prev.end() && it->second != v;
+    return QString::number(view_base(cpu)) + ' ' + QString::number(addr_digits(sp, view_base(cpu))) + ' '
+           + QString::number(row - center()) + ' ' + QString::number(a) + ' ' + QString::number(v) + (changed ? " c" : "");
 }
 
 void StackView::set_cpu(CPU * c)
@@ -55,7 +77,7 @@ void StackView::mark_stop()
     }
 }
 
-void StackView::paintEvent(QPaintEvent *)
+void StackView::paintEvent(QPaintEvent *event)
 {
     QPainter p(this);
     const dbg::Colors c = dbg::colors(palette());
@@ -78,8 +100,11 @@ void StackView::paintEvent(QPaintEvent *)
     const int n = height() / m_rh + 1;
     for (int r = 0; r < n; r++) {
         const int i = r - center();
-        if (!cpu->stack_address(i, a)) continue;
         const int y = r * m_rh;
+        const QRect row(0, y, width(), m_rh);
+        if (!event->region().intersects(row)) continue;
+        m_painted.painted(event, r, row, row_key(r));
+        if (!cpu->stack_address(i, a)) continue;
         if (i == 0) {
             p.fillRect(0, y, width(), m_rh, c.pc_back);
             p.setPen(c.text);

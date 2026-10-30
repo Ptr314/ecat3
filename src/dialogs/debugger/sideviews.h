@@ -13,6 +13,7 @@
 #include <QWidget>
 
 #include "emulator/emulator.h"
+#include "debugutil.h"
 
 //An address of code with its instruction, as the listing writes them
 typedef std::function<QString(unsigned int)> CodeFormatter;
@@ -25,7 +26,8 @@ class StackView : public QWidget
 public:
     StackView(CPU * cpu, QWidget *parent);
     void set_cpu(CPU * cpu);
-    void refresh() { update(); }
+    //Repaints the rows that changed
+    void refresh();
     void mark_stop();
 
 signals:
@@ -46,6 +48,10 @@ private:
     //The value of the row under the point, if the stack has one there
     bool value_at(const QPoint &pos, unsigned int &value) const;
     int center() const { return (height() / m_rh) / 2; }
+
+    PaintedRows m_painted;
+    //What a row of the view shows, for PaintedRows
+    QString row_key(int row) const;
 };
 
 //The breakpoints of a processor. A double click shows one in the listing,

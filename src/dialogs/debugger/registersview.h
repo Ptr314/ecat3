@@ -13,6 +13,7 @@
 #include <QWidget>
 
 #include "emulator/emulator.h"
+#include "debugutil.h"
 
 class CellEditor;
 
@@ -61,6 +62,10 @@ private:
     int first_row() const;
     void commit_edit();
     void close_edit();
+
+    PaintedRows m_painted;
+    //What a row of the view shows, for PaintedRows
+    QString row_key(int row) const;
 };
 
 //The flags as a row of letters: the letter when set, a dash when clear. A
@@ -92,4 +97,7 @@ private:
 
     int cell_width(const std::string &name) const;
     int x_first() const;
+
+    PaintedRows m_painted;  //The whole line as one row
+    QString key() const;
 };
