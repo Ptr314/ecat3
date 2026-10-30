@@ -2672,7 +2672,7 @@
     <message>
         <location filename="../mainwindow.ui" line="161"/>
         <source>Persistence</source>
-        <translation>Послесвечене</translation>
+        <translation>Послесветене</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1055"/>

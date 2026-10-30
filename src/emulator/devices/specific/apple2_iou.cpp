@@ -205,8 +205,10 @@ unsigned Apple2IOU::get_value(unsigned address)
         return status(address);
     }
     if (a >= 0x60 && a < 0x70) {
-        // The Правец reads the code table flip-flop on D6 of any of them
-        const unsigned d6 = (m_pravetz && m_softsw) ? 0x40 : 0;
+        // The Правец reads the code table flip-flop on D6 of any of them,
+        // inverted: 1 in the 7-bit table. PARIS takes that for its proof of
+        // a Правец, and the ROM flashes punctuation only with D6 set
+        const unsigned d6 = (m_pravetz && !m_softsw) ? 0x40 : 0;
         const unsigned n = a & 7;
         bool b = false;
         if (n == 0) {

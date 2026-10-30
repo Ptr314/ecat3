@@ -1,1 +1,3 @@
+[iou.softsw] $01
+[keyboard.caps] $00
 [keyboard.cl] $00
