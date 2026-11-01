@@ -1,0 +1,24 @@
+[prn.sent] &00000000401
+[prn.output] &252
+[prn.sent] &00000000455
+[prn.sent] &00000001452
+[prn.overruns] &00000000000
+[prn.text] *
+IBM Personal Computer DOS Version  3.30 
+
+ Volume in drive A is 1          
+ Directory of  A:\
+
+COMMAND  COM    25307   3-17-87  12:00p
+FDISK    COM    48983   4-12-88   3:00a
+FORMAT   COM    11671   4-12-88   3:00a
+LABEL    COM     2346   4-12-88   3:00a
+PRINT    COM     9011   4-12-88   3:00a
+SELECT   COM     4132   4-12-88   3:00a
+SYS      COM     4725   4-12-88   3:00a
+TREE     COM     3540   4-12-88   3:00a
+FASTOPEN EXE     3888   4-12-88   3:00a
+XCOPY    EXE    11216   4-12-88   3:00a
+       10 File(s)         0 bytes free
+
+[mc1702.unsupported] &00000000000

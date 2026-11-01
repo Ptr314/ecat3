@@ -1,0 +1,2 @@
+[knmd.refused] &00000000000
+[cpu.unsupported] &00000000000

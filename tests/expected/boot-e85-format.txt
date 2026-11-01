@@ -1,0 +1,5 @@
+[fd0.deleted] &00000000014
+[fdc.formats] &00000000120
+[fdc.writes] &00000001441
+[fdc.unsupported] &00000000000
+[fd0.deleted] &00000000000
