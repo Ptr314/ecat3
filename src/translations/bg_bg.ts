@@ -494,7 +494,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+1204"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1205"/>
         <source>Disk image</source>
         <translation>Образ на диск</translation>
     </message>
@@ -511,24 +511,28 @@
     </message>
     <message>
         <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+640"/>
+        <location filename="../emulator/devices/specific/e85_knmd.cpp" line="+593"/>
         <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+563"/>
         <source>Hard disk image</source>
         <translation>Образ на твърд диск</translation>
     </message>
     <message>
         <location line="+7"/>
+        <location filename="../emulator/devices/specific/e85_knmd.cpp" line="+7"/>
         <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+7"/>
         <source>Hard disk writes</source>
         <translation>Запис на твърдия диск</translation>
     </message>
     <message>
         <location line="+3"/>
+        <location filename="../emulator/devices/specific/e85_knmd.cpp" line="+3"/>
         <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+3"/>
         <source>Into the image file</source>
         <translation>Във файла с образа</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../emulator/devices/specific/e85_knmd.cpp" line="+1"/>
         <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+1"/>
         <source>Into memory only, the image stays as it was</source>
         <translation>Само в паметта, образът не се променя</translation>
@@ -671,22 +675,26 @@
 <context>
     <name>DVKDW</name>
     <message>
+        <location filename="../emulator/devices/specific/e85_knmd.cpp" line="-512"/>
         <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-485"/>
         <source>Hard disk image file not found</source>
         <translation>Файлът с образа на твърдия диск не е намерен</translation>
     </message>
     <message>
         <location line="+9"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+9"/>
         <source>Unrecognized hard disk geometry</source>
         <translation>Неразпозната геометрия на твърдия диск</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+31"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+23"/>
         <source>Unsupported hard disk geometry</source>
         <translation>Неподдържана геометрия на твърдия диск</translation>
     </message>
     <message>
-        <location line="+537"/>
+        <location line="+559"/>
+        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+537"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Командата &apos;load&apos; изисква име на файл</translation>
     </message>
@@ -1146,6 +1154,22 @@
     </message>
 </context>
 <context>
+    <name>E85Display</name>
+    <message>
+        <location filename="../emulator/devices/specific/e85_video.cpp" line="+482"/>
+        <source>The video controller is expected in &apos;video&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>E85Kngmd</name>
+    <message>
+        <location filename="../emulator/devices/specific/e85_kngmd.cpp" line="+75"/>
+        <source>The controller chip is expected in &apos;fdc&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Emulator</name>
     <message>
         <location filename="../emulator/files.cpp" line="+40"/>
@@ -1239,7 +1263,7 @@
         <translation>Неизвестен тип файл</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+282"/>
+        <location filename="../emulator/emulator.cpp" line="+291"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройството &apos;system&apos; не е намерено в конфигурацията</translation>
     </message>
@@ -1607,7 +1631,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-1170"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1171"/>
         <source>Incorrect fdd list for</source>
         <translation>Некоректен списък с дискови устройства за</translation>
     </message>
@@ -1635,7 +1659,7 @@
         <translation>Непознат ред на пистите в образа</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+20"/>
         <source>Disk image file not found</source>
         <translation>Файлът с образа на диска не е намерен</translation>
     </message>
@@ -2099,7 +2123,7 @@
 <context>
     <name>MS7004</name>
     <message>
-        <location filename="../emulator/devices/specific/ms7004.cpp" line="+83"/>
+        <location filename="../emulator/devices/specific/ms7004.cpp" line="+104"/>
         <source>Unknown fks mode</source>
         <translation>Непознат режим fks (lamp или toggle)</translation>
     </message>
@@ -2130,7 +2154,7 @@
         <translation>Некоректна стойност във файла със съответствия</translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+51"/>
         <source>Key table entry is incorrect</source>
         <translation>Некоректен елемент в таблицата на клавишите</translation>
     </message>
@@ -2145,7 +2169,7 @@
         <translation>Повтарящ се елемент в таблицата на клавишите</translation>
     </message>
     <message>
-        <location line="+371"/>
+        <location line="+441"/>
         <source>Invalid key code</source>
         <translation>Некоректен код на клавиш</translation>
     </message>
@@ -2222,7 +2246,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1393"/>
+        <location filename="../mainwindow.cpp" line="+1396"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Стоп</translation>
@@ -2290,13 +2314,13 @@
     <message>
         <location line="+15"/>
         <location filename="../mainwindow.cpp" line="-902"/>
-        <location line="+2244"/>
+        <location line="+2246"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1886"/>
+        <location filename="../mainwindow.cpp" line="-1888"/>
         <source>On-screen keyboard</source>
         <translation>Екранна клавиатура</translation>
     </message>
@@ -2311,7 +2335,7 @@
         <translation>Картините, които програмата редува от кадър на кадър, се показват като равномерна смес, а не като трептене: всяка точка е средното между нейния цвят и предишния, различен от него</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Autosave</source>
         <translation>Автоматично запазване</translation>
     </message>
@@ -2379,7 +2403,7 @@
         <translation>Език</translation>
     </message>
     <message>
-        <location line="-369"/>
+        <location line="-372"/>
         <source>Exit</source>
         <translation>Изход</translation>
     </message>
@@ -2396,14 +2420,14 @@
     <message>
         <location filename="../mainwindow.cpp" line="-626"/>
         <location line="+47"/>
-        <location line="+1791"/>
+        <location line="+1792"/>
         <location line="+30"/>
         <location line="+43"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не е зареден&gt;</translation>
     </message>
     <message>
-        <location line="-1908"/>
+        <location line="-1909"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Отвори образ...</translation>
@@ -2426,13 +2450,13 @@
         <translation>Запиши във файл...</translation>
     </message>
     <message>
-        <location line="-125"/>
-        <location line="+78"/>
-        <location line="+1387"/>
+        <location line="-128"/>
+        <location line="+81"/>
+        <location line="+1388"/>
         <location line="+60"/>
         <location line="+79"/>
         <location line="+334"/>
-        <location line="+109"/>
+        <location line="+110"/>
         <location line="+62"/>
         <location line="+269"/>
         <location line="+25"/>
@@ -2443,7 +2467,7 @@
         <translation>Грешка</translation>
     </message>
     <message>
-        <location line="-2917"/>
+        <location line="-2919"/>
         <source>Failed to load language file for: </source>
         <translation>Грешка при зареждане на езиковия файл за: </translation>
     </message>
@@ -2526,7 +2550,7 @@
         <translation>Стартирай без дебъгване</translation>
     </message>
     <message>
-        <location line="+303"/>
+        <location line="+304"/>
         <source>All supported files</source>
         <translation>Всички поддържани файлове</translation>
     </message>
@@ -2537,7 +2561,7 @@
         <translation>Запазени състояния</translation>
     </message>
     <message>
-        <location line="-1638"/>
+        <location line="-1639"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по подразбиране</translation>
@@ -2550,7 +2574,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+83"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+2211"/>
+        <location filename="../mainwindow.cpp" line="+2213"/>
         <source>Record video</source>
         <translation>Запиши видео</translation>
     </message>
@@ -2560,15 +2584,15 @@
         <translation>Спри записа на видео</translation>
     </message>
     <message>
-        <location line="-2189"/>
-        <location line="+1567"/>
-        <location line="+491"/>
+        <location line="-2191"/>
+        <location line="+1568"/>
+        <location line="+492"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation>Запис на видео</translation>
     </message>
     <message>
-        <location line="-2171"/>
+        <location line="-2173"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2604,7 +2628,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+2008"/>
+        <location line="+2010"/>
         <source>Path to ffmpeg</source>
         <translation>Път до ffmpeg</translation>
     </message>
@@ -2624,8 +2648,8 @@
         <translation>Записва се видео в </translation>
     </message>
     <message>
-        <location line="-556"/>
-        <location line="+585"/>
+        <location line="-557"/>
+        <location line="+586"/>
         <source>Finishing the video...</source>
         <translation>Видеото се довършва...</translation>
     </message>
@@ -2635,13 +2659,13 @@
         <translation>Видеото е запазено: </translation>
     </message>
     <message>
-        <location line="-2189"/>
+        <location line="-2191"/>
         <source>As on screen</source>
         <translation>Като на екрана</translation>
     </message>
     <message>
-        <location line="-532"/>
-        <location line="+642"/>
+        <location line="-535"/>
+        <location line="+645"/>
         <location line="+1"/>
         <location line="+908"/>
         <source>Turbo</source>
@@ -2755,7 +2779,7 @@
         <translation>Потребителят остави записа на серийния порт във файл.</translation>
     </message>
     <message>
-        <location line="+185"/>
+        <location line="+186"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>
     </message>
@@ -2802,7 +2826,7 @@
         <translation>Отвори образ на твърд диск</translation>
     </message>
     <message>
-        <location line="+37"/>
+        <location line="+38"/>
         <source>Save disk image to a file</source>
         <translation>Запази образа на диска във файл</translation>
     </message>
@@ -2873,7 +2897,7 @@
         <translation>Машината спря</translation>
     </message>
     <message>
-        <location line="+317"/>
+        <location line="+320"/>
         <source>Remembered disks</source>
         <translation>Запомнени дискове</translation>
     </message>
@@ -2925,7 +2949,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-442"/>
+        <location filename="../mainwindow.cpp" line="-445"/>
         <location line="+243"/>
         <source>Start recording</source>
         <translation>Започни запис</translation>
@@ -2999,12 +3023,12 @@
         <translation>Скриптове eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1732"/>
+        <location line="-1734"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мишката е прихваната от машината. Натиснете Ctrl-Alt или средния бутон, за да я освободите</translation>
     </message>
     <message>
-        <location line="+1775"/>
+        <location line="+1777"/>
         <source>Some lines were skipped:</source>
         <translation>Някои редове са пропуснати:</translation>
     </message>
@@ -4488,7 +4512,7 @@ Do you want to replace it?</source>
         <translation>Несъответствие в размера на изходния файл</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_dos33.cpp" line="+33"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_dos33.cpp" line="+34"/>
         <source>Cannot read VTOC</source>
         <translation>VTOC не може да бъде прочетен</translation>
     </message>
@@ -4513,7 +4537,7 @@ Do you want to replace it?</source>
         <translation>Неправилен номер на пътечка за съпоставяне</translation>
     </message>
     <message>
-        <location line="+491"/>
+        <location line="+501"/>
         <location line="+304"/>
         <source>Incorrect track/sector data</source>
         <translation>Неправилни данни за пътечка/сектор</translation>
@@ -4571,7 +4595,7 @@ Do you want to replace it?</source>
         <translation>Таблицата за разпределение на Onix не е намерена</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+37"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+44"/>
         <source>Unknown CP/M disk definition</source>
         <translation>Неизвестно описание на диск CP/M</translation>
     </message>
@@ -4616,7 +4640,7 @@ Do you want to replace it?</source>
         <translation>Неподдържан тип диск за CP/M</translation>
     </message>
     <message>
-        <location line="+584"/>
+        <location line="+582"/>
         <source>user number out of range</source>
         <translation>Номерът на потребителя е извън допустимите граници</translation>
     </message>
