@@ -4,6 +4,7 @@
 // Description: SCN2661 (КМ1818ВВ61) serial controller, asynchronous mode
 
 #include "scn2661.h"
+#include "emulator/state.h"
 #include "emulator/utils.h"
 
 #define CALLBACK_RXD    1
@@ -50,6 +51,9 @@ emulator::Result SCN2661::load_config(SystemData *sd)
     if (!res) return res;
     m_osc = read_confg_value(cd, "osc", false, (unsigned int)5068800);
     m_rx_delay_us = read_confg_value(cd, "rx_delay", false, (unsigned int)0);
+    m_baud = read_confg_value(cd, "baud", false, (unsigned int)9600);
+    //Not read_confg_value(): it lowers the case, and /dev/ttyUSB0 is another file then
+    m_line.open_configured(cd->get_parameter("port", false).value, m_baud);
     return emulator::Result::ok();
 }
 
@@ -65,6 +69,8 @@ void SCN2661::reset(bool cold)
     m_tsr_busy = false;
     m_tx_left = 0;
     m_rx_wait = 0;
+    m_line.clear_queue();
+    m_line_left = 0;
     update_lines();
 }
 
@@ -100,9 +106,17 @@ void SCN2661::transmit_done()
     m_tsr_busy = false;
     m_sent++;
     if ((m_command & CMD_LOCAL) != 0 && (m_command & CMD_ECHO) == 0) receive(m_tsr);
-    else i_txd.change(m_tsr);
+    else line_out(m_tsr);
     load_shifter();
     update_lines();
+}
+
+// A byte on the TXD pin. The short loop never gets here: it is not on the pin
+void SCN2661::line_out(uint8_t value)
+{
+    put(value);
+    m_line.write(value);
+    i_txd.change(value);
 }
 
 void SCN2661::receive(uint8_t value)
@@ -117,7 +131,7 @@ void SCN2661::receive(uint8_t value)
     m_status |= ST_RXRDY;
     m_rx_wait = (int64_t)((uint64_t)m_system_clock * m_rx_delay_us / 1000000);
     m_received++;
-    if (m_command & CMD_ECHO) i_txd.change(value);
+    if (m_command & CMD_ECHO) line_out(value);
     update_lines();
 }
 
@@ -130,6 +144,17 @@ void SCN2661::clock(unsigned int counter)
             update_lines();
         }
     }
+    // The receiver looks at the line once in a character time, and only when it
+    // can hold a byte: what the far end sends waits for it, and the host port
+    // is not read on every clock. The short loop takes RXD off the receiver
+    if (m_line_left > 0)
+        m_line_left -= counter;
+    else if ((m_command & CMD_RXEN) != 0 && (m_status & ST_RXRDY) == 0
+             && (m_command & (CMD_LOCAL | CMD_ECHO)) != CMD_LOCAL) {
+        m_line_left = (int64_t)char_ticks();
+        uint8_t b;
+        if (m_line.next(b, true)) receive(b);
+    }
     if (!m_tsr_busy) return;
     m_tx_left -= counter;
     if (m_tx_left <= 0) transmit_done();
@@ -137,7 +162,9 @@ void SCN2661::clock(unsigned int counter)
 
 void SCN2661::interface_callback(unsigned int callback_id, unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
 {
-    if (callback_id == CALLBACK_RXD) receive((uint8_t)(new_value & 0xFF));
+    //The short loop ignores the RXD pin; its own bytes come from transmit_done()
+    if (callback_id == CALLBACK_RXD && (m_command & (CMD_LOCAL | CMD_ECHO)) != CMD_LOCAL)
+        receive((uint8_t)(new_value & 0xFF));
 }
 
 // Table 27. TXRDY reads 0 in the loops; the pin goes on working
@@ -228,6 +255,21 @@ void SCN2661::set_value(unsigned int address, unsigned int value, bool force)
     if ((address & 1) == 0) set_value_word(address, value, force);
 }
 
+ConfigFields SCN2661::get_config_fields()
+{
+    //As with dl11: the choice is offered where the line goes out of the machine
+    ConfigFields r;
+    const std::string host_port = str_trim(cd->get_parameter("host_port", false).value);
+    if (!host_port.empty() && parse_numeric_value(host_port, 10) != 0) {
+        ConfigField f;
+        f.name = "port";
+        f.title = QT_TRANSLATE_NOOP("ConfigFields", "Serial port of the computer");
+        f.type = CONFIG_FIELD_STRING;
+        r.push_back(f);
+    }
+    return r;
+}
+
 std::vector<DeviceFieldInfo> SCN2661::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
@@ -237,23 +279,55 @@ std::vector<DeviceFieldInfo> SCN2661::get_device_fields()
     r.push_back({"sent",     "Characters sent", false});
     r.push_back({"received", "Characters received", false});
     r.push_back({"overruns", "Receiver overruns", false});
+    r.push_back({"connected", "1 when the line goes out to a host port", false});
+    r.push_back({"port",     "Name of the host port", false});
+    r.push_back({"queued",   "Bytes of a script waiting for the receiver", false});
+    add_output_fields(r);
     return r;
 }
 
 bool SCN2661::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
+    if (field == "port") {
+        out.text = m_line.port_name();
+        return true;
+    }
+    if (get_output_field(field, from, to, out)) return true;
+
     out.numeric = true;
     out.width = 8;
     if (field == "status")   { out.values.push_back(read_status()); return true; }
     if (field == "command")  { out.values.push_back(m_command);     return true; }
     if (field == "mode")     { out.values.push_back(m_mode[0]); out.values.push_back(m_mode[1]); return true; }
-    out.width = 16;
+    out.width = 32;
     if (field == "sent")     { out.values.push_back(m_sent);        return true; }
     if (field == "received") { out.values.push_back(m_received);    return true; }
     if (field == "overruns") { out.values.push_back(m_overruns);    return true; }
+    if (field == "connected") { out.values.push_back(m_line.connected() ? 1 : 0); return true; }
+    if (field == "queued")   { out.values.push_back((unsigned int)m_line.queued()); return true; }
     out.width = 0;
     out.numeric = false;
     return AddressableDevice::get_field(field, from, to, out);
+}
+
+std::vector<DeviceCommandInfo> SCN2661::get_device_commands()
+{
+    std::vector<DeviceCommandInfo> r = AddressableDevice::get_device_commands();
+    r.push_back({"connect",    "\"port\"", "Takes the line out to a host port: COM5, /dev/ttyUSB0"});
+    r.push_back({"disconnect", "",         "Takes the line off the host port"});
+    r.push_back({"send",       "\"text\"", "Bytes for the receiver (\\n, \\r, \\t, \\ooo)"});
+    r.push_back({"sendfile",   "\"file\"", "The contents of a file for the receiver"});
+    return r;
+}
+
+emulator::Result SCN2661::send_command(const std::string &command, const std::string &parameters)
+{
+    std::vector<std::string> p = split_params(parameters);
+    const std::string arg = p.empty() ? std::string() : p[0];
+
+    emulator::Result res;
+    if (m_line.command(command, arg, m_baud, sd, res)) return res;
+    return AddressableDevice::send_command(command, parameters);
 }
 
 void SCN2661::save_state(StateWriter &w)
@@ -271,6 +345,11 @@ void SCN2661::save_state(StateWriter &w)
     w.b("tsr_busy", m_tsr_busy);
     w.n64("tx_left", (uint64_t)m_tx_left);
     w.n64("rx_wait", (uint64_t)m_rx_wait);
+    w.n64("line_left", (uint64_t)m_line_left);
+    w.n("sent", m_sent);
+    w.n("received", m_received);
+    w.n("overruns", m_overruns);
+    m_line.save_queue(w);
 }
 
 emulator::Result SCN2661::load_state(const StateReader &r)
@@ -291,6 +370,11 @@ emulator::Result SCN2661::load_state(const StateReader &r)
     uint64_t left = 0;
     if (r.n64("tx_left", left)) m_tx_left = (int64_t)left;
     if (r.n64("rx_wait", left)) m_rx_wait = (int64_t)left;
+    if (r.n64("line_left", left)) m_line_left = (int64_t)left;
+    r.u("sent", m_sent);
+    r.u("received", m_received);
+    r.u("overruns", m_overruns);
+    m_line.load_queue(r);
     return emulator::Result::ok();
 }
 

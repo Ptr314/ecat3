@@ -1,0 +1,93 @@
+[prn.sent] &00000000400
+[prn.sent] &00000001652
+[prn.text] ..                       .oSNOWNOE MEN@ - pros wERSIQ 2.03
+
+                         |LEKTRONIKA
+                         pRI ZATRUDNENIQH NAVMITE pm.
+
+                    ->
+                          pOSADKA NA lUNU
+                          lABIRINT
+                          .Xonix
+                          .sAPER
+                          kARLIKI
+                          oBSLUVIWANIE DISKA/DISKETOW
+                          oBSLUVIWANIE FAJLOW
+                          oBSLUVIWANIE PE^ATI
+                          dOPOLNITELXNYE MEN@
+                          oBZOR SOSTOQNIQ
+
+
+
+
+    wYBERITE I NAVMITE isp:
+
+
+    w OBZORE SOSTOQNIQ SOOB]ENIJ NET.
+
+[prn.sent] &00000044366
+[prn.overruns] &00000000000
+[prn.text] obespe~enie
+
+                                   pwk "|lektronika ms 0585"
+
+
+
+
+
+        2.    .00118-01 33 01
+                                   operacionnaq sistema |ldos 1.0
+
+                                   operacionnyj komponent
+
+                                   rukowodstwo programmista
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+..
+[prn.received] &00000000400
+[prn.queued] &00000000002
+[prn.received] &00000000402
+[prn.queued] &00000000000
+[prn.overruns] &00000000000
