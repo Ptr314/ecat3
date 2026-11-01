@@ -90,6 +90,12 @@ private:
     unsigned int sectors_read;
     unsigned int sectors_written;
     bool intrq_forced;      //INTRQ held by Force Interrupt I3 until a $D0
+    //Force Interrupt I2: INTRQ on the next index pulse, with the pulses modelled
+    bool m_index_irq = false;
+    //Read Address walks the sectors of the track as the disk turns (rotate_id).
+    //Off: it always finds sector 1
+    bool m_rotate_id = false;
+    unsigned int m_id_sector = 1;
 
     //Delay of a register write, controller clocks (wd1793_DELAY_REGISTER)
     int m_register_delay = wd1793_DELAY_REGISTER;
@@ -142,6 +148,9 @@ public:
     uint8_t registers[5];
     WD1793(InterfaceManager *im, EmulatorConfigDevice *cd);
     bool get_busy() override;
+    //The drive the select lines name has a disk: the READY of a board that
+    //takes it from the drive and not from this chip
+    bool selected_ready();
     //For a board whose own register holds the processor until DRQ or INTRQ
     //(the B504 of the Поиск-1, port C4h): runs the controller forward to that
     //point, as "sync" does for a data register

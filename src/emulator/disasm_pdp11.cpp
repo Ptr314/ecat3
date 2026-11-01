@@ -40,9 +40,10 @@ uint16_t word_at(CommandBytes bytes, unsigned int index)
 
 } // namespace
 
-DisAsmPDP11::DisAsmPDP11(bool has_eis, Console console):
+DisAsmPDP11::DisAsmPDP11(bool has_eis, Console console, bool has_mfpt):
     has_eis(has_eis),
-    console(console)
+    console(console),
+    has_mfpt(has_mfpt)
 {
     // Opcode word plus up to two operand words
     max_command_length = 6;
@@ -268,6 +269,8 @@ unsigned int DisAsmPDP11::decode(CommandBytes bytes, unsigned int PC, unsigned i
             if (cmd == 2 || cmd == 6) out->flow = FLOW_RET;           // RTI, RTT
             else if (cmd == 3 || cmd == 4) out->flow = FLOW_CALL;     // BPT, IOT
         }
+        else if (cmd == 7 && has_mfpt)
+            mnemonic = "MFPT";
         else if (console_name != nullptr)
             mnemonic = console_name;
         else {

@@ -24,12 +24,13 @@ public:
 private:
     bool has_eis;
     Console console;
+    bool has_mfpt;
 
     std::string format_operand(unsigned int spec, CommandBytes bytes,
                                unsigned int PC, unsigned int & index);
 
 public:
-    DisAsmPDP11(bool has_eis = false, Console console = CONSOLE_NONE);
+    DisAsmPDP11(bool has_eis = false, Console console = CONSOLE_NONE, bool has_mfpt = false);
 
     // No table is needed, the file name is accepted and ignored
     virtual emulator::Result load_file(const std::string &file_name) override;

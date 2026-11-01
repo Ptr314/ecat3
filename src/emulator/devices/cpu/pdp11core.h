@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: PDP-11 compatible CPU core (К1801ВМ1, К1801ВМ2, КМ1801ВМ3)
+// Description: PDP-11 compatible CPU core (К1801ВМ1, К1801ВМ2, КМ1801ВМ3, КМ1811ВМ1)
 
 #pragma once
 
@@ -24,6 +24,11 @@ protected:
     // пультовый режим (теневая память по SEL, страница HPAR). Всё это - в
     // pdp11core_vm3.cpp; у ВМ1 и ВМ2 ни одна из этих веток не работает
     bool vm3;
+    // КМ1811ВМ1 (DEC F-11) идёт теми же ветками: режимы, приоритет и диспетчер
+    // памяти у него те же. Отличия от ВМ3 проверяются этим признаком: нет
+    // теневого пульта и HPAR, нечётный адрес слова не прерывает, двойная
+    // ошибка - повторное прерывание со стеком в 0/2, есть MFPT
+    bool f11;
     uint16_t m_sp[4] = {};          // указатели стека режимов, кроме текущего
     // Стек пульта (R10 кристалла): им в пульте пользуются неявные обращения к
     // стеку - JSR, RTS, RTI, вход в пульт. Явный SP в команде пульта - SP ядра
@@ -73,6 +78,33 @@ protected:
     bool vm3_interrupts(unsigned int & cycles);
     void vm3_reset();
     bool vm3_execute(uint16_t command, unsigned int & cycles);
+
+    // FP11 F-11 (pdp11core_fp.cpp). Без него, has_fp = false, коды 170000-177777
+    // резервные: автотест определяет так, установлен ли адаптер
+    struct fp_value {
+        bool sign;
+        int exp;                    // со смещением 128
+        uint64_t frac;              // скрытая единица в старшем разряде
+    };
+    uint16_t m_fac[6][4] = {};
+    uint16_t m_fps = 0, m_fec = 0, m_fea = 0;
+    uint16_t m_fp_pc = 0;
+    bool fp_execute(uint16_t command, unsigned int & cycles);
+    fp_value fp_unpack(const uint16_t * w) const;
+    fp_value fp_accumulator(unsigned int ac, bool dbl) const;
+    uint16_t fp_pack(fp_value v, uint16_t * w, bool dbl, bool round);
+    void fp_set_cc(const uint16_t * w);
+    void fp_copy_cc();
+    void fp_raise(uint16_t code);
+    uint16_t fp_address(unsigned int spec, unsigned int bytes, bool &immediate);
+    bool fp_read(unsigned int spec, bool dbl, uint16_t * w);
+    bool fp_write(unsigned int spec, bool dbl, const uint16_t * w);
+    bool fp_read_integer(unsigned int spec, bool is_long, int32_t &value);
+    bool fp_write_integer(unsigned int spec, int32_t value, bool is_long);
+    void fp_store_ac(unsigned int ac, const uint16_t * w, bool dbl);
+    fp_value fp_add(fp_value a, fp_value b);
+    fp_value fp_mul(const fp_value &a, const fp_value &b);
+    fp_value fp_div(const fp_value &a, const fp_value &b);
 
     // Пультовый режим ВМ1. Своего режима в кристалле нет: вход в пультовое
     // исключение - это цикл чтение-модификация-запись 0177716 с установкой
@@ -268,6 +300,11 @@ public:
     // VM3_STATE_WORDS слов
     enum { VM3_STATE_WORDS = 4 + 32 + 4 + 1 };
     bool is_vm3() const { return vm3; }
+    // Адаптер ПЗ F-11, задаётся конфигурацией
+    bool has_fp = false;
+    enum { FP_STATE_WORDS = 6 * 4 + 3 };
+    void get_fp(uint16_t * out) const;
+    void set_fp(const uint16_t * in);
     // Физический адрес виртуального - для отладчика, без аварий и отметок
     uint32_t vm3_peek_address(uint16_t va) { return vm3_translate(va, false, true); }
     void get_vm3(uint16_t * out) const;

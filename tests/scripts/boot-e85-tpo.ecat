@@ -1,0 +1,38 @@
+# Электроника МС 0585: ПРОС(Д) 1.8 запускает с дискет ТПО меню «Техническое
+# обслуживание», а из него «Проверку системного блока». Программа сама
+# проверяет машину: порт печати и порт коммуникаций в петле на всех скоростях,
+# команды ПЗ с исключениями, запись и чтение на двух НГМД. На экране итоговое
+# сообщение, по всем пунктам «ОШИБОК НЕТ»
+# @timeout 200
+MACHINE "computers/e85/MS0585.cfg"
+COMMAND fd0.load("software/e85/pros-d-1.8-system.dsk")
+WAIT _60000
+COMMAND fd0.eject()
+WAIT _3000
+COMMAND fd0.load("software/e85/tpo-1.dsk")
+WAIT _3000
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _30300
+COMMAND fd1.load("software/e85/tpo-2.dsk")
+WAIT _3000
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _40300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_f16
+WAIT _100
+KEYUP key_f16
+WAIT _90000
+LOGDEFS _16,_8
+LOG fdc.writes
+LOG prn.sent
+LOG comm.sent
+LOG comm.received
+SCREEN "../results/boot-e85-tpo.png"
+EXIT

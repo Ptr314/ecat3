@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2026 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: К1801ВМ3 part of the PDP-11 core: modes, MMU, halt mode
+// Description: К1801ВМ3 and КМ1811ВМ1 part of the PDP-11 core: modes, MMU, halt mode
 
 #include "pdp11core.h"
 
@@ -21,6 +21,14 @@
 // зависание магистрали берёт вектор 4 теневой памяти, ничего не кладя в стек.
 // Выход - RTI или RTT. Так это видно по тесту haltm.mac и по исходнику ядра
 // (hdl/vm3/vm3_wb.v реплики forth32: wb_adr[22] <= hmod & ~ba[15], parh_sel).
+//
+// КМ1811ВМ1 (F-11, f11) отличается по ТО1 Э-85, приложение 3, и ТО2, раздел
+// 4.2.2. Теневой памяти, HPAR и режима обслуживания нет, SR3 читается нулями
+// вне своих разрядов, нечётный адрес слова не прерывает, разряды 8-11 PSW не
+// хранятся, двойная ошибка - новое прерывание через 4 со стеком в 0/2. Его
+// пульт - микропрограмма ODT на линии 177560; пока её нет, HALT в режиме ядра
+// и запрос на линии останова просто останавливают процессор. Вектор команды
+// JMP R - 4, как у ВМ3: приложение 3 называет 10, но автотест ПЗУ ждёт 4.
 
 namespace {
     // Те же, что в pdp11core.cpp
@@ -36,6 +44,7 @@ namespace {
 #define SR0_RO      0020000         // запись в страницу только для чтения
 #define SR0_ABORTS  (SR0_NR | SR0_PL | SR0_RO)
 #define SR0_WRITE   0160401         // что программа пишет в SR0: аварии, обслуживание, включение
+#define SR0_WRITE_F11 0160001       // у F-11 разряды 7-12 резервные
 #define PDR_WRITE   0077416         // длина, направление, доступ
 #define PDR_W       0000100         // в страницу писали
 
@@ -136,14 +145,14 @@ bool pdp11core::vm3_register(uint32_t pa, bool write, bool byte, uint16_t &value
     else if (a >= 0172340 && a <= 0172357) { reg = &m_par[0][(a >> 1) & 7]; par = true; }
     else if (a >= 0177600 && a <= 0177617) { reg = &m_pdr[1][(a >> 1) & 7]; wmask = PDR_WRITE; }
     else if (a >= 0177640 && a <= 0177657) { reg = &m_par[1][(a >> 1) & 7]; par = true; }
-    else if ((a & ~1u) == 0177572) { reg = &m_sr0; wmask = SR0_WRITE; }
+    else if ((a & ~1u) == 0177572) { reg = &m_sr0; wmask = f11 ? SR0_WRITE_F11 : SR0_WRITE; }
     else if ((a & ~1u) == 0177574) { if (!write) value = 0; return true; }
     else if ((a & ~1u) == 0177576) { if (!write) value = m_sr2; return true; }
-    else if ((a & ~1u) == 0172512) { reg = &m_hpar; par = true; }
+    else if (!f11 && (a & ~1u) == 0172512) { reg = &m_hpar; par = true; }
     else if ((a & ~1u) == 0172516) {
         if (!write) {
-            // Неиспользуемые разряды кристалл читает единицами
-            value = (uint16_t)(0177717 | (m_sr3 & 060));
+            // Неиспользуемые разряды ВМ3 читает единицами, F-11 - нулями
+            value = (uint16_t)((f11 ? 0 : 0177717) | (m_sr3 & 060));
             return true;
         }
         reg = &m_sr3;
@@ -156,7 +165,7 @@ bool pdp11core::vm3_register(uint32_t pa, bool write, bool byte, uint16_t &value
     if (!write) {
         // PAR и HPAR без 22-разрядного режима отдают только 12 разрядов;
         // пульт этот режим включает сам
-        if (par && (m_sr3 & 020) == 0 && !context.halt_mode) cur &= 07777;
+        if (par && !f11 && (m_sr3 & 020) == 0 && !context.halt_mode) cur &= 07777;
         value = cur;
         return true;
     }
@@ -181,8 +190,11 @@ uint16_t pdp11core::vm3_read(uint16_t va, bool byte)
 {
     // Команда, у которой обращение уже сорвалось, магистраль больше не трогает
     if (m_abort) return 0;
-    // ВМ3, в отличие от ВМ1 и ВМ2, нечётный адрес слова не прощает
-    if (!byte && (va & 1)) { m_abort = true; return 0; }
+    // ВМ3, в отличие от ВМ1, ВМ2 и F-11, нечётный адрес слова не прощает
+    if (!byte && (va & 1)) {
+        if (!f11) { m_abort = true; return 0; }
+        va &= ~1u;
+    }
     const bool was = m_abort;
     m_abort = false;
     const uint32_t pa = vm3_translate(va, false);
@@ -197,7 +209,10 @@ uint16_t pdp11core::vm3_read(uint16_t va, bool byte)
 void pdp11core::vm3_write(uint16_t va, uint16_t value, bool byte)
 {
     if (m_abort) return;
-    if (!byte && (va & 1)) { m_abort = true; return; }
+    if (!byte && (va & 1)) {
+        if (!f11) { m_abort = true; return; }
+        va &= ~1u;
+    }
     const bool was = m_abort;
     m_abort = false;
     m_w_pdr = nullptr;
@@ -219,6 +234,7 @@ void pdp11core::vm3_write(uint16_t va, uint16_t value, bool byte)
 // пользователя
 void pdp11core::vm3_set_psw(uint16_t value)
 {
+    if (f11) value &= 0170377;
     const unsigned int old = vm3_sp_index(vm3_mode());
     const unsigned int now = vm3_sp_index((value >> 14) & 3);
     if (old != now) {
@@ -285,6 +301,22 @@ void pdp11core::vm3_trap(uint16_t vector)
             m_trap_depth++;
             vm3_trap(PDP11::V_MMU);
             m_trap_depth--;
+        } else if (f11) {
+            // Двойная ошибка F-11: новое прерывание через 4, стек в 0/2
+            // (ТО1, приложение 3, пункт 9)
+            m_space = 0;
+            const uint16_t pc4 = vm3_read(PDP11::V_BUS_ERROR, false);
+            const uint16_t psw4 = vm3_read((uint16_t)(PDP11::V_BUS_ERROR + 2), false);
+            m_space = -1;
+            vm3_set_psw((uint16_t)((psw4 & ~030000) | (old_mode << 12)));
+            context.R[PDP11::REG_SP] = 4;
+            m_in_trap = true;
+            push(old_psw);
+            push(old_pc);
+            m_in_trap = false;
+            m_abort = false;
+            m_mmu_abort = false;
+            context.R[PDP11::REG_PC] = pc4;
         } else
             vm3_enter_halt();
         return;
@@ -305,6 +337,11 @@ void pdp11core::vm3_enter_halt()
 {
     snapshot_history();
     m_step_pending = false;
+    // ODT F-11 нет: PC стоит на следующей команде, как и у него
+    if (f11) {
+        context.stop = true;
+        return;
+    }
     // Слово состояния пульта - 340, режим ядра: SP его команд - SP ядра
     const uint16_t psw = context.PSW;
     const uint16_t pc = context.R[PDP11::REG_PC];
@@ -387,6 +424,7 @@ void pdp11core::vm3_reset()
     for (int s = 0; s < 2; s++)
         for (int i = 0; i < 8; i++) { m_par[s][i] = 0; m_pdr[s][i] = 0; }
     m_sr0 = m_sr2 = m_sr3 = m_hpar = 0;
+    m_fps = m_fec = m_fea = 0;
     m_mmu_abort = false;
     m_space = -1;
     context.PSW = 0340;
@@ -400,6 +438,8 @@ void pdp11core::vm3_reset()
 bool pdp11core::vm3_execute(uint16_t command, unsigned int & cycles)
 {
     const bool kernel = context.halt_mode || vm3_mode() == 0;
+
+    if (has_fp && command >= 0170000) return fp_execute(command, cycles);
 
     switch (command) {
     case 0000000:                                       // HALT
@@ -430,6 +470,13 @@ bool pdp11core::vm3_execute(uint16_t command, unsigned int & cycles)
         return true;
     default:
         break;
+    }
+
+    // MFPT: номер типа процессора, у F-11 - 3
+    if (f11 && command == 0000007) {
+        cycles += C_ALU;
+        context.R[0] = 3;
+        return true;
     }
 
     // 000007-000077 у ВМ3 резервные: пультовых START, STEP и команд ВМ2 нет

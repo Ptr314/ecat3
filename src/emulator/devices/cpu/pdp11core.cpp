@@ -73,9 +73,10 @@ void pdp11core::set_reply_delay(unsigned int periods)
 }
 
 pdp11core::pdp11core(int family_type)
-    : has_eis(family_type == PDP11_FAMILY_1801VM2 || family_type == PDP11_FAMILY_1801VM3)
+    : has_eis(family_type == PDP11_FAMILY_1801VM2 || family_type == PDP11_FAMILY_1801VM3 || family_type == PDP11_FAMILY_F11)
     , has_console(family_type == PDP11_FAMILY_1801VM2)
-    , vm3(family_type == PDP11_FAMILY_1801VM3)
+    , vm3(family_type == PDP11_FAMILY_1801VM3 || family_type == PDP11_FAMILY_F11)
+    , f11(family_type == PDP11_FAMILY_F11)
     , vm1_console(family_type == PDP11_FAMILY_1801VM1)
     , is_virq(false)
     , virq_vector(0)
@@ -785,6 +786,9 @@ bool pdp11core::execute_double(uint16_t command, unsigned int & cycles)
     if (vm3 && m_abort) return true;
     m_dest = true;
     pdp11operand dst_op = decode_operand(command & 077, is_byte, cycles);
+    // F-11 берёт регистр-источник после разбора приёмника: MOV R0,(R0)+ пишет
+    // уже увеличенный R0, MOV PC,X(R0) - PC+4 (ТО1, приложение 3, пункты 1, 2)
+    if (f11 && src_op.is_reg) src = read_operand(src_op, is_byte);
 
     unsigned int kind = op_id & 07;             // 1 MOV, 2 CMP, 3 BIT, 4 BIC, 5 BIS, 6 ADD/SUB
     uint32_t mask = is_byte? 0xFFu : 0xFFFFu;
@@ -806,10 +810,12 @@ bool pdp11core::execute_double(uint16_t command, unsigned int & cycles)
     // УК-НЦ ROM fills areas with MOVB into 177024, and it is that read which
     // loads the background of the octet from the screen - without it the fill
     // wrote over stale dots. The ВМ1 chip model writes a byte without a read
-    // (DATO with WTBT); the read is done for every processor all the same
+    // (DATO with WTBT); the read is done for every processor all the same but
+    // the F-11, which ends MOV, CLR and SXT with a plain write (ТО1, appendix 3):
+    // MOVB into the data buffer of its floppy controller moves the pointer once
     uint16_t dst = 0;
     if (kind != 1) dst = read_operand(dst_op, is_byte);
-    else if (is_byte && !dst_op.is_reg) (void)read_operand(dst_op, true);
+    else if (is_byte && !dst_op.is_reg && !f11) (void)read_operand(dst_op, true);
 
     if (m_abort) return true;
 
@@ -1006,7 +1012,7 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
 
     // CLR does not read its destination, although the ВМ1 does; CLRB into
     // memory does, a read-modify-write cycle on both chips
-    uint16_t dst = (sop == 050 && !(is_byte && !op.is_reg))? 0 : read_operand(op, is_byte);
+    uint16_t dst = (sop == 050 && (f11 || !(is_byte && !op.is_reg)))? 0 : read_operand(op, is_byte);
     if (m_abort) return true;
 
     switch (sop) {
