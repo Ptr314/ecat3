@@ -1,0 +1,160 @@
+# Электроника МС 0585 с МС 1702: «PC Эмулятор» (EMUL.TSK) из меню Б, MS-DOS 3.30 с дискеты
+# на процессоре платы. BIOS платы: тест памяти, экран через видеопамять, клавиатура по
+# INT 9, таймер по INT 8. DIR, прокрутка на хосте по команде 5 порта 70h, CLS, VER;
+# DEBUG со второго дисковода рисует в режиме CGA 320x200; Ф17 возвращает в ПРОС
+# @timeout 200
+MACHINE "computers/e85/MS0585-1702.ext"
+COMMAND knmd.load("software/e85/pros-2.03-10m-pc.rd")
+COMMAND knmd.volatile(1)
+WAIT _45000
+COMMAND fd0.load("software/e85/eldos-msdos-3.30.dsk")
+COMMAND fd1.load("software/e85/eldos-msdos-utils.dsk")
+LOGDEFS _16,_8
+WAIT _2000
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_f16
+WAIT _100
+KEYUP key_f16
+WAIT _300
+WAIT _3000
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_f16
+WAIT _100
+KEYUP key_f16
+WAIT _300
+WAIT _4000
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_f16
+WAIT _100
+KEYUP key_f16
+WAIT _300
+WAIT _75000
+TYPE "\n"
+WAIT _500
+WAIT _4000
+TYPE "\n"
+WAIT _500
+WAIT _6000
+TYPE "dir\n"
+WAIT _500
+WAIT _8000
+SCREEN "../results/boot-e85-1702-dos-dir.png"
+TYPE "dir\n"
+WAIT _500
+WAIT _8000
+SCREEN "../results/boot-e85-1702-dos-scroll.png"
+TYPE "cls\n"
+WAIT _500
+WAIT _6000
+TYPE "ver\n"
+WAIT _500
+WAIT _5000
+SCREEN "../results/boot-e85-1702-dos-ver.png"
+TYPE "b:debug\n"
+WAIT _500
+WAIT _10000
+TYPE "a\n"
+WAIT _500
+WAIT _2000
+TYPE "mov ax,4\n"
+WAIT _500
+TYPE "int 10\n"
+WAIT _500
+TYPE "mov ax,b800\n"
+WAIT _500
+TYPE "mov es,ax\n"
+WAIT _500
+TYPE "xor di,di\n"
+WAIT _500
+TYPE "mov ax,e4e4\n"
+WAIT _500
+TYPE "mov cx,1000\n"
+WAIT _500
+TYPE "rep stosw\n"
+WAIT _500
+TYPE "int 3\n"
+WAIT _500
+TYPE "\n"
+WAIT _500
+WAIT _2000
+TYPE "g\n"
+WAIT _500
+WAIT _25000
+SCREEN "../results/boot-e85-1702-dos-cga.png"
+TYPE "q\n"
+WAIT _500
+WAIT _8000
+KEYDOWN key_f17
+WAIT _100
+KEYUP key_f17
+WAIT _300
+WAIT _12000
+LOG mc1702.reads
+LOG mc1702.writes
+LOG mc1702.vram_writes
+LOG mc1702.ints
+LOG mc1702.unsupported
+LOG cpu.timeouts
+SCREEN "../results/boot-e85-1702-dos-exit.png"
+EXIT

@@ -1,0 +1,3 @@
+[knmd.refused] &00000000000
+[knmd.unsupported] &00000000000
+[mc1702.unsupported] &00000000000

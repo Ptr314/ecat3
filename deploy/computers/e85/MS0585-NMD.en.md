@@ -66,6 +66,6 @@ formatting and checking the disk. At the highest speed that is less than a minut
 ## Not done
 
 - The service zone of a sector is not stored; the controller only counts such writes.
-- A 32 MB disk (8 heads, 511 cylinders) is set by the device parameters. The installer
-  recognises and formats it, but the installation was not run to the end.
-- A 5 MB disk (153 cylinders) is set the same way and was not tried.
+- There are no ready images for 32 MB (8 heads, 511 cylinders) and 5 MB (153 cylinders). Both
+  sizes are set by the device parameters, and PROS 2.03 installs on them from the floppies and
+  boots.

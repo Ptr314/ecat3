@@ -414,7 +414,7 @@
         <translation>int_opcode = $CD изисква свързан ~int_address</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/i8086.cpp" line="+113"/>
+        <location filename="../emulator/devices/cpu/i8086.cpp" line="+135"/>
         <source>Incorrect parameters for</source>
         <translation>Неправилно зададени параметри за</translation>
     </message>
@@ -1170,6 +1170,19 @@
     </message>
 </context>
 <context>
+    <name>E85Mc1702</name>
+    <message>
+        <location filename="../emulator/devices/specific/e85_mc1702.cpp" line="+58"/>
+        <source>The processor of the board is expected in &apos;cpu&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The test ROM is expected in &apos;test_rom&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Emulator</name>
     <message>
         <location filename="../emulator/files.cpp" line="+40"/>
@@ -1263,7 +1276,7 @@
         <translation>Неизвестен тип файл</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+291"/>
+        <location filename="../emulator/emulator.cpp" line="+292"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройството &apos;system&apos; не е намерено в конфигурацията</translation>
     </message>

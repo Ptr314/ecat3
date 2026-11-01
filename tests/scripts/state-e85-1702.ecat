@@ -1,0 +1,14 @@
+# Электроника МС 0585 с МС 1702: снимок посреди самопроверки платы (make-state-e85-1702.ecat).
+# Процессор платы должен пойти дальше: RES снят в снимке, а линия при восстановлении обратный
+# вызов не даёт. Счётчики доходят до 16384 записей, автотест заканчивается без ошибки BA1M
+# @timeout 60
+MACHINE "../tests/files/state-e85-1702.ecats.zip"
+LOGDEFS _16,_8
+WAIT _15000
+LOG mc1702.vram_writes
+LOG mc1702.writes
+LOG mc1702.nmis
+LOG mc1702.ints
+LOG mc1702.control
+LOG mc1702.unsupported
+EXIT

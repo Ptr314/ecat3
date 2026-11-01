@@ -20,4 +20,14 @@ WAIT _50
 COMMAND keyboard.host("6",0)
 WAIT _50
 LOG keyboard.last
+COMMAND keyboard.host("pause",1)
+WAIT _50
+COMMAND keyboard.host("pause",0)
+WAIT _50
+LOG keyboard.last
+COMMAND keyboard.host("print",1)
+WAIT _50
+COMMAND keyboard.host("print",0)
+WAIT _50
+LOG keyboard.last
 EXIT

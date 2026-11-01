@@ -10,6 +10,20 @@
 
 class i8086;
 
+// A board that serves the processor's I/O cycles itself and holds it meanwhile. The
+// core cannot stop in the middle of an instruction, so a write is latched and the
+// processor stops at the next instruction (gate_ready), and a read is told before
+// the instruction starts and is run when the data is there (gate_input).
+class I8086Gate
+{
+public:
+    virtual ~I8086Gate() {}
+    virtual bool gate_ready() = 0;
+    virtual bool gate_input(uint16_t port, bool word) = 0;
+    virtual uint16_t gate_in(uint16_t port, bool word) = 0;
+    virtual void gate_out(uint16_t port, uint16_t value, bool word) = 0;
+};
+
 // Library wrapper
 class I8086Core: public i8086core
 {
@@ -28,6 +42,7 @@ public:
     void     io_write16(uint16_t port, uint16_t value) override;
     unsigned mem_wait(uint32_t address, bool write, unsigned offset) override;
     uint8_t  int_ack() override;
+    uint8_t  mem_peek8(uint32_t address) override;
 };
 
 // Emulator device
@@ -37,7 +52,9 @@ public:
 // controller puts the vector out on its rising edge) and vector (8 bits, wired
 // to the controller's data output). The real chip runs two INTA cycles; the
 // i8259 here acknowledges on the first edge it sees, so one pulse is driven
-// and both cycles are timed
+// and both cycles are timed. reset (active high) holds the processor, and it starts
+// from FFFF0 when the line falls; unconnected, it is never held. The gate parameter
+// names an I8086Gate device, then all I/O goes through it
 class i8086 : public CPU
 {
     friend class I8086Core;
@@ -46,9 +63,12 @@ private:
     Interface i_nmi;
     Interface i_inta;
     Interface i_vector;
+    Interface i_reset;
 
     I8086Core * core;
     int m_family;
+    I8086Gate * m_gate = nullptr;
+    bool m_held = false;
 
     //Linear addresses of the last instructions executed, for LOG cpu.history
     enum { HISTORY_SIZE = 256 };
@@ -80,6 +100,7 @@ public:
     bool get_sp(unsigned int &sp) override;
     bool stack_address(int i, unsigned int &address) override;
     bool waiting() override;
+    bool halted() { return core->get_context()->halted; }
     std::vector<unsigned int> get_history() override;
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;

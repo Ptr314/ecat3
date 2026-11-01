@@ -11,6 +11,10 @@ using namespace I8086;
 
 #define CALLBACK_INTR   1
 #define CALLBACK_NMI    2
+#define CALLBACK_RESET  3
+
+// Clocks of a processor held by RES or by the gate, one pass of execute()
+#define GATE_CLOCKS     8
 
 //---------------------------  Library wrapper --------------------------------
 
@@ -42,23 +46,30 @@ void I8086Core::mem_write16(uint32_t address, uint16_t value)
 
 uint8_t I8086Core::io_read8(uint16_t port)
 {
+    if (emulator_device->m_gate != nullptr) return (uint8_t)emulator_device->m_gate->gate_in(port, false);
     return (uint8_t)emulator_device->mm->read_port(port);
 }
 
 void I8086Core::io_write8(uint16_t port, uint8_t value)
 {
-    emulator_device->mm->write_port(port, value);
+    if (emulator_device->m_gate != nullptr) emulator_device->m_gate->gate_out(port, value, false);
+    else emulator_device->mm->write_port(port, value);
 }
 
 //The ports of the machines are byte registers: a word is two of them
 uint16_t I8086Core::io_read16(uint16_t port)
 {
+    if (emulator_device->m_gate != nullptr) return emulator_device->m_gate->gate_in(port, true);
     const unsigned lo = emulator_device->mm->read_port(port) & 0xFF;
     return (uint16_t)(lo | ((emulator_device->mm->read_port((uint16_t)(port + 1)) & 0xFF) << 8));
 }
 
 void I8086Core::io_write16(uint16_t port, uint16_t value)
 {
+    if (emulator_device->m_gate != nullptr) {
+        emulator_device->m_gate->gate_out(port, value, true);
+        return;
+    }
     emulator_device->mm->write_port(port, value & 0xFF);
     emulator_device->mm->write_port((uint16_t)(port + 1), value >> 8);
 }
@@ -82,6 +93,11 @@ uint8_t I8086Core::int_ack()
     return v;
 }
 
+uint8_t I8086Core::mem_peek8(uint32_t address)
+{
+    return (uint8_t)emulator_device->peek_mem(address);
+}
+
 // ---------------------------  Emulator device --------------------------------
 
 i8086::i8086(InterfaceManager *im, EmulatorConfigDevice *cd, int family):
@@ -90,6 +106,7 @@ i8086::i8086(InterfaceManager *im, EmulatorConfigDevice *cd, int family):
     , i_nmi(this, im, 1, "nmi", MODE_R, CALLBACK_NMI)
     , i_inta(this, im, 1, "inta", MODE_W)
     , i_vector(this, im, 8, "vector", MODE_R)
+    , i_reset(this, im, 1, "reset", MODE_R, CALLBACK_RESET)
     , m_family(family)
 {
     core = new I8086Core(this, family);
@@ -108,6 +125,11 @@ emulator::Result i8086::load_config(SystemData *sd)
     try {
         //Wait states of every I/O cycle: the IBM PC adds one
         core->io_wait = read_confg_value(cd, "io_wait", false, (unsigned int)0);
+        const std::string gate = cd->get_parameter("gate", false).value;
+        if (!gate.empty()) {
+            m_gate = dynamic_cast<I8086Gate*>(im->dm->get_device_by_name(gate, false));
+            if (m_gate == nullptr) throw std::runtime_error(gate);
+        }
     } catch (std::exception &) {
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{CPU|" + std::string(QT_TRANSLATE_NOOP("CPU", "Incorrect parameters for")) + "} " + name);
@@ -159,6 +181,11 @@ void i8086::interface_callback(unsigned int callback_id, unsigned int new_value,
     case CALLBACK_NMI:
         core->set_nmi((new_value & 1) != 0);
         break;
+    case CALLBACK_RESET:
+        //Both edges: a chip in HLT leaves it at the start of RES
+        if (m_held != ((new_value & 1) != 0)) reset_mode = true;
+        m_held = (new_value & 1) != 0;
+        break;
     }
 }
 
@@ -178,6 +205,26 @@ unsigned int i8086::execute()
     if (held > 0) {
         core->idle(held);
         return held;
+    }
+
+    if (m_held) {
+        core->idle(GATE_CLOCKS);
+        return GATE_CLOCKS;
+    }
+    if (m_gate != nullptr) {
+        uint16_t port = 0;
+        bool word = false;
+        if (!m_gate->gate_ready()) {
+            core->idle(GATE_CLOCKS);
+            return GATE_CLOCKS;
+        }
+        if (core->next_input(port, word) && !m_gate->gate_input(port, word)) {
+            //The bus cycle has begun: an interrupt waits for the end of this IN,
+            //or the host's answer would go to the first IN of the handler
+            core->get_bus_state()->inhibit = true;
+            core->idle(GATE_CLOCKS);
+            return GATE_CLOCKS;
+        }
     }
 
     if (m_debug != DEBUG_OFF) debug_before();
@@ -366,6 +413,7 @@ void i8086::state_restored()
     i8086bus_state * b = core->get_bus_state();
     b->intr = i_intr.linked > 0 && (i_intr.value & 1) != 0;
     b->nmi_level = i_nmi.linked > 0 && (i_nmi.value & 1) != 0;
+    m_held = i_reset.linked > 0 && (i_reset.value & 1) != 0;
 }
 
 std::vector<DeviceFieldInfo> i8086::get_device_fields()

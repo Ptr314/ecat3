@@ -1,0 +1,23 @@
+# Электроника МС 0585 с МС 1702: автотест ПЗУ находит плату в позиции 5, читает её
+# тестовое ПЗУ BA1M и выполняет его на ЦП комплекса. Тест запускает самопроверку ПЗУ
+# платы: ЗОА и ЗОБ, инверсия данных, порты, HALT, NMI, INTR с вектором, две проверки
+# видеопамяти. Ошибка дала бы экран с кодом устройства 000061 и ожидание ПРОДОЛЖ, а
+# здесь машина сама доходит до Основного меню. Счётчики: 16384 записи в видеопамять,
+# один NMI, один INTR
+# @timeout 120
+MACHINE "computers/e85/MS0585-1702.ext"
+COMMAND knmd.load("software/e85/pros-2.03-10m-pc.rd")
+COMMAND knmd.volatile(1)
+WAIT _60000
+LOGDEFS _16,_8
+LOG mc1702.status
+LOG mc1702.control
+LOG mc1702.reads
+LOG mc1702.writes
+LOG mc1702.vram_writes
+LOG mc1702.nmis
+LOG mc1702.ints
+LOG mc1702.unsupported
+LOG cpu.timeouts
+SCREEN "../results/boot-e85-1702.png"
+EXIT

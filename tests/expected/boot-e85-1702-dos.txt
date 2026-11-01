@@ -1,0 +1,6 @@
+[mc1702.reads] &00000176535
+[mc1702.writes] &00000024134
+[mc1702.vram_writes] &00000310107
+[mc1702.ints] &00000001556
+[mc1702.unsupported] &00000000000
+[cpu.timeouts] &000007

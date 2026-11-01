@@ -84,6 +84,9 @@ public:
     //The second INTA cycle: the vector the interrupt controller puts on the bus
     virtual uint8_t  int_ack() = 0;
 
+    //A byte of memory, read without a bus cycle
+    virtual uint8_t  mem_peek8(uint32_t address) { (void)address; return 0xFF; }
+
     void reset();
     //One instruction, one iteration of a repeated string instruction, or the
     //entry into an interrupt. Returns the clocks it took, never 0
@@ -93,6 +96,10 @@ public:
 
     void set_nmi(bool level);
     void set_intr(bool level) { bus.intr = level; }
+
+    //The next execute() runs IN: its port and width. For a board that answers
+    //ports on its own time and must know before the instruction starts
+    bool next_input(uint16_t &port, bool &word);
 
     i8086context * get_context() { return &ctx; }
     i8086bus_state * get_bus_state() { return &bus; }
@@ -177,6 +184,7 @@ private:
     uint64_t eu_cycle_start();
     void     eu_cycle_end(uint64_t start, unsigned waits);
     uint8_t  inta_cycles();
+    uint8_t  stream_byte(unsigned i);
 
     void push(uint16_t v);
     uint16_t pop();
