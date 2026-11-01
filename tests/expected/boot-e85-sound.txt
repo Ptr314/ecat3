@@ -1,0 +1,19 @@
+=== Звонок и щелчок разрешены ===
+[keyboard.bells] &001
+[keyboard.clicks] &001
+=== Запрещены: команды принимаются, звука нет ===
+[keyboard.bell] &000
+[keyboard.click] &000
+[keyboard.bells] &001
+[keyboard.clicks] &001
+=== $23 с плохим байтом не разрешает ===
+[keyboard.bell] &000
+=== $23 и $1B с байтом громкости разрешают ===
+[keyboard.bells] &002
+[keyboard.clicks] &002
+=== Обе команды сразу: звонок раньше щелчка, оба слышны ===
+[keyboard.bells] &003
+[keyboard.clicks] &003
+=== $FD разрешает всё снова ===
+[keyboard.bell] &001
+[keyboard.click] &001

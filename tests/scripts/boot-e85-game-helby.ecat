@@ -103,5 +103,6 @@ KEYUP key_up
 WAIT _200
 LOGDEFS _16,_8
 LOG kbd.received
+LOG keyboard.clicks
 SCREEN "../results/boot-e85-game-helby.png"
 EXIT

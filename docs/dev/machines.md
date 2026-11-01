@@ -69,7 +69,8 @@ A DEC Pro 350 workalike. The documents are in `docs-external/E85` (the wiki pack
 - **Format data**: ТО5 says nothing of what goes into the data fields; as in Xhomer, the last byte of the buffer. The installer rewrites everything anyway. The service zone (16 bytes per sector, first byte through РАССЗ) is not stored; a write with a nonzero byte is counted in `knmd.unsupported`, 0 so far.
 - **ms7004.map** is the machine's own copy: F5 ДОП ВАРИАНТ, F6-F10 as on the drawing (ПРЕРЫВ ... ВЫХОД), F11 ПМ, F12 ИСП, Home/Ins/Del/End/PgUp/PgDn the edit block. `KEY` takes host names only: `KEY f7` is the host's F7, and `KEY key_f7` stops the script. A machine key by its name is `KEYDOWN key_f7` / `KEYUP key_f7`.
 - **`cpu.until` compares PC only**: with an MMU it also stops in the kernel at the same address. Choose an address the kernel does not run, such as its crash path.
-- **Not done**: the sound of the keyboard, which the games ask for by writing bell and click codes straight to 173500; 8274 and the printer port towards the outside; МС 1702; ODT; the F8 mark of `wd1793`.
+- **Sound is the piezo in МС7004**, `~sound` of `ms7004` on a `speaker`, from its firmware (`docs-external/DVK/ms7004.lst`). The ТО says a key press clicks; the ROM has two calls of the click routine, the repeat `$B4` (02B6) and the action of `$9F` (02E5), so a plain press is silent. ПРОС sends `$1B $82` and `$A1` at start: click on, bell off, so the `$A7` of "Вертолет" stays silent as it would there. "Лабиринт" and "Вертолет" send streams of `$9F`. `boot-e85-sound` drives the commands through 173500; a recorded WAV of the power-on signal has periods of 508.6 us, 1966 Hz. The ДВК machines use the same device with `~sound` unconnected.
+- **Not done**: 8274 and the printer port towards the outside; МС 1702; ODT; the F8 mark of `wd1793`.
 
 ## Floppy formats (HFE, Агат 140 KB)
 

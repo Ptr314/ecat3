@@ -27,6 +27,12 @@
 #define CMD_REPEAT_OFF  0xE1
 #define CMD_REPEAT_OFF2 0xD9
 #define CMD_REPEAT_ON   0xE3
+#define CMD_BELL        0xA7
+#define CMD_CLICK       0x9F
+#define CMD_BELL_OFF    0xA1
+#define CMD_CLICK_OFF   0x99
+#define CMD_BELL_ON     0x23        // с байтом 10000xxx
+#define CMD_CLICK_ON    0x1B
 #define KEYBOARD_ID     0x01        // номер прошивки в ответах
 
 #define CALLBACK_RXD    1
@@ -36,6 +42,16 @@
 #define LED_WAIT        0x01        // ОЖИД, P2.4
 #define LED_FKS         0x04        // ФКС, P2.6
 #define LED_LAT         0x10        // P1.5
+
+// Разряды байта действий 25H
+#define ACTION_BELL     0x02
+#define ACTION_CLICK    0x10
+
+// Времена по циклам прошивки, 46 циклов - 150 мкс: полупериод звонка 78 циклов
+// (00E8), щелчок 267 циклов (00D3)
+#define BELL_TOGGLES    254
+#define BELL_HALF_NS    254300
+#define CLICK_NS        870400
 
 // «Код хоста» клавиши, нажатой на рисунке: старше любого EmuKey
 #define KEY_ID_BASE     0x80000000u
@@ -55,8 +71,9 @@ MS7004::MS7004(InterfaceManager *im, EmulatorConfigDevice *cd):
       Keyboard(im, cd)
     , i_data(this, im, 8, "data", MODE_W)
     , i_rxd(this, im, 8, "rxd", MODE_R, CALLBACK_RXD)
+    , i_sound(this, im, 1, "sound", MODE_W)
 {
-    m_clocked = true;   // clock() отдаёт коды из очереди и ведёт автоповтор
+    m_clocked = true;   // clock() отдаёт коды из очереди, ведёт автоповтор и звук
 }
 
 emulator::Result MS7004::load_config(SystemData *sd)
@@ -73,6 +90,10 @@ emulator::Result MS7004::load_config(SystemData *sd)
     m_repeat_delay = (unsigned int)(clock * delay_ms / 1000);
     m_repeat_period = (unsigned int)(clock * period_ms / 1000);
     if (m_repeat_period == 0) m_repeat_period = 1;
+    m_bell_half = (unsigned int)(clock * BELL_HALF_NS / 1000000000);
+    m_click_pulse = (unsigned int)(clock * CLICK_NS / 1000000000);
+    if (m_bell_half == 0) m_bell_half = 1;
+    if (m_click_pulse == 0) m_click_pulse = 1;
 
     const std::string fks = cd->get_parameter("fks", false).value;
     if      (fks.empty())      m_fks_mode = FKS_NONE;
@@ -171,7 +192,15 @@ void MS7004::reset(const bool cold)
     m_inhibit = false;
     m_second = false;
     m_led_command = 0;
+    m_sound_command = 0;
     m_leds = 0;
+    m_bell_on = m_click_on = true;
+    m_actions = 0;
+    m_tone_left = 0;
+    m_level = false;
+    i_sound.change(0);
+    // При включении прошивка звенит дважды, пока ещё ничего не запрещено
+    if (cold) start_tone(BELL_TOGGLES * 2, m_bell_half);
 }
 
 // Таблица клавиш рисунка: `имя: код`, код - LK201, как в map
@@ -394,10 +423,17 @@ void MS7004::command(unsigned int code)
     // разбирается как параметр, а не как $89/$8B (0465)
     const bool second = m_second;
     const unsigned int led_command = m_led_command;
-    m_second = (code == 0x11 || code == 0x13 || code == 0x1B || code == 0x23);
+    const unsigned int sound_command = m_sound_command;
+    m_second = (code == 0x11 || code == 0x13 || code == CMD_CLICK_ON || code == CMD_BELL_ON);
     m_led_command = (code == CMD_LEDS_OFF || code == CMD_LEDS_ON) ? code : 0;
+    m_sound_command = (code == CMD_CLICK_ON || code == CMD_BELL_ON) ? code : 0;
     // $99 (запрет щелчка) прошивка разбирает раньше второго байта (044E)
     if (second && led_command != 0 && code != 0x99) led_byte(led_command, code);
+    // Байт громкости: 10000xxx, другой значения не имеет (05CD, 05E2)
+    if (second && sound_command != 0 && (code & 0xF8) == 0x80) {
+        if (sound_command == CMD_BELL_ON) m_bell_on = true;
+        else m_click_on = true;
+    }
     if (second && (code == CMD_INHIBIT || code == CMD_RESUME)) return;
 
     switch (code) {
@@ -411,6 +447,8 @@ void MS7004::command(unsigned int code)
         m_inhibit = false;
         m_repeat_on = true;
         m_leds = 0;         // 031B: лампы гаснут, ЛАТ тоже
+        m_actions = 0;      // 04F3
+        m_bell_on = m_click_on = true;
         break;
     case CMD_REQUEST_ID:
         send_locked(KEYBOARD_ID);
@@ -435,9 +473,59 @@ void MS7004::command(unsigned int code)
     case CMD_REPEAT_ON:
         m_repeat_on = true;
         break;
+    case CMD_BELL:
+        m_actions |= ACTION_BELL;
+        break;
+    case CMD_CLICK:
+        m_actions |= ACTION_CLICK;
+        break;
+    case CMD_BELL_OFF:
+        m_bell_on = false;
+        break;
+    case CMD_CLICK_OFF:
+        m_click_on = false;
+        break;
     default:
         break;
     }
+}
+
+void MS7004::start_tone(unsigned int toggles, unsigned int ticks)
+{
+    m_tone_left = toggles;
+    m_tone_ticks = ticks;
+    m_tone_wait = 0;
+}
+
+// Пока звучит одно, следующее ждёт в байте действий. За время двух $9F подряд на
+// линии щелчок успевает кончиться
+void MS7004::sound_clock(unsigned int counter)
+{
+    if (m_tone_left == 0) {
+        if (m_actions & ACTION_BELL) {
+            m_actions &= ~ACTION_BELL;
+            if (m_bell_on) {
+                m_bells++;
+                start_tone(BELL_TOGGLES, m_bell_half);
+            }
+        } else if (m_actions & ACTION_CLICK) {
+            m_actions &= ~ACTION_CLICK;
+            if (m_click_on) {
+                m_clicks++;
+                start_tone(2, m_click_pulse);
+            }
+        }
+        return;
+    }
+    // Команда может оказаться длиннее полупериода: длина звука от этого не меняется
+    while (counter >= m_tone_wait) {
+        counter -= m_tone_wait;
+        m_tone_wait = m_tone_ticks;
+        m_level = !m_level;
+        i_sound.change(m_level ? 1 : 0);
+        if (--m_tone_left == 0) return;
+    }
+    m_tone_wait -= counter;
 }
 
 void MS7004::key_down(unsigned int key)
@@ -459,6 +547,8 @@ void MS7004::key_up(unsigned int key)
 // Поток эмуляции: автоповтор и код на линию не чаще, чем раз в символ
 void MS7004::clock(unsigned int counter)
 {
+    if (m_tone_left != 0 || m_actions != 0) sound_clock(counter);
+
     if (m_repeat_armed) {
         compat_lock_guard lock(m_queue_mutex);
         if (m_repeat_armed) {
@@ -468,6 +558,7 @@ void MS7004::clock(unsigned int counter)
                 send_locked(CODE_REPEAT);
                 m_repeats++;
                 m_repeating = true;
+                m_actions |= ACTION_CLICK;  // 02B6
                 m_repeat_left = m_repeat_period;
             } else {
                 // Выключенный автоповтор: счётчик заворачивается (02A9)
@@ -507,6 +598,10 @@ std::vector<DeviceFieldInfo> MS7004::get_device_fields()
     r.push_back({"last",    "Последний отданный код LK201",               false});
     r.push_back({"queued",  "Сколько кодов ждут своей очереди на линии",  false});
     r.push_back({"dropped", "Сколько кодов не влезло в очередь",          false});
+    r.push_back({"bells",   "Сколько раз прозвенел звонок",                false});
+    r.push_back({"clicks",  "Сколько раз прозвучал щелчок",                false});
+    r.push_back({"bell",    "1, когда звонок разрешён",                    false});
+    r.push_back({"click",   "1, когда щелчок разрешён",                    false});
     r.push_back({"commands", "Сколько команд прислал терминал",            false});
     r.push_back({"command_log", "Последние 16 байтов от терминала",        false});
     r.push_back({"repeats", "Сколько кодов автоповтора ($B4) отдано",     false});
@@ -524,6 +619,10 @@ bool MS7004::get_field(const std::string &field, unsigned int from, unsigned int
     if (field == "last")    { out.values.push_back(m_last);    return true; }
     if (field == "dropped") { out.values.push_back(m_dropped); return true; }
     if (field == "commands") { out.values.push_back(m_commands); return true; }
+    if (field == "bells")    { out.values.push_back(m_bells);    return true; }
+    if (field == "clicks")   { out.values.push_back(m_clicks);   return true; }
+    if (field == "bell")     { out.values.push_back(m_bell_on ? 1 : 0);  return true; }
+    if (field == "click")    { out.values.push_back(m_click_on ? 1 : 0); return true; }
     if (field == "repeats") { out.values.push_back(m_repeats); return true; }
     if (field == "repeat")  { out.values.push_back(m_repeat_on ? 1 : 0); return true; }
     if (field == "inhibit") { out.values.push_back(m_inhibit ? 1 : 0); return true; }
@@ -583,6 +682,15 @@ void MS7004::save_state(StateWriter &w)
     w.u("wait", m_wait);
     w.n("leds", m_leds);
     w.b("fks", m_fks);
+    w.b("bell_on", m_bell_on);
+    w.b("click_on", m_click_on);
+    w.n("actions", m_actions);
+    w.n("tone_left", m_tone_left);
+    w.n("tone_wait", m_tone_wait);
+    w.n("tone_ticks", m_tone_ticks);
+    w.b("level", m_level);
+    w.n("bells", m_bells);
+    w.n("clicks", m_clicks);
 }
 
 emulator::Result MS7004::load_state(const StateReader &r)
@@ -600,7 +708,20 @@ emulator::Result MS7004::load_state(const StateReader &r)
     // Старый снимок поля не несёт: ФКС выключен, как при пуске
     m_fks = false;
     r.b("fks", m_fks);
+    r.b("bell_on", m_bell_on);
+    r.b("click_on", m_click_on);
+    // Старый снимок тоже не несёт, и звонка от сброса перед ним быть не должно
+    m_actions = m_tone_left = 0;
+    r.u("actions", m_actions);
+    r.u("tone_left", m_tone_left);
+    r.u("tone_wait", m_tone_wait);
+    r.u("tone_ticks", m_tone_ticks);
+    m_level = (i_sound.value & 1) != 0;
+    r.b("level", m_level);
+    r.u("bells", m_bells);
+    r.u("clicks", m_clicks);
     m_led_command = 0;
+    m_sound_command = 0;
     m_queue.clear();
     m_queued = false;
     m_shift_host = m_ctrl_host = false;
