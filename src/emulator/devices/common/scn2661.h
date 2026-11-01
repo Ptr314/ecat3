@@ -11,6 +11,12 @@
 // pointer steps between the two), command. The line to a device of the emulator
 // goes whole bytes, in the time of a character (~txd, ~rxd), as with dl11; the
 // requests are the chip's TXRDY and RXRDY pins (~txrdy, ~rxrdy, high when active).
+//
+// rx_delay, in microseconds, holds the RXRDY pin back from the status bit. On the
+// machine a character comes in the middle of an instruction, and that instruction
+// can still read the status before the interrupt is taken. Here it comes between
+// two instructions, so a loop reading the status behind a handler that takes the
+// character would never see it, without the delay.
 class SCN2661: public AddressableDevice
 {
 private:
@@ -32,6 +38,8 @@ private:
     int64_t m_tx_left = 0;
 
     unsigned int m_osc = 5068800;
+    unsigned int m_rx_delay_us = 0;
+    int64_t m_rx_wait = 0;          // clocks until the RXRDY pin follows the status
 
     unsigned int m_sent = 0;
     unsigned int m_received = 0;

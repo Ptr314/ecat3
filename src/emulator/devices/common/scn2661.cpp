@@ -49,6 +49,7 @@ emulator::Result SCN2661::load_config(SystemData *sd)
     emulator::Result res = AddressableDevice::load_config(sd);
     if (!res) return res;
     m_osc = read_confg_value(cd, "osc", false, (unsigned int)5068800);
+    m_rx_delay_us = read_confg_value(cd, "rx_delay", false, (unsigned int)0);
     return emulator::Result::ok();
 }
 
@@ -63,6 +64,7 @@ void SCN2661::reset(bool cold)
     m_thr_full = false;
     m_tsr_busy = false;
     m_tx_left = 0;
+    m_rx_wait = 0;
     update_lines();
 }
 
@@ -79,7 +81,7 @@ uint64_t SCN2661::char_ticks() const
 void SCN2661::update_lines()
 {
     const unsigned int tx = ((m_command & CMD_TXEN) != 0 && !m_thr_full) ? 1 : 0;
-    const unsigned int rx = (m_status & ST_RXRDY) ? 1 : 0;
+    const unsigned int rx = ((m_status & ST_RXRDY) != 0 && m_rx_wait == 0) ? 1 : 0;
     if ((i_txrdy.value & 1) != tx || i_txrdy.value > 1) i_txrdy.change(tx);
     if ((i_rxrdy.value & 1) != rx || i_rxrdy.value > 1) i_rxrdy.change(rx);
 }
@@ -113,6 +115,7 @@ void SCN2661::receive(uint8_t value)
     }
     m_rx = value;
     m_status |= ST_RXRDY;
+    m_rx_wait = (int64_t)((uint64_t)m_system_clock * m_rx_delay_us / 1000000);
     m_received++;
     if (m_command & CMD_ECHO) i_txd.change(value);
     update_lines();
@@ -120,6 +123,13 @@ void SCN2661::receive(uint8_t value)
 
 void SCN2661::clock(unsigned int counter)
 {
+    if (m_rx_wait > 0) {
+        m_rx_wait -= counter;
+        if (m_rx_wait <= 0) {
+            m_rx_wait = 0;
+            update_lines();
+        }
+    }
     if (!m_tsr_busy) return;
     m_tx_left -= counter;
     if (m_tx_left <= 0) transmit_done();
@@ -260,6 +270,7 @@ void SCN2661::save_state(StateWriter &w)
     w.b("thr_full", m_thr_full);
     w.b("tsr_busy", m_tsr_busy);
     w.n64("tx_left", (uint64_t)m_tx_left);
+    w.n64("rx_wait", (uint64_t)m_rx_wait);
 }
 
 emulator::Result SCN2661::load_state(const StateReader &r)
@@ -279,6 +290,7 @@ emulator::Result SCN2661::load_state(const StateReader &r)
     r.b("tsr_busy", m_tsr_busy);
     uint64_t left = 0;
     if (r.n64("tx_left", left)) m_tx_left = (int64_t)left;
+    if (r.n64("rx_wait", left)) m_rx_wait = (int64_t)left;
     return emulator::Result::ok();
 }
 

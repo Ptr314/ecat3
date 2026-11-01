@@ -1,0 +1,25 @@
+# Электроника МС 0585: «Посадка на Луну» на ПРОС 2.03. Рельеф, корабль и приборы рисует
+# векторный движок НВ1, корабль стирается и рисуется заново исключающим ИЛИ
+# @timeout 120
+MACHINE "computers/e85/MS0585-NMD.ext"
+COMMAND knmd.load("software/e85/pros-2.03-10m.rd")
+COMMAND knmd.volatile(1)
+WAIT _45000
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_f16
+WAIT _100
+KEYUP key_f16
+WAIT _300
+WAIT _11000
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _300
+WAIT _7000
+LOGDEFS _16,_8
+LOG video.vectors
+SCREEN "../results/boot-e85-game-lander.png"
+EXIT
