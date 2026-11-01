@@ -1,0 +1,78 @@
+# Электроника МС 0585: установка ПРОС 2.03 на чистый винчестер с пяти дискет. Программа
+# установки сама узнаёт число поверхностей (читает поверхности 4-7 и размечает их),
+# размечает 306 цилиндров, пишет и читает все секторы, создаёт файловую систему и
+# копирует систему. Затем машина загружается с этого диска без дискет. Запись идёт в
+# память: файл e85-blank.rd - один нулевой сектор, накопитель продолжает его нулями
+# @timeout 240
+MACHINE "computers/e85/MS0585-NMD.ext"
+COMMAND knmd.volatile(1)
+COMMAND knmd.load("../tests/files/e85-blank.rd")
+COMMAND fd0.load("software/e85/pros-2.03-1-system.dsk")
+WAIT _60000
+KEYDOWN key_f16
+WAIT _100
+KEYUP key_f16
+WAIT _300
+WAIT _15000
+COMMAND fd1.load("software/e85/pros-2.03-2-regim.dsk")
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _300
+# Дата и время
+WAIT _15000
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _300
+# Разметка, запись и проверка диска; затем вопрос о типе клавиатуры
+WAIT _700000
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _300
+WAIT _80000
+COMMAND fd1.eject()
+WAIT _3000
+COMMAND fd1.load("software/e85/pros-2.03-3-program.dsk")
+WAIT _3000
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _300
+WAIT _70000
+COMMAND fd1.eject()
+WAIT _3000
+COMMAND fd1.load("software/e85/pros-2.03-4-bibliot.dsk")
+WAIT _3000
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _300
+WAIT _70000
+COMMAND fd1.eject()
+WAIT _3000
+COMMAND fd1.load("software/e85/pros-2.03-5-utilit.dsk")
+WAIT _3000
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _300
+WAIT _70000
+LOGDEFS _16,_8
+LOG knmd.geometry
+LOG knmd.formats
+LOG knmd.reads
+LOG knmd.writes
+LOG knmd.refused
+LOG knmd.unsupported
+LOG fdc.reads
+SCREEN "../results/slow-e85-install-done.png"
+COMMAND fd0.eject()
+COMMAND fd1.eject()
+RESET cold
+WAIT _60000
+LOG knmd.reads
+LOG knmd.writes
+SCREEN "../results/slow-e85-install.png"
+EXIT

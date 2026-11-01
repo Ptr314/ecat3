@@ -2533,7 +2533,8 @@ void MainWindow::hdd_open(unsigned int n)
 
     QFileInfo fi(file_name);
     const std::string arg = format_script_arg(fi.absoluteFilePath().toStdString());
-    emulator::Result res = hdds[n]->send_command("load", arg);
+    emulator::Result res = emulator::Result::ok();
+    e->invoke([&]() { res = hdds[n]->send_command("load", arg); });
     if (!res)
         QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
     else {
@@ -2547,7 +2548,7 @@ void MainWindow::hdd_open(unsigned int n)
 
 void MainWindow::hdd_eject(unsigned int n)
 {
-    hdds[n]->send_command("eject", "");
+    e->invoke([&]() { hdds[n]->send_command("eject", ""); });
     e->record_command(hdds[n]->name, "eject", "");
     disk_changed(hdds[n]);
     hdd_show(n);
@@ -2556,7 +2557,7 @@ void MainWindow::hdd_eject(unsigned int n)
 void MainWindow::hdd_wp(unsigned int n)
 {
     const bool on = hdd_menu[n]->actions().at(3)->isChecked();
-    hdds[n]->send_command("protect", on?"1":"0");
+    e->invoke([&]() { hdds[n]->send_command("protect", on?"1":"0"); });
     e->record_command(hdds[n]->name, "protect", on?"1":"0");
     disk_changed(hdds[n]);
 }

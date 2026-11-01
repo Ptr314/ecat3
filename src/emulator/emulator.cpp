@@ -116,6 +116,7 @@
 #include "emulator/devices/specific/e85_comm.h"
 #include "emulator/devices/specific/e85_video.h"
 #include "emulator/devices/specific/e85_kngmd.h"
+#include "emulator/devices/specific/e85_knmd.h"
 #include "emulator/devices/cpu/i8051.h"
 #include "emulator/devices/specific/dvk_panel.h"
 #include "emulator/devices/specific/dvk_kcgd.h"
@@ -2681,6 +2682,7 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("e85-video", create_e85_video);
     dm->register_device("e85-display", create_e85_display);
     dm->register_device("e85-kngmd", create_e85_kngmd);
+    dm->register_device("e85-knmd", create_e85_knmd);
     dm->register_device("i8051", create_i8051);
     dm->register_device("register", create_register);
     dm->register_device("mux", create_mux);

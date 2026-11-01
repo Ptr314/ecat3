@@ -132,6 +132,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/e85_comm.h emulator/devices/specific/e85_comm.cpp
     emulator/devices/specific/e85_video.h emulator/devices/specific/e85_video.cpp
     emulator/devices/specific/e85_kngmd.h emulator/devices/specific/e85_kngmd.cpp
+    emulator/devices/specific/e85_knmd.h emulator/devices/specific/e85_knmd.cpp
     emulator/devices/specific/dvk_panel.h emulator/devices/specific/dvk_panel.cpp
     emulator/devices/specific/dvk_kcgd.h emulator/devices/specific/dvk_kcgd.cpp
     emulator/devices/specific/dvk_kmd.h emulator/devices/specific/dvk_kmd.cpp
