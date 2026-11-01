@@ -1,0 +1,4 @@
+[fdc.writes] &00000000002
+[fd0.deleted] &00000000014
+[mc1702.unsupported] &00000000000
+[knmd.refused] &00000000000

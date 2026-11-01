@@ -462,6 +462,8 @@ void WD1793::ExecuteCommand()
         if (sector_size > 0 && head_cylinder() != registers[wd1793_REG_TRACK]) sector_size = FDD_SEEK_NO_SECTOR;
         if ((sector_size > 0) && !drives[selected_drive]->is_protected())
         {
+            //a0 writes the deleted data mark, and a plain write takes it away
+            drives[selected_drive]->set_sector_deleted((registers[4] & wd1793_PARAM_a0) != 0);
             delay = wd1793_DELAY_NEXT_BYTE;
             command = wd1793_COMMAND_WRITE_BYTE;
             bytes = 0;
@@ -573,6 +575,8 @@ void WD1793::ExecuteCommand()
                 SetTypeIIFlags();
                 ClearFlag(wd1793_FLAG_PROTECTED);
                 ClearFlag(wd1793_FLAG_DATA_TYPE);
+                //The record type: the data are there all the same
+                if (drives[selected_drive]->is_sector_deleted()) SetFlag(wd1793_FLAG_DATA_TYPE);
                 SetINTRQ();
                 command = 0;
             };
@@ -624,7 +628,8 @@ void WD1793::track_byte(uint8_t value)
             const unsigned size = 128u << (m_wt_id[3] & 3);
             const int image = drives[selected_drive]->SeekSector(head_cylinder(), m_wt_id[2]);
             m_wt_write = image == (int)size;
-            if (!m_wt_write) note_unsupported("wd1793: Write Track, a sector the image has not");
+            if (m_wt_write) drives[selected_drive]->set_sector_deleted(value == 0xF8);
+            else note_unsupported("wd1793: Write Track, a sector the image has not");
             m_wt_state = 2;
             m_wt_left = size;
         }

@@ -31,6 +31,7 @@
 #define wd1793_PARAM_m          0x10
 #define wd1793_PARAM_h          0x08
 #define wd1793_PARAM_V          0x04
+#define wd1793_PARAM_a0         0x01
 
 //задержка записи значения в регистр
 //Если 0 - эмулятор не проходит некоторые тесты

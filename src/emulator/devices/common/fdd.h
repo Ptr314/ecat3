@@ -14,6 +14,8 @@
 #include "libs/mfm_formats.h"
 #include "libs/mfm_tools.h"
 
+namespace dsk_tools { struct HfeImage; }
+
 #define FDD_STREAM_PLAIN    0
 #define FDD_STREAM_MFM      1
 #define FDD_STREAM_HEADERS  2
@@ -70,6 +72,13 @@ private:
 
     AgatAIMCodes aim_codes;
 
+    // Deleted data marks of a sector image, a byte per sector in the order of
+    // the image. Empty: the disk has none, which is every .dsk
+    std::vector<uint8_t> m_deleted;
+    int sector_index(int track, int side, int sector);
+    emulator::Result sectors_from_hfe(const dsk_tools::HfeImage &img, const std::string &file_name);
+    emulator::Result sectors_to_hfe(const std::string &file_name);
+
     // A WOZ image: the disk as the bits under the head, with a track for
     // every quarter-track position the head can stand on (the map). The
     // tracks are a byte per bit; buffer keeps them as nibbles as well, for
@@ -125,6 +134,9 @@ public:
     int SeekSector(int track, int sector);
     // Сторона, выбранная последним SeekSector() (0 у односторонних)
     int get_side() const { return side; }
+    // The data mark ($F8 instead of $FB) of the sector of the last SeekSector()
+    bool is_sector_deleted();
+    void set_sector_deleted(bool value);
     // Дорожки целиком (режим дорожек: MX, IBM FM/MFM - контроллеры MX, DX, БК)
     bool whole_track() const;
     bool read_track(int track, int side, std::vector<uint8_t> &out);

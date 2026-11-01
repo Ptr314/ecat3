@@ -2204,6 +2204,10 @@
         <translation>Образы HFE для этого дисковода не поддерживаются</translation>
     </message>
     <message>
+        <source>Command 'mark' expects a track, a side and a sector of a sector image</source>
+        <translation>Команде mark нужны дорожка, сторона и сектор посекторного образа</translation>
+    </message>
+    <message>
         <source>Expected conversion form DSK to MFM is not supperted yet.</source>
         <translation type="vanished">Необходимая конвертация из посекторного в физический формат еще не поддерживается.</translation>
     </message>

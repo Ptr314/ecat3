@@ -329,21 +329,28 @@ def strip_load_report(output):
     """
     Без отчета MACHINE о загрузке: "Loaded <файл>", пустая строка, таблица
     устройств (name, type, class через табуляцию) и пустая строка за ней. В
-    эталонном логе обычного прогона его нет.
+    эталонном логе обычного прогона его нет. Сценарий со второй командой
+    MACHINE (открыл снятый им же снимок) дает такой отчет и посреди вывода.
     """
     lines = output.split("\n")
-    if not lines or not lines[0].startswith("Loaded "):
-        return output
-    i = 1
-    if i < len(lines) and lines[i] == "":
-        i += 1
-    if i < len(lines) and lines[i] == "name\ttype\tclass":
-        i += 1
-        while i < len(lines) and lines[i].count("\t") == 2:
+    kept = []
+    i = 0
+    while i < len(lines):
+        table = i + 2 < len(lines) and lines[i + 2] == "name\ttype\tclass"
+        if not lines[i].startswith("Loaded ") or (i > 0 and not table):
+            kept.append(lines[i])
             i += 1
-    if i < len(lines) and lines[i] == "":
+            continue
         i += 1
-    return "\n".join(lines[i:])
+        if i < len(lines) and lines[i] == "":
+            i += 1
+        if i < len(lines) and lines[i] == "name\ttype\tclass":
+            i += 1
+            while i < len(lines) and lines[i].count("\t") == 2:
+                i += 1
+        if i < len(lines) and lines[i] == "":
+            i += 1
+    return "\n".join(kept)
 
 
 def run_test(test, exe, env, extra_args, speed):
