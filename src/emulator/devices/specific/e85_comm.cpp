@@ -21,6 +21,7 @@
 #define MODEM_LOOP  0200
 
 #define BITS_PER_CHAR   10
+#define OSC_HZ          5068800     // the crystal the rates of table 14 are made from
 
 // Table 14, the clock 16 times the rate
 static const uint16_t DIVIDERS[16] = {
@@ -42,7 +43,6 @@ emulator::Result E85Comm::load_config(SystemData *sd)
 {
     emulator::Result res = AddressableDevice::load_config(sd);
     if (!res) return res;
-    m_osc = read_confg_value(cd, "osc", false, (unsigned int)5068800);
     return emulator::Result::ok();
 }
 
@@ -89,7 +89,7 @@ void E85Comm::start_shifter()
     m_shifting = true;
     m_tx_ip = true;
     const uint64_t divider = (uint64_t)DIVIDERS[m_rates >> 4] * 16;
-    m_tx_left = (int64_t)((uint64_t)m_system_clock * BITS_PER_CHAR * divider / m_osc);
+    m_tx_left = (int64_t)((uint64_t)m_system_clock * BITS_PER_CHAR * divider / OSC_HZ);
 }
 
 void E85Comm::transmit_done()

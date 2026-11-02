@@ -76,6 +76,7 @@ private:
     // the image. Empty: the disk has none, which is every .dsk
     std::vector<uint8_t> m_deleted;
     int sector_index(int track, int side, int sector);
+    void mark_sector(int index, bool value);
     emulator::Result sectors_from_hfe(const dsk_tools::HfeImage &img, const std::string &file_name);
     emulator::Result sectors_to_hfe(const std::string &file_name);
 
@@ -137,6 +138,7 @@ public:
     // The data mark ($F8 instead of $FB) of the sector of the last SeekSector()
     bool is_sector_deleted();
     void set_sector_deleted(bool value);
+    unsigned int deleted_count() const;
     // Дорожки целиком (режим дорожек: MX, IBM FM/MFM - контроллеры MX, DX, БК)
     bool whole_track() const;
     bool read_track(int track, int side, std::vector<uint8_t> &out);

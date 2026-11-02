@@ -100,7 +100,6 @@ public:
     bool get_sp(unsigned int &sp) override;
     bool stack_address(int i, unsigned int &address) override;
     bool waiting() override;
-    bool halted() { return core->get_context()->halted; }
     std::vector<unsigned int> get_history() override;
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;

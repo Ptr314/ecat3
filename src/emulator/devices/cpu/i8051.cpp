@@ -16,7 +16,6 @@
 #define SFR_SP      0x81
 #define SFR_DPL     0x82
 #define SFR_DPH     0x83
-#define SFR_PCON    0x87
 #define SFR_TCON    0x88
 #define SFR_TMOD    0x89
 #define SFR_TL0     0x8A
@@ -96,7 +95,6 @@ void i8051::reset_chip()
     m_pc = 0;
     m_in_irq[0] = m_in_irq[1] = false;
     m_skip_irq = false;
-    m_int0_old = m_int1_old = true;
     m_t0_fraction = m_t1_fraction = 0;
     for (unsigned int i = 0; i < 4; i++) drive_port(i);
 }
@@ -194,7 +192,8 @@ void i8051::write_direct(unsigned int address, uint8_t value)
     case SFR_P1: drive_port(1); break;
     case SFR_P2: drive_port(2); break;
     case SFR_P3: drive_port(3); break;
-    case SFR_ACC: update_parity(); break;
+    case SFR_ACC:
+    case SFR_PSW: update_parity(); break;
     case SFR_IE:
     case SFR_IP: m_skip_irq = true; break;
     case SFR_SBUF: note_unsupported("i8051: serial port"); break;
@@ -317,30 +316,32 @@ void i8051::jump_relative(uint8_t offset)
 }
 
 // Режимы таймера: 0 - 13 разрядов, 1 - 16, 2 - 8 с перезагрузкой, 3 - у T0 два
-// 8-разрядных счётчика (второй на такте и управлении T1), у T1 - стоп
+// 8-разрядных счётчика (второй на такте и управлении T1), у T1 - стоп. Пока T0 в
+// режиме 3, TR1 и TF1 заняты: T1 идёт без них, а останавливает его только свой режим 3
 void i8051::step_timer(unsigned int n, unsigned int machine_cycles)
 {
     uint8_t &tcon = m_sfr[SFR_TCON & 0x7F];
     const unsigned int tmod = (m_sfr[SFR_TMOD & 0x7F] >> (n * 4)) & 15;
     const unsigned int mode = tmod & 3;
+    const bool free_run = n == 1 && (m_sfr[SFR_TMOD & 0x7F] & 3) == 3;
     const uint8_t tr = n ? TCON_TR1 : TCON_TR0;
-    const uint8_t tf = n ? TCON_TF1 : TCON_TF0;
+    const uint8_t tf = free_run ? 0 : (n ? TCON_TF1 : TCON_TF0);
     uint8_t &tl = m_sfr[(n ? SFR_TL1 : SFR_TL0) & 0x7F];
     uint8_t &th = m_sfr[(n ? SFR_TH1 : SFR_TH0) & 0x7F];
 
-    if (n == 1 && (m_sfr[SFR_TMOD & 0x7F] & 3) == 3) {
-        // T0 в режиме 3 забрал TR1 и TF1 себе: TH0 считает такты
-        if (tcon & TCON_TR1) {
-            const unsigned int v = m_sfr[SFR_TH0 & 0x7F] + machine_cycles;
-            m_sfr[SFR_TH0 & 0x7F] = (uint8_t)v;
-            if (v > 0xFF) tcon |= TCON_TF1;
-        }
+    // T0 в режиме 3 забрал TR1 и TF1 себе: TH0 считает такты
+    if (free_run && (tcon & TCON_TR1)) {
+        const unsigned int v = m_sfr[SFR_TH0 & 0x7F] + machine_cycles;
+        m_sfr[SFR_TH0 & 0x7F] = (uint8_t)v;
+        if (v > 0xFF) tcon |= TCON_TF1;
     }
     if (n == 1 && mode == 3) return;
 
-    if ((tcon & tr) == 0) return;
-    // GATE: счёт идёт, только пока на INT высокий уровень
-    if ((tmod & 8) != 0 && (port_pins(3) & (n ? 8 : 4)) == 0) return;
+    if (!free_run) {
+        if ((tcon & tr) == 0) return;
+        // GATE: счёт идёт, только пока на INT высокий уровень
+        if ((tmod & 8) != 0 && (port_pins(3) & (n ? 8 : 4)) == 0) return;
+    }
 
     unsigned int ticks = machine_cycles;
     if (tmod & 4) {
@@ -372,7 +373,8 @@ void i8051::step_timer(unsigned int n, unsigned int machine_cycles)
     case 2: {
         const unsigned int v = tl + ticks;
         if (v > 0xFF) {
-            tl = (uint8_t)(th + (v - 0x100));
+            // При коротком периоде за команду бывает и не одна перезагрузка
+            tl = (uint8_t)(th + (v - 0x100) % (0x100u - th));
             tcon |= tf;
         } else
             tl = (uint8_t)v;
@@ -389,7 +391,7 @@ void i8051::step_timer(unsigned int n, unsigned int machine_cycles)
 
 void i8051::step_timers(unsigned int machine_cycles)
 {
-    if (m_sfr[SFR_TCON & 0x7F] & (TCON_TR0 | TCON_TR1)) {
+    if ((m_sfr[SFR_TCON & 0x7F] & (TCON_TR0 | TCON_TR1)) != 0 || (m_sfr[SFR_TMOD & 0x7F] & 3) == 3) {
         step_timer(0, machine_cycles);
         step_timer(1, machine_cycles);
     }
@@ -976,8 +978,8 @@ bool i8051::get_sp(unsigned int &sp)
     return true;
 }
 
-// Адрес записи стека во внутреннем ОЗУ. Отладчик читает стек через память, а
-// её здесь нет в карте программ: только вершина и то, что ниже, по номеру
+// Адрес записи стека во внутреннем ОЗУ: читает его stack_peek(). Стек растёт вверх,
+// поэтому запись i лежит на i байт ниже вершины
 bool i8051::stack_address(int i, unsigned int &address)
 {
     address = (unsigned int)((m_sfr[SFR_SP & 0x7F] - i) & 0x7F);

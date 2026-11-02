@@ -1,0 +1,13 @@
+# Электроника МС 0585: метки F8 посекторного образа живут только в снимке (make-state-e85-marks.ecat).
+# Снимок должен их вернуть, а ПЗУ - наткнуться на них при загрузке с дорожки 1: ВГ93 ставит
+# разряд 5 статуса, прошивка КНГМД отдаёт ошибку 364, как в work-e85-marks
+# @timeout 60
+MACHINE "../tests/files/state-e85-marks.ecats.zip"
+LOGDEFS _16,_8
+LOG fd0.deleted
+LOG fdc.reads
+WAITFOR fdc.reads == _1, _30000
+LOG fdc.status
+WAIT _5
+LOG kngmd.regs_read
+EXIT

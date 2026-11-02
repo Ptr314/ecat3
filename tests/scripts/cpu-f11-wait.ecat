@@ -1,0 +1,75 @@
+# Электроника МС 0585: WAIT под T-разрядом. Ловушки по T нет (Система команд, приложение 3,
+# пункт 8), и процессор встаёт так, что вывести его может только короткий импульс АИП (6.5):
+# запрос IRQ2 он не берёт. Без T тот же запрос WAIT прерывает.
+#
+# Счётчики: 3000 ловушка T, 3002 IRQ2, 3004 АИП, 3006 команда за WAIT.
+# @timeout 30
+MACHINE "../tests/files/e85-cpu-lines.ext"
+COMMAND cpu.stop()
+COMMAND ram.set16(&14,&2000,&340)   // ловушка T
+COMMAND ram.set16(&24,&2100,&340)   // АИП
+COMMAND ram.set16(&100,&2200,&340)   // IRQ2
+COMMAND ram.set16(&2000,&005237,&003000,&000006)   // INC @#3000; RTT
+COMMAND ram.set16(&2100,&005237,&003004,&000777)   // INC @#3004; BR .
+COMMAND ram.set16(&2200,&005237,&003002,&000002)   // INC @#3002; RTI
+
+PRINT "=== WAIT без T: IRQ2 его прерывает, дальше команда за WAIT ==="
+COMMAND ram.set16(&1000,&012706,&001000)   // MOV #1000,SP
+COMMAND ram.set16(&1004,&012746,&000000)   // MOV #0,-(SP): PSW
+COMMAND ram.set16(&1010,&012746,&001020)   // MOV #1020,-(SP): PC
+COMMAND ram.set16(&1014,&000002)   // RTI
+COMMAND ram.set16(&1020,&000001)   // WAIT
+COMMAND ram.set16(&1022,&005237,&003006,&000777)   // INC @#3006; BR .
+COMMAND cpu.setreg(PC,&1000)
+COMMAND cpu.run()
+WAIT _1
+LOG cpu.registers
+COMMAND lines.set(0,2)
+WAIT _1
+COMMAND lines.set(0,0)
+WAIT _1
+COMMAND cpu.stop()
+LOG cpu.registers
+LOG ram.value16(&3000,&3007)
+
+PRINT "=== WAIT сразу за RTT, под T: ловушки нет, стоит, выводит АИП ==="
+COMMAND ram.set16(&3000,0,0,0,0)
+COMMAND ram.set16(&1100,&012706,&001000)   // MOV #1000,SP
+COMMAND ram.set16(&1104,&012746,&000020)   // MOV #20,-(SP): PSW с T
+COMMAND ram.set16(&1110,&012746,&001122)   // MOV #1122,-(SP): PC
+COMMAND ram.set16(&1114,&000006)   // RTT
+COMMAND ram.set16(&1120,&000240)   // NOP
+COMMAND ram.set16(&1122,&000001)   // WAIT
+COMMAND ram.set16(&1124,&005237,&003006,&000777)   // INC @#3006; BR .
+COMMAND cpu.setreg(PC,&1100)
+COMMAND cpu.run()
+WAIT _1
+LOG cpu.registers
+COMMAND lines.set(0,1)
+WAIT _1
+COMMAND lines.set(0,0)
+COMMAND cpu.stop()
+LOG cpu.registers
+LOG ram.value16(&3000,&3007)
+
+PRINT "=== NOP под T даёт ловушку, а WAIT за ней нет; IRQ2 не берётся, выводит АИП ==="
+COMMAND ram.set16(&3000,0,0,0,0)
+COMMAND ram.set16(&1110,&012746,&001120)   // MOV #1120,-(SP): PC
+COMMAND cpu.setreg(PC,&1100)
+COMMAND cpu.run()
+WAIT _1
+LOG cpu.registers
+COMMAND lines.set(0,2)
+WAIT _1
+COMMAND lines.set(0,0)
+WAIT _1
+LOG cpu.registers
+LOG ram.value16(&3000,&3007)
+COMMAND lines.set(0,1)
+WAIT _1
+COMMAND lines.set(0,0)
+WAIT _1
+COMMAND cpu.stop()
+LOG cpu.registers
+LOG ram.value16(&3000,&3007)
+EXIT

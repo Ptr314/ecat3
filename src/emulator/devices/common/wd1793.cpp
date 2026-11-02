@@ -9,6 +9,8 @@
 #include "wd1793.h"
 #include "emulator/utils.h"
 
+#define CALLBACK_RESET  1
+
 WD1793::WD1793(InterfaceManager *im, EmulatorConfigDevice *cd):
       FDC(im, cd)
     , drives_count(0)
@@ -30,6 +32,7 @@ WD1793::WD1793(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_INTRQ(this, im, 1, "intrq", MODE_W)
     , i_DRQ(this, im, 1, "drq", MODE_W)
     , i_HLD(this, im, 1, "hld", MODE_W)
+    , i_reset(this, im, 1, "reset", MODE_R, CALLBACK_RESET)
 {
     m_clocked = true;   //clock() is overridden here
     memset(&registers, 0, sizeof(registers));
@@ -63,6 +66,22 @@ emulator::Result WD1793::load_config(SystemData *sd)
     m_rotate_id = read_confg_value(cd, "rotate_id", false, false);
 
     return emulator::Result::ok();
+}
+
+//MR, from the data sheet: what runs stops, the sector register gets 1, the
+//command register $03, and the chip restores as the pin goes away
+void WD1793::MasterReset()
+{
+    register_delay = 0;
+    ClearDRQ();
+    intrq_forced = false;
+    registers[wd1793_REG_SECTOR] = 1;
+    WriteRegister(wd1793_REG_COMMAND, 0x03);
+}
+
+void WD1793::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
+{
+    if (callback_id == CALLBACK_RESET && (new_value & 1) != 0 && (old_value & 1) == 0) MasterReset();
 }
 
 void WD1793::SetDRQ()
@@ -113,15 +132,18 @@ void WD1793::SetHLD(bool value)
     hld_timer = value ? wd1793_DELAY_HLD_RELEASE : 0;
 }
 
-void WD1793::FindSelectedDrive()
+//The drive the select lines name now. A command works with the one it found as
+//it started (selected_drive): a board can move the lines while it runs
+int WD1793::DriveOnLines()
 {
     for (unsigned int i=0; i < drives_count; i++)
-        if (drives[i]->is_selected())
-        {
-            selected_drive = i;
-            return void();
-        }
-    selected_drive = -1;
+        if (drives[i]->is_selected()) return (int)i;
+    return -1;
+}
+
+void WD1793::FindSelectedDrive()
+{
+    selected_drive = DriveOnLines();
 }
 
 void WD1793::WriteRegister(unsigned int address, unsigned int  value)
@@ -253,8 +275,8 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
 
 bool WD1793::selected_ready()
 {
-    FindSelectedDrive();
-    return selected_drive >= 0 && drives[selected_drive]->get_loaded();
+    const int drive = DriveOnLines();
+    return drive >= 0 && drives[drive]->get_loaded();
 }
 
 bool WD1793::get_busy()
@@ -292,8 +314,7 @@ unsigned int WD1793::get_value(unsigned int address)
     if (a==wd1793_REG_DATA) ClearDRQ();
     if (a==wd1793_REG_STATUS && !intrq_forced) ClearINTRQ();
     if (a==wd1793_REG_STATUS && m_index_period > 0 && m_type1) {
-        const bool disk = selected_drive >= 0 && drives[selected_drive]->get_loaded();
-        const bool index = disk && m_index_clock < m_index_width;
+        const bool index = selected_ready() && m_index_clock < m_index_width;
         return index ? (registers[a] | wd1793_FLAG_INDEX) : (registers[a] & ~wd1793_FLAG_INDEX);
     }
     return registers[a];
@@ -658,7 +679,7 @@ void WD1793::clock(unsigned int counter)
         m_index_clock += counter;
         while (m_index_clock >= m_index_period) {
             m_index_clock -= m_index_period;
-            if (m_index_irq && selected_drive >= 0 && drives[selected_drive]->get_loaded()) SetINTRQ();
+            if (m_index_irq && selected_ready()) SetINTRQ();
         }
     }
 

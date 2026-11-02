@@ -34,7 +34,7 @@ private:
     Interface i_drq;
     Interface i_intrq;
     Interface i_init;
-    Interface i_reset;          // RST процессора
+    Interface i_reset;          // начальная установка: RST процессора и MR ВГ93
     Interface i_select;
     Interface i_side;
     Interface i_motor;
@@ -54,11 +54,12 @@ private:
 
     void update_pins();
     void update_outputs();
-    unsigned int mcu_read(unsigned int address);
+    unsigned int mcu_read(unsigned int address, bool peek);
     void mcu_write(unsigned int address, unsigned int value);
-    unsigned int host_read(unsigned int address);
+    unsigned int host_read(unsigned int address, bool peek);
     void host_write(unsigned int address, unsigned int value);
     void start();
+    void board_init();
 
 public:
     E85Kngmd(InterfaceManager *im, EmulatorConfigDevice *cd);
@@ -69,6 +70,7 @@ public:
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
     unsigned int get_value(unsigned int address) override;
+    unsigned get_direct(unsigned address) override;
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
     unsigned int get_value_word(unsigned int address) override;
     void set_value_word(unsigned int address, unsigned int value, bool force=false) override;

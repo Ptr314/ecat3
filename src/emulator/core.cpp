@@ -2068,7 +2068,7 @@ int CPU::sp_above(unsigned int sp) const
 {
     const unsigned int bits = sp_bits();
     const unsigned int mask = (bits >= 32) ? 0xFFFFFFFFu : ((1u << bits) - 1);
-    const unsigned int d = (sp - m_temp_sp) & mask;
+    const unsigned int d = (stack_grows_up() ? m_temp_sp - sp : sp - m_temp_sp) & mask;
     //More than half the range up is the other way round: below
     return (d & ~(mask >> 1)) ? -(int)((mask - d) + 1) : (int)d;
 }
@@ -3310,6 +3310,16 @@ void GenericDisplay::change_resolution(unsigned new_x, unsigned new_y)
 bool GenericDisplay::has_valid_renderer()
 {
     return m_renderer_valid;
+}
+
+bool GenericDisplay::reduced_rate(uint64_t a, uint64_t b, uint64_t &num, uint64_t &den)
+{
+    if (a == 0 || b == 0) return false;
+    uint64_t x = a, y = b;
+    while (y != 0) { const uint64_t t = x % y; x = y; y = t; }
+    num = a / x;
+    den = b / x;
+    return true;
 }
 
 void GenericDisplay::lock_surface()

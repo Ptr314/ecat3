@@ -11,7 +11,6 @@
 #define REG_CONFIG  0100
 #define REG_SLOTS   0102
 #define REG_LAMPS   0104
-#define REG_MAINT   0200
 // 17777560-566, the console terminal registers. With no terminal on pin 9 of the
 // "Печать" connector they answer the bus with zeros and take writes: the terminal
 // driver of ПРОС sets and clears 17777564 around every character it prints, and

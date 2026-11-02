@@ -1,4 +1,4 @@
 [fdc.writes] &00000000151
-[prn.sent] &00000002360
-[comm.sent] &012450
-[comm.received] &012450
+[prn.sent] &00000002260
+[comm.sent] &012452
+[comm.received] &012452

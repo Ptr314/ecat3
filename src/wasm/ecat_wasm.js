@@ -53,6 +53,7 @@ const EmuKey = {
     F1:           0x01000030, F2: 0x01000031, F3: 0x01000032, F4: 0x01000033,
     F5:           0x01000034, F6: 0x01000035, F7: 0x01000036, F8: 0x01000037,
     F9:           0x01000038, F10: 0x01000039, F11: 0x0100003a, F12: 0x0100003b,
+    Pause:        0x01000008,
     Cancel:       0x01020001,
 };
 
@@ -133,8 +134,7 @@ const CODE_TO_EMUKEY = {
     "NumpadSubtract":  EmuKey.Minus | KEYPAD,
     "NumpadDecimal":   EmuKey.Period | KEYPAD,
     "NumpadDivide":    EmuKey.Slash | KEYPAD,
-    // Pause/Break -> Cancel (used for reset)
-    "Pause":           EmuKey.Cancel,
+    "Pause":           EmuKey.Pause,
 };
 
 // Keys that should be intercepted (prevent browser default action)
@@ -924,6 +924,10 @@ function translateKeyEvent(event) {
         const code = event.key.toUpperCase().charCodeAt(0);
         if (code > 0x20 && code <= 0x7e) return code;
     }
+
+    // Ctrl+Break resets the machine, as on the desktop: Cancel is what Windows
+    // gives for it there. Without Ctrl it is a key of the machine (Ф17 of the МС 7004)
+    if (event.key === "Cancel" || (event.code === "Pause" && event.ctrlKey)) return EmuKey.Cancel;
 
     // Try code-based mapping first (layout-independent)
     let emuKey = CODE_TO_EMUKEY[event.code];

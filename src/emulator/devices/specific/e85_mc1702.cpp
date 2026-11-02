@@ -29,6 +29,14 @@
 #define CTL_RES         0x08
 #define CTL_INTR        0x10
 
+// Ожидание ДОЗУ по автомату D44 (таблица 1 ТО) и схеме E3. Шаг автомата 133,3 нс:
+// OSC 15 МГц, делённые на 2 в D39.1. MRDC 8288 выдаёт с начала T2, MWTC с начала T3.
+// Запрос ловит D43.1, через 8 шагов RDY1 встаёт, и 8284 снимает ожидание по спаду
+// CLK: цикл чтения 10 тактов CLK, записи 11. Шаги автомата и такты CLK идут как 3:2,
+// фаз две, и при номинальных задержках обе дают одно и то же; запас около 24 нс.
+#define DRAM_READ_WAIT  6
+#define DRAM_WRITE_WAIT 7
+
 E85Mc1702::E85Mc1702(InterfaceManager *im, EmulatorConfigDevice *cd):
       AddressableDevice(im, cd)
     , i_irqa(this, im, 1, "irqa", MODE_W)
@@ -61,7 +69,7 @@ emulator::Result E85Mc1702::load_config(SystemData *sd)
     if (m_test_rom == nullptr)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{E85Mc1702|" + std::string(QT_TRANSLATE_NOOP("E85Mc1702", "The test ROM is expected in 'test_rom'")) + "} " + name);
-    m_memory_wait = read_confg_value(cd, "memory_wait", false, (unsigned int)0);
+    m_intr_delay = read_confg_value(cd, "intr_delay", false, (unsigned int)0);
     return emulator::Result::ok();
 }
 
@@ -218,9 +226,9 @@ void E85Mc1702::end_read(unsigned int value)
     update_lines();
 }
 
-unsigned int E85Mc1702::wait_states(MAYBE_UNUSED unsigned int address, MAYBE_UNUSED bool write, MAYBE_UNUSED unsigned int offset)
+unsigned int E85Mc1702::wait_states(MAYBE_UNUSED unsigned int address, bool write, MAYBE_UNUSED unsigned int offset)
 {
-    return m_memory_wait;
+    return write ? DRAM_WRITE_WAIT : DRAM_READ_WAIT;
 }
 
 //--------------------------- Сторона ЦП комплекса ---------------------------//
@@ -235,7 +243,7 @@ unsigned int E85Mc1702::status() const
     // Процессор стоит, пока хост не ответит на цикл
     if (m_count == 0 && !m_reading) v |= ST_NO_WAIT;
     if (m_intr) v |= ST_INTR;
-    if (m_cpu == nullptr || !m_cpu->halted()) v |= ST_NO_HALT;
+    if (m_cpu == nullptr || !m_cpu->waiting()) v |= ST_NO_HALT;
     if (m_count == 0) v |= ST_NO_WRITE;
     if (!m_reading) v |= ST_NO_READ;
     return v;
@@ -275,13 +283,17 @@ void E85Mc1702::write_reg(unsigned int reg, unsigned int value)
     case REG_STATUS:
         m_rom_counter = 0;
         break;
-    case REG_ADDRESS:
+    case REG_ADDRESS: {
+        const bool was_intr = m_intr;
         m_control = value;
         set_res((value & CTL_RES) != 0);
         m_intr = (value & CTL_INTR) != 0;
         i_vector.change((value >> 8) & 0xFF);
+        // Здесь это начало команды F-11, а на плате её последний цикл: см. intr_delay
+        if (m_intr && !was_intr) m_cpu->hold(m_intr_delay);
         update_lines();
         break;
+    }
     default:
         end_read(~value & 0xFFFF);
         break;

@@ -104,5 +104,7 @@ WAIT _200
 LOGDEFS _16,_8
 LOG kbd.received
 LOG keyboard.clicks
+# Игра стирает вертолёт и рисует заново: снимок через кадр, на целом вертолёте
+WAIT _20
 SCREEN "../results/boot-e85-game-helby.png"
 EXIT

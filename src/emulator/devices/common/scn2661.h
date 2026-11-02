@@ -42,7 +42,6 @@ private:
     bool m_tsr_busy = false;
     int64_t m_tx_left = 0;
 
-    unsigned int m_osc = 5068800;
     unsigned int m_rx_delay_us = 0;
     int64_t m_rx_wait = 0;          // clocks until the RXRDY pin follows the status
 

@@ -1,0 +1,112 @@
+# Электроника МС 0585: случаи FP11, которых ни ПЗУ, ни ПРОС не касаются. Программа кладётся
+# в ОЗУ, машина с первого такта идёт по ней, а ПЗУ не запускается.
+#
+# ПРРН, прерывание по -0, бывает только при чтении из памяти (ТО1, 9.3), и каждая команда
+# берёт его по-своему (9.8): LDF - до загрузки AC, но признаки уже показывают выборку; TSTF,
+# ABSF и NEGF - после исполнения, а ABSF и NEGF успевают записать на место точный 0. -0 в
+# накопителе прерывания не вызывает.
+#
+# MODF при переполнении произведения ставит VE; с разрешённым прерыванием в AC+1 идёт целая
+# часть с порядком по модулю, без него - точный 0. В AC в обоих случаях точный 0.
+#
+# Таблица с 4000: на случай FPS, FEC, FEA, число прерываний, затем то, что указано в программе.
+#
+# В конце время MUL: цикл MUL, INC, BR за 10 мс. MUL регистр-регистр - 24,6 мкс (ТО, таблица 2),
+# на него приходится большая часть оборота. С константой ВМ2 (14,4 мкс) оборотов было 537, а не 347.
+# @timeout 30
+MACHINE "computers/e85/MS0585.cfg"
+COMMAND cpu.stop()
+COMMAND ram.set16(&3000,&100000,&000000,&000000,&000000,&077400,&000000)   // -0, запас, 2**126
+COMMAND ram.set16(&1000,&012706,&001000)   // MOV #1000,SP
+COMMAND ram.set16(&1004,&012705,&004000)   // MOV #4000,R5
+COMMAND ram.set16(&1010,&012737,&001740,&000244)   // MOV #1740,@#244
+COMMAND ram.set16(&1016,&012737,&000340,&000246)   // MOV #340,@#246
+COMMAND ram.set16(&1024,&170127,&000000)   // без прерываний -0 грузится в AC1
+COMMAND ram.set16(&1030,&172537,&003000)   // LDF @#3000,AC1
+COMMAND ram.set16(&1034,&172427,&040200)   // LDF #1.0,AC0
+COMMAND ram.set16(&1040,&170127,&004000)   // LDFPS #4000: разрешено по -0
+COMMAND ram.set16(&1044,&172437,&003000)   // 1) LDF @#3000,AC0
+COMMAND ram.set16(&1050,&004737,&001700)   // JSR PC,@#1700
+COMMAND ram.set16(&1054,&174025)   // STF AC0,(R5)+: осталось 1.0
+COMMAND ram.set16(&1056,&170537,&003000)   // 2) TSTF @#3000
+COMMAND ram.set16(&1062,&004737,&001700)   // JSR PC,@#1700
+COMMAND ram.set16(&1066,&012737,&100000,&003004)   // MOV #100000,@#3004
+COMMAND ram.set16(&1074,&170737,&003004)   // 3) NEGF @#3004
+COMMAND ram.set16(&1100,&004737,&001700)   // JSR PC,@#1700
+COMMAND ram.set16(&1104,&013725,&003004)   // MOV @#3004,(R5)+: стал точный 0
+COMMAND ram.set16(&1110,&012737,&100000,&003004)   // MOV #100000,@#3004
+COMMAND ram.set16(&1116,&170637,&003004)   // 4) ABSF @#3004
+COMMAND ram.set16(&1122,&004737,&001700)   // JSR PC,@#1700
+COMMAND ram.set16(&1126,&013725,&003004)   // MOV @#3004,(R5)+: стал точный 0
+COMMAND ram.set16(&1132,&170601)   // 5) ABSF AC1: -0 в накопителе
+COMMAND ram.set16(&1134,&004737,&001700)   // JSR PC,@#1700
+COMMAND ram.set16(&1140,&170127,&000000)   // LDFPS #0
+COMMAND ram.set16(&1144,&172637,&003000)   // LDF @#3000,AC2
+COMMAND ram.set16(&1150,&170127,&004000)   // LDFPS #4000
+COMMAND ram.set16(&1154,&170502)   // 6) TSTF AC2: -0 в накопителе
+COMMAND ram.set16(&1156,&004737,&001700)   // JSR PC,@#1700
+COMMAND ram.set16(&1162,&170127,&001000)   // LDFPS #1000: разрешено по переполнению
+COMMAND ram.set16(&1166,&172437,&003010)   // LDF @#3010,AC0
+COMMAND ram.set16(&1172,&171437,&003010)   // 7) MODF @#3010,AC0
+COMMAND ram.set16(&1176,&004737,&001700)   // JSR PC,@#1700
+COMMAND ram.set16(&1202,&174025)   // STF AC0,(R5)+
+COMMAND ram.set16(&1204,&174125)   // STF AC1,(R5)+
+COMMAND ram.set16(&1206,&170127,&000000)   // LDFPS #0
+COMMAND ram.set16(&1212,&172437,&003010)   // LDF @#3010,AC0
+COMMAND ram.set16(&1216,&171437,&003010)   // 8) MODF @#3010,AC0
+COMMAND ram.set16(&1222,&004737,&001700)   // JSR PC,@#1700
+COMMAND ram.set16(&1226,&174025)   // STF AC0,(R5)+
+COMMAND ram.set16(&1230,&174125)   // STF AC1,(R5)+
+COMMAND ram.set16(&1232,&000777)   // BR .
+COMMAND ram.set16(&1700,&170225)   // STFPS (R5)+
+COMMAND ram.set16(&1702,&170325)   // STST (R5)+: FEC, FEA
+COMMAND ram.set16(&1704,&013725,&002000)   // MOV @#2000,(R5)+
+COMMAND ram.set16(&1710,&005037,&002000)   // CLR @#2000
+COMMAND ram.set16(&1714,&000207)   // RTS PC
+COMMAND ram.set16(&1740,&005237,&002000)   // INC @#2000
+COMMAND ram.set16(&1744,&000002)   // RTI
+COMMAND cpu.setreg(PSW,&340)
+COMMAND cpu.setreg(PC,&1000)
+COMMAND cpu.run()
+WAIT _10
+LOGDEFS _16,_8
+PRINT "=== 1 LDF: FPS, FEC, FEA, прерываний, AC0 ==="
+LOG ram.value16(&4000,&4013)
+PRINT "=== 2 TSTF: FPS, FEC, FEA, прерываний ==="
+LOG ram.value16(&4014,&4023)
+PRINT "=== 3 NEGF: FPS, FEC, FEA, прерываний, ячейка ==="
+LOG ram.value16(&4024,&4035)
+PRINT "=== 4 ABSF: FPS, FEC, FEA, прерываний, ячейка ==="
+LOG ram.value16(&4036,&4047)
+PRINT "=== 5 ABSF AC1: FPS, FEC, FEA, прерываний ==="
+LOG ram.value16(&4050,&4057)
+PRINT "=== 6 TSTF AC2: FPS, FEC, FEA, прерываний ==="
+LOG ram.value16(&4060,&4067)
+PRINT "=== 7 MODF, ПРРП: FPS, FEC, FEA, прерываний, AC0, AC1 ==="
+LOG ram.value16(&4070,&4107)
+PRINT "=== 8 MODF без ПРРП: FPS, FEC, FEA, прерываний, AC0, AC1 ==="
+LOG ram.value16(&4110,&4127)
+PRINT "=== MUL: оборотов цикла за 10 мс, R2 ==="
+COMMAND cpu.stop()
+COMMAND ram.set16(&1000,&070101,&005202,&000775)   // MUL R1,R1; INC R2; BR .-4
+COMMAND cpu.setreg(R2,0)
+COMMAND cpu.setreg(PC,&1000)
+COMMAND cpu.run()
+WAIT _10
+COMMAND cpu.stop()
+LOG cpu.registers
+PRINT "=== состояние FP11 в полях: те же FPS, FEC, FEA, что в случае 8 ==="
+LOG cpu.fps
+LOG cpu.fec
+LOG cpu.fea
+LOG cpu.ac
+PRINT "=== дизассемблер: формы команд, 170003 и AC6 - ошибка кода ==="
+COMMAND ram.set16(&5000,&170000,&170001,&170002,&170011,&170012,&170003)   // CFCC ... SETL, нет такой
+COMMAND ram.set16(&5014,&170111,&170237,&003000,&170337,&003000)   // LDFPS (R1); STFPS, STST @#3000
+COMMAND ram.set16(&5026,&170401,&170521,&170627,&040200,&170737,&003000)   // CLRF AC1; TSTF (R1)+; ABSF #; NEGF @#
+COMMAND ram.set16(&5042,&171005,&171406,&172011,&172467,&000010)   // MULF AC5,AC0; MODF AC6,AC0; ADDF (R1); LDF 10(PC)
+COMMAND ram.set16(&5054,&173161,&000004,&173721,&174025,&174502)   // SUBF 4(R1),AC1; CMPF (R1)+,AC3; STF AC0,(R5)+; DIVF AC2,AC1
+COMMAND ram.set16(&5066,&175001,&175422,&176022)   // STEXP AC0,R1; STCFI AC0,(R2)+; STCFD AC0,(R2)+
+COMMAND ram.set16(&5074,&176527,&000005,&177001,&177701)   // LDEXP #5,AC1; LDCIF R1,AC0; LDCDF AC1,AC3
+LOG cpu.disasm(&5000,&5104)
+EXIT

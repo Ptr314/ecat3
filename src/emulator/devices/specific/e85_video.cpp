@@ -37,20 +37,26 @@
 #define RUD_ENABLE      0040
 #define RUD_MASK        0077
 #define RUD2_MASK       0037477
+#define RUD_RESOLUTION  0030
+#define RUD2_RESOLUTION 014030
 
-// Что возвращают регистры только для записи: 0177577 на настоящей плате
+// Что отвечают регистры только для записи, ТО НВ1 не говорит. 0177577 взято из Xhomer:
+// там так отвечают РДВ, РФЯ и РФА с пометкой, что так делает настоящий DEC Pro. На НВ1
+// это не проверено; РУЦ у него 0177777, здесь он в той же группе. ПЗУ их не читает
 #define WRITE_ONLY_READ 0177577
 #define ID_HIGH         0177400
 
 #define WINDOW_BYTES    0100000u
 
-// Время построения: ячейка памяти 800 нс на слово, по 16 точек; значения
-// в тактах ЦП 6,67 МГц, с запасом от предела теста ПЗУ
+// Время построения, такты ЦП 6,67 МГц. ТО его не даёт, а 800 нс в нём - шаг адреса при
+// развёртке, по 16 точек на слово: это оценка для CLOCKS_PER_WORD. CLOCKS_PER_BIT - оценка
+// без расчёта. Граница одна: тест ПЗУ 140650 ждёт 43690 точек не дольше 5421 прохода
+// цикла опроса, это около 80 мс на F-11 этой модели, или 12 тактов на точку
 #define CLOCKS_PER_BIT  2
 #define CLOCKS_PER_WORD 5
 
-#define FRAME_LINES_625 312
-#define FRAME_LINES_525 262
+#define FRAME_LINES_625 625
+#define FRAME_LINES_525 525
 #define VISIBLE_625     256
 #define VISIBLE_525     240
 #define FULL_EVERY      50
@@ -158,6 +164,17 @@ unsigned int E85Video::plane_enables() const
     return v;
 }
 
+// РУД пишут перед каждой операцией с вектором. Картину меняет только разрешение
+// страницы, а ответ окна - только то, разрешена ли хоть одна
+void E85Video::set_rud(unsigned int &rud, unsigned int value, unsigned int resolution)
+{
+    const bool window = plane_enables() != 0;
+    const unsigned int changed = rud ^ value;
+    rud = value;
+    if ((plane_enables() != 0) != window && m_mapper != nullptr) m_mapper->routing_changed();
+    if ((changed & resolution) != 0 && m_display != nullptr) m_display->all_changed();
+}
+
 // Окно отвечает, только пока хотя бы одна страница разрешена. Всё остальное -
 // пустота: ПЗУ проверяет это по прерыванию через 4
 unsigned int E85Video::route(unsigned int address, MAYBE_UNUSED unsigned int mode)
@@ -210,25 +227,22 @@ void E85Video::write_register(unsigned int offset, unsigned int value)
         if (((old ^ m_csr) & 02001) != 0 && m_display != nullptr) m_display->all_changed();
         break;
     }
-    case REG_RUD1: {
-        const unsigned int enables = plane_enables();
-        m_rud1 = value & RUD_MASK;
-        if (plane_enables() != enables && m_mapper != nullptr) m_mapper->routing_changed();
-        if (m_display != nullptr) m_display->all_changed();
+    case REG_RUD1:
+        set_rud(m_rud1, value & RUD_MASK, RUD_RESOLUTION);
+        break;
+    case REG_RUD2:
+        set_rud(m_rud2, value & RUD2_MASK, RUD2_RESOLUTION);
+        break;
+    case REG_RUC: {
+        const unsigned int index = (value >> 8) & 7;
+        const unsigned int entry = value & 0xFF;
+        if (m_ruc[index] == entry) break;
+        m_ruc[index] = entry;
+        if (color_map() && m_display != nullptr) m_display->all_changed();
         break;
     }
-    case REG_RUD2: {
-        const unsigned int enables = plane_enables();
-        m_rud2 = value & RUD2_MASK;
-        if (plane_enables() != enables && m_mapper != nullptr) m_mapper->routing_changed();
-        if (m_display != nullptr) m_display->all_changed();
-        break;
-    }
-    case REG_RUC:
-        m_ruc[(value >> 8) & 7] = value & 0xFF;
-        if (m_display != nullptr) m_display->all_changed();
-        break;
     case REG_SCROLL:
+        if ((value & 0xFF) == m_scroll) break;
         m_scroll = value & 0xFF;
         if (m_display != nullptr) m_display->all_changed();
         break;
@@ -519,19 +533,33 @@ void E85Display::get_screen_constraints(unsigned int * sx, unsigned int * sy)
     *sy = this->sy;
 }
 
+// ТО3, таблица 4: 525 или 625 строк в кадре, в прогрессивной развёртке на одну больше.
+// Картину разряд не меняет: оба полукадра идут по тем же строкам памяти
+unsigned int E85Display::frame_lines() const
+{
+    const unsigned int lines = m_video->pal() ? FRAME_LINES_625 : FRAME_LINES_525;
+    return m_video->interlaced() ? lines : lines + 1;
+}
+
 void E85Display::update_timing()
 {
-    const unsigned int frame = (m_video != nullptr && m_video->pal())
-        ? m_system_clock / 50 : m_system_clock / 60;
-    const unsigned int lines = (m_video != nullptr && m_video->pal()) ? FRAME_LINES_625 : FRAME_LINES_525;
-    m_line_clocks = (frame / lines != 0) ? frame / lines : 1;
+    if (m_video == nullptr) return;
+    const unsigned int line = m_system_clock * 2 / (frame_lines() * (m_video->pal() ? 50 : 60));
+    m_line_clocks = (line != 0) ? line : 1;
+}
+
+// Картина выдаётся за полукадр, а их в кадре два и в прогрессивной развёртке
+bool E85Display::native_frame_rate(uint64_t &num, uint64_t &den)
+{
+    return reduced_rate((uint64_t)m_system_clock * 2, frame_clocks(), num, den);
 }
 
 void E85Display::line_done()
 {
     if (m_video == nullptr) return;
     const unsigned int visible = m_video->pal() ? VISIBLE_625 : VISIBLE_525;
-    const unsigned int total = m_video->pal() ? FRAME_LINES_625 : FRAME_LINES_525;
+    // Полукадры чересстрочной развёртки на строку различаются, прогрессивной - равны
+    const unsigned int total = (frame_lines() + (m_video->even() ? 1 : 0)) / 2;
 
     // Запрос посреди кадра исполняет следующий: строки выше луча уже прошли
     if (m_line == 0) {
@@ -541,6 +569,9 @@ void E85Display::line_done()
     if (m_line < visible) render_line(m_line);
     m_line++;
     if (m_line == visible) {
+        // Под растром после перехода с 625 на 525 осталась бы прежняя картина
+        if (m_full_pass)
+            for (unsigned int line = visible; line < E85Video::LINES; line++) render_line(line);
         if (++m_since_full >= FULL_EVERY) {
             m_since_full = 0;
             m_redraw = true;
@@ -655,6 +686,7 @@ std::vector<DeviceFieldInfo> E85Display::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = GenericDisplay::get_device_fields();
     r.push_back({"line", "Raster line the beam is on", false});
+    r.push_back({"frame_clocks", "Clocks of the display's domain per frame", false});
     return r;
 }
 
@@ -664,6 +696,12 @@ bool E85Display::get_field(const std::string &field, unsigned int from, unsigned
         out.numeric = true;
         out.width = 16;
         out.values.push_back(m_line);
+        return true;
+    }
+    if (field == "frame_clocks") {
+        out.numeric = true;
+        out.width = 32;
+        out.values.push_back(frame_clocks());
         return true;
     }
     return GenericDisplay::get_field(field, from, to, out);

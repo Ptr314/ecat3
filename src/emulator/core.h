@@ -989,6 +989,12 @@ public:
     //Width of the stack pointer: the 6502's S is a byte, and a stack that
     //wraps past $00 is still above its level
     virtual unsigned int sp_bits() const { return 16; }
+    //The 8051 pushes towards higher addresses: the step over and the step out
+    //measure a return by it
+    virtual bool stack_grows_up() const { return false; }
+    //A byte of the stack at an address of stack_address(): the 8051 keeps its
+    //stack in its own RAM, where peek_mem() does not reach
+    virtual unsigned int stack_peek(unsigned int address) { return peek_mem(address); }
 
     //Waits for an interrupt (WAIT, HLT): a step goes on until it comes
     virtual bool waiting() { return false; }
@@ -1197,6 +1203,9 @@ protected:
     bool m_precise = false;         //Asked for; a raster display takes it up at the next line
 
     virtual void render_all(bool force_render = false) = 0;
+
+    //The rate a/b as the reduced fraction native_frame_rate() answers with
+    static bool reduced_rate(uint64_t a, uint64_t b, uint64_t &num, uint64_t &den);
 
     //Called by a display at the end of the picture of every frame, on the
     //emulation thread and outside the surface lock

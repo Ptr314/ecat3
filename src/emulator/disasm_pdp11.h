@@ -25,12 +25,18 @@ private:
     bool has_eis;
     Console console;
     bool has_mfpt;
+    bool has_fp;
 
     std::string format_operand(unsigned int spec, CommandBytes bytes,
                                unsigned int PC, unsigned int & index);
+    std::string format_fp_operand(unsigned int spec, CommandBytes bytes, unsigned int PC,
+                                  unsigned int & index, bool & valid);
+    void decode_fp(uint16_t cmd, CommandBytes bytes, unsigned int PC, unsigned int & index,
+                   std::string & mnemonic, std::string & operands, bool & valid);
 
 public:
-    DisAsmPDP11(bool has_eis = false, Console console = CONSOLE_NONE, bool has_mfpt = false);
+    DisAsmPDP11(bool has_eis = false, Console console = CONSOLE_NONE, bool has_mfpt = false,
+                bool has_fp = false);
 
     // No table is needed, the file name is accepted and ignored
     virtual emulator::Result load_file(const std::string &file_name) override;

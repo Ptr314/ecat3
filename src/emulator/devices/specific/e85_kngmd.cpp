@@ -84,12 +84,20 @@ void E85Kngmd::reset(bool cold)
         memset(m_read, 0, sizeof(m_read));
         memset(m_buffer, 0, sizeof(m_buffer));
     }
-    m_pointer = 0;
-    m_busy = false;
-    i_reset.change(0);
     i_irqa.change(0);
     i_irqb.change(0);
+    board_init();
     update_outputs();
+}
+
+// Начальная установка (ТО4, 4.8.4): адрес буфера в ноль, сигнал на БИСК и МП, магистраль
+// у контроллера. ЦП не видит плату, пока прошивка не кончит свой тест и не отдаст её сама
+void E85Kngmd::board_init()
+{
+    m_pointer = 0;
+    m_busy = true;
+    i_reset.change(1);
+    i_reset.change(0);
     update_pins();
 }
 
@@ -131,12 +139,7 @@ void E85Kngmd::interface_callback(unsigned int callback_id, unsigned int new_val
         update_pins();
         break;
     case CALLBACK_INIT:
-        // Начальная установка от ЦП: контроллер проходит внутренний тест заново
-        if (new_value & 1) {
-            m_busy = false;
-            i_reset.change(1);
-            i_reset.change(0);
-        }
+        if (new_value & 1) board_init();
         break;
     default:
         break;
@@ -159,7 +162,7 @@ void E85Kngmd::start()
     update_pins();
 }
 
-unsigned int E85Kngmd::host_read(unsigned int address)
+unsigned int E85Kngmd::host_read(unsigned int address, bool peek)
 {
     // Пока магистраль у контроллера, ЦП его ячеек не видит. Загрузчик ПЗУ ждёт
     // так разряда готовности РСК (155312): иначе он брал буфер, ещё не заполненный
@@ -168,14 +171,14 @@ unsigned int E85Kngmd::host_read(unsigned int address)
     switch (address) {
     case HOST_BUFFER: {
         const unsigned int v = m_buffer[m_pointer];
-        m_pointer = (m_pointer + 1) & 0777;
+        if (!peek) m_pointer = (m_pointer + 1) & 0777;
         return v;
     }
     case HOST_POINTER:
-        m_pointer = 0;
+        if (!peek) m_pointer = 0;
         return 0;
     case HOST_START:
-        start();
+        if (!peek) start();
         return 0;
     default:
         return 0;
@@ -184,6 +187,7 @@ unsigned int E85Kngmd::host_read(unsigned int address)
 
 void E85Kngmd::host_write(unsigned int address, unsigned int value)
 {
+    if (m_busy) return;
     if (address < HOST_BUFFER) {
         m_write[(address >> 1) & 7] = (uint8_t)value;
         return;
@@ -205,25 +209,30 @@ void E85Kngmd::host_write(unsigned int address, unsigned int value)
     }
 }
 
-unsigned int E85Kngmd::mcu_read(unsigned int address)
+unsigned int E85Kngmd::mcu_read(unsigned int address, bool peek)
 {
     if (address < MCU_BUFFER) {
         const uint8_t * bank = (i_p1.value & P1_READ_BANK) ? m_read : m_write;
         return bank[(address >> 1) & 7];
     }
-    if (address >= MCU_FDC) return m_fdc->get_value((address >> 1) & 3) & 0xFF;
+    if (address >= MCU_FDC) {
+        const unsigned int reg = (address >> 1) & 3;
+        return (peek ? m_fdc->get_direct(reg) : m_fdc->get_value(reg)) & 0xFF;
+    }
     switch (address) {
     case MCU_BUFFER: {
         const unsigned int v = m_buffer[m_pointer];
-        m_pointer = (m_pointer + 1) & 0777;
+        if (!peek) m_pointer = (m_pointer + 1) & 0777;
         return v;
     }
     case MCU_POINTER:
-        m_pointer = 0;
+        if (!peek) m_pointer = 0;
         return 0;
     case MCU_RELEASE:
-        m_busy = false;
-        update_pins();
+        if (!peek) {
+            m_busy = false;
+            update_pins();
+        }
         return 0;
     default:
         return 0;
@@ -261,8 +270,8 @@ void E85Kngmd::mcu_write(unsigned int address, unsigned int value)
 
 unsigned int E85Kngmd::get_value_word(unsigned int address)
 {
-    if (address >= MCU_BASE) return mcu_read((address - MCU_BASE) & 0x1F);
-    return host_read(address & 076);
+    if (address >= MCU_BASE) return mcu_read((address - MCU_BASE) & 0x1F, false);
+    return host_read(address & 076, false);
 }
 
 void E85Kngmd::set_value_word(unsigned int address, unsigned int value, MAYBE_UNUSED bool force)
@@ -275,6 +284,13 @@ unsigned int E85Kngmd::get_value(unsigned int address)
 {
     if (address >= MCU_BASE) return get_value_word(address);
     return (address & 1) ? 0 : get_value_word(address);
+}
+
+// То же без запуска прошивки и сдвига адреса буфера: отладчик, LOG
+unsigned E85Kngmd::get_direct(unsigned address)
+{
+    if (address >= MCU_BASE) return mcu_read((address - MCU_BASE) & 0x1F, true);
+    return (address & 1) ? 0 : host_read(address & 076, true);
 }
 
 void E85Kngmd::set_value(unsigned int address, unsigned int value, bool force)
@@ -315,6 +331,7 @@ void E85Kngmd::save_state(StateWriter &w)
     w.hex("buffer", m_buffer, sizeof(m_buffer));
     w.n("pointer", m_pointer);
     w.b("busy", m_busy);
+    w.n("ready_wait", m_ready_wait);
     w.n("commands", m_commands);
 }
 
@@ -327,6 +344,7 @@ emulator::Result E85Kngmd::load_state(const StateReader &r)
     r.hex("buffer", m_buffer, sizeof(m_buffer));
     r.u("pointer", m_pointer);
     r.b("busy", m_busy);
+    r.u("ready_wait", m_ready_wait);
     r.u("commands", m_commands);
     return emulator::Result::ok();
 }

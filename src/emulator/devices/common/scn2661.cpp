@@ -20,9 +20,13 @@
 
 #define CMD_TXEN    0001
 #define CMD_RXEN    0004
+#define CMD_BREAK   0010
 #define CMD_RESET   0020
 #define CMD_ECHO    0100
 #define CMD_LOCAL   0200            // short loop; with CMD_ECHO the long one
+
+// The crystal the rates of table 29 are made from
+#define OSC_HZ  5068800
 
 // Divider of the reference for each code of mode register 2 (table 29), with
 // the clock 16 times the rate
@@ -49,7 +53,6 @@ emulator::Result SCN2661::load_config(SystemData *sd)
 {
     emulator::Result res = AddressableDevice::load_config(sd);
     if (!res) return res;
-    m_osc = read_confg_value(cd, "osc", false, (unsigned int)5068800);
     m_rx_delay_us = read_confg_value(cd, "rx_delay", false, (unsigned int)0);
     m_baud = read_confg_value(cd, "baud", false, (unsigned int)9600);
     //Not read_confg_value(): it lowers the case, and /dev/ttyUSB0 is another file then
@@ -81,7 +84,7 @@ uint64_t SCN2661::char_ticks() const
     const unsigned int parity = (m_mode[0] & 0020) ? 1 : 0;
     const unsigned int stop = ((m_mode[0] >> 6) == 3) ? 2 : 1;
     const uint64_t divider = (uint64_t)DIVIDERS[m_mode[1] & 017] * 16;
-    return (uint64_t)m_system_clock * (1 + data + parity + stop) * divider / m_osc;
+    return (uint64_t)m_system_clock * (1 + data + parity + stop) * divider / OSC_HZ;
 }
 
 void SCN2661::update_lines()
@@ -123,13 +126,14 @@ void SCN2661::receive(uint8_t value)
 {
     const bool local = (m_command & (CMD_LOCAL | CMD_ECHO)) == CMD_LOCAL;
     if ((m_command & CMD_RXEN) == 0 && !local) return;
+    // An overrun finds the pin up, or on its way up: it must not make a new edge
     if (m_status & ST_RXRDY) {
         m_status |= ST_OVERRUN;
         m_overruns++;
-    }
+    } else
+        m_rx_wait = (int64_t)((uint64_t)m_system_clock * m_rx_delay_us / 1000000);
     m_rx = value;
     m_status |= ST_RXRDY;
-    m_rx_wait = (int64_t)((uint64_t)m_system_clock * m_rx_delay_us / 1000000);
     m_received++;
     if (m_command & CMD_ECHO) line_out(value);
     update_lines();
@@ -179,6 +183,16 @@ unsigned int SCN2661::read_status() const
 void SCN2661::write_command(unsigned int value)
 {
     const bool rx_off = (value & CMD_RXEN) == 0;
+    // Обмен считается только асинхронным, на своих делителях, с тактом в 16 раз выше
+    // скорости. Разряд 5 режима 2 - такт передатчика, разряд 4 - приёмника: в короткой
+    // петле приёмнику свой не нужен, и самотест ПЗУ идёт с внешним (режим 057)
+    if ((value & (CMD_TXEN | CMD_RXEN)) != 0 && (m_mode[0] & 3) != 2)
+        note_unsupported("scn2661: synchronous mode or a clock not 16 times the rate");
+    const bool short_loop = (value & (CMD_LOCAL | CMD_ECHO)) == CMD_LOCAL;
+    if (((value & CMD_TXEN) != 0 && (m_mode[1] & 040) == 0)
+        || ((value & CMD_RXEN) != 0 && !short_loop && (m_mode[1] & 020) == 0))
+        note_unsupported("scn2661: external clocks");
+    if (value & CMD_BREAK) note_unsupported("scn2661: line break");
     m_command = (uint8_t)(value & ~CMD_RESET);
     if (value & CMD_RESET) m_status &= (uint8_t)~ST_ERRORS;
     if (rx_off) m_status &= (uint8_t)~(ST_RXRDY | ST_ERRORS);
@@ -222,7 +236,8 @@ void SCN2661::set_value_word(unsigned int address, unsigned int value, MAYBE_UNU
         update_lines();
         break;
     case 1:
-        break;                      // SYN1/SYN2/DLE, of the synchronous modes
+        note_unsupported("scn2661: SYN1/SYN2/DLE registers");
+        break;
     case 2:
         m_mode[m_mode_ptr] = (uint8_t)value;
         m_mode_ptr ^= 1;

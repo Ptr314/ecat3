@@ -1,0 +1,201 @@
+# i8051: таймеры, прерывания и бит P прямо, без прошивки КНГМД, которая их почти не трогает.
+# Выводы P1 заведены на P3 (конфигурация i8051-test.cfg), и INT0, INT1 программа дёргает сама.
+# Результаты идут в память с $8000 по порядку, конец отмечает $A2.
+#
+# Каждая строка программы - одна команда. Обработчики прерываний пишут: R4 и $11 INT0, $22 T0
+# ($23 на выходе, если просили T1 изнутри), $33 INT1, $44 T1. R4 = $A1 ставит команда за
+# записью в IE: она идёт раньше прерывания.
+# @timeout 30
+MACHINE "computers/e85/i8051-test.cfg"
+COMMAND cpu.stop()
+COMMAND ram.set($0000,$02,$01,$00)   // LJMP start
+COMMAND ram.set($0003,$02,$00,$30)   // LJMP int0_isr
+COMMAND ram.set($000B,$02,$00,$38)   // LJMP t0_isr
+COMMAND ram.set($0013,$02,$00,$47)   // LJMP int1_isr
+COMMAND ram.set($001B,$02,$00,$4E)   // LJMP t1_isr
+COMMAND ram.set($0030,$EC)   // MOV A,R4
+COMMAND ram.set($0031,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($0033,$74,$11)   // MOV A,#$11
+COMMAND ram.set($0035,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($0037,$32)   // RETI
+COMMAND ram.set($0038,$74,$22)   // MOV A,#$22
+COMMAND ram.set($003A,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($003C,$EE)   // MOV A,R6
+COMMAND ram.set($003D,$60,$07)   // JZ t0_out
+COMMAND ram.set($003F,$D2,$8F)   // SETB TF1
+COMMAND ram.set($0041,$00)   // NOP
+COMMAND ram.set($0042,$74,$23)   // MOV A,#$23
+COMMAND ram.set($0044,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($0046,$32)   // RETI
+COMMAND ram.set($0047,$74,$33)   // MOV A,#$33
+COMMAND ram.set($0049,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($004B,$D2,$93)   // SETB P13
+COMMAND ram.set($004D,$32)   // RETI
+COMMAND ram.set($004E,$74,$44)   // MOV A,#$44
+COMMAND ram.set($0050,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($0052,$32)   // RETI
+COMMAND ram.set($0100,$75,$81,$60)   // MOV SP,#$60
+COMMAND ram.set($0103,$90,$80,$00)   // MOV DPTR,#$8000
+COMMAND ram.set($0106,$7E,$00)   // MOV R6,#$00
+# Бит P считает только аккумулятор: запись в PSW его не меняет
+COMMAND ram.set($0108,$74,$01)   // MOV A,#$01
+COMMAND ram.set($010A,$75,$D0,$00)   // MOV PSW,#$00
+COMMAND ram.set($010D,$E5,$D0)   // MOV A,PSW
+COMMAND ram.set($010F,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($0111,$74,$03)   // MOV A,#$03
+COMMAND ram.set($0113,$75,$D0,$01)   // MOV PSW,#$01
+COMMAND ram.set($0116,$E5,$D0)   // MOV A,PSW
+COMMAND ram.set($0118,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($011A,$74,$01)   // MOV A,#$01
+COMMAND ram.set($011C,$C2,$D0)   // CLR PSW0
+COMMAND ram.set($011E,$E5,$D0)   // MOV A,PSW
+COMMAND ram.set($0120,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+# T0, режим 2 с периодом 2: команда в 4 цикла перезагружает его не один раз
+COMMAND ram.set($0122,$75,$89,$02)   // MOV TMOD,#$02
+COMMAND ram.set($0125,$75,$8C,$FE)   // MOV TH0,#$FE
+COMMAND ram.set($0128,$75,$8A,$FF)   // MOV TL0,#$FF
+COMMAND ram.set($012B,$75,$F0,$01)   // MOV B,#$01
+COMMAND ram.set($012E,$74,$01)   // MOV A,#$01
+COMMAND ram.set($0130,$75,$88,$10)   // MOV TCON,#$10
+COMMAND ram.set($0133,$A4)   // MUL AB
+COMMAND ram.set($0134,$75,$88,$00)   // MOV TCON,#$00
+COMMAND ram.set($0137,$E5,$8A)   // MOV A,TL0
+COMMAND ram.set($0139,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+# T0 в режиме 3, T1 в режиме 2: T1 идёт без TR1 и без TF1, TH0 и TL0 стоят
+COMMAND ram.set($013B,$75,$8A,$00)   // MOV TL0,#$00
+COMMAND ram.set($013E,$75,$8C,$00)   // MOV TH0,#$00
+COMMAND ram.set($0141,$75,$8B,$F0)   // MOV TL1,#$F0
+COMMAND ram.set($0144,$75,$8D,$F0)   // MOV TH1,#$F0
+COMMAND ram.set($0147,$75,$89,$23)   // MOV TMOD,#$23
+COMMAND ram.set($014A,$7F,$14)   // MOV R7,#$14
+COMMAND ram.set($014C,$DF,$FE)   // DJNZ R7,$
+COMMAND ram.set($014E,$75,$89,$33)   // MOV TMOD,#$33
+COMMAND ram.set($0151,$E5,$8B)   // MOV A,TL1
+COMMAND ram.set($0153,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($0155,$E5,$88)   // MOV A,TCON
+COMMAND ram.set($0157,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($0159,$E5,$8C)   // MOV A,TH0
+COMMAND ram.set($015B,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($015D,$E5,$8A)   // MOV A,TL0
+COMMAND ram.set($015F,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+# T1 стоит
+COMMAND ram.set($0161,$E5,$8B)   // MOV A,TL1
+COMMAND ram.set($0163,$FD)   // MOV R5,A
+COMMAND ram.set($0164,$7F,$0A)   // MOV R7,#$0A
+COMMAND ram.set($0166,$DF,$FE)   // DJNZ R7,$
+COMMAND ram.set($0168,$ED)   // MOV A,R5
+COMMAND ram.set($0169,$C3)   // CLR C
+COMMAND ram.set($016A,$95,$8B)   // SUBB A,TL1
+COMMAND ram.set($016C,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+# TH0 считает при TR1, TL0 - при TR0, и каждый свой TF
+COMMAND ram.set($016E,$75,$8A,$00)   // MOV TL0,#$00
+COMMAND ram.set($0171,$75,$8C,$00)   // MOV TH0,#$00
+COMMAND ram.set($0174,$75,$88,$40)   // MOV TCON,#$40
+COMMAND ram.set($0177,$7F,$0A)   // MOV R7,#$0A
+COMMAND ram.set($0179,$DF,$FE)   // DJNZ R7,$
+COMMAND ram.set($017B,$75,$88,$00)   // MOV TCON,#$00
+COMMAND ram.set($017E,$E5,$8C)   // MOV A,TH0
+COMMAND ram.set($0180,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($0182,$E5,$8A)   // MOV A,TL0
+COMMAND ram.set($0184,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($0186,$75,$88,$10)   // MOV TCON,#$10
+COMMAND ram.set($0189,$7F,$0A)   // MOV R7,#$0A
+COMMAND ram.set($018B,$DF,$FE)   // DJNZ R7,$
+COMMAND ram.set($018D,$75,$88,$00)   // MOV TCON,#$00
+COMMAND ram.set($0190,$E5,$8C)   // MOV A,TH0
+COMMAND ram.set($0192,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($0194,$E5,$8A)   // MOV A,TL0
+COMMAND ram.set($0196,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($0198,$75,$8C,$FE)   // MOV TH0,#$FE
+COMMAND ram.set($019B,$75,$88,$40)   // MOV TCON,#$40
+COMMAND ram.set($019E,$00)   // NOP
+COMMAND ram.set($019F,$00)   // NOP
+COMMAND ram.set($01A0,$00)   // NOP
+COMMAND ram.set($01A1,$00)   // NOP
+COMMAND ram.set($01A2,$E5,$88)   // MOV A,TCON
+COMMAND ram.set($01A4,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($01A6,$75,$8A,$FE)   // MOV TL0,#$FE
+COMMAND ram.set($01A9,$75,$88,$10)   // MOV TCON,#$10
+COMMAND ram.set($01AC,$00)   // NOP
+COMMAND ram.set($01AD,$00)   // NOP
+COMMAND ram.set($01AE,$00)   // NOP
+COMMAND ram.set($01AF,$00)   // NOP
+COMMAND ram.set($01B0,$E5,$88)   // MOV A,TCON
+COMMAND ram.set($01B2,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($01B4,$75,$88,$00)   // MOV TCON,#$00
+# GATE: T0 считает, только пока на INT0 высокий уровень
+COMMAND ram.set($01B7,$75,$89,$09)   // MOV TMOD,#$09
+COMMAND ram.set($01BA,$75,$8A,$00)   // MOV TL0,#$00
+COMMAND ram.set($01BD,$75,$8C,$00)   // MOV TH0,#$00
+COMMAND ram.set($01C0,$75,$88,$10)   // MOV TCON,#$10
+COMMAND ram.set($01C3,$7F,$0A)   // MOV R7,#$0A
+COMMAND ram.set($01C5,$DF,$FE)   // DJNZ R7,$
+COMMAND ram.set($01C7,$C2,$92)   // CLR P12
+COMMAND ram.set($01C9,$75,$8A,$00)   // MOV TL0,#$00
+COMMAND ram.set($01CC,$7F,$0A)   // MOV R7,#$0A
+COMMAND ram.set($01CE,$DF,$FE)   // DJNZ R7,$
+COMMAND ram.set($01D0,$E5,$8A)   // MOV A,TL0
+COMMAND ram.set($01D2,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($01D4,$D2,$92)   // SETB P12
+COMMAND ram.set($01D6,$7F,$0A)   // MOV R7,#$0A
+COMMAND ram.set($01D8,$DF,$FE)   // DJNZ R7,$
+COMMAND ram.set($01DA,$75,$88,$00)   // MOV TCON,#$00
+COMMAND ram.set($01DD,$E5,$8A)   // MOV A,TL0
+COMMAND ram.set($01DF,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($01E1,$75,$89,$00)   // MOV TMOD,#$00
+# Запросы, накопленные при EA = 0: порядок INT0, T0, INT1, T1, один уровень
+COMMAND ram.set($01E4,$75,$88,$05)   // MOV TCON,#$05
+COMMAND ram.set($01E7,$C2,$92)   // CLR P12
+COMMAND ram.set($01E9,$D2,$92)   // SETB P12
+COMMAND ram.set($01EB,$E5,$88)   // MOV A,TCON
+COMMAND ram.set($01ED,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($01EF,$D2,$8D)   // SETB TF0
+COMMAND ram.set($01F1,$D2,$8B)   // SETB IE1
+COMMAND ram.set($01F3,$D2,$8F)   // SETB TF1
+COMMAND ram.set($01F5,$75,$A8,$0F)   // MOV IE,#$0F
+COMMAND ram.set($01F8,$00)   // NOP
+COMMAND ram.set($01F9,$75,$A8,$8F)   // MOV IE,#$8F
+COMMAND ram.set($01FC,$7C,$A1)   // MOV R4,#$A1
+COMMAND ram.set($01FE,$00)   // NOP
+COMMAND ram.set($01FF,$00)   // NOP
+COMMAND ram.set($0200,$00)   // NOP
+COMMAND ram.set($0201,$00)   // NOP
+COMMAND ram.set($0202,$00)   // NOP
+COMMAND ram.set($0203,$00)   // NOP
+COMMAND ram.set($0204,$00)   // NOP
+COMMAND ram.set($0205,$00)   // NOP
+COMMAND ram.set($0206,$75,$A8,$00)   // MOV IE,#$00
+COMMAND ram.set($0209,$E5,$88)   // MOV A,TCON
+COMMAND ram.set($020B,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+# Старший уровень прерывает младший, изнутри него
+COMMAND ram.set($020D,$7E,$01)   // MOV R6,#$01
+COMMAND ram.set($020F,$75,$B8,$08)   // MOV IP,#$08
+COMMAND ram.set($0212,$75,$A8,$8A)   // MOV IE,#$8A
+COMMAND ram.set($0215,$D2,$8D)   // SETB TF0
+COMMAND ram.set($0217,$00)   // NOP
+COMMAND ram.set($0218,$00)   // NOP
+COMMAND ram.set($0219,$00)   // NOP
+COMMAND ram.set($021A,$00)   // NOP
+COMMAND ram.set($021B,$00)   // NOP
+COMMAND ram.set($021C,$00)   // NOP
+COMMAND ram.set($021D,$7E,$00)   // MOV R6,#$00
+COMMAND ram.set($021F,$75,$A8,$00)   // MOV IE,#$00
+COMMAND ram.set($0222,$75,$B8,$00)   // MOV IP,#$00
+# INT1 по уровню: запрос, пока на выводе ноль; разряд IE1 не участвует
+COMMAND ram.set($0225,$75,$88,$00)   // MOV TCON,#$00
+COMMAND ram.set($0228,$75,$A8,$84)   // MOV IE,#$84
+COMMAND ram.set($022B,$C2,$93)   // CLR P13
+COMMAND ram.set($022D,$00)   // NOP
+COMMAND ram.set($022E,$00)   // NOP
+COMMAND ram.set($022F,$00)   // NOP
+COMMAND ram.set($0230,$00)   // NOP
+COMMAND ram.set($0231,$75,$A8,$00)   // MOV IE,#$00
+COMMAND ram.set($0234,$74,$A2)   // MOV A,#$A2
+COMMAND ram.set($0236,$F0,$A3)   // MOVX @DPTR,A; INC DPTR
+COMMAND ram.set($0238,$80,$FE)   // SJMP $
+COMMAND cpu.setreg(PC,0)
+COMMAND cpu.run()
+WAIT _10
+LOG cpu.registers
+LOG ram.value($8000,$8030)
+EXIT

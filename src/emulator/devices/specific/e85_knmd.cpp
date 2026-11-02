@@ -20,8 +20,6 @@
 
 // Страница 13 ТО5 потеряна, разряды 09-13 РОШПК по тексту п. 4.5 и по контроллеру
 // ДВК, у которого те же регистры
-#define ERR_DM          0000400     // нет маркера данных
-#define ERR_TRK0        0001000     // не найдена нулевая дорожка
 #define ERR_FAULT       0002000     // неисправность
 #define ERR_ID          0010000     // нет адреса
 #define ERR_PRECOMP     0000040     // предкомпенсация со 128 цилиндра
@@ -52,7 +50,6 @@
 #define ST_RD           0100601
 
 // Отложенные события
-#define EV_NONE         0
 #define EV_RESTORE      1
 #define EV_READ         2
 #define EV_WRITE        3
@@ -60,20 +57,20 @@
 
 #define CALLBACK_INIT   1
 
-// Накопитель 5 МБ: разряд 8 РСНУ, позиционирование в режиме «Медленный поиск»
-#define SMALL_CYLINDERS 153
+// ТО5 времён не даёт. seek_time, step_time и word_time - значения dvk-dw, начальная
+// установка и format_time взяты без источника, а диск не вращается: сектор приходит сразу
+// за поиском. Настоящий накопитель медленнее, см. docs/dev/machines.md
+#define INIT_US         50000
 
 E85Knmd::E85Knmd(InterfaceManager *im, EmulatorConfigDevice *cd):
-      AddressableDevice(im, cd)
+      DWController(im, cd, 0200, INIT_US)
     , i_irqa(this, im, 1, "irqa", MODE_W)
     , i_irqb(this, im, 1, "irqb", MODE_W)
     , i_init(this, im, 1, "init", MODE_R, CALLBACK_INIT)
 {
-    device_class = "hdd";
-    m_clocked = true;
-    can_read = true;
-    can_write = true;
-    addresable_size = 0200;
+    // Образ может быть короче накопителя: чистый диск - файл хотя бы в один сектор
+    // и заданное число цилиндров
+    m_grows_image = true;
     reset_ids();
 }
 
@@ -82,80 +79,25 @@ void E85Knmd::reset_ids()
     for (unsigned int i = 0; i < ID_TRACKS; i++) m_id_head[i] = (uint8_t)(i & 7);
 }
 
-// Образ, без сброса контроллера: из снимка регистры и линии приходят сами
-emulator::Result E85Knmd::open_image(const std::string &file_name)
+void E85Knmd::image_opened()
 {
-    std::string error;
-    m_cylinders = 0;
-    if (!m_image.open(file_name, error))
-        return emulator::Result::error(emulator::ErrorCode::ConfigError,
-            "{DVKDW|" + std::string(QT_TRANSLATE_NOOP("DVKDW", "Hard disk image file not found")) + "} " + file_name);
-    // Цилиндры - из конфигурации или по размеру файла. Образ может быть короче
-    // накопителя: чистый диск - файл хотя бы в один сектор и заданное число цилиндров
-    const uint64_t track = (uint64_t)m_heads * m_sectors * HddImage::SECTOR_SIZE;
-    m_cylinders = (m_cfg_cylinders != 0) ? m_cfg_cylinders : (unsigned int)(m_image.size() / track);
-    if (m_cylinders == 0 || m_cylinders > 1024) {
-        m_image.close();
-        m_cylinders = 0;
-        return emulator::Result::error(emulator::ErrorCode::ConfigError,
-            "{DVKDW|" + std::string(QT_TRANSLATE_NOOP("DVKDW", "Unrecognized hard disk geometry")) + "} " + file_name);
-    }
-    m_image.extend(track * m_cylinders, 0);
     reset_ids();
-    return emulator::Result::ok();
 }
 
-emulator::Result E85Knmd::attach(const std::string &file_name)
+// Головки - степень двойки: лишние разряды РАП накопитель не видит
+bool E85Knmd::geometry_ok() const
 {
-    const emulator::Result res = open_image(file_name);
-    init_controller();
-    return res;
+    return (m_heads == 2 || m_heads == 4 || m_heads == 8) && m_sectors >= 1 && m_sectors <= 32;
 }
 
 emulator::Result E85Knmd::load_config(SystemData *sd)
 {
-    emulator::Result res = AddressableDevice::load_config(sd);
+    emulator::Result res = DWController::load_config(sd);
     if (!res) return res;
-
     m_mapper = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper", false));
-
-    files = read_confg_value(cd, "files", false, std::string(""));
-    m_image.set_write_protect(read_confg_value(cd, "write_protect", false, false));
-    m_image.set_volatile(read_confg_value(cd, "volatile", false, false));
-
-    m_heads = read_confg_value(cd, "heads", false, (unsigned int)4);
-    m_sectors = read_confg_value(cd, "sectors", false, (unsigned int)16);
-    m_cfg_cylinders = read_confg_value(cd, "cylinders", false, (unsigned int)0);
-    // Головки - степень двойки: лишние разряды РАП накопитель не видит
-    if ((m_heads != 2 && m_heads != 4 && m_heads != 8) || m_sectors < 1 || m_sectors > 32 || m_cfg_cylinders > 1024)
-        return emulator::Result::error(emulator::ErrorCode::ConfigError,
-            "{DVKDW|" + std::string(QT_TRANSLATE_NOOP("DVKDW", "Unsupported hard disk geometry")) + "} " + name);
-    const std::string small_jumper = cd->get_parameter("small", false).value;
-    m_small = small_jumper.empty() ? -1 : (parse_numeric_value(small_jumper) != 0 ? 1 : 0);
-
-    // Времена в микросекундах: поиск и поворот до сектора, переход на цилиндр,
-    // передача слова буфера, начальная установка, разметка дорожки (оборот)
-    m_seek_us = read_confg_value(cd, "seek_time", false, (unsigned int)2000);
-    m_step_us = read_confg_value(cd, "step_time", false, (unsigned int)200);
-    m_word_us = read_confg_value(cd, "word_time", false, (unsigned int)2);
-    m_init_us = read_confg_value(cd, "init_time", false, (unsigned int)50000);
+    // Разметка дорожки: оборот
     m_format_us = read_confg_value(cd, "format_time", false, (unsigned int)16667);
-
-    const std::string image = read_confg_value(cd, "image", false, std::string(""));
-    if (!image.empty()) {
-        const std::string file = find_file_location(sd, image);
-        if (!file.empty()) {
-            res = attach(file);
-            if (!res) return res;
-        }
-    }
-    init_controller();
-    return emulator::Result::ok();
-}
-
-void E85Knmd::reset(MAYBE_UNUSED bool cold)
-{
-    init_controller();
+    return load_image();
 }
 
 // Начальная установка - операция: «Занят», очистка регистров, переход на нулевую
@@ -219,52 +161,13 @@ void E85Knmd::interface_callback(unsigned int callback_id, unsigned int new_valu
 
 //--------------------------- Ход операции ----------------------------------//
 
-void E85Knmd::schedule(unsigned int event, unsigned int us)
+void E85Knmd::word_ready()
 {
-    m_event = event;
-    m_timeout = us;
-    m_acc = 0;
+    raise_data();
 }
 
-void E85Knmd::schedule_word()
+void E85Knmd::event_done(unsigned int event)
 {
-    m_word_pending = true;
-    m_word_timeout = m_word_us;
-    m_word_acc = 0;
-}
-
-unsigned int E85Knmd::seek_us(unsigned int cylinder) const
-{
-    const unsigned int d = (cylinder > m_track) ? cylinder - m_track : m_track - cylinder;
-    return m_seek_us + d * m_step_us;
-}
-
-void E85Knmd::clock(unsigned int counter)
-{
-    if (m_system_clock == 0) return;
-    if (m_word_pending) {
-        m_word_acc += (uint64_t)counter * 1000000ull;
-        while (m_word_acc >= m_system_clock && m_word_timeout > 0) {
-            m_word_acc -= m_system_clock;
-            m_word_timeout--;
-        }
-        if (m_word_timeout == 0) {
-            m_word_pending = false;
-            raise_data();
-        }
-    }
-    if (m_event == EV_NONE) return;
-
-    m_acc += (uint64_t)counter * 1000000ull;
-    const uint64_t step = m_system_clock;
-    while (m_acc >= step && m_timeout > 0) {
-        m_acc -= step;
-        m_timeout--;
-    }
-    if (m_timeout > 0) return;
-
-    const unsigned int event = m_event;
-    m_event = EV_NONE;
     switch (event) {
     case EV_RESTORE:
         m_track = 0;
@@ -418,6 +321,25 @@ void E85Knmd::command(unsigned int cmd)
 
 //--------------------------- Регистры --------------------------------------//
 
+unsigned int E85Knmd::reg_of(unsigned int address) const
+{
+    return (address & REG_STATUS) ? REG_STATUS : (address & 016);
+}
+
+// Слова данных вытеснили бы из журнала всё остальное за два сектора
+bool E85Knmd::trace_skips(unsigned int reg) const
+{
+    return reg == REG_DATA;
+}
+
+// Старшие байты РКС2 и РОШПК только читаются, но обращение к РКС2 есть обращение:
+// оно снимает ЗОА
+bool E85Knmd::odd_byte_write(unsigned int reg)
+{
+    if (reg == REG_CSR) clear_done();
+    return reg == REG_CSR || reg == REG_ERR;
+}
+
 unsigned int E85Knmd::read_reg(unsigned int reg, bool peek)
 {
     switch (reg) {
@@ -454,7 +376,7 @@ unsigned int E85Knmd::read_reg(unsigned int reg, bool peek)
         return m_csr & CSR_RD;
     case REG_STATUS: {
         unsigned int v = m_status & ST_RD;
-        if (m_small > 0 || (m_small < 0 && m_cylinders != 0 && m_cylinders <= SMALL_CYLINDERS)) v |= ST_SMALL;
+        if (small_drive()) v |= ST_SMALL;
         return v;
     }
     default:
@@ -518,283 +440,61 @@ bool E85Knmd::refused(unsigned int address)
     return true;
 }
 
-void E85Knmd::trace(unsigned int kind, unsigned int reg, unsigned int value)
-{
-    // Слова данных вытеснили бы из кольца всё остальное за два сектора
-    if (reg == REG_DATA) return;
-    // Подряд одинаковые чтения (опрос готовности) - одной записью
-    if (kind == 0 && m_trace_next > 0) {
-        const TraceEntry &prev = m_trace[(m_trace_next - 1) & 1023];
-        if (prev.kind == 0 && prev.reg == reg && prev.value == (value & 0xFFFF)) return;
-    }
-    TraceEntry &e = m_trace[m_trace_next & 1023];
-    e.kind = (uint16_t)kind;
-    e.reg = (uint16_t)reg;
-    e.value = (uint16_t)value;
-    m_trace_next++;
-}
-
-static inline unsigned int reg_of(unsigned int address)
-{
-    return (address & REG_STATUS) ? REG_STATUS : (address & 016);
-}
-
-unsigned int E85Knmd::get_value_word(unsigned int address)
-{
-    if (refused(address)) return 0xFFFF;
-    const unsigned int reg = reg_of(address);
-    const unsigned int v = read_reg(reg, false) & 0xFFFF;
-    trace(0, reg, v);
-    return v;
-}
-
-void E85Knmd::set_value_word(unsigned int address, unsigned int value, MAYBE_UNUSED bool force)
-{
-    if (refused(address)) return;
-    trace(1, reg_of(address), value);
-    write_reg(reg_of(address), value);
-}
-
-unsigned int E85Knmd::get_value(unsigned int address)
-{
-    const unsigned int w = get_value_word(address & ~1u);
-    return (address & 1) ? ((w >> 8) & 0xFF) : (w & 0xFF);
-}
-
-// Байт пишется в свою половину регистра. Старшие байты РКС2 и РОШПК только
-// читаются, но обращение к РКС2 есть обращение: оно снимает ЗОА
-void E85Knmd::set_value(unsigned int address, unsigned int value, MAYBE_UNUSED bool force)
-{
-    if (refused(address)) return;
-    const unsigned int reg = reg_of(address);
-    if (address & 1) {
-        if (reg == REG_CSR) clear_done();
-        if (reg == REG_CSR || reg == REG_ERR) return;
-    }
-    const unsigned int old = read_reg(reg, true);
-    const unsigned int w = (address & 1) ? ((old & 0x00FF) | ((value & 0xFF) << 8))
-                                         : ((old & 0xFF00) | (value & 0xFF));
-    trace(2, reg, w);
-    write_reg(reg, w);
-}
-
-unsigned E85Knmd::get_direct(unsigned address)
-{
-    const unsigned int w = read_reg(reg_of(address), true);
-    return (address & 1) ? ((w >> 8) & 0xFF) : (w & 0xFF);
-}
-
-//--------------------------- Поля и команды --------------------------------//
-
-ConfigFields E85Knmd::get_config_fields()
-{
-    ConfigField f;
-    f.name = "image";
-    f.title = QT_TRANSLATE_NOOP("ConfigFields", "Hard disk image");
-    f.type = CONFIG_FIELD_FILE;
-    f.files = cd->get_parameter("files", false).value;
-    f.embeddable = false;
-
-    ConfigField v;
-    v.name = "volatile";
-    v.title = QT_TRANSLATE_NOOP("ConfigFields", "Hard disk writes");
-    v.type = CONFIG_FIELD_CHOICE;
-    v.def = "0";
-    v.values.push_back({"0", QT_TRANSLATE_NOOP("ConfigFields", "Into the image file")});
-    v.values.push_back({"1", QT_TRANSLATE_NOOP("ConfigFields", "Into memory only, the image stays as it was")});
-    return {f, v};
-}
+//--------------------------- Поля и снимок ---------------------------------//
 
 std::vector<DeviceFieldInfo> E85Knmd::get_device_fields()
 {
-    std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
-    r.push_back({"attached",  "1, когда образ вставлен",                   false});
-    r.push_back({"file",      "Имя образа",                                false});
-    r.push_back({"protected", "1, когда запись в образ запрещена",          false});
-    r.push_back({"volatile",  "1, когда запись идёт в память, а не в файл", false});
-    r.push_back({"geometry",  "Цилиндры, головки и секторы образа",         false});
-    r.push_back({"csr",       "Регистр РКС2",                              false});
+    std::vector<DeviceFieldInfo> r = DWController::get_device_fields();
     r.push_back({"status",    "Регистр РСНУ",                              false});
-    r.push_back({"err",       "Регистр РОШПК",                             false});
-    r.push_back({"command",   "Последняя команда",                         false});
-    r.push_back({"cylinder",  "Цилиндр в регистре",                        false});
-    r.push_back({"head",      "Поверхность в регистре",                    false});
-    r.push_back({"sector",    "Сектор в регистре",                         false});
-    r.push_back({"reads",     "Сколько секторов прочитано",                 false});
-    r.push_back({"writes",    "Сколько секторов записано",                  false});
     r.push_back({"formats",   "Сколько дорожек размечено",                  false});
     r.push_back({"refused",   "Обращений к регистрам, пока контроллер занят", false});
-    r.push_back({"trace",     "Последние обращения к регистрам: вид (0 чтение, 1 запись слова, 2 байта), смещение, значение", true});
-    return r;
-}
-
-std::vector<DeviceCommandInfo> E85Knmd::get_device_commands()
-{
-    std::vector<DeviceCommandInfo> r = AddressableDevice::get_device_commands();
-    r.push_back({"load",     "\"file\"", "Вставляет образ винчестера"});
-    r.push_back({"eject",    "",         "Вынимает образ"});
-    r.push_back({"protect",  "[0|1]",    "Запрещает или разрешает запись в образ"});
-    r.push_back({"volatile", "[0|1]",    "Запись в память вместо файла; выключение забывает записанное"});
     return r;
 }
 
 bool E85Knmd::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
-    if (field == "file") { out.text = m_image.file_name(); return true; }
-    if (field == "trace") {
-        if (to >= 1024) to = 1023;
+    if (field == "status") {
         out.numeric = true;
-        out.has_start = true;
-        out.start = from;
         out.width = 16;
-        for (unsigned int i = from; i <= to; i++) {
-            const TraceEntry &e = m_trace[(m_trace_next + i) & 1023];
-            out.values.push_back(e.kind);
-            out.values.push_back(e.reg);
-            out.values.push_back(e.value);
-        }
+        out.values.push_back(read_reg(REG_STATUS, true));
         return true;
     }
-    if (field == "geometry") {
-        out.text = std::to_string(m_cylinders) + "/" + std::to_string(m_heads) + "/" + std::to_string(m_sectors);
+    if (field == "formats" || field == "refused") {
+        out.numeric = true;
+        out.width = 32;
+        out.values.push_back(field == "formats" ? m_formats : m_refused);
         return true;
     }
-    out.numeric = true;
-    out.width = 16;
-    if (field == "attached")  { out.values.push_back(m_image.attached() ? 1 : 0);     return true; }
-    if (field == "protected") { out.values.push_back(m_image.is_protected() ? 1 : 0); return true; }
-    if (field == "volatile")  { out.values.push_back(m_image.is_volatile() ? 1 : 0);  return true; }
-    if (field == "csr")       { out.values.push_back(m_csr);      return true; }
-    if (field == "status")    { out.values.push_back(read_reg(REG_STATUS, true)); return true; }
-    if (field == "err")       { out.values.push_back(m_err);      return true; }
-    if (field == "command")   { out.values.push_back(m_command);  return true; }
-    if (field == "cylinder")  { out.values.push_back(m_cyl);      return true; }
-    if (field == "head")      { out.values.push_back(m_head);     return true; }
-    if (field == "sector")    { out.values.push_back(m_sector);   return true; }
-    out.width = 32;
-    if (field == "reads")     { out.values.push_back(m_reads);    return true; }
-    if (field == "writes")    { out.values.push_back(m_writes);   return true; }
-    if (field == "formats")   { out.values.push_back(m_formats);  return true; }
-    if (field == "refused")   { out.values.push_back(m_refused);  return true; }
-    out.numeric = false;
-    out.width = 0;
-    return AddressableDevice::get_field(field, from, to, out);
-}
-
-emulator::Result E85Knmd::send_command(const std::string &command, const std::string &parameters)
-{
-    std::vector<std::string> p = split_params(parameters);
-
-    if (command == "load") {
-        if (p.empty() || p[0].empty())
-            return emulator::Result::error(emulator::ErrorCode::BadParameters,
-                "{DVKDW|" + std::string(QT_TRANSLATE_NOOP("DVKDW", "Command 'load' expects a file name")) + "}");
-        std::string file = find_file_location(sd, p[0]);
-        if (file.empty()) file = p[0];
-        return attach(file);
-    }
-    if (command == "eject") {
-        m_image.close();
-        m_cylinders = 0;
-        init_controller();
-        return emulator::Result::ok();
-    }
-    if (command == "protect") {
-        m_image.set_write_protect((p.empty() || p[0].empty()) ? !m_image.write_protect()
-                                                               : parse_numeric_value(p[0], 10) != 0);
-        return emulator::Result::ok();
-    }
-    if (command == "volatile") {
-        m_image.set_volatile((p.empty() || p[0].empty()) ? !m_image.is_volatile()
-                                                          : parse_numeric_value(p[0], 10) != 0);
-        return emulator::Result::ok();
-    }
-    return AddressableDevice::send_command(command, parameters);
+    return DWController::get_field(field, from, to, out);
 }
 
 void E85Knmd::save_state(StateWriter &w)
 {
-    AddressableDevice::save_state(w);
-    w.u("err", m_err);
-    w.u("sector", m_sector);
-    w.u("cyl", m_cyl);
-    w.u("head", m_head);
-    w.u("csr", m_csr);
+    DWController::save_state(w);
     w.u("status", m_status);
-    w.n("track", m_track);
-    w.u("command", m_command);
     w.hex("id_head", m_id_head, sizeof(m_id_head));
-    w.array("buf", m_buf, 256);
     w.n("pointer", m_pointer);
     w.n("count", m_count);
     w.n("op", m_op);
-    w.n("event", m_event);
-    w.n64("timeout", m_timeout);
-    w.n64("acc", m_acc);
-    w.b("word_pending", m_word_pending);
-    w.n64("word_timeout", m_word_timeout);
-    w.n64("word_acc", m_word_acc);
-    w.n("reads", m_reads);
-    w.n("writes", m_writes);
     w.n("formats", m_formats);
     w.n("refused", m_refused);
-    w.b("write_protect", m_image.write_protect());
-    if (m_image.attached()) {
-        w.b("attached", true);
-        m_image.save_state(w, "image", name);
-    }
 }
 
 emulator::Result E85Knmd::load_state(const StateReader &r)
 {
-    emulator::Result res = AddressableDevice::load_state(r);
+    const emulator::Result res = DWController::load_state(r);
     if (!res) return res;
 
-    // Образ - первым: регистры ниже - уже его. Без сброса: линии восстановлены
-    bool attached = false;
-    if (r.b("attached", attached) && attached) {
-        std::string file;
-        if (r.s("image", file) && !file.empty()) {
-            const std::string path = find_file_location(sd, file);
-            if (path.empty())
-                return emulator::Result::error(emulator::ErrorCode::FileError,
-                    "{MachineState|Saved state} " + name + ": file not found: " + file);
-            res = open_image(path);
-            if (!res) return res;
-            // Копия из снимка и его ОЗУ сняты вместе: запись в файл их
-            // рассогласовала бы, поэтому восстановленный диск пишет в память
-            m_image.set_volatile(true);
-        }
-    }
-
-    r.u("err", m_err);
-    r.u("sector", m_sector);
-    r.u("cyl", m_cyl);
-    r.u("head", m_head);
-    r.u("csr", m_csr);
     r.u("status", m_status);
-    r.u("track", m_track);
-    r.u("command", m_command);
     r.hex("id_head", m_id_head, sizeof(m_id_head));
-    r.array("buf", m_buf, 256);
     r.u("pointer", m_pointer);
     r.u("count", m_count);
     m_pointer &= 255;
     if (m_count > 256) m_count = 0;
     r.u("op", m_op);
     if (m_op > OP_FORMAT) m_op = OP_NONE;
-    r.u("event", m_event);
-    r.n64("timeout", m_timeout);
-    r.n64("acc", m_acc);
-    r.b("word_pending", m_word_pending);
-    r.n64("word_timeout", m_word_timeout);
-    r.n64("word_acc", m_word_acc);
-    r.u("reads", m_reads);
-    r.u("writes", m_writes);
     r.u("formats", m_formats);
     r.u("refused", m_refused);
-    bool wp = false;
-    if (r.b("write_protect", wp)) m_image.set_write_protect(wp);
     return emulator::Result::ok();
 }
 

@@ -51,7 +51,7 @@ private:
     i8086 * m_cpu = nullptr;
     AddressableDevice * m_test_rom = nullptr;
     std::vector<uint8_t> m_vram;
-    unsigned int m_memory_wait = 0;
+    unsigned int m_intr_delay = 0;  // тактов 8086 между записью INTR и его приёмом
 
     struct Write { uint16_t address; uint16_t data; bool word; bool vram; };
     enum { QUEUE = 8 };
@@ -113,7 +113,7 @@ public:
     uint16_t gate_in(uint16_t port, bool word) override;
     void gate_out(uint16_t port, uint16_t value, bool word) override;
 
-    // Такты ожидания цикла памяти: ответ платы процессору, wait у её мэппера
+    // Такты ожидания ДОЗУ: wait у памяти платы. ПЗУ и видеопамять отвечают сразу
     unsigned int wait_states(unsigned int address, bool write, unsigned int offset) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;

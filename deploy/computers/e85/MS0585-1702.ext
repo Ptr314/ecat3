@@ -16,11 +16,14 @@ mc1702-test : rom {
 	image = mc1702-test.rom
 }
 
-// memory_wait подобрано: при меньшем значении тест BA1M в автотесте даёт ошибку 7
+// intr_delay: команды здесь атомарны, поэтому запись INTR опережает плату на остаток
+// команды F-11 (42 такта 8086), а первая запись в видеопамять - на своё место в
+// REP STOSW (13). Эти 55 посчитаны. BA1M проходит от 62-66 в зависимости от фазы,
+// остальное подобрано с запасом: docs/dev/machines.md
 mc1702 : e85-mc1702 {
 	cpu = mc1702-cpu
 	test_rom = mc1702-test
-	memory_wait = _6
+	intr_delay = _70
 	~init = cpu.init
 	~inta = mc1702-cpu.inta
 }
@@ -35,8 +38,11 @@ mc1702-cpu : i8086 {
 	~vector = mc1702.vector
 }
 
+// Ждёт только ДОЗУ: контроллер отвечает через автомат D44, ПЗУ и видеопамять
+// отвечают сразу, через D81
 mc1702-ram : ram {
 	size = _512k
+	wait = mc1702
 }
 
 mc1702-rom : rom {
@@ -46,7 +52,6 @@ mc1702-rom : rom {
 
 mc1702-mapper : memory-mapper {
 	address_bits = _20
-	wait = mc1702
 	@memory[$00000-$7FFFF] = mc1702-ram
 	@memory[$B8000-$BBFFF] = mc1702[$20000]
 	@memory[$FC000-$FFFFF] = mc1702-rom {mode = r}

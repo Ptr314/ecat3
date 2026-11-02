@@ -1,0 +1,72 @@
+# Электроника МС 0585: отладочные пути контроллера НГМД и клавиатуры.
+#
+# Стек 8051 растёт вверх, а шаг через вызов измеряет возврат по стеку: L_8B8 сама
+# вызывает L_738, и без учёта направления шаг вставал на 8C3 внутри неё, а выход из
+# подпрограммы проскакивал возврат. Адреса - по КОЧАН.LST.
+#
+# Чтение регистра РСТ запускает прошивку, но LOG читает через get_direct(), и счётчик
+# команд с занятостью не двигаются.
+#
+# Переполнение приёмника не даёт нового фронта RXRDY: запрос 1 контроллера pic1, снятый
+# при занятом приёмнике, не возвращается. ПЗУ в первые секунды этот порт не трогает: сценарий
+# сам включает короткую петлю (команда 205), и переданного никто не читает.
+# 111 в регистр команд pic1 - сброс разряда 1 в IRR.
+#
+# RESET процессора - начальная установка платы НГМД (ТО4, 4.8.4): магистраль уходит к
+# контроллеру, и пока прошивка не кончит тест и не отдаст её, запись ЦП никуда не попадает.
+# Значит, регистры записи остаются прежними, а поле busy падает само.
+# @timeout 60
+MACHINE "computers/e85/MS0585.cfg"
+LOGDEFS _16,_8
+
+PRINT "=== 8051: выход из подпрограммы и шаг через вызов ==="
+COMMAND kngmd-cpu.pause()
+COMMAND kngmd-cpu.until($8C0)
+LOG kngmd-cpu.pc
+COMMAND kngmd-cpu.over()
+LOG kngmd-cpu.pc
+COMMAND kngmd-cpu.out()
+LOG kngmd-cpu.pc
+COMMAND kngmd-cpu.until($87)
+COMMAND kngmd-cpu.over()
+LOG kngmd-cpu.pc
+LOG kngmd-cpu.sfr($81)
+COMMAND kngmd-cpu.run()
+WAIT _1000
+
+PRINT "=== чтение регистров НГМД отладчиком ==="
+LOG kngmd.busy
+LOG kngmd.commands
+LOG kngmd.value(24)
+LOG kngmd.busy
+LOG kngmd.commands
+
+PRINT "=== переполнение приёмника клавиатуры ==="
+COMMAND kbd.set(4,&116)
+COMMAND kbd.set(4,&77)
+COMMAND kbd.set(6,&205)
+COMMAND kbd.set(0,&101)
+WAIT _5
+LOG kbd.received
+LOG kbd.overruns
+COMMAND pic1.set(2,&111)
+LOG pic1.irr
+COMMAND kbd.set(0,&102)
+WAIT _5
+LOG kbd.received
+LOG kbd.overruns
+LOG pic1.irr
+
+PRINT "=== RESET процессора: начальная установка контроллера НГМД ==="
+LOG kngmd.regs_write
+COMMAND cpu.stop()
+COMMAND cpu.setreg(PC,&160000)   // первая команда ПЗУ - RESET
+COMMAND cpu.run()
+WAIT _1
+LOG kngmd.busy
+COMMAND kngmd.set(0,&125)
+LOG kngmd.regs_write
+WAITFOR kngmd.busy == _0, _20000
+COMMAND kngmd.set(0,&125)
+LOG kngmd.regs_write
+EXIT

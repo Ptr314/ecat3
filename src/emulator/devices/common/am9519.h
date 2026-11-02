@@ -44,6 +44,7 @@ private:
 
     void chip_reset();
     int highest() const;
+    void select_own();
     void update();
     void command(unsigned int value);
     unsigned int status() const;

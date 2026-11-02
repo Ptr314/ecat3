@@ -1,0 +1,19 @@
+[rtc.time] &002 &000 &000 &000 &000 &000 &006 &001 &001 &130
+[rtc.control] &040 &116 &020 &200
+[rtc.value] &000100: &000123
+[rtc.time] &002 &000 &000 &000 &000 &000 &006 &001 &001 &130
+[rtc.control] &040 &006 &000 &200
+[rtc.value] &000100: &000123
+=== то, чего модель не считает ===
+[rtc.unsupported] &00000000001
+[rtc.unsupported] &00000000002
+[rtc.unsupported_last] mc146818: daylight saving
+[rtc.unsupported] &00000000003
+[rtc.unsupported_last] mc146818: square wave output
+=== код 0 на одну команду: так ПРОС меняет поле делителя, BICB #177 и BISB #52 ===
+[rtc.unsupported] &00000000003
+=== другая опорная частота держится секунду: часы стоят, это считается ===
+[rtc.unsupported] &00000000004
+[rtc.unsupported_last] mc146818: a time base other than 32768 Hz
+=== удержание делителя (11x) предусмотрено и не считается ===
+[rtc.unsupported] &00000000004

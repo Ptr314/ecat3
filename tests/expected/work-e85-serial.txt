@@ -1,0 +1,19 @@
+[kbd.mode] &116 &274
+[kbd.command] &047
+[kbd.unsupported] &00000000000
+[prn.unsupported] &00000000000
+=== регистр SYN ===
+[prn.unsupported] &00000000001
+[prn.unsupported_last] scn2661: SYN1/SYN2/DLE registers
+=== синхронный режим ===
+[prn.unsupported] &00000000002
+[prn.unsupported_last] scn2661: synchronous mode or a clock not 16 times the rate
+=== внешний такт ===
+[prn.unsupported] &00000000003
+[prn.unsupported_last] scn2661: external clocks
+=== короткая петля с внешним тактом приёмника: не считается ===
+[prn.unsupported] &00000000003
+=== разрыв линии ===
+[prn.unsupported] &00000000004
+[prn.unsupported_last] scn2661: line break
+[prn.unsupported] &00000000004

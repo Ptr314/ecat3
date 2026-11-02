@@ -62,6 +62,7 @@ private:
     void clear_registers();
     void update_irqb();
     unsigned int plane_enables() const;
+    void set_rud(unsigned int &rud, unsigned int value, unsigned int resolution);
     unsigned int memory_index(unsigned int address) const;
     unsigned int read_register(unsigned int offset) const;
     void write_register(unsigned int offset, unsigned int value);
@@ -93,6 +94,8 @@ public:
     const uint16_t * plane(unsigned int n) const { return m_planes[n].data(); }
     bool expansion() const { return m_expansion; }
     bool pal() const { return (m_csr & 1) != 0; }
+    bool interlaced() const { return (m_csr & 2) != 0; }
+    bool even() const { return m_even; }
     bool color_map() const { return (m_csr & 02000) != 0; }
     unsigned int scroll() const { return m_scroll; }
     unsigned int rud1() const { return m_rud1; }
@@ -121,6 +124,8 @@ private:
 
     std::vector<uint32_t> m_rgba;
 
+    unsigned int frame_lines() const;
+    unsigned int frame_clocks() const { return frame_lines() * m_line_clocks; }
     void update_timing();
     void line_done();
     void render_line(unsigned int line);
@@ -138,6 +143,7 @@ public:
     void set_renderer(VideoRenderer &vr) override;
     void clock(unsigned int counter) override;
     bool own_frames() const override { return true; }
+    bool native_frame_rate(uint64_t &num, uint64_t &den) override;
     void get_screen_constraints(unsigned int * sx, unsigned int * sy) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;

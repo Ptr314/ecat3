@@ -1,7 +1,8 @@
 # Электроника МС 0585: метки F8 посекторного привода. Метки дорожки 1 проходят через .hfe,
 # затем ПЗУ грузится с этой дорожки: ВГ93 ставит разряд 5 статуса, прошивка КНГМД отдаёт ошибку
-# 364 (F4 в регистре по смещению 6, данные остаются в буфере). Снимок состояния хранит метки,
-# обычный .dsk их не имеет. Сами установки с меткой - slow-e85-emul13
+# 364 (F4 в регистре по смещению 6, данные остаются в буфере). Обычный .dsk меток не имеет, и
+# его запись идёт в счётчик fd0.unsupported. Метки в снимке - state-e85-marks, сами установки
+# с меткой - slow-e85-emul13
 # @timeout 60
 MACHINE "computers/e85/MS0585.cfg"
 LOGDEFS _16,_8
@@ -26,10 +27,9 @@ WAITFOR fdc.reads == _1, _30000
 LOG fdc.status
 WAIT _5
 LOG kngmd.regs_read
-SAVESTATE "../../tests/results/work-e85-marks.ecats.zip"
-MACHINE "../tests/results/work-e85-marks.ecats.zip"
-LOGDEFS _16,_8
-LOG fd0.deleted
+COMMAND fd0.save("../../tests/results/work-e85-marks.dsk")
+LOG fd0.unsupported
+LOG fd0.unsupported_last
 COMMAND fd0.load("software/e85/pros-d-1.8-system.dsk")
 LOG fd0.deleted
 EXIT

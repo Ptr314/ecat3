@@ -1446,7 +1446,7 @@ void MainWindow::keyPressEvent( QKeyEvent *event )
         e->host_key(key, event->nativeScanCode(), event->modifiers(), true);
 
         if (key == EmuKey::Cancel) {
-            //Pause/Break resets the machine, see Emulator::key_event(); the
+            //Ctrl+Break resets the machine, see Emulator::key_event(); the
             //key has no script name, so the reset itself is recorded
             std::vector<std::string> args;
             args.push_back((event->modifiers() & Qt::AltModifier)?"cold":"soft");

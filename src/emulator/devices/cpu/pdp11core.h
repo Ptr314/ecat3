@@ -97,6 +97,9 @@ protected:
     void fp_copy_cc();
     void fp_raise(uint16_t code);
     uint16_t fp_address(unsigned int spec, unsigned int bytes, bool &immediate);
+    bool fp_fetch(unsigned int spec, bool dbl, uint16_t * w, uint16_t &address, bool &immediate);
+    bool fp_store(unsigned int spec, bool dbl, const uint16_t * w, uint16_t address, bool immediate);
+    bool fp_undefined(unsigned int spec, const uint16_t * w) const;
     bool fp_read(unsigned int spec, bool dbl, uint16_t * w);
     bool fp_write(unsigned int spec, bool dbl, const uint16_t * w);
     bool fp_read_integer(unsigned int spec, bool is_long, int32_t &value);

@@ -74,6 +74,7 @@ private:
     Interface i_INTRQ;
     Interface i_DRQ;
     Interface i_HLD;
+    Interface i_reset;      //MR, high here. Unconnected on most boards
     FDD * drives[4];
     unsigned int drives_count;
     int selected_drive;
@@ -93,8 +94,10 @@ private:
     bool intrq_forced;      //INTRQ held by Force Interrupt I3 until a $D0
     //Force Interrupt I2: INTRQ on the next index pulse, with the pulses modelled
     bool m_index_irq = false;
-    //Read Address walks the sectors of the track as the disk turns (rotate_id).
-    //Off: it always finds sector 1
+    //Read Address gives the next sector of the track each time it is run
+    //(rotate_id), however much time has passed: the chip returns the ID that comes
+    //under the head, and the position of the disk is not modelled here. Off: it
+    //always finds sector 1
     bool m_rotate_id = false;
     unsigned int m_id_sector = 1;
 
@@ -140,10 +143,12 @@ private:
     void SetHLD(bool value);
     void SetTypeIFlags(uint8_t T, uint8_t S);
     void SetTypeIIFlags();
+    int DriveOnLines();
     void FindSelectedDrive();
     void WriteRegister(unsigned address, unsigned  value);
     void ExecuteCommand();
     void SyncAccess();
+    void MasterReset();
 
 public:
     uint8_t registers[5];
@@ -163,6 +168,7 @@ public:
     void set_value(unsigned address, unsigned value, bool force=false) override;
     emulator::Result load_config(SystemData *sd) override;
     void clock(unsigned int counter) override;
+    void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

@@ -1,0 +1,44 @@
+# Электроника МС 0585: что устройство последовательного порта не моделирует. Модель считает только
+# асинхронный обмен с тактом в 16 раз выше скорости на своих делителях (ТО НС1, таблицы 28-31).
+# Остальное программа заказать может, и оно идёт в счётчик. Автотест счётчик не трогает, хотя
+# самотест ПЗУ включает короткую петлю с внешним тактом приёмника: в петле он не нужен.
+# @timeout 30
+MACHINE "computers/e85/MS0585.cfg"
+LOGDEFS _16,_8
+WAITFOR kbd.command == &047, _60000
+WAIT _100
+COMMAND cpu.stop()
+LOG kbd.mode
+LOG kbd.command
+LOG kbd.unsupported
+LOG prn.unsupported
+PRINT "=== регистр SYN ==="
+COMMAND prn.set(_2,&026)
+LOG prn.unsupported
+LOG prn.unsupported_last
+PRINT "=== синхронный режим ==="
+COMMAND prn.set(_4,&114)
+COMMAND prn.set(_4,&276)
+COMMAND prn.set(_6,&047)
+LOG prn.unsupported
+LOG prn.unsupported_last
+PRINT "=== внешний такт ==="
+COMMAND prn.set(_4,&116)
+COMMAND prn.set(_4,&016)
+COMMAND prn.set(_6,&047)
+LOG prn.unsupported
+LOG prn.unsupported_last
+PRINT "=== короткая петля с внешним тактом приёмника: не считается ==="
+COMMAND prn.set(_4,&116)
+COMMAND prn.set(_4,&057)
+COMMAND prn.set(_6,&245)
+LOG prn.unsupported
+PRINT "=== разрыв линии ==="
+COMMAND prn.set(_4,&116)
+COMMAND prn.set(_4,&276)
+COMMAND prn.set(_6,&057)
+LOG prn.unsupported
+LOG prn.unsupported_last
+COMMAND prn.set(_6,&047)
+LOG prn.unsupported
+EXIT

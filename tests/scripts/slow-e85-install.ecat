@@ -5,6 +5,7 @@
 # память: файл e85-blank.rd - один нулевой сектор, накопитель продолжает его нулями.
 # Потом на диск ставятся все игры с двух дискет. Это рецепт образа pros-2.03-10m.rd:
 # последний снимок совпадает с boot-e85-nmd
+# Вокруг снимков процессоры стоят: на --speed 1 машина иначе идёт дальше, пока снимок ждёт кадра
 # @timeout 280
 MACHINE "computers/e85/MS0585-NMD.ext"
 COMMAND knmd.volatile(1)
@@ -69,14 +70,22 @@ LOG knmd.writes
 LOG knmd.refused
 LOG knmd.unsupported
 LOG fdc.reads
+COMMAND cpu.stop()
+COMMAND kngmd-cpu.stop()
 SCREEN "../results/slow-e85-install-done.png"
+COMMAND kngmd-cpu.run()
+COMMAND cpu.run()
 COMMAND fd0.eject()
 COMMAND fd1.eject()
 RESET cold
 WAIT _60000
 LOG knmd.reads
 LOG knmd.writes
+COMMAND cpu.stop()
+COMMAND kngmd-cpu.stop()
 SCREEN "../results/slow-e85-install.png"
+COMMAND kngmd-cpu.run()
+COMMAND cpu.run()
 # Игры: в меню входит 5 программ, остальные - в меню А и Б. Дискету, с которой ставили,
 # система считает занятой, поэтому вторая дискета - после перезагрузки
 KEYDOWN key_down
@@ -1167,5 +1176,7 @@ LOG knmd.reads
 LOG knmd.writes
 LOG knmd.refused
 LOG knmd.unsupported
+COMMAND cpu.stop()
+COMMAND kngmd-cpu.stop()
 SCREEN "../results/slow-e85-install-games.png"
 EXIT

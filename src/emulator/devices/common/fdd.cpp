@@ -522,17 +522,29 @@ bool FDD::is_sector_deleted()
     return i >= 0 && !m_deleted.empty() && m_deleted[(size_t)i] != 0;
 }
 
-void FDD::set_sector_deleted(bool value)
+unsigned int FDD::deleted_count() const
 {
-    const int i = sector_index(track, side, sector);
-    if (i < 0) return;
+    unsigned int count = 0;
+    for (size_t i = 0; i < m_deleted.size(); i++)
+        if (m_deleted[i] != 0) count++;
+    return count;
+}
+
+void FDD::mark_sector(int index, bool value)
+{
     if (m_deleted.empty()) {
         if (!value) return;
         m_deleted.assign((size_t)sides*tracks*sectors, 0);
     }
-    if ((m_deleted[(size_t)i] != 0) == value) return;
-    m_deleted[(size_t)i] = value ? 1 : 0;
+    if ((m_deleted[(size_t)index] != 0) == value) return;
+    m_deleted[(size_t)index] = value ? 1 : 0;
     m_modified = true;
+}
+
+void FDD::set_sector_deleted(bool value)
+{
+    const int i = sector_index(track, side, sector);
+    if (i >= 0) mark_sector(i, value);
 }
 
 void FDD::NextPosition()
@@ -916,14 +928,6 @@ emulator::Result FDD::sectors_to_hfe(const std::string &file_name)
     dsk_tools::HfeImage img;
     dsk_tools::track_hfe_params(format, img);
     img.write_allowed = !write_protect;
-    //The gaps of the track the drivers of the БК and the УК-НЦ write
-    dsk_tools::IbmTrackFormat fmt;
-    fmt.sectors = sectors;
-    fmt.sector_size = sector_size;
-    fmt.gaps.index_mark = false;
-    fmt.gaps.gap1 = 42;
-    fmt.gaps.gap2 = 22;
-    fmt.gaps.gap3 = 36;
     for (int t = 0; t < tracks; t++)
         for (int s = 0; s < sides; s++) {
             const size_t first = (size_t)image_track(t, s, sides_layout) * sectors;
@@ -932,7 +936,8 @@ emulator::Result FDD::sectors_to_hfe(const std::string &file_name)
                 for (int k = 0; k < sectors; k++)
                     if (m_deleted[first + (size_t)k] != 0) deleted |= (uint16_t)(1u << k);
             dsk_tools::BYTES data, special;
-            if (!dsk_tools::ibm_format_track(fmt, t, s, buffer + first * sector_size, deleted, data, special))
+            if (!dsk_tools::ibm_mfm_format_track(data, special, t, s, sectors, sector_size,
+                                                 buffer + first * sector_size, deleted))
                 return unsupported;
             dsk_tools::mfm_encode(data.data(), special.data(), data.size(), img.cells[(size_t)t * sides + s]);
         }
@@ -1212,6 +1217,8 @@ emulator::Result FDD::save_image(const std::string &file_name)
                 }
             } else
             if (fdd_mode == FDD_MODE_LOGICAL) {
+                //The marks stay in memory and in a snapshot; a flat file has no place for them
+                if (deleted_count() != 0) note_unsupported("fdd: deleted data marks in a flat image");
                 dsk_tools::UTF8_ofstream file(file_name, std::ios::binary);
                 if (file.is_open()){
                     bool target_layout = layout_for_file(file_name);
@@ -1688,11 +1695,8 @@ bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to
 
     if (field == "deleted" && loaded && track_mode == FDD_MODE_SECTORS)
     {
-        unsigned int count = 0;
-        for (size_t i = 0; i < m_deleted.size(); i++)
-            if (m_deleted[i] != 0) count++;
         out.width = 32;
-        out.values.push_back(count);
+        out.values.push_back(deleted_count());
         return true;
     }
 
@@ -1798,15 +1802,7 @@ emulator::Result FDD::send_command(const std::string &command, const std::string
         if (i < 0)
             return emulator::Result::error(emulator::ErrorCode::BadParameters,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Command 'mark' expects a track, a side and a sector of a sector image")) + "}");
-        const bool wanted = p.size() < 4 || p[3].empty() || parse_numeric_value(p[3]) != 0;
-        if (m_deleted.empty()) {
-            if (!wanted) return emulator::Result::ok();
-            m_deleted.assign((size_t)sides*tracks*sectors, 0);
-        }
-        if ((m_deleted[(size_t)i] != 0) != wanted) {
-            m_deleted[(size_t)i] = wanted ? 1 : 0;
-            m_modified = true;
-        }
+        mark_sector(i, p.size() < 4 || p[3].empty() || parse_numeric_value(p[3]) != 0);
         return emulator::Result::ok();
     }
 

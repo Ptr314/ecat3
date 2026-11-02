@@ -28,8 +28,10 @@
 #define B_PIE       0100
 #define B_AIE       0040
 #define B_UIE       0020
+#define B_SQWE      0010            // the square wave output, not modelled
 #define B_DM        0004            // 1 - binary, 0 - BCD
 #define B_24H       0002
+#define B_DSE       0001            // daylight saving, not modelled
 #define C_IRQF      0200
 #define C_PF        0100
 #define C_AF        0040
@@ -46,6 +48,23 @@ MC146818::MC146818(InterfaceManager *im, EmulatorConfigDevice *cd):
     can_read = true;
     can_write = true;
     addresable_size = 128;
+    clear_chip();
+}
+
+// What a chip holds when its power comes back
+void MC146818::clear_chip()
+{
+    memset(m_regs, 0, sizeof(m_regs));
+    m_regs[REG_A] = 040;            // 32768 Hz
+    m_regs[REG_B] = B_DM | B_24H;
+    m_regs[REG_DAY] = 1;
+    m_regs[REG_MONTH] = 1;
+    m_regs[REG_YEAR] = 88;
+    m_regs[REG_DOW] = 6;
+    m_valid = false;
+    m_fraction = 0;
+    m_second_ticks = 0;
+    m_periodic_ticks = 0;
 }
 
 emulator::Result MC146818::load_config(SystemData *sd)
@@ -53,36 +72,24 @@ emulator::Result MC146818::load_config(SystemData *sd)
     emulator::Result res = AddressableDevice::load_config(sd);
     if (!res) return res;
     m_battery = read_confg_value(cd, "battery", false, false);
-    m_word_spaced = read_confg_value(cd, "word_spaced", false, true);
-    addresable_size = m_word_spaced ? 128 : 64;
+    m_valid = m_battery;
+    addresable_size = 128;
     return emulator::Result::ok();
 }
 
 void MC146818::reset(bool cold)
 {
     AddressableDevice::reset(cold);
-    if (cold) {
-        memset(m_regs, 0, sizeof(m_regs));
-        m_regs[REG_A] = 040;        // 32768 Hz
-        m_regs[REG_B] = B_DM | B_24H;
-        m_regs[REG_DAY] = 1;
-        m_regs[REG_MONTH] = 1;
-        m_regs[REG_YEAR] = 88;
-        m_regs[REG_DOW] = 6;
-        m_valid = m_battery;
-        m_fraction = 0;
-        m_second_ticks = 0;
-        m_periodic_ticks = 0;
-    }
+    if (cold && !m_battery) clear_chip();
     // The reset pin: interrupts off, flags down. Time and RAM stay
-    m_regs[REG_B] &= (uint8_t)~(B_PIE | B_AIE | B_UIE);
+    m_regs[REG_B] &= (uint8_t)~(B_PIE | B_AIE | B_UIE | B_SQWE);
     m_regs[REG_C] = 0;
     update_irq();
 }
 
 unsigned int MC146818::index_of(unsigned int address) const
 {
-    return (m_word_spaced ? (address >> 1) : address) & 077;
+    return (address >> 1) & 077;
 }
 
 unsigned int MC146818::to_binary(unsigned int v) const
@@ -148,8 +155,16 @@ bool MC146818::alarm_matches() const
 
 void MC146818::tick(unsigned int ticks)
 {
-    // Register A, bits 6-4: the divider runs only on 010
-    if ((m_regs[REG_A] & 0160) != 040) return;
+    // Register A, bits 6-4: the divider runs only on 010 and 11x holds it, the rest
+    // are other crystals. ПРОС changes the field in two commands, BICB #177 and
+    // BISB #52, and passes through 000: only a code that stays is counted
+    if ((m_regs[REG_A] & 0160) != 040) {
+        if ((m_regs[REG_A] & 0140) != 0140 && (m_stalled_ticks += ticks) >= TICKS_HZ) {
+            m_stalled_ticks = 0;
+            note_unsupported("mc146818: a time base other than 32768 Hz");
+        }
+        return;
+    }
 
     const unsigned int rate = m_regs[REG_A] & 017;
     if (rate != 0) {
@@ -224,9 +239,12 @@ void MC146818::write_register(unsigned int index, unsigned int value)
     value &= 0xFF;
     switch (index) {
     case REG_A:
+        m_stalled_ticks = 0;
         m_regs[REG_A] = (uint8_t)((m_regs[REG_A] & A_UIP) | (value & ~A_UIP));
         break;
     case REG_B:
+        if (value & B_DSE) note_unsupported("mc146818: daylight saving");
+        if (value & B_SQWE) note_unsupported("mc146818: square wave output");
         m_regs[REG_B] = (uint8_t)value;
         update_irq();
         break;
@@ -251,19 +269,19 @@ void MC146818::set_value_word(unsigned int address, unsigned int value, MAYBE_UN
 
 unsigned MC146818::get_direct(unsigned address)
 {
-    if (m_word_spaced && (address & 1)) return 0;
+    if (address & 1) return 0;
     return read_register(index_of(address), true);
 }
 
 unsigned int MC146818::get_value(unsigned int address)
 {
-    if (m_word_spaced && (address & 1)) return 0;
+    if (address & 1) return 0;
     return get_value_word(address);
 }
 
 void MC146818::set_value(unsigned int address, unsigned int value, bool force)
 {
-    if (m_word_spaced && (address & 1)) return;
+    if (address & 1) return;
     set_value_word(address, value, force);
 }
 
@@ -306,6 +324,7 @@ void MC146818::save_state(StateWriter &w)
     w.n64("fraction", m_fraction);
     w.n("second_ticks", m_second_ticks);
     w.n("periodic_ticks", m_periodic_ticks);
+    w.n("stalled_ticks", m_stalled_ticks);
 }
 
 emulator::Result MC146818::load_state(const StateReader &r)
@@ -317,6 +336,7 @@ emulator::Result MC146818::load_state(const StateReader &r)
     r.n64("fraction", m_fraction);
     r.u("second_ticks", m_second_ticks);
     r.u("periodic_ticks", m_periodic_ticks);
+    r.u("stalled_ticks", m_stalled_ticks);
     return emulator::Result::ok();
 }
 

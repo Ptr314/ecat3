@@ -74,7 +74,7 @@ int Am9519::highest() const
     return -1;
 }
 
-void Am9519::update()
+void Am9519::select_own()
 {
     m_own = 0;
     m_own_line = -1;
@@ -85,6 +85,11 @@ void Am9519::update()
             m_own = m_vectors[(m_mode & MODE_COMMON) ? 0 : line];
         }
     }
+}
+
+void Am9519::update()
+{
+    select_own();
     m_irq.offer(VirqLine::chain(m_own, i_virq_in, i_vector_in));
 }
 
@@ -117,15 +122,18 @@ void Am9519::interface_callback(unsigned int callback_id, unsigned int new_value
     }
 }
 
-// Table 38. The codes between the listed ones do what their neighbours do: the
-// chip decodes the upper bits only
+// Table 38. A range in it means the low bits do not matter. The codes it leaves out,
+// 001-017, 320-337 and 350-377, are counted and do nothing: MAME takes 001-007 for a
+// reset, ignores 010-017 and has 340-377 choose a vector of up to four bytes, but no
+// data sheet was at hand to settle it. No program here is known to write them
 void Am9519::command(unsigned int value)
 {
     const unsigned int bit = 1u << (value & 7);
     switch (value >> 3) {
     case 000:
     case 001:
-        chip_reset();
+        if (value == 0) chip_reset();
+        else note_unsupported("am9519: unknown command");
         break;
     case 002: m_irr = 0; m_imr = 0; break;
     case 003: m_irr &= (uint8_t)~bit; m_imr &= (uint8_t)~bit; break;
@@ -171,7 +179,7 @@ void Am9519::command(unsigned int value)
         m_write = WRITE_ACR;
         break;
     default:
-        if (value >= 0340) {
+        if ((value & 0370) == 0340) {
             m_write = WRITE_VECTOR;
             m_write_line = value & 7;
         } else
@@ -310,13 +318,8 @@ emulator::Result Am9519::load_state(const StateReader &r)
     unsigned int offered = 0;
     r.u("offered", offered);
     m_irq.set_offered(offered);
-    // Recomputed without a line moving: load_state() must not drive one
-    m_own = 0;
-    m_own_line = -1;
-    if ((m_mode & MODE_ARMED) != 0 && (m_mode & MODE_POLLED) == 0) {
-        m_own_line = highest();
-        if (m_own_line >= 0) m_own = m_vectors[(m_mode & MODE_COMMON) ? 0 : m_own_line];
-    }
+    // Without update(): load_state() must not drive a line
+    select_own();
     return emulator::Result::ok();
 }
 

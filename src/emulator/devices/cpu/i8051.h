@@ -34,8 +34,6 @@ private:
     uint16_t m_pc = 0;
 
     bool m_in_irq[2] = {};      // обслуживается уровень приоритета 0, 1
-    bool m_int0_old = true;
-    bool m_int1_old = true;
     bool m_held = false;        // RST
     bool m_skip_irq = false;    // команда, за которой запрос не берётся (RETI, запись IE, IP)
 
@@ -102,6 +100,8 @@ public:
     bool stack_address(int i, unsigned int &address) override;
     unsigned int stack_entry_bytes() const override { return 1; }
     unsigned int sp_bits() const override { return 8; }
+    bool stack_grows_up() const override { return true; }
+    unsigned int stack_peek(unsigned int address) override { return read_iram(address); }
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

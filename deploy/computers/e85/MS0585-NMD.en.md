@@ -65,6 +65,9 @@ formatting and checking the disk. At the highest speed that is less than a minut
 
 ## Not done
 
+- The speed of the disk is not the real one. The technical description gives no times, they are
+  taken from the DVK hard disk, and the disk does not turn: a sector comes right after the seek. A
+  real drive is slower, by how much is not known, so the time PROS takes to boot here is no measure.
 - The service zone of a sector is not stored; the controller only counts such writes.
 - There are no ready images for 32 MB (8 heads, 511 cylinders) and 5 MB (153 cylinders). Both
   sizes are set by the device parameters, and PROS 2.03 installs on them from the floppies and

@@ -42,7 +42,6 @@ private:
     bool m_rx_ip = false;           // a character came
     bool m_ius = false;             // RR2 read, no end of interrupt yet
 
-    unsigned int m_osc = 5068800;
     unsigned int m_sent = 0;
     unsigned int m_received = 0;
 

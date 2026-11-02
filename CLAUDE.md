@@ -114,8 +114,6 @@ from a regression.
   `m_debug != DEBUG_OFF`, and gives the debugger its stack, flags and wait state (`docs/dev/core.md`).
 - New machine: a `.cfg` (or an `.ext` on a base) plus a matching `.md` description (Russian; translations
   as `<stem>.en.md` / `<stem>.bg.md` beside it), no code.
-  `package_machines.py` skips an extension standing on another extension, so it silently drops out of the
-  web build.
 - Reserved names: `cpu` (master processor and time base), `mapper`, `display`, `keyboard`. Everything else
   is found by class.
 - A guest action the device does not model is counted (`note_unsupported()`), never fatal.

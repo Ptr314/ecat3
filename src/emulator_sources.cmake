@@ -138,6 +138,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/dvk_kcgd.h emulator/devices/specific/dvk_kcgd.cpp
     emulator/devices/specific/dvk_kmd.h emulator/devices/specific/dvk_kmd.cpp
     emulator/devices/specific/dvk_dw.h emulator/devices/specific/dvk_dw.cpp
+    emulator/devices/common/dw_controller.h emulator/devices/common/dw_controller.cpp
     emulator/devices/common/hdd_image.h emulator/devices/common/hdd_image.cpp
     emulator/devices/specific/uknc_sound.h emulator/devices/specific/uknc_sound.cpp
     emulator/devices/specific/argo_keyboard.h emulator/devices/specific/argo_keyboard.cpp

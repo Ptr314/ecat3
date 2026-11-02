@@ -13,7 +13,10 @@ using namespace I8086;
 #define CALLBACK_NMI    2
 #define CALLBACK_RESET  3
 
-// Clocks of a processor held by RES or by the gate, one pass of execute()
+// Clocks of a processor held by RES or by the gate, one pass of execute(). A step of
+// this model and no figure of a board: the chip looks at READY every clock, here a
+// released processor starts up to this many clocks late. No test depends on it: at 4
+// the МС 1702 and Поиск-1 references stay as they are
 #define GATE_CLOCKS     8
 
 //---------------------------  Library wrapper --------------------------------

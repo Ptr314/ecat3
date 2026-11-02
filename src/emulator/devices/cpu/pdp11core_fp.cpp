@@ -201,11 +201,13 @@ uint16_t pdp11core::fp_address(unsigned int spec, unsigned int bytes, bool &imme
     return a;
 }
 
-// Читает операнд ПЗ; false - команда кончена (авария, ошибка кода, неопределённая
-// величина с разрешённым прерыванием)
-bool pdp11core::fp_read(unsigned int spec, bool dbl, uint16_t * w)
+// Читает операнд ПЗ без проверки на -0; адрес остаётся для записи на то же место.
+// false - команда кончена (авария, ошибка кода)
+bool pdp11core::fp_fetch(unsigned int spec, bool dbl, uint16_t * w, uint16_t &address, bool &immediate)
 {
     w[0] = w[1] = w[2] = w[3] = 0;
+    address = 0;
+    immediate = false;
     if ((spec & 070) == 0) {
         const unsigned int reg = spec & 7;
         if (reg > 5) {
@@ -214,17 +216,52 @@ bool pdp11core::fp_read(unsigned int spec, bool dbl, uint16_t * w)
         }
         const unsigned int n = dbl ? 4 : 2;
         for (unsigned int i = 0; i < n; i++) w[i] = m_fac[reg][i];
-    } else {
-        bool immediate = false;
-        const uint16_t a = fp_address(spec, dbl ? 8 : 4, immediate);
-        if (m_abort) return false;
-        const unsigned int n = immediate ? 1 : (dbl ? 4 : 2);
-        for (unsigned int i = 0; i < n; i++) {
-            w[i] = read_word_checked((uint16_t)(a + i * 2));
-            if (m_abort) return false;
-        }
+        return true;
     }
-    if ((w[0] & 0177600) == 0100000 && (m_fps & FPS_FIUV) != 0) {
+    address = fp_address(spec, dbl ? 8 : 4, immediate);
+    if (m_abort) return false;
+    const unsigned int n = immediate ? 1 : (dbl ? 4 : 2);
+    for (unsigned int i = 0; i < n; i++) {
+        w[i] = read_word_checked((uint16_t)(address + i * 2));
+        if (m_abort) return false;
+    }
+    return true;
+}
+
+// Запись по адресу, который дала fp_address() или fp_fetch()
+bool pdp11core::fp_store(unsigned int spec, bool dbl, const uint16_t * w, uint16_t address, bool immediate)
+{
+    if ((spec & 070) == 0) {
+        const unsigned int reg = spec & 7;
+        if (reg > 5) {
+            fp_raise(FEC_OPCODE);
+            return false;
+        }
+        fp_store_ac(reg, w, dbl);
+        return true;
+    }
+    const unsigned int n = immediate ? 1 : (dbl ? 4 : 2);
+    for (unsigned int i = 0; i < n; i++) {
+        write_word_checked((uint16_t)(address + i * 2), w[i]);
+        if (m_abort) return false;
+    }
+    return true;
+}
+
+// Прерывание по -0 разрешено и он считан из памяти: в накопителе -0 его не вызывает
+// (ТО1, 9.3). Когда оно приходит, решает команда: LD, ABS, NEG и TST - по-своему
+bool pdp11core::fp_undefined(unsigned int spec, const uint16_t * w) const
+{
+    return (spec & 070) != 0 && (w[0] & 0177600) == 0100000 && (m_fps & FPS_FIUV) != 0;
+}
+
+// Читает операнд; false - команда кончена, в том числе прерыванием по -0 перед ней
+bool pdp11core::fp_read(unsigned int spec, bool dbl, uint16_t * w)
+{
+    uint16_t a;
+    bool immediate;
+    if (!fp_fetch(spec, dbl, w, a, immediate)) return false;
+    if (fp_undefined(spec, w)) {
         fp_raise(FEC_UNDEFINED);
         return false;
     }
@@ -233,25 +270,13 @@ bool pdp11core::fp_read(unsigned int spec, bool dbl, uint16_t * w)
 
 bool pdp11core::fp_write(unsigned int spec, bool dbl, const uint16_t * w)
 {
-    if ((spec & 070) == 0) {
-        const unsigned int reg = spec & 7;
-        if (reg > 5) {
-            fp_raise(FEC_OPCODE);
-            return false;
-        }
-        const unsigned int n = dbl ? 4 : 2;
-        for (unsigned int i = 0; i < n; i++) m_fac[reg][i] = w[i];
-        return true;
-    }
+    uint16_t a = 0;
     bool immediate = false;
-    const uint16_t a = fp_address(spec, dbl ? 8 : 4, immediate);
-    if (m_abort) return false;
-    const unsigned int n = immediate ? 1 : (dbl ? 4 : 2);
-    for (unsigned int i = 0; i < n; i++) {
-        write_word_checked((uint16_t)(a + i * 2), w[i]);
+    if ((spec & 070) != 0) {
+        a = fp_address(spec, dbl ? 8 : 4, immediate);
         if (m_abort) return false;
     }
-    return true;
+    return fp_store(spec, dbl, w, a, immediate);
 }
 
 pdp11core::fp_value pdp11core::fp_add(fp_value a, fp_value b)
@@ -451,43 +476,31 @@ bool pdp11core::fp_execute(uint16_t ir, unsigned int & cycles)
             m_fps &= (uint16_t)~(FPS_FN | FPS_FV | FPS_FC);
             m_fps |= FPS_FZ;
             return true;
-        case 1:                                                         // TSTF
-            if (!fp_read(spec, dbl, src)) return true;
+        case 1: {                                                       // TSTF
+            uint16_t a;
+            bool immediate;
+            if (!fp_fetch(spec, dbl, src, a, immediate)) return true;
             fp_set_cc(src);
             m_fps &= (uint16_t)~FPS_FV;
+            if (fp_undefined(spec, src)) fp_raise(FEC_UNDEFINED);       // после исполнения
             return true;
+        }
         default: {                                                      // ABSF, NEGF
             // Операнд меняется на месте: адрес считается один раз
-            const bool memory = (spec & 070) != 0;
-            uint16_t a = 0;
-            bool immediate = false;
-            if (memory) {
-                a = fp_address(spec, dbl ? 8 : 4, immediate);
-                if (m_abort) return true;
-                const unsigned int n = immediate ? 1 : (dbl ? 4 : 2);
-                src[1] = src[2] = src[3] = 0;
-                for (unsigned int i = 0; i < n; i++) {
-                    src[i] = read_word_checked((uint16_t)(a + i * 2));
-                    if (m_abort) return true;
-                }
-            } else if (!fp_read(spec, dbl, src))
-                return true;
+            uint16_t a;
+            bool immediate;
+            if (!fp_fetch(spec, dbl, src, a, immediate)) return true;
+            const bool undefined = fp_undefined(spec, src);
             uint16_t word = src[0];
             if ((word & 077600) == 0) word = 0;     // ноль и минус ноль дают ноль
             else if (ac == 2) word &= 077777;
             else word ^= 0100000;
             src[0] = word;
             if (word == 0) src[1] = src[2] = src[3] = 0;
-            if (memory) {
-                const unsigned int n = immediate ? 1 : (dbl ? 4 : 2);
-                for (unsigned int i = 0; i < n; i++) {
-                    write_word_checked((uint16_t)(a + i * 2), src[i]);
-                    if (m_abort) return true;
-                }
-            } else
-                fp_store_ac(spec & 7, src, dbl);
+            if (!fp_store(spec, dbl, src, a, immediate)) return true;
             fp_set_cc(src);
             m_fps &= (uint16_t)~FPS_FV;
+            if (undefined) fp_raise(FEC_UNDEFINED);                     // после исполнения
             return true;
         }
         }
@@ -502,6 +515,7 @@ bool pdp11core::fp_execute(uint16_t ir, unsigned int & cycles)
         fp_value b = fp_unpack(src);
         fp_value r;
         uint16_t error = 0;
+        uint16_t whole_error = 0;
         switch (group) {
         case 2:
             r = fp_mul(a, b);
@@ -531,11 +545,11 @@ bool pdp11core::fp_execute(uint16_t ir, unsigned int & cycles)
                         part.exp--;
                     }
             }
-            if ((ac & 1) == 0) {
-                uint16_t w[4];
-                fp_pack(whole, w, dbl, false);
-                fp_store_ac(ac | 1, w, dbl);
-            }
+            // Упаковывается всегда: переполнение произведения есть переполнение его
+            // целой части, а записывается она только при чётном AC
+            uint16_t w[4];
+            whole_error = fp_pack(whole, w, dbl, false);
+            if ((ac & 1) == 0) fp_store_ac(ac | 1, w, dbl);
             r = part;
             break;
         }
@@ -558,19 +572,31 @@ bool pdp11core::fp_execute(uint16_t ir, unsigned int & cycles)
             break;
         }
         error = fp_pack(r, res, dbl, true);
+        if (whole_error != 0) {                 // упаковка дробной части сняла VE
+            m_fps |= FPS_FV;
+            error = whole_error;
+        }
         fp_store_ac(ac, res, dbl);
         fp_set_cc(res);
         if (error != 0) fp_raise(error);
         return true;
     }
 
-    case 5:                                                             // LDF
+    case 5: {                                                           // LDF
         cycles += C_FP_LOAD;
-        if (!fp_read(spec, dbl, src)) return true;
-        fp_store_ac(ac, src, dbl);
+        uint16_t a;
+        bool immediate;
+        if (!fp_fetch(spec, dbl, src, a, immediate)) return true;
+        // Признаки показывают выборку и при -0, прерывание приходит до загрузки AC
         fp_set_cc(src);
         m_fps &= (uint16_t)~FPS_FV;
+        if (fp_undefined(spec, src)) {
+            fp_raise(FEC_UNDEFINED);
+            return true;
+        }
+        fp_store_ac(ac, src, dbl);
         return true;
+    }
 
     case 7: {                                                           // CMPF
         cycles += C_FP_LOAD;
