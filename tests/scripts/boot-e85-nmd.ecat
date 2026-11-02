@@ -1,0 +1,16 @@
+# Электроника МС 0585 с винчестером: автотест ПЗУ проверяет контроллер НМД (регистры,
+# прерывания А и Б, чтение на цилиндрах 0 и 227), затем ПРОС 2.03 загружается с диска
+# в Основное меню. Образ создан самой машиной, см. slow-e85-install
+# @timeout 120
+MACHINE "computers/e85/MS0585-NMD.ext"
+COMMAND knmd.load("software/e85/pros-2.03-10m.rd")
+COMMAND knmd.volatile(1)
+WAIT _60000
+LOGDEFS _16,_8
+LOG knmd.reads
+LOG knmd.writes
+LOG knmd.refused
+LOG knmd.unsupported
+LOG cpu.timeouts
+SCREEN "../results/boot-e85-nmd.png"
+EXIT

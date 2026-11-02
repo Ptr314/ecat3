@@ -57,6 +57,9 @@
 #include "emulator/devices/common/printer.h"
 #include "emulator/devices/common/i8253.h"
 #include "emulator/devices/common/i8259.h"
+#include "emulator/devices/common/am9519.h"
+#include "emulator/devices/common/scn2661.h"
+#include "emulator/devices/common/mc146818.h"
 #include "emulator/devices/common/register.h"
 #include "emulator/devices/common/mux.h"
 #include "emulator/devices/cpu/z80.h"
@@ -109,6 +112,13 @@
 #include "emulator/devices/specific/dvk_kgd.h"
 #include "emulator/devices/specific/dvk_dx.h"
 #include "emulator/devices/specific/dvk_lks.h"
+#include "emulator/devices/specific/e85_sys.h"
+#include "emulator/devices/specific/e85_comm.h"
+#include "emulator/devices/specific/e85_video.h"
+#include "emulator/devices/specific/e85_kngmd.h"
+#include "emulator/devices/specific/e85_knmd.h"
+#include "emulator/devices/specific/e85_mc1702.h"
+#include "emulator/devices/cpu/i8051.h"
 #include "emulator/devices/specific/dvk_panel.h"
 #include "emulator/devices/specific/dvk_kcgd.h"
 #include "emulator/devices/specific/dvk_kmd.h"
@@ -2674,6 +2684,17 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("printer", create_printer);
     dm->register_device("i8253", create_i8253);
     dm->register_device("i8259", create_i8259);
+    dm->register_device("am9519", create_am9519);
+    dm->register_device("scn2661", create_scn2661);
+    dm->register_device("mc146818", create_mc146818);
+    dm->register_device("e85-sys", create_e85_sys);
+    dm->register_device("e85-comm", create_e85_comm);
+    dm->register_device("e85-video", create_e85_video);
+    dm->register_device("e85-display", create_e85_display);
+    dm->register_device("e85-kngmd", create_e85_kngmd);
+    dm->register_device("e85-knmd", create_e85_knmd);
+    dm->register_device("e85-mc1702", create_e85_mc1702);
+    dm->register_device("i8051", create_i8051);
     dm->register_device("register", create_register);
     dm->register_device("mux", create_mux);
     dm->register_device("z80", create_z80);
@@ -2687,6 +2708,7 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("1801vm1", create_k1801vm1);
     dm->register_device("1801vm2", create_k1801vm2);
     dm->register_device("1801vm3", create_k1801vm3);
+    dm->register_device("km1811vm1", create_km1811vm1);
     dm->register_device("i8086", create_i8086);
     dm->register_device("i8088", create_i8088);
     dm->register_device("agat-fdc140", create_agat_fdc140);

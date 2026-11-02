@@ -9,6 +9,8 @@
 #include "wd1793.h"
 #include "emulator/utils.h"
 
+#define CALLBACK_RESET  1
+
 WD1793::WD1793(InterfaceManager *im, EmulatorConfigDevice *cd):
       FDC(im, cd)
     , drives_count(0)
@@ -30,6 +32,7 @@ WD1793::WD1793(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_INTRQ(this, im, 1, "intrq", MODE_W)
     , i_DRQ(this, im, 1, "drq", MODE_W)
     , i_HLD(this, im, 1, "hld", MODE_W)
+    , i_reset(this, im, 1, "reset", MODE_R, CALLBACK_RESET)
 {
     m_clocked = true;   //clock() is overridden here
     memset(&registers, 0, sizeof(registers));
@@ -60,8 +63,25 @@ emulator::Result WD1793::load_config(SystemData *sd)
     m_index_period = (unsigned)((uint64_t)m_system_clock * period_ms / 1000);
     m_index_width = (unsigned)((uint64_t)m_system_clock * width_us / 1000000);
     m_track_length = read_confg_value(cd, "track_length", false, (unsigned int)wd1793_TRACK_LENGTH);
+    m_rotate_id = read_confg_value(cd, "rotate_id", false, false);
 
     return emulator::Result::ok();
+}
+
+//MR, from the data sheet: what runs stops, the sector register gets 1, the
+//command register $03, and the chip restores as the pin goes away
+void WD1793::MasterReset()
+{
+    register_delay = 0;
+    ClearDRQ();
+    intrq_forced = false;
+    registers[wd1793_REG_SECTOR] = 1;
+    WriteRegister(wd1793_REG_COMMAND, 0x03);
+}
+
+void WD1793::interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value)
+{
+    if (callback_id == CALLBACK_RESET && (new_value & 1) != 0 && (old_value & 1) == 0) MasterReset();
 }
 
 void WD1793::SetDRQ()
@@ -112,15 +132,18 @@ void WD1793::SetHLD(bool value)
     hld_timer = value ? wd1793_DELAY_HLD_RELEASE : 0;
 }
 
-void WD1793::FindSelectedDrive()
+//The drive the select lines name now. A command works with the one it found as
+//it started (selected_drive): a board can move the lines while it runs
+int WD1793::DriveOnLines()
 {
     for (unsigned int i=0; i < drives_count; i++)
-        if (drives[i]->is_selected())
-        {
-            selected_drive = i;
-            return void();
-        }
-    selected_drive = -1;
+        if (drives[i]->is_selected()) return (int)i;
+    return -1;
+}
+
+void WD1793::FindSelectedDrive()
+{
+    selected_drive = DriveOnLines();
 }
 
 void WD1793::WriteRegister(unsigned int address, unsigned int  value)
@@ -131,6 +154,7 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
         //Command register
         registers[4] = value;
         if (!intrq_forced) ClearINTRQ();
+        m_index_irq = false;
         FindSelectedDrive();
         unsigned int c = (value & 0xF0) >> 4;
         m_type1 = c < 0x08 || c == 0x0D;
@@ -226,14 +250,20 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
             //does. Copiers and BIOSes reset the controller with $D8
             intrq_forced = (value & 0x08) != 0;
             if (intrq_forced) SetINTRQ();
-            //I2 - on every index pulse: there are no index pulses here, so
-            //once, as soon as the first would come. I0/I1 - on a change of
-            //the ready line, which no drive here ever changes
-            else if ((value & 0x04) != 0) SetINTRQ();
+            //I2 - on every index pulse. Without pulses in the model, once, as
+            //soon as the first would come. I0/I1 - on a change of the ready
+            //line, which no drive here ever changes
+            else if ((value & 0x04) != 0) {
+                if (m_index_period > 0) {
+                    m_index_irq = true;
+                    ClearINTRQ();
+                } else
+                    SetINTRQ();
+            }
             //No condition: the command ends without an interrupt, and this
             //is what releases one forced by I3
             else ClearINTRQ();
-            if ((value & 0x07) != 0)
+            if ((value & 0x03) != 0 || ((value & 0x04) != 0 && m_index_period == 0))
                 note_unsupported("wd1793: Force Interrupt on index or ready");
             break;
         }
@@ -241,6 +271,12 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
         registers[a] = value;
     }
     if (a==wd1793_REG_DATA) ClearDRQ();
+}
+
+bool WD1793::selected_ready()
+{
+    const int drive = DriveOnLines();
+    return drive >= 0 && drives[drive]->get_loaded();
 }
 
 bool WD1793::get_busy()
@@ -278,8 +314,7 @@ unsigned int WD1793::get_value(unsigned int address)
     if (a==wd1793_REG_DATA) ClearDRQ();
     if (a==wd1793_REG_STATUS && !intrq_forced) ClearINTRQ();
     if (a==wd1793_REG_STATUS && m_index_period > 0 && m_type1) {
-        const bool disk = selected_drive >= 0 && drives[selected_drive]->get_loaded();
-        const bool index = disk && m_index_clock < m_index_width;
+        const bool index = selected_ready() && m_index_clock < m_index_width;
         return index ? (registers[a] | wd1793_FLAG_INDEX) : (registers[a] & ~wd1793_FLAG_INDEX);
     }
     return registers[a];
@@ -385,6 +420,9 @@ void WD1793::SetTypeIIFlags()
     //Record Not Found of an earlier command (a Read Address or a verify)
     //does not outlive the one that found its sector
     ClearFlag(wd1793_FLAG_ERR_SEEK);
+    //Bit 5 was HLD after a type I command. Here it is the record type or a
+    //write fault: left as it was, Read Address looked like a deleted mark
+    ClearFlag(wd1793_FLAG_DATA_TYPE);
 }
 
 // One step of the command state machine, called when the current delay has expired
@@ -445,6 +483,8 @@ void WD1793::ExecuteCommand()
         if (sector_size > 0 && head_cylinder() != registers[wd1793_REG_TRACK]) sector_size = FDD_SEEK_NO_SECTOR;
         if ((sector_size > 0) && !drives[selected_drive]->is_protected())
         {
+            //a0 writes the deleted data mark, and a plain write takes it away
+            drives[selected_drive]->set_sector_deleted((registers[4] & wd1793_PARAM_a0) != 0);
             delay = wd1793_DELAY_NEXT_BYTE;
             command = wd1793_COMMAND_WRITE_BYTE;
             bytes = 0;
@@ -467,12 +507,16 @@ void WD1793::ExecuteCommand()
         //side, sector, size code and the CRC. The chip puts the cylinder into
         //the sector register
         const int cyl = head_cylinder();
-        const int size = (selected_drive >= 0) ? drives[selected_drive]->SeekSector(cyl, 1) : FDD_SEEK_NO_DISK;
+        int size = (selected_drive >= 0) ? drives[selected_drive]->SeekSector(cyl, 1) : FDD_SEEK_NO_DISK;
         if (size > 0) {
+            if (m_rotate_id) {
+                if (drives[selected_drive]->SeekSector(cyl, m_id_sector + 1) > 0) m_id_sector++;
+                else m_id_sector = 1;
+            }
             const int ss = drives[selected_drive]->get_sector_size();
             m_id[0] = (uint8_t)cyl;
             m_id[1] = (uint8_t)drives[selected_drive]->get_side();
-            m_id[2] = 1;
+            m_id[2] = m_rotate_id ? (uint8_t)m_id_sector : 1;
             m_id[3] = (uint8_t)((ss >= 1024) ? 3 : (ss >= 512) ? 2 : (ss >= 256) ? 1 : 0);
             m_id[4] = m_id[5] = 0;
             m_reading_id = true;
@@ -552,6 +596,8 @@ void WD1793::ExecuteCommand()
                 SetTypeIIFlags();
                 ClearFlag(wd1793_FLAG_PROTECTED);
                 ClearFlag(wd1793_FLAG_DATA_TYPE);
+                //The record type: the data are there all the same
+                if (drives[selected_drive]->is_sector_deleted()) SetFlag(wd1793_FLAG_DATA_TYPE);
                 SetINTRQ();
                 command = 0;
             };
@@ -603,7 +649,8 @@ void WD1793::track_byte(uint8_t value)
             const unsigned size = 128u << (m_wt_id[3] & 3);
             const int image = drives[selected_drive]->SeekSector(head_cylinder(), m_wt_id[2]);
             m_wt_write = image == (int)size;
-            if (!m_wt_write) note_unsupported("wd1793: Write Track, a sector the image has not");
+            if (m_wt_write) drives[selected_drive]->set_sector_deleted(value == 0xF8);
+            else note_unsupported("wd1793: Write Track, a sector the image has not");
             m_wt_state = 2;
             m_wt_left = size;
         }
@@ -630,7 +677,10 @@ void WD1793::clock(unsigned int counter)
 {
     if (m_index_period > 0) {
         m_index_clock += counter;
-        while (m_index_clock >= m_index_period) m_index_clock -= m_index_period;
+        while (m_index_clock >= m_index_period) {
+            m_index_clock -= m_index_period;
+            if (m_index_irq && selected_ready()) SetINTRQ();
+        }
     }
 
     //Delay before writing to a register
@@ -676,6 +726,8 @@ void WD1793::save_state(StateWriter &w)
     w.b("intrq_forced", intrq_forced);
     if (m_physical) w.array("head", m_head, 4);
     w.n("index_clock", m_index_clock);
+    w.b("index_irq", m_index_irq);
+    if (m_rotate_id) w.n("id_sector", m_id_sector);
     w.b("type1", m_type1);
     w.b("reading_id", m_reading_id);
     w.array("id", m_id, 6);
@@ -707,6 +759,8 @@ emulator::Result WD1793::load_state(const StateReader &r)
     r.b("intrq_forced", intrq_forced);
     if (m_physical) r.array("head", m_head, 4);
     r.u("index_clock", m_index_clock);
+    r.b("index_irq", m_index_irq);
+    if (m_rotate_id) r.u("id_sector", m_id_sector);
     r.b("type1", m_type1);
     r.b("reading_id", m_reading_id);
     r.array("id", m_id, 6);

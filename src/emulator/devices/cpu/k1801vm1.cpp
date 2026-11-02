@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2023-2025 Mikhail Revzin <p3.141592653589793238462643@gmail.com>
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
-// Description: К1801ВМ1 / К1801ВМ2 / КМ1801ВМ3 emulator interface class
+// Description: К1801ВМ1 / К1801ВМ2 / КМ1801ВМ3 / КМ1811ВМ1 emulator interface class
 
 #include "k1801vm1.h"
 #include "emulator/disasm_pdp11.h"
@@ -135,7 +135,7 @@ DisAsm * k1801vm1::create_disasm(MAYBE_UNUSED const std::string &data_path, emul
     DisAsmPDP11::Console console = DisAsmPDP11::CONSOLE_NONE;
     if (m_family == PDP11_FAMILY_1801VM1) console = DisAsmPDP11::CONSOLE_VM1;
     else if (m_family == PDP11_FAMILY_1801VM2) console = DisAsmPDP11::CONSOLE_VM2;
-    return new DisAsmPDP11(m_family == PDP11_FAMILY_1801VM2 || m_family == PDP11_FAMILY_1801VM3, console);
+    return new DisAsmPDP11(m_family != PDP11_FAMILY_1801VM1, console, m_family == PDP11_FAMILY_F11, core->has_fp);
 }
 
 emulator::Result k1801vm1::load_config(SystemData *sd)
@@ -198,6 +198,8 @@ emulator::Result k1801vm1::load_config(SystemData *sd)
     }
     // ВМ3: после пуска сразу в пульт - переключатель платы на «пульт»
     core->start_in_halt = read_confg_value(cd, "start_halt", false, false);
+    // F-11: адаптер плавающей запятой
+    core->has_fp = m_family == PDP11_FAMILY_F11 && read_confg_value(cd, "fp", false, false);
 
     // Линию режима надо выставить сразу: сообщается она только при смене, а
     // диспетчер адресов читает её с первого же обращения. Незаданный интерфейс
@@ -252,6 +254,11 @@ void k1801vm1::save_state(StateWriter &w)
         uint16_t v[pdp11core::VM3_STATE_WORDS];
         core->get_vm3(v);
         w.array("vm3", v, pdp11core::VM3_STATE_WORDS);
+    }
+    if (core->has_fp) {
+        uint16_t f[pdp11core::FP_STATE_WORDS];
+        core->get_fp(f);
+        w.array("fp", f, pdp11core::FP_STATE_WORDS);
     }
 
     //Where the chain of bus cycles stands against the 037 cycle: without it a
@@ -313,6 +320,10 @@ emulator::Result k1801vm1::load_state(const StateReader &r)
     if (core->is_vm3()) {
         uint16_t v[pdp11core::VM3_STATE_WORDS] = {};
         if (r.array("vm3", v, pdp11core::VM3_STATE_WORDS)) core->set_vm3(v);
+    }
+    if (core->has_fp) {
+        uint16_t f[pdp11core::FP_STATE_WORDS] = {};
+        if (r.array("fp", f, pdp11core::FP_STATE_WORDS)) core->set_fp(f);
     }
     if (m_timing) {
         r.n64("timing_now", m_timing->m_now);
@@ -415,6 +426,12 @@ std::vector<DeviceFieldInfo> k1801vm1::get_device_fields()
         r.push_back({"par",  "ВМ3: PAR ядра 0-7, затем пользователя 0-7", false});
         r.push_back({"pdr",  "ВМ3: PDR ядра 0-7, затем пользователя 0-7", false});
     }
+    if (core->has_fp) {
+        r.push_back({"fps",  "FP11: регистр состояния", false});
+        r.push_back({"fec",  "FP11: код последней ошибки", false});
+        r.push_back({"fea",  "FP11: адрес команды с последней ошибкой", false});
+        r.push_back({"ac",   "FP11: накопители AC0-AC5, по четыре слова", false});
+    }
     return r;
 }
 
@@ -439,6 +456,17 @@ bool k1801vm1::get_field(const std::string &field, unsigned int from, unsigned i
         else if (field == "pdr") { from_i = 20; count = 16; }
         else { from_i = 36; count = 4; }
         for (unsigned int i = 0; i < count; i++) out.values.push_back(v[from_i + i]);
+        return true;
+    }
+    if (core->has_fp && (field == "ac" || field == "fps" || field == "fec" || field == "fea")) {
+        uint16_t f[pdp11core::FP_STATE_WORDS];
+        core->get_fp(f);
+        // Накопители, затем FPS, FEC и FEA, как в снимке
+        const unsigned int status = pdp11core::FP_STATE_WORDS - 3;
+        if (field == "ac")
+            for (unsigned int i = 0; i < status; i++) out.values.push_back(f[i]);
+        else
+            out.values.push_back(f[status + ((field == "fps") ? 0 : (field == "fec") ? 1 : 2)]);
         return true;
     }
     if (field == "history" || field == "halt_history") {
@@ -821,6 +849,11 @@ ComputerDevice * create_k1801vm2(InterfaceManager *im, EmulatorConfigDevice *cd)
 ComputerDevice * create_k1801vm3(InterfaceManager *im, EmulatorConfigDevice *cd)
 {
     return new k1801vm1(im, cd, PDP11_FAMILY_1801VM3);
+}
+
+ComputerDevice * create_km1811vm1(InterfaceManager *im, EmulatorConfigDevice *cd)
+{
+    return new k1801vm1(im, cd, PDP11_FAMILY_F11);
 }
 
 bool k1801vm1::set_flag(const std::string &name, bool value)

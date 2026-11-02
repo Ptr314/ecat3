@@ -1,0 +1,8 @@
+[fd0.deleted] &00000000000
+[fd0.deleted] &00000000011
+[fd0.deleted] &00000000011
+[fdc.status] &000040
+[kngmd.regs_read] &004 &000 &310 &364 &001 &001 &000 &000
+[fd0.unsupported] &00000000001
+[fd0.unsupported_last] fdd: deleted data marks in a flat image
+[fd0.deleted] &00000000000

@@ -1,0 +1,48 @@
+# Электроника МС 0585: часы на аккумуляторе. Холодный сброс оставляет время и ОЗУ, снимает
+# разрешения прерываний и разряд 3 регистра 1 (ТО НС1, таблица 43). Без аккумулятора -
+# work-e85-rtc-dead. То, чего модель не считает, идёт в rtc.unsupported.
+# @timeout 30
+MACHINE "computers/e85/MS0585.cfg"
+LOGDEFS _16,_8
+COMMAND cpu.stop()
+COMMAND ram.set16(&1000,&000777)   // BR .: WAIT считает такты процессора
+COMMAND cpu.setreg(PC,&1000)
+COMMAND cpu.run()
+COMMAND rtc.set(_22,&0116)
+COMMAND rtc.set(&100,&123)
+WAIT _2500
+LOG rtc.time
+LOG rtc.control
+LOG rtc.value(&100)
+RESET cold
+COMMAND cpu.stop()
+COMMAND ram.set16(&1000,&000777)   // BR .: WAIT считает такты процессора
+COMMAND cpu.setreg(PC,&1000)
+COMMAND cpu.run()
+LOG rtc.time
+LOG rtc.control
+LOG rtc.value(&100)
+PRINT "=== то, чего модель не считает ==="
+LOG rtc.unsupported
+COMMAND rtc.set(_22,&0007)
+LOG rtc.unsupported
+LOG rtc.unsupported_last
+COMMAND rtc.set(_22,&0016)
+LOG rtc.unsupported
+LOG rtc.unsupported_last
+PRINT "=== код 0 на одну команду: так ПРОС меняет поле делителя, BICB #177 и BISB #52 ==="
+COMMAND rtc.set(_20,&0000)
+COMMAND rtc.set(_20,&0052)
+WAIT _1100
+LOG rtc.unsupported
+PRINT "=== другая опорная частота держится секунду: часы стоят, это считается ==="
+COMMAND rtc.set(_20,&0020)
+WAIT _1100
+LOG rtc.unsupported
+LOG rtc.unsupported_last
+PRINT "=== удержание делителя (11x) предусмотрено и не считается ==="
+COMMAND rtc.set(_20,&0160)
+WAIT _1100
+COMMAND rtc.set(_20,&0040)
+LOG rtc.unsupported
+EXIT

@@ -62,7 +62,7 @@ unsigned int StackView::entry(unsigned int address) const
 {
     unsigned int v = 0;
     const unsigned int n = cpu->stack_entry_bytes();
-    for (unsigned int b = 0; b < n; b++) v |= (cpu->peek_mem(address + b) & 0xFF) << (8 * b);
+    for (unsigned int b = 0; b < n; b++) v |= (cpu->stack_peek(address + b) & 0xFF) << (8 * b);
     return v;
 }
 

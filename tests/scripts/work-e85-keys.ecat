@@ -1,0 +1,33 @@
+# Электроника МС 0585: клавиши хоста, которых нет на самой МС7004. Scroll Lock - УСТ РЕЖИМА,
+# код $59: без него меню установки режимов ПРОС с клавиатуры ПК не открыть. Цифровой блок
+# хоста даёт коды блока МС7004, а не верхнего ряда: на них играет большинство игр
+# @timeout 30
+MACHINE "computers/e85/MS0585.cfg"
+WAIT _1000
+LOGDEFS _16,_8
+COMMAND keyboard.host("scroll",1)
+WAIT _50
+COMMAND keyboard.host("scroll",0)
+WAIT _50
+LOG keyboard.last
+COMMAND keyboard.host("kp6",1)
+WAIT _50
+COMMAND keyboard.host("kp6",0)
+WAIT _50
+LOG keyboard.last
+COMMAND keyboard.host("6",1)
+WAIT _50
+COMMAND keyboard.host("6",0)
+WAIT _50
+LOG keyboard.last
+COMMAND keyboard.host("pause",1)
+WAIT _50
+COMMAND keyboard.host("pause",0)
+WAIT _50
+LOG keyboard.last
+COMMAND keyboard.host("print",1)
+WAIT _50
+COMMAND keyboard.host("print",0)
+WAIT _50
+LOG keyboard.last
+EXIT

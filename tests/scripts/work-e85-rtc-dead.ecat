@@ -1,0 +1,22 @@
+# Электроника МС 0585 с севшим аккумулятором: холодный сброс возвращает часы к началу, а регистр 3
+# показывает потерю питания до первого чтения.
+# @timeout 30
+MACHINE "../tests/files/e85-no-battery.ext"
+LOGDEFS _16,_8
+COMMAND cpu.stop()
+COMMAND ram.set16(&1000,&000777)   // BR .: WAIT считает такты процессора
+COMMAND cpu.setreg(PC,&1000)
+COMMAND cpu.run()
+COMMAND rtc.set(&100,&123)
+WAIT _2500
+LOG rtc.time
+LOG rtc.value(&100)
+RESET cold
+COMMAND cpu.stop()
+COMMAND ram.set16(&1000,&000777)   // BR .: WAIT считает такты процессора
+COMMAND cpu.setreg(PC,&1000)
+COMMAND cpu.run()
+LOG rtc.time
+LOG rtc.control
+LOG rtc.value(&100)
+EXIT

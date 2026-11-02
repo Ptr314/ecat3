@@ -7,6 +7,11 @@
 
 using namespace I8086;
 
+static inline bool segment_prefix(uint8_t op)
+{
+    return op == 0x26 || op == 0x2E || op == 0x36 || op == 0x3E;
+}
+
 static inline uint32_t linear(uint16_t seg, uint16_t off)
 {
     return (((uint32_t)seg << 4) + off) & 0xFFFFF;
@@ -87,6 +92,35 @@ void i8086core::reset()
     bus.pf_ip = 0;
     //The chip spends a few clocks before the first fetch
     bus.pf_ready = bus.t + 7;
+}
+
+//The queue keeps the bytes as they were fetched: a write to the code since then
+//does not change what execute() is going to run
+uint8_t i8086core::stream_byte(unsigned i)
+{
+    if (i < bus.q_len) return bus.q[(bus.q_head + i) % QUEUE_MAX];
+    return mem_peek8(linear(ctx.s[CS], (uint16_t)(bus.pf_ip + (i - bus.q_len))));
+}
+
+bool i8086core::next_input(uint16_t &port, bool &word)
+{
+    if (bus.rep_active || ctx.halted || (!bus.inhibit && interrupt_pending())) return false;
+    unsigned i = 0;
+    uint8_t op = stream_byte(i++);
+    while (i < 0x10000 && (segment_prefix(op) || (op >= 0xF0 && op <= 0xF3)))
+        op = stream_byte(i++);
+    switch (op) {
+    case 0xE4: case 0xE5:
+        port = stream_byte(i);
+        word = (op & 1) != 0;
+        return true;
+    case 0xEC: case 0xED:
+        port = ctx.r[DX];
+        word = (op & 1) != 0;
+        return true;
+    default:
+        return false;
+    }
 }
 
 void i8086core::set_nmi(bool level)
@@ -914,7 +948,7 @@ unsigned i8086core::execute()
         uint8_t op = q_take();
         m_first_take = bus.t;
         for (;;) {
-            if (op == 0x26 || op == 0x2E || op == 0x36 || op == 0x3E) {
+            if (segment_prefix(op)) {
                 m_seg = (op >> 3) & 3;
             } else if (op == 0xF2 || op == 0xF3) {
                 m_rep = op;

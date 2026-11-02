@@ -1,0 +1,61 @@
+# Электроника МС 0585: развёртка НВ1. 525 строк в кадре, 526 в прогрессивной развёртке (ТО НВ1,
+# таблица 4): прогрессивные полукадры оба по 263 строки, чересстрочные по очереди 262 и 263.
+# Программа мерит это, как мерила бы на машине: число проходов цикла между сменами разряда 5 РКС
+# (первое значение неполное). Проход короче строки, и разница в строку на числах видна.
+#
+# Затем переход с 625 строк на 525: штрих в строке 250 с экрана уходит, новый растр его не рисует.
+# @timeout 30
+MACHINE "computers/e85/MS0585.cfg"
+LOGDEFS _16,_8
+COMMAND kngmd-cpu.stop()
+COMMAND cpu.stop()
+COMMAND ram.set16(&1000,&012706,&001000)   // MOV #1000,SP
+COMMAND ram.set16(&1004,&012705,&003000)   // MOV #3000,R5
+COMMAND ram.set16(&1010,&012704,&000006)   // MOV #6,R4
+COMMAND ram.set16(&1014,&013700,&174404,&042700,&177737)   // MOV @#РКС,R0; BIC #177737,R0
+COMMAND ram.set16(&1024,&005001)   // CLR R1
+COMMAND ram.set16(&1026,&005201)   // INC R1
+COMMAND ram.set16(&1030,&013702,&174404,&042702,&177737)   // MOV @#РКС,R2; BIC #177737,R2
+COMMAND ram.set16(&1040,&020200,&001771)   // CMP R2,R0; BEQ 1026
+COMMAND ram.set16(&1044,&010200,&010125,&077413,&000777)   // MOV R2,R0; MOV R1,(R5)+; SOB R4,1024; BR .
+COMMAND cpu.setreg(PC,&1000)
+COMMAND cpu.run()
+WAIT _200
+PRINT "=== прогрессивная: полукадры равны ==="
+LOG video.frames
+LOG ram.value16(&3000,&3013)
+COMMAND cpu.stop()
+COMMAND video.set16(&4,&2)
+COMMAND cpu.setreg(PC,&1000)
+COMMAND cpu.run()
+WAIT _200
+PRINT "=== чересстрочная: через один на строку короче ==="
+LOG ram.value16(&3000,&3013)
+PRINT "=== 625 строк, тоже чересстрочная ==="
+COMMAND cpu.stop()
+COMMAND video.set16(&4,&3)
+COMMAND cpu.setreg(PC,&1000)
+COMMAND cpu.run()
+WAIT _200
+LOG ram.value16(&3000,&3013)
+LOG display.frame_clocks
+PRINT "=== 625 строк, прогрессивная ==="
+COMMAND cpu.stop()
+COMMAND video.set16(&4,&1)
+COMMAND cpu.setreg(PC,&1000)
+COMMAND cpu.run()
+WAIT _200
+LOG ram.value16(&3000,&3013)
+LOG display.frame_clocks
+PRINT "=== штрих в строке 250 при 625 строках, затем 525 ==="
+COMMAND video.set16(&6,&040)
+COMMAND video.set16(&76400,&177777,&177777,&177777,&177777)
+WAIT _40
+COMMAND cpu.stop()
+SCREEN "../results/work-e85-raster-625.png"
+COMMAND cpu.run()
+COMMAND video.set16(&4,0)
+WAIT _60
+COMMAND cpu.stop()
+SCREEN "../results/work-e85-raster-525.png"
+EXIT

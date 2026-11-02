@@ -1,0 +1,60 @@
+// Электроника МС 0585 с винчестером и сопроцессором МС 1702 в пятой позиции
+// магистрали: IBM PC-совместимая плата на К1810ВМ86. Её устройства ввода-вывода и
+// экран обслуживает программа EMUL.TSK на ЦП комплекса.
+@extends e85/MS0585-NMD.ext
+@version МС 0585 с винчестером и МС 1702
+@protected
+
+sys:slots = 037
+
+pic2:~irq[4] = mc1702.irqa
+pic3:~irq[4] = mc1702.irqb
+
+// Тестовое ПЗУ D5 в карту памяти не входит: его читают через счётчик платы
+mc1702-test : rom {
+	size = _2k
+	image = mc1702-test.rom
+}
+
+// intr_delay: команды здесь атомарны, поэтому запись INTR опережает плату на остаток
+// команды F-11 (42 такта 8086), а первая запись в видеопамять - на своё место в
+// REP STOSW (13). Эти 55 посчитаны. BA1M проходит от 62-66 в зависимости от фазы,
+// остальное подобрано с запасом: docs/dev/machines.md
+mc1702 : e85-mc1702 {
+	cpu = mc1702-cpu
+	test_rom = mc1702-test
+	intr_delay = _70
+	~init = cpu.init
+	~inta = mc1702-cpu.inta
+}
+
+mc1702-cpu : i8086 {
+	clock = _5000000
+	mapper = mc1702-mapper
+	gate = mc1702
+	~reset = mc1702.res
+	~intr = mc1702.intr
+	~nmi = mc1702.nmi
+	~vector = mc1702.vector
+}
+
+// Ждёт только ДОЗУ: контроллер отвечает через автомат D44, ПЗУ и видеопамять
+// отвечают сразу, через D81
+mc1702-ram : ram {
+	size = _512k
+	wait = mc1702
+}
+
+mc1702-rom : rom {
+	size = _16k
+	image = mc1702.rom
+}
+
+mc1702-mapper : memory-mapper {
+	address_bits = _20
+	@memory[$00000-$7FFFF] = mc1702-ram
+	@memory[$B8000-$BBFFF] = mc1702[$20000]
+	@memory[$FC000-$FFFFF] = mc1702-rom {mode = r}
+}
+
+mapper:@memory[17775000-17775177] = mc1702

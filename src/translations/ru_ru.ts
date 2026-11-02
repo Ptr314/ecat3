@@ -486,7 +486,7 @@
         <translation>int_opcode = $CD требует подключённого ~int_address</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/i8086.cpp" line="+113"/>
+        <location filename="../emulator/devices/cpu/i8086.cpp" line="+138"/>
         <source>Incorrect parameters for</source>
         <translation>Неправильно указаны параметры для</translation>
     </message>
@@ -590,12 +590,13 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+1205"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1346"/>
         <source>Disk image</source>
         <translation>Образ диска</translation>
     </message>
     <message>
         <location filename="../emulator/devices/common/dl11.cpp" line="+326"/>
+        <location filename="../emulator/devices/common/scn2661.cpp" line="+281"/>
         <location filename="../emulator/devices/common/ins8250.cpp" line="+242"/>
         <source>Serial port of the computer</source>
         <translation>Последовательный порт компьютера</translation>
@@ -607,25 +608,25 @@
     </message>
     <message>
         <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+640"/>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+563"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="+233"/>
         <source>Hard disk image</source>
         <translation>Образ жёсткого диска</translation>
     </message>
     <message>
         <location line="+7"/>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+7"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="+7"/>
         <source>Hard disk writes</source>
         <translation>Запись на винчестер</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+3"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="+3"/>
         <source>Into the image file</source>
         <translation>В файл образа</translation>
     </message>
     <message>
         <location line="+1"/>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+1"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="+1"/>
         <source>Into memory only, the image stays as it was</source>
         <translation>Только в память, образ не меняется</translation>
     </message>
@@ -671,7 +672,7 @@
         <translation>Образ ПЗУ</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+649"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+658"/>
         <source>Low-pass filter cutoff, Hz (0 - off)</source>
         <translation>Срез фильтра нижних частот, Гц (0 - выключен)</translation>
     </message>
@@ -767,22 +768,22 @@
 <context>
     <name>DVKDW</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-485"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="-213"/>
         <source>Hard disk image file not found</source>
         <translation>Файл образа жёсткого диска не найден</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Unrecognized hard disk geometry</source>
         <translation>Нераспознанная геометрия жёсткого диска</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+29"/>
         <source>Unsupported hard disk geometry</source>
         <translation>Неподдерживаемая геометрия жёсткого диска</translation>
     </message>
     <message>
-        <location line="+537"/>
+        <location line="+256"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; ожидает имя файла</translation>
     </message>
@@ -1452,6 +1453,35 @@
     </message>
 </context>
 <context>
+    <name>E85Display</name>
+    <message>
+        <location filename="../emulator/devices/specific/e85_video.cpp" line="+496"/>
+        <source>The video controller is expected in &apos;video&apos;</source>
+        <translation>Ожидается видеоконтроллер в устройстве «video»</translation>
+    </message>
+</context>
+<context>
+    <name>E85Kngmd</name>
+    <message>
+        <location filename="../emulator/devices/specific/e85_kngmd.cpp" line="+75"/>
+        <source>The controller chip is expected in &apos;fdc&apos;</source>
+        <translation>Ожидается контроллер дисковода в устройстве «fdc»</translation>
+    </message>
+</context>
+<context>
+    <name>E85Mc1702</name>
+    <message>
+        <location filename="../emulator/devices/specific/e85_mc1702.cpp" line="+66"/>
+        <source>The processor of the board is expected in &apos;cpu&apos;</source>
+        <translation>Ожидается процессор платы в параметре «cpu»</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The test ROM is expected in &apos;test_rom&apos;</source>
+        <translation>Ожидается тестовое ПЗУ в параметре «test_rom»</translation>
+    </message>
+</context>
+<context>
     <name>Emulator</name>
     <message>
         <source>Error</source>
@@ -1605,7 +1635,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+282"/>
+        <location filename="../emulator/emulator.cpp" line="+292"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -2013,7 +2043,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-1171"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1312"/>
         <source>Incorrect fdd list for</source>
         <translation>Некорректный список дисководов для</translation>
     </message>
@@ -2071,49 +2101,50 @@
     </message>
     <message>
         <location line="-99"/>
-        <location line="+543"/>
-        <location line="+24"/>
+        <location line="+584"/>
+        <location line="+25"/>
         <location line="+14"/>
         <source>Unrecognized MFM format</source>
         <translation>Файл формата MFM не распознан</translation>
     </message>
     <message>
-        <location line="-505"/>
+        <location line="-547"/>
         <location line="+56"/>
-        <location line="+44"/>
+        <location line="+45"/>
         <location line="+29"/>
         <location line="+18"/>
-        <location line="+296"/>
+        <location line="+336"/>
         <location line="+16"/>
+        <location line="+198"/>
         <location filename="../emulator/devices/common/fdd_woz.cpp" line="+339"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="+200"/>
         <source>Error opening file</source>
         <translation>Ошибка открытия файла</translation>
     </message>
     <message>
-        <location line="-398"/>
+        <location line="-637"/>
         <location filename="../emulator/devices/common/fdd_woz.cpp" line="-32"/>
         <source>File is in unknown format</source>
         <translation>Формат файла не распознан</translation>
     </message>
     <message>
-        <location line="+44"/>
+        <location line="+45"/>
         <location line="+19"/>
         <location line="+18"/>
-        <location line="+311"/>
+        <location line="+351"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="-126"/>
         <source>Incorrect disk image size for</source>
         <translation>Некорректный размер файла образа</translation>
     </message>
     <message>
-        <location line="+329"/>
+        <location line="+427"/>
         <location line="+17"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="+93"/>
         <source>Error exporting disk.</source>
         <translation>Ошибка экспорта диска.</translation>
     </message>
     <message>
-        <location line="+540"/>
+        <location line="+580"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; требует имя файла</translation>
     </message>
@@ -2131,7 +2162,7 @@
         <translation type="vanished">Формат файла &apos;%1&apos; не распознан</translation>
     </message>
     <message>
-        <location line="-1281"/>
+        <location line="-1460"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation>Файлы AIM поддерживаются только на дисководах 840 Кб Агат!</translation>
     </message>
@@ -2140,7 +2171,7 @@
         <translation type="vanished">Некорректный файл образа диска &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+99"/>
+        <location line="+100"/>
         <source>Expected conversion from DSK to MFM is not supported yet.</source>
         <translation>Необходимая конвертация из посекторного в физический формат еще не поддерживается.</translation>
     </message>
@@ -2149,7 +2180,7 @@
         <translation type="vanished">Ошибка экспорта диска. %1 : %2</translation>
     </message>
     <message>
-        <location line="+686"/>
+        <location line="+826"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation>Дисковод работает в MFM-режиме. Сохранение в посекторные образы еще не поддерживается.</translation>
     </message>
@@ -2161,10 +2192,17 @@
         <translation>Сохранение образов для данного типа устройств еще не поддерживается.</translation>
     </message>
     <message>
-        <location line="-960"/>
-        <location line="+470"/>
+        <location line="-1101"/>
+        <location line="+511"/>
+        <location line="+197"/>
+        <location line="+48"/>
         <source>HFE images are not supported for this drive</source>
         <translation>Образы HFE для этого дисковода не поддерживаются</translation>
+    </message>
+    <message>
+        <location line="+886"/>
+        <source>Command &apos;mark&apos; expects a track, a side and a sector of a sector image</source>
+        <translation>Команде mark нужны дорожка, сторона и сектор посекторного образа</translation>
     </message>
     <message>
         <source>Expected conversion form DSK to MFM is not supperted yet.</source>
@@ -2201,7 +2239,7 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-575"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-584"/>
         <source>Incorrect sample rate</source>
         <translation>Неверная частота дискретизации</translation>
     </message>
@@ -2216,7 +2254,7 @@
         <translation>Ошибка записи</translation>
     </message>
     <message>
-        <location line="+517"/>
+        <location line="+527"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation>Команда &apos;volume&apos; требует значение</translation>
     </message>
@@ -2623,7 +2661,7 @@
 <context>
     <name>MS7004</name>
     <message>
-        <location filename="../emulator/devices/specific/ms7004.cpp" line="+83"/>
+        <location filename="../emulator/devices/specific/ms7004.cpp" line="+104"/>
         <source>Unknown fks mode</source>
         <translation>Неизвестный режим fks (lamp или toggle)</translation>
     </message>
@@ -2654,7 +2692,7 @@
         <translation>Некорректное значение в файле мэппинга</translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+51"/>
         <source>Key table entry is incorrect</source>
         <translation>Элемент таблицы клавиш некорректен</translation>
     </message>
@@ -2669,7 +2707,7 @@
         <translation>Повторяющийся элемент в таблице клавиш</translation>
     </message>
     <message>
-        <location line="+371"/>
+        <location line="+441"/>
         <source>Invalid key code</source>
         <translation>Некорректный код клавиши</translation>
     </message>
@@ -2827,13 +2865,13 @@
     <message>
         <location line="+15"/>
         <location filename="../mainwindow.cpp" line="-902"/>
-        <location line="+2245"/>
+        <location line="+2246"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1887"/>
+        <location filename="../mainwindow.cpp" line="-1888"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -2981,7 +3019,7 @@
         <location line="+60"/>
         <location line="+79"/>
         <location line="+334"/>
-        <location line="+109"/>
+        <location line="+110"/>
         <location line="+62"/>
         <location line="+269"/>
         <location line="+25"/>
@@ -2992,7 +3030,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2946"/>
+        <location line="-2947"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -3103,7 +3141,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+83"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+2212"/>
+        <location filename="../mainwindow.cpp" line="+2213"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -3113,15 +3151,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-2190"/>
+        <location line="-2191"/>
         <location line="+1568"/>
-        <location line="+491"/>
+        <location line="+492"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-2172"/>
+        <location line="-2173"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -3157,7 +3195,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+2009"/>
+        <location line="+2010"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -3177,8 +3215,8 @@
         <translation>Идет запись видео в </translation>
     </message>
     <message>
-        <location line="-556"/>
-        <location line="+585"/>
+        <location line="-557"/>
+        <location line="+586"/>
         <source>Finishing the video...</source>
         <translation>Видео дописывается...</translation>
     </message>
@@ -3188,7 +3226,7 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-2190"/>
+        <location line="-2191"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
@@ -3375,7 +3413,7 @@
         <translation>Открыть образ винчестера</translation>
     </message>
     <message>
-        <location line="+37"/>
+        <location line="+38"/>
         <source>Save disk image to a file</source>
         <translation>Сохранить образ диска в файл</translation>
     </message>
@@ -3572,12 +3610,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1733"/>
+        <location line="-1734"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1776"/>
+        <location line="+1777"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -4505,13 +4543,13 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+214"/>
+        <location line="+216"/>
         <location line="+61"/>
         <source>I/O ports</source>
         <translation>Порты ввода-вывода</translation>
     </message>
     <message>
-        <location line="-266"/>
+        <location line="-268"/>
         <source>Choose folder...</source>
         <translation>Выбрать папку...</translation>
     </message>
@@ -4571,7 +4609,7 @@
         <translation>Машины (%1)</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+14"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>

@@ -402,7 +402,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/cpu/i8086.cpp" line="+113"/>
+        <location filename="../emulator/devices/cpu/i8086.cpp" line="+138"/>
         <source>Incorrect parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -482,12 +482,13 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+1205"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1346"/>
         <source>Disk image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../emulator/devices/common/dl11.cpp" line="+326"/>
+        <location filename="../emulator/devices/common/scn2661.cpp" line="+281"/>
         <location filename="../emulator/devices/common/ins8250.cpp" line="+242"/>
         <source>Serial port of the computer</source>
         <translation type="unfinished"></translation>
@@ -499,25 +500,25 @@
     </message>
     <message>
         <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+640"/>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+563"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="+233"/>
         <source>Hard disk image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+7"/>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+7"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="+7"/>
         <source>Hard disk writes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+3"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="+3"/>
         <source>Into the image file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="+1"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="+1"/>
         <source>Into memory only, the image stays as it was</source>
         <translation type="unfinished"></translation>
     </message>
@@ -563,7 +564,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+649"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+658"/>
         <source>Low-pass filter cutoff, Hz (0 - off)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -647,22 +648,22 @@
 <context>
     <name>DVKDW</name>
     <message>
-        <location filename="../emulator/devices/specific/dvk_dw.cpp" line="-485"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="-213"/>
         <source>Hard disk image file not found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Unrecognized hard disk geometry</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+29"/>
         <source>Unsupported hard disk geometry</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+537"/>
+        <location line="+256"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1122,6 +1123,35 @@
     </message>
 </context>
 <context>
+    <name>E85Display</name>
+    <message>
+        <location filename="../emulator/devices/specific/e85_video.cpp" line="+496"/>
+        <source>The video controller is expected in &apos;video&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>E85Kngmd</name>
+    <message>
+        <location filename="../emulator/devices/specific/e85_kngmd.cpp" line="+75"/>
+        <source>The controller chip is expected in &apos;fdc&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>E85Mc1702</name>
+    <message>
+        <location filename="../emulator/devices/specific/e85_mc1702.cpp" line="+66"/>
+        <source>The processor of the board is expected in &apos;cpu&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The test ROM is expected in &apos;test_rom&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Emulator</name>
     <message>
         <location filename="../emulator/files.cpp" line="+40"/>
@@ -1215,7 +1245,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+282"/>
+        <location filename="../emulator/emulator.cpp" line="+292"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1583,7 +1613,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-1171"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1312"/>
         <source>Incorrect fdd list for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1605,24 +1635,24 @@
     </message>
     <message>
         <location line="-99"/>
-        <location line="+543"/>
-        <location line="+24"/>
+        <location line="+584"/>
+        <location line="+25"/>
         <location line="+14"/>
         <source>Unrecognized MFM format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-438"/>
+        <location line="-480"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+99"/>
+        <location line="+100"/>
         <source>Expected conversion from DSK to MFM is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+686"/>
+        <location line="+826"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1634,7 +1664,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1035"/>
+        <location line="-1176"/>
         <source>Incorrect fdd parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1655,47 +1685,50 @@
     </message>
     <message>
         <location line="+19"/>
-        <location line="+470"/>
+        <location line="+511"/>
+        <location line="+197"/>
+        <location line="+48"/>
         <source>HFE images are not supported for this drive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-381"/>
+        <location line="-667"/>
         <location line="+56"/>
-        <location line="+44"/>
+        <location line="+45"/>
         <location line="+29"/>
         <location line="+18"/>
-        <location line="+296"/>
+        <location line="+336"/>
         <location line="+16"/>
+        <location line="+198"/>
         <location filename="../emulator/devices/common/fdd_woz.cpp" line="+17"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="+200"/>
         <source>Error opening file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-398"/>
+        <location line="-637"/>
         <location filename="../emulator/devices/common/fdd_woz.cpp" line="-32"/>
         <source>File is in unknown format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+44"/>
+        <location line="+45"/>
         <location line="+19"/>
         <location line="+18"/>
-        <location line="+311"/>
+        <location line="+351"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="-126"/>
         <source>Incorrect disk image size for</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+329"/>
+        <location line="+427"/>
         <location line="+17"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="+93"/>
         <source>Error exporting disk.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+540"/>
+        <location line="+580"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1704,11 +1737,16 @@
         <source>Command &apos;save&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location line="+26"/>
+        <source>Command &apos;mark&apos; expects a track, a side and a sector of a sector image</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-575"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-584"/>
         <source>Incorrect sample rate</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1723,7 +1761,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+517"/>
+        <location line="+527"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2063,7 +2101,7 @@
 <context>
     <name>MS7004</name>
     <message>
-        <location filename="../emulator/devices/specific/ms7004.cpp" line="+83"/>
+        <location filename="../emulator/devices/specific/ms7004.cpp" line="+104"/>
         <source>Unknown fks mode</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2094,7 +2132,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+51"/>
         <source>Key table entry is incorrect</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2109,7 +2147,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+371"/>
+        <location line="+441"/>
         <source>Invalid key code</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2244,7 +2282,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1217"/>
+        <location filename="../mainwindow.cpp" line="+1218"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2265,14 +2303,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-2119"/>
-        <location line="+2245"/>
+        <location filename="../mainwindow.cpp" line="-2120"/>
+        <location line="+2246"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1887"/>
+        <location filename="../mainwindow.cpp" line="-1888"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2368,7 +2406,7 @@
         <location line="+60"/>
         <location line="+79"/>
         <location line="+334"/>
-        <location line="+109"/>
+        <location line="+110"/>
         <location line="+62"/>
         <location line="+269"/>
         <location line="+25"/>
@@ -2379,7 +2417,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2946"/>
+        <location line="-2947"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2484,13 +2522,13 @@
     <message>
         <location line="+16"/>
         <location line="+1568"/>
-        <location line="+491"/>
+        <location line="+492"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2172"/>
+        <location line="-2173"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2526,12 +2564,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+2009"/>
+        <location line="+2010"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1985"/>
+        <location line="-1986"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2733,12 +2771,12 @@
     </message>
     <message>
         <location line="+89"/>
-        <location line="+585"/>
+        <location line="+586"/>
         <source>Finishing the video...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-585"/>
+        <location line="-586"/>
         <source>Abort</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2758,7 +2796,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+37"/>
+        <location line="+38"/>
         <source>Save disk image to a file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2980,12 +3018,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1733"/>
+        <location line="-1734"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1776"/>
+        <location line="+1777"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3791,13 +3829,13 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+214"/>
+        <location line="+216"/>
         <location line="+61"/>
         <source>I/O ports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-266"/>
+        <location line="-268"/>
         <source>Choose folder...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3857,7 +3895,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+14"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>

@@ -31,6 +31,7 @@
 #define wd1793_PARAM_m          0x10
 #define wd1793_PARAM_h          0x08
 #define wd1793_PARAM_V          0x04
+#define wd1793_PARAM_a0         0x01
 
 //задержка записи значения в регистр
 //Если 0 - эмулятор не проходит некоторые тесты
@@ -73,6 +74,7 @@ private:
     Interface i_INTRQ;
     Interface i_DRQ;
     Interface i_HLD;
+    Interface i_reset;      //MR, high here. Unconnected on most boards
     FDD * drives[4];
     unsigned int drives_count;
     int selected_drive;
@@ -90,6 +92,14 @@ private:
     unsigned int sectors_read;
     unsigned int sectors_written;
     bool intrq_forced;      //INTRQ held by Force Interrupt I3 until a $D0
+    //Force Interrupt I2: INTRQ on the next index pulse, with the pulses modelled
+    bool m_index_irq = false;
+    //Read Address gives the next sector of the track each time it is run
+    //(rotate_id), however much time has passed: the chip returns the ID that comes
+    //under the head, and the position of the disk is not modelled here. Off: it
+    //always finds sector 1
+    bool m_rotate_id = false;
+    unsigned int m_id_sector = 1;
 
     //Delay of a register write, controller clocks (wd1793_DELAY_REGISTER)
     int m_register_delay = wd1793_DELAY_REGISTER;
@@ -133,15 +143,20 @@ private:
     void SetHLD(bool value);
     void SetTypeIFlags(uint8_t T, uint8_t S);
     void SetTypeIIFlags();
+    int DriveOnLines();
     void FindSelectedDrive();
     void WriteRegister(unsigned address, unsigned  value);
     void ExecuteCommand();
     void SyncAccess();
+    void MasterReset();
 
 public:
     uint8_t registers[5];
     WD1793(InterfaceManager *im, EmulatorConfigDevice *cd);
     bool get_busy() override;
+    //The drive the select lines name has a disk: the READY of a board that
+    //takes it from the drive and not from this chip
+    bool selected_ready();
     //For a board whose own register holds the processor until DRQ or INTRQ
     //(the B504 of the Поиск-1, port C4h): runs the controller forward to that
     //point, as "sync" does for a data register
@@ -153,6 +168,7 @@ public:
     void set_value(unsigned address, unsigned value, bool force=false) override;
     emulator::Result load_config(SystemData *sd) override;
     void clock(unsigned int counter) override;
+    void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;

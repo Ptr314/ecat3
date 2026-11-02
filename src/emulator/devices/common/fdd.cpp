@@ -156,8 +156,8 @@ emulator::Result FDD::load_image(const std::string &file_name)
     const unsigned int old_generation = m_generation;
 
     if (ext == ".hfe") {
-        if (fdd_mode != FDD_MODE_IBM_MFM && fdd_mode != FDD_MODE_IBM_FM && fdd_mode != FDD_MODE_DVK_MX
-            && fdd_mode != FDD_MODE_AGAT_840 && fdd_mode != FDD_MODE_AGAT_140)
+        if (fdd_mode != FDD_MODE_LOGICAL && fdd_mode != FDD_MODE_IBM_MFM && fdd_mode != FDD_MODE_IBM_FM
+            && fdd_mode != FDD_MODE_DVK_MX && fdd_mode != FDD_MODE_AGAT_840 && fdd_mode != FDD_MODE_AGAT_140)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "HFE images are not supported for this drive")) + "}");
         emulator::Result r = load_hfe(file_name);
@@ -335,6 +335,7 @@ emulator::Result FDD::load_image(const std::string &file_name)
                 if (buffer != nullptr) delete [] buffer;
                 buffer = new uint8_t[disk_size];
                 memset(buffer, 0, disk_size);
+                m_deleted.clear();
 
                 dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
                 if (file.is_open()) {
@@ -507,6 +508,45 @@ unsigned int FDD::translate_address()
     return (image_track(track, side, sides_layout)*sectors + sector-1)*sector_size + position;
 }
 
+// Number of a sector in a sector image, -1 when there is no such sector
+int FDD::sector_index(int track, int side, int sector)
+{
+    if (!loaded || track_mode != FDD_MODE_SECTORS || side < 0 || side >= sides || track < 0 || track >= tracks
+        || sector < 1 || sector > sectors) return -1;
+    return (int)image_track(track, side, sides_layout)*sectors + sector-1;
+}
+
+bool FDD::is_sector_deleted()
+{
+    const int i = sector_index(track, side, sector);
+    return i >= 0 && !m_deleted.empty() && m_deleted[(size_t)i] != 0;
+}
+
+unsigned int FDD::deleted_count() const
+{
+    unsigned int count = 0;
+    for (size_t i = 0; i < m_deleted.size(); i++)
+        if (m_deleted[i] != 0) count++;
+    return count;
+}
+
+void FDD::mark_sector(int index, bool value)
+{
+    if (m_deleted.empty()) {
+        if (!value) return;
+        m_deleted.assign((size_t)sides*tracks*sectors, 0);
+    }
+    if ((m_deleted[(size_t)index] != 0) == value) return;
+    m_deleted[(size_t)index] = value ? 1 : 0;
+    m_modified = true;
+}
+
+void FDD::set_sector_deleted(bool value)
+{
+    const int i = sector_index(track, side, sector);
+    if (i >= 0) mark_sector(i, value);
+}
+
 void FDD::NextPosition()
 {
     if (!sector_in_range()) {
@@ -623,6 +663,7 @@ static int hfe_buffer_bytes(int mode, const dsk_tools::DiskFormatParams &format)
 // FM каждая метка. Слово MX уходит старшим разрядом вперёд
 emulator::Result FDD::save_hfe(const std::string &file_name)
 {
+    if (fdd_mode == FDD_MODE_LOGICAL) return sectors_to_hfe(file_name);
     dsk_tools::DiskFormatParams format;
     format.layout = hfe_layout(fdd_mode);
     const bool agat = (fdd_mode == FDD_MODE_AGAT_840);
@@ -716,6 +757,7 @@ emulator::Result FDD::load_hfe(const std::string &file_name)
     if (!res || (size_t)img.tracks * img.sides > table)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Unrecognized MFM format")) + "} " + res.message);
+    if (fdd_mode == FDD_MODE_LOGICAL) return sectors_from_hfe(img, file_name);
 
     dsk_tools::DiskFormatParams format;
     format.layout = hfe_layout(fdd_mode);
@@ -810,6 +852,102 @@ emulator::Result FDD::load_hfe(const std::string &file_name)
     // привод; снять защиту можно как обычно
     if (!img.write_allowed) write_protect = true;
     m_generation++;
+    return emulator::Result::ok();
+}
+
+// A drive that works with sectors takes an HFE for what the sectors of its
+// tracks hold, and keeps of the rest only the deleted data marks. The tracks
+// must be IBM MFM of the geometry of the drive
+emulator::Result FDD::sectors_from_hfe(const dsk_tools::HfeImage &img, const std::string &file_name)
+{
+    dsk_tools::DiskFormatParams format;
+    if (!dsk_tools::hfe_probe_format(img, format) || format.layout != dsk_tools::TrackLayout::IbmMfm
+        || (int)format.heads != sides || (int)format.tracks > tracks
+        || (int)format.sectors != sectors || (int)format.sector_size != sector_size
+        || format.sector_base != 1
+        || (uint64_t)sides * tracks * sectors * sector_size > 64u * 1024 * 1024)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "HFE images are not supported for this drive")) + "}");
+
+    const bool order = layout_for_file(file_name);
+    const size_t total = (size_t)sides * tracks * sectors;
+    //By the geometry, which the tracks are placed by: disk_size does not agree
+    //with it after a snapshot that failed to load
+    const size_t image_size = total * sector_size;
+    uint8_t * new_buffer = new uint8_t[image_size];
+    memset(new_buffer, 0, image_size);
+    std::vector<uint8_t> marks(total, 0);
+    bool any = false;
+    bool damaged = false;
+    for (int t = 0; t < (int)format.tracks; t++)
+        for (int s = 0; s < sides; s++) {
+            const size_t first = (size_t)image_track(t, s, order) * sectors;
+            dsk_tools::TrackStatus status;
+            dsk_tools::track_from_cells(format, img.cells[(size_t)t * sides + s], new_buffer + first * sector_size, status);
+            if (status.missing != 0 || status.bad_crc != 0) damaged = true;
+            for (int k = 0; k < sectors && k < 32; k++)
+                if ((status.deleted & (1u << k)) != 0) {
+                    marks[first + (size_t)k] = 1;
+                    any = true;
+                }
+        }
+    //Saved tracks are made anew from the sectors, and a hole would become a good
+    //sector over the original file: such a disk is not written until the
+    //protection is taken off by hand
+    if (damaged) {
+        note_unsupported("HFE: a sector missing or with a bad CRC");
+        write_protect = true;
+    }
+    if (buffer != nullptr) delete [] buffer;
+    buffer = new_buffer;
+    disk_size = (int)image_size;
+    if (any) m_deleted.swap(marks);
+    else m_deleted.clear();
+    sides_layout = order;
+    track_mode = FDD_MODE_SECTORS;
+    position = 0;
+    loaded = true;
+    if (!img.write_allowed) write_protect = true;
+    m_generation++;
+    return emulator::Result::ok();
+}
+
+emulator::Result FDD::sectors_to_hfe(const std::string &file_name)
+{
+    const emulator::Result unsupported = emulator::Result::error(emulator::ErrorCode::ConfigError,
+        "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "HFE images are not supported for this drive")) + "}");
+    if (track_mode != FDD_MODE_SECTORS || sectors > 16) return unsupported;
+
+    dsk_tools::DiskFormatParams format;
+    format.layout = dsk_tools::TrackLayout::IbmMfm;
+    format.tracks = tracks;
+    format.heads = sides;
+    format.sectors = sectors;
+    format.sector_size = sector_size;
+    format.sector_base = 1;
+    dsk_tools::HfeImage img;
+    dsk_tools::track_hfe_params(format, img);
+    img.write_allowed = !write_protect;
+    for (int t = 0; t < tracks; t++)
+        for (int s = 0; s < sides; s++) {
+            const size_t first = (size_t)image_track(t, s, sides_layout) * sectors;
+            uint16_t deleted = 0;
+            if (!m_deleted.empty())
+                for (int k = 0; k < sectors; k++)
+                    if (m_deleted[first + (size_t)k] != 0) deleted |= (uint16_t)(1u << k);
+            dsk_tools::BYTES data, special;
+            if (!dsk_tools::ibm_mfm_format_track(data, special, t, s, sectors, sector_size,
+                                                 buffer + first * sector_size, deleted))
+                return unsupported;
+            dsk_tools::mfm_encode(data.data(), special.data(), data.size(), img.cells[(size_t)t * sides + s]);
+        }
+    dsk_tools::BYTES out;
+    dsk_tools::hfe_write(img, out);
+    dsk_tools::UTF8_ofstream file(file_name, std::ios::binary);
+    if (!file.is_open())
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
+    file.write(reinterpret_cast<const char*>(out.data()), (std::streamsize)out.size());
     return emulator::Result::ok();
 }
 
@@ -956,6 +1094,7 @@ void FDD::unload(){
     m_modified = false;
     m_woz = false;
     m_woz_tracks.clear();
+    m_deleted.clear();
     sides_layout = default_sides_layout;
     m_generation++;
     file_name = "";
@@ -1078,6 +1217,8 @@ emulator::Result FDD::save_image(const std::string &file_name)
                 }
             } else
             if (fdd_mode == FDD_MODE_LOGICAL) {
+                //The marks stay in memory and in a snapshot; a flat file has no place for them
+                if (deleted_count() != 0) note_unsupported("fdd: deleted data marks in a flat image");
                 dsk_tools::UTF8_ofstream file(file_name, std::ios::binary);
                 if (file.is_open()){
                     bool target_layout = layout_for_file(file_name);
@@ -1255,6 +1396,16 @@ void FDD::save_state(StateWriter &w)
         w.blob("woz", media, woz.data(), woz.size());
     }
 
+    //Deleted data marks of a sector image: the numbers of the marked sectors
+    std::vector<uint32_t> marked;
+    for (size_t i = 0; i < m_deleted.size(); i++)
+        if (m_deleted[i] != 0) marked.push_back(static_cast<uint32_t>(i));
+    if (!marked.empty())
+    {
+        w.n("deleted", static_cast<uint32_t>(marked.size()));
+        w.array("deleted_sectors", marked.data(), marked.size());
+    }
+
     if (track_mode != FDD_MODE_SECTORS)
     {
         //The table that says where each physical track begins
@@ -1304,6 +1455,7 @@ emulator::Result FDD::load_state(const StateReader &r)
     r.b("motor_was_on", m_motor_was_on);
     r.b("protected", write_protect);
     m_modified = false;
+    m_deleted.clear();
 
     bool was_loaded = false;
     if (!r.b("loaded", was_loaded) || !was_loaded) return emulator::Result::ok();
@@ -1370,6 +1522,25 @@ emulator::Result FDD::load_state(const StateReader &r)
             "{MachineState|Saved state} " + name + ": " + r.error());
     }
     disk_size = static_cast<int>(alloc);
+
+    uint32_t marked = 0;
+    if (track_mode == FDD_MODE_SECTORS && r.u("deleted", marked) && marked > 0)
+    {
+        //The count comes from the file too, so it is checked before anything is
+        //allocated. A number the geometry does not have is simply not a mark,
+        //which is also what an element the file lacks stays
+        const uint64_t total = static_cast<uint64_t>(sides) * tracks * sectors;
+        if (marked <= total && total <= max_disk)
+        {
+            std::vector<uint32_t> list(marked, 0xFFFFFFFFu);
+            if (r.array("deleted_sectors", list.data(), list.size()))
+            {
+                m_deleted.assign(static_cast<size_t>(total), 0);
+                for (size_t i = 0; i < list.size(); i++)
+                    if (list[i] < total) m_deleted[list[i]] = 1;
+            }
+        }
+    }
 
     if (track_mode != FDD_MODE_SECTORS)
     {
@@ -1454,7 +1625,7 @@ std::vector<DeviceFieldInfo> FDD::get_device_fields()
     r.push_back({"generation",  "Incremented on every load and eject",  false});
     r.push_back({"raw",         "Bytes of the track under the head",    true});
     r.push_back({"marks",       "Sync marks on the track under the head", false});
-    r.push_back({"deleted",     "IBM MFM/FM disk: sectors with the deleted data mark", false});
+    r.push_back({"deleted",     "Sectors with the deleted data mark",   false});
     r.push_back({"checksum",    "Whole-track disk: a hash of the tracks and their sync marks", false});
     return r;
 }
@@ -1466,6 +1637,7 @@ std::vector<DeviceCommandInfo> FDD::get_device_commands()
     r.push_back({"save",    "\"file\"", "Writes the image to a file"});
     r.push_back({"eject",   "",         "Ejects the image"});
     r.push_back({"protect", "[0|1]",    "Sets or toggles write protection"});
+    r.push_back({"mark",    "track,side,sector[,0|1]", "Sector image: sets or clears the deleted data mark"});
     return r;
 }
 
@@ -1518,6 +1690,13 @@ bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to
             }
         out.width = 32;
         out.values.push_back(h);
+        return true;
+    }
+
+    if (field == "deleted" && loaded && track_mode == FDD_MODE_SECTORS)
+    {
+        out.width = 32;
+        out.values.push_back(deleted_count());
         return true;
     }
 
@@ -1613,6 +1792,17 @@ emulator::Result FDD::send_command(const std::string &command, const std::string
             bool wanted = parse_numeric_value(p[0]) != 0;
             if (wanted != write_protect) change_protection();
         }
+        return emulator::Result::ok();
+    }
+
+    if (command == "mark") {
+        //Not through set_sector_deleted(): the head stays where it is
+        const int i = (p.size() < 3) ? -1 : sector_index(parse_numeric_value(p[0]), parse_numeric_value(p[1]),
+                                                         parse_numeric_value(p[2]));
+        if (i < 0)
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Command 'mark' expects a track, a side and a sector of a sector image")) + "}");
+        mark_sector(i, p.size() < 4 || p[3].empty() || parse_numeric_value(p[3]) != 0);
         return emulator::Result::ok();
     }
 

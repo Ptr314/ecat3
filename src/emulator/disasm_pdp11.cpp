@@ -27,6 +27,25 @@ const char * SINGLE_B[16] = {
 const char * BRANCH_LO[8] = {"", "BR", "BNE", "BEQ", "BGE", "BLT", "BGT", "BLE"};
 const char * BRANCH_HI[8] = {"BPL", "BMI", "BHI", "BLOS", "BVC", "BVS", "BCC", "BCS"};
 
+// FP11 (ТО1, 9.8), by bits 8-11 as in pdp11core::fp_execute(). Groups 0 and 1 have
+// no accumulator: bits 6-7 pick the instruction there. Precision is the FD bit of
+// FPS at run time, not a part of the code, so one name stands for both: LDF for LDD
+struct FpCommand {
+    const char * name;
+    bool ac_first;          // AC, DST and not SRC, AC
+    bool fp_operand;        // mode 0 is an accumulator, not a register
+};
+const FpCommand FP_COMMANDS[16] = {
+    {nullptr, false, false}, {nullptr, false, false},
+    {"MULF", false, true},  {"MODF", false, true},
+    {"ADDF", false, true},  {"LDF", false, true},
+    {"SUBF", false, true},  {"CMPF", false, true},
+    {"STF", true, true},    {"DIVF", false, true},
+    {"STEXP", true, false}, {"STCFI", true, false},
+    {"STCFD", true, true},  {"LDEXP", false, false},
+    {"LDCIF", false, false}, {"LDCDF", false, true}
+};
+
 // Numbers without leading zeros: MOV #1, R0, not MOV #000001, R0
 static std::string oct(unsigned int value)
 {
@@ -40,9 +59,11 @@ uint16_t word_at(CommandBytes bytes, unsigned int index)
 
 } // namespace
 
-DisAsmPDP11::DisAsmPDP11(bool has_eis, Console console):
+DisAsmPDP11::DisAsmPDP11(bool has_eis, Console console, bool has_mfpt, bool has_fp):
     has_eis(has_eis),
-    console(console)
+    console(console),
+    has_mfpt(has_mfpt),
+    has_fp(has_fp)
 {
     // Opcode word plus up to two operand words
     max_command_length = 6;
@@ -96,6 +117,57 @@ std::string DisAsmPDP11::format_operand(unsigned int spec, CommandBytes bytes,
     }
 }
 
+// Mode 0 of a floating operand is an accumulator. There are six: AC6 and AC7 are an
+// error of the code (FEC_OPCODE), as JMP to a register is
+std::string DisAsmPDP11::format_fp_operand(unsigned int spec, CommandBytes bytes, unsigned int PC,
+                                           unsigned int & index, bool & valid)
+{
+    if ((spec & 070) != 0) return format_operand(spec, bytes, PC, index);
+    if ((spec & 7) > 5) valid = false;
+    return "AC" + std::to_string(spec & 7);
+}
+
+void DisAsmPDP11::decode_fp(uint16_t cmd, CommandBytes bytes, unsigned int PC, unsigned int & index,
+                            std::string & mnemonic, std::string & operands, bool & valid)
+{
+    const unsigned int group = (cmd >> 8) & 017;
+    const unsigned int ac = (cmd >> 6) & 3;
+    const unsigned int spec = cmd & 077;
+
+    if (group == 0 && ac == 0) {
+        switch (spec) {
+        case 000: mnemonic = "CFCC"; return;
+        case 001: mnemonic = "SETF"; return;
+        case 002: mnemonic = "SETI"; return;
+        case 011: mnemonic = "SETD"; return;
+        case 012: mnemonic = "SETL"; return;
+        default:
+            mnemonic = ".WORD";
+            operands = oct(cmd);
+            valid = false;
+            return;
+        }
+    }
+    if (group == 0) {
+        static const char * STATUS[4] = {nullptr, "LDFPS", "STFPS", "STST"};
+        mnemonic = STATUS[ac];
+        operands = format_operand(spec, bytes, PC, index);
+        return;
+    }
+    if (group == 1) {
+        static const char * SINGLE[4] = {"CLRF", "TSTF", "ABSF", "NEGF"};
+        mnemonic = SINGLE[ac];
+        operands = format_fp_operand(spec, bytes, PC, index, valid);
+        return;
+    }
+    const FpCommand &c = FP_COMMANDS[group];
+    const std::string name = "AC" + std::to_string(ac);
+    const std::string operand = c.fp_operand ? format_fp_operand(spec, bytes, PC, index, valid)
+                                             : format_operand(spec, bytes, PC, index);
+    mnemonic = c.name;
+    operands = c.ac_first ? name + ", " + operand : operand + ", " + name;
+}
+
 // The address a JMP or a JSR goes to, when the operand names it: relative to
 // PC (mode 67) or absolute (37). The others go through a register or a cell
 static bool operand_target(unsigned int spec, CommandBytes bytes, unsigned int PC,
@@ -132,6 +204,9 @@ unsigned int DisAsmPDP11::decode(CommandBytes bytes, unsigned int PC, unsigned i
         std::string src = format_operand((cmd >> 6) & 077, bytes, PC, index);
         std::string dst = format_operand(cmd & 077, bytes, PC, index);
         operands = src + ", " + dst;
+    }
+    else if (group == 017 && has_fp) {
+        decode_fp(cmd, bytes, PC, index, mnemonic, operands, valid);
     }
     else if ((cmd & 0177400) >= 0000400 && (cmd & 0177400) <= 0003400) {
         mnemonic = BRANCH_LO[(cmd >> 8) & 7];
@@ -268,6 +343,8 @@ unsigned int DisAsmPDP11::decode(CommandBytes bytes, unsigned int PC, unsigned i
             if (cmd == 2 || cmd == 6) out->flow = FLOW_RET;           // RTI, RTT
             else if (cmd == 3 || cmd == 4) out->flow = FLOW_CALL;     // BPT, IOT
         }
+        else if (cmd == 7 && has_mfpt)
+            mnemonic = "MFPT";
         else if (console_name != nullptr)
             mnemonic = console_name;
         else {

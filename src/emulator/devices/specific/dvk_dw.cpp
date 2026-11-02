@@ -51,7 +51,7 @@
 #define SI_WR           0000510
 
 // Отложенные события
-#define EV_NONE         0
+#define EV_OLD_WORD     1       // только в снимках прежнего вида: слово готово
 #define EV_SEEK         2       // головки на дорожке 0
 #define EV_READ         3       // сектор прочитан в буфер
 #define EV_WRITE        4       // буфер записан
@@ -60,12 +60,13 @@
 #define CALLBACK_IAKO   2
 #define CALLBACK_INIT   3
 
-// Накопитель 5 МБ: столько цилиндров DW.SYS ждёт при поднятом разряде 400
-// регистра SI, а без него - вдвое больше
-#define SMALL_CYLINDERS 153
+// Сброс - возврат на дорожку 0. Проверка прерываний TESTDW разрешает их после паузы
+// и ждёт прерывания от конца сброса (100 мс - уже мало), а её же проверка регистров
+// ждёт снятия «занят» с ограничением (200 и 400 мс проходят)
+#define INIT_US         200000
 
 DVKDW::DVKDW(InterfaceManager *im, EmulatorConfigDevice *cd):
-      AddressableDevice(im, cd)
+      DWController(im, cd, 040, INIT_US)
     , i_virq(this, im, 1, "virq", MODE_W)
     , i_vector(this, im, 16, "vector", MODE_W)
     , i_virq_in(this, im, 1, "virq_in", MODE_R, CALLBACK_CHAIN)
@@ -74,85 +75,26 @@ DVKDW::DVKDW(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_iako(this, im, 16, "iako", MODE_R, CALLBACK_IAKO)
     , i_init(this, im, 1, "init", MODE_R, CALLBACK_INIT)
 {
-    device_class = "hdd";
-    m_clocked = true;
-    can_read = true;
-    can_write = true;
-    addresable_size = 040;
 }
 
-emulator::Result DVKDW::attach(const std::string &file_name)
+// Регистр головки - 3 разряда, сектора - с единицы до 16
+bool DVKDW::geometry_ok() const
 {
-    std::string error;
-    if (!m_image.open(file_name, error))
-        return emulator::Result::error(emulator::ErrorCode::ConfigError,
-            "{DVKDW|" + std::string(QT_TRANSLATE_NOOP("DVKDW", "Hard disk image file not found")) + "} " + file_name);
-    // Цилиндры - из конфигурации или по размеру файла; образ больше
-    // заданной геометрии допустим, хвост не используется
-    const uint64_t image_cylinders = m_image.size() / HddImage::SECTOR_SIZE / (m_heads * m_sectors);
-    m_cylinders = (m_cfg_cylinders != 0) ? m_cfg_cylinders : (unsigned int)image_cylinders;
-    if (m_cylinders == 0 || m_cylinders > 1024 || image_cylinders < m_cylinders) {
-        m_image.close();
-        m_cylinders = 0;
-        return emulator::Result::error(emulator::ErrorCode::ConfigError,
-            "{DVKDW|" + std::string(QT_TRANSLATE_NOOP("DVKDW", "Unrecognized hard disk geometry")) + "} " + file_name);
-    }
-    init_controller();
-    return emulator::Result::ok();
+    return m_heads >= 1 && m_heads <= 8 && m_sectors >= 1 && m_sectors <= 16;
 }
 
 emulator::Result DVKDW::load_config(SystemData *sd)
 {
-    emulator::Result res = AddressableDevice::load_config(sd);
+    emulator::Result res = DWController::load_config(sd);
     if (!res) return res;
-
-    files = read_confg_value(cd, "files", false, std::string(""));
     m_vector = read_confg_value(cd, "vector", false, (unsigned int)0300);
-    m_image.set_write_protect(read_confg_value(cd, "write_protect", false, false));
-    m_image.set_volatile(read_confg_value(cd, "volatile", false, false));
-
-    // Геометрия: регистр головки - 3 разряда, сектора - с единицы до 16,
-    // цилиндра - 10 разрядов
-    m_heads = read_confg_value(cd, "heads", false, (unsigned int)4);
-    m_sectors = read_confg_value(cd, "sectors", false, (unsigned int)16);
-    m_cfg_cylinders = read_confg_value(cd, "cylinders", false, (unsigned int)0);
-    if (m_heads < 1 || m_heads > 8 || m_sectors < 1 || m_sectors > 16 || m_cfg_cylinders > 1024)
-        return emulator::Result::error(emulator::ErrorCode::ConfigError,
-            "{DVKDW|" + std::string(QT_TRANSLATE_NOOP("DVKDW", "Unsupported hard disk geometry")) + "} " + name);
-    // Разряд «5 МБ» регистра SI - перемычка накопителя; без параметра - по
-    // числу цилиндров, как у накопителя на 4 головки
-    const std::string small_jumper = cd->get_parameter("small", false).value;
-    m_small = small_jumper.empty() ? -1 : (parse_numeric_value(small_jumper) != 0 ? 1 : 0);
-
-    // Времена в микросекундах: поиск и поворот до сектора,
-    // переход головок на цилиндр, выдача слова из буфера контроллера
-    m_seek_us = read_confg_value(cd, "seek_time", false, (unsigned int)2000);
-    m_step_us = read_confg_value(cd, "step_time", false, (unsigned int)200);
-    m_word_us = read_confg_value(cd, "word_time", false, (unsigned int)2);
-    // Сброс - возврат на дорожку 0. Проверка прерываний TESTDW разрешает их
-    // после паузы и ждёт прерывания от конца сброса (100 мс - уже мало), а её
-    // же проверка регистров ждёт снятия «занят» с ограничением (200 и 400 мс
-    // проходят)
-    m_init_us = read_confg_value(cd, "init_time", false, (unsigned int)200000);
-
-    // Образ на мегабайты возят отдельно от машины: его отсутствие не ошибка,
-    // гнездо пустое, образ вставляют командой load или из меню
-    const std::string image = read_confg_value(cd, "image", false, std::string(""));
-    if (!image.empty()) {
-        const std::string file = find_file_location(sd, image);
-        if (!file.empty()) {
-            res = attach(file);
-            if (!res) return res;
-        }
-    }
-    init_controller();
-    return emulator::Result::ok();
+    return load_image();
 }
 
-void DVKDW::reset(MAYBE_UNUSED bool cold)
+void DVKDW::reset(bool cold)
 {
     m_irq.clear();
-    init_controller();
+    DWController::reset(cold);
 }
 
 void DVKDW::init_controller()
@@ -162,7 +104,7 @@ void DVKDW::init_controller()
     m_csr = CSR_DONE | CSR_DRDY;
     // Сброс - операция: «занят», а «закончено» поднимется в её конце
     m_si = SI_BUSY;
-    if (m_small > 0 || (m_small < 0 && m_cylinders != 0 && m_cylinders <= SMALL_CYLINDERS)) m_si |= SI_SMALL;
+    if (small_drive()) m_si |= SI_SMALL;
     m_drqa = m_drqb = false;
     m_count_read = m_count_write = 0;
     m_format = false;
@@ -225,54 +167,13 @@ void DVKDW::interface_callback(unsigned int callback_id, unsigned int new_value,
 
 //--------------------------- Ход операции ----------------------------------//
 
-void DVKDW::schedule(unsigned int event, unsigned int us)
+void DVKDW::word_ready()
 {
-    m_event = event;
-    m_timeout = us;
-    m_acc = 0;
+    raise_drqb();
 }
 
-// «Слово готово» идёт своим ходом: обращение к регистру данных во время
-// операции (сброса, чтения, записи) не должно её отменять
-void DVKDW::schedule_word(unsigned int us)
+void DVKDW::event_done(unsigned int event)
 {
-    m_word_pending = true;
-    m_word_timeout = us;
-    m_word_acc = 0;
-}
-
-unsigned int DVKDW::seek_us(unsigned int cylinder) const
-{
-    const unsigned int d = (cylinder > m_track) ? cylinder - m_track : m_track - cylinder;
-    return m_seek_us + d * m_step_us;
-}
-
-void DVKDW::clock(unsigned int counter)
-{
-    if (m_system_clock == 0) return;
-    if (m_word_pending) {
-        m_word_acc += (uint64_t)counter * 1000000ull;
-        while (m_word_acc >= m_system_clock && m_word_timeout > 0) {
-            m_word_acc -= m_system_clock;
-            m_word_timeout--;
-        }
-        if (m_word_timeout == 0) {
-            m_word_pending = false;
-            raise_drqb();
-        }
-    }
-    if (m_event == EV_NONE) return;
-
-    m_acc += (uint64_t)counter * 1000000ull;
-    const uint64_t step = m_system_clock;
-    while (m_acc >= step && m_timeout > 0) {
-        m_acc -= step;
-        m_timeout--;
-    }
-    if (m_timeout > 0) return;
-
-    const unsigned int event = m_event;
-    m_event = EV_NONE;
     switch (event) {
     case EV_SEEK:
         m_track = 0;
@@ -405,6 +306,17 @@ void DVKDW::command(unsigned int cmd)
 
 //--------------------------- Регистры --------------------------------------//
 
+unsigned int DVKDW::reg_of(unsigned int address) const
+{
+    return (address >> 1) & 017;
+}
+
+// Старший байт CSR команды не даёт
+bool DVKDW::odd_byte_write(unsigned int reg)
+{
+    return reg == REG_CSR;
+}
+
 unsigned int DVKDW::read_reg(unsigned int reg, bool peek)
 {
     switch (reg) {
@@ -431,7 +343,7 @@ unsigned int DVKDW::read_reg(unsigned int reg, bool peek)
         } else {
             // Без команды буфер читается по кругу
             if (m_count_read >= 256) m_count_read = 0;
-            schedule_word(m_word_us);
+            schedule_word();
         }
         return data;
     }
@@ -472,7 +384,7 @@ void DVKDW::write_reg(unsigned int reg, unsigned int value)
         } else {
             // Без команды буфер пишется по кругу
             if (m_count_write >= 256) m_count_write = 0;
-            schedule_word(m_word_us);
+            schedule_word();
         }
         break;
     case REG_CYL:
@@ -502,248 +414,45 @@ void DVKDW::write_reg(unsigned int reg, unsigned int value)
     }
 }
 
-void DVKDW::trace(unsigned int kind, unsigned int reg, unsigned int value)
-{
-    // Подряд одинаковые чтения (опрос готовности) - одной записью
-    if (kind == 0 && m_trace_next > 0) {
-        const TraceEntry &prev = m_trace[(m_trace_next - 1) & 1023];
-        if (prev.kind == 0 && prev.reg == reg && prev.value == (value & 0xFFFF)) return;
-    }
-    TraceEntry &e = m_trace[m_trace_next & 1023];
-    e.kind = (uint16_t)kind;
-    e.reg = (uint16_t)reg;
-    e.value = (uint16_t)value;
-    m_trace_next++;
-}
-
-unsigned int DVKDW::get_value_word(unsigned int address)
-{
-    const unsigned int reg = (address >> 1) & 017;
-    const unsigned int v = read_reg(reg, false) & 0xFFFF;
-    trace(0, reg, v);
-    return v;
-}
-
-void DVKDW::set_value_word(unsigned int address, unsigned int value, MAYBE_UNUSED bool force)
-{
-    trace(1, (address >> 1) & 017, value);
-    write_reg((address >> 1) & 017, value);
-}
-
-unsigned int DVKDW::get_value(unsigned int address)
-{
-    const unsigned int w = get_value_word(address & ~1u);
-    return (address & 1) ? ((w >> 8) & 0xFF) : (w & 0xFF);
-}
-
-// Байт пишется в свою половину регистра; старший байт CSR команды не даёт
-void DVKDW::set_value(unsigned int address, unsigned int value, MAYBE_UNUSED bool force)
-{
-    const unsigned int reg = (address >> 1) & 017;
-    if ((address & 1) && reg == REG_CSR) return;
-    const unsigned int old = read_reg(reg, true);
-    const unsigned int w = (address & 1) ? ((old & 0x00FF) | ((value & 0xFF) << 8))
-                                         : ((old & 0xFF00) | (value & 0xFF));
-    trace(2, reg, w);
-    write_reg(reg, w);
-}
-
-unsigned DVKDW::get_direct(unsigned address)
-{
-    const unsigned int w = read_reg((address >> 1) & 017, true);
-    return (address & 1) ? ((w >> 8) & 0xFF) : (w & 0xFF);
-}
-
-//--------------------------- Поля и команды --------------------------------//
-
-ConfigFields DVKDW::get_config_fields()
-{
-    ConfigField f;
-    f.name = "image";
-    f.title = QT_TRANSLATE_NOOP("ConfigFields", "Hard disk image");
-    f.type = CONFIG_FIELD_FILE;
-    f.files = cd->get_parameter("files", false).value;
-    f.embeddable = false;
-
-    ConfigField v;
-    v.name = "volatile";
-    v.title = QT_TRANSLATE_NOOP("ConfigFields", "Hard disk writes");
-    v.type = CONFIG_FIELD_CHOICE;
-    v.def = "0";
-    v.values.push_back({"0", QT_TRANSLATE_NOOP("ConfigFields", "Into the image file")});
-    v.values.push_back({"1", QT_TRANSLATE_NOOP("ConfigFields", "Into memory only, the image stays as it was")});
-    return {f, v};
-}
+//--------------------------- Поля и снимок ---------------------------------//
 
 std::vector<DeviceFieldInfo> DVKDW::get_device_fields()
 {
-    std::vector<DeviceFieldInfo> r = AddressableDevice::get_device_fields();
-    r.push_back({"attached",  "1, когда образ вставлен",                   false});
-    r.push_back({"file",      "Имя образа",                                false});
-    r.push_back({"protected", "1, когда запись в образ запрещена",          false});
-    r.push_back({"volatile",  "1, когда запись идёт в память, а не в файл", false});
-    r.push_back({"geometry",  "Цилиндры, головки и секторы образа",         false});
-    r.push_back({"csr",       "Регистр 174016",                            false});
-    r.push_back({"si",        "Регистр 174020",                            false});
-    r.push_back({"err",       "Регистр ошибок 174004",                     false});
-    r.push_back({"command",   "Последняя команда",                         false});
-    r.push_back({"cylinder",  "Цилиндр в регистре",                        false});
-    r.push_back({"head",      "Головка в регистре",                        false});
-    r.push_back({"sector",    "Сектор в регистре",                         false});
-    r.push_back({"reads",     "Сколько секторов прочитано",                 false});
-    r.push_back({"writes",    "Сколько секторов записано",                  false});
-    r.push_back({"trace",     "Последние обращения к регистрам: вид (0 чтение, 1 запись слова, 2 байта), номер слова, значение", true});
-    return r;
-}
-
-std::vector<DeviceCommandInfo> DVKDW::get_device_commands()
-{
-    std::vector<DeviceCommandInfo> r = AddressableDevice::get_device_commands();
-    r.push_back({"load",     "\"file\"", "Вставляет образ винчестера"});
-    r.push_back({"eject",    "",         "Вынимает образ"});
-    r.push_back({"protect",  "[0|1]",    "Запрещает или разрешает запись в образ"});
-    r.push_back({"volatile", "[0|1]",    "Запись в память вместо файла; выключение забывает записанное"});
+    std::vector<DeviceFieldInfo> r = DWController::get_device_fields();
+    r.push_back({"si", "Регистр 174020", false});
     return r;
 }
 
 bool DVKDW::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
-    if (field == "file") { out.text = m_image.file_name(); return true; }
-    // Отладка: последние обращения, старые первыми, по три числа на каждое
-    if (field == "trace") {
-        if (to >= 1024) to = 1023;
+    if (field == "si") {
         out.numeric = true;
-        out.has_start = true;
-        out.start = from;
         out.width = 16;
-        for (unsigned int i = from; i <= to; i++) {
-            const TraceEntry &e = m_trace[(m_trace_next + i) & 1023];
-            out.values.push_back(e.kind);
-            out.values.push_back(e.reg);
-            out.values.push_back(e.value);
-        }
+        out.values.push_back(m_si);
         return true;
     }
-    if (field == "geometry") {
-        out.text = std::to_string(m_cylinders) + "/" + std::to_string(m_heads) + "/" + std::to_string(m_sectors);
-        return true;
-    }
-    out.numeric = true;
-    out.width = 16;
-    if (field == "attached")  { out.values.push_back(m_image.attached() ? 1 : 0);     return true; }
-    if (field == "protected") { out.values.push_back(m_image.is_protected() ? 1 : 0); return true; }
-    if (field == "volatile")  { out.values.push_back(m_image.is_volatile() ? 1 : 0);  return true; }
-    if (field == "csr")       { out.values.push_back(m_csr);      return true; }
-    if (field == "si")        { out.values.push_back(m_si);       return true; }
-    if (field == "err")       { out.values.push_back(m_err);      return true; }
-    if (field == "command")   { out.values.push_back(m_command);  return true; }
-    if (field == "cylinder")  { out.values.push_back(m_cyl);      return true; }
-    if (field == "head")      { out.values.push_back(m_head);     return true; }
-    if (field == "sector")    { out.values.push_back(m_sector);   return true; }
-    out.width = 32;
-    if (field == "reads")     { out.values.push_back(m_reads);    return true; }
-    if (field == "writes")    { out.values.push_back(m_writes);   return true; }
-    out.numeric = false;
-    out.width = 0;
-    return AddressableDevice::get_field(field, from, to, out);
-}
-
-emulator::Result DVKDW::send_command(const std::string &command, const std::string &parameters)
-{
-    std::vector<std::string> p = split_params(parameters);
-
-    if (command == "load") {
-        if (p.empty() || p[0].empty())
-            return emulator::Result::error(emulator::ErrorCode::BadParameters,
-                "{DVKDW|" + std::string(QT_TRANSLATE_NOOP("DVKDW", "Command 'load' expects a file name")) + "}");
-        std::string file = find_file_location(sd, p[0]);
-        if (file.empty()) file = p[0];
-        return attach(file);
-    }
-    if (command == "eject") {
-        m_image.close();
-        m_cylinders = 0;
-        init_controller();
-        return emulator::Result::ok();
-    }
-    if (command == "protect") {
-        m_image.set_write_protect((p.empty() || p[0].empty()) ? !m_image.write_protect()
-                                                               : parse_numeric_value(p[0], 10) != 0);
-        return emulator::Result::ok();
-    }
-    if (command == "volatile") {
-        m_image.set_volatile((p.empty() || p[0].empty()) ? !m_image.is_volatile()
-                                                          : parse_numeric_value(p[0], 10) != 0);
-        return emulator::Result::ok();
-    }
-    return AddressableDevice::send_command(command, parameters);
+    return DWController::get_field(field, from, to, out);
 }
 
 void DVKDW::save_state(StateWriter &w)
 {
-    AddressableDevice::save_state(w);
-    w.u("err", m_err);
-    w.u("sector", m_sector);
-    w.u("cyl", m_cyl);
-    w.u("head", m_head);
-    w.u("csr", m_csr);
+    DWController::save_state(w);
     w.u("si", m_si);
-    w.n("track", m_track);
-    w.u("command", m_command);
-    w.array("buf", m_buf, 256);
     w.n("count_read", m_count_read);
     w.n("count_write", m_count_write);
     w.b("format", m_format);
     w.n("op", m_op);
     w.b("drqa", m_drqa);
     w.b("drqb", m_drqb);
-    w.n("event", m_event);
-    w.n64("timeout", m_timeout);
-    w.n64("acc", m_acc);
-    w.b("word_pending", m_word_pending);
-    w.n64("word_timeout", m_word_timeout);
-    w.n64("word_acc", m_word_acc);
-    w.n("reads", m_reads);
-    w.n("writes", m_writes);
     w.u("offered", m_irq.offered());
-    w.b("write_protect", m_image.write_protect());
-    if (m_image.attached()) {
-        w.b("attached", true);
-        m_image.save_state(w, "image", name);
-    }
 }
 
 emulator::Result DVKDW::load_state(const StateReader &r)
 {
-    emulator::Result res = AddressableDevice::load_state(r);
+    const emulator::Result res = DWController::load_state(r);
     if (!res) return res;
 
-    // Образ - первым: attach() сбрасывает контроллер
-    bool attached = false;
-    if (r.b("attached", attached) && attached) {
-        std::string file;
-        if (r.s("image", file) && !file.empty()) {
-            const std::string path = find_file_location(sd, file);
-            if (path.empty())
-                return emulator::Result::error(emulator::ErrorCode::FileError,
-                    "{MachineState|Saved state} " + name + ": file not found: " + file);
-            res = attach(path);
-            if (!res) return res;
-            // Копия из снимка и его ОЗУ сняты вместе: запись в файл их
-            // рассогласовала бы, поэтому восстановленный диск пишет в память
-            m_image.set_volatile(true);
-        }
-    }
-
-    r.u("err", m_err);
-    r.u("sector", m_sector);
-    r.u("cyl", m_cyl);
-    r.u("head", m_head);
-    r.u("csr", m_csr);
     r.u("si", m_si);
-    r.u("track", m_track);
-    r.u("command", m_command);
-    r.array("buf", m_buf, 256);
     r.u("count_read", m_count_read);
     r.u("count_write", m_count_write);
     if (m_count_read > 256) m_count_read = 0;
@@ -753,21 +462,10 @@ emulator::Result DVKDW::load_state(const StateReader &r)
     if (m_op > OP_WRITE) m_op = OP_NONE;
     r.b("drqa", m_drqa);
     r.b("drqb", m_drqb);
-    r.u("event", m_event);
-    r.n64("timeout", m_timeout);
-    r.n64("acc", m_acc);
-    r.b("word_pending", m_word_pending);
-    r.n64("word_timeout", m_word_timeout);
-    r.n64("word_acc", m_word_acc);
-    // снимок прежнего вида: «слово готово» лежало в общем событии (1)
-    if (m_event == 1) { m_event = EV_NONE; m_word_pending = true; m_word_timeout = m_timeout; m_word_acc = m_acc; }
-    r.u("reads", m_reads);
-    r.u("writes", m_writes);
+    if (pending_event() == EV_OLD_WORD) adopt_word_event();
     unsigned int offered = 0;
     r.u("offered", offered);
     m_irq.set_offered(offered);
-    bool wp = false;
-    if (r.b("write_protect", wp)) m_image.set_write_protect(wp);
     return emulator::Result::ok();
 }
 

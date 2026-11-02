@@ -1,0 +1,12 @@
+# Электроника МС 0585: ПРОС(Д) 1.8 с дискеты. Загрузка идёт через весь контроллер
+# НГМД - прошивка 8751 читает сектора ВГ93 в буфер, ядро выводит приглашение
+# вставить прикладную дискету. Программы ПРОС на Паскале считают командами FP11
+# @timeout 150
+MACHINE "computers/e85/MS0585.cfg"
+COMMAND fd0.load("software/e85/pros-d-1.8-system.dsk")
+WAIT _60000
+LOGDEFS _16,_8
+LOG fdc.reads
+LOG cpu.timeouts
+SCREEN "../results/boot-e85-pros.png"
+EXIT

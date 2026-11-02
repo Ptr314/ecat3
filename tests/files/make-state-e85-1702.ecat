@@ -1,0 +1,8 @@
+# Снимок для tests/scripts/state-e85-1702.ecat: МС 1702 посреди самопроверки из автотеста,
+# 8086 заливает видеопамять, RES снят. Образа винчестера нет, поэтому снимок маленький.
+# Запуск от deploy/
+# @timeout 60
+MACHINE "computers/e85/MS0585-1702.ext"
+WAITFOR mc1702.vram_writes == _4000, _30000
+SAVESTATE "state-e85-1702.ecats.zip"
+EXIT

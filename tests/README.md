@@ -203,6 +203,8 @@ python tests/run_tests.py --update -k boot-bk-0011m
 | `state-pravetz-8a-liberty.ecats.zip` | `state-pravetz-8a-liberty` | Правец-8А с Liberty Drive посреди работы с диском |
 | `state-pravetz-8a-comport.ecats.zip` | `state-pravetz-8a-comport` | Правец-8А с платой COMport: поднимается вместе с «компьютером PC», DOS загружен через плату |
 | `state-pravetz-8d.ecats.zip` | `state-pravetz-8d` | Правец-8Д в HIRES: режим ULA, регистры VIA и AY, системное прерывание таймера 1 |
+| `state-e85-1702.ecats.zip` | `state-e85-1702` | Электроника МС 0585 с МС 1702 посреди самопроверки платы |
+| `state-e85-marks.ecats.zip` | `state-e85-marks` | Электроника МС 0585 до первого чтения дискеты: метки F8 образа `.dsk` есть только в снимке |
 
 Снимки &ndash; двоичные эталоны, и набор их не пересобирает. Каждый делает
 свой сценарий `files/make-state-*.ecat`, который запускается руками из

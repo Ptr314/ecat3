@@ -1,0 +1,5 @@
+[knmd.reads] &00000001711
+[knmd.writes] &00000000031
+[knmd.refused] &00000000000
+[knmd.unsupported] &00000000000
+[cpu.timeouts] &000010

@@ -1,0 +1,24 @@
+=== 8051: выход из подпрограммы и шаг через вызов ===
+[kngmd-cpu.pc] &004300
+[kngmd-cpu.pc] &004303
+[kngmd-cpu.pc] &000205
+[kngmd-cpu.pc] &000212
+[kngmd-cpu.sfr] &137
+=== чтение регистров НГМД отладчиком ===
+[kngmd.busy] &000
+[kngmd.commands] &000000
+[kngmd.value] &000024: &000000
+[kngmd.busy] &000
+[kngmd.commands] &000000
+=== переполнение приёмника клавиатуры ===
+[kbd.received] &00000000001
+[kbd.overruns] &00000000000
+[pic1.irr] &104
+[kbd.received] &00000000002
+[kbd.overruns] &00000000001
+[pic1.irr] &104
+=== RESET процессора: начальная установка контроллера НГМД ===
+[kngmd.regs_write] &000 &000 &000 &040 &020 &010 &004 &000
+[kngmd.busy] &001
+[kngmd.regs_write] &000 &002 &004 &006 &010 &012 &014 &000
+[kngmd.regs_write] &125 &000 &000 &040 &020 &010 &004 &000

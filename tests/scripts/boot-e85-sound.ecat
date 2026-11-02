@@ -1,0 +1,64 @@
+# Электроника МС 0585: звук живёт в клавиатуре, других источников в машине нет. После
+# автотеста ПЗУ команды клавиатуре идут прямо в порт 173500, как их шлют игры. Числа
+# в логе - прошивка МС7004: $A7 и $9F звучат, только пока разрешено, $A1 и $99 запрещают,
+# $23 и $1B с байтом 10000xxx разрешают, а другой байт после них значения не имеет
+# @timeout 60
+MACHINE "computers/e85/MS0585.cfg"
+WAIT _25000
+LOGDEFS _16,_8
+PRINT "=== Звонок и щелчок разрешены ==="
+COMMAND kbd.set(&0,&247)
+WAIT _100
+COMMAND kbd.set(&0,&237)
+WAIT _100
+LOG keyboard.bells
+LOG keyboard.clicks
+PRINT "=== Запрещены: команды принимаются, звука нет ==="
+COMMAND kbd.set(&0,&241)
+WAIT _20
+COMMAND kbd.set(&0,&231)
+WAIT _20
+COMMAND kbd.set(&0,&247)
+WAIT _100
+COMMAND kbd.set(&0,&237)
+WAIT _100
+LOG keyboard.bell
+LOG keyboard.click
+LOG keyboard.bells
+LOG keyboard.clicks
+PRINT "=== $23 с плохим байтом не разрешает ==="
+COMMAND kbd.set(&0,&043)
+WAIT _20
+COMMAND kbd.set(&0,&220)
+WAIT _20
+LOG keyboard.bell
+PRINT "=== $23 и $1B с байтом громкости разрешают ==="
+COMMAND kbd.set(&0,&043)
+WAIT _20
+COMMAND kbd.set(&0,&203)
+WAIT _20
+COMMAND kbd.set(&0,&033)
+WAIT _20
+COMMAND kbd.set(&0,&207)
+WAIT _20
+COMMAND kbd.set(&0,&247)
+WAIT _100
+COMMAND kbd.set(&0,&237)
+WAIT _100
+LOG keyboard.bells
+LOG keyboard.clicks
+PRINT "=== Обе команды сразу: звонок раньше щелчка, оба слышны ==="
+COMMAND kbd.set(&0,&237)
+WAIT _3
+COMMAND kbd.set(&0,&247)
+WAIT _200
+LOG keyboard.bells
+LOG keyboard.clicks
+PRINT "=== $FD разрешает всё снова ==="
+COMMAND kbd.set(&0,&241)
+WAIT _20
+COMMAND kbd.set(&0,&375)
+WAIT _20
+LOG keyboard.bell
+LOG keyboard.click
+EXIT

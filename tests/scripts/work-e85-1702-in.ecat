@@ -1,0 +1,133 @@
+# Электроника МС 0585 с МС 1702: программа опрашивает порт 61h, 8086 почти всё время стоит на
+# IN и ждёт хоста, а INTR приходит в этом окне. На кристалле цикл шины заканчивается, потом идёт
+# прерывание: ответ хоста получает начатый IN, а не первый IN обработчика. Иначе INT 9 читает из
+# порта 60h данные порта 61h, и DOS получает не ту клавишу. После нажатия x программа
+# останавливается на INT 3, DEBUG показывает AX = 2D78
+# @timeout 120
+MACHINE "computers/e85/MS0585-1702.ext"
+COMMAND knmd.load("software/e85/pros-2.03-10m-pc.rd")
+COMMAND knmd.volatile(1)
+WAIT _45000
+COMMAND fd0.load("software/e85/eldos-msdos-3.30.dsk")
+COMMAND fd1.load("software/e85/eldos-msdos-utils.dsk")
+LOGDEFS _16,_8
+WAIT _2000
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_f16
+WAIT _100
+KEYUP key_f16
+WAIT _300
+WAIT _3000
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_f16
+WAIT _100
+KEYUP key_f16
+WAIT _300
+WAIT _4000
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_down
+WAIT _100
+KEYUP key_down
+WAIT _300
+KEYDOWN key_f16
+WAIT _100
+KEYUP key_f16
+WAIT _300
+WAIT _75000
+TYPE "\n"
+WAIT _500
+WAIT _4000
+TYPE "\n"
+WAIT _500
+WAIT _6000
+TYPE "b:debug\n"
+WAIT _500
+WAIT _10000
+TYPE "a\n"
+WAIT _500
+WAIT _2000
+TYPE "mov dx,61\n"
+WAIT _500
+TYPE "in al,dx\n"
+WAIT _500
+TYPE "mov ah,1\n"
+WAIT _500
+TYPE "int 16\n"
+WAIT _500
+TYPE "jz 103\n"
+WAIT _500
+TYPE "mov ah,0\n"
+WAIT _500
+TYPE "int 16\n"
+WAIT _500
+TYPE "int 3\n"
+WAIT _500
+TYPE "\n"
+WAIT _500
+WAIT _2000
+TYPE "g\n"
+WAIT _500
+WAIT _4000
+TYPE "x"
+WAIT _500
+WAIT _8000
+LOG mc1702.unsupported
+SCREEN "../results/work-e85-1702-in.png"
+EXIT

@@ -29,6 +29,7 @@ set(ECAT_CORE_SOURCES
     emulator/disasm.h emulator/disasm.cpp
     emulator/disasm_pdp11.h emulator/disasm_pdp11.cpp
     emulator/disasm_x86.h emulator/disasm_x86.cpp
+    emulator/disasm_i8051.h emulator/disasm_i8051.cpp
     emulator/disasm_buffer.h emulator/disasm_buffer.cpp
 
     emulator/script/script_types.h
@@ -42,8 +43,9 @@ set(ECAT_CORE_SOURCES
     emulator/devices/cpu/i8080core.h emulator/devices/cpu/i8080core.cpp
     emulator/devices/cpu/6502core.h emulator/devices/cpu/6502core.cpp
     emulator/devices/cpu/6502.h emulator/devices/cpu/6502.cpp
-    emulator/devices/cpu/pdp11_context.h emulator/devices/cpu/pdp11core.h emulator/devices/cpu/pdp11core.cpp emulator/devices/cpu/pdp11core_vm3.cpp
+    emulator/devices/cpu/pdp11_context.h emulator/devices/cpu/pdp11core.h emulator/devices/cpu/pdp11core.cpp emulator/devices/cpu/pdp11core_vm3.cpp emulator/devices/cpu/pdp11core_fp.cpp
     emulator/devices/cpu/k1801vm1.h emulator/devices/cpu/k1801vm1.cpp
+    emulator/devices/cpu/i8051.h emulator/devices/cpu/i8051.cpp
     emulator/devices/cpu/i8086_context.h emulator/devices/cpu/i8086core.h emulator/devices/cpu/i8086core.cpp
     emulator/devices/cpu/i8086.h emulator/devices/cpu/i8086.cpp
     emulator/devices/cpu/vm1_timing.h emulator/devices/cpu/vm1_timing.cpp emulator/devices/cpu/vm1_timing_table.inc
@@ -80,6 +82,9 @@ set(ECAT_CORE_SOURCES
     emulator/devices/common/serial_line.h emulator/devices/common/serial_line.cpp
     emulator/devices/common/i8253.h emulator/devices/common/i8253.cpp
     emulator/devices/common/i8259.h emulator/devices/common/i8259.cpp
+    emulator/devices/common/am9519.h emulator/devices/common/am9519.cpp
+    emulator/devices/common/scn2661.h emulator/devices/common/scn2661.cpp
+    emulator/devices/common/mc146818.h emulator/devices/common/mc146818.cpp
     emulator/devices/common/register.h emulator/devices/common/register.cpp
     emulator/devices/common/page_mapper.h emulator/devices/common/page_mapper.cpp
     emulator/devices/common/plane_pair.h emulator/devices/common/plane_pair.cpp
@@ -123,10 +128,17 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/dvk_kgd.h emulator/devices/specific/dvk_kgd.cpp
     emulator/devices/specific/dvk_dx.h emulator/devices/specific/dvk_dx.cpp
     emulator/devices/specific/dvk_lks.h emulator/devices/specific/dvk_lks.cpp
+    emulator/devices/specific/e85_sys.h emulator/devices/specific/e85_sys.cpp
+    emulator/devices/specific/e85_comm.h emulator/devices/specific/e85_comm.cpp
+    emulator/devices/specific/e85_video.h emulator/devices/specific/e85_video.cpp
+    emulator/devices/specific/e85_kngmd.h emulator/devices/specific/e85_kngmd.cpp
+    emulator/devices/specific/e85_knmd.h emulator/devices/specific/e85_knmd.cpp
+    emulator/devices/specific/e85_mc1702.h emulator/devices/specific/e85_mc1702.cpp
     emulator/devices/specific/dvk_panel.h emulator/devices/specific/dvk_panel.cpp
     emulator/devices/specific/dvk_kcgd.h emulator/devices/specific/dvk_kcgd.cpp
     emulator/devices/specific/dvk_kmd.h emulator/devices/specific/dvk_kmd.cpp
     emulator/devices/specific/dvk_dw.h emulator/devices/specific/dvk_dw.cpp
+    emulator/devices/common/dw_controller.h emulator/devices/common/dw_controller.cpp
     emulator/devices/common/hdd_image.h emulator/devices/common/hdd_image.cpp
     emulator/devices/specific/uknc_sound.h emulator/devices/specific/uknc_sound.cpp
     emulator/devices/specific/argo_keyboard.h emulator/devices/specific/argo_keyboard.cpp

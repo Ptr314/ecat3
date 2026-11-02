@@ -205,13 +205,7 @@ unsigned int RasterDisplay::clocks_to_event() const
 
 bool RasterDisplay::raster_frame_rate(uint64_t &num, uint64_t &den, const unsigned pictures) const
 {
-    const uint64_t a = (uint64_t)m_system_clock * pictures, b = frame_clocks();
-    if (a == 0 || b == 0) return false;
-    uint64_t x = a, y = b;
-    while (y != 0) { const uint64_t t = x % y; x = y; y = t; }
-    num = a / x;
-    den = b / x;
-    return true;
+    return reduced_rate((uint64_t)m_system_clock * pictures, frame_clocks(), num, den);
 }
 
 void RasterDisplay::save_state(StateWriter &w)

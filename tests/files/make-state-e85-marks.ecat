@@ -1,0 +1,18 @@
+# Снимок для tests/scripts/state-e85-marks.ecat: метки F8 на дорожке 1 посекторного образа, ПЗУ
+# ещё не читало дискету. В самом .dsk меток нет, они только в снимке. Дискета почти пустая,
+# поэтому снимок маленький. Запуск от deploy/
+# @timeout 60
+MACHINE "computers/e85/MS0585.cfg"
+COMMAND fd0.load("software/e85/start-2.dsk")
+COMMAND fd0.mark(_1,_0,_1)
+COMMAND fd0.mark(_1,_0,_2)
+COMMAND fd0.mark(_1,_0,_3)
+COMMAND fd0.mark(_1,_0,_4)
+COMMAND fd0.mark(_1,_0,_5)
+COMMAND fd0.mark(_1,_0,_6)
+COMMAND fd0.mark(_1,_0,_7)
+COMMAND fd0.mark(_1,_0,_8)
+COMMAND fd0.mark(_1,_0,_9)
+WAIT _500
+SAVESTATE "state-e85-marks.ecats.zip"
+EXIT

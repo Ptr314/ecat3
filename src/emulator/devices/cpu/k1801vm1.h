@@ -189,3 +189,4 @@ public:
 ComputerDevice * create_k1801vm1(InterfaceManager *im, EmulatorConfigDevice *cd);
 ComputerDevice * create_k1801vm2(InterfaceManager *im, EmulatorConfigDevice *cd);
 ComputerDevice * create_k1801vm3(InterfaceManager *im, EmulatorConfigDevice *cd);
+ComputerDevice * create_km1811vm1(InterfaceManager *im, EmulatorConfigDevice *cd);

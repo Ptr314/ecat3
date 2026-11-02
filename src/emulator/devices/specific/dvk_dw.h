@@ -5,8 +5,7 @@
 
 #pragma once
 
-#include "emulator/core.h"
-#include "emulator/devices/common/hdd_image.h"
+#include "emulator/devices/common/dw_controller.h"
 #include "emulator/devices/common/virq_line.h"
 
 // Контроллер винчестера ДВК «DW» (КЗД 3.057.316): накопитель MFM, сектор 512
@@ -45,7 +44,7 @@
 // читает сектор 1 - блок 0). Образ - блоки подряд, блок = (цилиндр * головок
 // + головка) * секторов + сектор - 1, как DW_System54.DSK эмулятора Патронова
 // (4 головки, 16 секторов).
-class DVKDW: public AddressableDevice, public HddImageOwner
+class DVKDW: public DWController
 {
 private:
     Interface i_virq;
@@ -56,24 +55,9 @@ private:
     Interface i_iako;
     Interface i_init;
 
-    HddImage m_image;
-    unsigned int m_cylinders = 0;
-    unsigned int m_cfg_cylinders = 0;   // из конфигурации, 0 - по размеру образа
-    unsigned int m_heads = 4;
-    unsigned int m_sectors = 16;
-    int m_small = -1;                   // разряд «5 МБ» SI: -1 - по числу цилиндров
     unsigned int m_vector = 0300;
-
-    unsigned int m_err = 0;
-    unsigned int m_sector = 0;
-    unsigned int m_cyl = 0;
-    unsigned int m_head = 0;
-    unsigned int m_csr = 0;
     unsigned int m_si = 0;
-    unsigned int m_track = 0;       // где стоят головки
-    unsigned int m_command = 0;
 
-    uint16_t m_buf[256] = {};
     unsigned int m_count_read = 0;
     unsigned int m_count_write = 0;
     bool m_format = false;          // запись ведёт разметку дорожки
@@ -86,74 +70,38 @@ private:
     bool m_drqa = false;
     bool m_drqb = false;
 
-    // Отложенное событие, в микросекундах
-    unsigned int m_event = 0;
-    uint64_t m_timeout = 0;
-    uint64_t m_acc = 0;
-    // «Слово готово» - своё, отдельно от операции
-    bool m_word_pending = false;
-    uint64_t m_word_timeout = 0;
-    uint64_t m_word_acc = 0;
-    unsigned int m_seek_us = 0;
-    unsigned int m_step_us = 0;
-    unsigned int m_word_us = 0;
-    unsigned int m_init_us = 0;
-
-    unsigned int m_reads = 0;
-    unsigned int m_writes = 0;
-
-    // Отладка: кольцо последних обращений к регистрам - чтение или запись,
-    // регистр, значение; поле trace
-    struct TraceEntry { uint16_t kind; uint16_t reg; uint16_t value; };
-    TraceEntry m_trace[1024] = {};
-    unsigned int m_trace_next = 0;
-    void trace(unsigned int kind, unsigned int reg, unsigned int value);
-
-    void init_controller();
     void update_irq();
     void raise_drqa();
     void clear_drqa();
     void raise_drqb();
     void clear_drqb();
     void command(unsigned int cmd);
-    void schedule(unsigned int event, unsigned int us);
-    void schedule_word(unsigned int us);
-    unsigned int seek_us(unsigned int cylinder) const;
     bool sector_offset(uint64_t &offset) const;
     void fail(unsigned int err);
     void read_done();
     void write_done();
-    unsigned int read_reg(unsigned int reg, bool peek);
-    void write_reg(unsigned int reg, unsigned int value);
-    emulator::Result attach(const std::string &file_name);
+
+protected:
+    void init_controller() override;
+    void word_ready() override;
+    void event_done(unsigned int event) override;
+    bool geometry_ok() const override;
+    unsigned int reg_of(unsigned int address) const override;
+    unsigned int read_reg(unsigned int reg, bool peek) override;
+    void write_reg(unsigned int reg, unsigned int value) override;
+    bool odd_byte_write(unsigned int reg) override;
 
 public:
-    std::string files;
-    HddImage & hdd_image() override { return m_image; }
-    const std::string & hdd_files() const override { return files; }
-
     DVKDW(InterfaceManager *im, EmulatorConfigDevice *cd);
 
     emulator::Result load_config(SystemData *sd) override;
     void reset(bool cold) override;
-    void clock(unsigned int counter) override;
     void interface_callback(unsigned int callback_id, unsigned int new_value, unsigned int old_value) override;
 
-    unsigned int get_value(unsigned int address) override;
-    void set_value(unsigned int address, unsigned int value, bool force=false) override;
-    unsigned int get_value_word(unsigned int address) override;
-    void set_value_word(unsigned int address, unsigned int value, bool force=false) override;
-    unsigned get_direct(unsigned address) override;
-
-    ConfigFields get_config_fields() override;
     std::vector<DeviceFieldInfo> get_device_fields() override;
-    std::vector<DeviceCommandInfo> get_device_commands() override;
     bool get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out) override;
-    emulator::Result send_command(const std::string &command, const std::string &parameters) override;
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;
-    bool state_owns_file(const std::string &parameter) const override
-        { return parameter == "image"; }
 };
 
 ComputerDevice * create_dvk_dw(InterfaceManager *im, EmulatorConfigDevice *cd);

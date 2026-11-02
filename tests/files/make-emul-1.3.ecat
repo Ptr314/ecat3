@@ -1,0 +1,25 @@
+# Рецепт образа deploy/software/e85/emul-1.3.hfe: дискета «Эмулятор DOS v 1.3» из docs-external
+# с метками F8, которых нет в её .dsk. Меченые секторы найдены по блокам со словами в обратном
+# порядке: SHAG2 переворачивает только то, что прочитано с ошибкой 364 (docs/dev/machines.md).
+# Логический блок n лежит на физической дорожке n/10 + 1. Запуск вручную из deploy/:
+# eCat3-headless --no-sound --script ../tests/files/make-emul-1.3.ecat
+# @timeout 30
+MACHINE "computers/e85/MS0585.cfg"
+COMMAND fd0.load("../docs-external/E85/DSK/004/EMDOS13FD22.dsk")
+# FORM.TSK, блоки 0-5 файла: логические 80-85
+COMMAND fd0.mark(_9,_0,_7)
+COMMAND fd0.mark(_9,_0,_9)
+COMMAND fd0.mark(_9,_0,_1)
+COMMAND fd0.mark(_9,_0,_3)
+COMMAND fd0.mark(_9,_0,_5)
+COMMAND fd0.mark(_9,_0,_8)
+# EMUL.TSK, блоки 0 и 24-28 файла: логические 252 и 276-280
+COMMAND fd0.mark(_26,_0,_5)
+COMMAND fd0.mark(_28,_0,_8)
+COMMAND fd0.mark(_28,_0,_10)
+COMMAND fd0.mark(_28,_0,_2)
+COMMAND fd0.mark(_28,_0,_4)
+COMMAND fd0.mark(_29,_0,_7)
+LOG fd0.deleted
+COMMAND fd0.save("../../deploy/software/e85/emul-1.3.hfe")
+EXIT

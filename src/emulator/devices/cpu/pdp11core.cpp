@@ -51,6 +51,10 @@ namespace {
     // (work-uknc-speed). The chip model (tools/vm2-timing) shifts 4 clocks a
     // step, n - 1 steps to the right; the 8 a bit here are UKNCBTL's
     const unsigned int C_MUL      = 85;
+    // MUL of the F-11: 24.6 us register-register in table 2 of the ТО, 164
+    // clocks at 6.67 MHz, less a fetch of 11 (reply_delay 4). The table has no
+    // DIV, ASH or ASHC, so the F-11 keeps the ВМ2's numbers for those
+    const unsigned int C_MUL_F11  = 153;
     const unsigned int C_DIV      = 117;
     const unsigned int C_ASH      = 30;
     const unsigned int C_ASHC     = 46;
@@ -73,9 +77,10 @@ void pdp11core::set_reply_delay(unsigned int periods)
 }
 
 pdp11core::pdp11core(int family_type)
-    : has_eis(family_type == PDP11_FAMILY_1801VM2 || family_type == PDP11_FAMILY_1801VM3)
+    : has_eis(family_type == PDP11_FAMILY_1801VM2 || family_type == PDP11_FAMILY_1801VM3 || family_type == PDP11_FAMILY_F11)
     , has_console(family_type == PDP11_FAMILY_1801VM2)
-    , vm3(family_type == PDP11_FAMILY_1801VM3)
+    , vm3(family_type == PDP11_FAMILY_1801VM3 || family_type == PDP11_FAMILY_F11)
+    , f11(family_type == PDP11_FAMILY_F11)
     , vm1_console(family_type == PDP11_FAMILY_1801VM1)
     , is_virq(false)
     , virq_vector(0)
@@ -785,6 +790,9 @@ bool pdp11core::execute_double(uint16_t command, unsigned int & cycles)
     if (vm3 && m_abort) return true;
     m_dest = true;
     pdp11operand dst_op = decode_operand(command & 077, is_byte, cycles);
+    // F-11 берёт регистр-источник после разбора приёмника: MOV R0,(R0)+ пишет
+    // уже увеличенный R0, MOV PC,X(R0) - PC+4 (ТО1, приложение 3, пункты 1, 2)
+    if (f11 && src_op.is_reg) src = read_operand(src_op, is_byte);
 
     unsigned int kind = op_id & 07;             // 1 MOV, 2 CMP, 3 BIT, 4 BIC, 5 BIS, 6 ADD/SUB
     uint32_t mask = is_byte? 0xFFu : 0xFFFFu;
@@ -793,8 +801,9 @@ bool pdp11core::execute_double(uint16_t command, unsigned int & cycles)
     // MOV writes the destination without reading it and CMP and BIT never
     // write, the rest read and write it in a single read-modify-write cycle.
     // MOVB is counted among the rest, as the ВМ2 does it; the ВМ1 writes a
-    // byte with a plain DATO (the chip models, vm1/vm2_timing_table.inc)
-    operand_access dst_access = (kind == 1 && !is_byte)? OP_WRITE
+    // byte with a plain DATO (the chip models, vm1/vm2_timing_table.inc), and
+    // so does the F-11, see below
+    operand_access dst_access = (kind == 1 && (!is_byte || f11))? OP_WRITE
                               : ((kind == 2 || kind == 3)? OP_READ : OP_MODIFY);
     cycles += C_ALU + access_cycles(src_op, OP_READ) + access_cycles(dst_op, dst_access);
     if (!src_op.is_reg) cycles += C_SRC_MEM;
@@ -806,10 +815,13 @@ bool pdp11core::execute_double(uint16_t command, unsigned int & cycles)
     // УК-НЦ ROM fills areas with MOVB into 177024, and it is that read which
     // loads the background of the octet from the screen - without it the fill
     // wrote over stale dots. The ВМ1 chip model writes a byte without a read
-    // (DATO with WTBT); the read is done for every processor all the same
+    // (DATO with WTBT); the read is done for every processor all the same but
+    // the F-11. Item 18 of appendix 3 of ТО1 says of it only that CLR and SXT
+    // end with a plain write. For MOVB the ground is the ROM: its MOVB into the
+    // data buffer of the floppy controller must move the pointer once
     uint16_t dst = 0;
     if (kind != 1) dst = read_operand(dst_op, is_byte);
-    else if (is_byte && !dst_op.is_reg) (void)read_operand(dst_op, true);
+    else if (is_byte && !dst_op.is_reg && !f11) (void)read_operand(dst_op, true);
 
     if (m_abort) return true;
 
@@ -951,7 +963,7 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
             }
             default: {                                  // SXT
                 pdp11operand op = decode_operand(spec, false, cycles);
-                cycles += single_op_cycles(op, OP_MODIFY);
+                cycles += single_op_cycles(op, f11? OP_WRITE : OP_MODIFY);
                 uint16_t res = get_flag(PDP11::F_N)? 0xFFFF : 0x0000;
                 write_operand(op, false, res);
                 set_flag(PDP11::F_Z, !get_flag(PDP11::F_N));
@@ -1001,12 +1013,14 @@ bool pdp11core::execute_single(uint16_t command, unsigned int & cycles)
     pdp11operand op = decode_operand(spec, is_byte, cycles);
     // TST only reads its operand; everything else in the group reads and
     // writes it in one bus cycle. CLR is counted so too: a DATIO on the ВМ1,
-    // while the ВМ2 writes it with a plain DATO (the chip models)
-    cycles += single_op_cycles(op, (sop == 057)? OP_READ : OP_MODIFY);
+    // while the ВМ2 writes it with a plain DATO (the chip models), and the F-11
+    // too (ТО1, appendix 3, item 18)
+    cycles += single_op_cycles(op, (sop == 057)? OP_READ
+                                 : (sop == 050 && f11)? OP_WRITE : OP_MODIFY);
 
     // CLR does not read its destination, although the ВМ1 does; CLRB into
     // memory does, a read-modify-write cycle on both chips
-    uint16_t dst = (sop == 050 && !(is_byte && !op.is_reg))? 0 : read_operand(op, is_byte);
+    uint16_t dst = (sop == 050 && (f11 || !(is_byte && !op.is_reg)))? 0 : read_operand(op, is_byte);
     if (m_abort) return true;
 
     switch (sop) {
@@ -1229,7 +1243,7 @@ bool pdp11core::execute_misc(uint16_t command, unsigned int & cycles)
 
         switch (group) {
         case 0: {                                       // MUL
-            cycles += C_MUL;
+            cycles += f11 ? C_MUL_F11 : C_MUL;
             int32_t product = (int32_t)(int16_t)context.R[r] * (int32_t)(int16_t)src;
             context.R[r] = (uint16_t)(product >> 16);
             if ((r & 1) == 0) context.R[r | 1] = (uint16_t)(product & 0xFFFF);
@@ -1590,6 +1604,11 @@ unsigned int pdp11core::execute()
     // пропускается; m_step_pending приходит только из старых снимков
     const bool no_poll = m_no_poll;
     m_no_poll = false;
+
+    // F-11: WAIT под T-разрядом ловушки не даёт, а процессор встаёт так, что вывести его
+    // может только короткий импульс АИП (Система команд, 6.5; приложение 3, пункт 8)
+    if (f11 && context.halted && !is_aclo && get_flag(PDP11::F_T)) return C_IDLE;
+
     if (!m_step_pending && !no_poll && check_interrupts(cycles)) { m_last_kind = LAST_INTERRUPT; return cycles; }
 
     if (context.halted) return C_IDLE;          // WAIT, idling until an interrupt
@@ -1652,6 +1671,7 @@ unsigned int pdp11core::execute()
     // тянет (у ВМ3 тест 101 FKABD0, у ВМ2 - 060 теста 791404 диска ФОДОС:
     // RTT, затем IOT)
     if ((vm3 || has_console) && (command == 0000003 || command == 0000004 || (command & 0177000) == 0104000)) trace = false;
+    if (f11 && context.halted) trace = false;
 
     if (m_abort) {
         cycles += C_TRAP;

@@ -131,6 +131,39 @@ def parse_ext_metadata(ext_path):
     meta["files"], meta["optional"] = with_drawings(meta["files"])
     return meta
 
+def extension_chain(ext_path, computers_dir):
+    """
+    What a machine file stands on, the way the emulator follows @extends
+    (load_extension_chain() in config_ext.cpp): the extensions as (path, metadata)
+    from the file itself downwards, and the .cfg at the bottom. A .cfg that has
+    become an extension counts as one (cfg_or_ext()). (None, None) with a warning
+    when the chain cannot be packed.
+    """
+    chain = []
+    path = os.path.normpath(ext_path)
+    while True:
+        name = os.path.basename(path)
+        meta = parse_ext_metadata(path)
+        if not meta["extends"] or not meta["version"]:
+            print(f"  WARNING: {name}: no @extends or @version, skipped")
+            return None, None
+        chain.append((path, meta))
+        base = os.path.normpath(os.path.join(computers_dir, meta["extends"]))
+        if not os.path.isfile(base):
+            base = os.path.splitext(base)[0] + ".ext"
+        if not os.path.isfile(base) or not base.startswith(os.path.normpath(computers_dir)):
+            print(f"  WARNING: {name}: base {meta['extends']} is not in computers/, skipped")
+            return None, None
+        if base.lower().endswith(".cfg"):
+            return chain, base
+        if not base.lower().endswith(".ext"):
+            print(f"  WARNING: {name}: a packed extension cannot be a base, skipped")
+            return None, None
+        if base in [p for p, _ in chain]:
+            print(f"  WARNING: {name}: the chain of extensions is a loop, skipped")
+            return None, None
+        path = base
+
 def with_drawings(files):
     """A keyboard of a Правец finds its drawing and the table of it by the
     name of the map (pravetz-8a-gost.map: pravetz-8a-gost.keys and
@@ -301,32 +334,20 @@ def main():
     cfg_files = find_cfg_files(computers_dir)
 
     for machine_path in cfg_files:
-        # An extension is packed together with its base: the bundle carries
-        # both, and the emulator applies one to the other as on the desktop
-        ext_path = None
-        ext_meta = None
+        # An extension is packed together with what it stands on: the bundle
+        # carries the whole chain down to the .cfg, and the emulator applies
+        # one to the other as on the desktop
+        chain = []
         if is_extension(machine_path):
-            ext_path = machine_path
-            ext_meta = parse_ext_metadata(ext_path)
-            if not ext_meta["extends"] or not ext_meta["version"]:
-                print(f"  WARNING: {os.path.basename(ext_path)}: no @extends or @version, skipped")
-                continue
-            cfg_path = os.path.normpath(os.path.join(computers_dir, ext_meta["extends"]))
-            # An extension built on another extension (or on a .cfg that has
-            # become one) is not packed yet: the bundle would need the whole
-            # chain. The emulator loads such a file; the page skips it
-            as_ext = os.path.splitext(cfg_path)[0] + ".ext"
-            if cfg_path.lower().endswith(".ext") or (not os.path.isfile(cfg_path) and os.path.isfile(as_ext)):
-                print(f"  WARNING: {os.path.basename(ext_path)}: built on another extension, not packed")
-                continue
-            if not os.path.isfile(cfg_path) or not cfg_path.startswith(os.path.normpath(computers_dir)):
-                print(f"  WARNING: {os.path.basename(ext_path)}: base {ext_meta['extends']} is not in computers/, skipped")
+            chain, cfg_path = extension_chain(machine_path, computers_dir)
+            if chain is None:
                 continue
         else:
             cfg_path = machine_path
 
         meta = parse_cfg_metadata(cfg_path)
-        if ext_meta is not None:
+        # From the bottom up: an extension overrides what stands under it
+        for _, ext_meta in reversed(chain):
             meta["version"] = ext_meta["version"]
             system = ext_meta["system"]
             if "name" in system: meta["name"] = system["name"]
@@ -393,26 +414,30 @@ def main():
                 if ref_file not in meta["optional"]:
                     missing.append(ref_file)
 
-        # The extension itself, its description and the files it names. They
-        # keep their place relative to computers/: the emulator looks for the
-        # files of an extension next to it first
+        # The extensions, the description of the nearest one that has it and
+        # the files they name. They keep their place relative to computers/:
+        # the emulator looks for the files of an extension next to it first
         archive_machine_path = archive_cfg_path
         md_vfs_path = None
-        if ext_path is not None:
+        devices = set(meta["devices"])
+        for _, ext_meta in chain:
+            devices |= ext_meta["devices"]
+        for ext_path, ext_meta in chain:
             ext_dir = os.path.dirname(ext_path)
             ext_subdir = os.path.relpath(ext_dir, deploy_dir).replace("\\", "/")
-            archive_machine_path = f"{ext_subdir}/{os.path.basename(ext_path)}"
-            bundle_files[archive_machine_path] = ext_path
-            ext_md = os.path.join(ext_dir, machine_id + ".md")
-            if os.path.isfile(ext_md):
-                add_description(bundle_files, f"{ext_subdir}/{machine_id}.md", ext_md)
-                md_vfs_path = f"/{ext_subdir}/{machine_id}.md"
-            elif os.path.isfile(md_path):
-                md_vfs_path = f"/{machine_subdir}/{os.path.splitext(cfg_filename)[0]}.md"
+            archive_ext_path = f"{ext_subdir}/{os.path.basename(ext_path)}"
+            bundle_files[archive_ext_path] = ext_path
+            if ext_path == chain[0][0]:
+                archive_machine_path = archive_ext_path
+            ext_stem = machine_stem(ext_path)
+            ext_md = os.path.join(ext_dir, ext_stem + ".md")
+            if md_vfs_path is None and os.path.isfile(ext_md):
+                add_description(bundle_files, f"{ext_subdir}/{ext_stem}.md", ext_md)
+                md_vfs_path = f"/{ext_subdir}/{ext_stem}.md"
             for ref_file in ext_meta["files"]:
-                # A "map" naming a device - of the base, or one the extension
+                # A "map" naming a device - of the base, or one an extension
                 # adds - is not a file
-                if ref_file in meta["devices"] or ref_file in ext_meta["devices"]:
+                if ref_file in devices:
                     continue
                 local_path = find_file(ref_file, [ext_dir])
                 if local_path:
@@ -425,6 +450,8 @@ def main():
                 else:
                     if ref_file not in ext_meta["optional"]:
                         missing.append(ref_file)
+        if chain and md_vfs_path is None and os.path.isfile(md_path):
+            md_vfs_path = f"/{machine_subdir}/{os.path.splitext(cfg_filename)[0]}.md"
 
         if missing:
             print(f"  WARNING: {machine_id}: missing files: {', '.join(missing)}")
@@ -438,7 +465,7 @@ def main():
         print(f"Created {bundle_name} ({len(bundle_files)} files, {bundle_size} bytes) - {meta['name']}")
 
         # Virtual FS path of the file the emulator loads: the .cfg, or the
-        # extension, which finds its base in the same bundle
+        # extension, which finds what it stands on in the same bundle
         cfg_vfs_path = f"/{archive_machine_path}"
 
         display_name = meta["version"] if meta["version"] else meta["name"]

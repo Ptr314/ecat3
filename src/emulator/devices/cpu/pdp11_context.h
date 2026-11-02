@@ -10,6 +10,7 @@
 #define PDP11_FAMILY_1801VM1  0
 #define PDP11_FAMILY_1801VM2  1
 #define PDP11_FAMILY_1801VM3  2
+#define PDP11_FAMILY_F11      3     // КМ1811ВМ1 (DEC F-11), Электроника МС 0585
 
 #pragma pack(1)
 

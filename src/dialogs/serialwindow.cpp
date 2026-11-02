@@ -167,8 +167,10 @@ QWidget * SerialWindow::create_page(size_t i)
         p.charset->addItem(tr("Machine (%1)").arg(QString::fromStdString(machine_charmap)), CHARSET_MACHINE);
     for (int c = 0; c < CHARSET_COUNT; c++)
         p.charset->addItem(tr(CHARSETS[c].title), c);
-    //Выбор запоминается для каждого порта каждой машины
-    const QString saved = QString::fromStdString(e->read_setup("Serial", charset_key(p), ""));
+    //Выбор запоминается для каждого порта каждой машины, а до него действует
+    //кодировка, которую порту дала конфигурация
+    QString saved = QString::fromStdString(e->read_setup("Serial", charset_key(p), ""));
+    if (saved.isEmpty()) saved = QString::fromStdString(str_trim(p.dev->config_parameter("charset")));
     for (int c = 0; c < CHARSET_COUNT; c++)
         if (saved == CHARSETS[c].id) p.charset->setCurrentIndex(p.charset->findData(c));
     p.charset->setEnabled(mode == MODE_RECODED);
