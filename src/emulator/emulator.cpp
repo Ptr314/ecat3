@@ -1960,8 +1960,8 @@ void Emulator::render_screen()
         renderer->set_scan_lines(static_cast<int>(display->get_scan_lines()));
 
 #ifdef WASM_BUILD
-        // Always render: raster displays (Agat) write pixels in clock() on the emulation
-        // thread and don't set was_updated per frame, so we must push every frame to canvas.
+        // Always render: the canvas takes every frame the render loop is woken for,
+        // was_updated or not. A display the window lags on looks right here.
         renderer->render();
         display->was_updated = false;
 #else

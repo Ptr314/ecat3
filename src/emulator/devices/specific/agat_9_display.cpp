@@ -607,8 +607,8 @@ void Agat9Display::HSYNC(const unsigned line, const unsigned sync_val)
             // All 512 lines, or the 256 of the picture drawn in each field, as
             // the machine shows them: the picture changes 50 times a second
             render_line((m_512_mode == M_512_ON) ? raw : raw / 2);
-            // The last line of a field: a picture is whole
-            if (raw >= 510) frame_complete();
+            // The last line of a field: a picture is whole, and the window is to show it
+            if (raw >= 510) { was_updated = true; frame_complete(); }
         }
     }
 }
