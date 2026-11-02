@@ -458,6 +458,7 @@ public:
 
     void set_volume(int value);
     void set_muted(bool muted);
+    void set_sound_latency(unsigned int ms);
 
     // Emulation > Speed: how fast emulated time runs against the wall clock,
     // in quarters (1 = 0.25x, 4 = 1x, 40 = 10x, up to SPEED_MAX_Q), 0 - as

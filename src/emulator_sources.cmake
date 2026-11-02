@@ -142,6 +142,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/bk_fdc.h emulator/devices/specific/bk_fdc.cpp
 
     emulator/audio/audio_driver.h
+    emulator/audio/rate_match.h
     emulator/audio/audio_driver_miniaudio.h emulator/audio/audio_driver_miniaudio.cpp
     emulator/audio/audio_driver_sdl.h emulator/audio/audio_driver_sdl.cpp
 

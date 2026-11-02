@@ -482,7 +482,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+1204"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1205"/>
         <source>Disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -563,7 +563,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+626"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+649"/>
         <source>Low-pass filter cutoff, Hz (0 - off)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1583,7 +1583,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-1170"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1171"/>
         <source>Incorrect fdd list for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1596,7 +1596,7 @@
 <context>
     <name>FDD</name>
     <message>
-        <location line="+128"/>
+        <location line="+129"/>
         <location line="+87"/>
         <location line="+9"/>
         <location line="+8"/>
@@ -1634,7 +1634,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1034"/>
+        <location line="-1035"/>
         <source>Incorrect fdd parameters for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1649,7 +1649,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+20"/>
         <source>Disk image file not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1708,22 +1708,22 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-552"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-575"/>
         <source>Incorrect sample rate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+45"/>
         <source>Not a sound source</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+94"/>
+        <location line="+100"/>
         <source>Error writing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+495"/>
+        <location line="+517"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2191,7 +2191,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1393"/>
+        <location filename="../mainwindow.cpp" line="+1424"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -2244,7 +2244,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1216"/>
+        <location filename="../mainwindow.cpp" line="+1217"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2265,14 +2265,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-2118"/>
-        <location line="+2244"/>
+        <location filename="../mainwindow.cpp" line="-2119"/>
+        <location line="+2245"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1886"/>
+        <location filename="../mainwindow.cpp" line="-1887"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2287,7 +2287,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Autosave</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2347,7 +2347,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-369"/>
+        <location line="-372"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2362,9 +2362,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-739"/>
-        <location line="+78"/>
-        <location line="+1387"/>
+        <location filename="../mainwindow.cpp" line="-770"/>
+        <location line="+81"/>
+        <location line="+1416"/>
         <location line="+60"/>
         <location line="+79"/>
         <location line="+334"/>
@@ -2379,7 +2379,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2917"/>
+        <location line="-2946"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2406,14 +2406,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1791"/>
+        <location line="+1820"/>
         <location line="+30"/>
         <location line="+43"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1908"/>
+        <location line="-1937"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2462,7 +2462,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+57"/>
         <source>Mouse speed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2483,14 +2483,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1567"/>
+        <location line="+1568"/>
         <location line="+491"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2171"/>
+        <location line="-2172"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2526,12 +2526,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+2008"/>
+        <location line="+2009"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1984"/>
+        <location line="-1985"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2604,15 +2604,40 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-788"/>
-        <location line="+642"/>
+        <location line="-819"/>
+        <location line="+673"/>
         <location line="+1"/>
         <location line="+908"/>
         <source>Turbo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-755"/>
+        <location line="-1082"/>
+        <source>Sound latency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Automatic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Smallest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Large</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+323"/>
         <source>Picture tube</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2669,7 +2694,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+185"/>
+        <location line="+186"/>
         <source>Configurations</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2829,7 +2854,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+317"/>
+        <location line="+320"/>
         <source>Remembered disks</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2881,7 +2906,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-442"/>
+        <location filename="../mainwindow.cpp" line="-445"/>
         <location line="+243"/>
         <source>Start recording</source>
         <translation type="unfinished"></translation>
@@ -2955,12 +2980,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1732"/>
+        <location line="-1733"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1775"/>
+        <location line="+1776"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4442,7 +4467,7 @@ Do you want to replace it?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_dos33.cpp" line="+33"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_dos33.cpp" line="+34"/>
         <source>Cannot read VTOC</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4467,7 +4492,7 @@ Do you want to replace it?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+491"/>
+        <location line="+501"/>
         <location line="+304"/>
         <source>Incorrect track/sector data</source>
         <translation type="unfinished"></translation>
@@ -4525,7 +4550,7 @@ Do you want to replace it?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+37"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+44"/>
         <source>Unknown CP/M disk definition</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4570,7 +4595,7 @@ Do you want to replace it?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+584"/>
+        <location line="+582"/>
         <source>user number out of range</source>
         <translation type="unfinished"></translation>
     </message>

@@ -737,6 +737,34 @@ void MainWindow::CreateScreenMenu()
         if (!found) style_menu->actions().first()->setChecked(true);
     }
 
+    //How much sound waits for the audio device, a setting of the host. Works at
+    //once, by one short gap or cut
+    if (sound_latency_menu == nullptr) {
+        //Settings, after the host settings and before About
+        sound_latency_menu = new QMenu(this);
+        const QList<QAction*> acts = ui->menuHelp->actions();
+        const int at = acts.indexOf(ui->actionRecPanel);
+        ui->menuHelp->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, sound_latency_menu);
+    }
+    sound_latency_menu->setTitle(tr("Sound latency"));
+    clear_menu(sound_latency_menu);
+    {
+        const int current = atoi(e->read_setup("Sound", "latency", "0").c_str());
+        const QStringList titles = QStringList() << tr("Automatic") << tr("Smallest") << tr("Medium") << tr("Large");
+        static const int LATENCIES[] = {0, 10, 50, 150};
+        QActionGroup * latency_group = new QActionGroup(sound_latency_menu);
+        for (int i = 0; i < 4; i++) {
+            const int ms = LATENCIES[i];
+            QAction * la = sound_latency_menu->addAction(titles[i], [this, ms]{
+                e->write_setup("Sound", "latency", std::to_string(ms));
+                e->set_sound_latency(ms);
+            });
+            la->setActionGroup(latency_group);
+            la->setCheckable(true);
+            la->setChecked(current == ms);
+        }
+    }
+
     //Speed of the machine's mouse, a setting of the host rather than of a machine
     try {
         mouse_speed = std::stoi(e->read_setup("Mouse", "speed", "25"));

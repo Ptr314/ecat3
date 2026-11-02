@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "emulator/thread_compat.h"
+#include "emulator/audio/rate_match.h"
 #include "emulator/core.h"
 #include "libs/audio_filters.h"
 
@@ -106,18 +107,17 @@ private:
     size_t m_buffer_pos = 0;
     mutable compat_mutex m_buffer_mutex;
 
-    // What the buffer holds is heard that much later, so it is kept near
-    // m_target frames (a period, at most 15 ms), measured when the device has
-    // just taken its share - the band is half to twice that: the
-    // emulation produces a sample every few clocks in 1 ms slices and the
-    // device takes a period at a time, and the two clocks drift apart. Outside
-    // the band a frame in 64 is dropped or repeated (m_adjust -1/+1) until the
-    // level is back at the target; the pitch moves by a quarter of a semitone
-    // for that while. Only a burst (a slice after the host stalled) runs into
-    // m_buffer.size() and loses the excess at once
-    size_t m_target = 0;
-    int m_adjust = 0;
-    unsigned int m_adjust_phase = 0;
+    // What the buffer holds is heard that much later, so it is kept near a
+    // target (a period, at most 15 ms, unless the host proves to need more, or
+    // [Sound] latency of the ini fixes it), measured when the device has just
+    // taken its share: the emulation produces a sample every few clocks in
+    // 1 ms slices, the device takes a period at a time, and the two clocks
+    // drift apart. AudioRateMatch holds it there by a constant small change of
+    // the rate. Only a burst (a slice after the host stalled) that goes
+    // m_burst_room over the target loses the excess at once
+    AudioRateMatch m_rate_match;
+    size_t m_burst_room = 0;
+    unsigned int m_latency_ms = 0;      // [Sound] latency, 0 = automatic
     int16_t m_last_played[2] = {0, 0};  // the last frame the device got
 
     // How often the audio device found the buffer short of what it asked for
@@ -202,6 +202,8 @@ public:
     virtual void clock(unsigned int counter) override;
     virtual void set_volume(unsigned int volume);
     virtual void set_muted(bool muted);
+    // ms the buffer is kept at, 0 for the automatic choice
+    void set_latency(unsigned int ms);
     // 4 = 1x, see s_speed_q
     static void set_speed(int quarters) { s_speed_q = quarters; }
 

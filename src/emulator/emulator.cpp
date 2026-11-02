@@ -2511,6 +2511,15 @@ void Emulator::set_muted(bool muted)
         }
 }
 
+void Emulator::set_sound_latency(unsigned int ms)
+{
+    if (loaded)
+        for (ComputerDevice * d : dm->find_devices_by_class("sound")) {
+            GenericSound * sound = dynamic_cast<GenericSound*>(d);
+            if (sound != nullptr) sound->set_latency(ms);
+        }
+}
+
 Emulator::~Emulator()
 {
     stop_video_recording();

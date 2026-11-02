@@ -494,7 +494,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+1204"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1205"/>
         <source>Disk image</source>
         <translation>Образ на диск</translation>
     </message>
@@ -575,7 +575,7 @@
         <translation>Образ на ПЗУ</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+626"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+649"/>
         <source>Low-pass filter cutoff, Hz (0 - off)</source>
         <translation>Срез на нискочестотния филтър, Hz (0 - изключен)</translation>
     </message>
@@ -1607,7 +1607,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-1170"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1171"/>
         <source>Incorrect fdd list for</source>
         <translation>Некоректен списък с дискови устройства за</translation>
     </message>
@@ -1635,7 +1635,7 @@
         <translation>Непознат ред на пистите в образа</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+20"/>
         <source>Disk image file not found</source>
         <translation>Файлът с образа на диска не е намерен</translation>
     </message>
@@ -1732,22 +1732,22 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-552"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-575"/>
         <source>Incorrect sample rate</source>
         <translation>Неправилна честота на дискретизация</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+45"/>
         <source>Not a sound source</source>
         <translation>Устройството не е източник на звук</translation>
     </message>
     <message>
-        <location line="+94"/>
+        <location line="+100"/>
         <source>Error writing</source>
         <translation>Грешка при запис</translation>
     </message>
     <message>
-        <location line="+495"/>
+        <location line="+517"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation>Командата &apos;volume&apos; изисква стойност</translation>
     </message>
@@ -2222,7 +2222,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1393"/>
+        <location filename="../mainwindow.cpp" line="+1424"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Стоп</translation>
@@ -2290,13 +2290,13 @@
     <message>
         <location line="+15"/>
         <location filename="../mainwindow.cpp" line="-902"/>
-        <location line="+2244"/>
+        <location line="+2245"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1886"/>
+        <location filename="../mainwindow.cpp" line="-1887"/>
         <source>On-screen keyboard</source>
         <translation>Екранна клавиатура</translation>
     </message>
@@ -2311,7 +2311,7 @@
         <translation>Картините, които програмата редува от кадър на кадър, се показват като равномерна смес, а не като трептене: всяка точка е средното между нейния цвят и предишния, различен от него</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Autosave</source>
         <translation>Автоматично запазване</translation>
     </message>
@@ -2379,7 +2379,7 @@
         <translation>Език</translation>
     </message>
     <message>
-        <location line="-369"/>
+        <location line="-372"/>
         <source>Exit</source>
         <translation>Изход</translation>
     </message>
@@ -2394,16 +2394,16 @@
         <translation>Топъл рестарт (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-626"/>
+        <location filename="../mainwindow.cpp" line="-654"/>
         <location line="+47"/>
-        <location line="+1791"/>
+        <location line="+1820"/>
         <location line="+30"/>
         <location line="+43"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не е зареден&gt;</translation>
     </message>
     <message>
-        <location line="-1908"/>
+        <location line="-1937"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Отвори образ...</translation>
@@ -2426,9 +2426,9 @@
         <translation>Запиши във файл...</translation>
     </message>
     <message>
-        <location line="-125"/>
-        <location line="+78"/>
-        <location line="+1387"/>
+        <location line="-128"/>
+        <location line="+81"/>
+        <location line="+1416"/>
         <location line="+60"/>
         <location line="+79"/>
         <location line="+334"/>
@@ -2443,7 +2443,7 @@
         <translation>Грешка</translation>
     </message>
     <message>
-        <location line="-2917"/>
+        <location line="-2946"/>
         <source>Failed to load language file for: </source>
         <translation>Грешка при зареждане на езиковия файл за: </translation>
     </message>
@@ -2468,7 +2468,32 @@
         <translation>Български</translation>
     </message>
     <message>
-        <location line="+168"/>
+        <location line="+163"/>
+        <source>Sound latency</source>
+        <translation>Забавяне на звука</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Automatic</source>
+        <translation>Автоматично</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Smallest</source>
+        <translation>Най-малко</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Medium</source>
+        <translation>Средно</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Large</source>
+        <translation>Голямо</translation>
+    </message>
+    <message>
+        <location line="+29"/>
         <source>Mouse speed</source>
         <translation>Скорост на мишката</translation>
     </message>
@@ -2526,7 +2551,7 @@
         <translation>Стартирай без дебъгване</translation>
     </message>
     <message>
-        <location line="+303"/>
+        <location line="+304"/>
         <source>All supported files</source>
         <translation>Всички поддържани файлове</translation>
     </message>
@@ -2537,20 +2562,20 @@
         <translation>Запазени състояния</translation>
     </message>
     <message>
-        <location line="-1638"/>
+        <location line="-1667"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по подразбиране</translation>
     </message>
     <message>
-        <location line="+115"/>
+        <location line="+143"/>
         <source>Screenshot type</source>
         <translation>Тип на екранната снимка</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="+83"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+2211"/>
+        <location filename="../mainwindow.cpp" line="+2212"/>
         <source>Record video</source>
         <translation>Запиши видео</translation>
     </message>
@@ -2560,15 +2585,15 @@
         <translation>Спри записа на видео</translation>
     </message>
     <message>
-        <location line="-2189"/>
-        <location line="+1567"/>
+        <location line="-2190"/>
+        <location line="+1568"/>
         <location line="+491"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation>Запис на видео</translation>
     </message>
     <message>
-        <location line="-2171"/>
+        <location line="-2172"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -2604,7 +2629,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+2008"/>
+        <location line="+2009"/>
         <source>Path to ffmpeg</source>
         <translation>Път до ffmpeg</translation>
     </message>
@@ -2635,20 +2660,20 @@
         <translation>Видеото е запазено: </translation>
     </message>
     <message>
-        <location line="-2189"/>
+        <location line="-2190"/>
         <source>As on screen</source>
         <translation>Като на екрана</translation>
     </message>
     <message>
-        <location line="-532"/>
-        <location line="+642"/>
+        <location line="-563"/>
+        <location line="+673"/>
         <location line="+1"/>
         <location line="+908"/>
         <source>Turbo</source>
         <translation>Турбо</translation>
     </message>
     <message>
-        <location line="-1165"/>
+        <location line="-1193"/>
         <source>Floppy drive %1</source>
         <translation>Дисково устройство %1</translation>
     </message>
@@ -2668,7 +2693,7 @@
         <translation>По подразбиране</translation>
     </message>
     <message>
-        <location line="+59"/>
+        <location line="+87"/>
         <source>Original</source>
         <translation>Оригинал</translation>
     </message>
@@ -2755,7 +2780,7 @@
         <translation>Потребителят остави записа на серийния порт във файл.</translation>
     </message>
     <message>
-        <location line="+185"/>
+        <location line="+186"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>
     </message>
@@ -2873,7 +2898,7 @@
         <translation>Машината спря</translation>
     </message>
     <message>
-        <location line="+317"/>
+        <location line="+320"/>
         <source>Remembered disks</source>
         <translation>Запомнени дискове</translation>
     </message>
@@ -2925,7 +2950,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-442"/>
+        <location filename="../mainwindow.cpp" line="-445"/>
         <location line="+243"/>
         <source>Start recording</source>
         <translation>Започни запис</translation>
@@ -2999,12 +3024,12 @@
         <translation>Скриптове eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1732"/>
+        <location line="-1733"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мишката е прихваната от машината. Натиснете Ctrl-Alt или средния бутон, за да я освободите</translation>
     </message>
     <message>
-        <location line="+1775"/>
+        <location line="+1776"/>
         <source>Some lines were skipped:</source>
         <translation>Някои редове са пропуснати:</translation>
     </message>
@@ -4488,7 +4513,7 @@ Do you want to replace it?</source>
         <translation>Несъответствие в размера на изходния файл</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_dos33.cpp" line="+33"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_dos33.cpp" line="+34"/>
         <source>Cannot read VTOC</source>
         <translation>VTOC не може да бъде прочетен</translation>
     </message>
@@ -4513,7 +4538,7 @@ Do you want to replace it?</source>
         <translation>Неправилен номер на пътечка за съпоставяне</translation>
     </message>
     <message>
-        <location line="+491"/>
+        <location line="+501"/>
         <location line="+304"/>
         <source>Incorrect track/sector data</source>
         <translation>Неправилни данни за пътечка/сектор</translation>
@@ -4571,7 +4596,7 @@ Do you want to replace it?</source>
         <translation>Таблицата за разпределение на Onix не е намерена</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+37"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+44"/>
         <source>Unknown CP/M disk definition</source>
         <translation>Неизвестно описание на диск CP/M</translation>
     </message>
@@ -4616,7 +4641,7 @@ Do you want to replace it?</source>
         <translation>Неподдържан тип диск за CP/M</translation>
     </message>
     <message>
-        <location line="+584"/>
+        <location line="+582"/>
         <source>user number out of range</source>
         <translation>Номерът на потребителя е извън допустимите граници</translation>
     </message>

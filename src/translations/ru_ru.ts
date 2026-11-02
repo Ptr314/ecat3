@@ -590,7 +590,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+1204"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1205"/>
         <source>Disk image</source>
         <translation>Образ диска</translation>
     </message>
@@ -671,7 +671,7 @@
         <translation>Образ ПЗУ</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+626"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+649"/>
         <source>Low-pass filter cutoff, Hz (0 - off)</source>
         <translation>Срез фильтра нижних частот, Гц (0 - выключен)</translation>
     </message>
@@ -2013,7 +2013,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-1170"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1171"/>
         <source>Incorrect fdd list for</source>
         <translation>Некорректный список дисководов для</translation>
     </message>
@@ -2057,7 +2057,7 @@
         <translation>Неизвестный порядок дорожек образа</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+20"/>
         <source>Disk image file not found</source>
         <translation>Файл образа диска не найден</translation>
     </message>
@@ -2201,22 +2201,22 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-552"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="-575"/>
         <source>Incorrect sample rate</source>
         <translation>Неверная частота дискретизации</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+45"/>
         <source>Not a sound source</source>
         <translation>Устройство не является источником звука</translation>
     </message>
     <message>
-        <location line="+94"/>
+        <location line="+100"/>
         <source>Error writing</source>
         <translation>Ошибка записи</translation>
     </message>
     <message>
-        <location line="+495"/>
+        <location line="+517"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation>Команда &apos;volume&apos; требует значение</translation>
     </message>
@@ -2759,7 +2759,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1393"/>
+        <location filename="../mainwindow.cpp" line="+1424"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2827,18 +2827,18 @@
     <message>
         <location line="+15"/>
         <location filename="../mainwindow.cpp" line="-902"/>
-        <location line="+2244"/>
+        <location line="+2245"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1886"/>
+        <location filename="../mainwindow.cpp" line="-1887"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
     <message>
-        <location line="+138"/>
+        <location line="+141"/>
         <source>Autosave</source>
         <translation>Автосохранение</translation>
     </message>
@@ -2872,7 +2872,7 @@
         <translation type="vanished">Последовательные порты...</translation>
     </message>
     <message>
-        <location line="-70"/>
+        <location line="-73"/>
         <source>Blend frames</source>
         <translation>Смешивать кадры</translation>
     </message>
@@ -2886,7 +2886,7 @@
         <translation type="vanished">Запоминать выбор дисков</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+39"/>
         <source>Put the disks chosen last into the drives when a machine is loaded</source>
         <translation>Вставлять в дисководы последние выбранные образы при загрузке машины</translation>
     </message>
@@ -2924,7 +2924,7 @@
         <translation type="vanished">Выбрать компьютер...</translation>
     </message>
     <message>
-        <location line="-369"/>
+        <location line="-372"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
@@ -2939,16 +2939,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-626"/>
+        <location filename="../mainwindow.cpp" line="-654"/>
         <location line="+47"/>
-        <location line="+1791"/>
+        <location line="+1820"/>
         <location line="+30"/>
         <location line="+43"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1908"/>
+        <location line="-1937"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -2975,9 +2975,9 @@
         <translation type="vanished">Все файлы (*.*)</translation>
     </message>
     <message>
-        <location line="-125"/>
-        <location line="+78"/>
-        <location line="+1387"/>
+        <location line="-128"/>
+        <location line="+81"/>
+        <location line="+1416"/>
         <location line="+60"/>
         <location line="+79"/>
         <location line="+334"/>
@@ -2992,7 +2992,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2917"/>
+        <location line="-2946"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -3017,7 +3017,7 @@
         <translation>Български</translation>
     </message>
     <message>
-        <location line="+168"/>
+        <location line="+196"/>
         <source>Mouse speed</source>
         <translation>Скорость мыши</translation>
     </message>
@@ -3079,7 +3079,7 @@
         <translation>Запустить без отладки</translation>
     </message>
     <message>
-        <location line="+303"/>
+        <location line="+304"/>
         <source>All supported files</source>
         <translation>Все поддерживаемые файлы</translation>
     </message>
@@ -3090,20 +3090,20 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1638"/>
+        <location line="-1667"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
     </message>
     <message>
-        <location line="+115"/>
+        <location line="+143"/>
         <source>Screenshot type</source>
         <translation>Тип скриншота</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="+83"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+2211"/>
+        <location filename="../mainwindow.cpp" line="+2212"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -3113,15 +3113,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-2189"/>
-        <location line="+1567"/>
+        <location line="-2190"/>
+        <location line="+1568"/>
         <location line="+491"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-2171"/>
+        <location line="-2172"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -3157,7 +3157,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+2008"/>
+        <location line="+2009"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -3188,20 +3188,20 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-2189"/>
+        <location line="-2190"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
     <message>
-        <location line="-532"/>
-        <location line="+642"/>
+        <location line="-563"/>
+        <location line="+673"/>
         <location line="+1"/>
         <location line="+908"/>
         <source>Turbo</source>
         <translation>Турбо</translation>
     </message>
     <message>
-        <location line="-1165"/>
+        <location line="-1193"/>
         <source>Floppy drive %1</source>
         <translation>Дисковод %1</translation>
     </message>
@@ -3219,6 +3219,31 @@
         <location line="+14"/>
         <source>Default</source>
         <translation>По умолчанию</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Sound latency</source>
+        <translation>Задержка звука</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Automatic</source>
+        <translation>Автоматически</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Smallest</source>
+        <translation>Наименьшая</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Medium</source>
+        <translation>Средняя</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Large</source>
+        <translation>Большая</translation>
     </message>
     <message>
         <location line="+59"/>
@@ -3303,7 +3328,7 @@
         <translation>Пользователь оставил запись последовательного порта в файл.</translation>
     </message>
     <message>
-        <location line="+185"/>
+        <location line="+186"/>
         <source>Configurations</source>
         <translation>Конфигурации</translation>
     </message>
@@ -3421,7 +3446,7 @@
         <translation>Машина остановилась</translation>
     </message>
     <message>
-        <location line="+317"/>
+        <location line="+320"/>
         <source>Remembered disks</source>
         <translation>Запомненные диски</translation>
     </message>
@@ -3473,7 +3498,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-442"/>
+        <location filename="../mainwindow.cpp" line="-445"/>
         <location line="+243"/>
         <source>Start recording</source>
         <translation>Начать запись</translation>
@@ -3547,12 +3572,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1732"/>
+        <location line="-1733"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1775"/>
+        <location line="+1776"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -5200,7 +5225,7 @@ Do you want to replace it?</source>
         <translation>Несоответствие размера исходного файла</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_dos33.cpp" line="+33"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_dos33.cpp" line="+34"/>
         <source>Cannot read VTOC</source>
         <translation>Не удалось прочитать VTOC</translation>
     </message>
@@ -5225,7 +5250,7 @@ Do you want to replace it?</source>
         <translation>Некорректный номер дорожки для мэппинга</translation>
     </message>
     <message>
-        <location line="+491"/>
+        <location line="+501"/>
         <location line="+304"/>
         <source>Incorrect track/sector data</source>
         <translation>Некорректные данные дорожки/сектора</translation>
@@ -5283,7 +5308,7 @@ Do you want to replace it?</source>
         <translation>Таблица размещения Onix не найдена</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+37"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+44"/>
         <source>Unknown CP/M disk definition</source>
         <translation>Некорректное определение диска CP/M</translation>
     </message>
@@ -5328,7 +5353,7 @@ Do you want to replace it?</source>
         <translation>Неподдерживаемый тип диска CP/M</translation>
     </message>
     <message>
-        <location line="+584"/>
+        <location line="+582"/>
         <source>user number out of range</source>
         <translation>User # выходит за допустимые пределы</translation>
     </message>

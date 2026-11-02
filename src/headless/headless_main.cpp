@@ -28,6 +28,7 @@
 #include "emulator/disasm.h"
 #include "emulator/disasm_pdp11.h"
 #include "emulator/disasm_buffer.h"
+#include "emulator/audio/rate_match.h"
 //Часть помощников dsk_tools объявлена в его внутреннем заголовке, и звать
 //его надо по полному пути: короткий "utils.h" из dsk_tools.h у MSVC попадает
 //в emulator/utils.h - он ищет кавычечный include и по цепочке включающих
@@ -1083,6 +1084,257 @@ bool check_vm2_timing(std::string &message)
     return true;
 }
 
+//The sound fitted to the audio device, which the suite cannot see since it runs
+//silent: the slices of the emulation and the periods of a device are played
+//against each other on paper, with a tone in them
+struct RateCase
+{
+    double drift;                   //the clocks apart
+    unsigned int period, target;    //frames
+    double stall;                   //seconds lost every 3 s and caught up
+    double stop;                    //seconds the machine stands at 30 s
+    double big_stall;               //seconds lost once at 30 s and caught up
+    double fixed;                   //frames of a set target from the start
+    double set_at_30;               //frames of a set target from 30 s
+    double away;                    //seconds from 20 s at a speed the host holds 80% of
+    double blocked;                 //seconds of every 0.1 s the device is late, as a page's main thread
+};
+
+struct RateResult
+{
+    unsigned int early = 0, late = 0;   //periods the buffer failed, before and after 50 s
+    double mean = 0, target = 0;        //what it holds after 50 s, what it is kept at
+    double wobble = 0;                  //the rate off the drift after 50 s, at most
+    double swing = 0;                   //the same from 5 s on
+    double far = 0;                     //seconds from 30 s the level is 20 ms off the target
+    double breaks = 0;                  //the worst break in the tone
+};
+
+RateResult play_rate_match(const RateCase &c)
+{
+    const double rate = 44100, total = 100, settled = 50, slice = 0.001;
+    const double amplitude = 8000, w = 2 * 3.14159265358979 * 1000 / rate;
+    AudioRateMatch match;
+    match.setup(rate, c.target, rate * 0.15);
+    if (c.fixed > 0) match.set_fixed(c.fixed);
+    RateResult res;
+    double made = 0, level = 0, phase = 0;
+    double t_slice = 0, t_period = 0, late = 0, next_stall = 6, level_sum = 0;
+    double y1 = 0, y2 = 0;
+    uint32_t noise = 12345;
+    long count = 0, level_n = 0;
+    bool stopped = false, stalled = false, started = false, set = false;
+    auto out = [&](float v, float) {
+        level += 1;
+        //Of a sine the second difference is the sine itself scaled: a slipped
+        //frame jumps by the amplitude times w, 1100 here
+        if (count++ > 8) res.breaks = std::max(res.breaks, std::fabs(v - 2 * y1 + y2 + w * w * y1));
+        y2 = y1;
+        y1 = v;
+    };
+    while (t_period < total) {
+        //A device held up takes its periods one after another afterwards
+        const double held = std::fmod(t_period, 0.1);
+        const double t_take = (held < c.blocked) ? t_period - held + c.blocked : t_period;
+        const bool away = c.away > 0 && t_period >= 20 && t_period < 20 + c.away;
+        if (t_slice + late <= t_take) {
+            made += slice * rate * (1 + c.drift) * (away ? 0.8 : 1);
+            for (; made >= 1; made -= 1) {
+                match.push((float)(amplitude * std::sin(phase)), 0, out);
+                phase += w;
+                if (phase > 6.28318530717959) phase -= 6.28318530717959;
+            }
+            t_slice += slice;
+            noise = noise * 1103515245u + 12345u;
+            late = 0.005 * ((noise >> 16) & 255) / 255;
+            if (c.stall > 0 && t_slice >= next_stall) {
+                late = c.stall;
+                next_stall += 3;
+            }
+            if (c.big_stall > 0 && !stalled && t_slice >= 30) {
+                late = c.big_stall;
+                stalled = true;
+            }
+            if (c.stop > 0 && !stopped && t_slice >= 30) {
+                t_slice += c.stop;
+                stopped = true;
+            }
+            continue;
+        }
+        t_period += c.period / rate;
+        if (away) match.hold_off();
+        if (c.set_at_30 > 0 && !set && t_period >= 30) {
+            match.set_fixed(c.set_at_30);
+            set = true;
+        }
+        if (level < c.period || match.filling(level, c.period)) {
+            //The same at every start, which is no failure, and at 1x alone
+            if (!away) match.underrun(c.period);
+            if (started && !away && !set && !stopped) {
+                if (t_period < settled) res.early++; else res.late++;
+            }
+            continue;
+        }
+        started = true;
+        level -= c.period;
+        match.measure(level, c.period);
+        level -= match.surplus(level, c.period);
+        if (t_period >= 5) res.swing = std::max(res.swing, std::fabs(match.rate() - c.drift));
+        if (t_period >= 30 && std::fabs(level - match.target()) > 0.02 * rate) res.far += c.period / rate;
+        if (t_period < settled) continue;
+        level_sum += level;
+        level_n++;
+        res.wobble = std::max(res.wobble, std::fabs(match.rate() - c.drift));
+    }
+    res.mean = level_sum / level_n;
+    res.target = match.target();
+    return res;
+}
+
+//The level must come to the target and stay, the rate must settle at the
+//difference of the clocks and stand still, and the tone must have no breaks:
+//slipping frames holds the level just as well, and the tones of the Агат ЯЗС
+//howl with it. A host that stalls must get its reserve, and one that merely
+//stopped or ran at another speed must not
+bool check_rate_match(std::string &message)
+{
+    RateCase base = {};
+    base.drift = 0.0001;
+    base.period = 441;
+    base.target = 441;
+
+    const double drifts[] = {0.0001, -0.0001, 0.002, -0.002};
+    for (double drift : drifts) {
+        //A window: 1 ms slices, 10 ms periods, up to 5 ms late on a busy host
+        RateCase c = base;
+        c.drift = drift;
+        const RateResult r = play_rate_match(c);
+        const std::string at = ", drift " + std::to_string(drift);
+        if (r.early + r.late != 0) {
+            message = "the buffer ran dry on a steady host" + at;
+            return false;
+        }
+        //Clocks 0.2% apart take a busy host's reserve down to nothing once,
+        //before the loop has found the drift: one raise, and a fair one
+        if (r.target > c.target * (std::fabs(drift) < 0.001 ? 1 : 1.5)) {
+            message = "the target moved on a steady host: " + std::to_string(r.target) + at;
+            return false;
+        }
+        if (std::fabs(r.mean - r.target) > 0.25 * r.target) {
+            message = "the level stays at " + std::to_string(r.mean) + " of " + std::to_string(r.target) + at;
+            return false;
+        }
+        if (r.wobble > 0.0002) {
+            message = "the rate does not stand still: " + std::to_string(r.wobble) + at;
+            return false;
+        }
+        if (r.breaks > 8) {
+            message = "a break in the tone: " + std::to_string(r.breaks) + at;
+            return false;
+        }
+    }
+
+    //30 ms lost every 3 s: heard at first and then never again, and the raises
+    //do not move the sound on the way
+    RateCase c = base;
+    c.stall = 0.03;
+    RateResult r = play_rate_match(c);
+    if (r.early == 0) {
+        message = "the stalls of the model did not reach the device";
+        return false;
+    }
+    if (r.late != 0 || r.target <= 441) {
+        message = "the target did not grow out of the stalls: " + std::to_string(r.target)
+            + ", failed " + std::to_string(r.late) + " times after that";
+        return false;
+    }
+    if (r.swing > 0.002 || r.breaks > 8) {
+        message = "the sound moves with the stalls: " + std::to_string(r.swing);
+        return false;
+    }
+
+    //A machine stopped for 2 s, and a turbo the host cannot hold, are no trouble
+    //of the reserve
+    c = base;
+    c.stop = 2;
+    r = play_rate_match(c);
+    if (r.target != 441) {
+        message = "a stopped machine raised the target to " + std::to_string(r.target);
+        return false;
+    }
+    c = base;
+    c.away = 15;
+    r = play_rate_match(c);
+    if (r.target != 441) {
+        message = "another speed raised the target to " + std::to_string(r.target);
+        return false;
+    }
+
+    //A stall too long for any reserve: over with at once, not over half a minute
+    c = base;
+    c.big_stall = 0.3;
+    r = play_rate_match(c);
+    if (r.far > 1) {
+        message = "a long stall left the level off for " + std::to_string(r.far) + " s";
+        return false;
+    }
+
+    //A target set in the window covers the same stalls from the first one on,
+    //and one too small for them is not raised behind the user's back, nor does
+    //it leave the sound at the limit of the rate
+    c = base;
+    c.stall = 0.03;
+    c.fixed = 2205;
+    r = play_rate_match(c);
+    if (r.target != 2205 || r.early + r.late != 0 || r.swing > 0.001) {
+        message = "a set target: " + std::to_string(r.target) + ", failed " + std::to_string(r.early + r.late)
+            + " times, rate off by " + std::to_string(r.swing);
+        return false;
+    }
+    c.fixed = 441;
+    r = play_rate_match(c);
+    if (r.target != 441 || r.wobble > 0.001) {
+        message = "a set target grew to " + std::to_string(r.target) + ", rate off by " + std::to_string(r.wobble);
+        return false;
+    }
+
+    //Changed on the run, it is there at once both ways
+    c = base;
+    c.fixed = 6615;
+    c.set_at_30 = 441;
+    r = play_rate_match(c);
+    if (r.target != 441 || r.far > 1) {
+        message = "setting a smaller target took " + std::to_string(r.far) + " s";
+        return false;
+    }
+    c = base;
+    c.set_at_30 = 6615;
+    r = play_rate_match(c);
+    if (r.target != 6615 || r.far > 1) {
+        message = "setting a larger target took " + std::to_string(r.far) + " s";
+        return false;
+    }
+
+    //A web page: the emulation has its own thread, the device, a
+    //ScriptProcessorNode, is late with the main thread
+    c = base;
+    c.drift = 0.0005;
+    c.period = 2048;
+    c.target = 661;
+    r = play_rate_match(c);
+    if (r.early + r.late != 0 || r.target != 661 || r.wobble > 0.001) {
+        message = "a web page: failed " + std::to_string(r.early + r.late) + " times, rate off by " + std::to_string(r.wobble);
+        return false;
+    }
+    c.blocked = 0.04;
+    r = play_rate_match(c);
+    if (r.late != 0) {
+        message = "a web page with a busy main thread failed " + std::to_string(r.late) + " times";
+        return false;
+    }
+    return true;
+}
+
 //The debugger's listing: the decoders report where a jump goes, the backward
 //disassembly reads an instruction with an operand as one (not the operand as
 //an instruction of its own), and the arrows of nested jumps get lanes
@@ -1261,6 +1513,11 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     const bool disasm_ok = check_disassembly(data_path, message);
     if (!disasm_ok) { std::cout << "FAIL disassembly: " << message << std::endl; failed++; }
     std::cout << "debugger listing: " << (disasm_ok ? "ok" : "FAILED") << std::endl;
+
+    message.clear();
+    const bool rate_ok = check_rate_match(message);
+    if (!rate_ok) { std::cout << "FAIL sound rate: " << message << std::endl; failed++; }
+    std::cout << "sound rate match: " << (rate_ok ? "ok" : "FAILED") << std::endl;
 
     return failed ? 1 : 0;
 }

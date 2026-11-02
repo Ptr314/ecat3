@@ -99,6 +99,10 @@ emulator::Result GenericSound::load_config(SystemData *sd)
 #endif
     m_samples_per_buffer = std::max(period, 32u);
 
+    // The Sound latency menu of the window: ms the buffer is kept at, 0 finds
+    // it out by itself
+    m_latency_ms = (unsigned int)std::max(0, atoi(sd->read_setup ? sd->read_setup("Sound", "latency", "0").c_str() : "0"));
+
     m_lpf_coutoff = read_confg_value(cd, "lpf", false, (unsigned int)m_lpf_coutoff);
     m_use_lpf = (m_lpf_coutoff > 0);
     m_limiter = read_confg_value(cd, "limiter", false, false);
@@ -136,6 +140,9 @@ emulator::Result GenericSound::load_config(SystemData *sd)
     return emulator::Result::ok();
 }
 
+// The most the buffer is kept at, automatic or set, ms
+static const unsigned int LATENCY_MAX_MS = 150;
+
 void GenericSound::init_sound(unsigned int clock_freq)
 {
     if (m_initialized) {
@@ -165,11 +172,14 @@ void GenericSound::init_sound(unsigned int clock_freq)
     // slices whatever the period: one period, but no more than 15 ms. A late
     // device only lets the buffer grow. It was one period on the web page too,
     // 46 ms of the 1024 samples a ScriptProcessorNode takes. Room for five
-    // periods and 50 ms before a burst is cut
-    m_target = std::min(m_samples_per_buffer, m_sample_rate * 15 / 1000);
-    m_buffer.resize((m_samples_per_buffer * 5 + m_sample_rate / 20) * m_channels);
+    // periods and 50 ms over the target before a burst is cut
+    const size_t target = std::min(m_samples_per_buffer, m_sample_rate * 15 / 1000);
+    const size_t max_target = m_sample_rate * LATENCY_MAX_MS / 1000;
+    m_burst_room = m_samples_per_buffer * 5 + m_sample_rate / 20;
+    m_buffer.resize((max_target + m_burst_room) * m_channels);
     m_buffer_pos = 0;
-    m_adjust = 0;
+    m_rate_match.setup(m_sample_rate, (double)target, (double)max_target);
+    m_rate_match.set_fixed(m_sample_rate * (double)m_latency_ms / 1000);
 
     setup_pipeline();
 
@@ -274,6 +284,13 @@ void GenericSound::set_volume(unsigned int volume)
 void GenericSound::set_muted(bool muted)
 {
     m_muted = muted;
+}
+
+void GenericSound::set_latency(unsigned int ms)
+{
+    compat_lock_guard lock(m_buffer_mutex);
+    m_latency_ms = ms;
+    m_rate_match.set_fixed(m_sample_rate * (double)ms / 1000);
 }
 
 void GenericSound::refresh_sources()
@@ -462,23 +479,31 @@ void GenericSound::clock(unsigned int counter)
     //reset, and each of those says so through sound_mode_changed()
 }
 
-// A frame into the buffer of the audio device, under m_buffer_mutex
+// The interpolation overshoots a little near full scale
+static int16_t pcm16(float v)
+{
+    if (v >= 32767.0f) return 32767;
+    if (v <= -32768.0f) return -32768;
+    return static_cast<int16_t>(std::lrint(v));
+}
+
+// A frame into the buffer of the audio device, under m_buffer_mutex, at the
+// rate of the device's clock. Past the WAV and the video on purpose: they take
+// the sound in emulated time, and the device's clock is no part of it
 void GenericSound::push_frame(int16_t out, int16_t out_left)
 {
-    // Out of the band around m_target: a frame in 64 dropped or doubled
-    if (m_adjust != 0 && (++m_adjust_phase & 63) == 0) {
-        if (m_adjust < 0) return;
-        store_frame(out, out_left);
-    }
-    store_frame(out, out_left);
+    m_rate_match.push(out, out_left, [this](float v, float v_left) {
+        store_frame(pcm16(v), pcm16(v_left));
+    });
 }
 
 void GenericSound::store_frame(int16_t out, int16_t out_left)
 {
-    // A burst the buffer has no room for: everything but the target is old,
-    // and is thrown away at once rather than heard late
-    if (m_buffer_pos >= m_buffer.size()) {
-        const size_t keep = m_target * m_channels;
+    // A burst far over the target: everything but the target is old, and is
+    // thrown away at once rather than heard late
+    const size_t target = static_cast<size_t>(m_rate_match.target());
+    if (m_buffer_pos >= (target + m_burst_room) * m_channels) {
+        const size_t keep = target * m_channels;
         std::copy(
             m_buffer.begin() + (m_buffer_pos - keep),
             m_buffer.begin() + m_buffer_pos,
@@ -508,9 +533,13 @@ void GenericSound::handle_audio_callback(uint8_t* stream, int len)
 #endif
 
     const size_t samples_requested = len / sizeof(int16_t);
+    const size_t frames_requested = samples_requested / m_channels;
     int16_t *dst = reinterpret_cast<int16_t*>(stream);
 
-    if (m_buffer_pos >= samples_requested) {
+    if (s_speed_q != 4) m_rate_match.hold_off();
+
+    if (m_buffer_pos >= samples_requested
+        && !m_rate_match.filling((double)(m_buffer_pos / m_channels), (double)frames_requested)) {
         std::copy_n(m_buffer.data(), samples_requested, dst);
         std::copy(
             m_buffer.begin() + samples_requested,
@@ -520,25 +549,28 @@ void GenericSound::handle_audio_callback(uint8_t* stream, int len)
         m_buffer_pos -= samples_requested;
         for (unsigned int c = 0; c < m_channels; c++)
             m_last_played[c] = dst[samples_requested - m_channels + c];
+        // The level the buffer is left at is the latency
+        const double level = (double)(m_buffer_pos / m_channels);
+        m_rate_match.measure(level, (double)frames_requested);
+        const size_t surplus = static_cast<size_t>(m_rate_match.surplus(level, (double)frames_requested)) * m_channels;
+        if (surplus > 0) {
+            std::copy(m_buffer.begin() + surplus, m_buffer.begin() + m_buffer_pos, m_buffer.begin());
+            m_buffer_pos -= surplus;
+            m_overflows++;
+        }
     } else {
         // Short of a period: none of it is taken, and the device gets the last
         // frame fading to silence. What has arrived waits for the next period
         // and becomes the reserve, or the device would run dry again on the
         // next one. A stopped machine is a run of these
         m_underruns++;
+        if (s_speed_q == 4) m_rate_match.underrun((double)frames_requested);
         for (size_t i = 0; i < samples_requested; i += m_channels)
             for (unsigned int c = 0; c < m_channels; c++) {
                 m_last_played[c] -= m_last_played[c] / 32;
                 dst[i + c] = m_last_played[c];
             }
     }
-
-    // The level the buffer is left at is the latency: back to the target when
-    // it leaves the band
-    const size_t frames = m_buffer_pos / m_channels;
-    if (frames > m_target * 2) m_adjust = -1;
-    else if (frames < m_target / 2) m_adjust = 1;
-    else if ((m_adjust < 0 && frames <= m_target) || (m_adjust > 0 && frames >= m_target)) m_adjust = 0;
 }
 
 //------------------- Introspection and control ----------------------------//
@@ -643,6 +675,8 @@ std::vector<DeviceFieldInfo> GenericSound::get_device_fields()
     r.push_back({"channels",  "2 if a source of the mix is stereo, else 1",       false});
     r.push_back({"underruns", "Times the device was handed a padded buffer",   false});
     r.push_back({"overflows", "Times the emulation outran the device",         false});
+    r.push_back({"rate",      "How much faster than made the sound plays to fit the audio device, ppm", false});
+    r.push_back({"target",    "Samples (frames in stereo) the buffer is kept at", false});
     return r;
 }
 
@@ -651,6 +685,7 @@ std::vector<DeviceCommandInfo> GenericSound::get_device_commands()
     std::vector<DeviceCommandInfo> r = ComputerDevice::get_device_commands();
     r.push_back({"volume",  "0-100",    "Sets the volume"});
     r.push_back({"mute",    "[0|1]",    "Mutes or unmutes the sound"});
+    r.push_back({"latency", "[ms]",     "Keeps that much sound in the buffer; without a value finds it out by itself"});
     r.push_back({"record",  "[\"file.wav\"]", "Starts writing the output to a WAV file; without a name stops and writes it"});
     return r;
 }
@@ -667,7 +702,7 @@ bool GenericSound::get_field(const std::string &field, unsigned int from, unsign
     //a restored state left it at 0 while a tone is on, the mixer would hold a
     //stale level and the tone would come out coarse
     if (field == "moving")  { out.values.push_back(m_self_volatile?1:0); return true; }
-    if (field == "buffered" || field == "underruns" || field == "overflows") {
+    if (field == "buffered" || field == "underruns" || field == "overflows" || field == "rate" || field == "target") {
         //Read under the same lock the audio callback takes: these are written
         //from the host's audio thread
 #if USE_QT_THREADING
@@ -675,9 +710,16 @@ bool GenericSound::get_field(const std::string &field, unsigned int from, unsign
 #else
         std::lock_guard<std::mutex> lock(m_buffer_mutex);
 #endif
+        if (field == "rate") {
+            //Signed, so as text like the other device fields of that kind
+            out.numeric = false;
+            out.text = std::to_string((long)std::lround(m_rate_match.rate() * 1e6));
+            return true;
+        }
         out.width = 32;
         if (field == "buffered")       out.values.push_back((unsigned int)(m_buffer_pos / m_channels));
         else if (field == "underruns") out.values.push_back((unsigned int)m_underruns);
+        else if (field == "target")    out.values.push_back((unsigned int)m_rate_match.target());
         else                           out.values.push_back((unsigned int)m_overflows);
         return true;
     }
@@ -730,6 +772,11 @@ emulator::Result GenericSound::send_command(const std::string &command, const st
 
     if (command == "mute") {
         set_muted(p.empty() || p[0].empty() || parse_numeric_value(p[0]) != 0);
+        return emulator::Result::ok();
+    }
+
+    if (command == "latency") {
+        set_latency((p.empty() || p[0].empty()) ? 0 : parse_numeric_value(p[0]));
         return emulator::Result::ok();
     }
 
