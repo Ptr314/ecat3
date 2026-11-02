@@ -496,7 +496,8 @@ static std::string first_file_extension(const std::string &mask)
 // tape recorder window resolves it.
 std::string TapeRecorder::format_for_extension(const std::string &ext)
 {
-    if (ext.empty() || sd == nullptr || !sd->read_setup) return "";
+    if (sd == nullptr || !sd->read_setup) return "";
+    if (ext.empty()) return (m_tape_enc == TapeEnc::BK)?bk_tape::NAMED_FORMAT:"";
     std::string fmt = sd->read_setup("TapeFiles", sd->system_type + "." + ext, "");
     if (fmt.empty()) fmt = sd->read_setup("TapeFiles", ext, "");
     //An ini written before the Apple ][ tape was there does not know its
@@ -506,6 +507,9 @@ std::string TapeRecorder::format_for_extension(const std::string &ext)
             : (str_tolower(ext) == "wav") ? "apple-wav:20000;data" : "apple-raw:20000;data";
     if (fmt.empty() && m_tape_enc == TapeEnc::ORIC)
         fmt = (str_tolower(ext) == "wav") ? "oric-wav:20000;data" : "oric:19231;data";
+    //На ленте БК нет типов файлов, расширением может быть что угодно, и список
+    //всех не составить: остальное решает заголовок файла в load_file()
+    if (fmt.empty() && m_tape_enc == TapeEnc::BK) fmt = bk_tape::NAMED_FORMAT;
     return fmt;
 }
 
@@ -847,14 +851,24 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
         apple_tape::encode(buffer, tape_format == "apple", buffer_encoded);
         set_data(buffer_encoded);
     } else
-    if (tape_format == "bk" || tape_format == "bk-ascii") {
+    if (tape_format == "bk" || tape_format == "bk-name" || tape_format == "bk-ascii") {
         // For the БК the rate is given directly in units, one unit being the
         // half period of a synchronisation pulse
         set_baud_rate(baud);
+        // The extensions of the [TapeFiles] section are wrappers of the host
+        // and stay off the tape. Any other one is a part of the name: a tape
+        // name is a flat field of sixteen bytes with no extension of its own,
+        // and a program that loads its parts asks for the field as a whole
+        // (Десантник: "DESAN2.OVL", found by EMT 36). With nothing but the
+        // header to go by, a file that is not a БК one is turned down here
+        const bool whole_name = tape_format == "bk-name";
+        if (whole_name && !bk_tape::is_file(buffer))
+            return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect tape file format")) + "} " + file_name);
         // The name is typed on the БК in capitals, as its keyboard starts, and
         // the monitor and БЕЙСИК compare it byte for byte, so a file named in
         // small letters on the host could never be found
-        std::string tape_name = dsk_tools::get_file_basename(file_name);
+        std::string tape_name = whole_name? loaded_name : dsk_tools::get_file_basename(file_name);
         for (size_t i = 0; i < tape_name.size(); i++)
             if (tape_name[i] >= 'a' && tape_name[i] <= 'z') tape_name[i] = (char)(tape_name[i] - 'a' + 'A');
         if (tape_format == "bk-ascii")

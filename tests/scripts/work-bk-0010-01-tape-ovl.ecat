@@ -1,0 +1,26 @@
+# БК0010-01: файл с расширением не из [TapeFiles] открывается магнитофоном и идет
+# на ленту под полным именем. Имя на ленте - сплошное поле из 16 байт, и EMT 36
+# сравнивает его целиком: игра Десантник ждет "DESAN2.OVL      ", а файл, у которого
+# расширение обрезано, находит как чужой и пропускает. Монитор здесь просит тот же
+# блок, что и игра. В 002000 ожидается содержимое файла, в блоке 000320 код 0.
+
+MACHINE "bk/BK-0010-01.cfg"
+WAIT _3000
+
+TYPE "MO\n"
+WAIT _1000
+TYPE "M\n"
+WAIT _500
+TYPE "BKOVER.OVL\n"
+WAIT _500
+COMMAND tape.load("../files/bkover.ovl")
+COMMAND tape.play
+WAIT _10000
+
+LOGDEFS _8,_16
+LOG tape.mode
+LOG ram.value(321)
+LOG ram.value(346,365)
+LOG ram.value16(2000,2003)
+SCREEN "../results/work-bk-0010-01-tape-ovl.png"
+EXIT

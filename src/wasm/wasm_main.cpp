@@ -793,13 +793,10 @@ int wasm_tape_load(const char* device_name, const char* file_path)
     TapeRecorder * tape = wasm_tape(device_name);
     if (tape == nullptr || file_path == nullptr) return -2;
 
-    std::string ext = dsk_tools::get_file_ext(file_path);
+    std::string ext = str_tolower(dsk_tools::get_file_ext(file_path));
     if (!ext.empty() && ext[0] == '.') ext = ext.substr(1);
-    if (ext.empty()) return -3;
 
-    SystemData * sd = g_emulator->get_system_data();
-    std::string fmt = g_emulator->read_setup("TapeFiles", sd->system_type + "." + ext, "");
-    if (fmt.empty()) fmt = g_emulator->read_setup("TapeFiles", ext, "");
+    std::string fmt = tape->format_for_extension(ext);
     if (fmt.empty()) return -3;
 
     emulator::Result res = tape->load_file(std::string(file_path), fmt);

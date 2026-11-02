@@ -40,6 +40,19 @@ namespace bk_tape
     const unsigned NAME_SIZE   = 16;
     const unsigned HEADER_SIZE = 4 + NAME_SIZE;
 
+    // How a file goes on the tape when the [TapeFiles] section does not list
+    // its extension: under its whole name, see TapeRecorder::load_file()
+    const char * const NAMED_FORMAT = "bk-name:9464;data";
+
+    // A БК file states its own length in the header, and that is what tells it
+    // from any other file when the extension says nothing
+    inline bool is_file(const std::vector<uint8_t> &file)
+    {
+        if (file.size() < 4) return false;
+        const size_t length = (size_t)(file[2] | (file[3] << 8));
+        return length != 0 && length + 4 == file.size();
+    }
+
     // БЕЙСИК does not write a program saved in text form as one file. It cuts
     // the text into parts of 256 bytes, writes every part as a separate tape
     // file named "NAME  .ASC #NNN" and closes the series with a file of the
