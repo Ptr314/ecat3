@@ -1,0 +1,45 @@
+# Агат-9 + ЯЗС 5/2: ЯЗС-плеер с диска library/agat/yazs-player.dsk
+# (tools/yazs-player). «Быстропускалка» на дорожке 0 запускает плеер сама:
+# он читает каталог ДОС своим драйвером 840 КБ, показывает мелодии *.YZ,
+# загружает выбранную и играет ее по такту таймера ячейки (7980 / N Гц).
+#
+# Проверяется: в меню 7 мелодий; через 6 с игры первой - число тиков плеера,
+# кадр, регистры и счетчики ячейки (движок сверен с моделью pyplay.py, тут -
+# что он не изменился); пульт каналов и вид трекера; выход - РЕД в меню, РЕД в
+# монитор: ячейка остановлена ($C0 в +F), мотор дисковода выключен.
+# Индикаторы на экране меняются каждый тик: снимки - при остановленном
+# процессоре.
+# @pixels 600
+# @timeout 120
+
+MACHINE "agat/Agat-9-yazs.ext"
+COMMAND fdd0.load("../library/agat/yazs-player.dsk")
+RESET cold
+WAIT 12000
+SCREEN "../results/work-agat-9-yazs-player-menu.png"
+LOGDEFS 8,16
+LOG ram.value($4D,$4D)
+
+KEY 100,100,ret
+WAIT 6000
+COMMAND cpu.stop()
+LOG ram.value($1E,$1F)
+LOG ram.value($14,$14)
+LOG yazs.regs
+LOG yazs.counters
+SCREEN "../results/work-agat-9-yazs-player-panel.png"
+COMMAND cpu.run()
+
+KEY 100,100,ret
+WAIT 3000
+COMMAND cpu.stop()
+SCREEN "../results/work-agat-9-yazs-player-tracker.png"
+COMMAND cpu.run()
+
+KEY 100,100,esc
+WAIT 1500
+KEY 100,100,esc
+WAIT 1500
+LOG yazs.regs($F,$F)
+LOG fdd0.motor
+EXIT

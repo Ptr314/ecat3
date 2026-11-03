@@ -1,0 +1,1042 @@
+; SPDX-License-Identifier: GPL-3.0-or-later
+; Part of the eCat3 project: https://github.com/Ptr314/ecat3
+;
+; Движок .YZ (FORMAT.md). Тот же расчет, что в pyplay.py, - модель на Python
+; проверяет его по регистрам ячейки тик за тиком.
+
+; --- Начало мелодии: файл загружен, .YZ с адреса YZ ---
+eng_start   lda YZ+67
+            sta speed
+            lda YZ+66
+            sta ntimer
+            jsr set_timer
+            lda YZ+68
+            sta frames
+            lda #$FF
+            sta loopf
+            lda YZ+3
+            and #1
+            beq es_noloop
+            lda YZ+69
+            sta loopf
+es_noloop   ldx #0
+es_ptr      lda YZ+70,x         ; смещения таблиц -> адреса
+            sta ordp,x
+            lda YZ+71,x
+            clc
+            adc #hi(YZ)
+            sta ordp+1,x
+            inx
+            inx
+            cpx #8
+            bne es_ptr
+            ldx #7
+es_ch       lda #0
+            sta c_ins,x
+            sta c_pend,x
+            sta c_state,x
+            sta c_delay,x
+            sta c_cut,x
+            sta c_cutreq,x
+            sta c_porta,x
+            sta c_slide,x
+            sta c_arpfx,x
+            sta c_vibfx,x
+            sta c_det,x
+            sta c_trem,x
+            sta c_trans,x
+            sta c_retrig,x
+            sta c_lreg,x
+            sta c_meter,x
+            sta c_wait,x
+            sta c_pdirty,x
+            lda #$FF
+            sta c_pins,x
+            sta c_bus,x
+            sta c_lperlo,x
+            sta c_lperhi,x
+            sta c_uins,x
+            sta c_unote,x
+            sta c_ureg,x
+            sta c_umeter,x
+            dex
+            bpl es_ch
+            lda #$FF
+            sta d_pend
+            sta d_pend+1
+            sta jump
+            sta text
+            lda #0
+            sta d_preset
+            sta d_preset+1
+            sta tick
+            sta brkf
+            sta ended
+            sta tcnt
+            sta tcnt+1
+            sta secacc
+            sta secacc+1
+            sta secs
+            sta secs+1
+            sta tail
+            lda #1
+            sta textchg
+            lda #$FF
+            sta idlemin
+            sta idlemin+1
+            lda #0
+            sta idle
+            sta idle+1
+            jmp load_frame
+
+; --- Кадр A: число строк и указатели паттернов ---
+load_frame  sta frame
+            sta t0
+            lda #0
+            sta t1
+            ; zt = ordp + 9 * кадр
+            lda t0
+            asl a
+            rol t1
+            asl a
+            rol t1
+            asl a
+            rol t1
+            clc
+            adc t0
+            bcc lf_1
+            inc t1
+lf_1        clc
+            adc ordp
+            sta zt
+            lda t1
+            adc ordp+1
+            sta zt+1
+            ldy #0
+            lda (zt),y
+            sta frows
+            ldx #0
+lf_ch       iny
+            sty t2
+            lda (zt),y          ; номер паттерна
+            asl a
+            sta t3
+            lda #0
+            rol a
+            sta t1
+            ; tmp16 = ptabp + 2 * номер
+            lda ptabp
+            clc
+            adc t3
+            sta tmp16
+            lda ptabp+1
+            adc t1
+            sta tmp16+1
+            ldy #0
+            lda (tmp16),y
+            sta patp,x
+            iny
+            lda (tmp16),y
+            clc
+            adc #hi(YZ)
+            sta patp+1,x
+            txa
+            lsr a
+            tay
+            lda #0
+            sta c_wait,y
+            ldy t2
+            inx
+            inx
+            cpx #16
+            bne lf_ch
+            lda #0
+            sta row
+            rts
+
+; --- Байт потока канала ch ---
+getb        ldx ch2
+            lda (patp,x)
+            inc patp,x
+            bne gb_1
+            inc patp+1,x
+gb_1        ldx ch
+            rts
+
+; --- Тик ---
+eng_tick    lda ended
+            beq et_go
+            jmp et_tail
+et_go       lda tick
+            bne et_tones
+            ldx #0
+et_parse    stx ch
+            txa
+            asl a
+            sta ch2
+            jsr parse_ch
+            ldx ch
+            inx
+            cpx #8
+            bne et_parse
+            ; Ударный, который ударит в тике 1: сейчас D4 = 0
+            ldx #5
+            jsr drum_prep
+            ldx #6
+            jsr drum_prep
+et_tones    ldx #0
+et_tl       stx ch
+            jsr tone_tick
+            ldx ch
+            inx
+            cpx #5
+            bne et_tl
+            lda tick
+            cmp #1
+            bne et_adv
+            ldx #5
+            jsr drum_hit
+            ldx #6
+            jsr drum_hit
+et_adv      inc tcnt
+            bne et_a1
+            inc tcnt+1
+et_a1       jsr count_secs
+            inc tick
+            lda tick
+            cmp speed
+            bcc et_done
+            lda #0
+            sta tick
+            inc row
+            lda brkf
+            bne et_next
+            lda jump
+            cmp #$FF
+            bne et_next
+            lda row
+            cmp frows
+            bcc et_done
+et_next     lda jump
+            cmp #$FF
+            bne et_jmp
+            lda frame
+            clc
+            adc #1
+et_jmp      ldx #$FF
+            stx jump
+            ldx #0
+            stx brkf
+            cmp frames
+            bcc et_lf
+            lda loopf
+            cmp #$FF
+            beq et_end
+et_lf       jmp load_frame
+et_end      lda #1
+            sta ended
+et_done     rts
+            ; После конца - секунда на отпускание нот
+et_tail     ldx #0
+et_tt       stx ch
+            lda c_state,x
+            cmp #1
+            bne et_tt1
+            lda #2
+            sta c_state,x
+            lda #0
+            sta c_regpos,x
+et_tt1      jsr tone_tick
+            ldx ch
+            inx
+            cpx #5
+            bne et_tt
+            inc tail
+            rts
+
+; Секунды: каждый тик N / 7980 секунды
+count_secs  lda secacc
+            clc
+            adc ntimer
+            sta secacc
+            bcc cs_1
+            inc secacc+1
+cs_1        lda secacc
+            sec
+            sbc #lo(7980)
+            tax
+            lda secacc+1
+            sbc #hi(7980)
+            bcc cs_2
+            sta secacc+1
+            stx secacc
+            inc secs
+            bne cs_2
+            inc secs+1
+cs_2        rts
+
+; --- Разбор строки канала ch (X = ch) ---
+parse_ch    lda c_wait,x
+            beq pc_go
+            dec c_wait,x
+            rts
+pc_go       cpx #5
+            bcs pc_loop
+            lda #0
+            sta c_delay,x
+            sta c_cutreq,x
+pc_loop     jsr getb
+            cmp #$80
+            bcc pc_cmd
+            and #$7F
+            sta c_wait,x
+            rts
+pc_cmd      cmp #$60
+            bcs pc_ctl
+            cpx #5
+            bcs pc_dnote
+            sta c_pnote,x
+            lda #1
+            sta c_pend,x
+            jmp pc_loop
+pc_dnote    cpx #7
+            bcs pc_loop
+            sta d_pend-5,x
+            jmp pc_loop
+pc_ctl      cmp #$62
+            bcc pc_offcut
+            beq pc_instr
+            cmp #$63
+            beq pc_legato
+            sec
+            sbc #$64
+            sta t0
+            jsr getb
+            sta t1
+            jsr do_effect
+            ldx ch
+            jmp pc_loop
+pc_instr    jsr getb
+            cpx #5
+            bcs pc_loop
+            sta c_pins,x
+            jmp pc_loop
+pc_legato   jsr getb
+            cpx #5
+            bcs pc_dnote
+            sta c_pnote,x
+            lda #2
+            sta c_pend,x
+            jmp pc_loop
+pc_offcut   cpx #5
+            bcs pc_doff
+            tay
+            lda #0
+            sta c_pend,x
+            cpy #$60
+            bne pc_cut
+            lda c_state,x
+            cmp #1
+            bne pc_loop
+            lda #2
+            sta c_state,x
+            lda #0
+            sta c_regpos,x
+            jmp pc_loop
+pc_cut      lda #0
+            sta c_state,x
+            jsr reg_out
+            jmp pc_loop
+pc_doff     cpx #7
+            bcs pc_jl
+            lda #$FF
+            sta d_pend-5,x
+            lda d_preset-5,x
+            jsr drum_out
+pc_jl       jmp pc_loop
+
+; --- Эффект t0 с параметром t1, канал X ---
+do_effect   lda t0
+            cmp #17
+            bcs fx_none
+            asl a
+            tay
+            lda fxtab+1,y
+            pha
+            lda fxtab,y
+            pha
+            lda t1
+fx_none     rts
+
+fxtab       dw fx_arp-1, fx_su-1, fx_sd-1, fx_porta-1, fx_vib-1, fx_det-1, fx_bus-1
+            dw fx_trem-1, fx_delay-1, fx_cut-1, fx_speed-1, fx_tempo-1, fx_jump-1
+            dw fx_text-1, fx_tr-1, fx_retrig-1, fx_break-1
+
+fx_speed    sta speed
+            rts
+fx_tempo    sta ntimer
+            jmp set_timer
+fx_jump     sta jump
+            rts
+fx_text     sta text
+            inc textchg
+            rts
+fx_break    inc brkf
+            rts
+fx_arp      cpx #5
+            bcs fx_r
+            sta c_arpfx,x
+fx_dirty    lda #1
+            sta c_pdirty,x
+fx_r        rts
+fx_su       cpx #5
+            bcs fx_r
+            sta c_slide,x
+            jmp fx_dirty
+fx_sd       cpx #5
+            bcs fx_r
+            eor #$FF
+            clc
+            adc #1
+            sta c_slide,x
+            jmp fx_dirty
+fx_porta    cpx #5
+            bcs fx_r
+            sta c_porta,x
+            jmp fx_dirty
+fx_vib      cpx #5
+            bcs fx_r
+            sta c_vibfx,x
+            jmp fx_dirty
+fx_det      cpx #5
+            bcs fx_r
+            sta c_det,x
+            jmp fx_dirty
+fx_bus      cpx #5
+            bcs fx_r
+            sta c_bus,x
+            rts
+fx_trem     cpx #5
+            bcs fx_r
+            sta c_trem,x
+            lda #0
+            sta c_tremph,x
+            rts
+fx_delay    cpx #5
+            bcs fx_r
+            sta c_delay,x
+            rts
+fx_cut      cpx #5
+            bcs fx_r
+            sta c_cutreq,x
+            rts
+fx_tr       cpx #5
+            bcs fx_r
+            sta c_trans,x
+            jmp fx_dirty
+fx_retrig   cpx #5
+            bcs fx_r
+            sta c_retrig,x
+            lda #0
+            sta c_retcnt,x
+            rts
+
+; --- Регистр канала X: писать только изменение ---
+reg_out     cmp c_lreg,x
+            beq ro_same
+            sta c_lreg,x
+            ldy regoff,x
+            sta $C080,y
+ro_same     rts
+
+; --- Ударные (X = 5, 6) ---
+drum_out    ldy regoff,x
+            sta $C080,y
+            rts
+
+drum_prep   lda d_pend-5,x
+            cmp #$FF
+            beq dp_r
+            and #$0F
+            jsr drum_out
+dp_r        rts
+
+drum_hit    lda d_pend-5,x
+            cmp #$FF
+            beq dp_r
+            and #$0F
+            sta d_preset-5,x
+            ora #$10
+            jsr drum_out
+            lda #$FF
+            sta d_pend-5,x
+            sta c_meter,x
+            rts
+
+; --- Указатель инструмента канала X в ip ---
+set_ip      lda c_ins,x
+            asl a
+            tay
+            lda (itabp),y
+            sta ip
+            iny
+            lda (itabp),y
+            clc
+            adc #hi(YZ)
+            sta ip+1
+            rts
+
+; --- Шаг макроса: Y - смещение макроса, A - позиция; A = значение, mpos ---
+mstep       sty moff
+            sta mpos
+            tya
+            clc
+            adc mpos
+            tay
+            iny
+            iny
+            lda (ip),y
+            sta mval
+            ldy moff
+            inc mpos
+            lda mpos
+            cmp (ip),y
+            bcc ms_done
+            iny
+            lda (ip),y
+            cmp #$FF
+            bne ms_set
+            dey
+            lda (ip),y
+            sec
+            sbc #1
+ms_set      sta mpos
+ms_done     lda mval
+            rts
+
+; --- Включить ноту канала X ---
+note_on     lda c_pins,x
+            cmp #$FF
+            beq no_1
+            sta c_ins,x
+            lda #$FF
+            sta c_pins,x
+no_1        jsr set_ip
+            lda c_pnote,x
+            sta c_note,x
+            lda #0
+            sta t2
+            lda c_pnote,x
+            asl a
+            rol t2
+            asl a
+            rol t2
+            asl a
+            rol t2
+            asl a
+            rol t2
+            sta t1
+            lda c_pend,x
+            cmp #2
+            bne no_full
+            lda c_state,x
+            cmp #1
+            bne no_full
+            ; Лига: цель - новая нота; без PORTA - сразу
+            lda t1
+            sta c_tgtlo,x
+            lda t2
+            sta c_tgthi,x
+            lda c_porta,x
+            bne no_end
+            lda t1
+            sta c_curlo,x
+            lda t2
+            sta c_curhi,x
+            jmp no_end
+no_full     lda t1
+            sta c_curlo,x
+            sta c_tgtlo,x
+            lda t2
+            sta c_curhi,x
+            sta c_tgthi,x
+            lda #1
+            sta c_state,x
+            lda #0
+            sta c_regpos,x
+            sta c_arppos,x
+            sta c_pitpos,x
+            sta c_vibph,x
+            sta c_arpph,x
+            sta c_retcnt,x
+            sta c_tremph,x
+            ldy #9
+            lda (ip),y
+            sta c_vibcnt,x
+            ldy #17
+            lda (ip),y
+            ora #$0F
+            sta c_meter,x
+no_end      lda #1
+            sta c_pdirty,x
+            lda #0
+            sta c_pend,x
+            lda c_cutreq,x
+            beq no_2
+            clc
+            adc #1
+no_2        sta c_cut,x
+            rts
+
+; --- Тик тонового канала ch ---
+tone_tick   ldx ch
+            lda c_pend,x
+            beq tt_1
+            lda c_delay,x
+            clc
+            adc #1
+            cmp tick
+            bne tt_1
+            jsr note_on
+tt_1        lda c_cut,x
+            beq tt_2
+            dec c_cut,x
+            bne tt_2
+            lda c_state,x
+            cmp #1
+            bne tt_2
+            lda #2
+            sta c_state,x
+            lda #0
+            sta c_regpos,x
+tt_2        lda c_state,x
+            bne tt_on
+            rts
+tt_on       jsr set_ip
+            ; --- Регистр ---
+            lda c_state,x
+            cmp #1
+            bne tt_rel
+            lda c_retrig,x
+            beq tt_nor
+            inc c_retcnt,x
+            lda c_retcnt,x
+            cmp c_retrig,x
+            bcc tt_nor
+            lda #0
+            sta c_retcnt,x
+            sta c_regpos,x
+tt_nor      ldy #13
+            bne tt_mac
+tt_rel      ldy #14
+tt_mac      lda (ip),y
+            tay
+            lda c_regpos,x
+            jsr mstep
+            lda mpos
+            sta c_regpos,x
+            lda mval
+            sta t0
+            lda c_bus,x
+            cmp #$FF
+            beq tt_nobus
+            and #$0F
+            sta t1
+            lda t0
+            and #$30
+            ora t1
+            sta t0
+tt_nobus    lda c_state,x
+            cmp #1
+            bne tt_noov
+            lda c_trem,x
+            beq tt_notr
+            clc
+            adc #1
+            lsr a
+            sta t1
+            lda c_tremph,x
+            cmp t1
+            bcc tt_tr1
+            lda t0
+            and #$DF
+            sta t0
+tt_tr1      inc c_tremph,x
+            lda c_tremph,x
+            cmp c_trem,x
+            bcc tt_notr
+            lda #0
+            sta c_tremph,x
+tt_notr     lda c_retrig,x
+            beq tt_noov
+            sec
+            sbc #1
+            cmp c_retcnt,x
+            bne tt_noov
+            lda t0
+            and #$EF
+            sta t0
+tt_noov     lda c_pend,x
+            cmp #1
+            bne tt_noprep
+            lda t0
+            and #$EF
+            sta t0
+tt_noprep   lda t0
+            jsr reg_out
+            ; --- Индикатор ---
+            ldy #18
+            lda (ip),y
+            sta t1
+            lda #0
+            sta t2
+            lda c_state,x
+            cmp #1
+            bne tt_mrel
+            ldy #17
+            lda (ip),y
+            asl a
+            asl a
+            asl a
+            asl a
+            sta t2
+            jmp tt_mdec
+tt_mrel     asl t1
+            asl t1
+tt_mdec     lda c_meter,x
+            sec
+            sbc t1
+            bcc tt_mfl
+            cmp t2
+            bcs tt_mst
+tt_mfl      lda t2
+tt_mst      sta c_meter,x
+            ; --- Высота: если ничего не меняется - период тот же ---
+            lda c_pdirty,x
+            bne tp_go
+            lda c_slide,x
+            ora c_arpfx,x
+            bne tp_go
+            ldy #15
+            lda (ip),y
+            iny
+            ora (ip),y
+            bne tp_go
+            lda c_curlo,x
+            cmp c_tgtlo,x
+            bne tp_go
+            lda c_curhi,x
+            cmp c_tgthi,x
+            bne tp_go
+            lda c_vibfx,x
+            and #$0F
+            bne tp_go
+            lda c_vibfx,x
+            bne tp_skip         ; вибрато эффекта без глубины
+            ldy #11
+            lda (ip),y
+            bne tp_go
+tp_skip     rts
+tp_go       lda #0
+            sta c_pdirty,x
+            ; --- Высота: PORTA ---
+            lda c_curlo,x
+            cmp c_tgtlo,x
+            bne tp_p
+            lda c_curhi,x
+            cmp c_tgthi,x
+            beq tp_nop
+tp_p        lda c_curlo,x
+            cmp c_tgtlo,x
+            lda c_curhi,x
+            sbc c_tgthi,x
+            bcs tp_down
+            lda c_curlo,x
+            clc
+            adc c_porta,x
+            sta c_curlo,x
+            bcc tp_u1
+            inc c_curhi,x
+tp_u1       lda c_tgtlo,x
+            cmp c_curlo,x
+            lda c_tgthi,x
+            sbc c_curhi,x
+            bcs tp_nop
+            bcc tp_set
+tp_down     lda c_curlo,x
+            sec
+            sbc c_porta,x
+            sta c_curlo,x
+            bcs tp_d1
+            dec c_curhi,x
+tp_d1       lda c_curlo,x
+            cmp c_tgtlo,x
+            lda c_curhi,x
+            sbc c_tgthi,x
+            bcs tp_nop
+tp_set      lda c_tgtlo,x
+            sta c_curlo,x
+            lda c_tgthi,x
+            sta c_curhi,x
+tp_nop      ; --- Скольжение и макрос высоты: и высота, и цель ---
+            lda c_slide,x
+            beq tp_nosl
+            jsr add_cur
+tp_nosl     ldy #16
+            lda (ip),y
+            beq tp_nopit
+            tay
+            lda c_pitpos,x
+            jsr mstep
+            lda mpos
+            sta c_pitpos,x
+            lda mval
+            jsr add_cur
+tp_nopit    ; --- Полутоны: макрос арпеджио, ARP, транспозиция ---
+            lda #0
+            sta t3
+            ldy #15
+            lda (ip),y
+            beq ar_nom
+            tay
+            lda c_arppos,x
+            jsr mstep
+            lda mpos
+            sta c_arppos,x
+            lda mval
+            sta t3
+ar_nom      lda c_arpfx,x
+            beq ar_nofx
+            ldy c_arpph,x
+            beq ar_ph
+            dey
+            bne ar_2
+            lsr a
+            lsr a
+            lsr a
+            lsr a
+            bpl ar_add
+ar_2        and #$0F
+ar_add      clc
+            adc t3
+            sta t3
+ar_ph       inc c_arpph,x
+            lda c_arpph,x
+            cmp #3
+            bcc ar_nofx
+            lda #0
+            sta c_arpph,x
+ar_nofx     lda t3
+            clc
+            adc c_trans,x
+            ; tot = cur + полутоны * 16
+            sta t1
+            lda #0
+            sta t2
+            lda t1
+            bpl ar_pos
+            dec t2
+ar_pos      asl t1
+            rol t2
+            asl t1
+            rol t2
+            asl t1
+            rol t2
+            asl t1
+            rol t2
+            lda c_curlo,x
+            clc
+            adc t1
+            sta tot
+            lda c_curhi,x
+            adc t2
+            sta tot+1
+            ; --- Вибрато ---
+            lda c_vibfx,x
+            bne vb_fx
+            ldy #10
+            lda (ip),y
+            sta t1
+            iny
+            lda (ip),y
+            sta t2
+            jmp vb_go
+vb_fx       pha
+            lsr a
+            lsr a
+            lsr a
+            lsr a
+            sta t1
+            pla
+            and #$0F
+            sta t2
+vb_go       lda #0
+            sta vibv
+            lda t2
+            beq vb_done
+            lda c_vibcnt,x
+            beq vb_run
+            dec c_vibcnt,x
+            jmp vb_done
+vb_run      lda c_vibph,x
+            clc
+            adc t1
+            and #$3F
+            sta c_vibph,x
+            lda t2
+            lsr a
+            lsr a
+            clc
+            adc #hi(vibtab)
+            sta zt+1
+            lda t2
+            and #3
+            asl a
+            asl a
+            asl a
+            asl a
+            asl a
+            asl a
+            ora c_vibph,x
+            sta zt
+            ldy #0
+            lda (zt),y
+            sta vibv
+vb_done     ; --- Расстройка инструмента, эффекта, вибрато ---
+            ldy #12
+            lda (ip),y
+            jsr add_tot
+            lda c_det,x
+            jsr add_tot
+            lda vibv
+            jsr add_tot
+            ; --- Период ---
+            lda tot+1
+            bpl pc_pos
+            lda #0
+            sta tot
+            sta tot+1
+            beq pc_ok
+pc_pos      cmp #6
+            bcc pc_ok
+            lda #$FF
+            sta tot
+            lda #5
+            sta tot+1
+pc_ok       lda tot
+            and #$0F
+            sta t1
+            lda tot+1
+            sta t2
+            lda tot
+            lsr t2
+            ror a
+            lsr t2
+            ror a
+            lsr t2
+            ror a
+            lsr t2
+            ror a
+            tay
+            lda div12,y
+            sta oct
+            lda mod12,y
+            asl a
+            asl a
+            asl a
+            asl a
+            ora t1
+            tay
+            lda ptab_lo,y
+            sta per
+            lda ptab_hi,y
+            sta per+1
+            ldy oct
+            beq pc_wr
+            lda per
+            clc
+            adc rnd_lo,y
+            sta per
+            lda per+1
+            adc rnd_hi,y
+            sta per+1
+pc_sh       lsr per+1
+            ror per
+            dey
+            bne pc_sh
+pc_wr       lda per
+            cmp c_lperlo,x
+            bne pc_do
+            lda per+1
+            cmp c_lperhi,x
+            beq pc_end
+pc_do       lda per
+            sta c_lperlo,x
+            ldy cntoff,x
+            sta $C080,y
+            lda per+1
+            sta c_lperhi,x
+            sta $C080,y
+pc_end      rts
+
+; A (со знаком) прибавить к высоте и цели канала X, с границами 0..1535
+add_cur     sta t1
+            lda #0
+            sta t2
+            lda t1
+            bpl ac_1
+            dec t2
+ac_1        lda c_curlo,x
+            clc
+            adc t1
+            sta c_curlo,x
+            lda c_curhi,x
+            adc t2
+            sta c_curhi,x
+            lda c_tgtlo,x
+            clc
+            adc t1
+            sta c_tgtlo,x
+            lda c_tgthi,x
+            adc t2
+            sta c_tgthi,x
+            ; границы
+            lda c_curhi,x
+            bpl ac_c1
+            lda #0
+            sta c_curlo,x
+            sta c_curhi,x
+ac_c1       cmp #6
+            bcc ac_c2
+            lda #$FF
+            sta c_curlo,x
+            lda #5
+            sta c_curhi,x
+ac_c2       lda c_tgthi,x
+            bpl ac_c3
+            lda #0
+            sta c_tgtlo,x
+            sta c_tgthi,x
+ac_c3       cmp #6
+            bcc ac_c4
+            lda #$FF
+            sta c_tgtlo,x
+            lda #5
+            sta c_tgthi,x
+ac_c4       rts
+
+; A (со знаком) прибавить к tot
+add_tot     ora #0
+            bmi at_neg
+            clc
+            adc tot
+            sta tot
+            bcc at_r
+            inc tot+1
+at_r        rts
+at_neg      clc
+            adc tot
+            sta tot
+            bcs at_r
+            dec tot+1
+            rts

@@ -1,0 +1,433 @@
+; SPDX-License-Identifier: GPL-3.0-or-later
+; Part of the eCat3 project: https://github.com/Ptr314/ecat3
+;
+; Чтение диска 840 КБ (контроллер Агата, два ВВ55) и каталога ДОС 3.3.
+; Чтение сектора повторяет загрузочное ПЗУ контроллера ($C55C-$C5EA), шаг
+; головки - загрузчик «Быстропускалка» ($D7E1): 5 мс на шаг, 18 мс на
+; успокоение. Логическая дорожка = цилиндр * 2 + сторона.
+;
+; Порты (X = слот * 16): +1 состояние привода (D4 индекс, D6 = 0 - дорожка 00,
+; D7 = 0 - готов), +2/+3 порт C и управляющее слово ВВ55 (D2 направление шага,
+; D4 сторона, D7 мотор), +4 байт данных, +6 D6 = 0 - синхронизация, D7 = 1 -
+; байт готов, +9 шаг, +A сброс синхронизации.
+
+; Задержка A * 100 тактов
+delay100    ldy #18
+dl_1        dey
+            bne dl_1
+            nop
+            sec
+            sbc #1
+            bne delay100
+            rts
+
+dsk_on      ldx fdc
+            lda #$92
+            sta $C083,x
+            lda #$BD
+            sta $C087,x
+            lda #0
+            sta tolo
+            sta tohi
+do_1        lda #$0F            ; мотор
+            sta $C083,x
+            lda $C082,x
+            bmi do_2
+            jsr dsk_to
+            bcc do_1
+            rts
+do_2        lda $C081,x         ; готовность
+            bpl do_3
+            jsr dsk_to
+            bcc do_2
+            rts
+do_3        lda #$09
+            sta $C087,x
+            clc
+            rts
+
+; Таймаут ожидания (~1 с): C = 1, когда вышел
+dsk_to      inc tolo
+            bne dt_1
+            inc tohi
+            beq dt_out
+dt_1        clc
+            rts
+dt_out      sec
+            rts
+
+dsk_off     ldx fdc
+            lda #$0E
+            sta $C083,x
+            rts
+
+; Головка на дорожку 00
+dsk_recal   ldx fdc
+            lda #$04
+            sta $C083,x
+            lda #100
+            sta t3
+dr_1        lda $C081,x
+            and #$40
+            beq dr_ok
+            sta $C089,x
+            lda #50
+            jsr delay100
+            dec t3
+            bne dr_1
+            sec
+            rts
+dr_ok       lda #0
+            sta curcyl
+            lda #180
+            jsr delay100
+            clc
+            rts
+
+; На логическую дорожку ltrk
+dsk_seek    ldx fdc
+            lda ltrk
+            lsr a
+            sta tcyl
+            lda #$04            ; $08 + сторона: D4 порта C
+            rol a
+            sta $C083,x
+            lda tcyl
+            cmp curcyl
+            beq ds_r
+            bcs ds_in
+            lda #$04
+            sta $C083,x
+            lda curcyl
+            sec
+            sbc tcyl
+            jmp ds_go
+ds_in       lda #$05
+            sta $C083,x
+            lda tcyl
+            sec
+            sbc curcyl
+ds_go       sta t3
+ds_l        sta $C089,x
+            lda #50
+            jsr delay100
+            dec t3
+            bne ds_l
+            lda tcyl
+            sta curcyl
+            lda #180
+            jsr delay100
+ds_r        rts
+
+; Сектор lsec дорожки ltrk в (bufp); C = 1 - ошибка
+dsk_read    jsr dsk_seek
+            lda #3
+            sta retry
+rs_rev      lda #32
+            sta tries
+rs_addr     jsr find_addr
+            bcs rs_fail
+            lda t1
+            cmp ltrk
+            bne rs_next
+            lda t2
+            cmp lsec
+            bne rs_next
+            jsr read_data
+            bcc rs_ok
+rs_next     dec tries
+            bne rs_addr
+            dec retry
+            bne rs_rev
+rs_fail     sec
+rs_ok       rts
+
+; Поле адреса: 95 6A том дорожка сектор -> t1, t2
+find_addr   ldx fdc
+            lda #0
+            sta tolo
+            sta tohi
+fa_reset    sta $C08A,x
+fa_ws       inc tolo
+            bne fa_w0
+            inc tohi
+            beq fa_to
+fa_w0       lda $C086,x
+            asl a
+            bmi fa_ws
+            lda $C084,x
+fa_w1       lda $C086,x
+            bpl fa_w1
+            lda $C084,x
+            cmp #$95
+            bne fa_reset
+            sta $C08A,x
+fa_w2       lda $C086,x
+            bpl fa_w2
+            lda $C084,x
+            cmp #$6A
+            bne fa_reset
+fa_w3       lda $C086,x
+            bpl fa_w3
+            lda $C084,x
+fa_w4       lda $C086,x
+            bpl fa_w4
+            lda $C084,x
+            sta t1
+fa_w5       lda $C086,x
+            bpl fa_w5
+            lda $C084,x
+            sta t2
+            clc
+            rts
+fa_to       sec
+            rts
+
+; Поле данных: 6A 95, 256 байт, сумма с переносом
+read_data   lda #4
+            sta rdtries
+rd_reset    dec rdtries
+            beq rd_bad
+            sta $C08A,x
+rd_ws       lda $C086,x
+            asl a
+            bmi rd_ws
+            lda $C084,x
+rd_w1       lda $C086,x
+            bpl rd_w1
+            lda $C084,x
+            cmp #$6A
+            bne rd_reset
+            sta $C08A,x
+rd_w2       lda $C086,x
+            bpl rd_w2
+            lda $C084,x
+            cmp #$95
+            bne rd_reset
+            ldy #0
+            sty csum
+            clc
+rd_l        lda $C086,x
+            bpl rd_l
+            lda $C084,x
+            sta (bufp),y
+            adc csum
+            sta csum
+            iny
+            bne rd_l
+rd_w3       lda $C086,x
+            bpl rd_w3
+            lda $C084,x
+            cmp csum
+            bne rd_bad
+            clc
+            rts
+rd_bad      sec
+            rts
+
+; --- Каталог ---------------------------------------------------------------
+
+; Прочитать сектор A (дорожка) / Y (сектор) в BUF
+rd_buf      sta ltrk
+            sty lsec
+            lda #lo(BUF)
+            sta bufp
+            lda #hi(BUF)
+            sta bufp+1
+            jmp dsk_read
+
+; Собрать в DIRTAB двоичные файлы *.YZ; C = 1 - ошибка диска
+read_cat    lda #0
+            sta nfiles
+            jsr dsk_on
+            bcs rc_err
+            jsr dsk_recal
+            bcs rc_err
+            lda #17
+            ldy #0
+            jsr rd_buf
+            bcs rc_err
+            lda BUF+1
+            sta cattrk          ; дорожка и сектор каталога
+            lda BUF+2
+            sta catsec
+rc_sec      lda cattrk
+            beq rc_done
+            ldy catsec
+            jsr rd_buf
+            bcs rc_err
+            lda #0
+            sta tsidx
+rc_ent      ldx tsidx
+            ldy catoff,x
+            lda BUF,y           ; дорожка списка T/S
+            beq rc_done         ; конец каталога
+            cmp #$FF
+            beq rc_nxt          ; удален
+            lda BUF+2,y
+            and #$7F
+            cmp #$04            ; B
+            bne rc_nxt
+            jsr is_yz
+            bcc rc_nxt
+            jsr add_file
+rc_nxt      inc tsidx
+            lda tsidx
+            cmp #7
+            bne rc_ent
+            lda BUF+1
+            sta cattrk
+            lda BUF+2
+            sta catsec
+            jmp rc_sec
+rc_done     jsr dsk_off
+            clc
+            rts
+rc_err      jsr dsk_off
+            sec
+            rts
+
+catoff      db $0B,$2E,$51,$74,$97,$BA,$DD
+
+; Имя записи BUF+Y+3 (30 знаков) кончается на ".YZ"? C = 1 - да
+is_yz       tya
+            clc
+            adc #3+29
+            tax
+            lda #30
+            sta t1
+iy_1        lda BUF,x
+            cmp #$A0
+            bne iy_2
+            dex
+            dec t1
+            bne iy_1
+            clc
+            rts
+iy_2        lda t1
+            cmp #4
+            bcc iy_no
+            lda BUF,x
+            cmp #$DA            ; Z
+            bne iy_no
+            lda BUF-1,x
+            cmp #$D9            ; Y
+            bne iy_no
+            lda BUF-2,x
+            cmp #$AE            ; .
+            bne iy_no
+            sec
+            rts
+iy_no       clc
+            rts
+
+; Запись BUF+Y - в DIRTAB[nfiles]: дорожка и сектор списка, имя
+add_file    lda nfiles
+            cmp #MAXFILES
+            bcs af_r
+            jsr dir_ptr
+            lda BUF,y
+            sta t1
+            lda BUF+1,y
+            sta t2
+            sty t3
+            ldy #0
+            lda t1
+            sta (dirp),y
+            iny
+            lda t2
+            sta (dirp),y
+            ldx t3
+af_l        lda BUF+3,x
+            iny
+            sta (dirp),y
+            inx
+            cpy #31
+            bne af_l
+            inc nfiles
+            ldy t3
+af_r        rts
+
+; dirp = DIRTAB + 32 * A
+dir_ptr     pha
+            sta dirp
+            lda #0
+            sta dirp+1
+            ldx #5
+dp_1        asl dirp
+            rol dirp+1
+            dex
+            bne dp_1
+            lda dirp+1
+            clc
+            adc #hi(DIRTAB)
+            sta dirp+1
+            pla
+            rts
+
+; --- Загрузка файла sel: тело B-файла с SONGLD, .YZ с YZ; C = 1 - ошибка ---
+load_file   jsr dsk_on
+            bcs lf_err
+            lda sel
+            jsr dir_ptr
+            ldy #0
+            lda (dirp),y
+            sta ltrk
+            iny
+            lda (dirp),y
+            sta lsec
+            lda #lo(SONGLD)
+            sta zt
+            lda #hi(SONGLD)
+            sta zt+1
+lf_ts       lda #lo(TSBUF)
+            sta bufp
+            lda #hi(TSBUF)
+            sta bufp+1
+            jsr dsk_read
+            bcs lf_err
+            lda #$0C
+            sta tsidx
+lf_pair     ldy tsidx
+            lda TSBUF,y
+            sta ltrk
+            lda TSBUF+1,y
+            sta lsec
+            ora ltrk
+            beq lf_done         ; 0,0 - конец файла
+            lda zt+1
+            cmp #SONGTOP
+            bcs lf_err          ; не помещается
+            lda zt
+            sta bufp
+            lda zt+1
+            sta bufp+1
+            jsr dsk_read
+            bcs lf_err
+            inc zt+1
+            lda tsidx
+            clc
+            adc #2
+            sta tsidx
+            bne lf_pair         ; 122 пары, потом следующий список
+            lda TSBUF+1
+            sta ltrk
+            lda TSBUF+2
+            sta lsec
+            ora ltrk
+            bne lf_ts
+lf_done     jsr dsk_off
+            lda YZ
+            cmp #$59
+            bne lf_bad
+            lda YZ+1
+            cmp #$5A
+            bne lf_bad
+            lda YZ+2
+            cmp #1
+            bne lf_bad
+            clc
+            rts
+lf_err      jsr dsk_off
+lf_bad      sec
+            rts

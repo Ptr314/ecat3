@@ -1,0 +1,515 @@
+; SPDX-License-Identifier: GPL-3.0-or-later
+; Part of the eCat3 project: https://github.com/Ptr314/ecat3
+;
+; Вид «трекер»: АЦР-64 (один байт на знак, 64 знака в строке), страница кадра
+; по строкам: ноты и инструменты пяти тонов, пресеты ударных. Страница (28
+; строк кадра) рисуется по кускам, по одному за тик: очистка по 4 строки,
+; потом по каналу, - так тик движка не опаздывает. Указатель «>» идет по
+; строкам; на ударах вспыхивает палитра (зеленая -> белая).
+
+TRK_ROWS    equ 28              ; строк кадра на странице
+TRK_TOP     equ 3               ; первая строка экрана
+
+trkphase    equ $70             ; 0 - готово, 1..7 - очистка, 8..14 - каналы
+trkframe    equ $71
+trkpage     equ $72
+trkmark     equ $73             ; где стоит указатель
+trkflash    equ $74
+trkcol      equ $75
+
+trk_draw    sta $C78A           ; АЦР-64, $1000
+            sta $C05B           ; палитра 3: зеленая
+            sta $C058
+            lda #lo(SCREEN)
+            sta zt
+            lda #hi(SCREEN)
+            sta zt+1
+            ldx #8
+td_0        ldy #0
+            lda #$A0
+td_1        sta (zt),y
+            iny
+            bne td_1
+            jsr poll_tick
+            inc zt+1
+            dex
+            bne td_0
+            ; заголовок
+            ldx #0
+            ldy #0
+            jsr at64
+            lda #lo(s_header)
+            ldy #hi(s_header)
+            jsr print64
+            ldx #0
+            ldy #32
+            jsr at64
+            lda #lo(YZ+4)
+            sta str
+            lda #hi(YZ+4)
+            sta str+1
+            ldx #30
+            jsr putn64
+            ldx #2
+            ldy #0
+            jsr at64
+            lda #lo(s_trkcols)
+            ldy #hi(s_trkcols)
+            jsr print64
+            ldx #31
+            ldy #0
+            jsr at64
+            lda #lo(s_playhelp)
+            ldy #hi(s_playhelp)
+            jsr print64
+            lda #$FF
+            sta trkframe
+            sta trkmark
+            lda #0
+            sta trkphase
+            sta trkflash
+            rts
+
+; Курсор АЦР-64: X - строка, Y - колонка
+at64        lda rowlo,x
+            sta scr
+            lda rowhi,x
+            sta scr+1
+            tya
+            clc
+            adc scr
+            sta scr
+            bcc a64_1
+            inc scr+1
+a64_1       rts
+
+putc64      ldy #0
+            sta (scr),y
+            inc scr
+            bne p64_1
+            inc scr+1
+p64_1       rts
+
+print64     sta str
+            sty str+1
+pr64_l      ldy #0
+            lda (str),y
+            beq pr64_r
+            jsr putc64
+            inc str
+            bne pr64_l
+            inc str+1
+            bne pr64_l
+pr64_r      rts
+
+putn64      ldy #0
+            lda (str),y
+            jsr putc64
+            inc str
+            bne pn64_1
+            inc str+1
+pn64_1      dex
+            bne putn64
+            rts
+
+hex64       pha
+            lsr a
+            lsr a
+            lsr a
+            lsr a
+            jsr hexd64
+            pla
+            and #$0F
+hexd64      cmp #10
+            bcc h64_1
+            adc #6
+h64_1       adc #$B0
+            jmp putc64
+
+dec3_64     ldx #$B0
+d64_1       cmp #100
+            bcc d64_2
+            sbc #100
+            inx
+            bne d64_1
+d64_2       pha
+            txa
+            jsr putc64
+            pla
+            ldx #$B0
+d64_3       cmp #10
+            bcc d64_4
+            sbc #10
+            inx
+            bne d64_3
+d64_4       pha
+            txa
+            jsr putc64
+            pla
+            ora #$B0
+            jmp putc64
+
+; --- Тик вида ---
+trk_tick    ; новая страница?
+            lda row
+            ldx #0
+tk_pg       cmp #TRK_ROWS
+            bcc tk_pg1
+            sbc #TRK_ROWS
+            inx
+            bne tk_pg
+tk_pg1      sta t0              ; строка на странице
+            lda frame
+            cmp trkframe
+            bne tk_new
+            cpx trkpage
+            beq tk_cont
+tk_new      sta trkframe
+            stx trkpage
+            lda #1
+            sta trkphase
+            lda #$FF
+            sta trkmark
+tk_cont     lda trkphase
+            beq tk_mark
+            cmp #8
+            bcs tk_chan
+            ; очистка 4 строк страницы
+            sec
+            sbc #1
+            asl a
+            asl a
+            clc
+            adc #TRK_TOP
+            sta t1
+            lda #4
+            sta t2
+tk_cl       ldx t1
+            ldy #0
+            jsr at64
+            ldy #63
+            lda #$A0
+tk_cl1      sta (scr),y
+            dey
+            bpl tk_cl1
+            ; номер строки кадра (hex)
+            lda t1
+            sec
+            sbc #TRK_TOP
+            sta t3
+            lda trkpage
+            beq tk_cl2
+            lda t3
+            clc
+            adc #TRK_ROWS
+            sta t3
+tk_cl2      ldx t1
+            ldy #0
+            jsr at64
+            lda t3
+            jsr hex64
+            inc t1
+            dec t2
+            bne tk_cl
+            jmp tk_adv
+tk_chan     sec
+            sbc #8
+            jsr trk_decode
+tk_adv      inc trkphase
+            lda trkphase
+            cmp #15
+            bcc tk_mark
+            lda #0
+            sta trkphase
+tk_mark     ; указатель строки
+            lda t0
+            cmp trkmark
+            beq tk_info
+            lda trkmark
+            cmp #$FF
+            beq tk_m1
+            clc
+            adc #TRK_TOP
+            tax
+            ldy #3
+            jsr at64
+            lda #$A0
+            jsr putc64
+tk_m1       lda t0
+            sta trkmark
+            clc
+            adc #TRK_TOP
+            tax
+            ldy #3
+            jsr at64
+            lda #$BE            ; >
+            jsr putc64
+tk_info     ; кадр и время в строке 1, раз в 8 тиков
+            lda tick
+            and #7
+            bne tk_fl
+            ldx #1
+            ldy #0
+            jsr at64
+            lda #$EB            ; К
+            jsr putc64
+            lda #$A0
+            jsr putc64
+            lda frame
+            jsr dec3_64
+            lda #$A0
+            jsr putc64
+            jsr putc64
+            lda secs
+            sta tmp16
+            lda secs+1
+            sta tmp16+1
+            jsr mmss64
+tk_fl       ; вспышка на ударах
+            lda c_meter+5
+            cmp #$FF
+            beq tk_hit
+            lda c_meter+6
+            cmp #$FF
+            bne tk_fl1
+tk_hit      lda #$E0
+            sta c_meter+5
+            sta c_meter+6
+            sta $C05A           ; палитра 1: белая
+            sta $C058
+            lda #4
+            sta trkflash
+            rts
+tk_fl1      lda trkflash
+            beq tk_r
+            dec trkflash
+            bne tk_r
+            sta $C05B
+            sta $C058
+tk_r        rts
+
+mmss64      ldx #0
+m64_1       lda tmp16
+            sec
+            sbc #60
+            tay
+            lda tmp16+1
+            sbc #0
+            bcc m64_2
+            sta tmp16+1
+            sty tmp16
+            inx
+            bne m64_1
+m64_2       txa
+            jsr dec2_64
+            lda #$BA
+            jsr putc64
+            lda tmp16
+dec2_64     ldx #$B0
+d264_1      cmp #10
+            bcc d264_2
+            sbc #10
+            inx
+            bne d264_1
+d264_2      pha
+            txa
+            jsr putc64
+            pla
+            ora #$B0
+            jmp putc64
+
+; Канал A страницы trkframe/trkpage: разобрать паттерн с начала кадра
+trk_decode  sta trkcol
+            ; zt = начало записи кадра
+            lda trkframe
+            sta t0
+            lda #0
+            sta t1
+            lda t0
+            asl a
+            rol t1
+            asl a
+            rol t1
+            asl a
+            rol t1
+            clc
+            adc t0
+            bcc dc_1
+            inc t1
+dc_1        clc
+            adc ordp
+            sta zt
+            lda t1
+            adc ordp+1
+            sta zt+1
+            ldy #0
+            lda (zt),y
+            sta t3              ; строк в кадре
+            ldy trkcol
+            iny
+            lda (zt),y
+            asl a
+            sta t1
+            lda #0
+            rol a
+            sta t2
+            lda ptabp
+            clc
+            adc t1
+            sta tmp16
+            lda ptabp+1
+            adc t2
+            sta tmp16+1
+            ldy #0
+            lda (tmp16),y
+            sta str
+            iny
+            lda (tmp16),y
+            clc
+            adc #hi(YZ)
+            sta str+1
+            ; первая строка страницы
+            lda trkpage
+            ldx #0
+            stx t2              ; строка кадра
+            tax
+            lda #0
+dc_pg       cpx #0
+            beq dc_pg1
+            clc
+            adc #TRK_ROWS
+            dex
+            jmp dc_pg
+dc_pg1      sta t1              ; первая строка страницы
+dc_row      lda t2
+            cmp t3
+            bcc dc_cmd
+            rts
+            ; команды строки t2
+dc_cmd      ldy #0
+            lda (str),y
+            inc str
+            bne dc_2
+            inc str+1
+dc_2        cmp #$80
+            bcc dc_2a
+            jmp dc_term
+dc_2a
+            cmp #$60
+            bcc dc_note
+            cmp #$62
+            bcc dc_off
+            beq dc_ins
+            cmp #$63
+            beq dc_leg
+            jsr dc_skip         ; эффект: пропустить параметр
+            jmp dc_cmd
+dc_ins      ldy #0
+            lda (str),y
+            sta mval            ; инструмент - показать рядом с нотой
+            jsr dc_skip
+            lda trkcol
+            cmp #5
+            bcs dc_cmd
+            ldx #5
+            jsr dc_at
+            bcs dc_cmd
+            lda mval
+            jsr hex64
+            jmp dc_cmd
+dc_leg      ldy #0
+            lda (str),y
+            jsr dc_skip
+            pha
+            ldx #0
+            jsr dc_at
+            pla
+            bcs dc_cmd
+            jsr dc_putnote
+            lda #$DE            ; ^ - лига
+            jsr putc64
+            jmp dc_cmd
+dc_note     pha
+            ldx #0
+            jsr dc_at
+            pla
+            bcs dc_cmd
+            ldx trkcol
+            cpx #5
+            bcs dc_dr
+            jsr dc_putnote
+            jmp dc_cmd
+dc_dr       jsr hex64
+            jmp dc_cmd
+dc_off      pha
+            ldx #0
+            jsr dc_at
+            pla
+            bcs dc_jc
+            cmp #$60
+            bne dc_cut
+            lda #$BD            ; ===
+            bne dc_o3
+dc_cut      lda #$DE            ; ^^^
+dc_o3       sta t0
+            jsr putc64
+            lda t0
+            jsr putc64
+            lda trkcol
+            cmp #5
+            bcs dc_jc
+            lda t0
+            jsr putc64
+dc_jc       jmp dc_cmd
+dc_term     and #$7F
+            sec
+            adc t2              ; строка + 1 + пропуск
+            sta t2
+            jmp dc_row
+dc_end      rts
+
+dc_skip     inc str
+            bne dsk_1
+            inc str+1
+dsk_1       rts
+
+; Курсор на строку t2 канала trkcol, смещение X в колонке; C = 1 - не на странице
+dc_at       lda t2
+            sec
+            sbc t1
+            bcc dca_no
+            cmp #TRK_ROWS
+            bcs dca_no
+            clc
+            adc #TRK_ROWS-TRK_ROWS+TRK_TOP
+            stx t0
+            tax
+            ldy trkcol
+            lda trkx,y
+            clc
+            adc t0
+            tay
+            jsr at64
+            clc
+            rts
+dca_no      sec
+            rts
+
+; Нота A: «C#4»
+dc_putnote  tay
+            lda div12,y
+            pha
+            lda mod12,y
+            asl a
+            tay
+            lda notenm,y
+            sty t0
+            jsr putc64
+            ldy t0
+            lda notenm+1,y
+            jsr putc64
+            pla
+            ora #$B0
+            jmp putc64
+
+trkx        db 5,14,23,32,41,51,56
