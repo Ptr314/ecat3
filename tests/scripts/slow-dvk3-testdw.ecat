@@ -11,7 +11,7 @@
 # память, образ не меняется.
 # @timeout 600
 MACHINE "dvk/DVK-3.cfg"
-COMMAND dw.load("rt11-dw.dsk")
+COMMAND dw.load("../library/dvk/rt11-dw.dsk")
 COMMAND dw.volatile(1)
 WAIT _2000
 KEY _100,_50,ret

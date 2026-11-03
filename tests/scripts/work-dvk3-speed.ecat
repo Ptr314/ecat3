@@ -6,7 +6,7 @@
 # тыс. операций в секунду называют для ДВК-3).
 # @timeout 300
 MACHINE "dvk/DVK-3.cfg"
-COMMAND my0.load("FODOSTMO.DSK")
+COMMAND my0.load("../library/dvk/FODOSTMO.DSK")
 WAIT _2000
 KEY _100,_50,ret
 WAIT _300

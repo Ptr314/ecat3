@@ -8,7 +8,7 @@
 # номер и стоит; без ошибок машина выводит «тест КЦГД окончен».
 # @timeout 400
 MACHINE "../../tests/files/dvk4-kcgd181.ext"
-COMMAND my0.load("FODOSTMO.DSK")
+COMMAND my0.load("../library/dvk/FODOSTMO.DSK")
 WAIT _12000
 TYPE "BMY0"
 WAIT _20000

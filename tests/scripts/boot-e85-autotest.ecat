@@ -4,6 +4,7 @@
 # Таблица конфигурации - в конце ОЗУ, все коды ошибок нулевые
 # @timeout 100
 MACHINE "computers/e85/MS0585.cfg"
+COMMAND fd0.eject()
 WAIT _25000
 LOGDEFS _16,_8
 PRINT "=== Таблица конфигурации ==="

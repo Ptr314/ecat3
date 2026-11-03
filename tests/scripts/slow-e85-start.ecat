@@ -3,7 +3,7 @@
 # таблицу и спрашивает имя файла. Это проверка окон, меню среды и задач в ней
 # @timeout 200
 MACHINE "computers/e85/MS0585-NMD.ext"
-COMMAND knmd.load("software/e85/pros-2.03-10m.rd")
+COMMAND knmd.load("../library/e85/pros-2.03-10m.rd")
 COMMAND knmd.volatile(1)
 LOGDEFS _16,_8
 WAIT _45000
@@ -61,7 +61,7 @@ WAIT _100
 KEYUP key_f16
 WAIT _300
 WAIT _5000
-COMMAND fd0.load("software/e85/start-1.dsk")
+COMMAND fd0.load("../library/e85/start-1.dsk")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100
@@ -113,7 +113,7 @@ WAIT _100
 KEYUP key_f7
 WAIT _300
 WAIT _15000
-COMMAND fd1.load("software/e85/start-2.dsk")
+COMMAND fd1.load("../library/e85/start-2.dsk")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100
@@ -178,7 +178,7 @@ WAIT _100
 KEYUP key_f16
 WAIT _300
 WAIT _5000
-COMMAND fd0.load("software/e85/start-5.dsk")
+COMMAND fd0.load("../library/e85/start-5.dsk")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100

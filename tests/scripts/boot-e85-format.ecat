@@ -4,7 +4,7 @@
 # прошивке программа тоже сообщает об успехе, но дорожек не пишет
 # @timeout 120
 MACHINE "../../tests/files/e85-kochan-f1.ext"
-COMMAND knmd.load("software/e85/pros-2.03-10m.rd")
+COMMAND knmd.load("../library/e85/pros-2.03-10m.rd")
 COMMAND knmd.volatile(1)
 LOGDEFS _16,_8
 WAIT _45000
@@ -62,7 +62,7 @@ WAIT _100
 KEYUP key_f16
 WAIT _300
 WAIT _5000
-COMMAND fd0.load("software/e85/format-2.0.dsk")
+COMMAND fd0.load("../library/e85/format-2.0.dsk")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100
@@ -105,7 +105,7 @@ COMMAND fd0.eject()
 COMMAND fd1.eject()
 RESET cold
 WAIT _45000
-COMMAND fd0.load("software/e85/emul-1.3.hfe")
+COMMAND fd0.load("../library/e85/emul-1.3.hfe")
 LOG fd0.deleted
 WAIT _2000
 KEYDOWN key_down

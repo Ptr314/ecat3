@@ -3,7 +3,7 @@
 # поэтому снимок маленький. Запуск от deploy/
 # @timeout 60
 MACHINE "computers/e85/MS0585.cfg"
-COMMAND fd0.load("software/e85/start-2.dsk")
+COMMAND fd0.load("../library/e85/start-2.dsk")
 COMMAND fd0.mark(_1,_0,_1)
 COMMAND fd0.mark(_1,_0,_2)
 COMMAND fd0.mark(_1,_0,_3)

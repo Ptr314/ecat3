@@ -7,7 +7,7 @@
 # останавливает машину.
 # @timeout 900
 MACHINE "../../tests/files/dvk4-ksm.ext"
-COMMAND my0.load("FODOSTMO.DSK")
+COMMAND my0.load("../library/dvk/FODOSTMO.DSK")
 WAIT _12000
 TYPE "BMY0"
 WAIT _20000

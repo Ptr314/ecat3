@@ -4,7 +4,7 @@
 # с перевёрнутыми блоками и упала бы при запуске (состояние 4, код ошибки 8). Образ - tests/files/make-emul-1.3.ecat
 # @timeout 300
 MACHINE "computers/e85/MS0585-1702.ext"
-COMMAND knmd.load("software/e85/pros-2.03-10m.rd")
+COMMAND knmd.load("../library/e85/pros-2.03-10m.rd")
 COMMAND knmd.volatile(1)
 LOGDEFS _16,_8
 WAIT _45000
@@ -62,7 +62,7 @@ WAIT _100
 KEYUP key_f16
 WAIT _300
 WAIT _5000
-COMMAND fd0.load("software/e85/emul-1.3.hfe")
+COMMAND fd0.load("../library/e85/emul-1.3.hfe")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100
@@ -106,7 +106,7 @@ SCREEN "../results/slow-e85-emul13-install.png"
 COMMAND fd0.eject()
 RESET cold
 WAIT _45000
-COMMAND fd0.load("software/e85/eldos-msdos-3.30.dsk")
+COMMAND fd0.load("../library/e85/eldos-msdos-3.30.dsk")
 WAIT _2000
 KEYDOWN key_down
 WAIT _100

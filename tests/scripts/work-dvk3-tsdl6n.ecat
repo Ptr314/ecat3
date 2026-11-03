@@ -10,7 +10,7 @@ COMMAND k3.plug(1)
 COMMAND k4.plug(1)
 COMMAND k5.plug(1)
 COMMAND k6.plug(1)
-COMMAND my0.load("FODOSTMO.DSK")
+COMMAND my0.load("../library/dvk/FODOSTMO.DSK")
 WAIT _2000
 KEY _100,_50,ret
 WAIT _300

@@ -18,7 +18,7 @@
 # @timeout 180
 
 MACHINE "uknc/UKNC.cfg"
-COMMAND fdd0.load("basic.dsk")
+COMMAND fdd0.load("../library/uknc/basic.dsk")
 WAIT _12000
 
 LOGDEFS _16,_8

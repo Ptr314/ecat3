@@ -52,7 +52,7 @@ KEY _100,_100,ret
 WAIT _60000
 KEY _100,_100,ret
 WAIT _25000
-COMMAND fdd1.load("../../deploy/software/uknc/basic.dsk")
+COMMAND fdd1.load("../library/uknc/basic.dsk")
 WAIT _500
 TYPE "RU MZ1:DBAS\n"
 WAIT _10000

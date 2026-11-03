@@ -1,0 +1,43 @@
+Дискета start-1.dsk  (том START1)
+Пакет СТАРТ, дискета 1: оконная среда
+============================================================================
+Пакет СТАРТ: оконная среда для ПРОС 2.03 и её программы на пяти дискетах.
+Ставится на винчестер: start-1.dsk в привод 0, «Установить прикладную программу
+на диск»; вторую дискету установка просит в привод 2. Программы с дискет 3-5
+ставятся каждая отдельно. Проверены сама среда и запуск «Электронного листа».
+
+На этой дискете - сама среда (каталог [ZZPROVUE]) и установка пакета.
+
+Источник: docs-external/E85/DSK/005/001_START.dsk (то же, что 010_START.dsk).
+Формат: Files-11 ODS-1, дискета 400 КБ (80 дорожек по 10 секторов), секторы
+в физическом порядке.
+
+Файл                     Блоки  Создан     Описание
+-----------------------  -----  ---------  ------------------------------------
+[ZZPROVUE]INSPRT.TSK;1      36  13-FEB-89
+[ZZPROVUE]ENVEXE.TSK;1      26  13-FEB-89
+[ZZPROVUE]MANAGE.TSK;1      94  13-FEB-89
+[ZZPROVUE]WISVR.TSK;1      137  08-MAY-88
+[ZZPROVUE]WIN.TSK;1         93  08-MAY-88
+[ZZPROVUE]STRENV.TSK;1      11  13-FEB-89
+[ZZPROVUE]SYNREM.TSK;1      27  13-FEB-89
+[ZZPROVUE]INSAPP.TSK;1      49  13-FEB-89
+[ZZPROVUE]REMEXE.TSK;1      30  13-FEB-89
+[ZZPROVUE]DUMRUN.TSK;1      15  13-FEB-89
+[ZZPROVUE]WIF0.TSK;1         3  13-FEB-89
+[ZZPROVUE]WIF2.TSK;1        12  13-FEB-89
+[ZZPROVUE]WIF3.TSK;1        12  13-FEB-89
+[ZZPROVUE]WIF5.TSK;1        12  13-FEB-89
+[ZZPROVUE]WIF6.TSK;1        12  13-FEB-89
+[ZZPROVUE]WIF1.TSK;1        12  13-FEB-89
+[ZZPROVUE]WIF8.TSK;1        12  13-FEB-89
+[ZZPROVUE]UI.OFF;1         102  13-FEB-89
+[ZZPROVUE]WINSVR.OFF;1       8  13-FEB-89
+[ZZPROVUE]SYNERR.HLP;1      10  13-FEB-89  справка по ошибкам
+[ZZPROVUE]INSPRT.MSG;1       6  13-FEB-89
+[ZZPROVUE]SYNERGY.STR;1      1  13-FEB-89
+
+[START]START.INS;1           5  13-FEB-89  установка «Пакет   С Т А Р Т»
+-----------------------  -----
+Файлов 23, блоков 725 (блок - 512 байт). Системные файлы тома
+(INDEXF.SYS, BITMAP.SYS, BADBLK.SYS, CORIMG.SYS, каталоги) не показаны.

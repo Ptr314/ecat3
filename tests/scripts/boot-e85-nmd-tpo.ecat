@@ -2,20 +2,20 @@
 # без винчестера добавляется «Накопитель МД»: запись и чтение на рабочем цилиндре
 # @timeout 200
 MACHINE "computers/e85/MS0585-NMD.ext"
-COMMAND knmd.load("software/e85/pros-2.03-10m.rd")
+COMMAND knmd.load("../library/e85/pros-2.03-10m.rd")
 COMMAND knmd.volatile(1)
 COMMAND fd0.load("software/e85/pros-d-1.8-system.dsk")
 WAIT _60000
 COMMAND fd0.eject()
 WAIT _3000
-COMMAND fd0.load("software/e85/tpo-1.dsk")
+COMMAND fd0.load("../library/e85/tpo-1.dsk")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100
 KEYUP key_f7
 WAIT _300
 WAIT _30000
-COMMAND fd1.load("software/e85/tpo-2.dsk")
+COMMAND fd1.load("../library/e85/tpo-2.dsk")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100

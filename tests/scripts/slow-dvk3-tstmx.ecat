@@ -11,7 +11,7 @@
 # дополняется нулями.
 # @timeout 900
 MACHINE "dvk/DVK-3.cfg"
-COMMAND my0.load("FODOSTMO.DSK")
+COMMAND my0.load("../library/dvk/FODOSTMO.DSK")
 COMMAND mx1.load("../files/mx-blank.img")
 WAIT _2000
 KEY _100,_50,ret

@@ -4,9 +4,9 @@
 # два одинаковых байта от принтера доходят до приёмника порознь
 # @timeout 120
 MACHINE "computers/e85/MS0585-NMD.ext"
-COMMAND knmd.load("software/e85/pros-2.03-10m.rd")
+COMMAND knmd.load("../library/e85/pros-2.03-10m.rd")
 COMMAND knmd.volatile(1)
-COMMAND fd0.load("software/e85/emul-1.3.hfe")
+COMMAND fd0.load("../library/e85/emul-1.3.hfe")
 LOGDEFS _16,_8
 WAIT _45000
 LOG prn.sent

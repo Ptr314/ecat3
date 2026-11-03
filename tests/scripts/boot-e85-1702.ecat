@@ -6,7 +6,7 @@
 # один NMI, один INTR
 # @timeout 120
 MACHINE "computers/e85/MS0585-1702.ext"
-COMMAND knmd.load("software/e85/pros-2.03-10m-pc.rd")
+COMMAND knmd.load("../library/e85/pros-2.03-10m-pc.rd")
 COMMAND knmd.volatile(1)
 WAIT _60000
 LOGDEFS _16,_8

@@ -1,0 +1,36 @@
+Дискета start-2.dsk  (том START2)
+Пакет СТАРТ, дискета 2: текстово-графический редактор
+============================================================================
+Вторая дискета пакета СТАРТ: текстово-графический редактор (каталоги [ZZCET2] и
+[ZZSKETCH], справки .GID). Её просит установка с start-1.dsk, в привод 2.
+
+Источник: docs-external/E85/DSK/005/002_START.dsk (то же, что 012_START.dsk).
+Формат: Files-11 ODS-1, дискета 400 КБ (80 дорожек по 10 секторов), секторы
+в физическом порядке.
+
+Файл                       Блоки  Создан     Описание
+-------------------------  -----  ---------  ------------------------------------
+[ZZCET2]PVUSYN.TSK;1          63  08-AUG-89
+[ZZCET2]CETSK.TSK;1          194  08-AUG-89
+[ZZCET2]PROSEFRMS.OFF;1      128  08-AUG-89  кадры редактора
+[ZZCET2]PROSESK.UDK;1         10  08-AUG-89  клавиши редактора
+[ZZCET2]PROSESK.TSK;1         32  08-AUG-89
+
+[ZZSKETCH]GEDSYN.TSK;1       148  08-AUG-89
+[ZZSKETCH]GEDROMAN.TSK;1      15  08-AUG-89
+[ZZSKETCH]GEDFRMS.OFF;1       21  08-AUG-89  кадры графической части
+[ZZSKETCH]HADDOPSYN.GID;1      4  08-AUG-89
+[ZZSKETCH]HCOPYSYN.GID;1       6  08-AUG-89
+[ZZSKETCH]HDRAGSYN.GID;1       3  08-AUG-89
+[ZZSKETCH]HEDPADSYN.GID;1      4  08-AUG-89
+[ZZSKETCH]HEXITSYN.GID;1       3  08-AUG-89
+[ZZSKETCH]HFCTKYSYN.GID;1      5  08-AUG-89
+[ZZSKETCH]HFINDSYN.GID;1       3  08-AUG-89
+[ZZSKETCH]HNEWOBSYN.GID;1      4  08-AUG-89
+[ZZSKETCH]HOLDOBSYN.GID;1      5  08-AUG-89
+[ZZSKETCH]HPICLBSYN.GID;1      3  08-AUG-89
+[ZZSKETCH]HREMOVSYN.GID;1      3  08-AUG-89
+[ZZSKETCH]HSTARTSYN.GID;1      4  08-AUG-89
+-------------------------  -----
+Файлов 20, блоков 658 (блок - 512 байт). Системные файлы тома
+(INDEXF.SYS, BITMAP.SYS, BADBLK.SYS, CORIMG.SYS, каталоги) не показаны.

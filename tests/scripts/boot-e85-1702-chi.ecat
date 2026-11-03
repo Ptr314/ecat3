@@ -2,10 +2,10 @@
 # портах платы
 # @timeout 120
 MACHINE "computers/e85/MS0585-1702.ext"
-COMMAND knmd.load("software/e85/pros-2.03-10m-pc.rd")
+COMMAND knmd.load("../library/e85/pros-2.03-10m-pc.rd")
 COMMAND knmd.volatile(1)
 WAIT _45000
-COMMAND fd0.load("software/e85/eldos-chi-dos-3.30.dsk")
+COMMAND fd0.load("../library/e85/eldos-chi-dos-3.30.dsk")
 WAIT _2000
 KEYDOWN key_down
 WAIT _100

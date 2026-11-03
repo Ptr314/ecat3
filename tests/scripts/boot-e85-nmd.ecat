@@ -3,7 +3,7 @@
 # в Основное меню. Образ создан самой машиной, см. slow-e85-install
 # @timeout 120
 MACHINE "computers/e85/MS0585-NMD.ext"
-COMMAND knmd.load("software/e85/pros-2.03-10m.rd")
+COMMAND knmd.load("../library/e85/pros-2.03-10m.rd")
 COMMAND knmd.volatile(1)
 WAIT _60000
 LOGDEFS _16,_8

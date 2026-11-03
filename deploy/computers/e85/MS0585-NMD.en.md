@@ -10,9 +10,11 @@ picture of the system unit with device code 000401 and error code 000005.
 
 ## PROS 2.03
 
-A ready system with games is in `software/e85/pros-2.03-10m.rd`. Put a copy of this
-file into the hard disk slot and restart the machine: the main menu appears in 40
-seconds. Drive 0 must be empty: with a floppy in it, the ROM boots from the floppy.
+A ready system with games is the image `pros-2.03-10m.rd`. It does not come with the
+emulator: it and the floppies below are in the software library on the emulator's site
+(https://ecat.emuverse.ru). Put a copy of this file into the hard disk slot and restart
+the machine: the main menu appears in 40 seconds. Drive 0 must be empty: with a floppy
+in it, the ROM boots from the floppy.
 
 ## Games
 

@@ -4,7 +4,7 @@
 # на итоговом экране - «ОШИБОК НЕТ», mc1702.writes растёт только от этого теста
 # @timeout 200
 MACHINE "computers/e85/MS0585-1702.ext"
-COMMAND knmd.load("software/e85/pros-2.03-10m.rd")
+COMMAND knmd.load("../library/e85/pros-2.03-10m.rd")
 COMMAND knmd.volatile(1)
 LOGDEFS _16,_8
 WAIT _45000
@@ -62,7 +62,7 @@ WAIT _100
 KEYUP key_f16
 WAIT _300
 WAIT _5000
-COMMAND fd0.load("software/e85/tpo-1.dsk")
+COMMAND fd0.load("../library/e85/tpo-1.dsk")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100
@@ -100,7 +100,7 @@ WAIT _100
 KEYUP key_f16
 WAIT _300
 WAIT _35000
-COMMAND fd1.load("software/e85/tpo-2.dsk")
+COMMAND fd1.load("../library/e85/tpo-2.dsk")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100
@@ -225,7 +225,7 @@ WAIT _100
 KEYUP key_f16
 WAIT _300
 WAIT _8000
-COMMAND fd0.load("software/e85/emul-1.3.hfe")
+COMMAND fd0.load("../library/e85/emul-1.3.hfe")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100
@@ -240,8 +240,8 @@ WAIT _20000
 LOG mc1702.writes
 COMMAND fd0.eject()
 WAIT _1000
-COMMAND fd0.load("software/e85/tpo-1.dsk")
-COMMAND fd1.load("software/e85/tpo-2.dsk")
+COMMAND fd0.load("../library/e85/tpo-1.dsk")
+COMMAND fd1.load("../library/e85/tpo-2.dsk")
 WAIT _3000
 KEYDOWN key_down
 WAIT _100

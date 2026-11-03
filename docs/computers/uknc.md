@@ -16,12 +16,12 @@
 
 ## Что нужно
 
-ПЗУ машины и картриджей входят в поставку: `deploy/computers/uknc/`. Дискеты &ndash; в `software/uknc`: `sysimage.dsk` (FODOS, заводской тест), `sys1002.dsk` (RT-11), `basic.dsk` (дисковый Бейсик).
+ПЗУ машины и картриджей входят в поставку: `deploy/computers/uknc/`. Дискеты &ndash; в `software/uknc`: `sysimage.dsk` (FODOS, заводской тест), `sys1002.dsk` (RT-11). Дисковый Бейсик `basic.dsk` &ndash; в библиотеке программ на сайте эмулятора (https://ecat.emuverse.ru).
 
 Дополнительно, по необходимости:
 * Образ винчестера &ndash; в поставку не входит; подключается кнопкой винчестера или кладется в `software/uknc/hdd.img`.
 * Загрузка по стыку С2 (протокол HX) &ndash; сервер [OpenHX](https://github.com/anpp/openhxserver) и пара виртуальных портов (Windows &ndash; com0com, Linux &ndash; socat).
-* Перевод записи кассеты WAV в `.uknc.tap` &ndash; Python 3 и `software/uknc/wav2uknc.py`.
+* Перевод записи кассеты WAV в `.uknc.tap` &ndash; Python 3 и `wav2uknc.py` из библиотеки программ на сайте.
 
 ## Файлы
 

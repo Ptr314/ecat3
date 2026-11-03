@@ -1,0 +1,163 @@
+Винчестер pros-2.03-10m.rd  (том BIGVOLUME)
+Винчестер 10 МБ: ПРОС 2.03 и игры
+============================================================================
+Образ винчестера МС5401 на 10 МБ (4 головки, 306 цилиндров, 16 секторов по 512
+байт) для конфигурации «МС 0585 с винчестером»: ПРОС 2.03 и 14 программ. Собран
+самой машиной в eCat3: программа установки ПРОС с дискет pros-2.03-1..5 на чистый
+диск, затем все игры с igra.dsk и igra-color.dsk.
+
+Меню игр: Основное - Посадка на Луну, Лабиринт, Xonix, Сапер, Карлики; А - Червячок,
+Backgammon, China-Town, Space Shuttle, Blackjack Trainer; Б - Пещера, Вертолет,
+Каменщик, Тетрис. Меню А и Б открываются из «Дополнительных меню».
+
+Запуск: копию файла вставить в гнездо винчестера (машина меняет образ при каждой
+загрузке), привод 0 пуст. Основное меню появляется через 40 секунд.
+
+Прикладные программы установлены в каталоги [ZZAPnnnnn]; Вертолет и Каменщик
+(HELBY.TSK, SO.TSK) лежат в [ZZSYS], как и на igra-color.dsk. Дата создания у всех
+файлов одна, 01-JAN-88: такая стояла на часах машины при установке.
+
+Формат: Files-11 ODS-1; блок 0 тома лежит в секторе 1 образа (сектор 0 образа
+в том не входит).
+
+Файл                        Блоки  Создан     Описание
+--------------------------  -----  ---------  ------------------------------------
+[ZZSYS]SETUP.DAT;1              4  01-JAN-88  установленные режимы
+[ZZSYS]KBTTAB.DAT;1             6  01-JAN-88  таблица клавиатуры
+[ZZSYS]POS.SYS;1              595  01-JAN-88  образ ядра ПРОС
+[ZZSYS]POSRES.TSK;1            39  01-JAN-88  резидентная библиотека ПРОС
+[ZZSYS]CTEX.MSG;1               5  01-JAN-88
+[ZZSYS]CMAIN.TSK;1             43  01-JAN-88  Основное меню, запуск прикладных программ по их .INS
+[ZZSYS]ACCNT.TSK;1             23  01-JAN-88
+[ZZSYS]CSUTL.TSK;1            105  01-JAN-88
+[ZZSYS]SERSAP.TSK;1            26  01-JAN-88
+[ZZSYS]SETUP.MSG;1              7  01-JAN-88  сообщения Установки режимов
+[ZZSYS]SETUP.HLP;1             13  01-JAN-88  справка Установки режимов
+[ZZSYS]CAINS.TSK;1            112  01-JAN-88  установка прикладной программы на диск
+[ZZSYS]CAREM.TSK;1             85  01-JAN-88  удаление прикладной программы с диска
+[ZZSYS]FCSRES.TSK;1            31  01-JAN-88  резидентная библиотека FCS
+[ZZSYS]CSTART.TSK;1            16  01-JAN-88
+[ZZSYS]XKDRV.TSK;1             18  01-JAN-88  загружаемый драйвер устройства XK:
+[ZZSYS]XTDRV.TSK;1             18  01-JAN-88  загружаемый драйвер устройства XT:
+[ZZSYS]COMLIB.TSK;1            13  01-JAN-88
+[ZZSYS]COMSETUP.DAT;1           1  01-JAN-88  режимы коммуникационного порта
+[ZZSYS]CGLGRT.TSK;1            13  01-JAN-88  графическая библиотека CGL
+[ZZSYS]GIFILE.TSK;1            50  01-JAN-88
+[ZZSYS]GIBITM.TSK;1            59  01-JAN-88
+[ZZSYS]STARTUP.TSK;1           33  01-JAN-88  начальный запуск системы
+[ZZSYS]CTEX.TSK;1              29  01-JAN-88
+[ZZSYS]CBUTL.TSK;1             88  01-JAN-88
+[ZZSYS]CFUTL.TSK;1            128  01-JAN-88  Обслуживание файлов
+[ZZSYS]CDUTL.TSK;1             84  01-JAN-88  Обслуживание диска/дискетов
+[ZZSYS]CPRNT.TSK;1             68  01-JAN-88  Обслуживание печати
+[ZZSYS]CBTLOG.TSK;1            23  01-JAN-88
+[ZZSYS]CPUTL.TSK;1             63  01-JAN-88
+[ZZSYS]CVUTL.TSK;1             76  01-JAN-88
+[ZZSYS]COPY.TSK;1              33  01-JAN-88
+[ZZSYS]SYSINI.TSK;1             7  01-JAN-88
+[ZZSYS]DAPRES.TSK;1            40  01-JAN-88  резидентная библиотека DAP
+[ZZSYS]RMSERR.MSG;1             4  01-JAN-88  сообщения об ошибках RMS
+[ZZSYS]BRUTL.HLP;1              5  01-JAN-88  справка к ним
+[ZZSYS]BRUTL.MNU;1              4  01-JAN-88  меню резервирования и восстановления файлов, инициализации дискетов
+[ZZSYS]BRUTL.MSG;1             12  01-JAN-88  сообщения к ним
+[ZZSYS]CTEX.HLP;1              39  01-JAN-88  справочное меню: справка по всем службам системы
+[ZZSYS]DUTL.MNU;1               7  01-JAN-88  меню Обслуживания диска/дискетов
+[ZZSYS]DUTL.HLP;1              21  01-JAN-88  справка Обслуживания диска/дискетов
+[ZZSYS]DUTL.MSG;1              18  01-JAN-88  сообщения Обслуживания диска/дискетов
+[ZZSYS]FUTL.MNU;1               8  01-JAN-88  меню Обслуживания файлов
+[ZZSYS]FUTL.HLP;1              21  01-JAN-88  справка Обслуживания файлов
+[ZZSYS]FUTL.MSG;1              15  01-JAN-88  сообщения Обслуживания файлов
+[ZZSYS]SYSTEM.MNU;1             5  01-JAN-88  общие меню дополнительных вариантов
+[ZZSYS]PRINT.MNU;1             12  01-JAN-88  меню обслуживания печати, установка характеристик ПУ МС6307М
+[ZZSYS]PRINT.HLP;1             24  01-JAN-88  справка обслуживания печати
+[ZZSYS]PRINT.MSG;1             11  01-JAN-88  сообщения обслуживания печати
+[ZZSYS]MESBRD.HLP;1             3  01-JAN-88  справка обзора состояния
+[ZZSYS]INSAPPL.SYS;1           16  01-JAN-88  список установленных прикладных программ
+[ZZSYS]MSGBOARD.SYS;1          32  01-JAN-88  сообщения обзора состояния
+[ZZSYS]INIT.MSG;1               3  01-JAN-88
+[ZZSYS]NSHODIR.TSK;1           73  01-JAN-88
+[ZZSYS]GIROBT.TSK;1            59  01-JAN-88
+[ZZSYS]REDAK.MNU;1              3  01-JAN-88  меню Редактора
+[ZZSYS]CET.TSK;1              123  01-JAN-88  Редактор текстов
+[ZZSYS]REDAK.HLP;1             69  01-JAN-88  справка Редактора
+[ZZSYS]REDAK.MSG;1              8  01-JAN-88  сообщения Редактора
+[ZZSYS]REDAK.UDK;1             10  01-JAN-88  клавиши Редактора
+[ZZSYS]C81LIB.TSK;1            34  01-JAN-88  библиотека времени выполнения КОБОЛа-81
+[ZZSYS]PBESML.TSK;1            34  01-JAN-88
+[ZZSYS]PBFSML.TSK;1            34  01-JAN-88
+[ZZSYS]PROF77.TSK;1            34  01-JAN-88  библиотека времени выполнения Фортрана-77
+[ZZSYS]DBLPRO.TSK;1            30  01-JAN-88
+[ZZSYS]PASRES.TSK;1            34  01-JAN-88  библиотека времени выполнения Паскаля
+[ZZSYS]PROSORT.TSK;1           74  01-JAN-88  сортировка файлов
+[ZZSYS]PROSORT.SYS;1           25  01-JAN-88  сортировка файлов
+[ZZSYS]CGLEIS.TSK;1            27  01-JAN-88  графическая библиотека CGL, вариант для EIS
+[ZZSYS]CGLFPU.TSK;1            24  01-JAN-88  графическая библиотека CGL, вариант для FPU
+[ZZSYS]GIHPGL.TSK;1            47  01-JAN-88
+[ZZSYS]DBLRES.TSK;1            35  01-JAN-88  библиотека времени выполнения ДИБОЛа
+[ZZSYS]FMSRES.TSK;1            23  01-JAN-88  резидентная библиотека FMS (экранные формы)
+[ZZSYS]XONIX.DAT;1              4  01-JAN-88  данные Xonix
+[ZZSYS]HELBY.TSK;1             32  01-JAN-88  Вертолет
+[ZZSYS]SO.TSK;1                43  01-JAN-88  Каменщик
+[ZZSYS]TETRIS.DAT;1             1  01-JAN-88  данные Тетриса
+
+[USERFILES]LR.DNG;1            15  01-JAN-88  данные Пещеры
+
+[1,2]PASERR.MSG;1               8  01-JAN-88  сообщения об ошибках Паскаля
+[1,2]DIBOLERR.MSG;1             6  01-JAN-88  сообщения об ошибках ДИБОЛа
+[1,2]PROF77.MSG;1               9  01-JAN-88  сообщения об ошибках Фортрана-77
+[1,2]C81RTE.TXT;1              11  01-JAN-88  сообщения об ошибках КОБОЛа-81
+[1,2]BASIC2.ERR;1              10  01-JAN-88  сообщения об ошибках Бейсика
+[1,2]FMSERR.MSG;1               2  01-JAN-88  сообщения об ошибках FMS
+[1,2]C81DBG.HLP;1              13  01-JAN-88  справка отладчика КОБОЛа-81
+
+[ZZDECNET]COMINI.TSK;1         36  01-JAN-88  запуск связи DECnet
+[ZZDECNET]V10B07P06.VER;1       0  01-JAN-88  метка версии
+
+[ZZAP00001]ZZAP00001.INS;1      1  01-JAN-88  прикладная программа «Посадка на Луну»
+[ZZAP00001]LANDER.TSK;1        85  01-JAN-88  Посадка на Луну
+[ZZAP00001]INTRO.TXT;1          3  01-JAN-88  вступление к Посадке на Луну
+
+[ZZAP00002]ZZAP00002.INS;1      1  01-JAN-88  прикладная программа «Лабиринт»
+[ZZAP00002]PACMAN.TSK;1        77  01-JAN-88  Лабиринт
+
+[ZZAP00003]ZZAP00003.INS;1      1  01-JAN-88  прикладная программа «Xonix»
+[ZZAP00003]XONIX.TSK;1         58  01-JAN-88  Xonix
+
+[ZZAP00004]ZZAP00004.INS;1      1  01-JAN-88  прикладная программа «Сапер»
+[ZZAP00004]SAPPER.TSK;1        32  01-JAN-88  Сапер
+
+[ZZAP00005]ZZAP00005.INS;1      1  01-JAN-88  прикладная программа «Карлики»
+[ZZAP00005]PAC.TSK;1           70  01-JAN-88  Карлики
+
+[ZZAP00006]ZZAP00006.INS;1      1  01-JAN-88  прикладная программа «Червячок»
+[ZZAP00006]WORMY.TSK;1         42  01-JAN-88  Червячок
+[ZZAP00006]WORMY.TXT;1          2  01-JAN-88  описание Червячка
+
+[ZZAP00007]ZZAP00007.INS;1      1  01-JAN-88  прикладная программа «Backgammon»
+[ZZAP00007]GAMXXX.TSK;1         4  01-JAN-88  часть Backgammon
+[ZZAP00007]GAMMON.TSK;1        97  01-JAN-88  Backgammon
+
+[ZZAP00008]ZZAP00008.INS;1      1  01-JAN-88  прикладная программа «China-Town»
+[ZZAP00008]CHESS.TSK;1         38  01-JAN-88  China-Town
+
+[ZZAP00009]ZZAP00009.INS;1      1  01-JAN-88  прикладная программа «Space Shuttle»
+[ZZAP00009]BRAD.TSK;1          32  01-JAN-88  Space Shuttle
+
+[ZZAP00010]ZZAP00010.INS;1      1  01-JAN-88  прикладная программа «Blackjack Trainer»
+[ZZAP00010]BJT.TSK;1           87  01-JAN-88  Blackjack Trainer
+[ZZAP00010]BJT.MNU;1            3  01-JAN-88  меню Blackjack Trainer
+[ZZAP00010]BJT.HLP;1           26  01-JAN-88  справка Blackjack Trainer
+
+[ZZAP00011]ZZAP00011.INS;1      1  01-JAN-88  прикладная программа «Пещера»
+[ZZAP00011]LR.TSK;1           110  01-JAN-88  Пещера (Lode Runner)
+[ZZAP00011]AA.DNG;1             1  01-JAN-88  данные Пещеры
+
+[ZZAP00012]ZZAP00012.INS;1      1  01-JAN-88  прикладная программа «Вертолет»
+
+[ZZAP00013]ZZAP00013.INS;1      1  01-JAN-88  прикладная программа «Каменщик»
+
+[ZZAP00014]ZZAP00014.INS;1      1  01-JAN-88  прикладная программа «Тетрис»
+[ZZAP00014]TETRIS.TSK;1        67  01-JAN-88  Тетрис
+--------------------------  -----
+Файлов 119, блоков 4052 (блок - 512 байт). Системные файлы тома
+(INDEXF.SYS, BITMAP.SYS, BADBLK.SYS, CORIMG.SYS, каталоги) не показаны.

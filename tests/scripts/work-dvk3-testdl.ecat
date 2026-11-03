@@ -5,7 +5,7 @@
 # @timeout 120
 MACHINE "../../tests/files/dvk3-ktlk.ext"
 COMMAND tl.plug(1)
-COMMAND my0.load("FODOSTMO.DSK")
+COMMAND my0.load("../library/dvk/FODOSTMO.DSK")
 WAIT _2000
 KEY _100,_50,ret
 WAIT _300

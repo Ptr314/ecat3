@@ -9,7 +9,7 @@
 # короче дискеты и дополняется нулями: дорожки ВП1-128 строит сама.
 # @timeout 600
 MACHINE "dvk/DVK-3.cfg"
-COMMAND my0.load("FODOSTMO.DSK")
+COMMAND my0.load("../library/dvk/FODOSTMO.DSK")
 COMMAND my1.load("../files/my-blank.img")
 WAIT _2000
 KEY _100,_50,ret

@@ -6,7 +6,7 @@
 
 MACHINE "pravetz/Pravetz-8A.cfg"
 LOGDEFS 8,16
-COMMAND fdd0.load("igra-i-matematika.nib")
+COMMAND fdd0.load("../library/pravetz/igra-i-matematika.nib")
 COMMAND fdd0.protect(1)
 WAIT 30000
 LOG fdd0.protected

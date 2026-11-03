@@ -4,7 +4,7 @@
 # Монитор 134 грузит так же, как 279: сброс, сектор 1, чтение, проверка NOP.
 # @timeout 150
 MACHINE "../../tests/files/dvk4-ksm.ext"
-COMMAND dw.load("rt11-dw.dsk")
+COMMAND dw.load("../library/dvk/rt11-dw.dsk")
 COMMAND dw.volatile(1)
 WAIT _12000
 # Тумблер «Прерывания» - после теста памяти монитора: часы RT-11 идут от него

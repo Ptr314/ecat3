@@ -3,7 +3,7 @@
 # делать в эти мгновения: 7030 - середина промежутка 7010-7050 мс, где корабль цел
 # @timeout 120
 MACHINE "computers/e85/MS0585-NMD.ext"
-COMMAND knmd.load("software/e85/pros-2.03-10m.rd")
+COMMAND knmd.load("../library/e85/pros-2.03-10m.rd")
 COMMAND knmd.volatile(1)
 WAIT _45000
 KEYDOWN key_down

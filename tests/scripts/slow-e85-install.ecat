@@ -10,14 +10,14 @@
 MACHINE "computers/e85/MS0585-NMD.ext"
 COMMAND knmd.volatile(1)
 COMMAND knmd.load("../tests/files/e85-blank.rd")
-COMMAND fd0.load("software/e85/pros-2.03-1-system.dsk")
+COMMAND fd0.load("../library/e85/pros-2.03-1-system.dsk")
 WAIT _60000
 KEYDOWN key_f16
 WAIT _100
 KEYUP key_f16
 WAIT _300
 WAIT _15000
-COMMAND fd1.load("software/e85/pros-2.03-2-regim.dsk")
+COMMAND fd1.load("../library/e85/pros-2.03-2-regim.dsk")
 KEYDOWN key_f7
 WAIT _100
 KEYUP key_f7
@@ -37,7 +37,7 @@ WAIT _300
 WAIT _80000
 COMMAND fd1.eject()
 WAIT _3000
-COMMAND fd1.load("software/e85/pros-2.03-3-program.dsk")
+COMMAND fd1.load("../library/e85/pros-2.03-3-program.dsk")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100
@@ -46,7 +46,7 @@ WAIT _300
 WAIT _70000
 COMMAND fd1.eject()
 WAIT _3000
-COMMAND fd1.load("software/e85/pros-2.03-4-bibliot.dsk")
+COMMAND fd1.load("../library/e85/pros-2.03-4-bibliot.dsk")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100
@@ -55,7 +55,7 @@ WAIT _300
 WAIT _70000
 COMMAND fd1.eject()
 WAIT _3000
-COMMAND fd1.load("software/e85/pros-2.03-5-utilit.dsk")
+COMMAND fd1.load("../library/e85/pros-2.03-5-utilit.dsk")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100
@@ -122,7 +122,7 @@ WAIT _100
 KEYUP key_f16
 WAIT _300
 WAIT _5000
-COMMAND fd0.load("software/e85/igra.dsk")
+COMMAND fd0.load("../library/e85/igra.dsk")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100
@@ -896,7 +896,7 @@ WAIT _100
 KEYUP key_f16
 WAIT _300
 WAIT _5000
-COMMAND fd0.load("software/e85/igra-color.dsk")
+COMMAND fd0.load("../library/e85/igra-color.dsk")
 WAIT _3000
 KEYDOWN key_f7
 WAIT _100

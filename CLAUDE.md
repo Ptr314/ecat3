@@ -36,6 +36,9 @@ from a regression.
 
 - Build instructions, dependencies and release scripts: `docs/BUILD.md`, `.build/README.md`.
 - Run from `deploy/` as the working directory (configs, ROMs, `data/` are there).
+- `deploy/software/` ships with every release: only images a config loads itself (`image =`, `disk_N =`)
+  and small tapes. Everything else goes to `library/<machine>/` (not shipped; the site's software library
+  and test media, named `"../library/..."` from scripts: nothing searches there). `library/README.md`.
 - Options in `src/CMakeLists.txt`: `ENABLE_GUI` (ON; OFF means no Qt at all), `ENABLE_HEADLESS` (console
   `eCat3-headless`, C++17 toolchain), `ENABLE_MCP`. A windowed build needs exactly one of `RENDERER_OPENGL`
   (Qt 6 only), `RENDERER_SDL2`, `RENDERER_QT`; Debug defaults to OpenGL on Qt 6, SDL2 on Qt 5.
