@@ -38,7 +38,7 @@
 | `dvk` | `rt11-dw.dsk` | RT-11 V05.04 на винчестере DW, 5 МБ |
 | | `FODOSTMO.DSK` | ФОДОС, заводские тесты (ВМ2, ВМ3, MY, MX, DW, КГД, КЦГД) |
 | `agat` | `INIT_HELLO840[a7].dsk`, `ikp2-19176.dsk` | диски Агата, которые не загружает ни одна конфигурация |
-| | `yazs-player.dsk`, `yazs-player.hfe` | ЯЗС-плеер и «Симфония А-Г-А-Т» для ЯЗС 5/2 (сборка - `tools/yazs-player`) |
+| | `yazs-player.dsk`, `yazs-player.hfe` | ЯЗС-плеер и «Симфония А-Г-А-Т» для ЯЗС 5/2 (сборка - проект [ЯЗС-Студия](https://github.com/Ptr314/yazs-studio)) |
 | `pravetz` | `sokoban.dsk`, `arkanoid.dsk`, `igra-i-matematika.nib` | игры с agatcomp.ru |
 | `uknc` | `basic.dsk`, `basic.lst` | дисковый Бейсик и список файлов |
 | | `wav2uknc.py` | перевод записи кассеты WAV в `.uknc.tap` |

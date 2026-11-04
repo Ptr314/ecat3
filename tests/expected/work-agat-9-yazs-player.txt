@@ -1,5 +1,5 @@
 [ram.value] $004D: $07
-[ram.value] $001E: $E8 $01
+[ram.value] $001E: $E6 $01
 [ram.value] $0014: $01
 [yazs.regs] $0000: $08 $0B $0D $B6 $13 $60 $00 $80 $3F $3F $3E $3E $3C $00 $00 $40
 [yazs.counters] $00000813 $00000B6C $00000D95 $00001335 $000060CC $0000005B
