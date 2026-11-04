@@ -28,8 +28,12 @@
 //   is eight bits wide, so a word of the peripheral processor takes two
 //   accesses and a byte one: its read is 3.2 us, a word write 2.56, a byte
 //   write 1.92, in a read-modify-write too. The central processor has planes
-//   1 and 2 side by side, a word is one access: a read 0.96 us, a write 2.24,
-//   the write of a read-modify-write 0.64 - the row is open already.
+//   1 and 2 side by side, a word is one access. A read-modify-write is two
+//   separate memory cycles here (the read, then the write with its own
+//   `rmw_write`), not one cycle with a row left open: the values are fitted
+//   to the machines' times (see `cpu-mem` in UKNC.cfg for the current
+//   numbers), what the controller does with RAS between the halves is not
+//   known.
 //
 // Each processor has its own device: the measurements show no contention
 // between them, and their clocks are unrelated (the central one has its own
