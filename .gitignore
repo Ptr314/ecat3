@@ -25,3 +25,8 @@ deploy/ecat.ini
 
 # Конфигурации пользователя (.ext), см. docs/CONFIG.md
 deploy/ecat-exts/
+
+# Библиотека программ: стороннее ПО, в git не входит. Архив - на сайте,
+# распаковывается в корень репозитория (library/README.md)
+library/*
+!library/README.md

@@ -366,6 +366,11 @@ def run_test(test, exe, env, extra_args, speed):
         result["skipped"] = reason
         return result
 
+    missing = test.missing_library()
+    if missing:
+        result["skipped"] = "нет library/" + ", library/".join(missing) + " (архив - " + rt.LIBRARY_URL + ")"
+        return result
+
     machine, commands = prepare(test)
     if speed not in ("", "1"):
         # На место первой пустой строки (комментарий в начале, MACHINE), чтобы

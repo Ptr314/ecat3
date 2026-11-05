@@ -55,6 +55,14 @@ cmake -S src -B build-headless -G Ninja -DCMAKE_BUILD_TYPE=Release       -DENABL
 Сгенерированный `src/globals.h` содержит то же число, но он появляется только
 после запуска cmake, поэтому скрипты на него не смотрят.
 
+## Библиотека программ
+
+`pack_library.cmd` (или `pack_library.py` там, где нет Windows и 7-Zip)
+упаковывает `library/` в `release/ecat3-library.zip` для
+https://ecat.emuverse.ru/library/. Это не выпуск эмулятора: в git каталога
+нет, архив собирается из того, что лежит на диске (см. `library/README.md`).
+Состав архива задан в обоих скриптах одинаково, и менять его надо в обоих.
+
 ## Что куда кладётся
 
 ```

@@ -16,7 +16,7 @@
 
 ## Что нужно
 
-ПЗУ машины и картриджей входят в поставку: `deploy/computers/uknc/`. Дискеты &ndash; в `software/uknc`: `sysimage.dsk` (FODOS, заводской тест), `sys1002.dsk` (RT-11). Дисковый Бейсик `basic.dsk` &ndash; в библиотеке программ на сайте эмулятора (https://ecat.emuverse.ru).
+ПЗУ машины и картриджей входят в поставку: `deploy/computers/uknc/`. Дискеты &ndash; в `software/uknc`: `sysimage.dsk` (FODOS, заводской тест), `sys1002.dsk` (RT-11). Дисковый Бейсик `basic.dsk` &ndash; в библиотеке программ на сайте эмулятора (https://ecat.emuverse.ru/library/uknc/).
 
 Дополнительно, по необходимости:
 * Образ винчестера &ndash; в поставку не входит; подключается кнопкой винчестера или кладется в `software/uknc/hdd.img`.

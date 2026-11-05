@@ -39,6 +39,11 @@ from a regression.
 - `deploy/software/` ships with every release: only images a config loads itself (`image =`, `disk_N =`)
   and small tapes. Everything else goes to `library/<machine>/` (not shipped; the site's software library
   and test media, named `"../library/..."` from scripts: nothing searches there). `library/README.md`.
+- **`library/` is not in git** (third-party software): only its `README.md` is. It comes from the site
+  archive `ecat3-library.zip` at https://ecat.emuverse.ru/library/ (`.build/pack_library.cmd` or `.py` makes
+  it, keep the two in step; the machine descriptions link that page), unpacked into the repository root. The
+  runners skip a test whose `"../library/..."` file is missing. Never commit an image there, and never
+  copy one into `tests/files/` or into a committed snapshot (`.ecats.zip` carries its media).
 - Options in `src/CMakeLists.txt`: `ENABLE_GUI` (ON; OFF means no Qt at all), `ENABLE_HEADLESS` (console
   `eCat3-headless`, C++17 toolchain), `ENABLE_MCP`. A windowed build needs exactly one of `RENDERER_OPENGL`
   (Qt 6 only), `RENDERER_SDL2`, `RENDERER_QT`; Debug defaults to OpenGL on Qt 6, SDL2 on Qt 5.

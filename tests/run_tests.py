@@ -39,6 +39,8 @@ SCRIPTS_DIR = os.path.join(TESTS_DIR, "scripts")
 EXPECTED_DIR = os.path.join(TESTS_DIR, "expected")
 RESULTS_DIR = os.path.join(TESTS_DIR, "results")
 DEPLOY_DIR = os.path.join(REPO_DIR, "deploy")
+LIBRARY_DIR = os.path.join(REPO_DIR, "library")
+LIBRARY_URL = "https://ecat.emuverse.ru/library/"
 
 DEFAULT_TIMEOUT = 90            # секунд, если в сценарии нет строки "# @timeout"
 EXT_ERRORS_DIR = os.path.join(TESTS_DIR, "files", "ext-errors")
@@ -255,6 +257,12 @@ class Test(object):
         self.pixels = int(m.group(1)) if m else None
         # Все, что сценарий пишет в tests/results
         self.artifacts = sorted(set(re.findall(r'"\.\./results/([^"]+)"', text)))
+        # Образы из library/ (путь от deploy/): каталога нет в git, он
+        # распаковывается из архива с сайта, см. library/README.md
+        self.library = sorted(set(re.findall(r'"\.\./library/([^"]+)"', text)))
+
+    def missing_library(self):
+        return [f for f in self.library if not os.path.isfile(os.path.join(LIBRARY_DIR, f))]
 
 
 def collect_tests(filters, include_slow):
@@ -506,6 +514,18 @@ def main():
             print("%-32s %s" % (t.name, t.title))
         print("\nвсего: %d" % len(tests))
         return 0
+
+    # Без образа библиотеки сценарий не может пройти, и это не ошибка
+    # эмулятора: свежий клон без распакованного архива
+    no_library = [t for t in tests if t.missing_library()]
+    if no_library:
+        missing = sorted(set(f for t in no_library for f in t.missing_library()))
+        print("Нет образов library/ (%d): %s\nПропущено тестов: %d. Архив библиотеки - %s,\n"
+              "распаковать в корень репозитория (library/README.md).\n"
+              % (len(missing), ", ".join(missing), len(no_library), LIBRARY_URL))
+        tests = [t for t in tests if not t.missing_library()]
+        if not tests:
+            sys.exit("Под условия отбора не подошел ни один тест")
 
     for d in (RESULTS_DIR, EXPECTED_DIR):
         os.makedirs(d, exist_ok=True)

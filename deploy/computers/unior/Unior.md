@@ -111,7 +111,7 @@ COPY A:=CT:CPM55     прочитать его обратно</pre>
 Каждая из кассет TCP/M загружается сама: зарядите её в окне магнитофона и дайте
 команду <tt>I</tt>. Рядом с каждой лежит <tt>.lst</tt> со списком файлов. В поставку
 эмулятора входит <tt>elcon.a.bt</tt>, кассеты <tt>pasc.a.bt</tt> и <tt>sc.a.bt</tt>
-лежат в библиотеке программ на сайте эмулятора (https://ecat.emuverse.ru).
+лежат в библиотеке программ на сайте эмулятора (https://ecat.emuverse.ru/library/unior/).
 
 * <tt>elcon.a.bt</tt> &ndash; заряжена с самого начала: игры группы &laquo;Елкон&raquo; и
   &laquo;Вільні майстри&raquo; с описаниями: GNOMIK, AKAD, BUILD, PIPE, TRAIN, PITON,

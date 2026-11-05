@@ -13,7 +13,7 @@
 
 ## Что нужно
 
-ПЗУ, знакогенераторы и палитры входят в поставку: `deploy/computers/unior/`. Кассеты &ndash; в `software/unior`, Pascal и SuperCalc &ndash; в библиотеке программ на сайте эмулятора (https://ecat.emuverse.ru), к каждой кассете список файлов `.lst`:
+ПЗУ, знакогенераторы и палитры входят в поставку: `deploy/computers/unior/`. Кассеты &ndash; в `software/unior`, Pascal и SuperCalc &ndash; в библиотеке программ на сайте эмулятора (https://ecat.emuverse.ru/library/unior/), к каждой кассете список файлов `.lst`:
 
 * `elcon.a.bt` &ndash; TCP/M и игры (заряжена в Юниоре);
 * `argo.a.bt` &ndash; системная кассета Арго, `ZX.COM`;
