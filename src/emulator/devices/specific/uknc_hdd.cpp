@@ -70,6 +70,7 @@ UKNCHDD::UKNCHDD(InterfaceManager *im, EmulatorConfigDevice *cd):
     can_write = true;
     addresable_size = 020000;   // верхняя половина окна кассеты, 110000-117777
     memset(m_buffer, 0, sizeof(m_buffer));
+    memset(m_passport, 0, sizeof(m_passport));
 }
 
 UKNCHDD::~UKNCHDD()
@@ -137,23 +138,49 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
                 heads = 16;
             }
         }
-    } else if ((w[0] == 0x54A9 && w[1] == 0xFFEF && w[2] == 0xFEFF)
-        || (w[0] == 0xAB56 && w[1] == 0x0010 && w[2] == 0x0100)) {
-        // Разметка HD: число секторов и их общее число на цилиндр лежат
-        // словами, обратный код узнаётся по заголовку
-        inverted = (w[0] == 0xAB56);
-        uint16_t nsec = w[4], ncyl = w[5];
-        if (inverted) { nsec = ~nsec; ncyl = ~ncyl; }
-        sectors = nsec;
-        if (sectors != 0) heads = (ncyl / sectors) & 0xFF;
     } else {
-        // Разметка WD и ID: первый байт - секторы, второй - головки.
-        // Образ в обратном коде узнаётся по пустому месту в конце сектора
-        uint8_t test = 0xFF;
-        for (int i = 0x1F0; i <= 0x1FB; i++) test &= first[i];
-        inverted = (test == 0xFF);
-        sectors = inverted? (uint8_t)~first[0] : first[0];
-        heads   = inverted? (uint8_t)~first[1] : first[1];
+        // Разметку программы кладут в сектор 0 диска, а у *.hdi он лежит за
+        // паспортом. Обрезанный *.hdi может кончаться и раньше него
+        uint8_t boot[SECTOR_SIZE];
+        bool marked = true;
+        if (base == 0) memcpy(boot, first, SECTOR_SIZE);
+        else marked = m_image.read(base, boot);
+        const uint16_t * b = (const uint16_t *)boot;
+
+        if (!marked) {
+            // Разметки нет - геометрия будет из паспорта
+        } else if ((b[0] == 0x54A9 && b[1] == 0xFFEF && b[2] == 0xFEFF)
+            || (b[0] == 0xAB56 && b[1] == 0x0010 && b[2] == 0x0100)) {
+            // Разметка HD: число секторов и их общее число на цилиндр лежат
+            // словами, обратный код узнаётся по заголовку
+            inverted = (b[0] == 0xAB56);
+            uint16_t nsec = b[4], ncyl = b[5];
+            if (inverted) { nsec = ~nsec; ncyl = ~ncyl; }
+            sectors = nsec;
+            if (sectors != 0) heads = (ncyl / sectors) & 0xFF;
+        } else {
+            // Разметка WD и ID: первый байт - секторы, второй - головки.
+            // Образ в обратном коде узнаётся по пустому месту в конце сектора
+            uint8_t test = 0xFF;
+            for (int i = 0x1F0; i <= 0x1FB; i++) test &= boot[i];
+            inverted = (test == 0xFF);
+            sectors = inverted? (uint8_t)~boot[0] : boot[0];
+            heads   = inverted? (uint8_t)~boot[1] : boot[1];
+        }
+
+        // Разметка главнее паспорта *.hdi, как таблица разделов у БК: по ней
+        // адресует драйвер диска. Паспорт дает геометрию неразмеченному диску,
+        // а размеченному так же - число цилиндров: обрезанный образ короче
+        // накопителя, и по длине файла их вышло бы меньше
+        if (hdi_sectors != 0 && hdi_heads != 0 && hdi_cylinders != 0) {
+            if (sectors == 0 || heads == 0) {
+                sectors = hdi_sectors;
+                heads = hdi_heads;
+                table_cylinders = hdi_cylinders;
+            } else if (sectors == hdi_sectors && heads == hdi_heads) {
+                table_cylinders = hdi_cylinders;
+            }
+        }
     }
 
     unsigned int cylinders = table_cylinders;
@@ -167,6 +194,8 @@ emulator::Result UKNCHDD::load_image(const std::string &file_name)
     }
 
     m_data_offset = base;
+    m_has_passport = (base != 0);
+    if (m_has_passport) memcpy(m_passport, first, SECTOR_SIZE);
     m_inverted = inverted;
     m_sectors = sectors;
     m_heads = heads;
@@ -215,6 +244,7 @@ void UKNCHDD::unload()
 {
     m_image.close();
     m_data_offset = 0;
+    m_has_passport = false;
     m_cylinders = m_heads = m_sectors = 0;
 }
 
@@ -450,7 +480,10 @@ void UKNCHDD::handle_command(unsigned int command)
         case CMD_IDENTIFY:
             identify_drive();
             m_bufferoffset = 0;
-            m_sectorcount = 1;
+            // Паспорт - единственный буфер команды: прочитанный до конца, он
+            // не должен запускать чтение сектора, как запустил бы его остаток
+            // счетчика у READ
+            m_sectorcount = 0;
             m_status |= ST_BUFFER_READY | ST_SEEK_COMPLETE | ST_DRIVE_READY;
             m_status &= ~(ST_BUSY | ST_ERROR);
             break;
@@ -468,7 +501,62 @@ static void swap_strncpy(uint8_t * dst, const char * src, int words)
     for (; i < words * 2; i++) dst[i ^ 1] = ' ';
 }
 
+// Паспорт из заголовка *.hdi с геометрией накопителя. Адрес цилиндр-головка-
+// сектор здесь переводится одной геометрией - той, что взята при загрузке (у
+// платы БК - из таблицы разделов) или задана командой 0x91, - и паспорт
+// называет ее: программа, которая адресует по нему, иначе попала бы в другие
+// сектора. У снятых с машины образов геометрия в заголовке та же, и паспорт
+// остается как был. Слова 54-58 правятся, только когда слово 53 объявляет их,
+// а 60-61 - когда в заголовке есть число секторов; контрольная сумма в слове
+// 255 (младший байт 0xA5) пересчитывается
+void UKNCHDD::fit_passport_geometry()
+{
+    const uint32_t total = (uint32_t)m_cylinders * m_heads * m_sectors;
+    uint16_t * w = (uint16_t *)m_buffer;
+    w[1] = (uint16_t)m_cylinders;
+    w[3] = (uint16_t)m_heads;
+    w[6] = (uint16_t)m_sectors;
+    if (w[53] & 1) {
+        w[54] = (uint16_t)m_cylinders;
+        w[55] = (uint16_t)m_heads;
+        w[56] = (uint16_t)m_sectors;
+        w[57] = (uint16_t)total;
+        w[58] = (uint16_t)(total >> 16);
+    }
+    if (w[60] != 0 || w[61] != 0) {
+        w[60] = (uint16_t)total;
+        w[61] = (uint16_t)(total >> 16);
+    }
+    if ((w[255] & 0xFF) == 0xA5) {
+        uint8_t sum = 0;
+        for (unsigned int i = 0; i < SECTOR_SIZE - 1; i++) sum += m_buffer[i];
+        m_buffer[SECTOR_SIZE - 1] = (uint8_t)(0x100 - sum);
+    }
+}
+
 void UKNCHDD::identify_drive()
+{
+    if (m_has_passport) {
+        memcpy(m_buffer, m_passport, SECTOR_SIZE);
+        fit_passport_geometry();
+    } else {
+        build_passport();
+    }
+
+    // Паспорт отдаёт сам накопитель, через ту же магистраль, что и сектор, и
+    // процессор получает его в обратном коде при любом образе. Буфер хранит
+    // данные так, как они лежат в образе: у образа в обратном коде (у платы
+    // БК - всегда) это и есть вид накопителя, у прямого - перевёрнутый.
+    // Заголовок *.hdi всегда в виде накопителя. Загрузчик MKDOS 3.18 читает
+    // модель из 177756 через SWAB и COM: паспорт прямым кодом печатался после
+    // «HDD:» мусором, а байт 0214 из него переключал монитор БК0010 в режим
+    // расширенной памяти. UKNCBTL переворачивает паспорт всегда, и у образов
+    // в обратном коде он у него доходит до машины прямым кодом
+    if (!m_inverted) invert_buffer();
+}
+
+// Паспорт образа без заголовка: геометрия и модель эмулятора
+void UKNCHDD::build_passport()
 {
     const uint32_t total = (uint32_t)m_cylinders * m_heads * m_sectors;
 
@@ -481,23 +569,16 @@ void UKNCHDD::identify_drive()
     w[6]  = (uint16_t)m_sectors;
     swap_strncpy((uint8_t*)(w + 10), "0000000000", 10);     // заводской номер
     swap_strncpy((uint8_t*)(w + 23), "1.0", 4);             // версия прошивки
-    swap_strncpy((uint8_t*)(w + 27), "eCat3 Hard Disk", 18);// модель
+    swap_strncpy((uint8_t*)(w + 27), "eCat3 Hard Disk", 20);// модель
     w[47] = 0x8001;
     w[49] = 0x2F00;
     w[53] = 1;
     w[54] = (uint16_t)m_cylinders;
     w[55] = (uint16_t)m_heads;
     w[56] = (uint16_t)m_sectors;
-    const uint32_t track = (uint32_t)m_heads * m_sectors;
-    memcpy(w + 57, &track, 4);
+    memcpy(w + 57, &total, 4);          // ёмкость в текущей геометрии, секторов
     memcpy(w + 60, &total, 4);
     memcpy(w + 100, &total, 4);
-
-    // Паспорт кладётся в буфер в обратном коде - так же, как его отдал бы
-    // накопитель через инвертирующую магистраль. Дальше с ним обращаются как
-    // с прочитанным сектором, поэтому машине он достаётся прямым кодом
-    // только у образов в обратном коде; так же ведёт себя и UKNCBTL
-    invert_buffer();
 }
 
 //--------------------------- Регистры накопителя ---------------------------//

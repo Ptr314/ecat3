@@ -1,0 +1,111 @@
+# УК-НЦ: образ винчестера *.hdi.
+#
+# *.hdi начинается с паспорта накопителя (ответ на IDENTIFY, 512 байт), и диск
+# идет после него. Разметку WD (байт 0 - секторы, байт 1 - головки) контроллер
+# ищет в секторе 0 диска, то есть за паспортом: раньше он читал ее из самого
+# паспорта и находил 90 секторов и 4 головки (байты 0x5A и 0x04 слова 045A).
+#
+# ../files/uknc-hdd.hdi делает make_uknc_hdd.py: диск uknc-hdd.img (4 сектора,
+# 2 головки, в каждом секторе его номер и тот же номер в обратном коде), но
+# паспорт говорит о 16 цилиндрах, а в файле только 4. Геометрия - 16/2/4:
+# разметка та же, что в паспорте, и цилиндры берутся из него. Сектор за концом
+# файла читается пустым, без ошибки. На IDENTIFY приходит этот паспорт, и
+# машина видит его дополнением, как и сектора образа в прямом коде.
+#
+# ../files/uknc-hdd-blank.hdi - неразмеченный диск: паспорт 8/2/4 и пустой
+# сектор. Разметки нет, и геометрия берется из паспорта.
+#
+# Регистры, как в boot-uknc-hdd: пишется дополнение значения, читается
+# дополнение ответа. Числа восьмеричные, кроме геометрии (16/2/4 - десятичные).
+# @timeout 60
+
+MACHINE "uknc/hdd-test.cfg"
+LOGDEFS _16,_8
+
+COMMAND cpu.stop()
+COMMAND ram.set16(1000, 777)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+
+PRINT "=== образ *.hdi, обрезанный ==="
+COMMAND hdd.load("../files/uknc-hdd.hdi")
+COMMAND hdd.protect(1)
+LOG hdd.attached
+LOG hdd.geometry
+LOG hdd.inverted
+WAIT _10
+
+PRINT "=== цилиндр 1, головка 1, сектор 3 - сектор 16 по порядку ==="
+COMMAND mapper.set16(110012, 177776)
+COMMAND mapper.set16(110010, 177774)
+COMMAND mapper.set16(110006, 177776)
+COMMAND mapper.set16(110004, 177777)
+COMMAND mapper.set16(110002, 177776)
+COMMAND mapper.set16(110000, 177737)
+WAITFOR hdd.reads == 1, _1000
+LOG hdd.status
+LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+
+PRINT "=== цилиндр 12 - за концом файла, но на диске: пустой сектор ==="
+COMMAND mapper.set16(110012, 177776)
+COMMAND mapper.set16(110010, 177776)
+COMMAND mapper.set16(110006, 177765)
+COMMAND mapper.set16(110004, 177777)
+COMMAND mapper.set16(110002, 177777)
+COMMAND mapper.set16(110000, 177737)
+WAITFOR hdd.reads == 2, _1000
+LOG hdd.status
+LOG hdd.error
+LOG mapper.value16(110016)
+LOG mapper.value16(110016)
+
+PRINT "=== паспорт ==="
+# Программа процессора читает 256 слов паспорта: после COM - в 3000 (как их
+# отдал накопитель, числа читаются прямо), после SWAB еще и в 4000 (строки по
+# порядку)
+COMMAND cpu.stop()
+COMMAND ram.set16(2000, 012701, 003000)            # MOV #3000,R1
+COMMAND ram.set16(2004, 012703, 004000)            # MOV #4000,R3
+COMMAND ram.set16(2010, 012702, 000400)            # MOV #400,R2
+COMMAND ram.set16(2014, 013700, 110016)            # MOV @#110016,R0
+COMMAND ram.set16(2020, 005100, 010021)            # COM R0; MOV R0,(R1)+
+COMMAND ram.set16(2024, 000300, 010023)            # SWAB R0; MOV R0,(R3)+
+COMMAND ram.set16(2030, 077207, 000777)            # SOB R2,2014; BR .
+COMMAND mapper.set16(110000, 177423)
+LOG hdd.status
+COMMAND cpu.setreg(PC, 2000)
+COMMAND cpu.run()
+WAITFOR cpu.pc == 2032, _1000
+PRINT "слова 0-6: тип 002132 (045A), цилиндры 20 (_16), 0, головки 2, 0, 0, секторы 4"
+LOG ram.value16(3000, 3015)
+PRINT "слово 255: подпись A5 и контрольная сумма"
+LOG ram.value16(3776, 3777)
+PRINT "модель, слова 27-46: UKNC HDI TEST"
+LOG ram.value(4066, 4135)
+PRINT "после паспорта накопитель готов и не читает следом сектор"
+LOG hdd.status
+LOG hdd.reads
+COMMAND cpu.stop()
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+
+PRINT "=== неразмеченный *.hdi: геометрия паспорта ==="
+COMMAND hdd.load("../files/uknc-hdd-blank.hdi")
+COMMAND hdd.protect(1)
+LOG hdd.attached
+LOG hdd.geometry
+LOG hdd.inverted
+WAIT _10
+PRINT "цилиндр 7, головка 1, сектор 4 - последний сектор диска, пустой"
+COMMAND mapper.set16(110012, 177776)
+COMMAND mapper.set16(110010, 177773)
+COMMAND mapper.set16(110006, 177770)
+COMMAND mapper.set16(110004, 177777)
+COMMAND mapper.set16(110002, 177776)
+COMMAND mapper.set16(110000, 177737)
+WAITFOR hdd.reads == 3, _1000
+LOG hdd.status
+LOG hdd.error
+LOG mapper.value16(110016)
+EXIT

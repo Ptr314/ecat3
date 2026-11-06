@@ -34,11 +34,11 @@
 // переворачивает обратно (как и UKNCBTL, признак определяется сам по
 // первому сектору).
 //
-// Геометрия берётся из первого сектора образа: байт 0 - число секторов на
+// Геометрия берётся из первого сектора диска: байт 0 - число секторов на
 // дорожке, байт 1 - число головок; число цилиндров считается по размеру
 // файла. Так размечают диск программы WD и ID, и так же поступает UKNCBTL.
-// Разметку HD, образы .hdi (паспорт IDENTIFY) и плату БК (board = bk,
-// таблица АльтПро) разбирает load_image() по-своему.
+// Разметку HD, образы .hdi (паспорт IDENTIFY, первый сектор диска за ним)
+// и плату БК (board = bk, таблица АльтПро) разбирает load_image() по-своему.
 //
 // Адресуют накопитель двумя способами, и выбирает его сама программа разрядом
 // 6 регистра 110002. Снятый - цилиндр, головка и сектор (сектора с единицы),
@@ -63,8 +63,14 @@ private:
                          unsigned int &heads, unsigned int &sectors, uint64_t base);
     unsigned int drive_address() const;
     // Образ *.hdi начинается с паспорта накопителя (ответ на IDENTIFY, 512
-    // байт), и сектора идут после него
+    // байт), и сектора идут после него. На IDENTIFY отвечает этот паспорт - у
+    // накопителя, с которого снят образ, свои модель и номер, - а без него
+    // паспорт собирается из геометрии. Копия берется при загрузке образа:
+    // снимок состояния хранит файл целиком, и load_image() читает ее заново
     uint64_t m_data_offset = 0;
+    bool m_has_passport = false;
+    uint8_t m_passport[512];
+    void fit_passport_geometry();
 
     unsigned int m_cylinders = 0;
     unsigned int m_heads = 0;
@@ -100,6 +106,7 @@ private:
     void set_port(unsigned int reg, unsigned int value);
     void handle_command(unsigned int command);
     void identify_drive();
+    void build_passport();
     bool lba_mode() const;
     uint64_t sector_offset() const;
     bool read_sector();
