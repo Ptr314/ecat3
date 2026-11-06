@@ -96,7 +96,6 @@ protected:
 public:
     PravetzKeyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
     emulator::Result load_config(SystemData *sd) override;
-    ConfigFields get_config_fields() override;
     void reset(bool cold) override;
     void clock(unsigned int counter) override;
     bool needs_shift_char(char ch, unsigned int key) override;

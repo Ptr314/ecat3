@@ -514,6 +514,10 @@ protected:
 public:
     Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd);
     emulator::Result load_config(SystemData *sd) override;
+    // The layout for the extension editor, when the config lists the maps it
+    // offers (map_1, map_2, ... titled map_title_N, the field named by
+    // map_label): ГОСТ, БДС or ЯВЕРТЪ of the Правец, МС7004 or LK201 of the Э-85
+    ConfigFields get_config_fields() override;
     // host: the key was typed on the host, so the remap table of the current
     // mode applies. Scripts and MCP press keys as they are, or a test would
     // depend on the developer's setting

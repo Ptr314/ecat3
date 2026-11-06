@@ -48,7 +48,7 @@ https://ecat.emuverse.ru/library/ - на неё же ссылаются опис
 | | `format-2.0.dsk` | «Форматирование дискет v 2.0» |
 | | `emul-1.3.hfe` | «Эмулятор DOS v 1.3», дискета с метками F8 (рецепт - `tests/files/make-emul-1.3.ecat`) |
 | | `eldos-*.dsk` | MS-DOS 3.30, утилиты, Chi-DOS 3.30, «PC Эмулятор в.1.1» |
-| | `rt11-sj.dsk` | RT-11 SJ, с этим ПЗУ не загружается |
+| | `rt11v53.rd` | винчестер 32 МБ: RT-11 V05.03 фирмы DEC для Professional (тест `boot-e85-rt11`) |
 | `dvk` | `rt11-dw.dsk` | RT-11 V05.04 на винчестере DW, 5 МБ |
 | | `FODOSTMO.DSK` | ФОДОС, заводские тесты (ВМ2, ВМ3, MY, MX, DW, КГД, КЦГД) |
 | `agat` | `INIT_HELLO840[a7].dsk`, `ikp2-19176.dsk` | диски Агата, которые не загружает ни одна конфигурация |

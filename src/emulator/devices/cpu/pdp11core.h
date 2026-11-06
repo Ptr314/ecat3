@@ -303,6 +303,7 @@ public:
     // VM3_STATE_WORDS слов
     enum { VM3_STATE_WORDS = 4 + 32 + 4 + 1 };
     bool is_vm3() const { return vm3; }
+    bool is_f11() const { return f11; }
     // Адаптер ПЗ F-11, задаётся конфигурацией
     bool has_fp = false;
     enum { FP_STATE_WORDS = 6 * 4 + 3 };

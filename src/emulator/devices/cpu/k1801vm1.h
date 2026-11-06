@@ -160,6 +160,10 @@ public:
     // to SEL+004 without a trap frame, whatever mode the vector then sets
     bool m_halt_before = false;
     void note_timeout(unsigned int address);
+    //Memory management of the ВМ3 and the F-11 in the debugger's register list
+    std::vector<std::string> mmu_register_names() const;
+    int mmu_word(const std::string &name, bool &is_current) const;
+    void set_mmu_register(const std::string &name, unsigned int value);
     void set_halt_mode(bool state);
     void virq_acknowledged(unsigned int vector);
     void bus_init();
@@ -178,6 +182,8 @@ public:
     virtual DisAsm * create_disasm(const std::string &data_path, emulator::Result &res) override;
 
     virtual void set_context_value(const std::string &name, unsigned int value) override;
+    std::vector<std::string> get_context_names() override;
+    std::vector<CpuRegister> get_register_values() override;
     bool set_flag(const std::string &name, bool value) override;
     bool get_sp(unsigned int &sp) override;
     bool stack_address(int i, unsigned int &address) override;

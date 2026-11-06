@@ -565,6 +565,108 @@ void k1801vm1::set_context_value(const std::string &name, unsigned int value)
         c->PSW = (uint16_t)value;
     else if (name.size() == 2 && name[0] == 'R' && name[1] >= '0' && name[1] <= '5')
         c->R[name[1] - '0'] = (uint16_t)value;
+    else if (core->is_vm3())
+        set_mmu_register(name, value);
+}
+
+//----------------------- memory management in the debugger -----------------//
+
+//The ВМ3 and the F-11 show their memory management after PSW in the debugger's
+//list. LOG cpu.registers keeps get_registers() as it was: the tests log it, and
+//scripts read the same state from the fields sps, mmu, par and pdr
+
+//The register names in the order of the list, "" where a gap separates groups
+std::vector<std::string> k1801vm1::mmu_register_names() const
+{
+    static const char * const sets[4] = {"KPAR", "KPDR", "UPAR", "UPDR"};
+    std::vector<std::string> r;
+    if (!core->is_vm3()) return r;
+    r.push_back("");
+    r.push_back("KSP");
+    r.push_back("USP");
+    r.push_back("");
+    r.push_back("SR0");
+    r.push_back("SR2");
+    r.push_back("SR3");
+    if (!core->is_f11()) r.push_back("HPAR");
+    for (int s = 0; s < 4; s++) {
+        r.push_back("");
+        for (int page = 0; page < 8; page++) r.push_back(std::string(sets[s]) + (char)('0' + page));
+    }
+    return r;
+}
+
+//The word of get_vm3() a register of the list is kept in, -1 for none. The
+//stack pointer of the current mode is R6 and not that word: is_current tells
+int k1801vm1::mmu_word(const std::string &name, bool &is_current) const
+{
+    is_current = false;
+    if (name == "KSP" || name == "USP") {
+        //Two pointers, chosen by bit 15 of the mode (vm3_sp_index())
+        const int word = (name == "KSP") ? 0 : 3;
+        const unsigned int mode = (core->get_context()->PSW >> 14) & 3;
+        is_current = (((mode & 2) ? 3 : 0) == word);
+        return word;
+    }
+    if (name == "SR0") return 36;
+    if (name == "SR2") return 37;
+    if (name == "SR3") return 38;
+    if (name == "HPAR" && !core->is_f11()) return 39;
+    if (name.size() == 5 && name[4] >= '0' && name[4] <= '7') {
+        const int page = name[4] - '0';
+        const std::string set = name.substr(0, 4);
+        if (set == "KPAR") return 4 + page;
+        if (set == "UPAR") return 12 + page;
+        if (set == "KPDR") return 20 + page;
+        if (set == "UPDR") return 28 + page;
+    }
+    return -1;
+}
+
+//A write from the debugger takes the whole word, as a snapshot restores it
+void k1801vm1::set_mmu_register(const std::string &name, unsigned int value)
+{
+    bool is_current;
+    const int word = mmu_word(name, is_current);
+    if (word < 0) return;
+    if (is_current) {
+        core->get_context()->R[PDP11::REG_SP] = (uint16_t)value;
+        return;
+    }
+    uint16_t v[pdp11core::VM3_STATE_WORDS];
+    core->get_vm3(v);
+    v[word] = (uint16_t)value;
+    core->set_vm3(v);
+}
+
+std::vector<std::string> k1801vm1::get_context_names()
+{
+    std::vector<std::string> names = CPU::get_context_names();
+    for (const std::string &n : mmu_register_names())
+        if (!n.empty()) names.push_back(n);
+    return names;
+}
+
+std::vector<CpuRegister> k1801vm1::get_register_values()
+{
+    std::vector<CpuRegister> r = CPU::get_register_values();
+    if (!core->is_vm3()) return r;
+    uint16_t v[pdp11core::VM3_STATE_WORDS];
+    core->get_vm3(v);
+    for (const std::string &name : mmu_register_names()) {
+        CpuRegister reg;
+        reg.name = name;
+        reg.value = 0;
+        reg.bits = 0;
+        bool is_current;
+        const int word = name.empty() ? -1 : mmu_word(name, is_current);
+        if (word >= 0) {
+            reg.value = is_current ? core->get_context()->R[PDP11::REG_SP] : v[word];
+            reg.bits = 16;
+        }
+        r.push_back(reg);
+    }
+    return r;
 }
 
 void k1801vm1::interface_callback(unsigned int callback_id, unsigned int new_value, MAYBE_UNUSED unsigned int old_value)

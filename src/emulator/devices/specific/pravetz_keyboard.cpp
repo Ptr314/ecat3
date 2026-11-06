@@ -238,26 +238,6 @@ std::vector<Keyboard::Indicator> PravetzKeyboard::indicators() const
     return r;
 }
 
-// The layout, when the config lists the maps it offers (map_1, map_2, ...
-// titled map_title_N): ГОСТ, БДС or ЯВЕРТЪ on the same keyboard
-ConfigFields PravetzKeyboard::get_config_fields()
-{
-    ConfigField f;
-    f.name = "map";
-    const std::string label = str_trim(cd->get_parameter("map_label", false).value);
-    f.title = label.empty() ? std::string(QT_TRANSLATE_NOOP("ConfigFields", "Keyboard layout")) : label;
-    f.type = CONFIG_FIELD_CHOICE;
-    for (unsigned n = 1; ; n++) {
-        const std::string file = str_trim(cd->get_parameter("map_" + std::to_string(n), false).value);
-        if (file.empty()) break;
-        const std::string title = str_trim(cd->get_parameter("map_title_" + std::to_string(n), false).value);
-        f.values.push_back({file, title.empty() ? file : title});
-    }
-    if (f.values.empty()) return {};
-    f.def = f.values[0].value;
-    return {f};
-}
-
 void PravetzKeyboard::reset(bool cold)
 {
     Keyboard::reset(cold);

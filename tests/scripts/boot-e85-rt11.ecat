@@ -1,0 +1,20 @@
+# Электроника МС 0585: RT-11 V5.3 для DEC Pro с винчестера - монитор XM с драйверами PI и DW
+# проходит STARTX.COM до приглашения KMON. Набор идёт раскладкой LK201: программы DEC делают
+# знак из кода клавиши по местам QWERTY, и с раскладкой МС7004 `SHOW CONFIG` приходит
+# как `cjjd wjyabu`
+# @timeout 120
+MACHINE "../../tests/files/e85-rt11.ext"
+COMMAND knmd.load("../library/e85/rt11v53.rd")
+COMMAND knmd.volatile(1)
+LOGDEFS _16,_8
+WAIT _42000
+TYPE "SHOW CONFIGURATION\n"
+WAIT _3000
+TYPE "dir/brief *.com\n"
+WAIT _3000
+SCREEN "../results/boot-e85-rt11.png"
+LOG keyboard.dropped
+LOG cpu.timeouts
+LOG cpu.timeout_address
+LOG knmd.geometry
+EXIT

@@ -1,0 +1,4 @@
+[keyboard.dropped] &000
+[cpu.timeouts] &000047
+[cpu.timeout_address] &172000
+[knmd.geometry] 512/8/16

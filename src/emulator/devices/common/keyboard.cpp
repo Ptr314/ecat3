@@ -15,6 +15,24 @@ Keyboard::Keyboard(InterfaceManager *im, EmulatorConfigDevice *cd):
     reset_priority = 100;
 }
 
+ConfigFields Keyboard::get_config_fields()
+{
+    ConfigField f;
+    f.name = "map";
+    const std::string label = str_trim(cd->get_parameter("map_label", false).value);
+    f.title = label.empty() ? std::string(QT_TRANSLATE_NOOP("ConfigFields", "Keyboard layout")) : label;
+    f.type = CONFIG_FIELD_CHOICE;
+    for (unsigned n = 1; ; n++) {
+        const std::string file = str_trim(cd->get_parameter("map_" + std::to_string(n), false).value);
+        if (file.empty()) break;
+        const std::string title = str_trim(cd->get_parameter("map_title_" + std::to_string(n), false).value);
+        f.values.push_back({file, title.empty() ? file : title});
+    }
+    if (f.values.empty()) return {};
+    f.def = f.values[0].value;
+    return {f};
+}
+
 emulator::Result Keyboard::load_config(SystemData *sd)
 {
     emulator::Result res = ComputerDevice::load_config(sd);

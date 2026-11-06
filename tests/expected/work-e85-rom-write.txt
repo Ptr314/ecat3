@@ -1,0 +1,11 @@
+=== TST (R4): чтение ПЗУ отвечает ===
+[cpu.pc] &00001002
+[cpu.timeouts] &000000
+=== MOV (R4),(R4): запись в ПЗУ - тайм-аут и вектор 4 ===
+[cpu.timeouts] &000001
+[cpu.timeout_address] &160000
+[cpu.timeout_pc] &001002
+[cpu.trap_vector] &000004
+=== MOV (R4),(R4) в ОЗУ: без тайм-аута ===
+[cpu.pc] &00001002
+[cpu.timeouts] &000001

@@ -1,0 +1,37 @@
+# Электроника МС 0585: ПЗУ отвечает только на чтение. Запись в него - тайм-аут магистрали и
+# прерывание по вектору 4 (strict у диапазона ПЗУ). По этому прерыванию советский PI.SYS RT-11 5.1
+# находит верх памяти: MOV @R4,@R4 с шагом 4000 до 170000 должна прерваться на 160000, где без
+# диспетчера видна первая страница ПЗУ. Без прерывания система принимала ПЗУ за ОЗУ
+# @timeout 30
+MACHINE "computers/e85/MS0585.cfg"
+LOGDEFS _16,_8
+COMMAND cpu.pause()
+COMMAND cpu.setreg(SP, 1000)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(R4, 160000)
+
+PRINT "=== TST (R4): чтение ПЗУ отвечает ==="
+COMMAND ram.set(1000, 314)
+COMMAND ram.set(1001, 13)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.tstep(1)
+LOG cpu.pc
+LOG cpu.timeouts
+
+PRINT "=== MOV (R4),(R4): запись в ПЗУ - тайм-аут и вектор 4 ==="
+COMMAND ram.set(1000, 14)
+COMMAND ram.set(1001, 23)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.tstep(1)
+LOG cpu.timeouts
+LOG cpu.timeout_address
+LOG cpu.timeout_pc
+LOG cpu.trap_vector
+
+PRINT "=== MOV (R4),(R4) в ОЗУ: без тайм-аута ==="
+COMMAND cpu.setreg(R4, 154000)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.tstep(1)
+LOG cpu.pc
+LOG cpu.timeouts
+EXIT
