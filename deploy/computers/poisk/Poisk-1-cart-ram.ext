@@ -10,9 +10,10 @@
 // Стоит прямо на Poisk-1.cfg и повторяет правки Poisk-1-128k.ext, а не
 // строится на нем: расширение поверх расширения не попадает в веб-версию
 @extends poisk/Poisk-1.cfg
-@version Поиск-1 (128 КБ) + картридж ОЗУ 256 КБ
+@version Поиск-1 (128+256 Кб)
 @protected
 
+system:order = 400
 ram0:size = 128k
 -mapper:@memory[$00000-$77FFF] = ram0
 

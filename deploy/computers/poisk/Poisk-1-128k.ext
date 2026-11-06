@@ -5,6 +5,7 @@
 @version Поиск-1 (128 КБ)
 @protected
 
+system:order = 300
 ram0:size = 128k
 -mapper:@memory[$00000-$77FFF] = ram0
 @before mapper:@memory[$B8000-$BFFFF]

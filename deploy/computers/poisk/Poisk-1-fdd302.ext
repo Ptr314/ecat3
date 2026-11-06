@@ -6,7 +6,8 @@
 // когда порт C6h говорит, что мотор стоит, и DOS загружается в несколько раз
 // быстрее
 @extends poisk/Poisk-1.cfg
-@version Поиск-1 (512 КБ), ПЗУ дисковода v3.02
+@version Поиск-1 (Быстрая загрузка)
 @protected
 
+system:order = 200
 fddrom:image = b_ngmd_t.rf2
