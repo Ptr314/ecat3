@@ -1,5 +1,7 @@
 # Ириша и клоны
 
+[English](irisha.en.md) | [Български](irisha.bg.md)
+
 Учебный компьютер на КР580ВМ80А и его клоны. Группа «Ириша» в окне выбора машины.
 
 ## Конфигурации
@@ -13,7 +15,7 @@
 
 ## Что нужно
 
-ПЗУ входят в поставку: `deploy/computers/irisha/`. Диски &ndash; в `software/irisha` (`disk5.gmd` &ndash; игры, `02.cpm` &ndash; утилиты CP/M).
+ПЗУ входят в поставку: `deploy/computers/irisha/files/`. Диски &ndash; в `software/irisha` (`disk5.gmd` &ndash; игры, `02.cpm` &ndash; утилиты CP/M).
 
 ## Файлы
 

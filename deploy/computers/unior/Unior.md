@@ -97,7 +97,7 @@ COPY A:=CT:CPM55     прочитать его обратно</pre>
 * ВК: Enter, ТАБ: Tab, АР2: Esc, ЗБ: Backspace, стрелки: стрелки, СТОП: `~`;
 * АЛФ: Caps Lock, ФИКС: Scroll Lock, ГРАФ: Alt, НР: Shift, УПР: Ctrl;
 * К1&ndash;К5: F1&ndash;F5; ПОМ: Home, УСТ: Insert, ИСП: Delete;
-* цифровой блок: цифры на F6&ndash;F12, PgUp, PgDn, End; `+`, `&minus;` и `*` на
+* цифровой блок: цифры на F6&ndash;F12, PgUp, PgDn, End; `+`, `-` и `*` на
   серых (серый Enter даёт тот же `*`), `.` на NumLock. Запятая цифрового блока
   есть только на экранной клавиатуре.
 

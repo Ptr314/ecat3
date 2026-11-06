@@ -1,5 +1,7 @@
 # Радио-86РК и совместимые
 
+[English](radio-86rk.en.md) | [Български](radio-86rk.bg.md)
+
 Радиолюбительский компьютер (журнал «Радио», 1986) и его заводские варианты. Группа «Радио-86РК» в окне выбора машины.
 
 ## Конфигурации
@@ -15,7 +17,7 @@
 
 ## Что нужно
 
-ПЗУ и знакогенераторы входят в поставку: `deploy/computers/radio-86rk/`, `apogey/`, `mikrosha/`. Программы &ndash; в `software/radio-86rk`, `software/apogey`, `software/mikrosha`.
+ПЗУ и знакогенераторы входят в поставку: `deploy/computers/radio-86rk/files/`, `apogey/files/`, `mikrosha/files/`. Программы &ndash; в `software/radio-86rk`, `software/apogey`, `software/mikrosha`.
 
 ## Файлы
 

@@ -2,7 +2,7 @@
 
 Elektronika MS 0585 with the hard disk controller in the first bus slot and a 10 MB
 drive: 4 heads, 306 cylinders, 16 sectors of 512 bytes. Everything else is as in the
-[main machine](MS0585.en.md).
+main machine.
 
 The image slot is empty: the machine changes the 10 MB file on every boot, so use a
 copy of it. Without an image the drive is not ready, and the self test shows the
@@ -11,8 +11,8 @@ picture of the system unit with device code 000401 and error code 000005.
 ## PROS 2.03
 
 A ready system with games is the image `pros-2.03-10m.rd`. It does not come with the
-emulator: it and the floppies below are in the software library on the emulator's site
-(https://ecat.emuverse.ru/library/e85/). Put a copy of this file into the hard disk slot and restart
+emulator: it and the floppies below are in the [software library on the emulator's site](https://ecat.emuverse.ru/library/e85/).
+Put a copy of this file into the hard disk slot and restart
 the machine: the main menu appears in 40 seconds. Drive 0 must be empty: with a floppy
 in it, the ROM boots from the floppy.
 
@@ -56,21 +56,21 @@ system keeps the floppy it installed from in use.
 
 ## Installing from floppies
 
-You can build the image yourself. A blank disk is any file shorter than 10 MB, at least
+How to build a new disk image. A blank disk is any file shorter than 10 MB, at least
 one 512-byte sector: the machine reads zeros past its end and extends it on writing.
 Put it into the slot, and `pros-2.03-1-system.dsk` into drive 0. When the installer
 asks, change the floppy in drive 2 (`pros-2.03-2-regim.dsk`, `-3-program`, `-4-bibliot`,
 `-5-utilit`). Eject the floppy first, insert the next one, and only then press Resume.
 
 Installing the system takes about 18 minutes of emulated time, up to 12 of them for
-formatting and checking the disk. At the highest speed that is less than a minute.
+formatting and checking the disk. You can use the turbo mode of the emulation to avoid waiting.
 
 ## Not done
 
+- The service zone of a sector is not stored; the controller only counts such writes.
 - The speed of the disk is not the real one. The technical description gives no times, they are
   taken from the DVK hard disk, and the disk does not turn: a sector comes right after the seek. A
   real drive is slower, by how much is not known, so the time PROS takes to boot here is no measure.
-- The service zone of a sector is not stored; the controller only counts such writes.
 - There are no ready images for 32 MB (8 heads, 511 cylinders) and 5 MB (153 cylinders). Both
   sizes are set by the device parameters, and PROS 2.03 installs on them from the floppies and
   boots.

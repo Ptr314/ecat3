@@ -1,5 +1,7 @@
 # Поиск-1
 
+[English](poisk.en.md) | [Български](poisk.bg.md)
+
 IBM PC-совместимый компьютер КПО «Электронмаш» (Киев, 1989). Группа «Поиск» в окне выбора машины.
 
 ## Конфигурации
@@ -8,14 +10,14 @@ IBM PC-совместимый компьютер КПО «Электронмаш
 |---|---|---|
 | Поиск-1 (512 КБ) | К1810ВМ88 5 МГц, 512 КБ ОЗУ, картридж дисковода B504 (два привода 720 КБ), магнитофон | [Poisk-1.md](../../deploy/computers/poisk/Poisk-1.md) |
 | Поиск-1 (128 КБ) | 128 КБ ОЗУ: BIOS и кассеты работают, MS-DOS 5.0 &ndash; нет | [Poisk-1-128k.md](../../deploy/computers/poisk/Poisk-1-128k.md) |
-| Поиск-1 (128 КБ) + картридж ОЗУ 256 КБ | Память картриджа без тактов ожидания, всего 352 КБ | [Poisk-1-cart-ram.md](../../deploy/computers/poisk/Poisk-1-cart-ram.md) |
-| Поиск-1 (512 КБ), ПЗУ дисковода v3.02 | ПЗУ дисковода «Moscow 1991»: загрузка MS-DOS в несколько раз быстрее | [Poisk-1-fdd302.md](../../deploy/computers/poisk/Poisk-1-fdd302.md) |
+| Поиск-1 (128+256 Кб) | Память картриджа без тактов ожидания, всего 352 КБ | [Poisk-1-cart-ram.md](../../deploy/computers/poisk/Poisk-1-cart-ram.md) |
+| Поиск-1 (Быстрая загрузка) | ПЗУ дисковода «Moscow 1991»: загрузка MS-DOS в несколько раз быстрее | [Poisk-1-fdd302.md](../../deploy/computers/poisk/Poisk-1-fdd302.md) |
 
 Видеосистема: 320x200 (4 цвета) и 640x200, без текстового режима; текст рисует BIOS через ловушку NMI.
 
 ## Что нужно
 
-ПЗУ входят в поставку: `deploy/computers/poisk/` (BIOS 14.02.1991, ПЗУ картриджа дисковода). Программы &ndash; в `software/poisk`: `msdos5_vc405.img` (MS-DOS 5.0), `TETRIS.CAS`.
+ПЗУ входят в поставку: `deploy/computers/poisk/files/` (BIOS 14.02.1991, ПЗУ картриджа дисковода). Программы &ndash; в `software/poisk`: `msdos5_vc405.img` (MS-DOS 5.0), `TETRIS.CAS`.
 
 ## Файлы
 

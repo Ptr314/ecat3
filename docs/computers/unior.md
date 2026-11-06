@@ -1,5 +1,7 @@
 # Юниор и Арго
 
+[English](unior.en.md) | [Български](unior.bg.md)
+
 Киевские компьютеры ФВ-6506 и ФВ-6511, развитие Радио-86РК. Группа «Юниор» в окне выбора машины.
 
 ## Конфигурации
@@ -13,7 +15,7 @@
 
 ## Что нужно
 
-ПЗУ, знакогенераторы и палитры входят в поставку: `deploy/computers/unior/`. Кассеты &ndash; в `software/unior`, Pascal и SuperCalc &ndash; в библиотеке программ на сайте эмулятора (https://ecat.emuverse.ru/library/unior/), к каждой кассете список файлов `.lst`:
+ПЗУ, знакогенераторы и палитры входят в поставку: `deploy/computers/unior/files/`. Кассеты &ndash; в `software/unior`, Pascal и SuperCalc &ndash; в библиотеке программ на сайте эмулятора (https://ecat.emuverse.ru/library/unior/), к каждой кассете список файлов `.lst`:
 
 * `elcon.a.bt` &ndash; TCP/M и игры (заряжена в Юниоре);
 * `argo.a.bt` &ndash; системная кассета Арго, `ZX.COM`;
