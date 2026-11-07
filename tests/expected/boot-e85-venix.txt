@@ -1,0 +1,5 @@
+[sys.id] &111 &100 &123 &000 &000 &000 &371 &374
+[keyboard.dropped] &000
+[cpu.timeouts] &000006
+[cpu.timeout_address] &000000
+[knmd.geometry] 512/8/16

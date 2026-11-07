@@ -1,0 +1,22 @@
+# Электроника МС 0585: VENIX/PRO 2.0 (Unix для DEC Pro) с образа винчестера из Xhomer. Ядро
+# сверяет номер доступа с серийным номером в ПЗУ 17773600: с номером, отличным от ПЗУ Pro 350
+# в Xhomer, оно останавливается на PANIC: Bad access number. Загрузчик считает адрес на диске
+# под 8 головок по 16 секторов и ошибок контроллера не проверяет: при 4 головках он ждёт
+# данных вечно. fsck обоих разделов, вход root без пароля, каталог корня
+# @timeout 150
+MACHINE "../../tests/files/e85-rt11.ext"
+COMMAND knmd.load("../library/e85/venix2.rd")
+COMMAND knmd.volatile(1)
+LOGDEFS _16,_8
+LOG sys.id
+WAIT _90000
+TYPE "root\n"
+WAIT _15000
+TYPE "ls /\n"
+WAIT _5000
+SCREEN "../results/boot-e85-venix.png"
+LOG keyboard.dropped
+LOG cpu.timeouts
+LOG cpu.timeout_address
+LOG knmd.geometry
+EXIT

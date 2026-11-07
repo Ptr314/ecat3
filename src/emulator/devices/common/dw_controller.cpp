@@ -29,11 +29,16 @@ emulator::Result DWController::open_image(const std::string &file_name)
     if (!m_image.open(file_name, error))
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{DVKDW|" + std::string(QT_TRANSLATE_NOOP("DVKDW", "Hard disk image file not found")) + "} " + file_name);
-    // Цилиндры - из конфигурации или по размеру файла. Образ больше заданной
-    // геометрии допустим, хвост не используется; меньше - только там, где он растёт
+    // Образ известного накопителя - его геометрия. Иначе цилиндры из конфигурации или
+    // по размеру файла. Образ больше заданной геометрии допустим, хвост не используется;
+    // меньше - только там, где он растёт
+    unsigned int cylinders = m_cfg_cylinders;
+    m_heads = m_cfg_heads;
+    m_sectors = m_cfg_sectors;
+    known_geometry(m_image.size(), m_heads, cylinders, m_sectors);
     const uint64_t track = (uint64_t)m_heads * m_sectors * HddImage::SECTOR_SIZE;
     const uint64_t image_cylinders = m_image.size() / track;
-    m_cylinders = (m_cfg_cylinders != 0) ? m_cfg_cylinders : (unsigned int)image_cylinders;
+    m_cylinders = (cylinders != 0) ? cylinders : (unsigned int)image_cylinders;
     if (m_cylinders == 0 || m_cylinders > 1024 || (!m_grows_image && image_cylinders < m_cylinders)) {
         m_image.close();
         m_cylinders = 0;
@@ -62,8 +67,8 @@ emulator::Result DWController::load_config(SystemData *sd)
     m_image.set_write_protect(read_confg_value(cd, "write_protect", false, false));
     m_image.set_volatile(read_confg_value(cd, "volatile", false, false));
 
-    m_heads = read_confg_value(cd, "heads", false, (unsigned int)4);
-    m_sectors = read_confg_value(cd, "sectors", false, (unsigned int)16);
+    m_heads = m_cfg_heads = read_confg_value(cd, "heads", false, (unsigned int)4);
+    m_sectors = m_cfg_sectors = read_confg_value(cd, "sectors", false, (unsigned int)16);
     m_cfg_cylinders = read_confg_value(cd, "cylinders", false, (unsigned int)0);
     if (m_cfg_cylinders > 1024 || !geometry_ok())
         return emulator::Result::error(emulator::ErrorCode::ConfigError,

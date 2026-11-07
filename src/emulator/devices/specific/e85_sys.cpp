@@ -36,9 +36,11 @@ emulator::Result E85Sys::load_config(SystemData *sd)
     m_config = read_confg_value(cd, "memory", false, (unsigned int)0) & 0177;
     m_slots = read_confg_value(cd, "slots", false, (unsigned int)0) & 0377;
 
+    // The low byte first; bytes 4 and 5 stay zero, as in the PROM of a DEC Pro 350
+    // (Xhomer's id.rom)
     const unsigned int serial = read_confg_value(cd, "serial", false, (unsigned int)1);
     memset(m_id, 0, sizeof(m_id));
-    for (unsigned int i = 0; i < 6; i++) m_id[i] = (uint8_t)((serial >> (8 * (i & 3))) & 0xFF);
+    for (unsigned int i = 0; i < 4; i++) m_id[i] = (uint8_t)((serial >> (8 * i)) & 0xFF);
     // Each word: XOR, then rotate left; the last word cancels what is left
     uint16_t sum = 0xFFFF;
     for (unsigned int i = 0; i < 3; i++) {

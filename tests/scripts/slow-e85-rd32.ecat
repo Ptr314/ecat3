@@ -1,0 +1,89 @@
+# Электроника МС 0585 с винчестером на 6 головок (RD32, 6 x 820): ПРОС 2.03 ставится на чистый
+# диск с дискет и загружается с него. У накопителя на 6 головок поверхностей 6 и 7 нет, и
+# обращение к ним кончается ошибкой «нет адреса», как за последним цилиндром; у накопителя на
+# 4 головки поверхности 4-7 совпадают с 0-3 (slow-e85-install). Программа установки проверяет
+# поверхности 4-7, размечает и проверяет диск (около 30 минут эмулированного времени вместо 12)
+# и копирует систему с четырёх дискет. Запись идёт в память: e85-blank.rd - один нулевой
+# сектор, накопитель продолжает его нулями до 6 x 820
+# Вокруг снимков процессоры стоят: на --speed 1 машина иначе идёт дальше, пока снимок ждёт кадра
+# @timeout 500
+MACHINE "../../tests/files/e85-rd32.ext"
+COMMAND knmd.volatile(1)
+COMMAND knmd.load("../tests/files/e85-blank.rd")
+COMMAND fd0.load("../library/e85/pros-2.03-1-system.dsk")
+WAIT _60000
+KEYDOWN key_f16
+WAIT _100
+KEYUP key_f16
+WAIT _300
+WAIT _15000
+COMMAND fd1.load("../library/e85/pros-2.03-2-regim.dsk")
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _300
+# Дата и время
+WAIT _15000
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _300
+# Разметка, запись и проверка диска; затем вопрос о типе клавиатуры
+WAIT _1900000
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _300
+WAIT _80000
+COMMAND fd1.eject()
+WAIT _3000
+COMMAND fd1.load("../library/e85/pros-2.03-3-program.dsk")
+WAIT _3000
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _300
+WAIT _70000
+COMMAND fd1.eject()
+WAIT _3000
+COMMAND fd1.load("../library/e85/pros-2.03-4-bibliot.dsk")
+WAIT _3000
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _300
+WAIT _70000
+COMMAND fd1.eject()
+WAIT _3000
+COMMAND fd1.load("../library/e85/pros-2.03-5-utilit.dsk")
+WAIT _3000
+KEYDOWN key_f7
+WAIT _100
+KEYUP key_f7
+WAIT _300
+WAIT _70000
+LOGDEFS _16,_8
+LOG knmd.geometry
+LOG knmd.formats
+LOG knmd.reads
+LOG knmd.writes
+LOG knmd.err
+LOG knmd.refused
+LOG knmd.unsupported
+COMMAND cpu.stop()
+COMMAND kngmd-cpu.stop()
+SCREEN "../results/slow-e85-rd32-done.png"
+COMMAND kngmd-cpu.run()
+COMMAND cpu.run()
+COMMAND fd0.eject()
+COMMAND fd1.eject()
+RESET cold
+WAIT _60000
+LOG knmd.reads
+LOG knmd.writes
+LOG knmd.err
+LOG cpu.timeouts
+COMMAND cpu.stop()
+COMMAND kngmd-cpu.stop()
+SCREEN "../results/slow-e85-rd32.png"
+EXIT

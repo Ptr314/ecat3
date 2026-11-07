@@ -16,8 +16,9 @@
 //
 // The autotest copies the first eight bytes of the PROM into the configuration
 // table and clears them if their sum (the same as of a module ROM) is not zero.
-// No dump of the chip is known, so the first six are serial and the rest make
-// the sum come out.
+// No dump of the chip of an Э-85 is known: the first four bytes are serial, the
+// next two zero, the last two make the sum come out. The machine takes the number
+// of the DEC Pro 350 PROM in Xhomer, since VENIX/PRO 2.0 ties its licence to it.
 class E85Sys: public AddressableDevice
 {
 private:

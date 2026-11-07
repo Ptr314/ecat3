@@ -54,13 +54,17 @@
 #define EV_READ         2
 #define EV_WRITE        3
 #define EV_FORMAT       4
+#define EV_READ_MISS    5               // сектор не нашёлся: конец поиска
+#define EV_WRITE_MISS   6
 
 #define CALLBACK_INIT   1
 
-// ТО5 времён не даёт. seek_time, step_time и word_time - значения dvk-dw, начальная
-// установка и format_time взяты без источника, а диск не вращается: сектор приходит сразу
-// за поиском. Настоящий накопитель медленнее, см. docs/dev/machines.md
+// ТО5 даёт только поиск сектора: два оборота (п. 4.5.2), дальше «Ошибка поиска адреса».
+// seek_time, step_time и word_time - значения dvk-dw, начальная установка и оборот
+// (format_time) взяты без источника, а диск не вращается: найденный сектор приходит сразу
+// за поиском дорожки. Настоящий накопитель медленнее, см. docs/dev/machines.md
 #define INIT_US         50000
+#define MISS_REVS       2
 
 E85Knmd::E85Knmd(InterfaceManager *im, EmulatorConfigDevice *cd):
       DWController(im, cd, 0200, INIT_US)
@@ -84,10 +88,38 @@ void E85Knmd::image_opened()
     reset_ids();
 }
 
-// Головки - степень двойки: лишние разряды РАП накопитель не видит
+// От 1 до 8 головок: РАП - 3 разряда. Как их видит накопитель - physical_head()
 bool E85Knmd::geometry_ok() const
 {
-    return (m_heads == 2 || m_heads == 4 || m_heads == 8) && m_sectors >= 1 && m_sectors <= 32;
+    return m_heads >= 1 && m_heads <= 8 && m_sectors >= 1 && m_sectors <= 32;
+}
+
+// Накопители, которые узнаются по размеру образа: таблица Xhomer (накопители DEC Pro, по
+// 16 и 17 секторов; программы 17-й сектор не трогают), два RD52 других изготовителей из
+// таблицы DEVCHR драйвера DW (RT-11 V5.4A-V5.7) и 32 МБ на 8 x 511, куда тоже ставится
+// ПРОС. Чистый винчестер - файл другого размера, он дорастает до геометрии из параметров
+bool E85Knmd::known_geometry(uint64_t size, unsigned int &heads, unsigned int &cylinders, unsigned int &sectors) const
+{
+    static const struct { unsigned int heads, cylinders; } drives[] = {
+        {4, 153},   // RD50, 5 МБ
+        {4, 306},   // RD51 и МС5401, 10 МБ
+        {4, 615},   // RD31, 21 МБ
+        {5, 697},   // RD52, тип 52C у DW
+        {8, 511},   // 32 МБ у ПРОС
+        {8, 512},   // RD52, 36 МБ (52Q у DW)
+        {7, 645},   // RD52, тип 52A у DW
+        {6, 820},   // RD32, 43 МБ
+        {8, 1024},  // RD53, 71 МБ
+    };
+    for (unsigned int s = 16; s <= 17; s++)
+        for (unsigned int i = 0; i < sizeof(drives) / sizeof(drives[0]); i++)
+            if (size == (uint64_t)drives[i].heads * drives[i].cylinders * s * HddImage::SECTOR_SIZE) {
+                heads = drives[i].heads;
+                cylinders = drives[i].cylinders;
+                sectors = s;
+                return true;
+            }
+    return false;
 }
 
 emulator::Result E85Knmd::load_config(SystemData *sd)
@@ -95,8 +127,8 @@ emulator::Result E85Knmd::load_config(SystemData *sd)
     emulator::Result res = DWController::load_config(sd);
     if (!res) return res;
     m_mapper = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper", false));
-    // Разметка дорожки: оборот
-    m_format_us = read_confg_value(cd, "format_time", false, (unsigned int)16667);
+    // Оборот диска: столько идёт разметка дорожки, а сектор, которого нет, ищется два оборота
+    m_rev_us = read_confg_value(cd, "format_time", false, (unsigned int)16667);
     return load_image();
 }
 
@@ -183,22 +215,41 @@ void E85Knmd::event_done(unsigned int event)
     case EV_FORMAT:
         format_done();
         break;
+    case EV_READ_MISS:
+        m_err |= ERR_ID;
+        m_csr |= CSR_ERR;
+        give_buffer();
+        break;
+    case EV_WRITE_MISS:
+        fail(ERR_ID);
+        break;
     }
 }
 
-// У накопителя на 4 головки поверхности 4-7 совпадают с 0-3
+// Накопитель видит столько разрядов РАП, сколько нужно на его головки: у накопителя на
+// 4 головки поверхности 4-7 совпадают с 0-3, а у RD32 на 6 головок поверхностей 6 и 7
+// нет вовсе, и обращение к ним кончается, как за последним цилиндром
 unsigned int E85Knmd::physical_head() const
 {
-    return m_head & (m_heads - 1);
+    unsigned int mask = 0;
+    while (mask + 1 < m_heads) mask = (mask << 1) | 1;
+    return m_head & mask;
 }
 
-// Где лежит сектор. Дальше последнего цилиндра накопитель не идёт
+// Где лежит сектор. Дальше последнего цилиндра и последней поверхности накопитель не идёт
 bool E85Knmd::sector_offset(unsigned int sector, uint64_t &offset) const
 {
-    if (!m_image.attached() || m_cyl >= m_cylinders || sector >= m_sectors)
+    if (!m_image.attached() || m_cyl >= m_cylinders || sector >= m_sectors || physical_head() >= m_heads)
         return false;
     offset = ((uint64_t)(m_cyl * m_heads + physical_head()) * m_sectors + sector) * HddImage::SECTOR_SIZE;
     return true;
+}
+
+// Найдётся ли сектор из регистров: дорожка есть, и её идентификаторы совпадают с регистрами
+// целиком
+bool E85Knmd::sector_found(uint64_t &offset) const
+{
+    return sector_offset(m_sector & 037, offset) && m_id_head[m_cyl * 8 + physical_head()] == m_head;
 }
 
 // Конец операции: снят «Занят», ЗОА и «Операция завершена»
@@ -218,18 +269,28 @@ void E85Knmd::fail(unsigned int err)
     finish();
 }
 
+// Найден сектор или нет, чтение кончается одинаково: ЗОБ и «Запрос данных», буфер
+// отдаётся программе, а ЗОА приходит, когда его прочтут. Сектор не нашёлся за два оборота
+// (EV_READ_MISS) - в буфере остаётся прежнее, и стоят разряды ошибки. Обработчик DW из
+// RT-11 на чтение разрешает только ЗОБ и при ошибке опустошает буфер сам (DUMP), а DW с
+// V5.4A, определяя размер, ждёт «Запрос данных» опросом: ЗОА без ЗОБ повесили бы обоих
 void E85Knmd::read_done()
 {
     uint64_t offset;
     uint8_t data[HddImage::SECTOR_SIZE];
     m_track = (m_cyl < m_cylinders) ? m_cyl : m_cylinders - 1;
-    if (!sector_offset(m_sector & 037, offset) || m_id_head[m_cyl * 8 + physical_head()] != m_head
-            || !m_image.read(offset, data)) {
-        fail(ERR_ID);
+    if (!sector_found(offset) || !m_image.read(offset, data)) {
+        schedule(EV_READ_MISS, MISS_REVS * m_rev_us);
         return;
     }
     for (unsigned int i = 0; i < 256; i++) m_buf[i] = (uint16_t)(data[2 * i] | (data[2 * i + 1] << 8));
     m_reads++;
+    give_buffer();
+}
+
+// Буфер готов к выдаче программе
+void E85Knmd::give_buffer()
+{
     m_pointer = m_count = 0;
     m_op = OP_READ;
     m_status &= ~ST_BUSY;
@@ -242,8 +303,8 @@ void E85Knmd::write_done()
     uint64_t offset;
     uint8_t data[HddImage::SECTOR_SIZE];
     m_track = (m_cyl < m_cylinders) ? m_cyl : m_cylinders - 1;
-    if (!sector_offset(m_sector & 037, offset) || m_id_head[m_cyl * 8 + physical_head()] != m_head) {
-        fail(ERR_ID);
+    if (!sector_found(offset)) {
+        schedule(EV_WRITE_MISS, MISS_REVS * m_rev_us);
         return;
     }
     for (unsigned int i = 0; i < 256; i++) {
@@ -409,7 +470,7 @@ void E85Knmd::write_reg(unsigned int reg, unsigned int value)
             m_op = OP_NONE;
             m_word_pending = false;
             m_status |= ST_BUSY;
-            schedule(format ? EV_FORMAT : EV_WRITE, format ? seek_us(m_cyl) + m_format_us : seek_us(m_cyl));
+            schedule(format ? EV_FORMAT : EV_WRITE, format ? seek_us(m_cyl) + m_rev_us : seek_us(m_cyl));
         } else {
             schedule_word();
         }

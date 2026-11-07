@@ -16,7 +16,8 @@
 //
 // Параметры: heads, sectors, cylinders (без него - по размеру образа), small (перемычка
 // накопителя 5 МБ, без него - по числу цилиндров), seek_time, step_time, word_time,
-// init_time, в микросекундах.
+// init_time, в микросекундах. Образ размера известного накопителя (known_geometry())
+// приносит свою геометрию вместо heads, sectors и cylinders.
 class DWController: public AddressableDevice, public HddImageOwner
 {
 private:
@@ -50,7 +51,9 @@ protected:
     HddImage m_image;
     unsigned int m_cylinders = 0;
     unsigned int m_cfg_cylinders = 0;   // из конфигурации, 0 - по размеру образа
-    unsigned int m_heads = 4;
+    unsigned int m_cfg_heads = 4;
+    unsigned int m_cfg_sectors = 16;
+    unsigned int m_heads = 4;           // вставленного образа
     unsigned int m_sectors = 16;
     bool m_grows_image = false;         // образ короче накопителя дополняется нулями
 
@@ -88,6 +91,11 @@ protected:
     virtual void word_ready() = 0;
     virtual void event_done(unsigned int event) = 0;
     virtual bool geometry_ok() const = 0;
+    // Накопитель, который узнаётся по размеру образа в байтах; false - геометрия из
+    // параметров
+    virtual bool known_geometry(MAYBE_UNUSED uint64_t size, MAYBE_UNUSED unsigned int &heads,
+                                MAYBE_UNUSED unsigned int &cylinders, MAYBE_UNUSED unsigned int &sectors) const
+        { return false; }
     virtual unsigned int reg_of(unsigned int address) const = 0;
     virtual unsigned int read_reg(unsigned int reg, bool peek) = 0;
     virtual void write_reg(unsigned int reg, unsigned int value) = 0;

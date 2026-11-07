@@ -57,7 +57,8 @@ system keeps the floppy it installed from in use.
 ## Installing from floppies
 
 How to build a new disk image. A blank disk is any file shorter than 10 MB, at least
-one 512-byte sector: the machine reads zeros past its end and extends it on writing.
+one 512-byte sector, and not of the size of one of the drives below: the machine reads
+zeros past its end and extends it on writing.
 Put it into the slot, and `pros-2.03-1-system.dsk` into drive 0. When the installer
 asks, change the floppy in drive 2 (`pros-2.03-2-regim.dsk`, `-3-program`, `-4-bibliot`,
 `-5-utilit`). Eject the floppy first, insert the next one, and only then press Resume.
@@ -65,12 +66,32 @@ asks, change the floppy in drive 2 (`pros-2.03-2-regim.dsk`, `-3-program`, `-4-b
 Installing the system takes about 18 minutes of emulated time, up to 12 of them for
 formatting and checking the disk. You can use the turbo mode of the emulation to avoid waiting.
 
+## Images of other sizes and DEC systems
+
+The controller tells the geometry of an image by the size of the file. It knows the DEC
+Professional drives RD50 (5 MB), RD51 (10 MB), RD31 (21 MB), RD52 (36 MB), RD32 (43 MB) and RD53 (71 MB),
+with 16 and with 17 sectors a track, as the Xhomer emulator does, two RD52 drives of other
+makers (5 heads and 697 cylinders, 7 heads and 645 cylinders), which the DW handler of
+RT-11 V5.4-V5.7 tells apart, and 32 MB of 8 heads and 511 cylinders, where PROS installs. A file of another size takes the geometry from the device
+parameters: 4 heads and 306 cylinders, which can be changed in the extension editor. This is
+how PROS 2.03 installs from the floppies on 5 and 32 MB; there are no ready images of those
+sizes.
+
+The library has two 32 MB images with systems for the DEC Professional:
+
+- `rt11v53.rd`: RT-11 V5.3 with the XM monitor, the prompt comes after 40 seconds;
+- `venix2.rd`: VENIX/PRO 2.0, the Unix that came with Xhomer. After a minute and a half,
+  once the file systems are checked, `login:` appears. User `root` gets a shell, `demo` the
+  colour demo; neither has a password. VENIX shows the year as 1988: it does not take years
+  after 1999 from the clock.
+
+DEC programs take a character by the place of the key on the LK201 keyboard, while the Latin
+letters of MS7004 are laid out as ЙЦУКЕН, so for them choose the LK201 layout in the extension
+editor.
+
 ## Not done
 
 - The service zone of a sector is not stored; the controller only counts such writes.
 - The speed of the disk is not the real one. The technical description gives no times, they are
   taken from the DVK hard disk, and the disk does not turn: a sector comes right after the seek. A
   real drive is slower, by how much is not known, so the time PROS takes to boot here is no measure.
-- There are no ready images for 32 MB (8 heads, 511 cylinders) and 5 MB (153 cylinders). Both
-  sizes are set by the device parameters, and PROS 2.03 installs on them from the floppies and
-  boots.

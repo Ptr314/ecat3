@@ -1,0 +1,11 @@
+[knmd.geometry] 820/6/16
+[knmd.formats] &00000006636
+[knmd.reads] &00000332340
+[knmd.writes] &00000344244
+[knmd.err] &000000
+[knmd.refused] &00000000000
+[knmd.unsupported] &00000000000
+[knmd.reads] &00000334272
+[knmd.writes] &00000344275
+[knmd.err] &000000
+[cpu.timeouts] &000020

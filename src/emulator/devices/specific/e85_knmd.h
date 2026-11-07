@@ -36,7 +36,13 @@
 // чтение поверхности 4 на такой дорожке 0 не находит адреса, а разметка
 // поверхности 4 попадает на поверхность 0 и записывает в идентификаторы 4. Так
 // установка ПРОС узнаёт число поверхностей, поэтому номер из идентификаторов
-// хранится отдельно от образа, для дорожек, размеченных в этом сеансе.
+// хранится отдельно от образа, для дорожек, размеченных в этом сеансе. У
+// накопителя на 6 головок (RD32) три разряда, а поверхностей 6 и 7 нет: обращение к
+// ним кончается ошибкой «нет адреса», как за последним цилиндром.
+//
+// Сектор, которого нет, контроллер ищет два оборота (ТО5, п. 4.5.2). Чтение и тогда
+// кончается ЗОБ и «Запросом данных» с разрядами ошибки, ЗОА - после выдачи буфера; запись -
+// ЗОА с ошибкой. На этом стоит определение размера диска драйвером DW из RT-11.
 class E85Knmd: public DWController
 {
 private:
@@ -58,7 +64,7 @@ private:
     enum Op { OP_NONE = 0, OP_READ, OP_WRITE, OP_FORMAT };
     unsigned int m_op = OP_NONE;
 
-    unsigned int m_format_us = 0;
+    unsigned int m_rev_us = 0;          // оборот диска, мкс
     unsigned int m_formats = 0;
     unsigned int m_refused = 0;         // обращений во время операции
 
@@ -72,8 +78,10 @@ private:
     void reset_ids();
     unsigned int physical_head() const;
     bool sector_offset(unsigned int sector, uint64_t &offset) const;
+    bool sector_found(uint64_t &offset) const;
     void fail(unsigned int err);
     void finish();
+    void give_buffer();
     void read_done();
     void write_done();
     void format_done();
@@ -83,6 +91,7 @@ protected:
     void word_ready() override;
     void event_done(unsigned int event) override;
     bool geometry_ok() const override;
+    bool known_geometry(uint64_t size, unsigned int &heads, unsigned int &cylinders, unsigned int &sectors) const override;
     unsigned int reg_of(unsigned int address) const override;
     unsigned int read_reg(unsigned int reg, bool peek) override;
     void write_reg(unsigned int reg, unsigned int value) override;
