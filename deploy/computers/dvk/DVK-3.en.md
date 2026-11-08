@@ -30,6 +30,10 @@ choose the file on your computer) and boot it with the command
 
 `@BDW`
 
+Without an image the controller, like a real one with no drive, never leaves its
+reset, and `@BDW` waits for it forever. An image inserted meanwhile lets the boot
+go on.
+
 ## Keyboard
 
 | Host | Machine |

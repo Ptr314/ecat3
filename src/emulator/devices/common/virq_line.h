@@ -21,6 +21,11 @@
 //     that does not clear its cause is not called again and again until the
 //     stack runs off the bottom of memory.
 //
+// A device whose request really is a level, which the acknowledge does not
+// clear (the ДВК DW board), calls clear() on its own acknowledge and offers
+// again: the processor then takes it again once the handler has returned,
+// unless the handler cleared the cause and the device withdrew it.
+//
 // Devices sharing one line form a chain: each offers its own request first and
 // passes on the one coming from further along (~virq_in / ~vector_in, the
 // ~virq / ~vector of the next device). chain() picks between the two.
@@ -53,7 +58,8 @@ public:
     //A saved state restores the line itself; this is the memory of what was
     //offered on it, so that the same request is not made again
     void set_offered(unsigned int vector) { m_offered = vector; }
-    // Forgets the offer without touching the line, for a reset
+    // Forgets the offer without touching the line: for a reset, or so that the
+    // next offer of the same vector pulls the line again
     void clear() { m_offered = 0; }
 
 private:

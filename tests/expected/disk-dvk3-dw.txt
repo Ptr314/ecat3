@@ -1,6 +1,6 @@
 [dw.geometry] 153/4/16
 [dw.writes] &00000000024
-[dw.err] &000000
+[dw.err] &000040
 === Экран ===
 [display.text] 
                              lin  lat  wr             9600  0 0 0  0 0 0  0 0 1

@@ -21,3 +21,4 @@ WAIT 20
 KEYUP key_quote
 WAIT 20
 LOG keyboard.latch
+EXIT

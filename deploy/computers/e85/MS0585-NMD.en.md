@@ -5,8 +5,10 @@ drive: 4 heads, 306 cylinders, 16 sectors of 512 bytes. Everything else is as in
 main machine.
 
 The image slot is empty: the machine changes the 10 MB file on every boot, so use a
-copy of it. Without an image the drive is not ready, and the self test shows the
-picture of the system unit with device code 000401 and error code 000005.
+copy of it. Without a drive the controller firmware, as on the real machine, never
+leaves its reset, and its registers do not answer: the self test polls the slot for
+about 20 seconds with a black screen and shows the picture of the system unit with
+code 177776 (slot occupied, registers do not answer).
 
 ## PROS 2.03
 

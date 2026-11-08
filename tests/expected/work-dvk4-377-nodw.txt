@@ -1,0 +1,30 @@
+=== Экран ===
+[display.text] 
+                             lin  lat  wr             9600  0 0 0  0 0 0  0 0 1
+
+tEST HALT-REVIMA*
+dOSTUPNOE ozu  -  1024 k*
+tEST dp I PRERYWANIJ*
+tEST nvd
+? - o[IBKA -ZANQT*
+@013370
+@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== CSR, SI ===
+[dw.csr] &000000
+[dw.status] &100000

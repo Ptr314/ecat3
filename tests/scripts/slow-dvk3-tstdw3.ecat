@@ -21,6 +21,7 @@ WAIT _130000
 
 LOGDEFS _16,_8
 LOG dw.writes
+LOG dw.formats
 PRINT "=== Экран ==="
 LOG display.text
 EXIT

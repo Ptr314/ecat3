@@ -56,3 +56,4 @@ KEYUP key_minus
 KEYUP key_shift_r
 WAIT 20
 LOG keyboard.latch
+EXIT
