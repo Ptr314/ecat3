@@ -578,7 +578,7 @@ unsigned int DWController::read_reg(unsigned int reg, bool peek)
         if (!peek) csr_touched();
         return m_csr & CSR_RD;
     case DW_STATUS: {
-        unsigned int v = (m_status & (ST_BUSY | ST_DRQ1 | ST_DONE)) | status_bus_bits();
+        unsigned int v = m_status & (ST_BUSY | ST_DRQ1 | ST_DONE);
         if (small_drive()) v |= ST_SMALL;
         return v;
     }
@@ -674,15 +674,17 @@ unsigned int DWController::get_value(unsigned int address)
     return (address & 1) ? ((w >> 8) & 0xFF) : (w & 0xFF);
 }
 
-// Байт пишется в свою половину регистра. Старшие байты РКС2 и РОШПК только читаются,
-// но обращение к РКС2 есть обращение: оно снимает ЗОА и адрес буфера
+// Байт пишется в свою половину регистра. Старшие байты РКС2, РОШПК и РСНУ только
+// читаются, но обращение к РКС2 есть обращение: оно снимает ЗОА и адрес буфера. В РСНУ
+// записываемые разряды (сброс, у ДВК и разрешение) - в младшем байте, а разрешение не
+// читается: слово из прочитанного младшего байта его бы сняло
 void DWController::set_value(unsigned int address, unsigned int value, MAYBE_UNUSED bool force)
 {
     if (refused(address)) return;
     const unsigned int reg = reg_of(address);
     if (address & 1) {
         if (reg == DW_CSR) csr_touched();
-        if (reg == DW_CSR || reg == DW_ERR) return;
+        if (reg == DW_CSR || reg == DW_ERR || reg == DW_STATUS) return;
     }
     const unsigned int old = read_reg(reg, true);
     const unsigned int w = (address & 1) ? ((old & 0x00FF) | ((value & 0xFF) << 8))

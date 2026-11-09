@@ -77,13 +77,9 @@ void DVKDW::bus_init()
     update_irq();
 }
 
-unsigned int DVKDW::status_bus_bits() const
-{
-    return m_ie ? SI_IE : 0;
-}
-
 // Записываются только сброс и разрешение (Alex_K); разрешение при поднятом ЗОА или ЗОБ
-// даёт прерывание сразу
+// даёт прерывание сразу. Сброс записью 10 идёт следом (DWController) и снимает
+// разрешение и тогда, когда оно записано вместе с ним
 void DVKDW::status_written(unsigned int value)
 {
     m_ie = (value & SI_IE) != 0;
@@ -114,18 +110,26 @@ std::vector<DeviceFieldInfo> DVKDW::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = DWController::get_device_fields();
     r.push_back({"si", "Регистр SI (174020) - то же, что status", false});
+    r.push_back({"ie", "1, когда прерывания разрешены (разряд 100 SI; программа его не читает)", false});
     return r;
 }
 
 bool DVKDW::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
+    if (field == "ie") {
+        out.numeric = true;
+        out.width = 1;
+        out.values.push_back(m_ie ? 1 : 0);
+        return true;
+    }
     return DWController::get_field(field == "si" ? std::string("status") : field, from, to, out);
 }
 
 void DVKDW::save_state(StateWriter &w)
 {
     DWController::save_state(w);
-    w.u("si", read_reg(DW_STATUS, true));
+    // «si» - РСНУ с разрешением на его месте, как в снимках, где оно читалось
+    w.u("si", read_reg(DW_STATUS, true) | (m_ie ? SI_IE : 0));
     w.u("offered", m_irq.offered());
 }
 

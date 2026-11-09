@@ -188,8 +188,7 @@ protected:
     virtual void request_changed(unsigned int request, bool up) = 0;
     // Начальная установка платы, до снятия запросов
     virtual void bus_init() {}
-    // Разряды РСНУ, которые добавляет шина, и запись в РСНУ до начальной установки
-    virtual unsigned int status_bus_bits() const { return 0; }
+    // Запись в РСНУ, до начальной установки, которую она может начать
     virtual void status_written(MAYBE_UNUSED unsigned int value) {}
 
     unsigned int read_reg(unsigned int reg, bool peek);
