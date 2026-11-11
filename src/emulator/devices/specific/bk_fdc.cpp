@@ -516,7 +516,9 @@ void BKFDC::set_value(unsigned int address, unsigned int value, bool force)
 
 unsigned int BKFDC::get_direct(unsigned int address)
 {
-    return ((address & 2) == REG_DATA) ? m_datareg : read_status();
+    // The debugger reads bytes: the odd address is the high byte
+    const unsigned int v = ((address & 2) == REG_DATA) ? m_datareg : read_status();
+    return (address & 1)? ((v >> 8) & 0xFF) : v;
 }
 
 //----------------------- Introspection ------------------------------------//

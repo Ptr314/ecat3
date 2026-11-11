@@ -1730,6 +1730,10 @@ unsigned int Port::get_value(unsigned int address)
 
 unsigned int Port::get_direct(unsigned address)
 {
+    // The debugger and LOG read bytes through the mapper: the odd address of a
+    // wide port is its high byte, as get_value() has it. The even one gives the
+    // whole value, which get_direct(0) callers (LOG port.value) rely on
+    if (size > 8 && (address & 1)) return (value >> 8) & 0xFF;
     return value;
 }
 

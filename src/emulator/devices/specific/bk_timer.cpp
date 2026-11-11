@@ -162,7 +162,9 @@ void BKTimer::set_value(unsigned int address, unsigned int value, bool force)
 
 unsigned int BKTimer::get_direct(unsigned int address)
 {
-    return get_value_word(address);
+    // The debugger reads bytes: the odd address is the high byte
+    unsigned int v = get_value_word(address);
+    return (address & 1)? ((v >> 8) & 0xFF) : v;
 }
 
 std::vector<DeviceFieldInfo> BKTimer::get_device_fields()
