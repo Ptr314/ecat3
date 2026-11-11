@@ -63,7 +63,9 @@ one 512-byte sector, and not of the size of one of the drives below: the machine
 zeros past its end and extends it on writing.
 Put it into the slot, and `pros-2.03-1-system.dsk` into drive 0. When the installer
 asks, change the floppy in drive 2 (`pros-2.03-2-regim.dsk`, `-3-program`, `-4-bibliot`,
-`-5-utilit`). Eject the floppy first, insert the next one, and only then press Resume.
+`-5-utilit`). A new image can be loaded straight over the old one: the drive shows the
+machine a disk change and is not ready for a second and a half. Press Resume after that;
+pressed earlier, it leaves the installer at the same prompt, and has to be pressed again.
 
 Installing the system takes about 18 minutes of emulated time, up to 12 of them for
 formatting and checking the disk. You can use the turbo mode of the emulation to avoid waiting.

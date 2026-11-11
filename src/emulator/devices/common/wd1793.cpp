@@ -276,7 +276,7 @@ void WD1793::WriteRegister(unsigned int address, unsigned int  value)
 bool WD1793::selected_ready()
 {
     const int drive = DriveOnLines();
-    return drive >= 0 && drives[drive]->get_loaded();
+    return drive >= 0 && drives[drive]->is_ready();
 }
 
 bool WD1793::get_busy()

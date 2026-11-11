@@ -58,6 +58,18 @@ private:
     std::chrono::steady_clock::time_point led_start;
     bool led_active = false;
 
+    // A disk change (change_time): an image loaded over another one is the old
+    // disk taken out and the new one put in, and the drive is not ready for
+    // m_change_clocks. A controller that learns of a change only from READY
+    // going down (the Э-85 КНГМД polls it about once a second) sees none when
+    // one image replaces another at once. 0: the new disk is ready at once.
+    // A disk that has been in for less than that is replaced without a change:
+    // a script's first command runs one instruction after the start, and the
+    // image it loads over the configuration's one is in the drive at power-on
+    unsigned int m_change_clocks = 0;
+    unsigned int m_disk_age = 0;        // clocks since this disk went in, up to m_change_clocks
+    bool m_changed = false;             // it went in over another one: not ready while young
+
 
     int side;
     int track;
@@ -126,6 +138,9 @@ public:
     int get_tracks();
     int get_sectors();
     int get_loaded();
+    // READY of the drive: a disk is in and not being changed. What a
+    // controller reports as ready; get_loaded() is whether there is an image
+    bool is_ready() const { return loaded && !(m_changed && m_disk_age < m_change_clocks); }
     unsigned int get_generation();
     // Rewriting a sector with the same bytes does not count
     bool is_modified() const { return m_modified; }
@@ -168,6 +183,7 @@ public:
     void WriteNextByte(uint8_t value);
     void WriteByte(uint8_t value);
     emulator::Result load_config(SystemData *sd) override;
+    void clock(unsigned int counter) override;
     emulator::Result load_image(const std::string &file_name);
     emulator::Result save_image(const std::string &file_name);
     void unload();

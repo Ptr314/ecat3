@@ -90,6 +90,11 @@ emulator::Result FDD::load_config(SystemData *sd)
     files_save = cd->get_parameter("files_save", false).value;
     if (files_save.empty()) files_save = files;
 
+    //Milliseconds of the clock source; a drive without it needs no clock
+    const unsigned int change_ms = read_confg_value(cd, "change_time", false, (unsigned int)0);
+    m_change_clocks = (unsigned int)((uint64_t)m_system_clock * change_ms / 1000);
+    m_clocked = m_change_clocks > 0;
+
     std::string s = read_confg_value(cd, "mode", false, std::string("logical"));
     if (s == "logical")
         fdd_mode = FDD_MODE_LOGICAL;
@@ -154,6 +159,7 @@ emulator::Result FDD::load_image(const std::string &file_name)
     std::string ext = dsk_tools::get_file_ext(file_name);  // returns ".ext" lowercase
     std::string base_name = dsk_tools::get_filename(file_name);
     const unsigned int old_generation = m_generation;
+    const bool was_loaded = loaded;
 
     if (ext == ".hfe") {
         if (fdd_mode != FDD_MODE_LOGICAL && fdd_mode != FDD_MODE_IBM_MFM && fdd_mode != FDD_MODE_IBM_FM
@@ -432,7 +438,12 @@ emulator::Result FDD::load_image(const std::string &file_name)
             this->file_name = base_name;
         }
     }
-    if (m_generation != old_generation) m_modified = false;
+    if (m_generation != old_generation) {
+        m_modified = false;
+        //Over a disk in the middle of its own change the window starts again
+        m_changed = was_loaded && (m_changed || m_disk_age >= m_change_clocks);
+        m_disk_age = 0;
+    }
     //Every branch that took the image ends by naming it; one that did not
     //(an unknown extension) leaves the previous image and its path alone
     if (loaded && this->file_name == base_name) {
@@ -1072,6 +1083,13 @@ bool FDD::is_protected()
     return write_protect;
 }
 
+//Clocked only with a change_time
+void FDD::clock(unsigned int counter)
+{
+    if (m_disk_age < m_change_clocks)
+        m_disk_age = (counter < m_change_clocks - m_disk_age) ? m_disk_age + counter : m_change_clocks;
+}
+
 bool FDD::is_index()
 {
     //TODO: tune conditions
@@ -1364,6 +1382,10 @@ void FDD::save_state(StateWriter &w)
     w.b("protected", write_protect);
     w.b("loaded", loaded);
     w.n("generation", m_generation);
+    if (m_disk_age < m_change_clocks) {
+        w.n("disk_age", m_disk_age);
+        w.b("changed", m_changed);
+    }
     //The led is timed against the host clock and starts again from now
 
     if (!loaded || buffer == nullptr || disk_size <= 0) return;
@@ -1456,6 +1478,12 @@ emulator::Result FDD::load_state(const StateReader &r)
     r.b("protected", write_protect);
     m_modified = false;
     m_deleted.clear();
+    //Without the keys the disk of the snapshot has been in long enough
+    m_disk_age = m_change_clocks;
+    m_changed = false;
+    r.u("disk_age", m_disk_age);
+    r.b("changed", m_changed);
+    if (m_disk_age > m_change_clocks) m_disk_age = m_change_clocks;
 
     bool was_loaded = false;
     if (!r.b("loaded", was_loaded) || !was_loaded) return emulator::Result::ok();
@@ -1610,6 +1638,7 @@ std::vector<DeviceFieldInfo> FDD::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
     r.push_back({"loaded",      "1 if an image is loaded",              false});
+    r.push_back({"ready",       "1 if the drive is ready: loaded and not being changed (change_time)", false});
     r.push_back({"modified",    "1 if the machine changed the disk since it was loaded", false});
     r.push_back({"file",        "Name of the loaded image",             false});
     r.push_back({"path",        "Full path of the loaded image",        false});
@@ -1658,6 +1687,7 @@ bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to
 
     out.numeric = true;
     if (field == "loaded")      { out.values.push_back(loaded?1:0);         return true; }
+    if (field == "ready")       { out.values.push_back(is_ready()?1:0);     return true; }
     if (field == "modified")    { out.values.push_back(m_modified?1:0);     return true; }
     if (field == "protected")   { out.values.push_back(write_protect?1:0);  return true; }
     if (field == "selected")    { out.values.push_back(is_selected()?1:0);  return true; }

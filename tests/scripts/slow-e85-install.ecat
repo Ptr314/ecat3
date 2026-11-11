@@ -4,7 +4,8 @@
 # копирует систему. Затем машина загружается с этого диска без дискет. Запись идёт в
 # память: файл e85-blank.rd - один нулевой сектор, накопитель продолжает его нулями.
 # Потом на диск ставятся все игры с двух дискет. Это рецепт образа pros-2.03-10m.rd:
-# последний снимок совпадает с boot-e85-nmd
+# последний снимок совпадает с boot-e85-nmd. Дискеты 3-5 загружаются поверх прежних, как в меню:
+# дисковод сам показывает извлечение и вставку (change_time), иначе установка просит дискету снова
 # Вокруг снимков процессоры стоят: на --speed 1 машина иначе идёт дальше, пока снимок ждёт кадра
 # @timeout 280
 MACHINE "computers/e85/MS0585-NMD.ext"
@@ -35,8 +36,6 @@ WAIT _100
 KEYUP key_f7
 WAIT _300
 WAIT _80000
-COMMAND fd1.eject()
-WAIT _3000
 COMMAND fd1.load("../library/e85/pros-2.03-3-program.dsk")
 WAIT _3000
 KEYDOWN key_f7
@@ -44,8 +43,6 @@ WAIT _100
 KEYUP key_f7
 WAIT _300
 WAIT _70000
-COMMAND fd1.eject()
-WAIT _3000
 COMMAND fd1.load("../library/e85/pros-2.03-4-bibliot.dsk")
 WAIT _3000
 KEYDOWN key_f7
@@ -53,8 +50,6 @@ WAIT _100
 KEYUP key_f7
 WAIT _300
 WAIT _70000
-COMMAND fd1.eject()
-WAIT _3000
 COMMAND fd1.load("../library/e85/pros-2.03-5-utilit.dsk")
 WAIT _3000
 KEYDOWN key_f7
