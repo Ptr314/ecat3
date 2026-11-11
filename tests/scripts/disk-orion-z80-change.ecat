@@ -1,0 +1,36 @@
+# Смена дискеты (change_time у fdd) глазами ВГ93: образ, загруженный поверх прежнего, 1,5 с
+# не готов. Бит 7 статуса - линия готовности в момент чтения, команда чтения сектора
+# не выполняется (не занят, счетчик чтений стоит); после окна та же команда идет
+# (BUSY и DRQ). CP/M к этому времени загружена и стоит на приглашении
+# @timeout 40
+
+MACHINE "../../tests/files/orion-disk-change.ext"
+WAIT 9000
+
+LOGDEFS 8,16
+PRINT "=== До смены ==="
+LOG fdc.drive
+LOG fdd0.ready
+LOG fdc.status
+LOG fdc.reads
+
+COMMAND fdd0.load("Disk2.ODI")
+PRINT "=== Сразу после ==="
+LOG fdd0.loaded
+LOG fdd0.ready
+LOG fdc.status
+COMMAND fdc.set(0, $80)
+WAIT 10
+LOG fdc.status
+LOG fdc.busy
+LOG fdc.reads
+
+WAIT 1600
+PRINT "=== Через 1,6 с ==="
+LOG fdd0.ready
+LOG fdc.status
+COMMAND fdc.set(0, $80)
+WAIT 10
+LOG fdc.status
+LOG fdc.busy
+EXIT

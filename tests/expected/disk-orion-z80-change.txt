@@ -1,0 +1,17 @@
+=== До смены ===
+[fdc.drive] $00
+[fdd0.ready] $01
+[fdc.status] $00
+[fdc.reads] $0000003D
+=== Сразу после ===
+[fdd0.loaded] $01
+[fdd0.ready] $00
+[fdc.status] $80
+[fdc.status] $80
+[fdc.busy] $00
+[fdc.reads] $0000003D
+=== Через 1,6 с ===
+[fdd0.ready] $01
+[fdc.status] $00
+[fdc.status] $03
+[fdc.busy] $01

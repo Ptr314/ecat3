@@ -1,0 +1,5 @@
+// Орион-128 Z80 с временем смены дискеты у дисковода A:. Тест - disk-orion-z80-change
+@extends orion-128/Orion-128-Z80.cfg
+@version Смена дискеты 1,5 с
+
+fdd0:change_time = 1500

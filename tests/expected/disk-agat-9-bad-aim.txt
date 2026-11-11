@@ -1,0 +1,7 @@
+[fdd0.file] ikp1-16414.dsk
+[fdd0.checksum] $8DD06AEA
+ERROR line 11: Incorrect disk image size for: no-such-image.aim
+[fdd0.loaded] $01
+[fdd0.file] ikp1-16414.dsk
+[fdd0.generation] $00000001
+[fdd0.checksum] $8DD06AEA

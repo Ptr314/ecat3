@@ -1,0 +1,8 @@
+[fdd0.file] Disk2.ODI
+[fdd0.generation] $00000001
+ERROR line 13: Incorrect disk image size for no-such-image.odi
+[fdd0.loaded] $01
+[fdd0.file] Disk2.ODI
+[fdd0.generation] $00000001
+[fdc.status] $03
+[fdc.busy] $01

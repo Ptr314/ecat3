@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <memory>
 #include <stdexcept>
 #include "libs/mfm_tools.h"
 #include "dsk_tools/core.h"
@@ -326,12 +327,18 @@ uint8_t * generate_mfm_agat_840(const std::string &file_name, int & sides, int &
 
 uint8_t * load_aim_image(const std::string &file_name, int & sides, int & tracks, int & disk_size, HXC_MFM_TRACK_INFO track_indexes[], AgatAIMCodes & aim_codes)
 {
-    sides = 2;
-    tracks = 80;
-    int track_len = AGAT_840_AIM_TRACK_LEN;
-    disk_size = tracks * track_len * sides;
-    uint16_t * image = reinterpret_cast<uint16_t*>(load_image(file_name, disk_size*2));
-    uint8_t * out = new uint8_t[disk_size];
+    // Nothing is handed back until the file has been read: load_image()
+    // throws on one it cannot take, and the drive keeps its disk then
+    const int new_sides = 2;
+    const int new_tracks = 80;
+    const int track_len = AGAT_840_AIM_TRACK_LEN;
+    const int new_size = new_tracks * track_len * new_sides;
+    std::unique_ptr<uint8_t[]> raw(load_image(file_name, new_size*2));
+    const uint16_t * image = reinterpret_cast<const uint16_t*>(raw.get());
+    uint8_t * out = new uint8_t[new_size];
+    sides = new_sides;
+    tracks = new_tracks;
+    disk_size = new_size;
 
     for (uint8_t track = 0; track < tracks; track++) {
         for (uint8_t head = 0; head < sides; head++) {
@@ -353,7 +360,6 @@ uint8_t * load_aim_image(const std::string &file_name, int & sides, int & tracks
             track_indexes[agat_track].mfmtrackoffset = (track*2 + head)*track_len;
         }
     }
-    delete [] image;
     return out;
 }
 

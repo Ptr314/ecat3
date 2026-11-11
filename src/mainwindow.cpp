@@ -2454,6 +2454,8 @@ void MainWindow::fdd_open(unsigned int n)
             emulator::Result res = emulator::Result::ok();
             e->invoke([&]() { res = fdds[n]->load_image(file_name.toStdString()); });
             if (!res) {
+                //The drive keeps the disk it had: the menu and the button show it again
+                fdd_show(n);
                 QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
             } else {
                 e->record_command(fdds[n]->name, "load", format_script_arg(fi.absoluteFilePath().toStdString()));

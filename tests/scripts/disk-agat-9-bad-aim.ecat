@@ -1,0 +1,16 @@
+# Агат-9: образ .aim, который дисковод не принял (здесь файла нет, размер не тот), оставляет
+# в нем прежний диск ИКП: то же имя, те же дорожки и пометки (checksum). Раньше дисковод
+# освобождал буфер до чтения файла, а загрузчик успевал сменить геометрию: первое же
+# обращение к диску роняло эмулятор
+# @timeout 40
+
+MACHINE "agat/Agat-9.cfg"
+LOGDEFS 8,16
+LOG fdd0.file
+LOG fdd0.checksum
+COMMAND fdd0.load("no-such-image.aim")
+LOG fdd0.loaded
+LOG fdd0.file
+LOG fdd0.generation
+LOG fdd0.checksum
+EXIT

@@ -4,6 +4,7 @@
 // Description: FDD device, source
 
 #include <cstring>
+#include <memory>
 
 #include "fdd.h"
 #include "emulator/utils.h"
@@ -322,8 +323,16 @@ emulator::Result FDD::load_image(const std::string &file_name)
         if (fdd_mode != FDD_MODE_AGAT_840)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "AIM files supported on Agat 840k drives only!")) + "}");
-        if (buffer != nullptr) delete [] buffer;
-        buffer = load_aim_image(file_name, sides, tracks, disk_size, track_indexes, aim_codes);
+        // The loader throws on a file it cannot take, before it changes
+        // anything: the drive keeps its disk, as with the converters below
+        uint8_t * converted = nullptr;
+        try {
+            converted = load_aim_image(file_name, sides, tracks, disk_size, track_indexes, aim_codes);
+        } catch (const std::exception &e) {
+            return emulator::Result::error(emulator::ErrorCode::ConfigError, e.what());
+        }
+        delete [] buffer;
+        buffer = converted;
         track_mode = FDD_MODE_WHOLE_TRACK;
         position = 0;
         loaded = true;
@@ -336,32 +345,33 @@ emulator::Result FDD::load_image(const std::string &file_name)
             // A shorter image is accepted as a disk whose remaining tracks
             // are blank: БК images come as 40- and 80-track dumps of the
             // same geometry, and the drive itself does not care
-            if (file_size > 0 && file_size <= static_cast<long long>(disk_size))
-            {
-                if (buffer != nullptr) delete [] buffer;
-                buffer = new uint8_t[disk_size];
-                memset(buffer, 0, disk_size);
-                m_deleted.clear();
-
-                dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
-                if (file.is_open()) {
-                    file.read(reinterpret_cast<char*>(buffer), file_size);
-                    file.close();
-
-                    track_mode = FDD_MODE_SECTORS;
-                    sides_layout = layout_for_file(file_name);
-                    loaded = true;
-                    m_generation++;
-                    this->file_name = base_name;
-                } else {
-                    return emulator::Result::error(emulator::ErrorCode::ConfigError,
-                        "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
-                }
-            } else {
-                this->file_name = "";
+            if (file_size <= 0 || file_size > static_cast<long long>(disk_size))
                 return emulator::Result::error(emulator::ErrorCode::ConfigError,
                     "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect disk image size for")) + "} " + file_name);
-            }
+
+            // The file is read whole before the drive gives up its disk: one
+            // that does not open or comes back short leaves that disk in,
+            // with its name, as every other kind of image does
+            dsk_tools::UTF8_ifstream file(file_name, std::ios::binary);
+            if (!file.is_open())
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                    "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
+            std::unique_ptr<uint8_t[]> image(new uint8_t[disk_size]());
+            file.read(reinterpret_cast<char*>(image.get()), (std::streamsize)file_size);
+            //good(): the MinGW stream has no gcount(), and a short read clears it in both
+            if (!file.good())
+                return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                    "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
+            file.close();
+
+            delete [] buffer;
+            buffer = image.release();
+            m_deleted.clear();
+            track_mode = FDD_MODE_SECTORS;
+            sides_layout = layout_for_file(file_name);
+            loaded = true;
+            m_generation++;
+            this->file_name = base_name;
         } else {
             // Convert to MFM. The converters throw on a file they cannot take
             // (too short, unreadable); the drive keeps its disk then, and the

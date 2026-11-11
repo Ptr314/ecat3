@@ -141,6 +141,8 @@ public:
     // READY of the drive: a disk is in and not being changed. What a
     // controller reports as ready; get_loaded() is whether there is an image
     bool is_ready() const { return loaded && !(m_changed && m_disk_age < m_change_clocks); }
+    // The drive has a change_time: its READY is worth showing as it is now
+    bool models_change() const { return m_change_clocks > 0; }
     unsigned int get_generation();
     // Rewriting a sector with the same bytes does not count
     bool is_modified() const { return m_modified; }

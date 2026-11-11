@@ -132,6 +132,13 @@ private:
 
     int head_cylinder();
     void move_head(int steps);
+    //SeekSector() on the drive of the command, refused as with no disk while
+    //the drive is not ready (a disk being changed: the drive's change_time)
+    int seek_sector(int track, int sector);
+    //Status bit 7 is the READY input, inverted, at the moment of the read
+    //(the data sheet). So it is shown for a selected drive with a change_time;
+    //for the others the bit stays what the last command found
+    unsigned int ready_status(unsigned int status);
 
     void SetDRQ();
     bool GetDRQ();

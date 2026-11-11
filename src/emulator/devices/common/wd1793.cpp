@@ -313,11 +313,30 @@ unsigned int WD1793::get_value(unsigned int address)
     if (a==wd1793_REG_DATA && (address & sync_mask) != 0) SyncAccess();
     if (a==wd1793_REG_DATA) ClearDRQ();
     if (a==wd1793_REG_STATUS && !intrq_forced) ClearINTRQ();
-    if (a==wd1793_REG_STATUS && m_index_period > 0 && m_type1) {
-        const bool index = selected_ready() && m_index_clock < m_index_width;
-        return index ? (registers[a] | wd1793_FLAG_INDEX) : (registers[a] & ~wd1793_FLAG_INDEX);
+    if (a==wd1793_REG_STATUS) {
+        const unsigned int status = ready_status(registers[a]);
+        if (m_index_period > 0 && m_type1) {
+            const bool index = selected_ready() && m_index_clock < m_index_width;
+            return index ? (status | wd1793_FLAG_INDEX) : (status & ~wd1793_FLAG_INDEX);
+        }
+        return status;
     }
     return registers[a];
+}
+
+unsigned int WD1793::ready_status(unsigned int status)
+{
+    const int drive = DriveOnLines();
+    if (drive < 0 || !drives[drive]->models_change()) return status;
+    return drives[drive]->is_ready() ? (status & ~wd1793_FLAG_NOT_READY) : (status | wd1793_FLAG_NOT_READY);
+}
+
+int WD1793::seek_sector(int track, int sector)
+{
+    if (selected_drive < 0) return FDD_SEEK_NO_DISK;
+    FDD * d = drives[selected_drive];
+    if (d->get_loaded() && !d->is_ready()) return FDD_SEEK_NO_DISK;
+    return d->SeekSector(track, sector);
 }
 
 // The cylinder the disk is read at: the head of the selected drive, or the
@@ -342,7 +361,8 @@ unsigned WD1793::get_direct(unsigned address)
     //Reading a register here must not move the controller: this is where a
     //LOG in a script, the port window and the memory dump come from, and
     //get_value() clears DRQ/INTRQ and can run the state machine forward
-    return registers[address & 0x03];
+    const unsigned int a = address & 0x03;
+    return (a == wd1793_REG_STATUS) ? ready_status(registers[a]) : registers[a];
 }
 
 void WD1793::set_value(unsigned int address, unsigned int value, bool force)
@@ -391,7 +411,7 @@ void WD1793::SetTypeIFlags(uint8_t T, uint8_t S)
     {
         //A type I command only positions the head, so an address the disk does
         //not have is not an error here - only a missing disk is
-        seek_res = drives[selected_drive]->SeekSector(m_physical ? head_cylinder() : T, S);
+        seek_res = seek_sector(m_physical ? head_cylinder() : T, S);
         if (seek_res == FDD_SEEK_NO_DISK)
             SetFlag(wd1793_FLAG_NOT_READY);
         else
@@ -458,7 +478,7 @@ void WD1793::ExecuteCommand()
         break;
 
     case wd1793_COMMAND_READ_SECTOR:
-        sector_size = (selected_drive >= 0) ? drives[selected_drive]->SeekSector(head_cylinder(), registers[wd1793_REG_SECTOR]) : -1;
+        sector_size = seek_sector(head_cylinder(), registers[wd1793_REG_SECTOR]);
         if (sector_size > 0 && head_cylinder() != registers[wd1793_REG_TRACK]) sector_size = FDD_SEEK_NO_SECTOR;
         if (sector_size > 0)
         {
@@ -479,7 +499,7 @@ void WD1793::ExecuteCommand()
         break;
 
     case wd1793_COMMAND_WRITE_SECTOR:
-        sector_size = (selected_drive >= 0) ? drives[selected_drive]->SeekSector(head_cylinder(), registers[wd1793_REG_SECTOR]) : -1;
+        sector_size = seek_sector(head_cylinder(), registers[wd1793_REG_SECTOR]);
         if (sector_size > 0 && head_cylinder() != registers[wd1793_REG_TRACK]) sector_size = FDD_SEEK_NO_SECTOR;
         if ((sector_size > 0) && !drives[selected_drive]->is_protected())
         {
@@ -507,7 +527,7 @@ void WD1793::ExecuteCommand()
         //side, sector, size code and the CRC. The chip puts the cylinder into
         //the sector register
         const int cyl = head_cylinder();
-        int size = (selected_drive >= 0) ? drives[selected_drive]->SeekSector(cyl, 1) : FDD_SEEK_NO_DISK;
+        int size = seek_sector(cyl, 1);
         if (size > 0) {
             if (m_rotate_id) {
                 if (drives[selected_drive]->SeekSector(cyl, m_id_sector + 1) > 0) m_id_sector++;
@@ -535,7 +555,7 @@ void WD1793::ExecuteCommand()
 
     case wd1793_COMMAND_WRITE_TRACK: {
         //From the index pulse on, a byte at each DRQ until the next one
-        const int size = (selected_drive >= 0) ? drives[selected_drive]->SeekSector(head_cylinder(), 1) : FDD_SEEK_NO_DISK;
+        const int size = seek_sector(head_cylinder(), 1);
         if (size == FDD_SEEK_NO_DISK || drives[selected_drive]->is_protected()) {
             SetTypeIIFlags();
             SetFlag((size == FDD_SEEK_NO_DISK) ? wd1793_FLAG_NOT_READY : wd1793_FLAG_PROTECTED);
@@ -794,7 +814,7 @@ std::vector<DeviceFieldInfo> WD1793::get_device_fields()
 bool WD1793::get_field(const std::string &field, unsigned int from, unsigned int to, DeviceFieldValue &out)
 {
     out.numeric = true;
-    if (field == "status")  { out.values.push_back(registers[wd1793_REG_STATUS]);   return true; }
+    if (field == "status")  { out.values.push_back(ready_status(registers[wd1793_REG_STATUS])); return true; }
     if (field == "track")   { out.values.push_back(registers[wd1793_REG_TRACK]);    return true; }
     if (field == "sector")  { out.values.push_back(registers[wd1793_REG_SECTOR]);   return true; }
     if (field == "data")    { out.values.push_back(registers[wd1793_REG_DATA]);     return true; }
