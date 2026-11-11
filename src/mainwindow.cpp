@@ -96,11 +96,8 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, i
     , script_file(script_file)
     //, fdc(nullptr)
 {
-    QFontDatabase::addApplicationFont(":/fonts/mono-bold");
+    //The fixed-pitch font of the debugger and the script editor (dbg::font())
     QFontDatabase::addApplicationFont(":/fonts/mono-regular");
-    QFontDatabase::addApplicationFont(":/fonts/mono-semibold");
-    QFontDatabase::addApplicationFont(":/fonts/consolas");
-    QFontDatabase::addApplicationFont(":/fonts/dos");
 
     QString app_path = QApplication::applicationDirPath();
     QString current_path = QDir::currentPath();

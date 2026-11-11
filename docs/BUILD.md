@@ -106,14 +106,26 @@ cd репозиторий-приложения\.build
 C:\DEV\venv\Scripts\activate.bat
 mkdir C:\Temp\qt-build
 cd C:\Temp\qt-build
-configure.bat -static -static-runtime -release -opensource -confirm-license -nomake examples -nomake tests -submodules qtbase,qtsvg,qttools,qttranslations -platform win32-msvc -prefix %_QT_PREFIX_STATIC%
+configure.bat -static -static-runtime -release -optimize-size -ltcg -opensource -confirm-license -nomake examples -nomake tests -submodules qtbase,qtsvg,qttools,qttranslations -no-feature-freetype -no-feature-timezone_locale -platform win32-msvc -prefix %_QT_PREFIX_STATIC%
 cmake --build . --parallel
 cmake --install .
 ```
 
+Ключи после `-release` и перед `-platform` уменьшают программу. Статический Qt входит в exe целиком, со всеми данными, которые эмулятору не нужны. 
+Замер на Qt 6.11.2, MSVC, вариант OpenGL: без этих ключей exe весит 28,2 МБ, из них Qt около 20.
+* `-no-feature-timezone_locale` убирает названия часовых поясов на всех языках (данные CLDR, 3,8 МБ в Qt6Core). Эмулятор их не показывает.
+* `-no-feature-freetype`: на Windows шрифты рисует DirectWrite, FreeType (0,6 МБ) нужен только движку `fontengine=freetype`, который выбирают вручную. 
+  Ключ `-no-freetype` в Qt 6.11 молча ничего не делает.
+* `-optimize-size` компилирует Qt на размер (`/O1`), а `-ltcg` дает компоновщику выбросить неиспользуемое по всей программе. 
+  Скорость эмуляции от них не зависит: ядро собирается с обычными ключами проекта. Программа с таким набором компонуется дольше.
+
+Набор с этими ключами собирается заново целиком, в чистом каталоге сборки. Плагины, которые входят в программу, выбирает `qt_import_plugins` 
+в `src/CMakeLists.txt`: из форматов изображений только GIF (анимация магнитофона), PNG Qt читает сам. Программа, которой понадобится 
+другой формат, добавляет его плагин туда.
+
 Модуль `qtsvg` нужен экранной клавиатуре (окно с рисунком клавиатуры машины). Без него программа собирается, но без клавиатуры: CMake пишет `Qt Svg not found: the on-screen keyboard is disabled`, скрипты выпуска повторяют это предупреждением. Набор, собранный раньше без `qtsvg`, придется пересобрать; есть ли модуль в готовом наборе, видно по каталогу `lib\cmake\Qt6Svg` внутри `%_QT_PREFIX_STATIC%`.
 
-Статический набор для MinGW собирается той же командой в окружении `vars-mingw-latest.cmd`, с `-platform win32-g++` вместо `win32-msvc`; устанавливается он в `_QT_PREFIX_STATIC` из этого файла.
+Статический набор для MinGW собирается той же командой в окружении `vars-mingw-latest.cmd`, с `-platform win32-g++` вместо `win32-msvc`; устанавливается он в `_QT_PREFIX_STATIC` из этого файла. С MinGW ключ `-ltcg` не проверялся: если компоновка программы с ним не идет, набор собирается без него.
 
 ##### Qt5 для Windows 7
 

@@ -15,11 +15,12 @@
 namespace dbg {
 
 //The views are text in columns: one fixed-pitch font for all of them, the
-//Consolas the main window registers from the resources
+//Roboto Mono the main window registers from the resources. At 9 pt it takes
+//the width and x-height of the 10 pt Consolas the views were laid out with
 inline QFont font()
 {
-    QFont f("Consolas");
-    f.setPointSize(10);
+    QFont f("Roboto Mono");
+    f.setPointSize(9);
     f.setStyleHint(QFont::Monospace);
     f.setFixedPitch(true);
     return f;

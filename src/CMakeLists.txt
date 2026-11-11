@@ -442,6 +442,18 @@ if(QT_VERSION_MAJOR EQUAL 6 AND RENDERER_OPENGL)
     )
 endif()
 
+# A static Qt links every plugin of the kit into the exe: ten image formats
+# (webp, tiff, jpeg with libjpeg...) cost 1.4 MB. The program reads PNG, which
+# QtGui decodes itself, and GIF (the tape recorder animation); the keyboard
+# draws its SVG through QSvgRenderer, not through an icon engine. A shared
+# build loads plugins at run time, and the call changes nothing there
+if(QT_VERSION_MAJOR EQUAL 6 AND COMMAND qt_import_plugins)
+    qt_import_plugins(${PROJECT_NAME}
+        INCLUDE_BY_TYPE imageformats Qt::QGifPlugin
+        EXCLUDE_BY_TYPE iconengines
+    )
+endif()
+
 # Different platforms setup
 
 if(APPLE)
