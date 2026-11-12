@@ -34,7 +34,11 @@ ecat_machine, отдает остальные строки одним вызов
 * на месте первой пустой строки идет SPEED со скоростью из --speed (по умолчанию MAX), как
   run_tests.py гоняет весь набор. Именно строкой ecat_run, а не ключом сервера:
   между ecat_machine и ecat_run машина идет сама по себе, и на MAX за это время
-  она ушла бы далеко вперед. --speed 1 строку не добавляет.
+  она ушла бы далеко вперед. --speed 1 строку не добавляет;
+* сценарий, который начинается с PLATFORM (запуск программы по имени
+  платформы), идет одним ecat_run без ecat_machine: машину называет сценарий
+  запуска, и пакет, начатый с нее, сервер грузит сам. SPEED здесь - ключ
+  сервера: до ecat_run машины нет, и уходить вперед нечему.
 
 Все остальное &ndash; те же строки, тот же порядок, тот же движок.
 """
@@ -60,6 +64,10 @@ MCP_RESULTS_DIR = os.path.join(rt.RESULTS_DIR, "mcp")
 
 # Команды, которые в сессии MCP не воспроизводятся, см. шапку
 SKIP_VERBS = ("SCREEN", "EXIT")
+
+# Машина сценария, который начинается с PLATFORM: ее знает только сценарий
+# запуска платформы, ecat_machine не зовется
+PLATFORM_MACHINE = "<platform>"
 
 PROTOCOL_VERSION = "2024-11-05"
 
@@ -306,6 +314,10 @@ def prepare(test):
             # work-agat-9-yazs-regs, boot-bk0011m-a16m)
             commands.append(s)
             continue
+        if verb == "PLATFORM" and machine is None:
+            # Машину называет сценарий запуска платформы; строка остается в
+            # ecat_run, и с нее сервер грузит машину сам
+            machine = PLATFORM_MACHINE
         if verb in SKIP_VERBS:
             commands.append("")
             continue
@@ -372,7 +384,11 @@ def run_test(test, exe, env, extra_args, speed):
         return result
 
     machine, commands = prepare(test)
-    if speed not in ("", "1"):
+    platform = machine == PLATFORM_MACHINE
+    server_args = list(extra_args)
+    if platform and speed not in ("", "1"):
+        server_args += ["--speed", speed]
+    elif speed not in ("", "1"):
         # На место первой пустой строки (комментарий в начале, MACHINE), чтобы
         # номера строк в сообщениях движка не сдвинулись
         if commands and commands[0] == "":
@@ -394,11 +410,11 @@ def run_test(test, exe, env, extra_args, speed):
     server = None
     output = None
     try:
-        server = McpServer(exe, env, extra_args)
+        server = McpServer(exe, env, server_args)
         server.handshake()
 
-        text, failed = server.tool("ecat_machine", {"config": machine},
-                                   timeout=test.timeout + 15)
+        text, failed = ("", False) if platform else server.tool(
+            "ecat_machine", {"config": machine}, timeout=test.timeout + 15)
         if failed:
             result["problems"].append("ecat_machine: " + text.strip())
         else:

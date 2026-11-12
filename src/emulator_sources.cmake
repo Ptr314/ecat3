@@ -37,6 +37,7 @@ set(ECAT_CORE_SOURCES
     emulator/script/script_log.cpp emulator/script/script_log.h
     emulator/script/script_engine.cpp emulator/script/script_engine.h
     emulator/script/script_recorder.cpp emulator/script/script_recorder.h
+    emulator/script/platform_launch.cpp emulator/script/platform_launch.h
 
     emulator/devices/cpu/i8080.cpp emulator/devices/cpu/i8080.h
     emulator/devices/cpu/i8080_context.h

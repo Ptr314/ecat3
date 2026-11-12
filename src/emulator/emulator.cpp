@@ -161,6 +161,13 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , m_script_state(SCRIPT_NONE)
     , settings(ini_file)
 {
+    //"<root>/computers/" -> "<root>/platforms/", "/computers/" of the web
+    //build -> "/platforms/"
+    std::string root = work_path;
+    while (!root.empty() && (root[root.size() - 1] == '/' || root[root.size() - 1] == '\\')) root.erase(root.size() - 1);
+    const size_t slash = root.find_last_of("/\\");
+    root = (slash == std::string::npos) ? std::string() : root.substr(0, slash + 1);
+    platforms_path = root + "platforms/";
 
     // connect(this, &Emulator::finished, this, &Emulator::stop_emulation, Qt::DirectConnection);
 
@@ -931,6 +938,20 @@ emulator::Result Emulator::load_script(const std::string &file_name)
     //Devices look up files next to the script first, so that a script and the
     //images it uses can live in one directory
     sd.script_path = s->get_path();
+    //The buffer no longer holds the demo of an extension: a change of machine
+    //keeps it (build_machine())
+    m_embedded_loaded = false;
+    return emulator::Result::ok();
+}
+
+emulator::Result Emulator::load_script_text(const std::string &text, const std::string &file_name)
+{
+    ScriptEngine * s = script_engine();
+
+    emulator::Result res = s->load_text(text, file_name);
+    if (!res) return res;
+    sd.script_path = s->get_path();
+    m_embedded_loaded = false;
     return emulator::Result::ok();
 }
 
@@ -1063,6 +1084,11 @@ bool Emulator::script_exit_requested() const
 int Emulator::script_exit_code() const
 {
     return script?script->get_exit_code():0;
+}
+
+std::string Emulator::script_error() const
+{
+    return script ? script->get_first_error() : std::string();
 }
 
 void Emulator::run()

@@ -5,8 +5,12 @@
 
 #include "cache.h"
 
+#include <cstring>
 #include <ctime>
 #include <vector>
+
+#include "dsk_tools/core.h"
+#include "libs/dsk_tools/src/utils.h"
 
 #ifdef _WIN32
     #ifndef NOMINMAX
@@ -139,4 +143,31 @@ void cache_cleanup(const std::string &cache_path, unsigned int max_age_days)
     const time_t older_than = time(nullptr) - static_cast<time_t>(max_age_days) * 24 * 60 * 60;
     clean(cache_path + "ext/", older_than);
     clean(cache_path + "inline/", older_than);
+    clean(cache_path + "launch/", older_than);
+}
+
+void cache_make_dirs(const std::string &path)
+{
+    for (size_t i = 1; i <= path.size(); i++)
+        if (i == path.size() || path[i] == '/' || path[i] == '\\')
+        {
+            const std::string dir = path.substr(0, i);
+            //A drive letter is not a directory to create
+            if (dir.size() == 2 && dir[1] == ':') continue;
+            dsk_tools::utf8_mkdir(dir);
+        }
+}
+
+bool cache_write(const std::string &path, const uint8_t * data, size_t size)
+{
+    if (dsk_tools::file_exists(path) && dsk_tools::utf8_file_size(path) == static_cast<long long>(size))
+    {
+        const std::string old = dsk_tools::utf8_read_file(path);
+        if (old.size() == size && (size == 0 || memcmp(old.data(), data, size) == 0)) return true;
+    }
+    dsk_tools::UTF8_ofstream f(path, std::ios::binary);
+    if (!f.good()) return false;
+    if (size > 0) f.write(reinterpret_cast<const char *>(data), static_cast<std::streamsize>(size));
+    f.close();
+    return true;
 }

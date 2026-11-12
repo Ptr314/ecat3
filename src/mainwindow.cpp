@@ -66,6 +66,7 @@
 #include "emulator/devices/common/fdd.h"
 #include "emulator/devices/common/hdd_image.h"
 #include "emulator/devices/common/tape.h"
+#include "emulator/script/platform_launch.h"
 #include "emulator/script/script_parser.h"
 #include "dialogs/taperecorder.h"
 #include "dialogs/keyboardwindow.h"
@@ -473,7 +474,25 @@ void MainWindow::showEvent(QShowEvent* event)
 
         //The script is parsed before the machine is loaded: its MACHINE command
         //may name the configuration to start with
-        if (!script_file.isEmpty())
+        bool launch = false;
+        if (!launch_platform.isEmpty())
+        {
+            //--platform is one line of script, PLATFORM: loading it puts the
+            //launch script of the platform in its place, MACHINE first. Named
+            //in the cache, so a log of its errors does not land in deploy/
+            emulator::Result res = e->load_script_text(
+                platform_script_text(launch_platform.toStdString(), launch_program.toStdString()),
+                platform_script_name(e->cache_path));
+            if (!res) {
+                //Somebody started the window to play a program: the reason
+                //goes on the screen, and the machine of the ini comes up
+                QMessageBox::warning(this, tr("Error"), translateResultMessage(res.message));
+            } else {
+                launch = true;
+                first_config = resolve_startup_path(QString::fromStdString(e->script_machine()));
+            }
+        }
+        else if (!script_file.isEmpty())
         {
             QString path = QFileInfo(script_file).exists()
                 ? QFileInfo(script_file).absoluteFilePath()
@@ -489,22 +508,32 @@ void MainWindow::showEvent(QShowEvent* event)
                     first_config = resolve_startup_path(QString::fromStdString(machine));
             }
         }
+        const bool scripted = launch || !script_file.isEmpty();
 
         startup_load = !cmdline_config.isEmpty();
-        cmdline_starting = !script_file.isEmpty();
+        cmdline_starting = scripted;
         //The script starts with the machine, at its first clock: started
         //after the load it would begin wherever the machine had got to
         //meanwhile, which depends on the host (Emulator::arm_script())
-        e->arm_script(!script_file.isEmpty());
-        load_config(first_config, false, script_file.isEmpty());
+        e->arm_script(scripted);
+        load_config(first_config, false, !scripted);
         cmdline_starting = false;
         startup_load = false;
         CreateScreenMenu();
 
         //A machine that did not load never ran to start the script
         if (!e->loaded) e->arm_script(false);
-        if (!script_file.isEmpty()) start_script();
+        //A launch script has no EXIT to close the window with: it ends with the
+        //program running, and the machine is the user's from then on
+        if (scripted) start_script(!launch);
+        launch_running = launch && e->loaded;
     }
+}
+
+void MainWindow::set_platform_launch(const QString &platform, const QString &program)
+{
+    launch_platform = platform;
+    launch_program = program;
 }
 
 void MainWindow::start_script(bool from_cmdline)
@@ -513,6 +542,9 @@ void MainWindow::start_script(bool from_cmdline)
 
     fdd_autosave_all();
     fdd_autosave_held = true;
+
+    //Whatever ran before is no launch of a program any more
+    launch_running = false;
 
     //A script from the command line runs through the same controls as a
     //recording, the only difference being that its EXIT closes the window
@@ -3330,6 +3362,22 @@ void MainWindow::rec_tick()
             }
             rec_cmdline = false;
             rec_stop_all();
+            //The script took the host's Caps Lock away from the machine (its
+            //state at a reset); a script that ends without EXIT - a launch of
+            //a program, a demo - leaves the machine to the user, who gets it back
+            use_host_lock_keys(true);
+            //A command of the launch that failed (a disk image the drive does
+            //not take) means the program did not start, while the machine
+            //runs on with whatever it has. The box comes after this tick: its
+            //event loop would run the timer under it
+            if (launch_running) {
+                launch_running = false;
+                const QString error = translateResultMessage(s->get_first_error());
+                if (!error.isEmpty())
+                    QTimer::singleShot(0, this, [this, error]() {
+                        QMessageBox::warning(this, tr("Error"), tr("The program was not started: %1").arg(error));
+                    });
+            }
         }
     }
 

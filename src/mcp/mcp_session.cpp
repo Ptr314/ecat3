@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include "emulator/emulator.h"
+#include "emulator/script/platform_launch.h"
 #include "emulator/script/script_parser.h"
 #include "emulator/utils.h"
 #include "mcp/mcp_session.h"
@@ -190,9 +191,6 @@ McpResult McpSession::run(const std::string &commands, unsigned int timeout_ms)
 
 McpResult McpSession::run_locked(const std::string &commands, unsigned int timeout_ms)
 {
-    if (!m_armed)
-        return McpResult::bad("No machine is loaded. Call ecat_machine first.");
-
     //Everything is parsed before anything runs: a batch with a typo half way
     //down must not leave the machine part way through it
     std::vector<std::string> lines;
@@ -222,7 +220,30 @@ McpResult McpSession::run_locked(const std::string &commands, unsigned int timeo
         parsed.push_back(c);
     }
 
+    //PLATFORM becomes the launch script of its platform, MACHINE first, right
+    //here: the batch is then split around that MACHINE like any other, and the
+    //launch starts at the new machine's first clock, as in a script. Unlike a
+    //script, anywhere in the batch - MACHINE may stand anywhere here too
+    for (size_t i = 0; i < parsed.size(); i++)
+    {
+        if (parsed[i].verb != SCRIPT_CMD_PLATFORM) continue;
+        if (e == nullptr) return McpResult::bad("No emulator to run on.");
+        std::vector<ScriptCommand> launch;
+        emulator::Result res = expand_platform_command(parsed[i], std::string(), e->platforms_path, e->cache_path, launch);
+        if (!res) return McpResult::bad(strip_message_context(res.message) + "\n  " + lines[i]);
+        std::vector<std::string> launch_lines;
+        for (size_t k = 0; k < launch.size(); k++) launch_lines.push_back(format_script_command(launch[k]));
+        parsed.erase(parsed.begin() + static_cast<std::ptrdiff_t>(i));
+        lines.erase(lines.begin() + static_cast<std::ptrdiff_t>(i));
+        parsed.insert(parsed.begin() + static_cast<std::ptrdiff_t>(i), launch.begin(), launch.end());
+        lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(i), launch_lines.begin(), launch_lines.end());
+        i += launch.size() - 1;
+    }
+
     if (parsed.empty()) return McpResult::good("ok");
+    //A batch that starts by loading a machine needs none loaded before it
+    if (!m_armed && parsed[0].verb != SCRIPT_CMD_MACHINE)
+        return McpResult::bad("No machine is loaded. Call ecat_machine first.");
     return run_parsed_locked(lines, parsed, timeout_ms);
 }
 

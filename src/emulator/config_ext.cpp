@@ -69,52 +69,6 @@ std::string unquote(const std::string &s)
     return s;
 }
 
-void make_dirs(const std::string &path)
-{
-    for (size_t i = 1; i <= path.size(); i++)
-        if (i == path.size() || path[i] == '/' || path[i] == '\\')
-        {
-            const std::string dir = path.substr(0, i);
-            //A drive letter is not a directory to create
-            if (dir.size() == 2 && dir[1] == ':') continue;
-            dsk_tools::utf8_mkdir(dir);
-        }
-}
-
-bool write_file(const std::string &path, const uint8_t * data, size_t size)
-{
-    dsk_tools::UTF8_ofstream f(path, std::ios::binary);
-    if (!f.good()) return false;
-    if (size > 0) f.write(reinterpret_cast<const char *>(data), static_cast<std::streamsize>(size));
-    f.close();
-    return true;
-}
-
-//The cache is shared by every running emulator: a parallel test run loads
-//the same extension several times at once. A file that already holds these
-//bytes is left alone, so only the first load writes and nobody truncates a
-//file another process is reading. A copy a drive has written into differs
-//and is put back
-bool write_cached(const std::string &path, const uint8_t * data, size_t size)
-{
-    if (dsk_tools::file_exists(path) && dsk_tools::utf8_file_size(path) == static_cast<long long>(size))
-    {
-        const std::string old = dsk_tools::utf8_read_file(path);
-        if (old.size() == size && (size == 0 || memcmp(old.data(), data, size) == 0)) return true;
-    }
-    return write_file(path, data, size);
-}
-
-//What one archive may unpack into, and how many files it may hold. A browser
-//unpacks into the memory of its tab, hence less there. Far above anything a
-//machine carries: the largest real member is a hard disk image of 128 MB
-#ifdef WASM_BUILD
-const uint64_t ARCHIVE_UNPACKED_LIMIT = 256ULL << 20;
-#else
-const uint64_t ARCHIVE_UNPACKED_LIMIT = 1ULL << 30;
-#endif
-const size_t ARCHIVE_ENTRIES_LIMIT = 4096;
-
 emulator::Result load_error(const char * message, const std::string &detail)
 {
     return emulator::Result::error(emulator::ErrorCode::ConfigError,
@@ -210,7 +164,7 @@ emulator::Result unpack_archive(const std::string &file, const std::string &cach
     for (size_t i = 0; i < zip.entries().size(); i++)
         if (!ZipReader::is_safe_name(zip.entries()[i].name))
             return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.entries()[i].name);
-    make_dirs(dir);
+    cache_make_dirs(dir);
     //Used now: the cache cleanup goes by the time of this directory, and a
     //load that finds every file already there writes nothing that would move it
     cache_touch(dir);
@@ -222,8 +176,8 @@ emulator::Result unpack_archive(const std::string &file, const std::string &cach
         if (!zip.read(i, bytes))
             return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error reading the archive"), file + ": " + zip.error());
         const std::string out = dir + en.name;
-        make_dirs(dsk_tools::get_file_path(out));
-        if (!write_cached(out, bytes.data(), bytes.size()))
+        cache_make_dirs(dsk_tools::get_file_path(out));
+        if (!cache_write(out, bytes.data(), bytes.size()))
             return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error writing file"), out);
     }
     dir_out = dir;
@@ -1170,8 +1124,8 @@ emulator::Result materialize_inline_data(EmulatorConfig &config, const std::stri
             //Checked on every load: a drive may have written into the copy
             //the last time, and the machine must start from the data in the
             //configuration
-            make_dirs(dir);
-            if (!write_cached(path, data.data(), data.size()))
+            cache_make_dirs(dir);
+            if (!cache_write(path, data.data(), data.size()))
                 return load_error(QT_TRANSLATE_NOOP("EmulatorConfig", "Error writing file"), path);
             //Used now, even when the same bytes were already there
             cache_touch(path);

@@ -218,6 +218,10 @@ function clamp(value, lo, hi) {
 // index.html?load=https://host/game.ext.zip starts a machine that is not in
 // this build at all: the page downloads that configuration extension and runs
 // it, see startUrlMachine().
+// index.html?platform=БК0010&load=https://host/1373-terra1.zip runs a program
+// the way a catalog of software asks for it: the platform names the machine
+// and the launch script (platforms/platforms.cfg), load= the program - a .bin,
+// a disk image .bkd or .img, or an archive holding one. There is no machine= then; see startPlatform().
 // It holds for this visit only: nothing read from the address goes into
 // the saved settings, so following somebody else's link leaves one's own
 // choices as they were. A machine picked or a slider moved by hand is saved as
@@ -239,10 +243,19 @@ function readUrlParams() {
         if (/^(0|false|no|off)$/i.test(value)) return false;
         return null;
     };
+    // A name in any case: a catalog may write PLATFORM=, as the emulator of
+    // bk-catalog takes it
+    const anyCase = (name) => {
+        for (const [key, value] of q) if (key.toLowerCase() === name) return value;
+        return null;
+    };
     return {
         machine:  q.get("machine") || null,
-        // A configuration extension to download and start, by its own address
+        // A configuration extension to download and start, by its own address;
+        // with platform= the program to run
         load:     q.get("load") || null,
+        // The platform of a program, as a catalog names it: "БК0010", "bk10"
+        platform: (anyCase("platform") || "").trim() || null,
         keyboard: kbd !== null && !/^(0|false|no|off)$/i.test(kbd),
         scale:    number("scale"),
         // "auto" follows the width of the screen, like a size never picked
@@ -343,8 +356,13 @@ function urlMachineFile(url) {
 function currentPageUrl() {
     const q = new URLSearchParams();
     // A machine downloaded by the address keeps the address it came from:
-    // there is nothing in this build to name it by
-    if (currentLoadUrl) q.set("load", currentLoadUrl);
+    // there is nothing in this build to name it by. A program run by its
+    // platform is given again the same way, platform and program
+    if (currentPlatform) {
+        q.set("platform", currentPlatform.platform);
+        q.set("load", currentPlatform.url);
+    }
+    else if (currentLoadUrl) q.set("load", currentLoadUrl);
     else if (currentMachine) q.set("machine", currentMachine.id);
     q.set("scale", screenScale);
     q.set("aspect", aspectMode());
@@ -520,6 +538,10 @@ const I18N = {
         stLoadName:         "The address must name an .ext, .ext.zip, .ecats or .ecats.zip file: {0}",
         stLoadFailed:       "Failed to download {0}: {1}",
         stLoadBase:         "{0} is built on a machine this build does not have: {1}",
+        stPlatformName:     "The address of the program names no file: {0}",
+        stPlatformFile:     "platform={0} needs the address of a program in load=",
+        stPlatformError:    "Cannot run {0}: {1}",
+        stPlatformMachine:  "The platform {0} runs on {1}, which this build does not have",
         stRunning:          "Running",
         stError:            "Error: {0}",
         stDiskLoading:      "Loading disk image: {0}",
@@ -651,6 +673,10 @@ const I18N = {
         stLoadName:         "В адресе должен быть файл .ext, .ext.zip, .ecats или .ecats.zip: {0}",
         stLoadFailed:       "Не удалось скачать {0}: {1}",
         stLoadBase:         "{0} построен на машине, которой нет в этой сборке: {1}",
+        stPlatformName:     "В адресе программы нет имени файла: {0}",
+        stPlatformFile:     "Для platform={0} нужен адрес программы в load=",
+        stPlatformError:    "Не удалось запустить {0}: {1}",
+        stPlatformMachine:  "Платформа {0} работает на {1}, а этой машины нет в сборке",
         stRunning:          "Работает",
         stError:            "Ошибка: {0}",
         stDiskLoading:      "Загрузка образа диска: {0}",
@@ -782,6 +808,10 @@ const I18N = {
         stLoadName:         "Адресът трябва да сочи файл .ext, .ext.zip, .ecats или .ecats.zip: {0}",
         stLoadFailed:       "Неуспешно изтегляне на {0}: {1}",
         stLoadBase:         "{0} е изграден върху машина, която липсва в тази версия: {1}",
+        stPlatformName:     "В адреса на програмата няма име на файл: {0}",
+        stPlatformFile:     "За platform={0} е нужен адрес на програма в load=",
+        stPlatformError:    "Неуспешно стартиране на {0}: {1}",
+        stPlatformMachine:  "Платформата {0} работи на {1}, която липсва в тази версия",
         stRunning:          "Работи",
         stError:            "Грешка: {0}",
         stDiskLoading:      "Зареждане на образ на диск: {0}",
@@ -1507,12 +1537,20 @@ let currentMachine = null;
 // The address a downloaded machine came from, for the link button, and the
 // line the list of machines gets for it
 let currentLoadUrl = null;
+// The platform and the address of a program run by platform=, for the link
+// button; null once another machine is picked
+let currentPlatform = null;
+// The machine being loaded is that of a platform launch
+let platformLaunching = false;
 let urlOption = null;
 // Starts a machine from bytes the page has in hand, set up by initEcat(): the
 // file button lives outside that closure and needs the same path a load=
 // address takes
 let startMachineFile = null;
 const URL_MACHINE_ID = "__url__";
+// The table of platforms and the launch scripts (deploy/platforms/), packed by
+// package_machines.py. Fetched only for an address with platform=
+const PLATFORMS_BUNDLE = "bundles/platforms.bundle";
 
 function setupInfoDialog(module) {
     const dialog = document.getElementById("info-dialog");
@@ -1905,6 +1943,18 @@ const CORE_MESSAGE_TEXT = {
         "The base configuration has several lines with this key, add the value of the one to remove": "В базовой конфигурации несколько строк с этим ключом, укажите значение удаляемой",
         "The base configuration has several lines with this key, remove them first": "В базовой конфигурации несколько строк с этим ключом, сначала удалите их",
         "The base configuration has this property with other modifiers, remove it first": "В базовой конфигурации это свойство записано с другими модификаторами, сначала удалите его",
+        "Unknown platform":                          "Неизвестная платформа",
+        "The platform does not run files of this type":"Платформа не запускает файлы такого типа",
+        "The archive holds no file this platform runs":"В архиве нет файла, который запускает эта платформа",
+        "The archive holds several programs":        "В архиве несколько программ",
+        "The table of platforms is not found":       "Не найдена таблица платформ",
+        "File is not found":                         "Файл не найден",
+        "The archive is too large":                  "Архив слишком большой",
+        "The archive holds too many files":          "В архиве слишком много файлов",
+        "A launch script must start with MACHINE":   "Сценарий запуска должен начинаться с MACHINE",
+        "PLATFORM expects a platform and a file":    "PLATFORM: нужны платформа и файл",
+        "Incorrect disk image size for":             "Некорректный размер файла образа",
+        "Error opening file":                        "Ошибка открытия файла",
     },
     bg: {
         "Unknown file type": "Неизвестен тип файл",
@@ -1939,6 +1989,18 @@ const CORE_MESSAGE_TEXT = {
         "The base configuration has several lines with this key, add the value of the one to remove": "В базовата конфигурация има няколко реда с този ключ, посочете стойността на премахвания",
         "The base configuration has several lines with this key, remove them first": "В базовата конфигурация има няколко реда с този ключ, първо ги премахнете",
         "The base configuration has this property with other modifiers, remove it first": "В базовата конфигурация това свойство е записано с други модификатори, първо го премахнете",
+        "Unknown platform": "Непозната платформа",
+        "The platform does not run files of this type": "Платформата не стартира файлове от този тип",
+        "The archive holds no file this platform runs": "В архива няма файл, който тази платформа стартира",
+        "The archive holds several programs": "В архива има няколко програми",
+        "The table of platforms is not found": "Таблицата с платформите не е намерена",
+        "File is not found": "Файлът не е намерен",
+        "The archive is too large": "Архивът е твърде голям",
+        "The archive holds too many files": "Архивът съдържа твърде много файлове",
+        "A launch script must start with MACHINE": "Сценарият за стартиране трябва да започва с MACHINE",
+        "PLATFORM expects a platform and a file": "PLATFORM: нужни са платформа и файл",
+        "Incorrect disk image size for": "Некоректен размер на образа на диска за",
+        "Error opening file": "Грешка при отваряне на файла",
     },
 };
 
@@ -2279,8 +2341,9 @@ async function rememberDisk(module, drive) {
 // Called right before the machine is loaded: the core gets the entries of
 // this machine, the images they name are put back into MEMFS
 async function prepareRememberedDisks(module, machinePath) {
-    // A saved state carries its media itself
-    const on = rememberDisksOn() && !/\.ecats(\.zip)?$/i.test(machinePath);
+    // A saved state carries its media itself, and a program run by its
+    // platform expects the configuration's own, as a script on the desktop does
+    const on = rememberDisksOn() && !platformLaunching && !/\.ecats(\.zip)?$/i.test(machinePath);
     module.ccall("wasm_disks_prepare", null, ["number"], [on ? 1 : 0]);
     if (!on) return;
     // The key of the core: the machine file relative to the root of MEMFS
@@ -3890,6 +3953,7 @@ async function initEcat() {
         // A machine picked from the list takes the place of a downloaded one
         if (urlOption) { urlOption.remove(); urlOption = null; }
         currentLoadUrl = null;
+        currentPlatform = null;
         selectEl.value = machine.id;
         selectEl.disabled = true;
         currentMachine = machine;
@@ -3937,6 +4001,95 @@ async function initEcat() {
         }
 
         return startMachineFile(name, bytes, url);
+    };
+
+    // The launch script runs on with the machine, and a command of it that
+    // failed (a disk image the drive does not take) is known when it ends: the
+    // program did not start, while the machine goes on with what it has. The
+    // paths of the page's filesystem say nothing to the visitor: the program
+    // goes by its name. A machine picked meanwhile ends the watch ("")
+    const watchLaunch = (name, path) => {
+        const timer = setInterval(() => {
+            const result = module.ccall("wasm_launch_result", "string", [], []);
+            if (result === "running") return;
+            clearInterval(timer);
+            if (!result) return;
+            const message = result.split(path).join(name).replace(/\/tmp\/ecat3-cache\/launch\/[^\/]+\//g, "");
+            setStatus("stPlatformError", "error", name, coreMessage(message));
+        }, 250);
+    };
+
+    // A program by its platform: index.html?platform=БК0010&load=<program>,
+    // the way a catalog of software starts one. The program goes into the
+    // filesystem of the emulator, the table of platforms and the launch
+    // scripts beside it, and the core answers which machine of this build the
+    // launch script names. That machine starts as if picked from the list, and
+    // wasm_load_machine() runs the launch with it. As with load= alone, the
+    // server of the program has to allow the download (CORS)
+    const startPlatform = async (platform, url) => {
+        if (!url) {
+            setStatus("stPlatformFile", "error", platform);
+            return false;
+        }
+        let name = "";
+        try {
+            name = decodeURIComponent(new URL(url, location.href).pathname.split("/").pop() || "");
+        } catch (e) {
+            name = "";
+        }
+        if (!/^[^\\/:*?"<>|]+$/.test(name)) {
+            setStatus("stPlatformName", "error", url);
+            return false;
+        }
+
+        setStatus("stLoadFetching", "loading", name);
+        let bytes;
+        try {
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error(resp.status + " " + resp.statusText);
+            bytes = new Uint8Array(await resp.arrayBuffer());
+        } catch (err) {
+            setStatus("stLoadFailed", "error", name, (err && err.message) || String(err));
+            return false;
+        }
+        const path = "/tmp/load/" + name;
+        try {
+            await fetchAndMount(module, PLATFORMS_BUNDLE, "/platforms");
+            mkdirRecursive(module, "/tmp/load");
+            module.FS.writeFile(path, bytes);
+        } catch (err) {
+            setStatus("stError", "error", (err && err.message) || String(err));
+            return false;
+        }
+
+        const cfg = module.ccall("wasm_platform_prepare", "string", ["string", "string"], [platform, path]);
+        if (!cfg) {
+            // An unknown platform, a type it does not run, an archive with
+            // nothing to run in it: the core says which
+            const message = module.ccall("wasm_last_error", "string", [], []);
+            setStatus("stPlatformError", "error", name,
+                      message ? coreMessage(message.split(path).join(name)) : platform);
+            return false;
+        }
+        const machine = machines.find((m) => (m.cfg_path || "").toLowerCase() === cfg.toLowerCase());
+        if (!machine) {
+            setStatus("stPlatformMachine", "error", platform, cfg.replace(/^\/computers\//, ""));
+            return false;
+        }
+        // Not remembered: the next visit without an address starts the machine
+        // of the visitor's own choice, not the catalog's
+        let ok = false;
+        platformLaunching = true;
+        try {
+            ok = await startMachine(machine, false, true);
+        } finally {
+            platformLaunching = false;
+        }
+        if (ok) {
+            currentPlatform = { platform: platform, url: url };
+            watchLaunch(name, path);
+        }
+        return ok;
     };
 
     // Everything of that which does not care where the bytes came from: the
@@ -4058,7 +4211,10 @@ async function initEcat() {
     // else is started in its place: the visitor is told why and picks a
     // machine himself
     let started = false;
-    if (urlParams.load !== null) {
+    if (urlParams.platform !== null) {
+        // The platform names the machine itself: there is no machine= with it
+        started = await startPlatform(urlParams.platform, urlParams.load);
+    } else if (urlParams.load !== null) {
         started = await startUrlMachine(urlParams.load);
     } else {
         let first = null;

@@ -126,7 +126,7 @@ for VARIANT in "${VARIANTS[@]}"; do
   # machine that was renamed, say) stay in the bundle. Resources itself is not
   # wiped -- it also holds the icon put there by cmake.
   RESOURCES="${BUILD_DIR}/${APP_NAME}.app/Contents/Resources"
-  rm -rf "${RESOURCES}/computers" "${RESOURCES}/data" "${RESOURCES}/software"
+  rm -rf "${RESOURCES}/computers" "${RESOURCES}/data" "${RESOURCES}/software" "${RESOURCES}/platforms"
   copy_deploy "${RESOURCES}"
 
   # Bundle SDL2 dylib

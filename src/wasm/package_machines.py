@@ -11,6 +11,10 @@ Generates, inside <output_dir>:
   - bundles/<machine-id>.bundle: per-machine asset archive
   - bundles/data.bundle: shared data files (charmaps, keyboard maps from
     deploy/data/)
+  - bundles/platforms.bundle: the table of platforms and the launch scripts
+    (deploy/platforms/), for an address with platform=: the page unpacks it
+    into /platforms/ and the core finds the machine and the script of the
+    platform there. Named in ecat_wasm.js (PLATFORMS_BUNDLE)
   - tapefiles.ini: the [TapeFiles] section of deploy/.ecat.ini, which the page
     writes into the ini of the emulator - it says how a tape file of every
     extension goes onto the tape, and the core reads it when recording too
@@ -328,6 +332,19 @@ def main():
         print(f"Created {data_bundle} ({len(data_files)} files)")
 
     write_tape_files(deploy_dir, output_dir)
+
+    # The launch of a program by its platform: everything of deploy/platforms/
+    platforms_dir = os.path.join(deploy_dir, "platforms")
+    platform_files = {}
+    if os.path.isdir(platforms_dir):
+        for f in os.listdir(platforms_dir):
+            fpath = os.path.join(platforms_dir, f)
+            if os.path.isfile(fpath):
+                platform_files[f] = fpath
+    if platform_files:
+        platforms_bundle = os.path.join(bundles_dir, "platforms.bundle")
+        create_bundle(platform_files, platforms_bundle)
+        print(f"Created {platforms_bundle} ({len(platform_files)} files)")
 
     # Process each machine config
     machines = []

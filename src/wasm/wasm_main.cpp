@@ -18,6 +18,7 @@
 #include "emulator/emulator.h"
 #include "emulator/config_ext.h"
 #include "emulator/files.h"
+#include "emulator/script/platform_launch.h"
 #include "emulator/utils.h"
 #include "emulator/devices/common/fdd.h"
 #include "emulator/devices/common/tape.h"
@@ -40,6 +41,11 @@ static Emulator* g_emulator = nullptr;
 static WasmRenderer* g_renderer = nullptr;
 //What went wrong in the last load, for wasm_last_error()
 static std::string g_load_error;
+// wasm_platform_prepare() has loaded a launch script: the next
+// wasm_load_machine() starts it instead of the script of the machine
+static bool g_launch_pending = false;
+// That launch is running: wasm_launch_result() reports how it ended
+static bool g_launch_watch = false;
 
 static const std::string WORK_PATH = "/computers/";
 static const std::string DATA_PATH = "/data/";
@@ -280,15 +286,27 @@ int wasm_load_machine(const char* cfg_path)
     g_load_error.clear();
     printf("eCat3 WASM: loading machine: %s\n", cfg_path);
 
+    // A launch prepared for this machine is taken once: a machine picked from
+    // the list afterwards starts without it
+    const bool launch = g_launch_pending;
+    g_launch_pending = false;
+    g_launch_watch = false;
+
     try {
         // Stop current emulation if running, and the demo script of the
-        // previous machine with it
-        g_emulator->stop_script();
+        // previous machine with it - unless the script is the launch made
+        // for this very machine
+        if (!launch) g_emulator->stop_script();
         g_emulator->stop_emulation();
+
+        // The launch script starts with the machine, at its first clock, as a
+        // script of the command line does (Emulator::arm_script())
+        if (launch) g_emulator->arm_script(true);
 
         // Load new configuration
         emulator::Result res = g_emulator->load_config(std::string(cfg_path));
         if (!res) {
+            if (launch) g_emulator->arm_script(false);
             g_load_error = res.message;
             printf("eCat3 WASM: load_config failed: %s\n", res.message.c_str());
             return -2;
@@ -316,8 +334,13 @@ int wasm_load_machine(const char* cfg_path)
         // Start emulation
         g_emulator->run();
 
-        // A configuration extension may carry a script: the start of a demo
-        if (g_emulator->has_embedded_script()) {
+        // run() has started the launch script already; this only says so.
+        // Otherwise a configuration extension may carry a script: the start
+        // of a demo
+        if (launch) {
+            g_emulator->start_script();
+            g_launch_watch = true;
+        } else if (g_emulator->has_embedded_script()) {
             emulator::Result sres = g_emulator->load_embedded_script();
             if (sres) g_emulator->start_script();
             else printf("eCat3 WASM: embedded script failed: %s\n", sres.message.c_str());
@@ -403,6 +426,59 @@ int wasm_machine_selfcontained(const char* file_path)
 {
     if (file_path == nullptr) return 0;
     return is_state_file(std::string(file_path)) ? 1 : 0;
+}
+
+// ?platform=<name>&load=<program>: the program the page has put into the
+// filesystem is to run on the machine of that platform. Loads the launch
+// script of the platform (platforms/platforms.cfg, which the page unpacks into
+// /platforms/ first) and answers the machine it names, "/computers/bk/BK-0010-01.cfg":
+// the page starts that machine of its list as usual, and wasm_load_machine()
+// runs the launch with it. Empty, with wasm_last_error(), when the platform is
+// unknown or the file cannot be run on it
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_platform_prepare(const char* platform, const char* file_path)
+{
+    static std::string result;
+    result.clear();
+    g_load_error.clear();
+    g_launch_pending = false;
+    if (!g_emulator || platform == nullptr || file_path == nullptr) return result.c_str();
+
+    // A demo of the machine running now would hold the buffer
+    g_emulator->stop_script();
+    emulator::Result res = g_emulator->load_script_text(
+        platform_script_text(std::string(platform), std::string(file_path)),
+        platform_script_name(g_emulator->cache_path));
+    if (!res) {
+        g_load_error = res.message;
+        printf("eCat3 WASM: %s: %s\n", platform, res.message.c_str());
+        return result.c_str();
+    }
+
+    const std::string machine = g_emulator->script_machine();
+    result = (machine.empty() || machine[0] == '/') ? machine : WORK_PATH + machine;
+    g_launch_pending = true;
+    return result.c_str();
+}
+
+// How the launch that wasm_load_machine() started went: "running" while its
+// script runs, the message of its first command that failed once it has ended
+// with one (the program did not start), empty otherwise - it went well, or
+// there is no launch. The page asks until the answer is not "running"; an
+// ended launch is reported once
+EMSCRIPTEN_KEEPALIVE
+const char* wasm_launch_result()
+{
+    static std::string result;
+    result.clear();
+    if (!g_emulator || !g_launch_watch) return result.c_str();
+    if (!g_emulator->script_finished()) {
+        result = "running";
+        return result.c_str();
+    }
+    g_launch_watch = false;
+    result = g_emulator->script_error();
+    return result.c_str();
 }
 
 // The message of the last wasm_load_machine() or wasm_machine_base() that

@@ -1,0 +1,18 @@
+# Запуск образа дискеты из архива по имени платформы: "42-bk-platform-disk.zip" с
+# образом и лишним readme.txt, как архивы хранит каталог ПО. Сценарий
+# bk0011m-disk.ecat - БК0011М с СМК-512 и образ, вынутый из архива, в приводе A:
+# до первого такта; с дискеты BIOS платы грузится сам.
+#
+# Образ (tests/files/make-bk-platform.py) - один загрузочный сектор: в 02100 метка
+# 123456, в 02102 SP, с которым BIOS его пустил, и полоса в окне 040000.
+# @timeout 60
+
+PLATFORM "bk11m", "../files/42-bk-platform-disk.zip"
+LOGDEFS _16,_8
+WAITFOR mapper.value16(2100) == 123456, _30000
+WAIT _200
+LOG fdd0.file
+LOG smk.mode
+LOG mapper.value16(2100,2103)
+SCREEN "../results/platform-bk0011m-bkd.png"
+EXIT

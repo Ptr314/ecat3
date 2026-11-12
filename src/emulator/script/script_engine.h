@@ -6,6 +6,7 @@
 #pragma once
 
 #include <atomic>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -145,6 +146,12 @@ public:
     bool is_finished() const;
     bool is_exit_requested() const;
     int  get_exit_code() const;
+    //The message of the first command that failed since start(), with its
+    //context marks ({Ctx|text}); empty while every command has succeeded. A
+    //failed command does not stop a script, so a launch of a program
+    //(PLATFORM) asks this when its script ends: a launch with an error is one
+    //that did not happen
+    std::string get_first_error() const;
 
     uint64_t get_ticks_per_ms() const;
 
@@ -177,6 +184,9 @@ private:
     std::string                 m_machine;
     std::vector<ScriptCommand>  m_commands;
     std::vector<std::string>    m_errors;       //Parse errors, reported on start
+    //Values a command has produced for the ones after it, written ${name} in
+    //their arguments: load_address after LOAD. Touched only inside the mutex
+    std::map<std::string, std::string> m_vars;
     std::unique_ptr<ScriptLog>  m_log;
     LogFormat                   m_format;
 
@@ -185,6 +195,7 @@ private:
     std::atomic<bool>           m_finished;
     std::atomic<bool>           m_exit_requested;
     int                         m_exit_code;
+    std::string                 m_first_error;  //See get_first_error(); under the mutex
 
     std::atomic<bool>           m_interactive;  //Commands may be added while the engine runs
     std::atomic<size_t>         m_done_pc;      //Commands [0, m_done_pc) have fully completed
@@ -219,7 +230,9 @@ private:
     std::vector<std::string>    m_held_ids;
     bool                        m_mouse_buttons_held = false;   //MOUSE left a button down
 
-    size_t                      m_wait_pc;      //Index of the active WAITFOR
+    //The active WAITFOR as it ran, ${name} already replaced: the condition is
+    //evaluated from it again and again
+    ScriptCommand               m_wait_command;
     uint64_t                    m_wait_deadline;
 
     uint64_t ms_to_ticks(unsigned int ms) const;
@@ -238,6 +251,10 @@ private:
     bool     waitfor_step();                    //true when the condition is met or timed out
     void     start_keys(const std::vector<unsigned int> &keys, const std::vector<bool> &shift,
                         unsigned int delay, unsigned int hold);
+
+    //Puts the values of m_vars in place of ${name} in the arguments. An
+    //unknown name is an error rather than a text left as it is
+    emulator::Result substitute_vars(ScriptCommand &c) const;
 
     ComputerDevice * find_device(const ScriptCommand &c);
     bool     read_field(const ScriptCommand &c, DeviceFieldValue &out);

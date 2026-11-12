@@ -8,6 +8,7 @@
 #include <cstring>
 #include <filesystem>
 #include <iostream>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -34,9 +35,27 @@
 //в emulator/utils.h - он ищет кавычечный include и по цепочке включающих
 #include "libs/dsk_tools/src/utils.h"
 
+#include "emulator/script/platform_launch.h"
+#include "emulator/script/script_parser.h"
+
 #ifdef ENABLE_MCP
     #include "mcp/mcp_server.h"
     #include "mcp/mcp_session.h"
+#endif
+
+#ifdef _WIN32
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include <windows.h>
+    #include <shellapi.h>
+    //Leftovers of 16-bit Windows that windows.h still defines; the selftest
+    //has fields of these names
+    #undef far
+    #undef near
 #endif
 
 namespace fs = std::filesystem;
@@ -63,6 +82,8 @@ struct Options
 {
     std::string config;
     std::string script;
+    std::string platform;   //--platform: the program is started by a launch script
+    std::string program;    //The file it runs, a positional argument
     std::string workdir;
     bool mcp = false;
     bool mcp_trace = false;
@@ -93,14 +114,55 @@ std::string extension_of(const std::string &s)
     return lowercase(s.substr(dot + 1));
 }
 
+//The arguments in UTF-8, which is what the core takes a file name in. On
+//Windows argv is in the code page of the system, where "БК0010" of --platform
+//or a program in a Cyrillic folder does not survive; the wide command line is
+//converted instead
+std::vector<std::string> utf8_arguments(int argc, char *argv[])
+{
+    std::vector<std::string> out;
+#ifdef _WIN32
+    int n = 0;
+    LPWSTR * w = CommandLineToArgvW(GetCommandLineW(), &n);
+    if (w != nullptr)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            const int size = WideCharToMultiByte(CP_UTF8, 0, w[i], -1, nullptr, 0, nullptr, nullptr);
+            std::string s(size > 0 ? size - 1 : 0, '\0');
+            if (size > 1) WideCharToMultiByte(CP_UTF8, 0, w[i], -1, &s[0], size, nullptr, nullptr);
+            out.push_back(s);
+        }
+        LocalFree(w);
+        return out;
+    }
+#endif
+    for (int i = 0; i < argc; i++) out.push_back(argv[i]);
+    return out;
+}
+
+//A UTF-8 name as a path of the host, and back
+fs::path u8(const std::string &s) { return fs::u8path(s); }
+
+//An absolute name for a file given relative to the current directory: a
+//script built from it starts in another one
+std::string absolute_utf8(const std::string &file)
+{
+    if (file.empty() || is_absolute_path(file)) return file;
+    std::error_code ec;
+    const fs::path p = fs::absolute(u8(file), ec);
+    return ec ? file : p.generic_u8string();
+}
+
 //The same options as the windowed build, parsed by hand: this frontend has no
 //Qt and therefore no QCommandLineParser
-Options parse_options(int argc, char *argv[])
+Options parse_options(const std::vector<std::string> &args)
 {
     Options o;
+    const int argc = static_cast<int>(args.size());
     for (int i = 1; i < argc; i++)
     {
-        const std::string a = argv[i];
+        const std::string &a = args[i];
         const bool has_next = (i + 1 < argc);
 
         if (a == "-h" || a == "--help")          { o.help = true; }
@@ -109,21 +171,31 @@ Options parse_options(int argc, char *argv[])
         else if (a == "--mcp-trace")             { o.mcp_trace = true; }
         else if (a == "--no-sound")              { o.no_sound = true; }
         else if (a == "--selftest")              { o.selftest = true; }
-        else if ((a == "-c" || a == "--config")  && has_next) { o.config  = argv[++i]; }
-        else if ((a == "-s" || a == "--script")  && has_next) { o.script  = argv[++i]; }
-        else if (a == "--workdir"                && has_next) { o.workdir = argv[++i]; }
-        else if (a == "--speed"                  && has_next) { o.speed   = argv[++i]; }
-        else if (a == "--print-config"           && has_next) { o.print_config = argv[++i]; }
+        else if ((a == "-c" || a == "--config")  && has_next) { o.config  = args[++i]; }
+        else if ((a == "-s" || a == "--script")  && has_next) { o.script  = args[++i]; }
+        else if (a == "--platform"               && has_next) { o.platform = args[++i]; }
+        else if (a.compare(0, 11, "--platform=") == 0)        { o.platform = a.substr(11); }
+        else if (a == "--workdir"                && has_next) { o.workdir = args[++i]; }
+        else if (a == "--speed"                  && has_next) { o.speed   = args[++i]; }
+        else if (a == "--print-config"           && has_next) { o.print_config = args[++i]; }
         else if (!a.empty() && a[0] == '-')      { o.bad = true; o.bad_argument = a; }
         else
         {
             //A positional argument is dispatched by its extension, so that a
-            //script or a configuration can simply be dropped on the executable
+            //script or a configuration can simply be dropped on the executable.
+            //Anything else is a program for --platform to run
             const std::string ext = extension_of(a);
             if (ext == "ecat" && o.script.empty())     o.script = a;
             else if (is_machine_file(a) && o.config.empty()) o.config = a;
+            else if (o.program.empty()) o.program = a;
             else { o.bad = true; o.bad_argument = a; }
         }
+    }
+    //A program without a platform has no machine to go into
+    if (!o.bad && !o.program.empty() && o.platform.empty())
+    {
+        o.bad = true;
+        o.bad_argument = o.program + " (a program is run with --platform)";
     }
     return o;
 }
@@ -137,6 +209,9 @@ void print_help()
         << "\n"
         << "  -c, --config <file.cfg>   Machine configuration to load\n"
         << "  -s, --script <file.ecat>  Script to run, see docs/SCRIPTING.md\n"
+        << "      --platform <name> <file>  Run a program or a disk (.bin, .bkd, .img, a\n"
+        << "                            .zip...) on the machine of a platform (bk10,\n"
+        << "                            bk11m...), see platforms/platforms.cfg\n"
         << "      --workdir <dir>       Directory to work in, the one holding computers/\n"
         << "      --no-sound            Do not open an audio device at all\n"
         << "      --speed <factor>      Speed of emulation: 0.25 to 1000, or max (as fast as\n"
@@ -151,7 +226,8 @@ void print_help()
         << "  -h, --help                Show this help\n"
         << "  -v, --version             Show the version\n"
         << "\n"
-        << "A positional argument is taken as a script or a configuration by its extension.\n";
+        << "A positional argument is taken as a script or a configuration by its extension,\n"
+        << "anything else as the program of --platform.\n";
 }
 
 //--------------------------------- Selftest --------------------------------//
@@ -1421,6 +1497,107 @@ bool check_disassembly(const std::string &data_path, std::string &message)
     return true;
 }
 
+//The launch of a program by its platform: the names a catalog sends match the
+//table however they are written, the program is found in an archive by the
+//rules of platform_launch.h, and the table of the installation holds together -
+//no name in two blocks, every script there and starting with MACHINE
+bool check_platforms(const std::string &work_path, std::string &message)
+{
+    struct Key { const char * a; const char * b; };
+    const Key same[] = {
+        {"  БК0010   (11М) ", "бк0010 (11м)"},
+        {"BK11M", "bk11m"},
+        {"ЁЖ", "ёж"},
+        {"БК0011М\xC2\xA0+ СМК512", "бк0011м + смк512"},
+    };
+    for (size_t i = 0; i < sizeof(same) / sizeof(same[0]); i++)
+        if (platform_name_key(same[i].a) != platform_name_key(same[i].b))
+        {
+            message = std::string("'") + same[i].a + "' and '" + same[i].b + "' are different platforms";
+            return false;
+        }
+    if (platform_name_key("БК0010") == platform_name_key("БК0011"))
+    {
+        message = "two platforms compare equal";
+        return false;
+    }
+
+    struct Pick { const char * archive; std::vector<std::string> names; int want; };
+    const std::vector<std::string> bin(1, ".bin");
+    const Pick picks[] = {
+        //By the name of the archive without the number of the catalog, in any case
+        {"1373-terra1.zip", {"readme.txt", "other.bin", "TERRA1.BIN"}, 2},
+        //The name differs ("BABY207_bin" holds "BABY207.bin"): the only program
+        {"3-BABY207_bin.zip", {"BABY207.bin", "BABY207.txt"}, 0},
+        //A number without a dash is a name
+        {"2048.zip", {"1.bin", "2048.bin"}, 1},
+        //Directories and names that would land outside are not candidates
+        {"5-game.zip", {"dir/", "../game.bin", "dir/game.bin"}, 2},
+        //Nothing to run, or no way to choose
+        {"9-krakout4661.zip", {"krakout.img"}, -1},
+        {"7-two.zip", {"a.bin", "b.bin"}, -1},
+    };
+    for (size_t i = 0; i < sizeof(picks) / sizeof(picks[0]); i++)
+    {
+        std::string problem;
+        const int got = pick_archive_member(picks[i].archive, picks[i].names, bin, problem);
+        if (got != picks[i].want || (got < 0) != !problem.empty())
+        {
+            message = std::string(picks[i].archive) + ": file " + std::to_string(got) + " picked, "
+                    + std::to_string(picks[i].want) + " expected";
+            return false;
+        }
+    }
+
+    //The table of the installation, next to computers/
+    std::string root = work_path;
+    while (!root.empty() && root[root.size() - 1] == '/') root.erase(root.size() - 1);
+    const std::string platforms = root.substr(0, root.find_last_of('/') + 1) + "platforms/";
+    EmulatorConfig table;
+    const std::string table_file = platforms + PLATFORMS_TABLE;
+    if (!dsk_tools::file_exists(table_file)) { message = table_file + " is not found"; return false; }
+    emulator::Result res = table.load_from_text(dsk_tools::utf8_read_file(table_file) + "\n");
+    if (!res) { message = table_file + ": " + strip_message_context(res.message); return false; }
+    std::map<std::string, std::string> owner;
+    for (unsigned int i = 0; i < table.get_devices_count(); i++)
+    {
+        EmulatorConfigDevice * d = table.get_device(static_cast<int>(i));
+        std::vector<std::string> names = split_string(d->get_parameter("names", false).value, '|', true);
+        names.push_back(d->name);
+        for (size_t n = 0; n < names.size(); n++)
+        {
+            const std::string key = platform_name_key(names[n]);
+            if (owner.count(key) && owner[key] != d->name)
+            {
+                message = "the name '" + str_trim(names[n]) + "' is in both " + owner[key] + " and " + d->name;
+                return false;
+            }
+            owner[key] = d->name;
+        }
+        for (size_t p = 0; p < d->parameters.size(); p++)
+        {
+            if (d->parameters[p].name == "names") continue;
+            const std::string script = platforms + str_trim(d->parameters[p].value);
+            std::vector<ScriptCommand> commands;
+            std::vector<std::string> errors;
+            res = parse_script_file(script, commands, errors);
+            if (!res || !errors.empty() || commands.empty() || commands[0].verb != SCRIPT_CMD_MACHINE
+                || commands[0].args.empty())
+            {
+                message = d->name + ": " + script + " does not start with MACHINE";
+                return false;
+            }
+            const std::string machine = work_path + commands[0].args[0];
+            if (!dsk_tools::file_exists(machine))
+            {
+                message = d->name + ": " + script + " names " + machine + ", which is not there";
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 int run_selftest(const std::string &work_path, const std::string &data_path,
                  const std::string &software_path)
 {
@@ -1519,6 +1696,11 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     if (!rate_ok) { std::cout << "FAIL sound rate: " << message << std::endl; failed++; }
     std::cout << "sound rate match: " << (rate_ok ? "ok" : "FAILED") << std::endl;
 
+    message.clear();
+    const bool platforms_ok = check_platforms(work_path, message);
+    if (!platforms_ok) { std::cout << "FAIL platforms: " << message << std::endl; failed++; }
+    std::cout << "platform launch: " << (platforms_ok ? "ok" : "FAILED") << std::endl;
+
     return failed ? 1 : 0;
 }
 
@@ -1596,9 +1778,9 @@ Paths resolve_paths(const std::string &argv0)
 std::string resolve_startup_path(const std::string &file_name, const std::string &work_path)
 {
     if (file_name.empty()) return file_name;
-    const fs::path p(file_name);
+    const fs::path p = u8(file_name);
     if (p.is_absolute()) return file_name;
-    if (fs::exists(p)) return fs::absolute(p).generic_string();
+    if (fs::exists(p)) return fs::absolute(p).generic_u8string();
     return work_path + file_name;
 }
 
@@ -1682,7 +1864,7 @@ private:
 
 int main(int argc, char *argv[])
 {
-    Options o = parse_options(argc, argv);
+    Options o = parse_options(utf8_arguments(argc, argv));
 
     if (o.bad)
     {
@@ -1692,6 +1874,18 @@ int main(int argc, char *argv[])
     }
     if (o.help)    { print_help(); return 0; }
     if (o.version) { std::cout << "eCat3 " << PROJECT_VERSION << std::endl; return 0; }
+
+    //The launch script is the script of the run and names the machine itself
+    if (!o.platform.empty() && (!o.script.empty() || !o.config.empty() || o.mcp || o.program.empty()))
+    {
+        std::cerr << (o.program.empty()
+                      ? "--platform needs the file of a program to run"
+                      : "--platform cannot be combined with --script, --config or --mcp")
+                  << std::endl;
+        return 2;
+    }
+    //Relative to the directory the user is in, before --workdir moves away
+    o.program = absolute_utf8(o.program);
 
 #ifndef ENABLE_MCP
     if (o.mcp)
@@ -1705,7 +1899,7 @@ int main(int argc, char *argv[])
     if (!o.workdir.empty())
     {
         std::error_code ec;
-        fs::current_path(o.workdir, ec);
+        fs::current_path(u8(o.workdir), ec);
         if (ec)
         {
             std::cerr << "Unable to change the working directory to " << o.workdir << std::endl;
@@ -1719,7 +1913,7 @@ int main(int argc, char *argv[])
         return run_selftest(sp.work, sp.data, sp.software);
     }
 
-    if (!o.mcp && o.script.empty() && o.config.empty() && o.print_config.empty())
+    if (!o.mcp && o.script.empty() && o.config.empty() && o.print_config.empty() && o.platform.empty())
     {
         std::cerr << "Nothing to do: the console build needs a script, a configuration or --mcp."
                   << std::endl;
@@ -1776,13 +1970,28 @@ int main(int argc, char *argv[])
     if (!o.script.empty())
     {
         emulator::Result res = emulator.load_script(
-            fs::exists(o.script) ? fs::absolute(o.script).generic_string() : o.script);
+            dsk_tools::file_exists(o.script) ? absolute_utf8(o.script) : o.script);
         if (!res)
         {
             std::cerr << strip_message_context(res.message) << std::endl;
             return 2;
         }
         if (config.empty()) config = emulator.script_machine();
+    }
+    //--platform is one line of script, PLATFORM: loading it puts the launch
+    //script of the platform in its place, and that one names the machine. The
+    //name is in the cache, so a log of its errors does not land in deploy/
+    const bool launch = !o.platform.empty();
+    if (launch)
+    {
+        emulator::Result res = emulator.load_script_text(platform_script_text(o.platform, o.program),
+                                                         platform_script_name(emulator.cache_path));
+        if (!res)
+        {
+            std::cerr << strip_message_context(res.message) << std::endl;
+            return 2;
+        }
+        config = emulator.script_machine();
     }
     if (config.empty()) config = emulator.read_setup("Startup", "default", "");
 
@@ -1815,7 +2024,7 @@ int main(int argc, char *argv[])
     {
         //An explicit script starts with the machine, at its first clock (an
         //embedded one is known only once the machine is loaded)
-        if (!o.script.empty()) emulator.arm_script(true);
+        if (!o.script.empty() || launch) emulator.arm_script(true);
         const std::string err = host.load_machine(config);
         if (!err.empty())
         {
@@ -1825,7 +2034,7 @@ int main(int argc, char *argv[])
 
         //A configuration extension may carry a script of its own. A script
         //given explicitly takes its place
-        bool run_script = !o.script.empty();
+        bool run_script = !o.script.empty() || launch;
         if (!run_script && emulator.has_embedded_script())
         {
             emulator::Result res = emulator.load_embedded_script();
@@ -1844,6 +2053,23 @@ int main(int argc, char *argv[])
             //main thread has nothing else to do
             while (!emulator.script_finished() && !host.should_quit() && !emulation_died(emulator))
                 compat_sleep_ms(10);
+            //A launch script ends with the program started: the program goes
+            //on until the process is killed, as a machine with no script does.
+            //One of its commands that failed (a disk image the drive does not
+            //take) means the program did not start: that is the end of the run
+            if (launch && emulator.script_finished() && !emulator.script_exit_requested()
+                && !emulation_died(emulator))
+            {
+                const std::string error = emulator.script_error();
+                if (!error.empty())
+                {
+                    std::cerr << "The program was not started: " << strip_message_context(error) << std::endl;
+                    emulator.stop_emulation();
+                    return 2;
+                }
+            }
+            if (launch && !emulator.script_exit_requested())
+                while (!host.should_quit() && !emulation_died(emulator)) compat_sleep_ms(50);
             exit_code = emulation_died(emulator) ? 3 : emulator.script_exit_code();
         }
         else

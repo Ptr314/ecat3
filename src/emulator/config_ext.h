@@ -17,11 +17,24 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 
 #include "config.h"
 #include "state.h"
+
+//What one archive may unpack into, and how many files it may hold. A browser
+//unpacks into the memory of its tab, hence less there. Far above anything a
+//machine carries: the largest real member is a hard disk image of 128 MB.
+//Also the bounds of a program archive of a platform launch
+#ifdef WASM_BUILD
+const uint64_t ARCHIVE_UNPACKED_LIMIT = 256ULL << 20;
+#else
+const uint64_t ARCHIVE_UNPACKED_LIMIT = 1ULL << 30;
+#endif
+const size_t ARCHIVE_ENTRIES_LIMIT = 4096;
 
 struct ExtEdit {
     //RemoveDevice takes the whole device out: "-hdd", no property. AddDevice

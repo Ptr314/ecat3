@@ -35,6 +35,11 @@ public:
     //is kept here for main(), which turns it into the status of the process
     int script_exit_code() const { return rec_exit_code; }
 
+    //--platform: the program is started by the launch script of its platform
+    //(deploy/platforms/platforms.cfg), which also names the machine. Called
+    //before show(); program is an absolute path
+    void set_platform_launch(const QString &platform, const QString &program);
+
     Emulator *e;
 
 #ifdef ENABLE_MCP
@@ -241,6 +246,9 @@ private:
     bool startup_load = false;          //The machine of the command line is being loaded
     bool cmdline_starting = false;      //The machine of a command line script is being loaded
     QString script_file;
+    QString launch_platform;            //--platform and its program
+    QString launch_program;
+    bool launch_running = false;        //Its launch script runs: an error is reported when it ends
 
     QString resolve_startup_path(const QString &file_name) const;
     void start_script(bool from_cmdline = true);

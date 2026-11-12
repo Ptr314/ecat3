@@ -287,6 +287,10 @@ public:
     //Configurations of the user (.ext), listed by the machine chooser next to
     //those of computers/
     std::string user_ext_path;
+    //The table of platforms and the launch scripts of a platform launch
+    //(PLATFORM, --platform, ?platform=). The constructor puts it beside
+    //work_path: <root>/computers/ and <root>/platforms/
+    std::string platforms_path;
 
     bool loaded;
 
@@ -542,6 +546,10 @@ public:
     //A script is parsed before the machine is loaded, because its MACHINE
     //command may select the configuration to start with
     emulator::Result load_script(const std::string &file_name);
+    //The same for a script held in memory: the PLATFORM line a frontend
+    //builds for --platform or ?platform=. file_name names it (the log, the
+    //directory relative names start from)
+    emulator::Result load_script_text(const std::string &text, const std::string &file_name);
 
     //The @script part of the loaded configuration extension. The frontend
     //loads and starts it when nothing else drives the machine: an explicit
@@ -566,6 +574,9 @@ public:
     bool script_finished() const;
     bool script_exit_requested() const;
     int  script_exit_code() const;
+    //The first command of the script that failed (ScriptEngine::get_first_error()),
+    //empty if none: a launch of a program that ends with one has failed
+    std::string script_error() const;
 
     //The engine and the recorder are created on first use and live as long
     //as the emulator: the GUI record / replay controls work on them directly

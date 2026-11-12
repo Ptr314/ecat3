@@ -39,7 +39,8 @@ namespace {
         {SCRIPT_CMD_RADIX,   "radix",   false},
         {SCRIPT_CMD_MOUSE,   "mouse",   false},
         {SCRIPT_CMD_SAVESTATE, "savestate", false},
-        {SCRIPT_CMD_SPEED,   "speed",   false}
+        {SCRIPT_CMD_SPEED,   "speed",   false},
+        {SCRIPT_CMD_PLATFORM, "platform", false}
     };
 
     const unsigned int VERBS_COUNT = sizeof(VERBS) / sizeof(VERBS[0]);
@@ -220,6 +221,19 @@ std::string escape_script_text(const std::string &s)
     {
         if (s[i] == '"' || s[i] == '\\') r += '\\';
         r += s[i];
+    }
+    return r;
+}
+
+std::string unescape_script_text(const std::string &s)
+{
+    std::string r;
+    for (size_t i = 0; i < s.length(); i++)
+    {
+        if (s[i] == '\\' && i + 1 < s.length() && (s[i+1] == '"' || s[i+1] == '\\'))
+            r += s[++i];
+        else
+            r += s[i];
     }
     return r;
 }

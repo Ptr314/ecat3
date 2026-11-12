@@ -259,7 +259,7 @@
     <message>
         <location line="+12"/>
         <source>The language card RAM is 16K banks of a ][</source>
-        <translation type="unfinished"></translation>
+        <translation>ОЗУ языковой карты - банки по 16 Кб, и только у ][</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -452,7 +452,7 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+780"/>
+        <location filename="../emulator/core.cpp" line="+784"/>
         <source>No CPU clock value found</source>
         <translation>Не задана тактовая частота процессора</translation>
     </message>
@@ -502,7 +502,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1395"/>
+        <location filename="../emulator/core.cpp" line="-1399"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -590,7 +590,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+1346"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1374"/>
         <source>Disk image</source>
         <translation>Образ диска</translation>
     </message>
@@ -607,8 +607,8 @@
         <translation>Номер станции в сети (0-63)</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+640"/>
-        <location filename="../emulator/devices/common/dw_controller.cpp" line="+233"/>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+721"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="+708"/>
         <source>Hard disk image</source>
         <translation>Образ жёсткого диска</translation>
     </message>
@@ -707,7 +707,7 @@
         <translation>Набор знаков</translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/pravetz_keyboard.cpp" line="+248"/>
+        <location filename="../emulator/devices/common/keyboard.cpp" line="+23"/>
         <source>Keyboard layout</source>
         <translation>Раскладка клавиатуры</translation>
     </message>
@@ -768,12 +768,12 @@
 <context>
     <name>DVKDW</name>
     <message>
-        <location filename="../emulator/devices/common/dw_controller.cpp" line="-213"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="-635"/>
         <source>Hard disk image file not found</source>
         <translation>Файл образа жёсткого диска не найден</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+15"/>
         <source>Unrecognized hard disk geometry</source>
         <translation>Нераспознанная геометрия жёсткого диска</translation>
     </message>
@@ -783,7 +783,7 @@
         <translation>Неподдерживаемая геометрия жёсткого диска</translation>
     </message>
     <message>
-        <location line="+256"/>
+        <location line="+679"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; ожидает имя файла</translation>
     </message>
@@ -807,7 +807,7 @@
 <context>
     <name>DebugMenu</name>
     <message>
-        <location filename="../mainwindow.cpp" line="+375"/>
+        <location filename="../mainwindow.cpp" line="+373"/>
         <source>SMK-512...</source>
         <translation>СМК-512...</translation>
     </message>
@@ -1586,7 +1586,7 @@
         <translation>Не удалось загрузить файл: все ram-диски уже заполнены!</translation>
     </message>
     <message>
-        <location line="+91"/>
+        <location line="+99"/>
         <source>Unknown file type</source>
         <translation>Неизвестный тип файла</translation>
     </message>
@@ -1635,7 +1635,7 @@
         <translation type="vanished">Сохранить записанные данные</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+292"/>
+        <location filename="../emulator/emulator.cpp" line="+299"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройство &apos;system&apos; не найдено</translation>
     </message>
@@ -1677,7 +1677,7 @@
     </message>
     <message>
         <location filename="../emulator/config.cpp" line="+276"/>
-        <location filename="../emulator/config_ext.cpp" line="+143"/>
+        <location filename="../emulator/config_ext.cpp" line="+97"/>
         <location line="+8"/>
         <location line="+5"/>
         <location line="+834"/>
@@ -2043,7 +2043,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-1312"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1339"/>
         <source>Incorrect fdd list for</source>
         <translation>Некорректный список дисководов для</translation>
     </message>
@@ -2077,7 +2077,7 @@
         <translation>Некорректный параметр дисковода</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+25"/>
         <source>Unknown fdd mode</source>
         <translation>Неизвестный режим работы устройства fdd</translation>
     </message>
@@ -2092,7 +2092,7 @@
         <translation>Файл образа диска не найден</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <location line="+87"/>
         <location line="+9"/>
         <location line="+8"/>
@@ -2101,19 +2101,20 @@
     </message>
     <message>
         <location line="-99"/>
-        <location line="+584"/>
+        <location line="+598"/>
         <location line="+25"/>
         <location line="+14"/>
         <source>Unrecognized MFM format</source>
         <translation>Файл формата MFM не распознан</translation>
     </message>
     <message>
-        <location line="-547"/>
+        <location line="-561"/>
         <location line="+56"/>
-        <location line="+45"/>
-        <location line="+29"/>
+        <location line="+44"/>
+        <location line="+6"/>
+        <location line="+33"/>
         <location line="+18"/>
-        <location line="+336"/>
+        <location line="+341"/>
         <location line="+16"/>
         <location line="+198"/>
         <location filename="../emulator/devices/common/fdd_woz.cpp" line="+339"/>
@@ -2122,29 +2123,29 @@
         <translation>Ошибка открытия файла</translation>
     </message>
     <message>
-        <location line="-637"/>
+        <location line="-651"/>
         <location filename="../emulator/devices/common/fdd_woz.cpp" line="-32"/>
         <source>File is in unknown format</source>
         <translation>Формат файла не распознан</translation>
     </message>
     <message>
-        <location line="+45"/>
-        <location line="+19"/>
+        <location line="+31"/>
+        <location line="+42"/>
         <location line="+18"/>
-        <location line="+351"/>
+        <location line="+356"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="-126"/>
         <source>Incorrect disk image size for</source>
         <translation>Некорректный размер файла образа</translation>
     </message>
     <message>
-        <location line="+427"/>
+        <location line="+434"/>
         <location line="+17"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="+93"/>
         <source>Error exporting disk.</source>
         <translation>Ошибка экспорта диска.</translation>
     </message>
     <message>
-        <location line="+580"/>
+        <location line="+592"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; требует имя файла</translation>
     </message>
@@ -2162,7 +2163,7 @@
         <translation type="vanished">Формат файла &apos;%1&apos; не распознан</translation>
     </message>
     <message>
-        <location line="-1460"/>
+        <location line="-1493"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation>Файлы AIM поддерживаются только на дисководах 840 Кб Агат!</translation>
     </message>
@@ -2171,7 +2172,7 @@
         <translation type="vanished">Некорректный файл образа диска &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+109"/>
         <source>Expected conversion from DSK to MFM is not supported yet.</source>
         <translation>Необходимая конвертация из посекторного в физический формат еще не поддерживается.</translation>
     </message>
@@ -2180,7 +2181,7 @@
         <translation type="vanished">Ошибка экспорта диска. %1 : %2</translation>
     </message>
     <message>
-        <location line="+826"/>
+        <location line="+838"/>
         <source>FDD is working in a physical mode now, generating of DSK images is not supported yet.</source>
         <translation>Дисковод работает в MFM-режиме. Сохранение в посекторные образы еще не поддерживается.</translation>
     </message>
@@ -2192,15 +2193,15 @@
         <translation>Сохранение образов для данного типа устройств еще не поддерживается.</translation>
     </message>
     <message>
-        <location line="-1101"/>
-        <location line="+511"/>
+        <location line="-1122"/>
+        <location line="+525"/>
         <location line="+197"/>
         <location line="+48"/>
         <source>HFE images are not supported for this drive</source>
         <translation>Образы HFE для этого дисковода не поддерживаются</translation>
     </message>
     <message>
-        <location line="+886"/>
+        <location line="+905"/>
         <source>Command &apos;mark&apos; expects a track, a side and a sector of a sector image</source>
         <translation>Команде mark нужны дорожка, сторона и сектор посекторного образа</translation>
     </message>
@@ -2597,7 +2598,7 @@
 <context>
     <name>Keyboard</name>
     <message>
-        <location filename="../emulator/devices/common/keyboard.cpp" line="+215"/>
+        <location filename="../emulator/devices/common/keyboard.cpp" line="+210"/>
         <source>Error reading remap file</source>
         <translation>Ошибка чтения файла переназначения клавиш</translation>
     </message>
@@ -2797,7 +2798,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1424"/>
+        <location filename="../mainwindow.cpp" line="+1455"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation>Останов</translation>
@@ -2865,13 +2866,13 @@
     <message>
         <location line="+15"/>
         <location filename="../mainwindow.cpp" line="-902"/>
-        <location line="+2246"/>
+        <location line="+2248"/>
         <source>Keyboard</source>
         <translation>Клавиатура</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1888"/>
+        <location filename="../mainwindow.cpp" line="-1890"/>
         <source>On-screen keyboard</source>
         <translation>Экранная клавиатура</translation>
     </message>
@@ -2979,14 +2980,14 @@
     <message>
         <location filename="../mainwindow.cpp" line="-654"/>
         <location line="+47"/>
-        <location line="+1820"/>
+        <location line="+1822"/>
         <location line="+30"/>
         <location line="+43"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-1937"/>
+        <location line="-1939"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -3013,24 +3014,26 @@
         <translation type="vanished">Все файлы (*.*)</translation>
     </message>
     <message>
-        <location line="-128"/>
-        <location line="+81"/>
+        <location line="-155"/>
+        <location line="+14"/>
+        <location line="+94"/>
         <location line="+1416"/>
         <location line="+60"/>
         <location line="+79"/>
-        <location line="+334"/>
+        <location line="+336"/>
         <location line="+110"/>
         <location line="+62"/>
         <location line="+269"/>
         <location line="+25"/>
-        <location line="+471"/>
+        <location line="+424"/>
+        <location line="+63"/>
         <location line="+29"/>
         <location line="+92"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-2947"/>
+        <location line="-2965"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -3141,7 +3144,7 @@
     <message>
         <location filename="../mainwindow.ui" line="+83"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+2213"/>
+        <location filename="../mainwindow.cpp" line="+2215"/>
         <source>Record video</source>
         <translation>Записать видео</translation>
     </message>
@@ -3151,15 +3154,15 @@
         <translation>Остановить запись видео</translation>
     </message>
     <message>
-        <location line="-2191"/>
+        <location line="-2193"/>
         <location line="+1568"/>
-        <location line="+492"/>
+        <location line="+494"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation>Запись видео</translation>
     </message>
     <message>
-        <location line="-2173"/>
+        <location line="-2175"/>
         <source>Codec</source>
         <translation>Кодек</translation>
     </message>
@@ -3195,7 +3198,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+2010"/>
+        <location line="+2012"/>
         <source>Path to ffmpeg</source>
         <translation>Путь к ffmpeg</translation>
     </message>
@@ -3215,8 +3218,8 @@
         <translation>Идет запись видео в </translation>
     </message>
     <message>
-        <location line="-557"/>
-        <location line="+586"/>
+        <location line="-559"/>
+        <location line="+588"/>
         <source>Finishing the video...</source>
         <translation>Видео дописывается...</translation>
     </message>
@@ -3226,13 +3229,13 @@
         <translation>Видео сохранено: </translation>
     </message>
     <message>
-        <location line="-2191"/>
+        <location line="-2193"/>
         <source>As on screen</source>
         <translation>Как на экране</translation>
     </message>
     <message>
-        <location line="-563"/>
-        <location line="+673"/>
+        <location line="-594"/>
+        <location line="+704"/>
         <location line="+1"/>
         <location line="+908"/>
         <source>Turbo</source>
@@ -3408,7 +3411,7 @@
         <translation>Открыть образ диска</translation>
     </message>
     <message>
-        <location line="+113"/>
+        <location line="+115"/>
         <source>Open a hard disk image</source>
         <translation>Открыть образ винчестера</translation>
     </message>
@@ -3484,7 +3487,12 @@
         <translation>Машина остановилась</translation>
     </message>
     <message>
-        <location line="+320"/>
+        <location line="+42"/>
+        <source>The program was not started: %1</source>
+        <translation>Программа не запущена: %1</translation>
+    </message>
+    <message>
+        <location line="+294"/>
         <source>Remembered disks</source>
         <translation>Запомненные диски</translation>
     </message>
@@ -3536,13 +3544,13 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-445"/>
-        <location line="+243"/>
+        <location filename="../mainwindow.cpp" line="-461"/>
+        <location line="+259"/>
         <source>Start recording</source>
         <translation>Начать запись</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-243"/>
+        <location filename="../mainwindow.cpp" line="-259"/>
         <source>Pause recording</source>
         <translation>Приостановить запись</translation>
     </message>
@@ -3583,7 +3591,7 @@
         <translation>Остановить запись или воспроизведение</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="+181"/>
+        <location filename="../mainwindow.cpp" line="+197"/>
         <location line="+7"/>
         <location line="+13"/>
         <source>Open recording</source>
@@ -3610,12 +3618,12 @@
         <translation>Сценарии eCat (*.ecat)</translation>
     </message>
     <message>
-        <location line="-1734"/>
+        <location line="-1752"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation>Мышь захвачена машиной. Ctrl-Alt или средняя кнопка отпускает ее</translation>
     </message>
     <message>
-        <location line="+1777"/>
+        <location line="+1795"/>
         <source>Some lines were skipped:</source>
         <translation>Некоторые строки пропущены:</translation>
     </message>
@@ -3768,7 +3776,7 @@
         <translation type="vanished">Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+1127"/>
+        <location line="+1131"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
@@ -4053,7 +4061,7 @@
     <message>
         <location filename="../emulator/devices/specific/oric_ula.cpp" line="+37"/>
         <source>A RAM of 64K is expected</source>
-        <translation type="unfinished"></translation>
+        <translation>Ожидается ОЗУ на 64 Кб</translation>
     </message>
 </context>
 <context>
@@ -4113,7 +4121,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-889"/>
+        <location filename="../emulator/core.cpp" line="-893"/>
         <source>Incorrect access mode</source>
         <translation>Некорректный режим доступа</translation>
     </message>
@@ -4140,7 +4148,7 @@
 <context>
     <name>PravetzKeyboard</name>
     <message>
-        <location filename="../emulator/devices/specific/pravetz_keyboard.cpp" line="-198"/>
+        <location filename="../emulator/devices/specific/pravetz_keyboard.cpp" line="+50"/>
         <source>Keyboard map file is expected</source>
         <translation>Ожидается файл раскладки клавиатуры</translation>
     </message>
@@ -4412,7 +4420,7 @@
 <context>
     <name>Script</name>
     <message>
-        <location filename="../emulator/script/script_parser.cpp" line="+58"/>
+        <location filename="../emulator/script/script_parser.cpp" line="+59"/>
         <source>Line</source>
         <translation>Строка</translation>
     </message>
@@ -4457,9 +4465,77 @@
         <translation>Файл сценария не найден</translation>
     </message>
     <message>
-        <location line="+91"/>
+        <location line="+104"/>
         <source>Unable to write the script file</source>
         <translation>Не удалось записать файл сценария</translation>
+    </message>
+    <message>
+        <location filename="../emulator/script/platform_launch.cpp" line="+97"/>
+        <source>No cache directory to unpack into</source>
+        <translation>Нет временного каталога для распаковки</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+6"/>
+        <location line="+16"/>
+        <source>Error reading the archive</source>
+        <translation>Ошибка чтения архива</translation>
+    </message>
+    <message>
+        <location line="-20"/>
+        <location line="+17"/>
+        <source>The archive is too large</source>
+        <translation>Архив слишком большой</translation>
+    </message>
+    <message>
+        <location line="-10"/>
+        <source>The archive holds too many files</source>
+        <translation>В архиве слишком много файлов</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Error writing file</source>
+        <translation>Ошибка записи файла</translation>
+    </message>
+    <message>
+        <location line="+77"/>
+        <source>The archive holds no file this platform runs</source>
+        <translation>В архиве нет файла, который запускает эта платформа</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The archive holds several programs</source>
+        <translation>В архиве несколько программ</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>The table of platforms is not found</source>
+        <translation>Не найдена таблица платформ</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Unknown platform</source>
+        <translation>Неизвестная платформа</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>File is not found</source>
+        <translation>Файл не найден</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>The platform does not run files of this type</source>
+        <translation>Платформа не запускает файлы такого типа</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>PLATFORM expects a platform and a file</source>
+        <translation>PLATFORM: нужны платформа и файл</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>A launch script must start with MACHINE</source>
+        <translation>Сценарий запуска должен начинаться с MACHINE</translation>
     </message>
 </context>
 <context>
@@ -4671,7 +4747,7 @@
         <translation>Файл образа ленты не найден</translation>
     </message>
     <message>
-        <location line="+591"/>
+        <location line="+595"/>
         <source>Tape file format is not defined</source>
         <translation>Не задан формат файла записи</translation>
     </message>
@@ -4679,17 +4755,18 @@
         <location line="+9"/>
         <location line="+100"/>
         <location line="+9"/>
+        <location line="+20"/>
         <source>Incorrect tape file format</source>
         <translation>Некорректный формат файла записи</translation>
     </message>
     <message>
-        <location line="-29"/>
+        <location line="-49"/>
         <location line="+32"/>
         <source>The file is too large for a cassette record</source>
         <translation>Файл слишком велик для записи на кассету</translation>
     </message>
     <message>
-        <location line="+279"/>
+        <location line="+289"/>
         <location line="+635"/>
         <location line="+18"/>
         <location line="+7"/>
@@ -4862,7 +4939,7 @@ Do you want to replace it?</source>
 <context>
     <name>UKNCHDD</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-557"/>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-637"/>
         <source>Hard disk image file not found</source>
         <translation>Файл образа жёсткого диска не найден</translation>
     </message>
@@ -4873,12 +4950,12 @@ Do you want to replace it?</source>
         <translation>Нераспознанный образ жёсткого диска</translation>
     </message>
     <message>
-        <location line="+64"/>
+        <location line="+90"/>
         <source>Unrecognized hard disk geometry</source>
         <translation>Нераспознанная геометрия жёсткого диска</translation>
     </message>
     <message>
-        <location line="+657"/>
+        <location line="+711"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Команда &apos;load&apos; ожидает имя файла</translation>
     </message>
@@ -5491,12 +5568,12 @@ Do you want to replace it?</source>
 <context>
     <name>main</name>
     <message>
-        <location filename="../main.cpp" line="+60"/>
+        <location filename="../main.cpp" line="+62"/>
         <source>Internal error, the program may be unstable:</source>
         <translation>Внутренняя ошибка, программа может работать неустойчиво:</translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+73"/>
         <source>eCat3, a universal emulator of retro computers</source>
         <translation>eCat3, универсальный эмулятор ретрокомпьютеров</translation>
     </message>
@@ -5521,14 +5598,28 @@ Do you want to replace it?</source>
         <translation>файл.ecat</translation>
     </message>
     <message>
+        <location line="+4"/>
+        <source>Run the program given as the file on the machine of this platform (bk10, bk11m...), see platforms/platforms.cfg.</source>
+        <translation>Запустить программу, заданную файлом, на машине этой платформы (bk10, bk11m...), см. platforms/platforms.cfg.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>name</source>
+        <translation>имя</translation>
+    </message>
+    <message>
         <location line="+3"/>
         <source>file</source>
         <translation>файл</translation>
     </message>
     <message>
         <location line="+1"/>
+        <source>A .cfg configuration, a .ecat script, or the program for --platform.</source>
+        <translation>Конфигурация .cfg, сценарий .ecat или программа для --platform.</translation>
+    </message>
+    <message>
         <source>A .cfg configuration or a .ecat script.</source>
-        <translation>Конфигурация .cfg или сценарий .ecat.</translation>
+        <translation type="vanished">Конфигурация .cfg или сценарий .ecat.</translation>
     </message>
     <message>
         <location line="+6"/>

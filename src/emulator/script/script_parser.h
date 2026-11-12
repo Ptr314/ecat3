@@ -48,6 +48,11 @@ std::string script_verb_name(unsigned int verb);
 // round trip through a file.
 std::string escape_script_text(const std::string &s);
 
+// The reverse: resolves the escapes a quoted argument may carry. Only the
+// sequences needed to write a quote or a backslash are handled; anything else
+// is left alone so that Windows paths survive unchanged.
+std::string unescape_script_text(const std::string &s);
+
 // Quotes an argument when it cannot be written bare: an empty string, or one
 // with anything outside [A-Za-z0-9_+.-]. The text itself is not changed.
 std::string format_script_arg(const std::string &s);

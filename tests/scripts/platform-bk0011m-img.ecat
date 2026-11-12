@@ -1,0 +1,19 @@
+# Образ дискеты БК с расширением .img: в таблице deploy/platforms/platforms.cfg он
+# идет тем же сценарием, что .bkd (bk0011m-disk.ecat) - БК0011М с СМК-512 и образ в
+# приводе A: до первого такта, с дискеты BIOS платы грузится сам. Имя платформы
+# «БК0011» - еще одно из имен блока bk0011m.
+#
+# Образ (tests/files/make-bk-platform.py) - тот же загрузочный сектор, что в
+# bk-platform-disk.bkd: в 02100 метка 123456, в 02102 SP, с которым BIOS его
+# пустил, и полоса в окне 040000.
+# @timeout 60
+
+PLATFORM "БК0011", "../files/bk-platform-disk.img"
+LOGDEFS _16,_8
+WAITFOR mapper.value16(2100) == 123456, _30000
+WAIT _200
+LOG fdd0.file
+LOG smk.mode
+LOG mapper.value16(2100,2103)
+SCREEN "../results/platform-bk0011m-img.png"
+EXIT

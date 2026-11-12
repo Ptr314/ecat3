@@ -1,0 +1,19 @@
+# Запуск образа дискеты по имени платформы: таблица deploy/platforms/platforms.cfg
+# дает для .bkd сценарий bk0010-disk.ecat - БК0010-01 с СМК-512 и образ в приводе A:
+# до первого такта. Больше сценарий ничего не делает: BIOS платы, подождав
+# винчестер (около 10 с), сам грузится с дискеты.
+#
+# Образ (tests/files/make-bk-platform.py) - один загрузочный сектор, остаток
+# дискеты пустой. BIOS читает его в 01000 и пускает; сектор кладет в 02100 метку
+# 123456, в 02102 SP, с которым его пустили, и рисует полосу.
+# @timeout 60
+
+PLATFORM "БК0010", "../files/bk-platform-disk.bkd"
+LOGDEFS _16,_8
+WAITFOR mapper.value16(2100) == 123456, _30000
+WAIT _200
+LOG fdd0.file
+LOG smk.mode
+LOG mapper.value16(2100,2103)
+SCREEN "../results/platform-bk0010-bkd.png"
+EXIT

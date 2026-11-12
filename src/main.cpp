@@ -5,7 +5,9 @@
 
 #include "mainwindow.h"
 
+#include <cstring>
 #include <iostream>
+#include <vector>
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -93,7 +95,28 @@ int main(int argc, char *argv[])
             style_given = true;
     }
 
-    EcatApplication a(argc, argv);
+    //--platform of a program launch is an option of Qt itself as well:
+    //-platform picks the plugin of the window system, and Qt takes it with two
+    //dashes too. "БК0010" would be a plugin it cannot find, and the process
+    //would end right there. So --platform <name> is taken out of the arguments
+    //before Qt sees them; the plugin is still chosen by -platform with one
+    //dash or by QT_QPA_PLATFORM. --platform=<name> Qt leaves alone. The value
+    //is kept for the case QCommandLineParser no longer sees it: on Windows the
+    //parser reads the wide command line, and does see it, unless Qt took some
+    //other option of its own out (-style)
+    QString platform_arg;
+    std::vector<char*> qt_argv;
+    for (int i = 0; i < argc; i++) {
+        if (i > 0 && i + 1 < argc && std::strcmp(argv[i], "--platform") == 0) {
+            platform_arg = QString::fromLocal8Bit(argv[++i]);
+            continue;
+        }
+        qt_argv.push_back(argv[i]);
+    }
+    int qt_argc = static_cast<int>(qt_argv.size());
+    qt_argv.push_back(nullptr);
+
+    EcatApplication a(qt_argc, qt_argv.data());
     a.setProperty("ecat_style_given", style_given);
 
     //Qt plays the "fade or slide menus into view" of Windows itself, on the
@@ -123,8 +146,13 @@ int main(int argc, char *argv[])
         QCoreApplication::translate("main", "file.ecat"));
     parser.addOption(scriptOption);
 
+    QCommandLineOption platformOption(QStringList() << "platform",
+        QCoreApplication::translate("main", "Run the program given as the file on the machine of this platform (bk10, bk11m...), see platforms/platforms.cfg."),
+        QCoreApplication::translate("main", "name"));
+    parser.addOption(platformOption);
+
     parser.addPositionalArgument(QCoreApplication::translate("main", "file"),
-        QCoreApplication::translate("main", "A .cfg configuration or a .ecat script."));
+        QCoreApplication::translate("main", "A .cfg configuration, a .ecat script, or the program for --platform."));
 
     //Registered whatever the build: an MCP client launches the executable
     //with --mcp, and a build without the server has to say so on stderr and
@@ -173,6 +201,10 @@ int main(int argc, char *argv[])
     }
 #endif
 
+    //A program is named relative to the directory the user is in, which
+    //--workdir is about to leave
+    const QDir start_dir = QDir::current();
+
     //Set before the main window is built: it resolves the emulator root and
     //the ini file against the current directory
     const QString workdir = parser.value(workdirOption);
@@ -187,7 +219,9 @@ int main(int argc, char *argv[])
     QString script_file = parser.value(scriptOption);
 
     //Positional arguments are dispatched by their extension, so that a script
-    //or a configuration can simply be dropped onto the executable
+    //or a configuration can simply be dropped onto the executable. Any other
+    //file is a program for --platform to run
+    QString program;
     const QStringList positional = parser.positionalArguments();
     for (const QString &arg : positional)
     {
@@ -197,7 +231,21 @@ int main(int argc, char *argv[])
         } else if (is_machine_file(arg.toStdString())) {
             //.cfg, or a configuration extension (.ext, .ext.zip)
             if (config_file.isEmpty()) config_file = arg;
+        } else if (program.isEmpty()) {
+            program = start_dir.absoluteFilePath(arg);
         }
+    }
+
+    //The launch script of the platform is the script of the run and names the
+    //machine itself
+    const QString platform = parser.isSet(platformOption) ? parser.value(platformOption) : platform_arg;
+    if (!platform.isEmpty() && (program.isEmpty() || !script_file.isEmpty() || !config_file.isEmpty() || mcp_mode))
+    {
+        std::cerr << (program.isEmpty()
+                      ? "--platform needs the file of a program to run"
+                      : "--platform cannot be combined with --script, --config or --mcp")
+                  << std::endl;
+        return 2;
     }
 
 #ifdef RENDERER_SDL2
@@ -208,6 +256,7 @@ int main(int argc, char *argv[])
 
     MainWindow w(config_file, script_file, speed_q);
     w.setWindowIcon(QIcon(":/icons/tv"));
+    if (!platform.isEmpty()) w.set_platform_launch(platform, program);
 
 #ifdef ENABLE_MCP
     if (mcp_mode)

@@ -417,7 +417,7 @@ static emulator::Result load_rko(Emulator* e, const std::string &file_name)
 // and the length, both little endian, followed by the data. It goes through
 // the memory mapper rather than a single RAM device, because a program may
 // target main memory or video memory depending on its load address.
-static emulator::Result load_bk(Emulator* e, const std::string &file_name)
+static emulator::Result load_bk(Emulator* e, const std::string &file_name, LoadInfo * info)
 {
     long long fsize = dsk_tools::utf8_file_size(file_name);
     if (fsize < 4)
@@ -456,11 +456,19 @@ static emulator::Result load_bk(Emulator* e, const std::string &file_name)
     for (unsigned int i = 0; i < length; i++)
         mapper->write((address + i) & 0xFFFF, data[i]);
 
+    if (info != nullptr)
+    {
+        info->has_address = true;
+        info->address = address;
+        info->size = length;
+    }
     return emulator::Result::ok();
 }
 
-emulator::Result HandleExternalFile(Emulator* e, const std::string &file_name)
+emulator::Result HandleExternalFile(Emulator* e, const std::string &file_name, LoadInfo * info)
 {
+    if (info != nullptr) *info = LoadInfo();
+
     std::string ext = dsk_tools::get_file_ext(file_name);
 
     // The .bin extension means different things on different machines: on the
@@ -470,7 +478,7 @@ emulator::Result HandleExternalFile(Emulator* e, const std::string &file_name)
     if (ext == ".hex") return load_hex(e, file_name);
     else if (ext == ".rk" || ext == ".rkr" || ext == ".rkm" || ext == ".rka" || ext == ".gam") return load_rk(e, file_name);
     else if (ext == ".rko" || ext == ".ord" || ext == ".bru") return load_rko(e, file_name);
-    else if (ext == ".bin" && is_bk) return load_bk(e, file_name);
+    else if (ext == ".bin" && is_bk) return load_bk(e, file_name, info);
     else if (ext == ".cim" || ext == ".bin") return load_bin(e, file_name);
     else
         return emulator::Result::error(emulator::ErrorCode::ConfigError,

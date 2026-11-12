@@ -13,25 +13,27 @@
 #include "emulator/emulator.h"
 #include "emulator/files.h"
 #include "emulator/devices/common/keyboard.h"
+#include "emulator/script/platform_launch.h"
 #include "emulator/script/script_engine.h"
 #include "emulator/script/script_parser.h"
 #include "emulator/utils.h"
 
 namespace {
 
-    // Resolves the escapes a quoted argument may carry. Only the sequences that
-    // are needed to write a quote or a backslash are handled: anything else is
-    // left alone so that Windows paths survive unchanged.
-    std::string unescape_text(const std::string &s)
+    std::string unescape_text(const std::string &s) { return unescape_script_text(s); }
+
+    // A number the way the script writes its own: digits in its radix, no
+    // prefix, so that ${load_address} works both as an argument
+    // (setreg(PC, ${load_address})) and inside text typed to a monitor
+    std::string radix_digits(unsigned int value, unsigned int base)
     {
+        if (base != 2 && base != 8 && base != 16) return std::to_string(value);
+        static const char DIGITS[] = "0123456789ABCDEF";
         std::string r;
-        for (size_t i = 0; i < s.length(); i++)
-        {
-            if (s[i] == '\\' && i + 1 < s.length() && (s[i+1] == '"' || s[i+1] == '\\'))
-                r += s[++i];
-            else
-                r += s[i];
-        }
+        do {
+            r.insert(r.begin(), DIGITS[value % base]);
+            value /= base;
+        } while (value != 0);
         return r;
     }
 
@@ -62,7 +64,6 @@ ScriptEngine::ScriptEngine(Emulator * e):
     , m_key_pressed(false)
     , m_key_delay(SCRIPT_KEY_DELAY)
     , m_key_hold(SCRIPT_KEY_HOLD)
-    , m_wait_pc(0)
     , m_wait_deadline(0)
 {
 }
@@ -142,6 +143,16 @@ emulator::Result ScriptEngine::load_text(const std::string &text, const std::str
 
 emulator::Result ScriptEngine::load_commands(const std::string &file_name, std::vector<ScriptCommand> &commands, std::vector<std::string> &errors)
 {
+    //PLATFORM at the head becomes the launch script of its platform, MACHINE
+    //first, so the machine is chosen the usual way. Outside the lock: it may
+    //unpack an archive
+    if (e != nullptr)
+    {
+        emulator::Result res = expand_platform(commands, dsk_tools::get_file_path(file_name),
+                                               e->platforms_path, e->cache_path);
+        if (!res) return res;
+    }
+
     compat_lock_guard lock(m_mutex);
     //From now on the process is scripted: no state of the host keyboard
     //(Caps Lock) gets into a machine, or runs would depend on it
@@ -184,6 +195,7 @@ void ScriptEngine::clear_locked()
 {
     m_commands.clear();
     m_errors.clear();
+    m_vars.clear();
     m_machine.clear();
     m_file_name.clear();
     m_path.clear();
@@ -194,6 +206,7 @@ void ScriptEngine::clear_locked()
     m_finished = false;
     m_exit_requested = false;
     m_exit_code = 0;
+    m_first_error.clear();
     m_play_base_ms = 0;
     m_play_from_pending = false;
     m_resume_pending = false;
@@ -302,6 +315,13 @@ void ScriptEngine::log_error(const ScriptCommand &c, const std::string &text)
 {
     //Runtime errors never stop a script: they are recorded and execution goes on
     log("ERROR line " + std::to_string(c.line) + ": " + strip_message_context(text));
+    if (m_first_error.empty()) m_first_error = text;
+}
+
+std::string ScriptEngine::get_first_error() const
+{
+    compat_lock_guard lock(m_mutex);
+    return m_first_error;
 }
 
 //------------------------------- Control ----------------------------------//
@@ -329,6 +349,7 @@ void ScriptEngine::start(uint64_t clock_now)
     m_finished = false;
     m_exit_requested = false;
     m_exit_code = 0;
+    m_first_error.clear();
     m_resume_pending = false;
     m_play_base_ms = 0;
     m_play_from_pending = true;
@@ -593,8 +614,52 @@ void ScriptEngine::tick(uint64_t clock_counter)
 
 //--------------------------- Command dispatch -----------------------------//
 
-emulator::Result ScriptEngine::execute(const ScriptCommand &c)
+emulator::Result ScriptEngine::substitute_vars(ScriptCommand &c) const
 {
+    std::vector<std::string*> parts;
+    for (size_t i = 0; i < c.args.size(); i++) parts.push_back(&c.args[i]);
+    parts.push_back(&c.params);
+
+    for (size_t i = 0; i < parts.size(); i++)
+    {
+        std::string &s = *parts[i];
+        size_t pos = 0;
+        while ((pos = s.find("${", pos)) != std::string::npos)
+        {
+            const size_t end = s.find('}', pos + 2);
+            if (end == std::string::npos) break;
+            const std::string name = s.substr(pos + 2, end - pos - 2);
+            const std::map<std::string, std::string>::const_iterator v = m_vars.find(name);
+            if (v == m_vars.end())
+                return emulator::Result::error(emulator::ErrorCode::BadParameters,
+                    "the value ${" + name + "} is not known here" +
+                    std::string(name == "load_address" ? ": no LOAD before it gave one" : ""));
+            s.replace(pos, end - pos + 1, v->second);
+            pos += v->second.size();
+        }
+    }
+    return emulator::Result::ok();
+}
+
+emulator::Result ScriptEngine::execute(const ScriptCommand &command)
+{
+    //${name} takes its value at the moment the command runs: the value comes
+    //from a command before it (LOAD gives load_address). A command without one
+    //is not copied - execute() runs for every command of every script
+    ScriptCommand substituted;
+    const ScriptCommand * source = &command;
+    bool has_vars = command.params.find("${") != std::string::npos;
+    for (size_t i = 0; i < command.args.size() && !has_vars; i++)
+        has_vars = command.args[i].find("${") != std::string::npos;
+    if (has_vars)
+    {
+        substituted = command;
+        emulator::Result res = substitute_vars(substituted);
+        if (!res) return res;
+        source = &substituted;
+    }
+    const ScriptCommand &c = *source;
+
     try {
         switch (c.verb)
         {
@@ -605,6 +670,14 @@ emulator::Result ScriptEngine::execute(const ScriptCommand &c)
                 //Handled before the emulator starts: the frontend takes it from
                 //Emulator::script_machine() (see refresh_machine()) and loads it
                 return emulator::Result::ok();
+
+            case SCRIPT_CMD_PLATFORM:
+                //At the head of a script it has been replaced by its launch
+                //script when the script was loaded (expand_platform()); MCP
+                //replaces it wherever it stands. Anywhere else it would have
+                //to switch machines halfway, which only MACHINE first can do
+                return emulator::Result::error(emulator::ErrorCode::ScriptError,
+                    "PLATFORM must be the first command of a script");
 
             case SCRIPT_CMD_WAIT:
                 if (c.args.empty())
@@ -670,7 +743,15 @@ emulator::Result ScriptEngine::execute(const ScriptCommand &c)
                     return emulator::Result::error(emulator::ErrorCode::BadParameters, "LOAD expects a file name");
                 std::string file = find_file_location(e->get_system_data(), c.args[0]);
                 if (file.empty()) file = c.args[0];
-                return HandleExternalFile(e, file);
+                LoadInfo info;
+                emulator::Result res = HandleExternalFile(e, file, &info);
+                //Where the file went, for a command after it: a launch script
+                //starts the program with it. In the radix of the script, without
+                //a prefix, so it can be typed to a monitor as it is
+                m_vars.erase("load_address");
+                if (res && info.has_address)
+                    m_vars["load_address"] = radix_digits(info.address, get_default_radix());
+                return res;
             }
 
             case SCRIPT_CMD_PRINT:
@@ -1060,7 +1141,7 @@ emulator::Result ScriptEngine::do_waitfor(const ScriptCommand &c)
         return emulator::Result::error(emulator::ErrorCode::BadParameters,
             "WAITFOR: field '" + c.member + "' is not a number");
 
-    m_wait_pc = m_pc - 1;
+    m_wait_command = c;
     m_wait_deadline = m_now + ms_to_ticks(timeout);
     m_poll_at = m_now;          //Evaluate the condition right away
     m_state = StateWaitFor;
@@ -1069,7 +1150,7 @@ emulator::Result ScriptEngine::do_waitfor(const ScriptCommand &c)
 
 bool ScriptEngine::waitfor_step()
 {
-    const ScriptCommand &c = m_commands[m_wait_pc];
+    const ScriptCommand &c = m_wait_command;
 
     DeviceFieldValue v;
     unsigned int op = 0, expected = 0;
