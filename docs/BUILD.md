@@ -106,18 +106,38 @@ cd репозиторий-приложения\.build
 C:\DEV\venv\Scripts\activate.bat
 mkdir C:\Temp\qt-build
 cd C:\Temp\qt-build
-configure.bat -static -static-runtime -release -optimize-size -ltcg -opensource -confirm-license -nomake examples -nomake tests -submodules qtbase,qtsvg,qttools,qttranslations -no-feature-freetype -no-feature-timezone_locale -platform win32-msvc -prefix %_QT_PREFIX_STATIC%
+configure.bat -static -static-runtime -release -optimize-size -ltcg -opensource -confirm-license -nomake examples -nomake tests -submodules qtbase,qtsvg,qttools,qttranslations -skip qtdeclarative,qtshadertools,qtlanguageserver,qtimageformats,qtactiveqt -no-feature-freetype -no-feature-timezone -no-feature-sha3-fast -no-feature-mdiarea -no-feature-calendarwidget -no-feature-datetimeedit -no-feature-colordialog -no-feature-textodfwriter -no-feature-hijricalendar -no-feature-jalalicalendar -no-feature-designer -no-feature-assistant -platform win32-msvc -prefix %_QT_PREFIX_STATIC%
 cmake --build . --parallel
 cmake --install .
 ```
 
-Ключи после `-release` и перед `-platform` уменьшают программу. Статический Qt входит в exe целиком, со всеми данными, которые эмулятору не нужны. 
-Замер на Qt 6.11.2, MSVC, вариант OpenGL: без этих ключей exe весит 28,2 МБ, из них Qt около 20.
-* `-no-feature-timezone_locale` убирает названия часовых поясов на всех языках (данные CLDR, 3,8 МБ в Qt6Core). Эмулятор их не показывает.
+Каталог сборки нужен с коротким путем, как `C:\Temp\qt-build`: пути объектных файлов плагина direct2d длинные, и в глубоком каталоге 
+они выходят за 260 символов, а `cl` падает с `C1083: Cannot open compiler generated file: ''`.
+
+Ключи после `-submodules` и перед `-platform` уменьшают программу и сокращают сборку. Статический Qt входит в exe со всем, на что 
+ссылается сам, даже если эмулятору это не нужно. Замер на MSVC, вариант OpenGL: Qt в exe без этих ключей (Qt 6.11.2) 19,7 МБ, 
+с ними (Qt 6.11.3) 11,6 МБ. Весь exe теперь 19,2 МБ, в zip-архиве 9,1.
+* `-skip qtdeclarative,qtshadertools,qtlanguageserver,qtimageformats,qtactiveqt`: эти модули `-submodules` подтягивает сам, как 
+  необязательные зависимости `qttools` и `qtsvg`. В программу они не входят, а `qtdeclarative` &ndash; один из самых больших модулей Qt. 
+  Без них набор со всеми ключами этого списка проходит configure, сборку в 12 потоков и установку за 23 минуты.
+* `-no-feature-timezone` убирает часовые пояса по базе IANA, а с ними и их названия на всех языках (данные CLDR, 3,8 МБ в Qt6Core). 
+  `QDateTime` в местном времени и UTC работает и без них, `QTimeZone` эмулятор не использует. Отключить одни названия 
+  (`-no-feature-timezone_locale`) на Windows нельзя: часовые пояса Windows в Qt 6.11 без них не компилируются.
 * `-no-feature-freetype`: на Windows шрифты рисует DirectWrite, FreeType (0,6 МБ) нужен только движку `fontengine=freetype`, который выбирают вручную. 
   Ключ `-no-freetype` в Qt 6.11 молча ничего не делает.
+* `-no-feature-sha3-fast`: SHA-3 в компактном варианте, а не в восьми развернутых (0,2 МБ). Хешами Qt пользуется сам, скорость здесь не важна.
+* `-no-feature-mdiarea`, `-no-feature-calendarwidget`, `-no-feature-datetimeedit`, `-no-feature-colordialog`, `-no-feature-textodfwriter`, 
+  `-no-feature-hijricalendar`, `-no-feature-jalalicalendar`: классы, которых в эмуляторе нет, а в exe они попадали через ссылки внутри Qt 
+  (0,4 МБ). Программа, которой понадобится один из них, получит ошибку компиляции, и ключ придется убрать.
+* `-no-feature-designer -no-feature-assistant`: эти программы из статического набора не нужны (`uic` входит в qtbase, `lupdate` и `lrelease` 
+  собираются отдельно), а с ключами выше они не компилируются: в них `QMdiArea` и `QColorDialog` без проверки. Окно Linguist требует 
+  `mdiarea` и Qt Quick, его configure пропускает сам.
 * `-optimize-size` компилирует Qt на размер (`/O1`), а `-ltcg` дает компоновщику выбросить неиспользуемое по всей программе. 
   Скорость эмуляции от них не зависит: ядро собирается с обычными ключами проекта. Программа с таким набором компонуется дольше.
+
+Отключить нельзя `graphicsview` (стиль Windows 11 подключает `QGraphicsDropShadowEffect` без проверки) и `dockwidget` (модуль QtUiTools 
+из `qttools` подключает `qdockwidget.h` без проверки): сборка Qt падает. Новый ключ проверяется полной сборкой: qtbase с ним может 
+собраться, а плагин или `qttools` &ndash; нет.
 
 Набор с этими ключами собирается заново целиком, в чистом каталоге сборки. Плагины, которые входят в программу, выбирает `qt_import_plugins` 
 в `src/CMakeLists.txt`: из форматов изображений только GIF (анимация магнитофона), PNG Qt читает сам. Программа, которой понадобится 

@@ -181,3 +181,16 @@ else()
 endif()
 
 list(TRANSFORM ECAT_CORE_SOURCES PREPEND "${CMAKE_CURRENT_LIST_DIR}/")
+
+# miniaudio only plays (ma_device, audio_driver_miniaudio.cpp). Its decoders
+# (WAV, FLAC, MP3), encoder, generators, node graph and engine went into every
+# build all the same: 0.3 MB of the Windows exe. The driver gets the same
+# switches, so that both files read the header alike and a call into the parts
+# left out fails to compile
+set_property(SOURCE
+        ${CMAKE_CURRENT_LIST_DIR}/libs/miniaudio/miniaudio.c
+        ${CMAKE_CURRENT_LIST_DIR}/emulator/audio/audio_driver_miniaudio.cpp
+    APPEND PROPERTY COMPILE_DEFINITIONS
+        MA_NO_DECODING MA_NO_ENCODING MA_NO_WAV MA_NO_FLAC MA_NO_MP3
+        MA_NO_GENERATION MA_NO_NODE_GRAPH MA_NO_ENGINE MA_NO_RESOURCE_MANAGER
+)

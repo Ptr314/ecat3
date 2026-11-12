@@ -9,7 +9,7 @@ rem                      with no Qt DLLs and no MSVC runtime redistributable
 rem                      (Qt is configured with -static-runtime).
 rem                      See docs/BUILD.md for how to build it.
 
-SET _QT_VERSION=6.11.2
+SET _QT_VERSION=6.11.3
 SET _ROOT_MSVC=C:\DEV\MSVC\msvc
 SET _ROOT_QT=C:\DEV\Qt
 SET _ROOT_SRC=%_ROOT_QT%\%_QT_VERSION%\Src
