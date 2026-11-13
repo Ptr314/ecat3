@@ -118,7 +118,7 @@ namespace {
         "  MACHINE \"dir/file.cfg\"         - switch to another machine; the lines after it in\n"
         "                                   the same call start at its first clock\n"
         "  PLATFORM \"name\", \"file\"        - run a program the way a catalog does: the launch\n"
-        "                                   script of the platform (platforms/platforms.cfg)\n"
+        "                                   script of the platform (launch/platforms.cfg)\n"
         "                                   loads its machine and starts the file\n"
         "  PRINT \"text\"                   - put a line into the output\n"
         "  SPEED x                        - emulation speed, 0.25..1000 or MAX; WAIT stays\n"

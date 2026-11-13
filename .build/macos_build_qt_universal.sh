@@ -2,12 +2,17 @@
 
 set -e
 
-QT_VERSION=6.8.2
+QT_VERSION=6.11.3
 QT_SRC_TAR=~/Downloads/qt-everywhere-src-$QT_VERSION.tar.xz
 QT_SRC_DIR=/tmp/qt-everywhere-src-$QT_VERSION
 INSTALL_BASE=~/Qt-$QT_VERSION-static-universal
 BUILD_BASE=~/dev/qt-build-universal
 SYSTEM_PREFIX=/usr/local/Qt-$QT_VERSION-static-universal
+
+# Link time code generation, as in the static kit for Windows. It has not been
+# tried on macOS yet: if eCat3 does not link with the kit, empty this and build
+# the kit again
+QT_LTCG="-ltcg"
 
 detect_shell_config() {
     if [[ -n "$ZSH_VERSION" ]]; then
@@ -28,14 +33,28 @@ extract_sources() {
     tar xf "$QT_SRC_TAR" -C /tmp
 }
 
+# The keys from -optimize-size to -no-feature-assistant make Qt in the program
+# smaller and the build shorter: the same set as the static kit for Windows,
+# each of them is explained in docs/BUILD.md
 configure_universal() {
     echo "Configuring universal Qt..."
+    # From scratch: a configure over an earlier one keeps the features that
+    # one found (CMakeCache.txt), and the keys below would not all apply
+    rm -rf "$BUILD_BASE"
     mkdir -p "$BUILD_BASE"
     cd "$BUILD_BASE"
 
     $QT_SRC_DIR/configure \
         -static -release -nomake tests -nomake examples \
         -opensource -confirm-license \
+        -optimize-size $QT_LTCG \
+        -submodules qtbase,qtsvg,qttools,qttranslations \
+        -skip qtdeclarative,qtshadertools,qtlanguageserver,qtimageformats,qtactiveqt \
+        -no-feature-freetype -no-feature-timezone -no-feature-sha3-fast \
+        -no-feature-mdiarea -no-feature-calendarwidget -no-feature-datetimeedit \
+        -no-feature-colordialog -no-feature-textodfwriter \
+        -no-feature-hijricalendar -no-feature-jalalicalendar \
+        -no-feature-designer -no-feature-assistant \
         -platform macx-clang \
         -no-rpath \
         -prefix $INSTALL_BASE \
@@ -47,6 +66,9 @@ build_universal() {
     echo "Building universal Qt..."
     cd "$BUILD_BASE"
     cmake --build . --parallel
+    # Into an empty prefix: modules and plugins of an earlier kit would stay
+    # there, and a static Qt links every plugin it finds into the program
+    rm -rf "$INSTALL_BASE"
     cmake --install .
 }
 

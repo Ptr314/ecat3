@@ -5423,7 +5423,7 @@ Do you want to replace it?</source>
         <translation>Таблица размещения Onix не найдена</translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+44"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+76"/>
         <source>Unknown CP/M disk definition</source>
         <translation>Некорректное определение диска CP/M</translation>
     </message>
@@ -5468,7 +5468,7 @@ Do you want to replace it?</source>
         <translation>Неподдерживаемый тип диска CP/M</translation>
     </message>
     <message>
-        <location line="+582"/>
+        <location line="+605"/>
         <source>user number out of range</source>
         <translation>User # выходит за допустимые пределы</translation>
     </message>
@@ -5599,8 +5599,8 @@ Do you want to replace it?</source>
     </message>
     <message>
         <location line="+4"/>
-        <source>Run the program given as the file on the machine of this platform (bk10, bk11m...), see platforms/platforms.cfg.</source>
-        <translation>Запустить программу, заданную файлом, на машине этой платформы (bk10, bk11m...), см. platforms/platforms.cfg.</translation>
+        <source>Run the program given as the file on the machine of this platform (bk10, bk11m...), see launch/platforms.cfg.</source>
+        <translation>Запустить программу, заданную файлом, на машине этой платформы (bk10, bk11m...), см. launch/platforms.cfg.</translation>
     </message>
     <message>
         <location line="+1"/>

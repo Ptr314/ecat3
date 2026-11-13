@@ -12,7 +12,9 @@
 #
 # Qt is linked dynamically here on purpose -- the AppImage bundles the Qt
 # libraries it actually needs, and a shared build keeps compatibility with a
-# wider range of distributions (see docs/BUILD.md).
+# wider range of distributions (see docs/BUILD.md). The kit is built from the
+# sources by linux_build_qt.sh: Qt 6.11 of the online installer does not run
+# on Ubuntu 20.04.
 #
 # Usage: ./build-linux.sh [clean] [all]
 
@@ -20,7 +22,7 @@ set -euo pipefail
 
 ARCHITECTURE="x86_64"
 PLATFORM="linux"
-QT_PATH="${HOME}/Qt/6.8.2/gcc_64"
+QT_PATH="${HOME}/Qt-6.11.3-shared"
 LINUXDEPLOYQT="${HOME}/Downloads/linuxdeployqt-continuous-x86_64.AppImage"
 
 # SDL2 is not built here: the AppImage would have to carry libSDL2, and the Qt
@@ -42,7 +44,7 @@ if [ ! -x "${LINUXDEPLOYQT}" ]; then
 fi
 
 if [ ! -d "${QT_PATH}" ]; then
-    echo "ERROR: Qt not found at ${QT_PATH}" >&2
+    echo "ERROR: Qt not found at ${QT_PATH} (linux_build_qt.sh builds it)" >&2
     exit 1
 fi
 

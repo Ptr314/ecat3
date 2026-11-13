@@ -211,7 +211,7 @@ void print_help()
         << "  -s, --script <file.ecat>  Script to run, see docs/SCRIPTING.md\n"
         << "      --platform <name> <file>  Run a program or a disk (.bin, .bkd, .img, a\n"
         << "                            .zip...) on the machine of a platform (bk10,\n"
-        << "                            bk11m...), see platforms/platforms.cfg\n"
+        << "                            bk11m...), see launch/platforms.cfg\n"
         << "      --workdir <dir>       Directory to work in, the one holding computers/\n"
         << "      --no-sound            Do not open an audio device at all\n"
         << "      --speed <factor>      Speed of emulation: 0.25 to 1000, or max (as fast as\n"
@@ -1552,9 +1552,9 @@ bool check_platforms(const std::string &work_path, std::string &message)
     //The table of the installation, next to computers/
     std::string root = work_path;
     while (!root.empty() && root[root.size() - 1] == '/') root.erase(root.size() - 1);
-    const std::string platforms = root.substr(0, root.find_last_of('/') + 1) + "platforms/";
+    const std::string launch_dir = root.substr(0, root.find_last_of('/') + 1) + "launch/";
     EmulatorConfig table;
-    const std::string table_file = platforms + PLATFORMS_TABLE;
+    const std::string table_file = launch_dir + PLATFORMS_TABLE;
     if (!dsk_tools::file_exists(table_file)) { message = table_file + " is not found"; return false; }
     emulator::Result res = table.load_from_text(dsk_tools::utf8_read_file(table_file) + "\n");
     if (!res) { message = table_file + ": " + strip_message_context(res.message); return false; }
@@ -1577,7 +1577,7 @@ bool check_platforms(const std::string &work_path, std::string &message)
         for (size_t p = 0; p < d->parameters.size(); p++)
         {
             if (d->parameters[p].name == "names") continue;
-            const std::string script = platforms + str_trim(d->parameters[p].value);
+            const std::string script = launch_dir + str_trim(d->parameters[p].value);
             std::vector<ScriptCommand> commands;
             std::vector<std::string> errors;
             res = parse_script_file(script, commands, errors);

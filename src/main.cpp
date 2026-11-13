@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
     parser.addOption(scriptOption);
 
     QCommandLineOption platformOption(QStringList() << "platform",
-        QCoreApplication::translate("main", "Run the program given as the file on the machine of this platform (bk10, bk11m...), see platforms/platforms.cfg."),
+        QCoreApplication::translate("main", "Run the program given as the file on the machine of this platform (bk10, bk11m...), see launch/platforms.cfg."),
         QCoreApplication::translate("main", "name"));
     parser.addOption(platformOption);
 

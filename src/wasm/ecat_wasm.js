@@ -220,7 +220,7 @@ function clamp(value, lo, hi) {
 // it, see startUrlMachine().
 // index.html?platform=БК0010&load=https://host/1373-terra1.zip runs a program
 // the way a catalog of software asks for it: the platform names the machine
-// and the launch script (platforms/platforms.cfg), load= the program - a .bin,
+// and the launch script (launch/platforms.cfg), load= the program - a .bin,
 // a disk image .bkd or .img, or an archive holding one. There is no machine= then; see startPlatform().
 // It holds for this visit only: nothing read from the address goes into
 // the saved settings, so following somebody else's link leaves one's own
@@ -1548,9 +1548,9 @@ let urlOption = null;
 // address takes
 let startMachineFile = null;
 const URL_MACHINE_ID = "__url__";
-// The table of platforms and the launch scripts (deploy/platforms/), packed by
+// The table of platforms and the launch scripts (deploy/launch/), packed by
 // package_machines.py. Fetched only for an address with platform=
-const PLATFORMS_BUNDLE = "bundles/platforms.bundle";
+const LAUNCH_BUNDLE = "bundles/launch.bundle";
 
 function setupInfoDialog(module) {
     const dialog = document.getElementById("info-dialog");
@@ -4054,7 +4054,7 @@ async function initEcat() {
         }
         const path = "/tmp/load/" + name;
         try {
-            await fetchAndMount(module, PLATFORMS_BUNDLE, "/platforms");
+            await fetchAndMount(module, LAUNCH_BUNDLE, "/launch");
             mkdirRecursive(module, "/tmp/load");
             module.FS.writeFile(path, bytes);
         } catch (err) {

@@ -26,7 +26,7 @@
 #include "emulator/result.h"
 #include "emulator/script/script_types.h"
 
-//The name of the table in the platforms directory
+//The name of the table in the directory of the platform launch (launch/)
 extern const char * const PLATFORMS_TABLE;
 
 //A platform name the way the table compares it: trimmed, every run of spaces

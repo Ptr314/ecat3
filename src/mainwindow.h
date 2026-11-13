@@ -36,7 +36,7 @@ public:
     int script_exit_code() const { return rec_exit_code; }
 
     //--platform: the program is started by the launch script of its platform
-    //(deploy/platforms/platforms.cfg), which also names the machine. Called
+    //(deploy/launch/platforms.cfg), which also names the machine. Called
     //before show(); program is an absolute path
     void set_platform_launch(const QString &platform, const QString &program);
 

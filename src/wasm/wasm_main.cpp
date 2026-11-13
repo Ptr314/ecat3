@@ -430,8 +430,8 @@ int wasm_machine_selfcontained(const char* file_path)
 
 // ?platform=<name>&load=<program>: the program the page has put into the
 // filesystem is to run on the machine of that platform. Loads the launch
-// script of the platform (platforms/platforms.cfg, which the page unpacks into
-// /platforms/ first) and answers the machine it names, "/computers/bk/BK-0010-01.cfg":
+// script of the platform (launch/platforms.cfg, which the page unpacks into
+// /launch/ first) and answers the machine it names, "/computers/bk/BK-0010-01.cfg":
 // the page starts that machine of its list as usual, and wasm_load_machine()
 // runs the launch with it. Empty, with wasm_last_error(), when the platform is
 // unknown or the file cannot be run on it

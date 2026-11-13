@@ -289,7 +289,7 @@ public:
     std::string user_ext_path;
     //The table of platforms and the launch scripts of a platform launch
     //(PLATFORM, --platform, ?platform=). The constructor puts it beside
-    //work_path: <root>/computers/ and <root>/platforms/
+    //work_path: <root>/computers/ and <root>/launch/
     std::string platforms_path;
 
     bool loaded;

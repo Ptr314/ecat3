@@ -9,9 +9,9 @@
 * Windows 10+
     * Версия х86_64. Актуальная версия Qt 6.10.2 для mingw 13.10 и MSVC2022.
 * macOS 15 (возможна совместимость с более ранними версиями)
-    * Универсальная версия х86_64+arm64. Qt 6.8.2, xcode 16
+    * Универсальная версия х86_64+arm64. Qt 6.11.3, xcode 16
 * Linux Ubuntu 20.04+
-    * Версия х86_64. Qt 6.8.2, gcc 9.4.0
+    * Версия х86_64. Qt 6.11.3, gcc 9.4.0
 * Браузер
     * Версия WebAssembly на основе Emscripten. Qt не используется.
 
@@ -257,9 +257,20 @@ sudo xcodebuild -license
 * Распаковка происходит в `/tmp`.
 * Установка происходит в `~/Qt-$QT_VERSION-static-universal`.
 * После установки можно отдельно скопировать Qt в `/usr/local` и установить системные пути при необходимости.
-* Скрипт собирает все модули Qt, в том числе `qtsvg`, нужный экранной клавиатуре; ограничивать набор ключом `-submodules` без него нельзя.
+* Скрипт собирает те же модули с теми же ключами, что и статический набор для Windows (см. [Компиляция Qt6](#компиляция-qt6-актуальная-версия)):
+  `qtbase`, `qtsvg` для экранной клавиатуры, `qttools` (`lupdate` и `lrelease` для переводов) и `qttranslations`.
+  Qt собирается на размер, без часовых поясов, FreeType и классов, которыми эмулятор не пользуется. На macOS шрифты рисует
+  CoreText, и FreeType там нужен тоже только движку, который выбирают вручную.
+* Перед configure скрипт удаляет каталог сборки, а перед установкой &ndash; каталог установки: configure поверх прежнего оставляет
+  признаки из его `CMakeCache.txt`, а в прежней установке остаются модули и плагины, и статическая программа подхватит их плагины.
 
-Перед запуском нужно актуализировать пути в первых строках файла.
+Перед запуском нужно актуализировать пути в первых строках файла. Qt 6.11 собирается Xcode 15 и новее (SDK macOS 14),
+программа с ним работает на macOS 13 и новее; нужны CMake 3.25+ и Ninja.
+
+Ключи взяты из сборки для Windows, на macOS они сборкой еще не проверены. Код Qt для macOS (плагин `cocoa`, стиль `macos`) может
+обращаться к отключенному классу без проверки, как стиль Windows 11 к `graphicsview`; тогда сборка Qt падает, и ключ этого класса
+надо убрать из `configure_universal`. `-ltcg` вынесен в переменную `QT_LTCG` в начале скрипта: если программа с набором не
+компонуется, переменную надо очистить и собрать набор заново.
 
 После перезагрузки системы `/tmp` очищается, поэтому для повторного запуска надо распаковывать исходники заново.
 
@@ -289,11 +300,6 @@ https://www.csalmeida.com/log/how-to-install-sdl2-on-macos/
 
 #### 1. Установить программы
 * https://download.qt.io/, скачать online-инсталлятор (возможно, из России понадобится зарубежный VPN) и установить следующие компоненты:
-    * Qt [X.X.X]
-        * Desktop
-        * Sources 
-        * Plugins
-            * Qt5Compatibility 
     * Qt Developer and Designer tools
         * Qt Creator
         * cmake
@@ -301,6 +307,10 @@ https://www.csalmeida.com/log/how-to-install-sdl2-on-macos/
 * Компилятор `sudo apt install g++`
 * SDL2 `sudo apt install libsdl2-dev`
 * Скачать linuxdeployqt: https://github.com/probonopd/linuxdeployqt/releases и разместить в `~/Downloads`.
+* Архив исходников Qt `qt-everywhere-src-X.X.X.tar.xz` (https://download.qt.io/official_releases/qt/) поместить в `~/Downloads`.
+
+Сам Qt из online-инсталлятора не ставится: Qt 6.11 оттуда в Ubuntu 20.04 не запустится, его библиотеки требуют glibc 2.34,
+а в этой версии 2.31. Qt собирается из исходников, см. п. 2.
 
 Добавить в `~/.profile` пути к cmake и ninja:
 ```
@@ -313,10 +323,48 @@ PATH="~/Qt/Tools/Cmake/bin:~/Qt/Tools/Ninja:${PATH}"
 sudo apt install libgl1-mesa-dev
 ```
 
-#### 2. Настроить Kit в Qt Creator
+#### 2. Собрать Qt
+
+Для сборки Qt используется скрипт `.build/linux_build_qt.sh`. Данный скрипт исходит из следующих условий:
+* Архив с исходными файлами лежит в `~/Downloads/`.
+* Распаковка происходит в `~/dev`, сборка &ndash; в `~/dev/qt-build-linux`.
+* Установка происходит в `~/Qt-$QT_VERSION-shared`, оттуда Qt берет `build-linux.sh` (`QT_PATH`).
+* `bash linux_build_qt.sh` делает все три шага подряд, по одному их запускают аргументами `extract`, `configure` и `build`.
+* Перед configure скрипт удаляет каталог сборки, а перед установкой &ndash; каталог установки: configure поверх прежнего оставляет
+  признаки из его `CMakeCache.txt`, а плагины прежней установки linuxdeployqt положил бы в AppImage.
+
+Перед запуском нужно актуализировать пути в первых строках файла. Нужны CMake 3.22+ (в apt Ubuntu 20.04 версия 3.16, поэтому
+cmake из инсталлятора, см. п. 1), Ninja, Python 3 и пакеты для окна X11, шрифтов и OpenGL:
+
+```
+sudo apt install python3 libgl1-mesa-dev libdbus-1-dev libatspi2.0-dev \
+    libfontconfig1-dev libfreetype-dev libx11-dev libx11-xcb-dev libxcb-cursor-dev \
+    libxcb-glx0-dev libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev \
+    libxcb-randr0-dev libxcb-render-util0-dev libxcb-shape0-dev libxcb-shm0-dev \
+    libxcb-sync-dev libxcb-util-dev libxcb-xfixes0-dev libxcb-xkb-dev libxcb1-dev \
+    libxext-dev libxfixes-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev libxrender-dev
+```
+
+Набор динамический, как и раньше: AppImage везет библиотеки Qt с собой. Модули и ключи те же, что у статического набора для Windows
+(см. [Компиляция Qt6](#компиляция-qt6-актуальная-версия)), с такими отличиями:
+* FreeType остается: в Linux он вместе с Fontconfig и рисует шрифты.
+* `-no-icu`: ICU нет и в Qt для Windows и macOS, а здесь linuxdeployqt положил бы его библиотеки в AppImage (из них 30 МБ занимает
+  `libicudata`). Без ICU в Qt остаются кодировки UTF-8/16/32 и Latin-1, а сравнение строк по правилам языка берется у системы;
+  эмулятор не делает через Qt ни того, ни другого.
+* `-no-libjpeg -no-ico`: из форматов изображений qtbase остается только GIF, как у статического набора по `qt_import_plugins`.
+  Динамический Qt загружает плагины при запуске, и linuxdeployqt кладет в AppImage все форматы набора.
+* `-xcb -fontconfig -opengl desktop` останавливают configure, если какого-то пакета из списка нет. Иначе набор соберется
+  без окна X11, без шрифтов системы или без OpenGL, и это выяснится только при запуске AppImage.
+
+Ключи взяты из сборки для Windows, на Linux они сборкой еще не проверены. Если сборка Qt падает на отключенном классе (как стиль
+Windows 11 на `graphicsview`), ключ этого класса надо убрать из `configure_qt`. `-ltcg` вынесен в переменную `QT_LTCG` в начале
+скрипта: если набор не собирается или программа с ним не компонуется, переменную надо очистить и собрать набор заново.
+
+#### 3. Настроить Kit в Qt Creator
+* Kit на Qt из `~/Qt-$QT_VERSION-shared`.
 * Если нужна полная очистка, удалить файлы __CMakeLists.txt.user*__.
 
-#### 3. Сборка приложения
+#### 4. Сборка приложения
 
 Для сборки приложения используется скрипт `.build/build-linux.sh`. Перед первым запуском необходимо актуализировать следующе переменные: QT_PATH и LINUXDEPLOYQT.
 

@@ -4665,7 +4665,7 @@ Do you want to replace it?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+44"/>
+        <location filename="../libs/dsk_tools/src/filesystems/fs_cpm.cpp" line="+76"/>
         <source>Unknown CP/M disk definition</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4710,7 +4710,7 @@ Do you want to replace it?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+582"/>
+        <location line="+605"/>
         <source>user number out of range</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4841,7 +4841,7 @@ Do you want to replace it?</source>
     </message>
     <message>
         <location line="+4"/>
-        <source>Run the program given as the file on the machine of this platform (bk10, bk11m...), see platforms/platforms.cfg.</source>
+        <source>Run the program given as the file on the machine of this platform (bk10, bk11m...), see launch/platforms.cfg.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

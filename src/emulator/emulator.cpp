@@ -161,13 +161,13 @@ Emulator::Emulator(std::string work_path, std::string data_path, std::string sof
     , m_script_state(SCRIPT_NONE)
     , settings(ini_file)
 {
-    //"<root>/computers/" -> "<root>/platforms/", "/computers/" of the web
-    //build -> "/platforms/"
+    //"<root>/computers/" -> "<root>/launch/", "/computers/" of the web
+    //build -> "/launch/"
     std::string root = work_path;
     while (!root.empty() && (root[root.size() - 1] == '/' || root[root.size() - 1] == '\\')) root.erase(root.size() - 1);
     const size_t slash = root.find_last_of("/\\");
     root = (slash == std::string::npos) ? std::string() : root.substr(0, slash + 1);
-    platforms_path = root + "platforms/";
+    platforms_path = root + "launch/";
 
     // connect(this, &Emulator::finished, this, &Emulator::stop_emulation, Qt::DirectConnection);
 
