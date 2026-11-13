@@ -35,7 +35,9 @@ extract_sources() {
 
 # The keys from -optimize-size to -no-feature-assistant make Qt in the program
 # smaller and the build shorter: the same set as the static kit for Windows,
-# each of them is explained in docs/BUILD.md
+# each of them is explained in docs/BUILD.md. All but -no-feature-mdiarea: the
+# macos style plugin uses QMdiSubWindow without a check (qmacstyle_mac.mm of
+# Qt 6.11.3), and Qt does not build without it
 configure_universal() {
     echo "Configuring universal Qt..."
     # From scratch: a configure over an earlier one keeps the features that
@@ -51,7 +53,7 @@ configure_universal() {
         -submodules qtbase,qtsvg,qttools,qttranslations \
         -skip qtdeclarative,qtshadertools,qtlanguageserver,qtimageformats,qtactiveqt \
         -no-feature-freetype -no-feature-timezone -no-feature-sha3-fast \
-        -no-feature-mdiarea -no-feature-calendarwidget -no-feature-datetimeedit \
+        -no-feature-calendarwidget -no-feature-datetimeedit \
         -no-feature-colordialog -no-feature-textodfwriter \
         -no-feature-hijricalendar -no-feature-jalalicalendar \
         -no-feature-designer -no-feature-assistant \
