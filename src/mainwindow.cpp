@@ -713,6 +713,49 @@ void MainWindow::CreateHDDMenu(unsigned int n)
     ui->toolBar->insertWidget(ui->actionSaveState, hdd_button[n]);
 }
 
+//Гнездо карты microSD: карта - папка компьютера. Пункты - выбрать папку,
+//писать ли машине в нее, вынуть карту и вернуть папку конфигурации
+void MainWindow::CreateSDMenu(unsigned int n)
+{
+    sd_menu[n] = new QMenu(this);
+    QAction * a1 = new QAction(MainWindow::tr("<No card>"), this);
+    a1->setIcon(QIcon(":/icons/sdcard_none"));
+    a1->setEnabled(false);
+    QAction * a2 = new QAction(MainWindow::tr("Choose a folder..."), this);
+    a2->setIcon(QIcon(":/icons/open"));
+    connect(a2, &QAction::triggered, this, [this, n](){sd_open(n);});
+    QAction * a3 = new QAction(MainWindow::tr("Write into the folder"), this);
+    a3->setCheckable(true);
+    connect(a3, &QAction::triggered, this, [this, n](){sd_write(n);});
+    QAction * a4 = new QAction(MainWindow::tr("Remove the card"), this);
+    a4->setIcon(QIcon(":/icons/eject"));
+    connect(a4, &QAction::triggered, this, [this, n](){sd_eject(n);});
+    QAction * a5 = new QAction(MainWindow::tr("Default folder"), this);
+    connect(a5, &QAction::triggered, this, [this, n](){sd_default(n);});
+    sd_menu[n]->addAction(a1);
+    sd_menu[n]->addSeparator();
+    sd_menu[n]->addAction(a2);
+    sd_menu[n]->addAction(a3);
+    sd_menu[n]->addAction(a4);
+    sd_menu[n]->addAction(a5);
+    //A script, an MCP client or the remembered disks may have changed the card
+    connect(sd_menu[n], &QMenu::aboutToShow, this, [this, n, a5](){
+        if (n < sds.size()) sd_show(n);
+        a5->setEnabled(n < sds.size() && e->has_remembered_disk(sds[n]->name));
+    });
+
+    sd_button[n] = new QToolButton();
+    sd_button[n]->setIcon(QIcon(":/icons/sdcard_none"));
+    sd_button[n]->setMenu(sd_menu[n]);
+    sd_button[n]->setPopupMode(QToolButton::MenuButtonPopup);
+    sd_button[n]->setFocusPolicy(Qt::NoFocus);
+    sd_button[n]->setToolTip(drive_title(sds[n], MainWindow::tr("microSD card")));
+
+    connect(sd_button[n], &QToolButton::clicked, this, [this, n](){sd_open(n);});
+
+    ui->toolBar->insertWidget(ui->actionSaveState, sd_button[n]);
+}
+
 MainWindow::~MainWindow()
 {
     delete ui;
@@ -1201,6 +1244,14 @@ void MainWindow::UpdateToolbar()
         hdds.clear();
         hdds_found = 0;
     }
+    if (sds_found > 0) {
+        for (unsigned int i = 0; i < sds_found; i++) {
+            delete sd_button[i];
+            delete sd_menu[i];
+        }
+        sds.clear();
+        sds_found = 0;
+    }
 
     if (tape_action != nullptr) {
         ui->toolBar->removeAction(tape_action);
@@ -1252,8 +1303,19 @@ void MainWindow::UpdateToolbar()
         buttons_added++;
         hdd_show(i);
     }
+    //Гнезда карт microSD (AZBK): карта - папка компьютера. В веб-версии их нет
+    std::vector<ComputerDevice*> sd_devices = e->dm->find_devices_by_class("sdcard");
+    sds_found = sd_devices.size();
+    if (sds_found > sizeof(sd_button)/sizeof(sd_button[0]))
+        sds_found = sizeof(sd_button)/sizeof(sd_button[0]);
+    for (unsigned int i = 0; i < sds_found; i++) {
+        sds.push_back(sd_devices[i]);
+        CreateSDMenu(i);
+        buttons_added++;
+        sd_show(i);
+    }
 
-    if (fdds_found > 0 || hdds_found > 0) {
+    if (fdds_found > 0 || hdds_found > 0 || sds_found > 0) {
         if (fdd_timer == nullptr)
         {
             fdd_timer = new QTimer(this);
@@ -1294,7 +1356,7 @@ void MainWindow::UpdateToolbar()
 #endif
 
     // Device options
-    bool has_hw_buttons = (fdds_found > 0 || hdds_found > 0 || tape_devices.size() != 0);
+    bool has_hw_buttons = (fdds_found > 0 || hdds_found > 0 || sds_found > 0 || tape_devices.size() != 0);
     bool options_separator_added = false;
 
     SystemData * sd = e->get_system_data();
@@ -2379,6 +2441,7 @@ void MainWindow::closeEvent (QCloseEvent *event)
 
     fdds_found = 0; // to prevent crashing on buttons update
     hdds_found = 0;
+    sds_found = 0;
 
     // The timers must not fire once the emulator is gone
     if (fdd_timer != nullptr) fdd_timer->stop();
@@ -2621,6 +2684,106 @@ void MainWindow::hdd_wp(unsigned int n)
     disk_changed(hdds[n]);
 }
 
+//The button and the menu of a card socket from the state of its device
+void MainWindow::sd_show(unsigned int n)
+{
+    ComputerDevice * d = sds[n];
+    const bool attached = device_flag(d, "attached");
+    const QString path = QDir::toNativeSeparators(QString::fromStdString(device_text(d, "path")));
+    sd_menu[n]->actions().at(0)->setText(attached ? path : MainWindow::tr("<No card>"));
+    sd_menu[n]->actions().at(0)->setIcon(QIcon(attached ? ":/icons/sdcard" : ":/icons/sdcard_none"));
+    sd_button[n]->setIcon(QIcon(attached ? ":/icons/sdcard" : ":/icons/sdcard_none"));
+    sd_button[n]->setProperty("card_icon", QString(attached ? ":/icons/sdcard" : ":/icons/sdcard_none"));
+    //The way the machine writes belongs to the socket: it holds for the next card too
+    sd_menu[n]->actions().at(3)->setChecked(!device_flag(d, "protected"));
+    sd_menu[n]->actions().at(4)->setEnabled(attached);
+    const QString title = drive_title(d, MainWindow::tr("microSD card"));
+    sd_button[n]->setToolTip(attached ? title + ": " + path : title);
+}
+
+//Files the machine has written into the card's memory, not into the folder.
+//Read where the device lives: they change while the machine runs
+unsigned int MainWindow::sd_files(unsigned int n)
+{
+    unsigned int files = 0;
+    e->invoke([&]() {
+        DeviceFieldValue v;
+        if (sds[n]->get_field("files", 0, 0, v) && !v.values.empty()) files = v.values[0];
+    });
+    return files;
+}
+
+//Another card, or none: the files in the memory of this one are lost
+bool MainWindow::sd_files_may_go(unsigned int n)
+{
+    const unsigned int files = sd_files(n);
+    if (files == 0) return true;
+    return QMessageBox::question(this, MainWindow::tr("microSD card"),
+        MainWindow::tr("The machine has written %1 file(s) into the card's memory, not into the folder. They will be lost. Continue?").arg(files))
+        == QMessageBox::Yes;
+}
+
+void MainWindow::sd_open(unsigned int n)
+{
+    const std::string now = device_text(sds[n], "path");
+    const QString start = now.empty() ? last_path : QString::fromStdString(now);
+    const QString dir = QFileDialog::getExistingDirectory(this, MainWindow::tr("Choose the folder of the microSD card"), start);
+    if (dir.isEmpty() || !sd_files_may_go(n)) return;
+    const std::string arg = format_script_arg(QFileInfo(dir).absoluteFilePath().toStdString());
+    emulator::Result res = emulator::Result::ok();
+    e->invoke([&]() { res = sds[n]->send_command("load", arg); });
+    if (!res)
+        QMessageBox::critical(this, tr("Error"), translateResultMessage(res.message));
+    else {
+        e->record_command(sds[n]->name, "load", arg);
+        disk_changed(sds[n]);
+    }
+    sd_show(n);
+}
+
+void MainWindow::sd_eject(unsigned int n)
+{
+    if (!sd_files_may_go(n)) return;
+    e->invoke([&]() { sds[n]->send_command("eject", ""); });
+    e->record_command(sds[n]->name, "eject", "");
+    disk_changed(sds[n]);
+    sd_show(n);
+}
+
+//Writing into the folder is the socket's protection taken off. What the
+//machine has written into the card's memory so far may go there first
+void MainWindow::sd_write(unsigned int n)
+{
+    const bool on = sd_menu[n]->actions().at(3)->isChecked();
+    if (on) {
+        const unsigned int files = sd_files(n);
+        if (files > 0) {
+            const QMessageBox::StandardButton reply = QMessageBox::question(this, MainWindow::tr("microSD card"),
+                MainWindow::tr("The machine has written %1 file(s) into the card's memory. Write them into the folder too?").arg(files),
+                QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+            if (reply == QMessageBox::Cancel) {
+                sd_show(n);
+                return;
+            }
+            if (reply == QMessageBox::Yes) {
+                e->invoke([&]() { sds[n]->send_command("flush", ""); });
+                e->record_command(sds[n]->name, "flush", "");
+            }
+        }
+    }
+    e->invoke([&]() { sds[n]->send_command("protect", on ? "0" : "1"); });
+    e->record_command(sds[n]->name, "protect", on ? "0" : "1");
+    disk_changed(sds[n]);
+    sd_show(n);
+}
+
+void MainWindow::sd_default(unsigned int n)
+{
+    if (!sd_files_may_go(n)) return;
+    e->restore_default_disk(sds[n]);
+    sd_show(n);
+}
+
 void MainWindow::fdd_write(unsigned int n)
 {
     if (fdds[n] != nullptr)
@@ -2804,6 +2967,12 @@ void MainWindow::update_fdds()
             hdd_button[i]->setIcon(QIcon(icon));
             hdd_button[i]->setProperty("led_icon", QString(icon));
         }
+    }
+    //A card socket has no lamp, but a script or an MCP client may change its card
+    for (unsigned int i = 0; i < sds_found; i++)
+    {
+        const char * icon = device_flag(sds[i], "attached") ? ":/icons/sdcard" : ":/icons/sdcard_none";
+        if (sd_button[i]->property("card_icon").toString() != icon) sd_show(i);
     }
 }
 

@@ -177,7 +177,11 @@ python tests/run_tests.py --update -k boot-bk-0011m
   оконной раннер ищет консольную рядом, а если ее нет &ndash; пропускает их и
   говорит об этом.
 
-Архив `files/ext-vm1.ext.zip` собирает `files/make_ext_zip.py`.
+Архив `files/ext-vm1.ext.zip` собирает `files/make_ext_zip.py`. Сценарий
+`work-bk0011m-azbk-sd` и `work-bk0011m-azbk-azini` (таблицы операций для
+интерпретатора в ОЗУ БК) собирает `files/make-azbk-sd-test.py`; их карты microSD &ndash;
+каталоги `files/azbk-sd` (файлы без переводов строк, чтобы размер не зависел от
+`core.autocrlf`) и `files/azbk-sd-ini` (с AZ.INI).
 
 ## Тесты сохраненного состояния
 

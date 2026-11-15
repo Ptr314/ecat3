@@ -11,6 +11,7 @@
 
 #include "emulator/core.h"
 #include "emulator/devices/common/virq_line.h"
+#include "azbk_sdcard.h"
 
 class AZBK;
 class HddUnit;
@@ -29,6 +30,16 @@ class HddUnit;
 // по эмулируемому времени. Сети нет. Команда 037 перезапускает плату (azbk)
 // и БК: импульс на выходе dclo.
 //
+// Карта microSD - гнездо azbk-sdcard (azbk_sdcard.h): оглавление (003, 013),
+// монтирование ее файла на AZn и снятие (004, 014), чтение и запись файлов
+// (050-055), файл в память AZ (047), объем (056, 057), снимок экрана в файл
+// (044). Без карты эти команды кончаются ошибкой. Файловые команды и
+// энергонезависимая память работают с одним буфером на 256 слов (022, 023).
+// При включении и по команде 037 диски берутся из раздела [DISKS] файла AZ.INI
+// карты, как у платы: перечисленные приводы монтируются с карты, смонтированные
+// с нее и не перечисленные снимаются, образы конфигурации и окна на приводах,
+// которых AZ.INI не называет, остаются.
+//
 // Параметры:
 //   board        - устройство azbk
 //   units        - псевдодиски, hdd-unit через |: AZ0, AZ1, ...
@@ -39,10 +50,11 @@ class HddUnit;
 //   rtc_start    - время часов при включении, "ГГГГ-ММ-ДД ЧЧ:ММ:СС"
 //   eeprom       - начальное содержимое энергонезависимой памяти (файл 510
 //                  байт), только чтение; без него память не записана
+//   card         - гнездо карты microSD, azbk-sdcard; нет - нет и карты
 //   ~virq_in, ~vector_in - запрос и вектор клавиатуры БК: она ближе к
 //                  процессору, ее запрос идет раньше своего; ~iako -
 //                  подтверждение прерывания
-class AZBKDisk: public AddressableDevice
+class AZBKDisk: public AddressableDevice, public AzSdListener
 {
 public:
     static const unsigned int UNITS = 32;
@@ -94,15 +106,46 @@ private:
     // Буферы
     uint16_t m_iobuf[256]{};
     unsigned int m_iobuf_filled = 0;    // слов, принятых командой 016
-    uint16_t m_cmos[256]{};             // слово состояния + 255 слов
+    // Буфер энергонезависимой памяти и файловых команд: после 021 - слово
+    // состояния и 255 слов памяти, 023 пишет его с начала
+    uint16_t m_cmos[256]{};
     uint16_t m_eeprom[EEPROM_WORDS]{};
     bool m_eeprom_valid = false;
-    uint16_t m_eeprom_in[EEPROM_WORDS]{};
     uint16_t m_timestamp[14]{};
     uint16_t m_simple_in[7]{};
     uint16_t m_ipdata[12]{};
-    enum { SRC_IOBUF, SRC_TABLE };
+    enum { SRC_IOBUF, SRC_TABLE, SRC_DIRREC };
     unsigned int m_read_source = SRC_IOBUF;
+
+    // Карта microSD: гнездо, без него - пустая карта
+    AZBKSdCard * m_sd = nullptr;
+    AzSdCard m_no_card;
+    AzSdCard & card() { return m_sd != nullptr ? m_sd->card() : m_no_card; }
+    bool m_iobuf_string = false;        // после сброса была 016: 014 берет строку
+    std::vector<AzSdCard::Entry> m_dir; // открытое оглавление (003)
+    bool m_dir_open = false;
+    std::string m_dir_path;
+    unsigned int m_dir_pos = 0;
+    uint16_t m_dirrec[11]{};            // запись оглавления (013)
+    std::string m_mount[UNITS];         // строка монтирования 004 ...
+    std::string m_mount_file[UNITS];    // ... имя образа, который она поставила,
+    std::string m_mount_path[UNITS];    // ... путь на карте
+    unsigned int m_mount_writes[UNITS]{};   // ... и записи привода к тому времени
+    // Файлы 050 (чтение) и 053 (запись) - разные, как у gid: копирование может
+    // чередовать 052 и 055. 051 отвечает про последний открытый
+    struct CardFile {
+        bool open = false;
+        std::string path;
+        uint32_t size = 0;              // чтение - длина файла, запись - записано
+        uint32_t pos = 0;               // прочитано или записано байт
+        unsigned int result = 0;        // код FatFs открытия
+    };
+    CardFile m_rd;
+    CardFile m_wr;
+    enum { IO_NONE, IO_READ, IO_WRITE };
+    unsigned int m_io_mode = IO_NONE;   // последней была 050 или 053
+    uint16_t m_length_in[2]{};          // 054: длина файла на запись
+    uint16_t m_sizecard[2]{};           // 056: объем и свободно, МБ
 
     // Поток слов через DR
     std::vector<uint16_t> m_out;
@@ -112,7 +155,7 @@ private:
     unsigned int m_in_size = 0;
     unsigned int m_in_pos = 0;
     unsigned int m_in_target = 0;       // куда идет поток: IN_*
-    enum { IN_NONE, IN_IOBUF, IN_EEPROM, IN_SIMPLE };
+    enum { IN_NONE, IN_IOBUF, IN_EEPROM, IN_SIMPLE, IN_LENGTH };
 
     // Для скриптов
     unsigned int m_commands = 0;
@@ -132,6 +175,27 @@ private:
     HddUnit * unit() const;
     uint64_t now_seconds() const;
     void fill_timestamp(uint64_t seconds);
+    void fat_now(uint16_t &date, uint16_t &time) const;
+
+    std::string buffer_string(const uint16_t * buffer, unsigned int max_bytes) const;
+    void put_cmos_string(const std::string &s);
+    bool card_command(unsigned int cmd);
+    void open_dir();
+    void read_dir();
+    void mount();
+    void unmount();
+    bool card_mounted(unsigned int n) const;
+    bool mount_unit(unsigned int n, const std::string &given);
+    void drop_unit(unsigned int n);
+    void apply_az_ini();
+    void open_read();
+    void read_file_block();
+    void open_write();
+    void write_file_block();
+    void read_into_memory();
+    struct Region { uint32_t word; uint32_t words; };
+    bool screen_plan(std::vector<Region> &regions, std::string &error) const;
+    void screenshot();
 
 public:
     AZBKDisk(InterfaceManager *im, EmulatorConfigDevice *cd);
@@ -148,6 +212,8 @@ public:
     void set_value(unsigned int address, unsigned int value, bool force=false) override;
     void set_value_word(unsigned int address, unsigned int value, bool force=false) override;
 
+    void card_changed(bool replaced) override;
+    void state_restored() override;
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;
 

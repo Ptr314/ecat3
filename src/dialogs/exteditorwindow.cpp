@@ -179,7 +179,9 @@ void ExtEditorWindow::add_field(int index)
         return;
     }
 
-    // CONFIG_FIELD_FILE: the name is chosen, never typed
+    // CONFIG_FIELD_FILE and CONFIG_FIELD_DIR: the name is chosen, never typed.
+    // A folder (the microSD card of the AZBK) is only ever referred to
+    const bool folder = (f.field.type == CONFIG_FIELD_DIR);
     QWidget * box = new QWidget();
     QHBoxLayout * layout = new QHBoxLayout(box);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -188,13 +190,13 @@ void ExtEditorWindow::add_field(int index)
     FileRow row;
     row.field = index;
     row.edit = read_only_edit(QString());
-    QToolButton * pick = small_button(":/icons/rec_open", tr("Select a file"));
+    QToolButton * pick = small_button(":/icons/rec_open", folder ? tr("Select a folder") : tr("Select a file"));
     QToolButton * clear = small_button(":/icons/clear", tr("Clear the field"));
     row.embed = new QCheckBox(tr("Embed"));
     row.embed->setToolTip(tr("Store the file inside the configuration"));
     row.embed->setChecked(f.is_inline());
     // Some files are only ever referred to (a hard disk the machine writes)
-    row.embed->setVisible(f.field.embeddable);
+    row.embed->setVisible(f.field.embeddable && !folder);
     layout->addWidget(row.edit, 1);
     layout->addWidget(pick);
     layout->addWidget(clear);
@@ -204,11 +206,13 @@ void ExtEditorWindow::add_field(int index)
     m_files.push_back(row);
     show_file(m_files[n]);
 
-    connect(pick, &QToolButton::clicked, this, [this, n]() {
+    connect(pick, &QToolButton::clicked, this, [this, n, folder]() {
         FileRow &r = m_files[n];
         DeviceConfigField &f = m_model.fields[r.field];
-        const QString name = QFileDialog::getOpenFileName(this, tr("Select a file"),
-            QString::fromStdString(e->get_last_path()), QString::fromStdString(f.field.files));
+        const QString start = !r.picked.isEmpty() ? r.picked : QString::fromStdString(e->get_last_path());
+        const QString name = folder
+            ? QFileDialog::getExistingDirectory(this, tr("Select a folder"), start)
+            : QFileDialog::getOpenFileName(this, tr("Select a file"), start, QString::fromStdString(f.field.files));
         if (name.isEmpty()) return;
         r.picked = QFileInfo(name).absoluteFilePath();
         f.present = true;

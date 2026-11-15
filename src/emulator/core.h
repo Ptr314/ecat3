@@ -206,6 +206,7 @@ typedef std::vector<DeviceOption> DeviceOptions;
 #define CONFIG_FIELD_CHOICE     0   // one of values
 #define CONFIG_FIELD_STRING     1   // free text, def when not set (may be empty)
 #define CONFIG_FIELD_FILE       2   // a file name; files is the file dialog filter
+#define CONFIG_FIELD_DIR        3   // a directory name, chosen by a dialog (never embedded)
 
 struct ConfigFieldValue {
     std::string value;              // as written in the config

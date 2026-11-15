@@ -35,14 +35,31 @@ without, with repeated dots and lines and scrolling. The ordinary BK screen is t
 512x256 and 256x256 modes over the shadow of pages 5 and 6, with the palettes of
 register 0177662.
 
+## microSD card
+
+The card is a folder on the computer. At start-up the socket is empty; the SD button on
+the toolbar chooses the folder, takes the card out and turns writing into the folder on,
+and the choice is remembered for the machine, like disk images. The folder can also be set
+in the extension editor, in a copy of the machine. The controller sees
+the files and folders there whose names are 8.3 (NAME.EXT, upper and lower case alike)
+and nothing else, and a program cannot get outside the folder. If the card has an AZ.INI, at power-on
+and when the board restarts AZ0&ndash;AZ3 take the disks of its [DISKS] section, as on the
+real board (an image on a drive AZ.INI does not name stays). MAXIOL's AZMNT (in the
+software library), AZUMNT and AZSMNT work (mounting an image from the card on
+AZ0&ndash;AZ3), as do reading and writing
+files (SETUP writes AZ.INI), loading a file into the controller's memory and saving a
+screenshot to a file (into SCREENS, if the folder has one). What the machine writes stays
+in the card's memory and in a saved state by default, and the folder is left as it was; to
+write into the folder itself, use "Write into the folder" of the SD button (turning it on
+offers to write what is already in memory into the folder too).
+
 ## Not done
 
 * The clock of the controller's pair of AY chips (ports 0177172&ndash;0177175) is not
   described and is taken as 12 MHz / 7, as on the BK sound cards. The chip type, YM2149
   or AY-3-8910, is chosen in SETUP, as on the board. The BK's AY sound card on port
   0177714 works as usual.
-* The network, the Hall of Fame, the files of the microSD card (mounting, directories,
-  loading files into memory), saving a screenshot to a file, the UART, a PS/2 keyboard.
+* The network, the Hall of Fame, the UART, a PS/2 keyboard.
 * The access time of the controller's memory is not described and is taken as zero.
 
 ## Joystick and mouse

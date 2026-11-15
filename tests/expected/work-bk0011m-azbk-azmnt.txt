@@ -1,0 +1,8 @@
+=== Таблица контроллера ===
+=== D01: TEST.IMG с карты ===
+[az1.attached] &00000000001
+[az1.file] TEST.IMG
+=== D01 снят ===
+[az1.attached] &00000000000
+=== Выход в ANDOS ===
+[azbk-vga.mode] &012201

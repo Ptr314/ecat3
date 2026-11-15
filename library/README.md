@@ -53,6 +53,7 @@ https://ecat.emuverse.ru/library/ - на неё же ссылаются опис
 | `dvk` | `rt11-dw.dsk` | RT-11 V05.04 на винчестере DW, 5 МБ |
 | | `FODOSTMO.DSK` | ФОДОС, заводские тесты (ВМ2, ВМ3, MY, MX, DW, КГД, КЦГД) |
 | `bk` | `AZVIDT24.BIN` | тест видеоконтроллера AZBK (MAXIOL): все 60 однослойных режимов; платформа «AZБК» (тест `work-bk0011m-azbk-azvidt`) |
+| `bk` | `AZMOUNT1.BIN` | AZMNT 09 (MAXIOL): монтирование дисков AZ с карты microSD AZBK, обзор карты, чтение и запись AZ.INI (тест `work-bk0011m-azbk-azmnt`) |
 | `agat` | `INIT_HELLO840[a7].dsk`, `ikp2-19176.dsk` | диски Агата, которые не загружает ни одна конфигурация |
 | `pravetz` | `sokoban.dsk`, `arkanoid.dsk`, `igra-i-matematika.nib` | игры с agatcomp.ru |
 | `uknc` | `basic.dsk`, `basic.lst` | дисковый Бейсик и список файлов |

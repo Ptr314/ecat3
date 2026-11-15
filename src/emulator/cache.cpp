@@ -11,6 +11,7 @@
 
 #include "dsk_tools/core.h"
 #include "libs/dsk_tools/src/utils.h"
+#include "host_dir.h"
 
 #ifdef _WIN32
     #ifndef NOMINMAX
@@ -30,90 +31,45 @@
 
 namespace {
 
-struct Item {
-    std::string name;
-    bool dir;
-    time_t modified;
-};
-
 #ifdef _WIN32
-
-//FILETIME counts 100 ns from 1601, time_t seconds from 1970
-time_t to_time_t(const FILETIME &ft)
-{
-    ULARGE_INTEGER u;
-    u.LowPart = ft.dwLowDateTime;
-    u.HighPart = ft.dwHighDateTime;
-    return static_cast<time_t>((u.QuadPart - 116444736000000000ULL) / 10000000ULL);
-}
-
-std::vector<Item> list(const std::string &dir)
-{
-    std::vector<Item> out;
-    WIN32_FIND_DATAW fd;
-    HANDLE h = FindFirstFileW(dsk_tools::utf8_to_wide(dir + "*").c_str(), &fd);
-    if (h == INVALID_HANDLE_VALUE) return out;
-    do {
-        const std::wstring w = fd.cFileName;
-        if (w == L"." || w == L"..") continue;
-        const int n = WideCharToMultiByte(CP_UTF8, 0, w.c_str(), -1, nullptr, 0, nullptr, nullptr);
-        std::string name(n > 0 ? n - 1 : 0, '\0');
-        if (n > 1) WideCharToMultiByte(CP_UTF8, 0, w.c_str(), -1, &name[0], n, nullptr, nullptr);
-        out.push_back({name, (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0, to_time_t(fd.ftLastWriteTime)});
-    } while (FindNextFileW(h, &fd));
-    FindClose(h);
-    return out;
-}
 
 void remove_file(const std::string &path) { DeleteFileW(dsk_tools::utf8_to_wide(path).c_str()); }
 void remove_dir(const std::string &path) { RemoveDirectoryW(dsk_tools::utf8_to_wide(path).c_str()); }
+//The link itself, never what it points to: a directory link goes the way of a
+//directory
+void remove_link(const std::string &path, bool dir) { if (dir) remove_dir(path); else remove_file(path); }
 
 #else
 
-std::vector<Item> list(const std::string &dir)
-{
-    std::vector<Item> out;
-    DIR * d = opendir(dir.c_str());
-    if (d == nullptr) return out;
-    while (dirent * e = readdir(d))
-    {
-        const std::string name = e->d_name;
-        if (name == "." || name == "..") continue;
-        struct stat st;
-        if (stat((dir + name).c_str(), &st) != 0) continue;
-        out.push_back({name, S_ISDIR(st.st_mode), st.st_mtime});
-    }
-    closedir(d);
-    return out;
-}
-
 void remove_file(const std::string &path) { unlink(path.c_str()); }
 void remove_dir(const std::string &path) { rmdir(path.c_str()); }
+void remove_link(const std::string &path, bool) { unlink(path.c_str()); }
 
 #endif
+
+void remove_entry(const std::string &dir, const HostDirEntry &e);
 
 //A directory with everything in it. What cannot go (a file open elsewhere)
 //stays, and so does the directory holding it
 void remove_tree(const std::string &dir)
 {
-    const std::vector<Item> items = list(dir);
-    for (size_t i = 0; i < items.size(); i++)
-    {
-        if (items[i].dir) remove_tree(dir + items[i].name + "/");
-        else remove_file(dir + items[i].name);
-    }
+    const std::vector<HostDirEntry> items = host_dir_list(dir);
+    for (size_t i = 0; i < items.size(); i++) remove_entry(dir, items[i]);
     remove_dir(dir.substr(0, dir.size() - 1));
+}
+
+void remove_entry(const std::string &dir, const HostDirEntry &e)
+{
+    if (e.link) remove_link(dir + e.name, e.dir);
+    else if (e.dir) remove_tree(dir + e.name + "/");
+    else remove_file(dir + e.name);
 }
 
 void clean(const std::string &dir, time_t older_than)
 {
-    const std::vector<Item> items = list(dir);
+    const std::vector<HostDirEntry> items = host_dir_list(dir);
     for (size_t i = 0; i < items.size(); i++)
-    {
-        if (items[i].modified >= older_than) continue;
-        if (items[i].dir) remove_tree(dir + items[i].name + "/");
-        else remove_file(dir + items[i].name);
-    }
+        if (items[i].modified < older_than) remove_entry(dir, items[i]);
 }
 
 } // namespace

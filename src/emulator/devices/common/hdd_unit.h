@@ -29,6 +29,7 @@ private:
     std::string m_files;
     unsigned int m_reads = 0;
     unsigned int m_writes = 0;
+    bool m_volatile_config = false;     // volatile из конфигурации
 
     emulator::Result load_image(const std::string &file_name);
 
@@ -49,6 +50,16 @@ public:
     uint64_t blocks() const { return m_image.size() / BLOCK_SIZE; }
     bool read_block(uint64_t block, uint8_t * buffer);
     bool write_block(uint64_t block, const uint8_t * buffer);
+
+    // Монтирование командой контроллера (AZ: 004 и 014). Файл компьютера с
+    // записью в него (writable) или только в память; или данные - копия
+    // файла, которого на диске нет, записи в память. name - имя в окне
+    bool attach_file(const std::string &host_path, bool writable);
+    bool attach_data(const std::string &name, const std::vector<uint8_t> &data);
+    unsigned int writes() const { return m_writes; }
+    // Монтирование ставит свою запись в память; снятие, «вынуть» и
+    // «вставить» возвращают ту, что в конфигурации
+    void detach();
 
     ConfigFields get_config_fields() override;
     // Образ - дело самого накопителя: снимок несет то, что в нем сейчас, с

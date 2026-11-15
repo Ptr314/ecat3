@@ -1,0 +1,6 @@
+// БК0011М + AZBK с картой microSD tests/files/azbk-sd-ini: в ее AZ.INI - диски
+// D1, D02 (файла нет) и D5 (привода нет). Для теста work-bk0011m-azbk-azini
+@extends bk/BK-0011M-azbk.ext
+@version БК0011М + AZBK, карта с AZ.INI (тест)
+
+az-sd:folder = azbk-sd-ini

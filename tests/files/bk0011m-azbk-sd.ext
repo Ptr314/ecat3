@@ -1,0 +1,8 @@
+// БК0011М + AZBK с картой microSD: каталог tests/files/azbk-sd, записи машины
+// остаются в памяти карты (write не задан). Объем карты 1024 МБ. Для теста
+// work-bk0011m-azbk-sd
+@extends bk/BK-0011M-azbk.ext
+@version БК0011М + AZBK, карта microSD (тест)
+
+az-sd:folder = azbk-sd
+az-sd:size = _1024

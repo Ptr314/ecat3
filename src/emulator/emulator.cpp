@@ -106,6 +106,8 @@
 #include "emulator/devices/specific/azbk_display.h"
 #include "emulator/devices/specific/azbk_sound.h"
 #include "emulator/devices/specific/azbk_disk.h"
+#include "emulator/devices/specific/azbk_sdcard.h"
+#include "emulator/host_dir.h"
 #include "emulator/devices/common/hdd_unit.h"
 #include "emulator/devices/specific/a16m.h"
 #include "emulator/devices/specific/uknc_timer.h"
@@ -605,7 +607,8 @@ std::vector<ComputerDevice*> Emulator::disk_devices()
     if (dm == nullptr) return r;
     for (unsigned int i = 0; i < dm->device_count; i++) {
         ComputerDevice * dev = dm->get_device(i)->device.get();
-        if (dev->device_class == "fdd" || dev->device_class == "hdd") r.push_back(dev);
+        //A card socket holds a folder of the host (the microSD card of the AZBK)
+        if (dev->device_class == "fdd" || dev->device_class == "hdd" || dev->device_class == "sdcard") r.push_back(dev);
     }
     return r;
 }
@@ -674,6 +677,12 @@ std::string Emulator::disk_path(const std::string &file)
 {
     std::string path = find_file_location(&sd, is_absolute_path(file) ? file : root_path() + file);
     if (path.empty() && !is_absolute_path(file)) path = find_file_location(&sd, file);
+    //The folder of a card socket
+    if (path.empty()) {
+        const std::string dir = is_absolute_path(file) ? file : root_path() + file;
+        HostDirEntry e;
+        if (host_stat(dir, e) && e.dir && !e.link) path = dir;
+    }
     return path;
 }
 
@@ -2784,6 +2793,7 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("azbk-display", create_azbk_display);
     dm->register_device("azbk-sound", create_azbk_sound);
     dm->register_device("azbk-disk", create_azbk_disk);
+    dm->register_device("azbk-sdcard", create_azbk_sdcard);
     dm->register_device("hdd-unit", create_hdd_unit);
     dm->register_device("a16m", create_a16m);
     dm->register_device("uknc-timer", create_uknc_timer);

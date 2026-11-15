@@ -4,13 +4,16 @@
 // Description: AZBK controller of the БК (MAXIOL): the AZ disk controller
 
 #include <algorithm>
+#include <map>
 #include <climits>
 #include <cstdio>
 #include <cstring>
 
 #include "azbk_disk.h"
 #include "azbk.h"
+#include "azbk_vga.h"
 #include "emulator/devices/common/hdd_unit.h"
+#include "emulator/host_dir.h"
 #include "emulator/utils.h"
 #include "dsk_tools/core.h"
 
@@ -110,6 +113,14 @@ emulator::Result AZBKDisk::load_config(SystemData *sd)
         m_eeprom_valid = true;
     }
 
+    // Гнездо карты microSD: оно сообщает, когда карту сменили
+    const std::string sd_name = str_trim(cd->get_parameter("card", false).value);
+    if (!sd_name.empty()) {
+        m_sd = dynamic_cast<AZBKSdCard*>(im->dm->get_device_by_name(sd_name, false));
+        if (m_sd == nullptr) return emulator::Result::error(emulator::ErrorCode::ConfigError, bad + " (card)");
+        m_sd->set_listener(this);
+    }
+
     m_mapper = dynamic_cast<MemoryMapper*>(im->dm->get_device_by_name("mapper", false));
     return emulator::Result::ok();
 }
@@ -133,6 +144,13 @@ void AZBKDisk::reset_controller()
     m_in = nullptr;
     m_in_target = IN_NONE;
     m_irq_pending = false;
+    // Микроконтроллер начинает сначала: оглавление и файл закрыты
+    m_iobuf_string = false;
+    m_dir_open = false;
+    m_dir.clear();
+    m_io_mode = IO_NONE;
+    m_rd = CardFile();
+    m_wr = CardFile();
     update_irq();
 }
 
@@ -151,6 +169,8 @@ void AZBKDisk::reset(bool cold)
     }
     m_irq.clear();
     reset_controller();
+    // Включение: контроллер читает AZ.INI карты
+    if (cold) apply_az_ini();
 }
 
 //------------------------------------------------------------- время ---
@@ -311,7 +331,13 @@ void AZBKDisk::build_table(std::vector<uint16_t> &out) const
         // Флаги - как у gid (1 - описан в AZ.INI, 4 - смонтирован): программы
         // MAXIOL смотрят только имя
         e[4] = 5;
-        const std::string n = "0:/" + dsk_tools::get_filename(const_cast<HddUnit*>(u)->hdd_image().file_name());
+        const std::string &file = const_cast<HddUnit*>(u)->hdd_image().file_name();
+        // Смонтированный командой 004 - той строкой, какой его монтировали,
+        // пока в приводе тот же образ (из снимка состояния он приходит копией
+        // под тем же именем)
+        const std::string n = (!m_mount[i].empty()
+                               && str_tolower(dsk_tools::get_filename(m_mount_file[i])) == str_tolower(dsk_tools::get_filename(file)))
+                            ? m_mount[i] : "0:/" + dsk_tools::get_filename(file);
         uint8_t * name = reinterpret_cast<uint8_t*>(e + 5);
         for (size_t k = 0; k < n.size() && k + 1 < NAME_BYTES; k++) name[k] = (uint8_t)n[k];
     }
@@ -332,6 +358,7 @@ void AZBKDisk::command(unsigned int value)
             m_in = nullptr;
             m_in_target = IN_NONE;
             m_read_source = SRC_IOBUF;
+            m_iobuf_string = false;
             m_err = false;
             m_busy_cmd = 0;
             m_busy = true;
@@ -350,11 +377,12 @@ void AZBKDisk::command(unsigned int value)
     HddUnit * u;
     uint16_t tmp[2];
     switch (cmd) {
-    case 000:   // сброс
+    case 000:   // сброс: оглавление, файл и буферы остаются
         m_out.clear();
         m_in = nullptr;
         m_in_target = IN_NONE;
         m_read_source = SRC_IOBUF;
+        m_iobuf_string = false;
         break;
     case 001:   // выбор устройства, мгновенно
         m_unit = (int)(m_arg & 037);
@@ -409,11 +437,14 @@ void AZBKDisk::command(unsigned int value)
             std::vector<uint16_t> t;
             build_table(t);
             stream_out(t.data(), (unsigned int)t.size());
-        } else
+        } else if (m_read_source == SRC_DIRREC)
+            stream_out(m_dirrec, 11);
+        else
             stream_out(m_iobuf, 256);
         break;
     case 016:   // прием блока в буфер
         m_iobuf_filled = 0;
+        m_iobuf_string = true;
         stream_in(IN_IOBUF, m_iobuf, 256);
         break;
     case 020:   // расширенная диагностика: два слова
@@ -432,8 +463,8 @@ void AZBKDisk::command(unsigned int value)
     case 022:   // EEPROM через DR: слово состояния и 255 слов
         stream_out(m_cmos, 256);
         break;
-    case 023:
-        stream_in(IN_EEPROM, m_eeprom_in, EEPROM_WORDS);
+    case 023:   // в буфер с начала: память для 024, имя или данные файла
+        stream_in(IN_EEPROM, m_cmos, 256);
         break;
     case 027:   // версия: прошивка STM32 и плата (4 - AZБК), затем старший диск
         tmp[0] = (uint16_t)((m_stm_version << 8) | 4);
@@ -452,9 +483,10 @@ void AZBKDisk::command(unsigned int value)
     case 036:
         start_long(cmd, m_command_us);
         return;
-    case 037:   // перезапуск платы и всей БК
+    case 037:   // перезапуск платы и всей БК: контроллер снова читает AZ.INI
         m_board->restart();
         reset_controller();
+        apply_az_ini();
         m_restart_left = (uint64_t)m_restart_ms * m_system_clock / 1000;
         if (m_restart_left == 0) m_restart_left = 1;
         i_dclo.change(0);
@@ -462,9 +494,12 @@ void AZBKDisk::command(unsigned int value)
     case 041:
         stream_out(m_ipdata, 12);
         break;
+    case 003: case 004: case 013: case 014: case 044: case 047:
+    case 050: case 051: case 052: case 053: case 054: case 055: case 056: case 057:
+        if (card_command(cmd)) return;
+        break;
     default:
-        // Карта microSD (003, 004, 013, 014, 044, 047, 050-057) и Hall of
-        // Fame (025, 026) - пока нет
+        // Hall of Fame (025, 026) - нет
         note_unsupported("command " + oct_str(cmd, 3));
         m_err = true;
         break;
@@ -508,7 +543,7 @@ void AZBKDisk::finish_long()
         memcpy(m_cmos + 1, m_eeprom, sizeof(m_eeprom));
         break;
     case 024:   // буфер записи идет без слова состояния
-        memcpy(m_eeprom, m_eeprom_in, sizeof(m_eeprom));
+        memcpy(m_eeprom, m_cmos, sizeof(m_eeprom));
         m_eeprom_valid = true;
         break;
     case 031:
@@ -529,10 +564,535 @@ void AZBKDisk::finish_long()
     case 042:   // часы стека TCP/IP никто не ставил (Б.3)
         memset(m_timestamp, 0, sizeof(m_timestamp));
         break;
+    case 003: open_dir();         break;
+    case 013: read_dir();         break;
+    case 004: mount();            break;
+    case 014: unmount();          break;
+    case 050: open_read();        break;
+    case 052: read_file_block();  break;
+    case 053: open_write();       break;
+    case 055: write_file_block(); break;
+    case 047: read_into_memory(); break;
+    case 044: screenshot();       break;
+    case 056: {
+        unsigned int total = 0, free = 0;
+        card().sizes(total, free);
+        m_sizecard[0] = (uint16_t)total;
+        m_sizecard[1] = (uint16_t)free;
+        break;
+    }
     default:
         break;
     }
     finish();
+}
+
+//------------------------------------------------------------ карта microSD ---
+
+// Строка в буфере слов: байты по порядку, до нуля
+std::string AZBKDisk::buffer_string(const uint16_t * buffer, unsigned int max_bytes) const
+{
+    std::string s;
+    for (unsigned int i = 0; i < max_bytes; i++) {
+        const char c = (char)((i & 1) ? (buffer[i / 2] >> 8) : (buffer[i / 2] & 0xFF));
+        if (c == 0) break;
+        s += c;
+    }
+    return s;
+}
+
+// Строка в буфер файловых команд, с нулем; остальное - нули
+void AZBKDisk::put_cmos_string(const std::string &s)
+{
+    memset(m_cmos, 0, sizeof(m_cmos));
+    for (size_t i = 0; i < s.size() && i < sizeof(m_cmos) - 1; i++)
+        m_cmos[i / 2] |= (uint16_t)((uint8_t)s[i] << ((i & 1) ? 8 : 0));
+}
+
+void AZBKDisk::fat_now(uint16_t &date, uint16_t &time) const
+{
+    const uint64_t s = now_seconds();
+    int y, mo, d;
+    civil_from_days((int64_t)(s / 86400), y, mo, d);
+    const unsigned int sod = (unsigned int)(s % 86400);
+    date = (uint16_t)((y >= 1980 && y < 2108) ? (((y - 1980) << 9) | (mo << 5) | d) : 0);
+    time = (uint16_t)(((sod / 3600) << 11) | (((sod / 60) % 60) << 5) | ((sod % 60) / 2));
+}
+
+// "Dnn" строки монтирования (AZ.INI): номер привода десятичный
+static bool parse_unit(const std::string &s, size_t &i, unsigned int &unit)
+{
+    while (i < s.size() && s[i] == ' ') i++;
+    if (i >= s.size() || (s[i] != 'D' && s[i] != 'd')) return false;
+    i++;
+    unsigned int n = 0, digits = 0;
+    while (i < s.size() && s[i] >= '0' && s[i] <= '9' && digits < 3) {
+        n = n * 10 + (unsigned int)(s[i] - '0');
+        i++;
+        digits++;
+    }
+    while (i < s.size() && s[i] == ' ') i++;
+    unit = n;
+    return digits > 0;
+}
+
+// Разделители подряд - один (FatFs их так и понимает): "//" в значении
+// снимка состояния читалось бы как начало комментария
+static std::string collapse_separators(const std::string &s)
+{
+    std::string out;
+    for (size_t i = 0; i < s.size(); i++) {
+        const bool sep = (s[i] == '/' || s[i] == '\\');
+        if (sep && !out.empty() && (out[out.size() - 1] == '/' || out[out.size() - 1] == '\\')) continue;
+        out += s[i];
+    }
+    return out;
+}
+
+// Команда карты. true - пошла «длительная», ее окончание - finish_long()
+bool AZBKDisk::card_command(unsigned int cmd)
+{
+    if (!card().present()) {
+        m_err = true;
+        return false;
+    }
+    switch (cmd) {
+    case 051: {     // про последний из 050 и 053: длина файла на чтение или код FatFs с разрядом 31
+        if (m_io_mode == IO_NONE) {
+            m_err = true;
+            return false;
+        }
+        const CardFile &f = (m_io_mode == IO_READ) ? m_rd : m_wr;
+        uint16_t w[2] = { 0, 0 };
+        if (f.result != AzSdCard::FR_OK) {
+            w[0] = (uint16_t)f.result;
+            w[1] = 0100000;
+        } else if (m_io_mode == IO_READ) {
+            w[0] = (uint16_t)f.size;
+            w[1] = (uint16_t)(f.size >> 16);
+        }
+        stream_out(w, 2);
+        return false;
+    }
+    case 054:       // длина файла на запись: два слова через DR
+        m_length_in[0] = m_length_in[1] = 0;
+        stream_in(IN_LENGTH, m_length_in, 2);
+        return false;
+    case 057:
+        stream_out(m_sizecard, 2);
+        return false;
+    case 052:
+    case 055:
+        start_long(cmd, m_block_us);
+        return true;
+    case 047: {     // весь файл: по блоку карты на 512 байт
+        const uint64_t blocks = m_rd.open ? (m_rd.size + 511) / 512 : 0;
+        start_long(cmd, m_command_us + blocks * m_block_us);
+        return true;
+    }
+    case 044: {
+        std::vector<Region> regions;
+        std::string error;
+        uint64_t words = 0;
+        if (screen_plan(regions, error))
+            for (size_t i = 0; i < regions.size(); i++) words += regions[i].words;
+        start_long(cmd, m_command_us + (words * 2 + 1024 + 511) / 512 * m_block_us);
+        return true;
+    }
+    default:        // 003, 004, 013, 014, 050, 053, 056
+        start_long(cmd, m_command_us);
+        return true;
+    }
+}
+
+// 003: путь оглавления - строка в буфере блока (016), до 384 байт
+void AZBKDisk::open_dir()
+{
+    m_dir_open = false;
+    m_dir.clear();
+    m_dir_pos = 0;
+    std::string path;
+    if (AzSdCard::parse(buffer_string(m_iobuf, 384), path) != AzSdCard::FR_OK
+        || card().list(path, m_dir) != AzSdCard::FR_OK) {
+        m_err = true;
+        return;
+    }
+    m_dir_path = path;
+    m_dir_open = true;
+}
+
+// 013: запись оглавления, 11 слов для 015 - размер (2 слова), дата и время
+// FAT, байт атрибутов, имя "ИМЯ.ТИП" с нулем (13 байт). За последней записью -
+// запись с пустым именем, как у f_readdir FatFs
+void AZBKDisk::read_dir()
+{
+    memset(m_dirrec, 0, sizeof(m_dirrec));
+    m_read_source = SRC_DIRREC;
+    if (!m_dir_open) {
+        m_err = true;
+        return;
+    }
+    if (m_dir_pos >= m_dir.size()) return;
+    const AzSdCard::Entry &e = m_dir[m_dir_pos++];
+    uint8_t rec[22] = {};
+    rec[0] = (uint8_t)e.size;
+    rec[1] = (uint8_t)(e.size >> 8);
+    rec[2] = (uint8_t)(e.size >> 16);
+    rec[3] = (uint8_t)(e.size >> 24);
+    rec[4] = (uint8_t)e.date;
+    rec[5] = (uint8_t)(e.date >> 8);
+    rec[6] = (uint8_t)e.time;
+    rec[7] = (uint8_t)(e.time >> 8);
+    rec[8] = e.dir ? 020 : 040;         // каталог; архивный файл
+    for (size_t k = 0; k < e.name.size() && k < 12; k++) rec[9 + k] = (uint8_t)e.name[k];
+    for (unsigned int w = 0; w < 11; w++) m_dirrec[w] = (uint16_t)(rec[w * 2] | (rec[w * 2 + 1] << 8));
+}
+
+// 004: строка как в AZ.INI, "D04=0:/DISKS/A.IMG", в буфере блока. Привод
+// должен быть свободен. Монтирование только до перезапуска эмулятора: в AZ.INI
+// карты оно не пишется (пишет ли его туда плата, MAXIOL не описал)
+void AZBKDisk::mount()
+{
+    const std::string s = buffer_string(m_iobuf, NAME_BYTES);
+    size_t i = 0;
+    unsigned int n = 0;
+    if (!parse_unit(s, i, n) || i >= s.size() || s[i] != '=') {
+        m_err = true;
+        return;
+    }
+    if (n >= UNITS || m_units[n] == nullptr || m_units[n]->attached()
+        || !mount_unit(n, s.substr(i + 1)))
+        m_err = true;
+}
+
+// Образ на приводе n поставлен с карты (004 или AZ.INI) и с тех пор его не
+// сменили кнопкой окна или сценарием
+bool AZBKDisk::card_mounted(unsigned int n) const
+{
+    if (n >= UNITS || m_mount_path[n].empty() || m_units[n] == nullptr || !m_units[n]->attached()) return false;
+    const std::string file = dsk_tools::get_filename(const_cast<HddUnit*>(m_units[n])->hdd_image().file_name());
+    return str_tolower(m_mount_file[n]) == str_tolower(file);
+}
+
+// Монтирует на свободный привод n файл карты по строке монтирования ("0:/..."):
+// файл компьютера (запись в него при записи в каталог) или файл памяти карты
+bool AZBKDisk::mount_unit(unsigned int n, const std::string &text)
+{
+    const std::string given = collapse_separators(str_trim(text));
+    std::string path, host;
+    const std::vector<uint8_t> * data = nullptr;
+    if (n >= UNITS || m_units[n] == nullptr || m_units[n]->attached()
+        || AzSdCard::parse(given, path) != AzSdCard::FR_OK || path.empty()
+        || !card().mount_source(path, host, data))
+        return false;
+    const bool ok = (data != nullptr) ? m_units[n]->attach_data("0:/" + path, *data)
+                                      : m_units[n]->attach_file(host, card().writes_host());
+    if (!ok) return false;
+    m_mount[n] = given;
+    m_mount_file[n] = dsk_tools::get_filename(m_units[n]->hdd_image().file_name());
+    m_mount_path[n] = path;
+    m_mount_writes[n] = m_units[n]->writes();
+    return true;
+}
+
+// Снимает образ с привода n. Без записи в каталог записанное машиной на образ,
+// смонтированный с карты, остается на карте - в ее памяти, как файл (до 32 МБ)
+void AZBKDisk::drop_unit(unsigned int n)
+{
+    if (n >= UNITS || m_units[n] == nullptr) return;
+    HddUnit * u = m_units[n];
+    if (card_mounted(n) && !card().writes_host() && u->writes() != m_mount_writes[n]) {
+        std::vector<uint8_t> image;
+        uint16_t date, time;
+        fat_now(date, time);
+        if (u->hdd_image().contents(image)) {
+            // Образ округлен до сектора; длина файла - его
+            uint32_t size = 0;
+            if (card().file_size(m_mount_path[n], size) == AzSdCard::FR_OK && size <= image.size()) image.resize(size);
+            card().store(m_mount_path[n], image, date, time);
+        }
+    }
+    u->detach();
+    m_mount[n].clear();
+    m_mount_file[n].clear();
+    m_mount_path[n].clear();
+}
+
+// Раздел [DISKS] файла AZ.INI карты: "Dnn=путь" (D0, D04, ...), как у MAXIOL.
+// Привод, который AZ.INI называет, получает этот файл; уже стоящий там по той же
+// строке остается (записанное в него не теряется). Смонтированный с карты и
+// не названный - снимается. Образ конфигурации или окна на приводе, которого
+// AZ.INI не называет, остается: настоящей плате его взять неоткуда. Привод,
+// которого у машины нет (D4 и дальше), и файл, которого нет на карте,
+// пропускаются: привод остается пустым
+void AZBKDisk::apply_az_ini()
+{
+    AzSdCard &c = card();
+    uint32_t size = 0;
+    if (!c.present() || c.file_size("AZ.INI", size) != AzSdCard::FR_OK || size == 0 || size > 65536) return;
+    std::vector<uint8_t> raw(size);
+    if (!c.read("AZ.INI", 0, raw.data(), size)) return;
+    std::map<unsigned int, std::string> disks;
+    std::string section;
+    size_t pos = 0;
+    const std::string text(raw.begin(), raw.end());
+    while (pos < text.size()) {
+        size_t end = text.find('\n', pos);
+        if (end == std::string::npos) end = text.size();
+        const std::string line = str_trim(text.substr(pos, end - pos));
+        pos = end + 1;
+        if (line.empty() || line[0] == ';' || line[0] == '#') continue;
+        if (line[0] == '[') {
+            const size_t close = line.find(']');
+            section = str_tolower(str_trim(line.substr(1, close == std::string::npos ? std::string::npos : close - 1)));
+            continue;
+        }
+        if (section != "disks") continue;
+        size_t i = 0;
+        unsigned int n = 0;
+        if (!parse_unit(line, i, n) || i >= line.size() || line[i] != '=' || n >= UNITS) continue;
+        disks[n] = collapse_separators(str_trim(line.substr(i + 1)));
+    }
+    for (unsigned int n = 0; n < UNITS; n++) {
+        if (m_units[n] == nullptr) continue;
+        std::map<unsigned int, std::string>::const_iterator it = disks.find(n);
+        if (it == disks.end()) {
+            if (card_mounted(n)) drop_unit(n);
+            continue;
+        }
+        std::string want;
+        if (AzSdCard::parse(it->second, want) != AzSdCard::FR_OK || want.empty()) continue;
+        if (card_mounted(n) && m_mount_path[n] == want) {
+            m_mount[n] = it->second;
+            continue;
+        }
+        if (m_units[n]->attached()) drop_unit(n);
+        mount_unit(n, it->second);
+    }
+}
+
+// 014: привод - строкой "D04" в буфере блока, как у AZUMNT MAXIOL, или
+// номером в DR, как в вики. Ошибка, если на нем ничего нет. Без записи на
+// диск компьютера записанное машиной на смонтированном с карты образе
+// остается на карте - в ее памяти, как файл (до 32 МБ)
+void AZBKDisk::unmount()
+{
+    unsigned int n = m_arg & 0177777;
+    if (m_iobuf_string) {
+        const std::string s = buffer_string(m_iobuf, NAME_BYTES);
+        size_t i = 0;
+        if (!parse_unit(s, i, n)) {
+            m_err = true;
+            return;
+        }
+    }
+    if (n >= UNITS || m_units[n] == nullptr || !m_units[n]->attached()) {
+        m_err = true;
+        return;
+    }
+    drop_unit(n);
+}
+
+// 050: имя файла - строка в буфере 023, до 256 байт. Ошибку открытия отдает 051
+void AZBKDisk::open_read()
+{
+    m_io_mode = IO_READ;
+    m_rd = CardFile();
+    std::string path;
+    int result = AzSdCard::parse(buffer_string(m_cmos, 256), path);
+    if (result == AzSdCard::FR_OK) result = card().file_size(path, m_rd.size);
+    m_rd.result = (unsigned int)result;
+    m_rd.open = (result == AzSdCard::FR_OK);
+    m_rd.path = path;
+}
+
+// 052: следующие 512 байт файла в буфер (последний блок дополнен нулями);
+// прочитанный до конца файл закрывается
+void AZBKDisk::read_file_block()
+{
+    if (!m_rd.open || m_rd.pos >= m_rd.size) {
+        m_rd.open = false;
+        m_err = true;
+        return;
+    }
+    uint8_t block[512] = {};
+    const uint32_t n = std::min<uint32_t>(512, m_rd.size - m_rd.pos);
+    if (!card().read(m_rd.path, m_rd.pos, block, n)) {
+        m_rd.open = false;
+        m_err = true;
+        return;
+    }
+    for (unsigned int i = 0; i < 256; i++) m_cmos[i] = (uint16_t)(block[i * 2] | (block[i * 2 + 1] << 8));
+    m_rd.pos += n;
+    if (m_rd.pos >= m_rd.size) m_rd.open = false;
+}
+
+// 053: файл создается (или обрезается) сразу; 051 отдает 0, 0 или код FatFs
+void AZBKDisk::open_write()
+{
+    m_io_mode = IO_WRITE;
+    m_wr = CardFile();
+    std::string path;
+    int result = AzSdCard::parse(buffer_string(m_cmos, 256), path);
+    if (result == AzSdCard::FR_OK) {
+        uint16_t date, time;
+        fat_now(date, time);
+        result = card().create(path, date, time);
+    }
+    m_wr.result = (unsigned int)result;
+    m_wr.open = (result == AzSdCard::FR_OK);
+    m_wr.path = path;
+}
+
+// 055: до 512 байт буфера в файл, сколько осталось до длины 054; на ней файл
+// закрывается
+void AZBKDisk::write_file_block()
+{
+    const uint32_t declared = (uint32_t)m_length_in[0] | ((uint32_t)m_length_in[1] << 16);
+    if (!m_wr.open || m_wr.pos >= declared) {
+        m_wr.open = false;
+        m_err = true;
+        return;
+    }
+    uint8_t block[512];
+    for (unsigned int i = 0; i < 256; i++) {
+        block[i * 2] = (uint8_t)m_cmos[i];
+        block[i * 2 + 1] = (uint8_t)(m_cmos[i] >> 8);
+    }
+    const uint32_t n = std::min<uint32_t>(512, declared - m_wr.pos);
+    if (!card().append(m_wr.path, block, n)) {
+        m_wr.open = false;
+        m_err = true;
+        return;
+    }
+    m_wr.pos += n;
+    m_wr.size = m_wr.pos;
+    if (m_wr.pos >= declared) m_wr.open = false;
+}
+
+// 047: файл 050 целиком в память AZ со словного адреса из буфера (младшее,
+// старшее слово). Состояние - в буфере и сразу в DR: длина или код FatFs с
+// разрядом 31 (9 - файл не открыт, 19 - не помещается в 32 МБ)
+void AZBKDisk::read_into_memory()
+{
+    const uint32_t word = (uint32_t)m_cmos[0] | ((uint32_t)m_cmos[1] << 16);
+    unsigned int code = AzSdCard::FR_OK;
+    if (!m_rd.open)
+        code = 9;
+    else if ((uint64_t)word * 2 + m_rd.size > m_board->memory_size())
+        code = 19;
+    else if (m_rd.size > 0) {
+        const uint64_t byte = (uint64_t)word * 2;
+        if (!card().read(m_rd.path, 0, m_board->memory() + byte, m_rd.size)) code = AzSdCard::FR_DISK_ERR;
+        for (uint64_t p = byte / AZBK::PAGE_BYTES; p <= (byte + m_rd.size - 1) / AZBK::PAGE_BYTES; p++)
+            m_board->touch_page((unsigned int)p);
+    }
+    const uint32_t size = m_rd.size;
+    m_rd.open = false;
+    memset(m_cmos, 0, sizeof(m_cmos));
+    if (code != AzSdCard::FR_OK) {
+        m_err = true;
+        m_cmos[0] = (uint16_t)code;
+        m_cmos[1] = 0100000;
+    } else {
+        m_cmos[0] = (uint16_t)size;
+        m_cmos[1] = (uint16_t)(size >> 16);
+    }
+    stream_out(m_cmos, 256);
+}
+
+// Что снимает 044 - по заголовку в странице AZ 076 (вики MAXIOL): метка 0240,
+// затем адрес и длина в словах (по два слова), затем начальная страница и
+// число страниц, затем копии 177300-177352 и 177230-177256, палитра. Есть
+// длина - участок по адресу; нет - страницы; нет и их - картина по копиям
+// регистров видео: рулон слоя 0, у слоеного режима - всех трех слоев (как
+// MAXIOL считает рулон здесь, он не описал). Не больше 2 МБ
+bool AZBKDisk::screen_plan(std::vector<Region> &regions, std::string &error) const
+{
+    regions.clear();
+    const uint8_t * mem = m_board->memory();
+    const uint32_t base = 076 * AZBK::PAGE_BYTES;
+    if (mem == nullptr || base + 1024 > m_board->memory_size()) {
+        error = "ERROR memory";
+        return false;
+    }
+    uint16_t h[40];
+    for (unsigned int i = 0; i < 40; i++) h[i] = (uint16_t)(mem[base + i * 2] | (mem[base + i * 2 + 1] << 8));
+    if (h[0] != 0240) {
+        error = "ERROR tag";
+        return false;
+    }
+    const uint32_t page_words = AZBK::PAGE_BYTES / 2;
+    const uint32_t address = (uint32_t)h[1] | ((uint32_t)h[2] << 16);
+    const uint32_t length = (uint32_t)h[3] | ((uint32_t)h[4] << 16);
+    if (length != 0) {
+        regions.push_back(Region{address, length});
+    } else if (h[6] != 0) {
+        regions.push_back(Region{(uint32_t)h[5] * page_words, (uint32_t)h[6] * page_words});
+    } else {
+        const unsigned int mode = h[29];
+        unsigned int roll = (mode >> 12) & 15;
+        if (roll > 11) roll = 11;
+        const uint32_t words = AZBKVga::ROLL_WORDS[roll];
+        regions.push_back(Region{(uint32_t)h[30] * page_words, words});
+        if (mode & 4) {
+            regions.push_back(Region{(uint32_t)h[31] * page_words, words});
+            regions.push_back(Region{(uint32_t)h[32] * page_words, words});
+        }
+    }
+    uint64_t total = 0;
+    for (size_t i = 0; i < regions.size(); i++) {
+        total += regions[i].words;
+        if (((uint64_t)regions[i].word + regions[i].words) * 2 > m_board->memory_size()) {
+            error = "ERROR address";
+            return false;
+        }
+    }
+    if (total > (1u << 20)) {
+        error = "ERROR size";
+        return false;
+    }
+    return true;
+}
+
+// 044: файл - первый килобайт страницы 076 и снятая память. Имя - строка в
+// буфере 023; пустая - 0:/SCREENS/ДДЧЧММСС.SCR по часам платы. В буфер
+// возвращается имя файла или "ERROR ..." (как у MAXIOL: "ERROR f_open 5" -
+// нет каталога SCREENS)
+void AZBKDisk::screenshot()
+{
+    std::string name = buffer_string(m_cmos, 256);
+    if (name.empty()) {
+        const uint64_t s = now_seconds();
+        int y, mo, d;
+        civil_from_days((int64_t)(s / 86400), y, mo, d);
+        const unsigned int sod = (unsigned int)(s % 86400);
+        char buf[40];
+        std::snprintf(buf, sizeof(buf), "0:/SCREENS/%02d%02u%02u%02u.SCR", d, sod / 3600, (sod / 60) % 60, sod % 60);
+        name = buf;
+    }
+    std::vector<Region> regions;
+    std::string error, path;
+    int result = AzSdCard::FR_OK;
+    uint16_t date, time;
+    fat_now(date, time);
+    if (!screen_plan(regions, error)) {
+    } else if ((result = AzSdCard::parse(name, path)) != AzSdCard::FR_OK || path.empty()
+               || (result = card().create(path, date, time)) != AzSdCard::FR_OK) {
+        error = "ERROR f_open " + std::to_string(result == AzSdCard::FR_OK ? AzSdCard::FR_INVALID_NAME : result);
+    } else {
+        const uint8_t * mem = m_board->memory();
+        bool ok = card().append(path, mem + 076 * AZBK::PAGE_BYTES, 1024);
+        for (size_t i = 0; ok && i < regions.size(); i++)
+            ok = card().append(path, mem + (uint64_t)regions[i].word * 2, regions[i].words * 2);
+        if (!ok) error = "ERROR f_write";
+    }
+    if (!error.empty()) {
+        m_err = true;
+        put_cmos_string(error);
+        return;
+    }
+    put_cmos_string("0:/" + path);
 }
 
 //------------------------------------------------------- обращения шины ---
@@ -638,7 +1198,6 @@ void AZBKDisk::save_state(StateWriter &w)
     w.array("cmos", m_cmos, 256);
     w.array("eeprom", m_eeprom, EEPROM_WORDS);
     w.b("eeprom_valid", m_eeprom_valid);
-    w.array("eeprom_in", m_eeprom_in, EEPROM_WORDS);
     w.array("timestamp", m_timestamp, 14);
     w.array("simple_in", m_simple_in, 7);
     w.array("ipdata", m_ipdata, 12);
@@ -651,6 +1210,32 @@ void AZBKDisk::save_state(StateWriter &w)
     w.n("in_size", m_in_size);
     w.n("in_pos", m_in_pos);
     w.n("commands", m_commands);
+    w.b("iobuf_string", m_iobuf_string);
+    w.b("dir_open", m_dir_open);
+    w.s("dir_path", m_dir_path);
+    w.n("dir_pos", m_dir_pos);
+    w.array("dirrec", m_dirrec, 11);
+    for (unsigned int i = 0; i < UNITS; i++) {
+        if (m_mount[i].empty()) continue;
+        const std::string k = std::to_string(i);
+        w.s(("mount_" + k).c_str(), m_mount[i]);
+        w.s(("mount_file_" + k).c_str(), m_mount_file[i]);
+        w.s(("mount_path_" + k).c_str(), m_mount_path[i]);
+        w.n(("mount_writes_" + k).c_str(), m_mount_writes[i]);
+    }
+    w.n("io_mode", m_io_mode);
+    const CardFile * files[2] = { &m_rd, &m_wr };
+    const char * names[2] = { "rd", "wr" };
+    for (unsigned int i = 0; i < 2; i++) {
+        const std::string k = names[i];
+        w.b((k + "_open").c_str(), files[i]->open);
+        w.s((k + "_path").c_str(), files[i]->path);
+        w.n((k + "_size").c_str(), files[i]->size);
+        w.n((k + "_pos").c_str(), files[i]->pos);
+        w.n((k + "_result").c_str(), files[i]->result);
+    }
+    w.array("length_in", m_length_in, 2);
+    w.array("sizecard", m_sizecard, 2);
 }
 
 emulator::Result AZBKDisk::load_state(const StateReader &r)
@@ -682,9 +1267,10 @@ emulator::Result AZBKDisk::load_state(const StateReader &r)
     r.array("iobuf", m_iobuf, 256);
     r.u("iobuf_filled", m_iobuf_filled);
     r.array("cmos", m_cmos, 256);
+    // Снимок прежней сборки: 023 писала отдельный буфер, его берет 024
+    r.array("eeprom_in", m_cmos, EEPROM_WORDS);
     r.array("eeprom", m_eeprom, EEPROM_WORDS);
     r.b("eeprom_valid", m_eeprom_valid);
-    r.array("eeprom_in", m_eeprom_in, EEPROM_WORDS);
     r.array("timestamp", m_timestamp, 14);
     r.array("simple_in", m_simple_in, 7);
     r.array("ipdata", m_ipdata, 12);
@@ -701,13 +1287,84 @@ emulator::Result AZBKDisk::load_state(const StateReader &r)
     r.u("in_pos", m_in_pos);
     m_in = nullptr;
     if (m_in_target == IN_IOBUF && m_in_size <= 256) m_in = m_iobuf;
-    else if (m_in_target == IN_EEPROM && m_in_size <= EEPROM_WORDS) m_in = m_eeprom_in;
+    else if (m_in_target == IN_EEPROM && m_in_size <= 256) m_in = m_cmos;
     else if (m_in_target == IN_SIMPLE && m_in_size <= 7) m_in = m_simple_in;
+    else if (m_in_target == IN_LENGTH && m_in_size <= 2) m_in = m_length_in;
     else m_in_target = IN_NONE;
     if (m_in_pos > m_in_size) m_in_pos = m_in_size;
     if (m_out_pos > m_out.size()) m_out_pos = (unsigned int)m_out.size();
     r.u("commands", m_commands);
+
+    r.b("iobuf_string", m_iobuf_string);
+    r.b("dir_open", m_dir_open);
+    r.s("dir_path", m_dir_path);
+    r.u("dir_pos", m_dir_pos);
+    r.array("dirrec", m_dirrec, 11);
+    // Пути карты из снимка - только такие, какие дал бы разбор пути гостя
+    std::string check;
+    if (AzSdCard::parse(m_dir_path, check) != AzSdCard::FR_OK || check != m_dir_path) m_dir_open = false;
+    for (unsigned int i = 0; i < UNITS; i++) {
+        const std::string k = std::to_string(i);
+        m_mount[i].clear();
+        m_mount_file[i].clear();
+        m_mount_path[i].clear();
+        m_mount_writes[i] = 0;
+        r.s(("mount_" + k).c_str(), m_mount[i]);
+        r.s(("mount_file_" + k).c_str(), m_mount_file[i]);
+        r.s(("mount_path_" + k).c_str(), m_mount_path[i]);
+        r.u(("mount_writes_" + k).c_str(), m_mount_writes[i]);
+        if (AzSdCard::parse(m_mount_path[i], check) != AzSdCard::FR_OK || check != m_mount_path[i]) m_mount_path[i].clear();
+    }
+    r.u("io_mode", m_io_mode);
+    if (m_io_mode > IO_WRITE) m_io_mode = IO_NONE;
+    CardFile * files[2] = { &m_rd, &m_wr };
+    const char * names[2] = { "rd", "wr" };
+    for (unsigned int i = 0; i < 2; i++) {
+        const std::string k = names[i];
+        *files[i] = CardFile();
+        r.b((k + "_open").c_str(), files[i]->open);
+        r.s((k + "_path").c_str(), files[i]->path);
+        r.u((k + "_size").c_str(), files[i]->size);
+        r.u((k + "_pos").c_str(), files[i]->pos);
+        r.u((k + "_result").c_str(), files[i]->result);
+        if (AzSdCard::parse(files[i]->path, check) != AzSdCard::FR_OK || check != files[i]->path) files[i]->open = false;
+    }
+    r.array("length_in", m_length_in, 2);
+    r.array("sizecard", m_sizecard, 2);
     return emulator::Result::ok();
+}
+
+// Оглавление читается заново, когда восстановлено и гнездо карты: каталог мог
+// измениться
+void AZBKDisk::state_restored()
+{
+    AddressableDevice::state_restored();
+    m_dir.clear();
+    if (m_dir_open && (!card().present() || card().list(m_dir_path, m_dir) != AzSdCard::FR_OK)) m_dir_open = false;
+    if (m_dir_pos > m_dir.size()) m_dir_pos = (unsigned int)m_dir.size();
+}
+
+// Карту вынули или вставили другую: оглавление и файлы закрыты, образы,
+// смонтированные с нее, сняты (записанное в них пропадает вместе с картой).
+// Сменилось, куда идет запись: файл на запись закрыт - его начало осталось
+// там, куда шла запись
+void AZBKDisk::card_changed(bool replaced)
+{
+    m_wr = CardFile();
+    if (m_io_mode == IO_WRITE) m_io_mode = IO_NONE;
+    if (!replaced) return;
+    m_dir_open = false;
+    m_dir.clear();
+    m_dir_pos = 0;
+    m_rd = CardFile();
+    m_io_mode = IO_NONE;
+    for (unsigned int i = 0; i < UNITS; i++) {
+        // Образ, вставленный поверх кнопкой окна, остается
+        if (card_mounted(i)) m_units[i]->detach();
+        m_mount[i].clear();
+        m_mount_file[i].clear();
+        m_mount_path[i].clear();
+    }
 }
 
 //----------------------------------------------------------------- поля ---
@@ -726,6 +1383,8 @@ std::vector<DeviceFieldInfo> AZBKDisk::get_device_fields()
     r.push_back({"eeprom",   "Non-volatile memory words from-to",                  true});
     r.push_back({"rtc",      "Clock: year, month, day, hour, minute, second",      false});
     r.push_back({"vector",   "Vector offered to the processor, or 0",              false});
+    r.push_back({"sd",       "1 if the microSD card is in",                       false});
+    r.push_back({"file",     "Card files: last opened (1 - 050, 2 - 053); the read file open, bytes read, size; the write file open, bytes written", false});
     return r;
 }
 
@@ -741,6 +1400,17 @@ bool AZBKDisk::get_field(const std::string &field, unsigned int from, unsigned i
     if (field == "commands") { out.width = 32; out.values.push_back(m_commands); return true; }
     if (field == "refused")  { out.width = 32; out.values.push_back(m_refused); return true; }
     if (field == "vector")   { out.values.push_back(m_irq.offered()); return true; }
+    if (field == "sd")       { out.width = 1; out.values.push_back(card().present() ? 1 : 0); return true; }
+    if (field == "file") {
+        out.width = 32;
+        out.values.push_back(m_io_mode);
+        out.values.push_back(m_rd.open ? 1 : 0);
+        out.values.push_back(m_rd.pos);
+        out.values.push_back(m_rd.size);
+        out.values.push_back(m_wr.open ? 1 : 0);
+        out.values.push_back(m_wr.pos);
+        return true;
+    }
     if (field == "trace")    { out.width = 8; for (uint16_t v : m_trace) out.values.push_back(v); return true; }
     if (field == "eeprom") {
         if (to < from) to = from;

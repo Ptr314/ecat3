@@ -595,6 +595,22 @@
 <context>
     <name>ConfigFields</name>
     <message>
+        <source>microSD card folder</source>
+        <translation>Каталог карты microSD</translation>
+    </message>
+    <message>
+        <source>microSD card writes</source>
+        <translation>Запись на карту microSD</translation>
+    </message>
+    <message>
+        <source>Into memory only, the folder stays as it was</source>
+        <translation>Только в память, каталог не меняется</translation>
+    </message>
+    <message>
+        <source>Into the files of the folder</source>
+        <translation>В файлы каталога</translation>
+    </message>
+    <message>
         <location filename="../emulator/devices/common/fdd.cpp" line="+1374"/>
         <source>Disk image</source>
         <translation>Образ диска</translation>
@@ -1907,6 +1923,10 @@
 <context>
     <name>ExtEditorWindow</name>
     <message>
+        <source>Select a folder</source>
+        <translation>Выбрать папку</translation>
+    </message>
+    <message>
         <location filename="../dialogs/exteditorwindow.ui" line="+14"/>
         <location filename="../dialogs/exteditorwindow.cpp" line="+383"/>
         <location line="+19"/>
@@ -2754,6 +2774,42 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message>
+        <source>&lt;No card&gt;</source>
+        <translation>&lt;Нет карты&gt;</translation>
+    </message>
+    <message>
+        <source>Choose a folder...</source>
+        <translation>Выбрать папку...</translation>
+    </message>
+    <message>
+        <source>Write into the folder</source>
+        <translation>Запись в папку</translation>
+    </message>
+    <message>
+        <source>Remove the card</source>
+        <translation>Вынуть карту</translation>
+    </message>
+    <message>
+        <source>Default folder</source>
+        <translation>Папка по умолчанию</translation>
+    </message>
+    <message>
+        <source>microSD card</source>
+        <translation>Карта microSD</translation>
+    </message>
+    <message>
+        <source>Choose the folder of the microSD card</source>
+        <translation>Папка карты microSD</translation>
+    </message>
+    <message>
+        <source>The machine has written %1 file(s) into the card&apos;s memory, not into the folder. They will be lost. Continue?</source>
+        <translation>Машина записала в память карты, а не в папку, файлов: %1. Они пропадут. Продолжить?</translation>
+    </message>
+    <message>
+        <source>The machine has written %1 file(s) into the card&apos;s memory. Write them into the folder too?</source>
+        <translation>Машина записала в память карты файлов: %1. Записать их и в папку?</translation>
+    </message>
     <message>
         <source>MainWindow</source>
         <translation type="vanished">eCat3</translation>

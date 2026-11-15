@@ -108,6 +108,21 @@ void HddImage::close_locked()
     m_overlay.clear();
 }
 
+bool HddImage::open_source(std::unique_ptr<HddSource> source, const std::string &name)
+{
+    close();
+    if (!source || source->size() == 0) return false;
+    const uint64_t size = source->size();
+    compat_lock_guard lock(m_mutex);
+    close_locked();
+    m_source = std::move(source);
+    m_file_name = name;
+    m_file_size = size;
+    m_size = (size + SECTOR_SIZE - 1) / SECTOR_SIZE * SECTOR_SIZE;
+    m_read_only = true;
+    return true;
+}
+
 void HddImage::close()
 {
     compat_lock_guard lock(m_mutex);

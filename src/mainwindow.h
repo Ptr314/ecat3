@@ -105,6 +105,13 @@ private slots:
     void fdd_default(unsigned int n);
     void hdd_default(unsigned int n);
 
+    //A microSD card socket (class "sdcard", the AZBK): a folder of the
+    //computer instead of an image
+    void sd_open(unsigned int n);
+    void sd_eject(unsigned int n);
+    void sd_write(unsigned int n);
+    void sd_default(unsigned int n);
+
     void update_fdds();                 //The lamps of the floppy and hard disk drives
 
     void on_actionScreenshot_triggered();
@@ -206,6 +213,16 @@ private:
     std::vector<ComputerDevice*> hdds;
     void hdd_show(unsigned int n);
     unsigned int hdds_found = 0;
+    // microSD card sockets: a button with a menu, as for a hard disk. Driven
+    // through the commands load (a folder), eject, protect, flush and the
+    // fields attached, path, protected, files
+    QToolButton * sd_button[2];
+    QMenu * sd_menu[2];
+    std::vector<ComputerDevice*> sds;
+    void sd_show(unsigned int n);
+    unsigned int sd_files(unsigned int n);
+    bool sd_files_may_go(unsigned int n);
+    unsigned int sds_found = 0;
     void fdd_show(unsigned int n);
     //Writes what a drive holds into the ini when the setting is on
     void disk_changed(ComputerDevice * dev);
@@ -299,6 +316,7 @@ private:
     void CreateScreenMenu();
     void CreateFDDMenu(unsigned int n);
     void CreateHDDMenu(unsigned int n);
+    void CreateSDMenu(unsigned int n);
 
     void set_title();
 

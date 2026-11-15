@@ -1505,6 +1505,10 @@
 <context>
     <name>ExtEditorWindow</name>
     <message>
+        <source>Select a folder</source>
+        <translation>Избор на папка</translation>
+    </message>
+    <message>
         <location filename="../dialogs/exteditorwindow.ui" line="+14"/>
         <location filename="../dialogs/exteditorwindow.cpp" line="+383"/>
         <location line="+19"/>
@@ -2230,6 +2234,42 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message>
+        <source>&lt;No card&gt;</source>
+        <translation>&lt;Няма карта&gt;</translation>
+    </message>
+    <message>
+        <source>Choose a folder...</source>
+        <translation>Избор на папка...</translation>
+    </message>
+    <message>
+        <source>Write into the folder</source>
+        <translation>Запис в папката</translation>
+    </message>
+    <message>
+        <source>Remove the card</source>
+        <translation>Изваждане на картата</translation>
+    </message>
+    <message>
+        <source>Default folder</source>
+        <translation>Папка по подразбиране</translation>
+    </message>
+    <message>
+        <source>microSD card</source>
+        <translation>Карта microSD</translation>
+    </message>
+    <message>
+        <source>Choose the folder of the microSD card</source>
+        <translation>Папка на картата microSD</translation>
+    </message>
+    <message>
+        <source>The machine has written %1 file(s) into the card&apos;s memory, not into the folder. They will be lost. Continue?</source>
+        <translation>Машината е записала в паметта на картата, а не в папката, файлове: %1. Те ще бъдат загубени. Продължаване?</translation>
+    </message>
+    <message>
+        <source>The machine has written %1 file(s) into the card&apos;s memory. Write them into the folder too?</source>
+        <translation>Машината е записала в паметта на картата файлове: %1. Да бъдат ли записани и в папката?</translation>
+    </message>
     <message>
         <location filename="../mainwindow.ui" line="+69"/>
         <source>File</source>

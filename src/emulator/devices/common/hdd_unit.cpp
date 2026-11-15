@@ -3,6 +3,11 @@
 // Part of the eCat3 project: https://github.com/Ptr314/ecat3
 // Description: A block device on an image file, for a controller that keeps several of them
 
+#include <algorithm>
+#include <cstring>
+#include <memory>
+#include <vector>
+
 #include "hdd_unit.h"
 #include "emulator/utils.h"
 #include "dsk_tools/core.h"
@@ -29,7 +34,8 @@ emulator::Result HddUnit::load_config(SystemData *sd)
     if (!res) return res;
     m_files = cd->get_parameter("files", false).value;   // подпись окна выбора, как написана
     m_image.set_write_protect(read_confg_value(cd, "write_protect", false, false));
-    m_image.set_volatile(read_confg_value(cd, "volatile", false, false));
+    m_volatile_config = read_confg_value(cd, "volatile", false, false);
+    m_image.set_volatile(m_volatile_config);
     // Образа может и не быть: гнездо пустое, образ вставляют командой load
     // Как написано: read_confg_value() приводит строку к нижнему регистру, и
     // образ с заглавными буквами в имени не находился там, где регистр
@@ -43,6 +49,46 @@ emulator::Result HddUnit::load_config(SystemData *sd)
         }
     }
     return emulator::Result::ok();
+}
+
+bool HddUnit::attach_file(const std::string &host_path, bool writable)
+{
+    std::string error;
+    m_image.set_volatile(!writable);
+    return m_image.open(host_path, error, !writable);
+}
+
+namespace {
+
+// Копия файла в памяти как источник образа
+class DataSource : public HddSource
+{
+    std::vector<uint8_t> m_data;
+public:
+    explicit DataSource(const std::vector<uint8_t> &data) : m_data(data) {}
+    uint64_t size() const override { return m_data.size(); }
+    bool read(uint64_t offset, uint8_t * buffer, size_t length) override
+    {
+        if (offset > m_data.size()) return false;
+        const size_t n = (size_t)std::min<uint64_t>(length, m_data.size() - offset);
+        if (n > 0) memcpy(buffer, m_data.data() + offset, n);
+        if (n < length) memset(buffer + n, 0, length - n);
+        return true;
+    }
+};
+
+} // namespace
+
+void HddUnit::detach()
+{
+    m_image.close();
+    m_image.set_volatile(m_volatile_config);
+}
+
+bool HddUnit::attach_data(const std::string &name, const std::vector<uint8_t> &data)
+{
+    m_image.set_volatile(true);
+    return m_image.open_source(std::unique_ptr<HddSource>(new DataSource(data)), name);
 }
 
 bool HddUnit::read_block(uint64_t block, uint8_t * buffer)
@@ -178,10 +224,12 @@ emulator::Result HddUnit::send_command(const std::string &command, const std::st
                 "{HddUnit|" + std::string(QT_TRANSLATE_NOOP("HddUnit", "Command 'load' expects a file name")) + "}");
         std::string file = find_file_location(sd, p[0]);
         if (file.empty()) file = p[0];
+        m_image.close();
+        m_image.set_volatile(m_volatile_config);
         return load_image(file);
     }
     if (command == "eject") {
-        m_image.close();
+        detach();
         return emulator::Result::ok();
     }
     if (command == "protect") {

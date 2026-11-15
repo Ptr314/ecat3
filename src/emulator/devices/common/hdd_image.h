@@ -56,6 +56,9 @@ public:
     // в память (set_volatile), файл на запись не нужен, а открытый так файл
     // поставки другие процессы (параллельный прогон тестов) могут не прочитать
     bool open(const std::string &file_name, std::string &error, bool read_only = false);
+    // Образ из источника, а не из файла (файл карты microSD AZBK, записанный
+    // машиной только в память): читается из него, записи остаются в памяти
+    bool open_source(std::unique_ptr<HddSource> source, const std::string &name);
     void close();
 
     bool attached() const { return m_file != nullptr || m_source; }

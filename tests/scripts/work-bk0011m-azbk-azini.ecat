@@ -1,0 +1,68 @@
+# БК0011М + AZBK: диски из AZ.INI карты microSD - при включении и по команде
+# 037, как у платы (AZMNT MAXIOL пишет AZ.INI и перезапускает плату, чтобы они
+# подключились). Карта tests/files/azbk-sd-ini, машина
+# tests/files/bk0011m-azbk-azini.ext; сценарий собирает
+# tests/files/make-azbk-sd-test.py.
+#
+# 1. В AZ.INI - D1=0:/disks/test.img, D02 (файла нет), D5 (привода нет). После
+#    включения AZ1 - TEST.IMG, в таблице 011 - строкой из AZ.INI; AZ2 пуст, AZ0
+#    (в AZ.INI его нет) - andos330.img конфигурации, с него и грузится система.
+# 2. Новый AZ.INI - только D3 - пишется в память карты (023 053 054 023 055) и
+#    команда 037 перезапускает плату: AZ1, смонтированный с карты и больше не
+#    названный, снят, AZ3 - TEST.IMG, AZ0 по-прежнему andos330.img.
+# @timeout 60
+
+MACHINE "../../tests/files/bk0011m-azbk-azini.ext"
+LOGDEFS _16,_8
+WAIT _500
+PRINT "=== 1. После включения ==="
+LOG az0.file
+LOG az1.attached
+LOG az1.file
+LOG az2.attached
+LOG az3.attached
+COMMAND cpu.stop()
+COMMAND ram0.set16(1000, 012701, 177220, 012702, 004000, 012705, 006000, 012203, 001430)
+COMMAND ram0.set16(1020, 012204, 005303, 001005, 010411, 105711, 100376, 011125, 000766)
+COMMAND ram0.set16(1040, 005303, 001003, 010461, 000002, 000761, 005303, 001004, 016125)
+COMMAND ram0.set16(1060, 000002, 077403, 000753, 012403, 010361, 000002, 001374, 000746)
+COMMAND ram0.set16(1100, 000777)
+PRINT "=== 1. Таблица 011: AZ1 ==="
+COMMAND cpu.stop()
+COMMAND ram0.set16(4000, 000001, 000000, 000001, 000011, 000001, 000015, 000003, 000306)
+COMMAND ram0.set16(4020, 000003, 000020, 000000, 000000)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+WAIT _100
+PRINT "011 AZ1: размер, флаги, имя"
+LOG ram0.value16(6622, 6661)
+LOG cpu.registers
+PRINT "=== 2. Новый AZ.INI и 037 ==="
+COMMAND cpu.stop()
+COMMAND ram0.set16(10000, 055101, 044456, 044516, 000000)
+COMMAND ram0.set16(4000, 000001, 000000, 000001, 000023, 000004, 010000, 000001, 000000)
+COMMAND ram0.set16(4020, 000001, 000053, 000001, 000054, 000002, 000037, 000002, 000000)
+COMMAND ram0.set16(4040, 000001, 000023, 000002, 042133, 000002, 051511, 000002, 051513)
+COMMAND ram0.set16(4060, 000002, 006535, 000002, 042012, 000002, 036463, 000002, 035060)
+COMMAND ram0.set16(4100, 000002, 042057, 000002, 051511, 000002, 051513, 000002, 052057)
+COMMAND ram0.set16(4120, 000002, 051505, 000002, 027124, 000002, 046511, 000002, 006507)
+COMMAND ram0.set16(4140, 000002, 000012, 000001, 000055, 000000, 000000)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+WAIT _100
+PRINT "CSR 053"
+LOG ram0.value16(6006, 6007)
+PRINT "CSR 055"
+LOG ram0.value16(6014, 6015)
+LOG cpu.registers
+LOG az-sd.files
+COMMAND mapper.set16(177220, 37)
+WAIT _1000
+PRINT "=== 2. После 037 ==="
+LOG az0.file
+LOG az1.attached
+LOG az3.attached
+LOG az3.file
+EXIT

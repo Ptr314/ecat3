@@ -13,6 +13,7 @@ set(ECAT_CORE_SOURCES
     emulator/config.cpp emulator/config.h
     emulator/config_ext.cpp emulator/config_ext.h
     emulator/cache.cpp emulator/cache.h
+    emulator/host_dir.cpp emulator/host_dir.h
     emulator/video_recorder.cpp emulator/video_recorder.h
     emulator/config_fields.cpp emulator/config_fields.h
     emulator/state.cpp emulator/state.h
@@ -124,6 +125,7 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/azbk_display.h emulator/devices/specific/azbk_display.cpp
     emulator/devices/specific/azbk_sound.h emulator/devices/specific/azbk_sound.cpp
     emulator/devices/specific/azbk_disk.h emulator/devices/specific/azbk_disk.cpp
+    emulator/devices/specific/azbk_sdcard.h emulator/devices/specific/azbk_sdcard.cpp
     emulator/devices/common/hdd_unit.h emulator/devices/common/hdd_unit.cpp
     emulator/devices/specific/a16m.h emulator/devices/specific/a16m.cpp
     emulator/devices/specific/uknc_timer.h emulator/devices/specific/uknc_timer.cpp
