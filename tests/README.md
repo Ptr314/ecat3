@@ -181,7 +181,10 @@ python tests/run_tests.py --update -k boot-bk-0011m
 `work-bk0011m-azbk-sd` и `work-bk0011m-azbk-azini` (таблицы операций для
 интерпретатора в ОЗУ БК) собирает `files/make-azbk-sd-test.py`; их карты microSD &ndash;
 каталоги `files/azbk-sd` (файлы без переводов строк, чтобы размер не зависел от
-`core.autocrlf`) и `files/azbk-sd-ini` (с AZ.INI).
+`core.autocrlf`) и `files/azbk-sd-ini` (с AZ.INI). `files/azhwt.bin` и `files/azpic.bin` -
+пробы платы AZBK, их исходники и сборка - в `tools/azbk-hwtest` (`build.py` кладет
+копии сюда); `work-bk0011m-azbk-hwtest` и `work-bk0011m-azbk-azpic` - ответы модели на
+них, их снимки идут в пакет для владельцев плат.
 
 ## Тесты сохраненного состояния
 

@@ -1,0 +1,939 @@
+; AZHWT - проба платы AZBK на БК0011М: ответы ПЛИС на вопросы, которых не
+; закрывает прошивка STM32 (eCat3, tools/azbk-hwtest/README.md).
+; Запуск из ANDOS как обычной программы (с 01000). Отчет - на экран и в файл
+; 0:/AZHWT.TXT на карте; все числа еще и в таблице RESULT (01400) по порядку.
+; Числа восьмеричные, времена - десятичные (тики таймера БК, 31250 Гц).
+; Собирается tools/azbk-hwtest/asm11.py (build.py).
+
+CSR     = 177220
+DR      = 177222
+WPAG7   = 177316                ; страница окна 7 (070000-077777)
+WACT    = 177340                ; окна: активные
+WRO     = 177342                ; запрет записи
+WSHD    = 177344                ; тень
+BLTC    = 177270
+BLTP    = 177272
+TPRE    = 177706
+TCNT    = 177710
+TCTL    = 177712
+KBS     = 177660
+KBD     = 177662
+PORT    = 177714
+AY1     = 177172
+AY2     = 177174
+
+PAGEP   = 1202                  ; страница AZ для пробы окна
+PAGEQ   = 1201                  ; пакет блиттера
+PAGET   = 1200                  ; куда пишет блиттер: слово 024 000000
+RESULT  = 14000                 ; таблица чисел (256 слов)
+RBUF    = 15000                 ; текст отчета
+REND    = 27000
+SAVBUF  = 30000                 ; ОЗУ БК под окном 7 (4 КБ)
+
+        . = 1000
+START:  MOV     @#4,SV4
+        MOV     @#6,SV6
+        MOV     #TRAP4,@#4
+        MOV     #340,@#6
+        MOV     @#177230,SV230          ; экран AZ - черно-белый 512x256
+        MOV     #12100,@#177230
+        MOV     #RESULT,R1
+        MOV     #400,R2
+1$:     CLR     (R1)+
+        SOB     R2,1$
+        MOV     #RESULT,RESP
+        MOV     #RBUF,RPTR
+        MOV     #14,R0                  ; чистый экран
+        JSR     PC,PUTC
+
+;---------------------------------------------------------------- 1. версии
+        MOV     #T.HEAD,R1
+        JSR     PC,PRS
+        MOV     @#177370,R0
+        MOV     #T.370,R1
+        JSR     PC,OVAL
+        MOV     @#177346,R0
+        MOV     #T.346,R1
+        JSR     PC,OVAL
+        MOV     @#177212,R0
+        MOV     #T.212,R1
+        JSR     PC,OVAL
+        JSR     PC,NL
+        JSR     PC,AZRST
+        MOV     #27,R0
+        JSR     PC,AZCMD
+        MOV     #T.027,R1
+        JSR     PC,OVAL
+        MOV     #3,R2
+2$:     MOV     @#DR,R0
+        MOV     #T.NONE,R1
+        JSR     PC,OVAL
+        SOB     R2,2$
+        JSR     PC,NL
+
+;------------------------------------------------- 2. слово ошибки (прошивка)
+        JSR     PC,AZRST
+        MOV     #40,@#DR
+        MOV     #1,R0
+        JSR     PC,AZCMD
+        MOV     #T.001,R1
+        JSR     PC,OVAL
+        MOV     @#DR,R0
+        MOV     #T.DR,R1
+        JSR     PC,OVAL
+        JSR     PC,AZRST
+        MOV     #13,R0
+        JSR     PC,AZCMD
+        MOV     #T.013,R1
+        JSR     PC,OVAL
+        MOV     @#DR,R0
+        MOV     #T.DR,R1
+        JSR     PC,OVAL
+        JSR     PC,NL
+        JSR     PC,AZRST
+        CLR     @#DR
+        MOV     #1,R0
+        JSR     PC,AZCMD
+        MOV     #7,R0
+        JSR     PC,AZCMD
+        MOV     #T.007,R1
+        JSR     PC,OVAL
+        MOV     @#DR,R0
+        MOV     #T.DR,R1
+        JSR     PC,OVAL
+        JSR     PC,NL
+
+;-------------------------------------- 3. Б.7 177176, Б.6 Covox: чтение
+        MOV     #T.REG1,R1
+        MOV     #RDTAB,R2
+        JSR     PC,PRREG
+        CLR     TRAPS
+        MOV     #12345,@#177200
+        MOV     #54321,@#177202
+        MOV     TRAPS,R0
+        MOV     #T.WT,R1
+        JSR     PC,OVAL
+        JSR     PC,NL
+        MOV     #T.REG2,R1
+        MOV     #RDTAB2,R2
+        JSR     PC,PRREG
+        MOV     #34567,@#177204
+        MOV     #T.REG3,R1
+        MOV     #RDTAB2,R2
+        JSR     PC,PRREG
+        MOV     #41501,@#177206
+        MOV     #T.REG4,R1
+        MOV     #RDTAB2,R2
+        JSR     PC,PRREG
+        CLR     @#177200
+        CLR     @#177202
+
+;------------------------------------------- 4. Б.12 окно: ИЛИ и запрет записи
+        MTPS    #340
+        JSR     PC,WSAVE
+        JSR     PC,ZBK
+        MOV     #PAGEP,R0
+        JSR     PC,W7ON
+        MOV     #12345,@#70000          ; запись в активное окно
+        MOV     @#70000,R0
+        MOV     #T.WW,R1
+        JSR     PC,OVAL
+        JSR     PC,W7OFF
+        MOV     @#70000,R0              ; дошла ли до ОЗУ БК
+        MOV     #T.WBK,R1
+        JSR     PC,OVAL
+        CLR     @#70000
+        MOV     #PAGEP,R0
+        JSR     PC,W7ON
+        MOV     @#70000,R0              ; страница AZ (ОЗУ БК - 0)
+        MOV     #T.WAZ,R1
+        JSR     PC,OVAL
+        MOV     #7417,@#70000
+        JSR     PC,W7OFF
+        MOV     #30060,@#70000          ; ОЗУ БК 030060, страница 007417
+        MOV     #PAGEP,R0
+        JSR     PC,W7ON
+        MOV     @#70000,R0              ; 037477 - ИЛИ
+        MOV     #T.WOR,R1
+        JSR     PC,OVAL
+        JSR     PC,NL
+        JSR     PC,W7OFF
+        CLR     @#70000
+        MOV     #PAGEP,R0
+        JSR     PC,W7ON
+        BIS     #200,@#WRO
+        CLR     TRAPS
+        MOV     #360,@#70000            ; запись в окно с запретом
+        MOV     TRAPS,R0
+        MOV     #T.ROT,R1
+        JSR     PC,OVAL
+        MOV     @#70000,R0
+        MOV     #T.ROR,R1
+        JSR     PC,OVAL
+        BIC     #200,@#WRO
+        JSR     PC,W7OFF
+        MOV     @#70000,R0
+        MOV     #T.ROBK,R1
+        JSR     PC,OVAL
+        JSR     PC,NL
+        MTPS    #0
+        JSR     PC,PAUSE
+        MTPS    #340
+
+;--------------------------------------- 5. Б.13 память AZ после включения
+        MOV     #PGTAB,R2
+3$:     MOV     (R2)+,R0
+        BEQ     6$
+        MOV     R2,-(SP)
+        MOV     R0,-(SP)
+        JSR     PC,ZBK
+        MOV     (SP),R0
+        JSR     PC,W7ON
+        MOV     #T.PG,R1
+        JSR     PC,PRS
+        MOV     (SP)+,R0
+        JSR     PC,PROCT
+        MOV     #':,R0
+        JSR     PC,PUTC
+        MOV     #70000,R5
+        MOV     #4,R2
+4$:     MOV     (R5)+,R0
+        MOV     #T.NONE,R1
+        JSR     PC,OVAL
+        SOB     R2,4$
+        MOV     #70000,R1               ; ненулевых слов и сумма
+        MOV     #4000,R2
+        CLR     R3
+        CLR     R4
+5$:     MOV     (R1)+,R0
+        BEQ     7$
+        INC     R3
+7$:     ADD     R0,R4
+        SOB     R2,5$
+        MOV     R3,R0
+        MOV     #T.NZ,R1
+        JSR     PC,DVAL
+        MOV     R4,R0
+        MOV     #T.SUM,R1
+        JSR     PC,OVAL
+        JSR     PC,NL
+        JSR     PC,W7OFF
+        MOV     (SP)+,R2
+        BR      3$
+6$:     JSR     PC,WREST
+        MTPS    #0
+
+;------------------------------------------------ 6. Б.5 время памяти AZ
+        MOV     #T.TIME,R1
+        JSR     PC,PRS
+        MTPS    #340
+        JSR     PC,WSAVE
+        MOV     #70000,R1
+        MOV     #RDLOOP,R5
+        JSR     PC,TIME
+        MOV     #T.T1,R1
+        JSR     PC,DVAL
+        MOV     #PAGEP,R0
+        JSR     PC,W7ON
+        MOV     #70000,R1
+        JSR     PC,TIME
+        MOV     #T.T2,R1
+        JSR     PC,DVAL
+        JSR     PC,W7OFF
+        MOV     #70000,R1
+        MOV     #WRLOOP,R5
+        JSR     PC,TIME
+        MOV     #T.T3,R1
+        JSR     PC,DVAL
+        MOV     #PAGEP,R0
+        JSR     PC,W7ON
+        MOV     #70000,R1
+        JSR     PC,TIME
+        MOV     #T.T4,R1
+        JSR     PC,DVAL
+        JSR     PC,W7OFF
+        JSR     PC,WREST
+        JSR     PC,NL
+        MOV     @#WACT,R0               ; окна 12-15, как их оставила система
+        MOV     R0,SACT2
+        MOV     #T.ACT,R1
+        JSR     PC,OVAL
+        MOV     #140000,R1
+        MOV     #RDLOOP,R5
+        JSR     PC,TIME
+        MOV     #T.T5,R1
+        JSR     PC,DVAL
+        MOV     #10000,R0               ; окно 12 - наоборот
+        BIT     R0,SACT2
+        BEQ     8$
+        BIC     R0,@#WACT
+        BR      9$
+8$:     BIS     R0,@#WACT
+9$:     CLR     TRAPS
+        MOV     @#140000,R0             ; отвечает ли кто-нибудь
+        MOV     TRAPS,R0
+        BNE     10$
+        MOV     #140000,R1
+        JSR     PC,TIME
+10$:    MOV     SACT2,@#WACT
+        MOV     #T.T6,R1
+        JSR     PC,DVAL
+        MOV     TRAPS,R0
+        MOV     #T.TT,R1
+        JSR     PC,OVAL
+        JSR     PC,NL
+        MTPS    #0
+        JSR     PC,PAUSE
+
+;------------------------------------------------------- 7. Б.8 блиттер
+        MOV     #T.BLT,R1
+        JSR     PC,PRS
+        MTPS    #340
+        JSR     PC,WSAVE
+        MOV     #BLTA,R2                ; 0 строк, ширина 4, приращение 4
+        JSR     PC,BCLR
+        JSR     PC,BPACK
+        JSR     PC,BGO2
+        JSR     PC,BCOUNT
+        MOV     #T.BA,R1
+        JSR     PC,BREP
+        MOV     #BLTB,R2                ; 2 строки, приращение 0
+        JSR     PC,BCLR
+        JSR     PC,BPACK
+        JSR     PC,BGO2
+        JSR     PC,BCOUNT
+        MOV     #T.BB,R1
+        JSR     PC,BREP
+        MOV     #BLTC1,R2               ; пуск разрядом 12 без ручного режима
+        JSR     PC,BCLR
+        JSR     PC,BPACK
+        CLR     @#BLTC
+        MOV     #PAGEQ,@#BLTP
+        MOV     #50001,@#BLTC
+        JSR     PC,BWAIT
+        JSR     PC,BCOUNT
+        MOV     #T.BC1,R1
+        JSR     PC,BREP
+        MOV     #50001,@#BLTC           ; еще раз - теперь режим ручной
+        JSR     PC,BWAIT
+        JSR     PC,BCOUNT
+        MOV     #T.BC2,R1
+        JSR     PC,BREP
+        CLR     @#BLTC
+        JSR     PC,WREST
+        MTPS    #0
+
+;------------------------------------------- 8. Б.11 IE при DONE = 1
+        MOV     #T.IE,R1
+        JSR     PC,PRS
+        JSR     PC,AZRST
+        MOV     #130,R0                 ; 030 + IE
+        MOV     #T.I30,R1
+        JSR     PC,IETST
+        JSR     PC,AZRST
+        CLR     @#DR
+        MOV     #101,R0                 ; 001 + IE
+        MOV     #T.I01,R1
+        JSR     PC,IETST
+        JSR     PC,AZRST
+        MOV     #121,R0                 ; 021 + IE: длительная
+        MOV     #T.I21,R1
+        JSR     PC,IETST
+        MOV     #130,R0                 ; снова 030 + IE после нее
+        MOV     #T.I30,R1
+        JSR     PC,IETST
+        JSR     PC,AZRST
+        JSR     PC,NL
+
+;------------------------------------------------ 9. отчет в файл на карте
+        MOV     RPTR,R0
+        SUB     #RBUF,R0
+        MOV     R0,RLEN
+        JSR     PC,WFILE
+        MOV     R0,-(SP)
+        MOV     #T.FILE,R1
+        JSR     PC,PRS
+        MOV     (SP)+,R0
+        MOV     #T.LEN,R1
+        JSR     PC,DVAL
+        MOV     RLEN,R0
+        MOV     #T.OF,R1
+        JSR     PC,DVAL
+        JSR     PC,NL
+        JSR     PC,PAUSE
+
+;------------------------------------------------- 10. звук: на слух
+        MOV     #T.AYF,R1
+        JSR     PC,PRS
+        MOV     #AY1,R1
+        MOV     #TONEA,R2
+        MOV     #T.S1,R3
+        JSR     PC,AYSTG
+        MOV     #AY1,R1
+        MOV     #TONEC,R2
+        MOV     #T.S2,R3
+        JSR     PC,AYSTG
+        MOV     #AY1,R1
+        MOV     #TONEB,R2
+        MOV     #T.S3,R3
+        JSR     PC,AYSTG
+        MOV     #AY2,R1
+        MOV     #TONEA,R2
+        MOV     #T.S4,R3
+        JSR     PC,AYSTG
+        MOV     #T.S5,R1                ; Б.2: AY через 0177714
+        JSR     PC,PRS
+        MOV     #PTONE,R2
+        JSR     PC,PAY
+        JSR     PC,PAUSE
+        MOV     #PSIL,R2
+        JSR     PC,PAY
+        MOV     #T.S6,R1                ; Б.2: Covox через 0177714
+        JSR     PC,PRS
+        JSR     PC,COVSQ
+        CLRB    @#PORT
+
+;------------------------------------------------------------- выход
+        MOV     #T.END,R1
+        JSR     PC,PRS
+        MTPS    #340
+        MOV     SV4,@#4
+        MOV     SV6,@#6
+        MTPS    #0
+        EMT     6
+        MOV     SV230,@#177230
+        JMP     @#100000
+
+;================================================================ подпрограммы
+
+TRAP4:  INC     TRAPS
+        RTI
+AZIRQ:  INC     IRQS
+        RTI
+
+; Символ R0 - на экран (EMT 16) и в текст отчета (\n - как \r\n)
+PUTC:   MOV     R1,-(SP)
+        MOV     R2,-(SP)
+        MOV     R3,-(SP)
+        MOV     R4,-(SP)
+        MOV     R5,-(SP)
+        MOV     R0,-(SP)
+        CMPB    R0,#14
+        BEQ     2$
+        MOV     RPTR,R1
+        CMP     R1,#REND
+        BHIS    2$
+        CMPB    R0,#12
+        BNE     1$
+        MOVB    #15,(R1)+
+1$:     MOVB    R0,(R1)+
+        MOV     R1,RPTR
+2$:     EMT     16
+        MOV     (SP)+,R0
+        MOV     (SP)+,R5
+        MOV     (SP)+,R4
+        MOV     (SP)+,R3
+        MOV     (SP)+,R2
+        MOV     (SP)+,R1
+        RTS     PC
+
+; Строка R1 до нуля
+PRS:    MOVB    (R1)+,R0
+        BEQ     1$
+        JSR     PC,PUTC
+        BR      PRS
+1$:     RTS     PC
+
+NL:     MOV     R0,-(SP)
+        MOV     #12,R0
+        JSR     PC,PUTC
+        MOV     (SP)+,R0
+        RTS     PC
+
+; R0 - шесть восьмеричных цифр
+PROCT:  MOV     R0,-(SP)
+        MOV     R1,-(SP)
+        MOV     R2,-(SP)
+        MOV     R0,R1
+        CLR     R0
+        ASL     R1
+        ROL     R0
+        ADD     #'0,R0
+        JSR     PC,PUTC
+        MOV     #5,R2
+1$:     CLR     R0
+        ASL     R1
+        ROL     R0
+        ASL     R1
+        ROL     R0
+        ASL     R1
+        ROL     R0
+        ADD     #'0,R0
+        JSR     PC,PUTC
+        SOB     R2,1$
+        MOV     (SP)+,R2
+        MOV     (SP)+,R1
+        MOV     (SP)+,R0
+        RTS     PC
+
+; R0 - десятичное без знака
+PRDEC:  MOV     R0,-(SP)
+        MOV     R1,-(SP)
+        MOV     R2,-(SP)
+        MOV     R3,-(SP)
+        MOV     R0,R1
+        MOV     #DTAB,R2
+        CLR     R3
+1$:     CLR     R0
+2$:     CMP     R1,(R2)
+        BLO     3$
+        SUB     (R2),R1
+        INC     R0
+        BR      2$
+3$:     TST     (R2)+
+        TST     R0
+        BNE     4$
+        TST     R3
+        BNE     4$
+        CMP     R2,#DTEND
+        BNE     5$
+4$:     INC     R3
+        ADD     #'0,R0
+        JSR     PC,PUTC
+5$:     CMP     R2,#DTEND
+        BLO     1$
+        MOV     (SP)+,R3
+        MOV     (SP)+,R2
+        MOV     (SP)+,R1
+        MOV     (SP)+,R0
+        RTS     PC
+
+; Подпись R1, число R0 (OVAL - восьмеричное, DVAL - десятичное) и пробел;
+; число - в таблицу
+OVAL:   MOV     R0,@RESP
+        ADD     #2,RESP
+        MOV     R0,-(SP)
+        JSR     PC,PRS
+        MOV     (SP)+,R0
+        JSR     PC,PROCT
+        BR      VALSP
+DVAL:   MOV     R0,@RESP
+        ADD     #2,RESP
+        MOV     R0,-(SP)
+        JSR     PC,PRS
+        MOV     (SP)+,R0
+        JSR     PC,PRDEC
+VALSP:  MOV     R0,-(SP)
+        MOV     #' ,R0
+        JSR     PC,PUTC
+        MOV     (SP)+,R0
+        RTS     PC
+
+; Подпись R1, затем регистры из списка R2 (до нуля): значение, T - ловушка
+PRREG:  JSR     PC,PRS
+1$:     TST     (R2)
+        BEQ     3$
+        CLR     TRAPS
+        MOV     #123456,R0
+        MOV     @(R2)+,R0
+        MOV     R0,@RESP
+        ADD     #2,RESP
+        MOV     TRAPS,@RESP
+        ADD     #2,RESP
+        JSR     PC,PROCT
+        TST     TRAPS
+        BEQ     2$
+        MOV     #'T,R0
+        JSR     PC,PUTC
+2$:     MOV     #' ,R0
+        JSR     PC,PUTC
+        BR      1$
+3$:     JSR     PC,NL
+        RTS     PC
+
+; Контроллер AZ: сброс; команда R0 и ожидание готовности, CSR - в R0
+AZRST:  CLR     R0
+AZCMD:  MOV     R4,-(SP)
+        MOV     R0,@#CSR
+        CLR     R4
+1$:     TSTB    @#CSR
+        BMI     2$
+        SOB     R4,1$
+2$:     MOV     @#CSR,R0
+        MOV     (SP)+,R4
+        RTS     PC
+
+; Проба прерывания: команда R0 в CSR, ожидание готовности, пауза; сколько
+; раз пришло прерывание 0174 - с подписью R1. Вектор 0174 стоит только на это
+; время: в 0170-0177 у БОС свои переменные, вывод на экран их меняет
+IETST:  MOV     R1,-(SP)
+        MTPS    #340
+        MOV     @#174,-(SP)
+        MOV     @#176,-(SP)
+        MOV     #AZIRQ,@#174
+        MOV     #340,@#176
+        CLR     IRQS
+        MTPS    #0
+        MOV     R0,@#CSR
+        CLR     R4
+1$:     TSTB    @#CSR
+        BMI     2$
+        SOB     R4,1$
+2$:     JSR     PC,DELAY
+        MTPS    #340
+        MOV     (SP)+,@#176
+        MOV     (SP)+,@#174
+        MTPS    #0
+        MOV     IRQS,R0
+        MOV     (SP)+,R1
+        JSR     PC,OVAL
+        RTS     PC
+
+DELAY:  MOV     R4,-(SP)
+        MOV     #20000,R4
+1$:     SOB     R4,1$
+        MOV     (SP)+,R4
+        RTS     PC
+
+; Ожидание клавиши (прерывания разрешены)
+PAUSE:  MOV     #T.KEY,R1
+        JSR     PC,PRS
+        EMT     6
+        MOV     #14,R0
+        JSR     PC,PUTC
+        RTS     PC
+
+; Окно 7 (070000-077777): регистры и ОЗУ БК под ним - сохранить; окно и тень
+; выключены
+WSAVE:  MOV     @#WPAG7,SW7
+        MOV     @#WACT,SACT
+        MOV     @#WRO,SRO
+        MOV     @#WSHD,SSHD
+        BIC     #200,@#WACT
+        BIC     #200,@#WSHD
+        MOV     #70000,R1
+        MOV     #SAVBUF,R2
+        MOV     #4000,R3
+1$:     MOV     (R1)+,(R2)+
+        SOB     R3,1$
+        RTS     PC
+
+WREST:  BIC     #200,@#WACT
+        BIC     #200,@#WSHD
+        MOV     #SAVBUF,R1
+        MOV     #70000,R2
+        MOV     #4000,R3
+1$:     MOV     (R1)+,(R2)+
+        SOB     R3,1$
+        MOV     SSHD,@#WSHD
+        MOV     SRO,@#WRO
+        MOV     SW7,@#WPAG7
+        MOV     SACT,@#WACT
+        RTS     PC
+
+; ОЗУ БК под окном 7 - нули (окно выключено): читая через окно, видно
+; страницу AZ, даже если ОЗУ БК отвечает вместе с ней
+ZBK:    BIC     #200,@#WACT
+        MOV     R1,-(SP)
+        MOV     R3,-(SP)
+        MOV     #70000,R1
+        MOV     #4000,R3
+1$:     CLR     (R1)+
+        SOB     R3,1$
+        MOV     (SP)+,R3
+        MOV     (SP)+,R1
+        RTS     PC
+
+W7ON:   MOV     R0,@#WPAG7
+        BIC     #200,@#WRO
+        BIS     #200,@#WACT
+        RTS     PC
+
+W7OFF:  BIC     #200,@#WACT
+        RTS     PC
+
+; Время цикла R5 по адресу R1: 1000 проходов по 8 обращений; тики - в R0
+TIME:   MOV     #177777,@#TPRE
+        MOV     #20,@#TCTL
+        MOV     @#TCNT,R2
+        MOV     #1000.,R3
+        JSR     PC,(R5)
+        MOV     @#TCNT,R0
+        NEG     R0
+        ADD     R2,R0
+        RTS     PC
+
+RDLOOP: MOV     (R1),R0
+        MOV     (R1),R0
+        MOV     (R1),R0
+        MOV     (R1),R0
+        MOV     (R1),R0
+        MOV     (R1),R0
+        MOV     (R1),R0
+        MOV     (R1),R0
+        SOB     R3,RDLOOP
+        RTS     PC
+
+WRLOOP: MOV     R0,(R1)
+        MOV     R0,(R1)
+        MOV     R0,(R1)
+        MOV     R0,(R1)
+        MOV     R0,(R1)
+        MOV     R0,(R1)
+        MOV     R0,(R1)
+        MOV     R0,(R1)
+        SOB     R3,WRLOOP
+        RTS     PC
+
+; Блиттер: страница T - нули, пакет R2 (8 слов) - в страницу Q
+BCLR:   MOV     #PAGET,R0
+        JSR     PC,W7ON
+        MOV     #70000,R1
+        MOV     #4000,R3
+1$:     CLR     (R1)+
+        SOB     R3,1$
+        RTS     PC
+
+BPACK:  MOV     #PAGEQ,R0
+        JSR     PC,W7ON
+        MOV     #70000,R1
+        MOV     #10,R3
+1$:     MOV     (R2)+,(R1)+
+        SOB     R3,1$
+        JSR     PC,W7OFF
+        JSR     PC,ZBK
+        RTS     PC
+
+; Ручной режим, затем пуск разрядом 12
+BGO2:   CLR     @#BLTC
+        MOV     #PAGEQ,@#BLTP
+        MOV     #40001,@#BLTC
+        MOV     #50001,@#BLTC
+BWAIT:  MOV     R3,-(SP)
+        CLR     R3
+1$:     TST     @#BLTC
+        BPL     2$
+        SOB     R3,1$
+2$:     MOV     (SP)+,R3
+        RTS     PC
+
+; Слова 052525 в странице T: R3 - сколько, R4 - смещение первого после
+; слова 3 (177777 - нет), R5 - последнего
+BCOUNT: MOV     #PAGET,R0
+        JSR     PC,W7ON
+        MOV     #70000,R1
+        CLR     R3
+        MOV     #177777,R4
+        MOV     #177777,R5
+        CLR     R2
+1$:     CMP     (R1)+,#52525
+        BNE     2$
+        INC     R3
+        MOV     R2,R5
+        CMP     R2,#3
+        BLOS    2$
+        CMP     R4,#177777
+        BNE     2$
+        MOV     R2,R4
+2$:     INC     R2
+        CMP     R2,#4000
+        BLO     1$
+        JSR     PC,W7OFF
+        RTS     PC
+
+BREP:   MOV     R3,R0
+        JSR     PC,DVAL
+        MOV     R4,R0
+        MOV     #T.B2,R1
+        JSR     PC,OVAL
+        MOV     R5,R0
+        MOV     #T.BL,R1
+        JSR     PC,OVAL
+        MOV     @#BLTC,R0
+        MOV     #T.BS,R1
+        JSR     PC,OVAL
+        JSR     PC,NL
+        RTS     PC
+
+; Отчет - в 0:/AZHWT.TXT (023 имя, 053, 054 длина, 023 + 055 по 512 байт);
+; в R0 - длина, которую потом отдает 051 после 050 (0 - не вышло)
+WFILE:  JSR     PC,FNAME
+        JSR     PC,AZRST
+        MOV     #53,R0
+        JSR     PC,AZCMD
+        MOV     #54,R0
+        JSR     PC,AZCMD
+        MOV     RLEN,@#DR
+        CLR     @#DR
+        MOV     #RBUF,R1
+        MOV     RLEN,R2
+1$:     MOV     #23,R0
+        JSR     PC,AZCMD
+        MOV     #400,R3
+2$:     MOV     (R1)+,@#DR
+        SOB     R3,2$
+        MOV     #55,R0
+        JSR     PC,AZCMD
+        SUB     #1000,R2
+        BHI     1$
+        JSR     PC,FNAME
+        MOV     #50,R0
+        JSR     PC,AZCMD
+        MOV     #51,R0
+        JSR     PC,AZCMD
+        MOV     @#DR,-(SP)
+        MOV     @#DR,R1
+        JSR     PC,AZRST
+        MOV     (SP)+,R0
+        RTS     PC
+
+FNAME:  JSR     PC,AZRST
+        MOV     #23,R0
+        JSR     PC,AZCMD
+        MOV     #FNAMS,R1
+1$:     MOV     (R1)+,@#DR
+        BNE     1$
+        JSR     PC,AZRST
+        RTS     PC
+
+; Звук: слова R2 (регистр + значение * 400, до 177777) - в AY по адресу R1;
+; подпись R3, ожидание клавиши, тишина
+AYSTG:  MOV     R1,-(SP)
+        MOV     R3,R1
+        JSR     PC,PRS
+        MOV     (SP),R1
+        JSR     PC,AYW
+        JSR     PC,PAUSE
+        MOV     (SP)+,R1
+        MOV     #SILENT,R2
+        JSR     PC,AYW
+        RTS     PC
+
+AYW:    MOV     (R2)+,R0
+        CMP     R0,#177777
+        BEQ     1$
+        MOV     R0,(R1)
+        BR      AYW
+1$:     RTS     PC
+
+; AY приставки БК через 0177714: слово - номер регистра, байт - данные, оба
+; дополнением. Пары регистр, значение до 177777
+PAY:    MOV     (R2)+,R0
+        CMP     R0,#177777
+        BEQ     1$
+        COM     R0
+        MOV     R0,@#PORT
+        MOV     (R2)+,R0
+        COM     R0
+        MOVB    R0,@#PORT
+        BR      PAY
+1$:     RTS     PC
+
+; Covox через 0177714: меандр около 500 Гц до клавиши (опрос 0177660)
+COVSQ:  MTPS    #340
+1$:     MOVB    #377,@#PORT
+        MOV     #400,R4
+2$:     SOB     R4,2$
+        CLRB    @#PORT
+        MOV     #400,R4
+3$:     SOB     R4,3$
+        TSTB    @#KBS
+        BPL     1$
+        MOV     @#KBD,R0
+        MTPS    #0
+        RTS     PC
+
+;===================================================================== данные
+TRAPS:  .WORD   0
+IRQS:   .WORD   0
+RESP:   .WORD   0
+RPTR:   .WORD   0
+RLEN:   .WORD   0
+SV4:    .WORD   0
+SV6:    .WORD   0
+SV230:  .WORD   0
+SW7:    .WORD   0
+SACT:   .WORD   0
+SRO:    .WORD   0
+SSHD:   .WORD   0
+SACT2:  .WORD   0
+DTAB:   .WORD   10000.,1000.,100.,10.,1.
+DTEND:
+RDTAB:  .WORD   177176,177200,177202,177204,177206,0
+RDTAB2: .WORD   177200,177202,177204,177206,0
+PGTAB:  .WORD   206,1000,1100,2000,3777,17777,0
+; Блиттер: заливка 052525 в страницу T (слово 024 000000)
+BLTA:   .WORD   24,0,0,0,<0*400>+3,4,0,125
+BLTB:   .WORD   24,0,0,0,<2*400>+3,0,0,125
+BLTC1:  .WORD   24,0,0,0,<1*400>+3,4,0,125
+; AY: тон 256 (такт / 4096) канала A, C, B; тишина
+TONEA:  .WORD   0,1+<1*400>,10+<17*400>,7+<76*400>,177777
+TONEC:  .WORD   4,5+<1*400>,12+<17*400>,7+<73*400>,177777
+TONEB:  .WORD   2,3+<1*400>,11+<17*400>,7+<75*400>,177777
+SILENT: .WORD   7+<77*400>,10,11,12,177777
+PTONE:  .WORD   0,0,1,1,10,17,7,76,177777
+PSIL:   .WORD   7,77,10,0,177777
+FNAMS:  .ASCIZ  /0:\AZHWT.TXT/
+        .EVEN
+        .WORD   0
+
+T.HEAD: .ASCIZ  /AZHWT 1.0 eCat3: AZBK hardware probe/<12>
+T.370:  .ASCIZ  /370=/
+T.346:  .ASCIZ  /346=/
+T.212:  .ASCIZ  /212=/
+T.027:  .ASCIZ  /027:/
+T.NONE: .BYTE   0
+T.001:  .ASCIZ  /001(40):/
+T.DR:   .ASCIZ  /DR=/
+T.013:  .ASCIZ  /013:/
+T.007:  .ASCIZ  /007:/
+T.REG1: .ASCIZ  /176 200 202 204 206: /
+T.WT:   .ASCIZ  /wr-trap=/
+T.REG2: .ASCIZ  /200=12345 202=54321: /
+T.REG3: .ASCIZ  /204=34567: /
+T.REG4: .ASCIZ  /206=41501: /
+T.WW:   .ASCIZ  /win:/
+T.WBK:  .ASCIZ  /bk:/
+T.WAZ:  .ASCIZ  /az:/
+T.WOR:  .ASCIZ  /or:/
+T.ROT:  .ASCIZ  /RO trap=/
+T.ROR:  .ASCIZ  /rd=/
+T.ROBK: .ASCIZ  /bk=/
+T.PG:   .ASCIZ  /pg/
+T.NZ:   .ASCIZ  /nz=/
+T.SUM:  .ASCIZ  /s=/
+T.TIME: .ASCIZ  /Time, 8000 accesses, ticks:/<12>
+T.T1:   .ASCIZ  /bk r=/
+T.T2:   .ASCIZ  /az r=/
+T.T3:   .ASCIZ  /bk w=/
+T.T4:   .ASCIZ  /az w=/
+T.ACT:  .ASCIZ  /340=/
+T.T5:   .ASCIZ  /140000 r=/
+T.T6:   .ASCIZ  /w12 flip=/
+T.TT:   .ASCIZ  /trap=/
+T.BLT:  .ASCIZ  /Blitter: words, row2, last, 270/<12>
+T.BA:   .ASCIZ  /0 rows: /
+T.BB:   .ASCIZ  /inc 0:  /
+T.BC1:  .ASCIZ  /b12 1:  /
+T.BC2:  .ASCIZ  /b12 2:  /
+T.B2:   .ASCIZ  /r2=/
+T.BL:   .ASCIZ  /last=/
+T.BS:   .ASCIZ  /270=/
+T.IE:   .ASCIZ  /IE irqs: /
+T.I30:  .ASCIZ  /030=/
+T.I01:  .ASCIZ  /001=/
+T.I21:  .ASCIZ  /021=/
+T.FILE: .ASCIZ  /File 0:\AZHWT.TXT /
+T.LEN:  .ASCIZ  /len=/
+T.OF:   .ASCIZ  /of /
+T.KEY:  .ASCIZ  <12>/-- key --/
+T.AYF:  .ASCIZ  /Tone 256: clk\4096 Hz. 1.714MHz 418.5, 1.75 427.2,/<12>/1.7734 433.0, 2.0 488.3, 1.0 244.1/<12>
+T.S1:   .ASCIZ  /S1 AY1 A: Hz? RIGHT only?/
+T.S2:   .ASCIZ  /S2 AY1 C: LEFT only?/
+T.S3:   .ASCIZ  /S3 AY1 B: both sides?/
+T.S4:   .ASCIZ  /S4 AY2 A: RIGHT only?/
+T.S5:   .ASCIZ  /S5 AY tone via 177714 (BK board protocol): heard?/
+T.S6:   .ASCIZ  /S6 Covox square via 177714: heard? (key stops)/<12>
+T.END:  .ASCIZ  <12>/Done. Key - back to ANDOS./
+        .EVEN
+        .END

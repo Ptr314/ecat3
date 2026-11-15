@@ -30,3 +30,8 @@ deploy/ecat-exts/
 # распаковывается в корень репозитория (library/README.md)
 library/*
 !library/README.md
+
+# Пробы AZBK: диск ANDOS, листинги и пакет собирает tools/azbk-hwtest/build.py
+tools/azbk-hwtest/AZTEST.IMG
+tools/azbk-hwtest/*.lst
+tools/azbk-hwtest/dist/
