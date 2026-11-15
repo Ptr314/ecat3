@@ -27,6 +27,13 @@
 # ту же полосу. 42-bk-platform-disk.zip - тот же образ в архиве с readme.txt,
 # bk-platform-disk.img - он же с другим расширением дискеты БК.
 #
+# 7-bk-smk-overlay.zip - тот же образ так, как программы для СМК-512 лежат в
+# каталоге: bins/*.bin (основная программа и оверлей, их она сама грузит с
+# диска) и один и тот же диск под разные системы - disks/OVERLAY_CSIDOS.IMG,
+# disks/overlay_andos.img, disks/OVERLAY_MKDOS.IMG (регистр разный нарочно). Ни
+# одно имя не совпадает с именем архива; платформа «БК0011М + СМК512» берет
+# только образы, а из них по строке prefer = ANDOS - образ под ANDOS.
+#
 #   01000  000240                     NOP                 ; как у загрузочных секторов БК
 #   01002  012737 123456 002100       MOV  #123456,@#2100
 #   01010  010637 002102              MOV  SP,@#2102
@@ -35,6 +42,23 @@
 #   01024  012720 177777        1$:   MOV  #177777,(R0)+
 #   01030  077103                     SOB  R1,1$
 #   01032  000777                     BR   .
+#
+# 9-bk-81-tracks.zip - образ дискеты на 81 дорожку (829440 байт, так размечает
+# MK-DOS; в архиве почти одни нули): дисковод БК растет под него до max_tracks.
+# Загрузочный сектор читает через вход 0160004 ПЗУ дисковода блок 1600 -
+# дорожка 80, сторона 0 - и кладет его первое слово (метка 0161616) в 02100, а
+# при ошибке (C) - R0 в 02102:
+#
+#   01000  000240                     NOP
+#   01002  012700 003100              MOV  #3100,R0       ; блок 1600
+#   01006  012701 000400              MOV  #400,R1        ; 256 слов
+#   01012  012702 003000              MOV  #3000,R2       ; буфер
+#   01016  004737 160004              JSR  PC,@#160004    ; R3 - область ПЗУ, как его пустили
+#   01022  103404                     BCS  1$
+#   01024  013737 003000 002100       MOV  @#3000,@#2100
+#   01032  000777                     BR   .
+#   01034  010037 002102        1$:   MOV  R0,@#2102
+#   01040  000777                     BR   .
 #
 #   py tests/files/make-bk-platform.py
 
@@ -91,4 +115,30 @@ with zipfile.ZipFile(os.path.join(HERE, "42-bk-platform-disk.zip"), "w", zipfile
     z.writestr(zipfile.ZipInfo("readme.txt", date_time=STAMP), b"eCat3 platform launch test\r\n",
                compress_type=zipfile.ZIP_DEFLATED)
     z.writestr(zipfile.ZipInfo("bk-platform-disk.bkd", date_time=STAMP), disk,
+               compress_type=zipfile.ZIP_DEFLATED)
+
+with zipfile.ZipFile(os.path.join(HERE, "7-bk-smk-overlay.zip"), "w", zipfile.ZIP_DEFLATED) as z:
+    z.writestr(zipfile.ZipInfo("bins/overlay.exe.bin", date_time=STAMP), bk_file(code),
+               compress_type=zipfile.ZIP_DEFLATED)
+    z.writestr(zipfile.ZipInfo("bins/overlay.ovl.bin", date_time=STAMP), bk_file(bytes(16)),
+               compress_type=zipfile.ZIP_DEFLATED)
+    for name in ("disks/OVERLAY_CSIDOS.IMG", "disks/overlay_andos.img", "disks/OVERLAY_MKDOS.IMG"):
+        z.writestr(zipfile.ZipInfo(name, date_time=STAMP), disk, compress_type=zipfile.ZIP_DEFLATED)
+
+BOOT81 = [0o000240,
+          0o012700, 0o003100,
+          0o012701, 0o000400,
+          0o012702, 0o003000,
+          0o004737, 0o160004,
+          0o103404,
+          0o013737, 0o003000, 0o002100,
+          0o000777,
+          0o010037, 0o002102,
+          0o000777]
+boot81 = b"".join(struct.pack("<H", w) for w in BOOT81)
+disk81 = bytearray(81 * 2 * 10 * 512)
+disk81[0:len(boot81)] = boot81
+disk81[1600 * 512:1600 * 512 + 2] = struct.pack("<H", 0o161616)
+with zipfile.ZipFile(os.path.join(HERE, "9-bk-81-tracks.zip"), "w", zipfile.ZIP_DEFLATED) as z:
+    z.writestr(zipfile.ZipInfo("bk-81-tracks.img", date_time=STAMP), bytes(disk81),
                compress_type=zipfile.ZIP_DEFLATED)

@@ -39,7 +39,7 @@ static std::FILE * open_file(const std::string &file_name, bool for_write)
 #endif
 }
 
-bool HddImage::open(const std::string &file_name, std::string &error)
+bool HddImage::open(const std::string &file_name, std::string &error, bool read_only_wanted)
 {
     close();
 
@@ -62,8 +62,8 @@ bool HddImage::open(const std::string &file_name, std::string &error)
         }
     }
 
-    bool read_only = false;
-    std::FILE * f = open_file(file_name, true);
+    bool read_only = read_only_wanted;
+    std::FILE * f = read_only ? nullptr : open_file(file_name, true);
     if (f == nullptr) {
         read_only = true;
         f = open_file(file_name, false);

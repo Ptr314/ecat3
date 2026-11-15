@@ -91,7 +91,8 @@ std::string hex8(uint32_t v)
 //under its own name. Only that one file: the rest of the archive (a readme, a
 //picture) is of no use to the machine
 emulator::Result unpack_program(const std::string &file, const std::string &cache_path,
-                                const std::vector<std::string> &types, std::string &program)
+                                const std::vector<std::string> &types, const std::vector<std::string> &prefer,
+                                std::string &program)
 {
     if (cache_path.empty())
         return launch_error(emulator::ErrorCode::FileError, QT_TRANSLATE_NOOP("Script", "No cache directory to unpack into"), file);
@@ -114,7 +115,7 @@ emulator::Result unpack_program(const std::string &file, const std::string &cach
     std::vector<std::string> names;
     for (size_t i = 0; i < zip.entries().size(); i++) names.push_back(zip.entries()[i].name);
     std::string problem;
-    const int index = pick_archive_member(file, names, types, problem);
+    const int index = pick_archive_member(file, names, types, problem, prefer);
     if (index < 0) return emulator::Result::error(emulator::ErrorCode::FileError, problem);
 
     const ZipReader::Entry &entry = zip.entries()[static_cast<size_t>(index)];
@@ -192,8 +193,14 @@ std::string platform_name_key(const std::string &name)
     return out;
 }
 
+bool platform_table_setting(const std::string &key)
+{
+    return key == "names" || key == "prefer";
+}
+
 int pick_archive_member(const std::string &archive, const std::vector<std::string> &names,
-                        const std::vector<std::string> &types, std::string &problem)
+                        const std::vector<std::string> &types, std::string &problem,
+                        const std::vector<std::string> &prefer)
 {
     problem.clear();
     const std::string want = platform_name_key(strip_catalog_id(stem(archive)));
@@ -209,6 +216,25 @@ int pick_archive_member(const std::string &archive, const std::vector<std::strin
     for (size_t i = 0; i < found.size(); i++)
         if (platform_name_key(stem(names[found[i]])) == want) return static_cast<int>(found[i]);
     if (found.size() == 1) return static_cast<int>(found[0]);
+
+    //Several: the first fragment that only one of them has. The whole path
+    //counts, since a catalog may tell the systems apart by the directory
+    //(disk_MKDOS/ECSIT.IMG); a fragment that two of them have decides nothing
+    for (size_t f = 0; f < prefer.size() && found.size() > 1; f++)
+    {
+        const std::string fragment = platform_name_key(prefer[f]);
+        if (fragment.empty()) continue;
+        int only = -1;
+        size_t count = 0;
+        for (size_t i = 0; i < found.size(); i++)
+            if (platform_name_key(names[found[i]]).find(fragment) != std::string::npos)
+            {
+                only = static_cast<int>(found[i]);
+                count++;
+            }
+        if (count == 1) return only;
+        if (count > 1) break;
+    }
 
     if (found.empty())
         problem = "{Script|" + std::string(QT_TRANSLATE_NOOP("Script", "The archive holds no file this platform runs")) + "} "
@@ -256,10 +282,11 @@ emulator::Result resolve_platform(const std::string &platforms_path, const std::
     //Every other line of the block is a type of file and its script
     std::vector<std::string> types;
     std::vector<std::string> scripts;
+    const std::vector<std::string> prefer = split_string(entry->get_parameter("prefer", false).value, '|', true);
     for (size_t i = 0; i < entry->parameters.size(); i++)
     {
         const EmulatorConfigParameter &p = entry->parameters[i];
-        if (p.name == "names") continue;
+        if (platform_table_setting(p.name)) continue;
         types.push_back("." + str_tolower(p.name));
         scripts.push_back(str_trim(p.value));
     }
@@ -270,7 +297,7 @@ emulator::Result resolve_platform(const std::string &platforms_path, const std::
     std::string program = file;
     if (lower_ext(file) == ".zip")
     {
-        res = unpack_program(file, cache_path, types, program);
+        res = unpack_program(file, cache_path, types, prefer, program);
         if (!res) return res;
     }
 

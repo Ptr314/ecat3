@@ -384,7 +384,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+784"/>
+        <location filename="../emulator/core.cpp" line="+831"/>
         <source>No CPU clock value found</source>
         <translation>Не е зададена тактова честота на процесора</translation>
     </message>
@@ -422,7 +422,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1399"/>
+        <location filename="../emulator/core.cpp" line="-1446"/>
         <source>Incorrect interface definition for</source>
         <translation>Неправилна дефиниция на интерфейс за</translation>
     </message>
@@ -453,6 +453,11 @@
         <location line="+62"/>
         <location line="+4"/>
         <location filename="../emulator/devices/specific/smk512.cpp" line="+71"/>
+        <location filename="../emulator/devices/specific/azbk.cpp" line="+48"/>
+        <location filename="../emulator/devices/specific/azbk_vga.cpp" line="+110"/>
+        <location filename="../emulator/devices/specific/azbk_display.cpp" line="+34"/>
+        <location filename="../emulator/devices/specific/azbk_sound.cpp" line="+62"/>
+        <location filename="../emulator/devices/specific/azbk_disk.cpp" line="+77"/>
         <location filename="../emulator/devices/specific/a16m.cpp" line="+71"/>
         <location filename="../emulator/devices/specific/uknc_mouse.cpp" line="+36"/>
         <source>Incorrect parameters for</source>
@@ -512,24 +517,28 @@
     </message>
     <message>
         <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+721"/>
+        <location filename="../emulator/devices/common/hdd_unit.cpp" line="+66"/>
         <location filename="../emulator/devices/common/dw_controller.cpp" line="+708"/>
         <source>Hard disk image</source>
         <translation>Образ на твърд диск</translation>
     </message>
     <message>
         <location line="+7"/>
+        <location filename="../emulator/devices/common/hdd_unit.cpp" line="+7"/>
         <location filename="../emulator/devices/common/dw_controller.cpp" line="+7"/>
         <source>Hard disk writes</source>
         <translation>Запис на твърдия диск</translation>
     </message>
     <message>
         <location line="+3"/>
+        <location filename="../emulator/devices/common/hdd_unit.cpp" line="+3"/>
         <location filename="../emulator/devices/common/dw_controller.cpp" line="+3"/>
         <source>Into the image file</source>
         <translation>Във файла с образа</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../emulator/devices/common/hdd_unit.cpp" line="+1"/>
         <location filename="../emulator/devices/common/dw_controller.cpp" line="+1"/>
         <source>Into memory only, the image stays as it was</source>
         <translation>Само в паметта, образът не се променя</translation>
@@ -570,7 +579,7 @@
         <translation>Случайна</translation>
     </message>
     <message>
-        <location line="+773"/>
+        <location line="+820"/>
         <location line="+15"/>
         <source>ROM image</source>
         <translation>Образ на ПЗУ</translation>
@@ -880,7 +889,7 @@
 <context>
     <name>DeviceManager</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1329"/>
+        <location filename="../emulator/core.cpp" line="-1376"/>
         <source>Too many devices</source>
         <translation>Твърде много устройства</translation>
     </message>
@@ -904,7 +913,7 @@
         <location filename="../emulator/devices/specific/apple2_video.cpp" line="+16"/>
         <location filename="../emulator/devices/specific/uknc_display.cpp" line="+163"/>
         <location line="+246"/>
-        <location filename="../emulator/devices/specific/bk_display.cpp" line="+179"/>
+        <location filename="../emulator/devices/specific/bk_display.cpp" line="+183"/>
         <location line="+336"/>
         <source>Video output</source>
         <translation>Видеоизход</translation>
@@ -1269,7 +1278,7 @@
         <translation>Неизвестен тип файл</translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+299"/>
+        <location filename="../emulator/emulator.cpp" line="+305"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation>Устройството &apos;system&apos; не е намерено в конфигурацията</translation>
     </message>
@@ -1789,6 +1798,19 @@
         <location line="+527"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation>Командата &apos;volume&apos; изисква стойност</translation>
+    </message>
+</context>
+<context>
+    <name>HddUnit</name>
+    <message>
+        <location filename="../emulator/devices/common/hdd_unit.cpp" line="-56"/>
+        <source>Disk image file not found</source>
+        <translation type="unfinished">Файлът с образа на диска не е намерен</translation>
+    </message>
+    <message>
+        <location line="+146"/>
+        <source>Command &apos;load&apos; expects a file name</source>
+        <translation type="unfinished">Командата &apos;load&apos; изисква име на файл</translation>
     </message>
 </context>
 <context>
@@ -3171,7 +3193,7 @@
 <context>
     <name>Memory</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+990"/>
+        <location filename="../emulator/core.cpp" line="+1036"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation>Командата &apos;load&apos; изисква име на файл</translation>
     </message>
@@ -3204,7 +3226,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location line="+1131"/>
+        <location line="+1143"/>
         <source>Interface not found</source>
         <translation>Интерфейсът не е намерен</translation>
     </message>
@@ -3541,7 +3563,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-893"/>
+        <location filename="../emulator/core.cpp" line="-904"/>
         <source>Incorrect access mode</source>
         <translation>Невалиден режим на достъп</translation>
     </message>
@@ -3596,6 +3618,7 @@
     <name>ROM</name>
     <message>
         <location filename="../emulator/core.cpp" line="-223"/>
+        <location filename="../emulator/devices/specific/azbk.cpp" line="+44"/>
         <source>File not found</source>
         <translation>Файлът не е намерен</translation>
     </message>

@@ -18,6 +18,7 @@
 #define AY_BUS_PINS     3   // no bus: BDIR, BC1 and the data lines are interfaces
 
 #define AY_CB_PINS      1
+#define AY_CB_YM        2
 // БК sound boards run the chip from 12 MHz / 7
 #define AY_DEFAULT_FREQUENCY    1714286
 
@@ -26,11 +27,36 @@ static const unsigned int AY_VOLUME[16] = {
     0, 14, 21, 29, 42, 62, 85, 137, 169, 265, 353, 450, 570, 728, 869, 1000
 };
 
+// The 32 steps of the YM2149, 0..1000: MAME's model of its DAC (ay8910.cpp,
+// Couriersud, BSD-3-Clause: ym2149_param_env, r_up 630, r_down 801 and the 32
+// resistances, into MAME's default load of 1000 ohm), normalized as MAME's
+// build_single_table() does. MAME's 16 resistances of a fixed volume
+// (ym2149_param) are the odd steps of these: volume v is step 2v + 1
+static const unsigned int YM_VOLUME[32] = {
+      0,   2,   5,   9,  11,  14,  16,  19,  23,  27,  31,  36,  43,  51,  59,  68,
+     81,  97, 113, 131, 157, 188, 218, 252, 305, 367, 429, 498, 608, 731, 863, 1000
+};
+
 // Bits actually stored by each register
 static const uint8_t AY_REG_MASK[AY_REGS] = {
     0xFF, 0x0F, 0xFF, 0x0F, 0xFF, 0x0F, 0x1F, 0xFF,
     0x1F, 0x1F, 0x1F, 0xFF, 0xFF, 0x0F, 0xFF, 0xFF
 };
+
+// The channels a side takes, "left = bc": bit 0 for A; 0 for none or a letter
+// that is not a channel
+static unsigned int channel_mask(const std::string &s)
+{
+    unsigned int mask = 0;
+    for (size_t i = 0; i < s.size(); i++) {
+        const char c = s[i];
+        if (c == 'a' || c == 'A') mask |= 1;
+        else if (c == 'b' || c == 'B') mask |= 2;
+        else if (c == 'c' || c == 'C') mask |= 4;
+        else return 0;
+    }
+    return mask;
+}
 
 AY8910::AY8910(InterfaceManager *im, EmulatorConfigDevice *cd):
       AddressableDevice(im, cd)
@@ -40,6 +66,7 @@ AY8910::AY8910(InterfaceManager *im, EmulatorConfigDevice *cd):
     , i_bc1(this, im, 1, "bc1", MODE_R, AY_CB_PINS)
     , i_da(this, im, 8, "da", MODE_R, AY_CB_PINS)
     , i_da_out(this, im, 8, "da_out", MODE_W)
+    , i_ym(this, im, 1, "ym", MODE_R, AY_CB_YM)
     , m_bus(AY_BUS_DIRECT)
     , m_frequency(AY_DEFAULT_FREQUENCY)
     , m_step(0)
@@ -53,6 +80,15 @@ AY8910::AY8910(InterfaceManager *im, EmulatorConfigDevice *cd):
     can_read = true;
     can_write = true;
     memset(m_regs, 0, sizeof(m_regs));
+    const std::string left = str_trim(cd->get_parameter("left", false).value);
+    const std::string right = str_trim(cd->get_parameter("right", false).value);
+    if (!left.empty() || !right.empty()) {
+        m_stereo = true;
+        m_left_mask = channel_mask(left);
+        m_right_mask = channel_mask(right);
+        m_channels_bad = (m_left_mask == 0 || m_right_mask == 0);
+        if (m_channels_bad) m_left_mask = m_right_mask = 7;
+    }
     reset(true);
 }
 
@@ -60,6 +96,9 @@ emulator::Result AY8910::load_config(SystemData *sd)
 {
     emulator::Result res = AddressableDevice::load_config(sd);
     if (!res) return res;
+    if (m_channels_bad)
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect parameters for")) + "} " + name + ": left, right");
 
     std::string bus = str_tolower(cd->get_parameter("bus", false).value);
     if (bus.empty() || bus == "direct")
@@ -88,6 +127,15 @@ emulator::Result AY8910::load_config(SystemData *sd)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{AY8910|" + std::string(QT_TRANSLATE_NOOP("AY8910", "Incorrect chip number")) + "}");
     m_selected = (m_board_chip != 2);
+
+    // The chip it plays as until a ~ym line, if any, says otherwise
+    const std::string type = str_tolower(cd->get_parameter("type", false).value);
+    if (type == "ym2149")
+        set_ym(true);
+    else if (!type.empty() && type != "ay-3-8910" && type != "ay8910")
+        return emulator::Result::error(emulator::ErrorCode::ConfigError,
+            "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect parameters for")) + "} " + name + ": type " + type);
+
     const std::string pair = cd->get_parameter("pair", false).value;
     if (!pair.empty()) {
         m_pair = dynamic_cast<AY8910*>(im->dm->get_device_by_name(pair, false));
@@ -169,10 +217,30 @@ unsigned int AY8910::read_reg(unsigned int reg)
     return (reg < AY_REGS) ? m_regs[reg] : 0xFF;
 }
 
+// The YM2149 takes the envelope on from the same place of its slope: an
+// AY step s is YM steps 2s + 1 and 2s, and the counter runs twice as fast
+void AY8910::set_ym(bool ym)
+{
+    if (ym == m_ym) return;
+    if (!m_used) catch_up();
+    const bool attack = m_env_attack != 0;
+    if (ym) {
+        if (!m_env_holding) m_env_step = m_env_step * 2 + 1;
+        m_env_count *= 2;
+    } else {
+        m_env_step >>= 1;
+        m_env_count /= 2;
+    }
+    m_ym = ym;
+    m_env_attack = attack ? env_max() : 0;
+    m_env_volume = (unsigned int)m_env_step ^ m_env_attack;
+    sound_changed();
+}
+
 void AY8910::restart_envelope()
 {
     unsigned int shape = m_regs[13];
-    m_env_attack = (shape & 0x04) ? 0x0F : 0x00;
+    m_env_attack = (shape & 0x04) ? env_max() : 0x00;
     if ((shape & 0x08) == 0) {
         // Shapes 0-7: one slope, then silence
         m_env_hold = true;
@@ -182,7 +250,7 @@ void AY8910::restart_envelope()
         m_env_alternate = (shape & 0x02) != 0;
     }
     m_env_count = 0;
-    m_env_step = 15;
+    m_env_step = (int)env_max();
     m_env_holding = false;
     m_env_volume = (unsigned int)m_env_step ^ m_env_attack;
 }
@@ -201,7 +269,10 @@ void AY8910::tick()
         }
     }
 
-    // Noise and envelope are clocked at half the tone rate
+    // The 32 steps of a YM2149 envelope come at the tone rate
+    if (m_ym) env_tick();
+
+    // Noise and the 16 envelope steps of an AY are clocked at half the tone rate
     m_prescale ^= 1;
     if (m_prescale) return;
 
@@ -214,31 +285,36 @@ void AY8910::tick()
         m_rng >>= 1;
     }
 
-    if (!m_env_holding) {
-        unsigned int env_period = m_regs[11] | (m_regs[12] << 8);
-        if (env_period == 0) env_period = 1;
-        if (++m_env_count >= env_period) {
-            m_env_count = 0;
-            m_env_step--;
-            if (m_env_step < 0) {
-                if (m_env_hold) {
-                    if (m_env_alternate) m_env_attack ^= 0x0F;
-                    m_env_holding = true;
-                    m_env_step = 0;
-                } else {
-                    if (m_env_alternate) m_env_attack ^= 0x0F;
-                    m_env_step = 15;
-                }
+    if (!m_ym) env_tick();
+}
+
+void AY8910::env_tick()
+{
+    if (m_env_holding) return;
+    unsigned int env_period = m_regs[11] | (m_regs[12] << 8);
+    if (env_period == 0) env_period = 1;
+    if (++m_env_count >= env_period) {
+        m_env_count = 0;
+        m_env_step--;
+        if (m_env_step < 0) {
+            if (m_env_hold) {
+                if (m_env_alternate) m_env_attack ^= env_max();
+                m_env_holding = true;
+                m_env_step = 0;
+            } else {
+                if (m_env_alternate) m_env_attack ^= env_max();
+                m_env_step = (int)env_max();
             }
-            m_env_volume = (unsigned int)m_env_step ^ m_env_attack;
         }
+        m_env_volume = (unsigned int)m_env_step ^ m_env_attack;
     }
 }
 
 // The ticks a chip with every register at 0 has been counting instead of
 // running. With all periods 0 (taken as 1) the tone outputs flip on every
-// tick, and noise and envelope step on every other one: the noise LFSR comes
-// round every 131071 steps, and envelope shape 0 holds after its one slope
+// tick, and noise and envelope step on every other one (the envelope of a
+// YM2149 on every one): the noise LFSR comes round every 131071 steps, and
+// envelope shape 0 holds after its one slope
 void AY8910::catch_up()
 {
     const uint64_t n = m_idle_ticks;
@@ -257,15 +333,16 @@ void AY8910::catch_up()
         m_rng >>= 1;
     }
 
-    for (uint64_t i = 0; i < steps && !m_env_holding; i++) {
+    const uint64_t env_steps = m_ym ? n : steps;
+    for (uint64_t i = 0; i < env_steps && !m_env_holding; i++) {
         m_env_step--;
         if (m_env_step < 0) {
-            if (m_env_alternate) m_env_attack ^= 0x0F;
+            if (m_env_alternate) m_env_attack ^= env_max();
             if (m_env_hold) {
                 m_env_holding = true;
                 m_env_step = 0;
             } else
-                m_env_step = 15;
+                m_env_step = (int)env_max();
         }
         m_env_volume = (unsigned int)m_env_step ^ m_env_attack;
     }
@@ -286,28 +363,58 @@ void AY8910::clock(unsigned int counter)
     }
 }
 
-// Sum of the three channels, 0..3000
-unsigned int AY8910::level()
+// Sum of the channels in mask (bit 0 for A), 0..1000 each
+unsigned int AY8910::level(unsigned int mask)
 {
     unsigned int mixer = m_regs[7];
     unsigned int noise = m_rng & 1;
     unsigned int sum = 0;
     for (unsigned int c = 0; c < AY_TONE_CHANNELS; c++) {
+        if (((mask >> c) & 1) == 0) continue;
         // Mixer bits are active low: a set bit disables the source
         unsigned int tone_on  = m_tone_out[c] | ((mixer >> c) & 1);
         unsigned int noise_on = noise | ((mixer >> (c + 3)) & 1);
         if (tone_on && noise_on) {
             unsigned int volume = m_regs[8 + c];
-            unsigned int step = (volume & 0x10) ? m_env_volume : (volume & 0x0F);
-            sum += AY_VOLUME[step];
+            if (m_ym)
+                sum += YM_VOLUME[(volume & 0x10) ? m_env_volume : (((volume & 0x0F) << 1) | 1)];
+            else
+                sum += AY_VOLUME[(volume & 0x10) ? m_env_volume : (volume & 0x0F)];
         }
     }
     return sum;
 }
 
+// Full scale is every channel of the side at its loudest: 3000 for a mono
+// chip, 2000 for a side of two. Divided by constants: this runs on every
+// instruction while the chip sounds, and a division by a variable is a real
+// 64-bit divide there
+int32_t AY8910::side_sample(unsigned int mask, int64_t amplitude)
+{
+    const int64_t x = (int64_t)level(mask) * amplitude;
+    switch (mask) {
+    case 7:  return (int32_t)(x / 1500 - amplitude);
+    case 3:
+    case 5:
+    case 6:  return (int32_t)(x / 1000 - amplitude);
+    default: return (int32_t)(x / 500 - amplitude);
+    }
+}
+
 int32_t AY8910::sound_sample(int64_t amplitude)
 {
-    return (int32_t)((int64_t)level() * amplitude / 1500 - amplitude);
+    return side_sample(m_right_mask, amplitude);
+}
+
+int32_t AY8910::sound_sample_left(int64_t amplitude)
+{
+    return side_sample(m_left_mask, amplitude);
+}
+
+// A mono output (the sound of a video) takes every channel, whatever side
+int32_t AY8910::sound_sample_mono(int64_t amplitude)
+{
+    return side_sample(7, amplitude);
 }
 
 bool AY8910::sound_active()
@@ -396,6 +503,7 @@ void AY8910::pin_cycle()
 void AY8910::interface_callback(unsigned int callback_id, MAYBE_UNUSED unsigned int new_value, MAYBE_UNUSED unsigned int old_value)
 {
     if (callback_id == AY_CB_PINS && m_bus == AY_BUS_PINS) pin_cycle();
+    if (callback_id == AY_CB_YM) set_ym((new_value & 1) != 0);
 }
 
 unsigned int AY8910::get_value_word(unsigned int address)
@@ -465,12 +573,15 @@ void AY8910::save_state(StateWriter &w)
     w.n("env_volume", m_env_volume);
     if (m_board_chip != 0) w.b("selected", m_selected);
     if (m_bus == AY_BUS_PINS) w.b("active", m_active);
+    // Only a chip that can play as a YM2149: the others keep their old state
+    if (m_ym || i_ym.linked != 0) w.b("ym", m_ym);
 }
 
 emulator::Result AY8910::load_state(const StateReader &r)
 {
     emulator::Result res = AddressableDevice::load_state(r);
     if (!res) return res;
+    r.b("ym", m_ym);
     r.array("regs", m_regs, AY_REGS);
     r.u("latch", m_latch);
     r.b("used", m_used);
@@ -499,7 +610,10 @@ std::vector<DeviceFieldInfo> AY8910::get_device_fields()
     r.push_back({"regs",     "Registers 0-15; without a range all of them",  true});
     r.push_back({"register", "Selected register",                           false});
     r.push_back({"level",    "Output level, 0-3000",                        false});
-    r.push_back({"envelope", "Current envelope volume, 0-15",               false});
+    r.push_back({"left",     "Level of the left side's channels (all for a mono chip)",  false});
+    r.push_back({"right",    "Level of the right side's channels (all for a mono chip)", false});
+    r.push_back({"envelope", "Current envelope volume, 0-15 (0-31 as a YM2149)", false});
+    r.push_back({"ym",       "1 if the chip plays as a YM2149",             false});
     r.push_back({"plugged",  "1 if the chip is plugged in",                 false});
     r.push_back({"selected", "1 if the chip takes the data writes (a chip of a 2xAY board)", false});
     return r;
@@ -521,11 +635,14 @@ bool AY8910::get_field(const std::string &field, unsigned int from, unsigned int
     }
     if (field == "register") { out.values.push_back(m_latch);       return true; }
     out.width = 16;
-    if (field == "level")    { out.values.push_back(level());       return true; }
+    if (field == "level")    { out.values.push_back(level(7));      return true; }
+    if (field == "left")     { out.values.push_back(level(m_left_mask));  return true; }
+    if (field == "right")    { out.values.push_back(level(m_right_mask)); return true; }
     out.width = 0;
     if (field == "envelope") { out.values.push_back(m_env_volume);  return true; }
     if (field == "plugged")  { out.values.push_back(plugged()?1:0); return true; }
     if (field == "selected") { out.values.push_back(m_selected?1:0); return true; }
+    if (field == "ym")       { out.values.push_back(m_ym?1:0);      return true; }
 
     out.numeric = false;
     return ComputerDevice::get_field(field, from, to, out);

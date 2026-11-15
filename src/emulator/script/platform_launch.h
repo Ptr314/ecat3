@@ -33,13 +33,21 @@ extern const char * const PLATFORMS_TABLE;
 //made one, ASCII and Cyrillic letters in lower case
 std::string platform_name_key(const std::string &name);
 
+//The lines of a platform block that are not a type of file: "names", and
+//"prefer" (see pick_archive_member)
+bool platform_table_setting(const std::string &key);
+
 //Which file of an archive is the program. A catalog names its archives
 //"<id>-<name>.zip": the file whose name without its extension is <name> is
-//taken, otherwise the only file of a type the platform runs. types are
-//extensions with the dot, in lower case. -1, and problem set, when neither
-//rule picks a file
+//taken, otherwise the only file of a type the platform runs. When there are
+//several, prefer (the "prefer" line of the block) names fragments in order:
+//the first one found in the whole path of exactly one of them, without regard
+//to case, picks it (a disk "for ANDOS" next to the same one for MK-DOS). types
+//are extensions with the dot, in lower case. -1, and problem set, when no rule
+//picks a file
 int pick_archive_member(const std::string &archive, const std::vector<std::string> &names,
-                        const std::vector<std::string> &types, std::string &problem);
+                        const std::vector<std::string> &types, std::string &problem,
+                        const std::vector<std::string> &prefer = std::vector<std::string>());
 
 struct PlatformLaunch {
     std::string script;     //The launch script

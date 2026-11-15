@@ -1,0 +1,569 @@
+# БК0011М + AZBK: тест видеоконтроллера MAXIOL AZVIDT24 (library/bk/AZVIDT24.BIN,
+# описание там же в AZVIDT24.lst; без библиотеки тест пропускается).
+#
+# Запуск - платформой «AZБК»: стартовое ПЗУ грузит ANDOS с AZ0, программа
+# пускается с 01000 со стеком под ней. Меню и сетка режимов 15 x 4 - снимки
+# (совпадают со снимками автора AZVID24_1 и AZVID24_2). Затем SELECT VIDEO
+# MODE обходит сетку змейкой: на каждом из 60 однослойных режимов (1, 2, 4, 8
+# бит на точку, ширина 128-1024, высота 192-768) - ВК, 3 с на отрисовку, номер
+# режима (0177230) и свертка всей картины, пробел - назад в сетку. На каждом
+# режиме - кольца рамки по краю и подписи; 061122 - снимок (совпадает с
+# AZVID24_3 автора с точностью до перевода 5 бит цвета в 8). Моменты отсчетов
+# задают клавиши, а не таймер теста, поэтому повтор через MCP сходится.
+# @timeout 180
+
+PLATFORM "AZБК", "../library/bk/AZVIDT24.BIN"
+LOGDEFS _16,_8
+WAIT _1500
+LOG azbk-vga.mode
+LOG display.crc
+SCREEN "../results/work-bk0011m-azbk-azvidt-menu.png"
+KEY _10,_50,down
+WAIT _300
+KEY _10,_50,ret
+WAIT _1500
+SCREEN "../results/work-bk0011m-azbk-azvidt-grid.png"
+KEY _100,_50,up
+KEY _100,_50,up
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 003300 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 012300 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 021300 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 040300 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 040200 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 021200 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 012200 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 003200 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 003100 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 012100 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 021100 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 040100 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 060010 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 041010 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 032010 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 023010 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 003301 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 012301 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 021301 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 040301 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 040201 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 021201 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 012201 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 003201 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 023111 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 032111 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 041111 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 060111 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 100021 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 061021 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 052021 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 043021 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 003302 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 012302 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 021302 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 040302 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 060212 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 041212 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 032212 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 023212 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 043122 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 052122 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 061122 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+SCREEN "../results/work-bk0011m-azbk-azvidt-061122.png"
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 100122 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 120032 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 101032 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 072032 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 063032 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 023313 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 032313 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 041313 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 060313 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 100223 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 061223 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 052223 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,left
+WAIT _300
+PRINT "=== 043223 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,down
+WAIT _300
+PRINT "=== 063133 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 072133 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 101133 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+KEY _100,_50,right
+WAIT _300
+PRINT "=== 120133 ==="
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-vga.mode
+LOG display.crc
+KEY _10,_50,space
+WAIT _1500
+EXIT

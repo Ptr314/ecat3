@@ -1,0 +1,60 @@
+# БК0011М + AZBK: звуковой DMA и Covox (MAXIOL, тема 5556; формат IMA - по
+# его кодировщику imaadpcm_enc_dec: стандартный IMA ADPCM с нулевым
+# состоянием, младший полубайт первым, в стерео кадр в байте).
+#
+# Процессор крутит BR ., данные кладутся в память AZ (страница 0600)
+# напрямую, регистры пишутся устройству. Отсчеты идут 44100 Гц по
+# эмулируемому времени; поле hash - сумма всех сыгранных отсчетов.
+# 1. IMA моно, однократно (04003), 2 слова - 8 отсчетов: после конца
+#    разряд 3 (конец однократного) и тишина.
+# 2. PCM16 моно, по кругу (01), 2 слова: идет, пока его не остановит
+#    разряд 2; текущая страница в 0177170.
+# 3. IMA стерео, однократно (05003): 4 кадра.
+# 4. Covox: 16 бит в оба канала (0177204), 8 бит стерео словом (0177206).
+# @timeout 60
+
+MACHINE "bk/BK-0011M-azbk.ext"
+LOGDEFS _16,_8
+WAIT _500
+COMMAND cpu.stop()
+COMMAND ram0.set16(1000, 000777)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+
+PRINT "=== 1. IMA моно, однократно ==="
+COMMAND azbk-ram.set(06000000, 027, 010, 177, 210)
+COMMAND azbk-sound.set16(177162, 600, 0, 2)
+COMMAND azbk-sound.set16(177160, 004003)
+WAIT _1
+LOG azbk-sound.dma
+LOG azbk-sound.samples
+LOG azbk-sound.hash
+LOG azbk-sound.output
+
+PRINT "=== 2. PCM16 моно по кругу ==="
+COMMAND azbk-ram.set16(06000000, 001750, 176030)
+COMMAND azbk-sound.set16(177160, 000001)
+WAIT _1
+LOG azbk-sound.dma
+LOG azbk-sound.samples
+LOG azbk-sound.dma_page
+LOG azbk-sound.output
+COMMAND azbk-sound.set16(177160, 000004)
+LOG azbk-sound.dma
+LOG azbk-sound.output
+
+PRINT "=== 3. IMA стерео, однократно ==="
+COMMAND azbk-ram.set(06000000, 027, 161, 210, 017)
+COMMAND azbk-sound.set16(177160, 005003)
+WAIT _1
+LOG azbk-sound.dma
+LOG azbk-sound.samples
+LOG azbk-sound.hash
+
+PRINT "=== 4. Covox ==="
+COMMAND azbk-sound.set16(177204, 012345)
+LOG azbk-sound.covox
+COMMAND azbk-sound.set16(177206, 100377)
+LOG azbk-sound.covox
+EXIT

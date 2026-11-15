@@ -174,6 +174,10 @@ void BKDisplay::get_screen_constraints(unsigned int * sx, unsigned int * sy)
 
 DeviceOptions BKDisplay::get_device_options()
 {
+    // The monitor choice belongs to the picture shown. A БК raster kept only
+    // for its frame interrupt under another name (the БК0011М + AZBK, whose
+    // screen is the AZBK's) offers nothing: the toolbar lists every device
+    if (name != "display") return {};
     return {
         {
             BK_OPTION_COLORS, DEVICE_OPTION_DROPDOWN, QT_TRANSLATE_NOOP("DeviceOptions", "Video output"), "kscreensaver.png",

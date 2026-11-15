@@ -51,8 +51,11 @@ public:
 
     ~HddImage();
 
-    // Открывает файл; при неудаче гнездо остаётся пустым, текст ошибки - в error
-    bool open(const std::string &file_name, std::string &error);
+    // Открывает файл; при неудаче гнездо остаётся пустым, текст ошибки - в error.
+    // read_only - не пытаться открыть на запись: образу, запись в который идет
+    // в память (set_volatile), файл на запись не нужен, а открытый так файл
+    // поставки другие процессы (параллельный прогон тестов) могут не прочитать
+    bool open(const std::string &file_name, std::string &error, bool read_only = false);
     void close();
 
     bool attached() const { return m_file != nullptr || m_source; }

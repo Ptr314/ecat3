@@ -1,0 +1,7 @@
+[az0.file] bk-platform-disk.bkd
+[az0.blocks] &00000000001
+[az0.reads] &00000000001
+[mapper.value16] &002100: &123456 &000776
+[azbk.last_716] &054002
+[mapper.value16] &054400: &177777
+[azbk-ram.value16] &0254400: &177777

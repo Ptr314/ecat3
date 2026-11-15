@@ -1,0 +1,5 @@
+[fdd0.file] bk-81-tracks.img
+[fdd0.tracks] &000121
+[fdd0.track] &000120
+[mapper.value16] &002100: &161616 &000000
+[fdd0.tracks] &000120

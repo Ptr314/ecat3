@@ -101,6 +101,12 @@
 #include "emulator/devices/specific/uknc_hdd.h"
 #include "emulator/devices/specific/uknc_ram_timing.h"
 #include "emulator/devices/specific/smk512.h"
+#include "emulator/devices/specific/azbk.h"
+#include "emulator/devices/specific/azbk_vga.h"
+#include "emulator/devices/specific/azbk_display.h"
+#include "emulator/devices/specific/azbk_sound.h"
+#include "emulator/devices/specific/azbk_disk.h"
+#include "emulator/devices/common/hdd_unit.h"
 #include "emulator/devices/specific/a16m.h"
 #include "emulator/devices/specific/uknc_timer.h"
 #include "emulator/devices/specific/uknc_keyboard.h"
@@ -639,8 +645,8 @@ DiskChoice Emulator::disk_state(ComputerDevice * dev)
 {
     DiskChoice c;
     DeviceFieldValue v;
-    //A floppy drive keeps the bare name in "file" and the whole one in "path";
-    //the hard disks keep the whole one in "file"
+    //A floppy drive and hdd-unit keep the bare name in "file" and the whole one
+    //in "path"; the other hard disks keep the whole one in "file"
     bool loaded = false;
     if (dev->get_field("loaded", 0, 0, v) || dev->get_field("attached", 0, 0, v))
         loaded = !v.values.empty() && v.values[0] != 0;
@@ -2773,6 +2779,12 @@ void register_all_devices(DeviceManager * dm)
     dm->register_device("uknc-ram-timing", create_uknc_ram_timing);
     dm->register_device("uknc-hdd", create_uknc_hdd);
     dm->register_device("smk512", create_smk512);
+    dm->register_device("azbk", create_azbk);
+    dm->register_device("azbk-vga", create_azbk_vga);
+    dm->register_device("azbk-display", create_azbk_display);
+    dm->register_device("azbk-sound", create_azbk_sound);
+    dm->register_device("azbk-disk", create_azbk_disk);
+    dm->register_device("hdd-unit", create_hdd_unit);
     dm->register_device("a16m", create_a16m);
     dm->register_device("uknc-timer", create_uknc_timer);
     dm->register_device("uknc-keyboard", create_uknc_keyboard);

@@ -1,0 +1,53 @@
+# БК0011М + AZBK: SETUP из ПЗУ (слот R56, «AZBK BIOS Setup Utility v1.05»)
+# пишет энергонезависимую память, а BIOS следующего пуска ее читает.
+#
+# Память не записана: команда 021 дает слово состояния 1, BIOS печатает «CMOS
+# memory: error: different size» и берет кадровый таймер 48.8 Гц (разряд 2
+# 0177346). КТ во время «Press KT to run Setup» запускает SETUP: он читает
+# AZ.INI с карты (050/051; карты нет - ошибка) и рисует меню. Advanced,
+# V-Sync Timer -> 60Hz, АР2+0, Yes: SETUP пишет память (023/024) и командой
+# 037 перезапускает плату и БК. BIOS второго пуска видит записанную память
+# и ставит 60 Гц: разряд 2 снят, на экране «V-sync timer: 60Hz».
+# @timeout 180
+
+MACHINE "bk/BK-0011M-azbk.ext"
+LOGDEFS _16,_8
+
+WAIT _10000
+PRINT "=== Пустая память: 48.8 Гц ==="
+LOG azbk.control
+LOG azbk-disk.eeprom(0, 7)
+
+KEYDOWN key_kt
+WAIT _100
+KEYUP key_kt
+WAIT _10000
+PRINT "=== SETUP: Advanced, V-Sync Timer, 60Hz ==="
+KEY _10,_50,right
+WAIT _3000
+KEY _10,_50,down
+WAIT _1000
+KEY _10,_50,ret
+WAIT _2000
+KEY _10,_50,down
+WAIT _1000
+KEY _10,_50,ret
+WAIT _2000
+PRINT "=== АР2+0, Yes ==="
+KEYDOWN key_ar2
+WAIT _50
+KEY _10,_50,0
+KEYUP key_ar2
+WAIT _3000
+KEY _10,_50,left
+WAIT _1000
+KEY _10,_50,ret
+WAIT _3000
+LOG azbk-disk.eeprom(0, 7)
+LOG azbk-disk.trace
+
+WAIT _9000
+PRINT "=== Второй пуск: память прочитана, 60 Гц ==="
+LOG azbk.control
+SCREEN "../results/work-bk0011m-azbk-setup.png"
+EXIT

@@ -1,0 +1,206 @@
+// БК0011М с контроллером AZBK (MAXIOL) в разъеме МПИ: 32 МБ памяти окнами
+// по 4 КБ, свой выход VGA 1024x768 с тремя слоями, блиттер, Covox и звуковой
+// DMA, дисковый контроллер AZ на образах, энергонезависимая память и часы.
+// Машина серийная, без доработок: память БК под окнами контроллера не
+// отключается, и он видит ее запись в тени.
+//
+// Устройство по описаниям MAXIOL (forum.maxiol.com, темы 5556, 5388, 5605;
+// вики «API контроллеров AZ») и исходникам его стартового ПЗУ. Прошивки - пакет
+// 00019 MAXIOL (azboot, AZLIB00-03, SETUP) и AZ337, AZLOGO.RAW из его набора
+// карты. Чего MAXIOL не описал, здесь нет или помечено «Б.n» - номер вопроса
+// к нему (docs/dev/machines.md, раздел AZBK).
+@extends bk/BK-0011M.cfg
+@version БК0011М + AZBK
+@protected
+
+@before port-kbd-state
+
+// Память и регистры контроллера стоят на МПИ, за ПЛИС, и отвечают сразу -
+// как у реплики СМК. Настоящая задержка не описана (Б.5)
+azbk-bus : bus-timing {
+}
+
+// 32 МБ памяти AZ: 8192 страницы по 4 КБ. В снимок - только непустые страницы
+azbk-ram : ram {
+	size = _32768k
+	state_pages = 1
+}
+
+// Маппер и регистры платы. Слоты ПЗУ - как в AZ.INI MAXIOL (номер слота
+// десятичный, слот n - страница 0100+n); ПЗУ БК0011М и БК0010 - те же файлы,
+// что у самих машин
+azbk : azbk {
+	bus_timing = azbk-bus
+	ram = azbk-ram
+	machine = bk11
+	modification = none
+	~bk_sys = port-sys.alt[0-4]
+	// Версия прошивки ПЛИС в 177370: BIOS ее печатает. Значение gid, с
+	// которым проверены BIOS и Dangerous Dave; у прошивки 19 не описано (Б.4)
+	fpga_version = _18
+	rom_00 = azbk19/azboot.ROM
+	rom_01 = azbk19/AZLIB00.ROM
+	rom_02 = azbk19/AZLIB01.ROM
+	rom_03 = azbk19/AZLIB02.ROM
+	rom_04 = azbk19/AZLIB03.ROM
+	rom_08 = azbk19/AZ337.ROM
+	rom_16 = B11M_BOS.ROM
+	rom_18 = B11M_EXT.ROM
+	rom_20 = BAS11M_1.ROM
+	// 328 и 329 одним файлом: слоты 22-25
+	rom_22 = BAS11M_0.ROM
+	rom_26 = B11M_MSTD.ROM
+	rom_28 = MONIT10.ROM
+	rom_30 = Focal.rom
+	rom_32 = Tests.rom
+	rom_34 = Basic10first.rom
+	rom_36 = Basic10second.rom
+	rom_38 = Basic10third.rom
+	rom_56 = azbk19/SETUP.ROM
+	logo = azbk19/AZLOGO.RAW
+}
+
+// Развертка VGA 65 МГц, регистры экрана, кадровый таймер (вектор 100), LFSR
+azbk-vga : azbk-vga {
+	bus_timing = azbk-bus
+	board = azbk
+	frequency = _65000000
+}
+
+// Экран - выход VGA контроллера: обычная картина БК там тоже есть (режимы
+// 012100 и 012201 по тени страниц 5 и 6). Растр БК остается под другим именем
+// ради своего кадрового прерывания и окна отладчика «Экран БК»
+-display
+
+bk-video : bk-display {
+	vram = ram5
+	vram2 = ram6
+	scroll = port-scroll
+	control = port-palette
+	mode = color
+}
+
+display : azbk-display {
+	video = azbk-vga
+}
+
+frame-irq:~a[0] = bk-video.frame
+
+// Звук платы - раньше динамика, который складывает уровни источников: устройства
+// тактуются в порядке описания
+@before sound
+
+// Covox и звуковой DMA
+azbk-sound : azbk-sound {
+	bus_timing = azbk-bus
+	board = azbk
+}
+
+// Пара AY платы: 177172 и 177173 - адрес и данные первой, 177174 и 177175 -
+// второй, в прямом коде (у приставок БК на 177714 - в обратном); слово кладет
+// адрес младшим байтом, данные старшим. Выход по MAXIOL: справа A и B обеих,
+// слева C и B обеих. Частота не описана (Б.1): 12 МГц / 7, как у приставок
+// БК и по умолчанию у gid. Тип - разряд 3 177212: 0 (после включения и по
+// умолчанию у SETUP) - YM2149, 1 - AY-3-8910
+az-ay1 : ay8910 {
+	bus_timing = azbk-bus
+	frequency = _1714286
+	left = bc
+	right = ab
+	~ym = azbk-sound.ym
+}
+
+az-ay2 : ay8910 {
+	bus_timing = azbk-bus
+	frequency = _1714286
+	left = bc
+	right = ab
+	~ym = azbk-sound.ym
+}
+
+// Covox, звуковой DMA (44100 Гц) и пара AY платы подмешиваются к динамику
+// БК. Отсчеты DMA идут до 22 кГц: устройство открывается на 44100 Гц, срез
+// фильтра 16 кГц, как у ЯЗС Агата. Громкость делится поровну между
+// звучащими источниками, поэтому источник входит в смесь, только когда
+// зазвучал после сброса (как у звукового модуля УК-НЦ): иначе молчащие AY и
+// Covox платы впятеро приглушали бы динамик и приставку БК
+sound:mix = ay|covox|ts-ay1|ts-ay2|azbk-sound|az-ay1|az-ay2
+sound:sample_rate = 44100
+sound:lpf = 16000
+sound:idle_share = 0
+
+// Псевдодиски AZ0-AZ3 (контроллер держит до 32). С AZ0 стартовое ПЗУ
+// грузит систему; образ из поставки пишется только в память
+az0 : hdd-unit {
+	title = AZ0
+	image = andos330.img
+	volatile = 1
+	files = "Образы дисков AZ (*.img *.bkd *.dsk);;Все файлы (*.*)"
+}
+
+az1 : hdd-unit {
+	title = AZ1
+	files = "Образы дисков AZ (*.img *.bkd *.dsk);;Все файлы (*.*)"
+}
+
+az2 : hdd-unit {
+	title = AZ2
+	files = "Образы дисков AZ (*.img *.bkd *.dsk);;Все файлы (*.*)"
+}
+
+az3 : hdd-unit {
+	title = AZ3
+	files = "Образы дисков AZ (*.img *.bkd *.dsk);;Все файлы (*.*)"
+}
+
+// Дисковый контроллер AZ. Прерывание 0174 идет по той же линии, что и от
+// клавиатуры. Клавиатура ближе к процессору (ППР1 и ППР2 разъема МПИ на
+// схеме БК0011М): ее запрос контроллер пропускает раньше своего
+azbk-disk : azbk-disk {
+	bus_timing = azbk-bus
+	board = azbk
+	units = az0|az1|az2|az3
+	// Версия прошивки STM32 в команде 027 - как 177370 (Б.4)
+	stm_version = _18
+	~virq_in = kbd-irq.out[0]
+	~vector_in = keyboard.vector
+	~iako = cpu.iako
+}
+
+// Кадровое прерывание (вектор 100) приходит и от 037, и от таймера AZBK
+frame-or : mux {
+	~a[0] = frame-irq.out[0]
+	~b = 1
+	~s = azbk-vga.irq
+}
+
+cpu:~irq2 = !frame-or.out[0]
+cpu:~virq = azbk-disk.virq
+cpu:~vector = azbk-disk.vector
+// Команда 037 перезапускает БК: процессор снова берет адрес пуска из 177716
+cpu:~dclo = azbk-disk.dclo
+
+// Окна контроллера - раньше всей памяти БК: по каждому окну плата сама
+// решает, ответить, ответить вместе с БК, подслушать запись или промолчать
+@before mapper:@memory[000000-037777]
+mapper:@memory[000000-176777] = azbk {routed = 1}
+
+@before mapper:@memory[177660-177661]
+// 177130 - эмуляция СМК: только запись, чтение остается без ответа
+mapper:@memory[177130-177131] = azbk[177130] {mode = w, strict = 1}
+mapper:@memory[177160-177171] = azbk-sound[177160]
+mapper:@memory[177172-177173] = az-ay1
+mapper:@memory[177174-177175] = az-ay2
+mapper:@memory[177200-177207] = azbk-sound[177200]
+mapper:@memory[177212-177213] = azbk-sound[177212]
+mapper:@memory[177220-177227] = azbk-disk[177220]
+mapper:@memory[177230-177257] = azbk-vga[177230]
+mapper:@memory[177270-177273] = azbk-vga[177270]
+mapper:@memory[177300-177353] = azbk[177300]
+mapper:@memory[177370-177371] = azbk[177370]
+mapper:@memory[177550-177551] = azbk-vga[177550]
+// Палитра и скролл БК доходят и до экрана AZBK
+mapper:@memory[177662-177665] = azbk-vga[177662] {mode = w, through = 1}
+// 177716: чтение складывается с регистром БК (пуск с 170000), запись -
+// и плате БК, и мапперу AZBK
+mapper:@memory[177716-177717] = azbk[177716] {or_read = 1, through = 1}

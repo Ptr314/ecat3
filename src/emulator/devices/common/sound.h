@@ -27,11 +27,14 @@ class GenericSound;
 // volatile, the default, and is asked on every clock as before.
 //
 // A source may be stereo (the Агат ЯЗС has two line outputs). sound_sample()
-// is then its right channel and the one a mono output takes, so it must be
-// the sample that sounds right alone: summing two channels of a pseudo-stereo
+// is then its right channel and, unless sound_sample_mono() says otherwise,
+// the one a mono output (the sound of a video) takes, so it must be the
+// sample that sounds right alone: summing two channels of a pseudo-stereo
 // source cancels what one of them has turned over. sound_sample_left() is the
-// other channel. A GenericSound with a stereo source opens its device in
-// stereo, and every mono source sounds the same in both channels
+// other channel. A source whose sides carry different parts (an AY with its
+// channels spread over them) gives the whole of it in sound_sample_mono(). A
+// GenericSound with a stereo source opens its device in stereo, and every mono
+// source sounds the same in both channels
 class SoundSource
 {
     friend class GenericSound;
@@ -43,6 +46,8 @@ public:
     // Decided by the configuration, asked once when the output is opened
     virtual bool sound_stereo() { return false; }
     virtual int32_t sound_sample_left(int64_t amplitude) { return sound_sample(amplitude); }
+    // Asked only while a video is recorded from a stereo mix
+    virtual int32_t sound_sample_mono(int64_t amplitude) { return sound_sample(amplitude); }
     // A source that is switched off (a board pulled out of its connector)
     // takes no share of the mix, so the others keep their loudness
     virtual bool sound_active() { return true; }
@@ -74,6 +79,10 @@ private:
     // that makes it up changes
     int64_t m_level = 0;
     int64_t m_level_left = 0;           // stereo only: the left channel of it
+    // Stereo and recording a video: the mono sum the video takes, and whether
+    // it was summed with the current level
+    int64_t m_level_mono = 0;
+    bool m_mono_valid = false;
     bool m_level_dirty = true;
 
     // 2 when a source of the mix is stereo: the buffer, the capture and the
@@ -87,6 +96,7 @@ private:
     // sees the same "mixed" field in a silent run
     std::vector<std::string> m_source_names;
     std::vector<int32_t> m_idle_sample;
+    std::vector<int32_t> m_idle_sample_left;    // a stereo source is heard on either side
     std::vector<char> m_heard;
     bool m_idle_share = true;
     bool m_idle_taken = false;          // m_idle_sample holds this reset's samples
@@ -131,13 +141,16 @@ private:
     // Sample accumulator
     int64_t m_accumulator;
     int64_t m_accumulator_left = 0;
+    int64_t m_accumulator_mono = 0;
     int64_t m_acc_counter;
     float m_last_input;
     float m_last_input_left = 0;
+    float m_last_input_mono = 0;
 
     // DC offset removal, keeps silence at 0 to avoid clicks on start/stop/mute
     DCBlocker m_dc_blocker;
     DCBlocker m_dc_blocker_left;
+    DCBlocker m_dc_blocker_mono;
 
     // Low pass filter
     bool m_use_lpf;
@@ -146,6 +159,7 @@ private:
     int m_lpf_coutoff;
     ButterworthLowPassFilter m_filter;
     ButterworthLowPassFilter m_filter_left;
+    ButterworthLowPassFilter m_filter_mono;
 
     // Запись того, что уходит в звуковое устройство, в WAV (команда record).
     // Работает и без устройства (--no-sound): тогда тракт выборок заводится

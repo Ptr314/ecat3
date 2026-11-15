@@ -87,6 +87,10 @@ emulator::Result FDD::load_config(SystemData *sd)
     } catch (std::exception &e) {
         return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect fdd parameters for")) + "} " + name);
     }
+    m_config_tracks = tracks;
+    m_max_tracks = (int)read_confg_value(cd, "max_tracks", false, (unsigned int)tracks);
+    if (m_max_tracks < tracks || sides * m_max_tracks > (int)(sizeof(track_indexes) / sizeof(track_indexes[0])))
+        return emulator::Result::error(emulator::ErrorCode::ConfigError, "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect fdd parameters for")) + "} " + name + " (max_tracks)");
 
     files_save = cd->get_parameter("files_save", false).value;
     if (files_save.empty()) files_save = files;
@@ -402,10 +406,16 @@ emulator::Result FDD::load_image(const std::string &file_name)
                     case FDD_MODE_IBM_FM:
                     case FDD_MODE_IBM_MFM: {
                         // Плоский образ секторов - дорожки, как их размечает
-                        // ПЗУ. Образ короче геометрии - остаток пустой
+                        // ПЗУ. Образ короче геометрии привода - остаток пустой;
+                        // длиннее (MK-DOS размечает 81-83 дорожки) - привод
+                        // растет под него до max_tracks целыми дорожками, и
+                        // сохраняется столько же. Каждый образ начинает с
+                        // геометрии конфигурации, а не с прежнего диска
                         const long long file_size = dsk_tools::utf8_file_size(file_name);
-                        const long long flat_size = (long long)sides * tracks * sectors * sector_size;
-                        if (file_size <= 0 || file_size > flat_size)
+                        const long long track_bytes = (long long)sides * sectors * sector_size;
+                        long long want = m_config_tracks;
+                        if (file_size > want * track_bytes) want = (file_size + track_bytes - 1) / track_bytes;
+                        if (file_size <= 0 || want > m_max_tracks)
                             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Incorrect disk image size for")) + "} " + file_name);
                         std::vector<uint8_t> flat((size_t)file_size, 0);
@@ -414,6 +424,7 @@ emulator::Result FDD::load_image(const std::string &file_name)
                             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                                 "{FDD|" + std::string(QT_TRANSLATE_NOOP("FDD", "Error opening file")) + "} " + file_name);
                         file.read(reinterpret_cast<char*>(flat.data()), (std::streamsize)flat.size());
+                        tracks = (int)want;
                         sides_layout = layout_for_file(file_name);
                         if (fdd_mode == FDD_MODE_IBM_FM)
                             converted = generate_tracks_ibm_fm(flat.data(), flat.size(), sides, tracks, sectors, sector_size,
@@ -1658,6 +1669,7 @@ std::vector<DeviceFieldInfo> FDD::get_device_fields()
     r.push_back({"motor",       "1 if the motor is on",                 false});
     r.push_back({"led",         "1 if the activity led is on",          false});
     r.push_back({"track",       "Current track",                        false});
+    r.push_back({"tracks",      "Tracks of the disk: the drive's, or more for a longer sector image (max_tracks)", false});
     r.push_back({"sector",      "Current sector",                       false});
     r.push_back({"side",        "Current side",                         false});
     r.push_back({"position",    "Current position on a track",          false});
@@ -1704,6 +1716,7 @@ bool FDD::get_field(const std::string &field, unsigned int from, unsigned int to
     if (field == "motor")       { out.values.push_back(motor_on?1:0);       return true; }
     if (field == "led")         { out.values.push_back(is_led_on()?1:0);    return true; }
     if (field == "track")       { out.values.push_back(track);              return true; }
+    if (field == "tracks")      { out.values.push_back(tracks);             return true; }
     if (field == "sector")      { out.values.push_back(sector);             return true; }
     if (field == "side")        { out.values.push_back(side);               return true; }
 

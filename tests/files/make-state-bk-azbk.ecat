@@ -1,0 +1,34 @@
+# Сборка эталонного снимка состояния для state-bk0011m-azbk.ecat.
+#
+# Запускается руками, а не набором тестов: снимок - это двоичный эталон,
+# который обновляют осознанно. Из каталога deploy/:
+#
+#   eCat3-headless --no-sound --script ../tests/files/make-state-bk-azbk.ecat
+#
+# БК0011М + AZBK на экране BIOS. Псевдодиск AZ0 вынут (снимок унес бы образ
+# целиком). Окно 14 (0160000) переводится на страницу 01234 с RPLY, туда
+# кладется образец; в последнее слово 32 МБ памяти AZ - еще один; ячейка
+# палитры 0400 меняется. Процессор крутится на BR . по 01000.
+
+MACHINE "bk/BK-0011M-azbk.ext"
+LOGDEFS _16,_8
+WAIT _2500
+
+COMMAND cpu.stop()
+COMMAND az0.eject()
+COMMAND ram0.set16(1000, 000777)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 1000)
+
+COMMAND azbk.set16(177334, 1234)
+COMMAND azbk.set16(177340, 040000)
+COMMAND mapper.set16(160000, 054321, 012345)
+COMMAND azbk-ram.set16(177777776, 070707)
+COMMAND azbk-vga.set16(177234, 400)
+COMMAND azbk-vga.set16(177236, 012345)
+LOG azbk.windows
+
+COMMAND cpu.run()
+WAIT _100
+SAVESTATE "state-bk-azbk.ecats.zip"
+EXIT

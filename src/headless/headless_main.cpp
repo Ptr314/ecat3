@@ -30,6 +30,7 @@
 #include "emulator/disasm_pdp11.h"
 #include "emulator/disasm_buffer.h"
 #include "emulator/audio/rate_match.h"
+#include "emulator/devices/specific/azbk_sound.h"
 //Часть помощников dsk_tools объявлена в его внутреннем заголовке, и звать
 //его надо по полному пути: короткий "utils.h" из dsk_tools.h у MSVC попадает
 //в emulator/utils.h - он ищет кавычечный include и по цепочке включающих
@@ -522,6 +523,54 @@ bool check_zx_tape_round_trip(std::string &message)
                     message += ", first difference at " + std::to_string(i);
                     break;
                 }
+            return false;
+        }
+    }
+    return true;
+}
+
+//IMA ADPCM of the AZBK sound DMA. The bytes and the samples come from the
+//encoder and decoder MAXIOL ships for the board (imaed of 2021), run
+//on a ramp, both limits and silence: the step index reaches 88 and 0 and the
+//sample saturates in both directions, mono two samples per byte (low nibble
+//first), stereo a frame per byte (low nibble left)
+bool check_ima_adpcm(std::string &message)
+{
+    static const uint8_t mono_bytes[] = {
+        255, 255, 255, 70, 67, 67, 50, 52, 119, 4, 0, 0, 0, 0, 0, 0, 255, 191, 8, 136, 128, 8, 136, 128,
+        71, 8, 8, 8, 8, 8, 8, 8, 128, 8, 128, 8, 8, 128, 8, 128, 128, 8, 128, 8, 8, 128, 128, 8};
+    static const int16_t mono_pcm[] = {
+        -11, -41, -104, -240, -533, -1164, 12, 1454, 2812, 4399, 5891, 7637, 8810, 10302, 12048, 13690,
+        16889, 23751, 32576, 32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767,
+        32767, 32767, 27614, 16564, -7125, -30824, -32768, -29970, -32513, -32768, -30666, -32577, -32768,
+        -31189, -32624, -32768, -31582, -32660, -17952, 968, -1575, 737, -1365, 546, -1191, 388, -1047,
+        258, -928, 150, -830, 61, -749, -13, 656, 48, -505, -2, 455, 40, -338, 5, -307, -23, 235, 1,
+        -212, -18, 158, -2, 143, 11, -109, 0, 99, 9, -73, 1, -67, -6, 50, -1, 45, 3, -35, -1};
+    static const uint8_t stereo_bytes[] = {
+        255, 255, 79, 127, 127, 127, 246, 244, 51, 116, 115, 68, 242, 147, 20, 19, 23, 23, 244, 0, 0, 16,
+        0, 16, 240, 80, 240, 112, 240, 112, 240, 112, 255, 127, 255, 123, 248, 112, 248, 120, 176, 136,
+        8, 128, 8, 136, 0, 136};
+    static const int16_t stereo_pcm[] = {
+        -11, -11, -41, -41, -104, -3, -240, 73, -533, 238, -1164, 593, 12, -172, 1454, -1814, 2812, -172,
+        4399, 3027, 5891, 9889, 7637, 18714, 8810, 916, 10302, -6714, 12048, 223, 13690, 6529, 16889,
+        12262, 23751, 17473, 32576, -6216, 32767, -2831, 32767, 246, 32767, 8640, 32767, 11183, 32767,
+        18120, 32767, -13413, 32767, 31640, 32767, -29796, 32767, 31640, 32767, -29796, 32767, 31640,
+        32767, -29796, 32767, 31640, 27614, -29796, 16564, 31640, -7125, -29796, -30824, 31640, -32768,
+        -29796, -29970, 31640, -32513, -29796, -32768, 31640, -30666, 2971, -32577, -753, -32768, 2632,
+        -31189, -445, -32624, 2353, -32768, -190, -31582, 2122, -32660, 20};
+    const struct { const char * what; const uint8_t * data; size_t bytes; bool stereo; const int16_t * pcm; } cases[] = {
+        {"mono",   mono_bytes,   sizeof(mono_bytes),   false, mono_pcm},
+        {"stereo", stereo_bytes, sizeof(stereo_bytes), true,  stereo_pcm},
+    };
+    for (const auto &c : cases)
+    {
+        std::vector<int16_t> out(c.bytes * 2, 0);
+        AZBKSound::ima_decode(c.data, c.bytes, c.stereo, out.data());
+        for (size_t i = 0; i < out.size(); i++)
+        {
+            if (out[i] == c.pcm[i]) continue;
+            message = std::string(c.what) + " sample " + std::to_string(i) + " is " + std::to_string(out[i])
+                    + ", MAXIOL's decoder gives " + std::to_string(c.pcm[i]);
             return false;
         }
     }
@@ -1549,6 +1598,34 @@ bool check_platforms(const std::string &work_path, std::string &message)
         }
     }
 
+    //Several disks of one program for different systems: "prefer" picks by a
+    //fragment of the path, in its order, without regard to case
+    const std::vector<std::string> disks(1, ".img");
+    std::vector<std::string> andos;
+    andos.push_back("ANDOS");
+    andos.push_back("MKDOS");
+    const Pick preferred[] = {
+        //The name of the disk, among bins that are not of this type
+        {"10-sight4_by_CSI.zip", {"bins/a.bin", "disks/s4_CSIDOS.IMG", "disks/s4_andos.img", "disks/s4_MKDOS.IMG"}, 2},
+        //No ANDOS: the next fragment, here in the directory
+        {"11-eCSIt_demo_2022_by_CSI.zip", {"disk_CSIDOS/ECSIT.IMG", "disk_MKDOS/ECSIT.IMG"}, 1},
+        //Two for ANDOS decide nothing, and MK-DOS is not looked at then
+        {"12-x.zip", {"a_ANDOS.img", "b_ANDOS.img", "c_MKDOS.img"}, -1},
+        //The name of the archive still comes first
+        {"13-s4_mkdos.zip", {"s4_andos.img", "s4_mkdos.img"}, 1},
+    };
+    for (size_t i = 0; i < sizeof(preferred) / sizeof(preferred[0]); i++)
+    {
+        std::string problem;
+        const int got = pick_archive_member(preferred[i].archive, preferred[i].names, disks, problem, andos);
+        if (got != preferred[i].want || (got < 0) != !problem.empty())
+        {
+            message = std::string(preferred[i].archive) + ": file " + std::to_string(got) + " picked, "
+                    + std::to_string(preferred[i].want) + " expected (prefer)";
+            return false;
+        }
+    }
+
     //The table of the installation, next to computers/
     std::string root = work_path;
     while (!root.empty() && root[root.size() - 1] == '/') root.erase(root.size() - 1);
@@ -1576,7 +1653,7 @@ bool check_platforms(const std::string &work_path, std::string &message)
         }
         for (size_t p = 0; p < d->parameters.size(); p++)
         {
-            if (d->parameters[p].name == "names") continue;
+            if (platform_table_setting(d->parameters[p].name)) continue;
             const std::string script = launch_dir + str_trim(d->parameters[p].value);
             std::vector<ScriptCommand> commands;
             std::vector<std::string> errors;
@@ -1670,6 +1747,11 @@ int run_selftest(const std::string &work_path, const std::string &data_path,
     const bool hex_ok = check_hex_round_trip(message);
     if (!hex_ok) { std::cout << "FAIL hex: " << message << std::endl; failed++; }
     std::cout << "hex dump round trip: " << (hex_ok ? "ok" : "FAILED") << std::endl;
+
+    message.clear();
+    const bool ima_ok = check_ima_adpcm(message);
+    if (!ima_ok) { std::cout << "FAIL IMA ADPCM: " << message << std::endl; failed++; }
+    std::cout << "AZBK IMA ADPCM: " << (ima_ok ? "ok" : "FAILED") << std::endl;
 
     message.clear();
     const bool zx_ok = check_zx_tape_round_trip(message);

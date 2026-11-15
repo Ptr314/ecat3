@@ -124,6 +124,7 @@ emulator::Result GenericSound::load_config(SystemData *sd)
     }
     m_idle_share = read_confg_value(cd, "idle_share", false, true);
     m_idle_sample.assign(m_sources.size(), 0);
+    m_idle_sample_left.assign(m_sources.size(), 0);
     m_heard.assign(m_sources.size(), m_idle_share ? 1 : 0);
 
     // A source's configuration is read by its constructor, so it can answer
@@ -194,6 +195,7 @@ void GenericSound::setup_pipeline()
 
     m_dc_blocker.setup(m_sample_rate, 20);
     m_dc_blocker_left.setup(m_sample_rate, 20);
+    m_dc_blocker_mono.setup(m_sample_rate, 20);
     refresh_sources();
 
     // A cutoff at or above half the sample rate is no filter at all, and
@@ -204,6 +206,7 @@ void GenericSound::setup_pipeline()
     if (m_lpf_on) {
         m_filter.setup(m_sample_rate, m_lpf_coutoff);
         m_filter_left.setup(m_sample_rate, m_lpf_coutoff);
+        m_filter_mono.setup(m_sample_rate, m_lpf_coutoff);
     }
     m_pipeline = true;
 }
@@ -332,15 +335,19 @@ void GenericSound::listen_to_sources()
 {
     m_listen_left += listen_period(m_system_clock);
     if (!m_idle_taken) {
-        for (size_t i = 0; i < m_sources.size(); i++)
+        for (size_t i = 0; i < m_sources.size(); i++) {
             m_idle_sample[i] = m_sources[i]->sound_sample(LISTEN_AMPLITUDE);
+            m_idle_sample_left[i] = m_sources[i]->sound_sample_left(LISTEN_AMPLITUDE);
+        }
         m_idle_taken = true;
         return;
     }
+    // A stereo source may sound on one side only (channel C of an AZBK AY)
     bool unheard = false;
     for (size_t i = 0; i < m_sources.size(); i++) {
         if (m_heard[i]) continue;
-        if (m_sources[i]->sound_sample(LISTEN_AMPLITUDE) != m_idle_sample[i]) m_heard[i] = 1;
+        if (m_sources[i]->sound_sample(LISTEN_AMPLITUDE) != m_idle_sample[i]
+            || m_sources[i]->sound_sample_left(LISTEN_AMPLITUDE) != m_idle_sample_left[i]) m_heard[i] = 1;
         else unheard = true;
     }
     m_listening = unheard;
@@ -375,7 +382,10 @@ void GenericSound::clock(unsigned int counter)
     // every instruction of the processor the device is clocked with
     // Summed again only when a part of it may have changed: that is most of
     // the cost of sound, paid on every instruction for the same silence
-    if (m_level_dirty || m_self_volatile || m_sources_volatile) {
+    // A video of a stereo mix takes a mono sum of its own (an AY with its
+    // channels over both sides would lose one of them in the right channel)
+    const bool mono = m_video_capture && m_channels == 2;
+    if (m_level_dirty || m_self_volatile || m_sources_volatile || (mono && !m_mono_valid)) {
         m_level_dirty = false;
         m_level = calc_sound_value();
         m_level_left = m_level;
@@ -384,7 +394,15 @@ void GenericSound::clock(unsigned int counter)
         if (m_channels == 2)
             for (size_t i = 0; i < m_active.size(); i++)
                 m_level_left += m_active[i]->sound_sample_left(m_amplitude);
+        m_mono_valid = mono;
+        if (mono) {
+            m_level_mono = calc_sound_value();
+            for (size_t i = 0; i < m_active.size(); i++)
+                m_level_mono += m_active[i]->sound_sample_mono(m_amplitude);
+        }
     }
+    // Out of a video the sum goes stale: the next one sums it anew
+    if (!mono) m_mono_valid = false;
     const int64_t level = m_level;
 
     // The level is weighted by the clock ticks it was held for. An instruction
@@ -393,6 +411,7 @@ void GenericSound::clock(unsigned int counter)
     // bytes of a DAC, the pulse widths of a one-bit output
     m_accumulator += level * counter;
     if (m_channels == 2) m_accumulator_left += m_level_left * counter;
+    if (mono) m_accumulator_mono += m_level_mono * counter;
     m_acc_counter += counter;
 
     m_counter += counter << 8;
@@ -434,11 +453,22 @@ void GenericSound::clock(unsigned int counter)
             if (out_left > 32767.0f) out_left = 32767.0f;
             else if (out_left < -32768.0f) out_left = -32768.0f;
         }
-        m_accumulator = m_accumulator_left = m_acc_counter = 0;
-
         // A video takes the sound whether the window is muted or not: the
         // sound of the speakers is not the sound of the machine
-        if (m_video_capture) m_video_data.push_back(static_cast<int16_t>(out));
+        if (m_video_capture) {
+            float out_mono = out;
+            if (m_channels == 2) {
+                float vm = (m_acc_counter > 0) ? static_cast<float>(m_accumulator_mono) / (float)(m_acc_counter * m_shares) : m_last_input_mono;
+                m_last_input_mono = vm;
+                out_mono = m_dc_blocker_mono.process(vm);
+                if (m_lpf_on) out_mono = m_filter_mono.process(out_mono);
+                if (m_limiter) out_mono = soft_limit(out_mono);
+                if (out_mono > 32767.0f) out_mono = 32767.0f;
+                else if (out_mono < -32768.0f) out_mono = -32768.0f;
+            }
+            m_video_data.push_back(static_cast<int16_t>(out_mono));
+        }
+        m_accumulator = m_accumulator_left = m_accumulator_mono = m_acc_counter = 0;
 
         if (m_muted) out = out_left = 0;
 
@@ -604,6 +634,12 @@ void GenericSound::save_state(StateWriter &w)
         for (size_t i = 0; i < heard.size(); i++) flat[i] = heard[i] ? 1 : 0;
         w.array("heard", reinterpret_cast<const uint8_t *>(flat.data()), flat.size());
         if (!samples.empty()) w.array("idle_sample", samples.data(), samples.size());
+        //Only with a stereo source: for a mono one both sides are the same
+        if (m_channels == 2 && !m_idle_sample_left.empty()) {
+            for (size_t i = 0; i < m_idle_sample_left.size(); i++)
+                samples[i] = static_cast<uint32_t>(m_idle_sample_left[i]);
+            w.array("idle_sample_left", samples.data(), samples.size());
+        }
     }
 }
 
@@ -637,6 +673,10 @@ emulator::Result GenericSound::load_state(const StateReader &r)
         r.array("idle_sample", samples.data(), samples.size());
         for (size_t i = 0; i < m_idle_sample.size(); i++)
             m_idle_sample[i] = static_cast<int32_t>(samples[i]);
+        //A mono mix, or a state from before the left side was kept
+        r.array("idle_sample_left", samples.data(), samples.size());
+        for (size_t i = 0; i < m_idle_sample_left.size() && i < samples.size(); i++)
+            m_idle_sample_left[i] = static_cast<int32_t>(samples[i]);
     }
     return emulator::Result::ok();
 }

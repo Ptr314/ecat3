@@ -7,7 +7,7 @@ this file only if a rule changes.
 ## Project
 
 **eCat3** is a universal emulator of retro computers (Орион-128, Радио-86РК and family, Агат-7/9, Ириша,
-БК0010/0011М with СМК-512 and А16М, УК-НЦ, ДВК-1..4, Поиск-1, Юниор, Арго, Правец-82/8М/8А/8С/8Д, Электроника МС 0585) in C++. The core
+БК0010/0011М with СМК-512, А16М and AZBK, УК-НЦ, ДВК-1..4, Поиск-1, Юниор, Арго, Правец-82/8М/8А/8С/8Д, Электроника МС 0585) in C++. The core
 (`src/emulator/`) is **Qt-free**, using only the standard library, so it also builds for the console
 (`src/headless/`) and WebAssembly (`src/wasm/`). Qt is only the windowed GUI (`src/mainwindow.*`,
 `src/dialogs/`, `src/renderers/`). Targets: Windows 7+ (XP kit too), macOS, Linux.

@@ -1,0 +1,86 @@
+# БК0011М + AZBK: пара AY платы (MAXIOL, тема 5553, «Добавлена эмуляция
+# 2xAY»). 0177172/0177173 - адрес и данные первой, 0177174/0177175 - второй,
+# прямой код; выход - справа A и B обеих, слева C и B обеих. Частота (Б.1)
+# здесь не проверяется: она не описана.
+#
+# Тип - разряд 3 0177212: после включения 0, YM2149 (стартовое ПЗУ пишет туда
+# выбор SETUP, при пустой памяти тоже 0). У YM2149 постоянная громкость v -
+# ступень 2v+1 из 32 (уровни - модель MAME), поэтому громкость 0 дает не 0, а
+# 2 из 1000.
+#
+# Процессор пишет регистры сам: первой AY словами (адрес младшим байтом,
+# данные старшим), второй - байтами. Регистр 7 = 077 выключает тон и шум, и
+# канал звучит своей громкостью: у первой A = 017 (справа), у второй C = 017
+# (слева). Затем B первой: и справа, и слева. Чтение слова порта - адрес и
+# выбранный регистр, как у микросхемы (MAXIOL чтения не описал).
+#
+# Огибающая второй AY (форма 010 - пила вниз, период 1000): у YM2149 32
+# ступени по 8 * 1000 тактов, за 50 мс - 10 ступеней (31 - 10 = 21); у
+# AY-3-8910 (0177212 = 010) 16 ступеней по 16 * 1000 тактов, за 50 мс - 5
+# (15 - 5 = 10).
+#
+# Смесь: источник входит в нее, только когда зазвучал (idle_share = 0); вторая
+# AY звучит одним левым каналом и тоже входит. Приставка БК на 0177714 молчит
+# и в смесь не входит.
+# @timeout 60
+
+MACHINE "bk/BK-0011M-azbk.ext"
+LOGDEFS _16,_8
+WAIT _500
+LOG sound.mixed
+LOG azbk-sound.control
+LOG az-ay1.ym
+LOG az-ay2.ym
+COMMAND cpu.stop()
+COMMAND ram0.set16(1000, 012737, 037407, 177172)
+COMMAND ram0.set16(1006, 012737, 007410, 177172)
+COMMAND ram0.set16(1014, 112737, 000007, 177174)
+COMMAND ram0.set16(1022, 112737, 000077, 177175)
+COMMAND ram0.set16(1030, 112737, 000012, 177174)
+COMMAND ram0.set16(1036, 112737, 000017, 177175)
+COMMAND ram0.set16(1044, 013700, 177172)
+COMMAND ram0.set16(1050, 013701, 177174)
+COMMAND ram0.set16(1054, 000777)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+WAIT _10
+
+PRINT "=== A первой, C второй (YM2149) ==="
+LOG cpu.registers
+LOG az-ay1.regs(7,12)
+LOG az-ay1.left
+LOG az-ay1.right
+LOG az-ay2.regs(7,12)
+LOG az-ay2.left
+LOG az-ay2.right
+LOG ay.level
+LOG sound.mixed
+
+PRINT "=== B первой ==="
+COMMAND mapper.set16(177172, 007411)
+WAIT _10
+LOG az-ay1.left
+LOG az-ay1.right
+
+PRINT "=== Огибающая YM2149: 32 ступени ==="
+COMMAND mapper.set16(177174, 164013)
+COMMAND mapper.set16(177174, 001414)
+COMMAND mapper.set16(177174, 010012)
+COMMAND mapper.set16(177174, 004015)
+WAIT _50
+LOG az-ay2.envelope
+LOG az-ay2.left
+
+PRINT "=== AY-3-8910 (0177212 = 010): 16 ступеней ==="
+COMMAND mapper.set16(177212, 10)
+LOG azbk-sound.control
+LOG az-ay1.ym
+LOG az-ay2.ym
+LOG az-ay1.left
+LOG az-ay1.right
+COMMAND mapper.set16(177174, 004015)
+WAIT _50
+LOG az-ay2.envelope
+LOG az-ay2.left
+EXIT

@@ -118,6 +118,13 @@ set(ECAT_CORE_SOURCES
     emulator/devices/specific/uknc_hdd.h emulator/devices/specific/uknc_hdd.cpp
     emulator/devices/specific/uknc_ram_timing.h emulator/devices/specific/uknc_ram_timing.cpp
     emulator/devices/specific/smk512.h emulator/devices/specific/smk512.cpp
+    emulator/devices/specific/azbk.h emulator/devices/specific/azbk.cpp
+    emulator/devices/specific/azbk_vga.h emulator/devices/specific/azbk_vga.cpp
+    emulator/devices/specific/azbk_blitter.h emulator/devices/specific/azbk_blitter.cpp
+    emulator/devices/specific/azbk_display.h emulator/devices/specific/azbk_display.cpp
+    emulator/devices/specific/azbk_sound.h emulator/devices/specific/azbk_sound.cpp
+    emulator/devices/specific/azbk_disk.h emulator/devices/specific/azbk_disk.cpp
+    emulator/devices/common/hdd_unit.h emulator/devices/common/hdd_unit.cpp
     emulator/devices/specific/a16m.h emulator/devices/specific/a16m.cpp
     emulator/devices/specific/uknc_timer.h emulator/devices/specific/uknc_timer.cpp
     emulator/devices/specific/uknc_keyboard.h emulator/devices/specific/uknc_keyboard.cpp

@@ -1,0 +1,34 @@
+# БК0011М + AZBK: холодный старт стартовым ПЗУ MAXIOL и загрузка ANDOS с AZ0.
+#
+# При включении разряды 6-8 0177346 нулевые: стартовое ПЗУ (azboot.asm)
+# записывает 0700, пищит и командой 037 перезапускает плату и БК. Второй
+# проход видит 7 и ведет BIOS: экран 256 цветов, частота процессора (по
+# таймеру БК против кадрового таймера AZ - 4 МГц), проверки, сеть (ее нет:
+# адрес нулевой, 20 попыток NTP), затем AZ337 грузит систему с псевдодиска
+# AZ0 (andos330.img из поставки, запись только в память).
+# @timeout 120
+
+MACHINE "bk/BK-0011M-azbk.ext"
+LOGDEFS _16,_8
+
+WAIT _60
+PRINT "=== Первый проход: 700 в 0177346 и команда 037 ==="
+LOG azbk.control
+LOG azbk-disk.trace
+
+WAIT _2000
+PRINT "=== Второй проход: экран BIOS ==="
+LOG azbk.start
+LOG azbk.control
+LOG azbk-vga.mode
+LOG display.crc
+SCREEN "../results/boot-bk0011m-azbk-bios.png"
+
+WAIT _18000
+PRINT "=== ANDOS загружен с AZ0 ==="
+LOG az0.reads
+LOG azbk.windows
+LOG azbk-vga.mode
+LOG display.crc
+SCREEN "../results/boot-bk0011m-azbk.png"
+EXIT

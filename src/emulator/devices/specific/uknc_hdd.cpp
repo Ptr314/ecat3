@@ -253,7 +253,7 @@ emulator::Result UKNCHDD::load_config(SystemData *sd)
     emulator::Result res = AddressableDevice::load_config(sd);
     if (!res) return res;
 
-    files = read_confg_value(cd, "files", false, std::string(""));
+    files = cd->get_parameter("files", false).value;     // подпись окна выбора, как написана
     m_bk = read_confg_value(cd, "board", false, std::string("uknc")) == "bk";
     m_image.set_write_protect(read_confg_value(cd, "write_protect", false, false));
     m_image.set_volatile(read_confg_value(cd, "volatile", false, false));
@@ -266,7 +266,10 @@ emulator::Result UKNCHDD::load_config(SystemData *sd)
     // Образ винчестера - файл на сотни мегабайт, его не кладут рядом с
     // машиной и не возят с эмулятором. Поэтому его отсутствие не ошибка:
     // гнездо просто пустое, а образ вставляют командой load
-    const std::string image = read_confg_value(cd, "image", false, std::string(""));
+    // Как написано: read_confg_value() приводит строку к нижнему регистру, и
+    // образ с заглавными буквами в имени не находился там, где регистр
+    // в именах файлов важен (Linux, веб-версия)
+    const std::string image = str_trim(cd->get_parameter("image", false).value);
     if (!image.empty()) {
         const std::string file = find_file_location(sd, image);
         if (!file.empty()) {

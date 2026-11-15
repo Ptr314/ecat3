@@ -27,6 +27,15 @@
 // is. The second names the first in "pair": it is plugged in and out with it,
 // and takes a share of the mix only once a program has written to it, so a
 // program for a single AY sounds exactly as before.
+//
+// A chip is mono unless "left" and "right" name the channels of each side
+// (left = bc, right = ab: the pair of the AZBK board, B in both). Each side is
+// then at full scale with all of its channels at their loudest.
+//
+// The same chip may play as a YM2149 ("type", or the ~ym line where the host
+// switches it: the AZBK, bit 3 of 0177212). Its envelope has 32 steps, each
+// half as long, and its own DAC; a fixed volume v is step 2v + 1. The levels
+// are MAME's model of the YM2149 (ay8910.cpp), see YM_VOLUME.
 
 #define AY_REGS             16
 #define AY_TONE_CHANNELS    3
@@ -43,6 +52,12 @@ private:
     Interface i_bc1;
     Interface i_da;
     Interface i_da_out;
+    // 1: play as a YM2149. Optional; without it "type" decides
+    Interface i_ym;
+    bool m_ym = false;
+    void set_ym(bool ym);
+    unsigned int env_max() const { return m_ym ? 0x1F : 0x0F; }
+    void env_tick();
     // The chip takes the data cycles only after an address cycle whose upper
     // four bits were its own mask code, 0000
     bool m_active = true;
@@ -54,6 +69,14 @@ private:
     uint32_t m_acc;
 
     unsigned int m_board_chip = 0;      // 1 or 2 on a 2xAY board, 0 alone
+
+    // Channels of each side, bit 0 for A; both 7 for a mono chip. Read by the
+    // constructor: the mixer asks sound_stereo() before this device's
+    // load_config() when it comes first in the configuration
+    bool m_stereo = false;
+    bool m_channels_bad = false;        // "left" or "right" names no channel
+    unsigned int m_left_mask = 7;
+    unsigned int m_right_mask = 7;
     bool m_selected = true;             // this chip takes the data writes
     AY8910 * m_pair = nullptr;          // the first chip, for the second
     AY8910 * m_partner = nullptr;       // the second chip, for the first
@@ -91,7 +114,8 @@ private:
     unsigned int read_reg(unsigned int reg);
     void restart_envelope();
     void tick();
-    unsigned int level();
+    unsigned int level(unsigned int mask);
+    int32_t side_sample(unsigned int mask, int64_t amplitude);
 
 protected:
     void plug_changed() override;
@@ -113,6 +137,9 @@ public:
     unsigned int get_direct(unsigned int address) override;
 
     int32_t sound_sample(int64_t amplitude) override;
+    bool sound_stereo() override { return m_stereo; }
+    int32_t sound_sample_left(int64_t amplitude) override;
+    int32_t sound_sample_mono(int64_t amplitude) override;
     bool sound_active() override;
     // Before the first write every register is 0 and the output is silence;
     // after it the generators move the level on their own

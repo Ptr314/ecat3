@@ -1,0 +1,7 @@
+// БК0011М + AZBK с доработкой управления 037 (Verilog MAXIOL: разряд 14
+// 0177346 = 1, разряд 9 отключает ОЗУ БК 000000-137777). Для теста
+// work-bk0011m-azbk-vp037
+@extends bk/BK-0011M-azbk.ext
+@version БК0011М + AZBK, доработка 037 (тест)
+
+azbk:modification = vp037

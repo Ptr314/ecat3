@@ -148,7 +148,10 @@ emulator::Result DWController::load_config(SystemData *sd)
 // пустое, образ вставляют командой load или из меню
 emulator::Result DWController::load_image()
 {
-    const std::string image = read_confg_value(cd, "image", false, std::string(""));
+    // Как написано: read_confg_value() приводит строку к нижнему регистру, и
+    // образ с заглавными буквами в имени не находился там, где регистр
+    // в именах файлов важен (Linux, веб-версия)
+    const std::string image = str_trim(cd->get_parameter("image", false).value);
     if (!image.empty()) {
         const std::string file = find_file_location(sd, image);
         if (!file.empty()) {

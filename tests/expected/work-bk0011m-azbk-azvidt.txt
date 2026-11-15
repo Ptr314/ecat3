@@ -1,0 +1,182 @@
+[azbk-vga.mode] &012100
+[display.crc] &36676705145
+=== 003300 ===
+[azbk-vga.mode] &003300
+[display.crc] &06551377705
+=== 012300 ===
+[azbk-vga.mode] &012300
+[display.crc] &10354476645
+=== 021300 ===
+[azbk-vga.mode] &021300
+[display.crc] &14220103305
+=== 040300 ===
+[azbk-vga.mode] &040300
+[display.crc] &10426475405
+=== 040200 ===
+[azbk-vga.mode] &040200
+[display.crc] &35545431105
+=== 021200 ===
+[azbk-vga.mode] &021200
+[display.crc] &37705067405
+=== 012200 ===
+[azbk-vga.mode] &012200
+[display.crc] &04214526425
+=== 003200 ===
+[azbk-vga.mode] &003200
+[display.crc] &35305674005
+=== 003100 ===
+[azbk-vga.mode] &003100
+[display.crc] &14702613505
+=== 012100 ===
+[azbk-vga.mode] &012100
+[display.crc] &31445674205
+=== 021100 ===
+[azbk-vga.mode] &021100
+[display.crc] &03175476105
+=== 040100 ===
+[azbk-vga.mode] &040100
+[display.crc] &23446206405
+=== 060010 ===
+[azbk-vga.mode] &060010
+[display.crc] &25366151005
+=== 041010 ===
+[azbk-vga.mode] &041010
+[display.crc] &12214450105
+=== 032010 ===
+[azbk-vga.mode] &032010
+[display.crc] &02342461345
+=== 023010 ===
+[azbk-vga.mode] &023010
+[display.crc] &10407537105
+=== 003301 ===
+[azbk-vga.mode] &003301
+[display.crc] &00414417305
+=== 012301 ===
+[azbk-vga.mode] &012301
+[display.crc] &26525443145
+=== 021301 ===
+[azbk-vga.mode] &021301
+[display.crc] &04210552705
+=== 040301 ===
+[azbk-vga.mode] &040301
+[display.crc] &21117047205
+=== 040201 ===
+[azbk-vga.mode] &040201
+[display.crc] &03136233305
+=== 021201 ===
+[azbk-vga.mode] &021201
+[display.crc] &33225027005
+=== 012201 ===
+[azbk-vga.mode] &012201
+[display.crc] &01752320025
+=== 003201 ===
+[azbk-vga.mode] &003201
+[display.crc] &02170123005
+=== 023111 ===
+[azbk-vga.mode] &023111
+[display.crc] &22035774505
+=== 032111 ===
+[azbk-vga.mode] &032111
+[display.crc] &26271033645
+=== 041111 ===
+[azbk-vga.mode] &041111
+[display.crc] &06520232105
+=== 060111 ===
+[azbk-vga.mode] &060111
+[display.crc] &35071316545
+=== 100021 ===
+[azbk-vga.mode] &100021
+[display.crc] &00367766465
+=== 061021 ===
+[azbk-vga.mode] &061021
+[display.crc] &22553710145
+=== 052021 ===
+[azbk-vga.mode] &052021
+[display.crc] &34047355165
+=== 043021 ===
+[azbk-vga.mode] &043021
+[display.crc] &27025502705
+=== 003302 ===
+[azbk-vga.mode] &003302
+[display.crc] &16125260005
+=== 012302 ===
+[azbk-vga.mode] &012302
+[display.crc] &00556622325
+=== 021302 ===
+[azbk-vga.mode] &021302
+[display.crc] &12154534205
+=== 040302 ===
+[azbk-vga.mode] &040302
+[display.crc] &12260440405
+=== 060212 ===
+[azbk-vga.mode] &060212
+[display.crc] &31673124145
+=== 041212 ===
+[azbk-vga.mode] &041212
+[display.crc] &01177251705
+=== 032212 ===
+[azbk-vga.mode] &032212
+[display.crc] &15260255505
+=== 023212 ===
+[azbk-vga.mode] &023212
+[display.crc] &11345364705
+=== 043122 ===
+[azbk-vga.mode] &043122
+[display.crc] &23164262005
+=== 052122 ===
+[azbk-vga.mode] &052122
+[display.crc] &22274441605
+=== 061122 ===
+[azbk-vga.mode] &061122
+[display.crc] &13203075245
+=== 100122 ===
+[azbk-vga.mode] &100122
+[display.crc] &30071540265
+=== 120032 ===
+[azbk-vga.mode] &120032
+[display.crc] &14516432435
+=== 101032 ===
+[azbk-vga.mode] &101032
+[display.crc] &11307462325
+=== 072032 ===
+[azbk-vga.mode] &072032
+[display.crc] &30624504035
+=== 063032 ===
+[azbk-vga.mode] &063032
+[display.crc] &02512055545
+=== 023313 ===
+[azbk-vga.mode] &023313
+[display.crc] &15325451105
+=== 032313 ===
+[azbk-vga.mode] &032313
+[display.crc] &04544751645
+=== 041313 ===
+[azbk-vga.mode] &041313
+[display.crc] &27200357405
+=== 060313 ===
+[azbk-vga.mode] &060313
+[display.crc] &21712243405
+=== 100223 ===
+[azbk-vga.mode] &100223
+[display.crc] &36320361705
+=== 061223 ===
+[azbk-vga.mode] &061223
+[display.crc] &24135344505
+=== 052223 ===
+[azbk-vga.mode] &052223
+[display.crc] &11416427365
+=== 043223 ===
+[azbk-vga.mode] &043223
+[display.crc] &12214467505
+=== 063133 ===
+[azbk-vga.mode] &063133
+[display.crc] &17500733205
+=== 072133 ===
+[azbk-vga.mode] &072133
+[display.crc] &34505140505
+=== 101133 ===
+[azbk-vga.mode] &101133
+[display.crc] &15457424005
+=== 120133 ===
+[azbk-vga.mode] &120133
+[display.crc] &27606362345

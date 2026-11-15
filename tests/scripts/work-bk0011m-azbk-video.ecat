@@ -1,0 +1,73 @@
+# БК0011М + AZBK: видеорежимы VGA контроллера (MAXIOL, тема 5556; однослойные
+# режимы проверены его тестом AZVIDT24 на железе).
+#
+# После старта BIOS процессор крутит BR . с запрещенными прерываниями,
+# регистры экрана и память AZ задаются напрямую, точки читаются полем
+# display.rgb (номер - строка * 1024 + x).
+# 1. 256 цветов 512x384 (0131133): байт - точка, повтор x2, ячейка палитры
+#    = байт; горизонтальный скролл на слово сдвигает на две точки.
+# 2. Плановый режим (010004): по биту из трех слоев, верхний - старший,
+#    ячейки 328-335 (верхняя половина 16-цветной палитры, MAXIOL).
+# 3. Слои по 2 бита (010005): 0 прозрачен, верхний слой первый, палитры
+#    0/1/2 по слою (ячейки 256 + 4 * слой); все прозрачно - цвет 0 нижнего.
+# 4. 4 цвета БК (012201) с палитрой 177662 и четверть экрана (177664 бит 9).
+# @timeout 60
+
+MACHINE "bk/BK-0011M-azbk.ext"
+LOGDEFS _16,_8
+WAIT _500
+COMMAND cpu.stop()
+COMMAND ram0.set16(1000, 000777)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+
+PRINT "=== 1. 256 цветов ==="
+COMMAND azbk-ram.set(04000000, 0, 1, 2, 3, 4, 5, 6, 7, 377)
+COMMAND azbk-vga.set16(177232, 400, 0)
+COMMAND azbk-vga.set16(177250, 0, 0, 0, 0)
+COMMAND azbk-vga.set16(177230, 131133)
+WAIT _40
+LOG azbk-vga.palette(0, 7)
+LOG display.rgb(0, 17)
+COMMAND azbk-vga.set16(177252, 1)
+WAIT _40
+LOG display.rgb(0, 7)
+LOG display.rgb(2000, 2007)
+
+PRINT "=== 2. Плановый режим ==="
+COMMAND azbk-ram.set16(04100000, 177777)
+COMMAND azbk-ram.set16(04110000, 000377)
+COMMAND azbk-ram.set16(04120000, 007417)
+COMMAND azbk-vga.set16(177232, 410)
+COMMAND azbk-vga.set16(177240, 411, 412)
+COMMAND azbk-vga.set16(177244, 0, 0, 0, 0, 0, 0)
+COMMAND azbk-vga.set16(177230, 010004)
+WAIT _40
+LOG azbk-vga.palette(510, 517)
+LOG display.rgb(0, 17)
+
+PRINT "=== 3. Слои по 2 бита ==="
+COMMAND azbk-ram.set16(04100000, 000004)
+COMMAND azbk-ram.set16(04110000, 000002)
+COMMAND azbk-ram.set16(04120000, 000017)
+COMMAND azbk-vga.set16(177230, 010005)
+WAIT _40
+LOG azbk-vga.palette(400, 413)
+LOG display.rgb(0, 5)
+
+PRINT "=== 4. 4 цвета БК, палитра 177662, четверть экрана ==="
+COMMAND ram5.set16(0, 033)
+COMMAND azbk-ram.set16(040000, 033)
+COMMAND azbk-vga.set16(177232, 4)
+COMMAND azbk-vga.set16(177230, 012201)
+COMMAND azbk-vga.set16(177662, 001000)
+COMMAND azbk-vga.set16(177664, 001330)
+WAIT _40
+LOG azbk-vga.legacy_palette
+LOG display.rgb(0, 17)
+COMMAND azbk-vga.set16(177664, 000330)
+WAIT _40
+LOG display.rgb(0, 3)
+LOG display.rgb(1400000, 1400003)
+EXIT

@@ -42,6 +42,7 @@
 #define ROUTE_TIMEOUT           2
 #define ROUTE_THROUGH           3
 #define ROUTE_OR                4
+#define ROUTE_SNOOP             5
 
 #define DEBUG_OFF               0
 #define DEBUG_STOPPED           1
@@ -296,6 +297,10 @@ struct MapperPage {
     AddressableDevice * device_r;   //nullptr: nothing answers a read here
     AddressableDevice * device_w;   //nullptr: nothing answers a write here
     unsigned int        offset;     //address_on_device == address + offset
+    //A routed device that listens to every write of the page (ROUTE_SNOOP):
+    //it gets the write first, then device_w answers it as usual
+    AddressableDevice * snoop;
+    unsigned int        snoop_offset;
     bool                uncached;   //this page needs the full scan under this tag
     bool                timeout_r;  //what no_device becomes when device_r is null
     bool                timeout_w;
@@ -540,11 +545,14 @@ public:
     //(ROUTE_ANSWER), leave the address to the ranges after it (ROUTE_PASS),
     //hold the bus without an answer (ROUTE_TIMEOUT), or answer a write and let
     //it go on to the ranges after it as well (ROUTE_THROUGH), or answer a read
-    //wired together with the ranges after it, OR-ed like "or_read" (ROUTE_OR).
-    //A board that
-    //switches parts of the machine's own memory off, like the СМК of the БК,
-    //decides this by its mode. Must be free of side effects: the debugger and
-    //the bus timing ask too
+    //wired together with the ranges after it, OR-ed like "or_read" (ROUTE_OR),
+    //or take a write without answering it (ROUTE_SNOOP, writes only): the
+    //device stores the value, and the cycle, its reply and its timing belong
+    //to the ranges after it, as if the device were not there. The shadow
+    //windows of the AZBK listen to the writes into the БК's own memory that
+    //way. A board that switches parts of the machine's own memory off, like
+    //the СМК of the БК, decides this by its mode. Must be free of side
+    //effects: the debugger and the bus timing ask too
     virtual unsigned int route(unsigned int address, unsigned int mode) { (void)address; (void)mode; return ROUTE_ANSWER; }
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
@@ -621,6 +629,10 @@ protected:
     bool random_fill;
     unsigned int read_callback;
     unsigned int write_callback;
+    //state_pages = 1: a saved state keeps only the 4 KB pages that are not all
+    //zero, in one blob, instead of the hex dump - for a memory of megabytes
+    //that a program fills only in part (the 32 MB of the AZBK)
+    bool m_state_pages = false;
 
 public:
     Memory(InterfaceManager *im, EmulatorConfigDevice *cd);

@@ -1,0 +1,27 @@
+# БК0011М + AZBK: время команд К1801ВМ1 с ОЗУ БК в тени контроллера.
+#
+# Та же программа 45com-lo, что в timing-bk0011m. На серийной БК контроллер
+# не отключает ОЗУ: окна 0-11 у него в тени, и каждая запись процессора в ОЗУ
+# идет и в память AZ, но ответ и время цикла остаются за ВП1-037
+# (ROUTE_SNOOP). Значения на экране должны совпасть с timing-bk0011m: 16,
+# 37.3, 32, 40, 48, 64, 72, ...
+#
+# Программа рисует в страницу 5 БК (0177716 = 014000); экран AZBK показывает
+# ее тень обычным режимом БК 512x256 (012100).
+# @timeout 60
+
+MACHINE "bk/BK-0011M-azbk.ext"
+WAIT _2500
+
+COMMAND cpu.stop()
+COMMAND mapper.set16(177716, 014000)
+COMMAND mapper.set16(177662, 040000)
+COMMAND azbk-vga.set16(177230, 012100)
+COMMAND ram0.load("../files/bk-timing/45com-lo.bin", 774)
+COMMAND cpu.setreg(SP, 1000)
+COMMAND cpu.setreg(PSW, 340)
+COMMAND cpu.setreg(PC, 1000)
+COMMAND cpu.run()
+WAIT _6000
+SCREEN "../results/timing-bk0011m-azbk-45com.png"
+EXIT

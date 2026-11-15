@@ -44,6 +44,11 @@ private:
 
     unsigned int selector;
 
+    // The tracks of the drive as configured, and how far a sector image longer
+    // than that may grow it (max_tracks: MK-DOS lays out 81-83 tracks)
+    int m_config_tracks = 0;
+    int m_max_tracks = 0;
+
     Interface i_select;
     Interface i_side;
     Interface i_density;

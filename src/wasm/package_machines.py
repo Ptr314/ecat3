@@ -116,7 +116,7 @@ def parse_ext_metadata(ext_path):
         if m:
             meta["devices"].add(m.group(1))
             continue
-        m = re.match(r'(?:image(?:_\w+)?|remap_\w+|map|keys|picture|groups)\s*=\s*([^\s{]+)', s)
+        m = re.match(r'(?:image(?:_\w+)?|rom_\d+|remap_\w+|map|keys|picture|groups|logo|eeprom)\s*=\s*([^\s{]+)', s)
         if m and "base64" not in s:
             meta["files"].append(m.group(1).strip('"'))
             continue
@@ -129,7 +129,7 @@ def parse_ext_metadata(ext_path):
         if m:
             meta["system"][m.group(1)] = m.group(2).strip()
             continue
-        m = re.match(r'[^-/@][^:]*:\s*(?:image(?:_\w+)?|remap_\w+|map|keys|picture|groups)\s*=\s*([^\s{]+)', s)
+        m = re.match(r'[^-/@][^:]*:\s*(?:image(?:_\w+)?|rom_\d+|remap_\w+|map|keys|picture|groups|logo|eeprom)\s*=\s*([^\s{]+)', s)
         if m and "base64" not in s:
             meta["files"].append(m.group(1).strip('"'))
     meta["files"], meta["optional"] = with_drawings(meta["files"])
@@ -215,7 +215,8 @@ def parse_cfg_metadata(cfg_path):
         m = re.search(r'order\s*=\s*(-?\d+)', block)
         if m: order = int(m.group(1))
 
-    # Files a config refers to: ROM/disk images, the host keyboard map, and the
+    # Files a config refers to: ROM/disk images (image, and the ROM slots
+    # rom_NN, logo and eeprom of the AZBK board), the host keyboard map, and the
     # native key table with the keyboard drawing the on-screen keyboard needs.
     # The line must start with the parameter, or "charmap" would match too.
     # A "map" may also name a device of the same machine - the page table of
@@ -223,7 +224,7 @@ def parse_cfg_metadata(cfg_path):
     # value is not a file to pack
     devices = set(re.findall(r'^\s*([\w-]+)\s*:\s*[\w-]+\s*\{', content, re.MULTILINE))
     files = []
-    for m in re.finditer(r'^\s*(?:image(?:_\w+)?|remap_\w+|map|keys|picture|groups)\s*=\s*(\S+)', content, re.MULTILINE):
+    for m in re.finditer(r'^\s*(?:image(?:_\w+)?|rom_\d+|remap_\w+|map|keys|picture|groups|logo|eeprom)\s*=\s*(\S+)', content, re.MULTILINE):
         if m.group(1) not in devices:
             files.append(m.group(1))
 

@@ -1,0 +1,28 @@
+[sound.mixed] -
+[azbk-sound.control] &000000
+[az-ay1.ym] &000001
+[az-ay2.ym] &000001
+=== A первой, C второй (YM2149) ===
+[cpu.registers] R0=007410 R1=007412 R2=000000 R3=010421 R4=000064 R5=000000 SP=001742 PC=001054 PSW=000340
+[az-ay1.regs] &000007: &077 &017 &000 &000
+[az-ay1.left] &000004
+[az-ay1.right] &001752
+[az-ay2.regs] &000007: &077 &000 &000 &017
+[az-ay2.left] &001752
+[az-ay2.right] &000004
+[ay.level] &000000
+[sound.mixed] az-ay1 az-ay2
+=== B первой ===
+[az-ay1.left] &001752
+[az-ay1.right] &003720
+=== Огибающая YM2149: 32 ступени ===
+[az-ay2.envelope] &000025
+[az-ay2.left] &000276
+=== AY-3-8910 (0177212 = 010): 16 ступеней ===
+[azbk-sound.control] &000010
+[az-ay1.ym] &000000
+[az-ay2.ym] &000000
+[az-ay1.left] &001750
+[az-ay1.right] &003720
+[az-ay2.envelope] &000012
+[az-ay2.left] &000541

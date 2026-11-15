@@ -1,0 +1,19 @@
+=== 1. IMA моно, однократно ===
+[azbk-sound.dma] &004012
+[azbk-sound.samples] &00000000010
+[azbk-sound.hash] &35733206567
+[azbk-sound.output] &000000 &000000
+=== 2. PCM16 моно по кругу ===
+[azbk-sound.dma] &000001
+[azbk-sound.samples] &00000000064
+[azbk-sound.dma_page] &000600
+[azbk-sound.output] &176030 &176030
+[azbk-sound.dma] &000004
+[azbk-sound.output] &000000 &000000
+=== 3. IMA стерео, однократно ===
+[azbk-sound.dma] &005012
+[azbk-sound.samples] &00000000070
+[azbk-sound.hash] &01335546524
+=== 4. Covox ===
+[azbk-sound.covox] &012345 &012345
+[azbk-sound.covox] &077400 &000000

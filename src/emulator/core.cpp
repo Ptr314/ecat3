@@ -1221,20 +1221,66 @@ uint8_t * Memory::get_buffer()
     return buffer.empty() ? nullptr : buffer.data();
 }
 
+//The page of state_pages = 1
+static const size_t STATE_PAGE = 4096;
+
 void Memory::save_state(StateWriter &w)
 {
     ComputerDevice::save_state(w);
     //Whole, never a "changed pages" shortcut: a cold reset may fill RAM with
     //random bytes (RAM::reset with fill = random), so what is not written here
     //can differ from run to run
-    if (can_write && !buffer.empty()) w.hex("data", buffer.data(), buffer.size());
+    if (!can_write || buffer.empty()) return;
+    if (!m_state_pages) {
+        w.hex("data", buffer.data(), buffer.size());
+        return;
+    }
+    //Still the whole memory: a page left out is one of zeros, and the load
+    //clears everything before it puts the others back
+    const size_t size = buffer.size();
+    const size_t pages = (size + STATE_PAGE - 1) / STATE_PAGE;
+    std::vector<uint8_t> present((pages + 7) / 8, 0);
+    std::vector<uint8_t> packed;
+    for (size_t p = 0; p < pages; p++) {
+        const size_t from = p * STATE_PAGE;
+        const size_t len = std::min(STATE_PAGE, size - from);
+        const uint8_t * d = buffer.data() + from;
+        bool zero = true;
+        for (size_t i = 0; i < len; i++) if (d[i] != 0) { zero = false; break; }
+        if (zero) continue;
+        present[p >> 3] |= (uint8_t)(1u << (p & 7));
+        packed.insert(packed.end(), d, d + len);
+    }
+    w.hex("pages", present.data(), present.size());
+    if (!packed.empty()) w.blob("page_data", name + ".pages", packed.data(), packed.size());
 }
 
 emulator::Result Memory::load_state(const StateReader &r)
 {
     emulator::Result res = ComputerDevice::load_state(r);
     if (!res) return res;
-    if (!buffer.empty()) r.hex("data", buffer.data(), buffer.size());
+    if (buffer.empty()) return emulator::Result::ok();
+    //Either form, whatever state_pages says now: the state was written by
+    //the configuration it carries
+    const size_t size = buffer.size();
+    const size_t pages = (size + STATE_PAGE - 1) / STATE_PAGE;
+    std::vector<uint8_t> present((pages + 7) / 8, 0);
+    if (!r.hex("pages", present.data(), present.size())) {
+        r.hex("data", buffer.data(), size);
+        return emulator::Result::ok();
+    }
+    std::vector<uint8_t> packed;
+    r.blob("page_data", packed);
+    memset(buffer.data(), 0, size);
+    size_t at = 0;
+    for (size_t p = 0; p < pages; p++) {
+        if ((present[p >> 3] & (1u << (p & 7))) == 0) continue;
+        const size_t from = p * STATE_PAGE;
+        const size_t len = std::min(STATE_PAGE, size - from);
+        if (at + len > packed.size()) break;
+        memcpy(buffer.data() + from, packed.data() + at, len);
+        at += len;
+    }
     return emulator::Result::ok();
 }
 
@@ -1348,6 +1394,7 @@ emulator::Result RAM::load_config(SystemData *sd)
     if (!res) return res;
 
     set_size(parse_numeric_value(this->cd->get_parameter("size").value));
+    m_state_pages = read_confg_value(cd, "state_pages", false, false);
 
     try {
         std::string s = str_tolower(cd->get_parameter("fill").value);
@@ -2370,6 +2417,8 @@ MapperPage * MemoryMapper::fill_page(unsigned int page, uint64_t tag)
     e->uncached = false;
     e->device_r = e->device_w = nullptr;
     e->offset = 0;
+    e->snoop = nullptr;
+    e->snoop_offset = 0;
     e->timeout_r = e->timeout_w = true;
 
     const MapperRange * found = nullptr;
@@ -2393,11 +2442,20 @@ MapperPage * MemoryMapper::fill_page(unsigned int page, uint64_t tag)
             const unsigned int a1 = p_end - mr->range_begin + mr->base;
             const unsigned int r = mr->device->route(a0, MODE_R);
             const unsigned int w = mr->device->route(a0, MODE_W);
+            //A listener of the writes counts as absent, like PASS: the page
+            //only remembers it, and one listener per page at most
+            const bool w_pass = (w == ROUTE_PASS || w == ROUTE_SNOOP);
             if (r != mr->device->route(a1, MODE_R) || w != mr->device->route(a1, MODE_W)
-                || r == ROUTE_OR || r == ROUTE_THROUGH || w == ROUTE_OR || w == ROUTE_THROUGH
-                || (r == ROUTE_PASS) != (w == ROUTE_PASS)) {
+                || r == ROUTE_OR || r == ROUTE_THROUGH || r == ROUTE_SNOOP
+                || w == ROUTE_OR || w == ROUTE_THROUGH
+                || (r == ROUTE_PASS) != w_pass
+                || (w == ROUTE_SNOOP && e->snoop != nullptr)) {
                 e->uncached = true;
                 return nullptr;
+            }
+            if (w == ROUTE_SNOOP) {
+                e->snoop = mr->device;
+                e->snoop_offset = mr->base - mr->range_begin;
             }
             //Left to the ranges after it both ways: as if it were not there
             if (r == ROUTE_PASS) continue;
@@ -2897,7 +2955,7 @@ bool MemoryMapper::reads_on(unsigned int range_index, unsigned int route) const
 bool MemoryMapper::goes_through(unsigned int range_index, unsigned int route) const
 {
     const MapperRange & mr = this->ranges[range_index];
-    return mr.through || (mr.routed && route == ROUTE_THROUGH);
+    return mr.through || (mr.routed && (route == ROUTE_THROUGH || route == ROUTE_SNOOP));
 }
 
 // Whether anything is mapped at the address at all: a range of the other
@@ -2918,7 +2976,7 @@ bool MemoryMapper::responds(unsigned int address, unsigned int mode)
             if (mr->routed) {
                 const unsigned int r = mr->device->route(address - mr->range_begin + mr->base,
                                                          ((mode & MODE_R) != 0) ? MODE_R : MODE_W);
-                if (r == ROUTE_PASS) continue;
+                if (r == ROUTE_PASS || r == ROUTE_SNOOP) continue;
                 if (r == ROUTE_TIMEOUT) return false;
             }
             return true;
@@ -2931,6 +2989,7 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
 {
     MapperPage * e = find_page(address, page_tag());
     if (e != nullptr) {
+        if (e->snoop != nullptr) e->snoop->set_value(address + e->snoop_offset, value);
         this->last_device = e->device_w;
         if (e->device_w != nullptr) {
             this->no_device = false;
@@ -2944,6 +3003,13 @@ void MemoryMapper::write(unsigned int address, unsigned int value)
     this->no_device = false;
     unsigned int route = ROUTE_ANSWER;
     AddressableDevice * d = map_write(address, &address_on_device, &range_index, &route);
+    //A listener takes the write and leaves the cycle to the ranges after it
+    while (d != nullptr && route == ROUTE_SNOOP) {
+        d->set_value(address_on_device, value);
+        d = (range_index < this->ranges_count)
+            ? this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index, &route)
+            : nullptr;
+    }
     this->last_device = d;
     if (d == nullptr) {
         this->no_device = !this->responds(address, MODE_W);
@@ -3051,6 +3117,7 @@ void MemoryMapper::write_word(unsigned int address, unsigned int value)
 {
     MapperPage * e = find_page(address, page_tag());
     if (e != nullptr) {
+        if (e->snoop != nullptr) e->snoop->set_value_word(address + e->snoop_offset, value);
         this->last_device = e->device_w;
         if (e->device_w != nullptr) {
             this->no_device = false;
@@ -3064,6 +3131,13 @@ void MemoryMapper::write_word(unsigned int address, unsigned int value)
     this->no_device = false;
     unsigned int route = ROUTE_ANSWER;
     AddressableDevice * d = map_write(address, &address_on_device, &range_index, &route);
+    //See write(): a listener takes the word, the ranges after it answer
+    while (d != nullptr && route == ROUTE_SNOOP) {
+        d->set_value_word(address_on_device, value);
+        d = (range_index < this->ranges_count)
+            ? this->map(&(this->ranges), range_index + 1, this->ranges_count, this->i_config.value, address, MODE_W, &address_on_device, &range_index, &route)
+            : nullptr;
+    }
     this->last_device = d;
     if (d == nullptr) {
         this->no_device = !this->responds(address, MODE_W);

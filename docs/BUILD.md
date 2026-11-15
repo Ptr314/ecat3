@@ -232,6 +232,12 @@ https://doc.qt.io/qt-6/macos.html
 
 https://brew.sh/
 
+Для виртуальных машин с процессором Intel:
+
+```
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/df3c25561/install.sh)"`
+```
+
 ### 3. Установить утилиты
 
 cmake, ninja, принять лицензию xcode:

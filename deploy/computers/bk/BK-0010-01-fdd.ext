@@ -43,6 +43,9 @@ fdd0 : fdd {
 	title = A:
 	sides = _2
 	tracks = _80
+	// Образ на 81-83 дорожки (так размечает MK-DOS) удлиняет диск, контроллер
+	// шагает до 82-й
+	max_tracks = _83
 	sectors = _10
 	sector_size = _512
 	selector_value = 0
@@ -59,6 +62,9 @@ fdd1 : fdd {
 	title = B:
 	sides = _2
 	tracks = _80
+	// Образ на 81-83 дорожки (так размечает MK-DOS) удлиняет диск, контроллер
+	// шагает до 82-й
+	max_tracks = _83
 	sectors = _10
 	sector_size = _512
 	selector_value = 1
