@@ -142,6 +142,7 @@ void AzSdCard::configure(const std::string &root, bool write, unsigned int size_
     m_size_mb = size_mb;
     m_overlay.clear();
     m_overlay_bytes = 0;
+    m_dirs.clear();
     m_cache_path.clear();
     m_cache_host.clear();
 }
@@ -208,9 +209,11 @@ int AzSdCard::list(const std::string &dir, std::vector<Entry> &out) const
 {
     out.clear();
     std::string hd;
-    if (!host_dir(dir, hd)) return FR_NO_PATH;
+    const bool on_host = host_dir(dir, hd);
+    if (!on_host && !overlay_dir(dir)) return FR_NO_PATH;
     std::map<std::string, Entry> m;
-    std::vector<HostDirEntry> items = host_dir_list(hd);
+    std::vector<HostDirEntry> items;
+    if (on_host) items = host_dir_list(hd);
     std::sort(items.begin(), items.end(), by_name);
     for (size_t i = 0; i < items.size(); i++) {
         if (items[i].link) continue;
@@ -222,6 +225,15 @@ int AzSdCard::list(const std::string &dir, std::vector<Entry> &out) const
         e.size = e.dir ? 0 : (uint32_t)std::min<uint64_t>(items[i].size, 0xFFFFFFFFu);
         fat_time((int64_t)items[i].modified, e.date, e.time);
         m[name] = e;
+    }
+    for (std::set<std::string>::const_iterator it = m_dirs.begin(); it != m_dirs.end(); ++it) {
+        std::string d, n;
+        split_path(*it, d, n);
+        if (d != dir || m.count(n)) continue;
+        Entry e;
+        e.name = n;
+        e.dir = true;
+        m[n] = e;
     }
     for (std::map<std::string, File>::const_iterator it = m_overlay.begin(); it != m_overlay.end(); ++it) {
         std::string d, n;
@@ -249,7 +261,7 @@ int AzSdCard::file_size(const std::string &path, uint32_t &size) const
     }
     std::string dir, name, hd, hn;
     split_path(path, dir, name);
-    if (!host_dir(dir, hd)) return FR_NO_PATH;
+    if (!host_dir(dir, hd)) return overlay_dir(dir) ? FR_NO_FILE : FR_NO_PATH;
     bool is_dir = false;
     uint64_t bytes = 0;
     int64_t modified = 0;
@@ -302,8 +314,11 @@ int AzSdCard::host_target(const std::string &path, std::string &host) const
 
 int AzSdCard::create(const std::string &path, uint16_t date, uint16_t time)
 {
+    if (overlay_dir(path)) return FR_DENIED;
     if (m_write) {
-        std::string host;
+        std::string dir, name, host;
+        split_path(path, dir, name);
+        materialize(dir);
         const int result = host_target(path, host);
         if (result != FR_OK) return result;
         std::FILE * f = host_fopen(host, "wb");
@@ -322,11 +337,13 @@ int AzSdCard::create(const std::string &path, uint16_t date, uint16_t time)
     if (path.empty()) return FR_INVALID_NAME;
     std::string dir, name, hd, hn;
     split_path(path, dir, name);
-    if (!host_dir(dir, hd)) return FR_NO_PATH;
-    bool is_dir = false;
-    uint64_t size = 0;
-    int64_t modified = 0;
-    if (host_entry(hd, name, hn, is_dir, size, modified) && is_dir) return FR_DENIED;
+    if (host_dir(dir, hd)) {
+        bool is_dir = false;
+        uint64_t size = 0;
+        int64_t modified = 0;
+        if (host_entry(hd, name, hn, is_dir, size, modified) && is_dir) return FR_DENIED;
+    } else if (!overlay_dir(dir))
+        return FR_NO_PATH;
     std::map<std::string, File>::iterator it = m_overlay.find(path);
     if (it != m_overlay.end()) m_overlay_bytes -= it->second.data.size();
     File &f = m_overlay[path];
@@ -357,6 +374,8 @@ bool AzSdCard::append(const std::string &path, const uint8_t * data, uint32_t co
 
 unsigned int AzSdCard::flush()
 {
+    const std::set<std::string> dirs = m_dirs;
+    for (std::set<std::string>::const_iterator it = dirs.begin(); it != dirs.end(); ++it) materialize(*it);
     std::vector<std::string> done;
     for (std::map<std::string, File>::const_iterator it = m_overlay.begin(); it != m_overlay.end(); ++it) {
         std::string host;
@@ -377,9 +396,47 @@ unsigned int AzSdCard::flush()
     return (unsigned int)m_overlay.size();
 }
 
+int AzSdCard::make_dir(const std::string &path)
+{
+    if (m_root.empty()) return FR_NOT_READY;
+    if (path.empty() || overlay_dir(path) || m_overlay.count(path)) return FR_EXIST;
+    std::string dir, name, hd, hn;
+    split_path(path, dir, name);
+    if (host_dir(dir, hd)) {
+        bool is_dir = false;
+        uint64_t size = 0;
+        int64_t modified = 0;
+        if (host_entry(hd, name, hn, is_dir, size, modified)) return FR_EXIST;
+    } else if (!overlay_dir(dir))
+        return FR_NO_PATH;
+    if (m_write) {
+        materialize(dir);
+        if (!host_dir(dir, hd)) return FR_NO_PATH;
+        // Под этим именем на диске нет ничего, чего карта не видит
+        HostDirEntry st;
+        if (host_stat(hd + name, st) || reserved_name(name)) return FR_DENIED;
+        return host_mkdir(hd + name) ? FR_OK : FR_DENIED;
+    }
+    m_dirs.insert(path);
+    return FR_OK;
+}
+
+// Каталог слоя (и каталоги слоя над ним) - на диск компьютера: туда идет запись
+bool AzSdCard::materialize(const std::string &dir)
+{
+    if (dir.empty() || !overlay_dir(dir)) return true;
+    std::string parent, name, hd;
+    split_path(dir, parent, name);
+    if (!materialize(parent) || !host_dir(parent, hd)) return false;
+    HostDirEntry st;
+    if (host_stat(hd + name, st) || reserved_name(name) || !host_mkdir(hd + name)) return false;
+    m_dirs.erase(dir);
+    return true;
+}
+
 bool AzSdCard::store(const std::string &path, const std::vector<uint8_t> &data, uint16_t date, uint16_t time)
 {
-    if (m_write || path.empty() || data.size() > MAX_FILE) return false;
+    if (path.empty() || data.size() > MAX_FILE) return false;
     std::map<std::string, File>::iterator it = m_overlay.find(path);
     const uint64_t old = (it != m_overlay.end()) ? it->second.data.size() : 0;
     if (m_overlay_bytes - old + data.size() > MAX_OVERLAY) return false;
@@ -433,6 +490,10 @@ void AzSdCard::sizes(unsigned int &total_mb, unsigned int &free_mb) const
 
 void AzSdCard::save_state(StateWriter &w) const
 {
+    w.n("sd_dirs", (uint32_t)m_dirs.size());
+    unsigned int di = 0;
+    for (std::set<std::string>::const_iterator it = m_dirs.begin(); it != m_dirs.end(); ++it, di++)
+        w.s(("sd_dir_" + std::to_string(di)).c_str(), *it);
     w.n("sd_files", (uint32_t)m_overlay.size());
     unsigned int i = 0;
     for (std::map<std::string, File>::const_iterator it = m_overlay.begin(); it != m_overlay.end(); ++it, i++) {
@@ -448,8 +509,16 @@ void AzSdCard::load_state(const StateReader &r)
 {
     m_overlay.clear();
     m_overlay_bytes = 0;
+    m_dirs.clear();
     m_cache_path.clear();
     m_cache_host.clear();
+    unsigned int dirs = 0;
+    r.u("sd_dirs", dirs);
+    for (unsigned int i = 0; i < dirs && i < 4096; i++) {
+        std::string path, check;
+        if (r.s(("sd_dir_" + std::to_string(i)).c_str(), path) && parse(path, check) == FR_OK && check == path && !path.empty())
+            m_dirs.insert(path);
+    }
     unsigned int count = 0;
     r.u("sd_files", count);
     for (unsigned int i = 0; i < count; i++) {

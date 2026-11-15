@@ -125,6 +125,11 @@ std::FILE * host_fopen(const std::string &path, const char * mode)
     return _wfsopen(dsk_tools::utf8_to_wide(path).c_str(), dsk_tools::utf8_to_wide(mode).c_str(), _SH_DENYNO);
 }
 
+bool host_mkdir(const std::string &path)
+{
+    return CreateDirectoryW(dsk_tools::utf8_to_wide(without_separator(path)).c_str(), nullptr) != 0;
+}
+
 std::string host_absolute(const std::string &path)
 {
     HostDirEntry e;
@@ -175,6 +180,11 @@ bool host_stat(const std::string &path, HostDirEntry &out)
 std::FILE * host_fopen(const std::string &path, const char * mode)
 {
     return std::fopen(path.c_str(), mode);
+}
+
+bool host_mkdir(const std::string &path)
+{
+    return mkdir(without_separator(path).c_str(), 0777) == 0;
 }
 
 std::string host_absolute(const std::string &path)

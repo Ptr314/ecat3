@@ -168,8 +168,9 @@ azbk-disk : azbk-disk {
 	board = azbk
 	units = az0|az1|az2|az3
 	card = az-sd
-	// Версия прошивки STM32 в команде 027 - как 177370 (Б.4)
-	stm_version = _18
+	// Версия прошивки STM32 в команде 027: прошивка 00019 отдает 0x19 (BIOS
+	// печатает ее десятичной - 25)
+	stm_version = $19
 	~virq_in = kbd-irq.out[0]
 	~vector_in = keyboard.vector
 	~iako = cpu.iako

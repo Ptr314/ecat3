@@ -38,3 +38,6 @@ std::string host_absolute(const std::string &path);
 // fopen() by a UTF-8 name. Other processes may open the file at the same time
 // (on Windows _wfsopen with no sharing denied, as the disk images do)
 std::FILE * host_fopen(const std::string &path, const char * mode);
+
+// A new directory (its parent must be there); false if it could not be made
+bool host_mkdir(const std::string &path);

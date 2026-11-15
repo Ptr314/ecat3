@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -27,7 +28,9 @@
 // Запись на диск компьютера - только с sd_write = 1. Иначе записанный файл
 // остается в слое в памяти: его видят оглавление и чтение, его несет снимок
 // состояния, а каталог не меняется. Файл слоя - не больше 32 МБ, весь слой -
-// не больше 64 МБ. Новых каталогов карта не заводит: таких команд у AZ нет.
+// не больше 64 МБ. Каталоги заводит только сам контроллер (0:/TEMP и
+// 0:/SCREENS при каждом старте, как прошивка STM32): без записи в каталог - тоже
+// в слое.
 //
 // Сетевые диски MAXIOL (N:, R:, P:, S:) отвечают «не готов»: сети нет.
 class AzSdCard
@@ -36,7 +39,7 @@ public:
     // Коды FatFs (вики MAXIOL «API контроллеров AZ», команда 051)
     enum {
         FR_OK = 0, FR_DISK_ERR = 1, FR_NOT_READY = 3, FR_NO_FILE = 4, FR_NO_PATH = 5,
-        FR_INVALID_NAME = 6, FR_DENIED = 7, FR_INVALID_DRIVE = 11
+        FR_INVALID_NAME = 6, FR_DENIED = 7, FR_EXIST = 8, FR_INVALID_DRIVE = 11
     };
     static const uint32_t MAX_FILE = 32u << 20;
     static const uint64_t MAX_OVERLAY = 64ull << 20;
@@ -69,7 +72,11 @@ public:
     bool append(const std::string &path, const uint8_t * data, uint32_t count);
     // Что монтировать: файл компьютера (host) или файл слоя (data)
     bool mount_source(const std::string &path, std::string &host, const std::vector<uint8_t> * &data) const;
-    // Образ, записанный машиной на смонтированном диске, - в слой целиком
+    // Каталог, как f_mkdir: с записью в каталог - на диске компьютера, без нее -
+    // в слое (его видят оглавление и пути, его несет снимок). Уже есть - FR_EXIST
+    int make_dir(const std::string &path);
+    // Образ, записанный машиной на смонтированном диске, - в слой целиком (и при
+    // записи в каталог: образ открыли без нее, в каталог его отнесет flush)
     bool store(const std::string &path, const std::vector<uint8_t> &data, uint16_t date, uint16_t time);
     // Объем и свободное место, МБ (команда 056)
     void sizes(unsigned int &total_mb, unsigned int &free_mb) const;
@@ -90,6 +97,7 @@ private:
     };
     std::map<std::string, File> m_overlay;
     uint64_t m_overlay_bytes = 0;
+    std::set<std::string> m_dirs;       // каталоги слоя
 
     // Последний найденный файл компьютера: 052 и 055 идут по блоку, и каталоги
     // пути не листаются заново на каждые 512 байт
@@ -97,6 +105,8 @@ private:
     mutable std::string m_cache_host;
 
     bool host_dir(const std::string &dir, std::string &host) const;
+    bool overlay_dir(const std::string &dir) const { return m_dirs.count(dir) != 0; }
+    bool materialize(const std::string &dir);
     bool host_entry(const std::string &host_dir, const std::string &name, std::string &host_name, bool &is_dir, uint64_t &size, int64_t &modified) const;
     bool host_file(const std::string &path, std::string &host) const;
     int host_target(const std::string &path, std::string &host) const;
