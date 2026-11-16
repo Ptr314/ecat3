@@ -1,0 +1,91 @@
+# БК0011М: блокировка клавиши СТОП разрядом 12 регистра магнитофона (запись в
+# 0177716 с разрядом 11 = 0), issue #92. БОС ставит его, пока ждет клавишу
+# (BIS #10000 в копию регистра, ячейку 116), и снимает, когда клавиша пришла.
+# На плате выход защелки D13.Q5 через R5 заряжает конденсатор клавиши C1: при
+# блокировке он разряжен, и нажатие импульса на IRQ1 не дает вовсе.
+#
+# Раньше СТОП проходил всегда: каждое нажатие в прямом режиме печатало
+# «СТОП», а частые нажатия попадали внутрь обработчика и портили вывод
+# («СТП», «O» без «k»), в issue - вешали машину. Теперь в прямом режиме
+# нажатия теряются и экран чист, а программу СТОП прерывает, как прежде.
+# @timeout 60
+
+MACHINE "bk/BK-0011M.cfg"
+WAIT _4000
+LOGDEFS _16,_8
+
+PRINT "=== Бейсик ждет строку: СТОП заблокирован ==="
+LOG port-sys.value
+LOG stop-pulse.enabled
+
+PRINT "=== три редких нажатия СТОП в прямом режиме ничего не дают ==="
+KEYDOWN key_stop
+WAIT _50
+KEYUP key_stop
+WAIT _300
+KEYDOWN key_stop
+WAIT _50
+KEYUP key_stop
+WAIT _300
+KEYDOWN key_stop
+WAIT _50
+KEYUP key_stop
+WAIT _300
+LOG stop-pulse.pulses
+
+PRINT "=== и восемь частых тоже ==="
+KEYDOWN key_stop
+WAIT _7
+KEYUP key_stop
+WAIT _7
+KEYDOWN key_stop
+WAIT _7
+KEYUP key_stop
+WAIT _7
+KEYDOWN key_stop
+WAIT _7
+KEYUP key_stop
+WAIT _7
+KEYDOWN key_stop
+WAIT _7
+KEYUP key_stop
+WAIT _7
+KEYDOWN key_stop
+WAIT _7
+KEYUP key_stop
+WAIT _7
+KEYDOWN key_stop
+WAIT _7
+KEYUP key_stop
+WAIT _7
+KEYDOWN key_stop
+WAIT _7
+KEYUP key_stop
+WAIT _7
+KEYDOWN key_stop
+WAIT _7
+KEYUP key_stop
+WAIT _1000
+LOG stop-pulse.pulses
+
+PRINT "=== Бейсик отвечает ==="
+TYPE "PRINT 6*7\n"
+WAIT _1500
+
+PRINT "=== во время работы программы СТОП разблокирован и прерывает ее ==="
+TYPE "10 GOTO 10\n"
+TYPE "RUN\n"
+WAIT _2000
+LOG port-sys.value
+LOG stop-pulse.enabled
+KEYDOWN key_stop
+WAIT _50
+KEYUP key_stop
+WAIT _2000
+LOG stop-pulse.pulses
+
+PRINT "=== после останова Бейсик снова ждет строку ==="
+LOG stop-pulse.enabled
+
+SCREEN "../results/work-bk-0011m-stop-lock.png"
+EXIT

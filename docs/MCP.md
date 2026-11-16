@@ -120,7 +120,7 @@ cmake --build build
         "--mcp", "--workdir", "${ECAT3_DEPLOY:-C:\\...\\eCat3\\deploy}"
       ],
       "env": {
-        "PATH": "${ECAT3_QT_BIN:-...\\Qt\\6.11.2\\mingw_64\\bin};${ECAT3_MINGW_BIN:-...\\Qt\\Tools\\mingw1310_64\\bin};${PATH}"
+        "PATH": "${ECAT3_QT_BIN:-...\\Qt\\6.11.3\\mingw_64\\bin};${ECAT3_MINGW_BIN:-...\\Qt\\Tools\\mingw1310_64\\bin};${PATH}"
       }
     }
   }
