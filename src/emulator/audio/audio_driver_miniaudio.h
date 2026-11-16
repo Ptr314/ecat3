@@ -29,4 +29,5 @@ private:
     AudioCallback m_callback;
     void* m_userdata;
     bool m_opened;
+    unsigned long m_open_thread;    // Windows: the thread that opened the device
 };

@@ -514,6 +514,19 @@ void wasm_set_speed(int quarters)
     if (g_emulator) g_emulator->set_speed(quarters);
 }
 
+// Screen and sound > Sample rate of the page, Hz, 0 - each machine's own. Into
+// the ini in memory, which every machine load reads (GenericSound::load_config),
+// and to the machine running: its audio device is opened again here, on the
+// main thread, the only one with Web Audio
+EMSCRIPTEN_KEEPALIVE
+void wasm_set_sample_rate(int hz)
+{
+    if (!g_emulator) return;
+    if (hz < 0) hz = 0;
+    g_emulator->write_setup("Sound", "rate", std::to_string(hz));
+    g_emulator->set_sound_rate((unsigned int)hz);
+}
+
 // Screen > Blend frames, see VideoRenderer::blend_frame(). Written to the ini
 // in memory as well, which init_video() reads at every machine load
 EMSCRIPTEN_KEEPALIVE

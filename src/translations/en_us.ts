@@ -4,7 +4,7 @@
 <context>
     <name>AY8910</name>
     <message>
-        <location filename="../emulator/devices/common/ay8910.cpp" line="+75"/>
+        <location filename="../emulator/devices/common/ay8910.cpp" line="+114"/>
         <source>Unknown bus protocol</source>
         <translation type="unfinished"></translation>
     </message>
@@ -19,7 +19,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+16"/>
         <source>Not an AY-3-8910</source>
         <translation type="unfinished"></translation>
     </message>
@@ -440,12 +440,15 @@
         <location line="+9"/>
         <location line="+62"/>
         <location line="+4"/>
+        <location filename="../emulator/devices/common/ay8910.cpp" line="-43"/>
+        <location line="+36"/>
         <location filename="../emulator/devices/specific/smk512.cpp" line="+71"/>
         <location filename="../emulator/devices/specific/azbk.cpp" line="+48"/>
         <location filename="../emulator/devices/specific/azbk_vga.cpp" line="+110"/>
         <location filename="../emulator/devices/specific/azbk_display.cpp" line="+34"/>
-        <location filename="../emulator/devices/specific/azbk_sound.cpp" line="+62"/>
-        <location filename="../emulator/devices/specific/azbk_disk.cpp" line="+77"/>
+        <location filename="../emulator/devices/specific/azbk_sound.cpp" line="+61"/>
+        <location filename="../emulator/devices/specific/azbk_disk.cpp" line="+109"/>
+        <location filename="../emulator/devices/specific/azbk_sdcard.cpp" line="+681"/>
         <location filename="../emulator/devices/specific/a16m.cpp" line="+71"/>
         <location filename="../emulator/devices/specific/uknc_mouse.cpp" line="+36"/>
         <source>Incorrect parameters for</source>
@@ -487,7 +490,7 @@
 <context>
     <name>ConfigFields</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="+1374"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="+1385"/>
         <source>Disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -504,9 +507,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+721"/>
-        <location filename="../emulator/devices/common/hdd_unit.cpp" line="+66"/>
-        <location filename="../emulator/devices/common/dw_controller.cpp" line="+708"/>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="+724"/>
+        <location filename="../emulator/devices/common/hdd_unit.cpp" line="+116"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="+711"/>
         <source>Hard disk image</source>
         <translation type="unfinished"></translation>
     </message>
@@ -573,11 +576,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+658"/>
-        <source>Low-pass filter cutoff, Hz (0 - off)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../emulator/devices/specific/agat_yazs.cpp" line="+884"/>
         <source>Volume, % (100 = 1.5 V full scale)</source>
         <translation type="unfinished"></translation>
@@ -610,6 +608,26 @@
     <message>
         <location filename="../emulator/devices/common/keyboard.cpp" line="+23"/>
         <source>Keyboard layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../emulator/devices/specific/azbk_sdcard.cpp" line="-85"/>
+        <source>microSD card folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>microSD card writes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Into memory only, the folder stays as it was</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Into the files of the folder</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -657,7 +675,7 @@
 <context>
     <name>DVKDW</name>
     <message>
-        <location filename="../emulator/devices/common/dw_controller.cpp" line="-635"/>
+        <location filename="../emulator/devices/common/dw_controller.cpp" line="-638"/>
         <source>Hard disk image file not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -672,7 +690,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+679"/>
+        <location line="+682"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -996,7 +1014,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/devices/common/ay8910.cpp" line="+239"/>
+        <location filename="../emulator/devices/common/ay8910.cpp" line="+305"/>
         <source>AY-3-8910</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1169,13 +1187,13 @@
     </message>
     <message>
         <location line="+24"/>
-        <location line="+389"/>
+        <location line="+393"/>
         <source>Unable to find a RAM page to store data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-407"/>
-        <location line="+77"/>
+        <location line="-411"/>
+        <location line="+81"/>
         <source>File is smaller than expected!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1191,8 +1209,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-122"/>
-        <location line="+82"/>
+        <location line="-126"/>
+        <location line="+86"/>
         <location line="+75"/>
         <location line="+7"/>
         <location line="+89"/>
@@ -1202,12 +1220,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-335"/>
+        <location line="-339"/>
         <source>Incorrect addresses in the file header</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+13"/>
         <location line="+131"/>
         <location line="+162"/>
         <source>The file does not fit into the memory</source>
@@ -1254,7 +1272,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/emulator.cpp" line="+305"/>
+        <location filename="../emulator/emulator.cpp" line="+307"/>
         <source>Device &apos;system&apos; not found in config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1482,7 +1500,7 @@
     <name>ExtEditorWindow</name>
     <message>
         <location filename="../dialogs/exteditorwindow.ui" line="+14"/>
-        <location filename="../dialogs/exteditorwindow.cpp" line="+383"/>
+        <location filename="../dialogs/exteditorwindow.cpp" line="+387"/>
         <location line="+19"/>
         <source>Configuration editor</source>
         <translation type="unfinished"></translation>
@@ -1508,8 +1526,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../dialogs/exteditorwindow.cpp" line="-317"/>
-        <location line="+200"/>
+        <location filename="../dialogs/exteditorwindow.cpp" line="-321"/>
+        <location line="+204"/>
         <location line="+22"/>
         <location line="+20"/>
         <location line="+7"/>
@@ -1518,7 +1536,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-260"/>
+        <location line="-264"/>
         <source>Base</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1533,13 +1551,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+85"/>
-        <location line="+19"/>
+        <location line="+87"/>
+        <location line="+22"/>
         <source>Select a file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-18"/>
+        <location line="-22"/>
+        <location line="+21"/>
+        <source>Select a folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-20"/>
         <source>Clear the field</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1554,7 +1578,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+46"/>
+        <location line="+48"/>
         <source>Embedded file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1622,7 +1646,7 @@
 <context>
     <name>FDC</name>
     <message>
-        <location filename="../emulator/devices/common/fdd.cpp" line="-1339"/>
+        <location filename="../emulator/devices/common/fdd.cpp" line="-1350"/>
         <source>Incorrect fdd list for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1635,7 +1659,7 @@
 <context>
     <name>FDD</name>
     <message>
-        <location line="+135"/>
+        <location line="+139"/>
         <location line="+87"/>
         <location line="+9"/>
         <location line="+8"/>
@@ -1644,19 +1668,19 @@
     </message>
     <message>
         <location line="-99"/>
-        <location line="+598"/>
+        <location line="+605"/>
         <location line="+25"/>
         <location line="+14"/>
         <source>Unrecognized MFM format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-494"/>
+        <location line="-501"/>
         <source>AIM files supported on Agat 840k drives only!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+109"/>
+        <location line="+116"/>
         <source>Expected conversion from DSK to MFM is not supported yet.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1673,12 +1697,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1203"/>
+        <location line="-1214"/>
+        <location line="+5"/>
         <source>Incorrect fdd parameters for</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+24"/>
         <source>Unknown fdd mode</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1694,20 +1719,20 @@
     </message>
     <message>
         <location line="+20"/>
-        <location line="+525"/>
+        <location line="+532"/>
         <location line="+197"/>
         <location line="+48"/>
         <source>HFE images are not supported for this drive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-681"/>
+        <location line="-688"/>
         <location line="+56"/>
         <location line="+44"/>
         <location line="+6"/>
         <location line="+33"/>
-        <location line="+18"/>
-        <location line="+341"/>
+        <location line="+24"/>
+        <location line="+342"/>
         <location line="+16"/>
         <location line="+198"/>
         <location filename="../emulator/devices/common/fdd_woz.cpp" line="+17"/>
@@ -1716,7 +1741,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-651"/>
+        <location line="-658"/>
         <location filename="../emulator/devices/common/fdd_woz.cpp" line="-32"/>
         <source>File is in unknown format</source>
         <translation type="unfinished"></translation>
@@ -1724,8 +1749,8 @@
     <message>
         <location line="+31"/>
         <location line="+42"/>
-        <location line="+18"/>
-        <location line="+356"/>
+        <location line="+24"/>
+        <location line="+357"/>
         <location filename="../emulator/devices/common/fdd_apple13.cpp" line="-126"/>
         <source>Incorrect disk image size for</source>
         <translation type="unfinished"></translation>
@@ -1738,7 +1763,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+592"/>
+        <location line="+594"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1756,22 +1781,22 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="-584"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+75"/>
         <source>Incorrect sample rate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+44"/>
         <source>Not a sound source</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+159"/>
         <source>Error writing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+527"/>
+        <location line="+552"/>
         <source>Command &apos;volume&apos; expects a value</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1779,12 +1804,12 @@
 <context>
     <name>HddUnit</name>
     <message>
-        <location filename="../emulator/devices/common/hdd_unit.cpp" line="-56"/>
+        <location filename="../emulator/devices/common/hdd_unit.cpp" line="-100"/>
         <source>Disk image file not found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+146"/>
+        <location line="+197"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2252,7 +2277,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1455"/>
+        <location filename="../mainwindow.cpp" line="+1579"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -2305,7 +2330,7 @@
     <message>
         <location line="+9"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1220"/>
+        <location filename="../mainwindow.cpp" line="+1327"/>
         <source>Record video</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2326,14 +2351,14 @@
     </message>
     <message>
         <location line="+15"/>
-        <location filename="../mainwindow.cpp" line="-2122"/>
-        <location line="+2248"/>
+        <location filename="../mainwindow.cpp" line="-2248"/>
+        <location line="+2374"/>
         <source>Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="-1890"/>
+        <location filename="../mainwindow.cpp" line="-1997"/>
         <source>On-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2423,16 +2448,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-797"/>
+        <location filename="../mainwindow.cpp" line="-921"/>
         <location line="+14"/>
         <location line="+94"/>
-        <location line="+1416"/>
+        <location line="+1540"/>
         <location line="+60"/>
         <location line="+79"/>
-        <location line="+336"/>
+        <location line="+337"/>
         <location line="+110"/>
-        <location line="+62"/>
-        <location line="+269"/>
+        <location line="+75"/>
+        <location line="+87"/>
+        <location line="+275"/>
         <location line="+25"/>
         <location line="+424"/>
         <location line="+63"/>
@@ -2442,7 +2468,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2965"/>
+        <location line="-3196"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2469,14 +2495,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1822"/>
+        <location line="+1947"/>
         <location line="+30"/>
         <location line="+43"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1939"/>
+        <location line="-2064"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2515,7 +2541,41 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+12"/>
+        <location line="+2034"/>
+        <source>&lt;No card&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-2031"/>
+        <source>Choose a folder...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Write into the folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Remove the card</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Default folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <location line="+2010"/>
+        <location line="+21"/>
+        <location line="+40"/>
+        <source>microSD card</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-2040"/>
         <source>Interface style</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2525,7 +2585,48 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+32"/>
+        <source>Sound</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Latency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>Sample rate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Auto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>%1 Hz</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Off</source>
+        <comment>filter</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>%1 kHz</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+26"/>
         <source>Mouse speed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2546,14 +2647,14 @@
     </message>
     <message>
         <location line="+16"/>
-        <location line="+1568"/>
-        <location line="+494"/>
+        <location line="+1588"/>
+        <location line="+600"/>
         <location line="+118"/>
         <source>Video recording</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2175"/>
+        <location line="-2301"/>
         <source>Codec</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2589,12 +2690,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+2012"/>
+        <location line="+2138"/>
         <source>Path to ffmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1988"/>
+        <location line="-2114"/>
         <source>No remapping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2667,20 +2768,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-850"/>
-        <location line="+704"/>
+        <location line="-955"/>
+        <location line="+809"/>
         <location line="+1"/>
-        <location line="+908"/>
+        <location line="+927"/>
         <source>Turbo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1082"/>
-        <source>Sound latency</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+4"/>
+        <location line="-1147"/>
         <source>Automatic</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2700,7 +2796,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+323"/>
+        <location line="+373"/>
         <source>Picture tube</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2720,7 +2816,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+313"/>
+        <location line="+332"/>
         <source>High precision</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2795,13 +2891,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+89"/>
-        <location line="+588"/>
+        <location line="+90"/>
+        <location line="+694"/>
         <source>Finishing the video...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-588"/>
+        <location line="-694"/>
         <source>Abort</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2821,7 +2917,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="+69"/>
+        <source>The machine has written %1 file(s) into the card&apos;s memory, not into the folder. They will be lost. Continue?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Choose the folder of the microSD card</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>The machine has written %1 file(s) into the card&apos;s memory. Write them into the folder too?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+29"/>
         <source>Save disk image to a file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2872,7 +2983,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+103"/>
+        <location line="+109"/>
         <source>Save screenshot</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3048,12 +3159,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1752"/>
+        <location line="-1859"/>
         <source>The mouse is captured by the machine. Press Ctrl-Alt or the middle button to release it</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1795"/>
+        <location line="+1902"/>
         <source>Some lines were skipped:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3783,7 +3894,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../emulator/script/platform_launch.cpp" line="+97"/>
+        <location filename="../emulator/script/platform_launch.cpp" line="+98"/>
         <source>No cache directory to unpack into</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3811,7 +3922,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+102"/>
         <source>The archive holds no file this platform runs</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3831,7 +3942,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+15"/>
         <source>File is not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4231,7 +4342,7 @@ Do you want to replace it?</source>
 <context>
     <name>UKNCHDD</name>
     <message>
-        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-637"/>
+        <location filename="../emulator/devices/specific/uknc_hdd.cpp" line="-640"/>
         <source>Hard disk image file not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4247,7 +4358,7 @@ Do you want to replace it?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+711"/>
+        <location line="+714"/>
         <source>Command &apos;load&apos; expects a file name</source>
         <translation type="unfinished"></translation>
     </message>

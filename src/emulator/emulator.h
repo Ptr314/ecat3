@@ -262,6 +262,9 @@ private:
     bool m_video_capturing = false;     //The sound outputs capture for it; GUI thread
     void collect_video_audio(bool flush);
     std::vector<GenericSound*> sound_outputs();
+    //Every output that opens an audio device: those, and the speakers the
+    //tape recorders are heard through (no devices of the machine)
+    std::vector<GenericSound*> audio_devices();
 
     //Applies the @state section of a .ecats. Called by run() on the emulation
     //thread, after reset(true) and before the loop starts, so that no device
@@ -459,10 +462,19 @@ public:
     //An exception fn throws comes out of invoke() as std::runtime_error.
     //fn must not wait for the calling thread: that one is waiting here
     void invoke(const std::function<void()> &fn);
+    //Runs fn on the calling thread while the emulation thread stands between
+    //two time slices, as invoke() would have it: for what has to be done on
+    //this thread, as opening an audio device (Web Audio exists only on the
+    //page's main thread). fn must not wait for the emulation thread
+    void while_held(const std::function<void()> &fn);
 
     void set_volume(int value);
     void set_muted(bool muted);
     void set_sound_latency(unsigned int ms);
+    // Settings > Sound of the window, from any thread: the rate of every audio
+    // output (0 - each machine's own) and the cutoff of their filter (0 - off)
+    void set_sound_rate(unsigned int hz);
+    void set_sound_filter(unsigned int hz);
 
     // Emulation > Speed: how fast emulated time runs against the wall clock,
     // in quarters (1 = 0.25x, 4 = 1x, 40 = 10x, up to SPEED_MAX_Q), 0 - as

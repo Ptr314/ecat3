@@ -334,7 +334,10 @@ private:
     int mouse_rec_y = 0;
     int mouse_buttons = 0;              //Bit 0 - left (button 1), bit 1 - right (button 2)
     int mouse_speed = 25;               //Percent: steps a line of the machine's screen crossed by the host pointer
-    QMenu * sound_latency_menu = nullptr; //Settings > Sound latency, made once
+    QMenu * sound_menu = nullptr;       //Settings > Sound, made once with the three below
+    QMenu * sound_latency_menu = nullptr; //Settings > Sound > Latency
+    QMenu * sound_rate_menu = nullptr;  //Settings > Sound > Sample rate
+    QMenu * sound_filter_menu = nullptr; //Settings > Sound > Filter
     QMenu * mouse_speed_menu = nullptr; //Display > Mouse speed, made once
     bool screenshot_as_shown = false;   //Settings > Screenshot type: the picture of the window, not the machine's pixels
     QMenu * screenshot_menu = nullptr;  //Settings > Screenshot type, made once

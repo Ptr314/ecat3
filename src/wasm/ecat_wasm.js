@@ -479,6 +479,12 @@ const I18N = {
         scale:              "Scale",
         screenFormat:       "Format",
         volume:             "Volume",
+        sampleRate:         "Sample rate",
+        sampleRateTitle:    "The rate the sound card is opened at, for every machine. Auto leaves it to the machine: 22050 Hz, 44100 Hz with a synthesizer or a DAC. Everything above half of it is lost",
+        sampleRateAuto:     "Auto",
+        rate22050:          "22050 Hz",
+        rate44100:          "44100 Hz",
+        rate48000:          "48000 Hz",
         language:           "Language",
         keyboard:           "Keyboard",
         keyboardTitle:      "On-screen keyboard",
@@ -614,6 +620,12 @@ const I18N = {
         scale:              "Масштаб",
         screenFormat:       "Формат",
         volume:             "Громкость",
+        sampleRate:         "Частота звука",
+        sampleRateTitle:    "Частота дискретизации, на которой открывается звуковая карта, для всех машин. Авто — частоту выбирает машина: 22050 Гц, у машин с синтезатором или ЦАП 44100 Гц. Все, что выше ее половины, теряется",
+        sampleRateAuto:     "Авто",
+        rate22050:          "22050 Гц",
+        rate44100:          "44100 Гц",
+        rate48000:          "48000 Гц",
         language:           "Язык",
         keyboard:           "Клавиатура",
         keyboardTitle:      "Экранная клавиатура",
@@ -749,6 +761,12 @@ const I18N = {
         scale:              "Мащаб",
         screenFormat:       "Формат",
         volume:             "Сила на звука",
+        sampleRate:         "Честота на звука",
+        sampleRateTitle:    "Честота на дискретизация, с която се отваря звуковата карта, за всички машини. Авто — честотата се избира от машината: 22050 Hz, при машините със синтезатор или ЦАП 44100 Hz. Всичко над половината ѝ се губи",
+        sampleRateAuto:     "Авто",
+        rate22050:          "22050 Hz",
+        rate44100:          "44100 Hz",
+        rate48000:          "48000 Hz",
         language:           "Език",
         keyboard:           "Клавиатура",
         keyboardTitle:      "Екранна клавиатура",
@@ -2423,6 +2441,26 @@ function setupVolume(module) {
             () => setVolume(module, parseInt(range.value, 10) + dir * VOLUME_STEP));
         releaseFocus(button);
     }
+}
+
+// Screen and sound > Sample rate: the rate the audio device is opened at, 0 -
+// each machine's own. The core keeps it in its ini in memory, which every
+// machine load reads, and opens the device of a running machine again (a short
+// gap). Sent before the first machine, like the speed
+function setupSampleRate(module) {
+    const select = document.getElementById("sample-rate");
+    const send = () => module.ccall("wasm_set_sample_rate", null, ["number"], [parseInt(select.value, 10)]);
+    select.value = settings.get("sampleRate", "0");
+    if (select.selectedIndex < 0) select.value = "0";
+    send();
+    select.addEventListener("change", () => {
+        settings.set("sampleRate", select.value);
+        send();
+        // The new AudioContext is made suspended; the change is the
+        // visitor's own gesture, which lets it play
+        unlockAudio();
+    });
+    releaseFocus(select);
 }
 
 function setupSpeed(module) {
@@ -4199,6 +4237,7 @@ async function initEcat() {
     });
 
     setupVolume(module);
+    setupSampleRate(module);
     setupKeyRemap(module);
     setupSpeed(module);
     setupFrameBlending(module);

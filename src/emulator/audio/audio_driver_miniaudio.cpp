@@ -16,6 +16,16 @@
 
 #include "libs/miniaudio/miniaudio.h"
 
+#if defined(_WIN32)
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #include <windows.h>
+#endif
+
 // Helper struct to pass both callback and userdata through miniaudio's single pUserData pointer
 struct MiniaudioCallbackData {
     AudioCallback callback;
@@ -39,6 +49,7 @@ MiniaudioDriver::MiniaudioDriver()
     , m_callback(NULL)
     , m_userdata(NULL)
     , m_opened(false)
+    , m_open_thread(0)
 {
 }
 
@@ -86,6 +97,9 @@ bool MiniaudioDriver::open(int sampleRate, int channels, int bufferSamples,
     m_sampleRate = static_cast<int>(m_device->sampleRate);
     m_bufferSamples = bufferSamples;
     m_opened = true;
+#if defined(_WIN32)
+    m_open_thread = GetCurrentThreadId();
+#endif
     return true;
 }
 
@@ -120,6 +134,16 @@ void MiniaudioDriver::close()
     if (m_opened && m_device) {
         // Save pUserData before uninit so we can free it
         MiniaudioCallbackData* cbd = static_cast<MiniaudioCallbackData*>(m_device->pUserData);
+#if defined(_WIN32)
+        // The context miniaudio makes for the device takes COM on the thread
+        // that opens it (CoInitializeEx) and gives it back on the one that
+        // closes it (CoUninitialize). A new sample rate reopens the device on
+        // the emulation thread, and the machine closes it later on the GUI
+        // thread, which would lose the COM Qt holds there (OLE: the clipboard,
+        // file dialogs). Closed on another thread, the opener keeps its share
+        if (m_open_thread != GetCurrentThreadId() && m_device->pContext != NULL)
+            m_device->pContext->win32.CoInitializeResult = (long)0x80010106L;   // RPC_E_CHANGED_MODE: none taken
+#endif
         ma_device_uninit(m_device);
         delete cbd;
         delete m_device;

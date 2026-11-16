@@ -232,6 +232,10 @@ public:
     TapeRecorder(InterfaceManager *im, EmulatorConfigDevice *cd);
     virtual ~TapeRecorder();
 
+    //The speaker the tape is heard through: an audio output of its own, which
+    //is no device of the machine and so is not found by its class
+    GenericSound * own_sound() { return speaker; }
+
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;
     //Окно магнитофона могло быть открыто до восстановления: пусть перечитает

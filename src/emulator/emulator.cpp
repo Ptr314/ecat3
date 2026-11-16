@@ -888,6 +888,59 @@ void Emulator::invoke(const std::function<void()> &fn)
     if (call.failed) throw std::runtime_error(call.error);
 }
 
+void Emulator::while_held(const std::function<void()> &fn)
+{
+    std::atomic<bool> held(false);
+    std::atomic<bool> released(false);
+    //What the emulation thread runs: it stays in the call until let go
+    const std::function<void()> hold = [&held, &released]() {
+        held = true;
+        unsigned int spins = 0;
+        while (!released)
+        {
+            if (++spins < 5000) compat_yield(); else compat_sleep_ms(1);
+        }
+    };
+    PendingCall call(&hold);
+    bool queued = false;
+    {
+        compat_lock_guard lock(m_calls_mutex);
+        if (m_calls_open && !(m_calls_thread == compat_this_thread_id()))
+        {
+            m_calls.push_back(&call);
+            m_calls_pending = true;
+            queued = true;
+        }
+    }
+
+    if (!queued)
+    {
+        fn();
+        return;
+    }
+
+    unsigned int spins = 0;
+    while (!held)
+    {
+        if (++spins < 5000) compat_yield(); else compat_sleep_ms(1);
+    }
+    std::string error;
+    bool failed = false;
+    try {
+        fn();
+    } catch (const std::exception &ex) {
+        failed = true;
+        error = ex.what();
+    }
+    released = true;
+    spins = 0;
+    while (!call.done)
+    {
+        if (++spins < 5000) compat_yield(); else compat_sleep_ms(1);
+    }
+    if (failed) throw std::runtime_error(error);
+}
+
 void Emulator::run_pending_calls()
 {
     std::vector<PendingCall*> calls;
@@ -2569,6 +2622,37 @@ void Emulator::set_sound_latency(unsigned int ms)
             GenericSound * sound = dynamic_cast<GenericSound*>(d);
             if (sound != nullptr) sound->set_latency(ms);
         }
+}
+
+void Emulator::set_sound_rate(unsigned int hz)
+{
+    if (!loaded || dm == nullptr) return;
+    //Reopens the audio device on this thread, the one load_config() opened it
+    //on, with the machine held still: a Web Audio context can be made only on
+    //the page's main thread, and miniaudio wants a device on Windows closed
+    //where it was opened (COM)
+    while_held([this, hz]() {
+        for (GenericSound * sound : audio_devices()) sound->set_sample_rate(hz);
+    });
+}
+
+void Emulator::set_sound_filter(unsigned int hz)
+{
+    if (!loaded || dm == nullptr) return;
+    invoke([this, hz]() {
+        for (GenericSound * sound : audio_devices()) sound->set_filter(hz);
+    });
+}
+
+std::vector<GenericSound*> Emulator::audio_devices()
+{
+    std::vector<GenericSound*> out = sound_outputs();
+    if (dm == nullptr) return out;
+    for (ComputerDevice * d : dm->find_devices_by_class("tape")) {
+        TapeRecorder * tape = dynamic_cast<TapeRecorder*>(d);
+        if (tape != nullptr && tape->own_sound() != nullptr) out.push_back(tape->own_sound());
+    }
+    return out;
 }
 
 Emulator::~Emulator()

@@ -109,6 +109,17 @@ private:
     unsigned int m_counter;
     unsigned int m_samples_per_buffer;
     unsigned int m_sample_rate;
+    // The rate of the configuration (sample_rate, 22050 when it says nothing)
+    // and the one the window forces on every machine ([Sound] rate of the ini,
+    // Settings > Sound > Sample rate), 0 when it leaves it to the machine
+    unsigned int m_config_rate = 22050;
+    unsigned int m_forced_rate = 0;
+    // [Sound] period of the ini, ms: the period of the device at any rate
+    int m_period_ms = 10;
+    unsigned int period_samples(unsigned int rate) const;
+    // The rate a sample path without an audio device is set up at: a WAV of
+    // record under --no-sound, the sound of a video
+    unsigned int capture_rate() const { return m_forced_rate ? m_forced_rate : 44100; }
     AudioDriver * m_audio_driver;
     uint64_t m_counts_per_sample;
 
@@ -152,7 +163,8 @@ private:
     DCBlocker m_dc_blocker_left;
     DCBlocker m_dc_blocker_mono;
 
-    // Low pass filter
+    // Low pass filter, a setting of the host ([Sound] filter of the ini,
+    // Settings > Sound > Filter), not of the machine: the cutoff, 0 = none
     bool m_use_lpf;
     bool m_limiter = false;             // soft limiting of the final sample (limiter = 1)
     bool m_lpf_on = false;              // m_use_lpf, and the cutoff below half the sample rate
@@ -160,6 +172,11 @@ private:
     ButterworthLowPassFilter m_filter;
     ButterworthLowPassFilter m_filter_left;
     ButterworthLowPassFilter m_filter_mono;
+    void setup_filter();
+    void close_sound();
+    // The machine runs with sound (not --no-sound), whether the device opened or not
+    bool m_audio_wanted = false;
+    void open_at(unsigned int rate);
 
     // Запись того, что уходит в звуковое устройство, в WAV (команда record).
     // Работает и без устройства (--no-sound): тогда тракт выборок заводится
@@ -218,6 +235,12 @@ public:
     virtual void set_muted(bool muted);
     // ms the buffer is kept at, 0 for the automatic choice
     void set_latency(unsigned int ms);
+    // The settings of the window, on the emulation thread. The rate reopens
+    // the audio device (a short gap), 0 gives it back to the machine; it waits
+    // for the next machine while a WAV or a video is recorded, whose files
+    // keep one rate. The cutoff of the filter, 0 = off
+    void set_sample_rate(unsigned int forced);
+    void set_filter(unsigned int hz);
     // 4 = 1x, see s_speed_q
     static void set_speed(int quarters) { s_speed_q = quarters; }
 
@@ -235,10 +258,6 @@ public:
     // Called by the sources, see SoundSource
     void source_changed() { m_level_dirty = true; }
     void source_mode_changed() { refresh_sources(); }
-
-    // The cutoff of the filter, offered to the configuration editor only by a
-    // machine that sets lpf_editable = 1 (the Агат with the ЯЗС)
-    ConfigFields get_config_fields() override;
 
     std::vector<DeviceFieldInfo> get_device_fields() override;
     std::vector<DeviceCommandInfo> get_device_commands() override;

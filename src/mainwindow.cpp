@@ -809,16 +809,28 @@ void MainWindow::CreateScreenMenu()
         if (!found) style_menu->actions().first()->setChecked(true);
     }
 
-    //How much sound waits for the audio device, a setting of the host. Works at
-    //once, by one short gap or cut
-    if (sound_latency_menu == nullptr) {
+    //Settings of the host for the sound of every machine. The submenus are made
+    //once with it and only filled again here: made anew at every switch of
+    //language, they would pile up inside it
+    if (sound_menu == nullptr) {
         //Settings, after the host settings and before About
-        sound_latency_menu = new QMenu(this);
+        sound_menu = new QMenu(this);
         const QList<QAction*> acts = ui->menuHelp->actions();
         const int at = acts.indexOf(ui->actionRecPanel);
-        ui->menuHelp->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, sound_latency_menu);
+        ui->menuHelp->insertMenu((at >= 0 && at + 1 < acts.size())?acts[at + 1]:nullptr, sound_menu);
+        sound_latency_menu = sound_menu->addMenu(QString());
+        sound_rate_menu = sound_menu->addMenu(QString());
+        sound_filter_menu = sound_menu->addMenu(QString());
+        //A video keeps the rate it began with
+        connect(sound_menu, &QMenu::aboutToShow, this, [this](){
+            sound_rate_menu->setEnabled(e == nullptr || !e->video_recording());
+        });
     }
-    sound_latency_menu->setTitle(tr("Sound latency"));
+    sound_menu->setTitle(tr("Sound"));
+
+    //How much sound waits for the audio device. Works at once, by one short
+    //gap or cut
+    sound_latency_menu->setTitle(tr("Latency"));
     clear_menu(sound_latency_menu);
     {
         const int current = atoi(e->read_setup("Sound", "latency", "0").c_str());
@@ -835,6 +847,57 @@ void MainWindow::CreateScreenMenu()
             la->setCheckable(true);
             la->setChecked(current == ms);
         }
+    }
+
+    //The rate the audio device is opened at, for every machine; Auto leaves it
+    //to the machine (22050 Hz unless its configuration says otherwise). Works
+    //at once, the device is opened again
+    sound_rate_menu->setTitle(tr("Sample rate"));
+    clear_menu(sound_rate_menu);
+    {
+        const int current = atoi(e->read_setup("Sound", "rate", "0").c_str());
+        static const int RATES[] = {0, 22050, 44100, 48000};
+        QActionGroup * rate_group = new QActionGroup(sound_rate_menu);
+        for (size_t i = 0; i < sizeof(RATES) / sizeof(RATES[0]); i++) {
+            const int hz = RATES[i];
+            QAction * ra = sound_rate_menu->addAction(
+                hz == 0 ? tr("Auto") : tr("%1 Hz").arg(hz),
+                [this, hz]{
+                    e->write_setup("Sound", "rate", std::to_string(hz));
+                    e->set_sound_rate(hz);
+                });
+            ra->setActionGroup(rate_group);
+            ra->setCheckable(true);
+            ra->setChecked(current == hz);
+        }
+        //A rate of the ini the menu does not offer still works, and none is
+        //marked then rather than a wrong one; one out of 8000-192000 is Auto
+        //(GenericSound::load_config)
+        if (current < 8000 || current > 192000) sound_rate_menu->actions().first()->setChecked(true);
+    }
+
+    //The cutoff of the low-pass filter of every machine. Off by default: the
+    //5 kHz the machines had made the sound dull. A cutoff at or above half the
+    //sample rate filters nothing
+    sound_filter_menu->setTitle(tr("Filter"));
+    clear_menu(sound_filter_menu);
+    {
+        const int current = atoi(e->read_setup("Sound", "filter", "0").c_str());
+        static const int CUTOFFS[] = {0, 5000, 10000, 15000, 20000};
+        QActionGroup * filter_group = new QActionGroup(sound_filter_menu);
+        for (size_t i = 0; i < sizeof(CUTOFFS) / sizeof(CUTOFFS[0]); i++) {
+            const int hz = CUTOFFS[i];
+            QAction * fa = sound_filter_menu->addAction(
+                hz == 0 ? tr("Off", "filter") : tr("%1 kHz").arg(hz / 1000),
+                [this, hz]{
+                    e->write_setup("Sound", "filter", std::to_string(hz));
+                    e->set_sound_filter(hz);
+                });
+            fa->setActionGroup(filter_group);
+            fa->setCheckable(true);
+            fa->setChecked(current == hz);
+        }
+        if (current <= 0) sound_filter_menu->actions().first()->setChecked(true);
     }
 
     //Speed of the machine's mouse, a setting of the host rather than of a machine

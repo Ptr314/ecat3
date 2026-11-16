@@ -21,6 +21,10 @@
     #include "emulator/audio/audio_driver_miniaudio.h"
 #endif
 
+#if defined(__EMSCRIPTEN__)
+    #include <emscripten/threading.h>
+#endif
+
 std::atomic<int> GenericSound::s_speed_q(4);
 
 void SoundSource::sound_changed()
@@ -44,7 +48,7 @@ GenericSound::GenericSound(InterfaceManager *im, EmulatorConfigDevice *cd):
     , m_volume(100)
     , m_muted(false)
     , m_use_lpf(false)
-    , m_lpf_coutoff(5000)
+    , m_lpf_coutoff(0)
     , m_accumulator(0)
     , m_acc_counter(0)
     , m_last_input(0)
@@ -67,12 +71,16 @@ emulator::Result GenericSound::load_config(SystemData *sd)
 
     // The rate the audio device is opened at. 22050 Hz cuts everything above
     // 11 kHz, which a one-bit beeper does not miss and the Агат ЯЗС does: its
-    // drum 7 hisses at 6-13 kHz
+    // drum 7 hisses at 6-13 kHz. Settings > Sound > Sample rate of the window
+    // ([Sound] rate of the ini) puts one rate over every machine
     const unsigned int rate = read_confg_value(cd, "sample_rate", false, (unsigned int)22050);
     if (rate < 8000 || rate > 192000)
         return emulator::Result::error(emulator::ErrorCode::ConfigError,
             "{GenericSound|" + std::string(QT_TRANSLATE_NOOP("GenericSound", "Incorrect sample rate")) + "} " + name);
-    m_sample_rate = rate;
+    m_config_rate = rate;
+    const int forced = sd->read_setup ? atoi(sd->read_setup("Sound", "rate", "0").c_str()) : 0;
+    m_forced_rate = (forced >= 8000 && forced <= 192000) ? (unsigned int)forced : 0;
+    m_sample_rate = m_forced_rate ? m_forced_rate : m_config_rate;
 
     // The period of the audio device, [Sound] period in ms of the ini: the
     // latency is about four of them (the device holds three, the buffer here
@@ -87,23 +95,19 @@ emulator::Result GenericSound::load_config(SystemData *sd)
 #else
     const char * period_default = "10";
 #endif
-    int period_ms = atoi(sd->read_setup ? sd->read_setup("Sound", "period", period_default).c_str() : period_default);
-    if (period_ms < 2 || period_ms > 200) period_ms = atoi(period_default);
-    unsigned int period = (unsigned int)((uint64_t)rate * period_ms / 1000);
-#if defined(__EMSCRIPTEN__) || defined(USE_SDL_AUDIO)
-    // A power of two: a ScriptProcessorNode takes nothing else, nor do some
-    // SDL backends
-    unsigned int p2 = 64;
-    while (p2 < period) p2 <<= 1;
-    period = p2;
-#endif
-    m_samples_per_buffer = std::max(period, 32u);
+    m_period_ms = atoi(sd->read_setup ? sd->read_setup("Sound", "period", period_default).c_str() : period_default);
+    if (m_period_ms < 2 || m_period_ms > 200) m_period_ms = atoi(period_default);
+    m_samples_per_buffer = period_samples(m_sample_rate);
 
     // The Sound latency menu of the window: ms the buffer is kept at, 0 finds
     // it out by itself
     m_latency_ms = (unsigned int)std::max(0, atoi(sd->read_setup ? sd->read_setup("Sound", "latency", "0").c_str() : "0"));
 
-    m_lpf_coutoff = read_confg_value(cd, "lpf", false, (unsigned int)m_lpf_coutoff);
+    // The filter is the listener's: Settings > Sound > Filter, [Sound] filter
+    // of the ini. It was the configuration's, 5 kHz unless a machine said
+    // otherwise, and the sound came out dull
+    const int cutoff = sd->read_setup ? atoi(sd->read_setup("Sound", "filter", "0").c_str()) : 0;
+    m_lpf_coutoff = std::max(0, cutoff);
     m_use_lpf = (m_lpf_coutoff > 0);
     m_limiter = read_confg_value(cd, "limiter", false, false);
 
@@ -136,6 +140,7 @@ emulator::Result GenericSound::load_config(SystemData *sd)
     //Without an audio device the whole sound path stays dormant: clock() drops
     //out right after the idle-share check, so a silent run costs less than a
     //loud one
+    m_audio_wanted = sd->audio_enabled;
     if (sd->audio_enabled) init_sound(m_system_clock);
 
     return emulator::Result::ok();
@@ -143,6 +148,68 @@ emulator::Result GenericSound::load_config(SystemData *sd)
 
 // The most the buffer is kept at, automatic or set, ms
 static const unsigned int LATENCY_MAX_MS = 150;
+
+unsigned int GenericSound::period_samples(unsigned int rate) const
+{
+    unsigned int period = (unsigned int)((uint64_t)rate * m_period_ms / 1000);
+#if defined(__EMSCRIPTEN__) || defined(USE_SDL_AUDIO)
+    // A power of two: a ScriptProcessorNode takes nothing else, nor do some
+    // SDL backends
+    unsigned int p2 = 64;
+    while (p2 < period) p2 <<= 1;
+    period = p2;
+#endif
+    return std::max(period, 32u);
+}
+
+void GenericSound::close_sound()
+{
+    if (!m_initialized) return;
+    m_initialized = false;
+    if (m_audio_driver) {
+        // Returns when the callback of the device has finished
+        m_audio_driver->stop();
+        m_audio_driver->close();
+        delete m_audio_driver;
+        m_audio_driver = NULL;
+    }
+}
+
+void GenericSound::set_sample_rate(unsigned int forced)
+{
+    m_forced_rate = (forced >= 8000 && forced <= 192000) ? forced : 0;
+    const unsigned int rate = m_forced_rate ? m_forced_rate : m_config_rate;
+    // Without sound (--no-sound) nothing is played; a WAV or a video takes the
+    // rate it began with to its end
+    if (!m_audio_wanted || m_capture || m_video_capture) return;
+#if defined(__EMSCRIPTEN__)
+    // Web Audio exists only on the page's main thread (Emulator::set_sound_rate
+    // calls from there); a script runs on the emulation thread
+    if (!emscripten_is_main_runtime_thread()) return;
+#endif
+    if (m_initialized && rate == m_sample_rate) return;
+    const unsigned int old = m_sample_rate;
+    close_sound();
+    open_at(rate);
+    // A device that will not take the rate stays at the old one; with none at
+    // all the samples are still made at the rate the pipeline says
+    if (!m_initialized && rate != old) open_at(old);
+    if (!m_initialized) setup_pipeline();
+}
+
+void GenericSound::open_at(unsigned int rate)
+{
+    m_sample_rate = rate;
+    m_samples_per_buffer = period_samples(rate);
+    init_sound((unsigned int)m_clock_freq);
+}
+
+void GenericSound::set_filter(unsigned int hz)
+{
+    m_lpf_coutoff = (int)std::min(hz, 1000000u);
+    m_use_lpf = m_lpf_coutoff > 0;
+    if (m_pipeline) setup_filter();
+}
 
 void GenericSound::init_sound(unsigned int clock_freq)
 {
@@ -197,18 +264,27 @@ void GenericSound::setup_pipeline()
     m_dc_blocker_left.setup(m_sample_rate, 20);
     m_dc_blocker_mono.setup(m_sample_rate, 20);
     refresh_sources();
+    setup_filter();
+    m_pipeline = true;
+}
 
+void GenericSound::setup_filter()
+{
     // A cutoff at or above half the sample rate is no filter at all, and
     // ButterworthLowPassFilter::setup() leaves its coefficients unset for it:
     // the output was garbage and the machine went silent (lpf = 16000 at the
     // 22050 Hz of the window)
     m_lpf_on = m_use_lpf && m_lpf_coutoff < (int)(m_sample_rate / 2);
     if (m_lpf_on) {
+        // A history left from a filter switched off long ago, or from another
+        // rate, would click. Its input comes after the DC blocker, about 0
+        m_filter.reset();
+        m_filter_left.reset();
+        m_filter_mono.reset();
         m_filter.setup(m_sample_rate, m_lpf_coutoff);
         m_filter_left.setup(m_sample_rate, m_lpf_coutoff);
         m_filter_mono.setup(m_sample_rate, m_lpf_coutoff);
     }
-    m_pipeline = true;
 }
 
 // 16-bit PCM, mono or stereo as the output is, the rate the samples were
@@ -242,7 +318,7 @@ unsigned int GenericSound::produced_rate() const
 void GenericSound::begin_video_capture()
 {
     if (!m_pipeline) {
-        if (!m_initialized) m_sample_rate = 44100;
+        if (!m_initialized) m_sample_rate = capture_rate();
         setup_pipeline();
     }
     compat_lock_guard lock(m_buffer_mutex);
@@ -266,15 +342,7 @@ void GenericSound::take_video_samples(std::vector<int16_t> &out)
 
 GenericSound::~GenericSound()
 {
-    if (m_initialized) {
-        m_initialized = false;
-        if (m_audio_driver) {
-            m_audio_driver->stop();
-            m_audio_driver->close();
-            delete m_audio_driver;
-            m_audio_driver = NULL;
-        }
-    }
+    close_sound();
 }
 
 void GenericSound::set_volume(unsigned int volume)
@@ -688,20 +756,6 @@ void GenericSound::state_restored()
     m_level_dirty = true;
 }
 
-ConfigFields GenericSound::get_config_fields()
-{
-    // Read from cd only: the editor builds the machine without load_config()
-    const std::string editable = str_trim(cd->get_parameter("lpf_editable", false).value);
-    if (editable.empty() || parse_numeric_value(editable, 10) == 0) return {};
-    ConfigField f;
-    f.name = "lpf";
-    f.title = QT_TRANSLATE_NOOP("ConfigFields", "Low-pass filter cutoff, Hz (0 - off)");
-    f.type = CONFIG_FIELD_STRING;
-    // What sounds when the configuration says nothing: the constructor's
-    f.def = "5000";
-    return {f};
-}
-
 std::vector<DeviceFieldInfo> GenericSound::get_device_fields()
 {
     std::vector<DeviceFieldInfo> r = ComputerDevice::get_device_fields();
@@ -717,6 +771,8 @@ std::vector<DeviceFieldInfo> GenericSound::get_device_fields()
     r.push_back({"overflows", "Times the emulation outran the device",         false});
     r.push_back({"rate",      "How much faster than made the sound plays to fit the audio device, ppm", false});
     r.push_back({"target",    "Samples (frames in stereo) the buffer is kept at", false});
+    r.push_back({"sample_rate", "Hz the samples are made at", false});
+    r.push_back({"filter",    "Cutoff of the low-pass filter in effect, Hz; 0 - none", false});
     return r;
 }
 
@@ -726,6 +782,8 @@ std::vector<DeviceCommandInfo> GenericSound::get_device_commands()
     r.push_back({"volume",  "0-100",    "Sets the volume"});
     r.push_back({"mute",    "[0|1]",    "Mutes or unmutes the sound"});
     r.push_back({"latency", "[ms]",     "Keeps that much sound in the buffer; without a value finds it out by itself"});
+    r.push_back({"sample_rate", "[Hz]", "Reopens the audio device at that rate; without a value at the machine's own"});
+    r.push_back({"filter",  "[Hz]",     "Sets the cutoff of the low-pass filter; without a value or 0 switches it off"});
     r.push_back({"record",  "[\"file.wav\"]", "Starts writing the output to a WAV file; without a name stops and writes it"});
     return r;
 }
@@ -737,6 +795,12 @@ bool GenericSound::get_field(const std::string &field, unsigned int from, unsign
     if (field == "muted")   { out.values.push_back(m_muted?1:0);    return true; }
     if (field == "active")  { out.values.push_back(m_initialized?1:0); return true; }
     if (field == "channels") { out.values.push_back(m_channels); return true; }
+    // In decimal whatever the radix of the machine: Hz
+    if (field == "sample_rate" || field == "filter") {
+        out.numeric = false;
+        out.text = std::to_string(field == "sample_rate" ? m_sample_rate : (m_lpf_on ? (unsigned int)m_lpf_coutoff : 0u));
+        return true;
+    }
     //Whether the device says its own level moves between writes. A device that
     //cannot tell stays at 1; the УК-НЦ works it out from its register, and if
     //a restored state left it at 0 while a tone is on, the mixer would hold a
@@ -790,11 +854,12 @@ emulator::Result GenericSound::send_command(const std::string &command, const st
 
     // record("file.wav") starts writing the output to a file, record() stops
     // and writes it. With an audio device the file has its rate; without one
-    // (--no-sound) the samples are made for the file alone, at 44100 Hz
+    // (--no-sound) the samples are made for the file alone, at 44100 Hz or the
+    // rate the window forces
     if (command == "record") {
         if (!p.empty() && !p[0].empty()) {
             if (!m_pipeline) {
-                if (!m_initialized) m_sample_rate = 44100;
+                if (!m_initialized) m_sample_rate = capture_rate();
                 setup_pipeline();
             }
             m_capture_file = p[0];
@@ -817,6 +882,16 @@ emulator::Result GenericSound::send_command(const std::string &command, const st
 
     if (command == "latency") {
         set_latency((p.empty() || p[0].empty()) ? 0 : parse_numeric_value(p[0]));
+        return emulator::Result::ok();
+    }
+
+    if (command == "sample_rate") {
+        set_sample_rate((p.empty() || p[0].empty()) ? 0 : parse_numeric_value(p[0]));
+        return emulator::Result::ok();
+    }
+
+    if (command == "filter") {
+        set_filter((p.empty() || p[0].empty()) ? 0 : parse_numeric_value(p[0]));
         return emulator::Result::ok();
     }
 
