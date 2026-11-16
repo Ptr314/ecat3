@@ -52,6 +52,7 @@ https://ecat.emuverse.ru/library/ - на неё же ссылаются опис
 | | `venix2.rd` | винчестер 32 МБ: VENIX/PRO 2.0 из Xhomer, вход root без пароля (тест `boot-e85-venix`) |
 | `dvk` | `rt11-dw.dsk` | RT-11 V05.04 на винчестере DW, 5 МБ |
 | | `FODOSTMO.DSK` | ФОДОС, заводские тесты (ВМ2, ВМ3, MY, MX, DW, КГД, КЦГД) |
+| | `ars-games-1.dsk`, `ars-games-2.dsk` | игры с логического диска GAME.DSK (АДОС), загрузочные дискеты MY с RT-11: пакет PLAYER и игры под КЦГД; под КГД, под УКНЦ и прочие |
 | `bk` | `AZVIDT24.BIN` | тест видеоконтроллера AZBK (MAXIOL): все 60 однослойных режимов; платформа «AZБК» (тест `work-bk0011m-azbk-azvidt`) |
 | `bk` | `AZMOUNT1.BIN` | AZMNT 09 (MAXIOL): монтирование дисков AZ с карты microSD AZBK, обзор карты, чтение и запись AZ.INI (тест `work-bk0011m-azbk-azmnt`) |
 | `agat` | `INIT_HELLO840[a7].dsk`, `ikp2-19176.dsk` | диски Агата, которые не загружает ни одна конфигурация |
