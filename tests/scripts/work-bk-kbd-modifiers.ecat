@@ -1,0 +1,74 @@
+# БК0010-01: модификатор хоста не держит признак нажатой клавиши.
+#
+# Разряд 6 регистра 0177716 (0 - клавиша нажата) дает матрица К1801ВП1-014.
+# НР, СУ и АР2 в нее не входят: у каждой своя линия, и она меняет только код
+# клавиши матрицы. Раньше линию держала любая клавиша хоста, Shift тоже: после
+# Shift+буква, отпущенной раньше Shift, MK-DOS и ANDOS повторяли букву, пока
+# держался Shift. Линию не держит и клавиша хоста, которой нет в bk.map (F5;
+# на Маке так ведет себя Ctrl, у Qt это Meta).
+#
+# port-sys-rd - сам регистр 0177716 (разряд 6 = 100: ничего не нажато),
+# keyboard.count - сколько клавиш хоста держится, модификаторы тоже.
+# @timeout 30
+
+MACHINE "bk/BK-0010-01.cfg"
+WAIT _2000
+
+LOGDEFS _16,_8
+
+PRINT "=== Shift + A, A отпущена, Shift держится ==="
+KEYDOWN shift
+WAIT _50
+LOG port-sys-rd.value16(0,0)
+KEYDOWN a
+WAIT _50
+LOG port-kbd-code.value
+LOG port-sys-rd.value16(0,0)
+KEYUP a
+WAIT _50
+LOG port-sys-rd.value16(0,0)
+LOG keyboard.count
+KEYUP shift
+WAIT _50
+
+PRINT "=== Shift отпущен раньше буквы: буква держит линию до своего отпускания ==="
+KEYDOWN shift
+WAIT _50
+KEYDOWN a
+WAIT _50
+KEYUP shift
+WAIT _50
+LOG port-sys-rd.value16(0,0)
+KEYUP a
+WAIT _50
+LOG port-sys-rd.value16(0,0)
+
+PRINT "=== Ctrl (СУ) и Alt (АР2) по одному ==="
+KEYDOWN ctrl
+WAIT _50
+LOG port-sys-rd.value16(0,0)
+KEYUP ctrl
+WAIT _50
+KEYDOWN alt
+WAIT _50
+LOG port-sys-rd.value16(0,0)
+KEYUP alt
+WAIT _50
+
+PRINT "=== F5: клавиша хоста без кода ==="
+KEYDOWN f5
+WAIT _50
+LOG port-sys-rd.value16(0,0)
+LOG keyboard.count
+KEYUP f5
+WAIT _50
+
+PRINT "=== Caps Lock шлет РУС и держит линию, как клавиша матрицы ==="
+KEYDOWN caps
+WAIT _50
+LOG port-kbd-code.value
+LOG port-sys-rd.value16(0,0)
+KEYUP caps
+WAIT _50
+LOG port-sys-rd.value16(0,0)
+EXIT

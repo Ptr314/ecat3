@@ -49,10 +49,18 @@ private:
     std::vector<unsigned int> m_alt_codes;
     bool alt_vector_for(unsigned int code, bool alt) const;
 
-    // Keys currently held down, to drive i_pressed. Keys pressed on the drawing
-    // are counted separately: they carry an id, not a host code.
+    // Host keys currently held down (fields held and count). Keys pressed on the
+    // drawing are counted separately: they carry an id, not a host code.
     std::vector<unsigned int> keys_held;
     std::vector<std::string> ids_down;
+    // The held host keys that sent the machine a code: only these drive
+    // i_pressed. A modifier is a line of its own that changes the code of a
+    // key and is no key itself (НР, СУ, АР2 of the БК are outside the matrix
+    // of К1801ВП1-014), and neither is a host key without a code. Shift held
+    // after the letter it typed kept the line up, and MK-DOS and ANDOS
+    // repeated the letter until Shift was let go
+    std::vector<unsigned int> keys_sent;
+    void note_sent(unsigned int key);
     void update_pressed();
 
     // Machine key id of a host code, so that typing on the real keyboard lights

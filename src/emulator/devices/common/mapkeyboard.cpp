@@ -307,7 +307,15 @@ void MapKeyboard::repeat_key(const std::string &id, bool press)
 // after it has been read.
 void MapKeyboard::update_pressed()
 {
-    i_pressed.change((keys_held.empty() && ids_down.empty())? 0 : 1);
+    i_pressed.change((keys_sent.empty() && ids_down.empty())? 0 : 1);
+}
+
+void MapKeyboard::note_sent(unsigned int key)
+{
+    for (size_t i = 0; i < keys_sent.size(); i++)
+        if (keys_sent[i] == key) return;
+    keys_sent.push_back(key);
+    update_pressed();
 }
 
 unsigned int MapKeyboard::resolve_keypad(unsigned int key) const
@@ -324,10 +332,7 @@ void MapKeyboard::key_down(unsigned int key)
     bool known = false;
     for (size_t i = 0; i < keys_held.size(); i++)
         if (keys_held[i] == key) { known = true; break; }
-    if (!known) {
-        keys_held.push_back(key);
-        update_pressed();
-    }
+    if (!known) keys_held.push_back(key);
 
     //So that typing on the real keyboard lights the drawing up as well
     note_id(id_of_code(key), true);
@@ -342,6 +347,7 @@ void MapKeyboard::key_down(unsigned int key)
     else if (key == code_ruslat) {
         set_rus(!rus_mode);
         if (m_use_codes && m_has_rus_switches) {
+            note_sent(key);
             send_key(m_rus_switches[rus_mode?0:1]);
         }
     }else {
@@ -386,6 +392,9 @@ void MapKeyboard::key_down(unsigned int key)
                     if (l >= 0) value = id_map[l].value;
                 }
             }
+            //The line goes up before the code, as it did when every held key
+            //raised it
+            note_sent(key);
             //АР2 latched on the drawing applies to the host keyboard as well
             send_key(value, alt_held());
         }
@@ -411,6 +420,11 @@ void MapKeyboard::key_up(unsigned int key)
     for (size_t i = 0; i < keys_held.size(); i++)
         if (keys_held[i] == key) {
             keys_held.erase(keys_held.begin() + i);
+            break;
+        }
+    for (size_t i = 0; i < keys_sent.size(); i++)
+        if (keys_sent[i] == key) {
+            keys_sent.erase(keys_sent.begin() + i);
             update_pressed();
             break;
         }
@@ -549,6 +563,7 @@ void MapKeyboard::reset(bool cool)
     Keyboard::reset(cool);
 
     keys_held.clear();
+    keys_sent.clear();
     ids_down.clear();
     //The modifiers go with them: a key held across the reset is forgotten, and
     //a modifier that survived would silently rewrite everything typed after
@@ -589,6 +604,7 @@ emulator::Result MapKeyboard::load_state(const StateReader &r)
     r.u("last_value", m_last_value);
     r.b("last_alt", m_last_alt);
     keys_held.clear();
+    keys_sent.clear();
     ids_down.clear();
     shift_pressed = false;
     ctrl_pressed = false;

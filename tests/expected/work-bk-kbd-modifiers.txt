@@ -1,0 +1,19 @@
+=== Shift + A, A отпущена, Shift держится ===
+[port-sys-rd.value16] &100144
+[port-kbd-code.value] &000141
+[port-sys-rd.value16] &100040
+[port-sys-rd.value16] &100140
+[keyboard.count] &000001
+=== Shift отпущен раньше буквы: буква держит линию до своего отпускания ===
+[port-sys-rd.value16] &100040
+[port-sys-rd.value16] &100140
+=== Ctrl (СУ) и Alt (АР2) по одному ===
+[port-sys-rd.value16] &100140
+[port-sys-rd.value16] &100140
+=== F5: клавиша хоста без кода ===
+[port-sys-rd.value16] &100140
+[keyboard.count] &000001
+=== Caps Lock шлет РУС и держит линию, как клавиша матрицы ===
+[port-kbd-code.value] &000016
+[port-sys-rd.value16] &100040
+[port-sys-rd.value16] &100140
