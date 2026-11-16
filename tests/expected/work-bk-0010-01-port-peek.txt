@@ -5,4 +5,4 @@
 [mapper.value] &177664: &234 &002
 [mapper.value] &177706: &345 &024
 [mapper.value] &177700: &340 &377 &377 &377 &040 &377
-[mapper.value] &177716: &140 &200
+[mapper.value] &177716: &144 &200

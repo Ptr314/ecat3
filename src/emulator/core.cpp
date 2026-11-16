@@ -1746,12 +1746,13 @@ void Port::interface_callback(MAYBE_UNUSED unsigned int callback_id, unsigned in
 
 unsigned int Port::read_register()
 {
-    if (access_on_read) {
-        i_access.change(0);
-        i_access.change(1);
-    }
-    if (!has_constant_return) return value;
-    return constant_value;
+    // As on a bus read: the strobe falls, the value is taken, the strobe rises.
+    // A flip-flop cleared by the end of the read (bit 2 of the БК 0177716) is
+    // still seen set by this read
+    if (access_on_read) i_access.change(0);
+    const unsigned int v = has_constant_return ? constant_value : value;
+    if (access_on_read) i_access.change(1);
+    return v;
 }
 
 void Port::write_register(unsigned int new_value)
