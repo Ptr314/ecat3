@@ -96,7 +96,11 @@ static emulator::Result load_rk(Emulator* e, const std::string &file_name)
         const unsigned int end = static_cast<unsigned int>(header[2]) * 256 + header[3];
         //An end before the start made the length wrap around to four gigabytes
         if (end < delta) return file_error(QT_TRANSLATE_NOOP("Emulator", "Incorrect addresses in the file header"));
-        unsigned int len = end - delta;
+        //The end address is the last byte of the block, as the monitors write
+        //and read it on tape. Without the +1 that byte was not loaded, and the
+        //search for $E6 below took it for the trailer: a file whose last byte
+        //is neither 0 nor $E6 failed to load at all
+        unsigned int len = end - delta + 1;
 
         RAM* m;
         res = find_ram(e, &m);
