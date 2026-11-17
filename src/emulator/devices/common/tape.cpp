@@ -507,6 +507,9 @@ std::string TapeRecorder::format_for_extension(const std::string &ext)
             : (str_tolower(ext) == "wav") ? "apple-wav:20000;data" : "apple-raw:20000;data";
     if (fmt.empty() && m_tape_enc == TapeEnc::ORIC)
         fmt = (str_tolower(ext) == "wav") ? "oric-wav:20000;data" : "oric:19231;data";
+    //Запись кассеты - не файл БК, и под полным именем на ленту не идет.
+    //Здесь же, а не только в ini: старый ini о ней не знает
+    if (fmt.empty() && m_tape_enc == TapeEnc::BK && str_tolower(ext) == "wav") fmt = bk_tape::WAV_FORMAT;
     //На ленте БК нет типов файлов, расширением может быть что угодно, и список
     //всех не составить: остальное решает заголовок файла в load_file()
     if (fmt.empty() && m_tape_enc == TapeEnc::BK) fmt = bk_tape::NAMED_FORMAT;
@@ -685,6 +688,8 @@ void TapeRecorder::set_baud_rate(unsigned int baud)
 
 void TapeRecorder::set_data(const std::vector<uint8_t> &new_data){
     data = new_data;
+    //A new tape plays the usual way unless its format says otherwise
+    m_exact_steps = false;
     set_tape_mode(TAPE_STOPPED);
     data_size = data.size();
     data_position = 0;
@@ -830,13 +835,17 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
         oric_tape::encode(buffer, buffer_encoded);
         set_data(buffer_encoded);
     } else
-    if (tape_format == "apple-wav" || tape_format == "oric-wav") {
-        // A cassette as it was digitised: the levels come from the sound
-        set_baud_rate(baud);
-        if (!apple_tape::wav_to_steps(buffer, buffer_encoded))
+    if (tape_format == "apple-wav" || tape_format == "oric-wav" || tape_format == "bk-wav") {
+        // A cassette as it was digitised: the levels come from the sound, on
+        // a grid of as many steps a second as the rate says
+        if (baud <= 0 || !wav_tape::wav_to_steps(buffer, buffer_encoded, (unsigned)baud))
             return emulator::Result::error(emulator::ErrorCode::BadParameters,
                 "{TapeRecorder|" + std::string(QT_TRANSLATE_NOOP("TapeRecorder", "Incorrect tape file format")) + "} " + file_name);
+        set_baud_rate(baud);
         set_data(buffer_encoded);
+        //The step of the БК grid is shorter than an instruction of the
+        //processor: a call may pass several of them
+        m_exact_steps = tape_format == "bk-wav";
     } else
     if (tape_format == "apple" || tape_format == "apple-raw") {
         // A PTP file holds its records; a bare file is one record, the one
@@ -892,6 +901,28 @@ void TapeRecorder::clock(unsigned int counter)
     if (medium == TapeMedium::Bytes)  { bytes_clock(counter); return; }
     if (medium == TapeMedium::Pulses) { zx_clock(counter); return; }
     cycle_counter += counter;
+    if (tape_mode != TAPE_STOPPED && m_exact_steps && m_system_clock > 0) {
+        //Шаг ленты мельче команды: за вызов их проходит столько, сколько
+        //уложилось в такты, и остаток копится в долях такта (такты, умноженные
+        //на скорость), так что ход точен при любой частоте процессора. Линию
+        //трогаем только на перепаде: change() не сравнивает значения сам, а
+        //шагов здесь сто тысяч в секунду
+        uint64_t acc = (uint64_t)ticks_counter + (uint64_t)counter * baud_rate;
+        while (acc >= m_system_clock && data_position < data_size) {
+            acc -= m_system_clock;
+            if (tape_mode == TAPE_READ) {
+                const unsigned int v = (data[data_position] >> bit_shift) & 1;
+                if (i_output.value != v) i_output.change(v);
+                if (i_speaker.value != v) i_speaker.change(v);
+            }
+            if (--bit_shift < 0) {
+                bit_shift = 7;
+                data_position++;
+            }
+        }
+        if (data_position < data_size) ticks_counter = (unsigned int)acc;
+        else { ticks_counter = 0; stop(); }
+    } else
     if (tape_mode != TAPE_STOPPED) {
         if (ticks_counter < ticks_per_bit) {
             ticks_counter += counter;
@@ -955,6 +986,8 @@ void TapeRecorder::save_state(StateWriter &w)
     w.n("ticks_counter", ticks_counter);
     w.n("bit_shift", static_cast<uint32_t>(bit_shift));
     w.n("baud_rate", baud_rate);
+    //Как идет лента, решил ее формат, а формата в снимке нет
+    if (m_exact_steps) w.b("exact", m_exact_steps);
     w.b("recording", is_recording);
     //Имя кассеты и то, что лентопротяжку держит машина: окно магнитофона
     //показывает табло только при известном имени, а закрываясь, останавливает
@@ -1065,6 +1098,8 @@ emulator::Result TapeRecorder::load_state(const StateReader &r)
     uint32_t baud = baud_rate;
     //На скорость делят
     if (r.u("baud_rate", baud) && baud != 0) set_baud_rate(baud);
+    m_exact_steps = false;
+    r.b("exact", m_exact_steps);
     r.b("recording", is_recording);
     //The decoder's thresholds come with the start of a recording, which a
     //restored one never sees; without them every half period ends a record.

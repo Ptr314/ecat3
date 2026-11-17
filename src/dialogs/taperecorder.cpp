@@ -412,9 +412,11 @@ void TapeRecorderWindow::save_recording()
     // grows: asked there
     unsigned recorded = 0;
     std::string suggested;
+    bool saves_wav = false;
     e->invoke([&]() {
         recorded = d->get_record_size();
         if (recorded != 0) suggested = d->get_record_name();
+        saves_wav = d->saves_wav();
     });
     if (recorded != 0) {
         QString path = QString::fromStdString(e->get_last_path());
@@ -425,6 +427,27 @@ void TapeRecorderWindow::save_recording()
         // the extension is what decides how the file goes back on the tape
         QString filter = QString::fromStdString(d->files);
         if (filter.isEmpty()) filter = "Binary files (*.bin);;Text programs (*.asc)";
+        // A tape that reads cassette recordings but cannot make one (БК,
+        // Oric) would write its file under .wav, and the file would not load
+        // back: the masks of the load dialog lose *.wav here, and a group
+        // left with nothing goes too
+        if (!saves_wav) {
+            QStringList kept;
+            const QStringList groups = filter.split(";;");
+            for (int g = 0; g < groups.size(); g++) {
+                const QString &group = groups[g];
+                const int open = group.indexOf('(');
+                const int close = group.lastIndexOf(')');
+                if (open < 0 || close < open) { kept << group; continue; }
+                QStringList masks;
+                const QStringList words = group.mid(open + 1, close - open - 1).split(' ');
+                for (int w = 0; w < words.size(); w++)
+                    if (!words[w].isEmpty() && words[w].compare("*.wav", Qt::CaseInsensitive) != 0) masks << words[w];
+                if (masks.isEmpty()) continue;
+                kept << group.left(open + 1) + masks.join(" ") + group.mid(close);
+            }
+            if (!kept.isEmpty()) filter = kept.join(";;");
+        }
         if (!filter.contains("*.*")) filter += ";;All files (*.*)";
         // A compound extension like ".uknc.tap" is beyond the Windows dialog:
         // it takes only ".tap" for the extension of a name, finds it unlike

@@ -44,6 +44,14 @@ namespace bk_tape
     // its extension: under its whole name, see TapeRecorder::load_file()
     const char * const NAMED_FORMAT = "bk-name:9464;data";
 
+    // A recording of a cassette, *.wav: the levels on a grid of 10 us, which
+    // is 30 cycles at 3 MHz and 40 at 4 MHz. A half period of the БК signal
+    // is some 105 us at the speed of the БК0010-01 and less on a fast tape,
+    // and the grid of 50 us the Apple ][ tape is read on would shake it by
+    // a half. The reader in the monitor times the levels itself, so the
+    // recording may be at any speed
+    const char * const WAV_FORMAT = "bk-wav:100000;data";
+
     // A БК file states its own length in the header, and that is what tells it
     // from any other file when the extension says nothing
     inline bool is_file(const std::vector<uint8_t> &file)

@@ -1,0 +1,30 @@
+# БК0010-01: лента из записи кассеты (WAV, tests/files/make-bk-wav.py:
+# синусоиды, постоянная составляющая, шум, лента на 15% медленнее). Уровни для
+# разряда 5 0177716 дает компаратор с гистерезисом на сетке 10 мкс, и ход их
+# точен по тактам: Монитор принимает пилот, только если 2048 полупериодов
+# подряд ровные. Загрузка - как с настоящего магнитофона: MO, M, имя. В блоке
+# 000320 код 0, в 000346 адрес и длина с ленты, в 000352 имя, в 002000
+# содержимое файла.
+
+MACHINE "bk/BK-0010-01.cfg"
+WAIT _3000
+
+TYPE "MO\n"
+WAIT _1000
+TYPE "M\n"
+WAIT _500
+TYPE "WAVTEST\n"
+WAIT _500
+COMMAND tape.load("../files/bk-0010-01-record.wav")
+COMMAND tape.play
+WAIT _3000
+
+LOGDEFS _8,_16
+LOG tape.mode
+LOG tape.baudrate
+LOG ram.value(321)
+LOG ram.value16(346,351)
+LOG ram.value(352,371)
+LOG ram.value(2000,2017)
+SCREEN "../results/tape-bk-0010-01-wav.png"
+EXIT

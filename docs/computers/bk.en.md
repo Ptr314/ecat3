@@ -35,7 +35,7 @@ The ROMs come with the emulator: `deploy/computers/bk/files/`. The ANDOS 3.30 fl
 | Medium | Format |
 |---|---|
 | Programs | `.bin` with a load address header, «File / Open...» |
-| Tape recorder | `.bin`, `.cod`, `.foc`, `.asc` (BASIC text) |
+| Tape recorder | `.bin`, `.cod`, `.foc`, `.asc` (BASIC text), `.wav` (a cassette recording) |
 | Floppies | `.img`, `.bkd`, `.dsk` (819200 bytes; 40 tracks are accepted), `.hfe`. Writes go to memory, saving is by hand |
 | Hard disk (SMK-512) | `.img`, `.hdi`; writes go straight to the file |
 

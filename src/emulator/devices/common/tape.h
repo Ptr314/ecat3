@@ -17,6 +17,7 @@
 #include "emulator/devices/common/tape_record.h"
 #include "emulator/devices/common/tape_rk86.h"
 #include "emulator/devices/common/tape_uknc.h"
+#include "emulator/devices/common/tape_wav.h"
 #include "emulator/devices/common/tape_zx.h"
 
 #define TAPE_STOPPED 0
@@ -106,6 +107,11 @@ protected:
     void tape_sound(unsigned int level) { i_speaker.change(level); }
     void clock_sound(unsigned int counter) { speaker->clock(counter); }
     void notify_state();
+    //Уровни выдаются по тактам точно, сколько бы их ни пришлось на вызов:
+    //запись кассеты БК (bk-wav), у которой шаг мельче команды процессора.
+    //Остальные уровневые ленты идут прежней петлей - не больше выборки за
+    //вызов, - на ней записаны их эталоны
+    bool m_exact_steps = false;
     TapeEnc m_tape_enc = TapeEnc::MSX;
     TapeMedium medium = TapeMedium::Levels;
     uint64_t cycle_counter = 0;
@@ -279,6 +285,9 @@ public:
     //The same in the form the name asks for: the Apple ][ tape goes to a
     //.wav as sound, to anything else as its records
     void get_save_data_for(const std::string &file_name, std::vector<uint8_t> &out);
+    //Whether a recording can go to a .wav: only the Apple ][ one is turned
+    //back into sound, the others read *.wav and save their own files
+    bool saves_wav() const { return m_tape_enc == TapeEnc::APPLE; }
     virtual std::string get_record_name();
     virtual std::vector<uint8_t> * get_record_data();
 
