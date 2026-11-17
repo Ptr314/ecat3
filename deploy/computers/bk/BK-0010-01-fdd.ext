@@ -80,8 +80,8 @@ fdd1 : fdd {
 mapper:~config[2-3] = fdc.control[2-3]
 
 @before mapper:@memory[177660-177661]
-mapper:@memory[14:14][120000-137777] = basic1 {mode = r}
-mapper:@memory[14:14][140000-157777] = basic2 {mode = r}
+mapper:@memory[14:14][120000-137777] = basic1 {mode = r, strict = 1}
+mapper:@memory[14:14][140000-157777] = basic2 {mode = r, strict = 1}
 mapper:@memory[0:10][120000-157777] = ram-fdd
 mapper:@memory[160000-167777] = disk {mode = r}
 mapper:@memory[177130-177133] = fdc
