@@ -77,20 +77,21 @@ emulator::Result AZBK::load_config(SystemData *sd)
         }
         if (slot >= ROM_PAGES || str_trim(p.value).empty())
             return emulator::Result::error(emulator::ErrorCode::ConfigError, bad + " (" + p.name + ")");
-        m_slots.push_back({slot, str_trim(p.value)});
+        m_slots.push_back({slot, str_trim(p.value), 1});
     }
     m_logo = str_trim(cd->get_parameter("logo", false).value);
 
     // Файлы читаются сразу: нет файла или слоты перекрываются - ошибка
     // конфигурации, а не пустое ПЗУ после сброса
     std::vector<bool> used(ROM_PAGES, false);
-    for (const Slot &s : m_slots) {
+    for (Slot &s : m_slots) {
         const std::string file = find_file_location(sd, s.file);
         const long long size = file.empty() ? -1 : dsk_tools::utf8_file_size(file);
         if (size <= 0)
             return emulator::Result::error(emulator::ErrorCode::ConfigError,
                 "{ROM|" + std::string(QT_TRANSLATE_NOOP("ROM", "File not found")) + "} " + s.file);
         const unsigned int pages = (unsigned int)((size + PAGE_BYTES - 1) / PAGE_BYTES);
+        s.pages = pages;
         for (unsigned int i = 0; i < pages; i++) {
             if (s.slot + i >= ROM_PAGES || used[s.slot + i])
                 return emulator::Result::error(emulator::ErrorCode::ConfigError, bad + " (rom_" + std::to_string(s.slot) + ")");

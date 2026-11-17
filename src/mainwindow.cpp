@@ -60,6 +60,7 @@
 #include "dialogs/debugger/debuggerwindow.h"
 #include "dialogs/debugger/memorywindow.h"
 #include "dialogs/smkwindow.h"
+#include "dialogs/azbkwindow.h"
 #include "dialogs/bkscreenwindow.h"
 #include "dialogs/portwindow.h"
 #include "dialogs/openconfigwindow.h"
@@ -371,6 +372,7 @@ MainWindow::MainWindow(const QString &config_file, const QString &script_file, i
     DWM->register_debug_window("taperecorder", &CreateTapeWindow);
     DWM->register_debug_window("register", &CreatePortWindow);
     DWM->register_debug_window("smk512", &CreateSMKWindow, QT_TRANSLATE_NOOP("DebugMenu", "SMK-512..."));
+    DWM->register_debug_window("azbk", &CreateAZBKWindow, QT_TRANSLATE_NOOP("DebugMenu", "AZBK..."));
     DWM->register_debug_window("bk-display", &CreateBKScreenWindow, QT_TRANSLATE_NOOP("DebugMenu", "BK screen..."));
 
     #ifdef RENDERER_SDL2

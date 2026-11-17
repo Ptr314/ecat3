@@ -72,6 +72,9 @@ public:
     static const unsigned int CTRL_REV037  = 1u << 14;
     static const unsigned int CTRL_WIN1OFF = 1u << 15;
 
+    // Слот ПЗУ: номер R00..R63, файл и сколько слотов он занимает
+    struct Slot { unsigned int slot; std::string file; unsigned int pages; };
+
 private:
     Memory * m_ram = nullptr;
     uint8_t * m_buf = nullptr;          // память AZ, прямо в буфере azbk-ram
@@ -114,7 +117,6 @@ private:
     unsigned int m_halts = 0;           // низкий HALT: включение, сброс, команда 037
 
     // Слоты ПЗУ и логотип: файлы и что из них вышло
-    struct Slot { unsigned int slot; std::string file; };
     std::vector<Slot> m_slots;
     std::string m_logo;
 
@@ -165,6 +167,20 @@ public:
     unsigned int control() const { return m_ctrl; }
     unsigned int halts() const { return m_halts; }
     unsigned int window_page(unsigned int n) const { return m_win[n & 15]; }
+
+    // Для отладочного окна: регистры маппера и что стоит в памяти AZ. Ответ
+    // окна на чтение и запись окно берет у route(), как диспетчер
+    Memory * board_ram() const { return m_ram; }
+    unsigned int active() const { return m_active; }
+    unsigned int readonly() const { return m_ro; }
+    unsigned int shadow() const { return m_shadow; }
+    unsigned int copy130() const { return m_copy130; }
+    unsigned int copy716() const { return m_copy716; }
+    bool starting() const { return m_start; }
+    bool smk_flag() const { return m_smk_flag; }
+    bool window_readonly(unsigned int n) const { return window_ro(n & 15); }
+    const std::vector<Slot> & rom_slots() const { return m_slots; }
+    const std::string & logo_file() const { return m_logo; }
 
     void save_state(StateWriter &w) override;
     emulator::Result load_state(const StateReader &r) override;

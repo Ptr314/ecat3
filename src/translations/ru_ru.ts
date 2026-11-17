@@ -25,6 +25,263 @@
     </message>
 </context>
 <context>
+    <name>AZBKWindow</name>
+    <message>
+        <location filename="../dialogs/azbkwindow.cpp" line="+89"/>
+        <source>Processor addresses</source>
+        <translation>Адреса процессора</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Pages of the windows</source>
+        <translation>Страницы окон</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>AZ memory</source>
+        <translation>Память AZ</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>View:</source>
+        <translation>Вид:</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Page:</source>
+        <translation>Страница:</translation>
+    </message>
+    <message>
+        <location line="+72"/>
+        <source>BK RAM page %1, part %2</source>
+        <translation>ОЗУ БК, страница %1, часть %2</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>logo</source>
+        <translation>логотип</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>logo: %1</source>
+        <translation>логотип: %1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>screenshot header</source>
+        <translation>заголовок снимка экрана</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>BIOS variables</source>
+        <translation>переменные BIOS</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>service</source>
+        <translation>служебная</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>ROM %1: %2, part %3 of %4</source>
+        <translation>ПЗУ %1: %2, часть %3 из %4</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>ROM %1: %2</source>
+        <translation>ПЗУ %1: %2</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>ROM %1, empty</source>
+        <translation>ПЗУ %1, пусто</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>SMK-512 page %1, segment %2</source>
+        <translation>СМК-512, страница %1, сегмент %2</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>free</source>
+        <translation>свободная</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>page %1: %2</source>
+        <translation>страница %1: %2</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>answers</source>
+        <translation>отвечает</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>shadow</source>
+        <translation>тень</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>not answering</source>
+        <translation>не отвечает</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>nowhere</source>
+        <translation>нигде</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>AZ OR %1</source>
+        <translation>AZ ИЛИ %1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+1"/>
+        <location line="+12"/>
+        <location line="+2"/>
+        <location line="+40"/>
+        <source>no answer</source>
+        <translation>нет ответа</translation>
+    </message>
+    <message>
+        <location line="-44"/>
+        <source>AZ and %1</source>
+        <translation>AZ и %1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1, copy to AZ (shadow)</source>
+        <translation>%1, копия в AZ (тень)</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>%1 (read-only window)</source>
+        <translation>%1 (окно только для чтения)</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>nothing</source>
+        <translation>ничего</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>shadow: %1</source>
+        <translation>тень: %1</translation>
+    </message>
+    <message>
+        <location line="+36"/>
+        <source>no window</source>
+        <translation>нет окна</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>%1; the processor: %2</source>
+        <translation>%1; процессор: %2</translation>
+    </message>
+    <message>
+        <location line="+48"/>
+        <source>CPU %1 MHz</source>
+        <translation>ЦП %1 МГц</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>48.8 Hz</source>
+        <translation>48,8 Гц</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>60 Hz</source>
+        <translation>60 Гц</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>timer of vector %1</source>
+        <translation>таймер вектора %1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>BK11 ROM in window 1</source>
+        <translation>ПЗУ БК11 в окне 1</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>BK11 emulation</source>
+        <translation>эмуляция БК11</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>BK10</source>
+        <translation>БК10</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>window 1 modification</source>
+        <translation>доработка окна 1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>037 control</source>
+        <translation>управление 037</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>window 1 to SMK</source>
+        <translation>окно 1 у СМК</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>start</source>
+        <translation>старт</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>0177130 armed</source>
+        <translation>0177130 ждет режим</translation>
+    </message>
+    <message>
+        <location line="+51"/>
+        <source>Page</source>
+        <translation>Страница</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Contents</source>
+        <translation>Что стоит</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Seen at</source>
+        <translation>Где видна</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Address</source>
+        <translation>Адрес</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>AZ page</source>
+        <translation>Страница AZ</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Read</source>
+        <translation>Чтение</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Write</source>
+        <translation>Запись</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>registers of the machine</source>
+        <translation>регистры машины</translation>
+    </message>
+</context>
+<context>
     <name>About</name>
     <message>
         <location filename="../dialogs/aboutdlg.ui" line="+14"/>
@@ -452,7 +709,7 @@
         <translation type="vanished">Ошибка</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="+831"/>
+        <location filename="../emulator/core.cpp" line="+832"/>
         <source>No CPU clock value found</source>
         <translation>Не задана тактовая частота процессора</translation>
     </message>
@@ -502,7 +759,7 @@
         <translation type="vanished">Некорректное значение для тактовой частоты %1</translation>
     </message>
     <message>
-        <location filename="../emulator/core.cpp" line="-1446"/>
+        <location filename="../emulator/core.cpp" line="-1447"/>
         <source>Incorrect interface definition for</source>
         <translation>Некорректное определение интерфейса для</translation>
     </message>
@@ -838,9 +1095,14 @@
 <context>
     <name>DebugMenu</name>
     <message>
-        <location filename="../mainwindow.cpp" line="+373"/>
+        <location filename="../mainwindow.cpp" line="+374"/>
         <source>SMK-512...</source>
         <translation>СМК-512...</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>AZBK...</source>
+        <translation>AZBK...</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2278,7 +2540,7 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+75"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+79"/>
         <source>Incorrect sample rate</source>
         <translation>Неверная частота дискретизации</translation>
     </message>
@@ -2288,7 +2550,7 @@
         <translation>Устройство не является источником звука</translation>
     </message>
     <message>
-        <location line="+159"/>
+        <location line="+175"/>
         <source>Error writing</source>
         <translation>Ошибка записи</translation>
     </message>
@@ -2785,12 +3047,12 @@
     <name>MainWindow</name>
     <message>
         <location filename="../mainwindow.cpp" line="+347"/>
-        <location line="+2034"/>
+        <location line="+2035"/>
         <source>&lt;No card&gt;</source>
         <translation>&lt;Нет карты&gt;</translation>
     </message>
     <message>
-        <location line="-2031"/>
+        <location line="-2032"/>
         <source>Choose a folder...</source>
         <translation>Выбрать папку...</translation>
     </message>
@@ -2811,7 +3073,7 @@
     </message>
     <message>
         <location line="+19"/>
-        <location line="+2010"/>
+        <location line="+2011"/>
         <location line="+21"/>
         <location line="+40"/>
         <source>microSD card</source>
@@ -3078,16 +3340,16 @@
         <translation>Теплый перезапуск (Ctrl+Break)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-778"/>
+        <location filename="../mainwindow.cpp" line="-779"/>
         <location line="+47"/>
-        <location line="+1947"/>
+        <location line="+1948"/>
         <location line="+30"/>
         <location line="+43"/>
         <source>&lt;Not loaded&gt;</source>
         <translation>&lt;Не загружено&gt;</translation>
     </message>
     <message>
-        <location line="-2064"/>
+        <location line="-2065"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation>Открыть образ...</translation>
@@ -3117,7 +3379,7 @@
         <location line="-155"/>
         <location line="+14"/>
         <location line="+94"/>
-        <location line="+1540"/>
+        <location line="+1541"/>
         <location line="+60"/>
         <location line="+79"/>
         <location line="+337"/>
@@ -3134,7 +3396,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-3196"/>
+        <location line="-3197"/>
         <source>Failed to load language file for: </source>
         <translation>Ошибка загрузки языкового файла: </translation>
     </message>
@@ -3169,7 +3431,7 @@
         <translation>Задержка</translation>
     </message>
     <message>
-        <location line="+83"/>
+        <location line="+84"/>
         <source>Mouse speed</source>
         <translation>Скорость мыши</translation>
     </message>
@@ -3242,13 +3504,13 @@
         <translation>Сохраненные состояния</translation>
     </message>
     <message>
-        <location line="-1791"/>
+        <location line="-1792"/>
         <location line="+45"/>
         <source>Default image</source>
         <translation>Образ по умолчанию</translation>
     </message>
     <message>
-        <location line="+248"/>
+        <location line="+249"/>
         <source>Screenshot type</source>
         <translation>Тип скриншота</translation>
     </message>
@@ -3345,15 +3607,15 @@
         <translation>Как на экране</translation>
     </message>
     <message>
-        <location line="-699"/>
-        <location line="+809"/>
+        <location line="-701"/>
+        <location line="+811"/>
         <location line="+1"/>
         <location line="+927"/>
         <source>Turbo</source>
         <translation>Турбо</translation>
     </message>
     <message>
-        <location line="-1317"/>
+        <location line="-1318"/>
         <source>Floppy drive %1</source>
         <translation>Дисковод %1</translation>
     </message>
@@ -3412,7 +3674,7 @@
         <translation>%1 Гц</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+18"/>
         <source>Filter</source>
         <translation>Фильтр</translation>
     </message>
@@ -3849,7 +4111,7 @@
         <translation>Некорректный параметр клавиатуры rusmode</translation>
     </message>
     <message>
-        <location line="+257"/>
+        <location line="+271"/>
         <source>Key table entry is incorrect</source>
         <translation>Элемент таблицы клавиш некорректен</translation>
     </message>
@@ -3868,7 +4130,7 @@
         <translation type="vanished">Некорректный параметр клавиатуры rusmode %1</translation>
     </message>
     <message>
-        <location line="-271"/>
+        <location line="-285"/>
         <source>rus_switches should have two values separated by &apos;/&apos;</source>
         <translation>Параметр rus_switches должен быть задан как два числа, разделённые &apos;/&apos;</translation>
     </message>
@@ -3917,7 +4179,7 @@
         <translation type="vanished">Некорректный диапазон для &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+1143"/>
+        <location line="+1144"/>
         <source>Interface not found</source>
         <translation>Интерфейс не найден</translation>
     </message>
@@ -4262,7 +4524,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-904"/>
+        <location filename="../emulator/core.cpp" line="-905"/>
         <source>Incorrect access mode</source>
         <translation>Некорректный режим доступа</translation>
     </message>
@@ -4889,26 +5151,26 @@
         <translation>Файл образа ленты не найден</translation>
     </message>
     <message>
-        <location line="+595"/>
+        <location line="+600"/>
         <source>Tape file format is not defined</source>
         <translation>Не задан формат файла записи</translation>
     </message>
     <message>
         <location line="+9"/>
         <location line="+100"/>
-        <location line="+9"/>
+        <location line="+13"/>
         <location line="+20"/>
         <source>Incorrect tape file format</source>
         <translation>Некорректный формат файла записи</translation>
     </message>
     <message>
-        <location line="-49"/>
-        <location line="+32"/>
+        <location line="-53"/>
+        <location line="+36"/>
         <source>The file is too large for a cassette record</source>
         <translation>Файл слишком велик для записи на кассету</translation>
     </message>
     <message>
-        <location line="+289"/>
+        <location line="+315"/>
         <location line="+635"/>
         <location line="+18"/>
         <location line="+7"/>
@@ -4967,7 +5229,7 @@
         <translation type="vanished">Некорректно задан способ кодирования данных для магнитофона %1</translation>
     </message>
     <message>
-        <location line="-889"/>
+        <location line="-915"/>
         <source>Unknown tape format!</source>
         <translation>Неизвестный формат файла записи!</translation>
     </message>
@@ -5034,17 +5296,17 @@
     <message>
         <location line="+22"/>
         <location line="+12"/>
-        <location line="+173"/>
+        <location line="+196"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="-173"/>
+        <location line="-196"/>
         <source>Unknown tape file format!</source>
         <translation>Неизвестный формат файла записи!</translation>
     </message>
     <message>
-        <location line="+143"/>
+        <location line="+166"/>
         <location line="+11"/>
         <source>Save recorded data</source>
         <translation>Сохранить записанные данные</translation>

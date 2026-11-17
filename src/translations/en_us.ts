@@ -25,6 +25,263 @@
     </message>
 </context>
 <context>
+    <name>AZBKWindow</name>
+    <message>
+        <location filename="../dialogs/azbkwindow.cpp" line="+89"/>
+        <source>Processor addresses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Pages of the windows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>AZ memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>View:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Page:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+72"/>
+        <source>BK RAM page %1, part %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>logo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>logo: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>screenshot header</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>BIOS variables</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>ROM %1: %2, part %3 of %4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>ROM %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>ROM %1, empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>SMK-512 page %1, segment %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>page %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>answers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>shadow</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>not answering</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>nowhere</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>AZ OR %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+1"/>
+        <location line="+12"/>
+        <location line="+2"/>
+        <location line="+40"/>
+        <source>no answer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-44"/>
+        <source>AZ and %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1, copy to AZ (shadow)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>%1 (read-only window)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>nothing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>shadow: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+36"/>
+        <source>no window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>%1; the processor: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+48"/>
+        <source>CPU %1 MHz</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>48.8 Hz</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>60 Hz</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>timer of vector %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>BK11 ROM in window 1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>BK11 emulation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>BK10</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>window 1 modification</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>037 control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>window 1 to SMK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>0177130 armed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+51"/>
+        <source>Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Seen at</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>AZ page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Read</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Write</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>registers of the machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>About</name>
     <message>
         <location filename="../dialogs/aboutdlg.ui" line="+14"/>
@@ -372,7 +629,7 @@
 <context>
     <name>CPU</name>
     <message>
-        <location filename="../emulator/core.cpp" line="+831"/>
+        <location filename="../emulator/core.cpp" line="+832"/>
         <source>No CPU clock value found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -410,7 +667,7 @@
 <context>
     <name>ComputerDevice</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-1446"/>
+        <location filename="../emulator/core.cpp" line="-1447"/>
         <source>Incorrect interface definition for</source>
         <translation type="unfinished"></translation>
     </message>
@@ -714,8 +971,13 @@
 <context>
     <name>DebugMenu</name>
     <message>
-        <location filename="../mainwindow.cpp" line="+373"/>
+        <location filename="../mainwindow.cpp" line="+374"/>
         <source>SMK-512...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>AZBK...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1781,7 +2043,7 @@
 <context>
     <name>GenericSound</name>
     <message>
-        <location filename="../emulator/devices/common/sound.cpp" line="+75"/>
+        <location filename="../emulator/devices/common/sound.cpp" line="+79"/>
         <source>Incorrect sample rate</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1791,7 +2053,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+159"/>
+        <location line="+175"/>
         <source>Error writing</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2277,7 +2539,7 @@
     <message>
         <location line="+36"/>
         <location line="+3"/>
-        <location filename="../mainwindow.cpp" line="+1579"/>
+        <location filename="../mainwindow.cpp" line="+1580"/>
         <location line="+1"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
@@ -2448,10 +2710,10 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="-921"/>
+        <location filename="../mainwindow.cpp" line="-922"/>
         <location line="+14"/>
         <location line="+94"/>
-        <location line="+1540"/>
+        <location line="+1541"/>
         <location line="+60"/>
         <location line="+79"/>
         <location line="+337"/>
@@ -2468,7 +2730,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-3196"/>
+        <location line="-3197"/>
         <source>Failed to load language file for: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -2495,14 +2757,14 @@
     <message>
         <location line="+17"/>
         <location line="+47"/>
-        <location line="+1947"/>
+        <location line="+1948"/>
         <location line="+30"/>
         <location line="+43"/>
         <source>&lt;Not loaded&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2064"/>
+        <location line="-2065"/>
         <location line="+47"/>
         <source>Open an image...</source>
         <translation type="unfinished"></translation>
@@ -2542,12 +2804,12 @@
     </message>
     <message>
         <location line="+12"/>
-        <location line="+2034"/>
+        <location line="+2035"/>
         <source>&lt;No card&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2031"/>
+        <location line="-2032"/>
         <source>Choose a folder...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2568,14 +2830,14 @@
     </message>
     <message>
         <location line="+19"/>
-        <location line="+2010"/>
+        <location line="+2011"/>
         <location line="+21"/>
         <location line="+40"/>
         <source>microSD card</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2040"/>
+        <location line="-2041"/>
         <source>Interface style</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2610,7 +2872,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+18"/>
         <source>Filter</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2768,15 +3030,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-955"/>
-        <location line="+809"/>
+        <location line="-957"/>
+        <location line="+811"/>
         <location line="+1"/>
         <location line="+927"/>
         <source>Turbo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1147"/>
+        <location line="-1148"/>
         <source>Automatic</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2796,7 +3058,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+373"/>
+        <location line="+374"/>
         <source>Picture tube</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3242,7 +3504,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+247"/>
+        <location line="+261"/>
         <source>Key table entry is incorrect</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3293,7 +3555,7 @@
 <context>
     <name>MemoryMapper</name>
     <message>
-        <location line="+1143"/>
+        <location line="+1144"/>
         <source>Interface not found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3629,7 +3891,7 @@
 <context>
     <name>Port</name>
     <message>
-        <location filename="../emulator/core.cpp" line="-904"/>
+        <location filename="../emulator/core.cpp" line="-905"/>
         <source>Incorrect access mode</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4159,21 +4421,21 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+595"/>
+        <location line="+600"/>
         <source>Tape file format is not defined</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+9"/>
         <location line="+100"/>
-        <location line="+9"/>
+        <location line="+13"/>
         <location line="+20"/>
         <source>Incorrect tape file format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-49"/>
-        <location line="+32"/>
+        <location line="-53"/>
+        <location line="+36"/>
         <source>The file is too large for a cassette record</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4183,7 +4445,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+256"/>
+        <location line="+282"/>
         <location line="+635"/>
         <location line="+18"/>
         <location line="+7"/>
@@ -4296,17 +4558,17 @@
     <message>
         <location line="+22"/>
         <location line="+12"/>
-        <location line="+173"/>
+        <location line="+196"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-173"/>
+        <location line="-196"/>
         <source>Unknown tape file format!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+143"/>
+        <location line="+166"/>
         <location line="+11"/>
         <source>Save recorded data</source>
         <translation type="unfinished"></translation>
