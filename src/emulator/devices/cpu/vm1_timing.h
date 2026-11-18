@@ -217,7 +217,7 @@ private:
     // BusReply in ticks of this processor, converted on first use
     struct ReplyTicks {
         const BusReply * reply = nullptr;
-        uint32_t window, setup_read, setup_write, setup_rmw, delay, rmw_extra;
+        uint32_t window, setup_read, setup_write, setup_rmw, delay, rmw_extra, read_extra;
         uint32_t shift;     // window less the phase of the points, mod window
         unsigned int phase_ns;  // the BusReply::phase_ns shift was worked out for
     };

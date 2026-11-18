@@ -5,7 +5,7 @@
 [azbk.start] &000
 [azbk.control] &000400
 [azbk-vga.mode] &052122
-[display.crc] &03221456225
+[display.crc] &33475271635
 === ANDOS загружен с AZ0 ===
 [az0.reads] &00000000101
 [azbk.windows]         000000: 00030 --S
@@ -25,4 +25,4 @@
         160000: 00110 AR-
         170000: 00100 AR-
 [azbk-vga.mode] &012201
-[display.crc] &01321624655
+[display.crc] &30255340775

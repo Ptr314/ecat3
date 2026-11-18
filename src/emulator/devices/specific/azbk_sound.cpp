@@ -7,6 +7,7 @@
 
 #include "azbk_sound.h"
 #include "azbk.h"
+#include "emulator/devices/common/ay8910.h"
 #include "emulator/utils.h"
 
 static const unsigned int R_DMA_CSR = 0177160;
@@ -19,6 +20,18 @@ static const unsigned int R_COV_R   = 0177202;
 static const unsigned int R_COV_M   = 0177204;
 static const unsigned int R_COV_8   = 0177206;
 static const unsigned int R_CTRL    = 0177212;
+static const unsigned int R_LEGACY  = 0177714;
+
+// 177212
+static const unsigned int CTRL_STEREO = 1;      // Covox через 177714 - стерео
+static const unsigned int CTRL_NO_714 = 2;      // перехват 177714 запрещен
+
+// 177714: вид последней записи
+static const unsigned int LEGACY_NONE = 0;
+static const unsigned int LEGACY_WORD = 1;
+static const unsigned int LEGACY_BYTE = 2;
+// С какой записи подряд одного вида начинается поток Covox
+static const unsigned int LEGACY_STREAM = 3;
 
 // 177160
 static const unsigned int DMA_START   = 1;
@@ -61,6 +74,13 @@ emulator::Result AZBKSound::load_config(SystemData *sd)
             "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect parameters for")) + "} " + name);
     m_rate = read_confg_value(cd, "rate", false, 44100u);
     if (m_rate == 0) m_rate = 44100;
+    const std::string ay = str_trim(cd->get_parameter("ay", false).value);
+    if (!ay.empty()) {
+        m_ay = dynamic_cast<AY8910*>(im->dm->get_device_by_name(ay, false));
+        if (m_ay == nullptr)
+            return emulator::Result::error(emulator::ErrorCode::ConfigError,
+                "{ComputerDevice|" + std::string(QT_TRANSLATE_NOOP("ComputerDevice", "Incorrect parameters for")) + "} " + name + " (ay)");
+    }
     return emulator::Result::ok();
 }
 
@@ -79,6 +99,10 @@ void AZBKSound::reset(bool cold)
     m_hash = 2166136261u;
     m_left = m_right = 0;
     m_control = 0;
+    m_legacy_last = LEGACY_NONE;
+    m_legacy_run = 0;
+    m_legacy_pending = false;
+    m_legacy_word = 0;
     // После включения 177212 = 0: YM2149 (стартовое ПЗУ потом пишет туда
     // выбор SETUP, по умолчанию тоже YM)
     i_ym.change(1);
@@ -212,10 +236,15 @@ void AZBKSound::clock(unsigned int counter)
 
 //------------------------------------------------------------ регистры ---
 
-// Covox по чтению не отдает записанное (MAXIOL); что отдает - вопрос Б.6, здесь 0
+// Covox читается (плата, AZHWT 2026-11-17, вопрос Б.6): 177200 - левый канал,
+// 177202, 177204 и 177206 - правый
 unsigned int AZBKSound::read_register(unsigned int address) const
 {
     switch (address & ~1u) {
+    case R_COV_L:   return (unsigned int)m_left & 0177777;
+    case R_COV_R:
+    case R_COV_M:
+    case R_COV_8:   return (unsigned int)m_right & 0177777;
     case R_DMA_CSR: return m_dma_csr;
     case R_DMA_PG:  return m_dma_page;
     case R_DMA_LH:  return m_dma_len_hi;
@@ -239,20 +268,71 @@ void AZBKSound::write_register(unsigned int address, unsigned int value, bool wo
     case R_COV_M:   m_left = m_right = (int16_t)value; sound_changed(); break;
     case R_COV_8:
         // Слово - стерео: младший байт левый, старший правый; байт - моно.
-        // 8 бит без знака, середина 0200 (знак - вопрос Б.6)
+        // Плата кладет байт в 16-битный регистр канала сдвигом на 7 (041501 ->
+        // 020200 и 020600): 8 бит без знака дают 0-077600, только положительные
         if (word) {
-            m_left = ((int32_t)(value & 0377) - 0200) << 8;
-            m_right = ((int32_t)((value >> 8) & 0377) - 0200) << 8;
+            m_left = (int32_t)(value & 0377) << 7;
+            m_right = (int32_t)((value >> 8) & 0377) << 7;
         } else
-            m_left = m_right = ((int32_t)(value & 0377) - 0200) << 8;
+            m_left = m_right = (int32_t)(value & 0377) << 7;
         sound_changed();
         break;
     case R_CTRL:
+        // Перехват 0177714 включили или выключили: поток начинается заново
+        if ((m_control ^ value) & CTRL_NO_714) {
+            m_legacy_last = LEGACY_NONE;
+            m_legacy_run = 0;
+            m_legacy_pending = false;
+        }
         m_control = value & 017;
         i_ym.change((m_control & 010) ? 0 : 1);
         break;
     default:        break;
     }
+}
+
+// Запись в 177714, перехваченная платой (в порт БК она уходит и так). Слово
+// всегда выбирает регистр AY, байт - ее данные: так пишут приставку AY,
+// парами. Третья и дальше запись подряд одного вида (слово за словом, байт за
+// байтом) - выборка Covox: так пишет поток Covox. Слово из потока звучит,
+// только когда следом пришло еще слово: если за ним байт, это был выбор
+// регистра. ANDOS обнуляет порт двумя словами, и первый выбор регистра
+// программой - третье слово подряд. По этому правилу звучат обе программы
+// автора платы: AZPSG17 пишет AY парами, SNDTST09 перед Covox выбирает
+// регистр 14 AY и пишет 12 байтов подряд (первые два уходят в регистр 14),
+// затем выборки словами
+void AZBKSound::legacy_write(unsigned int value, bool word)
+{
+    if (m_control & CTRL_NO_714) return;
+    const unsigned int kind = word ? LEGACY_WORD : LEGACY_BYTE;
+    m_legacy_run = (kind == m_legacy_last) ? std::min(m_legacy_run + 1, LEGACY_STREAM) : 1;
+    m_legacy_last = kind;
+    if (word) {
+        if (m_ay != nullptr) m_ay->set_value(0, (~value) & 0xFF);
+        if (m_legacy_pending) covox_sample(m_legacy_word, true);
+        m_legacy_pending = m_legacy_run >= LEGACY_STREAM;
+        m_legacy_word = value & 0177777;
+        return;
+    }
+    m_legacy_pending = false;
+    if (m_legacy_run < LEGACY_STREAM) {
+        if (m_ay != nullptr) m_ay->set_value(1, (~value) & 0xFF);
+        return;
+    }
+    covox_sample(value, false);
+}
+
+// Выборка Covox через 177714 - как запись в 177206: байт в 16-битный канал
+// сдвигом на 7
+void AZBKSound::covox_sample(unsigned int value, bool word)
+{
+    if ((m_control & CTRL_STEREO) == 0)
+        m_left = m_right = (int32_t)(value & 0377) << 7;
+    else {
+        m_left = (int32_t)(value & 0377) << 7;
+        if (word) m_right = (int32_t)((value >> 8) & 0377) << 7;
+    }
+    sound_changed();
 }
 
 unsigned int AZBKSound::get_value(unsigned int address)
@@ -271,6 +351,11 @@ void AZBKSound::set_value(unsigned int address, unsigned int value, bool force)
     (void)force;
     const unsigned int a = address & ~1u;
     value &= 0xFF;
+    if (a == R_LEGACY) {
+        // Байт в старшую половину порта плата не разбирает
+        if ((address & 1) == 0) legacy_write(value, false);
+        return;
+    }
     if (a == R_COV_8) {
         write_register(address, (address & 1) ? value << 8 : value, false);
         return;
@@ -282,6 +367,10 @@ void AZBKSound::set_value(unsigned int address, unsigned int value, bool force)
 void AZBKSound::set_value_word(unsigned int address, unsigned int value, bool force)
 {
     (void)force;
+    if ((address & ~1u) == R_LEGACY) {
+        legacy_write(value & 0177777, true);
+        return;
+    }
     write_register(address, value & 0177777, true);
 }
 
@@ -336,6 +425,10 @@ void AZBKSound::save_state(StateWriter &w)
     w.n("left", (uint32_t)m_left);
     w.n("right", (uint32_t)m_right);
     w.u("control", m_control, 8);
+    w.n("legacy_last", m_legacy_last);
+    w.n("legacy_run", m_legacy_run);
+    w.b("legacy_pending", m_legacy_pending);
+    w.u("legacy_word", m_legacy_word, 16);
 }
 
 emulator::Result AZBKSound::load_state(const StateReader &r)
@@ -363,6 +456,14 @@ emulator::Result AZBKSound::load_state(const StateReader &r)
     if (r.u("left", v)) m_left = (int32_t)v;
     if (r.u("right", v)) m_right = (int32_t)v;
     r.u("control", m_control);
+    m_legacy_last = LEGACY_NONE;
+    m_legacy_run = 0;
+    if (r.u("legacy_last", v)) m_legacy_last = std::min(v, LEGACY_BYTE);
+    if (r.u("legacy_run", v)) m_legacy_run = std::min(v, LEGACY_STREAM);
+    m_legacy_pending = false;
+    m_legacy_word = 0;
+    r.b("legacy_pending", m_legacy_pending);
+    r.u("legacy_word", m_legacy_word);
     if (m_index[0] < 0) m_index[0] = 0;
     if (m_index[1] < 0) m_index[1] = 0;
     sound_changed();
@@ -379,6 +480,7 @@ std::vector<DeviceFieldInfo> AZBKSound::get_device_fields()
     r.push_back({"output",    "DMA output left and right, 16 bits",            false});
     r.push_back({"control",   "0177212 sound control",                         false});
     r.push_back({"covox",     "Covox left and right, 16 bits",                 false});
+    r.push_back({"legacy",    "0177714: the last write the board took (0 none, 1 word, 2 byte) and how many of that kind in a row, up to 3", false});
     return r;
 }
 
@@ -389,6 +491,7 @@ bool AZBKSound::get_field(const std::string &field, unsigned int from, unsigned 
     if (field == "dma")       { out.values.push_back(m_dma_csr); return true; }
     if (field == "dma_page")  { out.values.push_back(read_register(R_DMA_CUR)); return true; }
     if (field == "control")   { out.values.push_back(m_control); return true; }
+    if (field == "legacy")    { out.values.push_back(m_legacy_last); out.values.push_back(m_legacy_run); return true; }
     if (field == "output")    { out.values.push_back((unsigned int)m_dma_left & 0xFFFF); out.values.push_back((unsigned int)m_dma_right & 0xFFFF); return true; }
     if (field == "covox")     { out.values.push_back((unsigned int)m_left & 0xFFFF); out.values.push_back((unsigned int)m_right & 0xFFFF); return true; }
     out.width = 32;

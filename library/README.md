@@ -55,6 +55,7 @@ https://ecat.emuverse.ru/library/ - на неё же ссылаются опис
 | | `ars-games-1.dsk`, `ars-games-2.dsk` | игры с логического диска GAME.DSK (АДОС), загрузочные дискеты MY с RT-11: пакет PLAYER и игры под КЦГД; под КГД, под УКНЦ и прочие |
 | `bk` | `AZVIDT24.BIN` | тест видеоконтроллера AZBK (MAXIOL): все 60 однослойных режимов; платформа «AZБК» (тест `work-bk0011m-azbk-azvidt`) |
 | `bk` | `AZMOUNT1.BIN` | AZMNT 09 (MAXIOL): монтирование дисков AZ с карты microSD AZBK, обзор карты, чтение и запись AZ.INI (тест `work-bk0011m-azbk-azmnt`) |
+| `bk` | `AZTESTS.DSK` | загрузочный ANDOS с тестами автора AZBK: AZVIDT24, AZPSG17 (AY: проверки чтением, AY через 177714), SNDTST09 (Covox через 177714, DMA, приоритет звука); платформа «AZБК» (тест `work-bk0011m-azbk-aztests`) |
 | `agat` | `INIT_HELLO840[a7].dsk`, `ikp2-19176.dsk` | диски Агата, которые не загружает ни одна конфигурация |
 | `pravetz` | `sokoban.dsk`, `arkanoid.dsk`, `igra-i-matematika.nib` | игры с agatcomp.ru |
 | `uknc` | `basic.dsk`, `basic.lst` | дисковый Бейсик и список файлов |

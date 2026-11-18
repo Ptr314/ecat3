@@ -1,0 +1,28 @@
+=== BUS / BASIC / WRITE ===
+[ram0.value16] &037504: &000017 &000000 &000377
+=== BUS / LIMIT / INDEX ===
+[ram0.value16] &037504: &000022 &000000 &000377
+=== BUS / SWEEP / REG ALL ===
+[ram0.value16] &037504: &000034 &000000 &000377
+=== BUS / LIVE / BURST ===
+[ram0.value16] &037504: &000020 &000000 &000377
+=== BUS / MULTI / 2 PSG ===
+[ram0.value16] &037504: &000036 &000000 &000377
+=== BUS / STRESS / R/W ===
+[ram0.value16] &037504: &000116 &000000 &000377
+=== AY LEGACY: BASIC / TONE 1K ===
+[az-ay1.regs] &000000: &160 &000 &000 &000 &000 &000 &000 &076 &017 &000 &000 &000 &000 &000
+[azbk-sound.legacy] &000002 &000001
+[azbk-sound.covox] &000000 &000000
+[az-ay1.regs] &000007: &077 &000
+=== Выход в ANDOS, SNDTST09 ===
+=== COVOX LEGACY / LEFT RANDOM NOISE ===
+[azbk-sound.control] &000001
+[azbk-sound.legacy] &000001 &000003
+[azbk-sound.value16] &177202: &077600
+[az-ay1.regs] &000016: &000 &000
+[azbk-sound.control] &000000
+=== DMA PCM16 / SINE 690HZ ===
+[azbk-sound.dma] &000001
+[azbk-sound.dma_page] &002400
+[azbk-sound.dma] &000000

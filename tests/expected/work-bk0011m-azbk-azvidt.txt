@@ -1,5 +1,5 @@
 [azbk-vga.mode] &012100
-[display.crc] &36676705145
+[display.crc] &16446641005
 === 003300 ===
 [azbk-vga.mode] &003300
 [display.crc] &06551377705

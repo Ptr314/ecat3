@@ -16,7 +16,9 @@ PRINT "=== Первый проход: 700 в 0177346 и команда 037 ==="
 LOG azbk.control
 LOG azbk-disk.trace
 
-WAIT _2000
+# Экран BIOS - до ожидания сети (BIOS идет из памяти AZ, ее скорость - задержка
+# чтения платы)
+WAIT _3000
 PRINT "=== Второй проход: экран BIOS ==="
 LOG azbk.start
 LOG azbk.control
@@ -24,7 +26,7 @@ LOG azbk-vga.mode
 LOG display.crc
 SCREEN "../results/boot-bk0011m-azbk-bios.png"
 
-WAIT _18000
+WAIT _17000
 PRINT "=== ANDOS загружен с AZ0 ==="
 LOG az0.reads
 LOG azbk.windows

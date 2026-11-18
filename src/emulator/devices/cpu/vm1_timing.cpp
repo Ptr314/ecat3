@@ -164,6 +164,7 @@ Vm1BusTiming::ReplyTicks * Vm1BusTiming::ticks_of(const BusReply * reply)
             c.setup_rmw = conv(reply->setup_rmw_ns);
             c.delay = conv(reply->reply_ns);
             c.rmw_extra = reply->rmw_extra * TICKS_PER_HALF;
+            c.read_extra = reply->read_extra * TICKS_PER_HALF;
             c.phase_ns = reply->phase_ns + 1;   // shift on the first call
             return &c;
         }
@@ -183,7 +184,7 @@ uint32_t Vm1BusTiming::reply_time(uint32_t strobe, uint8_t kind, bool rmw_write,
 {
     ReplyTicks * r = (reply != nullptr) ? ticks_of(reply) : nullptr;
     if (r == nullptr || r->window == 0) {
-        if (kind == K_READ) return strobe + FAST_READ_HALVES * TICKS_PER_HALF;
+        if (kind == K_READ) return strobe + FAST_READ_HALVES * TICKS_PER_HALF + (r ? r->read_extra : 0);
         return strobe + FAST_WRITE_HALVES * TICKS_PER_HALF + (rmw_write && r ? r->rmw_extra : 0);
     }
     //The phase is drawn anew at every power-on (phase = random)

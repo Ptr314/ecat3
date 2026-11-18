@@ -1,0 +1,674 @@
+; AZIRQ - проба прерывания контроллера AZ платы AZBK (вопрос Б.11; eCat3,
+; tools/azbk-hwtest/README.md). AZHWT 1.1-1.3 на плате зависали на пробе IE,
+; хотя у 1.3 обработчики векторов 4 и 0174 были ограничены. AZIRQ 1.0 на
+; плате встала после записи 0130 в CSR при запрещенных прерываниях, до конца
+; опроса CSR, без прерывания и ловушки: цикл шины не кончается.
+;
+; 1.1: в шагах с IE прерывания открыты на весь шаг, до записи команды; перед
+; каждым обращением к плате своя буква (запись CSR, опрос CSR, чтение 0177230
+; - регистр самой ПЛИС, чтение CSR). Шаг 1.0 (запись и опрос при запрещенных
+; прерываниях) - последним, с буквами между записью, чтением 0177230 и опросом
+; CSR: фото покажет, что именно стоит. Если 0174 держится (8 подряд),
+; обработчик сам пишет в CSR 000: IE снят, следующие шаги идут.
+;
+; Программа ловит все, что могло увести процессор:
+;   - векторы 0-0774 (заглушка на каждый: номер вектора, PC, PS, 0177716);
+;     0174 и 0100 (IRQ2) считаются до 8 подряд, остальные - сразу событие;
+;   - пультовый вход К1801ВМ1 (подтверждение прерывания без ответа - 0160012,
+;     двойное зависание - 0160006, HALT - 0160002): в окне 14 на время пробы
+;     своя страница AZ с этими векторами, остальное в ней - IOT (вектор 020
+;     покажет, куда ушел процессор). Если 0177674/0177676 не отвечают, вход
+;     кончается ловушкой 4 с разрядом 3 в 0177716;
+;   - зависание: перед каждым шагом на экране буква, так что фото покажет,
+;     где процессор встал.
+; Вывод - прямо в экран БК (окно 040000, страница 1; AZ в режиме 012100),
+; шрифтом монитора БК0010: ни BOS, ни EMT на время пробы не нужны, векторы
+; 0-0776 свои. Прерывания разрешены только в окнах пробы.
+;
+; Окна (строка на окно): фон; 130, 030, 121, 030, 110, 000 - прерывания
+; открыты весь шаг; фон; 130 при запрещенных (как 1.0); 030; фон. Буквы:
+;   W - запись команды в CSR, P - опрос CSR до DONE (не дольше 65536 раз),
+;   затем D (готов) или T (нет); G - чтение 0177230; C - чтение CSR;
+;   E - прерывания открыты, пауза (только в шаге 1.0); X - окно кончилось;
+;   ! - событие (первое в окне), Z - обработчик 0174 пишет 000 в CSR.
+; Запуск из ANDOS (с 01000); выход - клавиша, затем ANDOS (0100000).
+; Собирается tools/azbk-hwtest/asm11.py (build.py).
+
+CSR     = 177220
+DR      = 177222
+W14     = 177334                ; страница окна 14 (160000-167777)
+WACT    = 177340
+WRO     = 177342
+WSHD    = 177344
+VGA     = 177230
+SCROLL  = 177664
+KBS     = 177660
+KBD     = 177662
+SCR     = 40000                 ; экран: 64 байта строка, 10 строк на знак
+PAGEV   = 1203                  ; страница AZ для окна 14
+NMAX    = 10                    ; 0174 и 0100: столько подряд - запрос держится
+DLY     = 100000                ; окно с разрешенными прерываниями (SOB)
+NONE    = 177777
+WEND    = 177776                ; конец таблицы окон
+
+        . = 1000
+START:  MTPS    #340
+        MOV     @#KBD,R0
+        MOV     SP,SVSP
+        MOV     #PSTK,SP
+        MOV     @#VGA,SV230
+        MOV     #12100,@#VGA
+        MOV     @#SCROLL,SV664
+        MOV     #1330,@#SCROLL
+        MOV     @#KBS,SVKBS
+        BIS     #100,@#KBS              ; клавиатура без прерываний
+        MOV     #SCR,R1
+        MOV     #20000,R2
+1$:     CLR     (R1)+
+        SOB     R2,1$
+        CLR     LINE
+        JSR     PC,LNSET
+        MOV     #T.HEAD,R1
+        JSR     PC,PRSNL
+        MOV     #T.LEG1,R1
+        JSR     PC,PRSNL
+        MOV     #T.LEG2,R1
+        JSR     PC,PRSNL
+        MOV     #T.LEG3,R1
+        JSR     PC,PRSNL
+        MOV     #T.LEG4,R1
+        JSR     PC,PRSNL
+        MOV     #T.346,R1
+        MOV     @#177346,R0
+        JSR     PC,OVAL
+        MOV     #T.340,R1
+        MOV     @#WACT,R0
+        JSR     PC,OVAL
+        MOV     #T.342,R1
+        MOV     @#WRO,R0
+        JSR     PC,OVAL
+        MOV     #T.344,R1
+        MOV     @#WSHD,R0
+        JSR     PC,OVAL
+        JSR     PC,NL
+        MOV     #T.334,R1
+        MOV     @#W14,R0
+        JSR     PC,OVAL
+        MOV     #T.352,R1
+        MOV     @#177352,R0
+        JSR     PC,OVAL
+
+; Векторы 0-0776: свои (заглушки JSR R5,CATCH, номер вектора - по R5)
+        CLR     R1
+        MOV     #LOWSAV,R2
+        MOV     #400,R3
+2$:     MOV     (R1)+,(R2)+
+        SOB     R3,2$
+        MOV     #STUBS,R1
+        MOV     #CATCH-STUBS-4,R2
+        MOV     #200,R3
+3$:     MOV     #4567,(R1)+
+        MOV     R2,(R1)+
+        SUB     #4,R2
+        SOB     R3,3$
+        CLR     R1
+        MOV     #STUBS,R2
+        MOV     #200,R3
+4$:     MOV     R2,(R1)+
+        MOV     #340,(R1)+
+        ADD     #4,R2
+        SOB     R3,4$
+        MOV     #AZIRQ,@#174
+        MOV     #FRIRQ,@#100
+
+; Окно 14 - своя страница: векторы пультового режима, остальное - IOT
+        MOV     @#W14,SVW14
+        MOV     @#WACT,SVACT
+        MOV     @#WRO,SVRO
+        MOV     @#WSHD,SVSHD
+        MOV     #PAGEV,@#W14
+        BIC     #40000,@#WRO
+        BIC     #40000,@#WSHD
+        BIS     #40000,@#WACT
+        MOV     #160000,R1
+        MOV     #4000,R2
+5$:     MOV     #4,(R1)+
+        SOB     R2,5$
+        MOV     #CON2,@#160002
+        MOV     #340,@#160004
+        MOV     #CON6,@#160006
+        MOV     #340,@#160010
+        MOV     #CON12,@#160012
+        MOV     #340,@#160014
+        MOV     #T.W14,R1
+        JSR     PC,PRS
+        MOV     #T.OK,R1
+        CMP     @#160012,#CON12
+        BNE     6$
+        CMP     @#160000,#4
+        BEQ     7$
+6$:     MOV     #T.BAD,R1
+7$:     JSR     PC,PRSNL
+
+;--------------------------------------------------------------------- пробы
+        JSR     PC,AZRST                ; BIOS и AZ337 оставляют 110 (сеть)
+        CLR     WMODE
+        MOV     #T.OPEN,R1
+        JSR     PC,PRSNL
+        MOV     #WTAB1,R2               ; прерывания открыты весь шаг
+        JSR     PC,WINS
+        MOV     #T.MASK,R1
+        JSR     PC,PRSNL
+        INC     WMODE                   ; 130 как в 1.0: при запрещенных
+        MOV     #130,R0
+        MOV     #T.130,R1
+        JSR     PC,WIN
+        CLR     WMODE
+        MOV     #WTAB2,R2
+        JSR     PC,WINS
+        TST     EVF                     ; последнее окно - фон: снят ли запрос
+        BEQ     EXIT
+
+; Запрос не снимается ничем: системные векторы не вернуть (прерывание ушло бы
+; по ним неизвестно куда) - фон красный, программа стоит, нужно выключение
+STUCK:  MOV     #T.STK,R1
+        JSR     PC,PRS
+        MOV     #520,@#177234
+        MOV     #76000,@#177236
+        BR      .
+
+EXIT:   MOV     #T.END,R1
+        JSR     PC,PRS
+        MOV     SVW14,@#W14
+        MOV     SVRO,@#WRO
+        MOV     SVSHD,@#WSHD
+        MOV     SVACT,@#WACT
+        MOV     #LOWSAV,R1
+        CLR     R2
+        MOV     #400,R3
+1$:     MOV     (R1)+,(R2)+
+        SOB     R3,1$
+        MOV     @#KBD,R0                ; клавиша, нажатая раньше, не в счет
+2$:     TSTB    @#KBS
+        BPL     2$
+        MOV     @#KBD,R0
+        MOV     SVKBS,@#KBS
+        MOV     #110,@#CSR              ; сеть, как ее оставляют BIOS и AZ337
+        MOV     SV664,@#SCROLL
+        MOV     SV230,@#VGA
+        MOV     SVSP,SP
+        MTPS    #0
+        JMP     @#100000
+
+;================================================================ подпрограммы
+
+; Окна по таблице R2: пары (команда или NONE, подпись), конец - WEND
+WINS:   MOV     (R2)+,R0
+        CMP     R0,#WEND
+        BEQ     1$
+        MOV     (R2)+,R1
+        MOV     R2,-(SP)
+        JSR     PC,WIN
+        MOV     (SP)+,R2
+        BR      WINS
+1$:     RTS     PC
+
+; Окно пробы: подпись R1, команда R0 в CSR (NONE - без команды). WMODE = 0:
+; прерывания открыты все окно - запись, опрос, пауза; затем при запрещенных
+; чтение 0177230 и CSR. WMODE = 1 (как 1.0): при запрещенных запись, чтение
+; 0177230, опрос; затем пауза с открытыми. Буква - на экран до шага. Событие
+; (обработчик) возвращает сюда, на 4$, со стеком JSP
+WIN:    MOV     R0,WCMD
+        JSR     PC,PRS
+        MOV     #NONE,EVEC
+        CLR     EVF
+        CLR     NIRQ
+        CLR     NF
+        CLR     EPC
+        CLR     EPS
+        CLR     E716
+        MOV     #NONE,WCSR
+        MOV     #4$,RESUME
+        MOV     SP,JSP
+        TST     WMODE
+        BNE     5$
+        MTPS    #0                      ; открыты весь шаг
+        CMP     WCMD,#NONE
+        BEQ     1$
+        MOV     #'W,R0
+        JSR     PC,DRAWC
+        MOV     WCMD,@#CSR
+        MOV     #'P,R0
+        JSR     PC,DRAWC
+        JSR     PC,POLL
+1$:     JSR     PC,PAUSE
+        MTPS    #340
+        MOV     #'G,R0
+        JSR     PC,DRAWC
+        TST     @#VGA
+        MOV     #'C,R0
+        JSR     PC,DRAWC
+        MOV     @#CSR,WCSR
+        BR      3$
+5$:     MOV     #'W,R0                  ; как 1.0: при запрещенных
+        JSR     PC,DRAWC
+        MOV     WCMD,@#CSR
+        MOV     #'G,R0
+        JSR     PC,DRAWC
+        TST     @#VGA
+        MOV     #'P,R0
+        JSR     PC,DRAWC
+        JSR     PC,POLL
+        MOV     #'E,R0
+        JSR     PC,DRAWC
+        MTPS    #0
+        JSR     PC,PAUSE
+        MTPS    #340
+3$:     MOV     #'X,R0
+        JSR     PC,DRAWC
+4$:     MTPS    #340
+        MOV     JSP,SP
+        JSR     PC,FIELDS
+        JSR     PC,NL
+        RTS     PC
+
+; Опрос CSR до DONE, не дольше 65536 раз: буква D или T, CSR - в WCSR
+POLL:   MOV     R4,-(SP)
+        CLR     R4
+1$:     TSTB    @#CSR
+        BMI     2$
+        SOB     R4,1$
+        MOV     @#CSR,WCSR
+        MOV     #'T,R0
+        BR      3$
+2$:     MOV     @#CSR,WCSR
+        MOV     #'D,R0
+3$:     JSR     PC,DRAWC
+        MOV     (SP)+,R4
+        RTS     PC
+
+PAUSE:  MOV     R4,-(SP)
+        MOV     #DLY,R4
+1$:     SOB     R4,1$
+        MOV     (SP)+,R4
+        RTS     PC
+
+; Строка окна с колонки 11: N F (одна цифра, 8 - запрос держится), V P S K C
+; (восьмеричные; - нет события или CSR не читался)
+FIELDS: MOV     #11.,R0
+        JSR     PC,COLSET
+        MOV     #T.N,R1
+        MOV     NIRQ,R0
+        JSR     PC,D1VAL
+        MOV     #T.F,R1
+        MOV     NF,R0
+        JSR     PC,D1VAL
+        MOV     #T.V,R1
+        MOV     EVEC,R0
+        JSR     PC,XVAL
+        MOV     #T.P,R1
+        MOV     EPC,R0
+        JSR     PC,EVAL
+        MOV     #T.S,R1
+        MOV     EPS,R0
+        JSR     PC,EVAL
+        MOV     #T.K,R1
+        MOV     E716,R0
+        JSR     PC,EVAL
+        MOV     #T.C,R1
+        MOV     WCSR,R0
+        JSR     PC,XVAL
+        RTS     PC
+
+; Заглушки векторов: JSR R5,CATCH - в стеке R5, PC, PS; вектор = R5 - STUBS - 4.
+; Только первое событие окна; затем назад в окно, прерывания запрещены
+CATCH:  CMP     EVEC,#NONE
+        BNE     1$
+        MOV     R5,EVEC
+        SUB     #STUBS+4,EVEC
+        MOV     2(SP),EPC
+        MOV     4(SP),EPS
+        JSR     PC,EVENT
+1$:     BR      LJMP
+
+; 0174: до NMAX подряд - RTI (запрос держится?), затем событие и сброс 000
+; в CSR - снять IE, чтобы следующие шаги шли (Z - до записи)
+AZIRQ:  INC     NIRQ
+        CMP     NIRQ,#NMAX
+        BHIS    1$
+        RTI
+1$:     CMP     EVEC,#NONE
+        BNE     2$
+        MOV     #174,EVEC
+        MOV     (SP),EPC
+        MOV     2(SP),EPS
+        JSR     PC,EVENT
+2$:     MOV     #'Z,R0
+        JSR     PC,DRAWC
+        CLR     @#CSR
+        BR      LJMP
+; 0100 (IRQ2): так же
+FRIRQ:  INC     NF
+        CMP     NF,#NMAX
+        BHIS    1$
+        RTI
+1$:     MOV     #100,R0
+IRQEV:  CMP     EVEC,#NONE
+        BNE     1$
+        MOV     R0,EVEC
+        MOV     (SP),EPC
+        MOV     2(SP),EPS
+        JSR     PC,EVENT
+1$:     BR      LJMP
+
+; Пультовый вход через свою страницу в окне 14: PC и PS прерванной
+; программы - в 0177674/0177676 (раз вход дошел сюда, они ответили)
+CON2:   MOV     #160002,R0
+        BR      CONX
+CON6:   MOV     #160006,R0
+        BR      CONX
+CON12:  MOV     #160012,R0
+CONX:   CMP     EVEC,#NONE
+        BNE     1$
+        MOV     R0,EVEC
+        MOV     @#177674,EPC
+        MOV     @#177676,EPS
+        JSR     PC,EVENT
+1$:     BR      LJMP
+
+; Назад в окно пробы (на RESUME, стек JSP) через RTI с PS = 340: RTI на
+; К1801ВМ1 снимает и пультовый режим (разряды 10, 11 PSW)
+LJMP:   MOV     JSP,SP
+        MOV     #340,-(SP)
+        MOV     RESUME,-(SP)
+        RTI
+
+; Событие: 0177716 и знак ! на экран
+EVENT:  MOV     @#177716,E716
+        INC     EVF
+        MOV     #'!,R0
+        JSR     PC,DRAWC
+        RTS     PC
+
+; Контроллер AZ: сброс (без IE) и ожидание готовности
+AZRST:  MOV     R4,-(SP)
+        CLR     @#CSR
+        CLR     R4
+1$:     TSTB    @#CSR
+        BMI     2$
+        SOB     R4,1$
+2$:     MOV     (SP)+,R4
+        RTS     PC
+
+;----------------------------------------------------------------- вывод
+; Курсор CUR - байт экрана левого верхнего угла знакоместа: строка LINE
+; (по 10 строк растра), колонка
+LNSET:  CLR     R0
+COLSET: MOV     R1,-(SP)
+        MOV     LINE,R1
+        ASL     R1
+        ASL     R1
+        ASL     R1
+        ASL     R1
+        ASL     R1
+        ASL     R1
+        ASL     R1                      ; * 128
+        ADD     R1,R0
+        ASL     R1
+        ASL     R1                      ; * 512
+        ADD     R1,R0
+        ADD     #SCR,R0
+        MOV     R0,CUR
+        MOV     (SP)+,R1
+        RTS     PC
+
+NL:     MOV     R0,-(SP)
+        CMP     LINE,#24.
+        BHIS    1$
+        INC     LINE
+1$:     JSR     PC,LNSET
+        MOV     (SP)+,R0
+        RTS     PC
+
+; Знак R0 (040-0137; строчные - заглавными) в CUR, CUR - дальше
+DRAWC:  MOV     R0,-(SP)
+        MOV     R1,-(SP)
+        MOV     R2,-(SP)
+        MOV     R3,-(SP)
+        BIC     #177600,R0
+        CMP     R0,#140
+        BLO     1$
+        SUB     #40,R0
+1$:     SUB     #40,R0
+        BHIS    2$
+        CLR     R0
+2$:     ASL     R0
+        MOV     R0,R1
+        ASL     R0
+        ASL     R0
+        ADD     R0,R1                   ; * 10
+        ADD     #FONT,R1
+        MOV     CUR,R2
+        MOV     #10.,R3
+3$:     MOVB    (R1)+,(R2)
+        ADD     #100,R2
+        SOB     R3,3$
+        INC     CUR
+        MOV     (SP)+,R3
+        MOV     (SP)+,R2
+        MOV     (SP)+,R1
+        MOV     (SP)+,R0
+        RTS     PC
+
+PRS:    MOV     R0,-(SP)
+1$:     MOVB    (R1)+,R0
+        BEQ     2$
+        JSR     PC,DRAWC
+        BR      1$
+2$:     MOV     (SP)+,R0
+        RTS     PC
+
+PRSNL:  JSR     PC,PRS
+        JSR     PC,NL
+        RTS     PC
+
+; R0 - шесть восьмеричных цифр
+PROCT:  MOV     R0,-(SP)
+        MOV     R1,-(SP)
+        MOV     R2,-(SP)
+        MOV     R0,R1
+        CLR     R0
+        ASL     R1
+        ROL     R0
+        ADD     #'0,R0
+        JSR     PC,DRAWC
+        MOV     #5,R2
+1$:     CLR     R0
+        ASL     R1
+        ROL     R0
+        ASL     R1
+        ROL     R0
+        ASL     R1
+        ROL     R0
+        ADD     #'0,R0
+        JSR     PC,DRAWC
+        SOB     R2,1$
+        MOV     (SP)+,R2
+        MOV     (SP)+,R1
+        MOV     (SP)+,R0
+        RTS     PC
+
+; Подпись R1, число R0 и пробел: OVAL - восьмеричное, D1VAL - одна десятичная
+; цифра (до 9), XVAL - восьмеричное или ------ при NONE, EVAL - восьмеричное
+; или ------ без события
+OVAL:   JSR     PC,PRS
+        JSR     PC,PROCT
+        BR      SP1
+D1VAL:  JSR     PC,PRS
+        CMP     R0,#9.
+        BLOS    1$
+        MOV     #9.,R0
+1$:     ADD     #'0,R0
+        JSR     PC,DRAWC
+        BR      SP1
+XVAL:   JSR     PC,PRS
+        CMP     R0,#NONE
+        BEQ     DASH
+        JSR     PC,PROCT
+        BR      SP1
+EVAL:   JSR     PC,PRS
+        TST     EVF
+        BEQ     DASH
+        JSR     PC,PROCT
+        BR      SP1
+DASH:   MOV     #T.DASH,R1
+        JSR     PC,PRS
+SP1:    MOV     #' ,R0
+        JSR     PC,DRAWC
+        RTS     PC
+
+;===================================================================== данные
+SVSP:   .WORD   0
+SV230:  .WORD   0
+SV664:  .WORD   0
+SVKBS:  .WORD   0
+SVW14:  .WORD   0
+SVACT:  .WORD   0
+SVRO:   .WORD   0
+SVSHD:  .WORD   0
+LINE:   .WORD   0
+CUR:    .WORD   0
+WCMD:   .WORD   0
+WCSR:   .WORD   0
+RESUME: .WORD   0
+JSP:    .WORD   0
+EVEC:   .WORD   0
+EVF:    .WORD   0
+EPC:    .WORD   0
+EPS:    .WORD   0
+E716:   .WORD   0
+NIRQ:   .WORD   0
+NF:     .WORD   0
+WMODE:  .WORD   0
+
+; Окна: команда (NONE - без команды) и подпись; конец - WEND
+WTAB1:  .WORD   NONE,T.NONE
+        .WORD   130,T.130               ; 030 + IE
+        .WORD   30,T.030
+        .WORD   121,T.121               ; 021 + IE: длительная
+        .WORD   30,T.030
+        .WORD   110,T.110               ; сеть с IE, так плату оставляет BIOS
+        .WORD   0,T.000
+        .WORD   NONE,T.NONE
+        .WORD   WEND
+WTAB2:  .WORD   30,T.030                ; после шага 1.0
+        .WORD   NONE,T.NONE
+        .WORD   WEND
+
+T.HEAD: .ASCIZ  /AZIRQ 1.1 ECAT3: AZ CONTROLLER INTERRUPT (IE), BK0011M+AZBK/
+T.LEG1: .ASCIZ  /W CMD TO CSR, P POLL CSR: D DONE T NOT, G READ 177230, C CSR/
+T.LEG2: .ASCIZ  /E INTS ON+PAUSE, X CLEAN, ! EVENT, Z IRQ HANDLER WRITES 000/
+T.LEG3: .ASCIZ  /N F: IRQS 0174 0100 (8 = HELD). V: VECTOR, P S: PC PS, K: 716/
+T.LEG4: .ASCIZ  /C: CSR. V=4 AND K BIT 3: CONSOLE ENTRY FAILED. 1600NN: CONSOLE/
+T.346:  .ASCIZ  /346=/
+T.340:  .ASCIZ  /340=/
+T.342:  .ASCIZ  /342=/
+T.344:  .ASCIZ  /344=/
+T.334:  .ASCIZ  /334=/
+T.352:  .ASCIZ  /352=/
+T.W14:  .ASCIZ  /WIN14 CONSOLE PAGE: /
+T.OK:   .ASCIZ  /OK/
+T.BAD:  .ASCIZ  /NOT WRITABLE/
+T.NONE: .ASCIZ  /--- /
+T.OPEN: .ASCIZ  /INTS ON FOR THE WHOLE STEP:/
+T.MASK: .ASCIZ  /INTS OFF FOR WRITE AND POLL, AS 1.0:/
+T.130:  .ASCIZ  /130 /
+T.121:  .ASCIZ  /121 /
+T.030:  .ASCIZ  /030 /
+T.000:  .ASCIZ  /000 /
+T.110:  .ASCIZ  /110 /
+T.N:    .ASCIZ  /N=/
+T.F:    .ASCIZ  /F=/
+T.V:    .ASCIZ  /V=/
+T.P:    .ASCIZ  /P=/
+T.S:    .ASCIZ  /S=/
+T.K:    .ASCIZ  /K=/
+T.C:    .ASCIZ  /C=/
+T.DASH: .ASCIZ  /------/
+T.END:  .ASCIZ  /DONE. ANY KEY - BACK TO ANDOS/
+T.STK:  .ASCIZ  /REQUEST HELD, CANNOT RETURN. PHOTO, POWER OFF/
+        .EVEN
+
+; Шрифт монитора БК0010 (MONIT10.ROM, 0112276): знаки 040-0137 по 10 строк,
+; разряд 0 - левая точка
+FONT:
+        .BYTE   0,0,0,0,0,0,0,0,0,0  ; 040
+        .BYTE   0,10,10,10,10,10,0,10,0,0  ; 041
+        .BYTE   0,44,44,22,0,0,0,0,0,0  ; 042
+        .BYTE   0,24,24,76,24,76,24,24,0,0  ; 043
+        .BYTE   0,42,34,42,42,42,34,42,0,0  ; 044
+        .BYTE   0,6,46,20,10,4,62,60,0,0  ; 045
+        .BYTE   0,10,24,24,14,52,22,54,0,0  ; 046
+        .BYTE   0,30,10,4,0,0,0,0,0,0  ; 047
+        .BYTE   0,20,10,4,4,4,10,20,0,0  ; 050
+        .BYTE   0,4,10,20,20,20,10,4,0,0  ; 051
+        .BYTE   0,0,10,52,34,52,10,0,0,0  ; 052
+        .BYTE   0,0,10,10,76,10,10,0,0,0  ; 053
+        .BYTE   0,0,0,0,0,0,14,14,10,4  ; 054
+        .BYTE   0,0,0,0,76,0,0,0,0,0  ; 055
+        .BYTE   0,0,0,0,0,0,14,14,0,0  ; 056
+        .BYTE   0,0,40,20,10,4,2,0,0,0  ; 057
+        .BYTE   0,34,42,62,52,46,42,34,0,0  ; 060
+        .BYTE   0,10,14,12,10,10,10,76,0,0  ; 061
+        .BYTE   0,34,42,40,30,4,2,76,0,0  ; 062
+        .BYTE   0,76,40,20,30,40,42,34,0,0  ; 063
+        .BYTE   0,20,30,24,22,76,20,20,0,0  ; 064
+        .BYTE   0,76,2,36,40,40,42,34,0,0  ; 065
+        .BYTE   0,70,4,2,36,42,42,34,0,0  ; 066
+        .BYTE   0,76,40,20,10,4,4,4,0,0  ; 067
+        .BYTE   0,34,42,42,34,42,42,34,0,0  ; 070
+        .BYTE   0,34,42,42,74,40,20,16,0,0  ; 071
+        .BYTE   0,0,0,14,14,0,14,14,0,0  ; 072
+        .BYTE   0,0,0,14,14,0,14,14,10,4  ; 073
+        .BYTE   0,20,10,4,2,4,10,20,0,0  ; 074
+        .BYTE   0,0,0,76,0,76,0,0,0,0  ; 075
+        .BYTE   0,4,10,20,40,20,10,4,0,0  ; 076
+        .BYTE   0,34,42,40,20,10,0,10,0,0  ; 077
+        .BYTE   0,34,62,52,52,72,2,34,0,0  ; 100
+        .BYTE   0,10,24,42,42,76,42,42,0,0  ; 101
+        .BYTE   0,36,42,42,36,42,42,36,0,0  ; 102
+        .BYTE   0,34,42,2,2,2,42,34,0,0  ; 103
+        .BYTE   0,36,44,44,44,44,44,36,0,0  ; 104
+        .BYTE   0,76,2,2,36,2,2,76,0,0  ; 105
+        .BYTE   0,76,2,2,36,2,2,2,0,0  ; 106
+        .BYTE   0,34,42,2,2,62,42,74,0,0  ; 107
+        .BYTE   0,42,42,42,76,42,42,42,0,0  ; 110
+        .BYTE   0,34,10,10,10,10,10,34,0,0  ; 111
+        .BYTE   0,70,20,20,20,20,22,14,0,0  ; 112
+        .BYTE   0,42,22,12,6,12,22,42,0,0  ; 113
+        .BYTE   0,2,2,2,2,2,2,76,0,0  ; 114
+        .BYTE   0,42,66,52,52,42,42,42,0,0  ; 115
+        .BYTE   0,42,42,46,52,62,42,42,0,0  ; 116
+        .BYTE   0,34,42,42,42,42,42,34,0,0  ; 117
+        .BYTE   0,36,42,42,36,2,2,2,0,0  ; 120
+        .BYTE   0,34,42,42,42,52,22,54,0,0  ; 121
+        .BYTE   0,36,42,42,36,12,22,42,0,0  ; 122
+        .BYTE   0,34,42,2,34,40,42,34,0,0  ; 123
+        .BYTE   0,76,10,10,10,10,10,10,0,0  ; 124
+        .BYTE   0,42,42,42,42,42,42,34,0,0  ; 125
+        .BYTE   0,42,42,42,24,24,10,10,0,0  ; 126
+        .BYTE   0,42,42,42,52,52,52,24,0,0  ; 127
+        .BYTE   0,42,42,24,10,24,42,42,0,0  ; 130
+        .BYTE   0,42,42,24,10,10,10,10,0,0  ; 131
+        .BYTE   0,76,40,20,10,4,2,76,0,0  ; 132
+        .BYTE   0,34,4,4,4,4,4,34,0,0  ; 133
+        .BYTE   0,0,2,4,10,20,40,0,0,0  ; 134
+        .BYTE   0,34,20,20,20,20,20,34,0,0  ; 135
+        .BYTE   0,0,0,76,40,40,0,0,0,0  ; 136
+        .BYTE   0,0,0,0,0,0,0,0,76,0  ; 137
+
+STUBS:  .BLKW   400                     ; 128 заглушек JSR R5,CATCH
+LOWSAV: .BLKW   400                     ; ОЗУ 0-0777 (векторы, переменные BOS, стек)
+        .BLKW   200
+PSTK:                                   ; стек программы
+        .END

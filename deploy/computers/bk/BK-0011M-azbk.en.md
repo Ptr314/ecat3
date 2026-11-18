@@ -53,14 +53,23 @@ in the card's memory and in a saved state by default, and the folder is left as 
 write into the folder itself, use "Write into the folder" of the SD button (turning it on
 offers to write what is already in memory into the folder too).
 
+## Sound
+
+The controller's pair of AY chips (ports 0177172&ndash;0177175) plays in stereo:
+channels A and B on the right, C and B on the left; the clock is 1.785714 MHz. The
+chip type, YM2149 or AY-3-8910, is chosen in SETUP, as on the board. The board
+captures writes to port 0177714: a program for an AY sound card plays on the
+controller's first AY, a program for a Covox on the controller's Covox (mono or
+stereo, by the Legacy Covox setting in SETUP). So the BK's sound card connector is
+empty after start-up; a card can be chosen on the toolbar, but then the AY is heard
+twice.
+
 ## Not done
 
-* The clock of the controller's pair of AY chips (ports 0177172&ndash;0177175) is not
-  described and is taken as 12 MHz / 7, as on the BK sound cards. The chip type, YM2149
-  or AY-3-8910, is chosen in SETUP, as on the board. The BK's AY sound card on port
-  0177714 works as usual.
+* How the board tells an AY sound card from a Covox on port 0177714 is not described
+  by MAXIOL: the rule is rebuilt from the board author's tests. The board does not
+  take the speaker (0177716) into its output: the BK's speaker sounds by itself.
 * The network, the Hall of Fame, the UART, a PS/2 keyboard.
-* The access time of the controller's memory is not described and is taken as zero.
 
 ## Joystick and mouse
 

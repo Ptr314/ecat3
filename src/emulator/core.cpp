@@ -662,7 +662,7 @@ BusTiming::BusTiming(InterfaceManager *im, EmulatorConfigDevice *cd):
 {
 }
 
-//Times in ns, rmw_extra in half clocks of the processor. The values are read
+//Times in ns, rmw_extra and read_extra in half clocks of the processor. The values are read
 //here and not in the constructor: a device must be free of side effects there,
 //and a mistyped number has to stop the load rather than silently mean "no window"
 emulator::Result BusTiming::load_config(SystemData *sd)
@@ -676,6 +676,7 @@ emulator::Result BusTiming::load_config(SystemData *sd)
         reply.setup_rmw_ns   = read_confg_value(cd, "setup_rmw", false, (unsigned int)0);
         reply.reply_ns       = read_confg_value(cd, "reply", false, (unsigned int)0);
         reply.rmw_extra      = read_confg_value(cd, "rmw_extra", false, (unsigned int)0);
+        reply.read_extra     = read_confg_value(cd, "read_extra", false, (unsigned int)0);
         //The power-on variant: phase steps of phase_step ns each, or a variant
         //of the list phases drawn at every power-on
         m_phase_step = read_confg_value(cd, "phase_step", false, (unsigned int)0);

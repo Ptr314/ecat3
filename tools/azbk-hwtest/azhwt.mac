@@ -1,8 +1,10 @@
-; AZHWT - проба платы AZBK на БК0011М: ответы ПЛИС на вопросы, которых не
-; закрывает прошивка STM32 (eCat3, tools/azbk-hwtest/README.md).
+; AZHWT - проба платы AZBK на БК0011М (идет и на БК0010-01): ответы ПЛИС на
+; вопросы, которых не закрывает прошивка STM32 (eCat3,
+; tools/azbk-hwtest/README.md).
 ; Запуск из ANDOS как обычной программы (с 01000). Отчет - на экран и в файл
-; 0:/AZHWT.TXT на карте; все числа еще и в таблице RESULT (01400) по порядку.
-; Числа восьмеричные, времена - десятичные (тики таймера БК, 31250 Гц).
+; 0:/AZHWT.TXT на карте; все числа еще и в таблице RESULT (014000) по порядку.
+; Числа восьмеричные, времена - десятичные: тики таймера БК, частота ЦП / 128
+; (31250 Гц на БК0011М, 23437,5 на БК0010-01); тип БК - в строке времен.
 ; Собирается tools/azbk-hwtest/asm11.py (build.py).
 
 CSR     = 177220
@@ -29,6 +31,7 @@ RESULT  = 14000                 ; таблица чисел (256 слов)
 RBUF    = 15000                 ; текст отчета
 REND    = 27000
 SAVBUF  = 30000                 ; ОЗУ БК под окном 7 (4 КБ)
+IRQMAX  = 100                   ; столько прерываний 0174 подряд - запрос держится
 
         . = 1000
 START:  MOV     @#4,SV4
@@ -226,6 +229,7 @@ START:  MOV     @#4,SV4
 ;------------------------------------------------ 6. Б.5 время памяти AZ
         MOV     #T.TIME,R1
         JSR     PC,PRS
+        JSR     PC,BKTYPE
         MTPS    #340
         JSR     PC,WSAVE
         MOV     #70000,R1
@@ -323,46 +327,11 @@ START:  MOV     @#4,SV4
         JSR     PC,WREST
         MTPS    #0
 
-;------------------------------------------- 8. Б.11 IE при DONE = 1
-        MOV     #T.IE,R1
-        JSR     PC,PRS
-        JSR     PC,AZRST
-        MOV     #130,R0                 ; 030 + IE
-        MOV     #T.I30,R1
-        JSR     PC,IETST
-        JSR     PC,AZRST
-        CLR     @#DR
-        MOV     #101,R0                 ; 001 + IE
-        MOV     #T.I01,R1
-        JSR     PC,IETST
-        JSR     PC,AZRST
-        MOV     #121,R0                 ; 021 + IE: длительная
-        MOV     #T.I21,R1
-        JSR     PC,IETST
-        MOV     #130,R0                 ; снова 030 + IE после нее
-        MOV     #T.I30,R1
-        JSR     PC,IETST
-        JSR     PC,AZRST
-        JSR     PC,NL
-
-;------------------------------------------------ 9. отчет в файл на карте
-        MOV     RPTR,R0
-        SUB     #RBUF,R0
-        MOV     R0,RLEN
-        JSR     PC,WFILE
-        MOV     R0,-(SP)
-        MOV     #T.FILE,R1
-        JSR     PC,PRS
-        MOV     (SP)+,R0
-        MOV     #T.LEN,R1
-        JSR     PC,DVAL
-        MOV     RLEN,R0
-        MOV     #T.OF,R1
-        JSR     PC,DVAL
-        JSR     PC,NL
+;------------------------------------------------ 8. отчет в файл на карте
+        JSR     PC,REPORT
         JSR     PC,PAUSE
 
-;------------------------------------------------- 10. звук: на слух
+;-------------------------------------------------- 9. звук: на слух
         MOV     #T.AYF,R1
         JSR     PC,PRS
         MOV     #AY1,R1
@@ -393,7 +362,28 @@ START:  MOV     @#4,SV4
         JSR     PC,COVSQ
         CLRB    @#PORT
 
+;------------------------------------- 10. Б.11 IE при DONE = 1 - последней
+; AZHWT 1.1 и 1.2 на плате здесь зависали. Отчет к этому времени уже на
+; карте; если проба дойдет до конца, он пишется еще раз - с ее строками
+        MOV     #T.IE,R1
+        JSR     PC,PRS
+        JSR     PC,AZRST
+        MOV     #130,R0                 ; 030 + IE
+        MOV     #T.I30,R1
+        JSR     PC,IETST
+        JSR     PC,AZRST
+        CLR     @#DR
+        MOV     #101,R0                 ; 001 + IE
+        MOV     #T.I01,R1
+        JSR     PC,IETST
+        JSR     PC,AZRST
+        MOV     #121,R0                 ; 021 + IE: длительная
+        MOV     #T.I21,R1
+        JSR     PC,IETST
+        JSR     PC,REPORT
+
 ;------------------------------------------------------------- выход
+        MOV     #110,@#CSR              ; сеть, как ее оставляют BIOS и AZMNT
         MOV     #T.END,R1
         JSR     PC,PRS
         MTPS    #340
@@ -408,8 +398,46 @@ START:  MOV     @#4,SV4
 
 TRAP4:  INC     TRAPS
         RTI
+
+; Тип БК: разряд 12 регистра 177346 ставит BIOS AZBK (checktypeBK в AZBOOT:
+; запись в 177662 на БК0010 - ловушка через 4)
+BKTYPE: MOV     #T.B11,R1
+        BIT     #10000,@#177346
+        BEQ     1$
+        MOV     #T.B10,R1
+1$:     JSR     PC,PRS
+        RTS     PC
+; Отчет - в файл на карте и строка о нем на экран
+REPORT: MOV     RPTR,R0
+        SUB     #RBUF,R0
+        MOV     R0,RLEN
+        JSR     PC,WFILE
+        MOV     R0,-(SP)
+        MOV     #T.FILE,R1
+        JSR     PC,PRS
+        MOV     (SP)+,R0
+        MOV     #T.LEN,R1
+        JSR     PC,DVAL
+        MOV     RLEN,R0
+        MOV     #T.OF,R1
+        JSR     PC,DVAL
+        JSR     PC,NL
+        RTS     PC
+
+; На время пробы IE: прерывание 0174 и ловушка через 4 (ответа на
+; подтверждение прерывания нет - STM32 выставляет вектор программой). Запрос
+; может держаться: после IRQMAX подряд прерванная программа продолжает с
+; запретом прерываний
 AZIRQ:  INC     IRQS
-        RTI
+        CMP     IRQS,#IRQMAX
+        BLO     1$
+        BIS     #340,2(SP)
+1$:     RTI
+IETRP:  INC     T4S
+        CMP     T4S,#IRQMAX
+        BLO     1$
+        BIS     #340,2(SP)
+1$:     RTI
 
 ; Символ R0 - на экран (EMT 16) и в текст отчета (\n - как \r\n)
 PUTC:   MOV     R1,-(SP)
@@ -563,30 +591,75 @@ AZCMD:  MOV     R4,-(SP)
         MOV     (SP)+,R4
         RTS     PC
 
-; Проба прерывания: команда R0 в CSR, ожидание готовности, пауза; сколько
-; раз пришло прерывание 0174 - с подписью R1. Вектор 0174 стоит только на это
-; время: в 0170-0177 у БОС свои переменные, вывод на экран их меняет
-IETST:  MOV     R1,-(SP)
+; Проба прерывания (с подписью R1): команда R0 в CSR. Векторы 4 и 0174 - свои,
+; пока запрос не снят; окно - ожидание готовности с запретом, затем пауза с
+; разрешенными прерываниями. Окна: после команды, после 030 без IE, после
+; сброса 000, после 110 (сеть: DONE = 0 до сброса, так плату оставляет BIOS).
+; В каждом - число прерываний 0174 и ловушек через 4. Системные векторы
+; возвращаются, только если последнее окно пустое: в 0170-0177 у БОС свои
+; переменные, и прерывание через них ушло бы неизвестно куда (так зависали
+; 1.1 и 1.2). Если запрос не снять ничем - экран красный, программа стоит
+IETST:  MOV     R0,-(SP)
+        JSR     PC,PRS
+        MOV     (SP)+,R0
         MTPS    #340
-        MOV     @#174,-(SP)
-        MOV     @#176,-(SP)
+        MOV     @#4,SVI4
+        MOV     @#6,SVI6
+        MOV     @#174,SVI174
+        MOV     @#176,SVI176
+        MOV     #IETRP,@#4
+        MOV     #340,@#6
         MOV     #AZIRQ,@#174
         MOV     #340,@#176
-        CLR     IRQS
-        MTPS    #0
+        MOV     #IEWINS,R2
         MOV     R0,@#CSR
+        JSR     PC,IEWIN
+        MOV     #30,@#CSR
+        JSR     PC,IEWIN
+        CLR     @#CSR
+        JSR     PC,IEWIN
+        MOV     #110,@#CSR
+        JSR     PC,IEWIN
+        TST     -(R2)
+        BNE     IESTK
+        TST     -(R2)
+        BNE     IESTK
+        MOV     SVI176,@#176
+        MOV     SVI174,@#174
+        MOV     SVI6,@#6
+        MOV     SVI4,@#4
+        MTPS    #0
+        MOV     #IEWINS,R2
+        MOV     #IELBL,R3
+1$:     MOV     (R2)+,R0
+        MOV     (R3)+,R1
+        JSR     PC,DVAL
+        MOV     (R2)+,R0
+        MOV     #T.SL,R1
+        JSR     PC,DVAL
+        CMP     R2,#IEWEND
+        BLO     1$
+        JSR     PC,NL
+        RTS     PC
+IESTK:  MOV     #520,@#177234           ; фон - красный
+        MOV     #76000,@#177236
+        BR      .
+
+; Окно пробы: готовность (с запретом), пауза с разрешенными прерываниями;
+; прерывания 0174 и ловушки - в (R2)+, (R2)+
+IEWIN:  MOV     R4,-(SP)
         CLR     R4
 1$:     TSTB    @#CSR
         BMI     2$
         SOB     R4,1$
-2$:     JSR     PC,DELAY
-        MTPS    #340
-        MOV     (SP)+,@#176
-        MOV     (SP)+,@#174
+2$:     CLR     IRQS
+        CLR     T4S
         MTPS    #0
-        MOV     IRQS,R0
-        MOV     (SP)+,R1
-        JSR     PC,OVAL
+        JSR     PC,DELAY
+        MTPS    #340
+        MOV     IRQS,(R2)+
+        MOV     T4S,(R2)+
+        MOV     (SP)+,R4
         RTS     PC
 
 DELAY:  MOV     R4,-(SP)
@@ -846,6 +919,14 @@ COVSQ:  MTPS    #340
 ;===================================================================== данные
 TRAPS:  .WORD   0
 IRQS:   .WORD   0
+T4S:    .WORD   0
+SVI4:   .WORD   0
+SVI6:   .WORD   0
+SVI174: .WORD   0
+SVI176: .WORD   0
+IEWINS: .BLKW   10                      ; 4 окна: прерывания, ловушки
+IEWEND:
+IELBL:  .WORD   T.NONE,T.OFF,T.RST,T.NET
 RESP:   .WORD   0
 RPTR:   .WORD   0
 RLEN:   .WORD   0
@@ -877,7 +958,7 @@ FNAMS:  .ASCIZ  /0:\AZHWT.TXT/
         .EVEN
         .WORD   0
 
-T.HEAD: .ASCIZ  /AZHWT 1.0 eCat3: AZBK hardware probe/<12>
+T.HEAD: .ASCIZ  /AZHWT 1.3 eCat3: AZBK hardware probe/<12>
 T.370:  .ASCIZ  /370=/
 T.346:  .ASCIZ  /346=/
 T.212:  .ASCIZ  /212=/
@@ -902,7 +983,9 @@ T.ROBK: .ASCIZ  /bk=/
 T.PG:   .ASCIZ  /pg/
 T.NZ:   .ASCIZ  /nz=/
 T.SUM:  .ASCIZ  /s=/
-T.TIME: .ASCIZ  /Time, 8000 accesses, ticks:/<12>
+T.TIME: .ASCIZ  /Time, 8000 accesses, ticks of CPU\128, /
+T.B11:  .ASCIZ  /BK0011M:/<12>
+T.B10:  .ASCIZ  /BK0010:/<12>
 T.T1:   .ASCIZ  /bk r=/
 T.T2:   .ASCIZ  /az r=/
 T.T3:   .ASCIZ  /bk w=/
@@ -919,10 +1002,14 @@ T.BC2:  .ASCIZ  /b12 2:  /
 T.B2:   .ASCIZ  /r2=/
 T.BL:   .ASCIZ  /last=/
 T.BS:   .ASCIZ  /270=/
-T.IE:   .ASCIZ  /IE irqs: /
-T.I30:  .ASCIZ  /030=/
-T.I01:  .ASCIZ  /001=/
-T.I21:  .ASCIZ  /021=/
+T.IE:   .ASCIZ  <12>/IE: irq 0174 \ trap 4; after cmd, 030, 000, 110/<12>
+T.I30:  .ASCIZ  /030+IE: /
+T.I01:  .ASCIZ  /001+IE: /
+T.I21:  .ASCIZ  /021+IE: /
+T.SL:   .ASCIZ  /\/
+T.OFF:  .ASCIZ  /030:/
+T.RST:  .ASCIZ  /000:/
+T.NET:  .ASCIZ  /110:/
 T.FILE: .ASCIZ  /File 0:\AZHWT.TXT /
 T.LEN:  .ASCIZ  /len=/
 T.OF:   .ASCIZ  /of /
@@ -934,6 +1021,6 @@ T.S3:   .ASCIZ  /S3 AY1 B: both sides?/
 T.S4:   .ASCIZ  /S4 AY2 A: RIGHT only?/
 T.S5:   .ASCIZ  /S5 AY tone via 177714 (BK board protocol): heard?/
 T.S6:   .ASCIZ  /S6 Covox square via 177714: heard? (key stops)/<12>
-T.END:  .ASCIZ  <12>/Done. Key - back to ANDOS./
+T.END:  .ASCIZ  <12>/Done. Key - exit./
         .EVEN
         .END

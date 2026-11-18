@@ -13,7 +13,11 @@
 MACHINE "bk/BK-0011M-azbk.ext"
 LOGDEFS _16,_8
 
-WAIT _10000
+# Подсказка «Press KT to run Setup» встает сразу за строкой CMOS. Ждем не
+# время, а признак этой строки (разряд 2 0177346 - 48.8 Гц при пустой
+# памяти): BIOS идет из памяти AZ, и ее скорость - это задержка чтения платы
+WAITFOR azbk.control == 404, _20000
+WAIT _300
 PRINT "=== Пустая память: 48.8 Гц ==="
 LOG azbk.control
 LOG azbk-disk.eeprom(0, 7)

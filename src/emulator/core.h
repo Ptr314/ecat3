@@ -467,6 +467,7 @@ struct BusReply {
     unsigned int setup_rmw_ns = 0;  //the same for DOUT of the write half of a read-modify-write
     unsigned int reply_ns = 0;      //from the point to RPLY
     unsigned int rmw_extra = 0;     //half clocks a fast memory adds to the write half of a read-modify-write
+    unsigned int read_extra = 0;    //half clocks a fast memory adds to a read (AZBK: SDRAM behind the FPGA, writes posted)
     //How much later than the processor's time 0 the points come: the phase the
     //dividers of the processor clock and of the controller took at power-on
     unsigned int phase_ns = 0;

@@ -106,7 +106,7 @@ void AZBKDisplay::make_key(unsigned int line, LineKey &key) const
     const unsigned int layers = (s.mode & 4) ? 3 : 1;
     const unsigned int row = line / (((s.mode >> 9) & 3) + 1);
     for (unsigned int l = 0; l < layers; l++) {
-        // Буфер строки - 256 слов, до двух страниц
+        // Строка - до 256 слов, не больше двух страниц
         const unsigned int first = row_word(s, l, row) * 2 / AZBK::PAGE_BYTES;
         for (unsigned int p = first; p <= first + 1 && key.count < 6; p++) {
             key.pages[key.count] = p;
@@ -148,10 +148,15 @@ void AZBKDisplay::render_line15(unsigned int line, uint16_t * out) const
     const uint8_t * mem = board->memory();
     const unsigned int size = board->memory_size();
 
+    // Строка рулона - 32, 64, 128 или 256 слов (разряды 4-3). Скролл за ее
+    // длину заворачивает внутри самой строки (плата, AZPIC 2026-11-17, вопрос
+    // Б.10: полосы идут сплошь), а не берет слова следующей
+    const unsigned int line_words = 32u << ((s.mode >> 3) & 3);
+    const unsigned int wrap = line_words - 1;
     uint16_t buf[3][256];
     for (unsigned int l = 0; l < layers; l++) {
         const unsigned int a = row_word(s, l, row) * 2;
-        for (unsigned int i = 0; i < 256; i++) {
+        for (unsigned int i = 0; i < line_words; i++) {
             const unsigned int b = a + i * 2;
             buf[l][i] = (b + 1 < size) ? (uint16_t)(mem[b] | (mem[b + 1] << 8)) : 0;
         }
@@ -164,7 +169,7 @@ void AZBKDisplay::render_line15(unsigned int line, uint16_t * out) const
         const unsigned int shift = (sp % per_word) * bpp;
         unsigned int cell;
         if (!layered) {
-            const unsigned int v = (buf[0][(s.hscroll[0] + k) & 255] >> shift) & mask;
+            const unsigned int v = (buf[0][(s.hscroll[0] + k) & wrap] >> shift) & mask;
             switch (bpp_code) {
             case 0:  cell = 336 + v; break;
             case 1:  cell = 256 + 4 * s.legacy_pal + v; break;
@@ -173,7 +178,7 @@ void AZBKDisplay::render_line15(unsigned int line, uint16_t * out) const
             }
         } else {
             unsigned int v[3];
-            for (unsigned int l = 0; l < 3; l++) v[l] = (buf[l][(s.hscroll[l] + k) & 255] >> shift) & mask;
+            for (unsigned int l = 0; l < 3; l++) v[l] = (buf[l][(s.hscroll[l] + k) & wrap] >> shift) & mask;
             if (bpp_code == 0) {
                 // Плановый режим: три бита из трех слоев, верхний - старший;
                 // верхняя половина 16-цветной палитры

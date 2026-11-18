@@ -11,6 +11,7 @@
 #include "emulator/devices/common/sound.h"
 
 class AZBK;
+class AY8910;
 
 // Звук AZBK (MAXIOL, тема 5556): Covox 16 бит стерео (177200-177206),
 // управление перехватами 177212 и звуковой DMA (177160-177170: PCM16 моно,
@@ -24,17 +25,30 @@ class AZBK;
 //
 // Пара AY платы (177172-177175) - два устройства ay8910 в карте памяти
 // (BK-0011M-azbk.ext); их тип - разряд 3 177212 (0 - YM2149, 1 - AY-3-8910),
-// он выходит на линию ym (1 - YM2149). Перехваты 177714 и 177716 не
-// моделируются: 177714 остается за звуковой приставкой БК, динамик БК звучит
-// сам; остальные разряды 177212 только хранятся.
+// он выходит на линию ym (1 - YM2149).
+//
+// Перехват 177714 (запись идет дальше, в порт БК): при разряде 1 177212 = 0
+// плата разбирает запись как приставка AY или как Covox (MAXIOL: «Legacy AY
+// через 177714, автоопределение - или ковокс или AY»; тесты автора AZPSG17 и
+// SNDTST09). AY - протокол приставок БК в первую AY платы (параметр ay):
+// слово выбирает регистр, байт следом - данные, оба дополнением. Covox -
+// в 177200/177202, как запись в 177206: моно (разряд 0 = 0) - младший байт в
+// оба канала, стерео - младший байт левый, старший правый. Правило выбора
+// MAXIOL не описал; восстановлено так, чтобы обе программы автора звучали:
+// слово - выбор регистра AY, байт - ее данные, а с третьей записи подряд
+// одного вида (слово за словом, байт за байтом) - выборки Covox; слово
+// потока звучит, когда за ним пришло еще слово (за выбором идет байт). Перехват
+// динамика 177716 (разряд 2) не моделируется: динамик БК звучит сам.
 //
 // Параметры:
 //   board - устройство azbk
+//   ay    - AY, в которую идет AY через 177714 (необязательный)
 //   rate  - частота отсчетов DMA, Гц (44100)
 class AZBKSound: public AddressableDevice, public SoundSource
 {
 private:
     AZBK * m_board = nullptr;
+    AY8910 * m_ay = nullptr;            // AY, которой достается 177714
     Interface i_ym;                     // 1 - пара AY играет как YM2149
     unsigned int m_rate = 44100;
 
@@ -60,8 +74,18 @@ private:
     int32_t m_right = 0;
     unsigned int m_control = 0;         // 177212
 
+    // 177714: вид последней записи (0 - не было, 1 - слово, 2 - байт) и
+    // сколько их подряд (до 3); слово потока, которое станет выборкой Covox,
+    // если следом придет не байт
+    unsigned int m_legacy_last = 0;
+    unsigned int m_legacy_run = 0;
+    bool m_legacy_pending = false;
+    unsigned int m_legacy_word = 0;
+
     unsigned int read_register(unsigned int address) const;
     void write_register(unsigned int address, unsigned int value, bool word);
+    void legacy_write(unsigned int value, bool word);
+    void covox_sample(unsigned int value, bool word);
     void dma_control(unsigned int value);
     void dma_start();
     void dma_sample();

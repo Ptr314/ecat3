@@ -2,6 +2,8 @@
 ; 5) и Б.10 (горизонтальный скролл за длину строки). Каждую картинку надо
 ; сфотографировать: где толкования расходятся, картинка выходит заметно иной
 ; (tools/azbk-hwtest/README.md). Запуск из ANDOS (с 01000), клавиша - дальше.
+; Идет на БК0011М и БК0010-01: запись в 177662 на БК0010 - ловушка через 4,
+; программа ее ловит (SETBP).
 ; Собирается tools/azbk-hwtest/asm11.py (build.py).
 
 WPAG7   = 177316
@@ -38,6 +40,11 @@ START:  MTPS    #340
         EMT     16
         MOV     #T.HEAD,R1
         JSR     PC,PRS
+        MOV     #T.B11,R1               ; тип БК - по разряду 12 177346 (его ставит BIOS)
+        BIT     #10000,@#177346
+        BEQ     0$
+        MOV     #T.B10,R1
+0$:     JSR     PC,PRS
         MOV     #VREGS,R2               ; регистры видео как есть
         MOV     #VSAVE,R3
         CLR     R4
@@ -111,7 +118,8 @@ START:  MTPS    #340
 
 ;--------------------------------------- 2. режим 5: три слоя, палитра p = 4
         MTPS    #340
-        MOV     #42000,@#BKPAL          ; p = 4 (и запрет кадрового прерывания)
+        MOV     #42000,R0               ; p = 4 (и запрет кадрового прерывания)
+        JSR     PC,SETBP
         JSR     PC,WSAVE
         MOV     #PAL2,R1
         JSR     PC,SETPAL
@@ -139,7 +147,8 @@ START:  MTPS    #340
         MOV     #12205,@#VMODE          ; рулон 8192, строка x3, точка x4, 2 бита, слои
         JSR     PC,WAITK
         MTPS    #340
-        MOV     #40000,@#BKPAL          ; p = 0
+        MOV     #40000,R0               ; p = 0
+        JSR     PC,SETBP
 
 ;------------------------------- 3. скролл 16 слов при строке 32 слова
         JSR     PC,WSAVE
@@ -192,6 +201,21 @@ START:  MTPS    #340
 
 ;================================================================ подпрограммы
 RTIV:   RTI
+
+; R0 - в 177662 (прерывания запрещены). На БК0010 регистр только читается:
+; запись остается без ответа, но VGA платы значение все равно берет (AZBOOT,
+; checktypeBK). Ловушка - на свой вектор 4 и только здесь: остальное время
+; вектор 4 у системы (СТОП)
+SETBP:  MOV     @#4,-(SP)
+        MOV     @#6,-(SP)
+        MOV     #TRAPV,@#4
+        MOV     #340,@#6
+        MOV     R0,@#BKPAL
+        MOV     (SP)+,@#6
+        MOV     (SP)+,@#4
+        RTS     PC
+TRAPV:  INC     BPTRAP
+        RTI
 
 PRS:    MOVB    (R1)+,R0
         BEQ     1$
@@ -366,6 +390,7 @@ B3:     MOV     #TPL1,R1
 SV100:  .WORD   0
 SV102:  .WORD   0
 PALRD:  .WORD   0
+BPTRAP: .WORD   0                       ; ловушек на записи в 177662
 CURPG:  .WORD   0
 ROWFN:  .WORD   0
 SW7:    .WORD   0
@@ -403,12 +428,14 @@ PAL2:   .WORD   400,6.*2041,401,12.*2000,402,21.*2000,403,31.*2000
 ; 3: ячейки 336, 337 - черный и белый
 PAL3:   .WORD   520,0,521,77777,177777
 
-T.HEAD: .ASCIZ  /AZPIC 1.0 eCat3: AZBK video probe (B.9, B.10)/<12>
+T.HEAD: .ASCIZ  /AZPIC 1.1 eCat3: AZBK video probe (B.9, B.10), /
+T.B11:  .ASCIZ  /BK0011M/<12>
+T.B10:  .ASCIZ  /BK0010/<12>
 T.PAL:  .ASCIZ  /Palette cell 7: wrote 012345, read /
 T.HELP: .ASCII  /Three pictures; photograph each, then any key./<12>
         .ASCII  /1: mode 4, eight bars. 2: mode 5, three layers./<12>
         .ASCIZ  /3: scroll 16 words over 32-word lines./<12>/-- key --/
-T.END:  .ASCIZ  <12>/Done, video and palette restored. Key - ANDOS./
-T.ENDNP: .ASCIZ <12>/Done. Palette is not readable: reset to restore/<12>/the colours. Key - ANDOS./
+T.END:  .ASCIZ  <12>/Done, video and palette restored. Key - exit./
+T.ENDNP: .ASCIZ <12>/Done. Palette is not readable: reset to restore/<12>/the colours. Key - exit./
         .EVEN
         .END

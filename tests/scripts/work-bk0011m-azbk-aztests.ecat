@@ -1,0 +1,161 @@
+# БК0011М + AZBK: тесты звука автора платы с его диска AZTESTS.DSK
+# (library/bk, загрузочный ANDOS; без библиотеки тест пропускается).
+#
+# Платформа «AZБК» ставит диск на AZ0, стартовое ПЗУ грузит с него ANDOS. В
+# панели - AZPSG17 (PSG TEST MATRIX, сборка 17 от 2026-10-26) и SNDTST09
+# (SOUND TEST MATRIX, сборка 09 от 2026-11-07). Обе программы проверяют
+# немногое сами: остальное - что должно быть слышно.
+#
+# AZPSG17, интерфейс AY1 BYTE: столбец BUS - шесть проверок чтением
+# (0177172 словом: старший байт - данные, младшие 4 разряда - номер
+# регистра). После каждой - счетчики программы: проверок, расхождений,
+# первый расходящийся регистр (0377 - нет). Затем интерфейс AY LEGACY
+# (приставка AY на 0177714: слово - дополнение номера регистра, байт -
+# дополнение данных) и тон 1 кГц канала A: плата перехватывает 0177714, и
+# регистры первой AY платы - период 0160, R7 = 076, громкость 017; в Covox
+# ничего не попало (ANDOS обнуляет порт двумя словами, выбор регистра следом
+# - не выборка). Кнопка EXIT - выход в ANDOS.
+#
+# SNDTST09: Covox через 0177714, левый канал - программа ставит 0177212 = 1
+# (стерео, перехват разрешен), выбирает регистр 14 AY, пишет 12 байтов 0377
+# (первые два - данные 0 в регистр 14) и выборки словами: младший байт -
+# шум, старший - 0377 (правый канал, 0177202, стоит на 077600; левый -
+# случайный, от 0177550, и не выводится: повтор через MCP идет не такт в
+# такт). По остановке 0177212 возвращается. DMA PCM16: синус 690 Гц из страницы 02400 по кругу
+# (0177160 = 1); по остановке программа сверяет страницу - «SDRAM PAGE
+# RESTORED» на снимке.
+# @timeout 240
+
+PLATFORM "AZБК", "../library/bk/AZTESTS.DSK"
+LOGDEFS _16,_8
+WAIT _25000
+KEY _10,_50,space
+WAIT _4000
+KEY _100,_50,down
+KEY _100,_50,down
+KEY _100,_50,ret
+WAIT _6000
+KEY _200,_50,right
+KEY _200,_50,ret
+WAIT _300
+KEY _200,_50,down
+KEY _200,_50,ret
+WAIT _300
+KEY _200,_50,down
+KEY _200,_50,right
+KEY _200,_50,right
+KEY _200,_50,right
+KEY _200,_50,right
+KEY _200,_50,right
+WAIT _300
+PRINT "=== BUS / BASIC / WRITE ==="
+KEY _200,_50,ret
+WAIT _2000
+LOG ram0.value16(37504, 37512)
+KEY _200,_50,ret
+WAIT _300
+PRINT "=== BUS / LIMIT / INDEX ==="
+KEY _200,_50,down
+KEY _200,_50,ret
+WAIT _2000
+LOG ram0.value16(37504, 37512)
+KEY _200,_50,ret
+WAIT _300
+PRINT "=== BUS / SWEEP / REG ALL ==="
+KEY _200,_50,down
+KEY _200,_50,ret
+WAIT _3000
+LOG ram0.value16(37504, 37512)
+KEY _200,_50,ret
+WAIT _300
+PRINT "=== BUS / LIVE / BURST ==="
+KEY _200,_50,down
+KEY _200,_50,ret
+WAIT _3000
+LOG ram0.value16(37504, 37512)
+KEY _200,_50,ret
+WAIT _300
+PRINT "=== BUS / MULTI / 2 PSG ==="
+KEY _200,_50,down
+KEY _200,_50,ret
+WAIT _3000
+LOG ram0.value16(37504, 37512)
+KEY _200,_50,ret
+WAIT _300
+PRINT "=== BUS / STRESS / R/W ==="
+KEY _200,_50,down
+KEY _200,_50,ret
+WAIT _5000
+LOG ram0.value16(37504, 37512)
+SCREEN "../results/work-bk0011m-azbk-aztests-bus.png"
+KEY _200,_50,ret
+WAIT _300
+PRINT "=== AY LEGACY: BASIC / TONE 1K ==="
+KEY _200,_50,up
+KEY _200,_50,up
+KEY _200,_50,up
+KEY _200,_50,up
+KEY _200,_50,up
+KEY _200,_50,up
+KEY _200,_50,up
+KEY _200,_50,left
+KEY _200,_50,ret
+WAIT _300
+KEY _200,_50,down
+KEY _200,_50,down
+KEY _200,_50,left
+KEY _200,_50,left
+KEY _200,_50,left
+KEY _200,_50,left
+KEY _200,_50,left
+KEY _200,_50,ret
+WAIT _1500
+LOG az-ay1.regs(0, 15)
+LOG azbk-sound.legacy
+LOG azbk-sound.covox
+KEY _200,_50,ret
+WAIT _500
+LOG az-ay1.regs(7, 10)
+PRINT "=== Выход в ANDOS, SNDTST09 ==="
+KEY _200,_50,down
+KEY _200,_50,down
+KEY _200,_50,down
+KEY _200,_50,down
+KEY _200,_50,down
+KEY _200,_50,down
+KEY _200,_50,right
+KEY _200,_50,right
+KEY _200,_50,right
+KEY _200,_50,ret
+WAIT _3000
+KEY _100,_50,down
+KEY _100,_50,down
+KEY _100,_50,ret
+WAIT _6000
+PRINT "=== COVOX LEGACY / LEFT RANDOM NOISE ==="
+KEY _200,_50,down
+KEY _200,_50,down
+KEY _200,_50,down
+KEY _200,_50,ret
+WAIT _1500
+LOG azbk-sound.control
+LOG azbk-sound.legacy
+LOG azbk-sound.value16(177202, 177202)
+LOG az-ay1.regs(16, 17)
+KEY _200,_50,ret
+WAIT _500
+LOG azbk-sound.control
+PRINT "=== DMA PCM16 / SINE 690HZ ==="
+KEY _200,_50,down
+KEY _200,_50,down
+KEY _200,_50,down
+KEY _200,_50,down
+KEY _200,_50,ret
+WAIT _1500
+LOG azbk-sound.dma
+LOG azbk-sound.dma_page
+KEY _200,_50,ret
+WAIT _2000
+LOG azbk-sound.dma
+SCREEN "../results/work-bk0011m-azbk-aztests-dma.png"
+EXIT

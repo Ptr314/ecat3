@@ -36,7 +36,8 @@ unsigned int AZBKBlitter::read_control() const
 // меняется только число команд (для следующего пуска; пока читается пакет -
 // и оно нет), а смена режима и пуск не принимаются. Ручной пуск - разряд 12
 // при уже стоящем разряде 14 (MAXIOL: «устанавливаем бит 14; следующей
-// командой бит 12 и количество команд»)
+// командой бит 12 и количество команд») или вместе с ним в одной записи
+// (плата, AZHWT 2026-11-17: 050001 после 0 пускает)
 void AZBKBlitter::write_control(unsigned int value)
 {
     const unsigned int count = value & 0777;
@@ -53,7 +54,7 @@ void AZBKBlitter::write_control(unsigned int value)
     const bool was_manual = m_manual;
     m_count = count;
     m_manual = (value & 040000) != 0;
-    if (was_manual && (value & 010000) != 0) start();
+    if ((was_manual || m_manual) && (value & 010000) != 0) start();
 }
 
 void AZBKBlitter::frame_end()
@@ -101,13 +102,10 @@ bool AZBKBlitter::load_command()
     m_src &= ADDRESS_MASK;
     m_dst &= ADDRESS_MASK;
     m_width = (p[4] & 0377) + 1;
-    // 0 строк - одна строка, как у gid (вопрос Б.8: у MAXIOL «максимальное
-    // количество строк - 256» при восьмиразрядном поле, но 256 ломает
-    // Dangerous Dave). Демо MAXIOL 2024 года с диска AZKV этого не решают:
-    // они написаны под прежний формат команды, где число строк стояло в слове
-    // 7, а в старшем байте слова 5 - ноль
+    // 0 строк - одно слово (плата, AZHWT 2026-11-17, вопрос Б.8): конец
+    // команды проверяется после каждого слова. У MAXIOL «максимальное
+    // количество строк - 256», у gid 0 - одна строка
     m_rows = (p[4] >> 8) & 0377;
-    if (m_rows == 0) m_rows = 1;
     m_inc = p[5] & 0377;
     m_const = p[7];
     m_col = m_row = 0;
@@ -170,10 +168,11 @@ unsigned int AZBKBlitter::step_word()
     } else {
         m_col = 0;
         m_dst += (m_op & 02000) ? (uint32_t)(0 - m_inc) : m_inc;
-        if (++m_row >= m_rows) {
-            m_cmd_loaded = false;
-            m_cmd++;
-        }
+        m_row++;
+    }
+    if (m_row >= m_rows) {
+        m_cmd_loaded = false;
+        m_cmd++;
     }
     m_dst &= ADDRESS_MASK;
     return cost;

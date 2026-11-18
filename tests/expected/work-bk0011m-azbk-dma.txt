@@ -16,4 +16,4 @@
 [azbk-sound.hash] &01335546524
 === 4. Covox ===
 [azbk-sound.covox] &012345 &012345
-[azbk-sound.covox] &077400 &000000
+[azbk-sound.covox] &077600 &040000
