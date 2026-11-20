@@ -1,0 +1,52 @@
+# БК0010-01: программа БЕЙСИКа, записанная CSAVE, читается CLOAD с файла.
+# БЕЙСИК сам строит имя для EMT 36 (блок 000320) и при записи, и при чтении:
+# CSAVE"AB" и CLOAD"AB" дают "AB    .COD" и шесть нулевых байтов, а EMT 36
+# сравнивает все 16 байт. Магнитофон добивал имя файла пробелами, и CLOAD
+# находил на ленте "чужой" файл: печатал его имя и ждал дальше. Запись
+# сохраняется дважды: AB.COD.bin (имя с ленты, как его предлагает окно
+# магнитофона) и AB.cod (расширение .cod само дает на ленте .COD). Обе
+# читаются по CLOAD"AB" и печатают 3.14159...
+
+MACHINE "bk/BK-0010-01.cfg"
+WAIT _4000
+
+TYPE "10 PRINT 355/113\n"
+WAIT _300
+
+PRINT "=== CSAVE ==="
+COMMAND tape.record(1)
+TYPE "CSAVE\"AB\"\n"
+WAIT _6000
+COMMAND tape.record(0)
+
+LOGDEFS _16,_10
+LOG tape.recorded
+COMMAND tape.save("../results/AB.COD.bin")
+COMMAND tape.save("../results/AB.cod")
+
+PRINT "=== CLOAD из AB.COD.bin ==="
+TYPE "NEW\n"
+WAIT _500
+COMMAND tape.load("../results/AB.COD.bin")
+TYPE "CLOAD\"AB\"\n"
+WAIT _500
+COMMAND tape.play
+WAIT _6000
+TYPE "RUN\n"
+WAIT _1500
+SCREEN "../results/tape-bk-0010-01-cod-1.png"
+
+# NEW очищает и экран
+PRINT "=== CLOAD из AB.cod ==="
+TYPE "NEW\n"
+WAIT _500
+COMMAND tape.load("../results/AB.cod")
+TYPE "CLOAD\"AB\"\n"
+WAIT _500
+COMMAND tape.play
+WAIT _6000
+TYPE "RUN\n"
+WAIT _1500
+
+SCREEN "../results/tape-bk-0010-01-cod-2.png"
+EXIT

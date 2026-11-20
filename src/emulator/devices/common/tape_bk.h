@@ -167,6 +167,35 @@ namespace bk_tape
         put_sync(bits, 32);
     }
 
+    // The name field of a file. БЕЙСИК makes the name itself from the one typed,
+    // the same way when it writes and when it reads (the parameter block of
+    // EMT 36 at 000320 of the БК0010-01): six characters, cut or padded with
+    // spaces, then the extension of its format. CSAVE and CLOAD give
+    // "AB    .COD" and six zero bytes, BSAVE and BLOAD "AB    .BIN" and six
+    // spaces. The reader compares all sixteen bytes, and nothing typed on the
+    // БК can produce another padding, so a file named after its tape name
+    // ("GRF123.COD.bin", "AB.COD.bin") is laid out the way БЕЙСИК lays it out.
+    // A .BIN with a longer stem is a name typed in the monitor and stays as
+    // it is; any other name is padded with spaces, as the monitor and Фокал do.
+    inline void name_field(const std::string &name, uint8_t * field)
+    {
+        const size_t dot = name.rfind('.');
+        const std::string ext = (dot == std::string::npos)? std::string() : name.substr(dot + 1);
+        std::string stem = (dot == std::string::npos)? name : name.substr(0, dot);
+        while (!stem.empty() && stem[stem.size() - 1] == ' ') stem.erase(stem.size() - 1);
+        const bool cod = ext == "COD";
+        if (cod || (ext == "BIN" && stem.size() <= 6)) {
+            for (unsigned i = 0; i < 6; i++)
+                field[i] = (i < stem.size())? (uint8_t)stem[i] : (uint8_t)' ';
+            field[6] = '.';
+            for (unsigned i = 0; i < 3; i++) field[7 + i] = (uint8_t)ext[i];
+            for (unsigned i = 10; i < NAME_SIZE; i++) field[i] = cod? 0 : (uint8_t)' ';
+            return;
+        }
+        for (unsigned i = 0; i < NAME_SIZE; i++)
+            field[i] = (i < name.size())? (uint8_t)name[i] : (uint8_t)' ';
+    }
+
     // A БК file starts with the load address and the length, which are also
     // the first four bytes of the tape header. The rest of the header is the
     // sixteen character name.
@@ -184,11 +213,10 @@ namespace bk_tape
             if (length == 0 || length > file.size() - 4) length = (uint16_t)(file.size() - 4);
         }
 
-        uint8_t name_field[NAME_SIZE];
-        for (unsigned i = 0; i < NAME_SIZE; i++)
-            name_field[i] = (i < name.size())? (uint8_t)name[i] : (uint8_t)' ';
+        uint8_t field[NAME_SIZE];
+        name_field(name, field);
 
-        put_file(bits, address, file.data() + data_at, length, name_field);
+        put_file(bits, address, file.data() + data_at, length, field);
 
         pack(bits, out);
     }
@@ -264,7 +292,10 @@ namespace bk_tape
         std::string m_name;
         size_t decoded_periods = 0;
 
-        // Turns a tape name into something that can be offered as a file name
+        // Turns a tape name into something that can be offered as a file name.
+        // The dot stays: БЕЙСИК finds its files by the extension it puts into
+        // the name ("AB    .COD"), and "AB.COD.bin" goes back on the tape under
+        // that name, where "ABCOD.bin" could never be found again
         static std::string clean_name(const std::string &name)
         {
             std::string s;
@@ -273,7 +304,10 @@ namespace bk_tape
                 if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')
                     || (c >= 'a' && c <= 'z') || c == '-' || c == '_')
                     s += c;
+                else if (c == '.' && !s.empty() && s[s.size() - 1] != '.')
+                    s += c;
             }
+            while (!s.empty() && s[s.size() - 1] == '.') s.erase(s.size() - 1);
             return s.empty()? std::string("tape") : s;
         }
 

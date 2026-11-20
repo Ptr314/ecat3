@@ -878,6 +878,11 @@ emulator::Result TapeRecorder::load_file(const std::string &file_name, const std
         // the monitor and БЕЙСИК compare it byte for byte, so a file named in
         // small letters on the host could never be found
         std::string tape_name = whole_name? loaded_name : dsk_tools::get_file_basename(file_name);
+        // A .cod is a program saved by CSAVE, and CLOAD looks for it under
+        // its name with .COD (bk_tape::name_field)
+        if (!whole_name && dsk_tools::get_file_ext(file_name) == ".cod"
+            && str_tolower(dsk_tools::get_file_ext(tape_name)) != ".cod")
+            tape_name += ".COD";
         for (size_t i = 0; i < tape_name.size(); i++)
             if (tape_name[i] >= 'a' && tape_name[i] <= 'z') tape_name[i] = (char)(tape_name[i] - 'a' + 'A');
         if (tape_format == "bk-ascii")

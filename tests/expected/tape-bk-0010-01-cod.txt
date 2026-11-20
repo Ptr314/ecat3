@@ -1,0 +1,4 @@
+=== CSAVE ===
+[tape.recorded] 22
+=== CLOAD из AB.COD.bin ===
+=== CLOAD из AB.cod ===
